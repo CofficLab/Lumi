@@ -2,6 +2,7 @@
 import Foundation
 import Testing
 
+@MainActor
 @Suite("HTML preview element context menu")
 struct HTMLPreviewElementContextMenuTests {
     @Test("orders the target before its ancestors")
@@ -57,6 +58,72 @@ struct HTMLPreviewElementContextMenuTests {
         #expect(items.count == 1)
         #expect(items[0].isEnabled == false)
         #expect(items[0].title == "Conversation Unavailable")
+    }
+
+    @Test("keeps the selection callback alive until menu tracking finishes")
+    func selectionSurvivesMenuClose() {
+        let items = HTMLPreviewElementContextMenuModel.items(
+            candidates: [reference(label: "Checkout", tag: "button")],
+            isEnabled: true,
+            locale: Locale(identifier: "en"),
+            localize: { $0 }
+        )
+        var selected: HTMLPreviewElementReference?
+        var cancellationCount = 0
+        let session = HTMLPreviewElementContextMenuSession(
+            items: items,
+            onSelect: { selected = $0 },
+            onCancel: { cancellationCount += 1 }
+        )
+
+        session.select(at: 0)
+        session.finish()
+        session.finish()
+
+        #expect(selected == items[0].reference)
+        #expect(cancellationCount == 0)
+    }
+
+    @Test("cancelling menu tracking finishes exactly once")
+    func cancellationFinishesOnce() {
+        let items = HTMLPreviewElementContextMenuModel.items(
+            candidates: [reference(label: "Checkout", tag: "button")],
+            isEnabled: true,
+            locale: Locale(identifier: "en"),
+            localize: { $0 }
+        )
+        var cancellationCount = 0
+        let session = HTMLPreviewElementContextMenuSession(
+            items: items,
+            onSelect: { _ in },
+            onCancel: { cancellationCount += 1 }
+        )
+
+        session.finish()
+        session.finish()
+
+        #expect(cancellationCount == 1)
+    }
+
+    @Test("uses the native orientation of flipped web views")
+    func flippedPresentationPoint() {
+        let bounds = NSRect(x: 0, y: 0, width: 390, height: 844)
+
+        let flipped = HTMLPreviewElementContextMenuGeometry.presentationPoint(
+            clientX: 120,
+            clientY: 180,
+            bounds: bounds,
+            isFlipped: true
+        )
+        let unflipped = HTMLPreviewElementContextMenuGeometry.presentationPoint(
+            clientX: 120,
+            clientY: 180,
+            bounds: bounds,
+            isFlipped: false
+        )
+
+        #expect(flipped == NSPoint(x: 120, y: 180))
+        #expect(unflipped == NSPoint(x: 120, y: 664))
     }
 
     private func reference(label: String, tag: String, blockID: String? = nil) -> HTMLPreviewElementReference {

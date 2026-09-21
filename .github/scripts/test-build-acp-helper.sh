@@ -71,11 +71,11 @@ case "$1" in
     if [ -n "${scratch}" ]; then
       bin_subdir="${scratch}/arm64-apple-macosx/${config}"
       mkdir -p "${bin_subdir}"
-      echo "fake binary" > "${bin_subdir}/ACPBootstrap"
-      chmod +x "${bin_subdir}/ACPBootstrap"
+      echo "fake binary" > "${bin_subdir}/LumiACPExecutable"
+      chmod +x "${bin_subdir}/LumiACPExecutable"
       # Create a fake resource bundle
-      mkdir -p "${bin_subdir}/ACPBootstrap_ACPBootstrap.bundle"
-      echo "fake resource" > "${bin_subdir}/ACPBootstrap_ACPBootstrap.bundle/data.txt"
+      mkdir -p "${bin_subdir}/FactoryLumiACP_FactoryLumiACP.bundle"
+      echo "fake resource" > "${bin_subdir}/FactoryLumiACP_FactoryLumiACP.bundle/data.txt"
     fi
     ;;
 esac
@@ -89,16 +89,19 @@ cat > "${WORK}/bin/lipo" <<'FAKE_LIPO'
 set -uo pipefail
 echo "$@" >> "${FAKE_LOG}/lipo-calls.txt"
 
-case "$1" in
+case "${2:-}" in
   -verify_arch)
-    arch="$2"
-    binary="$3"
+    binary="$1"
+    arch="$3"
     if [ "${arch}" = "${FAKE_LIPO_ARCH:-arm64}" ]; then
       exit 0
     else
       exit 1
     fi
     ;;
+esac
+
+case "$1" in
   -archs)
     echo "${FAKE_LIPO_ARCH:-arm64}"
     ;;
@@ -116,16 +119,16 @@ FAKE_DITTO
 chmod +x "${WORK}/bin/ditto"
 
 # ---------------------------------------------------------------------------
-# Fake ACPBootstrap package
+# Fake FactoryLumiACP package
 # ---------------------------------------------------------------------------
 setup_fake_package() {
   local pkg_dir="${WORK}/fake-package"
-  mkdir -p "${pkg_dir}/Sources/ACPBootstrap"
-  echo 'print("hello")' > "${pkg_dir}/Sources/ACPBootstrap/main.swift"
+  mkdir -p "${pkg_dir}/Sources/LumiACPExecutable"
+  echo 'print("hello")' > "${pkg_dir}/Sources/LumiACPExecutable/main.swift"
   cat > "${pkg_dir}/Package.swift" <<'PKG'
 // swift-tools-version: 6.0
 import PackageDescription
-let package = Package(name: "ACPBootstrap", targets: [.executableTarget(name: "ACPBootstrap", path: "Sources/ACPBootstrap")])
+let package = Package(name: "FactoryLumiACP", products: [.executable(name: "LumiACPExecutable", targets: ["LumiACPExecutable"])], targets: [.executableTarget(name: "LumiACPExecutable", path: "Sources/LumiACPExecutable")])
 PKG
   echo '{"pins":[]}' > "${pkg_dir}/Package.resolved"
   echo "${pkg_dir}"
@@ -203,7 +206,9 @@ FAKE_LOG="${WORK}/log1"
 mkdir -p "${FAKE_LOG}"
 pkg_dir="$(setup_fake_package)"
 dest="${WORK}/dest1"
+resources="${WORK}/resources1"
 scratch="${WORK}/scratch1"
+cache="${WORK}/cache1"
 
 export PATH="${WORK}/bin:${PATH}"
 export FAKE_LOG FAKE_LIPO_ARCH="arm64"
@@ -211,17 +216,23 @@ export FAKE_LOG FAKE_LIPO_ARCH="arm64"
 bash "${SCRIPT}" "arm64" "${dest}" \
   --source-dir "${pkg_dir}" \
   --scratch-path "${scratch}" \
+  --cache-path "${cache}" \
+  --resources-dir "${resources}" \
+  --output-name "LumiACP" \
   --config release > "${WORK}/stdout1.txt" 2>&1
 run_exit=$?
 
 expect_eq "0" "${run_exit}" "exits 0"
-expect_exists "${dest}/lumi-acp" "executable copied"
+expect_exists "${dest}/LumiACP" "executable copied with requested name"
+expect_contains "$(cat "${FAKE_LOG}/ditto-calls.txt" 2>/dev/null || echo '')" "${resources}/FactoryLumiACP_FactoryLumiACP.bundle" "resource copied to requested directory"
 SWIFT_CALLS="$(cat "${FAKE_LOG}/swift-calls.txt" 2>/dev/null || echo '')"
+expect_contains "${SWIFT_CALLS}" "--product LumiACPExecutable" "builds current executable product"
 expect_contains "${SWIFT_CALLS}" "--triple arm64-apple-macosx14.0" "passes correct triple"
 expect_contains "${SWIFT_CALLS}" "--scratch-path ${scratch}" "passes scratch path"
+expect_contains "${SWIFT_CALLS}" "--cache-path ${cache}" "passes dependency cache path"
 expect_contains "${SWIFT_CALLS}" "--force-resolved-versions" "enforces locked versions"
 expect_contains "${SWIFT_CALLS}" "-c release" "passes release config"
-expect_contains "$(cat "${FAKE_LOG}/lipo-calls.txt" 2>/dev/null)" "-verify_arch arm64" "verifies architecture"
+expect_contains "$(cat "${FAKE_LOG}/lipo-calls.txt" 2>/dev/null)" "LumiACPExecutable -verify_arch arm64" "verifies architecture"
 
 # ---------------------------------------------------------------------------
 # 4. x86_64 build uses correct triple
@@ -278,8 +289,8 @@ case "$1" in
     if [ -n "${scratch}" ]; then
       bin_subdir="${scratch}/${triple}/${config}"
       mkdir -p "${bin_subdir}"
-      echo "fake binary" > "${bin_subdir}/ACPBootstrap"
-      chmod +x "${bin_subdir}/ACPBootstrap"
+      echo "fake binary" > "${bin_subdir}/LumiACPExecutable"
+      chmod +x "${bin_subdir}/LumiACPExecutable"
     fi
     ;;
 esac
@@ -332,7 +343,7 @@ bash "${SCRIPT}" "arm64" "" \
 run_exit=$?
 
 expect_eq "0" "${run_exit}" "skip-copy exits 0"
-expect_contains "$(cat "${WORK}/stdout4.txt")" "ACPBootstrap" "prints binary path"
+expect_contains "$(cat "${WORK}/stdout4.txt")" "LumiACPExecutable" "prints binary path"
 
 # ---------------------------------------------------------------------------
 # Summary

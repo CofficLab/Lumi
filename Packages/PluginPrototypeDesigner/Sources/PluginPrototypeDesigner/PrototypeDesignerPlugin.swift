@@ -87,7 +87,7 @@ public final class PrototypeDesignerPlugin: SuperPlugin, SuperLog {
         // 注册 Agent 工具到 ToolManagerProviding。
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {
-                toolManager.add(tool, pluginID: id)
+                toolManager.add(ConversationScopedPrototypeTool(tool), pluginID: id)
             }
         }
 

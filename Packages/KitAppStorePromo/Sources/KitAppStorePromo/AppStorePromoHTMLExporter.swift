@@ -1,7 +1,6 @@
 import AppKit
 import CoreGraphics
 import Foundation
-import KitHTMLPreview
 import WebKit
 
 public enum AppStorePromoExportError: LocalizedError, Equatable {
@@ -49,7 +48,7 @@ public enum AppStorePromoHTMLExporter {
             throw AppStorePromoExportError.resourcesTimedOut
         }
 
-        let image = try await HTMLScreenshotter.capture(webView)
+        let image = try await captureViewport(of: webView)
         let pointWidth = Int(image.size.width.rounded())
         let pointHeight = Int(image.size.height.rounded())
         guard pointWidth == preset.width, pointHeight == preset.height else {
@@ -72,8 +71,8 @@ public enum AppStorePromoHTMLExporter {
               ) else {
             throw AppStorePromoExportError.pngEncodingFailed
         }
-        // WKWebView/PDF capture produces a Retina backing representation even
-        // though its CSS viewport is already the exact App Store point size.
+        // WKWebView snapshots use a Retina backing representation even though
+        // the CSS viewport is already the exact App Store point size.
         // Rasterize that representation at one output pixel per CSS pixel so
         // the encoded file has the required dimensions without changing layout.
         context.interpolationQuality = .high
@@ -83,6 +82,18 @@ public enum AppStorePromoHTMLExporter {
             throw AppStorePromoExportError.pngEncodingFailed
         }
         return data
+    }
+
+    private static func captureViewport(of webView: WKWebView) async throws -> NSImage {
+        try await withCheckedThrowingContinuation { continuation in
+            webView.takeSnapshot(with: nil) { image, error in
+                if let image {
+                    continuation.resume(returning: image)
+                } else {
+                    continuation.resume(throwing: error ?? AppStorePromoExportError.pngEncodingFailed)
+                }
+            }
+        }
     }
 
     private static func disableMotion(in webView: WKWebView) async throws {

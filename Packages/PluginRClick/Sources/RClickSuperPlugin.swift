@@ -92,6 +92,7 @@ public final class RClickSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog
                         recommended: RailViewWidth(minWidth: 240, idealWidth: 280, maxWidth: 400),
                         store: railWidthStore
                     )
+                    rootView?.setRailViewVisible(rail?.hasVisibleTabs ?? false)
                     content?.setContentView(AnyView(RClickSettingsView(viewModel: RClickSettingsViewModel(configManager: configManager))))
                     chat?.setVisible(false)
                     rootView?.setContentHeaderViewHidden(true)
@@ -100,6 +101,7 @@ public final class RClickSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog
                     chat?.setVisible(true)
                     rootView?.setContentHeaderViewHidden(false)
                     rail?.setVisibleCategories(Set(RailViewCategory.allCases))
+                    rootView?.setRailViewVisible(rail?.hasVisibleTabs ?? false)
                     rail?.deactivateWidthProfile(ownerID: pluginID)
                 }
             },
@@ -115,7 +117,9 @@ public final class RClickSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog
             kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
-            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         }
         configObserver?.cancel()
         configObserver = nil

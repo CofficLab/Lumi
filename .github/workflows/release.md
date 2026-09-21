@@ -6,13 +6,13 @@
 
 1.	GitHub Actions 自动运行
 2.	根据 conventional commit 自动计算版本
-3.	使用 Xcode 构建 .app
-4.	使用 Developer ID Application 证书签名
-5.	打包成 .dmg
-6.	提交 Apple Notarization
-7.	Staple 公证票据并执行 Gatekeeper 验证
-8.	自动创建 GitHub Release 并上传 DMG
-9.	`main` 发布会生成 stable release 和 stable appcast；`pre` 发布会生成 prerelease 和 preview appcast
+3.	`prepare` 固定触发提交并生成唯一的发布 metadata
+4.	两个隔离的 build job 并行构建、校验 `arm64` 与 `x86_64` 归档
+5.	`publish` 验证两份归档的来源、摘要、权限、资源和架构
+6.	集中使用 Developer ID Application 证书签名并生成唯一命名的 DMG
+7.	提交 Apple Notarization，状态为 Accepted 后 staple 并执行 Gatekeeper 验证
+8.	在任何公开写入前保存可恢复的 `final-assets`，再上传并逐字节验证两个 DMG
+9.	创建并核验 GitHub Release 草稿，最后依次更新架构 feed、默认 feed 并开放 Release
 
 ### 更新通道
 
@@ -23,7 +23,46 @@
 
 两个通道分别存放 DMG 和 appcast。稳定版客户端优先读取 R2，R2 不可访问时回退到 GitHub Release 的架构 appcast。预览版使用 `pre` 前缀的 R2 路径；预览版的备用地址由客户端通道配置决定。
 
-Sparkle 的构建号使用 UTC 日期格式 `YYYYMMDDHHmmss`，例如 `20260101120000`。发布时先与仓库历史、线上 appcast 的最大构建号比较；如果发生时钟回退或同秒发布，则使用已知最大值加一。stable 和 preview 共用全局发布锁。版本配置和 appcast 只在 CI 工作目录中临时生成，不提交回代码仓库。
+Sparkle 的构建号使用 UTC 日期格式 `YYYYMMDDHHmmss`，例如 `20260101120000`。发布时先与仓库历史、线上 appcast 的最大构建号比较；如果发生时钟回退或同秒发布，则使用已知最大值加一。stable 和 preview 共用全局发布锁。Lumi 的版本配置只在各 build job 的两份 Lumi xcconfig 中临时注入。stable appcast 不提交；preview 的三份 appcast 会在 CDN 文件确认可用后，以普通、非强制提交同步到最新 `pre`，作为客户端 fallback。
+
+### 发布产物命名
+
+新发布不再复用 `Lumi_版本_架构.dmg`。所有地方都从同一份 metadata 读取名称：
+
+```text
+Lumi_<marketing-version>_<build-number>_<arch>.dmg
+Lumi_<marketing-version>_<build-number>_<arch>_dSYMs.zip
+```
+
+例如 `Lumi_6.1.0_20260921190000_arm64.dmg`。旧版 URL 保持可读；同名新 DMG 若线上字节不同，发布会拒绝覆盖。
+
+### 权限与密钥边界
+
+- `prepare` 与 build matrix 只有仓库只读权限，不接触签名、公证、Sparkle 或 R2 密钥。
+- 两个 build job 必须 checkout metadata 中固定的 SHA，使用受版本控制的两套 lock 严格解析。
+- 只有 `publish` 获得仓库写权限；各 secret 只注入实际使用它的步骤。
+- 缓存只保存锁定依赖源码，不保存最终 App、签名文件、钥匙串或发布 metadata。
+
+### 无发布副作用的构建验证
+
+`.github/workflows/release-build-validation.yml` 可手工运行，也会在 `release-validation/**` 分支运行。它使用与生产相同的 metadata、依赖解析、archive、归档校验和打包脚本，但没有发布凭据，也没有 publish job。用它完成冷缓存、热缓存和单一源码变更的受控对照后，再让正式流程进入 preview 灰度。
+
+## 发布失败与恢复
+
+`final-assets-<run-id>-<build-number>` 会在第一次公开写入前保存 30 天，包含两架构已签名且 stapled 的 DMG、dSYM、appcast、changelog、metadata、每个文件的 SHA256 和 Apple notarization submission ID。上传这份恢复包失败时，不会上传 DMG 或 feed。
+
+重跑 publish 时先寻找同一 run/build 的恢复包：
+
+1. 存在且 metadata、摘要、公证状态全部一致：跳过重新签名和公证，复用原字节并核对线上状态。
+2. 不存在：从同一 run/build/arch 的两份归档重新进入签名阶段，禁止使用“最近成功”的其他产物。
+3. 同名 DMG 已存在：字节一致则幂等复用，不一致立即停止；每个 build 另有不可变的 `release-state-<build>.json` 绑定 source SHA、通道和所有摘要。
+4. 线上 appcast 已出现更高 build：旧任务立即停止；若 build 相等，只有线上 recovery state 与本地 manifest 完全一致才允许继续。
+5. GitHub tag 或既有 asset 与固定 source SHA/本地摘要不同：立即停止。
+6. 公证等待超时时查询原 submission ID；只有明确 Accepted 才能 staple 和继续。
+
+公开顺序固定为：本地验收 → 保存恢复包 → 两个 DMG → 下载校验公开字节 → GitHub Release 草稿及完整 assets → 两个架构 feed → legacy/default feed → preview fallback 提交 → 开放 GitHub Release。feed 逐文件更新不是跨服务原子事务，但每份可见 feed 都只会指向已经验证可下载的 DMG。
+
+若 artifacts 已过期或 provenance 不一致，应创建新的正常 build，而不是跨 run 拼接或覆盖旧文件。回退并行流程时，回到保留双 lock、正确 ACP 架构和严格归档门禁的串行版本，不能回到可能嵌入宿主架构 helper 的旧路径。
 
 ## 二、需要准备的东西
 
@@ -135,13 +174,12 @@ base64 AuthKey_XXXX.p8 > api.txt
 
 ## 五、独立 app 的发版（Tag → Xcode Cloud）
 
-Lumi 走上面的 Developer ID + Notarization 流程。其余独立 app（BookletMaker、AppIconDesigner、CADDesigner、DatabaseManager）走 **git tag → Xcode Cloud** 流程：GitHub Actions 按 conventional commit scope 自动打 tag，Xcode Cloud 监听对应 tag 触发构建发版。
+Lumi 走上面的 Developer ID + Notarization 流程。其余独立 app（AppIconDesigner、CADDesigner、DatabaseManager）走 **git tag → Xcode Cloud** 流程：GitHub Actions 按 conventional commit scope 自动打 tag，Xcode Cloud 监听对应 tag 触发构建发版。BookletMaker 已移除独立 app，只保留 Lumi 内插件，不再拥有独立发布 tag。
 
 ### Tag 与 scope 约定
 
 | app | tag 前缀 | conventional commit scope | 版本注入脚本 | xcconfig |
 |-----|---------|--------------------------|-------------|----------|
-| BookletMaker | `booklet-v*` | `booklet` \| `bookletmaker` \| `bookletmakerapp` | `set-booklet-version.sh` | `BookletMakerApp/BookletMaker.xcconfig` |
 | AppIconDesigner | `appicondesigner-v*` | `appicondesigner` \| `appicondesignerapp` | `set-appicondesigner-version.sh` | `AppIconDesignerApp/AppIconDesigner.xcconfig` |
 | CADDesigner | `caddesigner-v*` | `caddesigner` \| `caddesignerapp` | `set-caddesigner-version.sh` | `CADDesignerApp/CADDesigner.xcconfig` |
 | DatabaseManager | `databasemanager-v*` | `databasemanager` \| `databasemanagerapp` | `set-databasemanager-version.sh` | `DatabaseManagerApp/DatabaseManager.xcconfig` |

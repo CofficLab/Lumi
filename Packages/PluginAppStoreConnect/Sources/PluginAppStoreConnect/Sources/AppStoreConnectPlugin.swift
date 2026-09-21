@@ -239,6 +239,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
                     ])
                     rootView?.setContentHeaderViewHidden(true)
                     rail?.setVisibleTabID(Self.railTabID)
+                    rootView?.setRailViewVisible(rail?.hasVisibleTabs ?? false)
                     rail?.activateWidthProfile(
                         ownerID: pluginID,
                         recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
@@ -259,6 +260,8 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
                     chat?.setActiveContext(nil)
                     chat?.deactivateWidthProfile(ownerID: pluginID)
                     rail?.deactivateWidthProfile(ownerID: pluginID)
+                    rail?.setVisibleCategories(Set(RailViewCategory.allCases))
+                    rootView?.setRailViewVisible(rail?.hasVisibleTabs ?? false)
                     toolbar?.removeToolbarItems(ids: [Self.openToolbarItemID, Self.workspaceToolbarItemID, Self.submitToolbarItemID, Self.distributionToolbarItemID, Self.refreshToolbarItemID])
                 }
             },
@@ -296,6 +299,8 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
             kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RailViewProviding).self)?
                 .setVisibleCategories(Set(RailViewCategory.allCases))
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
         AppStoreConnectToolSupport.configure(network: nil)

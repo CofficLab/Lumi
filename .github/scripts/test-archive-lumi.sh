@@ -122,6 +122,8 @@ expect_contains "${ARGS}" "CODE_SIGNING_REQUIRED=NO" "keeps CODE_SIGNING_REQUIRE
 expect_contains "${ARGS}" "AD_HOC_CODE_SIGNING_ALLOWED=YES" "keeps ad-hoc signing allowed"
 expect_contains "${ARGS}" "ARCHS=arm64" "targets only arm64"
 expect_contains "${ARGS}" "ONLY_ACTIVE_ARCH=NO" "keeps ONLY_ACTIVE_ARCH=NO"
+expect_contains "${ARGS}" "-onlyUsePackageVersionsFromResolvedFile" "enforces resolved dependency versions during archive"
+expect_contains "${ARGS}" "-skipPackageUpdates" "prevents dependency updates during archive"
 expect_contains "${ARGS}" "-skipPackagePluginValidation" "keeps plugin validation skip"
 expect_contains "${ARGS}" "-skipPackageSignatureValidation" "keeps signature validation skip"
 expect_contains "${ARGS}" "-showBuildTimingSummary" "includes build timing summary"

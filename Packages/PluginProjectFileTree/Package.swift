@@ -11,6 +11,7 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../ProviderRailView"),
+        .package(path: "../ProviderRootView"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderConversationInput"),
@@ -26,6 +27,7 @@ let package = Package(
             dependencies: [
                 "KernelCore",
                 "ProviderRailView",
+                "ProviderRootView",
                 "ProviderProject",
                 "ProviderStorage",
                 "ProviderConversationInput",

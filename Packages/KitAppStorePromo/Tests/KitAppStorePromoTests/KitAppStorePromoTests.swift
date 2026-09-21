@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 import ImageIO
 import Testing
 @testable import KitAppStorePromo
@@ -214,6 +215,35 @@ struct KitAppStorePromoTests {
         #expect(properties[kCGImagePropertyPixelHeight] as? Int == 200)
     }
 
+    // Regression fixture mirrors the BookletMaker page whose inline feature SVGs
+    // disappeared only when the export path generated a PDF.
+    @MainActor
+    @Test func exporterPreservesFeatureSVGs() async throws {
+        let fixtureURL = try #require(Bundle.module.url(
+            forResource: "FeatureSVGPrintRegression",
+            withExtension: "html"
+        ))
+        let html = try String(contentsOf: fixtureURL, encoding: .utf8)
+        let htmlWithoutFeatureIcons = try removingFeatureSVGs(from: html)
+        let temporaryDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("app-store-promo-svg-regression-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
+        let baselineURL = temporaryDirectory.appendingPathComponent("without-feature-icons.html")
+        try htmlWithoutFeatureIcons.write(to: baselineURL, atomically: true, encoding: .utf8)
+
+        let preset = try #require(AppStorePromoDisplaySpec.preset(for: "APP_DESKTOP"))
+        let withIcons = try await AppStorePromoHTMLExporter.exportPNG(html: html, fileURL: fixtureURL, preset: preset)
+        let withoutIcons = try await AppStorePromoHTMLExporter.exportPNG(
+            html: htmlWithoutFeatureIcons,
+            fileURL: baselineURL,
+            preset: preset
+        )
+        let changedPixels = try differingPixelCount(withIcons, withoutIcons)
+
+        #expect(changedPixels > 0, "Removing the feature SVGs must change the exported PNG.")
+    }
+
     @MainActor
     @Test func exporterLoadsFromDiskFileURL() async throws {
         let dir = FileManager.default.temporaryDirectory
@@ -275,5 +305,70 @@ struct KitAppStorePromoTests {
         for error in errors {
             #expect(!(error.errorDescription ?? "").isEmpty)
         }
+    }
+
+    private func removingFeatureSVGs(from html: String) throws -> String {
+        guard let featureStart = html.range(of: "<div class=\"features\">"),
+              let featureEnd = html.range(
+                of: "</div>\\s*</section>",
+                options: .regularExpression,
+                range: featureStart.lowerBound..<html.endIndex
+              ) else {
+            throw TestFixtureError.missingFeaturesSection
+        }
+        let featureSection = String(html[featureStart.lowerBound..<featureEnd.upperBound])
+        let svgRegex = try NSRegularExpression(pattern: "<svg\\b[^>]*>.*?</svg>", options: .dotMatchesLineSeparators)
+        let range = NSRange(featureSection.startIndex..<featureSection.endIndex, in: featureSection)
+        let sectionWithoutSVGs = svgRegex.stringByReplacingMatches(
+            in: featureSection,
+            range: range,
+            withTemplate: ""
+        )
+        return String(html[..<featureStart.lowerBound])
+            + sectionWithoutSVGs
+            + String(html[featureEnd.upperBound...])
+    }
+
+    private func differingPixelCount(_ lhs: Data, _ rhs: Data) throws -> Int {
+        let lhsSource = try #require(CGImageSourceCreateWithData(lhs as CFData, nil))
+        let rhsSource = try #require(CGImageSourceCreateWithData(rhs as CFData, nil))
+        let lhsImage = try #require(CGImageSourceCreateImageAtIndex(lhsSource, 0, nil))
+        let rhsImage = try #require(CGImageSourceCreateImageAtIndex(rhsSource, 0, nil))
+        #expect(lhsImage.width == rhsImage.width)
+        #expect(lhsImage.height == rhsImage.height)
+
+        let lhsPixels = rgbaPixels(lhsImage)
+        let rhsPixels = rgbaPixels(rhsImage)
+        var changedPixels = 0
+        for offset in stride(from: 0, to: min(lhsPixels.count, rhsPixels.count), by: 4) {
+            let differs = (0..<4).contains { channel in
+                abs(Int(lhsPixels[offset + channel]) - Int(rhsPixels[offset + channel])) > 2
+            }
+            if differs {
+                changedPixels += 1
+            }
+        }
+        return changedPixels
+    }
+
+    private func rgbaPixels(_ image: CGImage) -> [UInt8] {
+        var pixels = [UInt8](repeating: 0, count: image.width * image.height * 4)
+        pixels.withUnsafeMutableBytes { bytes in
+            guard let context = CGContext(
+                data: bytes.baseAddress,
+                width: image.width,
+                height: image.height,
+                bitsPerComponent: 8,
+                bytesPerRow: image.width * 4,
+                space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ) else { return }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        }
+        return pixels
+    }
+
+    private enum TestFixtureError: Error {
+        case missingFeaturesSection
     }
 }

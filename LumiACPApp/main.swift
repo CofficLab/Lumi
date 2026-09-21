@@ -1,20 +1,12 @@
-import Foundation
-import FactoryLumiACP
-
-// Headless ACP server entry point.
-//
-// LumiACPApp is a minimal Xcode app target that directly depends on
-// FactoryLumiACP. It replaces the old ACPBootstrap SwiftPM package,
-// eliminating the need for a separate Package.resolved and build phase script.
-//
-// The built executable is embedded into Lumi.app as lumi-acp by the
-// "Embed ACP Helper" build phase.
-
-setenv("LUMI_ACP_HEADLESS", "1", 1)
-
-do {
-    try FactoryLumiACP.runACPServer()
-} catch {
-    fputs("ACP_BOOTSTRAP_FAILED \(error)\n", stderr)
-    exit(1)
+/// Xcode wrapper used to produce the LumiACP app bundle.
+///
+/// The Build ACP Executable phase replaces this stub with the executable linked
+/// by SwiftPM. Keeping the MLX package graph outside Xcode's native linker is
+/// required because Xcode omits the nested mlx-c submodule sources.
+struct LumiACPApp {
+    static func main() {
+        // Replaced by the SwiftPM-built executable before code signing.
+    }
 }
+
+LumiACPApp.main()

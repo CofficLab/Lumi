@@ -4,7 +4,8 @@ verify-package-locks.py — compare shared dependencies between two Package.reso
 
 Reads the main project lock and the ACP lock, then reports:
   * Dependencies present in one but not the other (informational).
-  * Dependencies present in both but with different revisions (ERROR).
+  * Dependencies present in both but with different repository locations or
+    revisions (ERROR).
 
 Usage:
   verify-package-locks.py <main-lock> <acp-lock> [--strict]
@@ -16,6 +17,7 @@ Exit codes:
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Dict, Optional, Tuple
@@ -54,6 +56,13 @@ def get_version(pin: dict) -> Optional[str]:
     return state.get("version")
 
 
+def normalize_location(pin: dict) -> str:
+    """Normalize a source-control URL for stable lock-file comparison."""
+    location = str(pin.get("location", "")).strip().lower()
+    location = re.sub(r"\.git/?$", "", location).rstrip("/")
+    return location
+
+
 def compare_locks(
     main_pins: Dict[str, dict],
     acp_pins: Dict[str, dict],
@@ -78,7 +87,10 @@ def compare_locks(
         main_rev = get_revision(main_pins[identity])
         acp_rev = get_revision(acp_pins[identity])
 
-        if main_rev == acp_rev:
+        main_location = normalize_location(main_pins[identity])
+        acp_location = normalize_location(acp_pins[identity])
+
+        if main_rev == acp_rev and main_location == acp_location:
             matches += 1
         else:
             mismatches += 1
@@ -87,6 +99,9 @@ def compare_locks(
             print(f"  ❌ {identity}:")
             print(f"     main: {main_ver} ({main_rev[:12] if main_rev else 'unknown'}...)")
             print(f"     acp:  {acp_ver} ({acp_rev[:12] if acp_rev else 'unknown'}...)")
+            if main_location != acp_location:
+                print(f"     main source: {main_location or 'unknown'}")
+                print(f"     acp source:  {acp_location or 'unknown'}")
 
     if only_main:
         print(f"\n  ℹ️  {len(only_main)} dependencies only in main lock:")
@@ -128,8 +143,8 @@ def main() -> int:
 
     if mismatches > 0:
         print()
-        print("❌ Shared dependencies have different revisions!")
-        print("   This may cause duplicate code or version conflicts at runtime.")
+        print("❌ Shared dependencies have different sources or revisions!")
+        print("   This may cause dependency substitution, duplicate code, or version conflicts.")
         return 1
 
     if strict and unique_count > 0:

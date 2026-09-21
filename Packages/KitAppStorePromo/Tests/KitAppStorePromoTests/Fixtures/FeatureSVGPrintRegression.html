@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>简洁易用</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body {
+      background: #1a2a5e;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Noto Sans SC", sans-serif;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      padding: 5% 5% 5%;
+    }
+    .header { text-align: center; margin-bottom: 2%; }
+    .brand {
+      font-size: clamp(14px, 1.8vmin, 24px);
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0.9;
+      margin-bottom: 0.5%;
+      color: #4A90E2;
+    }
+    h1 {
+      font-size: clamp(48px, 8vmin, 100px);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .subtitle {
+      font-size: clamp(16px, 2.2vmin, 30px);
+      font-weight: 400;
+      opacity: 0.85;
+      margin-top: 0.6%;
+    }
+    .visual {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2%;
+    }
+    .drop-zone {
+      width: clamp(420px, 52vmin, 700px);
+      height: clamp(200px, 26vmin, 350px);
+      border: 3px dashed rgba(74, 144, 226, 0.5);
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5%;
+      background: linear-gradient(145deg, rgba(74, 144, 226, 0.08) 0%, rgba(74, 144, 226, 0.03) 100%);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 30px rgba(74, 144, 226, 0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .drop-icon {
+      opacity: 0.9;
+    }
+    .drop-icon svg {
+      width: clamp(48px, 6vmin, 78px);
+      height: clamp(48px, 6vmin, 78px);
+      fill: none;
+      stroke: #4A90E2;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 2px 8px rgba(74, 144, 226, 0.4));
+    }
+    .drop-text {
+      font-size: clamp(18px, 2.4vmin, 32px);
+      font-weight: 600;
+      opacity: 0.95;
+      color: #ffffff;
+    }
+    .drop-hint {
+      font-size: clamp(12px, 1.5vmin, 18px);
+      opacity: 0.6;
+    }
+    .features {
+      display: flex;
+      gap: clamp(16px, 2.2vmin, 32px);
+      justify-content: center;
+      margin-top: 1%;
+    }
+    .feature {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5%;
+    }
+    .feature-icon {
+      width: clamp(52px, 6.5vmin, 84px);
+      height: clamp(52px, 6.5vmin, 84px);
+      border-radius: 16px;
+      background: linear-gradient(145deg, rgba(74, 144, 226, 0.15) 0%, rgba(74, 144, 226, 0.08) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .feature-icon svg {
+      width: 50%;
+      height: 50%;
+      fill: none;
+      stroke: #4A90E2;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0.9;
+    }
+    .feature-label {
+      font-size: clamp(12px, 1.5vmin, 18px);
+      font-weight: 600;
+      opacity: 0.85;
+    }
+
+    .tag {
+      text-align: center;
+      margin-top: 2.5%;
+      font-size: clamp(15px, 2vmin, 26px);
+      font-weight: 700;
+      opacity: 1;
+      letter-spacing: 0.05em;
+      color: #4A90E2;
+      background: rgba(74, 144, 226, 0.12);
+      padding: 10px 28px;
+      border-radius: 22px;
+      display: inline-block;
+      align-self: center;
+      border: 1px solid rgba(74, 144, 226, 0.25);
+    }
+  </style>
+</head>
+<body>
+  <section class="header">
+    <div class="brand">BookletMaker</div>
+    <h1>简洁易用</h1>
+    <div class="subtitle">拖入即用，无需复杂设置</div>
+  </section>
+  <section class="visual">
+    <div class="drop-zone">
+      <div class="drop-icon">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
+      </div>
+      <div class="drop-text">拖入 PDF 文件</div>
+      <div class="drop-hint">或点击选择文件</div>
+    </div>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </div>
+        <div class="feature-label">自动拼版</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <div class="feature-label">实时预览</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+        </div>
+        <div class="feature-label">PDF 拆分</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </div>
+        <div class="feature-label">自定义设置</div>
+      </div>
+    </div>
+  </section>
+  <div style="text-align: center;"><div class="tag">支持 A4 · A5 · Letter 纸张</div></div>
+</body>
+</html>

@@ -108,6 +108,8 @@ set +e
   -clonedSourcePackagesDirPath "${source_packages_path}" \
   -archivePath "${archive_path}" \
   -configuration Release \
+  -onlyUsePackageVersionsFromResolvedFile \
+  -skipPackageUpdates \
   -skipPackagePluginValidation \
   -skipPackageSignatureValidation \
   CODE_SIGN_STYLE=Manual \

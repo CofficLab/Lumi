@@ -87,6 +87,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
                 if state == .activated {
                     toolbar?.setVisibleCategories([.global])
                     railView?.setVisibleTabID(Self.railTabID)
+                    rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                     railView?.activateWidthProfile(
                         ownerID: pluginID,
                         recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
@@ -105,6 +106,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
                 } else {
                     toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+                    rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                     railView?.deactivateWidthProfile(ownerID: pluginID)
                     chat?.setVisible(true)
                     rootView?.setContentHeaderViewHidden(false)
@@ -134,6 +136,10 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
         }
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
+        if wasActive {
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
+        }
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
         kernel.resolveProvider((any ExternalFileOpening).self)?.unregisterHandlers(pluginID: id)

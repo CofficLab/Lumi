@@ -125,6 +125,7 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
                         toolbar?.setVisibleCategories([.global, .system])
                         railView?.setVisibleCategories([.system])
                         railView?.setVisibleTabID(Self.railTabID)
+                        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                         railView?.activateWidthProfile(
                             ownerID: pluginID,
                             recommended: RailViewWidth(minWidth: 240, idealWidth: 300, maxWidth: 440),
@@ -140,6 +141,7 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
                         chat?.setVisible(true)
                         rootView?.setContentHeaderViewHidden(false)
                         railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+                        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                         railView?.deactivateWidthProfile(ownerID: pluginID)
                     }
                 },
@@ -171,6 +173,8 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         }
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)

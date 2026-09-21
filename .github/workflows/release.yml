@@ -2,787 +2,451 @@ name: Release
 
 on:
   push:
-    branches:
-      - pre
-      - main
+    branches: [main, pre]
 
 concurrency:
-  # Stable and preview share one build counter. Serialize both channels so
-  # two releases cannot reserve the same Sparkle build number.
   group: release-lumi
   cancel-in-progress: false
 
-permissions:
-  contents: write
-
 env:
-  # 基础环境变量
   SCHEME: Lumi
-  REPO_LINK: "https://github.com/CofficLab/Lumi"
-  DESTINATION: "generic/platform=macOS"
-  ENTITLEMENTS_PATH: "LumiApp/App.entitlements"
-  DERIVED_DATA_PATH: "./DerivedData"
-  SOURCE_PACKAGES_PATH: "./SourcePackages"
-  ArchivePath: "./my-app"
-  BuildPath: "./temp"
-  RELEASE_ARCHS: "arm64 x86_64"
-  DEFAULT_UPDATE_ARCH: "arm64"
-  SPARKLE_VERSION: "2.9.1"
-  # 客户端 feed 与 DMG 的公开下载根地址。该路径对应 R2 中的 lumi/ 前缀。
-  UPDATE_DOWNLOAD_BASE_URL: "https://s.kuaiyizhi.cn/lumi"
-
-  # Secrets
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
-  BUILD_CERTIFICATE_P12_PASSWORD: ${{ secrets.BUILD_CERTIFICATE_P12_PASSWORD }}
-  APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
-  APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-  APP_STORE_CONNECT_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ISSUER_ID }}
-  SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY_GITOK }}
+  DESTINATION: generic/platform=macOS
+  SPARKLE_VERSION: 2.9.1
+  UPDATE_DOWNLOAD_BASE_URL: https://s.kuaiyizhi.cn/lumi
+  REPO_LINK: https://github.com/CofficLab/Lumi
 
 jobs:
-  release_pipeline:
+  prepare:
     runs-on: macos-26
+    permissions:
+      contents: read
+    outputs:
+      source_sha: ${{ steps.metadata.outputs.source_sha }}
+      marketing_version: ${{ steps.metadata.outputs.marketing_version }}
+      build_number: ${{ steps.metadata.outputs.build_number }}
+      build_floor: ${{ steps.metadata.outputs.build_floor }}
+      tag: ${{ steps.metadata.outputs.tag }}
+      channel: ${{ steps.metadata.outputs.channel }}
+      is_prerelease: ${{ steps.metadata.outputs.is_prerelease }}
+      previous_tag: ${{ steps.metadata.outputs.previous_tag }}
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout the triggering source SHA
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
-
       - name: Setup Xcode
-        uses: maxim-lobanov/setup-xcode@v1
+        uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
         with:
           xcode-version: "26.3"
-
-      # =================================================================================================
-      # 1. 版本计算与项目更新
-      # =================================================================================================
-      - name: Calculate Next Version
-        id: version
-        run: |
-          chmod +x .github/scripts/bump-version.sh
-          chmod +x .github/scripts/calculate-version.sh
-
-          # 获取当前版本 (仅用于显示)
-          LAST_TAG=$(git tag -l "v*" | sort -V | tail -n 1 2>/dev/null || echo "v0.0.0")
-          LAST_TAG="${LAST_TAG#v}"
-
-          # 计算新版本
-          NEW_VERSION=$(.github/scripts/calculate-version.sh)
-          echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
-
-          # 保存上一个标签供 changelog 生成使用
-          echo "previous_tag=$LAST_TAG" >> $GITHUB_ENV
-
-          # 输出摘要
-          echo "## 📊 版本计算" >> $GITHUB_STEP_SUMMARY
-          echo "- **上一个版本**: \`$LAST_TAG\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **新版本**: \`$NEW_VERSION\`" >> $GITHUB_STEP_SUMMARY
-
-      - name: Generate Monotonic Date Build Number
-        id: build_number
+      - name: Prepare immutable release metadata
+        id: metadata
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${SOURCE_SHA}"
+          case "${REF_NAME}" in main) channel=stable ;; pre) channel=preview ;; *) exit 1 ;; esac
+          .github/scripts/prepare-release-metadata.sh --channel "${channel}" \
+            --source-sha "${SOURCE_SHA}" --run-id "${RUN_ID}" --output release-metadata.json
+      - name: Upload immutable release metadata
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-metadata-${{ github.run_id }}
+          path: release-metadata.json
+          retention-days: 14
+          if-no-files-found: error
 
-          # Sparkle compares sparkle:version / CFBundleVersion. Use a UTC
-          # timestamp so the build number is readable without storing a
-          # mutable counter in GitHub or the source tree.
-          extract_max() {
-            awk -F'[<>]' '/<sparkle:version>/{ value = $3 + 0; if (value > max) max = value } END { print max + 0 }'
-          }
-
-          source_max=0
-          for file in LumiApp/Config/Lumi-Debug.xcconfig LumiApp/Config/Lumi-Release.xcconfig; do
-            if [ -f "$file" ]; then
-              value=$(sed -n 's/^CURRENT_PROJECT_VERSION = \([0-9][0-9]*\);/\1/p' "$file" | head -1)
-              if [[ "$value" =~ ^[0-9]+$ ]] && (( value > source_max )); then
-                source_max=$value
-              fi
-            fi
-          done
-
-          history_max=$(git log --all -p -- \
-            appcast.xml appcast-arm64.xml appcast-x86_64.xml \
-            appcast-pre.xml appcast-pre-arm64.xml appcast-pre-x86_64.xml \
-            | extract_max)
-
-          online_max=0
-          stable_feeds=(
-            "${{ env.UPDATE_DOWNLOAD_BASE_URL }}/appcast.xml"
-            "${{ env.UPDATE_DOWNLOAD_BASE_URL }}/appcast-arm64.xml"
-            "${{ env.UPDATE_DOWNLOAD_BASE_URL }}/appcast-x86_64.xml"
-          )
-          preview_feeds=(
-            "${{ env.UPDATE_DOWNLOAD_BASE_URL }}/pre/appcast-pre.xml"
-            "${{ env.UPDATE_DOWNLOAD_BASE_URL }}/pre/appcast-pre-arm64.xml"
-            "${{ env.UPDATE_DOWNLOAD_BASE_URL }}/pre/appcast-pre-x86_64.xml"
-          )
-
-          for url in "${stable_feeds[@]}"; do
-            feed=$(curl -fsSL --retry 3 --max-time 20 "$url") || {
-              echo "❌ 无法读取稳定版线上 appcast，拒绝继续发布: $url"
-              exit 1
-            }
-            value=$(printf '%s' "$feed" | extract_max)
-            if (( value > online_max )); then online_max=$value; fi
-          done
-
-          # Preview feeds may not exist yet, but an existing preview build
-          # must still participate in the global counter.
-          for url in "${preview_feeds[@]}"; do
-            if feed=$(curl -fsSL --retry 3 --max-time 20 "$url"); then
-              value=$(printf '%s' "$feed" | extract_max)
-              if (( value > online_max )); then online_max=$value; fi
-            else
-              echo "ℹ️ Preview appcast not available, skipping: $url"
-            fi
-          done
-
-          timestamp_build=$(date -u +%Y%m%d%H%M%S)
-          if ! [[ "$timestamp_build" =~ ^[0-9]{14}$ ]]; then
-            echo "❌ 无法生成 14 位 UTC 日期构建号: $timestamp_build"
-            exit 1
-          fi
-
-          known_max=$(printf '%s\n' "$source_max" "$history_max" "$online_max" | sort -n | tail -1)
-          if (( timestamp_build > known_max )); then
-            new_build="$timestamp_build"
-          else
-            # Handles clock rollback and the rare case of two releases in the
-            # same second without allowing Sparkle's version to go backwards.
-            new_build=$((known_max + 1))
-            echo "⚠️ UTC 时间构建号不大于已知最大值，使用 $new_build"
-          fi
-
-          echo "Known maximum Sparkle build: $known_max"
-          echo "Generated Sparkle build: $new_build"
-          echo "build_number=$new_build" >> "$GITHUB_ENV"
-          echo "build_number=$new_build" >> "$GITHUB_OUTPUT"
-          echo "build_floor=$known_max" >> "$GITHUB_ENV"
-
-      - name: Update Lumi Marketing Version
+  build:
+    needs: prepare
+    runs-on: macos-26
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        arch: [arm64, x86_64]
+    env:
+      TARGET_ARCH: ${{ matrix.arch }}
+      DERIVED_DATA_PATH: DerivedData/${{ matrix.arch }}
+      SOURCE_PACKAGES_PATH: SourcePackages/${{ matrix.arch }}
+      ACP_CACHE_PATH: build/ci-acp-cache/${{ matrix.arch }}
+      ACP_SCRATCH_ROOT: build/ci-acp/${{ matrix.arch }}
+      ARCHIVE_DIR: temp
+    steps:
+      - name: Checkout the prepared source SHA
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.prepare.outputs.source_sha }}
+          fetch-depth: 1
+      - name: Download immutable release metadata
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-metadata-${{ github.run_id }}
+          path: release-input
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
+        with:
+          xcode-version: "26.3"
+      - name: Verify source and inject the prepared version
         run: |
           set -euo pipefail
-
-          echo "📝 Updating Lumi MARKETING_VERSION to ${{ env.new_version }}..."
-
-          # build settings 已从 project.pbxproj 迁移到各 App 目录的 xcconfig。
-          # 各 app 版本号独立维护：发版只改 Lumi 的 Debug/Release 两个文件，
-          # 不再像旧逻辑那样把所有 target 的版本号统一覆盖。
-          for f in LumiApp/Config/Lumi-Debug.xcconfig LumiApp/Config/Lumi-Release.xcconfig; do
-            sed -i '' "s/^MARKETING_VERSION = .*/MARKETING_VERSION = ${{ env.new_version }};/" "$f"
-            if ! grep -q "^MARKETING_VERSION = ${{ env.new_version }};" "$f"; then
-              echo "❌ $f 的 MARKETING_VERSION 未更新为 ${{ env.new_version }}"
-              exit 1
-            fi
-          done
-
-          echo "✅ Lumi MARKETING_VERSION 已更新为 ${{ env.new_version }}"
-
-          # Inject the reserved build number only into this CI checkout. The
-          # value is embedded in the app but is intentionally not committed.
-          for f in LumiApp/Config/Lumi-Debug.xcconfig LumiApp/Config/Lumi-Release.xcconfig; do
-            sed -i '' "s/^CURRENT_PROJECT_VERSION = .*/CURRENT_PROJECT_VERSION = ${{ env.build_number }};/" "$f"
-            if ! grep -q "^CURRENT_PROJECT_VERSION = ${{ env.build_number }};" "$f"; then
-              echo "❌ $f 的 CURRENT_PROJECT_VERSION 未注入为 ${{ env.build_number }}"
-              exit 1
-            fi
-          done
-
-          echo "✅ Lumi CURRENT_PROJECT_VERSION 已临时注入为 ${{ env.build_number }}"
-
-      - name: Determine Tag and Prerelease Status
-        run: |
-          BUILD_VERSION="${{ env.build_number }}"
-
-          if [[ "${{ github.ref }}" == "refs/heads/pre" ]]; then
-            TAG_NAME="p${{ env.new_version }}($BUILD_VERSION)"
-            echo "IS_PRERELEASE=true" >> $GITHUB_ENV
-            echo "UPDATE_CHANNEL=preview" >> $GITHUB_ENV
-            echo "UPDATE_R2_PREFIX=lumi/pre" >> $GITHUB_ENV
-            echo "## 🏷️ Tag Info (Pre-release)" >> $GITHUB_STEP_SUMMARY
-          else
-            TAG_NAME="v${{ env.new_version }}"
-            echo "IS_PRERELEASE=false" >> $GITHUB_ENV
-            echo "UPDATE_CHANNEL=stable" >> $GITHUB_ENV
-            echo "UPDATE_R2_PREFIX=lumi" >> $GITHUB_ENV
-            echo "## 🏷️ Tag Info (Release)" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          echo "tag=$TAG_NAME" >> $GITHUB_ENV
-          echo "- **Tag**: \`$TAG_NAME\`" >> $GITHUB_STEP_SUMMARY
-
-      # =================================================================================================
-      # 2. 构建与签名
-      # =================================================================================================
-      - name: Setup macOS signing
-        id: signing
-        run: |
-          chmod +x ./.github/scripts/setup-macos-signing.sh
-          source ./.github/scripts/setup-macos-signing.sh
-          echo "signing_identity=$SIGNING_IDENTITY" >> $GITHUB_OUTPUT
-          echo "team_id=$TEAM_ID" >> $GITHUB_OUTPUT
-          echo "api_key_path=$API_KEY_PATH" >> $GITHUB_OUTPUT
-
-      - name: Check Timestamp Service Availability
-        run: |
-          echo "🔍 Checking Apple timestamp service availability..."
-          # Check if we can reach Apple's timestamp server
-          for i in {1..3}; do
-            if nc -z -w 5 timestamp.apple.com 80 2>/dev/null || \
-               nc -z -w 5 ts.apple.com 80 2>/dev/null; then
-              echo "✅ Timestamp service is reachable"
-              exit 0
-            fi
-            echo "⚠️  Attempt $i: Timestamp service not reachable, retrying..."
-            sleep 2
-          done
-          echo "⚠️ Timestamp service is not reachable after 3 attempts; continuing and letting codesign validate timestamping"
-
-      - name: Compute Dependency Hash
-        id: dep-hash
+          test "$(git rev-parse HEAD)" = "${{ needs.prepare.outputs.source_sha }}"
+          .github/scripts/inject-lumi-version.sh release-input/release-metadata.json
+          changed="$(git diff --name-only)"
+          test "${changed}" = $'LumiApp/Config/Lumi-Debug.xcconfig\nLumiApp/Config/Lumi-Release.xcconfig'
+      - name: Compute exact dependency cache key
+        id: cache-key
         run: |
           set -euo pipefail
-          # Compute a stable hash from dependency inputs.
-          # Includes: main lock, all Package.swift files, project.pbxproj.
-          hash_input=$(
-            {
-              cat "Lumi.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" 2>/dev/null || true
-              find Packages -name "Package.swift" -type f -exec cat {} + 2>/dev/null || true
-              cat Lumi.xcodeproj/project.pbxproj 2>/dev/null || true
-            } | shasum -a 256 | awk '{print $1}'
-          )
-          echo "hash=${hash_input}" >> "$GITHUB_OUTPUT"
-          echo "Dependency hash: ${hash_input}"
-
-      - name: Cache SPM Source Packages
-        uses: actions/cache@v4
+          python3 .github/scripts/verify-package-locks.py \
+            Lumi.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved \
+            Packages/FactoryLumiACP/Package.resolved
+          expected_main=$(python3 -c 'import json; print(json.load(open("release-input/release-metadata.json"))["lock_hashes"]["main"])')
+          expected_acp=$(python3 -c 'import json; print(json.load(open("release-input/release-metadata.json"))["lock_hashes"]["acp"])')
+          actual_main=$(shasum -a 256 Lumi.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved | awk '{print $1}')
+          actual_acp=$(shasum -a 256 Packages/FactoryLumiACP/Package.resolved | awk '{print $1}')
+          test "${expected_main}" = "${actual_main}" && test "${expected_acp}" = "${actual_acp}"
+          toolchain="$(xcodebuild -version | shasum -a 256 | cut -c1-16)-sdk$(xcrun --sdk macosx --show-sdk-version)"
+          echo "value=release-spm-v3-${toolchain}-${TARGET_ARCH}-${expected_main}-${expected_acp}" >> "$GITHUB_OUTPUT"
+      - name: Restore exact Xcode package cache
+        id: xcode-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ env.SOURCE_PACKAGES_PATH }}
-          key: spm-src-v1-${{ runner.os }}-${{ runner.arch }}-xcode26.3-${{ steps.dep-hash.outputs.hash }}
-          restore-keys: |
-            spm-src-v1-${{ runner.os }}-${{ runner.arch }}-xcode26.3-
-
-      - name: Resolve SPM Dependencies
-        run: |
-          set -euo pipefail
-          chmod +x .github/scripts/resolve-ci-packages.sh
-          .github/scripts/resolve-ci-packages.sh \
-            "${{ env.SCHEME }}.xcodeproj" \
-            "${{ env.SCHEME }}" \
-            "${{ env.SOURCE_PACKAGES_PATH }}" \
-            --derived-data-path "${{ env.DERIVED_DATA_PATH }}"
-
-      - name: Build App (Archive)
-        run: |
-          set -euo pipefail
-          set -o pipefail
-          mkdir -p ./temp
-
-          # Verify SPM packages are resolved
-          if [ ! -d "${{ env.SOURCE_PACKAGES_PATH }}/checkouts" ]; then
-            echo "❌ SPM checkouts not found, re-resolving..."
-            chmod +x .github/scripts/resolve-ci-packages.sh
-            .github/scripts/resolve-ci-packages.sh \
-              "${{ env.SCHEME }}.xcodeproj" \
-              "${{ env.SCHEME }}" \
-              "${{ env.SOURCE_PACKAGES_PATH }}" \
-              --derived-data-path "${{ env.DERIVED_DATA_PATH }}"
-          fi
-          echo "✅ SPM checkouts: $(ls ${{ env.SOURCE_PACKAGES_PATH }}/checkouts | wc -l | tr -d ' ') packages"
-
-          chmod +x .github/scripts/archive-lumi.sh
-
-          # Architectures stay serial here on purpose: this step is the
-          # measurement baseline for the later isolated-job experiment.
-          for arch in ${{ env.RELEASE_ARCHS }}; do
-            .github/scripts/archive-lumi.sh "$arch" "${{ steps.signing.outputs.team_id }}"
-          done
-
-      - name: Collect Build Metrics
-        if: always()
-        run: |
-          set -euo pipefail
-          chmod +x .github/scripts/collect-build-metrics.sh
-          .github/scripts/collect-build-metrics.sh \
-            --archive-dir ./temp \
-            --output ./temp/build-metrics.json
-          cat ./temp/build-metrics.json >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload Build Diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
+          key: ${{ steps.cache-key.outputs.value }}-xcode
+      - name: Restore exact ACP dependency cache
+        id: acp-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          name: build-diagnostics
-          path: |
-            temp/archive-*.log
-            temp/results-*.xcresult
-            temp/build-metrics.json
-          retention-days: 14
-          if-no-files-found: ignore
-
-      - name: Codesign App
+          path: ${{ env.ACP_CACHE_PATH }}
+          key: ${{ steps.cache-key.outputs.value }}-acp
+      - name: Strictly resolve locked dependencies
         run: |
           set -euo pipefail
-
-          IDENTITY="${{ steps.signing.outputs.signing_identity }}"
-
-          # 使用脚本进行深度签名
-          chmod +x .github/scripts/sign_app.sh
-
-          for arch in ${{ env.RELEASE_ARCHS }}; do
-            ARCHIVE_APP="./temp/${{ env.SCHEME }}-${arch}.xcarchive/Products/Applications/${{ env.SCHEME }}.app"
-            APP_PATH="./temp/${{ env.SCHEME }}-${arch}.app"
-
-            if [ ! -d "$ARCHIVE_APP" ]; then
-              echo "❌ Archived app not found: $ARCHIVE_APP"
-              exit 1
-            fi
-
-            # 从 xcarchive 中提取 App (使用 ditto 保持符号链接和元数据)
-            rm -rf "$APP_PATH"
-            ditto "$ARCHIVE_APP" "$APP_PATH"
-
-            BINARY_PATH="$APP_PATH/Contents/MacOS/${{ env.SCHEME }}"
-            if ! lipo -archs "$BINARY_PATH" | tr ' ' '\n' | grep -qx "$arch"; then
-              echo "❌ $BINARY_PATH does not contain expected architecture: $arch"
-              lipo -archs "$BINARY_PATH" || true
-              exit 1
-            fi
-
-            .github/scripts/sign_app.sh "$APP_PATH" "$IDENTITY" "${{ env.ENTITLEMENTS_PATH }}"
-          done
-
-      - name: Create DMG
-        run: |
-          set -euo pipefail
-
-          chmod +x .github/scripts/create-designed-dmg.sh
-
-          for arch in ${{ env.RELEASE_ARCHS }}; do
-            VOL_NAME="${{ env.SCHEME }}-${arch}"
-            DMG_NAME="./temp/${{ env.SCHEME }}_${{ env.new_version }}_${arch}.dmg"
-            APP_PATH="./temp/${{ env.SCHEME }}-${arch}.app"
-
-            if [ ! -d "$APP_PATH" ]; then
-              echo "❌ Signed app not found: $APP_PATH"
-              exit 1
-            fi
-
-            .github/scripts/create-designed-dmg.sh \
-              "$APP_PATH" \
-              "$DMG_NAME" \
-              "$VOL_NAME" \
-              ".github/dmg/Lumi-dmg-background.png" \
-              "${{ env.SCHEME }}"
-
-            echo "Created: $DMG_NAME"
-          done
-
-      - name: Verify Release Build Number
-        run: |
-          set -euo pipefail
-
-          expected="${{ env.build_number }}"
-          floor="${{ env.build_floor }}"
-
-          if ! [[ "$expected" =~ ^[0-9]+$ ]] || ! [[ "$floor" =~ ^[0-9]+$ ]]; then
-            echo "❌ 构建号校验输入无效: expected=$expected floor=$floor"
-            exit 1
-          fi
-          if (( expected <= floor )); then
-            echo "❌ Sparkle 构建号没有递增: $expected <= $floor"
-            exit 1
-          fi
-
-          for arch in ${{ env.RELEASE_ARCHS }}; do
-            app_path="./temp/${{ env.SCHEME }}-${arch}.app"
-            actual=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Contents/Info.plist")
-            if [ "$actual" != "$expected" ]; then
-              echo "❌ $arch 的 CFBundleVersion=$actual，预期=$expected"
-              exit 1
-            fi
-            echo "✅ $arch CFBundleVersion=$actual (> $floor)"
-          done
-
-      - name: Notary
-        run: |
-          set -euo pipefail
-
-          if ! compgen -G "./temp/*.dmg" > /dev/null; then
-            echo "DMG not found"
-            exit 1
-          fi
-
-          for file in ./temp/*.dmg; do
-            echo "📨 Notarizing $file..."
-            result_file="notary_result_$(basename "$file" .dmg).txt"
-
-            # Run submit and capture output
-            set +e
-            xcrun notarytool submit "$file" \
-              --key ${{ steps.signing.outputs.api_key_path }} \
-              --key-id=${{ env.APP_STORE_CONNECT_KEY_ID }} \
-              --issuer ${{ env.APP_STORE_CONNECT_KEY_ISSUER_ID }} \
-              --wait \
-              --timeout 10m > "$result_file" 2>&1
-
-            EXIT_CODE=$?
-            set -e
-
-            # Output result for debugging
-            cat "$result_file"
-
-            if [ $EXIT_CODE -ne 0 ] || grep -q "status: Invalid" "$result_file"; then
-               echo "❌ Notarization failed for $file. Retrieving logs..."
-               # Extract ID from the output file
-               SUBMISSION_ID=$(grep "id:" "$result_file" | sed -n '1p' | awk '{print $2}' | tr -d ' ')
-               if [ -n "$SUBMISSION_ID" ]; then
-                  echo "Fetching log for Submission ID: $SUBMISSION_ID"
-                  xcrun notarytool log "$SUBMISSION_ID" \
-                    --key ${{ steps.signing.outputs.api_key_path }} \
-                    --key-id=${{ env.APP_STORE_CONNECT_KEY_ID }} \
-                    --issuer ${{ env.APP_STORE_CONNECT_KEY_ISSUER_ID }}
-               fi
-               exit 1
-            fi
-
-            stapler staple "$file"
-          done
-
-      - name: Validate Notarization
-        run: |
-          set -euo pipefail
-          for file in ./temp/*.dmg; do
-            stapler validate "$file"
-          done
-
-      - name: Prepare Updates Directory
-        run: |
-          mkdir updates
-          cp ./temp/*.dmg updates/
-          ls -alh updates
-
-      # =================================================================================================
-      # 2.5 符号文件归档 (dSYM)
-      # =================================================================================================
-      - name: Package dSYMs
-        run: |
-          set -euo pipefail
-
-          for arch in ${{ env.RELEASE_ARCHS }}; do
-            DSYM_SOURCE="./temp/${{ env.SCHEME }}-${arch}.xcarchive/dSYMs"
-            DSYM_ZIP="./temp/${{ env.SCHEME }}_${{ env.new_version }}_${arch}_dSYMs.zip"
-
-            if [ -d "$DSYM_SOURCE" ]; then
-              (cd "$DSYM_SOURCE" && zip -r "$GITHUB_WORKSPACE/$DSYM_ZIP" ./*.dSYM)
-              echo "✅ dSYMs packaged for $arch: $(du -sh "$DSYM_ZIP" | cut -f1)"
-              ls -lh "$DSYM_ZIP"
-            else
-              echo "⚠️ No dSYMs directory found in xcarchive for $arch"
-              ls -R "./temp/${{ env.SCHEME }}-${arch}.xcarchive/" || true
-            fi
-          done
-
-      # =================================================================================================
-      # 2.6 生成 Changelog (供两个通道的 appcast 和 GitHub Release 使用)
-      # =================================================================================================
-      - name: Generate Changelog
+          .github/scripts/resolve-ci-packages.sh Lumi.xcodeproj Lumi "${SOURCE_PACKAGES_PATH}" \
+            --derived-data-path "${DERIVED_DATA_PATH}"
+          before=$(shasum -a 256 Packages/FactoryLumiACP/Package.resolved | awk '{print $1}')
+          mkdir -p "${ACP_CACHE_PATH}" "${ACP_SCRATCH_ROOT}/resolve"
+          xcrun swift package --package-path Packages/FactoryLumiACP --cache-path "${ACP_CACHE_PATH}" \
+            --scratch-path "${ACP_SCRATCH_ROOT}/resolve" --force-resolved-versions resolve
+          after=$(shasum -a 256 Packages/FactoryLumiACP/Package.resolved | awk '{print $1}')
+          test "${before}" = "${after}"
+      - name: Save complete Xcode package cache
+        if: steps.xcode-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.SOURCE_PACKAGES_PATH }}
+          key: ${{ steps.xcode-cache.outputs.cache-primary-key }}
+      - name: Save complete ACP dependency cache
+        if: steps.acp-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.ACP_CACHE_PATH }}
+          key: ${{ steps.acp-cache.outputs.cache-primary-key }}
+      - name: Archive exactly one architecture
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEVELOPMENT_TEAM: Y6HZ9JJYV6
+        run: .github/scripts/archive-lumi.sh "${TARGET_ARCH}" "${DEVELOPMENT_TEAM}"
+      - name: Verify and package the architecture archive
         run: |
           set -euo pipefail
-
-          if [ "${{ env.IS_PRERELEASE }}" = "true" ]; then
-            NOTES="## Preview ${{ env.tag }}\n\nThis preview build was published from the pre branch and may contain unfinished changes."
-          else
-            PREVIOUS_TAG="${{ env.previous_tag }}"
-
-          if [ -z "$PREVIOUS_TAG" ] || [ "$PREVIOUS_TAG" = "0.0.0" ]; then
-            NOTES="## Release ${{ env.tag }}\n\nInitial release"
-          else
-            CHANGES=$(git log v${PREVIOUS_TAG}..HEAD --no-merges --pretty=format:'- %s' \
-              | grep -Ev '^- (ci|chore|build|style|test|docs)(\(|:)' \
-              | grep -Ev '^- 👷 CI:' \
-              | sort -u \
-              | sed -n '1,20p') || true
-            if [ -z "$CHANGES" ]; then
-              CHANGES="- Maintenance and stability improvements"
-            fi
-            NOTES="## Release ${{ env.tag }}\n\n### Changes since v${PREVIOUS_TAG}\n\n${CHANGES}"
-          fi
-          fi
-
-          echo -e "$NOTES" > changelog.md
-          cat changelog.md >> $GITHUB_STEP_SUMMARY
-
-          # 转换为 HTML 供 appcast 使用
-          RELEASE_NOTES_HTML=$(gh api markdown -F text=@changelog.md -f mode=gfm)
-          echo "RELEASE_NOTES_HTML<<EOF" >> $GITHUB_ENV
-          echo "$RELEASE_NOTES_HTML" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-          # 设置 release notes 链接
-          RELEASE_NOTES_LINK="${{ env.REPO_LINK }}/releases/tag/${{ env.tag }}"
-          echo "RELEASE_NOTES_LINK=$RELEASE_NOTES_LINK" >> $GITHUB_ENV
-
-          echo "✅ Changelog generated and converted to HTML"
-
-      # =================================================================================================
-      # 3. Appcast 生成 (按通道分别生成)
-      # =================================================================================================
-      - name: Generate Appcasts (per-arch)
-        run: |
-          set -euo pipefail
-
-          chmod +x .github/scripts/install-sparkle-tools.sh
-          SPARKLE_BIN="$(SPARKLE_VERSION="${{ env.SPARKLE_VERSION }}" .github/scripts/install-sparkle-tools.sh)"
-
-          if [ ! -x "$SPARKLE_BIN/generate_appcast" ]; then
-            echo "❌ Sparkle generate_appcast not found at $SPARKLE_BIN"
-            exit 1
-          fi
-
-          for arch in ${{ env.RELEASE_ARCHS }}; do
-            DMG_FILE="${{ github.workspace }}/updates/${{ env.SCHEME }}_${{ env.new_version }}_${arch}.dmg"
-            if [ ! -f "$DMG_FILE" ]; then
-              echo "❌ DMG not found for $arch: $DMG_FILE"
-              exit 1
-            fi
-
-            # 每个架构使用独立目录，避免 generate_appcast 混淆
-            APPCAST_INPUT="${{ github.workspace }}/appcast_input_${arch}"
-            rm -rf "$APPCAST_INPUT"
-            mkdir -p "$APPCAST_INPUT"
-            cp "$DMG_FILE" "$APPCAST_INPUT/"
-
-            echo "🔑 Generating appcast for $arch..."
-            APPCAST_FILE="$APPCAST_INPUT/appcast.xml"
-            echo "${{ env.SPARKLE_PRIVATE_KEY }}" | "$SPARKLE_BIN/generate_appcast" \
-              --ed-key-file - \
-              -o "$APPCAST_FILE" \
-              "$APPCAST_INPUT"
-
-            if [ ! -f "$APPCAST_FILE" ]; then
-              echo "❌ Appcast not generated at $APPCAST_FILE"
-              ls -la "$APPCAST_INPUT" || true
-              exit 1
-            fi
-
-            # 替换 enclosure url 为正确的下载链接
-            DMG_FILENAME=$(basename "$DMG_FILE")
-            DMG_URL_ENCODED=$(echo "$DMG_FILENAME" | sed 's/ /%20/g')
-            DOWNLOAD_ROOT="${{ env.UPDATE_DOWNLOAD_BASE_URL }}"
-            if [ "${{ env.UPDATE_CHANNEL }}" = "preview" ]; then
-              DOWNLOAD_ROOT="$DOWNLOAD_ROOT/pre"
-            fi
-            DOWNLOAD_URL="$DOWNLOAD_ROOT/$DMG_URL_ENCODED"
-            sed -i '' 's|url="[^"]*"|url="'"$DOWNLOAD_URL"'"|g' "$APPCAST_FILE"
-
-            # 注入 release notes HTML 到 appcast
-            if [ -n "${RELEASE_NOTES_HTML:-}" ]; then
-              export u="$DOWNLOAD_URL"
-              export RELEASE_NOTES_HTML
-              export RELEASE_NOTES_LINK="${{ env.RELEASE_NOTES_LINK }}"
-              
-              # 替换 enclosure url
-              perl -i -pe 'if (!$done) { s/(enclosure url=")[^"]*/$1.$ENV{u}/e && ($done=1) }' "$APPCAST_FILE"
-              
-              # 注入 description 和 fullReleaseNotesLink
-              perl -i -0777 -pe '
-                if (!$done++) {
-                  my $notes = $ENV{RELEASE_NOTES_HTML} // "";
-                  my $link = $ENV{RELEASE_NOTES_LINK} // "";
-                  my $insert = qq{\n            <description><![CDATA[$notes]]></description>\n            <sparkle:fullReleaseNotesLink>$link</sparkle:fullReleaseNotesLink>};
-                  s/(<sparkle:minimumSystemVersion>[^<]+<\/sparkle:minimumSystemVersion>)(?!\s*<description)/$1$insert/s;
-                }
-              ' "$APPCAST_FILE"
-              
-              echo "✅ Release notes injected for $arch"
-            fi
-
-            # Stable keeps the legacy names; preview uses its own names so
-            # the two feeds can never overwrite each other.
-            if [ "${{ env.UPDATE_CHANNEL }}" = "preview" ]; then
-              OUTPUT_APPCAST="${{ github.workspace }}/appcast-pre-${arch}.xml"
-            else
-              OUTPUT_APPCAST="${{ github.workspace }}/appcast-${arch}.xml"
-            fi
-            cp "$APPCAST_FILE" "$OUTPUT_APPCAST"
-
-            echo "✅ $(basename "$OUTPUT_APPCAST") generated:"
-            cat "$OUTPUT_APPCAST"
-          done
-
-          if [ "${{ env.UPDATE_CHANNEL }}" = "preview" ]; then
-            cp "${{ github.workspace }}/appcast-pre-${{ env.DEFAULT_UPDATE_ARCH }}.xml" "${{ github.workspace }}/appcast-pre.xml"
-          else
-            # 兼容旧版本客户端（仍读取 appcast.xml），使用默认架构
-            cp "${{ github.workspace }}/appcast-${{ env.DEFAULT_UPDATE_ARCH }}.xml" "${{ github.workspace }}/appcast.xml"
-          fi
-
-      # Preview fallback feeds are read from the pre branch when the primary
-      # CDN is unavailable, so keep the generated preview appcasts there.
-      - name: Commit and Push Preview Appcasts
-        if: success() && env.UPDATE_CHANNEL == 'preview'
-        uses: stefanzweifel/git-auto-commit-action@v5
+          .github/scripts/package-release-archive.sh "temp/Lumi-${TARGET_ARCH}.xcarchive" \
+            "${TARGET_ARCH}" release-input/release-metadata.json "release-archive-${TARGET_ARCH}"
+      - name: Upload architecture archive
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          commit_message: "ci: update preview appcasts for ${{ env.new_version }}"
-          commit_user_name: GitHub Action
-          file_pattern: "appcast-pre.xml appcast-pre-arm64.xml appcast-pre-x86_64.xml"
+          name: release-archive-${{ github.run_id }}-${{ needs.prepare.outputs.build_number }}-${{ matrix.arch }}
+          path: release-archive-${{ matrix.arch }}/
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
+      - name: Collect build metrics
+        if: always()
+        run: .github/scripts/collect-build-metrics.sh --archive-dir temp --output temp/build-metrics-${TARGET_ARCH}.json
+      - name: Upload architecture diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: build-diagnostics-${{ github.run_id }}-${{ matrix.arch }}
+          path: |
+            temp/archive-${{ matrix.arch }}.log
+            temp/results-${{ matrix.arch }}.xcresult
+            temp/build-metrics-${{ matrix.arch }}.json
+          retention-days: 14
+          if-no-files-found: warn
 
-      - name: Prepare Release Assets
-        if: success()
+  publish:
+    needs: [prepare, build]
+    runs-on: macos-26
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    env:
+      RELEASE_METADATA: release-input/release-metadata.json
+      FINAL_ASSETS: final-assets
+      ENTITLEMENTS_PATH: LumiApp/App.entitlements
+    steps:
+      - name: Checkout the prepared source SHA
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.prepare.outputs.source_sha }}
+          fetch-depth: 0
+      - name: Download immutable release metadata
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-metadata-${{ github.run_id }}
+          path: release-input
+      - name: Try to restore an existing final-assets recovery bundle
+        id: recovery-download
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: final-assets-${{ github.run_id }}-${{ needs.prepare.outputs.build_number }}
+          path: final-assets
+      - name: Validate recovery state
+        id: recovery
         run: |
-          rm -rf release-assets
-          mkdir -p release-assets
-
-          if ! compgen -G "./updates/*.dmg" > /dev/null; then
-            echo "❌ No DMG found in updates directory"
-            exit 1
-          fi
-          cp ./updates/*.dmg release-assets/
-
-          if [ "${{ env.UPDATE_CHANNEL }}" = "preview" ]; then
-            APPCAST_FILES="appcast-pre.xml appcast-pre-arm64.xml appcast-pre-x86_64.xml"
+          set -euo pipefail
+          if [ -f "${FINAL_ASSETS}/final-assets-manifest.json" ]; then
+            .github/scripts/verify-final-assets.py "${RELEASE_METADATA}" "${FINAL_ASSETS}" "${FINAL_ASSETS}/final-assets-manifest.json"
+            echo "reuse=true" >> "$GITHUB_OUTPUT"
           else
-            APPCAST_FILES="appcast.xml appcast-arm64.xml appcast-x86_64.xml"
+            rm -rf "${FINAL_ASSETS}"
+            echo "reuse=false" >> "$GITHUB_OUTPUT"
           fi
-          for APPCAST_FILE in $APPCAST_FILES; do
-            if [ ! -f "./$APPCAST_FILE" ]; then
-              echo "❌ $APPCAST_FILE is required for ${{ env.UPDATE_CHANNEL }} releases"
-              exit 1
-            fi
-            cp "./$APPCAST_FILE" release-assets/
+      - name: Download arm64 archive
+        if: steps.recovery.outputs.reuse != 'true'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-archive-${{ github.run_id }}-${{ needs.prepare.outputs.build_number }}-arm64
+          path: incoming/arm64
+      - name: Download x86_64 archive
+        if: steps.recovery.outputs.reuse != 'true'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-archive-${{ github.run_id }}-${{ needs.prepare.outputs.build_number }}-x86_64
+          path: incoming/x86_64
+      - name: Setup Xcode
+        if: steps.recovery.outputs.reuse != 'true'
+        uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
+        with:
+          xcode-version: "26.3"
+      - name: Verify and restore both build artifacts
+        if: steps.recovery.outputs.reuse != 'true'
+        run: .github/scripts/verify-release-inputs.py "${RELEASE_METADATA}" incoming temp
+      - name: Setup macOS signing
+        id: signing
+        if: steps.recovery.outputs.reuse != 'true'
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          BUILD_CERTIFICATE_P12_PASSWORD: ${{ secrets.BUILD_CERTIFICATE_P12_PASSWORD }}
+          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          source .github/scripts/setup-macos-signing.sh
+          echo "signing_identity=${SIGNING_IDENTITY}" >> "$GITHUB_OUTPUT"
+          echo "api_key_path=${API_KEY_PATH}" >> "$GITHUB_OUTPUT"
+      - name: Sign restored applications
+        if: steps.recovery.outputs.reuse != 'true'
+        env:
+          SIGNING_IDENTITY: ${{ steps.signing.outputs.signing_identity }}
+        run: |
+          set -euo pipefail
+          for arch in arm64 x86_64; do
+            source_app="temp/Lumi-${arch}.xcarchive/Products/Applications/Lumi.app"
+            signed_app="temp/Lumi-${arch}.app"
+            rm -rf "${signed_app}"; ditto "${source_app}" "${signed_app}"
+            .github/scripts/sign_app.sh "${signed_app}" "${SIGNING_IDENTITY}" "${ENTITLEMENTS_PATH}"
+            test "$(lipo -archs "${signed_app}/Contents/MacOS/Lumi" | xargs)" = "${arch}"
+            test "$(lipo -archs "${signed_app}/Contents/MacOS/lumi-acp" | xargs)" = "${arch}"
           done
-
-          if compgen -G "./temp/*_dSYMs.zip" > /dev/null; then
-            cp ./temp/*_dSYMs.zip release-assets/
+      - name: Create uniquely named DMGs
+        if: steps.recovery.outputs.reuse != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p "${FINAL_ASSETS}"; cp "${RELEASE_METADATA}" "${FINAL_ASSETS}/release-metadata.json"
+          for arch in arm64 x86_64; do
+            filename=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["dmg_filenames"][sys.argv[2]])' "${RELEASE_METADATA}" "${arch}")
+            .github/scripts/create-designed-dmg.sh "temp/Lumi-${arch}.app" "${FINAL_ASSETS}/${filename}" \
+              "Lumi-${arch}" .github/dmg/Lumi-dmg-background.png Lumi
+          done
+      - name: Notarize, staple, and validate DMGs
+        if: steps.recovery.outputs.reuse != 'true'
+        env:
+          API_KEY_PATH: ${{ steps.signing.outputs.api_key_path }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          for arch in arm64 x86_64; do
+            filename=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["dmg_filenames"][sys.argv[2]])' "${RELEASE_METADATA}" "${arch}")
+            .github/scripts/notarize-dmg.sh "${FINAL_ASSETS}/${filename}" "${arch}" "notary-records/${arch}.json"
+          done
+      - name: Prepare release notes and dSYMs
+        if: steps.recovery.outputs.reuse != 'true'
+        run: |
+          set -euo pipefail
+          tag='${{ needs.prepare.outputs.tag }}'
+          if [ '${{ needs.prepare.outputs.channel }}' = preview ]; then
+            printf '## Preview %s\n\nThis preview build may contain unfinished changes.\n' "${tag}" > "${FINAL_ASSETS}/changelog.md"
           else
-            echo "⚠️ dSYM zips not found, continuing without them"
+            previous='${{ needs.prepare.outputs.previous_tag }}'
+            changes=$(git log "v${previous}..${{ needs.prepare.outputs.source_sha }}" --no-merges --pretty=format:'- %s' | grep -Ev '^- (ci|chore|build|style|test|docs)(\(|:)' | sort -u | sed -n '1,20p') || true
+            [ -n "${changes}" ] || changes='- Maintenance and stability improvements'
+            printf '## Release %s\n\n### Changes since v%s\n\n%s\n' "${tag}" "${previous}" "${changes}" > "${FINAL_ASSETS}/changelog.md"
           fi
-
-          ls -alh release-assets
-
-      # =================================================================================================
-      # 5.5 上传到 Cloudflare R2
-      # =================================================================================================
-      - name: Upload to Cloudflare R2
-        if: success()
+          for arch in arm64 x86_64; do
+            filename=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["dsym_filenames"][sys.argv[2]])' "${RELEASE_METADATA}" "${arch}")
+            test -d "temp/Lumi-${arch}.xcarchive/dSYMs"
+            (cd "temp/Lumi-${arch}.xcarchive/dSYMs" && zip -qry "$GITHUB_WORKSPACE/${FINAL_ASSETS}/${filename}" .)
+          done
+      - name: Generate architecture appcasts
+        if: steps.recovery.outputs.reuse != 'true'
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY_GITOK }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          sparkle_bin="$(SPARKLE_VERSION="${SPARKLE_VERSION}" .github/scripts/install-sparkle-tools.sh)"
+          notes_html=$(gh api markdown -F text="@${FINAL_ASSETS}/changelog.md" -f mode=gfm)
+          channel='${{ needs.prepare.outputs.channel }}'; tag='${{ needs.prepare.outputs.tag }}'
+          for arch in arm64 x86_64; do
+            filename=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["dmg_filenames"][sys.argv[2]])' "${RELEASE_METADATA}" "${arch}")
+            input="appcast-input-${arch}"; rm -rf "${input}"; mkdir "${input}"; cp "${FINAL_ASSETS}/${filename}" "${input}/"
+            echo "${SPARKLE_PRIVATE_KEY}" | "${sparkle_bin}/generate_appcast" --ed-key-file - -o "${input}/appcast.xml" "${input}"
+            download_root=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["download_root"])' "${RELEASE_METADATA}")
+            if [ "${channel}" = preview ]; then output="appcast-pre-${arch}.xml"; else output="appcast-${arch}.xml"; fi
+            URL="${download_root}/${filename}" NOTES="${notes_html}" LINK="${REPO_LINK}/releases/tag/${tag}" \
+              perl -0777 -pe 's#url="[^"]*"#url="$ENV{URL}"#; s#(<sparkle:minimumSystemVersion>[^<]+</sparkle:minimumSystemVersion>)#$1\n<description><![CDATA[$ENV{NOTES}]]></description>\n<sparkle:fullReleaseNotesLink>$ENV{LINK}</sparkle:fullReleaseNotesLink>#' \
+              "${input}/appcast.xml" > "${FINAL_ASSETS}/${output}"
+          done
+          if [ "${channel}" = preview ]; then cp "${FINAL_ASSETS}/appcast-pre-arm64.xml" "${FINAL_ASSETS}/appcast-pre.xml"; else cp "${FINAL_ASSETS}/appcast-arm64.xml" "${FINAL_ASSETS}/appcast.xml"; fi
+      - name: Create immutable final-assets manifest
+        if: steps.recovery.outputs.reuse != 'true'
+        run: |
+          .github/scripts/create-final-assets-manifest.py "${RELEASE_METADATA}" "${FINAL_ASSETS}" "${FINAL_ASSETS}/final-assets-manifest.json" --notary-dir notary-records
+          .github/scripts/verify-final-assets.py "${RELEASE_METADATA}" "${FINAL_ASSETS}" "${FINAL_ASSETS}/final-assets-manifest.json"
+      - name: Save final-assets recovery artifact before publication
+        if: steps.recovery.outputs.reuse != 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: final-assets-${{ github.run_id }}-${{ needs.prepare.outputs.build_number }}
+          path: final-assets/
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: error
+      - name: Refuse a stale publish rerun
+        run: |
+          state_url=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["download_root"]+"/"+d["state_filename"])' "${RELEASE_METADATA}")
+          .github/scripts/guard-release-build.py "${RELEASE_METADATA}" \
+            --manifest "${FINAL_ASSETS}/final-assets-manifest.json" --state-url "${state_url}" \
+            --required-feed "${UPDATE_DOWNLOAD_BASE_URL}/appcast.xml" --required-feed "${UPDATE_DOWNLOAD_BASE_URL}/appcast-arm64.xml" \
+            --required-feed "${UPDATE_DOWNLOAD_BASE_URL}/appcast-x86_64.xml" --optional-feed "${UPDATE_DOWNLOAD_BASE_URL}/pre/appcast-pre.xml" \
+            --optional-feed "${UPDATE_DOWNLOAD_BASE_URL}/pre/appcast-pre-arm64.xml" --optional-feed "${UPDATE_DOWNLOAD_BASE_URL}/pre/appcast-pre-x86_64.xml"
+      - name: Upload immutable DMGs
         env:
           WEBHOOK_SECRET: ${{ secrets.COFFIC_APP_UPLOAD_KEY }}
-          API_URL: https://data.kuaiyizhi.cn
         run: |
           set -euo pipefail
-
-          # 上传 DMG
-          if ! compgen -G "./release-assets/*.dmg" > /dev/null; then
-            echo "⚠️  No DMG file found to upload"
-          else
-            for DMG_FILE in ./release-assets/*.dmg; do
-              DMG_FILENAME=$(basename "$DMG_FILE")
-              R2_KEY="${{ env.UPDATE_R2_PREFIX }}/${DMG_FILENAME}"
-
-              echo "📤 Uploading DMG to R2: $R2_KEY"
-
-              RESPONSE=$(curl -s -X POST "${API_URL}/lumi/upload" \
-                -H "X-Webhook-Secret: ${WEBHOOK_SECRET}" \
-                -F "file=@${DMG_FILE}" \
-                -F "key=${R2_KEY}")
-
-              echo "Response: $RESPONSE"
-
-              if echo "$RESPONSE" | grep -q '"success":true'; then
-                R2_DMG_URL=$(echo "$RESPONSE" | grep -o '"url":"[^"]*' | cut -d'"' -f4)
-                echo "✅ DMG uploaded: $R2_DMG_URL"
-              else
-                echo "❌ Failed to upload DMG to R2: $DMG_FILENAME"
-                exit 1
-              fi
-            done
-          fi
-
-          # 上传当前通道的 appcast
-          if [ "${{ env.UPDATE_CHANNEL }}" = "preview" ]; then
-            APPCAST_FILES="./release-assets/appcast-pre.xml ./release-assets/appcast-pre-arm64.xml ./release-assets/appcast-pre-x86_64.xml"
-          else
-            APPCAST_FILES="./release-assets/appcast.xml ./release-assets/appcast-arm64.xml ./release-assets/appcast-x86_64.xml"
-          fi
-          for APPCAST_FILE in $APPCAST_FILES; do
-              if [ -f "$APPCAST_FILE" ]; then
-                APPCAST_FILENAME=$(basename "$APPCAST_FILE")
-                R2_KEY="${{ env.UPDATE_R2_PREFIX }}/${APPCAST_FILENAME}"
-
-                echo "📤 Uploading appcast to R2: $R2_KEY"
-
-                RESPONSE=$(curl -s -X POST "${API_URL}/lumi/upload" \
-                  -H "X-Webhook-Secret: ${WEBHOOK_SECRET}" \
-                  -F "file=@${APPCAST_FILE}" \
-                  -F "key=${R2_KEY}")
-
-                echo "Response: $RESPONSE"
-
-                if echo "$RESPONSE" | grep -q '"success":true'; then
-                  echo "✅ Appcast uploaded: $R2_KEY"
-                else
-                  echo "❌ Failed to upload appcast to R2: $APPCAST_FILENAME"
-                  exit 1
-                fi
-              fi
+          prefix=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["r2_prefix"])' "${RELEASE_METADATA}")
+          public_root=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["download_root"])' "${RELEASE_METADATA}")
+          for arch in arm64 x86_64; do
+            filename=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["dmg_filenames"][sys.argv[2]])' "${RELEASE_METADATA}" "${arch}")
+            .github/scripts/publish-r2-asset.py "${FINAL_ASSETS}/${filename}" "${prefix}/${filename}" "${public_root}/${filename}"
           done
-
-      # =================================================================================================
-      # 6. 发布 Release
-      # =================================================================================================
-      - name: Create GitHub Release
-        if: success()
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ env.tag }}
-          prerelease: ${{ env.IS_PRERELEASE }}
-          body_path: changelog.md
-          files: |
-            ./release-assets/*
+      - name: Verify public DMG bytes
+        run: |
+          public_root=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["download_root"])' "${RELEASE_METADATA}")
+          .github/scripts/verify-published-assets.py "${RELEASE_METADATA}" "${FINAL_ASSETS}/final-assets-manifest.json" "${public_root}"
+      - name: Upload immutable release recovery state
+        env:
+          WEBHOOK_SECRET: ${{ secrets.COFFIC_APP_UPLOAD_KEY }}
+        run: |
+          prefix=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["r2_prefix"])' "${RELEASE_METADATA}")
+          public_root=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["download_root"])' "${RELEASE_METADATA}")
+          state=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["state_filename"])' "${RELEASE_METADATA}")
+          .github/scripts/publish-r2-asset.py "${FINAL_ASSETS}/final-assets-manifest.json" "${prefix}/${state}" "${public_root}/${state}"
+      - name: Create or verify draft GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag='${{ needs.prepare.outputs.tag }}'; sha='${{ needs.prepare.outputs.source_sha }}'
+          if git show-ref --verify --quiet "refs/tags/${tag}"; then
+            test "$(git rev-parse "${tag}^{commit}")" = "${sha}" || { echo "Tag ${tag} already targets another commit" >&2; exit 1; }
+          fi
+          if gh release view "${tag}" >/dev/null 2>&1; then
+            git fetch origin "refs/tags/${tag}:refs/tags/${tag}" 2>/dev/null || true
+            remote_sha=$(git rev-parse "${tag}^{commit}")
+            test "${remote_sha}" = "${sha}" || { echo "Tag ${tag} points to ${remote_sha}, not ${sha}" >&2; exit 1; }
+          else
+            prerelease=(); [ '${{ needs.prepare.outputs.is_prerelease }}' = true ] && prerelease=(--prerelease)
+            gh release create "${tag}" --draft --target "${sha}" "${prerelease[@]}" --title "${tag}" --notes-file "${FINAL_ASSETS}/changelog.md"
+          fi
+          mkdir -p existing-assets
+          for file in "${FINAL_ASSETS}"/*; do
+            name=$(basename "${file}")
+            if gh release view "${tag}" --json assets --jq '.assets[].name' | grep -Fqx "${name}"; then
+              rm -f "existing-assets/${name}"; gh release download "${tag}" --pattern "${name}" --dir existing-assets
+              test "$(shasum -a 256 "${file}" | cut -d' ' -f1)" = "$(shasum -a 256 "existing-assets/${name}" | cut -d' ' -f1)" || exit 1
+            else
+              gh release upload "${tag}" "${file}"
+            fi
+          done
+      - name: Upload architecture feeds
+        env:
+          WEBHOOK_SECRET: ${{ secrets.COFFIC_APP_UPLOAD_KEY }}
+        run: |
+          set -euo pipefail
+          prefix=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["r2_prefix"])' "${RELEASE_METADATA}")
+          public_root=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["download_root"])' "${RELEASE_METADATA}")
+          if [ '${{ needs.prepare.outputs.channel }}' = preview ]; then feeds='appcast-pre-arm64.xml appcast-pre-x86_64.xml'; else feeds='appcast-arm64.xml appcast-x86_64.xml'; fi
+          for feed in ${feeds}; do .github/scripts/publish-r2-asset.py --mutable "${FINAL_ASSETS}/${feed}" "${prefix}/${feed}" "${public_root}/${feed}"; done
+      - name: Upload legacy feed last
+        env:
+          WEBHOOK_SECRET: ${{ secrets.COFFIC_APP_UPLOAD_KEY }}
+        run: |
+          prefix=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["r2_prefix"])' "${RELEASE_METADATA}")
+          public_root=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["download_root"])' "${RELEASE_METADATA}")
+          if [ '${{ needs.prepare.outputs.channel }}' = preview ]; then feed=appcast-pre.xml; else feed=appcast.xml; fi
+          .github/scripts/publish-r2-asset.py --mutable "${FINAL_ASSETS}/${feed}" "${prefix}/${feed}" "${public_root}/${feed}"
+      - name: Commit preview fallback feeds
+        if: needs.prepare.outputs.channel == 'preview'
+        run: .github/scripts/commit-preview-appcasts.sh "${FINAL_ASSETS}" "${RELEASE_METADATA}"
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit '${{ needs.prepare.outputs.tag }}' --draft=false --target '${{ needs.prepare.outputs.source_sha }}'
+      - name: Clean signing credentials
+        if: always() && steps.recovery.outputs.reuse != 'true'
+        run: |
+          security delete-keychain "${RUNNER_TEMP}/app-signing.keychain-db" 2>/dev/null || true
+          rm -f "${RUNNER_TEMP}/build_certificate.p12" "$HOME/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8"
 
   rebase:
     if: github.ref == 'refs/heads/main'
-    needs:
-      - release_pipeline
+    needs: [publish]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout main
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: main
           fetch-depth: 0
-      - name: Check pre branch
-        id: check_pre
-        run: |
-          if git ls-remote --heads origin pre | grep -q pre; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
-      - name: Rebase pre on main
-        if: steps.check_pre.outputs.exists == 'true'
+      - name: Rebase pre on the released main
         continue-on-error: true
         run: |
-          git config --global user.name "GitHub Action"
-          git config --global user.email "action@github.com"
-          git fetch origin pre
-          git checkout pre
-          if ! git rebase origin/main; then
-            echo "## Rebase pre on main failed" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "The release completed, but the pre branch could not be rebased automatically." >> "$GITHUB_STEP_SUMMARY"
-            echo "Resolve the conflict locally and push pre manually." >> "$GITHUB_STEP_SUMMARY"
-            git rebase --abort || true
-            exit 1
-          fi
-          if ! git push origin pre --force-with-lease; then
-            echo "## Push pre after rebase failed" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "The release completed, but the rebased pre branch could not be pushed." >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
+          set -euo pipefail
+          git ls-remote --exit-code --heads origin pre >/dev/null || exit 0
+          git config user.name 'GitHub Action'; git config user.email 'action@github.com'
+          git fetch origin pre; git checkout -B pre origin/pre; git rebase origin/main
+          git push origin pre --force-with-lease

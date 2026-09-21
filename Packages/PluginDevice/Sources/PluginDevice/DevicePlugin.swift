@@ -90,6 +90,7 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         // 切换到其它入口时恢复 Rail 可见性。
                         rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                         rootView?.setContentHeaderViewHidden(false)
                     }
                 },
@@ -125,6 +126,7 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         rootView?.setRailView(railView?.makeRailView())
+        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         rootView?.setContentHeaderViewHidden(false)
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)

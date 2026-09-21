@@ -25,7 +25,9 @@ public struct ListPrototypeProjectsTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let projects = await MainActor.run { WorkspaceStore.shared.projects }
+        let projects = try PrototypeToolSupport.store.listProjects(
+            storagePath: await PrototypeToolSupport.storagePath()
+        )
         guard !projects.isEmpty else {
             return "No prototype projects found. Call prototype_create_project to start one."
         }

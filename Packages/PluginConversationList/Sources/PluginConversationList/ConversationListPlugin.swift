@@ -7,6 +7,7 @@ import ProviderConversation
 import ProviderConversationState
 import ProviderProject
 import ProviderRailView
+import ProviderRootView
 import ProviderToolbar
 import ProviderToolManager
 import SwiftUI
@@ -100,7 +101,10 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
             order: order,
             pluginID: id
         )
-        controller.start(rail: rail)
+        controller.start(
+            rail: rail,
+            rootView: kernel.resolveProvider((any RootViewProviding).self)
+        )
         railTabController = controller
 
         // 2. 全局标题栏按钮 + popover（复刻旧版 titleToolbarItems / .trailing）。
@@ -185,9 +189,11 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
             ids: ["\(id).conversation-list"]
         )
         kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: "get_recent_conversations")
-        kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        railView?.removeTabs(
             ids: ["\(id).chats", "\(id).project-chats"]
         )
+        kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
     }
 
     // MARK: - Attention Scan

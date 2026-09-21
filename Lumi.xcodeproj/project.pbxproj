@@ -76,6 +76,7 @@
 				"LumiACP-Debug.xcconfig",
 				"LumiACP-Info.plist",
 				"LumiACP-Release.xcconfig",
+				App.entitlements,
 			);
 			target = AC0000000000000000000009 /* LumiACP */;
 		};
@@ -268,6 +269,7 @@
 				AC0000000000000000000007 /* Sources */,
 				AC0000000000000000000005 /* Frameworks */,
 				AC0000000000000000000006 /* Resources */,
+				AC0000000000000000000014 /* Build ACP Executable */,
 			);
 			buildRules = (
 			);
@@ -278,7 +280,6 @@
 			);
 			name = LumiACP;
 			packageProductDependencies = (
-				AC2AFD000000000000000001 /* FactoryLumiACP */,
 			);
 			productName = LumiACP;
 			productReference = AC0000000000000000000002 /* LumiACP.app */;
@@ -451,7 +452,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */,
-				AC2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumiACP" */,
 				LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/KitSuperLog" */,
 				LF000000000000000018 /* XCLocalSwiftPackageReference "Packages/KitLocalization" */,
 				F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Packages/PluginAppUpdate" */,
@@ -522,6 +522,28 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		AC0000000000000000000014 /* Build ACP Executable */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/.github/scripts/build-acp-helper.sh",
+				"$(SRCROOT)/Packages/FactoryLumiACP/Package.swift",
+				"$(SRCROOT)/Packages/FactoryLumiACP/Package.resolved",
+			);
+			name = "Build ACP Executable";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "set -euo pipefail\n\nACP_ARCH=\"${CURRENT_ARCH:-}\"\ncase \"${ACP_ARCH}\" in\n  arm64|x86_64) ;;\n  *)\n    ACP_ARCH=\"$(printf '%s\\n' \"${ARCHS:-}\" | awk '{$1=$1; print}')\"\n    case \"${ACP_ARCH}\" in\n      arm64|x86_64) ;;\n      *)\n        echo \"error: Build ACP Executable requires exactly one target architecture; got CURRENT_ARCH='${CURRENT_ARCH:-}' ARCHS='${ARCHS:-}'\" >&2\n        exit 1\n        ;;\n    esac\n    ;;\nesac\n\nBUILD_CONFIG=\"debug\"\nif [[ \"${CONFIGURATION}\" == \"Release\" ]]; then\n  BUILD_CONFIG=\"release\"\nfi\n\nDEST=\"${TARGET_BUILD_DIR}/${EXECUTABLE_PATH}\"\nDEST_DIR=\"$(/usr/bin/dirname \"${DEST}\")\"\nRESOURCES=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\nSCRATCH_ROOT=\"${ACP_SCRATCH_ROOT:-${SRCROOT}/build/acp}\"\nCACHE_PATH=\"${ACP_CACHE_PATH:-${SRCROOT}/build/acp-cache}\"\n\n\"${SRCROOT}/.github/scripts/build-acp-helper.sh\" \"${ACP_ARCH}\" \"${DEST_DIR}\" \\\n  --config \"${BUILD_CONFIG}\" \\\n  --scratch-path \"${SCRATCH_ROOT}/${ACP_ARCH}\" \\\n  --cache-path \"${CACHE_PATH}\" \\\n  --source-dir \"${SRCROOT}/Packages/FactoryLumiACP\" \\\n  --resources-dir \"${RESOURCES}\" \\\n  --output-name \"$(/usr/bin/basename \"${DEST}\")\"\n";
+		};
 		F5A4E9203026524000A90001 /* Embed Signed RAG Vector Extension */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -792,10 +814,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		AC2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumiACP" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/FactoryLumiACP;
-		};
 		AI2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryAppIconDesigner" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FactoryAppIconDesigner;
@@ -835,11 +853,6 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		AC2AFD000000000000000001 /* FactoryLumiACP */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AC2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumiACP" */;
-			productName = FactoryLumiACP;
-		};
 		AI2AFD000000000000000001 /* FactoryAppIconDesigner */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = AI2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryAppIconDesigner" */;
