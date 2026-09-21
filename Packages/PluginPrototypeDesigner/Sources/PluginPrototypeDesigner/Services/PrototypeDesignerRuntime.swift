@@ -17,6 +17,17 @@ enum PrototypeDesignerRuntime {
     /// 当前项目内存储的文件夹名（`<项目>/.lumi/prototype`）。
     static let projectFolderName = "prototype"
 
+    static func prototypeStorageDirectory(forProjectPath projectPath: String?) -> URL? {
+        guard let path = projectPath?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty else {
+            return nil
+        }
+        return URL(fileURLWithPath: path, isDirectory: true)
+            .appendingPathComponent(".lumi", isDirectory: true)
+            .appendingPathComponent(projectFolderName, isDirectory: true)
+            .standardizedFileURL
+    }
+
     /// 聊天输入框服务（宿主注入，可空）。用于把选中的区块预填进输入框待发送。
     static var conversationInput: (any ConversationInputProviding)?
     /// 瞬时提示服务（宿主注入，可空）。用于发送到对话的成功 / 失败反馈。
@@ -39,12 +50,7 @@ enum PrototypeDesignerRuntime {
         let path = normalizedPath?.isEmpty == false ? normalizedPath : nil
         guard path != currentProjectPath || projectStorageDirectory != nil else { return }
         currentProjectPath = path
-        let resolved = path.map {
-            URL(fileURLWithPath: $0, isDirectory: true)
-                .appendingPathComponent(".lumi", isDirectory: true)
-                .appendingPathComponent(projectFolderName, isDirectory: true)
-                .standardizedFileURL
-        }
+        let resolved = prototypeStorageDirectory(forProjectPath: path)
         guard projectStorageDirectory != resolved else { return }
         projectStorageDirectory = resolved
         WorkspaceStore.shared.setProjectStorage(
