@@ -71,12 +71,58 @@ enum HTMLPreviewElementContextMenuModel {
 }
 
 @MainActor
-final class HTMLPreviewElementContextMenuPresenter: NSObject, NSMenuDelegate {
-    private var menu: NSMenu?
-    private var items: [HTMLPreviewElementContextMenuItem] = []
+final class HTMLPreviewElementContextMenuSession {
+    let items: [HTMLPreviewElementContextMenuItem]
+    private(set) var didSelect = false
     private var onSelect: ((HTMLPreviewElementReference) -> Void)?
     private var onCancel: (() -> Void)?
-    private var didSelect = false
+    private var didFinish = false
+
+    init(
+        items: [HTMLPreviewElementContextMenuItem],
+        onSelect: @escaping (HTMLPreviewElementReference) -> Void,
+        onCancel: @escaping () -> Void
+    ) {
+        self.items = items
+        self.onSelect = onSelect
+        self.onCancel = onCancel
+    }
+
+    func select(at index: Int) {
+        guard !didFinish,
+              items.indices.contains(index),
+              items[index].isEnabled else { return }
+        didSelect = true
+        onSelect?(items[index].reference)
+    }
+
+    func finish() {
+        guard !didFinish else { return }
+        didFinish = true
+        if !didSelect { onCancel?() }
+        onSelect = nil
+        onCancel = nil
+    }
+}
+
+enum HTMLPreviewElementContextMenuGeometry {
+    static func presentationPoint(
+        clientX: Double,
+        clientY: Double,
+        bounds: NSRect,
+        isFlipped: Bool
+    ) -> NSPoint {
+        NSPoint(
+            x: bounds.minX + clientX,
+            y: isFlipped ? bounds.minY + clientY : bounds.maxY - clientY
+        )
+    }
+}
+
+@MainActor
+final class HTMLPreviewElementContextMenuPresenter: NSObject {
+    private var menu: NSMenu?
+    private var session: HTMLPreviewElementContextMenuSession?
 
     func present(
         request: HTMLPreviewContextMenuRequest,
@@ -86,7 +132,7 @@ final class HTMLPreviewElementContextMenuPresenter: NSObject, NSMenuDelegate {
         onCancel: @escaping () -> Void
     ) {
         dismiss()
-        items = HTMLPreviewElementContextMenuModel.items(
+        let items = HTMLPreviewElementContextMenuModel.items(
             candidates: request.candidates,
             isEnabled: isEnabled
         )
@@ -95,13 +141,15 @@ final class HTMLPreviewElementContextMenuPresenter: NSObject, NSMenuDelegate {
             return
         }
 
-        self.onSelect = onSelect
-        self.onCancel = onCancel
-        didSelect = false
+        let session = HTMLPreviewElementContextMenuSession(
+            items: items,
+            onSelect: onSelect,
+            onCancel: onCancel
+        )
+        self.session = session
 
         let menu = NSMenu()
         menu.autoenablesItems = false
-        menu.delegate = self
         for (index, itemModel) in items.enumerated() {
             if index == 1 { menu.addItem(.separator()) }
             let item = NSMenuItem(
@@ -121,40 +169,51 @@ final class HTMLPreviewElementContextMenuPresenter: NSObject, NSMenuDelegate {
         self.menu = menu
 
         let point = presentationPoint(for: request, in: webView)
-        menu.popUp(positioning: nil, at: point, in: webView)
+        let didChooseItem = menu.popUp(positioning: nil, at: point, in: webView)
+
+        // AppKit may close the menu before dispatching its target/action. Do not
+        // tear down the callbacks from menuDidClose; finish only after tracking
+        // returns, and allow one main-run-loop turn if a selection is pending.
+        if didChooseItem, !session.didSelect {
+            DispatchQueue.main.async { [weak self, weak menu, weak session] in
+                guard let self, let menu, let session else { return }
+                self.finish(session: session, menu: menu)
+            }
+        } else {
+            finish(session: session, menu: menu)
+        }
     }
 
     func dismiss() {
-        guard let menu else { return }
+        guard let menu, let session else { return }
         menu.cancelTracking()
-        finishIfNeeded()
-    }
-
-    func menuDidClose(_ menu: NSMenu) {
-        finishIfNeeded()
+        finish(session: session, menu: menu)
     }
 
     @objc private func selectItem(_ sender: NSMenuItem) {
-        guard items.indices.contains(sender.tag), items[sender.tag].isEnabled else { return }
-        didSelect = true
-        let reference = items[sender.tag].reference
-        onSelect?(reference)
+        session?.select(at: sender.tag)
     }
 
-    private func finishIfNeeded() {
-        if !didSelect { onCancel?() }
-        menu = nil
-        items = []
-        onSelect = nil
-        onCancel = nil
-        didSelect = false
+    private func finish(
+        session: HTMLPreviewElementContextMenuSession,
+        menu: NSMenu
+    ) {
+        guard self.session === session, self.menu === menu else { return }
+        session.finish()
+        self.menu = nil
+        self.session = nil
     }
 
     private func presentationPoint(
         for request: HTMLPreviewContextMenuRequest,
         in webView: WKWebView
     ) -> NSPoint {
-        let candidate = NSPoint(x: request.clientX, y: webView.bounds.height - request.clientY)
+        let candidate = HTMLPreviewElementContextMenuGeometry.presentationPoint(
+            clientX: request.clientX,
+            clientY: request.clientY,
+            bounds: webView.bounds,
+            isFlipped: webView.isFlipped
+        )
         if webView.bounds.insetBy(dx: -2, dy: -2).contains(candidate) {
             return candidate
         }
