@@ -82,7 +82,7 @@ main_binary="${app_path}/Contents/MacOS/Lumi"
 if [ ! -x "${main_binary}" ]; then
   check_fail "Lumi binary not found"
 else
-  if lipo -verify_arch "${expected_arch}" "${main_binary}" 2>/dev/null; then
+  if lipo "${main_binary}" -verify_arch "${expected_arch}" 2>/dev/null; then
     check_pass "Lumi contains ${expected_arch}"
   else
     actual="$(lipo -archs "${main_binary}" 2>/dev/null || echo 'unknown')"
@@ -98,7 +98,7 @@ acp_binary="${app_path}/Contents/MacOS/lumi-acp"
 if [ ! -x "${acp_binary}" ]; then
   check_fail "lumi-acp not found"
 else
-  if lipo -verify_arch "${expected_arch}" "${acp_binary}" 2>/dev/null; then
+  if lipo "${acp_binary}" -verify_arch "${expected_arch}" 2>/dev/null; then
     check_pass "lumi-acp contains ${expected_arch}"
   else
     actual="$(lipo -archs "${acp_binary}" 2>/dev/null || echo 'unknown')"
@@ -114,7 +114,7 @@ finder_appex="$(find "${app_path}/Contents/PlugIns" -name "*.appex" -maxdepth 1 
 if [ -n "${finder_appex}" ] && [ -d "${finder_appex}" ]; then
   finder_binary="${finder_appex}/Contents/MacOS/$(PlistBuddy -c 'Print :CFBundleExecutable' "${finder_appex}/Contents/Info.plist" 2>/dev/null || echo '')"
   if [ -n "${finder_binary}" ] && [ -x "${finder_binary}" ]; then
-    if lipo -verify_arch "${expected_arch}" "${finder_binary}" 2>/dev/null; then
+    if lipo "${finder_binary}" -verify_arch "${expected_arch}" 2>/dev/null; then
       check_pass "Finder extension contains ${expected_arch}"
     else
       actual="$(lipo -archs "${finder_binary}" 2>/dev/null || echo 'unknown')"

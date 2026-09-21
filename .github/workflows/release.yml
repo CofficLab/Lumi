@@ -23,6 +23,8 @@ env:
   ENTITLEMENTS_PATH: "LumiApp/App.entitlements"
   DERIVED_DATA_PATH: "./DerivedData"
   SOURCE_PACKAGES_PATH: "./SourcePackages"
+  ACP_CACHE_PATH: "./build/ci-acp-cache"
+  ACP_SCRATCH_ROOT: "./build/ci-acp"
   ArchivePath: "./my-app"
   BuildPath: "./temp"
   RELEASE_ARCHS: "arm64 x86_64"
@@ -240,29 +242,63 @@ jobs:
           done
           echo "⚠️ Timestamp service is not reachable after 3 attempts; continuing and letting codesign validate timestamping"
 
-      - name: Compute Dependency Hash
-        id: dep-hash
+      - name: Compute Locked Dependency Inputs
+        id: build-inputs
         run: |
           set -euo pipefail
-          # Compute a stable hash from dependency inputs.
-          # Includes: main lock, all Package.swift files, project.pbxproj.
+
+          main_lock="Lumi.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+          acp_lock="Packages/FactoryLumiACP/Package.resolved"
+          for lock in "$main_lock" "$acp_lock"; do
+            if [ ! -f "$lock" ]; then
+              echo "❌ Required dependency lock is missing: $lock"
+              exit 1
+            fi
+          done
+
           hash_input=$(
             {
-              cat "Lumi.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" 2>/dev/null || true
-              find Packages -name "Package.swift" -type f -exec cat {} + 2>/dev/null || true
-              cat Lumi.xcodeproj/project.pbxproj 2>/dev/null || true
+              printf '%s\n' "$main_lock" "$acp_lock"
+              cat "$main_lock" "$acp_lock"
+              find Packages -name Package.swift -type f -print | LC_ALL=C sort | while IFS= read -r file; do
+                printf '%s\n' "$file"
+                cat "$file"
+              done
+              printf '%s\n' "Lumi.xcodeproj/project.pbxproj"
+              cat Lumi.xcodeproj/project.pbxproj
             } | shasum -a 256 | awk '{print $1}'
           )
+
+          xcode_build=$(xcodebuild -version | tr '\n' '-' | sed 's/[^A-Za-z0-9._-]/_/g')
+          sdk_version=$(xcrun --sdk macosx --show-sdk-version)
+          target_set=$(printf '%s' "${{ env.RELEASE_ARCHS }}" | tr ' ' '-')
+
           echo "hash=${hash_input}" >> "$GITHUB_OUTPUT"
+          echo "xcode_build=${xcode_build}" >> "$GITHUB_OUTPUT"
+          echo "sdk_version=${sdk_version}" >> "$GITHUB_OUTPUT"
+          echo "target_set=${target_set}" >> "$GITHUB_OUTPUT"
           echo "Dependency hash: ${hash_input}"
 
-      - name: Cache SPM Source Packages
-        uses: actions/cache@v4
+      - name: Restore Xcode Source Package Cache
+        id: xcode-source-cache
+        uses: actions/cache/restore@v4
         with:
           path: ${{ env.SOURCE_PACKAGES_PATH }}
-          key: spm-src-v1-${{ runner.os }}-${{ runner.arch }}-xcode26.3-${{ steps.dep-hash.outputs.hash }}
-          restore-keys: |
-            spm-src-v1-${{ runner.os }}-${{ runner.arch }}-xcode26.3-
+          key: spm-src-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.build-inputs.outputs.xcode_build }}-sdk${{ steps.build-inputs.outputs.sdk_version }}-${{ steps.build-inputs.outputs.target_set }}-${{ steps.build-inputs.outputs.hash }}
+
+      - name: Restore ACP Dependency Cache
+        id: acp-source-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.ACP_CACHE_PATH }}
+          key: acp-src-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.build-inputs.outputs.xcode_build }}-sdk${{ steps.build-inputs.outputs.sdk_version }}-${{ steps.build-inputs.outputs.target_set }}-${{ steps.build-inputs.outputs.hash }}
+
+      - name: Verify Dependency Locks
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/verify-package-locks.py \
+            Lumi.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved \
+            Packages/FactoryLumiACP/Package.resolved
 
       - name: Resolve SPM Dependencies
         run: |
@@ -273,6 +309,41 @@ jobs:
             "${{ env.SCHEME }}" \
             "${{ env.SOURCE_PACKAGES_PATH }}" \
             --derived-data-path "${{ env.DERIVED_DATA_PATH }}"
+
+      - name: Resolve ACP Dependencies
+        run: |
+          set -euo pipefail
+          lock="Packages/FactoryLumiACP/Package.resolved"
+          before=$(shasum -a 256 "$lock" | awk '{print $1}')
+
+          mkdir -p "${{ env.ACP_CACHE_PATH }}" "${{ env.ACP_SCRATCH_ROOT }}/resolve"
+          xcrun swift package \
+            --package-path Packages/FactoryLumiACP \
+            --cache-path "${{ env.ACP_CACHE_PATH }}" \
+            --scratch-path "${{ env.ACP_SCRATCH_ROOT }}/resolve" \
+            --force-resolved-versions \
+            resolve
+
+          after=$(shasum -a 256 "$lock" | awk '{print $1}')
+          if [ "$before" != "$after" ]; then
+            echo "❌ ACP dependency resolution changed Package.resolved"
+            git diff -- "$lock" || true
+            exit 1
+          fi
+
+      - name: Save Xcode Source Package Cache
+        if: steps.xcode-source-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.SOURCE_PACKAGES_PATH }}
+          key: ${{ steps.xcode-source-cache.outputs.cache-primary-key }}
+
+      - name: Save ACP Dependency Cache
+        if: steps.acp-source-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.ACP_CACHE_PATH }}
+          key: ${{ steps.acp-source-cache.outputs.cache-primary-key }}
 
       - name: Build App (Archive)
         run: |
@@ -298,7 +369,16 @@ jobs:
           # measurement baseline for the later isolated-job experiment.
           for arch in ${{ env.RELEASE_ARCHS }}; do
             .github/scripts/archive-lumi.sh "$arch" "${{ steps.signing.outputs.team_id }}"
+            .github/scripts/verify-release-archive.sh \
+              "./temp/${{ env.SCHEME }}-${arch}.xcarchive" \
+              "$arch" \
+              --expected-version "${{ env.new_version }}" \
+              --expected-build "${{ env.build_number }}"
           done
+
+          git diff --exit-code -- \
+            Lumi.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved \
+            Packages/FactoryLumiACP/Package.resolved
 
       - name: Collect Build Metrics
         if: always()
@@ -327,6 +407,15 @@ jobs:
           set -euo pipefail
 
           IDENTITY="${{ steps.signing.outputs.signing_identity }}"
+
+          # Re-run the release gate immediately before extracting/signing.
+          for arch in ${{ env.RELEASE_ARCHS }}; do
+            .github/scripts/verify-release-archive.sh \
+              "./temp/${{ env.SCHEME }}-${arch}.xcarchive" \
+              "$arch" \
+              --expected-version "${{ env.new_version }}" \
+              --expected-build "${{ env.build_number }}"
+          done
 
           # 使用脚本进行深度签名
           chmod +x .github/scripts/sign_app.sh

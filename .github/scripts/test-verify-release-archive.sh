@@ -23,10 +23,10 @@ mkdir -p "${WORK}/bin"
 # Fake lipo
 cat > "${WORK}/bin/lipo" <<'FAKE_LIPO'
 #!/usr/bin/env bash
-case "$1" in
+case "${2:-}" in
   -verify_arch)
-    arch="$2"
-    binary="$3"
+    binary="$1"
+    arch="$3"
     # Read actual arch from file next to binary (set by test)
     actual_file="${binary}.actual_arch"
     if [ -f "${actual_file}" ]; then
@@ -35,6 +35,9 @@ case "$1" in
     fi
     exit 0
     ;;
+esac
+
+case "$1" in
   -archs)
     binary="$2"
     actual_file="${binary}.actual_arch"
