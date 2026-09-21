@@ -10,14 +10,14 @@ import tempfile
 from pathlib import Path
 
 
-def create_resolved(pins: dict) -> str:
+def create_resolved(pins: dict, locations: dict | None = None) -> str:
     """Create a Package.resolved JSON string from a dict of identity -> (version, revision)."""
     pin_list = []
     for identity, (version, revision) in pins.items():
         pin_list.append({
             "identity": identity,
             "kind": "remoteSourceControl",
-            "location": f"https://github.com/example/{identity}.git",
+            "location": (locations or {}).get(identity, f"https://github.com/example/{identity}.git"),
             "state": {
                 "revision": revision,
                 "version": version,
@@ -80,6 +80,29 @@ def test_revision_mismatch():
     assert "mismatched" in output.lower(), f"expected mismatch in output\n{output}"
     assert "Alamofire" in output
     print("  ✅ mismatch exits 1")
+
+
+def test_source_mismatch():
+    """The same identity and revision from a different repository fails."""
+    print("▶ source mismatch detected")
+    pins = {"Alamofire": ("5.9.0", "abc123")}
+    main = create_resolved(pins, {"Alamofire": "https://github.com/Alamofire/Alamofire.git"})
+    acp = create_resolved(pins, {"Alamofire": "https://github.com/attacker/Alamofire.git"})
+    code, output = run_verify(main, acp)
+    assert code == 1, f"expected exit 1, got {code}\n{output}"
+    assert "source" in output.lower()
+    print("  ✅ source mismatch exits 1")
+
+
+def test_equivalent_source_urls():
+    """Case, trailing slash and .git differences do not create false failures."""
+    print("▶ equivalent source URLs normalize")
+    pins = {"Alamofire": ("5.9.0", "abc123")}
+    main = create_resolved(pins, {"Alamofire": "HTTPS://GITHUB.COM/Example/Alamofire.git"})
+    acp = create_resolved(pins, {"Alamofire": "https://github.com/example/alamofire/"})
+    code, output = run_verify(main, acp)
+    assert code == 0, f"expected exit 0, got {code}\n{output}"
+    print("  ✅ equivalent sources match")
 
 
 def test_unique_dependencies():
@@ -171,6 +194,8 @@ def main():
     tests = [
         test_all_matching,
         test_revision_mismatch,
+        test_source_mismatch,
+        test_equivalent_source_urls,
         test_unique_dependencies,
         test_strict_mode,
         test_empty_locks,

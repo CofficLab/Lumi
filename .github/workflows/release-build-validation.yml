@@ -1,0 +1,134 @@
+name: Release Build Validation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - release-validation/**
+
+permissions:
+  contents: read
+
+env:
+  SCHEME: Lumi
+  DESTINATION: generic/platform=macOS
+
+jobs:
+  prepare:
+    runs-on: macos-26
+    outputs:
+      source_sha: ${{ steps.metadata.outputs.source_sha }}
+      build_number: ${{ steps.metadata.outputs.build_number }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
+        with:
+          xcode-version: "26.3"
+      - name: Prepare the same immutable metadata used by release
+        id: metadata
+        run: |
+          test "$(git rev-parse HEAD)" = '${{ github.sha }}'
+          .github/scripts/prepare-release-metadata.sh --channel stable --source-sha '${{ github.sha }}' \
+            --run-id '${{ github.run_id }}' --output release-metadata.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: validation-metadata-${{ github.run_id }}
+          path: release-metadata.json
+          retention-days: 7
+          if-no-files-found: error
+
+  build:
+    needs: prepare
+    runs-on: macos-26
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        arch: [arm64, x86_64]
+    env:
+      TARGET_ARCH: ${{ matrix.arch }}
+      DERIVED_DATA_PATH: DerivedData/${{ matrix.arch }}
+      SOURCE_PACKAGES_PATH: SourcePackages/${{ matrix.arch }}
+      ACP_CACHE_PATH: build/ci-acp-cache/${{ matrix.arch }}
+      ACP_SCRATCH_ROOT: build/ci-acp/${{ matrix.arch }}
+      ARCHIVE_DIR: temp
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.prepare.outputs.source_sha }}
+          fetch-depth: 1
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: validation-metadata-${{ github.run_id }}
+          path: release-input
+      - uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
+        with:
+          xcode-version: "26.3"
+      - name: Inject and validate immutable version
+        run: .github/scripts/inject-lumi-version.sh release-input/release-metadata.json
+      - name: Compute exact cache key
+        id: key
+        run: |
+          python3 .github/scripts/verify-package-locks.py \
+            Lumi.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved Packages/FactoryLumiACP/Package.resolved
+          main=$(shasum -a 256 Lumi.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved | cut -d' ' -f1)
+          acp=$(shasum -a 256 Packages/FactoryLumiACP/Package.resolved | cut -d' ' -f1)
+          toolchain=$(xcodebuild -version | shasum -a 256 | cut -c1-16)
+          echo "value=release-spm-v3-${toolchain}-${TARGET_ARCH}-${main}-${acp}" >> "$GITHUB_OUTPUT"
+      - id: xcode-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.SOURCE_PACKAGES_PATH }}
+          key: ${{ steps.key.outputs.value }}-xcode
+      - id: acp-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.ACP_CACHE_PATH }}
+          key: ${{ steps.key.outputs.value }}-acp
+      - name: Strictly resolve both locked package graphs
+        run: |
+          set -euo pipefail
+          .github/scripts/resolve-ci-packages.sh Lumi.xcodeproj Lumi "${SOURCE_PACKAGES_PATH}" --derived-data-path "${DERIVED_DATA_PATH}"
+          before=$(shasum -a 256 Packages/FactoryLumiACP/Package.resolved | cut -d' ' -f1)
+          xcrun swift package --package-path Packages/FactoryLumiACP --cache-path "${ACP_CACHE_PATH}" \
+            --scratch-path "${ACP_SCRATCH_ROOT}/resolve" --force-resolved-versions resolve
+          test "${before}" = "$(shasum -a 256 Packages/FactoryLumiACP/Package.resolved | cut -d' ' -f1)"
+      - if: steps.xcode-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.SOURCE_PACKAGES_PATH }}
+          key: ${{ steps.xcode-cache.outputs.cache-primary-key }}
+      - if: steps.acp-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.ACP_CACHE_PATH }}
+          key: ${{ steps.acp-cache.outputs.cache-primary-key }}
+      - name: Archive using the production archive script
+        env:
+          DEVELOPMENT_TEAM: Y6HZ9JJYV6
+        run: .github/scripts/archive-lumi.sh "${TARGET_ARCH}" "${DEVELOPMENT_TEAM}"
+      - name: Verify and package using the production transfer protocol
+        run: .github/scripts/package-release-archive.sh "temp/Lumi-${TARGET_ARCH}.xcarchive" "${TARGET_ARCH}" \
+          release-input/release-metadata.json "validation-${TARGET_ARCH}"
+      - name: Save validation archive
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: validation-archive-${{ github.run_id }}-${{ needs.prepare.outputs.build_number }}-${{ matrix.arch }}
+          path: validation-${{ matrix.arch }}/
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
+      - name: Preserve diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: validation-diagnostics-${{ github.run_id }}-${{ matrix.arch }}
+          path: |
+            temp/archive-${{ matrix.arch }}.log
+            temp/results-${{ matrix.arch }}.xcresult
+          retention-days: 14
+          if-no-files-found: warn

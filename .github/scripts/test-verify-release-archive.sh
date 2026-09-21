@@ -81,7 +81,9 @@ else
 fi
 uuid_file="${binary}.uuid"
 if [ -f "${uuid_file}" ]; then
-  echo "UUID: $(cat "${uuid_file}") (x86_64) $(binary)"
+  arch_file="${binary}.actual_arch"
+  arch="$(cat "${arch_file}" 2>/dev/null || echo arm64)"
+  echo "UUID: $(cat "${uuid_file}") (${arch}) ${binary}"
 fi
 exit 0
 FAKE_DWARF
@@ -107,6 +109,9 @@ create_fake_archive() {
 
   mkdir -p "${archive}/Products/Applications/Lumi.app/Contents/MacOS"
   mkdir -p "${archive}/Products/Applications/Lumi.app/Contents/PlugIns/LumiFinder.appex/Contents/MacOS"
+  mkdir -p "${archive}/Products/Applications/Lumi.app/Contents/Frameworks/Sparkle.framework"
+  mkdir -p "${archive}/Products/Applications/Lumi.app/Contents/Resources/PluginProjectRAG_ProjectRAGEngine.bundle"
+  mkdir -p "${archive}/Products/Applications/Lumi.app/Contents/Resources/PluginACP_PluginACP.bundle"
   mkdir -p "${archive}/dSYMs/Lumi.app.dSYM/Contents/Resources/DWARF"
 
   # Main binary
@@ -120,6 +125,9 @@ create_fake_archive() {
   chmod +x "${archive}/Products/Applications/Lumi.app/Contents/MacOS/lumi-acp"
   echo "${arch}" > "${archive}/Products/Applications/Lumi.app/Contents/MacOS/lumi-acp.actual_arch"
 
+  echo "fake" > "${archive}/Products/Applications/Lumi.app/Contents/Frameworks/vec0.dylib"
+  echo "${arch}" > "${archive}/Products/Applications/Lumi.app/Contents/Frameworks/vec0.dylib.actual_arch"
+
   # Finder extension
   echo "fake" > "${archive}/Products/Applications/Lumi.app/Contents/PlugIns/LumiFinder.appex/Contents/MacOS/LumiFinder"
   chmod +x "${archive}/Products/Applications/Lumi.app/Contents/PlugIns/LumiFinder.appex/Contents/MacOS/LumiFinder"
@@ -129,6 +137,7 @@ create_fake_archive() {
   # dSYM
   echo "fake" > "${archive}/dSYMs/Lumi.app.dSYM/Contents/Resources/DWARF/Lumi"
   echo "${uuid}" > "${archive}/dSYMs/Lumi.app.dSYM/Contents/Resources/DWARF/Lumi.uuid"
+  echo "${arch}" > "${archive}/dSYMs/Lumi.app.dSYM/Contents/Resources/DWARF/Lumi.actual_arch"
 
   # Info.plist
   touch "${archive}/Products/Applications/Lumi.app/Contents/Info.plist"
@@ -159,6 +168,7 @@ expect_contains() {
 set +e
 
 export PATH="${WORK}/bin:${PATH}"
+export PLIST_BUDDY="${WORK}/bin/PlistBuddy"
 
 # ---------------------------------------------------------------------------
 # 1. Argument validation
@@ -183,7 +193,7 @@ bash "${SCRIPT}" "${archive}" "arm64" \
   --expected-version "6.0.0" \
   --expected-build "20260920120000" > "${WORK}/out-ok.txt" 2>&1
 expect_eq "0" "$?" "valid archive exits 0"
-expect_contains "$(cat "${WORK}/out-ok.txt")" "6 checks passed" "reports 6 checks passed"
+expect_contains "$(cat "${WORK}/out-ok.txt")" "12 checks passed" "reports all release checks passed"
 
 # ---------------------------------------------------------------------------
 # 3. Architecture mismatch on main binary
@@ -196,7 +206,7 @@ echo "arm64" > "${archive}/Products/Applications/Lumi.app/Contents/MacOS/Lumi.ac
 
 bash "${SCRIPT}" "${archive}" "x86_64" > "${WORK}/out-arch.txt" 2>&1
 expect_eq "1" "$?" "arch mismatch exits 1"
-expect_contains "$(cat "${WORK}/out-arch.txt")" "Lumi missing x86_64" "reports main binary mismatch"
+expect_contains "$(cat "${WORK}/out-arch.txt")" "Lumi architecture mismatch" "reports main binary mismatch"
 
 # ---------------------------------------------------------------------------
 # 4. ACP helper architecture mismatch
@@ -209,7 +219,7 @@ echo "arm64" > "${archive}/Products/Applications/Lumi.app/Contents/MacOS/lumi-ac
 
 bash "${SCRIPT}" "${archive}" "x86_64" > "${WORK}/out-acp.txt" 2>&1
 expect_eq "1" "$?" "acp arch mismatch exits 1"
-expect_contains "$(cat "${WORK}/out-acp.txt")" "lumi-acp missing x86_64" "reports ACP mismatch"
+expect_contains "$(cat "${WORK}/out-acp.txt")" "lumi-acp architecture mismatch" "reports ACP mismatch"
 
 # ---------------------------------------------------------------------------
 # 5. dSYM UUID mismatch
@@ -225,7 +235,19 @@ expect_eq "1" "$?" "uuid mismatch exits 1"
 expect_contains "$(cat "${WORK}/out-uuid.txt")" "dSYM UUID mismatch" "reports UUID mismatch"
 
 # ---------------------------------------------------------------------------
-# 6. Version mismatch
+# 6. Missing release resource
+# ---------------------------------------------------------------------------
+echo "▶ missing required resource"
+
+archive="${WORK}/archive-resource"
+create_fake_archive "${archive}" "arm64"
+rm -rf "${archive}/Products/Applications/Lumi.app/Contents/Resources/PluginProjectRAG_ProjectRAGEngine.bundle"
+bash "${SCRIPT}" "${archive}" "arm64" > "${WORK}/out-resource.txt" 2>&1
+expect_eq "1" "$?" "missing release resource exits 1"
+expect_contains "$(cat "${WORK}/out-resource.txt")" "PluginProjectRAG_ProjectRAGEngine.bundle" "reports missing RAG resource"
+
+# ---------------------------------------------------------------------------
+# 7. Version mismatch
 # ---------------------------------------------------------------------------
 echo "▶ version mismatch"
 
