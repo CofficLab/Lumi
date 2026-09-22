@@ -15,7 +15,9 @@ Lumi 编辑器插件。
 
 ## 提供什么
 
-<!-- TODO: 描述本包提供的功能 -->
+- `StepFunProvider`：Step Plan 通道，只暴露 `step-router-v1`。
+- `StepFunPlatformProvider`：开放平台标准 Chat Completions 通道，提供 Step 5、Step 3.x 与 StepAudio Chat 模型。
+- 两个 Provider 共享同一个 StepFun API Key，但使用独立端点，避免模型被发送到不兼容的通道。
 
 ## 依赖与集成
 
@@ -35,4 +37,3 @@ From this package directory:
 ```sh
 swift test
 ```
-
