@@ -9,8 +9,8 @@
 3.	`prepare` 固定触发提交并生成唯一的发布 metadata
 4.	两个隔离的 build job 并行构建、校验 `arm64` 与 `x86_64` 归档
 5.	`publish` 验证两份归档的来源、摘要、权限、资源和架构
-6.	集中使用 Developer ID Application 证书签名并生成唯一命名的 DMG
-7.	提交 Apple Notarization，状态为 Accepted 后 staple 并执行 Gatekeeper 验证
+6.	集中使用 Developer ID Application 证书签名 App，生成唯一命名的 DMG 后签名 DMG 本体
+7.	提交 Apple Notarization，状态为 Accepted 后 staple，并以磁盘映像模式执行 Gatekeeper 验证
 8.	在任何公开写入前保存可恢复的 `final-assets`，再上传并逐字节验证两个 DMG
 9.	创建并核验 GitHub Release 草稿，最后依次更新架构 feed、默认 feed 并开放 Release
 
@@ -58,7 +58,7 @@ Lumi_<marketing-version>_<build-number>_<arch>_dSYMs.zip
 3. 同名 DMG 已存在：字节一致则幂等复用，不一致立即停止；每个 build 另有不可变的 `release-state-<build>.json` 绑定 source SHA、通道和所有摘要。
 4. 线上 appcast 已出现更高 build：旧任务立即停止；若 build 相等，只有线上 recovery state 与本地 manifest 完全一致才允许继续。
 5. GitHub tag 或既有 asset 与固定 source SHA/本地摘要不同：立即停止。
-6. 公证等待超时时查询原 submission ID；只有明确 Accepted 才能 staple 和继续。
+6. 公证等待超时时查询原 submission ID；只有明确 Accepted 才能 staple，并通过 DMG 签名、stapler 与 Gatekeeper 三重验证后继续。
 
 公开顺序固定为：本地验收 → 保存恢复包 → 两个 DMG → 下载校验公开字节 → GitHub Release 草稿及完整 assets → 两个架构 feed → legacy/default feed → preview fallback 提交 → 开放 GitHub Release。feed 逐文件更新不是跨服务原子事务，但每份可见 feed 都只会指向已经验证可下载的 DMG。
 

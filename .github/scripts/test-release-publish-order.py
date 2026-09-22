@@ -4,6 +4,7 @@
 from pathlib import Path
 
 WORKFLOW = Path(__file__).parents[1] / "workflows/release.yml"
+SCRIPTS = Path(__file__).parent
 
 
 def position(text: str, marker: str) -> int:
@@ -17,6 +18,7 @@ def main() -> int:
     order = [
         "name: Sign restored applications",
         "name: Create uniquely named DMGs",
+        "name: Sign disk images",
         "name: Notarize, staple, and validate DMGs",
         "name: Generate architecture appcasts",
         "name: Create immutable final-assets manifest",
@@ -36,6 +38,13 @@ def main() -> int:
     assert "--target" in text and "needs.prepare.outputs.source_sha" in text
     assert "needs: [prepare, build]" in text
     assert "contents: read" in text
+
+    sign_dmg = (SCRIPTS / "sign-dmg.sh").read_text(encoding="utf-8")
+    notarize_dmg = (SCRIPTS / "notarize-dmg.sh").read_text(encoding="utf-8")
+    assert 'codesign --force --timestamp --sign "${identity}" "${dmg}"' in sign_dmg
+    assert 'codesign --verify --strict --verbose=2 "${dmg}"' in sign_dmg
+    assert 'spctl -a -vvv -t open --context context:primary-signature "${dmg}"' in notarize_dmg
+    assert "-t install" not in notarize_dmg
     print("✅ test-release-publish-order.py: recovery and public-write order passed")
     return 0
 

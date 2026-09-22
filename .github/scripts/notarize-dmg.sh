@@ -10,6 +10,10 @@ case "${arch}" in arm64|x86_64) ;; *) exit 2 ;; esac
 : "${APP_STORE_CONNECT_KEY_ISSUER_ID:?missing APP_STORE_CONNECT_KEY_ISSUER_ID}"
 [ -f "${dmg}" ] || { echo "error: DMG missing: ${dmg}" >&2; exit 2; }
 
+# A disk image is a signed distribution container, not an installer package.
+# Reject unsigned or damaged images before spending time on notarization.
+codesign --verify --strict --verbose=2 "${dmg}"
+
 mkdir -p "$(dirname "${record}")"
 submit_json="${record}.submit"
 set +e
@@ -61,5 +65,6 @@ json.dump({"arch":os.environ["ARCH"], "dmg":os.environ["DMG"],
 PY
 xcrun stapler staple "${dmg}"
 xcrun stapler validate "${dmg}"
-spctl -a -vvv -t install "${dmg}"
+codesign --verify --strict --verbose=2 "${dmg}"
+spctl -a -vvv -t open --context context:primary-signature "${dmg}"
 echo "Notarization accepted and validated: ${submission_id}"

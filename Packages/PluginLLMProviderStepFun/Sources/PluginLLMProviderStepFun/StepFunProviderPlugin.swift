@@ -7,7 +7,7 @@ import KitSuperLog
 
 /// StepFun 供应商装配插件（KernelCore 生态）。
 ///
-/// 在 `onBoot` 中把本供应商的 StepFunProvider 注册进
+/// 在 `onBoot` 中把 Step Plan 与开放平台 Provider 注册进
 /// `LLMProviderManagerProviding`，聊天链路即可经管理器路由到该供应商。
 @MainActor
 public final class StepFunProviderPlugin: SuperPlugin, SuperLog {
@@ -20,7 +20,7 @@ public final class StepFunProviderPlugin: SuperPlugin, SuperLog {
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.llm-provider.stepfun",
         name: "阶跃星辰供应商",
-        description: "注册 StepFunProvider 到 LLM 管理器。",
+        description: "注册 Step Plan 与开放平台 Provider 到 LLM 管理器。",
         category: .llm,
         stage: .stable,
         policy: .alwaysOn
@@ -35,7 +35,10 @@ public final class StepFunProviderPlugin: SuperPlugin, SuperLog {
         }
         let networkProvider = kernel.resolveProvider((any LLMNetworkProviding).self)
         let apiService = VendorAPIService(networkProvider: networkProvider)
-        let providers: [any SuperLLMProvider] = [StepFunProvider(apiService: apiService)]
+        let providers: [any SuperLLMProvider] = [
+            StepFunProvider(apiService: apiService),
+            StepFunPlatformProvider(apiService: apiService),
+        ]
         for provider in providers {
             if Self.verbose {
                 let typeName = String(describing: type(of: provider))

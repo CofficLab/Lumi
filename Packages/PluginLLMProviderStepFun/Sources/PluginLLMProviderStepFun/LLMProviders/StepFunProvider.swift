@@ -2,7 +2,10 @@ import KitLLM
 import Foundation
 import ProviderLLMManager
 
-/// StepFun StepPlan 供应商（迁移自旧 LLMProviderStepFunPlugin）。
+/// StepFun Step Plan 供应商。
+///
+/// `step-router-v1` 只能通过 Step Plan 端点调用。开放平台模型由
+/// `StepFunPlatformProvider` 独立承载，避免把模型发送到错误的通道。
 @MainActor
 public final class StepFunProvider: VendorLLMProvider {
 
@@ -10,19 +13,17 @@ public final class StepFunProvider: VendorLLMProvider {
         super.init(
             info: LLMProviderInfo(
                 id: "stepfun",
-                displayName: "StepFun StepPlan",
-                description: "StepFun StepPlan AI",
-                defaultModel: "step-3.5-flash",
+                displayName: "StepFun Step Plan",
+                description: "Step Plan 智能路由服务",
+                defaultModel: "step-router-v1",
                 models: [
-                    LLMModelInfo(id: "step-3.7-flash", contextWindowSize: 262_144, supportsVision: true),
-                    LLMModelInfo(id: "step-router-v1", contextWindowSize: 262_144, supportsVision: false, supportsTools: false),
-                    LLMModelInfo(id: "stepaudio-2.5-chat", contextWindowSize: 1_000_000, supportsVision: false),
-                    LLMModelInfo(id: "stepaudio-2.5-tts", contextWindowSize: 1_000_000, supportsVision: false, supportsTools: false),
-                    LLMModelInfo(id: "stepaudio-2.5-asr", contextWindowSize: 1_000_000, supportsVision: false, supportsTools: false),
-                    LLMModelInfo(id: "stepaudio-2.5-realtime", contextWindowSize: 1_000_000, supportsVision: false),
-                    LLMModelInfo(id: "step-image-edit-2", contextWindowSize: 1_000_000, supportsVision: true, supportsTools: false),
-                    LLMModelInfo(id: "step-3.5-flash-2603", contextWindowSize: 262_144, supportsVision: true),
-                    LLMModelInfo(id: "step-3.5-flash", contextWindowSize: 262_144, supportsVision: true),
+                    LLMModelInfo(
+                        id: "step-router-v1",
+                        displayName: "Step Router V1",
+                        contextWindowSize: 262_144,
+                        supportsVision: false,
+                        supportsTools: true
+                    ),
                 ],
                 websiteURL: URL(string: "https://www.stepfun.com/")!,
                 apiFormat: .openAI,

@@ -12,7 +12,13 @@ from pathlib import Path
 def read(source: str, optional: bool) -> bytes:
     try:
         if source.startswith(("http://", "https://", "file://")):
-            with urllib.request.urlopen(source, timeout=30) as response:
+            # 显式设置 UA：CDN（s.kuaiyizhi.cn）会拦截 Python-urllib 默认 UA 并返回 403。
+            # 与 publish-r2-asset.py / verify-published-assets.py 的自定义 UA 保持同一约定。
+            request = urllib.request.Request(
+                source,
+                headers={"User-Agent": "Lumi-release-guard/1"},
+            )
+            with urllib.request.urlopen(request, timeout=30) as response:
                 return response.read()
         return Path(source).read_bytes()
     except (OSError, urllib.error.URLError) as exc:

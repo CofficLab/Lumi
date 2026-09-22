@@ -4,6 +4,7 @@ import KernelCore
 import ProviderChatSection
 import ProviderLifecycleHooks
 import ProviderProject
+import ProviderSettingView
 import ProviderSkill
 
 @testable import PluginSkill
@@ -96,7 +97,7 @@ struct SkillPluginTests {
         await service.invalidateCache(projectPath: "/tmp/proj")
     }
 
-    @Test("插件 onBoot 注册工具栏且不抛错")
+    @Test("插件 onBoot 注册设置入口与工具栏且不抛错")
     func pluginLifecycle() async throws {
         let kernel = KernelCoreContainer()
         let project = DefaultProjectProvider()
@@ -104,22 +105,85 @@ struct SkillPluginTests {
         let chat = DefaultChatSectionProviding()
         let skillProvider = DefaultSkillProvider()
         let hooks = DefaultLifecycleHooksProvider()
+        let settings = DefaultSettingViewProviding()
         try kernel.registerProvider((any ProjectProviding).self, project)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
         try kernel.registerProvider((any SkillProviding).self, skillProvider)
         try kernel.registerProvider((any LifecycleHooksProviding).self, hooks)
+        try kernel.registerProvider((any SettingViewProviding).self, settings)
 
         let plugin = SkillPlugin()
         try plugin.onBoot(kernel: kernel)
         #expect(kernel.resolveProvider((any ProjectProviding).self) != nil)
         #expect(chat.barItems.map(\.id) == ["com.coffic.lumi.plugin.skill.toolbar"])
+        #expect(settings.entries.map(\.id) == ["com.coffic.lumi.plugin.skill.settings"])
+        #expect(settings.entries.first?.systemImage == "sparkles")
         #expect(skillProvider.isProviderRegistered(providerID: SkillPlugin.builtinContributorID))
         #expect(hooks.revision == 1)
 
         try plugin.onShutdown(kernel: kernel)
         #expect(chat.barItems.isEmpty)
+        #expect(settings.entries.isEmpty)
         #expect(!skillProvider.isProviderRegistered(providerID: SkillPlugin.builtinContributorID))
         #expect(hooks.revision == 2)
+    }
+
+    @Test("SkillSettingsViewModel 加载选中项目的技能")
+    func settingsViewModelLoadsProjectSkills() async {
+        let service = SkillService(scanner: ProjectPathScanner(), builtinProvider: EmptyBuiltin())
+        let viewModel = SkillSettingsViewModel(service: service)
+        viewModel.updateProjects([
+            ProjectInfo(name: "Alpha", path: "/tmp/skill-alpha"),
+            ProjectInfo(name: "Beta", path: "/tmp/skill-beta"),
+        ])
+        viewModel.selectProject(path: "/tmp/skill-alpha")
+        await waitUntil { viewModel.projectSkills.contains { $0.name == "skill-alpha" } }
+        #expect(viewModel.selectedProjectPath == "/tmp/skill-alpha")
+        #expect(viewModel.projectSkills.map(\.name) == ["skill-alpha"])
+
+        viewModel.selectProject(path: "/tmp/skill-beta")
+        await waitUntil { viewModel.projectSkills.contains { $0.name == "skill-beta" } }
+        #expect(viewModel.projectSkills.map(\.name) == ["skill-beta"])
+        #expect(!viewModel.projectSkills.contains { $0.name == "skill-alpha" })
+    }
+
+    @Test("SkillSettingsViewModel 无选中项目时清空技能")
+    func settingsViewModelEmptyWithoutProject() async {
+        let service = SkillService(scanner: ProjectPathScanner(), builtinProvider: EmptyBuiltin())
+        let viewModel = SkillSettingsViewModel(service: service)
+        await viewModel.reload()
+        #expect(viewModel.projectSkills.isEmpty)
+        #expect(viewModel.availableSkillCount == 0)
+    }
+
+    @Test("SkillSettingsObserver 同步项目列表与技能底座")
+    func settingsObserverSyncsProjectsAndBase() async throws {
+        let project = DefaultProjectProvider()
+        let skillProvider = DefaultSkillProvider()
+        let service = SkillService(scanner: ProjectPathScanner(), builtinProvider: EmptyBuiltin())
+        let viewModel = SkillSettingsViewModel(service: service)
+        let observer = SkillSettingsObserver(
+            projectProvider: project,
+            skillProvider: skillProvider,
+            viewModel: viewModel
+        )
+
+        #expect(viewModel.projects.isEmpty)
+        #expect(viewModel.baseSkills.isEmpty)
+
+        let contributed = SkillMetadata(name: "shared", title: "Shared", description: "")
+        skillProvider.addProvider(StaticSkillContributor(providerID: "tests.base", skills: [contributed]))
+        await waitUntil { !viewModel.baseSkills.isEmpty }
+        #expect(viewModel.baseSkills.map(\.name) == ["shared"])
+
+        try await project.openProject(at: "/tmp/skill-settings-project")
+        await waitUntil { !viewModel.projects.isEmpty }
+        #expect(viewModel.projects.map(\.path) == ["/tmp/skill-settings-project"])
+
+        observer.cancel()
+        try await project.openProject(at: "/tmp/ignored-after-cancel")
+        #expect(viewModel.projects.count == 1)
+        #expect(viewModel.projects.first?.path == "/tmp/skill-settings-project")
     }
 
     @Test("当前项目和技能贡献变化会更新工具栏 ViewModel")

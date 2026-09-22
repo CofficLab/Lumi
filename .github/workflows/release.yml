@@ -189,6 +189,7 @@ jobs:
     env:
       RELEASE_METADATA: release-input/release-metadata.json
       FINAL_ASSETS: final-assets
+      RESTORED_ARCHIVES: restored-archives
       ENTITLEMENTS_PATH: LumiApp/App.entitlements
     steps:
       - name: Checkout the prepared source SHA
@@ -238,7 +239,7 @@ jobs:
           xcode-version: "26.3"
       - name: Verify and restore both build artifacts
         if: steps.recovery.outputs.reuse != 'true'
-        run: .github/scripts/verify-release-inputs.py "${RELEASE_METADATA}" incoming temp
+        run: .github/scripts/verify-release-inputs.py "${RELEASE_METADATA}" incoming "${RESTORED_ARCHIVES}"
       - name: Setup macOS signing
         id: signing
         if: steps.recovery.outputs.reuse != 'true'
@@ -260,7 +261,7 @@ jobs:
         run: |
           set -euo pipefail
           for arch in arm64 x86_64; do
-            source_app="temp/Lumi-${arch}.xcarchive/Products/Applications/Lumi.app"
+            source_app="${RESTORED_ARCHIVES}/Lumi-${arch}.xcarchive/Products/Applications/Lumi.app"
             signed_app="temp/Lumi-${arch}.app"
             rm -rf "${signed_app}"; ditto "${source_app}" "${signed_app}"
             .github/scripts/sign_app.sh "${signed_app}" "${SIGNING_IDENTITY}" "${ENTITLEMENTS_PATH}"
@@ -276,6 +277,16 @@ jobs:
             filename=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["dmg_filenames"][sys.argv[2]])' "${RELEASE_METADATA}" "${arch}")
             .github/scripts/create-designed-dmg.sh "temp/Lumi-${arch}.app" "${FINAL_ASSETS}/${filename}" \
               "Lumi-${arch}" .github/dmg/Lumi-dmg-background.png Lumi
+          done
+      - name: Sign disk images
+        if: steps.recovery.outputs.reuse != 'true'
+        env:
+          SIGNING_IDENTITY: ${{ steps.signing.outputs.signing_identity }}
+        run: |
+          set -euo pipefail
+          for arch in arm64 x86_64; do
+            filename=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["dmg_filenames"][sys.argv[2]])' "${RELEASE_METADATA}" "${arch}")
+            .github/scripts/sign-dmg.sh "${FINAL_ASSETS}/${filename}" "${SIGNING_IDENTITY}"
           done
       - name: Notarize, staple, and validate DMGs
         if: steps.recovery.outputs.reuse != 'true'
@@ -304,8 +315,8 @@ jobs:
           fi
           for arch in arm64 x86_64; do
             filename=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["dsym_filenames"][sys.argv[2]])' "${RELEASE_METADATA}" "${arch}")
-            test -d "temp/Lumi-${arch}.xcarchive/dSYMs"
-            (cd "temp/Lumi-${arch}.xcarchive/dSYMs" && zip -qry "$GITHUB_WORKSPACE/${FINAL_ASSETS}/${filename}" .)
+            test -d "${RESTORED_ARCHIVES}/Lumi-${arch}.xcarchive/dSYMs"
+            (cd "${RESTORED_ARCHIVES}/Lumi-${arch}.xcarchive/dSYMs" && zip -qry "$GITHUB_WORKSPACE/${FINAL_ASSETS}/${filename}" .)
           done
       - name: Generate architecture appcasts
         if: steps.recovery.outputs.reuse != 'true'
