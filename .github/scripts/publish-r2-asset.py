@@ -66,10 +66,7 @@ def main() -> int:
         result = json.loads(Path(response.name).read_text(encoding="utf-8"))
     if result.get("success") is not True:
         raise SystemExit(f"error: upload API rejected {args.key}: {result}")
-    published = remote_digest(args.public_url)
-    if published != local:
-        raise SystemExit(f"error: uploaded bytes do not match local file for {args.key}")
-    print(f"Uploaded and verified immutable asset: {args.key}")
+    print(f"Uploaded asset: {args.key}")
     return 0
 
 

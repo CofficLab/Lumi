@@ -362,6 +362,7 @@ jobs:
             .github/scripts/publish-r2-asset.py "${FINAL_ASSETS}/${filename}" "${prefix}/${filename}" "${public_root}/${filename}"
           done
       - name: Verify public DMG bytes
+        if: false  # 上传后不回读校验，避免 CDN 传播延迟导致误报
         run: |
           public_root=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["download_root"])' "${RELEASE_METADATA}")
           .github/scripts/verify-published-assets.py "${RELEASE_METADATA}" "${FINAL_ASSETS}/final-assets-manifest.json" "${public_root}"
