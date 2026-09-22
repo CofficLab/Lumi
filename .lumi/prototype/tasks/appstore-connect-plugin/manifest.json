@@ -1,0 +1,39 @@
+{
+  "createdAt" : "2026-09-21T06:37:59Z",
+  "device" : {
+    "height" : 900,
+    "kind" : "desktop",
+    "scale" : 2,
+    "width" : 1440
+  },
+  "id" : "appstore-connect-plugin",
+  "schemaVersion" : 1,
+  "screens" : [
+    {
+      "createdAt" : "2026-09-21T06:50:33Z",
+      "hotspots" : [
+
+      ],
+      "htmlFileName" : "index.html",
+      "id" : "01-main-view",
+      "order" : 0,
+      "title" : "Main View",
+      "updatedAt" : "2026-09-21T06:50:33Z"
+    },
+    {
+      "createdAt" : "2026-09-21T07:14:06Z",
+      "hotspots" : [
+
+      ],
+      "htmlFileName" : "index.html",
+      "id" : "02-settings-view",
+      "order" : 1,
+      "title" : "Settings View",
+      "updatedAt" : "2026-09-21T07:14:06Z"
+    }
+  ],
+  "startScreenID" : "01-main-view",
+  "style" : "hiFi",
+  "title" : "App Store Connect Plugin",
+  "updatedAt" : "2026-09-21T07:14:40Z"
+}

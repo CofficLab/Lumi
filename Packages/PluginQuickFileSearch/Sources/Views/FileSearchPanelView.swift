@@ -1,5 +1,5 @@
 import SwiftUI
-import EditorContracts
+import ProviderEditor
 import LumiUI
 import AppKit
 

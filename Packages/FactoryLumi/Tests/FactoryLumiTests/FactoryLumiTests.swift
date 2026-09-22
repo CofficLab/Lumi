@@ -154,6 +154,18 @@ struct FactoryLumiTests {
         #expect(barItemIDs.contains("com.coffic.lumi.plugin.model-selector.action-bar-button"))
     }
 
+    @Test("makeKernel 注册当前对话 HTML 导出按钮")
+    func makeKernelRegistersConversationExportToolbarButton() throws {
+        let kernel = try KernelFactory.makeKernel()
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self) as? DefaultChatSectionProviding
+
+        #expect(
+            chat?.barItems.contains {
+                $0.id == "com.coffic.lumi.plugin.conversation-export.toolbar"
+            } == true
+        )
+    }
+
     @Test("makeKernel 创建内核并注册默认 StorageProviding")
     func makeKernelRegistersDefaultStorageProvider() throws {
         let kernel = try KernelFactory.makeKernel()
@@ -492,6 +504,8 @@ struct FactoryLumiTests {
         try kernel.start(plugins: DefaultPluginFactory().makePlugins())
         #expect(kernel.lifecycleState == .running)
         #expect(kernel.resolveProvider((any ThemeProviding).self)?.themes.count == 22)
+        // 设计类插件（图标/促销图/思维导图/简历/原型）均为 disabledByDefault，
+        // 未启用时不贡献 ActivityBar 条目，因此此处只统计默认启用的插件。
         #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.count == 10)
     }
 
@@ -503,7 +517,7 @@ struct FactoryLumiTests {
         #expect(manager != nil)
         // 默认 LLM Provider 插件注册全部内建供应商，包含 Codex 与 MLX 本地供应商。
         // 注意：总量随供应商目录变化，调整内建供应商时需要同步更新此断言。
-        #expect(manager?.providerCount == 33)
+        #expect(manager?.providerCount == 34)
         #expect(manager?.allProviders().filter { $0.providerInfo.isLocal }.count == 8)
         #expect(manager?.providerID == "llm-provider-manager")
     }

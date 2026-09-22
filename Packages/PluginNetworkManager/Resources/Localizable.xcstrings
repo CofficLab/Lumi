@@ -64,40 +64,6 @@
         }
       }
     },
-    "Active Only" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Active Only"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "仅活动"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "仅活动"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "仅活动"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "仅活动"
-          }
-        }
-      }
-    },
     "All" : {
       "localizations" : {
         "en" : {
@@ -351,6 +317,7 @@
       }
     },
     "Download" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -571,6 +538,7 @@
       }
     },
     "Fetching..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -809,6 +777,7 @@
       }
     },
     "Interface" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -909,6 +878,7 @@
       }
     },
     "Latency (Ping)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1011,6 +981,7 @@
       }
     },
     "Local IP" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1349,6 +1320,7 @@
       }
     },
     "Not Connected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1655,6 +1627,7 @@
       }
     },
     "Public IP" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2062,41 +2035,6 @@
         }
       }
     },
-    "Search..." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search..."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索…"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索…"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索…"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索…"
-          }
-        }
-      }
-    },
     "Select an HTTP exchange" : {
       "localizations" : {
         "en" : {
@@ -2166,6 +2104,7 @@
       }
     },
     "Signal" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2556,6 +2495,7 @@
       }
     },
     "Upload" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2658,6 +2598,7 @@
       }
     },
     "Wi-Fi" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

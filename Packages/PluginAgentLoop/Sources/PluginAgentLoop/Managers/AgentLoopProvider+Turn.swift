@@ -25,7 +25,22 @@ extension AgentLoopManager {
         guard resumingConversations.insert(conversationID).inserted else {
             throw AgentLoopError.invalidResumeRequest
         }
-        defer { resumingConversations.remove(conversationID) }
+        var resumeAccepted = false
+        defer {
+            resumingConversations.remove(conversationID)
+            // 无效请求可能在恢复窗口内暂时压住旧的 suspended 通知；若恢复
+            // 没有真正推进 FSM，就在退出时重新发布仍有效的挂起状态。
+            if !resumeAccepted,
+               let currentRuntime = runtimes[conversationID],
+               case .awaitingUser(let turnID, _, _, let suspension) = currentRuntime.phase,
+               currentRuntime.lastTurnID == turnID {
+                notify(.suspended(
+                    conversationID: conversationID,
+                    turnID: turnID,
+                    suspension: suspension
+                ))
+            }
+        }
         if let task = runtime.task { await task.value }
         guard case .awaitingUser(let turnID, _, let pendingToolCalls, let suspension) = runtime.phase,
               suspension.suspensionID == request.suspensionID,
@@ -69,6 +84,7 @@ extension AgentLoopManager {
         runtime.completionDelivered = false
         let (next, outcome) = TurnReducer.reduce(runtime, event: .toolCallCompleted(toolCallID: toolCallID, result: result))
         runtimes[conversationID] = next
+        resumeAccepted = true
         if let outcome { finishTurn(conversationID: conversationID, turnID: turnID, outcome: outcome); return outcome }
         if case .executingTools(let nextTurnID, let assistantMessageID, let remaining) = next.phase,
            !remaining.isEmpty {
@@ -186,7 +202,16 @@ extension AgentLoopManager {
             case .failed(let reason): self.notify(.failed(conversationID: conversationID, turnID: turnID, reason: reason))
             case .cancelled: self.notify(.cancelled(conversationID: conversationID, turnID: turnID))
             case .suspended:
-                if let suspension = suspendedState {
+                // finishTurn 通过异步任务投递通知；在 lifecycle hook await 期间，
+                // 用户可能已经恢复同一回合。只发布仍然有效的挂起点，避免旧事件
+                // 覆盖恢复后的状态或让 MessageSender 提前结束发送状态。
+                let currentRuntime = self.runtimes[conversationID]
+                let suspensionIsCurrent = !self.resumingConversations.contains(conversationID)
+                    && currentRuntime?.lastTurnID == turnID
+                    && currentRuntime?.phase.turnID == turnID
+                    && currentRuntime?.activeSuspension?.suspensionID == suspendedState?.suspensionID
+                    && self.state(for: conversationID) == .suspended
+                if suspensionIsCurrent, let suspension = suspendedState {
                     self.notify(.suspended(conversationID: conversationID, turnID: turnID, suspension: suspension))
                 }
             }

@@ -39,6 +39,14 @@ public extension AgentLoopProviding {
         nil
     }
 
+    /// 默认不抑制自动回复（保持既有行为）。
+    func isAutoReplySuppressed(for conversationID: UUID) -> Bool {
+        false
+    }
+
+    /// 默认无操作（保持既有行为）。
+    func setAutoReplySuppressed(_ suppressed: Bool, for conversationID: UUID) {}
+
     func retryTurn(
         in conversationID: UUID,
         after failedTurnID: UUID

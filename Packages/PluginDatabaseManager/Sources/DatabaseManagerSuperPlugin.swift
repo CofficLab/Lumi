@@ -1,5 +1,4 @@
-import EditorContracts
-import EditorService
+import ProviderEditor
 import KernelCore
 import ProviderActivityBar
 import ProviderChatSection
@@ -25,6 +24,7 @@ struct DatabaseManagerPlugin {
 public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.database-manager"
     public let order = 750
+    public let dependencies = ["com.coffic.lumi.plugin.editor-host"]
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.database-manager",
         name: LumiPluginLocalization.string("Database", bundle: .module),
@@ -49,10 +49,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         viewModel.embeddedEditorProvider = kernel.resolveProvider(EditorEmbeddedEditorProviding.self)
-        if let editor = kernel.resolveProvider(EditorService.self) {
-            editor.editorExtensions.registerLanguage(DatabaseSQLLanguageSupport.descriptor)
-            editor.editorExtensions.registerGrammarProvider(DatabaseSQLGrammarProvider())
-        }
+        try installEditorContributions(kernel: kernel)
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
@@ -90,6 +87,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
                 if state == .activated {
                     toolbar?.setVisibleCategories([.global])
                     railView?.setVisibleTabID(Self.railTabID)
+                    rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                     railView?.activateWidthProfile(
                         ownerID: pluginID,
                         recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
@@ -108,6 +106,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
                 } else {
                     toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+                    rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                     railView?.deactivateWidthProfile(ownerID: pluginID)
                     chat?.setVisible(true)
                     rootView?.setContentHeaderViewHidden(false)
@@ -126,6 +125,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        try withdrawEditorContributions(kernel: kernel)
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
@@ -136,6 +136,10 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
         }
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
+        if wasActive {
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
+        }
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
         kernel.resolveProvider((any ExternalFileOpening).self)?.unregisterHandlers(pluginID: id)
@@ -147,8 +151,39 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
         viewModel.embeddedEditorProvider = nil
     }
 
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        try installEditorContributions(kernel: kernel)
+        viewModel.embeddedEditorProvider = kernel.resolveProvider(EditorEmbeddedEditorProviding.self)
+    }
+
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        try withdrawEditorContributions(kernel: kernel)
+        viewModel.embeddedEditorProvider = nil
+    }
+
     public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    }
+
+    private func installEditorContributions(kernel: KernelCoreContainer) throws {
+        guard let editor = kernel.resolveProvider(EditorProviding.self) else {
+            throw KernelCoreError.providerNotRegistered(type: EditorProviding.self)
+        }
+        let bundle = EditorContributionBundle(
+            pluginID: id,
+            languages: [
+                EditorLanguageContribution(
+                    language: DatabaseSQLLanguageSupport.descriptor,
+                    grammar: DatabaseSQLGrammarProvider()
+                ),
+            ]
+        )
+        try editor.extensions.installBundle(for: id, with: bundle.stamped(pluginID: id, generation: 1))
+    }
+
+    private func withdrawEditorContributions(kernel: KernelCoreContainer) throws {
+        guard let editor = kernel.resolveProvider(EditorProviding.self) else { return }
+        try editor.extensions.installBundle(for: id, with: nil)
     }
 
     private func openSQLiteDatabase(_ url: URL) -> Bool {

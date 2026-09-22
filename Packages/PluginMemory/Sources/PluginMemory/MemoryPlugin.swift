@@ -2,9 +2,11 @@ import os
 import Foundation
 import KernelCore
 import KitSuperLog
+import ProviderSettingView
 import ProviderStorage
 import ProviderProject
 import ProviderToolManager
+import SwiftUI
 
 /// 记忆插件：把重要信息持久化到记忆系统，供 Agent 在后续对话中调用。
 ///
@@ -12,6 +14,7 @@ import ProviderToolManager
 /// - 存储目录遵循 Storage 约定：`<数据根目录>/Memory`；
 /// - 注册 4 个 Agent 工具：save_memory / recall_memory / list_memories / delete_memory；
 /// - 记忆文件为 Markdown（frontmatter 元数据 + 正文），按 global/projects 分目录。
+/// - 在设置视图中注册「记忆」入口，左侧列表 + 右侧详情形式。
 @MainActor
 public final class MemoryPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.memory", category: "Memory")
@@ -33,7 +36,6 @@ public final class MemoryPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
 
     public init() {}
 
-
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let storageProvider = kernel.resolveProvider((any StorageProviding).self),
               let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
@@ -49,6 +51,20 @@ public final class MemoryPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         toolManager.add(RecallMemoryTool(storage: storage, project: project), pluginID: id)
         toolManager.add(ListMemoriesTool(storage: storage, project: project), pluginID: id)
         toolManager.add(DeleteMemoryTool(storage: storage, project: project), pluginID: id)
+
+        // 注册设置入口
+        if let settingView = kernel.resolveProvider((any SettingViewProviding).self) {
+            settingView.addEntries([
+                SettingEntryItem(
+                    id: "\(id).settings",
+                    title: "记忆",
+                    systemImage: "brain",
+                    order: 150
+                ) {
+                    MemorySettingsView(storage: storage)
+                },
+            ])
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -60,6 +76,11 @@ public final class MemoryPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         toolManager.remove(id: "recall_memory")
         toolManager.remove(id: "list_memories")
         toolManager.remove(id: "delete_memory")
+
+        // 撤回设置入口
+        kernel.resolveProvider((any SettingViewProviding).self)?
+            .removeEntries(ids: ["\(id).settings"])
+
         storage = nil
     }
 }

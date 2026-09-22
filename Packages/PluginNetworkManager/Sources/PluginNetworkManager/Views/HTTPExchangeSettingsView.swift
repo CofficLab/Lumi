@@ -253,7 +253,7 @@ public struct HTTPExchangeSettingsView: View {
     private var domainFilter: some View {
         HStack(spacing: 6) {
             Image(systemName: "globe")
-                .font(.system(size: 11))
+                .font(.appMicro)
                 .foregroundStyle(theme.textSecondary)
             Picker(LumiPluginLocalization.string("Domain", bundle: .module), selection: $selectedDomain) {
                 Text(LumiPluginLocalization.string("All", bundle: .module)).tag(String?.none)
@@ -282,7 +282,7 @@ public struct HTTPExchangeSettingsView: View {
     private var timeRangeFilter: some View {
         HStack(spacing: 6) {
             Image(systemName: "clock")
-                .font(.system(size: 11))
+                .font(.appMicro)
                 .foregroundStyle(theme.textSecondary)
             Picker(LumiPluginLocalization.string("Time Range", bundle: .module), selection: $selectedTimeRange) {
                 ForEach(TimeRangeFilter.allCases, id: \.self) { range in

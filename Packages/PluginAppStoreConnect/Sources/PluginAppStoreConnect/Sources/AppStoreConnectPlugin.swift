@@ -12,9 +12,10 @@ import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
 import ProviderStorage
-import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
+import ProviderSkill
+import ProviderAgentRules
 import SwiftUI
 
 /// App Store Connect 管理插件。
@@ -33,6 +34,10 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
     public let order = 65
     public static let railTabID = "app-store-connect.sidebar"
     public static let settingsEntryID = "com.coffic.lumi.plugin.app-store-connect.settings"
+    private static let openToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.open"
+    private static let workspaceToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.workspace"
+    private static let submitToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.submit"
+    private static let distributionToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.distribution"
     private static let refreshToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.refresh"
 
     public let metadata = PluginMetadata(
@@ -85,7 +90,6 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
 
         let network = kernel.resolveProvider((any NetworkProviding).self)
         AppStoreConnectToolSupport.configure(network: network)
-        VM.shared.configure(toast: kernel.resolveProvider((any ToastProviding).self))
         if let network {
             VM.shared.configure(network: network)
             Task { await ScreenshotImageCache.shared.configure(network: network) }
@@ -97,6 +101,25 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
             }
         } else {
             Self.logger.error("\(Self.t) ToolManagerProviding not found")
+        }
+
+        if let skillProvider = kernel.resolveProvider((any SkillProviding).self) {
+            if !skillProvider.isProviderRegistered(providerID: id) {
+                let contributor = AppStoreConnectSkillContributor(providerID: id)
+                skillProvider.addProvider(contributor)
+                Self.logger.info("\(Self.t)Contributed \(contributor.allSkills.count) skill(s) via SkillProviding")
+            }
+        } else {
+            Self.logger.warning("\(Self.t) SkillProviding not found; skipping skill contribution")
+        }
+
+        // 注册 Agent Rule 贡献者。
+        if let ruleProvider = kernel.resolveProvider((any AgentRuleProviding).self) {
+            if !ruleProvider.isProviderRegistered(providerID: id) {
+                let contributor = AppStoreConnectRuleContributor(providerID: id)
+                ruleProvider.addProvider(contributor)
+                Self.logger.info("\(Self.t)Contributed \(contributor.allRules.count) rule(s) via AgentRuleProviding")
+            }
         }
 
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
@@ -159,21 +182,64 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
                 ownerPluginID: id
             ) { state in
                 if state == .activated {
-                    toolbar?.setVisibleCategories([.global, .general])
+                    // 激活时同时显示 Chat 区块与对话工具栏（新建对话、会话列表）。
+                    // 漏掉 `.chat` 会让 Chat 面板已显示但工具栏缺少对话上下文项。
+                    toolbar?.setVisibleCategories([.global, .chat, .general])
                     toolbar?.addToolbarItems([
+                        ToolbarItem(
+                            id: Self.openToolbarItemID,
+                            title: AppStoreConnectLocalization.string("Open App Store Connect"),
+                            placement: .leading,
+                            category: .general,
+                            ownerPluginID: pluginID,
+                            order: refreshToolbarOrder
+                        ) {
+                            AppStoreConnectOpenToolbarButton()
+                        },
+                        ToolbarItem(
+                            id: Self.workspaceToolbarItemID,
+                            title: AppStoreConnectLocalization.string("App Store Connect"),
+                            placement: .center,
+                            category: .general,
+                            ownerPluginID: pluginID,
+                            order: refreshToolbarOrder
+                        ) {
+                            AppStoreConnectWorkspaceToolbarView(viewModel: VM.shared)
+                        },
+                        ToolbarItem(
+                            id: Self.submitToolbarItemID,
+                            title: AppStoreConnectLocalization.string("Submit for Review"),
+                            placement: .trailing,
+                            category: .general,
+                            ownerPluginID: pluginID,
+                            order: refreshToolbarOrder
+                        ) {
+                            AppStoreConnectSubmitToolbarButton(viewModel: VM.shared)
+                        },
+                        ToolbarItem(
+                            id: Self.distributionToolbarItemID,
+                            title: AppStoreConnectLocalization.string("Version and Locale"),
+                            placement: .trailing,
+                            category: .general,
+                            ownerPluginID: pluginID,
+                            order: refreshToolbarOrder + 1
+                        ) {
+                            AppStoreConnectDistributionToolbarView(viewModel: VM.shared)
+                        },
                         ToolbarItem(
                             id: Self.refreshToolbarItemID,
                             title: AppStoreConnectLocalization.string("Refresh"),
                             placement: .trailing,
                             category: .general,
                             ownerPluginID: pluginID,
-                            order: refreshToolbarOrder
+                            order: refreshToolbarOrder + 2
                         ) {
                             AppStoreConnectRefreshToolbarButton(viewModel: VM.shared)
                         },
                     ])
                     rootView?.setContentHeaderViewHidden(true)
                     rail?.setVisibleTabID(Self.railTabID)
+                    rootView?.setRailViewVisible(rail?.hasVisibleTabs ?? false)
                     rail?.activateWidthProfile(
                         ownerID: pluginID,
                         recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
@@ -194,7 +260,9 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
                     chat?.setActiveContext(nil)
                     chat?.deactivateWidthProfile(ownerID: pluginID)
                     rail?.deactivateWidthProfile(ownerID: pluginID)
-                    toolbar?.removeToolbarItems(ids: [Self.refreshToolbarItemID])
+                    rail?.setVisibleCategories(Set(RailViewCategory.allCases))
+                    rootView?.setRailViewVisible(rail?.hasVisibleTabs ?? false)
+                    toolbar?.removeToolbarItems(ids: [Self.openToolbarItemID, Self.workspaceToolbarItemID, Self.submitToolbarItemID, Self.distributionToolbarItemID, Self.refreshToolbarItemID])
                 }
             },
         ])
@@ -202,7 +270,6 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
 
     public func onReady(kernel: KernelCoreContainer) throws {
         // The network can be registered after the plugin boot phase by some hosts.
-        VM.shared.configure(toast: kernel.resolveProvider((any ToastProviding).self))
         if let network = kernel.resolveProvider((any NetworkProviding).self) {
             AppStoreConnectToolSupport.configure(network: network)
             VM.shared.configure(network: network)
@@ -213,6 +280,8 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
         kernel.resolveProvider((any ToolManagerProviding).self).map { manager in
             Self.agentTools.forEach { manager.remove(id: $0.name) }
         }
+        kernel.resolveProvider((any SkillProviding).self)?.removeProvider(providerID: id)
+        kernel.resolveProvider((any AgentRuleProviding).self)?.removeProvider(providerID: id)
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: [Self.settingsEntryID])
@@ -230,12 +299,13 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
             kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RailViewProviding).self)?
                 .setVisibleCategories(Set(RailViewCategory.allCases))
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
         AppStoreConnectToolSupport.configure(network: nil)
-        VM.shared.configure(toast: nil)
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(
-            ids: [Self.refreshToolbarItemID]
+            ids: [Self.openToolbarItemID, Self.workspaceToolbarItemID, Self.refreshToolbarItemID]
         )
     }
 

@@ -21,6 +21,17 @@ final class TitleService: SuperLog {
     private let llmProvider: any LLMManaging
     private var messageObserver: (any MessageInsertedObserverHandle)?
     private var runningConversationIDs: Set<UUID> = []
+    /// 是否启用自动标题（headless agent 进程应关闭，见 `isEnabled`）。
+    private let isEnabled: Bool
+
+    /// 自动标题是否启用。
+    ///
+    /// 在 headless ACP agent 进程（`LUMI_ACP_HEADLESS=1`）中必须关闭：
+    /// ACP 客户端（编辑器）自行管理会话标题，且该进程无人应答系统对话框，
+    /// 额外的标题 LLM 请求会与用户回合争抢额度并可能阻塞。
+    static var isEnabled: Bool {
+        ProcessInfo.processInfo.environment["LUMI_ACP_HEADLESS"] != "1"
+    }
 
     init(
         kernel: KernelCoreContainer,
@@ -32,6 +43,11 @@ final class TitleService: SuperLog {
         self.conversations = conversations
         self.messages = messages
         self.llmProvider = llmProvider
+        self.isEnabled = Self.isEnabled
+        guard isEnabled else {
+            Self.logger.info("\(Self.t)自动标题已禁用（headless agent 进程）")
+            return
+        }
         installObserver()
     }
 

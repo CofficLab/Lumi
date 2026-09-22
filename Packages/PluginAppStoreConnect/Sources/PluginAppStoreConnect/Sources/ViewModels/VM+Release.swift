@@ -5,23 +5,34 @@ extension VM {
 
     /// 加载版本的发布相关信息：可选 builds、已关联 build、审核提交状态。
     func loadReleaseInfo(forceRefresh: Bool = false) async {
-        guard let app = selectedApp, let version = selectedVersion else { return }
+        guard selectedApp != nil, selectedVersion != nil else { return }
         await runBusy(forceRefresh: forceRefresh) {
-            async let buildsTask = client.listBuilds(appID: app.id, platform: version.platform)
-            async let assignedTask = client.readAssignedBuildID(versionID: version.id)
-            async let submissionTask = client.readSubmissionID(versionID: version.id)
-
-            let (fetchedBuilds, assigned, submission) = try await (buildsTask, assignedTask, submissionTask)
-            builds = fetchedBuilds
-            assignedBuildID = assigned
-            submissionID = submission
-            if let assigned, fetchedBuilds.contains(where: { $0.id == assigned }) {
-                selectedBuildID = assigned
-            } else if selectedBuildID == nil || !fetchedBuilds.contains(where: { $0.id == selectedBuildID }) {
-                selectedBuildID = fetchedBuilds.first(where: { $0.isAssignable })?.id
-            }
-            Self.logger.info("\(self.t)loadReleaseInfo builds=\(fetchedBuilds.count) assigned=\(assigned ?? "nil") submission=\(submission ?? "nil")")
+            try await reloadReleaseInfoFromNetwork()
         }
+    }
+
+    /// 重新加载当前版本的构建和提交状态。
+    ///
+    /// 调用方负责设置网络请求策略；这样分发页的全局刷新可以在同一个
+    /// `runBusy(forceRefresh: true)` 中刷新版本、本地化内容和构建，避免
+    /// 嵌套忙碌状态导致构建列表没有真正更新。
+    func reloadReleaseInfoFromNetwork() async throws {
+        guard let app = selectedApp, let version = selectedVersion else { return }
+
+        async let buildsTask = client.listBuilds(appID: app.id, platform: version.platform)
+        async let assignedTask = client.readAssignedBuildID(versionID: version.id)
+        async let submissionTask = client.readSubmissionID(versionID: version.id)
+
+        let (fetchedBuilds, assigned, submission) = try await (buildsTask, assignedTask, submissionTask)
+        builds = fetchedBuilds
+        assignedBuildID = assigned
+        submissionID = submission
+        if let assigned, fetchedBuilds.contains(where: { $0.id == assigned }) {
+            selectedBuildID = assigned
+        } else if selectedBuildID == nil || !fetchedBuilds.contains(where: { $0.id == selectedBuildID }) {
+            selectedBuildID = fetchedBuilds.first(where: { $0.isAssignable })?.id
+        }
+        Self.logger.info("\(self.t)reloadReleaseInfoFromNetwork builds=\(fetchedBuilds.count) assigned=\(assigned ?? "nil") submission=\(submission ?? "nil")")
     }
 
     // MARK: - Build Assignment

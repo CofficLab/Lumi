@@ -6,6 +6,7 @@ import os
 import ProviderConversationInput
 import ProviderProject
 import ProviderRailView
+import ProviderRootView
 import ProviderStorage
 import ProviderToast
 import SwiftUI
@@ -42,8 +43,11 @@ public final class ProjectFileTreePlugin: SuperPlugin, PluginDataMigrating, Supe
     public let order = 30
     public let metadata = PluginMetadata(
         id: pluginID,
-        name: "Project File Tree",
-        description: "Browse project files with Git status, drag-and-drop and file operations in the Explorer rail.",
+        name: LumiPluginLocalization.string("Project File Tree", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "Browse project files with Git status, drag-and-drop and file operations in the Explorer rail.",
+            bundle: .module
+        ),
         version: "1.0.0",
         category: .project,
         stage: .preview,
@@ -56,6 +60,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, PluginDataMigrating, Supe
     private var packageDependencyStore: PackageDependencyStore?
     private var projectObserver: ProjectProvidingObserver?
     private weak var railView: (any RailViewProviding)?
+    private weak var rootView: (any RootViewProviding)?
 
     public init() {}
 
@@ -123,6 +128,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, PluginDataMigrating, Supe
             return
         }
         self.railView = railView
+        rootView = kernel.resolveProvider((any RootViewProviding).self)
 
         updateExplorerTabVisibility(
             for: project?.currentProject,
@@ -141,6 +147,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, PluginDataMigrating, Supe
         fileTreeObserver = nil
         packageDependencyStore = nil
         railView?.removeTabs(ids: [Self.railTabID])
+        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         railView = nil
     }
 
@@ -159,7 +166,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, PluginDataMigrating, Supe
                 RailTabItem(
                     id: Self.railTabID,
                     category: .fileTree,
-                    title: "Explorer",
+                    title: LumiPluginLocalization.string("Explorer", bundle: .module),
                     systemImage: "square.grid.2x2.fill",
                     order: order
                 ) {
@@ -172,5 +179,6 @@ public final class ProjectFileTreePlugin: SuperPlugin, PluginDataMigrating, Supe
                 }
             ])
         }
+        rootView?.setRailViewVisible(railView.hasVisibleTabs)
     }
 }

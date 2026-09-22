@@ -1,5 +1,5 @@
 import AppKit
-import EditorContracts
+import ProviderEditor
 import SwiftUI
 
 /// 嵌入式代码/SQL 编辑器。

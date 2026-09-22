@@ -696,7 +696,12 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             return
         }
         conversationInput.addToConversation(fileURLs: urls)
-        let subtitle = urls.count == 1 ? urls[0].lastPathComponent : "\(urls.count) files"
+        let subtitle = urls.count == 1
+            ? urls[0].lastPathComponent
+            : String(
+                format: LumiPluginLocalization.string("%lld files", bundle: .module),
+                urls.count
+            )
         context?.toast?.show(
             LumiPluginLocalization.string("Sent to Conversation", bundle: .module),
             detail: subtitle,

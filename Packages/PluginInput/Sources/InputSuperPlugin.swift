@@ -102,6 +102,7 @@ public final class InputSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                         rootView?.setContentHeaderViewHidden(false)
                     }
                 },
@@ -124,6 +125,9 @@ public final class InputSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
             kernel.resolveProvider((any RootViewProviding).self)?.setRailView(
                 kernel.resolveProvider((any RailViewProviding).self)?.makeRailView()
+            )
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(
+                kernel.resolveProvider((any RailViewProviding).self)?.hasVisibleTabs ?? false
             )
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
         }

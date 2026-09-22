@@ -29,7 +29,7 @@ public struct ProcessRow: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(process.name)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.appCaptionEmphasized)
                         .lineLimit(1)
                         .foregroundColor(.primary)
 
@@ -78,7 +78,7 @@ public struct SpeedText: View {
 
     public var body: some View {
         Text(text)
-            .font(.system(size: 12, design: .monospaced))
+            .font(.appMonoCaption)
             .foregroundColor(color)
             .lineLimit(1)
             .truncationMode(.tail)

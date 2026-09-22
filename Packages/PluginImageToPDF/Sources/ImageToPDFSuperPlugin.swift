@@ -55,6 +55,7 @@ import SwiftUI
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                         rootView?.setContentHeaderViewHidden(false)
                     }
                 },
@@ -66,8 +67,12 @@ import SwiftUI
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
-        if activityBar?.activeItemID == "\(id).entry" {
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
+        activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         }
         ImageToPDFRuntimeBridge.directoryURL = nil
     }

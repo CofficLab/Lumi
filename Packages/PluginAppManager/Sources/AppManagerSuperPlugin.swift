@@ -29,7 +29,35 @@ import SwiftUI
         if let storage = kernel.resolveProvider((any StorageProviding).self) { AppManagerPlugin.pluginDataDirectoryProvider = { [pluginID = id] in storage.pluginDataDirectory(for: pluginID) } }
         let content = kernel.resolveProvider((any ContentViewProviding).self); let chat = kernel.resolveProvider((any ChatSectionProviding).self); let rail = kernel.resolveProvider((any RailViewProviding).self); let root = kernel.resolveProvider((any RootViewProviding).self); let toolbar = kernel.resolveProvider((any ToolbarProviding).self); let entry = "\(id).entry"
         rail?.addTabs([RailTabItem(id: AppManagerPlugin.railTabID, category: .system, title: LumiPluginLocalization.string("Apps", bundle: .module), systemImage: "apps.ipad", order: order) { AppRailView(viewModel: self.viewModel) }])
-        if let bar = kernel.resolveProvider((any ActivityBarProviding).self) { bar.addItems([ActivityBarItem(id: entry, title: metadata.name, systemImage: "apps.ipad", order: order, ownerPluginID: id) { state in if state == .activated { toolbar?.setVisibleCategories([.global, .system]); root?.setContentHeaderViewHidden(true); rail?.setVisibleCategories([.system]); rail?.setVisibleTabID(AppManagerPlugin.railTabID); content?.setContentView(AnyView(AppManagerView(viewModel: self.viewModel))); chat?.setVisible(false) } else { toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases)); root?.setContentHeaderViewHidden(false); chat?.setVisible(true) } }]) } else { content?.setContentView(AnyView(AppManagerView(viewModel: viewModel))) }
+        if let bar = kernel.resolveProvider((any ActivityBarProviding).self) {
+            bar.addItems([
+                ActivityBarItem(
+                    id: entry,
+                    title: metadata.name,
+                    systemImage: "apps.ipad",
+                    order: order,
+                    ownerPluginID: id
+                ) { state in
+                    if state == .activated {
+                        toolbar?.setVisibleCategories([.global, .system])
+                        root?.setContentHeaderViewHidden(true)
+                        rail?.setVisibleCategories([.system])
+                        rail?.setVisibleTabID(AppManagerPlugin.railTabID)
+                        root?.setRailViewVisible(rail?.hasVisibleTabs ?? false)
+                        content?.setContentView(AnyView(AppManagerView(viewModel: self.viewModel)))
+                        chat?.setVisible(false)
+                    } else {
+                        toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
+                        root?.setContentHeaderViewHidden(false)
+                        rail?.setVisibleCategories(Set(RailViewCategory.allCases))
+                        root?.setRailViewVisible(rail?.hasVisibleTabs ?? false)
+                        chat?.setVisible(true)
+                    }
+                },
+            ])
+        } else {
+            content?.setContentView(AnyView(AppManagerView(viewModel: viewModel)))
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -40,9 +68,11 @@ import SwiftUI
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
         }
-        kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [AppManagerPlugin.railTabID])
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        railView?.removeTabs(ids: [AppManagerPlugin.railTabID])
         if wasActive {
-            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+            railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         }
     }
 

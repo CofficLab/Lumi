@@ -1,6 +1,8 @@
 import KitAgentTool
 import KernelCore
 import ProviderChatSection
+import ProviderAgentRules
+import ProviderLifecycleHooks
 import ProviderProject
 import ProviderSettingView
 import ProviderToolManager
@@ -44,6 +46,8 @@ public final class AgentRulesPlugin: SuperPlugin, SuperLog {
     private let settingsViewModel = AgentRulesViewModel()
     private var toolbarProjectObserver: AgentRulesToolbarProjectObserver?
     private var toolbarViewModel: AgentRulesToolbarViewModel?
+    private var ruleInjectionHook: AgentRuleInjectionHook?
+    private var lifecycleHandles: [any LifecycleHookHandle] = []
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         projectObserver?.cancel()
@@ -52,6 +56,9 @@ public final class AgentRulesPlugin: SuperPlugin, SuperLog {
         toolbarViewModel?.cancel()
         toolbarProjectObserver = nil
         toolbarViewModel = nil
+        for handle in lifecycleHandles { handle.cancel() }
+        lifecycleHandles.removeAll()
+        ruleInjectionHook = nil
 
         // 配置运行时：项目服务（工具 fallback 到当前项目路径）。
         let project = kernel.resolveProvider((any ProjectProviding).self)
@@ -61,6 +68,20 @@ public final class AgentRulesPlugin: SuperPlugin, SuperLog {
             viewModel: settingsViewModel
         )
         self.projectObserver = projectObserver
+
+        // 在 LLM 请求前注入项目规则和已启用插件贡献的规则。
+        if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
+            let hook = AgentRuleInjectionHook(
+                project: project,
+                ruleProvider: kernel.resolveProvider((any AgentRuleProviding).self)
+            )
+            ruleInjectionHook = hook
+            let handle = hooks.addWillSendToLLMHook { [weak hook] context in
+                guard let hook else { return context }
+                return await hook.apply(to: context)
+            }
+            lifecycleHandles.append(handle)
+        }
 
         // 注册 Agent 工具。
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
@@ -122,6 +143,9 @@ public final class AgentRulesPlugin: SuperPlugin, SuperLog {
         projectObserver?.cancel()
         projectObserver = nil
         AgentRulesRuntime.reset()
+        for handle in lifecycleHandles { handle.cancel() }
+        lifecycleHandles.removeAll()
+        ruleInjectionHook = nil
     }
 
     // MARK: - Agent Tools

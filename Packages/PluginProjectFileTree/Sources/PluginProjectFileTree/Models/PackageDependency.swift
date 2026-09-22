@@ -1,4 +1,5 @@
 import Foundation
+import KitLocalization
 
 public enum PackageDependencyKind: String, Codable, Sendable {
     case remote
@@ -13,9 +14,9 @@ public enum PackageDependencyStatus: Equatable, Sendable {
     public var displayText: String {
         switch self {
         case .resolved:
-            return "Resolved"
+            return LumiPluginLocalization.string("Resolved", bundle: .module)
         case .unresolved:
-            return "Unresolved"
+            return LumiPluginLocalization.string("Unresolved", bundle: .module)
         case .missing(let detail):
             return detail
         }

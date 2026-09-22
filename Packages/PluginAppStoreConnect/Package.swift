@@ -27,9 +27,10 @@ let package = Package(
         .package(path: "../ProviderRootView"),
         .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderStorage"),
-        .package(path: "../ProviderToast"),
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderToolManager"),
+        .package(path: "../ProviderSkill"),
+        .package(path: "../ProviderAgentRules"),
     ],
     targets: [
         .target(
@@ -50,11 +51,16 @@ let package = Package(
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
-                .product(name: "ProviderToast", package: "ProviderToast"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderSkill", package: "ProviderSkill"),
+                .product(name: "ProviderAgentRules", package: "ProviderAgentRules"),
             ],
-            resources: [.process("Resources/Localizable.xcstrings")],
+            resources: [
+                .process("../../Resources/Localizable.xcstrings"),
+                .copy("../../Resources/Skills"),
+                .copy("../../Resources/AgentRules"),
+            ],
             linkerSettings: [.linkedFramework("Security")]
         ),
         .testTarget(
@@ -69,7 +75,10 @@ let package = Package(
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderToolbar", package: "ProviderToolbar"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderSkill", package: "ProviderSkill"),
+                .product(name: "ProviderAgentRules", package: "ProviderAgentRules"),
             ],
             path: "Tests/PluginAppStoreConnectTests"
         ),

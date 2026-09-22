@@ -8,26 +8,12 @@ public struct ProcessNetworkListView: View {
     public var body: some View {
         VStack(spacing: 0) {
             // Toolbar
-            HStack {
-                Text(LumiPluginLocalization.string("Process Monitor", bundle: .module))
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(.primary)
-
-                Spacer()
-
-                Toggle(LumiPluginLocalization.string("Active Only", bundle: .module), isOn: $viewModel.onlyActiveProcesses)
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-
-                GlassTextField(
-                    title: "搜索",
-                    text: $viewModel.processSearchText,
-                    placeholder: LumiPluginLocalization.string("Search...", bundle: .module)
-                )
-                .frame(width: 160)
-            }
-            .padding(10)
-            .background(Material.regularMaterial)
+            Text(LumiPluginLocalization.string("Process Monitor", bundle: .module))
+                .font(.appBodyEmphasized)
+                .foregroundColor(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
+                .background(Material.regularMaterial)
 
             // Table Header
             GeometryReader { geometry in

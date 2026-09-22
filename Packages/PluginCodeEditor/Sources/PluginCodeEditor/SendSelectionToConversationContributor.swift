@@ -1,5 +1,5 @@
-import EditorService
 import Foundation
+import ProviderEditor
 import ProviderConversationInput
 
 /// 将编辑器当前主选区追加到聊天输入框的右键菜单贡献者。
@@ -7,7 +7,7 @@ import ProviderConversationInput
 /// 该能力只负责“准备消息”，不直接调用 MessageSendingProviding，
 /// 让用户仍可以在发送前补充自己的指令。
 @MainActor
-public final class SendSelectionToConversationContributor: SuperEditorContextMenuContributor {
+public final class SendSelectionToConversationContributor: EditorContextMenuProviding {
     public static let contributorID = "com.coffic.lumi.plugin.code-editor.send-selection"
 
     public let id = SendSelectionToConversationContributor.contributorID
@@ -18,41 +18,33 @@ public final class SendSelectionToConversationContributor: SuperEditorContextMen
         self.conversationInput = conversationInput
     }
 
-    public func provideContextMenuItems(
-        context: EditorCommandContext,
-        state: EditorState,
-        textView: TextView?
-    ) -> [EditorContextMenuItemSuggestion] {
+    public func provideItems(context: EditorContextMenuContext) -> [EditorContextMenuItem] {
         guard conversationInput != nil,
-              context.hasSelection,
-              let textView,
-              let selectedText = Self.selectedText(in: textView),
+              let selectedText = context.selectedText,
               !selectedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return []
         }
 
         let payload = Self.messagePayload(
             selectedText: selectedText,
-            documentText: textView.string,
-            fileURL: state.currentFileURL,
-            projectRootPath: state.projectRootPath,
-            languageID: context.languageId,
-            selection: textView.selectionManager.textSelections.first?.range
+            documentText: context.documentText,
+            fileURL: context.fileURL,
+            projectRootPath: context.projectRootPath,
+            languageID: context.languageID,
+            selection: context.selection
         )
 
         return [
-            EditorContextMenuItemSuggestion(
+            EditorContextMenuItem(
                 id: Self.contributorID,
                 title: Self.localized("Send to Conversation"),
                 systemImage: "text.bubble",
-                category: EditorCommandCategory.chat.rawValue,
+                category: "chat",
                 order: 10,
+                priority: 10,
+                dedupeKey: Self.contributorID,
                 isEnabled: true,
-                metadata: EditorContributionMetadata(
-                    priority: 10,
-                    dedupeKey: Self.contributorID,
-                    whenClause: .key(.hasSelection)
-                )
+                requiresSelection: true
             ) { [weak self] in
                 guard let self, let conversationInput = self.conversationInput else { return }
                 Self.append(payload, to: conversationInput)
@@ -60,17 +52,16 @@ public final class SendSelectionToConversationContributor: SuperEditorContextMen
         ]
     }
 
-    /// 读取主选区文本。TextView 的选区使用 UTF-16 NSRange，必须通过 String
-    /// 的 Range 转换，不能直接按 Character 下标计算。
-    public static func selectedText(in textView: TextView) -> String? {
-        guard let selection = textView.selectionManager.textSelections.first?.range,
-              selection.location != NSNotFound,
-              selection.length > 0,
-              let range = Range(selection, in: textView.string) else {
+    /// 读取 UTF-16 选区文本。不能直接按 Character 下标计算。
+    public static func selectedText(in text: String, range: NSRange) -> String? {
+        guard range.location != NSNotFound,
+              range.length > 0,
+              let selection = Range(range, in: text) else {
             return nil
         }
-        return String(textView.string[range])
+        return String(text[selection])
     }
+
 
     /// 生成带文件和语言上下文的 Markdown 消息。
     public static func messagePayload(

@@ -1,5 +1,5 @@
-import EditorService
 import LumiUI
+import ProviderEditor
 import ProviderTheme
 import SwiftUI
 
@@ -7,7 +7,7 @@ import SwiftUI
 ///
 /// `ProviderTheme` 不依赖编辑器模块，因此主题只暴露通用的 accent、atmosphere
 /// 和 text 色板。编辑器插件在边界处把这些颜色映射到各个语法捕获类型，保持
-/// ProviderTheme 与 EditorService 的依赖方向单向。
+/// ProviderTheme 与编辑器 Host 的依赖方向单向。
 @MainActor
 enum CodeEditorThemeAdapter {
     static let themeIDPrefix = "com.coffic.lumi.editor.app-theme"
@@ -27,7 +27,7 @@ enum CodeEditorThemeAdapter {
         }
     }
 
-    static func palettes(for theme: ProviderTheme.LumiTheme) -> [(scheme: ColorScheme, palette: EditorSyntaxPalette)] {
+    static func palettes(for theme: ProviderTheme.LumiTheme) -> [(scheme: ColorScheme, palette: ProviderEditor.EditorSyntaxPalette)] {
         switch theme.appearanceKind {
         case .dark:
             return [(.dark, makePalette(from: theme, colorScheme: .dark))]
@@ -44,7 +44,7 @@ enum CodeEditorThemeAdapter {
     static func makePalette(
         from theme: ProviderTheme.LumiTheme,
         colorScheme: ColorScheme
-    ) -> EditorSyntaxPalette {
+    ) -> ProviderEditor.EditorSyntaxPalette {
         let palette = theme.palette
         let isDark = colorScheme == .dark
         let text = hex(palette.textPrimary, colorScheme: colorScheme)
@@ -54,7 +54,7 @@ enum CodeEditorThemeAdapter {
         let secondary = hex(palette.accentSecondary, colorScheme: colorScheme)
         let tertiary = hex(palette.accentTertiary, colorScheme: colorScheme)
 
-        return EditorSyntaxPalette(
+        return ProviderEditor.EditorSyntaxPalette(
             text: .color(text),
             insertionPointHex: text,
             invisibles: .color(tertiaryText),

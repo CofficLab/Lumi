@@ -18,6 +18,9 @@ let package = Package(
         .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderChatSection"),
+        .package(path: "../ProviderAgentRules"),
+        .package(path: "../ProviderLifecycleHooks"),
+        .package(path: "../KitLLM"),
     ],
     targets: [
         .target(
@@ -31,6 +34,9 @@ let package = Package(
                 "ProviderSettingView",
                 "ProviderToolManager",
                 "ProviderChatSection",
+                "ProviderAgentRules",
+                "ProviderLifecycleHooks",
+                "KitLLM",
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
@@ -42,6 +48,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderAgentRules", package: "ProviderAgentRules"),
             ]
         ),
     ]

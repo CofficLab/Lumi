@@ -111,7 +111,35 @@ if [ -d "$HELPERS_DIR" ]; then
     done
 fi
 
-# 4. Sign the Main App
+# 4. Sign bare executables in Contents/MacOS
+# These are standalone executables copied into the app after the target that
+# builds them has finished (for example, the embedded lumi-acp runtime).
+# They are not bundles, so the component scan above does not find them.
+echo "🔍 Signing bare executables..."
+MACOS_DIR="$APP_PATH/Contents/MacOS"
+MAIN_EXECUTABLE=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP_PATH/Contents/Info.plist" 2>/dev/null || true)
+if [ -d "$MACOS_DIR" ]; then
+    find "$MACOS_DIR" -type f -perm -111 ! -type l ! -name "$MAIN_EXECUTABLE" 2>/dev/null | while read -r executable; do
+        echo "✍️  Signing executable: $executable"
+        retry_count=0
+        while [ $retry_count -lt $MAX_RETRIES ]; do
+            if codesign --force --verbose --timestamp --sign "$IDENTITY" --options runtime "$executable" 2>&1; then
+                break
+            else
+                retry_count=$((retry_count + 1))
+                if [ $retry_count -lt $MAX_RETRIES ]; then
+                    echo "   ⚠️  Signing executable failed (attempt $retry_count/$MAX_RETRIES), retrying in ${RETRY_DELAY}s..."
+                    sleep $RETRY_DELAY
+                else
+                    echo "   ❌  Signing executable failed after $MAX_RETRIES attempts"
+                    exit 1
+                fi
+            fi
+        done
+    done
+fi
+
+# 5. Sign the Main App
 echo "✍️  Signing Main App..."
 OPTS=(--force --verbose --timestamp --sign "$IDENTITY" --options runtime)
 if [ -n "$ENTITLEMENTS" ]; then
@@ -133,6 +161,24 @@ while [ $retry_count -lt $MAX_RETRIES ]; do
     fi
 done
 
-# 5. Verify Signature
+# 6. Verify Signature
 echo "✅ Verifying signature..."
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+
+# Verify the embedded ACP runtime explicitly. A top-level app verification can
+# otherwise miss a bare executable that was not included in the app's code
+# signature hierarchy.
+ACP_HELPER="$MACOS_DIR/lumi-acp"
+if [ -f "$ACP_HELPER" ]; then
+    codesign --verify --strict --verbose=2 "$ACP_HELPER"
+    ACP_SIGNATURE=$(codesign -d --verbose=4 "$ACP_HELPER" 2>&1)
+    if ! grep -q 'flags=.*runtime' <<< "$ACP_SIGNATURE"; then
+        echo "❌ Embedded ACP helper is missing the hardened runtime"
+        exit 1
+    fi
+    if ! grep -q '^Timestamp=' <<< "$ACP_SIGNATURE"; then
+        echo "❌ Embedded ACP helper is missing a secure timestamp"
+        exit 1
+    fi
+    echo "✅ Embedded ACP helper has a hardened runtime and secure timestamp"
+fi

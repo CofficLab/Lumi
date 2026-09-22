@@ -1,7 +1,7 @@
 import AppKit
 import KitSuperLog
 import Foundation
-import EditorContracts
+import ProviderEditor
 import SwiftUI
 import os
 import os.signpost

@@ -167,20 +167,13 @@ struct ScreenshotsSection: View {
                 action: { Task { await viewModel.reloadScreenshotsForSelectedDisplayType(forceRefresh: true) } }
             )
         } else {
-            VStack(alignment: .leading, spacing: 12) {
-                if let error = viewModel.errorMessage {
-                    ErrorBanner(message: error)
-                        .padding(.horizontal)
-                }
-
-                ScreenshotFilmstrip(
-                    screenshots: viewModel.screenshots,
-                    pendingScreenshots: isEditable ? viewModel.pendingScreenshots : [],
-                    displayType: viewModel.selectedScreenshotDisplayType,
-                    onRemovePending: { viewModel.removeScreenshot($0) },
-                    onDeleteRemote: isEditable ? { screenshot in Task { await viewModel.deleteRemoteScreenshot(screenshot) } } : nil
-                )
-            }
+            ScreenshotFilmstrip(
+                screenshots: viewModel.screenshots,
+                pendingScreenshots: isEditable ? viewModel.pendingScreenshots : [],
+                displayType: viewModel.selectedScreenshotDisplayType,
+                onRemovePending: { viewModel.removeScreenshot($0) },
+                onDeleteRemote: isEditable ? { screenshot in Task { await viewModel.deleteRemoteScreenshot(screenshot) } } : nil
+            )
         }
     }
 

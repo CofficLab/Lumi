@@ -17,7 +17,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/nookery/LibGit2Swift", .branch("main")),
         .package(path: "../KernelCore"),
-        .package(path: "../EditorContracts"),
+        .package(path: "../ProviderEditor"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderGit"),
         .package(path: "../ProviderProject"),
@@ -34,7 +34,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LibGit2Swift", package: "Libgit2swift"),
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "EditorContracts", package: "EditorContracts"),
+                .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderGit", package: "ProviderGit"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
@@ -57,7 +57,7 @@ let package = Package(
             dependencies: [
                 "GitPlugin",
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "EditorContracts", package: "EditorContracts"),
+                .product(name: "ProviderEditor", package: "ProviderEditor"),
             ],
             path: "Tests"
         )

@@ -1,6 +1,5 @@
-import EditorService
-import EditorLanguageRuntime
 import KernelCore
+import ProviderEditor
 import TreeSitterBash
 import TreeSitterJavaScript
 import TreeSitterJSON
@@ -31,45 +30,40 @@ public final class CodeEditorLanguagesSuperPlugin: SuperPlugin, SuperLog {
         policy: .required
     )
 
-    private var registeredLanguageIDs: [String] = []
-    private var registeredGrammarIDs: [String] = []
     private var providers: [BuiltInGrammarProvider] = []
 
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let editor = kernel.resolveProvider(EditorService.self) else {
-            throw KernelCoreError.providerNotRegistered(type: EditorService.self)
+        guard let editor = kernel.resolveProvider(EditorProviding.self) else {
+            throw KernelCoreError.providerNotRegistered(type: EditorProviding.self)
         }
 
         let providers = Self.makeProviders()
-        for descriptor in Self.descriptors {
-            editor.editorExtensions.registerLanguage(descriptor)
+        let grammars = Dictionary(uniqueKeysWithValues: providers.map { ($0.grammarId, $0) })
+        let languages = Self.descriptors.map { descriptor in
+            EditorLanguageContribution(
+                language: descriptor,
+                grammar: grammars[descriptor.highlightLanguageId]
+            )
         }
-        for provider in providers {
-            editor.editorExtensions.registerGrammarProvider(provider)
-        }
-
-        registeredLanguageIDs = Self.descriptors.map(\.languageId)
-        registeredGrammarIDs = providers.map(\.grammarId)
+        let bundle = EditorContributionBundle(
+            pluginID: id,
+            languages: languages
+        )
+        try editor.extensions.installBundle(for: id, with: bundle.stamped(pluginID: id, generation: 1))
         self.providers = providers
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        guard let editor = kernel.resolveProvider(EditorService.self) else { return }
-        for languageID in registeredLanguageIDs {
-            editor.editorExtensions.languageRegistry.unregister(languageId: languageID)
+        if let editor = kernel.resolveProvider(EditorProviding.self) {
+            try editor.extensions.installBundle(for: id, with: nil)
         }
-        for grammarID in registeredGrammarIDs {
-            editor.editorExtensions.languageRegistry.unregisterGrammarProvider(grammarId: grammarID)
-        }
-        registeredLanguageIDs.removeAll()
-        registeredGrammarIDs.removeAll()
         providers.removeAll()
     }
 
-    public static let descriptors: [EditorLanguageRuntime.EditorLanguageDescriptor] = [
-        EditorLanguageRuntime.EditorLanguageDescriptor(
+    public static let descriptors: [EditorLanguageDescriptor] = [
+        EditorLanguageDescriptor(
             languageId: "swift",
             displayName: "Swift",
             fileExtensions: ["swift"],
@@ -79,7 +73,7 @@ public final class CodeEditorLanguagesSuperPlugin: SuperPlugin, SuperLog {
             rangeCommentClose: "*/",
             lspLanguageId: "swift"
         ),
-        EditorLanguageRuntime.EditorLanguageDescriptor(
+        EditorLanguageDescriptor(
             languageId: "javascript",
             displayName: "JavaScript",
             fileExtensions: ["js", "jsx", "mjs", "cjs"],
@@ -89,7 +83,7 @@ public final class CodeEditorLanguagesSuperPlugin: SuperPlugin, SuperLog {
             rangeCommentClose: "*/",
             lspLanguageId: "javascript"
         ),
-        EditorLanguageRuntime.EditorLanguageDescriptor(
+        EditorLanguageDescriptor(
             languageId: "typescript",
             displayName: "TypeScript",
             fileExtensions: ["ts", "mts", "cts"],
@@ -98,7 +92,7 @@ public final class CodeEditorLanguagesSuperPlugin: SuperPlugin, SuperLog {
             rangeCommentClose: "*/",
             lspLanguageId: "typescript"
         ),
-        EditorLanguageRuntime.EditorLanguageDescriptor(
+        EditorLanguageDescriptor(
             languageId: "typescriptreact",
             displayName: "TypeScript React",
             fileExtensions: ["tsx"],
@@ -108,20 +102,20 @@ public final class CodeEditorLanguagesSuperPlugin: SuperPlugin, SuperLog {
             highlightLanguageId: "tsx",
             lspLanguageId: "typescriptreact"
         ),
-        EditorLanguageRuntime.EditorLanguageDescriptor(
+        EditorLanguageDescriptor(
             languageId: "json",
             displayName: "JSON",
             fileExtensions: ["json", "jsonc"],
             lspLanguageId: "json"
         ),
-        EditorLanguageRuntime.EditorLanguageDescriptor(
+        EditorLanguageDescriptor(
             languageId: "markdown",
             displayName: "Markdown",
             fileExtensions: ["md", "markdown", "mdown", "mkd"],
             highlightLanguageId: "markdown",
             lspLanguageId: "markdown"
         ),
-        EditorLanguageRuntime.EditorLanguageDescriptor(
+        EditorLanguageDescriptor(
             languageId: "python",
             displayName: "Python",
             fileExtensions: ["py", "pyi", "pyw"],
@@ -129,7 +123,7 @@ public final class CodeEditorLanguagesSuperPlugin: SuperPlugin, SuperLog {
             lineComment: "#",
             lspLanguageId: "python"
         ),
-        EditorLanguageRuntime.EditorLanguageDescriptor(
+        EditorLanguageDescriptor(
             languageId: "shellscript",
             displayName: "Shell Script",
             fileExtensions: ["sh", "bash", "zsh"],
@@ -138,7 +132,7 @@ public final class CodeEditorLanguagesSuperPlugin: SuperPlugin, SuperLog {
             highlightLanguageId: "bash",
             lspLanguageId: "shellscript"
         ),
-        EditorLanguageRuntime.EditorLanguageDescriptor(
+        EditorLanguageDescriptor(
             languageId: "yaml",
             displayName: "YAML",
             fileExtensions: ["yaml", "yml"],

@@ -1,0 +1,4 @@
+# actionlint v1.7.7 predates GitHub's macos-26 hosted runner label.
+self-hosted-runner:
+  labels:
+    - macos-26

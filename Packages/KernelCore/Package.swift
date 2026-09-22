@@ -15,14 +15,14 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../EditorContracts"),
+        .package(path: "../ProviderEditor"),
         .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "KernelCore",
             dependencies: [
-                .product(name: "EditorContracts", package: "EditorContracts"),
+                .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
             ],
             path: "Sources/KernelCore"

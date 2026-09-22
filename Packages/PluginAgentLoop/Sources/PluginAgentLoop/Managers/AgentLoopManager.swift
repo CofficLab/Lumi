@@ -46,6 +46,9 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
     var completionWaiters: [UUID: [CompletionWaiter]] = [:]
     private var agentLoopObservers: [UUID: (AgentLoopEvent) -> Void] = [:]
 
+    /// 自动回复被抑制的会话（外部控制器托管回合，如 ACP）。
+    private var autoReplySuppressed: Set<UUID> = []
+
     // MARK: - Init
 
     init(
@@ -89,7 +92,10 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
         switch phase {
         case .idle: state = .idle
         case .requestingLLM, .executingTools, .waitingForToolJobs: state = .running
-        case .awaitingUser: state = .suspended
+        case .awaitingUser:
+            // resumeTurn 会先登记恢复意图，再异步读取消息/解析用户响应。
+            // 在这段窗口内 FSM phase 仍是 awaitingUser，但挂起已不再是当前状态。
+            state = resumingConversations.contains(conversationID) ? .running : .suspended
         case .completed: state = .completed
         case .failed: state = .failed
         case .cancelled: state = .cancelled
@@ -122,6 +128,18 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
 
     public func currentTurnID(for conversationID: UUID) -> UUID? {
         runtimes[conversationID]?.turnID
+    }
+
+    public func isAutoReplySuppressed(for conversationID: UUID) -> Bool {
+        autoReplySuppressed.contains(conversationID)
+    }
+
+    public func setAutoReplySuppressed(_ suppressed: Bool, for conversationID: UUID) {
+        if suppressed {
+            autoReplySuppressed.insert(conversationID)
+        } else {
+            autoReplySuppressed.remove(conversationID)
+        }
     }
 
     public func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {

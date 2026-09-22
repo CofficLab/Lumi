@@ -1,5 +1,4 @@
-import EditorContracts
-import EditorService
+import ProviderEditor
 import KernelCore
 import ProviderActivityBar
 import ProviderChatSection
@@ -39,7 +38,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     )
 
     private var viewModel: CodeEditorViewModel?
-    private var editor: EditorService?
+    private var editor: (any EditorProviding)?
     private var sendSelectionContributor: SendSelectionToConversationContributor?
     private var projectObserver: CodeEditorProjectObserver?
     private var themeObserver: CodeEditorThemeObserver?
@@ -68,11 +67,11 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onDisable(kernel: KernelCoreContainer) async throws {
-        uninstallContributions()
+        try uninstallContributions()
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        uninstallContributions()
+        try uninstallContributions()
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
@@ -80,8 +79,8 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     }
 
     private func installContributions(kernel: KernelCoreContainer) throws {
-        guard let editor = kernel.resolveProvider(EditorService.self) else {
-            throw KernelCoreError.providerNotRegistered(type: EditorService.self)
+        guard let editor = kernel.resolveProvider(EditorProviding.self) else {
+            throw KernelCoreError.providerNotRegistered(type: EditorProviding.self)
         }
         guard let surface = kernel.resolveProvider(EditorSurfaceProviding.self) else {
             throw KernelCoreError.providerNotRegistered(type: EditorSurfaceProviding.self)
@@ -102,11 +101,15 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
             subtitle: metadata.description.isEmpty ? nil : metadata.description,
             systemImage: "chevron.left.forwardslash.chevron.right"
         )
-        uninstallContributions()
+        try uninstallContributions()
         let sendSelectionContributor = SendSelectionToConversationContributor(
             conversationInput: kernel.resolveProvider((any ConversationInputProviding).self)
         )
-        editor.editorExtensions.registerContextMenuContributor(sendSelectionContributor)
+        let contributionBundle = EditorContributionBundle(
+            pluginID: id,
+            contextMenuProviders: [sendSelectionContributor]
+        )
+        try editor.extensions.installBundle(for: id, with: contributionBundle.stamped(pluginID: id, generation: 1))
         let viewModel = CodeEditorViewModel(editor: editor)
         viewModel.updateCurrentFile(project.currentFileURL)
         let projectObserver = CodeEditorProjectObserver(project: project) { [weak viewModel] fileURL in
@@ -163,6 +166,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                     rootView?.setContentFooterViewHidden(false)
                     // Code Editor 激活时只显示文件树，避免带出其它项目类 RailView。
                     railView?.setVisibleCategories([.fileTree])
+                    rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                         railView?.activateWidthProfile(
                             ownerID: pluginID,
                             recommended: RailViewWidth(minWidth: 240, idealWidth: 300, maxWidth: 440),
@@ -184,6 +188,8 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                     toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     rootView?.setContentHeaderViewHidden(true)
                     rootView?.setContentFooterViewHidden(true)
+                    railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+                    rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                     chat?.setActiveContext(nil)
                     chat?.deactivateWidthProfile(ownerID: pluginID)
                     railView?.deactivateWidthProfile(ownerID: pluginID)
@@ -192,10 +198,10 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         ])
     }
 
-    private func uninstallContributions() {
-        editor?.editorExtensions.unregisterContextMenuContributor(
-            id: SendSelectionToConversationContributor.contributorID
-        )
+    private func uninstallContributions() throws {
+        if let editor {
+            try editor.extensions.installBundle(for: id, with: nil)
+        }
         let ownedCurrentContent = activityBar?.activeItemID == Self.activityItemID
         if ownedCurrentContent {
             chat?.setActiveContext(nil)
@@ -208,6 +214,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
             rootView?.setContentHeaderViewHidden(true)
             rootView?.setContentFooterViewHidden(true)
             railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+            rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         }
         projectObserver?.cancel()
         projectObserver = nil

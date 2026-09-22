@@ -27,6 +27,12 @@ LumiApp/Plugins/<PluginName>/          # 或 LumiApp/Plugins-Agent/<PluginName>/
 ├── Middleware/                        # 各类中间件（按需）
 │   └── *.swift
 │
+├── Providers/                         # *Providing 契约的实现（按需）
+│   └── *Provider.swift
+│
+├── LLMProviders/                      # LLM 供应商实现（仅 PluginLLMProvider*）
+│   └── *Provider.swift
+│
 ├── Models/                            # 数据模型
 │   └── *.swift
 │
@@ -95,6 +101,70 @@ struct ExampleSendMiddleware: SendMiddleware {
 - 每个中间件一个文件，文件名与类型名一致（如 `FooSendMiddleware.swift` → `struct FooSendMiddleware`）。
 - 类型名建议以 `Middleware` 结尾，或带管线前缀（如 `…SendMiddleware`），便于与 `Services/` 等区分。
 - 对 `SendMiddleware`：通过 `ctx.chatHistoryService` 等做持久化时，注意与 `SendMessageContext` 生命周期一致；`order` 与同插件内其它中间件及全局排序（插件 `order` × 中间件 `order`）配合使用。
+
+### Providers/
+
+存放插件对内核 / 共享层 **`*Providing` 契约的实现**。这些类型是「可插拔实现」，与 `Services/` 中的业务服务职责不同，因此单独成目录。
+
+判定标准（**窄口径**）：**仅当该类型的职责就是实现某个 `*Providing` 协议时**，才放入 `Providers/`。
+
+```swift
+// Providers/NetworkProvider.swift
+public final class NetworkProvider: NetworkProviding {
+    public func request(_ request: HTTPRequest) async throws -> HTTPResponse { ... }
+}
+```
+
+**不适用情形**：若某个类型的主体身份是**服务或管理器**，只是顺带实现了 `*Providing`，则**保持在 `Services/` / `Managers/` 原处**，不迁移。例如：
+
+| 类型 | 保留位置 | 原因 |
+|------|---------|------|
+| `StorageService: StorageProviding` | `Services/`（或插件根） | 身份是「存储服务」 |
+| `ToastCenter: ToastProviding` | `Services/`（或插件根） | 身份是「通知中心」 |
+| `ToolManager: ToolManagerProviding` | `Managers/` | 身份是「管理器」 |
+| `LogoManager: LogoProviding` | 插件根 | 身份是「管理器」 |
+
+**桥接 / 适配类型**也放本目录，文件名以 `Adapter` 结尾：
+
+```swift
+// Providers/LLMNetworkProviderAdapter.swift
+public final class LLMNetworkProviderAdapter: LLMNetworkProviding {
+    private let networkProvider: any NetworkProviding
+    ...
+}
+```
+
+**注册方式**：provider 由插件在 `onBoot` 通过 `kernel.registerProvider(_:_:)` 注册、`onShutdown` 通过 `kernel.unregisterProvider(_:)` 注销（替换内核默认实现时先 `unregisterProvider` 再 `registerProvider`）。
+
+**最佳实践**：
+
+- 每个 provider 一个文件，文件名与类型名一致（如 `NetworkProvider.swift` → `final class NetworkProvider`）。
+- 类型名以 `Provider` 结尾；纯桥接类型以 `Adapter` 结尾。
+- 依赖的方向必须是「插件 → 内核/共享协议包」，不得反向（见 [内核与插件边界规范](./core-plugin-boundary-rules.md)）。
+
+**现行示例**：`PluginActivityBar/Providers/ActivityBarProvider.swift`、`PluginMessageSender/Providers/MessageSender.swift`、`PluginToolbar/Providers/ToolbarProvider.swift`。
+
+### LLMProviders/
+
+**LLM 供应商插件**（`PluginLLMProvider*`）**必须**建立 `LLMProviders/` 目录，并将**所有供应商实现文件**放入其中。这是 `Providers/` 在 LLM 供应商场景下的专用目录名，用于按供应商区分实现。
+
+```
+PluginLLMProviderAliyun/
+├── AliyunProviderPlugin.swift          # 插件入口，留在根目录
+└── LLMProviders/
+    ├── AliyunProvider.swift            # 供应商实现
+    └── AliyunTokenPlanProvider.swift   # 供应商实现（同一插件的第二个供应商）
+```
+
+**放入 `LLMProviders/`**：实现 `VendorLLMProvider` / `SuperLLMProvider` / `LumiLLMProvider` 等供应商协议的类型。
+
+**留在原位置**（不得放入）：插件入口 `*Plugin.swift`、CLI / 输出解析等辅助类型、下载器 / Runtime / 模型注册等基础设施、`Views/`、`ViewModels/`、`Capabilities/` 等。
+
+**最佳实践**：
+
+- 每个供应商一个文件，文件名与类型名一致（如 `AliyunProvider.swift` → `final class AliyunProvider`）。
+- 若一个文件同时包含供应商实现与其配置 / 模型 / 错误类型，**整文件移入** `LLMProviders/`，不拆分。
+- 一个插件可含多个供应商（如 `AliyunProvider` + `AliyunTokenPlanProvider`），全部放入同一 `LLMProviders/`。
 
 ### Models/
 
@@ -208,6 +278,7 @@ struct DockerImageListView: View {
 | 视图 | `<Feature>View.swift` | `DockerImageListView.swift` |
 | 行组件 | `<Feature>Row.swift` | `DockerImageRow.swift` |
 | 中间件 | `<Feature>Middleware.swift`、`<Pipeline>Middleware.swift`（如 `…SendMiddleware`） | `AutoConversationTitleSendMiddleware.swift` |
+| Provider | `<Feature>Provider.swift`、`<Feature>Adapter.swift` | `NetworkProvider.swift` |
 
 ### 类/结构体命名
 
@@ -220,6 +291,7 @@ struct DockerImageListView: View {
 | 视图模型 | `<Feature>ViewModel` | `DockerViewModel` |
 | 视图 | `<Feature>View` | `DockerImageListView` |
 | 中间件 | `<Feature>Middleware`、`<Feature>SendMiddleware` 等 | `AutoConversationTitleSendMiddleware` |
+| Provider | `<Feature>Provider`、`<Feature>Adapter` | `NetworkProvider`、`LLMNetworkProviderAdapter` |
 
 ---
 
@@ -311,6 +383,14 @@ struct <PluginName>Plugin: SuperPlugin, SuperLog {
 ├── Middleware/
 │   └── ExampleSendMiddleware.swift
 │
+├── Providers/
+│   ├── ExampleProvider.swift
+│   └── ExampleAdapter.swift
+│
+├── LLMProviders/
+│   ├── ExampleProvider.swift
+│   └── AnotherProvider.swift
+│
 ├── Models/
 │   ├── ModelA.swift
 │   └── ModelB.swift
@@ -361,6 +441,7 @@ struct <PluginName>Plugin: SuperPlugin, SuperLog {
 | ViewModels | ✅ | ❌ | 可能有 |
 | Views | ✅ | ✅ | 可能有 |
 | Middleware | 按需（有任意中间件类型时放在此目录） | 若有中间件则应放入 | 可能有 |
+| Providers | 按需（有 `*Providing` 实现时放在此目录） | 若有 provider 则应放入 | 可能有 |
 | 其他目录 | ❌ | ❌ | Core/, Drivers/ 等 |
 
 ### B. 检查清单
@@ -370,7 +451,7 @@ struct <PluginName>Plugin: SuperPlugin, SuperLog {
 - [ ] 目录名使用 `PascalCase`
 - [ ] 包含 `<PluginName>Plugin.swift` 主入口
 - [ ] 包含 `<PluginName>.xcstrings` 本地化文件
-- [ ] 按功能将代码放入对应子目录（含各类中间件 → `Middleware/`）
+- [ ] 按功能将代码放入对应子目录（含各类中间件 → `Middleware/`，`*Providing` 实现 → `Providers/`）
 - [ ] 遵循命名规范
 - [ ] 在 `docs/plugins/<PluginName>/` 添加 README.md 说明文档（推荐）
 

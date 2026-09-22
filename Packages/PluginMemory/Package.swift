@@ -12,9 +12,12 @@ let package = Package(
         .package(path: "../KernelCore"),
         .package(path: "../KitSuperLog"),
         .package(path: "../KitAgentTool"),
+        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderProject"),
+        .package(path: "../ProviderSettingView"),
     ],
     targets: [
         .target(
@@ -22,9 +25,12 @@ let package = Package(
             dependencies: [
                 "KernelCore",
                 "KitAgentTool",
+                "KitLocalization",
+                "LumiUI",
                 "ProviderStorage",
                 "ProviderToolManager",
                 "ProviderProject",
+                "ProviderSettingView",
             ],
             path: "Sources/PluginMemory"
         ),

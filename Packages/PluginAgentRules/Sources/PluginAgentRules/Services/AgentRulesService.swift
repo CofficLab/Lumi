@@ -1,4 +1,5 @@
 import Foundation
+import ProviderAgentRules
 
 /// Agent 规则服务
 ///
@@ -69,6 +70,37 @@ public actor AgentRulesService {
         rules.sort { $0.modifiedAt > $1.modifiedAt }
 
         return rules
+    }
+
+    /// 加载项目规则的统一 Provider 表示，供 LLM 注入和插件规则合并使用。
+    ///
+    /// 项目规则目录不存在或单个文件读取失败时返回可用的部分结果，避免规则
+    /// 管理目录问题阻断正常对话。
+    public func loadRuleDefinitions(projectPath: String) -> [AgentRuleDefinition] {
+        let directoryURL = getRulesDirectoryURL(for: projectPath)
+        guard let files = try? FileManager.default.contentsOfDirectory(
+            at: directoryURL,
+            includingPropertiesForKeys: [.contentModificationDateKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return []
+        }
+
+        return files
+            .filter { $0.pathExtension == "md" }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .compactMap { file in
+                guard let content = try? readTextFile(at: file) else { return nil }
+                let (title, description) = extractTitleAndDescription(from: content)
+                let id = file.deletingPathExtension().lastPathComponent
+                return AgentRuleDefinition(
+                    id: id,
+                    title: title,
+                    description: description,
+                    content: content,
+                    version: "project"
+                )
+            }
     }
 
     /// 读取规则文档内容

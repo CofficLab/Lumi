@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import PluginACP
 import PluginAgentRules
 import PluginAgentTempStorage
 import PluginAgentPlanStorage
@@ -13,6 +14,9 @@ import AppManagerPlugin
 import ClipboardManagerPlugin
 import BrowserPlugin
 import ComputerUsePlugin
+import PluginMCP
+import PluginXcodeMCP
+import PluginGithubMCP
 import BrewManagerPlugin
 import DisplayControlPlugin
 import PortManagerPlugin
@@ -40,12 +44,14 @@ import PluginActivityBar
 import PluginAppIconDesigner
 import PluginAppStoreConnect
 import PluginAppStorePromoDesigner
+import PluginPrototypeDesigner
 import PluginAskUser
 import PluginCaffeinate
 import PluginChatFileAttachment
 import PluginChatPanel
 import PluginChatScreenshot
 import PluginConversationBehavior
+import PluginConversationExport
 import PluginConversationVerbosity
 import PluginConversationCacheHitRate
 import PluginConversationFork
@@ -190,6 +196,7 @@ public struct DefaultPluginFactory: PluginFactory {
             AppStorePromoDesignerPlugin(),
             MindMapDesignerPlugin(),
             ResumeDesignerPlugin(),
+            PrototypeDesignerPlugin(),
             // ActivityBar 自定义实现：替换 ProviderFactory 预注册的 DefaultActivityBarProviding，
             // 必须在所有 onBoot 中调用 addItems 的业务插件（如 ResumeDesignerPlugin order=81）之前。
             PluginActivityBar(),
@@ -219,6 +226,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationStatePlugin(),
             ConversationPendingMessagePlugin(),
             ConversationForkPlugin(),
+            ConversationExportPlugin(),
             AskUserPlugin(),
             OpenInFinderPlugin(),
             OpenInXcodePlugin(),
@@ -228,6 +236,9 @@ public struct DefaultPluginFactory: PluginFactory {
             OpenInGitHubDesktopPlugin(),
             OpenInGitOKPlugin(),
             AgentTurnNotificationPlugin(),
+            // ACP Agent 端：GUI 下仅注册、不自启 stdio 服务（autoStartsServer=false），
+            // 由 headless 入口（lumi-acp）解析该实例后显式启动。
+            PluginACP(),
             DeveloperModePlugin(),
             FileLogPlugin(),
             ShowImagePlugin(),
@@ -237,6 +248,9 @@ public struct DefaultPluginFactory: PluginFactory {
             ClipboardManagerSuperPlugin(),
             BrowserSuperPlugin(),
             ComputerUseSuperPlugin(),
+            MCPPlugin(),
+            PluginXcodeMCP(),
+            PluginGithubMCP(),
             BrewManagerSuperPlugin(),
             DisplayControlSuperPlugin(),
             PortManagerSuperPlugin(),

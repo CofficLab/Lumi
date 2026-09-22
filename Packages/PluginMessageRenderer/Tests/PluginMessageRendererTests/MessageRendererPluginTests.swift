@@ -10,7 +10,7 @@ import SwiftUI
 import Testing
 @testable import PluginMessageRenderer
 
-    /// 验证 PluginMessageRenderer 的 11 个内置渲染器注册与匹配逻辑。
+    /// 验证 PluginMessageRenderer 的 12 个内置渲染器注册与匹配逻辑。
 @Suite("MessageRendererPlugin")
 @MainActor
 struct MessageRendererPluginTests {
@@ -130,11 +130,11 @@ struct MessageRendererPluginTests {
         )
     }
 
-    @Test("11 个内置渲染器全部注册")
+    @Test("12 个内置渲染器全部注册")
     func registersAllBuiltinRenderers() throws {
         let kernel = try makeKernel()
         let manager = try #require(kernel.resolveProvider((any MessageRenderingProviding).self))
-        #expect(manager.allRenderers.count == 11)
+        #expect(manager.allRenderers.count == 12)
         let ids = Set(manager.allRenderers.map(\.id))
         #expect(ids.contains("core-user-message"))
         #expect(ids.contains("core-assistant-message"))
@@ -145,6 +145,7 @@ struct MessageRendererPluginTests {
         #expect(ids.contains("core-turn-completed"))
         #expect(ids.contains("core-context-compaction"))
         #expect(ids.contains("core-agent-loop-retry"))
+        #expect(ids.contains("core-goal-task-continuation"))
         #expect(ids.contains("core-tool-step-group"))
         #expect(ids.contains("core-default-markdown"))
     }

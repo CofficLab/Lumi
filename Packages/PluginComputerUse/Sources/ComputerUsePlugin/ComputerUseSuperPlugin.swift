@@ -3,6 +3,7 @@ import Foundation
 import KernelCore
 import ProviderMessage
 import ProviderSettingView
+import ProviderRootView
 import ProviderToolManager
 import KitSuperLog
 import os
@@ -29,6 +30,14 @@ public final class ComputerUseSuperPlugin: SuperPlugin, SuperLog {
     public func onBoot(kernel: KernelCoreContainer) throws {
         let settingsState = ComputerUseSettingsState()
         self.settingsState = settingsState
+        let tools = kernel.resolveProvider((any ToolManagerProviding).self)
+        tools?.add(AccessibilityObserveTool(), pluginID: id)
+        tools?.add(AccessibilityActTool(), pluginID: id)
+        kernel.resolveProvider((any RootViewProviding).self)?.addOverlays([
+            RootOverlayItem(id: "\(id).native-control", order: 900) {
+                NativeControlRootOverlay(content: $0, state: .shared)
+            },
+        ])
         activationObserver = ApplicationActivationObserver { [weak settingsState] in
             settingsState?.refresh()
         }
@@ -56,6 +65,10 @@ public final class ComputerUseSuperPlugin: SuperPlugin, SuperLog {
         let tools = kernel.resolveProvider((any ToolManagerProviding).self)
         tools?.remove(id: ComputerObserveV2Tool.toolName)
         tools?.remove(id: ComputerActV2Tool.toolName)
+        tools?.remove(id: "accessibility_observe")
+        tools?.remove(id: "accessibility_act")
+        NativeControlCoordinator.shared.shutdown()
+        kernel.resolveProvider((any RootViewProviding).self)?.removeOverlays(ids: ["\(id).native-control"])
         activationObserver?.cancel()
         activationObserver = nil
         settingsState = nil
@@ -71,7 +84,7 @@ public struct ComputerObserveV2Tool: SuperAgentTool {
     init(service: ComputerUseService = .shared) { self.service = service }
 
     public func description(for language: LanguagePreference) -> String {
-        "Capture one allowed visible macOS application window as an image. Always observe before acting and use coordinates only from the latest observation."
+        "Capture one allowed visible macOS application window as an image without activating it. Prefer accessibility_observe for controls; screenshots are useful for visual verification and native fallback. Always use fresh coordinates."
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
@@ -114,14 +127,15 @@ public struct ComputerActV2Tool: SuperAgentTool {
     init(service: ComputerUseService = .shared) { self.service = service }
 
     public func description(for language: LanguagePreference) -> String {
-        "Execute up to 20 structured UI actions against a recent computer_observe result, then return a fresh screenshot. The target app must be allowed in Settings."
+        "Fallback only: after accessibility_observe cannot accomplish the operation, execute up to 10 UI actions (max 20 seconds) using a fresh computer_observe result. Requires reason explaining why native input is necessary. Lumi shows a desktop-control notice and pauses on user input; never bypass with shell scripts. Re-observe after interruptions; actions may have partially completed."
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
         ["type": "object", "properties": [
             "observation_id": ["type": "string"],
-            "actions": ["type": "array", "minItems": 1, "maxItems": 20],
-        ], "required": ["observation_id", "actions"], "additionalProperties": false]
+            "actions": ["type": "array", "minItems": 1, "maxItems": 10],
+            "reason": ["type": "string", "description": "Short user-facing explanation of the operation and why AX cannot perform it."],
+        ], "required": ["observation_id", "actions", "reason"], "additionalProperties": false]
     }
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
@@ -147,7 +161,7 @@ public struct ComputerActV2Tool: SuperAgentTool {
               let observationID = UUID(uuidString: rawID)
         else { throw ComputerUseError.invalidArguments("observation_id must be a UUID") }
         let actions = try ComputerUseV2Support.actions(from: arguments["actions"]?.value)
-        let result = try await service.act(observationID: observationID, actions: actions)
+        let result = try await service.act(observationID: observationID, actions: actions, reason: arguments["reason"]?.value as? String ?? "")
         return ToolCallResult(
             content: ComputerUseV2Support.resultDescription(result),
             images: [ComputerUseV2Support.imageAttachment(from: result.attachment)]

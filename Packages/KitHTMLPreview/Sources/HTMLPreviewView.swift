@@ -18,18 +18,26 @@ public struct HTMLPreviewView: View {
     /// 右键命中一个区块（`data-block` 或兜底语义块）后回调，携带区块标识与 `outerHTML`。
     var onBlockSelected: ((PromoBlockSelection) -> Void)?
 
+    /// 右键菜单中选择一个精确 DOM 元素后回调。
+    var onElementReferenceSelected: ((HTMLPreviewElementReference) -> Void)?
+    var isElementReferenceActionEnabled: Bool
+
     public init(
         htmlText: String,
         fileURL: URL? = nil,
         contentSize: CGSize? = nil,
         onWebViewResolved: ((WKWebView) -> Void)? = nil,
-        onBlockSelected: ((PromoBlockSelection) -> Void)? = nil
+        onBlockSelected: ((PromoBlockSelection) -> Void)? = nil,
+        onElementReferenceSelected: ((HTMLPreviewElementReference) -> Void)? = nil,
+        isElementReferenceActionEnabled: Bool = true
     ) {
         self.htmlText = htmlText
         self.fileURL = fileURL
         self.contentSize = contentSize
         self.onWebViewResolved = onWebViewResolved
         self.onBlockSelected = onBlockSelected
+        self.onElementReferenceSelected = onElementReferenceSelected
+        self.isElementReferenceActionEnabled = isElementReferenceActionEnabled
     }
 
     public var body: some View {
@@ -59,7 +67,9 @@ public struct HTMLPreviewView: View {
                 fileURL: fileURL,
                 containerSize: webViewSize,
                 onWebViewResolved: onWebViewResolved,
-                onBlockSelected: onBlockSelected
+                onBlockSelected: onBlockSelected,
+                onElementReferenceSelected: onElementReferenceSelected,
+                isElementReferenceActionEnabled: isElementReferenceActionEnabled
             )
             .frame(width: webViewSize.width, height: webViewSize.height)
             .scaleEffect(fitScale)
@@ -100,9 +110,15 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
     let containerSize: CGSize
     let onWebViewResolved: ((WKWebView) -> Void)?
     let onBlockSelected: ((PromoBlockSelection) -> Void)?
+    let onElementReferenceSelected: ((HTMLPreviewElementReference) -> Void)?
+    let isElementReferenceActionEnabled: Bool
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onBlockSelected: onBlockSelected)
+        Coordinator(
+            onBlockSelected: onBlockSelected,
+            onElementReferenceSelected: onElementReferenceSelected,
+            isElementReferenceActionEnabled: isElementReferenceActionEnabled
+        )
     }
 
     func makeNSView(context: Context) -> WKWebView {
@@ -111,7 +127,18 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
         // 注册消息通道：JS 把「选中区块 → 发送」事件回传给 Swift。
         // Coordinator 作为 messageHandler 必须以弱引用持有，避免 webview↔coordinator 保留环
         // （WebKit 常见坑：userContentController 强持有 handler）。
-        userContentController.add(WeakScriptMessageHandler(proxy: context.coordinator), name: Self.messageHandlerName)
+        if onBlockSelected != nil {
+            userContentController.add(
+                WeakScriptMessageHandler(proxy: context.coordinator),
+                name: Self.legacyMessageHandlerName
+            )
+        }
+        if onElementReferenceSelected != nil {
+            userContentController.add(
+                WeakScriptMessageHandler(proxy: context.coordinator),
+                name: HTMLPreviewElementBridgeScript.messageHandlerName
+            )
+        }
         config.userContentController = userContentController
 
         let webView = WKWebView(frame: CGRect(origin: .zero, size: containerSize), configuration: config)
@@ -129,6 +156,8 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
     func updateNSView(_ webView: WKWebView, context: Context) {
         // 回调指针可能变化（闭包重建），同步给 coordinator。
         context.coordinator.onBlockSelected = onBlockSelected
+        context.coordinator.onElementReferenceSelected = onElementReferenceSelected
+        context.coordinator.isElementReferenceActionEnabled = isElementReferenceActionEnabled
 
         DispatchQueue.main.async {
             onWebViewResolved?(webView)
@@ -155,12 +184,12 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
         }
 
         // 即使不重载（首次已由 didFinish 处理），也兜底确保 JS 至少注入一次。
-        if !didReload, !context.coordinator.didInjectSelectionScript {
-            context.coordinator.injectSelectionScript(into: webView)
+        if !didReload {
+            context.coordinator.injectEnabledScripts(into: webView)
         }
     }
 
-    static let messageHandlerName = "promoBlockAction"
+    static let legacyMessageHandlerName = "promoBlockAction"
 }
 
 // MARK: - Coordinator
@@ -172,40 +201,95 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
 fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
     weak var webView: WKWebView?
     var onBlockSelected: ((PromoBlockSelection) -> Void)?
+    var onElementReferenceSelected: ((HTMLPreviewElementReference) -> Void)?
+    var isElementReferenceActionEnabled: Bool
     var lastLoadKey: LoadKey?
     /// 标记当前 webview 实例是否已注入选区脚本（重载后会被重置，需重新注入）。
     var didInjectSelectionScript = false
+    var didInjectElementBridge = false
+    var navigationGeneration = 0
+    private let elementContextMenuPresenter = HTMLPreviewElementContextMenuPresenter()
 
-    init(onBlockSelected: ((PromoBlockSelection) -> Void)?) {
+    init(
+        onBlockSelected: ((PromoBlockSelection) -> Void)?,
+        onElementReferenceSelected: ((HTMLPreviewElementReference) -> Void)?,
+        isElementReferenceActionEnabled: Bool
+    ) {
         self.onBlockSelected = onBlockSelected
+        self.onElementReferenceSelected = onElementReferenceSelected
+        self.isElementReferenceActionEnabled = isElementReferenceActionEnabled
     }
 
     // MARK: WKNavigationDelegate
 
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        elementContextMenuPresenter.dismiss()
+        navigationGeneration += 1
+        didInjectSelectionScript = false
+        didInjectElementBridge = false
+    }
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        // 每次导航完成（含 fileURL 重载）后注入/重注入选区脚本。
-        injectSelectionScript(into: webView)
+        // 每次导航完成（含 fileURL 重载）后注入/重注入启用的选区脚本。
+        injectEnabledScripts(into: webView)
     }
 
     // MARK: WKScriptMessageHandler
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard message.name == _WKWebViewWrapper.messageHandlerName else { return }
-        guard let body = message.body as? [String: Any],
-              let action = body["action"] as? String,
-              action == "send" else { return }
-        let blockID = (body["blockID"] as? String) ?? "block"
-        let label = (body["label"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? blockID
-        let outerHTML = (body["outerHTML"] as? String) ?? ""
-        let selection = PromoBlockSelection(blockID: blockID, label: label, outerHTML: outerHTML)
+        if message.name == HTMLPreviewElementBridgeScript.messageHandlerName {
+            guard let request = try? HTMLPreviewContextMenuRequestDecoder.decode(body: message.body),
+                  request.navigationGeneration == navigationGeneration,
+                  let webView else { return }
+            let generation = navigationGeneration
+            elementContextMenuPresenter.present(
+                request: request,
+                in: webView,
+                isEnabled: isElementReferenceActionEnabled,
+                onSelect: { [weak self, weak webView] reference in
+                    guard let self, self.navigationGeneration == generation else { return }
+                    self.onElementReferenceSelected?(reference)
+                    guard let webView else { return }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self, weak webView] in
+                        guard self?.navigationGeneration == generation, let webView else { return }
+                        webView.evaluateJavaScript("window.__lumiElementBridge && window.__lumiElementBridge.clear()")
+                    }
+                },
+                onCancel: { [weak self, weak webView] in
+                    guard self?.navigationGeneration == generation, let webView else { return }
+                    webView.evaluateJavaScript("window.__lumiElementBridge && window.__lumiElementBridge.clear()")
+                }
+            )
+            return
+        }
+        guard message.name == _WKWebViewWrapper.legacyMessageHandlerName else { return }
+        guard let selection = PromoBlockSelection.decodeLegacyMessageBody(message.body) else { return }
         onBlockSelected?(selection)
     }
 
     // MARK: Script injection
 
+    func injectEnabledScripts(into webView: WKWebView) {
+        if onBlockSelected != nil, !didInjectSelectionScript {
+            injectSelectionScript(into: webView)
+        }
+        if onElementReferenceSelected != nil, !didInjectElementBridge {
+            injectElementBridge(into: webView)
+        }
+    }
+
     func injectSelectionScript(into webView: WKWebView) {
         webView.evaluateJavaScript(Self.selectionScript) { [weak self] _, _ in
             self?.didInjectSelectionScript = true
+        }
+    }
+
+    func injectElementBridge(into webView: WKWebView) {
+        let script = HTMLPreviewElementBridgeScript.makeSource(
+            navigationGeneration: navigationGeneration
+        )
+        webView.evaluateJavaScript(script) { [weak self] _, error in
+            self?.didInjectElementBridge = error == nil
         }
     }
 

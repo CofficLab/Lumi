@@ -68,10 +68,12 @@ enum ComputerUseAction: Equatable, Sendable {
 
     var changesState: Bool {
         switch self {
-        case .screenshot, .move, .wait: false
-        case .click, .drag, .scroll, .type, .keypress: true
+        case .screenshot, .wait: false
+        case .click, .move, .drag, .scroll, .type, .keypress: true
         }
     }
+
+    var requiresNativeInput: Bool { changesState }
 }
 
 enum ComputerMouseButton: String, Equatable, Sendable {

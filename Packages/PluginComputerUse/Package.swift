@@ -7,12 +7,14 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "PluginComputerUse", targets: ["ComputerUsePlugin"]),
+        .executable(name: "AXFixture", targets: ["AXFixture"]),
     ],
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderSettingView"),
+        .package(path: "../ProviderRootView"),
         .package(path: "../ProviderMessage"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../KitLocalization"),
@@ -26,6 +28,7 @@ let package = Package(
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
@@ -40,6 +43,10 @@ let package = Package(
                 "ComputerUsePlugin",
             ],
             path: "Tests/ComputerUsePluginTests"
+        ),
+        .executableTarget(
+            name: "AXFixture",
+            path: "Sources/AXFixture"
         ),
     ]
 )
