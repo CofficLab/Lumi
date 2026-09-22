@@ -14,7 +14,10 @@
 #   build-acp-helper.sh <arch> <destination-dir>
 #     [--config debug|release]
 #     [--scratch-path <path>]
+#     [--cache-path <path>]
 #     [--source-dir <path>]
+#     [--resources-dir <path>]
+#     [--output-name <name>]
 #     [--skip-copy]
 #
 # Arguments:
@@ -27,8 +30,13 @@
 #   --scratch-path    SwiftPM scratch directory. Defaults to
 #                     ./build/ci-acp/<arch> when CI is set, or
 #                     ./build/acp/<arch> otherwise.
-#   --source-dir      Path to the ACPBootstrap package. Defaults to
-#                     ./Packages/ACPBootstrap.
+#   --cache-path      SwiftPM dependency download cache. Defaults to
+#                     ./build/acp-cache.
+#   --source-dir      Path to the FactoryLumiACP package. Defaults to
+#                     ./Packages/FactoryLumiACP.
+#   --resources-dir   Directory for SwiftPM resource bundles. Defaults to the
+#                     destination directory.
+#   --output-name     Copied executable name (default: lumi-acp).
 #   --skip-copy       Do not copy; print the binary path and exit.
 #
 # Exit codes:
@@ -41,6 +49,7 @@ set -euo pipefail
 readonly SUPPORTED_ARCHS="arm64 x86_64"
 readonly DEFAULT_CONFIG="release"
 readonly DEPLOYMENT_TARGET="14.0"
+readonly PRODUCT_NAME="LumiACPExecutable"
 
 # ---------------------------------------------------------------------------
 # Argument parsing
@@ -56,7 +65,10 @@ shift 2
 
 config="${DEFAULT_CONFIG}"
 scratch_path=""
-source_dir="./Packages/ACPBootstrap"
+cache_path="${ACP_CACHE_PATH:-./build/acp-cache}"
+source_dir="./Packages/FactoryLumiACP"
+resources_dir=""
+output_name="lumi-acp"
 skip_copy=false
 
 while [ "$#" -gt 0 ]; do
@@ -77,12 +89,36 @@ while [ "$#" -gt 0 ]; do
       scratch_path="$2"
       shift 2
       ;;
+    --cache-path)
+      if [ "$#" -lt 2 ] || [ -z "${2:-}" ]; then
+        echo "error: --cache-path requires a value" >&2
+        exit 2
+      fi
+      cache_path="$2"
+      shift 2
+      ;;
     --source-dir)
       if [ "$#" -lt 2 ] || [ -z "${2:-}" ]; then
         echo "error: --source-dir requires a value" >&2
         exit 2
       fi
       source_dir="$2"
+      shift 2
+      ;;
+    --resources-dir)
+      if [ "$#" -lt 2 ] || [ -z "${2:-}" ]; then
+        echo "error: --resources-dir requires a value" >&2
+        exit 2
+      fi
+      resources_dir="$2"
+      shift 2
+      ;;
+    --output-name)
+      if [ "$#" -lt 2 ] || [ -z "${2:-}" ]; then
+        echo "error: --output-name requires a value" >&2
+        exit 2
+      fi
+      output_name="$2"
       shift 2
       ;;
     --skip-copy)
@@ -117,15 +153,19 @@ case "${config}" in
 esac
 
 if [ ! -d "${source_dir}" ]; then
-  echo "❌ ACPBootstrap package not found: ${source_dir}" >&2
+  echo "❌ FactoryLumiACP package not found: ${source_dir}" >&2
   exit 1
 fi
 
 if [ ! -f "${source_dir}/Package.resolved" ]; then
-  echo "❌ ACPBootstrap Package.resolved not found: ${source_dir}/Package.resolved" >&2
+  echo "❌ FactoryLumiACP Package.resolved not found: ${source_dir}/Package.resolved" >&2
   echo "   Run 'xcrun swift package --package-path ${source_dir} resolve' first." >&2
   exit 1
 fi
+
+case "${output_name}" in
+  ""|*/*|.|..) echo "❌ Invalid output name: ${output_name}" >&2; exit 2 ;;
+esac
 
 # ---------------------------------------------------------------------------
 # Defaults for scratch path
@@ -158,11 +198,15 @@ triple="${arch}-apple-macosx${DEPLOYMENT_TARGET}"
 # ---------------------------------------------------------------------------
 # Build
 # ---------------------------------------------------------------------------
-mkdir -p "${scratch_path}"
+mkdir -p "${scratch_path}" "${cache_path}"
+
+lock_file="${source_dir}/Package.resolved"
+lock_hash_before="$(shasum -a 256 "${lock_file}" | awk '{print $1}')"
 
 echo "🔧 Building ACP helper for ${arch} (${config})..."
 echo "    triple:    ${triple}"
 echo "    scratch:   ${scratch_path}"
+echo "    cache:     ${cache_path}"
 echo "    source:    ${source_dir}"
 
 started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -172,10 +216,11 @@ set +e
 xcrun swift build \
   --package-path "${source_dir}" \
   -c "${config}" \
-  --product ACPBootstrap \
+  --product "${PRODUCT_NAME}" \
   --triple "${triple}" \
   --sdk "${sdk_path}" \
   --scratch-path "${scratch_path}" \
+  --cache-path "${cache_path}" \
   --force-resolved-versions 2>&1
 build_exit=$?
 set -e
@@ -187,6 +232,14 @@ if [ "${build_exit}" -ne 0 ]; then
   exit "${build_exit}"
 fi
 
+lock_hash_after="$(shasum -a 256 "${lock_file}" | awk '{print $1}')"
+if [ "${lock_hash_before}" != "${lock_hash_after}" ]; then
+  echo "❌ ACP dependency lock changed during the build" >&2
+  echo "   before: ${lock_hash_before}" >&2
+  echo "   after:  ${lock_hash_after}" >&2
+  exit 1
+fi
+
 # ---------------------------------------------------------------------------
 # Locate binary
 # ---------------------------------------------------------------------------
@@ -194,10 +247,12 @@ set +e
 bin_dir="$(xcrun swift build \
   --package-path "${source_dir}" \
   -c "${config}" \
-  --product ACPBootstrap \
+  --product "${PRODUCT_NAME}" \
   --triple "${triple}" \
   --sdk "${sdk_path}" \
   --scratch-path "${scratch_path}" \
+  --cache-path "${cache_path}" \
+  --force-resolved-versions \
   --show-bin-path 2>/dev/null)"
 set -e
 
@@ -206,17 +261,17 @@ if [ -z "${bin_dir}" ]; then
   exit 1
 fi
 
-binary="${bin_dir}/ACPBootstrap"
+binary="${bin_dir}/${PRODUCT_NAME}"
 
 if [ ! -x "${binary}" ]; then
-  echo "❌ ACPBootstrap binary not found or not executable: ${binary}" >&2
+  echo "❌ ${PRODUCT_NAME} binary not found or not executable: ${binary}" >&2
   exit 1
 fi
 
 # ---------------------------------------------------------------------------
 # Verify architecture
 # ---------------------------------------------------------------------------
-if ! lipo -verify_arch "${arch}" "${binary}" 2>/dev/null; then
+if ! lipo "${binary}" -verify_arch "${arch}" 2>/dev/null; then
   echo "❌ Binary does not contain expected architecture: ${arch}" >&2
   echo "   actual: $(lipo -archs "${binary}" 2>/dev/null || echo 'unknown')" >&2
   exit 1
@@ -238,15 +293,19 @@ if [ -z "${dest_dir}" ]; then
 fi
 
 mkdir -p "${dest_dir}"
+if [ -z "${resources_dir}" ]; then
+  resources_dir="${dest_dir}"
+fi
+mkdir -p "${resources_dir}"
 
-# Copy the executable as lumi-acp.
-cp -f "${binary}" "${dest_dir}/lumi-acp"
-chmod 755 "${dest_dir}/lumi-acp"
+# Copy the executable under the caller-selected runtime name.
+cp -f "${binary}" "${dest_dir}/${output_name}"
+chmod 755 "${dest_dir}/${output_name}"
 
 # Copy resource bundles alongside the executable.
 for bundle in "${bin_dir}"/*.bundle; do
   [ -d "${bundle}" ] || continue
-  ditto "${bundle}" "${dest_dir}/$(basename "${bundle}")"
+  ditto "${bundle}" "${resources_dir}/$(basename "${bundle}")"
 done
 
-echo "✅ Copied lumi-acp to ${dest_dir}"
+echo "✅ Copied ${output_name} to ${dest_dir}"

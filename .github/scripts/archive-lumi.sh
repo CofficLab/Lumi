@@ -108,6 +108,8 @@ set +e
   -clonedSourcePackagesDirPath "${source_packages_path}" \
   -archivePath "${archive_path}" \
   -configuration Release \
+  -onlyUsePackageVersionsFromResolvedFile \
+  -skipPackageUpdates \
   -skipPackagePluginValidation \
   -skipPackageSignatureValidation \
   CODE_SIGN_STYLE=Manual \
@@ -116,6 +118,8 @@ set +e
   PROVISIONING_PROFILE_SPECIFIER="" \
   CODE_SIGNING_REQUIRED=NO \
   AD_HOC_CODE_SIGNING_ALLOWED=YES \
+  DEBUG_INFORMATION_FORMAT=dwarf-with-dsym \
+  GCC_GENERATE_DEBUGGING_SYMBOLS=YES \
   ARCHS="${arch}" \
   ONLY_ACTIVE_ARCH=NO \
   -showBuildTimingSummary \

@@ -6,6 +6,7 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "FactoryLumiACP", targets: ["FactoryLumiACP"]),
+        .executable(name: "LumiACPExecutable", targets: ["LumiACPExecutable"]),
     ],
     dependencies: [
         .package(path: "../KernelCore"),
@@ -199,6 +200,11 @@ let package = Package(
                 .product(name: "PluginLLMProviderMLX", package: "PluginLLMProviderMLX"),
             ],
             path: "Sources/FactoryLumiACP"
+        ),
+        .executableTarget(
+            name: "LumiACPExecutable",
+            dependencies: ["FactoryLumiACP"],
+            path: "Sources/LumiACPExecutable"
         ),
     ]
 )

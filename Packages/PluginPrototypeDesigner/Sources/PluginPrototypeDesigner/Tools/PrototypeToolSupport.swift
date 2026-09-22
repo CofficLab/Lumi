@@ -14,19 +14,36 @@ enum PrototypeToolSupport {
     /// 当前已打开项目的路径（来自 Runtime 缓存）。
     static func currentProjectPath() async -> String? {
         await MainActor.run {
-            PrototypeDesignerRuntime.currentProjectPath?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .nilIfEmpty
+            if case .conversation(let projectPath) = PrototypeConversationProjectScope.binding {
+                return normalizedProjectPath(projectPath)
+            }
+            return PrototypeDesignerRuntime.currentProjectPath
+                .flatMap { normalizedProjectPath($0) }
         }
     }
 
-    /// 当前项目的存储路径。无打开项目时抛 invalidStoragePath。
+    /// 当前调用所属项目的存储路径。Agent 工具按会话项目解析；直接 UI 调用
+    /// 才回退到当前打开项目。无项目时抛 invalidStoragePath。
     static func storagePath() async throws -> String {
         try await MainActor.run {
+            if case .conversation(let projectPath) = PrototypeConversationProjectScope.binding {
+                guard let directory = PrototypeDesignerRuntime.prototypeStorageDirectory(forProjectPath: projectPath) else {
+                    throw PrototypeStoreError.invalidStoragePath
+                }
+                return directory.path
+            }
             let path = WorkspaceStore.shared.projectStoragePath
             guard !path.isEmpty else { throw PrototypeStoreError.invalidStoragePath }
             return path
         }
+    }
+
+    private static func normalizedProjectPath(_ path: String?) -> String? {
+        guard let path = path?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty else {
+            return nil
+        }
+        return URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL.path
     }
 
     static func required(_ key: String, _ arguments: [String: ToolArgument]) throws -> String {
@@ -37,7 +54,15 @@ enum PrototypeToolSupport {
     }
 
     static func notify(projectID: String? = nil, screenID: String? = nil) async {
-        await MainActor.run { WorkspaceStore.shared.reload(selectProject: projectID, screen: screenID) }
+        await MainActor.run {
+            if case .conversation(let projectPath) = PrototypeConversationProjectScope.binding {
+                guard normalizedProjectPath(projectPath)
+                    == normalizedProjectPath(WorkspaceStore.shared.currentProjectPath) else {
+                    return
+                }
+            }
+            WorkspaceStore.shared.reload(selectProject: projectID, screen: screenID)
+        }
     }
 
     // MARK: - 摘要

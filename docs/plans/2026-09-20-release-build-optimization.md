@@ -337,7 +337,7 @@ lipo -verify_arch "$arch" "$bin_dir/ACPBootstrap"
 
 ## 7. 测试、检查命令与明确预期
 
-以下命令是后续实施后的验收入口，本次文档编写没有执行真实 archive、签名或发布。新增脚本尚待实现，不能把这些命令写成已通过的测试记录。
+以下命令是实施后的本地验收入口。脚本测试与静态检查已执行；真实签名、公证、公开发布及双架构真机验收仍须在受控 CI/preview 环境完成，不能由 mock 测试替代。
 
 ### 7.1 本地静态与脚本测试
 
@@ -352,6 +352,7 @@ bash .github/scripts/test-resolve-ci-packages.sh
 bash .github/scripts/test-release-metadata.sh
 python3 .github/scripts/test-verify-package-locks.py
 python3 .github/scripts/test-release-artifacts.py
+python3 .github/scripts/test-published-assets.py
 python3 .github/scripts/test-release-workflow.py
 python3 .github/scripts/test-release-publish-order.py
 bash .github/scripts/test-calculate-version.sh
@@ -438,7 +439,13 @@ git diff --check
 - [ ] 缓存/产物存储及总 runner 成本可接受。
 - [ ] 串行回退点和恢复步骤可实际执行，日志与文档同步更新。
 
-**当前状态：上述条目均为待实施验收，不是本次已完成结果。** 本次完成的是配置、近期记录、工具参数和官方资料的分析，以及本执行方案。发现的主要前置风险是 ACP 架构/依赖确定性、移动分支 checkout、跨 job 产物完整性和部分发布恢复；方案已将它们设置为上线门槛。
+### 实施状态（2026-09-21）
+
+Task 0–5 的代码、自动化门禁、无发布验证 workflow 与运维文档已经实现。Task 6 的编译产物缓存仍按方案保持关闭；它是独立的可选实验，不阻塞第一轮源码依赖缓存和架构级并行上线。
+
+本地已完成：脚本故障注入测试、YAML/actionlint 检查、两套 lock 来源与 revision 比较、严格解析、ACP 的 arm64/x86_64 实际构建、Lumi arm64 Release 实际构建，以及真实 App 目录的架构、dSYM、资源与符号链接门禁验证。发布代码现在使用固定 SHA、唯一 metadata、两个隔离 build job、可验证 tar/manifest、发布前 final-assets 恢复包、不可变 DMG、公开字节校验、GitHub Release 草稿和最后更新 feed 的顺序。
+
+仍需在启用生产路径前由仓库维护者完成的外部验收是：GitHub Actions 上至少三组冷/热/源码变更对照、真实 Developer ID 签名与 Apple 公证、Apple Silicon 与 Intel 真机安装/升级、ACP/Finder/RAG/MLX 功能和视觉验收。它们需要 CI secrets、Apple 服务与两类真实硬件，不能由本地静态测试替代。首次应通过 `release-build-validation.yml` 和 preview 灰度执行；未通过时按 `.github/workflows/release.md` 回退，不放宽锁定、架构或发布门禁。
 
 ## 10. 建议提交边界
 

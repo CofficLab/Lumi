@@ -76,6 +76,7 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
                     toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     chat?.setVisible(true)
                     rootView?.setRailView(railView?.makeRailView())
+                    rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                     rootView?.setContentHeaderViewHidden(false)
                     toolbar?.removeToolbarItems(ids: [refreshItemID])
                 }
@@ -89,6 +90,8 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
         activityBar?.removeItems(ids: [activityItemID])
         if wasActive {
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         }
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: [refreshItemID])
         viewModel = nil

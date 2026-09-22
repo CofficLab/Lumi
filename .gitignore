@@ -48,7 +48,7 @@ playground.xcworkspace
 
 .build/
 Packages/*/Package.resolved
-!Packages/ACPBootstrap/Package.resolved
+!Packages/FactoryLumiACP/Package.resolved
 
 # CocoaPods
 #
