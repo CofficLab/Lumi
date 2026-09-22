@@ -51,6 +51,7 @@ import PluginChatFileAttachment
 import PluginChatPanel
 import PluginChatScreenshot
 import PluginConversationBehavior
+import PluginConversationExport
 import PluginConversationVerbosity
 import PluginConversationCacheHitRate
 import PluginConversationFork
@@ -225,6 +226,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationStatePlugin(),
             ConversationPendingMessagePlugin(),
             ConversationForkPlugin(),
+            ConversationExportPlugin(),
             AskUserPlugin(),
             OpenInFinderPlugin(),
             OpenInXcodePlugin(),

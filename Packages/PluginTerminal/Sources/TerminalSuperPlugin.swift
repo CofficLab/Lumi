@@ -57,13 +57,19 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        rootView?.activateContentFooterHeightProfile(
+            ownerID: id,
+            recommended: .standard,
+            store: nil
+        )
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([
             ActivityBarItem(
                 id: "\(id).entry",
                 title: metadata.name,
                 systemImage: "terminal",
                 order: order,
-                ownerPluginID: id
+                ownerPluginID: id,
+                preservesContentFooter: true
             ) { state in
                 if state == .activated {
                     toolbar?.setVisibleCategories([.global, .project])
@@ -71,12 +77,16 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
                     rootView?.setRailView(nil)
                     rootView?.setContentHeaderViewHidden(true)
                     content?.setContentView(AnyView(TerminalV2MainView(observer: terminalProjectObserver)))
+                    rootView?.setContentFooterView(
+                        AnyView(TerminalV2BottomPanelView(observer: terminalProjectObserver))
+                    )
                 } else {
                     toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     chat?.setVisible(true)
                     rootView?.setRailView(railView?.makeRailView())
                     rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                     rootView?.setContentHeaderViewHidden(false)
+                    rootView?.setContentFooterView(nil)
                 }
             },
         ])
@@ -88,10 +98,14 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
         TerminalTabsViewModel.bottomPanel.closeAllSessions()
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == "\(id).entry"
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        if wasActive {
+            rootView?.setContentFooterView(nil)
+        }
+        rootView?.deactivateContentFooterHeightProfile(ownerID: id)
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
-            let rootView = kernel.resolveProvider((any RootViewProviding).self)
             let railView = kernel.resolveProvider((any RailViewProviding).self)
             rootView?.setRailView(railView?.makeRailView())
             rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
@@ -117,5 +131,18 @@ private struct TerminalV2MainView: View {
 
     var body: some View {
         TerminalMainView(projectPath: observer.currentPath)
+    }
+}
+
+@MainActor
+private struct TerminalV2BottomPanelView: View {
+    @ObservedObject private var observer: TerminalV2ProjectObserver
+
+    init(observer: TerminalV2ProjectObserver) {
+        self._observer = ObservedObject(wrappedValue: observer)
+    }
+
+    var body: some View {
+        TerminalMainView(projectPath: observer.currentPath, viewModel: .bottomPanel)
     }
 }

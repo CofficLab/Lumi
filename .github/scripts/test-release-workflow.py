@@ -20,7 +20,13 @@ def main() -> int:
     assert "jobs:\n  prepare:" in release and "\n  build:" in release and "\n  publish:" in release
     assert "permissions:\n      contents: read" in release
     build_section = release.split("\n  build:", 1)[1].split("\n  publish:", 1)[0]
+    publish_section = release.split("\n  publish:", 1)[1].split("\n  rebase:", 1)[0]
     assert "secrets." not in build_section
+    assert "RESTORED_ARCHIVES: restored-archives" in publish_section
+    assert 'verify-release-inputs.py "${RELEASE_METADATA}" incoming "${RESTORED_ARCHIVES}"' in publish_section
+    assert 'source_app="${RESTORED_ARCHIVES}/Lumi-${arch}.xcarchive/Products/Applications/Lumi.app"' in publish_section
+    assert '"${RESTORED_ARCHIVES}/Lumi-${arch}.xcarchive/dSYMs"' in publish_section
+    assert 'verify-release-inputs.py "${RELEASE_METADATA}" incoming temp' not in publish_section
     assert "release-archive-${{ github.run_id }}-${{ needs.prepare.outputs.build_number }}-${{ matrix.arch }}" in release
     assert "retention-days: 7" in release and "retention-days: 14" in release
     assert "secrets." not in validation
