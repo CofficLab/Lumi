@@ -38,6 +38,9 @@ def main() -> int:
     assert "--target" in text and "needs.prepare.outputs.source_sha" in text
     assert "needs: [prepare, build]" in text
     assert "contents: read" in text
+    assert 'prerelease=()' not in text
+    assert '"${prerelease[@]}"' not in text
+    assert 'gh release create "${tag}" --draft --prerelease' in text
 
     sign_dmg = (SCRIPTS / "sign-dmg.sh").read_text(encoding="utf-8")
     notarize_dmg = (SCRIPTS / "notarize-dmg.sh").read_text(encoding="utf-8")

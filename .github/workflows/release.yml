@@ -399,8 +399,13 @@ jobs:
             remote_sha=$(git rev-parse "${tag}^{commit}")
             test "${remote_sha}" = "${sha}" || { echo "Tag ${tag} points to ${remote_sha}, not ${sha}" >&2; exit 1; }
           else
-            prerelease=(); [ '${{ needs.prepare.outputs.is_prerelease }}' = true ] && prerelease=(--prerelease)
-            gh release create "${tag}" --draft --target "${sha}" "${prerelease[@]}" --title "${tag}" --notes-file "${FINAL_ASSETS}/changelog.md"
+            if [ '${{ needs.prepare.outputs.is_prerelease }}' = true ]; then
+              gh release create "${tag}" --draft --prerelease --target "${sha}" \
+                --title "${tag}" --notes-file "${FINAL_ASSETS}/changelog.md"
+            else
+              gh release create "${tag}" --draft --target "${sha}" \
+                --title "${tag}" --notes-file "${FINAL_ASSETS}/changelog.md"
+            fi
           fi
           mkdir -p existing-assets
           for file in "${FINAL_ASSETS}"/*; do
