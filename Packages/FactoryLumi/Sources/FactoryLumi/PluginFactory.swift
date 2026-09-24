@@ -141,6 +141,7 @@ import PluginWelcome
 import PluginThemePack
 import PluginThemeManager
 import PluginToolManager
+import PluginToolActivity
 import PluginToolbar
 import PluginToolbarSettings
 import PluginVideoConverter
@@ -305,6 +306,7 @@ public struct DefaultPluginFactory: PluginFactory {
             // 工具管理器：替换默认 ToolManagerProviding 并注册内置工具，
             // 必须早于 PluginAgentLoop(order=8)。
             PluginToolManager(),
+            ToolActivityPlugin(),
             AiRouterProviderPlugin(),
             AliyunProviderPlugin(),
             AnthropicProviderPlugin(),

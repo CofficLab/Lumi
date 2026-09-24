@@ -144,6 +144,12 @@ public protocol ToolManagerProviding: AnyObject {
 
     // MARK: - Records（调用记录）
 
+    /// 查询某个会话的全部工具 Job，包括进行中和已结束的调用。
+    ///
+    /// UI 活动面板只应通过这个能力读取工具状态，不应直接访问 Job
+    /// 执行器或 SwiftData 存储。
+    func jobs(forConversationID conversationID: UUID) -> [ToolJob]
+
     /// 查询某个 AgentTurn 下全部已持久化的工具调用。
     func toolCalls(for turnID: UUID) async -> [ToolCallRecord]
 
@@ -168,6 +174,12 @@ public protocol ToolManagerProviding: AnyObject {
 // MARK: - Default registration
 
 public extension ToolManagerProviding {
+    /// 尚未提供 Job 查询能力的自定义 ToolManager 默认返回空集合。
+    func jobs(forConversationID conversationID: UUID) -> [ToolJob] {
+        _ = conversationID
+        return []
+    }
+
     /// 未指定插件归属的工具使用的默认分组。
     static var builtInPluginID: String { "Built-in" }
 
