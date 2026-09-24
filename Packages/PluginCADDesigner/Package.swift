@@ -6,7 +6,7 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [.library(name: "PluginCADDesigner", targets: ["PluginCADDesigner"])],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitCADDesigner"),
         .package(path: "../ProviderContentView"),
@@ -19,7 +19,7 @@ let package = Package(
         .target(
             name: "PluginCADDesigner",
             dependencies: [
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "KitAgentTool",
                 .product(name: "KitCADDesigner", package: "KitCADDesigner"),
                 "ProviderContentView",
@@ -33,7 +33,7 @@ let package = Package(
             name: "PluginCADDesignerTests",
             dependencies: [
                 "PluginCADDesigner",
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "KitAgentTool",
                 "ProviderContentView",
                 "ProviderStorage",

@@ -10,7 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KitAgentTool"),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitLocalization"),
         .package(path: "../ProviderNetwork"),
         .package(path: "../ProviderToolManager"),
@@ -21,7 +21,7 @@ let package = Package(
             name: "PluginWebSearch",
             dependencies: [
                 "KitAgentTool",
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "KitLocalization",
                 "ProviderNetwork",
                 "ProviderToolManager",

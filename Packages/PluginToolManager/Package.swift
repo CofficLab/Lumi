@@ -14,7 +14,7 @@ let package = Package(
     dependencies: [
         .package(path: "../KitAgentTool"),
         .package(path: "../KitFileSystem"),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitLocalization"),
         .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderStorage"),
@@ -32,7 +32,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "KitFileSystem", package: "KitFileSystem"),
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
@@ -51,7 +51,7 @@ let package = Package(
             name: "PluginToolManagerTests",
             dependencies: [
                 "PluginToolManager",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),

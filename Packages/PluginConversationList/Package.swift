@@ -6,7 +6,7 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginConversationList", targets: ["PluginConversationList"])],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitSuperLog"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderChatSection"),
@@ -22,7 +22,7 @@ let package = Package(
         .package(path: "../KitLocalization"),
     ],
     targets: [.target(name: "PluginConversationList", dependencies: [
-        .product(name: "KernelCore", package: "KernelCore"),
+        .product(name: "KernelCore", package: "LumiKernel"),
         .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
         .product(name: "ProviderConversation", package: "ProviderConversation"),

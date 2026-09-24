@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginHostsManager", targets: ["PluginHostsManager"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitLocalization"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../ProviderActivityBar"),
@@ -25,7 +25,7 @@ let package = Package(
         .target(
             name: "PluginHostsManager",
             dependencies: [
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "KitLocalization",
                 "LumiUI",
                 "ProviderActivityBar",

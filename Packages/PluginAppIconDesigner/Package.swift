@@ -11,7 +11,7 @@ let package = Package(
     dependencies: [
         .package(path: "../KitAgentTool"),
         .package(path: "../KitSuperLog"),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitLocalization"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../ProviderActivityBar"),
@@ -34,7 +34,7 @@ let package = Package(
             dependencies: [
                 "KitAgentTool",
                 "KitSuperLog",
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "KitLocalization",
                 "LumiUI",
                 "ProviderActivityBar",
@@ -62,7 +62,7 @@ let package = Package(
             dependencies: [
                 "PluginAppIconDesigner",
                 "KitAgentTool",
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderAgentRules", package: "ProviderAgentRules"),
                 "ProviderActivityBar",
                 "ProviderChatSection",

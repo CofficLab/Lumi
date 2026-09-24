@@ -7,7 +7,7 @@ let package = Package(
     products: [.library(name: "PluginChatPanel", targets: ["PluginChatPanel"])],
     dependencies: [
         .package(path: "../KitSuperLog"),
-        .package(path: "../KernelCore"), .package(path: "../ProviderActivityBar"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"), .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderRootView"),
@@ -17,7 +17,7 @@ let package = Package(
     ],
     targets: [
         .target(name: "PluginChatPanel", dependencies: [
-            .product(name: "KernelCore", package: "KernelCore"),
+            .product(name: "KernelCore", package: "LumiKernel"),
             .product(name: "KitLocalization", package: "KitLocalization"),
             .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
             .product(name: "ProviderToolbar", package: "ProviderToolbar"),
@@ -32,7 +32,7 @@ let package = Package(
             name: "PluginChatPanelTests",
             dependencies: [
                 "PluginChatPanel",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),

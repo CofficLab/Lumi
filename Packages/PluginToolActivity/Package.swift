@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginToolActivity", targets: ["PluginToolActivity"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitLocalization"),
         .package(path: "../KitSuperLog"),
         .package(path: "../ProviderChatSection"),
@@ -20,7 +20,7 @@ let package = Package(
         .target(
             name: "PluginToolActivity",
             dependencies: [
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "KitLocalization",
                 "KitSuperLog",
                 "ProviderChatSection",

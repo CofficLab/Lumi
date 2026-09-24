@@ -1,3 +1,4 @@
+import Foundation
 import KernelCore
 import ProviderActivityBar
 import ProviderChatSection

@@ -7,7 +7,7 @@ let package = Package(
     products: [.library(name: "FactoryDatabaseManager", targets: ["FactoryDatabaseManager"])],
     dependencies: [
         .package(path: "../FactoryLumi"),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../PluginCodeEditorHost"),
         .package(name: "PluginDatabaseManager", path: "../PluginDatabaseManager"),
         .package(path: "../ProviderExternalFile"),
@@ -17,7 +17,7 @@ let package = Package(
             name: "FactoryDatabaseManager",
             dependencies: [
                 .product(name: "FactoryLumi", package: "FactoryLumi"),
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "PluginCodeEditorHost", package: "PluginCodeEditorHost"),
                 .product(name: "PluginDatabaseManager", package: "PluginDatabaseManager"),
                 .product(name: "ProviderExternalFile", package: "ProviderExternalFile"),
@@ -27,7 +27,7 @@ let package = Package(
             name: "FactoryDatabaseManagerTests",
             dependencies: [
                 "FactoryDatabaseManager",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
             ]
         ),
     ]

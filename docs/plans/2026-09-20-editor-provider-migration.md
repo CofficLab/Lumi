@@ -15,7 +15,7 @@
 **Files:**
 - Modify: `Packages/ProviderEditor/Package.swift`
 - Modify: all manifests and Swift imports currently referencing `EditorContracts`
-- Modify: `Packages/KernelCore/Sources/KernelCore/EditorContractsExports.swift`
+- Modify: `LumiKernel/Sources/KernelCore`
 - Test: `Packages/ProviderEditor/Tests/EditorContractsTests`
 
 **Steps:**

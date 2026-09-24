@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginOpenInCursor", targets: ["PluginOpenInCursor"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitLocalization"),
         .package(path: "../KitSuperLog"),
         .package(path: "../OpenInKit"),
@@ -22,7 +22,7 @@ let package = Package(
         .target(
             name: "PluginOpenInCursor",
             dependencies: [
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "KitLocalization",
                 "KitSuperLog",
                 "OpenInKit",
@@ -38,7 +38,7 @@ let package = Package(
             name: "PluginOpenInCursorTests",
             dependencies: [
                 "PluginOpenInCursor",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "OpenInKit", package: "OpenInKit"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),

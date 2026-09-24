@@ -15,7 +15,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../ProviderNetwork"),
         .package(path: "../ProviderAppUpdate"),
         .package(path: "../KitLocalization"),
@@ -27,7 +27,7 @@ let package = Package(
         .target(
             name: "AppUpdatePlugin",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderNetwork", package: "ProviderNetwork"),
                 .product(name: "ProviderAppUpdate", package: "ProviderAppUpdate"),
                 .product(name: "KitLocalization", package: "KitLocalization"),

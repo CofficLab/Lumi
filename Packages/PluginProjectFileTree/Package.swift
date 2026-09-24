@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginProjectFileTree", targets: ["PluginProjectFileTree"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../ProviderRailView"),
         .package(path: "../ProviderRootView"),
         .package(path: "../ProviderProject"),
@@ -25,7 +25,7 @@ let package = Package(
         .target(
             name: "PluginProjectFileTree",
             dependencies: [
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "ProviderRailView",
                 "ProviderRootView",
                 "ProviderProject",
@@ -43,7 +43,7 @@ let package = Package(
             name: "PluginProjectFileTreeTests",
             dependencies: [
                 .target(name: "PluginProjectFileTree"),
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
             ],

@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginMessageManager", targets: ["PluginMessageManager"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderStorage"),
@@ -20,7 +20,7 @@ let package = Package(
         .target(
             name: "PluginMessageManager",
             dependencies: [
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "ProviderMessage",
                 "ProviderConversation",
                 "ProviderStorage",

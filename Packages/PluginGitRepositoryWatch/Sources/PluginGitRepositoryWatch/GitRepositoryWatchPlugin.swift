@@ -1,3 +1,4 @@
+import Foundation
 import KernelCore
 import KitSuperLog
 import os
