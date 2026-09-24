@@ -217,8 +217,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationVerbosityPlugin(),
             ConversationLanguagePlugin(),
             ConversationReasoningPlugin(),
-            // 会话统计：消息计数 / 上下文用量
-            ConversationMessageCountPlugin(),
+            // 会话统计：上下文用量
             ConversationCacheHitRatePlugin(),
             ConversationSpeedPlugin(),
             ConversationAgentTurnCountPlugin(),
