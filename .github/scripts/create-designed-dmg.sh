@@ -117,13 +117,30 @@ on run argv
       open
       delay 1
       set bounds of container window to {120, 120, 840, 660}
+      close container window
+      delay 1
     end tell
   end tell
 end run
 APPLESCRIPT
 
 sync
-hdiutil detach "$MOUNT_POINT" >/dev/null
+detach_mount() {
+  local attempt
+
+  for attempt in 1 2 3 4 5; do
+    if hdiutil detach "$MOUNT_POINT" >/dev/null 2>&1; then
+      return 0
+    fi
+    echo "DMG is still busy; retrying detach (${attempt}/5): ${VOLUME_NAME}" >&2
+    sleep "$attempt"
+  done
+
+  echo "DMG remained busy after 5 detach attempts; forcing detach: ${VOLUME_NAME}" >&2
+  hdiutil detach "$MOUNT_POINT" -force >/dev/null
+}
+
+detach_mount
 MOUNT_POINT=""
 
 rm -f "$OUTPUT_PATH"
