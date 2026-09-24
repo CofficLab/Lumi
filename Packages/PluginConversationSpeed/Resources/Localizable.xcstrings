@@ -35,40 +35,6 @@
         }
       }
     },
-    "%.1f tok/s" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%.1f tok/s"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%.1f 令牌/秒"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%.1f 令牌/秒"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%.1f 令牌/秒"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%.1f 令牌/秒"
-          }
-        }
-      }
-    },
     "%.2f s" : {
       "localizations" : {
         "en" : {
