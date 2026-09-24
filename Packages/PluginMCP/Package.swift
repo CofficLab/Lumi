@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginMCP", targets: ["PluginMCP"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderStorage"),
@@ -26,7 +26,7 @@ let package = Package(
         .target(
             name: "PluginMCP",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),

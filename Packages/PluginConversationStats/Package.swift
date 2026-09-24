@@ -9,11 +9,10 @@ let package = Package(
         .library(name: "PluginConversationStats", targets: ["PluginConversationStats"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitSuperLog"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
-        .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../KitLocalization"),
@@ -22,11 +21,10 @@ let package = Package(
         .target(
             name: "PluginConversationStats",
             dependencies: [
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "KitSuperLog",
                 "ProviderChatSection",
                 "ProviderConversation",
-                "ProviderMessage",
                 "ProviderAgentLoop",
                 "LumiUI",
                 .product(name: "KitLocalization", package: "KitLocalization"),

@@ -10,7 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KitSuperLog"),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLifecycleHooks"),
@@ -20,7 +20,7 @@ let package = Package(
             name: "PluginAgentTurnNotification",
             dependencies: [
                 "KitSuperLog",
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "ProviderAgentLoop",
                 "ProviderConversation",
                 "ProviderLifecycleHooks",
@@ -31,7 +31,7 @@ let package = Package(
             name: "PluginAgentTurnNotificationTests",
             dependencies: [
                 "PluginAgentTurnNotification",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
             ],

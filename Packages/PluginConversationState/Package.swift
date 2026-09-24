@@ -8,7 +8,7 @@ let package = Package(
         .library(name: "PluginConversationState", targets: ["PluginConversationState"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderConversationState"),
         .package(path: "../KitSuperLog"),
@@ -19,7 +19,7 @@ let package = Package(
         .target(
             name: "PluginConversationState",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderConversationState", package: "ProviderConversationState"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),

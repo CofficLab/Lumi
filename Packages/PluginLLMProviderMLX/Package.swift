@@ -7,7 +7,7 @@ let package = Package(
     products: [.library(name: "PluginLLMProviderMLX", targets: ["PluginLLMProviderMLX"])],
     dependencies: [
         .package(path: "../KitSuperLog"),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderStorage"),
         .package(path: "../KitLLM"),
@@ -22,7 +22,7 @@ let package = Package(
             name: "PluginLLMProviderMLX",
             dependencies: [
                 "KitSuperLog",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "KitLLM", package: "KitLLM"),
@@ -34,7 +34,7 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginLLMProviderMLXTests",
-            dependencies: ["PluginLLMProviderMLX", .product(name: "KernelCore", package: "KernelCore"), .product(name: "ProviderLLMManager", package: "ProviderLLMManager")],
+            dependencies: ["PluginLLMProviderMLX", .product(name: "KernelCore", package: "LumiKernel"), .product(name: "ProviderLLMManager", package: "ProviderLLMManager")],
             path: "Tests/PluginLLMProviderMLXTests"
         ),
     ]

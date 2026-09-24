@@ -94,6 +94,10 @@ public final class ToolManager: ToolManagerProviding, SuperLog {
         toolExecutionManager.jobs(for: turnID)
     }
 
+    public func jobs(forConversationID conversationID: UUID) -> [ToolJob] {
+        toolExecutionManager.jobs(forConversationID: conversationID)
+    }
+
     public func job(
         forToolCallID toolCallID: String,
         conversationID: UUID,

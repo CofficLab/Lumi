@@ -62,7 +62,7 @@ graph TB
 
 ### 插件系统
 
-插件遵循 [`SuperPlugin`](Packages/KernelCore/Sources/KernelCore/Contracts/SuperPlugin.swift) 协议，可以参与注册、Boot、Ready、启用/禁用、Shutdown 和注销阶段，并贡献 Provider、工具、命令、视图、设置、编辑器扩展、菜单、本地 Web 路由等能力。
+插件遵循 [`SuperPlugin`](https://github.com/CofficLab/LumiKernel/blob/main/Sources/KernelCore/Contracts/SuperPlugin.swift) 协议，可以参与注册、Boot、Ready、启用/禁用、Shutdown 和注销阶段，并贡献 Provider、工具、命令、视图、设置、编辑器扩展、菜单、本地 Web 路由等能力。
 
 主要实现层包括：
 
@@ -144,7 +144,7 @@ swift test --package-path Packages/PluginAgentLoop
 
 ## 参与贡献
 
-欢迎在 [CofficLab/Lumi](https://github.com/CofficLab/Lumi) 提交 Issue 与 Pull Request。新功能通常实现为 `Plugin*` 包，并在 [`DefaultPluginFactory`](Packages/FactoryLumi/Sources/FactoryLumi/PluginFactory.swift) 中完成装配。建议从 [`SuperPlugin`](Packages/KernelCore/Sources/KernelCore/Contracts/SuperPlugin.swift)、现有插件以及对应的 `Provider*` 契约开始了解。
+欢迎在 [CofficLab/Lumi](https://github.com/CofficLab/Lumi) 提交 Issue 与 Pull Request。新功能通常实现为 `Plugin*` 包，并在 [`DefaultPluginFactory`](Packages/FactoryLumi/Sources/FactoryLumi/PluginFactory.swift) 中完成装配。建议从 [`SuperPlugin`](https://github.com/CofficLab/LumiKernel/blob/main/Sources/KernelCore/Contracts/SuperPlugin.swift)、现有插件以及对应的 `Provider*` 契约开始了解。
 
 ## 许可证
 

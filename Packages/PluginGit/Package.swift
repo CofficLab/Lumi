@@ -16,7 +16,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/nookery/LibGit2Swift", .branch("main")),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../ProviderEditor"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderGit"),
@@ -33,7 +33,7 @@ let package = Package(
             name: "GitPlugin",
             dependencies: [
                 .product(name: "LibGit2Swift", package: "Libgit2swift"),
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderGit", package: "ProviderGit"),
@@ -56,7 +56,7 @@ let package = Package(
             name: "GitPluginTests",
             dependencies: [
                 "GitPlugin",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
             ],
             path: "Tests"

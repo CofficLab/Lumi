@@ -8,7 +8,7 @@ let package = Package(
     products: [.library(name: "PluginCommand", targets: ["PluginCommand"])],
     dependencies: [
         .package(path: "../KitSuperLog"),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../ProviderCommand"),
         .package(path: "../ProviderStorage"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
@@ -19,7 +19,7 @@ let package = Package(
             name: "PluginCommand",
             dependencies: [
                 "KitSuperLog",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderCommand", package: "ProviderCommand"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "LumiUI", package: "LumiUI"),

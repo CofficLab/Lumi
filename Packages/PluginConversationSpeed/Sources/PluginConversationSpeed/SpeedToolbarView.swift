@@ -40,7 +40,7 @@ struct SpeedToolbarView: View {
                 providerID: viewModel.providerID,
                 speedHistory: viewModel.speedHistory
             )
-            .frame(width: 360)
+            .frame(width: 420)
         }
         .onChange(of: viewModel.selectedConversationID) { _, newValue in
             if newValue == nil {
@@ -53,9 +53,6 @@ struct SpeedToolbarView: View {
         guard let cachedTPS = viewModel.cachedTPS else {
             return "—"
         }
-        return String(
-            format: LumiPluginLocalization.string("%.1f tok/s", bundle: .module),
-            cachedTPS
-        )
+        return String(format: "%.1f", cachedTPS)
     }
 }

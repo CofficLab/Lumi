@@ -124,6 +124,7 @@ expect_contains "${ARGS}" "DEBUG_INFORMATION_FORMAT=dwarf-with-dsym" "forces a v
 expect_contains "${ARGS}" "GCC_GENERATE_DEBUGGING_SYMBOLS=YES" "keeps debug symbols enabled for dSYM generation"
 expect_contains "${ARGS}" "ARCHS=arm64" "targets only arm64"
 expect_contains "${ARGS}" "ONLY_ACTIVE_ARCH=NO" "keeps ONLY_ACTIVE_ARCH=NO"
+expect_contains "${ARGS}" "-disableAutomaticPackageResolution" "disables automatic package resolution during archive"
 expect_contains "${ARGS}" "-onlyUsePackageVersionsFromResolvedFile" "enforces resolved dependency versions during archive"
 expect_contains "${ARGS}" "-skipPackageUpdates" "prevents dependency updates during archive"
 expect_contains "${ARGS}" "-skipPackagePluginValidation" "keeps plugin validation skip"

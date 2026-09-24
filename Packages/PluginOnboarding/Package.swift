@@ -10,7 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KitSuperLog"),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../ProviderOnboarding"),
         .package(path: "../ProviderRootView"),
         .package(path: "../ProviderStorage"),
@@ -22,7 +22,7 @@ let package = Package(
             name: "PluginOnboarding",
             dependencies: [
                 "KitSuperLog",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
@@ -35,7 +35,7 @@ let package = Package(
             name: "PluginOnboardingTests",
             dependencies: [
                 "PluginOnboarding",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),

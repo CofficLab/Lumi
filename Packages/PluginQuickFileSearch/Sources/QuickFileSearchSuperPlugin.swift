@@ -1,4 +1,5 @@
 import KernelCore
+import ProviderEditor
 import ProviderDocsView
 import ProviderProject
 import ProviderRootView

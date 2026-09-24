@@ -8,7 +8,7 @@ let package = Package(
     products: [.library(name: "PluginCodeEditorHost", targets: ["PluginCodeEditorHost"])],
     dependencies: [
         .package(path: "../KitSuperLog"),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../ProviderEditor"),
         .package(path: "../KitEditorKernel"),
         .package(path: "../KitEditorSource"),
@@ -49,7 +49,7 @@ let package = Package(
             name: "PluginCodeEditorHost",
             dependencies: [
                 "KitSuperLog",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 "EditorService",
                 .product(name: "EditorSource", package: "KitEditorSource"),
@@ -77,7 +77,7 @@ let package = Package(
             name: "PluginCodeEditorHostTests",
             dependencies: [
                 "PluginCodeEditorHost",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 "EditorService",
             ]

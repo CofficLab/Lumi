@@ -8,7 +8,7 @@ let package = Package(
         .library(name: "PluginAgentLoopRetry", targets: ["PluginAgentLoopRetry"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitSuperLog"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderLifecycleHooks"),
@@ -18,7 +18,7 @@ let package = Package(
         .target(
             name: "PluginAgentLoopRetry",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
