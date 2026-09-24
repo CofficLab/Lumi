@@ -17,7 +17,7 @@ let package = Package(
     dependencies: [
         .package(path: "../ProviderEditor"),
         .package(path: "../PluginCodeEditorHost"),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderChatSection"),
@@ -44,7 +44,7 @@ let package = Package(
             name: "DatabaseManagerPlugin",
             dependencies: [
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
@@ -87,7 +87,7 @@ let package = Package(
                 "DatabaseManagerPlugin",
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "PluginCodeEditorHost", package: "PluginCodeEditorHost"),
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),

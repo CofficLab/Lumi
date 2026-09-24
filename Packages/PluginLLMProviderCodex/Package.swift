@@ -14,7 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitLLM"),
         .package(path: "../KitSuperLog"),
         .package(path: "../ProviderLLMManager"),
@@ -24,7 +24,7 @@ let package = Package(
         .target(
             name: "PluginLLMProviderCodex",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),

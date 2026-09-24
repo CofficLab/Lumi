@@ -11,7 +11,7 @@ let package = Package(
         .library(name: "PluginLLMProviderAliyun", targets: ["PluginLLMProviderAliyun"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),
         .package(path: "../ProviderNetwork"),
@@ -21,7 +21,7 @@ let package = Package(
         .target(
             name: "PluginLLMProviderAliyun",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "ProviderNetwork", package: "ProviderNetwork"),
@@ -33,7 +33,7 @@ let package = Package(
             name: "PluginLLMProviderAliyunTests",
             dependencies: [
                 "PluginLLMProviderAliyun",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
             ],
             path: "Tests/PluginLLMProviderAliyunTests"

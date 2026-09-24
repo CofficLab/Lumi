@@ -8,7 +8,7 @@ let package = Package(
         .library(name: "PluginXcodeMCP", targets: ["PluginXcodeMCP"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitMCP"),
         .package(path: "../ProviderMCP"),
         .package(path: "../KitSuperLog"),
@@ -17,7 +17,7 @@ let package = Package(
         .target(
             name: "PluginXcodeMCP",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitMCP", package: "KitMCP"),
                 .product(name: "ProviderMCP", package: "ProviderMCP"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),

@@ -16,7 +16,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KitSuperLog"),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitLocalization"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../ProviderDocsView"),
@@ -28,7 +28,7 @@ let package = Package(
             name: "PluginIdleTime",
             dependencies: [
                 "KitSuperLog",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
@@ -49,7 +49,7 @@ let package = Package(
             name: "PluginIdleTimeTests",
             dependencies: [
                 "PluginIdleTime",
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "ProviderIdleTime",
             ],
             path: "Tests/PluginIdleTimeTests"

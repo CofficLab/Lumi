@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginAskUser", targets: ["PluginAskUser"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitSuperLog"),
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
@@ -29,7 +29,7 @@ let package = Package(
         .target(
             name: "PluginAskUser",
             dependencies: [
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "KitAgentTool",
                 "LumiUI",
                 "ProviderConversation",
@@ -48,7 +48,7 @@ let package = Package(
             name: "PluginAskUserTests",
             dependencies: [
                 "PluginAskUser",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),

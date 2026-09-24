@@ -15,7 +15,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitSuperLog"),
         .package(path: "../ProviderGit"),
         .package(path: "../ProviderGitRepositoryWatch"),
@@ -31,7 +31,7 @@ let package = Package(
         .target(
             name: "PluginGitWorkspace",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderGit", package: "ProviderGit"),
                 .product(name: "ProviderGitRepositoryWatch", package: "ProviderGitRepositoryWatch"),
@@ -50,7 +50,7 @@ let package = Package(
             name: "PluginGitWorkspaceTests",
             dependencies: [
                 "PluginGitWorkspace",
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "ProviderActivityBar",
                 "ProviderChatSection",
                 "ProviderContentView",

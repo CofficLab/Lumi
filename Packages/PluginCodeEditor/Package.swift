@@ -11,7 +11,7 @@ let package = Package(
     dependencies: [
         .package(path: "../KitSuperLog"),
         .package(path: "../KitLocalization"),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../PluginCodeEditorHost"),
         .package(path: "../ProviderEditor"),
         .package(path: "../ProviderActivityBar"),
@@ -34,7 +34,7 @@ let package = Package(
             dependencies: [
                 "KitSuperLog",
                 "KitLocalization",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
@@ -55,7 +55,7 @@ let package = Package(
             name: "PluginCodeEditorTests",
             dependencies: [
                 "PluginCodeEditor",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "PluginCodeEditorHost", package: "PluginCodeEditorHost"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),

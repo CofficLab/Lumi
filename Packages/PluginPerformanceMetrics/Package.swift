@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginPerformanceMetrics", targets: ["PluginPerformanceMetrics"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitLocalization"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../ProviderPerformanceMetrics"),
@@ -20,7 +20,7 @@ let package = Package(
         .target(
             name: "PluginPerformanceMetrics",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderPerformanceMetrics", package: "ProviderPerformanceMetrics"),

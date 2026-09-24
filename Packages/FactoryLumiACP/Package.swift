@@ -9,7 +9,7 @@ let package = Package(
         .executable(name: "LumiACPExecutable", targets: ["LumiACPExecutable"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitLLM"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderAgentLoop"),
@@ -106,7 +106,7 @@ let package = Package(
         .target(
             name: "FactoryLumiACP",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),

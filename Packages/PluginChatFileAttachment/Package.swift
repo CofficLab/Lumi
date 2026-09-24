@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginChatFileAttachment", targets: ["PluginChatFileAttachment"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitSuperLog"),
         .package(path: "../KitLocalization"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
@@ -22,7 +22,7 @@ let package = Package(
         .target(
             name: "PluginChatFileAttachment",
             dependencies: [
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "KitSuperLog",
                 "KitLocalization",
                 "LumiUI",
@@ -37,7 +37,7 @@ let package = Package(
             name: "PluginChatFileAttachmentTests",
             dependencies: [
                 "PluginChatFileAttachment",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
             ]
         ),

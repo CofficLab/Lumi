@@ -4,7 +4,7 @@ import Testing
 
 @MainActor
 @Test func statisticsPackageCanBeImported() async throws {
-    #expect(ConversationMessageCountPlugin().id == "com.coffic.lumi.plugin.conversation-message-count")
+    #expect(ConversationAgentTurnCountPlugin().id == "com.coffic.lumi.plugin.conversation-agent-turn-count")
 }
 
 @Test @MainActor func toolbarStatesForwardTypedEvents() {
@@ -19,43 +19,6 @@ import Testing
     agentHandle.cancel()
     agentState.markAgentLoopChanged(conversationID: conversationID)
     #expect(agentEvents == 2)
-
-    let messageState = MessageCountToolbarState()
-    var messageEvents = 0
-    let messageHandle = messageState.addObserver { _ in messageEvents += 1 }
-    messageState.setSelectedConversationID(conversationID)
-    messageState.markMessagesChanged(conversationID: conversationID)
-    #expect(messageEvents == 2)
-    messageHandle.cancel()
-    messageState.markMessagesChanged(conversationID: conversationID)
-    #expect(messageEvents == 2)
-}
-
-@Test @MainActor func toolbarStatesSuppressRepeatedSelectionAndForwardClearing() {
-    let firstConversationID = UUID()
-    let secondConversationID = UUID()
-    let messageState = MessageCountToolbarState()
-    var messageEvents: [String] = []
-    let messageHandle = messageState.addObserver { event in
-        switch event {
-        case .selectedConversationChanged(let id):
-            messageEvents.append("selection:\(id?.uuidString ?? "none")")
-        case .messagesChanged(let id):
-            messageEvents.append("messages:\(id.uuidString)")
-        }
-    }
-
-    messageState.setSelectedConversationID(firstConversationID)
-    messageState.setSelectedConversationID(firstConversationID)
-    messageState.setSelectedConversationID(nil)
-    messageState.markMessagesChanged(conversationID: secondConversationID)
-
-    #expect(messageEvents == [
-        "selection:\(firstConversationID.uuidString)",
-        "selection:none",
-        "messages:\(secondConversationID.uuidString)",
-    ])
-    messageHandle.cancel()
 }
 
 @Test @MainActor func agentTurnStateSeparatesObserversAndMakesCancellationIdempotent() {

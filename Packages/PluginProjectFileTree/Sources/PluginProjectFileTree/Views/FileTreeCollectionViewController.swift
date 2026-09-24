@@ -485,6 +485,14 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         menu.addItem(.separator())
         
         menu.addItem(menuItem(
+            title: LumiPluginLocalization.string("Send to Conversation", bundle: .module),
+            action: #selector(sendToConversation(_:)),
+            urls: conversationTargets,
+            enabled: context?.conversationInput != nil
+        ))
+        menu.addItem(.separator())
+        
+        menu.addItem(menuItem(
             title: LumiPluginLocalization.string("Reveal in Finder", bundle: .module),
             action: #selector(revealInFinder(_:)),
             url: url
@@ -498,12 +506,6 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             title: LumiPluginLocalization.string("Open in Terminal", bundle: .module),
             action: #selector(openInTerminal(_:)),
             url: url
-        ))
-        menu.addItem(menuItem(
-            title: LumiPluginLocalization.string("Send to Conversation", bundle: .module),
-            action: #selector(sendToConversation(_:)),
-            urls: conversationTargets,
-            enabled: context?.conversationInput != nil
         ))
         menu.addItem(menuItem(
             title: LumiPluginLocalization.string("Copy Path", bundle: .module),

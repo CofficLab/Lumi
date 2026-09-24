@@ -128,8 +128,13 @@ jobs:
       - name: Strictly resolve locked dependencies
         run: |
           set -euo pipefail
-          .github/scripts/resolve-ci-packages.sh Lumi.xcodeproj Lumi "${SOURCE_PACKAGES_PATH}" \
-            --derived-data-path "${DERIVED_DATA_PATH}"
+          if [ "${{ steps.xcode-cache.outputs.cache-hit }}" = "true" ]; then
+            .github/scripts/resolve-ci-packages.sh Lumi.xcodeproj Lumi "${SOURCE_PACKAGES_PATH}" \
+              --derived-data-path "${DERIVED_DATA_PATH}" --cache-hit
+          else
+            .github/scripts/resolve-ci-packages.sh Lumi.xcodeproj Lumi "${SOURCE_PACKAGES_PATH}" \
+              --derived-data-path "${DERIVED_DATA_PATH}"
+          fi
           before=$(shasum -a 256 Packages/FactoryLumiACP/Package.resolved | awk '{print $1}')
           mkdir -p "${ACP_CACHE_PATH}" "${ACP_SCRATCH_ROOT}/resolve"
           xcrun swift package --package-path Packages/FactoryLumiACP --cache-path "${ACP_CACHE_PATH}" \
@@ -399,8 +404,13 @@ jobs:
             remote_sha=$(git rev-parse "${tag}^{commit}")
             test "${remote_sha}" = "${sha}" || { echo "Tag ${tag} points to ${remote_sha}, not ${sha}" >&2; exit 1; }
           else
-            prerelease=(); [ '${{ needs.prepare.outputs.is_prerelease }}' = true ] && prerelease=(--prerelease)
-            gh release create "${tag}" --draft --target "${sha}" "${prerelease[@]}" --title "${tag}" --notes-file "${FINAL_ASSETS}/changelog.md"
+            if [ '${{ needs.prepare.outputs.is_prerelease }}' = true ]; then
+              gh release create "${tag}" --draft --prerelease --target "${sha}" \
+                --title "${tag}" --notes-file "${FINAL_ASSETS}/changelog.md"
+            else
+              gh release create "${tag}" --draft --target "${sha}" \
+                --title "${tag}" --notes-file "${FINAL_ASSETS}/changelog.md"
+            fi
           fi
           mkdir -p existing-assets
           for file in "${FINAL_ASSETS}"/*; do

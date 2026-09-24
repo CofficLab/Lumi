@@ -11,7 +11,7 @@ let package = Package(
     dependencies: [
         .package(path: "../KitSuperLog"),
         .package(path: "../KitAgentTool"),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitLocalization"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../ProviderActivityBar"),
@@ -32,7 +32,7 @@ let package = Package(
             dependencies: [
                 "KitSuperLog",
                 "KitAgentTool",
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "KitLocalization",
                 "LumiUI",
                 "ProviderActivityBar",
@@ -57,7 +57,7 @@ let package = Package(
             dependencies: [
                 "PluginMindMapDesigner",
                 "KitAgentTool",
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),

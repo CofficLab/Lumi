@@ -15,7 +15,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../ProviderActivityBar"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../KitSuperLog"),
@@ -27,7 +27,7 @@ let package = Package(
         .target(
             name: "PluginActivityBar",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
@@ -40,7 +40,7 @@ let package = Package(
             name: "PluginActivityBarTests",
             dependencies: [
                 "PluginActivityBar",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),

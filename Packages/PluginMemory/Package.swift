@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginMemory", targets: ["PluginMemory"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitSuperLog"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitLocalization"),
@@ -23,7 +23,7 @@ let package = Package(
         .target(
             name: "PluginMemory",
             dependencies: [
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "KitAgentTool",
                 "KitLocalization",
                 "LumiUI",
@@ -38,7 +38,7 @@ let package = Package(
             name: "PluginMemoryTests",
             dependencies: [
                 "PluginMemory",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),

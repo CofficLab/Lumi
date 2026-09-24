@@ -8,19 +8,19 @@ let package = Package(
         .library(name: "ProviderPluginControl", targets: ["ProviderPluginControl"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
     ],
     targets: [
         .target(
             name: "ProviderPluginControl",
-            dependencies: [.product(name: "KernelCore", package: "KernelCore")],
+            dependencies: [.product(name: "KernelCore", package: "LumiKernel")],
             path: "Sources/ProviderPluginControl"
         ),
         .testTarget(
             name: "ProviderPluginControlTests",
             dependencies: [
                 "ProviderPluginControl",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
             ]
         ),
     ]

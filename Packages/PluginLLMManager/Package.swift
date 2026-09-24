@@ -12,7 +12,7 @@ let package = Package(
         .library(name: "PluginLLMManager", targets: ["PluginLLMManager"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),
@@ -27,7 +27,7 @@ let package = Package(
         .target(
             name: "PluginLLMManager",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "KitLLM", package: "KitLLM"),
@@ -45,7 +45,7 @@ let package = Package(
             name: "PluginLLMManagerTests",
             dependencies: [
                 "PluginLLMManager",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "KitLLM", package: "KitLLM"),

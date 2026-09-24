@@ -10,7 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KitAgentTool"),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitSuperLog"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../ProviderDocsView"),
@@ -21,7 +21,7 @@ let package = Package(
             name: "PluginOcr",
             dependencies: [
                 "KitAgentTool",
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "LumiUI",
                 "ProviderDocsView",
                 "ProviderToolManager",

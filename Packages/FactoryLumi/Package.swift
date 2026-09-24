@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "FactoryLumi", targets: ["FactoryLumi"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitLocalization"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../PluginAppIconDesigner"),
@@ -100,6 +100,7 @@ let package = Package(
         .package(path: "../PluginAgentLoop"),
         .package(path: "../PluginAgentLoopRetry"),
         .package(path: "../PluginToolManager"),
+        .package(path: "../PluginToolActivity"),
         .package(path: "../PluginToolbar"),
         .package(path: "../PluginFileLog"),
         .package(path: "../PluginShowImage"),
@@ -207,7 +208,7 @@ let package = Package(
         .target(
             name: "FactoryLumi",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "PluginAppIconDesigner", package: "PluginAppIconDesigner"),
@@ -299,6 +300,7 @@ let package = Package(
                 .product(name: "PluginAgentLoop", package: "PluginAgentLoop"),
                 .product(name: "PluginAgentLoopRetry", package: "PluginAgentLoopRetry"),
                 .product(name: "PluginToolManager", package: "PluginToolManager"),
+                .product(name: "PluginToolActivity", package: "PluginToolActivity"),
                 .product(name: "PluginToolbar", package: "PluginToolbar"),
                 .product(name: "PluginFileLog", package: "PluginFileLog"),
                 .product(name: "PluginShowImage", package: "PluginShowImage"),

@@ -7,7 +7,7 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginRClick", targets: ["RClickPlugin"])],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderChatSection"),
@@ -24,7 +24,7 @@ let package = Package(
 .target(
             name: "RClickPlugin",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),

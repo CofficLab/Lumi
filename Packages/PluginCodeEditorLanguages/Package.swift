@@ -9,7 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KitSuperLog"),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../ProviderEditor"),
         .package(path: "../PluginCodeEditorHost"),
         .package(path: "../KitEditorLanguageRuntime"),
@@ -30,7 +30,7 @@ let package = Package(
             name: "PluginCodeEditorLanguages",
             dependencies: [
                 "KitSuperLog",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "TreeSitterSwift", package: "tree-sitter-swift"),
                 .product(name: "TreeSitterJavaScript", package: "tree-sitter-javascript"),
@@ -47,7 +47,7 @@ let package = Package(
             name: "PluginCodeEditorLanguagesTests",
             dependencies: [
                 "PluginCodeEditorLanguages",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "PluginCodeEditorHost", package: "PluginCodeEditorHost"),
                 .product(name: "EditorLanguageRuntime", package: "KitEditorLanguageRuntime"),

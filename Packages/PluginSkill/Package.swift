@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginSkill", targets: ["PluginSkill"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../KitLLM"),
         .package(path: "../KitSuperLog"),
         .package(path: "../ProviderChatSection"),
@@ -24,7 +24,7 @@ let package = Package(
         .target(
             name: "PluginSkill",
             dependencies: [
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "LumiUI",
                 "ProviderChatSection",
                 "ProviderLifecycleHooks",
@@ -43,7 +43,7 @@ let package = Package(
             name: "PluginSkillTests",
             dependencies: [
                 "PluginSkill",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
