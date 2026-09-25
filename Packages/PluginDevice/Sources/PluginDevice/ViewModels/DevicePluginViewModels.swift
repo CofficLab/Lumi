@@ -1,6 +1,5 @@
 import Combine
 import Foundation
-import SwiftUI
 
 @MainActor
 final class StorageManagerViewModel: ObservableObject {
@@ -36,7 +35,6 @@ final class DevicePluginViewModels: ObservableObject {
     let cpuHistory = DeviceHistoryViewModel<CPUDataPoint>()
     let gpuHistory = DeviceHistoryViewModel<GPUDataPoint>()
     let memoryHistory = DeviceHistoryViewModel<MemoryDataPoint>()
-    private var cancellables = Set<AnyCancellable>()
 
     init() {
         deviceData = DeviceData()
@@ -48,23 +46,5 @@ final class DevicePluginViewModels: ObservableObject {
         storage = StorageManagerViewModel()
         systemMonitor = SystemMonitorViewModel()
         menuBar = DeviceInfoMenuBarContentViewModel()
-
-        let publishers: [AnyPublisher<Void, Never>] = [
-            cpu.objectWillChange.map { _ in () }.eraseToAnyPublisher(),
-            memory.objectWillChange.map { _ in () }.eraseToAnyPublisher(),
-            memorySettings.objectWillChange.map { _ in () }.eraseToAnyPublisher(),
-            gpu.objectWillChange.map { _ in () }.eraseToAnyPublisher(),
-            battery.objectWillChange.map { _ in () }.eraseToAnyPublisher(),
-            storage.objectWillChange.map { _ in () }.eraseToAnyPublisher(),
-            systemMonitor.objectWillChange.map { _ in () }.eraseToAnyPublisher(),
-            menuBar.objectWillChange.map { _ in () }.eraseToAnyPublisher(),
-            cpuHistory.objectWillChange.map { _ in () }.eraseToAnyPublisher(),
-            gpuHistory.objectWillChange.map { _ in () }.eraseToAnyPublisher(),
-            memoryHistory.objectWillChange.map { _ in () }.eraseToAnyPublisher(),
-            deviceData.objectWillChange.map { _ in () }.eraseToAnyPublisher(),
-        ]
-        Publishers.MergeMany(publishers)
-            .sink { [weak self] _ in self?.objectWillChange.send() }
-            .store(in: &cancellables)
     }
 }
