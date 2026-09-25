@@ -96,7 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiKernel.git",
       "state" : {
-        "revision" : "8fa80b0bf87bb4700fe81d622e16be917e91f35a"
+        "branch" : "main",
+        "revision" : "d48f2cf8696dfa0dc3653b79d6e8013d71d7a71a"
       }
     },
     {

@@ -7,7 +7,7 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginMessageListEmpty", targets: ["PluginMessageListEmpty"])],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../KitLocalization"),
         .package(path: "../KitSuperLog"),

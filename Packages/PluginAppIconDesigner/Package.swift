@@ -11,7 +11,7 @@ let package = Package(
     dependencies: [
         .package(path: "../KitAgentTool"),
         .package(path: "../KitSuperLog"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitLocalization"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../ProviderActivityBar"),

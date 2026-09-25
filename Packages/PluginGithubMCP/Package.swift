@@ -8,7 +8,7 @@ let package = Package(
         .library(name: "PluginGithubMCP", targets: ["PluginGithubMCP"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitMCP"),
         .package(path: "../ProviderMCP"),
         .package(path: "../KitSuperLog"),

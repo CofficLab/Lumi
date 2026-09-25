@@ -10,7 +10,7 @@ let package = Package(
         .executable(name: "AXFixture", targets: ["AXFixture"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderSettingView"),
