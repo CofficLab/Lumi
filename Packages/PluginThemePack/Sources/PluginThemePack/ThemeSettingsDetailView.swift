@@ -125,13 +125,13 @@ struct ThemeSettingsDetailView: View {
         VStack(spacing: 0) {
             VStack(spacing: 10) {
                 AppSearchBar(text: $searchText, placeholder: "搜索主题")
-                Picker("主题类型", selection: $appearanceFilter) {
-                    ForEach(ThemeAppearanceFilter.allCases) { filter in
-                        Text(filter.title).tag(filter)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
+                AppSegmentedControl(
+                    ThemeAppearanceFilter.allCases.map(\.title),
+                    selection: Binding(
+                        get: { ThemeAppearanceFilter.allCases.firstIndex(of: appearanceFilter) ?? 0 },
+                        set: { appearanceFilter = ThemeAppearanceFilter.allCases[$0] }
+                    )
+                )
             }
             .padding(12)
 
