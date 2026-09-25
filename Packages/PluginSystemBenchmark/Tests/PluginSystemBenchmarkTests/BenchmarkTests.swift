@@ -1,7 +1,53 @@
+import KernelCore
+import ProviderActivityBar
+import ProviderContentView
+import ProviderSettingView
+import SwiftUI
 import Testing
 @testable import PluginSystemBenchmark
 
+@Suite("PluginSystemBenchmark")
+@MainActor
 struct BenchmarkTests {
+    @Test("plugin registers an Activity Bar entry and shared dashboard content")
+    func pluginRegistersActivityBarEntry() throws {
+        @MainActor final class TrackingContentView: ContentViewProviding {
+            private(set) var setCount = 0
+
+            func setContentView(_ view: AnyView?) {
+                if view != nil {
+                    setCount += 1
+                }
+            }
+
+            func makeContentView() -> AnyView {
+                AnyView(EmptyView())
+            }
+        }
+
+        let kernel = KernelCoreContainer()
+        let settings = DefaultSettingViewProviding()
+        let activityBar = DefaultActivityBarProviding()
+        let contentView = TrackingContentView()
+        activityBar.registerItems([
+            ActivityBarItem(id: "other", title: "Other", systemImage: "circle"),
+        ])
+        try kernel.registerProvider((any SettingViewProviding).self, settings)
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+        try kernel.registerProvider((any ContentViewProviding).self, contentView)
+
+        let plugin = SystemBenchmarkPlugin()
+        try plugin.onBoot(kernel: kernel)
+
+        #expect(settings.entries.count == 1)
+        let entry = activityBar.items.first { $0.id == "\(plugin.id).entry" }
+        #expect(entry != nil)
+        #expect(entry?.ownerPluginID == plugin.id)
+
+        activityBar.activateItem(id: "\(plugin.id).entry")
+        #expect(contentView.setCount == 1)
+    }
+
     @Test("progress advances in benchmark order")
     func progressFractions() {
         #expect(BenchmarkProgress.preparing.fraction == 0)

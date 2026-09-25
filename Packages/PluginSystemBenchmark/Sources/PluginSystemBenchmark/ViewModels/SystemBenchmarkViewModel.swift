@@ -2,16 +2,20 @@ import Foundation
 import SwiftUI
 
 @MainActor
-final class SystemBenchmarkViewModel: ObservableObject {
-    @Published private(set) var isRunning = false
-    @Published private(set) var progress: BenchmarkProgress = .preparing
-    @Published private(set) var report: BenchmarkReport?
-    @Published private(set) var errorMessage: String?
+public final class SystemBenchmarkViewModel: ObservableObject {
+    @Published public private(set) var isRunning = false
+    @Published public private(set) var progress: BenchmarkProgress = .preparing
+    @Published public private(set) var report: BenchmarkReport?
+    @Published public private(set) var errorMessage: String?
 
-    private let runner = SystemBenchmarkRunner()
+    private let runner: SystemBenchmarkRunner
     private var task: Task<Void, Never>?
 
-    func start() {
+    public init(runner: SystemBenchmarkRunner = SystemBenchmarkRunner()) {
+        self.runner = runner
+    }
+
+    public func start() {
         guard !isRunning else { return }
         isRunning = true
         progress = .preparing
@@ -37,7 +41,7 @@ final class SystemBenchmarkViewModel: ObservableObject {
         }
     }
 
-    func cancel() {
+    public func cancel() {
         task?.cancel()
     }
 }

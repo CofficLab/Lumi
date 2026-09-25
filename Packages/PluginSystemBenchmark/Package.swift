@@ -9,9 +9,15 @@ let package = Package(
         .library(name: "PluginSystemBenchmark", targets: ["PluginSystemBenchmark"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
+        .package(path: "../ProviderActivityBar"),
+        .package(path: "../ProviderContentView"),
+        .package(path: "../ProviderRailView"),
+        .package(path: "../ProviderRootView"),
         .package(path: "../ProviderSettingView"),
+        .package(path: "../ProviderToolbar"),
     ],
     targets: [
         .target(
@@ -19,7 +25,13 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderContentView", package: "ProviderContentView"),
+                .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "ProviderToolbar", package: "ProviderToolbar"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
