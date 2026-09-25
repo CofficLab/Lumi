@@ -135,6 +135,7 @@ import PluginResumeDesigner
 import PluginSettingGeneral
 import PluginSettingView
 import PluginPerformanceMetrics
+import PluginSystemBenchmark
 import PluginSkill
 import PluginOnboarding
 import PluginWelcome
@@ -181,6 +182,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ProjectFileTreePlugin(),
             ProjectFilesSuperPlugin(),
             DevicePlugin(),
+            SystemBenchmarkPlugin(),
             HostsManagerPlugin(),
             DiskManagerPlugin(),
             NetworkManagerPlugin(),

@@ -1,0 +1,62 @@
+{
+  "sourceLanguage" : "en",
+  "version" : "1.0",
+  "strings" : {
+    "System Benchmark" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "System Benchmark" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "系统测速" } }
+      }
+    },
+    "Measure local CPU, memory, and disk performance." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Measure local CPU, memory, and disk performance." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "测量本机 CPU、内存和磁盘性能。" } }
+      }
+    },
+    "Measure CPU compute, memory bandwidth, and sequential disk throughput." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Measure CPU compute, memory bandwidth, and sequential disk throughput." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "测量 CPU 计算、内存带宽和磁盘顺序读写速度。" } }
+      }
+    },
+    "Tests run locally and do not use the network. Disk tests use a temporary file that is removed after the test." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tests run locally and do not use the network. Disk tests use a temporary file that is removed after the test." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "测试全部在本地运行，不使用网络。磁盘测试使用临时文件，完成后会删除。" } }
+      }
+    },
+    "Start Test" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start Test" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "开始测速" } }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "取消" } }
+      }
+    },
+    "Test cancelled" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Test cancelled" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "测速已取消" } }
+      }
+    },
+    "Preparing" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "准备中" } } } },
+    "Testing CPU" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "正在测试 CPU" } } } },
+    "Testing Memory" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "正在测试内存" } } } },
+    "Testing Disk" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "正在测试磁盘" } } } },
+    "Finished" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "已完成" } } } },
+    "Latest Result" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "最近结果" } } } },
+    "CPU" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "CPU" } } } },
+    "Memory Bandwidth" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "内存带宽" } } } },
+    "Disk Throughput" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "磁盘吞吐" } } } },
+    "Single Core" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "单核" } } } },
+    "Multi Core" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "多核" } } } },
+    "Read" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "读取" } } } },
+    "Write" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "写入" } } } },
+    "Copy" : { "localizations" : { "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "复制" } } } }
+  }
+}
