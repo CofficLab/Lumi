@@ -18,6 +18,9 @@ public protocol SuperLLMProvider: AnyObject, Sendable {
     /// 读取 API Key（未配置返回空串）。
     func getApiKey() -> String
 
+    /// 为一次 API 请求可靠解析 API Key；供应商可覆盖读取、重试和错误分类。
+    func resolveAPIKey() throws -> String
+
     /// 写入 API Key。
     func setApiKey(_ apiKey: String)
 
@@ -30,6 +33,13 @@ public protocol SuperLLMProvider: AnyObject, Sendable {
 public extension SuperLLMProvider {
     func hasApiKey() -> Bool { true }
     func getApiKey() -> String { "" }
+    func resolveAPIKey() throws -> String {
+        let key = getApiKey().trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty else {
+            throw VendorAPIError.missingAPIKey(providerInfo.displayName)
+        }
+        return key
+    }
     func setApiKey(_ apiKey: String) {}
     func removeApiKey() {}
 }

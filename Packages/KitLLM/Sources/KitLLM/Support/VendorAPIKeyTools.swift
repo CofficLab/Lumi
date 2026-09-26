@@ -15,9 +15,15 @@ public enum VendorAPIKeyTools {
     private static let extractedKitLLMService = "com.kit.llm.apikey"
 
     /// 已成功读取过的值只在当前进程内短暂缓存，用于抵抗 Keychain 服务的
-    /// 瞬时读取失败。删除或成功写入时同步更新，绝不写入 UserDefaults/日志。
+    /// 瞬时读取失败或旧式 Keychain 的误报 not-found。删除或成功写入时同步
+    /// 更新，绝不写入 UserDefaults/日志。
     private static let cacheLock = NSLock()
-    nonisolated(unsafe) private static var cachedAPIKeys: [String: String] = [:]
+    private struct CachedAPIKey {
+        let value: String
+        let lastUsedAt: Date
+    }
+    private static let cacheLifetime: TimeInterval = 10 * 60
+    nonisolated(unsafe) private static var cachedAPIKeys: [String: CachedAPIKey] = [:]
 
     /// 从 Keychain 解析 API Key；未配置时抛错。
     public static func resolve(storageKey: String?, displayName: String) throws -> String {
@@ -25,7 +31,7 @@ public enum VendorAPIKeyTools {
             throw VendorAPIError.missingAPIKey(displayName)
         }
         do {
-            guard let key = try read(storageKey: storageKey)?
+            guard let key = try read(storageKey: storageKey, retryMissing: true)?
                 .trimmingCharacters(in: .whitespacesAndNewlines),
                 !key.isEmpty else {
                 throw VendorAPIError.missingAPIKey(displayName)
@@ -117,7 +123,34 @@ public enum VendorAPIKeyTools {
         "\(keychainService)\u{0}\(storageKey)"
     }
 
-    private static func read(storageKey: String) throws -> String? {
+    private static func read(storageKey: String, retryMissing: Bool = false) throws -> String? {
+        do {
+            let value: String?
+            if retryMissing {
+                value = try readWithMissingRetry(operation: {
+                    try readOnce(storageKey: storageKey)
+                })
+            } else {
+                value = try readOnce(storageKey: storageKey)
+            }
+            if let value {
+                return value
+            }
+        } catch {
+            // 如果当前查询路径暂时不可用，继续尝试最近一次已确认可用的值。
+            if let cached = cachedValue(for: storageKey) {
+                return cached
+            }
+            throw error
+        }
+
+        // macOS 的旧式 file-based Keychain 在无交互/锁定场景下可能把
+        // 暂时不可访问表现为 not-found。只有多轮完整查询仍未命中才走到这里；
+        // 对最近成功读取的 Key 做短期回退，避免中断正在进行的对话。
+        return cachedValue(for: storageKey)
+    }
+
+    private static func readOnce(storageKey: String) throws -> String? {
         var firstAccessError: Error?
 
         for (index, store) in stores().enumerated() {
@@ -149,11 +182,38 @@ public enum VendorAPIKeyTools {
             }
         }
 
-        // 只有在本次读取明确遇到访问错误时才使用缓存；纯粹的 missing
-        // 仍然代表用户已删除/从未配置，避免缓存复活已删除的 Key。
-        if firstAccessError != nil, let cached = cachedValue(for: storageKey) {
-            return cached
+        if let firstAccessError {
+            throw firstAccessError
         }
+        return nil
+    }
+
+    /// 对完整的多存储查询做有限重试。KeychainStore 已经重试明确的临时
+    /// OSStatus；这里另外覆盖「一次完整查询看起来全部 not-found」的情况。
+    static func readWithMissingRetry(
+        maxAttempts: Int = 3,
+        sleeper: (UInt64) -> Void = { nanoseconds in
+            Thread.sleep(forTimeInterval: TimeInterval(nanoseconds) / 1_000_000_000)
+        },
+        operation: () throws -> String?
+    ) throws -> String? {
+        guard maxAttempts > 0 else { return nil }
+        var firstAccessError: Error?
+
+        for attempt in 0..<maxAttempts {
+            do {
+                if let value = try operation() {
+                    return value
+                }
+            } catch {
+                firstAccessError = firstAccessError ?? error
+            }
+
+            if attempt < maxAttempts - 1 {
+                sleeper(KeychainStore.transientRetryDelayNanoseconds(for: attempt))
+            }
+        }
+
         if let firstAccessError {
             throw firstAccessError
         }
@@ -170,13 +230,20 @@ public enum VendorAPIKeyTools {
 
     private static func remember(_ value: String, for storageKey: String) {
         cacheLock.lock()
-        cachedAPIKeys[cacheKey(for: storageKey)] = value
+        cachedAPIKeys[cacheKey(for: storageKey)] = CachedAPIKey(value: value, lastUsedAt: Date())
         cacheLock.unlock()
     }
 
     private static func cachedValue(for storageKey: String) -> String? {
         cacheLock.lock()
         defer { cacheLock.unlock() }
-        return cachedAPIKeys[cacheKey(for: storageKey)]
+        let key = cacheKey(for: storageKey)
+        guard let cached = cachedAPIKeys[key] else { return nil }
+        guard Date().timeIntervalSince(cached.lastUsedAt) <= cacheLifetime else {
+            cachedAPIKeys.removeValue(forKey: key)
+            return nil
+        }
+        cachedAPIKeys[key] = CachedAPIKey(value: cached.value, lastUsedAt: Date())
+        return cached.value
     }
 }
