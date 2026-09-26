@@ -18,7 +18,7 @@ let package = Package(
         .package(path: "../ProviderMCP"),
         .package(path: "../KitLocalization"),
         .package(path: "../KitSuperLog"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         // 测试 target 需要直接构造 mock MCP Server（与 KitMCP 同版本，保证类型一致）。
         .package(url: "https://github.com/modelcontextprotocol/swift-sdk.git", exact: "0.12.1"),
     ],

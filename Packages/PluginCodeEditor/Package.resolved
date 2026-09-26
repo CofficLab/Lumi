@@ -1,5 +1,5 @@
 {
-  "originHash" : "bc4a39bce00581b4b0853019294c6a690e77a2df37557d52c67bc0df8dda6c72",
+  "originHash" : "a9a8d048c8471d3e0c968b84f1bb7bd85f3feb2e63e758912fd1f13a0cd46b8f",
   "pins" : [
     {
       "identity" : "fseventswrapper",
@@ -38,12 +38,21 @@
       }
     },
     {
+      "identity" : "lumikernel",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiKernel.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "4a30c5f4d6e3b24be61e87a036b14720ef0f1654"
+      }
+    },
+    {
       "identity" : "lumiui",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiUI.git",
       "state" : {
-        "revision" : "3b3e3dc58c1c6738030b3493d747371fad941619",
-        "version" : "1.5.1"
+        "revision" : "e54783a431c018a6f4b64797274dbe0118f490d4",
+        "version" : "1.7.0"
       }
     },
     {

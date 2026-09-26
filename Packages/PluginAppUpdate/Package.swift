@@ -19,7 +19,7 @@ let package = Package(
         .package(path: "../ProviderNetwork"),
         .package(path: "../ProviderAppUpdate"),
         .package(path: "../KitLocalization"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../KitSuperLog"),
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.5.0"),
     ],

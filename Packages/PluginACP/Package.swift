@@ -19,7 +19,7 @@ let package = Package(
         .package(path: "../KitAgentTool"),
         .package(path: "../KitLocalization"),
         .package(path: "../ProviderSettingView"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
     ],
     targets: [
         .target(

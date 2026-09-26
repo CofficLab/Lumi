@@ -20,7 +20,7 @@ let package = Package(
         .package(path: "../ProviderPluginControl"),
         .package(path: "../ProviderPluginManaging"),
         .package(path: "../ProviderToolbar"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
     ],
     targets: [
         .target(

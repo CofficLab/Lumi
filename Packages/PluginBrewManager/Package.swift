@@ -24,7 +24,7 @@ let package = Package(
         .package(path: "../ProviderRootView"),
         .package(path: "../ProviderToolbar"),
         .package(path: "../KitLocalization"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../KitShell"),
         .package(path: "../KitSuperLog"),
     ],

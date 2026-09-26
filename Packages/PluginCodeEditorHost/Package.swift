@@ -16,7 +16,7 @@ let package = Package(
         .package(path: "../KitEditorLanguageRuntime"),
         .package(path: "../KitShell"),
         .package(path: "../KitLocalization"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/nookery/MagicAlert.git", from: "1.0.1"),
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter.git", from: "0.25.0"),
         .package(url: "https://github.com/ChimeHQ/LanguageClient", .upToNextMajor(from: "0.8.2")),
