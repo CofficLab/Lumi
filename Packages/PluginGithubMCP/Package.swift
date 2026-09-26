@@ -24,5 +24,15 @@ let package = Package(
             ],
             path: "Sources/PluginGithubMCP"
         ),
+        .testTarget(
+            name: "PluginGithubMCPTests",
+            dependencies: [
+                "PluginGithubMCP",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "KitMCP", package: "KitMCP"),
+                .product(name: "ProviderMCP", package: "ProviderMCP"),
+            ],
+            path: "Tests/PluginGithubMCPTests"
+        ),
     ]
 )

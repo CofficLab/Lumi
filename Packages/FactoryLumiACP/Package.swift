@@ -206,5 +206,13 @@ let package = Package(
             dependencies: ["FactoryLumiACP"],
             path: "Sources/LumiACPExecutable"
         ),
+        .testTarget(
+            name: "FactoryLumiACPTests",
+            dependencies: [
+                "FactoryLumiACP",
+                .product(name: "KernelCore", package: "LumiKernel"),
+            ],
+            path: "Tests/FactoryLumiACPTests"
+        ),
     ]
 )

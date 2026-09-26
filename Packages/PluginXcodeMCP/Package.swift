@@ -24,5 +24,15 @@ let package = Package(
             ],
             path: "Sources/PluginXcodeMCP"
         ),
+        .testTarget(
+            name: "PluginXcodeMCPTests",
+            dependencies: [
+                "PluginXcodeMCP",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "KitMCP", package: "KitMCP"),
+                .product(name: "ProviderMCP", package: "ProviderMCP"),
+            ],
+            path: "Tests/PluginXcodeMCPTests"
+        ),
     ]
 )
