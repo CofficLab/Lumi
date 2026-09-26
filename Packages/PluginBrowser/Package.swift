@@ -26,6 +26,8 @@ let package = Package(
         .package(path: "../ProviderToolbar"),
         .package(path: "../KitLocalization"),
         .package(path: "../KitSuperLog"),
+        .package(path: "../KitMCP"),
+        .package(path: "../ProviderMCP"),
     ],
     targets: [
         .target(
@@ -42,6 +44,8 @@ let package = Package(
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "KitMCP", package: "KitMCP", condition: .when(platforms: [.macOS])),
+                .product(name: "ProviderMCP", package: "ProviderMCP", condition: .when(platforms: [.macOS])),
             ],
             path: "Sources",
             resources: [

@@ -1,6 +1,7 @@
 # PluginBrowser
 
-Lumi's integrated WebKit browser workspace and conversation-scoped browser tools.
+Lumi's browser capability plugin: an integrated WebKit workspace and the official
+Chrome DevTools MCP server for controlling Chrome.
 
 > **重要规则：本插件包不能依赖其他插件包，也不能被其他插件包依赖。**
 >
@@ -13,10 +14,19 @@ Lumi's integrated WebKit browser workspace and conversation-scoped browser tools
 - **browser_open** - opens an HTTP or HTTPS page in the current conversation's isolated browser session
 - **browser_read** - returns the page title, URL, bounded visible text, and references for visible links and controls
 - **browser_interact** - clicks a referenced control or enters text into a field after Lumi's high-risk approval flow
+- **Chrome DevTools MCP** - contributes the official Chrome browser automation MCP server to Lumi's MCP client on macOS
 - Each conversation has its own non-persistent website data store
 - Local and private-network destinations require approval; the browser blocks redirects to unapproved local hosts
 
 Browser sessions currently live for the app process. Closing Lumi clears the isolated website data.
+
+The Chrome DevTools MCP server is seeded disabled in MCP Servers settings. Enable it
+there to let the Agent control Chrome. It runs in a separate Chrome session by default
+and does not share the in-app WebKit page or its isolated website data. The Browser
+plugin itself is always on.
+
+The Chrome integration is compiled only for macOS. It requires Node.js LTS available
+as `npx` and a current stable Google Chrome installation.
 
 ## Structure
 

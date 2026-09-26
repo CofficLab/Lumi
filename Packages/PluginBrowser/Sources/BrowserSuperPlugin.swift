@@ -9,6 +9,10 @@ import ProviderToolbar
 import KitSuperLog
 import os
 import SwiftUI
+#if os(macOS)
+import KitMCP
+import ProviderMCP
+#endif
 
 @MainActor
 public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
@@ -75,6 +79,24 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
         toolManager?.add(BrowserOpenTool(sessions: sessions), pluginID: id)
         toolManager?.add(BrowserReadTool(sessions: sessions), pluginID: id)
         toolManager?.add(BrowserInteractTool(sessions: sessions), pluginID: id)
+    }
+
+    /// Register Chrome DevTools after every plugin has completed booting, so
+    /// PluginMCP has already published its server contribution provider.
+    public func onReady(kernel: KernelCoreContainer) throws {
+        #if os(macOS)
+        guard let contributor = kernel.resolveProvider((any MCPServerContributionProviding).self) else {
+            Self.logger.error("MCP server contribution provider is unavailable; Chrome DevTools was not registered.")
+            return
+        }
+        contributor.contribute(
+            MCPServerConfig(
+                name: "Chrome DevTools (official)",
+                command: "npx",
+                arguments: ["-y", "chrome-devtools-mcp@latest"]
+            )
+        )
+        #endif
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
