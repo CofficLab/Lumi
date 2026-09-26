@@ -10,15 +10,41 @@ public struct MCPPreparedTransport: Sendable {
     public let stopProcess: (@Sendable () -> Void)?
     /// 查询子进程是否已退出及其退出码；仍在运行返回 `nil`。
     public let terminationStatus: (@Sendable () -> Int32?)?
+    /// stdio 场景由子进程输出的诊断信息；HTTP 场景为 `nil`。
+    public let diagnosticOutput: (@Sendable () -> String?)?
 
     public init(
         transport: any Transport,
         stopProcess: (@Sendable () -> Void)? = nil,
-        terminationStatus: (@Sendable () -> Int32?)? = nil
+        terminationStatus: (@Sendable () -> Int32?)? = nil,
+        diagnosticOutput: (@Sendable () -> String?)? = nil
     ) {
         self.transport = transport
         self.stopProcess = stopProcess
         self.terminationStatus = terminationStatus
+        self.diagnosticOutput = diagnosticOutput
+    }
+}
+
+/// 收集 MCP 子进程 stderr，避免启动失败时丢失最有用的诊断信息。
+private final class ProcessDiagnosticBuffer: @unchecked Sendable {
+    private let lock = NSLock()
+    private var data = Data()
+    private let limit = 64 * 1024
+
+    func append(_ chunk: Data) {
+        lock.lock()
+        defer { lock.unlock() }
+        let remaining = limit - data.count
+        guard remaining > 0 else { return }
+        data.append(chunk.prefix(remaining))
+    }
+
+    func contents() -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !data.isEmpty else { return nil }
+        return String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
@@ -57,9 +83,19 @@ public enum MCPProcessTransport {
         }
         let inputPipe = Pipe()  // 客户端写请求 → 进程 stdin
         let outputPipe = Pipe() // 进程 stdout → 客户端读
+        let errorPipe = Pipe()
+        let diagnosticBuffer = ProcessDiagnosticBuffer()
         process.standardInput = inputPipe
         process.standardOutput = outputPipe
-        process.standardError = FileHandle.nullDevice
+        process.standardError = errorPipe
+        errorPipe.fileHandleForReading.readabilityHandler = { handle in
+            let chunk = handle.availableData
+            if chunk.isEmpty {
+                handle.readabilityHandler = nil
+            } else {
+                diagnosticBuffer.append(chunk)
+            }
+        }
 
         do {
             try process.run()
@@ -83,7 +119,8 @@ public enum MCPProcessTransport {
             },
             terminationStatus: { [box] in
                 box.process.isRunning ? nil : box.process.terminationStatus
-            }
+            },
+            diagnosticOutput: { diagnosticBuffer.contents() }
         )
     }
 
@@ -141,7 +178,7 @@ public actor MCPServerSession: MCPServerServing {
         } catch {
             prepared.stopProcess?()
             self.prepared = nil
-            throw MCPClientError.transport(error.localizedDescription)
+            throw MCPClientError.transport(Self.message(error, diagnostics: prepared.diagnosticOutput?()))
         }
         self.client = client
         isConnected = true
@@ -161,8 +198,12 @@ public actor MCPServerSession: MCPServerServing {
 
     public func listTools() async throws -> [MCPToolDescriptor] {
         let client = try connectedClient()
-        let (tools, _) = try await client.listTools()
-        return tools.map(MCPToolDescriptor.init(tool:))
+        do {
+            let (tools, _) = try await client.listTools()
+            return tools.map(MCPToolDescriptor.init(tool:))
+        } catch {
+            throw MCPClientError.transport(Self.message(error, diagnostics: prepared?.diagnosticOutput?()))
+        }
     }
 
     public func callTool(
@@ -192,5 +233,10 @@ public actor MCPServerSession: MCPServerServing {
             throw MCPClientError.serverTerminated(status)
         }
         return client
+    }
+
+    private static func message(_ error: Error, diagnostics: String?) -> String {
+        guard let diagnostics, !diagnostics.isEmpty else { return error.localizedDescription }
+        return "\(error.localizedDescription)\n\nstderr:\n\(diagnostics)"
     }
 }
