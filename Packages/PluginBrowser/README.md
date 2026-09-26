@@ -1,6 +1,6 @@
-# BrowserPlugin
+# PluginBrowser
 
-Browser plugin for Lumi. Provides web page screenshots and browser automation tools.
+Lumi's integrated WebKit browser workspace and conversation-scoped browser tools.
 
 > **重要规则：本插件包不能依赖其他插件包，也不能被其他插件包依赖。**
 >
@@ -9,18 +9,26 @@ Browser plugin for Lumi. Provides web page screenshots and browser automation to
 
 ## Features
 
-- **browser_screenshot** - WKWebView-based page rendering and screenshot capture
-- **browser_agent** - browser automation via the `agent-browser` CLI
+- **Browser workspace** - a visible `WKWebView` in the main content area with Lumi's existing chat panel beside it
+- **browser_open** - opens an HTTP or HTTPS page in the current conversation's isolated browser session
+- **browser_read** - returns the page title, URL, bounded visible text, and references for visible links and controls
+- **browser_interact** - clicks a referenced control or enters text into a field after Lumi's high-risk approval flow
+- Each conversation has its own non-persistent website data store
+- Local and private-network destinations require approval; the browser blocks redirects to unapproved local hosts
+
+Browser sessions currently live for the app process. Closing Lumi clears the isolated website data.
 
 ## Structure
 
 ```text
-BrowserPlugin
+    PluginBrowser
   Package.swift
-  Sources/
-    BrowserPlugin.swift
-    BrowserScreenshotTool.swift
-    BrowserAgentTool.swift
+    Sources/
+      BrowserSuperPlugin.swift
+      BrowserSession.swift
+      BrowserTools.swift
+      BrowserWorkspaceView.swift
+      BrowserWebView.swift
   Resources/
     Localizable.xcstrings
   Tests/
@@ -38,4 +46,3 @@ swift test
 Package-owned translations live in `Resources/Localizable.xcstrings`.
 
 Code in this package should localize with `Bundle.module`, not the app main bundle. Use `PluginBrowserLocalization.string(_:)` for plugin metadata so package tests and app integration read from the same resource bundle.
-
