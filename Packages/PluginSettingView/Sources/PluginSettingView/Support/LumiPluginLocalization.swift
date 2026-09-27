@@ -1,5 +1,5 @@
 import Foundation
-import KitLocalization
+import LumiLocalizationKit
 
 /// PluginSettingView 的运行时本地化。
 ///

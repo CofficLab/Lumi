@@ -1,6 +1,6 @@
 import Foundation
 import IOKit.pwr_mgt
-import KitLocalization
+import LumiLocalizationKit
 import KernelCore
 import Observation
 import ProviderLogo

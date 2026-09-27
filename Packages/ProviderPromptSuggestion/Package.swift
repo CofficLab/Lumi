@@ -10,7 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderActivityBar"),
         .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.0.1"),
@@ -22,7 +22,7 @@ let package = Package(
     targets: [
         .target(name: "ProviderPromptSuggestion", dependencies: [
             .product(name: "KernelCore", package: "LumiKernel"),
-            .product(name: "KitLocalization", package: "KitLocalization"),
+            .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
             .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
             .product(name: "ProviderPluginControl", package: "LumiProviders"),
@@ -39,7 +39,7 @@ let package = Package(
             name: "ProviderPromptSuggestionTests",
             dependencies: [
                 "ProviderPromptSuggestion",
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),

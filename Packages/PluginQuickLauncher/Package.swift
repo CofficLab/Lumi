@@ -16,7 +16,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../KitSuperLog"),
         .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.0.1"),
@@ -29,7 +29,7 @@ let package = Package(
             name: "QuickLauncherPlugin",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderCommand", package: "LumiProviders"),

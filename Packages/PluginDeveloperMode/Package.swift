@@ -13,7 +13,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(path: "../KitSuperLog"),
         .package(path: "../ProviderDeveloperMode"),
         .package(path: "../ProviderToolbar"),
@@ -24,7 +24,7 @@ let package = Package(
             name: "PluginDeveloperMode",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderDeveloperMode", package: "ProviderDeveloperMode"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),

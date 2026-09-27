@@ -15,7 +15,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(path: "../KitSuperLog"),
     ],
 
@@ -23,7 +23,7 @@ let package = Package(
         .target(
             name: "KitHttp",
             dependencies: [
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
             ],
             path: "Sources",

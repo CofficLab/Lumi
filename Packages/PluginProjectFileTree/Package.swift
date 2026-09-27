@@ -18,7 +18,7 @@ let package = Package(
         .package(path: "../ProviderToast"),
         .package(path: "../KitFileSystem"),
         .package(path: "../KitSuperLog"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
     ],
     targets: [
@@ -34,7 +34,7 @@ let package = Package(
                 "ProviderToast",
                 "KitFileSystem",
                 "KitSuperLog",
-                "KitLocalization",
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 "LumiUI",
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]

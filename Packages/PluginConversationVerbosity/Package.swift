@@ -11,7 +11,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitSuperLog"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderToast"),
@@ -27,7 +27,7 @@ let package = Package(
                 "ProviderConversation",
                 "ProviderToast",
                 "LumiUI",
-                "KitLocalization",
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
             path: "Sources/PluginConversationVerbosity",
             resources: [.process("../../Resources/Localizable.xcstrings")]

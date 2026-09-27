@@ -11,7 +11,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitLLM"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../PluginActivityBar"),
         .package(path: "../PluginAppIconDesigner"),
@@ -50,7 +50,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitLLM", package: "KitLLM"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "PluginActivityBar", package: "PluginActivityBar"),
                 .product(name: "PluginAppIconDesigner", package: "PluginAppIconDesigner"),

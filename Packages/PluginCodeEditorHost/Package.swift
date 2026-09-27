@@ -15,7 +15,7 @@ let package = Package(
         .package(path: "../KitEditorTextView"),
         .package(path: "../KitEditorLanguageRuntime"),
         .package(path: "../KitShell"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/nookery/MagicAlert.git", from: "1.0.1"),
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter.git", from: "0.25.0"),
@@ -29,7 +29,7 @@ let package = Package(
             dependencies: [
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "EditorKernel", package: "KitEditorKernel"),
                 .product(name: "EditorSource", package: "KitEditorSource"),
                 .product(name: "EditorTextView", package: "KitEditorTextView"),
@@ -54,7 +54,7 @@ let package = Package(
                 "EditorService",
                 .product(name: "EditorSource", package: "KitEditorSource"),
                 .product(name: "EditorLanguageRuntime", package: "KitEditorLanguageRuntime"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             resources: [.process("../../Resources")]

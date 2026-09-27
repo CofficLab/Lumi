@@ -21,7 +21,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -34,7 +34,7 @@ let package = Package(
                 .product(name: "ProviderCommand", package: "LumiProviders"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderTheme", package: "LumiProviders"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
             path: "Sources/PluginThemePack",
             resources: [.process("../../Resources/Localizable.xcstrings")]

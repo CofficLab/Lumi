@@ -1,6 +1,6 @@
 import Foundation
 import KernelCore
-import KitLocalization
+import LumiLocalizationKit
 import LumiUI
 import ProviderGit
 import ProviderMessage

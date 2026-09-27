@@ -14,7 +14,7 @@ let package = Package(
         .package(path: "../ProviderOnboarding"),
         .package(path: "../ProviderRootView"),
         .package(path: "../ProviderStorage"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
     ],
     targets: [
@@ -26,7 +26,7 @@ let package = Package(
                 .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]

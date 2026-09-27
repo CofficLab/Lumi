@@ -18,7 +18,7 @@ let package = Package(
         .package(path: "../KitLLM"),
         .package(path: "../KitSuperLog"),
         .package(path: "../ProviderLLMManager"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -28,7 +28,7 @@ let package = Package(
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
             path: "Sources",
             exclude: [

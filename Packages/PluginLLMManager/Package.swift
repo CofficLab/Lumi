@@ -20,7 +20,7 @@ let package = Package(
         .package(path: "../ProviderMessageRendering"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../KitSuperLog"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(path: "../ProviderOnboarding"),
     ],
     targets: [
@@ -35,7 +35,7 @@ let package = Package(
                 .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
             ],
             path: "Sources/PluginLLMManager",

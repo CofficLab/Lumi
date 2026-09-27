@@ -15,14 +15,14 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
     ],
 
     targets: [
         .target(
             name: "KitHTMLPreview",
             dependencies: [
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
             path: "Sources",
             resources: [

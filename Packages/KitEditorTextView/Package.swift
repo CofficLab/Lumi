@@ -28,7 +28,7 @@ let package = Package(
         // Logging protocol
         .package(path: "../KitSuperLog"),
         // Runtime localization
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
     ],
     targets: [
         // The main text view target.
@@ -39,7 +39,7 @@ let package = Package(
                 .product(name: "Collections", package: "swift-collections"),
                 "EditorTextViewObjC",
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
             path: ".",
             exclude: ["Sources/EditorTextViewObjC"],

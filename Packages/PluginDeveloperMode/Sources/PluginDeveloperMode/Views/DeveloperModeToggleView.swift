@@ -1,6 +1,6 @@
 import ProviderDeveloperMode
 import SwiftUI
-import KitLocalization
+import LumiLocalizationKit
 import LumiUI
 
 /// 开发者模式开关视图：View 只依赖 `DeveloperModeViewModel`，

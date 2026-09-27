@@ -16,7 +16,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
         .package(path: "../KitMCP"),
         .package(path: "../ProviderMCP"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(path: "../KitSuperLog"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         // 测试 target 需要直接构造 mock MCP Server（与 KitMCP 同版本，保证类型一致）。
@@ -33,7 +33,7 @@ let package = Package(
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "KitMCP", package: "KitMCP"),
                 .product(name: "ProviderMCP", package: "ProviderMCP"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
@@ -44,7 +44,7 @@ let package = Package(
             name: "PluginMCPTests",
             dependencies: [
                 "PluginMCP",
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "MCP", package: "swift-sdk"),
             ],
             path: "Tests/PluginMCPTests"

@@ -13,12 +13,12 @@ let package = Package(
         .package(path: "../ProviderRootView"),
         .package(path: "../ProviderRailView"),
         .package(path: "../ProviderStorage"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
     ],
     targets: [
         .target(name: "PluginChatPanel", dependencies: [
             .product(name: "KernelCore", package: "LumiKernel"),
-            .product(name: "KitLocalization", package: "KitLocalization"),
+            .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
             .product(name: "ProviderToolbar", package: "ProviderToolbar"),
             .product(name: "ProviderChatSection", package: "ProviderChatSection"),

@@ -14,7 +14,7 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -25,7 +25,7 @@ let package = Package(
                 "ProviderChatSection",
                 "ProviderConversation",
                 "ProviderMessage",
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
             path: "Sources/PluginConversationCacheHitRate",
             resources: [.process("../../Resources/Localizable.xcstrings")]

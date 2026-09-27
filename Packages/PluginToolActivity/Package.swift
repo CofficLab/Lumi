@@ -10,7 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(path: "../KitSuperLog"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
@@ -21,7 +21,7 @@ let package = Package(
             name: "PluginToolActivity",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                "KitLocalization",
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 "KitSuperLog",
                 "ProviderChatSection",
                 "ProviderConversation",

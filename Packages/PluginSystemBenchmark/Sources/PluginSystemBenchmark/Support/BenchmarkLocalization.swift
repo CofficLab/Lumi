@@ -1,5 +1,5 @@
 import Foundation
-import KitLocalization
+import LumiLocalizationKit
 
 enum BenchmarkLocalization {
     static func string(_ key: String, bundle: Bundle = .module, locale: Locale = .current) -> String {

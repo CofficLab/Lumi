@@ -16,7 +16,7 @@ let package = Package(
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderAgentLoop"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -28,7 +28,7 @@ let package = Package(
                 "ProviderLLMManager",
                 "ProviderAgentLoop",
                 "LumiUI",
-                "KitLocalization",
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
             path: "Sources/PluginConversationMode",
             resources: [.process("../../Resources/Localizable.xcstrings")]

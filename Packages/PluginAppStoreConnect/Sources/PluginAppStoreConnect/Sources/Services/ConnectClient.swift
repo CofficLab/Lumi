@@ -3,7 +3,7 @@ import Foundation
 import KernelCore
 import KitAgentTool
 import KitAppStorePromo
-import KitLocalization
+import LumiLocalizationKit
 import KitSuperLog
 import ProviderActivityBar
 import ProviderChatSection

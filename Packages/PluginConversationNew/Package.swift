@@ -12,14 +12,14 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderToolbar"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
     ],
     targets: [
         .target(
             name: "PluginConversationNew",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
