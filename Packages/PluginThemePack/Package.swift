@@ -15,6 +15,7 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(url: "https://github.com/CofficLab/LumiThemePack.git", from: "1.0.0"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitSuperLog"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
@@ -26,6 +27,7 @@ let package = Package(
         .target(
             name: "PluginThemePack",
             dependencies: [
+                .product(name: "LumiThemePack", package: "LumiThemePack"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "LumiUI", package: "LumiUI"),
@@ -39,7 +41,7 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginThemePackTests",
-            dependencies: ["PluginThemePack"]
+            dependencies: ["PluginThemePack", .product(name: "LumiThemePack", package: "LumiThemePack")]
         )
     ]
 )

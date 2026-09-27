@@ -1,38 +1,5 @@
 # PluginThemePack
 
-Lumi 编辑器插件。
+Lumi's Kernel adapter for the shared [LumiThemePack](https://github.com/CofficLab/LumiThemePack) package. The remote package owns the 19-theme catalog, registration helper, and theme browser/preview UI. This package keeps Lumi's required-plugin metadata, settings entry, localized command menu, and lifecycle cleanup.
 
-> **重要规则：本插件包不能依赖其他插件包，也不能被其他插件包依赖。**
->
-> 插件之间只通过 Provider 契约通信：共享能力放入 `Provider*` / `Kit*` 包，
-> 由宿主（`Factory*`）统一装配；跨插件互相引用会破坏插件的独立装配与卸载。
-
-## Package
-
-- Product: `PluginThemePack`
-- Platform: macOS 14+
-- Swift tools: 6.0
-
-## 提供什么
-
-<!-- TODO: 描述本包提供的功能 -->
-
-## 依赖与集成
-
-```swift
-dependencies: [
-    .package(path: "../PluginThemePack"),
-],
-targets: [
-    .target(name: "YourTarget", dependencies: ["PluginThemePack"]),
-]
-```
-
-## Testing
-
-From this package directory:
-
-```sh
-swift test
-```
-
+Build this package with `swift build`.
