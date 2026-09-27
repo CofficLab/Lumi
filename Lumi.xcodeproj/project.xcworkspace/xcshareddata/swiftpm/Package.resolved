@@ -105,8 +105,26 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiProviders.git",
       "state" : {
-        "revision" : "78d2746c2c02cc386ef4936eab7953372294ac54",
+        "revision" : "80b33857dd75b33c1d587796edfc592f179ee320",
+        "version" : "1.0.2"
+      }
+    },
+    {
+      "identity" : "lumisettings",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiSettings.git",
+      "state" : {
+        "revision" : "59af093194b98154bba8e9ac61669b253d66e2ba",
         "version" : "1.0.1"
+      }
+    },
+    {
+      "identity" : "lumithemepack",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiThemePack.git",
+      "state" : {
+        "revision" : "38d3f0fe5438d2657350dd8d37ff3d4304e148d7",
+        "version" : "1.0.0"
       }
     },
     {

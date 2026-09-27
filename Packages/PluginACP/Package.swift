@@ -18,7 +18,7 @@ let package = Package(
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitLocalization"),
-        .package(path: "../ProviderSettingView"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
     ],
     targets: [
@@ -34,7 +34,7 @@ let package = Package(
                 .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
-                .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources/PluginACP",

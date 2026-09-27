@@ -20,7 +20,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderPluginManaging"),
-        .package(path: "../ProviderSettingView"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
         .package(path: "../ProviderPromptSuggestion"),
     ],
     targets: [
@@ -32,7 +32,7 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderPluginManaging", package: "ProviderPluginManaging"),
-                .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
             ],
             path: "Sources/PluginPluginManager"
@@ -44,7 +44,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
                 .product(name: "ProviderPluginManaging", package: "ProviderPluginManaging"),
-                .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "ProviderSettingView", package: "LumiSettings"),
             ],
             path: "Tests/PluginPluginManagerTests"
         )

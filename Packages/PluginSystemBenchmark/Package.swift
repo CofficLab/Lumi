@@ -16,7 +16,7 @@ let package = Package(
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderRailView"),
         .package(path: "../ProviderRootView"),
-        .package(path: "../ProviderSettingView"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
         .package(path: "../ProviderToolbar"),
     ],
     targets: [
@@ -30,7 +30,7 @@ let package = Package(
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
-                .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]

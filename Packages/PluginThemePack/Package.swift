@@ -20,7 +20,7 @@ let package = Package(
         .package(path: "../KitSuperLog"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.0.1"),
-        .package(path: "../ProviderSettingView"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
         .package(path: "../KitLocalization"),
     ],
     targets: [
@@ -32,7 +32,7 @@ let package = Package(
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderCommand", package: "LumiProviders"),
-                .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderTheme", package: "LumiProviders"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
             ],

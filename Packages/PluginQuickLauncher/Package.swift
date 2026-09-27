@@ -21,7 +21,7 @@ let package = Package(
         .package(path: "../KitSuperLog"),
         .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.0.1"),
         .package(path: "../ProviderMessageSender"),
-        .package(path: "../ProviderSettingView"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
         .package(path: "../ProviderDocsView"),
     ],
     targets: [
@@ -34,7 +34,7 @@ let package = Package(
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderCommand", package: "LumiProviders"),
                 .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
-                .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
             ],
             path: "Sources",

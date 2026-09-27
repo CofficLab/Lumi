@@ -17,7 +17,7 @@ let package = Package(
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderProject"),
-        .package(path: "../ProviderSettingView"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
     ],
     targets: [
         .target(
@@ -30,7 +30,7 @@ let package = Package(
                 "ProviderStorage",
                 "ProviderToolManager",
                 "ProviderProject",
-                "ProviderSettingView",
+                .product(name: "ProviderSettingView", package: "LumiSettings"),
             ],
             path: "Sources/PluginMemory"
         ),

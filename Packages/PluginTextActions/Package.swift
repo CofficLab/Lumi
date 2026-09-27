@@ -16,7 +16,7 @@ let package = Package(
         .package(path: "../KitSuperLog"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderLLMManager"),
-        .package(path: "../ProviderSettingView")
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1")
     ],
     targets: [
         .target(
@@ -29,7 +29,7 @@ let package = Package(
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
-                .product(name: "ProviderSettingView", package: "ProviderSettingView")
+                .product(name: "ProviderSettingView", package: "LumiSettings")
             ],
             path: "Sources",
             resources: [.process("../Resources/Localizable.xcstrings")]

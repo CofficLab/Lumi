@@ -12,7 +12,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.0.1"),
-        .package(path: "../ProviderSettingView"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
         .package(path: "../ProviderToast"),
         .package(path: "../ProviderWebServer"),
         .package(path: "../KitWebServer"),
@@ -21,7 +21,7 @@ let package = Package(
     targets: [
         .target(
             name: "PluginWebServer",
-            dependencies: [.product(name: "KernelCore", package: "LumiKernel"), .product(name: "ProviderTheme", package: "LumiProviders"), "ProviderSettingView", "ProviderToast", "ProviderWebServer", "KitWebServer", "KitSuperLog", "LumiUI"]
+            dependencies: [.product(name: "KernelCore", package: "LumiKernel"), .product(name: "ProviderTheme", package: "LumiProviders"), .product(name: "ProviderSettingView", package: "LumiSettings"), "ProviderToast", "ProviderWebServer", "KitWebServer", "KitSuperLog", "LumiUI"]
         ),
         .testTarget(
             name: "PluginWebServerTests",
