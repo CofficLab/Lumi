@@ -12,6 +12,7 @@ let package = Package(
         .library(name: "PluginGoalTask", targets: ["GoalTaskPlugin"])
     ],
     dependencies: [
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.1.0"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
@@ -22,7 +23,6 @@ let package = Package(
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderMessage"),
-        .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager")
     ],
     targets: [
@@ -39,7 +39,7 @@ let package = Package(
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             ],
             path: "Sources",

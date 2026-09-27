@@ -7,9 +7,9 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginStorage", targets: ["PluginStorage"])],
     dependencies: [
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.1.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
-        .package(path: "../ProviderStorage"),
     ],
     targets: [
         .target(
@@ -17,7 +17,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
             ],
             path: "Sources/PluginStorage"
         ),

@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "FactoryAppIconDesigner", targets: ["FactoryAppIconDesigner"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/CofficLab/LumiThemePack.git", from: "1.0.2"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitLLM"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
@@ -27,7 +28,7 @@ let package = Package(
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderChatSection"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.1.0"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
@@ -40,7 +41,6 @@ let package = Package(
         .package(path: "../ProviderRailView"),
         .package(path: "../ProviderRootView"),
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
-        .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderToolbar"),
     ],
@@ -48,6 +48,7 @@ let package = Package(
         .target(
             name: "FactoryAppIconDesigner",
             dependencies: [
+                .product(name: "LumiThemePack", package: "LumiThemePack"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
@@ -79,7 +80,7 @@ let package = Package(
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderTheme", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),

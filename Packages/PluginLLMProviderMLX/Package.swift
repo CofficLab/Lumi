@@ -6,10 +6,10 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginLLMProviderMLX", targets: ["PluginLLMProviderMLX"])],
     dependencies: [
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.1.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderLLMManager"),
-        .package(path: "../ProviderStorage"),
         .package(path: "../KitLLM"),
         .package(path: "../KitDownload"),
         .package(
@@ -24,7 +24,7 @@ let package = Package(
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "KitDownload", package: "KitDownload"),
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),

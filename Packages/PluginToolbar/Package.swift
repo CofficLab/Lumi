@@ -17,8 +17,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.0.1"),
-        .package(path: "../ProviderPluginManaging"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.1.0"),
         .package(path: "../ProviderToolbar"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
     ],
@@ -28,7 +27,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
-                .product(name: "ProviderPluginManaging", package: "ProviderPluginManaging"),
+                .product(name: "ProviderPluginManaging", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ]
@@ -39,7 +38,7 @@ let package = Package(
                 "PluginToolbar",
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderPluginControl", package: "LumiProviders"),
-                .product(name: "ProviderPluginManaging", package: "ProviderPluginManaging"),
+                .product(name: "ProviderPluginManaging", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
             ]
         ),

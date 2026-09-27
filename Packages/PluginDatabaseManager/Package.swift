@@ -15,6 +15,7 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.1.0"),
         .package(path: "../ProviderEditor"),
         .package(path: "../PluginCodeEditorHost"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
@@ -25,7 +26,6 @@ let package = Package(
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderExternalFile"),
         .package(path: "../ProviderRailView"),
-        .package(path: "../ProviderStorage"),
         .package(path: "../ProviderRootView"),
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderToolManager"),
@@ -52,7 +52,7 @@ let package = Package(
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderExternalFile", package: "ProviderExternalFile"),
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),

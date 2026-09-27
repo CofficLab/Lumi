@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "PluginAppIconDesigner", targets: ["PluginAppIconDesigner"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.1.0"),
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
@@ -22,7 +23,6 @@ let package = Package(
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderRailView"),
         .package(path: "../ProviderRootView"),
-        .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderPromptSuggestion"),
         .package(path: "../ProviderSkill"),
@@ -45,7 +45,7 @@ let package = Package(
                 "ProviderProject",
                 "ProviderRailView",
                 "ProviderRootView",
-                "ProviderStorage",
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
                 "ProviderSkill",
@@ -70,7 +70,7 @@ let package = Package(
                 "ProviderProject",
                 "ProviderRailView",
                 "ProviderRootView",
-                "ProviderStorage",
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 "ProviderToolManager",
             ]
         ),

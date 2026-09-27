@@ -9,13 +9,13 @@ let package = Package(
         .library(name: "PluginEditorPreview", targets: ["PluginEditorPreview"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.1.0"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(path: "../KitMarkdown"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderRootView"),
-        .package(path: "../ProviderStorage"),
     ],
     targets: [
         .target(
@@ -27,7 +27,7 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),

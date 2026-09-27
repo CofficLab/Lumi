@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "PluginMindMapDesigner", targets: ["PluginMindMapDesigner"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.1.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
@@ -22,7 +23,6 @@ let package = Package(
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderRailView"),
         .package(path: "../ProviderRootView"),
-        .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderSkill"),
     ],
@@ -43,7 +43,7 @@ let package = Package(
                 "ProviderProject",
                 "ProviderRailView",
                 "ProviderRootView",
-                "ProviderStorage",
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 "ProviderToolManager",
                 "ProviderSkill",
             ],
@@ -62,7 +62,7 @@ let package = Package(
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
                 "ProviderProject",
-                "ProviderStorage",
+                .product(name: "ProviderStorage", package: "LumiProviders"),
             ]
         ),
     ]
