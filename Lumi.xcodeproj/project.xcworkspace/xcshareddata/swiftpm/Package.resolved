@@ -1,5 +1,5 @@
 {
-  "originHash" : "2d404ba984d05d5340e49730c4d090e7eb51731f1cfeae097190097ce536c658",
+  "originHash" : "3c3caf7dfb3af26501cce724296925c96f3944d593370fbc676462df1bfadb62",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -98,6 +98,15 @@
       "state" : {
         "branch" : "main",
         "revision" : "d48f2cf8696dfa0dc3653b79d6e8013d71d7a71a"
+      }
+    },
+    {
+      "identity" : "lumilocalization",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiLocalization.git",
+      "state" : {
+        "revision" : "2a65f2ea3626936a559458352b8ae694f2f6f74a",
+        "version" : "1.0.0"
       }
     },
     {

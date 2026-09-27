@@ -1,5 +1,5 @@
 {
-  "originHash" : "a9a8d048c8471d3e0c968b84f1bb7bd85f3feb2e63e758912fd1f13a0cd46b8f",
+  "originHash" : "adc3c16b1be0cbb9270ac4fde70990e1839c9fd51c59c79df2ad56a2c98e68f1",
   "pins" : [
     {
       "identity" : "fseventswrapper",
@@ -44,6 +44,24 @@
       "state" : {
         "branch" : "main",
         "revision" : "4a30c5f4d6e3b24be61e87a036b14720ef0f1654"
+      }
+    },
+    {
+      "identity" : "lumilocalization",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiLocalization.git",
+      "state" : {
+        "revision" : "2a65f2ea3626936a559458352b8ae694f2f6f74a",
+        "version" : "1.0.0"
+      }
+    },
+    {
+      "identity" : "lumiproviders",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiProviders.git",
+      "state" : {
+        "revision" : "80b33857dd75b33c1d587796edfc592f179ee320",
+        "version" : "1.0.2"
       }
     },
     {

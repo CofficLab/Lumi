@@ -1,5 +1,5 @@
 {
-  "originHash" : "ab406a88531550e85586b348880c956b7ad456f38aa470b5ca514f943a1e0f80",
+  "originHash" : "38676ec23f2c90bd2ed14bafff881b7b3c73162fb19b920b29bce59505f878fe",
   "pins" : [
     {
       "identity" : "beautiful-mermaid-swift",
@@ -26,6 +26,15 @@
       "state" : {
         "branch" : "main",
         "revision" : "4a30c5f4d6e3b24be61e87a036b14720ef0f1654"
+      }
+    },
+    {
+      "identity" : "lumilocalization",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiLocalization.git",
+      "state" : {
+        "revision" : "2a65f2ea3626936a559458352b8ae694f2f6f74a",
+        "version" : "1.0.0"
       }
     },
     {
