@@ -1,7 +1,7 @@
 import KernelCore
 import os
 import ProviderLogo
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// Smart Light Logo 插件

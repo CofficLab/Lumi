@@ -16,12 +16,12 @@ let package = Package(
         .package(path: "../ProviderToast"),
         .package(path: "../ProviderWebServer"),
         .package(path: "../KitWebServer"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
             name: "PluginWebServer",
-            dependencies: [.product(name: "KernelCore", package: "LumiKernel"), .product(name: "ProviderTheme", package: "LumiProviders"), .product(name: "ProviderSettingView", package: "LumiSettings"), "ProviderToast", "ProviderWebServer", "KitWebServer", "KitSuperLog", "LumiUI"]
+            dependencies: [.product(name: "KernelCore", package: "LumiKernel"), .product(name: "ProviderTheme", package: "LumiProviders"), .product(name: "ProviderSettingView", package: "LumiSettings"), "ProviderToast", "ProviderWebServer", "KitWebServer", .product(name: "LumiLoggingKit", package: "LumiLogging"), "LumiUI"]
         ),
         .testTarget(
             name: "PluginWebServerTests",

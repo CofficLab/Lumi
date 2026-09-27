@@ -15,7 +15,7 @@ let package = Package(
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),
         .package(path: "../ProviderNetwork"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
@@ -25,7 +25,7 @@ let package = Package(
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "ProviderNetwork", package: "ProviderNetwork"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources/PluginLLMProviderAliyun"
         ),

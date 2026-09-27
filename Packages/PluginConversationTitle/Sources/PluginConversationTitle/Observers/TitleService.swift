@@ -1,7 +1,7 @@
 import Foundation
 import KernelCore
 import KitLLM
-import KitSuperLog
+import LumiLoggingKit
 import os
 import ProviderAgentLoop
 import ProviderConversation

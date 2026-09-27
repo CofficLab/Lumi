@@ -2,7 +2,7 @@ import Combine
 import CoreGraphics
 import Foundation
 import os
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 #if canImport(AppKit)

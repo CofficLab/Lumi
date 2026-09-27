@@ -11,7 +11,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitLLM"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderProject"),
@@ -44,7 +44,7 @@ let package = Package(
             dependencies: [
                 "PluginSkill",
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),

@@ -5,7 +5,7 @@ import ProviderToast
 import ProviderSettingView
 import ProviderWebServer
 import KitWebServer
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 旧版本地 HTTP 服务的 V2 迁移实现。

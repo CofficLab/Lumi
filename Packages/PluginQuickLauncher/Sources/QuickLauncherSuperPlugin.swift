@@ -6,8 +6,7 @@ import ProviderMessageSender
 import ProviderSettingView
 import SwiftUI
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 struct QuickLauncherPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "QuickLauncherPlugin")
 }

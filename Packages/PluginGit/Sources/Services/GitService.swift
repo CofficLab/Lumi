@@ -1,5 +1,5 @@
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import LibGit2Swift
 import os
 import ProviderGit

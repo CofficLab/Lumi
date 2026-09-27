@@ -9,7 +9,7 @@ import ProviderProject
 import ProviderSettingView
 import ProviderStorage
 import ProviderToolManager
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// Conversation Manager Plugin

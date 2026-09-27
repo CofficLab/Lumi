@@ -1,5 +1,5 @@
 import KernelCore
-import KitSuperLog
+import LumiLoggingKit
 import LumiUI
 import os
 import ProviderDeveloperMode

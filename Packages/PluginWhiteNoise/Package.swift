@@ -25,7 +25,7 @@ let package = Package(
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderRailView"),
         .package(path: "../ProviderRootView"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
@@ -41,7 +41,7 @@ let package = Package(
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources/PluginWhiteNoise",
             resources: [

@@ -1,6 +1,6 @@
 import KitAgentTool
 import KitDownload
-import KitSuperLog
+import LumiLoggingKit
 import Foundation
 import KernelCore
 import os

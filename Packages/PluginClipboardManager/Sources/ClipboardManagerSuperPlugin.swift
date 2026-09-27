@@ -9,8 +9,7 @@ import ProviderRootView
 import ProviderStorage
 import SwiftUI
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 enum ClipboardManagerPlugin {
     nonisolated static let verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "ClipboardManagerPlugin")

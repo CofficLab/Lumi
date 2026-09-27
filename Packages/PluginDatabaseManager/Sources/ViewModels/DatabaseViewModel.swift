@@ -1,6 +1,6 @@
 import ProviderEditor
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import Combine
 
 @MainActor

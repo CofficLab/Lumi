@@ -6,8 +6,7 @@ import ProviderLLMManager
 import ProviderMessageRendering
 import ProviderOnboarding
 import KitLLM
-import KitSuperLog
-
+import LumiLoggingKit
 /// LLM 供应商管理器插件。
 ///
 /// 替换 `DefaultProviderFactory` 预注册的 `DefaultLLMManager`：在 `onBoot`

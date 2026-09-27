@@ -7,7 +7,7 @@ import ProviderToolbar
 import ProviderRailView
 import ProviderRootView
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 @MainActor

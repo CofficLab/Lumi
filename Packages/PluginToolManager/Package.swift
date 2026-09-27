@@ -24,7 +24,7 @@ let package = Package(
         .package(path: "../ProviderProject"),
         .package(path: "../KitShell"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
@@ -42,7 +42,7 @@ let package = Package(
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "KitShell", package: "KitShell"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources/PluginToolManager",
             resources: [.process("../../Resources/Localizable.xcstrings")]

@@ -1,5 +1,5 @@
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 extension VM {
     func loadApps(silent: Bool = false) async {
         guard !isLoadingApps else { return }

@@ -16,14 +16,14 @@ let package = Package(
     dependencies: [
         .package(path: "../KitLLM"),
         .package(path: "../ProviderMessage"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
             name: "ProviderLLMManager",
             dependencies: [
                 .product(name: "KitLLM", package: "KitLLM"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources/ProviderLLMManager"
         ),

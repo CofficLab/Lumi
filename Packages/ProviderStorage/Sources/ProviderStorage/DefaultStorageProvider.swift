@@ -1,7 +1,6 @@
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// `StorageProviding` 的默认实现
 ///
 /// 目录结构：

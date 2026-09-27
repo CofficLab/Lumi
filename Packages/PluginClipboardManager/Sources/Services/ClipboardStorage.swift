@@ -1,5 +1,5 @@
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 剪贴板存储

@@ -6,7 +6,7 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginLLMProviderMLX", targets: ["PluginLLMProviderMLX"])],
     dependencies: [
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderStorage"),
@@ -21,7 +21,7 @@ let package = Package(
         .target(
             name: "PluginLLMProviderMLX",
             dependencies: [
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),

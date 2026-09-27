@@ -6,7 +6,7 @@ import ProviderChatSection
 import ProviderConversation
 import ProviderLifecycleHooks
 import ProviderToast
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// 会话回复语言控制插件（中文 / English）。

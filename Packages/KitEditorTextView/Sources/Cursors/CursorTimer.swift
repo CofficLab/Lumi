@@ -7,7 +7,7 @@
 
 import Foundation
 import AppKit
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 class CursorTimer: SuperLog {

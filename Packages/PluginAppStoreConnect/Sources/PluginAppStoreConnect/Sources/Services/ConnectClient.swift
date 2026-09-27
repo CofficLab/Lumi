@@ -4,7 +4,7 @@ import KernelCore
 import KitAgentTool
 import KitAppStorePromo
 import LumiLocalizationKit
-import KitSuperLog
+import LumiLoggingKit
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
@@ -16,7 +16,7 @@ import ProviderStorage
 import ProviderToolbar
 import ProviderToolManager
 import os
-import KitSuperLog
+import LumiLoggingKit
 enum AppStoreConnectClientError: LocalizedError {
     case missingCredentials
     case invalidPrivateKey

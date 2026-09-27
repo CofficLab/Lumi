@@ -29,6 +29,15 @@
       }
     },
     {
+      "identity" : "lumilogging",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiLogging.git",
+      "state" : {
+        "revision" : "8c00bb13b76a21f88bee186a68ca20568550f65e",
+        "version" : "1.0.1"
+      }
+    },
+    {
       "identity" : "lumiproviders",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiProviders.git",

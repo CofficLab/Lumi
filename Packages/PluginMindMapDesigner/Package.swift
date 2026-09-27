@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginMindMapDesigner", targets: ["PluginMindMapDesigner"]),
     ],
     dependencies: [
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
@@ -30,7 +30,7 @@ let package = Package(
         .target(
             name: "PluginMindMapDesigner",
             dependencies: [
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 "KitAgentTool",
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),

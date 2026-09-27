@@ -1,5 +1,5 @@
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// `ProjectProviding` 的内存默认实现。

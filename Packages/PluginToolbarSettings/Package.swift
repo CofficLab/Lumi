@@ -15,7 +15,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../ProviderToolbar"),
@@ -24,7 +24,7 @@ let package = Package(
         .target(
             name: "PluginToolbarSettings",
             dependencies: [
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),

@@ -8,7 +8,7 @@ let package = Package(
         .library(name: "PluginCodeEditorLanguages", targets: ["PluginCodeEditorLanguages"]),
     ],
     dependencies: [
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderEditor"),
         .package(path: "../PluginCodeEditorHost"),
@@ -29,7 +29,7 @@ let package = Package(
         .target(
             name: "PluginCodeEditorLanguages",
             dependencies: [
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "TreeSitterSwift", package: "tree-sitter-swift"),

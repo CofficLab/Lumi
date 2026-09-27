@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginOnboarding", targets: ["PluginOnboarding"]),
     ],
     dependencies: [
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderOnboarding"),
         .package(path: "../ProviderRootView"),
@@ -21,7 +21,7 @@ let package = Package(
         .target(
             name: "PluginOnboarding",
             dependencies: [
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),

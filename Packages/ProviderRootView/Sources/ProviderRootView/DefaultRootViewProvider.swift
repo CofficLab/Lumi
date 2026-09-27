@@ -1,6 +1,6 @@
 import Combine
 import LumiUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 import ProviderRailView
 import SwiftUI

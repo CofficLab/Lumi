@@ -3,8 +3,7 @@ import os
 import KernelCore
 import ProviderLLMManager
 import KitLLM
-import KitSuperLog
-
+import LumiLoggingKit
 /// CommandCode 供应商装配插件（KernelCore 生态）。
 ///
 /// 在 `onBoot` 中把 GoatPlanProvider 注册进

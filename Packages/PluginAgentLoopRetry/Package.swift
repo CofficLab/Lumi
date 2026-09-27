@@ -9,7 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderMessage"),
@@ -19,7 +19,7 @@ let package = Package(
             name: "PluginAgentLoopRetry",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),

@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 @MainActor
 final class LargeFilesViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📄"

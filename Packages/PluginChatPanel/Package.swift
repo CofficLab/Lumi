@@ -6,7 +6,7 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginChatPanel", targets: ["PluginChatPanel"])],
     dependencies: [
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"), .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderChatSection"),

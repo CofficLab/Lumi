@@ -1,7 +1,7 @@
 import KernelCore
 import LumiUI
 import ProviderNetwork
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 import os
 

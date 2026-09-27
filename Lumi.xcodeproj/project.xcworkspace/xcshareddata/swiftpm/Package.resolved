@@ -1,5 +1,5 @@
 {
-  "originHash" : "3c3caf7dfb3af26501cce724296925c96f3944d593370fbc676462df1bfadb62",
+  "originHash" : "b6ddb43923ed71ff42f94d844d6593e668a690b3ae03e00cfd7ee8bd89d8b848",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -107,6 +107,15 @@
       "state" : {
         "revision" : "2a65f2ea3626936a559458352b8ae694f2f6f74a",
         "version" : "1.0.0"
+      }
+    },
+    {
+      "identity" : "lumilogging",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiLogging.git",
+      "state" : {
+        "revision" : "8c00bb13b76a21f88bee186a68ca20568550f65e",
+        "version" : "1.0.1"
       }
     },
     {

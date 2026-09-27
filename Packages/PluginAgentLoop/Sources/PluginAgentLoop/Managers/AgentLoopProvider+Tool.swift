@@ -9,8 +9,7 @@ import ProviderMessageStreaming
 import ProviderToolManager
 import ProviderLifecycleHooks
 import ProviderLLMContext
-import KitSuperLog
-
+import LumiLoggingKit
 // MARK: - LLM Request
 
 extension AgentLoopManager {

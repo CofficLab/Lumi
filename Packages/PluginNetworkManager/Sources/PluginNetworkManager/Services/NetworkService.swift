@@ -1,5 +1,5 @@
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import KitHttp
 import SystemConfiguration
 import Darwin

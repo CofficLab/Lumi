@@ -6,7 +6,7 @@ import ProviderConversation
 import ProviderRootView
 import ProviderToolManager
 import ProviderToolbar
-import KitSuperLog
+import LumiLoggingKit
 import os
 import SwiftUI
 #if os(macOS)

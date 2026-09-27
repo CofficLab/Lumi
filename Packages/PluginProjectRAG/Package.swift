@@ -9,7 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitLLM"),
@@ -33,7 +33,7 @@ let package = Package(
             name: "ProjectRAGEngine",
             dependencies: [
                 "CSQLite",
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "ProviderIdleTime", package: "ProviderIdleTime"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
             ],

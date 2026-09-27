@@ -5,7 +5,7 @@ import LumiUI
 import ProviderChatSection
 import ProviderConversation
 import ProviderToast
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// 会话推理强度控制插件（low / medium / high / xhigh / max / 关闭）。

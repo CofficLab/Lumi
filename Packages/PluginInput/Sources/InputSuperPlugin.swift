@@ -8,7 +8,7 @@ import ProviderStorage
 import ProviderRailView
 import ProviderRootView
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 enum InputPluginRuntimeBridge {

@@ -14,7 +14,7 @@ import ProviderSkill
 import ProviderAgentRules
 import ProviderProject
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// KernelCore 版本的 Resume Designer 插件。

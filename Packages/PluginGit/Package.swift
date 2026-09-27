@@ -26,7 +26,7 @@ let package = Package(
         .package(path: "../ProviderMessageRendering"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../KitShell"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
@@ -43,7 +43,7 @@ let package = Package(
                 .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitShell", package: "KitShell"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources",
             resources: [

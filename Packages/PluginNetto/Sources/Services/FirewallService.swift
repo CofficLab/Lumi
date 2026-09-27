@@ -2,7 +2,7 @@ import Foundation
 @preconcurrency import NetworkExtension
 import SystemExtensions
 import os
-import KitSuperLog
+import LumiLoggingKit
 import AppKit
 import SwiftUI
 

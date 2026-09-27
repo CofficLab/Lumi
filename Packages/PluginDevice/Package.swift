@@ -27,7 +27,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderRootView"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
@@ -45,7 +45,7 @@ let package = Package(
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: ".",
             exclude: [

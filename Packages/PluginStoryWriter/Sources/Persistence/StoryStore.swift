@@ -1,7 +1,6 @@
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// Persistent storage for story writer data.
 ///
 /// File layout under `pluginDirectory`:

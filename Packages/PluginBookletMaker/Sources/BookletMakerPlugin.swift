@@ -13,7 +13,7 @@ import ProviderSkill
 import ProviderStorage
 import ProviderToolbar
 import ProviderToolManager
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 // MARK: - Plugin Entry

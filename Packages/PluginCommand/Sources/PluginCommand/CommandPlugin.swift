@@ -3,7 +3,7 @@ import Foundation
 import KernelCore
 import ProviderCommand
 import ProviderStorage
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 // MARK: - Command SuperPlugin

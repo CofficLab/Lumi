@@ -1,7 +1,7 @@
 import ProviderEditor
 import KernelCore
 import KitAgentTool
-import KitSuperLog
+import LumiLoggingKit
 import os
 import ProviderGit
 import ProviderMessageRendering

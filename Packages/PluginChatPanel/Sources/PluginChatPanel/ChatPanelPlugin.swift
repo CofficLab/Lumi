@@ -6,7 +6,7 @@ import ProviderRootView
 import ProviderRailView
 import ProviderStorage
 import ProviderToolbar
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// Persists the last active Rail tab ID for the Chat panel.

@@ -23,7 +23,7 @@ let package = Package(
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(name: "PluginMessageListDetailed", dependencies: [
@@ -43,7 +43,7 @@ let package = Package(
             .product(name: "ProviderProject", package: "ProviderProject"),
             .product(name: "ProviderToolbar", package: "ProviderToolbar"),
             .product(name: "ProviderToolManager", package: "ProviderToolManager"),
-            .product(name: "KitSuperLog", package: "KitSuperLog"),
+            .product(name: "LumiLoggingKit", package: "LumiLogging"),
         ], resources: [.process("../../Resources/Localizable.xcstrings")]),
         .testTarget(name: "PluginMessageListDetailedTests", dependencies: [
             "PluginMessageListDetailed",

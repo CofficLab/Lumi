@@ -19,7 +19,7 @@ let package = Package(
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderToolManager"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),        .package(path: "../KitDownload"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
@@ -29,7 +29,7 @@ let package = Package(
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),                .product(name: "KitDownload", package: "KitDownload"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources",
             resources: [

@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginResumeDesigner", targets: ["PluginResumeDesigner"]),
     ],
     dependencies: [
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitHTMLPreview"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
@@ -35,7 +35,7 @@ let package = Package(
         .target(
             name: "PluginResumeDesigner",
             dependencies: [
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 "KitAgentTool",
                 "KitHTMLPreview",
                 .product(name: "KernelCore", package: "LumiKernel"),

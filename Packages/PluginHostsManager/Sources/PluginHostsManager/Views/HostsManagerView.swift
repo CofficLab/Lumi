@@ -1,5 +1,5 @@
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import LumiUI
 
 public struct HostsManagerView: View, SuperLog {

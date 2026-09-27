@@ -18,7 +18,7 @@ let package = Package(
         .package(path: "../ProviderMenuBar"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
@@ -33,7 +33,7 @@ let package = Package(
                 "ProviderMenuBar",
                 "ProviderStorage",
                 "ProviderToolManager",
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),

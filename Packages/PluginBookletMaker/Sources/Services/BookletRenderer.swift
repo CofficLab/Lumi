@@ -1,8 +1,7 @@
 import CoreGraphics
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 // MARK: - Renderer Protocol
 
 /// Rendering contract used by the view model.

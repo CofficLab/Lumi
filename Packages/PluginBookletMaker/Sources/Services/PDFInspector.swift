@@ -1,8 +1,7 @@
 import CoreGraphics
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 // MARK: - PDF Inspector
 
 /// Lightweight wrapper around `CGPDFDocument` that extracts just the

@@ -1,8 +1,7 @@
 import os
 import KernelCore
 import ProviderChatSection
-import KitSuperLog
-
+import LumiLoggingKit
 /// Chat File Attachment Plugin（KernelCore 版本）
 ///
 /// 由旧版 `Plugins/ChatFileAttachmentPlugin`（KernelLumi / LumiPlugin 架构）复刻而来：

@@ -21,7 +21,7 @@ let package = Package(
         .package(path: "../ProviderToolbar"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../KitShell"),
-        .package(path: "../KitSuperLog")
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1")
     ],
     targets: [
 .target(
@@ -36,7 +36,7 @@ let package = Package(
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitShell", package: "KitShell"),
-                .product(name: "KitSuperLog", package: "KitSuperLog")
+                .product(name: "LumiLoggingKit", package: "LumiLogging")
             ],
             path: "Sources",
             resources: [

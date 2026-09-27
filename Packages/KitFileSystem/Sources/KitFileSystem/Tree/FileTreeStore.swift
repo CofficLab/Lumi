@@ -1,7 +1,6 @@
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// 文件树状态持久化存储
 ///
 /// 负责持久化文件树的展开状态和最近项目路径。

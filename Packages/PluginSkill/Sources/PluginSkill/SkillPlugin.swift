@@ -2,7 +2,7 @@ import os
 import Foundation
 import KitLLM
 import KernelCore
-import KitSuperLog
+import LumiLoggingKit
 import LumiUI
 import ProviderLifecycleHooks
 import ProviderChatSection

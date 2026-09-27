@@ -1,7 +1,7 @@
 import Foundation
 import KernelCore
 import ProviderStorage
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 // MARK: - Storage SuperPlugin

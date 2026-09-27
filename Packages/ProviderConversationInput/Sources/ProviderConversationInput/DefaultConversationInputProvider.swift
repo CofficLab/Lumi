@@ -1,7 +1,6 @@
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 @MainActor
 public final class DefaultConversationInputProvider: ConversationInputProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-conversation-input", category: "ConversationInput")

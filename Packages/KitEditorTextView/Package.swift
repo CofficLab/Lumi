@@ -26,7 +26,7 @@ let package = Package(
             .upToNextMajor(from: "1.0.0")
         ),
         // Logging protocol
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         // Runtime localization
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
     ],
@@ -38,7 +38,7 @@ let package = Package(
                 "TextStory",
                 .product(name: "Collections", package: "swift-collections"),
                 "EditorTextViewObjC",
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
             path: ".",

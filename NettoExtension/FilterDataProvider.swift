@@ -1,6 +1,6 @@
 import NetworkExtension
 import os
-import KitSuperLog
+import LumiLoggingKit
 import NettoPlugin
 
 class FilterDataProvider: NEFilterDataProvider, SuperLog {

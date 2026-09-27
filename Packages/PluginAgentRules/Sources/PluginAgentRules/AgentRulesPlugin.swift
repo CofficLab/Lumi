@@ -7,7 +7,7 @@ import ProviderProject
 import ProviderSettingView
 import ProviderToolManager
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// Agent Rules 插件（KernelCore 版本）

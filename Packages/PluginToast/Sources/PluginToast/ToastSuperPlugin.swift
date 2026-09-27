@@ -1,7 +1,7 @@
 import Foundation
 import KernelCore
 import ProviderToast
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 // MARK: - Toast SuperPlugin

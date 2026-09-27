@@ -7,7 +7,7 @@ import ProviderStorage
 import ProviderToolManager
 import ProviderProjectRAG
 import ProviderLifecycleHooks
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// Project RAG 的 KernelCore 适配器。

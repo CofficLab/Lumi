@@ -14,7 +14,7 @@
 		F5D870C830458510006C38DD /* PluginLLMProviderCodex in Frameworks */ = {isa = PBXBuildFile; productRef = LC2AFD000000000000000001 /* PluginLLMProviderCodex */; };
 		F5FL20000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = F5FL200000000000000001 /* FactoryLumi */; };
 		LF000000000000000014 /* LumiFinder.appex in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = LF000000000000000001 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		LF000000000000000015 /* KitSuperLog in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000016 /* KitSuperLog */; };
+		LF000000000000000015 /* LumiLoggingKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000016 /* LumiLoggingKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -247,7 +247,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				LF000000000000000015 /* KitSuperLog in Frameworks */,
+				LF000000000000000015 /* LumiLoggingKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -435,7 +435,7 @@
 			);
 			name = LumiFinder;
 			packageProductDependencies = (
-				LF000000000000000016 /* KitSuperLog */,
+				LF000000000000000016 /* LumiLoggingKit */,
 			);
 			productName = LumiFinder;
 			productReference = LF000000000000000001 /* LumiFinder.appex */;
@@ -509,8 +509,8 @@
 			mainGroup = F54F8C752F1A3B6500AABB2A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				LF000000000000000017 /* XCRemoteSwiftPackageReference "LumiLogging" */,
 				FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */,
-				LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/KitSuperLog" */,
 				F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Packages/PluginAppUpdate" */,
 				BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */,
 				AI2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryAppIconDesigner" */,
@@ -944,14 +944,16 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/PluginLLMProviderCodex;
 		};
-		LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/KitSuperLog" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/KitSuperLog;
-		};
+
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		/* End XCRemoteSwiftPackageReference section */
+		LF000000000000000017 /* XCRemoteSwiftPackageReference "LumiLogging" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CofficLab/LumiLogging.git";
+			requirement = { kind = upToNextMajorVersion; minimumVersion = 1.0.1; };
+		};
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		AI2AFD000000000000000001 /* FactoryAppIconDesigner */ = {
@@ -983,9 +985,10 @@
 			package = LC2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderCodex" */;
 			productName = PluginLLMProviderCodex;
 		};
-		LF000000000000000016 /* KitSuperLog */ = {
+		LF000000000000000016 /* LumiLoggingKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = KitSuperLog;
+			package = LF000000000000000017 /* XCRemoteSwiftPackageReference "LumiLogging" */;
+			productName = LumiLoggingKit;
 		};
 		/* End XCSwiftPackageProductDependency section */
 	};

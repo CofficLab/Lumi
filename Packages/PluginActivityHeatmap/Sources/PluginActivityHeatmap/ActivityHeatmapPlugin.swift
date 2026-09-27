@@ -12,7 +12,7 @@ import ProviderIdleTime
 import ProviderDocsView
 import ProviderStorage
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// V2 activity dashboard. It preserves the legacy heatmap's three time ranges,

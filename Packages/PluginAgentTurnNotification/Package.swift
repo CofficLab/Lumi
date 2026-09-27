@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginAgentTurnNotification", targets: ["PluginAgentTurnNotification"]),
     ],
     dependencies: [
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderConversation"),
@@ -19,7 +19,7 @@ let package = Package(
         .target(
             name: "PluginAgentTurnNotification",
             dependencies: [
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 "ProviderAgentLoop",
                 "ProviderConversation",

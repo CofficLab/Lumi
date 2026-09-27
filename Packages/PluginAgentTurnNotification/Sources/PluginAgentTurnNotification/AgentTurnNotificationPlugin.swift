@@ -4,7 +4,7 @@ import ProviderAgentLoop
 import ProviderConversation
 import ProviderLifecycleHooks
 import UserNotifications
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 回合通知插件：回合结束时发系统通知。

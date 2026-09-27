@@ -1,6 +1,6 @@
 import KernelCore
 import LumiThemePack
-import KitSuperLog
+import LumiLoggingKit
 import os
 import ProviderCommand
 import ProviderSettingView

@@ -7,7 +7,7 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginCodeEditorHost", targets: ["PluginCodeEditorHost"])],
     dependencies: [
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderEditor"),
         .package(path: "../KitEditorKernel"),
@@ -38,7 +38,7 @@ let package = Package(
                 .product(name: "LanguageClient", package: "LanguageClient"),
                 .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
                 .product(name: "KitShell", package: "KitShell"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "MagicAlert", package: "MagicAlert"),
                 .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
             ],
@@ -48,7 +48,7 @@ let package = Package(
         .target(
             name: "PluginCodeEditorHost",
             dependencies: [
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 "EditorService",

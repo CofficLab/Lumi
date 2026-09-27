@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginPrototypeDesigner", targets: ["PluginPrototypeDesigner"]),
     ],
     dependencies: [
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitPrototype"),
         .package(path: "../KitHTMLPreview"),
@@ -36,7 +36,7 @@ let package = Package(
         .target(
             name: "PluginPrototypeDesigner",
             dependencies: [
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 "KitAgentTool",
                 "KitPrototype",
                 "KitHTMLPreview",

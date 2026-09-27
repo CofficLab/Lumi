@@ -9,7 +9,7 @@ import TreeSitterSwift
 import TreeSitterTSX
 import TreeSitterTypeScript
 import TreeSitterYAML
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 @MainActor

@@ -17,7 +17,7 @@ let package = Package(
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
@@ -28,7 +28,7 @@ let package = Package(
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources/PluginMessageSender"
         ),

@@ -1,7 +1,6 @@
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 public enum EditorPerfEvent: String, Sendable, CaseIterable {
     case fileOpen = "file.open"
     case fileOpenRead = "file.open.read"
