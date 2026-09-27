@@ -125,6 +125,7 @@ struct ThemeSettingsDetailView: View {
         VStack(spacing: 0) {
             VStack(spacing: 10) {
                 AppSearchBar(text: $searchText, placeholder: "搜索主题")
+                    .padding(.horizontal, 12)
                 AppSegmentedControl(
                     ThemeAppearanceFilter.allCases.map(\.title),
                     selection: Binding(
@@ -132,8 +133,9 @@ struct ThemeSettingsDetailView: View {
                         set: { appearanceFilter = ThemeAppearanceFilter.allCases[$0] }
                     )
                 )
+                .padding(.horizontal, 12)
             }
-            .padding(12)
+            .padding(.vertical, 12)
 
             AppDivider()
 
