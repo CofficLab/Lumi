@@ -27,6 +27,7 @@ struct DefaultRootHostView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityIdentifier("root.main")
         .background(theme.background)
         .appThemedAppearance()
         #if os(macOS)

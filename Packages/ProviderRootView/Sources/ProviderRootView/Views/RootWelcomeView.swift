@@ -25,11 +25,13 @@ struct RootWelcomeView: View {
                     Text(LumiPluginLocalization.string("Welcome to Lumi", bundle: .module))
                         .font(.appTitle)
                         .foregroundStyle(theme.textPrimary)
+                        .accessibilityIdentifier("root.welcome.title")
 
                     Text(LumiPluginLocalization.string("Select an item from the ActivityBar to get started", bundle: .module))
                         .font(.appBody)
                         .foregroundStyle(theme.textSecondary)
                         .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("root.welcome.description")
                 }
 
                 Spacer()

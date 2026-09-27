@@ -33,6 +33,13 @@
 			remoteGlobalIDString = LF000000000000000002;
 			remoteInfo = LumiFinder;
 		};
+		UT0000000000000000000012 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F54F8C762F1A3B6500AABB2A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F54F8C7D2F1A3B6500AABB2A;
+			remoteInfo = Lumi;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -67,6 +74,7 @@
 		ED0129D9D619E8053070A012 /* LumiFinder-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "LumiFinder-Release.xcconfig"; path = "Packages/PluginRClick/FinderExtension/LumiFinder-Release.xcconfig"; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		LF000000000000000001 /* LumiFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumiFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		UT0000000000000000000002 /* LumiUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LumiUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -166,11 +174,37 @@
 			path = Packages/PluginRClick/FinderExtension;
 			sourceTree = "<group>";
 		};
+		UT0000000000000000000004 /* LumiUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = LumiUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		AC0000000000000000000005 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		UT0000000000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		UT0000000000000000000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		UT0000000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -238,12 +272,14 @@
 				CD0000000000000000000004 /* CADDesignerApp */,
 				DB0000000000000000000004 /* DatabaseManagerApp */,
 				LF000000000000000009 /* Packages/PluginRClick/FinderExtension */,
+				UT0000000000000000000004 /* LumiUITests */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
 				AC0000000000000000000002 /* LumiACP.app */,
 				AI0000000000000000000002 /* AppIconDesigner.app */,
 				CD0000000000000000000002 /* CADDesigner.app */,
 				DB0000000000000000000002 /* DatabaseManager.app */,
 				LF000000000000000001 /* LumiFinder.appex */,
+				UT0000000000000000000002 /* LumiUITests.xctest */,
 				0BBD822C30067A13005CCD05 /* Frameworks */,
 				7BACB91084647EBF2FC35695 /* Project-Debug.xcconfig */,
 				AE205FD720E849E1FFA4D49C /* Project-Release.xcconfig */,
@@ -408,6 +444,27 @@
 			productReference = LF000000000000000001 /* LumiFinder.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		UT0000000000000000000001 /* LumiUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = UT000000000000000000000F /* Build configuration list for PBXNativeTarget "LumiUITests" */;
+			buildPhases = (
+				UT0000000000000000000007 /* Sources */,
+				UT0000000000000000000005 /* Frameworks */,
+				UT0000000000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				UT0000000000000000000013 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				UT0000000000000000000004 /* LumiUITests */,
+			);
+			name = LumiUITests;
+			productName = LumiUITests;
+			productReference = UT0000000000000000000002 /* LumiUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -435,6 +492,10 @@
 					};
 					LF000000000000000002 = {
 						CreatedOnToolsVersion = 16.4;
+					};
+					UT0000000000000000000001 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = F54F8C7D2F1A3B6500AABB2A;
 					};
 				};
 			};
@@ -472,6 +533,7 @@
 				CD0000000000000000000009 /* CADDesigner */,
 				DB0000000000000000000009 /* DatabaseManager */,
 				LF000000000000000002 /* LumiFinder */,
+				UT0000000000000000000001 /* LumiUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -644,6 +706,11 @@
 			target = LF000000000000000002 /* LumiFinder */;
 			targetProxy = LF000000000000000012 /* PBXContainerItemProxy */;
 		};
+		UT0000000000000000000013 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F54F8C7D2F1A3B6500AABB2A /* Lumi */;
+			targetProxy = UT0000000000000000000012 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -745,6 +812,36 @@
 			};
 			name = Release;
 		};
+		UT000000000000000000000B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = Lumi;
+			};
+			name = Debug;
+		};
+		UT000000000000000000000C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = Lumi;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -807,6 +904,15 @@
 			buildConfigurations = (
 				LF000000000000000006 /* Debug */,
 				LF000000000000000007 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		UT000000000000000000000F /* Build configuration list for PBXNativeTarget "LumiUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				UT000000000000000000000B /* Debug */,
+				UT000000000000000000000C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
