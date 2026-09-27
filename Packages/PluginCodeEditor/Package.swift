@@ -24,8 +24,7 @@ let package = Package(
         .package(path: "../ProviderRailView"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderRootView"),
-        .package(path: "../ProviderPluginControl"),
-        .package(path: "../ProviderTheme"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
     ],
     targets: [
@@ -46,7 +45,7 @@ let package = Package(
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
-                .product(name: "ProviderTheme", package: "ProviderTheme"),
+                .product(name: "ProviderTheme", package: "LumiProviders"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             resources: [.process("../../Resources")]
@@ -63,9 +62,9 @@ let package = Package(
                 .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
-                .product(name: "ProviderPluginControl", package: "ProviderPluginControl"),
+                .product(name: "ProviderPluginControl", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
-                .product(name: "ProviderTheme", package: "ProviderTheme"),
+                .product(name: "ProviderTheme", package: "LumiProviders"),
             ]
         ),
     ]

@@ -9,7 +9,7 @@ let package = Package(
     dependencies: [
         .package(path: "../KitSuperLog"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
-        .package(path: "../ProviderCommand"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.0.1"),
         .package(path: "../ProviderStorage"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../KitLocalization"),
@@ -20,7 +20,7 @@ let package = Package(
             dependencies: [
                 "KitSuperLog",
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "ProviderCommand", package: "ProviderCommand"),
+                .product(name: "ProviderCommand", package: "LumiProviders"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitLocalization", package: "KitLocalization"),

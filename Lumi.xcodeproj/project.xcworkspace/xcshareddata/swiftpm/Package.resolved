@@ -101,6 +101,15 @@
       }
     },
     {
+      "identity" : "lumiproviders",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiProviders.git",
+      "state" : {
+        "revision" : "78d2746c2c02cc386ef4936eab7953372294ac54",
+        "version" : "1.0.1"
+      }
+    },
+    {
       "identity" : "lumiui",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiUI.git",
