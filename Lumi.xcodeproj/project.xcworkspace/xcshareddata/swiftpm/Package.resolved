@@ -106,7 +106,7 @@
       "location": "https://github.com/CofficLab/LumiKernel.git",
       "state": {
         "branch": "main",
-        "revision": "d48f2cf8696dfa0dc3653b79d6e8013d71d7a71a"
+        "revision": "4a30c5f4d6e3b24be61e87a036b14720ef0f1654"
       }
     },
     {
@@ -125,6 +125,15 @@
       "state": {
         "revision": "8c00bb13b76a21f88bee186a68ca20568550f65e",
         "version": "1.0.1"
+      }
+    },
+    {
+      "identity": "lumiplugintoast",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/CofficLab/LumiPluginToast.git",
+      "state": {
+        "revision": "2dfff03dee58cac87a5c5fe4d59d77e2a74ae48b",
+        "version": "1.0.0"
       }
     },
     {
