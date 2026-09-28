@@ -164,10 +164,7 @@ public struct DefaultPluginFactory: PluginFactory {
             // 核心基础插件（order 10-20）：必须最先启动
             try! StorageSuperPlugin(),
             CommandPlugin(),
-            // 工具栏自定义实现（order=0）：替换 ProviderFactory 预注册的
-            // DefaultToolbarProviding，必须早于所有解析 ToolbarProviding 的插件。
-            // 最严格的约束来自 PluginChatPanel / PluginDeveloperMode（均 order=1）：
-            // 它们把解析到的实例捕获进延迟闭包，晚替换会让其调用打在旧实例上。
+            // 共享工具栏插件在 onReady 同步 macOS 与 iOS 的插件贡献启用状态。
             PluginToolbar(),
             ToastSuperPlugin(),
             CaffeinatePlugin(),

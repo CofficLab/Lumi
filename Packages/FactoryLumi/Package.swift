@@ -103,7 +103,6 @@ let package = Package(
         .package(path: "../PluginAgentLoopRetry"),
         .package(path: "../PluginToolManager"),
         .package(path: "../PluginToolActivity"),
-        .package(path: "../PluginToolbar"),
         .package(path: "../PluginFileLog"),
         .package(path: "../PluginShowImage"),
         .package(name: "PluginImageToPDF", path: "../PluginImageToPDF"),
@@ -184,7 +183,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
         .package(path: "../ProviderSkill"),
         .package(path: "../ProviderAgentRules"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.3.5"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderConversationInput"),
         .package(path: "../ProviderIdleTime"),
@@ -296,7 +295,7 @@ let package = Package(
                 .product(name: "PluginAgentLoopRetry", package: "PluginAgentLoopRetry"),
                 .product(name: "PluginToolManager", package: "PluginToolManager"),
                 .product(name: "PluginToolActivity", package: "PluginToolActivity"),
-                .product(name: "PluginToolbar", package: "PluginToolbar"),
+                .product(name: "PluginToolbar", package: "LumiProviders"),
                 .product(name: "PluginFileLog", package: "PluginFileLog"),
                 .product(name: "PluginShowImage", package: "PluginShowImage"),
                 .product(name: "PluginImageToPDF", package: "PluginImageToPDF"),
@@ -435,7 +434,7 @@ let package = Package(
                 .product(name: "ProviderIdleTime", package: "ProviderIdleTime"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "PluginConversationManager", package: "PluginConversationManager"),
-                .product(name: "PluginToolbar", package: "PluginToolbar"),
+                .product(name: "PluginToolbar", package: "LumiProviders"),
             ]
         )
     ]

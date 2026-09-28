@@ -228,15 +228,15 @@ struct FactoryLumiTests {
         #expect(resolved != nil)
     }
 
-    @Test("makeKernel 创建内核并由 PluginToolbar 注册 ToolbarProviding")
+    @Test("makeKernel 创建内核并安装共享 PluginToolbar")
     func makeKernelRegistersDefaultToolbarProviding() throws {
         let kernel = try KernelFactory.makeKernel()
 
-        #expect(kernel.isPluginRegistered(id: "com.coffic.lumi.plugin.toolbar"))
+        #expect(kernel.isPluginRegistered(id: "com.coffic.shared.plugin.toolbar"))
 
         let resolved: (any ToolbarProviding)? = kernel.resolveProvider((any ToolbarProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is ToolbarProvider)
+        #expect(resolved is DefaultToolbarProviding)
     }
 
     @Test("makeKernel 创建内核并注册默认 RootViewProviding")
