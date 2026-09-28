@@ -1,5 +1,5 @@
 {
-  "originHash" : "d0dc6516242acdfc267efde53cbc32bf0be9a65aee7a5b1596433ee212d7211b",
+  "originHash" : "4d3fcaf692a22ece87ee5d650b86b8b62cff0e643c508d74a5726f1d1cbeffcb",
   "pins" : [
     {
       "identity" : "fseventswrapper",
@@ -44,6 +44,24 @@
       "state" : {
         "branch" : "main",
         "revision" : "4a30c5f4d6e3b24be61e87a036b14720ef0f1654"
+      }
+    },
+    {
+      "identity" : "lumilocalization",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiLocalization.git",
+      "state" : {
+        "revision" : "2a65f2ea3626936a559458352b8ae694f2f6f74a",
+        "version" : "1.0.0"
+      }
+    },
+    {
+      "identity" : "lumilogging",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiLogging.git",
+      "state" : {
+        "revision" : "8c00bb13b76a21f88bee186a68ca20568550f65e",
+        "version" : "1.0.1"
       }
     },
     {
@@ -212,8 +230,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tree-sitter/tree-sitter-typescript.git",
       "state" : {
-        "revision" : "f975a621f4e7f532fe322e13c4f79495e0a7b2e7",
-        "version" : "0.23.2"
+        "revision" : "f975a621f4e7f532fe322e13c4f79495e0a7b2e7"
       }
     },
     {

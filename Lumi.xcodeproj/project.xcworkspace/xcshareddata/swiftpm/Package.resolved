@@ -92,6 +92,15 @@
       }
     },
     {
+      "identity" : "lumibookletmaker",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiBookletMaker.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "7eaf6e6c4c30ec8a333ada1ebd8a1cdafe8f19a9"
+      }
+    },
+    {
       "identity" : "lumikernel",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiKernel.git",
@@ -625,8 +634,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tree-sitter/tree-sitter-typescript.git",
       "state" : {
-        "revision" : "f975a621f4e7f532fe322e13c4f79495e0a7b2e7",
-        "version" : "0.23.2"
+        "revision" : "f975a621f4e7f532fe322e13c4f79495e0a7b2e7"
       }
     },
     {

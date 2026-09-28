@@ -973,6 +973,7 @@
 		};
 		F5CBA1A13020000000425FF6 /* AppUpdatePlugin */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Packages/PluginAppUpdate" */;
 			productName = AppUpdatePlugin;
 		};
 		F5FL200000000000000001 /* FactoryLumi */ = {
