@@ -1,11 +1,64 @@
 import KitAgentTool
 import Foundation
+import KernelCore
+import ProviderActivityBar
+import ProviderChatSection
+import ProviderContentView
+import ProviderRailView
+import ProviderRootView
+import SwiftUI
 import Testing
 @testable import BrowserPlugin
 
 @Suite("PluginBrowser")
 @MainActor
 struct PluginBrowserTests {
+    @Test("Browser 激活和关闭时管理 Rail 生命周期")
+    func browserManagesRailLifecycle() throws {
+        let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
+        let chat = DefaultChatSectionProviding()
+        let contentView = DefaultContentViewProviding()
+        let rootView = DefaultRootViewProvider()
+        let railView = DefaultRailViewProviding()
+        railView.addTabs([
+            RailTabItem(id: "browser.files", category: .fileTree, title: "Files", systemImage: "folder") {
+                Text("Files")
+            },
+        ])
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
+        try kernel.registerProvider((any ContentViewProviding).self, contentView)
+        try kernel.registerProvider((any RootViewProviding).self, rootView)
+        try kernel.registerProvider((any RailViewProviding).self, railView)
+
+        let plugin = BrowserSuperPlugin()
+        try plugin.onBoot(kernel: kernel)
+
+        #expect(activityBar.activeItemID == "Browser.entry")
+        #expect(chat.isVisible)
+        #expect(!rootView.isRailViewVisible)
+
+        activityBar.addItems([ActivityBarItem(
+            id: "test.other.entry",
+            title: "Other",
+            systemImage: "square"
+        )])
+        activityBar.activateItem(id: "test.other.entry")
+
+        #expect(!chat.isVisible)
+        #expect(rootView.isRailViewVisible)
+
+        activityBar.activateItem(id: "Browser.entry")
+        #expect(chat.isVisible)
+        #expect(!rootView.isRailViewVisible)
+
+        try plugin.onShutdown(kernel: kernel)
+
+        #expect(chat.isVisible)
+        #expect(rootView.isRailViewVisible)
+    }
+
     @Test("plugin metadata is stable")
     func pluginMetadata() {
         let plugin = BrowserSuperPlugin()

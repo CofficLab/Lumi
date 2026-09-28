@@ -4,6 +4,7 @@ import ProviderChatSection
 import ProviderContentView
 import ProviderConversation
 import ProviderRootView
+import ProviderRailView
 import ProviderToolManager
 import ProviderToolbar
 import LumiLoggingKit
@@ -35,7 +36,10 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
     private weak var contentView: (any ContentViewProviding)?
     private weak var chat: (any ChatSectionProviding)?
     private weak var rootView: (any RootViewProviding)?
+    private weak var railView: (any RailViewProviding)?
     private weak var toolbar: (any ToolbarProviding)?
+    private var rootViewObserver: (any RootViewObserverHandle)?
+    private var isBrowserActive = false
     private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
     private let entryID = "Browser.entry"
 
@@ -46,7 +50,19 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
         contentView = kernel.resolveProvider((any ContentViewProviding).self)
         chat = kernel.resolveProvider((any ChatSectionProviding).self)
         rootView = kernel.resolveProvider((any RootViewProviding).self)
+        railView = kernel.resolveProvider((any RailViewProviding).self)
         toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+
+        rootViewObserver = rootView?.addRootViewObserver { [weak self] event in
+            guard let self,
+                  self.isBrowserActive else { return }
+            switch event {
+            case .railViewChanged, .railViewVisibilityChanged(true):
+                self.hideRailView()
+            default:
+                break
+            }
+        }
 
         if let conversations = kernel.resolveProvider((any ConversationManaging).self) {
             sessions.selectConversation(conversations.selectedConversationID)
@@ -72,7 +88,7 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
             },
         ])
         if activityBar == nil {
-            contentView?.setContentView(view)
+            setActive(true, view: view)
         }
 
         let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
@@ -102,18 +118,23 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         selectedConversationObserver?.cancel()
         selectedConversationObserver = nil
-        let wasActive = activityBar?.activeItemID == entryID
+        rootViewObserver?.cancel()
+        rootViewObserver = nil
+        let wasActive = isBrowserActive || activityBar?.activeItemID == entryID
         activityBar?.removeItems(ids: [entryID])
         kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: "browser_open")
         kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: "browser_read")
         kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: "browser_interact")
         if wasActive {
+            isBrowserActive = false
             contentView?.setContentView(nil)
             rootView?.setContentViewHidden(false)
             rootView?.setContentHeaderViewHidden(false)
             chat?.setVisible(true)
             chat?.setContextActive(true)
             chat?.setActiveContext(.defaultChat)
+            railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+            mountRailView()
             toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
         }
         sessions?.onRequestPresentation = nil
@@ -121,6 +142,7 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
     }
 
     private func setActive(_ active: Bool, view: AnyView) {
+        isBrowserActive = active
         if active {
             toolbar?.setVisibleCategories([.global, .chat, .project])
             rootView?.setContentHeaderViewHidden(true)
@@ -129,6 +151,7 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
             chat?.setVisible(true)
             chat?.setContextActive(true)
             chat?.setActiveContext(.defaultChat)
+            hideRailView()
         } else {
             contentView?.setContentView(nil)
             rootView?.setContentViewHidden(false)
@@ -136,7 +159,20 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
             chat?.setVisible(false)
             chat?.setContextActive(false)
             chat?.setActiveContext(nil)
+            mountRailView()
             toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
         }
+    }
+
+    private func hideRailView() {
+        rootView?.setRailView(nil)
+        rootView?.setRailViewVisible(false)
+    }
+
+    private func mountRailView() {
+        if let railView {
+            rootView?.setRailView(railView.makeRailView())
+        }
+        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
     }
 }
