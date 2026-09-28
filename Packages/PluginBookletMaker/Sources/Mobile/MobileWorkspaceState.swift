@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import BookletMakerCore
 
 // MARK: - Mobile Workspace State
 

@@ -1,5 +1,6 @@
 import Foundation
 import KitAgentTool
+import BookletMakerCore
 
 /// 把 PDF 拼版为可打印的小册子：A4 双面打印后沿中线折叠、骑马钉装订
 /// 即得正确页序的小册子。

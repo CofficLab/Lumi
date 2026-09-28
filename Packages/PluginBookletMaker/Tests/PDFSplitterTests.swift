@@ -2,6 +2,7 @@ import CoreGraphics
 import Foundation
 import PDFKit
 import XCTest
+import BookletMakerCore
 @testable import BookletMakerPlugin
 
 final class PDFSplitterTests: XCTestCase {

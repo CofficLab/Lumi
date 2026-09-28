@@ -1,4 +1,5 @@
 #if os(iOS)
+import BookletMakerCore
 import SwiftUI
 
 /// 拆分计划编辑器：页序原样展示（不重排），可点击页面间分隔点

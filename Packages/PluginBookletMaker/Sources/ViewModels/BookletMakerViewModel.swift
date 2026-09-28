@@ -4,6 +4,7 @@ import Foundation
 import os
 import LumiLoggingKit
 import SwiftUI
+import BookletMakerCore
 
 #if canImport(AppKit)
 import AppKit

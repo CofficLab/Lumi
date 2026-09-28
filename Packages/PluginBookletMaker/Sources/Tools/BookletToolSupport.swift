@@ -1,5 +1,6 @@
 import Foundation
 import KitAgentTool
+import BookletMakerCore
 
 // MARK: - Booklet Tool Support
 

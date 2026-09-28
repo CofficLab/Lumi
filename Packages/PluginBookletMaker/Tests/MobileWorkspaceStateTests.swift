@@ -1,5 +1,6 @@
 import Foundation
 import XCTest
+import BookletMakerCore
 @testable import BookletMakerPlugin
 
 @MainActor

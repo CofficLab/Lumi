@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import BookletMakerCore
 
 // MARK: - Sheet Preview View
 
@@ -198,7 +199,7 @@ struct OutputSheetView: View {
     @ViewBuilder
     private func centerLine(paperHeight: CGFloat, margin: CGFloat) -> some View {
         switch settings.layout {
-        case .bookletFold:
+        case .bookletFold, .signatureFold:
             // 折叠虚线
             Rectangle()
                 .fill(Color.clear)

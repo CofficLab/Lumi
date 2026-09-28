@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import BookletMakerCore
 
 /// Shared rail for the PDF toolbox. The current document is global while
 /// every tool owns an independent settings section and primary action.
