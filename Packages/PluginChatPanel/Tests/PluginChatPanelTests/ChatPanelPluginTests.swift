@@ -20,6 +20,13 @@ struct ChatPanelPluginTests {
         let chat = DefaultChatSectionProviding()
         let rootView = DefaultRootViewProvider()
         let railView = DefaultRailViewProviding()
+        var railViewChanges = 0
+        let rootObserver = rootView.addRootViewObserver { event in
+            if case .railViewChanged = event {
+                railViewChanges += 1
+            }
+        }
+        defer { rootObserver.cancel() }
         try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
         try kernel.registerProvider((any RootViewProviding).self, rootView)
@@ -31,6 +38,7 @@ struct ChatPanelPluginTests {
         #expect(rootView.isContentViewHidden)
         #expect(chat.isVisible)
         #expect(railView.visibleCategories == [.chat, .fileTree])
+        #expect(railViewChanges == 1)
 
         let otherEntryID = "test.other.entry"
         activityBar.addItems([ActivityBarItem(
