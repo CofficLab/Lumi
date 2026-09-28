@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import SwiftUI
 import KernelCore
 import ProviderActivityBar
 import ProviderChatSection
@@ -45,6 +46,41 @@ import ProviderRootView
     #expect(chat.isVisible)
     #expect(rootView.railView != nil)
     #expect(rootView.isContentHeaderViewHidden == false)
+}
+
+@MainActor
+@Test func compactHostActivatesAndRestoresRailLifecycleWithoutActivityBar() throws {
+    let kernel = KernelCoreContainer()
+    let chat = DefaultChatSectionProviding()
+    let contentView = DefaultContentViewProviding()
+    let railView = DefaultRailViewProviding()
+    let rootView = DefaultRootViewProvider()
+    railView.addTabs([
+        RailTabItem(id: "files", category: .fileTree, title: "Files", systemImage: "folder") {
+            Text("Files")
+        },
+    ])
+    rootView.setRailView(railView.makeRailView())
+    rootView.setRailViewVisible(true)
+    try kernel.registerProvider((any ChatSectionProviding).self, chat)
+    try kernel.registerProvider((any ContentViewProviding).self, contentView)
+    try kernel.registerProvider((any RailViewProviding).self, railView)
+    try kernel.registerProvider((any RootViewProviding).self, rootView)
+
+    let plugin = InputSuperPlugin()
+    try plugin.onBoot(kernel: kernel)
+
+    #expect(!chat.isVisible)
+    #expect(rootView.railView == nil)
+    #expect(!rootView.isRailViewVisible)
+    #expect(rootView.isContentHeaderViewHidden)
+
+    try plugin.onShutdown(kernel: kernel)
+
+    #expect(chat.isVisible)
+    #expect(rootView.railView != nil)
+    #expect(rootView.isRailViewVisible)
+    #expect(!rootView.isContentHeaderViewHidden)
 }
 
 @MainActor
