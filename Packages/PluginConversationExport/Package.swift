@@ -15,7 +15,7 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
-        .package(path: "../ProviderToast"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
     ],
     targets: [
         .target(
@@ -27,7 +27,7 @@ let package = Package(
                 "ProviderChatSection",
                 "ProviderConversation",
                 "ProviderMessage",
-                "ProviderToast",
+                .product(name: "ProviderToast", package: "LumiProviders"),
             ],
             path: "Sources/PluginConversationExport",
             resources: [.process("../../Resources/Localizable.xcstrings")]

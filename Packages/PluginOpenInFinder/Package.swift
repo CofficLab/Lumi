@@ -13,10 +13,9 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../OpenInKit"),
-        .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../ProviderToolbar"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
     ],
     targets: [
         .target(
@@ -26,10 +25,10 @@ let package = Package(
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 "OpenInKit",
-                "ProviderDocsView",
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
                 "ProviderProject",
                 "ProviderToolManager",
-                "ProviderToolbar",
+                .product(name: "ProviderToolbar", package: "LumiProviders"),
             ],
             path: "Sources/PluginOpenInFinder",
             resources: [.process("../../Resources/Localizable.xcstrings")]
@@ -40,9 +39,9 @@ let package = Package(
                 "PluginOpenInFinder",
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "OpenInKit", package: "OpenInKit"),
-                .product(name: "ProviderDocsView", package: "ProviderDocsView"),
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
-                .product(name: "ProviderToolbar", package: "ProviderToolbar"),
+                .product(name: "ProviderToolbar", package: "LumiProviders"),
             ]
         ),
     ]

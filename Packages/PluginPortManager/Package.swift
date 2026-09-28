@@ -14,14 +14,11 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderActivityBar"),
-        .package(path: "../ProviderContentView"),
-        .package(path: "../ProviderDocsView"),
-        .package(path: "../ProviderRailView"),
         .package(path: "../ProviderRootView"),
-        .package(path: "../ProviderToolbar"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../KitShell"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1")
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
     ],
     targets: [
 .target(
@@ -29,11 +26,11 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
-                .product(name: "ProviderContentView", package: "ProviderContentView"),
-                .product(name: "ProviderDocsView", package: "ProviderDocsView"),
-                .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "ProviderContentView", package: "LumiProviders"),
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
+                .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
-                .product(name: "ProviderToolbar", package: "ProviderToolbar"),
+                .product(name: "ProviderToolbar", package: "LumiProviders"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitShell", package: "KitShell"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging")

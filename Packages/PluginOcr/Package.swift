@@ -13,8 +13,8 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
-        .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderToolManager"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
     ],
     targets: [
         .target(
@@ -23,7 +23,7 @@ let package = Package(
                 "KitAgentTool",
                 .product(name: "KernelCore", package: "LumiKernel"),
                 "LumiUI",
-                "ProviderDocsView",
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
                 "ProviderToolManager",
             ]
         ),

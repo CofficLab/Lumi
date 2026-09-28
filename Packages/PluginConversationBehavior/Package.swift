@@ -17,9 +17,9 @@ let package = Package(
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderAgentLoop"),
-        .package(path: "../ProviderToast"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
     ],
     targets: [
         .target(
@@ -30,7 +30,7 @@ let package = Package(
                 "ProviderConversation",
                 "ProviderLifecycleHooks",
                 "ProviderLLMManager",
-                "ProviderToast",
+                .product(name: "ProviderToast", package: "LumiProviders"),
                 "LumiUI",
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
@@ -44,7 +44,7 @@ let package = Package(
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
-                .product(name: "ProviderToast", package: "ProviderToast"),
+                .product(name: "ProviderToast", package: "LumiProviders"),
             ],
             path: "Tests/PluginConversationBehaviorTests"
         ),

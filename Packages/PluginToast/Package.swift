@@ -9,8 +9,8 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
-        .package(path: "../ProviderToast"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
     ],
     targets: [
         .target(
@@ -18,7 +18,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "ProviderToast", package: "ProviderToast"),
+                .product(name: "ProviderToast", package: "LumiProviders"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources/PluginToast"
@@ -28,7 +28,7 @@ let package = Package(
             dependencies: [
                 "PluginToast",
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "ProviderToast", package: "ProviderToast"),
+                .product(name: "ProviderToast", package: "LumiProviders"),
             ],
             path: "Tests/PluginToastTests"
         ),

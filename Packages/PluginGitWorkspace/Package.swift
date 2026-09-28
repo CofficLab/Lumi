@@ -21,11 +21,9 @@ let package = Package(
         .package(path: "../ProviderGitRepositoryWatch"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderContentView"),
         .package(path: "../ProviderProject"),
-        .package(path: "../ProviderRailView"),
         .package(path: "../ProviderRootView"),
-        .package(path: "../ProviderToolbar"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
     ],
     targets: [
         .target(
@@ -37,11 +35,11 @@ let package = Package(
                 .product(name: "ProviderGitRepositoryWatch", package: "ProviderGitRepositoryWatch"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
-                .product(name: "ProviderContentView", package: "ProviderContentView"),
+                .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
-                .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
-                .product(name: "ProviderToolbar", package: "ProviderToolbar"),
+                .product(name: "ProviderToolbar", package: "LumiProviders"),
             ],
             path: "Sources/PluginGitWorkspace",
             resources: [.process("../../Resources/Localizable.xcstrings")]
@@ -53,11 +51,11 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 "ProviderActivityBar",
                 "ProviderChatSection",
-                "ProviderContentView",
+                .product(name: "ProviderContentView", package: "LumiProviders"),
                 "ProviderProject",
-                "ProviderRailView",
+                .product(name: "ProviderRailView", package: "LumiProviders"),
                 "ProviderRootView",
-                "ProviderToolbar",
+                .product(name: "ProviderToolbar", package: "LumiProviders"),
             ]
         ),
     ]

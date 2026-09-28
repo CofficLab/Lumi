@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginLLMContext", targets: ["PluginLLMContext"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.1.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitLLM"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),

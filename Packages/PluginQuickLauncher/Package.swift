@@ -19,10 +19,9 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2"),
         .package(path: "../ProviderMessageSender"),
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
-        .package(path: "../ProviderDocsView"),
     ],
     targets: [
         .target(
@@ -35,7 +34,7 @@ let package = Package(
                 .product(name: "ProviderCommand", package: "LumiProviders"),
                 .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
-                .product(name: "ProviderDocsView", package: "ProviderDocsView"),
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
             ],
             path: "Sources",
             resources: [

@@ -13,11 +13,9 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../ProviderActivityBar"),
-        .package(path: "../ProviderContentView"),
-        .package(path: "../ProviderRailView"),
         .package(path: "../ProviderRootView"),
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
-        .package(path: "../ProviderToolbar"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
     ],
     targets: [
         .target(
@@ -27,11 +25,11 @@ let package = Package(
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
-                .product(name: "ProviderContentView", package: "ProviderContentView"),
-                .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "ProviderContentView", package: "LumiProviders"),
+                .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
-                .product(name: "ProviderToolbar", package: "ProviderToolbar"),
+                .product(name: "ProviderToolbar", package: "LumiProviders"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),

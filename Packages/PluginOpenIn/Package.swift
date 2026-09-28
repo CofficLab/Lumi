@@ -14,8 +14,8 @@ let package = Package(
         .package(path: "../KitAgentTool"),
         .package(path: "../OpenInKit"),
         .package(path: "../ProviderProject"),
-        .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderToolManager"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
     ],
     targets: [
         .target(
@@ -25,7 +25,7 @@ let package = Package(
                 "KitAgentTool",
                 "OpenInKit",
                 "ProviderProject",
-                "ProviderDocsView",
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
                 "ProviderToolManager",
             ],
             path: "Sources/PluginOpenIn"

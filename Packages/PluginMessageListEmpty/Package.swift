@@ -16,7 +16,7 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderPromptSuggestion"),
-        .package(path: "../ProviderToolbar"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
     ],
     targets: [
         .target(
@@ -31,7 +31,7 @@ let package = Package(
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
-                .product(name: "ProviderToolbar", package: "ProviderToolbar"),
+                .product(name: "ProviderToolbar", package: "LumiProviders"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
@@ -45,7 +45,7 @@ let package = Package(
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
-                .product(name: "ProviderToolbar", package: "ProviderToolbar"),
+                .product(name: "ProviderToolbar", package: "LumiProviders"),
             ]
         ),
     ]

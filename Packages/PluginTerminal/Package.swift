@@ -17,17 +17,14 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderActivityBar"),
-        .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderContentView"),
-        .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderProject"),
-        .package(path: "../ProviderRailView"),
         .package(path: "../ProviderRootView"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/migueldeicaza/SwiftTerm", .upToNextMajor(from: "1.5.0")),
         .package(path: "../KitTerminalCore"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
     ],
     targets: [
         .target(
@@ -35,12 +32,12 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
-                .product(name: "ProviderToolbar", package: "ProviderToolbar"),
+                .product(name: "ProviderToolbar", package: "LumiProviders"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
-                .product(name: "ProviderContentView", package: "ProviderContentView"),
-                .product(name: "ProviderDocsView", package: "ProviderDocsView"),
+                .product(name: "ProviderContentView", package: "LumiProviders"),
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
-                .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
@@ -59,7 +56,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
-                .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
             ],
             path: "Tests"
