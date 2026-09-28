@@ -5,7 +5,7 @@ import SwiftUI
 
 @MainActor
 struct DefaultRootHostView: View {
-    let provider: PluginRootView
+    let provider: LumiRootViewProvider
     @LumiTheme private var theme
     @State private var observationRevision = 0
     @State private var observerHandle: (any RootViewObserverHandle)?

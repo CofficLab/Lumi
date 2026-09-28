@@ -58,8 +58,8 @@ struct ACPPluginFactoryTests {
         #expect(ids.contains("com.coffic.lumi.plugin.llm-manager"))
         #expect(ids.contains("com.coffic.lumi.plugin.tool-manager"))
         #expect(ids.contains("com.coffic.lumi.plugin.agent-loop"))
-        #expect(ids.contains("com.coffic.lumi.plugin.conversation-manager"))
-        #expect(ids.contains("com.coffic.lumi.plugin.message-manager"))
+        #expect(ids.contains("com.coffic.lumi.plugin.conversation-store"))
+        #expect(ids.contains("com.coffic.lumi.plugin.message-store"))
         #expect(ids.contains("com.coffic.lumi.plugin.mcp"))
     }
 

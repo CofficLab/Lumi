@@ -4,7 +4,7 @@ import ProviderRootView
 
 @MainActor
 struct WorkbenchSplitView: View {
-    @ObservedObject var provider: PluginRootView
+    @ObservedObject var provider: LumiRootViewProvider
 
     private var showsRail: Bool {
         provider.railView != nil && provider.isRailViewVisible

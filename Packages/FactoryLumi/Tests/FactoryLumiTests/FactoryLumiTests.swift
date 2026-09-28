@@ -245,7 +245,8 @@ struct FactoryLumiTests {
 
         let resolved: (any RootViewProviding)? = kernel.resolveProvider((any RootViewProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is PluginRootView)
+        #expect(resolved is LumiRootViewProvider)
+        #expect(kernel.isPluginRegistered(id: RootViewPlugin.pluginID))
     }
 
     @Test("makeKernel 创建内核并注册默认 ActivityBarProviding")
@@ -333,7 +334,7 @@ struct FactoryLumiTests {
         #expect(toast is DefaultToastProviding)
         #expect(network is DefaultNetworkProviding)
         #expect(toolbar is DefaultToolbarProviding)
-        #expect(rootView is PluginRootView)
+        #expect(rootView is LumiRootViewProvider)
         #expect(activityBar is DefaultActivityBarProviding)
         #expect(railView is DefaultRailViewProviding)
         #expect(settingView is DefaultSettingViewProviding)

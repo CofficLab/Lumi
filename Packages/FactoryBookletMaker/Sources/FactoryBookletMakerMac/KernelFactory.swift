@@ -1,4 +1,5 @@
 import KernelCore
+import PluginRootView
 import ProviderStorage
 import SwiftUI
 
@@ -56,7 +57,11 @@ public enum KernelFactory {
         )
         // 将完整插件目录交给 Kernel 注册；Kernel 会对禁用插件跳过 Boot/Ready，
         // 但仍执行 onRegister，以便贡献提示词等目录型能力。
-        let plugins = pluginFactory.makePlugins() + additionalPlugins
+        let plugins = makePlugins(
+            providerFactory: providerFactory,
+            pluginFactory: pluginFactory,
+            additionalPlugins: additionalPlugins
+        )
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             try PluginDataMigrationRunner(storage: storage).run(for: plugins)
         }
@@ -76,7 +81,11 @@ public enum KernelFactory {
         let kernel = KernelCoreContainer()
         try providerFactory.registerProviders(into: kernel)
 
-        let plugins = pluginFactory.makePlugins() + additionalPlugins
+        let plugins = makePlugins(
+            providerFactory: providerFactory,
+            pluginFactory: pluginFactory,
+            additionalPlugins: additionalPlugins
+        )
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             try PluginDataMigrationRunner(storage: storage).run(for: plugins)
         }
@@ -88,6 +97,16 @@ public enum KernelFactory {
         try kernel.start(plugins: plugins)
 
         return kernel
+    }
+
+    private static func makePlugins(
+        providerFactory: any ProviderFactory,
+        pluginFactory: any PluginFactory,
+        additionalPlugins: [any SuperPlugin]
+    ) -> [any SuperPlugin] {
+        [RootViewPlugin(provider: providerFactory.makeRootViewProvider())]
+            + pluginFactory.makePlugins()
+            + additionalPlugins
     }
 
     // MARK: - Main View Assembly

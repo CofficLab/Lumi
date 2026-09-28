@@ -63,7 +63,7 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultPromptSuggestionProvider()
     }
     public func makeToolbarProvider() -> any ToolbarProviding { DefaultToolbarProviding() }
-    public func makeRootViewProvider() -> any RootViewProviding { PluginRootView() }
+    public func makeRootViewProvider() -> any RootViewProviding { LumiRootViewProvider() }
     public func makeActivityBarProvider() -> any ActivityBarProviding { DefaultActivityBarProviding() }
     public func makeRailViewProvider() -> any RailViewProviding { DefaultRailViewProviding() }
     public func makeSettingViewProvider() -> any SettingViewProviding { DefaultSettingViewProviding() }
@@ -125,7 +125,6 @@ public struct DefaultProviderFactory: ProviderFactory {
             makePromptSuggestionProvider()
         )
         try kernel.registerProvider((any ToolbarProviding).self, makeToolbarProvider())
-        try kernel.registerProvider((any RootViewProviding).self, makeRootViewProvider())
         try kernel.registerProvider((any ActivityBarProviding).self, makeActivityBarProvider())
         try kernel.registerProvider((any RailViewProviding).self, makeRailViewProvider())
         try kernel.registerProvider((any SettingViewProviding).self, makeSettingViewProvider())

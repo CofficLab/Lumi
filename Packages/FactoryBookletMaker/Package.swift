@@ -26,7 +26,7 @@ let package = Package(
         .package(path: "../ProviderActivityBar"),
         .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
         .package(path: "../ProviderLogo"),
-        .package(path: "../ProviderRootView"),
+        .package(path: "../PluginRootView"),
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
     ],
     targets: [
@@ -41,7 +41,7 @@ let package = Package(
                 .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
-                .product(name: "PluginRootView", package: "ProviderRootView"),
+                .product(name: "PluginRootView", package: "PluginRootView"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),

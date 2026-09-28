@@ -36,7 +36,7 @@ public struct DefaultProviderFactory: ProviderFactory {
     }
 
     public func makeRootViewProvider() -> any RootViewProviding {
-        PluginRootView()
+        LumiRootViewProvider()
     }
 
     public func makeSettingViewProvider() -> any SettingViewProviding {
@@ -61,7 +61,6 @@ public struct DefaultProviderFactory: ProviderFactory {
         try kernel.registerProvider((any ContentViewProviding).self, makeContentViewProvider())
         try kernel.registerProvider((any DocsViewProviding).self, makeDocsViewProvider())
         try kernel.registerProvider((any ToolbarProviding).self, makeToolbarProvider())
-        try kernel.registerProvider((any RootViewProviding).self, makeRootViewProvider())
         try kernel.registerProvider((any SettingViewProviding).self, makeSettingViewProvider())
 
         #if os(macOS)

@@ -17,7 +17,7 @@ import SwiftUI
 /// - 根视图应用主题背景、`appThemedAppearance`、`ThemeWindowAppearanceBridge`
 ///   与 `AppThemeVM` 环境对象（复刻旧版主题链）。
 @MainActor
-public final class PluginRootView: DefaultRootViewProviding, SuperLog {
+public final class LumiRootViewProvider: DefaultRootViewProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-root-view", category: "ProviderRootView")
     nonisolated public static let emoji = "🏠"
     nonisolated static let verbose = false
@@ -264,7 +264,7 @@ public final class PluginRootView: DefaultRootViewProviding, SuperLog {
 /// a plugin adds or removes an overlay after the root view has been assembled.
 @MainActor
 private struct RootOverlayHostView: View {
-    let provider: PluginRootView
+    let provider: LumiRootViewProvider
     @State private var observationRevision = 0
     @State private var observerHandle: (any RootViewObserverHandle)?
 
@@ -294,4 +294,4 @@ private struct RootOverlayHostView: View {
 }
 
 /// Compatibility name for existing Lumi factories and tests.
-public typealias DefaultRootViewProvider = PluginRootView
+public typealias DefaultRootViewProvider = LumiRootViewProvider

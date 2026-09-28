@@ -1,4 +1,5 @@
 import KernelCore
+import PluginRootView
 import ProviderChatSection
 import ProviderConversation
 import ProviderStorage
@@ -27,7 +28,9 @@ public enum KernelFactory {
     ) throws -> KernelCoreContainer {
         let kernel = KernelCoreContainer()
         try providerFactory.registerProviders(into: kernel)
-        let plugins = pluginFactory.makePlugins() + additionalPlugins
+        let plugins = [RootViewPlugin(provider: providerFactory.makeRootViewProvider())]
+            + pluginFactory.makePlugins()
+            + additionalPlugins
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             try PluginDataMigrationRunner(storage: storage).run(for: plugins)
         }

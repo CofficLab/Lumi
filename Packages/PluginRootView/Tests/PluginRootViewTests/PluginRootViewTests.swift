@@ -4,11 +4,25 @@ import SwiftUI
 import Testing
 @testable import PluginRootView
 import ProviderRootView
+import KernelCore
 
 /// RootViewProviding 协议与默认实现的基础验证。
-@Suite("ProviderRootView")
+@Suite("PluginRootView")
 @MainActor
 struct ProviderRootViewTests {
+
+    @Test("RootViewPlugin 在生命周期中注册并撤销 RootViewProviding")
+    func rootViewPluginManagesProviderLifecycle() throws {
+        let kernel = KernelCoreContainer()
+        let provider = LumiRootViewProvider()
+        let plugin = RootViewPlugin(provider: provider)
+
+        try plugin.onBoot(kernel: kernel)
+        #expect(kernel.resolveProvider((any RootViewProviding).self) as AnyObject? === provider)
+
+        try plugin.onShutdown(kernel: kernel)
+        #expect(kernel.resolveProvider((any RootViewProviding).self) == nil)
+    }
 
     @Test("根叠层按顺序注册且可独立撤回")
     func rootOverlaysRegisterAndRemoveByID() {
