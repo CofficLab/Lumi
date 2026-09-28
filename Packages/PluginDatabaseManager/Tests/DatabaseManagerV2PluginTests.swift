@@ -20,7 +20,7 @@ struct DatabaseManagerV2PluginTests {
         let content = DefaultContentViewProviding()
         let activityBar = DefaultActivityBarProviding()
         let chat = DefaultChatSectionProviding()
-        let rootView = DefaultRootViewProvider()
+        let rootView = DefaultRootViewProviding()
         let railView = DefaultRailViewProviding()
         let externalFiles = DefaultExternalFileOpening()
         let tools = DefaultToolManagerProviding()

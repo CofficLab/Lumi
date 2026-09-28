@@ -14,7 +14,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../ProviderToolManager"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7")
     ],
     targets: [
         .target(

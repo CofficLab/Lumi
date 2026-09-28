@@ -15,11 +15,10 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderRootView"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7")
     ],
     targets: [
 .target(
@@ -32,7 +31,7 @@ let package = Package(
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
-                .product(name: "ProviderRootView", package: "ProviderRootView"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging")

@@ -50,6 +50,11 @@ public final class ToastSuperPlugin: SuperPlugin, SuperLog {
 public final class ToastCenter: ToastProviding {
     /// 当前显示的 toast；`nil` 表示不显示。
     public private(set) var currentToast: LumiToast?
+    /// 当前需要用户明确关闭的错误通知。
+    ///
+    /// 错误通知的生命周期独立于普通 Toast；宿主可以在根视图中读取它，
+    /// 或通过更高层的错误面板进行渲染。
+    public private(set) var currentError: LumiErrorNotice?
     private var observers: [UUID: (ToastProvidingEvent) -> Void] = [:]
 
     private var dismissTask: Task<Void, Never>?
@@ -91,6 +96,14 @@ public final class ToastCenter: ToastProviding {
         guard currentToast != nil else { return }
         currentToast = nil
         notify(.currentToastChanged(nil))
+    }
+
+    public func presentError(title: String, message: String) {
+        currentError = LumiErrorNotice(title: title, message: message)
+    }
+
+    public func dismissError() {
+        currentError = nil
     }
 
     private func notify(_ event: ToastProvidingEvent) {

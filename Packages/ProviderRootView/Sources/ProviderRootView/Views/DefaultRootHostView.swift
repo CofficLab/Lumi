@@ -1,10 +1,11 @@
 import Foundation
 import LumiUI
+import ProviderRootView
 import SwiftUI
 
 @MainActor
 struct DefaultRootHostView: View {
-    let provider: DefaultRootViewProvider
+    let provider: PluginRootView
     @LumiTheme private var theme
     @State private var observationRevision = 0
     @State private var observerHandle: (any RootViewObserverHandle)?

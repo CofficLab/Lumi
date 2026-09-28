@@ -16,7 +16,7 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderPromptSuggestion"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7")
     ],
     targets: [
         .target(

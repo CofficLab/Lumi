@@ -44,7 +44,7 @@ struct CodeEditorSuperPluginTests {
         let content = TestContentProvider()
         let docs = DefaultDocsViewProviding()
         let project = DefaultProjectProvider()
-        let rootView = DefaultRootViewProvider()
+        let rootView = DefaultRootViewProviding()
         try kernel.registerProvider((any ActivityBarProviding).self, activity)
         try kernel.registerProvider((any ContentViewProviding).self, content)
         try kernel.registerProvider((any DocsViewProviding).self, docs)

@@ -2,6 +2,7 @@ import KernelCore
 import ProviderContentView
 import ProviderDocsView
 import ProviderRootView
+import PluginRootView
 import ProviderSettingView
 import ProviderStorage
 import ProviderToolbar
@@ -35,7 +36,7 @@ public struct DefaultProviderFactory: ProviderFactory {
     }
 
     public func makeRootViewProvider() -> any RootViewProviding {
-        DefaultRootViewProvider()
+        PluginRootView()
     }
 
     public func makeSettingViewProvider() -> any SettingViewProviding {

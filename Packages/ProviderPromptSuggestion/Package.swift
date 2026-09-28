@@ -13,7 +13,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderActivityBar"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
     ],
     targets: [

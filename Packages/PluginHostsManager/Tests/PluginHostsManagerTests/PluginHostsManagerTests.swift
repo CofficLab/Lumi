@@ -36,7 +36,7 @@ struct PluginHostsManagerTests {
         let chat = DefaultChatSectionProviding()
         let contentView = DefaultContentViewProviding()
         let railView = DefaultRailViewProviding()
-        let rootView = DefaultRootViewProvider()
+        let rootView = DefaultRootViewProviding()
         try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
         try kernel.registerProvider((any ContentViewProviding).self, contentView)

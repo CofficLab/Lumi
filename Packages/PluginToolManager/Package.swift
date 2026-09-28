@@ -12,7 +12,7 @@ let package = Package(
         .library(name: "PluginToolManager", targets: ["PluginToolManager"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitFileSystem"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),

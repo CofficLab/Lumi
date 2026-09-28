@@ -9,6 +9,7 @@ import ProviderContentView
 import ProviderConversation
 import ProviderRailView
 import ProviderRootView
+import PluginRootView
 import ProviderSettingView
 import ProviderTheme
 import ProviderToolbar

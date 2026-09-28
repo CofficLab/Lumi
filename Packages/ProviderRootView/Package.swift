@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "ProviderRootView",
+    name: "PluginRootView",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14),
@@ -10,8 +10,8 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "ProviderRootView",
-            targets: ["ProviderRootView"]
+            name: "PluginRootView",
+            targets: ["PluginRootView"]
         ),
     ],
     dependencies: [
@@ -19,16 +19,17 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(path: "../ProviderChatSection"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7")
     ],
     targets: [
         .target(
-            name: "ProviderRootView",
+            name: "PluginRootView",
             dependencies: [
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources/ProviderRootView",
@@ -37,7 +38,7 @@ let package = Package(
         .testTarget(
             name: "ProviderRootViewTests",
             dependencies: [
-                "ProviderRootView",
+                "PluginRootView",
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
             ]

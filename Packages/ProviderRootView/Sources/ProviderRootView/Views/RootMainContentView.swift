@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import ProviderRootView
 
 /// 根布局内容区（可选带右侧 trailing pane）。
 ///
@@ -20,7 +21,7 @@ struct RootMainContentView: View {
     let contentFooterHeight: ContentFooterHeight
     let onContentFooterResize: (@MainActor (CGFloat) -> Void)?
     let isContentViewHidden: Bool
-    @ObservedObject var trailingPane: RootTrailingPane
+    @ObservedObject var trailingPane: RootViewPane
     init(
         contentHeaderView: AnyView?,
         isContentHeaderViewHidden: Bool,
@@ -30,7 +31,7 @@ struct RootMainContentView: View {
         contentFooterHeight: ContentFooterHeight = .standard,
         onContentFooterResize: (@MainActor (CGFloat) -> Void)? = nil,
         isContentViewHidden: Bool,
-        trailingPane: RootTrailingPane?
+        trailingPane: RootViewPane?
     ) {
         self.contentHeaderView = contentHeaderView
         self.isContentHeaderViewHidden = isContentHeaderViewHidden
@@ -40,7 +41,7 @@ struct RootMainContentView: View {
         self.contentFooterHeight = contentFooterHeight
         self.onContentFooterResize = onContentFooterResize
         self.isContentViewHidden = isContentViewHidden
-        _trailingPane = ObservedObject(wrappedValue: trailingPane ?? RootTrailingPane(
+        _trailingPane = ObservedObject(wrappedValue: trailingPane ?? RootViewPane(
             id: "root.empty",
             isVisible: false,
             content: AnyView(EmptyView())
@@ -128,7 +129,7 @@ struct RootMainContentView: View {
                             .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
                             .appSplitDivider(
                                 .trailing,
-                                initialPosition: trailingPane.width.idealWidth,
+                                initialPosition: trailingPane.idealWidth,
                                 onResize: trailingPane.saveWidth
                             )
                         trailingPane.content

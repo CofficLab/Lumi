@@ -10,7 +10,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../PluginCADDesigner"),
         .package(path: "../ProviderToolManager"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7")
     ],
     targets: [
         .target(

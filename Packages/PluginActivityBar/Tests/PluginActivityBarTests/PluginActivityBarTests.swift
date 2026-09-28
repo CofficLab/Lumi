@@ -102,7 +102,7 @@ struct PluginActivityBarTests {
     @Test("激活入口时仅 Code Editor 保留 Content Footer")
     func contentFooterVisibilityFollowsActiveItem() throws {
         let kernel = KernelCoreContainer()
-        let rootView = DefaultRootViewProvider()
+        let rootView = DefaultRootViewProviding()
         let legacyProvider = DefaultActivityBarProviding()
         legacyProvider.addItems([
             ActivityBarItem(id: "other", title: "Other", systemImage: "square"),

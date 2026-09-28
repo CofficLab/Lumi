@@ -10,7 +10,6 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderRootView"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderAgentLoop"),
@@ -18,7 +17,7 @@ let package = Package(
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7")
     ],
     targets: [.target(name: "PluginConversationList", dependencies: [
         .product(name: "KernelCore", package: "LumiKernel"),
@@ -27,7 +26,7 @@ let package = Package(
         .product(name: "ProviderConversation", package: "ProviderConversation"),
         .product(name: "ProviderChatSection", package: "ProviderChatSection"),
         .product(name: "ProviderRailView", package: "LumiProviders"),
-        .product(name: "ProviderRootView", package: "ProviderRootView"),
+        .product(name: "ProviderRootView", package: "LumiProviders"),
         .product(name: "ProviderProject", package: "ProviderProject"),
         .product(name: "ProviderToolbar", package: "LumiProviders"),
         .product(name: "ProviderToolManager", package: "ProviderToolManager"),

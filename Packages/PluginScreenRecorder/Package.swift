@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginScreenRecorder", targets: ["ScreenRecorderPlugin"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),

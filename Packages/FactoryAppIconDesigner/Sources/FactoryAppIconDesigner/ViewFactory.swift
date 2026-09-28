@@ -7,6 +7,7 @@ import ProviderChatSection
 import ProviderContentView
 import ProviderRailView
 import ProviderRootView
+import PluginRootView
 import ProviderSettingView
 import ProviderTheme
 import ProviderToolbar

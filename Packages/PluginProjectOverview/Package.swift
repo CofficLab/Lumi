@@ -29,7 +29,8 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),                .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KitShell", package: "KitShell"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),

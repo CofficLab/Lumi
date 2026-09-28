@@ -11,6 +11,7 @@ import ProviderNetwork
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
+import PluginRootView
 import ProviderSettingView
 import ProviderStorage
 import ProviderTheme
@@ -244,7 +245,7 @@ struct FactoryLumiTests {
 
         let resolved: (any RootViewProviding)? = kernel.resolveProvider((any RootViewProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is DefaultRootViewProvider)
+        #expect(resolved is PluginRootView)
     }
 
     @Test("makeKernel 创建内核并注册默认 ActivityBarProviding")
@@ -332,7 +333,7 @@ struct FactoryLumiTests {
         #expect(toast is DefaultToastProviding)
         #expect(network is DefaultNetworkProviding)
         #expect(toolbar is DefaultToolbarProviding)
-        #expect(rootView is DefaultRootViewProvider)
+        #expect(rootView is PluginRootView)
         #expect(activityBar is DefaultActivityBarProviding)
         #expect(railView is DefaultRailViewProviding)
         #expect(settingView is DefaultSettingViewProviding)

@@ -1,9 +1,10 @@
 import SwiftUI
 import LumiUI
+import ProviderRootView
 
 @MainActor
 struct WorkbenchSplitView: View {
-    @ObservedObject var provider: DefaultRootViewProvider
+    @ObservedObject var provider: PluginRootView
 
     private var showsRail: Bool {
         provider.railView != nil && provider.isRailViewVisible

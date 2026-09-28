@@ -25,7 +25,7 @@ import ProviderRootView
     let chat = DefaultChatSectionProviding()
     let contentView = DefaultContentViewProviding()
     let railView = DefaultRailViewProviding()
-    let rootView = DefaultRootViewProvider()
+    let rootView = DefaultRootViewProviding()
     rootView.setRailView(railView.makeRailView())
     try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
     try kernel.registerProvider((any ChatSectionProviding).self, chat)
@@ -54,7 +54,7 @@ import ProviderRootView
     let chat = DefaultChatSectionProviding()
     let contentView = DefaultContentViewProviding()
     let railView = DefaultRailViewProviding()
-    let rootView = DefaultRootViewProvider()
+    let rootView = DefaultRootViewProviding()
     railView.addTabs([
         RailTabItem(id: "files", category: .fileTree, title: "Files", systemImage: "folder") {
             Text("Files")

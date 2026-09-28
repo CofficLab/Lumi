@@ -51,7 +51,7 @@ func activationKeepsChatToolbarCategoryVisible() throws {
     try kernel.registerProvider((any ChatSectionProviding).self, chat)
     try kernel.registerProvider((any ContentViewProviding).self, DefaultContentViewProviding())
     try kernel.registerProvider((any RailViewProviding).self, DefaultRailViewProviding())
-    try kernel.registerProvider((any RootViewProviding).self, DefaultRootViewProvider())
+    try kernel.registerProvider((any RootViewProviding).self, DefaultRootViewProviding())
     try kernel.registerProvider((any ToolbarProviding).self, toolbar)
 
     let plugin = AppStoreConnectPlugin()

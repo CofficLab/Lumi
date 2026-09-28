@@ -16,6 +16,7 @@ import ProviderProject
 import ProviderPromptSuggestion
 import ProviderRailView
 import ProviderRootView
+import PluginRootView
 import ProviderSettingView
 import ProviderStorage
 import ProviderToolManager
@@ -62,7 +63,7 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultPromptSuggestionProvider()
     }
     public func makeToolbarProvider() -> any ToolbarProviding { DefaultToolbarProviding() }
-    public func makeRootViewProvider() -> any RootViewProviding { DefaultRootViewProvider() }
+    public func makeRootViewProvider() -> any RootViewProviding { PluginRootView() }
     public func makeActivityBarProvider() -> any ActivityBarProviding { DefaultActivityBarProviding() }
     public func makeRailViewProvider() -> any RailViewProviding { DefaultRailViewProviding() }
     public func makeSettingViewProvider() -> any SettingViewProviding { DefaultSettingViewProviding() }

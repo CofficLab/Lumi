@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginCaffeinate", targets: ["PluginCaffeinate"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),

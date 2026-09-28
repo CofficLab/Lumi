@@ -19,7 +19,7 @@ struct PluginBrowserTests {
         let activityBar = DefaultActivityBarProviding()
         let chat = DefaultChatSectionProviding()
         let contentView = DefaultContentViewProviding()
-        let rootView = DefaultRootViewProvider()
+        let rootView = DefaultRootViewProviding()
         let railView = DefaultRailViewProviding()
         railView.addTabs([
             RailTabItem(id: "browser.files", category: .fileTree, title: "Files", systemImage: "folder") {

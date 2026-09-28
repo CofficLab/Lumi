@@ -11,8 +11,8 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
         .package(path: "../ProviderProject"),
-        .package(path: "../ProviderRootView"),
     ],
     targets: [
         .target(
@@ -21,7 +21,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
-                .product(name: "ProviderRootView", package: "ProviderRootView"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
             ],
             resources: [.process("../../Resources")]
         ),

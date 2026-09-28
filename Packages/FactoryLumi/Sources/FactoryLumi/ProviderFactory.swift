@@ -14,6 +14,7 @@ import ProviderNetwork
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
+import PluginRootView
 import ProviderSettingView
 import ProviderSkill
 import ProviderAgentRules
@@ -159,7 +160,7 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     /// 产出 `RootViewProviding` 实现（默认「工具栏 + 内容区」根布局）。
     public func makeRootViewProvider() -> any RootViewProviding {
-        DefaultRootViewProvider()
+        PluginRootView()
     }
 
     /// 产出 `ActivityBarProviding` 实现（默认竖直入口栏）。

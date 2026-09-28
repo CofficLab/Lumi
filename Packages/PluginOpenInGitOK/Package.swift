@@ -15,7 +15,7 @@ let package = Package(
         .package(path: "../OpenInKit"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderToolManager"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.2")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7")
     ],
     targets: [
         .target(
