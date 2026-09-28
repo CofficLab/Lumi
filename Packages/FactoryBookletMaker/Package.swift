@@ -10,7 +10,7 @@ let package = Package(
         .library(name: "FactoryBookletMakerIOS", targets: ["FactoryBookletMakerIOS"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiThemePack.git", from: "1.0.2"),
+        .package(url: "https://github.com/CofficLab/LumiThemePack.git", from: "1.0.3"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
