@@ -37,15 +37,18 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     private let inspector  = PDFInspector()
     private let renderer: any BookletRendering
     private let splitter: any PDFSplitting
+    private let merger: any PDFMerging
     private let thumbnailer = BookletThumbnailer()
     private let demoDocument: CurrentPDFDocument
 
     private var renderTask: Task<URL, Error>?
     private var splitTask: Task<[URL], Error>?
+    private var mergeTask: Task<URL, Error>?
     private var thumbnailTask: Task<Void, Never>?
     private var loadRequestID = UUID()
     private var activeExportJobID: UUID?
     private var securityScopedURL: URL?
+    private var mergeSecurityScopedURLs: [URL] = []
 
     // MARK: - Published state
 
@@ -88,6 +91,12 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     /// Files produced by the most recent successful split.
     @Published private(set) var lastSplitOutputURLs: [URL] = []
 
+    /// PDFs queued for the merge tool, in export order.
+    @Published private(set) var mergeDocuments: [PDFMergeItem] = []
+
+    /// URL of the most recent successful merge.
+    @Published private(set) var lastMergeOutputURL: URL?
+
     /// Generated preview thumbnails.
     @Published private(set) var thumbnails: [BookletThumbnailer.Thumbnail] = []
 
@@ -99,10 +108,13 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     /// - Parameters:
     ///   - renderer: renderer override for tests. Defaults to `BookletRenderer`.
     ///   - splitter: splitter override for tests. Defaults to `PDFSplitter`.
+    ///   - merger: merger override for tests. Defaults to `PDFMerger`.
     init(renderer: (any BookletRendering)? = nil,
-         splitter: (any PDFSplitting)? = nil) {
+         splitter: (any PDFSplitting)? = nil,
+         merger: (any PDFMerging)? = nil) {
         self.renderer = renderer ?? BookletRenderer()
         self.splitter = splitter ?? PDFSplitter()
+        self.merger = merger ?? PDFMerger()
         do {
             let demo = try DemoPDFProvider.makeDocument()
             demoDocument = demo
@@ -180,10 +192,23 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
             && FileManager.default.fileExists(atPath: currentDocument.url.path)
     }
 
+    var mergePageCount: Int {
+        mergeDocuments.reduce(0) { $0 + $1.pageCount }
+    }
+
+    var canExportMerge: Bool {
+        !isBusy
+            && mergeDocuments.count >= 2
+            && mergeDocuments.allSatisfy {
+                FileManager.default.fileExists(atPath: $0.url.path)
+            }
+    }
+
     var canExport: Bool {
         switch selectedTool {
         case .booklet: canExportBooklet
         case .split: canExportSplit
+        case .merge: canExportMerge
         }
     }
 
@@ -193,11 +218,14 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     func loadPDF(_ url: URL) async {
         cancelInternal()
         activeExportJobID = nil
+        releaseMergeSecurityScopes()
+        mergeDocuments = []
         errorMessage = nil
         progress = 0
         thumbnails = []
         lastOutputURL = nil
         lastSplitOutputURLs = []
+        lastMergeOutputURL = nil
         splitFileNameOverrides = [:]
 
         let requestID = UUID()
@@ -230,19 +258,99 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         }
     }
 
+    /// Load source PDFs into the merge queue after inspecting every file.
+    func loadMergePDFs(_ urls: [URL], appending: Bool = false) async {
+        cancelInternal()
+        activeExportJobID = nil
+        errorMessage = nil
+        progress = 0
+        lastMergeOutputURL = nil
+
+        let existingURLs = appending ? mergeDocuments.map(\.url) : []
+        let requestedURLs = existingURLs + urls
+        let uniqueURLs = requestedURLs.reduce(into: [URL]()) { result, url in
+            guard url.pathExtension.lowercased() == "pdf",
+                  !result.contains(where: { $0.standardizedFileURL == url.standardizedFileURL }) else {
+                return
+            }
+            result.append(url)
+        }
+        let newURLs = appending
+            ? uniqueURLs.filter { url in
+                !existingURLs.contains { $0.standardizedFileURL == url.standardizedFileURL }
+            }
+            : uniqueURLs
+        let requestID = UUID()
+        loadRequestID = requestID
+        let scopedURLs = newURLs.filter { $0.startAccessingSecurityScopedResource() }
+
+        do {
+            var items: [PDFMergeItem] = []
+            for url in uniqueURLs {
+                let info = try await inspector.inspect(url)
+                items.append(PDFMergeItem(url: url, pageCount: info.pageCount))
+            }
+            guard loadRequestID == requestID else {
+                scopedURLs.forEach { $0.stopAccessingSecurityScopedResource() }
+                return
+            }
+            releaseSecurityScope()
+            if appending {
+                mergeSecurityScopedURLs.append(contentsOf: scopedURLs)
+            } else {
+                releaseMergeSecurityScopes()
+                mergeSecurityScopedURLs = scopedURLs
+            }
+            mergeDocuments = items
+            Self.logger.info("\(Self.t)Loaded \(items.count) PDFs for merge")
+        } catch {
+            scopedURLs.forEach { $0.stopAccessingSecurityScopedResource() }
+            guard loadRequestID == requestID else { return }
+            if !appending {
+                mergeDocuments = []
+            }
+            let message = (error as? LocalizedError)?.errorDescription
+                ?? error.localizedDescription
+            errorMessage = message
+            Self.logger.error("\(Self.t)Merge source inspection failed: \(message)")
+        }
+    }
+
+    func removeMergeDocument(_ item: PDFMergeItem) {
+        mergeDocuments.removeAll { $0.id == item.id }
+        lastMergeOutputURL = nil
+        errorMessage = nil
+    }
+
+    func moveMergeDocument(_ item: PDFMergeItem, offsetBy offset: Int) {
+        guard let index = mergeDocuments.firstIndex(where: { $0.id == item.id }) else { return }
+        let destination = index + offset
+        guard mergeDocuments.indices.contains(destination) else { return }
+        mergeDocuments.swapAt(index, destination)
+        lastMergeOutputURL = nil
+    }
+
+    func moveMergeDocuments(from offsets: IndexSet, to destination: Int) {
+        mergeDocuments.move(fromOffsets: offsets, toOffset: destination)
+        lastMergeOutputURL = nil
+    }
+
     /// Clear the user selection and return to the built-in demo document.
     func clear() {
         loadRequestID = UUID()
         cancelInternal()
         activeExportJobID = nil
         releaseSecurityScope()
+        releaseMergeSecurityScopes()
         currentDocument = demoDocument
         progress = 0
         thumbnails = []
         lastOutputURL = nil
         lastSplitOutputURLs = []
+        lastMergeOutputURL = nil
         splitFileNameOverrides = [:]
         splitCutPointsText = ""
+        mergeDocuments = []
         errorMessage = nil
     }
 
@@ -382,6 +490,67 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         }
     }
 
+    /// Export the queued PDFs as one concatenated document.
+    func exportMerge(to outputURL: URL) async {
+        guard canExportMerge else { return }
+        cancelInternal()
+
+        let jobID = UUID()
+        activeExportJobID = jobID
+        let sourceURLs = mergeDocuments.map(\.url)
+        progress = 0
+        lastOutputURL = nil
+        lastSplitOutputURLs = []
+        lastMergeOutputURL = nil
+        errorMessage = nil
+        isRendering = true
+        isPreparingPreview = false
+        isCancelling = false
+
+        do {
+            let task = Task { [merger] in
+                try await merger.merge(
+                    sourceURLs: sourceURLs,
+                    outputURL: outputURL
+                ) { [weak self] value in
+                    Task { @MainActor in
+                        guard let self,
+                              self.activeExportJobID == jobID,
+                              !self.isCancelling else { return }
+                        self.progress = value
+                    }
+                }
+            }
+            mergeTask = task
+            let result = try await task.value
+            mergeTask = nil
+
+            guard activeExportJobID == jobID else { return }
+            if Task.isCancelled || isCancelling {
+                isRendering = false
+                isCancelling = false
+                return
+            }
+            lastMergeOutputURL = result
+            progress = 1
+            isRendering = false
+            Self.logger.info("\(Self.t)Merge export complete: \(result.lastPathComponent)")
+        } catch is CancellationError {
+            mergeTask = nil
+            guard activeExportJobID == jobID else { return }
+            isRendering = false
+            isCancelling = false
+        } catch {
+            mergeTask = nil
+            guard activeExportJobID == jobID else { return }
+            errorMessage = (error as? LocalizedError)?.errorDescription
+                ?? error.localizedDescription
+            isRendering = false
+            isCancelling = false
+            Self.logger.error("\(Self.t)Merge export failed: \(error.localizedDescription)")
+        }
+    }
+
     /// Add or remove a split immediately after `pageNumber`.
     func toggleSplit(after pageNumber: Int) {
         guard pageNumber >= 1, pageNumber < currentDocument.pageCount else { return }
@@ -469,6 +638,7 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         isCancelling = true
         renderTask?.cancel()
         splitTask?.cancel()
+        mergeTask?.cancel()
         thumbnailTask?.cancel()
     }
 
@@ -480,6 +650,8 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         renderTask = nil
         splitTask?.cancel()
         splitTask = nil
+        mergeTask?.cancel()
+        mergeTask = nil
         thumbnailTask?.cancel()
         thumbnailTask = nil
         isCancelling = false
@@ -534,7 +706,13 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         securityScopedURL = nil
     }
 
+    private func releaseMergeSecurityScopes() {
+        mergeSecurityScopedURLs.forEach { $0.stopAccessingSecurityScopedResource() }
+        mergeSecurityScopedURLs = []
+    }
+
     deinit {
         securityScopedURL?.stopAccessingSecurityScopedResource()
+        mergeSecurityScopedURLs.forEach { $0.stopAccessingSecurityScopedResource() }
     }
 }

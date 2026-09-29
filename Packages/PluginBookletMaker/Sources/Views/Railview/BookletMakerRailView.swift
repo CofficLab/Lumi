@@ -10,6 +10,7 @@ struct BookletMakerRailView: View {
     @ObservedObject var viewModel: BookletMakerViewModel
     let onExportBooklet: () -> Void
     let onExportSplit: () -> Void
+    let onExportMerge: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -19,7 +20,9 @@ struct BookletMakerRailView: View {
 
                     AppDivider()
 
-                    railTitle(BookletLocalization.string("Current PDF"))
+                    railTitle(BookletLocalization.string(
+                        viewModel.selectedTool == .merge ? "PDF Files" : "Current PDF"
+                    ))
                     BookletDropZoneView(viewModel: viewModel)
 
                     AppDivider()
@@ -29,6 +32,8 @@ struct BookletMakerRailView: View {
                         bookletSettings
                     case .split:
                         splitSettings
+                    case .merge:
+                        mergeSettings
                     }
                 }
                 .padding()
@@ -206,6 +211,34 @@ struct BookletMakerRailView: View {
         }
     }
 
+    private var mergeSettings: some View {
+        AppSettingSection(title: BookletLocalization.string("Merge Settings")) {
+            AppCard(
+                style: .subtle,
+                cornerRadius: DesignTokens.Radius.sm,
+                padding: DesignTokens.Spacing.compactPadding,
+                showShadow: false
+            ) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(BookletLocalization.string("Merge Result"))
+                        .font(DesignTokens.Typography.bodyEmphasized)
+                    Text(BookletLocalization.string(
+                        "%lld files · %lld pages",
+                        Int64(viewModel.mergeDocuments.count),
+                        Int64(viewModel.mergePageCount)
+                    ))
+                    .font(DesignTokens.Typography.caption1)
+                    .foregroundStyle(theme.textSecondary)
+                    if viewModel.mergeDocuments.count < 2 {
+                        Text(BookletLocalization.string("Select at least two PDF files to merge."))
+                            .font(DesignTokens.Typography.caption1)
+                            .foregroundStyle(theme.textSecondary)
+                    }
+                }
+            }
+        }
+    }
+
     private var primaryAction: some View {
         AppButton(
             primaryActionTitle,
@@ -213,7 +246,9 @@ struct BookletMakerRailView: View {
                 ? "xmark.circle"
                 : (viewModel.selectedTool == .booklet
                     ? "square.and.arrow.down"
-                    : "scissors"),
+                    : (viewModel.selectedTool == .split
+                        ? "scissors"
+                        : "arrow.triangle.merge")),
             style: .primary,
             fillsWidth: true,
             action: primaryActionHandler
@@ -236,6 +271,8 @@ struct BookletMakerRailView: View {
                 "Export %lld PDF files",
                 Int64(viewModel.splitSegments.count)
             )
+        case .merge:
+            return BookletLocalization.string("Export Merged PDF")
         }
     }
 
@@ -247,6 +284,7 @@ struct BookletMakerRailView: View {
         switch viewModel.selectedTool {
         case .booklet: onExportBooklet()
         case .split: onExportSplit()
+        case .merge: onExportMerge()
         }
     }
 
@@ -303,7 +341,8 @@ struct BookletMakerRailView: View {
     BookletMakerRailView(
         viewModel: BookletMakerViewModel(),
         onExportBooklet: {},
-        onExportSplit: {}
+        onExportSplit: {},
+        onExportMerge: {}
     )
     .frame(width: 280, height: 760)
 }

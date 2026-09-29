@@ -14,7 +14,7 @@ struct BookletWelcomeView: View {
             )
         } description: {
             Text(BookletLocalization.string(
-                "Turn a PDF into a folded booklet or split it into multiple files."
+                "Turn PDFs into a folded booklet, merge them, or split them into multiple files."
             ))
         } actions: {
             VStack(spacing: 12) {
