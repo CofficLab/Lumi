@@ -1,5 +1,4 @@
 {
-  "originHash": "483165733aeebf714982e70cfbe2271beef44a89a3667865126edb72aef0ccad",
   "pins": [
     {
       "identity": "async-http-client",
@@ -88,7 +87,7 @@
       "location": "https://github.com/nookery/LibGit2Swift",
       "state": {
         "branch": "main",
-        "revision": "68d4c67f5c09421744d2b99e12dfdfec8f83be39"
+        "revision": "5beda751bb32d6f0228ab592d7e1dd3e02190b02"
       }
     },
     {
@@ -137,12 +136,21 @@
       }
     },
     {
+      "identity": "lumipluginstorage",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/CofficLab/LumiPluginStorage.git",
+      "state": {
+        "revision": "521d3ed40f374a03cd2aea5b9bfd5ed13375ee12",
+        "version": "1.1.1"
+      }
+    },
+    {
       "identity": "lumiproviders",
       "kind": "remoteSourceControl",
       "location": "https://github.com/CofficLab/LumiProviders.git",
       "state": {
-        "revision": "a7abaf96f6fdc1390f21ccff8846993f08c9c7cb",
-        "version": "1.2.7"
+        "revision": "79c6da16ba399dca6140e6ee93af769f1d05357c",
+        "version": "1.3.5"
       }
     },
     {
