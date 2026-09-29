@@ -12,8 +12,10 @@ public final class XiaomiProvider: VendorLLMProvider {
                 id: "xiaomi",
                 displayName: "Xiaomi TokenPlan",
                 description: "Xiaomi TokenPlan AI Models",
-                defaultModel: "mimo-v2.5-pro",
+                defaultModel: "mimo-v2.6-pro",
                 models: [
+                    LLMModelInfo(id: "mimo-v2.6-pro", contextWindowSize: 1_000_000, supportsVision: true),
+                    LLMModelInfo(id: "mimo-v2.6-flash", contextWindowSize: 1_000_000, supportsVision: true),
                     LLMModelInfo(id: "mimo-v2.5-pro", contextWindowSize: 1_000_000, supportsVision: true),
                     LLMModelInfo(id: "mimo-v2.5", contextWindowSize: 1_000_000, supportsVision: false),
                     LLMModelInfo(id: "mimo-v2.5-tts", contextWindowSize: 131_072, supportsVision: false, supportsTools: false),
