@@ -9,9 +9,8 @@ let package = Package(
         .library(name: "PluginProjectFileTree", targets: ["PluginProjectFileTree"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.4.0"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
-        .package(path: "../ProviderProject"),
         .package(path: "../ProviderConversationInput"),
         .package(path: "../KitFileSystem"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
@@ -25,7 +24,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
-                "ProviderProject",
+                .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 "ProviderConversationInput",
                 .product(name: "ProviderToast", package: "LumiProviders"),
@@ -41,7 +40,7 @@ let package = Package(
             dependencies: [
                 .target(name: "PluginProjectFileTree"),
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
             ],
             path: "Tests"

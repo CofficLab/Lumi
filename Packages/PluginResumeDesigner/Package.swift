@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginResumeDesigner", targets: ["PluginResumeDesigner"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.4.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitHTMLPreview"),
@@ -23,7 +23,6 @@ let package = Package(
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderPromptSuggestion"),
         .package(path: "../ProviderSkill"),
-        .package(path: "../ProviderProject"),
         .package(path: "../ProviderAgentRules"),
     ],
     targets: [
@@ -48,7 +47,7 @@ let package = Package(
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
                 "ProviderSkill",
-                "ProviderProject",
+                .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
                 "ProviderAgentRules",
             ],

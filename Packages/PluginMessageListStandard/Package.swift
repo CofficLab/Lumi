@@ -20,10 +20,9 @@ let package = Package(
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../ProviderPromptSuggestion"),
-        .package(path: "../ProviderProject"),
         .package(path: "../ProviderToolManager"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.4.0")
     ],
     targets: [
         .target(name: "PluginMessageListStandard", dependencies: [
@@ -40,7 +39,7 @@ let package = Package(
             .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
             .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
             .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
-            .product(name: "ProviderProject", package: "ProviderProject"),
+            .product(name: "ProviderProject", package: "LumiProviders"),
             .product(name: "ProviderToolbar", package: "LumiProviders"),
             .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             .product(name: "LumiLoggingKit", package: "LumiLogging"),
@@ -53,7 +52,7 @@ let package = Package(
             .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             .product(name: "ProviderChatSection", package: "ProviderChatSection"),
             .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
-            .product(name: "ProviderProject", package: "ProviderProject"),
+            .product(name: "ProviderProject", package: "LumiProviders"),
             .product(name: "ProviderToolbar", package: "LumiProviders"),
         ]),
     ]

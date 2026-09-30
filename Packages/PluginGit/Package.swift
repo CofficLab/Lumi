@@ -15,12 +15,12 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.4.0"),
         .package(url: "https://github.com/nookery/LibGit2Swift", .branch("main")),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderEditor"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderGit"),
-        .package(path: "../ProviderProject"),
         .package(path: "../ProviderSkill"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderMessageRendering"),
@@ -37,7 +37,7 @@ let package = Package(
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderGit", package: "ProviderGit"),
-                .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderSkill", package: "ProviderSkill"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
