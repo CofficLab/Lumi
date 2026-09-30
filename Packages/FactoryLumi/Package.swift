@@ -38,7 +38,7 @@ let package = Package(
         .package(path: "../PluginLogoManager"),
         .package(path: "../PluginLogoSmartLight"),
         .package(path: "../PluginSettingGeneral"),
-        .package(url: "https://github.com/CofficLab/LumiPluginSettingView.git", from: "1.0.0"),
+        .package(url: "https://github.com/CofficLab/LumiPluginSettingView.git", from: "1.0.1"),
         .package(path: "../PluginPerformanceMetrics"),
         .package(path: "../PluginSystemBenchmark"),
         .package(path: "../PluginThemeManager"),

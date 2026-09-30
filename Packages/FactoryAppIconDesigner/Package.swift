@@ -20,7 +20,7 @@ let package = Package(
         .package(path: "../PluginLogoCoffic"),
         .package(path: "../PluginLogoManager"),
         .package(path: "../PluginSettingGeneral"),
-        .package(url: "https://github.com/CofficLab/LumiPluginSettingView.git", from: "1.0.0"),
+        .package(url: "https://github.com/CofficLab/LumiPluginSettingView.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiPluginStorage.git", from: "1.0.0"),
         .package(path: "../PluginThemeManager"),
         .package(url: "https://github.com/CofficLab/LumiPluginThemePack.git", from: "1.0.0"),
