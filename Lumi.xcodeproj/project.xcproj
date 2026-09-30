@@ -28,9 +28,6 @@
       "path": "Packages/PluginAppUpdate",
     }, {
       "kind": "local",
-      "path": "Packages/FactoryBookletMaker",
-    }, {
-      "kind": "local",
       "path": "Packages/FactoryAppIconDesigner",
     }, {
       "kind": "local",
