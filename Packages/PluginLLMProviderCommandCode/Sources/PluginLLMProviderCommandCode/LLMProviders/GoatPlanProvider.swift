@@ -6,14 +6,15 @@ import ProviderLLMManager
 ///
 /// 通过 CommandCode 统一网关访问多种模型，使用 OpenAI Chat Completions 格式。
 ///
-/// 模型列表来源（按优先级）：
-/// 1. 远程模型池（`/provider/v1/models`），由 `RemoteModelListLoader` 解析并缓存。
-/// 2. 磁盘缓存（`LLMModelListCache`），跨启动保留，失败时兜底。
-/// 3. 下方 `providerInfo.models` 中硬编码的 4 个主力模型，仅在完全无网络、无缓存时生效。
+/// 模型列表获取策略（由本插件自行决定，继承 `RemoteModelVendorProvider` 获得）：
+/// 1. 远程模型池（`/provider/v1/models`），由 KitLLM loader 解析并缓存。
+/// 2. 磁盘缓存，跨启动保留，拉取失败时兜底。
+/// 3. 下方 `providerInfo.models` 中硬编码的 4 个主力模型，完全无网时兜底。
 ///
 /// 上游加模型无需改本文件——刷新一次即可拿到新模型池。
+/// 若需要自定义解析/刷新逻辑，直接 override `refreshModels()` 即可。
 @MainActor
-public final class GoatPlanProvider: VendorLLMProvider {
+public final class GoatPlanProvider: RemoteModelVendorProvider {
 
     public init(apiService: VendorAPIService = VendorAPIService()) {
         super.init(
