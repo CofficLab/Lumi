@@ -265,6 +265,25 @@ public let metadata = PluginMetadata(
   `fetchMessagesOperation(withFolder:requestKind:uids:)` /
   `fetchMessageOperation(withFolder:uid:)` / `MCOMessageBuilder` 均可在 Swift 中调用。
 
+**3b. libetpan MIME 解析死循环（MCOMessageParser hang，2026-10-02 补丁）**
+- 现象：`MCOMessageBuilder.data()` 正常（678 字节），但 `MCOMessageParser(data:)`
+  立即死循环（CPU 满载，sample 定位在 `mailmime_fields_parse →`
+  `mailmime_parameter_parse → mailimf_quoted_string_parse`）。
+- 根因：vendored libetpan（submodule rev `6dc099a`）`mailimf_quoted_string_parse`
+  的 `while (1)` **无退出条件**——当 fws 与 qcontent 都返回 `MAILIMF_ERROR_PARSE`
+  （quoted-string 遇收尾引号等不可消费输入）时 cur_token 不再前进、无限循环。
+  纯 ASCII 输入同样复现，与中文/编码无关。
+- 补丁：`deps/libetpan/src/low-level/imf/mailimf.c` 在该函数循环内新增
+  `if ((r_fws == MAILIMF_ERROR_PARSE) && (r_qcontent == MAILIMF_ERROR_PARSE)) break;`
+  （RFC 语义：quoted-string 在非 qcontent 字符处结束，交由后续 `dquote_parse` 收尾）。
+- 验证：重建 Debug libetpan（补丁）→ Release mailcore2 重新链接 → 重组
+  `MailCore2.xcframework`（macos-arm64 新 slice，最终 3 slices：macos-arm64 /
+  ios-arm64_armv7 / ios-x86_64-simulator，**不含 macos-x86_64**，SwiftPM 会判
+  x86_64+arm64 为 "equivalent"）→ 替换 Vendor → `MimeMessageBuilderTests` 与
+  全量 KitMail 测试 27 项全绿，`MCOMessageParser` / `plainTextRendering` /
+  `htmlRendering(with:)` 均正常。
+- 经验：改 Vendor 后必须 `rm -rf Packages/KitMail/.build`，否则 SPM 缓存沿用旧二进制。
+
 **4. 回退条件复核**
 - 三个回退触发条件（SPM 集成失败 / 真实服务器 PoC 失败 / 并发胶水 >1500 行）：
   SPM 集成已通过；真实服务器 PoC（Task 0.2）待测试账户；并发适配按
