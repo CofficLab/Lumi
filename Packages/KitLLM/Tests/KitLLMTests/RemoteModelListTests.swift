@@ -142,6 +142,49 @@ struct RemoteModelListTests {
         try? await provider.refreshModels()
         #expect(provider.availableModels.map(\.id) == ["static-a", "static-b"])
     }
+
+    @Test("RemoteModelVendorProvider:未配 endpoint 时退化为静态行为")
+    @MainActor
+    func remoteConvenienceBaseWithoutSource() async {
+        let provider = RemoteBaseTestProvider(source: nil)
+        #expect(provider.usesRemoteModelList == false)
+        #expect(provider.availableModels.map(\.id) == ["base-a"])
+        #expect(provider.lastModelSyncDate == nil)
+
+        // 无远程源时 refresh 为空操作，不抛错
+        try? await provider.refreshModels()
+        #expect(provider.availableModels.map(\.id) == ["base-a"])
+    }
+
+    @Test("RemoteModelVendorProvider:配置 endpoint 后标记为远程型")
+    @MainActor
+    func remoteConvenienceBaseWithSource() {
+        let provider = RemoteBaseTestProvider(
+            source: RemoteModelSource(endpoint: URL(string: "https://example.com/models")!)
+        )
+        #expect(provider.usesRemoteModelList == true)
+        #expect(provider.remoteModelSource?.endpoint == URL(string: "https://example.com/models")!)
+        // 尚未拉取：先回退静态基线
+        #expect(provider.availableModels.map(\.id) == ["base-a"])
+    }
+}
+
+/// RemoteModelVendorProvider 测试替身：endpoint 可注入。
+@MainActor
+private final class RemoteBaseTestProvider: RemoteModelVendorProvider {
+    private let injectedSource: RemoteModelSource?
+
+    init(source: RemoteModelSource?) {
+        self.injectedSource = source
+        super.init(info: LLMProviderInfo(
+            id: "remote-base-test",
+            displayName: "Remote Base Test",
+            defaultModel: "base-a",
+            models: [LLMModelInfo(id: "base-a")]
+        ))
+    }
+
+    override var remoteModelSource: RemoteModelSource? { injectedSource }
 }
 
 /// 最小静态供应商测试替身。

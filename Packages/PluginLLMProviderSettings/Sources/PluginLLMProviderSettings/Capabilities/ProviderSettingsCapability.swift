@@ -108,11 +108,9 @@ final class ProviderSettingsCapabilityAdapter: ProviderSettingsCapability {
     }
 
     func availableModels(for providerID: String) -> [LLMModelInfo] {
-        guard let provider = manager.provider(id: providerID) else { return [] }
-        if let dynamic = provider as? any LLMModelListProviding {
-            return dynamic.availableModels
-        }
-        return provider.providerInfo.models
+        // 协议属性：静态供应商返回 providerInfo.models，
+        // 远程供应商返回「远程快照 / 缓存 / 基线」合并池。
+        manager.provider(id: providerID)?.availableModels ?? []
     }
 
     func apiKey(for providerID: String) -> String {

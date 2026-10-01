@@ -144,13 +144,15 @@ public extension LLMManaging {
 // MARK: - Dynamic model list capability
 
 public extension LLMManaging {
-    /// 获取供应商的动态模型池（可远程更新）。
+    /// 获取供应商的动态模型池。
     ///
-    /// 供应商实现 `LLMModelListProviding`（远程模型列表）时读取其
-    /// `availableModels`；否则回退到 `providerInfo.models` 静态列表。
-    /// 既保证远程模型不落空，也保证静态供应商行为零变化。
+    /// 直接读取协议属性 `availableModels`：
+    /// - 静态供应商（默认实现）返回 `providerInfo.models`
+    /// - 远程供应商 override 后返回「远程快照 / 缓存 / 基线」合并结果
+    ///
+    /// 获取策略完全由供应商插件内部决定，管理器不感知。
     func dynamicModels(of provider: any SuperLLMProvider) -> [LLMModelInfo] {
-        (provider as? any LLMModelListProviding)?.availableModels ?? provider.providerInfo.models
+        provider.availableModels
     }
 
     /// 动态模型池中的全部模型 id。

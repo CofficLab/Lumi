@@ -6,6 +6,11 @@ import os
 /// 子类只需提供：
 /// - `providerInfo`（模型列表、协议格式、API Key storage key）
 /// - `openAIConfiguration` 或 `anthropicConfiguration`（对应协议的端点配置）
+///
+/// 模型列表获取策略由子类自行决定：
+/// - 静态子类：使用默认 `availableModels`（返回 `providerInfo.models`）。
+/// - 远程子类：override `availableModels` / `refreshModels` 等，或继承
+///   `RemoteModelVendorProvider` 便利基类获得开箱即用实现。
 @MainActor
 open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
 
@@ -20,24 +25,29 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
     /// Anthropic 兼容协议适配器配置（子类覆盖）。
     open var anthropicConfiguration: AnthropicCompatibleProviderConfiguration? { nil }
 
-    /// 远程模型源（子类覆盖）。
-    ///
-    /// 实现 `LLMModelListProviding` 时使用：非 `nil` 表示该供应商支持从远程
-    /// API 定期拉取模型列表；`nil`（默认）表示静态供应商，模型列表为
-    /// `providerInfo.models`。
-    open var remoteModelSource: RemoteModelSource? { nil }
-
-    private let modelListCache: LLMModelListCache
-    private var fetchedRemoteModels: [LLMModelInfo] = []
-    private var remoteSyncDate: Date?
-
     public init(info: LLMProviderInfo, apiService: VendorAPIService = VendorAPIService()) {
         self.providerInfo = info
         self.apiService = apiService
-        self.modelListCache = LLMModelListCache(providerID: info.id)
     }
 
     public var providerID: String { providerInfo.id }
+
+    // MARK: - 模型列表（默认静态实现；子类自行 override 决定获取策略）
+
+    /// 默认静态实现：模型列表来自注册时的 `providerInfo.models`。
+    ///
+    /// 以 `open` 声明（而非协议扩展默认），保证远程子类的 override
+    /// 能通过 `any SuperLLMProvider` 动态派发到。
+    open var availableModels: [LLMModelInfo] { providerInfo.models }
+
+    /// 默认空操作（静态供应商无远程源）。
+    open func refreshModels() async throws {}
+
+    /// 默认无远程模型源。
+    open var usesRemoteModelList: Bool { false }
+
+    /// 默认无同步记录。
+    open var lastModelSyncDate: Date? { nil }
 
     // MARK: - LLMProviding
 
@@ -391,61 +401,6 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             )
             : input
         return (input, output, cachedInput, cacheWrite, cacheTotal)
-    }
-}
-
-// MARK: - LLMModelListProviding (可选能力，默认实现)
-
-extension VendorLLMProvider: LLMModelListProviding {
-
-    public var usesRemoteModelList: Bool { remoteModelSource != nil }
-
-    public var availableModels: [LLMModelInfo] {
-        // 静态基线（providerInfo.models）
-        let base = providerInfo.models
-        // 远程快照 / 磁盘缓存
-        let remote: [LLMModelInfo]
-        if usesRemoteModelList, !fetchedRemoteModels.isEmpty {
-            remote = fetchedRemoteModels
-        } else if usesRemoteModelList,
-                  let cached = modelListCache.cachedSnapshot() {
-            remote = cached.models
-        } else {
-            remote = []
-        }
-        // 合并：远程优先（保留远程的 displayName/context），静态补齐缺漏（兜底）。
-        var byID: [String: LLMModelInfo] = [:]
-        for model in base { byID[model.id] = model }
-        for model in remote { byID[model.id] = model }
-        // 排序：先静态声明顺序，未在静态中的远程模型追加在后。
-        var seen = Set<String>()
-        var merged: [LLMModelInfo] = []
-        for model in base {
-            merged.append(byID[model.id] ?? model)
-            seen.insert(model.id)
-        }
-        for model in remote where !seen.contains(model.id) {
-            merged.append(model)
-            seen.insert(model.id)
-        }
-        return merged
-    }
-
-    public var lastModelSyncDate: Date? { remoteSyncDate }
-
-    public func refreshModels() async throws {
-        guard let source = remoteModelSource else { return }
-        let apiKey: String?
-        if let storageKey = source.apiKeyStorageKey, !storageKey.isEmpty {
-            apiKey = getApiKey()
-        } else {
-            apiKey = nil
-        }
-        let loader = RemoteModelListLoader(apiService: apiService)
-        let models = try await loader.load(from: source, apiKey: apiKey)
-        fetchedRemoteModels = models
-        remoteSyncDate = Date()
-        modelListCache.store(models: models, syncedAt: remoteSyncDate ?? Date())
     }
 }
 

@@ -3,9 +3,9 @@ import KitLLM
 import Testing
 @testable import ProviderLLMManager
 
-/// 可远程更新模型列表的 Mock：通过注入 `availableModels` 模拟刷新后的动态池。
+/// 可远程更新模型列表的 Mock：直接 override 协议属性模拟动态池。
 @MainActor
-final class MockRemoteModelProvider: ManagedLLMProvider, LLMModelListProviding {
+final class MockRemoteModelProvider: ManagedLLMProvider {
     let providerInfo: LLMProviderInfo
     var availableModels: [LLMModelInfo]
     var usesRemoteModelList: Bool
