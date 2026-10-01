@@ -2,57 +2,8 @@ import Foundation
 import Testing
 @testable import KitLLM
 
-/// 远程模型列表：loader 解析、缓存语义、VendorLLMProvider 默认行为。
+/// LLMModelListCache 缓存语义 + VendorLLMProvider 静态默认行为。
 struct RemoteModelListTests {
-
-    // MARK: - RemoteModelListLoader.parse
-
-    @Test("解析 OpenAI 标准格式（无 name/context_length）")
-    func parseOpenAIStandardFormat() throws {
-        let json = """
-        {"data":[{"id":"gpt-4o","object":"model"},{"id":"gpt-4o-mini","object":"model"}]}
-        """
-        let models = try RemoteModelListLoader.parse(data: Data(json.utf8))
-
-        #expect(models.count == 2)
-        #expect(models[0].id == "gpt-4o")
-        #expect(models[0].displayName == "gpt-4o") // 缺省回退 id
-        #expect(models[0].contextWindowSize == nil)
-        #expect(models[1].id == "gpt-4o-mini")
-    }
-
-    @Test("解析 CommandCode 变体（含 name/context_length）")
-    func parseCommandCodeVariant() throws {
-        let json = """
-        {"data":[{"id":"claude-sonnet-5-5","name":"Claude Sonnet 5.5","context_length":1000000}]}
-        """
-        let models = try RemoteModelListLoader.parse(data: Data(json.utf8))
-
-        #expect(models.count == 1)
-        #expect(models[0].id == "claude-sonnet-5-5")
-        #expect(models[0].displayName == "Claude Sonnet 5.5")
-        #expect(models[0].contextWindowSize == 1_000_000)
-    }
-
-    @Test("空 data 或缺失 data 视为解码失败（不返回空列表）")
-    func parseEmptyFails() {
-        let emptyData = #"{"data":[]}"#
-        #expect(throws: VendorAPIError.self) {
-            try RemoteModelListLoader.parse(data: Data(emptyData.utf8))
-        }
-
-        let missingData = #"{"models":[]}"#
-        #expect(throws: VendorAPIError.self) {
-            try RemoteModelListLoader.parse(data: Data(missingData.utf8))
-        }
-    }
-
-    @Test("跳过无 id 的条目")
-    func parseSkipsMissingID() throws {
-        let json = #"{"data":[{"name":"No ID","context_length":1000}]}"#
-        let models = try RemoteModelListLoader.parse(data: Data(json.utf8))
-        #expect(models.isEmpty)
-    }
 
     // MARK: - LLMModelListCache
 
@@ -141,46 +92,6 @@ struct RemoteModelListTests {
         // 静态供应商 refreshModels 不抛错、不改列表
         try? await provider.refreshModels()
         #expect(provider.availableModels.map(\.id) == ["static-a", "static-b"])
-    }
-
-    @Test("RemoteModelMerger:远程空时返回基线")
-    @MainActor
-    func mergerEmptyRemoteReturnsBase() {
-        let base = [LLMModelInfo(id: "a"), LLMModelInfo(id: "b")]
-        let merged = RemoteModelMerger.merge(base: base, remote: [])
-        #expect(merged.map(\.id) == ["a", "b"])
-    }
-
-    @Test("RemoteModelMerger:远程覆盖同 id 基线元数据")
-    @MainActor
-    func mergerRemoteOverridesBase() {
-        let base = [LLMModelInfo(id: "a", displayName: "A-base", contextWindowSize: 100)]
-        let remote = [LLMModelInfo(id: "a", displayName: "A-remote", contextWindowSize: 999)]
-        let merged = RemoteModelMerger.merge(base: base, remote: remote)
-
-        #expect(merged.count == 1)
-        #expect(merged[0].displayName == "A-remote")
-        #expect(merged[0].contextWindowSize == 999)
-    }
-
-    @Test("RemoteModelMerger:远程新增模型追加在基线之后")
-    @MainActor
-    func mergerRemoteAppendedAfterBase() {
-        let base = [LLMModelInfo(id: "a"), LLMModelInfo(id: "b")]
-        let remote = [LLMModelInfo(id: "c"), LLMModelInfo(id: "d")]
-        let merged = RemoteModelMerger.merge(base: base, remote: remote)
-        #expect(merged.map(\.id) == ["a", "b", "c", "d"])
-    }
-
-    @Test("RemoteModelMerger:远程与基线交叉时按基线顺序输出，新增追加在后")
-    @MainActor
-    func mergerMixedOrder() {
-        let base = [LLMModelInfo(id: "a"), LLMModelInfo(id: "b"), LLMModelInfo(id: "c")]
-        let remote = [LLMModelInfo(id: "b", displayName: "B-remote"), LLMModelInfo(id: "d")]
-        let merged = RemoteModelMerger.merge(base: base, remote: remote)
-
-        #expect(merged.map(\.id) == ["a", "b", "c", "d"])
-        #expect(merged[1].displayName == "B-remote")
     }
 }
 

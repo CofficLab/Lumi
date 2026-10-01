@@ -9,9 +9,8 @@ import os
 ///
 /// 模型列表获取策略由子类自行决定：
 /// - 静态子类：使用默认 `availableModels`（返回 `providerInfo.models`）。
-/// - 远程子类：override `availableModels` / `refreshModels`，可组合
-///   `RemoteModelMerger`、`LLMModelListCache`、`RemoteModelListLoader`
-///   等工具按需实现。
+/// - 远程子类：override `availableModels` / `refreshModels`，在供应商包内
+///   自行实现请求/解析/合并逻辑（每个供应商格式可能不同）。
 @MainActor
 open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
 

@@ -1,15 +1,13 @@
 import Foundation
+import KitLLM
 
-/// 远程模型列表的静态合并工具。
+/// GoatPlan 远程模型列表的静态合并工具。
 ///
 /// 将「静态基线」与「远程拉取到的模型」按 id 合并：
 /// - 远程优先：同 id 模型用远程的 displayName / contextWindowSize 覆盖基线
 /// - 静态补齐：远程未覆盖的基线模型原样保留，保证永不为空
 /// - 排序：先按基线声明顺序，远程新增模型追加在后
-///
-/// 供需要远程模型能力的供应商（如 `GoatPlanProvider`）自行调用；
-/// 静态供应商无需关心本类型。
-public enum RemoteModelMerger {
+enum RemoteModelMerger {
 
     /// 合并静态基线与远程模型。
     ///
@@ -17,7 +15,7 @@ public enum RemoteModelMerger {
     ///   - base: 硬编码的静态基线（通常来自 `providerInfo.models`）。
     ///   - remote: 远程拉取到的模型快照（可为空，此时等价于返回 base）。
     /// - Returns: 合并后的模型列表，**永不为空**（base 非空时）。
-    public static func merge(base: [LLMModelInfo], remote: [LLMModelInfo]) -> [LLMModelInfo] {
+    static func merge(base: [LLMModelInfo], remote: [LLMModelInfo]) -> [LLMModelInfo] {
         guard !remote.isEmpty else { return base }
 
         // 远程优先覆盖同 id 元数据
