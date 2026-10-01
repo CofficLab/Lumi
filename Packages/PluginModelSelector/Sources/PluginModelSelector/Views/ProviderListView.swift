@@ -109,6 +109,10 @@ struct ProviderListView: View {
                                         isSelected: info.id == viewModel.selectedProviderID,
                                         onSelect: {
                                             viewModel.selectedProviderID = info.id
+                                        },
+                                        canRefreshModels: viewModel.canRefreshModels(providerID: info.id),
+                                        onRefreshModels: {
+                                            Task { await viewModel.refreshModels(providerID: info.id) }
                                         }
                                     )
                                 }
@@ -121,6 +125,10 @@ struct ProviderListView: View {
                                             isSelected: info.id == viewModel.selectedProviderID,
                                             onSelect: {
                                                 viewModel.selectedProviderID = info.id
+                                            },
+                                            canRefreshModels: viewModel.canRefreshModels(providerID: info.id),
+                                            onRefreshModels: {
+                                                Task { await viewModel.refreshModels(providerID: info.id) }
                                             }
                                         )
                                     }
@@ -132,6 +140,10 @@ struct ProviderListView: View {
                                         isSelected: info.id == viewModel.selectedProviderID,
                                         onSelect: {
                                             viewModel.selectedProviderID = info.id
+                                        },
+                                        canRefreshModels: viewModel.canRefreshModels(providerID: info.id),
+                                        onRefreshModels: {
+                                            Task { await viewModel.refreshModels(providerID: info.id) }
                                         }
                                     )
                                 }
