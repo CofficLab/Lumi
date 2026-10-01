@@ -36,7 +36,7 @@ let package = Package(
         ),
         .testTarget(
             name: "KitMailTests",
-            dependencies: ["KitMail"],
+            dependencies: ["KitMail", "MailCore2"],
             path: "Tests"
         )
     ]
