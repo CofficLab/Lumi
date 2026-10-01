@@ -14,7 +14,7 @@ import ProviderToolManager
 import ProviderPromptSuggestion
 import ProviderProject
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 产品原型图设计器插件。

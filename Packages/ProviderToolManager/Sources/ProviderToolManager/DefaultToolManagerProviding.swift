@@ -1,6 +1,6 @@
 import KitAgentTool
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 private struct DefaultToolInteractionPayload: Codable {

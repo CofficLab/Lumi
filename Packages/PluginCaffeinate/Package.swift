@@ -9,16 +9,15 @@ let package = Package(
         .library(name: "PluginCaffeinate", targets: ["PluginCaffeinate"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
         .package(path: "../KitAgentTool"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
-        .package(path: "../KitLocalization"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
-        .package(path: "../ProviderDocsView"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../ProviderLogo"),
         .package(path: "../ProviderMenuBar"),
-        .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
@@ -26,14 +25,14 @@ let package = Package(
             dependencies: [
                 "KitAgentTool",
                 .product(name: "KernelCore", package: "LumiKernel"),
-                "KitLocalization",
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 "LumiUI",
-                "ProviderDocsView",
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
                 "ProviderLogo",
                 "ProviderMenuBar",
-                "ProviderStorage",
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 "ProviderToolManager",
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
@@ -42,7 +41,7 @@ let package = Package(
             dependencies: [
                 "PluginCaffeinate",
                 "KitAgentTool",
-                "ProviderStorage",
+                .product(name: "ProviderStorage", package: "LumiProviders"),
             ]
         ),
     ]

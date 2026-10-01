@@ -6,7 +6,7 @@ import ProviderLogo
 import ProviderMenuBar
 import ProviderStorage
 import ProviderToolManager
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// Caffeinate 插件（KernelCore 版本）

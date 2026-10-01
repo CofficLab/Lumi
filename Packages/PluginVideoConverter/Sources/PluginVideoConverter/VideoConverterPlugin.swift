@@ -7,7 +7,7 @@ import ProviderDocsView
 import ProviderRailView
 import ProviderRootView
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 视频转换插件

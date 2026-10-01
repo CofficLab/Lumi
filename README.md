@@ -101,7 +101,9 @@ The concrete provider contracts live under `Packages/Provider*`; the feature imp
 ## Requirements
 
 - macOS 14.0 or later
-- Xcode 26.x (the release workflow currently uses Xcode 26.3)
+- Xcode 27.0 or later. The project uses Xcode's JSON project format
+  (`project.xcproj`), which Xcode 26 cannot open. The release workflow runs on
+  the `xcode-27` runner with Xcode 27.0.
 - Swift 6.0 or later
 
 Some features require additional macOS permissions. For example, Computer Use and screen capture require the corresponding Accessibility, Automation, or Screen Recording permissions.

@@ -15,11 +15,11 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../KitLocalization"),        .package(path: "../KitDownload"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),        .package(path: "../KitDownload"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
@@ -28,8 +28,9 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
-                .product(name: "KitLocalization", package: "KitLocalization"),                .product(name: "KitDownload", package: "KitDownload"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
+                .product(name: "KitDownload", package: "KitDownload"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources",
             resources: [

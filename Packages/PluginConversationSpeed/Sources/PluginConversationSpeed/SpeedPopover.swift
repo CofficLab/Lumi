@@ -24,11 +24,6 @@ struct SpeedPopover: View {
 
             if let tps {
                 speedCardsRow(currentTPS: tps)
-
-                Text(LumiPluginLocalization.string("Streaming speed measures how fast the model generates output tokens. Higher is better.", bundle: .module))
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
             } else {
                 unavailableBlock
             }

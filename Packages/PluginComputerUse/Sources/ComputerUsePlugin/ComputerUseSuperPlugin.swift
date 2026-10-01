@@ -5,7 +5,7 @@ import ProviderMessage
 import ProviderSettingView
 import ProviderRootView
 import ProviderToolManager
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 @MainActor

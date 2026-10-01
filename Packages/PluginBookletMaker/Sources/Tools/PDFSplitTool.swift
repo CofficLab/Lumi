@@ -1,5 +1,6 @@
 import Foundation
 import KitAgentTool
+import BookletMakerCore
 
 /// 按切点把一份 PDF 拆成多个 PDF 文件。
 ///

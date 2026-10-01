@@ -1,7 +1,6 @@
 import KitAgentTool
 import Foundation
-import KitSuperLog
-
+import LumiLoggingKit
 /// 获取 HTTP 日志统计摘要的 Agent 工具。
 struct GetHTTPSummaryTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "📊"

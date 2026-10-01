@@ -4,8 +4,7 @@ import KernelCore
 import os
 import ProviderStorage
 import ProviderToolManager
-import KitSuperLog
-
+import LumiLoggingKit
 /// Agent Temp Storage 插件（KernelCore 版本）
 ///
 /// 由旧版 `Plugins/AgentTempStoragePlugin`（KernelLumi / LumiPlugin 架构）复刻而来，

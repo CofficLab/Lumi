@@ -11,6 +11,7 @@ import ProviderNetwork
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
+import PluginRootView
 import ProviderSettingView
 import ProviderStorage
 import ProviderTheme
@@ -227,15 +228,15 @@ struct FactoryLumiTests {
         #expect(resolved != nil)
     }
 
-    @Test("makeKernel 创建内核并由 PluginToolbar 注册 ToolbarProviding")
+    @Test("makeKernel 创建内核并安装共享 PluginToolbar")
     func makeKernelRegistersDefaultToolbarProviding() throws {
         let kernel = try KernelFactory.makeKernel()
 
-        #expect(kernel.isPluginRegistered(id: "com.coffic.lumi.plugin.toolbar"))
+        #expect(kernel.isPluginRegistered(id: "com.coffic.shared.plugin.toolbar"))
 
         let resolved: (any ToolbarProviding)? = kernel.resolveProvider((any ToolbarProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is ToolbarProvider)
+        #expect(resolved is DefaultToolbarProviding)
     }
 
     @Test("makeKernel 创建内核并注册默认 RootViewProviding")
@@ -244,7 +245,8 @@ struct FactoryLumiTests {
 
         let resolved: (any RootViewProviding)? = kernel.resolveProvider((any RootViewProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is DefaultRootViewProvider)
+        #expect(resolved is LumiRootViewProvider)
+        #expect(kernel.isPluginRegistered(id: RootViewPlugin.pluginID))
     }
 
     @Test("makeKernel 创建内核并注册默认 ActivityBarProviding")
@@ -332,7 +334,7 @@ struct FactoryLumiTests {
         #expect(toast is DefaultToastProviding)
         #expect(network is DefaultNetworkProviding)
         #expect(toolbar is DefaultToolbarProviding)
-        #expect(rootView is DefaultRootViewProvider)
+        #expect(rootView is LumiRootViewProvider)
         #expect(activityBar is DefaultActivityBarProviding)
         #expect(railView is DefaultRailViewProviding)
         #expect(settingView is DefaultSettingViewProviding)

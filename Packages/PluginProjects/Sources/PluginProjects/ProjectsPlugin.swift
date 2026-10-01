@@ -12,7 +12,7 @@ import ProviderStorage
 import ProviderToolbar
 import ProviderToolManager
 import ProviderPromptSuggestion
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// 项目管理插件。

@@ -1,6 +1,6 @@
 import Foundation
 import KitAgentTool
-import KitLocalization
+import LumiLocalizationKit
 import KitMarkdown
 import LumiUI
 import os

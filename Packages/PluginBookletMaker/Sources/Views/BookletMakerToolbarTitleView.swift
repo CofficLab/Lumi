@@ -25,6 +25,8 @@ struct BookletMakerToolbarTitleView: View {
             BookletLocalization.string("Booklet Maker")
         case .split:
             BookletLocalization.string("Split PDF")
+        case .merge:
+            BookletLocalization.string("Merge PDF")
         }
     }
 }

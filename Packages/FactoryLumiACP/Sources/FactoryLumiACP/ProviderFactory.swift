@@ -14,6 +14,7 @@ import ProviderNetwork
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
+import PluginRootView
 import ProviderSettingView
 import ProviderSkill
 import ProviderAgentRules
@@ -159,7 +160,7 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     /// 产出 `RootViewProviding` 实现（默认「工具栏 + 内容区」根布局）。
     public func makeRootViewProvider() -> any RootViewProviding {
-        DefaultRootViewProvider()
+        LumiRootViewProvider()
     }
 
     /// 产出 `ActivityBarProviding` 实现（默认竖直入口栏）。
@@ -394,7 +395,6 @@ public struct DefaultProviderFactory: ProviderFactory {
         try kernel.registerProvider((any ToastProviding).self, makeToastProvider())
         try kernel.registerProvider((any NetworkProviding).self, makeNetworkProvider())
         try kernel.registerProvider((any ToolbarProviding).self, makeToolbarProvider())
-        try kernel.registerProvider((any RootViewProviding).self, makeRootViewProvider())
         try kernel.registerProvider((any ActivityBarProviding).self, makeActivityBarProvider())
         try kernel.registerProvider((any RailViewProviding).self, makeRailViewProvider())
         try kernel.registerProvider((any SettingViewProviding).self, makeSettingViewProvider())

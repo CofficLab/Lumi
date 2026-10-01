@@ -17,7 +17,7 @@ env:
 
 jobs:
   prepare:
-    runs-on: macos-26
+    runs-on: xcode-27
     permissions:
       contents: read
     outputs:
@@ -38,7 +38,7 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
         with:
-          xcode-version: "26.3"
+          xcode-version: "27.0"
       - name: Prepare immutable release metadata
         id: metadata
         env:
@@ -61,7 +61,7 @@ jobs:
 
   build:
     needs: prepare
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 120
     permissions:
       contents: read
@@ -91,7 +91,31 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
         with:
-          xcode-version: "26.3"
+          xcode-version: "27.0"
+      - name: Install Metal Toolchain
+        run: |
+          set -euo pipefail
+          # Xcode 26 made the Metal toolchain an optional component and the
+          # hosted runner images do not pre-install it. mlx-swift compiles
+          # .metal sources, so archiving fails with "cannot execute tool
+          # 'metal'" while the payload is absent.
+          #
+          # `xcrun -f metal` is not a usable probe: it resolves the launcher
+          # shim inside XcodeDefault.xctoolchain even when no payload is
+          # installed, which silently skipped the download. Ask the compiler
+          # for its version instead.
+          if xcrun metal --version >/dev/null 2>&1; then
+            echo "Metal toolchain already available"
+          else
+            echo "Downloading the Metal toolchain..."
+            xcodebuild -downloadComponent MetalToolchain
+            xcrun metal --version >/dev/null || {
+              echo "Metal toolchain is still unusable after the download" >&2
+              exit 1
+            }
+            echo "Metal toolchain installed"
+          fi
+          xcrun metal --version
       - name: Verify source and inject the prepared version
         run: |
           set -euo pipefail
@@ -187,7 +211,7 @@ jobs:
 
   publish:
     needs: [prepare, build]
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 90
     permissions:
       contents: write
@@ -241,7 +265,7 @@ jobs:
         if: steps.recovery.outputs.reuse != 'true'
         uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
         with:
-          xcode-version: "26.3"
+          xcode-version: "27.0"
       - name: Verify and restore both build artifacts
         if: steps.recovery.outputs.reuse != 'true'
         run: .github/scripts/verify-release-inputs.py "${RELEASE_METADATA}" incoming "${RESTORED_ARCHIVES}"

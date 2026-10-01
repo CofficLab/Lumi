@@ -1,6 +1,6 @@
 import Foundation
 import AppKit
-import KitSuperLog
+import LumiLoggingKit
 import EditorSource
 
 /// 编辑器 UI 状态

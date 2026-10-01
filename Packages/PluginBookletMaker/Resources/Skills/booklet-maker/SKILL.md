@@ -1,6 +1,6 @@
 # Booklet Maker 工具使用指南
 
-当用户需要把 PDF 做成可打印装订的小册子（折页 / 骑马钉），或按页范围拆分 PDF 时，
+当用户需要把 PDF 做成可打印装订的小册子（折页 / 骑马钉）、合并多个 PDF，或按页范围拆分 PDF 时，
 使用 Booklet Maker 提供的 Agent 工具完成任务。
 
 小册子（booklet）指：把若干张纸**双面打印**后沿中线**折叠**、在折缝处**装订**成册。
@@ -13,6 +13,7 @@
 | `pdf_inspect` | 读取 PDF 页数、页面尺寸、加密状态，并给出拼版计划（纸张数与逐面页序） | 低 |
 | `booklet_make` | 把 PDF 拼版为可打印的小册子 PDF | 中（`overwrite=true` 为高） |
 | `pdf_split` | 按切点把 PDF 拆成多个文件 | 中（`overwrite=true` 为高） |
+| `pdf_merge` | 按给定顺序合并多个 PDF 为一个文件 | 中（`overwrite=true` 为高） |
 | `booklet_preview` | 渲染前几个印刷面为 PNG 附件，供视觉确认 | 低 |
 
 ## 标准工作流
@@ -30,6 +31,12 @@
 ```
 
 每次生成前都应 `pdf_inspect` 确认页数，避免切点越界或对空白页拼版。
+
+合并流程：
+```
+1. 按用户指定顺序准备至少两个 PDF 路径
+2. `pdf_merge(sourcePaths=[...], outputPath="/Users/me/merged.pdf")`
+```
 
 ## 核心概念
 
@@ -83,11 +90,20 @@
 `cutPoints=[20, 50]` 处理 100 页文档 → 三段：1–20、21–50、51–100。
 切点必须满足 `1 ≤ cutPoint < 页数`，否则工具报错。
 
+### `pdf_merge` 参数
+
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| `sourcePaths` | ✓ | 至少两个 PDF 的绝对路径数组；数组顺序就是输出页序 |
+| `outputPath` | ✓ | 合并后 PDF 的绝对路径 |
+| `overwrite` | | 是否覆盖已存在的输出，默认 `false` |
+
 ## 注意事项
 
 - **路径必须是绝对路径**；相对路径会被当作相对于进程当前目录。
 - `booklet_make` 默认不覆盖已有文件；需显式传 `overwrite=true`（高风险）。
 - `booklet_make` 会原子写入输出，失败时不会留下半成品；覆盖时会先删除旧文件。
+- `pdf_merge` 保留源 PDF 页面内容并按顺序拼接，失败或取消时不会留下半成品。
 - 源 PDF 若加密或页面尺寸为 0，`pdf_inspect` / `booklet_make` 会直接报错。
 - `booklet_preview` 的临时文件写在插件数据目录，结果只以 PNG 附件返回，不落盘到用户目录。
 - 打印提示：**双面、沿短边翻转（flip on short edge）**，与工具返回的说明一致。
@@ -104,6 +120,18 @@ booklet_make(
   outputPath="/Users/me/slides-booklet.pdf",
   paper="a4",
   layout="bookletFold"
+)
+```
+
+### 场景 4：按章节顺序合并 PDF
+```
+pdf_merge(
+  sourcePaths=[
+    "/Users/me/chapters/01-intro.pdf",
+    "/Users/me/chapters/02-basics.pdf",
+    "/Users/me/chapters/03-exercises.pdf"
+  ],
+  outputPath="/Users/me/book.pdf"
 )
 ```
 

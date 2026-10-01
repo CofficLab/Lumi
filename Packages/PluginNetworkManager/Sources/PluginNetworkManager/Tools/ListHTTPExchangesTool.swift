@@ -1,7 +1,6 @@
 import KitAgentTool
 import Foundation
-import KitSuperLog
-
+import LumiLoggingKit
 /// 查询最近 HTTP 交换记录的 Agent 工具。
 ///
 /// 支持按请求方法、URL 关键词、时间范围和状态码筛选。

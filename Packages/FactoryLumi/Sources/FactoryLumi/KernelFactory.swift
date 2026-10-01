@@ -4,6 +4,7 @@ import ProviderExternalFile
 import ProviderProject
 import ProviderChatSection
 import ProviderConversation
+import PluginRootView
 import ProviderStorage
 import SwiftUI
 
@@ -93,14 +94,15 @@ public enum KernelFactory {
     ) async throws -> KernelCoreContainer {
         // 复用同一套 Provider composition；空目录先把内核推进 running，随后
         // `startAsync` 原子安装真实目录。后续宿主切换为异步启动时无需复制装配图。
-        let kernel = try makeKernel(
-            providerFactory: providerFactory,
-            pluginFactory: EmptyPluginFactory(),
-            additionalPlugins: []
-        )
+        let kernel = KernelCoreContainer()
+        try providerFactory.registerProviders(into: kernel)
         // 将完整插件目录交给 Kernel 注册；Kernel 会对禁用插件跳过 Boot/Ready，
         // 但仍执行 onRegister，以便贡献提示词等目录型能力。
-        let plugins = pluginFactory.makePlugins() + additionalPlugins
+        let plugins = makePlugins(
+            providerFactory: providerFactory,
+            pluginFactory: pluginFactory,
+            additionalPlugins: additionalPlugins
+        )
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             try PluginDataMigrationCoordinator(storage: storage).run(for: plugins)
         }
@@ -120,7 +122,11 @@ public enum KernelFactory {
         let kernel = KernelCoreContainer()
         try providerFactory.registerProviders(into: kernel)
 
-        let plugins = pluginFactory.makePlugins() + additionalPlugins
+        let plugins = makePlugins(
+            providerFactory: providerFactory,
+            pluginFactory: pluginFactory,
+            additionalPlugins: additionalPlugins
+        )
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             try PluginDataMigrationCoordinator(storage: storage).run(for: plugins)
         }
@@ -141,6 +147,16 @@ public enum KernelFactory {
         }
 
         return kernel
+    }
+
+    private static func makePlugins(
+        providerFactory: any ProviderFactory,
+        pluginFactory: any PluginFactory,
+        additionalPlugins: [any SuperPlugin]
+    ) -> [any SuperPlugin] {
+        [RootViewPlugin(provider: providerFactory.makeRootViewProvider())]
+            + pluginFactory.makePlugins()
+            + additionalPlugins
     }
 
     // MARK: - Main View Assembly

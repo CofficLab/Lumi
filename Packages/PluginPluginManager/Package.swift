@@ -15,24 +15,23 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../KitSuperLog"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
-        .package(path: "../ProviderDocsView"),
-        .package(path: "../ProviderPluginManaging"),
-        .package(path: "../ProviderSettingView"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
         .package(path: "../ProviderPromptSuggestion"),
     ],
     targets: [
         .target(
             name: "PluginPluginManager",
             dependencies: [
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "ProviderDocsView", package: "ProviderDocsView"),
-                .product(name: "ProviderPluginManaging", package: "ProviderPluginManaging"),
-                .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
+                .product(name: "ProviderPluginManaging", package: "LumiProviders"),
+                .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
             ],
             path: "Sources/PluginPluginManager"
@@ -43,8 +42,8 @@ let package = Package(
                 "PluginPluginManager",
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
-                .product(name: "ProviderPluginManaging", package: "ProviderPluginManaging"),
-                .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "ProviderPluginManaging", package: "LumiProviders"),
+                .product(name: "ProviderSettingView", package: "LumiSettings"),
             ],
             path: "Tests/PluginPluginManagerTests"
         )

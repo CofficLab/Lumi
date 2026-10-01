@@ -101,7 +101,8 @@ sequenceDiagram
 ## 系统要求
 
 - macOS 14.0 或更高版本
-- Xcode 26.x（当前发布流程使用 Xcode 26.3）
+- Xcode 27.0 或更高版本。工程使用 Xcode 的 JSON 工程格式（`project.xcproj`），
+  Xcode 26 无法打开。发布流程运行在 `xcode-27` runner 上，使用 Xcode 27.0。
 - Swift 6.0 或更高版本
 
 部分功能需要额外的 macOS 权限。例如 Computer Use 和屏幕捕获需要相应的辅助功能、自动化或屏幕录制权限。

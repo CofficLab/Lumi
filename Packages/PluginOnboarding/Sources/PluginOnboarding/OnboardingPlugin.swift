@@ -1,6 +1,6 @@
 import Foundation
 import KernelCore
-import KitSuperLog
+import LumiLoggingKit
 import LumiUI
 import ProviderOnboarding
 import ProviderRootView

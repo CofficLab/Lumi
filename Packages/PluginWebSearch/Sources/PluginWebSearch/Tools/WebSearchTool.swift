@@ -1,7 +1,7 @@
 import KitAgentTool
 import Foundation
 import ProviderNetwork
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 网页搜索工具（KernelCore 体系）

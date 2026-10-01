@@ -1,4 +1,5 @@
 #if os(iOS)
+import BookletMakerCore
 import SwiftUI
 
 /// 拼版预览阶段：按打印面顺序展示每一张纸的正反两面，

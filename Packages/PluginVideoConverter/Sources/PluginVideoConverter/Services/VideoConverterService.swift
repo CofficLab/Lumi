@@ -1,5 +1,5 @@
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// Service that wraps FFmpeg CLI for video conversion.

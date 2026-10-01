@@ -7,7 +7,7 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
 import ProviderRootView
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// Hosts Manager 插件（KernelCore 版本）

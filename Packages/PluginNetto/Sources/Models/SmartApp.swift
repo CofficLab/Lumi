@@ -2,8 +2,7 @@ import AppKit
 import Foundation
 import SwiftUI
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 public struct SmartApp: Identifiable, Sendable, Equatable, Hashable, SuperLog {
     // MARK: - Properties
     

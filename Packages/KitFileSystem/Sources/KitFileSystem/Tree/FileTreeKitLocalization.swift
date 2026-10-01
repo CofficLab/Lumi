@@ -1,5 +1,5 @@
 import Foundation
-import KitLocalization
+import LumiLocalizationKit
 
 public enum FileTreeKitLocalization {
     public static func string(_ key: String, bundle: Bundle, locale: Locale = .current) -> String {

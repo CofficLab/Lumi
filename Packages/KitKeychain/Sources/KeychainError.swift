@@ -30,21 +30,28 @@ public enum KeychainStoreError: LocalizedError, Sendable, Equatable {
     public var errorDescription: String? {
         switch self {
         case .readFailed(let status):
-            let systemMessage = SecCopyErrorMessageString(status, nil) as String?
-                ?? "Unknown Keychain error"
-            return "Keychain read failed (OSStatus \(status): \(systemMessage))"
+            return "Keychain read failed (OSStatus \(status): \(Self.systemMessage(for: status)))"
         case .writeFailed(let status):
-            let systemMessage = SecCopyErrorMessageString(status, nil) as String?
-                ?? "Unknown Keychain error"
-            return "Keychain write failed (OSStatus \(status): \(systemMessage))"
+            return "Keychain write failed (OSStatus \(status): \(Self.systemMessage(for: status)))"
         case .deleteFailed(let status):
-            let systemMessage = SecCopyErrorMessageString(status, nil) as String?
-                ?? "Unknown Keychain error"
-            return "Keychain delete failed (OSStatus \(status): \(systemMessage))"
+            return "Keychain delete failed (OSStatus \(status): \(Self.systemMessage(for: status)))"
         case .missingDataForSuccessfulRead:
             return "Keychain reported a successful read without returning item data"
         case .invalidStringData:
             return "Keychain item contains invalid UTF-8 data"
+        }
+    }
+
+    /// 系统错误文案。`SecCopyErrorMessageString` 对部分状态码（如 -34018）
+    /// 只返回状态码本身，等于没有信息；这里补充可操作的说明。
+    private static func systemMessage(for status: OSStatus) -> String {
+        switch status {
+        case errSecMissingEntitlement:
+            return "errSecMissingEntitlement: the app is missing a required Keychain entitlement"
+                + " or its code signature changed; restarting the app usually fixes it"
+        default:
+            return SecCopyErrorMessageString(status, nil) as String?
+                ?? "Unknown Keychain error"
         }
     }
 }

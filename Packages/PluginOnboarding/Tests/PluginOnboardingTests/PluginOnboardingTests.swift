@@ -24,7 +24,7 @@ import Testing
 @MainActor
 @Test func onboardingRegistersAndRemovesItsPages() throws {
     let kernel = KernelCoreContainer()
-    let rootView = DefaultRootViewProvider()
+    let rootView = DefaultRootViewProviding()
     let dataRoot = FileManager.default.temporaryDirectory
         .appendingPathComponent("PluginOnboardingTests-\(UUID().uuidString)")
     let storage = DefaultStorageProvider(dataRootDirectory: dataRoot)

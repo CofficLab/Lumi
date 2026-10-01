@@ -1,6 +1,6 @@
 import KitAgentTool
 import KernelCore
-import KitLocalization
+import LumiLocalizationKit
 import LumiUI
 import KitMarkdown
 import ProviderConversation
@@ -9,7 +9,7 @@ import ProviderMessageRendering
 import ProviderMessageSender
 import ProviderToolManager
 import Foundation
-import KitLocalization
+import LumiLocalizationKit
 
 /// Runtime localization for MessageRendererPlugin bundle.
 ///

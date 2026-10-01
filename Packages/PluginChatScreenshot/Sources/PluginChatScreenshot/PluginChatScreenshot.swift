@@ -2,8 +2,7 @@ import os
 import KernelCore
 import ProviderChatSection
 import ProviderCommand
-import KitSuperLog
-
+import LumiLoggingKit
 /// Chat Screenshot Plugin（KernelCore 版本）
 ///
 /// 由旧版 `Plugins/ChatScreenshotPlugin`（KernelLumi / LumiPlugin 架构）复刻而来：

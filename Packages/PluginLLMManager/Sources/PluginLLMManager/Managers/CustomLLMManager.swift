@@ -2,8 +2,7 @@ import ProviderLLMManager
 import Foundation
 import KitLLM
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// PluginLLMManager 自研的 `LLMManaging` 实现。
 ///
 /// 独立实现完整的供应商注册表、选中持久化与请求路由，并提供插件化的扩展点：

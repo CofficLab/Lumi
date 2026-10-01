@@ -1,8 +1,7 @@
 import os
 import SwiftUI
 import LumiUI
-import KitSuperLog
-
+import LumiLoggingKit
 struct BrewManagerView: View {
     @ObservedObject private var viewModel: BrewManagerViewModel
     @State private var selectedTab: BrewTab = .installed

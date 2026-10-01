@@ -3,7 +3,7 @@ import KernelCore
 import ProviderDocsView
 import ProviderIdleTime
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 空闲时间插件（KernelCore 版本）。

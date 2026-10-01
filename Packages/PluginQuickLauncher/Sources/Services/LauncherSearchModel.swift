@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// Kernel-agnostic command record used by the launcher search index.

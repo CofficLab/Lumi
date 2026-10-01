@@ -1,6 +1,6 @@
 #if DEBUG
 import SwiftUI
-import KitLocalization
+import LumiLocalizationKit
 import LumiUI
 
 /// Indicates that the app is running a Debug build.

@@ -2,7 +2,7 @@ import Foundation
 import KernelCore
 import KitMCP
 import ProviderMCP
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// PluginGithubMCP：贡献 GitHub 官方 MCP 服务器模板。

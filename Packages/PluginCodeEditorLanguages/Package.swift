@@ -8,8 +8,8 @@ let package = Package(
         .library(name: "PluginCodeEditorLanguages", targets: ["PluginCodeEditorLanguages"]),
     ],
     dependencies: [
-        .package(path: "../KitSuperLog"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderEditor"),
         .package(path: "../PluginCodeEditorHost"),
         .package(path: "../KitEditorLanguageRuntime"),
@@ -18,7 +18,10 @@ let package = Package(
             revision: "31d17fe7e818a2048c808b5c6fdc2dc792f4f5b5"
         ),
         .package(url: "https://github.com/tree-sitter/tree-sitter-javascript.git", exact: "0.23.1"),
-        .package(url: "https://github.com/tree-sitter/tree-sitter-typescript.git", exact: "0.23.2"),
+        .package(
+            url: "https://github.com/tree-sitter/tree-sitter-typescript.git",
+            revision: "f975a621f4e7f532fe322e13c4f79495e0a7b2e7"
+        ),
         .package(url: "https://github.com/tree-sitter/tree-sitter-json.git", exact: "0.24.8"),
         .package(url: "https://github.com/tree-sitter/tree-sitter-python.git", exact: "0.23.6"),
         .package(url: "https://github.com/tree-sitter/tree-sitter-bash.git", exact: "0.23.3"),
@@ -29,7 +32,7 @@ let package = Package(
         .target(
             name: "PluginCodeEditorLanguages",
             dependencies: [
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "TreeSitterSwift", package: "tree-sitter-swift"),

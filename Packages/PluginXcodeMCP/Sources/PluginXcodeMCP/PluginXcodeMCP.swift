@@ -2,7 +2,7 @@ import Foundation
 import KernelCore
 import KitMCP
 import ProviderMCP
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// PluginXcodeMCP：贡献 Xcode 原生 MCP 服务器模板。

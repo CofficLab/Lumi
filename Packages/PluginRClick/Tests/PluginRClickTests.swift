@@ -21,7 +21,7 @@ import ProviderStorage
     let activityBar = DefaultActivityBarProviding()
     let chat = DefaultChatSectionProviding()
     let rail = DefaultRailViewProviding(visibleCategories: [.chat])
-    let rootView = DefaultRootViewProvider()
+    let rootView = DefaultRootViewProviding()
     try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
     try kernel.registerProvider((any ChatSectionProviding).self, chat)
     try kernel.registerProvider((any RailViewProviding).self, rail)

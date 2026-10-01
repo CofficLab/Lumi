@@ -8,9 +8,9 @@ let package = Package(
         .library(name: "PluginAgentPlanStorage", targets: ["PluginAgentPlanStorage"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
         .package(path: "../KitAgentTool"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
-        .package(path: "../ProviderStorage"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderToolManager"),
     ],
     targets: [
@@ -19,7 +19,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             ],
             path: "Sources/PluginAgentPlanStorage"

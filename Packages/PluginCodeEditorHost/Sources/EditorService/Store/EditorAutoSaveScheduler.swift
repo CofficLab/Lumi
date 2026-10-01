@@ -1,8 +1,7 @@
 import Foundation
 import EditorKernel
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// 自动保存防抖调度器。
 ///
 /// 仅处理 `afterDelay` 模式的防抖触发；`onFocusChange` / `onWindowChange`

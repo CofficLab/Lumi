@@ -9,25 +9,23 @@ let package = Package(
         .library(name: "PluginEditorPreview", targets: ["PluginEditorPreview"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.4.0"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(path: "../KitMarkdown"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
-        .package(path: "../ProviderProject"),
-        .package(path: "../ProviderRootView"),
-        .package(path: "../ProviderStorage"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
     ],
     targets: [
         .target(
             name: "PluginEditorPreview",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "KitMarkdown", package: "KitMarkdown"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "ProviderProject", package: "ProviderProject"),
-                .product(name: "ProviderRootView", package: "ProviderRootView"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderProject", package: "LumiProviders"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
@@ -35,7 +33,7 @@ let package = Package(
             name: "PluginEditorPreviewTests",
             dependencies: [
                 "PluginEditorPreview",
-                .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderProject", package: "LumiProviders"),
             ]
         ),
     ]

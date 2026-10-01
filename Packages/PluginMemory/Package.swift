@@ -9,15 +9,14 @@ let package = Package(
         .library(name: "PluginMemory", targets: ["PluginMemory"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.4.0"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitAgentTool"),
-        .package(path: "../KitLocalization"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
-        .package(path: "../ProviderStorage"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../ProviderProject"),
-        .package(path: "../ProviderSettingView"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
     ],
     targets: [
         .target(
@@ -25,12 +24,12 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
                 "KitAgentTool",
-                "KitLocalization",
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 "LumiUI",
-                "ProviderStorage",
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 "ProviderToolManager",
-                "ProviderProject",
-                "ProviderSettingView",
+                .product(name: "ProviderProject", package: "LumiProviders"),
+                .product(name: "ProviderSettingView", package: "LumiSettings"),
             ],
             path: "Sources/PluginMemory"
         ),
@@ -39,8 +38,8 @@ let package = Package(
             dependencies: [
                 "PluginMemory",
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             ],
             path: "Tests/PluginMemoryTests"

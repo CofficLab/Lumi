@@ -1,6 +1,6 @@
 import Foundation
 import EditorKernel
-import KitSuperLog
+import LumiLoggingKit
 import AppKit
 @preconcurrency import EditorSource
 import EditorTextView

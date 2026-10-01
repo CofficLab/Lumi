@@ -35,7 +35,7 @@ struct PluginDiskManagerTests {
         let activity = DefaultActivityBarProviding()
         let chat = DefaultChatSectionProviding()
         let rail = DefaultRailViewProviding(visibleCategories: [.chat])
-        let root = DefaultRootViewProvider()
+        let root = DefaultRootViewProviding()
         try kernel.registerProvider((any ActivityBarProviding).self, activity)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
         try kernel.registerProvider((any RailViewProviding).self, rail)

@@ -1,7 +1,7 @@
 import os
 import Foundation
 import KernelCore
-import KitSuperLog
+import LumiLoggingKit
 import ProviderChatSection
 import ProviderConversation
 import ProviderLLMManager

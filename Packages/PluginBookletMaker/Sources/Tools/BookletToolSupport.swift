@@ -1,5 +1,6 @@
 import Foundation
 import KitAgentTool
+import BookletMakerCore
 
 // MARK: - Booklet Tool Support
 
@@ -110,6 +111,33 @@ enum BookletToolSupport {
                 .split { $0 == "," || $0.isWhitespace }
                 .compactMap { Int($0) }
             return ints.isEmpty ? nil : ints
+        }
+        return nil
+    }
+
+    /// Parse an ordered list of file paths. Accepts either a JSON array or a
+    /// comma/newline-separated string for callers that cannot send arrays.
+    static func stringArray(_ arguments: [String: ToolArgument], _ key: String) -> [String]? {
+        guard let value = arguments[key]?.value else { return nil }
+        if let values = value as? [String] {
+            let paths = values.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+            return paths.isEmpty ? nil : paths
+        }
+        if let values = value as? [Any] {
+            let paths = values.compactMap { item -> String? in
+                guard let path = item as? String else { return nil }
+                let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+                return trimmed.isEmpty ? nil : trimmed
+            }
+            return paths.isEmpty ? nil : paths
+        }
+        if let string = value as? String {
+            let paths = string
+                .split { $0 == "," || $0 == "\n" }
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+            return paths.isEmpty ? nil : paths
         }
         return nil
     }

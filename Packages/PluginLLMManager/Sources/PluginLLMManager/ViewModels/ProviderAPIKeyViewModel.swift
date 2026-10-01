@@ -47,8 +47,16 @@ final class ProviderAPIKeyViewModel: ObservableObject {
         isChecking = true
         Task { @MainActor [weak self] in
             guard let self else { return }
-            self.keyIsReadable = provider.hasApiKey()
-            self.apiKey = provider.getApiKey()
+            do {
+                self.apiKey = try provider.resolveAPIKey()
+                self.keyIsReadable = true
+            } catch {
+                // Keep the last-known-good in-memory value if a recheck still
+                // cannot resolve the Keychain entry; resolveAPIKey itself
+                // performs the bounded full-query retry before failing.
+                self.apiKey = provider.getApiKey()
+                self.keyIsReadable = !self.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
             self.isChecking = false
         }
     }

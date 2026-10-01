@@ -1,5 +1,5 @@
 import Foundation
-import KitLocalization
+import LumiLocalizationKit
 
 private final class FactoryLumiBundleFinder {}
 

@@ -2,8 +2,7 @@ import AppKit
 import Combine
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// Process monitoring service that reports top N CPU-consuming processes via libproc.
 @MainActor
 public final class ProcessService: ObservableObject, SuperLog {

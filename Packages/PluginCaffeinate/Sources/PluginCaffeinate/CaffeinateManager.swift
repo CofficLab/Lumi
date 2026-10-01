@@ -1,12 +1,11 @@
 import Foundation
 import IOKit.pwr_mgt
-import KitLocalization
+import LumiLocalizationKit
 import KernelCore
 import Observation
 import ProviderLogo
 import ProviderStorage
-import KitSuperLog
-
+import LumiLoggingKit
 /// Caffeinate Manager: Responsible for managing system power state
 @MainActor
 @Observable

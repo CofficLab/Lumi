@@ -1,5 +1,5 @@
 import Foundation
-import KitLocalization
+import LumiLocalizationKit
 
 /// Runtime localization for ModelSelectorPlugin bundle.
 enum LumiPluginLocalization {

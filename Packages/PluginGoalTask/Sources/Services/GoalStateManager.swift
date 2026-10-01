@@ -1,6 +1,6 @@
 import Foundation
 import SwiftData
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// GoalTask 插件的状态管理器

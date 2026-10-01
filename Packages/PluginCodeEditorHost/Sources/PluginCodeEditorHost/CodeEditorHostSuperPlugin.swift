@@ -6,7 +6,7 @@ import EditorSource
 import KernelCore
 import LumiUI
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// KernelCore 的编辑器宿主：提供与旧宿主相同的 SourceEditor 语法高亮能力。

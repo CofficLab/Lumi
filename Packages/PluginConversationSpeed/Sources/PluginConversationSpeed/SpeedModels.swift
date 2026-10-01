@@ -1,5 +1,5 @@
 import Foundation
-import KitLocalization
+import LumiLocalizationKit
 import ProviderMessage
 
 // MARK: - Message Speed Extension

@@ -1,4 +1,4 @@
-import KitLocalization
+import LumiLocalizationKit
 import LumiUI
 import SwiftUI
 

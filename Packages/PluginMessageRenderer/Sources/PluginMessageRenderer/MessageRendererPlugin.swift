@@ -1,6 +1,6 @@
 import os
 import KernelCore
-import KitSuperLog
+import LumiLoggingKit
 import LumiUI
 import ProviderChatSection
 import ProviderConversation

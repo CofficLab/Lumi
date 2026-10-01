@@ -14,19 +14,18 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
-        .package(path: "../KitSuperLog"),
-        .package(path: "../ProviderStorage"),
-        .package(path: "../ProviderTheme"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
     ],
     targets: [
         .target(
             name: "PluginThemeManager",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
-                .product(name: "ProviderTheme", package: "ProviderTheme"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
+                .product(name: "ProviderTheme", package: "LumiProviders"),
             ]
         ),
         .testTarget(

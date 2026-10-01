@@ -18,5 +18,13 @@ let package = Package(
             ],
             path: "Sources/ProviderMCP"
         ),
+        .testTarget(
+            name: "ProviderMCPTests",
+            dependencies: [
+                "ProviderMCP",
+                .product(name: "KitMCP", package: "KitMCP"),
+            ],
+            path: "Tests/ProviderMCPTests"
+        ),
     ]
 )

@@ -1,7 +1,7 @@
 #if os(iOS)
 import SwiftUI
 
-/// 文档概览：已打开文件的根页面。展示文件信息与两个工具入口；
+/// 文档概览：已打开文件的根页面。展示文件信息与三个工具入口；
 /// 菜单提供文件信息、更换 PDF、关闭当前 PDF（帮助与关于在 T6 接入）。
 struct PDFDocumentOverviewView: View {
     @ObservedObject var feature: BookletMakerMobileFeature
@@ -44,6 +44,15 @@ struct PDFDocumentOverviewView: View {
                     )
                 }
                 .accessibilityIdentifier("overview.splitTool")
+
+                NavigationLink(value: MobileWorkspaceState.Tool.merge) {
+                    toolRow(
+                        title: BookletLocalization.string("Merge PDF"),
+                        subtitle: BookletLocalization.string("Combine multiple PDFs in order"),
+                        systemImage: "arrow.triangle.merge"
+                    )
+                }
+                .accessibilityIdentifier("overview.mergeTool")
             }
         }
         .navigationTitle(BookletLocalization.string("Document"))
@@ -88,7 +97,7 @@ struct PDFDocumentOverviewView: View {
             }
         }
         .navigationDestination(for: MobileWorkspaceState.Tool.self) { tool in
-            feature.makeContentView()
+            feature.makeContentView(onOpenPDF: onOpenPDF)
                 .navigationBarTitleDisplayMode(.inline)
         }
         .overlay(alignment: .top) {
@@ -100,7 +109,7 @@ struct PDFDocumentOverviewView: View {
 
     private var thumbnail: some View {
         PDFDocumentPageView(
-            documentURL: viewModel.currentDocument.url,
+            documentURL: feature.documentPreviewURL,
             pageNumber: 1
         )
         .frame(width: 56, height: 56 / viewModel.currentDocument.pageAspectRatio)

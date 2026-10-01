@@ -3,8 +3,7 @@ import os
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
-import KitSuperLog
-
+import LumiLoggingKit
 /// Message Manager Service
 @MainActor
 public final class MessageManager: MessageManaging, SuperLog {

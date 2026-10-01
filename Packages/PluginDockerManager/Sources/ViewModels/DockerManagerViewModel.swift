@@ -1,7 +1,6 @@
 import Foundation
 import Combine
-import KitSuperLog
-
+import LumiLoggingKit
 protocol DockerManagerServicing: Sendable {
     func listImages() async throws -> [DockerImage]
     func removeImage(_ id: String, force: Bool) async throws

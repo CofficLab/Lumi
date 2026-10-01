@@ -7,8 +7,7 @@ import ProviderLLMManager
 import ProviderMessage
 import ProviderProject
 import ProviderToolManager
-import KitSuperLog
-
+import LumiLoggingKit
 /// Conversation Manager - real implementation using SwiftData persistence
 @MainActor
 public final class ConversationManager: ConversationManaging, SuperLog {

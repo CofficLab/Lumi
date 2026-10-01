@@ -1,8 +1,8 @@
 import CoreGraphics
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
+import BookletMakerCore
 // MARK: - Renderer Protocol
 
 /// Rendering contract used by the view model.

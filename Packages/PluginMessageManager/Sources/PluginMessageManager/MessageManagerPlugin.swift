@@ -5,8 +5,7 @@ import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
 import ProviderStorage
-import KitSuperLog
-
+import LumiLoggingKit
 /// Message Manager Plugin (v2)
 ///
 /// 复刻自旧版 `MessageManagerPlugin`：以 SwiftData 持久化的 `MessageManager`

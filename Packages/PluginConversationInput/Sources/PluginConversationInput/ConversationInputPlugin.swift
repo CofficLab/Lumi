@@ -7,7 +7,7 @@ import ProviderConversationState
 import ProviderConversationInput
 import ProviderMessageSender
 import ProviderPerformanceMetrics
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// Conversation Input Plugin

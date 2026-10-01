@@ -126,7 +126,7 @@ final class LanguageRuntimeCoverageTests: XCTestCase {
         XCTAssertNil(provider.cachedQuery())
     }
 
-    func testLocalizationForwardsToKitLocalization() {
+    func testLocalizationForwardsToLumiLocalization() {
         let value = EditorLanguageRuntimeLocalization.string(
             "some.key",
             bundle: Bundle(for: Self.self)

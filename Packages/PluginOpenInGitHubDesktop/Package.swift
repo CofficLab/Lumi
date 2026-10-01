@@ -9,27 +9,25 @@ let package = Package(
         .library(name: "PluginOpenInGitHubDesktop", targets: ["PluginOpenInGitHubDesktop"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
-        .package(path: "../KitLocalization"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../OpenInKit"),
-        .package(path: "../ProviderDocsView"),
-        .package(path: "../ProviderProject"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../ProviderToolbar"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.4.0")
     ],
     targets: [
         .target(
             name: "PluginOpenInGitHubDesktop",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                "KitLocalization",
-                "KitSuperLog",
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 "OpenInKit",
-                "ProviderDocsView",
-                "ProviderProject",
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
+                .product(name: "ProviderProject", package: "LumiProviders"),
                 "ProviderToolManager",
-                "ProviderToolbar",
+                .product(name: "ProviderToolbar", package: "LumiProviders"),
             ],
             path: "Sources/PluginOpenInGitHubDesktop",
             resources: [.process("../../Resources/Localizable.xcstrings")]
@@ -40,9 +38,9 @@ let package = Package(
                 "PluginOpenInGitHubDesktop",
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "OpenInKit", package: "OpenInKit"),
-                .product(name: "ProviderDocsView", package: "ProviderDocsView"),
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
-                .product(name: "ProviderToolbar", package: "ProviderToolbar"),
+                .product(name: "ProviderToolbar", package: "LumiProviders"),
             ]
         ),
     ]
