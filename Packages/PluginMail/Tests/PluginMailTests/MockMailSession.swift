@@ -39,6 +39,10 @@ actor MockMailSession: MailSessionServing {
     private(set) var connected = false
     /// 已记录的 setFlags 调用（断言用）。
     private(set) var flagUpdates: [(uid: UInt64, folder: String, isRead: Bool?, isFlagged: Bool?)] = []
+    /// 已发送的 MIME 载荷（断言用）。
+    private(set) var sentMIMEs: [Data] = []
+    /// 已 APPEND 的草稿（断言用）。
+    private(set) var appendedDrafts: [(mime: Data, folder: String)] = []
 
     init(behavior: MockMailSessionFactory.Behavior = MockMailSessionFactory.Behavior(), messages: [MailMessageSummary]) {
         self.behavior = behavior
@@ -110,7 +114,11 @@ actor MockMailSession: MailSessionServing {
         return messages.filter { $0.folder == folder }.map(\.uid)
     }
 
-    func sendMessage(mime: Data) async throws {}
+    func sendMessage(mime: Data) async throws {
+        sentMIMEs.append(mime)
+    }
 
-    func appendDraft(mime: Data, folder: String) async throws {}
+    func appendDraft(mime: Data, folder: String) async throws {
+        appendedDrafts.append((mime, folder))
+    }
 }

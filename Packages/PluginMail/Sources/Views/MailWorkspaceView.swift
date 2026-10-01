@@ -32,6 +32,8 @@ public struct MailWorkspaceView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
+            toolbar
+            Divider()
             errorBanner
             if viewModel.accounts.isEmpty {
                 noAccountsView
@@ -84,6 +86,35 @@ public struct MailWorkspaceView: View {
         .task {
             await viewModel.load()
         }
+        .sheet(isPresented: $viewModel.isComposerPresented, onDismiss: {
+            viewModel.dismissComposer()
+        }) {
+            MailComposeView(
+                viewModel: viewModel.makeComposeViewModel(),
+                onClose: { viewModel.dismissComposer() }
+            )
+        }
+    }
+
+    // MARK: - 工具栏
+
+    private var toolbar: some View {
+        HStack(spacing: 8) {
+            if viewModel.selectedMessage != nil, viewModel.selectedDetail != nil {
+                AppButton("回复", style: .secondary, size: .small) {
+                    viewModel.openComposer(mode: .reply, detail: viewModel.selectedDetail)
+                }
+                AppButton("转发", style: .secondary, size: .small) {
+                    viewModel.openComposer(mode: .forward, detail: viewModel.selectedDetail)
+                }
+            }
+            Spacer()
+            AppButton("写邮件", style: .primary, size: .small) {
+                viewModel.openComposer(mode: .new)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 
     // MARK: - 错误条

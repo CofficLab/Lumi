@@ -13,6 +13,7 @@ final class MailWorkspaceViewModel: ObservableObject {
     private let sessionManager: MailSessionManager
     private let cache: MailCacheService
     private let sync: MailSyncService?
+    let composer: MailComposerService
 
     // 状态
     @Published private(set) var accounts: [MailAccountConfig] = []
@@ -32,14 +33,62 @@ final class MailWorkspaceViewModel: ObservableObject {
     private let pageSize = 50
     private var loadedCount = 0
 
+    // 撰写
+    @Published var isComposerPresented = false
+    @Published var composeMode: MailComposeMode = .new
+    @Published private(set) var composeDetail: MailMessageDetail?
+
     init(
         sessionManager: MailSessionManager,
         cache: MailCacheService,
-        sync: MailSyncService? = nil
+        sync: MailSyncService? = nil,
+        composer: MailComposerService? = nil
     ) {
         self.sessionManager = sessionManager
         self.cache = cache
         self.sync = sync
+        self.composer = composer ?? MailComposerService(sessionManager: sessionManager)
+    }
+
+    // MARK: - 撰写入口
+
+    func openComposer(mode: MailComposeMode, detail: MailMessageDetail? = nil) {
+        composeMode = mode
+        composeDetail = detail
+        isComposerPresented = true
+    }
+
+    func dismissComposer() {
+        isComposerPresented = false
+        composeDetail = nil
+    }
+
+    func makeComposeViewModel() -> MailComposeViewModel {
+        guard let accountID = selectedAccountID,
+              let account = accounts.first(where: { $0.id == accountID }) else {
+            // 无账户兜底：新建仍可用（发送时会因 authFailed 提示）
+            return MailComposeViewModel(
+                composer: composer,
+                sessionManager: sessionManager,
+                account: MailAccountConfig(
+                    id: UUID(),
+                    displayName: "",
+                    email: "",
+                    imapHost: "",
+                    smtpHost: "",
+                    username: ""
+                ),
+                mode: composeMode,
+                originalDetail: composeDetail
+            )
+        }
+        return MailComposeViewModel(
+            composer: composer,
+            sessionManager: sessionManager,
+            account: account,
+            mode: composeMode,
+            originalDetail: composeDetail
+        )
     }
 
     // MARK: - 生命周期
