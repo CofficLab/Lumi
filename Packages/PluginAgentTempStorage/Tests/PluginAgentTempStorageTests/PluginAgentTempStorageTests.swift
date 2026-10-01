@@ -34,7 +34,7 @@ struct PluginAgentTempStorageTests {
     func localizationCatalogIsPackaged() {
         let bundle = Bundle.module
         #expect(bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
-        #expect(LumiPluginLocalization.string("Agent Temp Storage", bundle: .module).isEmpty == false)
+        #expect(pluginLocalization.string("Agent Temp Storage").isEmpty == false)
     }
 
     @Test

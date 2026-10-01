@@ -19,7 +19,7 @@ struct DeveloperModeToggleView: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: viewModel.isEnabled ? "hammer.fill" : "hammer")
-                Text(LumiPluginLocalization.string("DEV"))
+                Text(pluginLocalization.string("DEV"))
             }
             .font(.appMicroEmphasized)
             .tracking(0.3)
@@ -35,15 +35,11 @@ struct DeveloperModeToggleView: View {
         }
         .buttonStyle(.plain)
         .help(
-            LumiPluginLocalization.string(
-                viewModel.isEnabled ? "Developer mode is enabled" : "Developer mode is disabled"
-            )
+            pluginLocalization.string(viewModel.isEnabled ? "Developer mode is enabled" : "Developer mode is disabled")
         )
-        .accessibilityLabel(LumiPluginLocalization.string("Developer mode"))
+        .accessibilityLabel(pluginLocalization.string("Developer mode"))
         .accessibilityValue(
-            LumiPluginLocalization.string(
-                viewModel.isEnabled ? "Developer mode is enabled" : "Developer mode is disabled"
-            )
+            pluginLocalization.string(viewModel.isEnabled ? "Developer mode is enabled" : "Developer mode is disabled")
         )
     }
 }

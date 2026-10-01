@@ -12,11 +12,11 @@ struct ChangePreviewSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(LumiPluginLocalization.string("Pending Changes", bundle: .module))
+                Text(pluginLocalization.string("Pending Changes"))
                     .font(.appTitle)
                     .foregroundColor(theme.textPrimary)
                 Spacer()
-                AppButton(LumiPluginLocalization.string("Close", bundle: .module), style: .ghost, size: .small) {
+                AppButton(pluginLocalization.string("Close"), style: .ghost, size: .small) {
                     isPresented = false
                 }
             }
@@ -24,7 +24,7 @@ struct ChangePreviewSheet: View {
             if statements.isEmpty {
                 AppEmptyState(
                     icon: "checkmark.seal",
-                    title: LumiPluginLocalization.string("No pending changes", bundle: .module),
+                    title: pluginLocalization.string("No pending changes"),
                     description: nil
                 )
                 .frame(maxWidth: .infinity, minHeight: 120)
@@ -39,7 +39,7 @@ struct ChangePreviewSheet: View {
                                 .padding(10)
                                 .background(theme.appSubtleBorder.opacity(0.5), in: .rect(cornerRadius: 6))
                                 .contextMenu {
-                                    Button(LumiPluginLocalization.string("Copy", bundle: .module)) {
+                                    Button(pluginLocalization.string("Copy")) {
                                         NSPasteboard.general.clearContents()
                                         NSPasteboard.general.setString(statements[index], forType: .string)
                                     }
@@ -52,7 +52,7 @@ struct ChangePreviewSheet: View {
 
                 HStack {
                     AppButton(
-                        LumiPluginLocalization.string("Copy All", bundle: .module),
+                        pluginLocalization.string("Copy All"),
                         systemImage: "doc.on.doc",
                         style: .secondary,
                         fillsWidth: true
@@ -61,7 +61,7 @@ struct ChangePreviewSheet: View {
                         NSPasteboard.general.setString(statements.joined(separator: "\n"), forType: .string)
                     }
                     AppButton(
-                        LumiPluginLocalization.string("Save Changes", bundle: .module),
+                        pluginLocalization.string("Save Changes"),
                         systemImage: "checkmark.circle.fill",
                         style: .primary,
                         fillsWidth: true

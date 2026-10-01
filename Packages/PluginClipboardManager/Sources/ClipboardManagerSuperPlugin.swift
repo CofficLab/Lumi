@@ -22,8 +22,8 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, PluginDataMigrating
     public let order = 270
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.clipboard-manager",
-        name: LumiPluginLocalization.string("Clipboard", bundle: .module),
-        description: LumiPluginLocalization.string("Clipboard history manager.", bundle: .module),
+        name: pluginLocalization.string("Clipboard"),
+        description: pluginLocalization.string("Clipboard history manager."),
         category: .system,
         stage: .preview,
         policy: .disabledByDefault

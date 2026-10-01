@@ -35,7 +35,7 @@ public struct DatabaseWorkspaceView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help(LumiPluginLocalization.string("Toggle Inspector", bundle: .module))
+                .help(pluginLocalization.string("Toggle Inspector"))
                 .padding(.top, 6)
                 .padding(.trailing, 6)
             }

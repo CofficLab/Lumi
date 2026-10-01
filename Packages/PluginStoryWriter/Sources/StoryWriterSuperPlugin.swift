@@ -21,7 +21,7 @@ public final class StoryWriterSuperPlugin: SuperPlugin, PluginDataMigrating, Sup
     public let id = "com.coffic.lumi.plugin.story-writer"
     public let legacyDataDirectoryNames = ["StoryWriter"]
     public let order = 90
-    public let metadata = PluginMetadata(id: "com.coffic.lumi.plugin.story-writer", name: LumiPluginLocalization.string("Story Writer", bundle: .module), description: LumiPluginLocalization.string("A two-pane workspace for crafting stories with AI assistance.", bundle: .module), category: .project, stage: .preview, policy: .disabledByDefault)
+    public let metadata = PluginMetadata(id: "com.coffic.lumi.plugin.story-writer", name: pluginLocalization.string("Story Writer"), description: pluginLocalization.string("A two-pane workspace for crafting stories with AI assistance."), category: .project, stage: .preview, policy: .disabledByDefault)
     public static let railTabID = "com.coffic.lumi.plugin.story-writer.outline"
     private let entryID = "com.coffic.lumi.plugin.story-writer.entry"
     private var viewModel: StoryWriterViewModel?
@@ -71,7 +71,7 @@ public final class StoryWriterSuperPlugin: SuperPlugin, PluginDataMigrating, Sup
                         .appendingPathComponent("chat-section-width.plist", isDirectory: false)
                 )
             }
-        rail?.addTabs([RailTabItem(id: Self.railTabID, category: .project, title: LumiPluginLocalization.string("Story Outline", bundle: .module), systemImage: "list.bullet.rectangle.portrait", order: order) { StoryOutlineRootView() }])
+        rail?.addTabs([RailTabItem(id: Self.railTabID, category: .project, title: pluginLocalization.string("Story Outline"), systemImage: "list.bullet.rectangle.portrait", order: order) { StoryOutlineRootView() }])
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([ActivityBarItem(id: entryID, title: metadata.name, systemImage: "book.closed.fill", order: order, ownerPluginID: id) { state in
             if state == .activated {
                 toolbar?.setVisibleCategories([.global, .project])

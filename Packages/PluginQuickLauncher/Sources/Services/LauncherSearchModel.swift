@@ -53,10 +53,10 @@ public enum LauncherResultKind: String, CaseIterable, Sendable {
 
     var localizedTitle: String {
         switch self {
-        case .app: return LumiPluginLocalization.string("Applications", bundle: .module)
-        case .file: return LumiPluginLocalization.string("Files", bundle: .module)
-        case .command: return LumiPluginLocalization.string("Commands", bundle: .module)
-        case .ai: return LumiPluginLocalization.string("Ask AI", bundle: .module)
+        case .app: return pluginLocalization.string("Applications")
+        case .file: return pluginLocalization.string("Files")
+        case .command: return pluginLocalization.string("Commands")
+        case .ai: return pluginLocalization.string("Ask AI")
         }
     }
 
@@ -117,7 +117,7 @@ public struct LauncherResult: Identifiable, Hashable, Sendable {
         self.id = "ai:\(aiQuery)"
         self.kind = .ai
         self.title = aiQuery
-        self.subtitle = LumiPluginLocalization.string("Press Return to ask Lumi", bundle: .module)
+        self.subtitle = pluginLocalization.string("Press Return to ask Lumi")
         self.app = nil
         self.file = nil
         self.aiQuery = aiQuery

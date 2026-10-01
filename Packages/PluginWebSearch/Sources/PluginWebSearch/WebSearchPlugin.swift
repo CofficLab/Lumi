@@ -26,7 +26,7 @@ public final class WebSearchPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public var name: String {
-        LumiPluginLocalization.string("WebSearch", bundle: .module)
+        pluginLocalization.string("WebSearch")
     }
 
 

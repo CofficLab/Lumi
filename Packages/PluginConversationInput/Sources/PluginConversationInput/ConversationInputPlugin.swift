@@ -38,7 +38,7 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public var name: String {
-        LumiPluginLocalization.string("Conversation Input", bundle: .module)
+        pluginLocalization.string("Conversation Input")
     }
 
 

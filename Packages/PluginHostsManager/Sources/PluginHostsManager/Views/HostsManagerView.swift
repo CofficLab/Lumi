@@ -16,8 +16,8 @@ public struct HostsManagerView: View, SuperLog {
     public var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Picker(LumiPluginLocalization.string("Group", bundle: .module), selection: $viewModel.selectedGroup) {
-                    Text(LumiPluginLocalization.string("All", bundle: .module)).tag(String?.none)
+                Picker(pluginLocalization.string("Group"), selection: $viewModel.selectedGroup) {
+                    Text(pluginLocalization.string("All")).tag(String?.none)
                     ForEach(viewModel.groups, id: \.self) { group in
                         Text(group).tag(String?.some(group))
                     }
@@ -28,12 +28,12 @@ public struct HostsManagerView: View, SuperLog {
 
                 AppSearchBar(
                     text: $viewModel.searchText,
-                    placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search Host", bundle: .module))
+                    placeholder: LocalizedStringKey(pluginLocalization.string("Search Host"))
                 )
                 .frame(width: 220)
 
                 AppButton(
-                    LumiPluginLocalization.string("Add", bundle: .module),
+                    pluginLocalization.string("Add"),
                     systemImage: "plus",
                     style: .primary,
                     size: .small
@@ -42,20 +42,20 @@ public struct HostsManagerView: View, SuperLog {
                 }
 
                 Menu {
-                    Button(LumiPluginLocalization.string("Refresh", bundle: .module)) {
+                    Button(pluginLocalization.string("Refresh")) {
                         Task { await viewModel.loadHosts() }
                     }
                     Divider()
-                    Button(LumiPluginLocalization.string("Export Backup...", bundle: .module)) {
+                    Button(pluginLocalization.string("Export Backup...")) {
                         exportHosts()
                     }
-                    Button(LumiPluginLocalization.string("Import Backup...", bundle: .module)) {
+                    Button(pluginLocalization.string("Import Backup...")) {
                         importHosts()
                     }
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "ellipsis.circle")
-                        Text(LumiPluginLocalization.string("More", bundle: .module))
+                        Text(pluginLocalization.string("More"))
                     }
                     .font(.appCaptionEmphasized)
                     .foregroundColor(theme.textPrimary)
@@ -73,14 +73,14 @@ public struct HostsManagerView: View, SuperLog {
 
             if viewModel.isLoading {
                 AppLoadingOverlay(
-                    message: LocalizedStringKey(LumiPluginLocalization.string("Loading Hosts", bundle: .module)),
+                    message: LocalizedStringKey(pluginLocalization.string("Loading Hosts")),
                     size: .medium
                 )
             } else if let error = viewModel.errorMessage {
                 VStack {
                     AppErrorBanner(
                         message: LocalizedStringKey(error),
-                        retryTitle: LocalizedStringKey(LumiPluginLocalization.string("Retry", bundle: .module))
+                        retryTitle: LocalizedStringKey(pluginLocalization.string("Retry"))
                     ) {
                         Task { await viewModel.loadHosts() }
                     }
@@ -125,7 +125,7 @@ public struct HostsManagerView: View, SuperLog {
                         HostsManagerPlugin.logger.error("\(Self.t)Export failed: \(error)")
                     }
                     viewModel.errorMessage = String(
-                        format: LumiPluginLocalization.string("Export failed: %@", bundle: .module),
+                        format: pluginLocalization.string("Export failed: %@"),
                         error.localizedDescription
                     )
                 }
@@ -150,7 +150,7 @@ public struct HostsManagerView: View, SuperLog {
                         }
                         await MainActor.run {
                             viewModel.errorMessage = String(
-                                format: LumiPluginLocalization.string("Import failed: %@", bundle: .module),
+                                format: pluginLocalization.string("Import failed: %@"),
                                 error.localizedDescription
                             )
                         }
@@ -253,32 +253,32 @@ public struct HostAddView: View {
 
     public var body: some View {
         VStack(spacing: 20) {
-            Text(LumiPluginLocalization.string("Add Host Entry", bundle: .module))
+            Text(pluginLocalization.string("Add Host Entry"))
                 .font(.appTitle)
                 .foregroundColor(theme.textPrimary)
 
             AppCard {
                 VStack(alignment: .leading, spacing: 8) {
-                    GlassTextField(title: LumiPluginLocalization.string("IP Address", bundle: .module), text: $ip, placeholder: "127.0.0.1")
+                    GlassTextField(title: pluginLocalization.string("IP Address"), text: $ip, placeholder: "127.0.0.1")
                     if showIPError {
-                        AppErrorBanner(message: LocalizedStringKey(LumiPluginLocalization.string("Invalid IP address format", bundle: .module)))
+                        AppErrorBanner(message: LocalizedStringKey(pluginLocalization.string("Invalid IP address format")))
                     }
 
-                    GlassTextField(title: LumiPluginLocalization.string("Domain", bundle: .module), text: $domain, placeholder: "dev.example.com")
+                    GlassTextField(title: pluginLocalization.string("Domain"), text: $domain, placeholder: "dev.example.com")
                     if showDomainError {
-                        AppErrorBanner(message: LocalizedStringKey(LumiPluginLocalization.string("Invalid domain format", bundle: .module)))
+                        AppErrorBanner(message: LocalizedStringKey(pluginLocalization.string("Invalid domain format")))
                     }
-                    GlassTextField(title: "Comment", text: $comment, placeholder: LumiPluginLocalization.string("Optional", bundle: .module))
-                    GlassTextField(title: LumiPluginLocalization.string("Group", bundle: .module), text: $group, placeholder: "Optional")
+                    GlassTextField(title: "Comment", text: $comment, placeholder: pluginLocalization.string("Optional"))
+                    GlassTextField(title: pluginLocalization.string("Group"), text: $group, placeholder: "Optional")
                 }
             }
 
             HStack {
-                AppButton(LumiPluginLocalization.string("Cancel", bundle: .module), style: .ghost) {
+                AppButton(pluginLocalization.string("Cancel"), style: .ghost) {
                     isPresented = false
                 }
 
-                AppButton(LumiPluginLocalization.string("Save", bundle: .module), style: .primary) {
+                AppButton(pluginLocalization.string("Save"), style: .primary) {
                     let trimmedIP = ip.trimmingCharacters(in: .whitespacesAndNewlines)
                     let hasDomain = !domain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                     let hasValidDomains = viewModel.isValidDomainList(domain)

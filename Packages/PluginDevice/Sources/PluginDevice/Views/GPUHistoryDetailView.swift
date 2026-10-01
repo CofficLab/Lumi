@@ -14,13 +14,13 @@ struct GPUHistoryDetailView: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack {
-                Text(LumiPluginLocalization.string("GPU Usage Trend", bundle: .module))
+                Text(pluginLocalization.string("GPU Usage Trend"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.secondary)
 
                 Spacer()
 
-                Picker(LumiPluginLocalization.string("Time Range", bundle: .module), selection: $selectedRange) {
+                Picker(pluginLocalization.string("Time Range"), selection: $selectedRange) {
                     ForEach(GPUTimeRange.allCases) { range in
                         Text(range.displayName).tag(range)
                     }
@@ -45,38 +45,38 @@ struct GPUHistoryDetailView: View {
             // GPU detail metrics cards
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                 GPUMetricCard(
-                    title: LumiPluginLocalization.string("Utilization", bundle: .module),
+                    title: pluginLocalization.string("Utilization"),
                     value: viewModel.utilizationString,
                     color: statusColor(for: viewModel.utilization)
                 )
 
                 GPUMetricCard(
-                    title: LumiPluginLocalization.string("Memory", bundle: .module),
+                    title: pluginLocalization.string("Memory"),
                     value: viewModel.usedMemory,
                     subtitle: viewModel.totalMemory,
                     color: statusColor(for: viewModel.memoryUsagePercentage)
                 )
 
                 GPUMetricCard(
-                    title: LumiPluginLocalization.string("Renderer", bundle: .module),
+                    title: pluginLocalization.string("Renderer"),
                     value: viewModel.rendererUtilizationString,
                     color: .blue
                 )
 
                 GPUMetricCard(
-                    title: LumiPluginLocalization.string("Tiler", bundle: .module),
+                    title: pluginLocalization.string("Tiler"),
                     value: viewModel.tilerUtilizationString,
                     color: .orange
                 )
 
                 GPUMetricCard(
-                    title: LumiPluginLocalization.string("Temperature", bundle: .module),
+                    title: pluginLocalization.string("Temperature"),
                     value: viewModel.temperatureString,
                     color: temperatureColor
                 )
 
                 GPUMetricCard(
-                    title: LumiPluginLocalization.string("Model", bundle: .module),
+                    title: pluginLocalization.string("Model"),
                     value: viewModel.modelName,
                     color: .secondary
                 )

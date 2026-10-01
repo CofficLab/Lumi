@@ -33,15 +33,15 @@ public final class NetworkManagerPlugin: SuperPlugin, PluginDataMigrating, Super
     public let order = 30
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.network-manager",
-        name: LumiPluginLocalization.string("Network Manager", bundle: .module),
-        description: LumiPluginLocalization.string("Monitor upload/download speed, traffic statistics, and process usage in real time; view network status from the menu bar.", bundle: .module),
+        name: pluginLocalization.string("Network Manager"),
+        description: pluginLocalization.string("Monitor upload/download speed, traffic statistics, and process usage in real time; view network status from the menu bar."),
         category: .system,
         stage: .stable,
         policy: .enabledByDefault
     )
 
     public var name: String {
-        LumiPluginLocalization.string("Network Monitor", bundle: .module)
+        pluginLocalization.string("Network Monitor")
     }
 
     private var httpExchangeStore: HTTPExchangeStore?
@@ -137,14 +137,14 @@ public final class NetworkManagerPlugin: SuperPlugin, PluginDataMigrating, Super
         if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
             menuBar.addContent(MenuBarContentItem(
                 id: "\(id).speed",
-                title: LumiPluginLocalization.string("Network Speed", bundle: .module),
+                title: pluginLocalization.string("Network Speed"),
                 order: order
             ) {
                 NetworkMenuBarContentView(viewModel: viewModels.network)
             })
             menuBar.addPopup(MenuBarPopupItem(
                 id: "\(id).popup",
-                title: LumiPluginLocalization.string("Network Monitor", bundle: .module),
+                title: pluginLocalization.string("Network Monitor"),
                 order: order
             ) {
                 NetworkMenuBarPopupView(viewModel: viewModels.network, historyViewModel: viewModels.history)
@@ -157,7 +157,7 @@ public final class NetworkManagerPlugin: SuperPlugin, PluginDataMigrating, Super
             settingView.addEntries([
                 SettingEntryItem(
                     id: "\(id).settings",
-                    title: LumiPluginLocalization.string("HTTP Logs", bundle: .module),
+                    title: pluginLocalization.string("HTTP Logs"),
                     systemImage: "arrow.up.arrow.down.circle",
                     order: order
                 ) {

@@ -173,14 +173,14 @@ struct QueryResultView: View {
         .contextMenu {
             if changeManager?.isEditable == true {
                 if isDeleted {
-                    Button(LumiPluginLocalization.string("Undelete Row", bundle: .module)) {
+                    Button(pluginLocalization.string("Undelete Row")) {
                         onToggleRowDeletion?(row, result.columns)
                     }
                 } else {
                     Button(role: .destructive) {
                         onToggleRowDeletion?(row, result.columns)
                     } label: {
-                        Label(LumiPluginLocalization.string("Delete Row", bundle: .module), systemImage: "trash")
+                        Label(pluginLocalization.string("Delete Row"), systemImage: "trash")
                     }
                 }
             }
@@ -206,7 +206,7 @@ struct QueryResultView: View {
             Button(role: .destructive) {
                 onRemoveInsert?(insert.id)
             } label: {
-                Label(LumiPluginLocalization.string("Remove Row", bundle: .module), systemImage: "minus.circle")
+                Label(pluginLocalization.string("Remove Row"), systemImage: "minus.circle")
             }
         }
     }
@@ -245,7 +245,7 @@ struct QueryResultView: View {
                     editingInsert = key
                 }
                 .contextMenu {
-                    Button(LumiPluginLocalization.string("Set NULL", bundle: .module)) {
+                    Button(pluginLocalization.string("Set NULL")) {
                         onStageInsertChange?(insert.id, column, .null)
                     }
                 }
@@ -300,12 +300,12 @@ struct QueryResultView: View {
                     editingCell = key
                 }
                 .contextMenu {
-                    Button(LumiPluginLocalization.string("Copy", bundle: .module)) {
+                    Button(pluginLocalization.string("Copy")) {
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(text, forType: .string)
                     }
                     if changeManager?.isEditable == true {
-                        Button(LumiPluginLocalization.string("Set NULL", bundle: .module)) {
+                        Button(pluginLocalization.string("Set NULL")) {
                             onStageChange?(column, row, result.columns, .null)
                         }
                     }

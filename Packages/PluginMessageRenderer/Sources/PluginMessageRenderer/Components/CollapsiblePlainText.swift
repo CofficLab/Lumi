@@ -41,7 +41,7 @@ struct CollapsiblePlainText: View {
                 .textSelection(.enabled)
 
             if shouldCollapse {
-                Button(isCollapsed ? LumiPluginLocalization.string("Show more", bundle: .module) : LumiPluginLocalization.string("Show less", bundle: .module)) {
+                Button(isCollapsed ? pluginLocalization.string("Show more") : pluginLocalization.string("Show less")) {
                     isCollapsed.toggle()
                 }
                 .buttonStyle(.plain)

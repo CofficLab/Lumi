@@ -64,7 +64,7 @@ public struct LauncherView: View {
                 .frame(width: 20)
 
             TextField(
-                LumiPluginLocalization.string("Search apps, files, commands, or type ? to ask AI...", bundle: .module),
+                pluginLocalization.string("Search apps, files, commands, or type ? to ask AI..."),
                 text: $searchModel.query
             )
             .textFieldStyle(.plain)
@@ -108,8 +108,8 @@ public struct LauncherView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(LumiPluginLocalization.string("Close", bundle: .module))
-        .accessibilityLabel(LumiPluginLocalization.string("Close", bundle: .module))
+        .help(pluginLocalization.string("Close"))
+        .accessibilityLabel(pluginLocalization.string("Close"))
     }
 
     // MARK: - Results
@@ -153,7 +153,7 @@ public struct LauncherView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 26))
                 .foregroundColor(.secondary)
-            Text(LumiPluginLocalization.string("No matching results", bundle: .module))
+            Text(pluginLocalization.string("No matching results"))
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
         }
@@ -162,10 +162,10 @@ public struct LauncherView: View {
 
     private var hintView: some View {
         VStack(spacing: 8) {
-            Text(LumiPluginLocalization.string("Type to search apps, files and commands", bundle: .module))
+            Text(pluginLocalization.string("Type to search apps, files and commands"))
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
-            Text(LumiPluginLocalization.string("Prefix with ? to ask Lumi directly", bundle: .module))
+            Text(pluginLocalization.string("Prefix with ? to ask Lumi directly"))
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
         }

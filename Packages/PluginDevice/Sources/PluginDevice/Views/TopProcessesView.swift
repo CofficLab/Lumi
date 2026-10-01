@@ -44,7 +44,7 @@ struct TopProcessesView: View {
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
 
-                Text(LumiPluginLocalization.string("Top Processes", bundle: .module))
+                Text(pluginLocalization.string("Top Processes"))
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }
@@ -52,7 +52,7 @@ struct TopProcessesView: View {
             .padding(.bottom, 6)
 
             if processes.isEmpty {
-                Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
+                Text(pluginLocalization.string("Collecting..."))
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, alignment: .center)

@@ -21,8 +21,8 @@ struct AISetupPage: View {
             if viewModel.providers.isEmpty {
                 AppEmptyState(
                     icon: "network.slash",
-                    title: LumiPluginLocalization.string("No providers available", bundle: .module),
-                    description: LumiPluginLocalization.string("You can configure a provider later in Settings.", bundle: .module)
+                    title: pluginLocalization.string("No providers available"),
+                    description: pluginLocalization.string("You can configure a provider later in Settings.")
                 )
                 .frame(maxWidth: .infinity)
                 .frame(height: 180)
@@ -32,7 +32,7 @@ struct AISetupPage: View {
                 }
             }
 
-            Text(LumiPluginLocalization.string("You can also configure providers anytime in Settings > Cloud Providers.", bundle: .module))
+            Text(pluginLocalization.string("You can also configure providers anytime in Settings > Cloud Providers."))
                 .font(DesignTokens.Typography.caption1)
                 .foregroundStyle(theme.textSecondary)
                 .multilineTextAlignment(.center)
@@ -58,7 +58,7 @@ struct AISetupPage: View {
 
                     if !provider.providerInfo.isLocal,
                        let website = provider.providerInfo.websiteURL {
-                        Link(LumiPluginLocalization.string("Get a key", bundle: .module), destination: website)
+                        Link(pluginLocalization.string("Get a key"), destination: website)
                             .font(DesignTokens.Typography.caption1)
                     }
                 }
@@ -67,14 +67,14 @@ struct AISetupPage: View {
 
                 if provider.providerInfo.isLocal {
                     Label(
-                        LumiPluginLocalization.string("This local provider does not require an API key.", bundle: .module),
+                        pluginLocalization.string("This local provider does not require an API key."),
                         systemImage: "checkmark.circle"
                     )
                     .font(DesignTokens.Typography.subheadline)
                     .foregroundStyle(theme.success)
                 } else {
                     AppInputField(
-                        LocalizedStringKey(LumiPluginLocalization.string("API Key", bundle: .module)),
+                        LocalizedStringKey(pluginLocalization.string("API Key")),
                         text: $viewModel.apiKey,
                         fieldType: .secure
                     )
@@ -82,10 +82,7 @@ struct AISetupPage: View {
 
                 HStack {
                     AppButton(
-                        LumiPluginLocalization.string(
-                            provider.providerInfo.isLocal ? "Use Provider" : "Save API Key",
-                            bundle: .module
-                        ),
+                        pluginLocalization.string(provider.providerInfo.isLocal ? "Use Provider" : "Save API Key"),
                         style: .primary,
                         action: {
                             viewModel.saveAPIKey()
@@ -96,7 +93,7 @@ struct AISetupPage: View {
                     Spacer()
 
                     if viewModel.didSave {
-                        Label(LumiPluginLocalization.string("Saved", bundle: .module), systemImage: "checkmark.circle.fill")
+                        Label(pluginLocalization.string("Saved"), systemImage: "checkmark.circle.fill")
                             .font(DesignTokens.Typography.caption1)
                             .foregroundStyle(theme.success)
                     }
@@ -128,7 +125,7 @@ private struct ProviderSelectView: View {
 
                 Text(
                     selectedProvider?.providerInfo.displayName
-                        ?? LumiPluginLocalization.string("Provider", bundle: .module)
+                        ?? pluginLocalization.string("Provider")
                 )
                 .font(.system(size: 13, weight: .medium))
                 .lineLimit(1)
@@ -154,7 +151,7 @@ private struct ProviderSelectView: View {
                 isPresented: $isPresented
             )
         }
-        .accessibilityLabel(LumiPluginLocalization.string("Provider", bundle: .module))
+        .accessibilityLabel(pluginLocalization.string("Provider"))
     }
 }
 

@@ -34,7 +34,7 @@ public struct DeviceInfoMenuBarPopupView: View {
     private var liveCpuView: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(LumiPluginLocalization.string("CPU Usage", bundle: .module))
+                Text(pluginLocalization.string("CPU Usage"))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
 
@@ -72,7 +72,7 @@ public struct DeviceInfoMenuBarPopupView: View {
                     Circle()
                         .fill(.green)
                         .frame(width: 6, height: 6)
-                    Text(String(format: LumiPluginLocalization.string("User %.0f%%", bundle: .module), viewModel.userUsage))
+                    Text(String(format: pluginLocalization.string("User %.0f%%"), viewModel.userUsage))
                         .font(.system(size: 9))
                         .foregroundColor(.secondary)
                 }
@@ -80,7 +80,7 @@ public struct DeviceInfoMenuBarPopupView: View {
                     Circle()
                         .fill(.orange)
                         .frame(width: 6, height: 6)
-                    Text(String(format: LumiPluginLocalization.string("Sys %.0f%%", bundle: .module), viewModel.systemUsage))
+                    Text(String(format: pluginLocalization.string("Sys %.0f%%"), viewModel.systemUsage))
                         .font(.system(size: 9))
                         .foregroundColor(.secondary)
                 }
@@ -88,7 +88,7 @@ public struct DeviceInfoMenuBarPopupView: View {
                     Circle()
                         .fill(Color.secondary.opacity(0.4))
                         .frame(width: 6, height: 6)
-                    Text(String(format: LumiPluginLocalization.string("Idle %.0f%%", bundle: .module), viewModel.idleUsage))
+                    Text(String(format: pluginLocalization.string("Idle %.0f%%"), viewModel.idleUsage))
                         .font(.system(size: 9))
                         .foregroundColor(.secondary)
                 }

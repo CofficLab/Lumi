@@ -47,7 +47,7 @@ public final class QuickLauncherSuperPlugin: SuperPlugin, SuperLog {
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
                 id: id,
-                title: LumiPluginLocalization.string("Quick Launcher", bundle: .module),
+                title: pluginLocalization.string("Quick Launcher"),
                 systemImage: "bolt.fill",
                 order: order
             ) {

@@ -61,16 +61,16 @@ struct NettoAboutView: View {
     }
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
+        pluginLocalization.string(key, locale: locale)
     }
 
     private func coreL(_ key: String) -> String {
         // Fallback for core localization keys
         switch key {
         case "about.section.howItWorks":
-            return LumiPluginLocalization.string("How It Works", bundle: .module, locale: locale)
+            return pluginLocalization.string("How It Works", locale: locale)
         case "about.section.tips":
-            return LumiPluginLocalization.string("Tips", bundle: .module, locale: locale)
+            return pluginLocalization.string("Tips", locale: locale)
         default:
             return key
         }

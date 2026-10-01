@@ -178,7 +178,7 @@ private struct OnboardingCard: View {
                 Label(
                     pages.indices.contains(safeIndex)
                         ? pages[safeIndex].title
-                        : LumiPluginLocalization.string("Getting started", bundle: .module),
+                        : pluginLocalization.string("Getting started"),
                     systemImage: "graduationcap.fill"
                 )
                 .font(DesignTokens.Typography.bodyEmphasized)
@@ -187,7 +187,7 @@ private struct OnboardingCard: View {
                 Spacer()
                 Text(
                     String(
-                        format: LumiPluginLocalization.string("%lld of %lld", bundle: .module),
+                        format: pluginLocalization.string("%lld of %lld"),
                         Int64(safeIndex + 1),
                         Int64(pages.count)
                     )
@@ -196,7 +196,7 @@ private struct OnboardingCard: View {
                 .foregroundStyle(theme.textTertiary)
                 if safeIndex < pages.count - 1 {
                     AppButton(
-                        LumiPluginLocalization.string("Skip", bundle: .module),
+                        pluginLocalization.string("Skip"),
                         style: .tonal,
                         size: .small,
                         action: finish
@@ -221,7 +221,7 @@ private struct OnboardingCard: View {
 
             HStack {
                 AppButton(
-                    LumiPluginLocalization.string("Back", bundle: .module),
+                    pluginLocalization.string("Back"),
                     systemImage: "chevron.left",
                     style: .ghost,
                     size: .small,
@@ -233,8 +233,8 @@ private struct OnboardingCard: View {
 
                 AppButton(
                     safeIndex == pages.count - 1
-                        ? LumiPluginLocalization.string("Finish", bundle: .module)
-                        : LumiPluginLocalization.string("Continue", bundle: .module),
+                        ? pluginLocalization.string("Finish")
+                        : pluginLocalization.string("Continue"),
                     systemImage: safeIndex == pages.count - 1 ? nil : "chevron.right",
                     style: .primary,
                     action: {

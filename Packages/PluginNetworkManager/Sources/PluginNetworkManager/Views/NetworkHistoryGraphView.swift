@@ -53,7 +53,7 @@ public struct NetworkHistoryGraphView: View {
                             MiniGraphLine(data: dataPoints.map { $0.uploadSpeed }, maxValue: maxValue)
                                 .stroke(.red, lineWidth: 1.5)
                         } else {
-                            Text(LumiPluginLocalization.string("Collecting data...", bundle: .module))
+                            Text(pluginLocalization.string("Collecting data..."))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -112,7 +112,7 @@ public struct NetworkHistoryGraphView: View {
                 }
 
                 // 底部 0 标签
-                Text(verbatim: LumiPluginLocalization.string("0", bundle: .module))
+                Text(verbatim: pluginLocalization.string("0"))
                     .font(.system(size: 9))
                     .foregroundColor(.secondary)
             }

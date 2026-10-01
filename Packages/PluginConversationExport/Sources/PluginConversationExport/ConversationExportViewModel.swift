@@ -78,7 +78,7 @@ final class ConversationExportViewModel: ObservableObject {
         switch result {
         case let .success(url):
             toast?.show(
-                LumiPluginLocalization.string("Conversation exported"),
+                pluginLocalization.string("Conversation exported"),
                 detail: url.lastPathComponent,
                 style: .success
             )
@@ -88,7 +88,7 @@ final class ConversationExportViewModel: ObservableObject {
                 return
             }
             toast?.show(
-                LumiPluginLocalization.string("Conversation export failed"),
+                pluginLocalization.string("Conversation export failed"),
                 detail: error.localizedDescription,
                 style: .error
             )

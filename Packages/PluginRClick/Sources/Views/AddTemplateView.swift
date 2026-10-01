@@ -17,24 +17,24 @@ public struct AddTemplateView: View {
         VStack(spacing: 20) {
             GlassSectionHeader(
                 icon: "doc.badge.plus",
-                title: LumiPluginLocalization.string("Add New Template", bundle: .module)
+                title: pluginLocalization.string("Add New Template")
             )
 
             VStack(spacing: 12) {
                 GlassTextField(
-                    title: LumiPluginLocalization.string("Name (e.g. Python Script)", bundle: .module),
+                    title: pluginLocalization.string("Name (e.g. Python Script)"),
                     text: $name
                 )
                 .onChange(of: name) { _, _ in showNameError = false }
 
                 GlassTextField(
-                    title: LumiPluginLocalization.string("Extension (e.g. py)", bundle: .module),
+                    title: pluginLocalization.string("Extension (e.g. py)"),
                     text: $ext
                 )
                 .onChange(of: ext) { _, _ in showExtensionError = false }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(LumiPluginLocalization.string("Default Content", bundle: .module))
+                    Text(pluginLocalization.string("Default Content"))
                         .font(.appCaption)
                         .foregroundColor(theme.textTertiary)
                     TextEditor(text: $content)
@@ -46,17 +46,17 @@ public struct AddTemplateView: View {
             }
 
             if showNameError {
-                AppErrorBanner(message: LocalizedStringKey(LumiPluginLocalization.string("Template name cannot be empty or contain path separators", bundle: .module)))
+                AppErrorBanner(message: LocalizedStringKey(pluginLocalization.string("Template name cannot be empty or contain path separators")))
             }
 
             if showExtensionError {
-                AppErrorBanner(message: LocalizedStringKey(LumiPluginLocalization.string("Extension can only contain letters, numbers, hyphen, or underscore", bundle: .module)))
+                AppErrorBanner(message: LocalizedStringKey(pluginLocalization.string("Extension can only contain letters, numbers, hyphen, or underscore")))
             }
 
             HStack {
-                AppButton(LumiPluginLocalization.string("Cancel", bundle: .module), style: .ghost, fillsWidth: true, action: { isPresented = false })
+                AppButton(pluginLocalization.string("Cancel"), style: .ghost, fillsWidth: true, action: { isPresented = false })
                 Spacer()
-                AppButton(LumiPluginLocalization.string("Add", bundle: .module), style: .primary, fillsWidth: true, action: {
+                AppButton(pluginLocalization.string("Add"), style: .primary, fillsWidth: true, action: {
                     guard let normalizedName = NewFileTemplate.normalizedName(name) else {
                         showNameError = true
                         return

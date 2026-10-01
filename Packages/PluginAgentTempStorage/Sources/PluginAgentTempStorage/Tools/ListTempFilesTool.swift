@@ -7,10 +7,7 @@ struct ListTempFilesTool: SuperAgentTool {
     let name = "list_temp_files"
 
     func description(for language: LanguagePreference) -> String {
-        LumiPluginLocalization.string(
-            "List files in the agent temp storage directory with paths and modification times.",
-            bundle: .module
-        )
+        pluginLocalization.string("List files in the agent temp storage directory with paths and modification times.")
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {

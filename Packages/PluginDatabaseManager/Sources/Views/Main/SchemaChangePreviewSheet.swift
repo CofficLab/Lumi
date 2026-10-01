@@ -9,9 +9,9 @@ struct SchemaChangePreviewSheet: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(LumiPluginLocalization.string("Apply Structure Changes", bundle: .module))
+                    Text(pluginLocalization.string("Apply Structure Changes"))
                         .font(.title3.weight(.semibold))
-                    Text(LumiPluginLocalization.string("Review the generated DDL before changing the database.", bundle: .module))
+                    Text(pluginLocalization.string("Review the generated DDL before changing the database."))
                         .font(.appCaption)
                         .foregroundStyle(.secondary)
                 }
@@ -21,7 +21,7 @@ struct SchemaChangePreviewSheet: View {
             }
 
             if viewModel.schemaChangeManager?.hasDestructiveChanges == true {
-                Label(LumiPluginLocalization.string("This change drops data and cannot be undone by Lumi.", bundle: .module), systemImage: "exclamationmark.triangle.fill")
+                Label(pluginLocalization.string("This change drops data and cannot be undone by Lumi."), systemImage: "exclamationmark.triangle.fill")
                     .font(.appCaption)
                     .foregroundStyle(.red)
                     .padding(10)
@@ -52,12 +52,12 @@ struct SchemaChangePreviewSheet: View {
             }
 
             HStack {
-                Text(LumiPluginLocalization.string("Some database engines auto-commit DDL statements.", bundle: .module))
+                Text(pluginLocalization.string("Some database engines auto-commit DDL statements."))
                     .font(.appMicro)
                     .foregroundStyle(.secondary)
                 Spacer()
-                AppButton(LumiPluginLocalization.string("Cancel", bundle: .module), style: .secondary, size: .small) { isPresented = false }
-                AppButton(LumiPluginLocalization.string("Apply Changes", bundle: .module), systemImage: "checkmark.circle.fill", style: .primary, size: .small) {
+                AppButton(pluginLocalization.string("Cancel"), style: .secondary, size: .small) { isPresented = false }
+                AppButton(pluginLocalization.string("Apply Changes"), systemImage: "checkmark.circle.fill", style: .primary, size: .small) {
                     isPresented = false
                     Task { await viewModel.saveSchemaChanges() }
                 }

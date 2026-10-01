@@ -190,7 +190,7 @@ actor ProjectScanCoordinator {
         activeTask?.cancel()
         let myID = UUID()
         scanID = myID
-        currentProgress = LumiPluginLocalization.string("Starting scan...", bundle: .module)
+        currentProgress = pluginLocalization.string("Starting scan...")
 
         let task = Task { await performScan(paths: paths, id: myID) }
         activeTask = task

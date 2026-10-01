@@ -49,7 +49,7 @@ public final class AgentTempStoragePlugin: SuperPlugin, PluginDataMigrating, Sup
     }
 
     public var name: String {
-        LumiPluginLocalization.string("Agent Temp Storage", bundle: .module)
+        pluginLocalization.string("Agent Temp Storage")
     }
 
 

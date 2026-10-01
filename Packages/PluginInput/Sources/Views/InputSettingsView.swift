@@ -11,14 +11,14 @@ public struct InputSettingsView: View {
 
     public var body: some View {
         PluginSettingsScaffold(
-            title: LumiPluginLocalization.string("Input Source", bundle: .module),
-            subtitle: LumiPluginLocalization.string("Automatically switch input sources per application.", bundle: .module),
+            title: pluginLocalization.string("Input Source"),
+            subtitle: pluginLocalization.string("Automatically switch input sources per application."),
             showHeader: false
         ) {
             AppCard {
                 AppSettingsSection(spacing: 12) {
                     AppSettingsToggleRow(
-                        LumiPluginLocalization.string("Enable Auto Input Source Switching", bundle: .module),
+                        pluginLocalization.string("Enable Auto Input Source Switching"),
                         systemImage: "keyboard",
                         isOn: Binding(
                             get: { viewModel.isEnabled },
@@ -54,7 +54,7 @@ public struct InputSettingsView: View {
         } else {
             AppCard {
                 AppSettingsSection(
-                    title: LumiPluginLocalization.string("Rules", bundle: .module),
+                    title: pluginLocalization.string("Rules"),
                     spacing: 6
                 ) {
                     ForEach(Array(viewModel.rules.enumerated()), id: \.element.id) { index, rule in
@@ -63,7 +63,7 @@ public struct InputSettingsView: View {
                             availableSources: viewModel.availableSources
                         )
                         .contextMenu {
-                            Button(LumiPluginLocalization.string("Delete", bundle: .module), role: .destructive) {
+                            Button(pluginLocalization.string("Delete"), role: .destructive) {
                                 viewModel.removeRule(at: IndexSet(integer: index))
                             }
                         }

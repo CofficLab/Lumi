@@ -7,10 +7,7 @@ struct WriteTempFileTool: SuperAgentTool {
     let name = "write_temp_file"
 
     func description(for language: LanguagePreference) -> String {
-        LumiPluginLocalization.string(
-            "Write UTF-8 text to the agent temp storage directory. Files are auto-deleted after the retention period (default 7 days).",
-            bundle: .module
-        )
+        pluginLocalization.string("Write UTF-8 text to the agent temp storage directory. Files are auto-deleted after the retention period (default 7 days).")
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {

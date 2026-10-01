@@ -11,7 +11,7 @@ struct ActivityTokenTrendChart: View {
     var body: some View {
         AppLineChart(
             points: days.map { AppLineChartPoint(date: $0.date, value: Double($0.tokens)) },
-            accessibilityLabel: LumiPluginLocalization.string("Daily token consumption chart", bundle: .module),
+            accessibilityLabel: pluginLocalization.string("Daily token consumption chart"),
             valueLabel: { TokenCountFormat.compact(Int($0)) }
         )
     }

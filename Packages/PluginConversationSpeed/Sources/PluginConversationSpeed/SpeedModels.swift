@@ -105,30 +105,15 @@ enum SpeedUnavailability: String, Equatable {
     var localizedExplanation: String {
         switch self {
         case .noConversationSelected:
-            return LumiPluginLocalization.string(
-                "No conversation selected. Select a conversation to see streaming speed.",
-                bundle: .module
-            )
+            return pluginLocalization.string("No conversation selected. Select a conversation to see streaming speed.")
         case .waitingForResponse:
-            return LumiPluginLocalization.string(
-                "Waiting for the first assistant response with speed data.",
-                bundle: .module
-            )
+            return pluginLocalization.string("Waiting for the first assistant response with speed data.")
         case .missingOutputTokens:
-            return LumiPluginLocalization.string(
-                "The provider did not report output token count.",
-                bundle: .module
-            )
+            return pluginLocalization.string("The provider did not report output token count.")
         case .missingDuration:
-            return LumiPluginLocalization.string(
-                "The provider did not report streaming duration.",
-                bundle: .module
-            )
+            return pluginLocalization.string("The provider did not report streaming duration.")
         case .missingOutputTokensAndDuration:
-            return LumiPluginLocalization.string(
-                "The provider did not report output tokens or streaming duration.",
-                bundle: .module
-            )
+            return pluginLocalization.string("The provider did not report output tokens or streaming duration.")
         }
     }
 }

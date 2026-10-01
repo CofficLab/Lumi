@@ -19,7 +19,6 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../ProviderMessageStreaming"),
-        .package(path: "../ProviderToolManager"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
@@ -36,7 +35,6 @@ let package = Package(
             .product(name: "ProviderMessage", package: "ProviderMessage"),
             .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
             .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
-            .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             .product(name: "LumiLoggingKit", package: "LumiLogging"),
         ], resources: [.process("../../Resources/Localizable.xcstrings")]),
         .testTarget(name: "PluginMessageListBriefTests", dependencies: [

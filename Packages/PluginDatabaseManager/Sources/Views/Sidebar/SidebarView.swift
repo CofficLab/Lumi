@@ -92,7 +92,7 @@ public struct SidebarView: View {
     private var keysBrowser: some View {
         VStack(spacing: 0) {
             DatabaseSidebarHeaderBar(
-                title: LumiPluginLocalization.string("Keys", bundle: .module),
+                title: pluginLocalization.string("Keys"),
                 systemImage: "key",
                 onLoad: { Task { await viewModel.loadRedisKeys() } },
                 onToggleMode: { toggleMode() },
@@ -102,8 +102,8 @@ public struct SidebarView: View {
             if viewModel.redisKeys.isEmpty {
                 SidebarEmptyView(
                     systemImage: "key",
-                    title: LumiPluginLocalization.string("No keys", bundle: .module),
-                    description: LumiPluginLocalization.string("Click Reload to refresh the key list.", bundle: .module)
+                    title: pluginLocalization.string("No keys"),
+                    description: pluginLocalization.string("Click Reload to refresh the key list.")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -130,15 +130,15 @@ public struct SidebarView: View {
     private var emptyHint: some View {
         VStack(spacing: 0) {
             DatabaseSidebarHeaderBar(
-                title: LumiPluginLocalization.string("Database", bundle: .module),
+                title: pluginLocalization.string("Database"),
                 systemImage: "cylinder.split.1x2",
                 onToggleMode: { toggleMode() },
                 toggleMode: viewModel.sidebarMode
             )
             SidebarEmptyView(
                 systemImage: "cylinder.split.1x2",
-                title: LumiPluginLocalization.string("No database connected", bundle: .module),
-                description: LumiPluginLocalization.string("Switch to Connections above to add or pick a database.", bundle: .module)
+                title: pluginLocalization.string("No database connected"),
+                description: pluginLocalization.string("Switch to Connections above to add or pick a database.")
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

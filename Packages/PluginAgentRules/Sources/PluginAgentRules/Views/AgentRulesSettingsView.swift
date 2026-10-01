@@ -24,11 +24,8 @@ struct AgentRulesSettingsView: View {
 
     var body: some View {
         PluginSettingsScaffold(
-            title: LumiPluginLocalization.string("Agent Rules", bundle: .module),
-            subtitle: LumiPluginLocalization.string(
-                "View and manage rule documents in .agent/rules directory",
-                bundle: .module
-            ),
+            title: pluginLocalization.string("Agent Rules"),
+            subtitle: pluginLocalization.string("View and manage rule documents in .agent/rules directory"),
             showHeader: false,
             scrollsContent: false
         ) {
@@ -66,10 +63,10 @@ struct AgentRulesSettingsView: View {
                 Label(selectedProject.name, systemImage: "folder")
             }
             Spacer()
-            AppButton(LumiPluginLocalization.string("Refresh", bundle: .module), systemImage: "arrow.clockwise", size: .small) {
+            AppButton(pluginLocalization.string("Refresh"), systemImage: "arrow.clockwise", size: .small) {
                 viewModel.refresh()
             }
-            AppButton(LumiPluginLocalization.string("Open Rules Directory", bundle: .module), systemImage: "folder", size: .small) {
+            AppButton(pluginLocalization.string("Open Rules Directory"), systemImage: "folder", size: .small) {
                 viewModel.openRulesDirectory()
             }
         }
@@ -84,7 +81,7 @@ struct AgentRulesSettingsView: View {
             if viewModel.projectsSorted.isEmpty {
                 AppEmptyState(
                     icon: "folder",
-                    title: LumiPluginLocalization.string("No projects yet", bundle: .module)
+                    title: pluginLocalization.string("No projects yet")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -156,10 +153,10 @@ struct AgentRulesSettingsView: View {
                 AppEmptyState(icon: "exclamationmark.triangle", title: error)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.selectedProject == nil {
-                AppEmptyState(icon: "folder", title: LumiPluginLocalization.string("Select a project", bundle: .module))
+                AppEmptyState(icon: "folder", title: pluginLocalization.string("Select a project"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.rules.isEmpty {
-                AppEmptyState(icon: "doc.text", title: LumiPluginLocalization.string("No rules yet", bundle: .module))
+                AppEmptyState(icon: "doc.text", title: pluginLocalization.string("No rules yet"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {

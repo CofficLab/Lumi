@@ -97,7 +97,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                             BrewManagerPlugin.logger.error("\(self.t) ❌ Homebrew not detected")
                     }
                 }
-                errorMessage = LumiPluginLocalization.string("Homebrew not detected, please install Homebrew first.", bundle: .module)
+                errorMessage = pluginLocalization.string("Homebrew not detected, please install Homebrew first.")
             }
         }
     }
@@ -131,7 +131,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                     BrewManagerPlugin.logger.error("\(self.t) ❌ Refresh failed: \(error.localizedDescription)")
                 }
             }
-            self.errorMessage = LumiPluginLocalization.string("Refresh failed: \(error.localizedDescription)", bundle: .module)
+            self.errorMessage = pluginLocalization.string("Refresh failed: \(error.localizedDescription)")
         }
         
         isLoading = false
@@ -186,7 +186,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                                     BrewManagerPlugin.logger.error("\(self.t) ❌ 搜索失败: \(error.localizedDescription)")
                         }
                     }
-                    self.errorMessage = LumiPluginLocalization.string("Search failed: \(error.localizedDescription)", bundle: .module)
+                    self.errorMessage = pluginLocalization.string("Search failed: \(error.localizedDescription)")
                     self.isLoading = false
                 }
             }
@@ -214,7 +214,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                     BrewManagerPlugin.logger.error("\(self.t) ❌ 安装失败: \(error.localizedDescription)")
                 }
             }
-            errorMessage = LumiPluginLocalization.string("Installation failed: \(error.localizedDescription)", bundle: .module)
+            errorMessage = pluginLocalization.string("Installation failed: \(error.localizedDescription)")
         }
         isLoading = false
     }
@@ -240,7 +240,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                     BrewManagerPlugin.logger.error("\(self.t) ❌ 卸载失败: \(error.localizedDescription)")
                 }
             }
-            errorMessage = LumiPluginLocalization.string("Uninstallation failed: \(error.localizedDescription)", bundle: .module)
+            errorMessage = pluginLocalization.string("Uninstallation failed: \(error.localizedDescription)")
         }
         isLoading = false
     }
@@ -266,7 +266,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                     BrewManagerPlugin.logger.error("\(self.t) ❌ 更新失败: \(error.localizedDescription)")
                 }
             }
-            errorMessage = LumiPluginLocalization.string("Update failed: \(error.localizedDescription)", bundle: .module)
+            errorMessage = pluginLocalization.string("Update failed: \(error.localizedDescription)")
         }
         isLoading = false
     }
@@ -300,7 +300,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                                     BrewManagerPlugin.logger.error("\(self.t) ❌ 批量更新失败: \(error.localizedDescription)")
                 }
             }
-            errorMessage = LumiPluginLocalization.string("Batch update failed: \(error.localizedDescription)", bundle: .module)
+            errorMessage = pluginLocalization.string("Batch update failed: \(error.localizedDescription)")
         }
         isLoading = false
     }

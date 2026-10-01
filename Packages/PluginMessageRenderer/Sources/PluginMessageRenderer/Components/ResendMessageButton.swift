@@ -12,12 +12,12 @@ struct ResendMessageButton: View {
     var body: some View {
         AppIconButton(
             systemImage: "arrow.clockwise",
-            label: LumiPluginLocalization.string("重发", bundle: .module),
+            label: pluginLocalization.string("重发"),
             tint: theme.textSecondary.opacity(0.8),
             size: .compact,
             action: resend
         )
-        .help(LumiPluginLocalization.string("重新发送该消息", bundle: .module))
+        .help(pluginLocalization.string("重新发送该消息"))
     }
 
     private func resend() {

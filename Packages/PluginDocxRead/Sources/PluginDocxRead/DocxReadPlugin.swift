@@ -25,7 +25,7 @@ public final class DocxReadPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public var name: String {
-        LumiPluginLocalization.string("Docx Read", bundle: .module)
+        pluginLocalization.string("Docx Read")
     }
 
 

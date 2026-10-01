@@ -71,21 +71,21 @@ final class ToolActivityViewModel: ObservableObject {
     func statusTitle(for status: ToolJobStatus) -> String {
         switch status {
         case .queued:
-            return LumiPluginLocalization.string("Queued")
+            return pluginLocalization.string("Queued")
         case .running:
-            return LumiPluginLocalization.string("Running")
+            return pluginLocalization.string("Running")
         case .waitingForUser:
-            return LumiPluginLocalization.string("Waiting for you")
+            return pluginLocalization.string("Waiting for you")
         case .cancelling:
-            return LumiPluginLocalization.string("Stopping")
+            return pluginLocalization.string("Stopping")
         case .completed:
-            return LumiPluginLocalization.string("Completed")
+            return pluginLocalization.string("Completed")
         case .failed:
-            return LumiPluginLocalization.string("Failed")
+            return pluginLocalization.string("Failed")
         case .cancelled:
-            return LumiPluginLocalization.string("Cancelled")
+            return pluginLocalization.string("Cancelled")
         case .timedOut:
-            return LumiPluginLocalization.string("Timed out")
+            return pluginLocalization.string("Timed out")
         }
     }
 

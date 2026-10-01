@@ -19,8 +19,8 @@ public final class RClickSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog
     public let order = 50
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.rclick",
-        name: LumiPluginLocalization.string("Right Click", bundle: .module),
-        description: LumiPluginLocalization.string("Configure right-click actions and preview their behavior.", bundle: .module),
+        name: pluginLocalization.string("Right Click"),
+        description: pluginLocalization.string("Configure right-click actions and preview their behavior."),
         category: .system,
         stage: .preview,
         policy: .disabledByDefault
@@ -67,7 +67,7 @@ public final class RClickSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog
             RailTabItem(
                 id: railTabID,
                 category: .general,
-                title: LumiPluginLocalization.string("Preview", bundle: .module),
+                title: pluginLocalization.string("Preview"),
                 systemImage: "eye",
                 order: order
             ) {

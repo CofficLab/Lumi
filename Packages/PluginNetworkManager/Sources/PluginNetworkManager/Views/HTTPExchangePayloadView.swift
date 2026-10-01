@@ -24,7 +24,7 @@ struct HTTPExchangePayloadView: View {
                 HStack(spacing: 8) {
                     ProgressView()
                         .controlSize(.small)
-                    Text(LumiPluginLocalization.string("Loading payload…", bundle: .module))
+                    Text(pluginLocalization.string("Loading payload…"))
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
                 }

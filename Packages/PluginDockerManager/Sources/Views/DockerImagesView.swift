@@ -27,7 +27,7 @@ struct DockerImagesView: View, SuperLog {
             if let errorMessage = viewModel.errorMessage {
                 AppErrorBanner(
                     message: LocalizedStringKey(errorMessage),
-                    retryTitle: LocalizedStringKey(LumiPluginLocalization.string("Dismiss", bundle: .module))
+                    retryTitle: LocalizedStringKey(pluginLocalization.string("Dismiss"))
                 ) {
                     viewModel.errorMessage = nil
                 }
@@ -42,19 +42,19 @@ struct DockerImagesView: View, SuperLog {
                     HStack {
                         AppSearchBar(
                             text: $viewModel.searchText,
-                            placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search images...", bundle: .module))
+                            placeholder: LocalizedStringKey(pluginLocalization.string("Search images..."))
                         )
 
                         Menu {
-                            Picker(LumiPluginLocalization.string("Sort", bundle: .module), selection: $viewModel.sortOption) {
-                                Text(LumiPluginLocalization.string("Created", bundle: .module)).tag(DockerManagerViewModel.SortOption.created)
-                                Text(LumiPluginLocalization.string("Name", bundle: .module)).tag(DockerManagerViewModel.SortOption.name)
-                                Text(LumiPluginLocalization.string("Size", bundle: .module)).tag(DockerManagerViewModel.SortOption.size)
+                            Picker(pluginLocalization.string("Sort"), selection: $viewModel.sortOption) {
+                                Text(pluginLocalization.string("Created")).tag(DockerManagerViewModel.SortOption.created)
+                                Text(pluginLocalization.string("Name")).tag(DockerManagerViewModel.SortOption.name)
+                                Text(pluginLocalization.string("Size")).tag(DockerManagerViewModel.SortOption.size)
                             }
-                            Toggle(LumiPluginLocalization.string("Descending", bundle: .module), isOn: $viewModel.sortDescending)
+                            Toggle(pluginLocalization.string("Descending"), isOn: $viewModel.sortDescending)
                         } label: {
                             GlassRow {
-                                Label(LumiPluginLocalization.string("Sort", bundle: .module), systemImage: "arrow.up.arrow.down")
+                                Label(pluginLocalization.string("Sort"), systemImage: "arrow.up.arrow.down")
                                     .foregroundColor(theme.textPrimary)
                             }
                             .frame(width: 90)
@@ -62,7 +62,7 @@ struct DockerImagesView: View, SuperLog {
 
                         AppIconButton(
                             systemImage: "arrow.clockwise",
-                            label: LumiPluginLocalization.string("Refresh", bundle: .module),
+                            label: pluginLocalization.string("Refresh"),
                             size: .regular
                         ) {
                             Task { await viewModel.refreshImages() }
@@ -86,20 +86,20 @@ struct DockerImagesView: View, SuperLog {
                         DockerImageRow(image: image)
                             .tag(image)
                             .contextMenu {
-                                Button(LumiPluginLocalization.string("Tag...", bundle: .module)) {
+                                Button(pluginLocalization.string("Tag...")) {
                                     imageToTag = image
                                     newTag = image.repository + ":"
                                     showTagSheet = true
                                 }
-                                Button(LumiPluginLocalization.string("Export...", bundle: .module)) {
+                                Button(pluginLocalization.string("Export...")) {
                                     imageToExport = image
                                     showFileExporter = true
                                 }
-                                Button(LumiPluginLocalization.string("Scan", bundle: .module)) {
+                                Button(pluginLocalization.string("Scan")) {
                                     Task { await viewModel.scanImage(image) }
                                 }
                                 Divider()
-                                Button(LumiPluginLocalization.string("Delete", bundle: .module), role: .destructive) {
+                                Button(pluginLocalization.string("Delete"), role: .destructive) {
                                     Task { await viewModel.deleteImage(image) }
                                 }
                             }
@@ -114,10 +114,10 @@ struct DockerImagesView: View, SuperLog {
                             .font(.appMicro)
                             .foregroundColor(theme.textSecondary)
                         Spacer()
-                        AppButton(LumiPluginLocalization.string("Import", bundle: .module), style: .secondary, size: .small) {
+                        AppButton(pluginLocalization.string("Import"), style: .secondary, size: .small) {
                             showFileImporter = true
                         }
-                        AppButton(LumiPluginLocalization.string("Pull", bundle: .module), style: .primary, size: .small) {
+                        AppButton(pluginLocalization.string("Pull"), style: .primary, size: .small) {
                             showPullSheet = true
                         }
                     }
@@ -132,7 +132,7 @@ struct DockerImagesView: View, SuperLog {
                 } else {
                     AppEmptyState(
                         icon: "cube.box",
-                        title: LocalizedStringKey(LumiPluginLocalization.string("Select an image to view details", bundle: .module))
+                        title: LocalizedStringKey(pluginLocalization.string("Select an image to view details"))
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Material.regularMaterial)
@@ -141,11 +141,11 @@ struct DockerImagesView: View, SuperLog {
         }
         .sheet(isPresented: $showPullSheet) {
             VStack(spacing: 20) {
-                Text(LumiPluginLocalization.string("Pull New Image", bundle: .module))
+                Text(pluginLocalization.string("Pull New Image"))
                     .font(.appTitle)
                     .foregroundColor(theme.textPrimary)
                 GlassTextField(
-                    title: LumiPluginLocalization.string("Image", bundle: .module),
+                    title: pluginLocalization.string("Image"),
                     text: $pullImageName,
                     placeholder: "nginx:latest"
                 )
@@ -156,8 +156,8 @@ struct DockerImagesView: View, SuperLog {
                 }
 
                 HStack {
-                    AppButton(LumiPluginLocalization.string("Cancel", bundle: .module), style: .ghost) { showPullSheet = false }
-                    AppButton(LumiPluginLocalization.string("Pull", bundle: .module), style: .primary) {
+                    AppButton(pluginLocalization.string("Cancel"), style: .ghost) { showPullSheet = false }
+                    AppButton(pluginLocalization.string("Pull"), style: .primary) {
                         Task {
                             if await viewModel.pullImage(pullImageName) {
                                 showPullSheet = false
@@ -172,24 +172,24 @@ struct DockerImagesView: View, SuperLog {
         }
         .sheet(isPresented: $showTagSheet) {
             VStack(spacing: 20) {
-                Text(LumiPluginLocalization.string("Tag Image", bundle: .module))
+                Text(pluginLocalization.string("Tag Image"))
                     .font(.appTitle)
                     .foregroundColor(theme.textPrimary)
                 if let img = imageToTag {
-                    Text(LumiPluginLocalization.string("Source:", bundle: .module) + " \(img.name)")
+                    Text(pluginLocalization.string("Source:") + " \(img.name)")
                         .font(.appMicro)
                         .foregroundColor(theme.textSecondary)
                 }
                 GlassTextField(
-                    title: LumiPluginLocalization.string("New Tag", bundle: .module),
+                    title: pluginLocalization.string("New Tag"),
                     text: $newTag,
                     placeholder: "myrepo:v1"
                 )
                 .frame(width: 320)
 
                 HStack {
-                    AppButton(LumiPluginLocalization.string("Cancel", bundle: .module), style: .ghost) { showTagSheet = false }
-                    AppButton(LumiPluginLocalization.string("Confirm", bundle: .module), style: .primary) {
+                    AppButton(pluginLocalization.string("Cancel"), style: .ghost) { showTagSheet = false }
+                    AppButton(pluginLocalization.string("Confirm"), style: .primary) {
                         if let img = imageToTag {
                             Task {
                                 if await viewModel.tagImage(img, newTag: newTag) {
@@ -211,7 +211,7 @@ struct DockerImagesView: View, SuperLog {
                 if DockerManagerPlugin.verbose {
                     DockerManagerPlugin.logger.error("\(Self.t)Import failed: \(error.localizedDescription)")
                 }
-                viewModel.reportFilePanelError(LumiPluginLocalization.string("Import failed", bundle: .module), error: error)
+                viewModel.reportFilePanelError(pluginLocalization.string("Import failed"), error: error)
             }
         }
         .fileExporter(isPresented: $showFileExporter, document: DockerImageDocument(image: imageToExport), contentType: .data, defaultFilename: imageToExport?.name.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-") ?? "image") { result in
@@ -224,7 +224,7 @@ struct DockerImagesView: View, SuperLog {
                 if DockerManagerPlugin.verbose {
                     DockerManagerPlugin.logger.error("\(Self.t)Export failed: \(error.localizedDescription)")
                 }
-                viewModel.reportFilePanelError(LumiPluginLocalization.string("Export failed", bundle: .module), error: error)
+                viewModel.reportFilePanelError(pluginLocalization.string("Export failed"), error: error)
             }
         }
         .onAppear {
@@ -312,9 +312,9 @@ struct DockerImageDetailView: View {
                     }
                     Spacer()
 
-                    AppButton(LumiPluginLocalization.string("Scan", bundle: .module), style: .secondary, fillsWidth: true, action: { Task { await viewModel.scanImage(image) } })
+                    AppButton(pluginLocalization.string("Scan"), style: .secondary, fillsWidth: true, action: { Task { await viewModel.scanImage(image) } })
 
-                    AppButton(LumiPluginLocalization.string("Delete", bundle: .module), style: .destructive, fillsWidth: true, action: { showDeleteAlert = true })
+                    AppButton(pluginLocalization.string("Delete"), style: .destructive, fillsWidth: true, action: { showDeleteAlert = true })
                 }
                 }
 
@@ -322,7 +322,7 @@ struct DockerImageDetailView: View {
                 if let scanResult = viewModel.scanResult {
                     AppCard(style: .subtle, cornerRadius: 8) {
                         VStack(alignment: .leading, spacing: 8) {
-                        Text(LumiPluginLocalization.string("Security Scan", bundle: .module))
+                        Text(pluginLocalization.string("Security Scan"))
                             .font(.appBody)
                             .foregroundColor(theme.textPrimary)
 
@@ -343,9 +343,9 @@ struct DockerImageDetailView: View {
                 if let detail = detail {
                     AppCard(style: .subtle, cornerRadius: 8) {
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                        InfoRow(title: LumiPluginLocalization.string("Architecture", bundle: .module), value: detail.Architecture)
+                        InfoRow(title: pluginLocalization.string("Architecture"), value: detail.Architecture)
                         InfoRow(title: "OS", value: detail.Os)
-                        InfoRow(title: LumiPluginLocalization.string("Author", bundle: .module), value: detail.Author ?? "-")
+                        InfoRow(title: pluginLocalization.string("Author"), value: detail.Author ?? "-")
                         InfoRow(title: "Virtual Size", value: ByteCountFormatter.string(fromByteCount: detail.VirtualSize ?? 0, countStyle: .file))
                     }
                     }
@@ -354,17 +354,17 @@ struct DockerImageDetailView: View {
                     if let config = detail.Config {
                         AppCard(style: .subtle, cornerRadius: 8) {
                             VStack(alignment: .leading, spacing: 8) {
-                            Text(LumiPluginLocalization.string("Configuration", bundle: .module))
+                            Text(pluginLocalization.string("Configuration"))
                                 .font(.appBody)
                                 .foregroundColor(theme.textPrimary)
 
                             if let cmds = config.Cmd {
-                                Text(LumiPluginLocalization.string("CMD: ", bundle: .module) + cmds.joined(separator: " "))
+                                Text(pluginLocalization.string("CMD: ") + cmds.joined(separator: " "))
                                     .font(.monospaced(.caption)())
                             }
 
                             if let envs = config.Env {
-                                Text(LumiPluginLocalization.string("ENV:", bundle: .module))
+                                Text(pluginLocalization.string("ENV:"))
                                     .font(.appMicro)
                                     .fontWeight(.bold)
                                     .foregroundColor(theme.textSecondary)
@@ -374,7 +374,7 @@ struct DockerImageDetailView: View {
                                         .foregroundColor(theme.textSecondary)
                                 }
                                 if envs.count > 5 {
-                                    Text("... (+ \(envs.count - 5)) " + LumiPluginLocalization.string("more", bundle: .module))
+                                    Text("... (+ \(envs.count - 5)) " + pluginLocalization.string("more"))
                                         .font(.appMicro)
                                         .foregroundColor(theme.textTertiary)
                                 }
@@ -387,7 +387,7 @@ struct DockerImageDetailView: View {
                 // History/Layers
                 AppCard(style: .subtle, cornerRadius: 8) {
                     VStack(alignment: .leading, spacing: 8) {
-                    Text(LumiPluginLocalization.string("History / Layers", bundle: .module))
+                    Text(pluginLocalization.string("History / Layers"))
                         .font(.appBody)
                         .foregroundColor(theme.textPrimary)
 
@@ -418,9 +418,9 @@ struct DockerImageDetailView: View {
             .padding()
         }
         .background(Material.regularMaterial)
-        .alert(LumiPluginLocalization.string("Confirm Delete", bundle: .module), isPresented: $showDeleteAlert) {
-            Button(LumiPluginLocalization.string("Cancel", bundle: .module), role: .cancel) { }
-            Button(LumiPluginLocalization.string("Delete", bundle: .module), role: .destructive) {
+        .alert(pluginLocalization.string("Confirm Delete"), isPresented: $showDeleteAlert) {
+            Button(pluginLocalization.string("Cancel"), role: .cancel) { }
+            Button(pluginLocalization.string("Delete"), role: .destructive) {
                 Task { await viewModel.deleteImage(image) }
             }
         } message: {

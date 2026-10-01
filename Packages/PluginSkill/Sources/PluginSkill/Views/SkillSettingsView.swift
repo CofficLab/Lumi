@@ -27,11 +27,8 @@ struct SkillSettingsView: View {
 
     var body: some View {
         PluginSettingsScaffold(
-            title: LumiPluginLocalization.string("Skills", bundle: .module),
-            subtitle: LumiPluginLocalization.string(
-                "View project skills and contributed skills",
-                bundle: .module
-            ),
+            title: pluginLocalization.string("Skills"),
+            subtitle: pluginLocalization.string("View project skills and contributed skills"),
             showHeader: false,
             scrollsContent: false
         ) {
@@ -69,10 +66,10 @@ struct SkillSettingsView: View {
                 Label(selectedProject.name, systemImage: "folder")
             }
             Spacer()
-            AppButton(LumiPluginLocalization.string("Refresh", bundle: .module), systemImage: "arrow.clockwise", size: .small) {
+            AppButton(pluginLocalization.string("Refresh"), systemImage: "arrow.clockwise", size: .small) {
                 viewModel.refresh()
             }
-            AppButton(LumiPluginLocalization.string("Open Skills Directory", bundle: .module), systemImage: "folder", size: .small) {
+            AppButton(pluginLocalization.string("Open Skills Directory"), systemImage: "folder", size: .small) {
                 viewModel.openSkillsDirectory()
             }
         }
@@ -87,7 +84,7 @@ struct SkillSettingsView: View {
             if viewModel.projectsSorted.isEmpty {
                 AppEmptyState(
                     icon: "folder",
-                    title: LumiPluginLocalization.string("No projects yet", bundle: .module)
+                    title: pluginLocalization.string("No projects yet")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -159,40 +156,28 @@ struct SkillSettingsView: View {
                 AppEmptyState(icon: "exclamationmark.triangle", title: error)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.selectedProject == nil {
-                AppEmptyState(icon: "folder", title: LumiPluginLocalization.string("Select a project", bundle: .module))
+                AppEmptyState(icon: "folder", title: pluginLocalization.string("Select a project"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.availableSkillCount == 0 {
-                AppEmptyState(icon: "sparkles", title: LumiPluginLocalization.string("No Skills", bundle: .module))
+                AppEmptyState(icon: "sparkles", title: pluginLocalization.string("No Skills"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         skillSection(
-                            title: LumiPluginLocalization.string(
-                                "Project Skills",
-                                bundle: .module
-                            ),
-                            subtitle: LumiPluginLocalization.string(
-                                "From .agent/skills directory",
-                                bundle: .module
-                            ),
+                            title: pluginLocalization.string("Project Skills"),
+                            subtitle: pluginLocalization.string("From .agent/skills directory"),
                             count: viewModel.projectSkills.count,
                             skills: viewModel.projectSkills,
-                            emptyTitle: LumiPluginLocalization.string("No project skills yet", bundle: .module)
+                            emptyTitle: pluginLocalization.string("No project skills yet")
                         )
 
                         skillSection(
-                            title: LumiPluginLocalization.string(
-                                "Built-in & Plugin Skills",
-                                bundle: .module
-                            ),
-                            subtitle: LumiPluginLocalization.string(
-                                "Contributed by the app and plugins",
-                                bundle: .module
-                            ),
+                            title: pluginLocalization.string("Built-in & Plugin Skills"),
+                            subtitle: pluginLocalization.string("Contributed by the app and plugins"),
                             count: viewModel.baseSkills.count,
                             skills: viewModel.baseSkills,
-                            emptyTitle: LumiPluginLocalization.string("No shared skills", bundle: .module)
+                            emptyTitle: pluginLocalization.string("No shared skills")
                         )
                     }
                     .padding(12)

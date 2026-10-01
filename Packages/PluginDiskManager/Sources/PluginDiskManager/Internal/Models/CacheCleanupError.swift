@@ -5,6 +5,6 @@ public struct CacheCleanupError: LocalizedError, Sendable {
     public let underlyingDescription: String
 
     public var errorDescription: String? {
-        LumiPluginLocalization.string("Failed to remove \(path): \(underlyingDescription)", bundle: .module)
+        pluginLocalization.string("Failed to remove \(path): \(underlyingDescription)")
     }
 }

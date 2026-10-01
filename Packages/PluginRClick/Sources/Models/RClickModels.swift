@@ -16,15 +16,15 @@ public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Senda
 
     public var title: String {
         switch self {
-        case .newFile: return LumiPluginLocalization.string("New File", bundle: .module)
-        case .copyPath: return LumiPluginLocalization.string("Copy Path", bundle: .module)
-        case .openInTerminal: return LumiPluginLocalization.string("Open in Terminal", bundle: .module)
-        case .openInVSCode: return LumiPluginLocalization.string("Open in VS Code", bundle: .module)
-        case .deleteFile: return LumiPluginLocalization.string("Delete File", bundle: .module)
-        case .hideFile: return LumiPluginLocalization.string("Hide File", bundle: .module)
-        case .unhideFile: return LumiPluginLocalization.string("Unhide File", bundle: .module)
-        case .showHiddenFiles: return LumiPluginLocalization.string("Show Hidden Files", bundle: .module)
-        case .hideHiddenFiles: return LumiPluginLocalization.string("Do Not Show Hidden Files", bundle: .module)
+        case .newFile: return pluginLocalization.string("New File")
+        case .copyPath: return pluginLocalization.string("Copy Path")
+        case .openInTerminal: return pluginLocalization.string("Open in Terminal")
+        case .openInVSCode: return pluginLocalization.string("Open in VS Code")
+        case .deleteFile: return pluginLocalization.string("Delete File")
+        case .hideFile: return pluginLocalization.string("Hide File")
+        case .unhideFile: return pluginLocalization.string("Unhide File")
+        case .showHiddenFiles: return pluginLocalization.string("Show Hidden Files")
+        case .hideHiddenFiles: return pluginLocalization.string("Do Not Show Hidden Files")
         }
     }
 

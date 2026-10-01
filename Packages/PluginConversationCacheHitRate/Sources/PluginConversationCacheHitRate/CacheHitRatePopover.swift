@@ -12,7 +12,7 @@ struct CacheHitRatePopover: View {
                 Image(systemName: "memorychip")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.secondary)
-                Text(LumiPluginLocalization.string("Cache Hit Rate", bundle: .module))
+                Text(pluginLocalization.string("Cache Hit Rate"))
                     .font(.subheadline)
                     .fontWeight(.semibold)
             }
@@ -23,7 +23,7 @@ struct CacheHitRatePopover: View {
                     .monospacedDigit()
                     .foregroundColor(hitRateColor)
 
-                Text(String(format: LumiPluginLocalization.string("%lld requests in this conversation", bundle: .module), stats.sampleCount))
+                Text(String(format: pluginLocalization.string("%lld requests in this conversation"), stats.sampleCount))
                     .font(.caption)
                     .foregroundColor(.secondary)
             } else {
@@ -35,22 +35,22 @@ struct CacheHitRatePopover: View {
 
                 statRow(
                     icon: "arrow.down.circle",
-                    label: LumiPluginLocalization.string("Cached tokens", bundle: .module),
+                    label: pluginLocalization.string("Cached tokens"),
                     value: stats.totalCachedTokens.formatted(.number.grouping(.automatic))
                 )
                 statRow(
                     icon: "arrow.up.circle",
-                    label: LumiPluginLocalization.string("Total input tokens", bundle: .module),
+                    label: pluginLocalization.string("Total input tokens"),
                     value: stats.totalInputTokens.formatted(.number.grouping(.automatic))
                 )
                 statRow(
                     icon: "scalemass",
-                    label: LumiPluginLocalization.string("Token-weighted rate", bundle: .module),
+                    label: pluginLocalization.string("Token-weighted rate"),
                     value: String(format: "%.1f%%", stats.weightedHitRate * 100)
                 )
                 statRow(
                     icon: "chart.bar",
-                    label: LumiPluginLocalization.string("Per-request average", bundle: .module),
+                    label: pluginLocalization.string("Per-request average"),
                     value: String(format: "%.1f%%", stats.averageHitRate * 100)
                 )
 
@@ -78,7 +78,7 @@ struct CacheHitRatePopover: View {
                 .foregroundStyle(.secondary)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(LumiPluginLocalization.string("Cache hit rate unavailable", bundle: .module))
+                Text(pluginLocalization.string("Cache hit rate unavailable"))
                     .font(.subheadline.weight(.semibold))
                 Text(unavailabilityReason.localizedExplanation)
                     .font(.callout)

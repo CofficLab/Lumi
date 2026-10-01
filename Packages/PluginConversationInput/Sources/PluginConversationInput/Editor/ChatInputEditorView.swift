@@ -808,7 +808,7 @@ final class PastePreviewAttachment: NSTextAttachment {
     /// 内联 chip 上显示的一行文案，例如「粘贴的文本 · 12,480 字 · 312 行」。
     static func chipTitle(characterCount: Int, lineCount: Int) -> String {
         [
-            LumiPluginLocalization.string("Pasted text", bundle: .module),
+            pluginLocalization.string("Pasted text"),
             countText(characterCount),
             lineText(lineCount)
         ].joined(separator: " · ")
@@ -816,14 +816,14 @@ final class PastePreviewAttachment: NSTextAttachment {
 
     static func countText(_ count: Int) -> String {
         String(
-            format: LumiPluginLocalization.string("%@ chars", bundle: .module),
+            format: pluginLocalization.string("%@ chars"),
             Self.decimalNumber(count)
         )
     }
 
     static func lineText(_ count: Int) -> String {
         String(
-            format: LumiPluginLocalization.string("%@ lines", bundle: .module),
+            format: pluginLocalization.string("%@ lines"),
             Self.decimalNumber(count)
         )
     }
@@ -992,7 +992,7 @@ final class PastePreviewPopoverViewController: NSViewController {
         titleStack.translatesAutoresizingMaskIntoConstraints = false
 
         let titleLabel = NSTextField(
-            labelWithString: LumiPluginLocalization.string("Pasted text", bundle: .module)
+            labelWithString: pluginLocalization.string("Pasted text")
         )
         titleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
         titleLabel.textColor = .labelColor
@@ -1008,10 +1008,10 @@ final class PastePreviewPopoverViewController: NSViewController {
         spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        let copyButton = NSButton(title: LumiPluginLocalization.string("Copy original", bundle: .module), target: self, action: #selector(copyOriginalText))
+        let copyButton = NSButton(title: pluginLocalization.string("Copy original"), target: self, action: #selector(copyOriginalText))
         copyButton.bezelStyle = .rounded
         copyButton.translatesAutoresizingMaskIntoConstraints = false
-        let closeButton = NSButton(title: LumiPluginLocalization.string("Close", bundle: .module), target: self, action: #selector(closePopover))
+        let closeButton = NSButton(title: pluginLocalization.string("Close"), target: self, action: #selector(closePopover))
         closeButton.bezelStyle = .rounded
         closeButton.translatesAutoresizingMaskIntoConstraints = false
 

@@ -109,14 +109,14 @@ struct CacheHitRateLineChart: View {
                             Text(Self.tooltipDateFormatter.string(from: sample.date))
                                 .font(.system(size: 10, weight: .medium))
                             HStack(spacing: 4) {
-                                Text(LumiPluginLocalization.string("This request", bundle: .module))
+                                Text(pluginLocalization.string("This request"))
                                     .foregroundStyle(.secondary)
                                 Text(Self.percentText(sample.hitRate))
                                     .monospacedDigit()
                             }
                             .font(.system(size: 10))
                             HStack(spacing: 4) {
-                                Text(LumiPluginLocalization.string("Cumulative", bundle: .module))
+                                Text(pluginLocalization.string("Cumulative"))
                                     .foregroundStyle(.secondary)
                                 Text(Self.percentText(sample.cumulativeHitRate))
                                     .fontWeight(.semibold)

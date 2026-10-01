@@ -9,7 +9,7 @@ struct SidebarBlockedReason: View {
     let reason: String
 
     var body: some View {
-        Text(String(format: LumiPluginLocalization.string("⚠️ %@", bundle: .module), reason))
+        Text(String(format: pluginLocalization.string("⚠️ %@"), reason))
             .font(.caption2)
             .foregroundStyle(.orange)
             .lineLimit(2)

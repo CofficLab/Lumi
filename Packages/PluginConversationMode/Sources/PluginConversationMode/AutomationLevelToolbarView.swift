@@ -90,7 +90,7 @@ private struct AutomationLevelPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(LumiPluginLocalization.string("Automation Level", bundle: .module))
+            Text(pluginLocalization.string("Automation Level"))
                 .font(.system(size: 12, weight: .semibold))
 
             ForEach(AutomationLevel.allCases) { level in

@@ -14,7 +14,6 @@ struct MessageListServices {
     let developerMode: (any MessageListDeveloperModeCapability)?
     let messages: (any MessageListMessageCapability)?
     let rendering: (any MessageListRenderingCapability)?
-    let toolManager: (any MessageListToolManagerCapability)?
     let agentTurn: (any MessageListAgentLoopCapability)?
     var selectedConversationID: UUID? {
         conversations?.selectedConversationID

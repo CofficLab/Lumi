@@ -56,7 +56,7 @@ public final class DeveloperModePlugin: SuperPlugin, SuperLog {
         toolbarItems.append(
             ProviderToolbar.ToolbarItem(
                 id: "\(id).toggle",
-                title: LumiPluginLocalization.string("Developer mode"),
+                title: pluginLocalization.string("Developer mode"),
                 placement: .leading,
                 category: .global,
                 order: 5
@@ -69,7 +69,7 @@ public final class DeveloperModePlugin: SuperPlugin, SuperLog {
         toolbarItems.append(
             ProviderToolbar.ToolbarItem(
                 id: "\(id).badge",
-                title: LumiPluginLocalization.string("Running a Debug build"),
+                title: pluginLocalization.string("Running a Debug build"),
                 placement: .leading,
                 category: .global,
                 order: 900

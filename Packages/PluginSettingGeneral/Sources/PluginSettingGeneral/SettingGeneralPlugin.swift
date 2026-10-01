@@ -56,7 +56,7 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
                 items: [
                     CommandItem(
                         id: "\(id).openSettings",
-                        title: LumiPluginLocalization.string("Settings...", bundle: .module),
+                        title: pluginLocalization.string("Settings..."),
                         shortcut: ",",
                         modifiers: .command
                     ) {

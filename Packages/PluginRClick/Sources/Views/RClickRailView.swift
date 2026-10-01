@@ -15,7 +15,7 @@ public struct RClickRailView: View {
             // 标题栏
             AppToolbarContainer {
                 HStack {
-                    Text(LumiPluginLocalization.string("Preview", bundle: .module))
+                    Text(pluginLocalization.string("Preview"))
                         .font(.appBodyEmphasized)
                         .foregroundColor(theme.textPrimary)
                     Spacer()
@@ -33,7 +33,7 @@ public struct RClickRailView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         // 主菜单预览
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(LumiPluginLocalization.string("Menu", bundle: .module))
+                            Text(pluginLocalization.string("Menu"))
                                 .font(.appCaptionEmphasized)
                                 .foregroundColor(theme.textSecondary)
 
@@ -43,7 +43,7 @@ public struct RClickRailView: View {
                         // 新建文件子菜单展开预览（仅在新建文件启用且有模板时显示）
                         if viewModel.shouldShowNewFilePreview {
                             VStack(alignment: .leading, spacing: 6) {
-                                Text(LumiPluginLocalization.string("New File Submenu", bundle: .module))
+                                Text(pluginLocalization.string("New File Submenu"))
                                     .font(.appCaptionEmphasized)
                                     .foregroundColor(theme.textSecondary)
 

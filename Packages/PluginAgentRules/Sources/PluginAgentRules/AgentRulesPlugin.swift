@@ -39,7 +39,7 @@ public final class AgentRulesPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public var name: String {
-        LumiPluginLocalization.string("Agent Rules", bundle: .module)
+        pluginLocalization.string("Agent Rules")
     }
 
     private var projectObserver: AgentRulesProjectObserver?

@@ -70,7 +70,7 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
             settings.addEntries([
                 SettingEntryItem(
                     id: "\(id).settings",
-                    title: LumiPluginLocalization.string("Skills", bundle: .module),
+                    title: pluginLocalization.string("Skills"),
                     systemImage: "sparkles",
                     order: order
                 ) {
@@ -190,7 +190,7 @@ struct SkillChatToolbarView: View {
                         .font(.system(size: 10, weight: .medium))
                         .contentTransition(.numericText())
                 } else {
-                    Text(LumiPluginLocalization.string("Skills", bundle: .module))
+                    Text(pluginLocalization.string("Skills"))
                         .font(.system(size: 10, weight: .medium))
                 }
             }

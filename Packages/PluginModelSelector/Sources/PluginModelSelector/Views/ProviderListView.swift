@@ -39,7 +39,7 @@ struct ProviderListView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text(LumiPluginLocalization.string("Providers", bundle: .module))
+                Text(pluginLocalization.string("Providers"))
                     .font(.appCallout)
                 Spacer()
                 if let onClose {
@@ -62,11 +62,11 @@ struct ProviderListView: View {
             // 常用/云端/本地筛选
             HStack(spacing: 8) {
                 Picker("", selection: $viewModel.selectedScope) {
-                    Text(LumiPluginLocalization.string("Frequent", bundle: .module))
+                    Text(pluginLocalization.string("Frequent"))
                         .tag(ProviderScope.frequent)
-                    Text(LumiPluginLocalization.string("Cloud", bundle: .module))
+                    Text(pluginLocalization.string("Cloud"))
                         .tag(ProviderScope.cloud)
-                    Text(LumiPluginLocalization.string("Local", bundle: .module))
+                    Text(pluginLocalization.string("Local"))
                         .tag(ProviderScope.local)
                 }
                 .labelsHidden()
@@ -81,7 +81,7 @@ struct ProviderListView: View {
             AppDivider()
 
             // Search
-            AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search providers", bundle: .module)))
+            AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(pluginLocalization.string("Search providers")))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
 
@@ -93,11 +93,8 @@ struct ProviderListView: View {
                 if providers.isEmpty && viewModel.selectedScope == .frequent && viewModel.searchText.isEmpty {
                     AppEmptyState(
                         icon: "star",
-                        title: LumiPluginLocalization.string("No frequent providers yet", bundle: .module),
-                        description: LumiPluginLocalization.string(
-                            "As you use Lumi, your frequently used providers will appear here.",
-                            bundle: .module
-                        )
+                        title: pluginLocalization.string("No frequent providers yet"),
+                        description: pluginLocalization.string("As you use Lumi, your frequently used providers will appear here.")
                     )
                 } else {
                     ScrollView {
@@ -145,7 +142,7 @@ struct ProviderListView: View {
                 }
             } else {
                 Spacer()
-                Text(LumiPluginLocalization.string("No providers available", bundle: .module))
+                Text(pluginLocalization.string("No providers available"))
                     .font(.appCallout)
                     .foregroundColor(theme.textTertiary)
                 Spacer()

@@ -418,7 +418,7 @@ struct ToolCallRowView: View {
         ) {
             toggleParameterPopover()
         }
-        .help(LumiPluginLocalization.string("调用参数", bundle: .module))
+        .help(pluginLocalization.string("调用参数"))
         .popover(isPresented: popoverBinding(selection: $parameterPopoverToolCallID), arrowEdge: .bottom) {
             ToolDetailPopoverView(
                 title: "调用参数",
@@ -441,7 +441,7 @@ struct ToolCallRowView: View {
         ) {
             toggleResultPopover()
         }
-        .help(LumiPluginLocalization.string("调用结果", bundle: .module))
+        .help(pluginLocalization.string("调用结果"))
         .popover(isPresented: popoverBinding(selection: $resultPopoverToolCallID), arrowEdge: .bottom) {
             // 结果按钮本身不持有数据:打开时先显示 loading,再去能力层查询该工具调用结果,
             // 查到后再渲染。
@@ -670,7 +670,7 @@ private struct ToolDurationRowView: View {
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
 
-            Text(LumiPluginLocalization.string("执行耗时", bundle: .module))
+            Text(pluginLocalization.string("执行耗时"))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
 
