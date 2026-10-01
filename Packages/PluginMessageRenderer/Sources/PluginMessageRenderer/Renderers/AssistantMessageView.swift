@@ -30,7 +30,8 @@ struct AssistantMessageView: View {
                 stateViewModel: stateViewModel,
                 message: message,
                 shouldHideAssistantBody: message.isToolExecutionOnly,
-                contentVerbosity: contentVerbosity
+                contentVerbosity: contentVerbosity,
+                isV1: verbosity == .brief
             )
         }
     }
@@ -45,6 +46,9 @@ private struct AssistantMessageBody: View {
     let message: Message
     let shouldHideAssistantBody: Bool
     let contentVerbosity: ResponseVerbosity
+    /// 原始回复级别是否为 V1（brief）。`contentVerbosity` 已把 brief 升格为
+    /// standard 以复用 V2 内容布局，但工具调用渲染需要区分"是否真的 V1"。
+    let isV1: Bool
 
     private var reasoningContent: String? {
         guard let reasoning = message.reasoningContent,
@@ -80,11 +84,16 @@ private struct AssistantMessageBody: View {
 
             if let toolCalls = message.toolCalls,
                !toolCalls.isEmpty {
+                // V1（原始 brief）模式：消息正文不使用自定义工具渲染器（如
+                // ask_user 挂起交互），仅保留默认工具行摘要；完整交互视图由
+                // 底部 ChatSection 固定项单独展示。contentVerbosity 已把 brief
+                // 升格为 standard，这里必须用 isV1（原始级别）判断。
                 ToolCallRowsView(
                     capability: capability,
                     stateViewModel: stateViewModel,
                     message: message,
-                    verbosity: contentVerbosity
+                    verbosity: contentVerbosity,
+                    allowsCustomToolRenderers: !isV1
                 )
                     .padding(.top, shouldHideAssistantBody ? 0 : 4)
             }

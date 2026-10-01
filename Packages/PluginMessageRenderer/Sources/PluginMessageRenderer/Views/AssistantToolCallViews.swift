@@ -66,6 +66,19 @@ struct ToolCallRowsView: View {
     @ObservedObject var stateViewModel: MessageRendererStateViewModel
     let message: Message
     let verbosity: ResponseVerbosity
+    /// V1 (brief) 模式不使用自定义工具渲染器，统一走默认卡片路径。
+    ///
+    /// `AssistantMessageView` 会把 brief 升格为 standard 以复用 V2 内容布局，
+    /// 因此不能用 `verbosity != .brief` 推导；必须由调用方显式传入"是否为 V1"。
+    /// 这样 ask_user 等挂起交互不会在消息正文渲染完整交互视图（V1 由底部
+    /// 固定区单独展示），仅保留默认工具行摘要。
+    let allowsCustomToolRenderers: Bool
+
+    /// 根据"是否为 V1（原始 brief）"决定是否允许自定义工具渲染器。
+    /// V1：不允许（ask_user 等挂起交互只由底部固定区展示）；V2/V3：允许。
+    static func allowsCustomToolRenderers(isV1: Bool) -> Bool {
+        !isV1
+    }
 
     @State private var parameterPopoverToolCallID: String?
     @State private var resultPopoverToolCallID: String?
@@ -75,12 +88,14 @@ struct ToolCallRowsView: View {
         capability: any MessageRendererCapability,
         stateViewModel: MessageRendererStateViewModel,
         message: Message,
-        verbosity: ResponseVerbosity
+        verbosity: ResponseVerbosity,
+        allowsCustomToolRenderers: Bool
     ) {
         self.capability = capability
         self.stateViewModel = stateViewModel
         self.message = message
         self.verbosity = verbosity
+        self.allowsCustomToolRenderers = allowsCustomToolRenderers
     }
 
     private var toolCalls: [MessageToolCall] {
@@ -175,7 +190,10 @@ struct ToolCallRowsView: View {
     @ViewBuilder
     private func toolCallRow(for toolCall: MessageToolCall) -> some View {
         // V1 (brief) 模式不使用自定义工具渲染器，统一走默认卡片路径。
-        let useCustomRenderer = verbosity != .brief
+        // 注意不能再用 `verbosity != .brief`：AssistantMessageView 会把 brief
+        // 升格为 standard 传入，导致 V1 也命中 ask_user 等挂起交互的自定义
+        // renderer。这里使用调用方显式传入的 allowsCustomToolRenderers。
+        let useCustomRenderer = allowsCustomToolRenderers
         if useCustomRenderer,
            let customRenderer = capability.toolCallRenderer(for: toolCall.agentToolCall) {
             customRenderer.render(
