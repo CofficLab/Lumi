@@ -48,7 +48,7 @@ struct GoalDescriptionPopoverContent: View {
                     in: Circle()
                 )
 
-            Text(LumiPluginLocalization.string("Goal description", bundle: .module))
+            Text(pluginLocalization.string("Goal description"))
                 .font(.appCaptionEmphasized)
                 .foregroundColor(theme.textPrimary)
 

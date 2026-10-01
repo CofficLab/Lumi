@@ -8,7 +8,7 @@ struct ToolCallStatsSettingsView: View {
     @ObservedObject var viewModel: ToolManagerViewModel
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module)
+        pluginLocalization.string(key)
     }
 
     var body: some View {
@@ -69,15 +69,15 @@ private struct ToolStatRowView: View {
     var body: some View {
         AppSettingRow(
             title: stat.toolName,
-            description: String(format: LumiPluginLocalization.string("%lld errors", bundle: .module), stat.errorCount),
+            description: String(format: pluginLocalization.string("%lld errors"), stat.errorCount),
             icon: "wrench.and.screwdriver"
         ) {
             VStack(alignment: .trailing, spacing: 2) {
-                Text(String(format: LumiPluginLocalization.string("%lld calls", bundle: .module), stat.totalCount))
+                Text(String(format: pluginLocalization.string("%lld calls"), stat.totalCount))
                     .font(.appBody)
                     .foregroundStyle(.secondary)
                 if stat.averageDuration > 0 {
-                    Text(String(format: LumiPluginLocalization.string("avg %.2fs", bundle: .module), stat.averageDuration))
+                    Text(String(format: pluginLocalization.string("avg %.2fs"), stat.averageDuration))
                         .font(.appMicro)
                         .foregroundStyle(.secondary)
                 }

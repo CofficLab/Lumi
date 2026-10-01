@@ -87,6 +87,12 @@ public protocol LLMManaging: AnyObject, SuperLLMProvider {
     /// 只按模型 ID 更新全局选择。
     /// - Parameter reason: 本次切换的触发来源，随 `selectionChanged` 事件透传。
     func select(modelID: LLMModelID, reason: ModelSelectionReason)
+
+    /// 通知观察者：指定供应商的远程模型列表已刷新成功。
+    ///
+    /// 由供应商插件在成功拉取模型后调用；模型池可能变化，观察者应重新读取
+    /// `models(for:)` / `modelRoute(for:)`。默认实现广播 `modelsRefreshed` 事件。
+    func notifyModelsRefreshed(providerID: String)
 }
 
 public extension LLMManaging {
@@ -97,11 +103,12 @@ public extension LLMManaging {
 
     func modelID(providerID: String, model: String? = nil) -> LLMModelID? {
         guard let provider = provider(id: providerID) else { return nil }
-        let selected = model ?? (provider.providerInfo.defaultModel.isEmpty
-            ? provider.providerInfo.modelIDs.first
-            : provider.providerInfo.defaultModel)
+        let info = provider.providerInfo
+        let selected = model ?? (info.defaultModel.isEmpty
+            ? modelIDs(of: provider).first
+            : info.defaultModel)
         guard let selected,
-              provider.providerInfo.contains(model: selected) || selected == provider.providerInfo.defaultModel else {
+              contains(model: selected, in: provider) || selected == info.defaultModel else {
             return nil
         }
         return LLMModelID(providerID: providerID, modelID: selected)
@@ -110,8 +117,9 @@ public extension LLMManaging {
     func modelRoute(for modelID: LLMModelID) -> LLMModelRoute? {
         guard let provider = provider(id: modelID.providerID) else { return nil }
         let info = provider.providerInfo
-        guard info.contains(model: modelID.modelID) || info.defaultModel == modelID.modelID else { return nil }
-        let modelInfo = info.models.first(where: { $0.id == modelID.modelID }) ?? LLMModelInfo(id: modelID.modelID)
+        let dynamicContains = contains(model: modelID.modelID, in: provider)
+        guard dynamicContains || info.defaultModel == modelID.modelID else { return nil }
+        let modelInfo = modelInfo(for: modelID.modelID, in: provider) ?? LLMModelInfo(id: modelID.modelID)
         return LLMModelRoute(
             modelID: modelID,
             providerID: info.id,
@@ -124,6 +132,42 @@ public extension LLMManaging {
     func select(modelID: LLMModelID, reason: ModelSelectionReason) {
         guard modelRoute(for: modelID) != nil else { return }
         select(providerID: modelID.providerID, model: modelID.modelID, reason: reason)
+    }
+}
+
+/// 远程模型列表刷新成功后的通知方法（默认实现不做事，保持自定义实现兼容）。
+public extension LLMManaging {
+    /// 默认实现为空；`DefaultLLMManager` 覆写为广播 `modelsRefreshed`。
+    func notifyModelsRefreshed(providerID: String) {}
+}
+
+// MARK: - Dynamic model list capability
+
+public extension LLMManaging {
+    /// 获取供应商的动态模型池。
+    ///
+    /// 直接读取协议属性 `availableModels`：
+    /// - 静态供应商（默认实现）返回 `providerInfo.models`
+    /// - 远程供应商 override 后返回「远程快照 / 缓存 / 基线」合并结果
+    ///
+    /// 获取策略完全由供应商插件内部决定，管理器不感知。
+    func dynamicModels(of provider: any SuperLLMProvider) -> [LLMModelInfo] {
+        provider.availableModels
+    }
+
+    /// 动态模型池中的全部模型 id。
+    func modelIDs(of provider: any SuperLLMProvider) -> [String] {
+        dynamicModels(of: provider).map(\.id)
+    }
+
+    /// 动态模型池是否包含指定模型。
+    func contains(model id: String, in provider: any SuperLLMProvider) -> Bool {
+        dynamicModels(of: provider).contains { $0.id == id }
+    }
+
+    /// 动态模型池中指定模型的元数据；不存在时返回 `nil`。
+    func modelInfo(for id: String, in provider: any SuperLLMProvider) -> LLMModelInfo? {
+        dynamicModels(of: provider).first { $0.id == id }
     }
 }
 

@@ -17,31 +17,31 @@ struct SystemMonitorView: View {
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 300))], spacing: 16) {
             // CPU Card
-            MonitorCard(title: LumiPluginLocalization.string("CPU", bundle: .module), 
+            MonitorCard(title: pluginLocalization.string("CPU"), 
                         value: viewModel.metrics.cpuUsage.description,
                         color: viewModel.cpuColor) {
                 WaveformView(data: viewModel.metrics.cpuUsage.history, color: viewModel.cpuColor)
             }
             
             // Memory Card
-            MonitorCard(title: LumiPluginLocalization.string("Memory", bundle: .module), 
+            MonitorCard(title: pluginLocalization.string("Memory"), 
                         value: viewModel.metrics.memoryUsage.description,
                         color: viewModel.memoryColor) {
                 WaveformView(data: viewModel.metrics.memoryUsage.history, color: viewModel.memoryColor)
             }
             
             // GPU Card
-            MonitorCard(title: LumiPluginLocalization.string("GPU", bundle: .module),
+            MonitorCard(title: pluginLocalization.string("GPU"),
                         value: String(format: "%.0f%%", gpuViewModel.utilization),
                         color: gpuColor) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(gpuViewModel.modelName.isEmpty ? LumiPluginLocalization.string("GPU", bundle: .module) : gpuViewModel.modelName)
+                    Text(gpuViewModel.modelName.isEmpty ? pluginLocalization.string("GPU") : gpuViewModel.modelName)
                         .font(.system(size: 9))
                         .foregroundColor(theme.textSecondary)
 
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(LumiPluginLocalization.string("Memory", bundle: .module))
+                            Text(pluginLocalization.string("Memory"))
                                 .font(.system(size: 8))
                                 .foregroundColor(theme.textSecondary)
                             Text(gpuViewModel.usedMemory)
@@ -51,7 +51,7 @@ struct SystemMonitorView: View {
 
                         if gpuViewModel.temperature > 0 {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(LumiPluginLocalization.string("Temperature", bundle: .module))
+                                Text(pluginLocalization.string("Temperature"))
                                     .font(.system(size: 8))
                                     .foregroundColor(theme.textSecondary)
                                 Text(String(format: "%.0f°C", gpuViewModel.temperature))
@@ -67,7 +67,7 @@ struct SystemMonitorView: View {
             }
 
             // Network Card
-            MonitorCard(title: LumiPluginLocalization.string("Network", bundle: .module),
+            MonitorCard(title: pluginLocalization.string("Network"),
                         value: "↓\(viewModel.metrics.network.downloadSpeedString) ↑\(viewModel.metrics.network.uploadSpeedString)",
                         color: theme.info) {
                 ZStack {
@@ -79,8 +79,8 @@ struct SystemMonitorView: View {
             }
 
             // Disk Card
-            MonitorCard(title: LumiPluginLocalization.string("Disk I/O", bundle: .module),
-                        value: String(format: LumiPluginLocalization.string("R: %@ W: %@", bundle: .module), viewModel.metrics.disk.readSpeedString, viewModel.metrics.disk.writeSpeedString),
+            MonitorCard(title: pluginLocalization.string("Disk I/O"),
+                        value: String(format: pluginLocalization.string("R: %@ W: %@"), viewModel.metrics.disk.readSpeedString, viewModel.metrics.disk.writeSpeedString),
                         color: theme.warning) {
                 ZStack {
                     WaveformView(data: viewModel.metrics.disk.readHistory, color: theme.warning, maxVal: 1024*1024*50)
@@ -92,13 +92,13 @@ struct SystemMonitorView: View {
 
             // Battery Card
             if batteryViewModel.hasBattery {
-                MonitorCard(title: LumiPluginLocalization.string("Battery", bundle: .module),
+                MonitorCard(title: pluginLocalization.string("Battery"),
                             value: batteryMonitorValue,
                             color: batteryLevelColor) {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 12) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(LumiPluginLocalization.string("Health", bundle: .module))
+                                Text(pluginLocalization.string("Health"))
                                     .font(.system(size: 8))
                                     .foregroundColor(theme.textSecondary)
                                 Text("\(Int(batteryViewModel.healthPercentage))%")
@@ -107,7 +107,7 @@ struct SystemMonitorView: View {
                             }
 
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(LumiPluginLocalization.string("Cycles", bundle: .module))
+                                Text(pluginLocalization.string("Cycles"))
                                     .font(.system(size: 8))
                                     .foregroundColor(theme.textSecondary)
                                 Text("\(batteryViewModel.cycleCount)")
@@ -117,7 +117,7 @@ struct SystemMonitorView: View {
 
                             if batteryViewModel.temperature > 0 {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(LumiPluginLocalization.string("Temperature", bundle: .module))
+                                    Text(pluginLocalization.string("Temperature"))
                                         .font(.system(size: 8))
                                         .foregroundColor(theme.textSecondary)
                                     Text(String(format: "%.1f°C", batteryViewModel.temperature))
@@ -128,7 +128,7 @@ struct SystemMonitorView: View {
 
                             if batteryViewModel.watts > 0 {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(LumiPluginLocalization.string("Power", bundle: .module))
+                                    Text(pluginLocalization.string("Power"))
                                         .font(.system(size: 8))
                                         .foregroundColor(theme.textSecondary)
                                     Text(batteryViewModel.wattsString)

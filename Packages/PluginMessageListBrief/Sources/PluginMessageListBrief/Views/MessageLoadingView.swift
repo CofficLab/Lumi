@@ -13,9 +13,9 @@ struct MessageLoadingView: View {
                 .opacity(0.55)
 
             VStack(spacing: 3) {
-                Text(LumiPluginLocalization.string("Loading messages…"))
+                Text(pluginLocalization.string("Loading messages…"))
                     .font(.system(size: 13, weight: .medium))
-                Text(LumiPluginLocalization.string("Brief mode"))
+                Text(pluginLocalization.string("Brief mode"))
                     .font(.system(size: 11))
                     .foregroundStyle(theme.textSecondary)
             }

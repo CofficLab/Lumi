@@ -16,7 +16,7 @@ public final class ProjectOverviewSuperPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     private var promptSuggestion: PromptSuggestion {
-        PromptSuggestion(id: "\(id).overview", title: LumiPluginLocalization.string("Prompt.Suggestion.Overview", bundle: .module), order: order * 1_000, systemImage: "doc.text.magnifyingglass", visibility: .onlyWithProject)
+        PromptSuggestion(id: "\(id).overview", title: pluginLocalization.string("Prompt.Suggestion.Overview"), order: order * 1_000, systemImage: "doc.text.magnifyingglass", visibility: .onlyWithProject)
     }
     private func registerPromptSuggestion(kernel: KernelCoreContainer, requiresEnable: Bool) {
         var suggestion = promptSuggestion

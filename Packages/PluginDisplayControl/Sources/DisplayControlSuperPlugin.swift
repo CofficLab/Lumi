@@ -17,8 +17,8 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
     public let order = 210
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.display-control",
-        name: LumiPluginLocalization.string("Display Control", bundle: .module),
-        description: LumiPluginLocalization.string("Control brightness, volume, and contrast for external displays via DDC/CI.", bundle: .module),
+        name: pluginLocalization.string("Display Control"),
+        description: pluginLocalization.string("Control brightness, volume, and contrast for external displays via DDC/CI."),
         category: .system,
         stage: .preview,
         policy: .disabledByDefault

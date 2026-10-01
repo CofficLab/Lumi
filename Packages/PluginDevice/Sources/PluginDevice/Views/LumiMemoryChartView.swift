@@ -59,7 +59,7 @@ public struct LumiMemoryChartView: View {
             VStack(spacing: 4) {
                 ProgressView()
                     .scaleEffect(0.7)
-                Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
+                Text(pluginLocalization.string("Collecting..."))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
             }

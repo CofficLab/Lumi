@@ -57,13 +57,29 @@ final class ToolCallsObserver: SuperLog {
             // 不会执行工具，因此把它放进 Task 不会阻塞当前 AgentLoop 回调。
             executeLegacyBatch(inputs, policy: .blockAll, conversationID: conversationID, turnID: turnID)
         case .autoExecute:
-            // Job manager 只负责提交和启动后台任务，绝不在这里等待工具结果。
-            _ = toolManager.submit(
-                inputs,
-                policy: .autoExecute,
-                conversationID: conversationID,
-                turnID: turnID
-            )
+            // 自动化等级只能放宽"风险等级"判断，不能跳过工具自己声明的强制
+            // 确认（如 run_command 的 unsandboxed）。这条路径直接提交 Job，
+            // 不经过 executeBatch，因此必须在这里单独分流。
+            let forcedApproval = inputs.filter { toolManager.toolRequiresExplicitApproval($0) }
+            let autoExecutable = inputs.filter { !toolManager.toolRequiresExplicitApproval($0) }
+
+            if !autoExecutable.isEmpty {
+                // Job manager 只负责提交和启动后台任务，绝不在这里等待工具结果。
+                _ = toolManager.submit(
+                    autoExecutable,
+                    policy: .autoExecute,
+                    conversationID: conversationID,
+                    turnID: turnID
+                )
+            }
+            if !forcedApproval.isEmpty {
+                executeLegacyBatch(
+                    forcedApproval,
+                    policy: .requireApprovalForHighRisk,
+                    conversationID: conversationID,
+                    turnID: turnID
+                )
+            }
         case .requireApprovalForHighRisk:
             var autoExecutableInputs: [ToolCall] = []
             var approvalInputs: [ToolCall] = []

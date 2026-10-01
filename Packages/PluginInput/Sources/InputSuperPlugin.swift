@@ -38,8 +38,8 @@ public final class InputSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
     public let order = 70
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.input-manager",
-        name: LumiPluginLocalization.string("Input Manager", bundle: .module),
-        description: LumiPluginLocalization.string("Configure input methods and their behavior.", bundle: .module),
+        name: pluginLocalization.string("Input Manager"),
+        description: pluginLocalization.string("Configure input methods and their behavior."),
         category: .system,
         stage: .preview,
         policy: .disabledByDefault

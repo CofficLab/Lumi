@@ -10,7 +10,6 @@ import ProviderDeveloperMode
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageStreaming
-import ProviderToolManager
 import SwiftUI
 
 /// 简洁（V1 / brief）消息列表插件。
@@ -54,7 +53,6 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
         let messages = kernel.resolveProvider((any MessageManaging).self)
         let rendering = kernel.resolveProvider((any MessageRenderingProviding).self)
         let streaming = kernel.resolveProvider((any MessageStreamingProviding).self)
-        let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
         let agentTurn = kernel.resolveProvider((any AgentLoopProviding).self)
 
         let services = MessageListServices(
@@ -62,7 +60,6 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
             developerMode: developerMode.map(MessageListDeveloperModeCapabilityAdapter.init(developerMode:)),
             messages: messages.map(MessageListMessageCapabilityAdapter.init(messages:)),
             rendering: rendering.map(MessageListRenderingCapabilityAdapter.init(rendering:)),
-            toolManager: toolManager.map(MessageListToolManagerCapabilityAdapter.init(toolManager:)),
             agentTurn: agentTurn.map(MessageListAgentLoopCapabilityAdapter.init(agentTurn:)),
         )
         let messageListVM = ConversationMessageListVM(services: services)

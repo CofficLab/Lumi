@@ -13,8 +13,8 @@ public struct ClipboardSettingsView: View {
 
     public var body: some View {
         PluginSettingsScaffold(
-            title: LumiPluginLocalization.string("Clipboard Manager", bundle: .module),
-            subtitle: LumiPluginLocalization.string("Monitor clipboard history locally on this device.", bundle: .module),
+            title: pluginLocalization.string("Clipboard Manager"),
+            subtitle: pluginLocalization.string("Monitor clipboard history locally on this device."),
             showHeader: false
         ) {
             generalSection
@@ -32,11 +32,11 @@ public struct ClipboardSettingsView: View {
     private var generalSection: some View {
         AppCard {
             AppSettingsSection(
-                title: LumiPluginLocalization.string("General", bundle: .module),
+                title: pluginLocalization.string("General"),
                 spacing: 12
             ) {
                 AppSettingsToggleRow(
-                    LumiPluginLocalization.string("Enable Clipboard Monitoring", bundle: .module),
+                    pluginLocalization.string("Enable Clipboard Monitoring"),
                     systemImage: "doc.on.clipboard",
                     isOn: $isMonitoringEnabled
                 )
@@ -45,14 +45,14 @@ public struct ClipboardSettingsView: View {
                 }
 
                 AppSettingsPickerRow(
-                    LumiPluginLocalization.string("History Size", bundle: .module),
+                    pluginLocalization.string("History Size"),
                     systemImage: "clock.arrow.circlepath",
                     selection: $historySize
                 ) {
-                    Text(verbatim: LumiPluginLocalization.string("100", bundle: .module)).tag(100)
-                    Text(verbatim: LumiPluginLocalization.string("500", bundle: .module)).tag(500)
-                    Text(verbatim: LumiPluginLocalization.string("1000", bundle: .module)).tag(1000)
-                    Text(LumiPluginLocalization.string("Unlimited", bundle: .module)).tag(Int.max)
+                    Text(verbatim: pluginLocalization.string("100")).tag(100)
+                    Text(verbatim: pluginLocalization.string("500")).tag(500)
+                    Text(verbatim: pluginLocalization.string("1000")).tag(1000)
+                    Text(pluginLocalization.string("Unlimited")).tag(Int.max)
                 }
                 .onChange(of: historySize) { _, newValue in
                     store.set(newValue, forKey: historySizeKey)
@@ -64,11 +64,11 @@ public struct ClipboardSettingsView: View {
     private var dataSection: some View {
         AppCard {
             AppSettingsSection(
-                title: LumiPluginLocalization.string("Data", bundle: .module),
+                title: pluginLocalization.string("Data"),
                 spacing: 12
             ) {
                 AppButton(
-                    LumiPluginLocalization.string("Clear All History", bundle: .module),
+                    pluginLocalization.string("Clear All History"),
                     style: .destructive,
                     fillsWidth: true
                 ) {
@@ -77,7 +77,7 @@ public struct ClipboardSettingsView: View {
                     }
                 }
 
-                Text(LumiPluginLocalization.string("All data is stored locally in SwiftData database and will not be uploaded to any server.", bundle: .module))
+                Text(pluginLocalization.string("All data is stored locally in SwiftData database and will not be uploaded to any server."))
                     .font(.appCaption)
                     .foregroundColor(theme.textTertiary)
                     .frame(maxWidth: .infinity, alignment: .leading)

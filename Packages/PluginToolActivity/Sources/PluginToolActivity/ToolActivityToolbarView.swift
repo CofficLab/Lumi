@@ -27,7 +27,7 @@ struct ToolActivityToolbarView: View {
         }
         .buttonStyle(.plain)
         .disabled(viewModel.selectedConversationID == nil)
-        .help(Text(LumiPluginLocalization.string("View tool calls for this conversation")))
+        .help(Text(pluginLocalization.string("View tool calls for this conversation")))
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
             ToolActivityPopoverView(viewModel: viewModel)
                 .frame(width: 380, height: 430)
@@ -48,7 +48,7 @@ private struct ToolActivityPopoverView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
-                    Text(LumiPluginLocalization.string("Tool Calls"))
+                    Text(pluginLocalization.string("Tool Calls"))
                         .font(.headline)
                     Spacer()
                     Text("\(viewModel.activeJobs.count + viewModel.completedJobs.count)")
@@ -62,7 +62,7 @@ private struct ToolActivityPopoverView: View {
                     emptyState
                 } else {
                     if !viewModel.activeJobs.isEmpty {
-                        ToolActivitySection(title: LumiPluginLocalization.string("In progress")) {
+                        ToolActivitySection(title: pluginLocalization.string("In progress")) {
                             ForEach(viewModel.activeJobs) { job in
                                 ToolActivityRow(job: job, viewModel: viewModel)
                             }
@@ -70,7 +70,7 @@ private struct ToolActivityPopoverView: View {
                     }
 
                     if !viewModel.completedJobs.isEmpty {
-                        ToolActivitySection(title: LumiPluginLocalization.string("Completed"), secondary: true) {
+                        ToolActivitySection(title: pluginLocalization.string("Completed"), secondary: true) {
                             ForEach(viewModel.completedJobs) { job in
                                 ToolActivityRow(job: job, viewModel: viewModel)
                             }
@@ -84,7 +84,7 @@ private struct ToolActivityPopoverView: View {
     }
 
     private var emptyState: some View {
-        Text(LumiPluginLocalization.string("No tool calls in this conversation"))
+        Text(pluginLocalization.string("No tool calls in this conversation"))
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, minHeight: 180)
     }

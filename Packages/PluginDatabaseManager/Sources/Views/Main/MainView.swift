@@ -75,17 +75,17 @@ public struct MainView: View {
             HStack {
                 Spacer()
                 if viewModel.isConnected {
-                    AppButton(LumiPluginLocalization.string("Disconnect", bundle: .module), systemImage: "bolt.horizontal.circle", style: .secondary, size: .small, action: { Task { await viewModel.disconnect() } })
+                    AppButton(pluginLocalization.string("Disconnect"), systemImage: "bolt.horizontal.circle", style: .secondary, size: .small, action: { Task { await viewModel.disconnect() } })
                 }
                 if viewModel.isLoading {
                     ProgressView()
                         .scaleEffect(0.5)
                 }
-                AppButton(LumiPluginLocalization.string("Run", bundle: .module), systemImage: "play.fill", style: .primary, size: .small, action: { Task { await viewModel.executeQuery() } })
+                AppButton(pluginLocalization.string("Run"), systemImage: "play.fill", style: .primary, size: .small, action: { Task { await viewModel.executeQuery() } })
                     .keyboardShortcut(.return, modifiers: .command)
                 if statementCount > 1 {
                     AppButton(
-                        "\(LumiPluginLocalization.string("Run All", bundle: .module)) (\(statementCount))",
+                        "\(pluginLocalization.string("Run All")) (\(statementCount))",
                         systemImage: "play.rectangle.fill",
                         style: .secondary,
                         size: .small,
@@ -94,7 +94,7 @@ public struct MainView: View {
                     .keyboardShortcut(.return, modifiers: [.command, .shift])
                 }
                 AppButton(
-                    LumiPluginLocalization.string("History", bundle: .module),
+                    pluginLocalization.string("History"),
                     systemImage: "clock.arrow.circlepath",
                     style: .ghost,
                     size: .small,

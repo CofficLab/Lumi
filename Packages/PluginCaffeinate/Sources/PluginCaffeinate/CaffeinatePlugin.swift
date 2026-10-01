@@ -45,7 +45,7 @@ public final class CaffeinatePlugin: SuperPlugin, PluginDataMigrating, SuperLog 
     public init() {}
 
     public var name: String {
-        LumiPluginLocalization.string("Caffeinate", bundle: .module)
+        pluginLocalization.string("Caffeinate")
     }
 
     public func onRegister(kernel: KernelCoreContainer) throws {

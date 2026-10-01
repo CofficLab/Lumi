@@ -37,8 +37,8 @@ public final class IdleTimePlugin: SuperPlugin, PluginDataMigrating, SuperLog {
 
     public func onRegister(kernel: KernelCoreContainer) throws {
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: LumiPluginLocalization.string("Idle Time", bundle: .module)) { IdleTimeAboutView() })
-            docs.addManual(DocsEntry(id: id, name: LumiPluginLocalization.string("Idle Time", bundle: .module)) { IdleTimeManualView() })
+            docs.addAbout(DocsEntry(id: id, name: pluginLocalization.string("Idle Time")) { IdleTimeAboutView() })
+            docs.addManual(DocsEntry(id: id, name: pluginLocalization.string("Idle Time")) { IdleTimeManualView() })
         }
     }
 

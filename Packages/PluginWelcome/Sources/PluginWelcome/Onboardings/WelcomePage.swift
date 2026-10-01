@@ -11,9 +11,9 @@ struct WelcomePage: View {
                 .font(.system(size: 56, weight: .semibold))
                 .foregroundStyle(theme.primary)
             VStack(spacing: DesignTokens.Spacing.sm) {
-                Text(LumiPluginLocalization.string("Welcome to Lumi", bundle: .module))
+                Text(pluginLocalization.string("Welcome to Lumi"))
                     .font(DesignTokens.Typography.largeTitle)
-                Text(LumiPluginLocalization.string("Your local workspace for focused AI conversations, projects, and tools.", bundle: .module))
+                Text(pluginLocalization.string("Your local workspace for focused AI conversations, projects, and tools."))
                     .font(DesignTokens.Typography.body)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(theme.textSecondary)

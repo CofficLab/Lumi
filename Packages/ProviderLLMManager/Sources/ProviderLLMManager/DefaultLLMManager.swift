@@ -67,6 +67,14 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
         }
     }
 
+    /// 广播某供应商远程模型列表已刷新。
+    public func notifyModelsRefreshed(providerID: String) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)models refreshed: provider=\(providerID, privacy: .public)")
+        }
+        notify(.modelsRefreshed(providerID: providerID))
+    }
+
     // MARK: - UserDefaults Keys
 
     private enum UserDefaultsKeys {
@@ -139,23 +147,24 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
     // MARK: - Selection
 
     public func models(for providerID: String) -> [String] {
-        providers[providerID]?.providerInfo.modelIDs ?? []
+        guard let provider = providers[providerID] else { return [] }
+        return modelIDs(of: provider)
     }
 
     public func modelID(providerID: String, model: String? = nil) -> LLMModelID? {
         guard let provider = providers[providerID] else { return nil }
         let info = provider.providerInfo
-        let selected = model ?? (info.defaultModel.isEmpty ? info.modelIDs.first : info.defaultModel)
+        let selected = model ?? (info.defaultModel.isEmpty ? modelIDs(of: provider).first : info.defaultModel)
         guard let selected,
-              info.contains(model: selected) || selected == info.defaultModel else { return nil }
+              contains(model: selected, in: provider) || selected == info.defaultModel else { return nil }
         return LLMModelID(providerID: providerID, modelID: selected)
     }
 
     public func modelRoute(for modelID: LLMModelID) -> LLMModelRoute? {
         guard let provider = providers[modelID.providerID] else { return nil }
         let info = provider.providerInfo
-        guard info.contains(model: modelID.modelID) || info.defaultModel == modelID.modelID else { return nil }
-        let modelInfo = info.models.first(where: { $0.id == modelID.modelID }) ?? LLMModelInfo(id: modelID.modelID)
+        guard contains(model: modelID.modelID, in: provider) || info.defaultModel == modelID.modelID else { return nil }
+        let modelInfo = modelInfo(for: modelID.modelID, in: provider) ?? LLMModelInfo(id: modelID.modelID)
         return LLMModelRoute(
             modelID: modelID,
             providerID: info.id,
@@ -272,7 +281,7 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
         resolvedProvider: any SuperLLMProvider,
         resolvedModel: String?
     ) -> String? {
-        if let requested, resolvedProvider.providerInfo.contains(model: requested) {
+        if let requested, contains(model: requested, in: resolvedProvider) {
             return requested
         }
         if Self.verbose {
@@ -321,12 +330,12 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
         if requestedProviderID == nil,
            selectedProviderID == info.id,
            let selectedModel,
-           info.contains(model: selectedModel) {
+           contains(model: selectedModel, in: provider) {
             model = selectedModel
         } else if !info.defaultModel.isEmpty {
             model = info.defaultModel
         } else {
-            model = info.modelIDs.first
+            model = modelIDs(of: provider).first
         }
         if Self.verbose {
             Self.logger.debug("\(Self.t)resolved: provider=\(info.id, privacy: .public), model=\(model ?? "nil", privacy: .public)")

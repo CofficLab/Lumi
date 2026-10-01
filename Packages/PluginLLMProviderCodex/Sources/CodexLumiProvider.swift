@@ -6,8 +6,8 @@ import KernelLumi
 public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
     public static let info = LumiLLMProviderInfo(
         id: "codex",
-        displayName: LumiPluginLocalization.string("Codex", bundle: .module),
-        description: LumiPluginLocalization.string("OpenAI models via Codex CLI", bundle: .module),
+        displayName: pluginLocalization.string("Codex"),
+        description: pluginLocalization.string("OpenAI models via Codex CLI"),
         defaultModel: "gpt-5.5",
         availableModels: [
             .init(
@@ -45,7 +45,7 @@ public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
     public func providerStatus() -> LumiLLMProviderStatus? {
         guard cli.isAvailable else {
             return LumiLLMProviderStatus(
-                message: LumiPluginLocalization.string("Codex CLI not found", bundle: .module),
+                message: pluginLocalization.string("Codex CLI not found"),
                 level: .warning,
                 isBlocking: false
             )

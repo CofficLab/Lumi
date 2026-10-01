@@ -26,8 +26,8 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
     public let order = 21
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.hosts-manager",
-        name: LumiPluginLocalization.string("Hosts Manager", bundle: .module),
-        description: LumiPluginLocalization.string("Manage the hosts file and domain mappings.", bundle: .module),
+        name: pluginLocalization.string("Hosts Manager"),
+        description: pluginLocalization.string("Manage the hosts file and domain mappings."),
         category: .system,
         stage: .stable,
         policy: .disabledByDefault
@@ -40,7 +40,7 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public var name: String {
-        LumiPluginLocalization.string("Hosts Manager", bundle: .module)
+        pluginLocalization.string("Hosts Manager")
     }
 
     public func onRegister(kernel: KernelCoreContainer) throws {

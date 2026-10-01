@@ -12,13 +12,13 @@ struct MemoryHistoryDetailView: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack {
-                Text(LumiPluginLocalization.string("Memory Usage Trend", bundle: .module))
+                Text(pluginLocalization.string("Memory Usage Trend"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.secondary)
 
                 Spacer()
 
-                Picker(LumiPluginLocalization.string("Time Range", bundle: .module), selection: $selectedRange) {
+                Picker(pluginLocalization.string("Time Range"), selection: $selectedRange) {
                     ForEach(MemoryTimeRange.allCases) { range in
                         Text(range.displayName).tag(range)
                     }

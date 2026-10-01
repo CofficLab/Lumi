@@ -117,7 +117,7 @@ struct LanguageToolbarView: View {
         .buttonStyle(.plain)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(LumiPluginLocalization.string("Response Language", bundle: .module))
+                Text(pluginLocalization.string("Response Language"))
                     .font(.system(size: 12, weight: .semibold))
                 ForEach(ConversationLanguage.allCases) { language in
                     Button {
@@ -157,7 +157,7 @@ struct LanguageToolbarView: View {
         conversations.setGlobalLanguage(language)
         ConversationBehaviorToast.show(
             toast,
-            title: LumiPluginLocalization.string("Response Language", bundle: .module),
+            title: pluginLocalization.string("Response Language"),
             detail: language.shortCode,
         )
     }

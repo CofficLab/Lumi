@@ -11,7 +11,7 @@ struct StoryEditorView: View {
     @State private var editTitle = ""
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, locale: locale)
+        pluginLocalization.string(key, locale: locale)
     }
 
     var body: some View {

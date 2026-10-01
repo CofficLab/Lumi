@@ -171,7 +171,7 @@ final class ModelSelectorViewModel: ObservableObject {
         let modelInfo = modelInfo(for: providerID, model: model)
         let modelDisplayName = modelInfo?.displayName ?? model
         toast?.show(
-            LumiPluginLocalization.string("Switched to", bundle: .module),
+            pluginLocalization.string("Switched to"),
             detail: "\(providerDisplayName) · \(modelDisplayName)",
             style: .success
         )

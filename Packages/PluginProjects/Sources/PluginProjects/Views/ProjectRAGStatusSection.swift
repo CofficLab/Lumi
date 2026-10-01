@@ -20,27 +20,27 @@ struct ProjectRAGStatusSection: View {
 
     var body: some View {
         AppSettingSection(
-                        title: LumiPluginLocalization.string("RAG Index", bundle: .module),
+                        title: pluginLocalization.string("RAG Index"),
                         titleAlignment: .leading
                     ) {
             VStack(alignment: .leading, spacing: 10) {
                 switch viewModel.state {
                 case .loading:
-                    statusRow(icon: "hourglass", title: LumiPluginLocalization.string("Checking index status…", bundle: .module), color: theme.textSecondary)
+                    statusRow(icon: "hourglass", title: pluginLocalization.string("Checking index status…"), color: theme.textSecondary)
                 case .unavailable:
-                    statusRow(icon: "minus.circle", title: LumiPluginLocalization.string("RAG unavailable", bundle: .module), color: theme.textSecondary)
+                    statusRow(icon: "minus.circle", title: pluginLocalization.string("RAG unavailable"), color: theme.textSecondary)
                 case .notIndexed:
-                    statusRow(icon: "circle.dashed", title: LumiPluginLocalization.string("Not indexed", bundle: .module), color: .orange)
+                    statusRow(icon: "circle.dashed", title: pluginLocalization.string("Not indexed"), color: .orange)
                 case .indexed(let status):
                     indexedContent(status)
                 case .failed:
-                    statusRow(icon: "exclamationmark.triangle", title: LumiPluginLocalization.string("Unable to read index status", bundle: .module), color: .orange)
+                    statusRow(icon: "exclamationmark.triangle", title: pluginLocalization.string("Unable to read index status"), color: .orange)
                 }
 
                 if !viewModel.isLoading {
                     HStack {
                         Spacer()
-                        Button(LumiPluginLocalization.string("Refresh", bundle: .module)) {
+                        Button(pluginLocalization.string("Refresh")) {
                             Task { await viewModel.loadStatus() }
                         }
                         .buttonStyle(.borderless)
@@ -58,16 +58,16 @@ struct ProjectRAGStatusSection: View {
     private func indexedContent(_ status: ProjectRAGIndexStatus) -> some View {
         statusRow(
             icon: status.isStale ? "clock.badge.exclamationmark" : "checkmark.circle.fill",
-            title: status.isStale ? LumiPluginLocalization.string("Index is stale", bundle: .module) : LumiPluginLocalization.string("Indexed", bundle: .module),
+            title: status.isStale ? pluginLocalization.string("Index is stale") : pluginLocalization.string("Indexed"),
             color: status.isStale ? .orange : .green
         )
 
         VStack(spacing: 0) {
-            detailRow(title: LumiPluginLocalization.string("Files", bundle: .module), value: "\(status.fileCount)")
+            detailRow(title: pluginLocalization.string("Files"), value: "\(status.fileCount)")
             Divider().padding(.vertical, 7)
-            detailRow(title: LumiPluginLocalization.string("Chunks", bundle: .module), value: "\(status.chunkCount)")
+            detailRow(title: pluginLocalization.string("Chunks"), value: "\(status.chunkCount)")
             Divider().padding(.vertical, 7)
-            detailRow(title: LumiPluginLocalization.string("Last Indexed", bundle: .module), value: status.lastIndexedAt.formatted(date: .abbreviated, time: .shortened))
+            detailRow(title: pluginLocalization.string("Last Indexed"), value: status.lastIndexedAt.formatted(date: .abbreviated, time: .shortened))
         }
     }
 

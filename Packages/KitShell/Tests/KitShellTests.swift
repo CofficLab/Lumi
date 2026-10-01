@@ -306,8 +306,8 @@ struct ShellExecutorTests {
             options: .init(throwsOnError: false, maxOutputBytes: 4)
         )
 
-        #expect(result.stdout == "1234")
-        #expect(result.stderr == "abcd")
+        #expect(result.stdout == "7890")
+        #expect(result.stderr == "ghij")
         #expect(result.stdoutTruncated)
         #expect(result.stderrTruncated)
     }
@@ -325,7 +325,7 @@ struct ShellExecutorTests {
         )
 
         #expect(callbackBytes.value == 10)
-        #expect(result.stdout == "1234")
+        #expect(result.stdout == "7890")
         #expect(result.stdoutTruncated)
     }
 
@@ -685,23 +685,41 @@ struct BoundedOutputBufferTests {
         #expect(!buf.isTruncated)
     }
 
-    @Test("chunk exceeding the cap keeps only the remainder and marks truncated")
+    @Test("chunk exceeding the cap keeps only this chunk's tail and marks truncated")
     func overflowTruncates() {
         let buf = BoundedOutputBuffer(maxBytes: 5)
         buf.append(Data("abc".utf8))          // 3 bytes
-        buf.append(Data("defgh".utf8))        // only "de" fits (remaining 2)
-        #expect(buf.getString() == "abcde")
+        buf.append(Data("defgh".utf8))        // 5 bytes: the whole window now holds this chunk's tail
+        #expect(buf.getString() == "defgh")
         #expect(buf.isTruncated)
     }
 
-    @Test("further appends once full are dropped")
-    func furtherAppendsDropped() {
+    @Test("a chunk that exactly fills the cap is not marked truncated")
+    func exactFitIsNotTruncated() {
+        // Boundary: filling the window exactly loses nothing, so flagging it
+        // would produce a false "output truncated" notice.
         let buf = BoundedOutputBuffer(maxBytes: 3)
         buf.append(Data("abc".utf8))
-        #expect(!buf.isTruncated)
-        buf.append(Data("xyz".utf8))
-        #expect(buf.isTruncated)
         #expect(buf.getString() == "abc")
+        #expect(!buf.isTruncated)
+
+        let single = BoundedOutputBuffer(maxBytes: 3)
+        single.append(Data("xyz".utf8))
+        #expect(single.getString() == "xyz")
+        #expect(!single.isTruncated)
+    }
+
+    @Test("overflow drops the oldest bytes so the newest survive")
+    func overflowDropsOldestBytes() {
+        let buf = BoundedOutputBuffer(maxBytes: 5)
+        buf.append(Data("abc".utf8))
+        buf.append(Data("de".utf8))           // exactly fills: "abcde", nothing lost yet
+        #expect(buf.getString() == "abcde")
+        #expect(!buf.isTruncated)
+
+        buf.append(Data("fg".utf8))           // 2 bytes over: drop "ab", keep "cdefg"
+        #expect(buf.isTruncated)
+        #expect(buf.getString() == "cdefg")
     }
 
     @Test("maxBytes of zero truncates immediately")

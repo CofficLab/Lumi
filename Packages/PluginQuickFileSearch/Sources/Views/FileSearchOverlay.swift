@@ -85,7 +85,7 @@ extension FileSearchOverlay {
 
 #Preview("File Search Overlay") {
     FileSearchOverlay(
-        content: Text(LumiPluginLocalization.string("Content", bundle: .module)),
+        content: Text(pluginLocalization.string("Content")),
         projectPathProvider: { "" },
         windowIdProvider: { nil },
         hotkeyManager: FileSearchHotkeyManager.shared,

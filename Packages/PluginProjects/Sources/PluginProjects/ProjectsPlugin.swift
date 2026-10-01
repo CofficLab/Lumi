@@ -51,7 +51,7 @@ public final class ProjectsPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     public init() {}
 
     private var promptSuggestion: PromptSuggestion {
-        PromptSuggestion(id: "\(id).add", title: LumiPluginLocalization.string("Add Project", bundle: .module), order: order * 1_000, systemImage: "folder.badge.plus", action: .pickProjectFolder, visibility: .onlyWithoutProject, style: .additive)
+        PromptSuggestion(id: "\(id).add", title: pluginLocalization.string("Add Project"), order: order * 1_000, systemImage: "folder.badge.plus", action: .pickProjectFolder, visibility: .onlyWithoutProject, style: .additive)
     }
     private func registerPromptSuggestion(kernel: KernelCoreContainer, requiresEnable: Bool) {
         var suggestion = promptSuggestion
@@ -126,7 +126,7 @@ public final class ProjectsPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
             toolbar.addToolbarItems([
                 ToolbarItem(
                     id: "\(id).toolbar",
-                    title: LumiPluginLocalization.string("Projects", bundle: .module),
+                    title: pluginLocalization.string("Projects"),
                     placement: .center,
                     category: .project,
                     order: 0
@@ -164,7 +164,7 @@ public final class ProjectsPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
             settings.addEntries([
                 SettingEntryItem(
                     id: "\(id).settings",
-                    title: LumiPluginLocalization.string("Projects", bundle: .module),
+                    title: pluginLocalization.string("Projects"),
                     systemImage: "folder",
                     order: order
                 ) {

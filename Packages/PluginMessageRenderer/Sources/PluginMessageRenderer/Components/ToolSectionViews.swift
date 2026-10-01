@@ -21,7 +21,7 @@ struct LoadingToolSectionView: View {
             ProgressView()
                 .controlSize(.small)
 
-            Text(verbatim: LumiPluginLocalization.string("查询结果中...", bundle: .module))
+            Text(verbatim: pluginLocalization.string("查询结果中..."))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
         }
@@ -40,7 +40,7 @@ struct ToolFailureNoticeView: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundColor(theme.error)
 
-            Text(verbatim: LumiPluginLocalization.string("工具执行失败", bundle: .module))
+            Text(verbatim: pluginLocalization.string("工具执行失败"))
                 .font(.appCaptionEmphasized)
                 .foregroundColor(theme.error)
         }

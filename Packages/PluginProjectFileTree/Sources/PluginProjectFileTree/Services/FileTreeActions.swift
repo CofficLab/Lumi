@@ -26,14 +26,14 @@ enum FileTreeActions {
 
         let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
         textField.stringValue = defaultName
-        textField.placeholderString = defaultName.isEmpty ? LumiPluginLocalization.string("name", bundle: .module) : defaultName
+        textField.placeholderString = defaultName.isEmpty ? pluginLocalization.string("name") : defaultName
         // 预填时全选，方便整体替换
         textField.selectText(nil)
         alert.accessoryView = textField
         alert.window.initialFirstResponder = textField
 
         alert.addButton(withTitle: confirmButton)
-        alert.addButton(withTitle: LumiPluginLocalization.string("Cancel", bundle: .module))
+        alert.addButton(withTitle: pluginLocalization.string("Cancel"))
 
         // 运行模态弹窗，回车等价于点确认
         if alert.runModal() == .alertFirstButtonReturn {
@@ -50,15 +50,12 @@ enum FileTreeActions {
         let alert = NSAlert()
         alert.alertStyle = .warning
         alert.messageText = String(
-            format: LumiPluginLocalization.string("Are you sure you want to delete \"%@\"?", bundle: .module),
+            format: pluginLocalization.string("Are you sure you want to delete \"%@\"?"),
             url.lastPathComponent
         )
-        alert.informativeText = LumiPluginLocalization.string(
-            "This item will be moved to the Trash.",
-            bundle: .module
-        )
-        alert.addButton(withTitle: LumiPluginLocalization.string("Move to Trash", bundle: .module))
-        alert.addButton(withTitle: LumiPluginLocalization.string("Cancel", bundle: .module))
+        alert.informativeText = pluginLocalization.string("This item will be moved to the Trash.")
+        alert.addButton(withTitle: pluginLocalization.string("Move to Trash"))
+        alert.addButton(withTitle: pluginLocalization.string("Cancel"))
         return alert.runModal() == .alertFirstButtonReturn
     }
 }

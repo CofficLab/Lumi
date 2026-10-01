@@ -17,8 +17,8 @@ public struct MemorySettingsView: View {
 
     public var body: some View {
         PluginSettingsScaffold(
-            title: LumiPluginLocalization.string("Memory Monitor", bundle: .module),
-            subtitle: LumiPluginLocalization.string("Track Lumi's memory usage over time", bundle: .module),
+            title: pluginLocalization.string("Memory Monitor"),
+            subtitle: pluginLocalization.string("Track Lumi's memory usage over time"),
             showHeader: true
         ) {
             // System Memory Section
@@ -55,7 +55,7 @@ public struct MemorySettingsView: View {
     @ViewBuilder
     private var lumiMemorySection: some View {
         AppSettingsSection(
-            title: LumiPluginLocalization.string("Lumi Memory Usage", bundle: .module),
+            title: pluginLocalization.string("Lumi Memory Usage"),
             spacing: 12
         ) {
             lumiMemoryCard
@@ -70,7 +70,7 @@ public struct MemorySettingsView: View {
         AppCard {
             VStack(spacing: 12) {
                 HStack {
-                    Text(LumiPluginLocalization.string("System Memory", bundle: .module))
+                    Text(pluginLocalization.string("System Memory"))
                         .font(.appBody)
                         .bold()
                     Spacer()
@@ -101,10 +101,10 @@ public struct MemorySettingsView: View {
 
     private var timeRangeSelector: some View {
         AppCard {
-            AppSettingsSection(title: LumiPluginLocalization.string("Time Range", bundle: .module)) {
+            AppSettingsSection(title: pluginLocalization.string("Time Range")) {
                 AppSettingsRow {
                     HStack {
-                        Text(LumiPluginLocalization.string("Period", bundle: .module))
+                        Text(pluginLocalization.string("Period"))
                             .font(.appBody)
                         Spacer()
                         Picker("", selection: $systemMemoryTimeRange) {
@@ -126,9 +126,9 @@ public struct MemorySettingsView: View {
     private var memoryChartCard: some View {
         AppCard {
             AppSettingsSection(
-                title: LumiPluginLocalization.string("Memory Usage History", bundle: .module),
+                title: pluginLocalization.string("Memory Usage History"),
                 subtitle: viewModel.isRecording
-                    ? LumiPluginLocalization.string("Recording", bundle: .module)
+                    ? pluginLocalization.string("Recording")
                     : nil,
                 spacing: 12
             ) {
@@ -146,7 +146,7 @@ public struct MemorySettingsView: View {
 
     private var statisticsCard: some View {
         AppCard {
-            AppSettingsSection(title: LumiPluginLocalization.string("Statistics", bundle: .module)) {
+            AppSettingsSection(title: pluginLocalization.string("Statistics")) {
                 LazyVGrid(columns: [
                     GridItem(.flexible()),
                     GridItem(.flexible()),
@@ -154,25 +154,25 @@ public struct MemorySettingsView: View {
                     GridItem(.flexible())
                 ], spacing: 12) {
                     StatisticItem(
-                        title: LumiPluginLocalization.string("Average", bundle: .module),
+                        title: pluginLocalization.string("Average"),
                         value: String(format: "%.1f%%", viewModel.systemStatistics.average),
                         icon: "chart.bar.fill"
                     )
 
                     StatisticItem(
-                        title: LumiPluginLocalization.string("Peak", bundle: .module),
+                        title: pluginLocalization.string("Peak"),
                         value: String(format: "%.1f%%", viewModel.systemStatistics.peak),
                         icon: "arrow.up.circle.fill"
                     )
 
                     StatisticItem(
-                        title: LumiPluginLocalization.string("Minimum", bundle: .module),
+                        title: pluginLocalization.string("Minimum"),
                         value: String(format: "%.1f%%", viewModel.systemStatistics.minimum),
                         icon: "arrow.down.circle.fill"
                     )
 
                     StatisticItem(
-                        title: LumiPluginLocalization.string("Data Points", bundle: .module),
+                        title: pluginLocalization.string("Data Points"),
                         value: "\(viewModel.systemDataPointCount)",
                         icon: "circle.grid.3x3.fill"
                     )
@@ -190,7 +190,7 @@ public struct MemorySettingsView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "app.fill")
                             .foregroundColor(theme.primary)
-                        Text(LumiPluginLocalization.string("Lumi Memory", bundle: .module))
+                        Text(pluginLocalization.string("Lumi Memory"))
                             .font(.appBody)
                             .bold()
                     }
@@ -229,7 +229,7 @@ public struct MemorySettingsView: View {
     private var lumiMemoryChartCard: some View {
         AppCard {
             AppSettingsSection(
-                title: LumiPluginLocalization.string("Lumi Memory History", bundle: .module),
+                title: pluginLocalization.string("Lumi Memory History"),
                 spacing: 12
             ) {
                 LumiMemoryChartView(
@@ -245,7 +245,7 @@ public struct MemorySettingsView: View {
 
     private var lumiMemoryStatisticsCard: some View {
         AppCard {
-            AppSettingsSection(title: LumiPluginLocalization.string("Statistics", bundle: .module)) {
+            AppSettingsSection(title: pluginLocalization.string("Statistics")) {
                 LazyVGrid(columns: [
                     GridItem(.flexible()),
                     GridItem(.flexible()),
@@ -253,25 +253,25 @@ public struct MemorySettingsView: View {
                     GridItem(.flexible())
                 ], spacing: 12) {
                     StatisticItem(
-                        title: LumiPluginLocalization.string("Average", bundle: .module),
+                        title: pluginLocalization.string("Average"),
                         value: viewModel.lumiStatistics.averageFormatted,
                         icon: "chart.bar.fill"
                     )
 
                     StatisticItem(
-                        title: LumiPluginLocalization.string("Peak", bundle: .module),
+                        title: pluginLocalization.string("Peak"),
                         value: viewModel.lumiStatistics.peakFormatted,
                         icon: "arrow.up.circle.fill"
                     )
 
                     StatisticItem(
-                        title: LumiPluginLocalization.string("Minimum", bundle: .module),
+                        title: pluginLocalization.string("Minimum"),
                         value: viewModel.lumiStatistics.minimumFormatted,
                         icon: "arrow.down.circle.fill"
                     )
 
                     StatisticItem(
-                        title: LumiPluginLocalization.string("Data Points", bundle: .module),
+                        title: pluginLocalization.string("Data Points"),
                         value: "\(viewModel.lumiDataPointCount)",
                         icon: "circle.grid.3x3.fill"
                     )

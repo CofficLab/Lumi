@@ -6,6 +6,11 @@ import os
 /// 子类只需提供：
 /// - `providerInfo`（模型列表、协议格式、API Key storage key）
 /// - `openAIConfiguration` 或 `anthropicConfiguration`（对应协议的端点配置）
+///
+/// 模型列表获取策略由子类自行决定：
+/// - 静态子类：使用默认 `availableModels`（返回 `providerInfo.models`）。
+/// - 远程子类：override `availableModels` / `refreshModels` 等，或继承
+///   `RemoteModelVendorProvider` 便利基类获得开箱即用实现。
 @MainActor
 open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
 
@@ -26,6 +31,23 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
     }
 
     public var providerID: String { providerInfo.id }
+
+    // MARK: - 模型列表（默认静态实现；子类自行 override 决定获取策略）
+
+    /// 默认静态实现：模型列表来自注册时的 `providerInfo.models`。
+    ///
+    /// 以 `open` 声明（而非协议扩展默认），保证远程子类的 override
+    /// 能通过 `any SuperLLMProvider` 动态派发到。
+    open var availableModels: [LLMModelInfo] { providerInfo.models }
+
+    /// 默认空操作（静态供应商无远程源）。
+    open func refreshModels() async throws {}
+
+    /// 默认无远程模型源。
+    open var usesRemoteModelList: Bool { false }
+
+    /// 默认无同步记录。
+    open var lastModelSyncDate: Date? { nil }
 
     // MARK: - LLMProviding
 

@@ -9,7 +9,7 @@ public struct NoProjectView: View {
             Image(systemName: "folder")
                 .font(.system(size: 24))
                 .foregroundColor(.secondary.opacity(0.5))
-            Text(LumiPluginLocalization.string("No project", bundle: .module))
+            Text(pluginLocalization.string("No project"))
                 .font(.system(size: 11))
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }

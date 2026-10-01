@@ -14,10 +14,10 @@ struct DisplayControlLocalizationTests {
     @Test("loads simplified Chinese strings from plugin bundle")
     func loadsSimplifiedChineseStrings() {
         let locale = Locale(identifier: "zh-Hans")
-        #expect(LumiPluginLocalization.string("Display Control", bundle: .module, locale: locale) == "显示器控制")
-        #expect(LumiPluginLocalization.string("Brightness", bundle: .module, locale: locale) == "亮度")
-        #expect(LumiPluginLocalization.string("Restore Defaults", bundle: .module, locale: locale) == "恢复默认值")
-        #expect(LumiPluginLocalization.string("Display Control", bundle: .module, locale: Locale(identifier: "zh_CN")) == "显示器控制")
+        #expect(pluginLocalization.string("Display Control", locale: locale) == "显示器控制")
+        #expect(pluginLocalization.string("Brightness", locale: locale) == "亮度")
+        #expect(pluginLocalization.string("Restore Defaults", locale: locale) == "恢复默认值")
+        #expect(pluginLocalization.string("Display Control", locale: Locale(identifier: "zh_CN")) == "显示器控制")
     }
 
     @Test("string catalog defines required languages")

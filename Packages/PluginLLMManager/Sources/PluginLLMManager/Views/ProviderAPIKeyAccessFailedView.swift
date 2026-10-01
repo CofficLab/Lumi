@@ -35,13 +35,13 @@ struct ProviderAPIKeyAccessFailedView: View {
                 Spacer(minLength: 8)
             }
 
-            Text(LumiPluginLocalization.string("Lumi could not read the saved API Key from the system Keychain. The key was not treated as missing.", bundle: .module))
+            Text(pluginLocalization.string("Lumi could not read the saved API Key from the system Keychain. The key was not treated as missing."))
                 .font(.appCaption)
                 .foregroundStyle(theme.textSecondary)
 
             if let providerWebsiteURL = viewModel.providerWebsiteURL {
                 Link(destination: providerWebsiteURL) {
-                    Label(LumiPluginLocalization.string("Open provider website", bundle: .module), systemImage: "arrow.up.right.square")
+                    Label(pluginLocalization.string("Open provider website"), systemImage: "arrow.up.right.square")
                         .font(.appCaption)
                 }
                 .buttonStyle(.plain)
@@ -75,7 +75,7 @@ struct ProviderAPIKeyAccessFailedView: View {
             if viewModel.providerAvailable {
                 HStack(spacing: 8) {
                     AppButton(
-                        LumiPluginLocalization.string("Save API Key", bundle: .module),
+                        pluginLocalization.string("Save API Key"),
                         systemImage: "checkmark",
                         style: .primary,
                         size: .small
@@ -85,7 +85,7 @@ struct ProviderAPIKeyAccessFailedView: View {
                     .disabled(viewModel.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
                     AppButton(
-                        LumiPluginLocalization.string("Recheck Keychain", bundle: .module),
+                        pluginLocalization.string("Recheck Keychain"),
                         systemImage: "arrow.clockwise",
                         size: .small
                     ) {
@@ -94,7 +94,7 @@ struct ProviderAPIKeyAccessFailedView: View {
                     .disabled(viewModel.isChecking)
 
                     if viewModel.didSaveAPIKey {
-                        Label(LumiPluginLocalization.string("Saved", bundle: .module), systemImage: "checkmark.circle.fill")
+                        Label(pluginLocalization.string("Saved"), systemImage: "checkmark.circle.fill")
                             .font(.appCaption)
                             .foregroundStyle(theme.success)
                     }
@@ -111,7 +111,7 @@ struct ProviderAPIKeyAccessFailedView: View {
             }
 
             if viewModel.keyIsReadable {
-                Text(LumiPluginLocalization.string("The API Key is readable again. Resend the message to continue.", bundle: .module))
+                Text(pluginLocalization.string("The API Key is readable again. Resend the message to continue."))
                     .font(.appCaption)
                     .foregroundStyle(theme.success)
             } else if !viewModel.isChecking {

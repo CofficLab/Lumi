@@ -337,11 +337,11 @@ extension CaffeinateManager {
         var displayName: String {
             switch self {
             case .indefinite:
-                return LumiPluginLocalization.string("Indefinite", bundle: .module)
+                return pluginLocalization.string("Indefinite")
             case let .minutes(m):
-                return "\(m) \(LumiPluginLocalization.string("Minutes", bundle: .module))"
+                return "\(m) \(pluginLocalization.string("Minutes"))"
             case let .hours(h):
-                return "\(h) \(LumiPluginLocalization.string("Hours", bundle: .module))"
+                return "\(h) \(pluginLocalization.string("Hours"))"
             }
         }
 

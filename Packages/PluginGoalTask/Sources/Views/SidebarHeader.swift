@@ -53,7 +53,7 @@ struct SidebarHeader: View {
             }
         } else {
             Label(
-                LumiPluginLocalization.string("Goal", bundle: .module),
+                pluginLocalization.string("Goal"),
                 systemImage: "target"
             )
             .font(.headline)
@@ -79,8 +79,8 @@ struct SidebarHeader: View {
                     )
             }
             .buttonStyle(.plain)
-            .help(LumiPluginLocalization.string("Goal description", bundle: .module))
-            .accessibilityLabel(LumiPluginLocalization.string("Goal description", bundle: .module))
+            .help(pluginLocalization.string("Goal description"))
+            .accessibilityLabel(pluginLocalization.string("Goal description"))
             .popover(isPresented: $showDescriptionPopover, arrowEdge: .bottom) {
                 GoalDescriptionPopoverContent(text: description)
             }
@@ -97,6 +97,6 @@ struct SidebarHeader: View {
                 .font(.caption)
         }
         .buttonStyle(.borderless)
-        .help(LumiPluginLocalization.string(isCollapsed ? "Expand" : "Collapse", bundle: .module))
+        .help(pluginLocalization.string(isCollapsed ? "Expand" : "Collapse"))
     }
 }

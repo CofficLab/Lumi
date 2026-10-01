@@ -43,12 +43,12 @@ public struct RegistryCard: View {
                         }
                         .buttonStyle(.plain)
                         .foregroundColor(theme.textSecondary)
-                        .help(LumiPluginLocalization.string("Refresh", bundle: .module))
+                        .help(pluginLocalization.string("Refresh"))
                     }
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(verbatim: LumiPluginLocalization.string("Current Registry", bundle: .module))
+                    Text(verbatim: pluginLocalization.string("Current Registry"))
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
 
@@ -65,7 +65,7 @@ public struct RegistryCard: View {
                         .onTapGesture {
                             NSPasteboard.general.clearContents()
                             NSPasteboard.general.setString(currentUrl, forType: .string)
-                            viewModel.showToast(message: LumiPluginLocalization.string("Copied to clipboard", bundle: .module))
+                            viewModel.showToast(message: pluginLocalization.string("Copied to clipboard"))
                         }
                 }
 
@@ -87,7 +87,7 @@ public struct RegistryCard: View {
                 } label: {
                     HStack {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                        Text(verbatim: LumiPluginLocalization.string("Switch Source", bundle: .module))
+                        Text(verbatim: pluginLocalization.string("Switch Source"))
                     }
                     .frame(maxWidth: .infinity)
                 }

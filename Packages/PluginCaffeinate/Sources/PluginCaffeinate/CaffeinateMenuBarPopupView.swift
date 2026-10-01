@@ -15,11 +15,11 @@ struct CaffeinateMenuBarPopupView: View {
     }
 
     private let quickDurations: [(title: String, value: TimeInterval)] = [
-        (LumiPluginLocalization.string("Indefinite", bundle: .module), 0),
-        (LumiPluginLocalization.string("10 Min", bundle: .module), 600),
-        (LumiPluginLocalization.string("1 Hour", bundle: .module), 3600),
-        (LumiPluginLocalization.string("2 Hours", bundle: .module), 7200),
-        (LumiPluginLocalization.string("5 Hours", bundle: .module), 18000),
+        (pluginLocalization.string("Indefinite"), 0),
+        (pluginLocalization.string("10 Min"), 600),
+        (pluginLocalization.string("1 Hour"), 3600),
+        (pluginLocalization.string("2 Hours"), 7200),
+        (pluginLocalization.string("5 Hours"), 18000),
     ]
 
     /// 当前生效的快捷操作，由 manager 的真实状态推导，确保重新打开弹窗时对号仍然正确
@@ -82,7 +82,7 @@ struct CaffeinateMenuBarPopupView: View {
         // 中的 miniTrendView 风格一致。
         VStack(spacing: 0) {
             MenuBarActionRow(
-                title: LumiPluginLocalization.string("Prevent sleep & Keep screen on", bundle: .module),
+                title: pluginLocalization.string("Prevent sleep & Keep screen on"),
                 icon: "sun.max.fill",
                 color: Color(hex: "FF9F0A"),
                 isSelected: activeAction == .systemAndDisplay,
@@ -95,7 +95,7 @@ struct CaffeinateMenuBarPopupView: View {
                 .padding(.leading, 36)
 
             MenuBarActionRow(
-                title: LumiPluginLocalization.string("Prevent sleep & Allow screen off", bundle: .module),
+                title: pluginLocalization.string("Prevent sleep & Allow screen off"),
                 icon: "moon.fill",
                 color: .blue,
                 isSelected: activeAction == .systemOnly,
@@ -108,7 +108,7 @@ struct CaffeinateMenuBarPopupView: View {
                 .padding(.leading, 36)
 
             MenuBarActionRow(
-                title: LumiPluginLocalization.string("Prevent sleep & Turn off screen", bundle: .module),
+                title: pluginLocalization.string("Prevent sleep & Turn off screen"),
                 icon: "power",
                 color: Color(hex: "7C6FFF"),
                 isSelected: activeAction == .turnOffDisplay,

@@ -144,7 +144,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
 
         activityBar.addItems([ActivityBarItem(
             id: entryID,
-            title: LumiPluginLocalization.string("Chat", bundle: .module),
+            title: pluginLocalization.string("Chat"),
             systemImage: "bubble.left.and.bubble.right.fill",
             order: order,
             ownerPluginID: id

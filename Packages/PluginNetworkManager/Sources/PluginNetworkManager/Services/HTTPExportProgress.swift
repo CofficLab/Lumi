@@ -18,7 +18,7 @@ public final class HTTPExportProgress: ObservableObject {
 
     /// Localized, compact text for the status bar, e.g. "Exporting 3/42".
     public var statusText: String {
-        LumiPluginLocalization.string("Exporting", bundle: .module) + " \(completed)/\(total)"
+        pluginLocalization.string("Exporting") + " \(completed)/\(total)"
     }
 
     public func begin(total: Int) {

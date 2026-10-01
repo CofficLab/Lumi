@@ -20,8 +20,8 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
     public let order = 6
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.device-info",
-        name: LumiPluginLocalization.string("Device", bundle: .module),
-        description: LumiPluginLocalization.string("View device information and hardware status.", bundle: .module),
+        name: pluginLocalization.string("Device"),
+        description: pluginLocalization.string("View device information and hardware status."),
         category: .system,
         stage: .stable,
         policy: .disabledByDefault
@@ -55,7 +55,7 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
             let entry = SettingEntryItem(
                 id: "\(id).memory-settings",
-                title: LumiPluginLocalization.string("Memory Monitor", bundle: .module),
+                title: pluginLocalization.string("Memory Monitor"),
                 systemImage: "memorychip",
                 order: order
             ) {

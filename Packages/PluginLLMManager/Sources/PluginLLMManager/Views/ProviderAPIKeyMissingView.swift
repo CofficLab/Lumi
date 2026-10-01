@@ -43,19 +43,16 @@ struct ProviderAPIKeyMissingView: View {
             }
 
             Text(
-                LumiPluginLocalization.string(
-                    viewModel.keyIsReadable
+                pluginLocalization.string(viewModel.keyIsReadable
                         ? "The API Key is readable again. Resend the message to continue."
-                        : "Enter an API Key here, then resend your message.",
-                    bundle: .module
-                )
+                        : "Enter an API Key here, then resend your message.")
             )
                 .font(.appCaption)
                 .foregroundStyle(theme.textSecondary)
 
             if let providerWebsiteURL = viewModel.providerWebsiteURL {
                 Link(destination: providerWebsiteURL) {
-                    Label(LumiPluginLocalization.string("Open provider website", bundle: .module), systemImage: "arrow.up.right.square")
+                    Label(pluginLocalization.string("Open provider website"), systemImage: "arrow.up.right.square")
                         .font(.appCaption)
                 }
                 .buttonStyle(.plain)
@@ -90,7 +87,7 @@ struct ProviderAPIKeyMissingView: View {
             if viewModel.providerAvailable, !viewModel.keyIsReadable {
                 HStack(spacing: 8) {
                     AppButton(
-                        LumiPluginLocalization.string("Save API Key", bundle: .module),
+                        pluginLocalization.string("Save API Key"),
                         systemImage: "checkmark",
                         style: .primary,
                         size: .small
@@ -100,7 +97,7 @@ struct ProviderAPIKeyMissingView: View {
                     .disabled(viewModel.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
                     if viewModel.didSaveAPIKey {
-                        Label(LumiPluginLocalization.string("Saved", bundle: .module), systemImage: "checkmark.circle.fill")
+                        Label(pluginLocalization.string("Saved"), systemImage: "checkmark.circle.fill")
                             .font(.appCaption)
                             .foregroundStyle(theme.success)
                     }
@@ -115,7 +112,7 @@ struct ProviderAPIKeyMissingView: View {
             }
 
             if !viewModel.providerAvailable {
-                Text(LumiPluginLocalization.string("Provider is not registered yet. Open Settings to configure this key.", bundle: .module))
+                Text(pluginLocalization.string("Provider is not registered yet. Open Settings to configure this key."))
                     .font(.appCaption)
                     .foregroundStyle(theme.textSecondary)
             }
@@ -129,7 +126,7 @@ struct ProviderAPIKeyMissingView: View {
                         .padding(.top, 4)
                 }
             } label: {
-                Text(LumiPluginLocalization.string("Details", bundle: .module))
+                Text(pluginLocalization.string("Details"))
                     .font(.appCaption)
                     .foregroundStyle(theme.textSecondary)
             }

@@ -99,7 +99,7 @@ struct GoalRowView: View {
     @ViewBuilder
     private var blockedReasonRow: some View {
         if let blockedReason = goal.blockedReason, goal.status == .blocked {
-            Text(String(format: LumiPluginLocalization.string("⚠️ %@", bundle: .module), blockedReason))
+            Text(String(format: pluginLocalization.string("⚠️ %@"), blockedReason))
                 .font(.caption2)
                 .foregroundStyle(.orange)
                 .lineLimit(2)

@@ -26,7 +26,7 @@ public final class WebFetchPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public var name: String {
-        LumiPluginLocalization.string("WebFetch", bundle: .module)
+        pluginLocalization.string("WebFetch")
     }
 
 

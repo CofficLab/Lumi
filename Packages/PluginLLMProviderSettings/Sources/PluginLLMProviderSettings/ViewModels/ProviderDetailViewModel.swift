@@ -25,6 +25,7 @@ final class ProviderDetailViewModel: ObservableObject {
 
     private let capability: any ProviderSettingsCapability
     private var customCancellable: AnyCancellable?
+    private var modelsCancellable: AnyCancellable?
 
     init(
         capability: any ProviderSettingsCapability,
@@ -39,7 +40,8 @@ final class ProviderDetailViewModel: ObservableObject {
         providerDescription = info?.description ?? ""
         websiteURL = info?.websiteURL
         isLocal = info?.isLocal ?? false
-        models = info?.models ?? []
+        // 优先读取动态模型池（远程型：availableModels；静态型：providerInfo.models）
+        models = capability.availableModels(for: providerID)
         selectedModelID = capability.selectedModelID
         downloadCapability = capability.makeModelDownloadCapability(for: providerID)
         isCustomProvider = capability.isCustomProvider(id: providerID)
@@ -47,6 +49,13 @@ final class ProviderDetailViewModel: ObservableObject {
         customCancellable = capability.customProviderConfigurationsPublisher.sink { [weak self] _ in
             self?.isCustomProvider = self?.capability.isCustomProvider(id: providerID) ?? false
         }
+        // 订阅远程模型刷新事件：当前 provider 刷新成功后刷新 models。
+        modelsCancellable = capability.modelsUpdatedPublisher
+            .filter { $0 == providerID }
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.models = self.capability.availableModels(for: providerID)
+            }
     }
 
     // MARK: - Derived

@@ -13,11 +13,11 @@ struct ScanControlBar: View {
     /// 目录树扫描控制栏
     init(forDirectoryTree viewModel: DiskManagerViewModel) {
         self.viewModel = viewModel
-        self.scanText = LumiPluginLocalization.string("Analyze Directory", bundle: .module)
-        self.scanningText = LumiPluginLocalization.string("Stop Analysis", bundle: .module)
+        self.scanText = pluginLocalization.string("Analyze Directory")
+        self.scanningText = pluginLocalization.string("Stop Analysis")
         self.icon = "folder.badge.plus"
         self.scanningIcon = "stop.circle"
-        self.description = LumiPluginLocalization.string("Scan directory: User Home", bundle: .module)
+        self.description = pluginLocalization.string("Scan directory: User Home")
     }
 
     var body: some View {

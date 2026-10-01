@@ -61,7 +61,7 @@ public struct SidebarView: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(LumiPluginLocalization.string("Goal & Tasks", bundle: .module))
+        .accessibilityLabel(pluginLocalization.string("Goal & Tasks"))
     }
 
     // MARK: - Blocked Reason
