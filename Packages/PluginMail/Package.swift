@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "PluginMail", targets: ["PluginMail"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
@@ -16,12 +17,20 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitKeychain"),
         .package(path: "../KitMail"),
+        .package(path: "../ProviderActivityBar"),
+        .package(path: "../ProviderChatSection"),
     ],
     targets: [
         .target(
             name: "PluginMail",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderContentView", package: "LumiProviders"),
+                .product(name: "ProviderRailView", package: "LumiProviders"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "ProviderToolbar", package: "LumiProviders"),
+                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),

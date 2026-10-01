@@ -1,6 +1,11 @@
 import Foundation
 import KernelCore
 import ProviderSettingView
+import ProviderContentView
+import ProviderChatSection
+import ProviderRootView
+import ProviderToolbar
+import ProviderActivityBar
 import SwiftUI
 import os
 import LumiLoggingKit
@@ -9,8 +14,9 @@ import LumiLoggingKit
 ///
 /// 职责：
 /// - 注册「邮件账户」设置入口（账户 CRUD / 连接测试 / 删除）；
-/// - 持有 Session/Sync 服务生命周期（Phase 2 Task 2.3），
-///   `onShutdown` 断开全部会话。
+/// - 装配 ActivityBar 入口：激活时切换三栏工作区并隐藏 chat、加工具栏标题，
+///   还原时全部撤销（参照 DatabaseManagerSuperPlugin 对称写法）；
+/// - 持有 Session/Cache/Sync 服务生命周期，`onShutdown` 断开全部会话并回收入口。
 @MainActor
 public final class MailPlugin: SuperPlugin, SuperLog {
     public nonisolated static let logger = Logger(
@@ -30,17 +36,15 @@ public final class MailPlugin: SuperPlugin, SuperLog {
     )
 
     /// 会话池（懒连接 / 断线重连 / onShutdown 全断）。
-    private let sessionManager = MailSessionManager()
+    public let sessionManager = MailSessionManager()
+    /// 本地缓存（SwiftData，插件数据目录）。
+    public lazy var cacheService = MailCacheService(databaseDirectory: MailPluginRuntime.dataDirectory())
 
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
-            // 设置视图未注册：优雅降级，不贡献入口。
-            return
-        }
         let sessionManager = self.sessionManager
-        settings.addEntries([
+        kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
                 id: "\(id).settings",
                 title: pluginLocalization.string("Mail"),
@@ -50,11 +54,67 @@ public final class MailPlugin: SuperPlugin, SuperLog {
                 MailSettingsView(sessionManager: sessionManager)
             },
         ])
+
+        // ActivityBar 入口：激活/还原对称装配。
+        let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let cache = cacheService
+        let pluginID = id
+        kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([
+            ActivityBarItem(
+                id: "\(id).entry",
+                title: metadata.name,
+                systemImage: "envelope",
+                order: order,
+                ownerPluginID: id
+            ) { state in
+                if state == .activated {
+                    chat?.setVisible(false)
+                    rootView?.setContentHeaderViewHidden(true)
+                    contentView?.setContentView(
+                        AnyView(
+                            MailWorkspaceView(
+                                sessionManager: sessionManager,
+                                cache: cache
+                            )
+                        )
+                    )
+                    toolbar?.addToolbarItems([
+                        ToolbarItem(
+                            id: "\(pluginID).title",
+                            title: self.metadata.name,
+                            placement: .center,
+                            category: .global,
+                            order: 0
+                        ) {
+                            Text(self.metadata.name).font(.headline)
+                        },
+                    ])
+                } else {
+                    chat?.setVisible(true)
+                    rootView?.setContentHeaderViewHidden(false)
+                    toolbar?.removeToolbarItems(ids: ["\(pluginID).title"])
+                    contentView?.setContentView(nil)
+                }
+            },
+        ])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).settings"])
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
+        activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+            kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
+            kernel.resolveProvider((any ToolbarProviding).self)?
+                .removeToolbarItems(ids: ["\(id).title"])
+            kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
+        }
         Task {
             await sessionManager.disconnectAll()
         }

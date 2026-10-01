@@ -68,7 +68,8 @@ public final class MailCacheItem {
     }
 
     /// 跨 actor 返回的安全投影（`MailCacheService` 对外暴露用）。
-    public struct Summary: Sendable, Equatable {
+    public struct Summary: Sendable, Equatable, Identifiable {
+        public var id: UInt64 { uid }
         public var uid: UInt64
         public var subject: String
         public var fromDisplayName: String?
