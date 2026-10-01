@@ -218,7 +218,7 @@ public let metadata = PluginMetadata(
 - 新建 `Packages/KitMail` 骨架（swift-tools 5.9，`.macOS(.v14)`）；
 - 尝试以 SPM 引入 MailCore2（binary target / 官方 xcframework release /
   vendored 源码三选一，记录实际可行路径）；`swift build` 通过。
-- 验证：空包编译；依赖解析结果写入本文件「Spike 结论」小节。
+- 验证：空包编译；依赖解析结果写入本文件「Spike 结论」小节。✅ 2026-10-01 完成
 
 **Task 0.2 — 真实服务器 PoC**
 - 用测试账户（Gmail 应用密码 / QQ 授权码 至少一家，最好两家）完成：
@@ -227,7 +227,53 @@ public let metadata = PluginMetadata(
 - 验证：脚本输出各步骤结果；任一步失败即触发第 4 节回退决策（B 或 C），
   并把失败原因写回本文件。
 
-**Spike 结论**：（执行时填写）
+**Spike 结论**：（2026-10-01 执行，Task 0.1 ✅）
+
+**1. 官方 SPM binary target → 不可用（Apple Silicon）**
+- 官方 `Package.swift` 指向 `mailcore2/bin/MailCore2-2020-09-24.xcframework.zip`
+  （checksum 已核对一致），但该产物**仅含 macos-x86_64**（另有
+  ios-arm64_armv7 / ios-x86_64-simulator，无 macos-arm64、无 ios-arm64-simulator）。
+- 本机为 Apple M3（arm64），SPM binary target 不做 Rosetta 转译，
+  官方产物无法链接。**结论：官方 binary 方案作废。**
+
+**2. 社区现成分发 → 无可用**
+- 检索未发现含 macos-arm64 slice 的社区 SPM 分发；Swift Package Index 上
+  同名 `LiveUI/MailCore` 是 Vapor 邮件封装，与本项目无关。
+
+**3. vendored 源码构建 → 可行（采用）**
+- 从 `MailCore/mailcore2`（master @ 2026-10-01）源码 + 子模块
+  （ctemplate / libetpan / tidy-html5）构建出 **macos-arm64** 动态框架：
+  - 依赖：先构建 `libetpan.a`、`libctemplate.a`（arm64，`MACOSX_DEPLOYMENT_TARGET=14.0`），
+    按 macOS 工程实际命名放入 `Externals/libetpan-osx/`、`Externals/ctemplate-osx/`；
+  - 工程：`build-mac/mailcore2.xcodeproj` scheme `mailcore osx`，
+    `ARCHS=arm64 MACOSX_DEPLOYMENT_TARGET=14.0` 覆盖（原值 10.8 超出 Xcode 27 支持范围）；
+  - **源码兼容补丁（Xcode 27 / macOS 27 SDK，共 3 处，均 <10 行）**：
+    1. `src/core/basetypes/MCICUTypes.h`：C++11+ 分支 `typedef char16_t UChar`
+       改为 `typedef unsigned short UChar`，与 `umachine.h` 的 macOS 分支一致
+       （否则 `umachine.h:310` 与先前定义 redefinition 冲突）；同时保证与
+       `CFStringCreateWithCharactersNoCopy`（UniChar = unsigned short）兼容；
+    2. `src/core/basetypes/MCString.cpp`：`structuredError` 回调第二参数
+       `const xmlError *` 去掉 const（新 SDK `xmlStructuredErrorFunc` 为非 const 签名）；
+    3. 工程 Copy Headers 仅声明 223 个头，漏拷贝 ActiveSync 等 319 个头：
+       构建后把 `src/` 下全部 `*.h`（540 个）补齐到框架 `Headers/` 目录
+       （构建期用 `OTHER_CFLAGS='$(inherited) -I<allheaders>'` 提供全量头）。
+- 产物：`MailCore.framework`（Mach-O arm64，16 MB），合并官方 iOS slices 后
+  `MailCore2.xcframework`（43 MB，4 slices）已 vendored 至
+  `Packages/KitMail/Vendor/MailCore2.xcframework`，SPM 本地 `.binaryTarget` 引入。
+- **集成验证**：`Packages/KitMail`（swift-tools 5.9）`swift build` 通过；
+  冒烟代码 `import MailCore` 成功，`MCOIMAPSession` / `folderInfoOperation` /
+  `fetchMessagesOperation(withFolder:requestKind:uids:)` /
+  `fetchMessageOperation(withFolder:uid:)` / `MCOMessageBuilder` 均可在 Swift 中调用。
+
+**4. 回退条件复核**
+- 三个回退触发条件（SPM 集成失败 / 真实服务器 PoC 失败 / 并发胶水 >1500 行）：
+  SPM 集成已通过；真实服务器 PoC（Task 0.2）待测试账户；并发适配按
+  `@unchecked Sendable` + 内部串行队列集中处理，规模远小于 1500 行。
+  **结论：维持 A 方案（MailCore2），继续 Phase 1。**
+
+**5. 可复现构建脚本**
+- 构建命令与补丁步骤见上；如需重构建，按第 3 节步骤即可（脚本可后续固化到
+  `Scripts/build-mailcore2-xcframework.sh`，当前一次性手工执行已记录）。
 
 ### Phase 1：KitMail 协议包
 
