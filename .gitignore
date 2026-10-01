@@ -50,6 +50,10 @@ playground.xcworkspace
 Packages/*/Package.resolved
 !Packages/FactoryLumiACP/Package.resolved
 
+# Xcode 为归档/构建生成的 SPM 缓存（repositories/artifacts/checkouts），
+# 可随时重建，不必入库。
+SourcePackages/
+
 # CocoaPods
 #
 # We recommend against adding the Pods directory to your .gitignore. However
