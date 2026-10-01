@@ -6,6 +6,7 @@ import ProviderChatSection
 import ProviderRootView
 import ProviderToolbar
 import ProviderActivityBar
+import ProviderToolManager
 import SwiftUI
 import os
 import LumiLoggingKit
@@ -39,6 +40,14 @@ public final class MailPlugin: SuperPlugin, SuperLog {
     public let sessionManager = MailSessionManager()
     /// 本地缓存（SwiftData，插件数据目录）。
     public lazy var cacheService = MailCacheService(databaseDirectory: MailPluginRuntime.dataDirectory())
+    /// 发送编排。
+    public lazy var composerService = MailComposerService(sessionManager: sessionManager)
+    /// Agent 工具服务。
+    public lazy var agentToolService = MailAgentToolService(
+        sessionManager: sessionManager,
+        cache: cacheService,
+        composer: composerService
+    )
 
     public init() {}
 
@@ -62,6 +71,13 @@ public final class MailPlugin: SuperPlugin, SuperLog {
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         let cache = cacheService
         let pluginID = id
+        let tools = kernel.resolveProvider((any ToolManagerProviding).self)
+        let agentService = agentToolService
+        tools?.add(MailListMessagesTool(service: agentService), pluginID: id)
+        tools?.add(MailReadMessageTool(service: agentService), pluginID: id)
+        tools?.add(MailSearchMessagesTool(service: agentService), pluginID: id)
+        tools?.add(MailSendMessageTool(service: agentService), pluginID: id)
+
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([
             ActivityBarItem(
                 id: "\(id).entry",
@@ -115,6 +131,11 @@ public final class MailPlugin: SuperPlugin, SuperLog {
                 .removeToolbarItems(ids: ["\(id).title"])
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
+        let tools = kernel.resolveProvider((any ToolManagerProviding).self)
+        tools?.remove(id: MailListMessagesTool.toolName)
+        tools?.remove(id: MailReadMessageTool.toolName)
+        tools?.remove(id: MailSearchMessagesTool.toolName)
+        tools?.remove(id: MailSendMessageTool.toolName)
         Task {
             await sessionManager.disconnectAll()
         }

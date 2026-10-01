@@ -19,6 +19,8 @@ let package = Package(
         .package(path: "../KitMail"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderChatSection"),
+        .package(path: "../KitAgentTool"),
+        .package(path: "../ProviderToolManager"),
     ],
     targets: [
         .target(
@@ -31,6 +33,8 @@ let package = Package(
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
+                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
