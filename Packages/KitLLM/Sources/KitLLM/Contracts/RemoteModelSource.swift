@@ -2,8 +2,8 @@ import Foundation
 
 /// LLM 供应商远程模型源的端点配置。
 ///
-/// 由继承 `RemoteModelVendorProvider` 的供应商 override `remoteModelSource`
-/// 声明；`usesRemoteModelList` 由 `RemoteModelVendorProvider` 根据本配置推导。
+/// 由需要远程模型能力的供应商（直接继承 `VendorLLMProvider`）自行组合使用；
+/// `usesRemoteModelList` 由供应商自行 override 返回。
 ///
 /// - 认证：优先复用供应商 `LLMProviderInfo.apiKeyStorageKey` 以
 ///   `Bearer` 方式注入；不需要认证的端点用 `auth == nil`。

@@ -93,11 +93,8 @@ struct CommandCodeProviderPluginTests {
     func goatPlanUsesRemoteModelSource() throws {
         let provider = GoatPlanProvider()
 
+        // 标记为远程型
         #expect(provider.usesRemoteModelList == true)
-        let source = try #require(provider.remoteModelSource)
-        #expect(source.endpoint == URL(string: "https://api.commandcode.ai/provider/v1/models")!)
-        // /models 端点公开可读，无需鉴权（也避免后台刷新读 Keychain）
-        #expect(source.apiKeyStorageKey == nil)
 
         // 初始状态：未拉取过，lastModelSyncDate 为 nil
         #expect(provider.lastModelSyncDate == nil)

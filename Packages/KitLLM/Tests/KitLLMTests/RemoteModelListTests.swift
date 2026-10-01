@@ -143,48 +143,45 @@ struct RemoteModelListTests {
         #expect(provider.availableModels.map(\.id) == ["static-a", "static-b"])
     }
 
-    @Test("RemoteModelVendorProvider:未配 endpoint 时退化为静态行为")
+    @Test("RemoteModelMerger:远程空时返回基线")
     @MainActor
-    func remoteConvenienceBaseWithoutSource() async {
-        let provider = RemoteBaseTestProvider(source: nil)
-        #expect(provider.usesRemoteModelList == false)
-        #expect(provider.availableModels.map(\.id) == ["base-a"])
-        #expect(provider.lastModelSyncDate == nil)
-
-        // 无远程源时 refresh 为空操作，不抛错
-        try? await provider.refreshModels()
-        #expect(provider.availableModels.map(\.id) == ["base-a"])
+    func mergerEmptyRemoteReturnsBase() {
+        let base = [LLMModelInfo(id: "a"), LLMModelInfo(id: "b")]
+        let merged = RemoteModelMerger.merge(base: base, remote: [])
+        #expect(merged.map(\.id) == ["a", "b"])
     }
 
-    @Test("RemoteModelVendorProvider:配置 endpoint 后标记为远程型")
+    @Test("RemoteModelMerger:远程覆盖同 id 基线元数据")
     @MainActor
-    func remoteConvenienceBaseWithSource() {
-        let provider = RemoteBaseTestProvider(
-            source: RemoteModelSource(endpoint: URL(string: "https://example.com/models")!)
-        )
-        #expect(provider.usesRemoteModelList == true)
-        #expect(provider.remoteModelSource?.endpoint == URL(string: "https://example.com/models")!)
-        // 尚未拉取：先回退静态基线
-        #expect(provider.availableModels.map(\.id) == ["base-a"])
-    }
-}
+    func mergerRemoteOverridesBase() {
+        let base = [LLMModelInfo(id: "a", displayName: "A-base", contextWindowSize: 100)]
+        let remote = [LLMModelInfo(id: "a", displayName: "A-remote", contextWindowSize: 999)]
+        let merged = RemoteModelMerger.merge(base: base, remote: remote)
 
-/// RemoteModelVendorProvider 测试替身：endpoint 可注入。
-@MainActor
-private final class RemoteBaseTestProvider: RemoteModelVendorProvider {
-    private let injectedSource: RemoteModelSource?
-
-    init(source: RemoteModelSource?) {
-        self.injectedSource = source
-        super.init(info: LLMProviderInfo(
-            id: "remote-base-test",
-            displayName: "Remote Base Test",
-            defaultModel: "base-a",
-            models: [LLMModelInfo(id: "base-a")]
-        ))
+        #expect(merged.count == 1)
+        #expect(merged[0].displayName == "A-remote")
+        #expect(merged[0].contextWindowSize == 999)
     }
 
-    override var remoteModelSource: RemoteModelSource? { injectedSource }
+    @Test("RemoteModelMerger:远程新增模型追加在基线之后")
+    @MainActor
+    func mergerRemoteAppendedAfterBase() {
+        let base = [LLMModelInfo(id: "a"), LLMModelInfo(id: "b")]
+        let remote = [LLMModelInfo(id: "c"), LLMModelInfo(id: "d")]
+        let merged = RemoteModelMerger.merge(base: base, remote: remote)
+        #expect(merged.map(\.id) == ["a", "b", "c", "d"])
+    }
+
+    @Test("RemoteModelMerger:远程与基线交叉时按基线顺序输出，新增追加在后")
+    @MainActor
+    func mergerMixedOrder() {
+        let base = [LLMModelInfo(id: "a"), LLMModelInfo(id: "b"), LLMModelInfo(id: "c")]
+        let remote = [LLMModelInfo(id: "b", displayName: "B-remote"), LLMModelInfo(id: "d")]
+        let merged = RemoteModelMerger.merge(base: base, remote: remote)
+
+        #expect(merged.map(\.id) == ["a", "b", "c", "d"])
+        #expect(merged[1].displayName == "B-remote")
+    }
 }
 
 /// 最小静态供应商测试替身。
