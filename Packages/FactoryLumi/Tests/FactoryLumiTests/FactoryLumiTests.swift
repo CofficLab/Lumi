@@ -93,6 +93,16 @@ struct FactoryLumiTests {
         ])
     }
 
+    @Test("默认目录包含邮件插件（disabledByDefault）")
+    func defaultFactoryIncludesMailPlugin() throws {
+        let plugins = Dictionary(
+            uniqueKeysWithValues: DefaultPluginFactory().makePlugins().map { ($0.id, $0) }
+        )
+        let mail = try #require(plugins["com.coffic.lumi.plugin.mail"])
+        #expect(mail.metadata.policy == .disabledByDefault)
+        #expect(mail.metadata.category == .system)
+    }
+
     private final class AdditionalPlugin: SuperPlugin {
         let id = "test.additional-plugin"
         let metadata = PluginMetadata(
