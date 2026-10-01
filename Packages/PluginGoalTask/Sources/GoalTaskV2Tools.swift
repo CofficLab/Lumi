@@ -45,6 +45,67 @@ private enum GoalTaskToolSupport {
             GoalChangeCenter.shared.notify(conversationID: conversationID)
         }
     }
+
+    // MARK: - goal_id resolution
+
+    /// 解析失败时携带的面向模型的错误消息。
+    struct GoalResolutionError: Error, LocalizedError {
+        let message: String
+        var errorDescription: String? { message }
+    }
+
+    static func normalize(_ text: String) -> String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    static func goalListText(_ goals: [Goal]) -> String {
+        goals.map { "- [\($0.id)] **\($0.title)** (\($0.status.rawValue))" }.joined(separator: "\n")
+    }
+
+    /// 解析 `goal_id`，按三级回退：
+    /// 1. 精确 `goal.id` 匹配
+    /// 2. 会话内 `goal.title` 精确匹配（忽略大小写与首尾空白）
+    /// 3. 未提供 `goal_id` 时，解析会话内唯一活跃 goal
+    ///
+    /// 失败时返回面向模型的错误消息，**附本会话候选 goal 列表**，
+    /// 避免 "goal not found" 不可恢复。
+    static func resolveGoalId(
+        raw: String?,
+        conversationId: String?,
+        manager: GoalStateManager
+    ) async -> Result<String, GoalResolutionError> {
+        var scoped: [Goal] = []
+        if let conversationId { scoped = await manager.fetchGoals(conversationId: conversationId) }
+
+        if let raw, !raw.isEmpty {
+            if await manager.fetchGoal(id: raw) != nil { return .success(raw) }
+            let normalized = normalize(raw)
+            let byTitle = scoped.filter { normalize($0.title) == normalized }
+            if byTitle.count == 1, let goal = byTitle.first { return .success(goal.id) }
+            let candidates = byTitle.isEmpty ? scoped : byTitle
+            return .failure(GoalResolutionError(message: """
+            Error: goal not found: `\(raw)`
+
+            Available goals in this conversation:
+            \(candidates.isEmpty ? "- (none)" : goalListText(candidates))
+
+            Tip: pass the exact `goal_id` shown in create_goal's **Goal ID** line (or one listed above). An exact goal title is also accepted.
+            """))
+        }
+
+        let active = scoped.filter { ![Goal.GoalStatus.completed, .failed, .skipped].contains($0.status) }
+        if active.count == 1, let goal = active.first { return .success(goal.id) }
+        if active.isEmpty, scoped.count == 1, let goal = scoped.first { return .success(goal.id) }
+        let reason = active.count > 1 ? "multiple active goals found" : "goal_id is required"
+        return .failure(GoalResolutionError(message: """
+        Error: \(reason).
+
+        Available goals in this conversation:
+        \(scoped.isEmpty ? "- (none)" : goalListText(scoped))
+
+        Tip: pass a `goal_id` from create_goal's **Goal ID** line or one listed above.
+        """))
+    }
 }
 
 public struct CreateGoalV2Tool: SuperAgentTool, @unchecked Sendable {
@@ -90,13 +151,13 @@ public struct CreateGoalV2Tool: SuperAgentTool, @unchecked Sendable {
         guard !tasks.isEmpty else { return "Error: no valid tasks found" }
         let existingGoals = await manager.fetchGoals(conversationId: conversationId)
         if let active = existingGoals.first(where: { ![Goal.GoalStatus.completed, .failed, .skipped].contains($0.status) }) {
-            return "⚠️ Cannot create new goal: there is an unfinished goal.\n\n**Current goal:** \(active.title)\n**Status:** \(active.status.rawValue)\n\nComplete or skip it with `update_goal_status` before creating another goal."
+            return "⚠️ Cannot create new goal: there is an unfinished goal.\n\n**Current goal:** \(active.title)\n**Goal ID:** `\(active.id)`\n**Status:** \(active.status.rawValue)\n\nComplete or skip it with `update_goal_status` (goal_id: `\(active.id)`) before creating another goal."
         }
         do {
             let result = try await manager.createGoal(conversationId: conversationId, title: title, description: GoalTaskToolSupport.string(arguments, "description"), successCriteria: GoalTaskToolSupport.string(arguments, "successCriteria"), tasks: tasks)
             GoalTaskToolSupport.changed(conversationId)
             let items = result.tasks.enumerated().map { "\($0.offset + 1). \($0.element.status == .inProgress ? "▶️" : "⏳") [\($0.element.id)] **\($0.element.title)**" }.joined(separator: "\n")
-            return "✅ Created goal: **\(result.goal.title)**\n\n**Tasks (\(result.tasks.count)):**\n\(items)\n\nNow start working on the first task (or first parallel group)."
+            return "✅ Created goal: **\(result.goal.title)**\n\n**Goal ID:** `\(result.goal.id)` — you MUST use this `goal_id` in `update_goal_status` / `add_tasks_to_goal` / `get_goal_progress`. Keep it for the whole conversation.\n\n**Tasks (\(result.tasks.count)):**\n\(items)\n\nNow start working on the first task (or first parallel group)."
         } catch { return "Error: failed to create goal: \(error.localizedDescription)" }
     }
 }
@@ -104,15 +165,25 @@ public struct CreateGoalV2Tool: SuperAgentTool, @unchecked Sendable {
 public struct AddTasksToGoalV2Tool: SuperAgentTool, @unchecked Sendable {
     public static let toolName = "add_tasks_to_goal"; public let name = toolName; public init() {}
     public func description(for language: LanguagePreference) -> String { "Add new tasks to an existing goal when more work is discovered." }
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] { ["type": "object", "properties": ["goal_id": ["type": "string", "minLength": 1], "tasks": GoalTaskToolSupport.taskSchema()], "required": ["goal_id", "tasks"]] }
+    public func inputSchema(for language: LanguagePreference) -> [String: Any] { ["type": "object", "properties": ["goal_id": ["type": "string", "description": "Goal ID from create_goal's **Goal ID** line (or its exact title). Optional when the conversation has exactly one active goal.", "minLength": 1], "tasks": GoalTaskToolSupport.taskSchema()], "required": ["tasks"]] }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }; public func displayDescription(for arguments: [String: ToolArgument]) -> String { "Add tasks to goal" }
+    public func executeResult(context: ToolExecutionContext, arguments: [String: ToolArgument]) async throws -> ToolCallResult {
+        ToolCallResult(content: try await execute(conversationID: context.conversationID, arguments: arguments))
+    }
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let goalId = GoalTaskToolSupport.string(arguments, "goal_id"), !goalId.isEmpty else { return "Error: goal_id is required" }
+        try await execute(conversationID: nil, arguments: arguments)
+    }
+    private func execute(conversationID: UUID?, arguments: [String: ToolArgument]) async throws -> String {
         guard let manager = GoalTaskToolSupport.manager() else { return "Error: goal task manager is not initialized" }
         let inputs = GoalTaskToolSupport.taskInputs(arguments["tasks"]?.value); guard !inputs.isEmpty else { return "Error: no valid tasks found" }
+        let goalId: String
+        switch await GoalTaskToolSupport.resolveGoalId(raw: GoalTaskToolSupport.string(arguments, "goal_id"), conversationId: conversationID?.uuidString, manager: manager) {
+        case .success(let id): goalId = id
+        case .failure(let error): return error.message
+        }
         do {
             let tasks = try await manager.addTasksToGoal(goalId: goalId, tasks: inputs)
-            if let goal = await manager.fetchGoal(id: goalId) { await manager.resetContinuationCount(conversationId: goal.conversationId); GoalTaskToolSupport.changed(goal.conversationId) }
+            if let goal = await manager.fetchGoal(id: goalId) { await manager.resetContinuationCount(conversationId: goal.conversationId); GoalTaskToolSupport.changed(goal.conversationId); return "✅ Added \(tasks.count) tasks to goal\n\n**Goal ID:** `\(goal.id)`\n\n" + tasks.enumerated().map { "\($0.offset + 1). [\($0.element.id)] **\($0.element.title)**" }.joined(separator: "\n") }
             return "✅ Added \(tasks.count) tasks to goal\n\n" + tasks.enumerated().map { "\($0.offset + 1). [\($0.element.id)] **\($0.element.title)**" }.joined(separator: "\n")
         } catch { return "Error: failed to add tasks: \(error.localizedDescription)" }
     }
@@ -120,16 +191,27 @@ public struct AddTasksToGoalV2Tool: SuperAgentTool, @unchecked Sendable {
 
 public struct GetGoalProgressV2Tool: SuperAgentTool, @unchecked Sendable {
     public static let toolName = "get_goal_progress"; public let name = toolName; public init() {}
-    public func description(for language: LanguagePreference) -> String { "Query a goal's progress, tasks, and statuses." }
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] { ["type": "object", "properties": ["goal_id": ["type": "string", "minLength": 1]], "required": ["goal_id"]] }
+    public func description(for language: LanguagePreference) -> String { "Query a goal's progress, tasks, and statuses. goal_id may be omitted to resolve the conversation's active goal automatically." }
+    public func inputSchema(for language: LanguagePreference) -> [String: Any] { ["type": "object", "properties": ["goal_id": ["type": "string", "description": "Goal ID from create_goal's **Goal ID** line (or its exact title). Optional when the conversation has exactly one active goal.", "minLength": 1]], "required": []] }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }; public func displayDescription(for arguments: [String: ToolArgument]) -> String { "Get goal progress" }
+    public func executeResult(context: ToolExecutionContext, arguments: [String: ToolArgument]) async throws -> ToolCallResult {
+        ToolCallResult(content: try await execute(conversationID: context.conversationID, arguments: arguments))
+    }
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let goalId = GoalTaskToolSupport.string(arguments, "goal_id"), let manager = GoalTaskToolSupport.manager() else { return "Error: goal_id is required" }
+        try await execute(conversationID: nil, arguments: arguments)
+    }
+    private func execute(conversationID: UUID?, arguments: [String: ToolArgument]) async throws -> String {
+        guard let manager = GoalTaskToolSupport.manager() else { return "Error: goal task manager is not initialized" }
+        let goalId: String
+        switch await GoalTaskToolSupport.resolveGoalId(raw: GoalTaskToolSupport.string(arguments, "goal_id"), conversationId: conversationID?.uuidString, manager: manager) {
+        case .success(let id): goalId = id
+        case .failure(let error): return error.message
+        }
         guard let goal = await manager.fetchGoal(id: goalId) else { return "Error: goal not found" }
         let tasks = await manager.fetchTasks(goalId: goalId); let completed = tasks.filter { $0.status == .completed }.count; let skipped = tasks.filter { $0.status == .skipped }.count; let failed = tasks.filter { $0.status == .failed }.count; let active = tasks.filter { $0.status == .inProgress }.count; let pending = tasks.filter { $0.status == .pending }.count
         let progress = tasks.isEmpty ? 0 : Int(Double(completed + skipped) / Double(tasks.count) * 100)
         let rows = tasks.enumerated().map { index, task in "\(index + 1). \(icon(task.status)) \(task.title) [\(task.status.rawValue)]" }.joined(separator: "\n")
-        return "## 🎯 \(goal.title)\n**Status:** \(goal.status.rawValue)\n\n**Progress:** \(completed + skipped)/\(tasks.count) (\(progress)%)\n- Completed: \(completed)\n- Skipped: \(skipped)\n- Failed: \(failed)\n- In Progress: \(active)\n- Pending: \(pending)\n\n**Tasks:**\n\(rows)"
+        return "## 🎯 \(goal.title)\n**Goal ID:** `\(goal.id)`\n**Status:** \(goal.status.rawValue)\n\n**Progress:** \(completed + skipped)/\(tasks.count) (\(progress)%)\n- Completed: \(completed)\n- Skipped: \(skipped)\n- Failed: \(failed)\n- In Progress: \(active)\n- Pending: \(pending)\n\n**Tasks:**\n\(rows)"
     }
     private func icon(_ status: GoalTask.TaskStatus) -> String { switch status { case .completed: "✅"; case .inProgress: "▶️"; case .failed: "❌"; case .skipped: "⏭️"; case .pending: "⏳" } }
 }
@@ -137,11 +219,23 @@ public struct GetGoalProgressV2Tool: SuperAgentTool, @unchecked Sendable {
 public struct UpdateGoalStatusV2Tool: SuperAgentTool, @unchecked Sendable {
     public static let toolName = "update_goal_status"; public let name = toolName; public init() {}
     public func description(for language: LanguagePreference) -> String { "Update a goal's status, including blocked or failed reasons." }
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] { ["type": "object", "properties": ["goal_id": ["type": "string", "minLength": 1], "status": ["type": "string", "enum": GoalTaskToolSupport.goalStatuses], "blocked_reason": ["type": "string"], "failure_reason": ["type": "string"], "suggested_actions": ["type": "array", "items": ["type": "string"]]], "required": ["goal_id", "status"]] }
+    public func inputSchema(for language: LanguagePreference) -> [String: Any] { ["type": "object", "properties": ["goal_id": ["type": "string", "description": "Goal ID from create_goal's **Goal ID** line (or its exact title). Optional when the conversation has exactly one active goal.", "minLength": 1], "status": ["type": "string", "enum": GoalTaskToolSupport.goalStatuses], "blocked_reason": ["type": "string"], "failure_reason": ["type": "string"], "suggested_actions": ["type": "array", "items": ["type": "string"]]], "required": ["status"]] }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }; public func displayDescription(for arguments: [String: ToolArgument]) -> String { "Update goal status" }
+    public func executeResult(context: ToolExecutionContext, arguments: [String: ToolArgument]) async throws -> ToolCallResult {
+        ToolCallResult(content: try await execute(conversationID: context.conversationID, arguments: arguments))
+    }
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let goalId = GoalTaskToolSupport.string(arguments, "goal_id"), let value = GoalTaskToolSupport.string(arguments, "status"), let status = Goal.GoalStatus(rawValue: value) else { return "Error: invalid status" }; guard let manager = GoalTaskToolSupport.manager() else { return "Error: goal task manager is not initialized" }
-        do { let goal = try await manager.updateGoalStatus(id: goalId, status: status, blockedReason: GoalTaskToolSupport.string(arguments, "blocked_reason"), failureReason: GoalTaskToolSupport.string(arguments, "failure_reason")); GoalTaskToolSupport.changed(goal.conversationId); return "✅ Goal **\(goal.title)** updated to **\(status.rawValue)**" } catch { return "Error: failed to update goal: \(error.localizedDescription)" }
+        try await execute(conversationID: nil, arguments: arguments)
+    }
+    private func execute(conversationID: UUID?, arguments: [String: ToolArgument]) async throws -> String {
+        guard let value = GoalTaskToolSupport.string(arguments, "status"), let status = Goal.GoalStatus(rawValue: value) else { return "Error: invalid status" }
+        guard let manager = GoalTaskToolSupport.manager() else { return "Error: goal task manager is not initialized" }
+        let goalId: String
+        switch await GoalTaskToolSupport.resolveGoalId(raw: GoalTaskToolSupport.string(arguments, "goal_id"), conversationId: conversationID?.uuidString, manager: manager) {
+        case .success(let id): goalId = id
+        case .failure(let error): return error.message
+        }
+        do { let goal = try await manager.updateGoalStatus(id: goalId, status: status, blockedReason: GoalTaskToolSupport.string(arguments, "blocked_reason"), failureReason: GoalTaskToolSupport.string(arguments, "failure_reason")); GoalTaskToolSupport.changed(goal.conversationId); return "✅ Goal **\(goal.title)** (Goal ID: `\(goal.id)`) updated to **\(status.rawValue)**" } catch { return "Error: failed to update goal: \(error.localizedDescription)" }
     }
 }
 
@@ -152,6 +246,6 @@ public struct UpdateTaskStatusV2Tool: SuperAgentTool, @unchecked Sendable {
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }; public func displayDescription(for arguments: [String: ToolArgument]) -> String { "Update task status" }
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let taskId = GoalTaskToolSupport.string(arguments, "task_id"), let value = GoalTaskToolSupport.string(arguments, "status"), let status = GoalTask.TaskStatus(rawValue: value) else { return "Error: invalid status" }; guard let manager = GoalTaskToolSupport.manager() else { return "Error: goal task manager is not initialized" }
-        do { let result = try await manager.updateGoalTaskStatus(id: taskId, status: status, result: GoalTaskToolSupport.string(arguments, "result"), errorMessage: GoalTaskToolSupport.string(arguments, "error_message")); await manager.resetContinuationCount(conversationId: result.goal.conversationId); GoalTaskToolSupport.changed(result.goal.conversationId); return "✅ Task **\(result.task.title)** updated to **\(status.rawValue)**\n\nGoal **\(result.goal.title)** status: **\(result.goal.status.rawValue)**" } catch { return "Error: failed to update task: \(error.localizedDescription)" }
+        do { let result = try await manager.updateGoalTaskStatus(id: taskId, status: status, result: GoalTaskToolSupport.string(arguments, "result"), errorMessage: GoalTaskToolSupport.string(arguments, "error_message")); await manager.resetContinuationCount(conversationId: result.goal.conversationId); GoalTaskToolSupport.changed(result.goal.conversationId); return "✅ Task **\(result.task.title)** updated to **\(status.rawValue)**\n\nGoal **\(result.goal.title)** (Goal ID: `\(result.goal.id)`) status: **\(result.goal.status.rawValue)**" } catch { return "Error: failed to update task: \(error.localizedDescription)" }
     }
 }
