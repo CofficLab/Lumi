@@ -15,6 +15,10 @@ def main() -> int:
         assert "ref: ${{ needs.prepare.outputs.source_sha }}" in text
         assert ".github/scripts/archive-lumi.sh" in text
         assert ".github/scripts/package-release-archive.sh" in text
+        # The Metal toolchain must be installed through the shared script: it
+        # polls until the cryptex is mounted, which an inline probe cannot.
+        assert ".github/scripts/install-metal-toolchain.sh" in text
+        assert "downloadComponent MetalToolchain" not in text
         assert "restore-keys:" not in text
         assert "@v4" not in text and "@v6" not in text and "@v1\n" not in text
     assert "jobs:\n  prepare:" in release and "\n  build:" in release and "\n  publish:" in release
