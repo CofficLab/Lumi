@@ -17,7 +17,7 @@ env:
 
 jobs:
   prepare:
-    runs-on: macos-26
+    runs-on: xcode-27
     permissions:
       contents: read
     outputs:
@@ -38,7 +38,7 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
         with:
-          xcode-version: "26.3"
+          xcode-version: "27.0"
       - name: Prepare immutable release metadata
         id: metadata
         env:
@@ -61,7 +61,7 @@ jobs:
 
   build:
     needs: prepare
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 120
     permissions:
       contents: read
@@ -91,7 +91,7 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
         with:
-          xcode-version: "26.3"
+          xcode-version: "27.0"
       - name: Verify source and inject the prepared version
         run: |
           set -euo pipefail
@@ -187,7 +187,7 @@ jobs:
 
   publish:
     needs: [prepare, build]
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 90
     permissions:
       contents: write
@@ -241,7 +241,7 @@ jobs:
         if: steps.recovery.outputs.reuse != 'true'
         uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
         with:
-          xcode-version: "26.3"
+          xcode-version: "27.0"
       - name: Verify and restore both build artifacts
         if: steps.recovery.outputs.reuse != 'true'
         run: .github/scripts/verify-release-inputs.py "${RELEASE_METADATA}" incoming "${RESTORED_ARCHIVES}"
