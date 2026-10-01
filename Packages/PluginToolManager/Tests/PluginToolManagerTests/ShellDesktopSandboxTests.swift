@@ -1,5 +1,6 @@
 import Foundation
 import KitAgentTool
+import KitShell
 import Testing
 @testable import PluginToolManager
 
@@ -89,4 +90,86 @@ import Testing
     ])
     #expect(sandboxed != unsandboxed)
     #expect(unsandboxed.contains("沙箱"))
+}
+
+// MARK: - Output budget
+
+@Test func outputBudgetFallsBackToDefault() {
+    // Absent, zero and negative all mean "use the default"
+    let arguments: [[String: ToolArgument]] = [
+        ["command": ToolArgument("echo hi")],
+        ["command": ToolArgument("echo hi"), "max_output_bytes": ToolArgument(0)],
+        ["command": ToolArgument("echo hi"), "max_output_bytes": ToolArgument(-1)],
+    ]
+    for arg in arguments {
+        #expect(ShellTool.resolvedOutputBudget(for: arg) == 64 * 1024)
+    }
+}
+
+@Test func outputBudgetHonoursAnExplicitValue() {
+    #expect(ShellTool.resolvedOutputBudget(for: [
+        "command": ToolArgument("xcodebuild test"),
+        "max_output_bytes": ToolArgument(4 * 1024 * 1024),
+    ]) == 4 * 1024 * 1024)
+}
+
+@Test func outputBudgetIsClampedToTheCeiling() {
+    // The result is handed to an LLM, so one command must not be able to
+    // request an unbounded budget.
+    #expect(ShellTool.resolvedOutputBudget(for: [
+        "command": ToolArgument("yes"),
+        "max_output_bytes": ToolArgument(Int.max),
+    ]) == ShellTool.maxOutputBytesCeiling)
+}
+
+@Test func maxOutputBytesIsAdvertisedInSchema() {
+    let tool = ShellTool(workspaceRootProvider: { "/tmp" })
+    let properties = (tool.inputSchema(for: .english)["properties"] as? [String: Any]) ?? [:]
+    #expect(properties["max_output_bytes"] != nil)
+}
+
+@Test func truncatedOutputIsReportedToTheModel() {
+    // A silently truncated payload is the dangerous case: the model would draw
+    // conclusions from a partial build log without knowing it was cut.
+    let truncated = ShellResult(
+        exitCode: 0,
+        stdout: "Compiling Foo\n<build log continues>",
+        stderr: "",
+        stdoutTruncated: true
+    )
+    let text = ShellTool.resultText(for: truncated)
+    #expect(text.contains("truncated"))
+    #expect(text.contains("stdout"))
+    #expect(text.contains("max_output_bytes"))
+}
+
+@Test func truncatedStderrIsReportedSeparately() {
+    let truncated = ShellResult(
+        exitCode: 1,
+        stdout: "partial",
+        stderr: "error: something failed",
+        stderrTruncated: true
+    )
+    let text = ShellTool.resultText(for: truncated)
+    #expect(text.contains("truncated"))
+    #expect(text.contains("stderr"))
+    // The exit code and surviving output must still come through.
+    #expect(text.contains("Exit code: 1"))
+    #expect(text.contains("error: something failed"))
+}
+
+@Test func untruncatedOutputHasNoNotice() {
+    let clean = ShellResult(exitCode: 0, stdout: "ok", stderr: "")
+    #expect(ShellTool.resultText(for: clean) == "ok")
+
+    let bothTruncated = ShellResult(
+        exitCode: 0,
+        stdout: "",
+        stderr: "",
+        stdoutTruncated: true,
+        stderrTruncated: true
+    )
+    let text = ShellTool.resultText(for: bothTruncated)
+    #expect(text.contains("stdout"))
+    #expect(text.contains("stderr"))
 }

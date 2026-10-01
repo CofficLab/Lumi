@@ -41,6 +41,10 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
     private static let highRiskCommands: Set<String> = [
         "rm", "rmdir", "mv", "sudo", "kill", "killall", "chmod", "chown", "dd", "shutdown", "reboot"
     ]
+
+    /// Upper bound for a caller-supplied `max_output_bytes` (16 MiB per stream).
+    static let maxOutputBytesCeiling = 16 * 1024 * 1024
+
     private let commandTimeout: TimeInterval
     private let workspaceRootProvider: @MainActor @Sendable () -> String?
 
@@ -61,8 +65,9 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
             "type": "object",
             "properties": [
                 "command": ["type": "string", "description": "The shell command to execute; it may run for a while and can be cancelled. Output is size-limited."],
-                "timeout": ["type": "integer", "description": "Optional timeout in seconds (default: 120)"],
+                "timeout": ["type": "integer", "description": "Optional timeout in seconds (default: 120). Raise it for builds and test runs, which routinely take several minutes."],
                 "unsandboxed": ["type": "boolean", "description": "Optional. Run outside the desktop-isolation sandbox. Required for commands that create their own sandbox (swift build, xcodebuild, Swift macro expansion). Always requires explicit user approval. Defaults to false."],
+                "max_output_bytes": ["type": "integer", "description": "Optional. Maximum bytes kept from each output stream (default: 65536, max: 16777216). The tail is kept and the head dropped. Raise it when the useful output is larger than the default; otherwise redirect to a file and read it back."],
             ],
             "required": ["command"],
         ]
@@ -173,17 +178,45 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
                 ? workspaceRoot
                 : FileManager.default.homeDirectoryForCurrentUser.path,
             timeout: timeout,
-            throwsOnError: false
+            throwsOnError: false,
+            maxOutputBytes: Self.resolvedOutputBudget(for: arguments)
         )
         return (options, launch)
     }
 
-    private static func resultText(for result: ShellResult) -> String {
-        if result.exitCode != 0 {
-            return "Exit code: \(result.exitCode)\n\(result.stdout)\n\(result.stderr)"
+    /// Resolves the per-stream output budget, clamped to a sane ceiling.
+    ///
+    /// The ceiling exists because the result is handed to an LLM: an unbounded
+    /// budget would let one command blow up the context window.
+    static func resolvedOutputBudget(for arguments: [String: ToolArgument]) -> Int {
+        guard let requested = arguments.intValue("max_output_bytes"), requested > 0 else {
+            return ShellOptions.defaultOptions.maxOutputBytes
+        }
+        return min(requested, Self.maxOutputBytesCeiling)
+    }
+
+    /// 把命令输出整理成回传给模型的结果文本。
+    static func resultText(for result: ShellResult) -> String {
+        let combined = result.exitCode != 0
+            ? "Exit code: \(result.exitCode)\n\(result.stdout)\n\(result.stderr)"
+            : (result.stdout + result.stderr)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Never hand back a silently truncated payload: an LLM that cannot tell
+        // the output was cut may draw a confident wrong conclusion from a
+        // partial build log. The notice makes the gap explicit.
+        let streams = [
+            (result.stdoutTruncated, "stdout"),
+            (result.stderrTruncated, "stderr"),
+        ].filter(\.0).map(\.1)
+
+        guard !streams.isEmpty else {
+            return combined.isEmpty ? "Command completed successfully." : combined
         }
 
-        let combined = (result.stdout + result.stderr).trimmingCharacters(in: .whitespacesAndNewlines)
-        return combined.isEmpty ? "Command completed successfully." : combined
+        let notice = "[output truncated: kept the tail of "
+            + streams.joined(separator: " and ")
+            + ". Raise max_output_bytes, or redirect to a file and read it back.]"
+        return combined.isEmpty ? notice : combined + "\n\n" + notice
     }
 }
