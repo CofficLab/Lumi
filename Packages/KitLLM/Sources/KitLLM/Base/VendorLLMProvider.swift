@@ -20,9 +20,21 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
     /// Anthropic 兼容协议适配器配置（子类覆盖）。
     open var anthropicConfiguration: AnthropicCompatibleProviderConfiguration? { nil }
 
+    /// 远程模型源（子类覆盖）。
+    ///
+    /// 实现 `LLMModelListProviding` 时使用：非 `nil` 表示该供应商支持从远程
+    /// API 定期拉取模型列表；`nil`（默认）表示静态供应商，模型列表为
+    /// `providerInfo.models`。
+    open var remoteModelSource: RemoteModelSource? { nil }
+
+    private let modelListCache: LLMModelListCache
+    private var fetchedRemoteModels: [LLMModelInfo] = []
+    private var remoteSyncDate: Date?
+
     public init(info: LLMProviderInfo, apiService: VendorAPIService = VendorAPIService()) {
         self.providerInfo = info
         self.apiService = apiService
+        self.modelListCache = LLMModelListCache(providerID: info.id)
     }
 
     public var providerID: String { providerInfo.id }
@@ -379,6 +391,61 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             )
             : input
         return (input, output, cachedInput, cacheWrite, cacheTotal)
+    }
+}
+
+// MARK: - LLMModelListProviding (可选能力，默认实现)
+
+extension VendorLLMProvider: LLMModelListProviding {
+
+    public var usesRemoteModelList: Bool { remoteModelSource != nil }
+
+    public var availableModels: [LLMModelInfo] {
+        // 静态基线（providerInfo.models）
+        let base = providerInfo.models
+        // 远程快照 / 磁盘缓存
+        let remote: [LLMModelInfo]
+        if usesRemoteModelList, !fetchedRemoteModels.isEmpty {
+            remote = fetchedRemoteModels
+        } else if usesRemoteModelList,
+                  let cached = modelListCache.cachedSnapshot() {
+            remote = cached.models
+        } else {
+            remote = []
+        }
+        // 合并：远程优先（保留远程的 displayName/context），静态补齐缺漏（兜底）。
+        var byID: [String: LLMModelInfo] = [:]
+        for model in base { byID[model.id] = model }
+        for model in remote { byID[model.id] = model }
+        // 排序：先静态声明顺序，未在静态中的远程模型追加在后。
+        var seen = Set<String>()
+        var merged: [LLMModelInfo] = []
+        for model in base {
+            merged.append(byID[model.id] ?? model)
+            seen.insert(model.id)
+        }
+        for model in remote where !seen.contains(model.id) {
+            merged.append(model)
+            seen.insert(model.id)
+        }
+        return merged
+    }
+
+    public var lastModelSyncDate: Date? { remoteSyncDate }
+
+    public func refreshModels() async throws {
+        guard let source = remoteModelSource else { return }
+        let apiKey: String?
+        if let storageKey = source.apiKeyStorageKey, !storageKey.isEmpty {
+            apiKey = getApiKey()
+        } else {
+            apiKey = nil
+        }
+        let loader = RemoteModelListLoader(apiService: apiService)
+        let models = try await loader.load(from: source, apiKey: apiKey)
+        fetchedRemoteModels = models
+        remoteSyncDate = Date()
+        modelListCache.store(models: models, syncedAt: remoteSyncDate ?? Date())
     }
 }
 
