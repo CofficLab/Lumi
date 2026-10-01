@@ -40,10 +40,12 @@ public final class GoatPlanProvider: RemoteModelVendorProvider {
     }
 
     /// 远程模型源：拉取 CommandCode `/provider/v1/models` 端点。
+    ///
+    /// 该端点无需鉴权（公开可读），故不配 `apiKeyStorageKey`——
+    /// 也避免后台刷新时读 Keychain（无头环境可能挂起）。
     public override var remoteModelSource: RemoteModelSource? {
         RemoteModelSource(
-            endpoint: URL(string: "https://api.commandcode.ai/provider/v1/models")!,
-            apiKeyStorageKey: "DevAssistant_ApiKey_CommandCodeGoatPlan"
+            endpoint: URL(string: "https://api.commandcode.ai/provider/v1/models")!
         )
     }
 
