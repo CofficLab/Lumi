@@ -320,7 +320,7 @@ public let metadata = PluginMetadata(
   UTF-8 头编码（RFC 2047）。
 - 验证：往返测试（构建 → 解析器还原字段）；含中文主题、含附件用例。
 
-### Phase 2：PluginMail 骨架 + 账户管理（核心交付①）
+### Phase 2：PluginMail 骨架 + 账户管理（核心交付①）✅ 2026-10-02 完成
 
 **Task 2.1 — 插件包骨架与入口**
 - 新建 `Packages/PluginMail`：`MailPlugin.swift`（id/order/metadata）、
@@ -344,7 +344,7 @@ public let metadata = PluginMetadata(
   写 `MailCacheService`（SwiftData）。
 - 验证：同步单测（mock session：新增/删除/未读变化）；actor 并发测试。
 
-### Phase 3：三栏工作区 UI（核心交付②）
+### Phase 3：三栏工作区 UI（核心交付②）✅ 2026-10-02 完成
 
 **Task 3.1 — 工作区与文件夹树**
 - `MailWorkspaceView` + `MailFolderSidebarView`（账户分组、未读计数）；
@@ -364,7 +364,7 @@ public let metadata = PluginMetadata(
 - 验证：HTML 邮件（含表格/深色模式适配）、纯文本邮件、带附件邮件三类真机渲染；
   JS 不执行（自测含 `<script>` 的邮件）。
 
-### Phase 4：撰写与发送（核心交付③）
+### Phase 4：撰写与发送（核心交付③）✅ 2026-10-02 完成
 
 **Task 4.1 — 撰写视图**
 - `MailComposeView` + `MailComposeViewModel`：新写/回复/转发三模式、
@@ -377,7 +377,7 @@ public let metadata = PluginMetadata(
   `MailError` 可读文案。
 - 验证：真实 SMTP 发信端到端（收到自测邮件）；错误路径（错密码/断网）文案。
 
-### Phase 5：Agent 工具 + 缓存搜索
+### Phase 5：Agent 工具 + 缓存搜索 ✅ 2026-10-02 完成
 
 **Task 5.1 — 工具注册**
 - 4 个 `SuperAgentTool`，经 `ToolManagerProviding.add(_, pluginID:)` 注册，
