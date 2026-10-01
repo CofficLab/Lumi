@@ -68,6 +68,19 @@ jobs:
       - uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
         with:
           xcode-version: "27.0"
+      - name: Install Metal Toolchain
+        run: |
+          set -euo pipefail
+          # Xcode 26 made the Metal toolchain an optional component and the
+          # hosted runner images no longer pre-install it. mlx-swift compiles
+          # .metal sources, so archiving fails with "cannot execute tool
+          # 'metal'" until it is downloaded.
+          if xcrun -f metal >/dev/null 2>&1; then
+            echo "Metal toolchain already available: $(xcrun -f metal)"
+          else
+            xcodebuild -downloadComponent MetalToolchain
+            xcrun -f metal >/dev/null
+          fi
       - name: Inject and validate immutable version
         run: .github/scripts/inject-lumi-version.sh release-input/release-metadata.json
       - name: Compute exact cache key
