@@ -762,8 +762,7 @@ final class EditorTextView: NSTextView {
         popover.contentSize = NSSize(width: 620, height: 460)
         popover.contentViewController = PastePreviewPopoverViewController(
             text: attachment.originalText,
-            characterCount: attachment.characterCount,
-            lineCount: attachment.lineCount
+            summaryText: attachment.summaryText
         )
         popover.show(relativeTo: rect, of: self, preferredEdge: .maxY)
         pastePreviewPopover = popover
@@ -772,28 +771,28 @@ final class EditorTextView: NSTextView {
 
 // MARK: - PastePreviewAttachment
 
+/// 折叠后的大段粘贴内容。
+///
+/// 通过 ``PasteLinkAttachmentCell`` 在正文里绘制成一行内联的「链接样式」chip，
+/// 而不是过去那种 392×74 的卡片图片，视觉上只占用一行、随文本一起排版。
 final class PastePreviewAttachment: NSTextAttachment {
     let originalText: String
-    let previewText: String
-    let summaryText: String
-    let lineCount: Int
     let characterCount: Int
+    let lineCount: Int
+    let byteCountText: String
 
     init(originalText: String) {
         self.originalText = originalText
-        self.previewText = Self.previewText(for: originalText)
-        self.lineCount = Self.lineCount(for: originalText)
         self.characterCount = originalText.count
-        self.summaryText = Self.summaryText(for: originalText, lineCount: lineCount, characterCount: characterCount)
-
-        let image = Self.makeImage(
-            previewText: previewText,
-            summaryText: summaryText
+        self.lineCount = Self.lineCount(for: originalText)
+        self.byteCountText = ByteCountFormatter.string(
+            fromByteCount: Int64(originalText.utf8.count),
+            countStyle: .file
         )
-
         super.init(data: nil, ofType: nil)
-        self.image = image
-        self.bounds = CGRect(origin: .zero, size: image.size)
+        self.attachmentCell = PasteLinkAttachmentCell(
+            title: Self.chipTitle(characterCount: characterCount, lineCount: lineCount)
+        )
     }
 
     @available(*, unavailable)
@@ -801,79 +800,138 @@ final class PastePreviewAttachment: NSTextAttachment {
         fatalError("init(coder:) has not been implemented")
     }
 
-    private static func previewText(for text: String) -> String {
-        let collapsed = text
-            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        if collapsed.isEmpty {
-            return "Empty paste"
-        }
-        if collapsed.count <= 60 {
-            return collapsed
-        }
-        let prefix = String(collapsed.prefix(60))
-        return prefix + "…"
+    /// 预览弹窗里展示的完整摘要。
+    var summaryText: String {
+        "\(Self.countText(characterCount)) · \(Self.lineText(lineCount)) · \(byteCountText)"
+    }
+
+    /// 内联 chip 上显示的一行文案，例如「粘贴的文本 · 12,480 字 · 312 行」。
+    static func chipTitle(characterCount: Int, lineCount: Int) -> String {
+        [
+            LumiPluginLocalization.string("Pasted text", bundle: .module),
+            countText(characterCount),
+            lineText(lineCount)
+        ].joined(separator: " · ")
+    }
+
+    static func countText(_ count: Int) -> String {
+        String(
+            format: LumiPluginLocalization.string("%@ chars", bundle: .module),
+            Self.decimalNumber(count)
+        )
+    }
+
+    static func lineText(_ count: Int) -> String {
+        String(
+            format: LumiPluginLocalization.string("%@ lines", bundle: .module),
+            Self.decimalNumber(count)
+        )
+    }
+
+    private static func decimalNumber(_ value: Int) -> String {
+        NumberFormatter.localizedString(from: NSNumber(value: value), number: .decimal)
     }
 
     private static func lineCount(for text: String) -> Int {
         let normalized = text.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n")
         return max(1, normalized.split(separator: "\n", omittingEmptySubsequences: false).count)
     }
+}
 
-    private static func summaryText(for text: String, lineCount: Int, characterCount: Int) -> String {
-        let sizeText = ByteCountFormatter.string(fromByteCount: Int64(text.utf8.count), countStyle: .file)
-        return "\(characterCount) chars · \(lineCount) lines · \(sizeText)"
+// MARK: - PasteLinkAttachmentCell
+
+/// 把折叠的大段粘贴绘制成一行「链接样式」的内联 chip。
+///
+/// chip 跟随正文基线排版，只占一行，包含一个图标和一行摘要文字，外观接近一段
+/// 可点击的文本链接（accent 色 + 下划线），而不是过去那种独立的卡片图片。
+/// 宽度在初始化时按文本测量并缓存，避免布局阶段反复测量字符串。
+final class PasteLinkAttachmentCell: NSTextAttachmentCell {
+    private static let titleFont = NSFont.systemFont(ofSize: 12, weight: .medium)
+    private static let symbolPointSize: CGFloat = 10
+    private static let symbolName = "doc.on.clipboard"
+    private static let leadingPadding: CGFloat = 1
+    private static let trailingPadding: CGFloat = 2
+    private static let iconSize: CGFloat = 12
+    private static let iconTitleSpacing: CGFloat = 4
+    private static let maximumWidth: CGFloat = 320
+    private static let chipHeight: CGFloat = 18
+    private static let baselineOffset: CGFloat = -4
+
+    private static var titleAttributes: [NSAttributedString.Key: Any] {
+        [
+            .font: titleFont,
+            .foregroundColor: NSColor.controlAccentColor,
+            .underlineStyle: NSUnderlineStyle.single.rawValue,
+            .underlineColor: NSColor.controlAccentColor
+        ]
     }
 
-    private static func makeImage(previewText: String, summaryText: String) -> NSImage {
-        let size = NSSize(width: 392, height: 74)
-        let image = NSImage(size: size)
-        image.lockFocusFlipped(false)
-        defer { image.unlockFocus() }
+    private let chipTitle: String
+    private let chipTitleWidth: CGFloat
 
-        let rect = NSRect(origin: .zero, size: size)
-        let rounded = NSBezierPath(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), xRadius: 14, yRadius: 14)
+    init(title: String) {
+        self.chipTitle = title
+        let measured = ceil((title as NSString).size(withAttributes: Self.titleAttributes).width)
+        let maximum = Self.maximumWidth
+            - Self.leadingPadding
+            - Self.trailingPadding
+            - Self.iconSize
+            - Self.iconTitleSpacing
+        self.chipTitleWidth = min(measured, maximum)
+        super.init()
+    }
 
-        NSColor.controlBackgroundColor.withAlphaComponent(0.96).setFill()
-        rounded.fill()
+    @available(*, unavailable)
+    required init(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
-        NSColor.separatorColor.withAlphaComponent(0.65).setStroke()
-        rounded.lineWidth = 1
-        rounded.stroke()
+    override func cellSize() -> NSSize {
+        NSSize(
+            width: Self.leadingPadding + Self.iconSize + Self.iconTitleSpacing + chipTitleWidth + Self.trailingPadding,
+            height: Self.chipHeight
+        )
+    }
 
-        let iconRect = NSRect(x: 14, y: 24, width: 24, height: 24)
-        if let icon = NSImage(systemSymbolName: "doc.text.fill", accessibilityDescription: nil) {
-            icon.isTemplate = true
-            icon.draw(in: iconRect)
+    override func cellBaselineOffset() -> NSPoint {
+        NSPoint(x: 0, y: Self.baselineOffset)
+    }
+
+    override func draw(withFrame cellFrame: NSRect, in controlView: NSView?) {
+        var cursorX = cellFrame.minX + Self.leadingPadding
+        if let symbol = Self.symbolImage() {
+            let iconRect = NSRect(
+                x: cursorX,
+                y: cellFrame.midY - Self.iconSize / 2,
+                width: Self.iconSize,
+                height: Self.iconSize
+            )
+            symbol.draw(in: iconRect)
+            cursorX = iconRect.maxX + Self.iconTitleSpacing
         }
 
-        let titleAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 13, weight: .semibold),
-            .foregroundColor: NSColor.labelColor
-        ]
-        let summaryAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.monospacedSystemFont(ofSize: 10.5, weight: .medium),
-            .foregroundColor: NSColor.secondaryLabelColor
-        ]
-        let previewAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 12),
-            .foregroundColor: NSColor.secondaryLabelColor
-        ]
-
-        ("Large paste" as NSString).draw(
-            in: NSRect(x: 48, y: 42, width: 324, height: 16),
-            withAttributes: titleAttributes
-        )
-        ((summaryText + " · click to inspect") as NSString).draw(
-            in: NSRect(x: 48, y: 25, width: 324, height: 14),
-            withAttributes: summaryAttributes
-        )
-        (previewText as NSString).draw(
-            in: NSRect(x: 48, y: 8, width: 324, height: 14),
-            withAttributes: previewAttributes
+        let lineHeight = ceil(Self.titleFont.ascender - Self.titleFont.descender)
+        let titleRect = NSRect(
+            x: cursorX,
+            y: cellFrame.midY - lineHeight / 2,
+            width: max(0, cellFrame.maxX - Self.trailingPadding - cursorX),
+            height: lineHeight
         )
 
-        return image
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byTruncatingTail
+        var attributes = Self.titleAttributes
+        attributes[.paragraphStyle] = paragraph
+        (chipTitle as NSString).draw(in: titleRect, withAttributes: attributes)
+    }
+
+    private static func symbolImage() -> NSImage? {
+        guard let symbol = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil) else {
+            return nil
+        }
+        let configuration = NSImage.SymbolConfiguration(pointSize: symbolPointSize, weight: .semibold)
+            .applying(NSImage.SymbolConfiguration(paletteColors: [.controlAccentColor]))
+        return symbol.withSymbolConfiguration(configuration)
     }
 }
 
@@ -881,15 +939,13 @@ final class PastePreviewAttachment: NSTextAttachment {
 
 final class PastePreviewPopoverViewController: NSViewController {
     private let text: String
-    private let characterCount: Int
-    private let lineCount: Int
+    private let summaryText: String
     private weak var copyButton: NSButton?
     private var copyFeedbackResetItem: DispatchWorkItem?
 
-    init(text: String, characterCount: Int, lineCount: Int) {
+    init(text: String, summaryText: String) {
         self.text = text
-        self.characterCount = characterCount
-        self.lineCount = lineCount
+        self.summaryText = summaryText
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -935,11 +991,13 @@ final class PastePreviewPopoverViewController: NSViewController {
         titleStack.spacing = 2
         titleStack.translatesAutoresizingMaskIntoConstraints = false
 
-        let titleLabel = NSTextField(labelWithString: "Large paste preview")
+        let titleLabel = NSTextField(
+            labelWithString: LumiPluginLocalization.string("Pasted text", bundle: .module)
+        )
         titleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
         titleLabel.textColor = .labelColor
 
-        let detailLabel = NSTextField(labelWithString: "\(characterCount) chars · \(lineCount) lines")
+        let detailLabel = NSTextField(labelWithString: summaryText)
         detailLabel.font = .monospacedSystemFont(ofSize: 11, weight: .medium)
         detailLabel.textColor = .secondaryLabelColor
 
