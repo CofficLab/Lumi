@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginACP", targets: ["PluginACP"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderACP"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderConversation"),
@@ -17,9 +17,9 @@ let package = Package(
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../KitAgentTool"),
-        .package(path: "../KitLocalization"),
-        .package(path: "../ProviderSettingView"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
     ],
     targets: [
         .target(
@@ -33,8 +33,8 @@ let package = Package(
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
-                .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
+                .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources/PluginACP",

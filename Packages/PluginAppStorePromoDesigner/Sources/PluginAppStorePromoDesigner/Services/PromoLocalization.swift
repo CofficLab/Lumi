@@ -1,5 +1,5 @@
 import Foundation
-import KitLocalization
+import LumiLocalizationKit
 
 enum PromoLocalization {
     static func string(_ key: String) -> String {

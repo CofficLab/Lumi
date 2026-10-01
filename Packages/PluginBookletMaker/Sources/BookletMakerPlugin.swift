@@ -13,7 +13,7 @@ import ProviderSkill
 import ProviderStorage
 import ProviderToolbar
 import ProviderToolManager
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 // MARK: - Plugin Entry
@@ -117,7 +117,8 @@ public final class BookletMakerPlugin: SuperPlugin, PluginDataMigrating, SuperLo
                 BookletMakerRailView(
                     viewModel: self.sharedViewModel,
                     onExportBooklet: { self.presentSavePanel() },
-                    onExportSplit: { self.presentSplitDirectoryPanel() }
+                    onExportSplit: { self.presentSplitDirectoryPanel() },
+                    onExportMerge: { self.presentMergeSavePanel() }
                 )
             },
         ])
@@ -218,6 +219,24 @@ public final class BookletMakerPlugin: SuperPlugin, PluginDataMigrating, SuperLo
         #endif
     }
 
+    private func presentMergeSavePanel() {
+        #if os(macOS)
+            let panel = NSSavePanel()
+            panel.allowedContentTypes = [.pdf]
+            panel.nameFieldStringValue = suggestedMergeFileName()
+            panel.canCreateDirectories = true
+            panel.title = BookletLocalization.string("Export Merged PDF")
+            if panel.runModal() == .OK, let url = panel.url {
+                Task { await sharedViewModel.exportMerge(to: url) }
+            }
+        #endif
+    }
+
+    private func suggestedMergeFileName() -> String {
+        let first = sharedViewModel.mergeDocuments.first?.url.deletingPathExtension().lastPathComponent
+        return "\(first ?? "merged")-merged.pdf"
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
         unregisterAgentTools(kernel: kernel)
         unregisterSkill(kernel: kernel)
@@ -253,6 +272,7 @@ public final class BookletMakerPlugin: SuperPlugin, PluginDataMigrating, SuperLo
         PDFInspectTool(),
         BookletMakeTool(),
         PDFSplitTool(),
+        PDFMergeTool(),
         BookletPreviewTool(),
     ]
 

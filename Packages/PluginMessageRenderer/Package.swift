@@ -9,8 +9,8 @@ let package = Package(
         .library(name: "PluginMessageRenderer", targets: ["PluginMessageRenderer"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderDeveloperMode"),
         .package(path: "../ProviderAgentLoop"),
@@ -19,8 +19,8 @@ let package = Package(
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderToolManager"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(path: "../KitMarkdown"),
     ],
     targets: [
@@ -28,7 +28,7 @@ let package = Package(
             name: "PluginMessageRenderer",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 "ProviderConversation",
                 "ProviderDeveloperMode",
                 "ProviderAgentLoop",
@@ -38,7 +38,7 @@ let package = Package(
                 "ProviderMessageSender",
                 "ProviderToolManager",
                 "LumiUI",
-                "KitLocalization",
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 "KitMarkdown",
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]

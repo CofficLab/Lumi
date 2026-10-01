@@ -87,7 +87,7 @@ public enum FactoryLumiACP {
     }
 }
 
-public enum ACPBootstrapError: Error, CustomStringConvertible {
+public enum ACPBootstrapError: Error, LocalizedError, CustomStringConvertible {
     case pluginNotFound
 
     public var description: String {
@@ -95,6 +95,10 @@ public enum ACPBootstrapError: Error, CustomStringConvertible {
         case .pluginNotFound:
             "plugin 'acp' not found"
         }
+    }
+
+    public var errorDescription: String? {
+        description
     }
 }
 

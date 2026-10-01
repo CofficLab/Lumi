@@ -1,8 +1,7 @@
 import AppKit
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// Disk service - performs scanning and cleaning operations in the background.
 public final class DiskService: SuperLog, @unchecked Sendable {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "disk")

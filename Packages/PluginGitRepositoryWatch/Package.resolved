@@ -1,13 +1,13 @@
 {
-  "originHash" : "b923b3b4666acc740d27477074ec4b8cd82e873c732f3ee2102b0f3d8bc021c4",
+  "originHash" : "2a24b98fef4ae03eb770312239c2b6d50acfd51bc3878ff05632b8e042b309b8",
   "pins" : [
     {
-      "identity" : "lumiui",
+      "identity" : "lumikernel",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/CofficLab/LumiUI.git",
+      "location" : "https://github.com/CofficLab/LumiKernel.git",
       "state" : {
-        "revision" : "22eaba744553dc9e83766a237ac7ca2a44f4feff",
-        "version" : "1.2.1"
+        "branch" : "main",
+        "revision" : "4a30c5f4d6e3b24be61e87a036b14720ef0f1654"
       }
     }
   ],

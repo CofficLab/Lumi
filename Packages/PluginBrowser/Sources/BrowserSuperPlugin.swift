@@ -1,10 +1,19 @@
-import KitAgentTool
-import Foundation
 import KernelCore
+import ProviderActivityBar
+import ProviderChatSection
+import ProviderContentView
+import ProviderConversation
+import ProviderRootView
+import ProviderRailView
 import ProviderToolManager
-import KitShell
-import KitSuperLog
+import ProviderToolbar
+import LumiLoggingKit
 import os
+import SwiftUI
+#if os(macOS)
+import KitMCP
+import ProviderMCP
+#endif
 
 @MainActor
 public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
@@ -22,131 +31,148 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    private var sessions: BrowserSessionManager?
+    private weak var activityBar: (any ActivityBarProviding)?
+    private weak var contentView: (any ContentViewProviding)?
+    private weak var chat: (any ChatSectionProviding)?
+    private weak var rootView: (any RootViewProviding)?
+    private weak var railView: (any RailViewProviding)?
+    private weak var toolbar: (any ToolbarProviding)?
+    private var rootViewObserver: (any RootViewObserverHandle)?
+    private var isBrowserActive = false
+    private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
+    private let entryID = "Browser.entry"
+
     public func onBoot(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ToolManagerProviding).self)?.add(
-            BrowserAgentV2Tool(),
-            pluginID: id
+        let sessions = BrowserSessionManager()
+        self.sessions = sessions
+        activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        chat = kernel.resolveProvider((any ChatSectionProviding).self)
+        rootView = kernel.resolveProvider((any RootViewProviding).self)
+        railView = kernel.resolveProvider((any RailViewProviding).self)
+        toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+
+        rootViewObserver = rootView?.addRootViewObserver { [weak self] event in
+            guard let self,
+                  self.isBrowserActive else { return }
+            switch event {
+            case .railViewChanged, .railViewVisibilityChanged(true):
+                self.hideRailView()
+            default:
+                break
+            }
+        }
+
+        if let conversations = kernel.resolveProvider((any ConversationManaging).self) {
+            sessions.selectConversation(conversations.selectedConversationID)
+            selectedConversationObserver = conversations.addSelectedConversationObserver { [weak sessions] conversationID in
+                sessions?.selectConversation(conversationID)
+            }
+        }
+
+        sessions.onRequestPresentation = { [weak self] in
+            self?.activityBar?.activateItem(id: self?.entryID)
+        }
+
+        let view = AnyView(BrowserWorkspaceView(manager: sessions))
+        activityBar?.addItems([
+            ActivityBarItem(
+                id: entryID,
+                title: metadata.name,
+                systemImage: "globe",
+                order: order,
+                ownerPluginID: id
+            ) { [weak self] state in
+                self?.setActive(state == .activated, view: view)
+            },
+        ])
+        if activityBar == nil {
+            setActive(true, view: view)
+        }
+
+        let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
+        toolManager?.add(BrowserOpenTool(sessions: sessions), pluginID: id)
+        toolManager?.add(BrowserReadTool(sessions: sessions), pluginID: id)
+        toolManager?.add(BrowserInteractTool(sessions: sessions), pluginID: id)
+    }
+
+    /// Register Chrome DevTools after every plugin has completed booting, so
+    /// PluginMCP has already published its server contribution provider.
+    public func onReady(kernel: KernelCoreContainer) throws {
+        #if os(macOS)
+        guard let contributor = kernel.resolveProvider((any MCPServerContributionProviding).self) else {
+            Self.logger.error("MCP server contribution provider is unavailable; Chrome DevTools was not registered.")
+            return
+        }
+        contributor.contribute(
+            MCPServerConfig(
+                name: "Chrome DevTools (official)",
+                command: "npx",
+                arguments: ["-y", "chrome-devtools-mcp@latest"]
+            )
         )
+        #endif
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: BrowserAgentV2Tool.toolName)
-    }
-}
-
-public struct BrowserAgentV2Tool: SuperAgentTool {
-    public static let toolName = "browser_agent"
-    public let name = toolName
-
-    public init() {}
-
-    public func description(for language: LanguagePreference) -> String {
-        "Browser automation using agent-browser CLI. Supports navigation, element interaction, page snapshots, screenshots, PDFs, JavaScript, and cookies."
-    }
-
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "command": ["type": "string", "description": "agent-browser command, such as 'open https://example.com', 'snapshot', or 'click @e1'"],
-                "timeout": ["type": "integer", "minimum": 1, "maximum": 300],
-            ],
-            "required": ["command"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        "浏览器自动化"
-    }
-
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
-        .medium
-    }
-
-    public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let command = arguments["command"]?.value as? String else {
-            return "Error: Missing required 'command' parameter"
+        selectedConversationObserver?.cancel()
+        selectedConversationObserver = nil
+        rootViewObserver?.cancel()
+        rootViewObserver = nil
+        let wasActive = isBrowserActive || activityBar?.activeItemID == entryID
+        activityBar?.removeItems(ids: [entryID])
+        kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: "browser_open")
+        kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: "browser_read")
+        kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: "browser_interact")
+        if wasActive {
+            isBrowserActive = false
+            contentView?.setContentView(nil)
+            rootView?.setContentViewHidden(false)
+            rootView?.setContentHeaderViewHidden(false)
+            chat?.setVisible(true)
+            chat?.setContextActive(true)
+            chat?.setActiveContext(.defaultChat)
+            railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+            mountRailView()
+            toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
         }
-        guard let commandArguments = Self.parseCommandArguments(command), !commandArguments.isEmpty else {
-            return "Error: Command contains an unterminated quote or no arguments"
-        }
-        guard let executable = await Self.findAgentBrowser() else {
-            return Self.installationGuide
-        }
+        sessions?.onRequestPresentation = nil
+        sessions = nil
+    }
 
-        let timeout = Self.normalizedTimeout(arguments["timeout"]?.value)
-        do {
-            let result = try await ShellExecutor.execute(
-                executable: executable,
-                arguments: commandArguments,
-                options: .init(timeout: timeout, throwsOnError: false)
-            )
-            if result.exitCode == 0 {
-                return result.stdout.isEmpty ? "Command completed successfully" : result.stdout
-            }
-            return "Error: \(result.stderr.isEmpty ? "Command failed with exit code \(result.exitCode)" : result.stderr)"
-        } catch {
-            return "Error: \(error.localizedDescription)"
+    private func setActive(_ active: Bool, view: AnyView) {
+        isBrowserActive = active
+        if active {
+            toolbar?.setVisibleCategories([.global, .chat, .project])
+            rootView?.setContentHeaderViewHidden(true)
+            rootView?.setContentViewHidden(false)
+            contentView?.setContentView(view)
+            chat?.setVisible(true)
+            chat?.setContextActive(true)
+            chat?.setActiveContext(.defaultChat)
+            hideRailView()
+        } else {
+            contentView?.setContentView(nil)
+            rootView?.setContentViewHidden(false)
+            rootView?.setContentHeaderViewHidden(false)
+            chat?.setVisible(false)
+            chat?.setContextActive(false)
+            chat?.setActiveContext(nil)
+            mountRailView()
+            toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
         }
     }
 
-    static func normalizedTimeout(_ value: Any?) -> TimeInterval {
-        let requested = (value as? Int) ?? (value as? Double).map(Int.init) ?? (value as? String).flatMap(Int.init) ?? 30
-        return TimeInterval(min(max(requested, 1), 300))
+    private func hideRailView() {
+        rootView?.setRailView(nil)
+        rootView?.setRailViewVisible(false)
     }
 
-    static func parseCommandArguments(_ command: String) -> [String]? {
-        var arguments: [String] = []
-        var current = ""
-        var quote: Character?
-        var escaping = false
-        var hasArgument = false
-
-        for character in command {
-            if escaping {
-                current.append(character)
-                hasArgument = true
-                escaping = false
-            } else if character == "\\" {
-                escaping = true
-                hasArgument = true
-            } else if let activeQuote = quote {
-                if character == activeQuote {
-                    quote = nil
-                } else {
-                    current.append(character)
-                    hasArgument = true
-                }
-            } else if character == "\"" || character == "'" {
-                quote = character
-                hasArgument = true
-            } else if character.isWhitespace {
-                if hasArgument { arguments.append(current); current = ""; hasArgument = false }
-            } else {
-                current.append(character)
-                hasArgument = true
-            }
+    private func mountRailView() {
+        if let railView {
+            rootView?.setRailView(railView.makeRailView())
         }
-
-        guard quote == nil else { return nil }
-        if escaping { current.append("\\") }
-        if hasArgument { arguments.append(current) }
-        return arguments
+        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
     }
-
-    private static func findAgentBrowser() async -> String? {
-        if let path = await ShellExecutor.findCommand("agent-browser") { return path }
-        for path in ["/opt/homebrew/bin/agent-browser", "/usr/local/bin/agent-browser", "/usr/bin/agent-browser", "/Users/\(NSUserName())/.volta/bin/agent-browser"] {
-            if FileManager.default.isExecutableFile(atPath: path) { return path }
-        }
-        let result = try? await ShellExecutor.execute(executable: "/bin/zsh", arguments: ["-l", "-c", "which agent-browser"], options: .init(timeout: 5, throwsOnError: false))
-        let path = result?.stdout.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return result?.isSuccess == true && !path.isEmpty ? path : nil
-    }
-
-    private static let installationGuide = """
-    Error: agent-browser is not installed on this system.
-
-    Install it with `npm install -g agent-browser`, then run `agent-browser install` once to download Chrome.
-    """
 }

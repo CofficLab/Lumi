@@ -12,7 +12,7 @@ import ProviderStorage
 import ProviderTheme
 import ProviderToolbar
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 @MainActor

@@ -1,5 +1,5 @@
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// `SkillProviding` 的默认实现：线程安全的插件贡献注册表。

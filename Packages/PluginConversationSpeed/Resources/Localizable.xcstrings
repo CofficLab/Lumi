@@ -514,40 +514,6 @@
         }
       }
     },
-    "Streaming speed measures how fast the model generates output tokens. Higher is better." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Streaming speed measures how fast the model generates output tokens. Higher is better."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "流式速度衡量模型生成输出令牌的快慢，数值越高越好。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "流式速度衡量模型生成输出令牌的快慢，数值越高越好。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "流式速度衡量模型生成输出令牌的快慢，数值越高越好。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "流式速度衡量模型生成输出令牌的快慢，数值越高越好。"
-          }
-        }
-      }
-    },
     "The provider did not report output token count." : {
       "localizations" : {
         "en" : {

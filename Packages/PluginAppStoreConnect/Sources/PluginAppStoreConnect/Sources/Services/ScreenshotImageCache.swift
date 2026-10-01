@@ -3,8 +3,8 @@ import Foundation
 import KernelCore
 import KitAgentTool
 import KitAppStorePromo
-import KitLocalization
-import KitSuperLog
+import LumiLocalizationKit
+import LumiLoggingKit
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView

@@ -12,7 +12,7 @@ import ProviderStorage
 import ProviderSkill
 import ProviderToolManager
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// KernelCore 版本的思维导图设计器插件。

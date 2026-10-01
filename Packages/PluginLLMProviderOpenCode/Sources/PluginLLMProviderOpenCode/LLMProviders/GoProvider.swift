@@ -2,8 +2,7 @@ import Foundation
 import KitLLM
 import os
 import ProviderLLMManager
-import KitSuperLog
-
+import LumiLoggingKit
 /// OpenCode Go 供应商（Go 系列模型网关）。
 ///
 /// 同一网关下按模型走三种协议（Responses / OpenAI / Anthropic），

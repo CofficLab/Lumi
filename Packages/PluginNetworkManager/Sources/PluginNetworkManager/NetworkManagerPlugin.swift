@@ -9,8 +9,7 @@ import ProviderSettingView
 import ProviderStorage
 import ProviderToolManager
 import SwiftUI
-import KitSuperLog
-
+import LumiLoggingKit
 /// Network Manager 插件（KernelCore 版本）
 ///
 /// 由旧版 `Plugins/NetworkManagerPlugin`（KernelLumi / LumiPlugin 架构）复刻而来，

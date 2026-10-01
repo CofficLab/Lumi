@@ -1,5 +1,6 @@
 import Foundation
 import KitAgentTool
+import BookletMakerCore
 
 /// 以当前拼版参数渲染小册子的前若干个印刷面为 PNG 预览图，
 /// 供模型在真正导出前做视觉确认（页序、留白、裁切标记）。

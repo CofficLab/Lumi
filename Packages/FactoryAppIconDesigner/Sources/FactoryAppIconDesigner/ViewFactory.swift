@@ -1,3 +1,4 @@
+import LumiThemePack
 import Foundation
 import KernelCore
 import LumiUI
@@ -6,6 +7,7 @@ import ProviderChatSection
 import ProviderContentView
 import ProviderRailView
 import ProviderRootView
+import PluginRootView
 import ProviderSettingView
 import ProviderTheme
 import ProviderToolbar
@@ -74,7 +76,7 @@ public struct DefaultViewFactory: ViewFactory {
         }
 
         ResolvedSystemColorScheme.current = colorScheme
-        let chrome = PaletteChromeTheme(theme: selected, colorScheme: colorScheme)
+        let chrome = LumiPaletteChromeTheme(theme: selected, colorScheme: colorScheme)
         ActiveChromeTheme.current = chrome
         LumiUIThemeStore.shared.setTheme(ChromeToUIThemeAdapter(chrome: chrome))
     }

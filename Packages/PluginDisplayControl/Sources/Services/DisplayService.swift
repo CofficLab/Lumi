@@ -1,6 +1,6 @@
 import CoreGraphics
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 // MARK: - DisplayServices Bridge (built-in display)

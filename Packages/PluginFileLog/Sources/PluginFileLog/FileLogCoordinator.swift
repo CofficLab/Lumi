@@ -1,6 +1,6 @@
 import Foundation
 import OSLog
-import KitSuperLog
+import LumiLoggingKit
 import ProviderDiagnostics
 
 /// 磁盘日志协调器

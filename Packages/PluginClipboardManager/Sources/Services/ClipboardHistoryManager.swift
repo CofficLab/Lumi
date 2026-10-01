@@ -1,6 +1,6 @@
 import Foundation
 import os
-import KitSuperLog
+import LumiLoggingKit
 import SwiftData
 
 /// 剪贴板历史管理器

@@ -23,6 +23,24 @@ final class KeychainStoreTests: XCTestCase {
         XCTAssertEqual(backend.readCount, 1)
     }
 
+    func testFalseNotFoundCanLookMissingUntilANewReadFindsExistingItem() throws {
+        // Deterministically models the reported symptom: the key is available
+        // on a later read, but one SecItemCopyMatching result says not found.
+        // This verifies application behavior; it does not claim macOS itself
+        // spontaneously produces this sequence.
+        let backend = SequencedReadKeychainBackend([
+            KeychainResult(status: errSecItemNotFound, data: nil),
+            KeychainResult(status: errSecSuccess, data: Data("secret".utf8))
+        ])
+        let firstProcessStore = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+
+        XCTAssertNil(try firstProcessStore.stringReportingErrors(forKey: "account"))
+
+        // A fresh store stands in for the app restarting and reading again.
+        let afterRestartStore = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+        XCTAssertEqual(try afterRestartStore.stringReportingErrors(forKey: "account"), "secret")
+    }
+
     func testReportingReadThrowsUnexpectedOSStatus() {
         let backend = StubKeychainBackend(
             readResult: KeychainResult(status: errSecAuthFailed, data: nil)
@@ -127,5 +145,31 @@ final class StubKeychainBackend: KeychainBackend, @unchecked Sendable {
 
     func delete(service: String, account: String) -> KeychainResult {
         deleteResult ?? KeychainResult(status: errSecSuccess, data: nil)
+    }
+}
+
+private final class SequencedReadKeychainBackend: KeychainBackend, @unchecked Sendable {
+    private let lock = NSLock()
+    private var results: [KeychainResult]
+
+    init(_ results: [KeychainResult]) {
+        self.results = results
+    }
+
+    func read(service: String, account: String, allowInteraction: Bool) -> KeychainResult {
+        lock.withLock {
+            guard !results.isEmpty else {
+                return KeychainResult(status: errSecItemNotFound, data: nil)
+            }
+            return results.removeFirst()
+        }
+    }
+
+    func write(_ data: Data, service: String, account: String) -> KeychainResult {
+        KeychainResult(status: errSecSuccess, data: data)
+    }
+
+    func delete(service: String, account: String) -> KeychainResult {
+        KeychainResult(status: errSecSuccess, data: nil)
     }
 }

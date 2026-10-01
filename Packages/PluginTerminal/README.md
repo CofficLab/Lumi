@@ -29,7 +29,7 @@ Native terminal plugin for Lumi. Provides a developer tool view with interactive
 |---------|-------------|
 | [LumiCoreKit](../../Packages/LumiCoreKit) | Plugin protocol and project context types |
 | [LumiUI](https://github.com/CofficLab/LumiUI) | Shared Lumi UI components and theming |
-| [KitSuperLog](../../Packages/KitSuperLog) | Logging framework |
+| [LumiLogging](https://github.com/CofficLab/LumiLogging) | Logging framework |
 | [KitTerminalCore](../../Packages/KitTerminalCore) | Terminal session and tab view model logic |
 | [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) | Native terminal emulator |
 

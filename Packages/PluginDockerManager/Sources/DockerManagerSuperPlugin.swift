@@ -8,8 +8,7 @@ import ProviderRootView
 import ProviderToolbar
 import SwiftUI
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 struct DockerManagerPlugin {
     let name = "Docker"
     init() {}

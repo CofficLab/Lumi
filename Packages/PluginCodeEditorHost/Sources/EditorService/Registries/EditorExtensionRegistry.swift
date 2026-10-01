@@ -2,7 +2,7 @@ import Foundation
 import EditorSource
 import EditorTextView
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 编辑器扩展注册中心

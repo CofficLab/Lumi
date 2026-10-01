@@ -11,7 +11,7 @@ import ProviderToolbar
 import ProviderRootView
 import SwiftUI
 import KitTerminalCore
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// KernelCore entry point for the legacy terminal workspace.

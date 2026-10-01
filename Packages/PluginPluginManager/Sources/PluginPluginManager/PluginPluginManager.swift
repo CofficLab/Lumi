@@ -4,7 +4,7 @@ import ProviderPluginManaging
 import ProviderPromptSuggestion
 import ProviderSettingView
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 插件管理插件

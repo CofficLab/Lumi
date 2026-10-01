@@ -1,6 +1,6 @@
 import KernelCore
 import KitAgentTool
-import KitSuperLog
+import LumiLoggingKit
 import os
 import ProviderActivityBar
 import ProviderAgentRules

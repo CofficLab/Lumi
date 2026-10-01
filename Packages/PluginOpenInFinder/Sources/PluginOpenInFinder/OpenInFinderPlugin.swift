@@ -1,7 +1,7 @@
 import os
 import Foundation
 import KernelCore
-import KitSuperLog
+import LumiLoggingKit
 import OpenInKit
 import ProviderProject
 import ProviderDocsView

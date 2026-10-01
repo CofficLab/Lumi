@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import BookletMakerCore
 
 // MARK: - Mobile Workspace State
 
@@ -18,6 +19,7 @@ final class MobileWorkspaceState: ObservableObject {
     enum Tool: String, CaseIterable, Identifiable, Sendable {
         case booklet
         case split
+        case merge
 
         var id: String { rawValue }
     }
@@ -41,8 +43,10 @@ final class MobileWorkspaceState: ObservableObject {
         case help
         case shareBooklet(URL)
         case shareSplit([URL])
+        case shareMerge(URL)
         case saveBooklet(URL)
         case saveSplit([URL])
+        case saveMerge(URL)
 
         var id: String {
             switch self {
@@ -52,8 +56,10 @@ final class MobileWorkspaceState: ObservableObject {
             case .help: "help"
             case .shareBooklet(let url): "shareBooklet-\(url.path)"
             case .shareSplit(let urls): "shareSplit-\(urls.map(\.path).joined(separator: "|"))"
+            case .shareMerge(let url): "shareMerge-\(url.path)"
             case .saveBooklet(let url): "saveBooklet-\(url.path)"
             case .saveSplit(let urls): "saveSplit-\(urls.map(\.path).joined(separator: "|"))"
+            case .saveMerge(let url): "saveMerge-\(url.path)"
             }
         }
     }

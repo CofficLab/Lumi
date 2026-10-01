@@ -1,6 +1,6 @@
 import Darwin
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 // MARK: - Models

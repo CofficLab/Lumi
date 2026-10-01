@@ -1,8 +1,7 @@
 import Foundation
 import os
 import Security
-import KitSuperLog
-
+import LumiLoggingKit
 public final class HTTPClient: SuperLog, @unchecked Sendable {
     public nonisolated static let emoji = "🌐"
     public nonisolated static let verbose = false

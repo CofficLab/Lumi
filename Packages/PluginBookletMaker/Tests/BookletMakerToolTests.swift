@@ -24,6 +24,7 @@ struct BookletMakerToolTests {
             "pdf_inspect",
             "booklet_make",
             "pdf_split",
+            "pdf_merge",
             "booklet_preview",
         ])
     }
@@ -45,6 +46,10 @@ struct BookletMakerToolTests {
         ) == .high)
         #expect(PDFSplitTool().permissionRiskLevel(arguments: [:]) == .medium)
         #expect(PDFSplitTool().permissionRiskLevel(
+            arguments: ["overwrite": ToolArgument(true)]
+        ) == .high)
+        #expect(PDFMergeTool().permissionRiskLevel(arguments: [:]) == .medium)
+        #expect(PDFMergeTool().permissionRiskLevel(
             arguments: ["overwrite": ToolArgument(true)]
         ) == .high)
     }
@@ -210,6 +215,48 @@ struct BookletMakerToolTests {
     }
 
     // MARK: - pdf_split
+
+    @Test func mergeWritesSourcesInOrder() async throws {
+        let first = try makeSourcePDF(pageCount: 2)
+        let second = try makeSourcePDF(pageCount: 3)
+        let directory = try makeTemporaryDirectory()
+        defer {
+            try? FileManager.default.removeItem(at: first)
+            try? FileManager.default.removeItem(at: second)
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let outputURL = directory.appendingPathComponent("merged.pdf")
+
+        let message = try await PDFMergeTool().execute(arguments: [
+            "sourcePaths": ToolArgument([first.path, second.path]),
+            "outputPath": ToolArgument(outputURL.path),
+        ])
+
+        #expect(message.contains("Merged 2 PDF files"))
+        let output = try #require(PDFDocument(url: outputURL))
+        #expect(output.pageCount == 5)
+    }
+
+    @Test func mergeRefusesToOverwriteByDefault() async throws {
+        let first = try makeSourcePDF(pageCount: 1)
+        let second = try makeSourcePDF(pageCount: 1)
+        let directory = try makeTemporaryDirectory()
+        defer {
+            try? FileManager.default.removeItem(at: first)
+            try? FileManager.default.removeItem(at: second)
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let outputURL = directory.appendingPathComponent("merged.pdf")
+        try Data("existing".utf8).write(to: outputURL)
+
+        let message = try await PDFMergeTool().execute(arguments: [
+            "sourcePaths": ToolArgument([first.path, second.path]),
+            "outputPath": ToolArgument(outputURL.path),
+        ])
+
+        #expect(either(message, "already exists", "已存在"))
+        #expect(try Data(contentsOf: outputURL) == Data("existing".utf8))
+    }
 
     @Test func splitWritesOnePDFPerRange() async throws {
         let source = try makeSourcePDF(pageCount: 10)

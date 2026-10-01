@@ -10,8 +10,7 @@ import ProviderLLMManager
 import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
-import KitSuperLog
-
+import LumiLoggingKit
 extension Message {
     var llmMessage: LLMMessage {
         llmMessage(toolImages: [])

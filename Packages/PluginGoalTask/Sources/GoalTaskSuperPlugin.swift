@@ -8,7 +8,7 @@ import ProviderMessage
 import ProviderStorage
 import ProviderToolManager
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// KernelCore implementation of the goal and task workflow.

@@ -16,7 +16,7 @@ func gitWorkspacePluginRegistersEntry() throws {
     try kernel.registerProvider((any ActivityBarProviding).self, DefaultActivityBarProviding())
     try kernel.registerProvider((any ContentViewProviding).self, DefaultContentViewProviding())
     try kernel.registerProvider((any ProjectProviding).self, DefaultProjectProvider())
-    try kernel.registerProvider((any RootViewProviding).self, DefaultRootViewProvider())
+    try kernel.registerProvider((any RootViewProviding).self, DefaultRootViewProviding())
     try kernel.registerProvider((any ToolbarProviding).self, DefaultToolbarProviding())
 
     try GitWorkspacePlugin().onBoot(kernel: kernel)
@@ -34,7 +34,7 @@ func gitWorkspaceActivationAndShutdownRestoreHostUI() throws {
     let content = DefaultContentViewProviding()
     let project = DefaultProjectProvider()
     let rail = DefaultRailViewProviding()
-    let root = DefaultRootViewProvider()
+    let root = DefaultRootViewProviding()
     let toolbar = DefaultToolbarProviding()
     root.setRailView(rail.makeRailView())
     var contentChanges = 0

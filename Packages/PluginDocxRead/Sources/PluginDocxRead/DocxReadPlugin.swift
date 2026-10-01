@@ -2,8 +2,7 @@ import KitAgentTool
 import KernelCore
 import os
 import ProviderToolManager
-import KitSuperLog
-
+import LumiLoggingKit
 /// Docx Read 插件（KernelCore 版本）
 ///
 /// 由旧版 `Plugins/DocxReadPlugin`（KernelLumi / LumiPlugin 架构）复刻而来，

@@ -1,7 +1,6 @@
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// ClipboardManager 插件本地存储
 ///
 /// 负责持久化插件的配置和设置项。

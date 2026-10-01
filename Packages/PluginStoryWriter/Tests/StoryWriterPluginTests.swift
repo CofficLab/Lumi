@@ -28,7 +28,7 @@ func activationScopesRailView() throws {
     let activityBar = DefaultActivityBarProviding()
     let contentView = DefaultContentViewProviding()
     let railView = DefaultRailViewProviding()
-    let rootView = DefaultRootViewProvider()
+    let rootView = DefaultRootViewProviding()
     try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
     try kernel.registerProvider((any ContentViewProviding).self, contentView)
     try kernel.registerProvider((any RailViewProviding).self, railView)

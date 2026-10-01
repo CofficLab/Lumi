@@ -1,5 +1,5 @@
 import Foundation
-import KitLocalization
+import LumiLocalizationKit
 
 /// Runtime localization for the PluginMessageList bundle.
 enum LumiPluginLocalization {

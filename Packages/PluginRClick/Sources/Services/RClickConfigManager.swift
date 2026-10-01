@@ -1,7 +1,6 @@
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// RClick 配置管理器
 ///
 /// 主应用与 LumiFinder 扩展通过 App Group 容器内的 JSON 文件共享配置（`RClickConfig`）。

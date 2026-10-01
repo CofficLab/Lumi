@@ -4,8 +4,8 @@ import Foundation
 import KernelCore
 import KitAgentTool
 import KitAppStorePromo
-import KitLocalization
-import KitSuperLog
+import LumiLocalizationKit
+import LumiLoggingKit
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
@@ -17,7 +17,7 @@ import ProviderStorage
 import ProviderToolbar
 import ProviderToolManager
 import os
-import KitSuperLog
+import LumiLoggingKit
 @MainActor
 final class VM: ObservableObject, SuperLog {
     nonisolated static let emoji = "🏪"

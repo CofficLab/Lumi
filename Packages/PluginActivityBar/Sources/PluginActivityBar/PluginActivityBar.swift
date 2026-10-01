@@ -2,7 +2,7 @@ import Foundation
 import KernelCore
 import os
 import ProviderActivityBar
-import KitSuperLog
+import LumiLoggingKit
 import ProviderPluginManaging
 import ProviderRootView
 import ProviderStorage

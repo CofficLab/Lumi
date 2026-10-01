@@ -12,8 +12,7 @@ import ProviderToolbar
 import ProviderToolManager
 import SwiftUI
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 struct DatabaseManagerPlugin {
     nonisolated static let verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "DatabaseManagerPlugin")

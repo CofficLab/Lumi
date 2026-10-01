@@ -4,7 +4,7 @@ import KernelCore
 import ProviderProject
 import ProviderToolManager
 import ProviderPromptSuggestion
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 @MainActor

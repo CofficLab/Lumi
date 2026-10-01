@@ -1,5 +1,6 @@
 import CoreGraphics
 import XCTest
+import BookletMakerCore
 @testable import BookletMakerPlugin
 
 // MARK: - Booklet Layout Engine Tests
@@ -151,20 +152,19 @@ final class BookletLayoutEngineTests: XCTestCase {
     // MARK: - fitRect
 
     func testFitRectWideSourceFitsByHeight() {
-        // Source cell 1:1 vs source 2:1 means
-        // we fit by height: 100x50, centred.
+        // A wide source is fitted inside the target by width: 100x50.
         let r = BookletLayoutEngine.fitRect(aspectRatio: 2.0,
                                             into: CGRect(x: 0, y: 0, width: 100, height: 100))
-        XCTAssertEqual(r.width,  200, accuracy: 0.001)
-        XCTAssertEqual(r.height, 100, accuracy: 0.001)
+        XCTAssertEqual(r.width,  100, accuracy: 0.001)
+        XCTAssertEqual(r.height, 50, accuracy: 0.001)
     }
 
     func testFitRectTallSourceFitsByWidth() {
-        // Source 1:2, cell 100x100 → fit by width: 50x100.
+        // A tall source is fitted inside the target by height: 50x100.
         let r = BookletLayoutEngine.fitRect(aspectRatio: 0.5,
                                             into: CGRect(x: 0, y: 0, width: 100, height: 100))
-        XCTAssertEqual(r.width,  100, accuracy: 0.001)
-        XCTAssertEqual(r.height, 200, accuracy: 0.001)
+        XCTAssertEqual(r.width,  50, accuracy: 0.001)
+        XCTAssertEqual(r.height, 100, accuracy: 0.001)
     }
 
     func testFitRectDegenerateInputsReturnTarget() {

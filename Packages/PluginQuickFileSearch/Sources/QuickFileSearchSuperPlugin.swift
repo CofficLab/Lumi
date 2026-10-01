@@ -5,7 +5,7 @@ import ProviderProject
 import ProviderRootView
 import ProviderSettingView
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 @MainActor

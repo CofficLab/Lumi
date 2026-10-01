@@ -2,7 +2,7 @@ import Foundation
 import KitLLM
 import os
 import ProviderConversation
-import KitSuperLog
+import LumiLoggingKit
 import SwiftData
 
 /// Conversation storage service using SwiftData

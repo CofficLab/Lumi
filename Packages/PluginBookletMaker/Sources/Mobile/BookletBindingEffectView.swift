@@ -159,7 +159,7 @@ struct BookletBindingEffectView: View {
 
     private var explanationText: String {
         switch viewModel.settings.layout {
-        case .bookletFold:
+        case .bookletFold, .signatureFold:
             return BookletLocalization.string(
                 "Two source pages share one physical sheet, front and back. "
                 + "Fold the sheet along the centre line and read pages in order."

@@ -1,5 +1,5 @@
 import Foundation
-import KitLocalization
+import LumiLocalizationKit
 
 public enum PackageDependencyKind: String, Codable, Sendable {
     case remote

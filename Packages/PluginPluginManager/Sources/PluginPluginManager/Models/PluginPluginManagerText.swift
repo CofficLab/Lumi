@@ -4,7 +4,7 @@ import Foundation
 /// 插件管理页用到的文案常量集中管理。
 ///
 /// 与新版本其它插件包（PluginSettingGeneral / PluginThemePack）一致，
-/// 直接内联中文文案，不依赖 KitLocalization / xcstrings。
+/// 直接内联中文文案，不依赖 LumiLocalizationKit / xcstrings。
 enum PluginPluginManagerText {
     static let plugins = "插件管理"
     static let pluginsHint = "管理所有已注册插件"
@@ -61,7 +61,7 @@ extension PluginCategory {
     /// 展示顺序（用于分类筛选标签栏；`allCases` 缺失时作为排序依据）。
     static var displayOrder: [PluginCategory] {
         [
-            .core, .chat, .llm, .system, .project, .editor,
+            .core, .chat, .llm, .system, .project, .feature, .editor,
             .integration, .design, .general,
         ]
     }
@@ -73,6 +73,7 @@ extension PluginCategory {
         case .llm: "模型"
         case .editor: "编辑器"
         case .project: "项目"
+        case .feature: "功能"
         case .system: "系统"
         case .design: "设计"
         case .integration: "集成"
@@ -87,6 +88,7 @@ extension PluginCategory {
         case .llm: "cpu"
         case .editor: "chevron.left.forwardslash.chevron.right"
         case .project: "folder"
+        case .feature: "square.grid.2x2"
         case .system: "desktopcomputer"
         case .design: "paintbrush"
         case .integration: "arrow.up.right.square"
@@ -101,6 +103,7 @@ extension PluginCategory {
         case .llm: 20
         case .system: 25
         case .project: 30
+        case .feature: 32
         case .editor: 35
         case .integration: 40
         case .design: 45

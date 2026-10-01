@@ -3,7 +3,7 @@ import KernelCore
 import ProviderAgentLoop
 import ProviderChatSection
 import ProviderConversation
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// Agent Turn 运行状态插件

@@ -141,5 +141,11 @@ struct ProviderAPIKeyMissingView: View {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .strokeBorder(theme.divider, lineWidth: 1)
         }
+        .task {
+            // Missing is a snapshot taken when the error was created. Recheck
+            // on appearance so a transient Keychain false-negative does not
+            // leave a stale "API Key required" card until the app restarts.
+            viewModel.recheckKeychain()
+        }
     }
 }

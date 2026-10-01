@@ -1,8 +1,7 @@
 import Combine
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// Battery power history service with high-resolution (5s) storage.
 ///
 /// Records battery power draw/charge over time for trend visualization.

@@ -26,7 +26,7 @@ Manage installed applications for Lumi.
 |---------|-------------|
 | [LumiCoreKit](../../Packages/LumiCoreKit) | Core framework for Lumi plugins |
 | [LumiUI](https://github.com/CofficLab/LumiUI) | UI components |
-| [KitSuperLog](../../Packages/KitSuperLog) | Logging framework |
+| [LumiLogging](https://github.com/CofficLab/LumiLogging) | Logging framework |
 
 ## Usage
 

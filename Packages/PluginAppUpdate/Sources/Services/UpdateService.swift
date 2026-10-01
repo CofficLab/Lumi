@@ -2,7 +2,7 @@ import AppKit
 import ProviderAppUpdate
 import ProviderNetwork
 import Sparkle
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// Core update service integrating Sparkle.

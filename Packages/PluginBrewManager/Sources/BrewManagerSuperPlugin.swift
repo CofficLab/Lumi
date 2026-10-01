@@ -8,7 +8,7 @@ import ProviderRootView
 import ProviderToolbar
 import SwiftUI
 import os
-import KitSuperLog
+import LumiLoggingKit
 import ProviderChatSection
 
 struct BrewManagerPlugin {

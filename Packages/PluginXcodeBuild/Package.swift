@@ -9,8 +9,8 @@ let package = Package(
         .library(name: "PluginXcodeBuild", targets: ["PluginXcodeBuild"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderSkill"),
     ],
     targets: [
@@ -18,7 +18,7 @@ let package = Package(
             name: "PluginXcodeBuild",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 "ProviderSkill",
             ],
             path: "Sources/PluginXcodeBuild",

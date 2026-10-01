@@ -3,7 +3,7 @@ import KernelCore
 import os
 import ProviderDocsView
 import ProviderToolManager
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// OCR 文字识别插件

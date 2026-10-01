@@ -3,8 +3,7 @@ import os
 import KernelCore
 import ProviderLLMManager
 import KitLLM
-import KitSuperLog
-
+import LumiLoggingKit
 /// StepFun 供应商装配插件（KernelCore 生态）。
 ///
 /// 在 `onBoot` 中把 Step Plan 与开放平台 Provider 注册进

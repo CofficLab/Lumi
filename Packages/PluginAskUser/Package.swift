@@ -9,10 +9,10 @@ let package = Package(
         .library(name: "PluginAskUser", targets: ["PluginAskUser"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitAgentTool"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderMessageRendering"),
@@ -23,7 +23,7 @@ let package = Package(
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../KitLLM"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -39,7 +39,7 @@ let package = Package(
                 "ProviderAgentLoop",
                 "ProviderMessageSender",
                 "ProviderToolManager",
-                "KitLocalization",
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
             path: "Sources/PluginAskUser",
             resources: [.process("../../Resources/Localizable.xcstrings")]
@@ -49,7 +49,7 @@ let package = Package(
             dependencies: [
                 "PluginAskUser",
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),

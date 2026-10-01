@@ -5,8 +5,7 @@ import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
 import ProviderMessageSender
-import KitSuperLog
-
+import LumiLoggingKit
 /// 消息发送装配插件。
 @MainActor
 public final class MessageSenderPlugin: SuperPlugin, SuperLog {

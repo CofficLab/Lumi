@@ -1,6 +1,6 @@
 import Foundation
 import KitAgentTool
-import KitSuperLog
+import LumiLoggingKit
 import os
 import ProviderAgentLoop
 import ProviderConversation

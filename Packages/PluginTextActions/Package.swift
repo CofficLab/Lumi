@@ -9,14 +9,14 @@ let package = Package(
         .library(name: "PluginTextActions", targets: ["TextActionsPlugin"])
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitLLM"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
-        .package(path: "../KitLocalization"),
-        .package(path: "../KitSuperLog"),
-        .package(path: "../ProviderDocsView"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderLLMManager"),
-        .package(path: "../ProviderSettingView")
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7")
     ],
     targets: [
         .target(
@@ -25,11 +25,11 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
-                .product(name: "ProviderDocsView", package: "ProviderDocsView"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
-                .product(name: "ProviderSettingView", package: "ProviderSettingView")
+                .product(name: "ProviderSettingView", package: "LumiSettings")
             ],
             path: "Sources",
             resources: [.process("../Resources/Localizable.xcstrings")]

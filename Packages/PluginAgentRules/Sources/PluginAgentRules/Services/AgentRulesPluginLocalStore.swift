@@ -1,7 +1,6 @@
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// Agent 规则插件本地存储
 ///
 /// 负责管理插件的配置持久化

@@ -1,8 +1,7 @@
 import Foundation
 import os
 import KitLLM
-import KitSuperLog
-
+import LumiLoggingKit
 /// `DefaultLLMManager` 的历史别名，保持下游测试兼容。
 public typealias DefaultLLMProviderManagerProviding = DefaultLLMManager
 

@@ -1,8 +1,7 @@
 import Foundation
 import Combine
 import SwiftUI
-import KitSuperLog
-
+import LumiLoggingKit
 protocol BrewManagerServicing: Sendable {
     func checkInstalled() async -> Bool
     func listInstalled() async throws -> [BrewPackage]

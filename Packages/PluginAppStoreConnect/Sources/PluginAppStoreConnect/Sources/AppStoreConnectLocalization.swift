@@ -1,5 +1,5 @@
 import Foundation
-import KitLocalization
+import LumiLocalizationKit
 /// Plugin-scoped localization helper for AppStoreConnectPlugin.
 ///
 /// Defaults `bundle` to `.module` so the 270+ call-sites can use the short form.

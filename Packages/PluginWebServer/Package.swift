@@ -9,23 +9,22 @@ let package = Package(
         .library(name: "PluginWebServer", targets: ["PluginWebServer"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
-        .package(path: "../ProviderTheme"),
-        .package(path: "../ProviderSettingView"),
-        .package(path: "../ProviderToast"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
         .package(path: "../ProviderWebServer"),
         .package(path: "../KitWebServer"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
             name: "PluginWebServer",
-            dependencies: [.product(name: "KernelCore", package: "LumiKernel"), "ProviderTheme", "ProviderSettingView", "ProviderToast", "ProviderWebServer", "KitWebServer", "KitSuperLog", "LumiUI"]
+            dependencies: [.product(name: "KernelCore", package: "LumiKernel"), .product(name: "ProviderTheme", package: "LumiProviders"), .product(name: "ProviderSettingView", package: "LumiSettings"),.product(name: "ProviderToast", package: "LumiProviders"), "ProviderWebServer", "KitWebServer", .product(name: "LumiLoggingKit", package: "LumiLogging"), "LumiUI"]
         ),
         .testTarget(
             name: "PluginWebServerTests",
-            dependencies: ["PluginWebServer", .product(name: "KernelCore", package: "LumiKernel"), "ProviderTheme", "ProviderWebServer", "KitWebServer"]
+            dependencies: ["PluginWebServer", .product(name: "KernelCore", package: "LumiKernel"), .product(name: "ProviderTheme", package: "LumiProviders"), "ProviderWebServer", "KitWebServer"]
         ),
     ]
 )

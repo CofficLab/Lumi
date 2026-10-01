@@ -3,7 +3,7 @@ import LumiUI
 import os
 import ProviderConversation
 import ProviderMessage
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// Message List V2 View (standard / 标准模式)

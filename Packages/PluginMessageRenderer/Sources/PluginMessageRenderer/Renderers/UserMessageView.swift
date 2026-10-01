@@ -1,5 +1,5 @@
 import KitAgentTool
-import KitLocalization
+import LumiLocalizationKit
 import LumiUI
 import KitMarkdown
 import ProviderConversation

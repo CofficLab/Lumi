@@ -9,9 +9,9 @@ let package = Package(
         .library(name: "PluginToolActivity", targets: ["PluginToolActivity"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
-        .package(path: "../KitLocalization"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderToolManager"),
@@ -21,8 +21,8 @@ let package = Package(
             name: "PluginToolActivity",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                "KitLocalization",
-                "KitSuperLog",
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 "ProviderChatSection",
                 "ProviderConversation",
                 "ProviderToolManager",

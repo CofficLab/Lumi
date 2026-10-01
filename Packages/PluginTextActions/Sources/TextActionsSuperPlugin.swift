@@ -2,7 +2,7 @@ import KernelCore
 import ProviderDocsView
 import ProviderLLMManager
 import ProviderSettingView
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// KernelCore lifecycle for the global selected-text action menu.

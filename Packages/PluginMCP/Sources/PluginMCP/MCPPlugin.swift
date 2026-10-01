@@ -3,7 +3,7 @@ import KernelCore
 import KitAgentTool
 import KitMCP
 import ProviderMCP
-import KitSuperLog
+import LumiLoggingKit
 import ProviderSettingView
 import ProviderStorage
 import ProviderToolManager
