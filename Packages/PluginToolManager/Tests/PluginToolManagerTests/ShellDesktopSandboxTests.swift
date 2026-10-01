@@ -33,3 +33,60 @@ import Testing
     #expect(output.contains("com.apple.windowserver.active:"))
     #expect(!output.split(separator: "\n").contains { $0.hasSuffix(":0") })
 }
+
+// MARK: - Unsandboxed opt-out
+
+@Test func unsandboxedArgumentsSkipTheWrapper() {
+    // The whole point of the opt-out: the command must not be handed to
+    // sandbox-exec, because a sandboxed process cannot apply a second sandbox.
+    let wrapped = try? ShellDesktopSandbox.arguments(command: "swift build")
+    #expect(wrapped?.contains("/usr/bin/sandbox-exec") != true)
+    #expect(wrapped?.first == "-p")
+
+    let bare = ShellDesktopSandbox.unsandboxedArguments(command: "swift build")
+    #expect(bare == ["-lc", "swift build"])
+    #expect(!bare.contains("/usr/bin/sandbox-exec"))
+}
+
+@Test func unsandboxedDefaultsToOff() {
+    let tool = ShellTool(workspaceRootProvider: { "/tmp" })
+    #expect(tool.requiresExplicitApproval(arguments: ["command": ToolArgument("echo hi")]) == false)
+    #expect(tool.requiresExplicitApproval(arguments: [
+        "command": ToolArgument("echo hi"),
+        "unsandboxed": ToolArgument(false),
+    ]) == false)
+}
+
+@Test func unsandboxedAlwaysRequiresExplicitApproval() {
+    // Risk level alone is not enough: `.autonomous` conversations approve every
+    // risk level, which would let this run unattended.
+    let tool = ShellTool(workspaceRootProvider: { "/tmp" })
+    #expect(tool.requiresExplicitApproval(arguments: [
+        "command": ToolArgument("echo hi"),
+        "unsandboxed": ToolArgument(true),
+    ]) == true)
+}
+
+@Test func unsandboxedRaisesRiskLevelToHigh() {
+    let tool = ShellTool(workspaceRootProvider: { "/tmp" })
+    // A benign command would otherwise be `.low` and auto-approved.
+    #expect(tool.permissionRiskLevel(arguments: ["command": ToolArgument("echo hi")]) == .low)
+    #expect(tool.permissionRiskLevel(arguments: [
+        "command": ToolArgument("echo hi"),
+        "unsandboxed": ToolArgument(true),
+    ]) == .high)
+}
+
+@Test func unsandboxedIsAdvertisedInSchemaAndDescription() {
+    let tool = ShellTool(workspaceRootProvider: { "/tmp" })
+    let properties = (tool.inputSchema(for: .english)["properties"] as? [String: Any]) ?? [:]
+    #expect(properties["unsandboxed"] != nil)
+
+    let sandboxed = tool.displayDescription(for: ["command": ToolArgument("swift build")])
+    let unsandboxed = tool.displayDescription(for: [
+        "command": ToolArgument("swift build"),
+        "unsandboxed": ToolArgument(true),
+    ])
+    #expect(sandboxed != unsandboxed)
+    #expect(unsandboxed.contains("沙箱"))
+}

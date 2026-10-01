@@ -209,6 +209,13 @@ public final class ToolManager: ToolManagerProviding, SuperLog {
         return tool.permissionRiskLevel(arguments: arguments)
     }
 
+    /// 该调用是否绕过常规授权策略、强制交由用户确认。
+    func toolRequiresExplicitApproval(_ toolCall: ToolCall) -> Bool {
+        guard let tool = registeredTools[toolCall.name],
+              let arguments = try? ToolArgumentCoding.decode(toolCall.arguments) else { return false }
+        return tool.requiresExplicitApproval(arguments: arguments)
+    }
+
     public func authorizationDecision(
         for toolCall: ToolCall,
         conversationID: UUID
@@ -219,6 +226,12 @@ public final class ToolManager: ToolManagerProviding, SuperLog {
         // approval UI, which cannot build a request without a registered tool.
         guard registeredTools[toolCall.name] != nil else {
             return .autoApproved
+        }
+        // 工具可以为单次调用声明"无论自动化等级都必须经用户确认"。
+        // 典型场景是 `run_command` 请求脱离桌面隔离：`permissionRiskLevel`
+        // 只能表达风险高低，而 `.autonomous` 会直接放行所有风险等级。
+        if toolRequiresExplicitApproval(toolCall) {
+            return .requiresUserApproval
         }
         guard let level = conversationManager?.automationLevel(for: conversationID) else {
             let risk = riskLevel(for: toolCall) ?? .high
