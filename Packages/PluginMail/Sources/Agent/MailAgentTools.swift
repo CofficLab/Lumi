@@ -341,7 +341,7 @@ public struct MailSendMessageTool: SuperAgentTool {
     }
 
     public func description(for language: LanguagePreference) -> String {
-        "Send an email from a configured account. Requires explicit user approval. Draft summary is shown for review before sending."
+        "Send an email from a configured account. Requires user approval unless the conversation is in autonomous (A3) mode, where it sends without approval. Draft summary is shown for review before sending."
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {

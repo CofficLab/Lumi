@@ -57,7 +57,7 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
     }
 
     public func description(for language: LanguagePreference) -> String {
-        "Execute a shell command for files, builds and terminal tasks. Direct desktop control is sandboxed: do not use osascript, CGEvent, GUI launching or screenshots through this tool. For UI tasks use accessibility_observe/accessibility_act first, then managed computer_observe/computer_act if necessary. Commands can be cancelled and output is size-limited. Set unsandboxed=true only when the command must create its own sandbox — for example swift build, xcodebuild or any Swift code using macros; it requires explicit user approval."
+        "Execute a shell command for files, builds and terminal tasks. Direct desktop control is sandboxed: do not use osascript, CGEvent, GUI launching or screenshots through this tool. For UI tasks use accessibility_observe/accessibility_act first, then managed computer_observe/computer_act if necessary. Commands can be cancelled and output is size-limited. Set unsandboxed=true only when the command must create its own sandbox — for example swift build, xcodebuild or any Swift code using macros; it requires user approval unless the conversation is in autonomous (A3) mode, where it runs without approval."
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
@@ -66,7 +66,7 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
             "properties": [
                 "command": ["type": "string", "description": "The shell command to execute; it may run for a while and can be cancelled. Output is size-limited."],
                 "timeout": ["type": "integer", "description": "Optional timeout in seconds (default: 120). Raise it for builds and test runs, which routinely take several minutes."],
-                "unsandboxed": ["type": "boolean", "description": "Optional. Run outside the desktop-isolation sandbox. Required for commands that create their own sandbox (swift build, xcodebuild, Swift macro expansion). Always requires explicit user approval. Defaults to false."],
+                "unsandboxed": ["type": "boolean", "description": "Optional. Run outside the desktop-isolation sandbox. Required for commands that create their own sandbox (swift build, xcodebuild, Swift macro expansion). Requires user approval unless the conversation is in autonomous (A3) mode, where it runs without approval. Defaults to false."],
                 "max_output_bytes": ["type": "integer", "description": "Optional. Maximum bytes kept from each output stream (default: 65536, max: 16777216). The tail is kept and the head dropped. Raise it when the useful output is larger than the default; otherwise redirect to a file and read it back."],
             ],
             "required": ["command"],
@@ -85,10 +85,12 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
         return Self.highRiskCommands.contains(base) ? .high : .low
     }
 
-    /// An unsandboxed call must always be confirmed by the user.
+    /// An unsandboxed call is declared as needing explicit approval.
     ///
     /// Risk level alone is not enough: `.autonomous` conversations auto-approve
-    /// every risk level, which would let `unsandboxed` run unattended.
+    /// every risk level. The declaration is enforced in Chat/Build modes (and
+    /// when the conversation level cannot be resolved); in autonomous (A3) mode
+    /// the execution layer treats it as fully authorized and runs it directly.
     public func requiresExplicitApproval(arguments: [String: ToolArgument]) -> Bool {
         arguments.boolValue("unsandboxed") == true
     }

@@ -36,8 +36,9 @@ enum ShellDesktopSandbox {
     /// second `sandbox_apply`, so a sandboxed child cannot run anything that
     /// sandboxes itself: Xcode package resolution, the Swift macro plugin
     /// server, and `xcodebuild test` all fail under the wrapper. Callers that
-    /// need those must opt out — and must gate the opt-out on explicit user
-    /// approval, which `ShellTool` does via `requiresExplicitApproval`.
+    /// need those must opt out — the opt-out is declared via
+    /// `requiresExplicitApproval`, which the execution layer enforces in
+    /// Chat/Build modes and fully authorizes in autonomous (A3) mode.
     static func unsandboxedArguments(command: String) -> [String] {
         ["-lc", command]
     }
