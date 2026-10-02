@@ -60,7 +60,7 @@ private final class EmptyLLMProvider: SuperLLMProvider, @unchecked Sendable {
 @Suite("AskUserPlugin")
 @MainActor
 struct AskUserPluginTests {
-    @Test("V1 只显示当前会话的 userInput 挂起问题")
+    @Test("问题视图始终显示在当前会话的 userInput 挂起问题")
     func pendingInteractionVisibility() throws {
         let conversationID = UUID()
         let response = AskUserPendingResponse(
@@ -78,18 +78,13 @@ struct AskUserPluginTests {
             initialAnswer: nil
         )
 
+        // 问题视图始终显示，不受 verbosity 影响
         #expect(AskUserPendingInteraction.shouldShow(
-            verbosity: .brief,
             selectedConversationID: conversationID,
             interaction: interaction
         ))
+        // 其他会话不显示
         #expect(!AskUserPendingInteraction.shouldShow(
-            verbosity: .standard,
-            selectedConversationID: conversationID,
-            interaction: interaction
-        ))
-        #expect(!AskUserPendingInteraction.shouldShow(
-            verbosity: .brief,
             selectedConversationID: UUID(),
             interaction: interaction
         ))

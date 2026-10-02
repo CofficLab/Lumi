@@ -1,40 +1,5 @@
-import KitAgentTool
 import LumiUI
-import ProviderMessageRendering
 import SwiftUI
-
-/// ask_user 挂起调用的专用行渲染器。
-public struct AskUserRowRenderer: ToolCallRowRenderer {
-    public static let id = "ask-user-row"
-    public static let priority = 100
-
-    public init() {}
-
-    public func canRender(toolCall: ToolCall) -> Bool {
-        toolCall.name == AskUserTool.toolName
-            && toolCall.result?.awaitingUserResponse == true
-    }
-
-    @MainActor
-    public func render(toolCall: ToolCall, message: ToolCallRowMessageContext) -> AnyView {
-        guard let content = toolCall.result?.content,
-              let response = try? JSONDecoder().decode(
-                AskUserPendingResponse.self,
-                from: Data(content.utf8)
-              ) else {
-            return AnyView(Text("无法解析问题内容"))
-        }
-
-        return AnyView(AskUserPendingView(
-            interaction: AskUserPendingInteraction(
-                response: response,
-                toolCallID: toolCall.id,
-                conversationID: message.conversationId,
-                initialAnswer: toolCall.result?.interactionState?.answer
-            )
-        ))
-    }
-}
 
 struct AskUserPendingView: View {
     @LumiTheme private var theme
