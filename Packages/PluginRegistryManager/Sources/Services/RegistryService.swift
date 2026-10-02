@@ -26,6 +26,16 @@ public actor RegistryService {
             let process = Process()
             let stdoutPipe = Pipe()
             let stderrPipe = Pipe()
+            // 确定性回收管道 fd：不能依赖 autorelease pool，否则每次调用泄漏 4 个
+            // fd，长时间运行后耗尽进程上限（EMFILE）。
+            defer {
+                stdoutPipe.fileHandleForReading.readabilityHandler = nil
+                stderrPipe.fileHandleForReading.readabilityHandler = nil
+                try? stdoutPipe.fileHandleForReading.close()
+                try? stdoutPipe.fileHandleForWriting.close()
+                try? stderrPipe.fileHandleForReading.close()
+                try? stderrPipe.fileHandleForWriting.close()
+            }
             
             process.executableURL = URL(fileURLWithPath: "/bin/zsh")
             // Use -l to load user profile/rc files to ensure PATH is correct

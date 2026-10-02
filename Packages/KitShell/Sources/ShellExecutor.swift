@@ -501,6 +501,12 @@ public enum ShellExecutor {
                         handler: stderrHandler
                     )
 
+                    // 显式关闭管道 fd。Foundation.Pipe 的 fd 不能等 ARC/autorelease
+                    // pool：热路径上 pool 延迟排空会让每次工具调用泄漏 4 个 fd，
+                    // 长时间对话后耗尽进程上限（EMFILE）。
+                    stdoutPipe.closeFileDescriptors()
+                    stderrPipe.closeFileDescriptors()
+
                     state.complete(exitCode: process.terminationStatus)
                 }
 
@@ -532,6 +538,8 @@ public enum ShellExecutor {
                 guard state.prepareToStart(process) else {
                     stdoutPipe.fileHandleForReading.readabilityHandler = nil
                     stderrPipe.fileHandleForReading.readabilityHandler = nil
+                    stdoutPipe.closeFileDescriptors()
+                    stderrPipe.closeFileDescriptors()
                     state.complete(exitCode: -SIGTERM)
                     return
                 }
@@ -553,6 +561,8 @@ public enum ShellExecutor {
                 } catch {
                     stdoutPipe.fileHandleForReading.readabilityHandler = nil
                     stderrPipe.fileHandleForReading.readabilityHandler = nil
+                    stdoutPipe.closeFileDescriptors()
+                    stderrPipe.closeFileDescriptors()
                     state.fail(ShellError.launchFailed(
                         command: executable,
                         reason: error.localizedDescription

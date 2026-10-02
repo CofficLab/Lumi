@@ -38,6 +38,13 @@ actor VideoConverterService: SuperLog {
         process.standardOutput = FileHandle.nullDevice
 
         let pipe = Pipe()
+        let handle = pipe.fileHandleForReading
+        // 确定性回收管道 fd，避免依赖 autorelease pool 造成 fd 泄漏。
+        defer {
+            handle.readabilityHandler = nil
+            try? pipe.fileHandleForReading.close()
+            try? pipe.fileHandleForWriting.close()
+        }
         process.standardError = pipe
 
         // Parse progress from FFmpeg stderr
@@ -46,7 +53,6 @@ actor VideoConverterService: SuperLog {
         // First, probe duration
         totalDuration = await probeDuration(ffmpegPath: ffmpegPath, inputPath: input.path)
 
-        let handle = pipe.fileHandleForReading
         let outputStream = AsyncStream<Data> { continuation in
             handle.readabilityHandler = { fileHandle in
                 let data = fileHandle.availableData
@@ -111,6 +117,11 @@ actor VideoConverterService: SuperLog {
         process.executableURL = URL(fileURLWithPath: "/usr/bin/which")
         process.arguments = ["ffmpeg"]
         let pipe = Pipe()
+        // 确定性回收管道 fd，避免依赖 autorelease pool 造成 fd 泄漏。
+        defer {
+            try? pipe.fileHandleForReading.close()
+            try? pipe.fileHandleForWriting.close()
+        }
         process.standardOutput = pipe
         try process.run()
         process.waitUntilExit()
@@ -130,6 +141,11 @@ actor VideoConverterService: SuperLog {
         process.arguments = ["-i", inputPath, "-f", "null", "-"]
 
         let pipe = Pipe()
+        // 确定性回收管道 fd，避免依赖 autorelease pool 造成 fd 泄漏。
+        defer {
+            try? pipe.fileHandleForReading.close()
+            try? pipe.fileHandleForWriting.close()
+        }
         process.standardError = pipe
 
         do {

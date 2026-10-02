@@ -359,6 +359,14 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
         process.currentDirectoryURL = URL(fileURLWithPath: directory)
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
+        // 确定性回收管道 fd：不能依赖 autorelease pool，否则热路径上每次调用
+        // 泄漏 4 个 fd，长时间运行后耗尽进程上限（EMFILE）。
+        defer {
+            try? stdoutPipe.fileHandleForReading.close()
+            try? stdoutPipe.fileHandleForWriting.close()
+            try? stderrPipe.fileHandleForReading.close()
+            try? stderrPipe.fileHandleForWriting.close()
+        }
         process.standardOutput = stdoutPipe
         process.standardError = stderrPipe
 

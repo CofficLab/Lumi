@@ -113,6 +113,10 @@ public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
 
             process.terminationHandler = { process in
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                defer {
+                    try? pipe.fileHandleForReading.close()
+                    try? pipe.fileHandleForWriting.close()
+                }
                 let output = String(data: data, encoding: .utf8) ?? ""
                 if process.terminationStatus == 0 {
                     continuation.resume(returning: output)
