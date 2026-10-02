@@ -2,6 +2,7 @@ import Foundation
 import KernelCore
 import ProviderSettingView
 import ProviderContentView
+import ProviderRailView
 import ProviderChatSection
 import ProviderRootView
 import ProviderToolbar
@@ -68,6 +69,7 @@ public final class MailPlugin: SuperPlugin, SuperLog {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         let cache = cacheService
         let pluginID = id
@@ -87,6 +89,8 @@ public final class MailPlugin: SuperPlugin, SuperLog {
                 ownerPluginID: id
             ) { state in
                 if state == .activated {
+                    // 工作区自带三栏（文件夹树侧栏），不依赖宿主 RailView：激活时移除。
+                    rootView?.setRailView(nil)
                     chat?.setVisible(false)
                     rootView?.setContentHeaderViewHidden(true)
                     contentView?.setContentView(
@@ -109,6 +113,9 @@ public final class MailPlugin: SuperPlugin, SuperLog {
                         },
                     ])
                 } else {
+                    // 还原：重建宿主 RailView（若其它插件有可见 tab）。
+                    rootView?.setRailView(railView?.makeRailView())
+                    rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                     chat?.setVisible(true)
                     rootView?.setContentHeaderViewHidden(false)
                     toolbar?.removeToolbarItems(ids: ["\(pluginID).title"])
@@ -125,6 +132,10 @@ public final class MailPlugin: SuperPlugin, SuperLog {
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            let rootView = kernel.resolveProvider((any RootViewProviding).self)
+            rootView?.setRailView(railView?.makeRailView())
+            rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any ToolbarProviding).self)?
