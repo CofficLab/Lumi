@@ -10,7 +10,7 @@ struct CofficLogoView: View {
 
             ZStack {
                 switch scene {
-                case .general, .about:
+                case .general, .about, .appIcon:
                     CofficAnimatedLogoView(size: size)
                 case .statusBar, .statusBarHighlighted:
                     CofficMonochromeLogoView(size: size)

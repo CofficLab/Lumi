@@ -16,15 +16,15 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
-        .package(path: "../ProviderLogo"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.5.0"),
     ],
     targets: [
         .target(
             name: "PluginLogoManager",
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "ProviderLogo", package: "ProviderLogo"),
+                .product(name: "ProviderLogo", package: "LumiProviders"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ]
         ),
