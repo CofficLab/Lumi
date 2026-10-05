@@ -42,7 +42,7 @@ let package = Package(
         .package(path: "../PluginPerformanceMetrics"),
         .package(path: "../PluginSystemBenchmark"),
         .package(path: "../PluginThemeManager"),
-        .package(url: "https://github.com/CofficLab/LumiPluginThemePack.git", from: "1.0.0"),
+        .package(url: "https://github.com/CofficLab/LumiPluginThemePack.git", from: "1.1.0"),
         .package(path: "../PluginToolbarSettings"),
         .package(path: "../PluginVideoConverter"),
         .package(path: "../PluginWhiteNoise"),
