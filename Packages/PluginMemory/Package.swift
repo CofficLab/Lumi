@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "PluginMemory",
-    defaultLocalization: "zh-Hans",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "PluginMemory", targets: ["PluginMemory"]),
@@ -31,7 +31,8 @@ let package = Package(
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
             ],
-            path: "Sources/PluginMemory"
+            path: "Sources/PluginMemory",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "PluginMemoryTests",

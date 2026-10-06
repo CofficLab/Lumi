@@ -16,8 +16,8 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
 
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.plugin-manager",
-        name: "插件管理",
-        description: "管理所有已注册插件。",
+        name: pluginLocalization.string("Plugin Manager"),
+        description: pluginLocalization.string("Manage all registered plugins."),
         version: "1.0.0",
         category: .system,
         stage: .stable,
@@ -38,7 +38,7 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
     private var promptSuggestion: PromptSuggestion {
         PromptSuggestion(
             id: "\(id).browse",
-            title: "浏览插件",
+            title: pluginLocalization.string("Browse Plugins"),
             order: order * 1000,
             systemImage: "puzzlepiece.extension",
             action: .openSettingsTab(Self.settingsEntryID),
@@ -92,7 +92,7 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
 
         let entry = SettingEntryItem(
             id: Self.settingsEntryID,
-            title: "插件管理",
+            title: pluginLocalization.string("Plugin Manager"),
             systemImage: "puzzlepiece.extension",
             order: 3
         ) { [viewModel] in
