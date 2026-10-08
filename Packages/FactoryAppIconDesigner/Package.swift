@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "FactoryAppIconDesigner", targets: ["FactoryAppIconDesigner"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiThemePack.git", from: "1.0.4"),
+        .package(url: "https://github.com/CofficLab/LumiThemePack.git", from: "1.0.5"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitLLM"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
