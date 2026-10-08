@@ -12,17 +12,24 @@ public struct MCPPreparedTransport: Sendable {
     public let terminationStatus: (@Sendable () -> Int32?)?
     /// stdio 场景由子进程输出的诊断信息；HTTP 场景为 `nil`。
     public let diagnosticOutput: (@Sendable () -> String?)?
+    /// 释放本次传输占用的管道 fd（stdio 场景）；HTTP 场景为 `nil`。
+    ///
+    /// `Foundation.Pipe` 持有的 fd 不能只依赖 ARC/autorelease pool：反复
+    /// connect/disconnect 时会持续堆积，最终耗尽进程 fd 上限（EMFILE）。
+    public let cleanup: (@Sendable () -> Void)?
 
     public init(
         transport: any Transport,
         stopProcess: (@Sendable () -> Void)? = nil,
         terminationStatus: (@Sendable () -> Int32?)? = nil,
-        diagnosticOutput: (@Sendable () -> String?)? = nil
+        diagnosticOutput: (@Sendable () -> String?)? = nil,
+        cleanup: (@Sendable () -> Void)? = nil
     ) {
         self.transport = transport
         self.stopProcess = stopProcess
         self.terminationStatus = terminationStatus
         self.diagnosticOutput = diagnosticOutput
+        self.cleanup = cleanup
     }
 }
 
@@ -120,7 +127,16 @@ public enum MCPProcessTransport {
             terminationStatus: { [box] in
                 box.process.isRunning ? nil : box.process.terminationStatus
             },
-            diagnosticOutput: { diagnosticBuffer.contents() }
+            diagnosticOutput: { diagnosticBuffer.contents() },
+            cleanup: { [errorPipe, inputPipe, outputPipe] in
+                errorPipe.fileHandleForReading.readabilityHandler = nil
+                try? errorPipe.fileHandleForReading.close()
+                try? errorPipe.fileHandleForWriting.close()
+                try? outputPipe.fileHandleForReading.close()
+                try? outputPipe.fileHandleForWriting.close()
+                try? inputPipe.fileHandleForReading.close()
+                try? inputPipe.fileHandleForWriting.close()
+            }
         )
     }
 
@@ -177,6 +193,8 @@ public actor MCPServerSession: MCPServerServing {
             try await client.connect(transport: prepared.transport)
         } catch {
             prepared.stopProcess?()
+            // 连接失败也要释放本次已创建的管道 fd。
+            prepared.cleanup?()
             self.prepared = nil
             throw MCPClientError.transport(Self.message(error, diagnostics: prepared.diagnosticOutput?()))
         }
@@ -190,6 +208,8 @@ public actor MCPServerSession: MCPServerServing {
         }
         client = nil
         prepared?.stopProcess?()
+        // 释放 stdio 管道 fd，避免反复 connect/disconnect 造成 fd 泄漏。
+        prepared?.cleanup?()
         prepared = nil
         isConnected = false
     }

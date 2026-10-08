@@ -1,0 +1,58 @@
+#ifndef MAILCORE_MCACTIVESYNCMESSAGE_H
+
+#define MAILCORE_MCACTIVESYNCMESSAGE_H
+
+#include <MailCore/MCAbstractMessage.h>
+#include <MailCore/MCActiveSyncBody.h>
+#include <MailCore/MCActiveSyncBodyPart.h>
+
+#ifdef __cplusplus
+
+namespace mailcore {
+
+    class MAILCORE_EXPORT ActiveSyncMessage : public AbstractMessage {
+    public:
+        ActiveSyncMessage();
+        virtual ~ActiveSyncMessage();
+
+        virtual void setServerID(String * serverID);
+        virtual String * serverID();
+        virtual void setMessageClass(String * messageClass);
+        virtual String * messageClass();
+        virtual void setEstimatedSize(uint32_t estimatedSize);
+        virtual uint32_t estimatedSize();
+        virtual void setRead(bool read);
+        virtual bool isRead();
+        virtual void setFlagged(bool flagged);
+        virtual bool isFlagged();
+        virtual void setMessageData(Data * messageData);
+        virtual Data * messageData();
+        virtual void setBody(ActiveSyncBody * body);
+        virtual ActiveSyncBody * body();
+        virtual void setBodyParts(Array * /* ActiveSyncBodyPart */ bodyParts);
+        virtual Array * /* ActiveSyncBodyPart */ bodyParts();
+        virtual Array * /* AbstractPart */ attachments();
+        virtual Array * /* AbstractPart */ htmlInlineAttachments();
+        virtual AbstractPart * partForContentID(String * contentID);
+        virtual AbstractPart * partForUniqueID(String * uniqueID);
+
+        virtual Object * copy();
+        virtual String * description();
+
+    private:
+        String * mServerID;
+        String * mMessageClass;
+        uint32_t mEstimatedSize;
+        bool mRead;
+        bool mFlagged;
+        Data * mMessageData;
+        ActiveSyncBody * mBody;
+        Array * /* ActiveSyncBodyPart */ mBodyParts;
+        void init();
+    };
+
+}
+
+#endif
+
+#endif

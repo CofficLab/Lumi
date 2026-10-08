@@ -33,6 +33,7 @@ import QuickLauncherPlugin
 import TextActionsPlugin
 import TerminalPlugin
 import DatabaseManagerPlugin
+import PluginMail
 import GitPlugin
 import PluginGitRepositoryWatch
 import PluginGitWorkspace
@@ -266,6 +267,7 @@ public struct DefaultPluginFactory: PluginFactory {
             TextActionsSuperPlugin(),
             TerminalSuperPlugin(),
             DatabaseManagerSuperPlugin(),
+            MailPlugin(),
             GitSourceControlSuperPlugin(),
             GitRepositoryWatchPlugin(),
             GitWorkspacePlugin(),

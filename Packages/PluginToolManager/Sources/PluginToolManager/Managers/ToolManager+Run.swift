@@ -88,18 +88,8 @@ extension ToolManager {
             case .blockAll:
                 results.append(.blocked(reason: "Tool execution was blocked because this conversation is in Chat mode."))
             case .autoExecute:
-                // 自动化等级只能放宽"风险等级"判断，不能跳过工具自己声明的
-                // 强制确认（如 run_command 的 unsandboxed）。否则自主模式下
-                // 脱离沙箱执行会在无人确认时静默发生。
-                if toolRequiresExplicitApproval(toolCall) {
-                    eventManager.send(.authorizationRequired(
-                        conversationID: conversationID,
-                        turnID: turnID,
-                        toolCall: toolCall
-                    ))
-                    results.append(.needsUserResponse(payload: approvalPayload(for: toolCall)))
-                    break batchLoop
-                }
+                // A3 完全授权：工具自身声明的强制确认（如 run_command 的
+                // unsandboxed、mail_send_message）也直接执行，不弹授权。
                 results.append(.executed(await execute(toolCall, conversationID: conversationID, turnID: turnID)))
             case .requireApprovalForHighRisk:
                 if case .requiresUserApproval = authorizationDecision(

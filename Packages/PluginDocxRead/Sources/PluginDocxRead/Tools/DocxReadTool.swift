@@ -88,6 +88,11 @@ public struct DocxReadTool: SuperAgentTool {
         ]
 
         let pipe = Pipe()
+        // 确定性回收管道 fd，避免依赖 autorelease pool 造成 fd 泄漏。
+        defer {
+            try? pipe.fileHandleForReading.close()
+            try? pipe.fileHandleForWriting.close()
+        }
         process.standardError = pipe
 
         try process.run()

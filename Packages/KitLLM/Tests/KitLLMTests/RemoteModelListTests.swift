@@ -2,57 +2,8 @@ import Foundation
 import Testing
 @testable import KitLLM
 
-/// 远程模型列表：loader 解析、缓存语义、VendorLLMProvider 默认行为。
+/// LLMModelListCache 缓存语义 + VendorLLMProvider 静态默认行为。
 struct RemoteModelListTests {
-
-    // MARK: - RemoteModelListLoader.parse
-
-    @Test("解析 OpenAI 标准格式（无 name/context_length）")
-    func parseOpenAIStandardFormat() throws {
-        let json = """
-        {"data":[{"id":"gpt-4o","object":"model"},{"id":"gpt-4o-mini","object":"model"}]}
-        """
-        let models = try RemoteModelListLoader.parse(data: Data(json.utf8))
-
-        #expect(models.count == 2)
-        #expect(models[0].id == "gpt-4o")
-        #expect(models[0].displayName == "gpt-4o") // 缺省回退 id
-        #expect(models[0].contextWindowSize == nil)
-        #expect(models[1].id == "gpt-4o-mini")
-    }
-
-    @Test("解析 CommandCode 变体（含 name/context_length）")
-    func parseCommandCodeVariant() throws {
-        let json = """
-        {"data":[{"id":"claude-sonnet-5-5","name":"Claude Sonnet 5.5","context_length":1000000}]}
-        """
-        let models = try RemoteModelListLoader.parse(data: Data(json.utf8))
-
-        #expect(models.count == 1)
-        #expect(models[0].id == "claude-sonnet-5-5")
-        #expect(models[0].displayName == "Claude Sonnet 5.5")
-        #expect(models[0].contextWindowSize == 1_000_000)
-    }
-
-    @Test("空 data 或缺失 data 视为解码失败（不返回空列表）")
-    func parseEmptyFails() {
-        let emptyData = #"{"data":[]}"#
-        #expect(throws: VendorAPIError.self) {
-            try RemoteModelListLoader.parse(data: Data(emptyData.utf8))
-        }
-
-        let missingData = #"{"models":[]}"#
-        #expect(throws: VendorAPIError.self) {
-            try RemoteModelListLoader.parse(data: Data(missingData.utf8))
-        }
-    }
-
-    @Test("跳过无 id 的条目")
-    func parseSkipsMissingID() throws {
-        let json = #"{"data":[{"name":"No ID","context_length":1000}]}"#
-        let models = try RemoteModelListLoader.parse(data: Data(json.utf8))
-        #expect(models.isEmpty)
-    }
 
     // MARK: - LLMModelListCache
 
@@ -142,49 +93,6 @@ struct RemoteModelListTests {
         try? await provider.refreshModels()
         #expect(provider.availableModels.map(\.id) == ["static-a", "static-b"])
     }
-
-    @Test("RemoteModelVendorProvider:未配 endpoint 时退化为静态行为")
-    @MainActor
-    func remoteConvenienceBaseWithoutSource() async {
-        let provider = RemoteBaseTestProvider(source: nil)
-        #expect(provider.usesRemoteModelList == false)
-        #expect(provider.availableModels.map(\.id) == ["base-a"])
-        #expect(provider.lastModelSyncDate == nil)
-
-        // 无远程源时 refresh 为空操作，不抛错
-        try? await provider.refreshModels()
-        #expect(provider.availableModels.map(\.id) == ["base-a"])
-    }
-
-    @Test("RemoteModelVendorProvider:配置 endpoint 后标记为远程型")
-    @MainActor
-    func remoteConvenienceBaseWithSource() {
-        let provider = RemoteBaseTestProvider(
-            source: RemoteModelSource(endpoint: URL(string: "https://example.com/models")!)
-        )
-        #expect(provider.usesRemoteModelList == true)
-        #expect(provider.remoteModelSource?.endpoint == URL(string: "https://example.com/models")!)
-        // 尚未拉取：先回退静态基线
-        #expect(provider.availableModels.map(\.id) == ["base-a"])
-    }
-}
-
-/// RemoteModelVendorProvider 测试替身：endpoint 可注入。
-@MainActor
-private final class RemoteBaseTestProvider: RemoteModelVendorProvider {
-    private let injectedSource: RemoteModelSource?
-
-    init(source: RemoteModelSource?) {
-        self.injectedSource = source
-        super.init(info: LLMProviderInfo(
-            id: "remote-base-test",
-            displayName: "Remote Base Test",
-            defaultModel: "base-a",
-            models: [LLMModelInfo(id: "base-a")]
-        ))
-    }
-
-    override var remoteModelSource: RemoteModelSource? { injectedSource }
 }
 
 /// 最小静态供应商测试替身。

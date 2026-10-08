@@ -120,9 +120,26 @@ struct ModelListView: View {
 
             // Search（模型较少时列表可一览无余，搜索框不再占位）
             if viewModel.showsModelSearchBar {
-                AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(pluginLocalization.string("Search models")))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
+                HStack(spacing: 4) {
+                    AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(pluginLocalization.string("Search models")))
+
+                    if let providerID = viewModel.selectedProviderID,
+                       viewModel.canRefreshModels(providerID: providerID) {
+                        Button {
+                            Task { await viewModel.refreshModels(providerID: providerID) }
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(theme.textTertiary)
+                                .frame(width: 28, height: 28)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help(pluginLocalization.string("Refresh Models"))
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
 
                 AppDivider()
             }

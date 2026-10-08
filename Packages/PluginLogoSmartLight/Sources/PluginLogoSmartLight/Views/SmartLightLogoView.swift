@@ -10,7 +10,7 @@ struct SmartLightLogoView: View {
 
             ZStack {
                 switch scene {
-                case .general, .about:
+                case .general, .about, .appIcon:
                     SmartLightAnimatedLogoView(size: size)
                 case .statusBar, .statusBarHighlighted:
                     SmartLightMonochromeLogoView(

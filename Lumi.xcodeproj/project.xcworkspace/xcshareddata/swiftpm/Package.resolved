@@ -128,6 +128,15 @@
       }
     },
     {
+      "identity" : "lumiplugincommand",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiPluginCommand.git",
+      "state" : {
+        "revision" : "b0254d3c543efb2e32edeaefe0ea4d4e8a1033da",
+        "version" : "1.0.1"
+      }
+    },
+    {
       "identity" : "lumipluginsettingview",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiPluginSettingView.git",
@@ -150,8 +159,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiPluginThemePack.git",
       "state" : {
-        "revision" : "7b742db4594d0a82ea24824b5b5c919060ceb2ad",
-        "version" : "1.0.0"
+        "revision" : "fd4d91c866cea4c5ed5bebc3aa985a90709cff8e",
+        "version" : "1.1.0"
       }
     },
     {
@@ -168,8 +177,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiProviders.git",
       "state" : {
-        "revision" : "72ae706594e56f456da9d4f5da5860458d7e359f",
-        "version" : "1.4.0"
+        "revision" : "0703d74325475e7112a53dbf7717f702977c653c",
+        "version" : "1.5.0"
       }
     },
     {
@@ -186,8 +195,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiThemePack.git",
       "state" : {
-        "revision" : "6fc7265e927d2a35106c48dec71e83a688f2e303",
-        "version" : "1.0.4"
+        "revision" : "3157395d3ef65c4d15edd198aad20a1ee35772ae",
+        "version" : "1.0.5"
       }
     },
     {

@@ -141,14 +141,18 @@ final class CaffeinateManager: SuperLog {
     }
 
     private func turnOffDisplay() {
-        let task = Process()
-        task.launchPath = "/usr/bin/pmset"
-        task.arguments = ["displaysleepnow"]
-        do {
-            try task.run()
-        } catch {
-            if CaffeinatePlugin.verbose {
-                CaffeinatePlugin.logger.error("\(self.t)Failed to turn off display: \(error.localizedDescription)")
+        // 用 autoreleasepool 包裹：Process 内部会创建 autorelease 对象，
+        // 在未排空 autorelease pool 的线程上会滞留其持有的 fd。
+        autoreleasepool {
+            let task = Process()
+            task.launchPath = "/usr/bin/pmset"
+            task.arguments = ["displaysleepnow"]
+            do {
+                try task.run()
+            } catch {
+                if CaffeinatePlugin.verbose {
+                    CaffeinatePlugin.logger.error("\(self.t)Failed to turn off display: \(error.localizedDescription)")
+                }
             }
         }
     }

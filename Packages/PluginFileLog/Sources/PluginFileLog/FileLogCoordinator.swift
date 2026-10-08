@@ -572,6 +572,11 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
         process.standardError = errorPipe
         try process.run()
         process.waitUntilExit()
+        // 确定性回收管道 fd：本方法会在诊断导出时反复调用，不能依赖 autorelease pool。
+        defer {
+            try? errorPipe.fileHandleForReading.close()
+            try? errorPipe.fileHandleForWriting.close()
+        }
         guard process.terminationStatus == 0 else {
             let error = String(data: errorPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)
                 ?? "ditto exited with status \(process.terminationStatus)"

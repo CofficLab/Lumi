@@ -113,6 +113,36 @@ final class ModelSelectorViewModel: ObservableObject {
         usageStore.isMoreFrequentlyUsed(lhs, than: rhs)
     }
 
+    // MARK: - Remote model refresh
+
+    /// 指定供应商是否支持远程模型列表刷新。
+    func canRefreshModels(providerID: String) -> Bool {
+        box.manager.provider(id: providerID)?.usesRemoteModelList ?? false
+    }
+
+    /// 刷新指定供应商的远程模型列表。
+    ///
+    /// 成功时通过 `notifyModelsRefreshed` 通知管理器广播事件，
+    /// box 观察者会自动刷新快照，UI 随之更新。
+    func refreshModels(providerID: String) async {
+        guard let provider = box.manager.provider(id: providerID) else { return }
+        do {
+            try await provider.refreshModels()
+            box.manager.notifyModelsRefreshed(providerID: providerID)
+            toast?.show(
+                pluginLocalization.string("Models refreshed"),
+                detail: provider.providerInfo.displayName,
+                style: .success
+            )
+        } catch {
+            toast?.show(
+                pluginLocalization.string("Refresh failed"),
+                detail: error.localizedDescription,
+                style: .error
+            )
+        }
+    }
+
     /// 供应商是否命中当前筛选范围。
     func matchesActiveFilters(_ provider: LLMProviderInfo) -> Bool {
         selectedScope.includes(provider, usageCount: usageCount(for: provider.id))
