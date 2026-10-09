@@ -38,6 +38,7 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
     private var navigationTimeoutTask: Task<Void, Never>?
     private var navigationToken: UUID?
     private var approvedLocalHost: String?
+    private var urlObservation: NSKeyValueObservation?
 
     init(conversationID: UUID) {
         self.conversationID = conversationID
@@ -47,6 +48,22 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         super.init()
         webView.navigationDelegate = self
         webView.allowsBackForwardNavigationGestures = true
+        observeURL()
+    }
+
+    private func observeURL() {
+        urlObservation = webView.observe(\.url, options: [.new]) { [weak self] webView, _ in
+            Task { @MainActor in
+                self?.syncPageState(from: webView)
+            }
+        }
+    }
+
+    private func syncPageState(from webView: WKWebView) {
+        title = webView.title?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty ?? webView.url?.host ?? "Web Page"
+        urlString = webView.url?.absoluteString ?? ""
+        canGoBack = webView.canGoBack
+        canGoForward = webView.canGoForward
     }
 
     func navigate(to url: URL, allowLocalAccess: Bool = false) async throws {
