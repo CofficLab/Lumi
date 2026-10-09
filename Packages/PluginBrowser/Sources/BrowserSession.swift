@@ -325,6 +325,12 @@ public final class BrowserSessionManager: ObservableObject {
         }
     }
 
+    /// Returns the current page title and URL for a conversation, or nil if no session exists.
+    func status(conversationID: UUID) -> String? {
+        guard let session = sessions[conversationID] else { return nil }
+        return "Title: \(session.title)\nURL: \(session.urlString)"
+    }
+
     func navigateAddressBar(_ address: String) {
         let conversationID = activeConversationID ?? standaloneSessionID
         Task { try? await open(address, conversationID: conversationID, allowLocalAccess: true) }
