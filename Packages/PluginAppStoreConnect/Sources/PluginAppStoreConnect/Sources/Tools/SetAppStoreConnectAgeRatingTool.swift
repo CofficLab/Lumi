@@ -40,7 +40,11 @@ public struct SetAppStoreConnectAgeRatingTool: SuperAgentTool {
             + "Pass no rating attributes to read the current declaration. "
             + "Pass at least one rating attribute to update. "
             + "String ratings accept NONE, INFREQUENT_OR_MILD, or FREQUENT_OR_INTENSE. "
-            + "kidsAgeBand accepts FIVE_AND_UNDER, SIX_TO_EIGHT, or NINE_TO_ELEVEN."
+            + "kidsAgeBand accepts FIVE_AND_UNDER, SIX_TO_EIGHT, or NINE_TO_ELEVEN. "
+            + "IMPORTANT: The App Store Connect API cannot create a new age-rating declaration — "
+            + "it can only read or update existing ones. For versions created via API, "
+            + "the declaration must first be initialized through the App Store Connect website "
+            + "(app → version → Age Rating → complete questionnaire → Save)."
         )
     }
 
@@ -120,7 +124,14 @@ public struct SetAppStoreConnectAgeRatingTool: SuperAgentTool {
                 if let declaration = try await client.readAgeRatingDeclarationByAppInfo(versionID: versionID) {
                     return "(app-info level) " + formatDeclaration(declaration)
                 }
-                return "No age-rating declaration found for version id=\(versionID). Set at least one rating attribute to create one."
+                return [
+                    "No age-rating declaration found for version id=\(versionID).",
+                    "The App Store Connect API does not support creating age-rating declarations.",
+                    "You must create one through the App Store Connect website:",
+                    "  https://appstoreconnect.apple.com/apps/\(versionID)/distribution",
+                    "Open the version → Age Rating section → complete the questionnaire → Save.",
+                    "After that, use this tool to read or update the declaration."
+                ].joined(separator: "\n")
             }
 
             // Update mode: try version-level first, then fallback to appInfo-level
@@ -131,7 +142,14 @@ public struct SetAppStoreConnectAgeRatingTool: SuperAgentTool {
                 source = "appInfo"
             }
             guard let target = existing else {
-                return "No age-rating declaration found for version id=\(versionID). The declaration may need to be created through the App Store Connect website first."
+                return [
+                    "No age-rating declaration found for version id=\(versionID).",
+                    "The App Store Connect API does not support creating age-rating declarations — it can only update existing ones.",
+                    "Create one first through the App Store Connect website:",
+                    "  https://appstoreconnect.apple.com",
+                    "Navigate to your app → the version → Age Rating → complete the questionnaire → Save.",
+                    "Then retry this tool to update the declaration programmatically."
+                ].joined(separator: "\n")
             }
             let updated = try await client.updateAgeRating(
                 declarationID: target.id,

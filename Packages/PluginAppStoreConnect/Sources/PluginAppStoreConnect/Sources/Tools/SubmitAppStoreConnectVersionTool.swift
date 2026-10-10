@@ -61,9 +61,17 @@ public struct SubmitAppStoreConnectVersionTool: SuperAgentTool {
             }
 
             // 3b. 年龄分级检查
-            let ageRating = try await client.readAgeRatingDeclaration(versionID: versionID)
+            var ageRating = try await client.readAgeRatingDeclaration(versionID: versionID)
             if ageRating == nil {
-                warnings.append("No age-rating declaration found. Use set-age-rating to configure it, or set it in App Store Connect.")
+                ageRating = try await client.readAgeRatingDeclarationByAppInfo(versionID: versionID)
+            }
+            if ageRating == nil {
+                warnings.append(
+                    "No age-rating declaration found. The ASC API cannot create one — "
+                    + "you must initialize it via the App Store Connect website "
+                    + "(app → version → Age Rating → complete questionnaire → Save), "
+                    + "then use set-age-rating to update programmatically."
+                )
             }
 
             // 3c. 本地化信息检查
