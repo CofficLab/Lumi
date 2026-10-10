@@ -7,6 +7,9 @@ struct AppStoreVersion: Identifiable, Equatable, Hashable, Decodable {
     let appStoreState: String
     let appVersionState: String
     let createdDate: Date?
+    let copyright: String?
+    let releaseType: String?
+    let downloadable: Bool?
 
     /// Human-readable platform label
     var platformLabel: String {
@@ -39,6 +42,9 @@ struct AppStoreVersion: Identifiable, Equatable, Hashable, Decodable {
         case appStoreState
         case appVersionState
         case createdDate
+        case copyright
+        case releaseType
+        case downloadable
     }
 
     init(
@@ -47,7 +53,10 @@ struct AppStoreVersion: Identifiable, Equatable, Hashable, Decodable {
         versionString: String,
         appStoreState: String,
         appVersionState: String,
-        createdDate: Date?
+        createdDate: Date?,
+        copyright: String? = nil,
+        releaseType: String? = nil,
+        downloadable: Bool? = nil
     ) {
         self.id = id
         self.platform = platform
@@ -55,6 +64,9 @@ struct AppStoreVersion: Identifiable, Equatable, Hashable, Decodable {
         self.appStoreState = appStoreState
         self.appVersionState = appVersionState
         self.createdDate = createdDate
+        self.copyright = copyright
+        self.releaseType = releaseType
+        self.downloadable = downloadable
     }
 
     init(from decoder: Decoder) throws {
@@ -66,5 +78,8 @@ struct AppStoreVersion: Identifiable, Equatable, Hashable, Decodable {
         appStoreState = try attributes.decodeIfPresent(String.self, forKey: .appStoreState) ?? "-"
         appVersionState = try attributes.decodeIfPresent(String.self, forKey: .appVersionState) ?? "-"
         createdDate = try attributes.decodeIfPresent(Date.self, forKey: .createdDate)
+        copyright = try attributes.decodeIfPresent(String.self, forKey: .copyright)
+        releaseType = try attributes.decodeIfPresent(String.self, forKey: .releaseType)
+        downloadable = try attributes.decodeIfPresent(Bool.self, forKey: .downloadable)
     }
 }
