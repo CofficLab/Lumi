@@ -24,11 +24,15 @@ extension ConnectClient {
     func readAgeRatingDeclarationByAppInfo(versionID: String) async throws -> AgeRatingDeclaration? {
         Self.logger.info("\(Self.t)readAgeRatingDeclarationByAppInfo versionID=\(versionID)")
         do {
-            // Step 1: resolve appID from the version's relationships
-            let versionRel: AppStoreConnectOptionalRelationshipResponse = try await request(
-                path: "/v1/appStoreVersions/\(versionID)/relationships/app"
+            // Step 1: resolve appID from the version resource (using include=app)
+            let versionResponse: AppStoreConnectSingleResponse<VersionWithAppResource> = try await request(
+                path: "/v1/appStoreVersions/\(versionID)",
+                queryItems: [
+                    URLQueryItem(name: "fields[appStoreVersions]", value: "versionString"),
+                    URLQueryItem(name: "include", value: "app"),
+                ]
             )
-            guard let appID = versionRel.data?.id else { return nil }
+            guard let appID = versionResponse.data.appID else { return nil }
 
             // Step 2: resolve appInfoID from the app
             let appResponse: AppStoreConnectSingleResponse<AppInfoResource> = try await request(
@@ -195,5 +199,36 @@ struct AgeRatingDeclaration: Decodable {
         violenceCartoonOrFantasy = try attrs.decodeIfPresent(String.self, forKey: .violenceCartoonOrFantasy)
         violenceRealistic = try attrs.decodeIfPresent(String.self, forKey: .violenceRealistic)
         violenceRealisticProlongedGraphicOrSadistic = try attrs.decodeIfPresent(String.self, forKey: .violenceRealisticProlongedGraphicOrSadistic)
+    }
+}
+
+/// Lightweight decodable for extracting the app relationship id from a version resource.
+private struct VersionWithAppResource: Decodable {
+    let id: String
+    let appID: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, relationships
+    }
+    enum RelKeys: String, CodingKey {
+        case app
+    }
+    enum DataKeys: String, CodingKey {
+        case data
+    }
+    enum InnerKeys: String, CodingKey {
+        case id
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        if let rels = try? container.nestedContainer(keyedBy: RelKeys.self, forKey: .relationships),
+           let appData = try? rels.nestedContainer(keyedBy: DataKeys.self, forKey: .app),
+           let inner = try? appData.nestedContainer(keyedBy: InnerKeys.self, forKey: .data) {
+            appID = try? inner.decode(String.self, forKey: .id)
+        } else {
+            appID = nil
+        }
     }
 }
