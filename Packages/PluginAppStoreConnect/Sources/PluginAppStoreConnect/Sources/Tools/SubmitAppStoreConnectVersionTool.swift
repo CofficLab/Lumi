@@ -60,16 +60,13 @@ public struct SubmitAppStoreConnectVersionTool: SuperAgentTool {
                 warnings.append("copyright is not set. Use update-version to set it if required.")
             }
 
-            // 3b. 年龄分级检查
-            var ageRating = try await client.readAgeRatingDeclaration(versionID: versionID)
-            if ageRating == nil {
-                ageRating = try await client.readAgeRatingDeclarationByAppInfo(versionID: versionID)
-            }
+            // 3b. 年龄分级检查（声明为 app 级资源，经 appInfo 读取）
+            let ageRating = try await client.readAgeRatingDeclaration(versionID: versionID)
             if ageRating == nil {
                 warnings.append(
                     "No age-rating declaration found. The ASC API cannot create one — "
-                    + "you must initialize it via the App Store Connect website "
-                    + "(app → version → Age Rating → complete questionnaire → Save), "
+                    + "complete the questionnaire once for this app via the App Store Connect website "
+                    + "(App Information → Age Ratings → Set Up Age Ratings → Save), "
                     + "then use set-age-rating to update programmatically."
                 )
             }

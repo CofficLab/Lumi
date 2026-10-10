@@ -39,12 +39,14 @@ public struct SetAppStoreConnectAgeRatingTool: SuperAgentTool {
             "Read or update the age-rating declaration for an App Store version. "
             + "Pass no rating attributes to read the current declaration. "
             + "Pass at least one rating attribute to update. "
-            + "String ratings accept NONE, INFREQUENT_OR_MILD, or FREQUENT_OR_INTENSE. "
+            + "String ratings accept NONE, INFREQUENT, or FREQUENT "
+            + "(legacy INFREQUENT_OR_MILD / FREQUENT_OR_INTENSE also accepted). "
             + "kidsAgeBand accepts FIVE_AND_UNDER, SIX_TO_EIGHT, or NINE_TO_ELEVEN. "
+            + "The declaration is app-level and shared by all versions. "
             + "IMPORTANT: The App Store Connect API cannot create a new age-rating declaration — "
-            + "it can only read or update existing ones. For versions created via API, "
-            + "the declaration must first be initialized through the App Store Connect website "
-            + "(app → version → Age Rating → complete questionnaire → Save)."
+            + "it can only read or update existing ones. Complete the questionnaire once per app "
+            + "through the App Store Connect website (App Information → Age Ratings → Save), "
+            + "then this tool can read and update it for every version."
         )
     }
 
@@ -121,41 +123,33 @@ public struct SetAppStoreConnectAgeRatingTool: SuperAgentTool {
                 if let declaration = try await client.readAgeRatingDeclaration(versionID: versionID) {
                     return formatDeclaration(declaration)
                 }
-                if let declaration = try await client.readAgeRatingDeclarationByAppInfo(versionID: versionID) {
-                    return "(app-info level) " + formatDeclaration(declaration)
-                }
                 return [
-                    "No age-rating declaration found for version id=\(versionID).",
+                    "No age-rating declaration found for app of version id=\(versionID).",
                     "The App Store Connect API does not support creating age-rating declarations.",
-                    "You must create one through the App Store Connect website:",
-                    "  https://appstoreconnect.apple.com/apps/\(versionID)/distribution",
-                    "Open the version → Age Rating section → complete the questionnaire → Save.",
-                    "After that, use this tool to read or update the declaration."
+                    "Complete the questionnaire once for this app through the App Store Connect website:",
+                    "  https://appstoreconnect.apple.com",
+                    "My Apps → your app → App Information → Age Ratings → Set Up Age Ratings → Save.",
+                    "The declaration is app-level and applies to all versions of the app; after that,",
+                    "use this tool to read or update it programmatically."
                 ].joined(separator: "\n")
             }
 
-            // Update mode: try version-level first, then fallback to appInfo-level
-            var existing = try await client.readAgeRatingDeclaration(versionID: versionID)
-            var source = "version"
-            if existing == nil {
-                existing = try await client.readAgeRatingDeclarationByAppInfo(versionID: versionID)
-                source = "appInfo"
-            }
-            guard let target = existing else {
+            // Update mode: the declaration is app-level (appInfo), shared by all versions.
+            guard let target = try await client.readAgeRatingDeclaration(versionID: versionID) else {
                 return [
-                    "No age-rating declaration found for version id=\(versionID).",
+                    "No age-rating declaration found for app of version id=\(versionID).",
                     "The App Store Connect API does not support creating age-rating declarations — it can only update existing ones.",
-                    "Create one first through the App Store Connect website:",
+                    "Complete the questionnaire once for this app through the App Store Connect website:",
                     "  https://appstoreconnect.apple.com",
-                    "Navigate to your app → the version → Age Rating → complete the questionnaire → Save.",
-                    "Then retry this tool to update the declaration programmatically."
+                    "My Apps → your app → App Information → Age Ratings → Set Up Age Ratings → Save.",
+                    "The declaration is app-level and applies to all versions of the app; then retry this tool."
                 ].joined(separator: "\n")
             }
             let updated = try await client.updateAgeRating(
                 declarationID: target.id,
                 attributes: updateAttributes
             )
-            return "Age rating updated via \(source) for version id=\(versionID).\n" + formatDeclaration(updated)
+            return "Age rating updated for version id=\(versionID).\n" + formatDeclaration(updated)
         } catch {
             return "Failed to manage age rating: \(error.localizedDescription)"
         }
