@@ -4,6 +4,7 @@ import ProviderExternalFile
 import ProviderProject
 import ProviderChatSection
 import ProviderConversation
+import ProviderSettingView
 import PluginRootView
 import ProviderStorage
 import SwiftUI
@@ -107,7 +108,22 @@ public enum KernelFactory {
             try PluginDataMigrationCoordinator(storage: storage).run(for: plugins)
         }
         try await kernel.startAsync(plugins: plugins)
+        resetSettingsSelectionToFirstEntry(in: kernel)
         return kernel
+    }
+
+    /// 设置窗口默认选中 order 最小的入口（回归修复）。
+    ///
+    /// `addEntries` 会走 `registerEntries`，其"选中为空则锁定为当时列表第一个"
+    /// 的语义会让**最先注册入口的插件**（如 Projects）意外成为默认选中，
+    /// 与"默认选中第一个（通用）"的设计意图相悖。全部入口就位后在此重置；
+    /// 本次运行内的用户选择不受影响（选中态在内存中保留，重启后回到第一个）。
+    private static func resetSettingsSelectionToFirstEntry(in kernel: KernelCoreContainer) {
+        guard let settings = kernel.resolveProvider((any SettingViewProviding).self),
+              let firstID = settings.entries.first?.id,
+              settings.selectedEntryID != firstID
+        else { return }
+        settings.selectEntry(id: firstID)
     }
 
     /// 使用宿主提供的 Provider / Plugin 工厂装配内核。
@@ -136,6 +152,7 @@ public enum KernelFactory {
         // 将完整插件目录交给 Kernel 注册；Kernel 会对禁用插件跳过 Boot/Ready，
         // 但仍执行 onRegister，以便贡献提示词等目录型能力。
         try kernel.start(plugins: plugins)
+        resetSettingsSelectionToFirstEntry(in: kernel)
 
         // header / toolbar 可见性绑定（复刻旧版 ChatView 语义：无选中会话时
         // 隐藏 header / toolbar，仅保留正文与输入区）。
