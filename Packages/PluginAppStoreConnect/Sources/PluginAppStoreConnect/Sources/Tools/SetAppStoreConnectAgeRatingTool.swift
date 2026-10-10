@@ -114,22 +114,30 @@ public struct SetAppStoreConnectAgeRatingTool: SuperAgentTool {
         do {
             // Read mode
             if updateAttributes.isEmpty {
-                guard let declaration = try await client.readAgeRatingDeclaration(versionID: versionID) else {
-                    return "No age-rating declaration found for version id=\(versionID). Set at least one rating attribute to create one."
+                if let declaration = try await client.readAgeRatingDeclaration(versionID: versionID) {
+                    return formatDeclaration(declaration)
                 }
-                return formatDeclaration(declaration)
+                if let declaration = try await client.readAgeRatingDeclarationByAppInfo(versionID: versionID) {
+                    return "(app-info level) " + formatDeclaration(declaration)
+                }
+                return "No age-rating declaration found for version id=\(versionID). Set at least one rating attribute to create one."
             }
 
-            // Update mode
-            let declaration = try await client.readAgeRatingDeclaration(versionID: versionID)
-            guard let existing = declaration else {
+            // Update mode: try version-level first, then fallback to appInfo-level
+            var existing = try await client.readAgeRatingDeclaration(versionID: versionID)
+            var source = "version"
+            if existing == nil {
+                existing = try await client.readAgeRatingDeclarationByAppInfo(versionID: versionID)
+                source = "appInfo"
+            }
+            guard let target = existing else {
                 return "No age-rating declaration found for version id=\(versionID). The declaration may need to be created through the App Store Connect website first."
             }
             let updated = try await client.updateAgeRating(
-                declarationID: existing.id,
+                declarationID: target.id,
                 attributes: updateAttributes
             )
-            return "Age rating updated for version id=\(versionID).\n" + formatDeclaration(updated)
+            return "Age rating updated via \(source) for version id=\(versionID).\n" + formatDeclaration(updated)
         } catch {
             return "Failed to manage age rating: \(error.localizedDescription)"
         }
