@@ -78,6 +78,7 @@ struct CommandCodeProviderPluginTests {
             "xai/grok-4.5", "xai/grok-4.6",
         ])
         #expect(info.models.count == 69)
+        #expect(info.defaultModel == "deepseek/deepseek-v4-flash")
         #expect(info.contains(model: info.defaultModel))
 
         // 默认模型上下文窗口为 1M
@@ -86,6 +87,20 @@ struct CommandCodeProviderPluginTests {
         // 唯一显式声明支持视觉的模型
         let vision = try #require(info.models.first(where: { $0.id == "deepseek/deepseek-v4.1-flash" }))
         #expect(vision.supportsVision == true)
+    }
+
+    @Test("GoatPlan 支持远程模型源")
+    func goatPlanUsesRemoteModelSource() throws {
+        let provider = GoatPlanProvider()
+
+        // 标记为远程型
+        #expect(provider.usesRemoteModelList == true)
+
+        // 初始状态：未拉取过，lastModelSyncDate 为 nil
+        #expect(provider.lastModelSyncDate == nil)
+
+        // 默认模型仍可通过动态池访问（合并静态 ∪ 远程；远程未就绪时回退静态基线）
+        #expect(provider.availableModels.contains { $0.id == provider.providerInfo.defaultModel })
     }
 
     @Test("GoatPlan 供应商指向 commandcode 网关端点")

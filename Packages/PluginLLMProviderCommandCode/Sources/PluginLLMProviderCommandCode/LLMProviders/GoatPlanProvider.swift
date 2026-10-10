@@ -5,10 +5,33 @@ import ProviderLLMManager
 /// CommandCode GoatPlan 供应商（OpenAI 兼容协议）。
 ///
 /// 通过 CommandCode 统一网关访问多种模型，使用 OpenAI Chat Completions 格式。
+///
+/// 模型列表获取策略（由本插件自行决定）：
+/// 1. 远程模型池（`/provider/v1/models`），由 KitLLM loader 解析并缓存。
+/// 2. 磁盘缓存，跨启动保留，拉取失败时兜底。
+/// 3. 下方 `providerInfo.models` 中硬编码的完整模型清单，完全无网时兜底。
+///
+/// 上游加模型无需改本文件——刷新一次即可拿到新模型池。
+/// 若需要自定义解析/刷新逻辑，直接 override `refreshModels()` 即可。
 @MainActor
 public final class GoatPlanProvider: VendorLLMProvider {
 
+    // MARK: - 远程模型状态（本插件自行管理）
+
+    private let modelListCache: LLMModelListCache
+    private var fetchedRemoteModels: [LLMModelInfo] = []
+    private var remoteSyncDate: Date?
+
+    /// 远程模型源：CommandCode `/provider/v1/models` 端点。
+    ///
+    /// 该端点无需鉴权（公开可读），故不配 `apiKeyStorageKey`——
+    /// 也避免后台刷新时读 Keychain（无头环境可能挂起）。
+    private let remoteModelSource: RemoteModelSource = RemoteModelSource(
+        endpoint: URL(string: "https://api.commandcode.ai/provider/v1/models")!
+    )
+
     public init(apiService: VendorAPIService = VendorAPIService()) {
+        self.modelListCache = LLMModelListCache(providerID: "goatplan")
         super.init(
             info: LLMProviderInfo(
                 id: "goatplan",
@@ -107,6 +130,44 @@ public final class GoatPlanProvider: VendorLLMProvider {
             ),
             apiService: apiService
         )
+    }
+
+    // MARK: - SuperLLMProvider（远程模型逻辑，本插件自行实现）
+
+    public override var usesRemoteModelList: Bool { true }
+
+    public override var lastModelSyncDate: Date? { remoteSyncDate }
+
+    /// 动态模型池：静态基线 ∪（远程快照 → 磁盘缓存）。
+    ///
+    /// - 远程优先（保留远程的 displayName / contextWindowSize）
+    /// - 静态基线兜底补齐（保证永不为空）
+    /// - 排序：先静态声明顺序，远程新增模型追加在后
+    public override var availableModels: [LLMModelInfo] {
+        let base = providerInfo.models
+
+        let remote: [LLMModelInfo]
+        if !fetchedRemoteModels.isEmpty {
+            remote = fetchedRemoteModels
+        } else if let cached = modelListCache.cachedSnapshot() {
+            remote = cached.models
+        } else {
+            remote = []
+        }
+
+        return RemoteModelMerger.merge(base: base, remote: remote)
+    }
+
+    /// 拉取远程模型端点并更新内部快照与缓存。
+    ///
+    /// - Throws: 拉取/解析失败时抛错，**保留旧模型池**（调用方无需回滚）。
+    public override func refreshModels() async throws {
+        let loader = RemoteModelListLoader(apiService: apiService)
+        let models = try await loader.load(from: remoteModelSource, apiKey: nil)
+        fetchedRemoteModels = models
+        let now = Date()
+        remoteSyncDate = now
+        modelListCache.store(models: models, syncedAt: now)
     }
 
     public override var openAIConfiguration: OpenAICompatibleProviderConfiguration? {

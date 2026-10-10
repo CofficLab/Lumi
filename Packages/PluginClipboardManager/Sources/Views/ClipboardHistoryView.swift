@@ -16,14 +16,14 @@ public struct ClipboardHistoryView: View {
                 GlassTextField(
                     title: "搜索",
                     text: $viewModel.searchText,
-                    placeholder: LumiPluginLocalization.string("Search clipboard history...", bundle: .module)
+                    placeholder: pluginLocalization.string("Search clipboard history...")
                 )
                 .onChange(of: viewModel.searchText) { _, _ in
                     viewModel.filterItems()
                 }
                 
                 if !viewModel.searchText.isEmpty {
-                    AppButton(LumiPluginLocalization.string("Clear", bundle: .module), style: .ghost, fillsWidth: true, action: { viewModel.searchText = "" })
+                    AppButton(pluginLocalization.string("Clear"), style: .ghost, fillsWidth: true, action: { viewModel.searchText = "" })
                 }
             }
             .padding(10)
@@ -36,7 +36,7 @@ public struct ClipboardHistoryView: View {
                     Image(systemName: "doc.on.clipboard")
                         .font(.system(size: 40))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    Text(LumiPluginLocalization.string("No clipboard records", bundle: .module))
+                    Text(pluginLocalization.string("No clipboard records"))
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 }
@@ -47,14 +47,14 @@ public struct ClipboardHistoryView: View {
                         ClipboardItemRow(item: item)
                             .tag(item.id)
                             .contextMenu {
-                                Button(LumiPluginLocalization.string("Copy", bundle: .module)) {
+                                Button(pluginLocalization.string("Copy")) {
                                     viewModel.copyToClipboard(item)
                                 }
                                 Button(item.isPinned ? "Unpin" : "Pin") {
                                     viewModel.togglePin(id: item.id)
                                 }
                                 Divider()
-                                Button(LumiPluginLocalization.string("Delete", bundle: .module)) {
+                                Button(pluginLocalization.string("Delete")) {
                                     viewModel.delete(id: item.id)
                                 }
                             }
@@ -72,8 +72,8 @@ public struct ClipboardHistoryView: View {
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 Spacer()
-                AppButton(LumiPluginLocalization.string("Clear All", bundle: .module), style: .destructive, fillsWidth: true, action: { viewModel.clearAll() })
-                .help(LumiPluginLocalization.string("Clear History", bundle: .module))
+                AppButton(pluginLocalization.string("Clear All"), style: .destructive, fillsWidth: true, action: { viewModel.clearAll() })
+                .help(pluginLocalization.string("Clear History"))
             }
             .padding(8)
             .background(Material.regularMaterial)

@@ -27,7 +27,7 @@ struct ConversationExportToolbarView: View {
         }
         .buttonStyle(.plain)
         .disabled(!viewModel.canExport)
-        .help(Text(LumiPluginLocalization.string("Export current conversation as HTML")))
+        .help(Text(pluginLocalization.string("Export current conversation as HTML")))
         .fileExporter(
             isPresented: $viewModel.isExporterPresented,
             document: viewModel.document,

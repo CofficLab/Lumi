@@ -189,15 +189,15 @@ extension FirewallService: AppCommunication {
 
         let alert = NSAlert()
         alert.alertStyle = .warning
-        alert.messageText = LumiPluginLocalization.string("New Connection Request", bundle: .module)
+        alert.messageText = pluginLocalization.string("New Connection Request")
         alert.informativeText = Self.connectionPromptMessage(
             appId: appId,
             hostname: hostname,
             port: port,
             direction: direction
         )
-        alert.addButton(withTitle: LumiPluginLocalization.string("Allow", bundle: .module))
-        alert.addButton(withTitle: LumiPluginLocalization.string("Block", bundle: .module))
+        alert.addButton(withTitle: pluginLocalization.string("Allow"))
+        alert.addButton(withTitle: pluginLocalization.string("Block"))
 
         return alert.runModal() == .alertFirstButtonReturn
     }
@@ -212,13 +212,13 @@ extension FirewallService: AppCommunication {
         let directionText: String
         switch direction {
         case .inbound:
-            directionText = LumiPluginLocalization.string("Incoming", bundle: .module)
+            directionText = pluginLocalization.string("Incoming")
         case .outbound:
-            directionText = LumiPluginLocalization.string("Outgoing", bundle: .module)
+            directionText = pluginLocalization.string("Outgoing")
         case .any:
-            directionText = LumiPluginLocalization.string("Any", bundle: .module)
+            directionText = pluginLocalization.string("Any")
         @unknown default:
-            directionText = LumiPluginLocalization.string("Unknown", bundle: .module)
+            directionText = pluginLocalization.string("Unknown")
         }
 
         return "\(appId)\n\(directionText): \(endpoint)"

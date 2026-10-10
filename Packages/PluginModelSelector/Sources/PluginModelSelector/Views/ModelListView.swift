@@ -24,12 +24,12 @@ enum ModelCategory: String, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .all: return LumiPluginLocalization.string("All", bundle: .module)
-        case .language: return LumiPluginLocalization.string("Language Models", bundle: .module)
-        case .vision: return LumiPluginLocalization.string("Vision Models", bundle: .module)
-        case .tools: return LumiPluginLocalization.string("Tool Models", bundle: .module)
-        case .audio: return LumiPluginLocalization.string("Audio Models", bundle: .module)
-        case .image: return LumiPluginLocalization.string("Image Models", bundle: .module)
+        case .all: return pluginLocalization.string("All")
+        case .language: return pluginLocalization.string("Language Models")
+        case .vision: return pluginLocalization.string("Vision Models")
+        case .tools: return pluginLocalization.string("Tool Models")
+        case .audio: return pluginLocalization.string("Audio Models")
+        case .image: return pluginLocalization.string("Image Models")
         }
     }
 
@@ -120,9 +120,26 @@ struct ModelListView: View {
 
             // Search（模型较少时列表可一览无余，搜索框不再占位）
             if viewModel.showsModelSearchBar {
-                AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search models", bundle: .module)))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
+                HStack(spacing: 4) {
+                    AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(pluginLocalization.string("Search models")))
+
+                    if let providerID = viewModel.selectedProviderID,
+                       viewModel.canRefreshModels(providerID: providerID) {
+                        Button {
+                            Task { await viewModel.refreshModels(providerID: providerID) }
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(theme.textTertiary)
+                                .frame(width: 28, height: 28)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help(pluginLocalization.string("Refresh Models"))
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
 
                 AppDivider()
             }
@@ -156,7 +173,7 @@ struct ModelListView: View {
                 }
             } else {
                 Spacer()
-                Text(LumiPluginLocalization.string("Select a provider", bundle: .module))
+                Text(pluginLocalization.string("Select a provider"))
                     .font(.appCallout)
                     .foregroundColor(theme.textTertiary)
                 Spacer()

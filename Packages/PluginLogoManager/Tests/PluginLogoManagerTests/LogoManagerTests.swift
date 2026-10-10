@@ -1,3 +1,4 @@
+import SwiftUI
 import Testing
 @testable import PluginLogoManager
 import ProviderLogo

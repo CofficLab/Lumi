@@ -130,7 +130,7 @@ public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, Supe
         settings.addEntries([
             SettingEntryItem(
                 id: id,
-                title: LumiPluginLocalization.string("Activity Heatmap", bundle: .module),
+                title: pluginLocalization.string("Activity Heatmap"),
                 systemImage: "chart.bar.xaxis",
                 order: order
             ) {
@@ -146,10 +146,10 @@ public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, Supe
     public func onRegister(kernel: KernelCoreContainer) throws {
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
             docs.addAbout(
-                DocsEntry(id: id, name: LumiPluginLocalization.string("Activity Heatmap", bundle: .module)) { ActivityHeatmapAboutView() }
+                DocsEntry(id: id, name: pluginLocalization.string("Activity Heatmap")) { ActivityHeatmapAboutView() }
             )
             docs.addManual(
-                DocsEntry(id: id, name: LumiPluginLocalization.string("Activity Heatmap", bundle: .module)) { ActivityHeatmapManualView() }
+                DocsEntry(id: id, name: pluginLocalization.string("Activity Heatmap")) { ActivityHeatmapManualView() }
             )
         }
     }
@@ -190,9 +190,9 @@ public enum ActivityHeatmapPeriod: Int, CaseIterable, Identifiable, Sendable {
     public var id: Int { rawValue }
     var title: String {
         switch self {
-        case .days30: LumiPluginLocalization.string("Last 30 days", bundle: .module)
-        case .days90: LumiPluginLocalization.string("Last 90 days", bundle: .module)
-        case .year: LumiPluginLocalization.string("Last year", bundle: .module)
+        case .days30: pluginLocalization.string("Last 30 days")
+        case .days90: pluginLocalization.string("Last 90 days")
+        case .year: pluginLocalization.string("Last year")
         }
     }
 }
@@ -348,7 +348,7 @@ public struct ActivityHeatmapSettingsView: View {
     private static let activityMaximumColumnCount = 53
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module)
+        pluginLocalization.string(key)
     }
 
     public init(
@@ -612,7 +612,7 @@ private struct IdleTimeSummaryCard: View {
     @ObservedObject var state: ActivityHeatmapIdleTimeState
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module)
+        pluginLocalization.string(key)
     }
 
     var body: some View {
@@ -658,7 +658,7 @@ private struct IdleActivityTimeline: View {
     private static let timeLabels = [0, 6, 12, 18, 24]
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module)
+        pluginLocalization.string(key)
     }
 
     var body: some View {
@@ -798,7 +798,7 @@ private struct IdleActivityTimeline: View {
 
 private struct ActivityHeatmapAboutView: View {
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module)
+        pluginLocalization.string(key)
     }
 
     var body: some View {

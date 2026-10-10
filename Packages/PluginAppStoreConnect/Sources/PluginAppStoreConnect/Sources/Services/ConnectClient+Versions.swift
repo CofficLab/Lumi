@@ -6,7 +6,7 @@ extension ConnectClient {
             URLQueryItem(name: "limit", value: "100"),
             URLQueryItem(
                 name: "fields[appStoreVersions]",
-                value: "platform,versionString,appStoreState,appVersionState,createdDate"
+                value: "platform,versionString,appStoreState,appVersionState,createdDate,copyright,releaseType,downloadable"
             )
         ]
         let policy = fetchPolicy
@@ -30,7 +30,7 @@ extension ConnectClient {
         let query = [
             URLQueryItem(
                 name: "fields[appStoreVersions]",
-                value: "platform,versionString,appStoreState,appVersionState,createdDate"
+                value: "platform,versionString,appStoreState,appVersionState,createdDate,copyright,releaseType,downloadable"
             )
         ]
         Self.logger.info("\(Self.t)readVersion id=\(id)")
@@ -226,5 +226,35 @@ extension ConnectClient {
             ]
         ]
         return try JSONSerialization.data(withJSONObject: payload)
+    }
+
+    /// Update top-level attributes of an App Store version (copyright, releaseType, downloadable).
+    /// Only non-nil fields are sent; omitted fields keep their current values.
+    func updateVersion(
+        id: String,
+        copyright: String? = nil,
+        releaseType: String? = nil,
+        downloadable: Bool? = nil
+    ) async throws -> AppStoreVersion {
+        var attributes: [String: Any] = [:]
+        if let copyright { attributes["copyright"] = copyright }
+        if let releaseType { attributes["releaseType"] = releaseType }
+        if let downloadable { attributes["downloadable"] = downloadable }
+
+        let payload: [String: Any] = [
+            "data": [
+                "type": "appStoreVersions",
+                "id": id,
+                "attributes": attributes
+            ]
+        ]
+        let body = try JSONSerialization.data(withJSONObject: payload)
+        Self.logger.info("\(Self.t)updateVersion id=\(id)")
+        let response: AppStoreConnectSingleResponse<AppStoreVersion> = try await request(
+            path: "/v1/appStoreVersions/\(id)",
+            method: "PATCH",
+            body: body
+        )
+        return response.data
     }
 }

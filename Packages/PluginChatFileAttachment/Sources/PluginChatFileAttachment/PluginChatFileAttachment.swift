@@ -34,7 +34,7 @@ public final class ChatFileAttachmentPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public var name: String {
-        LumiPluginLocalization.string("Chat File Attachment", bundle: .module)
+        pluginLocalization.string("Chat File Attachment")
     }
 
 

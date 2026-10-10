@@ -17,7 +17,7 @@ struct BrewManagerErrorView: View {
     let message: String
 
     /// 标题文本（可本地化）。
-    var title: String = LumiPluginLocalization.string("Something went wrong", bundle: .module)
+    var title: String = pluginLocalization.string("Something went wrong")
 
     /// 关闭按钮回调（必填）。
     let onDismiss: () -> Void
@@ -78,7 +78,7 @@ struct BrewManagerErrorView: View {
                 VStack(spacing: 10) {
                     if let onRetry {
                         AppButton(
-                            LumiPluginLocalization.string("Retry", bundle: .module),
+                            pluginLocalization.string("Retry"),
                             systemImage: "arrow.clockwise",
                             style: .primary,
                             fillsWidth: true,
@@ -87,7 +87,7 @@ struct BrewManagerErrorView: View {
                     }
 
                     AppButton(
-                        LumiPluginLocalization.string("Dismiss", bundle: .module),
+                        pluginLocalization.string("Dismiss"),
                         systemImage: "xmark",
                         style: .ghost,
                         fillsWidth: true,
@@ -131,7 +131,7 @@ struct BrewManagerErrorView: View {
 
 #Preview("Error · Dismiss Only") {
     BrewManagerErrorView(
-        message: LumiPluginLocalization.string("Homebrew not detected, please install Homebrew first.", bundle: .module),
+        message: pluginLocalization.string("Homebrew not detected, please install Homebrew first."),
         onDismiss: {}
     )
     .frame(width: 480, height: 480)

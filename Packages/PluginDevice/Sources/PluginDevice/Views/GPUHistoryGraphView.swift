@@ -42,7 +42,7 @@ struct GPUHistoryGraphView: View {
                             GPUGraphLine(data: dataPoints.map { $0.usage }, maxValue: maxValue)
                                 .stroke(.blue, lineWidth: 1.5)
                         } else {
-                            Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
+                            Text(pluginLocalization.string("Collecting..."))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -100,7 +100,7 @@ struct GPUHistoryGraphView: View {
                     }
                 }
 
-                Text(verbatim: LumiPluginLocalization.string("0", bundle: .module))
+                Text(verbatim: pluginLocalization.string("0"))
                     .font(.system(size: 9))
                     .foregroundColor(.secondary)
             }

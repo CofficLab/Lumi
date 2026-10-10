@@ -55,7 +55,7 @@ public final class ConversationNewPlugin: SuperPlugin, SuperLog {
         ) {
             ToolbarItem(
                 id: toolbarItemID,
-                title: LumiPluginLocalization.string("New Chat", bundle: .module),
+                title: pluginLocalization.string("New Chat"),
                 placement: .trailing,
                 category: .chat,
                 order: 30

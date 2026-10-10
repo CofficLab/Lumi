@@ -26,7 +26,7 @@ struct PluginHostsManagerTests {
     func localizationCatalogIsPackaged() {
         let bundle = Bundle.module
         #expect(bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
-        #expect(PluginHostsManager.LumiPluginLocalization.string("Hosts Manager", bundle: .module).isEmpty == false)
+        #expect(PluginHostsManager.pluginLocalization.string("Hosts Manager").isEmpty == false)
     }
 
     @Test

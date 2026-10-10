@@ -23,7 +23,7 @@ struct ControlView: View {
                 Image(systemName: "folder")
                     .font(.system(size: 12, weight: .semibold))
 
-                Text(viewModel.currentProject?.name ?? LumiPluginLocalization.string("Projects", bundle: .module))
+                Text(viewModel.currentProject?.name ?? pluginLocalization.string("Projects"))
                     .font(.system(size: 13, weight: .medium))
                     .lineLimit(1)
 

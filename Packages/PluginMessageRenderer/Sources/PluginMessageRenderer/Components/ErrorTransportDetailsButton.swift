@@ -28,7 +28,7 @@ struct ErrorTransportDetailsButton: View {
         ) {
             isPresented.toggle()
         }
-        .help(LumiPluginLocalization.string("Show request and response details", bundle: .module))
+        .help(pluginLocalization.string("Show request and response details"))
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
             ErrorTransportDetailsPopoverContent(details: details)
         }
@@ -58,7 +58,7 @@ private struct ErrorTransportDetailsPopoverContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(LumiPluginLocalization.string("Request / Response Details", bundle: .module))
+                Text(pluginLocalization.string("Request / Response Details"))
                     .font(.appCallout)
                     .fontWeight(.semibold)
                     .foregroundColor(theme.textPrimary)
@@ -74,12 +74,12 @@ private struct ErrorTransportDetailsPopoverContent: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(theme.textSecondary)
-                .help(LumiPluginLocalization.string("Copy", bundle: .module))
+                .help(pluginLocalization.string("Copy"))
             }
 
             Picker("", selection: $selectedTab) {
-                Text(LumiPluginLocalization.string("Sending Data", bundle: .module)).tag(DetailsTab.request)
-                Text(LumiPluginLocalization.string("Received Data", bundle: .module)).tag(DetailsTab.response)
+                Text(pluginLocalization.string("Sending Data")).tag(DetailsTab.request)
+                Text(pluginLocalization.string("Received Data")).tag(DetailsTab.response)
             }
             .labelsHidden()
             .pickerStyle(.segmented)

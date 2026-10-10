@@ -123,7 +123,7 @@ struct ItemView: View {
     }
 
     private var attentionDot: some View {
-        dotCore
+        dotCore(color: .green)
             .padding(.top, 3)
             .padding(.trailing, 2)
             .allowsHitTesting(false)
@@ -131,7 +131,7 @@ struct ItemView: View {
 
     private var pulsingAttentionDot: some View {
         ZStack {
-            dotCore
+            dotCore(color: Color.accentColor)
 
             Circle()
                 .stroke(Color.accentColor.opacity(0.75), lineWidth: 1)
@@ -150,9 +150,9 @@ struct ItemView: View {
         .allowsHitTesting(false)
     }
 
-    private var dotCore: some View {
+    private func dotCore(color: Color) -> some View {
         Circle()
-            .fill(Color.accentColor)
+            .fill(color)
             .frame(width: 6, height: 6)
     }
 }

@@ -17,7 +17,7 @@ struct SpeedPopover: View {
                 Image(systemName: "gauge.with.dots.needle.bottom.50percent")
                     .font(.system(size: 18))
                     .foregroundStyle(.orange)
-                Text(LumiPluginLocalization.string("Streaming Speed", bundle: .module))
+                Text(pluginLocalization.string("Streaming Speed"))
                     .font(.headline)
                 Spacer()
             }
@@ -32,19 +32,19 @@ struct SpeedPopover: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 if let modelName, !modelName.isEmpty {
-                    detailRow(LumiPluginLocalization.string("Model", bundle: .module), value: modelName)
+                    detailRow(pluginLocalization.string("Model"), value: modelName)
                 }
                 if let outputTokens {
-                    detailRow(LumiPluginLocalization.string("Output tokens", bundle: .module), value: "\(outputTokens)")
+                    detailRow(pluginLocalization.string("Output tokens"), value: "\(outputTokens)")
                 }
                 if let streamingDurationMs {
-                    detailRow(LumiPluginLocalization.string("Streaming duration", bundle: .module), value: formatDuration(streamingDurationMs))
+                    detailRow(pluginLocalization.string("Streaming duration"), value: formatDuration(streamingDurationMs))
                 }
                 if let timeToFirstTokenMs {
-                    detailRow(LumiPluginLocalization.string("Time to first token", bundle: .module), value: formatDuration(timeToFirstTokenMs))
+                    detailRow(pluginLocalization.string("Time to first token"), value: formatDuration(timeToFirstTokenMs))
                 }
                 if let providerID, !providerID.isEmpty {
-                    detailRow(LumiPluginLocalization.string("Provider", bundle: .module), value: providerID)
+                    detailRow(pluginLocalization.string("Provider"), value: providerID)
                 }
             }
 
@@ -63,7 +63,7 @@ struct SpeedPopover: View {
                 .foregroundStyle(.secondary)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(LumiPluginLocalization.string("Speed unavailable", bundle: .module))
+                Text(pluginLocalization.string("Speed unavailable"))
                     .font(.subheadline.weight(.semibold))
                 Text(unavailabilityReason.localizedExplanation)
                     .font(.callout)
@@ -89,9 +89,9 @@ struct SpeedPopover: View {
 
     private func formatDuration(_ ms: Double) -> String {
         if ms >= 1000 {
-            return String(format: LumiPluginLocalization.string("%.2f s", bundle: .module), ms / 1000.0)
+            return String(format: pluginLocalization.string("%.2f s"), ms / 1000.0)
         }
-        return String(format: LumiPluginLocalization.string("%.0f ms", bundle: .module), ms)
+        return String(format: pluginLocalization.string("%.0f ms"), ms)
     }
 }
 
@@ -104,7 +104,7 @@ extension SpeedPopover {
         HStack(spacing: 10) {
             speedCard(
                 icon: "bolt.fill",
-                title: LumiPluginLocalization.string("Current speed", bundle: .module),
+                title: pluginLocalization.string("Current speed"),
                 value: currentTPS,
                 tint: .blue
             )
@@ -112,7 +112,7 @@ extension SpeedPopover {
             if let averageTPS = SpeedSample.averageTokensPerSecond(from: speedHistory) {
                 speedCard(
                     icon: "chart.line.uptrend.xyaxis",
-                    title: LumiPluginLocalization.string("Average speed", bundle: .module),
+                    title: pluginLocalization.string("Average speed"),
                     value: averageTPS,
                     tint: .orange
                 )
@@ -139,7 +139,7 @@ extension SpeedPopover {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text(String(format: "%.1f", value))
                         .font(.system(size: 20, weight: .semibold, design: .rounded))
-                    Text(LumiPluginLocalization.string("tokens / second", bundle: .module))
+                    Text(pluginLocalization.string("tokens / second"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -164,7 +164,7 @@ extension SpeedPopover {
 
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Text(LumiPluginLocalization.string("Conversation speed trend", bundle: .module))
+                    Text(pluginLocalization.string("Conversation speed trend"))
                         .font(.subheadline.weight(.semibold))
                     Spacer()
                     Text("\(speedHistory.count) messages")
@@ -177,12 +177,12 @@ extension SpeedPopover {
 
                 HStack {
                     Text(String(
-                        format: LumiPluginLocalization.string("Min %.1f", bundle: .module),
+                        format: pluginLocalization.string("Min %.1f"),
                         speedHistory.map(\.tokensPerSecond).min() ?? 0
                     ))
                     Spacer()
                     Text(String(
-                        format: LumiPluginLocalization.string("Max %.1f", bundle: .module),
+                        format: pluginLocalization.string("Max %.1f"),
                         speedHistory.map(\.tokensPerSecond).max() ?? 0
                     ))
                 }

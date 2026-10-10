@@ -33,7 +33,7 @@ public struct ProcessRow: View {
                         .lineLimit(1)
                         .foregroundColor(.primary)
 
-                    Text(LumiPluginLocalization.string("PID: \(process.id)", bundle: .module))
+                    Text(pluginLocalization.string("PID: \(process.id)"))
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
                 }

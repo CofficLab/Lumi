@@ -94,6 +94,7 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
         let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
         toolManager?.add(BrowserOpenTool(sessions: sessions), pluginID: id)
         toolManager?.add(BrowserReadTool(sessions: sessions), pluginID: id)
+        toolManager?.add(BrowserStatusTool(sessions: sessions), pluginID: id)
         toolManager?.add(BrowserInteractTool(sessions: sessions), pluginID: id)
     }
 
@@ -124,6 +125,7 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
         activityBar?.removeItems(ids: [entryID])
         kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: "browser_open")
         kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: "browser_read")
+        kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: "browser_status")
         kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: "browser_interact")
         if wasActive {
             isBrowserActive = false

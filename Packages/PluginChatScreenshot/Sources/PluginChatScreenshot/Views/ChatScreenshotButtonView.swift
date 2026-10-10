@@ -32,7 +32,7 @@ struct ChatScreenshotButtonView: View {
         }
         .buttonStyle(.plain)
         .disabled(isPreparing)
-        .help(LumiPluginLocalization.string("Capture screenshot", bundle: .module))
+        .help(pluginLocalization.string("Capture screenshot"))
     }
 
     private func start() {

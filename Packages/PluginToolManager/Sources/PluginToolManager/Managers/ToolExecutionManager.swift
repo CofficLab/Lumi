@@ -507,6 +507,8 @@ final class ToolExecutionManager {
         let data = Data(chunk.utf8)
         job.outputByteCount += data.count
         let combined = Data(job.latestOutput.utf8) + data
+        // Keep the tail so the live preview shows the newest output, matching
+        // the tail-keeping policy of KitShell's BoundedOutputBuffer.
         job.latestOutput = String(
             decoding: combined.suffix(Self.maxOutputBytes),
             as: UTF8.self

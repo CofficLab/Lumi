@@ -5,7 +5,6 @@ import os
 import ProviderAgentLoop
 import ProviderChatSection
 import ProviderConversation
-import ProviderMessageRendering
 import ProviderToolManager
 import KitAgentTool
 import LumiUI
@@ -17,8 +16,7 @@ import SwiftUI
 ///   创建 suspension（kind = "userInput"）并暂停回合；
 /// - 用户回答后经 `AgentLoopProviding.resumeTurn(in:request:)` 恢复。
 ///
-/// V1 通过聊天区固定项直接展示当前挂起的问题；V2/V3 继续由工具调用行渲染器
-/// 展示。两条路径共用 `AskUserPendingView` 和 `AskUserBridge`。
+/// 问题视图始终显示在聊天区底部固定位置，不嵌入消息列表。
 @MainActor
 public final class AskUserPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.ask-user", category: "AskUser")
@@ -46,8 +44,6 @@ public final class AskUserPlugin: SuperPlugin, SuperLog {
             return
         }
         toolManager.add(AskUserTool(conversations: conversations), pluginID: id)
-        kernel.resolveProvider((any ToolCallRenderingProviding).self)?
-            .register(AskUserRowRenderer())
 
         if let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self),
            let chat = kernel.resolveProvider((any ChatSectionProviding).self) {
@@ -76,7 +72,5 @@ public final class AskUserPlugin: SuperPlugin, SuperLog {
         chatViewModel = nil
         kernel.resolveProvider((any ToolManagerProviding).self)?
             .remove(id: AskUserTool.toolName)
-        kernel.resolveProvider((any ToolCallRenderingProviding).self)?
-            .unregister(id: AskUserRowRenderer.id)
     }
 }

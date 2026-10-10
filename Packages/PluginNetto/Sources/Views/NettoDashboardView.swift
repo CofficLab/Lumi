@@ -12,7 +12,7 @@ public struct NettoDashboardView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text(LumiPluginLocalization.string("Netto Firewall", bundle: .module))
+                Text(pluginLocalization.string("Netto Firewall"))
                     .font(.largeTitle)
                     .fontWeight(.bold)
                 Spacer()
@@ -34,7 +34,7 @@ public struct NettoDashboardView: View {
             HSplitView {
                 // Left: Apps List
                 VStack(alignment: .leading) {
-                    Text(LumiPluginLocalization.string("Apps", bundle: .module))
+                    Text(pluginLocalization.string("Apps"))
                         .font(.system(size: 15, weight: .medium))
                         .padding(.horizontal)
                         .padding(.top)
@@ -51,7 +51,7 @@ public struct NettoDashboardView: View {
                 
                 // Right: Events
                 VStack(alignment: .leading) {
-                    Text(LumiPluginLocalization.string("Recent Events", bundle: .module))
+                    Text(pluginLocalization.string("Recent Events"))
                         .font(.system(size: 15, weight: .medium))
                         .padding(.horizontal)
                         .padding(.top)

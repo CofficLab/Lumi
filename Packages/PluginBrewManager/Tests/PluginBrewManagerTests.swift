@@ -11,7 +11,7 @@ struct PluginBrewManagerTests {
     func pluginMetadataIsStable() {
         let plugin = BrewManagerSuperPlugin()
         #expect(plugin.id == "com.coffic.lumi.plugin.brew-manager")
-        #expect(plugin.metadata.name == LumiPluginLocalization.string("Package Management", bundle: LumiPluginLocalization.resourceBundle))
+        #expect(plugin.metadata.name == pluginLocalization.string("Package Management"))
         #expect(plugin.order == 260)
         #expect(plugin.metadata.policy == .disabledByDefault)
     }

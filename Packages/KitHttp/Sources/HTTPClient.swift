@@ -28,6 +28,14 @@ public final class HTTPClient: SuperLog, @unchecked Sendable {
         )
     }
 
+    deinit {
+        // 带 delegate 的 URLSession 会与 delegate 互相持有，且其连接池持有的 socket
+        // 只有在 invalidate 后才会释放。若此处不调用，每创建一个 HTTPClient 就会
+        // 永久泄漏若干 fd，长时间高频创建会耗尽进程 fd 上限，导致工具与网络路径
+        // 同时失败（见 issue #119）。
+        session.invalidateAndCancel()
+    }
+
     public func sendJSONRequest(
         request: URLRequest,
         body: [String: Any]

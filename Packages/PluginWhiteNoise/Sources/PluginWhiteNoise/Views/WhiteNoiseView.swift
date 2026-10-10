@@ -38,7 +38,7 @@ struct WhiteNoiseView: View {
                         .foregroundStyle(.tint)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(LumiPluginLocalization.string("White Noise", bundle: .module))
+                        Text(pluginLocalization.string("White Noise"))
                             .font(.system(size: 18, weight: .semibold))
                         Text(viewModel.isPlaying ? "Playing" : "Paused")
                             .font(.caption)
@@ -63,7 +63,7 @@ struct WhiteNoiseView: View {
                         Image(systemName: "speaker.wave.1.fill")
                             .font(.caption)
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                        Text(LumiPluginLocalization.string("Master Volume", bundle: .module))
+                        Text(pluginLocalization.string("Master Volume"))
                             .font(.caption)
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         Spacer()
@@ -99,7 +99,7 @@ struct WhiteNoiseView: View {
                     Image(systemName: "moon.zzz.fill")
                         .font(.system(size: 16))
                         .foregroundStyle(.tint)
-                    Text(LumiPluginLocalization.string("Sleep Timer", bundle: .module))
+                    Text(pluginLocalization.string("Sleep Timer"))
                         .font(.system(size: 15, weight: .medium))
                     Spacer()
                     if let remaining = viewModel.remainingSeconds {
@@ -109,7 +109,7 @@ struct WhiteNoiseView: View {
                     }
                 }
 
-                Picker(LumiPluginLocalization.string("Sleep Timer", bundle: .module), selection: $viewModel.sleepDuration) {
+                Picker(pluginLocalization.string("Sleep Timer"), selection: $viewModel.sleepDuration) {
                     ForEach(WhiteNoiseViewModel.SleepDuration.allCases) { duration in
                         Text(duration.title).tag(duration)
                     }

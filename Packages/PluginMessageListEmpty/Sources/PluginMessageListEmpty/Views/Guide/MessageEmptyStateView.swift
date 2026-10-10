@@ -19,12 +19,12 @@ struct MessageEmptyStateView: View {
     private var emptyStateTitle: String {
         let context = guideState.context
         if context?.id == ChatContext.defaultChat.id {
-            return LumiPluginLocalization.string("Start chatting with Lumi")
+            return pluginLocalization.string("Start chatting with Lumi")
         }
         if let title = context?.title {
-            return String(format: LumiPluginLocalization.string("For 「%@」, what can I help you with?"), title)
+            return String(format: pluginLocalization.string("For 「%@」, what can I help you with?"), title)
         }
-        return LumiPluginLocalization.string("Start chatting with Lumi")
+        return pluginLocalization.string("Start chatting with Lumi")
     }
 
     var body: some View {
@@ -50,7 +50,7 @@ struct MessageEmptyStateView: View {
                                 .multilineTextAlignment(.center)
                                 .padding(.top, 8)
                         } else {
-                            Text(LumiPluginLocalization.string("Pick an example, or type your question below."))
+                            Text(pluginLocalization.string("Pick an example, or type your question below."))
                                 .font(.system(size: 13))
                                 .foregroundStyle(theme.textSecondary)
                                 .multilineTextAlignment(.center)
@@ -83,8 +83,8 @@ struct MessageEmptyStateView: View {
                 catch { projectError = error.localizedDescription }
             }
         }
-        .alert(LumiPluginLocalization.string("Failed to Open Project"), isPresented: Binding(get: { projectError != nil }, set: { if !$0 { projectError = nil } })) {
-            Button(LumiPluginLocalization.string("OK"), role: .cancel) {}
+        .alert(pluginLocalization.string("Failed to Open Project"), isPresented: Binding(get: { projectError != nil }, set: { if !$0 { projectError = nil } })) {
+            Button(pluginLocalization.string("OK"), role: .cancel) {}
         } message: { Text(projectError ?? "") }
     }
 }

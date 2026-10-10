@@ -35,7 +35,7 @@ public struct DeviceInfoView: View {
                     .foregroundStyle(theme.textTertiary.opacity(0.15))
 
                 VStack(alignment: .leading, spacing: 16) {
-                    Label(LumiPluginLocalization.string("Real-time Monitor", bundle: .module), systemImage: "chart.xyaxis.line")
+                    Label(pluginLocalization.string("Real-time Monitor"), systemImage: "chart.xyaxis.line")
                         .font(.appBody)
                         .fontWeight(.semibold)
                         .foregroundColor(theme.textPrimary)
@@ -113,9 +113,9 @@ private struct CPUInfoCard: View {
     }
 
     var body: some View {
-        DeviceInfoCard(title: LumiPluginLocalization.string("CPU", bundle: .module), icon: "cpu", color: theme.info) {
+        DeviceInfoCard(title: pluginLocalization.string("CPU"), icon: "cpu", color: theme.info) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(deviceData.processorName.isEmpty ? String(format: LumiPluginLocalization.string("%d cores", bundle: .module), deviceData.coreCount) : deviceData.processorName)
+                Text(deviceData.processorName.isEmpty ? String(format: pluginLocalization.string("%d cores"), deviceData.coreCount) : deviceData.processorName)
                     .font(.appCaption)
                     .lineLimit(1)
                     .foregroundColor(theme.textSecondary)
@@ -129,7 +129,7 @@ private struct CPUInfoCard: View {
 
                 HStack(spacing: 12) {
                     HStack(spacing: 4) {
-                        Text(LumiPluginLocalization.string("User", bundle: .module))
+                        Text(pluginLocalization.string("User"))
                             .font(.appCaption)
                             .foregroundColor(theme.textSecondary)
                         Text(String(format: "%.0f%%", cpu.userUsage))
@@ -137,7 +137,7 @@ private struct CPUInfoCard: View {
                             .foregroundColor(theme.success)
                     }
                     HStack(spacing: 4) {
-                        Text(LumiPluginLocalization.string("System", bundle: .module))
+                        Text(pluginLocalization.string("System"))
                             .font(.appCaption)
                             .foregroundColor(theme.textSecondary)
                         Text(String(format: "%.0f%%", cpu.systemUsage))
@@ -160,7 +160,7 @@ private struct MemoryInfoCard: View {
     }
 
     var body: some View {
-        DeviceInfoCard(title: LumiPluginLocalization.string("Memory", bundle: .module), icon: "memorychip", color: theme.success) {
+        DeviceInfoCard(title: pluginLocalization.string("Memory"), icon: "memorychip", color: theme.success) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("\(memoryUsedText) / \(memoryTotalText)")
                     .font(.appCaption)
@@ -190,9 +190,9 @@ private struct DiskInfoCard: View {
     }
 
     var body: some View {
-        DeviceInfoCard(title: LumiPluginLocalization.string("Disk", bundle: .module), icon: "internaldrive", color: theme.warning) {
+        DeviceInfoCard(title: pluginLocalization.string("Disk"), icon: "internaldrive", color: theme.warning) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("\(diskUsedText) \(LumiPluginLocalization.string("used", bundle: .module))")
+                Text("\(diskUsedText) \(pluginLocalization.string("used"))")
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
 
@@ -227,7 +227,7 @@ private struct BatteryInfoCard: View {
     }
 
     var body: some View {
-        DeviceInfoCard(title: LumiPluginLocalization.string("Battery", bundle: .module), icon: batteryIcon, color: batteryLevelColor) {
+        DeviceInfoCard(title: pluginLocalization.string("Battery"), icon: batteryIcon, color: batteryLevelColor) {
             VStack(alignment: .leading, spacing: 8) {
                 if battery.hasBattery {
                     HStack {
@@ -257,7 +257,7 @@ private struct BatteryInfoCard: View {
                         }
                         if battery.cycleCount > 0 {
                             Label {
-                                Text(String(format: LumiPluginLocalization.string("%d cycles", bundle: .module), battery.cycleCount))
+                                Text(String(format: pluginLocalization.string("%d cycles"), battery.cycleCount))
                                     .font(.appCaption)
                             } icon: {
                                 Image(systemName: "arrow.triangle.2.circlepath")
@@ -270,13 +270,13 @@ private struct BatteryInfoCard: View {
                     HStack {
                         Image(systemName: "powerplug.fill")
                             .foregroundColor(theme.success)
-                        Text(LumiPluginLocalization.string("AC Power", bundle: .module))
+                        Text(pluginLocalization.string("AC Power"))
                             .font(.appBody)
                             .foregroundColor(theme.textPrimary)
                         Spacer()
                     }
                     if battery.adapterWatts > 0 {
-                        Text(String(format: LumiPluginLocalization.string("Adapter: %@", bundle: .module), battery.adapterWattsString))
+                        Text(String(format: pluginLocalization.string("Adapter: %@"), battery.adapterWattsString))
                             .font(.appCaption)
                             .foregroundColor(theme.textSecondary)
                     }
@@ -315,9 +315,9 @@ private struct GPUInfoCard: View {
     }
 
     var body: some View {
-        DeviceInfoCard(title: LumiPluginLocalization.string("GPU", bundle: .module), icon: "cpu", color: theme.info) {
+        DeviceInfoCard(title: pluginLocalization.string("GPU"), icon: "cpu", color: theme.info) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(gpu.modelName.isEmpty ? LumiPluginLocalization.string("GPU", bundle: .module) : gpu.modelName)
+                Text(gpu.modelName.isEmpty ? pluginLocalization.string("GPU") : gpu.modelName)
                     .font(.appCaption)
                     .lineLimit(1)
                     .foregroundColor(theme.textSecondary)
@@ -390,7 +390,7 @@ private struct UptimeView: View {
         HStack {
             Image(systemName: "clock")
                 .foregroundColor(theme.textSecondary)
-            Text("\(LumiPluginLocalization.string("Uptime", bundle: .module)): \(formatUptime(deviceData.uptime))")
+            Text("\(pluginLocalization.string("Uptime")): \(formatUptime(deviceData.uptime))")
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
             Spacer()

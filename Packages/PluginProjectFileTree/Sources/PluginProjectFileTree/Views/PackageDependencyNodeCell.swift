@@ -43,7 +43,7 @@ struct PackageDependencyNodeRowView: View {
                 .foregroundColor(palette.accentPrimary)
                 .frame(width: 16)
 
-            Text(LumiPluginLocalization.string("Package Dependencies", bundle: .module))
+            Text(pluginLocalization.string("Package Dependencies"))
                 .font(.appCaption)
                 .foregroundColor(palette.textPrimary)
                 .lineLimit(1)

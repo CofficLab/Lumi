@@ -202,11 +202,11 @@ enum CacheHitRateUnavailability: Equatable {
     var localizedExplanation: String {
         switch self {
         case .noConversationSelected:
-            return LumiPluginLocalization.string("No conversation selected. Select a conversation to see cache hit rate.", bundle: .module)
+            return pluginLocalization.string("No conversation selected. Select a conversation to see cache hit rate.")
         case .waitingForResponse:
-            return LumiPluginLocalization.string("Waiting for the first assistant response with cache usage data.", bundle: .module)
+            return pluginLocalization.string("Waiting for the first assistant response with cache usage data.")
         case .providerDidNotReportUsage:
-            return LumiPluginLocalization.string("The provider did not report cache token usage for this conversation. The model or endpoint may not support caching, the stable prefix may be too short, or no cache has been created yet.", bundle: .module)
+            return pluginLocalization.string("The provider did not report cache token usage for this conversation. The model or endpoint may not support caching, the stable prefix may be too short, or no cache has been created yet.")
         }
     }
 }

@@ -88,28 +88,20 @@ extension ToolManager {
             case .blockAll:
                 results.append(.blocked(reason: "Tool execution was blocked because this conversation is in Chat mode."))
             case .autoExecute:
+                // A3 完全授权：工具自身声明的强制确认（如 run_command 的
+                // unsandboxed、mail_send_message）也直接执行，不弹授权。
                 results.append(.executed(await execute(toolCall, conversationID: conversationID, turnID: turnID)))
             case .requireApprovalForHighRisk:
                 if case .requiresUserApproval = authorizationDecision(
                     for: toolCall,
                     conversationID: conversationID
                 ) {
-                    let risk = riskLevel(for: toolCall) ?? .high
                     eventManager.send(.authorizationRequired(
                         conversationID: conversationID,
                         turnID: turnID,
                         toolCall: toolCall
                     ))
-                    let payload = ToolInteractionPayload(
-                        toolCallID: "approval:\(toolCall.id)",
-                        kind: "permission",
-                        question: "此操作被判定为\(risk.displayName)，是否允许执行？\n\(displayDescription(for: toolCall) ?? toolCall.name)",
-                        options: ["允许", "拒绝"],
-                        mode: "yes_no"
-                    )
-                    let content = (try? String(data: JSONEncoder().encode(payload), encoding: .utf8))
-                        ?? "Unable to create tool interaction request."
-                    results.append(.needsUserResponse(payload: content))
+                    results.append(.needsUserResponse(payload: approvalPayload(for: toolCall)))
                     // 授权是批次的暂停点；后续调用必须等用户决定后再处理。
                     break batchLoop
                 } else {
@@ -238,6 +230,23 @@ extension ToolManager {
 
     private func resultCacheKey(toolCallID: String, conversationID: UUID, turnID: UUID?) -> String {
         conversationID.uuidString + "|" + (turnID?.uuidString ?? "nil") + "|" + toolCallID
+    }
+
+    /// 构造权限确认交互的挂起载荷。
+    ///
+    /// 用于 `requireApprovalForHighRisk` 与"强制确认"两种场景，避免两处
+    /// 各写一份 JSON，导致文案或字段不一致。
+    private func approvalPayload(for toolCall: ToolCall) -> String {
+        let risk = riskLevel(for: toolCall) ?? .high
+        let payload = ToolInteractionPayload(
+            toolCallID: "approval:\(toolCall.id)",
+            kind: "permission",
+            question: "此操作被判定为\(risk.displayName)，是否允许执行？\n\(displayDescription(for: toolCall) ?? toolCall.name)",
+            options: ["允许", "拒绝"],
+            mode: "yes_no"
+        )
+        return (try? String(data: JSONEncoder().encode(payload), encoding: .utf8))
+            ?? "Unable to create tool interaction request."
     }
 
     func logToolCall(toolCallID: String, toolName: String, toolDisplayName: String, turnID: UUID?, conversationID: UUID, createdAt: Date, startedAt: Date, completedAt: Date?, duration: TimeInterval?, argumentsJSON: String, resultContent: String, result: ToolCallResult, resultIsError: Bool, riskLevel: String) {

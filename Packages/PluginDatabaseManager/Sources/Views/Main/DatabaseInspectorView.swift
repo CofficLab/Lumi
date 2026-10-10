@@ -61,8 +61,8 @@ public struct DatabaseInspectorView: View {
         .sheet(isPresented: $viewModel.showSchemaChangePreview) {
             SchemaChangePreviewSheet(viewModel: viewModel, isPresented: $viewModel.showSchemaChangePreview)
         }
-        .alert(LumiPluginLocalization.string("Structure Change Error", bundle: .module), isPresented: schemaEditErrorBinding) {
-            Button(LumiPluginLocalization.string("OK", bundle: .module), role: .cancel) {}
+        .alert(pluginLocalization.string("Structure Change Error"), isPresented: schemaEditErrorBinding) {
+            Button(pluginLocalization.string("OK"), role: .cancel) {}
         } message: {
             Text(schemaEditError ?? "Unknown error")
         }
@@ -82,7 +82,7 @@ public struct DatabaseInspectorView: View {
             }
             Spacer()
             if viewModel.openTableObject != nil {
-                AppIconButton(systemImage: "arrow.clockwise", label: LumiPluginLocalization.string("Refresh Structure", bundle: .module), size: .compact) {
+                AppIconButton(systemImage: "arrow.clockwise", label: pluginLocalization.string("Refresh Structure"), size: .compact) {
                     Task { await viewModel.loadSelectedTableSchema(refresh: true) }
                 }
                 .disabled(viewModel.isLoadingTableSchema)
@@ -98,7 +98,7 @@ public struct DatabaseInspectorView: View {
         if viewModel.isLoadingTableSchema, viewModel.selectedTableSchema == nil {
             VStack(spacing: 10) {
                 ProgressView()
-                Text(LumiPluginLocalization.string("Loading structure…", bundle: .module))
+                Text(pluginLocalization.string("Loading structure…"))
                     .font(.appCaption)
                     .foregroundStyle(.secondary)
             }
@@ -106,7 +106,7 @@ public struct DatabaseInspectorView: View {
         } else if let error = viewModel.tableSchemaError, viewModel.selectedTableSchema == nil {
             AppEmptyState(
                 icon: "exclamationmark.triangle",
-                title: LumiPluginLocalization.string("Unable to Load Structure", bundle: .module),
+                title: pluginLocalization.string("Unable to Load Structure"),
                 description: error
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -136,7 +136,7 @@ public struct DatabaseInspectorView: View {
         } else {
             AppEmptyState(
                 icon: object.kind.systemImage,
-                title: LumiPluginLocalization.string("No Structure Available", bundle: .module),
+                title: pluginLocalization.string("No Structure Available"),
                 description: "Refresh to load metadata for this object."
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -145,7 +145,7 @@ public struct DatabaseInspectorView: View {
 
     private func sectionPicker(for schema: TableSchema) -> some View {
         HStack(spacing: 8) {
-            Picker(LumiPluginLocalization.string("Structure Section", bundle: .module), selection: $section) {
+            Picker(pluginLocalization.string("Structure Section"), selection: $section) {
                 ForEach(availableSections(for: schema)) { item in
                     Label(item.title, systemImage: item.systemImage).tag(item)
                 }
@@ -154,11 +154,11 @@ public struct DatabaseInspectorView: View {
             .labelsHidden()
             Spacer()
             if section == .columns, canEditStructure {
-                AppIconButton(systemImage: "plus", label: LumiPluginLocalization.string("Add Column", bundle: .module), size: .compact) {
+                AppIconButton(systemImage: "plus", label: pluginLocalization.string("Add Column"), size: .compact) {
                     showAddColumn = true
                 }
             } else if section == .indexes, canEditStructure {
-                AppIconButton(systemImage: "plus", label: LumiPluginLocalization.string("Add Index", bundle: .module), size: .compact) {
+                AppIconButton(systemImage: "plus", label: pluginLocalization.string("Add Index"), size: .compact) {
                     showAddIndex = true
                 }
             }
@@ -265,10 +265,10 @@ public struct DatabaseInspectorView: View {
             Text("\(viewModel.schemaChangeManager?.changes.count ?? 0) structure changes")
                 .font(.appMicroEmphasized)
             Spacer()
-            AppButton(LumiPluginLocalization.string("Discard", bundle: .module), systemImage: "trash", style: .ghost, size: .small) {
+            AppButton(pluginLocalization.string("Discard"), systemImage: "trash", style: .ghost, size: .small) {
                 viewModel.discardSchemaChanges()
             }
-            AppButton(LumiPluginLocalization.string("Preview DDL", bundle: .module), systemImage: "doc.text.magnifyingglass", style: .primary, size: .small) {
+            AppButton(pluginLocalization.string("Preview DDL"), systemImage: "doc.text.magnifyingglass", style: .primary, size: .small) {
                 viewModel.showSchemaChangePreview = true
             }
         }
@@ -283,7 +283,7 @@ public struct DatabaseInspectorView: View {
         @ViewBuilder content: @escaping (Item) -> Content
     ) -> some View {
         if items.isEmpty {
-            Text(LumiPluginLocalization.string("No items", bundle: .module))
+            Text(pluginLocalization.string("No items"))
                 .font(.appCaption)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, minHeight: 80)
@@ -300,7 +300,7 @@ public struct DatabaseInspectorView: View {
     private func ddlContent(_ ddl: String?) -> some View {
         if let ddl, !ddl.isEmpty {
             VStack(alignment: .trailing, spacing: 8) {
-                AppButton(LumiPluginLocalization.string("Copy DDL", bundle: .module), systemImage: "doc.on.doc", style: .ghost, size: .small) {
+                AppButton(pluginLocalization.string("Copy DDL"), systemImage: "doc.on.doc", style: .ghost, size: .small) {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(ddl, forType: .string)
                 }
@@ -319,7 +319,7 @@ public struct DatabaseInspectorView: View {
             }
             .onAppear { ddlText = ddl }
         } else {
-            Text(LumiPluginLocalization.string("DDL is not available for this object.", bundle: .module))
+            Text(pluginLocalization.string("DDL is not available for this object."))
                 .font(.appCaption)
                 .foregroundStyle(.secondary)
         }
@@ -339,13 +339,13 @@ public struct DatabaseInspectorView: View {
                             ("SSL", config.type.capabilities.supportsSSL ? "Supported" : "N/A"),
                         ]
                     )
-                    Text(LumiPluginLocalization.string("Open a table or view to inspect its structure.", bundle: .module))
+                    Text(pluginLocalization.string("Open a table or view to inspect its structure."))
                         .font(.appCaption)
                         .foregroundStyle(.secondary)
                 } else {
                     AppEmptyState(
                         icon: "cylinder.split.1x2",
-                        title: LumiPluginLocalization.string("No Database Connected", bundle: .module),
+                        title: pluginLocalization.string("No Database Connected"),
                         description: "Connect from the sidebar."
                     )
                 }
@@ -485,8 +485,8 @@ private struct SchemaColumnCard: View {
                     ForEach(badges, id: \.self) { AppTag($0, systemImage: nil, style: .subtle) }
                     if canEdit {
                         Menu {
-                            Button(LumiPluginLocalization.string("Rename…", bundle: .module), action: onRename)
-                            Button(LumiPluginLocalization.string("Drop Column…", bundle: .module), role: .destructive, action: onDrop)
+                            Button(pluginLocalization.string("Rename…"), action: onRename)
+                            Button(pluginLocalization.string("Drop Column…"), role: .destructive, action: onDrop)
                                 .disabled(column.isPrimaryKey)
                         } label: {
                             Image(systemName: "ellipsis")
@@ -496,8 +496,8 @@ private struct SchemaColumnCard: View {
                     }
                 }
                 Text(column.dataType).font(.appMicro).foregroundStyle(.secondary)
-                SchemaDetailRow(label: LumiPluginLocalization.string("Default", bundle: .module), value: column.defaultValue ?? "None")
-                SchemaDetailRow(label: LumiPluginLocalization.string("Position", bundle: .module), value: String(column.position + 1))
+                SchemaDetailRow(label: pluginLocalization.string("Default"), value: column.defaultValue ?? "None")
+                SchemaDetailRow(label: pluginLocalization.string("Position"), value: String(column.position + 1))
             }
         }
     }
@@ -518,7 +518,7 @@ private struct PendingSchemaChangeCard: View {
                 }
                 Spacer()
                 AppTag(status, systemImage: nil, style: .subtle)
-                AppIconButton(systemImage: "xmark", label: LumiPluginLocalization.string("Remove Change", bundle: .module), size: .compact, action: onRemove)
+                AppIconButton(systemImage: "xmark", label: pluginLocalization.string("Remove Change"), size: .compact, action: onRemove)
             }
         }
     }
@@ -538,7 +538,7 @@ private struct SchemaIndexCard: View {
                     AppTag(index.isUnique ? "UNIQUE" : "INDEX", systemImage: nil, style: .subtle)
                     if canEdit {
                         Menu {
-                            Button(LumiPluginLocalization.string("Drop Index…", bundle: .module), role: .destructive, action: onDrop)
+                            Button(pluginLocalization.string("Drop Index…"), role: .destructive, action: onDrop)
                         } label: {
                             Image(systemName: "ellipsis")
                         }
@@ -547,7 +547,7 @@ private struct SchemaIndexCard: View {
                     }
                 }
                 Text(index.columns.joined(separator: ", ")).font(.appMicro).foregroundStyle(.secondary)
-                SchemaDetailRow(label: LumiPluginLocalization.string("Index Type", bundle: .module), value: index.indexType ?? "Default")
+                SchemaDetailRow(label: pluginLocalization.string("Index Type"), value: index.indexType ?? "Default")
             }
         }
     }

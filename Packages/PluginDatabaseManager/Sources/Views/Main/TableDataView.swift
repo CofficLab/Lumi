@@ -44,24 +44,24 @@ struct TableDataView: View {
                 .font(.appMicroEmphasized)
                 .foregroundStyle(theme.textPrimary)
 
-            AppIconButton(systemImage: "arrow.uturn.backward", label: LumiPluginLocalization.string("Undo", bundle: .module), size: .compact) {
+            AppIconButton(systemImage: "arrow.uturn.backward", label: pluginLocalization.string("Undo"), size: .compact) {
                 viewModel.undoChange()
             }
             .disabled(cm?.canUndo != true)
 
-            AppIconButton(systemImage: "arrow.uturn.forward", label: LumiPluginLocalization.string("Redo", bundle: .module), size: .compact) {
+            AppIconButton(systemImage: "arrow.uturn.forward", label: pluginLocalization.string("Redo"), size: .compact) {
                 viewModel.redoChange()
             }
             .disabled(cm?.canRedo != true)
 
             Spacer()
-            AppButton(LumiPluginLocalization.string("Preview SQL", bundle: .module), systemImage: "doc.text.magnifyingglass", style: .ghost, size: .small) {
+            AppButton(pluginLocalization.string("Preview SQL"), systemImage: "doc.text.magnifyingglass", style: .ghost, size: .small) {
                 viewModel.showChangePreview = true
             }
-            AppButton(LumiPluginLocalization.string("Discard", bundle: .module), systemImage: "trash", style: .secondary, size: .small) {
+            AppButton(pluginLocalization.string("Discard"), systemImage: "trash", style: .secondary, size: .small) {
                 viewModel.discardChanges()
             }
-            AppButton(LumiPluginLocalization.string("Save", bundle: .module), systemImage: "checkmark.circle.fill", style: .primary, size: .small) {
+            AppButton(pluginLocalization.string("Save"), systemImage: "checkmark.circle.fill", style: .primary, size: .small) {
                 Task { await viewModel.saveChanges() }
             }
             .keyboardShortcut("s", modifiers: .command)
@@ -76,17 +76,17 @@ struct TableDataView: View {
         guard let cm else { return "" }
         var parts: [String] = []
         if cm.changedCellCount > 0 {
-            parts.append("\(cm.changedCellCount) \(LumiPluginLocalization.string("edits", bundle: .module))")
+            parts.append("\(cm.changedCellCount) \(pluginLocalization.string("edits"))")
         }
         if cm.pendingInsertCount > 0 {
-            parts.append("\(cm.pendingInsertCount) \(LumiPluginLocalization.string("new", bundle: .module))")
+            parts.append("\(cm.pendingInsertCount) \(pluginLocalization.string("new"))")
         }
         if cm.pendingDeleteCount > 0 {
-            parts.append("\(cm.pendingDeleteCount) \(LumiPluginLocalization.string("deletes", bundle: .module))")
+            parts.append("\(cm.pendingDeleteCount) \(pluginLocalization.string("deletes"))")
         }
         return parts.isEmpty
-            ? LumiPluginLocalization.string("No changes", bundle: .module)
-            : parts.joined(separator: " · ") + " " + LumiPluginLocalization.string("unsaved", bundle: .module)
+            ? pluginLocalization.string("No changes")
+            : parts.joined(separator: " · ") + " " + pluginLocalization.string("unsaved")
     }
 
     // MARK: - Header
@@ -100,11 +100,11 @@ struct TableDataView: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 if let count = viewModel.tableRowCount {
-                    Text("\(count.formatted()) \(LumiPluginLocalization.string("rows", bundle: .module))")
+                    Text("\(count.formatted()) \(pluginLocalization.string("rows"))")
                         .font(.appCaption)
                         .foregroundColor(theme.textSecondary)
                 } else if viewModel.isLoading {
-                    Text(LumiPluginLocalization.string("Loading…", bundle: .module))
+                    Text(pluginLocalization.string("Loading…"))
                         .font(.appCaption)
                         .foregroundColor(theme.textSecondary)
                 }
@@ -115,7 +115,7 @@ struct TableDataView: View {
             }
             if viewModel.changeManager?.isEditable == true {
                 AppButton(
-                    LumiPluginLocalization.string("Add Row", bundle: .module),
+                    pluginLocalization.string("Add Row"),
                     systemImage: "plus",
                     style: .secondary,
                     size: .small,
@@ -124,21 +124,21 @@ struct TableDataView: View {
                 .keyboardShortcut("n", modifiers: [.command, .shift])
             }
             AppButton(
-                LumiPluginLocalization.string("Refresh", bundle: .module),
+                pluginLocalization.string("Refresh"),
                 systemImage: "arrow.clockwise",
                 style: .secondary,
                 size: .small,
                 action: { Task { await viewModel.loadTablePage() } }
             )
             AppButton(
-                LumiPluginLocalization.string("Structure", bundle: .module),
+                pluginLocalization.string("Structure"),
                 systemImage: "list.bullet.rectangle",
                 style: .secondary,
                 size: .small,
                 action: { viewModel.inspectorVisible = true }
             )
             AppButton(
-                LumiPluginLocalization.string("SQL", bundle: .module),
+                pluginLocalization.string("SQL"),
                 systemImage: "curlybraces",
                 style: .ghost,
                 size: .small,
@@ -164,27 +164,27 @@ struct TableDataView: View {
         let currentPage = min(viewModel.tablePage + 1, pageCount)
 
         return HStack(spacing: 8) {
-            AppIconButton(systemImage: "chevron.left", label: LumiPluginLocalization.string("Prev", bundle: .module), size: .compact) {
+            AppIconButton(systemImage: "chevron.left", label: pluginLocalization.string("Prev"), size: .compact) {
                 Task { await viewModel.prevPage() }
             }
             .disabled(viewModel.tablePage == 0)
 
-            Text(LumiPluginLocalization.string("Page", bundle: .module) + " \(currentPage) / \(pageCount.formatted())")
+            Text(pluginLocalization.string("Page") + " \(currentPage) / \(pageCount.formatted())")
                 .font(.appMicro)
                 .foregroundStyle(.secondary)
 
-            AppIconButton(systemImage: "chevron.right", label: LumiPluginLocalization.string("Next", bundle: .module), size: .compact) {
+            AppIconButton(systemImage: "chevron.right", label: pluginLocalization.string("Next"), size: .compact) {
                 Task { await viewModel.nextPage() }
             }
             .disabled(currentPage >= pageCount)
 
             Spacer()
 
-            Text(LumiPluginLocalization.string("Rows", bundle: .module) + ": \(rowRangeText(currentPage: viewModel.tablePage))")
+            Text(pluginLocalization.string("Rows") + ": \(rowRangeText(currentPage: viewModel.tablePage))")
                 .font(.appMicro)
                 .foregroundStyle(.secondary)
 
-            Picker(LumiPluginLocalization.string("Page Size", bundle: .module), selection: pageSizeBinding) {
+            Picker(pluginLocalization.string("Page Size"), selection: pageSizeBinding) {
                 ForEach(pageSizes, id: \.self) { size in
                     Text("\(size)").tag(size)
                 }

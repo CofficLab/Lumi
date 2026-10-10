@@ -34,15 +34,32 @@ public final class CommandCodeProviderPlugin: SuperPlugin, SuperLog {
         }
         let networkProvider = kernel.resolveProvider((any LLMNetworkProviding).self)
         let apiService = VendorAPIService(networkProvider: networkProvider)
-        let providers: [any SuperLLMProvider] = [
-            GoatPlanProvider(apiService: apiService),
-        ]
-        for provider in providers {
-            if Self.verbose {
-                let typeName = String(describing: type(of: provider))
-                Self.logger.debug("\(Self.t)Registering provider: \(typeName, privacy: .public)")
+        let provider = GoatPlanProvider(apiService: apiService)
+        if Self.verbose {
+            Self.logger.debug("\(Self.t)Registering provider: \(String(describing: type(of: provider)), privacy: .public)")
+        }
+        try? manager.register(provider)
+        scheduleModelRefresh(provider: provider, manager: manager)
+    }
+
+    /// 启动后后台刷新一次远程模型列表（fire-and-forget）。
+    ///
+    /// - 不阻塞启动：缓存/静态基线已保证「注册即可用」。
+    /// - 失败静默：磁盘缓存与静态基线兜底，不影响注册与选中态。
+    /// - 成功广播：`modelsRefreshed` 事件让 UI 读取最新模型池。
+    private func scheduleModelRefresh(provider: GoatPlanProvider, manager: any LLMManaging) {
+        Task { @MainActor [weak provider] in
+            guard let provider else { return }
+            do {
+                try await provider.refreshModels()
+                manager.notifyModelsRefreshed(providerID: provider.providerID)
+                if Self.verbose {
+                    Self.logger.debug("\(Self.t)remote model list refreshed, total=\(provider.availableModels.count, privacy: .public)")
+                }
+            } catch {
+                // 失败保留旧模型池（缓存 / 静态基线），静默即可。
+                Self.logger.debug("\(Self.t)model refresh failed\(self.r("falling back to cache"))")
             }
-            try? manager.register(provider)
         }
     }
 }

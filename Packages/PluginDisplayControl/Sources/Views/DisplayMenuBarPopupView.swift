@@ -99,6 +99,6 @@ struct DisplayMenuBarPopupView: View {
     }
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
+        pluginLocalization.string(key, locale: locale)
     }
 }

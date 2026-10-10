@@ -19,8 +19,8 @@ struct QueryHistoryView: View {
             if viewModel.history.isEmpty {
                 AppEmptyState(
                     icon: "clock.arrow.circlepath",
-                    title: LumiPluginLocalization.string("No history", bundle: .module),
-                    description: LumiPluginLocalization.string("Executed queries will appear here.", bundle: .module)
+                    title: pluginLocalization.string("No history"),
+                    description: pluginLocalization.string("Executed queries will appear here.")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -46,11 +46,11 @@ struct QueryHistoryView: View {
 
     private var header: some View {
         HStack {
-            Text(LumiPluginLocalization.string("Query History", bundle: .module))
+            Text(pluginLocalization.string("Query History"))
                 .font(.appBodyEmphasized)
                 .foregroundColor(theme.textPrimary)
             Spacer()
-            AppButton(LumiPluginLocalization.string("Close", bundle: .module), style: .ghost, size: .small) {
+            AppButton(pluginLocalization.string("Close"), style: .ghost, size: .small) {
                 viewModel.showHistory = false
             }
         }
@@ -63,7 +63,7 @@ struct QueryHistoryView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
-            TextField(LumiPluginLocalization.string("Search history", bundle: .module), text: $viewModel.historySearchText)
+            TextField(pluginLocalization.string("Search history"), text: $viewModel.historySearchText)
                 .textFieldStyle(.plain)
                 .font(.appCaption)
             if !viewModel.historySearchText.isEmpty {
@@ -87,11 +87,11 @@ struct QueryHistoryView: View {
 
     private var footer: some View {
         HStack {
-            Text("\(viewModel.history.count) \(LumiPluginLocalization.string("entries", bundle: .module))")
+            Text("\(viewModel.history.count) \(pluginLocalization.string("entries"))")
                 .font(.appMicro)
                 .foregroundStyle(.secondary)
             Spacer()
-            AppButton(LumiPluginLocalization.string("Clear All", bundle: .module), systemImage: "trash", style: .secondary, size: .small) {
+            AppButton(pluginLocalization.string("Clear All"), systemImage: "trash", style: .secondary, size: .small) {
                 Task { await viewModel.clearHistory() }
             }
         }
@@ -134,9 +134,9 @@ private struct HistoryRow: View {
         }
         .buttonStyle(.plain)
         .contextMenu {
-            Button(LumiPluginLocalization.string("Load into Editor", bundle: .module)) { onLoad() }
+            Button(pluginLocalization.string("Load into Editor")) { onLoad() }
             Button(role: .destructive) { onDelete() } label: {
-                Label(LumiPluginLocalization.string("Delete", bundle: .module), systemImage: "trash")
+                Label(pluginLocalization.string("Delete"), systemImage: "trash")
             }
         }
         Divider()
@@ -144,7 +144,7 @@ private struct HistoryRow: View {
 
     private func relativeTime(_ date: Date) -> String {
         let interval = Date().timeIntervalSince(date)
-        if interval < 60 { return LumiPluginLocalization.string("just now", bundle: .module) }
+        if interval < 60 { return pluginLocalization.string("just now") }
         if interval < 3600 { return "\(Int(interval / 60))m" }
         if interval < 86400 { return "\(Int(interval / 3600))h" }
         return "\(Int(interval / 86400))d"

@@ -465,12 +465,12 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         
         if isDirectory {
             menu.addItem(menuItem(
-                title: LumiPluginLocalization.string("New File", bundle: .module),
+                title: pluginLocalization.string("New File"),
                 action: #selector(newFile(_:)),
                 url: url
             ))
             menu.addItem(menuItem(
-                title: LumiPluginLocalization.string("New Folder", bundle: .module),
+                title: pluginLocalization.string("New Folder"),
                 action: #selector(newFolder(_:)),
                 url: url
             ))
@@ -478,14 +478,14 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         }
         
         menu.addItem(menuItem(
-            title: LumiPluginLocalization.string("Rename", bundle: .module),
+            title: pluginLocalization.string("Rename"),
             action: #selector(renameItem(_:)),
             url: url
         ))
         menu.addItem(.separator())
         
         menu.addItem(menuItem(
-            title: LumiPluginLocalization.string("Send to Conversation", bundle: .module),
+            title: pluginLocalization.string("Send to Conversation"),
             action: #selector(sendToConversation(_:)),
             urls: conversationTargets,
             enabled: context?.conversationInput != nil
@@ -493,22 +493,22 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         menu.addItem(.separator())
         
         menu.addItem(menuItem(
-            title: LumiPluginLocalization.string("Reveal in Finder", bundle: .module),
+            title: pluginLocalization.string("Reveal in Finder"),
             action: #selector(revealInFinder(_:)),
             url: url
         ))
         menu.addItem(menuItem(
-            title: LumiPluginLocalization.string("Open in VS Code", bundle: .module),
+            title: pluginLocalization.string("Open in VS Code"),
             action: #selector(openInVSCode(_:)),
             url: url
         ))
         menu.addItem(menuItem(
-            title: LumiPluginLocalization.string("Open in Terminal", bundle: .module),
+            title: pluginLocalization.string("Open in Terminal"),
             action: #selector(openInTerminal(_:)),
             url: url
         ))
         menu.addItem(menuItem(
-            title: LumiPluginLocalization.string("Copy Path", bundle: .module),
+            title: pluginLocalization.string("Copy Path"),
             action: #selector(copyPath(_:)),
             url: url
         ))
@@ -516,7 +516,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         menu.addItem(.separator())
         
         menu.addItem(menuItem(
-            title: LumiPluginLocalization.string("Move to Trash", bundle: .module),
+            title: pluginLocalization.string("Move to Trash"),
             action: #selector(deleteItem(_:)),
             url: url
         ))
@@ -544,18 +544,15 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
     @objc private func newFile(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         guard let name = FileTreeActions.presentNamePrompt(
-            title: LumiPluginLocalization.string("New File", bundle: .module),
-            message: LumiPluginLocalization.string("Enter the name for the new file.", bundle: .module),
+            title: pluginLocalization.string("New File"),
+            message: pluginLocalization.string("Enter the name for the new file."),
             defaultName: "",
-            confirmButton: LumiPluginLocalization.string("Create", bundle: .module)
+            confirmButton: pluginLocalization.string("Create")
         ) else { return }
         
         guard let newURL = FileTreeFacade.createFile(in: url, name: name) else {
             context?.toast?.show(
-                LumiPluginLocalization.string(
-                    "Could not create the file. The name may be invalid or a file with that name already exists.",
-                    bundle: .module
-                ),
+                pluginLocalization.string("Could not create the file. The name may be invalid or a file with that name already exists."),
                 style: .error
             )
             return
@@ -566,7 +563,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         ensureDirectoryExpanded(url)
         refreshAfterMutation(parentURL: url)
         context?.toast?.show(
-            LumiPluginLocalization.string("New File", bundle: .module),
+            pluginLocalization.string("New File"),
             detail: name,
             style: .success
         )
@@ -575,18 +572,15 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
     @objc private func newFolder(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         guard let name = FileTreeActions.presentNamePrompt(
-            title: LumiPluginLocalization.string("New Folder", bundle: .module),
-            message: LumiPluginLocalization.string("Enter the name for the new folder.", bundle: .module),
+            title: pluginLocalization.string("New Folder"),
+            message: pluginLocalization.string("Enter the name for the new folder."),
             defaultName: "",
-            confirmButton: LumiPluginLocalization.string("Create", bundle: .module)
+            confirmButton: pluginLocalization.string("Create")
         ) else { return }
         
         guard let newURL = FileTreeFacade.createFolder(in: url, name: name) else {
             context?.toast?.show(
-                LumiPluginLocalization.string(
-                    "Could not create the folder. The name may be invalid or a folder with that name already exists.",
-                    bundle: .module
-                ),
+                pluginLocalization.string("Could not create the folder. The name may be invalid or a folder with that name already exists."),
                 style: .error
             )
             return
@@ -597,7 +591,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         ensureDirectoryExpanded(url)
         refreshAfterMutation(parentURL: url)
         context?.toast?.show(
-            LumiPluginLocalization.string("New Folder", bundle: .module),
+            pluginLocalization.string("New Folder"),
             detail: name,
             style: .success
         )
@@ -606,20 +600,17 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
     @objc private func renameItem(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         guard let newName = FileTreeActions.presentNamePrompt(
-            title: LumiPluginLocalization.string("Rename", bundle: .module),
-            message: LumiPluginLocalization.string("Enter the new name for this item.", bundle: .module),
+            title: pluginLocalization.string("Rename"),
+            message: pluginLocalization.string("Enter the new name for this item."),
             defaultName: url.lastPathComponent,
-            confirmButton: LumiPluginLocalization.string("Rename", bundle: .module)
+            confirmButton: pluginLocalization.string("Rename")
         ) else { return }
         
         guard newName != url.lastPathComponent else { return }
         
         guard let newURL = FileTreeFacade.renameItem(at: url, newName: newName) else {
             context?.toast?.show(
-                LumiPluginLocalization.string(
-                    "Could not rename the item. The name may be invalid or an item with that name already exists.",
-                    bundle: .module
-                ),
+                pluginLocalization.string("Could not rename the item. The name may be invalid or an item with that name already exists."),
                 style: .error
             )
             return
@@ -629,7 +620,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         }
         refreshAfterMutation(parentURL: newURL.deletingLastPathComponent())
         context?.toast?.show(
-            LumiPluginLocalization.string("Rename", bundle: .module),
+            pluginLocalization.string("Rename"),
             detail: "\(url.lastPathComponent) → \(newURL.lastPathComponent)",
             style: .success
         )
@@ -641,9 +632,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         
         guard FileTreeFacade.trashItem(at: url) else {
             context?.toast?.show(
-                LumiPluginLocalization.string(
-                    "Could not move the item to the Trash.", bundle: .module
-                ),
+                pluginLocalization.string("Could not move the item to the Trash."),
                 style: .error
             )
             return
@@ -654,7 +643,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         selectionState.clearSelection()
         refreshAfterMutation(parentURL: url.deletingLastPathComponent())
         context?.toast?.show(
-            LumiPluginLocalization.string("Moved to Trash", bundle: .module),
+            pluginLocalization.string("Moved to Trash"),
             detail: url.lastPathComponent,
             style: .success
         )
@@ -679,7 +668,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         guard let url = sender.representedObject as? URL else { return }
         FileTreeFacade.copyPath(url)
         context?.toast?.show(
-            LumiPluginLocalization.string("Path copied to clipboard", bundle: .module),
+            pluginLocalization.string("Path copied to clipboard"),
             detail: url.lastPathComponent,
             style: .success
         )
@@ -689,10 +678,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         guard let urls = sender.representedObject as? [URL], !urls.isEmpty else { return }
         guard let conversationInput = context?.conversationInput else {
             context?.toast?.show(
-                LumiPluginLocalization.string(
-                    "Conversation input is unavailable.",
-                    bundle: .module
-                ),
+                pluginLocalization.string("Conversation input is unavailable."),
                 style: .error
             )
             return
@@ -701,11 +687,11 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         let subtitle = urls.count == 1
             ? urls[0].lastPathComponent
             : String(
-                format: LumiPluginLocalization.string("%lld files", bundle: .module),
+                format: pluginLocalization.string("%lld files"),
                 urls.count
             )
         context?.toast?.show(
-            LumiPluginLocalization.string("Sent to Conversation", bundle: .module),
+            pluginLocalization.string("Sent to Conversation"),
             detail: subtitle,
             style: .success
         )

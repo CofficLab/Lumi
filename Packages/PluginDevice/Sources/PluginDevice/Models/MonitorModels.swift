@@ -47,7 +47,7 @@ public struct ResourceUsage: Equatable {
     }
 
     public static var empty: ResourceUsage {
-        ResourceUsage(percentage: 0, description: LumiPluginLocalization.string("--", bundle: .module), history: [])
+        ResourceUsage(percentage: 0, description: pluginLocalization.string("--"), history: [])
     }
 }
 

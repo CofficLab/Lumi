@@ -19,9 +19,9 @@ struct BrewManagerView: View {
 
         var localizedName: String {
             switch self {
-            case .installed: return LumiPluginLocalization.string("Installed", bundle: .module)
-            case .updates: return LumiPluginLocalization.string("Updates", bundle: .module)
-            case .search: return LumiPluginLocalization.string("Search", bundle: .module)
+            case .installed: return pluginLocalization.string("Installed")
+            case .updates: return pluginLocalization.string("Updates")
+            case .search: return pluginLocalization.string("Search")
             }
         }
 
@@ -42,7 +42,7 @@ struct BrewManagerView: View {
         .frame(minWidth: 420, idealWidth: 720, minHeight: 360, idealHeight: 520)
         .overlay {
             if viewModel.isLoading && selectedTab != .search {
-                ProgressView(LumiPluginLocalization.string("Processing...", bundle: .module))
+                ProgressView(pluginLocalization.string("Processing..."))
                     .padding()
                     .background(Material.regularMaterial)
                     .cornerRadius(8)
@@ -55,7 +55,7 @@ struct BrewManagerView: View {
         VStack(spacing: 0) {
             // Tab Picker
             AppCard(cornerRadius: 16, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
-                Picker(LumiPluginLocalization.string("View", bundle: .module), selection: $selectedTab) {
+                Picker(pluginLocalization.string("View"), selection: $selectedTab) {
                     ForEach(BrewTab.allCases) { tab in
                         Label(tab.localizedName, systemImage: tab.icon).tag(tab)
                     }
@@ -92,15 +92,15 @@ struct BrewManagerView: View {
                             if !viewModel.outdatedPackages.isEmpty {
                                 HStack {
                                     Spacer()
-                                    AppButton(LumiPluginLocalization.string("Update All", bundle: .module), style: .primary, fillsWidth: true, action: { Task { await viewModel.upgradeAll() } })
+                                    AppButton(pluginLocalization.string("Update All"), style: .primary, fillsWidth: true, action: { Task { await viewModel.upgradeAll() } })
                                     .padding()
                                 }
                             }
 
                             BrewListView(
                                 packages: viewModel.outdatedPackages,
-                                emptyMessage: LumiPluginLocalization.string("All packages are up to date", bundle: .module),
-                                actionButtonTitle: LumiPluginLocalization.string("Update", bundle: .module),
+                                emptyMessage: pluginLocalization.string("All packages are up to date"),
+                                actionButtonTitle: pluginLocalization.string("Update"),
                                 actionButtonColor: Color(hex: "0A84FF")
                             ) { package in
                                 Task { await viewModel.upgrade(package: package) }
@@ -112,9 +112,9 @@ struct BrewManagerView: View {
                             AppCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
                                 HStack {
                                     GlassTextField(
-                                        title: LumiPluginLocalization.string("Search", bundle: .module),
+                                        title: pluginLocalization.string("Search"),
                                         text: $viewModel.searchText,
-                                        placeholder: LumiPluginLocalization.string("Search Homebrew packages...", bundle: .module)
+                                        placeholder: pluginLocalization.string("Search Homebrew packages...")
                                     )
                                     .onSubmit {
                                         viewModel.performSearch()
@@ -130,8 +130,8 @@ struct BrewManagerView: View {
 
                             BrewListView(
                                 packages: viewModel.searchResults,
-                                emptyMessage: viewModel.searchText.isEmpty ? LumiPluginLocalization.string("Enter keywords to start searching", bundle: .module) : LumiPluginLocalization.string("No related packages found", bundle: .module),
-                                actionButtonTitle: LumiPluginLocalization.string("Install", bundle: .module),
+                                emptyMessage: viewModel.searchText.isEmpty ? pluginLocalization.string("Enter keywords to start searching") : pluginLocalization.string("No related packages found"),
+                                actionButtonTitle: pluginLocalization.string("Install"),
                                 actionButtonColor: Color(hex: "30D158"),
                                 showInstalledStatus: true
                             ) { package in
@@ -164,8 +164,8 @@ struct BrewInstalledContent: View {
         } else {
             BrewListView(
                 packages: packages,
-                emptyMessage: LumiPluginLocalization.string("No packages installed", bundle: .module),
-                actionButtonTitle: LumiPluginLocalization.string("Uninstall", bundle: .module),
+                emptyMessage: pluginLocalization.string("No packages installed"),
+                actionButtonTitle: pluginLocalization.string("Uninstall"),
                 actionButtonColor: Color(hex: "FF453A"),
                 action: onUninstall
             )
@@ -224,12 +224,12 @@ struct BrewPackageRow: View {
                             .font(.system(size: 15, weight: .medium))
 
                         if package.isCask {
-                            AppTag(LumiPluginLocalization.string("Cask", bundle: .module), style: .accent)
+                            AppTag(pluginLocalization.string("Cask"), style: .accent)
                         }
 
                         if showInstalledStatus {
                             if package.installedVersion != nil {
-                                Text(LumiPluginLocalization.string("Installed", bundle: .module))
+                                Text(pluginLocalization.string("Installed"))
                                     .font(.caption)
                                     .foregroundStyle(LinearGradient(colors: [Color(hex: "00D4FF"), Color(hex: "7C6FFF")], startPoint: .leading, endPoint: .trailing))
                             }
@@ -244,12 +244,12 @@ struct BrewPackageRow: View {
                     }
 
                     HStack(spacing: 8) {
-                        Text(LumiPluginLocalization.string("Version: \(package.version)", bundle: .module))
+                        Text(pluginLocalization.string("Version: \(package.version)"))
                             .font(.caption2)
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                         if let installedVer = package.installedVersion, installedVer != package.version {
-                            Text(LumiPluginLocalization.string("Installed: \(installedVer)", bundle: .module))
+                            Text(pluginLocalization.string("Installed: \(installedVer)"))
                                 .font(.caption2)
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         }

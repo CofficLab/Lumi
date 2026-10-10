@@ -111,7 +111,7 @@ struct ReasoningActionBarButton: View {
             .contentShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous))
         }
         .buttonStyle(.plain)
-        .help(LumiPluginLocalization.string("Reasoning Effort", bundle: .module))
+        .help(pluginLocalization.string("Reasoning Effort"))
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             ReasoningPopover(selected: selectedEffort) { option in
                 apply(option)
@@ -129,8 +129,8 @@ struct ReasoningActionBarButton: View {
             conversations.setGlobalReasoningEffort(nil)
             ConversationBehaviorToast.show(
                 toast,
-                title: LumiPluginLocalization.string("Reasoning Effort", bundle: .module),
-                detail: LumiPluginLocalization.string("Off", bundle: .module),
+                title: pluginLocalization.string("Reasoning Effort"),
+                detail: pluginLocalization.string("Off"),
             )
         case let .effort(effort):
             if let id = conversations.selectedConversationID {
@@ -139,7 +139,7 @@ struct ReasoningActionBarButton: View {
             conversations.setGlobalReasoningEffort(effort)
             ConversationBehaviorToast.show(
                 toast,
-                title: LumiPluginLocalization.string("Reasoning Effort", bundle: .module),
+                title: pluginLocalization.string("Reasoning Effort"),
                 detail: effort.levelCode,
             )
         }
@@ -157,7 +157,7 @@ private struct ReasoningPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(LumiPluginLocalization.string("Reasoning Effort", bundle: .module))
+            Text(pluginLocalization.string("Reasoning Effort"))
                 .font(.system(size: 12, weight: .semibold))
 
             // 关闭思考
@@ -169,7 +169,7 @@ private struct ReasoningPopover: View {
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(selected == nil ? .accentColor : .secondary)
                         .frame(width: 18)
-                    Text(LumiPluginLocalization.string("Off", bundle: .module))
+                    Text(pluginLocalization.string("Off"))
                         .font(.system(size: 12))
                         .foregroundColor(.primary)
                     Spacer()

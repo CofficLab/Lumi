@@ -209,6 +209,13 @@ public final class ToolManager: ToolManagerProviding, SuperLog {
         return tool.permissionRiskLevel(arguments: arguments)
     }
 
+    /// 该调用是否绕过常规授权策略、强制交由用户确认。
+    func toolRequiresExplicitApproval(_ toolCall: ToolCall) -> Bool {
+        guard let tool = registeredTools[toolCall.name],
+              let arguments = try? ToolArgumentCoding.decode(toolCall.arguments) else { return false }
+        return tool.requiresExplicitApproval(arguments: arguments)
+    }
+
     public func authorizationDecision(
         for toolCall: ToolCall,
         conversationID: UUID
@@ -221,6 +228,10 @@ public final class ToolManager: ToolManagerProviding, SuperLog {
             return .autoApproved
         }
         guard let level = conversationManager?.automationLevel(for: conversationID) else {
+            // 会话上下文不可用时保持保守：工具声明的强制确认优先，其次按风险判断。
+            if toolRequiresExplicitApproval(toolCall) {
+                return .requiresUserApproval
+            }
             let risk = riskLevel(for: toolCall) ?? .high
             return risk.requiresPermission ? .requiresUserApproval : .autoApproved
         }
@@ -228,8 +239,16 @@ public final class ToolManager: ToolManagerProviding, SuperLog {
         case .chat:
             return .blocked(reason: "Tool execution was blocked because this conversation is in Chat mode.")
         case .autonomous:
+            // A3 完全授权：放行所有工具（含工具自身声明的强制确认，如
+            // `run_command` 的 unsandboxed 与 `mail_send_message`），不弹授权。
             return .autoApproved
         case .build:
+            // 工具可以为单次调用声明"无论风险高低都必须经用户确认"。
+            // 典型场景是 `run_command` 请求脱离桌面隔离：`permissionRiskLevel`
+            // 只能表达风险高低，而 build 模式会按风险与强制确认双重判断。
+            if toolRequiresExplicitApproval(toolCall) {
+                return .requiresUserApproval
+            }
             let risk = riskLevel(for: toolCall) ?? .high
             return risk.requiresPermission ? .requiresUserApproval : .autoApproved
         }

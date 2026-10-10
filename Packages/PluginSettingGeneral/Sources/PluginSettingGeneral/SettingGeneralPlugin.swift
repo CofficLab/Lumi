@@ -28,8 +28,8 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
     public let order = 100
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.setting-general",
-        name: "通用设置",
-        description: "在设置视图中注册「通用」入口，包含新手引导、应用信息、网站与更新。",
+        name: pluginLocalization.string("General Settings"),
+        description: pluginLocalization.string("Registers the General settings entry with onboarding, app info, website and updates."),
         category: .system,
         stage: .stable,
         policy: .alwaysOn
@@ -56,7 +56,7 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
                 items: [
                     CommandItem(
                         id: "\(id).openSettings",
-                        title: LumiPluginLocalization.string("Settings...", bundle: .module),
+                        title: pluginLocalization.string("Settings..."),
                         shortcut: ",",
                         modifiers: .command
                     ) {
@@ -87,7 +87,7 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
 
         let entry = SettingEntryItem(
             id: "general",
-            title: "通用",
+            title: pluginLocalization.string("General"),
             systemImage: "gearshape",
             order: 1
         ) { [versionProvider, docsProvider, diagnosticsProvider, onboardingProvider, storageProvider, uninstallProvider, prepareForUninstall, kernel] in

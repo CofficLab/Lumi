@@ -54,6 +54,22 @@ public final class VendorAPIService: @unchecked Sendable {
         try await sendChatRequest(request: request, body: body)
     }
 
+    /// 发送无 body 的 JSON 请求（GET 远程模型列表等）。
+    ///
+    /// 对瞬态网络错误与可恢复 HTTP 状态自动重试；成功返回响应 Data。
+    public func send(request: URLRequest) async throws -> Data {
+        try await withRetry {
+            if let networkProvider {
+                let (data, response) = try await networkProvider.send(request: request, body: Data())
+                try validateResponse(response, data: data)
+                return data
+            }
+            let (data, response) = try await session.data(for: request)
+            try validateResponse(response, data: data)
+            return data
+        }
+    }
+
     /// 发送流式聊天完成请求（SSE）。
     ///
     /// - Parameters:

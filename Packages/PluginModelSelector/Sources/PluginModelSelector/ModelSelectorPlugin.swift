@@ -48,7 +48,7 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public var name: String {
-        LumiPluginLocalization.string("Model Selector", bundle: .module)
+        pluginLocalization.string("Model Selector")
     }
 
 

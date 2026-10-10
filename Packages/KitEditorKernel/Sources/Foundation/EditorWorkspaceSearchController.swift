@@ -80,6 +80,13 @@ public final class EditorWorkspaceSearchController {
 
         let outputPipe = Pipe()
         let errorPipe = Pipe()
+        // 确定性回收管道 fd，避免依赖 autorelease pool 造成 fd 泄漏。
+        defer {
+            try? outputPipe.fileHandleForReading.close()
+            try? outputPipe.fileHandleForWriting.close()
+            try? errorPipe.fileHandleForReading.close()
+            try? errorPipe.fileHandleForWriting.close()
+        }
         process.standardOutput = outputPipe
         process.standardError = errorPipe
 

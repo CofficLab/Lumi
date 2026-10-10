@@ -13,6 +13,18 @@ public class NetworkService: SuperLog, ObservableObject {
     public static let shared = NetworkService()
     private var exchangeStore: HTTPExchangeStore?
 
+    /// 查询公网 IP 专用的共享 HTTP client。
+    ///
+    /// 公网 IP 会被反复查询（定时刷新、UI 打开等）。复用单一 client 可让
+    /// URLSession 连接池在多次查询间被复用，避免反复重建连接、累积 fd（见 issue #119）。
+    private static let publicIPClient = HTTPClient(
+        timeoutIntervalForRequest: 2,
+        timeoutIntervalForResource: 2
+    ) { config in
+        config.urlCache = nil
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+    }
+
     // Published properties for subscribers
     @Published var downloadSpeed: Double = 0
     @Published var uploadSpeed: Double = 0
@@ -243,11 +255,10 @@ public class NetworkService: SuperLog, ObservableObject {
 
         let services = domesticServices + internationalServices
 
-        // 使用 KitHttp 的 ephemeral 配置客户端
-        let client = HTTPClient(timeoutIntervalForRequest: 2, timeoutIntervalForResource: 2) { config in
-            config.urlCache = nil
-            config.requestCachePolicy = .reloadIgnoringLocalCacheData
-        }
+        // 复用同一个 client：查询公网 IP 会被反复调用（定时刷新、UI 打开等），
+        // 若每次都新建 HTTPClient，其 URLSession 连接池也会被反复重建，
+        // 既浪费连接也容易累积 fd（见 issue #119）。
+        let client = Self.publicIPClient
 
         for service in services {
             guard let url = URL(string: service) else { continue }

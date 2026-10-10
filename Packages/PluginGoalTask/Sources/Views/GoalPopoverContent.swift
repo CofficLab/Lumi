@@ -28,7 +28,7 @@ struct GoalPopoverContent: View {
 
     private var header: some View {
         HStack {
-            Label(LumiPluginLocalization.string("Goals", bundle: .module), systemImage: "target")
+            Label(pluginLocalization.string("Goals"), systemImage: "target")
                 .font(.headline)
 
             Spacer()
@@ -77,7 +77,7 @@ struct GoalPopoverContent: View {
             Image(systemName: "target")
                 .font(.system(size: 32))
                 .foregroundStyle(.tertiary)
-            Text(LumiPluginLocalization.string("No goals yet", bundle: .module))
+            Text(pluginLocalization.string("No goals yet"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }

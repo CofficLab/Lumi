@@ -32,12 +32,12 @@ public struct LauncherSettingsView: View {
 
     private var hotkeySection: some View {
         AppSettingSection(
-            title: LumiPluginLocalization.string("Global Hotkey", bundle: .module),
+            title: pluginLocalization.string("Global Hotkey"),
             titleAlignment: .leading
         ) {
             AppSettingRow(
-                title: LumiPluginLocalization.string("Toggle Launcher", bundle: .module),
-                description: LumiPluginLocalization.string("Press the hotkey anywhere to open the launcher. Click Record, then press a key combination with ⌘/⌥/⌃.", bundle: .module),
+                title: pluginLocalization.string("Toggle Launcher"),
+                description: pluginLocalization.string("Press the hotkey anywhere to open the launcher. Click Record, then press a key combination with ⌘/⌥/⌃."),
                 icon: "command"
             ) {
                 HStack(spacing: 8) {
@@ -45,7 +45,7 @@ public struct LauncherSettingsView: View {
 
                     if viewModel.isRecording {
                         AppButton(
-                            LumiPluginLocalization.string("Cancel", bundle: .module),
+                            pluginLocalization.string("Cancel"),
                             systemImage: "xmark",
                             style: .secondary,
                             size: .small
@@ -54,7 +54,7 @@ public struct LauncherSettingsView: View {
                         }
                     } else {
                         AppButton(
-                            LumiPluginLocalization.string("Record", bundle: .module),
+                            pluginLocalization.string("Record"),
                             systemImage: "record.circle",
                             style: .secondary,
                             size: .small
@@ -62,7 +62,7 @@ public struct LauncherSettingsView: View {
                             viewModel.startRecording()
                         }
                         AppButton(
-                            LumiPluginLocalization.string("Reset", bundle: .module),
+                            pluginLocalization.string("Reset"),
                             systemImage: "arrow.counterclockwise",
                             style: .secondary,
                             size: .small
@@ -79,26 +79,26 @@ public struct LauncherSettingsView: View {
 
     private var sourcesSection: some View {
         AppSettingSection(
-            title: LumiPluginLocalization.string("Search Sources", bundle: .module),
+            title: pluginLocalization.string("Search Sources"),
             titleAlignment: .leading
         ) {
             VStack(spacing: 0) {
                 AppSettingToggleRow(
-                    LumiPluginLocalization.string("Applications", bundle: .module),
+                    pluginLocalization.string("Applications"),
                     icon: "app.fill",
                     isOn: $viewModel.appsEnabled
                 )
                 Divider()
                     .padding(.vertical, 8)
                 AppSettingToggleRow(
-                    LumiPluginLocalization.string("Files (Spotlight)", bundle: .module),
+                    pluginLocalization.string("Files (Spotlight)"),
                     icon: "doc.text.magnifyingglass",
                     isOn: $viewModel.filesEnabled
                 )
                 Divider()
                     .padding(.vertical, 8)
                 AppSettingToggleRow(
-                    LumiPluginLocalization.string("Commands", bundle: .module),
+                    pluginLocalization.string("Commands"),
                     icon: "terminal",
                     isOn: $viewModel.commandsEnabled
                 )
@@ -110,41 +110,41 @@ public struct LauncherSettingsView: View {
 
     private var usageSection: some View {
         AppSettingSection(
-            title: LumiPluginLocalization.string("How to Use", bundle: .module),
+            title: pluginLocalization.string("How to Use"),
             titleAlignment: .leading
         ) {
             VStack(spacing: 0) {
                 instructionRow(
                     key: viewModel.currentComboDisplay,
-                    description: LumiPluginLocalization.string("Open the launcher anywhere", bundle: .module),
+                    description: pluginLocalization.string("Open the launcher anywhere"),
                     icon: "command"
                 )
                 Divider()
                     .padding(.vertical, 8)
                 instructionRow(
                     key: "?",
-                    description: LumiPluginLocalization.string("Prefix with ? to ask Lumi directly", bundle: .module),
+                    description: pluginLocalization.string("Prefix with ? to ask Lumi directly"),
                     icon: "questionmark"
                 )
                 Divider()
                     .padding(.vertical, 8)
                 instructionRow(
                     key: "↑ ↓",
-                    description: LumiPluginLocalization.string("Navigate results", bundle: .module),
+                    description: pluginLocalization.string("Navigate results"),
                     icon: "arrow.up.arrow.down"
                 )
                 Divider()
                     .padding(.vertical, 8)
                 instructionRow(
                     key: "↩",
-                    description: LumiPluginLocalization.string("Open / execute selected result", bundle: .module),
+                    description: pluginLocalization.string("Open / execute selected result"),
                     icon: "return"
                 )
                 Divider()
                     .padding(.vertical, 8)
                 instructionRow(
                     key: "Esc",
-                    description: LumiPluginLocalization.string("Close the launcher", bundle: .module),
+                    description: pluginLocalization.string("Close the launcher"),
                     icon: "escape"
                 )
             }

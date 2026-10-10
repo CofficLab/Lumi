@@ -10,7 +10,7 @@ struct SmartLightLogoView: View {
 
             ZStack {
                 switch scene {
-                case .general, .about:
+                case .general, .about, .appIcon:
                     SmartLightAnimatedLogoView(size: size)
                 case .statusBar, .statusBarHighlighted:
                     SmartLightMonochromeLogoView(
@@ -34,25 +34,25 @@ struct SmartLightLogoView: View {
         VStack {
             SmartLightLogoView(scene: .general)
                 .frame(width: 48, height: 48)
-            Text(LumiPluginLocalization.string("General", bundle: .module))
+            Text(pluginLocalization.string("General"))
                 .font(.caption2)
         }
         VStack {
             SmartLightLogoView(scene: .about)
                 .frame(width: 48, height: 48)
-            Text(LumiPluginLocalization.string("About", bundle: .module))
+            Text(pluginLocalization.string("About"))
                 .font(.caption2)
         }
         VStack {
             SmartLightLogoView(scene: .statusBar)
                 .frame(width: 48, height: 48)
-            Text(LumiPluginLocalization.string("Status Bar", bundle: .module))
+            Text(pluginLocalization.string("Status Bar"))
                 .font(.caption2)
         }
         VStack {
             SmartLightLogoView(scene: .statusBarHighlighted)
                 .frame(width: 48, height: 48)
-            Text(LumiPluginLocalization.string("Highlighted", bundle: .module))
+            Text(pluginLocalization.string("Highlighted"))
                 .font(.caption2)
         }
     }
