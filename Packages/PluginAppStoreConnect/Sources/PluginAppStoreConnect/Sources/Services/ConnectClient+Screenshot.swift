@@ -73,23 +73,6 @@ extension ConnectClient {
         return response.data
     }
 
-    private func makeScreenshotSetsPayload(
-        sets: [ScreenshotSet],
-        includedScreenshots: [AppScreenshot]
-    ) -> ScreenshotSetsPayload {
-        let screenshotsByID = Dictionary(uniqueKeysWithValues: includedScreenshots.map { ($0.id, $0) })
-        var screenshotsBySetID: [String: [AppScreenshot]] = [:]
-
-        for set in sets {
-            let screenshots = set.screenshotIDs.compactMap { screenshotsByID[$0] }
-            if !screenshots.isEmpty {
-                screenshotsBySetID[set.id] = screenshots
-            }
-        }
-
-        return ScreenshotSetsPayload(sets: sets, screenshotsBySetID: screenshotsBySetID)
-    }
-
     private func listScreenshotSetsViaRelationshipInstances(localizationID: String) async throws -> ScreenshotSetsPayload {
         let relationshipResponse: AppStoreConnectRelationshipIdentifiersResponse = try await request(
             path: "/v1/appStoreVersionLocalizations/\(localizationID)/relationships/appScreenshotSets",
@@ -103,25 +86,29 @@ extension ConnectClient {
         }
 
         var sets: [ScreenshotSet] = []
-        var includedScreenshots: [AppScreenshot] = []
+        var screenshotsBySetID: [String: [AppScreenshot]] = [:]
         for id in ids {
+            // NOTE (2026-10-11 实测): 该端点带 fields[...] 时，Apple 会清空
+            // data.relationships.appScreenshots.data 指针（included 里仍返回完整
+            // 截图对象），导致 set.screenshotIDs 为空、按指针匹配落空、截图集被
+            // 误报为 0 张。因此这里不带 fields，并且兜底：单次请求的 included
+            // 截图必属于该 set，指针为空时直接全部归属。
             let response: AppStoreConnectSingleResponseWithIncluded<ScreenshotSet, AppScreenshot> = try await request(
                 path: "/v1/appScreenshotSets/\(id)",
                 queryItems: [
-                    URLQueryItem(name: "fields[appScreenshotSets]", value: "screenshotDisplayType"),
                     URLQueryItem(name: "include", value: "appScreenshots"),
-                    URLQueryItem(name: "fields[appScreenshots]", value: "fileName,fileSize,imageAsset"),
-                    URLQueryItem(name: "limit[appScreenshots]", value: "10")
+                    URLQueryItem(name: "limit[appScreenshots]", value: "10"),
                 ]
             )
-            sets.append(response.data)
-            includedScreenshots.append(contentsOf: response.included ?? [])
+            let set = response.data
+            sets.append(set)
+            let included = response.included ?? []
+            let pointedIDs = Set(set.screenshotIDs)
+            let matched = included.filter { pointedIDs.contains($0.id) }
+            screenshotsBySetID[set.id] = matched.isEmpty ? included : matched
         }
 
-        return makeScreenshotSetsPayload(
-            sets: sets,
-            includedScreenshots: includedScreenshots
-        )
+        return ScreenshotSetsPayload(sets: sets, screenshotsBySetID: screenshotsBySetID)
     }
 }
 
