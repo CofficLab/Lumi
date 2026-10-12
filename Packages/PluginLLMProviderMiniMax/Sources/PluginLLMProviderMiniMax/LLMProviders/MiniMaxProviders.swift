@@ -5,6 +5,7 @@ import ProviderLLMManager
 /// MiniMax 供应商族：三个协议变体共用的模型列表。
 enum MiniMaxVendorModels {
     static let all: [LLMModelInfo] = [
+        LLMModelInfo(id: "MiniMax-M3.1-Flash-Preview", contextWindowSize: 1_000_000, supportsVision: true),
         LLMModelInfo(id: "MiniMax-M3", contextWindowSize: 1_000_000, supportsVision: true),
         LLMModelInfo(id: "MiniMax-M2.7", contextWindowSize: 204_800, supportsVision: true),
         LLMModelInfo(id: "MiniMax-M2.7-highspeed", contextWindowSize: 204_800, supportsVision: true),
