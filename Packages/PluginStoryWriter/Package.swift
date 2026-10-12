@@ -9,11 +9,11 @@ let package = Package(
         .library(name: "PluginStoryWriter", targets: ["StoryWriterPlugin"])
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderConversationInput"),
         .package(path: "../ProviderChatSection"),
