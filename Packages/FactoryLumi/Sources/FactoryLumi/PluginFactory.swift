@@ -42,6 +42,7 @@ import PluginStorage
 import PluginToast
 import PluginCommand
 import PluginActivityBar
+import PluginRootView
 import PluginAppIconDesigner
 import PluginAppStoreConnect
 import PluginAppStorePromoDesigner
@@ -170,6 +171,9 @@ public struct DefaultPluginFactory: PluginFactory {
             ToastSuperPlugin(),
             CaffeinatePlugin(),
             SettingGeneralPlugin(),
+            // 底部面板宿主（order 12）：在 EditorPreview / Terminal 之前注册
+            // PanelBottomProviding，承载 content footer 的 tab 容器。
+            PanelBottomSuperPlugin(),
             CodeEditorHostSuperPlugin(),
             EditorPreviewSuperPlugin(),
             CodeEditorLanguagesSuperPlugin(),
