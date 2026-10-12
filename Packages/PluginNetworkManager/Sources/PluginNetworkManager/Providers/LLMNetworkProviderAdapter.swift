@@ -22,13 +22,12 @@ public final class LLMNetworkProviderAdapter: LLMNetworkProviding {
         if headers["Content-Type"] == nil {
             headers["Content-Type"] = "application/json"
         }
-
         let httpRequest = HTTPRequest(
             url: request.url ?? URL(string: "about:blank")!,
             method: httpMethod,
             headers: headers,
             body: body,
-            timeout: request.timeoutInterval
+            timeout: Self.llmTimeout(request)
         )
 
         let httpResponse: HTTPResponse
@@ -64,13 +63,18 @@ public final class LLMNetworkProviderAdapter: LLMNetworkProviding {
         if headers["Content-Type"] == nil {
             headers["Content-Type"] = "application/json"
         }
+        // SSE must remain byte-transparent. URLSession may advertise Brotli
+        // in the response headers even after transparently decoding the body,
+        // which makes the shared stream layer unable to distinguish compressed
+        // bytes from plain SSE. Disable content encoding for LLM streams.
+        headers["Accept-Encoding"] = "identity"
 
         let httpRequest = HTTPRequest(
             url: request.url ?? URL(string: "about:blank")!,
             method: httpMethod,
             headers: headers,
             body: body,
-            timeout: request.timeoutInterval
+            timeout: Self.llmTimeout(request)
         )
 
         do {
@@ -88,5 +92,16 @@ public final class LLMNetworkProviderAdapter: LLMNetworkProviding {
                 userInfo: [NSLocalizedDescriptionKey: error.underlyingDescription ?? error.localizedDescription]
             )
         }
+    }
+
+    /// LLM 请求的空闲超时。
+    ///
+    /// `URLRequest.timeoutInterval` 默认 60s，且一旦显式写入会覆盖 session 级
+    /// 配置。流式 LLM（思考模式）在首个 SSE 事件前可能长时间无字节，60s 会把
+    /// 尚未开始的流掐断，导致 `VendorAPIError.incompleteStream`
+    /// （「流式响应在收到结束信号前中断」）。这里保证 LLM 请求至少 300s，
+    /// 若调用方显式配置了更大的超时则尊重调用方。
+    private static func llmTimeout(_ request: URLRequest) -> TimeInterval {
+        max(request.timeoutInterval, 300)
     }
 }
