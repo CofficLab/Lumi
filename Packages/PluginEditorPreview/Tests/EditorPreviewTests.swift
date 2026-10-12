@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import ProviderProject
 import Testing
@@ -15,6 +16,25 @@ struct EditorPreviewTests {
     func imageExtensions() {
         #expect(EditorPreviewViewModel.kind(for: URL(fileURLWithPath: "/tmp/image.png")) == .image)
         #expect(EditorPreviewViewModel.kind(for: URL(fileURLWithPath: "/tmp/image.HEIC")) == .image)
+    }
+
+    @Test("recognizes SVG as an image preview")
+    func svgExtensions() {
+        #expect(EditorPreviewViewModel.kind(for: URL(fileURLWithPath: "/tmp/icon.svg")) == .image)
+        #expect(EditorPreviewViewModel.kind(for: URL(fileURLWithPath: "/tmp/icon.SVG")) == .image)
+    }
+
+    @Test("SVG files render through NSImage")
+    func svgRendersThroughNSImage() throws {
+        let fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-editor-preview-" + UUID().uuidString + ".svg")
+        let svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 100\">"
+            + "<rect width=\"200\" height=\"100\" fill=\"blue\"/></svg>"
+        try Data(svg.utf8).write(to: fileURL)
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        let image = try #require(NSImage(contentsOf: fileURL))
+        #expect(image.size == NSSize(width: 200, height: 100))
     }
 
     @Test("falls back for unsupported files")

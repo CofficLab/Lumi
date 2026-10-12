@@ -3,6 +3,7 @@
 > 状态：目标架构与实施蓝图  
 > 适用范围：`KernelLumi`、`EditorKernel`、`EditorService`、`EditorSource`、`EditorTextView`、`EditorLanguageRuntime`、所有编辑器及开发工具插件  
 > 当前架构说明：[`editor-architecture.md`](./editor-architecture.md)  
+> 包结构更新：编辑器 packages 统一归入 `ProviderEditor`、`KitEditor*`、`Plugin*`；`EditorService` 是 `PluginCodeEditorHost` 内部 target。本文中旧 package 路径仅作迁移蓝图，执行与验证以当前架构说明为准。
 > 原则：本文描述最终目标和迁移方法；迁移期间不得以破坏当前可用编辑体验为代价一次性重写。
 
 ## 1. 文档目的
@@ -1075,7 +1076,7 @@ Packages/KernelLumi/Sources/KernelLumi/Editor/
     ├── KernelLumi+EditorRegistration.swift
     └── KernelLumi+EditorServices.swift
 
-Plugins/EditorHostPlugin/
+Packages/PluginCodeEditorHost/
 ├── Host/
 ├── Adapters/
 ├── Contributions/
@@ -1370,9 +1371,9 @@ V2 single source of truth
 
 ```sh
 swift test --package-path Packages/KernelLumi
-swift test --package-path Packages/EditorKernel
-swift test --package-path Packages/EditorService
-swift test --package-path Plugins/EditorHostPlugin
+swift test --package-path Packages/KitEditorKernel
+swift test --package-path Packages/PluginCodeEditorHost --filter EditorServiceTests
+swift test --package-path Packages/PluginCodeEditorHost
 ```
 
 每个迁移插件还必须单独运行自身 `swift test --package-path ...`。如果插件没有测试 Target，应先增加最小注册和撤回测试。

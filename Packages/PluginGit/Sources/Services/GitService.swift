@@ -1,9 +1,9 @@
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import LibGit2Swift
 import os
+import ProviderGit
 import SwiftUI
-import os
 
 /// Git 服务
 ///
@@ -16,7 +16,7 @@ import os
 /// 导致的竞态崩溃（`EXC_BAD_ACCESS` / `SIGSEGV`）。
 /// 这是因为 libgit2 的 `git_repository` 对象不是线程安全的，
 /// 并发打开同一仓库或并发读取 index 可能导致 C 层内存错误。
-public final class GitService: @unchecked Sendable, SuperLog {
+public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReading {
     nonisolated private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.git")
     public nonisolated static let verbose: Bool = false
     public nonisolated static let emoji = "🌿"
@@ -30,20 +30,31 @@ public final class GitService: @unchecked Sendable, SuperLog {
 
     private init() {}
 
-    /// 在共享的 libgit2 串行队列上执行 LibGit2 操作，并安全地将结果传回 async 调用方。
+    /// 在共享的 libgit2 串行域上执行 LibGit2 操作，并安全地将结果传回 async 调用方。
     ///
     /// 在调用 body 之前先验证路径是否为有效 Git 仓库，
     /// 避免 libgit2 C 层在无效仓库上触发 abort() 导致 EXC_BREAKPOINT 崩溃。
+    ///
+    /// 串行域按仓库根隔离（见 ``gitQueue(for:)``）；等待受
+    /// `GitAsyncBridge` 的超时/取消保护，不会无限排队。
     private func performOnGitQueue<T: Sendable>(
         repoPath: String,
         body: @escaping @Sendable () throws -> T
     ) async throws -> T {
-        try await GitAsyncBridge.perform(on: GitAccessCoordinator.queue) {
+        try await GitAsyncBridge.perform(on: Self.gitQueue(for: repoPath)) {
             guard LibGit2.isGitRepository(at: repoPath) else {
                 throw GitServiceError.repositoryNotGit(path: repoPath)
             }
             return try body()
         }
+    }
+
+    /// 串行域队列：按仓库根划分（非仓库路径按解析后的路径划分），
+    /// 保证同一仓库的 libgit2 访问串行、不同仓库互不阻塞。
+    static func gitQueue(for path: String) -> DispatchQueue {
+        let resolved = resolvePath(path)
+        let key = (try? repositoryRoot(containing: resolved)) ?? resolved
+        return GitAccessCoordinator.queue(for: key)
     }
 
     // MARK: - Git Status
@@ -144,6 +155,31 @@ public final class GitService: @unchecked Sendable, SuperLog {
         }
     }
 
+    // MARK: - GitRepositoryReading
+
+    /// 实现 ``GitRepositoryReading/status(atPath:)``。
+    ///
+    /// 契约方法名与既有 `getStatus(path:)` 不同（契约省略 `get` 前缀），这里
+    /// 直接转发，保持既有调用方不变。
+    public func status(atPath path: String?) async throws -> GitStatus {
+        try await getStatus(path: path)
+    }
+
+    /// 实现 ``GitRepositoryReading/log(atPath:count:branch:file:)``。
+    public func log(atPath path: String?,
+                    count: Int,
+                    branch: String?,
+                    file: String?) async throws -> [GitCommitLog] {
+        try await getLog(path: path, count: count, branch: branch, file: file)
+    }
+
+    /// 实现 ``GitRepositoryReading/log(atPath:count:skip:)``。
+    public func log(atPath path: String?,
+                    count: Int,
+                    skip: Int) async throws -> [GitCommitLog] {
+        try await getLogWithSkip(path: path, count: count, skip: skip)
+    }
+
     // MARK: - Log With Skip (for pagination)
 
     /// 带跳过的日志获取（分页加载）
@@ -213,9 +249,9 @@ public final class GitService: @unchecked Sendable, SuperLog {
     // MARK: - Commit Changed Files
 
     /// 获取 commit 的变更文件列表（含精确变更类型）
-    public func getCommitChangedFiles(path: String?, hash: String) throws -> [GitChangedFile] {
+    public func getCommitChangedFiles(path: String?, hash: String) async throws -> [GitChangedFile] {
         let repoPath = Self.resolvePath(path)
-        return try GitAccessCoordinator.queue.sync {
+        return try await performOnGitQueue(repoPath: repoPath) {
             let diffFiles = try LibGit2.getCommitDiffFiles(atCommit: hash, at: repoPath)
             return diffFiles.map { file in
                 GitChangedFile(path: file.file, changeType: .fromString(file.changeType))
@@ -268,29 +304,21 @@ public final class GitService: @unchecked Sendable, SuperLog {
 
     // MARK: - Is Git Repository
 
-    public func isGitRepository(at path: String) -> Bool {
-        GitAccessCoordinator.queue.sync {
+    public func isGitRepository(at path: String) async -> Bool {
+        (try? await performOnGitQueue(repoPath: Self.resolvePath(path)) {
             LibGit2.isGitRepository(at: path)
-        }
+        }) ?? false
     }
 
     // MARK: - Unpushed Commits
 
     /// 获取未推送到远程的 commit 哈希列表
     /// 使用 LibGit2Swift 原生实现，参考 GitOK 的 Project.getUnPushedCommits()
-    public func getUnpushedCommitHashes(path: String?) -> [String] {
+    public func getUnpushedCommitHashes(path: String?) async -> [String] {
         let repoPath = Self.resolvePath(path)
-        return GitAccessCoordinator.performSync {
-            do {
-                let unpushedCommits = try LibGit2.getUnPushedCommits(at: repoPath, verbose: false)
-                return unpushedCommits.map { $0.hash }
-            } catch {
-                if Self.verbose {
-                    Self.logger.error("\(Self.t)❌ 获取未推送 commit 失败: \(error.localizedDescription)")
-                }
-                return []
-            }
-        }
+        return (try? await performOnGitQueue(repoPath: repoPath) {
+            try LibGit2.getUnPushedCommits(at: repoPath, verbose: false).map { $0.hash }
+        }) ?? []
     }
 
     // MARK: - Git Commit

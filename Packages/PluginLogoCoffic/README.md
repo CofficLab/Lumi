@@ -3,6 +3,11 @@
 Lumi 的 Coffic 咖啡主题 Logo 插件：贡献动画咖啡杯图标，用于应用 Logo / 关于页
 （`general` / `about` 场景）与菜单栏单色图标（`statusBar` 场景）。
 
+> **重要规则：本插件包不能依赖其他插件包，也不能被其他插件包依赖。**
+>
+> 插件之间只通过 Provider 契约通信：共享能力放入 `Provider*` / `Kit*` 包，
+> 由宿主（`Factory*`）统一装配；跨插件互相引用会破坏插件的独立装配与卸载。
+
 ## 全局架构
 
 Lumi 采用内核 + 插件 + Provider 扩展架构，完整说明见
@@ -29,7 +34,7 @@ ProviderLogo 层 (LogoProviding / LogoItem / LogoScene)
 | **类型** | 应用插件（SwiftPM 包） |
 | **职责** | 提供 Coffic 咖啡主题 Logo（动画 / 单色两种渲染） |
 | **宿主内核** | `KernelCore`（`SuperPlugin` 生命周期） |
-| **上游依赖** | `KernelCore`、`KitLocalization`、`ProviderLogo` |
+| **上游依赖** | `KernelCore`、`LumiLocalizationKit`、`ProviderLogo` |
 | **平台** | macOS 14+ |
 
 ## 目录结构
@@ -71,3 +76,4 @@ swift build
 # 测试
 swift test
 ```
+

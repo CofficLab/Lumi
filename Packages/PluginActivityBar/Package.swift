@@ -15,35 +15,33 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderActivityBar"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
-        .package(path: "../KitSuperLog"),
-        .package(path: "../ProviderPluginManaging"),
-        .package(path: "../ProviderStorage"),
-        .package(path: "../ProviderRootView"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
             name: "PluginActivityBar",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
-                .product(name: "ProviderPluginManaging", package: "ProviderPluginManaging"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
-                .product(name: "ProviderRootView", package: "ProviderRootView"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                .product(name: "ProviderPluginManaging", package: "LumiProviders"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
             ]
         ),
         .testTarget(
             name: "PluginActivityBarTests",
             dependencies: [
                 "PluginActivityBar",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
-                .product(name: "ProviderRootView", package: "ProviderRootView"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
             ]
         ),
     ]

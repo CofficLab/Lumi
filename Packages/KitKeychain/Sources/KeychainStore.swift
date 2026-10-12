@@ -48,10 +48,47 @@ public final class KeychainStore: @unchecked Sendable {
         forKey key: String,
         observedStatus: ((OSStatus) -> Void)? = nil
     ) throws -> String? {
+        try stringReportingErrors(forKey: key, allowInteraction: true, observedStatus: observedStatus)
+    }
+
+    /// 读取字符串，且**不弹出**任何系统授权/解锁 UI。
+    ///
+    /// 供 headless 进程、后台任务等无人应答的场景使用。需要授权的条目不会
+    /// 阻塞在系统对话框上，而是直接失败（`errSecInteractionNotAllowed`）。
+    ///
+    /// - Parameter observedStatus: 见 `stringReportingErrors(forKey:observedStatus:)`。
+    public func stringWithoutPromptReportingErrors(
+        forKey key: String,
+        observedStatus: ((OSStatus) -> Void)? = nil
+    ) throws -> String? {
+        try stringReportingErrors(forKey: key, allowInteraction: false, observedStatus: observedStatus)
+    }
+
+    /// 读取字符串，且**不弹出**任何系统 UI（失败折叠为 nil）。
+    public func stringWithoutPrompt(forKey key: String) -> String? {
+        try? stringWithoutPromptReportingErrors(forKey: key)
+    }
+
+    /// Read a string value while preserving Keychain failures.
+    ///
+    /// A `nil` result means only that the item does not exist. Transient and
+    /// unexpected Security framework failures are thrown with their OSStatus.
+    ///
+    /// - Parameters:
+    ///   - allowInteraction: 是否允许系统弹出授权 UI；`false` 时改用无提示
+    ///     读取（见 `stringWithoutPromptReportingErrors(forKey:)`）。
+    ///   - observedStatus: 若提供，会在本次读取得出最终结论时回调一次
+    ///     底层 `SecItemCopyMatching` 的 OSStatus（瞬时重试只汇报最后一次），
+    ///     供上层做诊断记录。
+    public func stringReportingErrors(
+        forKey key: String,
+        allowInteraction: Bool,
+        observedStatus: ((OSStatus) -> Void)? = nil
+    ) throws -> String? {
         guard !key.isEmpty else { return nil }
 
         for attempt in 0..<Self.maxTransientAttempts {
-            let result = backend.read(service: service, account: key)
+            let result = backend.read(service: service, account: key, allowInteraction: allowInteraction)
             switch classifyKeychainResult(status: result.status, data: result.data) {
             case .found(let data):
                 observedStatus?(result.status)
@@ -130,10 +167,45 @@ public final class KeychainStore: @unchecked Sendable {
         forKey key: String,
         observedStatus: ((OSStatus) -> Void)? = nil
     ) throws -> String? {
+        try loadMigratingLegacyUserDefaultsReportingErrors(
+            forKey: key,
+            allowInteraction: true,
+            observedStatus: observedStatus
+        )
+    }
+
+    /// 与 `loadMigratingLegacyUserDefaultsReportingErrors(forKey:observedStatus:)`
+    /// 相同，但**不弹出**任何系统 UI（见 `stringWithoutPromptReportingErrors`）。
+    public func loadMigratingLegacyUserDefaultsWithoutPromptReportingErrors(
+        forKey key: String,
+        observedStatus: ((OSStatus) -> Void)? = nil
+    ) throws -> String? {
+        try loadMigratingLegacyUserDefaultsReportingErrors(
+            forKey: key,
+            allowInteraction: false,
+            observedStatus: observedStatus
+        )
+    }
+
+    /// 读并迁移 legacy UserDefaults，且不弹出任何系统 UI（失败折叠为 nil）。
+    public func loadMigratingLegacyUserDefaultsWithoutPrompt(forKey key: String) -> String? {
+        try? loadMigratingLegacyUserDefaultsWithoutPromptReportingErrors(forKey: key)
+    }
+
+    /// - Parameter allowInteraction: 是否允许系统弹出授权 UI。
+    public func loadMigratingLegacyUserDefaultsReportingErrors(
+        forKey key: String,
+        allowInteraction: Bool,
+        observedStatus: ((OSStatus) -> Void)? = nil
+    ) throws -> String? {
         guard !key.isEmpty else { return nil }
 
         // 1. Current Keychain
-        if let keychainValue = try stringReportingErrors(forKey: key, observedStatus: observedStatus)?
+        if let keychainValue = try stringReportingErrors(
+            forKey: key,
+            allowInteraction: allowInteraction,
+            observedStatus: observedStatus
+        )?
             .trimmingCharacters(in: .whitespacesAndNewlines),
            !keychainValue.isEmpty {
             return keychainValue

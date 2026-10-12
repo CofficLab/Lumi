@@ -1,5 +1,5 @@
 import Foundation
-import KitLocalization
+import LumiLocalizationKit
 
 enum EditorPreviewLocalization {
     static func string(_ key: String, locale: Locale = .current) -> String {

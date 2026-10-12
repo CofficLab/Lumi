@@ -9,9 +9,9 @@ let package = Package(
         .library(name: "OpenInKit", targets: ["OpenInKit"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.4.0"),
         .package(path: "../KitAgentTool"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
-        .package(path: "../ProviderProject"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
     ],
     targets: [
         .target(
@@ -19,7 +19,7 @@ let package = Package(
             dependencies: [
                 "KitAgentTool",
                 "LumiUI",
-                "ProviderProject",
+                .product(name: "ProviderProject", package: "LumiProviders"),
             ],
             path: "Sources/OpenInKit",
             resources: [.process("../../Resources")]
@@ -29,7 +29,7 @@ let package = Package(
             dependencies: [
                 "OpenInKit",
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
-                .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderProject", package: "LumiProviders"),
             ]
         ),
     ]

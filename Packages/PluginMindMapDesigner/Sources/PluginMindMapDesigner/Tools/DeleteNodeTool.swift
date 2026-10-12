@@ -40,9 +40,9 @@ public struct DeleteNodeTool: SuperAgentTool {
             await MindMapToolSupport.notify(scope: scope, mapId: map.id)
             switch language {
             case .chinese:
-                return "已删除节点 \(nodeId.prefix(8)) 及其 \(removedCount - 1) 个后代。\n作用域: \(scope.rawValue)\n思维导图ID: \(updated.id)\n剩余节点数: \(updated.nodes.count)"
+                return "已删除节点 \(nodeId.prefix(8)) 及其 \(removedCount - 1) 个后代。\n思维导图ID: \(updated.id)\n剩余节点数: \(updated.nodes.count)"
             case .english:
-                return "Deleted node \(nodeId.prefix(8)) and \(removedCount - 1) descendant(s).\nscope=\(scope.rawValue)\nmapId: \(updated.id)\nremainingNodes: \(updated.nodes.count)"
+                return "Deleted node \(nodeId.prefix(8)) and \(removedCount - 1) descendant(s).\nmapId: \(updated.id)\nremainingNodes: \(updated.nodes.count)"
             }
         } catch {
             await MainActor.run { MindMapStore.shared.setError(error.localizedDescription) }

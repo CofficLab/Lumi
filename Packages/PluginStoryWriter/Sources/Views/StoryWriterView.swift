@@ -11,7 +11,7 @@ struct StoryWriterView: View {
     @Environment(\.locale) private var locale
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, locale: locale)
+        pluginLocalization.string(key, locale: locale)
     }
 
     var body: some View {

@@ -66,6 +66,7 @@ private struct FilmstripRemoteCard: View {
     var onDelete: (() -> Void)? = nil
     @State private var isHovering = false
     @State private var showsDeleteConfirmation = false
+    @State private var showsPreview = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -120,6 +121,11 @@ private struct FilmstripRemoteCard: View {
         .onHover { hovering in
             isHovering = hovering
         }
+        .sheet(isPresented: $showsPreview) {
+            if let previewURL = screenshot.previewURL {
+                ScreenshotPreviewModal(url: previewURL, screenshotID: screenshot.id)
+            }
+        }
     }
 
     @ViewBuilder
@@ -130,6 +136,10 @@ private struct FilmstripRemoteCard: View {
             } failure: {
                 placeholder
             }
+            .onTapGesture(count: 2) {
+                showsPreview = true
+            }
+            .help("双击查看大图")
         } else {
             placeholder
         }

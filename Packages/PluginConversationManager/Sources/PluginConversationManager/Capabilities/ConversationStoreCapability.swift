@@ -8,9 +8,6 @@ protocol ConversationStoreCapability: AnyObject {
     /// 当前选中会话（用于初始选中态对齐）。
     var selectedConversationID: UUID? { get }
 
-    /// 数据目录（DEBUG 下打开 Finder 用）。
-    var dataDirectory: URL { get }
-
     func fetchConversationPage(
         limit: Int,
         beforeUpdatedAt: Date?,
@@ -47,7 +44,6 @@ final class ConversationStoreCapabilityAdapter: ConversationStoreCapability {
     }
 
     var selectedConversationID: UUID? { manager.selectedConversationID }
-    var dataDirectory: URL { manager.dataDirectory }
 
     func fetchConversationPage(
         limit: Int,

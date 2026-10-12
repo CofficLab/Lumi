@@ -1,5 +1,5 @@
 import Foundation
-import EditorContracts
+import ProviderEditor
 import TreeSitterSQL
 
 enum DatabaseSQLLanguageSupport {

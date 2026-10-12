@@ -1,5 +1,5 @@
 import Foundation
-import EditorContracts
+import ProviderEditor
 
 /// 文件索引存储
 public struct FileIndexStore {

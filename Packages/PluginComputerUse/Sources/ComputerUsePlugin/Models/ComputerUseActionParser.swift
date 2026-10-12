@@ -10,8 +10,8 @@ enum ComputerUseActionParser {
         guard !rawActions.isEmpty else {
             throw ComputerUseError.invalidArguments("actions must not be empty")
         }
-        guard rawActions.count <= 20 else {
-            throw ComputerUseError.invalidArguments("a batch may contain at most 20 actions")
+        guard rawActions.count <= 10 else {
+            throw ComputerUseError.invalidArguments("a batch may contain at most 10 actions")
         }
         return try rawActions.map(parseAction)
     }

@@ -34,6 +34,28 @@ public extension AgentLoopProviding {
     ) -> any AgentLoopObserverHandle {
         NoopAgentLoopObserverHandle()
     }
+
+    func lastFailure(for conversationID: UUID) -> AgentLoopFailure? {
+        nil
+    }
+
+    /// 默认不抑制自动回复（保持既有行为）。
+    func isAutoReplySuppressed(for conversationID: UUID) -> Bool {
+        false
+    }
+
+    /// 默认无操作（保持既有行为）。
+    func setAutoReplySuppressed(_ suppressed: Bool, for conversationID: UUID) {}
+
+    func retryTurn(
+        in conversationID: UUID,
+        after failedTurnID: UUID
+    ) async throws -> AgentLoopOutcome {
+        guard state(for: conversationID) == .failed else {
+            throw AgentLoopError.invalidRetryRequest
+        }
+        return try await runTurn(in: conversationID)
+    }
 }
 
 @MainActor

@@ -1,6 +1,6 @@
 import AppKit
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// 应用服务

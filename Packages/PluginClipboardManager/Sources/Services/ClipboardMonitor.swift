@@ -1,7 +1,7 @@
 import AppKit
 import Combine
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 @MainActor

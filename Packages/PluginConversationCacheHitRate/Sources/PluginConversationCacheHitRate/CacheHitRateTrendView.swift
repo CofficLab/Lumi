@@ -29,10 +29,10 @@ struct CacheHitRateTrendView: View {
 extension CacheHitRateTrendView {
     private var header: some View {
         HStack {
-            Text(LumiPluginLocalization.string("Cache hit rate trend", bundle: .module))
+            Text(pluginLocalization.string("Cache hit rate trend"))
                 .font(.subheadline.weight(.semibold))
             Spacer()
-            Text(String(format: LumiPluginLocalization.string("%lld requests", bundle: .module), history.samples.count))
+            Text(String(format: pluginLocalization.string("%lld requests"), history.samples.count))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -40,8 +40,8 @@ extension CacheHitRateTrendView {
 
     private var legend: some View {
         HStack(spacing: 14) {
-            legendItem(lineWidth: 2.4, opacity: 1, label: LumiPluginLocalization.string("Cumulative", bundle: .module))
-            legendItem(lineWidth: 1.4, opacity: 0.55, label: LumiPluginLocalization.string("This request", bundle: .module))
+            legendItem(lineWidth: 2.4, opacity: 1, label: pluginLocalization.string("Cumulative"))
+            legendItem(lineWidth: 1.4, opacity: 0.55, label: pluginLocalization.string("This request"))
             Spacer(minLength: 0)
         }
         .font(.caption)
@@ -58,7 +58,7 @@ extension CacheHitRateTrendView {
     }
 
     private var emptyState: some View {
-        Text(LumiPluginLocalization.string("No cache usage history yet", bundle: .module))
+        Text(pluginLocalization.string("No cache usage history yet"))
             .font(.caption)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -68,15 +68,15 @@ extension CacheHitRateTrendView {
     private var statsRow: some View {
         HStack {
             if let minimum = history.minimumHitRate {
-                statItem(label: LumiPluginLocalization.string("Min", bundle: .module), value: minimum)
+                statItem(label: pluginLocalization.string("Min"), value: minimum)
             }
             Spacer()
             if let average = history.averageHitRate {
-                statItem(label: LumiPluginLocalization.string("Avg", bundle: .module), value: average)
+                statItem(label: pluginLocalization.string("Avg"), value: average)
             }
             Spacer()
             if let maximum = history.maximumHitRate {
-                statItem(label: LumiPluginLocalization.string("Max", bundle: .module), value: maximum)
+                statItem(label: pluginLocalization.string("Max"), value: maximum)
             }
         }
         .font(.caption)

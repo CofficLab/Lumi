@@ -2,7 +2,7 @@ import AppKit
 import KitAgentTool
 import Foundation
 import ProviderNetwork
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 // MARK: - Image Source

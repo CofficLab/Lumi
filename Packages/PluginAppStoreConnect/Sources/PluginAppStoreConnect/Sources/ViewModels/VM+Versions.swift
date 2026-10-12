@@ -6,6 +6,10 @@ extension VM {
             Self.logger.warning("\(self.t)loadVersions skipped: no selectedApp")
             return
         }
+        guard !isLoadingVersions else { return }
+        isLoadingVersions = true
+        defer { isLoadingVersions = false }
+
         Self.logger.info("\(self.t)loadVersions starting for app: \(app.name) (id: \(app.id), platform: \(app.platform ?? "nil"))")
         await runBusy {
             let rawVersions = try await client.listVersions(appID: app.id)
@@ -25,6 +29,13 @@ extension VM {
                 await loadLocalizations()
             } else {
                 Self.logger.warning("\(self.t)no sidebarVersions to select")
+            }
+
+            // 初次打开分发页时，版本列表加载流程不会经过 selectVersion，
+            // 因此需要在默认选中版本后主动加载构建和提交状态。放在同一个
+            // 忙碌范围内，让整个切换过程只显示一次 loading。
+            if selectedVersion != nil {
+                await loadReleaseInfo()
             }
         }
     }
@@ -193,5 +204,6 @@ extension VM {
             }
         }
         try await reloadLocalizationsFromNetwork()
+        try await reloadReleaseInfoFromNetwork()
     }
 }

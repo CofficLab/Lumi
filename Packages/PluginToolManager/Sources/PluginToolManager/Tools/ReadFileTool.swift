@@ -48,13 +48,30 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await execute(arguments: arguments, workspaceRootOverride: nil)
+    }
+
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        let workspaceRoot = await context.conversationProjectPath()
+        let content = try await execute(arguments: arguments, workspaceRootOverride: workspaceRoot)
+        return ToolCallResult(content: content)
+    }
+
+    private func execute(
+        arguments: [String: ToolArgument],
+        workspaceRootOverride: String?
+    ) async throws -> String {
         guard let path = arguments.stringValue("path") else {
             throw NSError(domain: "ReadFileTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing 'path' argument"])
         }
 
+        let defaultRoot = await workspaceRootProvider()
         let url = WorkspacePathResolver.resolve(
             path: path,
-            workspaceRoot: await workspaceRootProvider()
+            workspaceRoot: workspaceRootOverride ?? defaultRoot
         )
         do {
             let attributes = try FileManager.default.attributesOfItem(atPath: url.path)

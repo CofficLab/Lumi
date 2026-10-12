@@ -10,10 +10,32 @@ import SwiftUI
 import Testing
 @testable import PluginMessageRenderer
 
-    /// 验证 PluginMessageRenderer 的 10 个内置渲染器注册与匹配逻辑。
+    /// 验证 PluginMessageRenderer 的 12 个内置渲染器注册与匹配逻辑。
 @Suite("MessageRendererPlugin")
 @MainActor
 struct MessageRendererPluginTests {
+    @Test("V1 assistant 内容使用 V2 布局，仅隐藏 Header")
+    func assistantContentVerbosity() {
+        #expect(AssistantMessageView.contentVerbosity(for: .brief) == .standard)
+        #expect(AssistantMessageView.contentVerbosity(for: .standard) == .standard)
+        #expect(AssistantMessageView.contentVerbosity(for: .detailed) == .detailed)
+    }
+
+    @Test("V1 模式下 ask_user 等挂起交互不走自定义工具渲染器")
+    func v1DoesNotUseCustomToolRenderers() {
+        // V1（原始 brief）：不允许自定义工具渲染器 —— 完整交互视图（如
+        // ask_user）只由底部 ChatSection 固定项展示，消息正文仅保留默认摘要。
+        #expect(!ToolCallRowsView.allowsCustomToolRenderers(isV1: true))
+        // V2/V3：允许自定义工具渲染器。
+        #expect(ToolCallRowsView.allowsCustomToolRenderers(isV1: false))
+        // 语义校验：contentVerbosity 会把 brief 升格为 standard，若错误地
+        // 用升格后的值判断 V1，会得到 isV1 == false 从而错误启用自定义渲染器。
+        // 这正式说明必须由调用方用原始级别显式传入 isV1。
+        let contentVerbosity = AssistantMessageView.contentVerbosity(for: .brief)
+        #expect(contentVerbosity == .standard)
+        #expect(contentVerbosity != .brief)
+    }
+
     @Test("工具调用参数保留真实 JSON 与历史异常内容")
     func formatsToolCallArguments() {
         #expect(MessageViewHelpers.formatToolCallArguments("  {}  ") == nil)
@@ -123,11 +145,11 @@ struct MessageRendererPluginTests {
         )
     }
 
-    @Test("10 个内置渲染器全部注册")
+    @Test("12 个内置渲染器全部注册")
     func registersAllBuiltinRenderers() throws {
         let kernel = try makeKernel()
         let manager = try #require(kernel.resolveProvider((any MessageRenderingProviding).self))
-        #expect(manager.allRenderers.count == 10)
+        #expect(manager.allRenderers.count == 12)
         let ids = Set(manager.allRenderers.map(\.id))
         #expect(ids.contains("core-user-message"))
         #expect(ids.contains("core-assistant-message"))
@@ -137,6 +159,8 @@ struct MessageRendererPluginTests {
         #expect(ids.contains("core-status-message"))
         #expect(ids.contains("core-turn-completed"))
         #expect(ids.contains("core-context-compaction"))
+        #expect(ids.contains("core-agent-loop-retry"))
+        #expect(ids.contains("core-goal-task-continuation"))
         #expect(ids.contains("core-tool-step-group"))
         #expect(ids.contains("core-default-markdown"))
     }
@@ -165,6 +189,7 @@ struct MessageRendererPluginTests {
         // tool-step-group
         #expect(manager.renderer(for: message(role: .assistant, renderKind: "tool-step-group"))?.id == "core-tool-step-group")
         #expect(manager.renderer(for: message(role: .system, renderKind: MessageTimelineEvent.contextCompactionRenderKind))?.id == "core-context-compaction")
+        #expect(manager.renderer(for: message(role: .status, renderKind: MessageTimelineEvent.agentLoopRetryRenderKind))?.id == "core-agent-loop-retry")
         // 错误消息
         #expect(manager.renderer(for: message(role: .assistant, isError: true))?.id == "core-error-message")
     }

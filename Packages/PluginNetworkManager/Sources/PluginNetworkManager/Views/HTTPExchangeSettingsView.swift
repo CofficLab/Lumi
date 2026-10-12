@@ -17,11 +17,11 @@ public struct HTTPExchangeSettingsView: View {
         var title: String {
             switch self {
             case .all:
-                LumiPluginLocalization.string("All", bundle: .module)
+                pluginLocalization.string("All")
             case .normal:
-                LumiPluginLocalization.string("Normal", bundle: .module)
+                pluginLocalization.string("Normal")
             case .abnormal:
-                LumiPluginLocalization.string("Abnormal", bundle: .module)
+                pluginLocalization.string("Abnormal")
             }
         }
     }
@@ -35,13 +35,13 @@ public struct HTTPExchangeSettingsView: View {
         var title: String {
             switch self {
             case .all:
-                LumiPluginLocalization.string("All", bundle: .module)
+                pluginLocalization.string("All")
             case .today:
-                LumiPluginLocalization.string("Today", bundle: .module)
+                pluginLocalization.string("Today")
             case .lastHour:
-                LumiPluginLocalization.string("Last Hour", bundle: .module)
+                pluginLocalization.string("Last Hour")
             case .lastTenMinutes:
-                LumiPluginLocalization.string("Last 10 Minutes", bundle: .module)
+                pluginLocalization.string("Last 10 Minutes")
             }
         }
 
@@ -90,8 +90,8 @@ public struct HTTPExchangeSettingsView: View {
 
     public var body: some View {
         PluginSettingsScaffold(
-            title: LumiPluginLocalization.string("HTTP Exchange", bundle: .module),
-            subtitle: LumiPluginLocalization.string("Inspect all HTTP requests and responses made by Lumi", bundle: .module),
+            title: pluginLocalization.string("HTTP Exchange"),
+            subtitle: pluginLocalization.string("Inspect all HTTP requests and responses made by Lumi"),
             showHeader: false,
             scrollsContent: false
         ) {
@@ -99,14 +99,9 @@ public struct HTTPExchangeSettingsView: View {
                 HStack {
                     Spacer()
                     totalCountButton
-                    AppButton(LumiPluginLocalization.string("Refresh", bundle: .module), systemImage: "arrow.clockwise", size: .small) {
+                    AppButton(pluginLocalization.string("Refresh"), systemImage: "arrow.clockwise", size: .small) {
                         Task { await reloadAsync() }
                     }
-#if DEBUG
-                    AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", size: .small) {
-                        NSWorkspace.shared.open(store.directory)
-                    }
-#endif
                 }
 
                 requestActivity
@@ -151,13 +146,13 @@ public struct HTTPExchangeSettingsView: View {
             }
         }
         .alert(
-            LumiPluginLocalization.string("Export failed", bundle: .module),
+            pluginLocalization.string("Export failed"),
             isPresented: Binding(
                 get: { exportErrorMessage != nil },
                 set: { if !$0 { exportErrorMessage = nil } }
             )
         ) {
-            Button(LumiPluginLocalization.string("OK", bundle: .module), role: .cancel) {}
+            Button(pluginLocalization.string("OK"), role: .cancel) {}
         } message: {
             Text(exportErrorMessage ?? "")
         }
@@ -166,11 +161,11 @@ public struct HTTPExchangeSettingsView: View {
     private var requestActivity: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
-                Label(LumiPluginLocalization.string("Daily HTTP requests", bundle: .module), systemImage: "chart.xyaxis.line")
+                Label(pluginLocalization.string("Daily HTTP requests"), systemImage: "chart.xyaxis.line")
                     .font(.appCaptionEmphasized)
                     .foregroundStyle(theme.textPrimary)
                 Spacer(minLength: 0)
-                Text(LumiPluginLocalization.string("Peak", bundle: .module) + " (\(dailyCountSeries.peakCount))")
+                Text(pluginLocalization.string("Peak") + " (\(dailyCountSeries.peakCount))")
                     .font(.appMicro)
                     .monospacedDigit()
                     .foregroundStyle(theme.textSecondary)
@@ -198,7 +193,7 @@ public struct HTTPExchangeSettingsView: View {
                 VStack(spacing: 12) {
                     ProgressView()
                         .controlSize(.small)
-                    Text(LumiPluginLocalization.string("Loading...", bundle: .module))
+                    Text(pluginLocalization.string("Loading..."))
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
                 }
@@ -206,7 +201,7 @@ public struct HTTPExchangeSettingsView: View {
             } else if records.isEmpty {
                 AppEmptyState(
                     icon: "arrow.up.arrow.down.circle",
-                    title: LumiPluginLocalization.string("No matching HTTP exchanges", bundle: .module)
+                    title: pluginLocalization.string("No matching HTTP exchanges")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -258,10 +253,10 @@ public struct HTTPExchangeSettingsView: View {
     private var domainFilter: some View {
         HStack(spacing: 6) {
             Image(systemName: "globe")
-                .font(.system(size: 11))
+                .font(.appMicro)
                 .foregroundStyle(theme.textSecondary)
-            Picker(LumiPluginLocalization.string("Domain", bundle: .module), selection: $selectedDomain) {
-                Text(LumiPluginLocalization.string("All", bundle: .module)).tag(String?.none)
+            Picker(pluginLocalization.string("Domain"), selection: $selectedDomain) {
+                Text(pluginLocalization.string("All")).tag(String?.none)
                 ForEach(domains, id: \.self) { domain in
                     Text(domain).tag(String?.some(domain))
                 }
@@ -271,7 +266,7 @@ public struct HTTPExchangeSettingsView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             if selectedDomain != nil {
                 AppButton(
-                    LumiPluginLocalization.string("Export", bundle: .module),
+                    pluginLocalization.string("Export"),
                     systemImage: "square.and.arrow.down",
                     size: .small
                 ) {
@@ -287,9 +282,9 @@ public struct HTTPExchangeSettingsView: View {
     private var timeRangeFilter: some View {
         HStack(spacing: 6) {
             Image(systemName: "clock")
-                .font(.system(size: 11))
+                .font(.appMicro)
                 .foregroundStyle(theme.textSecondary)
-            Picker(LumiPluginLocalization.string("Time Range", bundle: .module), selection: $selectedTimeRange) {
+            Picker(pluginLocalization.string("Time Range"), selection: $selectedTimeRange) {
                 ForEach(TimeRangeFilter.allCases, id: \.self) { range in
                     Text(range.title).tag(range)
                 }
@@ -346,7 +341,7 @@ public struct HTTPExchangeSettingsView: View {
                 VStack(spacing: 12) {
                     ProgressView()
                         .controlSize(.small)
-                    Text(LumiPluginLocalization.string("Loading...", bundle: .module))
+                    Text(pluginLocalization.string("Loading..."))
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
                 }
@@ -354,7 +349,7 @@ public struct HTTPExchangeSettingsView: View {
             } else {
                 AppEmptyState(
                     icon: "doc.text.magnifyingglass",
-                    title: LumiPluginLocalization.string("Select an HTTP exchange", bundle: .module)
+                    title: pluginLocalization.string("Select an HTTP exchange")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -366,74 +361,141 @@ public struct HTTPExchangeSettingsView: View {
 
     private func requestTab(for record: HTTPExchangeExportSnapshot) -> some View {
         detailScroll {
-            AppSettingsSection(title: LumiPluginLocalization.string("Request", bundle: .module), subtitle: LumiPluginLocalization.string("HTTP request sent by the client", bundle: .module)) {
-                AppMetadataCard {
-                    AppMetadataRow(title: LumiPluginLocalization.string("Method", bundle: .module), systemImage: "arrow.left.arrow.right") {
+            AppSettingSection(
+                title: pluginLocalization.string("Request"),
+                titleAlignment: .leading
+            ) {
+                VStack(spacing: 0) {
+                    AppSettingRow(
+                        title: pluginLocalization.string("Method"),
+                        icon: "arrow.left.arrow.right"
+                    ) {
                         AppTag(record.method, systemImage: "arrow.up.right", style: .accent)
                     }
-                    AppSettingsDivider()
-                    AppMetadataRow(title: LumiPluginLocalization.string("URL", bundle: .module), systemImage: "link") {
-                        metadataValue(record.url, monospace: true, copyable: true)
+
+                    Divider()
+                        .padding(.vertical, 8)
+
+                    AppSettingRow(
+                        title: pluginLocalization.string("URL"),
+                        description: record.url,
+                        icon: "link"
+                    ) {
+                        copyButton(record.url)
                     }
-                    AppSettingsDivider()
-                    AppMetadataRow(title: LumiPluginLocalization.string("Started At", bundle: .module), systemImage: "calendar") {
-                        metadataValue(formattedDate(record.startedAt))
+
+                    Divider()
+                        .padding(.vertical, 8)
+
+                    AppSettingRow(
+                        title: pluginLocalization.string("Started At"),
+                        description: formattedDate(record.startedAt),
+                        icon: "calendar"
+                    ) {
+                        EmptyView()
                     }
+
                     if let duration = record.duration {
-                        AppSettingsDivider()
-                        AppMetadataRow(title: LumiPluginLocalization.string("Duration", bundle: .module), systemImage: "clock") {
-                            metadataValue(String(format: "%.3f s", duration))
+                        Divider()
+                            .padding(.vertical, 8)
+
+                        AppSettingRow(
+                            title: pluginLocalization.string("Duration"),
+                            description: String(format: "%.3f s", duration),
+                            icon: "clock"
+                        ) {
+                            EmptyView()
                         }
                     }
                 }
             }
 
             payloadSection(
-                title: LumiPluginLocalization.string("Request Headers", bundle: .module),
-                subtitle: LumiPluginLocalization.string("Raw header fields sent with the request", bundle: .module),
-                data: record.requestHeadersJSON,
-                fallback: "{}"
-            )
+                title: pluginLocalization.string("Request Headers"),
+                caption: pluginLocalization.string("Raw header fields sent with the request")
+            ) {
+                HTTPExchangePayloadView(data: record.requestHeadersJSON, fallback: "{}")
+            }
+
             payloadSection(
-                title: LumiPluginLocalization.string("Request Body", bundle: .module),
-                subtitle: String(format: LumiPluginLocalization.string("Original request body bytes (%@)", bundle: .module), byteCount(record.requestBody)),
-                data: record.requestBody,
-                fallback: "<empty>",
-                bodyKind: .request,
-                recordID: record.id,
-                mimeType: nil
-            )
+                title: pluginLocalization.string("Request Body"),
+                caption: String(format: pluginLocalization.string("Original request body bytes (%@)"), byteCount(record.requestBody))
+            ) {
+                requestBodyContent(for: record)
+            }
+
             payloadSection(
-                title: LumiPluginLocalization.string("Request Options", bundle: .module),
-                subtitle: LumiPluginLocalization.string("URLRequest transport options captured at send time", bundle: .module),
-                data: record.requestDetailsJSON,
-                fallback: "{}"
-            )
+                title: pluginLocalization.string("Request Options"),
+                caption: pluginLocalization.string("URLRequest transport options captured at send time")
+            ) {
+                HTTPExchangePayloadView(data: record.requestDetailsJSON, fallback: "{}")
+            }
         }
+    }
+
+    /// Request-tab section: `AppSettingSection` chrome with an optional caption
+    /// above the payload, matching the settings pages that use this card style.
+    @ViewBuilder
+    private func payloadSection<Content: View>(
+        title: String,
+        caption: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        AppSettingSection(title: title, titleAlignment: .leading) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(caption)
+                    .font(.appCaption)
+                    .foregroundStyle(theme.textSecondary)
+                    .padding(.leading, 4)
+
+                content()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func requestBodyContent(for record: HTTPExchangeExportSnapshot) -> some View {
+        if let body = record.requestBody, body.count > largePayloadByteThreshold {
+            HTTPExchangeLargePayloadView(
+                bodyKind: .request,
+                bodyData: body,
+                mimeType: nil,
+                recordID: record.id
+            )
+        } else {
+            HTTPExchangePayloadView(data: record.requestBody, fallback: "<empty>")
+        }
+    }
+
+    private func copyButton(_ value: String) -> some View {
+        AppIconButton(systemImage: "doc.on.doc", size: .compact) {
+            LumiPasteboard.copyString(value)
+        }
+        .help(pluginLocalization.string("Copy"))
     }
 
     private func responseTab(for record: HTTPExchangeExportSnapshot) -> some View {
         detailScroll {
-            AppSettingsSection(title: LumiPluginLocalization.string("Response", bundle: .module), subtitle: LumiPluginLocalization.string("HTTP response received from the server", bundle: .module)) {
+            AppSettingsSection(title: pluginLocalization.string("Response"), subtitle: pluginLocalization.string("HTTP response received from the server")) {
                 AppMetadataCard {
-                    AppMetadataRow(title: LumiPluginLocalization.string("Status", bundle: .module), systemImage: "number") {
+                    AppMetadataRow(title: pluginLocalization.string("Status"), systemImage: "number") {
                         AppTag(statusText(for: record), systemImage: statusIcon(for: record), style: .accent)
                     }
                     if let responseURL = record.responseURL {
                         AppSettingsDivider()
-                        AppMetadataRow(title: LumiPluginLocalization.string("URL", bundle: .module), systemImage: "link") {
+                        AppMetadataRow(title: pluginLocalization.string("URL"), systemImage: "link") {
                             metadataValue(responseURL, monospace: true, copyable: true)
                         }
                     }
                     if let version = record.responseHTTPVersion {
                         AppSettingsDivider()
-                        AppMetadataRow(title: LumiPluginLocalization.string("HTTP Version", bundle: .module), systemImage: "globe") {
+                        AppMetadataRow(title: pluginLocalization.string("HTTP Version"), systemImage: "globe") {
                             metadataValue(version)
                         }
                     }
                     if let mimeType = record.responseMIMEType {
                         AppSettingsDivider()
-                        AppMetadataRow(title: LumiPluginLocalization.string("MIME Type", bundle: .module), systemImage: "doc.text") {
+                        AppMetadataRow(title: pluginLocalization.string("MIME Type"), systemImage: "doc.text") {
                             metadataValue(mimeType)
                         }
                     }
@@ -441,8 +503,8 @@ public struct HTTPExchangeSettingsView: View {
             }
 
             payloadSection(
-                title: LumiPluginLocalization.string("Response Headers", bundle: .module),
-                subtitle: LumiPluginLocalization.string("Raw header fields received from the server", bundle: .module),
+                title: pluginLocalization.string("Response Headers"),
+                subtitle: pluginLocalization.string("Raw header fields received from the server"),
                 data: record.responseHeadersJSON,
                 fallback: "<no response headers>"
             )
@@ -454,7 +516,7 @@ public struct HTTPExchangeSettingsView: View {
     @ViewBuilder
     private func errorSection(for record: HTTPExchangeExportSnapshot) -> some View {
         if record.errorDescription != nil {
-            AppSettingsSection(title: LumiPluginLocalization.string("Error", bundle: .module), subtitle: LumiPluginLocalization.string("Transport or HTTP failure details", bundle: .module)) {
+            AppSettingsSection(title: pluginLocalization.string("Error"), subtitle: pluginLocalization.string("Transport or HTTP failure details")) {
                 VStack(alignment: .leading, spacing: 8) {
                     if let errorDescription = record.errorDescription {
                         Text(errorDescription)
@@ -481,8 +543,8 @@ public struct HTTPExchangeSettingsView: View {
         let isLargePayload = (record.responseBody?.count ?? 0) > largePayloadByteThreshold
 
         AppSettingsSection(
-            title: LumiPluginLocalization.string("Response Body", bundle: .module),
-            subtitle: String(format: LumiPluginLocalization.string("Original response body bytes (%@)", bundle: .module), byteCount(record.responseBody))
+            title: pluginLocalization.string("Response Body"),
+            subtitle: String(format: pluginLocalization.string("Original response body bytes (%@)"), byteCount(record.responseBody))
         ) {
             if isLargePayload {
                 HTTPExchangeLargePayloadView(
@@ -562,7 +624,7 @@ public struct HTTPExchangeSettingsView: View {
                 AppIconButton(systemImage: "doc.on.doc", size: .compact) {
                     LumiPasteboard.copyString(value)
                 }
-                .help(LumiPluginLocalization.string("Copy", bundle: .module))
+                .help(pluginLocalization.string("Copy"))
             }
         }
     }
@@ -712,12 +774,12 @@ public struct HTTPExchangeSettingsView: View {
         AppButton(totalCountDisplay, systemImage: "arrow.up.arrow.down.circle", size: .small) {
             isTotalCountPopoverPresented.toggle()
         }
-        .accessibilityLabel(LumiPluginLocalization.string("Total HTTP exchanges", bundle: .module))
+        .accessibilityLabel(pluginLocalization.string("Total HTTP exchanges"))
         .accessibilityValue(totalCountDisplay)
-        .help(LumiPluginLocalization.string("Show total HTTP exchange details", bundle: .module))
+        .help(pluginLocalization.string("Show total HTTP exchange details"))
         .popover(isPresented: $isTotalCountPopoverPresented, arrowEdge: .top) {
             VStack(alignment: .leading, spacing: 10) {
-                Text(LumiPluginLocalization.string("Total HTTP exchanges", bundle: .module))
+                Text(pluginLocalization.string("Total HTTP exchanges"))
                     .font(.appBodyEmphasized)
 
                 if let totalRecordCount {
@@ -727,7 +789,7 @@ public struct HTTPExchangeSettingsView: View {
                         .foregroundStyle(theme.textPrimary)
                 }
 
-                Text(LumiPluginLocalization.string("The number of HTTP exchange records currently stored locally. Each request and response round trip counts as one exchange; this is a record count, not network traffic volume.", bundle: .module))
+                Text(pluginLocalization.string("The number of HTTP exchange records currently stored locally. Each request and response round trip counts as one exchange; this is a record count, not network traffic volume."))
                     .font(.appCaption)
                     .foregroundStyle(theme.textSecondary)
             }
@@ -742,12 +804,12 @@ public struct HTTPExchangeSettingsView: View {
 
     private func statusText(for record: HTTPExchangeExportSnapshot) -> String {
         if let statusCode = record.responseStatusCode { return String(statusCode) }
-        return record.errorDescription == nil ? LumiPluginLocalization.string("Pending", bundle: .module) : LumiPluginLocalization.string("Error", bundle: .module)
+        return record.errorDescription == nil ? pluginLocalization.string("Pending") : pluginLocalization.string("Error")
     }
 
     private func statusText(for record: HTTPExchangeListSnapshot) -> String {
         if let statusCode = record.responseStatusCode { return String(statusCode) }
-        return record.errorDescription == nil ? LumiPluginLocalization.string("Pending", bundle: .module) : LumiPluginLocalization.string("Error", bundle: .module)
+        return record.errorDescription == nil ? pluginLocalization.string("Pending") : pluginLocalization.string("Error")
     }
 
     private func statusColor(for record: HTTPExchangeExportSnapshot) -> Color {
@@ -800,8 +862,8 @@ public struct HTTPExchangeSettingsView: View {
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
-        panel.message = LumiPluginLocalization.string("Choose Export Folder", bundle: .module)
-        panel.prompt = LumiPluginLocalization.string("Export", bundle: .module)
+        panel.message = pluginLocalization.string("Choose Export Folder")
+        panel.prompt = pluginLocalization.string("Export")
 
         guard panel.runModal() == .OK, let directory = panel.url else { return }
 
@@ -823,7 +885,7 @@ public struct HTTPExchangeSettingsView: View {
             }.value
 
             guard !snapshots.isEmpty else {
-                self.exportErrorMessage = LumiPluginLocalization.string("No matching HTTP exchanges", bundle: .module)
+                self.exportErrorMessage = pluginLocalization.string("No matching HTTP exchanges")
                 return
             }
 
@@ -865,9 +927,9 @@ private struct HTTPExchangeDetailView: View {
         var title: String {
             switch self {
             case .request:
-                LumiPluginLocalization.string("Request", bundle: .module)
+                pluginLocalization.string("Request")
             case .response:
-                LumiPluginLocalization.string("Response", bundle: .module)
+                pluginLocalization.string("Response")
             }
         }
 
@@ -913,7 +975,7 @@ private struct HTTPExchangeDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 AppButton(
-                    LumiPluginLocalization.string("Export", bundle: .module),
+                    pluginLocalization.string("Export"),
                     systemImage: "square.and.arrow.down",
                     size: .small,
                     action: export

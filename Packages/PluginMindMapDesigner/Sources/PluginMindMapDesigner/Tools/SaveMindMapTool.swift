@@ -29,9 +29,9 @@ public struct SaveMindMapTool: SuperAgentTool {
         await MindMapToolSupport.notify(scope: scope, mapId: map.id)
         switch language {
         case .chinese:
-            return "已保存思维导图。\n作用域: \(scope.rawValue)\n思维导图ID: \(map.id)\n标题: \(map.title)\n节点数: \(map.nodes.count)"
+            return "已保存思维导图。\n思维导图ID: \(map.id)\n标题: \(map.title)\n节点数: \(map.nodes.count)"
         case .english:
-            return "Saved mind map.\nscope=\(scope.rawValue)\nmapId: \(map.id)\ntitle: \(map.title)\nnodes: \(map.nodes.count)"
+            return "Saved mind map.\nmapId: \(map.id)\ntitle: \(map.title)\nnodes: \(map.nodes.count)"
         }
     }
 }

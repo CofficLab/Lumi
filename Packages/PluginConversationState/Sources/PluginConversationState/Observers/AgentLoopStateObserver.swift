@@ -1,5 +1,5 @@
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import os
 import ProviderAgentLoop
 import ProviderConversationState
@@ -13,10 +13,12 @@ final class AgentLoopStateObserver: SuperLog {
     )
 
     private let provider: ConversationStateProvider
+    private weak var agentLoop: (any AgentLoopProviding)?
     private var handle: (any AgentLoopObserverHandle)?
 
     init(agentLoop: any AgentLoopProviding, provider: ConversationStateProvider) {
         self.provider = provider
+        self.agentLoop = agentLoop
         handle = agentLoop.addAgentLoopObserver { [weak self] event in
             self?.consume(event)
         }
@@ -43,8 +45,20 @@ final class AgentLoopStateObserver: SuperLog {
             provider.update(conversationID: id, turnID: turn, agentLoopState: .running, toolState: .executing, activity: .executingTool)
         case .llmResponseReceived(let id, let turn, _):
             provider.update(conversationID: id, turnID: turn, agentLoopState: .running, activity: .thinking)
-        case .suspended(let id, let turn, _):
-            provider.update(conversationID: id, turnID: turn, agentLoopState: .suspended, toolState: .suspended)
+        case .suspended(let id, let turn, let suspension):
+            guard let agentLoop,
+                  agentLoop.state(for: id) == .suspended,
+                  agentLoop.currentTurnID(for: id) == turn,
+                  agentLoop.suspension(for: id)?.suspensionID == suspension.suspensionID else {
+                return
+            }
+            provider.update(
+                conversationID: id,
+                turnID: turn,
+                agentLoopState: .suspended,
+                toolState: .suspended,
+                activity: .waitingForUser
+            )
         case .completed(let id, let turn):
             provider.update(
                 conversationID: id,

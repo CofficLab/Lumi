@@ -12,18 +12,21 @@ public final class BookletMakerMobileFeature: ObservableObject {
     public enum Tool: String, CaseIterable, Identifiable, Sendable {
         case split
         case booklet
+        case merge
 
         public var id: String { rawValue }
         public var title: String {
             switch self {
             case .split: BookletLocalization.string("Split PDF")
             case .booklet: BookletLocalization.string("Booklet")
+            case .merge: BookletLocalization.string("Merge PDF")
             }
         }
         public var systemImage: String {
             switch self {
             case .split: "scissors"
             case .booklet: "book.closed"
+            case .merge: "arrow.triangle.merge"
             }
         }
     }
@@ -66,12 +69,31 @@ public final class BookletMakerMobileFeature: ObservableObject {
     // MARK: - Document access
 
     public var documentName: String {
+        if workspace.selectedTool == .merge, !viewModel.mergeDocuments.isEmpty {
+            return BookletLocalization.string(
+                "%lld PDF files",
+                Int64(viewModel.mergeDocuments.count)
+            )
+        }
         viewModel.currentDocument.isDemo
             ? BookletLocalization.string("Sample PDF")
             : viewModel.currentDocument.url.lastPathComponent
     }
-    public var pageCount: Int { viewModel.currentDocument.pageCount }
-    public var isDemo: Bool { viewModel.currentDocument.isDemo }
+    public var pageCount: Int {
+        workspace.selectedTool == .merge && !viewModel.mergeDocuments.isEmpty
+            ? viewModel.mergePageCount
+            : viewModel.currentDocument.pageCount
+    }
+    public var mergePageCount: Int { viewModel.mergePageCount }
+    public var mergeDocumentCount: Int { viewModel.mergeDocuments.count }
+    public var documentPreviewURL: URL {
+        viewModel.mergeDocuments.first?.url ?? viewModel.currentDocument.url
+    }
+    public var isDemo: Bool {
+        workspace.selectedTool != .merge || viewModel.mergeDocuments.isEmpty
+            ? viewModel.currentDocument.isDemo
+            : false
+    }
     public var isWorking: Bool { viewModel.isBusy }
     public var progress: Double { viewModel.progress }
     public var canExport: Bool { viewModel.canExport }
@@ -82,6 +104,12 @@ public final class BookletMakerMobileFeature: ObservableObject {
             BookletLocalization.string("%lld PDF files", Int64(viewModel.splitSegments.count))
         case .booklet:
             BookletLocalization.string("%lld sheets", Int64(viewModel.expectedSheetCount))
+        case .merge:
+            BookletLocalization.string(
+                "%lld files · %lld pages",
+                Int64(viewModel.mergeDocuments.count),
+                Int64(viewModel.mergePageCount)
+            )
         }
     }
 
@@ -100,11 +128,23 @@ public final class BookletMakerMobileFeature: ObservableObject {
     /// it, so a failed import never loses the previous document or its
     /// editing state.
     public func importDocument(from url: URL) async {
+        await importDocuments(from: [url])
+    }
+
+    /// Import and validate an ordered group of PDFs for the merge tool.
+    public func importDocuments(from urls: [URL]) async {
         sessionErrorMessage = nil
         workspace.beginImport()
         do {
-            let document = try await documentStore.importPDF(from: url)
-            await viewModel.loadPDF(document.url)
+            let documents = try await documentStore.importPDFs(from: urls)
+            if workspace.selectedTool == .merge {
+                await viewModel.loadMergePDFs(
+                    documents.map(\.url),
+                    appending: !viewModel.mergeDocuments.isEmpty
+                )
+            } else if let document = documents.first {
+                await viewModel.loadPDF(document.url)
+            }
             if viewModel.errorMessage == nil {
                 workspace.documentReady()
             } else {
@@ -137,12 +177,14 @@ public final class BookletMakerMobileFeature: ObservableObject {
             switch workspace.selectedTool {
             case .split: .split
             case .booklet: .booklet
+            case .merge: .merge
             }
         }
         set {
             switch newValue {
             case .split: workspace.selectTool(.split)
             case .booklet: workspace.selectTool(.booklet)
+            case .merge: workspace.selectTool(.merge)
             }
         }
     }
@@ -151,7 +193,7 @@ public final class BookletMakerMobileFeature: ObservableObject {
 
     public func cancel() { viewModel.cancel() }
 
-    public func makeContentView() -> AnyView {
+    public func makeContentView(onOpenPDF: @escaping () -> Void = {}) -> AnyView {
         switch workspace.selectedTool {
         case .split:
             AnyView(PDFSplitMobileView(
@@ -163,6 +205,12 @@ public final class BookletMakerMobileFeature: ObservableObject {
                 viewModel: viewModel,
                 onExport: { [weak self] in self?.exportBooklet() }
             ))
+        case .merge:
+            AnyView(PDFMergeMobileView(
+                viewModel: viewModel,
+                onOpenPDF: onOpenPDF,
+                onExport: { [weak self] in self?.exportMerge() }
+            ))
         }
     }
 
@@ -170,6 +218,7 @@ public final class BookletMakerMobileFeature: ObservableObject {
         switch workspace.selectedTool {
         case .booklet: exportBooklet()
         case .split: exportSplit()
+        case .merge: exportMerge()
         }
     }
 
@@ -190,6 +239,19 @@ public final class BookletMakerMobileFeature: ObservableObject {
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             await viewModel.exportSplit(to: directory)
             applyExportOutcome(urls: viewModel.lastSplitOutputURLs)
+        }
+    }
+
+    private func exportMerge() {
+        Task { @MainActor in
+            let url = documentStore.outputDirectory
+                .appendingPathComponent("merged-\(UUID().uuidString).pdf")
+            try? FileManager.default.createDirectory(
+                at: documentStore.outputDirectory,
+                withIntermediateDirectories: true
+            )
+            await viewModel.exportMerge(to: url)
+            applyExportOutcome(urls: viewModel.lastMergeOutputURL.map { [$0] } ?? [])
         }
     }
 
@@ -223,7 +285,11 @@ public final class BookletMakerMobileFeature: ObservableObject {
         let urls = exportedURLs()
         guard !urls.isEmpty else { return }
         if urls.count == 1 {
-            workspace.present(.shareBooklet(urls[0]))
+            if workspace.selectedTool == .merge {
+                workspace.present(.shareMerge(urls[0]))
+            } else {
+                workspace.present(.shareBooklet(urls[0]))
+            }
         } else {
             workspace.present(.shareSplit(urls))
         }
@@ -234,7 +300,11 @@ public final class BookletMakerMobileFeature: ObservableObject {
         let urls = exportedURLs()
         guard !urls.isEmpty else { return }
         if urls.count == 1 {
-            workspace.present(.saveBooklet(urls[0]))
+            if workspace.selectedTool == .merge {
+                workspace.present(.saveMerge(urls[0]))
+            } else {
+                workspace.present(.saveBooklet(urls[0]))
+            }
         } else {
             workspace.present(.saveSplit(urls))
         }

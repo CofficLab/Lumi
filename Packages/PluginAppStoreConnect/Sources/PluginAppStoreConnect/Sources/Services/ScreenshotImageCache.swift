@@ -3,8 +3,8 @@ import Foundation
 import KernelCore
 import KitAgentTool
 import KitAppStorePromo
-import KitLocalization
-import KitSuperLog
+import LumiLocalizationKit
+import LumiLoggingKit
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
@@ -32,7 +32,7 @@ enum ScreenshotImageCacheError: LocalizedError {
 actor ScreenshotImageCache {
     static let shared: ScreenshotImageCache = {
         let pluginRoot = AppStoreConnectPluginRuntimeBridge.pluginSubdirectory
-            ?? AppStoreConnectPluginRuntimeBridge.fallbackRootDirectory.appendingPathComponent(ScreenshotCacheConfiguration.pluginName, isDirectory: true)
+            ?? AppStoreConnectPluginRuntimeBridge.fallbackPluginDirectory
         let root = pluginRoot
             .appendingPathComponent(ScreenshotCacheConfiguration.cacheDirectoryName, isDirectory: true)
         return ScreenshotImageCache(rootDirectory: root)

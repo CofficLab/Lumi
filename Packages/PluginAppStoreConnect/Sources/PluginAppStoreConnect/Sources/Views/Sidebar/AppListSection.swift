@@ -10,14 +10,6 @@ struct AppListSection: View {
             // 标题栏
             HStack {
                 AppSectionLabel(AppStoreConnectLocalization.string("Apps"))
-
-                Spacer()
-
-                AppIconButton(systemImage: "arrow.clockwise") {
-                    Task { await viewModel.loadApps() }
-                }
-                .disabled(viewModel.isBusy || !viewModel.credentials.isComplete)
-                .help(AppStoreConnectLocalization.string("Refresh"))
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
@@ -37,9 +29,7 @@ struct AppListSection: View {
     }
 
     private var emptyState: some View {
-        Text(viewModel.credentials.isComplete
-            ? AppStoreConnectLocalization.string("No Apps")
-            : AppStoreConnectLocalization.string("Configure credentials first"))
+        Text(AppStoreConnectLocalization.string("No Apps"))
             .font(.caption)
             .foregroundStyle(.secondary)
             .padding(.horizontal, 12)

@@ -6,7 +6,7 @@ import os
 public final class CodexPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.codex"
     public var name: String {
-        LumiPluginLocalization.string("Codex", bundle: .module)
+        pluginLocalization.string("Codex")
     }
     public let order = 105
 	public let policy: LumiPluginPolicy = .disabled

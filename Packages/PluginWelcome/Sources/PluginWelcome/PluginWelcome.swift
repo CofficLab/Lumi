@@ -32,7 +32,7 @@ public final class PluginWelcome: SuperPlugin {
         onboarding.register(
             OnboardingPageItem(
                 id: Self.pageID,
-                title: LumiPluginLocalization.string("Welcome to Lumi", bundle: .module)
+                title: pluginLocalization.string("Welcome to Lumi")
             ) {
                 WelcomePage()
             }

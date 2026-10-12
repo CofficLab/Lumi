@@ -1,3 +1,4 @@
+import Foundation
 import KernelCore
 import KitAgentTool
 import ProviderAgentLoop
@@ -497,6 +498,126 @@ private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
     #expect(approvalResult)
 }
 
+// MARK: - A3 (autonomous) fully authorizes forced-approval tools
+
+/// Regression: in A3 the conversation is fully authorized, so even tools that
+/// declare `requiresExplicitApproval` (e.g. `run_command` with
+/// `unsandboxed=true`) must not surface an approval UI.
+@MainActor
+@Test func autonomousModeAutoApprovesForcedApprovalTools() {
+    let manager = ToolManager()
+    manager.add(ShellTool(workspaceRootProvider: { nil }), pluginID: "test")
+    let conversations = DefaultConversationManager()
+    manager.conversationManager = conversations
+    conversations.setGlobalAutomationLevel(.autonomous)
+
+    let call = ToolCall(
+        id: "unsandboxed-a3-1",
+        name: "run_command",
+        arguments: ToolArgumentCoding.encode([
+            "command": ToolArgument("echo hi"),
+            "unsandboxed": ToolArgument(true)
+        ])
+    )
+    #expect(manager.authorizationDecision(for: call, conversationID: UUID()) == .autoApproved)
+}
+
+/// Counterpart: in Build mode the same forced-approval tool still requires
+/// user confirmation.
+@MainActor
+@Test func buildModeStillRequiresApprovalForForcedApprovalTools() {
+    let manager = ToolManager()
+    manager.add(ShellTool(workspaceRootProvider: { nil }), pluginID: "test")
+    let conversations = DefaultConversationManager()
+    manager.conversationManager = conversations
+    conversations.setGlobalAutomationLevel(.build)
+
+    let call = ToolCall(
+        id: "unsandboxed-build-1",
+        name: "run_command",
+        arguments: ToolArgumentCoding.encode([
+            "command": ToolArgument("echo hi"),
+            "unsandboxed": ToolArgument(true)
+        ])
+    )
+    #expect(manager.authorizationDecision(for: call, conversationID: UUID()) == .requiresUserApproval)
+}
+
+@MainActor
+@Test func autoExecutePolicyRunsForcedApprovalToolWithoutApproval() async throws {
+    let manager = ToolManager()
+    manager.add(ShellTool(workspaceRootProvider: { "/tmp" }), pluginID: "test")
+
+    let call = ToolCall(
+        id: "unsandboxed-auto-1",
+        name: "run_command",
+        arguments: ToolArgumentCoding.encode([
+            "command": ToolArgument("echo hi"),
+            "unsandboxed": ToolArgument(true)
+        ])
+    )
+    let results = await manager.executeBatch(
+        [call],
+        policy: .autoExecute,
+        conversationID: UUID(),
+        turnID: UUID()
+    )
+    guard case let .executed(result) = results.first else {
+        Issue.record("A3 autoExecute must run forced-approval tools directly, got \(String(describing: results.first))")
+        return
+    }
+    #expect(result.content.contains("hi"))
+}
+
+@MainActor
+@Test func toolCallsObserverRunsForcedApprovalToolsInAutonomousMode() async throws {
+    let manager = ToolManager()
+    manager.add(ShellTool(workspaceRootProvider: { "/tmp" }), pluginID: "test")
+    let conversationID = UUID()
+    let turnID = UUID()
+    let agentLoop = RecordingToolCallsAgentLoop()
+    let conversations = DefaultConversationManager()
+    conversations.setGlobalAutomationLevel(.autonomous)
+    var events: [ToolManagerEvent] = []
+    let handle = manager.addToolManagerObserver { events.append($0) }
+    defer { handle.cancel() }
+    let observer = ToolCallsObserver(
+        agentLoop: agentLoop,
+        conversations: conversations,
+        service: manager
+    )
+    defer { observer.cancel() }
+
+    agentLoop.send(.toolCallsReceived(
+        conversationID: conversationID,
+        turnID: turnID,
+        assistantMessageID: UUID(),
+        toolCalls: [MessageToolCall(
+            id: "unsandboxed-observer-1",
+            name: "run_command",
+            arguments: ToolArgumentCoding.encode([
+                "command": ToolArgument("echo hi"),
+                "unsandboxed": ToolArgument(true)
+            ])
+        )]
+    ))
+    try await Task.sleep(nanoseconds: 100_000_000)
+
+    let approvalRequested = events.contains { event in
+        if case .authorizationRequired = event { return true }
+        return false
+    }
+    #expect(!approvalRequested)
+
+    let job = try #require(manager.job(
+        forToolCallID: "unsandboxed-observer-1",
+        conversationID: conversationID,
+        turnID: turnID
+    ))
+    let result = await manager.waitForJobResult(jobID: job.id)
+    #expect(result?.content.contains("hi") == true)
+}
+
 @MainActor
 @Test func globToolUsesTheCurrentWorkspaceRootWhenPathIsOmitted() async throws {
     let packageRoot = URL(fileURLWithPath: #filePath)
@@ -645,4 +766,164 @@ private final class RecordingToolCallsAgentLoop: AgentLoopProviding {
 @MainActor
 private final class NoopAgentLoopObserverHandle: AgentLoopObserverHandle {
     func cancel() {}
+}
+
+// MARK: - Conversation project path isolation across switched conversations
+
+/// A tool that reports the conversation project path it sees at execution time.
+private struct ProjectPathProbeTool: SuperAgentTool, @unchecked Sendable {
+    let name: String
+
+    func description(for language: LanguagePreference) -> String { name }
+    func inputSchema(for language: LanguagePreference) -> [String: Any] { [:] }
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
+    func displayDescription(for arguments: [String: ToolArgument]) -> String { name }
+
+    func executeResult(
+        context: KitAgentTool.ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        let path = await context.conversationProjectPath() ?? "<nil>"
+        return ToolCallResult(content: path)
+    }
+}
+
+/// Regression test: when two conversations are bound to different project paths,
+/// a tool executing in conversation A must see A's path — not the global
+/// `workspaceRootProvider` value that belongs to whichever conversation is
+/// currently selected in the UI.
+@MainActor
+@Test func conversationProjectPathIsIsolatedAcrossSwitchedConversations() async throws {
+    let manager = ToolManager()
+    manager.add(ProjectPathProbeTool(name: "probe"), pluginID: "test")
+
+    let conversationManager = DefaultConversationManager()
+    manager.conversationManager = conversationManager
+
+    // Create two conversations bound to different projects.
+    let gamePath = "/Users/colorfy/Code/CofficLab/GameFac"
+    let lumiPath = "/Users/colorfy/Code/CofficLab/Lumi"
+
+    let gameConvID = try conversationManager.createConversation(
+        title: "Game", projectPath: gamePath, providerID: nil, modelName: nil
+    )
+    let lumiConvID = try conversationManager.createConversation(
+        title: "Lumi", projectPath: lumiPath, providerID: nil, modelName: nil
+    )
+
+    // Simulate user switching: select Lumi in the UI so the global
+    // `workspaceRootProvider` would resolve to Lumi if the conversation
+    // binding were lost.
+    conversationManager.selectConversation(id: lumiConvID)
+
+    // Execute probe in the Game conversation — must see Game path, not Lumi.
+    let gameCall = ToolCall(id: "probe-1", name: "probe", arguments: "{}")
+    let gameResult = await manager.executeAuthorized(
+        gameCall, conversationID: gameConvID, turnID: UUID()
+    )
+    #expect(gameResult.content == gamePath,
+           "Game conversation probe should see Game project path, got: \(gameResult.content)")
+
+    // Execute probe in the Lumi conversation — must see Lumi path.
+    let lumiCall = ToolCall(id: "probe-2", name: "probe", arguments: "{}")
+    let lumiResult = await manager.executeAuthorized(
+        lumiCall, conversationID: lumiConvID, turnID: UUID()
+    )
+    #expect(lumiResult.content == lumiPath,
+           "Lumi conversation probe should see Lumi project path, got: \(lumiResult.content)")
+}
+
+/// Root cause test: tools that only implement `execute(arguments:)` (not
+/// `executeResult(context:arguments:)`) silently ignore the conversation
+/// project path and fall back to the global `workspaceRootProvider`. When the
+/// user switches conversations (and the global `ProjectProviding.currentProject`
+/// changes with it), those tools operate in the wrong project directory.
+///
+/// This reproduces the reported bug: a GameFac conversation's `read_file`
+/// resolves relative paths against Lumi's root because the default
+/// `executeResult(context:)` implementation discards the context.
+@MainActor
+@Test func fileToolsIgnoreConversationPathAndUseGlobalWorkspaceRoot() async throws {
+    // Create two temp project directories.
+    let gameRoot = FileManager.default.temporaryDirectory
+        .appendingPathComponent("lumi-game-project-\(UUID().uuidString)", isDirectory: true)
+    let lumiRoot = FileManager.default.temporaryDirectory
+        .appendingPathComponent("lumi-current-project-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: gameRoot, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: lumiRoot, withIntermediateDirectories: true)
+    defer {
+        try? FileManager.default.removeItem(at: gameRoot)
+        try? FileManager.default.removeItem(at: lumiRoot)
+    }
+
+    // Put a distinct file in each project.
+    try "game-file".write(
+        to: gameRoot.appendingPathComponent("note.txt"),
+        atomically: true, encoding: .utf8
+    )
+    try "lumi-file".write(
+        to: lumiRoot.appendingPathComponent("note.txt"),
+        atomically: true, encoding: .utf8
+    )
+
+    // Global workspaceRootProvider returns Lumi — simulating that the user
+    // currently has Lumi open as the active project.
+    let manager = ToolManager()
+    manager.registerBuiltinTools(workspaceRootProvider: { lumiRoot.path })
+
+    let conversationManager = DefaultConversationManager()
+    manager.conversationManager = conversationManager
+
+    // Create a conversation bound to the Game project.
+    let gameConvID = try conversationManager.createConversation(
+        title: "Game", projectPath: gameRoot.path, providerID: nil, modelName: nil
+    )
+
+    // Execute read_file("note.txt") in the Game conversation.
+    // EXPECTED (correct): resolves to gameRoot/note.txt → reads "game-file"
+    // ACTUAL (bug): default executeResult(context:) ignores context, so it
+    //   uses the global workspaceRoot → lumiRoot/note.txt → reads "lumi-file"
+    let call = ToolCall(id: "read-1", name: "read_file", arguments: "{\"path\":\"note.txt\"}")
+    let result = await manager.executeAuthorized(
+        call, conversationID: gameConvID, turnID: UUID()
+    )
+
+    #expect(result.content.contains("game-file"),
+           "read_file in Game conversation should read game-project/note.txt, but got: \(result.content.prefix(200))")
+}
+
+/// Regression test: when a conversation has NO projectPath bound, the tool
+/// falls back to the global `workspaceRootProvider`. If the user has switched
+/// the global project to a different repo (Lumi), the tool runs in Lumi's
+/// directory even though the conversation was created for another project.
+/// This is the actual bug seen in the wild: a GameFac conversation picks up
+/// Lumi as its working directory.
+@MainActor
+@Test func unboundConversationFallsBackToGlobalWorkspaceRoot() async throws {
+    // Register builtin tools with a global workspaceRootProvider that returns
+    // "Lumi" — simulating the global ProjectProviding.currentProject.
+    let manager = ToolManager()
+    manager.registerBuiltinTools(workspaceRootProvider: { "/Users/colorfy/Code/CofficLab/Lumi" })
+
+    let conversationManager = DefaultConversationManager()
+    manager.conversationManager = conversationManager
+
+    // Create a conversation with NO projectPath bound (nil).
+    let unboundConvID = try conversationManager.createConversation(
+        title: "Unbound", projectPath: nil, providerID: nil, modelName: nil
+    )
+
+    // Run `pwd` in the unbound conversation. ShellTool will fall back to
+    // workspaceRootProvider() because conversationProjectPath() returns nil.
+    let call = ToolCall(id: "pwd-1", name: "run_command", arguments: "{\"command\":\"pwd\"}")
+    let result = await manager.executeAuthorized(
+        call, conversationID: unboundConvID, turnID: UUID()
+    )
+
+    // The tool runs in Lumi's directory — this is the "串台" symptom:
+    // the conversation has no project binding, so it silently inherits the
+    // global current project.
+    #expect(result.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            == "/Users/colorfy/Code/CofficLab/Lumi",
+           "Unbound conversation should fall back to global workspaceRoot, got: \(result.content)")
 }

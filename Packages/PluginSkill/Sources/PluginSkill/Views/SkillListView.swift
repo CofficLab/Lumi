@@ -31,7 +31,7 @@ struct SkillListView: View {
         HStack(spacing: 8) {
             AppSearchBar(
                 text: $searchText,
-                placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search", bundle: .module))
+                placeholder: LocalizedStringKey(pluginLocalization.string("Search"))
             )
         }
         .padding(.horizontal, 12)
@@ -44,14 +44,14 @@ struct SkillListView: View {
             if skills.isEmpty {
                 AppEmptyState(
                     icon: "sparkles",
-                    title: LumiPluginLocalization.string("No Skills", bundle: .module),
-                    description: LumiPluginLocalization.string("No skills available for the current project.", bundle: .module)
+                    title: pluginLocalization.string("No Skills"),
+                    description: pluginLocalization.string("No skills available for the current project.")
                 )
                 .frame(maxWidth: .infinity, minHeight: 126)
             } else {
                 AppEmptyState(
                     icon: "magnifyingglass",
-                    title: LumiPluginLocalization.string("No Skills", bundle: .module)
+                    title: pluginLocalization.string("No Skills")
                 )
                 .frame(maxWidth: .infinity, minHeight: 126)
             }

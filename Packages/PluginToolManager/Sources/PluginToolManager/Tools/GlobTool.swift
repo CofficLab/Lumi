@@ -36,11 +36,29 @@ public struct GlobTool: SuperAgentTool, @unchecked Sendable {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await execute(arguments: arguments, workspaceRootOverride: nil)
+    }
+
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        let workspaceRoot = await context.conversationProjectPath()
+        let content = try await execute(arguments: arguments, workspaceRootOverride: workspaceRoot)
+        return ToolCallResult(content: content)
+    }
+
+    private func execute(
+        arguments: [String: ToolArgument],
+        workspaceRootOverride: String?
+    ) async throws -> String {
         guard let pattern = arguments.stringValue("pattern"), !pattern.isEmpty else {
             return "Error: Missing 'pattern' argument"
         }
         let explicitPath = arguments.stringValue("path")?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let workspaceRoot = await workspaceRootProvider()?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let defaultRoot = await workspaceRootProvider()
+        let workspaceRoot = (workspaceRootOverride ?? defaultRoot)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         let rootPath: String
         if let explicitPath, !explicitPath.isEmpty {
             rootPath = explicitPath

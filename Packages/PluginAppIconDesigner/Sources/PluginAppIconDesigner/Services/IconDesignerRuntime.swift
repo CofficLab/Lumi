@@ -2,20 +2,15 @@ import KitAgentTool
 import Foundation
 import KernelCore
 import ProviderProject
-import ProviderStorage
 
-/// 存储作用域：当前项目目录或应用级数据目录。
+/// 存储作用域：当前项目目录。
 public enum IconScope: String, CaseIterable, Sendable {
     case project
-    case app
 
     var rawName: String { rawValue }
 
     func displayName() -> String {
-        switch self {
-        case .project: AppIconDesignerLocalization.string("In Project")
-        case .app: AppIconDesignerLocalization.string("In App")
-        }
+        AppIconDesignerLocalization.string("In Project")
     }
 }
 
@@ -36,7 +31,6 @@ public protocol IconDesignReviewLLMProviding: AnyObject, Sendable {
 
 @MainActor
 enum IconDesignerRuntime {
-    static private(set) var appStorageDirectory: URL?
     static private(set) var projectStorageDirectory: URL?
     static private(set) var currentProjectPath: String?
 
@@ -45,20 +39,10 @@ enum IconDesignerRuntime {
 
     static let projectFolderName = "app-icon-designer"
 
-    static func configure(kernel: KernelCoreContainer, pluginID: String) {
-        let appDirectory = kernel.resolveProvider((any StorageProviding).self)?
-            .pluginDataDirectory(for: pluginID)
-        configure(appStorageDirectory: appDirectory)
+    static func configure(kernel: KernelCoreContainer) {
         updateProjectStorageDirectory(
             projectPath: kernel.resolveProvider((any ProjectProviding).self)?.currentProject?.path
         )
-    }
-
-    static func configure(appStorageDirectory: URL?) {
-        let resolved = appStorageDirectory?.standardizedFileURL
-        guard self.appStorageDirectory != resolved else { return }
-        self.appStorageDirectory = resolved
-        IconDocumentStore.shared.setAppStorage(appStorageDirectory: resolved)
     }
 
     /// Called by the plugin-owned project observer when the active project changes.
@@ -90,14 +74,12 @@ enum IconDesignerRuntime {
     }
 
     static func defaultScope(hasOpenProject: Bool? = nil) -> IconScope {
-        (hasOpenProject ?? self.hasOpenProject) ? .project : .app
+        .project
     }
 
     static func reset() {
-        appStorageDirectory = nil
         projectStorageDirectory = nil
         currentProjectPath = nil
-        IconDocumentStore.shared.setAppStorage(appStorageDirectory: nil)
         IconDocumentStore.shared.setProjectStorage(
             projectPath: nil,
             projectStorageDirectory: nil

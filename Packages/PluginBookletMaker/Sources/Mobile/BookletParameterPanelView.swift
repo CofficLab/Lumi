@@ -1,4 +1,5 @@
 #if os(iOS)
+import BookletMakerCore
 import SwiftUI
 
 /// Booklet 原生参数面板：输出纸张与布局、边距/装订线、裁切与补白选项。

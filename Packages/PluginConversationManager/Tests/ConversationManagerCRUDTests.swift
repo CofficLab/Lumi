@@ -64,9 +64,15 @@ struct ConversationManagerCRUDTests {
             ConversationSummary(id: secondID, title: "Second"),
         ]
         var selectedIDs: [UUID?] = []
+        var selectedEventTitles: [String] = []
         var events: [ConversationEvent] = []
         let selectedHandle = manager.addSelectedConversationObserver { selectedIDs.append($0) }
-        let eventHandle = manager.addConversationObserver { events.append($0) }
+        let eventHandle = manager.addConversationObserver { event in
+            events.append(event)
+            if case .selected = event {
+                selectedEventTitles.append(manager.currentTitle)
+            }
+        }
         defer {
             selectedHandle.cancel()
             eventHandle.cancel()
@@ -75,6 +81,7 @@ struct ConversationManagerCRUDTests {
         manager.selectConversation(id: firstID)
         #expect(manager.currentTitle == "First")
         #expect(selectedIDs == [firstID])
+        #expect(selectedEventTitles == ["First"])
 
         #expect(manager.updateConversationTitle("   ", for: firstID))
         #expect(manager.conversations.first(where: { $0.id == firstID })?.title == nil)
@@ -89,6 +96,7 @@ struct ConversationManagerCRUDTests {
         #expect(manager.sortedConversations.first?.id == secondID)
 
         manager.selectConversation(id: secondID)
+        #expect(selectedEventTitles == ["First", "Second"])
         manager.deleteConversation(id: secondID)
         #expect(manager.conversations.map(\.id) == [firstID])
         #expect(manager.selectedConversationID == firstID)

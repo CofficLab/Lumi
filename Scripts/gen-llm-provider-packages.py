@@ -4,16 +4,14 @@
 Each package mirrors one legacy LLM provider plugin:
   - Packages/PluginLLMProviderOpenAI/
       Package.swift
-      Sources/PluginLLMProviderOpenAI/OpenAIProvider.swift   (copied from shared ProviderLLMVendors/Vendors)
+      Sources/PluginLLMProviderOpenAI/OpenAIProvider.swift   (provider impl, depends on KitLLM)
       Sources/PluginLLMProviderOpenAI/OpenAIProviderPlugin.swift (SuperPlugin: onBoot registers itself)
       Tests/PluginLLMProviderOpenAITests/OpenAIProviderPluginTests.swift
 """
 import os
-import shutil
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PKGS = os.path.join(ROOT, "Packages")
-SHARED_VENDORS = os.path.join(PKGS, "ProviderLLMVendors", "Sources", "ProviderLLMVendors", "Vendors")
 
 # package -> (displayName, legacyPluginID, [(typeName, vendorFile)])
 PACKAGES = [
@@ -99,17 +97,19 @@ let package = Package(
         .library(name: "{pkg}", targets: ["{pkg}"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", revision: "8fa80b0bf87bb4700fe81d622e16be917e91f35a"),
         .package(path: "../ProviderLLMManager"),
-        .package(path: "../ProviderLLMVendors"),
+        .package(path: "../KitLLM"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
             name: "{pkg}",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
-                .product(name: "ProviderLLMVendors", package: "ProviderLLMVendors"),
+                .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources/{pkg}"
         ),
@@ -117,7 +117,7 @@ let package = Package(
             name: "{pkg}Tests",
             dependencies: [
                 "{pkg}",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
             ],
             path: "Tests/{pkg}Tests"
@@ -182,8 +182,6 @@ struct {plugin}Tests {{
 def generate():
     total_providers = 0
     for pkg, display, legacy_id, entries in PACKAGES:
-        # unique vendor files for this package
-        vendor_files = sorted({vf for _, vf in entries})
         types = ", ".join(t for t, _ in entries)
         instances = ", ".join(f"{t}()" for t, _ in entries)
         plugin = f"{display}ProviderPlugin"
@@ -193,22 +191,7 @@ def generate():
         os.makedirs(src_dir, exist_ok=True)
         os.makedirs(test_dir, exist_ok=True)
 
-        # 1. copy vendor implementations from shared package (add ProviderLLMVendors import)
-        #    Idempotent: if the shared Vendors dir was already consumed, keep the
-        #    implementation files already generated in each package.
-        if os.path.isdir(SHARED_VENDORS):
-            for vf in vendor_files:
-                src = os.path.join(SHARED_VENDORS, vf)
-                if not os.path.exists(src):
-                    continue
-                with open(src) as f:
-                    content = f.read()
-                if "import ProviderLLMVendors" not in content:
-                    content = "import ProviderLLMVendors\n\n" + content
-                with open(os.path.join(src_dir, vf), "w") as f:
-                    f.write(content)
-
-        # 2. Package.swift
+        # 1. Package.swift
         with open(os.path.join(PKGS, pkg, "Package.swift"), "w") as f:
             f.write(PACKAGE_SWIFT_TEMPLATE.format(pkg=pkg))
 

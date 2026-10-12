@@ -3,6 +3,11 @@
 Lumi 的设备信息插件，提供系统资源监控（CPU / 内存 / GPU / 电池 / 存储）与历史趋势，
 支持主内容视图、菜单栏图表、设置页与文档页等贡献点。
 
+> **重要规则：本插件包不能依赖其他插件包，也不能被其他插件包依赖。**
+>
+> 插件之间只通过 Provider 契约通信：共享能力放入 `Provider*` / `Kit*` 包，
+> 由宿主（`Factory*`）统一装配；跨插件互相引用会破坏插件的独立装配与卸载。
+
 ## 全局架构
 
 Lumi 采用内核 + 插件 + Provider 扩展架构，完整说明见
@@ -25,7 +30,7 @@ Provider* 层 (ActivityBar / ContentView / MenuBar / RailView / SettingView / Do
 | **类型** | 应用插件（SwiftPM 包） |
 | **职责** | 采集并展示设备指标：CPU、内存、GPU、电池、存储、进程、系统监控 |
 | **宿主内核** | `KernelCore`（`SuperPlugin` 生命周期） |
-| **上游依赖** | `KernelCore`、`KitLocalization`、`LumiUI`、`ProviderActivityBar`、`ProviderContentView`、`ProviderDocsView`、`ProviderMenuBar`、`ProviderRailView`、`ProviderSettingView`、`ProviderStorage`、`KitSuperLog` |
+| **上游依赖** | `KernelCore`、`LumiLocalizationKit`、`LumiUI`、`ProviderActivityBar`、`ProviderContentView`、`ProviderDocsView`、`ProviderMenuBar`、`ProviderRailView`、`ProviderSettingView`、`ProviderStorage`、`LumiLoggingKit` |
 | **平台** | macOS 14+ |
 
 ## 目录结构
@@ -70,3 +75,4 @@ swift build
 # 测试
 swift test
 ```
+

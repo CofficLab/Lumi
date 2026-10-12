@@ -7,7 +7,7 @@ import ProviderDocsView
 import ProviderRailView
 import ProviderRootView
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 白噪音播放插件。
@@ -68,6 +68,7 @@ public final class WhiteNoisePlugin: SuperPlugin, SuperLog {
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                         rootView?.setContentHeaderViewHidden(false)
                     }
                 },
@@ -83,6 +84,8 @@ public final class WhiteNoisePlugin: SuperPlugin, SuperLog {
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         }
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)

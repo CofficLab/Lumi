@@ -60,7 +60,6 @@ struct ConversationStoreObserverTests {
         let capability = ConversationStoreCapabilityAdapter(manager: manager, messageManager: nil)
 
         #expect(capability.selectedConversationID == selected.id)
-        #expect(capability.dataDirectory == manager.dataDirectory)
         #expect(await capability.fetchConversationPage(
             limit: 20,
             beforeUpdatedAt: nil,

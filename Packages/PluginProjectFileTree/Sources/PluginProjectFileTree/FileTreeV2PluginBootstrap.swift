@@ -5,5 +5,4 @@ import Foundation
 enum ProjectFileTreePluginRuntimeBridge {
     nonisolated(unsafe) static var pluginDirectory: URL?
 
-    static let pluginName = "ProjectFileTree"
 }

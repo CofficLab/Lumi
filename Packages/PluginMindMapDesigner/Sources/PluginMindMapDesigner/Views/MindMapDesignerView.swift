@@ -1,224 +1,218 @@
+import AppKit
+import LumiUI
 import SwiftUI
 
-/// 思维导图主视图：文档工具条 + 画布 + 选中节点操作 + 空态。
+private typealias L = MindMapLocalization
+
+/// 思维导图主视图：项目工具栏、画布和底部导出工具栏。
 public struct MindMapDesignerView: View {
     @ObservedObject private var store: MindMapStore
     @State private var selectedNodeId: String?
     @State private var editingNodeId: String?
     @State private var scale: CGFloat = 1.0
+    @State private var isExporting = false
+    private let onMapAvailabilityChanged: ((Bool) -> Void)?
 
-    init(store: MindMapStore) {
+    init(
+        store: MindMapStore,
+        onMapAvailabilityChanged: ((Bool) -> Void)? = nil
+    ) {
         self.store = store
+        self.onMapAvailabilityChanged = onMapAvailabilityChanged
     }
 
     public var body: some View {
-        ZStack {
-            Color(nsColor: .windowBackgroundColor)
+        VStack(spacing: 0) {
+            if store.projectStorageDirectory == nil || store.projectMaps.isEmpty {
+                MindMapOnboardingView(isProjectOpen: store.projectStorageDirectory != nil)
+            } else if let map = store.selectedMap {
+                topToolbar(for: map)
 
-            if let map = store.selectedMap {
-                MindMapCanvas(
-                    map: map,
-                    scope: store.selectedScope,
-                    selectedNodeId: $selectedNodeId,
-                    editingNodeId: $editingNodeId,
-                    scale: $scale,
-                    store: store
-                )
-                .padding(.top, 4)
+                ZStack(alignment: .bottom) {
+                    MindMapCanvas(
+                        map: map,
+                        scope: .project,
+                        selectedNodeId: $selectedNodeId,
+                        editingNodeId: $editingNodeId,
+                        scale: $scale,
+                        store: store
+                    )
+                    .padding(.top, 4)
 
-                VStack {
-                    documentBar
-                    Spacer()
                     if let id = selectedNodeId, let node = map.node(id: id) {
                         nodeActionBar(node: node, map: map)
-                            .padding(.bottom, 16)
+                            .padding(.bottom, DesignTokens.Spacing.md)
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                bottomToolbar(for: map)
             } else {
-                emptyState
+                MindMapTaskSelectionView(
+                    message: L.string(
+                        "Select a mind map from the left, or ask the Agent to create one."
+                    )
+                )
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(nsColor: .windowBackgroundColor))
         .overlay(alignment: .top) {
             if let error = store.lastError {
                 Text(error)
-                    .font(.caption)
-                    .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(Color.red.opacity(0.85), in: RoundedRectangle(cornerRadius: 6))
+                    .font(.appCaption)
+                    .padding(.horizontal, DesignTokens.Spacing.md)
+                    .padding(.vertical, DesignTokens.Spacing.xs)
+                    .background(themeErrorBackground, in: Capsule())
                     .foregroundStyle(.white)
-                    .padding(.top, 8)
+                    .padding(.top, DesignTokens.Spacing.sm)
                     .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.15), value: store.lastError)
-        .animation(.easeInOut(duration: 0.15), value: selectedNodeId)
-    }
-
-    // MARK: - Document Bar
-
-    private var documentBar: some View {
-        HStack(spacing: 8) {
-            Picker("", selection: $store.selectedScope) {
-                ForEach(MindMapScope.allCases, id: \.self) { scope in
-                    Text(scope.displayName()).tag(scope)
-                }
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 160)
-            .labelsHidden()
-
-            Menu {
-                ForEach(store.maps) { map in
-                    Button(map.title) {
-                        try? store.selectMindMap(id: map.id, scope: store.selectedScope)
-                    }
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "doc.text")
-                    Text(store.selectedMap?.title ?? MindMapLocalization.string("Select Mind Map"))
-                        .lineLimit(1)
-                    Image(systemName: "chevron.up.chevron.down")
-                }
-                .padding(.horizontal, 10).padding(.vertical, 5)
-                .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
-            }
-            .menuStyle(.borderlessButton)
-
-            Spacer()
-
-            Button {
-                createMap()
-            } label: {
-                Label(MindMapLocalization.string("New"), systemImage: "plus")
-            }
-
-            if store.selectedMap != nil {
-                Button(role: .destructive) {
-                    if let id = store.selectedMap?.id { store.deleteMindMap(id: id, scope: store.selectedScope) }
-                } label: {
-                    Image(systemName: "trash")
-                }
-                .help(MindMapLocalization.string("Delete current mind map"))
-            }
-
-            Divider().frame(height: 18)
-
-            Button { zoom(by: 0.1) } label: { Image(systemName: "plus.magnifyingglass") }
-                .help(MindMapLocalization.string("Zoom In"))
-            Button { zoom(by: -0.1) } label: { Image(systemName: "minus.magnifyingglass") }
-                .help(MindMapLocalization.string("Zoom Out"))
-            Button { scale = 1.0 } label: { Image(systemName: "1.magnifyingglass") }
-                .help(MindMapLocalization.string("Reset Zoom"))
+        .onAppear {
+            notifyMapAvailability()
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .onChange(of: store.projectMaps.count) { _, _ in
+            notifyMapAvailability()
+        }
     }
 
-    // MARK: - Node Action Bar
+    private var themeErrorBackground: Color {
+        Color.red.opacity(0.85)
+    }
+
+    private func topToolbar(for map: MindMap) -> some View {
+        AppToolbarContainer {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                AppToolbarTitleLabel(icon: "brain.head.profile", title: map.title)
+                AppTag(L.string("In Project"), systemImage: "folder", style: .subtle)
+
+                if let projectName = store.currentProjectPath?.split(separator: "/").last {
+                    Text(projectName)
+                        .font(.appCaption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+
+                AppIconButton(systemImage: "trash", action: { store.deleteMindMap(id: map.id, scope: .project) })
+                    .accessibilityLabel(L.string("Delete current mind map"))
+                    .help(L.string("Delete current mind map"))
+            }
+        }
+        .borderBottom()
+    }
+
+    private func bottomToolbar(for map: MindMap) -> some View {
+        AppToolbarContainer {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                Spacer(minLength: 0)
+
+                AppButton(
+                    L.string("Export Markdown"),
+                    systemImage: "arrow.down.doc",
+                    style: .secondary,
+                    size: .small
+                ) {
+                    export(map, format: .markdown)
+                }
+                .disabled(isExporting)
+
+                AppButton(
+                    L.string("Export JSON"),
+                    systemImage: "curlybraces",
+                    style: .secondary,
+                    size: .small
+                ) {
+                    export(map, format: .json)
+                }
+                .disabled(isExporting)
+
+                if isExporting {
+                    ProgressView()
+                        .controlSize(.small)
+                        .padding(.leading, DesignTokens.Spacing.xs)
+                }
+            }
+        }
+        .borderTop()
+    }
 
     private func nodeActionBar(node: MindMapNode, map: MindMap) -> some View {
         let isRoot = node.parentId == nil
         let hasChildren = !map.children(of: node.id).isEmpty
-        return HStack(spacing: 12) {
+
+        return HStack(spacing: DesignTokens.Spacing.sm) {
             Label(node.text, systemImage: isRoot ? "circle.fill" : "circle")
-                .font(.caption)
+                .font(.appCaption)
                 .lineLimit(1)
                 .foregroundStyle(.secondary)
+
             Divider().frame(height: 14)
-            Button { addChild(to: node, map: map) } label: { Label(MindMapLocalization.string("Child"), systemImage: "plus.circle") }
-            Button { addSibling(to: node, map: map) } label: { Label(MindMapLocalization.string("Sibling"), systemImage: "arrow.down.right.circle") }
+
+            AppIconButton(systemImage: "plus.circle", action: { addChild(to: node, map: map) })
+                .accessibilityLabel(L.string("Child"))
+                .help(L.string("Child"))
+            AppIconButton(systemImage: "arrow.down.right.circle", action: { addSibling(to: node, map: map) })
                 .disabled(isRoot)
-            Button { toggleCollapse(node: node) } label: {
-                Label(
-                    node.collapsed ? MindMapLocalization.string("Expand") : MindMapLocalization.string("Collapse"),
-                    systemImage: node.collapsed ? "chevron.right.circle" : "chevron.down.circle"
-                )
-            }
+                .accessibilityLabel(L.string("Sibling"))
+                .help(L.string("Sibling"))
+            AppIconButton(
+                systemImage: node.collapsed ? "chevron.right.circle" : "chevron.down.circle",
+                action: { toggleCollapse(node: node) }
+            )
             .disabled(!hasChildren)
-            Button(role: .destructive) { deleteSelected(node: node, map: map) } label: { Label(MindMapLocalization.string("Delete"), systemImage: "minus.circle") }
+            .accessibilityLabel(node.collapsed ? L.string("Expand") : L.string("Collapse"))
+            .help(node.collapsed ? L.string("Expand") : L.string("Collapse"))
+            AppIconButton(systemImage: "minus.circle", action: { deleteSelected(node: node, map: map) })
                 .disabled(isRoot)
+                .accessibilityLabel(L.string("Delete"))
+                .help(L.string("Delete"))
         }
-        .labelStyle(.titleAndIcon)
-        .font(.caption)
-        .padding(.horizontal, 14).padding(.vertical, 8)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
-        .shadow(color: .black.opacity(0.1), radius: 6, y: 2)
-    }
-
-    // MARK: - Empty State
-
-    private var emptyState: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "brain.head.profile")
-                .font(.system(size: 48))
-                .foregroundStyle(.tertiary)
-            Text(MindMapLocalization.string("No Mind Map Yet"))
-                .font(.title3.weight(.semibold))
-            Text(MindMapLocalization.string("Ask the agent in chat to create one, e.g. \"create a mind map about Swift concurrency\", or click New."))
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-            Button { createMap() } label: {
-                Label(MindMapLocalization.string("Create Mind Map"), systemImage: "plus")
-            }
-            .buttonStyle(.borderedProminent)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    // MARK: - Actions
-
-    private func createMap() {
-        let map = store.createMindMap(
-            title: MindMapLocalization.string("New Mind Map"),
-            rootText: MindMapLocalization.string("Central Topic"),
-            direction: .bilateral,
-            scope: store.selectedScope
-        )
-        selectedNodeId = map.root?.id
-        editingNodeId = map.root?.id
+        .padding(.horizontal, DesignTokens.Spacing.md)
+        .padding(.vertical, DesignTokens.Spacing.sm)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous))
+        .shadow(color: .black.opacity(0.10), radius: 8, y: 3)
     }
 
     private func addChild(to node: MindMapNode, map: MindMap) {
         do {
-            let (_, created) = try store.addChildNodes(
-                mapId: map.id, parentId: node.id,
-                texts: [MindMapLocalization.string("New Node")], color: nil,
-                scope: store.selectedScope
+            _ = try store.addChildNodes(
+                mapId: map.id,
+                parentId: node.id,
+                texts: [L.string("New Branch")],
+                color: nil,
+                scope: .project
             )
-            if let first = created.first {
-                selectedNodeId = first.id
-                editingNodeId = first.id
-            }
         } catch {
             store.setError(error.localizedDescription)
         }
     }
 
     private func addSibling(to node: MindMapNode, map: MindMap) {
-        guard node.parentId != nil else { return }
         do {
-            let (_, created) = try store.addSiblingNode(
-                mapId: map.id, siblingId: node.id,
-                text: MindMapLocalization.string("New Node"),
-                scope: store.selectedScope
+            _ = try store.addSiblingNode(
+                mapId: map.id,
+                siblingId: node.id,
+                text: L.string("New Branch"),
+                scope: .project
             )
-            if let created {
-                selectedNodeId = created.id
-                editingNodeId = created.id
-            }
         } catch {
             store.setError(error.localizedDescription)
         }
     }
 
     private func toggleCollapse(node: MindMapNode) {
-        guard let map = store.selectedMap else { return }
         do {
             _ = try store.updateNode(
-                mapId: map.id, nodeId: node.id, scope: store.selectedScope,
-                text: nil, note: nil, color: nil, collapsed: !node.collapsed
+                mapId: store.selectedMap?.id ?? "",
+                nodeId: node.id,
+                scope: .project,
+                text: nil,
+                note: nil,
+                color: nil,
+                collapsed: !node.collapsed
             )
         } catch {
             store.setError(error.localizedDescription)
@@ -227,22 +221,54 @@ public struct MindMapDesignerView: View {
 
     private func deleteSelected(node: MindMapNode, map: MindMap) {
         do {
-            _ = try store.deleteNode(mapId: map.id, nodeId: node.id, scope: store.selectedScope)
+            _ = try store.deleteNode(mapId: map.id, nodeId: node.id, scope: .project)
             selectedNodeId = nil
-            editingNodeId = nil
         } catch {
             store.setError(error.localizedDescription)
         }
     }
 
-    private func zoom(by delta: CGFloat) {
-        scale = max(0.3, min(3.0, scale + delta))
+    private enum ExportFormat {
+        case markdown
+        case json
+
+        var fileExtension: String {
+            switch self {
+            case .markdown: "md"
+            case .json: "json"
+            }
+        }
     }
-}
 
-// MARK: - Preview
+    private func export(_ map: MindMap, format: ExportFormat) {
+        let panel = NSSavePanel()
+        panel.canCreateDirectories = true
+        panel.nameFieldStringValue = "\(map.title).\(format.fileExtension)"
+        panel.prompt = L.string("Export")
 
-#Preview {
-    MindMapDesignerView(store: MindMapStore.shared)
-        .frame(width: 800, height: 600)
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        isExporting = true
+
+        do {
+            let data: Data
+            switch format {
+            case .markdown:
+                data = MindMapMarkdownCodec.encode(map).data(using: .utf8) ?? Data()
+            case .json:
+                let encoder = JSONEncoder()
+                encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+                encoder.dateEncodingStrategy = .iso8601
+                data = try encoder.encode(map)
+            }
+            try data.write(to: url, options: .atomic)
+            isExporting = false
+        } catch {
+            isExporting = false
+            store.setError(error.localizedDescription)
+        }
+    }
+
+    private func notifyMapAvailability() {
+        onMapAvailabilityChanged?(!store.projectMaps.isEmpty)
+    }
 }

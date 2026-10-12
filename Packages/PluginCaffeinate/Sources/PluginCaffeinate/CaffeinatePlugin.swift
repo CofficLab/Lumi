@@ -6,7 +6,7 @@ import ProviderLogo
 import ProviderMenuBar
 import ProviderStorage
 import ProviderToolManager
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// Caffeinate 插件（KernelCore 版本）
@@ -24,11 +24,14 @@ import SwiftUI
 ///
 /// 相比旧版移除：`viewContainers` 主界面（旧版已注释停用）。
 @MainActor
-public final class CaffeinatePlugin: SuperPlugin, SuperLog {
-    public let id = "Caffeinate"
+public final class CaffeinatePlugin: SuperPlugin, PluginDataMigrating, SuperLog {
+    public static let pluginID = "com.coffic.lumi.plugin.caffeinate"
+    public let legacyDataDirectoryNames = ["Caffeinate"]
+
+    public let id = CaffeinatePlugin.pluginID
     public let order = 1
     public let metadata = PluginMetadata(
-        id: "Caffeinate",
+        id: CaffeinatePlugin.pluginID,
         name: "Caffeinate",
         description: "",
         category: .integration,
@@ -42,7 +45,7 @@ public final class CaffeinatePlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public var name: String {
-        LumiPluginLocalization.string("Caffeinate", bundle: .module)
+        pluginLocalization.string("Caffeinate")
     }
 
     public func onRegister(kernel: KernelCoreContainer) throws {

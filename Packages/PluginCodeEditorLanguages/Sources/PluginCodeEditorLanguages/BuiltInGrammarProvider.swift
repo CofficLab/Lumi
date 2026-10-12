@@ -1,7 +1,7 @@
-import EditorService
 import Foundation
+import ProviderEditor
 
-final class BuiltInGrammarProvider: SuperEditorLanguageGrammarProvider {
+final class BuiltInGrammarProvider: LanguageGrammarProviding {
     let grammarId: String
     private let languagePointer: () -> OpaquePointer?
 

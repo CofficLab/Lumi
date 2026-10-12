@@ -35,12 +35,12 @@ struct SendActionBarButton: View {
 
         if state.showsSendButton {
             SendButton(canSend: state.canSend, action: { viewModel.send() })
-                .help(LumiPluginLocalization.string("Send", bundle: .module))
+                .help(pluginLocalization.string("Send"))
         }
 
         if state.showsStopButton {
             StopButton(action: { viewModel.cancel() })
-                .help(LumiPluginLocalization.string("Stop", bundle: .module))
+                .help(pluginLocalization.string("Stop"))
         }
     }
 
@@ -51,7 +51,7 @@ struct SendActionBarButton: View {
             HStack(spacing: 4) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.red)
-                Text(LumiPluginLocalization.string("Provider Error", bundle: .module))
+                Text(pluginLocalization.string("Provider Error"))
                     .font(.headline)
             }
             Text("Missing provider(s): \(missingProviders.joined(separator: ", "))")
@@ -76,6 +76,6 @@ private struct ErrorButton: View {
                 .font(.system(size: 16))
         }
         .buttonStyle(.plain)
-        .help(LumiPluginLocalization.string("Provider configuration error — click for details", bundle: .module))
+        .help(pluginLocalization.string("Provider configuration error — click for details"))
     }
 }

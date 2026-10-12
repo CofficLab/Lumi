@@ -150,6 +150,17 @@ final class ToolExecutionManager {
             .sorted { $0.createdAt < $1.createdAt }
     }
 
+    func jobs(forConversationID conversationID: UUID) -> [ToolJob] {
+        jobsByID.values
+            .filter { $0.conversationID == conversationID }
+            .sorted {
+                if $0.createdAt != $1.createdAt {
+                    return $0.createdAt < $1.createdAt
+                }
+                return $0.id < $1.id
+            }
+    }
+
     func job(
         forToolCallID toolCallID: String,
         conversationID: UUID,
@@ -496,6 +507,8 @@ final class ToolExecutionManager {
         let data = Data(chunk.utf8)
         job.outputByteCount += data.count
         let combined = Data(job.latestOutput.utf8) + data
+        // Keep the tail so the live preview shows the newest output, matching
+        // the tail-keeping policy of KitShell's BoundedOutputBuffer.
         job.latestOutput = String(
             decoding: combined.suffix(Self.maxOutputBytes),
             as: UTF8.self

@@ -7,7 +7,7 @@ import ProviderDocsView
 import ProviderRailView
 import ProviderRootView
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 @MainActor
@@ -17,8 +17,8 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
     public let order = 210
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.display-control",
-        name: LumiPluginLocalization.string("Display Control", bundle: .module),
-        description: LumiPluginLocalization.string("Control brightness, volume, and contrast for external displays via DDC/CI.", bundle: .module),
+        name: pluginLocalization.string("Display Control"),
+        description: pluginLocalization.string("Control brightness, volume, and contrast for external displays via DDC/CI."),
         category: .system,
         stage: .preview,
         policy: .disabledByDefault
@@ -66,6 +66,7 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                         rootView?.setContentHeaderViewHidden(false)
                     }
                 },
@@ -79,7 +80,13 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
         observer?.cancel()
         observer = nil
         viewModel = nil
-        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"])
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
+        activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
+        }
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {

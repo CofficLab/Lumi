@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// Service for monitoring Lumi app's own memory usage (not system-wide).

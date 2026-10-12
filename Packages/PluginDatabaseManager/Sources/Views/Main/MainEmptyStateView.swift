@@ -46,7 +46,7 @@ struct MainEmptyStateView: View {
     private var savedConnectionsSection: some View {
         if !viewModel.configs.isEmpty {
             VStack(spacing: 8) {
-                Text(LumiPluginLocalization.string("Saved Connections", bundle: .module))
+                Text(pluginLocalization.string("Saved Connections"))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
 

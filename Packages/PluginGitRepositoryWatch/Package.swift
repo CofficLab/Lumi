@@ -11,19 +11,19 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.4.0"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderGitRepositoryWatch"),
-        .package(path: "../ProviderProject"),
     ],
     targets: [
         .target(
             name: "PluginGitRepositoryWatch",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "ProviderGitRepositoryWatch", package: "ProviderGitRepositoryWatch"),
-                .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderProject", package: "LumiProviders"),
             ],
             path: "Sources/PluginGitRepositoryWatch"
         ),
@@ -32,7 +32,7 @@ let package = Package(
             dependencies: [
                 "PluginGitRepositoryWatch",
                 .product(name: "ProviderGitRepositoryWatch", package: "ProviderGitRepositoryWatch"),
-                .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderProject", package: "LumiProviders"),
             ],
             path: "Tests/PluginGitRepositoryWatchTests"
         ),

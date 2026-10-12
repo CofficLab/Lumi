@@ -1,7 +1,6 @@
 import KitAgentTool
 import Foundation
-import KitSuperLog
-
+import LumiLoggingKit
 /// 查询慢请求的 Agent 工具。
 struct GetHTTPSlowRequestsTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🐌"

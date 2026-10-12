@@ -4,6 +4,23 @@ import UniformTypeIdentifiers
 
 // MARK: - Booklet Drop Zone View
 
+private final class PDFDropURLCollector: @unchecked Sendable {
+    private let lock = NSLock()
+    private var urls: [URL] = []
+
+    func append(_ url: URL) {
+        lock.lock()
+        defer { lock.unlock() }
+        urls.append(url)
+    }
+
+    func snapshot() -> [URL] {
+        lock.lock()
+        defer { lock.unlock() }
+        return urls
+    }
+}
+
 /// 拖放区域视图，用于接收用户拖入或选择的 PDF 文件
 struct BookletDropZoneView: View {
     @LumiTheme private var theme
@@ -22,7 +39,11 @@ struct BookletDropZoneView: View {
                 .frame(height: 120)
 
             // 文件信息
-            fileInfo
+            if viewModel.selectedTool == .merge {
+                mergeFileInfo
+            } else {
+                fileInfo
+            }
 
             if let errorMessage = viewModel.errorMessage {
                 AppErrorBanner(message: LocalizedStringKey(errorMessage))
@@ -55,7 +76,9 @@ struct BookletDropZoneView: View {
                 .font(.system(size: 32))
                 .foregroundStyle(theme.textSecondary)
 
-            Text(BookletLocalization.string("Drop a PDF here or click to choose one"))
+            Text(viewModel.selectedTool == .merge
+                 ? BookletLocalization.string("Drop PDFs here or click to choose files")
+                 : BookletLocalization.string("Drop a PDF here or click to choose one"))
                 .font(DesignTokens.Typography.bodyEmphasized)
                 .foregroundStyle(theme.textSecondary)
 
@@ -104,17 +127,56 @@ struct BookletDropZoneView: View {
         .appSurface(style: .listRow, cornerRadius: DesignTokens.Radius.sm)
     }
 
+    private var mergeFileInfo: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(viewModel.mergeDocuments) { item in
+                HStack(spacing: 8) {
+                    Image(systemName: "doc.fill")
+                        .foregroundStyle(theme.primary)
+                    Text(item.url.lastPathComponent)
+                        .font(DesignTokens.Typography.caption1)
+                        .lineLimit(1)
+                    Spacer()
+                    Text(BookletLocalization.string("%lld pages", Int64(item.pageCount)))
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundStyle(theme.textSecondary)
+                    AppButton(systemImage: "xmark.circle.fill") {
+                        viewModel.removeMergeDocument(item)
+                    }
+                    .help(BookletLocalization.string("Remove"))
+                }
+            }
+            Text(BookletLocalization.string(
+                "%lld files · %lld pages",
+                Int64(viewModel.mergeDocuments.count),
+                Int64(viewModel.mergePageCount)
+            ))
+            .font(DesignTokens.Typography.caption1)
+            .foregroundStyle(theme.textSecondary)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .appSurface(style: .listRow, cornerRadius: DesignTokens.Radius.sm)
+    }
+
     // MARK: - Actions
 
     private func selectPDFFile() {
         #if os(macOS)
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.pdf]
-        panel.allowsMultipleSelection = false
+        panel.allowsMultipleSelection = viewModel.selectedTool == .merge
         panel.canChooseDirectories = false
 
-        if panel.runModal() == .OK, let url = panel.url {
-            Task { await viewModel.loadPDF(url) }
+        if panel.runModal() == .OK {
+            let urls = panel.urls
+            Task {
+                if viewModel.selectedTool == .merge {
+                    await viewModel.loadMergePDFs(urls)
+                } else if let url = urls.first {
+                    await viewModel.loadPDF(url)
+                }
+            }
         }
         #else
         isPresentingImporter = true
@@ -122,30 +184,44 @@ struct BookletDropZoneView: View {
     }
 
     private func handleDrop(providers: [NSItemProvider]) -> Bool {
-        guard let provider = providers.first(where: {
+        let matchingProviders = providers.filter {
             $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier)
-        }) else {
+        }
+        guard !matchingProviders.isEmpty else {
             return false
         }
 
-        provider.loadItem(
-            forTypeIdentifier: UTType.fileURL.identifier,
-            options: nil
-        ) { item, _ in
-            let url: URL?
-            if let data = item as? Data {
-                url = URL(dataRepresentation: data, relativeTo: nil)
-            } else if let itemURL = item as? URL {
-                url = itemURL
-            } else if let itemURL = item as? NSURL {
-                url = itemURL as URL
-            } else {
-                url = nil
+        let group = DispatchGroup()
+        let collector = PDFDropURLCollector()
+        for provider in matchingProviders {
+            group.enter()
+            provider.loadItem(
+                forTypeIdentifier: UTType.fileURL.identifier,
+                options: nil
+            ) { item, _ in
+                defer { group.leave() }
+                let url: URL?
+                if let data = item as? Data {
+                    url = URL(dataRepresentation: data, relativeTo: nil)
+                } else if let itemURL = item as? URL {
+                    url = itemURL
+                } else if let itemURL = item as? NSURL {
+                    url = itemURL as URL
+                } else {
+                    url = nil
+                }
+                guard let url, url.pathExtension.lowercased() == "pdf" else { return }
+                collector.append(url)
             }
-
-            guard let url, url.pathExtension.lowercased() == "pdf" else { return }
+        }
+        group.notify(queue: .main) {
             Task { @MainActor in
-                await viewModel.loadPDF(url)
+                let urls = collector.snapshot()
+                if self.viewModel.selectedTool == .merge {
+                    await self.viewModel.loadMergePDFs(urls)
+                } else if let url = urls.first {
+                    await self.viewModel.loadPDF(url)
+                }
             }
         }
         return true

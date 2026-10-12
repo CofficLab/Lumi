@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import BookletMakerCore
 
 // MARK: - Booklet Explanation View
 

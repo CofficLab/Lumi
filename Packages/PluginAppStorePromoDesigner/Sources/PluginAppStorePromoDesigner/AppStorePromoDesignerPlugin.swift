@@ -9,11 +9,12 @@ import ProviderRailView
 import ProviderStorage
 import ProviderRootView
 import ProviderSkill
+import ProviderAgentRules
 import ProviderToolManager
 import ProviderPromptSuggestion
 import ProviderProject
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// KernelCore 版本的 App Store 促销图设计器插件。
@@ -74,7 +75,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        PromoDesignerRuntime.configure(kernel: kernel, pluginID: id)
+        PromoDesignerRuntime.configure(kernel: kernel)
         projectObserver?.cancel()
         projectObserver = kernel.resolveProvider((any ProjectProviding).self).map { project in
             PromoDesignerProjectObserver(project: project) { path in
@@ -98,6 +99,15 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
             }
         }
 
+        // 注册 Agent Rule 贡献者。
+        if let ruleProvider = kernel.resolveProvider((any AgentRuleProviding).self) {
+            if !ruleProvider.isProviderRegistered(providerID: id) {
+                let contributor = AppStorePromoDesignerRuleContributor(providerID: id)
+                ruleProvider.addProvider(contributor)
+                Self.logger.info("\(Self.t)Contributed \(contributor.allRules.count) rule(s) via AgentRuleProviding")
+            }
+        }
+
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let chatContext = ChatContext(
@@ -109,6 +119,16 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let makeDesignerView: () -> AnyView = { [weak rootView] in
+            AnyView(
+                PromoDesignerView(
+                    workspace: self.workspace,
+                    onTaskAvailabilityChanged: { [weak rootView] hasTasks in
+                        rootView?.setRailViewVisible(hasTasks)
+                    }
+                )
+            )
+        }
         let chatWidthStore = kernel
             .resolveProvider((any StorageProviding).self)
             .map { storage in
@@ -153,7 +173,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
-                        toolbar?.setVisibleCategories([.global, .chat, .design])
+                        toolbar?.setVisibleCategories([.global, .project, .chat, .design])
                         rootView?.setContentHeaderViewHidden(true)
                         railView?.setVisibleTabID(Self.railTabID)
                         railView?.activateWidthProfile(
@@ -162,7 +182,8 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
                             store: railWidthStore
                         )
                         self.workspace.reload()
-                        contentView?.setContentView(AnyView(PromoDesignerView(workspace: self.workspace)))
+                        rootView?.setRailViewVisible(!self.workspace.projectTasks.isEmpty)
+                        contentView?.setContentView(makeDesignerView())
                         chat?.setVisible(true)
                         chat?.setContextActive(true)
                         chat?.setActiveContext(chatContext)
@@ -177,12 +198,15 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
                         chat?.setActiveContext(nil)
                         chat?.deactivateWidthProfile(ownerID: pluginID)
                         railView?.deactivateWidthProfile(ownerID: pluginID)
+                        railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+                        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                     }
                 },
             ])
         } else {
             workspace.reload()
-            contentView?.setContentView(AnyView(PromoDesignerView(workspace: workspace)))
+            rootView?.setRailViewVisible(!workspace.projectTasks.isEmpty)
+            contentView?.setContentView(makeDesignerView())
             chat?.setVisible(true)
             chat?.setContextActive(true)
             chat?.setActiveContext(chatContext)
@@ -227,6 +251,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
         if let skillProvider = kernel.resolveProvider((any SkillProviding).self) {
             skillProvider.removeProvider(providerID: id)
         }
+        kernel.resolveProvider((any AgentRuleProviding).self)?.removeProvider(providerID: id)
 
         kernel.resolveProvider((any RailViewProviding).self)?
             .removeTabs(ids: [Self.railTabID])
@@ -242,6 +267,9 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(
+                kernel.resolveProvider((any RailViewProviding).self)?.hasVisibleTabs ?? false
+            )
         }
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)

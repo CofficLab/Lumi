@@ -1,5 +1,6 @@
 import KernelCore
-import KitLocalization
+import LumiLocalizationKit
+import LumiUI
 import ProviderPerformanceMetrics
 import ProviderSettingView
 import ProviderStorage
@@ -7,8 +8,9 @@ import SwiftUI
 
 /// Registers the shared performance collector and exposes its local report in Settings.
 @MainActor
-public final class PerformanceMetricsPlugin: SuperPlugin {
+public final class PerformanceMetricsPlugin: SuperPlugin, PluginDataMigrating {
     public let id = "com.coffic.lumi.plugin.performance-metrics"
+    public let legacyDataDirectoryNames = ["PerformanceMetrics"]
     public let order = 5
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.performance-metrics",
@@ -25,7 +27,7 @@ public final class PerformanceMetricsPlugin: SuperPlugin {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let directory = kernel.resolveProvider((any StorageProviding).self)?
-            .pluginDataDirectory(for: "PerformanceMetrics")
+            .pluginDataDirectory(for: id)
         let provider = DefaultPerformanceMetricsProvider(directoryURL: directory)
         try kernel.registerProvider((any PerformanceMetricsProviding).self, provider)
         self.provider = provider
@@ -105,18 +107,20 @@ public struct PerformanceMetricsSettingsView: View {
             Spacer()
 
             HStack(spacing: 8) {
-                Button(PerformanceMetricsLocalization.string("Clear", bundle: .module)) {
+                AppButton(
+                    PerformanceMetricsLocalization.string("Clear", bundle: .module),
+                    systemImage: "trash",
+                    style: .secondary,
+                    size: .small
+                ) {
                     provider.clear()
                     Task { await reload() }
                 }
                 .disabled(isLoading)
 
-                Button {
+                AppIconButton(systemImage: "arrow.clockwise") {
                     Task { await reload() }
-                } label: {
-                    Image(systemName: "arrow.clockwise")
                 }
-                .buttonStyle(.borderless)
                 .help(PerformanceMetricsLocalization.string("Refresh performance data", bundle: .module))
             }
         }

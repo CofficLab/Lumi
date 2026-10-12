@@ -1,10 +1,10 @@
 # Lumi 代码编辑器技术架构
 
-> 本文描述当前实现。面向目标架构、Kernel/插件完整重构、功能规划和分阶段迁移的实施蓝图，见 [`editor-kernel-plugin-rearchitecture-plan.md`](./editor-kernel-plugin-rearchitecture-plan.md)。
+> 本文描述当前实现。所有编辑器 package 都必须归入 `Kit*`、`Provider*` 或 `Plugin*`；不设独立 `Editor*` package。面向完整重构的历史蓝图见 [`editor-kernel-plugin-rearchitecture-plan.md`](./editor-kernel-plugin-rearchitecture-plan.md)，包归类规则以本文及 [`editor-package-taxonomy-plan`](./plans/2026-09-20-editor-package-taxonomy.md) 为准。
 
 ## 概述
 
-Lumi 代码编辑器采用**分层 + 插件扩展**架构。底层负责文本渲染与语法高亮，中层承载无 UI 的编辑逻辑与服务门面，上层通过插件贡献命令、LSP 能力、面板与工作区 UI。依赖方向严格自下而上，内核不依赖插件，插件之间不互相依赖。
+Lumi 代码编辑器采用**分层 + 插件扩展**架构。底层负责文本渲染与语法高亮，中层承载无 UI 的编辑逻辑与服务门面，上层通过插件贡献命令、LSP 能力、面板与工作区 UI。编辑器契约由 `ProviderEditor` 承载，可复用实现位于 `KitEditor*`，业务集成位于 `Plugin*`。具体服务门面 `EditorService` 是 `PluginCodeEditorHost` 内部 target，不是独立 package 或导出 product。
 
 ## 分层架构
 
@@ -16,20 +16,18 @@ Lumi 代码编辑器采用**分层 + 插件扩展**架构。底层负责文本�
 └────────────────────────────┬────────────────────────────────────┘
                              │ 装配 & 注入
 ┌────────────────────────────▼────────────────────────────────────┐
-│ 插件扩展层 (Plugins/)                                            │
+│ 插件扩展层 (Packages/Plugin*)                                    │
 │  ┌─ Editor Host ────────────────────────────────────────────┐  │
-│  │ EditorHostPlugin — 唯一持有 EditorService 的宿主插件:      │  │
-│  │ OnBoot 注册具象 EditorService、FileTree/TabStrip 协同器、  │  │
-│  │ legacy EditorProviding 与 V2 契约 kernel.editorV2         │  │
+│  │ PluginCodeEditorHost — 唯一拥有内部 EditorService target   │  │
+│  │ 实现 ProviderEditor，并装配服务、编辑表面与扩展注册         │  │
 │  └──────────────────────────────────────────────────────────┘  │
 │  ┌─ UI Shell ───────────────────────────────────────────────┐  │
-│  │ EditorPanelPlugin — 工作区布局,经 kernel.editorV2.surface │  │
-│  │ EditorTabStrip / Breadcrumb / Rail* / Bottom* — 面板子插件  │  │
+│  │ PluginCodeEditor — 工作区代码编辑界面与协作能力            │  │
+│  │ 其他 Plugin* 通过 ProviderEditor 接入编辑器扩展点           │  │
 │  └──────────────────────────────────────────────────────────┘  │
 │  ┌─ 语言插件 ───────────────────────────────────────────────┐  │
-│  │ EditorGo / Vue / JS / Swift / Markdown / HTML / CSS …    │  │
-│  │ 注册 LSP 配置（LSPConfig.registerServerConfig）、高亮、    │  │
-│  │ 语言专属命令与项目上下文                                   │  │
+│  │ PluginCodeEditorLanguages — grammar、语言与高亮贡献        │  │
+│  │ 其他 Plugin* 注册 LSP 配置、语言命令与项目上下文            │  │
 │  └──────────────────────────────────────────────────────────┘  │
 │  ┌─ LSP 功能插件 ───────────────────────────────────────────┐  │
 │  │ LSPCodeAction / LSPFolding / LSPHover / LSPInlayHint …   │  │
@@ -39,8 +37,8 @@ Lumi 代码编辑器采用**分层 + 插件扩展**架构。底层负责文本�
 └────────────────────────────┬────────────────────────────────────┘
                              │ 注册 & 查询
 ┌────────────────────────────▼────────────────────────────────────┐
-│ 服务门面层 — EditorService                                       │
-│  EditorService — 编辑器子系统唯一对外 Facade（含 files/sessions/editing 等子门面）│
+│ PluginCodeEditorHost 内部 target — EditorService                 │
+│  服务 Facade（files/sessions/editing 等子门面），不对外单独发布  │
 │  EditorExtensionRegistry — 扩展点聚合、解析与去重                   │
 │  EditorState / EditorSessionStore — 文件、光标、面板运行时状态    │
 │  LSP 集成 — LanguageClient、请求管线、语义能力桥接                │
@@ -48,7 +46,7 @@ Lumi 代码编辑器采用**分层 + 插件扩展**架构。底层负责文本�
 └──────────────┬─────────────────────────────┬──────────────────────┘
                │ 视图绑定                     │ 纯逻辑调用
 ┌──────────────▼──────────────┐  ┌──────────▼──────────────────────┐
-│ 视图层 — EditorSource          │  │ 内核逻辑层 — EditorKernel        │
+│ KitEditorSource                 │  │ KitEditorKernel                  │
 │  SourceEditor SwiftUI 组件     │  │  无 UI 依赖的编辑域逻辑           │
 │  Tree-sitter 语法高亮管线        │  │  按领域子目录：Selection / Save  │
 │  缩进、配对、Symbols.xcassets    │  │  FindReplace / Command / LSP …  │
@@ -56,8 +54,8 @@ Lumi 代码编辑器采用**分层 + 插件扩展**架构。底层负责文本�
                │
 ┌──────────────▼──────────────────────────────────────────────────┐
 │ 渲染基础层                                                        │
-│  EditorTextView — 高性能 NSView 文本渲染、布局与输入               │
-│  EditorLanguageRuntime — tree-sitter 查询缓存与语言注册表          │
+│  KitEditorTextView — 高性能 NSView 文本渲染、布局与输入            │
+│  KitEditorLanguageRuntime — tree-sitter 查询缓存与语言注册表       │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -67,7 +65,7 @@ Lumi 代码编辑器采用**分层 + 插件扩展**架构。底层负责文本�
 
 | Package | 职责 | 使用方 |
 |---------|------|--------|
-| `EditorChatInputKit` | 聊天输入框编辑器（高度、键盘、拖放） | `ChatInputPlugin` |
+| `PluginConversationInput` | 聊天输入框编辑器（高度、键盘、拖放） | Conversation Input |
 
 ## 扩展点（EditorService / Proto）
 
@@ -85,7 +83,7 @@ Lumi 代码编辑器采用**分层 + 插件扩展**架构。底层负责文本�
 | `SuperEditorProjectContextCapability` | 项目上下文同步 |
 | `SuperEditorThemeContributor` | 语法主题 |
 
-完整协议定义见 `Packages/EditorService/Sources/Proto/`。
+完整协议定义见 `Packages/PluginCodeEditorHost/Sources/EditorService/Proto/`；跨包契约定义在 `Packages/ProviderEditor/`。
 
 ## EditorService 子门面
 
@@ -108,26 +106,29 @@ Lumi 代码编辑器采用**分层 + 插件扩展**架构。底层负责文本�
 
 ### Proto 桥接层（插件依赖收敛）
 
-插件**仅**依赖 `EditorService`，底层类型通过 Proto 桥接重导出：
+Host 内部的 `EditorService` 通过 Proto 桥接底层 Kit 类型。其他插件面向 `ProviderEditor` 扩展，不依赖或导入这个内部 target：
 
 | 文件 | 作用 |
 |------|------|
 | `EditorTypeBridge.swift` | LSP 请求生命周期、WorkspaceEdit 类型 |
-| `EditorTextViewBridge.swift` | `@_exported import EditorSource/EditorTextView` |
-| `EditorLanguageBridge.swift` | `@_exported import EditorLanguageRuntime` |
+| `EditorTextViewBridge.swift` | `@_exported import EditorSource/EditorTextView`（Kit 产品模块名保持兼容） |
+| `EditorLanguageBridge.swift` | `@_exported import EditorLanguageRuntime`（Kit 产品模块名保持兼容） |
 | `EditorHighlightProviderBridge.swift` | 在 EditorService 内构造 `HighlightProviding` 适配器 |
 
 ## 依赖规则
 
 ```text
 允许:
-  LumiApp → EditorService → EditorKernel / EditorSource → 基础层
-  Plugins → EditorService, LumiCoreKit, LumiUI
+  PluginCodeEditorHost / EditorService target → ProviderEditor + KitEditor*
+  其他 Plugin* → ProviderEditor + 所需 Kit*
+  KitEditorSource → KitEditorTextView + KitEditorLanguageRuntime
+  KitEditorKernel → KitEditorLanguageRuntime
 
 禁止:
-  EditorKernel / EditorService → 任何 Plugin
+  KitEditor* / ProviderEditor → 任何 Plugin
+  非 Host 插件 → EditorService 内部 target
   Plugin A → Plugin B（实现类型）
-  基础层 → EditorService / Plugins
+  KitEditor* → ProviderEditor / Plugin*
 ```
 
 ## 数据流（打开文件 → 编辑）
@@ -141,21 +142,25 @@ Lumi 代码编辑器采用**分层 + 插件扩展**架构。底层负责文本�
   → LanguageRegistry 选择已注册 grammar → 语法高亮
   → EditorExtensionRegistry 解析语言/LSP 贡献者
   → LSPService 发送 didOpen / 语义请求
-  → EditorPanelPlugin 渲染工作区 UI 与 Overlay
+  → PluginCodeEditor 渲染工作区 UI 与 Overlay
 ```
 
 ## Package 索引
 
-| Package | 层级 | 路径 |
-|---------|------|------|
-| `EditorTextView` | 渲染基础层 | `Packages/EditorTextView` |
-| `EditorLanguageRuntime` | 渲染基础层（语言无关运行时） | `Packages/EditorLanguageRuntime` |
-| `EditorSource` | 视图层（含 Symbols.xcassets） | `Packages/EditorSource` |
-| `EditorKernel` | 内核逻辑层 | `Packages/EditorKernel` |
-| `EditorService` | 服务门面层 | `Packages/EditorService` |
-| `EditorChatInputKit` | 邻接（聊天输入） | `Packages/EditorChatInputKit` |
-| `EditorHostPlugin` | 插件 — Editor Host（唯一持有 EditorService） | `Plugins/EditorHostPlugin` |
-| `EditorPanelPlugin` | 插件 — UI Shell | `Plugins/EditorPanelPlugin` |
+| Package | 分类 / 职责 | 路径 |
+|---------|-------------|------|
+| `ProviderEditor` | Provider — 编辑器协议、DTO 与扩展点 | `Packages/ProviderEditor` |
+| `KitEditorTextView` | Kit — 文本渲染（product/module `EditorTextView`） | `Packages/KitEditorTextView` |
+| `KitEditorLanguageRuntime` | Kit — 语言无关运行时（product/module `EditorLanguageRuntime`） | `Packages/KitEditorLanguageRuntime` |
+| `KitEditorSource` | Kit — 源码编辑视图（product/module `EditorSource`） | `Packages/KitEditorSource` |
+| `KitEditorKernel` | Kit — 编辑域逻辑（product/module `EditorKernel`） | `Packages/KitEditorKernel` |
+| `PluginCodeEditorHost` | Plugin — 唯一拥有内部 `EditorService` target 的 Host | `Packages/PluginCodeEditorHost` |
+| `PluginCodeEditor` | Plugin — 编辑器工作区集成 | `Packages/PluginCodeEditor` |
+| `PluginCodeEditorLanguages` | Plugin — 语言与 grammar 支持 | `Packages/PluginCodeEditorLanguages` |
+| `PluginEditorPreview` | Plugin — 预览集成 | `Packages/PluginEditorPreview` |
+| `PluginConversationInput` | Plugin — 聊天输入编辑器（邻接功能） | `Packages/PluginConversationInput` |
+
+不允许新增 `Packages/Editor*` 独立包；分类由 `Scripts/check-editor-provider-boundary.sh` 自动检查。模块名（例如 `EditorSource`）可以为兼容性保持不变，但它们属于上表中的 `KitEditor*` package。
 
 ## LSP 配置注册机制
 
@@ -202,7 +207,7 @@ public func registerEditorExtensions(into registry: EditorExtensionRegistry) {
 
 ## 新增语言插件
 
-1. 在 `Plugins/` 下创建 `Editor{Lang}Plugin`（可参考 `Scripts/generate-language-plugins.py`）
+1. 在 `Packages/` 下创建 `Plugin{Lang}...` package（可参考 `Scripts/generate-language-plugins.py`）
 2. 在插件中注册：
    - `registry.registerLanguage(EditorLanguageDescriptor(...))`
    - `registry.registerGrammarProvider(BundledGrammarProvider(...))`

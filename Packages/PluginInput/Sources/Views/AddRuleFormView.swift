@@ -36,7 +36,7 @@ public struct AddRuleFormView: View {
         VStack(alignment: .leading, spacing: 12) {
             // 标题
             HStack {
-                Text(verbatim: LumiPluginLocalization.string("Add New Rule", bundle: .module))
+                Text(verbatim: pluginLocalization.string("Add New Rule"))
                     .font(.appTitle)
                     .foregroundColor(theme.textPrimary)
                 Spacer()
@@ -45,8 +45,8 @@ public struct AddRuleFormView: View {
             // 表单控件
             HStack {
                 // 应用选择器
-                Picker(LumiPluginLocalization.string("Application", bundle: .module), selection: $selectedApp) {
-                    Text(verbatim: LumiPluginLocalization.string("Select Application", bundle: .module)).tag(nil as NSRunningApplication?)
+                Picker(pluginLocalization.string("Application"), selection: $selectedApp) {
+                    Text(verbatim: pluginLocalization.string("Select Application")).tag(nil as NSRunningApplication?)
                     ForEach(runningApps, id: \.bundleIdentifier) { app in
                         Text(app.localizedName ?? "Unknown").tag(app as NSRunningApplication?)
                     }
@@ -54,8 +54,8 @@ public struct AddRuleFormView: View {
                 .frame(width: 200)
 
                 // 输入源选择器
-                Picker(LumiPluginLocalization.string("Input Source", bundle: .module), selection: $selectedSourceID) {
-                    Text(verbatim: LumiPluginLocalization.string("Select Input Source", bundle: .module)).tag("")
+                Picker(pluginLocalization.string("Input Source"), selection: $selectedSourceID) {
+                    Text(verbatim: pluginLocalization.string("Select Input Source")).tag("")
                     ForEach(availableSources) { source in
                         Text(source.name).tag(source.id)
                     }

@@ -201,7 +201,7 @@ actor XcodeScanCoordinator {
         activeTask?.cancel()
         let myID = UUID()
         scanID = myID
-        currentStats = XcodeCleanService.ScanStats(scannedCategories: 0, totalItems: 0, currentCategory: LumiPluginLocalization.string("Starting scan...", bundle: .module))
+        currentStats = XcodeCleanService.ScanStats(scannedCategories: 0, totalItems: 0, currentCategory: pluginLocalization.string("Starting scan..."))
 
         let task = Task { await performScan(scanCategory: scanCategory, id: myID) }
         activeTask = task

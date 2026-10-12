@@ -1,5 +1,5 @@
 import Foundation
-import GitPlugin
+import ProviderGit
 import Testing
 @testable import PluginGitWorkspace
 

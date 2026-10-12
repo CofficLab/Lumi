@@ -11,21 +11,21 @@ let package = Package(
         .library(name: "PluginLLMProviderAliyun", targets: ["PluginLLMProviderAliyun"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.4.0"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),
-        .package(path: "../ProviderNetwork"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
             name: "PluginLLMProviderAliyun",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "KitLLM", package: "KitLLM"),
-                .product(name: "ProviderNetwork", package: "ProviderNetwork"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "ProviderNetwork", package: "LumiProviders"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources/PluginLLMProviderAliyun"
         ),
@@ -33,7 +33,7 @@ let package = Package(
             name: "PluginLLMProviderAliyunTests",
             dependencies: [
                 "PluginLLMProviderAliyun",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
             ],
             path: "Tests/PluginLLMProviderAliyunTests"

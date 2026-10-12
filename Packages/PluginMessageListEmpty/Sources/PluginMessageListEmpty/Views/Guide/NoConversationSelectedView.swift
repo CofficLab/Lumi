@@ -38,7 +38,7 @@ struct NoConversationSelectedView: View {
 
                         if let context = guideState.context,
                            context.id != ChatContext.defaultChat.id {
-                            Text(String(format: LumiPluginLocalization.string("For 「%@」, what can I help you with?"), context.title))
+                            Text(String(format: pluginLocalization.string("For 「%@」, what can I help you with?"), context.title))
                                 .font(.system(size: 20, weight: .semibold))
                                 .foregroundStyle(theme.textPrimary)
                                 .multilineTextAlignment(.center)
@@ -52,7 +52,7 @@ struct NoConversationSelectedView: View {
                         } else if let project {
                             projectTitle(project)
                         } else {
-                            Text(LumiPluginLocalization.string("How can I help you today?"))
+                            Text(pluginLocalization.string("How can I help you today?"))
                                 .font(.system(size: 20, weight: .semibold))
                                 .foregroundStyle(theme.textPrimary)
                                 .multilineTextAlignment(.center)
@@ -82,28 +82,28 @@ struct NoConversationSelectedView: View {
             guard case .success(let urls) = result, let url = urls.first else { return }
             Task { @MainActor in do { try await services.project?.openProject(at: url.path, reason: .userSelected) } catch { projectError = error.localizedDescription } }
         }
-        .alert(LumiPluginLocalization.string("Failed to Open Project"), isPresented: Binding(get: { projectError != nil }, set: { if !$0 { projectError = nil } })) {
-            Button(LumiPluginLocalization.string("OK"), role: .cancel) {}
+        .alert(pluginLocalization.string("Failed to Open Project"), isPresented: Binding(get: { projectError != nil }, set: { if !$0 { projectError = nil } })) {
+            Button(pluginLocalization.string("OK"), role: .cancel) {}
         } message: { Text(projectError ?? "") }
     }
 
     @ViewBuilder
     private func projectTitle(_ project: ProjectInfo) -> some View {
         HStack(spacing: 0) {
-            Text(LumiPluginLocalization.string("For 「"))
+            Text(pluginLocalization.string("For 「"))
                 .foregroundStyle(theme.textPrimary)
             Menu {
                 ForEach(guideState.projects, id: \.path) { item in
                     Button(item.name) { Task { @MainActor in do { try await services.project?.openProject(at: item.path, reason: .userSelected) } catch { projectError = error.localizedDescription } } }
                 }
                 Divider()
-                Button(LumiPluginLocalization.string("Add Project…")) { importingFolder = true }
+                Button(pluginLocalization.string("Add Project…")) { importingFolder = true }
             } label: {
                 Text(project.name).foregroundStyle(theme.primary).lineLimit(1).truncationMode(.middle)
             }
             .menuStyle(.borderlessButton)
             .fixedSize(horizontal: true, vertical: false)
-            Text(LumiPluginLocalization.string("」, what can I help you with?"))
+            Text(pluginLocalization.string("」, what can I help you with?"))
                 .foregroundStyle(theme.textPrimary)
         }.font(.system(size: 18, weight: .semibold))
     }

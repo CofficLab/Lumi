@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import PluginACP
 import PluginAgentRules
 import PluginAgentTempStorage
 import PluginAgentPlanStorage
@@ -13,6 +14,9 @@ import AppManagerPlugin
 import ClipboardManagerPlugin
 import BrowserPlugin
 import ComputerUsePlugin
+import PluginMCP
+import PluginXcodeMCP
+import PluginGithubMCP
 import BrewManagerPlugin
 import DisplayControlPlugin
 import PortManagerPlugin
@@ -29,6 +33,7 @@ import QuickLauncherPlugin
 import TextActionsPlugin
 import TerminalPlugin
 import DatabaseManagerPlugin
+import PluginMail
 import GitPlugin
 import PluginGitRepositoryWatch
 import PluginGitWorkspace
@@ -37,15 +42,18 @@ import PluginStorage
 import PluginToast
 import PluginCommand
 import PluginActivityBar
+import PluginRootView
 import PluginAppIconDesigner
 import PluginAppStoreConnect
 import PluginAppStorePromoDesigner
+import PluginPrototypeDesigner
 import PluginAskUser
 import PluginCaffeinate
 import PluginChatFileAttachment
 import PluginChatPanel
 import PluginChatScreenshot
 import PluginConversationBehavior
+import PluginConversationExport
 import PluginConversationVerbosity
 import PluginConversationCacheHitRate
 import PluginConversationFork
@@ -104,6 +112,7 @@ import PluginMessageManager
 import PluginMessageRenderer
 import PluginMessageSender
 import PluginAgentLoop
+import PluginAgentLoopRetry
 import PluginLLMContext
 import PluginMindMapDesigner
 import PluginModelSelector
@@ -128,11 +137,14 @@ import PluginResumeDesigner
 import PluginSettingGeneral
 import PluginSettingView
 import PluginPerformanceMetrics
+import PluginSystemBenchmark
 import PluginSkill
 import PluginOnboarding
 import PluginWelcome
 import PluginThemePack
+import PluginThemeManager
 import PluginToolManager
+import PluginToolActivity
 import PluginToolbar
 import PluginToolbarSettings
 import PluginVideoConverter
@@ -154,14 +166,14 @@ public struct DefaultPluginFactory: PluginFactory {
             // 核心基础插件（order 10-20）：必须最先启动
             try! StorageSuperPlugin(),
             CommandPlugin(),
-            // 工具栏自定义实现（order=0）：替换 ProviderFactory 预注册的
-            // DefaultToolbarProviding，必须早于所有解析 ToolbarProviding 的插件。
-            // 最严格的约束来自 PluginChatPanel / PluginDeveloperMode（均 order=1）：
-            // 它们把解析到的实例捕获进延迟闭包，晚替换会让其调用打在旧实例上。
+            // 共享工具栏插件在 onReady 同步 macOS 与 iOS 的插件贡献启用状态。
             PluginToolbar(),
             ToastSuperPlugin(),
             CaffeinatePlugin(),
             SettingGeneralPlugin(),
+            // 底部面板宿主（order 12）：在 EditorPreview / Terminal 之前注册
+            // PanelBottomProviding，承载 content footer 的 tab 容器。
+            PanelBottomSuperPlugin(),
             CodeEditorHostSuperPlugin(),
             EditorPreviewSuperPlugin(),
             CodeEditorLanguagesSuperPlugin(),
@@ -172,6 +184,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ProjectFileTreePlugin(),
             ProjectFilesSuperPlugin(),
             DevicePlugin(),
+            SystemBenchmarkPlugin(),
             HostsManagerPlugin(),
             DiskManagerPlugin(),
             NetworkManagerPlugin(),
@@ -188,6 +201,7 @@ public struct DefaultPluginFactory: PluginFactory {
             AppStorePromoDesignerPlugin(),
             MindMapDesignerPlugin(),
             ResumeDesignerPlugin(),
+            PrototypeDesignerPlugin(),
             // ActivityBar 自定义实现：替换 ProviderFactory 预注册的 DefaultActivityBarProviding，
             // 必须在所有 onBoot 中调用 addItems 的业务插件（如 ResumeDesignerPlugin order=81）之前。
             PluginActivityBar(),
@@ -195,6 +209,7 @@ public struct DefaultPluginFactory: PluginFactory {
             LogoCofficPlugin(),
             LogoSmartLightPlugin(),
             SettingsToolbarPlugin(),
+            ThemeManagerPlugin(),
             ThemePackPlugin(),
             VideoConverterPlugin(),
             WhiteNoisePlugin(),
@@ -207,8 +222,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationVerbosityPlugin(),
             ConversationLanguagePlugin(),
             ConversationReasoningPlugin(),
-            // 会话统计：消息计数 / 上下文用量
-            ConversationMessageCountPlugin(),
+            // 会话统计：上下文用量
             ConversationCacheHitRatePlugin(),
             ConversationSpeedPlugin(),
             ConversationAgentTurnCountPlugin(),
@@ -216,6 +230,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationStatePlugin(),
             ConversationPendingMessagePlugin(),
             ConversationForkPlugin(),
+            ConversationExportPlugin(),
             AskUserPlugin(),
             OpenInFinderPlugin(),
             OpenInXcodePlugin(),
@@ -225,6 +240,9 @@ public struct DefaultPluginFactory: PluginFactory {
             OpenInGitHubDesktopPlugin(),
             OpenInGitOKPlugin(),
             AgentTurnNotificationPlugin(),
+            // ACP Agent 端：GUI 下仅注册、不自启 stdio 服务（autoStartsServer=false），
+            // 由 headless 入口（lumi-acp）解析该实例后显式启动。
+            PluginACP(),
             DeveloperModePlugin(),
             FileLogPlugin(),
             ShowImagePlugin(),
@@ -234,6 +252,9 @@ public struct DefaultPluginFactory: PluginFactory {
             ClipboardManagerSuperPlugin(),
             BrowserSuperPlugin(),
             ComputerUseSuperPlugin(),
+            MCPPlugin(),
+            PluginXcodeMCP(),
+            PluginGithubMCP(),
             BrewManagerSuperPlugin(),
             DisplayControlSuperPlugin(),
             PortManagerSuperPlugin(),
@@ -250,6 +271,7 @@ public struct DefaultPluginFactory: PluginFactory {
             TextActionsSuperPlugin(),
             TerminalSuperPlugin(),
             DatabaseManagerSuperPlugin(),
+            MailPlugin(),
             GitSourceControlSuperPlugin(),
             GitRepositoryWatchPlugin(),
             GitWorkspacePlugin(),
@@ -273,11 +295,12 @@ public struct DefaultPluginFactory: PluginFactory {
             MessageManagerPlugin(),
             LLMContextPlugin(),
             PluginAgentLoop(),
+            AgentLoopRetryPlugin(),
             MessageSenderPlugin(),
             PluginPluginManager(),
             // 设置视图管理器：替换 ProviderFactory 预注册的默认 SettingViewProviding 实现，
             // 必须先于各设置入口贡献插件（如 SettingGeneralPlugin order=200）。
-            PluginSettingView(),
+            PluginSettingView(id: "com.coffic.lumi.plugin.setting-view"),
             PerformanceMetricsPlugin(),
             // Logo 管理器：替换 ProviderFactory 预注册的默认 LogoProviding 实现，
             // 必须先于各 Logo 贡献插件（如 LogoCofficPlugin order=100）。
@@ -288,6 +311,7 @@ public struct DefaultPluginFactory: PluginFactory {
             // 工具管理器：替换默认 ToolManagerProviding 并注册内置工具，
             // 必须早于 PluginAgentLoop(order=8)。
             PluginToolManager(),
+            ToolActivityPlugin(),
             AiRouterProviderPlugin(),
             AliyunProviderPlugin(),
             AnthropicProviderPlugin(),

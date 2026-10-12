@@ -51,10 +51,20 @@ sync
 
 hdiutil detach "/Volumes/$VOLUME_NAME" -force >/dev/null 2>&1 || true
 
+# Keep enough free space for the app, Finder metadata, and the Applications
+# alias. The old fixed 200 MiB image became too small as Lumi grew beyond that
+# size and made DMG creation fail with "device full".
+APP_SIZE_KB="$(du -sk "$APP_PATH" | awk '{print $1}')"
+IMAGE_SIZE_KB=$((APP_SIZE_KB + APP_SIZE_KB / 4 + 64 * 1024))
+MIN_IMAGE_SIZE_KB=$((200 * 1024))
+if (( IMAGE_SIZE_KB < MIN_IMAGE_SIZE_KB )); then
+  IMAGE_SIZE_KB="$MIN_IMAGE_SIZE_KB"
+fi
+
 create_read_write_image() {
   rm -f "$READ_WRITE_DMG"
   hdiutil create \
-    -size 200m \
+    -size "${IMAGE_SIZE_KB}k" \
     -fs HFS+ \
     -volname "$VOLUME_NAME" \
     -srcfolder "$STAGING_DIR" \
@@ -107,13 +117,30 @@ on run argv
       open
       delay 1
       set bounds of container window to {120, 120, 840, 660}
+      close container window
+      delay 1
     end tell
   end tell
 end run
 APPLESCRIPT
 
 sync
-hdiutil detach "$MOUNT_POINT" >/dev/null
+detach_mount() {
+  local attempt
+
+  for attempt in 1 2 3 4 5; do
+    if hdiutil detach "$MOUNT_POINT" >/dev/null 2>&1; then
+      return 0
+    fi
+    echo "DMG is still busy; retrying detach (${attempt}/5): ${VOLUME_NAME}" >&2
+    sleep "$attempt"
+  done
+
+  echo "DMG remained busy after 5 detach attempts; forcing detach: ${VOLUME_NAME}" >&2
+  hdiutil detach "$MOUNT_POINT" -force >/dev/null
+}
+
+detach_mount
 MOUNT_POINT=""
 
 rm -f "$OUTPUT_PATH"

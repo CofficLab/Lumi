@@ -113,7 +113,10 @@ get_certificate_info() {
     echo "正在获取证书信息..."
     local cert_info
     local identity
-    cert_info=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep '^[[:space:]]*1)' | head -n 1)
+    # Notarization requires a Developer ID Application certificate. Do not
+    # silently select an Apple Development identity when multiple certificates
+    # are installed in the temporary keychain.
+    cert_info=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep 'Developer ID Application:' | head -n 1)
     identity=$(echo "$cert_info" | awk -F'"' '{print $2}')
     
     # 导出环境变量

@@ -11,19 +11,19 @@ let package = Package(
         .library(name: "PluginLLMProviderDeepSeek", targets: ["PluginLLMProviderDeepSeek"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
             name: "PluginLLMProviderDeepSeek",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "KitLLM", package: "KitLLM"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources/PluginLLMProviderDeepSeek"
         ),
@@ -31,7 +31,7 @@ let package = Package(
             name: "PluginLLMProviderDeepSeekTests",
             dependencies: [
                 "PluginLLMProviderDeepSeek",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
             ],
             path: "Tests/PluginLLMProviderDeepSeekTests"

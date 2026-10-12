@@ -2,8 +2,7 @@ import CoreGraphics
 import Foundation
 import IOKit
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 // MARK: - Private API Declarations
 
 @_silgen_name("DisplayServicesGetBrightness")

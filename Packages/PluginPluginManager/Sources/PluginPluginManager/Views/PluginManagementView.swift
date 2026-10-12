@@ -73,6 +73,15 @@ struct PluginManagementView: View {
                     placeholder: LocalizedStringKey(PluginPluginManagerText.searchPlugins)
                 )
 
+                AppSegmentedControl(
+                    PluginManagementFilter.allCases.map(\.title),
+                    selection: Binding(
+                        get: { PluginManagementFilter.allCases.firstIndex(of: viewModel.statusFilter) ?? 0 },
+                        set: { viewModel.statusFilter = PluginManagementFilter.allCases[$0] }
+                    ),
+                    maxWidth: .infinity
+                )
+
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
                         categoryChip(

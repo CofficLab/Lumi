@@ -10,6 +10,38 @@ import Testing
 
 @MainActor
 struct LLMContextPluginTests {
+    @Test("时间线消息只展示给用户，不进入 LLM 历史")
+    func timelineMessagesAreExcludedFromLLMHistory() async {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        let retryTimeline = Message(
+            conversationID: conversationID,
+            role: .status,
+            content: "正在重试",
+            metadata: [MessageTimelineEvent.metadataKey: MessageTimelineEvent.agentLoopRetry],
+            renderKind: MessageTimelineEvent.agentLoopRetryRenderKind
+        )
+
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .user, content: "你好"),
+            to: conversationID
+        )
+        messages.insertMessage(retryTimeline, to: conversationID)
+
+        let result = await provider.messagesForLLM(in: conversationID)
+
+        #expect(result.count == 1)
+        #expect(result.first?.role == .user)
+        #expect(result.first?.content == "你好")
+    }
+
     @Test("短会话透传完整历史")
     func shortConversationUsesFullHistory() async {
         let messages = DefaultMessageManager()

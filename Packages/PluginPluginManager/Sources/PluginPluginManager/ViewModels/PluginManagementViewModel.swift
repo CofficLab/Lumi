@@ -17,6 +17,7 @@ final class PluginManagementViewModel: ObservableObject {
     @Published private(set) var plugins: [PluginManagementItem] = []
     @Published var searchText = ""
     @Published var selectedCategory: PluginCategory?
+    @Published var statusFilter: PluginManagementFilter = .all
     @Published private(set) var selectedPluginID: String?
     @Published private(set) var isDisablingAll = false
 
@@ -37,11 +38,12 @@ final class PluginManagementViewModel: ObservableObject {
         return plugins.filter { plugin in
             let metadata = plugin.metadata
             let matchesCategory = selectedCategory.map { metadata.category == $0 } ?? true
+            let matchesStatus = statusFilter.matches(isEnabled: plugin.isEnabled)
             let matchesKeyword = keyword.isEmpty
                 || metadata.name.localizedCaseInsensitiveContains(keyword)
                 || metadata.id.localizedCaseInsensitiveContains(keyword)
                 || metadata.description.localizedCaseInsensitiveContains(keyword)
-            return matchesCategory && matchesKeyword
+            return matchesCategory && matchesStatus && matchesKeyword
         }
     }
 

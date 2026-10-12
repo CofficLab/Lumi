@@ -1,5 +1,5 @@
 import KernelCore
-import KitSuperLog
+import LumiLoggingKit
 import os
 import ProviderActivityBar
 import ProviderToolbar
@@ -11,9 +11,10 @@ import ProviderRootView
 import ProviderStorage
 import SwiftUI
 
-@MainActor public final class ImageToPDFSuperPlugin: SuperPlugin, SuperLog {
+@MainActor public final class ImageToPDFSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.image-to-pdf", category: "ImageToPDF")
     public let id = "com.coffic.lumi.plugin.image-to-pdf"; public let order = 875
+    public let legacyDataDirectoryNames = ["ImageToPDF"]
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.image-to-pdf",
         name: ImageToPDFLocalization.string("Image to PDF"),
@@ -33,7 +34,7 @@ import SwiftUI
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        ImageToPDFRuntimeBridge.directoryURL = kernel.resolveProvider((any StorageProviding).self)?.pluginDataDirectory(for: "ImageToPDF")
+        ImageToPDFRuntimeBridge.directoryURL = kernel.resolveProvider((any StorageProviding).self)?.pluginDataDirectory(for: id)
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
@@ -54,6 +55,7 @@ import SwiftUI
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                         rootView?.setContentHeaderViewHidden(false)
                     }
                 },
@@ -65,8 +67,12 @@ import SwiftUI
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
-        if activityBar?.activeItemID == "\(id).entry" {
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
+        activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         }
         ImageToPDFRuntimeBridge.directoryURL = nil
     }

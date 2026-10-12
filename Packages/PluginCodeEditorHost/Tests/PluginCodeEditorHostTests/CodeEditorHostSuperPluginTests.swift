@@ -1,4 +1,4 @@
-import EditorContracts
+import ProviderEditor
 import EditorService
 import KernelCore
 import PluginCodeEditorHost
@@ -12,7 +12,7 @@ struct CodeEditorHostSuperPluginTests {
         try kernel.start(plugins: [CodeEditorHostSuperPlugin()])
 
         _ = try #require(kernel.resolveProvider(EditorService.self))
-        let editor = try #require(kernel.resolveProvider(EditorProvidingV2.self))
+        let editor = try #require(kernel.resolveProvider(EditorProviding.self))
         let surface = try #require(kernel.resolveProvider(EditorSurfaceProviding.self))
 
         #expect(editor.surface === surface)
@@ -27,7 +27,7 @@ struct CodeEditorHostSuperPluginTests {
         try kernel.stop()
 
         #expect(kernel.resolveProvider(EditorService.self) == nil)
-        #expect(kernel.resolveProvider(EditorProvidingV2.self) == nil)
+        #expect(kernel.resolveProvider(EditorProviding.self) == nil)
         #expect(kernel.resolveProvider(EditorSurfaceProviding.self) == nil)
         #expect(kernel.resolveProvider(EditorEmbeddedEditorProviding.self) == nil)
     }

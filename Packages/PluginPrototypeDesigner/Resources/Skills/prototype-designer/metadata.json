@@ -1,0 +1,7 @@
+{
+  "name": "prototype-designer",
+  "title": "Prototype Designer",
+  "description": "指导 AI 使用 Prototype Designer 的 Agent 工具创作产品原型图：选择设备画板与视觉风格、逐屏生成 HTML、连接屏幕跳转、预览渲染结果、校验并导出。",
+  "triggers": ["prototype", "原型", "原型图", "wireframe", "线框图", "mockup", "UI 草图", "页面设计", "界面设计", "交互流程", "低保真", "高保真", "产品原型", "screen design"],
+  "version": "1.0.0"
+}

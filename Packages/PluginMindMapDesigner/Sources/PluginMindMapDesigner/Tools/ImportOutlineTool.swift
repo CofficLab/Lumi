@@ -39,6 +39,9 @@ public struct ImportOutlineTool: SuperAgentTool {
         guard let outline = MindMapToolSupport.nonEmpty(MindMapToolSupport.string(arguments, "outline")) else {
             return MindMapToolSupport.missingParameter("outline", language: language)
         }
+        guard await MainActor.run(body: { !MindMapStore.shared.projectStoragePath.isEmpty }) else {
+            return MindMapToolSupport.error(MindMapStoreError.projectRequired, language: language)
+        }
 
         let scope = try await MindMapToolSupport.resolveScope(arguments)
         let title = MindMapToolSupport.string(arguments, "title")
@@ -58,7 +61,6 @@ public struct ImportOutlineTool: SuperAgentTool {
         case .chinese:
             return """
             已从大纲导入并创建思维导图。
-            作用域: \(scope.rawValue)
             思维导图ID: \(map.id)
             标题: \(map.title)
             节点数: \(map.nodes.count)
@@ -66,7 +68,6 @@ public struct ImportOutlineTool: SuperAgentTool {
         case .english:
             return """
             Imported outline into a new mind map.
-            scope=\(scope.rawValue)
             mapId: \(map.id)
             title: \(map.title)
             nodes: \(map.nodes.count)

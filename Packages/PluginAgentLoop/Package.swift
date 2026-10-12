@@ -8,8 +8,8 @@ let package = Package(
         .library(name: "PluginAgentLoop", targets: ["PluginAgentLoop"]),
     ],
     dependencies: [
-        .package(name: "KernelCore", path: "../KernelCore"),
-        .package(name: "KitSuperLog", path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(name: "ProviderAgentLoop", path: "../ProviderAgentLoop"),
         .package(name: "ProviderMessage", path: "../ProviderMessage"),
         .package(name: "ProviderMessageSender", path: "../ProviderMessageSender"),
@@ -26,8 +26,8 @@ let package = Package(
         .target(
             name: "PluginAgentLoop",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),

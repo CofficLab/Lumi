@@ -8,25 +8,38 @@ import ProviderStorage
 import ProviderRailView
 import ProviderRootView
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 enum InputPluginRuntimeBridge {
     nonisolated(unsafe) static var dataRootDirectory: URL?
+    nonisolated(unsafe) static var pluginDirectory: URL?
     static var fallbackRootDirectory: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
+    }
+    static var fallbackPluginDirectory: URL {
+        #if DEBUG
+        let versionedRoot = "db_debug_v6"
+        #else
+        let versionedRoot = "db_production_v6"
+        #endif
+        return fallbackRootDirectory
+            .appendingPathComponent("com.coffic.Lumi", isDirectory: true)
+            .appendingPathComponent(versionedRoot, isDirectory: true)
+            .appendingPathComponent("com.coffic.lumi.plugin.input-manager", isDirectory: true)
     }
 }
 
 @MainActor
-public final class InputSuperPlugin: SuperPlugin, SuperLog {
+public final class InputSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.input-manager", category: "Input")
     public let id = "com.coffic.lumi.plugin.input-manager"
+    public let legacyDataDirectoryNames = ["InputPlugin"]
     public let order = 70
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.input-manager",
-        name: LumiPluginLocalization.string("Input Manager", bundle: .module),
-        description: LumiPluginLocalization.string("Configure input methods and their behavior.", bundle: .module),
+        name: pluginLocalization.string("Input Manager"),
+        description: pluginLocalization.string("Configure input methods and their behavior."),
         category: .system,
         stage: .preview,
         policy: .disabledByDefault
@@ -62,6 +75,7 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
         )
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             InputPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
+            InputPluginRuntimeBridge.pluginDirectory = storage.pluginDataDirectory(for: id)
         }
 
         let content = kernel.resolveProvider((any ContentViewProviding).self)
@@ -79,21 +93,34 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
-                        toolbar?.setVisibleCategories([.global, .system])
-                        content?.setContentView(AnyView(InputSettingsView(viewModel: viewModel)))
-                        chat?.setVisible(false)
-                        rootView?.setRailView(nil)
-                        rootView?.setContentHeaderViewHidden(true)
+                        self.activateInputWorkspace(
+                            content: content,
+                            chat: chat,
+                            rootView: rootView,
+                            toolbar: toolbar,
+                            viewModel: viewModel
+                        )
                     } else {
-                        toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
-                        chat?.setVisible(true)
-                        rootView?.setRailView(railView?.makeRailView())
-                        rootView?.setContentHeaderViewHidden(false)
+                        self.restoreInputWorkspace(
+                            content: content,
+                            chat: chat,
+                            railView: railView,
+                            rootView: rootView,
+                            toolbar: toolbar
+                        )
                     }
                 },
             ])
         } else {
-            content?.setContentView(AnyView(InputSettingsView(viewModel: viewModel)))
+            // In compact hosts there is no ActivityBar event to drive the
+            // workspace transition, so onBoot is the activation boundary.
+            activateInputWorkspace(
+                content: content,
+                chat: chat,
+                rootView: rootView,
+                toolbar: toolbar,
+                viewModel: viewModel
+            )
         }
     }
 
@@ -106,17 +133,50 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == activityItemID
         activityBar?.removeItems(ids: [activityItemID])
-        if wasActive {
-            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
-            kernel.resolveProvider((any RootViewProviding).self)?.setRailView(
-                kernel.resolveProvider((any RailViewProviding).self)?.makeRailView()
+        if wasActive || activityBar == nil {
+            restoreInputWorkspace(
+                content: kernel.resolveProvider((any ContentViewProviding).self),
+                chat: kernel.resolveProvider((any ChatSectionProviding).self),
+                railView: kernel.resolveProvider((any RailViewProviding).self),
+                rootView: kernel.resolveProvider((any RootViewProviding).self),
+                toolbar: kernel.resolveProvider((any ToolbarProviding).self)
             )
-            kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
         }
         InputPluginRuntimeBridge.dataRootDirectory = nil
+        InputPluginRuntimeBridge.pluginDirectory = nil
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    }
+
+    private func activateInputWorkspace(
+        content: (any ContentViewProviding)?,
+        chat: (any ChatSectionProviding)?,
+        rootView: (any RootViewProviding)?,
+        toolbar: (any ToolbarProviding)?,
+        viewModel: InputSettingsViewModel
+    ) {
+        toolbar?.setVisibleCategories([.global, .system])
+        content?.setContentView(AnyView(InputSettingsView(viewModel: viewModel)))
+        chat?.setVisible(false)
+        rootView?.setRailView(nil)
+        rootView?.setRailViewVisible(false)
+        rootView?.setContentHeaderViewHidden(true)
+    }
+
+    private func restoreInputWorkspace(
+        content: (any ContentViewProviding)?,
+        chat: (any ChatSectionProviding)?,
+        railView: (any RailViewProviding)?,
+        rootView: (any RootViewProviding)?,
+        toolbar: (any ToolbarProviding)?
+    ) {
+        toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
+        chat?.setVisible(true)
+        rootView?.setRailView(railView?.makeRailView())
+        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
+        rootView?.setContentHeaderViewHidden(false)
+        content?.setContentView(nil)
     }
 }

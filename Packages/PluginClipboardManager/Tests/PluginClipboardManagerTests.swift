@@ -246,8 +246,8 @@ import Testing
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: root) }
 
-    let blockedDirectory = root.appendingPathComponent("ClipboardManager", isDirectory: true)
-    try "not a directory".write(to: blockedDirectory, atomically: true, encoding: .utf8)
+    let blockedDatabase = root.appendingPathComponent("history.sqlite", isDirectory: false)
+    try "not a database".write(to: blockedDatabase, atomically: true, encoding: .utf8)
 
     let container = ClipboardHistoryManager.makeContainer(databaseDirectory: root)
     let context = ModelContext(container)

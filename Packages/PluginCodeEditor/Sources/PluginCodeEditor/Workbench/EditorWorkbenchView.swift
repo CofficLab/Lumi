@@ -1,4 +1,4 @@
-import EditorContracts
+import ProviderEditor
 import SwiftUI
 
 public struct EditorWorkbenchView: View {

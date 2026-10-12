@@ -1,8 +1,9 @@
 import KernelCore
 import KitAgentTool
-import KitSuperLog
+import LumiLoggingKit
 import os
 import ProviderActivityBar
+import ProviderAgentRules
 import ProviderToolbar
 import ProviderChatSection
 import ProviderContentView
@@ -75,7 +76,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        IconDesignerRuntime.configure(kernel: kernel, pluginID: id)
+        IconDesignerRuntime.configure(kernel: kernel)
         projectObserver?.cancel()
         projectObserver = kernel.resolveProvider((any ProjectProviding).self).map { project in
             IconDesignerProjectObserver(project: project, viewModel: viewModel)
@@ -98,6 +99,13 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
             }
         }
 
+        // 注册 Agent Rule 贡献者。
+        if let ruleProvider = kernel.resolveProvider((any AgentRuleProviding).self) {
+            if !ruleProvider.isProviderRegistered(providerID: id) {
+                ruleProvider.addProvider(AppIconDesignerRuleContributor(providerID: id))
+            }
+        }
+
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let chatContext = ChatContext(
@@ -109,6 +117,16 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let makeDesignerView: () -> AnyView = { [weak rootView] in
+            AnyView(
+                DesignerView(
+                    viewModel: self.viewModel,
+                    onDocumentAvailabilityChanged: { hasDocuments in
+                        rootView?.setRailViewVisible(hasDocuments)
+                    }
+                )
+            )
+        }
         let chatWidthStore = kernel
             .resolveProvider((any StorageProviding).self)
             .map { storage in
@@ -157,7 +175,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
-                        toolbar?.setVisibleCategories([.global, .chat, .design])
+                        toolbar?.setVisibleCategories([.global, .project, .chat, .design])
                         rootView?.setContentHeaderViewHidden(true)
                         railView?.setVisibleTabID(Self.railTabID)
                         railView?.activateWidthProfile(
@@ -166,7 +184,8 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                             store: railWidthStore
                         )
                         self.viewModel.reload()
-                        contentView?.setContentView(AnyView(DesignerView(viewModel: self.viewModel)))
+                        rootView?.setRailViewVisible(!self.viewModel.projectDocuments.isEmpty)
+                        contentView?.setContentView(makeDesignerView())
                         chat?.setVisible(true)
                         chat?.setContextActive(true)
                         chat?.setActiveContext(chatContext)
@@ -178,6 +197,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                     } else {
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         rootView?.setContentHeaderViewHidden(false)
+                        rootView?.setRailViewVisible(true)
                         chat?.setActiveContext(nil)
                         chat?.deactivateWidthProfile(ownerID: pluginID)
                         railView?.deactivateWidthProfile(ownerID: pluginID)
@@ -186,7 +206,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
             ])
         } else {
             viewModel.reload()
-            contentView?.setContentView(AnyView(DesignerView(viewModel: viewModel)))
+            contentView?.setContentView(makeDesignerView())
             chat?.setVisible(true)
             chat?.setContextActive(true)
             chat?.setActiveContext(chatContext)
@@ -232,6 +252,9 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
             skillProvider.removeProvider(providerID: id)
         }
 
+        // 撤回 Agent Rule 贡献。
+        kernel.resolveProvider((any AgentRuleProviding).self)?.removeProvider(providerID: id)
+
         kernel.resolveProvider((any RailViewProviding).self)?
             .removeTabs(ids: [Self.railTabID])
 
@@ -245,6 +268,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any ChatSectionProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(true)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
         if activityBar == nil || activityBar?.activeItemID == nil {

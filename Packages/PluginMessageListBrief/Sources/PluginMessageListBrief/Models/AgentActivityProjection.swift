@@ -1,4 +1,5 @@
 import Foundation
+import ProviderAgentLoop
 import ProviderConversationState
 import ProviderMessageStreaming
 
@@ -80,6 +81,21 @@ struct AgentActivityProjection: Equatable, Sendable {
         case .thinking:
             return AgentActivityProjection(phase: .thinking, title: "正在思考…", detail: nil)
         case .executingTool, .waitingForUser, .none:
+            break
+        }
+
+        // activity 可能在工具完成、流式阶段切换等事件之间短暂为空，但只要
+        // AgentLoop 尚未结束，底部状态行就必须继续存在。
+        switch conversationState?.agentLoopState {
+        case .running:
+            return AgentActivityProjection(phase: .thinking, title: "正在处理…", detail: nil)
+        case .suspended:
+            return AgentActivityProjection(
+                phase: .waitingForUser,
+                title: "等待你的确认",
+                detail: conversationState?.jobActivity.recentJobDescription
+            )
+        case .idle, .completed, .failed, .cancelled, .none:
             return nil
         }
     }

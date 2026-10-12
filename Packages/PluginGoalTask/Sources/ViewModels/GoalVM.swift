@@ -1,7 +1,6 @@
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// GoalTaskPlugin 的唯一视图模型(已合并原 `SidebarViewModel`)。
 ///
 /// 由 `Plugin` 持有并管理生命周期,跨视图重建保留订阅与加载状态;

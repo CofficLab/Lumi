@@ -1,12 +1,12 @@
 import AppKit
-import EditorContracts
+import ProviderEditor
 import EditorLanguageRuntime
 import EditorService
 import EditorSource
 import KernelCore
 import LumiUI
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// KernelCore 的编辑器宿主：提供与旧宿主相同的 SourceEditor 语法高亮能力。
@@ -46,7 +46,7 @@ public final class CodeEditorHostSuperPlugin: SuperPlugin, SuperLog {
         let embeddedProvider = EmbeddedEditorSurfaceProvider(service: service)
 
         try kernel.registerProvider(EditorService.self, service)
-        try kernel.registerProvider(EditorProvidingV2.self, adapter)
+        try kernel.registerProvider(EditorProviding.self, adapter)
         try kernel.registerProvider(EditorSurfaceProviding.self, adapter.surface)
         try kernel.registerProvider(EditorEmbeddedEditorProviding.self, embeddedProvider)
 
@@ -59,7 +59,7 @@ public final class CodeEditorHostSuperPlugin: SuperPlugin, SuperLog {
         editorService?.cleanupForTeardown()
         kernel.unregisterProvider(EditorEmbeddedEditorProviding.self)
         kernel.unregisterProvider(EditorSurfaceProviding.self)
-        kernel.unregisterProvider(EditorProvidingV2.self)
+        kernel.unregisterProvider(EditorProviding.self)
         kernel.unregisterProvider(EditorService.self)
         embeddedEditorProvider = nil
         editorAdapter = nil

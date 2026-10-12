@@ -1,21 +1,44 @@
-# BrowserPlugin
+# PluginBrowser
 
-Browser plugin for Lumi. Provides web page screenshots and browser automation tools.
+Lumi's browser capability plugin: an integrated WebKit workspace and the official
+Chrome DevTools MCP server for controlling Chrome.
+
+> **重要规则：本插件包不能依赖其他插件包，也不能被其他插件包依赖。**
+>
+> 插件之间只通过 Provider 契约通信：共享能力放入 `Provider*` / `Kit*` 包，
+> 由宿主（`Factory*`）统一装配；跨插件互相引用会破坏插件的独立装配与卸载。
 
 ## Features
 
-- **browser_screenshot** - WKWebView-based page rendering and screenshot capture
-- **browser_agent** - browser automation via the `agent-browser` CLI
+- **Browser workspace** - a visible `WKWebView` in the main content area with Lumi's existing chat panel beside it
+- **browser_open** - opens an HTTP or HTTPS page in the current conversation's isolated browser session
+- **browser_read** - returns the page title, URL, bounded visible text, and references for visible links and controls
+- **browser_interact** - clicks a referenced control or enters text into a field after Lumi's high-risk approval flow
+- **Chrome DevTools MCP** - contributes the official Chrome browser automation MCP server to Lumi's MCP client on macOS
+- Each conversation has its own non-persistent website data store
+- Local and private-network destinations require approval; the browser blocks redirects to unapproved local hosts
+
+Browser sessions currently live for the app process. Closing Lumi clears the isolated website data.
+
+The Chrome DevTools MCP server is seeded disabled in MCP Servers settings. Enable it
+there to let the Agent control Chrome. It runs in a separate Chrome session by default
+and does not share the in-app WebKit page or its isolated website data. The Browser
+plugin itself is always on.
+
+The Chrome integration is compiled only for macOS. It requires Node.js LTS available
+as `npx` and a current stable Google Chrome installation.
 
 ## Structure
 
 ```text
-BrowserPlugin
+    PluginBrowser
   Package.swift
-  Sources/
-    BrowserPlugin.swift
-    BrowserScreenshotTool.swift
-    BrowserAgentTool.swift
+    Sources/
+      BrowserSuperPlugin.swift
+      BrowserSession.swift
+      BrowserTools.swift
+      BrowserWorkspaceView.swift
+      BrowserWebView.swift
   Resources/
     Localizable.xcstrings
   Tests/

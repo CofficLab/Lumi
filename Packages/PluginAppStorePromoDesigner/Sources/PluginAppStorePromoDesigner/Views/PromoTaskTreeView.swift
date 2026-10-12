@@ -7,7 +7,6 @@ struct PromoTaskTreeView: View {
     @ObservedObject var workspace: WorkspaceStore
     @LumiTheme private var theme
     @Binding var isExpanded: Bool
-    let scope: Scope
     let task: AppStorePromoTask
 
     // MARK: - 初始化
@@ -15,12 +14,10 @@ struct PromoTaskTreeView: View {
     init(
         workspace: WorkspaceStore,
         isExpanded: Binding<Bool>,
-        scope: Scope,
         task: AppStorePromoTask
     ) {
         self.workspace = workspace
         self._isExpanded = isExpanded
-        self.scope = scope
         self.task = task
     }
 
@@ -39,7 +36,6 @@ struct PromoTaskTreeView: View {
                     ForEach(task.images.sorted(by: { $0.order < $1.order })) { image in
                         PromoImageRowView(
                             workspace: workspace,
-                            scope: scope,
                             task: task,
                             image: image
                         )
@@ -59,11 +55,7 @@ struct PromoTaskTreeView: View {
         // 点选任务即选中（并自动展开）；展开/折叠交给 DisclosureGroup 原生三角。
         // 菜单挂在 row 上，避免被 AppListRow 的 Button 吞掉右键事件。
         AppListRow(isSelected: isSelected, action: {
-            workspace.selectScope(
-                scope,
-                taskID: task.id,
-                imageID: task.images.sorted(by: { $0.order < $1.order }).first?.id
-            )
+            workspace.select(taskID: task.id, imageID: task.images.sorted(by: { $0.order < $1.order }).first?.id)
             isExpanded = true
         }) {
             HStack(spacing: DesignTokens.Spacing.sm) {
@@ -83,7 +75,7 @@ struct PromoTaskTreeView: View {
         }
         .contextMenu {
             Button(role: .destructive) {
-                workspace.deleteTask(scope: scope, id: task.id)
+                workspace.deleteTask(id: task.id)
             } label: {
                 Label(PromoLocalization.string("Delete Task"), systemImage: "trash")
             }
@@ -93,7 +85,7 @@ struct PromoTaskTreeView: View {
     // MARK: - 计算属性
 
     private var isSelected: Bool {
-        workspace.selectedScope == scope && workspace.selectedTaskID == task.id
+        workspace.selectedTaskID == task.id
     }
 }
 
@@ -114,7 +106,6 @@ struct PromoTaskTreeView: View {
         PromoTaskTreeView(
             workspace: WorkspaceStore.shared,
             isExpanded: binding,
-            scope: .project,
             task: task
         )
     }

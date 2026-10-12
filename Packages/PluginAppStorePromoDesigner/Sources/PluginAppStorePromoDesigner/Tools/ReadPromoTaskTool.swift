@@ -9,7 +9,7 @@ public struct ReadPromoTaskTool: SuperAgentTool {
     public init() {}
 
     public func description(for language: LanguagePreference) -> String {
-        "Read task metadata, image order, and available exact App Store display sizes. Searches both project and app scopes by default."
+        "Read task metadata, image order, and available exact App Store display sizes from the current project."
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
@@ -26,18 +26,10 @@ public struct ReadPromoTaskTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let taskID = try PromoToolSupport.required("taskId", arguments)
-        let resolvedScope = try await PromoToolSupport.resolveScope(arguments)
-        let scopesToTry: [PromoScope] = resolvedScope == .project ? [.project, .app] : [.app]
-        var lastError: Error?
-        for scope in scopesToTry {
-            let path = try await PromoToolSupport.storagePath(for: scope)
-            do {
-                let task = try PromoToolSupport.store.readTask(storagePath: path, taskSlug: taskID)
-                return PromoToolSupport.taskSummary(task, scope: scope)
-            } catch {
-                lastError = error
-            }
-        }
-        throw lastError ?? PromoToolSupport.ToolArgumentError.invalid("taskId")
+        let task = try PromoToolSupport.store.readTask(
+            storagePath: try await PromoToolSupport.storagePath(),
+            taskSlug: taskID
+        )
+        return PromoToolSupport.taskSummary(task)
     }
 }

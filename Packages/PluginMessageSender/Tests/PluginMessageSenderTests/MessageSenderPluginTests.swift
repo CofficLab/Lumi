@@ -76,6 +76,43 @@ struct MessageSenderPluginTests {
         #expect(messages.messages(for: id).map(\.content) == ["hello", "response"])
         #expect(sender.isSending == false)
     }
+
+    @Test("恢复中的回合忽略迟到的 suspended 事件")
+    func senderIgnoresStaleSuspensionEvent() {
+        let messages = DefaultMessageManager()
+        let agentLoop = StubAgentLoop(messages: messages)
+        let turnID = UUID()
+        let suspension = AgentLoopSuspension(
+            suspensionID: "userInput:ask-1",
+            conversationID: UUID(),
+            toolCallID: "ask-1",
+            kind: "userInput",
+            payload: "{}"
+        )
+        agentLoop.currentState = .running
+        agentLoop.activeTurnID = turnID
+        agentLoop.activeSuspension = suspension
+        let sender = MessageSender(
+            conversations: DefaultConversationManager(),
+            messages: messages,
+            agentLoop: agentLoop
+        )
+        var completedOutcomes: [AgentLoopOutcome] = []
+        let observer = sender.addMessageSenderObserver { event in
+            if case .turnCompleted(_, let outcome) = event {
+                completedOutcomes.append(outcome)
+            }
+        }
+
+        sender.handleAgentLoopEvent(.suspended(
+            conversationID: suspension.conversationID,
+            turnID: turnID,
+            suspension: suspension
+        ))
+
+        #expect(completedOutcomes.isEmpty)
+        observer.cancel()
+    }
 }
 
 /// 测试用 AgentLoop 桩：最小实现，直接返回预设内容。
@@ -84,6 +121,9 @@ private final class StubAgentLoop: AgentLoopProviding {
     private let messages: any MessageManaging
     private var observers: [UUID: (AgentLoopEvent) -> Void] = [:]
     var responseContent: String = "response"
+    var currentState: AgentLoopState = .idle
+    var activeTurnID: UUID?
+    var activeSuspension: AgentLoopSuspension?
 
     init(messages: any MessageManaging) {
         self.messages = messages
@@ -116,10 +156,10 @@ private final class StubAgentLoop: AgentLoopProviding {
     }
 
     func cancelTurn(in conversationID: UUID) {}
-    func state(for conversationID: UUID) -> AgentLoopState { .idle }
-    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { nil }
+    func state(for conversationID: UUID) -> AgentLoopState { currentState }
+    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { activeSuspension }
     func isRunning(for conversationID: UUID) -> Bool { false }
-    func currentTurnID(for conversationID: UUID) -> UUID? { nil }
+    func currentTurnID(for conversationID: UUID) -> UUID? { activeTurnID }
     func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
 
 }

@@ -8,8 +8,7 @@ import ProviderRootView
 import ProviderToolbar
 import SwiftUI
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 struct DockerManagerPlugin {
     let name = "Docker"
     init() {}
@@ -73,6 +72,7 @@ public final class DockerManagerSuperPlugin: SuperPlugin, SuperLog {
                 } else {
                     toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     rootView?.setRailView(railView?.makeRailView())
+                    rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                     rootView?.setContentHeaderViewHidden(false)
                     toolbar?.removeToolbarItems(ids: [titleItemID])
                 }
@@ -81,7 +81,13 @@ public final class DockerManagerSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: [activityItemID])
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == activityItemID
+        activityBar?.removeItems(ids: [activityItemID])
+        if wasActive {
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
+        }
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: [titleItemID])
         viewModel = nil
     }

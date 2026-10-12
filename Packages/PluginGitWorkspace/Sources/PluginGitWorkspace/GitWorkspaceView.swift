@@ -1,4 +1,4 @@
-import GitPlugin
+import ProviderGit
 import ProviderGitRepositoryWatch
 import ProviderProject
 import SwiftUI
@@ -28,17 +28,28 @@ private final class GitWorkspaceProjectObserver: ObservableObject {
 }
 
 /// Git 工作区主面板：当前仓库概览、工作区状态和最近提交。
+///
+/// Git 数据来自 `GitRepositoryReading` 契约（由 `PluginGit` 发布），本插件
+/// 不直接依赖 `PluginGit`。
 public struct GitWorkspaceView: View {
     let project: any ProjectProviding
     @StateObject private var projectObserver: GitWorkspaceProjectObserver
     @StateObject private var viewModel: GitWorkspaceViewModel
 
-    public init(project: any ProjectProviding, gitWatch: (any GitRepositoryWatching)? = nil) {
+    /// - Parameter git: Git 读取契约。为 `nil` 时（宿主未装配 `PluginGit`）
+    ///   面板照常渲染，只是加载数据会报错而不是崩溃。
+    public init(
+        project: any ProjectProviding,
+        gitWatch: (any GitRepositoryWatching)? = nil,
+        git: (any GitRepositoryReading)? = nil
+    ) {
         self.project = project
         _projectObserver = StateObject(
             wrappedValue: GitWorkspaceProjectObserver(project: project, gitWatch: gitWatch)
         )
-        _viewModel = StateObject(wrappedValue: GitWorkspaceViewModel(git: LiveGitWorkspaceGitProvider()))
+        let provider: any GitWorkspaceGitProviding = git.map(ContractGitWorkspaceGitProvider.init)
+            ?? UnavailableGitWorkspaceGitProvider()
+        _viewModel = StateObject(wrappedValue: GitWorkspaceViewModel(git: provider))
     }
 
     public var body: some View {

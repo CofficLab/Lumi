@@ -6,23 +6,24 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
 import ProviderRootView
+import ProviderStorage
 import SwiftUI
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 enum ClipboardManagerPlugin {
     nonisolated static let verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "ClipboardManagerPlugin")
 }
 
 @MainActor
-public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
+public final class ClipboardManagerSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     public let id = "com.coffic.lumi.plugin.clipboard-manager"
+    public let legacyDataDirectoryNames = ["ClipboardManager"]
     public let order = 270
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.clipboard-manager",
-        name: LumiPluginLocalization.string("Clipboard", bundle: .module),
-        description: LumiPluginLocalization.string("Clipboard history manager.", bundle: .module),
+        name: pluginLocalization.string("Clipboard"),
+        description: pluginLocalization.string("Clipboard history manager."),
         category: .system,
         stage: .preview,
         policy: .disabledByDefault
@@ -46,6 +47,10 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            let pluginDirectory = storage.pluginDataDirectory(for: id)
+            ClipboardManagerRuntime.databaseDirectoryProvider = { pluginDirectory }
+        }
         monitorObserver?.cancel()
         monitorObserver = ClipboardMonitorObserver()
         let viewModel = ClipboardManagerViewModel()
@@ -79,6 +84,7 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                         rootView?.setContentHeaderViewHidden(false)
                     }
                 },
@@ -99,6 +105,8 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         }
     }
 

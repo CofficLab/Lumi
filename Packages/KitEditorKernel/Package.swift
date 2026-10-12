@@ -1,0 +1,47 @@
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "KitEditorKernel",
+    defaultLocalization: "en",
+    platforms: [
+        .macOS(.v14),
+        .iOS(.v17)
+    ],
+    products: [
+        .library(
+            name: "EditorKernel",
+            targets: ["EditorKernel"]
+        )
+    ],
+    dependencies: [
+        .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.14.0"),
+        .package(path: "../KitEditorLanguageRuntime"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
+    ],
+    targets: [
+        .target(
+            name: "EditorKernel",
+            dependencies: [
+                .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
+                .product(name: "EditorLanguageRuntime", package: "KitEditorLanguageRuntime"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
+            ],
+            path: ".",
+            exclude: ["Tests", "README.md"],
+            sources: ["Sources"],
+            resources: [
+                .process("Resources")
+            ]
+        ),
+        .testTarget(
+            name: "EditorKernelTests",
+            dependencies: [
+                "EditorKernel",
+            ],
+            path: "Tests"
+        )
+    ]
+)

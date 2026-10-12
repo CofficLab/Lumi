@@ -33,7 +33,7 @@ enum DisplayControlKind: Hashable, Sendable {
     }
 
     func label(locale: Locale = .current) -> String {
-        LumiPluginLocalization.string(localizationKey, bundle: .module, locale: locale)
+        pluginLocalization.string(localizationKey, locale: locale)
     }
 
     var icon: String {

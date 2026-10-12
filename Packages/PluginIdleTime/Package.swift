@@ -15,23 +15,23 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../KitSuperLog"),
-        .package(path: "../KernelCore"),
-        .package(path: "../KitLocalization"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
-        .package(path: "../ProviderDocsView"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../ProviderMenuBar"),
         .package(path: "../ProviderIdleTime"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7")
     ],
     targets: [
         .target(
             name: "PluginIdleTime",
             dependencies: [
-                "KitSuperLog",
-                .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "ProviderDocsView", package: "ProviderDocsView"),
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderMenuBar", package: "ProviderMenuBar"),
                 .product(name: "ProviderIdleTime", package: "ProviderIdleTime"),
             ],
@@ -49,7 +49,7 @@ let package = Package(
             name: "PluginIdleTimeTests",
             dependencies: [
                 "PluginIdleTime",
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "ProviderIdleTime",
             ],
             path: "Tests/PluginIdleTimeTests"

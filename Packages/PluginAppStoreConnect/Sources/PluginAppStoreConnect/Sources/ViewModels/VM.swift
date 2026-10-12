@@ -4,8 +4,8 @@ import Foundation
 import KernelCore
 import KitAgentTool
 import KitAppStorePromo
-import KitLocalization
-import KitSuperLog
+import LumiLocalizationKit
+import LumiLoggingKit
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
@@ -17,7 +17,7 @@ import ProviderStorage
 import ProviderToolbar
 import ProviderToolManager
 import os
-import KitSuperLog
+import LumiLoggingKit
 @MainActor
 final class VM: ObservableObject, SuperLog {
     nonisolated static let emoji = "🏪"
@@ -27,7 +27,6 @@ final class VM: ObservableObject, SuperLog {
     static let shared = VM()
 
     enum Page: String, CaseIterable, Identifiable {
-        case account
         case distribution
         case xcodeCloud
 
@@ -35,7 +34,6 @@ final class VM: ObservableObject, SuperLog {
 
         var title: String {
             switch self {
-            case .account: return AppStoreConnectLocalization.string("Account")
             case .distribution: return AppStoreConnectLocalization.string("Distribution")
             case .xcodeCloud: return AppStoreConnectLocalization.string("Xcode Cloud")
             }
@@ -43,7 +41,6 @@ final class VM: ObservableObject, SuperLog {
 
         var systemImage: String {
             switch self {
-            case .account: return "key"
             case .distribution: return "shippingbox"
             case .xcodeCloud: return "cloud"
             }
@@ -51,15 +48,12 @@ final class VM: ObservableObject, SuperLog {
 
         var showsTopBar: Bool {
             switch self {
-            case .account: return false
             case .distribution, .xcodeCloud: return true
             }
         }
     }
 
-    static let generalPages: [Page] = [.account]
-
-    @Published var page: Page = .account
+    @Published var page: Page = .distribution
     @Published var credentials: AppStoreConnectCredentials
     @Published var hasStoredPrivateKey: Bool
     @Published var connectionStatus = AppStoreConnectLocalization.string("Not connected")
@@ -125,6 +119,14 @@ final class VM: ObservableObject, SuperLog {
     let credentialStore: CredentialStore
     private(set) var client: ConnectClient
     let localStore: AppStoreConnectPluginLocalStore
+    var isLoadingApps = false
+    var isLoadingVersions = false
+
+    /// 同一用户动作可能串起多个 `runBusy` 操作（嵌套或并发）。
+    /// 由计数决定遮罩的生命周期，避免内层调用中途关掉外层已显示的遮罩。
+    var busyOperationCount = 0
+    /// 首个操作启动的 500ms 遮罩延时任务，由最后一个操作负责取消。
+    var busyOverlayDelayTask: Task<Void, Never>?
 
     init(
         credentialStore: CredentialStore = .shared,

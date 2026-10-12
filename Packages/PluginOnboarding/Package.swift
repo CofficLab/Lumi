@@ -9,24 +9,23 @@ let package = Package(
         .library(name: "PluginOnboarding", targets: ["PluginOnboarding"]),
     ],
     dependencies: [
-        .package(path: "../KitSuperLog"),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderOnboarding"),
-        .package(path: "../ProviderRootView"),
-        .package(path: "../ProviderStorage"),
-        .package(path: "../KitLocalization"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
     ],
     targets: [
         .target(
             name: "PluginOnboarding",
             dependencies: [
-                "KitSuperLog",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
-                .product(name: "ProviderRootView", package: "ProviderRootView"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
@@ -35,10 +34,10 @@ let package = Package(
             name: "PluginOnboardingTests",
             dependencies: [
                 "PluginOnboarding",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
-                .product(name: "ProviderRootView", package: "ProviderRootView"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
             ]
         ),
     ]

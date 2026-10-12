@@ -23,6 +23,19 @@ public protocol SuperAgentTool: Sendable {
     /// 工具自行评估当前调用的风险等级（必填）
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel
 
+    /// 本次调用是否必须经过用户显式批准，无论对话的自动化等级如何。
+    ///
+    /// 用于表达"风险等级"无法覆盖的场景：例如 `ShellTool` 请求脱离桌面隔离
+    /// 执行命令。这类调用即使在自主模式下也必须由用户确认，因此不能只靠
+    /// `permissionRiskLevel` 返回 `.high`——自主模式会直接放行高风险调用。
+    ///
+    /// 默认实现返回 `false`，现有工具无需改动。
+    ///
+    /// **必须声明为协议要求**：若仅放在扩展中，对存在类型
+    /// （`any SuperAgentTool`）调用时会静态分派到默认实现，工具自身覆盖的
+    /// 版本永远不会被调用。
+    func requiresExplicitApproval(arguments: [String: ToolArgument]) -> Bool
+
     /// Declares whether this tool can safely run concurrently with other jobs.
     ///
     /// Existing and third-party tools get the conservative serial default from
@@ -78,6 +91,9 @@ public protocol SuperAgentTool: Sendable {
 }
 
 extension SuperAgentTool {
+    /// Most tools never need to force approval; only opt-in escapes do.
+    public func requiresExplicitApproval(arguments: [String: ToolArgument]) -> Bool { false }
+
     /// Unknown/custom tools are serialized by default because their side
     /// effects cannot be inferred safely from the protocol alone.
     public var executionCapability: ToolExecutionCapability { .serialSideEffect }

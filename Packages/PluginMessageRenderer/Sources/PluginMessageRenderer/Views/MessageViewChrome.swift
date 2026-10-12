@@ -92,7 +92,7 @@ struct MessageViewChrome<Content: View>: View {
                             ) {
                                 showThinkingPopover.toggle()
                             }
-                            .help(LumiPluginLocalization.string("思考过程", bundle: .module))
+                            .help(pluginLocalization.string("思考过程"))
                             .popover(isPresented: $showThinkingPopover, arrowEdge: .bottom) {
                                 ThinkingPopoverContent(text: thinking!)
                             }

@@ -26,7 +26,7 @@ struct GPUMenuBarPopupView: View {
     private var liveStatsView: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(LumiPluginLocalization.string("GPU", bundle: .module))
+                Text(pluginLocalization.string("GPU"))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
 
@@ -73,7 +73,7 @@ struct GPUMenuBarPopupView: View {
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
 
-                Text(LumiPluginLocalization.string("Last 60 Seconds", bundle: .module))
+                Text(pluginLocalization.string("Last 60 Seconds"))
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
 
@@ -84,7 +84,7 @@ struct GPUMenuBarPopupView: View {
                         Circle()
                             .fill(Color.blue.opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text(LumiPluginLocalization.string("Usage", bundle: .module))
+                        Text(pluginLocalization.string("Usage"))
                             .font(.system(size: 9))
                             .foregroundColor(.secondary)
                     }
@@ -125,7 +125,7 @@ struct GPUMenuBarPopupView: View {
                         )
                         .stroke(Color.blue.opacity(0.8), lineWidth: 1.2)
                     } else {
-                        Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
+                        Text(pluginLocalization.string("Collecting..."))
                             .font(.system(size: 10))
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)

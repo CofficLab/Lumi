@@ -1,7 +1,7 @@
 import Foundation
 import os
 import ProviderMessage
-import KitSuperLog
+import LumiLoggingKit
 import SwiftData
 
 /// Message storage service using SwiftData

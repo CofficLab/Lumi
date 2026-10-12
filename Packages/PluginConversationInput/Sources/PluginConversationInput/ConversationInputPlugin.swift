@@ -7,7 +7,7 @@ import ProviderConversationState
 import ProviderConversationInput
 import ProviderMessageSender
 import ProviderPerformanceMetrics
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// Conversation Input Plugin
@@ -38,7 +38,7 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public var name: String {
-        LumiPluginLocalization.string("Conversation Input", bundle: .module)
+        pluginLocalization.string("Conversation Input")
     }
 
 

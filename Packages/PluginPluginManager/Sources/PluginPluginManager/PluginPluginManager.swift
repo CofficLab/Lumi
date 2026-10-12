@@ -4,7 +4,7 @@ import ProviderPluginManaging
 import ProviderPromptSuggestion
 import ProviderSettingView
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 插件管理插件
@@ -16,8 +16,8 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
 
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.plugin-manager",
-        name: "插件管理",
-        description: "管理所有已注册插件。",
+        name: pluginLocalization.string("Plugin Manager"),
+        description: pluginLocalization.string("Manage all registered plugins."),
         version: "1.0.0",
         category: .system,
         stage: .stable,
@@ -38,7 +38,7 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
     private var promptSuggestion: PromptSuggestion {
         PromptSuggestion(
             id: "\(id).browse",
-            title: "浏览插件",
+            title: pluginLocalization.string("Browse Plugins"),
             order: order * 1000,
             systemImage: "puzzlepiece.extension",
             action: .openSettingsTab(Self.settingsEntryID),
@@ -92,7 +92,7 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
 
         let entry = SettingEntryItem(
             id: Self.settingsEntryID,
-            title: "插件管理",
+            title: pluginLocalization.string("Plugin Manager"),
             systemImage: "puzzlepiece.extension",
             order: 3
         ) { [viewModel] in
@@ -137,9 +137,13 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
             .removeEntries(ids: [Self.settingsEntryID])
 
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            for pluginID in generatedAboutPluginIDs {
-                docs.removeEntries(id: pluginID)
-            }
+            // DocsViewProviding predates Kernel contribution ownership, so
+            // most plugins add their entries directly and do not have a
+            // token for KernelCore to revoke. At this point the kernel is
+            // stopping all plugins; clear the complete plugin-owned snapshot
+            // so a stopped kernel cannot expose stale About/Manual entries.
+            docs.replaceAboutEntries([])
+            docs.replaceManualEntries([])
         }
         generatedAboutPluginIDs.removeAll()
     }

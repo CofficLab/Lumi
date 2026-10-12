@@ -1058,7 +1058,7 @@
     "ProviderConversation",
     "ProviderMessage",
     "ProviderLLMManager",
-    "ProviderLLMVendors"
+    "KitLLM"
    ],
    "providersConsumed": [],
    "providersPublished": [],

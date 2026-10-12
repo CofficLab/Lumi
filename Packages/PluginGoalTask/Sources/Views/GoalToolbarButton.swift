@@ -77,11 +77,8 @@ struct GoalToolbarButton: View {
 
     private var helpText: String {
         guard progress.total > 0 else {
-            return LumiPluginLocalization.string("Goals", bundle: .module)
+            return pluginLocalization.string("Goals")
         }
-        return LumiPluginLocalization.string(
-            "Goals: \(progress.completed)/\(progress.total) tasks completed",
-            bundle: .module
-        )
+        return pluginLocalization.string("Goals: \(progress.completed)/\(progress.total) tasks completed")
     }
 }

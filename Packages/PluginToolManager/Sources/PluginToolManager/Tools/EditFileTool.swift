@@ -42,6 +42,22 @@ public struct EditFileTool: SuperAgentTool, @unchecked Sendable {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await execute(arguments: arguments, workspaceRootOverride: nil)
+    }
+
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        let workspaceRoot = await context.conversationProjectPath()
+        let content = try await execute(arguments: arguments, workspaceRootOverride: workspaceRoot)
+        return ToolCallResult(content: content)
+    }
+
+    private func execute(
+        arguments: [String: ToolArgument],
+        workspaceRootOverride: String?
+    ) async throws -> String {
         guard let filePath = arguments.stringValue("file_path"),
               let oldString = arguments.stringValue("old_string"),
               let newString = arguments.stringValue("new_string")
@@ -54,9 +70,10 @@ public struct EditFileTool: SuperAgentTool, @unchecked Sendable {
         }
 
         let replaceAll = arguments.boolValue("replace_all") ?? false
+        let defaultRoot = await workspaceRootProvider()
         let resolvedFilePath = WorkspacePathResolver.resolve(
             path: filePath,
-            workspaceRoot: await workspaceRootProvider()
+            workspaceRoot: workspaceRootOverride ?? defaultRoot
         ).path
 
         do {

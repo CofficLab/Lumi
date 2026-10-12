@@ -15,21 +15,21 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderDiagnostics"),
         .package(path: "../ProviderUninstall"),
-        .package(path: "../ProviderStorage"),
     ],
     targets: [
         .target(
             name: "PluginFileLog",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "ProviderDiagnostics", package: "ProviderDiagnostics"),
                 .product(name: "ProviderUninstall", package: "ProviderUninstall"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
             ],
             path: "Sources/PluginFileLog"
         ),
@@ -37,9 +37,9 @@ let package = Package(
             name: "PluginFileLogTests",
             dependencies: [
                 "PluginFileLog",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderDiagnostics", package: "ProviderDiagnostics"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
             ],
             path: "Tests/PluginFileLogTests"
         )

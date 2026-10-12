@@ -9,9 +9,9 @@ let package = Package(
         .library(name: "PluginConversationInput", targets: ["PluginConversationInput"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
-        .package(path: "../KitLocalization"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderConversationState"),
@@ -21,14 +21,14 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderPerformanceMetrics"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
             name: "PluginConversationInput",
             dependencies: [
-                "KernelCore",
-                "KitLocalization",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 "LumiUI",
                 "ProviderChatSection",
                 "ProviderConversation",
@@ -37,7 +37,7 @@ let package = Package(
                 "ProviderMessage",
                 "ProviderMessageSender",
                 "ProviderPerformanceMetrics",
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources/PluginConversationInput",
             resources: [.process("../../Resources/Localizable.xcstrings")]

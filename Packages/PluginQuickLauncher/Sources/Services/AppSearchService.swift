@@ -1,5 +1,5 @@
 import AppKit
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 启动器应用条目

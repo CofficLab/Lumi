@@ -20,7 +20,7 @@ enum MindMapToolSupport {
         return trimmed.isEmpty ? nil : trimmed
     }
 
-    // MARK: - Scope & Map Resolution
+    // MARK: - Project Map Resolution
 
     /// 当前已打开项目的路径（来自 Runtime 缓存）。
     static func currentProjectPath() async -> String? {
@@ -31,27 +31,22 @@ enum MindMapToolSupport {
         }
     }
 
-    /// 解析工具入参中的 scope：未指定时按是否有打开项目自动选择 project / app。
+    /// 所有工具都固定操作当前项目内的思维导图。
     static func resolveScope(_ arguments: [String: ToolArgument]) async throws -> MindMapScope {
-        if let raw = string(arguments, "scope")?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
-           !raw.isEmpty {
-            guard let scope = MindMapScope(rawValue: raw) else {
-                throw ToolArgumentError.invalid("scope")
-            }
-            return scope
-        }
-        let hasProject = await (currentProjectPath() != nil)
-        return await MainActor.run { MindMapDesignerRuntime.defaultScope(hasOpenProject: hasProject) }
+        await MainActor.run { MindMapDesignerRuntime.defaultScope() }
     }
 
-    /// 解析工具要操作的思维导图：优先读可选 `mapId`+`scope`，缺省回退到选中思维导图。
-    /// 返回思维导图快照（值类型）与其作用域。
+    /// 解析工具要操作的思维导图：优先读可选 mapId，缺省回退到选中思维导图。
+    /// 返回思维导图快照与固定的项目作用域。
     static func resolveMap(_ arguments: [String: ToolArgument]) async throws -> (MindMap, MindMapScope) {
         let scope = try await resolveScope(arguments)
         let explicitId = string(arguments, "mapId")?.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return try await MainActor.run {
             let store = MindMapStore.shared
+            guard !store.projectStoragePath.isEmpty else {
+                throw MindMapStoreError.projectRequired
+            }
             if let explicitId, !explicitId.isEmpty {
                 if let match = store.maps(for: scope).first(where: { $0.id == explicitId }) {
                     return (match, scope)
@@ -71,7 +66,7 @@ enum MindMapToolSupport {
         }
     }
 
-    /// 写操作完成后刷新 UI（按作用域重载并保持/切换选中）。
+    /// 写操作完成后刷新项目内列表并保持选中。
     static func notify(scope: MindMapScope, mapId: String?) async {
         await MainActor.run {
             MindMapStore.shared.reload(scope: scope, selectMapId: mapId)
@@ -80,16 +75,9 @@ enum MindMapToolSupport {
 
     // MARK: - Schema Helpers
 
-    /// 给工具 inputSchema 注入通用可选字段：scope（+ 可选 mapId）。
+    /// 给工具 inputSchema 注入通用可选字段：可选 mapId。
     static func baseProperties(includeScope: Bool = true, includeMapId: Bool = true) -> [String: Any] {
         var result: [String: Any] = [:]
-        if includeScope {
-            result["scope"] = [
-                "type": "string",
-                "enum": MindMapScope.allCases.map(\.rawValue),
-                "description": "Storage scope: 'project' (current project .lumi/mind-map folder) or 'app' (application data directory). Defaults to 'project' when a project is open, else 'app'.",
-            ]
-        }
         if includeMapId {
             result["mapId"] = [
                 "type": "string",
@@ -166,6 +154,7 @@ enum MindMapToolSupport {
 
     static func localizedErrorDescription(_ description: String) -> String {
         let map: [String: String] = [
+            "Open a project before creating or editing a mind map.": "请先打开一个项目，再创建或编辑思维导图。",
             "No mind map is selected.": "未选中思维导图。",
             "The root node cannot be deleted.": "根节点不能删除。",
             "This move would create a cycle and is not allowed.": "该移动会形成环，不允许。",

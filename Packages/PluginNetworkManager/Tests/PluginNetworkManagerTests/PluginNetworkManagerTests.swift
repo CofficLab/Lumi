@@ -1,13 +1,43 @@
 import Testing
 import Combine
+import Compression
 import Foundation
 import SQLite3
 @testable import PluginNetworkManager
 
+@Test func brotliSSEDecompressionHandlesHighCompressionRatio() {
+    let payload = Data((
+        String(repeating: "data: {\"choices\":[{\"delta\":{\"reasoning_content\":\"repeated\"}}]}\n\n", count: 300)
+        + "data: [DONE]\n\n"
+    ).utf8)
+    var compressed = Data(count: payload.count)
+    let compressedCapacity = compressed.count
+    let compressedSize = payload.withUnsafeBytes { source in
+        compressed.withUnsafeMutableBytes { destination in
+            compression_encode_buffer(
+                destination.bindMemory(to: UInt8.self).baseAddress!,
+                compressedCapacity,
+                source.bindMemory(to: UInt8.self).baseAddress!,
+                payload.count,
+                nil,
+                COMPRESSION_BROTLI
+            )
+        }
+    }
+
+    #expect(compressedSize > 0)
+    compressed = compressed.prefix(compressedSize)
+
+    let decoded = NetworkProvider.decompress(compressed, encoding: "br")
+
+    #expect(decoded == payload)
+    #expect(decoded.flatMap { String(data: $0, encoding: .utf8) }?.contains("data: [DONE]") == true)
+}
+
 @MainActor
 @Test func publicIPRefreshUsesCache() async throws {
     let fetcher = PublicIPFetcherStub(values: ["203.0.113.10"])
-    let viewModel = NetworkManagerViewModel(autoStartMonitoring: false) {
+    let viewModel = NetworkManagerViewModel {
         await fetcher.fetch()
     }
 
@@ -21,7 +51,7 @@ import SQLite3
 @MainActor
 @Test func publicIPRefreshCanBeForced() async throws {
     let fetcher = PublicIPFetcherStub(values: ["203.0.113.1", "203.0.113.2"])
-    let viewModel = NetworkManagerViewModel(autoStartMonitoring: false) {
+    let viewModel = NetworkManagerViewModel {
         await fetcher.fetch()
     }
 
@@ -36,7 +66,6 @@ import SQLite3
 @Test func processMonitorToggleIgnoresRepeatedAssignments() {
     let counter = ProcessMonitorCounter()
     let viewModel = NetworkManagerViewModel(
-        autoStartMonitoring: false,
         processMonitoringStarter: { counter.starts += 1 },
         processMonitoringStopper: { counter.stops += 1 }
     )
@@ -52,7 +81,7 @@ import SQLite3
 
 @MainActor
 @Test func networkUsageUpdatePublishesOnce() {
-    let viewModel = NetworkManagerViewModel(autoStartMonitoring: false)
+    let viewModel = NetworkManagerViewModel()
     var publishCount = 0
     var cancellables = Set<AnyCancellable>()
 

@@ -1,21 +1,14 @@
 import KitAppStorePromo
 import Foundation
 
-/// 旧版 `Scope` 的兼容别名：KernelCore 版本中定义在 `PromoDesignerRuntime` 中。
-typealias Scope = PromoScope
-
 @MainActor
 final class WorkspaceStore: ObservableObject {
     static let shared = WorkspaceStore()
 
-    /// 项目内（当前打开项目 `.lumi/app-store-promo`）任务列表。
+    /// 当前打开项目 `.lumi/app-store-promo` 下的任务列表。
     @Published private(set) var projectTasks: [AppStorePromoTask] = []
 
-    /// APP 内（应用数据目录）任务列表。
-    @Published private(set) var appTasks: [AppStorePromoTask] = []
-
     @Published private(set) var selectedImage: AppStorePromoResolvedImage?
-    @Published var selectedScope: Scope = .project
     @Published var selectedTaskID: String?
     @Published var selectedImageID: String?
     @Published var selectedLocaleIdentifier: String?
@@ -25,8 +18,6 @@ final class WorkspaceStore: ObservableObject {
 
     let documentStore = AppStorePromoDocumentStore()
 
-    /// APP 内存储根目录。
-    private(set) var appStorageDirectory: URL?
     /// 项目内存储根目录（基于当前项目路径；nil 表示无打开项目）。
     private(set) var projectStorageDirectory: URL?
     /// 当前打开项目的路径。
@@ -36,78 +27,43 @@ final class WorkspaceStore: ObservableObject {
 
     // MARK: - Paths
 
-    /// APP 内存储路径字符串。
-    var appStoragePath: String { appStorageDirectory?.path ?? "" }
-
     /// 项目内存储路径字符串（无打开项目时为空）。
     var projectStoragePath: String { projectStorageDirectory?.path ?? "" }
 
-    /// 指定 scope 的存储路径（用于工具路由）。
-    func storagePath(for scope: Scope) -> String {
-        switch scope {
-        case .project: projectStoragePath
-        case .app: appStoragePath
-        }
-    }
-
-    /// 指定 scope 的任务列表（用于 UI）。
-    func tasks(for scope: Scope) -> [AppStorePromoTask] {
-        switch scope {
-        case .project: projectTasks
-        case .app: appTasks
-        }
-    }
-
     // MARK: - Configuration
-
-    func setAppStorage(appStorageDirectory: URL?) {
-        let resolved = appStorageDirectory?.standardizedFileURL
-        guard self.appStorageDirectory != resolved else { return }
-        self.appStorageDirectory = resolved
-        if let resolved {
-            try? FileManager.default.createDirectory(at: resolved, withIntermediateDirectories: true)
-        }
-        reload()
-    }
 
     func setProjectStorage(projectPath: String?, projectStorageDirectory: URL?) {
         let resolvedPath = projectPath?.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedPath = (resolvedPath?.isEmpty == false) ? resolvedPath : nil
-        guard self.currentProjectPath != normalizedPath else { return }
+        let resolvedDirectory = projectStorageDirectory?.standardizedFileURL
+        guard self.currentProjectPath != normalizedPath || self.projectStorageDirectory != resolvedDirectory else { return }
         self.currentProjectPath = normalizedPath
-        self.projectStorageDirectory = projectStorageDirectory?.standardizedFileURL
-        if let projectStorageDirectory {
-            try? FileManager.default.createDirectory(at: projectStorageDirectory, withIntermediateDirectories: true)
+        self.projectStorageDirectory = resolvedDirectory
+        if let resolvedDirectory {
+            try? FileManager.default.createDirectory(at: resolvedDirectory, withIntermediateDirectories: true)
         }
         reload()
     }
 
     // MARK: - Reload
 
-    /// 重新加载所有 scope 的任务列表以及当前选中图像。
+    /// 重新加载项目任务列表以及当前选中图像。
     func reload() {
         lastError = nil
         reloadProject()
-        reloadApp()
         refreshSelectedImage()
     }
 
-    /// 当某个 scope 的数据发生变化时调用，按需刷新任务与选中。
-    func reload(scope: Scope, selectTask taskID: String? = nil, image imageID: String? = nil) {
+    /// 当项目数据发生变化时调用，按需刷新任务与选中。
+    func reload(selectTask taskID: String? = nil, image imageID: String? = nil) {
         lastError = nil
-        switch scope {
-        case .project:
-            reloadProject()
-            if let taskID {
-                selectScope(.project, taskID: taskID, imageID: imageID)
-                return
+        reloadProject()
+        if let taskID {
+            if selectedTaskID != taskID || selectedImageID != imageID {
+                selectedLocaleIdentifier = nil
             }
-        case .app:
-            reloadApp()
-            if let taskID {
-                selectScope(.app, taskID: taskID, imageID: imageID)
-                return
-            }
+            selectedTaskID = taskID
+            selectedImageID = imageID
         }
         refreshSelectedImage()
     }
@@ -125,38 +81,25 @@ final class WorkspaceStore: ObservableObject {
         }
     }
 
-    private func reloadApp() {
-        guard !appStoragePath.isEmpty else {
-            appTasks = []
-            return
-        }
-        do {
-            appTasks = try documentStore.listTasks(storagePath: appStoragePath)
-        } catch {
-            appTasks = []
-            lastError = error.localizedDescription
-        }
-    }
-
     private func refreshSelectedImage() {
         guard let selectedTaskID,
-              let scope = tasks(for: selectedScope).first(where: { $0.id == selectedTaskID }) else {
+              let task = projectTasks.first(where: { $0.id == selectedTaskID }) else {
             selectedImage = nil
             return
         }
         do {
-            let imageID = selectedImageID ?? scope.images.sorted(by: { $0.order < $1.order }).first?.id ?? ""
+            let imageID = selectedImageID ?? task.images.sorted(by: { $0.order < $1.order }).first?.id ?? ""
             let image: AppStorePromoResolvedImage
             do {
                 image = try documentStore.readImage(
-                    storagePath: storagePath(for: selectedScope),
+                    storagePath: projectStoragePath,
                     taskSlug: selectedTaskID,
                     imageSlug: imageID,
                     localeIdentifier: selectedLocaleIdentifier
                 )
             } catch AppStorePromoStoreError.localeNotFound {
                 image = try documentStore.readImage(
-                    storagePath: storagePath(for: selectedScope),
+                    storagePath: projectStoragePath,
                     taskSlug: selectedTaskID,
                     imageSlug: imageID
                 )
@@ -176,30 +119,13 @@ final class WorkspaceStore: ObservableObject {
 
     // MARK: - Selection
 
-    func selectScope(_ scope: Scope, taskID: String, imageID: String?) {
-        if selectedScope != scope || selectedTaskID != taskID || selectedImageID != imageID {
+    func select(taskID: String, imageID: String?) {
+        if selectedTaskID != taskID || selectedImageID != imageID {
             selectedLocaleIdentifier = nil
         }
-        selectedScope = scope
         selectedTaskID = taskID
         selectedImageID = imageID
         reload()
-    }
-
-    func select(taskID: String, imageID: String?) {
-        // 查找该 taskID 所在的 scope。
-        if projectTasks.contains(where: { $0.id == taskID }) {
-            selectScope(.project, taskID: taskID, imageID: imageID)
-            return
-        }
-        if appTasks.contains(where: { $0.id == taskID }) {
-            selectScope(.app, taskID: taskID, imageID: imageID)
-            return
-        }
-        // 兜底：保持当前 scope，仅记录 ID。
-        selectedTaskID = taskID
-        selectedImageID = imageID
-        refreshSelectedImage()
     }
 
     // MARK: - Mutations
@@ -215,21 +141,21 @@ final class WorkspaceStore: ObservableObject {
             let localized = try documentStore.addLocalization(
                 localeIdentifier,
                 copying: selectedImage.localeIdentifier,
-                storagePath: storagePath(for: selectedScope),
+                storagePath: projectStoragePath,
                 taskSlug: selectedImage.task.id,
                 imageSlug: selectedImage.image.id
             )
             selectedLocaleIdentifier = localized.localeIdentifier
-            reload(scope: selectedScope, selectTask: localized.task.id, image: localized.image.id)
+            reload(selectTask: localized.task.id, image: localized.image.id)
         } catch {
             setError(error)
         }
     }
 
-    func deleteTask(scope: Scope, id: String) {
+    func deleteTask(id: String) {
         do {
-            try documentStore.deleteTask(storagePath: storagePath(for: scope), taskSlug: id)
-            if selectedScope == scope, selectedTaskID == id {
+            try documentStore.deleteTask(storagePath: projectStoragePath, taskSlug: id)
+            if selectedTaskID == id {
                 selectedTaskID = nil
                 selectedImageID = nil
                 selectedLocaleIdentifier = nil
@@ -241,13 +167,13 @@ final class WorkspaceStore: ObservableObject {
         }
     }
 
-    func deleteImage(scope: Scope, taskID: String, imageID: String) {
+    func deleteImage(taskID: String, imageID: String) {
         do {
-            try documentStore.deleteImage(storagePath: storagePath(for: scope), taskSlug: taskID, imageSlug: imageID)
-            if selectedScope == scope, selectedTaskID == taskID, selectedImageID == imageID {
+            try documentStore.deleteImage(storagePath: projectStoragePath, taskSlug: taskID, imageSlug: imageID)
+            if selectedTaskID == taskID, selectedImageID == imageID {
                 selectedImageID = nil
             }
-            reload(scope: scope, selectTask: taskID)
+            reload(selectTask: taskID)
         } catch {
             setError(error)
         }

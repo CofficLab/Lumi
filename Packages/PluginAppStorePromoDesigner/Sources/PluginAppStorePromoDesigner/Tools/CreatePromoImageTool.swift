@@ -29,17 +29,16 @@ public struct CreatePromoImageTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let scope = try await PromoToolSupport.resolveScope(arguments)
         let taskID = try PromoToolSupport.required("taskId", arguments)
         let imageID = try PromoToolSupport.required("imageId", arguments)
         _ = try PromoToolSupport.store.createImage(
-            storagePath: try await PromoToolSupport.storagePath(for: scope),
+            storagePath: try await PromoToolSupport.storagePath(),
             taskSlug: taskID,
             imageSlug: imageID,
             title: try PromoToolSupport.required("title", arguments),
             html: PromoToolSupport.string(arguments, "html")
         )
-        await PromoToolSupport.notify(scope: scope, taskID: taskID, imageID: imageID)
-        return "Created promotional HTML image (scope=\(scope.rawValue)). imageId=\(imageID)\nEdit it with app_store_promo_replace_html or app_store_promo_patch_html, then call app_store_promo_preview_image."
+        await PromoToolSupport.notify(taskID: taskID, imageID: imageID)
+        return "Created promotional HTML image. imageId=\(imageID)\nEdit it with app_store_promo_replace_html or app_store_promo_patch_html, then call app_store_promo_preview_image."
     }
 }

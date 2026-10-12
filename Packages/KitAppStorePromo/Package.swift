@@ -7,19 +7,13 @@ let package = Package(
     products: [
         .library(name: "KitAppStorePromo", targets: ["KitAppStorePromo"]),
     ],
-    dependencies: [
-        .package(path: "../KitHTMLPreview"),
-    ],
+    dependencies: [],
     targets: [
-        .target(
-            name: "KitAppStorePromo",
-            dependencies: [
-                .product(name: "KitHTMLPreview", package: "KitHTMLPreview"),
-            ]
-        ),
+        .target(name: "KitAppStorePromo"),
         .testTarget(
             name: "KitAppStorePromoTests",
-            dependencies: ["KitAppStorePromo"]
+            dependencies: ["KitAppStorePromo"],
+            resources: [.copy("Fixtures/FeatureSVGPrintRegression.html")]
         ),
     ]
 )

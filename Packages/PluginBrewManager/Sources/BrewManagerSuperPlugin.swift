@@ -8,7 +8,7 @@ import ProviderRootView
 import ProviderToolbar
 import SwiftUI
 import os
-import KitSuperLog
+import LumiLoggingKit
 import ProviderChatSection
 
 struct BrewManagerPlugin {
@@ -22,8 +22,8 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
     public let order = 260
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.brew-manager",
-        name: LumiPluginLocalization.string("Package Management", bundle: .module),
-        description: LumiPluginLocalization.string("Manage Homebrew packages and casks.", bundle: .module),
+        name: pluginLocalization.string("Package Management"),
+        description: pluginLocalization.string("Manage Homebrew packages and casks."),
         category: .system,
         stage: .preview,
         policy: .disabledByDefault
@@ -65,17 +65,18 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
                     rootView?.setRailView(nil)
                     rootView?.setContentHeaderViewHidden(true)
                     toolbar?.addToolbarItems([
-                        ToolbarItem(id: refreshItemID, title: LumiPluginLocalization.string("Refresh", bundle: .module), placement: .trailing, category: .system, order: 260) {
+                        ToolbarItem(id: refreshItemID, title: pluginLocalization.string("Refresh"), placement: .trailing, category: .system, order: 260) {
                             AppIconButton(systemImage: "arrow.clockwise") {
                                 Task { await viewModel.refresh() }
                             }
-                            .help(LumiPluginLocalization.string("Refresh", bundle: .module))
+                            .help(pluginLocalization.string("Refresh"))
                         },
                     ])
                 } else {
                     toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     chat?.setVisible(true)
                     rootView?.setRailView(railView?.makeRailView())
+                    rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                     rootView?.setContentHeaderViewHidden(false)
                     toolbar?.removeToolbarItems(ids: [refreshItemID])
                 }
@@ -89,6 +90,8 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
         activityBar?.removeItems(ids: [activityItemID])
         if wasActive {
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         }
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: [refreshItemID])
         viewModel = nil

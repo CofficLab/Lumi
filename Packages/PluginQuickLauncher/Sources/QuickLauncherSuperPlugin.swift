@@ -6,8 +6,7 @@ import ProviderMessageSender
 import ProviderSettingView
 import SwiftUI
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 struct QuickLauncherPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "QuickLauncherPlugin")
 }
@@ -48,7 +47,7 @@ public final class QuickLauncherSuperPlugin: SuperPlugin, SuperLog {
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
                 id: id,
-                title: LumiPluginLocalization.string("Quick Launcher", bundle: .module),
+                title: pluginLocalization.string("Quick Launcher"),
                 systemImage: "bolt.fill",
                 order: order
             ) {

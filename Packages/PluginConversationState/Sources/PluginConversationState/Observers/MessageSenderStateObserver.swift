@@ -1,4 +1,5 @@
 import Foundation
+import ProviderAgentLoop
 import ProviderConversationState
 import ProviderMessageSender
 
@@ -15,7 +16,13 @@ final class MessageSenderStateObserver {
             switch event {
             case .started(let id):
                 self.provider.update(conversationID: id, activity: .sending)
-            case .turnCompleted(let id, _), .turnFailed(let id, _):
+            case .turnCompleted(let id, let outcome):
+                // suspended 代表回合仍在等待用户处理，不能按完成回合清除 activity。
+                guard case .suspended = outcome else {
+                    self.provider.update(conversationID: id, clearActivity: true)
+                    break
+                }
+            case .turnFailed(let id, _):
                 self.provider.update(conversationID: id, clearActivity: true)
             case .attachmentsChanged, .pendingMessagesChanged:
                 break

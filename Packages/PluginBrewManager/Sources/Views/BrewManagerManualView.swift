@@ -118,7 +118,7 @@ struct BrewManagerManualView: View {
                 lineMock(width: 28)
             }
             if tagged {
-                Text(LumiPluginLocalization.string("cask", bundle: .module))
+                Text(pluginLocalization.string("cask"))
                     .font(.system(size: 7, weight: .semibold, design: .monospaced))
                     .foregroundColor(theme.textSecondary)
                     .padding(.horizontal, 4)
@@ -147,7 +147,7 @@ struct BrewManagerManualView: View {
     // MARK: - Localization
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module)
+        pluginLocalization.string(key)
     }
 }
 

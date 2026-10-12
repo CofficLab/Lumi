@@ -14,6 +14,8 @@ struct BookletMakerMainView: View {
                 )
             case .split:
                 PDFSplitWorkspaceView(viewModel: viewModel)
+            case .merge:
+                PDFMergeWorkspaceView(viewModel: viewModel)
             }
         }
         .frame(maxWidth: .infinity)

@@ -11,6 +11,7 @@ import ProviderNetwork
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
+import PluginRootView
 import ProviderSettingView
 import ProviderStorage
 import ProviderTheme
@@ -38,7 +39,7 @@ struct FactoryLumiTests {
             .appendingPathComponent("FactoryLumiTests-\(UUID().uuidString)", isDirectory: true)
         let storage = DefaultStorageProvider(dataRootDirectory: root)
         let stateStore = PluginEnabledStateStore(
-            pluginDirectory: storage.pluginDataDirectory(for: "PluginManager")
+            pluginDirectory: storage.pluginDataDirectory(for: "com.coffic.lumi.plugin.plugin-manager")
         )
         let enabledPluginIDs = [
             "com.coffic.lumi.plugin.device-info",
@@ -74,6 +75,7 @@ struct FactoryLumiTests {
         let preview = try #require(plugins[EditorPreviewSuperPlugin.pluginID])
         let projectFiles = try #require(plugins[ProjectFilesSuperPlugin.pluginID])
         let bookletMaker = try #require(plugins["com.coffic.lumi.plugin.booklet-maker"])
+        let retry = try #require(plugins["com.coffic.lumi.plugin.agent-loop-retry"])
 
         #expect(host.metadata.policy == .alwaysOn)
         #expect(languages.metadata.policy == .required)
@@ -81,6 +83,7 @@ struct FactoryLumiTests {
         #expect(preview.metadata.policy == .enabledByDefault)
         #expect(projectFiles.metadata.policy == .required)
         #expect(bookletMaker.metadata.policy == .disabledByDefault)
+        #expect(retry.metadata.policy == .alwaysOn)
         #expect(projectFiles.dependencies == [
             "com.coffic.lumi.plugin.projects",
         ])
@@ -88,6 +91,16 @@ struct FactoryLumiTests {
             "com.coffic.lumi.plugin.editor-host",
             "com.coffic.lumi.plugin.project-file-tree",
         ])
+    }
+
+    @Test("默认目录包含邮件插件（disabledByDefault）")
+    func defaultFactoryIncludesMailPlugin() throws {
+        let plugins = Dictionary(
+            uniqueKeysWithValues: DefaultPluginFactory().makePlugins().map { ($0.id, $0) }
+        )
+        let mail = try #require(plugins["com.coffic.lumi.plugin.mail"])
+        #expect(mail.metadata.policy == .disabledByDefault)
+        #expect(mail.metadata.category == .system)
     }
 
     private final class AdditionalPlugin: SuperPlugin {
@@ -152,6 +165,18 @@ struct FactoryLumiTests {
         #expect(barItemIDs.contains("com.coffic.lumi.plugin.model-selector.action-bar-button"))
     }
 
+    @Test("makeKernel 注册当前对话 HTML 导出按钮")
+    func makeKernelRegistersConversationExportToolbarButton() throws {
+        let kernel = try KernelFactory.makeKernel()
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self) as? DefaultChatSectionProviding
+
+        #expect(
+            chat?.barItems.contains {
+                $0.id == "com.coffic.lumi.plugin.conversation-export.toolbar"
+            } == true
+        )
+    }
+
     @Test("makeKernel 创建内核并注册默认 StorageProviding")
     func makeKernelRegistersDefaultStorageProvider() throws {
         let kernel = try KernelFactory.makeKernel()
@@ -213,15 +238,15 @@ struct FactoryLumiTests {
         #expect(resolved != nil)
     }
 
-    @Test("makeKernel 创建内核并由 PluginToolbar 注册 ToolbarProviding")
+    @Test("makeKernel 创建内核并安装共享 PluginToolbar")
     func makeKernelRegistersDefaultToolbarProviding() throws {
         let kernel = try KernelFactory.makeKernel()
 
-        #expect(kernel.isPluginRegistered(id: "com.coffic.lumi.plugin.toolbar"))
+        #expect(kernel.isPluginRegistered(id: "com.coffic.shared.plugin.toolbar"))
 
         let resolved: (any ToolbarProviding)? = kernel.resolveProvider((any ToolbarProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is ToolbarProvider)
+        #expect(resolved is DefaultToolbarProviding)
     }
 
     @Test("makeKernel 创建内核并注册默认 RootViewProviding")
@@ -230,7 +255,8 @@ struct FactoryLumiTests {
 
         let resolved: (any RootViewProviding)? = kernel.resolveProvider((any RootViewProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is DefaultRootViewProvider)
+        #expect(resolved is LumiRootViewProvider)
+        #expect(kernel.isPluginRegistered(id: RootViewPlugin.pluginID))
     }
 
     @Test("makeKernel 创建内核并注册默认 ActivityBarProviding")
@@ -318,7 +344,7 @@ struct FactoryLumiTests {
         #expect(toast is DefaultToastProviding)
         #expect(network is DefaultNetworkProviding)
         #expect(toolbar is DefaultToolbarProviding)
-        #expect(rootView is DefaultRootViewProvider)
+        #expect(rootView is LumiRootViewProvider)
         #expect(activityBar is DefaultActivityBarProviding)
         #expect(railView is DefaultRailViewProviding)
         #expect(settingView is DefaultSettingViewProviding)
@@ -490,6 +516,8 @@ struct FactoryLumiTests {
         try kernel.start(plugins: DefaultPluginFactory().makePlugins())
         #expect(kernel.lifecycleState == .running)
         #expect(kernel.resolveProvider((any ThemeProviding).self)?.themes.count == 22)
+        // 设计类插件（图标/促销图/思维导图/简历/原型）均为 disabledByDefault，
+        // 未启用时不贡献 ActivityBar 条目，因此此处只统计默认启用的插件。
         #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.count == 10)
     }
 
@@ -501,7 +529,7 @@ struct FactoryLumiTests {
         #expect(manager != nil)
         // 默认 LLM Provider 插件注册全部内建供应商，包含 Codex 与 MLX 本地供应商。
         // 注意：总量随供应商目录变化，调整内建供应商时需要同步更新此断言。
-        #expect(manager?.providerCount == 33)
+        #expect(manager?.providerCount == 34)
         #expect(manager?.allProviders().filter { $0.providerInfo.isLocal }.count == 8)
         #expect(manager?.providerID == "llm-provider-manager")
     }
@@ -533,5 +561,33 @@ struct FactoryLumiTests {
 
         #expect(response?.content == "echo:hi")
         #expect(response?.model == "echo-1")
+    }
+
+    /// 设置窗口默认选中规则（回归测试）：
+    /// 全新启动后应选中 order 最小的入口，且入口列表按 order 升序。
+    ///
+    /// 背景：`addEntries` 会走 `registerEntries`，其"选中为空则锁定为当时
+    /// 列表第一个"的语义会让**最先注册入口的插件**（boot order 最小者）
+    /// 意外成为默认选中，与"默认选中第一个"的设计意图相悖。
+    /// Wakey 已修复（宿主在内核启动后重置），本测试验证 Lumi 是否存在同样问题。
+    @Test("设置窗口默认选中 order 最小的入口")
+    func settingsSelectsFirstEntryByOrderOnBoot() throws {
+        let kernel = try KernelFactory.makeKernel()
+        let settings = try #require(kernel.resolveProvider((any SettingViewProviding).self))
+
+        let entries = settings.entries
+        #expect(!entries.isEmpty, "设置入口应在内核启动后完成注册")
+
+        let orders = entries.map(\.order)
+        #expect(orders == orders.sorted(), "entries must be sorted by order ascending")
+
+        let entryList = entries.map { "\($0.id)#\($0.order)" }.joined(separator: ", ")
+        print("LUMI-ENTRIES: \(entryList)")
+        print("LUMI-SELECTED: \(settings.selectedEntryID ?? "nil")")
+
+        #expect(
+            settings.selectedEntryID == entries.first?.id,
+            "默认应选中 \(entries.first?.id ?? "nil")，实际为 \(settings.selectedEntryID ?? "nil")"
+        )
     }
 }

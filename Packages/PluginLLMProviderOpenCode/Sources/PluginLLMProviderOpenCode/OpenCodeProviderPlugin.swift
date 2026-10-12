@@ -3,8 +3,7 @@ import os
 import KernelCore
 import ProviderLLMManager
 import KitLLM
-import KitSuperLog
-
+import LumiLoggingKit
 /// OpenCode 供应商装配插件（KernelCore 生态）。
 ///
 /// 在 `onBoot` 中把 GoProvider 和 ZenProvider 注册进

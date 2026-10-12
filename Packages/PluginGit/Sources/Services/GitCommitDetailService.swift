@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import KitShell
+import ProviderGit
 
 /// Git Commit Detail 服务
 ///
@@ -14,7 +15,7 @@ public enum GitCommitDetailService {
 
     /// 将日期字符串（多种 ISO 格式）统一格式化为 "yyyy-MM-dd HH:mm:ss"
     public static func formattedDate(_ dateString: String) -> String {
-        let formatters = DateParseHelper.formatHandlers
+        let formatters = GitDateFormatting.formatHandlers
 
         for formatter in formatters {
             if let date = formatter.date(from: dateString) {
@@ -83,12 +84,10 @@ public enum GitCommitDetailService {
     /// - Returns: (commit 详情, 变更文件列表)
     public static func loadCommitDetail(path: String, hash: String) async throws -> (GitCommitDetail, [GitChangedFile]) {
         async let detailTask = GitService.shared.getCommitDetail(path: path, hash: hash)
-        async let filesTask = Task.detached(priority: .userInitiated) {
-            try GitService.shared.getCommitChangedFiles(path: path, hash: hash)
-        }
+        async let filesTask = GitService.shared.getCommitChangedFiles(path: path, hash: hash)
 
         let detail = try await detailTask
-        let files = (try? await filesTask.value) ?? []
+        let files = (try? await filesTask) ?? []
         return (detail, files)
     }
 

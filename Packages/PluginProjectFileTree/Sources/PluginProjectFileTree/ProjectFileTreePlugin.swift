@@ -1,11 +1,12 @@
 import Foundation
 import KernelCore
-import KitSuperLog
+import LumiLoggingKit
 import LumiUI
 import os
 import ProviderConversationInput
 import ProviderProject
 import ProviderRailView
+import ProviderRootView
 import ProviderStorage
 import ProviderToast
 import SwiftUI
@@ -19,7 +20,7 @@ import SwiftUI
 /// - 通过 `ProjectProviding` / `ConversationInputProviding` / `ToastProviding`
 ///   注入文件树所需的项目、发送到对话与提示能力。
 @MainActor
-public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
+public final class ProjectFileTreePlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.project-file-tree", category: "ProjectFileTree")
     public nonisolated static let emoji = "🌲"
     public nonisolated static let verbose = false
@@ -38,11 +39,12 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
     public nonisolated static let railTabID = "explorer"
 
     public let id = pluginID
+    public let legacyDataDirectoryNames = ["ProjectFileTree"]
     public let order = 30
     public let metadata = PluginMetadata(
         id: pluginID,
-        name: "Project File Tree",
-        description: "Browse project files with Git status, drag-and-drop and file operations in the Explorer rail.",
+        name: pluginLocalization.string("Project File Tree"),
+        description: pluginLocalization.string("Browse project files with Git status, drag-and-drop and file operations in the Explorer rail."),
         version: "1.0.0",
         category: .project,
         stage: .preview,
@@ -55,6 +57,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
     private var packageDependencyStore: PackageDependencyStore?
     private var projectObserver: ProjectProvidingObserver?
     private weak var railView: (any RailViewProviding)?
+    private weak var rootView: (any RootViewProviding)?
 
     public init() {}
 
@@ -72,7 +75,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             FileTreeSettings.shared.configure(
                 pluginDirectory: storage.pluginDataDirectory(
-                    for: ProjectFileTreePluginRuntimeBridge.pluginName
+                    for: id
                 )
             )
         } else {
@@ -122,6 +125,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
             return
         }
         self.railView = railView
+        rootView = kernel.resolveProvider((any RootViewProviding).self)
 
         updateExplorerTabVisibility(
             for: project?.currentProject,
@@ -140,6 +144,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
         fileTreeObserver = nil
         packageDependencyStore = nil
         railView?.removeTabs(ids: [Self.railTabID])
+        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         railView = nil
     }
 
@@ -158,7 +163,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
                 RailTabItem(
                     id: Self.railTabID,
                     category: .fileTree,
-                    title: "Explorer",
+                    title: pluginLocalization.string("Explorer"),
                     systemImage: "square.grid.2x2.fill",
                     order: order
                 ) {
@@ -171,5 +176,6 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
                 }
             ])
         }
+        rootView?.setRailViewVisible(railView.hasVisibleTabs)
     }
 }

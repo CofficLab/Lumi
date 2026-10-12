@@ -1,5 +1,6 @@
 import Foundation
 import PDFKit
+import BookletMakerCore
 
 // MARK: - Splitter Protocol
 

@@ -1,6 +1,6 @@
 import KitAgentTool
 import KernelCore
-import KitLocalization
+import LumiLocalizationKit
 import LumiUI
 import KitMarkdown
 import ProviderConversation
@@ -18,7 +18,7 @@ struct ThinkingPopoverContent: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
-                Text(LumiPluginLocalization.string("思考过程", bundle: .module))
+                Text(pluginLocalization.string("思考过程"))
                     .font(.appCaptionEmphasized)
                     .foregroundColor(theme.textSecondary)
 

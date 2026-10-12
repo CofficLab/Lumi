@@ -1,5 +1,5 @@
 import AppKit
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 import os
 

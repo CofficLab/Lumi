@@ -8,26 +8,12 @@ public struct ProcessNetworkListView: View {
     public var body: some View {
         VStack(spacing: 0) {
             // Toolbar
-            HStack {
-                Text(LumiPluginLocalization.string("Process Monitor", bundle: .module))
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(.primary)
-
-                Spacer()
-
-                Toggle(LumiPluginLocalization.string("Active Only", bundle: .module), isOn: $viewModel.onlyActiveProcesses)
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-
-                GlassTextField(
-                    title: "搜索",
-                    text: $viewModel.processSearchText,
-                    placeholder: LumiPluginLocalization.string("Search...", bundle: .module)
-                )
-                .frame(width: 160)
-            }
-            .padding(10)
-            .background(Material.regularMaterial)
+            Text(pluginLocalization.string("Process Monitor"))
+                .font(.appBodyEmphasized)
+                .foregroundColor(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
+                .background(Material.regularMaterial)
 
             // Table Header
             GeometryReader { geometry in
@@ -37,15 +23,15 @@ public struct ProcessNetworkListView: View {
                 let availableWidth = max(0, geometry.size.width - (horizontalPadding * 2) - scrollBarWidth)
                 
                 HStack(spacing: 0) {
-                    Text(LumiPluginLocalization.string("App", bundle: .module))
+                    Text(pluginLocalization.string("App"))
                         .frame(width: availableWidth * 0.50, alignment: .leading)
 
                     Spacer()
 
-                    Text(LumiPluginLocalization.string("Down", bundle: .module))
+                    Text(pluginLocalization.string("Down"))
                         .frame(width: availableWidth * 0.2, alignment: .trailing)
 
-                    Text(LumiPluginLocalization.string("Up", bundle: .module))
+                    Text(pluginLocalization.string("Up"))
                         .frame(width: availableWidth * 0.2, alignment: .trailing)
                 }
                 .font(.caption)
@@ -63,7 +49,7 @@ public struct ProcessNetworkListView: View {
             if viewModel.filteredProcesses.isEmpty {
                 VStack {
                     Spacer()
-                    Text(LumiPluginLocalization.string("No active processes", bundle: .module))
+                    Text(pluginLocalization.string("No active processes"))
                         .foregroundColor(.secondary)
                     Spacer()
                 }

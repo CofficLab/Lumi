@@ -3,7 +3,7 @@ import KernelCore
 import ProviderDocsView
 import ProviderIdleTime
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 空闲时间插件（KernelCore 版本）。
@@ -14,9 +14,10 @@ import os
 /// - 贡献关于文档；
 /// - onShutdown 全部撤回。
 @MainActor
-public final class IdleTimePlugin: SuperPlugin, SuperLog {
+public final class IdleTimePlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.idle-time", category: "IdleTime")
     public let id = "com.coffic.lumi.plugin.idle-time"
+    public let legacyDataDirectoryNames = ["IdleTime"]
     public let order = 96
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.idle-time",
@@ -36,8 +37,8 @@ public final class IdleTimePlugin: SuperPlugin, SuperLog {
 
     public func onRegister(kernel: KernelCoreContainer) throws {
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: LumiPluginLocalization.string("Idle Time", bundle: .module)) { IdleTimeAboutView() })
-            docs.addManual(DocsEntry(id: id, name: LumiPluginLocalization.string("Idle Time", bundle: .module)) { IdleTimeManualView() })
+            docs.addAbout(DocsEntry(id: id, name: pluginLocalization.string("Idle Time")) { IdleTimeAboutView() })
+            docs.addManual(DocsEntry(id: id, name: pluginLocalization.string("Idle Time")) { IdleTimeManualView() })
         }
     }
 

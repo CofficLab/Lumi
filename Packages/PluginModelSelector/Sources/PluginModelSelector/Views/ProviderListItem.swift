@@ -10,6 +10,8 @@ struct ProviderListItem: View {
     let info: LLMProviderInfo
     let isSelected: Bool
     let onSelect: () -> Void
+    var canRefreshModels: Bool = false
+    var onRefreshModels: (() -> Void)? = nil
 
     var body: some View {
         AppListRow(isSelected: isSelected, action: onSelect) {
@@ -38,6 +40,18 @@ struct ProviderListItem: View {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 14))
                         .foregroundColor(theme.primary)
+                }
+            }
+        }
+        .contextMenu {
+            if canRefreshModels {
+                Button {
+                    onRefreshModels?()
+                } label: {
+                    Label(
+                        pluginLocalization.string("Refresh Models"),
+                        systemImage: "arrow.clockwise"
+                    )
                 }
             }
         }

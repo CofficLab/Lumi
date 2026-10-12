@@ -81,12 +81,4 @@ final class QuickLauncherSettingsViewModel: ObservableObject {
     func resetHotkey() {
         hotkeyManager.resetToDefault()
     }
-
-    func openDataDirectory() {
-        let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("com.coffic.Lumi", isDirectory: true)
-        guard let url else { return }
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        NSWorkspace.shared.open(url)
-    }
 }

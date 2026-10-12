@@ -1,7 +1,9 @@
-import EditorService
+import EditorLanguageRuntime
 import Foundation
 import KernelCore
 import PluginCodeEditorLanguages
+import ProviderEditor
+import PluginCodeEditorHost
 import Testing
 
 @Suite(.serialized)
@@ -11,12 +13,8 @@ struct CodeEditorLanguagesTests {
     func registersLanguages() throws {
         LanguageRegistry.shared.reset()
         let kernel = KernelCoreContainer()
-        let editor = EditorService(editorExtensionRegistry: EditorExtensionRegistry())
-        try kernel.registerProvider(EditorService.self, editor)
-        let plugin = CodeEditorLanguagesSuperPlugin()
-
-        try plugin.onBoot(kernel: kernel)
-
+        try kernel.start(plugins: [CodeEditorHostSuperPlugin(), CodeEditorLanguagesSuperPlugin()])
+        defer { try? kernel.stop() }
         for descriptor in CodeEditorLanguagesSuperPlugin.descriptors {
             let context = try #require(LanguageRegistry.shared.context(for: descriptor.languageId))
             #expect(
@@ -34,10 +32,8 @@ struct CodeEditorLanguagesTests {
     func detectsLanguages() throws {
         LanguageRegistry.shared.reset()
         let kernel = KernelCoreContainer()
-        let editor = EditorService(editorExtensionRegistry: EditorExtensionRegistry())
-        try kernel.registerProvider(EditorService.self, editor)
-        let plugin = CodeEditorLanguagesSuperPlugin()
-        try plugin.onBoot(kernel: kernel)
+        try kernel.start(plugins: [CodeEditorHostSuperPlugin(), CodeEditorLanguagesSuperPlugin()])
+        defer { try? kernel.stop() }
 
         let expectations: [(String, String)] = [
             ("App.swift", "swift"),

@@ -2,7 +2,7 @@ import Foundation
 
 enum ResumeDesignerLocalization {
     static func string(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module, table: "Localizable")
+        pluginLocalization.string(key)
     }
 
     static func format(_ key: String, _ arguments: CVarArg...) -> String {

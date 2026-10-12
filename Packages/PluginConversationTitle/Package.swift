@@ -9,8 +9,8 @@ let package = Package(
         .library(name: "PluginConversationTitle", targets: ["PluginConversationTitle"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
@@ -24,9 +24,9 @@ let package = Package(
         .target(
             name: "PluginConversationTitle",
             dependencies: [
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "KitAgentTool",
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 "ProviderChatSection",
                 "ProviderConversation",
                 "ProviderMessage",

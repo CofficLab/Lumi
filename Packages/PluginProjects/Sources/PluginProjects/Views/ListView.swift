@@ -23,9 +23,9 @@ struct ListView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            AppSearchBar(text: $searchText, placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search", bundle: .module)))
+            AppSearchBar(text: $searchText, placeholder: LocalizedStringKey(pluginLocalization.string("Search")))
 
-            AppButton(LumiPluginLocalization.string("Add", bundle: .module), systemImage: "folder.badge.plus", size: .small) {
+            AppButton(pluginLocalization.string("Add"), systemImage: "folder.badge.plus", size: .small) {
                 addProject()
             }
         }
@@ -40,9 +40,9 @@ struct ListView: View {
                 // 列表为空：引导添加项目（项目是可选功能，无项目时聊天仍可正常使用）
                 AppEmptyState(
                     icon: "folder.badge.plus",
-                    title: LumiPluginLocalization.string("No Projects", bundle: .module),
-                    description: LumiPluginLocalization.string("Adding a project gives the agent file context. This is optional — chat works without one.", bundle: .module),
-                    actionTitle: LumiPluginLocalization.string("Add Project", bundle: .module),
+                    title: pluginLocalization.string("No Projects"),
+                    description: pluginLocalization.string("Adding a project gives the agent file context. This is optional — chat works without one."),
+                    actionTitle: pluginLocalization.string("Add Project"),
                     action: addProject
                 )
                 .frame(maxWidth: .infinity, minHeight: 126)
@@ -50,7 +50,7 @@ struct ListView: View {
                 // 仅为搜索无匹配
                 AppEmptyState(
                     icon: "magnifyingglass",
-                    title: LumiPluginLocalization.string("No Projects", bundle: .module)
+                    title: pluginLocalization.string("No Projects")
                 )
                 .frame(maxWidth: .infinity, minHeight: 126)
             }

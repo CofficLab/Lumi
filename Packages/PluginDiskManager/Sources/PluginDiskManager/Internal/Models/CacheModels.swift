@@ -42,9 +42,9 @@ public struct CacheCategory: Identifiable, Hashable, Sendable {
 
         public var label: String {
             switch self {
-            case .safe: return LumiPluginLocalization.string("Safe", bundle: .module)
-            case .medium: return LumiPluginLocalization.string("Medium", bundle: .module)
-            case .risky: return LumiPluginLocalization.string("Risky", bundle: .module)
+            case .safe: return pluginLocalization.string("Safe")
+            case .medium: return pluginLocalization.string("Medium")
+            case .risky: return pluginLocalization.string("Risky")
             }
         }
     }

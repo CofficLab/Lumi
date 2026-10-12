@@ -93,8 +93,8 @@ struct ProjectsStoreTests {
         }
     }
 
-    /// 存储目录 key 为 "Projects"。
-    @Test func storageDirectoryKeyIsProjects() {
-        #expect(ProjectsPlugin.storageDirectoryKey == "Projects")
+    /// 新版本存储目录直接使用插件 ID；旧目录名由迁移协议处理。
+    @Test func storageDirectoryUsesPluginID() {
+        #expect(ProjectsPlugin().id == "com.coffic.lumi.plugin.projects")
     }
 }

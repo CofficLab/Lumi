@@ -26,7 +26,7 @@ struct ConnectionsListView: View {
     var body: some View {
         VStack(spacing: 0) {
             DatabaseSidebarHeaderBar(
-                title: LumiPluginLocalization.string("Connections", bundle: .module),
+                title: pluginLocalization.string("Connections"),
                 systemImage: "cylinder.split.1x2",
                 onAdd: { showAddConfigSheet = true },
                 onToggleMode: onToggleMode,
@@ -70,11 +70,11 @@ struct ConnectionsListView: View {
         VStack(spacing: 8) {
             SidebarEmptyView(
                 systemImage: "cylinder.split.1x2",
-                title: LumiPluginLocalization.string("No saved connections", bundle: .module),
-                description: LumiPluginLocalization.string("Click + to add a new connection.", bundle: .module)
+                title: pluginLocalization.string("No saved connections"),
+                description: pluginLocalization.string("Click + to add a new connection.")
             )
             AppButton(
-                LumiPluginLocalization.string("Add Connection", bundle: .module),
+                pluginLocalization.string("Add Connection"),
                 systemImage: "plus",
                 style: .secondary,
                 size: .small,
@@ -117,12 +117,12 @@ struct ConnectionsListView: View {
             Button {
                 editingConfig = config
             } label: {
-                Label(LumiPluginLocalization.string("Edit", bundle: .module), systemImage: "pencil")
+                Label(pluginLocalization.string("Edit"), systemImage: "pencil")
             }
             Button(role: .destructive) {
                 viewModel.removeConfig(config)
             } label: {
-                Label(LumiPluginLocalization.string("Delete", bundle: .module), systemImage: "trash")
+                Label(pluginLocalization.string("Delete"), systemImage: "trash")
             }
         }
     }
@@ -165,7 +165,7 @@ struct ConnectionsListView: View {
     private var footer: some View {
         HStack(spacing: 8) {
             AppButton(
-                LumiPluginLocalization.string("Add Connection", bundle: .module),
+                pluginLocalization.string("Add Connection"),
                 systemImage: "plus",
                 style: .ghost,
                 fillsWidth: true,
@@ -173,7 +173,7 @@ struct ConnectionsListView: View {
             )
             if viewModel.isConnected {
                 AppButton(
-                    LumiPluginLocalization.string("Disconnect", bundle: .module),
+                    pluginLocalization.string("Disconnect"),
                     systemImage: "power",
                     style: .secondary,
                     action: { Task { await viewModel.disconnect() } }

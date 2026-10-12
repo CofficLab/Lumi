@@ -1,3 +1,4 @@
+import Foundation
 import KernelCore
 import ProviderActivityBar
 import ProviderChatSection
@@ -5,7 +6,7 @@ import ProviderRootView
 import ProviderRailView
 import ProviderStorage
 import ProviderToolbar
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// Persists the last active Rail tab ID for the Chat panel.
@@ -62,8 +63,10 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
     private var railObserver: ChatPanelRailObserver?
+    private var rootViewObserver: (any RootViewObserverHandle)?
     private var activeTabStore: FileRailActiveTabStore?
     private var railView: (any RailViewProviding)?
+    private var isChatActive = false
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -115,6 +118,17 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         // is active while Chat owns the panel.
         self.railView = railView
         self.activeTabStore = activeTabStore
+        rootViewObserver = rootView.addRootViewObserver { [weak self, weak rootView] event in
+            guard let self,
+                  self.isChatActive,
+                  case .railViewVisibilityChanged(false) = event else { return }
+            // The host initializes Rail visibility from `hasVisibleTabs` after
+            // plugins boot. Keep the Rail available while Chat owns the workbench.
+            if let railView = self.railView {
+                rootView?.setRailView(railView.makeRailView())
+            }
+            rootView?.setRailViewVisible(true)
+        }
         let railObserver = railView.flatMap { rail in
             activeTabStore.map { store in
                 ChatPanelRailObserver(
@@ -130,12 +144,13 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
 
         activityBar.addItems([ActivityBarItem(
             id: entryID,
-            title: LumiPluginLocalization.string("Chat", bundle: .module),
+            title: pluginLocalization.string("Chat"),
             systemImage: "bubble.left.and.bubble.right.fill",
             order: order,
             ownerPluginID: id
         ) { state in
             let isChatActive = state == .activated
+            self.isChatActive = isChatActive
             railObserver?.isActive = isChatActive
             toolbar?.setVisibleCategories(isChatActive ? [.global, .chat, .project] : Set(ToolbarItemCategory.allCases))
             chat.setVisible(isChatActive)
@@ -159,6 +174,10 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             rootView.setContentViewHidden(isChatActive)
             rootView.setContentHeaderViewHidden(!isChatActive)
             railView?.setVisibleCategories(isChatActive ? [.chat, .fileTree] : Set(RailViewCategory.allCases))
+            if let railView {
+                rootView.setRailView(railView.makeRailView())
+            }
+            rootView.setRailViewVisible(isChatActive || (railView?.hasVisibleTabs ?? false))
             // Restore the last active tab when Chat becomes active.
             if isChatActive, let savedTabID = activeTabStore?.load() {
                 railView?.activateTabWhenAvailable(id: savedTabID)
@@ -166,6 +185,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         }])
         
         activityBar.activateItem(id: entryID)
+        isChatActive = true
         chat.setVisible(true)
         chat.setContextActive(true)
         chat.setActiveContext(.defaultChat)
@@ -181,6 +201,10 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         )
         rootView.setContentHeaderViewHidden(true)
         railView?.setVisibleCategories([.chat, .fileTree])
+        if let railView {
+            rootView.setRailView(railView.makeRailView())
+        }
+        rootView.setRailViewVisible(true)
         // Begin tab restoration in onReady(); RailView also retries when the
         // view appears or dynamic tabs are registered later.
     }
@@ -201,13 +225,23 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
+        isChatActive = false
+        rootViewObserver?.cancel()
+        rootViewObserver = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(false)
         if wasActive {
             kernel.resolveProvider((any ChatSectionProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentViewHidden(false)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
-            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+            if let rootView = kernel.resolveProvider((any RootViewProviding).self) {
+                if let railView {
+                    rootView.setRailView(railView.makeRailView())
+                }
+                rootView.setRailViewVisible(railView?.hasVisibleTabs ?? false)
+            }
         }
     }
 }

@@ -1,24 +1,29 @@
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 extension VM {
     func loadApps(silent: Bool = false) async {
+        guard !isLoadingApps else { return }
+        isLoadingApps = true
+        defer { isLoadingApps = false }
+
         if silent {
             do {
-                let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-                apps = try await client.listApps(search: query.isEmpty ? nil : query)
-                connectionStatus = AppStoreConnectLocalization.string("Connected")
-                applyPersistedOrDefaultSelectedApp()
+                try await reloadAppsFromNetwork()
             } catch {
                 Self.logger.error("\(Self.t)loadApps(silent) failed: \(error.localizedDescription)")
             }
         } else {
             await runBusy {
-                let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-                apps = try await client.listApps(search: query.isEmpty ? nil : query)
-                connectionStatus = AppStoreConnectLocalization.string("Connected")
-                applyPersistedOrDefaultSelectedApp()
+                try await reloadAppsFromNetwork()
             }
         }
+    }
+
+    func reloadAppsFromNetwork() async throws {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        apps = try await client.listApps(search: query.isEmpty ? nil : query)
+        connectionStatus = AppStoreConnectLocalization.string("Connected")
+        applyPersistedOrDefaultSelectedApp()
     }
 
     func selectApp(_ app: AppStoreApp, openDistribution: Bool = false) {

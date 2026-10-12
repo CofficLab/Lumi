@@ -36,7 +36,7 @@ struct ConnectionPopoverView: View {
         HStack(spacing: 6) {
             Image(systemName: "cylinder.split.1x2")
                 .foregroundColor(theme.primary)
-            Text(LumiPluginLocalization.string("Database Connections", bundle: .module))
+            Text(pluginLocalization.string("Database Connections"))
                 .font(.appBodyEmphasized)
                 .foregroundColor(theme.textPrimary)
             Spacer()
@@ -53,7 +53,7 @@ struct ConnectionPopoverView: View {
             VStack(spacing: 6) {
                 Image(systemName: "tray")
                     .foregroundColor(theme.textSecondary)
-                Text(LumiPluginLocalization.string("No saved connections", bundle: .module))
+                Text(pluginLocalization.string("No saved connections"))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
             }
@@ -153,7 +153,7 @@ struct ConnectionPopoverView: View {
     private var footer: some View {
         HStack(spacing: 8) {
             AppButton(
-                LumiPluginLocalization.string("Add Connection", bundle: .module),
+                pluginLocalization.string("Add Connection"),
                 systemImage: "plus",
                 style: .ghost,
                 fillsWidth: true,
@@ -161,7 +161,7 @@ struct ConnectionPopoverView: View {
             )
             if viewModel.isConnected {
                 AppButton(
-                    LumiPluginLocalization.string("Disconnect", bundle: .module),
+                    pluginLocalization.string("Disconnect"),
                     systemImage: "power",
                     style: .secondary,
                     fillsWidth: false,

@@ -1,8 +1,7 @@
 import os
 import KernelCore
 import ProviderChatSection
-import KitSuperLog
-
+import LumiLoggingKit
 /// Chat File Attachment Plugin（KernelCore 版本）
 ///
 /// 由旧版 `Plugins/ChatFileAttachmentPlugin`（KernelLumi / LumiPlugin 架构）复刻而来：
@@ -35,7 +34,7 @@ public final class ChatFileAttachmentPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public var name: String {
-        LumiPluginLocalization.string("Chat File Attachment", bundle: .module)
+        pluginLocalization.string("Chat File Attachment")
     }
 
 

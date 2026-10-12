@@ -516,6 +516,7 @@
       }
     },
     "Switched to" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

@@ -29,11 +29,10 @@ public struct ImportPromoAssetTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let sourcePath = try PromoToolSupport.required("sourcePath", arguments)
-        let scope = try await PromoToolSupport.resolveScope(arguments)
         let taskID = try PromoToolSupport.required("taskId", arguments)
         let imageID = try PromoToolSupport.required("imageId", arguments)
         let directory = try PromoToolSupport.store.assetsDirectoryURL(
-            storagePath: try await PromoToolSupport.storagePath(for: scope),
+            storagePath: try await PromoToolSupport.storagePath(),
             taskSlug: taskID,
             imageSlug: imageID
         )
@@ -42,7 +41,7 @@ public struct ImportPromoAssetTool: SuperAgentTool {
             destinationDirectory: directory,
             preferredFileName: PromoToolSupport.string(arguments, "fileName")
         )
-        await PromoToolSupport.notify(scope: scope, taskID: taskID, imageID: imageID)
-        return "Imported promotional asset (scope=\(scope.rawValue)). relativePath=\(asset.relativePath) size=\(asset.pixelWidth)x\(asset.pixelHeight)"
+        await PromoToolSupport.notify(taskID: taskID, imageID: imageID)
+        return "Imported promotional asset. relativePath=\(asset.relativePath) size=\(asset.pixelWidth)x\(asset.pixelHeight)"
     }
 }

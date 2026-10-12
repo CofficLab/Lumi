@@ -1,10 +1,10 @@
-import LumiUI
 import KitResume
+import LumiUI
 import SwiftUI
 
 private typealias L = ResumeDesignerLocalization
 
-/// 简历 Rail 容器：列出应用数据目录（app 存储）下的简历。
+/// Project-local resume document browser injected into the workspace Rail.
 public struct ResumeRailView: View {
     @ObservedObject private var workspace: WorkspaceStore
     @LumiTheme private var theme
@@ -15,72 +15,80 @@ public struct ResumeRailView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Text(L.string("Resumes")).font(.headline)
-                Spacer()
-                Text("\(workspace.appResumes.count)")
-                    .font(.footnote.monospacedDigit())
-                    .foregroundStyle(theme.textTertiary)
-                Button { workspace.reload() } label: { Image(systemName: "arrow.clockwise") }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(theme.textTertiary)
-                    .help(L.string("Refresh"))
+            AppToolbarContainer(
+                height: 40,
+                backgroundStyle: .panel,
+                padding: EdgeInsets(
+                    top: DesignTokens.Spacing.sm,
+                    leading: DesignTokens.Spacing.md,
+                    bottom: DesignTokens.Spacing.sm,
+                    trailing: DesignTokens.Spacing.md
+                )
+            ) {
+                HStack(spacing: DesignTokens.Spacing.sm) {
+                    AppToolbarTitleLabel(title: L.string("Resumes"))
+                    AppTag("\(workspace.projectResumes.count)", style: .subtle)
+                    Spacer(minLength: 0)
+                    AppIconButton(systemImage: "arrow.clockwise", action: workspace.reload)
+                        .accessibilityLabel(L.string("Refresh"))
+                        .help(L.string("Refresh"))
+                }
             }
-            .padding(.horizontal, DesignTokens.Spacing.md)
-            .padding(.vertical, DesignTokens.Spacing.sm)
-            Divider()
+            .borderBottom()
 
-            if workspace.appStorageDirectory == nil {
-                ResumeEmptyStateView(message: L.string("Plugin storage is unavailable."))
-            } else if workspace.appResumes.isEmpty {
-                ResumeEmptyStateView(message: L.string("Ask the Agent to create a resume."))
+            if workspace.projectStorageDirectory == nil {
+                AppEmptyState(
+                    icon: "folder",
+                    title: L.string("Open a project to enable project-local storage.")
+                )
+            } else if workspace.projectResumes.isEmpty {
+                AppEmptyState(
+                    icon: "doc.badge.plus",
+                    title: L.string("Ask the Agent to create a resume.")
+                )
             } else {
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                        ForEach(workspace.appResumes) { document in
+                    LazyVStack(spacing: DesignTokens.Spacing.xs) {
+                        ForEach(workspace.projectResumes) { document in
                             resumeRow(document)
                         }
                     }
-                    .padding(.horizontal, DesignTokens.Spacing.sm)
-                    .padding(.vertical, DesignTokens.Spacing.xs)
+                    .padding(DesignTokens.Spacing.sm)
                 }
             }
         }
-        .background(Color(nsColor: .controlBackgroundColor))
+        .appSurface(style: .panel, cornerRadius: 0)
     }
 
-    // MARK: - 子视图
-
     private func resumeRow(_ document: ResumeDocument) -> some View {
-        let isSelected = workspace.selectedResumeID == document.id
-        return Button {
-            workspace.select(resumeID: document.id)
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "doc.text")
-                    .font(.caption)
-                    .foregroundStyle(isSelected ? theme.primary : theme.textTertiary)
-                VStack(alignment: .leading, spacing: 1) {
+        AppListRow(
+            isSelected: workspace.selectedResumeID == document.id,
+            action: { workspace.select(resumeID: document.id) }
+        ) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .fill(theme.primary.opacity(0.10))
+                    Image(systemName: "doc.text")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(theme.primary)
+                }
+                .frame(width: 34, height: 40)
+
+                VStack(alignment: .leading, spacing: 3) {
                     Text(document.title)
-                        .font(.caption)
+                        .font(.appBodyEmphasized)
+                        .foregroundStyle(theme.textPrimary)
                         .lineLimit(1)
-                        .foregroundStyle(isSelected ? theme.primary : theme.textPrimary)
                     Text("\(document.paper.rawValue.uppercased()) · \(document.template.rawValue)")
-                        .font(.caption2)
-                        .foregroundStyle(theme.textTertiary)
+                        .font(.appCaption)
+                        .foregroundStyle(theme.textSecondary)
                         .lineLimit(1)
                 }
-                Spacer()
+
+                Spacer(minLength: 0)
             }
-            .padding(.vertical, 2)
-            .padding(.horizontal, DesignTokens.Spacing.xs)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isSelected ? theme.primary.opacity(0.1) : Color.clear)
-            )
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
         .contextMenu {
             Button(role: .destructive) {
                 workspace.deleteResume(id: document.id)
@@ -90,8 +98,6 @@ public struct ResumeRailView: View {
         }
     }
 }
-
-// MARK: - 预览
 
 #Preview {
     ResumeRailView(workspace: WorkspaceStore.shared)

@@ -184,7 +184,7 @@ struct StoryWriterManualView: View {
     // MARK: - Localization
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key)
+        pluginLocalization.string(key)
     }
 }
 

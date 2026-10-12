@@ -12,15 +12,16 @@ import ProviderRootView
 import ProviderStorage
 import ProviderToolManager
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 @MainActor
-public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
+public final class StoryWriterSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.story-writer", category: "StoryWriter")
     public let id = "com.coffic.lumi.plugin.story-writer"
+    public let legacyDataDirectoryNames = ["StoryWriter"]
     public let order = 90
-    public let metadata = PluginMetadata(id: "com.coffic.lumi.plugin.story-writer", name: LumiPluginLocalization.string("Story Writer", bundle: .module), description: LumiPluginLocalization.string("A two-pane workspace for crafting stories with AI assistance.", bundle: .module), category: .project, stage: .preview, policy: .disabledByDefault)
+    public let metadata = PluginMetadata(id: "com.coffic.lumi.plugin.story-writer", name: pluginLocalization.string("Story Writer"), description: pluginLocalization.string("A two-pane workspace for crafting stories with AI assistance."), category: .project, stage: .preview, policy: .disabledByDefault)
     public static let railTabID = "com.coffic.lumi.plugin.story-writer.outline"
     private let entryID = "com.coffic.lumi.plugin.story-writer.entry"
     private var viewModel: StoryWriterViewModel?
@@ -35,7 +36,7 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        let directory = kernel.resolveProvider((any StorageProviding).self)?.pluginDataDirectory(for: "StoryWriter")
+        let directory = kernel.resolveProvider((any StorageProviding).self)?.pluginDataDirectory(for: id)
         StoryWriterStorage.configureV2(directory: directory)
         let viewModel = StoryWriterViewModel(store: StoryStore(pluginDirectory: directory ?? FileManager.default.temporaryDirectory))
         self.viewModel = viewModel
@@ -70,12 +71,13 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
                         .appendingPathComponent("chat-section-width.plist", isDirectory: false)
                 )
             }
-        rail?.addTabs([RailTabItem(id: Self.railTabID, category: .project, title: LumiPluginLocalization.string("Story Outline", bundle: .module), systemImage: "list.bullet.rectangle.portrait", order: order) { StoryOutlineRootView() }])
+        rail?.addTabs([RailTabItem(id: Self.railTabID, category: .project, title: pluginLocalization.string("Story Outline"), systemImage: "list.bullet.rectangle.portrait", order: order) { StoryOutlineRootView() }])
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([ActivityBarItem(id: entryID, title: metadata.name, systemImage: "book.closed.fill", order: order, ownerPluginID: id) { state in
             if state == .activated {
                 toolbar?.setVisibleCategories([.global, .project])
                 root?.setContentHeaderViewHidden(true)
                 rail?.setVisibleTabID(Self.railTabID)
+                root?.setRailViewVisible(rail?.hasVisibleTabs ?? false)
                 rail?.activateWidthProfile(
                     ownerID: pluginID,
                     recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
@@ -91,6 +93,7 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
                 toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                 root?.setContentHeaderViewHidden(false)
                 rail?.setVisibleCategories(Set(RailViewCategory.allCases))
+                root?.setRailViewVisible(rail?.hasVisibleTabs ?? false)
                 chat?.deactivateWidthProfile(ownerID: pluginID)
                 rail?.deactivateWidthProfile(ownerID: pluginID)
             }
@@ -114,7 +117,9 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any ChatSectionProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
-            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         }
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         let tools = kernel.resolveProvider((any ToolManagerProviding).self)

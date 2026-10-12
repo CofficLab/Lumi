@@ -25,13 +25,13 @@ public struct PortManagerView: View {
             HStack {
                 AppSearchBar(
                     text: $searchText,
-                    placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search port, PID, or process name", bundle: .module))
+                    placeholder: LocalizedStringKey(pluginLocalization.string("Search port, PID, or process name"))
                 )
 
                 Spacer()
 
                 AppButton(
-                    LocalizedStringKey(LumiPluginLocalization.string("Refresh", bundle: .module)),
+                    LocalizedStringKey(pluginLocalization.string("Refresh")),
                     systemImage: "arrow.clockwise",
                     style: .secondary,
                     size: .small
@@ -47,14 +47,14 @@ public struct PortManagerView: View {
 
             if isLoading && ports.isEmpty {
                 AppLoadingOverlay(
-                    message: LocalizedStringKey(LumiPluginLocalization.string("Loading Ports", bundle: .module)),
+                    message: LocalizedStringKey(pluginLocalization.string("Loading Ports")),
                     size: .medium
                 )
             } else if ports.isEmpty {
                 AppEmptyState(
                     icon: "network.slash",
-                    title: LocalizedStringKey(LumiPluginLocalization.string("No Listening Ports", bundle: .module)),
-                    description: LocalizedStringKey(LumiPluginLocalization.string("No listening ports found.", bundle: .module))
+                    title: LocalizedStringKey(pluginLocalization.string("No Listening Ports")),
+                    description: LocalizedStringKey(pluginLocalization.string("No listening ports found."))
                 )
             } else {
                 List {
@@ -72,13 +72,13 @@ public struct PortManagerView: View {
         .task {
             await refresh()
         }
-        .alert(Text(verbatim: LumiPluginLocalization.string("Error", bundle: .module)), isPresented: $showError, actions: {
+        .alert(Text(verbatim: pluginLocalization.string("Error")), isPresented: $showError, actions: {
             Button(role: .cancel) {
             } label: {
-                Text(LumiPluginLocalization.string("OK", bundle: .module))
+                Text(pluginLocalization.string("OK"))
             }
         }, message: {
-            Text(errorMessage ?? LumiPluginLocalization.string("Unknown error", bundle: .module))
+            Text(errorMessage ?? pluginLocalization.string("Unknown error"))
         })
         .frame(maxWidth: .infinity)
     }
@@ -92,7 +92,7 @@ public struct PortManagerView: View {
         } catch {
             ports = []
             errorMessage = String(
-                format: LumiPluginLocalization.string("Failed to scan ports: %@", bundle: .module),
+                format: pluginLocalization.string("Failed to scan ports: %@"),
                 error.localizedDescription
             )
             showError = true
@@ -106,7 +106,7 @@ public struct PortManagerView: View {
             try? await Task.sleep(nanoseconds: 500000000) // Wait 0.5s
             await refresh()
         } catch {
-            errorMessage = LumiPluginLocalization.string("Failed to kill process: \(error.localizedDescription)", bundle: .module)
+            errorMessage = pluginLocalization.string("Failed to kill process: \(error.localizedDescription)")
             showError = true
         }
     }
@@ -147,7 +147,7 @@ public struct PortRowView: View {
                             .font(.caption)
                             .monospaced()
 
-                        Text(verbatim: LumiPluginLocalization.string("•", bundle: .module))
+                        Text(verbatim: pluginLocalization.string("•"))
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                         Text("PID: \(port.pid)")
@@ -157,7 +157,7 @@ public struct PortRowView: View {
                             .background(Color(hex: "98989E").opacity(0.2))
                             .cornerRadius(4)
 
-                        Text(verbatim: LumiPluginLocalization.string("•", bundle: .module))
+                        Text(verbatim: pluginLocalization.string("•"))
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                         Text(port.user)
@@ -172,7 +172,7 @@ public struct PortRowView: View {
                 AppIconButton(systemImage: "xmark.circle.fill", tint: Color(hex: "FF453A").opacity(0.8), size: .regular) {
                     showConfirm = true
                 }
-                .help(LumiPluginLocalization.string("Kill Process", bundle: .module))
+                .help(pluginLocalization.string("Kill Process"))
             }
             .confirmationDialog(
                 Text("Are you sure you want to kill process \(port.command) (PID: \(port.pid))?"),
@@ -181,18 +181,18 @@ public struct PortRowView: View {
                 Button(role: .destructive) {
                     onKill()
                 } label: {
-                    Text(verbatim: LumiPluginLocalization.string("Kill Process", bundle: .module))
+                    Text(verbatim: pluginLocalization.string("Kill Process"))
                 }
                 Button(role: .cancel) {
                 } label: {
-                    Text(LumiPluginLocalization.string("Cancel", bundle: .module))
+                    Text(pluginLocalization.string("Cancel"))
                 }
             } message: {
-                Text(verbatim: LumiPluginLocalization.string("This action will force terminate the process, which may lead to data loss.", bundle: .module))
+                Text(verbatim: pluginLocalization.string("This action will force terminate the process, which may lead to data loss."))
             }
         }
         .padding(.vertical, 4)
-        .navigationTitle(LumiPluginLocalization.string("Port Manager", bundle: .module))
+        .navigationTitle(pluginLocalization.string("Port Manager"))
     }
 }
 

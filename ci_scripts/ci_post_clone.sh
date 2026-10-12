@@ -29,7 +29,6 @@ echo "    Swift 版本: $(swift --version 2>/dev/null | head -1)"
 SCRIPTS_DIR="${WORKSPACE_ROOT}/.github/scripts"
 SET_VERSION_SCRIPT=""
 case "${CI_TAG:-}" in
-    booklet-v*)         SET_VERSION_SCRIPT="${SCRIPTS_DIR}/set-booklet-version.sh" ;;
     appicondesigner-v*) SET_VERSION_SCRIPT="${SCRIPTS_DIR}/set-appicondesigner-version.sh" ;;
     caddesigner-v*)     SET_VERSION_SCRIPT="${SCRIPTS_DIR}/set-caddesigner-version.sh" ;;
     databasemanager-v*) SET_VERSION_SCRIPT="${SCRIPTS_DIR}/set-databasemanager-version.sh" ;;

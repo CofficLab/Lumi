@@ -24,9 +24,6 @@ struct GeneralSettingsDetailView: View {
     var body: some View {
         AppSettingsContentScaffold(maxContentWidth: nil) {
             VStack(alignment: .leading, spacing: 24) {
-#if DEBUG
-                debugHeader
-#endif
                 onboardingSection
                 lumiSection
                 websiteSection
@@ -45,20 +42,6 @@ struct GeneralSettingsDetailView: View {
             uninstallSheet
         }
     }
-
-    // MARK: - Debug Header
-
-    #if DEBUG
-    private var debugHeader: some View {
-        HStack(spacing: 10) {
-            Spacer()
-            AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", style: .warning, size: .small) {
-                openDataDirectory()
-            }
-        }
-        .font(.appCaption)
-    }
-    #endif
 
     // MARK: - 新手引导
 
@@ -111,12 +94,12 @@ struct GeneralSettingsDetailView: View {
 
     private var lumiSection: some View {
         AppSettingSection(
-            title: LumiPluginLocalization.string("Lumi", bundle: .module),
+            title: pluginLocalization.string("Lumi"),
             titleAlignment: .leading
         ) {
             VStack(spacing: 0) {
                 AppSettingRow(
-                    title: LumiPluginLocalization.string("Name", bundle: .module),
+                    title: pluginLocalization.string("Name"),
                     description: bundleInfo.name,
                     icon: "app"
                 ) {
@@ -134,7 +117,7 @@ struct GeneralSettingsDetailView: View {
                 Divider()
                     .padding(.vertical, 8)
                 AppSettingRow(
-                    title: LumiPluginLocalization.string("Version", bundle: .module),
+                    title: pluginLocalization.string("Version"),
                     description: bundleInfo.version ?? "Not Set",
                     icon: "info.circle"
                 ) {
@@ -143,11 +126,28 @@ struct GeneralSettingsDetailView: View {
                 Divider()
                     .padding(.vertical, 8)
                 AppSettingRow(
-                    title: LumiPluginLocalization.string("Build", bundle: .module),
+                    title: pluginLocalization.string("Build"),
                     description: bundleInfo.build ?? "Not Set",
                     icon: "hammer"
                 ) {
                     EmptyView()
+                }
+                Divider()
+                    .padding(.vertical, 8)
+                AppSettingRow(
+                    title: "占用空间",
+                    description: viewModel.storageSizeDescription,
+                    icon: "internaldrive"
+                ) {
+                    AppButton(
+                        "打开数据库目录",
+                        systemImage: "folder",
+                        style: .secondary,
+                        size: .small
+                    ) {
+                        viewModel.openStorageDirectory()
+                    }
+                    .disabled(!viewModel.isStorageAvailable)
                 }
             }
         }
@@ -189,17 +189,17 @@ struct GeneralSettingsDetailView: View {
     /// 点击广播 `checkForUpdates` 通知，由宿主（如 Sparkle 更新插件）消费。
     private var updatesSection: some View {
         AppSettingSection(
-            title: LumiPluginLocalization.string("Updates", bundle: .module),
+            title: pluginLocalization.string("Updates"),
             titleAlignment: .leading
         ) {
             VStack(spacing: 0) {
                 AppSettingRow(
-                    title: LumiPluginLocalization.string("Check for Updates", bundle: .module),
+                    title: pluginLocalization.string("Check for Updates"),
                     description: "Check whether a newer version of Lumi is available.",
                     icon: "arrow.down.circle"
                 ) {
                     AppButton(
-                        LumiPluginLocalization.string("Check...", bundle: .module),
+                        pluginLocalization.string("Check..."),
                         systemImage: "arrow.triangle.2.circlepath",
                         style: .secondary,
                         size: .small
@@ -399,16 +399,4 @@ struct GeneralSettingsDetailView: View {
         formatter.countStyle = .file
         return formatter.string(fromByteCount: bytes)
     }
-
-    // MARK: - Debug Helpers
-
-    #if DEBUG
-    private func openDataDirectory() {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("com.coffic.Lumi", isDirectory: true)
-        guard let url = appSupport else { return }
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        NSWorkspace.shared.open(url)
-    }
-    #endif
 }

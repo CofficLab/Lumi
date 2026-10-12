@@ -6,8 +6,9 @@ import ProviderToolManager
 
 /// Provides the Agent with a durable, plugin-owned place for plan documents.
 @MainActor
-public final class AgentPlanStoragePlugin: SuperPlugin {
+public final class AgentPlanStoragePlugin: SuperPlugin, PluginDataMigrating {
     public static let pluginID = "com.coffic.lumi.plugin.agent-plan-storage"
+    public let legacyDataDirectoryNames = ["AgentPlanStorage"]
     public static let toolNames = ["write_plan", "read_plan", "list_plans", "delete_plan"]
     public static let cleanupInterval: Duration = .seconds(6 * 60 * 60)
 
@@ -39,7 +40,7 @@ public final class AgentPlanStoragePlugin: SuperPlugin {
         }
 
         let directory = storage
-            .pluginDataDirectory(for: "AgentPlanStorage")
+            .pluginDataDirectory(for: id)
             .appendingPathComponent("plans", isDirectory: true)
         let service = try PlanFileStorageService(directory: directory)
         self.service = service

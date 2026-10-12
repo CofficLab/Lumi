@@ -44,7 +44,7 @@ struct AgentRulesListView: View {
 
             AppSearchBar(
                 text: $searchText,
-                placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search", bundle: .module))
+                placeholder: LocalizedStringKey(pluginLocalization.string("Search"))
             )
         }
         .padding(.horizontal, 12)
@@ -60,14 +60,14 @@ struct AgentRulesListView: View {
             if viewModel.rules.isEmpty {
                 AppEmptyState(
                     icon: "doc.text",
-                    title: LumiPluginLocalization.string("No Rules", bundle: .module),
-                    description: LumiPluginLocalization.string("No rules available for the current project.", bundle: .module)
+                    title: pluginLocalization.string("No Rules"),
+                    description: pluginLocalization.string("No rules available for the current project.")
                 )
                 .frame(maxWidth: .infinity, minHeight: 126)
             } else {
                 AppEmptyState(
                     icon: "magnifyingglass",
-                    title: LumiPluginLocalization.string("No Rules", bundle: .module)
+                    title: pluginLocalization.string("No Rules")
                 )
                 .frame(maxWidth: .infinity, minHeight: 126)
             }

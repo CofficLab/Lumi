@@ -1,5 +1,6 @@
 import CoreGraphics
 import SwiftUI
+import BookletMakerCore
 
 #if canImport(AppKit)
 import AppKit

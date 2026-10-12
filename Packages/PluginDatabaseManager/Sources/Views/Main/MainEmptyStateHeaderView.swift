@@ -32,16 +32,16 @@ struct MainEmptyStateHeaderView: View {
             Image(systemName: "cylinder.split.1x2")
                 .font(.appLargeTitle)
                 .foregroundColor(theme.textSecondary)
-            Text(LumiPluginLocalization.string("Select a database to connect", bundle: .module))
+            Text(pluginLocalization.string("Select a database to connect"))
                 .font(.appTitle)
                 .foregroundColor(theme.textSecondary)
-            Text(LumiPluginLocalization.string("Pick a saved connection below, or add a new one to get started.", bundle: .module))
+            Text(pluginLocalization.string("Pick a saved connection below, or add a new one to get started."))
                 .font(.appCaption)
                 .foregroundColor(theme.textSecondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 360)
             AppButton(
-                LumiPluginLocalization.string("Add Connection", bundle: .module),
+                pluginLocalization.string("Add Connection"),
                 systemImage: "plus",
                 style: .primary,
                 fillsWidth: false,

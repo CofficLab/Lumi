@@ -1,7 +1,6 @@
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 // MARK: - System Utilities
 
 class SystemUtil: SuperLog {

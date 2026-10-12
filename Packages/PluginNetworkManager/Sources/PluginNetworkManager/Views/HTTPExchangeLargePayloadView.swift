@@ -27,12 +27,12 @@ struct HTTPExchangeLargePayloadView: View {
             // Metadata row
             HStack(spacing: 16) {
                 metadataPill(
-                    LumiPluginLocalization.string("Size", bundle: .module),
+                    pluginLocalization.string("Size"),
                     ByteCountFormatter.string(fromByteCount: Int64(bodyData?.count ?? 0), countStyle: .binary)
                 )
                 if let mimeType, !mimeType.isEmpty {
                     metadataPill(
-                        LumiPluginLocalization.string("Type", bundle: .module),
+                        pluginLocalization.string("Type"),
                         mimeType
                     )
                 }
@@ -41,7 +41,7 @@ struct HTTPExchangeLargePayloadView: View {
             // Action buttons
             HStack(spacing: 8) {
                 AppButton(
-                    LumiPluginLocalization.string("Download Body", bundle: .module),
+                    pluginLocalization.string("Download Body"),
                     systemImage: "arrow.down.doc",
                     size: .small
                 ) {
@@ -53,13 +53,13 @@ struct HTTPExchangeLargePayloadView: View {
         .padding(12)
         .background(theme.textSecondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
         .alert(
-            LumiPluginLocalization.string("Export failed", bundle: .module),
+            pluginLocalization.string("Export failed"),
             isPresented: Binding(
                 get: { exportError != nil },
                 set: { if !$0 { exportError = nil } }
             )
         ) {
-            Button(LumiPluginLocalization.string("OK", bundle: .module), role: .cancel) {}
+            Button(pluginLocalization.string("OK"), role: .cancel) {}
         } message: {
             Text(exportError ?? "")
         }
@@ -82,7 +82,7 @@ struct HTTPExchangeLargePayloadView: View {
 
     private func exportBodyAsText() {
         guard let bodyData, !bodyData.isEmpty else {
-            exportError = LumiPluginLocalization.string("No body data to save.", bundle: .module)
+            exportError = pluginLocalization.string("No body data to save.")
             return
         }
 

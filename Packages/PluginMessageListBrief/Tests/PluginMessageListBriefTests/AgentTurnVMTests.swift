@@ -47,7 +47,6 @@ private final class StubMessageCapability: MessageListMessageCapability {
         developerMode: nil,
         messages: messages,
         rendering: nil,
-        toolManager: nil,
         agentTurn: nil,
     )
     let item = AgentTurnPresentationItem(

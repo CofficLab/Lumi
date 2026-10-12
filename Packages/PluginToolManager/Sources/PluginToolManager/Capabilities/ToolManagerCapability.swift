@@ -14,9 +14,6 @@ protocol ToolManagerCapability {
     /// 是否已配置记录存储（决定执行日志 / 统计 Tab 是否可用）。
     var hasLogStore: Bool { get }
 
-    /// 记录存储目录（用于打开数据目录）。
-    var storeDirectory: URL? { get }
-
     /// 记录总数。
     func countRecords() async -> Int
 
@@ -48,10 +45,6 @@ final class ToolManagerCapabilityAdapter: ToolManagerCapability {
 
     var hasLogStore: Bool {
         store != nil
-    }
-
-    var storeDirectory: URL? {
-        store?.directory
     }
 
     func countRecords() async -> Int {

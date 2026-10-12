@@ -21,16 +21,16 @@ public struct QuickFileSearchSettingsView: View {
 
     private var statusSection: some View {
         AppSettingSection(
-            title: LumiPluginLocalization.string("Current Status", bundle: .module),
+            title: pluginLocalization.string("Current Status"),
             titleAlignment: .leading
         ) {
             VStack(spacing: 0) {
                 AppSettingRow(
                     title: projectPath.isEmpty
-                        ? LumiPluginLocalization.string("No project selected", bundle: .module)
-                        : LumiPluginLocalization.string("Project indexed", bundle: .module),
+                        ? pluginLocalization.string("No project selected")
+                        : pluginLocalization.string("Project indexed"),
                     description: projectPath.isEmpty
-                        ? LumiPluginLocalization.string("Please select a project to enable file search", bundle: .module)
+                        ? pluginLocalization.string("Please select a project to enable file search")
                         : URL(fileURLWithPath: projectPath).lastPathComponent,
                     icon: projectPath.isEmpty ? "circle" : "checkmark.circle.fill"
                 ) {
@@ -42,7 +42,7 @@ public struct QuickFileSearchSettingsView: View {
                         .padding(.vertical, 8)
 
                     AppSettingRow(
-                        title: LumiPluginLocalization.string("File indexing is automatic when switching projects", bundle: .module),
+                        title: pluginLocalization.string("File indexing is automatic when switching projects"),
                         icon: "info.circle"
                     ) {
                         EmptyView()
@@ -54,31 +54,31 @@ public struct QuickFileSearchSettingsView: View {
 
     private var instructionsSection: some View {
         AppSettingSection(
-            title: LumiPluginLocalization.string("How to Use", bundle: .module),
+            title: pluginLocalization.string("How to Use"),
             titleAlignment: .leading
         ) {
             VStack(spacing: 0) {
                 instructionRow(
                     key: "Cmd+P",
-                    description: LumiPluginLocalization.string("Open file search", bundle: .module),
+                    description: pluginLocalization.string("Open file search"),
                     icon: "command"
                 )
                 Divider().padding(.vertical, 8)
                 instructionRow(
                     key: "↑ ↓",
-                    description: LumiPluginLocalization.string("Navigate results", bundle: .module),
+                    description: pluginLocalization.string("Navigate results"),
                     icon: "arrow.up.arrow.down"
                 )
                 Divider().padding(.vertical, 8)
                 instructionRow(
                     key: "Enter",
-                    description: LumiPluginLocalization.string("Select file", bundle: .module),
+                    description: pluginLocalization.string("Select file"),
                     icon: "return"
                 )
                 Divider().padding(.vertical, 8)
                 instructionRow(
                     key: "Esc",
-                    description: LumiPluginLocalization.string("Close search", bundle: .module),
+                    description: pluginLocalization.string("Close search"),
                     icon: "escape"
                 )
             }

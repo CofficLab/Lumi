@@ -102,7 +102,7 @@ struct PluginActivityBarTests {
     @Test("激活入口时仅 Code Editor 保留 Content Footer")
     func contentFooterVisibilityFollowsActiveItem() throws {
         let kernel = KernelCoreContainer()
-        let rootView = DefaultRootViewProvider()
+        let rootView = DefaultRootViewProviding()
         let legacyProvider = DefaultActivityBarProviding()
         legacyProvider.addItems([
             ActivityBarItem(id: "other", title: "Other", systemImage: "square"),
@@ -245,7 +245,7 @@ struct PluginActivityBarTests {
             .appendingPathComponent("PluginActivityBarTests-\(UUID().uuidString)")
         let storage = TestStorageProvider(dataRootDirectory: directory)
         let stateStore = ActivityBarStateStore(
-            directory: storage.pluginDataDirectory(for: "ActivityBar")
+            directory: storage.pluginDataDirectory(for: PluginActivityBar().id)
         )
         stateStore.saveActiveItemID("preferred")
         defer { try? FileManager.default.removeItem(at: directory) }

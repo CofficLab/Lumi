@@ -11,14 +11,18 @@ struct ContextPopover: View {
     let events: [Message]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            windowSection
-            if !events.isEmpty {
-                Divider()
-                compactionSection
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                windowSection
+                if !events.isEmpty {
+                    Divider()
+                    compactionSection
+                }
             }
         }
         .background(theme.background)
+        .frame(width: 360)
+        .frame(maxHeight: 520)
     }
 
     // MARK: - Window Section
@@ -79,11 +83,12 @@ struct ContextPopover: View {
                 .padding(.vertical, 8)
             }
         }
+        .padding(.top, 12)
     }
 
     // MARK: - Usage Row
 
-    /// 第一行：左侧是输入估算与输入预算，右侧是上下文窗口圆环。
+    /// 第一行：左侧是输入估算、输入预算与请求次数，右侧是上下文窗口圆环。
     private var usageRow: some View {
         HStack(alignment: .center, spacing: DesignTokens.Spacing.md) {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs + 2) {
@@ -105,6 +110,10 @@ struct ContextPopover: View {
                         .font(.caption)
                         .foregroundStyle(theme.textSecondary)
                 }
+                usageLine(
+                    label: String(localized: "Requests", defaultValue: "请求次数", bundle: .module),
+                    value: "\(history.samples.count)"
+                )
             }
 
             Spacer(minLength: 0)

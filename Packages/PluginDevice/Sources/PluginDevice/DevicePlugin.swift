@@ -1,5 +1,5 @@
 import KernelCore
-import KitSuperLog
+import LumiLoggingKit
 import os
 import ProviderActivityBar
 import ProviderToolbar
@@ -20,8 +20,8 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
     public let order = 6
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.device-info",
-        name: LumiPluginLocalization.string("Device", bundle: .module),
-        description: LumiPluginLocalization.string("View device information and hardware status.", bundle: .module),
+        name: pluginLocalization.string("Device"),
+        description: pluginLocalization.string("View device information and hardware status."),
         category: .system,
         stage: .stable,
         policy: .disabledByDefault
@@ -55,7 +55,7 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
             let entry = SettingEntryItem(
                 id: "\(id).memory-settings",
-                title: LumiPluginLocalization.string("Memory Monitor", bundle: .module),
+                title: pluginLocalization.string("Memory Monitor"),
                 systemImage: "memorychip",
                 order: order
             ) {
@@ -90,6 +90,7 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         // 切换到其它入口时恢复 Rail 可见性。
                         rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                         rootView?.setContentHeaderViewHidden(false)
                     }
                 },
@@ -125,6 +126,7 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         rootView?.setRailView(railView?.makeRailView())
+        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         rootView?.setContentHeaderViewHidden(false)
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)

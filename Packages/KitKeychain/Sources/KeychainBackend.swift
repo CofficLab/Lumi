@@ -15,7 +15,11 @@ public struct KeychainResult: Sendable {
 /// Protocol for Keychain backend implementations.
 public protocol KeychainBackend: Sendable {
     /// Read data from Keychain.
-    func read(service: String, account: String) -> KeychainResult
+    ///
+    /// - Parameter allowInteraction: 是否允许系统弹出授权/解锁 UI（如要求
+    ///   用户输入登录钥匙串密码）。后台进程、无界面 agent 与自动触发路径
+    ///   必须传 `false`，否则读取会阻塞在无人应答的系统对话框上。
+    func read(service: String, account: String, allowInteraction: Bool) -> KeychainResult
 
     /// Write data to Keychain.
     @discardableResult
@@ -24,6 +28,13 @@ public protocol KeychainBackend: Sendable {
     /// Delete data from Keychain.
     @discardableResult
     func delete(service: String, account: String) -> KeychainResult
+}
+
+public extension KeychainBackend {
+    /// 默认允许交互读取，保持既有调用点行为不变。
+    func read(service: String, account: String) -> KeychainResult {
+        read(service: service, account: account, allowInteraction: true)
+    }
 }
 
 /// System Keychain backend using Security framework.
@@ -51,11 +62,17 @@ public struct SystemKeychainBackend: KeychainBackend {
         return query
     }
 
-    public func read(service: String, account: String) -> KeychainResult {
+    public func read(service: String, account: String, allowInteraction: Bool) -> KeychainResult {
         Self.queue.sync {
             var query = baseQuery(service: service, account: account)
             query[kSecReturnData as String] = true
             query[kSecMatchLimit as String] = kSecMatchLimitOne
+            if !allowInteraction {
+                // 无提示模式：需要用户授权的条目直接返回
+                // errSecInteractionNotAllowed，而不是弹出系统密码框。
+                // headless/后台进程必须走这条路径，否则读取会一直阻塞。
+                query[kSecUseAuthenticationUI as String] = kSecUseAuthenticationUIFail
+            }
 
             var result: AnyObject?
             let status = SecItemCopyMatching(query as CFDictionary, &result)

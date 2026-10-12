@@ -50,7 +50,7 @@ struct BrewManagerEmptyView: View {
                 iconBadge
 
                 VStack(spacing: 8) {
-                    Text(LumiPluginLocalization.string("No packages installed", bundle: .module))
+                    Text(pluginLocalization.string("No packages installed"))
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(theme.textPrimary)
                         .multilineTextAlignment(.center)
@@ -64,7 +64,7 @@ struct BrewManagerEmptyView: View {
 
                 VStack(spacing: 10) {
                     AppButton(
-                        LumiPluginLocalization.string("Browse Packages", bundle: .module),
+                        pluginLocalization.string("Browse Packages"),
                         systemImage: "magnifyingglass",
                         style: .primary,
                         fillsWidth: true
@@ -74,7 +74,7 @@ struct BrewManagerEmptyView: View {
 
                     if let onLearnMore {
                         AppButton(
-                            LumiPluginLocalization.string("Learn More", bundle: .module),
+                            pluginLocalization.string("Learn More"),
                             systemImage: "book",
                             style: .ghost,
                             fillsWidth: true,
@@ -115,10 +115,7 @@ struct BrewManagerEmptyView: View {
     /// Two-line, localized description for users who just opened
     /// the plugin and have not installed anything yet.
     private var description: String {
-        LumiPluginLocalization.string(
-            "Search the Homebrew repository to install your first formula or cask, then come back here to manage updates and uninstalls.",
-            bundle: .module
-        )
+        pluginLocalization.string("Search the Homebrew repository to install your first formula or cask, then come back here to manage updates and uninstalls.")
     }
 }
 

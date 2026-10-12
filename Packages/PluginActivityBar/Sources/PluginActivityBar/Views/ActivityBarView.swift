@@ -12,7 +12,8 @@ private extension Notification.Name {
 ///
 /// 视觉与旧版 `FactoryCore.ActivityBar` 保持一致（即与 `DefaultActivityBarProviding`
 /// 相同的渲染），但在此**完全自实现**，不依赖 `DefaultActivityBarProviding`：
-/// - 48pt 宽的 `.panel` 表面 + 右侧 `theme.divider` 分隔线（`borderTrailing()`）；
+/// - 48pt 宽的 `.panel` 表面 + 右侧 1pt `theme.divider` 分隔线（overlay 自绘，
+///   颜色经 `@LumiTheme` 跟随主题明暗自动变化）；
 /// - 每个入口复用 `AppActivityIconButton`（18pt 图标、左侧 2.5pt 主题色指示条、
 ///   hover 高亮与 LumiMotion 动画），激活态由 `activeItemID` 判定；
 /// - 内容溢出时滚动，配合上下 8pt 渐隐遮罩提示可滚动；
@@ -21,6 +22,7 @@ internal struct ActivityBarView: View {
     private static let logger = Logger(subsystem: "com.coffic.lumi.plugin.activity-bar", category: "View")
 
     @ObservedObject private var viewModel: ActivityBarViewModel
+    @LumiTheme private var theme
 
     init(viewModel: ActivityBarViewModel) {
         self.viewModel = viewModel
@@ -43,7 +45,11 @@ internal struct ActivityBarView: View {
                 .frame(width: 48)
                 .frame(maxHeight: .infinity)
                 .appSurface(style: .panel, cornerRadius: 0)
-                .borderTrailing()
+                .overlay(alignment: .trailing) {
+                    Rectangle()
+                        .fill(theme.divider)
+                        .frame(width: 1)
+                }
                 .contextMenu {
                     Button {
                         NotificationCenter.default.post(name: .lumiOpenSettings, object: nil)

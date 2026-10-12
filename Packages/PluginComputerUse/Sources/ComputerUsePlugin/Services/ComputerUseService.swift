@@ -4,12 +4,6 @@ import Foundation
 import ProviderMessage
 import ScreenCaptureKit
 
-actor ComputerUseActionGate {
-    func perform<T: Sendable>(_ operation: @Sendable () async throws -> T) async rethrows -> T {
-        try await operation()
-    }
-}
-
 final class ComputerUseService: @unchecked Sendable {
     struct ObservationResult: Sendable {
         let observation: ComputerUseObservation
@@ -22,7 +16,6 @@ final class ComputerUseService: @unchecked Sendable {
     private let stateLock = NSLock()
     private var observations: [UUID: ComputerUseObservation] = [:]
     private var observationOrder: [UUID] = []
-    private let actionGate = ComputerUseActionGate()
     private let authorizationStore: ComputerUseAuthorizationStore
 
     init(authorizationStore: ComputerUseAuthorizationStore = .shared) {
@@ -50,8 +43,8 @@ final class ComputerUseService: @unchecked Sendable {
         return try await capture(window: selection)
     }
 
-    func act(observationID: UUID, actions: [ComputerUseAction]) async throws -> ObservationResult {
-        try await actionGate.perform { [self] in
+    @MainActor
+    func act(observationID: UUID, actions: [ComputerUseAction], reason: String) async throws -> ObservationResult {
             guard ComputerUsePermissionService.hasAccessibilityPermission else {
                 throw ComputerUseError.accessibilityPermissionRequired
             }
@@ -62,30 +55,66 @@ final class ComputerUseService: @unchecked Sendable {
                 throw ComputerUseError.applicationNotAllowed(observation.window.applicationName)
             }
 
-            let currentWindow = await MainActor.run {
-                ComputerUseWindowProvider.availableWindows().first(where: { $0.id == observation.window.id })
-            }
+            let currentWindow = ComputerUseWindowProvider.availableWindows().first(where: { $0.id == observation.window.id })
             guard let currentWindow,
                   currentWindow.processIdentifier == observation.window.processIdentifier,
-                  framesMatch(currentWindow.frame, observation.window.frame)
+                  framesMatch(currentWindow.frame, observation.window.frame),
+                  Date().timeIntervalSince(observation.capturedAt) < 60
             else { throw ComputerUseError.staleObservation }
 
-            _ = await MainActor.run {
-                NSRunningApplication(processIdentifier: currentWindow.processIdentifier)?
-                    .activate(options: [])
+        guard actions.contains(where: \.requiresNativeInput) else {
+            for action in actions { try await ComputerUseInputExecutor.execute(action, observation: observation) }
+            return try await capture(window: currentWindow)
+        }
+        guard AccessibilityService.shared.hasRecentInspection(currentWindow.bundleIdentifier) else {
+            throw ComputerUseError.invalidArguments("Call accessibility_observe for this application first. Prefer accessibility_act; native input is only a fallback.")
+        }
+        guard !reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw ComputerUseError.invalidArguments("Explain why Accessibility cannot perform this operation in reason.")
+        }
+        let coordinator = NativeControlCoordinator.shared
+        let session = try await coordinator.acquireWhenAvailable(application: currentWindow.applicationName,
+                                              bundleID: currentWindow.bundleIdentifier, reason: reason)
+        stateLock.withLock { _ = observations.removeValue(forKey: observationID) }
+        defer { coordinator.release(session) }
+        let driver = NativeInputDriver(session: session) { [self] in
+            guard ComputerUsePermissionService.hasAccessibilityPermission,
+                  authorizationStore.isAllowed(currentWindow.bundleIdentifier),
+                  authorizationStore.isNativeAllowed(currentWindow.bundleIdentifier) else { throw NativeControlInterruption.stopped }
+            guard NSWorkspace.shared.frontmostApplication?.processIdentifier == currentWindow.processIdentifier,
+                  let topWindow = ComputerUseWindowProvider.availableWindows().first(where: { $0.processIdentifier == currentWindow.processIdentifier }),
+                  topWindow.id == currentWindow.id,
+                  framesMatch(topWindow.frame, currentWindow.frame) else {
+                throw NativeControlInterruption.focusChanged
             }
-            try await Task.sleep(for: .milliseconds(120))
-            for action in actions {
-                try Task.checkCancellation()
-                try await ComputerUseInputExecutor.execute(action, observation: observation)
+        }
+        defer { driver.releaseHeldInput() }
+        do {
+            try await coordinator.prepare(session)
+            guard Date().timeIntervalSince(observation.capturedAt) < 60 else { throw ComputerUseError.staleObservation }
+            try coordinator.validateOwner(session)
+            NSRunningApplication(processIdentifier: currentWindow.processIdentifier)?.activate(options: [])
+            try await Task.sleep(for: .milliseconds(150))
+            for (index, action) in actions.enumerated() {
+                try coordinator.validateOwner(session)
+                coordinator.updateProgress(computerUseText("Step {current} of {total}", ["current": String(index + 1), "total": String(actions.count)]))
+                try await driver.execute(action, observation: observation)
             }
-            try await Task.sleep(for: .milliseconds(180))
-
-            let updatedWindow = await MainActor.run {
-                ComputerUseWindowProvider.availableWindows().first(where: { $0.id == currentWindow.id })
+            driver.releaseHeldInput()
+            // Release the desktop before screenshot encoding or the next LLM request.
+            coordinator.release(session)
+            return try await capture(window: currentWindow)
+        } catch let interruption as NativeControlInterruption {
+            driver.releaseHeldInput()
+            switch interruption {
+            case .userInput, .focusChanged:
+                try await coordinator.waitForUserAfterInterruption(session)
+            case .stopped:
+                throw ComputerUseError.invalidArguments("Computer operation stopped. Do not retry native input without the user's request.")
+            case .timedOut:
+                throw ComputerUseError.invalidArguments("Computer operation timed out and released the desktop. Observe the current state before continuing.")
             }
-            guard let updatedWindow else { throw ComputerUseError.staleObservation }
-            return try await capture(window: updatedWindow)
+            throw interruption
         }
     }
 

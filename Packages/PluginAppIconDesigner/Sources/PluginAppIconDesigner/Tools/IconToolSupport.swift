@@ -23,17 +23,16 @@ enum IconToolSupport {
         }
     }
 
-    /// 解析工具入参中的 scope：未指定时按是否有打开项目自动选择 project / app。
+    /// 解析工具入参中的 scope：图标文档始终属于当前项目。
     static func resolveScope(_ arguments: [String: ToolArgument]) async throws -> IconScope {
         if let raw = string(arguments, "scope")?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
            !raw.isEmpty {
-            guard let scope = IconScope(rawValue: raw) else {
+            guard raw == IconScope.project.rawValue else {
                 throw IconToolArgumentError.invalid("scope")
             }
-            return scope
+            return .project
         }
-        let hasProject = await (currentProjectPath() != nil)
-        return await MainActor.run { IconDesignerRuntime.defaultScope(hasOpenProject: hasProject) }
+        return .project
     }
 
     /// 指定 scope 的存储路径。无路径时抛 invalidStorageScope。
@@ -95,7 +94,7 @@ enum IconToolSupport {
             result["scope"] = [
                 "type": "string",
                 "enum": IconScope.allCases.map(\.rawValue),
-                "description": "Storage scope: 'project' (current project .lumi folder) or 'app' (application data directory). Defaults to 'project' when a project is open, else 'app'.",
+                "description": "Storage scope. Only 'project' is supported; an open project is required.",
             ]
         }
         if includeDocumentId {

@@ -5,10 +5,11 @@ import ProviderAppUpdate
 import ProviderDiagnostics
 import ProviderDocsView
 import ProviderOnboarding
+import ProviderStorage
 import ProviderUninstall
 import ProviderSettingView
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 设置 - 通用 插件
@@ -27,8 +28,8 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
     public let order = 100
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.setting-general",
-        name: "通用设置",
-        description: "在设置视图中注册「通用」入口，包含新手引导、应用信息、网站与更新。",
+        name: pluginLocalization.string("General Settings"),
+        description: pluginLocalization.string("Registers the General settings entry with onboarding, app info, website and updates."),
         category: .system,
         stage: .stable,
         policy: .alwaysOn
@@ -55,7 +56,7 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
                 items: [
                     CommandItem(
                         id: "\(id).openSettings",
-                        title: LumiPluginLocalization.string("Settings...", bundle: .module),
+                        title: pluginLocalization.string("Settings..."),
                         shortcut: ",",
                         modifiers: .command
                     ) {
@@ -78,6 +79,7 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
         let docsProvider = kernel.resolveProvider((any DocsViewProviding).self)
         let diagnosticsProvider = kernel.resolveProvider((any DiagnosticsProviding).self)
         let onboardingProvider = kernel.resolveProvider((any OnboardingProviding).self)
+        let storageProvider = kernel.resolveProvider((any StorageProviding).self)
         let uninstallProvider = self.uninstallProvider
         let prepareForUninstall: @MainActor () async -> Void = {
             try? await kernel.stopAsync()
@@ -85,10 +87,10 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
 
         let entry = SettingEntryItem(
             id: "general",
-            title: "通用",
+            title: pluginLocalization.string("General"),
             systemImage: "gearshape",
             order: 1
-        ) { [versionProvider, docsProvider, diagnosticsProvider, onboardingProvider, uninstallProvider, prepareForUninstall, kernel] in
+        ) { [versionProvider, docsProvider, diagnosticsProvider, onboardingProvider, storageProvider, uninstallProvider, prepareForUninstall, kernel] in
             // AppUpdateBootstrap is host-owned and may register after
             // plugin boot. Resolve it when the entry is materialized so
             // settings sees the provider in both Debug and Release.
@@ -97,6 +99,7 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
                 diagnosticsProvider: diagnosticsProvider,
                 updateProvider: kernel.resolveProvider((any AppUpdateChannelProviding).self),
                 onboardingProvider: onboardingProvider,
+                storageProvider: storageProvider,
                 uninstallProvider: uninstallProvider,
                 prepareForUninstall: prepareForUninstall
             )

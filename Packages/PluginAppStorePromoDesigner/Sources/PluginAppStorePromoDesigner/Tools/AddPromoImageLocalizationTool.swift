@@ -38,17 +38,16 @@ public struct AddPromoImageLocalizationTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let scope = try await PromoToolSupport.resolveScope(arguments)
         let taskID = try PromoToolSupport.required("taskId", arguments)
         let imageID = try PromoToolSupport.required("imageId", arguments)
         let localized = try PromoToolSupport.store.addLocalization(
             try PromoToolSupport.required("localeIdentifier", arguments),
             copying: PromoToolSupport.string(arguments, "sourceLocaleIdentifier"),
-            storagePath: try await PromoToolSupport.storagePath(for: scope),
+            storagePath: try await PromoToolSupport.storagePath(),
             taskSlug: taskID,
             imageSlug: imageID
         )
-        await PromoToolSupport.notify(scope: scope, taskID: taskID, imageID: imageID)
-        return "Added promotional image language (scope=\(scope.rawValue), locale=\(localized.localeIdentifier)). htmlPath=\(localized.htmlURL.path)"
+        await PromoToolSupport.notify(taskID: taskID, imageID: imageID)
+        return "Added promotional image language (locale=\(localized.localeIdentifier)). htmlPath=\(localized.htmlURL.path)"
     }
 }

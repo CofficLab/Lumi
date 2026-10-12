@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Store Connect Plugin - Settings</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1e1e1e;
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .settings-sidebar {
+            width: 200px;
+            background: #252526;
+            border-right: 1px solid #3c3c3c;
+            padding: 16px 0;
+        }
+
+        .settings-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #cccccc;
+            padding: 0 16px 12px;
+        }
+
+        .settings-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .settings-item:hover {
+            background: #37373d;
+        }
+
+        .settings-item.active {
+            background: #094771;
+        }
+
+        .settings-item-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            background: #858585;
+            border-radius: 4px;
+        }
+
+        .settings-item.active .settings-item-icon {
+            background: #ffffff;
+        }
+
+        .settings-item-text {
+            font-size: 13px;
+        }
+
+        .settings-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1e1e1e;
+        }
+
+        .settings-header {
+            padding: 24px 32px;
+            border-bottom: 1px solid #3c3c3c;
+        }
+
+        .settings-header-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .settings-header-subtitle {
+            font-size: 14px;
+            color: #858585;
+        }
+
+        .settings-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 32px;
+        }
+
+        .card {
+            background: #252526;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title-icon {
+            width: 20px;
+            height: 20px;
+            background: #cccccc;
+            border-radius: 4px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #cccccc;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 6px;
+            background: #3c3c3c;
+            border: 1px solid #4c4c4c;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        .form-input::placeholder {
+            color: #858585;
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .form-help {
+            font-size: 12px;
+            color: #858585;
+            margin-top: 6px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: #3c3c3c;
+            border-radius: 6px;
+            margin-top: 16px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .status-dot.connected {
+            background: #4ec9b0;
+        }
+
+        .status-text {
+            font-size: 13px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .button {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+        }
+
+        .button-primary {
+            background: #0e639c;
+            color: #ffffff;
+        }
+
+        .button-secondary {
+            background: #3c3c3c;
+            color: #ffffff;
+        }
+
+        .button-danger {
+            background: transparent;
+            color: #f44336;
+            border: 1px solid #f44336;
+        }
+
+        .info-box {
+            background: rgba(14, 99, 156, 0.2);
+            border: 1px solid rgba(14, 99, 156, 0.4);
+            border-radius: 6px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .info-box-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #569cd6;
+        }
+
+        .info-box-content {
+            font-size: 13px;
+            color: #cccccc;
+            line-height: 1.6;
+        }
+
+        .info-box-content ol {
+            margin-left: 20px;
+            margin-top: 8px;
+        }
+
+        .info-box-content li {
+            margin-bottom: 4px;
+        }
+
+        .section-divider {
+            height: 1px;
+            background: #3c3c3c;
+            margin: 20px 0;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .radio-circle {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid #4c4c4c;
+        }
+
+        .radio-item.selected .radio-circle {
+            border-color: #0e639c;
+            background: #0e639c;
+        }
+
+        .radio-label {
+            font-size: 14px;
+        }
+
+        .radio-description {
+            font-size: 12px;
+            color: #858585;
+        }
+
+        .status-bar {
+            height: 24px;
+            background: #007acc;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            font-size: 11px;
+            color: #ffffff;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-right: 16px;
+        }
+
+        .status-spacer {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="settings-sidebar">
+            <div class="settings-title">Settings</div>
+            <div class="settings-item">
+                <div class="settings-item-icon"></div>
+                <span class="settings-item-text">General</span>
+            </div>
+            <div class="settings-item">
+                <div class="settings-item-icon"></div>
+                <span class="settings-item-text">Appearance</span>
+            </div>
+            <div class="settings-item">
+                <div class="settings-item-icon"></div>
+                <span class="settings-item-text">Plugins</span>
+            </div>
+            <div class="settings-item active">
+                <div class="settings-item-icon"></div>
+                <span class="settings-item-text">App Store Connect</span>
+            </div>
+        </div>
+
+        <div class="settings-content">
+            <div class="settings-header">
+                <h1 class="settings-header-title">App Store Connect</h1>
+                <p class="settings-header-subtitle">Configure App Store Connect API credentials and connection status.</p>
+            </div>
+
+            <div class="settings-body">
+                <div class="card" data-block="account-config">
+                    <div class="card-title">
+                        <div class="card-title-icon"></div>
+                        Account Configuration
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Issuer ID</label>
+                        <input type="text" class="form-input" placeholder="Enter your Issuer ID" value="d9a45b23-7f7a-4c8f-9b8a-1234567890ab" data-block="issuer-id">
+                        <p class="form-help">Found in App Store Connect, Users and Access, Keys</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Key ID</label>
+                        <input type="text" class="form-input" placeholder="Enter your Key ID" value="ABC123DEF4" data-block="key-id">
+                        <p class="form-help">The Key ID from your App Store Connect API key</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Private Key</label>
+                        <textarea class="form-input form-textarea" placeholder="Paste your private key content here..." data-block="private-key"></textarea>
+                        <p class="form-help">Copy the contents of your .p8 private key file</p>
+                    </div>
+
+                    <div class="status-indicator" data-block="connection-status">
+                        <div class="status-dot connected"></div>
+                        <span class="status-text">Connected to App Store Connect</span>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="button button-primary">Save</button>
+                        <button class="button button-secondary">Test Connection</button>
+                        <button class="button button-danger">Disconnect</button>
+                    </div>
+                </div>
+
+                <div class="card" data-block="setup-guide">
+                    <div class="card-title">
+                        <div class="card-title-icon"></div>
+                        Setup Guide
+                    </div>
+
+                    <div class="info-box">
+                        <div class="info-box-title">How to configure App Store Connect API</div>
+                        <div class="info-box-content">
+                            <ol>
+                                <li>Go to App Store Connect, Users and Access, Keys</li>
+                                <li>Create a new API key with appropriate permissions</li>
+                                <li>Download the .p8 private key file</li>
+                                <li>Copy the Issuer ID and Key ID from the keys page</li>
+                                <li>Paste the private key content in the field above</li>
+                                <li>Click Test Connection to verify your credentials</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <div class="section-divider"></div>
+
+                    <div class="form-group">
+                        <label class="form-label">Required Permissions</label>
+                        <div class="radio-group">
+                            <div class="radio-item selected">
+                                <div class="radio-circle"></div>
+                                <div>
+                                    <div class="radio-label">Admin</div>
+                                    <div class="radio-description">Full access to all App Store Connect features</div>
+                                </div>
+                            </div>
+                            <div class="radio-item">
+                                <div class="radio-circle"></div>
+                                <div>
+                                    <div class="radio-label">Developer</div>
+                                    <div class="radio-description">Access to apps, builds, and testFlight</div>
+                                </div>
+                            </div>
+                            <div class="radio-item">
+                                <div class="radio-circle"></div>
+                                <div>
+                                    <div class="radio-label">Marketing</div>
+                                    <div class="radio-description">Access to metadata and screenshots</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" data-block="advanced-settings">
+                    <div class="card-title">
+                        <div class="card-title-icon"></div>
+                        Advanced Settings
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">API Base URL</label>
+                        <input type="text" class="form-input" value="api.appstoreconnect.apple.com/v1" data-block="api-base-url">
+                        <p class="form-help">Default API endpoint for App Store Connect.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Request Timeout</label>
+                        <input type="number" class="form-input" value="30" min="10" max="120">
+                        <p class="form-help">Timeout in seconds for API requests</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-item">
+            <div style="width: 12px; height: 12px; background: #ffffff; border-radius: 50%; display: inline-block;"></div>
+            Connected
+        </div>
+        <div class="status-item">Lumi v1.2.0</div>
+        <div class="status-spacer"></div>
+        <div class="status-item">3 Apps</div>
+        <div class="status-item">7 Versions</div>
+    </div>
+</body>
+</html>

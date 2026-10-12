@@ -8,6 +8,7 @@ import PluginSettingGeneral
 import PluginSettingView
 import PluginStorage
 import PluginThemePack
+import PluginThemeManager
 import PluginToolManager
 
 /// AppIconDesigner 的专用插件目录。
@@ -22,12 +23,13 @@ public struct DefaultPluginFactory: PluginFactory {
         [
             try! StorageSuperPlugin(),
             CommandPlugin(),
-            PluginSettingView(),
+            PluginSettingView(id: "com.coffic.lumi.plugin.setting-view"),
             PluginLogoManager(),
             PluginToolManager(),
             PluginActivityBar(),
             SettingGeneralPlugin(),
             LogoCofficPlugin(),
+            ThemeManagerPlugin(),
             ThemePackPlugin(),
             AlwaysOnPlugin(AppIconDesignerPlugin()),
         ]

@@ -1,23 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Prompt.Suggestion.Create" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Help me write my resume"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "帮我写一份简历"
-          }
-        }
-      }
-    },
     "" : {
 
     },
@@ -303,6 +286,9 @@
           }
         }
       }
+    },
+    "CV" : {
+
     },
     "Delete" : {
       "localizations" : {
@@ -923,6 +909,7 @@
       }
     },
     "Plugin storage is unavailable." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1072,6 +1059,23 @@
         }
       }
     },
+    "Prompt.Suggestion.Create" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Help me write my resume"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "帮我写一份简历"
+          }
+        }
+      }
+    },
     "Refresh" : {
       "localizations" : {
         "en" : {
@@ -1087,6 +1091,9 @@
           }
         }
       }
+    },
+    "RESUME" : {
+
     },
     "Resume Designer" : {
       "localizations" : {
@@ -1173,6 +1180,7 @@
       }
     },
     "Resumes are stored in the plugin's storage inside the app." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1461,6 +1469,7 @@
       }
     },
     "Toolbar: the Preview / Source switch, the paper size caption, and the Print, Export PDF, and Export PNG buttons." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

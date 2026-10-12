@@ -44,10 +44,10 @@ struct ConnectionFormView: View {
 
             AppCard {
                 VStack(alignment: .leading, spacing: 8) {
-                    GlassTextField(title: "Connection Name", text: $name, placeholder: LumiPluginLocalization.string("My Database", bundle: .module))
+                    GlassTextField(title: "Connection Name", text: $name, placeholder: pluginLocalization.string("My Database"))
 
                     HStack {
-                        Text(LumiPluginLocalization.string("Database Type", bundle: .module))
+                        Text(pluginLocalization.string("Database Type"))
                             .foregroundColor(theme.textSecondary)
                         Spacer()
                         Picker("", selection: $type) {
@@ -61,15 +61,15 @@ struct ConnectionFormView: View {
                     }
 
                     if type == .sqlite {
-                        GlassTextField(title: LumiPluginLocalization.string("Database Path", bundle: .module), text: $sqlitePath, placeholder: "/path/to/db.sqlite")
+                        GlassTextField(title: pluginLocalization.string("Database Path"), text: $sqlitePath, placeholder: "/path/to/db.sqlite")
                     } else {
-                        GlassTextField(title: LumiPluginLocalization.string("Host", bundle: .module), text: $host, placeholder: "127.0.0.1")
-                        GlassTextField(title: LumiPluginLocalization.string("Port", bundle: .module), text: $portText, placeholder: "\(type.defaultPort ?? 0)")
+                        GlassTextField(title: pluginLocalization.string("Host"), text: $host, placeholder: "127.0.0.1")
+                        GlassTextField(title: pluginLocalization.string("Port"), text: $portText, placeholder: "\(type.defaultPort ?? 0)")
                         if type != .redis {
-                            GlassTextField(title: LumiPluginLocalization.string("Database", bundle: .module), text: $database, placeholder: type == .postgresql ? "postgres" : "test")
-                            GlassTextField(title: LumiPluginLocalization.string("Username", bundle: .module), text: $username, placeholder: "user")
+                            GlassTextField(title: pluginLocalization.string("Database"), text: $database, placeholder: type == .postgresql ? "postgres" : "test")
+                            GlassTextField(title: pluginLocalization.string("Username"), text: $username, placeholder: "user")
                         }
-                        GlassTextField(title: LumiPluginLocalization.string("Password", bundle: .module), text: $password, placeholder: passwordPlaceholder, isSecure: true, allowsReveal: true)
+                        GlassTextField(title: pluginLocalization.string("Password"), text: $password, placeholder: passwordPlaceholder, isSecure: true, allowsReveal: true)
 
                         if type.capabilities.supportsSSL {
                             sslPicker
@@ -79,8 +79,8 @@ struct ConnectionFormView: View {
             }
 
             HStack {
-                AppButton(LumiPluginLocalization.string("Cancel", bundle: .module), style: .ghost, fillsWidth: true, action: { isPresented = false })
-                AppButton(LumiPluginLocalization.string("Test Connection", bundle: .module), style: .secondary, fillsWidth: true, action: testConnection)
+                AppButton(pluginLocalization.string("Cancel"), style: .ghost, fillsWidth: true, action: { isPresented = false })
+                AppButton(pluginLocalization.string("Test Connection"), style: .secondary, fillsWidth: true, action: testConnection)
                     .disabled(!canTestConnection())
                 AppButton(saveLabel, style: .primary, fillsWidth: true, action: save)
                     .disabled(!isValid())
@@ -110,7 +110,7 @@ struct ConnectionFormView: View {
     private var sslPicker: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(LumiPluginLocalization.string("SSL / TLS", bundle: .module))
+                Text(pluginLocalization.string("SSL / TLS"))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
                 Text(sslOption.helpText)
@@ -133,8 +133,8 @@ struct ConnectionFormView: View {
 
     private var title: String {
         editing == nil
-            ? LumiPluginLocalization.string("Add Connection", bundle: .module)
-            : LumiPluginLocalization.string("Edit Connection", bundle: .module)
+            ? pluginLocalization.string("Add Connection")
+            : pluginLocalization.string("Edit Connection")
     }
 
     private var saveLabel: String {
@@ -142,7 +142,7 @@ struct ConnectionFormView: View {
     }
 
     private var passwordPlaceholder: String {
-        editing == nil ? "••••••••" : LumiPluginLocalization.string("Leave blank to keep current", bundle: .module)
+        editing == nil ? "••••••••" : pluginLocalization.string("Leave blank to keep current")
     }
 
     // MARK: - Lifecycle
@@ -187,7 +187,7 @@ struct ConnectionFormView: View {
         Task {
             do {
                 try await viewModel.testConnection(config: config)
-                testMessage = LumiPluginLocalization.string("Connection succeeded", bundle: .module)
+                testMessage = pluginLocalization.string("Connection succeeded")
                 testSuccess = true
             } catch {
                 testMessage = error.localizedDescription

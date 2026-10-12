@@ -111,6 +111,15 @@ final class MobileDocumentStore {
         }
     }
 
+    func importPDFs(from urls: [URL]) async throws -> [CurrentPDFDocument] {
+        guard !urls.isEmpty else { return [] }
+        var documents: [CurrentPDFDocument] = []
+        for url in urls {
+            documents.append(try await importPDF(from: url))
+        }
+        return documents
+    }
+
     /// Remove the committed copy and this session's output directory.
     ///
     /// Call when the user closes the document. URLs still referenced by a

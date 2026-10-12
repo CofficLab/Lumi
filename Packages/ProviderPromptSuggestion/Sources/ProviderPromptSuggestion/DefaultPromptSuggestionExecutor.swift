@@ -1,5 +1,5 @@
 import Foundation
-import KitLocalization
+import LumiLocalizationKit
 import KernelCore
 import ProviderActivityBar
 import ProviderMessageSender

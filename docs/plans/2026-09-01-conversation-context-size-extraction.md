@@ -6,7 +6,7 @@
 
 **Architecture:** 保留现有插件 ID `com.coffic.conversation-context-size`、Toolbar placement、排序和 UI 行为，仅迁移上下文插件及其专属视图/格式化工具。`FactoryLumi` 改为依赖并注册新包，`PluginConversationStats` 只保留消息计数、缓存命中率和其它统计能力。
 
-**Tech Stack:** Swift 6 SwiftPM、SwiftUI、KernelCore SuperPlugin、ProviderChatSection、ProviderConversation、ProviderMessage、ProviderLLMManager、ProviderLLMVendors、Swift Testing。
+**Tech Stack:** Swift 6 SwiftPM、SwiftUI、KernelCore SuperPlugin、ProviderChatSection、ProviderConversation、ProviderMessage、ProviderLLMManager、KitLLM、Swift Testing。
 
 ---
 

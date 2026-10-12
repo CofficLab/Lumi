@@ -1,0 +1,126 @@
+import LumiUI
+import SwiftUI
+
+struct AskUserPendingView: View {
+    @LumiTheme private var theme
+
+    let interaction: AskUserPendingInteraction
+
+    @State private var answer = ""
+    @State private var responded = false
+
+    private var isFreeText: Bool {
+        interaction.response.mode == "free_text"
+            || (interaction.response.mode == nil && interaction.response.options.isEmpty)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "questionmark.circle.fill")
+                    .foregroundColor(theme.primary)
+                Text(interaction.response.question)
+                    .font(.appCaption)
+                    .foregroundColor(theme.textPrimary)
+            }
+
+            if isFreeText {
+                HStack(spacing: 8) {
+                    TextField("输入回答…", text: $answer)
+                        .textFieldStyle(.plain)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .background(theme.elevatedSurface)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .disabled(responded)
+
+                    submitButton
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(interaction.response.options) { option in
+                        Button {
+                            submit(option.label)
+                        } label: {
+                            HStack(alignment: .top, spacing: 8) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(option.label)
+                                        .foregroundColor(theme.textPrimary)
+                                    if let description = option.description {
+                                        Text(description)
+                                            .font(.appMicro)
+                                            .foregroundColor(theme.textSecondary)
+                                    }
+                                }
+                                Spacer()
+                                VStack(alignment: .trailing, spacing: 4) {
+                                    if let badge = option.badge {
+                                        AppTag(badge, systemImage: nil, style: .subtle)
+                                            .fixedSize()
+                                    }
+
+                                    if answer == option.label {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundColor(theme.success)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 7)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(theme.elevatedSurface)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                        .accessibilityElement(children: .combine)
+                        .buttonStyle(.plain)
+                        .disabled(responded)
+                    }
+                }
+            }
+
+            if responded {
+                Text("已回答：\(answer)")
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
+            }
+        }
+        .padding(12)
+        .background(theme.surface)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(theme.primary.opacity(0.35), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .onAppear {
+            if let initialAnswer = interaction.initialAnswer {
+                answer = initialAnswer
+                responded = true
+            }
+        }
+    }
+
+    private var submitButton: some View {
+        Button {
+            submit(answer.trimmingCharacters(in: .whitespacesAndNewlines))
+        } label: {
+            Image(systemName: "paperplane.fill")
+                .padding(8)
+                .background(Circle().fill(theme.primary))
+                .foregroundColor(theme.textPrimary.isLightColor ? .black : .white)
+        }
+        .buttonStyle(.plain)
+        .disabled(responded || answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    }
+
+    private func submit(_ value: String) {
+        let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !responded, !value.isEmpty else { return }
+        answer = value
+        responded = true
+        AskUserBridge.shared.resume(
+            conversationId: interaction.conversationID.uuidString,
+            toolCallId: interaction.toolCallID,
+            answer: value
+        )
+    }
+}

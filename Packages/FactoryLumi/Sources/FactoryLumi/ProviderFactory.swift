@@ -14,10 +14,11 @@ import ProviderNetwork
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
+import PluginRootView
 import ProviderSettingView
 import ProviderSkill
+import ProviderAgentRules
 import ProviderStorage
-import ProviderTheme
 import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
@@ -47,20 +48,21 @@ public struct DefaultProviderFactory: ProviderFactory {
         self.dataRootDirectory = dataRootDirectory
     }
 
-    /// 旧插件 ID → 新插件 ID 的别名映射。
-    /// 当前插件管理器的新旧 ID 一致，保留显式映射以兼容旧数据格式。
+    /// 新插件 ID → 旧插件 ID 的兼容映射。
+    /// 读取新 ID 不存在的数据时回退到旧 ID，写入时同步维护两者。
     static let pluginIDAliases: [String: String] = [
         "com.coffic.lumi.plugin.plugin-manager": "com.coffic.lumi.plugin.plugin-manager",
+        "com.coffic.lumi.plugin.caffeinate": "Caffeinate",
     ]
+
+    /// IdleTime 插件的持久化目录名必须与插件自身 ID 一致。
+    private static let idleTimePluginID = "com.coffic.lumi.plugin.idle-time"
+    private static let pluginManagerID = "com.coffic.lumi.plugin.plugin-manager"
+    private static let toolManagerID = "com.coffic.lumi.plugin.tool-manager"
 
     /// 产出 `StorageProviding` 实现（默认 Application Support 磁盘存储）。
     public func makeStorageProvider() -> any StorageProviding {
         DefaultStorageProvider(dataRootDirectory: dataRootDirectory)
-    }
-
-    /// 产出 `ThemeProviding` 实现（默认内置主题注册表 + 选中持久化）。
-    public func makeThemeProvider() -> any ThemeProviding {
-        DefaultThemeProviding()
     }
 
     /// 产出 `ContentViewProviding` 实现（默认持有当前内容视图）。
@@ -158,7 +160,7 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     /// 产出 `RootViewProviding` 实现（默认「工具栏 + 内容区」根布局）。
     public func makeRootViewProvider() -> any RootViewProviding {
-        DefaultRootViewProvider()
+        LumiRootViewProvider()
     }
 
     /// 产出 `ActivityBarProviding` 实现（默认竖直入口栏）。
@@ -208,8 +210,12 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     public func makeIdleTimeProvider(storage: any StorageProviding) -> any IdleTimeProviding {
         // 完整实现：事件持久化 + 休息窗口推断，数据目录遵循 Storage 约定
-        // （<数据根目录>/IdleTime/）。
-        IdleTimeService(store: IdleActivityStore(directoryURL: storage.pluginDataDirectory(for: "IdleTime")))
+        // （<数据根目录>/<IdleTime 插件 ID>/）。
+        IdleTimeService(
+            store: IdleActivityStore(
+                directoryURL: storage.pluginDataDirectory(for: Self.idleTimePluginID)
+            )
+        )
     }
 
     public func makeLegacyDataProvider() -> any LegacyDataProviding {
@@ -245,6 +251,10 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultSkillProvider()
     }
 
+    public func makeAgentRuleProvider() -> any AgentRuleProviding {
+        DefaultAgentRuleProvider()
+    }
+
     /// 产出 `DeveloperModeProviding` 实现（默认内存实现）。
     public func makeDeveloperModeProvider() -> any DeveloperModeProviding {
         DefaultDeveloperModeProviding()
@@ -261,20 +271,16 @@ public struct DefaultProviderFactory: ProviderFactory {
 
         // 必须在启动插件之前注入，使 registerPlugin 能读取用户的禁用状态。
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            try PluginDataMigrationCoordinator.migrateProviderData(
+                storage: storage,
+                pluginID: Self.pluginManagerID,
+                legacyDirectoryNames: ["PluginManager"]
+            )
             kernel.stateStore = PluginEnabledStateStore(
-                pluginDirectory: storage.pluginDataDirectory(for: "PluginManager")
+                pluginDirectory: storage.pluginDataDirectory(for: Self.pluginManagerID)
             )
             kernel.legacyPluginIDAliases = Self.pluginIDAliases
         }
-
-        // 主题 Provider：选中主题持久化遵循 Storage 约定
-        // （<数据根目录>/ThemeManager/theme-selection.plist）。
-        let themeProvider = makeThemeProvider()
-        if let storage = kernel.resolveProvider((any StorageProviding).self),
-           let defaultTheme = themeProvider as? DefaultThemeProviding {
-            defaultTheme.setStorageDirectory(storage.pluginDataDirectory(for: "ThemeManager"))
-        }
-        try kernel.registerProvider((any ThemeProviding).self, themeProvider)
 
         try kernel.registerProvider((any ContentViewProviding).self, makeContentViewProvider())
         try kernel.registerProvider((any ChatSectionProviding).self, makeChatSectionProvider())
@@ -319,8 +325,13 @@ public struct DefaultProviderFactory: ProviderFactory {
         let toolManager = makeToolManagerProvider()
         if let storage = kernel.resolveProvider((any StorageProviding).self),
            let defaultToolManager = toolManager as? DefaultToolManagerProviding {
+            try PluginDataMigrationCoordinator.migrateProviderData(
+                storage: storage,
+                pluginID: Self.toolManagerID,
+                legacyDirectoryNames: ["ToolManager"]
+            )
             defaultToolManager.recordStore = ToolCallRecordStore(
-                databaseRootURL: storage.pluginDataDirectory(for: "ToolManager")
+                databaseRootURL: storage.pluginDataDirectory(for: Self.toolManagerID)
             )
         }
         try kernel.registerProvider((any ToolManagerProviding).self, toolManager)
@@ -384,13 +395,14 @@ public struct DefaultProviderFactory: ProviderFactory {
         try kernel.registerProvider((any ToastProviding).self, makeToastProvider())
         try kernel.registerProvider((any NetworkProviding).self, makeNetworkProvider())
         try kernel.registerProvider((any ToolbarProviding).self, makeToolbarProvider())
-        try kernel.registerProvider((any RootViewProviding).self, makeRootViewProvider())
         try kernel.registerProvider((any ActivityBarProviding).self, makeActivityBarProvider())
         try kernel.registerProvider((any RailViewProviding).self, makeRailViewProvider())
         try kernel.registerProvider((any SettingViewProviding).self, makeSettingViewProvider())
         // Skill 管理：插件技能贡献注册表。必须在插件启动前注册，
         // 使各插件在 onBoot 中能解析到 SkillProviding 并注入技能。
         try kernel.registerProvider((any SkillProviding).self, makeSkillProvider())
+        // Agent Rule 管理：插件规则贡献注册表。必须在插件启动前注册。
+        try kernel.registerProvider((any AgentRuleProviding).self, makeAgentRuleProvider())
 
         // 开发者模式：运行时开关。必须在插件启动前注册，
         // 使 DeveloperModePlugin 在 onBoot 中能解析到。

@@ -43,8 +43,8 @@ struct TextActionsSettingsView: View {
     @State private var enabled = TextActionsSettings.isEnabled
     var body: some View {
         Form {
-            Toggle(LumiPluginLocalization.string("Enable selected-text actions", bundle: .module), isOn: $enabled).onChange(of: enabled) { _, value in TextActionsSettings.setEnabled(value) }
-            Button(LumiPluginLocalization.string("Request Accessibility Permission", bundle: .module)) { TextSelectionManager.shared.requestPermission() }
+            Toggle(pluginLocalization.string("Enable selected-text actions"), isOn: $enabled).onChange(of: enabled) { _, value in TextActionsSettings.setEnabled(value) }
+            Button(pluginLocalization.string("Request Accessibility Permission")) { TextSelectionManager.shared.requestPermission() }
         }.padding()
     }
 }

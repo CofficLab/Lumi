@@ -16,6 +16,72 @@ struct ProviderAgentLoopTests {
     // 消除 KitLLMVendors.ToolCall 与 KitAgentTool.ToolCall 的歧义
     private typealias ToolCall = KitAgentTool.ToolCall
 
+    @Test("结构化失败将网络错误标记为可重试")
+    func networkFailureIsRetryable() {
+        let failure = AgentLoopFailure.from(
+            error: VendorAPIError.requestFailed("connection reset")
+        )
+
+        #expect(failure.kind == .network)
+        #expect(failure.isRetryable)
+        #expect(failure.httpStatusCode == nil)
+    }
+
+    @Test("系统 TLS 错误会归类为可重试网络失败")
+    func systemTLSFailureIsRetryable() {
+        let error = NSError(
+            domain: NSURLErrorDomain,
+            code: NSURLErrorSecureConnectionFailed,
+            userInfo: [NSLocalizedDescriptionKey: "TLS错误导致安全连接失败"]
+        )
+        let failure = AgentLoopFailure.from(error: error, providerID: "goatplan")
+
+        #expect(failure.kind == .network)
+        #expect(failure.isRetryable)
+        #expect(failure.providerID == "goatplan")
+    }
+
+    @Test("结构化失败区分限流、服务端和鉴权错误")
+    func classifiesHTTPFailures() {
+        let rateLimited = AgentLoopFailure.from(
+            error: VendorAPIError.httpStatus(429, "rate limited")
+        )
+        let server = AgentLoopFailure.from(
+            error: VendorAPIError.httpStatus(503, "temporarily unavailable")
+        )
+        let unauthorized = AgentLoopFailure.from(
+            error: VendorAPIError.httpStatus(401, "unauthorized")
+        )
+
+        #expect(rateLimited.kind == .rateLimited)
+        #expect(rateLimited.isRetryable)
+        #expect(rateLimited.httpStatusCode == 429)
+        #expect(server.kind == .server)
+        #expect(server.isRetryable)
+        #expect(unauthorized.kind == .authentication)
+        #expect(!unauthorized.isRetryable)
+    }
+
+    @Test("鉴权、配置和上下文错误默认不可自动重试")
+    func nonRetryableFailuresRemainNonRetryable() {
+        let missingKey = AgentLoopFailure.from(
+            error: VendorAPIError.missingAPIKey("Test")
+        )
+        let invalidURL = AgentLoopFailure.from(
+            error: VendorAPIError.invalidBaseURL("not a URL")
+        )
+        let contextLimit = AgentLoopFailure.from(
+            error: VendorAPIError.httpStatus(400, "prompt is too long for context window")
+        )
+
+        #expect(missingKey.kind == .authentication)
+        #expect(!missingKey.isRetryable)
+        #expect(invalidURL.kind == .configuration)
+        #expect(!invalidURL.isRetryable)
+        #expect(contextLimit.kind == .contextLimit)
+        #expect(!contextLimit.isRetryable)
+    }
+
     @Test("用户文本文件附件会转换为 LLM 用户正文")
     func messageToLLMMessagePreservesUserFile() {
         let message = Message(

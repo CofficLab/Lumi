@@ -1,6 +1,6 @@
 import Foundation
 import Combine
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// CPU history service with high-resolution (1s) and long-term (1m) storage.

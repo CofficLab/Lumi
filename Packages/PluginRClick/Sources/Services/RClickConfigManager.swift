@@ -1,7 +1,6 @@
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// RClick 配置管理器
 ///
 /// 主应用与 LumiFinder 扩展通过 App Group 容器内的 JSON 文件共享配置（`RClickConfig`）。
@@ -17,9 +16,7 @@ public class RClickConfigManager: ObservableObject, SuperLog {
     public nonisolated static let sharedConfigFilename = "RClickConfig.json"
     public nonisolated static let corruptSharedConfigFilename = "RClickConfig.corrupt.json"
 
-    public static let shared = RClickConfigManager()
-
-    private let store: RClickPluginLocalStore
+    private let store: RClickPluginLocalStore?
     private let legacyConfigKey = "rClickConfig"
     private let customAppGroupConfigFileURL: URL?
     
@@ -29,11 +26,7 @@ public class RClickConfigManager: ObservableObject, SuperLog {
         }
     }
     
-    private convenience init() {
-        self.init(appGroupConfigFileURL: nil, store: .shared)
-    }
-
-    init(appGroupConfigFileURL: URL?, store: RClickPluginLocalStore) {
+    init(appGroupConfigFileURL: URL? = nil, store: RClickPluginLocalStore? = nil) {
         self.customAppGroupConfigFileURL = appGroupConfigFileURL
         self.store = store
         self.config = RClickConfig.default
@@ -49,7 +42,7 @@ public class RClickConfigManager: ObservableObject, SuperLog {
             quarantineAppGroupConfigData()
         }
 
-        guard let legacyData = store.data(forKey: legacyConfigKey) else {
+        guard let store, let legacyData = store.data(forKey: legacyConfigKey) else {
             if Self.verbose {
                 Self.logger.info("\(Self.t)配置文件不存在，使用默认配置并写入 App Group")
             }
@@ -67,7 +60,7 @@ public class RClickConfigManager: ObservableObject, SuperLog {
         do {
             let data = try JSONEncoder().encode(config)
             let appGroupSaved = writeAppGroupConfigData(data)
-            let localBackupSaved = store.set(data, forKey: legacyConfigKey)
+            let localBackupSaved = store?.set(data, forKey: legacyConfigKey) ?? true
             if Self.verbose {
                 Self.logger.info("\(Self.t)💾 已保存配置（App Group + 本地备份）")
             }
@@ -136,7 +129,7 @@ public class RClickConfigManager: ObservableObject, SuperLog {
     
     /// 清空所有配置
     public func clearAll() {
-        store.clearAll()
+        store?.clearAll()
         removeAppGroupConfigData()
         self.config = RClickConfig.default
         if Self.verbose {

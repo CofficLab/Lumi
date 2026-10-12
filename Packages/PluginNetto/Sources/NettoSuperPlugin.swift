@@ -3,7 +3,7 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderRootView
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// KernelCore migration of the Netto firewall workspace.

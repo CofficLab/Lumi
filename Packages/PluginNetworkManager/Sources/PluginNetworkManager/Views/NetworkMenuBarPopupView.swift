@@ -86,7 +86,7 @@ public struct NetworkMenuBarPopupView: View {
                     .font(.appMicro)
                     .foregroundColor(.secondary)
 
-                Text(LumiPluginLocalization.string("Last 60 seconds", bundle: .module))
+                Text(pluginLocalization.string("Last 60 seconds"))
                     .font(.appMicro)
                     .foregroundColor(.secondary)
 
@@ -98,7 +98,7 @@ public struct NetworkMenuBarPopupView: View {
                         Circle()
                             .fill(Color.green.opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text(LumiPluginLocalization.string("Down", bundle: .module))
+                        Text(pluginLocalization.string("Down"))
                             .font(.appMicro)
                             .foregroundColor(.secondary)
                     }
@@ -107,7 +107,7 @@ public struct NetworkMenuBarPopupView: View {
                         Circle()
                             .fill(Color.red.opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text(LumiPluginLocalization.string("Up", bundle: .module))
+                        Text(pluginLocalization.string("Up"))
                             .font(.appMicro)
                             .foregroundColor(.secondary)
                     }
@@ -175,7 +175,7 @@ public struct NetworkMenuBarPopupView: View {
                         )
                         .stroke(Color.red.opacity(0.8), lineWidth: 1.2)
                     } else {
-                        Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
+                        Text(pluginLocalization.string("Collecting..."))
                             .font(.appMicro)
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -187,74 +187,6 @@ public struct NetworkMenuBarPopupView: View {
         }
         .padding(.vertical, 8)
         .background(Color.secondary.opacity(0.06))
-    }
-}
-
-// MARK: - Process Row View
-
-public struct ProcessRowView: View {
-    public let process: NetworkProcess
-
-    public var body: some View {
-        HStack(spacing: 8) {
-            // Process icon
-            if let icon = process.icon {
-                AppImageThumbnail(
-                    image: Image(nsImage: icon),
-                    size: CGSize(width: 16, height: 16),
-                    shape: .none
-                )
-            } else {
-                Image(systemName: "app")
-                    .font(.appCaption)
-                    .foregroundColor(.secondary)
-            }
-
-            // Process name
-            VStack(alignment: .leading, spacing: 2) {
-                Text(process.name)
-                    .font(.appCaption)
-                    .foregroundColor(.primary)
-                    .lineLimit(1)
-
-                Text(LumiPluginLocalization.string("PID: \(process.id)", bundle: .module))
-                    .font(.appMicro)
-                    .foregroundColor(.secondary)
-            }
-
-            Spacer()
-
-            // Speed
-            HStack(spacing: 4) {
-                // Download
-                if process.downloadSpeed > 0 {
-                    HStack(spacing: 2) {
-                        Image(systemName: "arrow.down.circle.fill")
-                            .font(.appMicro)
-                            .foregroundColor(.green)
-
-                        Text(SpeedFormatter.formatForStatusBar(process.downloadSpeed))
-                            .font(.appMicro)
-                            .foregroundColor(.secondary)
-                    }
-                }
-
-                // Upload
-                if process.uploadSpeed > 0 {
-                    HStack(spacing: 2) {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.appMicro)
-                            .foregroundColor(.red)
-
-                        Text(SpeedFormatter.formatForStatusBar(process.uploadSpeed))
-                            .font(.appMicro)
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
     }
 }
 

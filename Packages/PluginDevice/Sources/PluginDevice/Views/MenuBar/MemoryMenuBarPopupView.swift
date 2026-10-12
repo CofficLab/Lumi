@@ -19,7 +19,7 @@ public struct MemoryMenuBarPopupView: View {
     private var liveStatsView: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(LumiPluginLocalization.string("Memory", bundle: .module))
+                Text(pluginLocalization.string("Memory"))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
 

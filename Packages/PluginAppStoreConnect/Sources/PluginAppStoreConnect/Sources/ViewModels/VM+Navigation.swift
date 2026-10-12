@@ -1,12 +1,34 @@
 import Foundation
 
 extension VM {
+    /// 工具栏刷新入口。
+    ///
+    /// 刷新过程静默执行：忙碌状态由页面内的加载遮罩表达，失败信息通过
+    /// `errorMessage` 交给界面上的错误横幅呈现，因此这里不弹出任何 toast。
+    func refreshWorkspace() async {
+        guard credentials.isComplete else { return }
+
+        await runBusy(forceRefresh: true) {
+            try await reloadAppsFromNetwork()
+
+            switch page {
+            case .distribution:
+                try await reloadDistributionFromNetwork()
+            case .xcodeCloud:
+                if selectedCiWorkflow != nil {
+                    try await reloadSelectedCiWorkflowDetailFromNetwork()
+                } else if selectedCiProduct != nil {
+                    try await reloadCiWorkflowsFromNetwork()
+                } else {
+                    try await reloadCiProductsFromNetwork()
+                }
+            }
+        }
+    }
+
     func refreshCurrentPage() async {
         await runBusy(forceRefresh: true) {
             switch page {
-            case .account:
-                try await client.testConnection()
-                connectionStatus = AppStoreConnectLocalization.string("Connected")
             case .distribution:
                 try await reloadDistributionFromNetwork()
             case .xcodeCloud:
@@ -22,9 +44,6 @@ extension VM {
     }
 
     func navigate(to page: Page) {
-        if Self.generalPages.contains(page) {
-            selectedVersion = nil
-        }
         self.page = page
         Task { await preparePageIfNeeded(page) }
     }

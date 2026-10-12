@@ -7,8 +7,7 @@ import ProviderLLMManager
 import ProviderMessage
 import ProviderProject
 import ProviderToolManager
-import KitSuperLog
-
+import LumiLoggingKit
 /// Conversation Manager - real implementation using SwiftData persistence
 @MainActor
 public final class ConversationManager: ConversationManaging, SuperLog {
@@ -26,6 +25,10 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     public internal(set) var selectedConversationID: UUID? {
         didSet {
             guard selectedConversationID != oldValue else { return }
+            // Publish selection only after the cached title reflects the new
+            // conversation. Observers commonly read `currentTitle` from the
+            // `.selected` callback to refresh their UI.
+            updateCurrentTitle()
             notifySelectedConversationObservers()
             notifyConversationObservers(.selected(selectedConversationID))
         }

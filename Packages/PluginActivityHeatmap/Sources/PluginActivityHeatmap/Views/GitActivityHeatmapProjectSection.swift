@@ -38,12 +38,9 @@ struct GitActivityHeatmapProjectSection: View {
                             .font(.appCaption)
                             .foregroundStyle(theme.textSecondary)
                     }
-                    Button {
+                    AppIconButton(systemImage: "arrow.clockwise") {
                         viewModel.refresh()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
                     }
-                    .buttonStyle(.borderless)
                     .help(L("Refresh activity"))
                 }
 
@@ -181,6 +178,6 @@ struct GitActivityHeatmapProjectSection: View {
     }
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module)
+        pluginLocalization.string(key)
     }
 }

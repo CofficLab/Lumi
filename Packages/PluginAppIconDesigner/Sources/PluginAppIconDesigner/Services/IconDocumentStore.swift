@@ -7,11 +7,8 @@ public final class IconDocumentStore: ObservableObject {
     /// 项目内（当前打开项目 `.lumi/app-icon-designer`）文档列表。
     @Published public private(set) var projectDocuments: [IconDocument] = []
 
-    /// APP 内（应用数据目录）文档列表。
-    @Published public private(set) var appDocuments: [IconDocument] = []
-
     /// 当前选中的作用域。
-    @Published public var selectedScope: IconScope = .app
+    @Published public var selectedScope: IconScope = .project
 
     @Published public var selectedDocumentId: String?
     @Published public private(set) var lastExportURL: URL?
@@ -21,7 +18,6 @@ public final class IconDocumentStore: ObservableObject {
 
     private var undoStack: [IconDocument] = []
     private var redoStack: [IconDocument] = []
-    private(set) var appStorageDirectory: URL?
     private(set) var projectStorageDirectory: URL?
     private(set) var currentProjectPath: String?
     private let fileManager = FileManager.default
@@ -37,17 +33,11 @@ public final class IconDocumentStore: ObservableObject {
     public func documents(for scope: IconScope) -> [IconDocument] { documentsList(for: scope) }
 
     private func documentsList(for scope: IconScope) -> [IconDocument] {
-        switch scope {
-        case .project: return projectDocuments
-        case .app: return appDocuments
-        }
+        projectDocuments
     }
 
     private func setDocumentsList(_ list: [IconDocument], for scope: IconScope) {
-        switch scope {
-        case .project: projectDocuments = list
-        case .app: appDocuments = list
-        }
+        projectDocuments = list
     }
 
     public var selectedDocument: IconDocument? {
@@ -55,13 +45,10 @@ public final class IconDocumentStore: ObservableObject {
         if let selectedDocumentId, let match = list.first(where: { $0.id == selectedDocumentId }) {
             return match
         }
-        return list.first
+        return nil
     }
 
     // MARK: - Paths
-
-    /// APP 内存储路径字符串。
-    public var appStoragePath: String { appStorageDirectory?.path ?? "" }
 
     /// 项目内存储路径字符串（无打开项目时为空）。
     public var projectStoragePath: String { projectStorageDirectory?.path ?? "" }
@@ -71,25 +58,10 @@ public final class IconDocumentStore: ObservableObject {
 
     /// 指定作用域的存储路径（用于工具路由）。
     public func storagePath(for scope: IconScope) -> String {
-        switch scope {
-        case .project: projectStoragePath
-        case .app: appStoragePath
-        }
+        projectStoragePath
     }
 
     // MARK: - Configuration
-
-    /// Binds the app-scope storage directory and reloads that scope.
-    public func setAppStorage(appStorageDirectory: URL?) {
-        let resolved = appStorageDirectory?.standardizedFileURL
-        guard self.appStorageDirectory != resolved else { return }
-        self.appStorageDirectory = resolved
-        if let resolved {
-            try? fileManager.createDirectory(at: resolved, withIntermediateDirectories: true)
-        }
-        reloadScope(.app)
-        refreshSelection()
-    }
 
     /// Sets the project-scope storage directory and reloads that scope.
     public func setProjectStorage(projectPath: String?, projectStorageDirectory: URL?) {
@@ -101,17 +73,16 @@ public final class IconDocumentStore: ObservableObject {
         if let projectStorageDirectory {
             try? fileManager.createDirectory(at: projectStorageDirectory, withIntermediateDirectories: true)
         }
-        // 项目打开/关闭时，默认作用域跟随是否有项目。
-        selectedScope = (pathToStore != nil) ? .project : .app
+        // 只有当前项目作用域，项目关闭时保留作用域但不显示文档。
+        selectedScope = .project
         reloadScope(.project)
         refreshSelection()
     }
 
-    /// Reloads both scopes from disk and refreshes the current selection.
+    /// Reloads the project scope from disk and refreshes the current selection.
     public func reload() {
         lastError = nil
         reloadScope(.project)
-        reloadScope(.app)
         refreshSelection()
     }
 
@@ -133,8 +104,8 @@ public final class IconDocumentStore: ObservableObject {
 
     private func refreshSelection() {
         let list = documentsList(for: selectedScope)
-        if selectedDocumentId == nil || !list.contains(where: { $0.id == selectedDocumentId }) {
-            selectedDocumentId = list.first?.id
+        if let selectedDocumentId, !list.contains(where: { $0.id == selectedDocumentId }) {
+            self.selectedDocumentId = nil
         }
         clearHistory()
     }
@@ -397,10 +368,6 @@ public final class IconDocumentStore: ObservableObject {
             try selectDocument(id: id, scope: .project)
             return
         }
-        if appDocuments.contains(where: { $0.id == id }) {
-            try selectDocument(id: id, scope: .app)
-            return
-        }
         throw IconDocumentStoreError.documentNotFound(id)
     }
 
@@ -438,12 +405,10 @@ public final class IconDocumentStore: ObservableObject {
 
     public func resetForTests() {
         projectDocuments.removeAll()
-        appDocuments.removeAll()
-        selectedScope = .app
+        selectedScope = .project
         selectedDocumentId = nil
         lastExportURL = nil
         lastError = nil
-        appStorageDirectory = nil
         projectStorageDirectory = nil
         currentProjectPath = nil
         clearHistory()
@@ -458,15 +423,11 @@ public final class IconDocumentStore: ObservableObject {
     }
 
     private func optionalList(for scope: IconScope) -> [IconDocument]? {
-        switch scope {
-        case .project: return projectDocuments
-        case .app: return appDocuments
-        }
+        projectDocuments
     }
 
     private func scopeContaining(documentId: String) -> IconScope? {
         if projectDocuments.contains(where: { $0.id == documentId }) { return .project }
-        if appDocuments.contains(where: { $0.id == documentId }) { return .app }
         return nil
     }
 

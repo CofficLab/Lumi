@@ -1,7 +1,7 @@
 import Foundation
 import os
 import ProviderConversation
-import KitSuperLog
+import LumiLoggingKit
 import SwiftData
 
 /// v4 历史会话读取器（只读）

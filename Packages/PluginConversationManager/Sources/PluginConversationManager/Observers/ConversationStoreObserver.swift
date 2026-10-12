@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import os
 import ProviderConversation
 

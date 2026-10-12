@@ -2,8 +2,7 @@ import AppKit
 import Foundation
 import os
 import PDFKit
-import KitSuperLog
-
+import LumiLoggingKit
 /// Converts images into single-page PDF files using CoreGraphics.
 ///
 /// The service is a stateless final class — it doesn't hold any mutable

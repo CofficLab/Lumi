@@ -47,15 +47,16 @@ struct MetadataSection: View {
 
 struct MetadataEditor: View {
     @ObservedObject var viewModel: VM
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            field(AppStoreConnectLocalization.string("Promotional Text"), limit: 170, text: binding(\.promotionalText), axis: .vertical)
-            field(AppStoreConnectLocalization.string("Description"), limit: 4000, text: binding(\.description), axis: .vertical, height: 120)
-            field(AppStoreConnectLocalization.string("Keywords"), limit: 100, text: binding(\.keywords))
-            field(AppStoreConnectLocalization.string("What's New"), limit: 4000, text: binding(\.whatsNew), axis: .vertical, height: 80)
-            field(AppStoreConnectLocalization.string("Support URL"), limit: 255, text: binding(\.supportURL))
-            field(AppStoreConnectLocalization.string("Marketing URL"), limit: 255, text: binding(\.marketingURL))
+            field(AppStoreConnectLocalization.string("Promotional Text"), icon: "megaphone", limit: 170, text: binding(\.promotionalText), axis: .vertical)
+            field(AppStoreConnectLocalization.string("Description"), icon: "doc.text", limit: 4000, text: binding(\.description), axis: .vertical, height: 120)
+            field(AppStoreConnectLocalization.string("Keywords"), icon: "tag", limit: 100, text: binding(\.keywords))
+            field(AppStoreConnectLocalization.string("What's New"), icon: "sparkles", limit: 4000, text: binding(\.whatsNew), axis: .vertical, height: 80)
+            field(AppStoreConnectLocalization.string("Support URL"), icon: "lifepreserver", limit: 255, text: binding(\.supportURL), opensURL: true)
+            field(AppStoreConnectLocalization.string("Marketing URL"), icon: "link", limit: 255, text: binding(\.marketingURL), opensURL: true)
         }
         .padding(.horizontal)
         .appStoreConnectAddToChatMenu(
@@ -82,14 +83,16 @@ struct MetadataEditor: View {
 
     private func field(
         _ title: String,
+        icon: String,
         limit: Int,
         text: Binding<String>,
         axis: Axis = .horizontal,
-        height: CGFloat? = nil
+        height: CGFloat? = nil,
+        opensURL: Bool = false
     ) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
-                AppSectionLabel(title)
+                MetadataFieldLabel(title: title, systemImage: icon)
                 Spacer()
                 Text("\(text.wrappedValue.count)/\(limit)")
                     .font(.caption2)
@@ -105,8 +108,33 @@ struct MetadataEditor: View {
                             .stroke(Color.secondary.opacity(0.22))
                     )
             } else {
-                GlassTextField(title: title, text: text)
+                HStack(spacing: 8) {
+                    GlassTextField(title: "", text: text, placeholder: title)
+
+                    if opensURL {
+                        AppIconButton(systemImage: "arrow.up.right.square", tint: .accentColor) {
+                            openURLValue(text.wrappedValue)
+                        }
+                        .help(AppStoreConnectLocalization.string("Open URL in Browser"))
+                        .accessibilityLabel(AppStoreConnectLocalization.string("Open %@ in Browser", title))
+                    }
+                }
             }
         }
+    }
+
+    private func openURLValue(_ rawValue: String) {
+        let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: value),
+              let scheme = url.scheme?.lowercased(),
+              scheme == "http" || scheme == "https",
+              url.host != nil else {
+            viewModel.errorMessage = AppStoreConnectLocalization.string(
+                "Enter a valid http or https URL before opening it."
+            )
+            return
+        }
+
+        openURL(url)
     }
 }

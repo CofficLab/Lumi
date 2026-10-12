@@ -18,8 +18,15 @@ struct ChatPanelPluginTests {
         let kernel = KernelCoreContainer()
         let activityBar = DefaultActivityBarProviding()
         let chat = DefaultChatSectionProviding()
-        let rootView = DefaultRootViewProvider()
+        let rootView = DefaultRootViewProviding()
         let railView = DefaultRailViewProviding()
+        var railViewChanges = 0
+        let rootObserver = rootView.addRootViewObserver { event in
+            if case .railViewChanged = event {
+                railViewChanges += 1
+            }
+        }
+        defer { rootObserver.cancel() }
         try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
         try kernel.registerProvider((any RootViewProviding).self, rootView)
@@ -31,6 +38,7 @@ struct ChatPanelPluginTests {
         #expect(rootView.isContentViewHidden)
         #expect(chat.isVisible)
         #expect(railView.visibleCategories == [.chat, .fileTree])
+        #expect(railViewChanges == 1)
 
         let otherEntryID = "test.other.entry"
         activityBar.addItems([ActivityBarItem(
@@ -63,7 +71,7 @@ struct ChatPanelPluginTests {
         let kernel = KernelCoreContainer()
         let activityBar = DefaultActivityBarProviding()
         let chat = DefaultChatSectionProviding()
-        let rootView = DefaultRootViewProvider()
+        let rootView = DefaultRootViewProviding()
         let railView = DefaultRailViewProviding()
         let storage = DefaultStorageProvider(dataRootDirectory: storageRoot)
         try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
@@ -111,7 +119,7 @@ struct ChatPanelPluginTests {
             in kernel: KernelCoreContainer,
             activityBar: DefaultActivityBarProviding,
             chat: DefaultChatSectionProviding,
-            rootView: DefaultRootViewProvider,
+            rootView: DefaultRootViewProviding,
             railView: DefaultRailViewProviding,
             storage: DefaultStorageProvider
         ) throws {
@@ -125,7 +133,7 @@ struct ChatPanelPluginTests {
         let firstKernel = KernelCoreContainer()
         let firstActivityBar = DefaultActivityBarProviding()
         let firstChat = DefaultChatSectionProviding()
-        let firstRootView = DefaultRootViewProvider()
+        let firstRootView = DefaultRootViewProviding()
         let firstRailView = DefaultRailViewProviding()
         let storage = DefaultStorageProvider(dataRootDirectory: storageRoot)
         try registerProviders(
@@ -149,7 +157,7 @@ struct ChatPanelPluginTests {
         let secondKernel = KernelCoreContainer()
         let secondActivityBar = DefaultActivityBarProviding()
         let secondChat = DefaultChatSectionProviding()
-        let secondRootView = DefaultRootViewProvider()
+        let secondRootView = DefaultRootViewProviding()
         let secondRailView = DefaultRailViewProviding()
         try registerProviders(
             in: secondKernel,

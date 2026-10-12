@@ -12,7 +12,7 @@ import ProviderStorage
 import ProviderToolbar
 import ProviderToolManager
 import ProviderPromptSuggestion
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// 项目管理插件。
@@ -24,10 +24,11 @@ import SwiftUI
 /// - 通过 `willSendToLLM` 钩子将当前对话绑定的项目路径注入 LLM 上下文;
 ///   「添加项目」动作胶囊。
 @MainActor
-public final class ProjectsPlugin: SuperPlugin, SuperLog {
+public final class ProjectsPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.projects", category: "Projects")
 
     public let id = "com.coffic.lumi.plugin.projects"
+    public let legacyDataDirectoryNames = ["Projects"]
     public let order = 5
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.projects",
@@ -50,7 +51,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     private var promptSuggestion: PromptSuggestion {
-        PromptSuggestion(id: "\(id).add", title: LumiPluginLocalization.string("Add Project", bundle: .module), order: order * 1_000, systemImage: "folder.badge.plus", action: .pickProjectFolder, visibility: .onlyWithoutProject, style: .additive)
+        PromptSuggestion(id: "\(id).add", title: pluginLocalization.string("Add Project"), order: order * 1_000, systemImage: "folder.badge.plus", action: .pickProjectFolder, visibility: .onlyWithoutProject, style: .additive)
     }
     private func registerPromptSuggestion(kernel: KernelCoreContainer, requiresEnable: Bool) {
         var suggestion = promptSuggestion
@@ -60,16 +61,13 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
     }
     public func onRegister(kernel: KernelCoreContainer) throws { registerPromptSuggestion(kernel: kernel, requiresEnable: !kernel.isPluginEnabled(id: id)) }
 
-    /// 存储目录 key，用于 `storage.pluginDataDirectory(for:)`。
-    static let storageDirectoryKey = "Projects"
-
     public func onBoot(kernel: KernelCoreContainer) throws {
-        // 1. 装配存储（应用数据目录按 storage key "Projects" 隔离）
+        // 1. 装配存储（应用数据目录按插件 ID 隔离）
         guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve StorageProviding from kernel")
             return
         }
-        let store = ProjectsStore(pluginDirectory: storage.pluginDataDirectory(for: Self.storageDirectoryKey))
+        let store = ProjectsStore(pluginDirectory: storage.pluginDataDirectory(for: id))
 
         // 2. v4 历史项目迁移（必须在 ViewModel 初始化之前;幂等、吞错）
         ProjectsLegacyMigration(
@@ -128,7 +126,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
             toolbar.addToolbarItems([
                 ToolbarItem(
                     id: "\(id).toolbar",
-                    title: LumiPluginLocalization.string("Projects", bundle: .module),
+                    title: pluginLocalization.string("Projects"),
                     placement: .center,
                     category: .project,
                     order: 0
@@ -166,7 +164,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
             settings.addEntries([
                 SettingEntryItem(
                     id: "\(id).settings",
-                    title: LumiPluginLocalization.string("Projects", bundle: .module),
+                    title: pluginLocalization.string("Projects"),
                     systemImage: "folder",
                     order: order
                 ) {

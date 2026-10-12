@@ -1,5 +1,8 @@
 import Foundation
+import ProviderAgentLoop
 import ProviderConversationState
+import ProviderLifecycleHooks
+import ProviderMessage
 import Testing
 @testable import PluginConversationState
 
@@ -141,5 +144,121 @@ struct PluginConversationStateTests {
         #expect(activity.runningJobCount == 2)
         #expect(activity.recentJobDescription == "build")
         #expect(activity.hasJobs)
+    }
+
+    @Test("恢复后的迟到 suspended 事件不会覆盖运行中状态")
+    @MainActor
+    func lateSuspendedEventDoesNotOverwriteResumedTurnState() {
+        let conversationID = UUID()
+        let turnID = UUID()
+        let suspension = AgentLoopSuspension(
+            suspensionID: "userInput:ask-1",
+            conversationID: conversationID,
+            toolCallID: "ask-1",
+            kind: "userInput",
+            payload: "{\"question\":\"继续吗？\"}"
+        )
+        let loop = TestAgentLoop()
+        loop.activeTurnID = turnID
+        loop.activeSuspension = suspension
+        loop.currentState = .suspended
+        let provider = ConversationStateProvider()
+        let observer = AgentLoopStateObserver(agentLoop: loop, provider: provider)
+
+        // 旧回合先挂起；用户回答后，恢复后的 LLM step 已经产生工具调用，
+        // 因而状态应当重新是 running。
+        loop.emit(.suspended(
+            conversationID: conversationID,
+            turnID: turnID,
+            suspension: suspension
+        ))
+        loop.emit(.toolCallsReceived(
+            conversationID: conversationID,
+            turnID: turnID,
+            assistantMessageID: UUID(),
+            toolCalls: [MessageToolCall(
+                id: "run-1",
+                name: "run_command",
+                arguments: "{\"command\":\"pwd\"}"
+            )]
+        ))
+        loop.currentState = .running
+        #expect(provider.state(for: conversationID).agentLoopState == .running)
+
+        // 模拟 finishTurn 中延迟投递的旧 suspended 通知到达。
+        loop.emit(.suspended(
+            conversationID: conversationID,
+            turnID: turnID,
+            suspension: suspension
+        ))
+
+        #expect(provider.state(for: conversationID).agentLoopState == .running)
+        #expect(provider.state(for: conversationID).activity == .executingTool)
+        observer.cancel()
+    }
+}
+
+@MainActor
+private final class TestAgentLoop: AgentLoopProviding {
+    private var callback: ((AgentLoopEvent) -> Void)?
+    var currentState: AgentLoopState = .running
+    var activeTurnID: UUID?
+    var activeSuspension: AgentLoopSuspension?
+
+    func addAgentLoopObserver(
+        _ callback: @escaping (AgentLoopEvent) -> Void
+    ) -> any AgentLoopObserverHandle {
+        self.callback = callback
+        return TestAgentLoopObserverHandle { [weak self] in
+            self?.callback = nil
+        }
+    }
+
+    func emit(_ event: AgentLoopEvent) {
+        callback?(event)
+    }
+
+    func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome { .completed }
+
+    func resumeTurn(
+        in conversationID: UUID,
+        request: AgentTurnResumeRequest
+    ) async throws -> AgentLoopOutcome { .completed }
+
+    func cancelTurn(in conversationID: UUID) {}
+
+    func state(for conversationID: UUID) -> AgentLoopState { currentState }
+
+    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { activeSuspension }
+
+    func lastFailure(for conversationID: UUID) -> AgentLoopFailure? { nil }
+
+    func isRunning(for conversationID: UUID) -> Bool { true }
+
+    func currentTurnID(for conversationID: UUID) -> UUID? { activeTurnID }
+
+    func isAutoReplySuppressed(for conversationID: UUID) -> Bool { false }
+
+    func setAutoReplySuppressed(_ suppressed: Bool, for conversationID: UUID) {}
+
+    func retryTurn(
+        in conversationID: UUID,
+        after failedTurnID: UUID
+    ) async throws -> AgentLoopOutcome { .completed }
+
+    func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
+}
+
+@MainActor
+private final class TestAgentLoopObserverHandle: AgentLoopObserverHandle {
+    private var cancellation: (() -> Void)?
+
+    init(cancellation: @escaping () -> Void) {
+        self.cancellation = cancellation
+    }
+
+    func cancel() {
+        cancellation?()
+        cancellation = nil
     }
 }

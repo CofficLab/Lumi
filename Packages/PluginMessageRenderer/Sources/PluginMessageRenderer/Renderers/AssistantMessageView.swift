@@ -1,6 +1,6 @@
 import Foundation
 import KitAgentTool
-import KitLocalization
+import LumiLocalizationKit
 import KitMarkdown
 import LumiUI
 import ProviderConversation
@@ -13,14 +13,25 @@ struct AssistantMessageView: View {
     let message: Message
     let verbosity: ResponseVerbosity
 
+    /// V1 assistant 消息沿用 V2 的内容布局；V1 与 V2 唯一的视觉差异是 Header。
+    static func contentVerbosity(for verbosity: ResponseVerbosity) -> ResponseVerbosity {
+        verbosity == .brief ? .standard : verbosity
+    }
+
     var body: some View {
-        MessageViewChrome(message: message, showsHeader: verbosity != .brief, verbosity: verbosity) {
+        let contentVerbosity = Self.contentVerbosity(for: verbosity)
+        return MessageViewChrome(
+            message: message,
+            showsHeader: verbosity != .brief,
+            verbosity: contentVerbosity
+        ) {
             AssistantMessageBody(
                 capability: capability,
                 stateViewModel: stateViewModel,
                 message: message,
                 shouldHideAssistantBody: message.isToolExecutionOnly,
-                verbosity: verbosity
+                contentVerbosity: contentVerbosity,
+                isV1: verbosity == .brief
             )
         }
     }
@@ -34,7 +45,10 @@ private struct AssistantMessageBody: View {
     @ObservedObject var stateViewModel: MessageRendererStateViewModel
     let message: Message
     let shouldHideAssistantBody: Bool
-    let verbosity: ResponseVerbosity
+    let contentVerbosity: ResponseVerbosity
+    /// 原始回复级别是否为 V1（brief）。`contentVerbosity` 已把 brief 升格为
+    /// standard 以复用 V2 内容布局，但工具调用渲染需要区分"是否真的 V1"。
+    let isV1: Bool
 
     private var reasoningContent: String? {
         guard let reasoning = message.reasoningContent,
@@ -54,7 +68,7 @@ private struct AssistantMessageBody: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if let reasoningContent, self.verbosity == .detailed {
+            if let reasoningContent, contentVerbosity == .detailed {
                 reasoningBlock(reasoningContent)
             }
 
@@ -70,17 +84,22 @@ private struct AssistantMessageBody: View {
 
             if let toolCalls = message.toolCalls,
                !toolCalls.isEmpty {
+                // V1（原始 brief）模式：消息正文不使用自定义工具渲染器（如
+                // ask_user 挂起交互），仅保留默认工具行摘要；完整交互视图由
+                // 底部 ChatSection 固定项单独展示。contentVerbosity 已把 brief
+                // 升格为 standard，这里必须用 isV1（原始级别）判断。
                 ToolCallRowsView(
                     capability: capability,
                     stateViewModel: stateViewModel,
                     message: message,
-                    verbosity: verbosity
+                    verbosity: contentVerbosity,
+                    allowsCustomToolRenderers: !isV1
                 )
                     .padding(.top, shouldHideAssistantBody ? 0 : 4)
             }
         }
-        .padding(.horizontal, verbosity == .brief ? 0 : 12)
-        .padding(.top, verbosity == .brief ? 0 : 2)
+        .padding(.horizontal, contentVerbosity == .brief ? 0 : 12)
+        .padding(.top, contentVerbosity == .brief ? 0 : 2)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -95,7 +114,7 @@ private struct AssistantMessageBody: View {
                         .font(.caption2.weight(.semibold))
                         .foregroundColor(theme.textSecondary)
                         .rotationEffect(.degrees(isReasoningExpanded ? 90 : 0))
-                    Text(LumiPluginLocalization.string("思考过程", bundle: .module))
+                    Text(pluginLocalization.string("思考过程"))
                         .font(.appCaptionEmphasized)
                         .foregroundColor(theme.textSecondary)
                     Spacer()

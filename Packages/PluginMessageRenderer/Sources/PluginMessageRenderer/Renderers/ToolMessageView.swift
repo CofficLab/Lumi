@@ -1,6 +1,6 @@
 import KernelCore
 import KitAgentTool
-import KitLocalization
+import LumiLocalizationKit
 import KitMarkdown
 import LumiUI
 import ProviderConversation

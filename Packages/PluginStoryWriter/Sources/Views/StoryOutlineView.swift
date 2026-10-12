@@ -17,7 +17,7 @@ struct StoryOutlineView: View {
     @State private var newChapterTitle = ""
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, locale: locale)
+        pluginLocalization.string(key, locale: locale)
     }
 
     var body: some View {
@@ -263,7 +263,7 @@ private struct OutlineRow: View {
     let onDelete: () -> Void
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, locale: locale)
+        pluginLocalization.string(key, locale: locale)
     }
 
     var body: some View {

@@ -77,7 +77,7 @@ struct DatabaseSidebarHeaderBar: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
-                .help(LumiPluginLocalization.string("Reload", bundle: .module))
+                .help(pluginLocalization.string("Reload"))
             }
 
             if let onAdd {
@@ -87,7 +87,7 @@ struct DatabaseSidebarHeaderBar: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
-                .help(LumiPluginLocalization.string("Add Connection", bundle: .module))
+                .help(pluginLocalization.string("Add Connection"))
             }
 
             if let onToggleMode {
@@ -114,11 +114,11 @@ struct DatabaseSidebarHeaderBar: View {
     private var toggleHelpText: String {
         switch toggleMode {
         case .connections:
-            return LumiPluginLocalization.string("Show Tables", bundle: .module)
+            return pluginLocalization.string("Show Tables")
         case .browser:
-            return LumiPluginLocalization.string("Show Connections", bundle: .module)
+            return pluginLocalization.string("Show Connections")
         case .none:
-            return LumiPluginLocalization.string("Toggle", bundle: .module)
+            return pluginLocalization.string("Toggle")
         }
     }
 }
@@ -134,12 +134,12 @@ public enum DatabaseSidebarMode: String, Hashable {
 
 #if DEBUG
 #Preview("Tables") {
-    DatabaseSidebarHeaderBar(title: LumiPluginLocalization.string("Tables", bundle: .module), systemImage: "tablecells", onLoad: {}, onToggleMode: {}, toggleMode: .browser)
+    DatabaseSidebarHeaderBar(title: pluginLocalization.string("Tables"), systemImage: "tablecells", onLoad: {}, onToggleMode: {}, toggleMode: .browser)
         .frame(width: 260)
 }
 
 #Preview("Connections") {
-    DatabaseSidebarHeaderBar(title: LumiPluginLocalization.string("Connections", bundle: .module), systemImage: "cylinder.split.1x2", onAdd: {}, onToggleMode: {}, toggleMode: .connections)
+    DatabaseSidebarHeaderBar(title: pluginLocalization.string("Connections"), systemImage: "cylinder.split.1x2", onAdd: {}, onToggleMode: {}, toggleMode: .connections)
         .frame(width: 260)
 }
 #endif

@@ -2,8 +2,8 @@ import Foundation
 import KernelCore
 import KitAgentTool
 import KitAppStorePromo
-import KitLocalization
-import KitSuperLog
+import LumiLocalizationKit
+import LumiLoggingKit
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
@@ -26,9 +26,9 @@ final class AppStoreConnectPluginLocalStore: @unchecked Sendable {
     private let settingsFileURL: URL
 
     init(pluginDirectory: URL? = nil) {
-        let root = pluginDirectory ?? (AppStoreConnectPluginRuntimeBridge.dataRootDirectory
-            ?? AppStoreConnectPluginRuntimeBridge.fallbackRootDirectory)
-            .appendingPathComponent("AppStoreConnectPlugin", isDirectory: true)
+        let root = pluginDirectory
+            ?? AppStoreConnectPluginRuntimeBridge.pluginSubdirectory
+            ?? AppStoreConnectPluginRuntimeBridge.fallbackPluginDirectory
         self.pluginDirectory = root
         self.settingsFileURL = root.appendingPathComponent("settings.plist")
         try? fileManager.createDirectory(at: root, withIntermediateDirectories: true)

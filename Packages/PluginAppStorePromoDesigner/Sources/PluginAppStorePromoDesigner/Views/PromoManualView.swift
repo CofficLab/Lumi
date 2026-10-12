@@ -24,7 +24,7 @@ struct PromoManualView: View {
 
             ManualSectionHeader(number: 2, title: L("Interface"))
             ManualBulletList(items: [
-                .init(L("Sidebar: the task list, grouped into In Project and In App.")),
+                .init(L("Sidebar: the task list for the current project.")),
                 .init(L("Toolbar: language picker, display size picker, Preview / HTML Source switch, Refresh, and Export.")),
                 .init(L("Preview: shows the image at the selected display size.")),
             ])
@@ -64,7 +64,7 @@ struct PromoManualView: View {
             ManualSectionHeader(number: 7, title: L("Storage"))
             ManualBulletList(items: [
                 .init(L("In Project: stored with the current project and available only to it.")),
-                .init(L("In App: stored in the app and available in every project.")),
+                .init(L("Project: stored in the current project's .lumi directory.")),
             ])
 
             ManualSectionHeader(number: 8, title: L("Notes"))
@@ -87,8 +87,6 @@ struct PromoManualView: View {
                     VStack(alignment: .leading, spacing: 7) {
                         groupLabel(L("In Project"))
                         taskRowMock()
-                        taskRowMock()
-                        groupLabel(L("In App"))
                         taskRowMock()
                         Spacer(minLength: 0)
                     }

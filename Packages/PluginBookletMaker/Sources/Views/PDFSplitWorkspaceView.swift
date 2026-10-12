@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import BookletMakerCore
 
 /// Visual split editor for the shared current PDF.
 struct PDFSplitWorkspaceView: View {

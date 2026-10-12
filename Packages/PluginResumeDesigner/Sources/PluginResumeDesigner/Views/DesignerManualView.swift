@@ -27,7 +27,7 @@ struct DesignerManualView: View {
             ManualSectionHeader(number: 2, title: L.string("Interface"))
             ManualBulletList(items: [
                 .init(L.string("Resumes list: each resume with its title, paper size, and template; click to select, right-click to delete.")),
-                .init(L.string("Toolbar: the Preview / Source switch, the paper size caption, and the Print, Export PDF, and Export PNG buttons.")),
+                .init(L.string("Top toolbar: the current resume and project; bottom toolbar: Preview, Source, Print, Export PDF, and Export PNG.")),
                 .init(L.string("Preview: shows the rendered page; clicking a block drafts an edit request in the chat.")),
             ])
             interfaceFigure
@@ -43,7 +43,7 @@ struct DesignerManualView: View {
 
             ManualSectionHeader(number: 4, title: L.string("Notes"))
             ManualBulletList(items: [
-                .init(L.string("Resumes are stored in the plugin's storage inside the app.")),
+                .init(L.string("Resumes are stored with the current project in project-local storage.")),
                 .init(L.string("Right-click a resume in the list to delete it.")),
             ])
         }

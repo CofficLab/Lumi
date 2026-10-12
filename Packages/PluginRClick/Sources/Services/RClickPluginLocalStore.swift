@@ -1,17 +1,12 @@
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// RClickPlugin 插件本地存储
 ///
 /// 负责持久化插件的配置和设置项。
 /// 存储位置：<LumiCore.dataRootDirectory>/RClickPlugin/settings.plist
 public final class RClickPluginLocalStore: SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rclick.local-store")
-    
-    // MARK: - Singleton
-    
-    public static let shared = RClickPluginLocalStore()
     
     // MARK: - Properties
     
@@ -23,13 +18,7 @@ public final class RClickPluginLocalStore: SuperLog, @unchecked Sendable {
     
     // MARK: - Initialization
     
-    public convenience init() {
-        let root = (RClickPluginRuntimeBridge.dataRootDirectory ?? RClickPluginRuntimeBridge.fallbackRootDirectory)
-            .appendingPathComponent("RClickPlugin", isDirectory: true)
-        self.init(pluginDirectory: root)
-    }
-
-    init(pluginDirectory: URL) {
+    public init(pluginDirectory: URL) {
         self.pluginDirectory = pluginDirectory
         self.settingsFileURL = pluginDirectory.appendingPathComponent("settings.plist")
         self.corruptSettingsFileURL = pluginDirectory.appendingPathComponent("settings.corrupt.plist")

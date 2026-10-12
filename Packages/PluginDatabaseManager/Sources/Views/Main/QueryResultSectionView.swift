@@ -71,10 +71,10 @@ struct QueryResultSectionView: View {
             AppEmptyState(
                 icon: viewModel.selectedSQLiteTable == nil ? "tablecells" : "tray",
                 title: viewModel.selectedSQLiteTable == nil
-                    ? LumiPluginLocalization.string("Select a table", bundle: .module)
-                    : LumiPluginLocalization.string("No results", bundle: .module),
+                    ? pluginLocalization.string("Select a table")
+                    : pluginLocalization.string("No results"),
                 description: viewModel.selectedSQLiteTable == nil
-                    ? LumiPluginLocalization.string("Choose a table from the sidebar to view its data.", bundle: .module)
+                    ? pluginLocalization.string("Choose a table from the sidebar to view its data.")
                     : nil
             )
         }
@@ -149,10 +149,10 @@ struct QueryResultSectionView: View {
             } else if let result = exec.result {
                 QueryResultView(result: result)
             } else {
-                AppEmptyState(icon: "tray", title: LumiPluginLocalization.string("No results", bundle: .module))
+                AppEmptyState(icon: "tray", title: pluginLocalization.string("No results"))
             }
         } else {
-            AppEmptyState(icon: "tray", title: LumiPluginLocalization.string("No results", bundle: .module))
+            AppEmptyState(icon: "tray", title: pluginLocalization.string("No results"))
         }
     }
 }

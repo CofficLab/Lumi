@@ -25,8 +25,7 @@ public struct LintPromoTaskTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let scope = try await PromoToolSupport.resolveScope(arguments)
-        let storagePath = try await PromoToolSupport.storagePath(for: scope)
+        let storagePath = try await PromoToolSupport.storagePath()
         let taskID = try PromoToolSupport.required("taskId", arguments)
         let task = try PromoToolSupport.store.readTask(storagePath: storagePath, taskSlug: taskID)
         guard !task.images.isEmpty else { return "Lint failed: task has no images." }
@@ -45,6 +44,6 @@ public struct LintPromoTaskTool: SuperAgentTool {
                 lines.append("image=\(image.id) locale=\(localeIdentifier) \(report.isValid ? "valid" : "invalid") \(details)")
             }
         }
-        return (["Promo task lint (scope=\(scope.rawValue)): \(errors == 0 ? "PASS" : "FAIL") errors=\(errors)"] + lines).joined(separator: "\n")
+        return (["Promo task lint: \(errors == 0 ? "PASS" : "FAIL") errors=\(errors)"] + lines).joined(separator: "\n")
     }
 }

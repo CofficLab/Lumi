@@ -11,6 +11,8 @@ public enum LLMManagerEvent {
     case providersChanged(providerID: String, reason: ProviderChangeReason)
     /// 当前选中供应商 / 模型变化；`reason` 说明本次变更的触发来源。
     case selectionChanged(providerID: String?, model: String?, reason: ModelSelectionReason)
+    /// 供应商远程模型列表刷新成功；模型池可能变化，观察者应重新读取。
+    case modelsRefreshed(providerID: String)
 }
 
 /// 供应商注册表变化的类型。

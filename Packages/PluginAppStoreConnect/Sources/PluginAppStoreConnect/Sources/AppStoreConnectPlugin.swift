@@ -1,6 +1,7 @@
+import Foundation
 import KernelCore
 import KitAgentTool
-import KitSuperLog
+import LumiLoggingKit
 import os
 import ProviderActivityBar
 import ProviderChatSection
@@ -9,9 +10,12 @@ import ProviderDocsView
 import ProviderNetwork
 import ProviderRailView
 import ProviderRootView
+import ProviderSettingView
 import ProviderStorage
 import ProviderToolbar
 import ProviderToolManager
+import ProviderSkill
+import ProviderAgentRules
 import SwiftUI
 
 /// App Store Connect 管理插件。
@@ -19,15 +23,22 @@ import SwiftUI
 /// 该插件保留历史版本的账号、版本、本地化、截图、发布和 Xcode Cloud
 /// 能力，但使用当前 KernelCore Provider 注册表作为唯一集成边界。
 @MainActor
-public final class AppStoreConnectPlugin: SuperPlugin, SuperLog {
+public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi.plugin.app-store-connect",
         category: "AppStoreConnectPlugin"
     )
 
     public let id = "com.coffic.lumi.plugin.app-store-connect"
+    public let legacyDataDirectoryNames = ["AppStoreConnectPlugin"]
     public let order = 65
     public static let railTabID = "app-store-connect.sidebar"
+    public static let settingsEntryID = "com.coffic.lumi.plugin.app-store-connect.settings"
+    private static let openToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.open"
+    private static let workspaceToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.workspace"
+    private static let submitToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.submit"
+    private static let distributionToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.distribution"
+    private static let refreshToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.refresh"
 
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.app-store-connect",
@@ -43,6 +54,27 @@ public final class AppStoreConnectPlugin: SuperPlugin, SuperLog {
     }
 
     public init() {}
+
+    public func migrateData(context: PluginDataMigrationContext) throws {
+        try PluginDataMigrationUtility.copyLegacyDirectories(
+            legacyDirectoryNames: legacyDataDirectoryNames,
+            context: context
+        )
+
+        // 早期版本的回退实现把缓存直接写到 bundle 根目录下的
+        // AppStoreConnectPlugin，升级时也要并入 ID 目录。
+        let legacyDirectory = AppStoreConnectPluginRuntimeBridge.fallbackRootDirectory
+            .appendingPathComponent("AppStoreConnectPlugin", isDirectory: true)
+        guard FileManager.default.fileExists(atPath: legacyDirectory.path) else { return }
+        try FileManager.default.createDirectory(
+            at: context.currentPluginDataDirectory,
+            withIntermediateDirectories: true
+        )
+        try PluginDataMigrationUtility.mergeDirectoryContents(
+            from: legacyDirectory,
+            to: context.currentPluginDataDirectory
+        )
+    }
 
     public func onRegister(kernel: KernelCoreContainer) throws {
         guard let docs = kernel.resolveProvider((any DocsViewProviding).self) else {
@@ -70,6 +102,36 @@ public final class AppStoreConnectPlugin: SuperPlugin, SuperLog {
         } else {
             Self.logger.error("\(Self.t) ToolManagerProviding not found")
         }
+
+        if let skillProvider = kernel.resolveProvider((any SkillProviding).self) {
+            if !skillProvider.isProviderRegistered(providerID: id) {
+                let contributor = AppStoreConnectSkillContributor(providerID: id)
+                skillProvider.addProvider(contributor)
+                Self.logger.info("\(Self.t)Contributed \(contributor.allSkills.count) skill(s) via SkillProviding")
+            }
+        } else {
+            Self.logger.warning("\(Self.t) SkillProviding not found; skipping skill contribution")
+        }
+
+        // 注册 Agent Rule 贡献者。
+        if let ruleProvider = kernel.resolveProvider((any AgentRuleProviding).self) {
+            if !ruleProvider.isProviderRegistered(providerID: id) {
+                let contributor = AppStoreConnectRuleContributor(providerID: id)
+                ruleProvider.addProvider(contributor)
+                Self.logger.info("\(Self.t)Contributed \(contributor.allRules.count) rule(s) via AgentRuleProviding")
+            }
+        }
+
+        kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
+            SettingEntryItem(
+                id: Self.settingsEntryID,
+                title: name,
+                systemImage: "app.badge.checkmark",
+                order: order
+            ) {
+                AppStoreConnectSettingsView(viewModel: VM.shared)
+            },
+        ])
 
         let rail = kernel.resolveProvider((any RailViewProviding).self)
         rail?.addTabs([
@@ -110,6 +172,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, SuperLog {
 
         let entryID = "\(id).entry"
         let pluginID = id
+        let refreshToolbarOrder = order
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([
             ActivityBarItem(
                 id: entryID,
@@ -119,9 +182,64 @@ public final class AppStoreConnectPlugin: SuperPlugin, SuperLog {
                 ownerPluginID: id
             ) { state in
                 if state == .activated {
-                    toolbar?.setVisibleCategories([.global, .general])
+                    // 激活时同时显示 Chat 区块与对话工具栏（新建对话、会话列表）。
+                    // 漏掉 `.chat` 会让 Chat 面板已显示但工具栏缺少对话上下文项。
+                    toolbar?.setVisibleCategories([.global, .chat, .general])
+                    toolbar?.addToolbarItems([
+                        ToolbarItem(
+                            id: Self.openToolbarItemID,
+                            title: AppStoreConnectLocalization.string("Open App Store Connect"),
+                            placement: .leading,
+                            category: .general,
+                            ownerPluginID: pluginID,
+                            order: refreshToolbarOrder
+                        ) {
+                            AppStoreConnectOpenToolbarButton()
+                        },
+                        ToolbarItem(
+                            id: Self.workspaceToolbarItemID,
+                            title: AppStoreConnectLocalization.string("App Store Connect"),
+                            placement: .center,
+                            category: .general,
+                            ownerPluginID: pluginID,
+                            order: refreshToolbarOrder
+                        ) {
+                            AppStoreConnectWorkspaceToolbarView(viewModel: VM.shared)
+                        },
+                        ToolbarItem(
+                            id: Self.submitToolbarItemID,
+                            title: AppStoreConnectLocalization.string("Submit for Review"),
+                            placement: .trailing,
+                            category: .general,
+                            ownerPluginID: pluginID,
+                            order: refreshToolbarOrder
+                        ) {
+                            AppStoreConnectSubmitToolbarButton(viewModel: VM.shared)
+                        },
+                        ToolbarItem(
+                            id: Self.distributionToolbarItemID,
+                            title: AppStoreConnectLocalization.string("Version and Locale"),
+                            placement: .trailing,
+                            category: .general,
+                            ownerPluginID: pluginID,
+                            order: refreshToolbarOrder + 1
+                        ) {
+                            AppStoreConnectDistributionToolbarView(viewModel: VM.shared)
+                        },
+                        ToolbarItem(
+                            id: Self.refreshToolbarItemID,
+                            title: AppStoreConnectLocalization.string("Refresh"),
+                            placement: .trailing,
+                            category: .general,
+                            ownerPluginID: pluginID,
+                            order: refreshToolbarOrder + 2
+                        ) {
+                            AppStoreConnectRefreshToolbarButton(viewModel: VM.shared)
+                        },
+                    ])
                     rootView?.setContentHeaderViewHidden(true)
                     rail?.setVisibleTabID(Self.railTabID)
+                    rootView?.setRailViewVisible(rail?.hasVisibleTabs ?? false)
                     rail?.activateWidthProfile(
                         ownerID: pluginID,
                         recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
@@ -142,6 +260,9 @@ public final class AppStoreConnectPlugin: SuperPlugin, SuperLog {
                     chat?.setActiveContext(nil)
                     chat?.deactivateWidthProfile(ownerID: pluginID)
                     rail?.deactivateWidthProfile(ownerID: pluginID)
+                    rail?.setVisibleCategories(Set(RailViewCategory.allCases))
+                    rootView?.setRailViewVisible(rail?.hasVisibleTabs ?? false)
+                    toolbar?.removeToolbarItems(ids: [Self.openToolbarItemID, Self.workspaceToolbarItemID, Self.submitToolbarItemID, Self.distributionToolbarItemID, Self.refreshToolbarItemID])
                 }
             },
         ])
@@ -159,7 +280,11 @@ public final class AppStoreConnectPlugin: SuperPlugin, SuperLog {
         kernel.resolveProvider((any ToolManagerProviding).self).map { manager in
             Self.agentTools.forEach { manager.remove(id: $0.name) }
         }
+        kernel.resolveProvider((any SkillProviding).self)?.removeProvider(providerID: id)
+        kernel.resolveProvider((any AgentRuleProviding).self)?.removeProvider(providerID: id)
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
+        kernel.resolveProvider((any SettingViewProviding).self)?
+            .removeEntries(ids: [Self.settingsEntryID])
 
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == "\(id).entry"
@@ -174,9 +299,14 @@ public final class AppStoreConnectPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RailViewProviding).self)?
                 .setVisibleCategories(Set(RailViewCategory.allCases))
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
         AppStoreConnectToolSupport.configure(network: nil)
+        kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(
+            ids: [Self.openToolbarItemID, Self.workspaceToolbarItemID, Self.refreshToolbarItemID]
+        )
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
@@ -208,5 +338,8 @@ public final class AppStoreConnectPlugin: SuperPlugin, SuperLog {
         CreateAppStoreConnectScreenshotSetTool(),
         StartAppStoreConnectCiBuildRunTool(),
         SetAppStoreConnectCiWorkflowEnabledTool(),
+        UpdateAppStoreConnectVersionTool(),
+        DeleteAppStoreConnectVersionTool(),
+        SetAppStoreConnectAgeRatingTool(),
     ]
 }

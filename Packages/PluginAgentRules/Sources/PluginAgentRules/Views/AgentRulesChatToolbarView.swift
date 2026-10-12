@@ -21,7 +21,7 @@ struct AgentRulesChatToolbarView: View {
                         .font(.system(size: 10, weight: .medium))
                         .contentTransition(.numericText())
                 } else {
-                    Text(LumiPluginLocalization.string("Rules", bundle: .module))
+                    Text(pluginLocalization.string("Rules"))
                         .font(.system(size: 10, weight: .medium))
                 }
             }

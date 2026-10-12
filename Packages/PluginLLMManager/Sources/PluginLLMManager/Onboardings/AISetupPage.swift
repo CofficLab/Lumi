@@ -1,17 +1,16 @@
 import KitLLM
 import LumiUI
-import PluginLLMProviderSettings
 import SwiftUI
 
 /// AI 模型配置引导页 —— 首次启动时引导用户选择 LLM 供应商并填写 API Key。
 ///
-/// View 只依赖 `AISetupViewModel`，不直接持有 `LLMManaging` 或 Store。
+/// View 只依赖 `AISetupViewModel`，不直接持有 `LLMManaging`。自定义供应商
+/// 的配置入口只在设置里提供（见页面底部的提示文案）。
 struct AISetupPage: View {
     @LumiTheme private var theme
     @ObservedObject private var viewModel: AISetupViewModel
 
     @State private var isProviderPickerPresented = false
-    @State private var isCustomProviderEditorPresented = false
 
     init(viewModel: AISetupViewModel) {
         self.viewModel = viewModel
@@ -22,8 +21,8 @@ struct AISetupPage: View {
             if viewModel.providers.isEmpty {
                 AppEmptyState(
                     icon: "network.slash",
-                    title: LumiPluginLocalization.string("No providers available", bundle: .module),
-                    description: LumiPluginLocalization.string("You can configure a provider later in Settings.", bundle: .module)
+                    title: pluginLocalization.string("No providers available"),
+                    description: pluginLocalization.string("You can configure a provider later in Settings.")
                 )
                 .frame(maxWidth: .infinity)
                 .frame(height: 180)
@@ -33,7 +32,7 @@ struct AISetupPage: View {
                 }
             }
 
-            Text(LumiPluginLocalization.string("You can also configure providers anytime in Settings > Cloud Providers.", bundle: .module))
+            Text(pluginLocalization.string("You can also configure providers anytime in Settings > Cloud Providers."))
                 .font(DesignTokens.Typography.caption1)
                 .foregroundStyle(theme.textSecondary)
                 .multilineTextAlignment(.center)
@@ -41,12 +40,6 @@ struct AISetupPage: View {
         .frame(maxWidth: 460)
         .padding(.vertical, DesignTokens.Spacing.xxl - 4)
         .onAppear { viewModel.synchronizeSelection() }
-        .sheet(isPresented: $isCustomProviderEditorPresented) {
-            if let editor = viewModel.makeCustomProviderEditor() {
-                editor
-                    .frame(width: 560, height: 620)
-            }
-        }
     }
 
     // MARK: - Sections
@@ -65,7 +58,7 @@ struct AISetupPage: View {
 
                     if !provider.providerInfo.isLocal,
                        let website = provider.providerInfo.websiteURL {
-                        Link(LumiPluginLocalization.string("Get a key", bundle: .module), destination: website)
+                        Link(pluginLocalization.string("Get a key"), destination: website)
                             .font(DesignTokens.Typography.caption1)
                     }
                 }
@@ -74,14 +67,14 @@ struct AISetupPage: View {
 
                 if provider.providerInfo.isLocal {
                     Label(
-                        LumiPluginLocalization.string("This local provider does not require an API key.", bundle: .module),
+                        pluginLocalization.string("This local provider does not require an API key."),
                         systemImage: "checkmark.circle"
                     )
                     .font(DesignTokens.Typography.subheadline)
                     .foregroundStyle(theme.success)
                 } else {
                     AppInputField(
-                        LocalizedStringKey(LumiPluginLocalization.string("API Key", bundle: .module)),
+                        LocalizedStringKey(pluginLocalization.string("API Key")),
                         text: $viewModel.apiKey,
                         fieldType: .secure
                     )
@@ -89,10 +82,7 @@ struct AISetupPage: View {
 
                 HStack {
                     AppButton(
-                        LumiPluginLocalization.string(
-                            provider.providerInfo.isLocal ? "Use Provider" : "Save API Key",
-                            bundle: .module
-                        ),
+                        pluginLocalization.string(provider.providerInfo.isLocal ? "Use Provider" : "Save API Key"),
                         style: .primary,
                         action: {
                             viewModel.saveAPIKey()
@@ -103,24 +93,11 @@ struct AISetupPage: View {
                     Spacer()
 
                     if viewModel.didSave {
-                        Label(LumiPluginLocalization.string("Saved", bundle: .module), systemImage: "checkmark.circle.fill")
+                        Label(pluginLocalization.string("Saved"), systemImage: "checkmark.circle.fill")
                             .font(DesignTokens.Typography.caption1)
                             .foregroundStyle(theme.success)
                     }
                 }
-            }
-        }
-        .overlay(alignment: .topTrailing) {
-            if viewModel.customProviderEditorAvailable {
-                AppButton(
-                    "添加供应商",
-                    systemImage: "plus",
-                    style: .tonal,
-                    size: .small
-                ) {
-                    isCustomProviderEditorPresented = true
-                }
-                .offset(x: 12, y: -12)
             }
         }
     }
@@ -148,7 +125,7 @@ private struct ProviderSelectView: View {
 
                 Text(
                     selectedProvider?.providerInfo.displayName
-                        ?? LumiPluginLocalization.string("Provider", bundle: .module)
+                        ?? pluginLocalization.string("Provider")
                 )
                 .font(.system(size: 13, weight: .medium))
                 .lineLimit(1)
@@ -174,7 +151,7 @@ private struct ProviderSelectView: View {
                 isPresented: $isPresented
             )
         }
-        .accessibilityLabel(LumiPluginLocalization.string("Provider", bundle: .module))
+        .accessibilityLabel(pluginLocalization.string("Provider"))
     }
 }
 

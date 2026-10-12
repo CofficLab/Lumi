@@ -16,8 +16,9 @@ import Testing
 }
 
 @Test func actionsReportWhetherTheyChangeApplicationState() {
-    let readOnlyActions: [ComputerUseAction] = [.screenshot, .move(x: 0, y: 0), .wait(milliseconds: 0)]
+    let readOnlyActions: [ComputerUseAction] = [.screenshot, .wait(milliseconds: 0)]
     let stateChangingActions: [ComputerUseAction] = [
+        .move(x: 0, y: 0),
         .click(x: 0, y: 0, button: .left, count: 1),
         .drag(path: [CGPoint(x: 0, y: 0), CGPoint(x: 1, y: 1)]),
         .scroll(x: 0, y: 0, deltaX: 0, deltaY: 1),

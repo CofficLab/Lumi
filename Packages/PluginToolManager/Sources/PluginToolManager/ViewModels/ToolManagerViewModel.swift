@@ -1,4 +1,3 @@
-import AppKit
 import Foundation
 import KitAgentTool
 import ProviderToolManager
@@ -95,15 +94,6 @@ final class ToolManagerViewModel: ObservableObject {
         Task { await reloadStats() }
     }
 
-    func openDataDirectory() {
-        let url = capability.storeDirectory
-            ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
-                .appendingPathComponent("com.coffic.Lumi", isDirectory: true)
-        guard let url else { return }
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        NSWorkspace.shared.open(url)
-    }
-
     // MARK: - Data
 
     func reloadTools() async {
@@ -197,7 +187,7 @@ final class ToolManagerViewModel: ObservableObject {
     }
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module)
+        pluginLocalization.string(key)
     }
 }
 

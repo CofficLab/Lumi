@@ -29,11 +29,11 @@ public struct ProcessRow: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(process.name)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.appCaptionEmphasized)
                         .lineLimit(1)
                         .foregroundColor(.primary)
 
-                    Text(LumiPluginLocalization.string("PID: \(process.id)", bundle: .module))
+                    Text(pluginLocalization.string("PID: \(process.id)"))
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
                 }
@@ -78,7 +78,7 @@ public struct SpeedText: View {
 
     public var body: some View {
         Text(text)
-            .font(.system(size: 12, design: .monospaced))
+            .font(.appMonoCaption)
             .foregroundColor(color)
             .lineLimit(1)
             .truncationMode(.tail)

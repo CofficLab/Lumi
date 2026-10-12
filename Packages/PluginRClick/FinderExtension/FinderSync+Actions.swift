@@ -1,8 +1,7 @@
 import Cocoa
 import FinderSync
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 extension FinderSync {
     // MARK: - Actions
 

@@ -2,6 +2,7 @@ import KernelCore
 import ProviderConversation
 import ProviderProject
 import ProviderRailView
+import ProviderRootView
 import SwiftUI
 
 /// 对话列表侧栏标签（`chats` / `project-chats`）的动态可见性控制器。
@@ -31,6 +32,7 @@ final class ConversationRailTabController {
     private let projectViewModel: ConversationListViewModel
 
     private weak var rail: (any RailViewProviding)?
+    private weak var rootView: (any RootViewProviding)?
     private var conversationsObserver: (any ConversationObserverHandle)?
     private var projectObserver: (any ProjectProvidingObserverHandle)?
     private var pendingRefresh: Task<Void, Never>?
@@ -55,8 +57,9 @@ final class ConversationRailTabController {
     }
 
     /// 启动观察并执行首次评估。重复调用会刷新订阅（覆盖旧 token）。
-    func start(rail: (any RailViewProviding)?) {
+    func start(rail: (any RailViewProviding)?, rootView: (any RootViewProviding)? = nil) {
         self.rail = rail
+        self.rootView = rootView
 
         conversationsObserver = context.conversations.addConversationObserver { [weak self] event in
             switch event {
@@ -145,6 +148,7 @@ final class ConversationRailTabController {
         } else if !desiredVisible && registered {
             rail.removeTabs(ids: [tabID])
         }
+        rootView?.setRailViewVisible(rail.hasVisibleTabs)
     }
 
     // MARK: - Item Builders

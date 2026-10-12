@@ -105,19 +105,19 @@ public class RegistryManagerViewModel: ObservableObject {
             registries[type] = source.url
             
             if type == .docker {
-                showToast(message: LumiPluginLocalization.string("Docker registry updated. Please restart Docker Desktop.", bundle: .module))
+                showToast(message: pluginLocalization.string("Docker registry updated. Please restart Docker Desktop."))
             } else {
-                let message = LumiPluginLocalization.string("Switched {type} registry to {name}", bundle: .module)
+                let message = pluginLocalization.string("Switched {type} registry to {name}")
                     .replacingOccurrences(of: "{type}", with: type.name)
                     .replacingOccurrences(of: "{name}", with: source.name)
                 showToast(message: message)
             }
         } catch {
             guard isCurrentOperation(operationID, for: type) else { return }
-            errorMsg = LumiPluginLocalization.string("Failed to set {type}: {error}", bundle: .module)
+            errorMsg = pluginLocalization.string("Failed to set {type}: {error}")
                 .replacingOccurrences(of: "{type}", with: type.name)
                 .replacingOccurrences(of: "{error}", with: error.localizedDescription)
-            let message = LumiPluginLocalization.string("Failed: {error}", bundle: .module)
+            let message = pluginLocalization.string("Failed: {error}")
                 .replacingOccurrences(of: "{error}", with: error.localizedDescription)
             showToast(message: message)
         }

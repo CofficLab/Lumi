@@ -23,7 +23,7 @@ public struct TerminalTabItem: View {
             }
             .contextMenu {
                 Button(action: onClose) {
-                    Label(LumiPluginLocalization.string("Close Tab", bundle: .module), systemImage: "xmark")
+                    Label(pluginLocalization.string("Close Tab"), systemImage: "xmark")
                 }
             }
     }

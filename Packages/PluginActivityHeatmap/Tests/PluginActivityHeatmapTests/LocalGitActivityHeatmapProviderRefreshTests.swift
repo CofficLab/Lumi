@@ -1,5 +1,5 @@
 import Foundation
-import GitPlugin
+import ProviderGit
 import ProviderActivityHeatmap
 import Testing
 @testable import PluginActivityHeatmap

@@ -38,9 +38,8 @@ public struct ReviewPromoImageTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let language = PromoToolSupport.language
 
-        // 1. 解析 scope + 读图 + lint（与 PreviewPromoImageTool 一致）。
-        let scope = try await PromoToolSupport.resolveScope(arguments)
-        let storagePath = try await PromoToolSupport.storagePath(for: scope)
+        // 1. 读取项目内图像并 lint（与 PreviewPromoImageTool 一致）。
+        let storagePath = try await PromoToolSupport.storagePath()
         let image = try PromoToolSupport.store.readImage(
             storagePath: storagePath,
             taskSlug: try PromoToolSupport.required("taskId", arguments),

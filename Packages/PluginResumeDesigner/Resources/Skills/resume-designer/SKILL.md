@@ -136,7 +136,7 @@ resume_preview_page(resumeId="john-doe")
 
 ## 注意事项
 
-- 简历仅存储在应用数据目录（app 作用域），不支持项目内存储。
+- 简历仅存储在当前项目的 `.lumi/resume-designer` 目录中，不使用应用级共享存储。
 - `resume_export` 的 `outputDirectory` 必须由用户明确指定，不可自行选择路径。
 - `resume_lint` 在导出前**必须**通过，否则导出会失败。
 - `resume_patch_html` 的 `oldText` 必须在 HTML 中唯一出现，否则操作会被拒绝。

@@ -152,7 +152,7 @@ struct RegistryManagerManualView: View {
     // MARK: - Localization
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module)
+        pluginLocalization.string(key)
     }
 }
 

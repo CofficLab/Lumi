@@ -1,7 +1,7 @@
 import os
 import Foundation
 import KernelCore
-import KitSuperLog
+import LumiLoggingKit
 import ProviderLLMManager
 import ProviderStorage
 import KitLLM
@@ -100,7 +100,7 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
         settings.addEntries([
             SettingEntryItem(
                 id: "\(id).remote-providers",
-                title: "云端供应商",
+                title: pluginLocalization.string("Cloud Providers"),
                 systemImage: "cloud",
                 order: 100
             ) {
@@ -108,7 +108,7 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
             },
             SettingEntryItem(
                 id: "\(id).local-providers",
-                title: "本地供应商",
+                title: pluginLocalization.string("Local Providers"),
                 systemImage: "cpu",
                 order: 101
             ) {

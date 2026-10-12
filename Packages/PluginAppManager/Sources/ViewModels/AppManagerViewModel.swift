@@ -1,6 +1,6 @@
 import Foundation
 import Combine
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 protocol AppManagerServicing: Sendable {

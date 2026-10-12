@@ -18,7 +18,6 @@ import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
 import ProviderStorage
-import ProviderTheme
 import ProviderToolManager
 import ProviderToolbar
 
@@ -26,7 +25,6 @@ import ProviderToolbar
 @MainActor
 public protocol ProviderFactory {
     func makeStorageProvider() -> any StorageProviding
-    func makeThemeProvider() -> any ThemeProviding
     func makeContentViewProvider() -> any ContentViewProviding
     func makeConversationProvider() -> any ConversationManaging
     func makeMessageProvider() -> any MessageManaging

@@ -1,6 +1,6 @@
 import SwiftUI
 import AppKit
-import EditorContracts
+import ProviderEditor
 
 /// 文件搜索结果行视图
 public struct FileSearchResultRow: View {

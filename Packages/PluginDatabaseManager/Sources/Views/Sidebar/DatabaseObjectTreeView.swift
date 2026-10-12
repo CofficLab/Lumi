@@ -30,7 +30,7 @@ struct DatabaseObjectTreeView: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
-                TextField(LumiPluginLocalization.string("Filter objects", bundle: .module), text: $searchText)
+                TextField(pluginLocalization.string("Filter objects"), text: $searchText)
                     .textFieldStyle(.plain)
                     .font(.appCaption)
                 if !searchText.isEmpty {
@@ -53,8 +53,8 @@ struct DatabaseObjectTreeView: View {
             if groupedNodes.isEmpty {
                 SidebarEmptyView(
                     systemImage: "tablecells",
-                    title: LumiPluginLocalization.string("No objects", bundle: .module),
-                    description: LumiPluginLocalization.string("Click Reload to refresh the object list.", bundle: .module)
+                    title: pluginLocalization.string("No objects"),
+                    description: pluginLocalization.string("Click Reload to refresh the object list.")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -81,7 +81,7 @@ struct DatabaseObjectTreeView: View {
     // MARK: - Derived
 
     private var headerTitle: String {
-        viewModel.selectedConfig?.name ?? LumiPluginLocalization.string("Database", bundle: .module)
+        viewModel.selectedConfig?.name ?? pluginLocalization.string("Database")
     }
 
     /// 当前选中对象名，用于高亮行。
@@ -165,7 +165,7 @@ struct DatabaseObjectTreeView: View {
                 Button {
                     Task { await viewModel.openObject(object) }
                 } label: {
-                    Label(LumiPluginLocalization.string("Open", bundle: .module), systemImage: "arrow.right.circle")
+                    Label(pluginLocalization.string("Open"), systemImage: "arrow.right.circle")
                 }
             }
         }

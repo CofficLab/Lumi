@@ -1,0 +1,469 @@
+{
+  "default-configuration": "Release",
+  "configurations": [
+    { "name": "Debug", "file": "Project-Debug.xcconfig" },
+    { "name": "Release", "file": "Project-Release.xcconfig" },
+  ],
+  "localizations": {
+    "development": "en",
+    "supported": [
+      "Base",
+      "zh-HK",
+      "zh-Hans",
+      "zh-Hant",
+    ],
+  },
+  "packages": [
+    {
+      "kind": "remote",
+      "repository": "https://github.com/CofficLab/LumiLogging.git",
+      "version": {
+        "up-to-next-major-version": "1.0.1",
+      },
+    }, {
+      "kind": "local",
+      "path": "Packages/FactoryLumi",
+    }, {
+      "kind": "local",
+      "path": "Packages/PluginAppUpdate",
+    }, {
+      "kind": "local",
+      "path": "Packages/FactoryAppIconDesigner",
+    }, {
+      "kind": "local",
+      "path": "Packages/FactoryCADDesigner",
+    }, {
+      "kind": "local",
+      "path": "Packages/FactoryDatabaseManager",
+    }, {
+      "kind": "local",
+      "path": "Packages/PluginLLMProviderCodex",
+    },
+  ],
+  "files": [
+    {
+      "kind": "folder",
+      "path": "LumiApp",
+      "target-membership": [
+        "Lumi",
+      ],
+      "membership-exceptions": [
+        {
+          "target": "Lumi",
+          "exclusions": [
+            "Lumi-Info.plist",
+          ],
+        },
+      ],
+    }, {
+      "kind": "folder",
+      "path": "LumiACPApp",
+      "target-membership": [
+        "LumiACP",
+      ],
+      "membership-exceptions": [
+        {
+          "target": "LumiACP",
+          "exclusions": [
+            "LumiACP-Debug.xcconfig",
+            "LumiACP-Info.plist",
+            "LumiACP-Release.xcconfig",
+          ],
+        },
+      ],
+    }, {
+      "kind": "folder",
+      "path": "AppIconDesignerApp",
+      "target-membership": [
+        "AppIconDesigner",
+      ],
+      "membership-exceptions": [
+        {
+          "target": "AppIconDesigner",
+          "exclusions": [
+            "AppIconDesigner-Info.plist",
+          ],
+        },
+      ],
+    }, {
+      "kind": "folder",
+      "path": "CADDesignerApp",
+      "target-membership": [
+        "CADDesigner",
+      ],
+      "membership-exceptions": [
+        {
+          "target": "CADDesigner",
+          "exclusions": [
+            "CADDesigner-Info.plist",
+          ],
+        },
+      ],
+    }, {
+      "kind": "folder",
+      "path": "DatabaseManagerApp",
+      "target-membership": [
+        "DatabaseManager",
+      ],
+      "membership-exceptions": [
+        {
+          "target": "DatabaseManager",
+          "exclusions": [
+            "DatabaseManager-Info.plist",
+          ],
+        },
+      ],
+    }, {
+      "kind": "folder",
+      "path": "Packages/PluginRClick/FinderExtension",
+      "target-membership": [
+        "LumiFinder",
+      ],
+      "membership-exceptions": [
+        {
+          "target": "LumiFinder",
+          "exclusions": [
+            "Info.plist",
+          ],
+        },
+      ],
+    },
+    { "kind": "folder", "path": "LumiUITests", "target-membership": [ "LumiUITests" ] },
+    { "path": "<PRODUCTS>/Lumi.app", "id": "F53C49142F1A42EC00929321", "type": "wrapper.application", "index": false },
+    { "path": "<PRODUCTS>/LumiACP.app", "id": "AC0000000000000000000002", "type": "wrapper.application", "index": false },
+    { "path": "<PRODUCTS>/AppIconDesigner.app", "id": "AI0000000000000000000002", "type": "wrapper.application", "index": false },
+    { "path": "<PRODUCTS>/CADDesigner.app", "id": "CD0000000000000000000002", "type": "wrapper.application", "index": false },
+    { "path": "<PRODUCTS>/DatabaseManager.app", "id": "DB0000000000000000000002", "type": "wrapper.application", "index": false },
+    { "path": "<PRODUCTS>/LumiFinder.appex", "id": "LF000000000000000001", "type": "wrapper.app-extension", "index": false, "target-membership": [ { "build-phase": "Lumi/copy/Embed PlugIns", "header-preservation": "remove-on-copy" } ] },
+    { "path": "<PRODUCTS>/LumiUITests.xctest", "id": "UT0000000000000000000002", "type": "wrapper.cfbundle", "index": false },
+    { "kind": "group", "name": "Frameworks" },
+    { "path": "LumiApp/Config/Project-Debug.xcconfig", "index": true },
+    { "path": "LumiApp/Config/Project-Release.xcconfig", "index": true },
+    { "path": "AppIconDesignerApp/AppIconDesigner.xcconfig", "index": true },
+    { "path": "CADDesignerApp/CADDesigner.xcconfig", "index": true },
+    { "path": "DatabaseManagerApp/DatabaseManager.xcconfig", "index": true },
+    { "path": "LumiApp/Config/Lumi-Debug.xcconfig", "index": true },
+    { "path": "LumiApp/Config/Lumi-Release.xcconfig", "index": true },
+    { "path": "Packages/PluginRClick/FinderExtension/LumiFinder-Debug.xcconfig", "index": true },
+    { "path": "Packages/PluginRClick/FinderExtension/LumiFinder-Release.xcconfig", "index": true },
+    { "path": "LumiACPApp/LumiACP-Debug.xcconfig", "index": true },
+    { "path": "LumiACPApp/LumiACP-Release.xcconfig", "index": true },
+  ],
+  "targets": [
+    {
+      "name": "Lumi",
+      "id": "F54F8C7D2F1A3B6500AABB2A",
+      "product": "Lumi.app",
+      "product-type": "application",
+      "specialized-configurations": [
+        { "name": "Debug", "file": "Lumi-Debug.xcconfig" },
+        { "name": "Release", "file": "Lumi-Release.xcconfig" },
+      ],
+      "dependencies": [
+        "LumiACP",
+        "LumiFinder",
+      ],
+      "build-phases": [
+        "compile-sources",
+        "frameworks",
+        "resources",
+        {
+          "kind": "copy",
+          "name": "Embed PlugIns",
+          "bundle-base-path": "plugins-directory",
+        }, {
+          "kind": "script",
+          "name": "Embed Signed RAG Vector Extension",
+          "log-environment-variables": true,
+          "input-paths": [
+            "$(SRCROOT)/Packages/PluginProjectRAG/Resources/vec0.dylib",
+          ],
+          "output-paths": [
+            "$(TARGET_BUILD_DIR)/$(FRAMEWORKS_FOLDER_PATH)/vec0.dylib",
+          ],
+          "run-on-every-build": true,
+          "shell": "/bin/zsh",
+          "script": [
+            "set -euo pipefail",
+            "",
+            "APP_RESOURCES=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"",
+            "APP_FRAMEWORKS=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"",
+            "LOCAL_EXTENSION=\"${SRCROOT}/Packages/PluginProjectRAG/Resources/vec0.dylib\"",
+            "SOURCE=\"\"",
+            "",
+            "if [[ -d \"${APP_RESOURCES}\" ]]; then",
+            "  SOURCE=\"$(/usr/bin/find \"${APP_RESOURCES}\" -path '*ProjectRAGEngine_ProjectRAGEngine.bundle*' -name 'vec0.dylib' -type f -print -quit)\"",
+            "fi",
+            "",
+            "if [[ -z \"${SOURCE}\" && -f \"${LOCAL_EXTENSION}\" ]]; then",
+            "  SOURCE=\"${LOCAL_EXTENSION}\"",
+            "fi",
+            "",
+            "if [[ -z \"${SOURCE}\" ]]; then",
+            "  echo \"error: required vec0.dylib is missing; Project RAG cannot start without sqlite-vec.\" >&2",
+            "  exit 1",
+            "fi",
+            "",
+            "DEST=\"${APP_FRAMEWORKS}/vec0.dylib\"",
+            "/bin/mkdir -p \"${APP_FRAMEWORKS}\"",
+            "/bin/cp -f \"${SOURCE}\" \"${DEST}\"",
+            "/bin/chmod 755 \"${DEST}\"",
+            "",
+            "# Strip debug symbols (SwiftPM release does not auto-strip; saves ~100MB).",
+            "/usr/bin/strip -rST \"${DEST}\"",
+            "",
+            "if [[ \"${CODE_SIGNING_ALLOWED:-NO}\" == \"YES\" ]]; then",
+            "  SIGN_IDENTITY=\"${EXPANDED_CODE_SIGN_IDENTITY:-}\"",
+            "  if [[ -z \"${SIGN_IDENTITY}\" ]]; then",
+            "    SIGN_IDENTITY=\"${CODE_SIGN_IDENTITY:-}\"",
+            "  fi",
+            "  if [[ -n \"${SIGN_IDENTITY}\" ]]; then",
+            "    /usr/bin/codesign --force --sign \"${SIGN_IDENTITY}\" --timestamp=none \"${DEST}\"",
+            "  fi",
+            "fi",
+            "",
+          ],
+        }, {
+          "kind": "script",
+          "name": "Embed ACP Helper",
+          "log-environment-variables": true,
+          "input-paths": [
+            "$(BUILT_PRODUCTS_DIR)/LumiACP.app/Contents/MacOS/LumiACP",
+          ],
+          "output-paths": [
+            "$(TARGET_BUILD_DIR)/$(EXECUTABLE_FOLDER_PATH)/lumi-acp",
+          ],
+          "run-on-every-build": true,
+          "shell": "/bin/zsh",
+          "script": [
+            "set -euo pipefail",
+            "",
+            "SOURCE=\"${BUILT_PRODUCTS_DIR}/LumiACP.app/Contents/MacOS/LumiACP\"",
+            "ACP_RESOURCES=\"${BUILT_PRODUCTS_DIR}/LumiACP.app/Contents/Resources\"",
+            "DEST=\"${TARGET_BUILD_DIR}/${EXECUTABLE_FOLDER_PATH}/lumi-acp\"",
+            "DEST_RESOURCES=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"",
+            "",
+            "if [[ ! -x \"${SOURCE}\" ]]; then",
+            "  echo \"error: LumiACP target did not produce ${SOURCE}\" >&2",
+            "  exit 1",
+            "fi",
+            "",
+            "/bin/mkdir -p \"$(/usr/bin/dirname \"${DEST}\")\" \"${DEST_RESOURCES}\"",
+            "/bin/cp -f \"${SOURCE}\" \"${DEST}\"",
+            "/bin/chmod 755 \"${DEST}\"",
+            "",
+            "# The embedded executable uses Bundle.main, so carry SwiftPM resource bundles",
+            "# into Lumi.app alongside the helper binary.",
+            "for BUNDLE in \"${ACP_RESOURCES}\"/*.bundle; do",
+            "  [[ -d \"${BUNDLE}\" ]] || continue",
+            "  /usr/bin/ditto \"${BUNDLE}\" \"${DEST_RESOURCES}/$(/usr/bin/basename \"${BUNDLE}\")\"",
+            "done",
+            "",
+            "if [[ \"${CODE_SIGNING_ALLOWED:-NO}\" == \"YES\" ]]; then",
+            "  SIGN_IDENTITY=\"${EXPANDED_CODE_SIGN_IDENTITY:-}\"",
+            "  if [[ -z \"${SIGN_IDENTITY}\" ]]; then",
+            "    SIGN_IDENTITY=\"${CODE_SIGN_IDENTITY:-}\"",
+            "  fi",
+            "  if [[ -n \"${SIGN_IDENTITY}\" ]]; then",
+            "    /usr/bin/codesign --force --sign \"${SIGN_IDENTITY}\" --timestamp=none \"${DEST}\"",
+            "  fi",
+            "fi",
+            "",
+          ],
+        },
+      ],
+      "package-product-members": [
+        {
+          "package": "FactoryLumi",
+          "product-name": "FactoryLumi",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": "PluginAppUpdate",
+          "product-name": "AppUpdatePlugin",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": "PluginLLMProviderCodex",
+          "product-name": "PluginLLMProviderCodex",
+          "build-phase": { "build-phase": "frameworks" },
+        },
+      ],
+    }, {
+      "name": "LumiACP",
+      "id": "AC0000000000000000000009",
+      "product": "LumiACP.app",
+      "product-type": "application",
+      "specialized-configurations": [
+        { "name": "Debug", "file": "LumiACP-Debug.xcconfig" },
+        { "name": "Release", "file": "LumiACP-Release.xcconfig" },
+      ],
+      "build-phases": [
+        "compile-sources",
+        "frameworks",
+        "resources",
+        {
+          "kind": "script",
+          "name": "Build ACP Executable",
+          "log-environment-variables": true,
+          "input-paths": [
+            "$(SRCROOT)/.github/scripts/build-acp-helper.sh",
+            "$(SRCROOT)/Packages/FactoryLumiACP/Package.swift",
+            "$(SRCROOT)/Packages/FactoryLumiACP/Package.resolved",
+          ],
+          "run-on-every-build": true,
+          "shell": "/bin/zsh",
+          "script": [
+            "set -euo pipefail",
+            "",
+            "ACP_ARCH=\"${CURRENT_ARCH:-}\"",
+            "case \"${ACP_ARCH}\" in",
+            "  arm64|x86_64) ;;",
+            "  *)",
+            "    ACP_ARCH=\"$(printf '%s\\n' \"${ARCHS:-}\" | awk '{$1=$1; print}')\"",
+            "    case \"${ACP_ARCH}\" in",
+            "      arm64|x86_64) ;;",
+            "      *)",
+            "        echo \"error: Build ACP Executable requires exactly one target architecture; got CURRENT_ARCH='${CURRENT_ARCH:-}' ARCHS='${ARCHS:-}'\" >&2",
+            "        exit 1",
+            "        ;;",
+            "    esac",
+            "    ;;",
+            "esac",
+            "",
+            "BUILD_CONFIG=\"debug\"",
+            "if [[ \"${CONFIGURATION}\" == \"Release\" ]]; then",
+            "  BUILD_CONFIG=\"release\"",
+            "fi",
+            "",
+            "DEST=\"${TARGET_BUILD_DIR}/${EXECUTABLE_PATH}\"",
+            "DEST_DIR=\"$(/usr/bin/dirname \"${DEST}\")\"",
+            "RESOURCES=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"",
+            "SCRATCH_ROOT=\"${ACP_SCRATCH_ROOT:-${SRCROOT}/build/acp}\"",
+            "CACHE_PATH=\"${ACP_CACHE_PATH:-${SRCROOT}/build/acp-cache}\"",
+            "",
+            "\"${SRCROOT}/.github/scripts/build-acp-helper.sh\" \"${ACP_ARCH}\" \"${DEST_DIR}\" \\",
+            "  --config \"${BUILD_CONFIG}\" \\",
+            "  --scratch-path \"${SCRATCH_ROOT}/${ACP_ARCH}\" \\",
+            "  --cache-path \"${CACHE_PATH}\" \\",
+            "  --source-dir \"${SRCROOT}/Packages/FactoryLumiACP\" \\",
+            "  --resources-dir \"${RESOURCES}\" \\",
+            "  --output-name \"$(/usr/bin/basename \"${DEST}\")\"",
+            "",
+          ],
+        },
+      ],
+    }, {
+      "name": "AppIconDesigner",
+      "id": "AI0000000000000000000009",
+      "product": "AppIconDesigner.app",
+      "product-type": "application",
+      "specialized-configurations": [
+        { "name": "Debug", "file": "AppIconDesigner.xcconfig" },
+        { "name": "Release", "file": "AppIconDesigner.xcconfig" },
+      ],
+      "build-phases": [
+        "compile-sources",
+        "frameworks",
+        "resources",
+      ],
+      "package-product-members": [
+        {
+          "package": "FactoryAppIconDesigner",
+          "product-name": "FactoryAppIconDesigner",
+          "build-phase": { "build-phase": "frameworks" },
+        },
+      ],
+    }, {
+      "name": "CADDesigner",
+      "id": "CD0000000000000000000009",
+      "product": "CADDesigner.app",
+      "product-type": "application",
+      "specialized-configurations": [
+        { "name": "Debug", "file": "CADDesigner.xcconfig" },
+        { "name": "Release", "file": "CADDesigner.xcconfig" },
+      ],
+      "build-phases": [
+        "compile-sources",
+        "frameworks",
+        "resources",
+      ],
+      "package-product-members": [
+        {
+          "package": "FactoryCADDesigner",
+          "product-name": "FactoryCADDesigner",
+          "build-phase": { "build-phase": "frameworks" },
+        },
+      ],
+    }, {
+      "name": "DatabaseManager",
+      "id": "DB0000000000000000000009",
+      "product": "DatabaseManager.app",
+      "product-type": "application",
+      "specialized-configurations": [
+        { "name": "Debug", "file": "DatabaseManager.xcconfig" },
+        { "name": "Release", "file": "DatabaseManager.xcconfig" },
+      ],
+      "build-phases": [
+        "compile-sources",
+        "frameworks",
+        "resources",
+      ],
+      "package-product-members": [
+        {
+          "package": "FactoryDatabaseManager",
+          "product-name": "FactoryDatabaseManager",
+          "build-phase": { "build-phase": "frameworks" },
+        },
+      ],
+    }, {
+      "name": "LumiFinder",
+      "id": "LF000000000000000002",
+      "product": "LumiFinder.appex",
+      "product-type": "app-extension",
+      "specialized-configurations": [
+        { "name": "Debug", "file": "LumiFinder-Debug.xcconfig" },
+        { "name": "Release", "file": "LumiFinder-Release.xcconfig" },
+      ],
+      "build-phases": [
+        "compile-sources",
+        "frameworks",
+        "resources",
+      ],
+      "package-product-members": [
+        {
+          "package": "LumiLogging",
+          "product-name": "LumiLoggingKit",
+          "build-phase": { "build-phase": "frameworks" },
+        },
+      ],
+    }, {
+      "name": "LumiUITests",
+      "id": "UT0000000000000000000001",
+      "product": "LumiUITests.xctest",
+      "product-type": "bundle.ui-testing",
+      "test-host-target": "Lumi",
+      "dependencies": [
+        "Lumi",
+      ],
+      "build-phases": [
+        "compile-sources",
+        "frameworks",
+        "resources",
+      ],
+      "build-settings": {
+        "CODE_SIGN_STYLE": "Automatic",
+        "GENERATE_INFOPLIST_FILE": "YES",
+        "MACOSX_DEPLOYMENT_TARGET": "14.0",
+        "PRODUCT_BUNDLE_IDENTIFIER": "com.coffic.lumi.uitests",
+        "PRODUCT_NAME": "$(TARGET_NAME)",
+        "SUPPORTED_PLATFORMS": "macosx",
+        "SWIFT_VERSION": "5.0",
+        "TARGETED_DEVICE_FAMILY": "1",
+        "TEST_TARGET_NAME": "Lumi",
+      },
+    },
+  ],
+  "products-group": [
+  ],
+  "last-upgrade": "26.2",
+  "last-swift-update": "26.2",
+}

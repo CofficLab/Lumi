@@ -2,8 +2,8 @@ import Foundation
 import KernelCore
 import KitAgentTool
 import KitAppStorePromo
-import KitLocalization
-import KitSuperLog
+import LumiLocalizationKit
+import LumiLoggingKit
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
@@ -22,7 +22,7 @@ import ProviderToolManager
 final class ConnectAPICache: @unchecked Sendable {
     static let shared: ConnectAPICache = {
         let pluginRoot = AppStoreConnectPluginRuntimeBridge.pluginSubdirectory
-            ?? AppStoreConnectPluginRuntimeBridge.fallbackRootDirectory.appendingPathComponent(ConnectAPICacheConfiguration.pluginName, isDirectory: true)
+            ?? AppStoreConnectPluginRuntimeBridge.fallbackPluginDirectory
         let root = pluginRoot
             .appendingPathComponent(ConnectAPICacheConfiguration.cacheDirectoryName, isDirectory: true)
         return ConnectAPICache(rootDirectory: root)

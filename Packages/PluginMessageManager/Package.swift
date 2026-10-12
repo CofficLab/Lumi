@@ -9,23 +9,23 @@ let package = Package(
         .library(name: "PluginMessageManager", targets: ["PluginMessageManager"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderConversation"),
-        .package(path: "../ProviderStorage"),
         .package(path: "../ProviderAgentLoop"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
             name: "PluginMessageManager",
             dependencies: [
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "ProviderMessage",
                 "ProviderConversation",
-                "ProviderStorage",
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 "ProviderAgentLoop",
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ]
         ),
         .testTarget(

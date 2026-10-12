@@ -6,12 +6,22 @@ import Foundation
 enum AgentTempStoragePluginRuntimeBridge {
     nonisolated(unsafe) static var pluginDirectory: URL?
 
-    static let pluginName = "AgentTempStorage"
-
     static let fallbackRootDirectory: URL = {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
         let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.lumi"
         return appSupport.appendingPathComponent(bundleID, isDirectory: true)
+    }()
+
+    static let fallbackPluginDirectory: URL = {
+        #if DEBUG
+        let versionedRoot = fallbackRootDirectory.appendingPathComponent("db_debug_v6", isDirectory: true)
+        #else
+        let versionedRoot = fallbackRootDirectory.appendingPathComponent("db_production_v6", isDirectory: true)
+        #endif
+        return versionedRoot.appendingPathComponent(
+            "com.coffic.lumi.plugin.agent-temp-storage",
+            isDirectory: true
+        )
     }()
 }

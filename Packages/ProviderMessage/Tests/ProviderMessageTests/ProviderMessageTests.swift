@@ -275,6 +275,21 @@ struct ProviderMessageTests {
         #expect(!MessageTimelineEvent.isContextCompaction(plain))
     }
 
+    @Test("AgentLoop 重试时间线事件可识别且不误判压缩")
+    func agentLoopRetryTimelineDetection() {
+        let conv = UUID()
+        let retry = Message(
+            conversationID: conv,
+            role: .status,
+            content: "正在重试",
+            metadata: [MessageTimelineEvent.metadataKey: MessageTimelineEvent.agentLoopRetry],
+            renderKind: MessageTimelineEvent.agentLoopRetryRenderKind
+        )
+
+        #expect(MessageTimelineEvent.isTimelineEvent(retry))
+        #expect(!MessageTimelineEvent.isContextCompaction(retry))
+    }
+
     @Test("isActualContextCompaction requires the actual marker")
     func actualCompactionRequiresMarker() {
         let conv = UUID()

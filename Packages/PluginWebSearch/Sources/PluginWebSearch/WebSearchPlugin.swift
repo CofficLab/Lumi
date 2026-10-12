@@ -2,8 +2,7 @@ import KitAgentTool
 import KernelCore
 import os
 import ProviderToolManager
-import KitSuperLog
-
+import LumiLoggingKit
 /// Web Search 插件（KernelCore 版本）
 ///
 /// 由旧版 `Plugins/WebSearchPlugin`（KernelLumi / LumiPlugin 架构）复刻而来，
@@ -27,7 +26,7 @@ public final class WebSearchPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public var name: String {
-        LumiPluginLocalization.string("WebSearch", bundle: .module)
+        pluginLocalization.string("WebSearch")
     }
 
 

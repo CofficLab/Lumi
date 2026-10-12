@@ -5,6 +5,10 @@ import Foundation
 ///
 /// Live callbacks still receive every chunk. Only the final aggregate is
 /// bounded so an untrusted command cannot grow memory without limit.
+///
+/// When the limit is exceeded the **tail** is kept, not the head: build,
+/// test and git output put the interesting part (errors, failures, summaries)
+/// at the end, so dropping the head keeps what the caller actually needs.
 final class BoundedOutputBuffer: @unchecked Sendable {
     private let maxBytes: Int
     private var data = Data()
@@ -20,18 +24,24 @@ final class BoundedOutputBuffer: @unchecked Sendable {
         defer { lock.unlock() }
 
         guard !newData.isEmpty else { return }
-        guard data.count < maxBytes else {
+
+        // A single chunk larger than the whole budget: everything seen so far
+        // is already out of the window, so keep only this chunk's tail.
+        // Note the strict `>`: a chunk that merely fills the budget exactly is
+        // handled below, which correctly avoids flagging an untouched payload
+        // as truncated.
+        if newData.count > maxBytes {
+            data = newData.suffix(maxBytes)
             truncated = true
             return
         }
 
-        let remaining = maxBytes - data.count
-        if newData.count <= remaining {
-            data.append(newData)
-        } else {
-            data.append(newData.prefix(remaining))
+        let overflow = data.count + newData.count - maxBytes
+        if overflow > 0 {
+            data.removeFirst(overflow)
             truncated = true
         }
+        data.append(newData)
     }
 
     func getString() -> String {
@@ -491,6 +501,12 @@ public enum ShellExecutor {
                         handler: stderrHandler
                     )
 
+                    // 显式关闭管道 fd。Foundation.Pipe 的 fd 不能等 ARC/autorelease
+                    // pool：热路径上 pool 延迟排空会让每次工具调用泄漏 4 个 fd，
+                    // 长时间对话后耗尽进程上限（EMFILE）。
+                    stdoutPipe.closeFileDescriptors()
+                    stderrPipe.closeFileDescriptors()
+
                     state.complete(exitCode: process.terminationStatus)
                 }
 
@@ -522,6 +538,8 @@ public enum ShellExecutor {
                 guard state.prepareToStart(process) else {
                     stdoutPipe.fileHandleForReading.readabilityHandler = nil
                     stderrPipe.fileHandleForReading.readabilityHandler = nil
+                    stdoutPipe.closeFileDescriptors()
+                    stderrPipe.closeFileDescriptors()
                     state.complete(exitCode: -SIGTERM)
                     return
                 }
@@ -543,6 +561,8 @@ public enum ShellExecutor {
                 } catch {
                     stdoutPipe.fileHandleForReading.readabilityHandler = nil
                     stderrPipe.fileHandleForReading.readabilityHandler = nil
+                    stdoutPipe.closeFileDescriptors()
+                    stderrPipe.closeFileDescriptors()
                     state.fail(ShellError.launchFailed(
                         command: executable,
                         reason: error.localizedDescription

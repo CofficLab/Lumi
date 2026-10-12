@@ -1,6 +1,8 @@
 import KernelCore
+import PluginRootView
 import ProviderChatSection
 import ProviderConversation
+import ProviderStorage
 import SwiftUI
 
 /// AppIconDesigner 的内核工厂。
@@ -26,7 +28,13 @@ public enum KernelFactory {
     ) throws -> KernelCoreContainer {
         let kernel = KernelCoreContainer()
         try providerFactory.registerProviders(into: kernel)
-        try kernel.start(plugins: pluginFactory.makePlugins() + additionalPlugins)
+        let plugins = [RootViewPlugin(provider: providerFactory.makeRootViewProvider())]
+            + pluginFactory.makePlugins()
+            + additionalPlugins
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            try PluginDataMigrationRunner(storage: storage).run(for: plugins)
+        }
+        try kernel.start(plugins: plugins)
         if let chat = kernel.resolveProvider((any ChatSectionProviding).self),
            let conversations = kernel.resolveProvider((any ConversationManaging).self) {
             chat.bindConversationSelection(conversations)

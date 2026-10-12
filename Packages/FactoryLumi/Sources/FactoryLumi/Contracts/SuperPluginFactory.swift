@@ -11,6 +11,7 @@ import PluginChatFileAttachment
 import PluginChatPanel
 import PluginChatScreenshot
 import PluginConversationBehavior
+import PluginConversationExport
 import PluginConversationVerbosity
 import PluginConversationFork
 import PluginConversationInput

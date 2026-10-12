@@ -1,12 +1,37 @@
 import AppKit
 import AppUpdatePlugin
+import Darwin
 import FactoryLumi
 import KernelCore
+import os
 import PluginToast
 import PluginToolbarSettings
 import ProviderSettingView
 import ProviderToast
 import SwiftUI
+
+/// 提升进程的文件描述符上限。
+///
+/// macOS App 的默认 soft limit 通常只有 256，对于长时间运行且频繁执行
+/// 工具调用（每次 `Process` + `Pipe` 消耗 4+ fds）和网络请求的 agent 应用，
+/// 很容易在持续对话后耗尽 fd，导致 `"Too many open files"` (EMFILE) 错误。
+///
+/// 将 soft limit 提升到 10240（或 hard limit 的较小值），为 agent 工作负载
+/// 提供充足的 fd 余量。
+private func raiseFileDescriptorLimit() {
+    var limit = rlimit()
+    guard getrlimit(RLIMIT_NOFILE, &limit) == 0 else { return }
+
+    let target: UInt64 = 10_240
+    let newSoft = min(target, limit.rlim_max)
+    guard newSoft > limit.rlim_cur else { return }
+
+    limit.rlim_cur = newSoft
+    if setrlimit(RLIMIT_NOFILE, &limit) == 0 {
+        Logger(subsystem: "com.coffic.lumi", category: "bootstrap")
+            .info("Raised RLIMIT_NOFILE to \(newSoft)")
+    }
+}
 
 @main
 struct LumiApp: App {
@@ -31,6 +56,9 @@ struct LumiApp: App {
     @Environment(\.openWindow) private var openWindow
 
     init() {
+        // 提升 fd 上限，避免长时间 agent 会话后因 EMFILE 导致网络/工具同时失败
+        raiseFileDescriptorLimit()
+
         do {
             // 先在属性初始化阶段完成可能失败的装配。
             let assembledKernel = try KernelFactory.makeKernel()
@@ -56,7 +84,10 @@ struct LumiApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("Lumi", id: "lumi.main") {
+        // Lumi is a single-workspace app. `WindowGroup` would allow users to
+        // create additional main windows through Dock reactivation, the New
+        // Window command, or repeated scene activation.
+        Window("Lumi", id: "lumi.main") {
             // App 只做一件事：让 Factory 给一个视图。
             // 主窗口 / 设置窗口 / 菜单栏共享同一内核（kernel），
             // 主题切换后各窗口即时同步。
@@ -87,9 +118,9 @@ struct LumiApp: App {
             }
             .onAppear {
                 menuBarController.install(kernel: kernel)
-                // Launch Services may deliver a file before WindowGroup has
-                // installed its Combine subscription. Consume the retained
-                // delegate value once the V2 window is actually ready.
+                // Launch Services may deliver a file before the main window
+                // has installed its Combine subscription. Consume the
+                // retained delegate value once the V2 window is ready.
                 if let path = appDelegate.pendingOpenPath {
                     consumePendingOpenPath(path, kernel: kernel)
                 }
@@ -120,7 +151,7 @@ struct LumiApp: App {
     /// 弹窗唤回应用，并把可成为 key 的主窗口置前。
     private func showMainWindow() {
         NSApp.activate(ignoringOtherApps: true)
-        if let window = NSApp.mainWindow ?? NSApp.windows.first(where: { $0.canBecomeKey }) {
+        if let window = NSApp.windows.first(where: { $0.identifier == LumiWindowIdentity.main }) {
             window.makeKeyAndOrderFront(nil)
         }
     }

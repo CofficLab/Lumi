@@ -19,7 +19,7 @@ func pluginRegistersAndRemovesToolDocumentationAndToolbarItem() throws {
     let plugin = OpenInXcodePlugin()
 
     #expect(plugin.id == "com.coffic.lumi.plugin.open-in-xcode")
-    #expect(plugin.metadata.policy == .enabledByDefault)
+    #expect(plugin.metadata.policy == .disabledByDefault)
     try plugin.onRegister(kernel: kernel)
     #expect(docs.aboutEntries.map(\.id) == [plugin.id])
     #expect(docs.manualEntries.map(\.id) == [plugin.id])

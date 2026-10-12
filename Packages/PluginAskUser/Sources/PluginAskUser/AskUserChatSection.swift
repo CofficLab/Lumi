@@ -4,7 +4,7 @@ import ProviderChatSection
 import ProviderConversation
 import SwiftUI
 
-/// The interaction data needed by both the V1 chat item and the V2/V3 tool row.
+/// The interaction data needed by the chat section view.
 struct AskUserPendingInteraction: Equatable, Sendable {
     let response: AskUserPendingResponse
     let toolCallID: String
@@ -33,12 +33,10 @@ struct AskUserPendingInteraction: Equatable, Sendable {
     }
 
     static func shouldShow(
-        verbosity: ResponseVerbosity,
         selectedConversationID: UUID?,
         interaction: Self?
     ) -> Bool {
-        guard verbosity == .brief,
-              let selectedConversationID,
+        guard let selectedConversationID,
               let interaction else { return false }
         return selectedConversationID == interaction.conversationID
     }
@@ -49,12 +47,10 @@ struct AskUserPendingInteraction: Equatable, Sendable {
 final class AskUserChatViewModel: ObservableObject {
     @Published private(set) var interaction: AskUserPendingInteraction?
     @Published private(set) var selectedConversationID: UUID?
-    @Published private(set) var verbosity: ResponseVerbosity = .standard
 
     private let conversations: any ConversationManaging
     private let agentLoop: any AgentLoopProviding
     private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
-    private var conversationObserver: (any ConversationObserverHandle)?
     private var agentLoopObserver: (any AgentLoopObserverHandle)?
 
     init(
@@ -64,14 +60,9 @@ final class AskUserChatViewModel: ObservableObject {
         self.conversations = conversations
         self.agentLoop = agentLoop
         self.selectedConversationID = conversations.selectedConversationID
-        self.verbosity = conversations.verbosity(for: conversations.selectedConversationID)
         synchronize()
 
         selectedConversationObserver = conversations.addSelectedConversationObserver { [weak self] _ in
-            self?.synchronize()
-        }
-        conversationObserver = conversations.addConversationObserver { [weak self] event in
-            guard case .verbosityChanged = event else { return }
             self?.synchronize()
         }
         agentLoopObserver = agentLoop.addAgentLoopObserver { [weak self] event in
@@ -82,13 +73,10 @@ final class AskUserChatViewModel: ObservableObject {
     func cancel() {
         selectedConversationObserver?.cancel()
         selectedConversationObserver = nil
-        conversationObserver?.cancel()
-        conversationObserver = nil
         agentLoopObserver?.cancel()
         agentLoopObserver = nil
         interaction = nil
         selectedConversationID = nil
-        verbosity = .standard
     }
 
     private func handle(_ event: AgentLoopEvent) {
@@ -111,10 +99,8 @@ final class AskUserChatViewModel: ObservableObject {
     private func synchronize() {
         let conversationID = conversations.selectedConversationID
         selectedConversationID = conversationID
-        verbosity = conversations.verbosity(for: conversationID)
 
         guard let conversationID,
-              verbosity == .brief,
               let suspension = agentLoop.suspension(for: conversationID),
               let next = AskUserPendingInteraction.from(suspension: suspension)
         else {
@@ -125,15 +111,14 @@ final class AskUserChatViewModel: ObservableObject {
     }
 }
 
-/// ChatSection contribution used only as a visible V1 fallback for pending
-/// user input. V2/V3 continue to render the interaction inside the tool row.
+/// ChatSection contribution that always shows pending ask_user interactions
+/// at the bottom of the chat, regardless of response verbosity.
 struct AskUserChatSectionView: View {
     @ObservedObject var viewModel: AskUserChatViewModel
 
     var body: some View {
         if let interaction = viewModel.interaction,
            AskUserPendingInteraction.shouldShow(
-               verbosity: viewModel.verbosity,
                selectedConversationID: viewModel.selectedConversationID,
                interaction: interaction
            ) {

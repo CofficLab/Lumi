@@ -43,7 +43,7 @@ struct RowView: View {
                         .frame(width: 22, height: 22)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(LumiPluginLocalization.string("Remove Project", bundle: .module))
+                .accessibilityLabel(pluginLocalization.string("Remove Project"))
             }
         }
     }

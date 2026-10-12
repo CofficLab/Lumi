@@ -1,7 +1,6 @@
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 public class AppSettingRepo: ObservableObject, SuperLog, @unchecked Sendable {
     public static let shared = AppSettingRepo()
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")

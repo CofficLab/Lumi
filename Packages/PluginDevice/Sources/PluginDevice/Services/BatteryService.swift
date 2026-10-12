@@ -3,8 +3,7 @@ import Foundation
 import IOKit
 import IOKit.ps
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// Enhanced battery monitoring service.
 ///
 /// Reads battery data from two sources:

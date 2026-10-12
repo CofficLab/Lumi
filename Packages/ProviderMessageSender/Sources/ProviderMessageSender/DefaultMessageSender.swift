@@ -3,8 +3,7 @@ import os
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
-import KitSuperLog
-
+import LumiLoggingKit
 /// 默认消息发送实现（KernelCore 体系，复刻旧版 `MessageSender`）。
 ///
 /// 职责：

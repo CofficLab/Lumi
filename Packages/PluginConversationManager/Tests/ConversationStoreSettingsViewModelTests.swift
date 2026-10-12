@@ -135,7 +135,6 @@ final class StubConversationStoreCapability: ConversationStoreCapability {
     }
 
     var selectedConversationID: UUID?
-    let dataDirectory = FileManager.default.temporaryDirectory
     var initialPage: [ConversationSummary] = []
     var nextPage: [ConversationSummary] = []
     var totalCount = 0

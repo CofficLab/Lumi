@@ -40,13 +40,13 @@ public struct BookletMakerMobileRootView: View {
         .fileImporter(
             isPresented: $isImporterPresented,
             allowedContentTypes: [.pdf],
-            allowsMultipleSelection: false
+            allowsMultipleSelection: feature.selectedTool == .merge
         ) { result in
-            guard case .success(let urls) = result, let url = urls.first else {
+            guard case .success(let urls) = result, !urls.isEmpty else {
                 return // 选择器取消：不改变当前内容
             }
             Task { @MainActor in
-                await feature.importDocument(from: url)
+                await feature.importDocuments(from: urls)
             }
         }
         .sheet(item: exportOutcomeBinding) { outcome in
@@ -60,11 +60,22 @@ public struct BookletMakerMobileRootView: View {
             case .shareSplit(let urls):
                 SharePresenter.ShareSheet(urls: urls)
                     .presentationDetents([.medium, .large])
+            case .shareMerge(let url):
+                SharePresenter.ShareSheet(urls: [url])
+                    .presentationDetents([.medium, .large])
             case .saveSplit(let urls):
                 SharePresenter.ShareSheet(urls: urls)
                     .presentationDetents([.medium, .large])
             case .saveBooklet(let url):
                 // 单文件：直接进入系统“保存到文件”对话框。
+                Color.clear
+                    .onAppear {
+                        saveDocument = PDFFileDocument(url: url)
+                        saveFilename = url.deletingPathExtension().lastPathComponent
+                        isSavingPresented = true
+                        feature.workspace.present(nil)
+                    }
+            case .saveMerge(let url):
                 Color.clear
                     .onAppear {
                         saveDocument = PDFFileDocument(url: url)
@@ -97,7 +108,7 @@ public struct BookletMakerMobileRootView: View {
                 .navigationBarTitleDisplayMode(.inline)
         } detail: {
             NavigationStack {
-                feature.makeContentView()
+                feature.makeContentView(onOpenPDF: { isImporterPresented = true })
             }
         }
     }
@@ -107,7 +118,7 @@ public struct BookletMakerMobileRootView: View {
             Section {
                 HStack(spacing: 12) {
                     PDFDocumentPageView(
-                        documentURL: feature.viewModel.currentDocument.url,
+                        documentURL: feature.documentPreviewURL,
                         pageNumber: 1
                     )
                     .frame(width: 44, height: 58)
@@ -130,6 +141,7 @@ public struct BookletMakerMobileRootView: View {
             Section {
                 toolRow(.booklet)
                 toolRow(.split)
+                toolRow(.merge)
             }
         }
         .toolbar {

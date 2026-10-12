@@ -30,7 +30,7 @@ import SwiftUI
     let activityBar = DefaultActivityBarProviding()
     let chat = DefaultChatSectionProviding()
     let railView = DefaultRailViewProviding()
-    let rootView = DefaultRootViewProvider()
+    let rootView = DefaultRootViewProviding()
 
     railView.addTabs([
         RailTabItem(id: "test.rail", category: .general, title: "Test", systemImage: "circle") {

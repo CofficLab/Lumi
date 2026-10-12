@@ -11,7 +11,7 @@ struct ToolCallLogSettingsView: View {
     @ObservedObject var viewModel: ToolManagerViewModel
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module)
+        pluginLocalization.string(key)
     }
 
     var body: some View {
@@ -150,7 +150,7 @@ private struct ToolCallRecordDetailView: View {
     let record: ToolCallRecord
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module)
+        pluginLocalization.string(key)
     }
 
     var body: some View {

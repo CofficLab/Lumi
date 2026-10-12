@@ -1,4 +1,5 @@
 import XCTest
+import BookletMakerCore
 @testable import BookletMakerPlugin
 
 final class PDFSplitPlanTests: XCTestCase {

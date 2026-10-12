@@ -1,10 +1,9 @@
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import Combine
 
 @MainActor
 public class NetworkManagerViewModel: ObservableObject, SuperLog {
-    public static let shared = NetworkManagerViewModel()
     public nonisolated static let emoji = "🌐"
     public nonisolated static let verbose: Bool = false
     @Published var networkState = NetworkState()
@@ -28,9 +27,6 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
             }
         }
     }
-    @Published var onlyActiveProcesses = true
-    @Published var processSearchText = ""
-
     // System boot time
     public var systemUptime: String {
         let uptime = ProcessInfo.processInfo.systemUptime
@@ -38,31 +34,16 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
     }
 
     public var filteredProcesses: [NetworkProcess] {
-        var result = processes
-        
-        // 1. Activity filtering (> 0 bytes/s)
-        if onlyActiveProcesses {
-            result = result.filter { $0.totalSpeed > 0 }
-        }
-        
-        // 2. Search filtering
-        if !processSearchText.isEmpty {
-            result = result.filter { 
-                $0.name.localizedCaseInsensitiveContains(processSearchText) ||
-                String($0.id).contains(processSearchText)
-            }
-        }
-        
-        // 3. Sorting (Default by total speed descending)
-        result.sort { $0.totalSpeed > $1.totalSpeed }
-        
-        return result
+        processes
+            .filter { $0.totalSpeed > 0 }
+            .sorted { $0.totalSpeed > $1.totalSpeed }
     }
 
     private var isProcessMonitoringActive = false
+    private let processMonitoringStarter: @MainActor () -> Void
+    private let processMonitoringStopper: @MainActor () -> Void
 
     public init(
-        autoStartMonitoring: Bool = false,
         publicIPProvider: @escaping @Sendable () async -> String? = {
             await NetworkService.shared.getPublicIP()
         },
@@ -70,6 +51,8 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
         processMonitoringStopper: @escaping @MainActor () -> Void = { ProcessMonitorService.shared.stopMonitoring() }
     ) {
         self.publicIPProvider = publicIPProvider
+        self.processMonitoringStarter = processMonitoringStarter
+        self.processMonitoringStopper = processMonitoringStopper
 
         if Self.verbose {
             if NetworkManagerPlugin.verbose {
@@ -81,31 +64,19 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
     public func startProcessMonitoring() {
         guard !isProcessMonitoringActive else { return }
         isProcessMonitoringActive = true
-        ProcessMonitorService.shared.startMonitoring()
+        processMonitoringStarter()
     }
     
     public func stopProcessMonitoring() {
         guard isProcessMonitoringActive else { return }
         isProcessMonitoringActive = false
-        ProcessMonitorService.shared.stopMonitoring()
+        processMonitoringStopper()
     }
 
     public func updateProcesses(_ processes: [NetworkProcess]) {
         self.processes = processes
     }
 
-    public func startMonitoring() {
-        if Self.verbose {
-            if NetworkManagerPlugin.verbose {
-                            NetworkManagerPlugin.logger.info("\(self.t)Starting network monitoring")
-            }
-        }
-
-    }
-
-    public func stopMonitoring() {
-    }
-    
     // Removed updateStats() as it is replaced by Combine subscription
 
     func applyNetworkUsage(

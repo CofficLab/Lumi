@@ -105,7 +105,9 @@ struct UninstallProviderTests {
     @Test("卸载删除数据、偏好设置与凭据，但不删除用户项目目录")
     func uninstallRemovesOwnedDataOnly() async throws {
         let fixture = try Fixture()
+        try fixture.write("Library/Application Support/com.coffic.lumi/db_production_v4/old/data.sqlite")
         try fixture.write("Library/Application Support/com.coffic.lumi/db_production_v5/plugin/data.sqlite")
+        try fixture.write("Library/Application Support/com.coffic.lumi/db_production_v6/current/data.sqlite")
         try fixture.write("Library/Group Containers/group.com.coffic.lumi/RClickConfig.json")
         try fixture.write("Library/Preferences/com.coffic.lumi.plist")
         try fixture.write("Applications/Lumi.app/Contents/Info.plist")

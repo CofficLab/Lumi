@@ -19,6 +19,14 @@ protocol ProviderSettingsCapability: AnyObject {
     func modelID(providerID: String, model: String) -> String?
     func select(modelID: String)
 
+    // MARK: 动态模型池
+
+    /// 远程模型源刷新成功后发布 providerID（供 VM 订阅刷新 models）。
+    var modelsUpdatedPublisher: AnyPublisher<String, Never> { get }
+
+    /// 指定供应商的动态模型池：远程型读 `availableModels`，静态型读 `providerInfo.models`。
+    func availableModels(for providerID: String) -> [LLMModelInfo]
+
     // MARK: API Key
 
     func apiKey(for providerID: String) -> String
@@ -46,12 +54,20 @@ final class ProviderSettingsCapabilityAdapter: ProviderSettingsCapability {
     private let manager: any LLMManaging
     private let customProviderStore: UserDefinedCloudProviderStore?
 
+    private let modelsUpdatedSubject = PassthroughSubject<String, Never>()
+    private var observer: (any LLMManagerObserverHandle)?
+
     init(
         manager: any LLMManaging,
         customProviderStore: UserDefinedCloudProviderStore?
     ) {
         self.manager = manager
         self.customProviderStore = customProviderStore
+        observer = manager.addObserver { [modelsUpdatedSubject] event in
+            if case let .modelsRefreshed(providerID) = event {
+                modelsUpdatedSubject.send(providerID)
+            }
+        }
     }
 
     var allProviders: [any SuperLLMProvider] {
@@ -85,6 +101,16 @@ final class ProviderSettingsCapabilityAdapter: ProviderSettingsCapability {
     func select(modelID: String) {
         guard let modelID = LLMModelID(rawValue: modelID) else { return }
         manager.select(modelID: modelID, reason: .userSelected)
+    }
+
+    var modelsUpdatedPublisher: AnyPublisher<String, Never> {
+        modelsUpdatedSubject.eraseToAnyPublisher()
+    }
+
+    func availableModels(for providerID: String) -> [LLMModelInfo] {
+        // 协议属性：静态供应商返回 providerInfo.models，
+        // 远程供应商返回「远程快照 / 缓存 / 基线」合并池。
+        manager.provider(id: providerID)?.availableModels ?? []
     }
 
     func apiKey(for providerID: String) -> String {

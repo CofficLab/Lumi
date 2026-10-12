@@ -2,8 +2,7 @@ import CoreGraphics
 import Foundation
 import os
 import PDFKit
-import KitSuperLog
-
+import LumiLoggingKit
 #if canImport(AppKit)
 import AppKit
 #elseif canImport(UIKit)

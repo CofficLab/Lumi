@@ -5,8 +5,6 @@ import SwiftUI
 /// with "Raw" and "Parsed" tabs, allowing the user to switch between the
 /// original response text and a pretty-printed JSON representation.
 struct HTTPExchangeJSONBodyTabs: View {
-    @LumiTheme private var theme
-
     let data: Data?
     let fallback: String
 
@@ -17,29 +15,27 @@ struct HTTPExchangeJSONBodyTabs: View {
         var title: String {
             switch self {
             case .raw:
-                LumiPluginLocalization.string("Raw", bundle: .module)
+                pluginLocalization.string("Raw")
             case .parsed:
-                LumiPluginLocalization.string("Parsed", bundle: .module)
+                pluginLocalization.string("Parsed")
             }
         }
     }
 
     @State private var selectedTab: DisplayTab = .parsed
 
+    private var selectedTabIndex: Binding<Int> {
+        Binding(
+            get: { DisplayTab.allCases.firstIndex(of: selectedTab) ?? 0 },
+            set: { selectedTab = DisplayTab.allCases[$0] }
+        )
+    }
+
     var body: some View {
         VStack(spacing: 8) {
             // Tab picker
-            HStack {
-                Picker("", selection: $selectedTab) {
-                    ForEach(DisplayTab.allCases, id: \.self) { tab in
-                        Text(tab.title).tag(tab)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-
-                Spacer()
-            }
+            AppSegmentedControl(DisplayTab.allCases.map(\.title), selection: selectedTabIndex, maxWidth: 200)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             // Content
             switch selectedTab {

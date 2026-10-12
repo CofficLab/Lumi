@@ -40,7 +40,7 @@ struct TaskRowView: View {
                 .truncationMode(.tail)
 
             if let group = displayItem.parallelGroup {
-                Text(String(format: LumiPluginLocalization.string("[%@]", bundle: .module), group))
+                Text(String(format: pluginLocalization.string("[%@]"), group))
                     .font(.system(size: 9))
                     .foregroundStyle(.secondary)
             }

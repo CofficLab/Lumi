@@ -4,6 +4,7 @@ import Foundation
 enum PDFTool: String, CaseIterable, Identifiable {
     case booklet
     case split
+    case merge
 
     var id: String { rawValue }
 
@@ -11,7 +12,7 @@ enum PDFTool: String, CaseIterable, Identifiable {
     ///
     /// "Split PDF" is listed before "Booklet Maker" so the split
     /// entry sits above the booklet entry in the rail.
-    static let displayOrder: [PDFTool] = [.split, .booklet]
+    static let displayOrder: [PDFTool] = [.merge, .split, .booklet]
 
     var title: String {
         switch self {
@@ -19,6 +20,8 @@ enum PDFTool: String, CaseIterable, Identifiable {
             BookletLocalization.string("Booklet Maker")
         case .split:
             BookletLocalization.string("Split PDF")
+        case .merge:
+            BookletLocalization.string("Merge PDF")
         }
     }
 
@@ -28,6 +31,8 @@ enum PDFTool: String, CaseIterable, Identifiable {
             BookletLocalization.string("Duplex imposition and binding")
         case .split:
             BookletLocalization.string("Split after specified pages")
+        case .merge:
+            BookletLocalization.string("Combine files in your chosen order")
         }
     }
 
@@ -35,6 +40,7 @@ enum PDFTool: String, CaseIterable, Identifiable {
         switch self {
         case .booklet: "book.closed"
         case .split: "scissors"
+        case .merge: "arrow.triangle.merge"
         }
     }
 }

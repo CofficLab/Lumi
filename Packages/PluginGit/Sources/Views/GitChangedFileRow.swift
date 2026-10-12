@@ -1,4 +1,5 @@
 import SwiftUI
+import ProviderGit
 
 /// Git changed file row shared by Git panel and status bar popover.
 public struct GitChangedFileRow: View {

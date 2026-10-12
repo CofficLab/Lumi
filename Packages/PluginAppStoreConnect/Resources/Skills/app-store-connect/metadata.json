@@ -1,0 +1,7 @@
+{
+  "name": "app-store-connect",
+  "title": "App Store Connect",
+  "description": "指导 AI 使用 App Store Connect 工具管理应用版本、商店本地化、截图、构建、Xcode Cloud 和审核提交。",
+  "triggers": ["App Store Connect", "appstoreconnect", "上架审核", "提交审核", "iOS版本", "应用版本", "商店截图", "Xcode Cloud"],
+  "version": "1.0.0"
+}

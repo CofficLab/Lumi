@@ -1,6 +1,6 @@
 import KitAgentTool
 import KernelCore
-import KitLocalization
+import LumiLocalizationKit
 import LumiUI
 import KitMarkdown
 import ProviderConversation
@@ -31,7 +31,7 @@ struct ErrorMessageView: View {
         if !summary.isEmpty {
             return summary
         }
-        return LumiPluginLocalization.string("Request failed.", bundle: .module)
+        return pluginLocalization.string("Request failed.")
     }
 
     private var httpBodyText: String? {
