@@ -18,7 +18,7 @@ public final class GoatPlanProvider: VendorLLMProvider {
 
     // MARK: - 远程模型状态（本插件自行管理）
 
-    private let modelListCache: LLMModelListCache
+    private let modelListCache: CommandCodeLocalStore
     private var fetchedRemoteModels: [LLMModelInfo] = []
     private var remoteSyncDate: Date?
 
@@ -30,8 +30,21 @@ public final class GoatPlanProvider: VendorLLMProvider {
         endpoint: URL(string: "https://api.commandcode.ai/provider/v1/models")!
     )
 
-    public init(apiService: VendorAPIService = VendorAPIService()) {
-        self.modelListCache = LLMModelListCache(providerID: "goatplan")
+    /// 使用纯内存缓存（不落盘）。仅供测试与 storage 缺失时降级。
+    public convenience init(apiService: VendorAPIService = VendorAPIService()) {
+        self.init(apiService: apiService, modelListCache: CommandCodeLocalStore())
+    }
+
+    /// 使用外部注入的模型列表缓存。
+    ///
+    /// - Parameters:
+    ///   - apiService: 网络请求服务。
+    ///   - modelListCache: 插件在 `onBoot` 中绑定好目录的 store；未绑定目录时退化为纯内存。
+    init(
+        apiService: VendorAPIService,
+        modelListCache: CommandCodeLocalStore
+    ) {
+        self.modelListCache = modelListCache
         super.init(
             info: LLMProviderInfo(
                 id: "goatplan",
