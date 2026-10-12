@@ -22,7 +22,7 @@ public final class MiniMaxOpenAIProvider: VendorLLMProvider {
         super.init(
             info: LLMProviderInfo(
                 id: "minimax-tokenplan",
-                displayName: "MiniMax (OpenAI)",
+                displayName: "MiniMax",
                 description: "MiniMax Token Plan via OpenAI-compatible API",
                 defaultModel: "MiniMax-M2.7",
                 models: MiniMaxVendorModels.all,

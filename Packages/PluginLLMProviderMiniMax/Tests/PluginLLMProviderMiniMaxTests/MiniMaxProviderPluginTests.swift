@@ -34,7 +34,7 @@ struct MiniMaxProviderPluginTests {
 
         let info = try #require(manager.provider(id: "minimax-tokenplan")?.providerInfo)
         #expect(info.id == "minimax-tokenplan")
-        #expect(info.displayName == "MiniMax (OpenAI)")
+        #expect(info.displayName == "MiniMax")
         #expect(info.description == "MiniMax Token Plan via OpenAI-compatible API")
         #expect(info.defaultModel == "MiniMax-M2.7")
         #expect(info.apiFormat.rawValue == "openAI")
