@@ -51,7 +51,8 @@ public class LumiTerminalView: LocalProcessTerminalView {
     }
 
     override public func accessibilityValue() -> Any? {
-        terminal.getText(
+        let terminal = getTerminal()
+        return terminal.getText(
             start: Position(col: 0, row: 0),
             end: Position(col: terminal.cols, row: terminal.getTopVisibleRow() + terminal.rows)
         )

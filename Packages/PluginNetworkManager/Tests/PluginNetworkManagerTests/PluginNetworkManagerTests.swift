@@ -1,8 +1,38 @@
 import Testing
 import Combine
+import Compression
 import Foundation
 import SQLite3
 @testable import PluginNetworkManager
+
+@Test func brotliSSEDecompressionHandlesHighCompressionRatio() {
+    let payload = Data((
+        String(repeating: "data: {\"choices\":[{\"delta\":{\"reasoning_content\":\"repeated\"}}]}\n\n", count: 300)
+        + "data: [DONE]\n\n"
+    ).utf8)
+    var compressed = Data(count: payload.count)
+    let compressedCapacity = compressed.count
+    let compressedSize = payload.withUnsafeBytes { source in
+        compressed.withUnsafeMutableBytes { destination in
+            compression_encode_buffer(
+                destination.bindMemory(to: UInt8.self).baseAddress!,
+                compressedCapacity,
+                source.bindMemory(to: UInt8.self).baseAddress!,
+                payload.count,
+                nil,
+                COMPRESSION_BROTLI
+            )
+        }
+    }
+
+    #expect(compressedSize > 0)
+    compressed = compressed.prefix(compressedSize)
+
+    let decoded = NetworkProvider.decompress(compressed, encoding: "br")
+
+    #expect(decoded == payload)
+    #expect(decoded.flatMap { String(data: $0, encoding: .utf8) }?.contains("data: [DONE]") == true)
+}
 
 @MainActor
 @Test func publicIPRefreshUsesCache() async throws {

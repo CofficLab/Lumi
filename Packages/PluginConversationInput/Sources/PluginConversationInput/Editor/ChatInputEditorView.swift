@@ -475,6 +475,8 @@ extension ChatInputEditorView {
             let attributed = NSAttributedString(attachment: attachment)
             textView.hasPastePreviewAttachments = true
             textView.insertText(attributed, replacementRange: textView.selectedRange())
+            // 折叠按钮的 hover 依赖 tracking area，这里立即挂上，不等 AppKit 的布局回调。
+            textView.syncPasteHoverTracking()
             return true
         }
 
@@ -572,6 +574,10 @@ final class EditorTextView: NSTextView {
     var fileDropHandler: ((URL) -> Void)?
     private var pastePreviewPopover: NSPopover?
 
+    /// 当前鼠标悬停的粘贴折叠按钮，供 cell 绘制高亮态时查询。
+    private(set) weak var hoveredPasteCell: PasteButtonAttachmentCell?
+    private var pasteHoverTrackingArea: NSTrackingArea?
+
     override init(frame frameRect: NSRect, textContainer container: NSTextContainer?) {
         super.init(frame: frameRect, textContainer: container)
         registerForDraggedTypes([.fileURL, .string])
@@ -585,6 +591,97 @@ final class EditorTextView: NSTextView {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         registerForDraggedTypes([.fileURL, .string])
+    }
+
+    // MARK: - 粘贴折叠按钮 hover
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        refreshPasteHoverTracking()
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        refreshPasteHoverTracking()
+    }
+
+    private func refreshPasteHoverTracking() {
+        pasteHoverTrackingArea.map(removeTrackingArea)
+        guard hasPastePreviewAttachments, window != nil else {
+            pasteHoverTrackingArea = nil
+            return
+        }
+        let area = NSTrackingArea(
+            rect: .zero,
+            options: [.mouseMoved, .mouseEnteredAndExited, .inVisibleRect, .activeInKeyWindow],
+            owner: self
+        )
+        addTrackingArea(area)
+        pasteHoverTrackingArea = area
+    }
+
+    /// 挂上/摘掉 hover 追踪区。粘贴折叠按钮出现后需要立即生效，
+    /// 不依赖 AppKit 的 `updateTrackingAreas` 回调时机。
+    func syncPasteHoverTracking() {
+        refreshPasteHoverTracking()
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        updateHoveredPasteCell(at: convert(event.locationInWindow, from: nil))
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        setHoveredPasteCell(nil)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        setHoveredPasteCell(nil)
+        let point = convert(event.locationInWindow, from: nil)
+        if showPastePreviewIfNeeded(at: point) {
+            return
+        }
+        super.mouseDown(with: event)
+    }
+
+    private func updateHoveredPasteCell(at point: NSPoint) {
+        guard let cell = pastePreviewCell(at: point) else {
+            setHoveredPasteCell(nil)
+            return
+        }
+        setHoveredPasteCell(cell)
+    }
+
+    private func setHoveredPasteCell(_ cell: PasteButtonAttachmentCell?) {
+        guard hoveredPasteCell !== cell else { return }
+        hoveredPasteCell = cell
+        // 按钮是内联 attachment，由 textView 统一绘制，状态变化后整段重画即可。
+        needsDisplay = true
+    }
+
+    /// 命中测试：返回命中点所在的粘贴折叠按钮，没有则返回 nil。
+    private func pastePreviewCell(at point: NSPoint) -> PasteButtonAttachmentCell? {
+        guard let textStorage, let layoutManager, let textContainer else {
+            return nil
+        }
+
+        let containerPoint = NSPoint(
+            x: point.x - textContainerOrigin.x,
+            y: point.y - textContainerOrigin.y
+        )
+        let charIndex = layoutManager.characterIndex(
+            for: containerPoint,
+            in: textContainer,
+            fractionOfDistanceBetweenInsertionPoints: nil
+        )
+        guard charIndex < textStorage.length,
+              let attachment = textStorage.attribute(.attachment, at: charIndex, effectiveRange: nil) as? PastePreviewAttachment
+        else {
+            return nil
+        }
+
+        return attachment.attachmentCell as? PasteButtonAttachmentCell
     }
 
     override func setMarkedText(
@@ -637,14 +734,6 @@ final class EditorTextView: NSTextView {
             return
         }
         super.paste(sender)
-    }
-
-    override func mouseDown(with event: NSEvent) {
-        let point = convert(event.locationInWindow, from: nil)
-        if showPastePreviewIfNeeded(at: point) {
-            return
-        }
-        super.mouseDown(with: event)
     }
 
     override func keyDown(with event: NSEvent) {
@@ -773,8 +862,8 @@ final class EditorTextView: NSTextView {
 
 /// 折叠后的大段粘贴内容。
 ///
-/// 通过 ``PasteLinkAttachmentCell`` 在正文里绘制成一行内联的「链接样式」chip，
-/// 而不是过去那种 392×74 的卡片图片，视觉上只占用一行、随文本一起排版。
+/// 通过 ``PasteButtonAttachmentCell`` 在正文里绘制成一行内联的「小按钮」chip，
+/// 视觉上只占用一行、随文本一起排版；点击后弹出可滚动的预览 popover。
 final class PastePreviewAttachment: NSTextAttachment {
     let originalText: String
     let characterCount: Int
@@ -790,7 +879,7 @@ final class PastePreviewAttachment: NSTextAttachment {
             countStyle: .file
         )
         super.init(data: nil, ofType: nil)
-        self.attachmentCell = PasteLinkAttachmentCell(
+        self.attachmentCell = PasteButtonAttachmentCell(
             title: Self.chipTitle(characterCount: characterCount, lineCount: lineCount)
         )
     }
@@ -838,31 +927,31 @@ final class PastePreviewAttachment: NSTextAttachment {
     }
 }
 
-// MARK: - PasteLinkAttachmentCell
+// MARK: - PasteButtonAttachmentCell
 
-/// 把折叠的大段粘贴绘制成一行「链接样式」的内联 chip。
+/// 把折叠的大段粘贴绘制成一行内联的「小按钮」。
 ///
-/// chip 跟随正文基线排版，只占一行，包含一个图标和一行摘要文字，外观接近一段
-/// 可点击的文本链接（accent 色 + 下划线），而不是过去那种独立的卡片图片。
+/// 外观是一个圆角胶囊：淡色背景 + 细描边 + 图标 + 一行摘要文字，
+/// 与正文基线对齐且只占一行。hover 时背景与描边加深，让用户知道这是个可点的按钮。
 /// 宽度在初始化时按文本测量并缓存，避免布局阶段反复测量字符串。
-final class PasteLinkAttachmentCell: NSTextAttachmentCell {
-    private static let titleFont = NSFont.systemFont(ofSize: 12, weight: .medium)
-    private static let symbolPointSize: CGFloat = 10
+final class PasteButtonAttachmentCell: NSTextAttachmentCell {
+    private static let titleFont = NSFont.systemFont(ofSize: 11, weight: .medium)
+    private static let symbolPointSize: CGFloat = 9
     private static let symbolName = "doc.on.clipboard"
-    private static let leadingPadding: CGFloat = 1
-    private static let trailingPadding: CGFloat = 2
-    private static let iconSize: CGFloat = 12
+    private static let contentInset: CGFloat = 6
+    private static let iconSize: CGFloat = 11
     private static let iconTitleSpacing: CGFloat = 4
-    private static let maximumWidth: CGFloat = 320
+    private static let maximumWidth: CGFloat = 260
     private static let chipHeight: CGFloat = 18
+    private static let cornerRadius: CGFloat = 5
     private static let baselineOffset: CGFloat = -4
+    /// 描边宽度的一半，留给描边本身，避免描边被裁掉。
+    private static let strokeInset: CGFloat = 1
 
     private static var titleAttributes: [NSAttributedString.Key: Any] {
         [
             .font: titleFont,
-            .foregroundColor: NSColor.controlAccentColor,
-            .underlineStyle: NSUnderlineStyle.single.rawValue,
-            .underlineColor: NSColor.controlAccentColor
+            .foregroundColor: NSColor.labelColor
         ]
     }
 
@@ -873,8 +962,7 @@ final class PasteLinkAttachmentCell: NSTextAttachmentCell {
         self.chipTitle = title
         let measured = ceil((title as NSString).size(withAttributes: Self.titleAttributes).width)
         let maximum = Self.maximumWidth
-            - Self.leadingPadding
-            - Self.trailingPadding
+            - Self.contentInset * 2
             - Self.iconSize
             - Self.iconTitleSpacing
         self.chipTitleWidth = min(measured, maximum)
@@ -888,7 +976,7 @@ final class PasteLinkAttachmentCell: NSTextAttachmentCell {
 
     override func cellSize() -> NSSize {
         NSSize(
-            width: Self.leadingPadding + Self.iconSize + Self.iconTitleSpacing + chipTitleWidth + Self.trailingPadding,
+            width: Self.contentInset * 2 + Self.iconSize + Self.iconTitleSpacing + chipTitleWidth,
             height: Self.chipHeight
         )
     }
@@ -898,23 +986,47 @@ final class PasteLinkAttachmentCell: NSTextAttachmentCell {
     }
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView?) {
-        var cursorX = cellFrame.minX + Self.leadingPadding
-        if let symbol = Self.symbolImage() {
-            let iconRect = NSRect(
-                x: cursorX,
-                y: cellFrame.midY - Self.iconSize / 2,
-                width: Self.iconSize,
-                height: Self.iconSize
-            )
-            symbol.draw(in: iconRect)
-            cursorX = iconRect.maxX + Self.iconTitleSpacing
+        let isHighlighted = (controlView as? EditorTextView)?.hoveredPasteCell === self
+
+        // 描边占1pt，位于 cellFrame 外缘之内，所以左右各留 1pt 的描边空间。
+        let chipRect = NSRect(
+            x: cellFrame.minX + Self.strokeInset,
+            y: cellFrame.minY + 1,
+            width: cellFrame.width - Self.strokeInset * 2,
+            height: cellFrame.height - 2
+        )
+
+        let path = NSBezierPath(
+            roundedRect: chipRect,
+            xRadius: Self.cornerRadius,
+            yRadius: Self.cornerRadius
+        )
+        path.lineWidth = 1
+
+        if isHighlighted {
+            NSColor.controlAccentColor.withAlphaComponent(0.16).setFill()
+            path.fill()
+            NSColor.controlAccentColor.withAlphaComponent(0.45).setStroke()
+        } else {
+            NSColor.labelColor.withAlphaComponent(0.07).setFill()
+            path.fill()
+            NSColor.labelColor.withAlphaComponent(0.16).setStroke()
         }
 
+        let iconRect = NSRect(
+            x: chipRect.minX + Self.contentInset,
+            y: chipRect.midY - Self.iconSize / 2,
+            width: Self.iconSize,
+            height: Self.iconSize
+        )
+        Self.symbolImage()?.draw(in: iconRect)
+
         let lineHeight = ceil(Self.titleFont.ascender - Self.titleFont.descender)
+        let titleMinX = iconRect.maxX + Self.iconTitleSpacing
         let titleRect = NSRect(
-            x: cursorX,
-            y: cellFrame.midY - lineHeight / 2,
-            width: max(0, cellFrame.maxX - Self.trailingPadding - cursorX),
+            x: titleMinX,
+            y: chipRect.midY - lineHeight / 2,
+            width: max(0, chipRect.maxX - Self.contentInset - titleMinX),
             height: lineHeight
         )
 
@@ -930,7 +1042,7 @@ final class PasteLinkAttachmentCell: NSTextAttachmentCell {
             return nil
         }
         let configuration = NSImage.SymbolConfiguration(pointSize: symbolPointSize, weight: .semibold)
-            .applying(NSImage.SymbolConfiguration(paletteColors: [.controlAccentColor]))
+            .applying(NSImage.SymbolConfiguration(paletteColors: [.secondaryLabelColor]))
         return symbol.withSymbolConfiguration(configuration)
     }
 }

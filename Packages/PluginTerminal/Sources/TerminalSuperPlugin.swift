@@ -5,6 +5,7 @@ import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
+import ProviderPanelBottom
 import ProviderProject
 import ProviderRailView
 import ProviderToolbar
@@ -32,6 +33,8 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
         policy: .disabledByDefault
     )
     private let projectObserver = TerminalV2ProjectObserver(project: nil)
+    /// 底部面板宿主（PanelBottom）引用；缺失时（如 headless ACP）降级为仅 ActivityBar 入口。
+    private var panelBottom: (any PanelBottomProviding)?
 
     public init() {}
 
@@ -69,7 +72,8 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "terminal",
                 order: order,
                 ownerPluginID: id,
-                preservesContentFooter: true
+                // 激活时隐藏 PanelBottom（content footer），不保留底部面板。
+                preservesContentFooter: false
             ) { state in
                 if state == .activated {
                     toolbar?.setVisibleCategories([.global, .project])
@@ -77,31 +81,44 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
                     rootView?.setRailView(nil)
                     rootView?.setContentHeaderViewHidden(true)
                     content?.setContentView(AnyView(TerminalV2MainView(observer: terminalProjectObserver)))
-                    rootView?.setContentFooterView(
-                        AnyView(TerminalV2BottomPanelView(observer: terminalProjectObserver))
-                    )
+                    // 激活时隐藏底部面板，只保留终端主视图。
+                    rootView?.setContentFooterViewHidden(true)
                 } else {
                     toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     chat?.setVisible(true)
                     rootView?.setRailView(railView?.makeRailView())
                     rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                     rootView?.setContentHeaderViewHidden(false)
-                    rootView?.setContentFooterView(nil)
                 }
             },
         ])
+
+        registerPanelBottomTab(kernel: kernel)
+    }
+
+    /// 运行时启用：重新注册底部面板入口。
+    ///
+    /// 启动时被跳过、从未 Boot 的插件走 `onBoot` 完整初始化；曾 Boot 过
+    /// 再启用的插件只走本方法。
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        registerPanelBottomTab(kernel: kernel)
+    }
+
+    /// 运行时禁用：撤回底部面板入口（内核不会代撤 Provider 侧贡献）。
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        panelBottom?.removeItems(ownerPluginID: id)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         projectObserver.cancel()
         TerminalTabsViewModel.shared.closeAllSessions()
         TerminalTabsViewModel.bottomPanel.closeAllSessions()
+        // 撤回底部面板入口；容器的安装/撤回由 PanelBottom 宿主统一管理。
+        panelBottom?.removeItems(ownerPluginID: id)
+        panelBottom = nil
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
-        if wasActive {
-            rootView?.setContentFooterView(nil)
-        }
         rootView?.deactivateContentFooterHeightProfile(ownerID: id)
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
@@ -119,6 +136,29 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
     public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
+
+    // MARK: - 私有方法
+
+    /// 注册底部面板 Terminal 入口：与 ActivityBar 全屏终端相互独立的
+    /// 底部终端会话（`.bottomPanel` 实例），在编辑器工作区的底部面板以 tab 呈现。
+    private func registerPanelBottomTab(kernel: KernelCoreContainer) {
+        guard kernel.isProviderRegistered((any PanelBottomProviding).self),
+              let panelBottom = kernel.resolveProvider((any PanelBottomProviding).self) else {
+            return
+        }
+        let observer = projectObserver
+        self.panelBottom = panelBottom
+        panelBottom.addItems([
+            PanelBottomItem(
+                id: "\(id).terminal",
+                title: pluginLocalization.string("Terminal"),
+                systemImage: "terminal",
+                // tab 权重派生自插件 order，相对顺序由插件目录统一决定。
+                order: order,
+                ownerPluginID: id
+            ) { AnyView(TerminalV2BottomPanelView(observer: observer)) }
+        ])
+    }
 }
 
 @MainActor
@@ -134,6 +174,10 @@ private struct TerminalV2MainView: View {
     }
 }
 
+/// 底部面板中的终端入口视图。
+///
+/// 与 ViewContainer（`.shared` 实例）使用不同的 ViewModel，
+/// 两处的终端会话相互独立。
 @MainActor
 private struct TerminalV2BottomPanelView: View {
     @ObservedObject private var observer: TerminalV2ProjectObserver

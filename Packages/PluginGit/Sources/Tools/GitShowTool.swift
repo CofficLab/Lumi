@@ -15,7 +15,7 @@ public struct GitShowV2Tool: SuperAgentTool, @unchecked Sendable {
         do {
             let path = try await GitV2ToolSupport.path(arguments, project: project)
             let detail = try await GitService.shared.getCommitDetail(path: path, hash: hash)
-            let files = try GitService.shared.getCommitChangedFiles(path: path, hash: hash)
+            let files = try await GitService.shared.getCommitChangedFiles(path: path, hash: hash)
             var output = "## Commit `\(detail.hash.prefix(7))`\n\n**信息**: \(detail.message)\n\n**作者**: \(detail.author) <\(detail.email)>\n\n**日期**: \(detail.date)\n\n"
             if !detail.body.isEmpty { output += "**正文**:\n\(detail.body)\n\n" }
             if let stats = detail.stats { output += "**统计**: \(stats.filesChanged) 个文件，+\(stats.insertions) 行，-\(stats.deletions) 行\n\n" }

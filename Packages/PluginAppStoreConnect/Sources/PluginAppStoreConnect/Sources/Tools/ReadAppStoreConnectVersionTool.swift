@@ -63,6 +63,9 @@ public struct ReadAppStoreConnectVersionTool: SuperAgentTool {
             if let downloadable = version.downloadable {
                 lines.append("- downloadable=\(downloadable)")
             }
+            if let earliestReleaseDate = version.earliestReleaseDate {
+                lines.append("- earliestReleaseDate=\(earliestReleaseDate)")
+            }
             lines.append("Use id as versionID for list-localizations / create-localization.")
             return lines.joined(separator: "\n")
         } catch {

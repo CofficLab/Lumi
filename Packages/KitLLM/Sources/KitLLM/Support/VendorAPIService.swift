@@ -14,16 +14,28 @@ public final class VendorAPIService: @unchecked Sendable {
     private let maxAttempts: Int
     private let baseRetryDelay: Double
 
+    /// 默认使用长空闲超时的 session。
+    ///
+    /// 与 NetworkProvider 保持一致：流式 LLM（思考模式）在首个 SSE 事件前
+    /// 可能长时间无字节，`URLSession.shared` 的 60s 空闲超时会把尚未开始的
+    /// 流掐断，导致 `VendorAPIError.incompleteStream`。
     public init(
-        session: URLSession = .shared,
+        session: URLSession? = nil,
         networkProvider: (any LLMNetworkProviding)? = nil,
         maxAttempts: Int = 3,
         baseRetryDelay: Double = 1.0
     ) {
-        self.session = session
+        self.session = session ?? VendorAPIService.makeLongTimeoutSession()
         self.networkProvider = networkProvider
         self.maxAttempts = max(1, maxAttempts)
         self.baseRetryDelay = max(0, baseRetryDelay)
+    }
+
+    private static func makeLongTimeoutSession() -> URLSession {
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 300
+        configuration.timeoutIntervalForResource = 600
+        return URLSession(configuration: configuration)
     }
 
     /// 发送聊天完成请求；只对瞬态网络错误和可恢复 HTTP 状态重试。

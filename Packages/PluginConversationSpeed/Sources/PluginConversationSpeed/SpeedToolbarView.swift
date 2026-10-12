@@ -38,6 +38,7 @@ struct SpeedToolbarView: View {
                 streamingDurationMs: viewModel.streamingDurationMs,
                 timeToFirstTokenMs: viewModel.timeToFirstTokenMs,
                 providerID: viewModel.providerID,
+                requestCount: viewModel.requestCount,
                 speedHistory: viewModel.speedHistory
             )
             .frame(width: 420)

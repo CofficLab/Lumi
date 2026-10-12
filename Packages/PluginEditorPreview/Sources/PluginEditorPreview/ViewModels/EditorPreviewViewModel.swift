@@ -84,7 +84,7 @@ public final class EditorPreviewViewModel: ObservableObject {
         if ["md", "markdown", "mdown", "mkdn", "mkd"].contains(extensionName) {
             return .markdown
         }
-        if ["png", "jpg", "jpeg", "gif", "webp", "tif", "tiff", "heic", "bmp"].contains(extensionName) {
+        if ["png", "jpg", "jpeg", "gif", "webp", "tif", "tiff", "heic", "bmp", "svg"].contains(extensionName) {
             return .image
         }
         return .unsupported

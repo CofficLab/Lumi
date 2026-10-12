@@ -12,6 +12,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
@@ -23,6 +24,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources/PluginLLMProviderCommandCode"
@@ -33,6 +35,7 @@ let package = Package(
                 "PluginLLMProviderCommandCode",
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
             ],
             path: "Tests/PluginLLMProviderCommandCodeTests"
         ),
