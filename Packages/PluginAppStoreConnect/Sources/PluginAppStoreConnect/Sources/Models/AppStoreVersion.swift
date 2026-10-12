@@ -10,6 +10,7 @@ struct AppStoreVersion: Identifiable, Equatable, Hashable, Decodable {
     let copyright: String?
     let releaseType: String?
     let downloadable: Bool?
+    let earliestReleaseDate: Date?
 
     /// Human-readable platform label
     var platformLabel: String {
@@ -45,6 +46,7 @@ struct AppStoreVersion: Identifiable, Equatable, Hashable, Decodable {
         case copyright
         case releaseType
         case downloadable
+        case earliestReleaseDate
     }
 
     init(
@@ -56,7 +58,8 @@ struct AppStoreVersion: Identifiable, Equatable, Hashable, Decodable {
         createdDate: Date?,
         copyright: String? = nil,
         releaseType: String? = nil,
-        downloadable: Bool? = nil
+        downloadable: Bool? = nil,
+        earliestReleaseDate: Date? = nil
     ) {
         self.id = id
         self.platform = platform
@@ -67,6 +70,7 @@ struct AppStoreVersion: Identifiable, Equatable, Hashable, Decodable {
         self.copyright = copyright
         self.releaseType = releaseType
         self.downloadable = downloadable
+        self.earliestReleaseDate = earliestReleaseDate
     }
 
     init(from decoder: Decoder) throws {
@@ -81,5 +85,6 @@ struct AppStoreVersion: Identifiable, Equatable, Hashable, Decodable {
         copyright = try attributes.decodeIfPresent(String.self, forKey: .copyright)
         releaseType = try attributes.decodeIfPresent(String.self, forKey: .releaseType)
         downloadable = try attributes.decodeIfPresent(Bool.self, forKey: .downloadable)
+        earliestReleaseDate = try attributes.decodeIfPresent(Date.self, forKey: .earliestReleaseDate)
     }
 }

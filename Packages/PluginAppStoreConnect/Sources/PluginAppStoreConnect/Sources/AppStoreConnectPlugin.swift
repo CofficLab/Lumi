@@ -339,6 +339,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
         StartAppStoreConnectCiBuildRunTool(),
         SetAppStoreConnectCiWorkflowEnabledTool(),
         UpdateAppStoreConnectVersionTool(),
+        DeleteAppStoreConnectVersionTool(),
         SetAppStoreConnectAgeRatingTool(),
     ]
 }
