@@ -19,6 +19,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
         .package(path: "../ProviderChatSection"),
+        .package(path: "../ProviderPanelBottom"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7")
     ],
@@ -30,8 +31,10 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+                .product(name: "ProviderPanelBottom", package: "ProviderPanelBottom"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources/PluginRootView",
@@ -41,8 +44,11 @@ let package = Package(
             name: "PluginRootViewTests",
             dependencies: [
                 "PluginRootView",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+                .product(name: "ProviderPanelBottom", package: "ProviderPanelBottom"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
             ],
             path: "Tests/PluginRootViewTests"
         )
