@@ -10,6 +10,7 @@
 - 插件不能创建 iOS 工程、Bundle ID、证书或签名，也不能上传 `.ipa`。构建必须先通过 Xcode、Transporter 或已配置的 Xcode Cloud 工作流上传并处理完成。
 - App Store Connect 最终审核前置条件可能还包括年龄分级、隐私信息、价格与可用地区、审核联系信息等插件未覆盖的内容。提交失败时，读取 Apple 返回的错误并引导用户到 App Store Connect 补充配置。
 - 调试时可以直接用 curl 调用 App Store Connect API（见下文「直接用 curl 调试 App Store Connect API」），不必依赖内置工具。
+- 所有已验证的 REST API 端点、请求参数和请求体示例见同目录的 [API-REFERENCE.md](./API-REFERENCE.md)。需要 curl 调试、查询请求体格式或了解端点与内置工具的对应关系时先读它。
 
 ## 工具分组
 
