@@ -49,16 +49,20 @@ struct MiniMaxProviderPluginTests {
         let info = provider.providerInfo
 
         #expect(info.modelIDs == [
+            "MiniMax-M3.1-Flash-Preview",
             "MiniMax-M3", "MiniMax-M2.7", "MiniMax-M2.7-highspeed",
             "MiniMax-M2.5", "MiniMax-M2.5-highspeed",
         ])
-        #expect(info.models.count == 5)
+        #expect(info.models.count == 6)
         #expect(info.contains(model: info.defaultModel))
 
         // 三个协议变体共享同一批模型
-        #expect(MiniMaxVendorModels.all.count == 5)
+        #expect(MiniMaxVendorModels.all.count == 6)
         #expect(MiniMaxVendorModels.all.map(\.id) == info.modelIDs)
 
+        let flash = try #require(info.models.first(where: { $0.id == "MiniMax-M3.1-Flash-Preview" }))
+        #expect(flash.contextWindowSize == 1_000_000)
+        #expect(flash.supportsVision == true)
         let m3 = try #require(info.models.first(where: { $0.id == "MiniMax-M3" }))
         #expect(m3.contextWindowSize == 1_000_000)
         #expect(m3.supportsVision == true)

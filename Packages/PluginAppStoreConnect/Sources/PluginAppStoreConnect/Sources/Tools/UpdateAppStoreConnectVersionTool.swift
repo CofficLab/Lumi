@@ -8,7 +8,7 @@ public struct UpdateAppStoreConnectVersionTool: SuperAgentTool {
     public init() {}
 
     public func description(for language: LanguagePreference) -> String {
-        AppStoreConnectLocalization.string("Update editable attributes of an App Store version such as copyright, releaseType, or downloadable. Only the fields you provide are changed; omitted fields keep their current values.")
+        AppStoreConnectLocalization.string("Update editable attributes of an App Store version such as copyright, releaseType, downloadable, or earliestReleaseDate. Only the fields you provide are changed; omitted fields keep their current values.")
     }
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
@@ -34,6 +34,10 @@ public struct UpdateAppStoreConnectVersionTool: SuperAgentTool {
                 "downloadable": .object([
                     "type": .string("boolean"),
                     "description": .string(AppStoreConnectLocalization.string("Whether the version is downloadable."))
+                ]),
+                "earliestReleaseDate": .object([
+                    "type": .string("string"),
+                    "description": .string(AppStoreConnectLocalization.string("Earliest scheduled release date in ISO 8601 format (e.g. 2026-01-01T10:00:00Z). Pass an empty string to clear it."))
                 ])
             ]),
             "required": .array([.string("versionID")])
@@ -53,9 +57,10 @@ public struct UpdateAppStoreConnectVersionTool: SuperAgentTool {
         let copyright = arguments["copyright"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines)
         let releaseType = arguments["releaseType"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines)
         let downloadable = AppStoreConnectToolSupport.parseBool(arguments["downloadable"])
+        let earliestReleaseDate = arguments["earliestReleaseDate"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        if copyright == nil, releaseType == nil, downloadable == nil {
-            return "No update fields provided. Pass copyright, releaseType, or downloadable."
+        if copyright == nil, releaseType == nil, downloadable == nil, earliestReleaseDate == nil {
+            return "No update fields provided. Pass copyright, releaseType, downloadable, or earliestReleaseDate."
         }
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
@@ -66,7 +71,8 @@ public struct UpdateAppStoreConnectVersionTool: SuperAgentTool {
                 id: versionID,
                 copyright: copyright,
                 releaseType: releaseType,
-                downloadable: downloadable
+                downloadable: downloadable,
+                earliestReleaseDate: earliestReleaseDate
             )
             var lines = [
                 "Version id=\(versionID) updated.",
@@ -78,6 +84,9 @@ public struct UpdateAppStoreConnectVersionTool: SuperAgentTool {
             }
             if let r = updated.releaseType {
                 lines.append("- releaseType=\(r)")
+            }
+            if let e = updated.earliestReleaseDate {
+                lines.append("- earliestReleaseDate=\(e)")
             }
             return lines.joined(separator: "\n")
         } catch {

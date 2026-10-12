@@ -6,10 +6,11 @@
 
 - 开始前确认 App Store Connect 插件已经配置 Issuer ID、Key ID 和 `.p8` 私钥。
 - 所有工具都需要使用 App Store Connect 的真实 ID，不要猜测应用、版本、本地化、截图集、截图或构建 ID。
-- 创建版本、关联构建、提交审核、撤回提交和上传截图会修改远端数据。执行这些操作前确认目标和参数。
+- 创建版本、删除版本、关联构建、提交审核、撤回提交和上传截图会修改远端数据。执行这些操作前确认目标和参数。
 - 插件不能创建 iOS 工程、Bundle ID、证书或签名，也不能上传 `.ipa`。构建必须先通过 Xcode、Transporter 或已配置的 Xcode Cloud 工作流上传并处理完成。
 - App Store Connect 最终审核前置条件可能还包括年龄分级、隐私信息、价格与可用地区、审核联系信息等插件未覆盖的内容。提交失败时，读取 Apple 返回的错误并引导用户到 App Store Connect 补充配置。
 - 调试时可以直接用 curl 调用 App Store Connect API（见下文「直接用 curl 调试 App Store Connect API」），不必依赖内置工具。
+- 所有已验证的 REST API 端点、请求参数和请求体示例见同目录的 [API-REFERENCE.md](./API-REFERENCE.md)。需要 curl 调试、查询请求体格式或了解端点与内置工具的对应关系时先读它。
 
 ## 工具分组
 
@@ -21,9 +22,11 @@
 | `app_store_connect_list_versions` | 列出应用的所有平台版本并获取 `versionID` |
 | `app_store_connect_read_version` | 读取单个版本详情 |
 | `app_store_connect_create_version` | 创建新的 iOS、macOS、tvOS 或 visionOS 版本 |
+| `app_store_connect_update_version` | 更新版本的版权、发布类型、可下载性或最早发布时间 |
+| `app_store_connect_delete_version` | 删除版本（危险操作），例如删除挡住新版本的草稿 |
 | `app_store_connect_release_version` | 发布处于待开发者发布状态的版本 |
 
-创建 iOS 版本时使用 `platform: "IOS"`。建议先列出版本，确认同一平台没有重复版本或正在进行中的版本，再创建版本。
+创建 iOS 版本时使用 `platform: "IOS"`。建议先列出版本，确认同一平台没有重复版本或正在进行中的版本，再创建版本。Apple 不允许修改已创建版本的版本号；需要改号时，先用 `app_store_connect_delete_version` 删除进行中的草稿版本，再用 `app_store_connect_create_version` 创建新版本号。
 
 ### 本地化与商店元数据
 

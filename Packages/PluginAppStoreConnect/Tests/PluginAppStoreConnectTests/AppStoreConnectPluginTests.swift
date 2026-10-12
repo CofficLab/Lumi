@@ -81,7 +81,7 @@ func appStoreConnectSkill() {
 func toolNamesUseCurrentConvention() {
     let names = AppStoreConnectPlugin.agentTools.map(\.name)
 
-    #expect(names.count == 24)
+    #expect(names.count == 27)
     #expect(Set(names).count == names.count)
     #expect(names.allSatisfy { $0.hasPrefix("app_store_connect_") })
     #expect(names.allSatisfy { !$0.contains("-") && !$0.contains(".") })
@@ -91,8 +91,31 @@ func toolNamesUseCurrentConvention() {
 @MainActor
 func toolSchemasAreObjects() {
     let schemas = AppStoreConnectPlugin.agentTools.map { $0.inputSchema(for: .english) }
-    #expect(schemas.count == 24)
+    #expect(schemas.count == 27)
     #expect(schemas.allSatisfy { ($0["type"] as? String) == "object" })
+}
+
+@Test("delete version tool is a high-risk single-id operation")
+@MainActor
+func deleteVersionToolShape() {
+    let tool = DeleteAppStoreConnectVersionTool()
+
+    #expect(tool.name == "app_store_connect_delete_version")
+    #expect(tool.permissionRiskLevel(arguments: [:]) == .high)
+    let properties = tool.inputSchema(for: .english)["properties"] as? [String: Any]
+    #expect(properties?["versionID"] != nil)
+}
+
+@Test("update version exposes earliestReleaseDate alongside existing fields")
+@MainActor
+func updateVersionSchemaIncludesEarliestReleaseDate() {
+    let tool = UpdateAppStoreConnectVersionTool()
+
+    let properties = tool.inputSchema(for: .english)["properties"] as? [String: Any]
+    #expect(properties?["copyright"] != nil)
+    #expect(properties?["releaseType"] != nil)
+    #expect(properties?["downloadable"] != nil)
+    #expect(properties?["earliestReleaseDate"] != nil)
 }
 
 @Test("credentials require all App Store Connect signing fields")

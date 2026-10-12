@@ -52,6 +52,15 @@ enum ConnectCacheInvalidator {
                 cache.invalidate(accountKey: accountKey) { $0.path.contains("/appStoreVersions") }
             }
 
+        case ("DELETE", let deletePath) where deletePath.hasPrefix("/v1/appStoreVersions/"):
+            if let versionID = extractTrailingID(from: deletePath) {
+                cache.invalidate(tags: [.version(versionID)])
+                cache.invalidate(accountKey: accountKey) { entry in
+                    entry.tags.contains(.version(versionID))
+                        || entry.path.contains("/appStoreVersions")
+                }
+            }
+
         case ("POST", "/v1/appStoreVersionLocalizations"):
             if let versionID = extractVersionID(fromLocalizationCreateBody: body) {
                 cache.invalidate(tags: [.version(versionID)])
