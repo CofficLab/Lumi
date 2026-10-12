@@ -15,10 +15,37 @@ enum MiniMaxVendorModels {
 }
 
 /// MiniMax TokenPlan OpenAI 协议变体（迁移自旧 `MiniMaxOpenAIProvider`）。
+///
+/// 模型列表获取策略：
+/// 1. 远程模型池（国内站 `/v1/models`），需 API Key，可手动刷新。
+/// 2. 插件自有磁盘缓存（`models.json`），跨启动保留，拉取失败时兜底。
+/// 3. 下方 `MiniMaxVendorModels` 静态清单，含上下文窗口与视觉能力，完全无网时兜底。
+///
+/// 上游新增模型无需改本文件——刷新一次即可拿到。
 @MainActor
 public final class MiniMaxOpenAIProvider: VendorLLMProvider {
 
-    public init(apiService: VendorAPIService = VendorAPIService()) {
+    // MARK: - 远程模型状态
+
+    private let modelListCache: MiniMaxLocalStore
+    private var fetchedRemoteModels: [LLMModelInfo] = []
+    private var remoteSyncDate: Date?
+
+    /// 使用纯内存缓存（不落盘）。仅供测试与 storage 缺失时降级。
+    public convenience init(apiService: VendorAPIService = VendorAPIService()) {
+        self.init(apiService: apiService, modelListCache: MiniMaxLocalStore())
+    }
+
+    /// 使用外部注入的模型列表缓存。
+    ///
+    /// - Parameters:
+    ///   - apiService: 网络请求服务。
+    ///   - modelListCache: 插件在 `onBoot` 中绑定好目录的 store；未绑定目录时退化为纯内存。
+    init(
+        apiService: VendorAPIService,
+        modelListCache: MiniMaxLocalStore
+    ) {
+        self.modelListCache = modelListCache
         super.init(
             info: LLMProviderInfo(
                 id: "minimax-tokenplan",
@@ -39,6 +66,43 @@ public final class MiniMaxOpenAIProvider: VendorLLMProvider {
         OpenAICompatibleProviderConfiguration(
             baseURL: "https://api.minimaxi.com/v1/chat/completions"
         )
+    }
+
+    // MARK: - SuperLLMProvider（远程模型逻辑）
+
+    public override var usesRemoteModelList: Bool { true }
+
+    public override var lastModelSyncDate: Date? { remoteSyncDate }
+
+    /// 动态模型池：静态清单 ∪（远程快照 → 磁盘缓存）。
+    ///
+    /// 合并以静态清单为准（见 `MiniMaxRemoteModelListLoader.merge`），
+    /// 保证上下文窗口与视觉能力不会因刷新而丢失。
+    public override var availableModels: [LLMModelInfo] {
+        let base = providerInfo.models
+
+        let remote: [LLMModelInfo]
+        if !fetchedRemoteModels.isEmpty {
+            remote = fetchedRemoteModels
+        } else if let cached = modelListCache.cachedSnapshot() {
+            remote = cached.models
+        } else {
+            remote = []
+        }
+
+        return MiniMaxRemoteModelListLoader.merge(base: base, remote: remote)
+    }
+
+    /// 拉取国内站模型列表并更新内部快照与磁盘缓存。
+    ///
+    /// - Throws: 缺少 API Key / 请求或解析失败时抛错，**保留旧模型池**。
+    public override func refreshModels() async throws {
+        let loader = MiniMaxRemoteModelListLoader(apiService: apiService)
+        let models = try await loader.load(apiKey: try resolveAPIKey())
+        fetchedRemoteModels = models
+        let now = Date()
+        remoteSyncDate = now
+        modelListCache.store(models: models, syncedAt: now)
     }
 }
 

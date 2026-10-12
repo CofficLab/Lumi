@@ -2,6 +2,7 @@ import Foundation
 import os
 import KernelCore
 import ProviderLLMManager
+import ProviderStorage
 import KitLLM
 import LumiLoggingKit
 /// MiniMax 供应商装配插件（KernelCore 生态）。
@@ -10,16 +11,21 @@ import LumiLoggingKit
 /// `LLMProviderManagerProviding`，聊天链路即可经管理器路由到该供应商。
 /// 三个协议变体共享同一批模型与 API Key，仅保留功能最完整的 OpenAI 协议变体，
 /// Anthropic / Responses 变体现注释停用。
+///
+/// 远程模型列表缓存由本插件自行维护，落盘在
+/// `storage.pluginDataDirectory(for: pluginID)/models.json`。
 @MainActor
 public final class MiniMaxProviderPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.llm-provider.minimax", category: "MiniMax")
     nonisolated public static let emoji = "⚡"
     nonisolated static let verbose = false
 
-    public let id = "com.coffic.lumi.plugin.llm-provider.minimax"
+    public static let pluginID = "com.coffic.lumi.plugin.llm-provider.minimax"
+
+    public let id = MiniMaxProviderPlugin.pluginID
     public let order = 100
     public let metadata = PluginMetadata(
-        id: "com.coffic.lumi.plugin.llm-provider.minimax",
+        id: MiniMaxProviderPlugin.pluginID,
         name: "MiniMax 供应商",
         description: "",
         category: .llm,
@@ -36,9 +42,14 @@ public final class MiniMaxProviderPlugin: SuperPlugin, SuperLog {
         }
         let networkProvider = kernel.resolveProvider((any LLMNetworkProviding).self)
         let apiService = VendorAPIService(networkProvider: networkProvider)
+
+        // 绑定插件自有数据目录，供远程模型列表缓存落盘。
+        let localStore = MiniMaxLocalStore()
+        localStore.configure(storage: kernel.resolveProvider((any StorageProviding).self))
+
         // 三个协议变体共享同一批模型与 API Key，仅保留功能最完整的 OpenAI 协议变体。
         // Anthropic / Responses 变体现注释停用（如需切换协议，取消注释即可）。
-        let providers: [any SuperLLMProvider] = [MiniMaxOpenAIProvider(apiService: apiService)]
+        let providers: [any SuperLLMProvider] = [MiniMaxOpenAIProvider(apiService: apiService, modelListCache: localStore)]
         // let providers: [any SuperLLMProvider] = [MiniMaxAnthropicProvider(apiService: apiService)]
         // let providers: [any SuperLLMProvider] = [MiniMaxResponsesProvider(apiService: apiService)]
         for provider in providers {
