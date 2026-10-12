@@ -31,6 +31,12 @@ public final class MiniMaxOpenAIProvider: VendorLLMProvider {
     private var fetchedRemoteModels: [LLMModelInfo] = []
     private var remoteSyncDate: Date?
 
+    /// UI 测试钩子：非 nil 时刷新远程模型列表用它代替 Keychain 解析，
+    /// 避免测试启动的 App 依赖用户真实 API Key。生产代码保持 nil。
+    #if DEBUG
+    var apiKeyOverride: String?
+    #endif
+
     /// 使用纯内存缓存（不落盘）。仅供测试与 storage 缺失时降级。
     public convenience init(apiService: VendorAPIService = VendorAPIService()) {
         self.init(apiService: apiService, modelListCache: MiniMaxLocalStore())
@@ -98,7 +104,17 @@ public final class MiniMaxOpenAIProvider: VendorLLMProvider {
     /// - Throws: 缺少 API Key / 请求或解析失败时抛错，**保留旧模型池**。
     public override func refreshModels() async throws {
         let loader = MiniMaxRemoteModelListLoader(apiService: apiService)
-        let models = try await loader.load(apiKey: try resolveAPIKey())
+        let apiKey: String
+        #if DEBUG
+        if let apiKeyOverride {
+            apiKey = apiKeyOverride
+        } else {
+            apiKey = try resolveAPIKey()
+        }
+        #else
+        apiKey = try resolveAPIKey()
+        #endif
+        let models = try await loader.load(apiKey: apiKey)
         fetchedRemoteModels = models
         let now = Date()
         remoteSyncDate = now

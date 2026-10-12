@@ -65,6 +65,17 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
         }
     }
 
+    /// 广播某供应商远程模型列表已刷新。
+    ///
+    /// 与 `DefaultLLMManager` 保持一致：远程模型刷新成功后必须广播
+    /// `.modelsRefreshed`，观察者（如模型选择器）才会重新读取动态模型池。
+    public func notifyModelsRefreshed(providerID: String) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)models refreshed: provider=\(providerID, privacy: .public)")
+        }
+        notify(.modelsRefreshed(providerID: providerID))
+    }
+
     // MARK: - UserDefaults Keys
 
     private enum UserDefaultsKeys {

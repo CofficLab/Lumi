@@ -35,6 +35,7 @@ struct ProviderListItem: View {
                         Text("\(modelCount ?? info.models.count) models")
                             .font(.appMicro)
                             .foregroundColor(theme.textTertiary)
+                            .accessibilityIdentifier("lumi.model-selector.provider.\(info.id).count")
                     }
                 }
 
@@ -59,5 +60,6 @@ struct ProviderListItem: View {
                 }
             }
         }
+        .accessibilityIdentifier("lumi.model-selector.provider.\(info.id)")
     }
 }

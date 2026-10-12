@@ -47,6 +47,16 @@ public final class MiniMaxProviderPlugin: SuperPlugin, SuperLog {
         let localStore = MiniMaxLocalStore()
         localStore.configure(storage: kernel.resolveProvider((any StorageProviding).self))
 
+        // UI 测试模式（--lumi-ui-testing）：用桩网络与固定假 Key 装配，
+        // 刷新返回固定 9 模型，不访问真实网络、不读用户 Keychain。
+        #if DEBUG
+        if MiniMaxUITestingSupport.isEnabled {
+            let testProvider = MiniMaxUITestingSupport.makeProvider(modelListCache: localStore)
+            try? manager.register(testProvider)
+            return
+        }
+        #endif
+
         // 三个协议变体共享同一批模型与 API Key，仅保留功能最完整的 OpenAI 协议变体。
         // Anthropic / Responses 变体现注释停用（如需切换协议，取消注释即可）。
         let providers: [any SuperLLMProvider] = [MiniMaxOpenAIProvider(apiService: apiService, modelListCache: localStore)]

@@ -205,6 +205,8 @@ struct ModelListView: View {
         }
         .buttonStyle(.plain)
         .help(pluginLocalization.string("Refresh Models"))
+        .accessibilityLabel(pluginLocalization.string("Refresh Models"))
+        .accessibilityIdentifier("lumi.model-selector.refresh")
     }
 
     // MARK: - Filtering
