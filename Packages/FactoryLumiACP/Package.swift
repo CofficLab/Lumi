@@ -15,6 +15,8 @@ let package = Package(
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderChatSection"),
         .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.4.0"),
+        // 显式声明：与主工程 lock 对齐 LumiUI 版本，避免 ACP lock 停留在旧 revision
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.8.0"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderConversationInput"),
         .package(path: "../ProviderExternalFile"),
