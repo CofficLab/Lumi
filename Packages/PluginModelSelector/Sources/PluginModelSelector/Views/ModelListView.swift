@@ -118,24 +118,19 @@ struct ModelListView: View {
 
             AppDivider()
 
-            // Search（模型较少时列表可一览无余，搜索框不再占位）
-            if viewModel.showsModelSearchBar {
+            // 搜索框与远程刷新入口共用一行：模型多到需要搜索时为「搜索框 + 刷新」，
+            // 模型少到无需搜索时仍保留刷新按钮（靠右），不额外占用一行。
+            if showsSearchOrRefresh {
                 HStack(spacing: 4) {
-                    AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(pluginLocalization.string("Search models")))
+                    if viewModel.showsModelSearchBar {
+                        AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(pluginLocalization.string("Search models")))
+                    } else {
+                        Spacer(minLength: 0)
+                    }
 
                     if let providerID = viewModel.selectedProviderID,
                        viewModel.canRefreshModels(providerID: providerID) {
-                        Button {
-                            Task { await viewModel.refreshModels(providerID: providerID) }
-                        } label: {
-                            Image(systemName: "arrow.clockwise")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(theme.textTertiary)
-                                .frame(width: 28, height: 28)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .help(pluginLocalization.string("Refresh Models"))
+                        refreshButton(providerID: providerID)
                     }
                 }
                 .padding(.horizontal, 8)
@@ -180,6 +175,36 @@ struct ModelListView: View {
             }
         }
         .background(theme.background)
+    }
+
+    // MARK: - Refreshing
+
+    /// 当前供应商是否支持远程模型刷新（提供刷新按钮）。
+    private var canRefreshSelectedProvider: Bool {
+        guard let providerID = viewModel.selectedProviderID else { return false }
+        return viewModel.canRefreshModels(providerID: providerID)
+    }
+
+    /// 搜索 / 刷新这一行是否有任何内容需要展示。
+    ///
+    /// 两者都没有时整行连同分割线一并隐藏，避免占位空白。
+    private var showsSearchOrRefresh: Bool {
+        viewModel.showsModelSearchBar || canRefreshSelectedProvider
+    }
+
+    /// 手动同步远程模型列表的按钮。
+    private func refreshButton(providerID: String) -> some View {
+        Button {
+            Task { await viewModel.refreshModels(providerID: providerID) }
+        } label: {
+            Image(systemName: "arrow.clockwise")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(theme.textTertiary)
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(pluginLocalization.string("Refresh Models"))
     }
 
     // MARK: - Filtering
