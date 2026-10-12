@@ -98,24 +98,45 @@ struct SpeedPopover: View {
 // MARK: - Sub-sections
 
 extension SpeedPopover {
-    /// 实时速度与平均速度并排显示，样式统一、配色区分。
+    /// 实时、平均、最高、最低四个速度块，2×2 网格显示，配色区分。
     @ViewBuilder
     func speedCardsRow(currentTPS: Double) -> some View {
-        HStack(spacing: 10) {
-            speedCard(
-                icon: "bolt.fill",
-                title: pluginLocalization.string("Current speed"),
-                value: currentTPS,
-                tint: .blue
-            )
+        let values = speedHistory.map(\.tokensPerSecond)
 
-            if let averageTPS = SpeedSample.averageTokensPerSecond(from: speedHistory) {
+        VStack(spacing: 10) {
+            HStack(spacing: 10) {
                 speedCard(
-                    icon: "chart.line.uptrend.xyaxis",
-                    title: pluginLocalization.string("Average speed"),
-                    value: averageTPS,
-                    tint: .orange
+                    icon: "bolt.fill",
+                    title: pluginLocalization.string("Current speed"),
+                    value: currentTPS,
+                    tint: .blue
                 )
+
+                if let averageTPS = SpeedSample.averageTokensPerSecond(from: speedHistory) {
+                    speedCard(
+                        icon: "chart.line.uptrend.xyaxis",
+                        title: pluginLocalization.string("Average speed"),
+                        value: averageTPS,
+                        tint: .orange
+                    )
+                }
+            }
+
+            if let maxV = values.max(), let minV = values.min() {
+                HStack(spacing: 10) {
+                    speedCard(
+                        icon: "arrow.up.right",
+                        title: pluginLocalization.string("Highest speed"),
+                        value: maxV,
+                        tint: .green
+                    )
+                    speedCard(
+                        icon: "arrow.down.right",
+                        title: pluginLocalization.string("Lowest speed"),
+                        value: minV,
+                        tint: .indigo
+                    )
+                }
             }
         }
     }
@@ -174,20 +195,6 @@ extension SpeedPopover {
 
                 SpeedLineChart(samples: speedHistory)
                     .frame(height: 118)
-
-                HStack {
-                    Text(String(
-                        format: pluginLocalization.string("Min %.1f"),
-                        speedHistory.map(\.tokensPerSecond).min() ?? 0
-                    ))
-                    Spacer()
-                    Text(String(
-                        format: pluginLocalization.string("Max %.1f"),
-                        speedHistory.map(\.tokensPerSecond).max() ?? 0
-                    ))
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
             }
         }
     }
