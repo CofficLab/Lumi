@@ -11,7 +11,7 @@ public struct GitUnpushedV2Tool: SuperAgentTool, @unchecked Sendable {
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { "查看未推送提交" }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let hashes = GitService.shared.getUnpushedCommitHashes(path: try await GitV2ToolSupport.path(arguments, project: project))
+        let hashes = await GitService.shared.getUnpushedCommitHashes(path: try await GitV2ToolSupport.path(arguments, project: project))
         guard !hashes.isEmpty else { return "✅ 所有 commit 都已推送到远程" }
         return "## 未推送的 Commit\n\n共有 **\(hashes.count)** 个 commit 未推送到远程：\n\n" + hashes.map { "- `\($0.prefix(7))`\n" }.joined() + "\n💡 使用 `git push` 推送到远程"
     }

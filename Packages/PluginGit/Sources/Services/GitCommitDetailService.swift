@@ -84,12 +84,10 @@ public enum GitCommitDetailService {
     /// - Returns: (commit 详情, 变更文件列表)
     public static func loadCommitDetail(path: String, hash: String) async throws -> (GitCommitDetail, [GitChangedFile]) {
         async let detailTask = GitService.shared.getCommitDetail(path: path, hash: hash)
-        async let filesTask = Task.detached(priority: .userInitiated) {
-            try GitService.shared.getCommitChangedFiles(path: path, hash: hash)
-        }
+        async let filesTask = GitService.shared.getCommitChangedFiles(path: path, hash: hash)
 
         let detail = try await detailTask
-        let files = (try? await filesTask.value) ?? []
+        let files = (try? await filesTask) ?? []
         return (detail, files)
     }
 
