@@ -9,7 +9,7 @@ struct SpeedPopover: View {
     let streamingDurationMs: Double?
     let timeToFirstTokenMs: Double?
     let providerID: String?
-    let messageCount: Int
+    let requestCount: Int
     let speedHistory: [SpeedSample]
 
     var body: some View {
@@ -163,7 +163,7 @@ extension SpeedPopover {
                         unit: pluginLocalization.string("tokens / second"),
                         tint: .green
                     )
-                    messageCountCard()
+                    requestCountCard()
                 }
             }
         }
@@ -232,13 +232,13 @@ extension SpeedPopover {
         .padding(.leading, 32)
     }
 
-    /// 会话消息总数卡片。复用 `speedCard`，保持与其余统计量一致的排版。
-    private func messageCountCard() -> some View {
+    /// 请求次数卡片。复用 `speedCard`，保持与其余统计量一致的排版。
+    private func requestCountCard() -> some View {
         speedCard(
-            icon: "text.bubble",
-            title: pluginLocalization.string("Messages in conversation"),
-            value: "\(messageCount)",
-            unit: pluginLocalization.string("messages"),
+            icon: "paperplane",
+            title: pluginLocalization.string("Requests"),
+            value: "\(requestCount)",
+            unit: pluginLocalization.string("requests"),
             tint: .teal
         )
     }
@@ -287,14 +287,8 @@ extension SpeedPopover {
             Divider()
 
             VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text(pluginLocalization.string("Conversation speed trend"))
-                        .font(.subheadline.weight(.semibold))
-                    Spacer()
-                    Text("\(speedHistory.count) messages")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Text(pluginLocalization.string("Conversation speed trend"))
+                    .font(.subheadline.weight(.semibold))
 
                 SpeedLineChart(samples: speedHistory)
                     .frame(height: 118)
