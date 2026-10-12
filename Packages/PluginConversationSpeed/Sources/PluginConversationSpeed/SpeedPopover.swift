@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// 流式速度详情弹窗
 struct SpeedPopover: View {
@@ -11,6 +12,8 @@ struct SpeedPopover: View {
     let providerID: String?
     let requestCount: Int
     let speedHistory: [SpeedSample]
+
+    @State private var isExporting = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -30,6 +33,15 @@ struct SpeedPopover: View {
                         .truncationMode(.middle)
                         .help(routeLabel)
                 }
+                Button(action: exportAsImage) {
+                    Image(systemName: "arrow.down.circle")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.secondary)
+                        .opacity(isExporting ? 0.5 : 1.0)
+                }
+                .buttonStyle(.plain)
+                .disabled(isExporting)
+                .help(pluginLocalization.string("Save as image"))
             }
 
             if let tps {
@@ -115,6 +127,69 @@ struct SpeedPopover: View {
             items.append((icon: "number", label: pluginLocalization.string("Tokens"), value: "\(outputTokens)"))
         }
         return items
+    }
+
+    /// 将卡片内容渲染为 PNG 并保存到用户选择的位置。
+    @MainActor
+    private func exportAsImage() {
+        isExporting = true
+
+        let renderer = ImageRenderer(content:
+            VStack(alignment: .leading, spacing: 14) {
+                headerView
+                if let tps {
+                    speedCardsRow(currentTPS: tps)
+                } else {
+                    unavailableBlock
+                }
+                speedHistorySection
+            }
+            .padding()
+            .frame(width: 420, alignment: .leading)
+            .background(Color(.windowBackgroundColor))
+        )
+        renderer.scale = 2.0
+
+        guard let cgImage = renderer.cgImage else {
+            isExporting = false
+            return
+        }
+
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "streaming-speed.png"
+        panel.allowedContentTypes = [.png]
+
+        guard panel.runModal() == .OK, let url = panel.url else {
+            isExporting = false
+            return
+        }
+
+        let bitmap = NSBitmapImageRep(cgImage: cgImage)
+        if let pngData = bitmap.representation(using: .png, properties: [:]) {
+            try? pngData.write(to: url)
+        }
+
+        isExporting = false
+    }
+
+    /// 标题行视图，用于导出时复用。
+    private var headerView: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "gauge.with.dots.needle.bottom.50percent")
+                .font(.system(size: 18))
+                .foregroundStyle(.orange)
+            Text(pluginLocalization.string("Streaming Speed"))
+                .font(.headline)
+                .fixedSize()
+            Spacer(minLength: 8)
+            if let routeLabel {
+                Text(routeLabel)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+        }
     }
 }
 
