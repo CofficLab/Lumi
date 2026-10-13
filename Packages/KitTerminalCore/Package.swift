@@ -18,9 +18,9 @@ let package = Package(
             dependencies: ["SwiftTerm",
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
-            path: "Sources",
+            path: "Sources/KitTerminalCore",
             resources: [
-                .process("../Resources")
+                .process("../../Resources")
             ]
         ),
         .testTarget(
