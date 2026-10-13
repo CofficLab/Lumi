@@ -24,9 +24,9 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
-            path: "Sources",
+            path: "Sources/KitDownload",
             resources: [
-                .process("../Resources")
+                .process("../../Resources")
             ]
         ),
         .testTarget(

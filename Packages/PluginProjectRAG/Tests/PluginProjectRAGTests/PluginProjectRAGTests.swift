@@ -7,19 +7,19 @@ import ProviderLifecycleHooks
 import ProviderProjectRAG
 import Testing
 
-@Suite("ProjectRAGSuperPlugin")
+@Suite("ProjectRAGPlugin")
 @MainActor
 struct ProjectRAGSuperPluginTests {
     @Test("keeps the legacy plugin and tool identifiers")
     func retainsStableIdentifiers() {
-        #expect(ProjectRAGSuperPlugin().id == "com.coffic.lumi.plugin.project.rag")
+        #expect(ProjectRAGPlugin().id == "com.coffic.lumi.plugin.project.rag")
         #expect(RAGCodeSearchTool.toolName == "search_code")
     }
 
     @Test("registers the RAG capability in KernelCore")
     func registersProvider() throws {
         let kernel = KernelCoreContainer()
-        let plugin = ProjectRAGSuperPlugin()
+        let plugin = ProjectRAGPlugin()
 
         try plugin.onBoot(kernel: kernel)
         #expect(kernel.resolveProvider((any ProjectRAGProviding).self) != nil)

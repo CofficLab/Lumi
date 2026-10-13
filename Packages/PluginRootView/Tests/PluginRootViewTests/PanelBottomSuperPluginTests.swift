@@ -5,20 +5,20 @@ import SwiftUI
 import Testing
 @testable import PluginRootView
 
-/// PanelBottomSuperPlugin 宿主生命周期测试。
+/// PanelBottomPlugin 宿主生命周期测试。
 ///
 /// 覆盖点：
 /// - `onBoot` 注册 `PanelBottomProviding`，入口变化时安装/撤回 footer 容器；
 /// - 内核重启（onShutdown → onBoot）复用 provider 实例并恢复容器。
-@Suite("PanelBottomSuperPlugin")
+@Suite("PanelBottomPlugin")
 @MainActor
 struct PanelBottomSuperPluginTests {
 
-    private func makePlugin() throws -> (PanelBottomSuperPlugin, KernelCoreContainer, LumiRootViewProvider) {
+    private func makePlugin() throws -> (PanelBottomPlugin, KernelCoreContainer, LumiRootViewProvider) {
         let kernel = KernelCoreContainer()
         let rootView = LumiRootViewProvider()
         try kernel.registerProvider((any RootViewProviding).self, rootView)
-        let plugin = PanelBottomSuperPlugin()
+        let plugin = PanelBottomPlugin()
         try plugin.onBoot(kernel: kernel)
         return (plugin, kernel, rootView)
     }

@@ -5,7 +5,7 @@ import Testing
 struct PluginDockerManagerTests {
     @Test
     func pluginMetadataIsStable() {
-        let plugin = DockerManagerSuperPlugin()
+        let plugin = DockerManagerPlugin()
         #expect(plugin.id == "com.coffic.lumi.plugin.docker-manager")
         #expect(plugin.metadata.name == "Docker")
         #expect(plugin.order == 50)
@@ -14,7 +14,7 @@ struct PluginDockerManagerTests {
 
     @Test
     func v2IdentifiersRemainStable() {
-        #expect(DockerManagerSuperPlugin().id.hasSuffix("docker-manager"))
+        #expect(DockerManagerPlugin().id.hasSuffix("docker-manager"))
     }
 
     @Test

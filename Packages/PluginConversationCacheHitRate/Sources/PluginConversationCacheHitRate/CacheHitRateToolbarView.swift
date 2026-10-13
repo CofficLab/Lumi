@@ -46,6 +46,7 @@ struct CacheHitRateToolbarView: View {
                 history: history,
                 unavailabilityReason: unavailabilityReason
             )
+            .frame(width: 420)
         }
         .onChange(of: selectedConversationID) { _, newValue in
             if newValue == nil {

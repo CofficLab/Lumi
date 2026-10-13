@@ -31,8 +31,8 @@ let package = Package(
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "ProviderSettingView", package: "LumiSettings")
             ],
-            path: "Sources",
-            resources: [.process("../Resources/Localizable.xcstrings")]
+            path: "Sources/PluginTextActions",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "TextActionsPluginTests",

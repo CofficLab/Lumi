@@ -33,7 +33,7 @@ struct ScreenRecorderPluginTests {
     @MainActor
     @Test("新版工具保留录制契约")
     func v2ToolsPreserveRecordingContract() {
-        let plugin = ScreenRecorderSuperPlugin()
+        let plugin = ScreenRecorderPlugin()
 
         #expect(plugin.id == "com.coffic.lumi.plugin.screen-recorder")
         #expect(StartRecordingV2Tool.toolName == "start_recording")

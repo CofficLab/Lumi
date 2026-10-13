@@ -37,9 +37,9 @@ let package = Package(
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
             ],
-            path: "Sources",
+            path: "Sources/PluginQuickFileSearch",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

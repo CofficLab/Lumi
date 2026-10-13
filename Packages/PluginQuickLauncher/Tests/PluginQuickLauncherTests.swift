@@ -109,7 +109,7 @@ struct QuickLauncherTests {
     }
 
     @Test func v2PluginPreservesLauncherIdentityAndPolicy() {
-        let plugin = QuickLauncherSuperPlugin()
+        let plugin = QuickLauncherPlugin()
         #expect(plugin.id == "com.coffic.lumi.plugin.quick-launcher")
         #expect(plugin.order == 8)
         #expect(plugin.metadata.policy == .alwaysOn)

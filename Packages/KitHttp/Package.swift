@@ -26,9 +26,9 @@ let package = Package(
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
-            path: "Sources",
+            path: "Sources/KitHttp",
             resources: [
-                .process("../Resources")
+                .process("../../Resources")
             ]
         ),
         .testTarget(

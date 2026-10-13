@@ -618,6 +618,16 @@ extension AgentLoopManager {
             // 上游的 HTTP 400。
             try response.validateToolCallArguments()
 
+            // 空终态响应（无工具调用且无正文）视为请求失败：不落库空
+            // assistant 消息，走失败链路交给自动重试插件接管时间线与重试，
+            // 与网络错误的处理方式一致。
+            if response.toolCalls?.isEmpty ?? true,
+               response.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Self.logger.warning("\(Self.t)⚠️ 模型返回空响应，按失败处理 model=\(response.model ?? "unknown")")
+                streaming.end(conversationID: conversationID)
+                return .failure(error: VendorAPIError.emptyResponse, recoverable: false)
+            }
+
             let timing = timingRecorder.finish()
 
             if Self.verbose {

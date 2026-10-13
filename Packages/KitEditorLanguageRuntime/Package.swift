@@ -22,9 +22,9 @@ let package = Package(
                 .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
-            path: "Sources",
+            path: "Sources/KitEditorLanguageRuntime",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

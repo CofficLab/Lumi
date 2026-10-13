@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginMail", targets: ["PluginMail"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
@@ -17,7 +17,6 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitKeychain"),
         .package(path: "../KitMail"),
-        .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderToolManager"),
@@ -31,7 +30,7 @@ let package = Package(
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
-                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
@@ -42,8 +41,8 @@ let package = Package(
                 .product(name: "KitKeychain", package: "KitKeychain"),
                 .product(name: "KitMail", package: "KitMail"),
             ],
-            path: "Sources",
-            resources: [.process("../Resources/Localizable.xcstrings")]
+            path: "Sources/PluginMail",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginMailTests",

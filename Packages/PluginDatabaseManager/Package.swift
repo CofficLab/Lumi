@@ -15,12 +15,11 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0"),
         .package(path: "../ProviderEditor"),
         .package(path: "../PluginCodeEditorHost"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitAgentTool"),
-        .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderExternalFile"),
         .package(path: "../ProviderToolManager"),
@@ -41,7 +40,7 @@ let package = Package(
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
-                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
@@ -63,16 +62,16 @@ let package = Package(
                 .product(name: "NIOSSL", package: "swift-nio-ssl"),
                 .product(name: "Logging", package: "swift-log"),
             ],
-            path: "Sources",
+            path: "Sources/PluginDatabaseManager",
             exclude: ["TreeSitterSQL"],
             resources: [
-                .process("../Resources/Localizable.xcstrings"),
-                .copy("../Resources/tree-sitter-sql")
+                .process("../../Resources/Localizable.xcstrings"),
+                .copy("../../Resources/tree-sitter-sql")
             ]
         ),
         .target(
             name: "TreeSitterSQL",
-            path: "Sources/TreeSitterSQL",
+            path: "Sources/PluginDatabaseManager/TreeSitterSQL",
             publicHeadersPath: "include",
             cSettings: [.headerSearchPath("vendored-headers")]
         ),
@@ -83,7 +82,7 @@ let package = Package(
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "PluginCodeEditorHost", package: "PluginCodeEditorHost"),
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderExternalFile", package: "ProviderExternalFile"),

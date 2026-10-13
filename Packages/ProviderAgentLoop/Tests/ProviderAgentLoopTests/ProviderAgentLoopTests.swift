@@ -82,6 +82,25 @@ struct ProviderAgentLoopTests {
         #expect(!contextLimit.isRetryable)
     }
 
+    @Test("空响应归类为可重试失败")
+    func emptyResponseIsRetryable() {
+        let vendorEmpty = AgentLoopFailure.from(
+            error: VendorAPIError.emptyResponse,
+            providerID: "goatplan",
+            modelName: "glm-5"
+        )
+        let providerEmpty = AgentLoopFailure.from(
+            error: LLMProviderError.emptyResponse
+        )
+
+        #expect(vendorEmpty.kind == .emptyResponse)
+        #expect(vendorEmpty.isRetryable)
+        #expect(vendorEmpty.providerID == "goatplan")
+        #expect(vendorEmpty.modelName == "glm-5")
+        #expect(providerEmpty.kind == .emptyResponse)
+        #expect(providerEmpty.isRetryable)
+    }
+
     @Test("用户文本文件附件会转换为 LLM 用户正文")
     func messageToLLMMessagePreservesUserFile() {
         let message = Message(

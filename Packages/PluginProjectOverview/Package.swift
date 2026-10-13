@@ -36,9 +36,9 @@ let package = Package(
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
             ],
-            path: "Sources",
+            path: "Sources/PluginProjectOverview",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(
