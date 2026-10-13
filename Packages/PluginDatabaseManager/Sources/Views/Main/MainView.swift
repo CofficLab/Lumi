@@ -11,7 +11,7 @@ import SwiftUI
 public struct MainView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    /// 由 ``DatabaseManagerPlugin`` 注入，与 ``DatabaseToolbarButton`` 共享同一个实例，
+    /// 由 ``DatabaseManagerPluginSupport`` 注入，与 ``DatabaseToolbarButton`` 共享同一个实例，
     /// 这样在工具栏 popover 中选中/断开连接会立即反映到主面板。
     @ObservedObject var viewModel: DatabaseViewModel
 

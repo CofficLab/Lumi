@@ -300,7 +300,7 @@ public final class LauncherSearchModel: ObservableObject, SuperLog {
             }
         }
         if Self.verbose {
-            QuickLauncherPlugin.logger.info("\(self.t)未找到命令结果对应的原始项: \(result.title)")
+            QuickLauncherPluginSupport.logger.info("\(self.t)未找到命令结果对应的原始项: \(result.title)")
         }
     }
 

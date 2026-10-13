@@ -4,12 +4,12 @@ import ProviderConversation
 import Testing
 @testable import GoalTaskPlugin
 
-// serialized：这些测试共享 GoalTaskPlugin._sharedManager 静态状态，
+// serialized：这些测试共享 GoalTaskPluginSupport._sharedManager 静态状态，
 // 并行执行会互相覆盖（清空）manager。
 @Suite("GoalTask V2", .serialized)
 struct GoalTaskV2Tests {
     @Test @MainActor func preservesPluginIdentityAndPolicy() {
-        let plugin = GoalTaskSuperPlugin()
+        let plugin = GoalTaskPlugin()
         #expect(plugin.id == "com.coffic.lumi.plugin.goal-task")
         #expect(plugin.order == 91)
         #expect(plugin.metadata.policy == .alwaysOn)
@@ -35,8 +35,8 @@ struct GoalTaskV2Tests {
         let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("GoalTaskContextTest-\(UUID().uuidString)")
         let manager = try GoalStateManager(databaseRootURL: tempDir)
-        GoalTaskPlugin._sharedManager = manager
-        defer { GoalTaskPlugin._sharedManager = nil }
+        GoalTaskPluginSupport._sharedManager = manager
+        defer { GoalTaskPluginSupport._sharedManager = nil }
 
         let conversations = DefaultConversationManager()
         let executionConversationID = try conversations.createConversation(
@@ -120,7 +120,7 @@ struct GoalTaskV2Tests {
         let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("GoalTaskResolveTest-\(UUID().uuidString)")
         let manager = try GoalStateManager(databaseRootURL: tempDir)
-        GoalTaskPlugin._sharedManager = manager
+        GoalTaskPluginSupport._sharedManager = manager
 
         let conversations = DefaultConversationManager()
         let conversationID = try conversations.createConversation(
@@ -137,13 +137,13 @@ struct GoalTaskV2Tests {
     @MainActor
     func createGoalExposesGoalId() async throws {
         let (_, context, tempDir) = try makeHarness()
-        defer { GoalTaskPlugin._sharedManager = nil; try? FileManager.default.removeItem(at: tempDir) }
+        defer { GoalTaskPluginSupport._sharedManager = nil; try? FileManager.default.removeItem(at: tempDir) }
 
         let result = try await CreateGoalV2Tool().executeResult(context: context, arguments: [
             "title": ToolArgument("Expose goal id"),
             "tasks": ToolArgument([["title": "T1"]]),
         ])
-        let goals = await GoalTaskPlugin._sharedManager!.fetchGoals(conversationId: context.conversationID.uuidString)
+        let goals = await GoalTaskPluginSupport._sharedManager!.fetchGoals(conversationId: context.conversationID.uuidString)
         let goalId = try #require(goals.first?.id)
 
         #expect(result.isError == false)
@@ -155,7 +155,7 @@ struct GoalTaskV2Tests {
     @MainActor
     func goalIdResolvesByTitle() async throws {
         let (_, context, tempDir) = try makeHarness()
-        defer { GoalTaskPlugin._sharedManager = nil; try? FileManager.default.removeItem(at: tempDir) }
+        defer { GoalTaskPluginSupport._sharedManager = nil; try? FileManager.default.removeItem(at: tempDir) }
 
         let created = try await CreateGoalV2Tool().executeResult(context: context, arguments: [
             "title": ToolArgument("Title Lookup Goal"),
@@ -176,7 +176,7 @@ struct GoalTaskV2Tests {
     @MainActor
     func omittedGoalIdResolvesActiveGoal() async throws {
         let (_, context, tempDir) = try makeHarness()
-        defer { GoalTaskPlugin._sharedManager = nil; try? FileManager.default.removeItem(at: tempDir) }
+        defer { GoalTaskPluginSupport._sharedManager = nil; try? FileManager.default.removeItem(at: tempDir) }
 
         _ = try await CreateGoalV2Tool().executeResult(context: context, arguments: [
             "title": ToolArgument("Only Active Goal"),
@@ -194,7 +194,7 @@ struct GoalTaskV2Tests {
     @MainActor
     func unknownGoalIdListsCandidates() async throws {
         let (_, context, tempDir) = try makeHarness()
-        defer { GoalTaskPlugin._sharedManager = nil; try? FileManager.default.removeItem(at: tempDir) }
+        defer { GoalTaskPluginSupport._sharedManager = nil; try? FileManager.default.removeItem(at: tempDir) }
 
         _ = try await CreateGoalV2Tool().executeResult(context: context, arguments: [
             "title": ToolArgument("Candidate Listing Goal"),

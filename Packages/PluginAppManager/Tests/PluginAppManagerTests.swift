@@ -11,8 +11,8 @@ import ProviderRailView
 struct PluginAppManagerTests {
     @Test
     func v2PluginStateIsStable() {
-        #expect(AppManagerPlugin.railTabID == "app-manager.sidebar")
-        #expect(AppManagerSuperPlugin().id == "com.coffic.lumi.plugin.app-manager")
+        #expect(AppManagerPluginSupport.railTabID == "app-manager.sidebar")
+        #expect(AppManagerPlugin().id == "com.coffic.lumi.plugin.app-manager")
     }
 
     @Test
@@ -27,7 +27,7 @@ struct PluginAppManagerTests {
 
         activity.addItems([ActivityBarItem(id: "chat.entry", title: "Chat", systemImage: "message")])
 
-        try AppManagerSuperPlugin().onBoot(kernel: kernel)
+        try AppManagerPlugin().onBoot(kernel: kernel)
 
         #expect(activity.activeItemID == "chat.entry")
 
@@ -35,8 +35,8 @@ struct PluginAppManagerTests {
 
         #expect(!chat.isVisible)
         #expect(rail.visibleCategories == [.system])
-        #expect(rail.visibleTabID == AppManagerPlugin.railTabID)
-        #expect(rail.activeTabID == AppManagerPlugin.railTabID)
+        #expect(rail.visibleTabID == AppManagerPluginSupport.railTabID)
+        #expect(rail.activeTabID == AppManagerPluginSupport.railTabID)
 
         activity.activateItem(id: nil)
 

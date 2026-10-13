@@ -17,7 +17,7 @@ import LumiLoggingKit
 /// 职责：
 /// - 注册「邮件账户」设置入口（账户 CRUD / 连接测试 / 删除）；
 /// - 装配 ActivityBar 入口：激活时切换三栏工作区并隐藏 chat、加工具栏标题，
-///   还原时全部撤销（参照 DatabaseManagerSuperPlugin 对称写法）；
+///   还原时全部撤销（参照 DatabaseManagerPlugin 对称写法）；
 /// - 持有 Session/Cache/Sync 服务生命周期，`onShutdown` 断开全部会话并回收入口。
 @MainActor
 public final class MailPlugin: SuperPlugin, SuperLog {

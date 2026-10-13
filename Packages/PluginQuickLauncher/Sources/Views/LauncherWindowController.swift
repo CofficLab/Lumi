@@ -64,7 +64,7 @@ public final class LauncherWindowController: NSObject, SuperLog {
         AppSearchService.shared.scanApplications()
 
         if Self.verbose {
-            QuickLauncherPlugin.logger.info("\(self.t)启动器窗口已显示")
+            QuickLauncherPluginSupport.logger.info("\(self.t)启动器窗口已显示")
         }
     }
 

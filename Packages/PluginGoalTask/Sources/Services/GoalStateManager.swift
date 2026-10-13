@@ -8,7 +8,7 @@ import os
 /// 通过 SwiftData 管理 Goal 和 Task 的增删改查。
 /// 使用 Actor 模式确保线程安全。
 ///
-/// 生命周期由 `GoalTaskPlugin` 在 `lifecycle(.didRegister)` 中初始化。
+/// 生命周期由 `GoalTaskPluginSupport` 在 `lifecycle(.didRegister)` 中初始化。
 public actor GoalStateManager: SuperLog {
     nonisolated public static let emoji = "🎯"
     nonisolated public static let verbose: Bool = false

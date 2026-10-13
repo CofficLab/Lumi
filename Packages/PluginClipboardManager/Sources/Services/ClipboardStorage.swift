@@ -9,7 +9,7 @@ import os
 public actor ClipboardStorage: SuperLog {
     public nonisolated static let emoji = "📋"
     public nonisolated static let verbose: Bool = false
-    public static let logger = ClipboardManagerPlugin.logger
+    public static let logger = ClipboardManagerPluginSupport.logger
 
     public static let shared = ClipboardStorage()
 
@@ -67,8 +67,8 @@ public actor ClipboardStorage: SuperLog {
     public func clear(keepPinned: Bool = true) async {
         await historyManager.clearAll(keepPinned: keepPinned)
         if Self.verbose {
-            if ClipboardManagerPlugin.verbose {
-                ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 已清空剪贴板历史")
+            if ClipboardManagerPluginSupport.verbose {
+                ClipboardManagerPluginSupport.logger.info("\(Self.t)🗑️ 已清空剪贴板历史")
             }
         }
     }
@@ -79,8 +79,8 @@ public actor ClipboardStorage: SuperLog {
         if let item = items.first(where: { $0.id == id }) {
             await historyManager.updatePinStatus(id: id, isPinned: !item.isPinned)
             if Self.verbose {
-                if ClipboardManagerPlugin.verbose {
-                    ClipboardManagerPlugin.logger.info("\(Self.t)📌 已切换固定状态：\(id)")
+                if ClipboardManagerPluginSupport.verbose {
+                    ClipboardManagerPluginSupport.logger.info("\(Self.t)📌 已切换固定状态：\(id)")
                 }
             }
         }
@@ -92,8 +92,8 @@ public actor ClipboardStorage: SuperLog {
         await historyManager.delete(id: id)
         if Self.verbose {
             let wasPinned = item?.isPinned ?? false
-            if ClipboardManagerPlugin.verbose {
-                ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 已删除剪贴板项：\(id)\(wasPinned ? " (已固定)" : "")")
+            if ClipboardManagerPluginSupport.verbose {
+                ClipboardManagerPluginSupport.logger.info("\(Self.t)🗑️ 已删除剪贴板项：\(id)\(wasPinned ? " (已固定)" : "")")
             }
         }
     }
@@ -102,8 +102,8 @@ public actor ClipboardStorage: SuperLog {
     public func delete(ids: [UUID]) async {
         await historyManager.delete(ids: ids)
         if Self.verbose {
-            if ClipboardManagerPlugin.verbose {
-                ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 批量删除 \(ids.count) 项")
+            if ClipboardManagerPluginSupport.verbose {
+                ClipboardManagerPluginSupport.logger.info("\(Self.t)🗑️ 批量删除 \(ids.count) 项")
             }
         }
     }
@@ -141,8 +141,8 @@ public actor ClipboardStorage: SuperLog {
             await historyManager.delete(ids: Array(itemsToDelete))
 
             if Self.verbose {
-                if ClipboardManagerPlugin.verbose {
-                    ClipboardManagerPlugin.logger.info("\(Self.t)🧹 清理了 \(itemsToDelete.count) 项超出限制的历史")
+                if ClipboardManagerPluginSupport.verbose {
+                    ClipboardManagerPluginSupport.logger.info("\(Self.t)🧹 清理了 \(itemsToDelete.count) 项超出限制的历史")
                 }
             }
         }

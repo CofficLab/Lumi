@@ -133,8 +133,8 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
     
     func refreshImages() async {
         if Self.verbose {
-            if DockerManagerPlugin.verbose {
-                DockerManagerPlugin.logger.info("\(self.t)刷新镜像列表")
+            if DockerManagerPluginSupport.verbose {
+                DockerManagerPluginSupport.logger.info("\(self.t)刷新镜像列表")
             }
         }
         isLoading = true
@@ -145,13 +145,13 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             self.images = fetched
             filterAndSortImages()
             if Self.verbose {
-                if DockerManagerPlugin.verbose {
-                    DockerManagerPlugin.logger.info("\(self.t)镜像列表刷新成功: \(fetched.count) 个镜像")
+                if DockerManagerPluginSupport.verbose {
+                    DockerManagerPluginSupport.logger.info("\(self.t)镜像列表刷新成功: \(fetched.count) 个镜像")
                 }
             }
         } catch {
-            if DockerManagerPlugin.verbose {
-                DockerManagerPlugin.logger.error("\(self.t)刷新镜像列表失败: \(error.localizedDescription)")
+            if DockerManagerPluginSupport.verbose {
+                DockerManagerPluginSupport.logger.error("\(self.t)刷新镜像列表失败: \(error.localizedDescription)")
             }
             errorMessage = error.localizedDescription
         }
@@ -161,8 +161,8 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
 
     func deleteImage(_ image: DockerImage, force: Bool = false) async {
         if Self.verbose {
-            if DockerManagerPlugin.verbose {
-                DockerManagerPlugin.logger.info("\(self.t)删除镜像: \(image.repository)")
+            if DockerManagerPluginSupport.verbose {
+                DockerManagerPluginSupport.logger.info("\(self.t)删除镜像: \(image.repository)")
             }
         }
         errorMessage = nil
@@ -178,13 +178,13 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
                 selectedImageDetail = nil
             }
             if Self.verbose {
-                if DockerManagerPlugin.verbose {
-                    DockerManagerPlugin.logger.info("\(self.t)镜像删除成功")
+                if DockerManagerPluginSupport.verbose {
+                    DockerManagerPluginSupport.logger.info("\(self.t)镜像删除成功")
                 }
             }
         } catch {
-            if DockerManagerPlugin.verbose {
-                DockerManagerPlugin.logger.error("\(self.t)删除镜像失败: \(error.localizedDescription)")
+            if DockerManagerPluginSupport.verbose {
+                DockerManagerPluginSupport.logger.error("\(self.t)删除镜像失败: \(error.localizedDescription)")
             }
             errorMessage = "删除失败: \(error.localizedDescription)"
         }
@@ -198,8 +198,8 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
         }
 
         if Self.verbose {
-            if DockerManagerPlugin.verbose {
-                DockerManagerPlugin.logger.info("\(self.t)拉取镜像: \(normalizedName)")
+            if DockerManagerPluginSupport.verbose {
+                DockerManagerPluginSupport.logger.info("\(self.t)拉取镜像: \(normalizedName)")
             }
         }
         isLoading = true
@@ -210,8 +210,8 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             isLoading = false
             return true
         } catch {
-            if DockerManagerPlugin.verbose {
-                DockerManagerPlugin.logger.error("\(self.t)拉取镜像失败: \(error.localizedDescription)")
+            if DockerManagerPluginSupport.verbose {
+                DockerManagerPluginSupport.logger.error("\(self.t)拉取镜像失败: \(error.localizedDescription)")
             }
             errorMessage = "拉取失败: \(error.localizedDescription)"
             isLoading = false
@@ -229,8 +229,8 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
         let selectedImageID = image.imageID
 
         if Self.verbose {
-            if DockerManagerPlugin.verbose {
-                DockerManagerPlugin.logger.info("\(self.t)选中镜像: \(image.repository)")
+            if DockerManagerPluginSupport.verbose {
+                DockerManagerPluginSupport.logger.info("\(self.t)选中镜像: \(image.repository)")
             }
         }
 
@@ -250,8 +250,8 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             } catch {
                 await MainActor.run {
                     guard !Task.isCancelled, self.selectedImage?.imageID == selectedImageID else { return }
-                    if DockerManagerPlugin.verbose {
-                        DockerManagerPlugin.logger.error("\(self.t)加载镜像详情失败: \(error.localizedDescription)")
+                    if DockerManagerPluginSupport.verbose {
+                        DockerManagerPluginSupport.logger.error("\(self.t)加载镜像详情失败: \(error.localizedDescription)")
                     }
                     self.errorMessage = "Load details failed: \(error.localizedDescription)"
                     self.imageDetailsTask = nil

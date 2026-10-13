@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginResumeDesigner", targets: ["PluginResumeDesigner"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.9.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitHTMLPreview"),
@@ -18,11 +18,8 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../KitResume"),
         .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderConversationInput"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderPromptSuggestion"),
-        .package(path: "../ProviderSkill"),
-        .package(path: "../ProviderAgentRules"),
     ],
     targets: [
         .target(
@@ -45,10 +42,10 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
-                "ProviderSkill",
+                .product(name: "ProviderSkill", package: "LumiProviders"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
-                .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
-                "ProviderAgentRules",
+                .product(name: "ProviderConversationInput", package: "LumiProviders"),
+                .product(name: "ProviderAgentRules", package: "LumiProviders"),
             ],
             resources: [
                 .process("../../Resources/Localizable.xcstrings"),
@@ -70,7 +67,7 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
-                .product(name: "ProviderAgentRules", package: "ProviderAgentRules"),
+                .product(name: "ProviderAgentRules", package: "LumiProviders"),
                 "KitResume",
             ]
         ),

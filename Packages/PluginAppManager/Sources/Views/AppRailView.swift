@@ -3,7 +3,7 @@ import SwiftUI
 
 /// 应用管理器侧边栏：搜索、统计、应用列表。
 ///
-/// 由 `AppManagerPlugin` 注册为 `PanelRailTabItem`，
+/// 由 `AppManagerPluginSupport` 注册为 `PanelRailTabItem`，
 /// 仅在 app-manager ViewContainer 中可见。
 struct AppRailView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme

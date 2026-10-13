@@ -7,7 +7,7 @@ import SwiftUI
 final class AppService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "📦"
     nonisolated static let verbose: Bool = false
-    // 懒加载：避免 AppManagerPlugin 实例化时（onReady 之前）就触发 CacheManager
+    // 懒加载：避免 AppManagerPluginSupport 实例化时（onReady 之前）就触发 CacheManager
     // 单例构建，保证首次使用时数据目录已按项目约定解析。
     private lazy var cacheManager = CacheManager.shared
 
@@ -62,8 +62,8 @@ final class AppService: @unchecked Sendable, SuperLog {
                 Task {
                     do {
                         if Self.verbose {
-                            if AppManagerPlugin.verbose {
-                                                            AppManagerPlugin.logger.info("\(self.t)正在扫描已安装应用 (force: \(force))")
+                            if AppManagerPluginSupport.verbose {
+                                                            AppManagerPluginSupport.logger.info("\(self.t)正在扫描已安装应用 (force: \(force))")
                             }
                         }
 
@@ -110,8 +110,8 @@ final class AppService: @unchecked Sendable, SuperLog {
 
                         let stats = await cacheManager.getStats()
                         if Self.verbose {
-                            if AppManagerPlugin.verbose {
-                                                            AppManagerPlugin.logger.info("\(self.t)缓存统计: \(stats.hitCount) 次命中, \(stats.missCount) 次未命中, \(String(format: "%.1f", stats.hitRate * 100))% 命中率")
+                            if AppManagerPluginSupport.verbose {
+                                                            AppManagerPluginSupport.logger.info("\(self.t)缓存统计: \(stats.hitCount) 次命中, \(stats.missCount) 次未命中, \(String(format: "%.1f", stats.hitRate * 100))% 命中率")
                             }
                         }
 
@@ -120,8 +120,8 @@ final class AppService: @unchecked Sendable, SuperLog {
                         }
 
                         if Self.verbose {
-                            if AppManagerPlugin.verbose {
-                                                            AppManagerPlugin.logger.info("\(self.t)扫描完成: 发现 \(sortedApps.count) 个应用")
+                            if AppManagerPluginSupport.verbose {
+                                                            AppManagerPluginSupport.logger.info("\(self.t)扫描完成: 发现 \(sortedApps.count) 个应用")
                             }
                         }
                         continuation.resume(returning: sortedApps)
@@ -183,15 +183,15 @@ final class AppService: @unchecked Sendable, SuperLog {
     func scanRelatedFiles(for app: AppModel) async -> [RelatedFile] {
         guard let bundleId = app.bundleIdentifier else {
             if Self.verbose {
-                if AppManagerPlugin.verbose {
-                                    AppManagerPlugin.logger.info("\(self.t)跳过扫描：无 Bundle ID (\(app.displayName))")
+                if AppManagerPluginSupport.verbose {
+                                    AppManagerPluginSupport.logger.info("\(self.t)跳过扫描：无 Bundle ID (\(app.displayName))")
                 }
             }
             return []
         }
         if Self.verbose {
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.info("\(self.t)开始扫描关联文件：\(app.displayName) (\(bundleId))")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t)开始扫描关联文件：\(app.displayName) (\(bundleId))")
             }
         }
         let home = NSHomeDirectory()
@@ -260,8 +260,8 @@ final class AppService: @unchecked Sendable, SuperLog {
         }
 
         if Self.verbose {
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.info("\(self.t)关联文件扫描完成：\(app.displayName)，找到 \(relatedFiles.count) 个")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t)关联文件扫描完成：\(app.displayName)，找到 \(relatedFiles.count) 个")
             }
         }
         return relatedFiles
@@ -280,8 +280,8 @@ final class AppService: @unchecked Sendable, SuperLog {
     /// 删除指定的文件列表
     func deleteFiles(_ files: [RelatedFile]) async throws {
         if Self.verbose {
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.info("\(self.t)开始删除 \(files.count) 个文件")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t)开始删除 \(files.count) 个文件")
             }
         }
         let fileManager = FileManager.default
@@ -289,14 +289,14 @@ final class AppService: @unchecked Sendable, SuperLog {
             // 使用 trashItem 放入废纸篓，比较安全
             try fileManager.trashItem(at: URL(fileURLWithPath: file.path), resultingItemURL: nil)
             if Self.verbose {
-                if AppManagerPlugin.verbose {
-                                    AppManagerPlugin.logger.info("\(self.t)  └─ 已移至废纸篓：\((file.path as NSString).lastPathComponent)")
+                if AppManagerPluginSupport.verbose {
+                                    AppManagerPluginSupport.logger.info("\(self.t)  └─ 已移至废纸篓：\((file.path as NSString).lastPathComponent)")
                 }
             }
         }
         if Self.verbose {
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.info("\(self.t)删除完成：\(files.count) 个文件已移至废纸篓")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t)删除完成：\(files.count) 个文件已移至废纸篓")
             }
         }
     }
@@ -304,8 +304,8 @@ final class AppService: @unchecked Sendable, SuperLog {
     /// 保存缓存
     func saveCache() async {
         if Self.verbose {
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.info("\(self.t)保存应用列表缓存")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t)保存应用列表缓存")
             }
         }
         await cacheManager.saveCache()
@@ -314,8 +314,8 @@ final class AppService: @unchecked Sendable, SuperLog {
     /// 卸载应用
     func uninstallApp(_ app: AppModel) async throws {
         if Self.verbose {
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.info("\(self.t)准备卸载应用: \(app.displayName)")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t)准备卸载应用: \(app.displayName)")
             }
         }
 
@@ -324,16 +324,16 @@ final class AppService: @unchecked Sendable, SuperLog {
 
         // 检查应用是否存在
         guard fileManager.fileExists(atPath: appPath) else {
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.error("\(self.t)应用不存在: \(appPath)")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.error("\(self.t)应用不存在: \(appPath)")
             }
             throw AppError.appNotFound
         }
 
         // 检查是否有写入权限
         guard fileManager.isWritableFile(atPath: appPath) else {
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.error("\(self.t)权限不足: \(appPath)")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.error("\(self.t)权限不足: \(appPath)")
             }
             throw AppError.permissionDenied
         }
@@ -341,8 +341,8 @@ final class AppService: @unchecked Sendable, SuperLog {
         // 移到废纸篓
         try fileManager.trashItem(at: app.bundleURL, resultingItemURL: nil)
         if Self.verbose {
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.info("\(self.t)应用已移至废纸篓: \(app.displayName)")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t)应用已移至废纸篓: \(app.displayName)")
             }
         }
     }

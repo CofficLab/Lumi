@@ -67,8 +67,8 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     init(service: any BrewManagerServicing = LiveBrewManagerService(), autoCheckEnvironment: Bool = true) {
         self.service = service
         if Self.verbose {
-            if BrewManagerPlugin.verbose {
-                            BrewManagerPlugin.logger.info("\(self.t) 初始化 BrewManagerViewModel")
+            if BrewManagerPluginSupport.verbose {
+                            BrewManagerPluginSupport.logger.info("\(self.t) 初始化 BrewManagerViewModel")
             }
         }
         if autoCheckEnvironment {
@@ -79,22 +79,22 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     func checkEnvironment() {
         Task {
             if Self.verbose {
-                if BrewManagerPlugin.verbose {
-                                    BrewManagerPlugin.logger.info("\(self.t) 检查 Homebrew 环境")
+                if BrewManagerPluginSupport.verbose {
+                                    BrewManagerPluginSupport.logger.info("\(self.t) 检查 Homebrew 环境")
                 }
             }
             isBrewInstalled = await service.checkInstalled()
             if isBrewInstalled {
                 if Self.verbose {
-                    if BrewManagerPlugin.verbose {
-                                            BrewManagerPlugin.logger.info("\(self.t) Homebrew 已安装，开始刷新数据")
+                    if BrewManagerPluginSupport.verbose {
+                                            BrewManagerPluginSupport.logger.info("\(self.t) Homebrew 已安装，开始刷新数据")
                     }
                 }
                 await refresh()
             } else {
                 if Self.verbose {
-                    if BrewManagerPlugin.verbose {
-                                            BrewManagerPlugin.logger.error("\(self.t) ❌ Homebrew not detected")
+                    if BrewManagerPluginSupport.verbose {
+                                            BrewManagerPluginSupport.logger.error("\(self.t) ❌ Homebrew not detected")
                     }
                 }
                 errorMessage = pluginLocalization.string("Homebrew not detected, please install Homebrew first.")
@@ -104,8 +104,8 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     
     func refresh() async {
         if Self.verbose {
-            if BrewManagerPlugin.verbose {
-                            BrewManagerPlugin.logger.info("\(self.t)🔄 Starting to refresh package list")
+            if BrewManagerPluginSupport.verbose {
+                            BrewManagerPluginSupport.logger.info("\(self.t)🔄 Starting to refresh package list")
             }
         }
         isLoading = true
@@ -118,8 +118,8 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
             let (installedList, outdatedList) = try await (installed, outdated)
             
             if Self.verbose {
-                if BrewManagerPlugin.verbose {
-                                    BrewManagerPlugin.logger.info("\(self.t) ✅ Refresh complete: \(installedList.count) installed, \(outdatedList.count) outdated")
+                if BrewManagerPluginSupport.verbose {
+                                    BrewManagerPluginSupport.logger.info("\(self.t) ✅ Refresh complete: \(installedList.count) installed, \(outdatedList.count) outdated")
                 }
             }
             
@@ -127,8 +127,8 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
             self.outdatedPackages = outdatedList
         } catch {
             if Self.verbose {
-                if BrewManagerPlugin.verbose {
-                                    BrewManagerPlugin.logger.error("\(self.t) ❌ Refresh failed: \(error.localizedDescription)")
+                if BrewManagerPluginSupport.verbose {
+                                    BrewManagerPluginSupport.logger.error("\(self.t) ❌ Refresh failed: \(error.localizedDescription)")
                 }
             }
             self.errorMessage = pluginLocalization.string("Refresh failed: \(error.localizedDescription)")
@@ -148,8 +148,8 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
         }
         
         if Self.verbose {
-            if BrewManagerPlugin.verbose {
-                            BrewManagerPlugin.logger.info("\(self.t) 🔍 触发搜索: \(self.searchText)")
+            if BrewManagerPluginSupport.verbose {
+                            BrewManagerPluginSupport.logger.info("\(self.t) 🔍 触发搜索: \(self.searchText)")
             }
         }
         isLoading = true
@@ -161,16 +161,16 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
                 try await Task.sleep(nanoseconds: 500_000_000)
                 
                 if Self.verbose {
-                    if BrewManagerPlugin.verbose {
-                                            BrewManagerPlugin.logger.info("\(self.t) 执行搜索 API 调用: \(self.searchText)")
+                    if BrewManagerPluginSupport.verbose {
+                                            BrewManagerPluginSupport.logger.info("\(self.t) 执行搜索 API 调用: \(self.searchText)")
                     }
                 }
                 let results = try await service.search(query: query)
                 
                 if !Task.isCancelled && query == self.searchText.trimmingCharacters(in: .whitespacesAndNewlines) {
                     if Self.verbose {
-                        if BrewManagerPlugin.verbose {
-                                                    BrewManagerPlugin.logger.info("\(self.t) ✅ 搜索完成: 找到 \(results.count) 个结果")
+                        if BrewManagerPluginSupport.verbose {
+                                                    BrewManagerPluginSupport.logger.info("\(self.t) ✅ 搜索完成: 找到 \(results.count) 个结果")
                         }
                     }
                     self.searchResults = results
@@ -182,8 +182,8 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
             } catch {
                 if !Task.isCancelled {
                     if Self.verbose {
-                        if BrewManagerPlugin.verbose {
-                                                    BrewManagerPlugin.logger.error("\(self.t) ❌ 搜索失败: \(error.localizedDescription)")
+                        if BrewManagerPluginSupport.verbose {
+                                                    BrewManagerPluginSupport.logger.error("\(self.t) ❌ 搜索失败: \(error.localizedDescription)")
                         }
                     }
                     self.errorMessage = pluginLocalization.string("Search failed: \(error.localizedDescription)")
@@ -195,23 +195,23 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     
     func install(package: BrewPackage) async {
         if Self.verbose {
-            if BrewManagerPlugin.verbose {
-                            BrewManagerPlugin.logger.info("\(self.t) ⬇️ 开始安装: \(package.name)")
+            if BrewManagerPluginSupport.verbose {
+                            BrewManagerPluginSupport.logger.info("\(self.t) ⬇️ 开始安装: \(package.name)")
             }
         }
         isLoading = true
         do {
             try await service.install(name: package.name, isCask: package.isCask)
             if Self.verbose {
-                if BrewManagerPlugin.verbose {
-                                    BrewManagerPlugin.logger.info("\(self.t) ✅ 安装成功: \(package.name)")
+                if BrewManagerPluginSupport.verbose {
+                                    BrewManagerPluginSupport.logger.info("\(self.t) ✅ 安装成功: \(package.name)")
                 }
             }
             await refresh()
         } catch {
             if Self.verbose {
-                if BrewManagerPlugin.verbose {
-                                    BrewManagerPlugin.logger.error("\(self.t) ❌ 安装失败: \(error.localizedDescription)")
+                if BrewManagerPluginSupport.verbose {
+                                    BrewManagerPluginSupport.logger.error("\(self.t) ❌ 安装失败: \(error.localizedDescription)")
                 }
             }
             errorMessage = pluginLocalization.string("Installation failed: \(error.localizedDescription)")
@@ -221,23 +221,23 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     
     func uninstall(package: BrewPackage) async {
         if Self.verbose {
-            if BrewManagerPlugin.verbose {
-                            BrewManagerPlugin.logger.info("\(self.t) 🗑️ 开始卸载: \(package.name)")
+            if BrewManagerPluginSupport.verbose {
+                            BrewManagerPluginSupport.logger.info("\(self.t) 🗑️ 开始卸载: \(package.name)")
             }
         }
         isLoading = true
         do {
             try await service.uninstall(name: package.name, isCask: package.isCask)
             if Self.verbose {
-                if BrewManagerPlugin.verbose {
-                                    BrewManagerPlugin.logger.info("\(self.t) ✅ 卸载成功: \(package.name)")
+                if BrewManagerPluginSupport.verbose {
+                                    BrewManagerPluginSupport.logger.info("\(self.t) ✅ 卸载成功: \(package.name)")
                 }
             }
             await refresh()
         } catch {
             if Self.verbose {
-                if BrewManagerPlugin.verbose {
-                                    BrewManagerPlugin.logger.error("\(self.t) ❌ 卸载失败: \(error.localizedDescription)")
+                if BrewManagerPluginSupport.verbose {
+                                    BrewManagerPluginSupport.logger.error("\(self.t) ❌ 卸载失败: \(error.localizedDescription)")
                 }
             }
             errorMessage = pluginLocalization.string("Uninstallation failed: \(error.localizedDescription)")
@@ -247,23 +247,23 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     
     func upgrade(package: BrewPackage) async {
         if Self.verbose {
-            if BrewManagerPlugin.verbose {
-                            BrewManagerPlugin.logger.info("\(self.t) ⬆️ 开始更新: \(package.name)")
+            if BrewManagerPluginSupport.verbose {
+                            BrewManagerPluginSupport.logger.info("\(self.t) ⬆️ 开始更新: \(package.name)")
             }
         }
         isLoading = true
         do {
             try await service.upgrade(name: package.name, isCask: package.isCask)
             if Self.verbose {
-                if BrewManagerPlugin.verbose {
-                                    BrewManagerPlugin.logger.info("\(self.t) ✅ 更新成功: \(package.name)")
+                if BrewManagerPluginSupport.verbose {
+                                    BrewManagerPluginSupport.logger.info("\(self.t) ✅ 更新成功: \(package.name)")
                 }
             }
             await refresh()
         } catch {
             if Self.verbose {
-                if BrewManagerPlugin.verbose {
-                                    BrewManagerPlugin.logger.error("\(self.t) ❌ 更新失败: \(error.localizedDescription)")
+                if BrewManagerPluginSupport.verbose {
+                                    BrewManagerPluginSupport.logger.error("\(self.t) ❌ 更新失败: \(error.localizedDescription)")
                 }
             }
             errorMessage = pluginLocalization.string("Update failed: \(error.localizedDescription)")
@@ -273,8 +273,8 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
     
     func upgradeAll() async {
         if Self.verbose {
-            if BrewManagerPlugin.verbose {
-                            BrewManagerPlugin.logger.info("\(self.t) 🚀 开始全部更新 (\(self.outdatedPackages.count) 个包)")
+            if BrewManagerPluginSupport.verbose {
+                            BrewManagerPluginSupport.logger.info("\(self.t) 🚀 开始全部更新 (\(self.outdatedPackages.count) 个包)")
             }
         }
         isLoading = true
@@ -282,22 +282,22 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
             // 简单实现：遍历更新
             for package in outdatedPackages {
                 if Self.verbose {
-                    if BrewManagerPlugin.verbose {
-                                            BrewManagerPlugin.logger.info("\(self.t) 正在更新: \(package.name)")
+                    if BrewManagerPluginSupport.verbose {
+                                            BrewManagerPluginSupport.logger.info("\(self.t) 正在更新: \(package.name)")
                     }
                 }
                 try await service.upgrade(name: package.name, isCask: package.isCask)
             }
             if Self.verbose {
-                if BrewManagerPlugin.verbose {
-                                    BrewManagerPlugin.logger.info("\(self.t) ✅ 全部更新完成")
+                if BrewManagerPluginSupport.verbose {
+                                    BrewManagerPluginSupport.logger.info("\(self.t) ✅ 全部更新完成")
                 }
             }
             await refresh()
         } catch {
             if Self.verbose {
-                if BrewManagerPlugin.verbose {
-                                    BrewManagerPlugin.logger.error("\(self.t) ❌ 批量更新失败: \(error.localizedDescription)")
+                if BrewManagerPluginSupport.verbose {
+                                    BrewManagerPluginSupport.logger.error("\(self.t) ❌ 批量更新失败: \(error.localizedDescription)")
                 }
             }
             errorMessage = pluginLocalization.string("Batch update failed: \(error.localizedDescription)")

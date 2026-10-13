@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginPrototypeDesigner", targets: ["PluginPrototypeDesigner"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.9.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitPrototype"),
@@ -18,11 +18,8 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderConversationInput"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderPromptSuggestion"),
-        .package(path: "../ProviderSkill"),
-        .package(path: "../ProviderAgentRules"),
     ],
     targets: [
         .target(
@@ -47,9 +44,9 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
-                .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
-                "ProviderSkill",
-                "ProviderAgentRules",
+                .product(name: "ProviderConversationInput", package: "LumiProviders"),
+                .product(name: "ProviderSkill", package: "LumiProviders"),
+                .product(name: "ProviderAgentRules", package: "LumiProviders"),
             ],
             resources: [
                 .process("../../Resources/Localizable.xcstrings"),
@@ -72,8 +69,8 @@ let package = Package(
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
-                .product(name: "ProviderAgentRules", package: "ProviderAgentRules"),
-                .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
+                .product(name: "ProviderAgentRules", package: "LumiProviders"),
+                .product(name: "ProviderConversationInput", package: "LumiProviders"),
             ]
         ),
     ]

@@ -31,7 +31,7 @@ struct PluginBrowserTests {
         try kernel.registerProvider((any RootViewProviding).self, rootView)
         try kernel.registerProvider((any RailViewProviding).self, railView)
 
-        let plugin = BrowserSuperPlugin()
+        let plugin = BrowserPlugin()
         try plugin.onBoot(kernel: kernel)
 
         #expect(activityBar.activeItemID == "Browser.entry")
@@ -72,7 +72,7 @@ struct PluginBrowserTests {
 
         // 必须保留插件实例：rootViewObserver 以 [weak self] 捕获插件，
         // 一次性实例会在 onBoot 返回后立刻释放，自保逻辑随之失效。
-        let plugin = BrowserSuperPlugin()
+        let plugin = BrowserPlugin()
         try plugin.onBoot(kernel: kernel)
 
         // 激活时应隐藏 header。
@@ -108,7 +108,7 @@ struct PluginBrowserTests {
         rootView.setContentHeaderViewHidden(true)
         #expect(rootView.isContentHeaderViewHidden)
 
-        let plugin = BrowserSuperPlugin()
+        let plugin = BrowserPlugin()
         try plugin.onBoot(kernel: kernel)
 
         #expect(rootView.isContentHeaderViewHidden)
@@ -126,7 +126,7 @@ struct PluginBrowserTests {
 
     @Test("plugin metadata is stable")
     func pluginMetadata() {
-        let plugin = BrowserSuperPlugin()
+        let plugin = BrowserPlugin()
         #expect(plugin.id == "Browser")
         #expect(plugin.metadata.name == "Browser")
         #expect(plugin.order == 102)

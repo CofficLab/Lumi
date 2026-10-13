@@ -3,7 +3,7 @@ import LumiUI
 
 /// Database 侧边栏：可切换的「数据浏览（Tables / Keys）」与「连接管理」面板。
 ///
-/// 由 ``DatabaseManagerPlugin`` 注册为 RailView 的 `PanelRailTabItem`，
+/// 由 ``DatabaseManagerPluginSupport`` 注册为 RailView 的 `PanelRailTabItem`，
 /// 仅在 database-manager ViewContainer 中可见。
 ///
 /// - 顶部 ``DatabaseSidebarHeaderBar`` 提供标题、Reload、Add 与切换按钮；

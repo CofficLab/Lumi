@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginAppIconDesigner", targets: ["PluginAppIconDesigner"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.9.0"),
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
@@ -18,8 +18,6 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderPromptSuggestion"),
-        .package(path: "../ProviderSkill"),
-        .package(path: "../ProviderAgentRules"),
     ],
     targets: [
         .target(
@@ -41,8 +39,8 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
-                "ProviderSkill",
-                "ProviderAgentRules",
+                .product(name: "ProviderSkill", package: "LumiProviders"),
+                .product(name: "ProviderAgentRules", package: "LumiProviders"),
             ],
             resources: [
                 .process("../../Resources/Localizable.xcstrings"),
@@ -56,7 +54,7 @@ let package = Package(
                 "PluginAppIconDesigner",
                 "KitAgentTool",
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "ProviderAgentRules", package: "ProviderAgentRules"),
+                .product(name: "ProviderAgentRules", package: "LumiProviders"),
                 .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 "ProviderChatSection",
                 .product(name: "ProviderContentView", package: "LumiProviders"),

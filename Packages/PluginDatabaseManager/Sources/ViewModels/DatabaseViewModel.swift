@@ -90,8 +90,8 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
         }
         if Self.verbose {
-            if DatabaseManagerPlugin.verbose {
-                            DatabaseManagerPlugin.logger.info("\(Self.t)初始化数据库视图模型")
+            if DatabaseManagerPluginSupport.verbose {
+                            DatabaseManagerPluginSupport.logger.info("\(Self.t)初始化数据库视图模型")
             }
         }
         // 恢复上次保存的连接；首次使用时保留一个内存 demo 连接
@@ -182,8 +182,8 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
         await DatabaseAgentConnectionRegistry.shared.upsert(config)
         if Self.verbose {
-            if DatabaseManagerPlugin.verbose {
-                            DatabaseManagerPlugin.logger.info("\(self.t)连接数据库: \(config.name)")
+            if DatabaseManagerPluginSupport.verbose {
+                            DatabaseManagerPluginSupport.logger.info("\(self.t)连接数据库: \(config.name)")
             }
         }
         isLoading = true
@@ -233,13 +233,13 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             }
 
             if Self.verbose {
-                if DatabaseManagerPlugin.verbose {
-                                    DatabaseManagerPlugin.logger.info("\(self.t)数据库连接成功: \(config.name)")
+                if DatabaseManagerPluginSupport.verbose {
+                                    DatabaseManagerPluginSupport.logger.info("\(self.t)数据库连接成功: \(config.name)")
                 }
             }
         } catch {
-            if DatabaseManagerPlugin.verbose {
-                            DatabaseManagerPlugin.logger.error("\(self.t)数据库连接失败: \(error.localizedDescription)")
+            if DatabaseManagerPluginSupport.verbose {
+                            DatabaseManagerPluginSupport.logger.error("\(self.t)数据库连接失败: \(error.localizedDescription)")
             }
             errorMessage = error.localizedDescription
         }
@@ -249,8 +249,8 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     public func disconnect() async {
         guard let config = selectedConfig else { return }
         if Self.verbose {
-            if DatabaseManagerPlugin.verbose {
-                            DatabaseManagerPlugin.logger.info("\(self.t)断开数据库连接: \(config.name)")
+            if DatabaseManagerPluginSupport.verbose {
+                            DatabaseManagerPluginSupport.logger.info("\(self.t)断开数据库连接: \(config.name)")
             }
         }
         await manager.disconnect(configId: config.id)
@@ -275,15 +275,15 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     public func executeQuery() async {
         guard let config = selectedConfig, let connection = await manager.getConnection(for: config.id) else {
             errorMessage = "未连接到数据库"
-            if DatabaseManagerPlugin.verbose {
-                            DatabaseManagerPlugin.logger.error("\(self.t)执行查询失败: 未连接到数据库")
+            if DatabaseManagerPluginSupport.verbose {
+                            DatabaseManagerPluginSupport.logger.error("\(self.t)执行查询失败: 未连接到数据库")
             }
             return
         }
 
         if Self.verbose {
-            if DatabaseManagerPlugin.verbose {
-                            DatabaseManagerPlugin.logger.info("\(self.t)执行查询: \(self.queryText.prefix(50))...")
+            if DatabaseManagerPluginSupport.verbose {
+                            DatabaseManagerPluginSupport.logger.info("\(self.t)执行查询: \(self.queryText.prefix(50))...")
             }
         }
 
@@ -309,23 +309,23 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
                     let result = try await connection.query(queryText, params: nil)
                     queryResult = result
                     if Self.verbose {
-                        if DatabaseManagerPlugin.verbose {
-                                                    DatabaseManagerPlugin.logger.info("\(self.t)查询成功，返回 \(result.rows.count) 行")
+                        if DatabaseManagerPluginSupport.verbose {
+                                                    DatabaseManagerPluginSupport.logger.info("\(self.t)查询成功，返回 \(result.rows.count) 行")
                         }
                     }
                 } else {
                     let affected = try await connection.execute(queryText, params: nil)
                     queryResult = QueryResult(columns: ["Result"], rows: [[.string("Success. Rows affected: \(affected)")]], rowsAffected: affected)
                     if Self.verbose {
-                        if DatabaseManagerPlugin.verbose {
-                                                    DatabaseManagerPlugin.logger.info("\(self.t)执行成功，影响 \(affected) 行")
+                        if DatabaseManagerPluginSupport.verbose {
+                                                    DatabaseManagerPluginSupport.logger.info("\(self.t)执行成功，影响 \(affected) 行")
                         }
                     }
                 }
             }
         } catch {
-            if DatabaseManagerPlugin.verbose {
-                            DatabaseManagerPlugin.logger.error("\(self.t)查询执行失败: \(error.localizedDescription)")
+            if DatabaseManagerPluginSupport.verbose {
+                            DatabaseManagerPluginSupport.logger.error("\(self.t)查询执行失败: \(error.localizedDescription)")
             }
             errorMessage = error.localizedDescription
         }

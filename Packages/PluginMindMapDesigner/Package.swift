@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginMindMapDesigner", targets: ["PluginMindMapDesigner"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.9.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
@@ -17,7 +17,6 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../ProviderSkill"),
     ],
     targets: [
         .target(
@@ -38,7 +37,7 @@ let package = Package(
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 "ProviderToolManager",
-                "ProviderSkill",
+                .product(name: "ProviderSkill", package: "LumiProviders"),
             ],
             resources: [
                 .process("../../Resources/Localizable.xcstrings"),

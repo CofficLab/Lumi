@@ -9,10 +9,9 @@ let package = Package(
         .library(name: "PluginOnboarding", targets: ["PluginOnboarding"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.9.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
-        .package(path: "../ProviderOnboarding"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
     ],
@@ -22,7 +21,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
+                .product(name: "ProviderOnboarding", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
@@ -35,7 +34,7 @@ let package = Package(
             dependencies: [
                 "PluginOnboarding",
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
+                .product(name: "ProviderOnboarding", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
             ]

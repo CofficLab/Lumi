@@ -12,7 +12,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.9.0"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitAppStorePromo"),
@@ -22,8 +22,6 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../ProviderSkill"),
-        .package(path: "../ProviderAgentRules"),
     ],
     targets: [
         .target(
@@ -46,8 +44,8 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
-                .product(name: "ProviderSkill", package: "ProviderSkill"),
-                .product(name: "ProviderAgentRules", package: "ProviderAgentRules"),
+                .product(name: "ProviderSkill", package: "LumiProviders"),
+                .product(name: "ProviderAgentRules", package: "LumiProviders"),
             ],
             resources: [
                 .process("../../Resources/Localizable.xcstrings"),
@@ -70,8 +68,8 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
-                .product(name: "ProviderSkill", package: "ProviderSkill"),
-                .product(name: "ProviderAgentRules", package: "ProviderAgentRules"),
+                .product(name: "ProviderSkill", package: "LumiProviders"),
+                .product(name: "ProviderAgentRules", package: "LumiProviders"),
             ],
             path: "Tests/PluginAppStoreConnectTests"
         ),

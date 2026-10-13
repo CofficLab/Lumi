@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginAgentRules", targets: ["PluginAgentRules"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.9.0"),
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
@@ -18,7 +18,6 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderAgentRules"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../KitLLM"),
     ],
@@ -34,7 +33,7 @@ let package = Package(
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 "ProviderToolManager",
                 "ProviderChatSection",
-                "ProviderAgentRules",
+                .product(name: "ProviderAgentRules", package: "LumiProviders"),
                 "ProviderLifecycleHooks",
                 "KitLLM",
             ],
@@ -48,7 +47,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
-                .product(name: "ProviderAgentRules", package: "ProviderAgentRules"),
+                .product(name: "ProviderAgentRules", package: "LumiProviders"),
             ]
         ),
     ]

@@ -136,7 +136,7 @@ public struct ACPPluginFactory: PluginFactory {
             WebFetchPlugin(),
             WebSearchPlugin(),
             DocxReadPlugin(),
-            TerminalSuperPlugin(),
+            TerminalPlugin(),
             PluginACP(),
             AiRouterProviderPlugin(),
             AliyunProviderPlugin(),

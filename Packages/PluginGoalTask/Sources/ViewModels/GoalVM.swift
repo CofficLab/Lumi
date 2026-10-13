@@ -1,10 +1,10 @@
 import Foundation
 import os
 import LumiLoggingKit
-/// GoalTaskPlugin 的唯一视图模型(已合并原 `SidebarViewModel`)。
+/// GoalTaskPluginSupport 的唯一视图模型(已合并原 `SidebarViewModel`)。
 ///
 /// 由 `Plugin` 持有并管理生命周期,跨视图重建保留订阅与加载状态;
-/// 通过 `managerProvider` 注入数据源,默认仍走 `GoalTaskPlugin.currentManager()`。
+/// 通过 `managerProvider` 注入数据源,默认仍走 `GoalTaskPluginSupport.currentManager()`。
 ///
 /// 职责:
 /// - 跟踪 `currentConversationID`(由 `SidebarView` 监听对话切换事件并写入)
@@ -20,7 +20,7 @@ import LumiLoggingKit
 @MainActor
 final class GoalVM: ObservableObject, SuperLog {
     public nonisolated static let verbose: Bool = false
-    public nonisolated static let logger = GoalTaskPlugin.logger
+    public nonisolated static let logger = GoalTaskPluginSupport.logger
     public nonisolated static let emoji = "🇫🇯"
 
     /// 数据源提供器;注入点允许外部传入自定义 `GoalStateManager`(测试 / 多实例场景)。
@@ -35,7 +35,7 @@ final class GoalVM: ObservableObject, SuperLog {
     /// 是否正在拉取 Goal 列表。
     @Published public var isLoading: Bool = false
 
-    public init(managerProvider: @escaping () -> GoalStateManager? = { GoalTaskPlugin.currentManager() }) {
+    public init(managerProvider: @escaping () -> GoalStateManager? = { GoalTaskPluginSupport.currentManager() }) {
         self.managerProvider = managerProvider
     }
 

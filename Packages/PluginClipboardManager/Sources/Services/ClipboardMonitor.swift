@@ -8,7 +8,7 @@ import os
 public class ClipboardMonitor: ObservableObject, SuperLog {
     public nonisolated static let emoji = "📋"
     public nonisolated static let verbose: Bool = false
-    public nonisolated static let logger = ClipboardManagerPlugin.logger
+    public nonisolated static let logger = ClipboardManagerPluginSupport.logger
 
     public static let shared = ClipboardMonitor()
 
@@ -57,8 +57,8 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
                 }
 
                 if Self.verbose {
-                    if ClipboardManagerPlugin.verbose {
-                        ClipboardManagerPlugin.logger.info("\(Self.t)\(Self.logMessage(for: item))")
+                    if ClipboardManagerPluginSupport.verbose {
+                        ClipboardManagerPluginSupport.logger.info("\(Self.t)\(Self.logMessage(for: item))")
                     }
                 }
             }

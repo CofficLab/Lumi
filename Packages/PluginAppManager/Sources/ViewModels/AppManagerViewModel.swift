@@ -82,19 +82,19 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     /// 从缓存加载应用列表（首次加载时调用）
     func loadFromCache() async {
         if Self.verbose {
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.info("\(self.t)开始从缓存加载应用列表")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t)开始从缓存加载应用列表")
             }
         }
         let apps = await appService.scanInstalledApps(force: false)
         if !apps.isEmpty {
             installedApps = apps
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.info("\(self.t)从缓存加载 \(apps.count) 个应用")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t)从缓存加载 \(apps.count) 个应用")
             }
         } else if Self.verbose {
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.info("\(self.t)缓存为空，需要扫描")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t)缓存为空，需要扫描")
             }
         }
     }
@@ -102,8 +102,8 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     /// 扫描应用
     /// - Parameter force: 是否强制重新扫描
     func scanApps(force: Bool = false) async {
-        if AppManagerPlugin.verbose {
-                    AppManagerPlugin.logger.info("\(self.t)开始扫描应用 (force: \(force))")
+        if AppManagerPluginSupport.verbose {
+                    AppManagerPluginSupport.logger.info("\(self.t)开始扫描应用 (force: \(force))")
         }
         // Cancel previous task if any
         scanTask?.cancel()
@@ -134,8 +134,8 @@ class AppManagerViewModel: ObservableObject, SuperLog {
         // 立即显示应用列表（不等待大小计算）
         installedApps = apps
         if Self.verbose {
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.info("\(self.t)App list loaded: \(self.installedApps.count) apps")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t)App list loaded: \(self.installedApps.count) apps")
             }
         }
 
@@ -167,8 +167,8 @@ class AppManagerViewModel: ObservableObject, SuperLog {
             await appService.saveCache()
         }
 
-        if AppManagerPlugin.verbose {
-                    AppManagerPlugin.logger.info("\(self.t)扫描完成：\(self.installedApps.count) 个应用")
+        if AppManagerPluginSupport.verbose {
+                    AppManagerPluginSupport.logger.info("\(self.t)扫描完成：\(self.installedApps.count) 个应用")
         }
     }
 
@@ -181,8 +181,8 @@ class AppManagerViewModel: ObservableObject, SuperLog {
 
     /// 扫描关联文件
     func scanRelatedFiles(for app: AppModel) {
-        if AppManagerPlugin.verbose {
-                    AppManagerPlugin.logger.info("\(self.t)开始扫描关联文件：\(app.displayName)")
+        if AppManagerPluginSupport.verbose {
+                    AppManagerPluginSupport.logger.info("\(self.t)开始扫描关联文件：\(app.displayName)")
         }
         relatedFilesTask?.cancel()
 
@@ -196,13 +196,13 @@ class AppManagerViewModel: ObservableObject, SuperLog {
             let files = await appService.scanRelatedFiles(for: app)
             guard !Task.isCancelled else { return }
 
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.info("\(self.t)关联文件扫描完成：\(app.displayName)，\(files.count) 个")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t)关联文件扫描完成：\(app.displayName)，\(files.count) 个")
             }
             await MainActor.run {
                 guard !Task.isCancelled, self.selectedApp?.bundleURL.path == appPath else {
-                    if AppManagerPlugin.verbose {
-                                            AppManagerPlugin.logger.info("\(self.t)忽略过期关联文件扫描结果：\(appName)")
+                    if AppManagerPluginSupport.verbose {
+                                            AppManagerPluginSupport.logger.info("\(self.t)忽略过期关联文件扫描结果：\(appName)")
                     }
                     return
                 }
@@ -228,8 +228,8 @@ class AppManagerViewModel: ObservableObject, SuperLog {
     func deleteSelectedFiles() {
         guard !selectedFileIds.isEmpty else { return }
         let filesToDelete = relatedFiles.filter { selectedFileIds.contains($0.id) }
-        if AppManagerPlugin.verbose {
-                    AppManagerPlugin.logger.info("\(self.t)开始删除选中的 \(filesToDelete.count) 个文件")
+        if AppManagerPluginSupport.verbose {
+                    AppManagerPluginSupport.logger.info("\(self.t)开始删除选中的 \(filesToDelete.count) 个文件")
         }
         isDeleting = true
 
@@ -252,8 +252,8 @@ class AppManagerViewModel: ObservableObject, SuperLog {
                         self.installedApps.removeAll { $0.bundleURL.path == app.bundleURL.path }
                         self.selectedApp = nil
                         self.relatedFiles = []
-                        if AppManagerPlugin.verbose {
-                                                    AppManagerPlugin.logger.info("\(self.t)应用已卸载：\(app.displayName)")
+                        if AppManagerPluginSupport.verbose {
+                                                    AppManagerPluginSupport.logger.info("\(self.t)应用已卸载：\(app.displayName)")
                         }
                     } else {
                         // 仅移除了部分文件，重新扫描以刷新状态（或者手动从 relatedFiles 移除）
@@ -267,8 +267,8 @@ class AppManagerViewModel: ObservableObject, SuperLog {
             } catch {
                 await MainActor.run {
                     self.isDeleting = false
-                    if AppManagerPlugin.verbose {
-                                            AppManagerPlugin.logger.error("\(self.t)删除文件失败：\(error.localizedDescription)")
+                    if AppManagerPluginSupport.verbose {
+                                            AppManagerPluginSupport.logger.error("\(self.t)删除文件失败：\(error.localizedDescription)")
                     }
                     self.errorMessage = error.localizedDescription
                 }

@@ -15,7 +15,7 @@ public struct GitSkillContributor: SkillContributing {
     public let skills: [SkillMetadata]
 
     public init(
-        providerID: String = GitSourceControlSuperPlugin.pluginID,
+        providerID: String = GitSourceControlPlugin.pluginID,
         directoryName: String = "Skills"
     ) {
         self.providerID = providerID

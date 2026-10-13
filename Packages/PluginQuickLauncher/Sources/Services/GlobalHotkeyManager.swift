@@ -188,12 +188,12 @@ public final class GlobalHotkeyManager: NSObject, ObservableObject, SuperLog {
             &newRef
         )
         guard status == noErr, let newRef else {
-            QuickLauncherPlugin.logger.error("\(self.t)注册全局热键失败: \(status) (\(self.currentCombo.displayString))")
+            QuickLauncherPluginSupport.logger.error("\(self.t)注册全局热键失败: \(status) (\(self.currentCombo.displayString))")
             return
         }
         hotKeyRef = newRef
         if Self.verbose {
-            QuickLauncherPlugin.logger.info("\(self.t)全局热键已注册: \(self.currentCombo.displayString)")
+            QuickLauncherPluginSupport.logger.info("\(self.t)全局热键已注册: \(self.currentCombo.displayString)")
         }
     }
 
@@ -244,7 +244,7 @@ public final class GlobalHotkeyManager: NSObject, ObservableObject, SuperLog {
             &newHandler
         )
         guard installStatus == noErr, let newHandler else {
-            QuickLauncherPlugin.logger.error("\(self.t)安装热键事件处理器失败: \(installStatus)")
+            QuickLauncherPluginSupport.logger.error("\(self.t)安装热键事件处理器失败: \(installStatus)")
             return
         }
         eventHandler = newHandler

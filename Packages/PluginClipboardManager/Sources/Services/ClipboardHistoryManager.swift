@@ -10,7 +10,7 @@ import SwiftData
 public actor ClipboardHistoryManager: SuperLog {
     public nonisolated static let emoji = "📋"
     public nonisolated static let verbose: Bool = false
-    public static let logger = ClipboardManagerPlugin.logger
+    public static let logger = ClipboardManagerPluginSupport.logger
     static let maxFetchLimit = 5000
 
     // MARK: - Singleton
@@ -62,8 +62,8 @@ public actor ClipboardHistoryManager: SuperLog {
         do {
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            if ClipboardManagerPlugin.verbose {
-                ClipboardManagerPlugin.logger.error("\(Self.t)❌ 打开剪贴板历史数据库失败，准备重建：\(error.localizedDescription)")
+            if ClipboardManagerPluginSupport.verbose {
+                ClipboardManagerPluginSupport.logger.error("\(Self.t)❌ 打开剪贴板历史数据库失败，准备重建：\(error.localizedDescription)")
             }
             quarantinePersistentStore(at: dbURL)
         }
@@ -72,8 +72,8 @@ public actor ClipboardHistoryManager: SuperLog {
             try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            if ClipboardManagerPlugin.verbose {
-                ClipboardManagerPlugin.logger.error("\(Self.t)❌ 重建剪贴板历史数据库失败，使用临时内存存储：\(error.localizedDescription)")
+            if ClipboardManagerPluginSupport.verbose {
+                ClipboardManagerPluginSupport.logger.error("\(Self.t)❌ 重建剪贴板历史数据库失败，使用临时内存存储：\(error.localizedDescription)")
             }
             return makeInMemoryContainer(schema: schema)
         }
@@ -123,8 +123,8 @@ public actor ClipboardHistoryManager: SuperLog {
         do {
             try FileManager.default.moveItem(at: url, to: destination)
         } catch {
-            if ClipboardManagerPlugin.verbose {
-                ClipboardManagerPlugin.logger.error("\(Self.t)❌ 隔离剪贴板数据库文件失败：\(error.localizedDescription)")
+            if ClipboardManagerPluginSupport.verbose {
+                ClipboardManagerPluginSupport.logger.error("\(Self.t)❌ 隔离剪贴板数据库文件失败：\(error.localizedDescription)")
             }
         }
     }
@@ -147,8 +147,8 @@ public actor ClipboardHistoryManager: SuperLog {
         let saved = save(context, operation: "保存剪贴板项")
 
         if saved, Self.verbose {
-            if ClipboardManagerPlugin.verbose {
-                ClipboardManagerPlugin.logger.info("\(Self.t)➕ 添加剪贴板项：\(item.content.prefix(50))...")
+            if ClipboardManagerPluginSupport.verbose {
+                ClipboardManagerPluginSupport.logger.info("\(Self.t)➕ 添加剪贴板项：\(item.content.prefix(50))...")
             }
         }
         return saved
@@ -173,8 +173,8 @@ public actor ClipboardHistoryManager: SuperLog {
         let saved = save(context, operation: "批量保存剪贴板项")
 
         if saved, Self.verbose {
-            if ClipboardManagerPlugin.verbose {
-                ClipboardManagerPlugin.logger.info("\(Self.t)📦 批量添加 \(items.count) 个剪贴板项")
+            if ClipboardManagerPluginSupport.verbose {
+                ClipboardManagerPluginSupport.logger.info("\(Self.t)📦 批量添加 \(items.count) 个剪贴板项")
             }
         }
         return saved
@@ -193,8 +193,8 @@ public actor ClipboardHistoryManager: SuperLog {
         do {
             return try context.fetch(descriptor)
         } catch {
-            if ClipboardManagerPlugin.verbose {
-                ClipboardManagerPlugin.logger.error("\(Self.t)❌ 查询失败：\(error.localizedDescription)")
+            if ClipboardManagerPluginSupport.verbose {
+                ClipboardManagerPluginSupport.logger.error("\(Self.t)❌ 查询失败：\(error.localizedDescription)")
             }
             return []
         }
@@ -213,8 +213,8 @@ public actor ClipboardHistoryManager: SuperLog {
         do {
             return try context.fetch(descriptor)
         } catch {
-            if ClipboardManagerPlugin.verbose {
-                ClipboardManagerPlugin.logger.error("\(Self.t)❌ 查询失败：\(error.localizedDescription)")
+            if ClipboardManagerPluginSupport.verbose {
+                ClipboardManagerPluginSupport.logger.error("\(Self.t)❌ 查询失败：\(error.localizedDescription)")
             }
             return []
         }
@@ -285,8 +285,8 @@ public actor ClipboardHistoryManager: SuperLog {
             let saved = save(context, operation: "更新剪贴板固定状态")
 
             if saved, Self.verbose {
-                if ClipboardManagerPlugin.verbose {
-                    ClipboardManagerPlugin.logger.info("\(Self.t)📌 更新固定状态：\(id) -> \(isPinned)")
+                if ClipboardManagerPluginSupport.verbose {
+                    ClipboardManagerPluginSupport.logger.info("\(Self.t)📌 更新固定状态：\(id) -> \(isPinned)")
                 }
             }
             return saved
@@ -308,8 +308,8 @@ public actor ClipboardHistoryManager: SuperLog {
             let saved = save(context, operation: "删除剪贴板项")
 
             if saved, Self.verbose {
-                if ClipboardManagerPlugin.verbose {
-                    ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 已删除：\(id)")
+                if ClipboardManagerPluginSupport.verbose {
+                    ClipboardManagerPluginSupport.logger.info("\(Self.t)🗑️ 已删除：\(id)")
                 }
             }
             return saved
@@ -333,8 +333,8 @@ public actor ClipboardHistoryManager: SuperLog {
             let saved = save(context, operation: "批量删除剪贴板项")
 
             if saved, Self.verbose {
-                if ClipboardManagerPlugin.verbose {
-                    ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 批量删除 \(ids.count) 项")
+                if ClipboardManagerPluginSupport.verbose {
+                    ClipboardManagerPluginSupport.logger.info("\(Self.t)🗑️ 批量删除 \(ids.count) 项")
                 }
             }
             return saved
@@ -364,8 +364,8 @@ public actor ClipboardHistoryManager: SuperLog {
         let saved = save(context, operation: "清空剪贴板历史")
 
         if saved, Self.verbose {
-            if ClipboardManagerPlugin.verbose {
-                ClipboardManagerPlugin.logger.info("\(Self.t)🗑️ 已清空 \(itemsToDelete.count) 项历史记录")
+            if ClipboardManagerPluginSupport.verbose {
+                ClipboardManagerPluginSupport.logger.info("\(Self.t)🗑️ 已清空 \(itemsToDelete.count) 项历史记录")
             }
         }
         return saved
@@ -399,8 +399,8 @@ public actor ClipboardHistoryManager: SuperLog {
         let saved = save(context, operation: "迁移剪贴板历史")
 
         if saved, Self.verbose {
-            if ClipboardManagerPlugin.verbose {
-                ClipboardManagerPlugin.logger.info("\(Self.t)✅ 迁移完成：\(items.count) 项")
+            if ClipboardManagerPluginSupport.verbose {
+                ClipboardManagerPluginSupport.logger.info("\(Self.t)✅ 迁移完成：\(items.count) 项")
             }
         }
         return saved
@@ -428,8 +428,8 @@ public actor ClipboardHistoryManager: SuperLog {
         let saved = save(context, operation: "清理过期剪贴板历史")
 
         if saved, Self.verbose && !oldItems.isEmpty {
-            if ClipboardManagerPlugin.verbose {
-                ClipboardManagerPlugin.logger.info("\(Self.t)🧹 清理了 \(oldItems.count) 条过期记录")
+            if ClipboardManagerPluginSupport.verbose {
+                ClipboardManagerPluginSupport.logger.info("\(Self.t)🧹 清理了 \(oldItems.count) 条过期记录")
             }
         }
     }
@@ -439,8 +439,8 @@ public actor ClipboardHistoryManager: SuperLog {
             try context.save()
             return true
         } catch {
-            if ClipboardManagerPlugin.verbose {
-                ClipboardManagerPlugin.logger.error("\(Self.t)❌ \(operation)失败：\(error.localizedDescription)")
+            if ClipboardManagerPluginSupport.verbose {
+                ClipboardManagerPluginSupport.logger.error("\(Self.t)❌ \(operation)失败：\(error.localizedDescription)")
             }
             return false
         }

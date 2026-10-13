@@ -24,10 +24,10 @@ actor CacheManager: SuperLog {
 
     /// 延迟创建：首次真正读写缓存时才解析 `pluginDataDirectoryProvider`，
     /// 确保此时 `onReady` 已注入标准路径
-    /// （`<Application Support>/<bundleID>/db_<mode>_v<major>/AppManagerPlugin/`），
+    /// （`<Application Support>/<bundleID>/db_<mode>_v<major>/AppManagerPluginSupport/`），
     /// 避免在插件实例化阶段（onReady 之前）就把数据库建到 fallback 目录。
     private lazy var container: ModelContainer = Self.makeContainer(
-        pluginDataDirectory: explicitDataDirectory ?? AppManagerPlugin.pluginDataDirectoryProvider())
+        pluginDataDirectory: explicitDataDirectory ?? AppManagerPluginSupport.pluginDataDirectoryProvider())
 
     private(set) var stats = CacheStats()
 
@@ -49,8 +49,8 @@ actor CacheManager: SuperLog {
             quarantineFileIfItBlocksDirectory(at: dbDir)
             try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
         } catch {
-            if AppManagerPlugin.verbose {
-                AppManagerPlugin.logger.error("\(Self.t)创建应用缓存数据库目录失败：\(error.localizedDescription)")
+            if AppManagerPluginSupport.verbose {
+                AppManagerPluginSupport.logger.error("\(Self.t)创建应用缓存数据库目录失败：\(error.localizedDescription)")
             }
         }
 
@@ -64,8 +64,8 @@ actor CacheManager: SuperLog {
         do {
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            if AppManagerPlugin.verbose {
-                AppManagerPlugin.logger.error("\(Self.t)打开应用缓存数据库失败，准备重建：\(error.localizedDescription)")
+            if AppManagerPluginSupport.verbose {
+                AppManagerPluginSupport.logger.error("\(Self.t)打开应用缓存数据库失败，准备重建：\(error.localizedDescription)")
             }
             quarantinePersistentStore(at: dbURL)
         }
@@ -74,8 +74,8 @@ actor CacheManager: SuperLog {
             try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            if AppManagerPlugin.verbose {
-                AppManagerPlugin.logger.error("\(Self.t)重建应用缓存数据库失败，使用临时内存缓存：\(error.localizedDescription)")
+            if AppManagerPluginSupport.verbose {
+                AppManagerPluginSupport.logger.error("\(Self.t)重建应用缓存数据库失败，使用临时内存缓存：\(error.localizedDescription)")
             }
             return makeInMemoryContainer(schema: schema)
         }
@@ -125,8 +125,8 @@ actor CacheManager: SuperLog {
         do {
             try FileManager.default.moveItem(at: url, to: destination)
         } catch {
-            if AppManagerPlugin.verbose {
-                AppManagerPlugin.logger.error("\(Self.t)隔离应用缓存数据库文件失败：\(error.localizedDescription)")
+            if AppManagerPluginSupport.verbose {
+                AppManagerPluginSupport.logger.error("\(Self.t)隔离应用缓存数据库文件失败：\(error.localizedDescription)")
             }
         }
     }
@@ -141,8 +141,8 @@ actor CacheManager: SuperLog {
         guard let item = try? context.fetch(descriptor).first else {
             stats.missCount += 1
             if Self.verbose {
-                if AppManagerPlugin.verbose {
-                                    AppManagerPlugin.logger.info("\(self.t)缓存未命中：\((path as NSString).lastPathComponent)")
+                if AppManagerPluginSupport.verbose {
+                                    AppManagerPluginSupport.logger.info("\(self.t)缓存未命中：\((path as NSString).lastPathComponent)")
                 }
             }
             return nil
@@ -152,16 +152,16 @@ actor CacheManager: SuperLog {
         if abs(item.lastModified - currentModificationDate.timeIntervalSince1970) < 1.0 {
             stats.hitCount += 1
             if Self.verbose {
-                if AppManagerPlugin.verbose {
-                                    AppManagerPlugin.logger.info("\(self.t)缓存命中：\(item.name)")
+                if AppManagerPluginSupport.verbose {
+                                    AppManagerPluginSupport.logger.info("\(self.t)缓存命中：\(item.name)")
                 }
             }
             return item.toDTO()
         } else {
             stats.missCount += 1
             if Self.verbose {
-                if AppManagerPlugin.verbose {
-                                    AppManagerPlugin.logger.info("\(self.t)缓存已过期：\(item.name)，已移除")
+                if AppManagerPluginSupport.verbose {
+                                    AppManagerPluginSupport.logger.info("\(self.t)缓存已过期：\(item.name)，已移除")
                 }
             }
             context.delete(item)
@@ -203,8 +203,8 @@ actor CacheManager: SuperLog {
         let saved = save(context, operation: "保存应用缓存")
 
         if saved, Self.verbose {
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.info("\(self.t)缓存已更新：\(app.displayName)")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t)缓存已更新：\(app.displayName)")
             }
         }
         return saved
@@ -228,8 +228,8 @@ actor CacheManager: SuperLog {
         if removedCount > 0 {
             let saved = save(context, operation: "清理无效应用缓存")
             if saved, Self.verbose {
-                if AppManagerPlugin.verbose {
-                                    AppManagerPlugin.logger.info("\(self.t)清理无效缓存：\(removedCount) 条")
+                if AppManagerPluginSupport.verbose {
+                                    AppManagerPluginSupport.logger.info("\(self.t)清理无效缓存：\(removedCount) 条")
                 }
             }
             return saved
@@ -259,8 +259,8 @@ actor CacheManager: SuperLog {
         stats = CacheStats()
 
         if Self.verbose {
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.info("\(self.t)缓存已清空。之前统计：\(oldStats.hitCount) 命中，\(oldStats.missCount) 未命中")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t)缓存已清空。之前统计：\(oldStats.hitCount) 命中，\(oldStats.missCount) 未命中")
             }
         }
         return true
@@ -276,8 +276,8 @@ actor CacheManager: SuperLog {
             try context.save()
             return true
         } catch {
-            if AppManagerPlugin.verbose {
-                AppManagerPlugin.logger.error("\(self.t)\(operation)失败：\(error.localizedDescription)")
+            if AppManagerPluginSupport.verbose {
+                AppManagerPluginSupport.logger.error("\(self.t)\(operation)失败：\(error.localizedDescription)")
             }
             return false
         }

@@ -90,7 +90,7 @@ public final class AppSearchService: ObservableObject, SuperLog {
                 self?.lastScanStamps = stamps
                 self?.isScanning = false
                 if Self.verbose {
-                    QuickLauncherPlugin.logger.info("\(self?.t ?? "")已扫描 \(items.count) 个应用")
+                    QuickLauncherPluginSupport.logger.info("\(self?.t ?? "")已扫描 \(items.count) 个应用")
                 }
             }
         }
@@ -176,7 +176,7 @@ public final class AppSearchService: ObservableObject, SuperLog {
         let config = NSWorkspace.OpenConfiguration()
         NSWorkspace.shared.openApplication(at: appURL, configuration: config) { _, error in
             if let error {
-                QuickLauncherPlugin.logger.error("启动应用失败 \(item.name, privacy: .public): \(error.localizedDescription)")
+                QuickLauncherPluginSupport.logger.error("启动应用失败 \(item.name, privacy: .public): \(error.localizedDescription)")
             }
         }
     }

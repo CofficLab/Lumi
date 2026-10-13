@@ -15,7 +15,7 @@ struct CodeEditorViewModelTests {
         defer { try? FileManager.default.removeItem(at: file) }
 
         let kernel = KernelCoreContainer()
-        try kernel.start(plugins: [CodeEditorHostSuperPlugin()])
+        try kernel.start(plugins: [CodeEditorHostPlugin()])
         defer { try? kernel.stop() }
         let provider = try #require(kernel.resolveProvider(EditorProviding.self))
         let viewModel = CodeEditorViewModel(editor: provider)
@@ -38,7 +38,7 @@ struct CodeEditorViewModelTests {
         defer { try? FileManager.default.removeItem(at: file) }
 
         let kernel = KernelCoreContainer()
-        try kernel.start(plugins: [CodeEditorHostSuperPlugin()])
+        try kernel.start(plugins: [CodeEditorHostPlugin()])
         defer { try? kernel.stop() }
         let provider = try #require(kernel.resolveProvider(EditorProviding.self))
         let viewModel = CodeEditorViewModel(editor: provider)

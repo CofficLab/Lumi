@@ -41,16 +41,16 @@ class AppCleanerHelper: SuperLog {
         let bundleID = app.bundleIdentifier ?? ""
 
         if Self.verbose {
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.info("\(self.t) 开始扫描应用关联文件：\(appName), BundleID: \(bundleID)")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t) 开始扫描应用关联文件：\(appName), BundleID: \(bundleID)")
             }
         }
 
         // 1. 扫描 Application Support 和 Caches
         guard let userLibURL = libraryDirectoryURL else {
             if Self.verbose {
-                if AppManagerPlugin.verbose {
-                    AppManagerPlugin.logger.warning("\(self.t) 无法定位用户 Library 目录，跳过关联文件扫描")
+                if AppManagerPluginSupport.verbose {
+                    AppManagerPluginSupport.logger.warning("\(self.t) 无法定位用户 Library 目录，跳过关联文件扫描")
                 }
             }
             return []
@@ -102,8 +102,8 @@ class AppCleanerHelper: SuperLog {
         // 去重
         let uniqueFiles = Array(Set(relatedFiles))
         if Self.verbose {
-            if AppManagerPlugin.verbose {
-                            AppManagerPlugin.logger.info("\(self.t) 扫描完成，找到 \(uniqueFiles.count) 个关联文件/文件夹")
+            if AppManagerPluginSupport.verbose {
+                            AppManagerPluginSupport.logger.info("\(self.t) 扫描完成，找到 \(uniqueFiles.count) 个关联文件/文件夹")
             }
         }
         return uniqueFiles

@@ -9,7 +9,7 @@ struct CodeEditorHostSuperPluginTests {
     @Test("registers the shared editor service and every host capability")
     func registersEditorServices() throws {
         let kernel = KernelCoreContainer()
-        try kernel.start(plugins: [CodeEditorHostSuperPlugin()])
+        try kernel.start(plugins: [CodeEditorHostPlugin()])
 
         _ = try #require(kernel.resolveProvider(EditorService.self))
         let editor = try #require(kernel.resolveProvider(EditorProviding.self))
@@ -22,7 +22,7 @@ struct CodeEditorHostSuperPluginTests {
     @Test("removes every editor capability during shutdown")
     func removesEditorServices() throws {
         let kernel = KernelCoreContainer()
-        try kernel.start(plugins: [CodeEditorHostSuperPlugin()])
+        try kernel.start(plugins: [CodeEditorHostPlugin()])
 
         try kernel.stop()
 
