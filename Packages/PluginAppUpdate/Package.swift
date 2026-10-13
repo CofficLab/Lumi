@@ -34,7 +34,7 @@ let package = Package(
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "Sparkle", package: "Sparkle"),
             ],
-            path: "Sources",
+            path: "Sources/PluginAppUpdate",
             resources: [
                 .process("Resources/Localizable.xcstrings")
             ]

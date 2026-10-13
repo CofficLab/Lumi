@@ -38,8 +38,8 @@ let package = Package(
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging")
             ],
-            path: "Sources",
-            resources: [.process("../Resources/Localizable.xcstrings")]
+            path: "Sources/PluginStoryWriter",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "StoryWriterPluginTests",

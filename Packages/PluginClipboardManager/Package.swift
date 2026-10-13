@@ -36,9 +36,9 @@ let package = Package(
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "ProviderStorage", package: "LumiProviders")
             ],
-            path: "Sources",
+            path: "Sources/PluginClipboardManager",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

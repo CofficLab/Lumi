@@ -36,9 +36,9 @@ let package = Package(
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging")
             ],
-            path: "Sources",
+            path: "Sources/PluginImageToPDF",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

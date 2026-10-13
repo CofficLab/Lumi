@@ -36,9 +36,9 @@ let package = Package(
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
             ],
-            path: "Sources",
+            path: "Sources/PluginQuickLauncher",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

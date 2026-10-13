@@ -30,13 +30,13 @@ let package = Package(
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
-            path: "Sources",
+            path: "Sources/PluginLLMProviderCodex",
             exclude: [
                 "CodexPlugin.swift",
                 "CodexLumiProvider.swift",
                 "Views",
             ],
-            resources: [.process("../Resources")]
+            resources: [.process("../../Resources")]
         ),
         .testTarget(
             name: "PluginLLMProviderCodexTests",

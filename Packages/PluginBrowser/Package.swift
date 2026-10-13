@@ -45,9 +45,9 @@ let package = Package(
                 .product(name: "KitMCP", package: "KitMCP", condition: .when(platforms: [.macOS])),
                 .product(name: "ProviderMCP", package: "ProviderMCP", condition: .when(platforms: [.macOS])),
             ],
-            path: "Sources",
+            path: "Sources/PluginBrowser",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

@@ -31,8 +31,8 @@ let package = Package(
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging")
             ],
-            path: "Sources",
-            resources: [.process("../Resources/Localizable.xcstrings")]
+            path: "Sources/PluginInput",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "InputPluginTests",

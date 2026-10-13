@@ -45,11 +45,11 @@ let package = Package(
                 .product(name: "KitShell", package: "KitShell"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
-            path: "Sources",
+            path: "Sources/PluginGit",
             resources: [
-                .process("../Resources/Localizable.xcstrings"),
+                .process("../../Resources/Localizable.xcstrings"),
                 // 保留 Skills 目录结构（.copy），否则 Bundle.module 遍历会失败。
-                .copy("../Resources/Skills")
+                .copy("../../Resources/Skills")
             ]
         ),
         .testTarget(

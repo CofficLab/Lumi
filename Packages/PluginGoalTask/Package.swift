@@ -42,8 +42,8 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             ],
-            path: "Sources",
-            resources: [.process("../Resources/Localizable.xcstrings")]
+            path: "Sources/PluginGoalTask",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "GoalTaskPluginTests",

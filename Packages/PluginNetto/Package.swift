@@ -30,9 +30,9 @@ let package = Package(
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging")
             ],
-            path: "Sources",
+            path: "Sources/PluginNetto",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

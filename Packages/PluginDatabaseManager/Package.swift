@@ -62,16 +62,16 @@ let package = Package(
                 .product(name: "NIOSSL", package: "swift-nio-ssl"),
                 .product(name: "Logging", package: "swift-log"),
             ],
-            path: "Sources",
+            path: "Sources/PluginDatabaseManager",
             exclude: ["TreeSitterSQL"],
             resources: [
-                .process("../Resources/Localizable.xcstrings"),
-                .copy("../Resources/tree-sitter-sql")
+                .process("../../Resources/Localizable.xcstrings"),
+                .copy("../../Resources/tree-sitter-sql")
             ]
         ),
         .target(
             name: "TreeSitterSQL",
-            path: "Sources/TreeSitterSQL",
+            path: "Sources/PluginDatabaseManager/TreeSitterSQL",
             publicHeadersPath: "include",
             cSettings: [.headerSearchPath("vendored-headers")]
         ),

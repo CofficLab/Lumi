@@ -35,9 +35,9 @@ let package = Package(
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging")
             ],
-            path: "Sources",
+            path: "Sources/PluginDisplayControl",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ],
             linkerSettings: [
                 .unsafeFlags(["-Xlinker", "-undefined", "-Xlinker", "dynamic_lookup"])

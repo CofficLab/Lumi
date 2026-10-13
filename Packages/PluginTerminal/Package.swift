@@ -44,9 +44,9 @@ let package = Package(
                 .product(name: "SwiftTerm", package: "SwiftTerm"),
                 .product(name: "KitTerminalCore", package: "KitTerminalCore"),
             ],
-            path: "Sources",
+            path: "Sources/PluginTerminal",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

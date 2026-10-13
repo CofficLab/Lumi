@@ -40,9 +40,9 @@ let package = Package(
                 .product(name: "KitShell", package: "KitShell"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
-            path: "Sources",
+            path: "Sources/PluginBrewManager",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

@@ -41,8 +41,8 @@ let package = Package(
                 .product(name: "KitKeychain", package: "KitKeychain"),
                 .product(name: "KitMail", package: "KitMail"),
             ],
-            path: "Sources",
-            resources: [.process("../Resources/Localizable.xcstrings")]
+            path: "Sources/PluginMail",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginMailTests",

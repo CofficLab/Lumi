@@ -32,8 +32,8 @@ let package = Package(
                 .product(name: "KitShell", package: "KitShell"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging")
             ],
-            path: "Sources",
-            resources: [.process("../Resources/Localizable.xcstrings")]
+            path: "Sources/PluginDockerManager",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "DockerManagerPluginTests",
