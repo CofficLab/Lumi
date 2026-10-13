@@ -17,8 +17,6 @@ struct GoalPopoverContent: View {
         VStack(alignment: .leading, spacing: 0) {
             header
 
-            Divider()
-
             content
         }
         .background(theme.background)
@@ -46,6 +44,16 @@ struct GoalPopoverContent: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        // 标题区与任务区视觉分层：独立底色 + 底部细线 + 向下投影
+        .background(theme.elevatedSurface)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(theme.divider)
+                .frame(height: 1)
+        }
+        .shadow(color: .black.opacity(0.12), radius: 4, y: 2)
+        .zIndex(1)
     }
 
     // MARK: - Content
