@@ -1,34 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%lld requests" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld requests"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 次请求"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 次請求"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 筆請求"
-          }
-        }
-      }
-    },
     "%lld requests in this conversation" : {
       "localizations" : {
         "en" : {
@@ -57,30 +29,30 @@
         }
       }
     },
-    "Avg" : {
+    "Average hit rate" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avg"
+            "value" : "Average hit rate"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "平均"
+            "value" : "平均命中率"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "平均"
+            "value" : "平均命中率"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "平均"
+            "value" : "平均命中率"
           }
         }
       }
@@ -253,58 +225,86 @@
         }
       }
     },
-    "Max" : {
+    "Current hit rate" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Max"
+            "value" : "Current hit rate"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "最大"
+            "value" : "当前命中率"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "最大"
+            "value" : "目前命中率"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "最大"
+            "value" : "目前命中率"
           }
         }
       }
     },
-    "Min" : {
+    "Highest hit rate" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Min"
+            "value" : "Highest hit rate"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "最小"
+            "value" : "最高命中率"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "最小"
+            "value" : "最高命中率"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "最小"
+            "value" : "最高命中率"
+          }
+        }
+      }
+    },
+    "Lowest hit rate" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lowest hit rate"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最低命中率"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最低命中率"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最低命中率"
           }
         }
       }
@@ -365,30 +365,58 @@
         }
       }
     },
-    "Per-request average" : {
+    "Requests" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Per-request average"
+            "value" : "Requests"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "单次请求平均"
+            "value" : "请求数"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "單次請求平均"
+            "value" : "請求數"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "單次請求平均"
+            "value" : "請求數"
+          }
+        }
+      }
+    },
+    "Save as image" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save as image"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存为图片"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存為圖片"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存為圖片"
           }
         }
       }
@@ -477,34 +505,6 @@
         }
       }
     },
-    "Token-weighted rate" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Token-weighted rate"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "按令牌加权命中率"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "按權杖加權命中率"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "按權杖加權命中率"
-          }
-        }
-      }
-    },
     "Total input tokens" : {
       "localizations" : {
         "en" : {
@@ -557,34 +557,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "等待第一筆包含快取用量資料的助手回覆。"
-          }
-        }
-      }
-    },
-    "命中率 = 缓存读取 tokens ÷ 总输入 tokens。该数值按 token 加权，缓存命中越高，重复上下文计费越低、响应越快。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hit rate = cached tokens ÷ total input tokens. This value is token-weighted: higher cache hits mean lower repeated context costs and faster responses."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "命中率 = 缓存读取 tokens ÷ 总输入 tokens。该数值按 token 加权，缓存命中越高，重复上下文计费越低、响应越快。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "命中率 = 快取讀取 tokens ÷ 總輸入 tokens。該數值按 token 加權，快取命中越高，重複上下文計費越低、回應越快。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "命中率 = 快取讀取 tokens ÷ 總輸入 tokens。該數值按 token 加權，快取命中越高，重複上下文計費越低、回應越快。"
           }
         }
       }
