@@ -11,10 +11,9 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitLLM"),
-        .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderChatSection"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0"),
         // 显式声明：与主工程 lock 对齐 LumiUI 版本，避免 ACP lock 停留在旧 revision
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.8.0"),
         .package(path: "../ProviderConversation"),
@@ -99,7 +98,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitLLM", package: "KitLLM"),
-                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderCommand", package: "LumiProviders"),

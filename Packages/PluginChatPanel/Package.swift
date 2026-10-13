@@ -6,9 +6,9 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginChatPanel", targets: ["PluginChatPanel"])],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"), .package(path: "../ProviderActivityBar"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderChatSection"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
     ],
@@ -16,7 +16,7 @@ let package = Package(
         .target(name: "PluginChatPanel", dependencies: [
             .product(name: "KernelCore", package: "LumiKernel"),
             .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
-            .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+            .product(name: "ProviderActivityBar", package: "LumiProviders"),
             .product(name: "ProviderToolbar", package: "LumiProviders"),
             .product(name: "ProviderChatSection", package: "ProviderChatSection"),
             .product(name: "ProviderRootView", package: "LumiProviders"),
@@ -30,7 +30,7 @@ let package = Package(
             dependencies: [
                 "PluginChatPanel",
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),

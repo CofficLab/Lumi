@@ -18,14 +18,13 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitMCP"),
         .package(path: "../ProviderMCP"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0")
     ],
     targets: [
         .target(
@@ -34,7 +33,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
-                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
