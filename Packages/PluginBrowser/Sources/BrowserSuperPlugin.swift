@@ -180,15 +180,7 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
     }
 
     private func hideRailView() {
-        // `setRailView(nil)` 没有变化检测：即使当前已是 nil 也会重复发出
-        // `.railViewChanged`，而 rootViewObserver 捕获该事件后会再次调用本方法，
-        // 形成无限递归（栈溢出）。
-        // 注意不能用 `isRailViewVisible` 做判据：事件在写入前同步派发，读取到的
-        // 仍是旧值，判据会永远成立。因此只对「置空 Rail 视图」这一步加守卫；
-        // `setRailViewVisible` 自带变化检测，可以无条件调用。
-        if rootView?.railView != nil {
-            rootView?.setRailView(nil)
-        }
+        rootView?.setRailView(nil)
         rootView?.setRailViewVisible(false)
     }
 
