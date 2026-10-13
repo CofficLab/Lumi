@@ -1,34 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%lld requests in this conversation" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld requests in this conversation"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本对话共 %lld 条请求"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本對話共 %lld 條請求"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本對話共 %lld 筆請求"
-          }
-        }
-      }
-    },
     "Average hit rate" : {
       "localizations" : {
         "en" : {

@@ -41,12 +41,6 @@ struct CacheHitRatePopover: View {
                 .font(.headline)
                 .fixedSize()
             Spacer(minLength: 8)
-            if stats.sampleCount > 0 {
-                Text(String(format: pluginLocalization.string("%lld requests in this conversation"), stats.sampleCount))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
             Button(action: exportAsImage) {
                 Image(systemName: "arrow.down.circle")
                     .font(.system(size: 16))
