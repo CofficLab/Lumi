@@ -10,7 +10,7 @@ import SwiftUI
 /// 通用设置页的唯一数据来源。
 ///
 /// 负责诊断导出、更新通道、卸载扫描/执行等业务状态；所有外部操作
-/// 经 `GeneralSettingsCapability` 收敛，View 只读取本 ViewModel。
+/// 经各 `GeneralSettings*Capability` 收敛，View 只读取本 ViewModel。
 @MainActor
 final class GeneralSettingsViewModel: ObservableObject {
     /// 卸载反馈的语义类型，决定反馈横幅（`AppStatusBanner`）的样式。
@@ -30,7 +30,12 @@ final class GeneralSettingsViewModel: ObservableObject {
         }
     }
 
-    private let capability: any GeneralSettingsCapability
+    private let docsCapability: any DocsCapability
+    private let updateChannelCapability: any UpdateChannelCapability
+    private let onboardingCapability: any OnboardingCapability
+    private let diagnosticsCapability: any DiagnosticsCapability
+    private let storageCapability: any StorageCapability
+    private let uninstallCapability: any UninstallCapability
 
     // MARK: - Published State (供 View 展示)
 
@@ -44,7 +49,7 @@ final class GeneralSettingsViewModel: ObservableObject {
     @Published var selectedUpdateChannel: AppUpdateChannel = .stable {
         didSet {
             guard selectedUpdateChannel != oldValue else { return }
-            capability.setUpdateChannel(selectedUpdateChannel)
+            updateChannelCapability.setUpdateChannel(selectedUpdateChannel)
         }
     }
 
@@ -61,33 +66,45 @@ final class GeneralSettingsViewModel: ObservableObject {
     @Published var removeKeychainCredentials = true
     @Published var removeApplication = true
 
-    init(capability: any GeneralSettingsCapability) {
-        self.capability = capability
+    init(
+        docsCapability: any DocsCapability,
+        updateChannelCapability: any UpdateChannelCapability,
+        onboardingCapability: any OnboardingCapability,
+        diagnosticsCapability: any DiagnosticsCapability,
+        storageCapability: any StorageCapability,
+        uninstallCapability: any UninstallCapability
+    ) {
+        self.docsCapability = docsCapability
+        self.updateChannelCapability = updateChannelCapability
+        self.onboardingCapability = onboardingCapability
+        self.diagnosticsCapability = diagnosticsCapability
+        self.storageCapability = storageCapability
+        self.uninstallCapability = uninstallCapability
         refreshManuals()
-        selectedUpdateChannel = capability.updateChannel
+        selectedUpdateChannel = updateChannelCapability.updateChannel
         refreshStorageUsage()
     }
 
     // MARK: - 派生状态
 
     var isOnboardingAvailable: Bool {
-        capability.isOnboardingAvailable
+        onboardingCapability.isOnboardingAvailable
     }
 
     var isUpdateChannelAvailable: Bool {
-        capability.isUpdateChannelAvailable
+        updateChannelCapability.isUpdateChannelAvailable
     }
 
     var isDiagnosticsAvailable: Bool {
-        capability.isDiagnosticsAvailable
+        diagnosticsCapability.isDiagnosticsAvailable
     }
 
     var isUninstallAvailable: Bool {
-        capability.isUninstallAvailable
+        uninstallCapability.isUninstallAvailable
     }
 
     var isStorageAvailable: Bool {
-        capability.isStorageAvailable
+        storageCapability.isStorageAvailable
     }
 
     var storageSizeDescription: String {
@@ -98,25 +115,25 @@ final class GeneralSettingsViewModel: ObservableObject {
 
     /// 说明书条目是否变化后由 Observer 调用来刷新。
     func refreshManuals() {
-        manuals = capability.manuals
+        manuals = docsCapability.manuals
     }
 
     func refreshStorageUsage() {
         storageSizeInBytes = nil
         Task { @MainActor [weak self] in
             guard let self else { return }
-            storageSizeInBytes = await capability.storageSizeInBytes()
+            storageSizeInBytes = await storageCapability.storageSizeInBytes()
         }
     }
 
     // MARK: - 用户意图
 
     func replayOnboarding() {
-        capability.replayOnboarding()
+        onboardingCapability.replayOnboarding()
     }
 
     func openStorageDirectory() {
-        capability.openStorageDirectory()
+        storageCapability.openStorageDirectory()
     }
 
     /// 检查更新：广播 `checkForUpdates` 通知，由宿主（如 Sparkle 更新插件）消费。
@@ -140,7 +157,7 @@ final class GeneralSettingsViewModel: ObservableObject {
             defer { isExportingDiagnostics = false }
 
             do {
-                let archive = try await capability.makeDiagnosticsArchive()
+                let archive = try await diagnosticsCapability.makeDiagnosticsArchive()
                 defer { try? FileManager.default.removeItem(at: archive.url) }
                 let panel = NSSavePanel()
                 panel.allowedContentTypes = [.zip]
@@ -179,7 +196,7 @@ final class GeneralSettingsViewModel: ObservableObject {
         isScanningUninstall = true
 
         Task { @MainActor in
-            uninstallScan = await capability.scanUninstall()
+            uninstallScan = await uninstallCapability.scanUninstall()
             isScanningUninstall = false
         }
     }
@@ -211,8 +228,8 @@ final class GeneralSettingsViewModel: ObservableObject {
         Task { @MainActor in
             defer { isUninstalling = false }
             do {
-                await capability.prepareForUninstall()
-                let result = try await capability.uninstall(options: UninstallOptions(
+                await uninstallCapability.prepareForUninstall()
+                let result = try await uninstallCapability.uninstall(options: UninstallOptions(
                     confirmation: UninstallOptions.confirmationPhrase,
                     removeKeychainCredentials: removeKeychainCredentials,
                     removeApplication: removeApplication

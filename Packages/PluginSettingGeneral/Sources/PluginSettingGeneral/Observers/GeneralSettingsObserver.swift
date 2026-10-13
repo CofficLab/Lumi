@@ -7,18 +7,18 @@ import ProviderDocsView
 /// `GeneralSettingsViewModel.manuals`；不向外传回调。
 @MainActor
 final class GeneralSettingsObserver {
-    private let capability: any GeneralSettingsCapability
+    private let docsCapability: any DocsCapability
     private let viewModel: GeneralSettingsViewModel
     private var docsObserverHandle: (any DocsViewObserverHandle)?
 
     init(
-        capability: any GeneralSettingsCapability,
+        docsCapability: any DocsCapability,
         viewModel: GeneralSettingsViewModel
     ) {
-        self.capability = capability
+        self.docsCapability = docsCapability
         self.viewModel = viewModel
         viewModel.refreshManuals()
-        docsObserverHandle = capability.addDocsViewObserver { [weak self] event in
+        docsObserverHandle = docsCapability.addDocsViewObserver { [weak self] event in
             guard let self else { return }
             switch event {
             case .manualEntriesChanged, .aboutEntriesChanged:
