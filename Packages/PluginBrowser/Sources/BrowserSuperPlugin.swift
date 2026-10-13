@@ -40,6 +40,12 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
     private weak var toolbar: (any ToolbarProviding)?
     private var rootViewObserver: (any RootViewObserverHandle)?
     private var isBrowserActive = false
+    /// Browser 激活前的 content header 可见性，用于退出时精确还原。
+    ///
+    /// header 的可见性由 ProjectFiles 按「有打开文件则显示」维护。Browser 激活时
+    /// 独占内容区需要隐藏它，但退出时不能无条件写死 `false`——那会覆盖
+    /// ProjectFiles 的判断（项目没打开文件时反而露出空条）。因此记录原值再还原。
+    private var contentHeaderVisibilityBeforeActivation = false
     private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
     private let entryID = "Browser.entry"
 
@@ -59,6 +65,11 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
             switch event {
             case .railViewChanged, .railViewVisibilityChanged(true):
                 self.hideRailView()
+            case .contentHeaderVisibilityChanged(false):
+                // 其它插件（如 ProjectFiles 按「有打开文件则显示」重算 header 可见性）
+                // 会在激活期间写入 header 可见性。Browser 激活时独占整个内容区，
+                // 因此纠正回隐藏状态——与 hideRailView() 是同一类自保逻辑。
+                self.rootView?.setContentHeaderViewHidden(true)
             default:
                 break
             }
@@ -131,7 +142,7 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
             isBrowserActive = false
             contentView?.setContentView(nil)
             rootView?.setContentViewHidden(false)
-            rootView?.setContentHeaderViewHidden(false)
+            rootView?.setContentHeaderViewHidden(!contentHeaderVisibilityBeforeActivation)
             chat?.setVisible(true)
             chat?.setContextActive(true)
             chat?.setActiveContext(.defaultChat)
@@ -146,6 +157,8 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
     private func setActive(_ active: Bool, view: AnyView) {
         isBrowserActive = active
         if active {
+            // 记录激活前的 header 可见性，退出时还原（见字段注释）。
+            contentHeaderVisibilityBeforeActivation = !(rootView?.isContentHeaderViewHidden ?? false)
             toolbar?.setVisibleCategories([.global, .chat, .project])
             rootView?.setContentHeaderViewHidden(true)
             rootView?.setContentViewHidden(false)
@@ -157,7 +170,7 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
         } else {
             contentView?.setContentView(nil)
             rootView?.setContentViewHidden(false)
-            rootView?.setContentHeaderViewHidden(false)
+            rootView?.setContentHeaderViewHidden(!contentHeaderVisibilityBeforeActivation)
             chat?.setVisible(false)
             chat?.setContextActive(false)
             chat?.setActiveContext(nil)
@@ -167,7 +180,15 @@ public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
     }
 
     private func hideRailView() {
-        rootView?.setRailView(nil)
+        // `setRailView(nil)` 没有变化检测：即使当前已是 nil 也会重复发出
+        // `.railViewChanged`，而 rootViewObserver 捕获该事件后会再次调用本方法，
+        // 形成无限递归（栈溢出）。
+        // 注意不能用 `isRailViewVisible` 做判据：事件在写入前同步派发，读取到的
+        // 仍是旧值，判据会永远成立。因此只对「置空 Rail 视图」这一步加守卫；
+        // `setRailViewVisible` 自带变化检测，可以无条件调用。
+        if rootView?.railView != nil {
+            rootView?.setRailView(nil)
+        }
         rootView?.setRailViewVisible(false)
     }
 
