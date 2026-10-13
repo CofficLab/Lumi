@@ -30,12 +30,12 @@ final class GeneralSettingsViewModel: ObservableObject {
         }
     }
 
-    private let docsCapability: any DocsCapability
-    private let updateChannelCapability: any UpdateChannelCapability
-    private let onboardingCapability: any OnboardingCapability
-    private let diagnosticsCapability: any DiagnosticsCapability
-    private let storageCapability: any StorageCapability
-    private let uninstallCapability: any UninstallCapability
+    private let docsCapability: any GeneralSettingsDocsCapability
+    private let updateChannelCapability: any GeneralSettingsUpdateChannelCapability
+    private let onboardingCapability: any GeneralSettingsOnboardingCapability
+    private let diagnosticsCapability: any GeneralSettingsDiagnosticsCapability
+    private let storageCapability: any GeneralSettingsStorageCapability
+    private let uninstallCapability: any GeneralSettingsUninstallCapability
 
     // MARK: - Published State (供 View 展示)
 
@@ -67,12 +67,12 @@ final class GeneralSettingsViewModel: ObservableObject {
     @Published var removeApplication = true
 
     init(
-        docsCapability: any DocsCapability,
-        updateChannelCapability: any UpdateChannelCapability,
-        onboardingCapability: any OnboardingCapability,
-        diagnosticsCapability: any DiagnosticsCapability,
-        storageCapability: any StorageCapability,
-        uninstallCapability: any UninstallCapability
+        docsCapability: any GeneralSettingsDocsCapability,
+        updateChannelCapability: any GeneralSettingsUpdateChannelCapability,
+        onboardingCapability: any GeneralSettingsOnboardingCapability,
+        diagnosticsCapability: any GeneralSettingsDiagnosticsCapability,
+        storageCapability: any GeneralSettingsStorageCapability,
+        uninstallCapability: any GeneralSettingsUninstallCapability
     ) {
         self.docsCapability = docsCapability
         self.updateChannelCapability = updateChannelCapability

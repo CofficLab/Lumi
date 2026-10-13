@@ -94,18 +94,18 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
             // AppUpdateBootstrap is host-owned and may register after
             // plugin boot. Resolve it when the entry is materialized so
             // settings sees the provider in both Debug and Release.
-            let docsCapability = DocsCapabilityAdapter(docsProvider: docsProvider)
-            let updateChannelCapability = UpdateChannelCapabilityAdapter(
+            let docsCapability = GeneralSettingsDocsCapabilityAdapter(docsProvider: docsProvider)
+            let updateChannelCapability = GeneralSettingsUpdateChannelCapabilityAdapter(
                 updateProvider: kernel.resolveProvider((any AppUpdateChannelProviding).self)
             )
-            let onboardingCapability = OnboardingCapabilityAdapter(
+            let onboardingCapability = GeneralSettingsOnboardingCapabilityAdapter(
                 onboardingProvider: onboardingProvider
             )
-            let diagnosticsCapability = DiagnosticsCapabilityAdapter(
+            let diagnosticsCapability = GeneralSettingsDiagnosticsCapabilityAdapter(
                 diagnosticsProvider: diagnosticsProvider
             )
-            let storageCapability = StorageCapabilityAdapter(storageProvider: storageProvider)
-            let uninstallCapability = UninstallCapabilityAdapter(
+            let storageCapability = GeneralSettingsStorageCapabilityAdapter(storageProvider: storageProvider)
+            let uninstallCapability = GeneralSettingsUninstallCapabilityAdapter(
                 uninstallProvider: uninstallProvider,
                 prepareForUninstall: prepareForUninstall
             )

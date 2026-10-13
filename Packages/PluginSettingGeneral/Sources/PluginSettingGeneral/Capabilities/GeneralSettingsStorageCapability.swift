@@ -6,7 +6,7 @@ import AppKit
 
 /// 通用设置页需要的最小存储信息能力。
 @MainActor
-protocol StorageCapability: AnyObject {
+protocol GeneralSettingsStorageCapability: AnyObject {
     var isStorageAvailable: Bool { get }
     func storageSizeInBytes() async -> Int64?
     func openStorageDirectory()
@@ -14,7 +14,7 @@ protocol StorageCapability: AnyObject {
 
 /// 默认实现：把 `StorageProviding` 收窄为本插件的存储信息能力。
 @MainActor
-final class StorageCapabilityAdapter: StorageCapability {
+final class GeneralSettingsStorageCapabilityAdapter: GeneralSettingsStorageCapability {
     private let storageProvider: (any StorageProviding)?
 
     init(storageProvider: (any StorageProviding)?) {

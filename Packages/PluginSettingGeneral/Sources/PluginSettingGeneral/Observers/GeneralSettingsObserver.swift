@@ -7,12 +7,12 @@ import ProviderDocsView
 /// `GeneralSettingsViewModel.manuals`；不向外传回调。
 @MainActor
 final class GeneralSettingsObserver {
-    private let docsCapability: any DocsCapability
+    private let docsCapability: any GeneralSettingsDocsCapability
     private let viewModel: GeneralSettingsViewModel
     private var docsObserverHandle: (any DocsViewObserverHandle)?
 
     init(
-        docsCapability: any DocsCapability,
+        docsCapability: any GeneralSettingsDocsCapability,
         viewModel: GeneralSettingsViewModel
     ) {
         self.docsCapability = docsCapability

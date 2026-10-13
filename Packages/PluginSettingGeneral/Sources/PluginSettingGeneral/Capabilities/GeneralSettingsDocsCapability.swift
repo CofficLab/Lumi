@@ -2,7 +2,7 @@ import ProviderDocsView
 
 /// 通用设置页需要的最小说明书能力。
 @MainActor
-protocol DocsCapability: AnyObject {
+protocol GeneralSettingsDocsCapability: AnyObject {
     /// 所有提供了说明书的文档条目。
     var manuals: [DocsEntry] { get }
 
@@ -14,7 +14,7 @@ protocol DocsCapability: AnyObject {
 
 /// 默认实现：把 `DocsViewProviding` 收窄为本插件的说明书能力。
 @MainActor
-final class DocsCapabilityAdapter: DocsCapability {
+final class GeneralSettingsDocsCapabilityAdapter: GeneralSettingsDocsCapability {
     private let docsProvider: (any DocsViewProviding)?
 
     init(docsProvider: (any DocsViewProviding)?) {
