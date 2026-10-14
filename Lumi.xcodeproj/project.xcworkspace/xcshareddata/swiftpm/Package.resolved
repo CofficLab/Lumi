@@ -1,5 +1,5 @@
 {
-  "originHash" : "b14ec6295bf8b6222d98960cf05babd615194af453158f2a614fdf4a925072c7",
+  "originHash" : "2c84900bdbf867e355c98b4bdbca0496afeb143e5acc38fbabaa681868eceed8",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -92,15 +92,6 @@
       }
     },
     {
-      "identity" : "lumibookletmaker",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/CofficLab/LumiBookletMaker.git",
-      "state" : {
-        "branch" : "main",
-        "revision" : "7eaf6e6c4c30ec8a333ada1ebd8a1cdafe8f19a9"
-      }
-    },
-    {
       "identity" : "lumikernel",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiKernel.git",
@@ -134,6 +125,15 @@
       "state" : {
         "revision" : "e1be36eeb916ce5c086163757e7b75ff03d01bbf",
         "version" : "1.0.1"
+      }
+    },
+    {
+      "identity" : "lumipluginbookletmaker",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiPluginBookletMaker.git",
+      "state" : {
+        "revision" : "4d28263264cd08f894656b12ff4cf1e233e66ae8",
+        "version" : "1.0.0"
       }
     },
     {
@@ -213,8 +213,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiUI.git",
       "state" : {
-        "revision" : "188ec1668846d4a3f840bcfd61b167d07d6c0a0b",
-        "version" : "1.8.0"
+        "revision" : "64825782f70998297156db9a834a69f2c959eee4",
+        "version" : "1.10.0"
       }
     },
     {
