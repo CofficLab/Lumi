@@ -67,10 +67,34 @@ public enum KernelFactory {
         additionalPlugins: [any SuperPlugin] = []
     ) throws -> KernelCoreContainer {
         try makeKernel(
-            providerFactory: DefaultProviderFactory(),
+            providerFactory: DefaultProviderFactory(dataRootDirectory: uiTestingDataRootDirectory()),
             pluginFactory: DefaultPluginFactory(),
             additionalPlugins: additionalPlugins
         )
+    }
+
+    /// UI 测试专用的隔离数据根目录（仅 DEBUG）。
+    ///
+    /// UI 测试需要造会话、消息等持久化数据。若沿用用户真实目录，测试会污染用户
+    /// 的会话列表（每次运行多出一条「测试会话」），而且测试之间的数据互相污染
+    /// 让断言不可靠。
+    ///
+    /// - Important: 由**显式开关** `--lumi-ui-testing-isolated-storage` 启用，
+    ///   而不是复用 `--lumi-ui-testing`。后者已被既有的 MiniMax 刷新模型 UI 测试
+    ///   使用（依赖真实供应商配置与磁盘 models.json），一旦连带重定向存储，
+    ///   会改变那个测试的既有前提，属于行为回归。
+    /// - Note: 每次启动使用独立子目录，保证测试之间不互相污染。
+    private static func uiTestingDataRootDirectory() -> URL? {
+        #if DEBUG
+        guard ProcessInfo.processInfo.arguments.contains(
+            "--lumi-ui-testing-isolated-storage"
+        ) else { return nil }
+        return FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiUITestingData", isDirectory: true)
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        #else
+        return nil
+        #endif
     }
 
     /// 异步插件目录的装配入口。
@@ -82,7 +106,7 @@ public enum KernelFactory {
         additionalPlugins: [any SuperPlugin] = []
     ) async throws -> KernelCoreContainer {
         try await makeKernelAsync(
-            providerFactory: DefaultProviderFactory(),
+            providerFactory: DefaultProviderFactory(dataRootDirectory: uiTestingDataRootDirectory()),
             pluginFactory: DefaultPluginFactory(),
             additionalPlugins: additionalPlugins
         )
