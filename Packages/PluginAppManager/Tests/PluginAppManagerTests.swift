@@ -45,7 +45,17 @@ struct PluginAppManagerTests {
 
     @Test
     func localizationCatalogIsPackaged() {
-        #expect(PluginAppManagerLocalization.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
+        // .xcstrings 会被编译进各语言的 .lproj/Localizable.strings，源文件不随包分发。
+        let compiled = PluginAppManagerLocalization.bundle.path(
+            forResource: "Localizable",
+            ofType: "strings",
+            inDirectory: nil
+        ) ?? PluginAppManagerLocalization.bundle.path(
+            forResource: "Localizable",
+            ofType: "strings",
+            inDirectory: "en.lproj"
+        )
+        #expect(compiled != nil)
         #expect(PluginAppManagerLocalization.string("App Manager").isEmpty == false)
     }
 
