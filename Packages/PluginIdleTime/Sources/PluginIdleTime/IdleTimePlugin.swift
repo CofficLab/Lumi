@@ -11,7 +11,7 @@ import os
 /// 由旧版 `Plugins/IdleTimePlugin`（KernelLumi / LumiPlugin 架构）复刻而来：
 /// - onBoot 解析内核注册的 `IdleTimeProviding`（FactoryLumi 已装配完整服务），
 ///   注册活动事件监听（应用激活 / 编辑器保存），把事件喂给服务做休息窗口推断；
-/// - 贡献关于文档；
+/// - 贡献关于文档与使用手册；
 /// - onShutdown 全部撤回。
 @MainActor
 public final class IdleTimePlugin: SuperPlugin, PluginDataMigrating, SuperLog {
@@ -29,8 +29,6 @@ public final class IdleTimePlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     )
 
     private var eventObserver: IdleTimeEventObserver?
-    private var snapshotObserver: IdleTimeSnapshotObserver?
-    private var viewModel: AppIdleTimeVM?
     private var provider: (any IdleTimeProviding)?
 
     public init() {}
@@ -50,13 +48,6 @@ public final class IdleTimePlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         // 2. 注册活动事件监听（替代旧版 IdleTimeRootObserver 的职责）。
         if let provider {
             eventObserver = IdleTimeEventObserver(provider: provider)
-            let viewModel = AppIdleTimeVM(provider: provider)
-            self.viewModel = viewModel
-            snapshotObserver = IdleTimeSnapshotObserver(provider: provider) { [weak viewModel] in
-                Task { @MainActor in
-                    viewModel?.refresh()
-                }
-            }
         }
     }
 
@@ -64,9 +55,6 @@ public final class IdleTimePlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         // 撤回事件监听。
         eventObserver?.cancel()
         eventObserver = nil
-        snapshotObserver?.cancel()
-        snapshotObserver = nil
-        viewModel = nil
         provider = nil
     }
 
