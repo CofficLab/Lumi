@@ -122,6 +122,20 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             }
         }
 
+        // `VendorAPIError.httpStatus` 是传输层归一化后的标准错误形态
+        // （见 PluginNetworkManager 的 `LLMNetworkProviderAdapter`）。
+        // 必须在此显式取出状态码：它既不遵循 `LLMHTTPErrorProviding`，也不是
+        // `NSURLErrorDomain` 错误，若漏判会退化为「不可重试」，
+        // 导致 429 / 5xx / 529 等可恢复状态不触发任何重试。
+        if case let .httpStatus(code, _) = error as? VendorAPIError {
+            return ProviderRetryPolicy.decision(
+                statusCode: code,
+                retryAfter: retryAfter,
+                attempt: attempt,
+                maxAttempts: maxAttempts
+            )
+        }
+
         if let httpError = error as? LLMHTTPErrorProviding, let code = httpError.httpStatusCode {
             return ProviderRetryPolicy.decision(
                 statusCode: code,

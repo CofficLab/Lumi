@@ -20,6 +20,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../KitShell"),
+        .package(path: "../ProviderAgentLoop"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
@@ -50,6 +51,7 @@ let package = Package(
             dependencies: [
                 "PluginNetworkManager",
                 "KitAgentTool",
+                .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 "ProviderToolManager",
             ]
