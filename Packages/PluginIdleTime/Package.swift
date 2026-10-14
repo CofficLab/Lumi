@@ -19,8 +19,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
-        .package(path: "../ProviderIdleTime"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.10.0")
     ],
     targets: [
         .target(
@@ -31,7 +30,7 @@ let package = Package(
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
-                .product(name: "ProviderIdleTime", package: "ProviderIdleTime"),
+                .product(name: "ProviderIdleTime", package: "LumiProviders"),
             ],
             path: ".",
             exclude: [
@@ -48,7 +47,7 @@ let package = Package(
             dependencies: [
                 "PluginIdleTime",
                 .product(name: "KernelCore", package: "LumiKernel"),
-                "ProviderIdleTime",
+                .product(name: "ProviderIdleTime", package: "LumiProviders"),
             ],
             path: "Tests/PluginIdleTimeTests"
         )
