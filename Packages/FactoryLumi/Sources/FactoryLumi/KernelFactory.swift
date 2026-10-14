@@ -97,6 +97,9 @@ public enum KernelFactory {
         // `startAsync` 原子安装真实目录。后续宿主切换为异步启动时无需复制装配图。
         let kernel = KernelCoreContainer()
         try providerFactory.registerProviders(into: kernel)
+        // Provider 就位后回填宿主工厂，使依赖容器的闭包（如 Booklet Maker
+        // 的聊天区显隐）能在插件启动后正常解析。
+        pluginFactory.didRegisterProviders(in: kernel)
         // 将完整插件目录交给 Kernel 注册；Kernel 会对禁用插件跳过 Boot/Ready，
         // 但仍执行 onRegister，以便贡献提示词等目录型能力。
         let plugins = makePlugins(
@@ -137,6 +140,9 @@ public enum KernelFactory {
     ) throws -> KernelCoreContainer {
         let kernel = KernelCoreContainer()
         try providerFactory.registerProviders(into: kernel)
+        // Provider 就位后回填宿主工厂，使依赖容器的闭包（如 Booklet Maker
+        // 的聊天区显隐）能在插件启动后正常解析。
+        pluginFactory.didRegisterProviders(in: kernel)
 
         let plugins = makePlugins(
             providerFactory: providerFactory,

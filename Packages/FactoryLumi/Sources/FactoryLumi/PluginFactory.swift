@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import ProviderChatSection
 import PluginACP
 import PluginAgentRules
 import PluginAgentTempStorage
@@ -24,7 +25,7 @@ import DockerManagerPlugin
 import RegistryManagerPlugin
 import RClickPlugin
 import InputPlugin
-import BookletMakerPlugin
+import PluginBookletMaker
 import ScreenRecorderPlugin
 import StoryWriterPlugin
 import QuickFileSearchPlugin
@@ -155,10 +156,43 @@ import PluginWhiteNoise
 import PluginXcodeBuild
 import NettoPlugin
 
+/// Booklet Maker 工作台代理：把聊天区显隐收敛到 Lumi 侧。
+///
+/// 共享包 `PluginBookletMaker` 不依赖 `ProviderChatSection`（GameFactory 无聊天区），
+/// 改由宿主注入 `onWorkspaceActivate` / `onWorkspaceDeactivate` 闭包。
+///
+/// Provider 在 `ProviderFactory.registerProviders` 阶段即完成注册，早于插件启动，
+/// 因此这里在 `makePlugins()` 之前从全局装配入口取得容器即可；容器为 nil 时
+/// 闭包退化为空操作，不影响插件其余行为。
+@MainActor
+private final class BookletMakerChatVisibilityProxy {
+    private weak var kernel: KernelCoreContainer?
+
+    func attach(kernel: KernelCoreContainer) {
+        self.kernel = kernel
+    }
+
+    func activate() {
+        kernel?.resolveProvider((any ChatSectionProviding).self)?.setVisible(false)
+    }
+
+    func deactivate() {
+        kernel?.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+    }
+}
+
 /// 默认 `PluginFactory` 实现：产出默认插件。
 @MainActor
 public struct DefaultPluginFactory: PluginFactory {
+    private let chatVisibility = BookletMakerChatVisibilityProxy()
+
     public init() {}
+
+    /// Provider 就位后回填聊天区代理，使其能在工作台切换时解析
+    /// `ChatSectionProviding`。`makePlugins()` 早于 Provider 注册，故在此补齐。
+    public func didRegisterProviders(in kernel: KernelCoreContainer) {
+        chatVisibility.attach(kernel: kernel)
+    }
 
     /// 产出默认插件列表。
     public func makePlugins() -> [any SuperPlugin] {
@@ -262,7 +296,10 @@ public struct DefaultPluginFactory: PluginFactory {
             RegistryManagerPlugin(),
             RClickPlugin(),
             InputPlugin(),
-            BookletMakerPlugin(),
+            BookletMakerPlugin(
+                onWorkspaceActivate: { chatVisibility.activate() },
+                onWorkspaceDeactivate: { chatVisibility.deactivate() }
+            ),
             ScreenRecorderPlugin(),
             StoryWriterPlugin(),
             QuickFileSearchPlugin(),
