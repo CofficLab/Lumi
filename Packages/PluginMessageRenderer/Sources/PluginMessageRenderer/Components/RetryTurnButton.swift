@@ -13,6 +13,18 @@ struct RetryTurnButton: View {
     let message: Message
 
     private var retryableTurnID: UUID? {
+        Self.retryableTurnID(message: message, capability: capability)
+    }
+
+    /// 该错误消息的回合当前是否真的可重试。
+    ///
+    /// 抽成纯函数以便单元测试直接覆盖判定：消息必须带 `turnID`，且
+    /// AgentLoop 仍停留在该失败回合上（`canRetryTurn`）。回合已被新回合取代时
+    /// 必须返回 `nil`，否则点击会触发一次注定失败的 `retryTurn`。
+    static func retryableTurnID(
+        message: Message,
+        capability: (any MessageRendererCapability)?
+    ) -> UUID? {
         guard let turnID = message.turnID,
               capability?.canRetryTurn(turnID: turnID, conversationID: message.conversationID) == true
         else { return nil }
