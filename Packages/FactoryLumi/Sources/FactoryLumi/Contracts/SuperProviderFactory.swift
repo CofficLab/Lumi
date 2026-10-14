@@ -7,6 +7,7 @@ import ProviderCommand
 import ProviderContentView
 import ProviderConversation
 import ProviderConversationInput
+import ProviderConversationInputBlock
 import ProviderDocsView
 import ProviderExternalFile
 import ProviderIdleTime
@@ -112,6 +113,7 @@ public protocol ProviderFactory {
     func makeToolManagerProvider() -> any ToolManagerProviding
 
     func makeConversationInputProvider() -> any ConversationInputProviding
+    func makeConversationInputBlockProvider() -> any ConversationInputBlockProviding
     func makeMessageStreamingProvider() -> any MessageStreamingProviding
     func makeMessageRenderingProvider() -> any MessageRenderingProviding
     func makeToolCallRenderingProvider() -> any ToolCallRenderingProviding
