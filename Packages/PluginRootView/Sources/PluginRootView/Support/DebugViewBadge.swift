@@ -12,21 +12,25 @@ extension View {
     /// `allowsHitTesting(false)`，不拦截任何交互，且对辅助功能隐藏。
     ///
     /// 嵌套区域各自带 badge 时，用不同的 `alignment` 避免相互遮挡。
+    /// 窄区域（如竖排侧边栏）可传 `rotationDegrees: 90` 让文字竖排，避免被裁切。
     @ViewBuilder
     func debugViewBadge(
         _ name: String,
-        alignment: Alignment = .bottomLeading
+        alignment: Alignment = .bottomLeading,
+        rotationDegrees: Double = 0
     ) -> some View {
         overlay(alignment: alignment) {
             Text(name)
                 .font(.system(size: 9, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
                 .lineLimit(1)
+                .fixedSize()
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
                 .background(Capsule().fill(Color.purple.opacity(0.85)))
                 .shadow(color: .black.opacity(0.2), radius: 1, y: 0.5)
                 .padding(4)
+                .rotationEffect(.degrees(rotationDegrees))
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
         }
@@ -38,7 +42,8 @@ extension View {
     @ViewBuilder
     func debugViewBadge(
         _ name: String,
-        alignment: Alignment = .bottomLeading
+        alignment: Alignment = .bottomLeading,
+        rotationDegrees: Double = 0
     ) -> some View {
         self
     }
