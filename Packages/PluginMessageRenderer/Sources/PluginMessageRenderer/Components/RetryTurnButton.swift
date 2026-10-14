@@ -12,6 +12,12 @@ struct RetryTurnButton: View {
     let capability: (any MessageRendererCapability)?
     let message: Message
 
+    /// UI 测试使用的无障碍标识。
+    ///
+    /// 按钮的 AX label 是本地化文案（en 为 "Retry"），跨语言不稳定，
+    /// UI 测试必须按标识定位而不是按文案。
+    static let accessibilityIdentifier = "lumi.message.error.retry-turn"
+
     private var retryableTurnID: UUID? {
         Self.retryableTurnID(message: message, capability: capability)
     }
@@ -40,6 +46,7 @@ struct RetryTurnButton: View {
             action: retry
         )
         .help(pluginLocalization.string("重试该回合"))
+        .accessibilityIdentifier(Self.accessibilityIdentifier)
     }
 
     private func retry() {
