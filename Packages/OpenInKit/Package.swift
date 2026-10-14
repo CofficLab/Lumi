@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "OpenInKit", targets: ["OpenInKit"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.4.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
     ],

@@ -5,7 +5,7 @@ import SwiftUI
 
 /// `PanelBottomProviding` 的默认实现。
 ///
-/// 由宿主插件（PluginRootView 的 `PanelBottomSuperPlugin`）创建并注册进内核：
+/// 由宿主插件（PluginRootView 的 `PanelBottomPlugin`）创建并注册进内核：
 /// - 入口按 `order` 升序（同权重按 id）排序，同 id 覆盖更新；
 /// - `removeItems(ownerPluginID:)` 只撤回指定插件贡献的入口；
 /// - 激活入口失效时先回退到持久化的历史选择，再回退到首个入口；

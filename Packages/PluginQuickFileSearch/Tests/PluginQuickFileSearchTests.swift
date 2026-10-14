@@ -5,7 +5,7 @@ import ProviderEditor
 
 @MainActor
 @Test func v2PluginPreservesQuickOpenIdentity() {
-    let plugin = QuickFileSearchSuperPlugin()
+    let plugin = QuickFileSearchPlugin()
     #expect(plugin.id == "QuickFileSearch")
     #expect(plugin.metadata.policy == .alwaysOn)
 }

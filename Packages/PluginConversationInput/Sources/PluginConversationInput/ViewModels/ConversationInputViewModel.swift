@@ -3,6 +3,7 @@ import Foundation
 import LumiLoggingKit
 import os
 import ProviderMessage
+import ProviderConversationInputBlock
 import ProviderMessageSender
 import SwiftUI
 import UniformTypeIdentifiers
@@ -29,6 +30,9 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     @Published private(set) var imageAttachments: [UserImageAttachment] = []
     @Published private(set) var fileAttachments: [UserFileAttachment] = []
     @Published private(set) var canSend = false
+    /// 待插入编辑器的折叠块。生产方递交后由编辑器消费（插入 chip），
+    /// 消费完成后清空，避免同一个块被重复插入。
+    @Published private(set) var pendingBlock: ConversationInputBlockRequest?
 
     private let capability: any ConversationInputCapability
 
@@ -54,6 +58,27 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         fileAttachments = capability.pendingFileAttachments
         canSend = hasAttachments || !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         revision &+= 1
+    }
+
+    /// 接收生产方递交的折叠块，转成编辑器可消费的请求。
+    ///
+    /// 焦点一并打开，用户可以直接在 chip 旁边继续写指令。
+    func enqueue(_ block: ConversationInputBlock) {
+        pendingBlock = ConversationInputBlockRequest(
+            id: block.id,
+            text: block.text,
+            title: block.title,
+            systemImage: block.systemImage,
+            collapseThreshold: block.collapseThreshold
+        )
+        capability.isInputFocused = true
+        revision &+= 1
+    }
+
+    /// 编辑器插入完该块后回报，避免 SwiftUI 再次带着同一个块刷新。
+    func consumePendingBlock(id: UUID) {
+        guard pendingBlock?.id == id else { return }
+        pendingBlock = nil
     }
 
     /// 对话切换：清空输入与未提交附件。

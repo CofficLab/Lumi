@@ -4,7 +4,7 @@ import Testing
 
 @MainActor
 @Test func v2PluginMetadataIsStable() {
-    let plugin = RegistryManagerSuperPlugin()
+    let plugin = RegistryManagerPlugin()
     #expect(plugin.id == "com.coffic.lumi.plugin.registry-manager")
     #expect(plugin.metadata.name == "Registry Manager")
     #expect(plugin.metadata.policy == .disabled)

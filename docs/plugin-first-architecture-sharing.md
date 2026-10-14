@@ -711,14 +711,14 @@ public struct DefaultPluginFactory: PluginFactory {
 // ③ CAD 设计器：只装 CAD
 private struct DedicatedPluginFactory: PluginFactory {
     func makePlugins() -> [any SuperPlugin] {
-        [DedicatedAlwaysOnPlugin(CADDesignerSuperPlugin())]
+        [DedicatedAlwaysOnPlugin(CADDesignerPlugin())]
     }
 }
 
 // ④ 数据库管理器：编辑器宿主 + 数据库插件
 [
-    DedicatedAlwaysOnPlugin(CodeEditorHostSuperPlugin()),
-    DedicatedAlwaysOnPlugin(DatabaseManagerSuperPlugin()),
+    DedicatedAlwaysOnPlugin(CodeEditorHostPlugin()),
+    DedicatedAlwaysOnPlugin(DatabaseManagerPlugin()),
 ]
 
 // ⑤ iOS 小册子工具：完全不用内核，直接调用插件暴露的 façade

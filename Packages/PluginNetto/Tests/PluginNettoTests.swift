@@ -5,7 +5,7 @@ import Testing
 
 @MainActor
 @Test func v2PluginPreservesDisabledFirewallCatalogPolicy() {
-    let plugin = NettoSuperPlugin()
+    let plugin = NettoPlugin()
 
     #expect(plugin.id == "com.coffic.lumi.plugin.netto")
     #expect(plugin.order == 99)

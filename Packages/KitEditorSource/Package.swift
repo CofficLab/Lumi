@@ -30,7 +30,7 @@ let package = Package(
                 .product(name: "EditorLanguageRuntime", package: "KitEditorLanguageRuntime"),
                 "TextFormation",
             ],
-            path: "Sources",
+            path: "Sources/KitEditorSource",
             resources: [
                 .process("EditorSource/Symbols.xcassets")
             ]

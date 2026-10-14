@@ -11,8 +11,8 @@ import ProviderRailView
 struct PluginAppManagerTests {
     @Test
     func v2PluginStateIsStable() {
-        #expect(AppManagerPlugin.railTabID == "app-manager.sidebar")
-        #expect(AppManagerSuperPlugin().id == "com.coffic.lumi.plugin.app-manager")
+        #expect(AppManagerPluginSupport.railTabID == "app-manager.sidebar")
+        #expect(AppManagerPlugin().id == "com.coffic.lumi.plugin.app-manager")
     }
 
     @Test
@@ -27,7 +27,7 @@ struct PluginAppManagerTests {
 
         activity.addItems([ActivityBarItem(id: "chat.entry", title: "Chat", systemImage: "message")])
 
-        try AppManagerSuperPlugin().onBoot(kernel: kernel)
+        try AppManagerPlugin().onBoot(kernel: kernel)
 
         #expect(activity.activeItemID == "chat.entry")
 
@@ -35,8 +35,8 @@ struct PluginAppManagerTests {
 
         #expect(!chat.isVisible)
         #expect(rail.visibleCategories == [.system])
-        #expect(rail.visibleTabID == AppManagerPlugin.railTabID)
-        #expect(rail.activeTabID == AppManagerPlugin.railTabID)
+        #expect(rail.visibleTabID == AppManagerPluginSupport.railTabID)
+        #expect(rail.activeTabID == AppManagerPluginSupport.railTabID)
 
         activity.activateItem(id: nil)
 
@@ -45,7 +45,17 @@ struct PluginAppManagerTests {
 
     @Test
     func localizationCatalogIsPackaged() {
-        #expect(PluginAppManagerLocalization.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
+        // .xcstrings 会被编译进各语言的 .lproj/Localizable.strings，源文件不随包分发。
+        let compiled = PluginAppManagerLocalization.bundle.path(
+            forResource: "Localizable",
+            ofType: "strings",
+            inDirectory: nil
+        ) ?? PluginAppManagerLocalization.bundle.path(
+            forResource: "Localizable",
+            ofType: "strings",
+            inDirectory: "en.lproj"
+        )
+        #expect(compiled != nil)
         #expect(PluginAppManagerLocalization.string("App Manager").isEmpty == false)
     }
 

@@ -13,9 +13,9 @@ struct CodeEditorLanguagesTests {
     func registersLanguages() throws {
         LanguageRegistry.shared.reset()
         let kernel = KernelCoreContainer()
-        try kernel.start(plugins: [CodeEditorHostSuperPlugin(), CodeEditorLanguagesSuperPlugin()])
+        try kernel.start(plugins: [CodeEditorHostPlugin(), CodeEditorLanguagesPlugin()])
         defer { try? kernel.stop() }
-        for descriptor in CodeEditorLanguagesSuperPlugin.descriptors {
+        for descriptor in CodeEditorLanguagesPlugin.descriptors {
             let context = try #require(LanguageRegistry.shared.context(for: descriptor.languageId))
             #expect(
                 LanguageRegistry.shared.treeSitterLanguage(for: context) != nil,
@@ -32,7 +32,7 @@ struct CodeEditorLanguagesTests {
     func detectsLanguages() throws {
         LanguageRegistry.shared.reset()
         let kernel = KernelCoreContainer()
-        try kernel.start(plugins: [CodeEditorHostSuperPlugin(), CodeEditorLanguagesSuperPlugin()])
+        try kernel.start(plugins: [CodeEditorHostPlugin(), CodeEditorLanguagesPlugin()])
         defer { try? kernel.stop() }
 
         let expectations: [(String, String)] = [

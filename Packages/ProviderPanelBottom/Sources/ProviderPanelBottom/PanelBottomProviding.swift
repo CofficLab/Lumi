@@ -22,7 +22,7 @@ public protocol PanelBottomObserverHandle: AnyObject {
 ///
 /// 定义「插件 → 底部面板 tab 入口」这一段的最小契约：
 /// - 插件通过 `addItems(_:)` 注册自己的 tab 入口，`removeItems(ownerPluginID:)` 撤回；
-/// - 宿主（PluginRootView 的 PanelBottomSuperPlugin）负责把入口渲染为
+/// - 宿主（PluginRootView 的 PanelBottomPlugin）负责把入口渲染为
 ///   content footer 中的 tab 容器，并按 `hasVisibleItems` 安装/卸载容器；
 /// - 观察者通过 `addPanelBottomObserver(_:)` 感知变化（在状态更新完成后触发）。
 ///

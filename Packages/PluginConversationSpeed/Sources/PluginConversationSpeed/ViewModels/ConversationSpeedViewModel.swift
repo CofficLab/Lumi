@@ -19,6 +19,9 @@ final class ConversationSpeedViewModel: ObservableObject {
     @Published private(set) var timeToFirstTokenMs: Double?
     @Published private(set) var providerID: String?
 
+    /// 会话内的 LLM 请求次数（assistant 消息数）。
+    @Published private(set) var requestCount: Int = 0
+
     func selectConversation(_ conversationID: UUID?, messages: [Message]) {
         if selectedConversationID != conversationID {
             resetDisplayState()
@@ -43,6 +46,7 @@ final class ConversationSpeedViewModel: ObservableObject {
 
         let history = SpeedSample.samples(from: messages)
         speedHistory = history
+        requestCount = messages.filter { $0.role == .assistant }.count
 
         guard !messages.isEmpty else {
             cachedTPS = nil
@@ -85,6 +89,7 @@ final class ConversationSpeedViewModel: ObservableObject {
     }
 
     private func clearDetails() {
+        requestCount = 0
         modelName = nil
         outputTokens = nil
         streamingDurationMs = nil

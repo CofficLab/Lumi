@@ -4,7 +4,7 @@ import SwiftUI
 
 /// 底部面板 tab 容器（content footer 的内容视图）。
 ///
-/// 由 `PanelBottomSuperPlugin` 注入 content footer 插槽：
+/// 由 `PanelBottomPlugin` 注入 content footer 插槽：
 /// 上方一排入口 tab（复用 LumiUI `AppTabBar`），下方渲染入口内容。
 ///
 /// 内容区采用「首次激活懒加载 + 之后保活」：
@@ -23,6 +23,7 @@ struct PanelBottomView: View {
             Divider()
             content
         }
+        .debugViewBadge("Panel Bottom", alignment: .bottomLeading)
         .onAppear { mountActiveItem() }
         .onChange(of: provider.activeItemID) { _, _ in
             mountActiveItem()
@@ -54,6 +55,7 @@ struct PanelBottomView: View {
                     item.makeView()
                         .opacity(item.id == provider.activeItemID ? 1 : 0)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .debugViewBadge(item.id)
                 }
             }
         }

@@ -17,6 +17,11 @@ final class ModelSelectorViewModel: ObservableObject {
     @Published private(set) var selectedModelID: String?
     @Published private(set) var providerInfos: [LLMProviderInfo] = []
     @Published private(set) var modelIDs: [String: [String]] = [:]
+    /// providerID -> 模型元数据（动态模型池）。
+    ///
+    /// 与 `modelIDs` 同源。远程刷新新增的模型只存在于动态池，
+    /// 读取 `providerInfo.models` 会漏掉它们。
+    @Published private(set) var modelInfos: [String: [LLMModelInfo]] = [:]
     @Published private(set) var usageRecords: [String: ProviderUsageRecord] = [:]
     @Published var searchText = ""
     @Published var selectedScope = ProviderScope.cloud
@@ -78,6 +83,39 @@ final class ModelSelectorViewModel: ObservableObject {
 
     func models(for providerID: String) -> [String] {
         modelIDs[providerID] ?? []
+    }
+
+    /// 指定供应商的模型元数据（动态模型池）。
+    ///
+    /// 远程刷新新增的模型不在 `providerInfo.models` 中，必须查这里。
+    func modelInfoMap(for providerID: String) -> [String: LLMModelInfo] {
+        guard let models = modelInfos[providerID] else { return [:] }
+        return Dictionary(uniqueKeysWithValues: models.map { ($0.id, $0) })
+    }
+
+    /// 类别筛选 + 搜索框文本过滤后的可见模型列表。
+    ///
+    /// 从 View 下沉到此处：渲染逻辑只依赖 ViewModel 快照，可被单元测试直接覆盖，
+    /// 也避免 View 里重复实现同一套过滤规则。
+    func visibleModels(for providerID: String) -> [String] {
+        let models = models(for: providerID)
+        let infos = modelInfoMap(for: providerID)
+        let query = activeModelSearchText
+
+        return models
+            .filter { model in
+                selectedCategory.includes(model: model, modelInfo: infos[model])
+            }
+            .sorted { lhs, rhs in
+                let lhsName = infos[lhs]?.displayName ?? lhs
+                let rhsName = infos[rhs]?.displayName ?? rhs
+                return lhsName.localizedCaseInsensitiveCompare(rhsName) == .orderedAscending
+            }
+            .filter { model in
+                query.isEmpty
+                    || model.localizedCaseInsensitiveContains(query)
+                    || (infos[model]?.displayName ?? model).localizedCaseInsensitiveContains(query)
+            }
     }
 
     /// 给定模型数量是否值得展示搜索框。
@@ -210,7 +248,7 @@ final class ModelSelectorViewModel: ObservableObject {
     // MARK: - Private
 
     private func modelInfo(for providerID: String, model: String) -> LLMModelInfo? {
-        providerInfo(id: providerID)?.models.first { $0.id == model }
+        modelInfos[providerID]?.first { $0.id == model }
     }
 
     private func refreshSnapshots() {
@@ -219,6 +257,7 @@ final class ModelSelectorViewModel: ObservableObject {
         selectedModelID = box.selectedModelID
         providerInfos = box.providerInfos
         modelIDs = box.modelIDs
+        modelInfos = box.modelInfos
         usageRecords = usageStore.records
         revision &+= 1
     }

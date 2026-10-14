@@ -8,7 +8,7 @@ import Testing
 
 @MainActor
 @Test func pluginMetadataIsStable() {
-    let plugin = ClipboardManagerSuperPlugin()
+    let plugin = ClipboardManagerPlugin()
 
     #expect(plugin.id == "com.coffic.lumi.plugin.clipboard-manager")
     #expect(plugin.metadata.name.isEmpty == false)
@@ -23,7 +23,7 @@ import Testing
     try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
     try kernel.registerProvider((any ChatSectionProviding).self, chat)
 
-    let plugin = ClipboardManagerSuperPlugin()
+    let plugin = ClipboardManagerPlugin()
     try plugin.onBoot(kernel: kernel)
 
     #expect(activityBar.activeItemID == "\(plugin.id).entry")

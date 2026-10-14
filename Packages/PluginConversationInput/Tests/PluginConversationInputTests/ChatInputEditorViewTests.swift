@@ -2,6 +2,7 @@ import AppKit
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderConversationInput
+import ProviderConversationInputBlock
 import ProviderLifecycleHooks
 import ProviderMessage
 import ProviderMessageSender
@@ -317,6 +318,72 @@ private final class MarkedTextTestView: NSTextView {
 
     override func hasMarkedText() -> Bool {
         isMarked
+    }
+}
+
+@MainActor
+@Suite("ConversationInputBlockRequest")
+struct ConversationInputBlockRequestTests {
+    @Test("折叠块按阈值决定折叠 chip 还是纯文本插入")
+    func pendingBlockCollapsesOnlyAboveThreshold() {
+        let short = ConversationInputBlockRequest(
+            text: "let x = 1",
+            title: "main.swift",
+            systemImage: "chevron.left.forwardslash.chevron.right",
+            collapseThreshold: 400
+        )
+        let long = ConversationInputBlockRequest(
+            text: String(repeating: "let x = 1\n", count: 100),
+            title: "main.swift",
+            systemImage: "chevron.left.forwardslash.chevron.right",
+            collapseThreshold: 400
+        )
+        let blank = ConversationInputBlockRequest(
+            text: "   \n  ",
+            title: "main.swift",
+            systemImage: "chevron.left.forwardslash.chevron.right",
+            collapseThreshold: 400
+        )
+
+        #expect(!short.shouldCollapse)
+        #expect(long.shouldCollapse)
+        // 只有空白的内容永不折叠，避免插出一个空 chip。
+        #expect(!blank.shouldCollapse)
+    }
+
+    @Test("递交折叠块后 ViewModel 待插入且消费后清空")
+    func enqueueThenConsumePendingBlock() {
+        let input = DefaultConversationInputProvider()
+        let capability = ConversationInputCapabilityAdapter(
+            input: input,
+            sender: nil,
+            conversations: nil,
+            conversationState: nil,
+            metrics: nil
+        )
+        let viewModel = ConversationInputViewModel(capability: capability)
+        let block = ConversationInputBlock(
+            text: String(repeating: "let x = 1\n", count: 100),
+            title: "main.swift",
+            systemImage: "chevron.left.forwardslash.chevron.right",
+            collapseThreshold: 400
+        )
+
+        #expect(viewModel.pendingBlock == nil)
+
+        viewModel.enqueue(block)
+
+        #expect(viewModel.pendingBlock?.id == block.id)
+        #expect(viewModel.pendingBlock?.title == "main.swift")
+        // 递交即聚焦，用户可以直接在 chip 旁补指令。
+        #expect(input.isInputFocused)
+
+        // 无关 ID 不应误清空。
+        viewModel.consumePendingBlock(id: UUID())
+        #expect(viewModel.pendingBlock?.id == block.id)
+
+        viewModel.consumePendingBlock(id: block.id)
+        #expect(viewModel.pendingBlock == nil)
     }
 }
 

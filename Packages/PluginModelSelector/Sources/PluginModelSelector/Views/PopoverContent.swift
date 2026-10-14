@@ -35,5 +35,6 @@ struct PopoverContent: View {
             )
         }
         .frame(width: 780, height: 600)
+        .accessibilityIdentifier("lumi.model-selector.popover")
     }
 }

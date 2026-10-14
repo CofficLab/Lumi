@@ -14,6 +14,7 @@ import SwiftUI
 struct ErrorMessageView: View {
     @LumiTheme private var theme
 
+    let capability: (any MessageRendererCapability)?
     let message: Message
     let verbosity: ResponseVerbosity
 
@@ -47,7 +48,9 @@ struct ErrorMessageView: View {
         let details = resolvedDetails
         let summary = summaryText(for: details)
         MessageViewChrome(
+            capability: capability,
             message: message,
+            showsRetryButton: true,
             errorTransportDetails: details,
             verbosity: verbosity
         ) {

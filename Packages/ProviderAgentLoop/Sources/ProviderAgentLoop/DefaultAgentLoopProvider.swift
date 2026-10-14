@@ -444,6 +444,16 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             await appendError(in: conversationID, error: error, turnID: turnID)
             throw error
         }
+        // 空终态响应（无工具调用且无正文）视为请求失败：不落库空 assistant
+        // 消息，走失败链路交给自动重试插件接管时间线与重试（与 AgentLoopManager 一致）。
+        if response.toolCalls?.isEmpty ?? true,
+           response.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            Self.logger.warning("\(Self.t)⚠️ 模型返回空响应，按失败处理")
+            streaming.end(conversationID: conversationID)
+            let error = VendorAPIError.emptyResponse
+            await appendError(in: conversationID, error: error, turnID: turnID)
+            throw error
+        }
         let timing = timingRecorder.finish()
         if Self.verbose {
             Self.logger.debug("\(Self.t)LLM response received conversation=\(conversationID.uuidString.prefix(8)), hasTools=\(!(response.toolCalls ?? []).isEmpty)")
@@ -638,6 +648,17 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                 try response.validateToolCallArguments()
             } catch {
                 streaming.end(conversationID: conversationID)
+                await appendError(in: conversationID, error: error, turnID: turnID)
+                failedConversations.insert(conversationID)
+                return .failed(String(describing: error))
+            }
+
+            // 空终态响应（无工具调用且无正文）视为请求失败，与 AgentLoopManager 一致。
+            if response.toolCalls?.isEmpty ?? true,
+               response.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Self.logger.warning("\(Self.t)⚠️ 模型返回空响应，按失败处理")
+                streaming.end(conversationID: conversationID)
+                let error = VendorAPIError.emptyResponse
                 await appendError(in: conversationID, error: error, turnID: turnID)
                 failedConversations.insert(conversationID)
                 return .failed(String(describing: error))

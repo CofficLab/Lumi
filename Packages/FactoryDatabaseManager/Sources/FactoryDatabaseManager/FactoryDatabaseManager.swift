@@ -33,8 +33,8 @@ public enum FactoryDatabaseManager {
 private struct DedicatedPluginFactory: PluginFactory {
     func makePlugins() -> [any SuperPlugin] {
         [
-            DedicatedAlwaysOnPlugin(CodeEditorHostSuperPlugin()),
-            DedicatedAlwaysOnPlugin(DatabaseManagerSuperPlugin()),
+            DedicatedAlwaysOnPlugin(CodeEditorHostPlugin()),
+            DedicatedAlwaysOnPlugin(DatabaseManagerPlugin()),
         ]
     }
 }

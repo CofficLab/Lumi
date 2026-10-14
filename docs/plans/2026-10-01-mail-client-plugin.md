@@ -188,7 +188,7 @@ public let metadata = PluginMetadata(
 **入口**：`ActivityBarItem`（SF Symbol `envelope`，order 派生自 `info.order`，
 遵守 [插件 UI 项 order 规范](../.agent/rules/plugin-order-rules.md)）→ 激活时切换
 `ContentViewProviding.setContentView(MailWorkspaceView)`（参照
-`DatabaseManagerSuperPlugin` 的激活/还原对称写法：激活设 content + 隐藏 chat +
+`DatabaseManagerPlugin` 的激活/还原对称写法：激活设 content + 隐藏 chat +
 加 toolbar 标题项，还原全部撤销）。
 
 **三栏布局**：

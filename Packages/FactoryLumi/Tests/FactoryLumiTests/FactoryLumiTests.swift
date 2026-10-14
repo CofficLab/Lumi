@@ -72,8 +72,8 @@ struct FactoryLumiTests {
         let host = try #require(plugins["com.coffic.lumi.plugin.editor-host"])
         let languages = try #require(plugins["com.coffic.lumi.plugin.editor-languages"])
         let workspace = try #require(plugins["com.coffic.lumi.plugin.code-editor"])
-        let preview = try #require(plugins[EditorPreviewSuperPlugin.pluginID])
-        let projectFiles = try #require(plugins[ProjectFilesSuperPlugin.pluginID])
+        let preview = try #require(plugins[EditorPreviewPlugin.pluginID])
+        let projectFiles = try #require(plugins[ProjectFilesPlugin.pluginID])
         let bookletMaker = try #require(plugins["com.coffic.lumi.plugin.booklet-maker"])
         let retry = try #require(plugins["com.coffic.lumi.plugin.agent-loop-retry"])
 

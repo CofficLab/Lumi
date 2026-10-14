@@ -1,4 +1,3 @@
-import KitAgentTool
 import Foundation
 import KernelCore
 import ProviderActivityBar
@@ -32,7 +31,7 @@ struct PluginBrowserTests {
         try kernel.registerProvider((any RootViewProviding).self, rootView)
         try kernel.registerProvider((any RailViewProviding).self, railView)
 
-        let plugin = BrowserSuperPlugin()
+        let plugin = BrowserPlugin()
         try plugin.onBoot(kernel: kernel)
 
         #expect(activityBar.activeItemID == "Browser.entry")
@@ -59,116 +58,77 @@ struct PluginBrowserTests {
         #expect(rootView.isRailViewVisible)
     }
 
+    @Test("Browser 激活期间持续压制 content header，退出时还原激活前的值")
+    func browserSuppressesContentHeaderWhileActive() throws {
+        let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
+        let rootView = DefaultRootViewProviding()
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+        try kernel.registerProvider((any RootViewProviding).self, rootView)
+
+        // 模拟 ProjectFiles：项目有打开文件 → header 应该可见。
+        rootView.setContentHeaderViewHidden(false)
+        #expect(!rootView.isContentHeaderViewHidden)
+
+        // 必须保留插件实例：rootViewObserver 以 [weak self] 捕获插件，
+        // 一次性实例会在 onBoot 返回后立刻释放，自保逻辑随之失效。
+        let plugin = BrowserPlugin()
+        try plugin.onBoot(kernel: kernel)
+
+        // 激活时应隐藏 header。
+        #expect(activityBar.activeItemID == "Browser.entry")
+        #expect(rootView.isContentHeaderViewHidden)
+
+        // 模拟 ProjectFiles 的 observer 在激活期间把 header 改回可见：
+        // Browser 自身的 rootViewObserver 会同步纠正，因此这里应仍是隐藏态。
+        rootView.setContentHeaderViewHidden(false)
+
+        #expect(rootView.isContentHeaderViewHidden)
+
+        // 退出时还原成激活前的值（header 可见），而不是无条件写 false。
+        activityBar.addItems([ActivityBarItem(
+            id: "test.other.entry",
+            title: "Other",
+            systemImage: "square"
+        )])
+        activityBar.activateItem(id: "test.other.entry")
+
+        #expect(!rootView.isContentHeaderViewHidden)
+    }
+
+    @Test("Browser 退出时不强行显示本该隐藏的 content header")
+    func browserRestoresHiddenContentHeaderOnDeactivate() throws {
+        let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
+        let rootView = DefaultRootViewProviding()
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+        try kernel.registerProvider((any RootViewProviding).self, rootView)
+
+        // 模拟 ProjectFiles：项目没有打开文件 → header 本该隐藏。
+        rootView.setContentHeaderViewHidden(true)
+        #expect(rootView.isContentHeaderViewHidden)
+
+        let plugin = BrowserPlugin()
+        try plugin.onBoot(kernel: kernel)
+
+        #expect(rootView.isContentHeaderViewHidden)
+
+        activityBar.addItems([ActivityBarItem(
+            id: "test.other.entry",
+            title: "Other",
+            systemImage: "square"
+        )])
+        activityBar.activateItem(id: "test.other.entry")
+
+        // 退出后不应露出空的 "No files open" 条。
+        #expect(rootView.isContentHeaderViewHidden)
+    }
+
     @Test("plugin metadata is stable")
     func pluginMetadata() {
-        let plugin = BrowserSuperPlugin()
+        let plugin = BrowserPlugin()
         #expect(plugin.id == "Browser")
         #expect(plugin.metadata.name == "Browser")
         #expect(plugin.order == 102)
-    }
-
-    @Test("plugin registers browser tools")
-    func pluginRegistersTools() {
-        #expect(BrowserAgentV2Tool().name == "browser_agent")
-    }
-
-    @Test("tool trims copied URL whitespace")
-    func toolTrimsCopiedURLWhitespace() throws {
-        let url = try #require(BrowserScreenshotTool.normalizedURL(from: " \nhttps://example.com/page\t"))
-
-        #expect(url.absoluteString == "https://example.com/page")
-    }
-
-    @Test("tool rejects blank copied URL")
-    func toolRejectsBlankCopiedURL() {
-        #expect(BrowserScreenshotTool.normalizedURL(from: " \n\t ") == nil)
-    }
-
-    @Test("tool accepts uppercase HTTP schemes")
-    func toolAcceptsUppercaseHTTPSchemes() throws {
-        let httpsURL = try #require(BrowserScreenshotTool.normalizedURL(from: " HTTPS://example.com/page "))
-        let httpURL = try #require(BrowserScreenshotTool.normalizedURL(from: "HTTP://example.com/page"))
-
-        #expect(BrowserScreenshotTool.isSupportedHTTPURL(httpsURL))
-        #expect(BrowserScreenshotTool.isSupportedHTTPURL(httpURL))
-    }
-
-    @Test("tool rejects unsupported URL schemes")
-    func toolRejectsUnsupportedURLSchemes() throws {
-        let url = try #require(BrowserScreenshotTool.normalizedURL(from: "ftp://example.com/page"))
-
-        #expect(!BrowserScreenshotTool.isSupportedHTTPURL(url))
-    }
-
-    @Test("tool normalizes unsafe viewport widths")
-    func toolNormalizesUnsafeViewportWidths() {
-        #expect(BrowserScreenshotTool.normalizedViewportWidth(from: nil) == 1280)
-        #expect(BrowserScreenshotTool.normalizedViewportWidth(from: -100) == 1280)
-        #expect(BrowserScreenshotTool.normalizedViewportWidth(from: 0) == 1280)
-        #expect(BrowserScreenshotTool.normalizedViewportWidth(from: 1440) == 1440)
-        #expect(BrowserScreenshotTool.normalizedViewportWidth(from: 8192) == 4096)
-        #expect(BrowserScreenshotTool.normalizedViewportWidth(from: " 1024 ") == 1024)
-    }
-
-    @Test("tool normalizes wait seconds")
-    func toolNormalizesWaitSeconds() {
-        #expect(BrowserScreenshotTool.normalizedWaitSeconds(from: nil) == 1.0)
-        #expect(BrowserScreenshotTool.normalizedWaitSeconds(from: -2.0) == 0)
-        #expect(BrowserScreenshotTool.normalizedWaitSeconds(from: 0.25) == 0.25)
-        #expect(BrowserScreenshotTool.normalizedWaitSeconds(from: 99) == 10)
-        #expect(BrowserScreenshotTool.normalizedWaitSeconds(from: " 2.5 ") == 2.5)
-    }
-
-    @Test("tool normalizes JavaScript content heights")
-    func toolNormalizesJavaScriptContentHeights() {
-        #expect(BrowserScreenshotTool.normalizedContentHeight(from: nil) == 800)
-        #expect(BrowserScreenshotTool.normalizedContentHeight(from: -10) == 800)
-        #expect(BrowserScreenshotTool.normalizedContentHeight(from: 0) == 800)
-        #expect(BrowserScreenshotTool.normalizedContentHeight(from: 1200) == 1200)
-        #expect(BrowserScreenshotTool.normalizedContentHeight(from: 1200.2) == 1201)
-        #expect(BrowserScreenshotTool.normalizedContentHeight(from: NSNumber(value: 2400.6)) == 2401)
-        #expect(BrowserScreenshotTool.normalizedContentHeight(from: " 1600.1 ") == 1601)
-        #expect(BrowserScreenshotTool.normalizedContentHeight(from: "not-a-number") == 800)
-    }
-
-    @Test("browser agent tool schema requires command")
-    func browserAgentToolSchemaRequiresCommand() throws {
-        let tool = BrowserAgentV2Tool()
-        let schema = tool.inputSchema(for: .english)
-
-        let required = try #require(schema["required"] as? [String])
-        #expect(required == ["command"])
-
-        let properties = try #require(schema["properties"] as? [String: [String: Any]])
-        #expect(properties["command"]?["type"] as? String == "string")
-        #expect(properties["timeout"]?["type"] as? String == "integer")
-        #expect(properties["timeout"]?["minimum"] as? Int == 1)
-        #expect(properties["timeout"]?["maximum"] as? Int == 300)
-    }
-
-    @Test("browser agent tool risk level is medium")
-    func browserAgentToolRiskLevel() {
-        #expect(BrowserAgentV2Tool().permissionRiskLevel(arguments: [:]) == .medium)
-    }
-
-    @Test("browser agent command parser preserves quoted browser arguments")
-    func browserAgentCommandParserPreservesQuotedBrowserArguments() {
-        #expect(BrowserAgentV2Tool.parseCommandArguments(#"fill @field "hello world""#) == ["fill", "@field", "hello world"])
-        #expect(BrowserAgentV2Tool.parseCommandArguments(#"type 'hello world'"#) == ["type", "hello world"])
-        #expect(BrowserAgentV2Tool.parseCommandArguments(#"open https://example.com/search\ path"#) == ["open", "https://example.com/search path"])
-        #expect(BrowserAgentV2Tool.parseCommandArguments(#"evaluate """#) == ["evaluate", ""])
-        #expect(BrowserAgentV2Tool.parseCommandArguments(#"fill @field "unterminated"#) == nil)
-    }
-
-    @Test("browser agent timeout is clamped to safe bounds")
-    func browserAgentTimeoutIsClampedToSafeBounds() {
-        #expect(BrowserAgentV2Tool.normalizedTimeout(nil) == 30)
-        #expect(BrowserAgentV2Tool.normalizedTimeout(-10) == 1)
-        #expect(BrowserAgentV2Tool.normalizedTimeout(0) == 1)
-        #expect(BrowserAgentV2Tool.normalizedTimeout(45) == 45)
-        #expect(BrowserAgentV2Tool.normalizedTimeout(45.0) == 45)
-        #expect(BrowserAgentV2Tool.normalizedTimeout("45") == 45)
-        #expect(BrowserAgentV2Tool.normalizedTimeout(999) == 300)
-        #expect(BrowserAgentV2Tool.normalizedTimeout("not-a-number") == 30)
     }
 }

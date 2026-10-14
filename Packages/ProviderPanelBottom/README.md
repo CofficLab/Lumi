@@ -17,7 +17,7 @@ Lumi 底部面板（PanelBottom / content footer）Provider。
 - `PanelBottomProvider`：默认实现（按 `order` 排序、按 `ownerPluginID` 批量撤回、
   激活入口回退与持久化回调、类型化变更事件）。
 
-宿主（PluginRootView 中的 `PanelBottomSuperPlugin`）负责把入口渲染为
+宿主（PluginRootView 中的 `PanelBottomPlugin`）负责把入口渲染为
 content footer 中的 tab 容器；EditorPreview、Terminal 等插件只贡献入口，
 不再直接写入 `RootViewProviding.setContentFooterView`。
 

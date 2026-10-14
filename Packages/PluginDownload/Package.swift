@@ -18,7 +18,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderToolManager"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),        .package(path: "../KitDownload"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),        .package(path: "../KitDownload"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
@@ -32,9 +32,9 @@ let package = Package(
                 .product(name: "KitDownload", package: "KitDownload"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
-            path: "Sources",
+            path: "Sources/PluginDownload",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

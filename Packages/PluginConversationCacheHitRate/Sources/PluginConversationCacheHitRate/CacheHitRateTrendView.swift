@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 缓存命中率趋势：历史双曲线 + 图例 + 统计。
+/// 缓存命中率趋势：标题 + 双曲线图例 + 折线图。
 ///
 /// 作为 `CacheHitRatePopover` 的一段，展示当前会话每次请求的缓存命中变化。
 struct CacheHitRateTrendView: View {
@@ -17,8 +17,6 @@ struct CacheHitRateTrendView: View {
 
                 CacheHitRateLineChart(samples: history.samples)
                     .frame(height: 118)
-
-                statsRow
             }
         }
     }
@@ -28,14 +26,8 @@ struct CacheHitRateTrendView: View {
 
 extension CacheHitRateTrendView {
     private var header: some View {
-        HStack {
-            Text(pluginLocalization.string("Cache hit rate trend"))
-                .font(.subheadline.weight(.semibold))
-            Spacer()
-            Text(String(format: pluginLocalization.string("%lld requests"), history.samples.count))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
+        Text(pluginLocalization.string("Cache hit rate trend"))
+            .font(.subheadline.weight(.semibold))
     }
 
     private var legend: some View {
@@ -63,32 +55,6 @@ extension CacheHitRateTrendView {
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 8)
-    }
-
-    private var statsRow: some View {
-        HStack {
-            if let minimum = history.minimumHitRate {
-                statItem(label: pluginLocalization.string("Min"), value: minimum)
-            }
-            Spacer()
-            if let average = history.averageHitRate {
-                statItem(label: pluginLocalization.string("Avg"), value: average)
-            }
-            Spacer()
-            if let maximum = history.maximumHitRate {
-                statItem(label: pluginLocalization.string("Max"), value: maximum)
-            }
-        }
-        .font(.caption)
-    }
-
-    private func statItem(label: String, value: Double) -> some View {
-        HStack(spacing: 3) {
-            Text(label)
-                .foregroundStyle(.secondary)
-            Text(CacheHitRateLineChart.percentText(value))
-                .monospacedDigit()
-        }
     }
 }
 

@@ -94,17 +94,30 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
             // AppUpdateBootstrap is host-owned and may register after
             // plugin boot. Resolve it when the entry is materialized so
             // settings sees the provider in both Debug and Release.
-            let capability = GeneralSettingsCapabilityAdapter(
-                docsProvider: docsProvider,
-                diagnosticsProvider: diagnosticsProvider,
-                updateProvider: kernel.resolveProvider((any AppUpdateChannelProviding).self),
-                onboardingProvider: onboardingProvider,
-                storageProvider: storageProvider,
+            let docsCapability = GeneralSettingsDocsCapabilityAdapter(docsProvider: docsProvider)
+            let updateChannelCapability = GeneralSettingsUpdateChannelCapabilityAdapter(
+                updateProvider: kernel.resolveProvider((any AppUpdateChannelProviding).self)
+            )
+            let onboardingCapability = GeneralSettingsOnboardingCapabilityAdapter(
+                onboardingProvider: onboardingProvider
+            )
+            let diagnosticsCapability = GeneralSettingsDiagnosticsCapabilityAdapter(
+                diagnosticsProvider: diagnosticsProvider
+            )
+            let storageCapability = GeneralSettingsStorageCapabilityAdapter(storageProvider: storageProvider)
+            let uninstallCapability = GeneralSettingsUninstallCapabilityAdapter(
                 uninstallProvider: uninstallProvider,
                 prepareForUninstall: prepareForUninstall
             )
-            let viewModel = GeneralSettingsViewModel(capability: capability)
-            let observer = GeneralSettingsObserver(capability: capability, viewModel: viewModel)
+            let viewModel = GeneralSettingsViewModel(
+                docsCapability: docsCapability,
+                updateChannelCapability: updateChannelCapability,
+                onboardingCapability: onboardingCapability,
+                diagnosticsCapability: diagnosticsCapability,
+                storageCapability: storageCapability,
+                uninstallCapability: uninstallCapability
+            )
+            let observer = GeneralSettingsObserver(docsCapability: docsCapability, viewModel: viewModel)
             self.generalObserver?.cancel()
             self.generalObserver = observer
 

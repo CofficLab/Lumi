@@ -2,22 +2,27 @@ import Foundation
 import os
 import KernelCore
 import ProviderLLMManager
+import ProviderStorage
 import KitLLM
 import LumiLoggingKit
 /// CommandCode 供应商装配插件（KernelCore 生态）。
 ///
 /// 在 `onBoot` 中把 GoatPlanProvider 注册进
 /// `LLMProviderManagerProviding`，聊天链路即可经管理器路由到对应供应商。
+/// 远程模型列表缓存由本插件自行维护，落盘在
+/// `storage.pluginDataDirectory(for: pluginID)/models.json`。
 @MainActor
 public final class CommandCodeProviderPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.llm-provider.commandcode", category: "CommandCode")
     nonisolated public static let emoji = "🔌"
     nonisolated static let verbose = false
 
-    public let id = "com.coffic.lumi.plugin.llm-provider.commandcode"
+    public static let pluginID = "com.coffic.lumi.plugin.llm-provider.commandcode"
+
+    public let id = CommandCodeProviderPlugin.pluginID
     public let order = 100
     public let metadata = PluginMetadata(
-        id: "com.coffic.lumi.plugin.llm-provider.commandcode",
+        id: CommandCodeProviderPlugin.pluginID,
         name: "CommandCode 供应商",
         description: "注册 GoatPlan 供应商到 LLM 管理器。",
         category: .llm,
@@ -34,7 +39,12 @@ public final class CommandCodeProviderPlugin: SuperPlugin, SuperLog {
         }
         let networkProvider = kernel.resolveProvider((any LLMNetworkProviding).self)
         let apiService = VendorAPIService(networkProvider: networkProvider)
-        let provider = GoatPlanProvider(apiService: apiService)
+
+        // 绑定插件自有数据目录，供远程模型列表缓存落盘。
+        let localStore = CommandCodeLocalStore()
+        localStore.configure(storage: kernel.resolveProvider((any StorageProviding).self))
+
+        let provider = GoatPlanProvider(apiService: apiService, modelListCache: localStore)
         if Self.verbose {
             Self.logger.debug("\(Self.t)Registering provider: \(String(describing: type(of: provider)), privacy: .public)")
         }

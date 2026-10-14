@@ -22,7 +22,7 @@ private struct GitPathEchoTool: SuperAgentTool {
 @MainActor
 @Test func sourceControlPluginRegistersEditorContract() throws {
     let kernel = KernelCoreContainer()
-    let plugin = GitSourceControlSuperPlugin()
+    let plugin = GitSourceControlPlugin()
     try plugin.onBoot(kernel: kernel)
     #expect(kernel.resolveProvider((any SourceControlProviding).self) is GitSourceControlAdapter)
 }
@@ -33,7 +33,7 @@ private struct GitPathEchoTool: SuperAgentTool {
     let toolManager = DefaultToolManagerProviding()
     try kernel.registerProvider((any ToolManagerProviding).self, toolManager)
 
-    try GitSourceControlSuperPlugin().onBoot(kernel: kernel)
+    try GitSourceControlPlugin().onBoot(kernel: kernel)
 
     #expect(toolManager.allTools().map(\.name) == GitV2ToolNames.all)
     #expect(toolManager.tool(named: "git_status")?.permissionRiskLevel(arguments: [:]) == .low)
