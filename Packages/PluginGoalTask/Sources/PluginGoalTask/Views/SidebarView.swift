@@ -12,9 +12,18 @@ public struct SidebarView: View {
     /// 单个任务行高度(`TaskRowView` 内部消费此值计算行高)。
     static let rowHeight: CGFloat = 30
 
+    /// 阻塞原因卡片高度(2 行 `caption2` + 上下内边距),由 `SidebarBlockedReason` 消费。
+    static let blockedReasonCardHeight: CGFloat = 40
+
     /// 是否有可见的 Goal
     private var hasVisibleGoal: Bool {
         viewModel.hasActiveWork
+    }
+
+    /// 是否需要展示阻塞原因卡片(与 `blockedReasonView` 的条件保持一致)。
+    private var showsBlockedReason: Bool {
+        viewModel.activeGoal?.status == .blocked
+            && viewModel.activeGoal?.blockedReason != nil
     }
 
     init(viewModel: GoalVM) {
@@ -39,6 +48,7 @@ public struct SidebarView: View {
                         .padding(.vertical, 8)
                 } else {
                     blockedReasonView
+                    blockedReasonDivider
                     taskListView
                 }
             }
@@ -75,6 +85,19 @@ public struct SidebarView: View {
         }
     }
 
+    /// 阻塞原因卡片与任务列表之间的分割线。
+    ///
+    /// 仅在阻塞原因卡片实际渲染时出现,与 `showsBlockedReason` 条件一致。
+    @ViewBuilder
+    private var blockedReasonDivider: some View {
+        if showsBlockedReason {
+            Rectangle()
+                .fill(Color.orange.opacity(0.16))
+                .frame(height: 1)
+                .padding(.horizontal, 12)
+        }
+    }
+
     // MARK: - Task List
 
     private var taskListView: some View {
@@ -99,10 +122,9 @@ public struct SidebarView: View {
             return Self.headerHeight + 32
         }
         var height = Self.headerHeight + taskListHeight
-        // 阻塞原因最多占 2 行(caption2 ≈ 12pt,行高约 16pt)
-        if viewModel.activeGoal?.status == .blocked,
-           viewModel.activeGoal?.blockedReason != nil {
-            height += 36
+        // 阻塞原因卡片 + 卡片与任务列表之间的分割线
+        if showsBlockedReason {
+            height += Self.blockedReasonCardHeight + 1
         }
         return height
     }
