@@ -126,7 +126,13 @@ public struct TurnRuntime {
         if case .awaitingUser(_, _, _, let s) = phase { return s }
         return nil
     }
-    public var turnID: UUID? { phase.turnID }
+    /// 当前或最近一次回合的身份。
+    ///
+    /// 终态 phase（completed / failed / cancelled）不携带 turnID，因此这里必须
+    /// 回退到 `lastTurnID`；否则回合失败后 `currentTurnID(for:)` 会变成 `nil`，
+    /// 依赖「失败回合仍可重试」判定的调用方（如 error 消息上的重试按钮）将永远
+    /// 拿不到回合 ID 而失效。
+    public var turnID: UUID? { phase.turnID ?? lastTurnID }
 
     /// 重置为 idle。
     public mutating func reset() {
