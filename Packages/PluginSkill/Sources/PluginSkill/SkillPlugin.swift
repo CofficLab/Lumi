@@ -189,7 +189,11 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
     // MARK: - Agent Tools
 
     public static let agentTools: [any SuperAgentTool] = [
+        ListSkillsTool(),
+        ReadSkillTool(),
         CreateSkillTool(),
+        UpdateSkillTool(),
+        DeleteSkillTool(),
     ]
 }
 
