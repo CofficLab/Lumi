@@ -9,11 +9,23 @@ import XCTest
 ///
 /// 单元测试能锁住判定逻辑，但只有驱动真实 App 才能证明「按钮出现」且「点击真的重试」。
 ///
-/// 确定性：App 以 `--lumi-ui-testing-error-retry` 启动时，`PluginAgentLoop`
-/// 植入一个真实的 `.failed` 回合 + 一条 error 消息（见 `ErrorRetryUITestingSupport`），
-/// 不依赖真实网络与用户 API Key；`--lumi-ui-testing-isolated-storage` 把数据根目录
-/// 重定向到临时目录，避免测试会话污染用户真实数据库。
-/// 范式参照 MiniMax 的 `--lumi-ui-testing` 桩网络注入。
+/// ## 确定性来源（两层夹具）
+///
+/// 1. `--lumi-ui-testing-error-retry`：向 Chat 会话植入一个真实的 `.failed`
+///    回合 + 一条 error 消息（见 `ErrorRetryUITestingSupport`）。
+/// 2. `--lumi-ui-testing`：注册 UI 测试专用 LLM 供应商并强制选中
+///    `ui-test-text`（见 `PluginUITestProvider`）。这条非常关键——
+///
+///    - 此前重试会走真实 AgentLoop 生产路径，回合结局取决于机器上是否配置了
+///      可用的 LLM：可能成功、可能再次失败、可能产生多条消息，界面层面的结果
+///      并不唯一。测试因此只能断言「新回合启动了」，无法断言重试后的终态。
+///    - 现在选中的是确定性桩：重试必定产出固定正文 `UI Testing Reply`。
+///      断言可以直接写死期望的界面内容。
+///
+/// 3. `--lumi-ui-testing-isolated-storage`：把数据根目录重定向到临时目录，
+///    避免测试会话污染用户真实数据库。
+///
+/// 范式参照 MiniMax 的 `--lumi-ui-testing` 桩网络注入；两者可同时生效。
 final class LumiErrorRetryTurnUITests: XCTestCase {
     private var app: XCUIApplication!
 
@@ -24,8 +36,17 @@ final class LumiErrorRetryTurnUITests: XCTestCase {
         /// 与 `ErrorMessageView.contentAccessibilityIdentifier` 保持一致。
         static let errorContent = "lumi.message.error.content"
         /// 与 `ErrorRetryUITestingSupport.retryMarkerContent` 保持一致。
-        /// 点击重试后新回合启动时由夹具插入，作为「重试真的生效」的确定性证据。
+        /// 点击重试后新回合启动时由夹具插入，作为「新回合真的启动了」的确定性证据。
         static let retryMarker = "UI Testing Retry Accepted"
+    }
+
+    /// 重试成功后桩产出的固定回复正文。
+    ///
+    /// 与 `PluginLLMProviderUITest` 的 `UITestFixtures.textResponse` 对应。
+    /// 该常量是 UI 测试进程外定义的，所以此处以字面量书写；
+    /// 改动桩文案时这个断言会失败，属于预期的显式耦合。
+    private enum StubReply {
+        static let text = "UI Testing Reply"
     }
 
     override func setUpWithError() throws {
@@ -39,6 +60,8 @@ final class LumiErrorRetryTurnUITests: XCTestCase {
             "-AppleLocale", "en_US",
             // 植入确定性失败回合，见 ErrorRetryUITestingSupport。
             "--lumi-ui-testing-error-retry",
+            // 注册并强制选中确定性桩供应商，让重试后的回合结局可断言。
+            "--lumi-ui-testing",
             // 隔离数据根目录，避免测试会话污染用户真实数据库。
             "--lumi-ui-testing-isolated-storage",
         ]
@@ -84,16 +107,20 @@ final class LumiErrorRetryTurnUITests: XCTestCase {
     }
 
     /// 核心用例：失败回合的错误消息 header 上必须出现「重试」按钮，
-    /// 且点击后必须真实重新发起回合。
+    /// 且点击后必须真实重新发起回合并产出确定性回复。
     ///
-    /// 关键断言是「夹具插入的重试标记消息出现」，而不是「按钮消失」或
-    /// 「错误行增加」。重试确实会重跑一个真实回合（AgentLoop 走生产路径），
-    /// 但那一回合的结局取决于机器上是否配置了可用的 LLM —— 可能成功、
-    /// 可能再次失败、可能产生多条消息，界面层面的结果并不唯一。
-    /// 而「新回合确实启动了」由夹具监听 `.started` 事件确定性地记录下来。
+    /// 三个断言层层递进：
+    /// 1. 按钮出现；
+    /// 2. 夹具标记消息出现 —— 新回合确实启动了（由 `.started` 事件驱动，与回合结局无关）；
+    /// 3. 桩回复出现 —— 新回合不仅启动，而且**成功跑完**并把结果渲染到了界面上。
+    ///
+    /// 第 3 条是引入 `--lumi-ui-testing`（确定性供应商）后才写得出来的断言。
+    /// 在此之前，重试会走真实 LLM，结局可能是成功 / 再次失败 / 产生多条消息，
+    /// 界面层面的结果并不唯一，测试只能停在第 2 条。现在回复正文固定，
+    /// 因此可以断言「界面确实变成了预期的样子」，而不只是「动作被受理了」。
     ///
     /// 缺陷版本中 `currentTurnID` 为 nil → 按钮点了没反应 → 标记消息不出现，
-    /// 本断言超时失败。
+    /// 本用例超时失败。
     func testRetryTurnButtonAppearsOnFailedTurnAndRetries() throws {
         XCTAssertTrue(
             element(identifier: "root.main").waitForExistence(timeout: 30),
@@ -134,6 +161,20 @@ final class LumiErrorRetryTurnUITests: XCTestCase {
             """
             点击重试后夹具标记消息「\(Identifiers.retryMarker)」未出现，\
             说明 retryTurn 未被真实受理（回合仍停留在原失败状态）
+            """
+        )
+
+        // 关键断言 3：新回合必须跑完并把桩回复渲染出来。
+        //
+        // 这是引入确定性供应商后新增的断言。此前无法写出这一条：重试走真实
+        // LLM，可能再次失败，界面终态不可预期。现在选中的是 `ui-test-text`，
+        // 回合必然成功且回复正文固定，因此「重试后界面出现这段文字」是可断言的。
+        let reply = element(anyLabelOf: [StubReply.text])
+        XCTAssertTrue(
+            reply.waitForExistence(timeout: 40),
+            """
+            重试后的回合未渲染出桩回复「\(StubReply.text)」，\
+            说明回合未跑完或回复未落到消息列表
             """
         )
 
