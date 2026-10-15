@@ -35,11 +35,16 @@
 
 内核不得依赖插件实现；插件之间不得相互依赖。细则见 [内核与插件边界规范](./core-plugin-boundary-rules.md)。
 
+### 5. 依赖升级
+
+改动 `LumiUI` / `LumiProviders` / `LumiLogging` 等**共享依赖**的版本时，主工程 lock 与 `Packages/FactoryLumiACP/Package.resolved` 必须**同时更新**，并跑通 `verify-package-locks.py`。否则 Release workflow 会在编译前直接失败。细则见 [SPM 依赖锁文件同步规范](./spm-package-lock-sync.md)。
+
 ---
 
 ## 相关规范
 
 - [内核与插件边界](./core-plugin-boundary-rules.md)
+- [SPM 依赖锁文件同步](./spm-package-lock-sync.md)
 - [数据存储规范](./plugin-storage-rules.md)
 - [目录结构规范](./plugin-directory-rules.md)
 - [国际化规范](./plugin-i18n-rules.md)
