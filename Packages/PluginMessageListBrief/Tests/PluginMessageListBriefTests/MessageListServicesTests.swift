@@ -32,20 +32,30 @@ struct MessageListServicesTests {
     @Test("tail gate 在 active run 期间重叠的 caller 不会插入任务")
     func overlappingRunnersReturnFalse() async {
         let gate = MessageListTailRefreshGate()
-        let taskStarted = Task<Void, Never> {}
-        defer { taskStarted.cancel() }
-        let runStarted = Task { @MainActor in
-            // 在第一个 run 进行时模拟重叠请求
-            return await gate.run { @MainActor in
-                try? await Task.sleep(nanoseconds: 30_000_000)
-                return true
+        var innerResult: Bool?
+        var operationRuns = 0
+        var didSendInner = false
+
+        // 在第一个 run 的 operation 挂起期间，于其内部发起一次重叠请求 ——
+        // 与真实场景（tail 刷新 I/O 期间又收到消息变更通知）等价。
+        // 只发一次：内层 run 会把 needsTrailingRefresh 置 true，gate 随后
+        // 自动补跑一轮 trailing operation；若每轮都重发内层请求，
+        // trailing 循环将永远重复（活锁）。
+        let outer = await gate.run { @MainActor in
+            operationRuns += 1
+            if !didSendInner {
+                didSendInner = true
+                innerResult = await gate.run { @MainActor in true }
             }
+            return true
         }
-        // 立刻尝试第二个 run，应返回 false（被 gate 收敛）。
-        let second = await gate.run { @MainActor in true }
-        #expect(second == false)
-        let first = await runStarted.value
-        #expect(first)
+
+        #expect(outer, "只有 active run 的持有者可以收到 true")
+        #expect(innerResult == false, "重叠的 caller 必须被 gate 收敛为 false")
+        #expect(
+            operationRuns == 2,
+            "重叠请求应触发恰好一次 trailing 补跑，实际跑了 \(operationRuns) 轮"
+        )
     }
 
     // MARK: - MessageListPaginationService

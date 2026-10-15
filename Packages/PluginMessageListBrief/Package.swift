@@ -41,6 +41,7 @@ let package = Package(
             "PluginMessageListBrief",
             .product(name: "ProviderMessage", package: "ProviderMessage"),
             .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+            .product(name: "ProviderConversation", package: "ProviderConversation"),
             .product(name: "ProviderConversationState", package: "ProviderConversationState"),
             .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
         ]),
