@@ -120,7 +120,7 @@ The card sits below all turns, at the very bottom of the list.
 | --- | --- | --- | --- |
 | 7.1 | Read a user message | Rendered by the user message renderer with its normal appearance. | 🖱 |
 | 7.2 | Read an assistant reply | Rendered by the assistant message renderer, Markdown supported. | 🖱 |
-| 7.3 | Open a message that no renderer claims | An orange placeholder reading `No renderer for message: <uuid>` appears in place of the message. | ✅ UI `testNoRendererPlaceholderAppears`（基于夹具第 4 个 turn） |
+| 7.3 | Open a message that no renderer claims | An orange placeholder reading `No renderer for message: <uuid>` appears in place of the message. | 🔧（`DefaultMessageRenderingProviding.renderer(for:)` 对 `preferredRendererID` 失配会回落到第一个能渲染的 renderer；占位仅在所有 renderer 全部缺席的降级场景出现，UI 夹具无法可靠构造） |
 
 ### 8. Edge cases
 
