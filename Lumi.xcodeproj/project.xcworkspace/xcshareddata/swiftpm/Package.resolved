@@ -132,8 +132,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiPluginBookletMaker.git",
       "state" : {
-        "revision" : "f22ede65695e9430f9bd36ca4ecbc0ca5dc14c0a",
-        "version" : "1.0.1"
+        "revision" : "607f3be0b829a96101a9e5f40c6705574e53ee62",
+        "version" : "1.1.0"
       }
     },
     {
