@@ -96,6 +96,7 @@ import PluginLLMProviderSettings
 import PluginLLMProviderStepFun
 import PluginLLMProviderSublyx
 import PluginLLMProviderTencent
+import PluginLLMProviderUITest
 import PluginLLMProviderXiaomi
 import PluginLLMProviderXybbz
 import PluginLLMProviderZhipu
@@ -368,6 +369,9 @@ public struct DefaultPluginFactory: PluginFactory {
             StepFunProviderPlugin(),
             SublyxProviderPlugin(),
             TencentProviderPlugin(),
+            // UI 测试专用供应商（仅 DEBUG + --lumi-ui-testing 时才真正注册）。
+            // order=900 排在其他供应商之后，使它的强制选中成为最后生效的那次。
+            PluginUITestProvider(),
             XiaomiProviderPlugin(),
             XybbzProviderPlugin(),
             ZhipuProviderPlugin(),

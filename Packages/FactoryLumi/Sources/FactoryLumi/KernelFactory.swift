@@ -81,8 +81,14 @@ public enum KernelFactory {
     ///
     /// - Important: 由**显式开关** `--lumi-ui-testing-isolated-storage` 启用，
     ///   而不是复用 `--lumi-ui-testing`。后者已被既有的 MiniMax 刷新模型 UI 测试
-    ///   使用（依赖真实供应商配置与磁盘 models.json），一旦连带重定向存储，
-    ///   会改变那个测试的既有前提，属于行为回归。
+    ///   与 UI 测试专用 LLM 供应商（`PluginLLMProviderUITest`）使用：
+    ///   前者依赖真实供应商配置与磁盘 models.json，后者依赖它自己的桩网络。
+    ///   一旦连带重定向存储，会改变那些测试的既有前提，属于行为回归。
+    ///
+    /// - Note: **不隔离 UserDefaults**。`CustomLLMManager` 的选中模型持久化在
+    ///   `UserDefaults.standard`，因此 UI 测试会跨启动读写同一个 key：
+    ///   `PluginUITestProvider` 注册时强制选中自己的模型（避免回落到用户上次
+    ///   的真实供应商），非测试启动时再主动清除这份残留选中态。
     /// - Note: 每次启动使用独立子目录，保证测试之间不互相污染。
     private static func uiTestingDataRootDirectory() -> URL? {
         #if DEBUG
