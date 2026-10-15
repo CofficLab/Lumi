@@ -79,24 +79,29 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
     }
 
     // MARK: - API Key
+    //
+    // 以下五个方法以 `open` 声明（而非 `public`），理由同 `availableModels`：
+    // 子类需要覆盖它们才能保证动态派发到覆盖实现。典型场景是 UI 测试专用
+    // 供应商——它必须在**完全不碰 Keychain** 的前提下返回一个固定假 Key，
+    // 否则 UI 测试会因 Keychain 授权弹窗而阻塞，或因未配置 Key 而稳定失败。
 
-    public func hasApiKey() -> Bool {
+    open func hasApiKey() -> Bool {
         VendorAPIKeyTools.has(storageKey: providerInfo.apiKeyStorageKey)
     }
 
-    public func getApiKey() -> String {
+    open func getApiKey() -> String {
         VendorAPIKeyTools.get(storageKey: providerInfo.apiKeyStorageKey)
     }
 
-    public func setApiKey(_ apiKey: String) {
+    open func setApiKey(_ apiKey: String) {
         VendorAPIKeyTools.set(apiKey, storageKey: providerInfo.apiKeyStorageKey)
     }
 
-    public func removeApiKey() {
+    open func removeApiKey() {
         VendorAPIKeyTools.remove(storageKey: providerInfo.apiKeyStorageKey)
     }
 
-    public func resolveAPIKey() throws -> String {
+    open func resolveAPIKey() throws -> String {
         try VendorAPIKeyTools.resolve(
             storageKey: providerInfo.apiKeyStorageKey,
             displayName: providerInfo.displayName
