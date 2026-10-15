@@ -222,8 +222,12 @@ struct UITestProviderPluginTests {
         #expect(plugin.order == 900)
         #expect(plugin.metadata.category == .llm)
         #expect(plugin.metadata.stage == .experimental)
-        // 默认停用：只能由启动参数驱动，避免有人手工启用一个永远返回假数据的供应商。
-        #expect(plugin.metadata.policy == .disabled)
+        // 必须不是 `.disabled`：内核会无条件剔除 `policy == .disabled` 的插件，
+        // 它们根本不进入 boot 流程，`onBoot` 的启动参数 gate 将永不执行
+        // （见 `KernelCore+Plugin.swift` 的 `activePlugins` 过滤）。
+        // 真正承担 gate 职责的是 `onBoot` 开头的 `PluginUITestProvider.isEnabled`。
+        #expect(plugin.metadata.policy == .alwaysOn)
+        #expect(plugin.metadata.policy != .disabled)
     }
 
     @Test("非 UI 测试启动时不注册供应商")

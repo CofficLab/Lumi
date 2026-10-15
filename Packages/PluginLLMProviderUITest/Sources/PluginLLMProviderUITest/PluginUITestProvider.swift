@@ -56,9 +56,18 @@ public final class PluginUITestProvider: SuperPlugin, SuperLog {
         description: "Deterministic LLM provider for UI tests (DEBUG only)",
         category: .llm,
         stage: .experimental,
-        // `.disabled`：默认不启动，用户无法在设置里启用它。
-        // 它只应由启动参数驱动，避免有人手工打开一个永远返回假数据的供应商。
-        policy: .disabled
+        // `.alwaysOn`，而不是 `.disabled`。
+        //
+        // - Important: 内核在启动时会**无条件**剔除 `policy == .disabled` 的插件
+        //   （见 `KernelCore+Plugin.swift` 的 `activePlugins` 过滤），这类插件
+        //   根本不进入 boot 流程，`onBoot` 里的 `--lumi-ui-testing` 判断因此
+        //   永远不会执行——表现为所有 `--lumi-ui-testing` 的 UI 测试都拿不到
+        //   本供应商（模型选择器里没有 UI Test）。
+        // - 这里真正承担 gate 职责的是 `onBoot` 开头的 `Self.isEnabled` 判断：
+        //   只有以 `--lumi-ui-testing` 启动时才注册供应商，否则直接 return。
+        //   叠加类体的 `#if DEBUG`，Release 构建中本插件不存在。
+        // - 因此 `.alwaysOn` 不会让假供应商泄漏到日常运行或发布包。
+        policy: .alwaysOn
     )
 
     public init() {}
