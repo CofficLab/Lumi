@@ -46,7 +46,7 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
         let scenario = Self.scenario(in: body)
         // 非流式路径由 `parseResponse` 解析，期望的是普通 JSON completion，
         // 不是 SSE。因此这里把 SSE 事件折叠成等价的单条响应，而不是直接返回 SSE 字节。
-        let completion = try Self.completionObject(for: scenario)
+        let completion = try Self.completionObject(for: scenario, alreadyAnswered: Self.hasToolResult(body))
         let data = try Self.json(completion)
         return (Data(data.utf8), Self.makeResponse(for: request, streaming: false))
     }
@@ -58,9 +58,10 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
     ) async throws {
         record(body: body)
         let scenario = Self.scenario(in: body)
+        let alreadyAnswered = Self.hasToolResult(body)
 
         var delivered = 0
-        for event in try Self.sseEvents(for: scenario) {
+        for event in try Self.sseEvents(for: scenario, alreadyAnswered: alreadyAnswered) {
             if scenario == .slow {
                 try await Task.sleep(nanoseconds: UInt64(UITestFixtures.slowChunkDelay * 1_000_000_000))
             }
@@ -87,6 +88,24 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
         return scenario
     }
 
+    /// 请求体里是否已包含工具结果（`role=tool` 消息）。
+    ///
+    /// 这是 ask_user 两段式响应的判据：用户回答后，AgentLoop 会补一条
+    /// `role=tool` 消息再发起第二轮请求（见 `AgentLoopManager.resumeTurn`
+    /// 中的 `insertToolResultMessage`）。因此「有没有 tool 消息」精确等价于
+    /// 「用户是否已经回答了这次提问」——不需要桩自己维护任何跨请求状态。
+    ///
+    /// - Note: 不能只看请求次数。真实 App 里同一会话可能先跑别的回合
+    ///   （用户手动发消息），用请求序号判定会把无关请求误判成第二轮。
+    ///   读请求体是唯一无状态的可靠信号。
+    private static func hasToolResult(_ body: Data) -> Bool {
+        guard let object = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
+              let messages = object["messages"] as? [Any] else {
+            return false
+        }
+        return messages.contains { ($0 as? [String: Any])?["role"] as? String == "tool" }
+    }
+
     private func record(body: Data) {
         lock.lock(); defer { lock.unlock() }
         _lastRequestBody = body
@@ -106,7 +125,10 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
     /// 与 `sseEvents` 保持同一份语义来源（同一组 fixture 常量），
     /// 因此流式与非流式路径产出的正文一定一致——`UITestProviderTests` 里
     /// 有一条测试专门锁住这个等价性。
-    private static func completionObject(for scenario: UITestScenario) throws -> [String: Any] {
+    private static func completionObject(
+        for scenario: UITestScenario,
+        alreadyAnswered: Bool
+    ) throws -> [String: Any] {
         if scenario == .error {
             // 非流式路径的错误形态：OpenAICompatibleResponse 的错误解码分支。
             return ["error": ["message": UITestFixtures.errorMessage, "type": "ui_test_error"]]
@@ -134,6 +156,20 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
             content = UITestFixtures.textResponse
         case .error:
             content = ""
+        case .askUserYesNo, .askUserChoice, .askUserFreeText:
+            if alreadyAnswered {
+                content = UITestFixtures.askUserFollowUpResponse
+            } else {
+                content = ""
+                toolCalls = [[
+                    "id": UITestFixtures.askUserToolCallID,
+                    "type": "function",
+                    "function": [
+                        "name": UITestFixtures.askUserToolName,
+                        "arguments": scenario.askUserArguments ?? "{}",
+                    ],
+                ]]
+            }
         }
 
         var message: [String: Any] = ["role": "assistant", "content": content]
@@ -141,7 +177,7 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
             message["tool_calls"] = toolCalls
         }
 
-        let usageValues: [String: Int] = scenario == .tool
+        let usageValues: [String: Int] = (scenario == .tool || (scenario.isAskUser && !alreadyAnswered))
             ? ["prompt_tokens": 30, "completion_tokens": 10, "total_tokens": 40]
             : ["prompt_tokens": 12, "completion_tokens": 6, "total_tokens": 18]
 
@@ -153,7 +189,7 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
             "choices": [[
                 "index": 0,
                 "message": message,
-                "finish_reason": scenario == .tool ? "tool_calls" : "stop",
+                "finish_reason": toolCalls == nil ? "stop" : "tool_calls",
             ]],
             "usage": usageValues,
         ]
@@ -165,7 +201,13 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
     ///
     /// 每个元素是一个完整事件块（含 `data: ` 前缀与结尾空行），
     /// 与 `OpenAICompatibleProviderAdapter.extractSSEData` 期望的输入一致。
-    static func sseEvents(for scenario: UITestScenario) throws -> [String] {
+    ///
+    /// - Parameter alreadyAnswered: 请求体里是否已有 `role=tool` 消息。
+    ///   仅对 ask_user 场景有意义——它决定这一轮该「发问」还是「收尾」。
+    static func sseEvents(
+        for scenario: UITestScenario,
+        alreadyAnswered: Bool = false
+    ) throws -> [String] {
         switch scenario {
         case .text, .slow, .unknown:
             return try textEvents(model: scenario.rawValue)
@@ -175,7 +217,58 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
             return [try errorEvent(model: scenario.rawValue)]
         case .long:
             return try longEvents(model: scenario.rawValue)
+        case .askUserYesNo, .askUserChoice, .askUserFreeText:
+            return try askUserEvents(for: scenario, alreadyAnswered: alreadyAnswered)
         }
+    }
+
+    /// ask_user 场景的两段式响应。
+    ///
+    /// - 未回答：`ask_user` 工具调用 → AgentLoop 挂起回合 → 界面出现问题卡片。
+    /// - 已回答：普通文本 → 回合完成。
+    ///
+    /// 工具名与参数分片下发，复用与 `.tool` 相同的 arguments 累加路径，
+    /// 因此 UI 测试也顺带覆盖了「ask_user 的参数被拆片传输」这一形态。
+    private static func askUserEvents(
+        for scenario: UITestScenario,
+        alreadyAnswered: Bool
+    ) throws -> [String] {
+        let model = scenario.rawValue
+
+        guard !alreadyAnswered else {
+            return [
+                try sse(delta: ["content": UITestFixtures.askUserFollowUpResponse], model: model),
+                try sse(usage: usage(prompt: 30, completion: 10), model: model),
+                doneEvent(),
+            ]
+        }
+
+        let arguments = scenario.askUserArguments ?? "{}"
+        let split = arguments.index(
+            arguments.startIndex,
+            offsetBy: min(12, arguments.count)
+        )
+        let head = String(arguments[arguments.startIndex..<split])
+        let tail = String(arguments[split...])
+
+        return [
+            try sse(delta: ["tool_calls": [[
+                "index": 0,
+                "id": UITestFixtures.askUserToolCallID,
+                "type": "function",
+                "function": [
+                    "name": UITestFixtures.askUserToolName,
+                    "arguments": head,
+                ],
+            ]]], model: model),
+            try sse(delta: ["tool_calls": [[
+                "index": 0,
+                "function": ["arguments": tail],
+            ]]], model: model),
+            try sse(delta: [:], model: model, finishReason: "tool_calls"),
+            try sse(usage: usage(prompt: 30, completion: 10), model: model),
+            doneEvent(),
+        ]
     }
 
     /// 文本场景：分段正文 + usage-only + `[DONE]`。
