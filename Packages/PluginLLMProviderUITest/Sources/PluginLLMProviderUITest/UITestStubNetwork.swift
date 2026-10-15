@@ -1,0 +1,313 @@
+import Foundation
+import KitLLM
+
+/// UI 测试专用供应商的桩网络。
+///
+/// ## 为什么桩在传输层而不是供应商层
+///
+/// 本桩只替换 `LLMNetworkProviding`（最底层的字节传输），**不** override
+/// `complete(_:)` / `streamComplete(_:onChunk:)`。因此一次「模型回复」仍然会走完：
+///
+/// 1. `OpenAICompatibleProviderAdapter.buildStreamingRequestBody` —— 真实请求序列化
+/// 2. `VendorAPIService.sendStreamingChatRequest` —— 真实事件分发与重试判定
+/// 3. `OpenAICompatibleProviderAdapter.parseStreamChunk` —— 真实 SSE 解析
+/// 4. `StreamingAccumulator` —— 真实增量累积与终止判定
+///
+/// 只有最后一步「字节从哪来」是假的。相比直接返回 `LLMResponse` 的做法，
+/// 这层适配器代码是被真实覆盖到的——适配器本身有 bug 时，测试会失败而不是被绕过。
+///
+/// ## 请求体即契约
+///
+/// 桩从**真实序列化后的请求体**里读 `model` 字段来决定场景。这一点是有意的：
+/// 若适配器把请求体序列化错了，桩会落到 `.unknown` 场景并产出可辨识的输出，
+/// 测试因此能区分「桩坏了」和「适配器坏了」，而不是两者一起静默通过。
+final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendable {
+
+    private let lock = NSLock()
+    private var _lastRequestBody: Data?
+    private var _sentEventCount = 0
+
+    /// 桩收到的最后一次请求体，供单测断言请求确实经过真实序列化。
+    var lastRequestBody: Data? {
+        lock.lock(); defer { lock.unlock() }
+        return _lastRequestBody
+    }
+
+    /// 最近一次流式响应实际投递的事件数（受 `onEvent` 提前返回影响会小于产出数）。
+    var sentEventCount: Int {
+        lock.lock(); defer { lock.unlock() }
+        return _sentEventCount
+    }
+
+    // MARK: - LLMNetworkProviding
+
+    func send(request: URLRequest, body: Data) async throws -> (Data, URLResponse) {
+        record(body: body)
+        let scenario = Self.scenario(in: body)
+        // 非流式路径由 `parseResponse` 解析，期望的是普通 JSON completion，
+        // 不是 SSE。因此这里把 SSE 事件折叠成等价的单条响应，而不是直接返回 SSE 字节。
+        let completion = try Self.completionObject(for: scenario)
+        let data = try Self.json(completion)
+        return (Data(data.utf8), Self.makeResponse(for: request, streaming: false))
+    }
+
+    func stream(
+        request: URLRequest,
+        body: Data,
+        onEvent: @Sendable @escaping (Data) async -> Bool
+    ) async throws {
+        record(body: body)
+        let scenario = Self.scenario(in: body)
+
+        var delivered = 0
+        for event in try Self.sseEvents(for: scenario) {
+            if scenario == .slow {
+                try await Task.sleep(nanoseconds: UInt64(UITestFixtures.slowChunkDelay * 1_000_000_000))
+            }
+            guard await onEvent(Data(Self.encode([event]).utf8)) else { break }
+            delivered += 1
+        }
+        // - Important: 必须用 `withLock` 作用域式加锁。`NSLock.lock()` 在 async
+        //   上下文中被 Swift 6 明确禁用（存在 await 间隙时锁可能被跨任务释放）。
+        lock.withLock {
+            _sentEventCount = delivered
+        }
+    }
+
+    // MARK: - 请求解析
+
+    private static func scenario(in body: Data) -> UITestScenario {
+        guard
+            let object = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
+            let model = object["model"] as? String,
+            let scenario = UITestScenario(rawValue: model)
+        else {
+            return .unknown
+        }
+        return scenario
+    }
+
+    private func record(body: Data) {
+        lock.lock(); defer { lock.unlock() }
+        _lastRequestBody = body
+    }
+
+    private static func makeResponse(for request: URLRequest, streaming: Bool) -> HTTPURLResponse {
+        HTTPURLResponse(
+            url: request.url ?? URL(string: "https://ui-test.invalid/v1/chat/completions")!,
+            statusCode: 200,
+            httpVersion: "HTTP/1.1",
+            headerFields: ["Content-Type": streaming ? "text/event-stream" : "application/json"]
+        )!
+    }
+
+    /// 非流式响应体：把 SSE 序列折叠成单条 OpenAI completion。
+    ///
+    /// 与 `sseEvents` 保持同一份语义来源（同一组 fixture 常量），
+    /// 因此流式与非流式路径产出的正文一定一致——`UITestProviderTests` 里
+    /// 有一条测试专门锁住这个等价性。
+    private static func completionObject(for scenario: UITestScenario) throws -> [String: Any] {
+        if scenario == .error {
+            // 非流式路径的错误形态：OpenAICompatibleResponse 的错误解码分支。
+            return ["error": ["message": UITestFixtures.errorMessage, "type": "ui_test_error"]]
+        }
+
+        let content: String
+        var toolCalls: [[String: Any]]?
+
+        switch scenario {
+        case .tool:
+            content = ""
+            toolCalls = [[
+                "id": "call_ui_test_0001",
+                "type": "function",
+                "function": [
+                    "name": UITestFixtures.toolName,
+                    "arguments": UITestFixtures.toolArguments,
+                ],
+            ]]
+        case .long:
+            content = (1...UITestFixtures.longParagraphCount)
+                .map { "段落 \($0)。" }
+                .joined()
+        case .text, .slow, .unknown:
+            content = UITestFixtures.textResponse
+        case .error:
+            content = ""
+        }
+
+        var message: [String: Any] = ["role": "assistant", "content": content]
+        if let toolCalls {
+            message["tool_calls"] = toolCalls
+        }
+
+        let usageValues: [String: Int] = scenario == .tool
+            ? ["prompt_tokens": 30, "completion_tokens": 10, "total_tokens": 40]
+            : ["prompt_tokens": 12, "completion_tokens": 6, "total_tokens": 18]
+
+        return [
+            "id": "chatcmpl-ui-test",
+            "object": "chat.completion",
+            "created": 1_788_000_000,
+            "model": scenario.rawValue,
+            "choices": [[
+                "index": 0,
+                "message": message,
+                "finish_reason": scenario == .tool ? "tool_calls" : "stop",
+            ]],
+            "usage": usageValues,
+        ]
+    }
+
+    // MARK: - SSE 构造（可被单测直接断言）
+
+    /// 按场景产出 OpenAI SSE 事件块。
+    ///
+    /// 每个元素是一个完整事件块（含 `data: ` 前缀与结尾空行），
+    /// 与 `OpenAICompatibleProviderAdapter.extractSSEData` 期望的输入一致。
+    static func sseEvents(for scenario: UITestScenario) throws -> [String] {
+        switch scenario {
+        case .text, .slow, .unknown:
+            return try textEvents(model: scenario.rawValue)
+        case .tool:
+            return try toolEvents(model: scenario.rawValue)
+        case .error:
+            return [try errorEvent(model: scenario.rawValue)]
+        case .long:
+            return try longEvents(model: scenario.rawValue)
+        }
+    }
+
+    /// 文本场景：分段正文 + usage-only + `[DONE]`。
+    private static func textEvents(model: String) throws -> [String] {
+        var events: [String] = []
+        for piece in UITestFixtures.textChunks where !piece.isEmpty {
+            events.append(try sse(delta: ["content": piece], model: model))
+        }
+        events.append(try sse(usage: usage(prompt: 12, completion: 6), model: model))
+        events.append(doneEvent())
+        return events
+    }
+
+    /// 长文本场景：多段正文，用于撑开消息列表。
+    private static func longEvents(model: String) throws -> [String] {
+        var events: [String] = []
+        for index in 1...UITestFixtures.longParagraphCount {
+            events.append(try sse(delta: ["content": "段落 \(index)。"], model: model))
+        }
+        events.append(try sse(usage: usage(prompt: 20, completion: 400), model: model))
+        events.append(doneEvent())
+        return events
+    }
+
+    /// 工具场景：按 OpenAI 分片协议发两次 tool_call delta，最后 `finish_reason`。
+    ///
+    /// 第一个 delta 带 `id` + `name` + arguments 首段；第二个只带 arguments 余段。
+    /// 这正是 `parseToolCallDelta` → `StreamingAccumulator.upsertToolCall` 的
+    /// arguments 累加路径，能覆盖到 arguments 被分片拼接的逻辑。
+    private static func toolEvents(model: String) throws -> [String] {
+        let id = "call_ui_test_0001"
+        let arguments = UITestFixtures.toolArguments
+        let split = arguments.index(
+            arguments.startIndex,
+            offsetBy: min(8, arguments.count)
+        )
+        let head = String(arguments[arguments.startIndex..<split])
+        let tail = String(arguments[split...])
+
+        return [
+            try sse(delta: ["tool_calls": [[
+                "index": 0,
+                "id": id,
+                "type": "function",
+                "function": [
+                    "name": UITestFixtures.toolName,
+                    "arguments": head,
+                ],
+            ]]], model: model),
+            try sse(delta: ["tool_calls": [[
+                "index": 0,
+                "function": ["arguments": tail],
+            ]]], model: model),
+            try sse(delta: [:], model: model, finishReason: "tool_calls"),
+            try sse(usage: usage(prompt: 30, completion: 10), model: model),
+            doneEvent(),
+        ]
+    }
+
+    /// 错误场景：单个携带 `error` 的事件。
+    ///
+    /// 走 SSE 内的 `{"error":{"message":...}}` 形态而非 HTTP 500，
+    /// 这样 `VendorAPIService` 的重试策略（对 5xx 会重试）不会介入，
+    /// 错误立即到达 AgentLoop —— 与真实供应商「请求被接受但回复失败」的情形一致。
+    private static func errorEvent(model: String) throws -> String {
+        let payload: [String: Any] = [
+            "error": [
+                "message": UITestFixtures.errorMessage,
+                "type": "ui_test_error",
+            ],
+        ]
+        return event(try json(payload))
+    }
+
+    // MARK: - SSE 基元
+
+    /// 构造一个带 delta 的 `data: {json}` 事件块。
+    private static func sse(
+        delta: [String: Any],
+        model: String,
+        finishReason: String? = nil
+    ) throws -> String {
+        var choice: [String: Any] = ["index": 0, "delta": delta]
+        choice["finish_reason"] = finishReason ?? NSNull()
+        let payload: [String: Any] = [
+            "id": "chatcmpl-ui-test",
+            "object": "chat.completion.chunk",
+            "created": 1_788_000_000,
+            "model": model,
+            "choices": [choice],
+        ]
+        return event(try json(payload))
+    }
+
+    /// usage-only 事件：适配器会把它解析成纯 token 统计 chunk。
+    private static func sse(usage: [String: Any], model: String) throws -> String {
+        let payload: [String: Any] = [
+            "id": "chatcmpl-ui-test",
+            "object": "chat.completion.chunk",
+            "created": 1_788_000_000,
+            "model": model,
+            "choices": [],
+            "usage": usage,
+        ]
+        return event(try json(payload))
+    }
+
+    private static func usage(prompt: Int, completion: Int) -> [String: Any] {
+        [
+            "prompt_tokens": prompt,
+            "completion_tokens": completion,
+            "total_tokens": prompt + completion,
+        ]
+    }
+
+    private static func doneEvent() -> String {
+        "data: [DONE]\n\n"
+    }
+
+    private static func event(_ json: String) -> String {
+        "data: \(json)\n\n"
+    }
+
+    private static func encode(_ events: [String]) -> String {
+        events.joined()
+    }
+
+    private static func json(_ object: [String: Any]) throws -> String {
+        let data = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+        guard let text = String(data: data, encoding: .utf8) else {
+            throw VendorAPIError.requestFailed("UI 测试桩无法编码 JSON")
+        }
+        return text
+    }
+}
