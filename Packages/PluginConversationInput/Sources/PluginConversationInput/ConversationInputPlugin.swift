@@ -86,6 +86,13 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
         } else {
             sendActionBarViewModel = nil
         }
+        // 发送按钮只经 `ActionBarInputObserver`（addTextObserver）获知文本变化，
+        // 而该通知只覆盖逐键输入。把「直接写入」也接到按钮上，否则粘贴、
+        // 语音输入与 UI 测试的 typeText 会让按钮停在 disabled。
+        let actionBar = sendActionBarViewModel
+        inputViewModel.onTextWritten = { [weak actionBar] text in
+            actionBar?.updateInputText(text)
+        }
         missingActionBarProviders = missingProviders
         let actionBarViewModel = sendActionBarViewModel
         let actionBarMissingProviders = missingActionBarProviders

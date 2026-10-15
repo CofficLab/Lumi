@@ -36,6 +36,14 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
 
     private let capability: any ConversationInputCapability
 
+    /// 文本写入后的旁路回调，供派生的发送按钮同步状态。
+    ///
+    /// 发送按钮由独立的 `SendActionBarViewModel` 驱动，它只经
+    /// `ActionBarInputObserver`（`addTextObserver`）获知文本变化，而该通知只覆盖
+    /// 逐键输入。用这个回调把「直接写入」也通知到按钮，避免输入框有内容而按钮
+    /// 停在 `disabled`。默认 nil，单测无需装配。
+    var onTextWritten: ((String) -> Void)?
+
     init(capability: any ConversationInputCapability) {
         self.capability = capability
         refresh()
@@ -43,6 +51,13 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
 
     var hasAttachments: Bool {
         !imageAttachments.isEmpty || !fileAttachments.isEmpty
+    }
+
+    /// 能否发送：内容非空白，或存在待发送附件。
+    ///
+    /// 抽成单一判定，避免「`refresh()` 与 `setText()` 各自算一遍」后规则漂移。
+    private static func canSend(text: String, hasAttachments: Bool) -> Bool {
+        hasAttachments || !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     // MARK: - Observer 入口（外部事件 → VM）
@@ -56,7 +71,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         errorMessage = capability.errorMessage
         imageAttachments = capability.pendingImageAttachments
         fileAttachments = capability.pendingFileAttachments
-        canSend = hasAttachments || !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        canSend = Self.canSend(text: text, hasAttachments: hasAttachments)
         revision &+= 1
     }
 
@@ -90,8 +105,24 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
 
     // MARK: - 输入绑定（写 Provider，由 Observer 回读）
 
+    /// 写入输入框文本，并**同步**重算 `canSend`。
+    ///
+    /// - Important: 不能只写 `capability.text` 然后等 Observer 回读。`canSend`
+    ///   只在 `refresh()` 里重算，而 `refresh()` 由 `ConversationInputObserver`
+    ///   驱动。任何不经过逐键文本变更通知的写入路径（粘贴、语音输入、
+    ///   拖入、以及 UI 测试的一次性 `typeText`）都会让 `canSend` 停留在旧值，
+    ///   表现为「输入框里有字，但发送按钮一直是灰的」。
+    ///
+    ///   这里同步重算是刻意的冗余：Observer 随后会再算一次，结论相同、幂等
+    ///   无副作用；换来的是按钮状态不再依赖异步通知的时序。
     func setText(_ value: String) {
         capability.text = value
+        // 本地同步 `text` 与 `canSend`，避免界面滞后于用户输入一拍。
+        text = value
+        canSend = Self.canSend(text: value, hasAttachments: hasAttachments)
+        // 派生的发送按钮只经 addTextObserver 获知变化（见 onTextWritten 注释），
+        // 直接写入的路径必须显式通知，否则按钮停在 disabled。
+        onTextWritten?(value)
     }
 
     func setInputHeight(_ value: CGFloat) {
