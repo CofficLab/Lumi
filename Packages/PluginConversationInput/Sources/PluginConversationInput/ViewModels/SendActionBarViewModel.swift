@@ -38,6 +38,11 @@ final class SendActionBarViewModel: SuperLog {
             text: text,
             hasAttachments: !capability.pendingImageAttachments.isEmpty || !capability.pendingFileAttachments.isEmpty
         )
+        // - Important: 必须把文本写回能力层。`send()` 直接读 `capability.text`
+        //   而不是 `state` 里的副本；若这里只更新 `canSend` 判定，调用方
+        //   （直接写入路径，如粘贴、UI 测试的 typeText）点发送时会因为
+        //   `capability.text` 仍为空而静默 return——按钮亮着、点了没反应。
+        capability.text = text
     }
 
     func updateAttachments() {
