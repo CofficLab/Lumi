@@ -81,6 +81,30 @@ struct PluginLLMManagerTests {
         #expect(response.content == "echo:ping")
     }
 
+    /// 远程模型列表刷新后必须广播 `.modelsRefreshed`。
+    ///
+    /// 回归：`CustomLLMManager` 曾漏实现 `notifyModelsRefreshed`，调用落到
+    /// `LLMManaging` 协议扩展的空实现，模型选择器收不到事件，刷新后界面
+    /// 仍显示旧的静态模型数（MiniMax 刷新落盘 9 个、界面停在 6 个）。
+    @Test("CustomLLMManager 广播 modelsRefreshed 事件")
+    func customManagerBroadcastsModelsRefreshed() throws {
+        let manager = CustomLLMManager()
+        let provider = EchoProvider(id: "minimax-tokenplan", model: "MiniMax-M2.7")
+        try manager.register(provider)
+
+        var refreshedProviderIDs: [String] = []
+        let handle = manager.addObserver { event in
+            if case let .modelsRefreshed(providerID) = event {
+                refreshedProviderIDs.append(providerID)
+            }
+        }
+        defer { handle.cancel() }
+
+        manager.notifyModelsRefreshed(providerID: provider.providerID)
+
+        #expect(refreshedProviderIDs == ["minimax-tokenplan"])
+    }
+
     @Test("CustomLLMManager 按全局模型 ID 解析重复模型名")
     func customManagerRoutesByGlobalModelID() async throws {
         let manager = CustomLLMManager()

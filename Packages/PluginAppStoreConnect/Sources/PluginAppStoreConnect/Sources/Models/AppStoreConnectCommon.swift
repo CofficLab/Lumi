@@ -90,10 +90,17 @@ struct AppStoreImageAsset: Decodable {
 
 struct AppStoreConnectErrorResponse: Decodable {
     struct APIError: Decodable {
+        struct APIErrorMeta: Decodable {
+            /// 409 STATE_ERROR 类错误携带的关联资源错误明细，
+            /// 例如提交审核时缺失的审核联系人字段、不可提交的构建类型等。
+            let associatedErrors: [String: [APIError]]?
+        }
+
         let status: String?
         let code: String?
         let title: String?
         let detail: String?
+        let meta: APIErrorMeta?
     }
 
     let errors: [APIError]

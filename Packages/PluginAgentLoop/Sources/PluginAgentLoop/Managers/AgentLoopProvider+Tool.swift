@@ -465,7 +465,11 @@ extension AgentLoopManager {
     enum LLMRequestResult {
         case success(LLMResponse, assistantMessageID: UUID)
         /// 保留原始错误，避免在落库前丢失专用 renderer 所需的元数据。
-        case failure(error: Error, recoverable: Bool)
+        ///
+        /// `reasoningContent` 承载本次请求已经流式收到的思考内容：判空失败时
+        /// `streaming.end()` 会丢弃临时行，若不外带思考内容就会彻底丢失。错误
+        /// 消息落库后由 `MessageViewChrome` 直接渲染思考入口。
+        case failure(error: Error, recoverable: Bool, reasoningContent: String?)
         case cancelled
     }
 
@@ -578,7 +582,7 @@ extension AgentLoopManager {
         guard let streamingManager = llmManager as? any LLMStreamingProviding else {
             streaming.end(conversationID: conversationID)
             let error = AgentLoopError.unsupportedStreaming
-            return .failure(error: error, recoverable: false)
+            return .failure(error: error, recoverable: false, reasoningContent: nil)
         }
 
         let timingRecorder = LLMStreamTimingRecorder()
@@ -617,6 +621,21 @@ extension AgentLoopManager {
             // 否则坏的 assistant tool call 会进入历史，并在下一轮请求时触发
             // 上游的 HTTP 400。
             try response.validateToolCallArguments()
+
+            // 空终态响应（无工具调用且无正文）视为请求失败：不落库空
+            // assistant 消息，走失败链路交给自动重试插件接管时间线与重试，
+            // 与网络错误的处理方式一致。思考内容可能已经流式输出过，随
+            // 错误一起保留到错误消息，避免用户看到内容凭空消失。
+            if response.toolCalls?.isEmpty ?? true,
+               response.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Self.logger.warning("\(Self.t)⚠️ 模型返回空响应，按失败处理 model=\(response.model ?? "unknown")")
+                streaming.end(conversationID: conversationID)
+                return .failure(
+                    error: VendorAPIError.emptyResponse,
+                    recoverable: false,
+                    reasoningContent: response.reasoningContent
+                )
+            }
 
             let timing = timingRecorder.finish()
 
@@ -732,7 +751,7 @@ extension AgentLoopManager {
                     "\(Self.t)LLM request failed recoverable=\(recoverable), conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), error=\(error.localizedDescription)"
                 )
             }
-            return .failure(error: error, recoverable: recoverable)
+            return .failure(error: error, recoverable: recoverable, reasoningContent: nil)
         }
     }
 

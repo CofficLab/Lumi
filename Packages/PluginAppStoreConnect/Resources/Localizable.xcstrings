@@ -726,12 +726,32 @@
         }
       }
     },
+    "Delete an App Store version that is associated with an app, for example a draft that blocks creating a new version." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除应用关联的 App Store 版本，例如挡住新版本创建的草稿版本。"
+          }
+        }
+      }
+    },
     "Delete Screenshot" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "删除截图"
+          }
+        }
+      }
+    },
+    "Delete Version" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除版本"
           }
         }
       }
@@ -842,6 +862,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "立即下载私钥。Apple 只允许下载一次。打开 .p8 文件，将完整内容粘贴到“私钥”字段。"
+          }
+        }
+      }
+    },
+    "Earliest scheduled release date in ISO 8601 format (e.g. 2026-01-01T10:00:00Z). Pass an empty string to clear it." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ISO 8601 格式的最早计划发布时间（如 2026-01-01T10:00:00Z）。传入空字符串可清除。"
           }
         }
       }
@@ -2256,6 +2286,16 @@
         }
       }
     },
+    "The appStoreVersion id to delete (see id field from list-versions)." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要删除的 appStoreVersion ID（参见 list-versions 返回的 id 字段）。"
+          }
+        }
+      }
+    },
     "The build id to assign (see id field from list-builds)." : {
       "localizations" : {
         "zh-Hans" : {
@@ -2346,6 +2386,16 @@
         }
       }
     },
+    "To change the version number, delete the in-flight version with app_store_connect_delete_version, then create a new version." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如需更换版本号，请先用 app_store_connect_delete_version 删除进行中的版本，然后创建新版本。"
+          }
+        }
+      }
+    },
     "tvOS" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2372,6 +2422,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未命名"
+          }
+        }
+      }
+    },
+    "Update editable attributes of an App Store version such as copyright, releaseType, downloadable, or earliestReleaseDate. Only the fields you provide are changed; omitted fields keep their current values." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新 App Store 版本的可编辑属性，如 copyright、releaseType、downloadable 或 earliestReleaseDate。只修改提供的字段，未提供的字段保持当前值。"
           }
         }
       }

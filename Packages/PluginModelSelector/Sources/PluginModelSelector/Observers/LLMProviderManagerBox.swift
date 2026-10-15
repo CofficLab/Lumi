@@ -53,6 +53,13 @@ public final class LLMProviderManagerBox {
     /// providerID -> 模型 id 列表快照。
     public private(set) var modelIDs: [String: [String]] = [:]
 
+    /// providerID -> 模型元数据快照（动态模型池）。
+    ///
+    /// 与 `modelIDs` 同源，但携带 `displayName` / 上下文窗口 / 能力标记。
+    /// 必须取 `dynamicModels(of:)` 而非 `providerInfo.models`：后者是供应商
+    /// 的静态常量，远程刷新新增的模型不会出现在其中。
+    public private(set) var modelInfos: [String: [LLMModelInfo]] = [:]
+
     private var observer: (any LLMManagerObserverHandle)?
     private var conversationObserver: (any ConversationObserverHandle)?
     private var observers: [UUID: (Event) -> Void] = [:]
@@ -130,11 +137,17 @@ public final class LLMProviderManagerBox {
         selectedModel = selection.selectedModel
         selectedModelID = selection.selectedModelID
         providerInfos = manager.allProviders().map { $0.providerInfo }
-        modelIDs = Dictionary(
-            uniqueKeysWithValues: manager.allProviders().map {
-                ($0.providerInfo.id, manager.models(for: $0.providerInfo.id))
-            }
-        )
+        // 两个快照必须来自同一次 `dynamicModels(of:)` 调用，否则 id 与元数据
+        // 可能因刷新竞态错位（出现有 id 无元数据的模型）。
+        var newModelIDs: [String: [String]] = [:]
+        var newModelInfos: [String: [LLMModelInfo]] = [:]
+        for provider in manager.allProviders() {
+            let models = manager.dynamicModels(of: provider)
+            newModelIDs[provider.providerInfo.id] = models.map(\.id)
+            newModelInfos[provider.providerInfo.id] = models
+        }
+        modelIDs = newModelIDs
+        modelInfos = newModelInfos
         observers.values.forEach { $0(.stateChanged) }
     }
 }

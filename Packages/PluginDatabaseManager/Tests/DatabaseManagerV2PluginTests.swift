@@ -32,11 +32,11 @@ struct DatabaseManagerV2PluginTests {
         try kernel.registerProvider((any ExternalFileOpening).self, externalFiles)
         try kernel.registerProvider((any ToolbarProviding).self, DefaultToolbarProviding())
         try kernel.registerProvider((any ToolManagerProviding).self, tools)
-        let editorHost = CodeEditorHostSuperPlugin()
+        let editorHost = CodeEditorHostPlugin()
         try editorHost.onBoot(kernel: kernel)
         let editor = try #require(kernel.resolveProvider(EditorProviding.self))
 
-        let plugin = DatabaseManagerSuperPlugin()
+        let plugin = DatabaseManagerPlugin()
         try plugin.onBoot(kernel: kernel)
 
         let sqlDocument = EditorDocumentSummary(
@@ -62,9 +62,9 @@ struct DatabaseManagerV2PluginTests {
         #expect(tools.tool(named: DatabaseReadonlyQueryV2Tool.toolName) != nil)
         #expect(tools.tool(named: DatabaseSampleTableV2Tool.toolName) != nil)
         #expect(activityBar.activeItemID == "\(plugin.id).entry")
-        #expect(railView.tabs.map(\.id) == [DatabaseManagerSuperPlugin.railTabID])
-        #expect(railView.visibleTabID == DatabaseManagerSuperPlugin.railTabID)
-        #expect(railView.activeTabID == DatabaseManagerSuperPlugin.railTabID)
+        #expect(railView.tabs.map(\.id) == [DatabaseManagerPlugin.railTabID])
+        #expect(railView.visibleTabID == DatabaseManagerPlugin.railTabID)
+        #expect(railView.activeTabID == DatabaseManagerPlugin.railTabID)
         #expect(!chat.isVisible)
         #expect(rootView.isContentHeaderViewHidden)
         try plugin.onShutdown(kernel: kernel)

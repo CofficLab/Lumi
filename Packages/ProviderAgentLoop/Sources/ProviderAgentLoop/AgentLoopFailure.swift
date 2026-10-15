@@ -42,11 +42,14 @@ public struct AgentLoopFailure: Sendable, Equatable, Codable {
     }
 
     /// 是否适合由上层策略自动重试。
+    ///
+    /// `.emptyResponse` 可重试：模型偶发返回空终态响应属于瞬时异常，
+    /// 由自动重试插件带时间线提示重启回合。
     public var isRetryable: Bool {
         switch kind {
-        case .network, .timeout, .rateLimited, .server, .incompleteStream, .decoding:
+        case .network, .timeout, .rateLimited, .server, .incompleteStream, .decoding, .emptyResponse:
             return true
-        case .emptyResponse, .authentication, .configuration, .contextLimit, .request, .unknown:
+        case .authentication, .configuration, .contextLimit, .request, .unknown:
             return false
         }
     }
@@ -121,6 +124,18 @@ public struct AgentLoopFailure: Sendable, Equatable, Codable {
                     modelName: modelName
                 )
             }
+        }
+
+        // 个别 Provider（如 Codex CLI）在空输出时抛 LLMProviderError.emptyResponse；
+        // 统一归类为 emptyResponse，纳入自动重试。
+        if let providerError = error as? LLMProviderError,
+           case .emptyResponse = providerError {
+            return AgentLoopFailure(
+                kind: .emptyResponse,
+                message: message,
+                providerID: providerID,
+                modelName: modelName
+            )
         }
 
         return AgentLoopFailure(

@@ -6,7 +6,7 @@ extension ConnectClient {
             URLQueryItem(name: "limit", value: "100"),
             URLQueryItem(
                 name: "fields[appStoreVersions]",
-                value: "platform,versionString,appStoreState,appVersionState,createdDate"
+                value: "platform,versionString,appStoreState,appVersionState,createdDate,copyright,releaseType,downloadable,earliestReleaseDate"
             )
         ]
         let policy = fetchPolicy
@@ -30,7 +30,7 @@ extension ConnectClient {
         let query = [
             URLQueryItem(
                 name: "fields[appStoreVersions]",
-                value: "platform,versionString,appStoreState,appVersionState,createdDate"
+                value: "platform,versionString,appStoreState,appVersionState,createdDate,copyright,releaseType,downloadable,earliestReleaseDate"
             )
         ]
         Self.logger.info("\(Self.t)readVersion id=\(id)")
@@ -226,5 +226,49 @@ extension ConnectClient {
             ]
         ]
         return try JSONSerialization.data(withJSONObject: payload)
+    }
+
+    /// Update top-level attributes of an App Store version (copyright, releaseType, downloadable, earliestReleaseDate).
+    /// Only non-nil fields are sent; omitted fields keep their current values.
+    /// An empty `earliestReleaseDate` string is sent as JSON null so Apple clears the scheduled date.
+    func updateVersion(
+        id: String,
+        copyright: String? = nil,
+        releaseType: String? = nil,
+        downloadable: Bool? = nil,
+        earliestReleaseDate: String? = nil
+    ) async throws -> AppStoreVersion {
+        var attributes: [String: Any] = [:]
+        if let copyright { attributes["copyright"] = copyright }
+        if let releaseType { attributes["releaseType"] = releaseType }
+        if let downloadable { attributes["downloadable"] = downloadable }
+        if let earliestReleaseDate {
+            attributes["earliestReleaseDate"] = earliestReleaseDate.isEmpty ? NSNull() : earliestReleaseDate
+        }
+
+        let payload: [String: Any] = [
+            "data": [
+                "type": "appStoreVersions",
+                "id": id,
+                "attributes": attributes
+            ]
+        ]
+        let body = try JSONSerialization.data(withJSONObject: payload)
+        Self.logger.info("\(Self.t)updateVersion id=\(id)")
+        let response: AppStoreConnectSingleResponse<AppStoreVersion> = try await request(
+            path: "/v1/appStoreVersions/\(id)",
+            method: "PATCH",
+            body: body
+        )
+        return response.data
+    }
+
+    /// 删除一个 App Store 版本（如挡住新版本创建的草稿版本）。
+    func deleteVersion(id: String) async throws {
+        Self.logger.info("\(Self.t)deleteVersion id=\(id)")
+        try await requestWithoutResponse(
+            path: "/v1/appStoreVersions/\(id)",
+            method: "DELETE"
+        )
     }
 }

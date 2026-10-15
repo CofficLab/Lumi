@@ -95,6 +95,6 @@ extension ConnectClient {
 }
 
 /// relationships 端点在未关联时返回 200 + {"data": null}
-private struct AppStoreConnectOptionalRelationshipResponse: Decodable {
+struct AppStoreConnectOptionalRelationshipResponse: Decodable {
     let data: AppStoreConnectResourceIdentifier?
 }

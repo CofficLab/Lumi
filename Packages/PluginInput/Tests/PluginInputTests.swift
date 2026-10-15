@@ -12,7 +12,7 @@ import ProviderRootView
 
 @MainActor
 @Test func packageLoads() async throws {
-    let plugin = InputSuperPlugin()
+    let plugin = InputPlugin()
 
     #expect(plugin.id == "com.coffic.lumi.plugin.input-manager")
     #expect(plugin.metadata.policy == .disabledByDefault)
@@ -33,7 +33,7 @@ import ProviderRootView
     try kernel.registerProvider((any RailViewProviding).self, railView)
     try kernel.registerProvider((any RootViewProviding).self, rootView)
 
-    let plugin = InputSuperPlugin()
+    let plugin = InputPlugin()
     try plugin.onBoot(kernel: kernel)
 
     #expect(activityBar.activeItemID == "\(plugin.id).entry")
@@ -67,7 +67,7 @@ import ProviderRootView
     try kernel.registerProvider((any RailViewProviding).self, railView)
     try kernel.registerProvider((any RootViewProviding).self, rootView)
 
-    let plugin = InputSuperPlugin()
+    let plugin = InputPlugin()
     try plugin.onBoot(kernel: kernel)
 
     #expect(!chat.isVisible)

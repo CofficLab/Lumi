@@ -3,7 +3,7 @@ import Testing
 
 @MainActor
 @Test func v2PluginMetadataIsStable() {
-    let plugin = PortManagerSuperPlugin()
+    let plugin = PortManagerPlugin()
     #expect(plugin.id == "com.coffic.lumi.plugin.port-manager")
     #expect(plugin.metadata.name == "Port Manager")
     #expect(plugin.metadata.policy == .disabled)

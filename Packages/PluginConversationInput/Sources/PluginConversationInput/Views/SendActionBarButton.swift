@@ -36,11 +36,13 @@ struct SendActionBarButton: View {
         if state.showsSendButton {
             SendButton(canSend: state.canSend, action: { viewModel.send() })
                 .help(pluginLocalization.string("Send"))
+                .accessibilityIdentifier(SendActionBarAccessibility.sendButton)
         }
 
         if state.showsStopButton {
             StopButton(action: { viewModel.cancel() })
                 .help(pluginLocalization.string("Stop"))
+                .accessibilityIdentifier(SendActionBarAccessibility.stopButton)
         }
     }
 
@@ -77,5 +79,6 @@ private struct ErrorButton: View {
         }
         .buttonStyle(.plain)
         .help(pluginLocalization.string("Provider configuration error — click for details"))
+        .accessibilityIdentifier(SendActionBarAccessibility.errorButton)
     }
 }

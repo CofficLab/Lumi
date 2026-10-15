@@ -10,7 +10,7 @@ import ProviderStorage
 
 @MainActor
 @Test func packageLoads() async throws {
-    let plugin = RClickSuperPlugin()
+    let plugin = RClickPlugin()
     #expect(plugin.id == "com.coffic.lumi.plugin.rclick")
     #expect(plugin.metadata.policy == .disabledByDefault)
 }
@@ -29,7 +29,7 @@ import ProviderStorage
 
     activityBar.addItems([ActivityBarItem(id: "chat.entry", title: "Chat", systemImage: "message")])
 
-    let plugin = RClickSuperPlugin()
+    let plugin = RClickPlugin()
     try plugin.onBoot(kernel: kernel)
     activityBar.activateItem(id: "\(plugin.id).entry")
 
@@ -59,7 +59,7 @@ import ProviderStorage
         DefaultStorageProvider(dataRootDirectory: currentRoot)
     )
 
-    let plugin = RClickSuperPlugin()
+    let plugin = RClickPlugin()
     try plugin.onBoot(kernel: kernel)
 
     let pluginDirectory = currentRoot.appendingPathComponent(plugin.id, isDirectory: true)

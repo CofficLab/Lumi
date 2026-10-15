@@ -4,6 +4,7 @@ import ProviderExternalFile
 import ProviderProject
 import ProviderChatSection
 import ProviderConversation
+import ProviderSettingView
 import PluginRootView
 import ProviderStorage
 import SwiftUI
@@ -66,10 +67,40 @@ public enum KernelFactory {
         additionalPlugins: [any SuperPlugin] = []
     ) throws -> KernelCoreContainer {
         try makeKernel(
-            providerFactory: DefaultProviderFactory(),
+            providerFactory: DefaultProviderFactory(dataRootDirectory: uiTestingDataRootDirectory()),
             pluginFactory: DefaultPluginFactory(),
             additionalPlugins: additionalPlugins
         )
+    }
+
+    /// UI 测试专用的隔离数据根目录（仅 DEBUG）。
+    ///
+    /// UI 测试需要造会话、消息等持久化数据。若沿用用户真实目录，测试会污染用户
+    /// 的会话列表（每次运行多出一条「测试会话」），而且测试之间的数据互相污染
+    /// 让断言不可靠。
+    ///
+    /// - Important: 由**显式开关** `--lumi-ui-testing-isolated-storage` 启用，
+    ///   而不是复用 `--lumi-ui-testing`。后者已被既有的 MiniMax 刷新模型 UI 测试
+    ///   与 UI 测试专用 LLM 供应商（`PluginLLMProviderUITest`）使用：
+    ///   前者依赖真实供应商配置与磁盘 models.json，后者依赖它自己的桩网络。
+    ///   一旦连带重定向存储，会改变那些测试的既有前提，属于行为回归。
+    ///
+    /// - Note: **不隔离 UserDefaults**。`CustomLLMManager` 的选中模型持久化在
+    ///   `UserDefaults.standard`，因此 UI 测试会跨启动读写同一个 key：
+    ///   `PluginUITestProvider` 注册时强制选中自己的模型（避免回落到用户上次
+    ///   的真实供应商），非测试启动时再主动清除这份残留选中态。
+    /// - Note: 每次启动使用独立子目录，保证测试之间不互相污染。
+    private static func uiTestingDataRootDirectory() -> URL? {
+        #if DEBUG
+        guard ProcessInfo.processInfo.arguments.contains(
+            "--lumi-ui-testing-isolated-storage"
+        ) else { return nil }
+        return FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiUITestingData", isDirectory: true)
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        #else
+        return nil
+        #endif
     }
 
     /// 异步插件目录的装配入口。
@@ -81,7 +112,7 @@ public enum KernelFactory {
         additionalPlugins: [any SuperPlugin] = []
     ) async throws -> KernelCoreContainer {
         try await makeKernelAsync(
-            providerFactory: DefaultProviderFactory(),
+            providerFactory: DefaultProviderFactory(dataRootDirectory: uiTestingDataRootDirectory()),
             pluginFactory: DefaultPluginFactory(),
             additionalPlugins: additionalPlugins
         )
@@ -96,6 +127,9 @@ public enum KernelFactory {
         // `startAsync` 原子安装真实目录。后续宿主切换为异步启动时无需复制装配图。
         let kernel = KernelCoreContainer()
         try providerFactory.registerProviders(into: kernel)
+        // Provider 就位后回填宿主工厂，使依赖容器的闭包（如 Booklet Maker
+        // 的聊天区显隐）能在插件启动后正常解析。
+        pluginFactory.didRegisterProviders(in: kernel)
         // 将完整插件目录交给 Kernel 注册；Kernel 会对禁用插件跳过 Boot/Ready，
         // 但仍执行 onRegister，以便贡献提示词等目录型能力。
         let plugins = makePlugins(
@@ -107,7 +141,22 @@ public enum KernelFactory {
             try PluginDataMigrationCoordinator(storage: storage).run(for: plugins)
         }
         try await kernel.startAsync(plugins: plugins)
+        resetSettingsSelectionToFirstEntry(in: kernel)
         return kernel
+    }
+
+    /// 设置窗口默认选中 order 最小的入口（回归修复）。
+    ///
+    /// `addEntries` 会走 `registerEntries`，其"选中为空则锁定为当时列表第一个"
+    /// 的语义会让**最先注册入口的插件**（如 Projects）意外成为默认选中，
+    /// 与"默认选中第一个（通用）"的设计意图相悖。全部入口就位后在此重置；
+    /// 本次运行内的用户选择不受影响（选中态在内存中保留，重启后回到第一个）。
+    private static func resetSettingsSelectionToFirstEntry(in kernel: KernelCoreContainer) {
+        guard let settings = kernel.resolveProvider((any SettingViewProviding).self),
+              let firstID = settings.entries.first?.id,
+              settings.selectedEntryID != firstID
+        else { return }
+        settings.selectEntry(id: firstID)
     }
 
     /// 使用宿主提供的 Provider / Plugin 工厂装配内核。
@@ -121,6 +170,9 @@ public enum KernelFactory {
     ) throws -> KernelCoreContainer {
         let kernel = KernelCoreContainer()
         try providerFactory.registerProviders(into: kernel)
+        // Provider 就位后回填宿主工厂，使依赖容器的闭包（如 Booklet Maker
+        // 的聊天区显隐）能在插件启动后正常解析。
+        pluginFactory.didRegisterProviders(in: kernel)
 
         let plugins = makePlugins(
             providerFactory: providerFactory,
@@ -136,6 +188,7 @@ public enum KernelFactory {
         // 将完整插件目录交给 Kernel 注册；Kernel 会对禁用插件跳过 Boot/Ready，
         // 但仍执行 onRegister，以便贡献提示词等目录型能力。
         try kernel.start(plugins: plugins)
+        resetSettingsSelectionToFirstEntry(in: kernel)
 
         // header / toolbar 可见性绑定（复刻旧版 ChatView 语义：无选中会话时
         // 隐藏 header / toolbar，仅保留正文与输入区）。

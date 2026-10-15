@@ -72,8 +72,8 @@ struct FactoryLumiTests {
         let host = try #require(plugins["com.coffic.lumi.plugin.editor-host"])
         let languages = try #require(plugins["com.coffic.lumi.plugin.editor-languages"])
         let workspace = try #require(plugins["com.coffic.lumi.plugin.code-editor"])
-        let preview = try #require(plugins[EditorPreviewSuperPlugin.pluginID])
-        let projectFiles = try #require(plugins[ProjectFilesSuperPlugin.pluginID])
+        let preview = try #require(plugins[EditorPreviewPlugin.pluginID])
+        let projectFiles = try #require(plugins[ProjectFilesPlugin.pluginID])
         let bookletMaker = try #require(plugins["com.coffic.lumi.plugin.booklet-maker"])
         let retry = try #require(plugins["com.coffic.lumi.plugin.agent-loop-retry"])
 
@@ -561,5 +561,33 @@ struct FactoryLumiTests {
 
         #expect(response?.content == "echo:hi")
         #expect(response?.model == "echo-1")
+    }
+
+    /// 设置窗口默认选中规则（回归测试）：
+    /// 全新启动后应选中 order 最小的入口，且入口列表按 order 升序。
+    ///
+    /// 背景：`addEntries` 会走 `registerEntries`，其"选中为空则锁定为当时
+    /// 列表第一个"的语义会让**最先注册入口的插件**（boot order 最小者）
+    /// 意外成为默认选中，与"默认选中第一个"的设计意图相悖。
+    /// Wakey 已修复（宿主在内核启动后重置），本测试验证 Lumi 是否存在同样问题。
+    @Test("设置窗口默认选中 order 最小的入口")
+    func settingsSelectsFirstEntryByOrderOnBoot() throws {
+        let kernel = try KernelFactory.makeKernel()
+        let settings = try #require(kernel.resolveProvider((any SettingViewProviding).self))
+
+        let entries = settings.entries
+        #expect(!entries.isEmpty, "设置入口应在内核启动后完成注册")
+
+        let orders = entries.map(\.order)
+        #expect(orders == orders.sorted(), "entries must be sorted by order ascending")
+
+        let entryList = entries.map { "\($0.id)#\($0.order)" }.joined(separator: ", ")
+        print("LUMI-ENTRIES: \(entryList)")
+        print("LUMI-SELECTED: \(settings.selectedEntryID ?? "nil")")
+
+        #expect(
+            settings.selectedEntryID == entries.first?.id,
+            "默认应选中 \(entries.first?.id ?? "nil")，实际为 \(settings.selectedEntryID ?? "nil")"
+        )
     }
 }

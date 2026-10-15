@@ -43,16 +43,31 @@ public struct ReadAppStoreConnectVersionTool: SuperAgentTool {
         do {
             let version = try await client.readVersion(id: versionID)
             let created = version.createdDate?.description ?? "unknown date"
-            return """
-            App Store version detail:
-            - id=\(version.id)
-            - versionString=\(version.versionString)
-            - platform=\(version.platform)
-            - appStoreState=\(version.appStoreState)
-            - appVersionState=\(version.appVersionState)
-            - created=\(created)
-            Use id as versionID for list-localizations / create-localization.
-            """
+            var lines = [
+                "App Store version detail:",
+                "- id=\(version.id)",
+                "- versionString=\(version.versionString)",
+                "- platform=\(version.platform)",
+                "- appStoreState=\(version.appStoreState)",
+                "- appVersionState=\(version.appVersionState)",
+                "- created=\(created)",
+            ]
+            if let copyright = version.copyright {
+                lines.append("- copyright=\(copyright)")
+            } else {
+                lines.append("- copyright=(not set)")
+            }
+            if let releaseType = version.releaseType {
+                lines.append("- releaseType=\(releaseType)")
+            }
+            if let downloadable = version.downloadable {
+                lines.append("- downloadable=\(downloadable)")
+            }
+            if let earliestReleaseDate = version.earliestReleaseDate {
+                lines.append("- earliestReleaseDate=\(earliestReleaseDate)")
+            }
+            lines.append("Use id as versionID for list-localizations / create-localization.")
+            return lines.joined(separator: "\n")
         } catch {
             return "Failed to read version: \(error.localizedDescription)"
         }

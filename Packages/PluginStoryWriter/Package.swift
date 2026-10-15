@@ -9,13 +9,11 @@ let package = Package(
         .library(name: "PluginStoryWriter", targets: ["StoryWriterPlugin"])
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.9.0"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
-        .package(path: "../ProviderActivityBar"),
-        .package(path: "../ProviderConversationInput"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderToolManager"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1")
@@ -28,10 +26,10 @@ let package = Package(
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
-                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
                 .product(name: "ProviderContentView", package: "LumiProviders"),
-                .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
+                .product(name: "ProviderConversationInput", package: "LumiProviders"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
@@ -40,15 +38,15 @@ let package = Package(
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging")
             ],
-            path: "Sources",
-            resources: [.process("../Resources/Localizable.xcstrings")]
+            path: "Sources/PluginStoryWriter",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "StoryWriterPluginTests",
             dependencies: [
                 .target(name: "StoryWriterPlugin"),
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),

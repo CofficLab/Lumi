@@ -46,6 +46,7 @@ struct ModelListItem: View {
                 }
             }
         }
+        .accessibilityIdentifier("lumi.model-selector.model.\(model)")
     }
 
     // MARK: - Capability Row

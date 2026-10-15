@@ -9,7 +9,7 @@ import ProviderChatSection
 struct PluginBrewManagerTests {
     @Test
     func pluginMetadataIsStable() {
-        let plugin = BrewManagerSuperPlugin()
+        let plugin = BrewManagerPlugin()
         #expect(plugin.id == "com.coffic.lumi.plugin.brew-manager")
         #expect(plugin.metadata.name == pluginLocalization.string("Package Management"))
         #expect(plugin.order == 260)
@@ -18,7 +18,7 @@ struct PluginBrewManagerTests {
 
     @Test
     func v2IdentifiersRemainStable() {
-        #expect(BrewManagerSuperPlugin().id.hasSuffix("brew-manager"))
+        #expect(BrewManagerPlugin().id.hasSuffix("brew-manager"))
     }
 
     @Test
@@ -74,7 +74,7 @@ struct PluginBrewManagerTests {
         try kernel.registerProvider((any ActivityBarProviding).self, activity)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
 
-        try BrewManagerSuperPlugin().onBoot(kernel: kernel)
+        try BrewManagerPlugin().onBoot(kernel: kernel)
 
         #expect(activity.activeItemID == "com.coffic.lumi.plugin.brew-manager.entry")
         #expect(!chat.isVisible)

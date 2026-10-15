@@ -34,7 +34,7 @@ as `npx` and a current stable Google Chrome installation.
     PluginBrowser
   Package.swift
     Sources/
-      BrowserSuperPlugin.swift
+      BrowserPlugin.swift
       BrowserSession.swift
       BrowserTools.swift
       BrowserWorkspaceView.swift

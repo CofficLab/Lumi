@@ -14,7 +14,7 @@ import SwiftUI
 
 /// Git 工作区入口。
 ///
-/// GitSourceControlSuperPlugin 提供 Git 数据能力，本插件只负责把它呈现为
+/// GitSourceControlPlugin 提供 Git 数据能力，本插件只负责把它呈现为
 /// 一个可从 ActivityBar 打开的工作区面板。这样编辑器/Agent 的 Git 能力与
 /// 桌面工作区 UI 保持独立，任一方都可以单独启停。
 @MainActor

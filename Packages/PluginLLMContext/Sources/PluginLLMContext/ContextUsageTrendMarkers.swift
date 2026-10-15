@@ -32,6 +32,7 @@ struct ContextUsageTrendMarkers: View {
             }
             .allowsHitTesting(false)
         }
+        .frame(height: 118)
     }
 }
 

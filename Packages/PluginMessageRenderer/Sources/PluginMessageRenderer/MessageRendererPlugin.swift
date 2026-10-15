@@ -162,8 +162,12 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             canRender: { message in
                 message.role == .error || message.isError
             },
-            render: { message, verbosity in
-                AnyView(ErrorMessageView(message: message, verbosity: verbosity))
+            render: { [capability] message, verbosity in
+                AnyView(ErrorMessageView(
+                    capability: capability,
+                    message: message,
+                    verbosity: verbosity
+                ))
             }
         ))
 

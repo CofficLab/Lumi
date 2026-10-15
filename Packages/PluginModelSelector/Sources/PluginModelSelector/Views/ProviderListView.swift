@@ -110,6 +110,7 @@ struct ProviderListView: View {
                                         onSelect: {
                                             viewModel.selectedProviderID = info.id
                                         },
+                                        modelCount: viewModel.models(for: info.id).count,
                                         canRefreshModels: viewModel.canRefreshModels(providerID: info.id),
                                         onRefreshModels: {
                                             Task { await viewModel.refreshModels(providerID: info.id) }
@@ -126,6 +127,7 @@ struct ProviderListView: View {
                                             onSelect: {
                                                 viewModel.selectedProviderID = info.id
                                             },
+                                            modelCount: viewModel.models(for: info.id).count,
                                             canRefreshModels: viewModel.canRefreshModels(providerID: info.id),
                                             onRefreshModels: {
                                                 Task { await viewModel.refreshModels(providerID: info.id) }
@@ -141,6 +143,7 @@ struct ProviderListView: View {
                                         onSelect: {
                                             viewModel.selectedProviderID = info.id
                                         },
+                                        modelCount: viewModel.models(for: info.id).count,
                                         canRefreshModels: viewModel.canRefreshModels(providerID: info.id),
                                         onRefreshModels: {
                                             Task { await viewModel.refreshModels(providerID: info.id) }

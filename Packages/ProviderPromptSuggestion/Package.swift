@@ -10,10 +10,9 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(path: "../ProviderMessageSender"),
-        .package(path: "../ProviderActivityBar"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
     ],
     targets: [
@@ -21,7 +20,7 @@ let package = Package(
             .product(name: "KernelCore", package: "LumiKernel"),
             .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
-            .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+            .product(name: "ProviderActivityBar", package: "LumiProviders"),
             .product(name: "ProviderPluginControl", package: "LumiProviders"),
             .product(name: "ProviderPluginManaging", package: "LumiProviders"),
             .product(name: "ProviderRailView", package: "LumiProviders"),
@@ -37,7 +36,7 @@ let package = Package(
             dependencies: [
                 "ProviderPromptSuggestion",
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
-                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
             ]

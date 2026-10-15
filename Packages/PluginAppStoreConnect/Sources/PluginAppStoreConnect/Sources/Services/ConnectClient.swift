@@ -241,9 +241,19 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
     private func apiErrorMessage(from data: Data, statusCode: Int) -> String {
         if let errorResponse = try? JSONDecoder().decode(AppStoreConnectErrorResponse.self, from: data),
            let first = errorResponse.errors.first {
-            return [first.title, first.detail]
-                .compactMap { $0 }
-                .joined(separator: ": ")
+            var parts = [first.title, first.detail].compactMap { $0 }
+            // 409 STATE_ERROR 类错误：把关联资源的明细（如缺失的审核联系人字段、
+            // 不可提交的构建类型）一并透出，便于直接定位修复项。
+            if let associated = first.meta?.associatedErrors {
+                for (_, errors) in associated {
+                    for error in errors {
+                        if let detail = error.detail, !parts.contains(detail) {
+                            parts.append(detail)
+                        }
+                    }
+                }
+            }
+            return parts.joined(separator: ": ")
         }
         return AppStoreConnectLocalization.string("App Store Connect request failed with HTTP %d.", statusCode)
     }

@@ -61,9 +61,11 @@ struct ComposerView: View {
                     viewModel.attachFile(url)
                 }
             },
+            onBlockInserted: { id in viewModel.consumePendingBlock(id: id) },
             isFocused: focusedBinding,
             cursorPosition: cursorBinding,
-            isImageDragHovering: .constant(false)
+            isImageDragHovering: .constant(false),
+            pendingBlock: viewModel.pendingBlock
         )
         .frame(height: viewModel.inputHeight)
         .padding(.horizontal, 10)

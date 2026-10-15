@@ -9,12 +9,11 @@ let package = Package(
         .library(name: "PluginProjectFileTree", targets: ["PluginProjectFileTree"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.4.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.9.0"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
-        .package(path: "../ProviderConversationInput"),
         .package(path: "../KitFileSystem"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
     ],
     targets: [
@@ -26,7 +25,7 @@ let package = Package(
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
-                "ProviderConversationInput",
+                .product(name: "ProviderConversationInput", package: "LumiProviders"),
                 .product(name: "ProviderToast", package: "LumiProviders"),
                 "KitFileSystem",
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),

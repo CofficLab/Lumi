@@ -14,11 +14,10 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
-        .package(path: "../ProviderActivityBar"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../KitShell"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.2.7")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0")
     ],
     targets: [
 .target(
@@ -26,7 +25,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
@@ -36,9 +35,9 @@ let package = Package(
                 .product(name: "KitShell", package: "KitShell"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging")
             ],
-            path: "Sources",
+            path: "Sources/PluginPortManager",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

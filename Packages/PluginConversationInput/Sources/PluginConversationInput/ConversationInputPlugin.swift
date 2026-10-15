@@ -5,6 +5,7 @@ import ProviderChatSection
 import ProviderConversation
 import ProviderConversationState
 import ProviderConversationInput
+import ProviderConversationInputBlock
 import ProviderMessageSender
 import ProviderPerformanceMetrics
 import LumiLoggingKit
@@ -49,6 +50,7 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
         }
 
         let input = kernel.resolveProvider((any ConversationInputProviding).self)
+        let blocks = kernel.resolveProvider((any ConversationInputBlockProviding).self)
         let sender = kernel.resolveProvider((any MessageSendingProviding).self)
         let metrics = kernel.resolveProvider((any PerformanceMetricsProviding).self)
         let conversations = kernel.resolveProvider((any ConversationManaging).self)
@@ -57,6 +59,7 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
         // 组装层：Capability → ViewModel → Observer → View。
         let capability = ConversationInputCapabilityAdapter(
             input: input,
+            blocks: blocks,
             sender: sender,
             conversations: conversations,
             conversationState: conversationState,
@@ -82,6 +85,13 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
             sendActionBarViewModel = SendActionBarViewModel(capability: capability)
         } else {
             sendActionBarViewModel = nil
+        }
+        // 发送按钮只经 `ActionBarInputObserver`（addTextObserver）获知文本变化，
+        // 而该通知只覆盖逐键输入。把「直接写入」也接到按钮上，否则粘贴、
+        // 语音输入与 UI 测试的 typeText 会让按钮停在 disabled。
+        let actionBar = sendActionBarViewModel
+        inputViewModel.onTextWritten = { [weak actionBar] text in
+            actionBar?.updateInputText(text)
         }
         missingActionBarProviders = missingProviders
         let actionBarViewModel = sendActionBarViewModel

@@ -15,16 +15,15 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.4.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.9.0"),
         .package(url: "https://github.com/nookery/LibGit2Swift", .branch("main")),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderEditor"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderGit"),
-        .package(path: "../ProviderSkill"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderMessageRendering"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.0"),        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../KitShell"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
@@ -38,7 +37,7 @@ let package = Package(
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderGit", package: "ProviderGit"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
-                .product(name: "ProviderSkill", package: "ProviderSkill"),
+                .product(name: "ProviderSkill", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
@@ -46,11 +45,11 @@ let package = Package(
                 .product(name: "KitShell", package: "KitShell"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
-            path: "Sources",
+            path: "Sources/PluginGit",
             resources: [
-                .process("../Resources/Localizable.xcstrings"),
+                .process("../../Resources/Localizable.xcstrings"),
                 // 保留 Skills 目录结构（.copy），否则 Bundle.module 遍历会失败。
-                .copy("../Resources/Skills")
+                .copy("../../Resources/Skills")
             ]
         ),
         .testTarget(
