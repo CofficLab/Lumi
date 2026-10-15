@@ -39,6 +39,9 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
     private var conversationStateVM: ConversationStateVM?
     private var developerModeObserver: DeveloperModeObserver?
     private var verbosityObservation: VerbosityObservationBox?
+    #if DEBUG
+    private var uiTestingSeedHandle: (any ConversationObserverHandle)?
+    #endif
 
     public init() {}
 
@@ -110,6 +113,15 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
                 conversationStateObserver: conversationStateObserver
             )
         }
+
+        #if DEBUG
+        if let conversations, let messages, MessageListBriefUITestingSupport.isEnabled {
+            uiTestingSeedHandle = MessageListBriefUITestingSupport.seed(
+                conversations: conversations,
+                messages: messages
+            )
+        }
+        #endif
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -125,6 +137,10 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
         verbosityObservation?.cancel()
         verbosityObservation = nil
         messageListVM = nil
+        #if DEBUG
+        uiTestingSeedHandle?.cancel()
+        uiTestingSeedHandle = nil
+        #endif
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeItem(id: id)
     }
