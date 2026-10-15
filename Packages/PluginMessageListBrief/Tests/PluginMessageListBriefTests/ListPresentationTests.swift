@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import ProviderAgentLoop
+import ProviderConversation
 import ProviderConversationState
 import ProviderMessage
 import ProviderMessageStreaming
@@ -16,25 +17,44 @@ import Testing
 /// 不依赖真实 Provider；通过 stub `MessageListMessageCapability` /
 /// `MessageListAgentLoopCapability` / `MessageListConversationCapability`
 /// 在内存里制造任意消息序列。
+///
+/// - Note: `ConversationMessageListVM.activate` 会先比对
+///   `services.selectedConversationID == conversationID`；`conversations`
+///   传 nil 时选中态恒为 nil，activate 会被 guard 直接挡掉。因此所有走
+///   activate 的用例都必须注入 `StubConversations(selected:)`。
 @MainActor
 struct ListPresentationTests {
     private let conversationID = UUID()
 
     // MARK: - Stubs
 
-    /// 可被驱动变化的 `MessageListMessageCapability`。
-    /// - 支持 `setSnapshot` 触发 Observer 收到 `.updated` 后，调用方决定要不要走
-    ///   `MessageObserver` 路径；本测试不走 observer，直接 `await refresh()`。
+    /// 基于内存 `snapshot` 提供与生产语义一致的分页实现。
+    ///
+    /// 默认：按 createdAt 升序分页、`beforeMessageID == nil` 时返回最新
+    /// `limit` 条、`hasEarlier` 在 nil 游标时用「> 10 条」探测窗口。
+    /// 需要特殊行为时用 `pageOverride` / `hasEarlierOverride` 覆盖。
     final class StubMessages: MessageListMessageCapability {
         var snapshot: [Message]
-        var pageResponse: (Int, UUID?) -> [Message] = { _, _ in [] }
-        var hasEarlierResponse: (UUID?) -> Bool = { _ in false }
+        var pageOverride: ((Int, UUID?) -> [Message])?
+        var hasEarlierOverride: ((UUID?) -> Bool)?
 
         init(snapshot: [Message] = []) {
             self.snapshot = snapshot
         }
 
-        func messagesSnapshot(in conversationID: UUID) async -> [Message] { snapshot }
+        private func messages(of conversationID: UUID) -> [Message] {
+            // 与真实 Provider 一致：分页接口只返回目标会话的消息。
+            snapshot
+                .filter { $0.conversationID == conversationID }
+                .sorted { lhs, rhs in
+                    if lhs.createdAt == rhs.createdAt { return lhs.id.uuidString < rhs.id.uuidString }
+                    return lhs.createdAt < rhs.createdAt
+                }
+        }
+
+        func messagesSnapshot(in conversationID: UUID) async -> [Message] {
+            messages(of: conversationID)
+        }
 
         func messagePageAsync(
             for conversationID: UUID,
@@ -42,7 +62,11 @@ struct ListPresentationTests {
             beforeMessageID: UUID?,
             includesToolMessages: Bool
         ) async -> [Message] {
-            pageResponse(limit, beforeMessageID)
+            if let pageOverride { return pageOverride(limit, beforeMessageID) }
+            let all = messages(of: conversationID)
+            guard let beforeMessageID else { return Array(all.suffix(limit)) }
+            guard let index = all.firstIndex(where: { $0.id == beforeMessageID }) else { return [] }
+            return Array(all[max(0, index - limit)..<index])
         }
 
         func hasEarlierMessagesAsync(
@@ -50,7 +74,11 @@ struct ListPresentationTests {
             beforeMessageID: UUID?,
             includesToolMessages: Bool
         ) async -> Bool {
-            hasEarlierResponse(beforeMessageID)
+            if let hasEarlierOverride { return hasEarlierOverride(beforeMessageID) }
+            let all = messages(of: conversationID)
+            guard let beforeMessageID else { return all.count > 10 }
+            guard let index = all.firstIndex(where: { $0.id == beforeMessageID }) else { return false }
+            return index > 0
         }
     }
 
@@ -70,17 +98,26 @@ struct ListPresentationTests {
         func state(for conversationID: UUID) -> AgentLoopState { stateToReturn }
     }
 
+    private func makeServices(
+        messages: (any MessageListMessageCapability)?,
+        conversations: (any MessageListConversationCapability)?
+    ) -> MessageListServices {
+        MessageListServices(
+            conversations: conversations,
+            developerMode: nil,
+            messages: messages,
+            rendering: nil,
+            agentTurn: nil
+        )
+    }
+
     // MARK: - §1.1 首次打开 → loading
 
     @Test("§1.1 activate 期间 isLoading == true，结束后 isLoading == false")
     func loadingStateDuringActivate() async {
-        let stub = StubMessages()
-        let services = MessageListServices(
-            conversations: nil,
-            developerMode: nil,
-            messages: stub,
-            rendering: nil,
-            agentTurn: nil
+        let services = makeServices(
+            messages: StubMessages(),
+            conversations: StubConversations(selected: conversationID)
         )
         let vm = ConversationMessageListVM(services: services)
 
@@ -89,9 +126,21 @@ struct ListPresentationTests {
         #expect(vm.isLoading == false)
     }
 
+    @Test("§1.1 conversations 未选中该会话时 activate 被 guard 挡下")
+    func activateRequiresSelectedConversation() async {
+        let services = makeServices(
+            messages: StubMessages(),
+            conversations: StubConversations(selected: nil)
+        )
+        let vm = ConversationMessageListVM(services: services)
+        await vm.activate(conversationID: conversationID)
+        // 未选中 → 不进入加载流程，也不挂 activeConversationID。
+        #expect(vm.agentTurns.isEmpty)
+    }
+
     // MARK: - §1.4 顶部 Load earlier 按钮的存在性
 
-    @Test("§1.4 完整消息序列短于 pageSize 时不显示 Load earlier")
+    @Test("§1.4 完整消息序列短于一页时 hasEarlierTurns == false")
     func loadEarlierHiddenWhenPageFits() async {
         let user = Message(
             conversationID: conversationID,
@@ -99,14 +148,9 @@ struct ListPresentationTests {
             content: "hi",
             createdAt: Date()
         )
-        let stub = StubMessages(snapshot: [user])
-        stub.hasEarlierResponse = { _ in false }
-        let services = MessageListServices(
-            conversations: nil,
-            developerMode: nil,
-            messages: stub,
-            rendering: nil,
-            agentTurn: nil
+        let services = makeServices(
+            messages: StubMessages(snapshot: [user]),
+            conversations: StubConversations(selected: conversationID)
         )
         let vm = ConversationMessageListVM(services: services, pageSize: 40)
         await vm.activate(conversationID: conversationID)
@@ -117,36 +161,20 @@ struct ListPresentationTests {
 
     @Test("§1.4 历史超过一页时 hasEarlierTurns 为 true")
     func loadEarlierVisibleWhenHistoryExceedsPage() async {
-        // 第一页：最近 pageSize 条；第二页（更早）：pageSize + 1 条，触发 hasEarlier。
+        // 45 条 user 消息 > 一页（pageSize = 40），首屏探测 limit = 41
+        // 依然命中「还有更早」的条件。
         let baseDate = Date()
-        let recent: [Message] = (0..<40).map { idx in
+        let many: [Message] = (0..<45).map { idx in
             Message(
                 conversationID: conversationID,
                 role: .user,
-                content: "recent \(idx)",
+                content: "msg \(idx)",
                 createdAt: baseDate.addingTimeInterval(TimeInterval(idx))
             )
         }
-        let stub = StubMessages(snapshot: recent)
-        // loadFirstPage 用 limit = pageSize + 1 探测历史。
-        stub.pageResponse = { limit, before in
-            guard before == nil else { return [] }
-            // 返回 pageSize + 1 条 → hasEarlierMessages = true
-            return (0..<(limit)).map { idx in
-                Message(
-                    conversationID: self.conversationID,
-                    role: .user,
-                    content: "page \(idx)",
-                    createdAt: baseDate.addingTimeInterval(TimeInterval(idx))
-                )
-            }
-        }
-        let services = MessageListServices(
-            conversations: nil,
-            developerMode: nil,
-            messages: stub,
-            rendering: nil,
-            agentTurn: nil
+        let services = makeServices(
+            messages: StubMessages(snapshot: many),
+            conversations: StubConversations(selected: conversationID)
         )
         let vm = ConversationMessageListVM(services: services, pageSize: 40)
         await vm.activate(conversationID: conversationID)
@@ -159,23 +187,18 @@ struct ListPresentationTests {
     @Test("§1.5 切换到另一个会话后旧数据被清空")
     func switchConversationClearsState() async {
         let stub = StubMessages()
-        let services = MessageListServices(
-            conversations: nil,
-            developerMode: nil,
-            messages: stub,
-            rendering: nil,
-            agentTurn: nil
-        )
+        let conversations = StubConversations(selected: conversationID)
+        let services = makeServices(messages: stub, conversations: conversations)
         let vm = ConversationMessageListVM(services: services)
-        await vm.activate(conversationID: conversationID)
 
-        // 第一次激活后填入数据。
+        await vm.activate(conversationID: conversationID)
         stub.snapshot = [Message(conversationID: conversationID, role: .user, content: "a")]
         await vm.refresh()
         #expect(vm.agentTurns.isEmpty == false)
 
-        // 切换到另一个会话。
+        // 切换到另一个会话：选中态同步变化后再 activate。
         let other = UUID()
+        conversations.selected = other
         await vm.activate(conversationID: other)
 
         #expect(vm.agentTurns.isEmpty)
@@ -197,11 +220,11 @@ struct ListPresentationTests {
             role: .assistant,
             content: "context-compaction",
             createdAt: Date().addingTimeInterval(1),
-            renderKind: MessageTimelineEvent.contextCompactionRenderKind,
             metadata: [
                 MessageTimelineEvent.actualContextCompactionKey:
                     MessageTimelineEvent.actualContextCompactionValue
-            ]
+            ],
+            renderKind: MessageTimelineEvent.contextCompactionRenderKind
         )
         let warmupCompaction = Message(
             conversationID: conversationID,
@@ -210,31 +233,26 @@ struct ListPresentationTests {
             createdAt: Date().addingTimeInterval(2),
             renderKind: MessageTimelineEvent.contextCompactionRenderKind
         )
-        let stub = StubMessages(snapshot: [user, realCompaction, warmupCompaction])
-        stub.hasEarlierResponse = { _ in false }
-        let services = MessageListServices(
-            conversations: nil,
-            developerMode: nil,
-            messages: stub,
-            rendering: nil,
-            agentTurn: nil
+        let services = makeServices(
+            messages: StubMessages(snapshot: [user, realCompaction, warmupCompaction]),
+            conversations: StubConversations(selected: conversationID)
         )
         let vm = ConversationMessageListVM(services: services)
         await vm.activate(conversationID: conversationID)
 
         let rows = vm.rows
-        #expect(rows.contains(where: { row in
+        #expect(rows.contains { row in
             if case let .timelineEvent(message) = row, message.id == realCompaction.id {
                 return true
             }
             return false
-        }))
-        #expect(rows.contains(where: { row in
+        })
+        #expect(rows.contains { row in
             if case let .timelineEvent(message) = row, message.id == warmupCompaction.id {
                 return true
             }
             return false
-        }) == false)
+        } == false)
     }
 
     // MARK: - §3.8 展开/折叠只动 disclosure 容器
@@ -244,83 +262,70 @@ struct ListPresentationTests {
     // 之后、last 行之前 —— 实际跳转/重排由 SwiftUI List 决定。
     // 真正的视觉验证放在 LumiMessageListBriefUITests。
 
-    // MARK: - §4.2 重复点击 loadEarlier 不会重复/丢失
+    // MARK: - §4.2 / §4.4 重复点击 loadEarlier
 
-    @Test("§4.2 / §4.4 重复触发 loadEarlier 在并发下只生效一次")
+    @Test("§4.4 历史耗尽后重复触发 loadEarlier 返回 nil 不再插入")
     func loadEarlierDoesNotDuplicateWhenReentrant() async {
         let anchorDate = Date()
-        let older: [Message] = (0..<5).map { idx in
+        // 45 条：首屏 40 条 + 更早 5 条。
+        let all: [Message] = (0..<45).map { idx in
             Message(
                 conversationID: conversationID,
                 role: .user,
-                content: "old \(idx)",
-                createdAt: anchorDate.addingTimeInterval(-100 + TimeInterval(idx))
-            )
-        }
-        let recent: [Message] = (0..<40).map { idx in
-            Message(
-                conversationID: conversationID,
-                role: .user,
-                content: "new \(idx)",
+                content: "msg \(idx)",
                 createdAt: anchorDate.addingTimeInterval(TimeInterval(idx))
             )
         }
-        let stub = StubMessages()
-        stub.snapshot = recent
-        stub.hasEarlierResponse = { _ in true }
-        stub.pageResponse = { limit, before in
-            // 第一次调用：返回更早一页；后续：返回空。
-            guard before != nil else { return Array(recent.suffix(limit)) }
-            return older
-        }
-        let services = MessageListServices(
-            conversations: nil,
-            developerMode: nil,
-            messages: stub,
-            rendering: nil,
-            agentTurn: nil
+        let services = makeServices(
+            messages: StubMessages(snapshot: all),
+            conversations: StubConversations(selected: conversationID)
         )
         let vm = ConversationMessageListVM(services: services, pageSize: 40)
         await vm.activate(conversationID: conversationID)
         #expect(vm.hasEarlierTurns)
 
-        let a = await vm.loadEarlier()
-        let b = await vm.loadEarlier()
-        // 第二次触发时 hasEarlierTurns 已为 false（older 全部 prepend），
-        // 不会插入重复内容，但 anchorID 仍可被视图用来 pin 旧 turn。
-        _ = a
-        _ = b
+        let first = await vm.loadEarlier()
+        #expect(first != nil, "第一次翻页应返回锚点 turn id 供视图 pin 位置")
+        #expect(vm.hasEarlierTurns == false, "剩余 5 条全部加载后按钮应消失")
+
+        let second = await vm.loadEarlier()
+        #expect(second == nil, "历史耗尽后重复触发不应再加载，防止重复行")
     }
 
     // MARK: - §4.5 加载到顶后按钮消失
 
-    @Test("§4.5 历史耗尽后 hasEarlierTurns 翻转为 false")
+    @Test("§4.5 翻页到顶后 hasEarlierTurns 翻转为 false 且行不重复")
     func loadEarlierHidesButtonWhenExhausted() async {
-        let stub = StubMessages()
-        stub.hasEarlierResponse = { _ in true }
-        let services = MessageListServices(
-            conversations: nil,
-            developerMode: nil,
-            messages: stub,
-            rendering: nil,
-            agentTurn: nil
+        let base = Date()
+        // 45 条：首屏 40 条 + 更早 5 条。
+        let all: [Message] = (0..<45).map { idx in
+            Message(
+                conversationID: conversationID,
+                role: .user,
+                content: "msg \(idx)",
+                createdAt: base.addingTimeInterval(TimeInterval(idx))
+            )
+        }
+        let services = makeServices(
+            messages: StubMessages(snapshot: all),
+            conversations: StubConversations(selected: conversationID)
         )
         let vm = ConversationMessageListVM(services: services, pageSize: 40)
         await vm.activate(conversationID: conversationID)
-        #expect(vm.hasEarlierTurns)
+        #expect(vm.hasEarlierTurns, "45 条 > 一页 → 首屏应提示 Load earlier")
+        #expect(vm.agentTurns.count == 40)
 
-        // 模拟 server-side 「更早一页返回空 + hasEarlier = false」。
-        stub.pageResponse = { _, _ in [] }
-        stub.hasEarlierResponse = { _ in false }
-        _ = await vm.loadEarlier()
-        #expect(vm.hasEarlierTurns == false)
+        let anchor = await vm.loadEarlier()
+
+        #expect(anchor != nil)
+        #expect(vm.hasEarlierTurns == false, "更早 5 条全部加载后按钮应消失")
+        #expect(vm.agentTurns.count == 45, "翻页后 45 行全部就位，无重复无跳过")
     }
 
-    // MARK: - §6.6 / §6.7 端态：activity 必须消失
+    // MARK: - §6 端态与隔离
 
     @Test("§6.7 / §6.9 agent loop 端态后 activity projection 为 nil")
     func activityClearedOnTerminalState() {
-        // 验证状态机本身：complet / failed / cancelled / idle 都映射成 nil。
         for terminalState in [AgentLoopState.completed, .failed, .cancelled, .idle] {
             let snapshot = ConversationStateSnapshot(
                 conversationID: conversationID,
@@ -336,8 +341,6 @@ struct ListPresentationTests {
             )
         }
     }
-
-    // MARK: - §6.8 切换会话后 activity 清空
 
     @Test("§6.8 切换到非选中会话后该会话的 activity 不会进入 stateVM")
     func activityIsolatedPerSelectedConversation() {
@@ -358,12 +361,10 @@ struct ListPresentationTests {
         vm.update(activity: activity, for: b)
         #expect(vm.activity == activity)
 
-        // 切换到 b 后，给 b 写入 nil 才应清空。
+        // 切换到 b 后，选中态变化应清空旧 activity。
         vm.updateSelectedConversation(b)
         #expect(vm.activity == nil)
     }
-
-    // MARK: - §6.3 缺 detail 时 placeholder 仍占位
 
     @Test("§6.3 缺 detail 时 ConversationStateView 的 detail 字符串使用 ' ' 占位")
     func detailPlaceholderIsSingleSpace() {
@@ -382,14 +383,9 @@ struct ListPresentationTests {
 
     @Test("§8.1 空对话激活后 isLoading == false，列表为空，没有 Load earlier")
     func emptyConversationLoadsCleanly() async {
-        let stub = StubMessages(snapshot: [])
-        stub.hasEarlierResponse = { _ in false }
-        let services = MessageListServices(
-            conversations: nil,
-            developerMode: nil,
-            messages: stub,
-            rendering: nil,
-            agentTurn: nil
+        let services = makeServices(
+            messages: StubMessages(snapshot: []),
+            conversations: StubConversations(selected: conversationID)
         )
         let vm = ConversationMessageListVM(services: services)
         await vm.activate(conversationID: conversationID)
@@ -412,14 +408,9 @@ struct ListPresentationTests {
                 createdAt: base.addingTimeInterval(TimeInterval(idx))
             )
         }
-        let stub = StubMessages(snapshot: messages)
-        stub.hasEarlierResponse = { _ in false }
-        let services = MessageListServices(
-            conversations: nil,
-            developerMode: nil,
-            messages: stub,
-            rendering: nil,
-            agentTurn: nil
+        let services = makeServices(
+            messages: StubMessages(snapshot: messages),
+            conversations: StubConversations(selected: conversationID)
         )
         let vm = ConversationMessageListVM(services: services, pageSize: 40)
         await vm.activate(conversationID: conversationID)
@@ -427,25 +418,23 @@ struct ListPresentationTests {
         #expect(vm.hasEarlierTurns == false)
     }
 
-    // MARK: - §8.5 切换后发新消息的并发安全
+    // MARK: - §8.5 快速切换会话
 
-    @Test("§8.5 已切换的会话上 activate(null) 不应阻塞新会话的 activate")
+    @Test("§8.5 快速切换会话后旧会话的加载任务不会泄漏到新会话")
     func rapidConversationSwitchingIsSafe() async {
         let stub = StubMessages()
-        let services = MessageListServices(
-            conversations: nil,
-            developerMode: nil,
-            messages: stub,
-            rendering: nil,
-            agentTurn: nil
-        )
+        let conversations = StubConversations(selected: conversationID)
+        let services = makeServices(messages: stub, conversations: conversations)
         let vm = ConversationMessageListVM(services: services)
         let a = UUID()
         let b = UUID()
 
-        // 快速来回切两次。
+        // 模拟真实链路：用户切换 → selected 更新 → activate。
+        conversations.selected = a
         await vm.activate(conversationID: a)
+        conversations.selected = b
         await vm.activate(conversationID: b)
+        conversations.selected = a
         await vm.activate(conversationID: a)
 
         #expect(vm.isLoading == false)

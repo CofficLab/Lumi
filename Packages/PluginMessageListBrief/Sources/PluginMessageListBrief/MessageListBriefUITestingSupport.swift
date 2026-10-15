@@ -46,23 +46,38 @@ public enum MessageListBriefUITestingSupport {
     /// 成后再 seed。`loadConversations` 会整体替换会话列表并清空选中态；
     /// 若过早植入，夹具会话会被这次加载覆盖。
     ///
+    /// - Important: 观察者必须**一次性自取消**。seed 自身的 `insertMessage`
+    ///   会经消息去抖触发 `.listChanged`；若不取消，seed → insert →
+    ///   listChanged → seed 形成无限循环（曾单次启动创建 360+ 个会话）。
+    ///
     /// - Returns: 一次性观察者句柄，插件 `onShutdown` 时调用 `cancel()` 释放。
     @discardableResult
     static func seed(
         conversations: any ConversationManaging,
         messages: any MessageManaging
     ) -> any ConversationObserverHandle {
-        let seedOnce: @MainActor () -> Void = {
-            doSeed(conversations: conversations, messages: messages)
-        }
-        if !conversations.isLoadingConversations {
-            seedOnce()
+        guard !hasSeeded(conversations: conversations) else {
             return NoopObserverHandle()
         }
-        return conversations.addConversationObserver { event in
-            guard event == .listChanged else { return }
-            seedOnce()
+        if !conversations.isLoadingConversations {
+            doSeed(conversations: conversations, messages: messages)
+            return NoopObserverHandle()
         }
+        let box = OneShotObserverBox()
+        let handle = conversations.addConversationObserver { event in
+            guard event == .listChanged else { return }
+            // 一次性：先注销自己，再 seed（seed 会再次触发 listChanged）。
+            box.handle?.cancel()
+            box.handle = nil
+            doSeed(conversations: conversations, messages: messages)
+        }
+        box.handle = handle
+        return handle
+    }
+
+    /// 是否已存在夹具会话（防止同一进程内重复 seed）。
+    private static func hasSeeded(conversations: any ConversationManaging) -> Bool {
+        conversations.conversations.contains { $0.title == conversationTitle }
     }
 
     private static func doSeed(
@@ -76,7 +91,9 @@ public enum MessageListBriefUITestingSupport {
             modelName: nil
         ) else { return }
 
-        // 4 个 turn：1 完成 + 1 完成 + 1 工具步骤多 + 1 含 No-renderer 兜底。
+        // 4 个 turn，全部保持简短：总高度低于消息区视口，避免 macOS List
+        // 懒加载把视口外的行裁掉导致 UI 测试找不到元素。
+        // 「3 步工具 turn」放在最后（视口锚定在底部时必然可见）。
         let turn1User = makeMessage(
             id: "11111111-1111-1111-1111-111111111111",
             conversationID: conversationID,
@@ -115,23 +132,43 @@ public enum MessageListBriefUITestingSupport {
         messages.insertMessage(turn2User, to: conversationID)
         messages.insertMessage(turn2Final, to: conversationID)
 
-        // 第 3 个 turn：3 个工具调用，便于 UI 测试断言 §3.2「执行了3个步骤」。
-        let turn3ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3"
         let turn3User = makeMessage(
             id: "33333333-1111-1111-1111-111111111111",
             conversationID: conversationID,
             role: .user,
-            content: "执行三步操作",
+            content: "最后一个普通 turn",
             createdAt: baseDate.addingTimeInterval(20),
-            turnID: turn3ID
+            turnID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3"
         )
-        let turn3Assistant = makeMessage(
+        let turn3Final = makeMessage(
             id: "33333333-2222-2222-2222-111111111111",
             conversationID: conversationID,
             role: .assistant,
+            content: "第三个 turn 的回复。",
+            createdAt: baseDate.addingTimeInterval(22),
+            turnID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3"
+        )
+        messages.insertMessage(turn3User, to: conversationID)
+        messages.insertMessage(turn3Final, to: conversationID)
+
+        // 最后一个 turn：3 个工具调用，便于 UI 测试断言 §3.2「执行了3个步骤」。
+        // 放在列表末尾 —— 初始定位在底部时必然在视口内。
+        let turn4ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4"
+        let turn4User = makeMessage(
+            id: "44444444-1111-1111-1111-111111111111",
+            conversationID: conversationID,
+            role: .user,
+            content: "执行三步操作",
+            createdAt: baseDate.addingTimeInterval(30),
+            turnID: turn4ID
+        )
+        let turn4Assistant = makeMessage(
+            id: "44444444-2222-2222-2222-111111111111",
+            conversationID: conversationID,
+            role: .assistant,
             content: "",
-            createdAt: baseDate.addingTimeInterval(21),
-            turnID: turn3ID,
+            createdAt: baseDate.addingTimeInterval(31),
+            turnID: turn4ID,
             toolCalls: (0..<3).map { idx in
                 MessageToolCall(
                     id: "c3-\(idx)",
@@ -141,42 +178,17 @@ public enum MessageListBriefUITestingSupport {
                 )
             }
         )
-        let turn3Final = makeMessage(
-            id: "33333333-3333-3333-3333-111111111111",
+        let turn4Final = makeMessage(
+            id: "44444444-3333-3333-3333-111111111111",
             conversationID: conversationID,
             role: .assistant,
             content: "三步全部完成。",
             createdAt: baseDate.addingTimeInterval(35),
-            turnID: turn3ID
-        )
-        messages.insertMessage(turn3User, to: conversationID)
-        messages.insertMessage(turn3Assistant, to: conversationID)
-        messages.insertMessage(turn3Final, to: conversationID)
-
-        // 第 4 个 turn：故意没有匹配的 renderer，验证 §7.3 占位文本。
-        let turn4ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4"
-        let turn4User = makeMessage(
-            id: "44444444-1111-1111-1111-111111111111",
-            conversationID: conversationID,
-            role: .user,
-            content: "最后一段长消息，用于把视口撑起来",
-            createdAt: baseDate.addingTimeInterval(40),
             turnID: turn4ID
         )
-        let turn4Long = makeMessage(
-            id: "44444444-2222-2222-2222-111111111111",
-            conversationID: conversationID,
-            role: .assistant,
-            content: String(
-                repeating: "这一行用来把视口撑起来，方便 UI 测试断言最后一行是否完整可见。\n",
-                count: 30
-            ),
-            createdAt: baseDate.addingTimeInterval(42),
-            turnID: turn4ID,
-            preferredRendererID: "__brief-fixture-no-such-renderer__"
-        )
         messages.insertMessage(turn4User, to: conversationID)
-        messages.insertMessage(turn4Long, to: conversationID)
+        messages.insertMessage(turn4Assistant, to: conversationID)
+        messages.insertMessage(turn4Final, to: conversationID)
 
         // 显式选回夹具会话 + 设 brief 详细度，触发 ListV1View 注册。
         conversations.selectConversation(id: conversationID)
@@ -190,8 +202,7 @@ public enum MessageListBriefUITestingSupport {
         content: String,
         createdAt: Date,
         turnID: String? = nil,
-        toolCalls: [MessageToolCall]? = nil,
-        preferredRendererID: String? = nil
+        toolCalls: [MessageToolCall]? = nil
     ) -> Message {
         Message(
             id: UUID(uuidString: id) ?? UUID(),
@@ -200,7 +211,6 @@ public enum MessageListBriefUITestingSupport {
             content: content,
             createdAt: createdAt,
             turnID: turnID.map { UUID(uuidString: $0) ?? UUID() },
-            preferredRendererID: preferredRendererID,
             toolCalls: toolCalls
         )
     }
@@ -210,5 +220,12 @@ public enum MessageListBriefUITestingSupport {
 @MainActor
 private final class NoopObserverHandle: ConversationObserverHandle {
     func cancel() {}
+}
+
+/// 让一次性观察者闭包能引用到自己的注销句柄（自取消语义，
+/// 与 `ErrorRetryUITestingSupport` 的 `ObserverHandleBox` 同范式）。
+@MainActor
+private final class OneShotObserverBox {
+    var handle: (any ConversationObserverHandle)?
 }
 #endif

@@ -107,13 +107,12 @@ struct AgentTurnProjectionTests {
                 state: .completed
             ),
         ]
-        let items = AgentTurnSummaryBuilder()
+        let summaries = AgentTurnSummaryBuilder()
             .build(records: records, messages: [firstUser, firstReply, secondUser, secondReply])
-            .map { AgentTurnPresentationItem(recorded: $0, acceptsLiveActivity: false) }
 
-        #expect(items.count == 2)
-        #expect(items[0].userMessage?.id == firstUser.id)
-        #expect(items[1].userMessage?.id == secondUser.id)
+        #expect(summaries.count == 2)
+        #expect(summaries[0].userMessage?.id == firstUser.id)
+        #expect(summaries[1].userMessage?.id == secondUser.id)
     }
 
     // MARK: - §2.4 / §2.5 tool / system 不在投影里，error 仍是最后回复
@@ -341,15 +340,24 @@ struct AgentTurnProjectionTests {
             endedAt: started.addingTimeInterval(12),
             state: .completed
         )
+        let final = Message(
+            conversationID: conversationID,
+            role: .assistant,
+            content: "完成",
+            createdAt: started.addingTimeInterval(12),
+            turnID: turnID
+        )
         let summary = AgentTurnSummaryBuilder()
-            .build(records: [record], messages: [user, call])
+            .build(records: [record], messages: [user, call, final])
             .first!
         let item = AgentTurnPresentationItem(recorded: summary, acceptsLiveActivity: false)
 
+        // 走真实链路：视图把 projection.processMessages 传给 disclosure。
+        let projection = AgentTurnVM.project(item: item, messages: [user, call, final])
         let title = AgentTurnVM.processDisclosureTitle(
             item: item,
-            userMessages: [user],
-            processMessages: summary.processMessages,
+            userMessages: projection.userMessages,
+            processMessages: projection.processMessages,
             now: started.addingTimeInterval(12)
         )
 

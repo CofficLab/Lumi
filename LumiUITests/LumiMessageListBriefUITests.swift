@@ -9,14 +9,18 @@ import XCTest
 ///   避免污染用户真实数据库。
 ///
 /// 覆盖 README §1 first open / §2.6 真实 context compaction / §3 process
-/// disclosure / §6 状态卡 / §7.3 No renderer 占位 的端到端验证。
+/// disclosure / §6 状态卡 的端到端验证。
 ///
-/// 不覆盖（按 README 注释，单元层或人工验收更合适）：
+/// 不覆盖：
 /// - §4 翻页 / §5 滚动（依赖真实 NSScrollView，UI 测试只能间接观察，单元
 ///   层在 `MessageListServicesTests` / `MessageListSendPositioningTests`
 ///   覆盖核心不变量）。
 /// - §5.9 resize / §5.10 code block 等纯视觉验证（CI 截图回归成本高，
 ///   仍以人工验收为主）。
+/// - §7.3 No-renderer 占位：`DefaultMessageRenderingProviding.renderer(for:)`
+///   对 `preferredRendererID` 失配会**回落**到第一个能渲染的 renderer，
+///   真实 App 中该占位只在所有 renderer 全部缺席的降级场景出现，UI 夹具
+///   无法可靠构造，故不在 UI 层断言。
 final class LumiMessageListBriefUITests: XCTestCase {
     private var app: XCUIApplication!
 
@@ -50,6 +54,15 @@ final class LumiMessageListBriefUITests: XCTestCase {
     private func element(anyLabelOf labels: [String]) -> XCUIElement {
         app.descendants(matching: .any)
             .matching(NSPredicate(format: "label IN %@ OR value IN %@", labels, labels))
+            .firstMatch
+    }
+
+    /// label 或 value 包含指定片段的元素（disclosure 标题带耗时后缀，
+    /// 如「执行了3个步骤 · 5秒」；展开后的工具行文本由 SwiftUI StaticText
+    /// 以 value 暴露，如「正在步骤 1 — 查找项目文件…」）。
+    private func element(containingLabel fragment: String) -> XCUIElement {
+        app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", fragment, fragment))
             .firstMatch
     }
 
@@ -108,7 +121,7 @@ final class LumiMessageListBriefUITests: XCTestCase {
             "夹具第 3 个 turn 的用户消息未出现"
         )
 
-        let disclosure = element(anyLabelOf: ["执行了3个步骤"])
+        let disclosure = element(containingLabel: "执行了3个步骤")
         XCTAssertTrue(
             disclosure.waitForExistence(timeout: 10),
             "第 3 个 turn 的 disclosure 折叠态未显示「执行了3个步骤」"
@@ -129,7 +142,7 @@ final class LumiMessageListBriefUITests: XCTestCase {
             element(anyLabelOf: ["执行三步操作"]).waitForExistence(timeout: 25)
         )
 
-        let disclosureButton = element(anyLabelOf: ["执行了3个步骤"])
+        let disclosureButton = element(containingLabel: "执行了3个步骤")
         XCTAssertTrue(
             disclosureButton.waitForExistence(timeout: 10),
             "disclosure 行未出现"
@@ -137,7 +150,7 @@ final class LumiMessageListBriefUITests: XCTestCase {
         disclosureButton.click()
 
         // 展开后应能看到第 3 步的具体描述。
-        let step1 = element(anyLabelOf: ["步骤 1 — 查找项目文件"])
+        let step1 = element(containingLabel: "查找项目文件")
         XCTAssertTrue(
             step1.waitForExistence(timeout: 10),
             "展开后过程消息「步骤 1 — 查找项目文件」未出现"
@@ -145,30 +158,11 @@ final class LumiMessageListBriefUITests: XCTestCase {
 
         // 再次点击折叠。
         disclosureButton.click()
-        let collapsed = element(anyLabelOf: ["步骤 1 — 查找项目文件"])
+        let collapsed = element(containingLabel: "查找项目文件")
         let collapsedStillVisible = collapsed.waitForExistence(timeout: 5)
         // 折叠后过程消息可能仍在视口里（取决于是否被滚动出可见区），
         // 不直接断言消失，但至少应保留 disclosure 折叠标题可再次展开。
         _ = collapsedStillVisible
-    }
-
-    // MARK: - §7.3 No renderer placeholder
-
-    /// 夹具第 4 个 turn 的 assistant 消息指定了一个不存在的 preferredRendererID，
-    /// 应触发「No renderer for message: <uuid>」占位文本。
-    func testNoRendererPlaceholderAppears() throws {
-        XCTAssertTrue(
-            element(identifier: "root.main").waitForExistence(timeout: 30)
-        )
-        dismissOnboardingIfPresent()
-
-        // 兜底文本以 message id 结尾：检查前缀足够稳定。
-        // 真实 ID 来自夹具 seed，是硬编码 UUID，所以可以用 label prefix 锁定。
-        let placeholder = element(anyLabelOf: ["No renderer for message:"])
-        XCTAssertTrue(
-            placeholder.waitForExistence(timeout: 25),
-            "无 renderer 时应出现 No renderer for message: ... 占位文本"
-        )
     }
 
     // MARK: - §6 状态卡初始不可见
@@ -180,14 +174,19 @@ final class LumiMessageListBriefUITests: XCTestCase {
         )
         dismissOnboardingIfPresent()
 
+        // onboarding 完成后 App 可能短暂进入 streaming（欢迎语等副作用），
+        // 给 2 秒稳定期让瞬时 activity 结束，再断言状态卡不出现。
+        sleep(2)
+
         XCTAssertTrue(
             element(anyLabelOf: ["请帮我总结这段代码"]).waitForExistence(timeout: 25),
             "夹具第一个 turn 的用户消息未出现"
         )
 
-        // 任何 phase 标题都不应出现。
+        // 用快照式 exists 检查（非 waitForExistence）：避免瞬时 activity
+        // 在 10 秒窗口内被误报为「长期存在」。
         for title in ["正在发送消息…", "正在思考…", "正在生成回复…", "正在执行", "等待你的确认"] {
-            let card = element(anyLabelOf: [title])
+            let card = element(containingLabel: title)
             XCTAssertFalse(
                 card.exists,
                 "空闲时不应显示状态卡，却出现了「\(title)」"
