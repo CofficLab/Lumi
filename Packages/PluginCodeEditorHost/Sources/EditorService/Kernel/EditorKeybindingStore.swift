@@ -1,7 +1,7 @@
 import EditorKernel
 import Foundation
 import os
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 private let editorKeybindingsFileName = "editor_keybindings.json"

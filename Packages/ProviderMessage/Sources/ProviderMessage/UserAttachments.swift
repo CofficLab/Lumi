@@ -29,33 +29,38 @@ public struct UserImageAttachment: Identifiable, Codable, Equatable, Sendable {
 /// 用户随消息一起发送的文件附件（与图片并行的链路）。
 ///
 /// 文本类附件提供 `textContent`（正文在 AgentLoop 注入用户消息文本），
-/// 二进制附件提供 `base64Data`；二者至少其一。
+/// 二进制附件保留 `base64Data`，并可带 `localPath` 供本地 Agent 工具解析。
 public struct UserFileAttachment: Identifiable, Codable, Equatable, Sendable {
     public let id: UUID
     public let fileName: String
     public let mimeType: String
     public let base64Data: String?
     public let textContent: String?
+    /// Original local path for files that should be inspected by local Agent tools.
+    /// Optional so attachments persisted by older app versions continue to decode.
+    public let localPath: String?
 
     public init(
         id: UUID = UUID(),
         fileName: String,
         mimeType: String,
         base64Data: String? = nil,
-        textContent: String? = nil
+        textContent: String? = nil,
+        localPath: String? = nil
     ) {
         self.id = id
         self.fileName = fileName
         self.mimeType = mimeType
         self.base64Data = base64Data
         self.textContent = textContent
+        self.localPath = localPath
     }
 }
 
 /// 将本地文件转换为可随用户消息发送的附件。
 ///
-/// 附件同时保留原始字节和可识别的 UTF-8 文本：前者保证二进制文件可传递，
-/// 后者便于文本文件被模型直接理解。文件路径只用于读取，不会写入消息正文。
+/// 附件保留原始字节、可识别的 UTF-8 文本和来源路径：文本文件由模型直接读取，
+/// 二进制文件可由本地 Agent 工具通过路径处理。
 public enum UserFileAttachmentLoader {
     public static func load(from url: URL) throws -> UserFileAttachment {
         let data = try Data(contentsOf: url, options: [.mappedIfSafe])
@@ -66,7 +71,8 @@ public enum UserFileAttachmentLoader {
             fileName: url.lastPathComponent,
             mimeType: mimeType,
             base64Data: data.base64EncodedString(),
-            textContent: String(data: data, encoding: .utf8)
+            textContent: String(data: data, encoding: .utf8),
+            localPath: url.path
         )
     }
 }
@@ -120,7 +126,7 @@ public enum UserAttachmentMetadata {
 
     /// 将文本文件附件追加到用户消息正文，供不支持独立文件字段的 LLM 协议使用。
     ///
-    /// 二进制附件只保留文件名和 MIME 类型提示，不把 base64 字节直接混入提示词。
+    /// 二进制附件不把 base64 字节混入提示词；有本地路径时提示 Agent 调用本地工具处理。
     public static func appendingFileAttachments(
         _ attachments: [UserFileAttachment],
         to content: String
@@ -130,8 +136,19 @@ public enum UserAttachmentMetadata {
         let renderedAttachments = attachments.map { attachment in
             let name = escapeAttribute(attachment.fileName)
             let mimeType = escapeAttribute(attachment.mimeType)
-            let body = attachment.textContent
-                ?? "[Binary file attachment; content is not decoded. MIME type: \(attachment.mimeType)]"
+            let body: String
+            if let textContent = attachment.textContent {
+                body = textContent
+            } else if let localPath = attachment.localPath {
+                let path = escapeText(localPath)
+                body = """
+                [Binary file; content is not decoded. MIME type: \(attachment.mimeType)]
+                Local file path: \(path)
+                Use the local run_command tool to inspect this file. For ZIP archives, list the entries first, then extract the needed files to a temporary directory and read their contents. Do not execute files from the archive.
+                """
+            } else {
+                body = "[Binary file attachment; content is not decoded. MIME type: \(attachment.mimeType)]"
+            }
 
             return """
             <attached_file name="\(name)" mime_type="\(mimeType)">
@@ -159,6 +176,13 @@ public enum UserAttachmentMetadata {
         value
             .replacingOccurrences(of: "&", with: "&amp;")
             .replacingOccurrences(of: "\"", with: "&quot;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+    }
+
+    private static func escapeText(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "&", with: "&amp;")
             .replacingOccurrences(of: "<", with: "&lt;")
             .replacingOccurrences(of: ">", with: "&gt;")
     }

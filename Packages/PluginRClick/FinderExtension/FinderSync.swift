@@ -1,8 +1,7 @@
 import Cocoa
 import FinderSync
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 class FinderSync: FIFinderSync, SuperLog {
     static let emoji = "🧩"
     static let verbose: Bool = true

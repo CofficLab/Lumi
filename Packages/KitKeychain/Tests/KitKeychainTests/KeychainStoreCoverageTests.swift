@@ -242,6 +242,14 @@ final class KeychainStoreCoverageTests: XCTestCase {
         XCTAssertTrue(text.contains("Keychain write failed"))
         XCTAssertTrue(text.contains("999999"))
     }
+
+    func testMissingEntitlementDescriptionIsActionable() {
+        // -34018 的系统文案只是状态码复读，必须给出可操作说明。
+        let text = KeychainStoreError.readFailed(errSecMissingEntitlement).localizedDescription
+        XCTAssertTrue(text.contains("Keychain read failed"))
+        XCTAssertTrue(text.contains("errSecMissingEntitlement"))
+        XCTAssertTrue(text.contains("restarting the app"))
+    }
 }
 
 /// 可记录调用的后端

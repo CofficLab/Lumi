@@ -2,23 +2,27 @@ import Foundation
 import os
 import KernelCore
 import ProviderLLMManager
+import ProviderStorage
 import KitLLM
-import KitSuperLog
-
+import LumiLoggingKit
 /// CommandCode 供应商装配插件（KernelCore 生态）。
 ///
 /// 在 `onBoot` 中把 GoatPlanProvider 注册进
 /// `LLMProviderManagerProviding`，聊天链路即可经管理器路由到对应供应商。
+/// 远程模型列表缓存由本插件自行维护，落盘在
+/// `storage.pluginDataDirectory(for: pluginID)/models.json`。
 @MainActor
 public final class CommandCodeProviderPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.llm-provider.commandcode", category: "CommandCode")
     nonisolated public static let emoji = "🔌"
     nonisolated static let verbose = false
 
-    public let id = "com.coffic.lumi.plugin.llm-provider.commandcode"
+    public static let pluginID = "com.coffic.lumi.plugin.llm-provider.commandcode"
+
+    public let id = CommandCodeProviderPlugin.pluginID
     public let order = 100
     public let metadata = PluginMetadata(
-        id: "com.coffic.lumi.plugin.llm-provider.commandcode",
+        id: CommandCodeProviderPlugin.pluginID,
         name: "CommandCode 供应商",
         description: "注册 GoatPlan 供应商到 LLM 管理器。",
         category: .llm,
@@ -35,15 +39,37 @@ public final class CommandCodeProviderPlugin: SuperPlugin, SuperLog {
         }
         let networkProvider = kernel.resolveProvider((any LLMNetworkProviding).self)
         let apiService = VendorAPIService(networkProvider: networkProvider)
-        let providers: [any SuperLLMProvider] = [
-            GoatPlanProvider(apiService: apiService),
-        ]
-        for provider in providers {
-            if Self.verbose {
-                let typeName = String(describing: type(of: provider))
-                Self.logger.debug("\(Self.t)Registering provider: \(typeName, privacy: .public)")
+
+        // 绑定插件自有数据目录，供远程模型列表缓存落盘。
+        let localStore = CommandCodeLocalStore()
+        localStore.configure(storage: kernel.resolveProvider((any StorageProviding).self))
+
+        let provider = GoatPlanProvider(apiService: apiService, modelListCache: localStore)
+        if Self.verbose {
+            Self.logger.debug("\(Self.t)Registering provider: \(String(describing: type(of: provider)), privacy: .public)")
+        }
+        try? manager.register(provider)
+        scheduleModelRefresh(provider: provider, manager: manager)
+    }
+
+    /// 启动后后台刷新一次远程模型列表（fire-and-forget）。
+    ///
+    /// - 不阻塞启动：缓存/静态基线已保证「注册即可用」。
+    /// - 失败静默：磁盘缓存与静态基线兜底，不影响注册与选中态。
+    /// - 成功广播：`modelsRefreshed` 事件让 UI 读取最新模型池。
+    private func scheduleModelRefresh(provider: GoatPlanProvider, manager: any LLMManaging) {
+        Task { @MainActor [weak provider] in
+            guard let provider else { return }
+            do {
+                try await provider.refreshModels()
+                manager.notifyModelsRefreshed(providerID: provider.providerID)
+                if Self.verbose {
+                    Self.logger.debug("\(Self.t)remote model list refreshed, total=\(provider.availableModels.count, privacy: .public)")
+                }
+            } catch {
+                // 失败保留旧模型池（缓存 / 静态基线），静默即可。
+                Self.logger.debug("\(Self.t)model refresh failed\(self.r("falling back to cache"))")
             }
-            try? manager.register(provider)
         }
     }
 }

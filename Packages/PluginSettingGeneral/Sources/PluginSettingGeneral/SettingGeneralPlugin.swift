@@ -9,7 +9,7 @@ import ProviderStorage
 import ProviderUninstall
 import ProviderSettingView
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 设置 - 通用 插件
@@ -28,8 +28,8 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
     public let order = 100
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.setting-general",
-        name: "通用设置",
-        description: "在设置视图中注册「通用」入口，包含新手引导、应用信息、网站与更新。",
+        name: pluginLocalization.string("General Settings"),
+        description: pluginLocalization.string("Registers the General settings entry with onboarding, app info, website and updates."),
         category: .system,
         stage: .stable,
         policy: .alwaysOn
@@ -56,7 +56,7 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
                 items: [
                     CommandItem(
                         id: "\(id).openSettings",
-                        title: LumiPluginLocalization.string("Settings...", bundle: .module),
+                        title: pluginLocalization.string("Settings..."),
                         shortcut: ",",
                         modifiers: .command
                     ) {
@@ -87,24 +87,37 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
 
         let entry = SettingEntryItem(
             id: "general",
-            title: "通用",
+            title: pluginLocalization.string("General"),
             systemImage: "gearshape",
             order: 1
         ) { [versionProvider, docsProvider, diagnosticsProvider, onboardingProvider, storageProvider, uninstallProvider, prepareForUninstall, kernel] in
             // AppUpdateBootstrap is host-owned and may register after
             // plugin boot. Resolve it when the entry is materialized so
             // settings sees the provider in both Debug and Release.
-            let capability = GeneralSettingsCapabilityAdapter(
-                docsProvider: docsProvider,
-                diagnosticsProvider: diagnosticsProvider,
-                updateProvider: kernel.resolveProvider((any AppUpdateChannelProviding).self),
-                onboardingProvider: onboardingProvider,
-                storageProvider: storageProvider,
+            let docsCapability = GeneralSettingsDocsCapabilityAdapter(docsProvider: docsProvider)
+            let updateChannelCapability = GeneralSettingsUpdateChannelCapabilityAdapter(
+                updateProvider: kernel.resolveProvider((any AppUpdateChannelProviding).self)
+            )
+            let onboardingCapability = GeneralSettingsOnboardingCapabilityAdapter(
+                onboardingProvider: onboardingProvider
+            )
+            let diagnosticsCapability = GeneralSettingsDiagnosticsCapabilityAdapter(
+                diagnosticsProvider: diagnosticsProvider
+            )
+            let storageCapability = GeneralSettingsStorageCapabilityAdapter(storageProvider: storageProvider)
+            let uninstallCapability = GeneralSettingsUninstallCapabilityAdapter(
                 uninstallProvider: uninstallProvider,
                 prepareForUninstall: prepareForUninstall
             )
-            let viewModel = GeneralSettingsViewModel(capability: capability)
-            let observer = GeneralSettingsObserver(capability: capability, viewModel: viewModel)
+            let viewModel = GeneralSettingsViewModel(
+                docsCapability: docsCapability,
+                updateChannelCapability: updateChannelCapability,
+                onboardingCapability: onboardingCapability,
+                diagnosticsCapability: diagnosticsCapability,
+                storageCapability: storageCapability,
+                uninstallCapability: uninstallCapability
+            )
+            let observer = GeneralSettingsObserver(docsCapability: docsCapability, viewModel: viewModel)
             self.generalObserver?.cancel()
             self.generalObserver = observer
 

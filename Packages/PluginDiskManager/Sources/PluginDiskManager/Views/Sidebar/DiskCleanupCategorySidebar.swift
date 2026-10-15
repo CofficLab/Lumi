@@ -72,7 +72,7 @@ struct DiskCleanupCategorySidebar: View {
             Image(systemName: "internaldrive")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
-            Text(LumiPluginLocalization.string("Disk Cleanup", bundle: .module))
+            Text(pluginLocalization.string("Disk Cleanup"))
                 .font(.appCaption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)

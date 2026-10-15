@@ -4,8 +4,7 @@ import EditorSource
 import EditorTextView
 import LanguageServerProtocol
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 @MainActor
 final class EditorInputRouter: SuperLog {
     nonisolated static let verbose = EditorState.verbose

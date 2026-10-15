@@ -21,6 +21,21 @@ struct MessageRendererPluginTests {
         #expect(AssistantMessageView.contentVerbosity(for: .detailed) == .detailed)
     }
 
+    @Test("V1 模式下 ask_user 等挂起交互不走自定义工具渲染器")
+    func v1DoesNotUseCustomToolRenderers() {
+        // V1（原始 brief）：不允许自定义工具渲染器 —— 完整交互视图（如
+        // ask_user）只由底部 ChatSection 固定项展示，消息正文仅保留默认摘要。
+        #expect(!ToolCallRowsView.allowsCustomToolRenderers(isV1: true))
+        // V2/V3：允许自定义工具渲染器。
+        #expect(ToolCallRowsView.allowsCustomToolRenderers(isV1: false))
+        // 语义校验：contentVerbosity 会把 brief 升格为 standard，若错误地
+        // 用升格后的值判断 V1，会得到 isV1 == false 从而错误启用自定义渲染器。
+        // 这正式说明必须由调用方用原始级别显式传入 isV1。
+        let contentVerbosity = AssistantMessageView.contentVerbosity(for: .brief)
+        #expect(contentVerbosity == .standard)
+        #expect(contentVerbosity != .brief)
+    }
+
     @Test("工具调用参数保留真实 JSON 与历史异常内容")
     func formatsToolCallArguments() {
         #expect(MessageViewHelpers.formatToolCallArguments("  {}  ") == nil)

@@ -2,8 +2,7 @@ import ProviderLLMManager
 import Foundation
 import KitLLM
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// PluginLLMManager 自研的 `LLMManaging` 实现。
 ///
 /// 独立实现完整的供应商注册表、选中持久化与请求路由，并提供插件化的扩展点：
@@ -64,6 +63,17 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
         for callback in observers.values {
             callback(event)
         }
+    }
+
+    /// 广播某供应商远程模型列表已刷新。
+    ///
+    /// 与 `DefaultLLMManager` 保持一致：远程模型刷新成功后必须广播
+    /// `.modelsRefreshed`，观察者（如模型选择器）才会重新读取动态模型池。
+    public func notifyModelsRefreshed(providerID: String) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)models refreshed: provider=\(providerID, privacy: .public)")
+        }
+        notify(.modelsRefreshed(providerID: providerID))
     }
 
     // MARK: - UserDefaults Keys

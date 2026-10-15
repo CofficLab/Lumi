@@ -22,11 +22,11 @@ struct ComputerUseSettingsView: View {
     }
 
     var body: some View {
-        PluginSettingsScaffold(title: LumiPluginLocalization.string("Computer Use", bundle: .module), subtitle: LumiPluginLocalization.string("Control which applications Lumi can observe and interact with.", bundle: .module), showHeader: false, scrollsContent: false) {
+        PluginSettingsScaffold(title: pluginLocalization.string("Computer Use"), subtitle: pluginLocalization.string("Control which applications Lumi can observe and interact with."), showHeader: false, scrollsContent: false) {
             VStack(alignment: .leading, spacing: 14) {
                 permissionsSection
                 applicationsSection
-                Text(LumiPluginLocalization.string("Computer Use captures only the selected window. Password fields are blocked, stale screenshot coordinates are rejected, and state-changing batches require approval in Build mode.", bundle: .module))
+                Text(pluginLocalization.string("Computer Use captures only the selected window. Password fields are blocked, stale screenshot coordinates are rejected, and state-changing batches require approval in Build mode."))
                     .font(.callout).foregroundStyle(theme.textSecondary).padding(.horizontal, 4)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -37,12 +37,12 @@ struct ComputerUseSettingsView: View {
     }
 
     private var permissionsSection: some View {
-        AppSettingsSection(title: LumiPluginLocalization.string("System Permissions", bundle: .module), subtitle: LumiPluginLocalization.string("These permissions are required before Computer Use can operate.", bundle: .module), spacing: 8) {
+        AppSettingsSection(title: pluginLocalization.string("System Permissions"), subtitle: pluginLocalization.string("These permissions are required before Computer Use can operate."), spacing: 8) {
             HStack(spacing: 8) {
-                permissionCard(title: LumiPluginLocalization.string("Screen Recording", bundle: .module), detail: LumiPluginLocalization.string("Allows Lumi to capture the selected application window.", bundle: .module), granted: screenRecordingAllowed, icon: "rectangle.dashed.and.paperclip") {
+                permissionCard(title: pluginLocalization.string("Screen Recording"), detail: pluginLocalization.string("Allows Lumi to capture the selected application window."), granted: screenRecordingAllowed, icon: "rectangle.dashed.and.paperclip") {
                     ComputerUsePermissionService.requestScreenRecordingPermission(); refresh()
                 }
-                permissionCard(title: LumiPluginLocalization.string("Accessibility", bundle: .module), detail: LumiPluginLocalization.string("Allows Lumi to click, type, scroll, and navigate.", bundle: .module), granted: accessibilityAllowed, icon: "accessibility") {
+                permissionCard(title: pluginLocalization.string("Accessibility"), detail: pluginLocalization.string("Allows Lumi to click, type, scroll, and navigate."), granted: accessibilityAllowed, icon: "accessibility") {
                     ComputerUsePermissionService.requestAccessibilityPermission(); refresh()
                 }
             }
@@ -58,7 +58,7 @@ struct ComputerUseSettingsView: View {
             }
             Spacer(minLength: 4)
             if granted { Image(systemName: "checkmark.circle.fill").foregroundStyle(theme.success) }
-            else { AppButton(LumiPluginLocalization.string("Grant Access", bundle: .module), size: .small, action: request) }
+            else { AppButton(pluginLocalization.string("Grant Access"), size: .small, action: request) }
         }
         .padding(12).frame(maxWidth: .infinity, alignment: .leading)
         .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -66,7 +66,7 @@ struct ComputerUseSettingsView: View {
     }
 
     private var applicationsSection: some View {
-        AppSettingsSection(title: LumiPluginLocalization.string("Allowed Applications", bundle: .module), subtitle: LumiPluginLocalization.string("Select an application to manage its Computer Use access.", bundle: .module), spacing: 0) {
+        AppSettingsSection(title: pluginLocalization.string("Allowed Applications"), subtitle: pluginLocalization.string("Select an application to manage its Computer Use access."), spacing: 0) {
             HStack(spacing: 0) {
                 applicationList.frame(width: 300)
                 AppDivider(.vertical)
@@ -92,7 +92,7 @@ struct ComputerUseSettingsView: View {
                         }
                     }
                 }
-                if applications.isEmpty { AppEmptyState(icon: "app.dashed", title: LumiPluginLocalization.string("No Applications", bundle: .module)).padding(.vertical, 30) }
+                if applications.isEmpty { AppEmptyState(icon: "app.dashed", title: pluginLocalization.string("No Applications")).padding(.vertical, 30) }
             }.padding(8)
         }.appSurface(style: .panel, cornerRadius: 0)
     }
@@ -109,26 +109,26 @@ struct ComputerUseSettingsView: View {
                             Text(application.bundleIdentifier).font(.appCaption).foregroundStyle(theme.textSecondary)
                         }.frame(maxWidth: .infinity, alignment: .leading)
                         let isAllowed = ComputerUseAuthorizationStore.shared.isAllowed(application.bundleIdentifier)
-                        AppButton(isAllowed ? LumiPluginLocalization.string("Not Allowed", bundle: .module) : LumiPluginLocalization.string("Allow", bundle: .module), systemImage: isAllowed ? "xmark" : "checkmark", size: .small) {
+                        AppButton(isAllowed ? pluginLocalization.string("Not Allowed") : pluginLocalization.string("Allow"), systemImage: isAllowed ? "xmark" : "checkmark", size: .small) {
                             ComputerUseAuthorizationStore.shared.setAllowed(!isAllowed, bundleIdentifier: application.bundleIdentifier)
                             revision += 1
                         }.fixedSize()
                     }
                     AppDivider()
                     if ComputerUseAuthorizationStore.shared.isNativeAllowed(application.bundleIdentifier) {
-                        AppSettingRow(title: LumiPluginLocalization.string("Mouse and Keyboard Control", bundle: .module),
-                                      description: LumiPluginLocalization.string("Lumi asks you to pause while it operates. Your input pauses the operation.", bundle: .module), icon: "cursorarrow.motionlines") {
-                            AppButton(LumiPluginLocalization.string("Ask Next Time", bundle: .module), size: .small) {
+                        AppSettingRow(title: pluginLocalization.string("Mouse and Keyboard Control"),
+                                      description: pluginLocalization.string("Lumi asks you to pause while it operates. Your input pauses the operation."), icon: "cursorarrow.motionlines") {
+                            AppButton(pluginLocalization.string("Ask Next Time"), size: .small) {
                                 ComputerUseAuthorizationStore.shared.revokeNative(application.bundleIdentifier)
                                 revision += 1
                             }
                         }
                     }
-                    AppSettingRow(title: LumiPluginLocalization.string("Computer Use Access", bundle: .module), description: ComputerUseAuthorizationStore.shared.isAllowed(application.bundleIdentifier) ? LumiPluginLocalization.string("Lumi can observe and interact with this application.", bundle: .module) : LumiPluginLocalization.string("Lumi must be allowed before it can interact with this application.", bundle: .module), icon: "hand.raised") { EmptyView() }
+                    AppSettingRow(title: pluginLocalization.string("Computer Use Access"), description: ComputerUseAuthorizationStore.shared.isAllowed(application.bundleIdentifier) ? pluginLocalization.string("Lumi can observe and interact with this application.") : pluginLocalization.string("Lumi must be allowed before it can interact with this application."), icon: "hand.raised") { EmptyView() }
                 }.padding(22)
             }
         } else {
-            AppEmptyState(icon: "app", title: LumiPluginLocalization.string("Select an Application", bundle: .module)).frame(maxWidth: .infinity, maxHeight: .infinity)
+            AppEmptyState(icon: "app", title: pluginLocalization.string("Select an Application")).frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 

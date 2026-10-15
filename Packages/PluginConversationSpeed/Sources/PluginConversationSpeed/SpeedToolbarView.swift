@@ -28,7 +28,7 @@ struct SpeedToolbarView: View {
             )
         }
         .buttonStyle(.plain)
-        .help(LumiPluginLocalization.string("Streaming output speed", bundle: .module))
+        .help(pluginLocalization.string("Streaming output speed"))
         .popover(isPresented: $popoverShown, arrowEdge: .bottom) {
             SpeedPopover(
                 tps: viewModel.cachedTPS,
@@ -38,9 +38,10 @@ struct SpeedToolbarView: View {
                 streamingDurationMs: viewModel.streamingDurationMs,
                 timeToFirstTokenMs: viewModel.timeToFirstTokenMs,
                 providerID: viewModel.providerID,
+                requestCount: viewModel.requestCount,
                 speedHistory: viewModel.speedHistory
             )
-            .frame(width: 360)
+            .frame(width: 420)
         }
         .onChange(of: viewModel.selectedConversationID) { _, newValue in
             if newValue == nil {
@@ -53,9 +54,6 @@ struct SpeedToolbarView: View {
         guard let cachedTPS = viewModel.cachedTPS else {
             return "—"
         }
-        return String(
-            format: LumiPluginLocalization.string("%.1f tok/s", bundle: .module),
-            cachedTPS
-        )
+        return String(format: "%.1f", cachedTPS)
     }
 }

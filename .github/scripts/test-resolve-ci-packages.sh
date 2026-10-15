@@ -202,7 +202,37 @@ ARGS="$(cat "${FAKE_LOG}/xcodebuild-args.txt" 2>/dev/null || echo '')"
 expect_contains "${ARGS}" "-derivedDataPath ./DerivedData" "uses default derived data path"
 
 # ---------------------------------------------------------------------------
-# 6. Existing checkouts are preserved (not deleted)
+# 6. Exact cache hits are validated without invoking xcodebuild
+# ---------------------------------------------------------------------------
+echo "▶ exact cache hit"
+
+FAKE_LOG="${WORK}/log-cache-hit"
+mkdir -p "${FAKE_LOG}"
+cached_dir="${WORK}/src-cache-hit"
+cached_derived="${WORK}/derived-cache-hit"
+mkdir -p "${cached_dir}/checkouts/CachedPackage"
+
+bash "${SCRIPT}" "${WORK}/fake.xcodeproj" "Lumi" "${cached_dir}" \
+  --derived-data-path "${cached_derived}" --cache-hit \
+  > "${WORK}/stdout-cache-hit.txt" 2>&1
+run_exit=$?
+
+expect_eq "0" "${run_exit}" "cache hit exits 0"
+expect_contains "$(cat "${WORK}/stdout-cache-hit.txt")" "skipped dependency resolution" "reports skipped resolution"
+expect_not_contains "$(cat "${FAKE_LOG}/xcodebuild-args.txt" 2>/dev/null || true)" "-resolvePackageDependencies" "does not invoke xcodebuild for cache hit"
+expect_exists "${cached_dir}/checkouts/CachedPackage" "preserves cached checkout"
+
+missing_cache_dir="${WORK}/src-missing-cache"
+bash "${SCRIPT}" "${WORK}/fake.xcodeproj" "Lumi" "${missing_cache_dir}" \
+  --derived-data-path "${cached_derived}" --cache-hit \
+  > "${WORK}/stdout-missing-cache.txt" 2>&1
+run_exit=$?
+
+expect_eq "1" "${run_exit}" "malformed cache hit exits 1"
+expect_contains "$(cat "${WORK}/stdout-missing-cache.txt")" "checkouts are missing" "reports malformed cache"
+
+# ---------------------------------------------------------------------------
+# 7. Existing checkouts are preserved (not deleted)
 # ---------------------------------------------------------------------------
 echo "▶ existing checkouts preserved"
 

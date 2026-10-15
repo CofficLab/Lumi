@@ -14,6 +14,7 @@ import ProviderNetwork
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
+import PluginRootView
 import ProviderSettingView
 import ProviderSkill
 import ProviderAgentRules
@@ -22,6 +23,7 @@ import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
 import ProviderConversationInput
+import ProviderConversationInputBlock
 import ProviderMessageStreaming
 import ProviderMessageRendering
 import ProviderPromptSuggestion
@@ -159,7 +161,7 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     /// 产出 `RootViewProviding` 实现（默认「工具栏 + 内容区」根布局）。
     public func makeRootViewProvider() -> any RootViewProviding {
-        DefaultRootViewProvider()
+        LumiRootViewProvider()
     }
 
     /// 产出 `ActivityBarProviding` 实现（默认竖直入口栏）。
@@ -184,6 +186,10 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     public func makeConversationInputProvider() -> any ConversationInputProviding {
         DefaultConversationInputProvider()
+    }
+
+    public func makeConversationInputBlockProvider() -> any ConversationInputBlockProviding {
+        DefaultConversationInputBlockProvider()
     }
 
     public func makeMessageStreamingProvider() -> any MessageStreamingProviding {
@@ -359,6 +365,11 @@ public struct DefaultProviderFactory: ProviderFactory {
             (any ConversationInputProviding).self,
             makeConversationInputProvider()
         )
+        // 跨插件递交的折叠内容块（如编辑器选区发送到对话）由输入插件消费。
+        try kernel.registerProvider(
+            (any ConversationInputBlockProviding).self,
+            makeConversationInputBlockProvider()
+        )
         try kernel.registerProvider((any MessageRenderingProviding).self, makeMessageRenderingProvider())
         try kernel.registerProvider((any ToolCallRenderingProviding).self, makeToolCallRenderingProvider())
         try kernel.registerProvider((any PromptSuggestionProviding).self, makePromptSuggestionProvider())
@@ -394,7 +405,6 @@ public struct DefaultProviderFactory: ProviderFactory {
         try kernel.registerProvider((any ToastProviding).self, makeToastProvider())
         try kernel.registerProvider((any NetworkProviding).self, makeNetworkProvider())
         try kernel.registerProvider((any ToolbarProviding).self, makeToolbarProvider())
-        try kernel.registerProvider((any RootViewProviding).self, makeRootViewProvider())
         try kernel.registerProvider((any ActivityBarProviding).self, makeActivityBarProvider())
         try kernel.registerProvider((any RailViewProviding).self, makeRailViewProvider())
         try kernel.registerProvider((any SettingViewProviding).self, makeSettingViewProvider())

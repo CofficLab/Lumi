@@ -6,7 +6,7 @@ import ProviderLogo
 import ProviderMenuBar
 import ProviderStorage
 import ProviderToolManager
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// Caffeinate 插件（KernelCore 版本）
@@ -45,7 +45,7 @@ public final class CaffeinatePlugin: SuperPlugin, PluginDataMigrating, SuperLog 
     public init() {}
 
     public var name: String {
-        LumiPluginLocalization.string("Caffeinate", bundle: .module)
+        pluginLocalization.string("Caffeinate")
     }
 
     public func onRegister(kernel: KernelCoreContainer) throws {

@@ -17,7 +17,7 @@ import SwiftUI
     let activityBar = DefaultActivityBarProviding()
     try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
 
-    let plugin = TerminalSuperPlugin()
+    let plugin = TerminalPlugin()
     try plugin.onBoot(kernel: kernel)
 
     #expect(plugin.id == "com.coffic.lumi.plugin.terminal")
@@ -30,7 +30,7 @@ import SwiftUI
     let activityBar = DefaultActivityBarProviding()
     let chat = DefaultChatSectionProviding()
     let railView = DefaultRailViewProviding()
-    let rootView = DefaultRootViewProvider()
+    let rootView = DefaultRootViewProviding()
 
     railView.addTabs([
         RailTabItem(id: "test.rail", category: .general, title: "Test", systemImage: "circle") {
@@ -45,7 +45,7 @@ import SwiftUI
     try kernel.registerProvider((any RailViewProviding).self, railView)
     try kernel.registerProvider((any RootViewProviding).self, rootView)
 
-    let plugin = TerminalSuperPlugin()
+    let plugin = TerminalPlugin()
     try plugin.onBoot(kernel: kernel)
 
     #expect(activityBar.activeItemID == "\(plugin.id).entry")

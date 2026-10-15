@@ -1,7 +1,7 @@
 import os
 import Foundation
 import KernelCore
-import KitSuperLog
+import LumiLoggingKit
 import ProviderChatSection
 import ProviderConversation
 import ProviderLLMManager
@@ -48,7 +48,7 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public var name: String {
-        LumiPluginLocalization.string("Model Selector", bundle: .module)
+        pluginLocalization.string("Model Selector")
     }
 
 

@@ -22,6 +22,8 @@ enum VersionCreateValidationError: LocalizedError {
             return AppStoreConnectLocalization.string(
                 "A version is already in progress for %@.",
                 AppStoreVersion.platformDisplayName(platform)
+            ) + " " + AppStoreConnectLocalization.string(
+                "To change the version number, delete the in-flight version with app_store_connect_delete_version, then create a new version."
             )
         }
     }

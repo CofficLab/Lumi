@@ -13,13 +13,13 @@ struct CPUHistoryDetailView: View {
         VStack(spacing: 12) {
             // Header with Picker
             HStack {
-                Text(LumiPluginLocalization.string("CPU Load Trend", bundle: .module))
+                Text(pluginLocalization.string("CPU Load Trend"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.secondary)
 
                 Spacer()
 
-                Picker(LumiPluginLocalization.string("Time Range", bundle: .module), selection: $selectedRange) {
+                Picker(pluginLocalization.string("Time Range"), selection: $selectedRange) {
                     ForEach(CPUTimeRange.allCases) { range in
                         Text(range.displayName).tag(range)
                     }

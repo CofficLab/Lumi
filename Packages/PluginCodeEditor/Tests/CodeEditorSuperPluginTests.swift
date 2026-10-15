@@ -18,7 +18,7 @@ import Testing
 struct CodeEditorSuperPluginTests {
     @Test("is user configurable and disabled by default")
     func metadata() {
-        let plugin = CodeEditorSuperPlugin()
+        let plugin = CodeEditorPlugin()
         #expect(plugin.metadata.policy == .disabledByDefault)
         #expect(plugin.dependencies == [
             "com.coffic.lumi.plugin.editor-host",
@@ -28,7 +28,7 @@ struct CodeEditorSuperPluginTests {
 
     @Test("本地化资源覆盖元数据与手册文案")
     func localizationCatalogProvidesSupportedLocales() {
-        let plugin = CodeEditorSuperPlugin()
+        let plugin = CodeEditorPlugin()
         let description = "Browse projects and edit source files in a VS Code-style workspace."
 
         #expect(plugin.metadata.name == CodeEditorLocalization.string("Code Editor"))
@@ -44,15 +44,15 @@ struct CodeEditorSuperPluginTests {
         let content = TestContentProvider()
         let docs = DefaultDocsViewProviding()
         let project = DefaultProjectProvider()
-        let rootView = DefaultRootViewProvider()
+        let rootView = DefaultRootViewProviding()
         try kernel.registerProvider((any ActivityBarProviding).self, activity)
         try kernel.registerProvider((any ContentViewProviding).self, content)
         try kernel.registerProvider((any DocsViewProviding).self, docs)
         try kernel.registerProvider((any ProjectProviding).self, project)
         try kernel.registerProvider((any RootViewProviding).self, rootView)
-        let workspace = CodeEditorSuperPlugin()
+        let workspace = CodeEditorPlugin()
         try kernel.start(plugins: [
-            CodeEditorHostSuperPlugin(),
+            CodeEditorHostPlugin(),
             ProjectFileTreeDependencyPlugin(),
             workspace,
         ])
@@ -60,10 +60,10 @@ struct CodeEditorSuperPluginTests {
 
         #expect(docs.aboutEntries.map(\.id) == [workspace.id])
         #expect(docs.manualEntries.map(\.id) == [workspace.id])
-        #expect(activity.items.allSatisfy { $0.id != CodeEditorSuperPlugin.activityItemID })
+        #expect(activity.items.allSatisfy { $0.id != CodeEditorPlugin.activityItemID })
         #expect(await control.enablePlugin(id: workspace.id))
-        #expect(activity.items.filter { $0.id == CodeEditorSuperPlugin.activityItemID }.count == 1)
-        activity.activateItem(id: CodeEditorSuperPlugin.activityItemID)
+        #expect(activity.items.filter { $0.id == CodeEditorPlugin.activityItemID }.count == 1)
+        activity.activateItem(id: CodeEditorPlugin.activityItemID)
         #expect(content.setCount == 1)
         #expect(rootView.isContentHeaderViewHidden == false)
 
@@ -81,12 +81,12 @@ struct CodeEditorSuperPluginTests {
         #expect(snapshot.text == "let value = 1\n")
 
         #expect(await control.disablePlugin(id: workspace.id))
-        #expect(activity.items.allSatisfy { $0.id != CodeEditorSuperPlugin.activityItemID })
+        #expect(activity.items.allSatisfy { $0.id != CodeEditorPlugin.activityItemID })
         #expect(content.clearCount == 1)
         #expect(rootView.isContentHeaderViewHidden)
 
         #expect(await control.enablePlugin(id: workspace.id))
-        #expect(activity.items.filter { $0.id == CodeEditorSuperPlugin.activityItemID }.count == 1)
+        #expect(activity.items.filter { $0.id == CodeEditorPlugin.activityItemID }.count == 1)
     }
 
     @Test("同步 ThemeProviding 主题到编辑器 Host 契约")
@@ -100,7 +100,7 @@ struct CodeEditorSuperPluginTests {
             builtinThemes: [BuiltinThemes.dark, BuiltinThemes.light]
         )
         let kernel = KernelCoreContainer()
-        try kernel.start(plugins: [CodeEditorHostSuperPlugin()])
+        try kernel.start(plugins: [CodeEditorHostPlugin()])
         defer { try? kernel.stop() }
         let editor = try #require(kernel.resolveProvider(EditorProviding.self))
         let observer = CodeEditorThemeObserver(theme: theme, editor: editor)

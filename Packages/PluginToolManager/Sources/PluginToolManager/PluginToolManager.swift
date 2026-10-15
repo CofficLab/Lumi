@@ -8,7 +8,7 @@ import ProviderSettingView
 import ProviderStorage
 import ProviderToolManager
 import ProviderAgentLoop
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// 工具管理插件。
@@ -75,7 +75,7 @@ public final class PluginToolManager: SuperPlugin, PluginDataMigrating, SuperLog
             settings.addEntries([
                 SettingEntryItem(
                     id: settingsEntryID,
-                    title: LumiPluginLocalization.string("Tools", bundle: .module),
+                    title: pluginLocalization.string("Tools"),
                     systemImage: "wrench.and.screwdriver",
                     order: 6
                 ) { [weak service] in

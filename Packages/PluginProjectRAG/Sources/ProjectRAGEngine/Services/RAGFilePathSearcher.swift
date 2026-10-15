@@ -70,6 +70,11 @@ public enum RAGFilePathSearcher {
         process.arguments = arguments
         process.standardOutput = outputPipe
         process.standardError = FileHandle.nullDevice
+        // 确定性回收管道 fd，避免热路径上依赖 autorelease pool 造成 fd 泄漏。
+        defer {
+            try? outputPipe.fileHandleForReading.close()
+            try? outputPipe.fileHandleForWriting.close()
+        }
 
         do {
             try process.run()

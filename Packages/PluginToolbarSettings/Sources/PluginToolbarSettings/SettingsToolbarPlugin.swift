@@ -2,7 +2,7 @@ import KernelCore
 import LumiUI
 import ProviderToolbar
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 工具栏 - 设置按钮插件

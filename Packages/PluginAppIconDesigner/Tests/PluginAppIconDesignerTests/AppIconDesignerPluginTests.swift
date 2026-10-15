@@ -39,7 +39,7 @@ struct AppIconDesignerPluginTests {
         let activity = DefaultActivityBarProviding()
         let rail = DefaultRailViewProviding()
         let chat = DefaultChatSectionProviding()
-        let rootView = DefaultRootViewProvider()
+        let rootView = DefaultRootViewProviding()
         let toolbar = DefaultToolbarProviding()
         let storage = TestStorage()
 

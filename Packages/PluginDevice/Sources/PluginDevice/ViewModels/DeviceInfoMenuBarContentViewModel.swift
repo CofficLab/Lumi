@@ -1,7 +1,7 @@
 import AppKit
 import Combine
 import os
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// 菜单栏 CPU/内存指标的共享 ViewModel。
@@ -99,13 +99,13 @@ struct DeviceInfoMenuBarSnapshot {
     private static func cpuHelpText(_ cpu: DeviceInfoMenuBarCPUMetrics) -> String {
         let coreCount = cpu.perCoreUsagePercent.count
         if coreCount > 0 {
-            return String(format: LumiPluginLocalization.string("CPU %.0f%% · %d Cores", bundle: .module), Double(cpu.usagePercent), coreCount)
+            return String(format: pluginLocalization.string("CPU %.0f%% · %d Cores"), Double(cpu.usagePercent), coreCount)
         } else {
-            return String(format: LumiPluginLocalization.string("CPU %.0f%%", bundle: .module), Double(cpu.usagePercent))
+            return String(format: pluginLocalization.string("CPU %.0f%%"), Double(cpu.usagePercent))
         }
     }
 
     private static func memoryHelpText(_ memory: DeviceInfoMenuBarMemoryMetrics) -> String {
-        String(format: LumiPluginLocalization.string("Memory %lld%% · %@ / %@", bundle: .module), Int64(memory.usagePercent), memory.usedMemory, memory.totalMemory)
+        String(format: pluginLocalization.string("Memory %lld%% · %@ / %@"), Int64(memory.usagePercent), memory.usedMemory, memory.totalMemory)
     }
 }

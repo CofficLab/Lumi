@@ -7,18 +7,20 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "KitTerminalCore", targets: ["KitTerminalCore"])],
     dependencies: [
-        .package(path: "../KitLocalization"),
-        .package(url: "https://github.com/migueldeicaza/SwiftTerm", from: "1.0.0")
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        // 上限锁定在 1.99.0 之前：SwiftTerm 的 v1.99.0 实际是 2.0 预发布，
+        // 移除了本包依赖的 getTerminal()，放开上限会解析到不兼容版本。
+        .package(url: "https://github.com/migueldeicaza/SwiftTerm", "1.0.0" ..< "1.99.0")
     ],
     targets: [
         .target(
             name: "KitTerminalCore",
             dependencies: ["SwiftTerm",
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
-            path: "Sources",
+            path: "Sources/KitTerminalCore",
             resources: [
-                .process("../Resources")
+                .process("../../Resources")
             ]
         ),
         .testTarget(

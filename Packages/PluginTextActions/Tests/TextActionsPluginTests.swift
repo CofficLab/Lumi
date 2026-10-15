@@ -45,7 +45,7 @@ func v2TranslationRequestPreservesPromptAndText() {
 @MainActor
 @Test
 func v2PluginPreservesIdentityAndOptInPolicy() {
-    let plugin = TextActionsSuperPlugin()
+    let plugin = TextActionsPlugin()
     #expect(plugin.id == "com.coffic.lumi.plugin.text-actions")
     #expect(plugin.order == 275)
     #expect(plugin.metadata.policy == .disabledByDefault)

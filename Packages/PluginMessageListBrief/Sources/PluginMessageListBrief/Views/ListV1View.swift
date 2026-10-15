@@ -241,7 +241,7 @@ struct ListV1View: View {
             if isLoading {
                 ProgressView().controlSize(.small)
             } else {
-                Text(LumiPluginLocalization.string("Load earlier messages"))
+                Text(pluginLocalization.string("Load earlier messages"))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
             }

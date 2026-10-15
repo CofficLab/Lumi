@@ -1,6 +1,6 @@
 import Foundation
 import os
-import KitSuperLog
+import LumiLoggingKit
 import ProviderMessageSender
 
 /// 把插件 Capability 的外部变化同步到插件自己的 ViewModel。

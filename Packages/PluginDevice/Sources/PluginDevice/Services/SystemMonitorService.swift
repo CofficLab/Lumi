@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 import IOKit
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 private final class MonitorState: @unchecked Sendable {

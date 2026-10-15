@@ -17,7 +17,7 @@ env:
 
 jobs:
   prepare:
-    runs-on: macos-26
+    runs-on: xcode-27
     permissions:
       contents: read
     outputs:
@@ -38,7 +38,7 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
         with:
-          xcode-version: "26.3"
+          xcode-version: "27.0"
       - name: Prepare immutable release metadata
         id: metadata
         env:
@@ -61,7 +61,7 @@ jobs:
 
   build:
     needs: prepare
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 120
     permissions:
       contents: read
@@ -91,7 +91,9 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
         with:
-          xcode-version: "26.3"
+          xcode-version: "27.0"
+      - name: Install Metal Toolchain
+        run: .github/scripts/install-metal-toolchain.sh
       - name: Verify source and inject the prepared version
         run: |
           set -euo pipefail
@@ -128,8 +130,13 @@ jobs:
       - name: Strictly resolve locked dependencies
         run: |
           set -euo pipefail
-          .github/scripts/resolve-ci-packages.sh Lumi.xcodeproj Lumi "${SOURCE_PACKAGES_PATH}" \
-            --derived-data-path "${DERIVED_DATA_PATH}"
+          if [ "${{ steps.xcode-cache.outputs.cache-hit }}" = "true" ]; then
+            .github/scripts/resolve-ci-packages.sh Lumi.xcodeproj Lumi "${SOURCE_PACKAGES_PATH}" \
+              --derived-data-path "${DERIVED_DATA_PATH}" --cache-hit
+          else
+            .github/scripts/resolve-ci-packages.sh Lumi.xcodeproj Lumi "${SOURCE_PACKAGES_PATH}" \
+              --derived-data-path "${DERIVED_DATA_PATH}"
+          fi
           before=$(shasum -a 256 Packages/FactoryLumiACP/Package.resolved | awk '{print $1}')
           mkdir -p "${ACP_CACHE_PATH}" "${ACP_SCRATCH_ROOT}/resolve"
           xcrun swift package --package-path Packages/FactoryLumiACP --cache-path "${ACP_CACHE_PATH}" \
@@ -182,7 +189,7 @@ jobs:
 
   publish:
     needs: [prepare, build]
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 90
     permissions:
       contents: write
@@ -236,7 +243,7 @@ jobs:
         if: steps.recovery.outputs.reuse != 'true'
         uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
         with:
-          xcode-version: "26.3"
+          xcode-version: "27.0"
       - name: Verify and restore both build artifacts
         if: steps.recovery.outputs.reuse != 'true'
         run: .github/scripts/verify-release-inputs.py "${RELEASE_METADATA}" incoming "${RESTORED_ARCHIVES}"
@@ -373,6 +380,7 @@ jobs:
             .github/scripts/publish-r2-asset.py "${FINAL_ASSETS}/${filename}" "${prefix}/${filename}" "${public_root}/${filename}"
           done
       - name: Verify public DMG bytes
+        if: false  # 上传后不回读校验，避免 CDN 传播延迟导致误报
         run: |
           public_root=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["download_root"])' "${RELEASE_METADATA}")
           .github/scripts/verify-published-assets.py "${RELEASE_METADATA}" "${FINAL_ASSETS}/final-assets-manifest.json" "${public_root}"
@@ -398,8 +406,13 @@ jobs:
             remote_sha=$(git rev-parse "${tag}^{commit}")
             test "${remote_sha}" = "${sha}" || { echo "Tag ${tag} points to ${remote_sha}, not ${sha}" >&2; exit 1; }
           else
-            prerelease=(); [ '${{ needs.prepare.outputs.is_prerelease }}' = true ] && prerelease=(--prerelease)
-            gh release create "${tag}" --draft --target "${sha}" "${prerelease[@]}" --title "${tag}" --notes-file "${FINAL_ASSETS}/changelog.md"
+            if [ '${{ needs.prepare.outputs.is_prerelease }}' = true ]; then
+              gh release create "${tag}" --draft --prerelease --target "${sha}" \
+                --title "${tag}" --notes-file "${FINAL_ASSETS}/changelog.md"
+            else
+              gh release create "${tag}" --draft --target "${sha}" \
+                --title "${tag}" --notes-file "${FINAL_ASSETS}/changelog.md"
+            fi
           fi
           mkdir -p existing-assets
           for file in "${FINAL_ASSETS}"/*; do

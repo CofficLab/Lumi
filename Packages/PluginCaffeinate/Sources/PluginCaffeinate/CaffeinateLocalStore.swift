@@ -1,8 +1,7 @@
 import Foundation
 import os
 import ProviderStorage
-import KitSuperLog
-
+import LumiLoggingKit
 /// Caffeinate 插件本地存储
 ///
 /// 负责持久化 Caffeinate 插件的用户配置（默认启动模式等）。

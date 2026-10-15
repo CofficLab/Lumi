@@ -75,13 +75,13 @@ public struct SettingsView: View {
 
     private var header: some View {
         HStack(spacing: 10) {
-            Label(String(format: LumiPluginLocalization.string("%lld projects", bundle: .module), projects.count), systemImage: "folder")
+            Label(String(format: pluginLocalization.string("%lld projects"), projects.count), systemImage: "folder")
             if let selected = selectedProject {
-                Text(LumiPluginLocalization.string("·", bundle: .module))
+                Text(pluginLocalization.string("·"))
                 Text(selected.name)
             }
             Spacer()
-            AppButton(LumiPluginLocalization.string("Add Project", bundle: .module), systemImage: "plus", style: .secondary, size: .small) {
+            AppButton(pluginLocalization.string("Add Project"), systemImage: "plus", style: .secondary, size: .small) {
                 addProject()
             }
         }
@@ -94,8 +94,8 @@ public struct SettingsView: View {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-        panel.message = LumiPluginLocalization.string("Select a project folder", bundle: .module)
-        panel.prompt = LumiPluginLocalization.string("Add", bundle: .module)
+        panel.message = pluginLocalization.string("Select a project folder")
+        panel.prompt = pluginLocalization.string("Add")
 
         if panel.runModal() == .OK, let url = panel.url {
             viewModel.addProject(url: url)
@@ -109,7 +109,7 @@ public struct SettingsView: View {
             if projects.isEmpty {
                 AppEmptyState(
                     icon: "folder",
-                    title: LumiPluginLocalization.string("No projects yet", bundle: .module)
+                    title: pluginLocalization.string("No projects yet")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -150,7 +150,7 @@ public struct SettingsView: View {
                             .font(.system(size: 13, weight: .medium))
                             .lineLimit(1)
                         if isCurrent {
-                            Text(LumiPluginLocalization.string("Current", bundle: .module))
+                            Text(pluginLocalization.string("Current"))
                                 .font(.system(size: 9, weight: .semibold))
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 5)
@@ -178,7 +178,7 @@ public struct SettingsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     AppSettingSection(
-                        title: LumiPluginLocalization.string("Overview", bundle: .module),
+                        title: pluginLocalization.string("Overview"),
                         titleAlignment: .leading
                     ) {
                         VStack(alignment: .leading, spacing: 12) {
@@ -196,7 +196,7 @@ public struct SettingsView: View {
                                     .textSelection(.enabled)
                                 Spacer()
                                 AppButton(
-                                    LumiPluginLocalization.string("Open in Finder", bundle: .module),
+                                    pluginLocalization.string("Open in Finder"),
                                     systemImage: "folder",
                                     style: .secondary,
                                     size: .small
@@ -208,22 +208,22 @@ public struct SettingsView: View {
                     }
 
                     AppSettingSection(
-                        title: LumiPluginLocalization.string("Basic Info", bundle: .module),
+                        title: pluginLocalization.string("Basic Info"),
                         titleAlignment: .leading
                     ) {
                         VStack(spacing: 0) {
-                            detailRow(title: LumiPluginLocalization.string("Name", bundle: .module), icon: "text.cursor", value: project.name)
+                            detailRow(title: pluginLocalization.string("Name"), icon: "text.cursor", value: project.name)
                             Divider().padding(.vertical, 8)
-                            detailRow(title: LumiPluginLocalization.string("Path", bundle: .module), icon: "folder", value: project.path, monospace: true)
+                            detailRow(title: pluginLocalization.string("Path"), icon: "folder", value: project.path, monospace: true)
                             Divider().padding(.vertical, 8)
-                            detailRow(title: LumiPluginLocalization.string("Language", bundle: .module), icon: "character.book.closed", value: project.language?.capitalized ?? LumiPluginLocalization.string("Unknown", bundle: .module))
+                            detailRow(title: pluginLocalization.string("Language"), icon: "character.book.closed", value: project.language?.capitalized ?? pluginLocalization.string("Unknown"))
                             Divider().padding(.vertical, 8)
-                            detailRow(title: LumiPluginLocalization.string("Last Used", bundle: .module), icon: "calendar", value: formattedDate(project.lastUsed))
+                            detailRow(title: pluginLocalization.string("Last Used"), icon: "calendar", value: formattedDate(project.lastUsed))
                             Divider().padding(.vertical, 8)
                             detailRow(
-                                title: LumiPluginLocalization.string("Status", bundle: .module),
+                                title: pluginLocalization.string("Status"),
                                 icon: "star",
-                                value: viewModel.currentProject?.path == project.path ? LumiPluginLocalization.string("Current Project", bundle: .module) : LumiPluginLocalization.string("Not Selected", bundle: .module)
+                                value: viewModel.currentProject?.path == project.path ? pluginLocalization.string("Current Project") : pluginLocalization.string("Not Selected")
                             )
                         }
                     }
@@ -241,7 +241,7 @@ public struct SettingsView: View {
         } else {
             AppEmptyState(
                 icon: "folder",
-                title: projects.isEmpty ? LumiPluginLocalization.string("No projects yet", bundle: .module) : LumiPluginLocalization.string("Select a project", bundle: .module)
+                title: projects.isEmpty ? pluginLocalization.string("No projects yet") : pluginLocalization.string("Select a project")
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .appSurface(style: .panel, cornerRadius: 0)
@@ -257,19 +257,19 @@ public struct SettingsView: View {
         let current = opened?.currentFileURL
 
         AppSettingSection(
-                        title: LumiPluginLocalization.string("Opened Files", bundle: .module),
+                        title: pluginLocalization.string("Opened Files"),
                         titleAlignment: .leading
                     ) {
             if isLoadingOpenedFiles {
                 HStack(spacing: 8) {
                     ProgressView()
                         .controlSize(.small)
-                    Text(LumiPluginLocalization.string("Loading opened files…", bundle: .module))
+                    Text(pluginLocalization.string("Loading opened files…"))
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
                 }
             } else if urls.isEmpty {
-                Text(LumiPluginLocalization.string("No opened files recorded", bundle: .module))
+                Text(pluginLocalization.string("No opened files recorded"))
                     .font(.callout)
                     .foregroundStyle(theme.textSecondary)
             } else {
@@ -283,7 +283,7 @@ public struct SettingsView: View {
                                 .foregroundStyle(theme.textPrimary)
                                 .lineLimit(1)
                             Spacer(minLength: 0)
-                            Text(LumiPluginLocalization.string("Active", bundle: .module))
+                            Text(pluginLocalization.string("Active"))
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
@@ -300,7 +300,7 @@ public struct SettingsView: View {
                         }
                     }
                     if urls.count > 20 {
-                        Text(String(format: LumiPluginLocalization.string("+%lld more", bundle: .module), urls.count - 20))
+                        Text(String(format: pluginLocalization.string("+%lld more"), urls.count - 20))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }

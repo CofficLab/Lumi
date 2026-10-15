@@ -1,5 +1,5 @@
 import Foundation
-import KitLocalization
+import LumiLocalizationKit
 
 /// Prototype Designer 的运行时本地化入口。
 ///

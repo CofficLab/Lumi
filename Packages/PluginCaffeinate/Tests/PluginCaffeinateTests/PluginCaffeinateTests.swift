@@ -55,7 +55,7 @@ struct PluginCaffeinateTests {
     func localizationCatalogIsPackaged() {
         let bundle = Bundle.module
         #expect(bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
-        #expect(LumiPluginLocalization.string("Caffeinate", bundle: .module).isEmpty == false)
+        #expect(pluginLocalization.string("Caffeinate").isEmpty == false)
     }
 }
 

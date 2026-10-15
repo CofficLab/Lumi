@@ -1,5 +1,5 @@
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import AppKit
 import Combine
 
@@ -125,6 +125,7 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
         task?.terminate()
         task = nil
 
+        // 确定性回收 nettop 管道的读端 fd（写端由子进程持有，随进程退出释放）。
         outputPipe?.fileHandleForReading.closeFile()
         outputPipe = nil
 

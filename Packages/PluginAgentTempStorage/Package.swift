@@ -9,12 +9,12 @@ let package = Package(
         .library(name: "PluginAgentTempStorage", targets: ["PluginAgentTempStorage"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
         .package(path: "../KitAgentTool"),
-        .package(path: "../KernelCore"),
-        .package(path: "../KitLocalization"),
-        .package(path: "../ProviderStorage"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .testTarget(
@@ -25,11 +25,11 @@ let package = Package(
             name: "PluginAgentTempStorage",
             dependencies: [
                 "KitAgentTool",
-                "KernelCore",
-                "KitLocalization",
-                "ProviderStorage",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 "ProviderToolManager",
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),

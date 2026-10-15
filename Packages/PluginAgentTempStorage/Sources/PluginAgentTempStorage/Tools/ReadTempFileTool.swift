@@ -1,16 +1,13 @@
 import KitAgentTool
 import Foundation
-import KitLocalization
+import LumiLocalizationKit
 
 /// 读取临时文件工具
 struct ReadTempFileTool: SuperAgentTool {
     let name = "read_temp_file"
 
     func description(for language: LanguagePreference) -> String {
-        LumiPluginLocalization.string(
-            "Read UTF-8 text from a file in the agent temp storage directory.",
-            bundle: .module
-        )
+        pluginLocalization.string("Read UTF-8 text from a file in the agent temp storage directory.")
     }
 
     func inputSchema(for language: LanguagePreference) -> [String: Any] {

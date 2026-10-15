@@ -24,12 +24,12 @@ enum ModelCategory: String, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .all: return LumiPluginLocalization.string("All", bundle: .module)
-        case .language: return LumiPluginLocalization.string("Language Models", bundle: .module)
-        case .vision: return LumiPluginLocalization.string("Vision Models", bundle: .module)
-        case .tools: return LumiPluginLocalization.string("Tool Models", bundle: .module)
-        case .audio: return LumiPluginLocalization.string("Audio Models", bundle: .module)
-        case .image: return LumiPluginLocalization.string("Image Models", bundle: .module)
+        case .all: return pluginLocalization.string("All")
+        case .language: return pluginLocalization.string("Language Models")
+        case .vision: return pluginLocalization.string("Vision Models")
+        case .tools: return pluginLocalization.string("Tool Models")
+        case .audio: return pluginLocalization.string("Audio Models")
+        case .image: return pluginLocalization.string("Image Models")
         }
     }
 
@@ -102,13 +102,13 @@ struct ModelListView: View {
     }
 
     /// 当前选中供应商的模型元数据字典（id → LLMModelInfo）
+    ///
+    /// 取动态模型池而非 `providerInfo.models`：远程刷新新增的模型只存在于
+    /// 动态池中，用静态清单会让它们丢失 displayName 与能力标记，
+    /// 进而在分类筛选中被误过滤。
     private var selectedProviderModelInfos: [String: LLMModelInfo] {
-        guard let providerID = viewModel.selectedProviderID,
-              let info = viewModel.providerInfo(id: providerID)
-        else {
-            return [:]
-        }
-        return Dictionary(uniqueKeysWithValues: info.models.map { ($0.id, $0) })
+        guard let providerID = viewModel.selectedProviderID else { return [:] }
+        return viewModel.modelInfoMap(for: providerID)
     }
 
     var body: some View {
@@ -118,11 +118,23 @@ struct ModelListView: View {
 
             AppDivider()
 
-            // Search（模型较少时列表可一览无余，搜索框不再占位）
-            if viewModel.showsModelSearchBar {
-                AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search models", bundle: .module)))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
+            // 搜索框与远程刷新入口共用一行：模型多到需要搜索时为「搜索框 + 刷新」，
+            // 模型少到无需搜索时仍保留刷新按钮（靠右），不额外占用一行。
+            if showsSearchOrRefresh {
+                HStack(spacing: 4) {
+                    if viewModel.showsModelSearchBar {
+                        AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(pluginLocalization.string("Search models")))
+                    } else {
+                        Spacer(minLength: 0)
+                    }
+
+                    if let providerID = viewModel.selectedProviderID,
+                       viewModel.canRefreshModels(providerID: providerID) {
+                        refreshButton(providerID: providerID)
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
 
                 AppDivider()
             }
@@ -131,7 +143,7 @@ struct ModelListView: View {
             if let providerID = viewModel.selectedProviderID {
                 let models = viewModel.models(for: providerID)
                 let modelInfos = selectedProviderModelInfos
-                let visibleModels = applyCategoryAndSearch(to: models, modelInfos: modelInfos)
+                let visibleModels = viewModel.visibleModels(for: providerID)
 
                 ScrollView {
                     LazyVStack(spacing: 4) {
@@ -156,7 +168,7 @@ struct ModelListView: View {
                 }
             } else {
                 Spacer()
-                Text(LumiPluginLocalization.string("Select a provider", bundle: .module))
+                Text(pluginLocalization.string("Select a provider"))
                     .font(.appCallout)
                     .foregroundColor(theme.textTertiary)
                 Spacer()
@@ -165,29 +177,42 @@ struct ModelListView: View {
         .background(theme.background)
     }
 
+    // MARK: - Refreshing
+
+    /// 当前供应商是否支持远程模型刷新（提供刷新按钮）。
+    private var canRefreshSelectedProvider: Bool {
+        guard let providerID = viewModel.selectedProviderID else { return false }
+        return viewModel.canRefreshModels(providerID: providerID)
+    }
+
+    /// 搜索 / 刷新这一行是否有任何内容需要展示。
+    ///
+    /// 两者都没有时整行连同分割线一并隐藏，避免占位空白。
+    private var showsSearchOrRefresh: Bool {
+        viewModel.showsModelSearchBar || canRefreshSelectedProvider
+    }
+
+    /// 手动同步远程模型列表的按钮。
+    private func refreshButton(providerID: String) -> some View {
+        Button {
+            Task { await viewModel.refreshModels(providerID: providerID) }
+        } label: {
+            Image(systemName: "arrow.clockwise")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(theme.textTertiary)
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(pluginLocalization.string("Refresh Models"))
+        .accessibilityLabel(pluginLocalization.string("Refresh Models"))
+        .accessibilityIdentifier("lumi.model-selector.refresh")
+    }
+
     // MARK: - Filtering
 
-    /// 类别筛选 + 搜索框文本过滤。
-    private func applyCategoryAndSearch(
-        to models: [String],
-        modelInfos: [String: LLMModelInfo]
-    ) -> [String] {
-        let query = viewModel.activeModelSearchText
-        return models
-            .filter { model in
-                viewModel.selectedCategory.includes(model: model, modelInfo: modelInfos[model])
-            }
-            .sorted { lhs, rhs in
-                let lhsName = modelInfos[lhs]?.displayName ?? lhs
-                let rhsName = modelInfos[rhs]?.displayName ?? rhs
-                return lhsName.localizedCaseInsensitiveCompare(rhsName) == .orderedAscending
-            }
-            .filter { model in
-                query.isEmpty
-                    || model.localizedCaseInsensitiveContains(query)
-                    || (modelInfos[model]?.displayName ?? model).localizedCaseInsensitiveContains(query)
-            }
-    }
+    /// 类别筛选 + 搜索框文本过滤的逻辑已下沉到
+    /// `ModelSelectorViewModel.visibleModels(for:)`，此处不再重复实现。
 }
 
 /// 模型能力筛选栏：横向滚动的标签（全部 / 语言模型 / 视觉模型 / …）。

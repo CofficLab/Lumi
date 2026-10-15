@@ -33,6 +33,11 @@ public struct ChatInputEditorView: NSViewRepresentable {
     private let onEnter: (() -> Void)?
     private let onEscape: (() -> Void)?
     private let onFileDrop: ((URL) -> Void)?
+    /// 编辑器插入完折叠块后的回调，ViewModel 据此清空待插入状态。
+    private let onBlockInserted: ((UUID) -> Void)?
+    /// 待插入输入框的折叠块请求（如编辑器选区发送到对话）。
+    /// 消费一次后由 ViewModel 置空，避免重复插入同一个 chip。
+    private let pendingBlock: ConversationInputBlockRequest?
 
     public init(
         text: Binding<String>,
@@ -48,9 +53,11 @@ public struct ChatInputEditorView: NSViewRepresentable {
         onEnter: (() -> Void)? = nil,
         onEscape: (() -> Void)? = nil,
         onFileDrop: ((URL) -> Void)? = nil,
+        onBlockInserted: ((UUID) -> Void)? = nil,
         isFocused: Binding<Bool>,
         cursorPosition: Binding<Int>,
-        isImageDragHovering: Binding<Bool>
+        isImageDragHovering: Binding<Bool>,
+        pendingBlock: ConversationInputBlockRequest? = nil
     ) {
         self._text = text
         self._height = height
@@ -68,6 +75,8 @@ public struct ChatInputEditorView: NSViewRepresentable {
         self.onEnter = onEnter
         self.onEscape = onEscape
         self.onFileDrop = onFileDrop
+        self.onBlockInserted = onBlockInserted
+        self.pendingBlock = pendingBlock
     }
 
     public func makeNSView(context: Context) -> NSScrollView {
@@ -116,6 +125,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
             height: CGFloat.greatestFiniteMagnitude
         )
         textView.textContainerInset = NSSize(width: 4, height: 4)
+        textView.setAccessibilityIdentifier("lumi.conversation-input.editor")
 
         scrollView.documentView = textView
         context.coordinator.attach(to: textView)
@@ -192,6 +202,22 @@ public struct ChatInputEditorView: NSViewRepresentable {
                 context.coordinator.scheduleHeightUpdate(for: textView, immediately: true)
             }
         }
+
+        insertPendingBlockIfNeeded(in: textView, context: context)
+    }
+
+    /// 把外部递交的折叠块插进编辑器。
+    ///
+    /// 超过块自带的折叠阈值时插入 chip（一行内联按钮），否则按纯文本插入，
+    /// 让用户仍能在发送前直接改写短内容。
+    private func insertPendingBlockIfNeeded(in textView: EditorTextView, context: Context) {
+        guard let block = pendingBlock,
+              context.coordinator.lastInsertedBlockID != block.id else {
+            return
+        }
+        context.coordinator.lastInsertedBlockID = block.id
+        context.coordinator.insert(block, in: textView)
+        onBlockInserted?(block.id)
     }
 
     public func makeCoordinator() -> Coordinator {
@@ -303,11 +329,48 @@ private final class ChatInputScrollView: NSScrollView {
     }
 }
 
+// MARK: - ConversationInputBlockRequest
+
+/// 待插入输入框的折叠块请求。
+///
+/// 与 Provider 层的 `ConversationInputBlock` 内容一致，但在插件内部多一层
+/// 传递：ViewModel 把它作为可发布状态交给 SwiftUI，编辑器消费后由
+/// ``ChatInputEditorView/Coordinator/lastInsertedBlockID`` 去重，避免同一个块
+/// 在后续的 `updateNSView` 中被反复插入。
+public struct ConversationInputBlockRequest: Equatable {
+    public let id: UUID
+    public let text: String
+    public let title: String
+    public let systemImage: String
+    /// 折叠阈值：文本短于此值时按纯文本插入，方便用户直接改写。
+    public let collapseThreshold: Int
+
+    public init(
+        id: UUID = UUID(),
+        text: String,
+        title: String,
+        systemImage: String,
+        collapseThreshold: Int
+    ) {
+        self.id = id
+        self.text = text
+        self.title = title
+        self.systemImage = systemImage
+        self.collapseThreshold = collapseThreshold
+    }
+
+    public var shouldCollapse: Bool {
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && text.count >= max(0, collapseThreshold)
+    }
+}
+
 extension ChatInputEditorView {
-    @MainActor
     public final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: ChatInputEditorView
         var lastSyncedCursorPosition: Int?
+        /// 最近一次已插入的折叠块 ID。用于在多次 `updateNSView` 之间去重。
+        var lastInsertedBlockID: UUID?
         private var pendingHeightWorkItem: DispatchWorkItem?
         private var pendingHeightBindingWorkItem: DispatchWorkItem?
         private var heightScheduleID = UUID()
@@ -461,6 +524,39 @@ extension ChatInputEditorView {
         }
 
         @MainActor
+        /// 插入外部递交的折叠块。
+        ///
+        /// 达到折叠阈值时插入 chip（一行内联按钮），否则按纯文本插入，
+        /// 让短内容在发送前仍可直接改写。两条路径都在末尾把光标移到插入点之后。
+        func insert(_ block: ConversationInputBlockRequest, in textView: EditorTextView) {
+            let insertionRange = textView.selectedRange()
+
+            if block.shouldCollapse {
+                let attachment = PastePreviewAttachment(
+                    originalText: block.text,
+                    title: block.title,
+                    systemImage: block.systemImage
+                )
+                textView.hasPastePreviewAttachments = true
+                textView.insertText(
+                    NSAttributedString(attachment: attachment),
+                    replacementRange: insertionRange
+                )
+                // chip 的 hover 依赖 tracking area，立即挂上不等 AppKit 的布局回调。
+                textView.syncPasteHoverTracking()
+            } else {
+                // 已有内容时留一个空行，避免和用户已写的文字黏在一起。
+                let separator = insertionRange.location > 0 ? "\n" : ""
+                textView.insertText(separator + block.text, replacementRange: insertionRange)
+            }
+
+            // insertText 会通过 delegate 发布文本；这里直接同步一次，
+            // 让草稿立刻带上新内容，不必等下一轮 SwiftUI 更新。
+            publishCommittedText(from: textView)
+            scheduleHeightUpdate(for: textView, immediately: true)
+        }
+
+        @MainActor
         func handlePaste(_ pasteboard: NSPasteboard, in textView: EditorTextView) -> Bool {
             guard let text = pasteboard.string(forType: .string)?.trimmingCharacters(in: .newlines),
                   !text.isEmpty else {
@@ -475,6 +571,8 @@ extension ChatInputEditorView {
             let attributed = NSAttributedString(attachment: attachment)
             textView.hasPastePreviewAttachments = true
             textView.insertText(attributed, replacementRange: textView.selectedRange())
+            // 折叠按钮的 hover 依赖 tracking area，这里立即挂上，不等 AppKit 的布局回调。
+            textView.syncPasteHoverTracking()
             return true
         }
 
@@ -572,6 +670,10 @@ final class EditorTextView: NSTextView {
     var fileDropHandler: ((URL) -> Void)?
     private var pastePreviewPopover: NSPopover?
 
+    /// 当前鼠标悬停的粘贴折叠按钮，供 cell 绘制高亮态时查询。
+    private(set) weak var hoveredPasteCell: PasteButtonAttachmentCell?
+    private var pasteHoverTrackingArea: NSTrackingArea?
+
     override init(frame frameRect: NSRect, textContainer container: NSTextContainer?) {
         super.init(frame: frameRect, textContainer: container)
         registerForDraggedTypes([.fileURL, .string])
@@ -585,6 +687,97 @@ final class EditorTextView: NSTextView {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         registerForDraggedTypes([.fileURL, .string])
+    }
+
+    // MARK: - 粘贴折叠按钮 hover
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        refreshPasteHoverTracking()
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        refreshPasteHoverTracking()
+    }
+
+    private func refreshPasteHoverTracking() {
+        pasteHoverTrackingArea.map(removeTrackingArea)
+        guard hasPastePreviewAttachments, window != nil else {
+            pasteHoverTrackingArea = nil
+            return
+        }
+        let area = NSTrackingArea(
+            rect: .zero,
+            options: [.mouseMoved, .mouseEnteredAndExited, .inVisibleRect, .activeInKeyWindow],
+            owner: self
+        )
+        addTrackingArea(area)
+        pasteHoverTrackingArea = area
+    }
+
+    /// 挂上/摘掉 hover 追踪区。粘贴折叠按钮出现后需要立即生效，
+    /// 不依赖 AppKit 的 `updateTrackingAreas` 回调时机。
+    func syncPasteHoverTracking() {
+        refreshPasteHoverTracking()
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        updateHoveredPasteCell(at: convert(event.locationInWindow, from: nil))
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        setHoveredPasteCell(nil)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        setHoveredPasteCell(nil)
+        let point = convert(event.locationInWindow, from: nil)
+        if showPastePreviewIfNeeded(at: point) {
+            return
+        }
+        super.mouseDown(with: event)
+    }
+
+    private func updateHoveredPasteCell(at point: NSPoint) {
+        guard let cell = pastePreviewCell(at: point) else {
+            setHoveredPasteCell(nil)
+            return
+        }
+        setHoveredPasteCell(cell)
+    }
+
+    private func setHoveredPasteCell(_ cell: PasteButtonAttachmentCell?) {
+        guard hoveredPasteCell !== cell else { return }
+        hoveredPasteCell = cell
+        // 按钮是内联 attachment，由 textView 统一绘制，状态变化后整段重画即可。
+        needsDisplay = true
+    }
+
+    /// 命中测试：返回命中点所在的粘贴折叠按钮，没有则返回 nil。
+    private func pastePreviewCell(at point: NSPoint) -> PasteButtonAttachmentCell? {
+        guard let textStorage, let layoutManager, let textContainer else {
+            return nil
+        }
+
+        let containerPoint = NSPoint(
+            x: point.x - textContainerOrigin.x,
+            y: point.y - textContainerOrigin.y
+        )
+        let charIndex = layoutManager.characterIndex(
+            for: containerPoint,
+            in: textContainer,
+            fractionOfDistanceBetweenInsertionPoints: nil
+        )
+        guard charIndex < textStorage.length,
+              let attachment = textStorage.attribute(.attachment, at: charIndex, effectiveRange: nil) as? PastePreviewAttachment
+        else {
+            return nil
+        }
+
+        return attachment.attachmentCell as? PasteButtonAttachmentCell
     }
 
     override func setMarkedText(
@@ -637,14 +830,6 @@ final class EditorTextView: NSTextView {
             return
         }
         super.paste(sender)
-    }
-
-    override func mouseDown(with event: NSEvent) {
-        let point = convert(event.locationInWindow, from: nil)
-        if showPastePreviewIfNeeded(at: point) {
-            return
-        }
-        super.mouseDown(with: event)
     }
 
     override func keyDown(with event: NSEvent) {
@@ -762,8 +947,8 @@ final class EditorTextView: NSTextView {
         popover.contentSize = NSSize(width: 620, height: 460)
         popover.contentViewController = PastePreviewPopoverViewController(
             text: attachment.originalText,
-            characterCount: attachment.characterCount,
-            lineCount: attachment.lineCount
+            summaryText: attachment.summaryText,
+            title: attachment.previewTitle
         )
         popover.show(relativeTo: rect, of: self, preferredEdge: .maxY)
         pastePreviewPopover = popover
@@ -772,28 +957,41 @@ final class EditorTextView: NSTextView {
 
 // MARK: - PastePreviewAttachment
 
+/// 折叠后的大段粘贴内容。
+///
+/// 通过 ``PasteButtonAttachmentCell`` 在正文里绘制成一行内联的「小按钮」chip，
+/// 视觉上只占用一行、随文本一起排版；点击后弹出可滚动的预览 popover。
+///
+/// 粘贴与大段内容的折叠共用这一种 attachment：区别只在 chip 上显示的标题与图标，
+/// 发送时都还原为 `originalText`。
 final class PastePreviewAttachment: NSTextAttachment {
     let originalText: String
-    let previewText: String
-    let summaryText: String
-    let lineCount: Int
     let characterCount: Int
+    let lineCount: Int
+    let byteCountText: String
+    /// 预览弹窗标题。粘贴固定为「粘贴的文本」，外部内容用来源标题（如文件名）。
+    let previewTitle: String
 
-    init(originalText: String) {
+    /// 粘贴路径：不带来源标题与图标，chip 沿用「粘贴的文本」文案。
+    convenience init(originalText: String) {
+        self.init(originalText: originalText, title: nil, systemImage: nil)
+    }
+
+    init(originalText: String, title: String?, systemImage: String?) {
         self.originalText = originalText
-        self.previewText = Self.previewText(for: originalText)
-        self.lineCount = Self.lineCount(for: originalText)
         self.characterCount = originalText.count
-        self.summaryText = Self.summaryText(for: originalText, lineCount: lineCount, characterCount: characterCount)
-
-        let image = Self.makeImage(
-            previewText: previewText,
-            summaryText: summaryText
+        self.lineCount = Self.lineCount(for: originalText)
+        self.byteCountText = ByteCountFormatter.string(
+            fromByteCount: Int64(originalText.utf8.count),
+            countStyle: .file
         )
-
+        self.previewTitle = title ?? pluginLocalization.string("Pasted text")
         super.init(data: nil, ofType: nil)
-        self.image = image
-        self.bounds = CGRect(origin: .zero, size: image.size)
+        self.attachmentCell = PasteButtonAttachmentCell(
+            title: title.map { "\($0) · \(Self.countText(self.characterCount))" }
+                ?? Self.chipTitle(characterCount: characterCount, lineCount: lineCount),
+            systemImage: systemImage
+        )
     }
 
     @available(*, unavailable)
@@ -801,79 +999,167 @@ final class PastePreviewAttachment: NSTextAttachment {
         fatalError("init(coder:) has not been implemented")
     }
 
-    private static func previewText(for text: String) -> String {
-        let collapsed = text
-            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        if collapsed.isEmpty {
-            return "Empty paste"
-        }
-        if collapsed.count <= 60 {
-            return collapsed
-        }
-        let prefix = String(collapsed.prefix(60))
-        return prefix + "…"
+    /// 预览弹窗里展示的完整摘要。
+    var summaryText: String {
+        "\(Self.countText(characterCount)) · \(Self.lineText(lineCount)) · \(byteCountText)"
+    }
+
+    /// 内联 chip 上显示的一行文案，例如「粘贴的文本 · 12,480 字 · 312 行」。
+    static func chipTitle(characterCount: Int, lineCount: Int) -> String {
+        [
+            pluginLocalization.string("Pasted text"),
+            countText(characterCount),
+            lineText(lineCount)
+        ].joined(separator: " · ")
+    }
+
+    static func countText(_ count: Int) -> String {
+        String(
+            format: pluginLocalization.string("%@ chars"),
+            Self.decimalNumber(count)
+        )
+    }
+
+    static func lineText(_ count: Int) -> String {
+        String(
+            format: pluginLocalization.string("%@ lines"),
+            Self.decimalNumber(count)
+        )
+    }
+
+    private static func decimalNumber(_ value: Int) -> String {
+        NumberFormatter.localizedString(from: NSNumber(value: value), number: .decimal)
     }
 
     private static func lineCount(for text: String) -> Int {
         let normalized = text.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n")
         return max(1, normalized.split(separator: "\n", omittingEmptySubsequences: false).count)
     }
+}
 
-    private static func summaryText(for text: String, lineCount: Int, characterCount: Int) -> String {
-        let sizeText = ByteCountFormatter.string(fromByteCount: Int64(text.utf8.count), countStyle: .file)
-        return "\(characterCount) chars · \(lineCount) lines · \(sizeText)"
-    }
+// MARK: - PasteButtonAttachmentCell
 
-    private static func makeImage(previewText: String, summaryText: String) -> NSImage {
-        let size = NSSize(width: 392, height: 74)
-        let image = NSImage(size: size)
-        image.lockFocusFlipped(false)
-        defer { image.unlockFocus() }
+/// 把折叠的大段粘贴绘制成一行内联的「小按钮」。
+///
+/// 外观是一个圆角胶囊：淡色背景 + 细描边 + 图标 + 一行摘要文字，
+/// 与正文基线对齐且只占一行。hover 时背景与描边加深，让用户知道这是个可点的按钮。
+/// 宽度在初始化时按文本测量并缓存，避免布局阶段反复测量字符串。
+final class PasteButtonAttachmentCell: NSTextAttachmentCell {
+    private static let titleFont = NSFont.systemFont(ofSize: 11, weight: .medium)
+    private static let symbolPointSize: CGFloat = 9
+    private static let symbolName = "doc.on.clipboard"
+    private static let contentInset: CGFloat = 6
+    private static let iconSize: CGFloat = 11
+    private static let iconTitleSpacing: CGFloat = 4
+    private static let maximumWidth: CGFloat = 260
+    private static let chipHeight: CGFloat = 18
+    private static let cornerRadius: CGFloat = 5
+    private static let baselineOffset: CGFloat = -4
+    /// 描边宽度的一半，留给描边本身，避免描边被裁掉。
+    private static let strokeInset: CGFloat = 1
 
-        let rect = NSRect(origin: .zero, size: size)
-        let rounded = NSBezierPath(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), xRadius: 14, yRadius: 14)
-
-        NSColor.controlBackgroundColor.withAlphaComponent(0.96).setFill()
-        rounded.fill()
-
-        NSColor.separatorColor.withAlphaComponent(0.65).setStroke()
-        rounded.lineWidth = 1
-        rounded.stroke()
-
-        let iconRect = NSRect(x: 14, y: 24, width: 24, height: 24)
-        if let icon = NSImage(systemSymbolName: "doc.text.fill", accessibilityDescription: nil) {
-            icon.isTemplate = true
-            icon.draw(in: iconRect)
-        }
-
-        let titleAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 13, weight: .semibold),
+    private static var titleAttributes: [NSAttributedString.Key: Any] {
+        [
+            .font: titleFont,
             .foregroundColor: NSColor.labelColor
         ]
-        let summaryAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.monospacedSystemFont(ofSize: 10.5, weight: .medium),
-            .foregroundColor: NSColor.secondaryLabelColor
-        ]
-        let previewAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 12),
-            .foregroundColor: NSColor.secondaryLabelColor
-        ]
+    }
 
-        ("Large paste" as NSString).draw(
-            in: NSRect(x: 48, y: 42, width: 324, height: 16),
-            withAttributes: titleAttributes
+    private let chipTitle: String
+    private let chipTitleWidth: CGFloat
+    /// chip 图标名。粘贴用剪贴板图标，外部内容由生产方指定（如代码文件的括号图标）。
+    private let symbolName: String
+
+    init(title: String, systemImage: String? = nil) {
+        self.chipTitle = title
+        self.symbolName = systemImage ?? Self.symbolName
+        let measured = ceil((title as NSString).size(withAttributes: Self.titleAttributes).width)
+        let maximum = Self.maximumWidth
+            - Self.contentInset * 2
+            - Self.iconSize
+            - Self.iconTitleSpacing
+        self.chipTitleWidth = min(measured, maximum)
+        super.init()
+    }
+
+    @available(*, unavailable)
+    required init(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func cellSize() -> NSSize {
+        NSSize(
+            width: Self.contentInset * 2 + Self.iconSize + Self.iconTitleSpacing + chipTitleWidth,
+            height: Self.chipHeight
         )
-        ((summaryText + " · click to inspect") as NSString).draw(
-            in: NSRect(x: 48, y: 25, width: 324, height: 14),
-            withAttributes: summaryAttributes
-        )
-        (previewText as NSString).draw(
-            in: NSRect(x: 48, y: 8, width: 324, height: 14),
-            withAttributes: previewAttributes
+    }
+
+    override func cellBaselineOffset() -> NSPoint {
+        NSPoint(x: 0, y: Self.baselineOffset)
+    }
+
+    override func draw(withFrame cellFrame: NSRect, in controlView: NSView?) {
+        let isHighlighted = (controlView as? EditorTextView)?.hoveredPasteCell === self
+
+        // 描边占1pt，位于 cellFrame 外缘之内，所以左右各留 1pt 的描边空间。
+        let chipRect = NSRect(
+            x: cellFrame.minX + Self.strokeInset,
+            y: cellFrame.minY + 1,
+            width: cellFrame.width - Self.strokeInset * 2,
+            height: cellFrame.height - 2
         )
 
-        return image
+        let path = NSBezierPath(
+            roundedRect: chipRect,
+            xRadius: Self.cornerRadius,
+            yRadius: Self.cornerRadius
+        )
+        path.lineWidth = 1
+
+        if isHighlighted {
+            NSColor.controlAccentColor.withAlphaComponent(0.16).setFill()
+            path.fill()
+            NSColor.controlAccentColor.withAlphaComponent(0.45).setStroke()
+        } else {
+            NSColor.labelColor.withAlphaComponent(0.07).setFill()
+            path.fill()
+            NSColor.labelColor.withAlphaComponent(0.16).setStroke()
+        }
+
+        let iconRect = NSRect(
+            x: chipRect.minX + Self.contentInset,
+            y: chipRect.midY - Self.iconSize / 2,
+            width: Self.iconSize,
+            height: Self.iconSize
+        )
+        symbolImage()?.draw(in: iconRect)
+
+        let lineHeight = ceil(Self.titleFont.ascender - Self.titleFont.descender)
+        let titleMinX = iconRect.maxX + Self.iconTitleSpacing
+        let titleRect = NSRect(
+            x: titleMinX,
+            y: chipRect.midY - lineHeight / 2,
+            width: max(0, chipRect.maxX - Self.contentInset - titleMinX),
+            height: lineHeight
+        )
+
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byTruncatingTail
+        var attributes = Self.titleAttributes
+        attributes[.paragraphStyle] = paragraph
+        (chipTitle as NSString).draw(in: titleRect, withAttributes: attributes)
+    }
+
+    private func symbolImage() -> NSImage? {
+        guard let symbol = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil) else {
+            return nil
+        }
+        let configuration = NSImage.SymbolConfiguration(
+            pointSize: Self.symbolPointSize,
+            weight: .semibold
+        )
+            .applying(NSImage.SymbolConfiguration(paletteColors: [.secondaryLabelColor]))
+        return symbol.withSymbolConfiguration(configuration)
     }
 }
 
@@ -881,15 +1167,16 @@ final class PastePreviewAttachment: NSTextAttachment {
 
 final class PastePreviewPopoverViewController: NSViewController {
     private let text: String
-    private let characterCount: Int
-    private let lineCount: Int
+    private let summaryText: String
+    /// 弹窗标题。粘贴显示「粘贴的文本」，外部内容显示来源（如文件名）。
+    private let displayTitle: String
     private weak var copyButton: NSButton?
     private var copyFeedbackResetItem: DispatchWorkItem?
 
-    init(text: String, characterCount: Int, lineCount: Int) {
+    init(text: String, summaryText: String, title: String = "") {
         self.text = text
-        self.characterCount = characterCount
-        self.lineCount = lineCount
+        self.summaryText = summaryText
+        self.displayTitle = title.isEmpty ? pluginLocalization.string("Pasted text") : title
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -935,11 +1222,13 @@ final class PastePreviewPopoverViewController: NSViewController {
         titleStack.spacing = 2
         titleStack.translatesAutoresizingMaskIntoConstraints = false
 
-        let titleLabel = NSTextField(labelWithString: "Large paste preview")
+        let titleLabel = NSTextField(
+            labelWithString: displayTitle
+        )
         titleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
         titleLabel.textColor = .labelColor
 
-        let detailLabel = NSTextField(labelWithString: "\(characterCount) chars · \(lineCount) lines")
+        let detailLabel = NSTextField(labelWithString: summaryText)
         detailLabel.font = .monospacedSystemFont(ofSize: 11, weight: .medium)
         detailLabel.textColor = .secondaryLabelColor
 
@@ -950,10 +1239,10 @@ final class PastePreviewPopoverViewController: NSViewController {
         spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        let copyButton = NSButton(title: LumiPluginLocalization.string("Copy original", bundle: .module), target: self, action: #selector(copyOriginalText))
+        let copyButton = NSButton(title: pluginLocalization.string("Copy original"), target: self, action: #selector(copyOriginalText))
         copyButton.bezelStyle = .rounded
         copyButton.translatesAutoresizingMaskIntoConstraints = false
-        let closeButton = NSButton(title: LumiPluginLocalization.string("Close", bundle: .module), target: self, action: #selector(closePopover))
+        let closeButton = NSButton(title: pluginLocalization.string("Close"), target: self, action: #selector(closePopover))
         closeButton.bezelStyle = .rounded
         closeButton.translatesAutoresizingMaskIntoConstraints = false
 

@@ -1,14 +1,16 @@
 import os
 import Foundation
 import KitLLM
+import KitAgentTool
 import KernelCore
-import KitSuperLog
+import LumiLoggingKit
 import LumiUI
 import ProviderLifecycleHooks
 import ProviderChatSection
 import ProviderProject
 import ProviderSettingView
 import ProviderSkill
+import ProviderToolManager
 import SwiftUI
 
 /// 技能插件：聚合「插件贡献 + 内置 + 项目」三层技能并注入 LLM system prompt。
@@ -62,6 +64,7 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
 
         let project = kernel.resolveProvider((any ProjectProviding).self)
         let skillService = SkillService.shared
+        SkillRuntime.configure(project: project)
         let skillProvider = kernel.resolveProvider((any SkillProviding).self)
 
         // 1. 设置页入口：展示项目列表 + 每个项目的技能（项目层 + 通用底座）。
@@ -70,7 +73,7 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
             settings.addEntries([
                 SettingEntryItem(
                     id: "\(id).settings",
-                    title: LumiPluginLocalization.string("Skills", bundle: .module),
+                    title: pluginLocalization.string("Skills"),
                     systemImage: "sparkles",
                     order: order
                 ) {
@@ -120,7 +123,14 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
             lifecycleHandles.append(handle)
         }
 
-        // 4. Chat 工具栏技能入口。
+        // 4. 注册 Agent 工具：创建项目技能。
+        if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
+            for tool in Self.agentTools {
+                toolManager.add(tool, pluginID: id)
+            }
+        }
+
+        // 5. Chat 工具栏技能入口。
         if let chat = kernel.resolveProvider((any ChatSectionProviding).self) {
             let toolbarViewModel = SkillChatToolbarViewModel(service: skillService)
             let toolbarObserver = SkillChatToolbarObserver(
@@ -156,9 +166,17 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
             skillProvider.removeProvider(providerID: Self.builtinContributorID)
         }
 
+        // 撤回 Agent 工具。
+        if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
+            for tool in Self.agentTools {
+                toolManager.remove(id: tool.name)
+            }
+        }
+
         for handle in lifecycleHandles { handle.cancel() }
         lifecycleHandles.removeAll()
         skillInjectionHook = nil
+        SkillRuntime.reset()
 
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).settings"])
@@ -167,6 +185,16 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
     }
 
     private var lifecycleHandles: [any LifecycleHookHandle] = []
+
+    // MARK: - Agent Tools
+
+    public static let agentTools: [any SuperAgentTool] = [
+        ListSkillsTool(),
+        ReadSkillTool(),
+        CreateSkillTool(),
+        UpdateSkillTool(),
+        DeleteSkillTool(),
+    ]
 }
 
 /// Chat 工具栏技能入口：显示可用技能数量（插件贡献 + 内置 + 项目），点击弹出列表。
@@ -190,7 +218,7 @@ struct SkillChatToolbarView: View {
                         .font(.system(size: 10, weight: .medium))
                         .contentTransition(.numericText())
                 } else {
-                    Text(LumiPluginLocalization.string("Skills", bundle: .module))
+                    Text(pluginLocalization.string("Skills"))
                         .font(.system(size: 10, weight: .medium))
                 }
             }

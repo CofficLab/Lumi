@@ -4,7 +4,7 @@ import Testing
 @MainActor
 @Test("Plugin info is valid")
 func pluginInfoIsValid() {
-    let info = DisplayControlSuperPlugin()
+    let info = DisplayControlPlugin()
     #expect(!info.id.isEmpty)
     #expect(!info.metadata.name.isEmpty)
     #expect(info.id == "com.coffic.lumi.plugin.display-control")

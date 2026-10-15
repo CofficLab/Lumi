@@ -1,5 +1,5 @@
 import Foundation
-import KitSuperLog
+import LumiLoggingKit
 import os
 import ProviderConversation
 import ProviderMessage

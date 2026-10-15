@@ -1,7 +1,6 @@
 import KitAgentTool
 import Foundation
-import KitSuperLog
-
+import LumiLoggingKit
 /// 下载文件工具
 ///
 /// 使用 URLSession 下载文件到本地磁盘。

@@ -26,7 +26,7 @@ struct PluginHostsManagerTests {
     func localizationCatalogIsPackaged() {
         let bundle = Bundle.module
         #expect(bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
-        #expect(PluginHostsManager.LumiPluginLocalization.string("Hosts Manager", bundle: .module).isEmpty == false)
+        #expect(PluginHostsManager.pluginLocalization.string("Hosts Manager").isEmpty == false)
     }
 
     @Test
@@ -36,7 +36,7 @@ struct PluginHostsManagerTests {
         let chat = DefaultChatSectionProviding()
         let contentView = DefaultContentViewProviding()
         let railView = DefaultRailViewProviding()
-        let rootView = DefaultRootViewProvider()
+        let rootView = DefaultRootViewProviding()
         try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
         try kernel.registerProvider((any ContentViewProviding).self, contentView)

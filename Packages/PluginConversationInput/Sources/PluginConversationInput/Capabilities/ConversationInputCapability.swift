@@ -1,6 +1,7 @@
 import Foundation
 import ProviderConversation
 import ProviderConversationInput
+import ProviderConversationInputBlock
 import ProviderConversationState
 import ProviderMessage
 import ProviderMessageSender
@@ -63,6 +64,13 @@ protocol ConversationInputCapability: AnyObject {
     @discardableResult
     func addTextObserver(_ callback: @escaping (String) -> Void) -> any TextInputObserverHandle
 
+    /// 注册折叠内容块观察者。生产方（如代码编辑器选区发送到对话）递交的块
+    /// 由 ViewModel 转成待插入请求交给编辑器渲染。
+    @discardableResult
+    func addBlockObserver(
+        _ callback: @escaping (ConversationInputBlockProvidingEvent) -> Void
+    ) -> any ConversationInputBlockObserverHandle
+
     @discardableResult
     func addInputObserver(
         _ callback: @escaping (ConversationInputProvidingEvent) -> Void
@@ -94,6 +102,7 @@ protocol ConversationInputCapability: AnyObject {
 @MainActor
 final class ConversationInputCapabilityAdapter: ConversationInputCapability {
     private let input: (any ConversationInputProviding)?
+    private let blocks: (any ConversationInputBlockProviding)?
     private let sender: (any MessageSendingProviding)?
     private let conversations: (any ConversationManaging)?
     private let conversationState: (any ConversationStateProviding)?
@@ -101,12 +110,14 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
 
     init(
         input: (any ConversationInputProviding)?,
+        blocks: (any ConversationInputBlockProviding)? = nil,
         sender: (any MessageSendingProviding)?,
         conversations: (any ConversationManaging)?,
         conversationState: (any ConversationStateProviding)?,
         metrics: (any PerformanceMetricsProviding)?
     ) {
         self.input = input
+        self.blocks = blocks
         self.sender = sender
         self.conversations = conversations
         self.conversationState = conversationState
@@ -232,6 +243,12 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
         _ callback: @escaping (String) -> Void
     ) -> any TextInputObserverHandle {
         input?.addTextObserver(callback) ?? NoopTextInputObserverHandle()
+    }
+
+    func addBlockObserver(
+        _ callback: @escaping (ConversationInputBlockProvidingEvent) -> Void
+    ) -> any ConversationInputBlockObserverHandle {
+        blocks?.addObserver(callback) ?? NoopConversationInputBlockObserverHandle()
     }
 
     func addInputObserver(

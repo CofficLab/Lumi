@@ -404,6 +404,37 @@ struct KitLLMTests {
         #expect(!VendorAPIKeyTools.has(storageKey: "test-key"))
     }
 
+    @Test("完整 Keychain 查询遇到一次 not-found 后会重试并恢复 Key")
+    func apiKeyReadRetriesCompleteMissingLookup() throws {
+        var results: [String?] = [nil, "sk-recovered"]
+        var delays: [UInt64] = []
+
+        let value = try VendorAPIKeyTools.readWithMissingRetry(
+            sleeper: { delays.append($0) },
+            operation: { results.removeFirst() }
+        )
+
+        #expect(value == "sk-recovered")
+        #expect(results.isEmpty)
+        #expect(delays == [50_000_000])
+    }
+
+    @Test("连续完整查询均 not-found 后才认定 API Key 缺失")
+    func apiKeyReadConfirmsMissingAcrossRetries() throws {
+        var attempts = 0
+
+        let value = try VendorAPIKeyTools.readWithMissingRetry(
+            sleeper: { _ in },
+            operation: {
+                attempts += 1
+                return nil
+            }
+        )
+
+        #expect(value == nil)
+        #expect(attempts == 3)
+    }
+
     @Test("网络中断可重试但认证失败不可重试")
     func retryPolicyClassifiesTransientErrors() {
         let network = ProviderRetryPolicy.decision(

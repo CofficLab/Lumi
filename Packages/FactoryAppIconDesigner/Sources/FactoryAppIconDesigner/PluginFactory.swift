@@ -23,7 +23,7 @@ public struct DefaultPluginFactory: PluginFactory {
         [
             try! StorageSuperPlugin(),
             CommandPlugin(),
-            PluginSettingView(),
+            PluginSettingView(id: "com.coffic.lumi.plugin.setting-view"),
             PluginLogoManager(),
             PluginToolManager(),
             PluginActivityBar(),

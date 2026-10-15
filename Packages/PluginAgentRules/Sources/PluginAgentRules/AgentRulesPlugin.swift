@@ -7,7 +7,7 @@ import ProviderProject
 import ProviderSettingView
 import ProviderToolManager
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// Agent Rules 插件（KernelCore 版本）
@@ -39,7 +39,7 @@ public final class AgentRulesPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public var name: String {
-        LumiPluginLocalization.string("Agent Rules", bundle: .module)
+        pluginLocalization.string("Agent Rules")
     }
 
     private var projectObserver: AgentRulesProjectObserver?

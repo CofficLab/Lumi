@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 缓存命中率趋势：历史双曲线 + 图例 + 统计。
+/// 缓存命中率趋势：标题 + 双曲线图例 + 折线图。
 ///
 /// 作为 `CacheHitRatePopover` 的一段，展示当前会话每次请求的缓存命中变化。
 struct CacheHitRateTrendView: View {
@@ -17,8 +17,6 @@ struct CacheHitRateTrendView: View {
 
                 CacheHitRateLineChart(samples: history.samples)
                     .frame(height: 118)
-
-                statsRow
             }
         }
     }
@@ -28,20 +26,14 @@ struct CacheHitRateTrendView: View {
 
 extension CacheHitRateTrendView {
     private var header: some View {
-        HStack {
-            Text(LumiPluginLocalization.string("Cache hit rate trend", bundle: .module))
-                .font(.subheadline.weight(.semibold))
-            Spacer()
-            Text(String(format: LumiPluginLocalization.string("%lld requests", bundle: .module), history.samples.count))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
+        Text(pluginLocalization.string("Cache hit rate trend"))
+            .font(.subheadline.weight(.semibold))
     }
 
     private var legend: some View {
         HStack(spacing: 14) {
-            legendItem(lineWidth: 2.4, opacity: 1, label: LumiPluginLocalization.string("Cumulative", bundle: .module))
-            legendItem(lineWidth: 1.4, opacity: 0.55, label: LumiPluginLocalization.string("This request", bundle: .module))
+            legendItem(lineWidth: 2.4, opacity: 1, label: pluginLocalization.string("Cumulative"))
+            legendItem(lineWidth: 1.4, opacity: 0.55, label: pluginLocalization.string("This request"))
             Spacer(minLength: 0)
         }
         .font(.caption)
@@ -58,37 +50,11 @@ extension CacheHitRateTrendView {
     }
 
     private var emptyState: some View {
-        Text(LumiPluginLocalization.string("No cache usage history yet", bundle: .module))
+        Text(pluginLocalization.string("No cache usage history yet"))
             .font(.caption)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 8)
-    }
-
-    private var statsRow: some View {
-        HStack {
-            if let minimum = history.minimumHitRate {
-                statItem(label: LumiPluginLocalization.string("Min", bundle: .module), value: minimum)
-            }
-            Spacer()
-            if let average = history.averageHitRate {
-                statItem(label: LumiPluginLocalization.string("Avg", bundle: .module), value: average)
-            }
-            Spacer()
-            if let maximum = history.maximumHitRate {
-                statItem(label: LumiPluginLocalization.string("Max", bundle: .module), value: maximum)
-            }
-        }
-        .font(.caption)
-    }
-
-    private func statItem(label: String, value: Double) -> some View {
-        HStack(spacing: 3) {
-            Text(label)
-                .foregroundStyle(.secondary)
-            Text(CacheHitRateLineChart.percentText(value))
-                .monospacedDigit()
-        }
     }
 }
 

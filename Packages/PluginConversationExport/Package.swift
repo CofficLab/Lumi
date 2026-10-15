@@ -9,25 +9,25 @@ let package = Package(
         .library(name: "PluginConversationExport", targets: ["PluginConversationExport"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
-        .package(path: "../KitLocalization"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
-        .package(path: "../ProviderToast"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0")
     ],
     targets: [
         .target(
             name: "PluginConversationExport",
             dependencies: [
-                "KernelCore",
-                "KitLocalization",
-                "KitSuperLog",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 "ProviderChatSection",
                 "ProviderConversation",
                 "ProviderMessage",
-                "ProviderToast",
+                .product(name: "ProviderToast", package: "LumiProviders"),
             ],
             path: "Sources/PluginConversationExport",
             resources: [.process("../../Resources/Localizable.xcstrings")]
@@ -36,7 +36,7 @@ let package = Package(
             name: "PluginConversationExportTests",
             dependencies: [
                 "PluginConversationExport",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),

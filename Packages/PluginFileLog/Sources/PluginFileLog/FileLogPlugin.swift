@@ -3,7 +3,7 @@ import KernelCore
 import ProviderDiagnostics
 import ProviderUninstall
 import ProviderStorage
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 // MARK: - File Log SuperPlugin

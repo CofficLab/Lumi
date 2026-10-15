@@ -1,7 +1,7 @@
 import KitAgentTool
 import Foundation
 import ProviderNetwork
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 网页搜索工具（KernelCore 体系）
@@ -21,10 +21,7 @@ public struct WebSearchTool: SuperAgentTool {
     }
 
     public func description(for language: LanguagePreference) -> String {
-        LumiPluginLocalization.string(
-            "Search the web for real-time information. Use this tool to find current information, news, or specific data from the internet. Note: This tool is often required to be used alongside web_fetch or web_extractor by certain AI models (e.g., Qwen).",
-            bundle: .module
-        )
+        pluginLocalization.string("Search the web for real-time information. Use this tool to find current information, news, or specific data from the internet. Note: This tool is often required to be used alongside web_fetch or web_extractor by certain AI models (e.g., Qwen).")
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {

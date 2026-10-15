@@ -8,21 +8,31 @@ let package = Package(
         .library(name: "PluginGithubMCP", targets: ["PluginGithubMCP"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitMCP"),
         .package(path: "../ProviderMCP"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
             name: "PluginGithubMCP",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitMCP", package: "KitMCP"),
                 .product(name: "ProviderMCP", package: "ProviderMCP"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources/PluginGithubMCP"
+        ),
+        .testTarget(
+            name: "PluginGithubMCPTests",
+            dependencies: [
+                "PluginGithubMCP",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "KitMCP", package: "KitMCP"),
+                .product(name: "ProviderMCP", package: "ProviderMCP"),
+            ],
+            path: "Tests/PluginGithubMCPTests"
         ),
     ]
 )

@@ -3,7 +3,7 @@ import Foundation
 import KernelCore
 import ProviderNetwork
 import ProviderToolManager
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 // MARK: - Show Image SuperPlugin

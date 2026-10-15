@@ -15,7 +15,7 @@ public struct ConversationStoreSettingsView: View {
     @State private var isTotalCountPopoverPresented = false
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module)
+        pluginLocalization.string(key)
     }
 
     init(viewModel: ConversationStoreSettingsViewModel) {

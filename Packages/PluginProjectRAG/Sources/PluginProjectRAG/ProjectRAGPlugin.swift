@@ -7,7 +7,7 @@ import ProviderStorage
 import ProviderToolManager
 import ProviderProjectRAG
 import ProviderLifecycleHooks
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// Project RAG 的 KernelCore 适配器。
@@ -17,7 +17,7 @@ import os
 /// KernelLumi 耦合的 RAG 引擎，并保留数据库目录 (`RAG`)、SQLite schema
 /// 与 vec0 扩展，因此升级不会丢失既有索引。
 @MainActor
-public final class ProjectRAGSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
+public final class ProjectRAGPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.project.rag", category: "ProjectRAG")
     public let id = "com.coffic.lumi.plugin.project.rag"
     public let legacyDataDirectoryNames = ["RAG"]

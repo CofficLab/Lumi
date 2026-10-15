@@ -1,7 +1,6 @@
 import KitAgentTool
 import Foundation
-import KitSuperLog
-
+import LumiLoggingKit
 /// 查询特定 URL 的 HTTP 日志详情的 Agent 工具。
 struct GetHTTPExchangeDetailTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🔎"

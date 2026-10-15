@@ -15,39 +15,34 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
-        .package(path: "../ProviderActivityBar"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderContentView"),
-        .package(path: "../ProviderDocsView"),
-        .package(path: "../ProviderRailView"),
-        .package(path: "../ProviderRootView"),
-        .package(path: "../ProviderToolbar"),
-        .package(path: "../KitLocalization"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../KitShell"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0")
     ],
     targets: [
         .target(
             name: "BrewManagerPlugin",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
-                .product(name: "ProviderContentView", package: "ProviderContentView"),
-                .product(name: "ProviderDocsView", package: "ProviderDocsView"),
-                .product(name: "ProviderRailView", package: "ProviderRailView"),
-                .product(name: "ProviderRootView", package: "ProviderRootView"),
-                .product(name: "ProviderToolbar", package: "ProviderToolbar"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "ProviderContentView", package: "LumiProviders"),
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
+                .product(name: "ProviderRailView", package: "LumiProviders"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "ProviderToolbar", package: "LumiProviders"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitShell", package: "KitShell"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
-            path: "Sources",
+            path: "Sources/PluginBrewManager",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

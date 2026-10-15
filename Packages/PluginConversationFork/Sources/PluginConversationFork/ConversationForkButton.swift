@@ -20,7 +20,7 @@ struct ConversationForkButton: View {
             if isForking {
                 ProgressView()
                     .controlSize(.small)
-                    .help(LumiPluginLocalization.string("Summarizing conversation…", bundle: .module))
+                    .help(pluginLocalization.string("Summarizing conversation…"))
             } else {
                 Button {
                     fork()
@@ -31,7 +31,7 @@ struct ConversationForkButton: View {
                         .padding(4)
                 }
                 .buttonStyle(.plain)
-                .help(LumiPluginLocalization.string("Summarize the current conversation and continue it in a new chat", bundle: .module))
+                .help(pluginLocalization.string("Summarize the current conversation and continue it in a new chat"))
             }
         }
     }

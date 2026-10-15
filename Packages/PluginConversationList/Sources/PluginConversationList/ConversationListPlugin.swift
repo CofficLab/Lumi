@@ -1,6 +1,6 @@
 import os
 import KernelCore
-import KitSuperLog
+import LumiLoggingKit
 import ProviderAgentLoop
 import ProviderChatSection
 import ProviderConversation
@@ -129,7 +129,7 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
         toolbar?.addToolbarItems([
             ToolbarItem(
                 id: "\(id).conversation-list",
-                title: LumiPluginLocalization.string("Chats", bundle: .module),
+                title: pluginLocalization.string("Chats"),
                 placement: .trailing,
                 category: .chat,
                 order: 200

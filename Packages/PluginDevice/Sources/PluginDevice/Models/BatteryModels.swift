@@ -95,10 +95,10 @@ public enum BatteryTimeRange: String, CaseIterable, Identifiable {
 
     public var displayName: String {
         switch self {
-        case .minute1: return LumiPluginLocalization.string("1 Min", bundle: .module)
-        case .minute5: return LumiPluginLocalization.string("5 Min", bundle: .module)
-        case .minute30: return LumiPluginLocalization.string("30 Min", bundle: .module)
-        case .hour1: return LumiPluginLocalization.string("1 Hour", bundle: .module)
+        case .minute1: return pluginLocalization.string("1 Min")
+        case .minute5: return pluginLocalization.string("5 Min")
+        case .minute30: return pluginLocalization.string("30 Min")
+        case .hour1: return pluginLocalization.string("1 Hour")
         }
     }
 

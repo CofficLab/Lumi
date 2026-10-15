@@ -9,12 +9,12 @@ let package = Package(
         .library(name: "PluginChatFileAttachment", targets: ["PluginChatFileAttachment"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
-        .package(path: "../KitSuperLog"),
-        .package(path: "../KitLocalization"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.9.0"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderConversationInput"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageSender"),
     ],
@@ -22,12 +22,12 @@ let package = Package(
         .target(
             name: "PluginChatFileAttachment",
             dependencies: [
-                "KernelCore",
-                "KitSuperLog",
-                "KitLocalization",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 "LumiUI",
                 "ProviderChatSection",
-                "ProviderConversationInput",
+                .product(name: "ProviderConversationInput", package: "LumiProviders"),
                 "ProviderMessage",
                 "ProviderMessageSender",
             ],
@@ -37,7 +37,7 @@ let package = Package(
             name: "PluginChatFileAttachmentTests",
             dependencies: [
                 "PluginChatFileAttachment",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
             ]
         ),

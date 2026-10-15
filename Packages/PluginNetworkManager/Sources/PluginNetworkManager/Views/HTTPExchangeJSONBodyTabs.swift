@@ -15,9 +15,9 @@ struct HTTPExchangeJSONBodyTabs: View {
         var title: String {
             switch self {
             case .raw:
-                LumiPluginLocalization.string("Raw", bundle: .module)
+                pluginLocalization.string("Raw")
             case .parsed:
-                LumiPluginLocalization.string("Parsed", bundle: .module)
+                pluginLocalization.string("Parsed")
             }
         }
     }

@@ -1,6 +1,6 @@
 import KitAgentTool
 import KernelCore
-import KitLocalization
+import LumiLocalizationKit
 import LumiUI
 import KitMarkdown
 import ProviderConversation
@@ -26,7 +26,7 @@ struct MessageInfoButton: View {
         ) {
             isPresented.toggle()
         }
-        .help(LumiPluginLocalization.string("消息详情", bundle: .module))
+        .help(pluginLocalization.string("消息详情"))
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
             MessageInfoPopoverContent(message: message)
         }

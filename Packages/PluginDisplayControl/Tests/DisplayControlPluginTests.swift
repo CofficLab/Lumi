@@ -9,25 +9,25 @@ import Testing
 @MainActor
 @Test("Plugin info has correct identifier")
 func pluginInfoIdentifier() {
-    #expect(DisplayControlSuperPlugin().id == "com.coffic.lumi.plugin.display-control")
+    #expect(DisplayControlPlugin().id == "com.coffic.lumi.plugin.display-control")
 }
 
 @MainActor
 @Test("Plugin info has correct display name")
 func pluginInfoDisplayName() {
-    #expect(DisplayControlSuperPlugin().metadata.name == LumiPluginLocalization.string("Display Control", bundle: LumiPluginLocalization.resourceBundle))
+    #expect(DisplayControlPlugin().metadata.name == pluginLocalization.string("Display Control"))
 }
 
 @MainActor
 @Test("Plugin category is system")
 func pluginCategory() {
-    #expect(DisplayControlSuperPlugin().metadata.category == .system)
+    #expect(DisplayControlPlugin().metadata.category == .system)
 }
 
 @MainActor
 @Test("Plugin policy is optIn")
 func pluginPolicy() {
-    #expect(DisplayControlSuperPlugin().metadata.policy == .disabledByDefault)
+    #expect(DisplayControlPlugin().metadata.policy == .disabledByDefault)
 }
 
 @Test("Plugin iconName is display")
@@ -45,7 +45,7 @@ func activationHidesChatSection() throws {
     try kernel.registerProvider((any ChatSectionProviding).self, chat)
     try kernel.registerProvider((any ContentViewProviding).self, DefaultContentViewProviding())
 
-    let plugin = DisplayControlSuperPlugin()
+    let plugin = DisplayControlPlugin()
     try plugin.onBoot(kernel: kernel)
 
     #expect(activity.activeItemID == "com.coffic.lumi.plugin.display-control.entry")

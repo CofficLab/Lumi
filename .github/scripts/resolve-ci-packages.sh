@@ -11,7 +11,7 @@
 #
 # Usage:
 #   resolve-ci-packages.sh <project> <scheme> <source-packages-dir> [options]
-#     [--derived-data-path <path>]
+#     [--derived-data-path <path>] [--cache-hit]
 #
 # Arguments:
 #   project              Path to the .xcodeproj file.
@@ -20,6 +20,7 @@
 #
 # Options:
 #   --derived-data-path  Derived data path (default: ./DerivedData).
+#   --cache-hit          Verify an exact restored cache without resolving again.
 #
 # Exit codes:
 #   0   success
@@ -42,6 +43,7 @@ source_packages_dir="$3"
 shift 3
 
 derived_data_path="./DerivedData"
+cache_hit=false
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -52,6 +54,10 @@ while [ "$#" -gt 0 ]; do
       fi
       derived_data_path="$2"
       shift 2
+      ;;
+    --cache-hit)
+      cache_hit=true
+      shift
       ;;
     *)
       echo "error: unknown option: $1" >&2
@@ -84,6 +90,27 @@ start_seconds="${SECONDS}"
 # This is safe even with cached packages; xcodebuild will reuse existing checkouts.
 mkdir -p "${source_packages_dir}"
 mkdir -p "${derived_data_path}"
+
+if [ "${cache_hit}" = "true" ]; then
+  if [ ! -d "${source_packages_dir}/checkouts" ]; then
+    echo "❌ Exact package cache was reported as hit, but checkouts are missing: ${source_packages_dir}/checkouts" >&2
+    exit 1
+  fi
+
+  checkout_count=0
+  for checkout in "${source_packages_dir}/checkouts"/*; do
+    if [ -d "${checkout}" ]; then
+      checkout_count=$((checkout_count + 1))
+    fi
+  done
+  if [ "${checkout_count}" -eq 0 ]; then
+    echo "❌ Exact package cache was reported as hit, but it contains no package checkouts" >&2
+    exit 1
+  fi
+
+  echo "✅ Exact package cache hit; skipped dependency resolution (${checkout_count} checkouts)"
+  exit 0
+fi
 
 set +e
 xcodebuild -project "${project}" \

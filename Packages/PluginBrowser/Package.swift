@@ -15,27 +15,39 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../KitLocalization"),
-        .package(path: "../KitShell"),
-        .package(path: "../KitSuperLog"),
+        .package(path: "../ProviderChatSection"),
+        .package(path: "../ProviderConversation"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../KitMCP"),
+        .package(path: "../ProviderMCP"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0")
     ],
     targets: [
         .target(
             name: "BrowserPlugin",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
-                .product(name: "KitShell", package: "KitShell"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+                .product(name: "ProviderContentView", package: "LumiProviders"),
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "ProviderRailView", package: "LumiProviders"),
+                .product(name: "ProviderToolbar", package: "LumiProviders"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                .product(name: "KitMCP", package: "KitMCP", condition: .when(platforms: [.macOS])),
+                .product(name: "ProviderMCP", package: "ProviderMCP", condition: .when(platforms: [.macOS])),
             ],
-            path: "Sources",
+            path: "Sources/PluginBrowser",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

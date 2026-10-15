@@ -9,8 +9,8 @@ let package = Package(
         .library(name: "PluginConversationFork", targets: ["PluginConversationFork"]),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
@@ -19,14 +19,14 @@ let package = Package(
         .package(path: "../KitLLM"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderLifecycleHooks"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
     ],
     targets: [
         .target(
             name: "PluginConversationFork",
             dependencies: [
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "ProviderChatSection",
                 "ProviderConversation",
                 "ProviderMessage",
@@ -34,7 +34,7 @@ let package = Package(
                 "ProviderLLMManager",
                 "KitLLM",
                 "LumiUI",
-                "KitLocalization",
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
             path: "Sources/PluginConversationFork",
             resources: [.process("../../Resources/Localizable.xcstrings")]

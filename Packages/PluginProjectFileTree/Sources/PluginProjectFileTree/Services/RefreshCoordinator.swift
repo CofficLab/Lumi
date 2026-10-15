@@ -1,6 +1,6 @@
 import Foundation
 import KitFileSystem
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// 文件树刷新协调器

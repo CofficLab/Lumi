@@ -17,7 +17,7 @@ let package = Package(
         .target(
             name: "KitKeychain",
             dependencies: [],
-            path: "Sources"
+            path: "Sources/KitKeychain"
         ),
         .testTarget(
             name: "KitKeychainTests",

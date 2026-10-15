@@ -1,0 +1,62 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Memories" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memories"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记忆"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記憶"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記憶"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記憶"
+          }
+        }
+      }
+    },
+    "删除" : {
+
+    },
+    "删除记忆" : {
+
+    },
+    "加载中..." : {
+
+    },
+    "取消" : {
+
+    },
+    "搜索记忆..." : {
+
+    },
+    "确定要删除记忆「%@」吗？此操作不可撤销。" : {
+
+    },
+    "确认删除" : {
+
+    }
+  },
+  "version" : "1.0"
+}

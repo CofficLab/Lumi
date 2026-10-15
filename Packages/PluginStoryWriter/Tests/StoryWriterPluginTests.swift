@@ -10,7 +10,7 @@ import Testing
 
 @MainActor
 @Test func v2PluginPreservesWorkspaceAndToolCatalog() async throws {
-    let plugin = StoryWriterSuperPlugin()
+    let plugin = StoryWriterPlugin()
     let expectedTools: Set<String> = [
         "list_stories", "get_story", "create_story", "update_story", "delete_story",
         "list_chapters", "get_chapter", "create_chapter", "update_chapter", "delete_chapter",
@@ -28,19 +28,19 @@ func activationScopesRailView() throws {
     let activityBar = DefaultActivityBarProviding()
     let contentView = DefaultContentViewProviding()
     let railView = DefaultRailViewProviding()
-    let rootView = DefaultRootViewProvider()
+    let rootView = DefaultRootViewProviding()
     try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
     try kernel.registerProvider((any ContentViewProviding).self, contentView)
     try kernel.registerProvider((any RailViewProviding).self, railView)
     try kernel.registerProvider((any RootViewProviding).self, rootView)
 
-    let plugin = StoryWriterSuperPlugin()
+    let plugin = StoryWriterPlugin()
     try plugin.onBoot(kernel: kernel)
 
-    #expect(railView.tabs.map(\.id) == [StoryWriterSuperPlugin.railTabID])
+    #expect(railView.tabs.map(\.id) == [StoryWriterPlugin.railTabID])
     #expect(activityBar.activeItemID == "\(plugin.id).entry")
-    #expect(railView.visibleTabID == StoryWriterSuperPlugin.railTabID)
-    #expect(railView.activeTabID == StoryWriterSuperPlugin.railTabID)
+    #expect(railView.visibleTabID == StoryWriterPlugin.railTabID)
+    #expect(railView.activeTabID == StoryWriterPlugin.railTabID)
     #expect(rootView.isContentHeaderViewHidden)
 
     activityBar.activateItem(id: nil)
@@ -57,7 +57,7 @@ func activationScopesRailView() throws {
     let kernel = KernelCoreContainer()
     let docs = DefaultDocsViewProviding()
     try kernel.registerProvider((any DocsViewProviding).self, docs)
-    let plugin = StoryWriterSuperPlugin()
+    let plugin = StoryWriterPlugin()
 
     try plugin.onRegister(kernel: kernel)
     #expect(docs.aboutEntries.map(\.id) == [plugin.id])

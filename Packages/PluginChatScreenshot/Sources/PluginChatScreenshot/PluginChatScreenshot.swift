@@ -2,8 +2,7 @@ import os
 import KernelCore
 import ProviderChatSection
 import ProviderCommand
-import KitSuperLog
-
+import LumiLoggingKit
 /// Chat Screenshot Plugin（KernelCore 版本）
 ///
 /// 由旧版 `Plugins/ChatScreenshotPlugin`（KernelLumi / LumiPlugin 架构）复刻而来：
@@ -37,7 +36,7 @@ public final class ChatScreenshotPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public var name: String {
-        LumiPluginLocalization.string("Chat Screenshot", bundle: .module)
+        pluginLocalization.string("Chat Screenshot")
     }
 
 
@@ -65,7 +64,7 @@ public final class ChatScreenshotPlugin: SuperPlugin, SuperLog {
                 items: [
                     CommandItem(
                         id: "\(id).capture",
-                        title: LumiPluginLocalization.string("Capture Screenshot", bundle: .module),
+                        title: pluginLocalization.string("Capture Screenshot"),
                         shortcut: "s",
                         modifiers: [.command, .shift]
                     ) {

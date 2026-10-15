@@ -13,17 +13,17 @@ struct WhiteNoiseManualView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             ManualHeader(
-                title: LumiPluginLocalization.string("White Noise", bundle: .module),
-                subtitle: LumiPluginLocalization.string("User Manual", bundle: .module)
+                title: pluginLocalization.string("White Noise"),
+                subtitle: pluginLocalization.string("User Manual")
             )
 
-            ManualSectionHeader(number: 1, title: LumiPluginLocalization.string("Overview", bundle: .module))
-            Text(LumiPluginLocalization.string("This manual covers the interface and basic operations of White Noise: playing noise tracks, adjusting volumes, and setting the sleep timer.", bundle: .module))
+            ManualSectionHeader(number: 1, title: pluginLocalization.string("Overview"))
+            Text(pluginLocalization.string("This manual covers the interface and basic operations of White Noise: playing noise tracks, adjusting volumes, and setting the sleep timer."))
                 .font(.appBody)
                 .foregroundColor(theme.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            ManualSectionHeader(number: 2, title: LumiPluginLocalization.string("Interface", bundle: .module))
+            ManualSectionHeader(number: 2, title: pluginLocalization.string("Interface"))
             ManualBulletList(items: [
                 .init("Master card: shows the playing status, the Play / Stop button, and the Master Volume slider."),
                 .init("Track list: White, Pink, and Brown noise rows, each with an on/off switch and a volume slider."),
@@ -31,7 +31,7 @@ struct WhiteNoiseManualView: View {
             ])
             interfaceFigure
 
-            ManualSectionHeader(number: 3, title: LumiPluginLocalization.string("Basic Operations", bundle: .module))
+            ManualSectionHeader(number: 3, title: pluginLocalization.string("Basic Operations"))
             ManualStepList(items: [
                 .init("Open the White Noise tab in the sidebar."),
                 .init("Click Play to start playback."),
@@ -40,7 +40,7 @@ struct WhiteNoiseManualView: View {
                 .init("Set a duration in the Sleep Timer to stop playback automatically."),
             ])
 
-            ManualSectionHeader(number: 4, title: LumiPluginLocalization.string("Notes", bundle: .module))
+            ManualSectionHeader(number: 4, title: pluginLocalization.string("Notes"))
             ManualBulletList(items: [
                 .init("When the sleep timer reaches zero, playback stops automatically."),
                 .init("Volume and sleep-timer controls are available during playback."),

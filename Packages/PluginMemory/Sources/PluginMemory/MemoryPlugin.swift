@@ -1,7 +1,7 @@
 import os
 import Foundation
 import KernelCore
-import KitSuperLog
+import LumiLoggingKit
 import ProviderSettingView
 import ProviderStorage
 import ProviderProject
@@ -57,7 +57,7 @@ public final class MemoryPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
             settingView.addEntries([
                 SettingEntryItem(
                     id: "\(id).settings",
-                    title: "记忆",
+                    title: pluginLocalization.string("Memories"),
                     systemImage: "brain",
                     order: 150
                 ) {

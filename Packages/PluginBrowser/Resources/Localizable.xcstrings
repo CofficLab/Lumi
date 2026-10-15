@@ -1,39 +1,67 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Browser": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Browser"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Ask Lumi to open a page, or enter a website address." : {
+
+    },
+    "Back" : {
+
+    },
+    "Browser" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browser"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "浏览器"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浏览器"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "瀏覽器"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "瀏覽器"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "瀏覽器"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "瀏覽器"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "瀏覽器"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "瀏覽器"
           }
         }
       }
-    }  },
-  "version": "1.0"
+    },
+    "Forward" : {
+
+    },
+    "https://example.com" : {
+
+    },
+    "Open" : {
+
+    },
+    "Reload" : {
+
+    },
+    "Search or enter website name" : {
+
+    },
+    "Stop loading" : {
+
+    },
+    "Website address" : {
+
+    }
+  },
+  "version" : "1.0"
 }

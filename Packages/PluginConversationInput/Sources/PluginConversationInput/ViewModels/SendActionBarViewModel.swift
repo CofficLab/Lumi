@@ -1,7 +1,6 @@
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// Manages the state and actions for the send/stop action bar.
 ///
 /// The plugin owns this model and its observation lifecycle. Observers update

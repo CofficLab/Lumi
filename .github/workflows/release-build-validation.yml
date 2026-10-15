@@ -15,7 +15,7 @@ env:
 
 jobs:
   prepare:
-    runs-on: macos-26
+    runs-on: xcode-27
     outputs:
       source_sha: ${{ steps.metadata.outputs.source_sha }}
       build_number: ${{ steps.metadata.outputs.build_number }}
@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
       - uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
         with:
-          xcode-version: "26.3"
+          xcode-version: "27.0"
       - name: Prepare the same immutable metadata used by release
         id: metadata
         run: |
@@ -42,7 +42,7 @@ jobs:
 
   build:
     needs: prepare
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 120
     strategy:
       fail-fast: false
@@ -67,7 +67,9 @@ jobs:
           path: release-input
       - uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
         with:
-          xcode-version: "26.3"
+          xcode-version: "27.0"
+      - name: Install Metal Toolchain
+        run: .github/scripts/install-metal-toolchain.sh
       - name: Inject and validate immutable version
         run: .github/scripts/inject-lumi-version.sh release-input/release-metadata.json
       - name: Compute exact cache key
@@ -92,7 +94,13 @@ jobs:
       - name: Strictly resolve both locked package graphs
         run: |
           set -euo pipefail
-          .github/scripts/resolve-ci-packages.sh Lumi.xcodeproj Lumi "${SOURCE_PACKAGES_PATH}" --derived-data-path "${DERIVED_DATA_PATH}"
+          if [ "${{ steps.xcode-cache.outputs.cache-hit }}" = "true" ]; then
+            .github/scripts/resolve-ci-packages.sh Lumi.xcodeproj Lumi "${SOURCE_PACKAGES_PATH}" \
+              --derived-data-path "${DERIVED_DATA_PATH}" --cache-hit
+          else
+            .github/scripts/resolve-ci-packages.sh Lumi.xcodeproj Lumi "${SOURCE_PACKAGES_PATH}" \
+              --derived-data-path "${DERIVED_DATA_PATH}"
+          fi
           before=$(shasum -a 256 Packages/FactoryLumiACP/Package.resolved | cut -d' ' -f1)
           xcrun swift package --package-path Packages/FactoryLumiACP --cache-path "${ACP_CACHE_PATH}" \
             --scratch-path "${ACP_SCRATCH_ROOT}/resolve" --force-resolved-versions resolve

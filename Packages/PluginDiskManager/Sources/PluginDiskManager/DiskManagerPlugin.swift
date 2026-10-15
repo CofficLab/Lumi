@@ -11,8 +11,7 @@ import ProviderRootView
 import ProviderStorage
 import ProviderToolManager
 import SwiftUI
-import KitSuperLog
-
+import LumiLoggingKit
 /// Disk Manager 插件（KernelCore 版本）
 ///
 /// 由旧版 `Plugins/DiskManagerPlugin`（KernelLumi / LumiPlugin 架构）复刻而来，

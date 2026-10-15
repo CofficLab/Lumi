@@ -1,6 +1,6 @@
 import Foundation
 import os
-import KitSuperLog
+import LumiLoggingKit
 import ProviderProject
 
 /// 项目视图模型，持有插件视图状态并暴露 Intent 给视图。

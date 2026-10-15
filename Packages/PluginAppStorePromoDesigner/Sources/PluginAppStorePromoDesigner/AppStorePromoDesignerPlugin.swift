@@ -14,7 +14,7 @@ import ProviderToolManager
 import ProviderPromptSuggestion
 import ProviderProject
 import SwiftUI
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// KernelCore 版本的 App Store 促销图设计器插件。

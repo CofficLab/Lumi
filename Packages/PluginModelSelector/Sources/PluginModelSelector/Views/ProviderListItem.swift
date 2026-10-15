@@ -10,6 +10,12 @@ struct ProviderListItem: View {
     let info: LLMProviderInfo
     let isSelected: Bool
     let onSelect: () -> Void
+    /// 动态模型池中的模型数量；缺省时回退静态清单。
+    ///
+    /// 用动态池才能反映远程刷新后新增的模型。
+    var modelCount: Int? = nil
+    var canRefreshModels: Bool = false
+    var onRefreshModels: (() -> Void)? = nil
 
     var body: some View {
         AppListRow(isSelected: isSelected, action: onSelect) {
@@ -26,9 +32,10 @@ struct ProviderListItem: View {
                         .foregroundColor(isSelected ? theme.primary : theme.textPrimary)
 
                     HStack(spacing: 4) {
-                        Text("\(info.models.count) models")
+                        Text("\(modelCount ?? info.models.count) models")
                             .font(.appMicro)
                             .foregroundColor(theme.textTertiary)
+                            .accessibilityIdentifier("lumi.model-selector.provider.\(info.id).count")
                     }
                 }
 
@@ -41,5 +48,18 @@ struct ProviderListItem: View {
                 }
             }
         }
+        .contextMenu {
+            if canRefreshModels {
+                Button {
+                    onRefreshModels?()
+                } label: {
+                    Label(
+                        pluginLocalization.string("Refresh Models"),
+                        systemImage: "arrow.clockwise"
+                    )
+                }
+            }
+        }
+        .accessibilityIdentifier("lumi.model-selector.provider.\(info.id)")
     }
 }

@@ -1,12 +1,37 @@
 import AppKit
 import AppUpdatePlugin
+import Darwin
 import FactoryLumi
 import KernelCore
+import os
 import PluginToast
 import PluginToolbarSettings
 import ProviderSettingView
 import ProviderToast
 import SwiftUI
+
+/// 提升进程的文件描述符上限。
+///
+/// macOS App 的默认 soft limit 通常只有 256，对于长时间运行且频繁执行
+/// 工具调用（每次 `Process` + `Pipe` 消耗 4+ fds）和网络请求的 agent 应用，
+/// 很容易在持续对话后耗尽 fd，导致 `"Too many open files"` (EMFILE) 错误。
+///
+/// 将 soft limit 提升到 10240（或 hard limit 的较小值），为 agent 工作负载
+/// 提供充足的 fd 余量。
+private func raiseFileDescriptorLimit() {
+    var limit = rlimit()
+    guard getrlimit(RLIMIT_NOFILE, &limit) == 0 else { return }
+
+    let target: UInt64 = 10_240
+    let newSoft = min(target, limit.rlim_max)
+    guard newSoft > limit.rlim_cur else { return }
+
+    limit.rlim_cur = newSoft
+    if setrlimit(RLIMIT_NOFILE, &limit) == 0 {
+        Logger(subsystem: "com.coffic.lumi", category: "bootstrap")
+            .info("Raised RLIMIT_NOFILE to \(newSoft)")
+    }
+}
 
 @main
 struct LumiApp: App {
@@ -31,6 +56,9 @@ struct LumiApp: App {
     @Environment(\.openWindow) private var openWindow
 
     init() {
+        // 提升 fd 上限，避免长时间 agent 会话后因 EMFILE 导致网络/工具同时失败
+        raiseFileDescriptorLimit()
+
         do {
             // 先在属性初始化阶段完成可能失败的装配。
             let assembledKernel = try KernelFactory.makeKernel()

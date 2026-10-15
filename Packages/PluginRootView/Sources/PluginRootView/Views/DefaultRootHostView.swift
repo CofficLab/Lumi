@@ -1,0 +1,63 @@
+import Foundation
+import LumiUI
+import ProviderRootView
+import SwiftUI
+
+@MainActor
+struct DefaultRootHostView: View {
+    let provider: LumiRootViewProvider
+    @LumiTheme private var theme
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any RootViewObserverHandle)?
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if let toolbarView = provider.toolbarView {
+                toolbarView
+                    .debugViewBadge("Toolbar", alignment: .bottomLeading)
+                // 与旧版 AppLayoutView 一致：工具栏下方使用主题分隔线。
+                AppDivider()
+            }
+
+            HStack(spacing: 0) {
+                if let activityBarView = provider.activityBarView {
+                    activityBarView
+                        .debugViewBadge("Activity Bar", alignment: .leading, rotationDegrees: 90)
+                }
+
+                WorkbenchSplitView(provider: provider)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityIdentifier("root.main")
+        .background(theme.background)
+        .appThemedAppearance()
+        #if os(macOS)
+        .background {
+            ThemeWindowAppearanceBridge()
+        }
+        #endif
+        .environmentObject(AppThemeVM.shared)
+        #if os(macOS)
+            .ignoresSafeArea()
+        #endif
+        .id(observationRevision)
+        .debugViewBadge("Root Host")
+        .onAppear {
+            guard observerHandle == nil else { return }
+            observerHandle = provider.addRootViewObserver { event in
+                switch event {
+                case .toolbarViewChanged, .activityBarViewChanged:
+                    observationRevision += 1
+                default:
+                    break
+                }
+            }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
+        }
+    }
+}

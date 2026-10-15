@@ -86,7 +86,7 @@ public struct NetworkMenuBarPopupView: View {
                     .font(.appMicro)
                     .foregroundColor(.secondary)
 
-                Text(LumiPluginLocalization.string("Last 60 seconds", bundle: .module))
+                Text(pluginLocalization.string("Last 60 seconds"))
                     .font(.appMicro)
                     .foregroundColor(.secondary)
 
@@ -98,7 +98,7 @@ public struct NetworkMenuBarPopupView: View {
                         Circle()
                             .fill(Color.green.opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text(LumiPluginLocalization.string("Down", bundle: .module))
+                        Text(pluginLocalization.string("Down"))
                             .font(.appMicro)
                             .foregroundColor(.secondary)
                     }
@@ -107,7 +107,7 @@ public struct NetworkMenuBarPopupView: View {
                         Circle()
                             .fill(Color.red.opacity(0.8))
                             .frame(width: 5, height: 5)
-                        Text(LumiPluginLocalization.string("Up", bundle: .module))
+                        Text(pluginLocalization.string("Up"))
                             .font(.appMicro)
                             .foregroundColor(.secondary)
                     }
@@ -175,7 +175,7 @@ public struct NetworkMenuBarPopupView: View {
                         )
                         .stroke(Color.red.opacity(0.8), lineWidth: 1.2)
                     } else {
-                        Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
+                        Text(pluginLocalization.string("Collecting..."))
                             .font(.appMicro)
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -25,7 +25,7 @@ public struct NetworkHistoryDetailView: View {
         VStack(spacing: 0) {
             // Header with Picker (History Trend)
             HStack {
-                Text(LumiPluginLocalization.string("History Trend", bundle: .module))
+                Text(pluginLocalization.string("History Trend"))
                     .font(.appCaptionEmphasized)
                     .foregroundColor(.secondary)
 

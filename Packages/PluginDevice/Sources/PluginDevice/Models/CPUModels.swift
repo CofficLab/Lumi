@@ -10,10 +10,10 @@ public enum CPUTimeRange: String, CaseIterable, Identifiable {
 
     public var displayName: String {
         switch self {
-        case .hour1: return LumiPluginLocalization.string("1 Hour", bundle: .module)
-        case .hour4: return LumiPluginLocalization.string("4 Hours", bundle: .module)
-        case .hour24: return LumiPluginLocalization.string("24 Hours", bundle: .module)
-        case .month1: return LumiPluginLocalization.string("30 Days", bundle: .module)
+        case .hour1: return pluginLocalization.string("1 Hour")
+        case .hour4: return pluginLocalization.string("4 Hours")
+        case .hour24: return pluginLocalization.string("24 Hours")
+        case .month1: return pluginLocalization.string("30 Days")
         }
     }
 

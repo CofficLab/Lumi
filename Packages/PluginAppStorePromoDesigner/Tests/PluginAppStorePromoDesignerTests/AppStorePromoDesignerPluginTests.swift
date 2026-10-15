@@ -58,7 +58,7 @@ struct AppStorePromoDesignerPluginTests {
         let activity = DefaultActivityBarProviding()
         let rail = DefaultRailViewProviding()
         let chat = DefaultChatSectionProviding()
-        let rootView = DefaultRootViewProvider()
+        let rootView = DefaultRootViewProviding()
         let toolbar = DefaultToolbarProviding()
 
         try kernel.registerProvider((any ActivityBarProviding).self, activity)

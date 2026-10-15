@@ -1,6 +1,6 @@
 #if DEBUG
 import SwiftUI
-import KitLocalization
+import LumiLocalizationKit
 import LumiUI
 
 /// Indicates that the app is running a Debug build.
@@ -8,7 +8,7 @@ struct DebugBadgeView: View {
     @LumiTheme private var theme
 
     var body: some View {
-        Text(LumiPluginLocalization.string("DEBUG"))
+        Text(pluginLocalization.string("DEBUG"))
             .font(.appMicroEmphasized)
             .tracking(0.3)
             .foregroundStyle(.white)

@@ -1,7 +1,6 @@
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// v4 历史会话迁移服务（后台执行）
 ///
 /// 在 ConversationManagerPlugin onBoot 阶段,以**后台任务**方式启动(不阻塞内核启动),

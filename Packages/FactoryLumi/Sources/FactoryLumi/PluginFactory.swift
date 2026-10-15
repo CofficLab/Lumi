@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import ProviderChatSection
 import PluginACP
 import PluginAgentRules
 import PluginAgentTempStorage
@@ -24,7 +25,7 @@ import DockerManagerPlugin
 import RegistryManagerPlugin
 import RClickPlugin
 import InputPlugin
-import BookletMakerPlugin
+import PluginBookletMaker
 import ScreenRecorderPlugin
 import StoryWriterPlugin
 import QuickFileSearchPlugin
@@ -33,6 +34,7 @@ import QuickLauncherPlugin
 import TextActionsPlugin
 import TerminalPlugin
 import DatabaseManagerPlugin
+import PluginMail
 import GitPlugin
 import PluginGitRepositoryWatch
 import PluginGitWorkspace
@@ -41,6 +43,7 @@ import PluginStorage
 import PluginToast
 import PluginCommand
 import PluginActivityBar
+import PluginRootView
 import PluginAppIconDesigner
 import PluginAppStoreConnect
 import PluginAppStorePromoDesigner
@@ -93,6 +96,7 @@ import PluginLLMProviderSettings
 import PluginLLMProviderStepFun
 import PluginLLMProviderSublyx
 import PluginLLMProviderTencent
+import PluginLLMProviderUITest
 import PluginLLMProviderXiaomi
 import PluginLLMProviderXybbz
 import PluginLLMProviderZhipu
@@ -135,12 +139,14 @@ import PluginResumeDesigner
 import PluginSettingGeneral
 import PluginSettingView
 import PluginPerformanceMetrics
+import PluginSystemBenchmark
 import PluginSkill
 import PluginOnboarding
 import PluginWelcome
 import PluginThemePack
 import PluginThemeManager
 import PluginToolManager
+import PluginToolActivity
 import PluginToolbar
 import PluginToolbarSettings
 import PluginVideoConverter
@@ -151,10 +157,43 @@ import PluginWhiteNoise
 import PluginXcodeBuild
 import NettoPlugin
 
+/// Booklet Maker 工作台代理：把聊天区显隐收敛到 Lumi 侧。
+///
+/// 共享包 `PluginBookletMaker` 不依赖 `ProviderChatSection`（GameFactory 无聊天区），
+/// 改由宿主注入 `onWorkspaceActivate` / `onWorkspaceDeactivate` 闭包。
+///
+/// Provider 在 `ProviderFactory.registerProviders` 阶段即完成注册，早于插件启动，
+/// 因此这里在 `makePlugins()` 之前从全局装配入口取得容器即可；容器为 nil 时
+/// 闭包退化为空操作，不影响插件其余行为。
+@MainActor
+private final class BookletMakerChatVisibilityProxy {
+    private weak var kernel: KernelCoreContainer?
+
+    func attach(kernel: KernelCoreContainer) {
+        self.kernel = kernel
+    }
+
+    func activate() {
+        kernel?.resolveProvider((any ChatSectionProviding).self)?.setVisible(false)
+    }
+
+    func deactivate() {
+        kernel?.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+    }
+}
+
 /// 默认 `PluginFactory` 实现：产出默认插件。
 @MainActor
 public struct DefaultPluginFactory: PluginFactory {
+    private let chatVisibility = BookletMakerChatVisibilityProxy()
+
     public init() {}
+
+    /// Provider 就位后回填聊天区代理，使其能在工作台切换时解析
+    /// `ChatSectionProviding`。`makePlugins()` 早于 Provider 注册，故在此补齐。
+    public func didRegisterProviders(in kernel: KernelCoreContainer) {
+        chatVisibility.attach(kernel: kernel)
+    }
 
     /// 产出默认插件列表。
     public func makePlugins() -> [any SuperPlugin] {
@@ -162,24 +201,25 @@ public struct DefaultPluginFactory: PluginFactory {
             // 核心基础插件（order 10-20）：必须最先启动
             try! StorageSuperPlugin(),
             CommandPlugin(),
-            // 工具栏自定义实现（order=0）：替换 ProviderFactory 预注册的
-            // DefaultToolbarProviding，必须早于所有解析 ToolbarProviding 的插件。
-            // 最严格的约束来自 PluginChatPanel / PluginDeveloperMode（均 order=1）：
-            // 它们把解析到的实例捕获进延迟闭包，晚替换会让其调用打在旧实例上。
+            // 共享工具栏插件在 onReady 同步 macOS 与 iOS 的插件贡献启用状态。
             PluginToolbar(),
             ToastSuperPlugin(),
             CaffeinatePlugin(),
             SettingGeneralPlugin(),
-            CodeEditorHostSuperPlugin(),
-            EditorPreviewSuperPlugin(),
-            CodeEditorLanguagesSuperPlugin(),
+            // 底部面板宿主（order 12）：在 EditorPreview / Terminal 之前注册
+            // PanelBottomProviding，承载 content footer 的 tab 容器。
+            PanelBottomPlugin(),
+            CodeEditorHostPlugin(),
+            EditorPreviewPlugin(),
+            CodeEditorLanguagesPlugin(),
             ProjectsPlugin(),
             // 原 LumiApp 显式注入的项目 RAG：保留旧索引数据库和 search_code 工具。
-            ProjectRAGSuperPlugin(),
+            ProjectRAGPlugin(),
             // 项目文件树（由旧版 Plugins/ProjectFileTreePlugin 迁移而来）。
             ProjectFileTreePlugin(),
-            ProjectFilesSuperPlugin(),
+            ProjectFilesPlugin(),
             DevicePlugin(),
+            SystemBenchmarkPlugin(),
             HostsManagerPlugin(),
             DiskManagerPlugin(),
             NetworkManagerPlugin(),
@@ -200,7 +240,7 @@ public struct DefaultPluginFactory: PluginFactory {
             // ActivityBar 自定义实现：替换 ProviderFactory 预注册的 DefaultActivityBarProviding，
             // 必须在所有 onBoot 中调用 addItems 的业务插件（如 ResumeDesignerPlugin order=81）之前。
             PluginActivityBar(),
-            CodeEditorSuperPlugin(),
+            CodeEditorPlugin(),
             LogoCofficPlugin(),
             LogoSmartLightPlugin(),
             SettingsToolbarPlugin(),
@@ -217,8 +257,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationVerbosityPlugin(),
             ConversationLanguagePlugin(),
             ConversationReasoningPlugin(),
-            // 会话统计：消息计数 / 上下文用量
-            ConversationMessageCountPlugin(),
+            // 会话统计：上下文用量
             ConversationCacheHitRatePlugin(),
             ConversationSpeedPlugin(),
             ConversationAgentTurnCountPlugin(),
@@ -242,36 +281,40 @@ public struct DefaultPluginFactory: PluginFactory {
             DeveloperModePlugin(),
             FileLogPlugin(),
             ShowImagePlugin(),
-            ImageToPDFSuperPlugin(),
-            DownloadSuperPlugin(),
-            AppManagerSuperPlugin(),
-            ClipboardManagerSuperPlugin(),
-            BrowserSuperPlugin(),
-            ComputerUseSuperPlugin(),
+            ImageToPDFPlugin(),
+            DownloadPlugin(),
+            AppManagerPlugin(),
+            ClipboardManagerPlugin(),
+            BrowserPlugin(),
+            ComputerUsePlugin(),
             MCPPlugin(),
             PluginXcodeMCP(),
             PluginGithubMCP(),
-            BrewManagerSuperPlugin(),
-            DisplayControlSuperPlugin(),
-            PortManagerSuperPlugin(),
-            DockerManagerSuperPlugin(),
-            RegistryManagerSuperPlugin(),
-            RClickSuperPlugin(),
-            InputSuperPlugin(),
-            BookletMakerPlugin(),
-            ScreenRecorderSuperPlugin(),
-            StoryWriterSuperPlugin(),
-            QuickFileSearchSuperPlugin(),
-            ProjectOverviewSuperPlugin(),
-            QuickLauncherSuperPlugin(),
-            TextActionsSuperPlugin(),
-            TerminalSuperPlugin(),
-            DatabaseManagerSuperPlugin(),
-            GitSourceControlSuperPlugin(),
+            BrewManagerPlugin(),
+            DisplayControlPlugin(),
+            PortManagerPlugin(),
+            DockerManagerPlugin(),
+            RegistryManagerPlugin(),
+            RClickPlugin(),
+            InputPlugin(),
+            BookletMakerPlugin(
+                onWorkspaceActivate: { chatVisibility.activate() },
+                onWorkspaceDeactivate: { chatVisibility.deactivate() }
+            ),
+            ScreenRecorderPlugin(),
+            StoryWriterPlugin(),
+            QuickFileSearchPlugin(),
+            ProjectOverviewPlugin(),
+            QuickLauncherPlugin(),
+            TextActionsPlugin(),
+            TerminalPlugin(),
+            DatabaseManagerPlugin(),
+            MailPlugin(),
+            GitSourceControlPlugin(),
             GitRepositoryWatchPlugin(),
             GitWorkspacePlugin(),
-            GoalTaskSuperPlugin(),
-            NettoSuperPlugin(),
+            GoalTaskPlugin(),
+            NettoPlugin(),
             SkillPlugin(),
             XcodeBuildPlugin(),
             OnboardingPlugin(),
@@ -295,7 +338,7 @@ public struct DefaultPluginFactory: PluginFactory {
             PluginPluginManager(),
             // 设置视图管理器：替换 ProviderFactory 预注册的默认 SettingViewProviding 实现，
             // 必须先于各设置入口贡献插件（如 SettingGeneralPlugin order=200）。
-            PluginSettingView(),
+            PluginSettingView(id: "com.coffic.lumi.plugin.setting-view"),
             PerformanceMetricsPlugin(),
             // Logo 管理器：替换 ProviderFactory 预注册的默认 LogoProviding 实现，
             // 必须先于各 Logo 贡献插件（如 LogoCofficPlugin order=100）。
@@ -306,6 +349,7 @@ public struct DefaultPluginFactory: PluginFactory {
             // 工具管理器：替换默认 ToolManagerProviding 并注册内置工具，
             // 必须早于 PluginAgentLoop(order=8)。
             PluginToolManager(),
+            ToolActivityPlugin(),
             AiRouterProviderPlugin(),
             AliyunProviderPlugin(),
             AnthropicProviderPlugin(),
@@ -325,6 +369,9 @@ public struct DefaultPluginFactory: PluginFactory {
             StepFunProviderPlugin(),
             SublyxProviderPlugin(),
             TencentProviderPlugin(),
+            // UI 测试专用供应商（仅 DEBUG + --lumi-ui-testing 时才真正注册）。
+            // order=900 排在其他供应商之后，使它的强制选中成为最后生效的那次。
+            PluginUITestProvider(),
             XiaomiProviderPlugin(),
             XybbzProviderPlugin(),
             ZhipuProviderPlugin(),

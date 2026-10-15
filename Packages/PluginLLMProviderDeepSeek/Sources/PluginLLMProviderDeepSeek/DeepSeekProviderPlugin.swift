@@ -3,8 +3,7 @@ import os
 import KernelCore
 import ProviderLLMManager
 import KitLLM
-import KitSuperLog
-
+import LumiLoggingKit
 /// DeepSeek 供应商装配插件（KernelCore 生态）。
 ///
 /// 在 `onBoot` 中把本供应商的 DeepSeekProvider(), DeepSeekAnthropicProvider 注册进

@@ -9,8 +9,7 @@ import SwiftTreeSitter
 import LanguageServerProtocol
 import MagicAlert
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// Jump-to-definition delegate
 /// 基于 Tree-Sitter AST 实现文件内跳转（Cmd+Click）
 /// 

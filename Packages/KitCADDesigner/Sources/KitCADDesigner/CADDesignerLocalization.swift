@@ -6,7 +6,7 @@ enum CADDesignerLocalization {
     static let bundle = Bundle.module
 
     static func string(_ key: String, locale: Locale = .current) -> String {
-        LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable", locale: locale)
+        pluginLocalization.string(key, locale: locale)
     }
 
     static func format(_ key: String, _ arguments: CVarArg...) -> String {

@@ -2,8 +2,7 @@ import AppKit
 import CoreGraphics
 import Foundation
 import os
-import KitSuperLog
-
+import LumiLoggingKit
 /// 截图状态机 + 选区裁剪纯函数
 ///
 /// 流程:

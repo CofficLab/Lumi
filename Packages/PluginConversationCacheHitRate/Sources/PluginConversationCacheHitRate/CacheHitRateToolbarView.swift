@@ -46,6 +46,7 @@ struct CacheHitRateToolbarView: View {
                 history: history,
                 unavailabilityReason: unavailabilityReason
             )
+            .frame(width: 420)
         }
         .onChange(of: selectedConversationID) { _, newValue in
             if newValue == nil {
@@ -89,9 +90,9 @@ struct CacheHitRateToolbarView: View {
 
     private var helpText: String {
         if stats.sampleCount > 0 {
-            return String(format: LumiPluginLocalization.string("Token-weighted cache hit rate: %@ (%lld requests)", bundle: .module), stats.percentText, stats.sampleCount)
+            return String(format: pluginLocalization.string("Token-weighted cache hit rate: %@ (%lld requests)"), stats.percentText, stats.sampleCount)
         }
-        return LumiPluginLocalization.string("Cache hit rate unavailable: click for details", bundle: .module)
+        return pluginLocalization.string("Cache hit rate unavailable: click for details")
     }
 
     private func refresh() async {

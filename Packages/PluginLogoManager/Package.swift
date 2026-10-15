@@ -15,17 +15,17 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
-        .package(path: "../ProviderLogo"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
     ],
     targets: [
         .target(
             name: "PluginLogoManager",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "ProviderLogo", package: "ProviderLogo"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderLogo", package: "LumiProviders"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ]
         ),
         .testTarget(

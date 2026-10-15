@@ -6,8 +6,7 @@ import ProviderLLMManager
 import ProviderMessageRendering
 import ProviderOnboarding
 import KitLLM
-import KitSuperLog
-
+import LumiLoggingKit
 /// LLM 供应商管理器插件。
 ///
 /// 替换 `DefaultProviderFactory` 预注册的 `DefaultLLMManager`：在 `onBoot`
@@ -101,7 +100,7 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
         onboarding.register(
             OnboardingPageItem(
                 id: Self.onboardingPageID,
-                title: LumiPluginLocalization.string("Set up your AI provider", bundle: .module)
+                title: pluginLocalization.string("Set up your AI provider")
             ) { [resolvedCapability] in
                 AISetupPage(viewModel: AISetupViewModel(capability: resolvedCapability))
             }

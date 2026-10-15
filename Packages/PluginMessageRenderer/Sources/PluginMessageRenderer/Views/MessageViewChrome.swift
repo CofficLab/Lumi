@@ -10,6 +10,8 @@ struct MessageViewChrome<Content: View>: View {
     var capability: (any MessageRendererCapability)? = nil
     let message: Message
     var showsResendButton = false
+    /// 失败消息是否提供「重试」入口（错误消息行）。是否真能重试由回合状态决定。
+    var showsRetryButton = false
     var showsHeader = true
     var errorTransportDetails: ResolvedErrorTransportDetails?
     let verbosity: ResponseVerbosity
@@ -83,6 +85,10 @@ struct MessageViewChrome<Content: View>: View {
                             ResendMessageButton(capability: capability, message: message)
                         }
 
+                        if showsActions, showsRetryButton, capability != nil {
+                            RetryTurnButton(capability: capability, message: message)
+                        }
+
                         if showsActions, thinking != nil, verbosity != .detailed {
                             AppIconButton(
                                 systemImage: "brain",
@@ -92,7 +98,7 @@ struct MessageViewChrome<Content: View>: View {
                             ) {
                                 showThinkingPopover.toggle()
                             }
-                            .help(LumiPluginLocalization.string("思考过程", bundle: .module))
+                            .help(pluginLocalization.string("思考过程"))
                             .popover(isPresented: $showThinkingPopover, arrowEdge: .bottom) {
                                 ThinkingPopoverContent(text: thinking!)
                             }

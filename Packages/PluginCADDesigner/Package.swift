@@ -6,26 +6,23 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [.library(name: "PluginCADDesigner", targets: ["PluginCADDesigner"])],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitCADDesigner"),
-        .package(path: "../ProviderContentView"),
-        .package(path: "../ProviderDocsView"),
-        .package(path: "../ProviderStorage"),
-        .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderToolManager"),
     ],
     targets: [
         .target(
             name: "PluginCADDesigner",
             dependencies: [
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "KitAgentTool",
                 .product(name: "KitCADDesigner", package: "KitCADDesigner"),
-                "ProviderContentView",
-                "ProviderDocsView",
-                "ProviderStorage",
-                "ProviderToolbar",
+                .product(name: "ProviderContentView", package: "LumiProviders"),
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
+                .product(name: "ProviderToolbar", package: "LumiProviders"),
                 "ProviderToolManager",
             ]
         ),
@@ -33,10 +30,10 @@ let package = Package(
             name: "PluginCADDesignerTests",
             dependencies: [
                 "PluginCADDesigner",
-                "KernelCore",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 "KitAgentTool",
-                "ProviderContentView",
-                "ProviderStorage",
+                .product(name: "ProviderContentView", package: "LumiProviders"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "KitCADDesigner", package: "KitCADDesigner"),
             ]
         ),

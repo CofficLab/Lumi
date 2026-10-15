@@ -11,14 +11,18 @@ struct ContextPopover: View {
     let events: [Message]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            windowSection
-            if !events.isEmpty {
-                Divider()
-                compactionSection
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                windowSection
+                if !events.isEmpty {
+                    Divider()
+                    compactionSection
+                }
             }
         }
         .background(theme.background)
+        .frame(width: 360)
+        .frame(maxHeight: 520)
     }
 
     // MARK: - Window Section

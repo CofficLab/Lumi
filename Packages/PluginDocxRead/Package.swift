@@ -10,20 +10,20 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KitAgentTool"),
-        .package(path: "../KernelCore"),
-        .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
             name: "PluginDocxRead",
             dependencies: [
                 "KitAgentTool",
-                "KernelCore",
-                "KitLocalization",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 "ProviderToolManager",
-                "KitSuperLog",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
@@ -32,7 +32,7 @@ let package = Package(
             dependencies: [
                 "PluginDocxRead",
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             ]
         ),

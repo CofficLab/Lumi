@@ -17,7 +17,7 @@ struct CADDesignerSuperPluginTests {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let storage = DefaultStorageProvider(dataRootDirectory: root)
         try kernel.registerProvider((any StorageProviding).self, storage)
-        try CADDesignerSuperPlugin().onBoot(kernel: kernel)
+        try CADDesignerPlugin().onBoot(kernel: kernel)
         #expect(kernel.resolveProvider((any ContentViewProviding).self) != nil)
         #expect(CADDesignerRuntimeBridge.configuredPluginSubdirectory == storage.pluginDataDirectory(for: "CADDesignerPlugin"))
     }

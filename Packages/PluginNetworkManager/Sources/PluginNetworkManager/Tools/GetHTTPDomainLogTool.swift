@@ -1,7 +1,6 @@
 import KitAgentTool
 import Foundation
-import KitSuperLog
-
+import LumiLoggingKit
 /// 查询特定域名或路径的 HTTP 日志的 Agent 工具。
 struct GetHTTPDomainLogTool: SuperAgentTool, SuperLog {
     nonisolated static let emoji = "🌐"

@@ -5,6 +5,7 @@ import ProviderPluginManaging
 import ProviderWebServer
 import ProviderChatSection
 import ProviderStorage
+import Foundation
 import Testing
 
 @Suite("FactoryLumi Infrastructure")

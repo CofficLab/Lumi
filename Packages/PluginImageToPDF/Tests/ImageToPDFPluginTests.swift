@@ -12,7 +12,7 @@ import Testing
     try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
     try kernel.registerProvider((any ChatSectionProviding).self, chat)
 
-    let plugin = ImageToPDFSuperPlugin()
+    let plugin = ImageToPDFPlugin()
     try plugin.onBoot(kernel: kernel)
 
     #expect(activityBar.activeItemID == "\(plugin.id).entry")

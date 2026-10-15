@@ -224,6 +224,10 @@ struct MCPSettingsView: View {
                 .font(.appCaption)
                 .foregroundStyle(theme.textSecondary)
 
+            if case .error(let message) = state {
+                connectionError(message)
+            }
+
             // 该服务器的工具列表
             let tools = manager.registeredTools
             if let adapters = tools[server.id], !adapters.isEmpty {
@@ -247,6 +251,27 @@ struct MCPSettingsView: View {
             }
 
         }
+    }
+
+    private func connectionError(_ message: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(MCPText.string("Connection Error"), systemImage: "exclamationmark.triangle.fill")
+                .font(.appCaptionEmphasized)
+                .foregroundStyle(.red)
+            Text(message)
+                .font(.system(.callout, design: .monospaced))
+                .foregroundStyle(theme.textPrimary)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(Color.red.opacity(0.25), lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
     }
 
 

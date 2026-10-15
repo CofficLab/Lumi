@@ -29,7 +29,7 @@ public enum FactoryCADDesigner {
 @MainActor
 private struct DedicatedPluginFactory: PluginFactory {
     func makePlugins() -> [any SuperPlugin] {
-        [DedicatedAlwaysOnPlugin(CADDesignerSuperPlugin())]
+        [DedicatedAlwaysOnPlugin(CADDesignerPlugin())]
     }
 }
 

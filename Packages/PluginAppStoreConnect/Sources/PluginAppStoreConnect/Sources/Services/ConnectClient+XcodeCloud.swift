@@ -6,10 +6,8 @@ extension ConnectClient {
     func listCiProducts() async throws -> [CiProduct] {
         let query = [
             URLQueryItem(name: "limit", value: "200"),
-            // App Store Connect API rejects `primaryApp` in fields[ciProducts] (invalid field name).
-            // Keep `include=primaryApp` for relationship resolution when available.
             URLQueryItem(name: "fields[ciProducts]", value: "name,createdDate,productType,bundleId,app,workflows"),
-            URLQueryItem(name: "include", value: "app,primaryApp")
+            URLQueryItem(name: "include", value: "app")
         ]
         let response: AppStoreConnectListResponse<CiProduct> = try await request(
             path: "/v1/ciProducts",

@@ -6,10 +6,10 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginLLMProviderMLX", targets: ["PluginLLMProviderMLX"])],
     dependencies: [
-        .package(path: "../KitSuperLog"),
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../ProviderLLMManager"),
-        .package(path: "../ProviderStorage"),
         .package(path: "../KitLLM"),
         .package(path: "../KitDownload"),
         .package(
@@ -21,10 +21,10 @@ let package = Package(
         .target(
             name: "PluginLLMProviderMLX",
             dependencies: [
-                "KitSuperLog",
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "KitDownload", package: "KitDownload"),
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),
@@ -34,7 +34,7 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginLLMProviderMLXTests",
-            dependencies: ["PluginLLMProviderMLX", .product(name: "KernelCore", package: "KernelCore"), .product(name: "ProviderLLMManager", package: "ProviderLLMManager")],
+            dependencies: ["PluginLLMProviderMLX", .product(name: "KernelCore", package: "LumiKernel"), .product(name: "ProviderLLMManager", package: "ProviderLLMManager")],
             path: "Tests/PluginLLMProviderMLXTests"
         ),
     ]

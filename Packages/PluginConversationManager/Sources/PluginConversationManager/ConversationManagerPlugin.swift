@@ -9,7 +9,7 @@ import ProviderProject
 import ProviderSettingView
 import ProviderStorage
 import ProviderToolManager
-import KitSuperLog
+import LumiLoggingKit
 import SwiftUI
 
 /// Conversation Manager Plugin
@@ -91,7 +91,7 @@ public final class ConversationManagerPlugin: SuperPlugin, PluginDataMigrating, 
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
                 id: "\(id).settings",
-                title: LumiPluginLocalization.string("Conversations", bundle: .module),
+                title: pluginLocalization.string("Conversations"),
                 systemImage: "bubble.left.and.bubble.right",
                 order: 7
             ) { [settingsViewModel] in

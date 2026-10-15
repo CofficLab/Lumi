@@ -15,19 +15,19 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
-        .package(path: "../KitLocalization"),
-        .package(path: "../ProviderLogo"),
-        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
     ],
     targets: [
         .target(
             name: "PluginLogoCoffic",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "KitLocalization", package: "KitLocalization"),
-                .product(name: "ProviderLogo", package: "ProviderLogo"),
-                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
+                .product(name: "ProviderLogo", package: "LumiProviders"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: ".",
             exclude: [

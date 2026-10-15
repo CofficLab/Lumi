@@ -62,7 +62,7 @@ graph TB
 
 ### Plugin system
 
-Plugins conform to [`SuperPlugin`](Packages/KernelCore/Sources/KernelCore/Contracts/SuperPlugin.swift). A plugin can participate in registration, boot, ready, enable/disable, shutdown, and unregister phases, and can contribute providers, tools, commands, views, settings, editor extensions, menus, web routes, and other application surfaces.
+Plugins conform to [`SuperPlugin`](https://github.com/CofficLab/LumiKernel/blob/main/Sources/KernelCore/Contracts/SuperPlugin.swift). A plugin can participate in registration, boot, ready, enable/disable, shutdown, and unregister phases, and can contribute providers, tools, commands, views, settings, editor extensions, menus, web routes, and other application surfaces.
 
 The main implementation layers are:
 
@@ -101,7 +101,9 @@ The concrete provider contracts live under `Packages/Provider*`; the feature imp
 ## Requirements
 
 - macOS 14.0 or later
-- Xcode 26.x (the release workflow currently uses Xcode 26.3)
+- Xcode 27.0 or later. The project uses Xcode's JSON project format
+  (`project.xcproj`), which Xcode 26 cannot open. The release workflow runs on
+  the `xcode-27` runner with Xcode 27.0.
 - Swift 6.0 or later
 
 Some features require additional macOS permissions. For example, Computer Use and screen capture require the corresponding Accessibility, Automation, or Screen Recording permissions.
@@ -144,7 +146,7 @@ There is no root `Package.swift`; the application is built through `Lumi.xcodepr
 
 ## Contributing
 
-Issues and pull requests are welcome at [CofficLab/Lumi](https://github.com/CofficLab/Lumi). New features are generally implemented as `Plugin*` packages and composed in [`DefaultPluginFactory`](Packages/FactoryLumi/Sources/FactoryLumi/PluginFactory.swift). Start with [`SuperPlugin`](Packages/KernelCore/Sources/KernelCore/Contracts/SuperPlugin.swift), an existing plugin, and the relevant `Provider*` contract.
+Issues and pull requests are welcome at [CofficLab/Lumi](https://github.com/CofficLab/Lumi). New features are generally implemented as `Plugin*` packages and composed in [`DefaultPluginFactory`](Packages/FactoryLumi/Sources/FactoryLumi/PluginFactory.swift). Start with [`SuperPlugin`](https://github.com/CofficLab/LumiKernel/blob/main/Sources/KernelCore/Contracts/SuperPlugin.swift), an existing plugin, and the relevant `Provider*` contract.
 
 ## License
 

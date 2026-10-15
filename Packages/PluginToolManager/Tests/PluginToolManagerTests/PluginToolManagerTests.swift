@@ -1,3 +1,4 @@
+import Foundation
 import KernelCore
 import KitAgentTool
 import ProviderAgentLoop
@@ -495,6 +496,126 @@ private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
     }
     #expect(approvalRequested)
     #expect(approvalResult)
+}
+
+// MARK: - A3 (autonomous) fully authorizes forced-approval tools
+
+/// Regression: in A3 the conversation is fully authorized, so even tools that
+/// declare `requiresExplicitApproval` (e.g. `run_command` with
+/// `unsandboxed=true`) must not surface an approval UI.
+@MainActor
+@Test func autonomousModeAutoApprovesForcedApprovalTools() {
+    let manager = ToolManager()
+    manager.add(ShellTool(workspaceRootProvider: { nil }), pluginID: "test")
+    let conversations = DefaultConversationManager()
+    manager.conversationManager = conversations
+    conversations.setGlobalAutomationLevel(.autonomous)
+
+    let call = ToolCall(
+        id: "unsandboxed-a3-1",
+        name: "run_command",
+        arguments: ToolArgumentCoding.encode([
+            "command": ToolArgument("echo hi"),
+            "unsandboxed": ToolArgument(true)
+        ])
+    )
+    #expect(manager.authorizationDecision(for: call, conversationID: UUID()) == .autoApproved)
+}
+
+/// Counterpart: in Build mode the same forced-approval tool still requires
+/// user confirmation.
+@MainActor
+@Test func buildModeStillRequiresApprovalForForcedApprovalTools() {
+    let manager = ToolManager()
+    manager.add(ShellTool(workspaceRootProvider: { nil }), pluginID: "test")
+    let conversations = DefaultConversationManager()
+    manager.conversationManager = conversations
+    conversations.setGlobalAutomationLevel(.build)
+
+    let call = ToolCall(
+        id: "unsandboxed-build-1",
+        name: "run_command",
+        arguments: ToolArgumentCoding.encode([
+            "command": ToolArgument("echo hi"),
+            "unsandboxed": ToolArgument(true)
+        ])
+    )
+    #expect(manager.authorizationDecision(for: call, conversationID: UUID()) == .requiresUserApproval)
+}
+
+@MainActor
+@Test func autoExecutePolicyRunsForcedApprovalToolWithoutApproval() async throws {
+    let manager = ToolManager()
+    manager.add(ShellTool(workspaceRootProvider: { "/tmp" }), pluginID: "test")
+
+    let call = ToolCall(
+        id: "unsandboxed-auto-1",
+        name: "run_command",
+        arguments: ToolArgumentCoding.encode([
+            "command": ToolArgument("echo hi"),
+            "unsandboxed": ToolArgument(true)
+        ])
+    )
+    let results = await manager.executeBatch(
+        [call],
+        policy: .autoExecute,
+        conversationID: UUID(),
+        turnID: UUID()
+    )
+    guard case let .executed(result) = results.first else {
+        Issue.record("A3 autoExecute must run forced-approval tools directly, got \(String(describing: results.first))")
+        return
+    }
+    #expect(result.content.contains("hi"))
+}
+
+@MainActor
+@Test func toolCallsObserverRunsForcedApprovalToolsInAutonomousMode() async throws {
+    let manager = ToolManager()
+    manager.add(ShellTool(workspaceRootProvider: { "/tmp" }), pluginID: "test")
+    let conversationID = UUID()
+    let turnID = UUID()
+    let agentLoop = RecordingToolCallsAgentLoop()
+    let conversations = DefaultConversationManager()
+    conversations.setGlobalAutomationLevel(.autonomous)
+    var events: [ToolManagerEvent] = []
+    let handle = manager.addToolManagerObserver { events.append($0) }
+    defer { handle.cancel() }
+    let observer = ToolCallsObserver(
+        agentLoop: agentLoop,
+        conversations: conversations,
+        service: manager
+    )
+    defer { observer.cancel() }
+
+    agentLoop.send(.toolCallsReceived(
+        conversationID: conversationID,
+        turnID: turnID,
+        assistantMessageID: UUID(),
+        toolCalls: [MessageToolCall(
+            id: "unsandboxed-observer-1",
+            name: "run_command",
+            arguments: ToolArgumentCoding.encode([
+                "command": ToolArgument("echo hi"),
+                "unsandboxed": ToolArgument(true)
+            ])
+        )]
+    ))
+    try await Task.sleep(nanoseconds: 100_000_000)
+
+    let approvalRequested = events.contains { event in
+        if case .authorizationRequired = event { return true }
+        return false
+    }
+    #expect(!approvalRequested)
+
+    let job = try #require(manager.job(
+        forToolCallID: "unsandboxed-observer-1",
+        conversationID: conversationID,
+        turnID: turnID
+    ))
+    let result = await manager.waitForJobResult(jobID: job.id)
+    #expect(result?.content.contains("hi") == true)
 }
 
 @MainActor

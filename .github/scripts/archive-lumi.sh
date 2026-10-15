@@ -108,6 +108,7 @@ set +e
   -clonedSourcePackagesDirPath "${source_packages_path}" \
   -archivePath "${archive_path}" \
   -configuration Release \
+  -disableAutomaticPackageResolution \
   -onlyUsePackageVersionsFromResolvedFile \
   -skipPackageUpdates \
   -skipPackagePluginValidation \

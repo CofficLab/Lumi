@@ -125,7 +125,7 @@ public enum PackageDependencyResolver {
                 version: nil,
                 branch: nil,
                 revision: nil,
-                status: exists ? .resolved : .missing(LumiPluginLocalization.string("Missing", bundle: .module))
+                status: exists ? .resolved : .missing(pluginLocalization.string("Missing"))
             )
         }
 

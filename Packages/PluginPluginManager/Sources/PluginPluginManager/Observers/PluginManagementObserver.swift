@@ -1,4 +1,4 @@
-import KitSuperLog
+import LumiLoggingKit
 import os
 import ProviderPluginManaging
 

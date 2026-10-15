@@ -38,5 +38,5 @@ Model Selector 插件（KernelCore 体系），由旧版 `Plugins/ModelSelectorP
 | `ProviderChatSection` | Chat 分区 Action Bar 贡献 |
 | `ProviderLLMManager` | LLM 供应商注册表 / 选中 / 路由 |
 | `LumiUI` | 共享 UI 组件（AppListRow / AppSearchBar / AppTag …） |
-| `KitLocalization` | 运行时本地化 |
+| `LumiLocalizationKit` | 运行时本地化 |
 

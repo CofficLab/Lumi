@@ -3,7 +3,7 @@ import KernelCore
 import KitLLM
 import ProviderLLMManager
 import ProviderStorage
-import KitSuperLog
+import LumiLoggingKit
 import os
 
 /// MLX 本地模型供应商注册插件。

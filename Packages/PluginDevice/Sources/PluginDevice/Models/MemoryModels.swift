@@ -10,10 +10,10 @@ public enum MemoryTimeRange: String, CaseIterable, Identifiable {
 
     public var displayName: String {
         switch self {
-        case .hour1: return LumiPluginLocalization.string("1h", bundle: .module)
-        case .hour4: return LumiPluginLocalization.string("4h", bundle: .module)
-        case .hour24: return LumiPluginLocalization.string("24h", bundle: .module)
-        case .month1: return LumiPluginLocalization.string("30d", bundle: .module)
+        case .hour1: return pluginLocalization.string("1h")
+        case .hour4: return pluginLocalization.string("4h")
+        case .hour24: return pluginLocalization.string("24h")
+        case .month1: return pluginLocalization.string("30d")
         }
     }
 

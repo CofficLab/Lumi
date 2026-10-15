@@ -1,7 +1,7 @@
 import Foundation
 import KernelCore
 import KitAgentTool
-import KitSuperLog
+import LumiLoggingKit
 import os
 import ProviderActivityBar
 import ProviderChatSection
@@ -338,5 +338,8 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
         CreateAppStoreConnectScreenshotSetTool(),
         StartAppStoreConnectCiBuildRunTool(),
         SetAppStoreConnectCiWorkflowEnabledTool(),
+        UpdateAppStoreConnectVersionTool(),
+        DeleteAppStoreConnectVersionTool(),
+        SetAppStoreConnectAgeRatingTool(),
     ]
 }

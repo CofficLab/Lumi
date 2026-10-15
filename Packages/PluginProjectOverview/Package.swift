@@ -15,11 +15,11 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../KernelCore"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
         .package(path: "../KitAgentTool"),
-        .package(path: "../KitLocalization"),        .package(path: "../KitSuperLog"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitShell"),
-        .package(path: "../ProviderProject"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderPromptSuggestion"),
     ],
@@ -27,17 +27,18 @@ let package = Package(
         .target(
             name: "ProjectOverviewPlugin",
             dependencies: [
-                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
-                .product(name: "KitLocalization", package: "KitLocalization"),                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KitShell", package: "KitShell"),
-                .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
             ],
-            path: "Sources",
+            path: "Sources/PluginProjectOverview",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(
