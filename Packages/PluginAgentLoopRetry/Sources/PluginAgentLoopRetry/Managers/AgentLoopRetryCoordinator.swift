@@ -9,6 +9,9 @@ import ProviderMessage
 /// - 校验失败是否可重试、是否达到最大尝试次数；
 /// - 通过 `retryTurn`（带失败回合 ID 校验）重启回合；
 /// - 每次重试在时间线写入一条系统消息（不进入 LLM 上下文）。
+///
+/// 重试预算按**连续失败**计费：同一回合内只要 LLM 成功返回过一次
+/// （工具调用或正文），预算即回到满额，只有背靠背的失败才会消耗次数。
 @MainActor
 final class AgentLoopRetryCoordinator {
     /// 单个会话的重试跟踪状态。
@@ -66,9 +69,25 @@ final class AgentLoopRetryCoordinator {
              .cancelled(let conversationID, _):
             clearState(for: conversationID)
 
-        case .toolCallsReceived, .llmResponseReceived, .suspended:
+        case .toolCallsReceived(let conversationID, _, _, _),
+             .llmResponseReceived(let conversationID, _, _):
+            // LLM 成功返回过一次（工具调用或正文）。回合仍在进行中，但失败
+            // 已经不再是背靠背的，重试预算回到满额。
+            resetAttempts(for: conversationID)
+
+        case .suspended:
             break
         }
+    }
+
+    /// 成功响应后把重试预算恢复到满额。
+    ///
+    /// 只清零计数：失败回合身份、待启动标记和正在进行的重试任务都属于当前
+    /// 重试链，必须保留，否则会丢失已经发出的重试或让后续失败无法接续。
+    private func resetAttempts(for conversationID: UUID) {
+        guard var state = states[conversationID], state.attempts > 0 else { return }
+        state.attempts = 0
+        states[conversationID] = state
     }
 
     private func handleFailure(conversationID: UUID, turnID: UUID) {
