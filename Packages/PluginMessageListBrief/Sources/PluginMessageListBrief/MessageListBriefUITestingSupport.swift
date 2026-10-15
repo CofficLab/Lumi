@@ -200,8 +200,8 @@ public enum MessageListBriefUITestingSupport {
             content: content,
             createdAt: createdAt,
             turnID: turnID.map { UUID(uuidString: $0) ?? UUID() },
-            toolCalls: toolCalls,
-            preferredRendererID: preferredRendererID
+            preferredRendererID: preferredRendererID,
+            toolCalls: toolCalls
         )
     }
 }

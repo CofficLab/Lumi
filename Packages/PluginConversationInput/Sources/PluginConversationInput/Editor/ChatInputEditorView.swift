@@ -125,6 +125,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
             height: CGFloat.greatestFiniteMagnitude
         )
         textView.textContainerInset = NSSize(width: 4, height: 4)
+        textView.setAccessibilityIdentifier("lumi.conversation-input.editor")
 
         scrollView.documentView = textView
         context.coordinator.attach(to: textView)
