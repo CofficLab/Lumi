@@ -147,6 +147,11 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
     /// - Note: 必须等会话列表加载完成后再植入。`loadConversations()` 会整体替换
     ///   会话列表并在未选中时清空选中态；若过早植入，夹具会话会被这次加载覆盖，
     ///   表现为「侧栏里看不到测试会话、消息区空白」。
+    ///
+    /// - Important: 函数体必须与 `ErrorRetryUITestingSupport.swift` 一样整体处于
+    ///   `#if DEBUG` 内。该夹具类型仅在 DEBUG 定义，若只包裹调用点，Release 构建
+    /// 会报 `cannot find 'ErrorRetryUITestingSupport' in scope`。
+    #if DEBUG
     private func seedErrorRetryUITestingFixtureIfNeeded(
         agentLoop: AgentLoopManager,
         messages: any MessageManaging,
@@ -202,6 +207,7 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
             seed()
         }
     }
+    #endif
 }
 
 /// 让观察者闭包能引用到自己的注销句柄（自取消的一次性观察）。
