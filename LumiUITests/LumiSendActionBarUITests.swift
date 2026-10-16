@@ -22,8 +22,23 @@ import XCTest
 ///    夹具职责由上述启动参数承担。
 ///
 /// 范式参照 `LumiErrorRetryTurnUITests`。
-final class LumiSendActionBarUITests: XCTestCase {
-    private var app: XCUIApplication!
+///
+/// ## 为什么这些用例必须切到 `ui-test-very-slow`
+///
+/// 夹具默认模型 `ui-test-text` 实测端到端仅 **1ms**（3 个 SSE 事件、无延迟）。
+/// 回合在测试能观察到之前就结束了，因此：
+///
+/// - 「停止按钮取代发送按钮」根本无从观察——按钮出现即消失；
+/// - 「回合跑完并渲染桩回复」也无法区分「跑完了」与「根本没跑」。
+///
+/// `ui-test-very-slow` 把回合拉到约 14s（32 段 × 0.4s），让「回合中」成为一个
+/// 可稳定采样的状态。这不是放宽断言，而是把原本依赖毫秒级运气的用例
+/// 变成确定性用例。
+final class LumiSendActionBarUITests: LumiUITestCase {
+    /// 让回合足够长以便观察的桩模型（实测约 14s）。
+    private enum StubModel {
+        static let verySlow = "ui-test-very-slow"
+    }
 
     /// 与 `SendActionBarAccessibility` 保持一致。
     ///
@@ -46,19 +61,13 @@ final class LumiSendActionBarUITests: XCTestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        // 先终止残留实例（与 LumiUITests 一致），避免复用 Background 旧进程：
-        // 旧进程里保存着上一次的选中模型与对话，会让「回合开始」时机不可预测。
-        app.terminate()
-        app.launchArguments += [
-            "-ApplePersistenceIgnoreState", "YES",
-            "-AppleLanguages", "(en)",
-            "-AppleLocale", "en_US",
+        // 启动、引导关闭、元素定位等由 `LumiUITestCase` 提供；
+        // 本文件只补充自己需要的夹具参数。
+        launchLumi(extraArguments: [
             // 确定性 LLM 供应商 + 隔离存储。
             "--lumi-ui-testing",
             "--lumi-ui-testing-isolated-storage",
-        ]
-        app.launch()
+        ])
     }
 
     override func tearDownWithError() throws {
@@ -70,57 +79,63 @@ final class LumiSendActionBarUITests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func element(identifier: String) -> XCUIElement {
-        app.descendants(matching: .any).matching(identifier: identifier).firstMatch
-    }
-
-    private func element(anyLabelOf labels: [String]) -> XCUIElement {
-        app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label IN %@ OR value IN %@", labels, labels))
-            .firstMatch
-    }
-
-    /// 隔离数据根目录会让新手引导重新出现（完成标记存在插件数据目录里），
-    /// 它是覆盖在聊天区之上的浮层，不关掉就点不到发送按钮。
-    private func dismissOnboardingIfPresent() {
-        for _ in 0..<8 {
-            let finish = app.buttons["Finish"]
-            let continueButton = app.buttons["Continue"]
-            let skip = app.buttons["Skip"]
-            if finish.exists, finish.isHittable {
-                finish.click()
-            } else if continueButton.exists, continueButton.isHittable {
-                continueButton.click()
-            } else if skip.exists, skip.isHittable {
-                skip.click()
-            } else {
-                return
-            }
-            sleep(1)
-        }
-    }
-
-    private func waitForMainWindow() {
-        XCTAssertTrue(
-            element(identifier: "root.main").waitForExistence(timeout: 30),
-            "主窗口未就绪"
-        )
-        dismissOnboardingIfPresent()
-    }
-
-    /// 在输入框里输入文本并按 Return 发送。
+    /// 在输入框里输入文本并发送。
     ///
-    /// 用键盘发送而不是点按钮：先要一个「有内容、回合已结束」的确定性起始态，
-    /// 而启动后输入框必然为空，点发送按钮只会被 `canSend` 挡住。
+    /// 走**点击发送按钮**而非 `typeKey(.return)`。
+    ///
+    /// - Important: Return 会被宿主输入法的候选栏吞掉（候选栏是系统模态层，
+    ///   `typeKey` 到不了 `NSTextView`），导致回合永不启动。这是夹具问题，
+    ///   不是产品缺陷——详见 `LumiUITestCase` 顶部的长注释。
+    ///   `LumiUITestCase.typeAndSend` 已统一改为点按钮，本方法直接复用。
     private func typeAndSend(_ text: String) {
-        let editor = element(identifier: Identifiers.editor)
         XCTAssertTrue(
-            editor.waitForExistence(timeout: 20),
-            "未找到聊天输入框（identifier=\(Identifiers.editor)），发送按钮测试无法进行"
+            typeAndSend(text, editorIdentifier: Identifiers.editor),
+            "输入「\(text)」后未能发出（identifier=\(Identifiers.editor)）"
         )
-        editor.click()
-        editor.typeText(text)
-        editor.typeKey(.return, modifierFlags: [])
+    }
+
+    /// 切到让回合足够长的桩模型（见类注释）。
+    ///
+    /// 复刻 `LumiAskUserUITests.selectStubModel`：UI 测试供应商 `isLocal = true`，
+    /// 因此位于模型选择器的「本地」页签。
+    private func selectSlowStubModel() {
+        let selectModelButton = app.buttons["Select Model"]
+        XCTAssertTrue(
+            selectModelButton.waitForExistence(timeout: 20),
+            "Action Bar 缺少模型选择按钮"
+        )
+        selectModelButton.click()
+
+        let popover = element(identifier: "lumi.model-selector.popover")
+        XCTAssertTrue(popover.waitForExistence(timeout: 10), "模型选择弹窗未出现")
+
+        let localSegment = app.radioButtons["Local"]
+        XCTAssertTrue(
+            localSegment.waitForExistence(timeout: 5),
+            "供应商列表缺少 Local 页签"
+        )
+        localSegment.click()
+        // 页签切换后列表要重新筛选，留稳定期再断言，避免读到切换前的快照。
+        sleep(1)
+
+        let providerRow = element(identifier: "lumi.model-selector.provider.ui-test")
+        XCTAssertTrue(
+            providerRow.waitForExistence(timeout: 5),
+            "本地供应商列表缺少 UI Test"
+        )
+        providerRow.click()
+
+        let modelRow = element(identifier: "lumi.model-selector.model.\(StubModel.verySlow)")
+        XCTAssertTrue(
+            modelRow.waitForExistence(timeout: 5),
+            "模型列表缺少 \(StubModel.verySlow)"
+        )
+        modelRow.click()
+
+        // 选中模型会关闭弹窗；等它消失，避免与后续点击争抢命中测试。
+        _ = popover.waitForNonExistence(timeout: 10)
+        // 弹窗关闭后输入框需重新拿回焦点，否则紧随其后的点击会落空。
+        sleep(1)
     }
 
     // MARK: - Tests
@@ -138,6 +153,7 @@ final class LumiSendActionBarUITests: XCTestCase {
     /// 3. 停止后：发送按钮回来 —— 说明 `cancel()` 真的取消了回合，而不只是切了图标。
     func testSendButtonIsReplacedByStopButtonWhileRunningAndRestoredAfterStop() throws {
         waitForMainWindow()
+        selectSlowStubModel()
 
         let sendButton = element(identifier: Identifiers.sendButton)
         let stopButton = element(identifier: Identifiers.stopButton)
@@ -199,6 +215,7 @@ final class LumiSendActionBarUITests: XCTestCase {
     /// 按钮看起来正常但点了没反应，单元测试无法发现（它直接调 `viewModel.send()`）。
     func testClickingSendButtonSubmitsMessageAndStartsTurn() throws {
         waitForMainWindow()
+        selectSlowStubModel()
 
         let sendButton = element(identifier: Identifiers.sendButton)
         XCTAssertTrue(
@@ -257,6 +274,7 @@ final class LumiSendActionBarUITests: XCTestCase {
     /// 静默消失（用户只看到输入框被清空）。
     func testSendingWithAttachmentGoesThroughBackgroundCommitPath() throws {
         waitForMainWindow()
+        selectSlowStubModel()
 
         // 在临时目录放一个可拖入的文件。
         let attachment = FileManager.default.temporaryDirectory
@@ -303,6 +321,7 @@ final class LumiSendActionBarUITests: XCTestCase {
     /// 这是 `SendActionBarState` 单布尔模型最容易出问题的地方。
     func testButtonStateFollowsSelectedConversationAfterSwitch() throws {
         waitForMainWindow()
+        selectSlowStubModel()
 
         let sendButton = element(identifier: Identifiers.sendButton)
         let stopButton = element(identifier: Identifiers.stopButton)
