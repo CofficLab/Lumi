@@ -28,6 +28,14 @@ struct AgentTurnNotificationPluginTests {
 
     @Test("V2 turn-finished hook 触发 notifier")
     func finishedTriggersNotifier() async throws {
+        // 测试进程是 xctest runner，没有 bundle identifier，
+        // `isNotificationDeliveryAvailable` 因此为 false，`onBoot` 会跳过 hook 注册。
+        // 这里显式置 true，让断言覆盖的是「hook 注册与触发」这条真实链路，
+        // 而不是被环境探测提前短路后的空路径。
+        let originalAvailability = AgentTurnNotificationPlugin.isNotificationDeliveryAvailable
+        AgentTurnNotificationPlugin.isNotificationDeliveryAvailable = true
+        defer { AgentTurnNotificationPlugin.isNotificationDeliveryAvailable = originalAvailability }
+
         let kernel = KernelCoreContainer()
         let hooks = DefaultLifecycleHooksProvider()
         try kernel.registerProvider((any LifecycleHooksProviding).self, hooks)

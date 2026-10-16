@@ -10,8 +10,8 @@ struct ZhipuProviderPluginTests {
     @Test("onBoot 把 Zhipu 供应商注册进管理器")
     func pluginRegistersProviders() throws {
         let kernel = KernelCoreContainer()
-        let manager = DefaultLLMProviderManagerProviding()
-        try kernel.registerProvider((any LLMProviderManagerProviding).self, manager)
+        let manager = DefaultLLMManager()
+        try kernel.registerProvider((any LLMManaging).self, manager)
 
         let plugin = ZhipuProviderPlugin()
         try plugin.onBoot(kernel: kernel)
