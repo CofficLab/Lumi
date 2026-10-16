@@ -31,8 +31,18 @@ class LumiLocalizationUITestCase: XCTestCase {
     }
 
     override func tearDownWithError() throws {
-        if let app, app.state != .notRunning {
+        // 等 App 真正退出：terminate() 是异步的，不等会让「上一个用例还在退出」
+        // 漂移成「下一个用例偶发失败」。本类继承 XCTestCase，故内联实现。
+        if app.state != .notRunning {
             app.terminate()
+            let stopped = NSPredicate(
+                format: "state == %d",
+                XCUIApplication.State.notRunning.rawValue
+            )
+            _ = XCTWaiter().wait(
+                for: [XCTNSPredicateExpectation(predicate: stopped, object: app)],
+                timeout: 10
+            )
         }
         try super.tearDownWithError()
     }

@@ -71,9 +71,8 @@ final class LumiSendActionBarUITests: LumiUITestCase {
     }
 
     override func tearDownWithError() throws {
-        if let app, app.state != .notRunning {
-            app.terminate()
-        }
+        // 等 App 真正退出，避免「上一个用例还在退出」漂移成「下一个用例偶发失败」。
+        terminateAppAndWait()
         try super.tearDownWithError()
     }
 

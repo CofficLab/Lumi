@@ -40,15 +40,18 @@ class LumiUITestCase: XCTestCase {
     /// - Parameter extraArguments: 额外的启动参数（场景专属夹具）。
     func launchLumi(extraArguments: [String] = []) {
         app = XCUIApplication()
-        // 先终止残留实例，避免复用 Background 旧进程：
-        // 旧进程里保存着上一次的选中模型与对话，会让回合时机不可预测。
+        // 先确保没有残留实例：旧进程里保存着上一次的选中模型与对话，
+        // 会让回合时机不可预测；若它还挂在后台，新实例拿不到前台激活。
         //
-        // - Important: `terminate()` 只发出终止请求，不等待进程真的退出。
-        //   若上一个用例的实例还挂在后台，新实例启动后拿不到前台激活，
-        //   后续交互全以 `Failed to activate application … (Running Background)`
-        //   失败。这里显式等到 `.notRunning` 再启动，把「进程已退出」变成
-        //   可观测事实而不是猜一个 sleep。
-        app.terminate()
+        // - Important: `terminate()` 只发出终止请求，**不等待进程真的退出**。
+        //   这里显式等到 `.notRunning`，把「旧进程已退出」变成可观测事实，
+        //   而不是交给一个猜出来的 sleep。
+        //
+        //   症状：新实例起来后激活失败，后续每次交互都报
+        //   `Failed to activate application … (Running Background)`，
+        //   或元素处于 `Not Hittable`。它表现为随机的「某个元素突然找不到」，
+        //   极易被误判成产品缺陷。
+        terminateAppAndWait()
 
         app.launchArguments += Self.commonLaunchArguments + extraArguments
         app.launch()
@@ -73,6 +76,34 @@ class LumiUITestCase: XCTestCase {
                 return
             }
             sleep(1)
+        }
+    }
+
+    /// 等待 App 进程彻底退出，必要时先请求终止。
+    ///
+    /// `terminate()` 是异步的：它发出终止请求后立刻返回，进程可能还在
+    /// 清理窗口与写盘。直接 `launch()` 新实例会撞上仍在退出的旧进程，
+    /// 导致激活失败或交互落在错误的目标上。
+    ///
+    /// 子类的 `tearDownWithError` 必须调用它而不是裸 `terminate()`，
+    /// 否则「上一个用例还在退出」会泄漏成「下一个用例偶发失败」——
+    /// 这种失败点随机漂移，极难归因。
+    ///
+    /// - Important: 用 `wait(for:)` 而不是固定 `sleep`：固定睡眠要么不够
+    ///   （问题复现），要么白白拖慢每个用例。这里等的是真实状态变化。
+    func terminateAppAndWait(timeout: TimeInterval = 10) {
+        guard app.state != .notRunning else { return }
+        app.terminate()
+        let stopped = NSPredicate(format: "state == %d", XCUIApplication.State.notRunning.rawValue)
+        let expectation = XCTNSPredicateExpectation(predicate: stopped, object: app)
+        let result = XCTWaiter().wait(for: [expectation], timeout: timeout)
+        if result != .completed {
+            XCTFail(
+                """
+                App 未在 \(Int(timeout))s 内退出（当前状态：\(app.state.rawValue)）。\
+                后续交互会失败在「无法激活应用」而非真实断言上，请勿据此判定产品缺陷。
+                """
+            )
         }
     }
 
