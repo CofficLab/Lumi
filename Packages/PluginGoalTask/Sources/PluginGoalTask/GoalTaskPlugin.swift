@@ -5,6 +5,7 @@ import ProviderChatSection
 import ProviderConversation
 import ProviderLifecycleHooks
 import ProviderMessage
+import ProviderMessageSender
 import ProviderStorage
 import ProviderToolManager
 import SwiftUI
@@ -33,6 +34,8 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     private let goalVM = GoalVM()
     private var conversationBridge: GoalTaskConversationBridge?
     private var goalChangeObserver: GoalChangeObserver?
+    /// 「在新对话中继续」的编排器，为 `nil` 表示缺少必需的 Provider。
+    private var forkCoordinator: GoalForkCoordinator?
     /// `turnFinished` 自动续跑钩子（见 `Hooks/GoalTaskTurnFinishedHook.swift`）。
     private var turnFinishedHook: GoalTaskTurnFinishedHook?
 
@@ -87,6 +90,14 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         }
         let bridge = GoalTaskConversationBridge(conversations)
         conversationBridge = bridge
+        if let messageSender = kernel.resolveProvider((any MessageSendingProviding).self) {
+            forkCoordinator = GoalForkCoordinator(
+                conversations: conversations,
+                messageSender: messageSender
+            )
+        } else {
+            Self.logger.error("\(Self.t) MessageSendingProviding not found, fork action disabled")
+        }
         goalVM.updateCurrentConversationID(bridge.selectedConversationID)
         goalChangeObserver = GoalChangeObserver { [weak self] conversationID in
             self?.goalVM.refreshIfCurrentConversation(conversationID)
@@ -104,7 +115,10 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         ])
         kernel.resolveProvider((any ChatSectionProviding).self)?.addBarItems([
             ChatSectionBarItem(id: "\(id).toolbar-button", placement: .toolbarTrailing) {
-                GoalToolbarButton(viewModel: self.goalVM)
+                GoalToolbarButton(
+                    viewModel: self.goalVM,
+                    forkCoordinator: self.forkCoordinator
+                )
             }
         ])
 
@@ -138,6 +152,7 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         conversationBridge = nil
         goalChangeObserver?.cancel()
         goalChangeObserver = nil
+        forkCoordinator = nil
         turnFinishedHook = nil
         Plugin._sharedManager = nil
     }

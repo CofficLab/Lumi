@@ -422,6 +422,69 @@ public actor GoalStateManager: SuperLog {
         return .pending
     }
     
+    // MARK: - Fork
+    
+    /// 将一个 Goal 复制到目标会话，源 Goal 置为 `skipped`。
+    ///
+    /// 「在新对话中继续」入口使用：源会话的 Goal 必须离开活跃集合，否则
+    /// `GoalTaskTurnFinishedHook` 会在两个会话里同时续跑同一个目标。
+    /// `skipped` 是终态，续跑钩子天然不再拾取它，无需额外标记字段。
+    ///
+    /// 副本保留任务的状态与结果，已完成的部分不必重做；仅重置副本自身的
+    /// 终态时间戳，因为它的完成时间尚未发生。
+    ///
+    /// - Returns: 新建的副本 Goal，可直接用于发起新一轮回合。
+    @discardableResult
+    func forkGoal(id: String, into conversationId: String) throws -> Goal {
+        let context = ModelContext(container)
+
+        guard let source = fetchGoal(id: id, context: context) else {
+            throw GoalStateError.goalNotFound(id: id)
+        }
+
+        let existingGoals = fetchAllGoals(conversationId: conversationId, context: context)
+        if let active = existingGoals.first(where: { ![Goal.GoalStatus.completed, .failed, .skipped].contains($0.status) }) {
+            throw GoalStateError.activeGoalAlreadyExists(title: active.title, goalId: active.id)
+        }
+
+        let forked = Goal(
+            conversationId: conversationId,
+            title: source.title,
+            goalDescription: source.goalDescription,
+            successCriteria: source.successCriteria,
+            status: source.isTerminal ? .pending : source.status
+        )
+        context.insert(forked)
+
+        for task in fetchAllTasks(goalId: source.id, context: context) {
+            let copy = GoalTask(
+                goalId: forked.id,
+                title: task.title,
+                taskDescription: task.taskDescription,
+                executionContext: task.executionContext,
+                status: task.status,
+                order: task.order,
+                parallelGroup: task.parallelGroup
+            )
+            copy.result = task.result
+            copy.errorMessage = task.errorMessage
+            copy.completedAt = task.completedAt
+            context.insert(copy)
+        }
+
+        // 源 Goal 退出活跃集合，避免两个会话争抢同一目标。
+        source.status = .skipped
+        source.updatedAt = Date().timeIntervalSince1970
+
+        try context.save()
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)fork Goal \(id) -> \(forked.id) 到会话 \(conversationId)")
+        }
+
+        return forked
+    }
+
     // MARK: - Automatic Continuation
     
     /// 标记某会话即将进入一次无感自动续聊轮次（在触发续聊前调用）。
@@ -482,6 +545,7 @@ public enum GoalStateError: LocalizedError {
     case tooManyTasks(max: Int)
     case goalNotFound(id: String)
     case taskNotFound(id: String)
+    case activeGoalAlreadyExists(title: String, goalId: String)
     
     public var errorDescription: String? {
         switch self {
@@ -493,6 +557,8 @@ public enum GoalStateError: LocalizedError {
             return "Goal not found: \(id)"
         case .taskNotFound(let id):
             return "Task not found: \(id)"
+        case .activeGoalAlreadyExists(let title, let goalId):
+            return "This conversation already has an unfinished goal: \(title) (\(goalId))"
         }
     }
 }

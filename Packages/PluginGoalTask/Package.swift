@@ -23,6 +23,7 @@ let package = Package(
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderMessage"),
+        .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderToolManager")
     ],
     targets: [
@@ -39,6 +40,7 @@ let package = Package(
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             ],

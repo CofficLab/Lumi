@@ -12,6 +12,7 @@ import SwiftUI
 struct GoalPopoverContent: View {
     @LumiTheme private var theme
     @ObservedObject var viewModel: GoalVM
+    let forkCoordinator: GoalForkCoordinator?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -72,7 +73,7 @@ struct GoalPopoverContent: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     ForEach(viewModel.goals) { item in
-                        GoalRowView(item: item)
+                        GoalRowView(item: item, forkCoordinator: forkCoordinator)
                     }
                 }
                 .padding(12)
