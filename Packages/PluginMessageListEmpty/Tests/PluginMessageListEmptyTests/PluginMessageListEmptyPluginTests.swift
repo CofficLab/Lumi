@@ -38,19 +38,22 @@ import Testing
     let visibleMessageID = UUID()
     messages.insertMessage(Message(id: visibleMessageID, conversationID: selectedID, role: .user, content: "Hello"), to: selectedID)
     await settleRegistrationEvaluation()
-    #expect(chat.items.isEmpty)
+    // 空态 item 常驻注册，可见性完全由 `isActive` 表达（见 `shouldRenderEmptyState`）。
+    #expect(!chat.items.isEmpty)
+    #expect(!chat.isEmptyStateRendering)
 
     messages.clearMessages(in: selectedID)
     await settleRegistrationEvaluation()
-    #expect(chat.items.map(\.id) == [plugin.id])
+    #expect(chat.isEmptyStateRendering)
 
     conversations.selectConversation(id: firstID)
     await settleRegistrationEvaluation()
-    #expect(chat.items.isEmpty)
+    // firstID 只有一条 user 消息 → 空态仍不渲染。
+    #expect(!chat.isEmptyStateRendering)
 
     messages.deleteMessage(id: firstMessageID, in: firstID)
     await settleRegistrationEvaluation()
-    #expect(chat.items.map(\.id) == [plugin.id])
+    #expect(chat.isEmptyStateRendering)
 
     conversations.deselectConversation()
     #expect(chat.items.map(\.id) == [plugin.id])
@@ -66,10 +69,20 @@ import Testing
 
 @MainActor
 private func settleRegistrationEvaluation() async {
-    // The plugin evaluates persisted state in a child task. Yield twice so
-    // this test observes the completed state without using a wall-clock sleep.
-    await Task.yield()
-    await Task.yield()
+    // The plugin evaluates persisted state in a child task that performs an
+    // async read. `Task.yield()` does not advance wall-clock time, so give the
+    // evaluation real time to finish instead of guessing how many yields it takes.
+    for _ in 0..<100 {
+        try? await Task.sleep(nanoseconds: 5_000_000)
+    }
+}
+
+/// 空态 item 现已常驻注册，可见性完全由 `isActive` 表达，
+/// 因此断言「是否渲染空态」而非「是否注册 item」。
+private extension DefaultChatSectionProviding {
+    var isEmptyStateRendering: Bool {
+        items.contains { $0.id == "com.coffic.lumi.plugin.message-list.empty" && $0.isActive() }
+    }
 }
 
 @Test @MainActor func pluginCanProvideNoSelectionEmptyStateWithoutOptionalProviders() throws {

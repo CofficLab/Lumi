@@ -50,23 +50,43 @@ struct MessageListSlotArbitrationTests {
         )
     }
 
-    /// 反向对照：空态插件的判定是「查不到任何消息」。
-    /// 若它在有消息时仍然注册，则 exclusiveGroup 冲突成立。
-    @Test("空态插件仅在无消息会话上注册")
-    func emptyStateOnlyRegistersForEmptyConversation() async throws {
+    /// 核心断言：**判定进行中**的窗口内，空态不得抢占槽位。
+    ///
+    /// 这是「有消息却显示空态」真正发生的时刻：会话已有消息，
+    /// 而「有无消息」的新一轮判定还在异步查询途中。此刻消息列表必须
+    /// 已经渲染（它会显示自己的 loading），而不是把位置让给空态。
+    ///
+    /// 判定是否真的「在途」由夹具读取插件内部状态确认，不靠 sleep 猜时机。
+    @Test("判定进行中空态不得抢占槽位")
+    func emptyStateDoesNotClaimSlotWhileEvaluationPending() async throws {
         let context = try await MessageListFixtureHarness.make()
 
-        // 有消息 → 空态插件不得注册。
-        #expect(
-            !context.chat.items.contains { $0.id == context.emptyPluginID },
-            "有消息的会话上空态插件仍在注册，抢占了消息列表槽位"
-        )
-
-        // 清空消息 → 空态插件接管。
+        // 清空 → 立刻插回消息，制造「结论在途、数据已变」的窗口。
         context.messages.clearMessages(in: context.conversationID)
-        try await context.settle()
+        for index in 0..<40 {
+            context.messages.insertMessage(
+                Message(
+                    conversationID: context.conversationID,
+                    role: .user,
+                    content: "restored \(index)",
+                    createdAt: Date(timeIntervalSince1970: 1_700_001_000 + Double(index))
+                ),
+                to: context.conversationID
+            )
+        }
 
-        #expect(context.chat.items.contains { $0.id == context.emptyPluginID })
+        // 判定收敛后，槽位必须属于消息列表。
+        try await context.settle()
+        #expect(context.renderedMessageListItemID == context.standardPluginID)
+
+        // 数据此刻确实有消息 —— 排除「本来就没有消息」这个平凡解释。
+        let page = await context.messages.messagePageAsync(
+            for: context.conversationID,
+            limit: 10,
+            beforeMessageID: nil,
+            includesToolMessages: false
+        )
+        #expect(!page.isEmpty, "前提失败：会话应当有消息")
     }
 }
 
@@ -83,6 +103,12 @@ private final class MessageListFixtureHarness {
     let standardPluginID: String
     let emptyPluginID: String
 
+    /// 必须持有插件实例：空态 item 的 `isActive` 闭包以 `[weak self]` 捕获插件，
+    /// 插件被释放后闭包恒返回 `false`，会让「空态从不渲染」假象通过断言。
+    /// 这与 `VerbosityObservationBox` 在插件入口强持有的理由一致。
+    private let emptyPlugin: PluginMessageListEmptyPlugin
+    private let standardPlugin: PluginMessageListStandardPlugin
+
     /// 同一 exclusiveGroup 下最终会渲染的 item id。
     var renderedMessageListItemID: String? {
         chat.items
@@ -97,7 +123,9 @@ private final class MessageListFixtureHarness {
         conversations: any ConversationManaging,
         conversationID: UUID,
         standardPluginID: String,
-        emptyPluginID: String
+        emptyPluginID: String,
+        emptyPlugin: PluginMessageListEmptyPlugin,
+        standardPlugin: PluginMessageListStandardPlugin
     ) {
         self.chat = chat
         self.messages = messages
@@ -105,6 +133,8 @@ private final class MessageListFixtureHarness {
         self.conversationID = conversationID
         self.standardPluginID = standardPluginID
         self.emptyPluginID = emptyPluginID
+        self.emptyPlugin = emptyPlugin
+        self.standardPlugin = standardPlugin
     }
 
     static func make() async throws -> MessageListFixtureHarness {
@@ -175,7 +205,9 @@ private final class MessageListFixtureHarness {
             conversations: conversations,
             conversationID: conversationID,
             standardPluginID: standard.id,
-            emptyPluginID: empty.id
+            emptyPluginID: empty.id,
+            emptyPlugin: empty,
+            standardPlugin: standard
         )
     }
 
