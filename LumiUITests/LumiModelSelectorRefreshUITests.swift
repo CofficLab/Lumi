@@ -1,4 +1,5 @@
 import XCTest
+import AppKit
 
 /// 模型选择器「刷新模型列表」UI 测试。
 ///
@@ -112,8 +113,16 @@ final class LumiModelSelectorRefreshUITests: XCTestCase {
             NSPredicate(format: "placeholderValue == %@", "Search models")
         ).firstMatch
         XCTAssertTrue(searchField.waitForExistence(timeout: 5), "模型列表缺少搜索框（模型数达到阈值后应显示）")
+        // 用剪贴板而不是 typeText：后者逐字符合成按键，会被宿主输入法吞掉
+        // 尾部字符，搜不到目标模型（详见 `LumiUITestCase` 的实测对照表）。
+        // 本类继承的是 XCTestCase 而非 LumiUITestCase，因此这里内联粘贴。
         searchField.click()
-        searchField.typeText("MiniMax-M2.1")
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString("MiniMax-M2.1", forType: .string)
+        sleep(1)
+        searchField.typeKey("v", modifierFlags: .command)
+        sleep(1)
 
         let newModelRow = element(identifier: Identifiers.newModelRow)
         XCTAssertTrue(

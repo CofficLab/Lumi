@@ -1,34 +1,36 @@
 import XCTest
+import AppKit
 
 /// 所有 `--lumi-ui-testing` UI 测试的共享基类。
 ///
-/// ## 为什么需要它：输入法会吞掉 Return
+/// ## 为什么需要它：合成键盘事件不可靠
 ///
-/// `XCUIElement.typeText` 是**逐字符模拟键盘事件**。App 继承宿主系统的输入法，
-/// 若宿主启用了中文拼音（`com.apple.inputmethod.SCIM.ITABC`）等 IME，
-/// 打字过程中候选栏会弹出：
+/// `XCUIElement.typeText` 是**逐字符派发合成键盘事件**，它有两个已被实测确认的缺陷，
+/// 且**都与被测代码无关**：
 ///
-/// ```text
-/// Application, Disabled                       ← 被候选栏整体禁用
-///   TextView, value: '...', Keyboard Focused, Disabled
-///   TouchBar
-///     DisclosureTriangle, title: 'Candidate Bar', value: 1
-///     Other, title: ' is'    Other, title: ' your'   ← IME 候选词
-/// ```
-///
-/// 候选栏是系统模态层，随后的 `typeKey(.return)` 被它用于「上屏」而**从未到达
-/// NSTextView**，于是回合永不启动、用户消息不出现在时间线上。
-///
-/// 这与被测代码无关：App 对 IME 的处理是正确的
-/// （`EditorTextView.finishIMEComposition` / `hasMarkedText`），
-/// 真正的缺陷是**夹具没有把输入法从测试里排除掉**。
-///
-/// - Note: `-AppleLanguages` / `-AppleLocale` 只影响**文案本地化**，
-///   不影响**键盘输入源**。两者是正交的，缺一不可。
+/// 1. **尾随空格必丢**。宿主系统启用了中文拼音输入法时，`typeText` 的按键事件会
+///    进入 IME 组合态，**最后一个空格被 IME 吞掉**——实测 `UI Testing Send Button Probe`
+///    （28 字符）只进入 27 字符的 `UI Testing Send ButtonProbe`，`PROBE MESSAGE UNIQUE TEXT`
+///    （25）进入 24，`Ask User Choice Probe`（21）进入 20，**每次都恰好少一个尾部空格**。
+/// 2. **候选栏吞 Return**。候选栏是系统模态层，随后的 `typeKey(.return)` 被它用于
+///    「上屏」而**从未到达 NSTextView**，于是回合永不启动。
 ///
 /// - Important: 症状依赖打字速度与长度（长 prompt 给 IME 更多弹候选的时间），
 ///   因此表现为**间歇性失败**——短 prompt 的用例能过、长 prompt 的过不了。
-///   修的是输入源这一根因，不是在特定用例上加重试。
+///   修的是输入通道这一根因，不是在特定用例上加重试。
+///
+/// ## 本基类的对策：绕开键盘事件链
+///
+/// - **写入正文**：走 `NSPasteboard` + `⌘V`，绕开 IME 组合态。实测 3/3 完整无损。
+/// - **发送**：点发送按钮，而不是 `typeKey(.return)`，绕开模态候选栏。
+///
+/// 两条路径都不经过 `typeText`，因此对上述两个输入法干扰免疫。
+/// 粘贴需要 `⌘V`，它是一次性修饰键组合、瞬时完成，不会留下组合态残留。
+///
+/// - Note: `-AppleLanguages` / `-AppleLocale` 只影响**文案本地化**，
+///   不影响**键盘输入源**。两者是正交的，缺一不可。
+/// - Note: `-AppleInputSourceOverride` 无法解决该问题——它只影响
+///   TIS 输入源选择，不阻止候选栏在 `typeText` 期间弹出。
 class LumiUITestCase: XCTestCase {
     /// App 实例。子类直接使用，不要重复创建。
     var app: XCUIApplication!
@@ -99,36 +101,33 @@ class LumiUITestCase: XCTestCase {
 
     /// 在输入框里输入文本并发送。
     ///
+    /// ## 为什么走剪贴板而不是 `typeText`
+    ///
+    /// `XCUIElement.typeText` 是逐字符派发合成键盘事件，会进入宿主输入法（中文拼音）
+    /// 的组合态，**必然丢掉最后一个空格**。实测三组对照：
+    ///
+    /// | 写入方式 | 期望 | 实际 |
+    /// |---|---|---|
+    /// | `typeText` | `UI Testing Send Button Probe`（28） | `UI Testing Send ButtonProbe`（27）❌ |
+    /// | `typeText` | `PROBE MESSAGE UNIQUE TEXT`（25） | `PROBE MESSAGE UNIQUETEXT`（24）❌ |
+    /// | 剪贴板粘贴 | 以上全部 | **完整无损** ✅ |
+    ///
+    /// 丢一个尾部空格会让「按完整文案断言消息是否上屏」的用例**必然失败**，
+    /// 且失败现象极具误导性——界面上的用户消息明明在，内容却对不上，
+    /// 很容易被误判成渲染缺陷或元素定位失败。
+    ///
     /// ## 为什么点按钮而不是按 Return
     ///
-    /// `XCUIElement.typeText` 是逐字符模拟键盘事件，会激活宿主系统的输入法。
-    /// 候选栏一旦弹出，它就是系统模态层，会把整个 App 标记为 `Disabled`：
-    ///
-    /// ```text
-    /// Application, Disabled
-    ///   TextView, value: '...', Keyboard Focused, Disabled
-    ///   TouchBar
-    ///     DisclosureTriangle, title: 'Candidate Bar', value: 1
-    /// ```
-    ///
-    /// 此时 `typeKey(.return)` 被候选栏用于「上屏」，**永远不会到达 NSTextView**，
-    /// 于是回合永不启动、用户消息不出现在时间线上。失败时刻的 UI 树里
-    /// 发送按钮**不带** `Disabled`（说明文本已就位、`canSend` 已为 true），
-    /// 唯一的问题就是 Return 送不出去。
-    ///
-    /// 因此改为点击发送按钮：它不经过键盘事件链，不受输入法影响。
+    /// 候选栏是系统模态层，`typeKey(.return)` 会被它用于「上屏」而**永远不会到达
+    /// NSTextView**，于是回合永不启动。点击发送按钮不经过键盘事件链，不受影响。
     /// 按钮的 `disabled` 判定由空内容驱动，仍能覆盖「空内容不可发送」这一行为。
     ///
-    /// - Note: `-AppleInputSourceOverride` 无法解决该问题——它只影响
-    ///   TIS 输入源选择，不阻止候选栏在 `typeText` 期间弹出。
-    ///
-    /// - Returns: 输入框是否存在（不存在时后续断言会给出更具体的失败原因）。
+    /// - Returns: 是否成功写入并点下发送（失败时后续断言会给出更具体的原因）。
     @discardableResult
     func typeAndSend(_ text: String, editorIdentifier: String) -> Bool {
         let editor = element(identifier: editorIdentifier)
         guard editor.waitForExistence(timeout: 20) else { return false }
-        editor.click()
-        editor.typeText(text)
+        paste(text, into: editor)
 
         let send = element(identifier: SendActionBar.editorSend)
         // 等 canSend 生效：按钮变可用正是「状态层已收到文本」的可观测证据。
@@ -143,6 +142,28 @@ class LumiUITestCase: XCTestCase {
         }
         send.click()
         return true
+    }
+
+    /// 通过剪贴板把文本写入控件。
+    ///
+    /// 为什么不校验返回值：AX 快照里长文本的 `value` 会被**截断显示**
+    /// （例如 `value: 'UI Testing Send Button Probe'` 显示成
+    /// `value: 'UI Testing Send Button Pr…'`），那是快照的显示缩写，
+    /// 不是控件真实内容。用它做全等比对会对长文案一律误报。
+    ///
+    /// 因此这里只负责「把文本送进去」，写入是否成功由调用方后续断言去判定——
+    /// `typeAndSend` 里等发送按钮变为可用，那才是真正可信的信号。
+    func paste(_ text: String, into element: XCUIElement) {
+        element.click()
+
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+        // 剪贴板写入到 App 收到 ⌘V 之间留一个稳定期。
+        // `⌘V` 是一次性组合、不进入 IME 组合态，但仍需要事件送达的时间。
+        sleep(1)
+        element.typeKey("v", modifierFlags: .command)
+        sleep(1)
     }
 
     /// 等待元素拿得键盘焦点。

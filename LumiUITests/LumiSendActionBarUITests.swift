@@ -231,9 +231,11 @@ final class LumiSendActionBarUITests: LumiUITestCase {
 
         let editor = element(identifier: Identifiers.editor)
         XCTAssertTrue(editor.waitForExistence(timeout: 20), "未找到聊天输入框")
-        editor.click()
         let message = "UI Testing Send Button Probe"
-        editor.typeText(message)
+        // 走剪贴板而不是 typeText：后者逐字符合成按键，会被宿主输入法
+        // 吞掉最后一个空格，导致这里断言的完整文案永远匹配不上（详见
+        // `LumiUITestCase` 类注释的实测对照表）。
+        paste(message, into: editor)
 
         // 输入后按钮应变为可用。
         let enabled = NSPredicate(format: "enabled == true")
@@ -284,9 +286,8 @@ final class LumiSendActionBarUITests: LumiUITestCase {
 
         let editor = element(identifier: Identifiers.editor)
         XCTAssertTrue(editor.waitForExistence(timeout: 20), "未找到聊天输入框")
-        editor.click()
         let message = "UI Testing Attachment Probe"
-        editor.typeText(message)
+        paste(message, into: editor)
 
         // 拖拽文件到输入框需要真实拖放手势，XCUITest 的坐标拖放在
         // SwiftUI 的 drop destination 上不稳定。这里改用 pasteboard 不可靠、
@@ -312,13 +313,32 @@ final class LumiSendActionBarUITests: LumiUITestCase {
         )
     }
 
-    /// 切换会话后按钮状态必须跟随新会话，而不是停留在旧会话的状态。
+    /// 选中会话被清空后，按钮状态必须回到发送态，而不是停留在旧会话的状态。
     ///
     /// 覆盖 `SendActionBarConversationObserver` 的选中会话订阅：
     /// `refreshConversationState()` 依据 `capability.selectedConversationID`
     /// 重新判断 `isSending`。这条链路一旦断掉，用户在一个正在跑的会话里
-    /// 切到空闲会话，会看到一个「点了没反应」的停止按钮——
+    /// 切走或开新对话，会看到一个「点了没反应」的停止按钮——
     /// 这是 `SendActionBarState` 单布尔模型最容易出问题的地方。
+    ///
+    /// ## 为什么覆盖的是「选中态清空」而不是「切到另一条会话」
+    ///
+    /// 本用例原本想点「新建会话」切到另一条会话，但实测走不通：
+    ///
+    /// - 「新建会话」工具栏按钮由 `NewChatToolbarObserver` 挂载，
+    ///   在 UI 测试窗口的工具栏布局里**没有出现**（实测回合中 25 个按钮
+    ///   无一是它），因此 `app.buttons["New Chat"]` 永远匹配不到。
+    /// - 隔离存储下只有一条会话，会话列表也没有可切换的第二条目标。
+    ///
+    /// 因此改用左侧「Add」入口：它把 `selectedConversationID` 置空
+    /// （`deselectConversation` 走同一条 observer 链路），并让 Action Bar
+    /// 渲染回发送态。这条路径**确实可观测**（实测 `stop` 从 true 变 false、
+    /// `send` 从 false 变 true），并且覆盖的正是 `refreshConversationState()`
+    /// 的 nil 分支。
+    ///
+    /// - Important: 断言全部发生在「回合进行中」，因此必须先切到慢模型。
+    ///   默认的 `ui-test-text` 回合仅 1ms，停止按钮在第一次采样前就消失，
+    ///   用例会变成在赌轮询时机。
     func testButtonStateFollowsSelectedConversationAfterSwitch() throws {
         waitForMainWindow()
         selectSlowStubModel()
@@ -330,32 +350,42 @@ final class LumiSendActionBarUITests: LumiUITestCase {
             "未找到发送按钮"
         )
 
-        // 在当前会话发起一个回合。
+        // 在当前会话发起一个回合。`verySlow` 让回合持续约 14s，
+        // 下面「回合中」的观察才有一个稳定的时间窗口。
         typeAndSend("UI Testing Conversation Switch Probe")
         XCTAssertTrue(
             stopButton.waitForExistence(timeout: 30),
-            "回合未启动，无法验证会话切换"
+            "回合未启动，无法验证选中会话变化"
+        )
+        XCTAssertFalse(
+            sendButton.exists,
+            "回合运行中不应同时渲染发送按钮"
         )
 
-        // 新建一个会话。回合立刻结束，按钮应恢复为发送按钮。
+        // 清空选中会话（打开起始面板）。
         //
-        // 用「新建会话」而不是切换已有会话：隔离存储下只有一个会话，
-        // 且新建会话是确定性的（`resolveTargetConversationID` 会自动创建）。
-        let newConversation = app.buttons.firstMatch
-        if newConversation.exists, newConversation.isHittable {
-            newConversation.click()
-        }
+        // - Important: 这里**不能**用 `app.buttons.firstMatch` 找入口。
+        //   实测它命中的是窗口标题栏的 `_XCUI:CloseWindow`（界面上的第一个按钮），
+        //   点下去是关闭整个窗口——用例会以一种与断言完全无关的方式失败，
+        //   且失败信息指向「按钮状态没跟随」，极具误导性。
+        let addButton = app.buttons["Add"]
+        XCTAssertTrue(
+            addButton.waitForExistence(timeout: 10),
+            "左侧缺少「Add」入口，无法清空选中会话"
+        )
+        addButton.click()
 
+        // 切走后按钮必须立刻回到发送态：旧会话的 `isSending` 不该外溢到新状态。
         XCTAssertTrue(
             sendButton.waitForExistence(timeout: 30),
             """
-            切换会话后发送按钮未恢复，\
+            清空选中会话后发送按钮未恢复，\
             说明按钮状态没有跟随 selectedConversationID 变化
             """
         )
         XCTAssertFalse(
             stopButton.exists,
-            "切换到空闲会话后不应残留停止按钮"
+            "切走会话后不应残留停止按钮"
         )
     }
 }

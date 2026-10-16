@@ -535,10 +535,14 @@ final class LumiSendActionBarRaceUITests: LumiUITestCase {
         )
 
         // 纯空白内容同样不可发送。
+        //
+        // 用剪贴板而不是 `typeText`：本用例要测的正是「只有空白」这个输入，
+        // 而 `typeText` 会把尾部空格吞掉，写进去的可能不是我们以为的空白串。
+        // 虽然少一个空格仍然是空白、断言照样成立，但那就变成在测一个我们没有
+        // 明确构造出来的输入，失去用例的本意。
         let editor = element(identifier: Identifiers.editor)
         XCTAssertTrue(editor.waitForExistence(timeout: 20), "未找到聊天输入框")
-        editor.click()
-        editor.typeText("   ")
+        paste("   ", into: editor)
 
         // 给状态层一点时间把 canSend 刷成 false。
         sleep(2)
