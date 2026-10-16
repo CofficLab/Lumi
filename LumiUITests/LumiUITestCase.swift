@@ -145,6 +145,23 @@ class LumiUITestCase: XCTestCase {
         return true
     }
 
+    /// 等待元素拿得键盘焦点。
+    ///
+    /// 用于「这个控件现在还能不能接收用户输入」这类判断。
+    ///
+    /// - Important: 这类断言**不要**用 `typeText` 或 `isEnabled`：
+    ///   宿主输入法候选栏弹出时 `typeText` 到不了控件、`isEnabled` 也会被
+    ///   报成 false，两者都会把测试环境假象误判成产品缺陷。
+    ///   键盘焦点不受输入法影响，是此处最稳的信号。
+    func waitForKeyboardFocus(
+        _ element: XCUIElement,
+        timeout: TimeInterval = 10
+    ) -> Bool {
+        let predicate = NSPredicate(format: "hasKeyboardFocus == true")
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
+        return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
+    }
+
     /// 等待元素从无到有（用于处理会话切换、卡片弹出等异步渲染）。
     func waitForNonExistence(_ element: XCUIElement, timeout: TimeInterval) -> Bool {
         let predicate = NSPredicate(format: "exists == false")
