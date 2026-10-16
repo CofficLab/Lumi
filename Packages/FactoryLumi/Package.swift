@@ -433,6 +433,10 @@ let package = Package(
                 .product(name: "ProviderIdleTime", package: "LumiProviders"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "PluginConversationManager", package: "PluginConversationManager"),
+                .product(name: "PluginMessageManager", package: "PluginMessageManager"),
+                .product(name: "PluginMessageListEmpty", package: "PluginMessageListEmpty"),
+                .product(name: "PluginMessageListStandard", package: "PluginMessageListStandard"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "PluginToolbar", package: "LumiProviders"),
             ]
         )
