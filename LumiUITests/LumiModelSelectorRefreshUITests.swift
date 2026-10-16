@@ -1,4 +1,5 @@
 import XCTest
+import AppKit
 
 /// 模型选择器「刷新模型列表」UI 测试。
 ///
@@ -40,7 +41,19 @@ final class LumiModelSelectorRefreshUITests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
-        app?.terminate()
+        // 等 App 真正退出：terminate() 是异步的，不等会让「上一个用例还在退出」
+        // 漂移成「下一个用例偶发失败」。本类继承 XCTestCase，故内联实现。
+        if app.state != .notRunning {
+            app.terminate()
+            let stopped = NSPredicate(
+                format: "state == %d",
+                XCUIApplication.State.notRunning.rawValue
+            )
+            _ = XCTWaiter().wait(
+                for: [XCTNSPredicateExpectation(predicate: stopped, object: app)],
+                timeout: 10
+            )
+        }
         try super.tearDownWithError()
     }
 
@@ -112,8 +125,16 @@ final class LumiModelSelectorRefreshUITests: XCTestCase {
             NSPredicate(format: "placeholderValue == %@", "Search models")
         ).firstMatch
         XCTAssertTrue(searchField.waitForExistence(timeout: 5), "模型列表缺少搜索框（模型数达到阈值后应显示）")
+        // 用剪贴板而不是 typeText：后者逐字符合成按键，会被宿主输入法吞掉
+        // 尾部字符，搜不到目标模型（详见 `LumiUITestCase` 的实测对照表）。
+        // 本类继承的是 XCTestCase 而非 LumiUITestCase，因此这里内联粘贴。
         searchField.click()
-        searchField.typeText("MiniMax-M2.1")
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString("MiniMax-M2.1", forType: .string)
+        sleep(1)
+        searchField.typeKey("v", modifierFlags: .command)
+        sleep(1)
 
         let newModelRow = element(identifier: Identifiers.newModelRow)
         XCTAssertTrue(

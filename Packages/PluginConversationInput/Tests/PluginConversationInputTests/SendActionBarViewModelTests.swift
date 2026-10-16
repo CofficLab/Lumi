@@ -1,4 +1,5 @@
 import Foundation
+import ProviderAgentLoop
 import ProviderConversation
 import ProviderConversationInput
 import ProviderConversationInputBlock
@@ -399,6 +400,8 @@ final class SendActionBarTestCapability: ConversationInputCapability {
     private var senderObservers: [UUID: (MessageSenderEvent) -> Void] = [:]
     private var selectedConversationObservers: [UUID: (UUID?) -> Void] = [:]
     private var conversationStateObservers: [UUID: (ConversationStateEvent) -> Void] = [:]
+    private var blockObservers: [UUID: (ConversationInputBlockProvidingEvent) -> Void] = [:]
+    private var inputObservers: [UUID: (ConversationInputProvidingEvent) -> Void] = [:]
 
     func addTextObserver(
         _ callback: @escaping (String) -> Void
@@ -411,13 +414,17 @@ final class SendActionBarTestCapability: ConversationInputCapability {
     func addBlockObserver(
         _ callback: @escaping (ConversationInputBlockProvidingEvent) -> Void
     ) -> any ConversationInputBlockObserverHandle {
-        SendActionBarTestHandle(cancel: {})
+        let id = UUID()
+        blockObservers[id] = callback
+        return SendActionBarTestHandle(cancel: { [weak self] in self?.blockObservers.removeValue(forKey: id) })
     }
 
     func addInputObserver(
         _ callback: @escaping (ConversationInputProvidingEvent) -> Void
     ) -> any ConversationInputProvidingObserverHandle {
-        SendActionBarTestHandle(cancel: {})
+        let id = UUID()
+        inputObservers[id] = callback
+        return SendActionBarTestHandle(cancel: { [weak self] in self?.inputObservers.removeValue(forKey: id) })
     }
 
     func addMessageSenderObserver(
@@ -464,6 +471,29 @@ final class SendActionBarTestCapability: ConversationInputCapability {
     func emitSelectedConversation(_ id: UUID?) {
         selectedConversationID = id
         for callback in selectedConversationObservers.values { callback(id) }
+    }
+
+    /// 推送错误提示变化。
+    func emitErrorMessageChanged(_ message: String?) {
+        errorMessage = message
+        for callback in inputObservers.values { callback(.errorMessageChanged(message)) }
+    }
+
+    /// 推送折叠块递交。
+    func emitBlockSubmitted(_ block: ConversationInputBlock) {
+        for callback in blockObservers.values { callback(.blockSubmitted(block)) }
+    }
+
+    /// 推送回合开始事件。
+    func emitTurnStarted(conversationID: UUID) {
+        for callback in senderObservers.values { callback(.started(conversationID: conversationID)) }
+    }
+
+    /// 推送回合结束事件。
+    func emitTurnCompleted(conversationID: UUID, outcome: AgentLoopOutcome) {
+        for callback in senderObservers.values {
+            callback(.turnCompleted(conversationID: conversationID, outcome: outcome))
+        }
     }
 
     // MARK: - Metrics

@@ -29,6 +29,16 @@ enum UITestScenario: String, CaseIterable, Sendable {
     /// 每段之间 sleep。用于验证流式加载态。
     case slow = "ui-test-slow"
 
+    /// 超长回合：段落数远多于 `slow`，且段间同样 sleep。
+    ///
+    /// 存在理由：`slow` 实测端到端仅约 1.7s（3 段 × 0.4s + 首包往返），
+    /// 而 XCUITest 单次状态查询本身就要几百毫秒。要稳定观察「回合中」的
+    /// 界面状态（停止按钮是否**持续**存在、能否在回合中点击停止），
+    /// 回合窗口必须显著长于 UI 测试的轮询周期，否则测的是运气不是行为。
+    ///
+    /// 本场景把回合拉到十几秒量级，让「回合中」成为一个可稳定采样的状态。
+    case verySlow = "ui-test-very-slow"
+
     /// 长文本回复。用于验证滚动与消息列表虚拟化。
     case long = "ui-test-long"
 
@@ -92,6 +102,7 @@ enum UITestScenario: String, CaseIterable, Sendable {
         case .tool: return "UI Test Tool"
         case .error: return "UI Test Error"
         case .slow: return "UI Test Slow"
+        case .verySlow: return "UI Test Very Slow"
         case .long: return "UI Test Long"
         case .askUserYesNo: return "UI Test Ask User Yes No"
         case .askUserChoice: return "UI Test Ask User Choice"
@@ -196,4 +207,10 @@ enum UITestFixtures {
 
     /// 慢速场景每段之间的延迟（秒）。
     static let slowChunkDelay: Double = 0.4
+
+    /// 超长回合场景的段数。
+    ///
+    /// 与 `slowChunkDelay` 相乘约 12s（32 × 0.4s），使回合窗口
+    /// 显著长于 XCUITest 的单次状态查询耗时。
+    static let verySlowParagraphCount = 32
 }

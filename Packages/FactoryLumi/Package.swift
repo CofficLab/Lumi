@@ -122,7 +122,7 @@ let package = Package(
         .package(name: "PluginRegistryManager", path: "../PluginRegistryManager"),
         .package(name: "PluginRClick", path: "../PluginRClick"),
         .package(name: "PluginInput", path: "../PluginInput"),
-        .package(url: "https://github.com/CofficLab/LumiPluginBookletMaker.git", from: "1.1.0"),
+        .package(url: "https://github.com/CofficLab/LumiPluginBookletMaker.git", from: "1.2.0"),
         .package(name: "PluginScreenRecorder", path: "../PluginScreenRecorder"),
         .package(name: "PluginStoryWriter", path: "../PluginStoryWriter"),
         .package(name: "PluginQuickFileSearch", path: "../PluginQuickFileSearch"),
@@ -433,6 +433,10 @@ let package = Package(
                 .product(name: "ProviderIdleTime", package: "LumiProviders"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "PluginConversationManager", package: "PluginConversationManager"),
+                .product(name: "PluginMessageManager", package: "PluginMessageManager"),
+                .product(name: "PluginMessageListEmpty", package: "PluginMessageListEmpty"),
+                .product(name: "PluginMessageListStandard", package: "PluginMessageListStandard"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "PluginToolbar", package: "LumiProviders"),
             ]
         )
