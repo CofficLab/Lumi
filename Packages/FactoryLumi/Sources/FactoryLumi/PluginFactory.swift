@@ -197,7 +197,7 @@ public struct DefaultPluginFactory: PluginFactory {
 
     /// 产出默认插件列表。
     public func makePlugins() -> [any SuperPlugin] {
-        [
+        var plugins: [any SuperPlugin] = [
             // 核心基础插件（order 10-20）：必须最先启动
             try! StorageSuperPlugin(),
             CommandPlugin(),
@@ -369,9 +369,6 @@ public struct DefaultPluginFactory: PluginFactory {
             StepFunProviderPlugin(),
             SublyxProviderPlugin(),
             TencentProviderPlugin(),
-            // UI 测试专用供应商（仅 DEBUG + --lumi-ui-testing 时才真正注册）。
-            // order=900 排在其他供应商之后，使它的强制选中成为最后生效的那次。
-            PluginUITestProvider(),
             XiaomiProviderPlugin(),
             XybbzProviderPlugin(),
             ZhipuProviderPlugin(),
@@ -379,6 +376,17 @@ public struct DefaultPluginFactory: PluginFactory {
             MLXProviderPlugin(),
             LLMProviderSettingsPlugin(),
         ]
+        // UI 测试专用供应商（仅 DEBUG + --lumi-ui-testing 时才真正注册）。
+        // 追加在数组末尾，保持 order=900 排在其他供应商之后，使其强制选中最后生效。
+        //
+        // - Important: PluginUITestProvider 的类体整体在 #if DEBUG 内，Release 构建中
+        //   该类型不存在。Swift 不允许把 #if 直接内嵌在数组字面量中间，故先构造数组
+        //   再条件追加；若裸写 PluginUITestProvider()，Release 报
+        //   `cannot find 'PluginUITestProvider' in scope`。
+        #if DEBUG
+        plugins.append(PluginUITestProvider())
+        #endif
+        return plugins
     }
 }
 
