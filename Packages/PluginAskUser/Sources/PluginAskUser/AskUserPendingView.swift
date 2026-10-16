@@ -125,6 +125,22 @@ struct AskUserPendingView: View {
                 .stroke(theme.primary.opacity(0.35), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 10))
+        // - Important: 必须显式 `children: .contain`。否则 SwiftUI 会把卡片
+        //   当作一个整体元素，把容器上的 `accessibilityIdentifier` **覆盖到所有后代**，
+        //   子元素最终统统报告 `lumi.ask-user.card`：
+        //
+        //   ```text
+        //   StaticText, identifier: 'lumi.ask-user.card'   ← 应为 .question
+        //   Button,     identifier: 'lumi.ask-user.card'   ← 应为 .option.0
+        //   TextField,  identifier: 'lumi.ask-user.card'   ← 应为 .free-text
+        //   ```
+        //
+        //   结果是 UI 测试无法按标识符定位到具体控件（`AskUserAccessibility` 里
+        //   逐个声明的 id 全部失效），只能靠 label 文案兜底——而 label 会随
+        //   `-AppleLanguages` 变化。
+        //
+        //   `contain` 让容器与后代各自保留自己的无障碍元素与标识符。
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AskUserAccessibility.card)
         .onAppear {
             if let initialAnswer = interaction.initialAnswer {
