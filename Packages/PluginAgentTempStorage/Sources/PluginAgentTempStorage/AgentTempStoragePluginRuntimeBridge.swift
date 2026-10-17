@@ -24,4 +24,9 @@ enum AgentTempStoragePluginRuntimeBridge {
             isDirectory: true
         )
     }()
+
+    /// 优先使用 `onBoot` 注入的目录；插件尚未启动时回退到版本化存根路径。
+    static var resolvedPluginDirectory: URL {
+        pluginDirectory ?? fallbackPluginDirectory
+    }
 }
