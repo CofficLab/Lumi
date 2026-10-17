@@ -4,8 +4,8 @@ import SwiftUI
 /// AskUser 交互视图的无障碍标识符。
 ///
 /// UI 测试（`LumiAskUserUITests`）必须按标识符定位控件，而不是按本地化文案：
-/// 问题文案与「已回答」提示都是随 `-AppleLanguages` 变化的文案，按文案定位在
-/// 非英文环境下必然失败。选项按钮的 label 恰好是模型产出的稳定常量，可以用文案，
+/// 问题文案是随 `-AppleLanguages` 变化的文案，按文案定位在非英文环境下
+/// 必然失败。选项按钮的 label 恰好是模型产出的稳定常量，可以用文案，
 /// 但仍统一加上标识符以便在同一条断言里区分「选项」与「问题」。
 ///
 /// 命名沿用仓库既有惯例（见 `RetryTurnButton.accessibilityIdentifier`）。
@@ -26,9 +26,6 @@ enum AskUserAccessibility {
 
     /// free_text 模式的提交按钮。
     static let submitButton = "lumi.ask-user.submit"
-
-    /// 已回答后的回显（如「已回答：是」）。
-    static let answeredLabel = "lumi.ask-user.answered"
 }
 
 struct AskUserPendingView: View {
@@ -109,13 +106,6 @@ struct AskUserPendingView: View {
                         .accessibilityIdentifier(AskUserAccessibility.option(index: index))
                     }
                 }
-            }
-
-            if responded {
-                Text("已回答：\(answer)")
-                    .font(.appMicro)
-                    .foregroundColor(theme.textSecondary)
-                    .accessibilityIdentifier(AskUserAccessibility.answeredLabel)
             }
         }
         .padding(12)

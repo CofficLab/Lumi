@@ -25,8 +25,8 @@ final class LumiAskUserUITests: LumiUITestCase {
 
     /// 与 `AskUserAccessibility` 保持一致。
     ///
-    /// 必须按标识符定位：问题文案与「已回答」提示都是随 `-AppleLanguages` 变化的
-    /// 文案，按文案定位在非英文环境下必然失效。
+    /// 必须按标识符定位：问题文案是随 `-AppleLanguages` 变化的文案，
+    /// 按文案定位在非英文环境下必然失效。
     private enum Identifiers {
         /// 问题卡片容器。
         static let card = "lumi.ask-user.card"
@@ -38,8 +38,6 @@ final class LumiAskUserUITests: LumiUITestCase {
         static let freeTextField = "lumi.ask-user.free-text"
         /// free_text 提交按钮。
         static let submitButton = "lumi.ask-user.submit"
-        /// 已回答回显。
-        static let answered = "lumi.ask-user.answered"
     }
 
     /// 模型选择器与聊天输入框的标识符。
@@ -194,7 +192,7 @@ final class LumiAskUserUITests: LumiUITestCase {
             "带 description 的选项未渲染说明文案，实际：\(firstOption.label)"
         )
 
-        // 断言 3：点击选项。挂起点随之清除，「已回答」回显同帧消失，
+        // 断言 3：点击选项。挂起点随之清除，问题卡片整块从树上消失，
         // 不能作为判据（见 free_text 用例的说明）；真正的判据是断言 4。
         firstOption.click()
 
@@ -260,8 +258,8 @@ final class LumiAskUserUITests: LumiUITestCase {
 
         submit.click()
 
-        // - Note: 回答后挂起点会被清除，卡片连同「已回答」回显一起从树上消失。
-        //   因此**不能**用「回显是否出现」判断点击是否被受理——它在回合恢复的
+        // - Note: 回答后挂起点会被清除，问题卡片整块一起从树上消失。
+        //   因此**不能**用「卡片是否还在」判断点击是否被受理——它在回合恢复的
         //   同一帧里就没了。真正的判定信号是**桩收尾回复**：它只有在本轮请求体里
         //   出现 role=tool 消息（即答案确实回传给了模型）时才会产出。
         //   点击是否受理改由「回合未卡在挂起态」间接证明。
