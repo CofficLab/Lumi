@@ -27,7 +27,12 @@ struct ListV2View: View, SuperLog {
     @State private var scrollTick: Int = 0
     private let bottomScrollController = ScrollViewBottomController()
     /// 首屏定位的就绪编排（含超时兜底），见 InitialPositionGate。
-    private let initialPositionGate = InitialPositionGate()
+    ///
+    /// - Important: 必须是 `@StateObject`，不能用 `let`。gate 是引用类型且
+    ///   有生命周期；`let` 会在 View 每次 init 时新建实例，`isReady` 恒为
+    ///   false，遮罩「正在加载消息…」将永久不消失。`@StateObject` 同时提供
+    ///   跨重建的实例同一性与 `ObservableObject` 变更通知。
+    @StateObject private var initialPositionGate = InitialPositionGate()
 
     init(
         services: MessageListServices,

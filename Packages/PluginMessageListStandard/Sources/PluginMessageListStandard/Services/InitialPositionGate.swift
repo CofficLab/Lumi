@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import SwiftUI
 
 /// 首屏就绪判定的编排策略（从 `ListV2View` 抽出以便测试）。
 ///
@@ -13,8 +14,16 @@ import Combine
 /// 这里把判定提炼为可测单元：收敛过程由调用方注入，本类型只负责
 /// 「何时算就绪」以及**超时兜底**——无论收敛成功与否，超过预算都必须放行，
 /// 否则任何收敛失败都会变成永久卡死。
+///
+/// - Important: 必须继承 `ObservableObject`。`isReady` 是 `@Published`，
+///   遮罩的显示条件依赖它；缺少 `ObservableObject` 就不会产生
+///   `objectWillChange`，属性变化无法触发 SwiftUI 重绘。
+/// - Important: 必须由 View 以 `@StateObject` 持有。本类型是引用类型且
+///   有生命周期（等待中的 Task、取消语义），`let` 属性会在 View 每次 init
+///   时重新构造 —— 新实例 `isReady` 恒为 false，旧实例立即释放使 Task 内
+///   `weak self` 落空，遮罩将永久不消失，且超时兜底也随之失效。
 @MainActor
-final class InitialPositionGate {
+final class InitialPositionGate: ObservableObject {
     /// 收敛过程的预算上限。超时后强制视为就绪。
     private let budgetNanoseconds: UInt64
 
@@ -38,7 +47,7 @@ final class InitialPositionGate {
     /// 请求为首屏定位。同一时间只允许一轮进行中。
     ///
     /// - Parameters:
-    ///   - conversationID: 本轮等待对应的会话；切��会让本轮失效。
+    ///   - conversationID: 本轮等待对应的会话；切换会让本轮失效。
     ///   - settle: 真正的收敛过程（返回 true 表示成功收敛）。
     ///   - stillRelevant: 判定本轮是否仍然有效（如会话未被换掉、仍在加载）。
     /// - Returns: 是否真的启动了新一轮（false 表示被去重或被忽略）。
@@ -111,7 +120,7 @@ final class InitialPositionGate {
         pendingConversationID = nil
     }
 
-    /// 加载开始时复位（用于切换会话后重新进入 loading）。
+    /// 加载开始时复位（用于切换会话后重新进入加载）。
     func resetForLoadingStart() {
         resetForConversationSwitch()
     }
