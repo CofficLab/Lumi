@@ -26,7 +26,6 @@ let package = Package(
                 .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
-                .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]

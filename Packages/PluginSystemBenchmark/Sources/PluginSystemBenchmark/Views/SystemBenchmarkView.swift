@@ -2,19 +2,6 @@ import Foundation
 import LumiUI
 import SwiftUI
 
-/// Full benchmark dashboard used by both Settings and the Activity Bar entry.
-public struct SystemBenchmarkSettingsView: View {
-    @ObservedObject private var viewModel: SystemBenchmarkViewModel
-
-    public init(viewModel: SystemBenchmarkViewModel = SystemBenchmarkViewModel()) {
-        self._viewModel = ObservedObject(wrappedValue: viewModel)
-    }
-
-    public var body: some View {
-        SystemBenchmarkDashboardView(viewModel: viewModel)
-    }
-}
-
 /// Main Activity Bar content for the local system benchmark plugin.
 public struct SystemBenchmarkView: View {
     @ObservedObject private var viewModel: SystemBenchmarkViewModel
