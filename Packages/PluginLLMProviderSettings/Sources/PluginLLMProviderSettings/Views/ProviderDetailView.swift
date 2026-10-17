@@ -144,6 +144,15 @@ public struct ProviderDetailView: View {
                     description: viewModel.savedAPIKey.isEmpty ? "尚未保存 API Key" : "已保存 API Key"
                 ) {
                     HStack(spacing: 8) {
+                        if !viewModel.savedAPIKey.isEmpty {
+                            AppIconButton(
+                                systemImage: isAPIKeyRevealed ? "eye.slash" : "eye"
+                            ) {
+                                isAPIKeyRevealed.toggle()
+                            }
+                            .help(isAPIKeyRevealed ? "隐藏 API Key" : "显示 API Key")
+                        }
+
                         AppButton("保存", systemImage: "checkmark", style: .primary, size: .small) {
                             viewModel.saveAPIKey()
                         }
