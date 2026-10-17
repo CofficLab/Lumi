@@ -26,17 +26,9 @@ public final class AgentRulesPluginLocalStore: SuperLog, @unchecked Sendable {
 
     // MARK: - 初始化
 
+    /// 使用插件专属数据目录（由 `onBoot` 从 `StorageProviding` 注入）。
     public convenience init() {
-        // 获取应用支持目录
-        let applicationSupportURL = FileManager.default.urls(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask
-        ).first ?? FileManager.default.homeDirectoryForCurrentUser
-
-        let lumiDirectory = applicationSupportURL.appending(path: "Lumi")
-        let settingsDir = lumiDirectory.appending(path: "PluginSettings")
-
-        self.init(settingsDirectory: settingsDir)
+        self.init(settingsDirectory: AgentRulesRuntime.settingsDirectory())
     }
 
     init(settingsDirectory settingsDir: URL) {

@@ -30,6 +30,7 @@ let package = Package(
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 "LumiUI",
                 .product(name: "ProviderProject", package: "LumiProviders"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 "ProviderToolManager",
                 "ProviderChatSection",
