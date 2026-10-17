@@ -54,17 +54,7 @@ final class DeviceMetricsObserver {
             .sink { [weak self] percentage, used, total in
                 MemoryHistoryService.shared.recordDataPoint(pct: percentage, bytes: used)
                 self?.viewModels.memory.apply(percentage: percentage, used: used, total: total)
-                self?.viewModels.memorySettings.applyMemory(percentage: percentage, used: used, total: total)
                 self?.viewModels.menuBar.applyMemory(percentage: percentage, used: used, total: total)
-            }
-            .store(in: &cancellables)
-        LumiMemoryService.shared.startMonitoring()
-        Publishers.CombineLatest(
-            LumiMemoryService.shared.$currentMemoryFormatted,
-            LumiMemoryService.shared.$history
-        )
-            .sink { [weak self] formatted, history in
-                self?.viewModels.memorySettings.applyLumiMemory(currentFormatted: formatted, history: history)
             }
             .store(in: &cancellables)
 
@@ -104,7 +94,6 @@ final class DeviceMetricsObserver {
             .combineLatest(MemoryHistoryService.shared.$longTermHistory)
             .sink { [weak self] recent, longTerm in
                 self?.viewModels.memoryHistory.apply(recent: recent, longTerm: longTerm)
-                self?.viewModels.memorySettings.applySystemHistory(recent: recent, longTerm: longTerm)
             }
             .store(in: &cancellables)
 
@@ -135,6 +124,5 @@ final class DeviceMetricsObserver {
         GPUHistoryService.shared.stopRecording()
         MemoryHistoryService.shared.stopRecording()
         BatteryHistoryService.shared.stopRecording()
-        LumiMemoryService.shared.stopMonitoring()
     }
 }
