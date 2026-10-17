@@ -192,85 +192,121 @@ public final class MessageManager: MessageManaging, SuperLog {
         store?.messageCount(conversationId: conversationID) ?? 0
     }
 
-    /// 聚合日统计的公共合并逻辑。
+    /// 聚合日统计的公共合并逻辑（消息条数 / token 总数各传一个标记）。
     ///
-    /// - Important: 必须按 **id 去重**。
-    ///   `persistLater` 是「先 `store.insertMessage`、再 `dequeuePending`」两步，
-    ///   中间存在一个窗口：磁盘**已**包含该消息、pending**仍**保留它。
-    ///   简单相加会把同一条统计两次——实测 20 轮中第 13 轮出现
-    ///   `dailyTokenCounts == 27`（应为 17，input 的 10 被算了两遍）。
+    /// - Important: pending 侧只补齐「**未落盘**」的增量。
+    ///   `persistLater` 分两步（先 `store.insertMessage`、再 `dequeuePending`），
+    ///   中间存在窗口：磁盘**已**含该消息、pending**仍**保留它。两侧简单相加会
+    ///   把同一条统计两次——实测 20 轮中第 13 轮 `dailyTokenCounts` 得到 27
+    ///   （应为 17，input 的 10 被算了两遍）。
     ///
-    ///   这与 `mergedPage` 解决的是同一类问题，故沿用其「已落盘则跳过」策略。
+    ///   去重判据由 `MessageStore.dailyAggregate` 在**同一把锁内**与聚合一起完成，
+    ///   不能拆成「先逐条探测再聚合」，否则探测与聚合之间仍有窗口。
     private nonisolated static func mergeDailyAggregate(
-        diskCounts: [Date: Int],
         pendingMessages: [Message],
         since: Date,
         store: MessageStore?,
-        value: (Message) -> Int
+        countTokens: Bool
     ) -> [Date: Int] {
-        var counts = diskCounts
+        let eligible = pendingMessages.filter { $0.createdAt >= since }
+        guard !eligible.isEmpty else {
+            // pending 为空：直接用磁盘口径。必须按 countTokens 分派，
+            // 不可无条件用 dailyMessageCounts——那会把 token 读成条数。
+            guard let store else { return [:] }
+            return countTokens ? store.dailyTokenCounts(since: since) : store.dailyMessageCounts(since: since)
+        }
+
+        let ids = Set(eligible.map { $0.id.uuidString })
+        guard let store else {
+            // store 未就绪：只靠 pending 尽力而为（read-your-writes）。
+            return Self.aggregatePendingOnly(eligible, countTokens: countTokens)
+        }
+
+        let (counts, alreadyPersisted) = store.dailyAggregate(
+            since: since,
+            pendingIDs: ids,
+            countTokens: countTokens
+        )
+        // 只有既未落盘、又尚未被移出 pending 的消息才需要补计。
+        var result = counts
         let calendar = Calendar.current
-        for message in pendingMessages where message.createdAt >= since {
-            let v = value(message)
-            guard v > 0 else { continue }
-            // pending 只承担「尚未落盘」的增量；已落盘的由磁盘侧计入。
-            if store?.fetchMessage(id: message.id) != nil { continue }
-            counts[calendar.startOfDay(for: message.createdAt), default: 0] += v
+        for message in eligible where !alreadyPersisted.contains(message.id.uuidString) {
+            let value = countTokens
+                ? (message.inputTokenCount ?? 0) + (message.outputTokenCount ?? 0)
+                : 1
+            guard value > 0 else { continue }
+            result[calendar.startOfDay(for: message.createdAt), default: 0] += value
+        }
+        return result
+    }
+
+    private nonisolated static func aggregatePendingOnly(
+        _ messages: [Message],
+        countTokens: Bool
+    ) -> [Date: Int] {
+        let calendar = Calendar.current
+        var counts: [Date: Int] = [:]
+        for message in messages {
+            let value = countTokens
+                ? (message.inputTokenCount ?? 0) + (message.outputTokenCount ?? 0)
+                : 1
+            guard value > 0 else { continue }
+            counts[calendar.startOfDay(for: message.createdAt), default: 0] += value
         }
         return counts
     }
 
     public func dailyMessageCounts(since: Date) -> [Date: Int] {
         Self.mergeDailyAggregate(
-            diskCounts: store?.dailyMessageCounts(since: since) ?? [:],
             pendingMessages: pending.snapshotAll(),
             since: since,
             store: store,
-            value: { _ in 1 }
+            countTokens: false
         )
     }
 
     /// 在后台读取并聚合消息日统计，避免 Heatmap 打开或刷新时阻塞 MainActor。
     public func dailyMessageCountsAsync(since: Date) async -> [Date: Int] {
         let store = self.store
-        let pending = self.pending
+        // 先在调用方快照 pending：detach 之后再取会拿到**另一个时间点**的缓冲，
+        // 与随后的磁盘读取不构成同一组判据，导致漏算。
+        let pendingSnapshot = pending.snapshotAll()
         return await Task.detached(priority: .utility) {
             Self.mergeDailyAggregate(
-                diskCounts: store?.dailyMessageCounts(since: since) ?? [:],
-                pendingMessages: pending.snapshotAll(),
+                pendingMessages: pendingSnapshot,
                 since: since,
                 store: store,
-                value: { _ in 1 }
+                countTokens: false
             )
         }.value
     }
 
     public func dailyTokenCounts(since: Date) -> [Date: Int] {
         Self.mergeDailyAggregate(
-            diskCounts: store?.dailyTokenCounts(since: since) ?? [:],
             pendingMessages: pending.snapshotAll(),
             since: since,
             store: store,
-            value: { ($0.inputTokenCount ?? 0) + ($0.outputTokenCount ?? 0) }
+            countTokens: true
         )
     }
 
     /// 在后台读取并聚合 token 日统计，保留 pending 消息的 read-your-writes 语义。
     public func dailyTokenCountsAsync(since: Date) async -> [Date: Int] {
         let store = self.store
-        let pending = self.pending
+        // 先在调用方快照 pending：detach 之后再取会拿到**另一个时间点**的缓冲，
+        // 与随后的磁盘读取不构成同一组判据，导致漏算。
+        let pendingSnapshot = pending.snapshotAll()
         return await Task.detached(priority: .utility) {
             Self.mergeDailyAggregate(
-                diskCounts: store?.dailyTokenCounts(since: since) ?? [:],
-                pendingMessages: pending.snapshotAll(),
+                pendingMessages: pendingSnapshot,
                 since: since,
                 store: store,
-                value: { ($0.inputTokenCount ?? 0) + ($0.outputTokenCount ?? 0) }
+                countTokens: true
             )
         }.value
     }
 
-    /// 分页查询（UI 滚动/历史加载）。
+
     public func messagePage(
         for conversationID: UUID,
         limit: Int,

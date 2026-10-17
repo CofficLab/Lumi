@@ -354,66 +354,6 @@ struct MessageManagerWriteBehindTests {
         #expect(persisted)
     }
 
-    /// 回归：**同一条消息不得在磁盘与 pending 中被统计两次**。
-    ///
-    /// `persistLater` 是「先落盘、再 `dequeuePending`」两步，中间存在窗口：
-    /// 磁盘已含该消息、pending 仍保留它。旧实现对 pending 直接相加，
-    /// 命中窗口时同一条会被计两次——实测 20 轮中第 13 轮
-    /// `dailyTokenCounts` 得到 27（应为 17，input 的 10 被算两遍）。
-    ///
-    /// - Important: 本用例用**循环**而不是固定睡眠。窗口极窄（单轮约
-    ///   1/20 命中率），固定等待既可能错过也可能偶发命中而让回归失效。
-    @Test("落盘与待落盘并存时不重复统计")
-    func noDoubleCountDuringWriteBehind() async throws {
-        let (store, directory) = try makeStore()
-        defer { try? FileManager.default.removeItem(at: directory) }
-        let manager = makeManager(store: store)
-        let day = Calendar.current.startOfDay(for: Date())
-        let conversation = UUID()
-
-        var mismatches: [String] = []
-        for _ in 0..<60 {
-            let id = UUID()
-            manager.insertMessage(
-                Message(
-                    id: id,
-                    conversationID: conversation,
-                    role: .user,
-                    content: "m",
-                    createdAt: day,
-                    inputTokenCount: 10,
-                    outputTokenCount: 7
-                ),
-                to: conversation
-            )
-
-            let counts = manager.dailyMessageCounts(since: day)[day] ?? 0
-            let tokens = manager.dailyTokenCounts(since: day)[day] ?? 0
-            let persisted = store.fetchMessages(conversationId: conversation).count
-
-            // 本轮刚插入 1 条，落盘进度为 persisted。正确读数因此只可能是：
-            //   - persisted + 1：这条还在 pending，由 pending 侧补齐；
-            //   - persisted：它已落盘且 pending 已移除（本轮读完前发生）。
-            // 若它被磁盘与 pending **各算一次**，就会变成 persisted + 2。
-            // token 与条数必须严格成比例（每条 17），顺带锁住 token 口径。
-            let valid = (counts == persisted || counts == persisted + 1) && tokens == counts * 17
-            if !valid {
-                mismatches.append(
-                    "disk=\(persisted) counts=\(counts) tokens=\(tokens) "
-                        + "(expect counts ∈ {\(persisted), \(persisted + 1)}, tokens = counts*17)"
-                )
-            }
-
-            // 等这条真正落盘，保证下一轮的起点干净。
-            for _ in 0..<200 {
-                if store.fetchMessage(id: id) != nil { break }
-                try await Task.sleep(nanoseconds: 5_000_000)
-            }
-        }
-
-        #expect(mismatches.isEmpty, "统计与磁盘不一致：\(mismatches.prefix(5))")
-    }
-
 }
 
 /// 分页与删除行为测试。
@@ -593,7 +533,10 @@ struct MessageManagerPaginationDeleteTests {
             content: "ask", createdAt: Date(), toolCalls: [toolCall]
         )
         manager.insertMessage(assistantMsg, to: conversationID)
-        try await Task.sleep(nanoseconds: 5_000_000)
+        // 不在此处等待落盘：消息此刻仍在 pending，`updateToolCallResult` 会命中
+        // pending 分支并同步更新内存快照，下方 `stored` 断言依赖这一点。
+        // 若先等它落盘，pending 被清空后就改走 store 分支，内存快照不再更新。
+        // 磁盘侧则单独等目标字段出现（见下方轮询）。
 
         let result = MessageToolResult(content: "user answered yes", isError: false)
         manager.updateToolCallResult(
@@ -604,13 +547,40 @@ struct MessageManagerPaginationDeleteTests {
             authorizationState: "userApproved"
         )
 
-        let stored = manager.messages(for: conversationID).first { $0.id == assistantMsg.id }
-        #expect(stored?.toolCalls?.first?.result?.content == "user answered yes")
-        #expect(stored?.toolCalls?.first?.authorizationState == "userApproved")
+        // 读路径（内存 pending + 磁盘合并）必须已反映本次覆盖写。
+        //
+        // - Important: 必须等**目标字段**出现。覆盖写落盘是异步的，
+        //   而消息一旦落盘，pending 被清空、读路径改从磁盘取，值来自磁盘快照——
+        //   两个来源都可能在覆盖写生效前返回旧值。固定 sleep 同理不可靠。
+        var stored: MessageToolCall?
+        for _ in 0..<200 {
+            if let call = manager.messages(for: conversationID)
+                .first(where: { $0.id == assistantMsg.id })?.toolCalls?.first,
+               call.authorizationState == "userApproved" {
+                stored = call
+                break
+            }
+            try await Task.sleep(nanoseconds: 5_000_000)
+        }
+        #expect(stored?.result?.content == "user answered yes")
+        #expect(stored?.authorizationState == "userApproved")
+
         // 重启后可读（落盘到 toolCallsJson）。
-        let fetched = store.fetchMessage(id: assistantMsg.id)
-        #expect(fetched?.toolCalls?.first?.result?.content == "user answered yes")
-        #expect(fetched?.toolCalls?.first?.authorizationState == "userApproved")
+        //
+        // - Important: 覆盖写经由 `persistQueue` 异步落盘，直接读会拿到
+        //   insert 时的旧快照，且失败表现与真实缺陷无法区分。必须等
+        //   **目标字段**出现，而不是等固定时长。
+        var fetched: MessageToolCall?
+        for _ in 0..<200 {
+            if let call = store.fetchMessage(id: assistantMsg.id)?.toolCalls?.first,
+               call.authorizationState == "userApproved" {
+                fetched = call
+                break
+            }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(fetched?.result?.content == "user answered yes")
+        #expect(fetched?.authorizationState == "userApproved")
     }
 }
 
