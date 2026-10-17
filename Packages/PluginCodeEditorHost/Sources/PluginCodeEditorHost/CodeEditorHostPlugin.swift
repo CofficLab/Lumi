@@ -1,5 +1,6 @@
 import AppKit
 import ProviderEditor
+import ProviderStorage
 import EditorLanguageRuntime
 import EditorService
 import EditorSource
@@ -11,7 +12,7 @@ import os
 
 /// KernelCore 的编辑器宿主：提供与旧宿主相同的 SourceEditor 语法高亮能力。
 @MainActor
-public final class CodeEditorHostPlugin: SuperPlugin, SuperLog {
+public final class CodeEditorHostPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.editor-host", category: "EditorHost")
     public let id = "com.coffic.lumi.plugin.editor-host"
     public let order = 1
@@ -28,11 +29,55 @@ public final class CodeEditorHostPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    /// 历史实现把编辑器配置与键位写在 `Application Support/EditorService/`（目录名来自
+    /// `EditorHostEnvironment.storageDirectoryName`），该路径不在 StorageProviding 的
+    /// 版本化数据根内，升级时不会被搬迁。
+    public let legacyDataDirectoryNames: [String] = []
+
+    /// 把旧目录 `Application Support/<storageDirectoryName>/` 的内容复制到插件专属目录。
+    ///
+    /// 旧路径不由本插件独占（各宿主共用），且不在版本根内，因此无法走
+    /// `copyLegacyDirectories` 的版本扫描，直接按 Application Support 定位。
+    /// 复制而非移动，保留原文件以便回退；目标已存在的文件不覆盖，可安全重试。
+    public func migrateData(context: PluginDataMigrationContext) throws {
+        let fileManager = FileManager.default
+        guard let applicationSupport = fileManager.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first else {
+            return
+        }
+
+        let legacyDirectory = applicationSupport
+            .appending(path: EditorHostEnvironment.current.storageDirectoryName, directoryHint: .isDirectory)
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: legacyDirectory.path, isDirectory: &isDirectory),
+              isDirectory.boolValue else {
+            return
+        }
+
+        let destination = context.currentPluginDataDirectory
+        try PluginDataMigrationUtility.mergeDirectoryContents(
+            from: legacyDirectory,
+            to: destination,
+            fileManager: fileManager
+        )
+        Self.logger.info("\(Self.t)Migrated editor settings from legacy \(legacyDirectory.lastPathComponent) directory")
+    }
+
     private var editorService: EditorService?
     private var editorAdapter: EditorProvidingV2Adapter?
     private var embeddedEditorProvider: EmbeddedEditorSurfaceProvider?
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        // 存储路径注入必须早于任何 EditorService / Store 的首次访问：
+        // `EditorConfigStore.store` 是 static let，首次访问即固化路径。
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            EditorSettingsLifecycle.hostPersistenceRootURL = {
+                storage.pluginDataDirectory(for: self.id)
+            }
+        }
+
         let registry = EditorExtensionRegistry()
         let service = EditorService(editorExtensionRegistry: registry)
         let contributions = EditorContributionRegistry(registry: registry)

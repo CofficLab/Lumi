@@ -9,6 +9,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.9.0"),
         .package(path: "../ProviderEditor"),
         .package(path: "../KitEditorKernel"),
         .package(path: "../KitEditorSource"),
@@ -51,6 +52,7 @@ let package = Package(
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 "EditorService",
                 .product(name: "EditorSource", package: "KitEditorSource"),
                 .product(name: "EditorLanguageRuntime", package: "KitEditorLanguageRuntime"),
