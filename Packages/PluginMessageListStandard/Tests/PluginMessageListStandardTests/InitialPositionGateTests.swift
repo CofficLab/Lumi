@@ -1,0 +1,154 @@
+import Foundation
+import Testing
+@testable import PluginMessageListStandard
+
+@MainActor
+private func waitUntil(
+    _ condition: @MainActor () -> Bool,
+    timeoutMs: Int = 2_000
+) async -> Bool {
+    for _ in 0..<(timeoutMs / 10) {
+        if condition() { return true }
+        try? await Task.sleep(nanoseconds: 10_000_000)
+    }
+    return condition()
+}
+
+@MainActor
+@Test("首屏就绪：收敛成功后放行")
+func gateBecomesReadyAfterSuccessfulSettle() async {
+    let gate = InitialPositionGate(budgetNanoseconds: 500_000_000)
+    let conversationID = UUID()
+
+    gate.request(conversationID: conversationID, settle: { true }, stillRelevant: { true })
+
+    let ready = await waitUntil { gate.isReady }
+    #expect(ready, "收敛成功后应就绪")
+}
+
+@MainActor
+@Test("首屏就绪：收敛失败也在预算内放行，绝不永久卡死")
+func gateReleasesEvenWhenSettleFails() async {
+    let conversationID = UUID()
+    let gate = InitialPositionGate(budgetNanoseconds: 200_000_000)
+
+    // 收敛永远失败（模拟几何不收敛）
+    gate.request(conversationID: conversationID, settle: { false }, stillRelevant: { true })
+
+    let ready = await waitUntil({ gate.isReady }, timeoutMs: 2_000)
+    #expect(ready, "收敛失败时必须在预算内强制放行，否则遮罩永久挂起")
+}
+
+@MainActor
+@Test("首屏就绪：收敛挂死时由超时兜底放行")
+func gateReleasesWhenSettleHangs() async {
+    let conversationID = UUID()
+    let gate = InitialPositionGate(budgetNanoseconds: 150_000_000)
+
+    // 收敛永不返回
+    gate.request(
+        conversationID: conversationID,
+        settle: {
+            // 无限等待，模拟 List 几何永不收敛
+            while true {
+                try? await Task.sleep(nanoseconds: 50_000_000)
+            }
+            return false
+        },
+        stillRelevant: { true }
+    )
+
+    let ready = await waitUntil({ gate.isReady }, timeoutMs: 2_000)
+    #expect(ready, "收敛挂死时超时兜底必须放行")
+}
+
+@MainActor
+@Test("首屏就绪：同一会话重复请求被去重")
+func gateDeduplicatesSameConversation() async {
+    let conversationID = UUID()
+    let gate = InitialPositionGate(budgetNanoseconds: 500_000_000)
+    var settleCount = 0
+
+    let first = gate.request(
+        conversationID: conversationID,
+        settle: { settleCount += 1; return true },
+        stillRelevant: { true }
+    )
+    let second = gate.request(
+        conversationID: conversationID,
+        settle: { settleCount += 1; return true },
+        stillRelevant: { true }
+    )
+
+    #expect(first)
+    #expect(!second, "同会话并发请求应被去重")
+    _ = await waitUntil { gate.isReady }
+    #expect(settleCount == 1, "收敛只应执行一次")
+}
+
+@MainActor
+@Test("首屏就绪：切换会话作废上一轮等待，不被旧结果污染")
+func gateDiscardsPreviousConversationOnSwitch() async {
+    let first = UUID()
+    let second = UUID()
+    let gate = InitialPositionGate(budgetNanoseconds: 300_000_000)
+
+    // 第一轮挂死
+    gate.request(
+        conversationID: first,
+        settle: {
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            return false
+        },
+        stillRelevant: { true }
+    )
+
+    // 立刻切到第二个会话
+    gate.request(conversationID: second, settle: { true }, stillRelevant: { true })
+
+    let ready = await waitUntil({ gate.isReady })
+    #expect(ready, "新会话应正常就绪")
+    #expect(gate.awaitingConversationID == nil || gate.awaitingConversationID == second)
+}
+
+@MainActor
+@Test("首屏就绪：会话切换复位后不再就绪")
+func gateResetClearsReady() async {
+    let conversationID = UUID()
+    let gate = InitialPositionGate(budgetNanoseconds: 200_000_000)
+
+    gate.request(conversationID: conversationID, settle: { true }, stillRelevant: { true })
+    _ = await waitUntil { gate.isReady }
+    #expect(gate.isReady)
+
+    gate.resetForConversationSwitch()
+    #expect(!gate.isReady, "切换会话后必须撤销就绪，遮罩才可重新出现")
+    #expect(!gate.isPreparing)
+}
+
+@MainActor
+@Test("首屏就绪：相关性失效时不置为就绪")
+func gateIgnoresResultWhenNoLongerRelevant() async {
+    let conversationID = UUID()
+    let gate = InitialPositionGate(budgetNanoseconds: 500_000_000)
+
+    gate.request(
+        conversationID: conversationID,
+        settle: { true },
+        stillRelevant: { false } // 期间会话被换掉 / 仍在加载
+    )
+
+    _ = await waitUntil({ !gate.isPreparing }, timeoutMs: 2_000)
+    #expect(!gate.isReady, "已失效的一轮不得置为就绪")
+}
+
+@MainActor
+@Test("首屏就绪：没有选中会话时直接就绪")
+func gateWithoutConversationIsImmediatelyReady() async {
+    let gate = InitialPositionGate(budgetNanoseconds: 500_000_000)
+
+    gate.request(conversationID: nil, settle: { false }, stillRelevant: { true })
+
+    #expect(gate.isReady, "无选中会话无需定位")
+    #expect(!gate.isPreparing)
+}
