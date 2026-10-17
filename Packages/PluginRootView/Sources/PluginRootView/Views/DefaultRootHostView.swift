@@ -22,7 +22,7 @@ struct DefaultRootHostView: View {
             HStack(spacing: 0) {
                 if let activityBarView = provider.activityBarView {
                     activityBarView
-                        .debugViewBadge("Activity Bar", alignment: .leading, rotationDegrees: 90)
+                        .debugViewBadge("Activity Bar", alignment: .bottomLeading)
                 }
 
                 WorkbenchSplitView(provider: provider)
