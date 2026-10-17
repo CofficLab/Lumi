@@ -192,13 +192,42 @@ public final class MessageManager: MessageManaging, SuperLog {
         store?.messageCount(conversationId: conversationID) ?? 0
     }
 
-    public func dailyMessageCounts(since: Date) -> [Date: Int] {
-        var counts = store?.dailyMessageCounts(since: since) ?? [:]
+    /// 聚合日统计的公共合并逻辑。
+    ///
+    /// - Important: 必须按 **id 去重**。
+    ///   `persistLater` 是「先 `store.insertMessage`、再 `dequeuePending`」两步，
+    ///   中间存在一个窗口：磁盘**已**包含该消息、pending**仍**保留它。
+    ///   简单相加会把同一条统计两次——实测 20 轮中第 13 轮出现
+    ///   `dailyTokenCounts == 27`（应为 17，input 的 10 被算了两遍）。
+    ///
+    ///   这与 `mergedPage` 解决的是同一类问题，故沿用其「已落盘则跳过」策略。
+    private nonisolated static func mergeDailyAggregate(
+        diskCounts: [Date: Int],
+        pendingMessages: [Message],
+        since: Date,
+        store: MessageStore?,
+        value: (Message) -> Int
+    ) -> [Date: Int] {
+        var counts = diskCounts
         let calendar = Calendar.current
-        for message in pending.snapshotAll() where message.createdAt >= since {
-            counts[calendar.startOfDay(for: message.createdAt), default: 0] += 1
+        for message in pendingMessages where message.createdAt >= since {
+            let v = value(message)
+            guard v > 0 else { continue }
+            // pending 只承担「尚未落盘」的增量；已落盘的由磁盘侧计入。
+            if store?.fetchMessage(id: message.id) != nil { continue }
+            counts[calendar.startOfDay(for: message.createdAt), default: 0] += v
         }
         return counts
+    }
+
+    public func dailyMessageCounts(since: Date) -> [Date: Int] {
+        Self.mergeDailyAggregate(
+            diskCounts: store?.dailyMessageCounts(since: since) ?? [:],
+            pendingMessages: pending.snapshotAll(),
+            since: since,
+            store: store,
+            value: { _ in 1 }
+        )
     }
 
     /// 在后台读取并聚合消息日统计，避免 Heatmap 打开或刷新时阻塞 MainActor。
@@ -206,24 +235,24 @@ public final class MessageManager: MessageManaging, SuperLog {
         let store = self.store
         let pending = self.pending
         return await Task.detached(priority: .utility) {
-            var counts = store?.dailyMessageCounts(since: since) ?? [:]
-            let calendar = Calendar.current
-            for message in pending.snapshotAll() where message.createdAt >= since {
-                counts[calendar.startOfDay(for: message.createdAt), default: 0] += 1
-            }
-            return counts
+            Self.mergeDailyAggregate(
+                diskCounts: store?.dailyMessageCounts(since: since) ?? [:],
+                pendingMessages: pending.snapshotAll(),
+                since: since,
+                store: store,
+                value: { _ in 1 }
+            )
         }.value
     }
 
     public func dailyTokenCounts(since: Date) -> [Date: Int] {
-        var counts = store?.dailyTokenCounts(since: since) ?? [:]
-        let calendar = Calendar.current
-        for message in pending.snapshotAll() where message.createdAt >= since {
-            let tokens = (message.inputTokenCount ?? 0) + (message.outputTokenCount ?? 0)
-            guard tokens > 0 else { continue }
-            counts[calendar.startOfDay(for: message.createdAt), default: 0] += tokens
-        }
-        return counts
+        Self.mergeDailyAggregate(
+            diskCounts: store?.dailyTokenCounts(since: since) ?? [:],
+            pendingMessages: pending.snapshotAll(),
+            since: since,
+            store: store,
+            value: { ($0.inputTokenCount ?? 0) + ($0.outputTokenCount ?? 0) }
+        )
     }
 
     /// 在后台读取并聚合 token 日统计，保留 pending 消息的 read-your-writes 语义。
@@ -231,14 +260,13 @@ public final class MessageManager: MessageManaging, SuperLog {
         let store = self.store
         let pending = self.pending
         return await Task.detached(priority: .utility) {
-            var counts = store?.dailyTokenCounts(since: since) ?? [:]
-            let calendar = Calendar.current
-            for message in pending.snapshotAll() where message.createdAt >= since {
-                let tokens = (message.inputTokenCount ?? 0) + (message.outputTokenCount ?? 0)
-                guard tokens > 0 else { continue }
-                counts[calendar.startOfDay(for: message.createdAt), default: 0] += tokens
-            }
-            return counts
+            Self.mergeDailyAggregate(
+                diskCounts: store?.dailyTokenCounts(since: since) ?? [:],
+                pendingMessages: pending.snapshotAll(),
+                since: since,
+                store: store,
+                value: { ($0.inputTokenCount ?? 0) + ($0.outputTokenCount ?? 0) }
+            )
         }.value
     }
 

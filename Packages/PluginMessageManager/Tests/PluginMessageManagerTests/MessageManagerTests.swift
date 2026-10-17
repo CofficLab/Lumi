@@ -354,6 +354,66 @@ struct MessageManagerWriteBehindTests {
         #expect(persisted)
     }
 
+    /// 回归：**同一条消息不得在磁盘与 pending 中被统计两次**。
+    ///
+    /// `persistLater` 是「先落盘、再 `dequeuePending`」两步，中间存在窗口：
+    /// 磁盘已含该消息、pending 仍保留它。旧实现对 pending 直接相加，
+    /// 命中窗口时同一条会被计两次——实测 20 轮中第 13 轮
+    /// `dailyTokenCounts` 得到 27（应为 17，input 的 10 被算两遍）。
+    ///
+    /// - Important: 本用例用**循环**而不是固定睡眠。窗口极窄（单轮约
+    ///   1/20 命中率），固定等待既可能错过也可能偶发命中而让回归失效。
+    @Test("落盘与待落盘并存时不重复统计")
+    func noDoubleCountDuringWriteBehind() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let day = Calendar.current.startOfDay(for: Date())
+        let conversation = UUID()
+
+        var mismatches: [String] = []
+        for _ in 0..<60 {
+            let id = UUID()
+            manager.insertMessage(
+                Message(
+                    id: id,
+                    conversationID: conversation,
+                    role: .user,
+                    content: "m",
+                    createdAt: day,
+                    inputTokenCount: 10,
+                    outputTokenCount: 7
+                ),
+                to: conversation
+            )
+
+            let counts = manager.dailyMessageCounts(since: day)[day] ?? 0
+            let tokens = manager.dailyTokenCounts(since: day)[day] ?? 0
+            let persisted = store.fetchMessages(conversationId: conversation).count
+
+            // 本轮刚插入 1 条，落盘进度为 persisted。正确读数因此只可能是：
+            //   - persisted + 1：这条还在 pending，由 pending 侧补齐；
+            //   - persisted：它已落盘且 pending 已移除（本轮读完前发生）。
+            // 若它被磁盘与 pending **各算一次**，就会变成 persisted + 2。
+            // token 与条数必须严格成比例（每条 17），顺带锁住 token 口径。
+            let valid = (counts == persisted || counts == persisted + 1) && tokens == counts * 17
+            if !valid {
+                mismatches.append(
+                    "disk=\(persisted) counts=\(counts) tokens=\(tokens) "
+                        + "(expect counts ∈ {\(persisted), \(persisted + 1)}, tokens = counts*17)"
+                )
+            }
+
+            // 等这条真正落盘，保证下一轮的起点干净。
+            for _ in 0..<200 {
+                if store.fetchMessage(id: id) != nil { break }
+                try await Task.sleep(nanoseconds: 5_000_000)
+            }
+        }
+
+        #expect(mismatches.isEmpty, "统计与磁盘不一致：\(mismatches.prefix(5))")
+    }
+
 }
 
 /// 分页与删除行为测试。
