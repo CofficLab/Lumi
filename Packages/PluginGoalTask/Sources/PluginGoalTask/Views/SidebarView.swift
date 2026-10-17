@@ -4,6 +4,9 @@ import SwiftUI
 public struct SidebarView: View {
     @ObservedObject var viewModel: GoalVM
 
+    /// 「在新对话中继续」的编排器,为 `nil` 时隐藏该入口(宿主缺少必需的 Provider)。
+    let forkCoordinator: GoalForkCoordinator?
+
     @State private var isCollapsed = false
 
     private static let headerHeight: CGFloat = 44
@@ -26,8 +29,9 @@ public struct SidebarView: View {
             && viewModel.activeGoal?.blockedReason != nil
     }
 
-    init(viewModel: GoalVM) {
+    init(viewModel: GoalVM, forkCoordinator: GoalForkCoordinator? = nil) {
         self.viewModel = viewModel
+        self.forkCoordinator = forkCoordinator
     }
 
     public var body: some View {
@@ -37,6 +41,8 @@ public struct SidebarView: View {
                     activeGoal: viewModel.activeGoal,
                     progressText: viewModel.progressText,
                     isCollapsed: isCollapsed,
+                    forkCoordinator: forkCoordinator,
+                    tasks: viewModel.activeTasks,
                     onToggleCollapsed: { isCollapsed.toggle() }
                 )
 

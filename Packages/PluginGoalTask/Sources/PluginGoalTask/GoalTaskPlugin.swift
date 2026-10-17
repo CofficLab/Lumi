@@ -103,21 +103,30 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
             self?.goalVM.refreshIfCurrentConversation(conversationID)
         }
 
+        // 先把编排器固化为局部常量再进闭包:直接捕获 `self.forkCoordinator`
+        // 会让 ChatSection 的构建时机与 Provider 注册顺序耦合,早于
+        // `MessageSendingProviding` 就绪时将永久拿到 nil。
+        let coordinator = forkCoordinator
+
         kernel.resolveProvider((any ChatSectionProviding).self)?.addItems([
             ChatSectionItem(
                 id: "\(id).active-goal",
                 placement: .stack,
                 fillsRemainingHeight: false,
                 showsTrailingDivider: false
-            ) { [goalVM, bridge] in
-                GoalTaskChatSectionView(viewModel: goalVM, conversationBridge: bridge)
+            ) { [goalVM, bridge, coordinator] in
+                GoalTaskChatSectionView(
+                    viewModel: goalVM,
+                    conversationBridge: bridge,
+                    forkCoordinator: coordinator
+                )
             }
         ])
         kernel.resolveProvider((any ChatSectionProviding).self)?.addBarItems([
-            ChatSectionBarItem(id: "\(id).toolbar-button", placement: .toolbarTrailing) {
+            ChatSectionBarItem(id: "\(id).toolbar-button", placement: .toolbarTrailing) { [goalVM, coordinator] in
                 GoalToolbarButton(
-                    viewModel: self.goalVM,
-                    forkCoordinator: self.forkCoordinator
+                    viewModel: goalVM,
+                    forkCoordinator: coordinator
                 )
             }
         ])
@@ -161,9 +170,10 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
 private struct GoalTaskChatSectionView: View {
     @ObservedObject var viewModel: GoalVM
     @ObservedObject var conversationBridge: GoalTaskConversationBridge
+    let forkCoordinator: GoalForkCoordinator?
 
     var body: some View {
-        SidebarView(viewModel: viewModel)
+        SidebarView(viewModel: viewModel, forkCoordinator: forkCoordinator)
             .task(id: conversationBridge.selectedConversationID) {
                 viewModel.updateCurrentConversationID(conversationBridge.selectedConversationID)
                 await viewModel.refresh()
