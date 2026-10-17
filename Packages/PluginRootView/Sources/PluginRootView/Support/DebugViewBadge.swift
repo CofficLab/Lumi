@@ -23,23 +23,43 @@ extension View {
         rotationDegrees: Double = 0,
         color: Color? = nil
     ) -> some View {
-        overlay(alignment: alignment) {
-            Text(name)
-                .font(.system(size: 9, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .fixedSize()
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(
-                    Capsule().fill((color ?? badgeColor(for: name)).opacity(0.9))
-                )
-                .shadow(color: .black.opacity(0.2), radius: 1, y: 0.5)
-                .padding(4)
-                .rotationEffect(.degrees(rotationDegrees))
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
+        // 旋转后的 badge 尺寸（宽高互换）与容器尺寸不匹配时，交给自定义 Layout 排布：
+        // 直接 overlay 时 overlay 只拿到与容器等大的尺寸提议，旋转后超出的部分会被裁切，
+        // 这里让 Layout 自行测量并按需超出容器绘制。
+        if rotationDegrees == 0 {
+            overlay(alignment: alignment) {
+                badgeLabel(name, rotationDegrees: 0, color: color)
+            }
+        } else {
+            overlay {
+                BadgeOverflowLayout(alignment: alignment, rotationDegrees: rotationDegrees) {
+                    badgeLabel(name, rotationDegrees: rotationDegrees, color: color)
+                }
+            }
         }
+    }
+
+    /// badge 本体；`allowsHitTesting(false)` 且对辅助功能隐藏，不干扰宿主交互。
+    private func badgeLabel(
+        _ name: String,
+        rotationDegrees: Double,
+        color: Color?
+    ) -> some View {
+        Text(name)
+            .font(.system(size: 9, weight: .semibold, design: .rounded))
+            .foregroundStyle(.white)
+            .lineLimit(1)
+            .fixedSize()
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(
+                Capsule().fill((color ?? badgeColor(for: name)).opacity(0.9))
+            )
+            .shadow(color: .black.opacity(0.2), radius: 1, y: 0.5)
+            .padding(4)
+            .rotationEffect(.degrees(rotationDegrees))
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 
     /// 由名称稳定映射到一个色相，避免所有 badge 颜色一致。
@@ -58,6 +78,93 @@ extension View {
             saturation: 0.65,
             brightness: 0.72
         )
+    }
+}
+
+/// 旋转 badge 的排布布局。
+///
+/// `rotationEffect` 只影响绘制、不改变布局尺寸：布局仍按未旋转的尺寸（如 70pt 宽）
+/// 排布，而视觉包围盒是旋转后的（如 15pt × 70pt）。两者不一致时，对齐会算错，
+/// 导致 badge 溢出到容器外被父级/屏幕裁切。
+///
+/// 这里显式换算旋转后的包围盒参与对齐，并允许绘制超出父级边界。
+private struct BadgeOverflowLayout: Layout {
+    let alignment: Alignment
+    let rotationDegrees: Double
+
+    func sizeThatFits(
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache: inout ()
+    ) -> CGSize {
+        guard let subview = subviews.first else { return .zero }
+        return rotatedBoundsSize(subview.sizeThatFits(.unspecified))
+    }
+
+    func placeSubviews(
+        in bounds: CGRect,
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache: inout ()
+    ) {
+        guard let subview = subviews.first else { return }
+
+        // 布局尺寸（未旋转）与视觉尺寸（旋转后）。
+        let layoutSize = subview.sizeThatFits(.unspecified)
+        let visualSize = rotatedBoundsSize(layoutSize)
+
+        // 按视觉包围盒计算对齐目标点。
+        let anchor = unitPoint(for: alignment)
+        let ax = anchor.x
+        let ay = anchor.y
+        let dx = bounds.width - visualSize.width
+        let dy = bounds.height - visualSize.height
+        let targetCenter = CGPoint(
+            x: bounds.minX + dx * ax + (0.5 - ax) * visualSize.width,
+            y: bounds.minY + dy * ay + (0.5 - ay) * visualSize.height
+        )
+
+        // `place(at:anchor:)` 的 anchor 相对子视图自身的布局框，
+        // 因此按布局尺寸反推放置点，使旋转后的视觉中心落在 targetCenter。
+        let placePoint = CGPoint(
+            x: targetCenter.x - (0.5 - ax) * layoutSize.width,
+            y: targetCenter.y - (0.5 - ay) * layoutSize.height
+        )
+
+        subview.place(
+            at: placePoint,
+            anchor: anchor,
+            proposal: ProposedViewSize(layoutSize)
+        )
+    }
+
+    /// 旋转后的视觉包围盒尺寸。
+    private func rotatedBoundsSize(_ size: CGSize) -> CGSize {
+        let radians = rotationDegrees * .pi / 180
+        let cosA = abs(cos(radians))
+        let sinA = abs(sin(radians))
+        // 0° / 180° 不改变包围盒。
+        guard sinA > .ulpOfOne else { return size }
+        return CGSize(
+            width: size.width * cosA + size.height * sinA,
+            height: size.width * sinA + size.height * cosA
+        )
+    }
+
+    /// `Alignment` → `UnitPoint`（0 = leading/top，1 = trailing/bottom）。
+    private func unitPoint(for alignment: Alignment) -> UnitPoint {
+        switch alignment {
+        case .leading, .topLeading, .bottomLeading:
+            return UnitPoint(x: 0, y: alignment == .topLeading ? 0 : (alignment == .bottomLeading ? 1 : 0.5))
+        case .trailing, .topTrailing, .bottomTrailing:
+            return UnitPoint(x: 1, y: alignment == .topTrailing ? 0 : (alignment == .bottomTrailing ? 1 : 0.5))
+        case .top:
+            return UnitPoint(x: 0.5, y: 0)
+        case .bottom:
+            return UnitPoint(x: 0.5, y: 1)
+        default:
+            return UnitPoint(x: 0.5, y: 0.5)
+        }
     }
 }
 #else
