@@ -26,8 +26,8 @@ struct ListV2View: View, SuperLog {
     /// 内容就绪信号：historyRows 首尾消息 id 变化时 +1。
     @State private var scrollTick: Int = 0
     private let bottomScrollController = ScrollViewBottomController()
-    @State private var isInitialPositionReady = false
-    @State private var isPreparingInitialPosition = false
+    /// 首屏定位的就绪编排（含超时兜底），见 InitialPositionGate。
+    private let initialPositionGate = InitialPositionGate()
 
     init(
         services: MessageListServices,
@@ -47,9 +47,9 @@ struct ListV2View: View, SuperLog {
         ZStack {
             messageScrollView
                 .id(viewModel.selectedConversationID)
-                .opacity(isInitialPositionReady ? 1 : 0)
-                .allowsHitTesting(isInitialPositionReady)
-            if viewModel.isLoading || !isInitialPositionReady {
+                .opacity(initialPositionGate.isReady ? 1 : 0)
+                .allowsHitTesting(initialPositionGate.isReady)
+            if viewModel.isLoading || !initialPositionGate.isReady {
                 MessageLoadingView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(theme.surface.opacity(0.6))
@@ -58,8 +58,7 @@ struct ListV2View: View, SuperLog {
         .task {
             // 首次出现/容器切换重建：重置滚动位置，加载当前选中会话。
             atBottomBox.value = true
-            isInitialPositionReady = false
-            isPreparingInitialPosition = false
+            initialPositionGate.resetForLoadingStart()
             if Self.verbose {
                 Self.logger.debug("\(Self.t)activate conversation: \(viewModel.selectedConversationID?.uuidString ?? "nil")")
             }
@@ -101,7 +100,7 @@ struct ListV2View: View, SuperLog {
                     .accessibilityHidden(true)
                     .plainMessageListRow(insets: EdgeInsets())
                     .onChange(of: scrollTick) { _, _ in
-                        guard isInitialPositionReady else { return }
+                        guard initialPositionGate.isReady else { return }
                         let conversationID = viewModel.selectedConversationID
                         // 新消息行可能还没有完成尺寸布局；立即 scrollTo 会把
                         // 锚点停在旧的内容底部，导致最后一行被输入框截断。
@@ -132,23 +131,21 @@ struct ListV2View: View, SuperLog {
                 if atBottomBox.value {
                     scrollTick &+= 1
                 }
-                if !isInitialPositionReady, !viewModel.isLoading {
+                if !initialPositionGate.isReady, !viewModel.isLoading {
                     prepareInitialPosition(proxy: proxy, messages: viewModel.historyRows)
                 }
             }
             .onChange(of: viewModel.isLoading) { _, isLoading in
                 if isLoading {
                     scrollCoordinator.cancelPendingTasks()
-                    isInitialPositionReady = false
-                    isPreparingInitialPosition = false
+                    initialPositionGate.resetForLoadingStart()
                 } else {
                     prepareInitialPosition(proxy: proxy, messages: viewModel.historyRows)
                 }
             }
             .onChange(of: viewModel.selectedConversationID) { _, _ in
                 scrollCoordinator.cancelPendingTasks()
-                isInitialPositionReady = false
-                isPreparingInitialPosition = false
+                initialPositionGate.resetForConversationSwitch()
             }
             // 流式行出现或内容增长时跟随滚到底；内容增长期间沿用
             // atBottomBox 判定（用户上滑则不跟随）。不能只监听 id，因为流式
@@ -185,25 +182,24 @@ struct ListV2View: View, SuperLog {
         proxy: ScrollViewProxy,
         messages: [ProviderMessage.Message]
     ) {
-        guard !isInitialPositionReady, !isPreparingInitialPosition else { return }
         let conversationID = viewModel.selectedConversationID
-        isPreparingInitialPosition = true
-        Task { @MainActor in
-            let ready = await scrollCoordinator.prepareInitialBottom(
-                proxy: proxy,
-                messages: messages,
-                controller: bottomScrollController,
-                condition: {
-                    conversationID == viewModel.selectedConversationID && !viewModel.isLoading
-                }
-            )
-            isPreparingInitialPosition = false
-            if ready,
-               conversationID == viewModel.selectedConversationID,
-               !viewModel.isLoading {
-                isInitialPositionReady = true
+        initialPositionGate.request(
+            conversationID: conversationID,
+            settle: { [scrollCoordinator, bottomScrollController] in
+                await scrollCoordinator.prepareInitialBottom(
+                    proxy: proxy,
+                    messages: messages,
+                    controller: bottomScrollController,
+                    condition: { true }
+                )
+            },
+            stillRelevant: { [viewModel] in
+                // 期间会话被换掉、或又进入加载 → 本轮结果作废。
+                // gate 内部另有 pendingConversationID 校验，这里补上
+                // ViewModel 侧的真实选择状态，双保险避免旧结果放行遮罩。
+                conversationID == viewModel.selectedConversationID && !viewModel.isLoading
             }
-        }
+        )
     }
 
     /// Stable historical rows. The live streaming tail is rendered separately
