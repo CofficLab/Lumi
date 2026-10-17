@@ -28,3 +28,33 @@ protocol MessageListBottomGeometry: AnyObject {
 }
 
 extension ScrollViewBottomController: MessageListBottomGeometry {}
+
+
+/// 底部判定的**唯一实现**。
+///
+/// 原先这段规则内联在 `ScrollViewBottomTracker.reevaluate()` 中且为 private，
+/// 只能靠真实视图树触发，因而长期零覆盖。抽为纯函数后：
+/// - 生产路径（tracker）与测试共用同一实现，不存在「测试复制一份」导致的漂移；
+/// - 迟滞带这种易错的边界条件可以被精确断言。
+enum BottomDecision {
+    /// 由几何量计算「是否在底部」。
+    ///
+    /// 迟滞：已在底部时用更宽容的离开阈值，不在底部时用更严格的进入阈值，
+    /// 避免在容差边界抖动时反复翻转 `onChange`。
+    ///
+    /// - Returns: 判定结果；几何不可用时返回 nil（调用方应放弃本次判定）。
+    static func evaluate(
+        documentHeight: CGFloat,
+        visibleHeight: CGFloat,
+        offsetY: CGFloat,
+        lastAtBottom: Bool,
+        enterTolerance: CGFloat,
+        leaveTolerance: CGFloat
+    ) -> Bool? {
+        guard documentHeight.isFinite, visibleHeight.isFinite,
+              documentHeight < 10_000_000, visibleHeight > 0 else { return nil }
+        let distance = documentHeight - (offsetY + visibleHeight)
+        let tolerance = lastAtBottom ? leaveTolerance : enterTolerance
+        return distance <= tolerance
+    }
+}
