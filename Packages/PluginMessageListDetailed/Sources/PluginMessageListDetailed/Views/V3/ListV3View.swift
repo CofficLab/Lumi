@@ -95,10 +95,12 @@ struct ListV3View: View {
                         // 等布局完成后只保留最后一次滚动请求，避免多个
                         // scrollTo 同时驱动 macOS List 的行 materialize。
                         scrollCoordinator.scheduleScrollToBottomAfterLayout(
-                            proxy: proxy,
+                            target: ProxyMessageListScrollingTarget(
+                                proxy: proxy,
+                                controller: bottomScrollController
+                            ),
                             messages: viewModel.historyRows,
                             animated: false,
-                            controller: bottomScrollController,
                             condition: {
                                 conversationID == viewModel.selectedConversationID
                             }
@@ -174,9 +176,11 @@ struct ListV3View: View {
         isPreparingInitialPosition = true
         Task { @MainActor in
             let ready = await scrollCoordinator.prepareInitialBottom(
-                proxy: proxy,
+                target: ProxyMessageListScrollingTarget(
+                    proxy: proxy,
+                    controller: bottomScrollController
+                ),
                 messages: messages,
-                controller: bottomScrollController,
                 condition: {
                     conversationID == viewModel.selectedConversationID && !viewModel.isLoading
                 }
@@ -256,7 +260,13 @@ struct ListV3View: View {
 
     private func loadEarlier(proxy: ScrollViewProxy) async {
         guard let anchorID = await viewModel.loadEarlier(isAtBottom: atBottomBox.value) else { return }
-        await scrollCoordinator.pinToAnchor(proxy: proxy, anchorID: anchorID)
+        await scrollCoordinator.pinToAnchor(
+            target: ProxyMessageListScrollingTarget(
+                proxy: proxy,
+                controller: bottomScrollController
+            ),
+            anchorID: anchorID
+        )
     }
 }
 

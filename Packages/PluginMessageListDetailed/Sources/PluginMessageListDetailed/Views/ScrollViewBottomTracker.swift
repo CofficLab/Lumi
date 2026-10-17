@@ -140,6 +140,8 @@ final class TrackerView: NSView {
     private weak var observedScrollView: NSScrollView?
     /// 上一次报告的「是否在底部」，用于迟滞判定、避免无谓回调。
     private var lastAtBottom: Bool = true
+    /// 纯几何判定器（无 AppKit 依赖，可单测）。
+    private let evaluator = BottomEdgeEvaluator()
 
     // MARK: - Live-resize 恢复
 
@@ -393,23 +395,16 @@ final class TrackerView: NSView {
         guard !isRestoringAfterResize else { return }
         guard let scrollView = observedScrollView,
               let documentView = scrollView.documentView else { return }
-        let documentHeight = documentView.bounds.height
-        let visibleHeight = scrollView.contentView.bounds.height
-        let offsetY = scrollView.contentView.bounds.origin.y
-        guard documentHeight.isFinite, visibleHeight.isFinite,
-              documentHeight < 10_000_000, visibleHeight > 0 else { return }
+        guard let result = evaluator.evaluate(
+            documentHeight: documentView.bounds.height,
+            visibleHeight: scrollView.contentView.bounds.height,
+            offsetY: scrollView.contentView.bounds.origin.y,
+            previousAtBottom: lastAtBottom
+        ) else { return }
 
-        let distance = documentHeight - (offsetY + visibleHeight)
-        // 迟滞：已在底部时用更宽容的离开阈值，不在底部时用更严格的进入阈值，
-        // 避免在容差边界抖动时反复翻转。
-        let tolerance = lastAtBottom
-            ? MessageListScrollCoordinator.bottomLeaveTolerance
-            : MessageListScrollCoordinator.bottomEnterTolerance
-        let atBottom = distance <= tolerance
-
-        guard atBottom != lastAtBottom else { return }
-        lastAtBottom = atBottom
-        onChange?(atBottom)
+        guard result.shouldNotify else { return }
+        lastAtBottom = result.atBottom
+        onChange?(result.atBottom)
     }
 
     /// 切换会话/重置滚动位置时由外部调用，把判定重置回「在底部」。
