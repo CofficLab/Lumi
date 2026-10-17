@@ -45,7 +45,12 @@ def platform_of(pkg_dir):
     with open(manifest, encoding="utf-8") as handle:
         text = handle.read()
     found = re.findall(r'\.(macOS|iOS|tvOS|watchOS)\s*:\s*"([\d.]+)"', text)
-    return ", ".join(f"{name} {ver}+" for name, ver in found)
+    if found:
+        return ", ".join(f"{name} {ver}+" for name, ver in found)
+    # 简写形式：platforms: [.macOS(.v14), .iOS(.v17)]
+    short = re.findall(r'\.(macOS|iOS|tvOS|watchOS)\s*\(\s*\.v(\d+)\s*\)', text)
+    if short:
+        return ", ".join(f"{name} {major}+" for name, major in short)
 
 
 def readme_head(pkg_dir, limit=700):
@@ -162,6 +167,14 @@ def parse_test_file(path):
             index += consumed
             continue
 
+        # XCTest 写法：`func testXxx()` 无 @Test 属性，且同样会被 DECL_RE 命中，
+        # 故必须先判 XCTest 再判通用 func，否则会被当成普通声明丢弃。
+        xctest = XCTest_FUNC_RE.match(line)
+        if xctest and not pending_active:
+            tests.append((None, xctest.group(1), current_suite))
+            index += 1
+            continue
+
         func = DECL_RE.match(line)
         if func:
             if pending_active:
@@ -170,10 +183,6 @@ def parse_test_file(path):
                 pending_display = None
             index += 1
             continue
-
-        xctest = XCTest_FUNC_RE.match(line)
-        if xctest:
-            tests.append((None, xctest.group(1), current_suite))
 
         index += 1
 
