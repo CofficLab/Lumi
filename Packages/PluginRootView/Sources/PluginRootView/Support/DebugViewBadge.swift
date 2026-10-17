@@ -13,11 +13,15 @@ extension View {
     ///
     /// 嵌套区域各自带 badge 时，用不同的 `alignment` 避免相互遮挡。
     /// 窄区域（如竖排侧边栏）可传 `rotationDegrees: 90` 让文字竖排，避免被裁切。
+    ///
+    /// 颜色默认由 `name` 哈希得到，同名区域颜色稳定，不同名区域相互区分，
+    /// 便于一眼分辨嵌套层级；需要精确控制时可传 `color`。
     @ViewBuilder
     func debugViewBadge(
         _ name: String,
         alignment: Alignment = .bottomLeading,
-        rotationDegrees: Double = 0
+        rotationDegrees: Double = 0,
+        color: Color? = nil
     ) -> some View {
         overlay(alignment: alignment) {
             Text(name)
@@ -27,13 +31,33 @@ extension View {
                 .fixedSize()
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
-                .background(Capsule().fill(Color.purple.opacity(0.85)))
+                .background(
+                    Capsule().fill((color ?? badgeColor(for: name)).opacity(0.9))
+                )
                 .shadow(color: .black.opacity(0.2), radius: 1, y: 0.5)
                 .padding(4)
                 .rotationEffect(.degrees(rotationDegrees))
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
         }
+    }
+
+    /// 由名称稳定映射到一个色相，避免所有 badge 颜色一致。
+    ///
+    /// 用 djb2 变体累加字符字节，与 UI 侧调试 badge 使用同一套映射逻辑。
+    /// 饱和度/亮度固定，仅色相变化，保证白字始终可读。
+    private func badgeColor(for name: String) -> Color {
+        var hash: UInt64 = 5381
+        for byte in name.utf8 {
+            hash = ((hash << 5) &+ hash) &+ UInt64(byte)
+        }
+        // 跳过过暗的蓝紫色区间（hue 约 0.6~0.75），与半透明背景叠在一起不易辨识
+        let hue = Double(hash % 1000) / 1000
+        return Color(
+            hue: hue < 0.6 || hue > 0.75 ? hue : (hue + 0.25).truncatingRemainder(dividingBy: 1),
+            saturation: 0.65,
+            brightness: 0.72
+        )
     }
 }
 #else
@@ -43,7 +67,8 @@ extension View {
     func debugViewBadge(
         _ name: String,
         alignment: Alignment = .bottomLeading,
-        rotationDegrees: Double = 0
+        rotationDegrees: Double = 0,
+        color: Color? = nil
     ) -> some View {
         self
     }
