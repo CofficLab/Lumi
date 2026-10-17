@@ -3,7 +3,13 @@ import ProviderMessage
 import Testing
 @testable import PluginActivityHeatmap
 
-@Suite("Activity heatmap view model")
+/// 活动热力图 ViewModel 测试。
+///
+/// - Important: `ActivityHeatmapViewModel.period` 持久化在 `UserDefaults.standard`
+///   （key `com.coffic.activity-heatmap.period`），是**共享全局状态**。
+///   每个用例自己 defer 还原，但套件必须 `.serialized`，
+///   否则并发用例会在同一份偏好上互相覆盖，读到对方的 period。
+@Suite("Activity heatmap view model", .serialized)
 @MainActor
 struct ActivityHeatmapViewModelTests {
     @Test("loads missing history once, combines cached days with today's live counts")
