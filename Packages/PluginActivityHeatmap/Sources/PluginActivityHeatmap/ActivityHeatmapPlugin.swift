@@ -106,9 +106,13 @@ public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, Supe
         }
         let directory = kernel.resolveProvider((any StorageProviding).self)?
             .pluginDataDirectory(for: id)
-        ActivityHeatmapViewModel.restoreLegacyPeriodIfNeeded(from: directory)
+        let settingsDirectory = directory?.appendingPathComponent("settings", isDirectory: true)
+        let preferences = ActivityHeatmapPreferences(
+            settingsDirectory: settingsDirectory ?? FileManager.default.temporaryDirectory
+        )
+        ActivityHeatmapViewModel.restoreLegacyPeriodIfNeeded(from: directory, preferences: preferences)
         cache = ActivityHeatmapCache(directory: directory)
-        let viewModel = ActivityHeatmapViewModel(messages: messages, cache: cache)
+        let viewModel = ActivityHeatmapViewModel(messages: messages, cache: cache, preferences: preferences)
         self.viewModel = viewModel
         if let messages {
             insertionObserver = MessageObserver(messages: messages) { [weak self] in
@@ -209,12 +213,13 @@ public struct ActivityDay: Identifiable, Sendable, Equatable {
 public final class ActivityHeatmapViewModel {
     private let messages: (any MessageManaging)?
     private let cache: ActivityHeatmapCache?
+    private let preferences: ActivityHeatmapPreferences
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
-    static let periodKey = "com.coffic.activity-heatmap.period"
+    static let periodKey = ActivityHeatmapPreferences.periodKey
 
     public var period: ActivityHeatmapPeriod {
-        didSet { UserDefaults.standard.set(period.rawValue, forKey: Self.periodKey) }
+        didSet { preferences.setStoredPeriodRawValue(period.rawValue) }
     }
     public private(set) var days: [ActivityDay] = []
     /// The heatmap keeps a full year's daily history so its layout can decide
@@ -233,21 +238,32 @@ public final class ActivityHeatmapViewModel {
         trendDays.max { $0.tokens < $1.tokens }.flatMap { $0.tokens > 0 ? $0 : nil }
     }
 
-    public init(messages: (any MessageManaging)?, cache: ActivityHeatmapCache? = nil) {
+    public init(
+        messages: (any MessageManaging)?,
+        cache: ActivityHeatmapCache? = nil,
+        preferences: ActivityHeatmapPreferences
+    ) {
         self.messages = messages
         self.cache = cache
-        self.period = ActivityHeatmapPeriod(rawValue: UserDefaults.standard.integer(forKey: Self.periodKey)) ?? .days30
+        self.preferences = preferences
+        self.period = ActivityHeatmapPeriod(rawValue: preferences.storedPeriodRawValue ?? 0) ?? .days30
     }
 
-    static func restoreLegacyPeriodIfNeeded(from directory: URL?) {
-        guard UserDefaults.standard.object(forKey: periodKey) == nil,
+    /// 从旧版 JSON 设置（`settings/settings.json`）恢复周期偏好。
+    ///
+    /// 仅在插件存储与 UserDefaults 都尚无记录时写入，沿用原有「首启才恢复」语义。
+    static func restoreLegacyPeriodIfNeeded(from directory: URL?, preferences: ActivityHeatmapPreferences) {
+        let periodKey = Self.periodKey
+        let hasStoredValue = preferences.storedPeriodRawValue != nil
+        let hasLegacyUserDefaultsValue = UserDefaults.standard.object(forKey: periodKey) != nil
+        guard !hasStoredValue, !hasLegacyUserDefaultsValue,
               let directory,
               let data = try? Data(contentsOf: directory.appendingPathComponent("settings/settings.json")),
               let legacy = try? JSONDecoder().decode(LegacyPeriodPreference.self, from: data),
               let rawValue = legacy.selectedPeriodRawValue,
               ActivityHeatmapPeriod(rawValue: rawValue) != nil
         else { return }
-        UserDefaults.standard.set(rawValue, forKey: periodKey)
+        preferences.setStoredPeriodRawValue(rawValue)
     }
 
     public func reload() async {
@@ -364,9 +380,10 @@ public struct ActivityHeatmapSettingsView: View {
     public init(
         messages: (any MessageManaging)?,
         idleTime: (any IdleTimeProviding)? = nil,
-        cache: ActivityHeatmapCache? = nil
+        cache: ActivityHeatmapCache? = nil,
+        preferences: ActivityHeatmapPreferences
     ) {
-        _model = State(initialValue: ActivityHeatmapViewModel(messages: messages, cache: cache))
+        _model = State(initialValue: ActivityHeatmapViewModel(messages: messages, cache: cache, preferences: preferences))
         self.idleTime = idleTime
         self.idleTimeState = ActivityHeatmapIdleTimeState(provider: idleTime)
     }

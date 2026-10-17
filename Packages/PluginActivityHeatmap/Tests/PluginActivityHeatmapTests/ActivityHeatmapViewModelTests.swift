@@ -5,25 +5,13 @@ import Testing
 
 /// 活动热力图 ViewModel 测试。
 ///
-/// - Important: `ActivityHeatmapViewModel.period` 持久化在 `UserDefaults.standard`
-///   （key `com.coffic.activity-heatmap.period`），是**共享全局状态**。
-///   每个用例自己 defer 还原，但套件必须 `.serialized`，
-///   否则并发用例会在同一份偏好上互相覆盖，读到对方的 period。
+/// - Note: `period` 持久化在插件专属目录的 Binary Plist 中。每个用例通过
+///   `makePreferences()` 使用独立的临时目录，因此用例之间互不影响。
 @Suite("Activity heatmap view model", .serialized)
 @MainActor
 struct ActivityHeatmapViewModelTests {
     @Test("loads missing history once, combines cached days with today's live counts")
     func reloadsAndCachesDailyCounts() async {
-        let defaults = UserDefaults.standard
-        let previousPeriod = defaults.object(forKey: ActivityHeatmapViewModel.periodKey)
-        defer {
-            if let previousPeriod {
-                defaults.set(previousPeriod, forKey: ActivityHeatmapViewModel.periodKey)
-            } else {
-                defaults.removeObject(forKey: ActivityHeatmapViewModel.periodKey)
-            }
-        }
-
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let firstDay = calendar.date(byAdding: .day, value: -29, to: today)!
@@ -35,7 +23,7 @@ struct ActivityHeatmapViewModelTests {
             tokenCounts: [activeDay: 400, previousActiveDay: 200, today: 700]
         )
         let cache = ActivityHeatmapCache(directory: nil)
-        let viewModel = ActivityHeatmapViewModel(messages: manager, cache: cache)
+        let viewModel = ActivityHeatmapViewModel(messages: manager, cache: cache, preferences: makePreferences())
         viewModel.period = .days30
 
         await viewModel.reload()
@@ -65,16 +53,6 @@ struct ActivityHeatmapViewModelTests {
 
     @Test("peak token day picks the busiest day inside the trend window")
     func reportsPeakTokenDay() async {
-        let defaults = UserDefaults.standard
-        let previousPeriod = defaults.object(forKey: ActivityHeatmapViewModel.periodKey)
-        defer {
-            if let previousPeriod {
-                defaults.set(previousPeriod, forKey: ActivityHeatmapViewModel.periodKey)
-            } else {
-                defaults.removeObject(forKey: ActivityHeatmapViewModel.periodKey)
-            }
-        }
-
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let busiestDay = calendar.date(byAdding: .day, value: -3, to: today)!
@@ -84,7 +62,11 @@ struct ActivityHeatmapViewModelTests {
             messageCounts: [busiestDay: 3, busyDay: 2, today: 1],
             tokenCounts: [busiestDay: 5_000, busyDay: 900, today: 100]
         )
-        let viewModel = ActivityHeatmapViewModel(messages: manager, cache: ActivityHeatmapCache(directory: nil))
+        let viewModel = ActivityHeatmapViewModel(
+            messages: manager,
+            cache: ActivityHeatmapCache(directory: nil),
+            preferences: makePreferences()
+        )
         viewModel.period = .days30
 
         await viewModel.reload()
@@ -96,7 +78,8 @@ struct ActivityHeatmapViewModelTests {
 
         let idleViewModel = ActivityHeatmapViewModel(
             messages: HeatmapMessageManager(messageCounts: [:], tokenCounts: [:]),
-            cache: ActivityHeatmapCache(directory: nil)
+            cache: ActivityHeatmapCache(directory: nil),
+            preferences: makePreferences()
         )
 
         await idleViewModel.reload()
@@ -106,16 +89,6 @@ struct ActivityHeatmapViewModelTests {
 
     @Test("peak token day ignores consumption outside the trend window")
     func ignoresConsumptionOutsideTrendWindow() async {
-        let defaults = UserDefaults.standard
-        let previousPeriod = defaults.object(forKey: ActivityHeatmapViewModel.periodKey)
-        defer {
-            if let previousPeriod {
-                defaults.set(previousPeriod, forKey: ActivityHeatmapViewModel.periodKey)
-            } else {
-                defaults.removeObject(forKey: ActivityHeatmapViewModel.periodKey)
-            }
-        }
-
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let staleHeavyDay = calendar.date(byAdding: .day, value: -100, to: today)!
@@ -125,7 +98,11 @@ struct ActivityHeatmapViewModelTests {
             messageCounts: [staleHeavyDay: 20, recentDay: 1],
             tokenCounts: [staleHeavyDay: 900_000, recentDay: 120]
         )
-        let viewModel = ActivityHeatmapViewModel(messages: manager, cache: ActivityHeatmapCache(directory: nil))
+        let viewModel = ActivityHeatmapViewModel(
+            messages: manager,
+            cache: ActivityHeatmapCache(directory: nil),
+            preferences: makePreferences()
+        )
         viewModel.period = .days30
 
         await viewModel.reload()
@@ -175,4 +152,11 @@ private final class HeatmapMessageManager: MessageManaging {
         in conversationID: UUID,
         authorizationState: String?
     ) {}
+}
+
+/// 为每个用例构造独立的偏好存储，隔离持久化状态。
+private func makePreferences() -> ActivityHeatmapPreferences {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ActivityHeatmapPrefs-\(UUID().uuidString)", isDirectory: true)
+    return ActivityHeatmapPreferences(settingsDirectory: directory)
 }
