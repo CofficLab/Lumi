@@ -387,6 +387,34 @@ extension AgentLoopManager {
         toolCall: AgentLoopToolCall,
         result toolResult: ToolCallResult
     ) async {
+        let result = convertResult(toolResult)
+
+        // 授权终态先于状态机落库。
+        //
+        // 「用户已允许/已拒绝」必须持久化，因为它决定渲染层还会不会再弹一次
+        // 授权卡片（见 `ToolApprovalRowRenderer.canRender`）。而回合状态机此时
+        // 可能已经不可靠：应用重启后 `runtimes` 为空、回合可能已结束或被取消、
+        // 事件的 turnID 也可能与消息落库的 turnID 不一致。若把落库挂在状态机的
+        // guard 之后，这三种情况都会静默丢弃授权终态，用户下次打开消息列表
+        // 就会再次被要求授权——尽管上一轮已经明确做过决定。
+        //
+        // 因此这里以**消息**（唯一可靠来源）定位落库目标，与状态机解耦；
+        // 下面的 guard 只决定「能否推进回合状态机」，不再决定「要不要落库」。
+        if let assistantMessageID = await assistantMessageID(
+            containingToolCallID: toolCall.id,
+            in: conversationID
+        ) {
+            messages.updateToolCallResult(
+                result,
+                toolCallID: toolCall.id,
+                assistantMessageID: assistantMessageID,
+                in: conversationID,
+                authorizationState: toolCall.authorizationState.rawValue
+            )
+        } else if Self.verbose {
+            Self.logger.error("\(Self.t)授权工具结果落库失败：找不到承载该调用的 assistant 消息 toolCallID=\(toolCall.id), conversation=\(conversationID.uuidString.prefix(8))")
+        }
+
         guard await prepareRuntimeForToolResult(
             conversationID: conversationID,
             eventTurnID: eventTurnID,
@@ -394,37 +422,28 @@ extension AgentLoopManager {
         ),
         var runtime = runtimes[conversationID] else {
             if Self.verbose {
-                Self.logger.error("\(Self.t)忽略授权工具结果：找不到会话运行时 conversation=\(conversationID.uuidString.prefix(8))")
+                Self.logger.error("\(Self.t)授权工具结果不推进回合：找不到会话运行时（结果已落库）conversation=\(conversationID.uuidString.prefix(8))")
             }
             return
         }
-        guard case .executingTools(let turnID, let assistantMessageID, let pending) = runtime.phase else {
+        guard case .executingTools(let turnID, _, let pending) = runtime.phase else {
             if Self.verbose {
-                Self.logger.error("\(Self.t)忽略授权工具结果：当前状态不是 executingTools，conversation=\(conversationID.uuidString.prefix(8))")
+                Self.logger.error("\(Self.t)授权工具结果不推进回合：当前状态不是 executingTools（结果已落库），conversation=\(conversationID.uuidString.prefix(8))")
             }
             return
         }
         guard eventTurnID == nil || eventTurnID == turnID else {
             if Self.verbose {
-                Self.logger.error("\(Self.t)忽略授权工具结果：turnID 不匹配，conversation=\(conversationID.uuidString.prefix(8))")
+                Self.logger.error("\(Self.t)授权工具结果不推进回合：turnID 不匹配（结果已落库），conversation=\(conversationID.uuidString.prefix(8))")
             }
             return
         }
         guard pending.contains(where: { $0.id == toolCall.id }) else {
             if Self.verbose {
-                Self.logger.error("\(Self.t)忽略未等待的授权工具结果：toolCallID=\(toolCall.id), conversation=\(conversationID.uuidString.prefix(8))")
+                Self.logger.error("\(Self.t)授权工具结果不推进回合：未等待该调用（结果已落库），toolCallID=\(toolCall.id), conversation=\(conversationID.uuidString.prefix(8))")
             }
             return
         }
-
-        let result = convertResult(toolResult)
-        messages.updateToolCallResult(
-            result,
-            toolCallID: toolCall.id,
-            assistantMessageID: assistantMessageID,
-            in: conversationID,
-            authorizationState: toolCall.authorizationState.rawValue
-        )
 
         if result.awaitingUserResponse {
             // 仍在等待用户输入时只更新 assistant 内嵌状态，避免把临时
@@ -460,6 +479,25 @@ extension AgentLoopManager {
             finishTurn(conversationID: conversationID, turnID: turnID, outcome: outcome)
         }
         continueAfterToolResults(runtime: runtime, conversationID: conversationID, turnID: turnID)
+    }
+
+    /// 找到承载指定工具调用的 assistant 消息 ID。
+    ///
+    /// 授权终态的落库目标以**消息**为准，而不是回合状态机：消息同时保存了
+    /// turnID、assistant 消息 ID 与完整工具调用列表，是重启后仍然可靠的来源
+    /// （`prepareRuntimeForToolResult` 的恢复分支用的是同一套查找逻辑）。
+    ///
+    /// - Note: 这里取**最后一条**匹配的消息。同一会话可能存在多个回合，
+    ///   工具调用 ID 在不同回合间可能复用，只有最近的 assistant 消息才
+    ///   持有当前这次调用的展示快照。
+    private func assistantMessageID(
+        containingToolCallID toolCallID: String,
+        in conversationID: UUID
+    ) async -> UUID? {
+        await messages.messagesSnapshot(in: conversationID).reversed().first { message in
+            message.role == .assistant
+                && message.toolCalls?.contains(where: { $0.id == toolCallID }) == true
+        }?.id
     }
 
     enum LLMRequestResult {
