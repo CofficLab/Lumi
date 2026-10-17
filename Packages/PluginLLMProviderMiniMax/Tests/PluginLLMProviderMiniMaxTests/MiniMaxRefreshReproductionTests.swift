@@ -13,6 +13,19 @@ import Testing
 @MainActor
 struct MiniMaxRefreshReproductionTests {
 
+    /// 把 API Key 写入**一次性**的 Keychain service，绝不碰生产 service。
+    ///
+    /// - Important: 不能改用「读旧值 → 写测试值 → defer 还原」的写法。未隔离时
+    ///   `VendorAPIKeyTools.get` 会读生产 service，若此刻读取失败（未授权 / 条目
+    ///   不可访问）返回空串，原实现会在 defer 里执行 `remove`，**反而删掉用户
+    ///   真实的 MiniMax key**。本套件曾把用户的 key 覆盖成 `test-key`。
+    ///
+    ///   隔离后读写都落在一次性 service 上，测试进程退出即失效，无需还原。
+    private static func withIsolatedAPIKey(_ provider: MiniMaxOpenAIProvider) {
+        VendorAPIKeyTools.keychainService = "com.coffic.lumi.apikey.test.\(UUID().uuidString)"
+        VendorAPIKeyTools.set("test-key", storageKey: provider.providerInfo.apiKeyStorageKey)
+    }
+
     /// 模拟国内站 `/v1/models` 返回 9 个模型：6 个与静态清单重叠 + 3 个新增。
     private static let remotePayload = """
     {"object":"list","data":[
@@ -65,17 +78,7 @@ struct MiniMaxRefreshReproductionTests {
         let apiService = VendorAPIService(networkProvider: network)
         let provider = MiniMaxOpenAIProvider(apiService: apiService, modelListCache: store)
 
-        // 保存/恢复真实 API Key，避免测试污染用户的 Keychain。
-        let storageKey = provider.providerInfo.apiKeyStorageKey
-        let previousKey = VendorAPIKeyTools.get(storageKey: storageKey)
-        VendorAPIKeyTools.set("test-key", storageKey: storageKey)
-        defer {
-            if previousKey.isEmpty {
-                VendorAPIKeyTools.remove(storageKey: storageKey)
-            } else {
-                VendorAPIKeyTools.set(previousKey, storageKey: storageKey)
-            }
-        }
+        Self.withIsolatedAPIKey(provider)
 
         let manager = DefaultLLMManager()
         try manager.register(provider)
@@ -125,16 +128,7 @@ struct MiniMaxRefreshReproductionTests {
         let apiService = VendorAPIService(networkProvider: StubNetwork(Data(remoteOnly.utf8)))
         let provider = MiniMaxOpenAIProvider(apiService: apiService, modelListCache: store)
 
-        let storageKey = provider.providerInfo.apiKeyStorageKey
-        let previousKey = VendorAPIKeyTools.get(storageKey: storageKey)
-        VendorAPIKeyTools.set("test-key", storageKey: storageKey)
-        defer {
-            if previousKey.isEmpty {
-                VendorAPIKeyTools.remove(storageKey: storageKey)
-            } else {
-                VendorAPIKeyTools.set(previousKey, storageKey: storageKey)
-            }
-        }
+        Self.withIsolatedAPIKey(provider)
 
         try await provider.refreshModels()
         #expect(provider.availableModels.count == MiniMaxVendorModels.all.count + 9,

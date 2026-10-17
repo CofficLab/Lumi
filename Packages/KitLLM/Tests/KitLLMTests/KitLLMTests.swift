@@ -2,6 +2,32 @@ import Foundation
 import Testing
 @testable import KitLLM
 
+/// 流式回调的线程安全收集器。
+///
+/// `StreamingAccumulator.consume` 的 `onChunk` 是 `@Sendable` 闭包，
+/// 测试不能在闭包里直接改捕获的 `var`（Swift 6 并发检查会拒绝）。
+private final class StreamSink: @unchecked Sendable {
+    private let lock = NSLock()
+    private var contentValue = ""
+    private var reasoningValue = ""
+
+    var content: String {
+        lock.lock(); defer { lock.unlock() }
+        return contentValue
+    }
+
+    var reasoning: String {
+        lock.lock(); defer { lock.unlock() }
+        return reasoningValue
+    }
+
+    func append(_ chunk: LLMStreamChunk) {
+        lock.lock(); defer { lock.unlock() }
+        if let reasoning = chunk.reasoningContent { reasoningValue += reasoning }
+        if let content = chunk.content { contentValue += content }
+    }
+}
+
 @MainActor
 struct KitLLMTests {
 
@@ -149,7 +175,7 @@ struct KitLLMTests {
             configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://example.com")
         )
         let event = "data: {\"choices\":[],\"usage\":{\"input_tokens\":12,\"output_tokens\":8}}\n\n"
-        let chunk = try adapter.parseStreamChunk(data: Data(event.utf8))
+        let chunk = try adapter.parseStreamChunks(data: Data(event.utf8)).first
 
         #expect(chunk?.inputTokens == 12)
         #expect(chunk?.outputTokens == 8)
@@ -161,7 +187,7 @@ struct KitLLMTests {
             configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://example.com")
         )
         let event = "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n"
-        let chunk = try adapter.parseStreamChunk(data: Data(event.utf8))
+        let chunk = try adapter.parseStreamChunks(data: Data(event.utf8)).first
 
         #expect(chunk?.stopReason == "stop")
     }
@@ -175,13 +201,186 @@ struct KitLLMTests {
         data: {"choices":[{"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":123,"completion_tokens":17,"prompt_cache_hit_tokens":100,"prompt_cache_miss_tokens":23}}
 
         """
-        let chunk = try adapter.parseStreamChunk(data: Data(event.utf8))
+        let chunk = try adapter.parseStreamChunks(data: Data(event.utf8)).first
 
         #expect(chunk?.inputTokens == 123)
         #expect(chunk?.outputTokens == 17)
         #expect(chunk?.cachedInputTokens == 100)
         #expect(chunk?.cacheTotalInputTokens == 123)
         #expect(chunk?.stopReason == "stop")
+    }
+
+    // MARK: - Interleaved thinking（思考与正文同 delta）
+
+    @Test("同一 delta 同时含思考与正文时两者都保留，不丢弃正文")
+    func openAIAdapterKeepsContentWhenInterleavedWithReasoning() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://api.minimaxi.com/v1")
+        )
+        let event = """
+        data: {"id":"x","choices":[{"index":0,"delta":{"role":"assistant","reasoning_content":"让我想想","content":"最终答案"}}],"model":"MiniMax-M3.1-Flash-Preview"}
+
+        """
+        let chunks = try adapter.parseStreamChunks(data: Data(event.utf8))
+
+        #expect(chunks.count == 2)
+
+        let thinking = chunks.first { $0.eventType == .thinkingDelta }
+        let text = chunks.first { $0.eventType == .textDelta }
+
+        // 回归的核心断言：正文曾因优先返回思考而被静默丢弃，
+        // 导致累积器 content 恒空、AgentLoop 判为「模型返回空响应」。
+        #expect(thinking?.content == "让我想想")
+        #expect(text?.content == "最终答案")
+    }
+
+    @Test("interleaved thinking 累积后正文非空，思考与正文各自完整")
+    func openAIAdapterAccumulatorPreservesInterleavedContent() async throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://api.minimaxi.com/v1")
+        )
+        let events = [
+            """
+            data: {"choices":[{"index":0,"delta":{"reasoning_content":"思考 A"}}],"model":"MiniMax-M3.1-Flash-Preview"}
+
+            """,
+            """
+            data: {"choices":[{"index":0,"delta":{"reasoning_content":"思考 B","content":"正文 A"}}],"model":"MiniMax-M3.1-Flash-Preview"}
+
+            """,
+            """
+            data: {"choices":[{"index":0,"delta":{"content":"正文 B"}}],"model":"MiniMax-M3.1-Flash-Preview"}
+
+            """,
+            "data: [DONE]\n\n",
+        ]
+
+        let accumulator = StreamingAccumulator()
+        // onChunk 是 @Sendable 闭包，用引用累加器收集，避免在并发闭包里改 var。
+        let sink = StreamSink()
+        for event in events {
+            for chunk in try adapter.parseStreamChunks(data: Data(event.utf8)) {
+                let keepGoing = await accumulator.consume(chunk) { piece in
+                    sink.append(piece)
+                }
+                if !keepGoing { break }
+            }
+        }
+        let response = try await accumulator.finish(model: "MiniMax-M3.1-Flash-Preview")
+
+        #expect(response.content == "正文 A正文 B")
+        #expect(response.reasoningContent == "思考 A思考 B")
+        // 流式回调侧收到的内容与最终响应一致：思考与正文都没有被丢弃。
+        #expect(sink.content == "正文 A正文 B")
+        #expect(sink.reasoning == "思考 A思考 B")
+        // 正文非空即满足 AgentLoop 的空响应判定。
+        #expect(!response.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    }
+
+    @Test("仅思考无正文时仍产出思考事件，且不伪造正文")
+    func openAIAdapterEmitsThinkingOnlyChunk() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://api.minimaxi.com/v1")
+        )
+        let event = """
+        data: {"choices":[{"index":0,"delta":{"reasoning_content":"只有思考"}}],"model":"MiniMax-M3.1-Flash-Preview"}
+
+        """
+        let chunks = try adapter.parseStreamChunks(data: Data(event.utf8))
+
+        #expect(chunks.count == 1)
+        #expect(chunks.first?.eventType == .thinkingDelta)
+        #expect(chunks.first?.content == "只有思考")
+    }
+
+    @Test("正文与工具调用同 delta 时优先保留正文增量")
+    func openAIAdapterPrefersTextOverToolCallsInSameDelta() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://example.com")
+        )
+        let event = """
+        data: {"choices":[{"index":0,"delta":{"content":"我先看看","tool_calls":[{"id":"call-1","type":"function","function":{"name":"read_file","arguments":"{}","index":0}]}}]}
+
+        """
+        let chunks = try adapter.parseStreamChunks(data: Data(event.utf8))
+
+        #expect(chunks.count == 1)
+        #expect(chunks.first?.eventType == .textDelta)
+        #expect(chunks.first?.content == "我先看看")
+    }
+
+    @Test("带正文与 finish_reason 的 delta 同时保留正文与结束信号")
+    func openAIAdapterKeepsContentWithFinishReason() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://example.com")
+        )
+        let event = """
+        data: {"choices":[{"index":0,"delta":{"content":"收尾正文"},"finish_reason":"stop"}],"usage":{"prompt_tokens":9,"completion_tokens":3}}
+
+        """
+        let chunks = try adapter.parseStreamChunks(data: Data(event.utf8))
+
+        #expect(chunks.count == 1)
+        #expect(chunks.first?.eventType == .textDelta)
+        #expect(chunks.first?.content == "收尾正文")
+        #expect(chunks.first?.stopReason == "stop")
+        #expect(chunks.first?.outputTokens == 3)
+    }
+
+    @Test("无任何增量的空 delta 不产出 chunk")
+    func openAIAdapterSkipsEmptyDelta() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://example.com")
+        )
+        let event = "data: {\"id\":\"x\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\"}}],\"usage\":null}\n\n"
+
+        let chunks = try adapter.parseStreamChunks(data: Data(event.utf8))
+
+        #expect(chunks.isEmpty)
+    }
+
+    @Test("返回空 chunk 的网关配置保持既有行为")
+    func openAIAdapterKeepsEmptyChunkFallback() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(
+                baseURL: "https://example.com",
+                returnsEmptyChunkWhenNoDelta: true
+            )
+        )
+        let event = "data: {\"choices\":[{\"index\":0,\"delta\":{}}]}\n\n"
+
+        let chunks = try adapter.parseStreamChunks(data: Data(event.utf8))
+
+        #expect(chunks.count == 1)
+        #expect(chunks.first?.eventType == .textDelta)
+        #expect(chunks.first?.content == "")
+    }
+
+    @Test("工具调用事件仍产出可累积的 chunk")
+    func openAIAdapterStillParsesToolCallDeltas() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://example.com")
+        )
+        let event = """
+        data: {"choices":[{"index":0,"delta":{"tool_calls":[{"id":"call-1","type":"function","function":{"name":"read_file","arguments":"{}","index":0}]}}]}
+
+        """
+        let chunks = try adapter.parseStreamChunks(data: Data(event.utf8))
+
+        #expect(chunks.count == 1)
+        #expect(chunks.first?.toolCalls?.first?.name == "read_file")
+    }
+
+    @Test("[DONE] 事件产出终止 chunk")
+    func openAIAdapterParsesDoneMarker() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://example.com")
+        )
+
+        let chunks = try adapter.parseStreamChunks(data: Data("data: [DONE]\n\n".utf8))
+
+        #expect(chunks.count == 1)
+        #expect(chunks.first?.isDone == true)
     }
 
     @Test("OpenAI 兼容请求过滤授权占位并去重旧工具结果")
@@ -402,6 +601,24 @@ struct KitLLMTests {
         #expect(VendorAPIKeyTools.get(storageKey: "test-key") == "sk-test-123")
         VendorAPIKeyTools.remove(storageKey: "test-key")
         #expect(!VendorAPIKeyTools.has(storageKey: "test-key"))
+    }
+
+    @Test("测试进程忘记隔离 service 时重定向，不写生产 Keychain")
+    func testProcessRedirectsProductionService() {
+        let previousService = VendorAPIKeyTools.keychainService
+        defer { VendorAPIKeyTools.keychainService = previousService }
+
+        // 模拟「调用方忘了改 service」：仍为正式值。
+        VendorAPIKeyTools.keychainService = "com.coffic.lumi.apikey"
+        let redirected = VendorAPIKeyTools.effectiveService
+
+        #expect(redirected != "com.coffic.lumi.apikey",
+                "测试进程下必须重定向，否则会写进用户真实 Keychain")
+        #expect(redirected.hasPrefix("com.coffic.lumi.apikey.xctest."))
+
+        // 已自行隔离的调用方不受重定向，service 原样透传。
+        VendorAPIKeyTools.keychainService = "com.kit.llm.test.custom"
+        #expect(VendorAPIKeyTools.effectiveService == "com.kit.llm.test.custom")
     }
 
     @Test("完整 Keychain 查询遇到一次 not-found 后会重试并恢复 Key")
