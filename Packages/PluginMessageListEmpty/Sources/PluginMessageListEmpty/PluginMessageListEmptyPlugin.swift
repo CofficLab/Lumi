@@ -58,6 +58,17 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
     }
     private var registrationState: RegistrationState = .evaluating
 
+    /// Slot id of the bottom activity strip. Derived from the plugin id so the
+    /// two slots stay namespaced together.
+    private var activityItemID: String { "\(id).activity" }
+
+    /// Data source for the activity strip.
+    ///
+    /// Held here rather than built inside the item closure: the model is
+    /// `@Observable`, so it must have a stable owner to keep its loaded window
+    /// across view rebuilds.
+    private var activityModel: EmptyStateActivityViewModel?
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -75,7 +86,8 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         let services = MessageListEmptyServices(
             project: project,
             promptSuggestions: promptSuggestions,
-            promptSuggestionExecutor: promptSuggestionExecutor
+            promptSuggestionExecutor: promptSuggestionExecutor,
+            messages: messages
         )
         let toolbarCoordinator = NoConversationSelectedToolbarCoordinator(
             project: project,
@@ -92,6 +104,7 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         self.messages = messages
         self.services = services
         self.guideState = guideState
+        self.activityModel = EmptyStateActivityViewModel(messages: messages)
 
         selectedConversationObserver = conversations?.addSelectedConversationObserver { [weak self] conversationID in
             self?.updateSelection(conversationID)
@@ -133,8 +146,10 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
 
         if isRegistered {
             chat?.removeItem(id: id)
+            chat?.removeItem(id: activityItemID)
             isRegistered = false
         }
+        activityModel = nil
         guideState?.toolbarCoordinator.deactivate()
         guideState = nil
         services = nil
@@ -249,7 +264,29 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
                     guard let services, let guideState else { return AnyView(EmptyView()) }
                     return AnyView(MessageListEmptyContentView(services: services, guideState: guideState))
                 }
-            )
+            ),
+            // The activity strip is a separate bottom-fixed slot rather than a
+            // child of the empty-state view, because the empty state centers its
+            // content in a scroll view and a footer would be pushed off-screen
+            // on short windows.
+            //
+            // - Important: bottomFixed items do not join the `message-list`
+            //   exclusive group, so visibility must be gated by `isActive`
+            //   alone. Reusing `shouldRenderEmptyState` is what keeps the strip
+            //   from appearing under a conversation that has messages.
+            ChatSectionItem(
+                id: activityItemID,
+                order: order,
+                placement: .bottomFixed,
+                showsTrailingDivider: false,
+                isActive: { @MainActor [weak self] in
+                    self?.shouldRenderEmptyState ?? false
+                },
+                content: { [weak activityModel] in
+                    guard let activityModel else { return AnyView(EmptyView()) }
+                    return AnyView(ActivityFooterView(model: activityModel))
+                }
+            ),
         ])
         isRegistered = true
     }
