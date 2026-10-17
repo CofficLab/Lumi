@@ -41,6 +41,7 @@ public final class PluginMessageListStandardPlugin: SuperPlugin, SuperLog {
     private var conversationObserver: (any ConversationObserverHandle)?
     private var developerModeObserver: DeveloperModeStateObserver?
     private var verbosityObservation: VerbosityObservationBox?
+    private var uiTestingSeedHandle: (any ConversationObserverHandle)?
 
     public init() {}
 
@@ -126,6 +127,17 @@ public final class PluginMessageListStandardPlugin: SuperPlugin, SuperLog {
                 viewModel?.refreshConversationSettingsIfNeeded()
             }
         }
+
+        // - Important: 整段（含 seed 调用与句柄赋值）必须在 `#if DEBUG` 内，
+        //   否则 Release 下会引用只在 DEBUG 定义的类型而编译失败。
+        #if DEBUG
+        if MessageListStandardUITestingSupport.isEnabled, let conversations, let messages {
+            uiTestingSeedHandle = MessageListStandardUITestingSupport.seed(
+                conversations: conversations,
+                messages: messages
+            )
+        }
+        #endif
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -141,6 +153,12 @@ public final class PluginMessageListStandardPlugin: SuperPlugin, SuperLog {
         conversationObserver = nil
         verbosityObservation?.cancel()
         verbosityObservation = nil
+        // - Important: 属性声明本身在 Release 下合法（仅恒为 nil），
+        //   但释放调用同样放入 DEBUG 守卫，保持与定义面一致。
+        #if DEBUG
+        uiTestingSeedHandle?.cancel()
+        uiTestingSeedHandle = nil
+        #endif
         developerModeObserver?.cancel()
         developerModeObserver = nil
         viewModel = nil

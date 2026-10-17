@@ -130,6 +130,18 @@ class LumiUITestCase: XCTestCase {
             .firstMatch
     }
 
+    /// label 或 value **包含**指定片段的元素。
+    ///
+    /// 用于文案带动态后缀的场景（如「执行了3个步骤 · 5秒」），
+    /// 或需要用稳定前缀定位会话标题 / 消息正文。
+    func element(containingLabel fragment: String) -> XCUIElement {
+        app.descendants(matching: .any)
+            .matching(
+                NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", fragment, fragment)
+            )
+            .firstMatch
+    }
+
     /// 在输入框里输入文本并发送。
     ///
     /// ## 为什么走剪贴板而不是 `typeText`
