@@ -501,3 +501,253 @@ struct MessageManagerPaginationDeleteTests {
         #expect(fetched?.toolCalls?.first?.authorizationState == "userApproved")
     }
 }
+
+/// 复现：**用户已授权/已拒绝的工具调用，重新打开消息列表又出现授权界面。**
+///
+/// ## 渲染层的复现判据
+///
+/// 授权卡片由 `ToolApprovalRowRenderer.canRender` 决定是否渲染，条件是：
+///
+/// ```
+/// authorizationState == "pendingAuthorization"
+/// && (result == nil || result.awaitingUserResponse == true)
+/// ```
+///
+/// 因此**只要消息里还留着「等待授权的占位结果 + pendingAuthorization」，
+/// 每次重新进入会话都会重新弹出授权界面**——`authorizationState` 缺失（nil）
+/// 与 `pendingAuthorization` 在这里等价。
+///
+/// ## 这一层要锁住什么
+///
+/// `MessageStore.updateToolCalls` 是 toolCalls 的**唯一覆盖写入口**，
+/// 而 `MessageManager.updateToolCallResult` 是它唯一的调用方之一。
+/// 只要「用户已决定」这件事在这一层被可靠持久化，重新打开会话就一定
+/// 不会再次要求授权。
+///
+/// - Note: 本组用例锁定的是**持久化层的正确性**（当前应通过）。
+///   真正丢失授权状态的是上游 —— `AgentLoopManager.handleAuthorizedToolCompletion`
+///   的 guard 会静默 return，根本不调用 `updateToolCallResult`，
+///   那由 `ToolAuthorizationPersistenceTests`（PluginAgentLoop）复现。
+@MainActor
+@Suite("MessageManager 工具授权状态持久化")
+struct MessageManagerToolAuthorizationTests {
+    private func makeStore(
+        _ tag: String
+    ) throws -> (MessageStore, URL) {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MessageManagerAuth-\(tag)-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return (try MessageStore(databaseRootURL: directory), directory)
+    }
+
+    private func makeManager(store: MessageStore?) -> MessageManager {
+        MessageManager(
+            store: store,
+            dataDirectory: URL(fileURLWithPath: NSTemporaryDirectory())
+        )
+    }
+
+    /// 轮询等待 `updateToolCallResult` 的后台覆盖写落到磁盘。
+    ///
+    /// - Important: 必须等**目标字段**出现，不能只等「消息里有 toolCalls」。
+    ///   覆盖写是异步的，过早读到的仍是 insert 时的初始快照，
+    ///   会把「授权状态丢失」误判成缺陷。
+    private func waitForToolCall(
+        _ store: MessageStore,
+        messageID: UUID,
+        toolCallID: String,
+        matching predicate: (MessageToolCall) -> Bool,
+        timeoutIterations: Int = 200
+    ) async throws -> MessageToolCall? {
+        var last: MessageToolCall?
+        for _ in 0..<timeoutIterations {
+            let call = store.fetchMessage(id: messageID)?
+                .toolCalls?
+                .first { $0.id == toolCallID }
+            if let call {
+                last = call
+                if predicate(call) { return call }
+            }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        return last
+    }
+
+    /// 一条处于「等待授权」形态的 assistant 消息。
+    ///
+    /// 与 `executeBatch(.requireApprovalForHighRisk)` 命中
+    /// `needsUserResponse` 后落库的真实形态一致。
+    private func pendingApprovalMessage(
+        conversationID: UUID,
+        toolCallID: String
+    ) -> Message {
+        Message(
+            conversationID: conversationID,
+            role: .assistant,
+            content: "",
+            createdAt: Date(),
+            toolCalls: [
+                MessageToolCall(
+                    id: toolCallID,
+                    name: "write_file",
+                    arguments: #"{"path":"/tmp/a.txt"}"#,
+                    result: MessageToolResult(
+                        content: #"{"toolCallId":"approval:\#(toolCallID)","kind":"permission","question":"是否允许？","options":["允许","拒绝"],"mode":"yes_no"}"#,
+                        awaitingUserResponse: true,
+                        interactionState: .waiting
+                    ),
+                    authorizationState: "pendingAuthorization"
+                )
+            ]
+        )
+    }
+
+    /// 用户点了「允许」后重开消息列表，不应再次要求授权。
+    ///
+    /// 这是「授权界面重新出现」在持久化层的**正向判据**：
+    /// 落库正确 ⇒ 重新打开读到的状态不满足 `canRender` 的两个条件。
+    @Test("用户允许后重新打开会话，不再显示授权界面")
+    func approvalIsNotPendingAfterReopen() async throws {
+        let (store, directory) = try makeStore("approve")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let conversationID = UUID()
+        let toolCallID = "call-approve"
+        let assistant = pendingApprovalMessage(
+            conversationID: conversationID,
+            toolCallID: toolCallID
+        )
+        manager.insertMessage(assistant, to: conversationID)
+
+        manager.updateToolCallResult(
+            MessageToolResult(content: "file written"),
+            toolCallID: toolCallID,
+            assistantMessageID: assistant.id,
+            in: conversationID,
+            authorizationState: "userApproved"
+        )
+        let approved = try await waitForToolCall(
+            store,
+            messageID: assistant.id,
+            toolCallID: toolCallID,
+            matching: { $0.authorizationState == "userApproved" }
+        )
+        #expect(approved?.authorizationState == "userApproved")
+
+        // 重新打开会话：新建 MessageManager 走磁盘读取路径。
+        let reopened = MessageManager(
+            store: try MessageStore(databaseRootURL: directory),
+            dataDirectory: URL(fileURLWithPath: NSTemporaryDirectory())
+        )
+        let call = reopened.messages(for: conversationID)
+            .first { $0.id == assistant.id }?
+            .toolCalls?
+            .first { $0.id == toolCallID }
+
+        // canRender 的两个条件都必须不成立。
+        #expect(call?.authorizationState != "pendingAuthorization")
+        #expect(call?.result?.awaitingUserResponse == false)
+    }
+
+    /// 用户点了「拒绝」后重开消息列表，同样不应再次要求授权。
+    ///
+    /// 拒绝没有「工具实际执行」带来的结果刷新，因此它是最容易只写一次、
+    /// 之后被别处覆盖写抹掉的形态。
+    @Test("用户拒绝后重新打开会话，不再显示授权界面")
+    func rejectionIsNotPendingAfterReopen() async throws {
+        let (store, directory) = try makeStore("reject")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let conversationID = UUID()
+        let toolCallID = "call-reject"
+        let assistant = pendingApprovalMessage(
+            conversationID: conversationID,
+            toolCallID: toolCallID
+        )
+        manager.insertMessage(assistant, to: conversationID)
+
+        manager.updateToolCallResult(
+            MessageToolResult(
+                content: "Tool execution was rejected by the user.",
+                isError: true
+            ),
+            toolCallID: toolCallID,
+            assistantMessageID: assistant.id,
+            in: conversationID,
+            authorizationState: "userRejected"
+        )
+        let rejected = try await waitForToolCall(
+            store,
+            messageID: assistant.id,
+            toolCallID: toolCallID,
+            matching: { $0.authorizationState == "userRejected" }
+        )
+        #expect(rejected?.authorizationState == "userRejected")
+
+        let reopened = MessageManager(
+            store: try MessageStore(databaseRootURL: directory),
+            dataDirectory: URL(fileURLWithPath: NSTemporaryDirectory())
+        )
+        let call = reopened.messages(for: conversationID)
+            .first { $0.id == assistant.id }?
+            .toolCalls?
+            .first { $0.id == toolCallID }
+
+        #expect(call?.authorizationState == "userRejected")
+        #expect(call?.result?.awaitingUserResponse == false)
+        #expect(call?.result?.isError == true)
+    }
+
+    /// 只更新结果、不带 `authorizationState` 的覆盖写，不能把已决定的授权状态抹掉。
+    ///
+    /// `MessageStore.updateToolCalls` 是**整体替换** toolCalls 数组的。
+    /// `MessageManager.updateToolCallResult` 在 `authorizationState == nil`
+    /// 时保留原值，因此这里锁住「空状态不等于回退到未授权」这条语义，
+    /// 避免后续重构把 `if let` 简化掉。
+    @Test("仅覆盖结果不会把已决定的授权状态清回未授权")
+    func overwritingResultKeepsResolvedAuthorizationState() async throws {
+        let (store, directory) = try makeStore("overwrite")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let conversationID = UUID()
+        let toolCallID = "call-approve-then-overwrite"
+        let assistant = pendingApprovalMessage(
+            conversationID: conversationID,
+            toolCallID: toolCallID
+        )
+        manager.insertMessage(assistant, to: conversationID)
+
+        manager.updateToolCallResult(
+            MessageToolResult(content: "file written"),
+            toolCallID: toolCallID,
+            assistantMessageID: assistant.id,
+            in: conversationID,
+            authorizationState: "userApproved"
+        )
+        _ = try await waitForToolCall(
+            store,
+            messageID: assistant.id,
+            toolCallID: toolCallID,
+            matching: { $0.authorizationState == "userApproved" }
+        )
+
+        // 结果从别处（ToolManager 记录恢复 / 渲染层 resolve）被再次覆盖写，
+        // 快照没有携带 authorizationState。
+        manager.updateToolCallResult(
+            MessageToolResult(content: "file written (refreshed)"),
+            toolCallID: toolCallID,
+            assistantMessageID: assistant.id,
+            in: conversationID,
+            authorizationState: nil
+        )
+        let overwritten = try await waitForToolCall(
+            store,
+            messageID: assistant.id,
+            toolCallID: toolCallID,
+            matching: { $0.result?.content == "file written (refreshed)" }
+        )
+
+        #expect(overwritten?.result?.content == "file written (refreshed)")
+        #expect(overwritten?.authorizationState == "userApproved")
+    }
+}
