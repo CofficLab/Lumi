@@ -19,6 +19,7 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../ProviderMessageStreaming"),
+        .package(path: "../ProviderLifecycleHooks"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
@@ -39,11 +40,17 @@ let package = Package(
         ], resources: [.process("../../Resources/Localizable.xcstrings")]),
         .testTarget(name: "PluginMessageListBriefTests", dependencies: [
             "PluginMessageListBrief",
-            .product(name: "ProviderMessage", package: "ProviderMessage"),
+            .product(name: "KernelCore", package: "LumiKernel"),
+            .product(name: "LumiUI", package: "LumiUI"),
             .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+            .product(name: "ProviderChatSection", package: "ProviderChatSection"),
             .product(name: "ProviderConversation", package: "ProviderConversation"),
             .product(name: "ProviderConversationState", package: "ProviderConversationState"),
+            .product(name: "ProviderDeveloperMode", package: "LumiProviders"),
+            .product(name: "ProviderMessage", package: "ProviderMessage"),
+            .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
             .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
+            .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
         ]),
     ]
 )
