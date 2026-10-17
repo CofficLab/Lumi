@@ -43,7 +43,6 @@ struct DefaultRootHostView: View {
             .ignoresSafeArea()
         #endif
         .id(observationRevision)
-        .debugViewBadge("Root Host")
         .onAppear {
             guard observerHandle == nil else { return }
             observerHandle = provider.addRootViewObserver { event in
