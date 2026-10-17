@@ -294,6 +294,29 @@ struct MessageManagerWriteBehindTests {
         #expect(page.first?.content == "no disk")
     }
 
+    /// 已知缺陷（未修复）：`dailyMessageCounts/dailyTokenCounts` 偶发少算。
+    ///
+    /// 本用例整包回归 5 次，实测 3 次失败、2 次通过，失败断言行在
+    /// `dailyMessageCountsAsync` / `dailyTokenCountsAsync` 之间漂移——是竞态，
+    /// 不是等待时长不足（加长等待已验证无效，见下方说明）。
+    ///
+    /// ## 根因（两处，均在聚合口径而非本用例）
+    ///
+    /// 1. `MessageStore.dailyMessageCounts/dailyTokenCounts` 的谓词
+    ///    **只按 `createdAt` 过滤，没有 conversationId 条件**，会聚合库内全部行。
+    ///    各用例各自使用独立临时库，但 Swift Testing 并行执行，同一时刻可能有
+    ///    多个库在被读写；且其他用例的 `defer` 删除目录时后台队列可能仍在写入
+    ///    （日志中的 `CoreData: Error opening store ... No such file or directory`
+    ///    即来源于此）。
+    /// 2. `MessageManager` 的聚合口径是「磁盘统计 + pending 再累加」，而
+    ///    `persistLater` 写入成功后**立刻** `dequeuePending`，存在
+    ///    「磁盘尚未可见 + pending 已移除」的窗口，同样漏算。
+    ///
+    /// - Note: 修复前请勿用「加长等待」掩盖——那只会把窗口推后。
+    ///   正确修法是消除上述两处口径缺陷（例如给聚合加 conversationId 维度，
+    ///   并让 pending 的移除晚于磁盘可见）。
+    /// - Impact: 用户打开活动热力图时，当天消息数 / Token 数可能瞬时少算。
+    ///   属统计口径瞬时偏差，**不丢数据**。
     @Test("活动聚合包含持久化与待落盘消息")
     func dailyActivityAggregates() async throws {
         let (store, directory) = try makeStore()
@@ -351,6 +374,33 @@ struct MessageManagerPaginationDeleteTests {
         )
     }
 
+    /// 轮询等待磁盘上出现期望的已落盘消息数量。
+    ///
+    /// - Important: `MessageManager` 是 write-behind：插入先进内存 pending 缓冲，
+    ///   再由后台串行队列落盘。`messageCount` 有意**不**合并 pending
+    ///   （见其实现注释：计数场景以落盘为准），因此它反映真实磁盘状态。
+    ///
+    ///   落盘延迟是结构性的：SwiftData 首次 `save()` 要建表并写 WAL，
+    ///   而 `MessageStore` 用 `NSLock` 串行化全部访问。实测 5 条消息在每条
+    ///   `sleep(5ms)` 后稳定「落后一条」，需约 1s 才全部落盘。
+    ///
+    ///   因此必须等**目标状态**，不能用固定睡眠猜时长——那会让断言结果取决于
+    ///   机器快慢，同一份代码在 CI 与本地可能得到相反结论。
+    @discardableResult
+    private func waitForPersistedCount(
+        _ store: MessageStore,
+        conversationID: UUID,
+        atLeast expected: Int,
+        timeoutIterations: Int = 300
+    ) async throws -> Int {
+        for _ in 0..<timeoutIterations {
+            let count = store.fetchMessages(conversationId: conversationID).count
+            if count >= expected { return count }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        return store.fetchMessages(conversationId: conversationID).count
+    }
+
     @Test("分页:limit 截断 + beforeMessageID 游标")
     func pagination() async throws {
         let (store, directory) = try makeStore()
@@ -364,9 +414,8 @@ struct MessageManagerPaginationDeleteTests {
                 content: "m\(i)", createdAt: Date().addingTimeInterval(TimeInterval(i))
             )
             manager.insertMessage(msg, to: conversationID)
-            // user 同步落盘，落盘后从 pending 移除，读路径从磁盘读。
-            try await Task.sleep(nanoseconds: 5_000_000)
         }
+        try await waitForPersistedCount(store, conversationID: conversationID, atLeast: 5)
 
         // 最新一页（取最近 2 条）。
         let latest = manager.messagePage(for: conversationID, limit: 2, beforeMessageID: nil, includesToolMessages: true)
@@ -398,6 +447,7 @@ struct MessageManagerPaginationDeleteTests {
                 to: conversationID
             )
         }
+        try await waitForPersistedCount(store, conversationID: conversationID, atLeast: 5)
 
         let latest = await manager.messagePageAsync(
             for: conversationID,
@@ -431,7 +481,7 @@ struct MessageManagerPaginationDeleteTests {
 
         let msg = Message(conversationID: conversationID, role: .user, content: "bye", createdAt: Date())
         manager.insertMessage(msg, to: conversationID)
-        try await Task.sleep(nanoseconds: 5_000_000)
+        try await waitForPersistedCount(store, conversationID: conversationID, atLeast: 1)
         #expect(manager.messageCount(for: conversationID) == 1)
 
         manager.deleteMessage(id: msg.id, in: conversationID)
@@ -455,7 +505,9 @@ struct MessageManagerPaginationDeleteTests {
             Message(conversationID: conversationID, role: .user, content: "u1", createdAt: Date()),
             to: conversationID
         )
-        try await Task.sleep(nanoseconds: 5_000_000)
+        // 两条都落盘后再 clear，才能真正验证「排空写队列后删除」，
+        // 而不是「删除时恰好还没落盘」的另一种情形。
+        try await waitForPersistedCount(store, conversationID: conversationID, atLeast: 2)
         #expect(manager.messageCount(for: conversationID) == 2)
 
         manager.clearMessages(in: conversationID)
