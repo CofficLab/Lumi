@@ -21,8 +21,7 @@ struct LumiSidebarExpectation {
 ///   比改成 `abstract class` 可靠——Swift 没有 `abstract class` 关键字，
 ///   而让基类脱离 `XCTestCase` 又会丢掉 `setUp`/`tearDown` 的调度能力。
 @MainActor
-class LumiLocalizationUITestCase: XCTestCase {
-    var app: XCUIApplication!
+class LumiLocalizationUITestCase: LumiUITestCase {
     var language: String { "en" }
     var locale: String { "en_US" }
     /// 本类是否被具体子类覆盖了 `expected`。
@@ -32,6 +31,7 @@ class LumiLocalizationUITestCase: XCTestCase {
     var expected: LumiSidebarExpectation { fatalError("Override per language") }
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication()
         app.terminate()
@@ -39,29 +39,17 @@ class LumiLocalizationUITestCase: XCTestCase {
             "-ApplePersistenceIgnoreState", "YES",
             "-AppleLanguages", "(\(language))",
             "-AppleLocale", locale,
+            // 隔离存储：等价全新安装，断言结果不取决于本机插件启用态。
+            "--lumi-ui-testing-isolated-storage",
         ]
         app.launch()
+        // 隔离存储下引导会重新出现，可能盖住设置窗口，先关掉。
+        dismissOnboardingIfPresent()
     }
 
     override func tearDownWithError() throws {
-        // 等 App 真正退出：terminate() 是异步的，不等会让「上一个用例还在退出」
-        // 漂移成「下一个用例偶发失败」。本类继承 XCTestCase，故内联实现。
-        if app.state != .notRunning {
-            app.terminate()
-            let stopped = NSPredicate(
-                format: "state == %d",
-                XCUIApplication.State.notRunning.rawValue
-            )
-            _ = XCTWaiter().wait(
-                for: [XCTNSPredicateExpectation(predicate: stopped, object: app)],
-                timeout: 10
-            )
-        }
+        terminateAppAndWait()
         try super.tearDownWithError()
-    }
-
-    func element(identifier: String) -> XCUIElement {
-        app.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 
     func button(label: String) -> XCUIElement {

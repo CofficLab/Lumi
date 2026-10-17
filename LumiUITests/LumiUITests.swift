@@ -1,19 +1,28 @@
 import XCTest
 
-final class LumiUITests: XCTestCase {
-    private var app: XCUIApplication!
-
+/// 主窗口与设置窗口的基础 UI 测试。
+///
+/// - Important: 必须带 `--lumi-ui-testing-isolated-storage`。它把数据根目录
+///   重定向到临时目录（见 `KernelFactory.uiTestingDataRootDirectory()`），
+///   等价于全新安装态：不读用户真实数据库，测试之间也不互相污染。
+///   缺了它，`testGeneralSettingsShowsAppInformation` 里「新手引导」入口的
+///   断言会取决于**本机引导是否跑过**——干净 CI 机器上必然失败。
+final class LumiUITests: LumiUITestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
+        super.setUpWithError()
         app = XCUIApplication()
         // 先终止上一次运行残留的实例：Lumi 启动慢，若上一测试的进程未完全退出，
         // launch() 会复用处于 Background 的旧实例，导致 activation 失败。
         app.terminate()
+        try super.setUpWithError()
         // 禁用 macOS 窗口状态恢复，避免上一次运行的残留窗口干扰测试。
         app.launchArguments += [
             "-ApplePersistenceIgnoreState", "YES",
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_US",
+            // 隔离存储：等价全新安装，不依赖本机插件启用态 / 会话数据。
+            "--lumi-ui-testing-isolated-storage",
         ]
         app.launch()
         // 注意：不要在 launch() 后立即 activate()。Lumi 启动较慢（240 个本地包），
@@ -23,34 +32,16 @@ final class LumiUITests: XCTestCase {
 
     override func tearDownWithError() throws {
         // 等 App 真正退出：terminate() 是异步的，不等会让「上一个用例还在退出」
-        // 漂移成「下一个用例偶发失败」。本类继承 XCTestCase，故内联实现。
-        if app.state != .notRunning {
-            app.terminate()
-            let stopped = NSPredicate(
-                format: "state == %d",
-                XCUIApplication.State.notRunning.rawValue
-            )
-            _ = XCTWaiter().wait(
-                for: [XCTNSPredicateExpectation(predicate: stopped, object: app)],
-                timeout: 10
-            )
-        }
+        // 漂移成「下一个用例偶发失败」。
+        terminateAppAndWait()
         try super.tearDownWithError()
-    }
-
-    func element(identifier: String) -> XCUIElement {
-        app.descendants(matching: .any).matching(identifier: identifier).firstMatch
-    }
-
-    func element(anyLabelOf labels: [String]) -> XCUIElement {
-        app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label IN %@ OR value IN %@", labels, labels))
-            .firstMatch
     }
 
     @discardableResult
     func openSettings() -> XCUIElement {
         XCTAssertTrue(element(identifier: "root.main").waitForExistence(timeout: 20), "主窗口未就绪")
+        // 隔离存储下引导会被标记为「未完成」，可能浮在窗口上，先关掉。
+        dismissOnboardingIfPresent()
         // AppIconButton 的 AX label 是系统图标名 "Gear Shape"。
         let gear = app.buttons["Gear Shape"]
         XCTAssertTrue(gear.waitForExistence(timeout: 10), "工具栏缺少设置按钮")

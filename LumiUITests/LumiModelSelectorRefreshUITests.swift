@@ -36,6 +36,8 @@ final class LumiModelSelectorRefreshUITests: XCTestCase {
             "-AppleLocale", "en_US",
             // MiniMax 刷新走桩网络（固定 9 模型），见 MiniMaxUITestingSupport。
             "--lumi-ui-testing",
+            // 隔离存储：否则本地 models.json 的真实条目会污染「刷新后 9 个模型」的计数断言。
+            "--lumi-ui-testing-isolated-storage",
         ]
         app.launch()
     }
