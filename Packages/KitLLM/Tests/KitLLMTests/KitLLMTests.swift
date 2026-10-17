@@ -126,6 +126,88 @@ struct KitLLMTests {
         #expect(info.providerType.displayName == "中转站")
     }
 
+    // MARK: - reasoning_effort 档位
+
+    @Test("基础档位对所有 OpenAI 兼容供应商都透传")
+    func openAIAdapterSendsBaseReasoningEffort() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://example.com")
+        )
+        for effort in ["minimal", "low", "medium", "high"] {
+            let body = try adapter.buildStreamingRequestBody(
+                messages: [LLMMessage(role: .user, content: "hi")],
+                model: "some-model",
+                tools: nil,
+                systemPrompt: "",
+                config: LLMConfig(model: "some-model", providerId: "test", reasoningEffort: effort)
+            )
+            #expect(body["reasoning_effort"] as? String == effort, "档位 \(effort) 应当透传")
+        }
+    }
+
+    @Test("未声明的额外档位不下发，避免上游返回 400")
+    func openAIAdapterDropsUndeclaredReasoningEffort() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://example.com")
+        )
+        for effort in ["xhigh", "max"] {
+            let body = try adapter.buildStreamingRequestBody(
+                messages: [LLMMessage(role: .user, content: "hi")],
+                model: "some-model",
+                tools: nil,
+                systemPrompt: "",
+                config: LLMConfig(model: "some-model", providerId: "test", reasoningEffort: effort)
+            )
+            // `reasoning_effort` 合法值因供应商而异：未知档位会让上游 400，
+            // 且 400 不可重试，因此未声明时必须整条参数不下发。
+            #expect(body["reasoning_effort"] == nil, "未声明的档位 \(effort) 不应下发")
+        }
+    }
+
+    @Test("供应商声明的额外档位正常下发（MiniMax 支持 xhigh / max）")
+    func openAIAdapterSendsDeclaredExtraReasoningEffort() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(
+                baseURL: "https://api.minimaxi.com/v1/chat/completions",
+                additionalReasoningEfforts: ["xhigh", "max"]
+            )
+        )
+        for effort in ["xhigh", "max"] {
+            let body = try adapter.buildStreamingRequestBody(
+                messages: [LLMMessage(role: .user, content: "hi")],
+                model: "MiniMax-M3.1-Flash-Preview",
+                tools: nil,
+                systemPrompt: "",
+                config: LLMConfig(model: "MiniMax-M3.1-Flash-Preview", providerId: "minimax", reasoningEffort: effort)
+            )
+            #expect(body["reasoning_effort"] as? String == effort, "档位 \(effort) 应当下发")
+        }
+    }
+
+    @Test("档位归一化忽略大小写与空白，并拒绝 auto")
+    func reasoningEffortNormalization() {
+        #expect(OpenAICompatibleGenerationOptionsApplier.normalizedReasoningEffort(" HIGH ") == "high")
+        #expect(OpenAICompatibleGenerationOptionsApplier.normalizedReasoningEffort("auto") == nil)
+        #expect(OpenAICompatibleGenerationOptionsApplier.normalizedReasoningEffort("automatic") == nil)
+        #expect(OpenAICompatibleGenerationOptionsApplier.normalizedReasoningEffort(nil) == nil)
+        #expect(OpenAICompatibleGenerationOptionsApplier.normalizedReasoningEffort("bogus") == nil)
+    }
+
+    @Test("额外档位声明在构造时归一化为小写")
+    func additionalReasoningEffortsAreNormalized() {
+        let configuration = OpenAICompatibleProviderConfiguration(
+            baseURL: "https://example.com",
+            additionalReasoningEfforts: ["XHigh", "  MAX  ", ""]
+        )
+        #expect(configuration.additionalReasoningEfforts == ["xhigh", "max"])
+
+        let body = OpenAICompatibleGenerationOptionsApplier.normalizedReasoningEffort(
+            "XHIGH",
+            additionalReasoningEfforts: configuration.additionalReasoningEfforts
+        )
+        #expect(body == "xhigh")
+    }
+
     @Test("VendorAPIError 错误描述")
     func errorDescriptions() {
         let missing = VendorAPIError.missingAPIKey("TestProvider")

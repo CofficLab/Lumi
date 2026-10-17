@@ -126,6 +126,7 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
         OpenAICompatibleGenerationOptionsApplier.apply(
             config: makeConfig(model: model, request: request),
             model: model,
+            additionalReasoningEfforts: configuration.additionalReasoningEfforts,
             to: &body
         )
         nonisolated(unsafe) let finalBody = body

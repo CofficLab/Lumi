@@ -95,7 +95,12 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             tools: tools,
             systemPrompt: systemPrompt
         )
-        OpenAICompatibleGenerationOptionsApplier.apply(config: config, model: model, to: &body)
+        OpenAICompatibleGenerationOptionsApplier.apply(
+            config: config,
+            model: model,
+            additionalReasoningEfforts: configuration.additionalReasoningEfforts,
+            to: &body
+        )
         return body
     }
 
