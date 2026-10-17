@@ -9,10 +9,14 @@ import KitMail
 /// - `onShutdown` 全断（插件卸载/退出时释放连接）。
 public actor MailSessionManager {
     private let factory: any MailSessionFactory
+    private let accountStore: MailAccountStore
     private var sessions: [UUID: any MailSessionServing] = [:]
 
-    public init(factory: any MailSessionFactory = MailCoreAdapterFactory()) {
-        self.factory = factory
+    public init(
+        factory: any MailSessionFactory = MailCoreAdapterFactory(),
+        accountStore: MailAccountStore
+    ) {        self.factory = factory
+        self.accountStore = accountStore
     }
 
     /// 返回已连接会话；不存在或已断开则创建并连接。
@@ -21,7 +25,7 @@ public actor MailSessionManager {
         if let existing = sessions[account.id] {
             return existing
         }
-        guard let password = MailAccountStore.password(for: account.id) else {
+        guard let password = accountStore.password(for: account.id) else {
             throw MailError.authFailed
         }
         let session = try await factory.makeSession(account: account, password: password)

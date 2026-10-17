@@ -10,6 +10,7 @@ public struct MailSettingsView: View {
     @LumiTheme private var theme: any LumiUITheme
 
     private let sessionManager: MailSessionManager
+    private let accountStore: MailAccountStore
 
     /// 当前展示的编辑草稿（非 nil 时展示表单）。
     @State private var editingDraft: MailAccountDraft?
@@ -20,8 +21,9 @@ public struct MailSettingsView: View {
     @State private var testingAccountID: UUID?
     @State private var errorMessage: String?
 
-    public init(sessionManager: MailSessionManager) {
+    public init(sessionManager: MailSessionManager, accountStore: MailAccountStore) {
         self.sessionManager = sessionManager
+        self.accountStore = accountStore
     }
 
     public var body: some View {
@@ -140,7 +142,7 @@ public struct MailSettingsView: View {
     // MARK: - 操作
 
     private func reloadAccounts() {
-        accounts = MailAccountStore.loadAccounts()
+        accounts = accountStore.loadAccounts()
     }
 
     private func beginAdding() {
@@ -152,15 +154,15 @@ public struct MailSettingsView: View {
         editingAccountID = account.id
         editingDraft = MailAccountDraft(
             config: account,
-            password: MailAccountStore.password(for: account.id)
+            password: accountStore.password(for: account.id)
         )
     }
 
     private func save(_ draft: MailAccountDraft) {
         let id = editingAccountID ?? UUID()
         let config = draft.toConfig(id: id)
-        MailAccountStore.upsertAccount(config)
-        MailAccountStore.setPassword(draft.password, for: id)
+        accountStore.upsertAccount(config)
+        accountStore.setPassword(draft.password, for: id)
         // 若编辑了已连接账户的凭据/主机，断开以强制下次重建会话。
         Task {
             await sessionManager.disconnect(accountID: id)
@@ -171,7 +173,7 @@ public struct MailSettingsView: View {
     }
 
     private func delete(_ account: MailAccountConfig) {
-        MailAccountStore.deleteAccount(id: account.id)
+        accountStore.deleteAccount(id: account.id)
         Task {
             await sessionManager.disconnect(accountID: account.id)
         }
@@ -182,7 +184,7 @@ public struct MailSettingsView: View {
         testingAccountID = account.id
         errorMessage = nil
         defer { testingAccountID = nil }
-        guard let password = MailAccountStore.password(for: account.id) else {
+        guard let password = accountStore.password(for: account.id) else {
             errorMessage = "未找到该账户的密码，请先编辑并保存密码。"
             return
         }

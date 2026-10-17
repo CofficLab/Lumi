@@ -9,22 +9,25 @@ public actor MailAgentToolService {
     private let sessionManager: MailSessionManager
     private let cache: MailCacheService
     private let composer: MailComposerService
+    private let accountStore: MailAccountStore
 
     public init(
         sessionManager: MailSessionManager,
         cache: MailCacheService,
-        composer: MailComposerService
+        composer: MailComposerService,
+        accountStore: MailAccountStore
     ) {
         self.sessionManager = sessionManager
         self.cache = cache
         self.composer = composer
+        self.accountStore = accountStore
     }
 
     // MARK: - 账户
 
     /// 列出账户（无凭据信息）。默认选中第一个账户的 INBOX。
     public func listAccounts() -> String {
-        let accounts = MailAccountStore.loadAccounts()
+        let accounts = accountStore.loadAccounts()
         guard !accounts.isEmpty else {
             return "没有可用的邮件账户。请先在「设置 → 邮件」添加账户。"
         }
@@ -157,7 +160,7 @@ public actor MailAgentToolService {
     // MARK: - 私有
 
     private func accountFor(_ accountID: UUID?) throws -> MailAccountConfig {
-        let accounts = MailAccountStore.loadAccounts()
+        let accounts = accountStore.loadAccounts()
         if let id = accountID {
             if let account = accounts.first(where: { $0.id == id }) {
                 return account
