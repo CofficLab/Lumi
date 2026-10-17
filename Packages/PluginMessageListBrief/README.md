@@ -132,6 +132,11 @@ The card sits below all turns, at the very bottom of the list.
 | 8.4 | Open a conversation with a very large number of turns | Scrolling stays responsive and no turn is duplicated or skipped across page boundaries. | 🔧 `MessageListServicesTests.refreshTail*` + `MessageListTailRefreshGate` |
 | 8.5 | Send a message immediately after switching conversations | The new message attaches to the conversation you are now looking at, and no pending scroll from the previous conversation interferes. | ✅ `ListPresentationTests.rapidConversationSwitchingIsSafe` |
 
+## TestPlan
+
+完整测试计划（公开 API、行为契约、51 条自动化用例 + 18 条人工验收场景）见
+[`Tests/TestPlan.md`](Tests/TestPlan.md)。
+
 ## Automated test entry points
 
 ```bash
