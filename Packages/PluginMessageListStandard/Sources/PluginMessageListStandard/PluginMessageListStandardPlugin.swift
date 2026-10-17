@@ -90,6 +90,7 @@ public final class PluginMessageListStandardPlugin: SuperPlugin, SuperLog {
             conversations: conversations,
             chat: chat,
             pluginID: id,
+            order: order,
             expectedVerbosity: .standard,
             makeView: { [weak viewModel, services] in
                 guard let viewModel else { return AnyView(EmptyView()) }
