@@ -114,14 +114,17 @@ private struct BadgeOverflowLayout: Layout {
         let visualSize = rotatedBoundsSize(layoutSize)
 
         // 按视觉包围盒计算对齐目标点。
+        // 目标中心 = 对齐边起点 + 半个视觉尺寸；`ax`/`ay` 只决定"对齐到哪条边"，
+        // 不参与中心偏移。若误乘 (0.5 - ax)，则仅在 ax == 0.5 时恰好抵消，
+        // 贴边对齐（ax/ay 为 0 或 1）会被额外推离对齐边半个身位。
         let anchor = unitPoint(for: alignment)
         let ax = anchor.x
         let ay = anchor.y
         let dx = bounds.width - visualSize.width
         let dy = bounds.height - visualSize.height
         let targetCenter = CGPoint(
-            x: bounds.minX + dx * ax + (0.5 - ax) * visualSize.width,
-            y: bounds.minY + dy * ay + (0.5 - ay) * visualSize.height
+            x: bounds.minX + dx * ax + 0.5 * visualSize.width,
+            y: bounds.minY + dy * ay + 0.5 * visualSize.height
         )
 
         // `place(at:anchor:)` 的 anchor 相对子视图自身的布局框，
