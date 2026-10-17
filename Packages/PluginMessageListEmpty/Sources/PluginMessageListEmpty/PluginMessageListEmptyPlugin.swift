@@ -60,7 +60,11 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
 
     /// Slot id of the bottom activity strip. Derived from the plugin id so the
     /// two slots stay namespaced together.
-    private var activityItemID: String { "\(id).activity" }
+    ///
+    /// Not `private`: 测试要断言注册进 ChatSection 的完整 item 集合，包含
+    /// 这条 activity strip。保持 internal 让测试复用同一个派生规则，
+    /// 避免在测试里硬编码 `"\(id).activity"` 而与实现悄悄脱钩。
+    var activityItemID: String { "\(id).activity" }
 
     /// Data source for the activity strip.
     ///

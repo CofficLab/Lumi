@@ -17,7 +17,9 @@ import Testing
     let plugin = PluginMessageListEmptyPlugin()
 
     try plugin.onBoot(kernel: kernel)
-    #expect(chat.items.map(\.id) == [plugin.id])
+    // 插件常驻注册两个槽位：空态本体 + 底部 activity strip（a362063f1 新增）。
+    let expectedItemIDs = [plugin.id, plugin.activityItemID]
+    #expect(chat.items.map(\.id) == expectedItemIDs)
     #expect(chat.items.first?.exclusiveGroup == "message-list")
     #expect(chat.items.first?.fillsRemainingHeight == true)
 
@@ -29,11 +31,11 @@ import Testing
         to: firstID
     )
     await settleRegistrationEvaluation()
-    #expect(chat.items.map(\.id) == [plugin.id])
+    #expect(chat.items.map(\.id) == expectedItemIDs)
 
     messages.insertMessage(Message(conversationID: selectedID, role: .tool, content: "Tool output"), to: selectedID)
     await settleRegistrationEvaluation()
-    #expect(chat.items.map(\.id) == [plugin.id])
+    #expect(chat.items.map(\.id) == expectedItemIDs)
 
     let visibleMessageID = UUID()
     messages.insertMessage(Message(id: visibleMessageID, conversationID: selectedID, role: .user, content: "Hello"), to: selectedID)
@@ -56,7 +58,7 @@ import Testing
     #expect(chat.isEmptyStateRendering)
 
     conversations.deselectConversation()
-    #expect(chat.items.map(\.id) == [plugin.id])
+    #expect(chat.items.map(\.id) == expectedItemIDs)
 
     try plugin.onShutdown(kernel: kernel)
     #expect(chat.items.isEmpty)
@@ -93,7 +95,7 @@ private extension DefaultChatSectionProviding {
 
     try plugin.onBoot(kernel: kernel)
 
-    #expect(chat.items.map(\.id) == [plugin.id])
+    #expect(chat.items.map(\.id) == [plugin.id, plugin.activityItemID])
     try plugin.onShutdown(kernel: kernel)
     #expect(chat.items.isEmpty)
 }
