@@ -249,14 +249,22 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             body: body
         ) { data in
             do {
-                var chunk = try adapter.parseStreamChunk(data: data)
-                if let reverseMap, !reverseMap.isEmpty, let toolCalls = chunk?.toolCalls {
-                    chunk = chunk?.withToolCalls(
-                        toolCalls.map { ToolCall(id: $0.id, name: reverseMap[$0.name] ?? $0.name, arguments: $0.arguments) }
-                    )
+                var parsed = try adapter.parseStreamChunks(data: data)
+                if let reverseMap, !reverseMap.isEmpty {
+                    parsed = parsed.map { chunk in
+                        guard let toolCalls = chunk.toolCalls else { return chunk }
+                        return chunk.withToolCalls(
+                            toolCalls.map { ToolCall(id: $0.id, name: reverseMap[$0.name] ?? $0.name, arguments: $0.arguments) }
+                        )
+                    }
                 }
-                guard let chunk else { return true }
-                return await accumulator.consume(chunk, onChunk: onChunk)
+                // 单个 SSE 事件可产出多个 chunk（思考与正文同 delta 时的
+                // interleaved thinking 形态），必须逐个喂给累积器；
+                // 只要有任一 chunk 请求终止，就停止读取后续事件。
+                for chunk in parsed {
+                    guard await accumulator.consume(chunk, onChunk: onChunk) else { return false }
+                }
+                return true
             } catch {
                 accumulator.fail(error)
                 return false

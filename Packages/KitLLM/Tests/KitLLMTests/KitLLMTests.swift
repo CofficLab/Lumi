@@ -8,12 +8,14 @@ import Testing
 /// 测试不能在闭包里直接改捕获的 `var`（Swift 6 并发检查会拒绝）。
 private final class StreamSink: @unchecked Sendable {
     private let lock = NSLock()
-    private var contentValue = ""
     private var reasoningValue = ""
+    private var textOnlyValue = ""
 
-    var content: String {
+    /// 思考事件会同时带 `content` 与 `reasoningContent`（下游分别消费两个字段），
+    /// 因此「纯正文」只统计不带 `reasoningContent` 的事件。
+    var textOnly: String {
         lock.lock(); defer { lock.unlock() }
-        return contentValue
+        return textOnlyValue
     }
 
     var reasoning: String {
@@ -24,8 +26,34 @@ private final class StreamSink: @unchecked Sendable {
     func append(_ chunk: LLMStreamChunk) {
         lock.lock(); defer { lock.unlock() }
         if let reasoning = chunk.reasoningContent { reasoningValue += reasoning }
-        if let content = chunk.content { contentValue += content }
+        if chunk.reasoningContent == nil, let content = chunk.content {
+            textOnlyValue += content
+        }
     }
+}
+
+/// 构造一条 SSE 事件。
+///
+/// 用 `JSONSerialization` 而不是手写字符串：工具调用 delta 里的
+/// `function.arguments` 本身是一段 JSON 字符串，手写极易漏转义或
+/// 数错括号，而这类夹具错误会让解析器在测试里"复现"出与生产无关的假故障。
+private func sseEvent(_ payload: [String: Any]) -> String {
+    let data = try! JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])
+    let json = String(decoding: data, as: UTF8.self)
+    return "data: \(json)\n\n"
+}
+
+/// 一条标准的 OpenAI 兼容 `tool_calls` delta。
+private func toolCallFixture() -> [String: Any] {
+    [
+        "id": "call-1",
+        "type": "function",
+        "function": [
+            "name": "read_file",
+            "arguments": #"{"k":"v"}"#,
+            "index": 0,
+        ],
+    ]
 }
 
 @MainActor
@@ -271,7 +299,7 @@ struct KitLLMTests {
         #expect(response.content == "正文 A正文 B")
         #expect(response.reasoningContent == "思考 A思考 B")
         // 流式回调侧收到的内容与最终响应一致：思考与正文都没有被丢弃。
-        #expect(sink.content == "正文 A正文 B")
+        #expect(sink.textOnly == "正文 A正文 B")
         #expect(sink.reasoning == "思考 A思考 B")
         // 正文非空即满足 AgentLoop 的空响应判定。
         #expect(!response.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -298,10 +326,18 @@ struct KitLLMTests {
         let adapter = OpenAICompatibleProviderAdapter(
             configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://example.com")
         )
-        let event = """
-        data: {"choices":[{"index":0,"delta":{"content":"我先看看","tool_calls":[{"id":"call-1","type":"function","function":{"name":"read_file","arguments":"{}","index":0}]}}]}
+        let event = sseEvent([
+            "choices": [
+                [
+                    "index": 0,
+                    "delta": [
+                        "content": "我先看看",
+                        "tool_calls": [toolCallFixture()],
+                    ],
+                ],
+            ],
+        ])
 
-        """
         let chunks = try adapter.parseStreamChunks(data: Data(event.utf8))
 
         #expect(chunks.count == 1)
@@ -361,10 +397,15 @@ struct KitLLMTests {
         let adapter = OpenAICompatibleProviderAdapter(
             configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://example.com")
         )
-        let event = """
-        data: {"choices":[{"index":0,"delta":{"tool_calls":[{"id":"call-1","type":"function","function":{"name":"read_file","arguments":"{}","index":0}]}}]}
+        let event = sseEvent([
+            "choices": [
+                [
+                    "index": 0,
+                    "delta": ["tool_calls": [toolCallFixture()]],
+                ],
+            ],
+        ])
 
-        """
         let chunks = try adapter.parseStreamChunks(data: Data(event.utf8))
 
         #expect(chunks.count == 1)
