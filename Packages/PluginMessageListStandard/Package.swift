@@ -53,6 +53,7 @@ let package = Package(
             .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
             .product(name: "ProviderProject", package: "LumiProviders"),
             .product(name: "ProviderToolbar", package: "LumiProviders"),
+            .product(name: "ProviderDeveloperMode", package: "LumiProviders"),
         ]),
     ]
 )
