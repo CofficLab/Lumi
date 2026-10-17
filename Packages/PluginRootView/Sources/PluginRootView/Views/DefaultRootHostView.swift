@@ -22,7 +22,8 @@ struct DefaultRootHostView: View {
             HStack(spacing: 0) {
                 if let activityBarView = provider.activityBarView {
                     activityBarView
-                        .debugViewBadge("Activity Bar", alignment: .bottomLeading)
+                        // ActivityBar 仅 48pt 宽，横向 badge 会被裁切，故竖排展示。
+                        .debugViewBadge("Activity Bar", alignment: .bottomLeading, rotationDegrees: 90)
                 }
 
                 WorkbenchSplitView(provider: provider)
