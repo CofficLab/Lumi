@@ -17,6 +17,8 @@ public struct ProviderDetailView: View {
     @ObservedObject private var viewModel: ProviderDetailViewModel
     @State private var isEditorPresented = false
     @State private var isDeleteConfirmationPresented = false
+    /// API Key 是否以明文展示（仅本地 UI 状态，不落盘）。
+    @State private var isAPIKeyRevealed = false
 
     init(viewModel: ProviderDetailViewModel) {
         self.viewModel = viewModel
@@ -113,10 +115,25 @@ public struct ProviderDetailView: View {
                     description: "配置访问凭证",
                     icon: "key"
                 ) {
-                    SecureField("输入 API Key", text: $viewModel.apiKey)
+                    HStack(spacing: 6) {
+                        Group {
+                            if isAPIKeyRevealed {
+                                TextField("输入 API Key", text: $viewModel.apiKey)
+                            } else {
+                                SecureField("输入 API Key", text: $viewModel.apiKey)
+                            }
+                        }
                         .textFieldStyle(.plain)
                         .font(.appBody)
-                        .frame(width: 280)
+                        .frame(width: 260)
+
+                        AppIconButton(
+                            systemImage: isAPIKeyRevealed ? "eye.slash" : "eye"
+                        ) {
+                            isAPIKeyRevealed.toggle()
+                        }
+                        .help(isAPIKeyRevealed ? "隐藏 API Key" : "显示 API Key")
+                    }
                 }
 
                 Divider()
