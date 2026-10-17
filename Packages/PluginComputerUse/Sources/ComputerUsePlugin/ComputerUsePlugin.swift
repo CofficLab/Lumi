@@ -4,12 +4,13 @@ import KernelCore
 import ProviderMessage
 import ProviderSettingView
 import ProviderRootView
+import ProviderStorage
 import ProviderToolManager
 import LumiLoggingKit
 import os
 
 @MainActor
-public final class ComputerUsePlugin: SuperPlugin, SuperLog {
+public final class ComputerUsePlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.computer-use", category: "ComputerUse")
     public let id = "com.coffic.lumi.plugin.computer-use"
     public let order = 278
@@ -22,12 +23,46 @@ public final class ComputerUsePlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
+    /// 历史实现把授权白名单存在 `UserDefaults.standard`，未使用插件专属目录。
+    /// 目录名未变过，无需版本根搬迁。
+    public let legacyDataDirectoryNames: [String] = []
+
     private var settingsState: ComputerUseSettingsState?
     private var activationObserver: ApplicationActivationObserver?
 
     public init() {}
 
+    /// 把 `UserDefaults.standard` 中的旧授权白名单并入插件专属存储。
+    ///
+    /// 只在目标 plist 尚无记录时导入，避免覆盖用户在插件内的后续修改。
+    /// `UserDefaults` 内的原 key 保留，便于回退。
+    public func migrateData(context: PluginDataMigrationContext) throws {
+        let legacyKey = "ComputerUse.nativeAllowedBundleIdentifiers"
+        let legacyAllowedKey = "ComputerUse.alwaysAllowedBundleIdentifiers"
+        guard let defaults = UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? "") else {
+            return
+        }
+        let nativeValues = (defaults[legacyKey] as? [String]) ?? []
+        let allowedValues = (defaults[legacyAllowedKey] as? [String]) ?? []
+        guard !nativeValues.isEmpty || !allowedValues.isEmpty else { return }
+
+        let store = ComputerUseAuthorizationStore(dataDirectory: context.currentPluginDataDirectory)
+        if !nativeValues.isEmpty, store.allowedBundleIdentifiers().isEmpty, store.isNativeAllowed(nativeValues[0]) == false {
+            for bundleIdentifier in nativeValues {
+                store.setNativeAllowed(true, bundleIdentifier: bundleIdentifier)
+            }
+            Self.logger.info("\(Self.t)Imported \(nativeValues.count) native authorization entries from UserDefaults")
+        }
+        for bundleIdentifier in allowedValues {
+            store.setAllowed(true, bundleIdentifier: bundleIdentifier)
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
+        // 存储目录注入必须早于 ComputerUseAuthorizationStore.shared 的首次访问。
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            ComputerUseRuntime.configure(settingsDirectory: storage.pluginDataDirectory(for: id))
+        }
         let settingsState = ComputerUseSettingsState()
         self.settingsState = settingsState
         let tools = kernel.resolveProvider((any ToolManagerProviding).self)

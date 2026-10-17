@@ -29,6 +29,7 @@ let package = Package(
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
