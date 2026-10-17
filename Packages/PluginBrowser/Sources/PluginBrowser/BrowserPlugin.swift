@@ -26,7 +26,7 @@ public final class BrowserPlugin: SuperPlugin, SuperLog {
         description: "Control web browser for viewing and interacting with web pages.",
         category: .integration,
         stage: .preview,
-        policy: .alwaysOn
+        policy: .disabledByDefault
     )
 
     public init() {}
