@@ -4,11 +4,13 @@ import ProviderLLMManager
 import SwiftUI
 
 enum TextActionsSettings {
-    static let enabledKey = "TextActions.enabled"
-    static var isEnabled: Bool { UserDefaults.standard.bool(forKey: enabledKey) }
+    /// 配置落盘在插件专属目录（Binary Plist），不再使用 UserDefaults。
+    static var isEnabled: Bool {
+        TextActionsPluginLocalStore.shared.isEnabled
+    }
 
     @MainActor static func setEnabled(_ enabled: Bool) {
-        UserDefaults.standard.set(enabled, forKey: enabledKey)
+        TextActionsPluginLocalStore.shared.setEnabled(enabled)
         if enabled {
             TextSelectionManager.shared.startMonitoring()
         } else {

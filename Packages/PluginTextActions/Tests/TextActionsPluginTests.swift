@@ -1,4 +1,5 @@
 import AppKit
+import Foundation
 import Testing
 @testable import TextActionsPlugin
 
@@ -9,6 +10,42 @@ func pluginMetadata() {
     #expect(plugin.id == "com.coffic.lumi.plugin.text-actions")
     #expect(plugin.metadata.name == pluginLocalization.string("Text Actions"))
     #expect(plugin.metadata.category == .system)
+}
+
+@Test
+func localStorePersistsEnabledFlagInBinaryPlist() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("TextActionsStore-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let store = TextActionsPluginLocalStore(settingsDirectory: directory)
+    #expect(!store.isEnabled)
+
+    store.setEnabled(true)
+    #expect(store.isEnabled)
+
+    // 重新构造实例，确认已落盘而非仅在内存中生效。
+    let reloaded = TextActionsPluginLocalStore(settingsDirectory: directory)
+    #expect(reloaded.isEnabled)
+
+    let plistURL = directory.appendingPathComponent("settings.plist")
+    let data = try Data(contentsOf: plistURL)
+    var format = PropertyListSerialization.PropertyListFormat.xml
+    _ = try PropertyListSerialization.propertyList(from: data, options: [], format: &format)
+    #expect(format == .binary)
+}
+
+@Test
+func localStoreWritesNoUserDefaults() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("TextActionsStore-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    UserDefaults.standard.removeObject(forKey: "TextActions.enabled")
+    let store = TextActionsPluginLocalStore(settingsDirectory: directory)
+    store.setEnabled(true)
+
+    #expect(UserDefaults.standard.object(forKey: "TextActions.enabled") == nil)
 }
 
 @Test
