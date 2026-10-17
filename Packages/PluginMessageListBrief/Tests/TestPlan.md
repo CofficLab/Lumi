@@ -66,72 +66,71 @@ PluginMessageListBrief 是消息列表 V1（Brief 模式）的实现包。它按
 
 | ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
 |----|------|------|----------|----------|----------|------|------|----------|
-| 1 | 加载 | §1.1 activate 期间 `isLoading == true`，结束后 `isLoading == false` | 已选中会话 | 调 `activate` | `isLoading` 先 true 后 false | P0 | ✅ 已覆盖 | `loadingStateDuringActivate` |
-| 2 | 加载 | §1.1 conversations 未选中该会话时 activate 被 guard 挡下 | 未选中目标会话 | 调 `activate` | `isLoading` 保持 false | P1 | ✅ 已覆盖 | `activateGuardedWhenNotSelected` |
-| 3 | 翻页 | §1.4 完整消息序列短于一页时 `hasEarlierTurns == false` | 消息数 < pageSize | 加载首页 | `hasEarlierTurns == false`，无 Load earlier 按钮 | P0 | ✅ 已覆盖 | `loadEarlierHiddenWhenPageFits` |
-| 4 | 翻页 | §1.4 历史超过一页时 `hasEarlierTurns` 为 true | 消息数 > pageSize | 加载首页 | `hasEarlierTurns == true` | P0 | ✅ 已覆盖 | `loadEarlierVisibleWhenHistoryExceedsPage` |
-| 5 | 会话切换 | §1.5 切换到另一个会话后旧数据被清空 | 已加载会话 A | 切换到会话 B | rows / activity / isLoading 全部清空 | P0 | ✅ 已覆盖 | `switchConversationClearsState` |
-| 6 | Turn 布局 | §2.1/§2.2 finished turn 包含 user、process、last 三段且 user 恰好一条 | 含完整 turn 的消息序列 | 投影 | user 恰好 1 条；process 含 tool/system；last 为 assistant 回复 | P0 | ✅ 已覆盖 | `finishedTurnLayout` |
-| 7 | Turn 布局 | §2.3 同一时间线里两条 user 消息各属于一个 turn 不会合并 | 两条 user 消息 | 投影 | 两个独立 turn | P0 | ✅ 已覆盖 | `twoUserMessagesRemainSeparateTurns` |
-| 8 | Turn 布局 | §2.4/§2.5 tool 与 system 不会进入 process / last 投影 | 含 tool result + system 消息 | 投影 | process 不含 tool result；last 不含 system | P0 | ✅ 已覆盖 | `toolAndSystemRowsAreHidden` |
-| 9 | Turn 布局 | §2.5 failed turn 仍然把 error 消息作为 last 渲染 | turn 末尾为 error 消息 | 投影 | `lastMessage` 为 error 消息 | P1 | ✅ 已覆盖 | `failedTurnSurfacesErrorAsLastMessage` |
-| 10 | Turn 布局 | §2.7 流式回合进行中 `lastMessage` 为 nil | 回合仍在 streaming | 投影 | `lastMessage == nil` | P0 | ✅ 已覆盖 | `streamingTurnHasNoLastMessage` |
-| 11 | Turn 布局 | §2.8 空回复（仅有占位符）回合不暴露 `lastMessage` | turn 无实质回复 | 投影 | `lastMessage == nil` | P1 | ✅ 已覆盖 | `emptyReplyTurnHidesLastMessage` |
-| 12 | Disclosure | §3.2 完成回合的 disclosure 标题显示步骤数与耗时 | turn 有 3 个 tool call | 构建摘要 | 标题含「执行了3个步骤」和耗时 | P0 | ✅ 已覆盖 | `finishedDisclosureTitleShowsStepsAndDuration` |
-| 13 | Disclosure | §3.3 没有工具调用时步骤数回退到 process 消息数 | turn 无 tool call 但有 process 消息 | 构建摘要 | 步骤数 == process 消息数 | P1 | ✅ 已覆盖 | `disclosureFallsBackToProcessCount` |
-| 14 | Disclosure | §3.6 运行中回合的 disclosure 标题使用运行标签 | turn 仍在运行 | 构建摘要 | 标题使用「正在…」标签 | P1 | ✅ 已覆盖 | `runningDisclosureTitleUsesRunningLabel` |
-| 15 | Turn VM | AgentTurnVM 发布 projection 变化 | 构造 VM + 注入消息 | 更新消息 | projection 属性通知观察者 | P1 | ✅ 已覆盖 | `agentTurnVMPublishesProjectionChanges` |
-| 16 | Turn VM | 活动工具调用留在 process disclosure 内 | turn 正在执行工具 | 检查投影 | tool call 出现在 processMessages 中 | P0 | ✅ 已覆盖 | `activeToolCallStaysInsideProcessDisclosure` |
-| 17 | Turn VM | 待处理与已记录 turn 保持稳定的列表身份 | pending + recorded turn | 检查 ID | 两者身份不因状态变化而改变 | P1 | ✅ 已覆盖 | `pendingAndRecordedTurnKeepStableListIdentity` |
-| 18 | 状态 VM | ConversationStateVM 只接受选中会话的活动投影 | 选中会话 A，向 B 推送 activity | 推 activity | B 的 activity 被忽略 | P0 | ✅ 已覆盖 | `conversationStateVMAcceptsOnlySelectedConversation` |
-| 19 | Compaction | §2.6 真实 context compaction 事件被收集为 timelineEvent；预热事件不展示 | 含 compaction + 预热事件 | 加载 | timelineEvents 仅含真实 compaction | P1 | ✅ 已覆盖 | `contextCompactionTimelineEvents` |
-| 20 | 翻页 | §4.4 历史耗尽后重复触发 `loadEarlier` 返回 nil 不再插入 | 已到顶部 | 连续调 `loadEarlier` | 返回 nil，rows 不变 | P0 | ✅ 已覆盖 | `loadEarlierDoesNotDuplicateWhenReentrant` |
-| 21 | 翻页 | §4.5 翻页到顶后 `hasEarlierTurns` 翻转为 false 且行不重复 | 连续翻页到耗尽 | 翻页 | `hasEarlierTurns == false`，无重复行 | P0 | ✅ 已覆盖 | `loadEarlierHidesButtonWhenExhausted` |
-| 22 | 状态卡 | §6.7/§6.9 agent loop 端态后 activity projection 为 nil | activity 非空 → 端态 | 推 `.completed` / `.failed` / `.cancelled` | activity == nil | P0 | ✅ 已覆盖 | `activityClearedOnTerminalState` |
-| 23 | 状态卡 | §6.8 切换到非选中会话后该会话的 activity 不会进入 stateVM | 向非选中会话推 activity | 推 activity | stateVM 的 activity 不变 | P0 | ✅ 已覆盖 | `activityIsolatedPerSelectedConversation` |
-| 24 | 状态卡 | §6.3 缺 detail 时 detail 字符串使用 `" "` 占位 | activity 无 detail | 读 detailText | 返回 `" "`（单空格，非空串） | P1 | ✅ 已覆盖 | `detailPlaceholderIsSingleSpace` |
-| 25 | 边界 | §8.1 空对话激活后 `isLoading == false`，列表为空 | 空对话 | `activate` | `isLoading == false`、rows 为空 | P0 | ✅ 已覆盖 | `emptyConversationLoadsCleanly` |
-| 26 | 边界 | §8.2 整段对话能放进一页时 `hasEarlierTurns == false` | 消息恰好填满一页 | 加载 | `hasEarlierTurns == false` | P1 | ✅ 已覆盖 | `singlePageConversationHasNoEarlier` |
-| 27 | 边界 | §8.5 快速切换会话后旧会话的加载任务不会泄漏到新会话 | 快速连续切换 3 个会话 | 切换 | 旧会话的 Task 被取消，新会话数据干净 | P0 | ✅ 已覆盖 | `rapidConversationSwitchingIsSafe` |
-| 28 | 活动投影 | 流式思考阶段映射为思考活动 | activity phase = `.streaming` + kind = `.thinking` | 投影 | title = `正在思考…` | P0 | ✅ 已覆盖 | `streamingThinkingPhase` |
-| 29 | 活动投影 | 生成阶段映射为生成活动 | activity phase = `.streaming` + kind = `.generating` | 投影 | title = `正在生成回复…` | P0 | ✅ 已覆盖 | `generatingPhase` |
-| 30 | 活动投影 | 工具阶段展示具体工具描述 | activity 含 tool description | 投影 | detail 含工具描述文本 | P0 | ✅ 已覆盖 | `toolPhaseShowsDescription` |
-| 31 | 活动投影 | 多个工具任务显示任务数量 | activity 含 3 个并发工具 | 投影 | title = `正在执行 3 个任务` | P0 | ✅ 已覆盖 | `multipleTools` |
-| 32 | 活动投影 | 等待用户阶段不暴露工具输出 | activity phase = `.waitingForUser` | 投影 | title = `等待你的确认`，detail 不含 output | P0 | ✅ 已覆盖 | `waitingForUser` |
-| 33 | 活动投影 | 回合运行中但 activity 短暂为空时保留状态视图 | 回合 active + activity 短暂 nil | 投影 | activity 视图保留（防闪烁） | P1 | ✅ 已覆盖 | `activityPreservedDuringActiveTurn` |
-| 34 | 活动投影 | 回合暂停但 activity 短暂为空时保留等待状态 | 回合 paused + activity 短暂 nil | 投影 | 等待状态保留 | P1 | ✅ 已覆盖 | `waitingStatePreservedDuringPause` |
-| 35 | 活动投影 | 空闲阶段不显示活动视图 | 无活跃回合 | 投影 | activity == nil | P0 | ✅ 已覆盖 | `idlePhaseHidesActivity` |
-| 36 | 定位 | §5.5 post-send 锚点常量 = 视口高度的 0.75 | — | 读常量 | `targetTopFraction == 0.25`（即 contentOffset = height × 0.75） | P0 | ✅ 已覆盖 | `postSendAnchorConstant` |
-| 37 | 定位 | §5.5 post-send reserve 在无效视口高度下返回 0 | viewportHeight = 0 | 调 reserve | 返回 0 | P1 | ✅ 已覆盖 | `postSendReserveWithInvalidHeight` |
-| 38 | 定位 | 流式回合使用与内容高度无关的稳定尾部留白 | 不同内容高度 | 计算留白 | 留白值稳定 | P1 | ✅ 已覆盖 | `stableTailReserveDuringStreaming` |
-| 39 | 服务 | tail gate 第一次 run 返回真实结果，事件突发合并为尾随一次 | 首次 + 重叠调用 | 调 run | 首次返回结果；重叠调用合并为一次尾随刷新 | P1 | ✅ 已覆盖 | `tailGateFirstRunAndCoalesce` |
-| 40 | 服务 | tail gate 在 active run 期间重叠的 caller 不会插入任务 | active run 中 | 并发调用 | 不插入额外任务 | P1 | ✅ 已覆盖 | `tailGateRejectsOverlapDuringActiveRun` |
-| 41 | 服务 | §4.1 `loadFirstPage` 用 pageSize+1 探测 hasEarlier | pageSize = N | 加载 | 查询 N+1 条；溢出才返回 `hasEarlier = true` | P0 | ✅ 已覆盖 | `loadFirstPageUsesOversizedQuery` |
-| 42 | 服务 | §4.3/§4.5 `loadEarlier` 翻到顶后返回 `hasEarlierMessages = false` | 已到顶部 | 翻页 | `hasEarlierMessages == false` | P0 | ✅ 已覆盖 | `loadEarlierExhaustsAtTop` |
-| 43 | 服务 | `refreshTail` 找到重叠位置时拼接保留头部历史 | current 与新页有重叠 | 拼接 | 头部历史保留，尾部更新 | P1 | ✅ 已覆盖 | `refreshTailPreservesHeadOnOverlap` |
-| 44 | 服务 | `refreshTail` 当 current 为空时使用最新页并补查 hasEarlier | current 为空 | 刷新 | 使用最新页，补查 hasEarlier | P1 | ✅ 已覆盖 | `refreshTailUsesLatestPageWhenEmpty` |
-| 45 | 服务 | `refreshTail` 无重叠且 current 非空时返回 nil | 无重叠 + current 非空 | 刷新 | 返回 nil（避免覆盖用户位置） | P1 | ✅ 已覆盖 | `refreshTailReturnsNilWithoutOverlap` |
-| 46 | 常量 | `ScrollCoordinator` 静态常量与 README §4/§5 描述一致 | — | 读常量 | `postAppendDelayNs` / `postPrependDelayNs` / `bottomEnterTolerance` 与文档一致 | P1 | ✅ 已覆盖 | `scrollCoordinatorConstants` |
-| 47 | 常量 | `ScrollCoordinator.bottomAnchorID` 是稳定常量，UI 测试可按此定位 | — | 读常量 | 非空且稳定 | P2 | ✅ 已覆盖 | `scrollCoordinatorBottomAnchorID` |
-| 48 | UI §1 | 首次打开后列表停在底部，第一个 turn 的用户消息可见 | 夹具注入 4 个 turn | 启动 App | 用户消息「请帮我总结这段代码」出现在视口 | P0 | ✅ 已覆盖 | UI `testFirstOpenLandsAtBottom` |
-| 49 | UI §3.2 | 第 3 个 turn 的 disclosure 显示「执行了3个步骤」 | 夹具第 3 turn 有 3 个工具 | 启动 App | disclosure 标题含「执行了3个步骤」 | P0 | ✅ 已覆盖 | UI `testProcessDisclosureShowsStepCount` |
-| 50 | UI §3.4/3.5 | 点击 disclosure 展开后过程消息可见，再次点击折叠 | 夹具已渲染 | 点击 disclosure 两次 | 展开后步骤 1 可见；折叠后标题仍可再次展开 | P0 | ✅ 已覆盖 | UI `testProcessDisclosureExpandsAndCollapses` |
-| 51 | UI §6 | 空闲时底部状态卡不出现 | 夹具无活跃回合 | 启动 App + 等待稳定 | 「正在发送消息…」等标题均不存在 | P0 | ✅ 已覆盖 | UI `testBottomStatusCardIsHiddenWhenIdle` |
-
-> 说明：全部 **51 条场景**（47 单元 + 4 UI）已在 macOS 上实跑通过。
->
-> 实现中几条易错约定已在用例里显式锁定：
-> - **流式回复不入 turn**（ID 10）：`lastMessage` 在回合进行中必须为 nil，
->   否则 turn 内部会出现「半截回复」闪烁。底部状态卡是唯一进度入口。
-> - **Activity 防闪烁**（ID 33/34）：回合仍 active 但 activity 短暂为 nil 时，
->   投影保留上一个非 nil 快照，避免工具切换间状态卡消失又出现。
-> - **翻页无跳动**（ID 20/21/43）：`refreshTail` 无重叠时返回 nil 而非覆盖，
->   防止用户滚动位置被重置。`postPrependDelayNs == 50ms` 确保 SwiftUI 完成
->   布局后再调整 offset。
-> - **快速切换安全**（ID 27）：`ConversationMessageListVM` 在切换时取消旧 Task，
->   旧会话的加载结果不会泄漏到新会话的 stateVM。
-> - **detail 占位**（ID 24）：缺 detail 时使用单空格 `" "` 而非空串，
->   避免 SwiftUI `Text` 在空串时折叠为 0 高度导致布局跳动。
+| 1 | 活动投影 | 流式思考阶段映射为思考活动 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `thinking` |
+| 2 | 活动投影 | 生成阶段映射为生成活动 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `generating` |
+| 3 | 活动投影 | 工具阶段展示具体工具描述 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `executingTool` |
+| 4 | 活动投影 | 多个工具任务显示任务数量 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `multipleTools` |
+| 5 | 活动投影 | 等待用户阶段不暴露工具输出 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `waitingForUser` |
+| 6 | 活动投影 | 回合运行中但 activity 短暂为空时保留状态视图 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `runningWithoutActivity` |
+| 7 | 活动投影 | 回合暂停但 activity 短暂为空时保留等待状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `suspendedWithoutActivity` |
+| 8 | 活动投影 | 空闲阶段不显示活动视图 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `idle` |
+| 9 | Turn 布局 | finished turn 包含 user、process、last 三段且 user 恰好一条 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `finishedTurnLayout` |
+| 10 | Turn 布局 | 同一时间线里两条 user 消息各属于一个 turn 不会合并 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `twoUserMessagesRemainSeparateTurns` |
+| 11 | Turn 布局 | tool 与 system 不会进入 process / last 投影 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `toolAndSystemRowsAreHidden` |
+| 12 | Turn 布局 | failed turn 仍把 error 消息作为 last 渲染 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `failedTurnSurfacesErrorAsLastMessage` |
+| 13 | Turn 布局 | 流式回合进行中 `lastMessage` 为 nil | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `streamingTurnHasNoLastMessage` |
+| 14 | Turn 布局 | 空回复回合不暴露 `lastMessage` | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `emptyReplyTurnHidesLastMessage` |
+| 15 | Disclosure | 完成回合的 disclosure 标题显示步骤数与耗时 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `finishedDisclosureTitleShowsStepsAndDuration` |
+| 16 | Disclosure | 没有工具调用时步骤数回退到 process 消息数 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `disclosureFallsBackToProcessCount` |
+| 17 | Disclosure | 运行中回合的 disclosure 标题使用运行标签 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `runningDisclosureTitleUsesRunningLabel` |
+| 18 | Turn VM | AgentTurnVM 发布 projection 变化 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `agentTurnVMPublishesProjectionChanges` |
+| 19 | Turn VM | 活动工具调用留在 process disclosure 内 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `activeToolCallStaysInsideProcessDisclosure` |
+| 20 | Turn VM | 待处理与已记录 turn 保持稳定的列表身份 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pendingAndRecordedTurnKeepStableListIdentity` |
+| 21 | 状态 VM | ConversationStateVM 只接受选中会话的活动投影 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `conversationStateVMAcceptsOnlySelectedConversation` |
+| 22 | 加载 | activate 期间 `isLoading == true`，结束后为 false | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `loadingStateDuringActivate` |
+| 23 | 加载 | 未选中该会话时 activate 被 guard 挡下 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activateRequiresSelectedConversation` |
+| 24 | 翻页 | 消息数少于 pageSize 时 `hasEarlierTurns == false` | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `loadEarlierHiddenWhenPageFits` |
+| 25 | 翻页 | 历史超过一页时 `hasEarlierTurns` 为 true | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `loadEarlierVisibleWhenHistoryExceedsPage` |
+| 26 | 会话切换 | 切换会话后旧数据被清空 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `switchConversationClearsState` |
+| 27 | Compaction | 真实 compaction 事件被收集为 timelineEvent；预热事件不展示 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `contextCompactionTimelineEvents` |
+| 28 | 翻页 | 历史耗尽后重复触发 `loadEarlier` 不再插入 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `loadEarlierDoesNotDuplicateWhenReentrant` |
+| 29 | 翻页 | 翻页到顶后 `hasEarlierTurns` 翻转为 false 且行不重复 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `loadEarlierHidesButtonWhenExhausted` |
+| 30 | 状态卡 | agent loop 端态后 activity projection 为 nil | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `activityClearedOnTerminalState` |
+| 31 | 状态卡 | 非选中会话的 activity 不进入 stateVM | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `activityIsolatedPerSelectedConversation` |
+| 32 | 状态卡 | 缺 detail 时 detail 字符串使用单空格占位 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `detailPlaceholderIsSingleSpace` |
+| 33 | 边界 | 空对话激活后 `isLoading == false`，列表为空 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emptyConversationLoadsCleanly` |
+| 34 | 边界 | 整段对话能放进一页时 `hasEarlierTurns == false` | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `singlePageConversationHasNoEarlier` |
+| 35 | 边界 | 快速切换会话后旧会话的加载任务不会泄漏到新会话 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rapidConversationSwitchingIsSafe` |
+| 36 | 定位 | 流式回合使用与内容高度无关的稳定尾部留白 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `conservativeReserveIsStable` |
+| 37 | 服务 | tail gate 第一次 run 返回真实结果，事件突发合并为尾随一次 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tailGateCollapsesBursts` |
+| 38 | 服务 | tail gate 在 active run 期间重叠的 caller 不会插入任务 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `overlappingRunnersReturnFalse` |
+| 39 | 服务 | `loadFirstPage` 用 pageSize+1 探测 hasEarlier | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `loadFirstPageProbesEarlier` |
+| 40 | 服务 | `loadEarlier` 翻到顶后返回 hasEarlierMessages = false | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `loadEarlierExhaustsAtTop` |
+| 41 | 服务 | `refreshTail` 找到重叠位置时拼接保留头部历史 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `refreshTailMergesAtOverlap` |
+| 42 | 服务 | `refreshTail` 当 current 为空时使用最新页并补查 hasEarlier | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `refreshTailSeedsFromEmpty` |
+| 43 | 服务 | `refreshTail` 无重叠且 current 非空时返回 nil | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `refreshTailAbortsOnUserScrolling` |
+| 44 | 定位 | post-send 锚点常量 = 视口高度的 0.75 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `postSendAnchorTopFraction` |
+| 45 | 定位 | post-send reserve 在无效视口高度下返回 0 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `postSendReserveZeroOnInvalidViewport` |
+| 46 | 常量 | `ScrollCoordinator` 静态常量与 README 描述一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `scrollCoordinatorConstantsMatchREADME` |
+| 47 | 常量 | `ScrollCoordinator.bottomAnchorID` 是稳定常量，UI 测试可按此定位 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `bottomAnchorIDIsStable` |
+| 48 | 观察 | 消息观察者转发选中会话的变化 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `messageObserverForwardsChanges` |
+| 49 | 观察 | 消息观察者忽略非选中会话 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `messageObserverIgnoresOtherConversations` |
+| 50 | 观察 | 消息观察者 cancel 后不再投递 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `messageObserverCancelStopsDelivery` |
+| 51 | 观察 | 开发者模式观察者同步初始状态并跟随变化 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `developerModeObserverSyncsAndFollows` |
+| 52 | 观察 | 无会话状态观察者时，选中会话观察者独立工作 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectedConversationObserverWithoutStateObserver` |
+| 53 | 观察 | 同时存在两者时优先使用会话状态观察者 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectedConversationObserverPrefersStateObserver` |
+| 54 | 观察 | 会话状态观察者构造时立即发布一次初始投影 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `conversationStateObserverPublishesInitialProjection` |
+| 55 | 观察 | 会话状态观察者处理 `.updated` 事件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `conversationStateObserverHandlesUpdated` |
+| 56 | 观察 | 会话状态观察者处理 `.removed` 事件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `conversationStateObserverHandlesRemoved` |
+| 57 | 观察 | 会话状态观察者忽略非选中会话的状态 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `conversationStateObserverIgnoresOtherConversations` |
+| 58 | 观察 | 会话状态观察者跟随 streaming 阶段更新活动 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `conversationStateObserverFollowsStreamingStage` |
+| 59 | 观察 | 切换会话时会话状态观察者复位状态 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `conversationStateObserverResetsOnSwitch` |
+| 60 | 观察 | 重复切换到同一会话不重复重置 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `conversationStateObserverSkipsRedundantSwitch` |
+| 61 | 观察 | 会话状态观察者 cancel 后不再投递 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `conversationStateObserverCancelStopsDelivery` |
+| 62 | Verbosity | verbosity 框注册与注销 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `verbosityBoxRegistersAndUnregisters` |
+| 63 | Verbosity | verbosity 变化时刷新 verbosity 框 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `verbosityBoxRefreshesOnVerbosityChange` |
+| 64 | Verbosity | verbosity 框激活态跟随 verbosity 值 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `verbosityBoxIsActiveFollowsVerbosity` |
+| 65 | Verbosity | verbosity 框 cancel 后停止刷新 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `verbosityBoxCancelStopsRefresh` |
 
 ## 仅人工验收场景
 
@@ -160,14 +159,10 @@ PluginMessageListBrief 是消息列表 V1（Brief 模式）的实现包。它按
 
 ## 覆盖率统计
 
-- **自动化**: 51 / 51（47 单元 + 4 UI）
-- **人工验收**: 18 场景
-- **优先级分布**:
-  - P0: 已覆盖 24 / 24
-  - P1: 已覆盖 20 / 20
-  - P2: 已覆盖 1 / 1
-  - 人工: 6 场景（无优先级要求）
-- **合计: 45 / 45 可自动化场景**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 31 / 31
+- P1: 已覆盖 31 / 31
+- P2: 已覆盖 3 / 3
+- **合计: 65 / 65**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

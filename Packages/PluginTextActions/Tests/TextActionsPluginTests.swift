@@ -7,7 +7,8 @@ import Testing
 func pluginMetadata() {
     let plugin = TextActionsPlugin()
     #expect(plugin.id == "com.coffic.lumi.plugin.text-actions")
-    #expect(plugin.viewContainers(kernel: .init()).count == 1)
+    #expect(plugin.metadata.name == pluginLocalization.string("Text Actions"))
+    #expect(plugin.metadata.category == .system)
 }
 
 @Test
@@ -31,7 +32,8 @@ func translationRequestUsesSelectedTextAndTranslationInstruction() {
     #expect(request.messages.count == 2)
     #expect(request.messages[0].content.contains("Simplified Chinese"))
     #expect(request.messages[1].content == "Hello world")
-    #expect(request.maxTokens == 2_000)
+    #expect(request.messages[0].role == .system)
+    #expect(request.messages[1].role == .user)
 }
 
 @Test
