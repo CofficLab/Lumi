@@ -403,8 +403,14 @@ struct KitLLMTests {
         #expect(chunks.first?.content == "只有思考")
     }
 
-    @Test("正文与工具调用同 delta 时优先保留正文增量")
-    func openAIAdapterPrefersTextOverToolCallsInSameDelta() throws {
+    /// 正文与工具调用同 delta 时两者都保留。
+    ///
+    /// 早期实现用 `if chunks.isEmpty` 守卫，断言只有正文 chunk（tool_calls
+    /// 被整包丢弃）。该取舍会让 interleaved thinking 模型（MiniMax M3 等）
+    /// 在收敛帧丢掉工具调用，累积器 content 恒为空，最终被判为「模型返回空
+    /// 响应」。字段键名互相独立、累加器分别写入，因此改为各自产出。
+    @Test("正文与工具调用同 delta 时两者都保留")
+    func openAIAdapterKeepsTextAndToolCallsInSameDelta() throws {
         let adapter = OpenAICompatibleProviderAdapter(
             configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://example.com")
         )
@@ -422,9 +428,8 @@ struct KitLLMTests {
 
         let chunks = try adapter.parseStreamChunks(data: Data(event.utf8))
 
-        #expect(chunks.count == 1)
-        #expect(chunks.first?.eventType == .textDelta)
-        #expect(chunks.first?.content == "我先看看")
+        #expect(chunks.contains { $0.eventType == .textDelta && $0.content == "我先看看" })
+        #expect(chunks.contains { $0.toolCalls?.first?.name == "read_file" })
     }
 
     @Test("带正文与 finish_reason 的 delta 同时保留正文与结束信号")

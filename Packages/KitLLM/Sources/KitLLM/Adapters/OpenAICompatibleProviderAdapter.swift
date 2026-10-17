@@ -463,14 +463,29 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
                 ))
             }
 
-            // 工具调用：仅在没有思考/正文增量的 delta 中解析。
-            // 三者并存时协议上属于歧义形态，保持既有的「增量优先」取舍。
-            if chunks.isEmpty {
-                if let toolCalls = delta["tool_calls"] as? [[String: Any]],
-                   !toolCalls.isEmpty,
-                   let toolChunk = parseToolCallDelta(toolCalls, stopReason: stopReason) {
-                    chunks.append(toolChunk)
-                }
+            // 工具调用：与思考/正文**各自独立**产出，不再受 `chunks.isEmpty` 约束。
+            //
+            // 曾经的 `if chunks.isEmpty` 守卫会把「同一 delta 内同时带
+            // reasoning_content + tool_calls」的形态整包丢弃。interleaved
+            // thinking 模型（MiniMax M3 / M3.1 等思考默认开启且无法关闭）会
+            // 在收敛阶段高频产生这种形态，于是工具调用被吞、累积器 content 恒
+            // 为空，最终在 AgentLoop 层被判为「模型返回空响应」而走失败链路
+            // （思考内容却正常显示，正是该 bug 的现场特征）。
+            //
+            // 三者并存时协议上并非歧义：字段键名互相独立，累加器也分别写入
+            // reasoningContent / content / toolCalls，追加不会互相覆盖。
+            if let toolCalls = delta["tool_calls"] as? [[String: Any]],
+               !toolCalls.isEmpty,
+               let toolChunk = parseToolCallDelta(
+                   toolCalls,
+                   stopReason: stopReason,
+                   inputTokens: inputTokens,
+                   outputTokens: outputTokens,
+                   cachedInputTokens: cachedInputTokens,
+                   cacheWriteInputTokens: cacheWriteInputTokens,
+                   cacheTotalInputTokens: inputTokens
+               ) {
+                chunks.append(toolChunk)
             }
 
             // 纯 stop_reason 结束信号
@@ -572,7 +587,15 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         )
     }
 
-    private func parseToolCallDelta(_ toolCalls: [[String: Any]], stopReason: String?) -> StreamChunk? {
+    private func parseToolCallDelta(
+        _ toolCalls: [[String: Any]],
+        stopReason: String?,
+        inputTokens: Int?,
+        outputTokens: Int?,
+        cachedInputTokens: Int?,
+        cacheWriteInputTokens: Int?,
+        cacheTotalInputTokens: Int?
+    ) -> StreamChunk? {
         var parsedToolCalls: [ToolCall] = []
         var partialJson: String?
         var toolCallIndex: Int?
@@ -612,6 +635,11 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
                 partialJson: partialJson,
                 toolCallIndex: toolCallIndex,
                 eventType: .contentBlockStart,
+                inputTokens: inputTokens,
+                outputTokens: outputTokens,
+                cachedInputTokens: cachedInputTokens,
+                cacheWriteInputTokens: cacheWriteInputTokens,
+                cacheTotalInputTokens: cacheTotalInputTokens,
                 stopReason: stopReason
             )
         }
@@ -621,6 +649,11 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
                 partialJson: partialJson,
                 toolCallIndex: toolCallIndex,
                 eventType: .inputJsonDelta,
+                inputTokens: inputTokens,
+                outputTokens: outputTokens,
+                cachedInputTokens: cachedInputTokens,
+                cacheWriteInputTokens: cacheWriteInputTokens,
+                cacheTotalInputTokens: cacheTotalInputTokens,
                 stopReason: stopReason
             )
         }
