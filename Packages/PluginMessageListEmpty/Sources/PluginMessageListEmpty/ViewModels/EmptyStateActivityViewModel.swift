@@ -16,6 +16,17 @@ struct EmptyStateActivityDay: Equatable, Sendable {
     var accessibilityLabel: String { "\(date.formatted(date: .long, time: .omitted)): \(count)" }
 }
 
+/// One day's token consumption, kept separate from ``EmptyStateActivityDay``
+/// because the token series has its own emptiness rule: a day can have messages
+/// but zero tokens, so folding it into the message day would silently reuse a
+/// level that was derived from an unrelated scale.
+struct EmptyStateTokenDay: Equatable, Sendable {
+    let date: Date
+    let count: Int
+
+    var accessibilityLabel: String { "\(date.formatted(date: .long, time: .omitted)): \(count)" }
+}
+
 /// Fills the empty state with a quiet 30-day activity strip.
 ///
 /// This view model owns the only question the strip asks: how many messages
@@ -26,7 +37,10 @@ struct EmptyStateActivityDay: Equatable, Sendable {
 @Observable
 final class EmptyStateActivityViewModel {
     /// How many trailing calendar days the strip covers.
-    static let windowDayCount = 30
+    ///
+    /// `nonisolated` because it is an immutable literal that the pure bucketing
+    /// helpers (`makeDays` / `makeTokenDays`) also need to size their output.
+    nonisolated static let windowDayCount = 30
     /// Four active buckets plus the empty one, matching `AppActivityHeatmap`'s
     /// default level count.
     private static let levelCount = 5
@@ -42,6 +56,18 @@ final class EmptyStateActivityViewModel {
 
     /// Total messages inside the window. `nil` until the first load resolves.
     private(set) var totalMessages: Int?
+
+    /// Daily token consumption over the same window as ``days``.
+    private(set) var tokenDays: [EmptyStateTokenDay] = []
+
+    /// Tokens consumed inside the window, or `nil` before the first load.
+    private(set) var totalTokens: Int?
+
+    /// Zero tokens means the trend line would be a flat axis with nothing to
+    /// say, so the chart is omitted rather than drawn empty.
+    var hasTokenActivity: Bool {
+        totalTokens.map { $0 > 0 } ?? false
+    }
 
     /// Oldest and newest visible day, or `nil` before the first load.
     var visibleRange: ClosedRange<Date>? {
@@ -59,18 +85,27 @@ final class EmptyStateActivityViewModel {
     /// - Parameters:
     ///   - messages: Source of cross-conversation daily counts.
     ///   - calendar: Calendar used to normalize dates into day buckets.
-    ///   - seededDays: Precomputed window for previews and tests. When nil the
-    ///     model loads through ``loadIfNeeded(force:)`` as usual.
+    ///   - seededDays: Precomputed message window for previews and tests. When
+    ///     nil the model loads through ``loadIfNeeded(force:)`` as usual.
+    ///   - seededTokenDays: Precomputed token window. Separate from
+    ///     `seededDays` because the two series scale independently — deriving
+    ///     one from the other would make previews and the hidden-state checks
+    ///     describe data that the real load path never produces.
     init(
         messages: (any MessageManaging)?,
         calendar: Calendar = .current,
-        seededDays: [EmptyStateActivityDay]? = nil
+        seededDays: [EmptyStateActivityDay]? = nil,
+        seededTokenDays: [EmptyStateTokenDay]? = nil
     ) {
         self.messages = messages
         self.calendar = calendar
         if let seededDays {
             days = seededDays
             totalMessages = seededDays.reduce(0) { $0 + $1.count }
+        }
+        if let seededTokenDays {
+            tokenDays = seededTokenDays
+            totalTokens = seededTokenDays.reduce(0) { $0 + $1.count }
         }
     }
 
@@ -97,10 +132,18 @@ final class EmptyStateActivityViewModel {
             to: today
         ) ?? today
         let counts = await messages.dailyMessageCountsAsync(since: startDate)
+        let tokens = await messages.dailyTokenCountsAsync(since: startDate)
         guard !Task.isCancelled, generation == loadGeneration else { return }
 
         days = Self.makeDays(counts: counts, startDate: startDate, endDate: today, calendar: calendar)
         totalMessages = days.reduce(0) { $0 + $1.count }
+        tokenDays = Self.makeTokenDays(
+            counts: tokens,
+            startDate: startDate,
+            endDate: today,
+            calendar: calendar
+        )
+        totalTokens = tokenDays.reduce(0) { $0 + $1.count }
     }
 
     /// Builds one entry per calendar day in the window, including days with no
@@ -131,6 +174,36 @@ final class EmptyStateActivityViewModel {
         }
 
         return levels(entries: entries, levelCount: levelCount)
+    }
+
+    /// Builds one token entry per calendar day in the window, including days
+    /// with no consumption, so the trend line keeps a continuous x-axis.
+    ///
+    /// - Important: `nonisolated` because it is pure date bucketing over plain
+    ///   values — it touches no view-model state, so isolating it would only
+    ///   force callers (previews, tests) onto the main actor for no reason.
+    nonisolated static func makeTokenDays(
+        counts: [Date: Int],
+        startDate: Date,
+        endDate: Date,
+        calendar: Calendar
+    ) -> [EmptyStateTokenDay] {
+        let normalizedCounts = Dictionary(
+            counts.map { (calendar.startOfDay(for: $0.key), $0.value) },
+            uniquingKeysWith: { current, latest in max(current, latest) }
+        )
+
+        var entries: [EmptyStateTokenDay] = []
+        entries.reserveCapacity(windowDayCount)
+
+        var cursor = startDate
+        while cursor <= endDate {
+            entries.append(EmptyStateTokenDay(date: cursor, count: normalizedCounts[cursor] ?? 0))
+            guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
+            cursor = next
+        }
+
+        return entries
     }
 
     /// Distributes counts into buckets so the busiest day lands on the top

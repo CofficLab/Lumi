@@ -47,6 +47,15 @@ struct ActivityFooterView: View {
             Text(summaryText)
                 .font(.appCaption)
                 .foregroundStyle(theme.textTertiary)
+
+            // The trend is nested under the strip so the two share one x-axis
+            // range and read as a single block. Each part hides itself when its
+            // own series is empty, so a user with messages but no recorded
+            // tokens still gets the heatmap without a dead chart.
+            if model.hasTokenActivity {
+                ActivityTokenTrendView(model: model)
+                    .padding(.top, 6)
+            }
         }
         .padding(.top, 18)
         .frame(maxWidth: 620)
