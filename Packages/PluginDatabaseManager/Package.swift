@@ -18,7 +18,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0"),
         .package(path: "../ProviderEditor"),
         .package(path: "../PluginCodeEditorHost"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderExternalFile"),
