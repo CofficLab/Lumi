@@ -13,7 +13,7 @@ Lumi is an AI-powered personal desktop assistant for macOS. It combines LLM chat
 
 ## Features
 
-- **Multi-provider LLM chat** — 20+ built-in provider integrations, including OpenAI, Anthropic, DeepSeek, Zhipu, MiniMax, Kimi Code, Aliyun, StepFun, Xiaomi, OpenRouter, Codex, and local MLX models. Several integrations expose more than one provider implementation.
+- **Multi-provider LLM chat** — 20+ built-in provider integrations, including OpenAI, Anthropic, DeepSeek, Zhipu, MiniMax, Kimi Code, Aliyun, StepFun, Xiaomi, OpenRouter, and local MLX models. Several integrations expose more than one provider implementation.
 - **Agent with tool use** — read and edit files, run shell commands, fetch and search the web, use browser and computer-control tools, inspect images, and request user input during a task.
 - **Built-in code editor** — project file tree, syntax highlighting, fuzzy file search, outline, references, call hierarchy, problems, language services, and Markdown preview.
 - **Developer tools** — native terminal, Git/GitHub integration, SQLite/MySQL/PostgreSQL/Redis database tools, Docker, Homebrew, ports and hosts management, and project diagnostics.

@@ -538,11 +538,6 @@
     "errors": [],
     "hasTestPlan": false
   },
-  "PluginLLMProviderCodex": {
-    "status": "ok",
-    "errors": [],
-    "hasTestPlan": false
-  },
   "PluginLLMProviderCommandCode": {
     "status": "ok",
     "errors": [],

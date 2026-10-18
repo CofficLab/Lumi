@@ -84,7 +84,6 @@ let package = Package(
         .package(path: "../PluginLLMProviderXiaomi"),
         .package(path: "../PluginLLMProviderXybbz"),
         .package(path: "../PluginLLMProviderZhipu"),
-        .package(path: "../PluginLLMProviderCodex"),
         .package(path: "../PluginLLMProviderMLX"),
     ],
     targets: [
@@ -182,7 +181,6 @@ let package = Package(
                 .product(name: "PluginLLMProviderXiaomi", package: "PluginLLMProviderXiaomi"),
                 .product(name: "PluginLLMProviderXybbz", package: "PluginLLMProviderXybbz"),
                 .product(name: "PluginLLMProviderZhipu", package: "PluginLLMProviderZhipu"),
-                .product(name: "PluginLLMProviderCodex", package: "PluginLLMProviderCodex"),
                 .product(name: "PluginLLMProviderMLX", package: "PluginLLMProviderMLX"),
             ],
             path: "Sources/FactoryLumiACP"

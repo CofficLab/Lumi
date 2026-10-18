@@ -35,9 +35,6 @@
     }, {
       "kind": "local",
       "path": "Packages/FactoryDatabaseManager",
-    }, {
-      "kind": "local",
-      "path": "Packages/PluginLLMProviderCodex",
     },
   ],
   "files": [
@@ -280,10 +277,6 @@
         }, {
           "package": "PluginAppUpdate",
           "product-name": "AppUpdatePlugin",
-          "build-phase": { "build-phase": "frameworks" },
-        }, {
-          "package": "PluginLLMProviderCodex",
-          "product-name": "PluginLLMProviderCodex",
           "build-phase": { "build-phase": "frameworks" },
         },
       ],

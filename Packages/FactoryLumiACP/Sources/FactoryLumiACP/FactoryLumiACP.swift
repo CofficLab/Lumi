@@ -19,7 +19,6 @@ import PluginLLMManager
 import PluginLLMProviderAiRouter
 import PluginLLMProviderAliyun
 import PluginLLMProviderAnthropic
-import PluginLLMProviderCodex
 import PluginLLMProviderCommandCode
 import PluginLLMProviderDeepSeek
 import PluginLLMProviderFeifeimiao
@@ -160,7 +159,6 @@ public struct ACPPluginFactory: PluginFactory {
             XiaomiProviderPlugin(),
             XybbzProviderPlugin(),
             ZhipuProviderPlugin(),
-            CodexLumiPlugin(),
             MLXProviderPlugin(),
         ]
     }

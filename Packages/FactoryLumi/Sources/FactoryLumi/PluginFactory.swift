@@ -100,7 +100,6 @@ import PluginLLMProviderUITest
 import PluginLLMProviderXiaomi
 import PluginLLMProviderXybbz
 import PluginLLMProviderZhipu
-import PluginLLMProviderCodex
 import PluginLLMProviderMLX
 import PluginLogoCoffic
 import PluginLogoManager
@@ -372,7 +371,6 @@ public struct DefaultPluginFactory: PluginFactory {
             XiaomiProviderPlugin(),
             XybbzProviderPlugin(),
             ZhipuProviderPlugin(),
-            CodexLumiPlugin(),
             MLXProviderPlugin(),
             LLMProviderSettingsPlugin(),
         ]
