@@ -30,6 +30,7 @@ final class DevicePluginViewModels: ObservableObject {
     let battery: BatteryManagerViewModel
     let storage: StorageManagerViewModel
     let systemMonitor: SystemMonitorViewModel
+    let thermal: ThermalViewModel
     let menuBar: DeviceInfoMenuBarContentViewModel
     let cpuHistory = DeviceHistoryViewModel<CPUDataPoint>()
     let gpuHistory = DeviceHistoryViewModel<GPUDataPoint>()
@@ -43,6 +44,7 @@ final class DevicePluginViewModels: ObservableObject {
         battery = BatteryManagerViewModel()
         storage = StorageManagerViewModel()
         systemMonitor = SystemMonitorViewModel()
+        thermal = ThermalViewModel()
         menuBar = DeviceInfoMenuBarContentViewModel()
     }
 }

@@ -40,6 +40,7 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                "PluginDeviceThermalBridge",
             ],
             path: ".",
             exclude: [
@@ -52,10 +53,17 @@ let package = Package(
                 "Sources/PluginDevice/Views/README.md",
                 "Sources/PluginDevice/Views/MenuBar/README.md",
                 "Sources/PluginDevice/Support/README.md",
+                "Sources/PluginDeviceThermalBridge",
             ],
             resources: [
                 .process("Resources")
             ]
+        ),
+        // 温度采集桥接层:纯 ObjC,封装 IOKit 私有 HID API。
+        // SwiftPM 单 target 不支持混编,故拆为独立 target。
+        .target(
+            name: "PluginDeviceThermalBridge",
+            path: "Sources/PluginDeviceThermalBridge"
         ),
         .testTarget(
             name: "PluginDeviceTests",

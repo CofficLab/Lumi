@@ -17,6 +17,7 @@ final class DeviceMetricsObserver {
         BatteryService.shared.startMonitoring()
         StorageService.shared.startMonitoring()
         SystemMonitorService.shared.startMonitoring()
+        ThermalService.shared.startMonitoring()
 
         Publishers.CombineLatest3(
             CPUService.shared.$cpuUsage,
@@ -77,6 +78,15 @@ final class DeviceMetricsObserver {
         SystemMonitorService.shared.$currentMetrics
             .sink { [weak self] metrics in self?.viewModels.systemMonitor.apply(metrics) }
             .store(in: &cancellables)
+        ThermalService.shared.objectWillChange
+            .sink { [weak self] in
+                guard let self else { return }
+                self.viewModels.thermal.apply(
+                    readings: ThermalService.shared.readings,
+                    peak: ThermalService.shared.peakCelsius
+                )
+            }
+            .store(in: &cancellables)
 
         CPUHistoryService.shared.$recentHistory
             .combineLatest(CPUHistoryService.shared.$longTermHistory)
@@ -119,6 +129,7 @@ final class DeviceMetricsObserver {
         BatteryService.shared.stopMonitoring()
         StorageService.shared.stopMonitoring()
         SystemMonitorService.shared.stopMonitoring()
+        ThermalService.shared.stopMonitoring()
         ProcessService.shared.stopMonitoring()
         CPUHistoryService.shared.stopRecording()
         GPUHistoryService.shared.stopRecording()
