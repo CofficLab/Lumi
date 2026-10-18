@@ -793,7 +793,11 @@ extension AgentLoopManager {
         }
     }
 
-    private func estimateToolSchemaTokens(_ schemas: [LLMFunctionSchema]) -> Int {
+    // - Important: 这三个纯函数保持 internal 而非 private，供 `@testable` 直接覆盖。
+    //   它们没有任何外部调用方，收窄可见性只会让错误分类逻辑无法被单测验证。
+
+    /// 估算全部工具 schema 占用的 token 数，用于上下文预算的保守预留。
+    func estimateToolSchemaTokens(_ schemas: [LLMFunctionSchema]) -> Int {
         schemas.reduce(0) { total, schema in
             let parameters = Self.jsonText(for: schema.parameters)
             return total
@@ -824,7 +828,7 @@ extension AgentLoopManager {
         return text
     }
 
-    private func isContextLimitError(_ error: Error) -> Bool {
+    func isContextLimitError(_ error: Error) -> Bool {
         guard case let VendorAPIError.httpStatus(_, summary) = error else { return false }
         let normalized = summary.lowercased()
         return normalized.contains("context")
@@ -836,7 +840,7 @@ extension AgentLoopManager {
 
     /// LLM 工具协议错误不会改变用户任务本身，允许在同一回合内重试。
     /// 认证、权限、上下文长度等错误仍然直接终止，避免无意义地重复请求。
-    private func isRecoverableLLMFailure(_ error: Error) -> Bool {
+    func isRecoverableLLMFailure(_ error: Error) -> Bool {
         if error is LLMToolCallValidationError {
             return true
         }
