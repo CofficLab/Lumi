@@ -1,8 +1,5 @@
-import KernelCore
 import LumiUI
-import ProviderConversationInput
 import ProviderMessage
-import ProviderMessageSender
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -13,7 +10,8 @@ import UniformTypeIdentifiers
 struct ChatFileAttachmentButton: View {
     @LumiTheme private var theme
 
-    let kernel: KernelCoreContainer
+    /// 附件写入与错误提示的窄能力；由插件入口注入。
+    let capability: ChatFileAttachmentCapability
 
     /// 控制 `.fileImporter` 显隐
     @State private var showImporter = false
@@ -42,10 +40,6 @@ struct ChatFileAttachmentButton: View {
     private func handle(_ result: Result<[URL], Error>) {
         switch result {
         case .success(let urls):
-            guard let sender = kernel.resolveProvider((any MessageSendingProviding).self) else {
-                return
-            }
-
             for url in urls {
                 let hasSecurityScopedAccess = url.startAccessingSecurityScopedResource()
                 Task { @MainActor in
@@ -59,10 +53,9 @@ struct ChatFileAttachmentButton: View {
                         let attachment = try await Task.detached(priority: .userInitiated) {
                             try UserFileAttachmentLoader.load(from: url)
                         }.value
-                        sender.addFileAttachment(attachment)
+                        capability.addFileAttachment(attachment)
                     } catch {
-                        kernel.resolveProvider((any ConversationInputProviding).self)?.errorMessage =
-                            error.localizedDescription
+                        capability.presentLoadError(error.localizedDescription)
                     }
                 }
             }
