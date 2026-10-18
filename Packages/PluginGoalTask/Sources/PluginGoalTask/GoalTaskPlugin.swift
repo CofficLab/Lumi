@@ -38,6 +38,9 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     private var forkCoordinator: GoalForkCoordinator?
     /// `turnFinished` 自动续跑钩子（见 `Hooks/GoalTaskTurnFinishedHook.swift`）。
     private var turnFinishedHook: GoalTaskTurnFinishedHook?
+    /// `willSendToLLM` 自主执行契约注入钩子（见 `Hooks/GoalPromptInjectionHook.swift`）。
+    private var promptInjectionHook: GoalPromptInjectionHook?
+    private var promptInjectionHandle: (any LifecycleHookHandle)?
 
     public init() {}
 
@@ -151,6 +154,15 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         hooks.addTurnFinishedHook { [weak hook] context in
             await hook?.apply(to: context)
         }
+
+        // 每轮注入 goal 自主执行契约与进度。没有这条契约，LLM 只知道
+        // 有个 goal 存在，却不知道该自己走完 —— 这正是它反复停下来问用户的原因。
+        let injectionHook = GoalPromptInjectionHook()
+        promptInjectionHook = injectionHook
+        promptInjectionHandle = hooks.addWillSendToLLMHook { [weak injectionHook] context in
+            guard let injectionHook else { return context }
+            return await injectionHook.apply(to: context)
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -165,6 +177,9 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         goalChangeObserver = nil
         forkCoordinator = nil
         turnFinishedHook = nil
+        promptInjectionHandle?.cancel()
+        promptInjectionHandle = nil
+        promptInjectionHook = nil
         Plugin._sharedManager = nil
     }
 }

@@ -27,10 +27,17 @@ public actor GoalStateManager: SuperLog {
     /// 单个会话连续无感自动续聊的最大次数，防止 LLM 卡住时空转。
     nonisolated static let maxAutomaticContinuations = 5
     
+    /// 单个会话连续自动代答 `ask_user` 的最大次数。
+    ///
+    /// LLM 在 goal 活跃期调用 `ask_user` 会被自动代答并恢复回合（见
+    /// `GoalTaskTurnFinishedHook`）。该预算用于兜住「模型反复问同一个问题」
+    /// 的空转：超限后不再自动代答，交回用户处理。
+    nonisolated static let maxAutomaticAskUserAnswers = 3
+
     /// 内存态（非持久化）：标记某会话即将进入一次无感自动续聊轮次。
     ///
-    /// 由 `TurnFinishedHook` 在触发续聊前置位，由
-    /// `GoalContextMiddleware` 在注入该轮 system prompt 时消费，
+    /// 由 `GoalTaskTurnFinishedHook` 在触发续聊前置位，由
+    /// `GoalPromptInjectionHook` 在注入该轮 system prompt 时消费，
     /// 消费即清除，避免后续普通轮次误判。
     private var pendingContinuationConversationIDs: Set<String> = []
     
@@ -39,6 +46,12 @@ public actor GoalStateManager: SuperLog {
     /// 当 LLM 在该会话中调用任务相关工具主动推进任务时计数归零；
     /// 超过 `maxAutomaticContinuations` 后不再自动续聊。
     private var continuationCountsByConversationID: [String: Int] = [:]
+    
+    /// 内存态（非持久化）：记录每个会话连续自动代答 `ask_user` 的次数。
+    ///
+    /// 与续跑预算相互独立：一次代答恢复的是**当前**回合，不会额外消耗
+    /// 无感续聊的机会。任务推进时（`resetContinuationCount`）一并归零。
+    private var askUserAnswerCountsByConversationID: [String: Int] = [:]
     
     // MARK: - Initialization
     
@@ -494,7 +507,7 @@ public actor GoalStateManager: SuperLog {
     
     /// 若该会话当前被标记为自动续聊轮次，则消费该标记并返回 `true`。
     ///
-    /// 由 `GoalContextMiddleware` 在每轮注入 system prompt 时调用，
+    /// 由 `GoalPromptInjectionHook` 在每轮注入 system prompt 时调用，
     /// 一次性消费，确保只在续聊那轮生效。
     func consumeContinuation(conversationId: String) -> Bool {
         pendingContinuationConversationIDs.remove(conversationId) != nil
@@ -510,17 +523,42 @@ public actor GoalStateManager: SuperLog {
         return next
     }
     
-    /// 将该会话的连续自动续聊计数归零。
+    /// 递增并返回该会话连续自动代答 `ask_user` 的次数。
+    ///
+    /// 返回 `nil` 表示代答预算已耗尽，调用方应把挂起点交回用户，
+    /// 而不是继续代答。
+    func incrementAskUserAnswerCount(conversationId: String) -> Int? {
+        let next = (askUserAnswerCountsByConversationID[conversationId] ?? 0) + 1
+        guard next <= Self.maxAutomaticAskUserAnswers else { return nil }
+        askUserAnswerCountsByConversationID[conversationId] = next
+        return next
+    }
+    
+    /// 将该会话的连续自动续聊计数与自动代答计数一并归零。
     ///
     /// 当 LLM 在轮次中主动调用了任务相关工具推进任务，说明它正在正常工作，
     /// 应解除"连续空转"的戒备，重新给足续聊预算。
     func resetContinuationCount(conversationId: String) {
         continuationCountsByConversationID[conversationId] = 0
+        askUserAnswerCountsByConversationID[conversationId] = 0
+    }
+    
+    /// 清理某会话的全部内存态预算与标记。
+    ///
+    /// Goal 全部到达终态并被删除时调用，避免已结束会话的预算残留在
+    /// 内存字典里长期驻留。
+    func clearRuntimeBudget(conversationId: String) {
+        continuationCountsByConversationID[conversationId] = 0
+        askUserAnswerCountsByConversationID[conversationId] = 0
+        pendingContinuationConversationIDs.remove(conversationId)
     }
     
     // MARK: - Delete
     
     /// 删除指定会话的所有 Goals
+    ///
+    /// 同时清空该会话的续跑 / 代答预算：Goal 已全部结束，这些内存态
+    /// 不再有恢复意义，留着只会在下次建 Goal 时少给几次机会。
     func deleteAllGoals(conversationId: String) throws {
         let context = ModelContext(container)
         let goals = fetchAllGoals(conversationId: conversationId, context: context)
@@ -530,6 +568,7 @@ public actor GoalStateManager: SuperLog {
         }
         
         try context.save()
+        clearRuntimeBudget(conversationId: conversationId)
         
         if Self.verbose {
             Self.logger.info("\(Self.t)删除会话 \(conversationId) 的所有 Goals")
