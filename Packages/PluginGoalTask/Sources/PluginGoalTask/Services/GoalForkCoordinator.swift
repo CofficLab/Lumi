@@ -1,6 +1,4 @@
 import Foundation
-import ProviderConversation
-import ProviderMessageSender
 
 /// 「在新对话中继续」的执行器：复制 Goal 到新会话并立即开跑。
 ///
@@ -9,42 +7,30 @@ import ProviderMessageSender
 /// 承担事务编排，且难以在不跑真实回合的前提下测试。
 @MainActor
 final class GoalForkCoordinator {
-    private let conversations: any ConversationManaging
-    private let messageSender: any MessageSendingProviding
+    private let capability: GoalForkCapability
 
-    init(conversations: any ConversationManaging, messageSender: any MessageSendingProviding) {
-        self.conversations = conversations
-        self.messageSender = messageSender
+    init(capability: GoalForkCapability) {
+        self.capability = capability
     }
 
     /// 把 `goal` 复制到一个全新对话，并在该对话里发起第一轮。
     ///
     /// - Throws: 建对话或复制 Goal 失败时抛出，调用方负责呈现错误。
     func forkAndStart(goal: GoalDisplayItem, tasks: [GoalTaskDisplayItem]) async throws {
-        guard let manager = Plugin.currentManager() else {
-            throw GoalForkError.managerUnavailable
-        }
-
-        let conversationID = try conversations.createConversation(
-            title: goal.title,
-            projectPath: nil,
-            providerID: nil,
-            modelName: nil
-        )
-        let conversationId = conversationID.uuidString
+        let conversationID = try capability.createConversation(title: goal.title)
 
         do {
-            let forked = try await manager.forkGoal(id: goal.id, into: conversationId)
+            let forked = try await capability.forkGoal(id: goal.id, into: conversationID)
             GoalChangeCenter.shared.notify(conversationID: conversationID)
 
             let prompt = Self.resumePrompt(for: forked, tasks: tasks)
-            guard let commit = try messageSender.commitUserMessage(prompt, conversationID: conversationID) else {
+            guard let commit = try capability.commitUserMessage(prompt, conversationID: conversationID) else {
                 throw GoalForkError.emptyPrompt
             }
-            await messageSender.startTurn(for: commit)
+            await capability.startTurn(for: commit)
         } catch {
             // 新建的空对话对用户没有价值，复制失败时回收掉，避免留下孤儿会话。
-            conversations.deleteConversation(id: conversationID)
+            capability.discardConversation(id: conversationID)
             throw error
         }
     }

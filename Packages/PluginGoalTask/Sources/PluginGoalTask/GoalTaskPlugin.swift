@@ -92,8 +92,10 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         conversationBridge = bridge
         if let messageSender = kernel.resolveProvider((any MessageSendingProviding).self) {
             forkCoordinator = GoalForkCoordinator(
-                conversations: conversations,
-                messageSender: messageSender
+                capability: GoalForkCapabilityAdapter(
+                    conversations: conversations,
+                    messageSender: messageSender
+                )
             )
         } else {
             Self.logger.error("\(Self.t) MessageSendingProviding not found, fork action disabled")
