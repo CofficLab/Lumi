@@ -2,7 +2,6 @@ import Combine
 import Foundation
 import KitLLM
 import ProviderLLMManager
-import ProviderToast
 
 /// 模型选择器唯一的数据来源与交互入口。
 ///
@@ -34,18 +33,18 @@ final class ModelSelectorViewModel: ObservableObject {
 
     private let box: LLMProviderManagerBox
     private let usageStore: ProviderUsageStore
-    private let toast: (any ToastProviding)?
+    private let toastCapability: ModelSelectorToastCapability
     private var boxObserverHandle: (any LLMProviderManagerBox.ObserverHandle)?
     private var usageCancellable: AnyCancellable?
 
     init(
         box: LLMProviderManagerBox,
         usageStore: ProviderUsageStore,
-        toast: (any ToastProviding)?
+        toastCapability: ModelSelectorToastCapability
     ) {
         self.box = box
         self.usageStore = usageStore
-        self.toast = toast
+        self.toastCapability = toastCapability
 
         selectedProviderID = box.selectedProviderID ?? box.providerInfos.first?.id
         selectedModel = box.selectedModel
@@ -167,13 +166,13 @@ final class ModelSelectorViewModel: ObservableObject {
         do {
             try await provider.refreshModels()
             box.manager.notifyModelsRefreshed(providerID: providerID)
-            toast?.show(
+            toastCapability.notify(
                 pluginLocalization.string("Models refreshed"),
                 detail: provider.providerInfo.displayName,
                 style: .success
             )
         } catch {
-            toast?.show(
+            toastCapability.notify(
                 pluginLocalization.string("Refresh failed"),
                 detail: error.localizedDescription,
                 style: .error
@@ -238,7 +237,7 @@ final class ModelSelectorViewModel: ObservableObject {
         let providerDisplayName = providerInfo(id: providerID)?.displayName ?? providerID
         let modelInfo = modelInfo(for: providerID, model: model)
         let modelDisplayName = modelInfo?.displayName ?? model
-        toast?.show(
+        toastCapability.notify(
             pluginLocalization.string("Switched to"),
             detail: "\(providerDisplayName) · \(modelDisplayName)",
             style: .success

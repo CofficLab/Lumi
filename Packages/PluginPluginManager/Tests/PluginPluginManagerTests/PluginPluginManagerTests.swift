@@ -15,7 +15,10 @@ struct PluginPluginManagerTests {
         let firstPlugin = TestPlugin(id: "first", policy: .enabledByDefault)
         let latePlugin = TestPlugin(id: "late", policy: .disabledByDefault)
         let capability = TestPluginManagementCapability(plugins: [firstPlugin])
-        let viewModel = PluginManagementViewModel(capability: capability, docsProvider: nil)
+        let viewModel = PluginManagementViewModel(
+            capability: capability,
+            docsCapability: PluginManagerDocsCapabilityAdapter(docs: nil)
+        )
 
         viewModel.refresh()
         #expect(viewModel.plugins.map(\.id) == ["first"])
@@ -32,7 +35,10 @@ struct PluginPluginManagerTests {
         let disabled = TestPlugin(id: "disabled", policy: .disabledByDefault)
         let capability = TestPluginManagementCapability(plugins: [enabled, disabled])
         capability.enabledIDs = ["enabled"]
-        let viewModel = PluginManagementViewModel(capability: capability, docsProvider: nil)
+        let viewModel = PluginManagementViewModel(
+            capability: capability,
+            docsCapability: PluginManagerDocsCapabilityAdapter(docs: nil)
+        )
 
         viewModel.refresh()
         #expect(viewModel.filteredPlugins.map(\.id) == ["enabled", "disabled"])

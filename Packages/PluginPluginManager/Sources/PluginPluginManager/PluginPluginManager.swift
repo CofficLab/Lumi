@@ -80,7 +80,7 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
         let capability = PluginManagementCapabilityAdapter(manager: manager)
         let viewModel = PluginManagementViewModel(
             capability: capability,
-            docsProvider: docsProvider
+            docsCapability: PluginManagerDocsCapabilityAdapter(docs: docsProvider)
         )
         observer?.cancel()
         observer = PluginManagementObserver(
