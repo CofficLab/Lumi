@@ -1,17 +1,16 @@
 import Foundation
 import KitAgentTool
-import ProviderProject
 
 /// 回忆记忆工具：按 id 读取一条记忆。
 public struct RecallMemoryTool: SuperAgentTool, @unchecked Sendable {
     public let name = "recall_memory"
 
     private let storage: MemoryFileStorage
-    private let project: (any ProjectProviding)?
+    private let projectCapability: MemoryProjectCapability
 
-    public init(storage: MemoryFileStorage, project: (any ProjectProviding)?) {
+    init(storage: MemoryFileStorage, projectCapability: MemoryProjectCapability) {
         self.storage = storage
-        self.project = project
+        self.projectCapability = projectCapability
     }
 
     public func description(for language: LanguagePreference) -> String {
@@ -43,7 +42,7 @@ public struct RecallMemoryTool: SuperAgentTool, @unchecked Sendable {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "id is required")
         }
         let scope = MemoryToolSupport.scope(arguments)
-        let projectPath = await MainActor.run { project?.currentProject?.path }
+        let projectPath = await MainActor.run { projectCapability.currentProjectPath }
         guard let item = try await storage.load(id: id, type: .project, scope: scope, projectPath: scope == .project ? projectPath : nil) else {
             return "## Memory Not Found ❌\n\n**ID**: `\(id)`"
         }

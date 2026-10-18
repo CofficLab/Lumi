@@ -36,3 +36,11 @@ From this package directory:
 swift test
 ```
 
+
+## 能力边界
+
+四个工具都只需要「当前项目路径」用于分域存取（`project` scope 的记忆按项目隔离），
+因此共享 `MemoryProjectCapability`，由 `MemoryProjectCapabilityAdapter` 收窄内核的
+`ProjectProviding`。工具层不再 import `ProviderProject`，也不直接持有 `any ProjectProviding`。
+
+Adapter 在 `onBoot` 中构造一次并被四个工具共享。
