@@ -30,6 +30,22 @@ struct ItemView: View {
                 Label("删除", systemImage: "trash")
             }
         }
+        // Important: 必须合并子元素并显式给出可访问性名称与标识。
+        //
+        // 此前本文件没有任何 accessibility 修饰，行是 `Button` 内嵌
+        // `HStack`（标题 + provider + 模型 + 项目 + 时间等若干 `Text`）。
+        // SwiftUI 不会为这种组合自动合成行级元素，结果是：
+        //   - 屏幕阅读器用户**读不到会话标题**（真实无障碍缺陷）；
+        //   - UI 测试无法按标题定位会话行，只能盲点坐标。
+        // 两者是同一个根因，因此在这里一并修。
+        //
+        // - Note: label 用 `.combine` 把子文本拼进来，并额外显式赋值，
+        //   保证标题一定出现在可访问性名称里（combine 在子元素过多时
+        //   可能只截断拼接，标题必须由我们自己保证在场）。
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(ConversationListAccessibility.itemID)
+        .accessibilityLabel(ConversationListAccessibility.rowLabel(for: conversation))
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 
     private var content: some View {
