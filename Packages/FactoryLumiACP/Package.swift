@@ -9,7 +9,7 @@ let package = Package(
         .executable(name: "LumiACPExecutable", targets: ["LumiACPExecutable"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../KitLLM"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderChatSection"),
