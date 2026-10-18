@@ -313,6 +313,40 @@
         }
       }
     },
+    "Models refreshed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Models refreshed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模型列表已刷新"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模型列表已重新整理"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模型列表已重新整理"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模型列表已重新整理"
+          }
+        }
+      }
+    },
     "No frequent providers yet" : {
       "localizations" : {
         "en" : {
@@ -376,6 +410,7 @@
       }
     },
     "Providers" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -399,40 +434,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "模型提供商"
-          }
-        }
-      }
-    },
-    "Refresh Models" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refresh Models"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新模型列表"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理模型列表"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理模型列表"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理模型列表"
           }
         }
       }
@@ -471,36 +472,36 @@
         }
       }
     },
-    "Models refreshed" : {
+    "Refresh Models" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Models refreshed"
+            "value" : "Refresh Models"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "模型列表已刷新"
+            "value" : "刷新模型列表"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "模型列表已重新整理"
+            "value" : "重新整理模型列表"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "模型列表已重新整理"
+            "value" : "重新整理模型列表"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "模型列表已重新整理"
+            "value" : "重新整理模型列表"
           }
         }
       }
