@@ -322,15 +322,36 @@ func streamingRowFollowsStage() async {
     streaming.streaming = streamingMessage
     streaming.stage = .generating
     harness.viewModel.handleStreamingChange(.updated(conversationID))
-    try? await Task.sleep(nanoseconds: 60_000_000) // 等待单飞帧门禁
-    #expect(harness.viewModel.streamingRow?.id == streamingMessage.id)
+    // - Important: 用轮询而非固定睡眠。`scheduleStreamingRefresh` 有 16ms 的
+    //   单飞帧门禁，固定 60ms 在机器负载高时不足以覆盖它，于是该用例
+    //   偶发失败（表现为与本用例无关的随机红），且极难归因。
+    //   轮询把「等状态成立」而非「等时间过去」。
+    #expect(
+        await waitUntil { harness.viewModel.streamingRow?.id == streamingMessage.id },
+        "进入流式阶段后 streamingRow 未在预期时间内更新"
+    )
 
     // 回到闲置
     streaming.streaming = nil
     streaming.stage = .idle
     harness.viewModel.handleStreamingChange(.updated(conversationID))
-    try? await Task.sleep(nanoseconds: 60_000_000)
-    #expect(harness.viewModel.streamingRow == nil)
+    #expect(
+        await waitUntil { harness.viewModel.streamingRow == nil },
+        "回到闲置阶段后 streamingRow 应隐藏"
+    )
+}
+
+/// 轮询等待条件成立，避免用固定睡眠与异步门禁赛跑。
+@MainActor
+private func waitUntil(
+    timeoutMs: Int = 2_000,
+    _ condition: @MainActor () -> Bool
+) async -> Bool {
+    for _ in 0..<(timeoutMs / 10) {
+        if condition() { return true }
+        try? await Task.sleep(nanoseconds: 10_000_000)
+    }
+    return condition()
 }
 
 @MainActor

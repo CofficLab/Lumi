@@ -143,10 +143,26 @@ import Testing
     )
     await viewModel.reload()
 
+    // - Important: 「未受影响」的基准必须是**创建时的实际值**，不能假定为 nil。
+    //   `createConversation` 会把 `globalAutomationLevel`（默认 `.build`）
+    //   写入每个新会话，因此 `automationLevel` 实际恒非 nil。曾经这里断言
+    //   `== nil`，于是该用例长期失败 —— 但失败的不是产品，而是断言基准错了：
+    //   它把「默认值」误当成了「缺省值」。
+    let untouchedBaseline = viewModel.conversations
+        .first(where: { $0.id == secondID })?.automationLevel
+    #expect(
+        untouchedBaseline == .build,
+        "新会话应继承全局自动化等级 .build，实际 \(String(describing: untouchedBaseline))"
+    )
+
     conversations.setAutomationLevel(.autonomous, for: firstID)
 
     #expect(viewModel.conversations.first(where: { $0.id == firstID })?.automationLevel == .autonomous)
-    #expect(viewModel.conversations.first(where: { $0.id == secondID })?.automationLevel == nil)
+    // 未被修改的会话必须**保持原值**，而不是变成 nil 或跟着变。
+    #expect(
+        viewModel.conversations.first(where: { $0.id == secondID })?.automationLevel == untouchedBaseline,
+        "第二个会话不应被这次修改影响"
+    )
     viewModel.cancel()
     contextObserver.cancel()
 }

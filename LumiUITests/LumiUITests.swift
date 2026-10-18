@@ -10,11 +10,12 @@ import XCTest
 final class LumiUITests: LumiUITestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
-        super.setUpWithError()
         app = XCUIApplication()
         // 先终止上一次运行残留的实例：Lumi 启动慢，若上一测试的进程未完全退出，
         // launch() 会复用处于 Background 的旧实例，导致 activation 失败。
         app.terminate()
+        // Important: 必须调用 super —— 基类在此注入隔离存储等 launchArguments，
+        // 漏掉会让本文件退化成读取用户真实数据的「手动测试」。
         try super.setUpWithError()
         // 禁用 macOS 窗口状态恢复，避免上一次运行的残留窗口干扰测试。
         app.launchArguments += [
