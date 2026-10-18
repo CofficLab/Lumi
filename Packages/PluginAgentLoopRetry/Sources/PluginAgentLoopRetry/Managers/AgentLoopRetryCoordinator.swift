@@ -1,6 +1,4 @@
 import Foundation
-import ProviderAgentLoop
-import ProviderMessage
 
 /// 监听 AgentLoop 事件并在可重试失败后自动重启回合。
 ///
@@ -22,21 +20,21 @@ final class AgentLoopRetryCoordinator {
         var retryTask: Task<Void, Never>?
     }
 
-    private let agentLoop: any AgentLoopProviding
-    private let messages: any MessageManaging
+    private let loop: AgentLoopRetryCapability
+    private let messages: AgentLoopRetryMessageCapability
     private let maxAttempts: Int
-    private var observerHandle: (any AgentLoopObserverHandle)?
+    private var observerHandle: (any AgentLoopRetryObserverHandle)?
     private var states: [UUID: RetryState] = [:]
 
     init(
-        agentLoop: any AgentLoopProviding,
-        messages: any MessageManaging,
+        loop: AgentLoopRetryCapability,
+        messages: AgentLoopRetryMessageCapability,
         maxAttempts: Int
     ) {
-        self.agentLoop = agentLoop
+        self.loop = loop
         self.messages = messages
         self.maxAttempts = max(0, maxAttempts)
-        observerHandle = agentLoop.addAgentLoopObserver { [weak self] event in
+        observerHandle = loop.addTurnObserver { [weak self] event in
             self?.handle(event)
         }
     }
@@ -48,7 +46,7 @@ final class AgentLoopRetryCoordinator {
         states.removeAll()
     }
 
-    private func handle(_ event: AgentLoopEvent) {
+    private func handle(_ event: AgentLoopRetryEvent) {
         switch event {
         case .started(let conversationID, let turnID):
             guard var state = states[conversationID] else { return }
@@ -62,21 +60,16 @@ final class AgentLoopRetryCoordinator {
                 states.removeValue(forKey: conversationID)
             }
 
-        case .failed(let conversationID, let turnID, _):
+        case .failed(let conversationID, let turnID):
             handleFailure(conversationID: conversationID, turnID: turnID)
 
-        case .completed(let conversationID, _),
-             .cancelled(let conversationID, _):
+        case .settled(let conversationID):
             clearState(for: conversationID)
 
-        case .toolCallsReceived(let conversationID, _, _, _),
-             .llmResponseReceived(let conversationID, _, _):
+        case .progressReceived(let conversationID):
             // LLM 成功返回过一次（工具调用或正文）。回合仍在进行中，但失败
             // 已经不再是背靠背的，重试预算回到满额。
             resetAttempts(for: conversationID)
-
-        case .suspended:
-            break
         }
     }
 
@@ -91,7 +84,7 @@ final class AgentLoopRetryCoordinator {
     }
 
     private func handleFailure(conversationID: UUID, turnID: UUID) {
-        guard let failure = agentLoop.lastFailure(for: conversationID),
+        guard let failure = loop.lastFailure(for: conversationID),
               failure.isRetryable,
               maxAttempts > 0 else {
             clearState(for: conversationID)
@@ -128,30 +121,29 @@ final class AgentLoopRetryCoordinator {
         conversationID: UUID,
         failedTurnID: UUID,
         attempt: Int,
-        failure: AgentLoopFailure
+        failure: AgentLoopRetryFailure
     ) async {
         guard !Task.isCancelled,
               let state = states[conversationID],
               state.attempts == attempt,
               state.failedTurnID == failedTurnID,
               state.retryStartPending,
-              agentLoop.state(for: conversationID) == .failed else {
+              loop.turnState(for: conversationID) == .failed else {
             return
         }
 
-        messages.insertMessage(
+        messages.insertRetryNotice(
             AgentLoopRetryTimeline.message(
                 conversationID: conversationID,
                 failedTurnID: failedTurnID,
                 attempt: attempt,
                 maxAttempts: maxAttempts,
                 failure: failure
-            ),
-            to: conversationID
+            )
         )
 
         do {
-            let outcome = try await agentLoop.retryTurn(
+            let outcome = try await loop.retryTurn(
                 in: conversationID,
                 after: failedTurnID
             )

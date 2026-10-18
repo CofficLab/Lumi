@@ -17,8 +17,8 @@ struct AgentLoopRetryPluginTests {
             .failed("network"),
         ])
         let coordinator = AgentLoopRetryCoordinator(
-            agentLoop: agentLoop,
-            messages: messages,
+            loop: AgentLoopRetryCapabilityAdapter(agentLoop: agentLoop),
+            messages: AgentLoopRetryMessageCapabilityAdapter(messages: messages),
             maxAttempts: 3
         )
 
@@ -56,8 +56,8 @@ struct AgentLoopRetryPluginTests {
         let messages = DefaultMessageManager()
         let agentLoop = TestAgentLoop()
         let coordinator = AgentLoopRetryCoordinator(
-            agentLoop: agentLoop,
-            messages: messages,
+            loop: AgentLoopRetryCapabilityAdapter(agentLoop: agentLoop),
+            messages: AgentLoopRetryMessageCapabilityAdapter(messages: messages),
             maxAttempts: 3
         )
 
@@ -79,8 +79,8 @@ struct AgentLoopRetryPluginTests {
         let messages = DefaultMessageManager()
         let agentLoop = TestAgentLoop(outcomes: [.completed, .completed])
         let coordinator = AgentLoopRetryCoordinator(
-            agentLoop: agentLoop,
-            messages: messages,
+            loop: AgentLoopRetryCapabilityAdapter(agentLoop: agentLoop),
+            messages: AgentLoopRetryMessageCapabilityAdapter(messages: messages),
             maxAttempts: 3
         )
         let failure = AgentLoopFailure(kind: .network, message: "暂时不可用")
@@ -111,8 +111,8 @@ struct AgentLoopRetryPluginTests {
         // 由测试显式驱动失败序列，避免 retryTurn 内部的终态事件重复计数。
         agentLoop.emitsTerminalEvent = false
         let coordinator = AgentLoopRetryCoordinator(
-            agentLoop: agentLoop,
-            messages: messages,
+            loop: AgentLoopRetryCapabilityAdapter(agentLoop: agentLoop),
+            messages: AgentLoopRetryMessageCapabilityAdapter(messages: messages),
             maxAttempts: 3
         )
         let failure = AgentLoopFailure(kind: .emptyResponse, message: "模型返回空响应")
@@ -157,8 +157,8 @@ struct AgentLoopRetryPluginTests {
         let agentLoop = TestAgentLoop(outcomes: [.failed("empty")])
         agentLoop.emitsTerminalEvent = false
         let coordinator = AgentLoopRetryCoordinator(
-            agentLoop: agentLoop,
-            messages: messages,
+            loop: AgentLoopRetryCapabilityAdapter(agentLoop: agentLoop),
+            messages: AgentLoopRetryMessageCapabilityAdapter(messages: messages),
             maxAttempts: 3
         )
         let failure = AgentLoopFailure(kind: .emptyResponse, message: "模型返回空响应")
