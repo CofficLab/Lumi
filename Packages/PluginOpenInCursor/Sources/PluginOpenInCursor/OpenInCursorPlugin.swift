@@ -42,6 +42,7 @@ public final class OpenInCursorPlugin: SuperPlugin, SuperLog {
         let tool = OpenInTool(config: OpenInTool.cursor, project: project)
 
         if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
+            let projectCapability = OpenInProjectCapabilityAdapter(project: project)
             toolbar.addToolbarItems([
                 ToolbarItem(
                     id: "\(id).toolbar",
@@ -50,7 +51,7 @@ public final class OpenInCursorPlugin: SuperPlugin, SuperLog {
                     category: .global,
                     order: order
                 ) {
-                    OpenInCursorToolbarView(tool: tool, project: project)
+                    OpenInCursorToolbarView(tool: tool, projectCapability: projectCapability)
                 },
             ])
         }

@@ -1,13 +1,12 @@
 import OpenInKit
-import ProviderProject
 import SwiftUI
 
 /// Open In VS Code 的标题栏按钮。
 struct OpenInVSCodeToolbarView: View {
     @StateObject private var model: OpenInVSCodeToolbarViewModel
 
-    init(tool: OpenInTool, project: (any ProjectProviding)?) {
-        _model = StateObject(wrappedValue: OpenInVSCodeToolbarViewModel(tool: tool, project: project))
+    init(tool: OpenInTool, projectCapability: OpenInProjectCapability) {
+        _model = StateObject(wrappedValue: OpenInVSCodeToolbarViewModel(tool: tool, projectCapability: projectCapability))
     }
 
     var body: some View {
@@ -31,6 +30,9 @@ struct OpenInVSCodeToolbarView: View {
 // MARK: - 预览
 
 #Preview("Open In VS Code Toolbar") {
-    OpenInVSCodeToolbarView(tool: OpenInTool(config: OpenInTool.vscode, project: nil), project: nil)
-        .padding()
+    OpenInVSCodeToolbarView(
+        tool: OpenInTool(config: OpenInTool.vscode, project: nil),
+        projectCapability: OpenInProjectCapabilityAdapter(project: nil)
+    )
+    .padding()
 }

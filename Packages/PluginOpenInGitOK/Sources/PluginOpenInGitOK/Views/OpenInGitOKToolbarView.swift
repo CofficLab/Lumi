@@ -1,13 +1,12 @@
 import OpenInKit
-import ProviderProject
 import SwiftUI
 
 /// Open In GitOK 的标题栏按钮。
 struct OpenInGitOKToolbarView: View {
     @StateObject private var model: OpenInGitOKToolbarViewModel
 
-    init(tool: OpenInTool, project: (any ProjectProviding)?) {
-        _model = StateObject(wrappedValue: OpenInGitOKToolbarViewModel(tool: tool, project: project))
+    init(tool: OpenInTool, projectCapability: OpenInProjectCapability) {
+        _model = StateObject(wrappedValue: OpenInGitOKToolbarViewModel(tool: tool, projectCapability: projectCapability))
     }
 
     var body: some View {
@@ -31,6 +30,6 @@ struct OpenInGitOKToolbarView: View {
 // MARK: - 预览
 
 #Preview("Open In GitOK Toolbar") {
-    OpenInGitOKToolbarView(tool: OpenInTool(config: OpenInTool.gitOK, project: nil), project: nil)
+    OpenInGitOKToolbarView(tool: OpenInTool(config: OpenInTool.gitOK, project: nil), projectCapability: OpenInProjectCapabilityAdapter(project: nil))
         .padding()
 }

@@ -1,22 +1,24 @@
 import Foundation
 import OpenInKit
-import ProviderProject
 
 /// 为标题栏按钮提供当前项目状态，并在项目切换后刷新可用性。
 @MainActor
 final class OpenInGitHubDesktopToolbarViewModel: ObservableObject {
     let tool: OpenInTool
-    private var projectObserver: (any ProjectProvidingObserverHandle)?
+    /// 强引用能力 Adapter，保证 ViewModel 存续期间能力始终可用。
+    private let projectCapability: OpenInProjectCapability
+    private var projectObserver: (any OpenInProjectObserverHandle)?
 
     @Published private(set) var currentProjectPath: String?
     @Published private(set) var isOpening = false
 
-    init(tool: OpenInTool, project: (any ProjectProviding)?) {
+    init(tool: OpenInTool, projectCapability: OpenInProjectCapability) {
         self.tool = tool
-        self.currentProjectPath = project?.currentProject?.path
-        self.projectObserver = project?.addObserver { [weak self] event in
-            guard case let .currentProjectChanged(currentProject, _) = event else { return }
-            self?.currentProjectPath = currentProject?.path
+        self.projectCapability = projectCapability
+        self.currentProjectPath = projectCapability.currentProjectPath
+        self.projectObserver = projectCapability.addProjectObserver { [weak self] event in
+            guard case let .currentProjectChanged(path) = event else { return }
+            self?.currentProjectPath = path
         }
     }
 
