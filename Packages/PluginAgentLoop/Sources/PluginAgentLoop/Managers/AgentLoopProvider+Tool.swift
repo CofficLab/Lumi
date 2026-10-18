@@ -795,16 +795,33 @@ extension AgentLoopManager {
 
     private func estimateToolSchemaTokens(_ schemas: [LLMFunctionSchema]) -> Int {
         schemas.reduce(0) { total, schema in
-            let parameters = (try? JSONSerialization.data(
-                withJSONObject: schema.parameters,
-                options: [.sortedKeys]
-            )).flatMap { String(data: $0, encoding: .utf8) } ?? String(describing: schema.parameters)
+            let parameters = Self.jsonText(for: schema.parameters)
             return total
                 + LLMContextTokenEstimator.estimate(text: schema.name)
                 + LLMContextTokenEstimator.estimate(text: schema.description)
                 + LLMContextTokenEstimator.estimate(text: parameters)
                 + 16
         }
+    }
+
+    /// 把工具参数序列化为键序稳定的 JSON 文本，供 token 估算使用。
+    ///
+    /// - Important: 必须先用 `isValidJSONObject` 预检，不能只靠 `try?`。
+    ///   `JSONSerialization.data(withJSONObject:)` 遇到非 JSON 类型（闭包、
+    ///   `Date`、`Data`、`NaN` 等）时抛的是 ObjC `NSException` 而非 Swift
+    ///   `Error`，`try?` 捕获不到，会直接 abort 整个进程（signal 6）。
+    ///   因此畸形工具 schema 必须先降级为文本估算，而不是让回合崩溃。
+    private static func jsonText(for parameters: [String: Any]) -> String {
+        guard JSONSerialization.isValidJSONObject(parameters),
+              let data = try? JSONSerialization.data(
+                withJSONObject: parameters,
+                options: [.sortedKeys]
+              ),
+              let text = String(data: data, encoding: .utf8)
+        else {
+            return String(describing: parameters)
+        }
+        return text
     }
 
     private func isContextLimitError(_ error: Error) -> Bool {
