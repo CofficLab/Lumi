@@ -2,6 +2,72 @@ import Foundation
 import Combine
 import SwiftUI
 
+/// `InitialPositionGate` 内部竞速的结论：收敛先结束，还是预算先耗尽。
+///
+/// - Note: 独立类型而非裸 `Bool`，是为了让「收敛失败」与「预算耗尽」在
+///   `switch` 里各自成 case —— 两者都放行遮罩，但一个是**已知结果**、
+///   一个是**兜底**，诊断时需要能区分。
+private enum InitialPositionOutcome {
+    /// 收敛过程已返回（参数表示是否成功收敛）。
+    case settled(Bool)
+    /// 预算耗尽仍未收敛，走兜底放行。
+    case timedOut
+}
+
+/// 「收敛结束」与「预算耗尽」之间的竞速器。
+///
+/// ## 为什么不能用 `withTaskGroup`
+///
+/// 收敛过程可能**永不返回**（List 几何一直不收敛）。`withTaskGroup` 退出会等待
+/// 全部子任务结束，于是收敛挂死时——正是需要兜底的那种情况——整个兜底自身
+/// 一起被挂住，遮罩再次永久不消失。
+///
+/// 本类型只 await 一个由「先完成方」唤醒的 continuation，**从不 join** 收敛任务；
+/// 落败方由调用方 `cancel()` 回收。因此兜底永远能在预算内返回。
+///
+/// - Important: 全部状态都在 `@MainActor`，`finish` 的
+///   「continuation 已为 nil 则忽略」即天然的一次性闸门，无需额外加锁。
+@MainActor
+private final class InitialPositionRace {
+    private var continuation: CheckedContinuation<InitialPositionOutcome, Never>?
+    private var settleTask: Task<Void, Never>?
+    private var timeoutTask: Task<Void, Never>?
+
+    /// 启动竞速并等待先完成方。返回后两个任务都已确定胜者。
+    func run(
+        settle: @escaping @MainActor () async -> Bool,
+        budgetNanoseconds: UInt64
+    ) async -> InitialPositionOutcome {
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
+            settleTask = Task { @MainActor in
+                let outcome = InitialPositionOutcome.settled(await settle())
+                finish(outcome)
+            }
+            timeoutTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: budgetNanoseconds)
+                finish(.timedOut)
+            }
+        }
+    }
+
+    /// 取消落败方，避免它在预算结束后继续空转。
+    func cancelLoser(of outcome: InitialPositionOutcome) {
+        switch outcome {
+        case .settled:
+            timeoutTask?.cancel()
+        case .timedOut:
+            settleTask?.cancel()
+        }
+    }
+
+    private func finish(_ outcome: InitialPositionOutcome) {
+        guard let continuation else { return }   // 已有胜者，忽略迟到的一方
+        self.continuation = nil
+        continuation.resume(returning: outcome)
+    }
+}
+
 /// 首屏就绪判定的编排策略（从 `ListV2View` 抽出以便测试）。
 ///
 /// ## 背景
@@ -12,7 +78,7 @@ import SwiftUI
 /// 超时兜底。用户在界面上只能看到「正在加载消息…」一直不消失。
 ///
 /// 这里把判定提炼为可测单元：收敛过程由调用方注入，本类型只负责
-/// 「何时算就绪」以及**超时兜底**——无论收敛成功与否，超过预算都必须放行，
+/// 「何时算就绪」以及**超时兜底**——收敛挂死时超过预算必须强制放行，
 /// 否则任何收敛失败都会变成永久卡死。
 ///
 /// - Important: 必须继承 `ObservableObject`。`isReady` 是 `@Published`，
@@ -24,7 +90,7 @@ import SwiftUI
 ///   `weak self` 落空，遮罩将永久不消失，且超时兜底也随之失效。
 @MainActor
 final class InitialPositionGate: ObservableObject {
-    /// 收敛过程的预算上限。超时后强制视为就绪。
+    /// 收敛过程的预算上限。仅在**收敛挂死**时才会被等满。
     private let budgetNanoseconds: UInt64
 
     /// 首屏是否就绪。必须 `@Published`：遮罩的显示条件依赖它，
@@ -79,32 +145,48 @@ final class InitialPositionGate: ObservableObject {
 
         task = Task { @MainActor [weak self] in
             guard let self else { return }
-            // 竞态跑：收敛过程与超时兜底并行，谁先结束听谁的。
-            let settled = Task { @MainActor in await settle() }
-            let timeout = Task { @MainActor in
-                try? await Task.sleep(nanoseconds: self.budgetNanoseconds)
-            }
 
-            // - Important: 超时到达后**不能**再 `await settled.value`。
-            //   收敛过程可能永不返回（List 几何一直不收敛）；此时 await 会把
-            //   兜底本身也一起挂住，遮罩依旧永久不消失 —— 正是要修的症状。
-            //   超时即代表「预算耗尽」，直接按兜底结果放行并取消收敛任务。
-            _ = await timeout.value
-            let timedOut = timeout.isCancelled == false
-            if timedOut {
-                settled.cancel()
-            }
-            let settledSuccessfully = timedOut ? false : await settled.value
+            // MARK: 收敛与预算的竞速
+            //
+            // Important: 这是**竞速**，不是「先等满预算再看结果」。
+            // 曾经的实现无条件 `await timeout.value`（等满预算才去取收敛结果），
+            // 于是无论几何多稳定，一次切换都要等满整个预算才撤遮罩 ——
+            // 用户看到的正是「切换对话时消息列表出现很慢」。
+            // 收敛一旦结束必须**立即**放行；只有收敛真的挂死才等预算兜底。
+            //
+            // Important: 禁止用 `withTaskGroup` 实现这个竞速。group 退出会等待
+            //   全部子任务结束，而收敛挂死（正是需要兜底的那种情况）会让兜底
+            //   自身一起挂住，遮罩再次永久不消失。
+            //   正确做法见 `InitialPositionRace`：只 await 先完成方，落败方 cancel。
+            let race = InitialPositionRace()
+            let outcome = await race.run(
+                settle: settle,
+                budgetNanoseconds: self.budgetNanoseconds
+            )
+            race.cancelLoser(of: outcome)
 
             guard conversationID == self.pendingConversationID,
                   stillRelevant() else {
-                self.isPreparing = false
+                // Important: 这里**不能**写 isPreparing = false。
+                // 此刻 pendingConversationID 可能已属于**新**轮次，那个
+                // isPreparing 属于新轮次而非本轮；在这里清零会把新轮次的门禁
+                // 提前打开，后续 request 因 isPreparing == false 再启动一轮收敛 ——
+                // 多轮收敛同时驱动同一个 scroll view，正是切换卡顿的放大器。
+                // 本轮的状态由 resetForConversationSwitch() 统一作废。
                 return
             }
-            // Note: 收敛失败（settled 返回 false）时同样放行。首屏遮罩只应
-            //   遮住「位置明显不对」的一瞬；用户更需要一个能滚动、可能位置
-            //   稍有偏差的列表，而不是永久的加载态。
-            self.isReady = timedOut || settledSuccessfully
+            // Note: **两条路径都必须放行遮罩**（这里是遮罩唯一的放行点）：
+            //   - 收敛成功 → 位置已对，立即放行；
+            //   - 预算耗尽 → 兜底放行；
+            //   - 收敛**失败** → 同样放行。首屏遮罩只应遮住「位置明显不对」的
+            //     一瞬；用户更需要一个能滚动、可能位置稍有偏差的列表，
+            //     而不是永久的加载态。
+            //
+            // Important: 曾经的写法是 `timedOut || settledSuccessfully`，
+            //   它在「收敛已返回但返回 false」时算出 false —— 与紧邻的注释
+            //   「收敛失败同样放行」**直接矛盾**，遮罩于是永久挂起且再无兜底
+            //   能救（预算已在竞速中结束）。收敛失败必须也放行。
+            self.isReady = true
             self.isPreparing = false
             self.task = nil
         }
