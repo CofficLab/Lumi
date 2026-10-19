@@ -52,6 +52,8 @@ struct ProviderListView: View {
                 Spacer(minLength: 8)
             }
             .padding(.horizontal, 12)
+            // Important: 垂直内边距必须与 ModelCategoryFilterBar 保持一致，
+            // 否则左右两栏的分割线无法对齐。
             .padding(.vertical, 6)
 
             AppDivider()
