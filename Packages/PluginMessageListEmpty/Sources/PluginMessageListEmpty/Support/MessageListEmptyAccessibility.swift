@@ -30,4 +30,21 @@ public enum MessageListEmptyAccessibility {
     /// - Important: 默认文案随语言变化，因此**仅在以 `-AppleLanguages (en)`
     ///   启动的 UI 测试中断言**。定位不到时应优先怀疑语言参数没生效。
     public static let defaultTitleLabel = "How can I help you today?"
+
+    /// 底部活动条（30 天热力图 + 摘要 + token 趋势）。
+    ///
+    /// 它是独立的 `bottomFixed` 槽位，不与空态容器嵌套，因此需要自己的标识符：
+    /// 断言「空态出现」不会顺带证明「活动条出现」。
+    public static let activityStripID = "lumi.message-list.empty.activity"
+
+    /// 建议 chip 的流式容器。
+    public static let suggestionFlowID = "lumi.message-list.empty.suggestion-flow"
+
+    /// 单个建议 chip，后缀为 suggestion id。
+    ///
+    /// 带 id 后缀是为了让测试能点名具体 chip，而不是「点第一个」——
+    /// 后者会依赖 Provider 的返回顺序，夹具微调就可能点到另一条。
+    public static func suggestionChipID(id: String) -> String {
+        "lumi.message-list.empty.suggestion.\(id)"
+    }
 }
