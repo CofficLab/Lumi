@@ -141,7 +141,6 @@ struct ModelListView: View {
 
             // Model items
             if let providerID = viewModel.selectedProviderID {
-                let models = viewModel.models(for: providerID)
                 let modelInfos = selectedProviderModelInfos
                 let visibleModels = viewModel.visibleModels(for: providerID)
 
