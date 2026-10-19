@@ -172,6 +172,7 @@ struct GoalRowView: View {
     private var expandedTaskList: some View {
         if isExpanded && !tasks.isEmpty {
             Divider()
+                .padding(.horizontal, 8)
 
             ForEach(tasks) { task in
                 HStack(spacing: 6) {
@@ -187,6 +188,8 @@ struct GoalRowView: View {
 
                     Spacer()
                 }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
             }
         }
     }
