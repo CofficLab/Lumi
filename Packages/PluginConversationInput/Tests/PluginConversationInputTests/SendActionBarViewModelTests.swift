@@ -298,7 +298,20 @@ final class SendActionBarTestCapability: ConversationInputCapability {
 
     // MARK: - State
 
-    var text: String = ""
+    /// 模拟真实 `DefaultConversationInputProvider.text` 的 `didSet` 通知语义：
+    /// 文本**实际发生变化**时同步通知全部文本观察者。
+    ///
+    /// 默认关闭。既有测试大多直接赋值 `capability.text` 只为给 ViewModel 铺初始
+    /// 状态，并不关心通知；开启后会让这些用例多走一轮 Observer 回环。性能相关的
+    /// 测试需要显式打开，才能复现生产链路里「写能力层 → 观察者回灌」的完整回路。
+    var notifiesTextObserversOnSet = false
+
+    var text: String = "" {
+        didSet {
+            guard notifiesTextObserversOnSet, text != oldValue else { return }
+            notifyTextObservers(text)
+        }
+    }
     var inputHeight: CGFloat = 40
     var isInputFocused = false
     var inputCursorPosition = 0
@@ -451,10 +464,15 @@ final class SendActionBarTestCapability: ConversationInputCapability {
         return SendActionBarTestHandle(cancel: { [weak self] in self?.conversationStateObservers.removeValue(forKey: id) })
     }
 
+    /// 同步通知全部文本观察者。
+    private func notifyTextObservers(_ text: String) {
+        for callback in textObservers.values { callback(text) }
+    }
+
     /// 推送输入文本变化。
     func emitText(_ text: String) {
         self.text = text
-        for callback in textObservers.values { callback(text) }
+        notifyTextObservers(text)
     }
 
     /// 推送附件变化。
