@@ -262,6 +262,54 @@ struct EmptyStateActivityLoadingTests {
         #expect(model.isLoading == false)
     }
 
+    /// Locks the zero-result retry rule.
+    ///
+    /// A zero result is "the store may not be ready yet", not "the user has no
+    /// history". App startup renders the empty state before the cross-conversation
+    /// statistics are ready, so the first query legitimately returns 0 and the
+    /// data arrives moments later. Treating that 0 as final pinned the strip to
+    /// "never shows" for the rest of the session.
+    ///
+    /// - Important: 只有**非零**结果才命中缓存门。零结果必须保持可重试，
+    ///   否则会在启动早期把「还没准备好」永久误判成「确实没有历史」。
+    @Test("a zero result stays retryable so late-arriving data still shows")
+    func zeroResultDoesNotPinTheStrip() async throws {
+        let manager = StubMessageManager()
+        // 首次查询：数据尚未就绪。
+        manager.messageSeries = [:]
+
+        let model = EmptyStateActivityViewModel(messages: manager, calendar: calendar)
+        await model.loadIfNeeded()
+        #expect(model.totalMessages == 0)
+        #expect(model.hasActivity == false)
+        #expect(manager.messageQueryCount == 1)
+
+        // 数据就绪后再次进入空态：零结果不得命中缓存门，必须重查。
+        manager.messageSeries = [day(0): 9]
+        manager.tokenSeries = [day(0): 100]
+        await model.loadIfNeeded()
+        #expect(manager.messageQueryCount == 2, "零结果被缓存门钉死，数据就绪后不再重查")
+        #expect(model.totalMessages == 9)
+        #expect(model.hasActivity, "数据就绪后活动条仍不显示")
+    }
+
+    /// 非零结果仍然受益于缓存门：同一天内重复进入不重复查库。
+    @Test("a non-zero result still short-circuits repeat queries")
+    func nonZeroResultKeepsTheCacheGate() async throws {
+        let manager = StubMessageManager()
+        manager.messageSeries = [day(0): 3]
+
+        let model = EmptyStateActivityViewModel(messages: manager, calendar: calendar)
+        await model.loadIfNeeded()
+        #expect(manager.messageQueryCount == 1)
+
+        // 再加一条消息，属于「同一天历史小幅变化」——维持原缓存语义。
+        manager.messageSeries = [day(0): 4]
+        await model.loadIfNeeded()
+        #expect(manager.messageQueryCount == 1, "非零结果不应重复查库")
+        #expect(model.totalMessages == 3)
+    }
+
     /// Messages and tokens gate the two visuals independently: a day can have
     /// messages but zero recorded tokens, and the heatmap must survive that.
     @Test("token activity is tracked independently from message activity")
