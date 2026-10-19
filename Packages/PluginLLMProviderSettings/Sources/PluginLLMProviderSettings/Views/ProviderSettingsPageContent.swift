@@ -58,12 +58,14 @@ struct ProviderSettingsPageContent: View {
                 viewModel.providerCountLabel,
                 systemImage: viewModel.headerSystemImage
             )
+            .accessibilityIdentifier(ProviderSettingsAccessibility.providerCountLabel)
             Text("\(viewModel.selectedModelCount) 个模型")
             Spacer()
             if !viewModel.isLocal {
                 AppButton("添加供应商", systemImage: "plus", style: .primary, size: .small) {
                     isCustomProviderEditorPresented = true
                 }
+                .accessibilityIdentifier(ProviderSettingsAccessibility.addProviderButton)
             }
         }
         .font(.appCaption)
@@ -73,6 +75,7 @@ struct ProviderSettingsPageContent: View {
     private var sidebar: some View {
         VStack(spacing: 0) {
             AppSearchBar(text: $viewModel.searchText, placeholder: "搜索供应商")
+                .accessibilityIdentifier(ProviderSettingsAccessibility.searchField)
                 .padding(12)
 
             AppDivider()
@@ -121,6 +124,7 @@ struct ProviderSettingsPageContent: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .accessibilityIdentifier(ProviderSettingsAccessibility.providerRow(info.id))
     }
 
     @ViewBuilder
