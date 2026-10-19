@@ -72,6 +72,10 @@ struct NoConversationSelectedView: View {
                 }
                 .scrollIndicators(.hidden)
             }
+            // 标识符挂在 ScrollView 的**内容**而非外层 GeometryReader 上：
+            // GeometryReader 是布局容器、无自身语义，在其上设置 identifier
+            // 只会让整页子树被合并成一个元素，屏幕阅读器将失去内部结构。
+            .accessibilityIdentifier(MessageListEmptyAccessibility.noConversationSelectedID)
         }
         .accessibilityIdentifier(MessageListEmptyA11y.noSelection)
         .onAppear {
