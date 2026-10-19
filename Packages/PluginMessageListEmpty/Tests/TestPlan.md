@@ -6,7 +6,7 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 并以常驻注册的 ChatSection 槽位参与 `message-list` 互斥竞争。
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，单元用例总数: 52（另有 5 条 UI 测试，见「UI 测试」章节）
+测试文件: 10 个，单元用例总数: 53（另有 5 条 UI 测试，见「UI 测试」章节）
 
 核心组件（源码目录）:
 - `Models/`
@@ -104,20 +104,22 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 | 51 | MessageListEmptyUITestingSupport | repeated seed does not duplicate conversations | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `fixtureSeedIsIdempotent` |
 | 52 | MessageListEmptyUITestingSupport | the fixture only activates with its launch argument | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fixtureOnlyActivatesWithLaunchArgument` |
 
-> 说明：全部 **52 条单元场景**已在本包 `swift test` 中实跑通过（5 suites / 52 tests，约 0.02 s）；另有 5 条 UI 测试见下方章节。
+| 53 | EmptyStateAccessibility | emptyStateAccessibilityIdentifiersAreStableAndDistinct | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emptyStateAccessibilityIdentifiersAreStableAndDistinct` |
+
+> 说明：全部 **53 条单元场景**已在本包 `swift test` 中实跑通过（5 suites / 53 tests，约 0.02 s）；另有 5 条 UI 测试见下方章节。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
+- P0: 已覆盖 11 / 11
 - P1: 已覆盖 38 / 38
 - P2: 已覆盖 4 / 4
-- **合计: 52 / 52**（仅表示清单场景，非源码覆盖率）
+- **合计: 53 / 53**（仅表示清单场景，非源码覆盖率）
 - **UI 测试: 5 条**（3 通过 / 2 跳过，见「UI 测试」章节）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
 - **P1**: 其余功能性用例（38 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
@@ -143,7 +145,19 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 
 会话列表由 rail 侧栏承载（`WorkbenchSplitView` 要求 `railView != nil && isRailViewVisible`）。
 本次执行环境的窗口布局下 rail 未渲染，`lumi.conversation-list` 容器不存在。
-**既有的 `LumiMessageListSwitchUITests` 在同一环境下同样失败**（"大会话未出现在会话列表"），可确认与本插件无关。
+
+**已在远程基线（`origin/dev`，不含本次提交）上复跑确认**：以下三类用例在同一环境下
+结果一致，均为既存失败/无法执行，与本插件改动无关：
+
+| 用例类 | 基线结果 | 本分支结果 |
+|--------|---------|-----------|
+| `LumiMessageListSwitchUITests`（切换遮罩） | ❌ 大会话未出现在会话列表 | 同样失败 |
+| `LumiFreshInstallEmptyStateUITests`（首条消息 → 列表出现） | ❌ 2 条失败 / 1 条通过 | 完全一致 |
+| `LumiMessageListEmptyUITests`（本插件切换类） | — | ⏭️ skip |
+
+同时说明标识符契约未被破坏：基线中通过的那条
+`testFreshInstallShowsEmptyStateInsteadOfBlankChat` 依赖 `no-conversation-selected`
+标识符，本次改名后它仍然通过。
 
 U4/U5 已实现为「容器不存在 → skip（附原因）；容器存在但找不到会话行 → fail」，
 两者分开归因，避免环境问题掩盖真实回归。
@@ -188,7 +202,7 @@ App 启动时空态先渲染、跨会话统计稍后就绪，首次查询**本�
 
 ## 跨平台说明
 
-- 单元测试：Package 声明 macOS 14+, iOS 17+，52 条用例位于 `Tests/`
+- 单元测试：Package 声明 macOS 14+, iOS 17+，53 条用例位于 `Tests/`
 - UI 测试：仅 macOS（`LumiUITests` target），5 条用例
 
 ## 测试执行
