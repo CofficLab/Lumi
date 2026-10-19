@@ -436,6 +436,19 @@ let package = Package(
                 .product(name: "PluginMessageListStandard", package: "PluginMessageListStandard"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "PluginToolbar", package: "LumiProviders"),
+                // 全新安装首屏装配（空态 → 首条消息 → 对话列表 tab）需要真实
+                // 拉起 ChatPanel 与 ConversationList 两个插件，并在同一 Kernel
+                // 上观察三方对 Rail / ChatSection 的写入。
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "PluginChatPanel", package: "PluginChatPanel"),
+                .product(name: "PluginConversationList", package: "PluginConversationList"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
+                .product(name: "ProviderRailView", package: "LumiProviders"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "ProviderProject", package: "LumiProviders"),
+                .product(name: "ProviderToolbar", package: "LumiProviders"),
+                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
             ]
         )
     ]
