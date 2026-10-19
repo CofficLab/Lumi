@@ -75,7 +75,7 @@ struct ActivityFooterView: View {
         .padding(.top, 18)
         .frame(maxWidth: 620)
         .frame(maxWidth: .infinity)
-        .accessibilityIdentifier(MessageListEmptyA11y.activityStrip)
+        .accessibilityIdentifier(MessageListEmptyAccessibility.activityStripID)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text(summaryText))
     }

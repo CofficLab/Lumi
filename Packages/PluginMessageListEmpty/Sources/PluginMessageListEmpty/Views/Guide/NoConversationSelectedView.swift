@@ -77,7 +77,6 @@ struct NoConversationSelectedView: View {
             // 只会让整页子树被合并成一个元素，屏幕阅读器将失去内部结构。
             .accessibilityIdentifier(MessageListEmptyAccessibility.noConversationSelectedID)
         }
-        .accessibilityIdentifier(MessageListEmptyA11y.noSelection)
         .onAppear {
             guideState.toolbarCoordinator.activate()
         }

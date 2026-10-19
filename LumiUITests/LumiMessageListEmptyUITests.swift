@@ -210,15 +210,18 @@ final class LumiMessageListEmptyUITests: LumiUITestCase {
     }
 }
 
-/// 空态视图的可访问性标识符（复述 `MessageListEmptyA11y`）。
+/// 空态视图的可访问性标识符（复述 `MessageListEmptyAccessibility`）。
 ///
 /// UI 测试是独立 target，不能 import 插件模块，因此在此复述常量。
-/// 改动必须与 `MessageListEmptyA11y` 同步。
+/// 改动必须与 `Support/MessageListEmptyAccessibility.swift` 同步。
+///
+/// - Note: 命名与字符串沿用插件 id 的点分形式（`message-list.empty`），
+///   与 `LumiFreshInstallEmptyStateUITests` 里的复述一致，不要改回连字符。
 enum MessageListEmptyA11yIDs {
-    static let noSelection = "lumi.message-list-empty.no-selection"
-    static let noMessages = "lumi.message-list-empty.no-messages"
-    static let suggestionFlow = "lumi.message-list-empty.suggestion-flow"
-    static let activityStrip = "lumi.message-list-empty.activity"
+    static let noSelection = "lumi.message-list.empty.no-conversation-selected"
+    static let noMessages = "lumi.message-list.empty.no-messages"
+    static let suggestionFlow = "lumi.message-list.empty.suggestion-flow"
+    static let activityStrip = "lumi.message-list.empty.activity"
 }
 
 /// 夹具会话标题（复述 `MessageListEmptyUITestingSupport`）。

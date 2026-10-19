@@ -79,7 +79,6 @@ struct MessageEmptyStateView: View {
             // 在其上设置 identifier 会让整页子树被合并成一个元素。
             .accessibilityIdentifier(MessageListEmptyAccessibility.noMessagesID)
         }
-        .accessibilityIdentifier(MessageListEmptyA11y.noMessages)
         .fileImporter(isPresented: $importingFolder, allowedContentTypes: [.folder], allowsMultipleSelection: false) { result in
             guard case .success(let urls) = result, let url = urls.first else { return }
             Task { @MainActor in
