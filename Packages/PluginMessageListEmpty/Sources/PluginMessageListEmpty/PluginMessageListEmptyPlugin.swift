@@ -45,6 +45,17 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
     private var promptSuggestionsObserver: (any PromptSuggestionProvidingObserverHandle)?
     private var registrationEvaluationTask: Task<Void, Never>?
     private var isRegistered = false
+
+    /// Holds the UI-test fixture's one-shot observer so it stays alive.
+    ///
+    /// Declared outside `#if DEBUG` on purpose: a stored property that is only
+    /// assigned inside a conditional-compilation branch is legal in Release (it
+    /// is simply never written), so guarding it would only add noise. The
+    /// *type* is what must stay guarded, and it does — see the `#if DEBUG` block
+    /// in `onBoot`.
+    ///
+    /// - Note: `nil` in Release, which is correct: there is no fixture to retain.
+    private var uiTestingSeedHandle: (any ConversationObserverHandle)?
     /// 「当前会话是否没有消息」这个判定的结果。
     ///
     /// 判定依赖异步 SwiftData 查询，因此必须显式建模「尚未得出结论」，
@@ -132,6 +143,18 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         // 常驻注册：可见性随后续判定变化，注册本身不再变动。
         register()
         scheduleRegistrationEvaluation()
+
+        #if DEBUG
+        // - Important: 调用点与夹具定义同处 `#if DEBUG`。夹具类型只在 DEBUG
+        //   存在，仅在调用点写守卫而把 seed 提到外面，会让 Release 构建报
+        //   "cannot find 'MessageListEmptyUITestingSupport' in scope"。
+        if let conversations, let messages, MessageListEmptyUITestingSupport.isEnabled {
+            uiTestingSeedHandle = MessageListEmptyUITestingSupport.seed(
+                conversations: conversations,
+                messages: messages
+            )
+        }
+        #endif
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -147,6 +170,8 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         chatObserver = nil
         promptSuggestionsObserver?.cancel()
         promptSuggestionsObserver = nil
+        uiTestingSeedHandle?.cancel()
+        uiTestingSeedHandle = nil
 
         if isRegistered {
             chat?.removeItem(id: id)

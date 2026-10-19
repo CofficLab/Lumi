@@ -25,8 +25,10 @@ struct PromptSuggestionFlow: View {
                     PromptSuggestionChip(suggestion: suggestion)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier(MessageListEmptyA11y.suggestionChip(id: suggestion.id))
             }
         }
+        .accessibilityIdentifier(MessageListEmptyA11y.suggestionFlow)
         .frame(maxWidth: 520)
     }
 }

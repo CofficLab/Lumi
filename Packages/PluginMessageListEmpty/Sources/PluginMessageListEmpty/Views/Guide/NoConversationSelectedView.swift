@@ -1,3 +1,4 @@
+import Foundation
 import LumiUI
 import ProviderChatSection
 import ProviderProject
@@ -72,6 +73,7 @@ struct NoConversationSelectedView: View {
                 .scrollIndicators(.hidden)
             }
         }
+        .accessibilityIdentifier(MessageListEmptyA11y.noSelection)
         .onAppear {
             guideState.toolbarCoordinator.activate()
         }
