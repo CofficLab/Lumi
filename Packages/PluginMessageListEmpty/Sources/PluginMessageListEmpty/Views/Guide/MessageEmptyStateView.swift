@@ -75,6 +75,9 @@ struct MessageEmptyStateView: View {
                 }
                 .scrollIndicators(.hidden)
             }
+            // 挂在内容而非外层 GeometryReader：后者是纯布局容器，
+            // 在其上设置 identifier 会让整页子树被合并成一个元素。
+            .accessibilityIdentifier(MessageListEmptyAccessibility.noMessagesID)
         }
         .fileImporter(isPresented: $importingFolder, allowedContentTypes: [.folder], allowsMultipleSelection: false) { result in
             guard case .success(let urls) = result, let url = urls.first else { return }
