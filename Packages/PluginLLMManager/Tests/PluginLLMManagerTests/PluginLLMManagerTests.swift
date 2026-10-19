@@ -8,16 +8,57 @@ import ProviderMessageRendering
 import Testing
 @testable import PluginLLMManager
 
-@MainActor
-@Suite("PluginLLMManager", .serialized)
-struct PluginLLMManagerTests {
+/// 快照并在测试结束后还原 `UserDefaults.standard` 中的指定键。
+///
+/// - Important: Swift Testing 的 Suite 是 struct，**不能**写 `deinit`，
+///   所以还原逻辑必须放在 trait 的 `deinit` 里（trait 可以是 class）。
+///   `snapshot` 是可变状态，需锁保护以满足 Swift 6 的 Sendable 要求。
+private final class DefaultsSnapshot: SuiteTrait, @unchecked Sendable {
+    private let keys: [String]
+    private let lock = NSLock()
+    private var snapshot: [String: Any] = [:]
 
-    init() {
+    init(keys: [String]) { self.keys = keys }
+
+    func setUp() async throws {
         let defaults = UserDefaults.standard
-        defaults.removeObject(forKey: "com.coffic.lumi.llmProviderManager.selectedModelID")
-        defaults.removeObject(forKey: "com.coffic.lumi.llmProviderManager.selectedProviderID")
-        defaults.removeObject(forKey: "com.coffic.lumi.llmProviderManager.selectedModel")
+        lock.withLock { snapshot = [:] }
+        for key in keys {
+            lock.withLock { snapshot[key] = defaults.object(forKey: key) }
+            defaults.removeObject(forKey: key)
+        }
     }
+
+    deinit {
+        let defaults = UserDefaults.standard
+        for key in keys {
+            let value = lock.withLock { snapshot[key] }
+            if let value {
+                defaults.set(value, forKey: key)
+            } else {
+                defaults.removeObject(forKey: key)
+            }
+        }
+    }
+}
+
+/// LLM 管理器测试。
+///
+/// - Important: `CustomLLMManager` 把选中模型持久化在 `UserDefaults.standard`，
+///   因此这些键是**共享全局状态**。本套件在每个用例前清空、结束后**还原**，
+///   既保证用例从干净状态开始，又不破坏开发者在 App 里选好的模型。
+///   `.serialized` 保证同套件内不并发踩同一份偏好。
+@MainActor
+@Suite(
+    "PluginLLMManager",
+    .serialized,
+    DefaultsSnapshot(keys: [
+        "com.coffic.lumi.llmProviderManager.selectedModelID",
+        "com.coffic.lumi.llmProviderManager.selectedProviderID",
+        "com.coffic.lumi.llmProviderManager.selectedModel",
+    ])
+)
+struct PluginLLMManagerTests {
 
     /// onBoot 应替换 ProviderFactory 预注册的默认管理器，并注册本插件的实现。
     @Test("onBoot 替换默认 LLMManaging 为 CustomLLMManager")

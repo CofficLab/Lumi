@@ -22,15 +22,15 @@ final class PluginManagementViewModel: ObservableObject {
     @Published private(set) var isDisablingAll = false
 
     private let capability: any PluginManagementCapability
-    private let docsProvider: (any DocsViewProviding)?
+    private let docsCapability: PluginManagerDocsCapability
     private var updatingPluginIDs = Set<String>()
 
     init(
         capability: any PluginManagementCapability,
-        docsProvider: (any DocsViewProviding)?
+        docsCapability: PluginManagerDocsCapability
     ) {
         self.capability = capability
-        self.docsProvider = docsProvider
+        self.docsCapability = docsCapability
     }
 
     var filteredPlugins: [PluginManagementItem] {
@@ -126,6 +126,6 @@ final class PluginManagementViewModel: ObservableObject {
     }
 
     func aboutEntry(for pluginID: String) -> DocsEntry? {
-        docsProvider?.aboutEntries.first(where: { $0.id == pluginID })
+        docsCapability.aboutEntry(for: pluginID)
     }
 }

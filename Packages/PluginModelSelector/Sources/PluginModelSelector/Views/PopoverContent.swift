@@ -18,11 +18,8 @@ struct PopoverContent: View {
     var body: some View {
         HStack(spacing: 0) {
             // Left: Provider List
-            ProviderListView(
-                viewModel: viewModel,
-                onClose: { isPresented = false }
-            )
-            .frame(width: 300)
+            ProviderListView(viewModel: viewModel)
+                .frame(width: 300)
 
             AppDivider(.vertical)
 

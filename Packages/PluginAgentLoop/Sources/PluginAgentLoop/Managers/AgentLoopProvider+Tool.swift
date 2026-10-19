@@ -387,6 +387,34 @@ extension AgentLoopManager {
         toolCall: AgentLoopToolCall,
         result toolResult: ToolCallResult
     ) async {
+        let result = convertResult(toolResult)
+
+        // 授权终态先于状态机落库。
+        //
+        // 「用户已允许/已拒绝」必须持久化，因为它决定渲染层还会不会再弹一次
+        // 授权卡片（见 `ToolApprovalRowRenderer.canRender`）。而回合状态机此时
+        // 可能已经不可靠：应用重启后 `runtimes` 为空、回合可能已结束或被取消、
+        // 事件的 turnID 也可能与消息落库的 turnID 不一致。若把落库挂在状态机的
+        // guard 之后，这三种情况都会静默丢弃授权终态，用户下次打开消息列表
+        // 就会再次被要求授权——尽管上一轮已经明确做过决定。
+        //
+        // 因此这里以**消息**（唯一可靠来源）定位落库目标，与状态机解耦；
+        // 下面的 guard 只决定「能否推进回合状态机」，不再决定「要不要落库」。
+        if let assistantMessageID = await assistantMessageID(
+            containingToolCallID: toolCall.id,
+            in: conversationID
+        ) {
+            messages.updateToolCallResult(
+                result,
+                toolCallID: toolCall.id,
+                assistantMessageID: assistantMessageID,
+                in: conversationID,
+                authorizationState: toolCall.authorizationState.rawValue
+            )
+        } else if Self.verbose {
+            Self.logger.error("\(Self.t)授权工具结果落库失败：找不到承载该调用的 assistant 消息 toolCallID=\(toolCall.id), conversation=\(conversationID.uuidString.prefix(8))")
+        }
+
         guard await prepareRuntimeForToolResult(
             conversationID: conversationID,
             eventTurnID: eventTurnID,
@@ -394,37 +422,28 @@ extension AgentLoopManager {
         ),
         var runtime = runtimes[conversationID] else {
             if Self.verbose {
-                Self.logger.error("\(Self.t)忽略授权工具结果：找不到会话运行时 conversation=\(conversationID.uuidString.prefix(8))")
+                Self.logger.error("\(Self.t)授权工具结果不推进回合：找不到会话运行时（结果已落库）conversation=\(conversationID.uuidString.prefix(8))")
             }
             return
         }
-        guard case .executingTools(let turnID, let assistantMessageID, let pending) = runtime.phase else {
+        guard case .executingTools(let turnID, _, let pending) = runtime.phase else {
             if Self.verbose {
-                Self.logger.error("\(Self.t)忽略授权工具结果：当前状态不是 executingTools，conversation=\(conversationID.uuidString.prefix(8))")
+                Self.logger.error("\(Self.t)授权工具结果不推进回合：当前状态不是 executingTools（结果已落库），conversation=\(conversationID.uuidString.prefix(8))")
             }
             return
         }
         guard eventTurnID == nil || eventTurnID == turnID else {
             if Self.verbose {
-                Self.logger.error("\(Self.t)忽略授权工具结果：turnID 不匹配，conversation=\(conversationID.uuidString.prefix(8))")
+                Self.logger.error("\(Self.t)授权工具结果不推进回合：turnID 不匹配（结果已落库），conversation=\(conversationID.uuidString.prefix(8))")
             }
             return
         }
         guard pending.contains(where: { $0.id == toolCall.id }) else {
             if Self.verbose {
-                Self.logger.error("\(Self.t)忽略未等待的授权工具结果：toolCallID=\(toolCall.id), conversation=\(conversationID.uuidString.prefix(8))")
+                Self.logger.error("\(Self.t)授权工具结果不推进回合：未等待该调用（结果已落库），toolCallID=\(toolCall.id), conversation=\(conversationID.uuidString.prefix(8))")
             }
             return
         }
-
-        let result = convertResult(toolResult)
-        messages.updateToolCallResult(
-            result,
-            toolCallID: toolCall.id,
-            assistantMessageID: assistantMessageID,
-            in: conversationID,
-            authorizationState: toolCall.authorizationState.rawValue
-        )
 
         if result.awaitingUserResponse {
             // 仍在等待用户输入时只更新 assistant 内嵌状态，避免把临时
@@ -460,6 +479,25 @@ extension AgentLoopManager {
             finishTurn(conversationID: conversationID, turnID: turnID, outcome: outcome)
         }
         continueAfterToolResults(runtime: runtime, conversationID: conversationID, turnID: turnID)
+    }
+
+    /// 找到承载指定工具调用的 assistant 消息 ID。
+    ///
+    /// 授权终态的落库目标以**消息**为准，而不是回合状态机：消息同时保存了
+    /// turnID、assistant 消息 ID 与完整工具调用列表，是重启后仍然可靠的来源
+    /// （`prepareRuntimeForToolResult` 的恢复分支用的是同一套查找逻辑）。
+    ///
+    /// - Note: 这里取**最后一条**匹配的消息。同一会话可能存在多个回合，
+    ///   工具调用 ID 在不同回合间可能复用，只有最近的 assistant 消息才
+    ///   持有当前这次调用的展示快照。
+    private func assistantMessageID(
+        containingToolCallID toolCallID: String,
+        in conversationID: UUID
+    ) async -> UUID? {
+        await messages.messagesSnapshot(in: conversationID).reversed().first { message in
+            message.role == .assistant
+                && message.toolCalls?.contains(where: { $0.id == toolCallID }) == true
+        }?.id
     }
 
     enum LLMRequestResult {
@@ -755,12 +793,13 @@ extension AgentLoopManager {
         }
     }
 
-    private func estimateToolSchemaTokens(_ schemas: [LLMFunctionSchema]) -> Int {
+    // - Important: 这三个纯函数保持 internal 而非 private，供 `@testable` 直接覆盖。
+    //   它们没有任何外部调用方，收窄可见性只会让错误分类逻辑无法被单测验证。
+
+    /// 估算全部工具 schema 占用的 token 数，用于上下文预算的保守预留。
+    func estimateToolSchemaTokens(_ schemas: [LLMFunctionSchema]) -> Int {
         schemas.reduce(0) { total, schema in
-            let parameters = (try? JSONSerialization.data(
-                withJSONObject: schema.parameters,
-                options: [.sortedKeys]
-            )).flatMap { String(data: $0, encoding: .utf8) } ?? String(describing: schema.parameters)
+            let parameters = Self.jsonText(for: schema.parameters)
             return total
                 + LLMContextTokenEstimator.estimate(text: schema.name)
                 + LLMContextTokenEstimator.estimate(text: schema.description)
@@ -769,7 +808,27 @@ extension AgentLoopManager {
         }
     }
 
-    private func isContextLimitError(_ error: Error) -> Bool {
+    /// 把工具参数序列化为键序稳定的 JSON 文本，供 token 估算使用。
+    ///
+    /// - Important: 必须先用 `isValidJSONObject` 预检，不能只靠 `try?`。
+    ///   `JSONSerialization.data(withJSONObject:)` 遇到非 JSON 类型（闭包、
+    ///   `Date`、`Data`、`NaN` 等）时抛的是 ObjC `NSException` 而非 Swift
+    ///   `Error`，`try?` 捕获不到，会直接 abort 整个进程（signal 6）。
+    ///   因此畸形工具 schema 必须先降级为文本估算，而不是让回合崩溃。
+    private static func jsonText(for parameters: [String: Any]) -> String {
+        guard JSONSerialization.isValidJSONObject(parameters),
+              let data = try? JSONSerialization.data(
+                withJSONObject: parameters,
+                options: [.sortedKeys]
+              ),
+              let text = String(data: data, encoding: .utf8)
+        else {
+            return String(describing: parameters)
+        }
+        return text
+    }
+
+    func isContextLimitError(_ error: Error) -> Bool {
         guard case let VendorAPIError.httpStatus(_, summary) = error else { return false }
         let normalized = summary.lowercased()
         return normalized.contains("context")
@@ -781,7 +840,7 @@ extension AgentLoopManager {
 
     /// LLM 工具协议错误不会改变用户任务本身，允许在同一回合内重试。
     /// 认证、权限、上下文长度等错误仍然直接终止，避免无意义地重复请求。
-    private func isRecoverableLLMFailure(_ error: Error) -> Bool {
+    func isRecoverableLLMFailure(_ error: Error) -> Bool {
         if error is LLMToolCallValidationError {
             return true
         }

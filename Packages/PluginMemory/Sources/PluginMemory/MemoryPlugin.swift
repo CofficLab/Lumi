@@ -46,11 +46,13 @@ public final class MemoryPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         let storage = MemoryFileStorage(rootURL: memoryRoot)
         self.storage = storage
 
-        let project = kernel.resolveProvider((any ProjectProviding).self)
-        toolManager.add(SaveMemoryTool(storage: storage, project: project), pluginID: id)
-        toolManager.add(RecallMemoryTool(storage: storage, project: project), pluginID: id)
-        toolManager.add(ListMemoriesTool(storage: storage, project: project), pluginID: id)
-        toolManager.add(DeleteMemoryTool(storage: storage, project: project), pluginID: id)
+        let projectCapability = MemoryProjectCapabilityAdapter(
+            project: kernel.resolveProvider((any ProjectProviding).self)
+        )
+        toolManager.add(SaveMemoryTool(storage: storage, projectCapability: projectCapability), pluginID: id)
+        toolManager.add(RecallMemoryTool(storage: storage, projectCapability: projectCapability), pluginID: id)
+        toolManager.add(ListMemoriesTool(storage: storage, projectCapability: projectCapability), pluginID: id)
+        toolManager.add(DeleteMemoryTool(storage: storage, projectCapability: projectCapability), pluginID: id)
 
         // 注册设置入口
         if let settingView = kernel.resolveProvider((any SettingViewProviding).self) {

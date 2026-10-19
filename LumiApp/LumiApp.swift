@@ -165,17 +165,83 @@ struct LumiApp: App {
     }
 }
 
+/// 内核装配失败时的兜底视图。
+///
+/// - Important: 此视图在内核装配失败后渲染，必须**完全自足**：
+///   不得使用 `@LumiTheme` / `AppUI.*` 等依赖 ThemeProviding 解析结果的
+///   LumiUI 组件，否则主题 Provider 缺失会二次崩溃，导致连错误页都显示不出来。
+///   因此这里只使用 SwiftUI 语义色与 SF Symbols。
 private struct BootstrapFailureView: View {
     let message: String
 
     var body: some View {
-        ContentUnavailableView(
-            "LumiMinimal 启动失败",
-            systemImage: "exclamationmark.triangle",
-            description: Text(message)
-        )
-        .textSelection(.enabled)
-        .padding(24)
+        VStack(spacing: 28) {
+            badge
+
+            Text("LumiMinimal 启动失败")
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(.primary)
+
+            detailCard
+        }
+        .padding(40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// 图标徽章：圆形渐变底 + 白色警告符号，替代系统默认的灰色描边图标。
+    private var badge: some View {
+        ZStack {
+            // 背景光晕：用大尺寸三角模糊铺在徽章后方，营造柔和的暖色氛围。
+            // 放在 .background 而非 .overlay，避免半透明色叠加导致徽章发浑。
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 132))
+                .foregroundStyle(.orange.opacity(0.10))
+                .blur(radius: 10)
+                .offset(y: 4)
+                .allowsHitTesting(false)
+
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [Color.orange, Color.red],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 96, height: 96)
+                .overlay {
+                    Circle().strokeBorder(.white.opacity(0.25), lineWidth: 1)
+                }
+                .shadow(color: .red.opacity(0.28), radius: 18, y: 8)
+
+            Image(systemName: "exclamationmark")
+                .font(.system(size: 44, weight: .bold))
+                .foregroundStyle(.white)
+        }
+        .accessibilityHidden(true)
+    }
+
+    /// 错误详情卡片：等宽字体 + 可选中，便于用户复制去排查。
+    private var detailCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("错误详情", systemImage: "doc.text.magnifyingglass")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.secondary)
+
+            Text(message)
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundStyle(.primary)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .frame(maxWidth: 460)
+        .background(.regularMaterial, in: .rect(cornerRadius: 12))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(.separator.opacity(0.6), lineWidth: 1)
+        }
     }
 }
 

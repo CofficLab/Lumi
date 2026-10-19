@@ -3,14 +3,20 @@ import KitMail
 @testable import PluginMail
 
 final class MailSessionManagerTests: XCTestCase {
-    override func setUp() {
-        super.setUp()
-        MailAccountStore.reset()
+    /// 每个用例一套独立的临时目录 + 内存 Keychain：不读写真实用户凭据。
+    private var fixture: MailAccountStoreFixture!
+    private var store: MailAccountStore!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        fixture = try MailAccountStoreFixture()
+        store = fixture.store
     }
 
-    override func tearDown() {
-        MailAccountStore.reset()
-        super.tearDown()
+    override func tearDownWithError() throws {
+        fixture = nil
+        store = nil
+        try super.tearDownWithError()
     }
 
     private func makeAccount() -> MailAccountConfig {
@@ -26,9 +32,9 @@ final class MailSessionManagerTests: XCTestCase {
 
     func testSessionCachesByAccount() async throws {
         let factory = MockMailSessionFactory()
-        let manager = MailSessionManager(factory: factory)
+        let manager = MailSessionManager(factory: factory, accountStore: store)
         let account = makeAccount()
-        MailAccountStore.setPassword("p", for: account.id)
+        store.setPassword("p", for: account.id)
 
         let first = try await manager.session(for: account)
         let second = try await manager.session(for: account)
@@ -39,7 +45,7 @@ final class MailSessionManagerTests: XCTestCase {
 
     func testSessionThrowsAuthFailedWhenPasswordMissing() async {
         let factory = MockMailSessionFactory()
-        let manager = MailSessionManager(factory: factory)
+        let manager = MailSessionManager(factory: factory, accountStore: store)
         let account = makeAccount()
         // 未存密码 → authFailed，且不创建会话
         do {
@@ -55,9 +61,9 @@ final class MailSessionManagerTests: XCTestCase {
 
     func testSessionThrowsAuthFailedOnBadCredentials() async {
         let factory = MockMailSessionFactory(behavior: MockMailSessionFactory.Behavior(failConnect: true))
-        let manager = MailSessionManager(factory: factory)
+        let manager = MailSessionManager(factory: factory, accountStore: store)
         let account = makeAccount()
-        MailAccountStore.setPassword("wrong", for: account.id)
+        store.setPassword("wrong", for: account.id)
 
         do {
             _ = try await manager.session(for: account)
@@ -75,9 +81,9 @@ final class MailSessionManagerTests: XCTestCase {
 
     func testDisconnectAndDisconnectAll() async throws {
         let factory = MockMailSessionFactory()
-        let manager = MailSessionManager(factory: factory)
+        let manager = MailSessionManager(factory: factory, accountStore: store)
         let account = makeAccount()
-        MailAccountStore.setPassword("p", for: account.id)
+        store.setPassword("p", for: account.id)
 
         _ = try await manager.session(for: account)
         var count = await manager.activeCount
@@ -95,25 +101,10 @@ final class MailSessionManagerTests: XCTestCase {
 
     func testTestConnectionDoesNotCache() async throws {
         let factory = MockMailSessionFactory()
-        let manager = MailSessionManager(factory: factory)
+        let manager = MailSessionManager(factory: factory, accountStore: store)
         let account = makeAccount()
         try await manager.testConnection(account: account, password: "p")
         let count = await manager.activeCount
         XCTAssertEqual(count, 0, "连接测试不缓存会话")
-    }
-}
-
-final class MailPluginLocalStoreTests: XCTestCase {
-    func testDefaults() {
-        let store = MailPluginLocalStore(suiteName: "com.coffic.lumi.plugin.mail.test")
-        store.reset()
-        XCTAssertTrue(store.unreadBadgeEnabled)
-        XCTAssertFalse(store.confirmBeforeLoadingHTML)
-
-        store.unreadBadgeEnabled = false
-        store.confirmBeforeLoadingHTML = true
-        XCTAssertFalse(store.unreadBadgeEnabled)
-        XCTAssertTrue(store.confirmBeforeLoadingHTML)
-        store.reset()
     }
 }

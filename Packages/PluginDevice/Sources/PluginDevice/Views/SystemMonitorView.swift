@@ -7,11 +7,18 @@ struct SystemMonitorView: View {
     @ObservedObject private var viewModel: SystemMonitorViewModel
     @ObservedObject private var gpuViewModel: GPUManagerViewModel
     @ObservedObject private var batteryViewModel: BatteryManagerViewModel
+    @ObservedObject private var thermalViewModel: ThermalViewModel
 
-    init(viewModel: SystemMonitorViewModel, gpuViewModel: GPUManagerViewModel, batteryViewModel: BatteryManagerViewModel) {
+    init(
+        viewModel: SystemMonitorViewModel,
+        gpuViewModel: GPUManagerViewModel,
+        batteryViewModel: BatteryManagerViewModel,
+        thermalViewModel: ThermalViewModel
+    ) {
         self.viewModel = viewModel
         self.gpuViewModel = gpuViewModel
         self.batteryViewModel = batteryViewModel
+        self.thermalViewModel = thermalViewModel
     }
 
     var body: some View {
@@ -65,6 +72,9 @@ struct SystemMonitorView: View {
                 }
                 .padding(8)
             }
+
+            // CPU Temperature Card
+            ThermalCardView(viewModel: thermalViewModel)
 
             // Network Card
             MonitorCard(title: pluginLocalization.string("Network"),

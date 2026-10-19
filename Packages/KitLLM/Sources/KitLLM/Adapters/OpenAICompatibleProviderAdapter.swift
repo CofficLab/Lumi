@@ -95,7 +95,12 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             tools: tools,
             systemPrompt: systemPrompt
         )
-        OpenAICompatibleGenerationOptionsApplier.apply(config: config, model: model, to: &body)
+        OpenAICompatibleGenerationOptionsApplier.apply(
+            config: config,
+            model: model,
+            additionalReasoningEfforts: configuration.additionalReasoningEfforts,
+            to: &body
+        )
         return body
     }
 
@@ -365,39 +370,55 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         return (choiceMessage.content ?? "", toolCalls, choiceMessage.reasoningContent)
     }
 
-    public func parseStreamChunk(data: Data) throws -> StreamChunk? {
+    /// 解析单个 SSE 事件，返回该事件产出的**有序事件列表**。
+    ///
+    /// 为什么是列表而不是单个 chunk：OpenAI 兼容协议允许同一个 `delta` 里
+    /// 同时携带 `reasoning_content` 与 `content`。interleaved thinking 模型
+    /// （MiniMax M3 / M3.1 等思考默认开启且无法关闭的模型）会高频产生这种
+    /// 形态，而 `StreamChunk` 只有一个 `content` 字段、靠 `eventType` 决定
+    /// 去向，因此无法用单个 chunk 同时表达「思考与正文都要保留」。
+    ///
+    /// 早期实现遇到并存形态时只返回思考、静默丢弃正文，累积器的
+    /// `content` 恒为空，最终在 AgentLoop 层被判为「模型返回空响应」
+    /// 而走失败链路（思考内容反而正常显示）。这里改为分别产出
+    /// `.thinkingDelta` 与 `.textDelta`，两种增量都不再丢失。
+    ///
+    /// - Returns: 按协议顺序排列的 chunk 列表；该事件不产出任何增量时返回空数组。
+    public func parseStreamChunks(data: Data) throws -> [StreamChunk] {
         guard let text = String(data: data, encoding: .utf8) else {
-            return nil
+            return []
         }
 
         let eventData = extractSSEData(from: text)
 
         guard let dataString = eventData, !dataString.isEmpty else {
-            return nil
+            return []
         }
 
         if dataString == "[DONE]" {
-            return StreamChunk(isDone: true)
+            return [StreamChunk(isDone: true)]
         }
 
         guard let jsonData = dataString.data(using: .utf8) else {
-            return nil
+            return []
         }
 
         let json: [String: Any]
         do {
             guard let object = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
-                return nil
+                return []
             }
             json = object
         } catch {
-            return nil
+            return []
         }
 
         if let error = json["error"] as? [String: Any],
            let errorMessage = error["message"] as? String {
-            return StreamChunk(error: errorMessage)
+            return [StreamChunk(error: errorMessage)]
         }
+
+        var chunks: [StreamChunk] = []
 
         // MARK: - Parse content/reasoning/toolCalls first
         if let choices = json["choices"] as? [[String: Any]],
@@ -413,11 +434,11 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             let stopReason = delta["stop_reason"] as? String
                 ?? firstChoice["finish_reason"] as? String
 
-            // 优先解析 reasoning_content（思考过程）
-            // 注意：即使同时包含 content，也要先处理 reasoning_content
+            // 思考增量与正文增量各自独立产出：二者可以同时存在，
+            // 都不因对方的存在而被丢弃。
             if let reasoningContent = delta["reasoning_content"] as? String,
                !reasoningContent.isEmpty {
-                return StreamChunk(
+                chunks.append(StreamChunk(
                     content: reasoningContent,
                     eventType: .thinkingDelta,
                     inputTokens: inputTokens,
@@ -426,12 +447,11 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
                     cacheWriteInputTokens: cacheWriteInputTokens,
                     cacheTotalInputTokens: inputTokens,
                     stopReason: stopReason
-                )
+                ))
             }
 
-            // 解析正文内容（跳过空字符串）
             if let content = delta["content"] as? String, !content.isEmpty {
-                return StreamChunk(
+                chunks.append(StreamChunk(
                     content: content,
                     eventType: .textDelta,
                     inputTokens: inputTokens,
@@ -440,50 +460,70 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
                     cacheWriteInputTokens: cacheWriteInputTokens,
                     cacheTotalInputTokens: inputTokens,
                     stopReason: stopReason
-                )
+                ))
             }
 
-            // 解析工具调用
-            if let toolCalls = delta["tool_calls"] as? [[String: Any]], !toolCalls.isEmpty {
-                return parseToolCallDelta(toolCalls, stopReason: stopReason)
+            // 工具调用：与思考/正文**各自独立**产出，不再受 `chunks.isEmpty` 约束。
+            //
+            // 曾经的 `if chunks.isEmpty` 守卫会把「同一 delta 内同时带
+            // reasoning_content + tool_calls」的形态整包丢弃。interleaved
+            // thinking 模型（MiniMax M3 / M3.1 等思考默认开启且无法关闭）会
+            // 在收敛阶段高频产生这种形态，于是工具调用被吞、累积器 content 恒
+            // 为空，最终在 AgentLoop 层被判为「模型返回空响应」而走失败链路
+            // （思考内容却正常显示，正是该 bug 的现场特征）。
+            //
+            // 三者并存时协议上并非歧义：字段键名互相独立，累加器也分别写入
+            // reasoningContent / content / toolCalls，追加不会互相覆盖。
+            if let toolCalls = delta["tool_calls"] as? [[String: Any]],
+               !toolCalls.isEmpty,
+               let toolChunk = parseToolCallDelta(
+                   toolCalls,
+                   stopReason: stopReason,
+                   inputTokens: inputTokens,
+                   outputTokens: outputTokens,
+                   cachedInputTokens: cachedInputTokens,
+                   cacheWriteInputTokens: cacheWriteInputTokens,
+                   cacheTotalInputTokens: inputTokens
+               ) {
+                chunks.append(toolChunk)
             }
 
             // 纯 stop_reason 结束信号
-            if let stopReason {
-                // DeepSeek 将最终 usage 放在带 choices/finish_reason 的最后一个
-                // chunk 中，而不是发送独立的 usage-only chunk。不能在这里丢弃
-                // token usage，否则速度和缓存命中率都无法落库。
-                return StreamChunk(
+            // DeepSeek 将最终 usage 放在带 choices/finish_reason 的最后一个
+            // chunk 中，而不是发送独立的 usage-only chunk。不能在这里丢弃
+            // token usage，否则速度和缓存命中率都无法落库。
+            if chunks.isEmpty, let stopReason {
+                chunks.append(StreamChunk(
                     inputTokens: inputTokens,
                     outputTokens: outputTokens,
                     cachedInputTokens: cachedInputTokens,
                     cacheWriteInputTokens: cacheWriteInputTokens,
                     cacheTotalInputTokens: inputTokens,
                     stopReason: stopReason
-                )
+                ))
             }
         }
 
         // MARK: - Usage-only chunk (no content delta)
         // 只有当没有 content/reasoning/toolCalls 时，才单独返回 usage
         // 某些供应商（如 StepFun）每个 chunk 都带 usage，但不能因此跳过内容
-        if let usage = json["usage"] as? [String: Any] {
-            let tokenCounts = Self.tokenCounts(from: usage)
-            return StreamChunk(
-                inputTokens: tokenCounts.input,
-                outputTokens: tokenCounts.output,
-                cachedInputTokens: Self.cacheReadInputTokens(from: usage)
-                    ?? (Self.cacheWriteInputTokens(from: usage) == nil ? nil : 0),
-                cacheWriteInputTokens: Self.cacheWriteInputTokens(from: usage),
-                cacheTotalInputTokens: tokenCounts.input
-            )
+        if chunks.isEmpty {
+            if let usage = json["usage"] as? [String: Any] {
+                let tokenCounts = Self.tokenCounts(from: usage)
+                chunks.append(StreamChunk(
+                    inputTokens: tokenCounts.input,
+                    outputTokens: tokenCounts.output,
+                    cachedInputTokens: Self.cacheReadInputTokens(from: usage)
+                        ?? (Self.cacheWriteInputTokens(from: usage) == nil ? nil : 0),
+                    cacheWriteInputTokens: Self.cacheWriteInputTokens(from: usage),
+                    cacheTotalInputTokens: tokenCounts.input
+                ))
+            } else if configuration.returnsEmptyChunkWhenNoDelta {
+                chunks.append(StreamChunk(content: "", eventType: .textDelta))
+            }
         }
 
-        if configuration.returnsEmptyChunkWhenNoDelta {
-            return StreamChunk(content: "", eventType: .textDelta)
-        }
-
-        return nil
+        return chunks
     }
 
     private func extractSSEData(from text: String) -> String? {
@@ -547,7 +587,15 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         )
     }
 
-    private func parseToolCallDelta(_ toolCalls: [[String: Any]], stopReason: String?) -> StreamChunk? {
+    private func parseToolCallDelta(
+        _ toolCalls: [[String: Any]],
+        stopReason: String?,
+        inputTokens: Int?,
+        outputTokens: Int?,
+        cachedInputTokens: Int?,
+        cacheWriteInputTokens: Int?,
+        cacheTotalInputTokens: Int?
+    ) -> StreamChunk? {
         var parsedToolCalls: [ToolCall] = []
         var partialJson: String?
         var toolCallIndex: Int?
@@ -587,6 +635,11 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
                 partialJson: partialJson,
                 toolCallIndex: toolCallIndex,
                 eventType: .contentBlockStart,
+                inputTokens: inputTokens,
+                outputTokens: outputTokens,
+                cachedInputTokens: cachedInputTokens,
+                cacheWriteInputTokens: cacheWriteInputTokens,
+                cacheTotalInputTokens: cacheTotalInputTokens,
                 stopReason: stopReason
             )
         }
@@ -596,6 +649,11 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
                 partialJson: partialJson,
                 toolCallIndex: toolCallIndex,
                 eventType: .inputJsonDelta,
+                inputTokens: inputTokens,
+                outputTokens: outputTokens,
+                cachedInputTokens: cachedInputTokens,
+                cacheWriteInputTokens: cacheWriteInputTokens,
+                cacheTotalInputTokens: cacheTotalInputTokens,
                 stopReason: stopReason
             )
         }

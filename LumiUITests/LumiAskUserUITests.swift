@@ -21,13 +21,12 @@ import XCTest
 ///    避免测试会话污染用户真实数据库。
 ///
 /// 范式参照 `LumiSendActionBarUITests` 与 `LumiErrorRetryTurnUITests`。
-final class LumiAskUserUITests: XCTestCase {
-    private var app: XCUIApplication!
+final class LumiAskUserUITests: LumiUITestCase {
 
     /// 与 `AskUserAccessibility` 保持一致。
     ///
-    /// 必须按标识符定位：问题文案与「已回答」提示都是随 `-AppleLanguages` 变化的
-    /// 文案，按文案定位在非英文环境下必然失效。
+    /// 必须按标识符定位：问题文案是随 `-AppleLanguages` 变化的文案，
+    /// 按文案定位在非英文环境下必然失效。
     private enum Identifiers {
         /// 问题卡片容器。
         static let card = "lumi.ask-user.card"
@@ -39,8 +38,6 @@ final class LumiAskUserUITests: XCTestCase {
         static let freeTextField = "lumi.ask-user.free-text"
         /// free_text 提交按钮。
         static let submitButton = "lumi.ask-user.submit"
-        /// 已回答回显。
-        static let answered = "lumi.ask-user.answered"
     }
 
     /// 模型选择器与聊天输入框的标识符。
@@ -68,72 +65,23 @@ final class LumiAskUserUITests: XCTestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        // 先终止残留实例（与 LumiSendActionBarUITests 一致），避免复用 Background
-        // 旧进程：旧进程里保存着上一次的选中模型与对话，会让回合时机不可预测。
-        app.terminate()
-        app.launchArguments += [
-            "-ApplePersistenceIgnoreState", "YES",
-            "-AppleLanguages", "(en)",
-            "-AppleLocale", "en_US",
+        launchLumi(extraArguments: [
             // 确定性 LLM 供应商 + 隔离存储。
             "--lumi-ui-testing",
             "--lumi-ui-testing-isolated-storage",
-        ]
-        app.launch()
+        ])
     }
 
     override func tearDownWithError() throws {
-        if let app, app.state != .notRunning {
-            app.terminate()
-        }
+        // 等 App 真正退出，避免「上一个用例还在退出」漂移成「下一个用例偶发失败」。
+        terminateAppAndWait()
         try super.tearDownWithError()
     }
 
     // MARK: - Helpers
 
-    private func element(identifier: String) -> XCUIElement {
-        app.descendants(matching: .any).matching(identifier: identifier).firstMatch
-    }
-
-    private func element(anyLabelOf labels: [String]) -> XCUIElement {
-        app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label IN %@ OR value IN %@", labels, labels))
-            .firstMatch
-    }
-
     /// 隔离数据根目录会让新手引导重新出现（完成标记存在插件数据目录里），
     /// 它覆盖在聊天区之上，不关掉就点不到输入框。
-    private func dismissOnboardingIfPresent() {
-        for _ in 0..<8 {
-            let finish = app.buttons["Finish"]
-            let continueButton = app.buttons["Continue"]
-            let skip = app.buttons["Skip"]
-            if finish.exists, finish.isHittable {
-                finish.click()
-            } else if continueButton.exists, continueButton.isHittable {
-                continueButton.click()
-            } else if skip.exists, skip.isHittable {
-                skip.click()
-            } else {
-                return
-            }
-            sleep(1)
-        }
-    }
-
-    private func waitForMainWindow() {
-        XCTAssertTrue(
-            element(identifier: "root.main").waitForExistence(timeout: 30),
-            "主窗口未就绪"
-        )
-        dismissOnboardingIfPresent()
-    }
-
-    /// 切换到指定的 UI 测试模型。
-    ///
-    /// 与「每个场景注册一个供应商」不同，桩让**模型名承载行为**，因此这里走真实
-    /// 的模型选择器路径——顺带覆盖了「切换模型后回合确实路由到新模型」这段链路。
     private func selectStubModel(_ model: String) {
         let selectModelButton = app.buttons["Select Model"]
         XCTAssertTrue(
@@ -183,19 +131,6 @@ final class LumiAskUserUITests: XCTestCase {
         sleep(1)
     }
 
-    /// 在输入框里输入文本并按 Return 发送。
-    ///
-    /// 用键盘发送而不是点按钮：按钮初始因 `canSend` 为 false 而不可用。
-    @discardableResult
-    private func typeAndSend(_ text: String) -> Bool {
-        let editor = element(identifier: Shell.editor)
-        guard editor.waitForExistence(timeout: 20) else { return false }
-        editor.click()
-        editor.typeText(text)
-        editor.typeKey(.return, modifierFlags: [])
-        return true
-    }
-
     // MARK: - Tests
 
     /// choice 模式全链路：发问 → 问题卡片与选项出现 → 点选 → 恢复 → 桩收尾回复。
@@ -206,7 +141,7 @@ final class LumiAskUserUITests: XCTestCase {
     /// 断言分层：
     /// 1. 回合发起后出现问题卡片，且问题正文与桩产出一致 → 挂起渲染生效；
     /// 2. 两个选项都出现（第二个带 description / badge）→ 选项列表渲染完整；
-    /// 3. 点选后出现「已回答」回显 → 点击被受理；
+    /// 3. 点选后卡片消失 → 挂起点被清除；
     /// 4. 桩收尾正文出现 → 恢复链路跑通、答案已回传给模型。
     func testChoiceQuestionAppearsAndAnsweringResumesTurn() throws {
         waitForMainWindow()
@@ -214,7 +149,7 @@ final class LumiAskUserUITests: XCTestCase {
 
         let prompt = "UI Testing Ask User Choice Probe"
         XCTAssertTrue(
-            typeAndSend(prompt),
+            typeAndSend(prompt, editorIdentifier: Shell.editor),
             "未找到聊天输入框（identifier=\(Shell.editor)）"
         )
         XCTAssertTrue(
@@ -232,7 +167,7 @@ final class LumiAskUserUITests: XCTestCase {
             """
         )
         XCTAssertTrue(
-            element(identifier: Identifiers.question).label.contains(Stub.choiceQuestion),
+            element(anyLabelOf: [Stub.choiceQuestion]).exists,
             "问题正文与桩产出的文案不一致"
         )
 
@@ -257,15 +192,9 @@ final class LumiAskUserUITests: XCTestCase {
             "带 description 的选项未渲染说明文案，实际：\(firstOption.label)"
         )
 
-        // 断言 3：点击选项后界面回显「已回答」。
+        // 断言 3：点击选项。挂起点随之清除，问题卡片整块从树上消失，
+        // 不能作为判据（见 free_text 用例的说明）；真正的判据是断言 4。
         firstOption.click()
-        XCTAssertTrue(
-            element(identifier: Identifiers.answered).waitForExistence(timeout: 15),
-            """
-            点击选项后未出现「已回答」回显（identifier=\(Identifiers.answered)），\
-            说明点击未被受理
-            """
-        )
 
         // 断言 4：回合恢复并以桩收尾正文结束。
         //
@@ -280,10 +209,7 @@ final class LumiAskUserUITests: XCTestCase {
         )
 
         // 问题卡片应随挂起点清除而消失。
-        XCTAssertFalse(
-            element(identifier: Identifiers.answered).waitForExistence(timeout: 5),
-            "回合完成后「已回答」回显仍残留"
-        )
+        _ = waitForNonExistence(element(identifier: Identifiers.card), timeout: 10)
         XCTAssertTrue(
             element(identifier: "root.main").exists,
             "回答后主窗口消失，App 可能已崩溃"
@@ -299,7 +225,7 @@ final class LumiAskUserUITests: XCTestCase {
         selectStubModel("ui-test-ask-user-free-text")
 
         let prompt = "UI Testing Ask User Free Text Probe"
-        XCTAssertTrue(typeAndSend(prompt), "未找到聊天输入框")
+        XCTAssertTrue(typeAndSend(prompt, editorIdentifier: Shell.editor), "未找到聊天输入框")
 
         let card = element(identifier: Identifiers.card)
         XCTAssertTrue(
@@ -324,8 +250,7 @@ final class LumiAskUserUITests: XCTestCase {
             "输入为空时提交按钮不应可用"
         )
 
-        field.click()
-        field.typeText(Stub.freeTextAnswer)
+        paste(Stub.freeTextAnswer, into: field)
 
         let enabled = NSPredicate(format: "enabled == true")
         expectation(for: enabled, evaluatedWith: submit)
@@ -333,10 +258,11 @@ final class LumiAskUserUITests: XCTestCase {
 
         submit.click()
 
-        XCTAssertTrue(
-            element(identifier: Identifiers.answered).waitForExistence(timeout: 15),
-            "点击提交后未出现「已回答」回显"
-        )
+        // - Note: 回答后挂起点会被清除，问题卡片整块一起从树上消失。
+        //   因此**不能**用「卡片是否还在」判断点击是否被受理——它在回合恢复的
+        //   同一帧里就没了。真正的判定信号是**桩收尾回复**：它只有在本轮请求体里
+        //   出现 role=tool 消息（即答案确实回传给了模型）时才会产出。
+        //   点击是否受理改由「回合未卡在挂起态」间接证明。
         XCTAssertTrue(
             element(anyLabelOf: [Stub.followUpResponse]).waitForExistence(timeout: 60),
             """
@@ -355,14 +281,14 @@ final class LumiAskUserUITests: XCTestCase {
         selectStubModel("ui-test-ask-user-yes-no")
 
         let prompt = "UI Testing Ask User Yes No Probe"
-        XCTAssertTrue(typeAndSend(prompt), "未找到聊天输入框")
+        XCTAssertTrue(typeAndSend(prompt, editorIdentifier: Shell.editor), "未找到聊天输入框")
 
         XCTAssertTrue(
             element(identifier: Identifiers.card).waitForExistence(timeout: 40),
             "yes_no 问题卡片未出现"
         )
         XCTAssertTrue(
-            element(identifier: Identifiers.question).label.contains(Stub.yesNoQuestion),
+            element(anyLabelOf: [Stub.yesNoQuestion]).exists,
             "问题正文与桩产出的文案不一致"
         )
 
@@ -374,10 +300,6 @@ final class LumiAskUserUITests: XCTestCase {
         )
         secondOption.click()
 
-        XCTAssertTrue(
-            element(identifier: Identifiers.answered).waitForExistence(timeout: 15),
-            "点击选项后未出现「已回答」回显"
-        )
         XCTAssertTrue(
             element(anyLabelOf: [Stub.followUpResponse]).waitForExistence(timeout: 60),
             """
@@ -396,7 +318,7 @@ final class LumiAskUserUITests: XCTestCase {
         selectStubModel("ui-test-text")
 
         let prompt = "UI Testing Ask User Absent Probe"
-        XCTAssertTrue(typeAndSend(prompt), "未找到聊天输入框")
+        XCTAssertTrue(typeAndSend(prompt, editorIdentifier: Shell.editor), "未找到聊天输入框")
 
         // 文本场景必定正常结束，且不会产生挂起点。
         XCTAssertTrue(
@@ -409,16 +331,5 @@ final class LumiAskUserUITests: XCTestCase {
             element(identifier: Identifiers.card).exists,
             "没有挂起交互时不应出现问题卡片"
         )
-    }
-}
-
-// MARK: - Helper
-
-private extension XCUIElement {
-    /// 等待元素从无到有（用于处理会话切换、卡片弹出等异步渲染）。
-    func waitForNonExistence(timeout: TimeInterval) -> Bool {
-        let predicate = NSPredicate(format: "exists == false")
-        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
-        return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
     }
 }

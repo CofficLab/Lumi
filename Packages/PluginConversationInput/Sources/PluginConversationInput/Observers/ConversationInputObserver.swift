@@ -46,7 +46,13 @@ final class ConversationInputObserver {
         textHandle = nil
         blockHandle?.cancel()
         blockHandle = nil
+        // - Important: 这两个必须 `cancel()` 而不是直接置 nil。句柄由 Provider 持有，
+        //   丢弃本地引用并不会退订，Provider 侧的观察者表仍留着回调。每次
+        //   `onBoot` 都会新建一个 Observer（插件重启 / 重复装配），不真正退订
+        //   会让注册表无限增长，且退订后仍能改动 ViewModel。
+        inputObserver?.cancel()
         inputObserver = nil
+        senderObserver?.cancel()
         senderObserver = nil
         viewModel = nil
     }

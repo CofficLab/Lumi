@@ -295,6 +295,67 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         }
     }
 
+    /// 原子地聚合日统计，并报告 `pendingIDs` 中**已落盘**的那些。
+    ///
+    /// `MessageManager` 的日统计口径是「磁盘聚合 + 未落盘 pending 增量」。
+    /// 但 `persistLater` 分两步（先落盘、再移出 pending），中间存在窗口：
+    /// 磁盘**已**含该消息、pending**仍**保留它。此时若两侧简单相加，
+    /// 同一条会被统计两次——实测 20 轮中第 13 轮 `dailyTokenCounts` 得到 27
+    /// （应为 17，input 的 10 被算了两遍）。
+    ///
+    /// - Important: 去重判据与聚合必须**在同一个 `locked` 块内**完成。
+    ///   若先逐条 `fetchMessage` 探测再另行聚合，两者之间仍有窗口：
+    ///   探测说「未落盘」、随后聚合却已包含它 → 漏算（实测 `dailyMessageCounts`
+    ///   偶发少 1）。因此这里一次 fetch、一次判定，顺带返回「哪些 pending 已落盘」。
+    ///
+    /// - Important: 聚合结果**仍按磁盘实际行计入**这批 pending 消息
+    ///   （不排除）。它们此刻既在磁盘、又在 pending，计一次即正确；
+    ///   调用方据此**跳过**它们即可达成去重。若此处排除、调用方又跳过，
+    ///   同一条会从两侧同时消失 → 少算。
+    ///
+    /// - Parameter countTokens: 为 true 时聚合 token 数，否则聚合消息条数。
+    /// - Returns: 聚合结果 + `pendingIDs` 中已落盘（已在上面计入）的 id 集合。
+    func dailyAggregate(
+        since: Date,
+        pendingIDs: Set<String>,
+        countTokens: Bool
+    ) -> (counts: [Date: Int], alreadyPersisted: Set<String>) {
+        locked {
+            let context = ModelContext(container)
+            let timestamp = since.timeIntervalSince1970
+            var descriptor = FetchDescriptor<MessageModel>(
+                predicate: #Predicate<MessageModel> { $0.createdAt >= timestamp }
+            )
+            descriptor.propertiesToFetch = countTokens
+                ? [\.id, \.createdAt, \.inputTokenCount, \.outputTokenCount]
+                : [\.id, \.createdAt]
+
+            guard let models = try? context.fetch(descriptor) else {
+                // 取不到磁盘数据：全部交给 pending 侧补齐，diskCounts 为空。
+                return ([:], [])
+            }
+
+            var alreadyPersisted: Set<String> = []
+            let calendar = Calendar.current
+            var counts: [Date: Int] = [:]
+            for model in models {
+                let value = countTokens
+                    ? (model.inputTokenCount ?? 0) + (model.outputTokenCount ?? 0)
+                    : 1
+                // - Important: 先判 value 再记 id。若反序，0-token 的消息会被标记
+                //   为「已计入」却实际没进 counts，调用方又跳过它 → 两侧同时丢失。
+                guard value > 0 else { continue }
+                if pendingIDs.contains(model.id) {
+                    // 已计入下面的 counts，调用方不要再补一次。
+                    alreadyPersisted.insert(model.id)
+                }
+                let day = calendar.startOfDay(for: Date(timeIntervalSince1970: model.createdAt))
+                counts[day, default: 0] += value
+            }
+            return (counts, alreadyPersisted)
+        }
+    }
+
     /// 返回指定日期（含）以来、按本地自然日聚合的消息数。
     func dailyMessageCounts(since: Date) -> [Date: Int] {
         locked {

@@ -44,7 +44,8 @@ public struct DeviceInfoView: View {
                     SystemMonitorView(
                         viewModel: viewModels.systemMonitor,
                         gpuViewModel: viewModels.gpu,
-                        batteryViewModel: viewModels.battery
+                        batteryViewModel: viewModels.battery,
+                        thermalViewModel: viewModels.thermal
                     )
                 }
             }

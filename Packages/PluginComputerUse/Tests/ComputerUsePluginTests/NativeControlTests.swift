@@ -31,10 +31,13 @@ import Testing
 
 @MainActor
 @Test func nativeControlHoldsExclusiveLeaseAndStopRequiresFreshConsent() throws {
-    let suite = "ComputerUse.Native.\(UUID())"
-    let defaults = try #require(UserDefaults(suiteName: suite))
-    defer { defaults.removePersistentDomain(forName: suite) }
-    let controller = NativeControlCoordinator(defaults: defaults, presentsUI: false)
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ComputerUseNative-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let controller = NativeControlCoordinator(
+        authorization: ComputerUseAuthorizationStore(dataDirectory: directory),
+        presentsUI: false
+    )
     let first = try controller.acquire(application: "Fixture", bundleID: "test.app", reason: "Test")
     #expect(controller.phase == .permission)
     controller.allow()
@@ -55,10 +58,13 @@ import Testing
 
 @MainActor
 @Test func resumeRequiresFreshObservationAndNeverReplaysBatch() async throws {
-    let suite = "ComputerUse.Resume.\(UUID())"
-    let defaults = try #require(UserDefaults(suiteName: suite))
-    defer { defaults.removePersistentDomain(forName: suite) }
-    let controller = NativeControlCoordinator(defaults: defaults, presentsUI: false)
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ComputerUseResume-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let controller = NativeControlCoordinator(
+        authorization: ComputerUseAuthorizationStore(dataDirectory: directory),
+        presentsUI: false
+    )
     let session = try controller.acquire(application: "Fixture", bundleID: "test.app", reason: "Test")
     session.interrupt(.userInput)
     let waiter = Task { try await controller.waitForUserAfterInterruption(session) }
@@ -77,10 +83,13 @@ import Testing
 
 @MainActor
 @Test func cancellationWhileAwaitingConsentReleasesUI() async throws {
-    let suite = "ComputerUse.Cancel.\(UUID())"
-    let defaults = try #require(UserDefaults(suiteName: suite))
-    defer { defaults.removePersistentDomain(forName: suite) }
-    let controller = NativeControlCoordinator(defaults: defaults, presentsUI: false)
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ComputerUseCancel-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let controller = NativeControlCoordinator(
+        authorization: ComputerUseAuthorizationStore(dataDirectory: directory),
+        presentsUI: false
+    )
     let session = try controller.acquire(application: "Fixture", bundleID: "test.app", reason: "Test")
     let task = Task {
         defer { controller.release(session) }

@@ -62,7 +62,7 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
 
         var delivered = 0
         for event in try Self.sseEvents(for: scenario, alreadyAnswered: alreadyAnswered) {
-            if scenario == .slow {
+            if scenario == .slow || scenario == .verySlow {
                 try await Task.sleep(nanoseconds: UInt64(UITestFixtures.slowChunkDelay * 1_000_000_000))
             }
             guard await onEvent(Data(Self.encode([event]).utf8)) else { break }
@@ -152,7 +152,7 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
             content = (1...UITestFixtures.longParagraphCount)
                 .map { "段落 \($0)。" }
                 .joined()
-        case .text, .slow, .unknown:
+        case .text, .slow, .verySlow, .unknown:
             content = UITestFixtures.textResponse
         case .error:
             content = ""
@@ -217,6 +217,8 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
             return [try errorEvent(model: scenario.rawValue)]
         case .long:
             return try longEvents(model: scenario.rawValue)
+        case .verySlow:
+            return try verySlowEvents(model: scenario.rawValue)
         case .askUserYesNo, .askUserChoice, .askUserFreeText:
             return try askUserEvents(for: scenario, alreadyAnswered: alreadyAnswered)
         }
@@ -289,6 +291,21 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
             events.append(try sse(delta: ["content": "段落 \(index)。"], model: model))
         }
         events.append(try sse(usage: usage(prompt: 20, completion: 400), model: model))
+        events.append(doneEvent())
+        return events
+    }
+
+    /// 超长回合场景：多段短正文，配合 `stream` 里的段间 sleep。
+    ///
+    /// 段数与 `slowChunkDelay` 相乘决定回合总时长（约 12s），
+    /// 让 UI 测试能把「回合中」当成一个可稳定采样的状态，
+    /// 而不是与 XCUITest 的轮询周期赛跑。
+    private static func verySlowEvents(model: String) throws -> [String] {
+        var events: [String] = []
+        for index in 1...UITestFixtures.verySlowParagraphCount {
+            events.append(try sse(delta: ["content": "\(index) "], model: model))
+        }
+        events.append(try sse(usage: usage(prompt: 20, completion: 30), model: model))
         events.append(doneEvent())
         return events
     }

@@ -10,15 +10,15 @@ struct DeepSeekProviderPluginTests {
     @Test("onBoot 把 DeepSeek 供应商注册进管理器")
     func pluginRegistersProviders() throws {
         let kernel = KernelCoreContainer()
-        let manager = DefaultLLMProviderManagerProviding()
+        let manager = DefaultLLMManager()
         try kernel.registerProvider((any LLMManaging).self, manager)
 
         let plugin = DeepSeekProviderPlugin()
         try plugin.onBoot(kernel: kernel)
 
-        #expect(manager.providerCount == 2)
+        // `DeepSeekAnthropicProvider` 目前被注释掉（生产代码），只注册 1 个供应商。
+        #expect(manager.providerCount == 1)
         #expect(manager.provider(id: "deepseek")?.providerInfo.id == "deepseek")
-        #expect(manager.provider(id: "deepseek-anthropic")?.providerInfo.id == "deepseek-anthropic")
     }
 
     @Test("V4.1 Flash 声明视觉能力")

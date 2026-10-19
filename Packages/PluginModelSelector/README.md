@@ -40,3 +40,12 @@ Model Selector 插件（KernelCore 体系），由旧版 `Plugins/ModelSelectorP
 | `LumiUI` | 共享 UI 组件（AppListRow / AppSearchBar / AppTag …） |
 | `LumiLocalizationKit` | 运行时本地化 |
 
+
+## 能力边界
+
+`ModelSelectorViewModel` 原先直接持有 `any ToastProviding`，现改为只依赖
+`ModelSelectorToastCapability`（`notify(_:detail:style:)`），由
+`ModelSelectorToastCapabilityAdapter` 收窄内核的 `ToastProviding`。
+
+ViewModel 只在「刷新模型」「切换模型」两处需要提示结果，不需要 Toast 的错误弹层、
+loading 或观察能力，因此这些成员不进入窄协议。ViewModel 层不再 import `ProviderToast`。

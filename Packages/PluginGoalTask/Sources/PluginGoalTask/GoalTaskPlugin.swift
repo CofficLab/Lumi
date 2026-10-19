@@ -5,6 +5,7 @@ import ProviderChatSection
 import ProviderConversation
 import ProviderLifecycleHooks
 import ProviderMessage
+import ProviderMessageSender
 import ProviderStorage
 import ProviderToolManager
 import SwiftUI
@@ -33,8 +34,13 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     private let goalVM = GoalVM()
     private var conversationBridge: GoalTaskConversationBridge?
     private var goalChangeObserver: GoalChangeObserver?
+    /// 「在新对话中继续」的编排器，为 `nil` 表示缺少必需的 Provider。
+    private var forkCoordinator: GoalForkCoordinator?
     /// `turnFinished` 自动续跑钩子（见 `Hooks/GoalTaskTurnFinishedHook.swift`）。
     private var turnFinishedHook: GoalTaskTurnFinishedHook?
+    /// `willSendToLLM` 自主执行契约注入钩子（见 `Hooks/GoalPromptInjectionHook.swift`）。
+    private var promptInjectionHook: GoalPromptInjectionHook?
+    private var promptInjectionHandle: (any LifecycleHookHandle)?
 
     public init() {}
 
@@ -87,10 +93,25 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         }
         let bridge = GoalTaskConversationBridge(conversations)
         conversationBridge = bridge
+        if let messageSender = kernel.resolveProvider((any MessageSendingProviding).self) {
+            forkCoordinator = GoalForkCoordinator(
+                capability: GoalForkCapabilityAdapter(
+                    conversations: conversations,
+                    messageSender: messageSender
+                )
+            )
+        } else {
+            Self.logger.error("\(Self.t) MessageSendingProviding not found, fork action disabled")
+        }
         goalVM.updateCurrentConversationID(bridge.selectedConversationID)
         goalChangeObserver = GoalChangeObserver { [weak self] conversationID in
             self?.goalVM.refreshIfCurrentConversation(conversationID)
         }
+
+        // 先把编排器固化为局部常量再进闭包:直接捕获 `self.forkCoordinator`
+        // 会让 ChatSection 的构建时机与 Provider 注册顺序耦合,早于
+        // `MessageSendingProviding` 就绪时将永久拿到 nil。
+        let coordinator = forkCoordinator
 
         kernel.resolveProvider((any ChatSectionProviding).self)?.addItems([
             ChatSectionItem(
@@ -98,13 +119,20 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
                 placement: .stack,
                 fillsRemainingHeight: false,
                 showsTrailingDivider: false
-            ) { [goalVM, bridge] in
-                GoalTaskChatSectionView(viewModel: goalVM, conversationBridge: bridge)
+            ) { [goalVM, bridge, coordinator] in
+                GoalTaskChatSectionView(
+                    viewModel: goalVM,
+                    conversationBridge: bridge,
+                    forkCoordinator: coordinator
+                )
             }
         ])
         kernel.resolveProvider((any ChatSectionProviding).self)?.addBarItems([
-            ChatSectionBarItem(id: "\(id).toolbar-button", placement: .toolbarTrailing) {
-                GoalToolbarButton(viewModel: self.goalVM)
+            ChatSectionBarItem(id: "\(id).toolbar-button", placement: .toolbarTrailing) { [goalVM, coordinator] in
+                GoalToolbarButton(
+                    viewModel: goalVM,
+                    forkCoordinator: coordinator
+                )
             }
         ])
 
@@ -126,6 +154,15 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         hooks.addTurnFinishedHook { [weak hook] context in
             await hook?.apply(to: context)
         }
+
+        // 每轮注入 goal 自主执行契约与进度。没有这条契约，LLM 只知道
+        // 有个 goal 存在，却不知道该自己走完 —— 这正是它反复停下来问用户的原因。
+        let injectionHook = GoalPromptInjectionHook()
+        promptInjectionHook = injectionHook
+        promptInjectionHandle = hooks.addWillSendToLLMHook { [weak injectionHook] context in
+            guard let injectionHook else { return context }
+            return await injectionHook.apply(to: context)
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -138,7 +175,11 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         conversationBridge = nil
         goalChangeObserver?.cancel()
         goalChangeObserver = nil
+        forkCoordinator = nil
         turnFinishedHook = nil
+        promptInjectionHandle?.cancel()
+        promptInjectionHandle = nil
+        promptInjectionHook = nil
         Plugin._sharedManager = nil
     }
 }
@@ -146,9 +187,10 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
 private struct GoalTaskChatSectionView: View {
     @ObservedObject var viewModel: GoalVM
     @ObservedObject var conversationBridge: GoalTaskConversationBridge
+    let forkCoordinator: GoalForkCoordinator?
 
     var body: some View {
-        SidebarView(viewModel: viewModel)
+        SidebarView(viewModel: viewModel, forkCoordinator: forkCoordinator)
             .task(id: conversationBridge.selectedConversationID) {
                 viewModel.updateCurrentConversationID(conversationBridge.selectedConversationID)
                 await viewModel.refresh()

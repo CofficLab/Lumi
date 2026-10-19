@@ -64,7 +64,13 @@ struct PluginDiskManagerTests {
 
     @Test
     func localizationCatalogIsPackaged() {
-        #expect(PluginDiskManagerLocalization.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
+        let bundle = PluginDiskManagerLocalization.bundle
+        // `.xcstrings` 是**源**目录里的文件；SPM 打包时会被编译成各语言的
+        // `Localizable.strings`（`<lang>.lproj/Localizable.strings`），
+        // 原始 `.xcstrings` 不会进 bundle。只查 `.xcstrings` 恒为 nil。
+        let hasCatalog = bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil
+        let hasCompiledStrings = bundle.path(forResource: "zh-Hans", ofType: "lproj") != nil
+        #expect(hasCatalog || hasCompiledStrings)
         #expect(PluginDiskManagerLocalization.string("Disk Manager").isEmpty == false)
     }
 

@@ -9,13 +9,13 @@ let package = Package(
         .executable(name: "LumiACPExecutable", targets: ["LumiACPExecutable"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../KitLLM"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderChatSection"),
         .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.10.0"),
         // 显式声明：与主工程 lock 对齐 LumiUI 版本，避免 ACP lock 停留在旧 revision
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.8.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.10.0"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderExternalFile"),
         .package(path: "../ProviderLegacyData"),
@@ -84,7 +84,6 @@ let package = Package(
         .package(path: "../PluginLLMProviderXiaomi"),
         .package(path: "../PluginLLMProviderXybbz"),
         .package(path: "../PluginLLMProviderZhipu"),
-        .package(path: "../PluginLLMProviderCodex"),
         .package(path: "../PluginLLMProviderMLX"),
     ],
     targets: [
@@ -182,7 +181,6 @@ let package = Package(
                 .product(name: "PluginLLMProviderXiaomi", package: "PluginLLMProviderXiaomi"),
                 .product(name: "PluginLLMProviderXybbz", package: "PluginLLMProviderXybbz"),
                 .product(name: "PluginLLMProviderZhipu", package: "PluginLLMProviderZhipu"),
-                .product(name: "PluginLLMProviderCodex", package: "PluginLLMProviderCodex"),
                 .product(name: "PluginLLMProviderMLX", package: "PluginLLMProviderMLX"),
             ],
             path: "Sources/FactoryLumiACP"

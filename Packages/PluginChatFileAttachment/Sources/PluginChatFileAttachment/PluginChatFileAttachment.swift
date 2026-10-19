@@ -1,6 +1,8 @@
 import os
 import KernelCore
 import ProviderChatSection
+import ProviderConversationInput
+import ProviderMessageSender
 import LumiLoggingKit
 /// Chat File Attachment Plugin（KernelCore 版本）
 ///
@@ -46,13 +48,17 @@ public final class ChatFileAttachmentPlugin: SuperPlugin, SuperLog {
 
         // Action Bar 附件按钮（沿用旧版 chatSectionActionBarItems .leading，
         // order 82 排在截图按钮（81）之后）。
+        let capability = ChatFileAttachmentCapabilityAdapter(
+            sender: kernel.resolveProvider((any MessageSendingProviding).self),
+            conversationInput: kernel.resolveProvider((any ConversationInputProviding).self)
+        )
         chat.addBarItems([
             ChatSectionBarItem(
                 id: "\(id).button",
                 order: 82,
                 placement: .actionLeading
             ) {
-                ChatFileAttachmentButton(kernel: kernel)
+                ChatFileAttachmentButton(capability: capability)
             },
         ])
     }

@@ -9,7 +9,6 @@
 | `CPUHistoryService.swift` | CPU 历史记录持久化与查询 |
 | `MemoryService.swift` | 内存占用实时采集 |
 | `MemoryHistoryService.swift` | 内存历史记录持久化（存储目录由插件入口配置） |
-| `LumiMemoryService.swift` | Lumi 专用内存历史（旧版语义兼容） |
 | `GPUService.swift` | GPU 占用实时采集 |
 | `GPUHistoryService.swift` | GPU 历史记录持久化与查询 |
 | `BatteryService.swift` | 电池电量与充电状态实时采集 |

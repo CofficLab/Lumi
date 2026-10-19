@@ -16,6 +16,58 @@ public enum VendorAPIKeyTools {
     /// Lumi 正式使用的 Keychain service；保持与历史版本一致。
     nonisolated(unsafe) public static var keychainService = "com.coffic.lumi.apikey"
 
+    /// 正式 service 的字面量。仅用于判断「调用方是否忘了在测试里改 service」。
+    private static let productionService = "com.coffic.lumi.apikey"
+
+    /// 测试进程的重定向前缀。
+    private static let testServicePrefix = "com.coffic.lumi.apikey.xctest."
+
+    /// 当前进程是否为测试进程。
+    ///
+    /// 需要同时覆盖两种测试运行方式——二者的进程特征完全不同：
+    /// - `xcodebuild test`：主 bundle 就是 `<Name>.xctest`，并注入
+    ///   `XCTestConfigurationFilePath`。
+    /// - `swift test`（SwiftPM）：主可执行文件是 `xctest` 或
+    ///   `swiftpm-testing-helper`，且 `Bundle.main` 指向 swiftpm 工具链目录，
+    ///   **不是** `.xctest`，也**不注入** `XCTestConfigurationFilePath`。
+    ///
+    /// 刻意不使用 `NSClassFromString("XCTestCase")`：它在两种方式下都为 true，
+    /// 但无法区分「测试进程」与「为承载 UI 测试而链接了 XCTest 的 Debug App」。
+    /// 误判会让正式 App 把用户 Key 写进一次性 service——那比测试污染严重得多。
+    ///
+    /// 正式 App 的可执行文件名是 `Lumi`（或 `LumiACP`），与下列判据均不匹配。
+    private static let isTestProcess: Bool = {
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            return true
+        }
+        if Bundle.main.bundlePath.hasSuffix(".xctest") {
+            return true
+        }
+        let executable = CommandLine.arguments.first?
+            .split(separator: "/").last.map(String.init) ?? ""
+        return executable.hasSuffix(".xctest") || executable == "swiftpm-testing-helper"
+    }()
+
+    /// 实际用于寻址的 service。
+    ///
+    /// 测试进程下 `keychainService` 仍是正式值（调用方忘了隔离）时，重定向到
+    /// 一个进程专属的 service。漏写隔离的测试因此只会污染自己那份数据，而不会
+    /// 改掉用户 Keychain 里的真实条目——`MiniMaxRefreshReproductionTests` 曾把
+    /// 用户的 MiniMax key 写成 `test-key`、OpenCode 测试写入
+    /// `sk-test-opencode-go`，根因就是缺少这层兜底。
+    ///
+    /// 测试若已自行隔离（如 `KitLLMTests` 设 `com.kit.llm.test.<uuid>`），原样
+    /// 透传，不受重定向影响。
+    ///
+    /// - Note: `internal` 而非 `private`，供 `@testable import KitLLM` 直接断言
+    ///   重定向规则；断言该值不需要访问任何 Keychain 条目。
+    internal static var effectiveService: String {
+        guard isTestProcess, keychainService == productionService else {
+            return keychainService
+        }
+        return testServicePrefix + String(ProcessInfo.processInfo.processIdentifier)
+    }
+
     /// `KitLLM` 提取期间曾使用过的临时 service，保留只读迁移能力。
     private static let extractedKitLLMService = "com.kit.llm.apikey"
 
@@ -110,7 +162,9 @@ public enum VendorAPIKeyTools {
     // MARK: - 私有方法
 
     private static func cacheKey(for storageKey: String) -> String {
-        "\(keychainService)\u{0}\(storageKey)"
+        // 必须用 effectiveService 而非 keychainService：测试重定向后若仍按正式
+        // service 建缓存键，同进程内会与重定向前读到的用户真值共用缓存条目。
+        "\(effectiveService)\u{0}\(storageKey)"
     }
 
     private static func keyLock(for key: String) -> NSLock {
@@ -270,21 +324,24 @@ public enum VendorAPIKeyTools {
     }
 
     private static func primaryStore() -> KeychainStore {
-        KeychainStore(service: keychainService, useDataProtectionKeychain: true)
+        KeychainStore(service: effectiveService, useDataProtectionKeychain: true)
     }
 
     private static func legacyFileStore() -> KeychainStore {
-        KeychainStore(service: keychainService)
+        KeychainStore(service: effectiveService)
     }
 
     private static func stores() -> [KeychainStore] {
+        let service = effectiveService
         var result = [primaryStore()]
 
         // 历史 Lumi service 的 file-based Keychain 条目。
         result.append(legacyFileStore())
 
         // KitLLM 提取期间错误使用过的 service，仅读取并迁移。
-        if keychainService != extractedKitLLMService {
+        // 测试重定向后不应再回源历史 service：漏写隔离的测试可能读到用户真值，
+        // 让「写入测试值」在断言层面表现正常，实际前提却已不成立。
+        if service != extractedKitLLMService, service != productionService {
             result.append(KeychainStore(service: extractedKitLLMService))
         }
         return result

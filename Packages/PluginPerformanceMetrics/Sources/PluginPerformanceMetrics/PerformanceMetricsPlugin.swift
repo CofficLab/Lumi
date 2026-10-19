@@ -32,24 +32,33 @@ public final class PerformanceMetricsPlugin: SuperPlugin, PluginDataMigrating {
         try kernel.registerProvider((any PerformanceMetricsProviding).self, provider)
         self.provider = provider
 
-        kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
-            SettingEntryItem(
-                id: id,
-                title: PerformanceMetricsLocalization.string("Performance Metrics", bundle: .module),
-                systemImage: "gauge.with.dots.needle.67percent",
-                order: order
-            ) {
-                PerformanceMetricsSettingsView(provider: provider)
-            },
-        ])
+        // - Important: 设置入口与视图仅在 DEBUG 构建下存在，
+        //   引用点必须与定义面同等守卫（见条件编译规范）。
+        #if DEBUG
+            kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
+                SettingEntryItem(
+                    id: id,
+                    title: PerformanceMetricsLocalization.string("Performance Metrics", bundle: .module),
+                    systemImage: "gauge.with.dots.needle.67percent",
+                    order: order
+                ) {
+                    PerformanceMetricsSettingsView(provider: provider)
+                },
+            ])
+        #endif
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
+        #if DEBUG
+            kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
+        #endif
         provider = nil
     }
 }
 
+// - Important: 视图仅在 DEBUG 构建下存在，
+//   引用点（onBoot 中的 SettingEntryItem）必须与本定义面同等守卫。
+#if DEBUG
 public struct PerformanceMetricsSettingsView: View {
     private let provider: any PerformanceMetricsProviding
 
@@ -174,3 +183,4 @@ public struct PerformanceMetricsSettingsView: View {
         report = nextReport
     }
 }
+#endif

@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// SidebarView 中展示的任务列表与单行渲染。
@@ -6,6 +7,9 @@ import SwiftUI
 /// 列表高度由调用方通过 `frame(height:)` 传入,本组件只负责内容布局。
 struct SidebarTaskList: View {
     let tasks: [GoalTaskDisplayItem]
+
+    /// 列表容器圆角,用于让内阴影贴合容器边缘。
+    private static let containerCornerRadius: CGFloat = 8
 
     var body: some View {
         ScrollView {
@@ -17,6 +21,9 @@ struct SidebarTaskList: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 4)
         }
+        // 让列表容器呈现「凹陷」质感:四周向内衰减的阴影,
+        // 复用 LumiUI 的输入面内阴影令牌,避免各插件各写一套内阴影。
+        .appInputSurface(cornerRadius: Self.containerCornerRadius)
     }
 }
 

@@ -1,5 +1,5 @@
 {
-  "originHash" : "2c84900bdbf867e355c98b4bdbca0496afeb143e5acc38fbabaa681868eceed8",
+  "originHash" : "56a7deba5caa24ff0f1f3f277071444063ae0d9fcef6d828cb6cf338ab85f1bd",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -96,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiKernel.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "4a30c5f4d6e3b24be61e87a036b14720ef0f1654"
+        "revision" : "b1a0e8028b40777cce0c9ee71ba7728350d9a52b",
+        "version" : "1.1.0"
       }
     },
     {
@@ -132,8 +132,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiPluginBookletMaker.git",
       "state" : {
-        "revision" : "607f3be0b829a96101a9e5f40c6705574e53ee62",
-        "version" : "1.1.0"
+        "revision" : "b1082270d9b2179587323b44826f9918d34ff2d5",
+        "version" : "1.2.0"
       }
     },
     {
@@ -195,8 +195,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiProviders.git",
       "state" : {
-        "revision" : "b9dbe6a77f4f75bb31409a4e14b6349ccbfa9308",
-        "version" : "1.10.0"
+        "revision" : "db6f0874337e01df039ef54c774803f1c737bc8d",
+        "version" : "1.12.0"
       }
     },
     {
@@ -572,8 +572,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swift-server/swift-service-lifecycle.git",
       "state" : {
-        "revision" : "c55297914e26ce3085b73ca88c521ef99136f6ad",
-        "version" : "2.12.1"
+        "revision" : "a18ee16b8039866fd919bdb4e8e906882d4ecc75",
+        "version" : "2.13.0"
       }
     },
     {

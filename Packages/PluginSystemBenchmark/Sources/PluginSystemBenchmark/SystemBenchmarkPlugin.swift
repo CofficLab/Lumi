@@ -3,7 +3,6 @@ import ProviderActivityBar
 import ProviderContentView
 import ProviderRailView
 import ProviderRootView
-import ProviderSettingView
 import ProviderToolbar
 import SwiftUI
 
@@ -27,17 +26,6 @@ public final class SystemBenchmarkPlugin: SuperPlugin {
     public func onBoot(kernel: KernelCoreContainer) throws {
         let viewModel = SystemBenchmarkViewModel()
         self.viewModel = viewModel
-
-        kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
-            SettingEntryItem(
-                id: id,
-                title: BenchmarkLocalization.string("System Benchmark"),
-                systemImage: "gauge.with.dots.needle.67percent",
-                order: order
-            ) {
-                SystemBenchmarkSettingsView(viewModel: viewModel)
-            },
-        ])
 
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
@@ -74,7 +62,7 @@ public final class SystemBenchmarkPlugin: SuperPlugin {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         viewModel?.cancel()
         viewModel = nil
-        kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
+
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         activityBar?.removeItems(ids: ["\(id).entry"])
 

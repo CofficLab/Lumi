@@ -7,7 +7,7 @@ let package = Package(
     products: [.library(name: "FactoryCADDesigner", targets: ["FactoryCADDesigner"])],
     dependencies: [
         .package(path: "../FactoryLumi"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../PluginCADDesigner"),
         .package(path: "../ProviderToolManager"),
         .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0")

@@ -138,7 +138,7 @@ public enum KernelFactory {
             additionalPlugins: additionalPlugins
         )
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
-            try PluginDataMigrationCoordinator(storage: storage).run(for: plugins)
+            PluginDataMigrationCoordinator(storage: storage).run(for: plugins)
         }
         try await kernel.startAsync(plugins: plugins)
         resetSettingsSelectionToFirstEntry(in: kernel)
@@ -180,7 +180,7 @@ public enum KernelFactory {
             additionalPlugins: additionalPlugins
         )
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
-            try PluginDataMigrationCoordinator(storage: storage).run(for: plugins)
+            PluginDataMigrationCoordinator(storage: storage).run(for: plugins)
         }
 
         // 默认目录与宿主附加插件在同一个依赖图中统一校验、排序、原子启动。

@@ -51,20 +51,7 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
             MemoryHistoryService.configure(storageDirectory: pluginStorageDir)
         }
 
-        // 1. 设置视图入口
-        if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
-            let entry = SettingEntryItem(
-                id: "\(id).memory-settings",
-                title: pluginLocalization.string("Memory Monitor"),
-                systemImage: "memorychip",
-                order: order
-            ) {
-                MemorySettingsView(viewModel: viewModels.memorySettings)
-            }
-            settings.addEntries([entry])
-        }
-
-        // 2. 注册 ActivityBar 入口；入口被激活时由插件切换自己的主内容，
+        // 1. 注册 ActivityBar 入口；入口被激活时由插件切换自己的主内容，
         //    并隐藏侧边栏 Rail（本插件不贡献 Rail 内容，直接全屏展示主视图）。
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
@@ -118,8 +105,6 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         metricsObserver?.cancel()
         metricsObserver = nil
         viewModels = nil
-        kernel.resolveProvider((any SettingViewProviding).self)?
-            .removeEntries(ids: ["\(id).memory-settings"])
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         activityBar?.removeItems(ids: ["\(id).entry"])
         // 恢复 Rail 可见性（本插件激活时可能已将其隐藏）。

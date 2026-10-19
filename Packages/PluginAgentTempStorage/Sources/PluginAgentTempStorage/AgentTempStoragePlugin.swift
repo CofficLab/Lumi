@@ -46,6 +46,23 @@ public final class AgentTempStoragePlugin: SuperPlugin, PluginDataMigrating, Sup
             from: legacyDirectory,
             to: context.currentPluginDataDirectory
         )
+
+        // 保留天数此前存在 UserDefaults，仅在插件存储尚无该键时导入。
+        importLegacyRetentionDays(to: context.currentPluginDataDirectory)
+    }
+
+    /// 把 `UserDefaults.standard` 中的旧保留天数导入插件专属存储。
+    private func importLegacyRetentionDays(to directory: URL) {
+        guard let domain = UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? ""),
+              let legacyValue = domain["AgentTempStorage.retentionDays"] as? Int
+        else {
+            return
+        }
+        let store = AgentTempStoragePluginLocalStore(settingsDirectory: directory)
+        let fileURL = directory.appendingPathComponent("settings.plist")
+        guard !FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        store.retentionDays = legacyValue
+        Self.logger.info("\(Self.t)Imported legacy retentionDays from UserDefaults: \(legacyValue)")
     }
 
     public var name: String {

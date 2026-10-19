@@ -1,0 +1,1116 @@
+{
+  "FactoryAppIconDesigner": {
+    "status": "broken",
+    "errors": [
+      "error: error: accessing build database \"/Users/angel/Code/Coffic/Lumi/Packages/FactoryAppIconDesigner/.build/out/Intermediates.noindex/XCBuildData/build.db\": database or disk is full",
+      "error: error: accessing build database \"/Users/angel/Code/Coffic/Lumi/Packages/FactoryAppIconDesigner/.build/out/Intermediates.noindex/XCBuildData/build.db\": database or disk is full",
+      "error: The build service has encountered an internal inconsistency error: unexpected incomplete target: target-FactoryAppIconDesignerTests-product-PACKAGE-PRODUCT:factoryappicondesigner_FactoryAppIconDesignerTests.Factor"
+    ],
+    "hasTestPlan": false
+  },
+  "FactoryCADDesigner": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "FactoryDatabaseManager": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "FactoryLumi": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "FactoryLumiACP": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitAgentTool": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitAppStorePromo": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitCADDesigner": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitDownload": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitEditorKernel": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitEditorLanguageRuntime": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitEditorSource": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitEditorTextView": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitFileSystem": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitHTMLPreview": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitHttp": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitKeychain": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitLLM": {
+    "status": "broken",
+    "errors": [
+      "error: failed to save attachment: /Users/angel/Code/Coffic/Lumi/Packages/KitLLM/.build/out/Intermediates.noindex/XCBuildData/dd27d7e43384ba85c99fa286c4cb0d26.xcbuilddata/attachments/2de6a04cdba79ed13580c47dfd70cc5f. Erro",
+      "error: failed to save attachment: /Users/angel/Code/Coffic/Lumi/Packages/KitLLM/.build/out/Intermediates.noindex/XCBuildData/dd27d7e43384ba85c99fa286c4cb0d26.xcbuilddata/attachments/7f9392d936ac5e64f56aeb438f364626. Erro",
+      "error: failed to save attachment: /Users/angel/Code/Coffic/Lumi/Packages/KitLLM/.build/out/Intermediates.noindex/XCBuildData/dd27d7e43384ba85c99fa286c4cb0d26.xcbuilddata/attachments/f86cbb10517a3bd51f252887359b04af. Erro",
+      "error: failed to save attachment: /Users/angel/Code/Coffic/Lumi/Packages/KitLLM/.build/out/Intermediates.noindex/XCBuildData/dd27d7e43384ba85c99fa286c4cb0d26.xcbuilddata/attachments/733078015bd0105d462627f03ed1c5c2. Erro",
+      "error: failed to save attachment: /Users/angel/Code/Coffic/Lumi/Packages/KitLLM/.build/out/Intermediates.noindex/XCBuildData/dd27d7e43384ba85c99fa286c4cb0d26.xcbuilddata/attachments/6211b0522daff529e92f5a3f8e9a09b7. Erro",
+      "error: failed to save attachment: /Users/angel/Code/Coffic/Lumi/Packages/KitLLM/.build/out/Intermediates.noindex/XCBuildData/dd27d7e43384ba85c99fa286c4cb0d26.xcbuilddata/attachments/d74090260c8aeaee15da57a386ef663c. Erro",
+      "error: failed to save attachment: /Users/angel/Code/Coffic/Lumi/Packages/KitLLM/.build/out/Intermediates.noindex/XCBuildData/dd27d7e43384ba85c99fa286c4cb0d26.xcbuilddata/attachments/4f4ac3523db0a986b5ac5582d64e054f. Erro",
+      "error: unexpected service error: build aborted due to an internal error: unable to write manifest to '/Users/angel/Code/Coffic/Lumi/Packages/KitLLM/.build/out/Intermediates.noindex/XCBuildData/dd27d7e43384ba85c99fa286c4c",
+      "error: Unexpected build state"
+    ],
+    "hasTestPlan": false
+  },
+  "KitMCP": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitMail": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitMarkdown": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitPrototype": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitResume": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitShell": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": true
+  },
+  "KitTerminalCore": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "KitWebServer": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "OpenInKit": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "PluginACP": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "PluginActivityHeatmap": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "PluginAgentLoop": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "PluginAgentLoopRetry": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "PluginAgentPlanStorage": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "PluginAgentRules": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "PluginAgentTempStorage": {
+    "status": "broken",
+    "errors": [
+      "error: Error Domain=NSCocoaErrorDomain Code=512 \"The file “swbuild.tmp.uwdAOrcl” couldn’t be saved in the folder “T”.\" UserInfo={NSURL=file:///private/var/folders/6d/f2x5d9r16md_0kwsk1qz4zqc0000gn/T/swbuild.tmp.uwdAOrcl/",
+      "error: ProcessInfoPlistFile /Users/angel/Code/Coffic/Lumi/Packages/PluginAgentTempStorage/.build/out/Products/Debug/KitAgentTool_KitAgentTool.bundle/Contents/Info.plist /Users/angel/Code/Coffic/Lumi/Packages/PluginAgentT",
+      "error: Error Domain=NSCocoaErrorDomain Code=512 \"The file “swbuild.tmp.eUTPDx7f” couldn’t be saved in the folder “T”.\" UserInfo={NSURL=file:///private/var/folders/6d/f2x5d9r16md_0kwsk1qz4zqc0000gn/T/swbuild.tmp.eUTPDx7f/",
+      "error: ProcessInfoPlistFile /Users/angel/Code/Coffic/Lumi/Packages/PluginAgentTempStorage/.build/out/Products/Debug/PluginAgentTempStorage_PluginAgentTempStorage.bundle/Contents/Info.plist /Users/angel/Code/Coffic/Lumi/P",
+      "error: Build failed"
+    ],
+    "hasTestPlan": false
+  },
+  "PluginAgentTurnNotification": {
+    "status": "broken",
+    "errors": [
+      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
+    ],
+    "hasTestPlan": false
+  },
+  "PluginAppIconDesigner": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginAppManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginAppStoreConnect": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginAppStorePromoDesigner": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginAppUpdate": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginAskUser": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginBrewManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginBrowser": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginCADDesigner": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginCaffeinate": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginChatFileAttachment": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginChatPanel": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginChatScreenshot": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginClipboardManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginCodeEditor": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginCodeEditorHost": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginCodeEditorLanguages": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginComputerUse": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginConversationBehavior": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginConversationCacheHitRate": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginConversationExport": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginConversationFork": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginConversationInput": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": true
+  },
+  "PluginConversationList": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginConversationManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginConversationMode": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginConversationNew": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginConversationPendingMessage": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginConversationSpeed": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginConversationState": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginConversationStats": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginConversationTitle": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginConversationVerbosity": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginDatabaseManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginDeveloperMode": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginDevice": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginDiskManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginDisplayControl": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginDockerManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginDocxRead": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginDownload": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginEditorPreview": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginFileLog": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginGit": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginGitRepositoryWatch": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginGitWorkspace": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginGithubMCP": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginGoalTask": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginHostsManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginImageToPDF": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginInput": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMContext": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderAiRouter": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderAliyun": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderAnthropic": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderCommandCode": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderDeepSeek": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderFeifeimiao": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderFlyMux": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderHappyCode": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderHyperAPI": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderKimiCode": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderLPgpt": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderMLX": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderMegaLLM": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderMiniMax": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderOpenAI": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderOpenCode": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderOpenRouter": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderSettings": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderStepFun": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderSublyx": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderTencent": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderUITest": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderXiaomi": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderXybbz": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLLMProviderZhipu": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLogoCoffic": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLogoManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginLogoSmartLight": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginMCP": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginMail": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginMemory": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginMessageListBrief": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": true
+  },
+  "PluginMessageListDetailed": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginMessageListEmpty": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginMessageListStandard": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginMessageManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginMessageRenderer": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginMessageSender": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": true
+  },
+  "PluginMindMapDesigner": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginModelSelector": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginNetto": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginNetworkManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginOcr": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginOnboarding": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginOpenInAntigravity": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginOpenInCursor": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginOpenInFinder": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginOpenInGitHubDesktop": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginOpenInGitOK": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginOpenInVSCode": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginOpenInXcode": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginPerformanceMetrics": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginPluginManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginPortManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginProjectFileTree": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginProjectFiles": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginProjectOverview": {
+    "status": "broken",
+    "errors": [
+      "error: clang dependency scanning failure:",
+      "error: clang dependency scanning failure:",
+      "error: clang dependency scanning failure:",
+      "error: clang dependency scanning failure:",
+      "error: clang dependency scanning failure:",
+      "error: clang dependency scanning failure:",
+      "error: clang dependency scanning failure:",
+      "error: clang dependency scanning failure:",
+      "error: clang dependency scanning failure:",
+      "error: clang dependency scanning failure:",
+      "error: clang dependency scanning failure:",
+      "error: clang dependency scanning failure:"
+    ],
+    "hasTestPlan": false
+  },
+  "PluginProjectRAG": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginProjects": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginPrototypeDesigner": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginQuickFileSearch": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginQuickLauncher": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginRClick": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginRegistryManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginResumeDesigner": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginRootView": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginScreenRecorder": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginSettingGeneral": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginShowImage": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginSkill": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginStoryWriter": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginSystemBenchmark": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginTerminal": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginTextActions": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginThemeManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginToolActivity": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginToolManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginToolbarSettings": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginVideoConverter": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginWebFetch": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginWebSearch": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginWebServer": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginWelcome": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginWhiteNoise": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginXcodeBuild": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "PluginXcodeMCP": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderACP": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderActivityHeatmap": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderAgentLoop": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderChatSection": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderConversation": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderConversationInputBlock": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderConversationState": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderDiagnostics": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderEditor": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderExternalFile": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderGit": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": true
+  },
+  "ProviderGitRepositoryWatch": {
+    "status": "skip",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderLLMContext": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderLLMManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderLegacyData": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderLifecycleHooks": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderMCP": {
+    "status": "broken",
+    "errors": [
+      "error: Build failed"
+    ],
+    "hasTestPlan": false
+  },
+  "ProviderMenuBar": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderMessage": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderMessageRendering": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderMessageSender": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderMessageStreaming": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderPanelBottom": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderPerformanceMetrics": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderProjectRAG": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderPromptSuggestion": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderToolManager": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderUninstall": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  },
+  "ProviderWebServer": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": false
+  }
+}

@@ -122,26 +122,48 @@ func paginationLoadsLatestPageAndDetectsEarlierMessages() async {
 @Test("向上翻页保留锚点，并重新检查是否还有更早消息")
 func paginationLoadsEarlierPageAroundAnchor() async {
     let conversationID = UUID()
-    let anchorID = UUID()
+    // stub 按 createdAt 排序，必须给递增时间戳，否则排序结果不确定。
+    let base = Date(timeIntervalSince1970: 100)
+    // 游标分页：从 anchor 之前截取。anchor 必须在数据集中，否则取不到更早消息。
+    let anchor = makeMessage(
+        conversationID: conversationID, role: .user, content: "anchor",
+        createdAt: base.addingTimeInterval(3)
+    )
     let earlier = [
-        makeMessage(conversationID: conversationID, role: .user, content: "one"),
-        makeMessage(conversationID: conversationID, role: .user, content: "two"),
+        makeMessage(
+            conversationID: conversationID, role: .user, content: "one",
+            createdAt: base
+        ),
+        makeMessage(
+            conversationID: conversationID, role: .user, content: "two",
+            createdAt: base.addingTimeInterval(1)
+        ),
+        makeMessage(
+            conversationID: conversationID, role: .user, content: "three",
+            createdAt: base.addingTimeInterval(2)
+        ),
     ]
-    let manager = StubMessageListMessageCapability(page: earlier, hasEarlier: true)
+    let manager = StubMessageListMessageCapability(
+        window: [anchor],
+        earlier: earlier,
+        hasEarlier: true
+    )
     let service = MessageListPaginationService(pageSize: 2, maxRetainedCount: 10)
 
     let result = await service.loadEarlier(
         conversationID: conversationID,
         messageManager: manager,
-        currentFirstID: anchorID,
+        currentFirstID: anchor.id,
         hasEarlier: true
     )
 
-    #expect(result?.anchorID == anchorID)
-    #expect(result?.earlier.map(\.id) == earlier.map(\.id))
+    #expect(result?.anchorID == anchor.id)
+    // pageSize=2 → 只取 anchor 之前最近的两条（two / three）。
+    #expect(result?.earlier.map(\.id) == earlier.suffix(2).map(\.id))
+    // 这两条之前仍有 "one" → 还有更早消息。
     #expect(result?.hasEarlierMessages == true)
-    #expect(manager.pageRequests.first?.beforeMessageID == anchorID)
-    #expect(manager.earlierRequests.first?.beforeMessageID == earlier.first?.id)
+    #expect(manager.pageRequests.first?.beforeMessageID == anchor.id)
+    #expect(manager.earlierRequests.first?.beforeMessageID == earlier.suffix(2).first?.id)
 }
 
 @MainActor
@@ -180,13 +202,24 @@ func paginationRefreshesOnlyAnOverlappingTail() async {
 @Test("空窗口首刷补查 earlier，尾部回收只在离开底部时执行")
 func paginationInitialRefreshAndTailEviction() async {
     let conversationID = UUID()
-    let page = (0..<2).map { index in
-        makeMessage(conversationID: conversationID, role: .user, content: "\(index)")
-    }
+    let base = Date(timeIntervalSince1970: 100)
+    // 首屏窗口只含最近一条，其前还有更早消息 → hasEarlierMessages == true。
+    let oldest = makeMessage(
+        conversationID: conversationID, role: .user, content: "oldest",
+        createdAt: base
+    )
+    let newest = makeMessage(
+        conversationID: conversationID, role: .user, content: "0",
+        createdAt: base.addingTimeInterval(1)
+    )
+    let page = [newest]
     let retained = (0..<3).map { index in
-        makeMessage(conversationID: conversationID, role: .user, content: "retained-\(index)")
+        makeMessage(
+            conversationID: conversationID, role: .user, content: "retained-\(index)",
+            createdAt: base.addingTimeInterval(TimeInterval(index))
+        )
     }
-    let manager = StubMessageListMessageCapability(page: page, hasEarlier: true)
+    let manager = StubMessageListMessageCapability(window: page, earlier: [oldest])
     let service = MessageListPaginationService(pageSize: 2, maxRetainedCount: 2)
 
     let initial = await service.refreshTail(conversationID: conversationID, messageManager: manager, current: [])
@@ -274,15 +307,32 @@ private func makeMessage(
 }
 
 @MainActor
-private final class StubMessageListMessageCapability: MessageListMessageCapability {
-    let page: [Message]
-    let hasEarlier: Bool
+final class StubMessageListMessageCapability: MessageListMessageCapability {
+    /// 首屏窗口。尾部刷新测试用它模拟「服务端已写入新消息」。
+    private(set) var page: [Message]
+    /// 完整消息集（按时间升序）。分页请求从 `beforeMessageID` 之前截取。
+    private(set) var allMessages: [Message]
+    var hasEarlier: Bool
     private(set) var pageRequests: [(limit: Int, beforeMessageID: UUID?, includesToolMessages: Bool)] = []
     private(set) var earlierRequests: [(beforeMessageID: UUID?, includesToolMessages: Bool)] = []
 
     init(page: [Message], hasEarlier: Bool = false) {
         self.page = page
+        self.allMessages = page.sorted { $0.createdAt < $1.createdAt }
         self.hasEarlier = hasEarlier
+    }
+
+    /// 显式提供「首屏窗口 + 更早历史」，用于翻页 / prepend 测试。
+    init(window: [Message], earlier: [Message], hasEarlier: Bool = false) {
+        self.page = window
+        self.allMessages = (earlier + window).sorted { $0.createdAt < $1.createdAt }
+        self.hasEarlier = hasEarlier
+    }
+
+    /// 模拟服务端状态变化：整体替换数据源，丢弃翻页历史。
+    func setPage(_ newPage: [Message]) {
+        page = newPage
+        allMessages = newPage.sorted { $0.createdAt < $1.createdAt }
     }
 
     func messagesSnapshot(in conversationID: UUID) async -> [Message] { page }
@@ -294,7 +344,16 @@ private final class StubMessageListMessageCapability: MessageListMessageCapabili
         includesToolMessages: Bool
     ) async -> [Message] {
         pageRequests.append((limit, beforeMessageID, includesToolMessages))
-        return page
+        // 首屏/尾部刷新（无游标）只返回当前窗口；
+        // 翻页（有游标）才回溯到窗口之前的历史。
+        let source: [Message]
+        if let beforeMessageID,
+           let index = allMessages.firstIndex(where: { $0.id == beforeMessageID }) {
+            source = Array(allMessages[..<index])
+        } else {
+            source = page
+        }
+        return Array(source.suffix(limit))
     }
 
     func hasEarlierMessagesAsync(
@@ -303,6 +362,10 @@ private final class StubMessageListMessageCapability: MessageListMessageCapabili
         includesToolMessages: Bool
     ) async -> Bool {
         earlierRequests.append((beforeMessageID, includesToolMessages))
-        return hasEarlier
+        guard let beforeMessageID,
+              let index = allMessages.firstIndex(where: { $0.id == beforeMessageID }) else {
+            return hasEarlier
+        }
+        return index > 0
     }
 }

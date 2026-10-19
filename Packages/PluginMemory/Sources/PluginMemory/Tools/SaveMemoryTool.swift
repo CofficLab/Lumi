@@ -1,17 +1,16 @@
 import Foundation
 import KitAgentTool
-import ProviderProject
 
 /// 保存记忆工具：把重要信息写入持久化记忆系统。
 public struct SaveMemoryTool: SuperAgentTool, @unchecked Sendable {
     public let name = "save_memory"
 
     private let storage: MemoryFileStorage
-    private let project: (any ProjectProviding)?
+    private let projectCapability: MemoryProjectCapability
 
-    public init(storage: MemoryFileStorage, project: (any ProjectProviding)?) {
+    init(storage: MemoryFileStorage, projectCapability: MemoryProjectCapability) {
         self.storage = storage
-        self.project = project
+        self.projectCapability = projectCapability
     }
 
     public func description(for language: LanguagePreference) -> String {
@@ -52,7 +51,7 @@ public struct SaveMemoryTool: SuperAgentTool, @unchecked Sendable {
         let type = MemoryToolSupport.type(arguments) ?? .project
         let scope = MemoryToolSupport.scope(arguments)
         let description = MemoryToolSupport.string(arguments, "description") ?? ""
-        let projectPath = await MainActor.run { project?.currentProject?.path }
+        let projectPath = await MainActor.run { projectCapability.currentProjectPath }
 
         let item = try await storage.save(
             id: id,

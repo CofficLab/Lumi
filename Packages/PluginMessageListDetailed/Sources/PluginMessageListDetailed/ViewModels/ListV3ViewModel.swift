@@ -41,7 +41,21 @@ private struct MessageFingerprintV3: Equatable {
 @MainActor
 final class ListV3ViewModel: ObservableObject {
     /// 流式逐字显示开关。
-    static var streamingDisplayEnabled = false
+    ///
+    /// 曾是 `static` 全局开关，测试并行执行时会互相覆盖，导致同一 suite
+    /// 内单跑通过、并行失败。改为实例属性 + 构造注入后不再有共享状态。
+    /// 生产代码从不设置它，默认关闭。
+    private let streamingDisplayEnabled: Bool
+
+    init(
+        services: MessageListServices,
+        pagination: MessageListPaginationService = MessageListPaginationService(),
+        streamingDisplayEnabled: Bool = false
+    ) {
+        self.services = services
+        self.pagination = pagination
+        self.streamingDisplayEnabled = streamingDisplayEnabled
+    }
 
     // MARK: - Published State (供 View 展示)
 
@@ -77,7 +91,7 @@ final class ListV3ViewModel: ObservableObject {
     // MARK: - Dependencies & Internal State
 
     private let services: MessageListServices
-    private let pagination = MessageListPaginationService()
+    private let pagination: MessageListPaginationService
     private let rowBuilder = MessageListRowBuilder()
     private let tailRefreshGate = MessageListTailRefreshGate()
 
@@ -92,12 +106,7 @@ final class ListV3ViewModel: ObservableObject {
     /// 激活序列号，用于防止并发切换时旧的异步加载结果回写。
     private var activationSequence: UInt64 = 0
 
-    init(services: MessageListServices) {
-        self.services = services
-    }
-
     // MARK: - Read-only Accessors (View 展示用)
-
     var selectedConversationID: UUID? {
         services.selectedConversationID
     }
@@ -363,7 +372,7 @@ final class ListV3ViewModel: ObservableObject {
 
     /// 从流式服务读取当前状态，更新 `streamingRow`。可见性规则同 V2。
     private func applyStreamingState() {
-        guard Self.streamingDisplayEnabled, verbosity != .brief else {
+        guard streamingDisplayEnabled, verbosity != .brief else {
             updateStreamingRow(nil)
             return
         }

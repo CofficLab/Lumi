@@ -192,57 +192,121 @@ public final class MessageManager: MessageManaging, SuperLog {
         store?.messageCount(conversationId: conversationID) ?? 0
     }
 
-    public func dailyMessageCounts(since: Date) -> [Date: Int] {
-        var counts = store?.dailyMessageCounts(since: since) ?? [:]
+    /// 聚合日统计的公共合并逻辑（消息条数 / token 总数各传一个标记）。
+    ///
+    /// - Important: pending 侧只补齐「**未落盘**」的增量。
+    ///   `persistLater` 分两步（先 `store.insertMessage`、再 `dequeuePending`），
+    ///   中间存在窗口：磁盘**已**含该消息、pending**仍**保留它。两侧简单相加会
+    ///   把同一条统计两次——实测 20 轮中第 13 轮 `dailyTokenCounts` 得到 27
+    ///   （应为 17，input 的 10 被算了两遍）。
+    ///
+    ///   去重判据由 `MessageStore.dailyAggregate` 在**同一把锁内**与聚合一起完成，
+    ///   不能拆成「先逐条探测再聚合」，否则探测与聚合之间仍有窗口。
+    private nonisolated static func mergeDailyAggregate(
+        pendingMessages: [Message],
+        since: Date,
+        store: MessageStore?,
+        countTokens: Bool
+    ) -> [Date: Int] {
+        let eligible = pendingMessages.filter { $0.createdAt >= since }
+        guard !eligible.isEmpty else {
+            // pending 为空：直接用磁盘口径。必须按 countTokens 分派，
+            // 不可无条件用 dailyMessageCounts——那会把 token 读成条数。
+            guard let store else { return [:] }
+            return countTokens ? store.dailyTokenCounts(since: since) : store.dailyMessageCounts(since: since)
+        }
+
+        let ids = Set(eligible.map { $0.id.uuidString })
+        guard let store else {
+            // store 未就绪：只靠 pending 尽力而为（read-your-writes）。
+            return Self.aggregatePendingOnly(eligible, countTokens: countTokens)
+        }
+
+        let (counts, alreadyPersisted) = store.dailyAggregate(
+            since: since,
+            pendingIDs: ids,
+            countTokens: countTokens
+        )
+        // 只有既未落盘、又尚未被移出 pending 的消息才需要补计。
+        var result = counts
         let calendar = Calendar.current
-        for message in pending.snapshotAll() where message.createdAt >= since {
-            counts[calendar.startOfDay(for: message.createdAt), default: 0] += 1
+        for message in eligible where !alreadyPersisted.contains(message.id.uuidString) {
+            let value = countTokens
+                ? (message.inputTokenCount ?? 0) + (message.outputTokenCount ?? 0)
+                : 1
+            guard value > 0 else { continue }
+            result[calendar.startOfDay(for: message.createdAt), default: 0] += value
+        }
+        return result
+    }
+
+    private nonisolated static func aggregatePendingOnly(
+        _ messages: [Message],
+        countTokens: Bool
+    ) -> [Date: Int] {
+        let calendar = Calendar.current
+        var counts: [Date: Int] = [:]
+        for message in messages {
+            let value = countTokens
+                ? (message.inputTokenCount ?? 0) + (message.outputTokenCount ?? 0)
+                : 1
+            guard value > 0 else { continue }
+            counts[calendar.startOfDay(for: message.createdAt), default: 0] += value
         }
         return counts
+    }
+
+    public func dailyMessageCounts(since: Date) -> [Date: Int] {
+        Self.mergeDailyAggregate(
+            pendingMessages: pending.snapshotAll(),
+            since: since,
+            store: store,
+            countTokens: false
+        )
     }
 
     /// 在后台读取并聚合消息日统计，避免 Heatmap 打开或刷新时阻塞 MainActor。
     public func dailyMessageCountsAsync(since: Date) async -> [Date: Int] {
         let store = self.store
-        let pending = self.pending
+        // 先在调用方快照 pending：detach 之后再取会拿到**另一个时间点**的缓冲，
+        // 与随后的磁盘读取不构成同一组判据，导致漏算。
+        let pendingSnapshot = pending.snapshotAll()
         return await Task.detached(priority: .utility) {
-            var counts = store?.dailyMessageCounts(since: since) ?? [:]
-            let calendar = Calendar.current
-            for message in pending.snapshotAll() where message.createdAt >= since {
-                counts[calendar.startOfDay(for: message.createdAt), default: 0] += 1
-            }
-            return counts
+            Self.mergeDailyAggregate(
+                pendingMessages: pendingSnapshot,
+                since: since,
+                store: store,
+                countTokens: false
+            )
         }.value
     }
 
     public func dailyTokenCounts(since: Date) -> [Date: Int] {
-        var counts = store?.dailyTokenCounts(since: since) ?? [:]
-        let calendar = Calendar.current
-        for message in pending.snapshotAll() where message.createdAt >= since {
-            let tokens = (message.inputTokenCount ?? 0) + (message.outputTokenCount ?? 0)
-            guard tokens > 0 else { continue }
-            counts[calendar.startOfDay(for: message.createdAt), default: 0] += tokens
-        }
-        return counts
+        Self.mergeDailyAggregate(
+            pendingMessages: pending.snapshotAll(),
+            since: since,
+            store: store,
+            countTokens: true
+        )
     }
 
     /// 在后台读取并聚合 token 日统计，保留 pending 消息的 read-your-writes 语义。
     public func dailyTokenCountsAsync(since: Date) async -> [Date: Int] {
         let store = self.store
-        let pending = self.pending
+        // 先在调用方快照 pending：detach 之后再取会拿到**另一个时间点**的缓冲，
+        // 与随后的磁盘读取不构成同一组判据，导致漏算。
+        let pendingSnapshot = pending.snapshotAll()
         return await Task.detached(priority: .utility) {
-            var counts = store?.dailyTokenCounts(since: since) ?? [:]
-            let calendar = Calendar.current
-            for message in pending.snapshotAll() where message.createdAt >= since {
-                let tokens = (message.inputTokenCount ?? 0) + (message.outputTokenCount ?? 0)
-                guard tokens > 0 else { continue }
-                counts[calendar.startOfDay(for: message.createdAt), default: 0] += tokens
-            }
-            return counts
+            Self.mergeDailyAggregate(
+                pendingMessages: pendingSnapshot,
+                since: since,
+                store: store,
+                countTokens: true
+            )
         }.value
     }
 
-    /// 分页查询（UI 滚动/历史加载）。
+
     public func messagePage(
         for conversationID: UUID,
         limit: Int,

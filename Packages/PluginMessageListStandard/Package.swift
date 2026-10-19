@@ -7,7 +7,7 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginMessageListStandard", targets: ["PluginMessageListStandard"])],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(path: "../KitMarkdown"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
@@ -53,6 +53,7 @@ let package = Package(
             .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
             .product(name: "ProviderProject", package: "LumiProviders"),
             .product(name: "ProviderToolbar", package: "LumiProviders"),
+            .product(name: "ProviderDeveloperMode", package: "LumiProviders"),
         ]),
     ]
 )

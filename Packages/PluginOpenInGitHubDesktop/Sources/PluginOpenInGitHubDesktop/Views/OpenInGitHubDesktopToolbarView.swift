@@ -1,13 +1,12 @@
 import OpenInKit
-import ProviderProject
 import SwiftUI
 
 /// Open In GitHub Desktop 的标题栏按钮。
 struct OpenInGitHubDesktopToolbarView: View {
     @StateObject private var model: OpenInGitHubDesktopToolbarViewModel
 
-    init(tool: OpenInTool, project: (any ProjectProviding)?) {
-        _model = StateObject(wrappedValue: OpenInGitHubDesktopToolbarViewModel(tool: tool, project: project))
+    init(tool: OpenInTool, projectCapability: OpenInProjectCapability) {
+        _model = StateObject(wrappedValue: OpenInGitHubDesktopToolbarViewModel(tool: tool, projectCapability: projectCapability))
     }
 
     var body: some View {
@@ -31,6 +30,6 @@ struct OpenInGitHubDesktopToolbarView: View {
 // MARK: - 预览
 
 #Preview("Open In GitHub Desktop Toolbar") {
-    OpenInGitHubDesktopToolbarView(tool: OpenInTool(config: OpenInTool.gitHubDesktop, project: nil), project: nil)
+    OpenInGitHubDesktopToolbarView(tool: OpenInTool(config: OpenInTool.gitHubDesktop, project: nil), projectCapability: OpenInProjectCapabilityAdapter(project: nil))
         .padding()
 }

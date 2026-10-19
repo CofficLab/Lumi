@@ -4,8 +4,8 @@ import SwiftUI
 /// AskUser 交互视图的无障碍标识符。
 ///
 /// UI 测试（`LumiAskUserUITests`）必须按标识符定位控件，而不是按本地化文案：
-/// 问题文案与「已回答」提示都是随 `-AppleLanguages` 变化的文案，按文案定位在
-/// 非英文环境下必然失败。选项按钮的 label 恰好是模型产出的稳定常量，可以用文案，
+/// 问题文案是随 `-AppleLanguages` 变化的文案，按文案定位在非英文环境下
+/// 必然失败。选项按钮的 label 恰好是模型产出的稳定常量，可以用文案，
 /// 但仍统一加上标识符以便在同一条断言里区分「选项」与「问题」。
 ///
 /// 命名沿用仓库既有惯例（见 `RetryTurnButton.accessibilityIdentifier`）。
@@ -26,9 +26,6 @@ enum AskUserAccessibility {
 
     /// free_text 模式的提交按钮。
     static let submitButton = "lumi.ask-user.submit"
-
-    /// 已回答后的回显（如「已回答：是」）。
-    static let answeredLabel = "lumi.ask-user.answered"
 }
 
 struct AskUserPendingView: View {
@@ -110,13 +107,6 @@ struct AskUserPendingView: View {
                     }
                 }
             }
-
-            if responded {
-                Text("已回答：\(answer)")
-                    .font(.appMicro)
-                    .foregroundColor(theme.textSecondary)
-                    .accessibilityIdentifier(AskUserAccessibility.answeredLabel)
-            }
         }
         .padding(12)
         .background(theme.surface)
@@ -125,6 +115,22 @@ struct AskUserPendingView: View {
                 .stroke(theme.primary.opacity(0.35), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 10))
+        // - Important: 必须显式 `children: .contain`。否则 SwiftUI 会把卡片
+        //   当作一个整体元素，把容器上的 `accessibilityIdentifier` **覆盖到所有后代**，
+        //   子元素最终统统报告 `lumi.ask-user.card`：
+        //
+        //   ```text
+        //   StaticText, identifier: 'lumi.ask-user.card'   ← 应为 .question
+        //   Button,     identifier: 'lumi.ask-user.card'   ← 应为 .option.0
+        //   TextField,  identifier: 'lumi.ask-user.card'   ← 应为 .free-text
+        //   ```
+        //
+        //   结果是 UI 测试无法按标识符定位到具体控件（`AskUserAccessibility` 里
+        //   逐个声明的 id 全部失效），只能靠 label 文案兜底——而 label 会随
+        //   `-AppleLanguages` 变化。
+        //
+        //   `contain` 让容器与后代各自保留自己的无障碍元素与标识符。
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AskUserAccessibility.card)
         .onAppear {
             if let initialAnswer = interaction.initialAnswer {

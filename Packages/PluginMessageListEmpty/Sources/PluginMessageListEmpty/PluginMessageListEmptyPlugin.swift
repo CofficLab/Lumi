@@ -45,6 +45,33 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
     private var promptSuggestionsObserver: (any PromptSuggestionProvidingObserverHandle)?
     private var registrationEvaluationTask: Task<Void, Never>?
     private var isRegistered = false
+    /// 「当前会话是否没有消息」这个判定的结果。
+    ///
+    /// 判定依赖异步 SwiftData 查询，因此必须显式建模「尚未得出结论」，
+    /// 否则「还不知道」会被当成「答案是空」，让空态在判定窗口内抢占
+    /// `message-list` 槽位，用户看到有消息却显示空态引导页。
+    private enum RegistrationState {
+        /// 判定任务在途，此刻**不应**参与槽位竞争。
+        case evaluating
+        /// 判定已完成，关联值即结论。
+        case resolved(Bool)
+    }
+    private var registrationState: RegistrationState = .evaluating
+
+    /// Slot id of the bottom activity strip. Derived from the plugin id so the
+    /// two slots stay namespaced together.
+    ///
+    /// Not `private`: 测试要断言注册进 ChatSection 的完整 item 集合，包含
+    /// 这条 activity strip。保持 internal 让测试复用同一个派生规则，
+    /// 避免在测试里硬编码 `"\(id).activity"` 而与实现悄悄脱钩。
+    var activityItemID: String { "\(id).activity" }
+
+    /// Data source for the activity strip.
+    ///
+    /// Held here rather than built inside the item closure: the model is
+    /// `@Observable`, so it must have a stable owner to keep its loaded window
+    /// across view rebuilds.
+    private var activityModel: EmptyStateActivityViewModel?
 
     public init() {}
 
@@ -63,7 +90,8 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         let services = MessageListEmptyServices(
             project: project,
             promptSuggestions: promptSuggestions,
-            promptSuggestionExecutor: promptSuggestionExecutor
+            promptSuggestionExecutor: promptSuggestionExecutor,
+            messages: messages
         )
         let toolbarCoordinator = NoConversationSelectedToolbarCoordinator(
             project: project,
@@ -80,6 +108,7 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         self.messages = messages
         self.services = services
         self.guideState = guideState
+        self.activityModel = EmptyStateActivityViewModel(messages: messages)
 
         selectedConversationObserver = conversations?.addSelectedConversationObserver { [weak self] conversationID in
             self?.updateSelection(conversationID)
@@ -100,6 +129,8 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         }
 
         updateSelection(conversations?.selectedConversationID)
+        // 常驻注册：可见性随后续判定变化，注册本身不再变动。
+        register()
         scheduleRegistrationEvaluation()
     }
 
@@ -119,8 +150,10 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
 
         if isRegistered {
             chat?.removeItem(id: id)
+            chat?.removeItem(id: activityItemID)
             isRegistered = false
         }
+        activityModel = nil
         guideState?.toolbarCoordinator.deactivate()
         guideState = nil
         services = nil
@@ -160,6 +193,15 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         let selectedID = conversations?.selectedConversationID
         updateSelection(selectedID)
 
+        // 「判定中」：先退出槽位竞争，等结论出来再决定是否进入。
+        //
+        // - Important: 这是修复「有消息却显示空态」的关键。判定需要异步
+        //   SwiftData 查询，在结论出来之前若保持已注册状态，消息列表插件
+        //   会因 exclusiveGroup 排序而失去槽位；查询完成后撤销注册又需要
+        //   一个异步窗口，用户会在窗口内看到空态引导页。这里让「尚未得知」
+        //   明确表达为「暂不参与竞争」，而不是「答案是空」。
+        registrationState = .evaluating
+
         guard let selectedID else {
             applyRegistration(shouldShow: true)
             return
@@ -187,27 +229,75 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         }
     }
 
-    private func applyRegistration(shouldShow: Bool) {
-        guard let chat else { return }
+    /// 空态当前是否应当渲染。
+    ///
+    /// 判定依赖异步 SwiftData 查询，因此必然存在一个「尚未得出结论」的
+    /// 中间态。关键在于把它表达为 `false`（不渲染）而不是「答案是空」：
+    ///
+    /// `isActive` 在 `ChatSectionHostView.stackItems` 中先于 `exclusiveItems`
+    /// 求值，因此它同时决定本插件能否赢得 `message-list` 槽位。判定在途时
+    /// 返回 `false`，消息列表插件（常驻注册）即先渲染，用户不会看到「有消息
+    /// 却显示空态」的中间画面。
+    private var shouldRenderEmptyState: Bool {
+        switch registrationState {
+        case .evaluating:
+            return false
+        case .resolved(let value):
+            return value
+        }
+    }
 
-        if shouldShow, !isRegistered {
-            let services = services
-            chat.addItems([
-                ChatSectionItem(
-                    id: id,
-                    order: order,
-                    exclusiveGroup: "message-list",
-                    fillsRemainingHeight: true
-                ) { [weak guideState] in
+    /// 常驻注册槽位 item。注册是一次性的，可见性完全由 `isActive` 表达——
+    /// 注册状态与可见状态刻意分离，避免二者脱节。
+    ///
+    /// 与 `VerbosityObservationBox` 采用同一范式：把状态收敛到单一数据源，
+    /// 才不会出现在「已移除 item 却仍需重新注册」这类不变量被破坏的路径上。
+    private func register() {
+        guard !isRegistered else { return }
+        let services = services
+        chat?.addItems([
+            ChatSectionItem(
+                id: id,
+                order: order,
+                exclusiveGroup: "message-list",
+                fillsRemainingHeight: true,
+                isActive: { @MainActor [weak self] in
+                    self?.shouldRenderEmptyState ?? false
+                },
+                content: { [weak guideState] in
                     guard let services, let guideState else { return AnyView(EmptyView()) }
                     return AnyView(MessageListEmptyContentView(services: services, guideState: guideState))
                 }
-            ])
-            isRegistered = true
-        } else if !shouldShow, isRegistered {
-            chat.removeItem(id: id)
-            isRegistered = false
-        }
+            ),
+            // The activity strip is a separate bottom-fixed slot rather than a
+            // child of the empty-state view, because the empty state centers its
+            // content in a scroll view and a footer would be pushed off-screen
+            // on short windows.
+            //
+            // - Important: bottomFixed items do not join the `message-list`
+            //   exclusive group, so visibility must be gated by `isActive`
+            //   alone. Reusing `shouldRenderEmptyState` is what keeps the strip
+            //   from appearing under a conversation that has messages.
+            ChatSectionItem(
+                id: activityItemID,
+                order: order,
+                placement: .bottomFixed,
+                showsTrailingDivider: false,
+                isActive: { @MainActor [weak self] in
+                    self?.shouldRenderEmptyState ?? false
+                },
+                content: { [weak activityModel] in
+                    guard let activityModel else { return AnyView(EmptyView()) }
+                    return AnyView(ActivityFooterView(model: activityModel))
+                }
+            ),
+        ])
+        isRegistered = true
+    }
+
+    private func applyRegistration(shouldShow: Bool) {
+        registrationState = .resolved(shouldShow)
+        chat?.refreshItems()
     }
 }
 

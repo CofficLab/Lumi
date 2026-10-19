@@ -36,3 +36,11 @@ From this package directory:
 swift test
 ```
 
+
+## 能力边界
+
+`PluginManagementViewModel` 原先直接持有 `any DocsViewProviding`，现改为只依赖
+`PluginManagerDocsCapability`（`aboutEntry(for:)`），由
+`PluginManagerDocsCapabilityAdapter` 收窄内核的 `DocsViewProviding`。
+
+注册 / 移除 About 条目仍由插件入口负责（它们属于组装层职责），不需要进入窄协议。

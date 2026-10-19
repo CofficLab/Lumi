@@ -70,7 +70,11 @@ public final class MiniMaxOpenAIProvider: VendorLLMProvider {
 
     public override var openAIConfiguration: OpenAICompatibleProviderConfiguration? {
         OpenAICompatibleProviderConfiguration(
-            baseURL: "https://api.minimaxi.com/v1/chat/completions"
+            baseURL: "https://api.minimaxi.com/v1/chat/completions",
+            // MiniMax 的 effort 档位比 OpenAI 兼容基线多两档（见官方文档
+            // 「Thinking depth」），不透传会让用户在 UI 选中的 xhigh / max
+            // 被静默丢弃。
+            additionalReasoningEfforts: ["xhigh", "max"]
         )
     }
 

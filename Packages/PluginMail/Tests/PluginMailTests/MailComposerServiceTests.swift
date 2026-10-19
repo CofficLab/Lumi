@@ -3,14 +3,20 @@ import KitMail
 @testable import PluginMail
 
 final class MailComposerServiceTests: XCTestCase {
-    override func setUp() {
-        super.setUp()
-        MailAccountStore.reset()
+    /// 每个用例一套独立的临时目录 + 内存 Keychain：不读写真实用户凭据。
+    private var fixture: MailAccountStoreFixture!
+    private var store: MailAccountStore!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        fixture = try MailAccountStoreFixture()
+        store = fixture.store
     }
 
-    override func tearDown() {
-        MailAccountStore.reset()
-        super.tearDown()
+    override func tearDownWithError() throws {
+        fixture = nil
+        store = nil
+        try super.tearDownWithError()
     }
 
     private func makeAccount() -> MailAccountConfig {
@@ -41,12 +47,13 @@ final class MailComposerServiceTests: XCTestCase {
     func testSendBuildsMIMEAndAppendsToSent() async throws {
         let session = MockMailSession(messages: [])
         let manager = MailSessionManager(
-            factory: SingleSessionFactory(session: session)
+            factory: SingleSessionFactory(session: session),
+            accountStore: store
         )
         let account = makeAccount()
-        MailAccountStore.setPassword("p", for: account.id)
+        store.setPassword("p", for: account.id)
 
-        let composer = MailComposerService(sessionManager: manager)
+        let composer = MailComposerService(sessionManager: manager, accountStore: store)
         try await composer.send(draft: makeDraft(), account: account)
 
         let sent = await session.sentMIMEs
@@ -63,8 +70,8 @@ final class MailComposerServiceTests: XCTestCase {
 
     func testSendThrowsAuthFailedWithoutPassword() async {
         let session = MockMailSession(messages: [])
-        let manager = MailSessionManager(factory: SingleSessionFactory(session: session))
-        let composer = MailComposerService(sessionManager: manager)
+        let manager = MailSessionManager(factory: SingleSessionFactory(session: session), accountStore: store)
+        let composer = MailComposerService(sessionManager: manager, accountStore: store)
         let account = makeAccount()
 
         do {
@@ -82,11 +89,11 @@ final class MailComposerServiceTests: XCTestCase {
     func testSentFolderDiscoveryPrefersSentKind() async throws {
         // 提供带 Sent 文件夹的 mock：应 APPEND 到 [Gmail]/Sent Mail
         let session = MockMailSession(messages: [])
-        let manager = MailSessionManager(factory: SingleSessionFactory(session: session))
+        let manager = MailSessionManager(factory: SingleSessionFactory(session: session), accountStore: store)
         let account = makeAccount()
-        MailAccountStore.setPassword("p", for: account.id)
+        store.setPassword("p", for: account.id)
 
-        let composer = MailComposerService(sessionManager: manager)
+        let composer = MailComposerService(sessionManager: manager, accountStore: store)
         try await composer.send(draft: makeDraft(), account: account)
 
         let appended = await session.appendedDrafts
@@ -109,14 +116,20 @@ private final class SingleSessionFactory: MailSessionFactory, @unchecked Sendabl
 
 @MainActor
 final class MailComposeViewModelTests: XCTestCase {
-    override func setUp() {
-        super.setUp()
-        MailAccountStore.reset()
+    /// 每个用例一套独立的临时目录 + 内存 Keychain：不读写真实用户凭据。
+    private var fixture: MailAccountStoreFixture!
+    private var store: MailAccountStore!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        fixture = try MailAccountStoreFixture()
+        store = fixture.store
     }
 
-    override func tearDown() {
-        MailAccountStore.reset()
-        super.tearDown()
+    override func tearDownWithError() throws {
+        fixture = nil
+        store = nil
+        try super.tearDownWithError()
     }
 
     private func makeAccount() -> MailAccountConfig {
@@ -167,12 +180,14 @@ final class MailComposeViewModelTests: XCTestCase {
         account: MailAccountConfig? = nil
     ) -> MailComposeViewModel {
         let manager = MailSessionManager(
-            factory: session.map { SingleSessionFactory(session: $0) } ?? MockMailSessionFactory()
+            factory: session.map { SingleSessionFactory(session: $0) } ?? MockMailSessionFactory(),
+            accountStore: store
         )
         return MailComposeViewModel(
-            composer: MailComposerService(sessionManager: manager),
+            composer: MailComposerService(sessionManager: manager, accountStore: store),
             sessionManager: manager,
             account: account ?? makeAccount(),
+            dataDirectory: FileManager.default.temporaryDirectory,
             mode: mode,
             originalDetail: detail
         )
@@ -210,7 +225,7 @@ final class MailComposeViewModelTests: XCTestCase {
     func testSendFailureRetainsDraftState() async {
         let session = MockMailSession(messages: [])
         let account = makeAccount()
-        MailAccountStore.setPassword("p", for: account.id)
+        store.setPassword("p", for: account.id)
         let vm = makeVM(mode: .new, session: session, account: account)
         vm.to = "lisi@example.com"
         vm.subject = "Hi"
@@ -222,7 +237,7 @@ final class MailComposeViewModelTests: XCTestCase {
         XCTAssertEqual(vm.phase, .sent, "mock 发送应成功")
 
         // 失败场景：清密码 → authFailed
-        MailAccountStore.setPassword(nil, for: account.id)
+        store.setPassword(nil, for: account.id)
         let vm2 = makeVM(mode: .new, session: session, account: account)
         vm2.to = "lisi@example.com"
         vm2.subject = "Hi"

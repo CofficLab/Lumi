@@ -28,37 +28,13 @@ enum ProviderScope: String, CaseIterable {
 struct ProviderListView: View {
     @LumiTheme private var theme
     @ObservedObject private var viewModel: ModelSelectorViewModel
-    var onClose: (() -> Void)? = nil
 
-    init(viewModel: ModelSelectorViewModel, onClose: (() -> Void)? = nil) {
+    init(viewModel: ModelSelectorViewModel) {
         self.viewModel = viewModel
-        self.onClose = onClose
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text(pluginLocalization.string("Providers"))
-                    .font(.appCallout)
-                Spacer()
-                if let onClose {
-                    Button {
-                        onClose()
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(theme.textTertiary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(theme.surface)
-
-            AppDivider()
-
             // 常用/云端/本地筛选
             HStack(spacing: 8) {
                 Picker("", selection: $viewModel.selectedScope) {

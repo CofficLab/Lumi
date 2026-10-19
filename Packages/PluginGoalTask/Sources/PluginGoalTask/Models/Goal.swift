@@ -54,6 +54,17 @@ final public class Goal: @unchecked Sendable {
         case skipped
     }
     
+    /// 是否为终态（completed / failed / skipped）。
+    ///
+    /// 非终态即视为「活跃」，是自动续跑钩子挑选目标、
+    /// 以及 `forkGoal` 让源 Goal 退出活跃集合的依据。
+    public var isTerminal: Bool {
+        switch status {
+        case .completed, .failed, .skipped: true
+        case .pending, .inProgress, .blocked: false
+        }
+    }
+    
     public init(
         id: String = UUID().uuidString,
         conversationId: String,

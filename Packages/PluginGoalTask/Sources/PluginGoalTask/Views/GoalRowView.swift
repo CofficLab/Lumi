@@ -10,10 +10,20 @@ import SwiftUI
 struct GoalRowView: View {
     @LumiTheme private var theme
     let item: GoalListItem
+    /// 为 `nil` 时隐藏「在新对话中继续」按钮（宿主缺少必需的 Provider）。
+    let forkCoordinator: GoalForkCoordinator?
+
     @State private var isExpanded = false
+    @State private var isForking = false
+    @State private var forkErrorMessage: String?
 
     private var goal: GoalDisplayItem { item.goal }
     private var tasks: [GoalTaskDisplayItem] { item.tasks }
+
+    /// 仅活跃 Goal 可继续推进；终态 Goal 没有未完成的上下文。
+    private var canFork: Bool {
+        !goal.isTerminal && forkCoordinator != nil
+    }
 
     private var completedCount: Int {
         tasks.filter { $0.status == .completed || $0.status == .skipped }.count
@@ -37,6 +47,7 @@ struct GoalRowView: View {
             goalHeader
             progressBar
             blockedReasonRow
+            forkErrorRow
             expandedTaskList
         }
         .padding(8)
@@ -47,36 +58,86 @@ struct GoalRowView: View {
 
     /// Goal 头部(点击展开/折叠任务)
     private var goalHeader: some View {
+        HStack(spacing: 6) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: statusIcon)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(statusColor)
+                        .frame(width: 14)
+
+                    Text(goal.title)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+
+                    Spacer(minLength: 4)
+
+                    Text("\(completedCount)/\(tasks.count)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // 与展开按钮并列，避免整行被 fork 按钮吞掉点击区域。
+            if canFork {
+                forkButton
+            }
+        }
+    }
+
+    /// 「在新对话中继续」按钮：复制 Goal 到新对话并立即开跑。
+    private var forkButton: some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.16)) {
-                isExpanded.toggle()
+            forkErrorMessage = nil
+            guard let forkCoordinator else { return }
+            isForking = true
+            Task {
+                defer { isForking = false }
+                do {
+                    try await forkCoordinator.forkAndStart(goal: goal, tasks: tasks)
+                } catch {
+                    forkErrorMessage = error.localizedDescription
+                }
             }
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: statusIcon)
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(statusColor)
-                    .frame(width: 14)
-
-                Text(goal.title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-
-                Spacer(minLength: 4)
-
-                Text("\(completedCount)/\(tasks.count)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-
-                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(.secondary)
+            Group {
+                if isForking {
+                    ProgressView().controlSize(.mini)
+                } else {
+                    Image(systemName: "arrow.branch")
+                }
             }
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(.secondary)
+            .frame(width: 20, height: 20)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(isForking)
+        .help(pluginLocalization.string("Continue in a new conversation"))
+    }
+
+    /// fork 失败时的错误提示（就近展示，避免弹窗一闪而过）。
+    @ViewBuilder
+    private var forkErrorRow: some View {
+        if let forkErrorMessage {
+            Text(forkErrorMessage)
+                .font(.caption2)
+                .foregroundStyle(.red)
+                .lineLimit(2)
+        }
     }
 
     /// 进度条:已用 statusColor 填充,背景为半透明灰。

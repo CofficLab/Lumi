@@ -17,6 +17,7 @@ final class DeviceMetricsObserver {
         BatteryService.shared.startMonitoring()
         StorageService.shared.startMonitoring()
         SystemMonitorService.shared.startMonitoring()
+        ThermalService.shared.startMonitoring()
 
         Publishers.CombineLatest3(
             CPUService.shared.$cpuUsage,
@@ -54,17 +55,7 @@ final class DeviceMetricsObserver {
             .sink { [weak self] percentage, used, total in
                 MemoryHistoryService.shared.recordDataPoint(pct: percentage, bytes: used)
                 self?.viewModels.memory.apply(percentage: percentage, used: used, total: total)
-                self?.viewModels.memorySettings.applyMemory(percentage: percentage, used: used, total: total)
                 self?.viewModels.menuBar.applyMemory(percentage: percentage, used: used, total: total)
-            }
-            .store(in: &cancellables)
-        LumiMemoryService.shared.startMonitoring()
-        Publishers.CombineLatest(
-            LumiMemoryService.shared.$currentMemoryFormatted,
-            LumiMemoryService.shared.$history
-        )
-            .sink { [weak self] formatted, history in
-                self?.viewModels.memorySettings.applyLumiMemory(currentFormatted: formatted, history: history)
             }
             .store(in: &cancellables)
 
@@ -87,6 +78,15 @@ final class DeviceMetricsObserver {
         SystemMonitorService.shared.$currentMetrics
             .sink { [weak self] metrics in self?.viewModels.systemMonitor.apply(metrics) }
             .store(in: &cancellables)
+        ThermalService.shared.objectWillChange
+            .sink { [weak self] in
+                guard let self else { return }
+                self.viewModels.thermal.apply(
+                    readings: ThermalService.shared.readings,
+                    peak: ThermalService.shared.peakCelsius
+                )
+            }
+            .store(in: &cancellables)
 
         CPUHistoryService.shared.$recentHistory
             .combineLatest(CPUHistoryService.shared.$longTermHistory)
@@ -104,7 +104,6 @@ final class DeviceMetricsObserver {
             .combineLatest(MemoryHistoryService.shared.$longTermHistory)
             .sink { [weak self] recent, longTerm in
                 self?.viewModels.memoryHistory.apply(recent: recent, longTerm: longTerm)
-                self?.viewModels.memorySettings.applySystemHistory(recent: recent, longTerm: longTerm)
             }
             .store(in: &cancellables)
 
@@ -130,11 +129,11 @@ final class DeviceMetricsObserver {
         BatteryService.shared.stopMonitoring()
         StorageService.shared.stopMonitoring()
         SystemMonitorService.shared.stopMonitoring()
+        ThermalService.shared.stopMonitoring()
         ProcessService.shared.stopMonitoring()
         CPUHistoryService.shared.stopRecording()
         GPUHistoryService.shared.stopRecording()
         MemoryHistoryService.shared.stopRecording()
         BatteryHistoryService.shared.stopRecording()
-        LumiMemoryService.shared.stopMonitoring()
     }
 }

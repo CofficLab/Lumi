@@ -44,6 +44,15 @@ final class ScrollViewBottomController {
         self.scrollView = nil
     }
 
+    // MARK: - 测试缝
+
+    /// 仅供测试装配真实滚动视图。生产路径经 `ScrollViewBottomTracker`
+    /// 的 `attachIfNeeded()` 调用 `attach(to:)`。
+    func attachForTesting(to scrollView: NSScrollView) { attach(to: scrollView) }
+
+    /// 仅供测试验证解绑后的行为。
+    func detachForTesting(from scrollView: NSScrollView) { detach(from: scrollView) }
+
     /// 钉住底层滚动视图的真实 document 底边，并返回当前几何快照。
     /// SwiftUI proxy 可能使用尚未完成的 List 行布局；直接调整 clip view
     /// 可以让调用方在 document 高度继续增长时重复收敛到真正的底部。
@@ -396,16 +405,15 @@ final class TrackerView: NSView {
         let documentHeight = documentView.bounds.height
         let visibleHeight = scrollView.contentView.bounds.height
         let offsetY = scrollView.contentView.bounds.origin.y
-        guard documentHeight.isFinite, visibleHeight.isFinite,
-              documentHeight < 10_000_000, visibleHeight > 0 else { return }
-
-        let distance = documentHeight - (offsetY + visibleHeight)
-        // 迟滞：已在底部时用更宽容的离开阈值，不在底部时用更严格的进入阈值，
-        // 避免在容差边界抖动时反复翻转。
-        let tolerance = lastAtBottom
-            ? MessageListScrollCoordinator.bottomLeaveTolerance
-            : MessageListScrollCoordinator.bottomEnterTolerance
-        let atBottom = distance <= tolerance
+        // 判定规则集中在 BottomDecision，便于精确测试迟滞带。
+        guard let atBottom = BottomDecision.evaluate(
+            documentHeight: documentHeight,
+            visibleHeight: visibleHeight,
+            offsetY: offsetY,
+            lastAtBottom: lastAtBottom,
+            enterTolerance: MessageListScrollCoordinator.bottomEnterTolerance,
+            leaveTolerance: MessageListScrollCoordinator.bottomLeaveTolerance
+        ) else { return }
 
         guard atBottom != lastAtBottom else { return }
         lastAtBottom = atBottom

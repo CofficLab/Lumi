@@ -1,17 +1,8 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%@ / %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ / %2$@"
-          }
-        }
-      }
-    },
     "Clear" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -46,6 +37,7 @@
       }
     },
     "Latency summaries" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -80,6 +72,7 @@
       }
     },
     "Local timings reported by app plugins. Message content is never collected." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -113,10 +106,8 @@
         }
       }
     },
-    "n=%lld" : {
-
-    },
     "No performance data" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -185,6 +176,7 @@
       }
     },
     "Recent samples: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -219,6 +211,7 @@
       }
     },
     "Refresh performance data" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -253,6 +246,7 @@
       }
     },
     "Use the app normally and timings will appear here." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

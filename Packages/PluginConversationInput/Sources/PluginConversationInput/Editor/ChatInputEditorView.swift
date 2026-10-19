@@ -180,11 +180,34 @@ public struct ChatInputEditorView: NSViewRepresentable {
 
         let currentText = resolvedText(from: textView)
         let textChanged = currentText != text
+
+        if textChanged, context.coordinator.shouldPublishEditorTextUp(currentText) {
+            // 补偿性回写：编辑器里有 binding 尚不知道的内容。
+            //
+            // 正常输入靠 `textViewDidChange` → `publishCommittedText` 上报。
+            // 但不是所有写入都会产生该通知——粘贴、语音输入、以及 UI 测试的
+            // `typeText`（一次性合成整段文本）都只改 `textView.string`。
+            // 此时 binding 仍是旧值，若按下面的分支把 binding 灌回编辑器，
+            // 用户刚输入的内容会被静默清空；即使侥幸没清空，状态层也永远
+            // 不知道「输入框有字」，导致发送按钮停在 disabled。
+            //
+            // 因此这里必须先判断方向：内容若是编辑器侧产生且从未上报过，
+            // 就向上写入 binding，而不是向下覆盖编辑器。
+            context.coordinator.publishEditorTextUp(currentText, from: textView)
+            updatePlaceholder(for: textView)
+            insertPendingBlockIfNeeded(in: textView, context: context)
+            // 本轮不回写选区：编辑器刚被外部写入，binding 的 cursorPosition
+            // 还是上一次同步的陈旧值，用它恢复选区会把刚输入的末尾字符吃掉
+            // （实测 `typeText("ZZVERIFY1")` 后只剩 `ZZVERIFY`）。
+            return
+        }
+
         if textChanged {
             textView.delegate = nil
             textView.hasPastePreviewAttachments = false
             textView.string = text
             textView.delegate = context.coordinator
+            context.coordinator.noteBindingTextPushedDown(text)
         }
 
         updatePlaceholder(for: textView)
@@ -371,6 +394,19 @@ extension ChatInputEditorView {
         var lastSyncedCursorPosition: Int?
         /// 最近一次已插入的折叠块 ID。用于在多次 `updateNSView` 之间去重。
         var lastInsertedBlockID: UUID?
+        /// 最近一次已同步的文本，无论同步方向是「binding → 编辑器」还是
+        /// 「编辑器 → binding」。
+        ///
+        /// `updateNSView` 发现两边不一致时，必须先回答「这个差异是谁造成的」，
+        /// 否则就会把方向判反：
+        /// - binding 变了（典型：发送后清空草稿）→ 必须下发到编辑器；
+        /// - 编辑器变了且 binding 不知情（粘贴、`typeText` 等一次性写入）
+        ///   → 必须上报到 binding。
+        ///
+        /// - Important: 上报路径**必须**也记录在这里。只有「binding → 编辑器」
+        ///   的下发被记录时，逐字输入后再发送的场景会被误判成「编辑器有未知
+        ///   新内容」，把已清空的草稿又写回 binding，输入框停留在原地。
+        private var lastSyncedBindingText: String?
         private var pendingHeightWorkItem: DispatchWorkItem?
         private var pendingHeightBindingWorkItem: DispatchWorkItem?
         private var heightScheduleID = UUID()
@@ -398,6 +434,49 @@ extension ChatInputEditorView {
 
         func accepts(_ textView: NSTextView) -> Bool {
             isActive && representedTextView === textView
+        }
+
+        // MARK: - 文本方向判定（binding ⇄ 编辑器）
+
+        /// binding 的文本刚被我们灌进编辑器时，编辑器与 binding「本该一致」。
+        /// 此时若仍不相等，说明是绑定侧的后续变更（或编辑器被外部改写后
+        /// binding 又动过），应按「binding → 编辑器」处理。
+        func noteBindingTextPushedDown(_ text: String) {
+            lastSyncedBindingText = text
+        }
+
+        /// 编辑器里的差异是否应判定为「编辑器侧变更」并向上发布。
+        ///
+        /// 仅当差异内容**不是**我们最近一次同步过的文本时才成立。这样区分了两个方向：
+        /// - 差异 == 最近同步值 → binding 变了，需要下发（正常路径）
+        /// - 差异 != 最近同步值 → 编辑器被写入且 binding 不知情，需要上报
+        func shouldPublishEditorTextUp(_ editorText: String) -> Bool {
+            if let synced = lastSyncedBindingText {
+                // 刚同步过：编辑器和该值不同说明用户/外部又改了，视为编辑器侧变更。
+                return editorText != synced
+            }
+            // 从未同步过：binding 与编辑器的任何差异都来自编辑器侧。
+            return true
+        }
+
+        /// 把编辑器内容向上发布到 binding。
+        ///
+        /// - Important: 这里**不**写 `parent.cursorPosition`。本方法只在
+        ///   「编辑器已被外部写入、binding 不知情」时调用，此时 binding 的
+        ///   `cursorPosition` 仍是上一次同步的值；若把它写回，`updateNSView`
+        ///   随后的光标恢复分支会用这个陈旧位置重设选区，把刚输入的末尾字符
+        ///   吃掉（实测 `typeText("ZZVERIFY1")` 后只剩 `ZZVERIFY`）。
+        ///   编辑器自身的选区已是正确位置，无需干预。
+        @MainActor
+        func publishEditorTextUp(_ editorText: String, from textView: NSTextView) {
+            lastSyncedBindingText = editorText
+            parent.text = editorText
+            // 只同步「当前光标在文本中的位置」这一事实，不触发选区回写。
+            lastSyncedCursorPosition = ChatInputEditorRules.utf16ToSwiftIndex(
+                textView.selectedRange().location,
+                in: textView.string
+            )
+            scheduleHeightUpdate(for: textView)
         }
 
         func invalidate() {
@@ -511,7 +590,11 @@ extension ChatInputEditorView {
 
         @MainActor
         private func publishCommittedText(from textView: NSTextView) {
-            parent.text = parent.resolvedText(from: textView)
+            let resolved = parent.resolvedText(from: textView)
+            // 记录本次上报：binding 与编辑器就此一致，后续差异才能归因到
+            // binding 侧（例如发送后清空草稿）而不是「编辑器有未知内容」。
+            lastSyncedBindingText = resolved
+            parent.text = resolved
 
             let utf16Location = textView.selectedRange().location
             let swiftLocation = ChatInputEditorRules.utf16ToSwiftIndex(utf16Location, in: textView.string)

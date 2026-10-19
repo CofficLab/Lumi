@@ -8,10 +8,14 @@ import SwiftUI
 /// 弹窗内容与单行渲染分别位于 `GoalPopoverContent.swift` 与 `GoalRowView.swift`。
 struct GoalToolbarButton: View {
     @ObservedObject var viewModel: GoalVM
+    /// 为 `nil` 表示宿主缺少必需的 Provider，此时隐藏「在新对话中继续」入口。
+    let forkCoordinator: GoalForkCoordinator?
+
     @State private var isPopoverPresented = false
 
-    init(viewModel: GoalVM) {
+    init(viewModel: GoalVM, forkCoordinator: GoalForkCoordinator?) {
         self.viewModel = viewModel
+        self.forkCoordinator = forkCoordinator
     }
 
     /// 所有 Goal 中已完成 / 已跳过的 task 数与总 task 数。
@@ -56,8 +60,11 @@ struct GoalToolbarButton: View {
             .buttonStyle(.plain)
             .help(helpText)
             .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-                GoalPopoverContent(viewModel: viewModel)
-                    .frame(width: 320, height: 400)
+                GoalPopoverContent(
+                    viewModel: viewModel,
+                    forkCoordinator: forkCoordinator
+                )
+                .frame(width: 320, height: 400)
             }
         }
     }

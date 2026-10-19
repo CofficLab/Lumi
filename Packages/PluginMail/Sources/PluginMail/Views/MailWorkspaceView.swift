@@ -18,14 +18,18 @@ public struct MailWorkspaceView: View {
 
     public init(
         sessionManager: MailSessionManager,
-        cache: MailCacheService
+        cache: MailCacheService,
+        accountStore: MailAccountStore,
+        dataDirectory: URL
     ) {
         self.sessionManager = sessionManager
         self.cache = cache
         self._viewModel = StateObject(
             wrappedValue: MailWorkspaceViewModel(
                 sessionManager: sessionManager,
-                cache: cache
+                cache: cache,
+                accountStore: accountStore,
+                dataDirectory: dataDirectory
             )
         )
     }

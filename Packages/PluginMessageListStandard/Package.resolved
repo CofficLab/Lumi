@@ -1,5 +1,5 @@
 {
-  "originHash" : "98a80e41279523e813350f01f88c781d75a2095a580027f7e187c409e909e7e4",
+  "originHash" : "5c986a8afd00106c59546a97df89e21e3a7a756f095e4aaa1f11f91aae530169",
   "pins" : [
     {
       "identity" : "beautiful-mermaid-swift",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiKernel.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "4a30c5f4d6e3b24be61e87a036b14720ef0f1654"
+        "revision" : "b1a0e8028b40777cce0c9ee71ba7728350d9a52b",
+        "version" : "1.1.0"
       }
     },
     {
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiProviders.git",
       "state" : {
-        "revision" : "f6a0117032d646ce20e561b5c10fd461e3a347b3",
-        "version" : "1.9.0"
+        "revision" : "947db244aa0a04ade2b5003307368564f7dec96a",
+        "version" : "1.11.0"
       }
     },
     {

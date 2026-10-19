@@ -42,6 +42,7 @@ public final class OpenInGitOKPlugin: SuperPlugin, SuperLog {
         let tool = OpenInTool(config: OpenInTool.gitOK, project: project)
 
         if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
+            let projectCapability = OpenInProjectCapabilityAdapter(project: project)
             toolbar.addToolbarItems([
                 ToolbarItem(
                     id: "\(id).toolbar",
@@ -50,7 +51,7 @@ public final class OpenInGitOKPlugin: SuperPlugin, SuperLog {
                     category: .global,
                     order: order
                 ) {
-                    OpenInGitOKToolbarView(tool: tool, project: project)
+                    OpenInGitOKToolbarView(tool: tool, projectCapability: projectCapability)
                 },
             ])
         }

@@ -42,6 +42,7 @@ public final class OpenInGitHubDesktopPlugin: SuperPlugin, SuperLog {
         let tool = OpenInTool(config: OpenInTool.gitHubDesktop, project: project)
 
         if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
+            let projectCapability = OpenInProjectCapabilityAdapter(project: project)
             toolbar.addToolbarItems([
                 ToolbarItem(
                     id: "\(id).toolbar",
@@ -50,7 +51,7 @@ public final class OpenInGitHubDesktopPlugin: SuperPlugin, SuperLog {
                     category: .global,
                     order: order
                 ) {
-                    OpenInGitHubDesktopToolbarView(tool: tool, project: project)
+                    OpenInGitHubDesktopToolbarView(tool: tool, projectCapability: projectCapability)
                 },
             ])
         }
