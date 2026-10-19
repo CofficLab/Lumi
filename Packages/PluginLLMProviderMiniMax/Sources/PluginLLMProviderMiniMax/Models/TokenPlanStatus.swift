@@ -229,6 +229,28 @@ struct TokenPlanData: Sendable, Equatable {
         "\(Self.formatTimestamp(weeklyStartTime)) — \(Self.formatTimestamp(weeklyEndTime))"
     }
 
+    /// 时段起止时间文本（紧凑版）。
+    ///
+    /// 同一天内时省略结束日期（`10/19 17:26 → 22:26`），跨天时保留完整时间戳。
+    var intervalTimeRangeCompact: String {
+        Self.formatTimeRange(start: startTime, end: endTime)
+    }
+
+    /// 本周起止时间文本（紧凑版）。
+    var weeklyTimeRangeCompact: String {
+        Self.formatTimeRange(start: weeklyStartTime, end: weeklyEndTime)
+    }
+
+    /// 时段剩余调用次数。
+    var intervalRemainingCount: Int {
+        max(0, intervalTotal - intervalUsage)
+    }
+
+    /// 本周剩余调用次数。
+    var weeklyRemainingCount: Int {
+        max(0, weeklyTotal - weeklyUsage)
+    }
+
     /// 当前时段重置时间展示分量；数据缺失时为 `nil`。
     var remainsTimeComponents: ResetTimeComponents? {
         Self.resetTimeComponents(endTime: endTime, remainsSeconds: remainsTime)
@@ -249,6 +271,38 @@ struct TokenPlanData: Sendable, Equatable {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "MM/dd HH:mm"
+        formatter.timeZone = .current
+        return formatter.string(from: Date(timeIntervalSince1970: Double(ms) / 1000))
+    }
+
+    /// 毫秒时间戳 → `HH:mm`；无效时间戳返回 `—`。
+    static func formatClock(_ ms: Int64) -> String {
+        guard ms > 0 else { return "—" }
+        return Self.format(ms, format: "HH:mm")
+    }
+
+    /// 毫秒时间戳 → `MM/dd`；无效时间戳返回 `—`。
+    static func formatDatePart(_ ms: Int64) -> String {
+        guard ms > 0 else { return "—" }
+        return Self.format(ms, format: "MM/dd")
+    }
+
+    /// 时间段紧凑文本：同一天时结束侧省略日期。
+    ///
+    /// 详情面板的卡片宽度有限，完整时间段会被截断；这里在同一天时压成
+    /// `MM/dd HH:mm → HH:mm`，跨天时保留完整日期。
+    static func formatTimeRange(start: Int64, end: Int64) -> String {
+        guard start > 0, end > 0 else { return "—" }
+        if Self.formatDatePart(start) == Self.formatDatePart(end) {
+            return "\(Self.formatTimestamp(start)) → \(Self.formatClock(end))"
+        }
+        return "\(Self.formatTimestamp(start)) → \(Self.formatTimestamp(end))"
+    }
+
+    private static func format(_ ms: Int64, format: String) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = format
         formatter.timeZone = .current
         return formatter.string(from: Date(timeIntervalSince1970: Double(ms) / 1000))
     }
@@ -285,6 +339,26 @@ enum TokenPlanStatusLocalization {
             format: pluginLocalization.string("Reset time format"),
             components.absolute,
             components.relative
+        )
+    }
+
+    /// 重置倒计时文本 `2 小时 32 分后重置`。
+    ///
+    /// 卡片里只放倒计时（绝对时间由时间段一行承担），避免同一信息出现两次。
+    static func resetCountdownText(_ components: ResetTimeComponents) -> String {
+        String(
+            format: pluginLocalization.string("Resets in %@"),
+            components.relative
+        )
+    }
+
+    /// 调用次数文本 `已用 19 / 100`；无次数上限时说明不限次。
+    static func usageText(used: Int, total: Int) -> String {
+        guard total > 0 else { return pluginLocalization.string("Unlimited calls") }
+        return String(
+            format: pluginLocalization.string("Used %lld / %lld"),
+            Int64(used),
+            Int64(total)
         )
     }
 }
