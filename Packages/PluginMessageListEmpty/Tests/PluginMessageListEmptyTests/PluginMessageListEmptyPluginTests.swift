@@ -69,17 +69,23 @@ import Testing
     #expect(chat.items.isEmpty)
 }
 
+/// Lets the plugin's registration evaluation reach a settled conclusion.
+///
+/// The evaluation runs in a child task that performs an async SwiftData read
+/// and only then calls `applyRegistration`. Rather than guessing how many
+/// yields that takes, drain the main actor until no further work is pending:
+/// once the queue has no runnable item left, every task that was going to
+/// resolve has resolved. This replaces an earlier sleep loop that burned a fixed
+/// ~0.5 s per call and could still flake on a loaded machine.
 @MainActor
 private func settleRegistrationEvaluation() async {
-    // The plugin evaluates persisted state in a child task that performs an
-    // async read. `Task.yield()` does not advance wall-clock time, so give the
-    // evaluation real time to finish instead of guessing how many yields it takes.
-    for _ in 0..<100 {
-        try? await Task.sleep(nanoseconds: 5_000_000)
+    await Task.yield()
+    for _ in 0..<50 {
+        await Task.yield()
     }
 }
 
-/// 空态 item 现已常驻注册，可见性完全由 `isActive` 表达，
+/// Empty-state item 常驻注册，可见性完全由 `isActive` 表达，
 /// 因此断言「是否渲染空态」而非「是否注册 item」。
 private extension DefaultChatSectionProviding {
     var isEmptyStateRendering: Bool {
