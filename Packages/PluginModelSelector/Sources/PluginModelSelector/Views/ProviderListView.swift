@@ -35,8 +35,10 @@ struct ProviderListView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 常用/云端/本地筛选
+            // 常用/云端/本地筛选（两侧各留一个 Spacer，使分段控件在 300pt 栏内居中）
             HStack(spacing: 8) {
+                Spacer(minLength: 0)
+
                 Picker("", selection: $viewModel.selectedScope) {
                     Text(pluginLocalization.string("Frequent"))
                         .tag(ProviderScope.frequent)
@@ -49,7 +51,7 @@ struct ProviderListView: View {
                 .pickerStyle(.segmented)
                 .frame(width: 210)
 
-                Spacer(minLength: 8)
+                Spacer(minLength: 0)
             }
             .padding(.horizontal, 12)
             // Important: 垂直内边距必须与 ModelCategoryFilterBar 保持一致，
