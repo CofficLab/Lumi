@@ -13,7 +13,22 @@ struct ActivityFooterView: View {
     let model: EmptyStateActivityViewModel
 
     var body: some View {
-        Group {
+        ZStack {
+            // - Important: 这个 0 高度的透明占位**不可省略**。
+            //
+            //   `.task` 绑定在视图的生命周期上，而下面的 `if` 在首次渲染时
+            //   一定为假（`totalMessages` 还是 `nil`，`hasActivity` 为 false）。
+            //   若容器此刻是空的，SwiftUI 不会为该分支建立真实的 view
+            //   identity，`.task` 于是**从不执行** —— 加载永远不会开始，
+            //   `hasActivity` 永远保持 false，构成死锁。表现为：明明有历史
+            //   数据，活动条却始终不出现。
+            //
+            //   实测证据：加日志后 `body` 求值多次而 `loadIfNeeded` 零次执行。
+            //   一个 0 高度、透明的真实视图让 `.task` 有可挂载的载体。
+            Color.clear
+                .frame(height: 0)
+                .allowsHitTesting(false)
+
             if model.hasActivity, let range = model.visibleRange {
                 content(range: range)
             }
@@ -60,6 +75,7 @@ struct ActivityFooterView: View {
         .padding(.top, 18)
         .frame(maxWidth: 620)
         .frame(maxWidth: .infinity)
+        .accessibilityIdentifier(MessageListEmptyA11y.activityStrip)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text(summaryText))
     }
