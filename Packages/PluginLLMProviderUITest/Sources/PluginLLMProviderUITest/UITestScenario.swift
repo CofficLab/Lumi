@@ -51,8 +51,24 @@ enum UITestScenario: String, CaseIterable, Sendable {
     /// 同上，但 `mode="choice"`，带多个选项（含 description / badge）。
     case askUserChoice = "ui-test-ask-user-choice"
 
+    /// 同 `askUserYesNo`，但**恢复后的第二轮**被拉长成多段慢响应。
+    ///
+    /// 存在理由：用户回答提问后，回合进入「恢复中」——AgentLoop 在跑，但会话
+    /// 状态快照还没收到新事件，仍停留在 `.suspended`。这个窗口必须能被稳定
+    /// 观测，否则「恢复回合中按停止是否真的停得住」只能靠运气。
+    case askUserYesNoSlow = "ui-test-ask-user-yes-no-slow"
+
     /// 同上，但 `mode="free_text"`，无选项，走输入框 + 提交按钮。
     case askUserFreeText = "ui-test-ask-user-free-text"
+
+    /// 调用**高风险工具**（`edit_file`）后挂起等待授权。用于验证高风险工具
+    /// 的授权卡片与「授权已处理后不再重复弹」的回归。
+    ///
+    /// 首轮返回 `edit_file` 工具调用 → 回合挂起 → 界面弹出授权卡片；
+    /// 用户点「允许/拒绝」后第二轮返回固定收尾正文。
+    /// 两段式响应与 ask_user 场景共用同一判据（请求体里是否已有
+    /// `role=tool` 消息），见 `UITestStubNetwork.hasToolResult`。
+    case approval = "ui-test-approval"
 
     /// 未知模型时的默认场景，保证不返回意外结果。
     case unknown = "ui-test-unknown"
@@ -66,16 +82,21 @@ enum UITestScenario: String, CaseIterable, Sendable {
             supportsStreaming: true,
             supportsVision: false,
             // ask_user 是工具调用场景，必须声明支持工具，否则请求体里不会带 tools。
-            supportsTools: self == .tool || self.isAskUser || self == .text
+            supportsTools: self == .tool || self.isAskUser || self == .text || self == .approval
         )
     }
 
     /// 是否为 ask_user 交互场景。
     var isAskUser: Bool {
         switch self {
-        case .askUserYesNo, .askUserChoice, .askUserFreeText: return true
+        case .askUserYesNo, .askUserChoice, .askUserFreeText, .askUserYesNoSlow: return true
         default: return false
         }
+    }
+
+    /// 是否为高风险工具授权场景。
+    var isApproval: Bool {
+        self == .approval
     }
 
     /// 该场景发起的 `ask_user` 工具调用参数 JSON。
@@ -84,7 +105,7 @@ enum UITestScenario: String, CaseIterable, Sendable {
     /// 只按 schema 产出参数，不假设宿主如何解析。
     var askUserArguments: String? {
         switch self {
-        case .askUserYesNo:
+        case .askUserYesNo, .askUserYesNoSlow:
             return #"{"question":"\#(UITestFixtures.askUserYesNoQuestion)","mode":"yes_no"}"#
         case .askUserChoice:
             return UITestFixtures.askUserChoiceArguments
@@ -92,6 +113,17 @@ enum UITestScenario: String, CaseIterable, Sendable {
             return #"{"question":"\#(UITestFixtures.askUserFreeTextQuestion)","mode":"free_text"}"#
         default:
             return nil
+        }
+    }
+
+    /// 该场景在「用户已回答」后产出的收尾正文。
+    ///
+    /// 慢恢复场景用不同的正文：它需要被拆成多段慢速吐出，
+    /// UI 测试才能在「恢复回合中」这个窗口里稳定采样。
+    var askUserFollowUpResponse: String {
+        switch self {
+        case .askUserYesNoSlow: return UITestFixtures.slowResumeFollowUpResponse
+        default: return UITestFixtures.askUserFollowUpResponse
         }
     }
 
@@ -105,8 +137,10 @@ enum UITestScenario: String, CaseIterable, Sendable {
         case .verySlow: return "UI Test Very Slow"
         case .long: return "UI Test Long"
         case .askUserYesNo: return "UI Test Ask User Yes No"
+        case .askUserYesNoSlow: return "UI Test Ask User Yes No Slow"
         case .askUserChoice: return "UI Test Ask User Choice"
         case .askUserFreeText: return "UI Test Ask User Free Text"
+        case .approval: return "UI Test Approval"
         case .unknown: return "UI Test Unknown"
         }
     }
@@ -204,6 +238,44 @@ enum UITestFixtures {
     /// 这是「答案确实回传给了 LLM 并被接受」的确定性证据：
     /// 桩只有在请求体里看到 `role=tool` 的消息（即用户已回答）时才产出它。
     static let askUserFollowUpResponse = "UI Testing Ask User Answered"
+
+    /// 慢恢复场景的收尾正文。
+    ///
+    /// 与 `askUserFollowUpResponse` 分开：慢恢复场景要在恢复窗口里
+    /// 持续产出内容，UI 测试才能断言「回合还在跑」而不是「已经跑完了」。
+    static let slowResumeFollowUpResponse = "UI Testing Slow Resumed Turn"
+
+    /// 慢恢复场景的段数。
+    ///
+    /// 与 `slowChunkDelay` 相乘约 6s（16 × 0.4s），给 XCUITest 留出足够的
+    /// 采样与点击窗口。
+    static let slowResumeChunkCount = 16
+
+    // MARK: - 高风险工具授权场景
+
+    /// 授权场景调用的工具名。
+    ///
+    /// 与 `EditFileTool.toolName` 一致。`EditFileTool.permissionRiskLevel`
+    /// 恒为 `.high`（`requiresPermission == true`），因此桩发出这个调用
+    /// 必然触发用户授权流程。
+    static let approvalToolName = "edit_file"
+
+    /// 授权场景的工具调用 id。
+    static let approvalToolCallID = "call_ui_test_approval"
+
+    /// 授权场景的工具参数。
+    ///
+    /// 参数只需要能被 `ToolArgumentCoding` 解码即可——授权卡片的判据是
+    /// 工具的**风险等级**，与参数内容无关。UI 测试点的是「拒绝」，
+    /// 工具不会被执行，因此不会真的去改这个文件。
+    static let approvalToolArguments =
+        #"{"file_path":"/tmp/lumi-ui-test-approval.txt","old_string":"before","new_string":"after"}"#
+
+    /// 授权场景在用户做出决定后，桩在第二轮给出的收尾回复。
+    ///
+    /// 判据与 ask_user 场景相同：请求体里出现 `role=tool` 消息
+    /// （即用户的授权决定已回传给模型）时才产出。
+    static let approvalFollowUpResponse = "UI Testing Approval Resolved"
 
     /// 慢速场景每段之间的延迟（秒）。
     static let slowChunkDelay: Double = 0.4

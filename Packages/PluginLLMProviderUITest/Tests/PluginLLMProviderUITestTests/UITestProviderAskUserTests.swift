@@ -54,7 +54,7 @@ struct UITestProviderAskUserTests {
             ) { _ in }
 
             #expect(
-                response.content == UITestFixtures.askUserFollowUpResponse,
+                response.content == scenario.askUserFollowUpResponse,
                 "\(scenario.rawValue) 次轮应产出收尾正文"
             )
             #expect(response.toolCalls?.isEmpty ?? true, "\(scenario.rawValue) 次轮不应再发工具调用")
@@ -141,7 +141,7 @@ struct UITestProviderAskUserTests {
             let secondComplete = try await provider.complete(
                 request(scenario: scenario, includeToolResult: true)
             )
-            #expect(secondComplete.content == UITestFixtures.askUserFollowUpResponse)
+            #expect(secondComplete.content == scenario.askUserFollowUpResponse)
         }
     }
 

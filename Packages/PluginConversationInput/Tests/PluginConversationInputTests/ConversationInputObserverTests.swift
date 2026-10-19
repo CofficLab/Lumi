@@ -254,6 +254,8 @@ struct ConversationInputCapabilityDegradationTests {
         #expect(capability.selectedConversationID == nil)
         #expect(!capability.isSending(for: UUID()))
         #expect(!capability.isSending(for: nil))
+        #expect(!capability.canStop(for: UUID()))
+        #expect(!capability.canStop(for: nil))
     }
 
     @Test("指标能力缺失时 beginMetrics 返回 nil 且其余调用无副作用")
