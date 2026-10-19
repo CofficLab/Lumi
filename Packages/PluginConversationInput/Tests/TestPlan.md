@@ -161,8 +161,64 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 87 | 降级 | 指标缺失时 beginMetrics 返回 nil | 全 Provider 缺失 | 调 begin / mark / end | begin 返回 nil；用真实 trace 调 mark/end 不崩溃 | P2 | ✅ 已覆盖 | `metricsDegradeGracefully` |
 | 88 | 降级 | 订阅返回可安全 cancel 的空句柄 | 全 Provider 缺失 | 注册 6 个订阅并（含重复）cancel | 全部不崩溃——调用方无差别持有并 cancel | P0 | ✅ 已覆盖 | `observersDegradeToNoopHandles` |
 
-> 说明：全部 **88 条场景 / 93 个测试方法**已在 macOS 上实跑通过
-> （`swift test` → 93 tests in 11 suites passed）。
+### 补充轮次（ID 89–96）：附件预览关闭按钮
+
+> 本轮补的是**预览 ✕ 的真实链路**。`ConversationInputViewModelAttachmentTests`
+> 用的是 `SendActionBarTestCapability`——直接改数组、且需手动 `refresh()`，
+> 只证明「给定正确 ID，移除逻辑正确」。只要 Adapter 少转发、Sender 少发
+> `.attachmentsChanged`、或 Observer 漏了该事件分支，**按钮点了没反应而旧测试全绿**。
+> 故本轮一律装配真实 `DefaultMessageSender` + `ConversationInputCapabilityAdapter`
+> + `ConversationInputObserver`，仅替换 AgentLoop。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 89 | 附件✕ | 点图片 ✕ 后缩略图立即消失，**不调 `refresh()`** | 真实 Sender + Adapter + Observer，两个图片附件 | 移除其一 | ViewModel 列表已更新（证明事件真的走通全链路） | P0 | ✅ 已覆盖 | `closingImageUpdatesPreviewWithoutManualRefresh` |
+| 90 | 附件✕ | 关闭最后一张图片后预览行整体消失 | 单张图片附件 | 移除它 | `hasAttachments == false`（`AttachmentPreviewView` 整行不渲染） | P0 | ✅ 已覆盖 | `closingLastImageHidesPreviewRow` |
+| 91 | 附件✕ | 关闭图片不影响文件附件 | 图片 + 文件各一 | 移除图片 | 文件保留，`hasAttachments` 仍为真 | P1 | ✅ 已覆盖 | `closingImageKeepsFileAttachments` |
+| 92 | 附件✕ | 连点同一个 ✕ 幂等，不误删其他图片 | 两个图片附件 | 同一 ID 连移除两次 | 另一个不受影响，无越界删除 | P1 | ✅ 已覆盖 | `closingSameImageTwiceIsIdempotent` |
+| 93 | 附件✕ | 附件池被外部清空后点陈旧 ✕ 是安全空操作 | 先 `handleConversationSwitched()` 清空 | 用已失效的 ID 移除 | 池保持为空，无崩溃 | P1 | ✅ 已覆盖 | `closingStaleThumbnailIsSafeNoOp` |
+| 94 | 附件✕ | 关闭图片后发送按钮状态随之回落 | 仅一张图片、正文为空 | 移除它 | `canSend` 由 true 回到 false | P1 | ✅ 已覆盖 | `closingLastImageDisablesSend` |
+| 95 | 附件✕ | 点文件 chip 的 ✕ 后立即移除 | 两个文件附件 | 移除其一 | 列表与 Sender 池同步为剩余项 | P1 | ✅ 已覆盖 | `closingFileChipUpdatesPreview` |
+| 96 | 附件✕ | Observer 退订后 ✕ 仍移除附件，但预览不再刷新（**回归**） | 装配 Observer 后 `cancel()` | 移除其一 | Sender 池已删；ViewModel 停在旧状态（锁住「句柄必须显式 cancel」） | P2 | ✅ 已覆盖 | `removalAfterObserverCancelStopsRefreshingPreview` |
+
+> **鉴别力验证**：本轮用两处变异确认用例不是「恒绿」——
+> 把 `ConversationInputObserver` 的 `.attachmentsChanged` 改成 `break`，
+> 6 个用例失败；把 `ConversationInputCapabilityAdapter.removeImageAttachment`
+> 改成空实现，另 6 个（含退订用例）失败。两处均已还原。
+
+### 补充轮次（ID 97–100）：本地化资源完整性
+
+> 这批用例由 UI 测试的失败倒逼而生：按文件名定位图片缩略图时**永远找不到**
+> 元素，排查后才发现 `.help()` 只是 tooltip、不进 AX 树，缩略图根本没有
+> 可访问文本。顺着这条线查出本包 xcstrings 里 7 处翻译缺失。
+>
+> 为什么必须由「读 xcstrings 本身」的测试兜住：单测不渲染文案、UI 测试按
+> identifier 定位而不读文案——**这层缺陷对两者都完全不可见**。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 97 | i18n | 已上屏文案都有 4 种语言翻译 | 读取本包 xcstrings | 校验 Remove image / Remove file / Binary file / Text file / Missing provider(s) | 每条均含 en / zh-Hans / zh-HK / zh-TW | P0 | ✅ 已覆盖 | `accessibilityLabelsAreFullyLocalized` |
+| 98 | i18n | Provider 错误文案含 en | 同上 | 校验 Provider Error 与配置错误文案 | 均含 en（否则英文界面把 key 显示出来） | P0 | ✅ 已覆盖 | `providerErrorKeysIncludeEnglish` |
+| 99 | i18n | 所有条目都含 4 种规范语言 | 同上 | 遍历全表 | 无条目缺语言 | P1 | ✅ 已覆盖 | `everyCatalogEntryCoversRequiredLanguages` |
+| 100 | i18n | 占位符在各语言间数量一致 | 同上 | 对每条比对 `%` 占位符个数 | 与 en 一致（否则运行期崩溃或丢值） | P1 | ✅ 已覆盖 | `placeholdersAreConsistentAcrossLanguages` |
+
+> 本轮修复的缺陷（先由用例失败暴露，再补齐）：
+> - `Binary file` / `Text file` / `Remove image` / `Remove file` /
+>   `Missing provider(s): %@` —— 4 种语言**全空**，且 `Binary file` /
+>   `Text file` 在代码里是硬编码英文，xcstrings 补了也不生效（已改走
+>   `pluginLocalization.string`）。
+> - `Provider Error` / `Provider configuration error…` —— **缺 en**。
+>
+> 另有 1 处无障碍缺陷由 UI 测试发现：`AttachmentThumbnail` 的 `.help()`
+> 不进 AX 树，VoiceOver 只能听到「移除图片」，无法分辨是哪张图（已补
+> `.accessibilityElement()` + 文件名 label）。
+>
+> UI 测试侧见 `LumiUITests/LumiAttachmentPreviewUITests.swift`（6 条，驱动
+> 真实 App 点击 ✕）。注：文件 chip 的 3 条尚未在干净环境跑通——本机有
+> 用户安装的正式版 Lumi 占用同一 App 名，导致 UI 测试宿主启动失败。
+
+> 说明：全部 **100 条场景 / 105 个测试方法**已在 macOS 上实跑通过
+> （`swift test` → 105 tests in 13 suites passed）。
 >
 > 实现中几条易错约定已在用例里显式锁定：
 > - **附件路径必须后台化**（ID 10）：同步 `commitUserMessage` 不做编码，附件消息走它会丢内容，
@@ -183,19 +239,21 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 
 ## 覆盖率统计
 
-- P0: 已覆盖 33 / 33
-- P1: 已覆盖 43 / 43
-- P2: 已覆盖 12 / 12
-- **合计: 88 / 88**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 37 / 37
+- P1: 已覆盖 50 / 50
+- P2: 已覆盖 13 / 13
+- **合计: 100 / 100**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 装配降级、可发送判定、发送/停止按钮形态切换、提交失败上报、
-  直写路径（`setText` / 回车 / 拖放清空）的回归、Observer 退订、UTF-16 索引换算
+  直写路径（`setText` / 回车 / 拖放清空）的回归、Observer 退订、UTF-16 索引换算、
+  附件预览 ✕ 的端到端链路（ID 89–90）、本地化缺失（ID 97–98）
 - **P1**: 会话切换与状态刷新、附件生命周期与拖放、Observer 事件路由与初始快照、
-  折叠块、拖放路径解析、错误提示
+  折叠块、拖放路径解析、错误提示、附件 ✕ 的幂等与陈旧 ID 容错（ID 91–95）、
+  全表语言完整性与占位符一致性（ID 99–100）
 - **P2**: Observer cancel 释放、编辑器延迟绑定与布局测量、placeholder 命中测试、
-  localhost 归一化、空文件容错
+  localhost 归一化、空文件容错、退订后的关闭行为（ID 96）
 
 ## 跨平台说明
 
