@@ -1,729 +1,756 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "" : {
-
-    },
-    "%lld models" : {
-
-    },
-    "All" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All"
+  "sourceLanguage": "en",
+  "strings": {
+    "%lld models": {},
+    "All": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
           }
         }
       }
     },
-    "As you use Lumi, your frequently used providers will appear here." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "As you use Lumi, your frequently used providers will appear here."
+    "As you use Lumi, your frequently used providers will appear here.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As you use Lumi, your frequently used providers will appear here."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "随着你的使用，这里会出现你常用的供应商。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "随着你的使用，这里会出现你常用的供应商。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隨著你的使用，這裡會出現你常用的供應商。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隨著你的使用，這裡會出現你常用的供應商。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隨著你的使用，這裡會出現你常用的供應商。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隨著你的使用，這裡會出現你常用的供應商。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隨著你的使用，這裡會出現你常用的供應商。"
-          }
-        }
-      }
-    },
-    "Audio Models" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Audio Models"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "语音模型"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "語音模型"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "語音模型"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "語音模型"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隨著你的使用，這裡會出現你常用的供應商。"
           }
         }
       }
     },
-    "Cloud" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cloud"
+    "Audio Models": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio Models"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "云端"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "语音模型"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "雲端"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語音模型"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "雲端"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語音模型"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "雲端"
-          }
-        }
-      }
-    },
-    "Frequent" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Frequent"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "常用"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "常用"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "常用"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "常用"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語音模型"
           }
         }
       }
     },
-    "Image Models" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Image Models"
+    "Cloud": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cloud"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "图像模型"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "云端"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖像模型"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "雲端"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖像模型"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "雲端"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖像模型"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "雲端"
           }
         }
       }
     },
-    "Language Models" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Language Models"
+    "Frequent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frequent"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "语言模型"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "常用"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "語言模型"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "常用"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "語言模型"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "常用"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "語言模型"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "常用"
           }
         }
       }
     },
-    "Local" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Local"
+    "Image Models": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image Models"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本地"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图像模型"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本地"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖像模型"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本地"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖像模型"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本地"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖像模型"
           }
         }
       }
     },
-    "Model Selector" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Model Selector"
+    "In Use": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Use"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "模型选择器"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用中"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "模型選擇器"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用中"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "模型選擇器"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用中"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "模型選擇器"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用中"
           }
         }
       }
     },
-    "Models refreshed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Models refreshed"
+    "Language Models": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language Models"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "模型列表已刷新"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "语言模型"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "模型列表已重新整理"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語言模型"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "模型列表已重新整理"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語言模型"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "模型列表已重新整理"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語言模型"
           }
         }
       }
     },
-    "No frequent providers yet" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No frequent providers yet"
+    "Local": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暂无常用供应商"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暫無常用供應商"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暫無常用供應商"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暫無常用供應商"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地"
           }
         }
       }
     },
-    "No providers available" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无可用的 Provider"
+    "Model Selector": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model Selector"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无可用的 Provider"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型选择器"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无可用的 Provider"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型選擇器"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无可用的 Provider"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型選擇器"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型選擇器"
           }
         }
       }
     },
-    "Providers" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "模型提供商"
+    "Models refreshed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Models refreshed"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "模型提供商"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型列表已刷新"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "模型提供商"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型列表已重新整理"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "模型提供商"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型列表已重新整理"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型列表已重新整理"
           }
         }
       }
     },
-    "Refresh failed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refresh failed"
+    "No frequent providers yet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No frequent providers yet"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新失败"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无常用供应商"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理失敗"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫無常用供應商"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理失敗"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫無常用供應商"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理失敗"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫無常用供應商"
           }
         }
       }
     },
-    "Refresh Models" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refresh Models"
+    "No providers available": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无可用的 Provider"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新模型列表"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无可用的 Provider"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理模型列表"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无可用的 Provider"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理模型列表"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理模型列表"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无可用的 Provider"
           }
         }
       }
     },
-    "Search models" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索模型"
+    "Providers": {
+      "extractionState": "stale",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型提供商"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索模型"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型提供商"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索模型"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型提供商"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索模型"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型提供商"
           }
         }
       }
     },
-    "Search providers" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索模型提供商"
+    "Refresh Models": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh Models"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索模型提供商"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新模型列表"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索模型提供商"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理模型列表"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索模型提供商"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理模型列表"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理模型列表"
           }
         }
       }
     },
-    "Select a provider" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择模型提供商"
+    "Refresh failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh failed"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择模型提供商"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新失败"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择模型提供商"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理失敗"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择模型提供商"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理失敗"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理失敗"
           }
         }
       }
     },
-    "Select Model" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择模型"
+    "Search models": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索模型"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择模型"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索模型"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择模型"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索模型"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择模型"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索模型"
           }
         }
       }
     },
-    "Switched to" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Switched to"
+    "Search providers": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索模型提供商"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已切换到"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索模型提供商"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已切換到"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索模型提供商"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已切換到"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已切換到"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索模型提供商"
           }
         }
       }
     },
-    "Tool Models" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tool Models"
+    "Select Model": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择模型"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具模型"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择模型"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具模型"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择模型"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具模型"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具模型"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择模型"
           }
         }
       }
     },
-    "Vision Models" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vision Models"
+    "Select a provider": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择模型提供商"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "视觉模型"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择模型提供商"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "視覺模型"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择模型提供商"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "視覺模型"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "視覺模型"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择模型提供商"
           }
         }
       }
     },
-    "中转站" : {
-
-    }
+    "Switched to": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switched to"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已切换到"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已切換到"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已切換到"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已切換到"
+          }
+        }
+      }
+    },
+    "Tool Models": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tool Models"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具模型"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具模型"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具模型"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具模型"
+          }
+        }
+      }
+    },
+    "Vision Models": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vision Models"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "视觉模型"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "視覺模型"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "視覺模型"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "視覺模型"
+          }
+        }
+      }
+    },
+    "中转站": {}
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

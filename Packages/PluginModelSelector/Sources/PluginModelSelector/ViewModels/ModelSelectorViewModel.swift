@@ -11,7 +11,14 @@ import ProviderLLMManager
 @MainActor
 final class ModelSelectorViewModel: ObservableObject {
     @Published private(set) var revision = 0
+    /// 浏览游标：用户当前点开的供应商，只决定右栏展示哪些模型，不写回内核。
+    ///
+    /// 与 `activeProviderID` 必须分开：前者是导航态，后者是真正生效的选择。
     @Published var selectedProviderID: String?
+    /// 实际生效的供应商（已提交到会话/全局设置）。
+    ///
+    /// 供应商列表右侧的对号由它决定，与浏览高亮互不干扰。
+    @Published private(set) var activeProviderID: String?
     @Published private(set) var selectedModel: String?
     @Published private(set) var selectedModelID: String?
     @Published private(set) var providerInfos: [LLMProviderInfo] = []
@@ -254,6 +261,9 @@ final class ModelSelectorViewModel: ObservableObject {
         // 浏览中的选中态不随外部事件回跳，仅刷新目录快照。
         selectedModel = box.selectedModel
         selectedModelID = box.selectedModelID
+        // 生效中的供应商由已提交的 modelID 反推，不复用浏览游标，
+        // 否则用户点开别的供应商时对号会跟着高亮跑，失去指示作用。
+        activeProviderID = selectedModelID.flatMap { LLMModelID(rawValue: $0)?.providerID }
         providerInfos = box.providerInfos
         modelIDs = box.modelIDs
         modelInfos = box.modelInfos

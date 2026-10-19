@@ -86,7 +86,8 @@ struct ProviderListView: View {
                                 ForEach(cloudProviders, id: \.id) { info in
                                     ProviderListItem(
                                         info: info,
-                                        isSelected: info.id == viewModel.selectedProviderID,
+                                        isBrowsing: info.id == viewModel.selectedProviderID,
+                                        isActive: info.id == viewModel.activeProviderID,
                                         onSelect: {
                                             viewModel.selectedProviderID = info.id
                                         },
@@ -103,7 +104,8 @@ struct ProviderListView: View {
                                     ForEach(relayProviders, id: \.id) { info in
                                         ProviderListItem(
                                             info: info,
-                                            isSelected: info.id == viewModel.selectedProviderID,
+                                            isBrowsing: info.id == viewModel.selectedProviderID,
+                                            isActive: info.id == viewModel.activeProviderID,
                                             onSelect: {
                                                 viewModel.selectedProviderID = info.id
                                             },
@@ -119,7 +121,8 @@ struct ProviderListView: View {
                                 ForEach(providers, id: \.id) { info in
                                     ProviderListItem(
                                         info: info,
-                                        isSelected: info.id == viewModel.selectedProviderID,
+                                        isBrowsing: info.id == viewModel.selectedProviderID,
+                                        isActive: info.id == viewModel.activeProviderID,
                                         onSelect: {
                                             viewModel.selectedProviderID = info.id
                                         },
