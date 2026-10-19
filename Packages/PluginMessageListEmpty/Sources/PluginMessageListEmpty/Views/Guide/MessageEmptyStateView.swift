@@ -76,6 +76,7 @@ struct MessageEmptyStateView: View {
                 .scrollIndicators(.hidden)
             }
         }
+        .accessibilityIdentifier(MessageListEmptyA11y.noMessages)
         .fileImporter(isPresented: $importingFolder, allowedContentTypes: [.folder], allowsMultipleSelection: false) { result in
             guard case .success(let urls) = result, let url = urls.first else { return }
             Task { @MainActor in
