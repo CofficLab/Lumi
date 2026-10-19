@@ -18,6 +18,12 @@ public struct SidebarView: View {
     /// 阻塞原因卡片高度(2 行 `caption2` + 上下内边距),由 `SidebarBlockedReason` 消费。
     static let blockedReasonCardHeight: CGFloat = 40
 
+    /// 任务列表容器与侧边栏底边之间的留白。
+    ///
+    /// 任务列表是容器内最后一个元素,没有下方的兄弟视图撑开间距,
+    /// 直接贴住底边会显得拥挤,这里留一段固定底部内边距。
+    private static let taskListBottomInset: CGFloat = 10
+
     /// 是否有可见的 Goal
     private var hasVisibleGoal: Bool {
         viewModel.hasActiveWork
@@ -109,6 +115,8 @@ public struct SidebarView: View {
     private var taskListView: some View {
         SidebarTaskList(tasks: viewModel.activeTasks)
             .frame(height: taskListHeight)
+            // 列表容器贴住侧边栏底边会显得拥挤,与上方元素之间留出呼吸感。
+            .padding(.bottom, Self.taskListBottomInset)
     }
 
     private var taskListHeight: CGFloat {
@@ -128,6 +136,10 @@ public struct SidebarView: View {
             return Self.headerHeight + 32
         }
         var height = Self.headerHeight + taskListHeight
+        // 任务列表与底边之间的留白(仅在列表实际渲染时存在)。
+        if !viewModel.activeTasks.isEmpty {
+            height += Self.taskListBottomInset
+        }
         // 阻塞原因卡片 + 卡片与任务列表之间的分割线
         if showsBlockedReason {
             height += Self.blockedReasonCardHeight + 1

@@ -231,7 +231,9 @@ private struct ModelCategoryFilterBar: View {
                 }
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            // Important: 垂直内边距必须与 ProviderListView 的筛选栏保持一致，
+            // 否则左右两栏的分割线无法对齐。
+            .padding(.vertical, 6)
         }
         .background(theme.surface)
     }
