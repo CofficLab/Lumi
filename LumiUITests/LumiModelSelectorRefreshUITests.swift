@@ -16,9 +16,7 @@ import AppKit
 /// `LLMProviderManagerBox` 收不到事件、快照停留在刷新前的 6 个。
 /// 包内单元测试直接使用 `DefaultLLMManager`（实现正确），无法暴露该问题，
 /// 只有驱动真实 App 装配的 UI 测试能复现。
-final class LumiModelSelectorRefreshUITests: XCTestCase {
-    private var app: XCUIApplication!
-
+final class LumiModelSelectorRefreshUITests: LumiUITestCase {
     private enum Identifiers {
         static let popover = "lumi.model-selector.popover"
         static let miniMaxRow = "lumi.model-selector.provider.minimax-tokenplan"
@@ -27,40 +25,21 @@ final class LumiModelSelectorRefreshUITests: XCTestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        // 先终止残留实例（与 LumiUITests 一致），避免复用 Background 旧进程。
-        app.terminate()
-        app.launchArguments += [
-            "-ApplePersistenceIgnoreState", "YES",
-            "-AppleLanguages", "(en)",
-            "-AppleLocale", "en_US",
+        launchLumi(extraArguments: [
             // MiniMax 刷新走桩网络（固定 9 模型），见 MiniMaxUITestingSupport。
             "--lumi-ui-testing",
             // 隔离存储：否则本地 models.json 的真实条目会污染「刷新后 9 个模型」的计数断言。
             "--lumi-ui-testing-isolated-storage",
-        ]
-        app.launch()
+        ])
+        // 基类在此等待主窗口并关掉新手引导：隔离存储会让引导重新出现，
+        // 它覆盖在聊天区之上，不关掉则点击「Select Model」会落在浮层上，
+        // popover 自然永远不会出现。
+        waitForMainWindow()
     }
 
     override func tearDownWithError() throws {
-        // 等 App 真正退出：terminate() 是异步的，不等会让「上一个用例还在退出」
-        // 漂移成「下一个用例偶发失败」。本类继承 XCTestCase，故内联实现。
-        if app.state != .notRunning {
-            app.terminate()
-            let stopped = NSPredicate(
-                format: "state == %d",
-                XCUIApplication.State.notRunning.rawValue
-            )
-            _ = XCTWaiter().wait(
-                for: [XCTNSPredicateExpectation(predicate: stopped, object: app)],
-                timeout: 10
-            )
-        }
+        terminateAppAndWait()
         try super.tearDownWithError()
-    }
-
-    private func element(identifier: String) -> XCUIElement {
-        app.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 
     /// 等待 MiniMax 供应商行的聚合无障碍标签包含指定片段（如 "6 models"）。
@@ -127,16 +106,9 @@ final class LumiModelSelectorRefreshUITests: XCTestCase {
             NSPredicate(format: "placeholderValue == %@", "Search models")
         ).firstMatch
         XCTAssertTrue(searchField.waitForExistence(timeout: 5), "模型列表缺少搜索框（模型数达到阈值后应显示）")
-        // 用剪贴板而不是 typeText：后者逐字符合成按键，会被宿主输入法吞掉
+        // 用剪贴板粘贴而不是 typeText：后者逐字符合成按键，会被宿主输入法吞掉
         // 尾部字符，搜不到目标模型（详见 `LumiUITestCase` 的实测对照表）。
-        // 本类继承的是 XCTestCase 而非 LumiUITestCase，因此这里内联粘贴。
-        searchField.click()
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString("MiniMax-M2.1", forType: .string)
-        sleep(1)
-        searchField.typeKey("v", modifierFlags: .command)
-        sleep(1)
+        paste("MiniMax-M2.1", into: searchField)
 
         let newModelRow = element(identifier: Identifiers.newModelRow)
         XCTAssertTrue(

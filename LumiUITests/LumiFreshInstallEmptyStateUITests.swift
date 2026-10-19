@@ -136,33 +136,40 @@ final class LumiFreshInstallEmptyStateUITests: LumiUITestCase {
 
     /// 首条消息后：空态让位给消息列表。
     ///
-    /// 空态与消息列表竞争同一个 `exclusiveGroup` 槽位，因此「空态还在」
-    /// 与「消息能看见」互斥。把这一条单独断言，是为了让失败时的报错
-    /// 直接指向仲裁环节，而不是让上层用例报「元素找不到」。
+    /// 空态与消息列表竞争同一个 `exclusiveGroup` 槽位，因此「空态还在」与
+    /// 「消息能看见」互斥。把这一条单独断言，是为了让失败时的报错直接指向
+    /// 仲裁环节，而不是让上层用例报「元素找不到」。
+    ///
+    /// - Important: 不要断言「`no-messages` 空态曾出现」这类中间态。用户消息
+    ///   在发送管线里**先落库再渲染**，第一次渲染时会话已经有消息了，那个
+    ///   「选中了会话但没有消息」的帧根本不会画出来。此前按中间态写，超时后
+    ///   报成「既未出现空态也未出现消息列表」，把「发送链路正常」误报成缺陷。
+    ///   可观察的判据只有两个：**空态最终都消失**、**消息列表接管了聊天区**。
     func testEmptyStateIsReplacedByMessageListAfterFirstMessage() throws {
         let noMessages = element(identifier: EmptyState.noMessagesID)
         let noConversation = element(identifier: EmptyState.noConversationSelectedID)
 
         XCTAssertTrue(
-            typeAndSend("Empty State Hand Over Probe", editorIdentifier: Input.editor),
+            typeAndSend("Handover Probe", editorIdentifier: Input.editor),
             "发送首条消息失败"
         )
 
-        // 等「当前会话无消息」的空态出现：它先于首条消息渲染，
-        // 随后应当被消息列表顶掉。若它一直不出现，说明消息根本没写入会话。
-        let appeared = noMessages.waitForExistence(timeout: 30) || noConversation.exists
-        XCTAssertTrue(appeared, "既未出现空态也未出现消息列表，聊天区无内容 —— 请检查前置发送是否成功")
-
         // 两种空态最终都必须消失。
-        let gone = waitForNonExistence(noMessages, timeout: 30)
-            && waitForNonExistence(noConversation, timeout: 5)
+        let gone = waitForNonExistence(noConversation, timeout: 30)
+            && waitForNonExistence(noMessages, timeout: 5)
         XCTAssertTrue(
             gone,
             """
-            已有消息后空态仍未让位（\(EmptyState.noMessagesID)）。\
+            已有消息后空态仍未让位（\(EmptyState.noConversationSelectedID) / \(EmptyState.noMessagesID)）。\
             空态 order=81 早于标准列表 order=82，仲裁只看 order —— \
             一旦空态的 isActive 误判为 true 就会永久压住消息列表。
             """
+        )
+
+        // 空态消失不等于有内容：消息正文必须真的渲染出来。
+        XCTAssertTrue(
+            element(containingLabel: "Handover Probe").waitForExistence(timeout: 20),
+            "空态让位了，但首条消息未显示在聊天区 —— 用户会以为消息丢失"
         )
     }
 }
