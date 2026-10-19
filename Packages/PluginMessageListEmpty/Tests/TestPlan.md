@@ -6,7 +6,7 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 并以常驻注册的 ChatSection 槽位参与 `message-list` 互斥竞争。
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，单元用例总数: 53（另有 5 条 UI 测试，见「UI 测试」章节）
+测试文件: 11 个，单元用例总数: 54（另有 5 条 UI 测试，见「UI 测试」章节）
 
 核心组件（源码目录）:
 - `Models/`
@@ -45,6 +45,7 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 - **EmptyStateActivityLoading**（7 条）：由 `loading fills the window and derives totals from both series`、`re-entering the empty state on the same day reuses the loaded window`、`a stale slow load cannot overwrite a newer window`、`a missing message provider degrades to an invisible strip` 锁定。覆盖 `loadIfNeeded(force:)` 的窗口填充、同日缓存门、`loadGeneration` 竞态防护、缺 provider 降级、token 与消息两级独立判空；改动 `EmptyStateActivityViewModel` 的加载路径时必须优先跑该文件。
 - **EmptyStateActivityWindow**（10 条）：由 `the window covers every calendar day including idle ones`、`a same-day merge keeps the larger count regardless of arrival order`、`levels are normalized against the busiest day in the window`、`a quiet day next to a busy one stays on the lowest active level` 锁定。覆盖 `makeDays` 的窗口填充、跨天归一化、同日合并取 max、level 相对峰值归一化与 ceiling 除法；改动热力图分桶逻辑时必须优先跑该文件。
 - **EmptyStateTokenTrend**（7 条）：由 `token days fill the whole window including idle days`、`no token consumption keeps the trend hidden`、`values below one thousand are shown verbatim` 等用例锁定；改动 token 趋势线或其紧凑数字格式化时优先跑对应测试文件。
+- **ActivityFooterLayout**（1 条）：由 `activityFooterOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth` 锁定。守住「热力图 + 折线图并排」的宽度阈值 `ActivityFooterLayout.sideBySideMinWidth`（及其三个组成常量）；改动活动条排布时必须优先跑该文件。
 
 ## 测试用例清单
 
@@ -106,21 +107,23 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 
 | 53 | EmptyStateAccessibility | emptyStateAccessibilityIdentifiersAreStableAndDistinct | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emptyStateAccessibilityIdentifiersAreStableAndDistinct` |
 
-> 说明：全部 **53 条单元场景**已在本包 `swift test` 中实跑通过（5 suites / 53 tests，约 0.02 s）；另有 5 条 UI 测试见下方章节。
+| 54 | ActivityFooterLayout | activityFooterOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activityFooterOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth` |
+
+> 说明：全部 **54 条单元场景**已在本包 `swift test` 中实跑通过（5 suites / 54 tests，约 0.02 s）；另有 5 条 UI 测试见下方章节。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 11 / 11
-- P1: 已覆盖 38 / 38
+- P1: 已覆盖 39 / 39
 - P2: 已覆盖 4 / 4
-- **合计: 53 / 53**（仅表示清单场景，非源码覆盖率）
+- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
 - **UI 测试: 5 条**（3 通过 / 2 跳过，见「UI 测试」章节）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（38 条）
+- **P1**: 其余功能性用例（39 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## UI 测试
@@ -137,7 +140,7 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 |----|------|------|------|
 | U1 | `testEmptyStateAppearsForConversationWithoutMessages` | ✅ 通过 | 选中无消息会话时空态出现 |
 | U2 | `testActivityStripAppearsAlongsideEmptyState` | ✅ 通过 | 空态与活动条同时出现（覆盖下述缺陷 1+2） |
-| U3 | `testActivityStripRendersSummaryText` | ✅ 通过 | 摘要文案渲染且带窗口天数 30 |
+| U3 | `testActivityStripRendersSummaryText` | ✅ 通过 | 无障碍摘要可读且带窗口天数 30（文案不再画在界面上） |
 | U4 | `testEmptyStateAndActivityStripYieldToConversationWithMessages` | ⏭️ 跳过 | 依赖会话列表容器，本环境 rail 未渲染 |
 | U5 | `testToolOnlyConversationStillShowsEmptyState` | ⏭️ 跳过 | 同上 |
 
@@ -202,7 +205,7 @@ App 启动时空态先渲染、跨会话统计稍后就绪，首次查询**本�
 
 ## 跨平台说明
 
-- 单元测试：Package 声明 macOS 14+, iOS 17+，53 条用例位于 `Tests/`
+- 单元测试：Package 声明 macOS 14+, iOS 17+，54 条用例位于 `Tests/`
 - UI 测试：仅 macOS（`LumiUITests` target），5 条用例
 
 ## 测试执行

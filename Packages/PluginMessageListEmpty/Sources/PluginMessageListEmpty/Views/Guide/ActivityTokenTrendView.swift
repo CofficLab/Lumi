@@ -1,38 +1,35 @@
 import LumiUI
 import SwiftUI
 
-/// Daily token consumption trend shown under the 30-day activity heatmap.
+/// Daily token consumption trend shown beside or under the 30-day activity heatmap.
 ///
 /// Split out from `ActivityFooterView` per the project's one-view-per-file rule.
 /// The chart is only meaningful once there are tokens to plot: a flat zero line
 /// reads as a broken widget, so the caller omits this view entirely when
 /// ``EmptyStateActivityViewModel/hasTokenActivity`` is false.
+///
+/// - Important: 不渲染摘要文案。两块图并排后，图下方的「…tokens in the last
+///   30 days」会和热力图下的「…messages in the last 30 days」挤成两行噪声，
+///   所以数字只保留在无障碍标签里，视觉上交给图形本身表达。
 struct ActivityTokenTrendView: View {
-    @LumiTheme private var theme
     let model: EmptyStateActivityViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            AppLineChart(
-                points: model.tokenDays.map {
-                    AppLineChartPoint(date: $0.date, value: Double($0.count))
-                },
-                accessibilityLabel: pluginLocalization.string("Daily token consumption chart"),
-                valueLabel: { Self.compactTokenCount(Int($0)) }
-            )
-            .frame(height: 110)
-
-            Text(summaryText)
-                .font(.appCaption)
-                .foregroundStyle(.tertiary)
-                .monospacedDigit()
-        }
+        AppLineChart(
+            points: model.tokenDays.map {
+                AppLineChartPoint(date: $0.date, value: Double($0.count))
+            },
+            accessibilityLabel: pluginLocalization.string("Daily token consumption chart"),
+            valueLabel: { Self.compactTokenCount(Int($0)) }
+        )
+        .frame(height: 110)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text(summaryText))
     }
 
-    /// "128.4K tokens in the last 30 days", matching the phrasing of the
-    /// message strip above so the two read as one sentence pair.
+    /// "128.4K tokens in the last 30 days", kept for assistive technologies
+    /// only: the chart has no visible caption any more, so this sentence is the
+    /// sole place the total is spelled out.
     private var summaryText: String {
         let format = String(
             localized: "%@ tokens in the last %lld days",
@@ -46,7 +43,7 @@ struct ActivityTokenTrendView: View {
         )
     }
 
-    /// Shortens a token count so the caption stays one line at any magnitude.
+    /// Shortens a token count so the tooltip stays one line at any magnitude.
     ///
     /// A local copy rather than reusing the activity-heatmap plugin's formatter:
     /// that type lives in another plugin and plugins must not depend on each

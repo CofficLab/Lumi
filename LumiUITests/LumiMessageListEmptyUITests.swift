@@ -88,11 +88,14 @@ final class LumiMessageListEmptyUITests: LumiUITestCase {
         )
     }
 
-    /// 活动条里的摘要文案必须真的渲染出来，并且带窗口天数。
+    /// 活动条的摘要必须可被无障碍读到，并且带窗口天数。
+    ///
+    /// 摘要不再画在界面上（两块图并排后图下的两行说明成了噪声），只作为
+    /// 活动条容器的 accessibility label 存在。因此这条用例真正守的是
+    /// **无障碍摘要没被删空**：容器在但 label 为空，读屏用户就只剩下
+    /// 30 个日期格子，得不到「近 30 天共多少条」这一层语义。
     ///
     /// 只断言文案的稳定片段、不断言具体数字：数字口径由夹具单测钉住（见类注释）。
-    /// 若活动条容器在、但摘要文本缺失或为空，说明布局或本地化退化，
-    /// 那正是这条用例要抓的。
     func testActivityStripRendersSummaryText() throws {
         waitForMainWindow()
 
