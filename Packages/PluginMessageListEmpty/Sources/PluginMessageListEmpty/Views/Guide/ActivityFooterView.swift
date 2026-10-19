@@ -9,8 +9,16 @@ import SwiftUI
 /// title or the prompt suggestions. It renders nothing when there is no
 /// activity, so a brand-new install keeps the clean composition it has today.
 struct ActivityFooterView: View {
-    @LumiTheme private var theme
     let model: EmptyStateActivityViewModel
+
+    /// Width the strip last received from its slot.
+    ///
+    /// Needed only to pick between the side-by-side and the stacked layout:
+    /// `AppLineChart` is built on a `GeometryReader`, so it happily shrinks to
+    /// any width. `ViewThatFits` therefore cannot detect "too narrow" here —
+    /// the flexible child always reports that it fits — and an explicit
+    /// measurement is what makes the fallback real.
+    @State private var availableWidth: CGFloat = 0
 
     var body: some View {
         ZStack {
@@ -33,6 +41,7 @@ struct ActivityFooterView: View {
                 content(range: range)
             }
         }
+        .background(alignment: .topLeading) { widthReader }
         .task {
             await model.loadIfNeeded()
         }
@@ -40,36 +49,19 @@ struct ActivityFooterView: View {
 
     private func content(range: ClosedRange<Date>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            AppActivityHeatmap(
-                days: model.days.map {
-                    AppActivityHeatmapDay(
-                        date: $0.date,
-                        level: $0.level,
-                        accessibilityLabel: $0.accessibilityLabel
-                    )
-                },
-                range: range,
-                cellSize: 9,
-                cellSpacing: 3,
-                levelCount: 5,
-                showsMonthLabels: false,
-                showsWeekdayLabels: false,
-                scrollsHorizontally: false,
-                showsLegend: false
-            )
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Text(summaryText)
-                .font(.appCaption)
-                .foregroundStyle(theme.textTertiary)
-
-            // The trend is nested under the strip so the two share one x-axis
-            // range and read as a single block. Each part hides itself when its
-            // own series is empty, so a user with messages but no recorded
-            // tokens still gets the heatmap without a dead chart.
-            if model.hasTokenActivity {
-                ActivityTokenTrendView(model: model)
-                    .padding(.top, 6)
+            if placesTrendBesideHeatmap {
+                // 并排时两块在竖直方向居中：热力图窄而矮，折线图更高也更宽，
+                // 居中对齐让整条活动条读起来是一个整体而不是两个控件。
+                HStack(alignment: .center, spacing: ActivityFooterLayout.columnSpacing) {
+                    heatmap(range: range)
+                    trendView
+                }
+            } else {
+                heatmap(range: range)
+                if model.hasTokenActivity {
+                    trendView
+                        .padding(.top, 6)
+                }
             }
         }
         .padding(.top, 18)
@@ -80,8 +72,54 @@ struct ActivityFooterView: View {
         .accessibilityLabel(Text(summaryText))
     }
 
+    private func heatmap(range: ClosedRange<Date>) -> some View {
+        AppActivityHeatmap(
+            days: model.days.map {
+                AppActivityHeatmapDay(
+                    date: $0.date,
+                    level: $0.level,
+                    accessibilityLabel: $0.accessibilityLabel
+                )
+            },
+            range: range,
+            cellSize: 9,
+            cellSpacing: 3,
+            levelCount: 5,
+            showsMonthLabels: false,
+            showsWeekdayLabels: false,
+            scrollsHorizontally: false,
+            showsLegend: false
+        )
+    }
+
+    private var trendView: some View {
+        ActivityTokenTrendView(model: model)
+    }
+
+    /// Reads the width the slot gives the strip without contributing any
+    /// layout of its own: a background `GeometryReader` takes the size of the
+    /// view it is attached to and is invisible to accessibility.
+    private var widthReader: some View {
+        GeometryReader { proxy in
+            Color.clear
+                .onAppear { availableWidth = proxy.size.width }
+                .onChange(of: proxy.size.width) { _, width in availableWidth = width }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    /// 只有「有 token 趋势」且「宽度够」两件事同时成立才并排，否则保持上下排布。
+    private var placesTrendBesideHeatmap: Bool {
+        model.hasTokenActivity
+            && ActivityFooterLayout.usesSideBySideLayout(availableWidth: availableWidth)
+    }
+
     /// "62 messages in the last 30 days", phrased so the number reads as a
     /// reward for past work rather than as a metric to judge.
+    ///
+    /// Not drawn any more — the strip shows only the two charts — but kept as
+    /// the strip's accessibility label so the message total is still announced.
     ///
     /// Lookup and formatting are two steps because `String(localized:)`
     /// resolves the template from the module bundle but takes no format
@@ -98,6 +136,30 @@ struct ActivityFooterView: View {
             model.totalMessages ?? 0,
             EmptyStateActivityViewModel.windowDayCount
         )
+    }
+}
+
+/// 活动条两块图的排布判定。
+///
+/// 抽成纯几何，让「多宽才并排」这条阈值可以被单测钉住：SwiftUI 里没有
+/// 稳定可测的横向自适应 API（见 `ActivityFooterView.availableWidth` 的注释），
+/// 所以阈值本身就是需要保护的契约。
+enum ActivityFooterLayout {
+    /// 30 天窗口最多铺满 6 周；`cellSize` 9 + `cellSpacing` 3 时约 72pt。
+    static let heatmapWidth: CGFloat = 72
+    /// 并排时两块之间的间距。
+    static let columnSpacing: CGFloat = 18
+    /// 折线图再窄就会把 30 个采样点挤成一团（点直径 6pt，间距不足 10pt 时
+    /// 曲线会糊成一条粗线），此时宁可上下排布。
+    static let minChartWidth: CGFloat = 300
+
+    /// 并排所需的最小可用宽度。
+    static var sideBySideMinWidth: CGFloat {
+        heatmapWidth + columnSpacing + minChartWidth
+    }
+
+    static func usesSideBySideLayout(availableWidth: CGFloat) -> Bool {
+        availableWidth >= sideBySideMinWidth
     }
 }
 
@@ -128,6 +190,12 @@ private enum ActivityFooterPreview {
                 startDate: start,
                 endDate: today,
                 calendar: calendar
+            ),
+            seededTokenDays: EmptyStateActivityViewModel.makeTokenDays(
+                counts: counts,
+                startDate: start,
+                endDate: today,
+                calendar: calendar
             )
         )
     }
@@ -137,6 +205,12 @@ private enum ActivityFooterPreview {
     ActivityFooterView(model: ActivityFooterPreview.sampleModel())
         .padding(24)
         .frame(width: 620)
+}
+
+#Preview("Activity footer — narrow") {
+    ActivityFooterView(model: ActivityFooterPreview.sampleModel())
+        .padding(24)
+        .frame(width: 280)
 }
 
 #Preview("Activity footer — empty history") {

@@ -40,8 +40,10 @@ public enum MessageListEmptyUITestingSupport {
     /// 仅 tool 消息的会话：按 `includesToolMessages: false` 判定仍算空。
     public static let toolOnlyConversationTitle = "UI Empty State ToolOnly"
 
-    /// 活动条文案里出现的量词前缀，UI 测试据此确认活动条真的渲染了。
-    /// 与 `ActivityFooterView.summaryText` 的格式串
+    /// 活动条无障碍摘要里出现的量词前缀，UI 测试据此确认摘要真的存在。
+    ///
+    /// 摘要已不再画在界面上（活动条只显示热力图与折线图），只作为容器的
+    /// accessibility label，与 `ActivityFooterView.summaryText` 的格式串
     /// 「"%lld messages in the last %lld days"」对应。
     public static let activitySummaryPrefix = "messages in the last"
 
