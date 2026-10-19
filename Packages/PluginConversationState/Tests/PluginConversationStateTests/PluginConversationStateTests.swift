@@ -63,6 +63,33 @@ struct PluginConversationStateTests {
 
     @Test
     @MainActor
+    func canStopCoversRunningAndSuspendedButNotTerminalStates() {
+        let provider = ConversationStateProvider()
+        let conversationID = UUID()
+
+        // 空闲：没有活可停。
+        #expect(!provider.state(for: conversationID).canStop)
+
+        // 回合在跑：可停。
+        provider.update(conversationID: conversationID, agentLoopState: .running)
+        #expect(provider.state(for: conversationID).canStop)
+
+        // 挂起等用户授权/回答：回合没干完，同样可停。
+        provider.update(conversationID: conversationID, agentLoopState: .suspended)
+        let suspended = provider.state(for: conversationID)
+        #expect(suspended.canStop)
+        // 但它没有在产出——这是两件事。
+        #expect(!suspended.isSending)
+
+        // 终态：不可停。
+        for terminal in [AgentLoopState.completed, .failed, .cancelled] {
+            provider.update(conversationID: conversationID, agentLoopState: terminal)
+            #expect(!provider.state(for: conversationID).canStop, "\(terminal) 不应可停")
+        }
+    }
+
+    @Test
+    @MainActor
     func clearFlagsResetActivityAndErrorWithoutTouchingOtherFields() {
         let provider = ConversationStateProvider()
         let conversationID = UUID()

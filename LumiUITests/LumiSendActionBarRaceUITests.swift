@@ -13,7 +13,7 @@ import XCTest
 /// 2. **回合未结束时再次发送**：`MessageSender` 会把第二次发送排进
 ///    `pendingQueues`。UI 上看不到队列，用户只能看到「按钮不见了，什么也没发生」。
 /// 3. **回合未结束时点击停止**：停掉正在跑的回合后，用户往往想立刻改一版重发。
-/// 4. **失败回合**：回合失败与回合成功一样会让 `isSending` 复位，但失败还会
+/// 4. **失败回合**：回合失败与回合成功一样会让 `canStop` 复位，但失败还会
 ///    渲染错误消息——两者叠加时按钮是否同步回落，属于未覆盖路径。
 ///
 /// ## 确定性来源（三层夹具）
@@ -290,7 +290,7 @@ final class LumiSendActionBarRaceUITests: LumiUITestCase {
     /// 停止后立刻重新发送：输入框应可用，回合能再次启动。
     ///
     /// 「停止」最常见的后续动作就是改一版重发。这条链路要求
-    /// `cancelCurrentRequest()` 之后 `isSending` 彻底复位，否则
+    /// `cancelCurrentRequest()` 之后 `canStop` 彻底复位，否则
     /// `send()` 提交后不会启动回合（`MessageSender` 认为仍有一个活动回合），
     /// 用户会看到「消息发出去了，但永远没有回复」。
     func testSendingAgainImmediatelyAfterStopStartsNewTurn() throws {
@@ -325,7 +325,7 @@ final class LumiSendActionBarRaceUITests: LumiUITestCase {
             typeAndSend(secondPrompt, editorIdentifier: Identifiers.editor),
             """
             停止后无法再次发送，\
-            说明输入框或 canSend 未恢复（isSending 可能没有真正复位）
+            说明输入框或 canSend 未恢复（canStop 可能没有真正复位）
             """
         )
 
@@ -335,7 +335,7 @@ final class LumiSendActionBarRaceUITests: LumiUITestCase {
         // 空输入框的 AX value 是 placeholder 文案（见 ComposerView 传入的
         // "输入消息，按 Return 发送…"），不是空串。
         //
-        // 同时不断言消息立刻出现在时间线上：停止只复位 `isSending`，
+        // 同时不断言消息立刻出现在时间线上：停止只复位 `canStop`，
         // 而 `MessageSender` 仍持有上一轮的回合跟踪任务时，第二条消息会被判为
         // 「同会话发送中」而入队（`pendingQueues`），要等当前回合结束才发出。
         // 「第二轮回合确实启动」由下一段断言证明。
@@ -350,7 +350,7 @@ final class LumiSendActionBarRaceUITests: LumiUITestCase {
             .completed,
             """
             停止后无法再次发送（输入框仍留着该消息），\
-            说明输入框或 canSend 未恢复——isSending 可能没有真正复位
+            说明输入框或 canSend 未恢复——canStop 可能没有真正复位
             """
         )
 
@@ -436,7 +436,7 @@ final class LumiSendActionBarRaceUITests: LumiUITestCase {
 
     /// 失败回合结束后，按钮必须回落到发送按钮。
     ///
-    /// 回合失败与成功一样要让 `isSending` 复位，但失败还会额外渲染错误消息
+    /// 回合失败与成功一样要让 `canStop` 复位，但失败还会额外渲染错误消息
     /// （`UI Testing Request Failed`）与「重试」入口。这两者叠加时，
     /// Action Bar 的按钮是否同步回落，属于未覆盖路径——若不回落，
     /// 用户会看到一个点不动的停止按钮，且没有任何办法重试。

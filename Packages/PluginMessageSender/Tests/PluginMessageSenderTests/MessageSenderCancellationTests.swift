@@ -87,6 +87,59 @@ struct MessageSenderCancellationTests {
         #expect(stateValues.isEmpty)
     }
 
+    // MARK: - 取消权归 AgentLoop：sender 不知道的回合也必须能停
+
+    @Test("AgentLoop 在跑但 sender 没有账本时仍然取消回合")
+    func cancelStopsTurnUnknownToSender() throws {
+        let fixture = SenderFixture()
+        let conversationID = try fixture.conversations.createConversation(
+            title: nil, projectPath: nil, providerID: nil, modelName: nil
+        )
+        // 模拟 ACP 托管 / 事件驱动 / 自动重试拉起的回合：
+        // AgentLoop 在跑，但 sender 从未 startTurn 过，没有自己的任务账本。
+        fixture.agentLoop.currentState = .running
+
+        fixture.sender.cancelCurrentRequest()
+
+        #expect(fixture.agentLoop.cancelledConversationIDs == [conversationID])
+    }
+
+    @Test("挂起等待用户时也能取消回合")
+    func cancelStopsSuspendedTurn() throws {
+        let fixture = SenderFixture()
+        let conversationID = try fixture.conversations.createConversation(
+            title: nil, projectPath: nil, providerID: nil, modelName: nil
+        )
+        // 回合挂在等用户授权/回答：sender 同样没有账本。
+        fixture.agentLoop.currentState = .suspended
+        fixture.agentLoop.activeSuspension = AgentLoopSuspension(
+            suspensionID: "userInput:call_1",
+            conversationID: conversationID,
+            toolCallID: "call_1",
+            kind: "userInput",
+            payload: "{}"
+        )
+
+        fixture.sender.cancelCurrentRequest()
+
+        #expect(fixture.agentLoop.cancelledConversationIDs == [conversationID])
+    }
+
+    @Test("sender 与 AgentLoop 都认为没有活回合时仍然不取消")
+    func cancelWithoutAnyActiveTurnIsNoOp() throws {
+        let fixture = SenderFixture()
+        let conversationID = try fixture.conversations.createConversation(
+            title: nil, projectPath: nil, providerID: nil, modelName: nil
+        )
+        // 回合已结束：状态是终态，没有挂起点。
+        fixture.agentLoop.currentState = .completed
+
+        fixture.sender.cancelCurrentRequest()
+
+        #expect(fixture.agentLoop.cancelledConversationIDs.isEmpty)
+        #expect(fixture.sender.isSending == false)
+    }
+
     // MARK: - ID 16: 跨会话并发不得提前复位 isSending
 
     @Test("两个会话并发发送，一个结束不得提前复位 isSending")

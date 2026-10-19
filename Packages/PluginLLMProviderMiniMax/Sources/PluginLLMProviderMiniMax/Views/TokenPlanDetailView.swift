@@ -1,12 +1,17 @@
 import LumiUI
 import SwiftUI
 
-/// MiniMax Token Plan 详情面板：逐模型展示 5 小时窗口与本周配额。
+/// MiniMax Token Plan 详情面板：按模型分组展示 5 小时窗口与本周配额的剩余量。
+///
+/// 面板只负责外壳（标题 / 刷新 / 滚动 / 更新时间），内容排版交给
+/// ``TokenPlanQuotaList``，卡片本身交给 ``TokenPlanQuotaCard``。
 struct TokenPlanDetailView: View {
     @LumiTheme private var theme: any LumiUITheme
 
     let status: TokenPlanStatus
     let onRefresh: () -> Void
+    /// 最近一次刷新的时间；用于在底部标注数据新鲜度。
+    let lastUpdatedAt: Date?
 
     // MARK: - View
 
@@ -14,15 +19,22 @@ struct TokenPlanDetailView: View {
         StatusBarPopoverScaffold(
             title: pluginLocalization.string("MiniMax Token Plan"),
             systemImage: "chart.bar.fill",
-            subtitle: pluginLocalization.string("MiniMax Token Plan Quota")
-        ) {
-            AppIconButton(systemImage: "arrow.clockwise") {
-                onRefresh()
+            subtitle: nil,
+            showsHeaderDivider: true,
+            headerAccessory: {
+                AppIconButton(systemImage: "arrow.clockwise") {
+                    onRefresh()
+                }
+                .help(pluginLocalization.string("Refresh"))
+            },
+            content: {
+                content
+            },
+            footer: {
+                footer
             }
-            .help(pluginLocalization.string("Refresh"))
-        } content: {
-            content
-        }
+        )
+        .padding(14)
     }
 
     @ViewBuilder
@@ -31,7 +43,7 @@ struct TokenPlanDetailView: View {
         case .loading:
             loadingState
         case .success(let plans):
-            details(plans)
+            quotaList(plans)
         case .authError:
             messageState(
                 systemImage: "exclamationmark.triangle.fill",
@@ -47,6 +59,8 @@ struct TokenPlanDetailView: View {
         }
     }
 
+    // MARK: - States
+
     private var loadingState: some View {
         HStack(spacing: 8) {
             ProgressView()
@@ -55,173 +69,43 @@ struct TokenPlanDetailView: View {
                 .foregroundColor(theme.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 8)
+        .padding(.vertical, 12)
     }
 
     private func messageState(systemImage: String, text: String, color: Color) -> some View {
-        HStack(spacing: 8) {
+        HStack(alignment: .top, spacing: 8) {
             Image(systemName: systemImage)
                 .foregroundColor(color)
             Text(text)
                 .foregroundColor(color)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 8)
+        .padding(.vertical, 12)
     }
 
+    /// 底部时间戳：标注这份配额是何时拉到的。
     @ViewBuilder
-    private func details(_ plans: [TokenPlanData]) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            ForEach(Array(plans.enumerated()), id: \.offset) { index, plan in
-                if index > 0 {
-                    Divider()
-                }
-                modelSection(plan)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func modelSection(_ plan: TokenPlanData) -> some View {
-        let config = TokenPlanModelDisplayConfig.from(plan.modelName)
-
-        VStack(alignment: .leading, spacing: 10) {
-            labeledRow(
-                label: pluginLocalization.string("Model:"),
-                value: pluginLocalization.string(config.displayNameKey)
-            )
-
-            sectionHeader(
-                pluginLocalization.string(config.intervalTitleKey),
-                description: pluginLocalization.string(config.intervalDescriptionKey)
-            )
-
-            // MARK: - 5 小时窗口
-
-            percentRow(percent: plan.remainingPercent)
-            statusRow(label: pluginLocalization.string("Status:"), plan: plan, isWeekly: false)
-            countRow(usage: plan.intervalUsage, total: plan.intervalTotal)
-            timeRow(
-                label: pluginLocalization.string("Time range:"),
-                value: plan.intervalTimeRange
-            )
-            timeRow(
-                label: pluginLocalization.string("Resets at:"),
-                value: plan.remainsTimeComponents
-                    .map(TokenPlanStatusLocalization.resetTimeText) ?? "—"
-            )
-
-            // MARK: - 本周
-
-            sectionHeader(
-                pluginLocalization.string("Weekly Quota"),
-                description: pluginLocalization.string("Weekly cumulative call limit")
-            )
-
-            percentRow(percent: plan.weeklyRemainingPercent)
-            statusRow(label: pluginLocalization.string("Status:"), plan: plan, isWeekly: true)
-            countRow(usage: plan.weeklyUsage, total: plan.weeklyTotal)
-            timeRow(
-                label: pluginLocalization.string("Time range:"),
-                value: plan.weeklyTimeRange
-            )
-            timeRow(
-                label: pluginLocalization.string("Resets at:"),
-                value: plan.weeklyRemainsTimeComponents
-                    .map(TokenPlanStatusLocalization.resetTimeText) ?? "—"
+    private var footer: some View {
+        if let lastUpdatedAt {
+            Text(
+                String(
+                    format: pluginLocalization.string("Updated at %@"),
+                    TokenPlanData.formatTimestamp(Int64(lastUpdatedAt.timeIntervalSince1970 * 1000))
+                )
             )
         }
     }
 
-    // MARK: - Row Builders
+    // MARK: - Quota List
 
-    private func sectionHeader(_ title: String, description: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-            if !description.isEmpty {
-                Text(description)
-                    .font(.system(size: 11))
-                    .foregroundColor(theme.textSecondary)
-            }
+    /// 配额列表：内容超出时在面板内滚动。
+    private func quotaList(_ plans: [TokenPlanData]) -> some View {
+        ScrollView {
+            TokenPlanQuotaList(plans: plans)
+                .padding(.top, 2)
         }
-    }
-
-    private func labeledRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .foregroundColor(theme.textSecondary)
-            Spacer()
-            Text(value)
-                .fontWeight(.medium)
-        }
-    }
-
-    private func percentRow(percent: Int) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(pluginLocalization.string("Remaining:"))
-                    .foregroundColor(theme.textSecondary)
-                Spacer()
-                Text("\(percent)%")
-                    .fontWeight(.medium)
-                    .monospacedDigit()
-            }
-            ProgressView(value: Double(percent), total: 100)
-                .progressViewStyle(.linear)
-                .tint(percent > 20 ? theme.success : theme.error)
-        }
-    }
-
-    private func statusRow(label: String, plan: TokenPlanData, isWeekly: Bool) -> some View {
-        let statusCode = isWeekly ? plan.weeklyStatus : plan.intervalStatus
-        let isNormal = statusCode == QuotaStatusCode.normal.rawValue
-        let color = isNormal ? theme.success : theme.error
-        let key = isWeekly ? plan.weeklyStatusKey : plan.intervalStatusKey
-
-        return HStack {
-            Text(label)
-                .foregroundColor(theme.textSecondary)
-            Spacer()
-            HStack(spacing: 4) {
-                Circle()
-                    .fill(color)
-                    .frame(width: 6, height: 6)
-                Text(pluginLocalization.string(key))
-                    .fontWeight(.medium)
-                    .foregroundColor(color)
-            }
-        }
-    }
-
-    private func countRow(usage: Int, total: Int) -> some View {
-        HStack {
-            Text(pluginLocalization.string("Call count:"))
-                .foregroundColor(theme.textSecondary)
-            Spacer()
-            if total == 0 {
-                Text(pluginLocalization.string("Unlimited"))
-                    .fontWeight(.medium)
-                    .foregroundColor(theme.success)
-            } else {
-                Text("\(usage) / \(total)")
-                    .fontWeight(.medium)
-                    .monospacedDigit()
-            }
-        }
-    }
-
-    private func timeRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .foregroundColor(theme.textSecondary)
-            Spacer()
-            Text(value)
-                .fontWeight(.medium)
-                .font(.system(size: 11))
-                .monospacedDigit()
-        }
+        .frame(maxHeight: 440)
     }
 }
 
@@ -232,7 +116,8 @@ struct TokenPlanDetailView: View {
 #Preview("Detail - Success") {
     TokenPlanDetailView(
         status: .success(TokenPlanPreviewFixtures.allPlans),
-        onRefresh: {}
+        onRefresh: {},
+        lastUpdatedAt: Date()
     )
     .inRootView()
     .frame(width: 600, height: 1000)
@@ -241,14 +126,15 @@ struct TokenPlanDetailView: View {
 #Preview("Detail - Success Compact") {
     TokenPlanDetailView(
         status: .success(TokenPlanPreviewFixtures.allPlans),
-        onRefresh: {}
+        onRefresh: {},
+        lastUpdatedAt: Date()
     )
     .inRootView()
     .frame(width: 600, height: 600)
 }
 
 #Preview("Detail - Auth Error") {
-    TokenPlanDetailView(status: .authError, onRefresh: {})
+    TokenPlanDetailView(status: .authError, onRefresh: {}, lastUpdatedAt: nil)
         .inRootView()
         .frame(width: 600, height: 1000)
 }

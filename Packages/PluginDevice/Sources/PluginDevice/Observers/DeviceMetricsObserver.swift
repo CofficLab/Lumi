@@ -78,12 +78,14 @@ final class DeviceMetricsObserver {
         SystemMonitorService.shared.$currentMetrics
             .sink { [weak self] metrics in self?.viewModels.systemMonitor.apply(metrics) }
             .store(in: &cancellables)
-        ThermalService.shared.objectWillChange
-            .sink { [weak self] in
+        // 用 `$peakCelsius` 订阅而非 `objectWillChange`:
+        // 后者在数值变更「之前」触发,读到的仍是上一轮采样值,首屏会出现数秒空档。
+        ThermalService.shared.$peakCelsius
+            .sink { [weak self] peak in
                 guard let self else { return }
                 self.viewModels.thermal.apply(
                     readings: ThermalService.shared.readings,
-                    peak: ThermalService.shared.peakCelsius
+                    peak: peak
                 )
             }
             .store(in: &cancellables)

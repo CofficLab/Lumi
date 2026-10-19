@@ -61,8 +61,11 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
         let alreadyAnswered = Self.hasToolResult(body)
 
         var delivered = 0
+        // 慢恢复场景整体放慢：首轮发问、恢复后的收尾都逐段投递，
+        // 让「回合中」与「恢复回合中」两个窗口都长于 XCUITest 的轮询周期。
+        let isSlowStream = scenario == .slow || scenario == .verySlow || scenario == .askUserYesNoSlow
         for event in try Self.sseEvents(for: scenario, alreadyAnswered: alreadyAnswered) {
-            if scenario == .slow || scenario == .verySlow {
+            if isSlowStream {
                 try await Task.sleep(nanoseconds: UInt64(UITestFixtures.slowChunkDelay * 1_000_000_000))
             }
             guard await onEvent(Data(Self.encode([event]).utf8)) else { break }
@@ -156,9 +159,9 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
             content = UITestFixtures.textResponse
         case .error:
             content = ""
-        case .askUserYesNo, .askUserChoice, .askUserFreeText:
+        case .askUserYesNo, .askUserChoice, .askUserFreeText, .askUserYesNoSlow:
             if alreadyAnswered {
-                content = UITestFixtures.askUserFollowUpResponse
+                content = scenario.askUserFollowUpResponse
             } else {
                 content = ""
                 toolCalls = [[
@@ -170,6 +173,20 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
                     ],
                 ]]
             }
+        case .approval:
+            if alreadyAnswered {
+                content = UITestFixtures.approvalFollowUpResponse
+            } else {
+                content = ""
+                toolCalls = [[
+                    "id": UITestFixtures.approvalToolCallID,
+                    "type": "function",
+                    "function": [
+                        "name": UITestFixtures.approvalToolName,
+                        "arguments": UITestFixtures.approvalToolArguments,
+                    ],
+                ]]
+            }
         }
 
         var message: [String: Any] = ["role": "assistant", "content": content]
@@ -177,7 +194,7 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
             message["tool_calls"] = toolCalls
         }
 
-        let usageValues: [String: Int] = (scenario == .tool || (scenario.isAskUser && !alreadyAnswered))
+        let usageValues: [String: Int] = (scenario == .tool || (scenario.isAskUser && !alreadyAnswered) || (scenario.isApproval && !alreadyAnswered))
             ? ["prompt_tokens": 30, "completion_tokens": 10, "total_tokens": 40]
             : ["prompt_tokens": 12, "completion_tokens": 6, "total_tokens": 18]
 
@@ -219,8 +236,10 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
             return try longEvents(model: scenario.rawValue)
         case .verySlow:
             return try verySlowEvents(model: scenario.rawValue)
-        case .askUserYesNo, .askUserChoice, .askUserFreeText:
+        case .askUserYesNo, .askUserChoice, .askUserFreeText, .askUserYesNoSlow:
             return try askUserEvents(for: scenario, alreadyAnswered: alreadyAnswered)
+        case .approval:
+            return try approvalEvents(for: scenario, alreadyAnswered: alreadyAnswered)
         }
     }
 
@@ -238,8 +257,11 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
         let model = scenario.rawValue
 
         guard !alreadyAnswered else {
+            if scenario == .askUserYesNoSlow {
+                return try slowResumeEvents(model: model)
+            }
             return [
-                try sse(delta: ["content": UITestFixtures.askUserFollowUpResponse], model: model),
+                try sse(delta: ["content": scenario.askUserFollowUpResponse], model: model),
                 try sse(usage: usage(prompt: 30, completion: 10), model: model),
                 doneEvent(),
             ]
@@ -260,6 +282,74 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
                 "type": "function",
                 "function": [
                     "name": UITestFixtures.askUserToolName,
+                    "arguments": head,
+                ],
+            ]]], model: model),
+            try sse(delta: ["tool_calls": [[
+                "index": 0,
+                "function": ["arguments": tail],
+            ]]], model: model),
+            try sse(delta: [:], model: model, finishReason: "tool_calls"),
+            try sse(usage: usage(prompt: 30, completion: 10), model: model),
+            doneEvent(),
+        ]
+    }
+
+    /// 慢恢复场景的收尾响应：把正文拆成多段。
+    ///
+    /// 存在的意义是让「恢复回合中」成为一个可稳定采样的状态：恢复后 AgentLoop
+    /// 在跑，但会话状态快照还没收到新事件，用户此时按下停止必须真的停得住。
+    private static func slowResumeEvents(model: String) throws -> [String] {
+        let text = UITestFixtures.slowResumeFollowUpResponse
+        let chunkSize = max(1, text.count / UITestFixtures.slowResumeChunkCount)
+        var events: [String] = []
+        var index = text.startIndex
+        while index < text.endIndex {
+            let end = text.index(index, offsetBy: chunkSize, limitedBy: text.endIndex) ?? text.endIndex
+            events.append(try sse(delta: ["content": String(text[index..<end])], model: model))
+            index = end
+        }
+        events.append(try sse(usage: usage(prompt: 30, completion: 10), model: model))
+        events.append(doneEvent())
+        return events
+    }
+
+    /// 高风险工具授权场景的两段式响应。
+    ///
+    /// - 未决定：发出 `edit_file` 工具调用 → 回合挂起 → 界面弹出授权卡片。
+    /// - 已决定：普通文本 → 回合完成。
+    ///
+    /// 判据与 ask_user 场景完全一致（请求体里是否已有 `role=tool` 消息），
+    /// 因此不需要桩自己维护跨请求状态。
+    private static func approvalEvents(
+        for scenario: UITestScenario,
+        alreadyAnswered: Bool
+    ) throws -> [String] {
+        let model = scenario.rawValue
+
+        guard !alreadyAnswered else {
+            return [
+                try sse(delta: ["content": UITestFixtures.approvalFollowUpResponse], model: model),
+                try sse(usage: usage(prompt: 30, completion: 10), model: model),
+                doneEvent(),
+            ]
+        }
+
+        let arguments = UITestFixtures.approvalToolArguments
+        let split = arguments.index(
+            arguments.startIndex,
+            offsetBy: min(16, arguments.count)
+        )
+        let head = String(arguments[arguments.startIndex..<split])
+        let tail = String(arguments[split...])
+
+        return [
+            try sse(delta: ["tool_calls": [[
+                "index": 0,
+                "id": UITestFixtures.approvalToolCallID,
+                "type": "function",
+                "function": [
+                    "name": UITestFixtures.approvalToolName,
                     "arguments": head,
                 ],
             ]]], model: model),

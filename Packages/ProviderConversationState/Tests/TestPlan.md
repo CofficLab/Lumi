@@ -5,7 +5,7 @@
 ProviderConversationState Lumi 编辑器 Provider。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 4
+测试文件: 2 个，用例总数: 5
 
 ## 公开 API
 
@@ -18,37 +18,39 @@ ProviderConversationState Lumi 编辑器 Provider。
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
+- **ConversationStateCanStop**（1 条）：由 `canStopCoversRunningAndSuspendedButNotTerminalStates` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationState**（4 条）：由 `jobActivityCodableAndPresence`、`snapshotSendingStateReflectsAgentLoop`、`snapshotStoresConversationState` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
 | ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
 |----|------|------|----------|----------|----------|------|------|----------|
-| 1 | ConversationState | 工具任务活动摘要可编码往返并按 current count 判断是否有任务 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `jobActivityCodableAndPresence` |
-| 2 | ConversationState | 会话状态 isSending 只在 AgentLoop running 时为 true | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `snapshotSendingStateReflectsAgentLoop` |
-| 3 | ConversationState | 会话状态快照保留完整活动、授权、工具及错误信息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `snapshotStoresConversationState` |
-| 4 | ConversationState | 状态变更事件携带会话 ID，默认 observer handle 可以安全取消 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `conversationStateEventsAndDefaultObserver` |
+| 1 | ConversationStateCanStop | canStop 覆盖 running 与 suspended，不覆盖 idle 与各终态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `canStopCoversRunningAndSuspendedButNotTerminalStates` |
+| 2 | ConversationState | 工具任务活动摘要可编码往返并按 current count 判断是否有任务 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `jobActivityCodableAndPresence` |
+| 3 | ConversationState | 会话状态 isSending 只在 AgentLoop running 时为 true | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `snapshotSendingStateReflectsAgentLoop` |
+| 4 | ConversationState | 会话状态快照保留完整活动、授权、工具及错误信息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `snapshotStoresConversationState` |
+| 5 | ConversationState | 状态变更事件携带会话 ID，默认 observer handle 可以安全取消 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `conversationStateEventsAndDefaultObserver` |
 
-> 说明：全部 **4 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **5 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 1 / 1
-- P1: 已覆盖 3 / 3
+- P1: 已覆盖 4 / 4
 - P2: 已覆盖 0 / 0
-- **合计: 4 / 4**（仅表示清单场景，非源码覆盖率）
+- **合计: 5 / 5**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（3 条）
+- **P1**: 其余功能性用例（4 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 4 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 5 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

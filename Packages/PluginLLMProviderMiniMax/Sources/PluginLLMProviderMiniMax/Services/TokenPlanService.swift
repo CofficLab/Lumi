@@ -169,7 +169,7 @@ enum TokenPlanService: SuperLog {
     }
 
     private nonisolated static func isAuthFailure(_ error: VendorAPIError) -> Bool {
-        guard case let .httpStatus(code, _) = error else { return false }
+        guard case let .httpStatus(code, _, _) = error else { return false }
         return code == 401 || code == 403
     }
 }

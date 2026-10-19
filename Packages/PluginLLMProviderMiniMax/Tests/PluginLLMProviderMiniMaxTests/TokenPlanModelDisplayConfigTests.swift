@@ -94,8 +94,8 @@ struct TokenPlanModelDisplayConfigTests {
         let keys = [
             "MiniMax Token Plan", "MiniMax Token Plan Quota", "Loading...", "Refresh",
             "Authentication failed; please check your API Key", "Unable to fetch quota info",
-            "Model:", "Weekly Quota", "Weekly cumulative call limit", "Remaining:",
-            "Status:", "Call count:", "Time range:", "Resets at:", "Unlimited",
+            "Weekly Quota", "Unlimited calls", "Used %lld / %lld", "Resets in %@",
+            "Updated at %@", "calls",
         ]
 
         for locale in ["zh-Hans", "zh-Hant", "zh-HK", "zh-TW"] {
@@ -107,5 +107,102 @@ struct TokenPlanModelDisplayConfigTests {
                 )
             }
         }
+    }
+
+    // MARK: - 展示口径
+
+    @Test("视频模型的时段按调用次数计量，其余按百分比计量")
+    func metricFollowsModelGranularity() {
+        #expect(TokenPlanModelDisplayConfig.general.intervalMetric == .percent)
+        #expect(TokenPlanModelDisplayConfig.general.weeklyMetric == .percent)
+        #expect(TokenPlanModelDisplayConfig.video.intervalMetric == .count)
+        #expect(TokenPlanModelDisplayConfig.video.weeklyMetric == .percent)
+        #expect(TokenPlanModelDisplayConfig.unknown.intervalMetric == .percent)
+    }
+
+    @Test("每个模型都有独立图标")
+    func eachModelHasIcon() {
+        let icons = [
+            TokenPlanModelDisplayConfig.general,
+            .video,
+            .unknown,
+        ].map(\.iconName)
+
+        #expect(Set(icons).count == icons.count)
+        #expect(icons.allSatisfy { !$0.isEmpty })
+    }
+
+    @Test("剩余比例按展示口径换算：百分比取百分比，次数取剩余/上限")
+    func remainingRatiosFollowMetric() {
+        let general = TokenPlanData(
+            modelName: "general",
+            remainingPercent: 80,
+            intervalStatus: 1,
+            intervalTotal: 100,
+            intervalUsage: 20,
+            startTime: 0,
+            endTime: 0,
+            remainsTime: 0,
+            weeklyRemainingPercent: 40,
+            weeklyStatus: 1,
+            weeklyTotal: 500,
+            weeklyUsage: 10,
+            weeklyStartTime: 0,
+            weeklyEndTime: 0,
+            weeklyRemainsTime: 0
+        )
+        let video = TokenPlanData(
+            modelName: "video",
+            remainingPercent: 0,
+            intervalStatus: 1,
+            intervalTotal: 20,
+            intervalUsage: 5,
+            startTime: 0,
+            endTime: 0,
+            remainsTime: 0,
+            weeklyRemainingPercent: 0,
+            weeklyStatus: 1,
+            weeklyTotal: 0,
+            weeklyUsage: 0,
+            weeklyStartTime: 0,
+            weeklyEndTime: 0,
+            weeklyRemainsTime: 0
+        )
+
+        let generalRatios = TokenPlanModelDisplayConfig.general.remainingRatios(for: general)
+        #expect(generalRatios.count == 2)
+        #expect(generalRatios.contains { abs($0 - 0.8) < 0.0001 })
+        #expect(generalRatios.contains { abs($0 - 0.4) < 0.0001 })
+
+        // 视频模型时段是次数口径：剩余 15 / 20 = 0.75；本周无次数上限则不参与。
+        let videoRatios = TokenPlanModelDisplayConfig.video.remainingRatios(for: video)
+        #expect(videoRatios.count == 2)
+        #expect(videoRatios.contains { abs($0 - 0.75) < 0.0001 })
+    }
+
+    @Test("次数口径在无上限时不产生比例")
+    func countMetricWithoutLimitHasNoRatio() {
+        let video = TokenPlanData(
+            modelName: "video",
+            remainingPercent: 0,
+            intervalStatus: 1,
+            intervalTotal: 0,
+            intervalUsage: 0,
+            startTime: 0,
+            endTime: 0,
+            remainsTime: 0,
+            weeklyRemainingPercent: 0,
+            weeklyStatus: 1,
+            weeklyTotal: 0,
+            weeklyUsage: 0,
+            weeklyStartTime: 0,
+            weeklyEndTime: 0,
+            weeklyRemainsTime: 0
+        )
+
+        let ratios = TokenPlanModelDisplayConfig.video.remainingRatios(for: video)
+
+        #expect(ratios.count == 1)
+        #expect(abs(ratios[0]) < 0.0001)
     }
 }

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMProviderMiniMax 的实现包，包含 14 个主要类型；当前测试覆盖 108 条用例。
+PluginLLMProviderMiniMax 的实现包，包含 18 个主要类型；当前测试覆盖 124 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 108
+测试文件: 13 个，用例总数: 124
 
 核心组件（源码目录）:
 - `LLMProviders/`
@@ -34,6 +34,10 @@ PluginLLMProviderMiniMax 的实现包，包含 14 个主要类型；当前测试
 - `TokenPlanToolbarMetrics`
 - `TokenPlanViewModel`
 - `TokenPlanDetailView`
+- `TokenPlanQuotaList`
+- `TokenPlanQuotaCard`
+- `TokenPlanQuotaUnit`
+- `TokenPlanMetric`
 
 ## 关键行为契约（实现约定，非协议要求）
 
@@ -43,11 +47,12 @@ PluginLLMProviderMiniMax 的实现包，包含 14 个主要类型；当前测试
 - **MiniMaxProviderPlugin**（10 条）：由 `pluginIdentityAndMetadata`、`pluginRegistersMiniMaxProvider`、`miniMaxModelCatalog` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MiniMaxRefreshReproduction**（2 条）：由 `refreshShouldExpandModelPoolFrom6To9`、`remoteOnlyModelsAreAppended` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MiniMaxSelectionGate**（12 条）：由 `allVariantIDsEnableGate`、`otherProvidersDisableGate`、`nilProviderDisablesGate` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **TokenPlanModelDisplayConfig**（8 条）：由 `generalKeys`、`videoKeys`、`unknownKeys` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **TokenPlanModelDisplayConfig**（12 条）：由 `generalKeys`、`videoKeys`、`unknownKeys`、`metricFollowsModelGranularity` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TokenPlanServiceFetch**（8 条）：由 `fetchesWithBearerToken`、`missingAPIKeyReturnsAuthErrorWithoutRequest`、`emptyStorageKeyReturnsAuthError` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TokenPlanServiceParsing**（12 条）：由 `parsesAllFields`、`convertsMillisecondsToSeconds`、`missingNumericFieldsDefaultToZero` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **TokenPlanStatusFormatting**（17 条）：由 `generalModelJoinsBothPercents`、`videoModelAppendsRemainingCount`、`combinesGeneralThenVideo` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **TokenPlanTimeFormatting**（11 条）：由 `intervalTimeRangeJoinsBothEnds`、`weeklyTimeRangeJoinsBothEnds`、`missingTimestampsShowPlaceholder` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **TokenPlanStatusFormatting**（21 条）：由 `generalModelJoinsBothPercents`、`videoModelAppendsRemainingCount`、`combinesGeneralThenVideo`、`usageTextShowsUsedAndTotal` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **TokenPlanTimeFormatting**（15 条）：由 `intervalTimeRangeJoinsBothEnds`、`weeklyTimeRangeJoinsBothEnds`、`missingTimestampsShowPlaceholder`、`sameDayRangeOmitsEndDate` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **TokenPlanQuotaLayout**（4 条）：由 `quotaListDoesNotOverflowWidth`、`quotaListFitsWithoutScrolling`、`quotaCardStaysCompact` 等用例锁定；改动详情面板版式时优先跑对应测试文件。
 - **TokenPlanToolbarRegistration**（9 条）：由 `registersToolbarItemOnTrailing`、`toolbarItemIDIsNamespaced`、`registersWithLargerOrderThanOtherPlugins` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TokenPlanViewModel**（10 条）：由 `startsLoadingWithoutChipText`、`nonSuccessStatesHaveNoChipText`、`refreshAppliesStatusAndBumpsRevision` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -163,16 +168,32 @@ PluginLLMProviderMiniMax 的实现包，包含 14 个主要类型；当前测试
 | 106 | TokenPlanViewModel | 连续 refresh 只保留最后一次结果 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `consecutiveRefreshKeepsLatestResult` |
 | 107 | TokenPlanViewModel | cancelPendingFetch 后迟到的响应不写入状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cancelledFetchDoesNotApplyLateResult` |
 | 108 | TokenPlanViewModel | 取消后仍可重新拉取 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `canRefreshAgainAfterCancel` |
+| 109 | TokenPlanModelDisplayConfig | 视频模型的时段按调用次数计量，其余按百分比计量 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `metricFollowsModelGranularity` |
+| 110 | TokenPlanModelDisplayConfig | 每个模型都有独立图标 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `eachModelHasIcon` |
+| 111 | TokenPlanModelDisplayConfig | 剩余比例按展示口径换算：百分比取百分比，次数取剩余/上限 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `remainingRatiosFollowMetric` |
+| 112 | TokenPlanModelDisplayConfig | 次数口径在无上限时不产生比例 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `countMetricWithoutLimitHasNoRatio` |
+| 113 | TokenPlanStatusFormatting | 调用次数文案含已用与上限 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `usageTextShowsUsedAndTotal` |
+| 114 | TokenPlanStatusFormatting | 无次数上限时说明不限次 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `usageTextFallsBackToUnlimited` |
+| 115 | TokenPlanStatusFormatting | 重置倒计时文案只含相对时长 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `resetCountdownTextOmitsAbsoluteTime` |
+| 116 | TokenPlanStatusFormatting | 剩余次数不为负 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `remainingCountNeverNegative` |
+| 117 | TokenPlanTimeFormatting | 同一天的时间段省略结束日期 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `sameDayRangeOmitsEndDate` |
+| 118 | TokenPlanTimeFormatting | 跨天的时间段保留完整时间戳 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `crossDayRangeKeepsBothDates` |
+| 119 | TokenPlanTimeFormatting | 时间戳缺失时紧凑时间段显示占位符 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `missingTimestampsShowPlaceholderInCompactRange` |
+| 120 | TokenPlanTimeFormatting | 紧凑时间段属性跟随对应周期 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compactRangesFollowPeriods` |
+| 121 | TokenPlanQuotaLayout | 两个模型的配额列表不横向溢出 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `quotaListDoesNotOverflowWidth` |
+| 122 | TokenPlanQuotaLayout | 两个模型的配额列表在弹层内排得下 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `quotaListFitsWithoutScrolling` |
+| 123 | TokenPlanQuotaLayout | 模型数量增加时列表仍能渲染 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `quotaListRendersWithManyModels` |
+| 124 | TokenPlanQuotaLayout | 配额卡片高度紧凑 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `quotaCardStaysCompact` |
 
-> 说明：全部 **108 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **124 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
-- P1: 已覆盖 81 / 81
-- P2: 已覆盖 18 / 18
-- **合计: 108 / 108**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 10 / 10
+- P1: 已覆盖 92 / 92
+- P2: 已覆盖 22 / 22
+- **合计: 124 / 124**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -183,7 +204,7 @@ PluginLLMProviderMiniMax 的实现包，包含 14 个主要类型；当前测试
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 108 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 124 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -20,6 +20,12 @@ final class TokenPlanViewModel: ObservableObject {
     @Published private(set) var revision: Int = 0
     @Published private(set) var status: TokenPlanStatus = .loading
 
+    /// 最近一次拉取完成的时间；详情面板用它标注数据新鲜度。
+    ///
+    /// 不做 `@Published`：刷新完成时 `revision` 一定自增，工具栏 View 读到
+    /// 新的 `revision` 后重建弹窗内容，时间戳随之刷新，无需额外发布信号。
+    private(set) var lastUpdatedAt: Date?
+
     /// API Key 的 Keychain storage key；与供应商本体共用同一份 Key。
     private let apiKeyStorageKey: String
     private let apiService: VendorAPIService
@@ -85,6 +91,7 @@ final class TokenPlanViewModel: ObservableObject {
     private func apply(_ newStatus: TokenPlanStatus) {
         status = newStatus
         lastUpdateTime = Date()
+        lastUpdatedAt = lastUpdateTime
         revision &+= 1
     }
 
@@ -95,6 +102,7 @@ final class TokenPlanViewModel: ObservableObject {
         set {
             status = newValue
             lastUpdateTime = Date()
+            lastUpdatedAt = lastUpdateTime
             revision &+= 1
         }
     }

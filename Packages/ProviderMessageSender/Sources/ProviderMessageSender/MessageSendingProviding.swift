@@ -95,6 +95,13 @@ public protocol MessageSendingProviding: AnyObject {
         fileAttachments: [UserFileAttachment],
         conversationID: UUID?
     ) async throws
+    /// 取消当前选中会话正在进行的回合。
+    ///
+    /// - Important: **取消权归 AgentLoop**。实现必须以「AgentLoop 认为该会话
+    ///   还有未完成的回合」为准（运行中，或挂在等用户授权/回答），
+    ///   不得用发送器自己的任务账本做守门条件。否则「AgentLoop 在跑但发送器
+    ///   不知情」的回合（ACP 托管、事件驱动、自动重试、恢复回合）停不掉——
+    ///   用户按下停止按钮却什么都没发生。
     func cancelCurrentRequest()
 
     // MARK: - Resume

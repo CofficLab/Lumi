@@ -327,22 +327,40 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         await startTurn(for: commit)
     }
 
+    /// 取消当前会话正在进行的回合。
+    ///
+    /// - Important: **取消权归 AgentLoop**。回合是否还在跑由状态机说了算，
+    ///   本类的 `currentTasks` 账本只负责清理自己那一半。
+    ///   旧实现拿账本当守门条件，会把「AgentLoop 在跑但本类不知情」的回合
+    ///   （ACP 托管的会话、事件驱动的回合、自动重试拉起的回合、恢复回合）
+    ///   全部挡在门外：停止按钮亮着，按下去却什么都没发生。
     public func cancelCurrentRequest() {
         if Self.verbose {
             Self.logger.info("\(self.t)cancel current request: activeTasks=\(self.currentTasks.count)")
         }
-        guard let conversationID = conversations.selectedConversationID,
-              currentTasks[conversationID] != nil || pendingTurnStarts.contains(conversationID) else {
-            return
-        }
+        guard let conversationID = conversations.selectedConversationID else { return }
+        let hasSenderWork = currentTasks[conversationID] != nil || pendingTurnStarts.contains(conversationID)
+        let hasAgentTurn = agentLoop.isRunning(for: conversationID)
+            || agentLoop.suspension(for: conversationID) != nil
+        guard hasSenderWork || hasAgentTurn else { return }
+
         currentTasks[conversationID]?.cancel()
         currentTasks.removeValue(forKey: conversationID)
         pendingTurnStarts.remove(conversationID)
+
+        // 无条件转交：cancelTurn 自身是幂等的，没有活回合时它就是 no-op。
+        // 这里不能按 hasAgentTurn 再筛一次——sender 的账本和 AgentLoop 的
+        // 状态机本来就可能各说各话，任一为真就意味着「有活没干完」。
         agentLoop.cancelTurn(in: conversationID)
-        handleAgentLoopEvent(.cancelled(
-            conversationID: conversationID,
-            turnID: agentLoop.currentTurnID(for: conversationID)
-        ))
+
+        if hasSenderWork {
+            // 合成 cancelled 事件唤醒本类的回合跟踪任务：它挂在 continuation
+            // 上，取消 Task 不会让它自己返回。
+            handleAgentLoopEvent(.cancelled(
+                conversationID: conversationID,
+                turnID: agentLoop.currentTurnID(for: conversationID)
+            ))
+        }
         if currentTasks.isEmpty && pendingTurnStarts.isEmpty {
             isSending = false
         }
