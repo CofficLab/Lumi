@@ -33,15 +33,27 @@ struct LLMNetworkProviderAdapterRetryTests {
     /// 始终返回 529 的 `NetworkProviding` 桩，形状与真实
     /// `PluginNetworkManager.NetworkProvider` 的错误抛出一致：
     /// 非 2xx 时抛 `HTTPNetworkError(statusCode:headers:body:)`。
+    ///
+    /// `retryAfter` 非空时按真实供应商的行为附加 `Retry-After` 响应头。
     private final class OverloadedNetwork: NetworkProviding, @unchecked Sendable {
         private(set) var requestCount = 0
+        private let retryAfter: String?
+
+        init(retryAfter: String? = nil) {
+            self.retryAfter = retryAfter
+        }
+
+        private var headers: [String: String] {
+            guard let retryAfter else { return [:] }
+            return ["Retry-After": retryAfter]
+        }
 
         func request(_ request: HTTPRequest) async throws -> HTTPResponse {
             requestCount += 1
             throw HTTPNetworkError(
                 url: request.url,
                 statusCode: 529,
-                headers: [:],
+                headers: headers,
                 body: Data(#"{"error":{"message":"当前服务集群负载较高，请稍后重试"}}"#.utf8)
             )
         }
@@ -54,13 +66,13 @@ struct LLMNetworkProviderAdapterRetryTests {
             requestCount += 1
             await onResponse(HTTPResponseMetadata(
                 statusCode: 529,
-                headers: [:],
+                headers: headers,
                 url: request.url
             ))
             throw HTTPNetworkError(
                 url: request.url,
                 statusCode: 529,
-                headers: [:],
+                headers: headers,
                 body: Data(#"{"error":{"message":"当前服务集群负载较高，请稍后重试"}}"#.utf8)
             )
         }
@@ -111,7 +123,7 @@ struct LLMNetworkProviderAdapterRetryTests {
             _ = try await adapter.send(request: try chatRequest(), body: Data())
             Issue.record("529 应抛错")
         } catch let error as VendorAPIError {
-            guard case let .httpStatus(code, summary) = error else {
+            guard case let .httpStatus(code, summary, _) = error else {
                 Issue.record("应归一为 httpStatus，实际为 \(error)")
                 return
             }
@@ -223,7 +235,7 @@ struct LLMNetworkProviderAdapterRetryTests {
             )
             Issue.record("529 应抛错")
         } catch let error as VendorAPIError {
-            guard case let .httpStatus(code, _) = error else {
+            guard case let .httpStatus(code, _, _) = error else {
                 Issue.record("应归一为 httpStatus")
                 return
             }
@@ -231,6 +243,107 @@ struct LLMNetworkProviderAdapterRetryTests {
         }
 
         #expect(counter.value == 0, "响应头即 529 时不应转发任何 SSE 事件")
+    }
+
+    // MARK: - Retry-After：服务端给出的退避建议必须一路带到重试策略
+
+    @Test("529 携带 Retry-After 时，归一化错误保留服务端建议的等待时间")
+    func normalizedErrorCarriesRetryAfter() async throws {
+        let network = OverloadedNetwork(retryAfter: "30")
+        let adapter = LLMNetworkProviderAdapter(network)
+
+        do {
+            _ = try await adapter.send(request: try chatRequest(), body: Data())
+            Issue.record("529 应抛错")
+        } catch let error as VendorAPIError {
+            guard case let .httpStatus(code, _, retryAfterSeconds) = error else {
+                Issue.record("应归一为 httpStatus，实际为 \(error)")
+                return
+            }
+            #expect(code == 529)
+            #expect(retryAfterSeconds == 30, "服务端建议的 30s 必须被保留")
+        }
+    }
+
+    @Test("Retry-After 进入重试决策，成为实际等待时长")
+    func retryAfterBecomesRetryDelay() async throws {
+        let network = OverloadedNetwork(retryAfter: "30")
+        let adapter = LLMNetworkProviderAdapter(network)
+
+        var thrown: Error?
+        do {
+            _ = try await adapter.send(request: try chatRequest(), body: Data())
+        } catch {
+            thrown = error
+        }
+
+        let decision = OpenAICompatibleProviderAdapter.retryDecision(
+            for: try #require(thrown),
+            statusCode: nil,
+            attempt: 1,
+            maxAttempts: 3
+        )
+        #expect(decision.shouldRetry)
+        #expect(decision.delaySeconds == 30, "应采用服务端建议的 30s 作为等待时长")
+    }
+
+    @Test("流式路径同样保留 Retry-After")
+    func streamingPathCarriesRetryAfter() async throws {
+        let network = OverloadedNetwork(retryAfter: "15")
+        let adapter = LLMNetworkProviderAdapter(network)
+
+        do {
+            try await adapter.stream(
+                request: try chatRequest(),
+                body: Data(),
+                onEvent: { _ in true }
+            )
+            Issue.record("529 应抛错")
+        } catch let error as VendorAPIError {
+            guard case let .httpStatus(_, _, retryAfterSeconds) = error else {
+                Issue.record("应归一为 httpStatus")
+                return
+            }
+            #expect(retryAfterSeconds == 15)
+        }
+    }
+
+    @Test("没有 Retry-After 头时退避建议为空，交由本地抖动退避决定")
+    func missingRetryAfterYieldsNoAdvice() async throws {
+        let network = OverloadedNetwork(retryAfter: nil)
+        let adapter = LLMNetworkProviderAdapter(network)
+
+        var thrown: Error?
+        do {
+            _ = try await adapter.send(request: try chatRequest(), body: Data())
+        } catch {
+            thrown = error
+        }
+
+        guard case let .httpStatus(_, _, retryAfterSeconds) = try #require(thrown) as? VendorAPIError else {
+            Issue.record("应归一为 httpStatus")
+            return
+        }
+        #expect(retryAfterSeconds == nil)
+    }
+
+    @Test("AgentLoopFailure 保留服务端退避建议，供整回合重试遵守")
+    func agentLoopFailureCarriesRetryAfter() async throws {
+        let network = OverloadedNetwork(retryAfter: "30")
+        let adapter = LLMNetworkProviderAdapter(network)
+
+        var thrown: Error?
+        do {
+            _ = try await adapter.send(request: try chatRequest(), body: Data())
+        } catch {
+            thrown = error
+        }
+
+        let failure = AgentLoopFailure.from(error: try #require(thrown))
+        #expect(failure.kind == .server)
+        #expect(failure.isRetryable)
+        #expect(failure.httpStatusCode == 529)
+        #expect(failure.retryAfterSeconds == 30)
     }
 
     // MARK: - 不回归：取消与非重试错误
