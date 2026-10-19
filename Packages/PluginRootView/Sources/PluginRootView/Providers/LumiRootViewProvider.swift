@@ -28,6 +28,30 @@ public final class LumiRootViewProvider: DefaultRootViewProviding, SuperLog {
     private var activeContentFooterHeightStore: (any ContentFooterHeightStoring)?
     private var activeContentFooterHeightOwnerID: String?
     private var lastRailViewVisibility = true
+
+    /// 已绑定的 Rail Provider（弱引用，仅用于重新计算 `hasRailContent`）。
+    private weak var boundRailProvider: (any RailViewProviding)?
+
+    /// Rail 当前是否有**可渲染内容**（可见标签或区块）。
+    ///
+    /// ## 为什么需要它：空的 split 面板会被折叠，且再也回不来
+    ///
+    /// `isRailViewVisible` 只表达「宿主是否允许显示 Rail」，不表达「Rail 里有没有东西」。
+    /// 全新安装时两者会在启动早期分叉：会话列表的 `chats` 标签要等数据首次加载
+    /// （异步计数 + 去抖）才注册，而 `ChatPanel` 在 boot 期就无条件把 Rail 置为可见。
+    /// 于是首帧渲染出一个**没有任何标签的空 Rail 面板**，`HSplitView` 把这一侧折叠成
+    /// 0 宽；随后标签注册成功，`NSSplitView` 也不会自动把分隔条推回去 ——
+    /// 表现为「会话已存在、日志显示 `hasVisibleTabs=true`，但界面上永远看不到会话列表」。
+    ///
+    /// `WorkbenchSplitView` 用本属性做 split 视图的 identity（`.id`）：内容从无到有
+    /// 时整块重建，让 Rail 以 `idealWidth` 重新布局一次。**不能**把它塞进
+    /// `showsRail` 的判定里把面板整个摘掉 —— 那会改变主内容的视图层级，导致
+    /// SwiftUI 把祖先的 `root.main` 标识符覆盖到后代控件上，发送按钮等控件
+    /// 会连同其可访问性标识符一起从 AX 树里消失。
+    ///
+    /// - Note: 未调用 `bindRailViewVisibility(to:)` 的宿主保持旧行为（恒为 `true`），
+    ///   因为拿不到 `RailViewProviding` 时无法判断内容，也不该改变它们的渲染结果。
+    @Published public private(set) var hasRailContent = true
     public override init() {
         super.init()
         if Self.verbose {
@@ -96,11 +120,32 @@ public final class LumiRootViewProvider: DefaultRootViewProviding, SuperLog {
 
     public override func bindRailViewVisibility(to provider: any RailViewProviding) {
         railVisibilityObserver?.cancel()
+        boundRailProvider = provider
+        refreshHasRailContent()
         setRailViewVisible(provider.hasVisibleTabs)
         railVisibilityObserver = provider.addObserver { [weak self] event in
-            guard case let .visibilityChanged(visible) = event else { return }
-            self?.setRailViewVisible(visible)
+            switch event {
+            case let .visibilityChanged(visible):
+                self?.setRailViewVisible(visible)
+                self?.refreshHasRailContent()
+            case .tabsChanged, .visibleCategoriesChanged, .visibleTabIDChanged, .didAppear:
+                // 内容集合本身变了（例如全新安装后首个会话注册 `chats` 标签）：
+                // 必须重新求值，否则无法把已折叠的 Rail 面板重新挂载起来。
+                self?.refreshHasRailContent()
+            case .activeTabChanged, .widthChanged:
+                break
+            }
         }
+    }
+
+    /// 依据已绑定的 Rail Provider 重算 `hasRailContent`。
+    ///
+    /// - Important: 只在值**确实改变**时赋值，避免无意义的
+    ///   `objectWillChange` 与视图重建。
+    private func refreshHasRailContent() {
+        let hasContent = boundRailProvider.map { $0.hasVisibleTabs || $0.hasVisibleSections } ?? false
+        guard hasRailContent != hasContent else { return }
+        hasRailContent = hasContent
     }
 
     public override func bindRailViewWidth(

@@ -32,6 +32,11 @@ struct WorkbenchSplitView: View {
                         )
                     provider.hasActiveContent ? AnyView(mainContent) : AnyView(RootWelcomeView())
                 }
+                // Rail 首批标签是**动态**注册的（`chats` 要等会话数据首次加载完成）。
+                // 首帧时 Rail 面板还没有任何标签，`HSplitView` 会把这一侧折叠成 0 宽，
+                // 之后标签注册成功也不会自动展开 —— 表现为「会话存在但列表永远不可见」。
+                // 内容从无到有时重建整个 split 视图，让它以 `idealWidth` 重新布局。
+                .id(provider.hasRailContent)
                 #else
                 HStack(spacing: 0) {
                     provider.railView!
