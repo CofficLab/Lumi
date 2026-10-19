@@ -6,7 +6,7 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 并以常驻注册的 ChatSection 槽位参与 `message-list` 互斥竞争。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 41
+测试文件: 10 个，单元用例总数: 52（另有 5 条 UI 测试，见「UI 测试」章节）
 
 核心组件（源码目录）:
 - `Models/`
@@ -92,42 +92,115 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 | 40 | CompactTokenFormatting | thousands switch to one decimal below one hundred units | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `thousandsFormatting` |
 | 41 | CompactTokenFormatting | millions and billions use their own suffixes | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `largeMagnitudes` |
 
-> 说明：全部 **41 条场景**已在本包 `swift test` 中实跑通过（4 suites / 41 tests，约 0.1 s）。
+| 42 | EmptyStateActivityLoading | a zero result stays retryable so late-arriving data still shows | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `zeroResultDoesNotPinTheStrip` |
+| 43 | EmptyStateActivityLoading | a non-zero result still short-circuits repeat queries | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nonZeroResultKeepsTheCacheGate` |
+| 44 | MessageListEmptyUITestingSupport | seeds exactly the three conversations the UI tests depend on | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureSeedsAllThreeConversations` |
+| 45 | MessageListEmptyUITestingSupport | selects the empty conversation as the starting state | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureSelectsEmptyConversation` |
+| 46 | MessageListEmptyUITestingSupport | the empty conversation really has no messages | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureEmptyConversationIsEmpty` |
+| 47 | MessageListEmptyUITestingSupport | the history conversation has the messages the activity strip counts | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureHistoryConversationHasMessages` |
+| 48 | MessageListEmptyUITestingSupport | activity counts include tool messages, unlike the empty-state check | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fixtureActivityCountsUseCrossConversationScope` |
+| 49 | MessageListEmptyUITestingSupport | history messages carry tokens so the trend line has data | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureHistoryCarriesTokens` |
+| 50 | MessageListEmptyUITestingSupport | the tool-only conversation stays empty for the empty-state check | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fixtureToolOnlyConversationCountsAsEmpty` |
+| 51 | MessageListEmptyUITestingSupport | repeated seed does not duplicate conversations | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `fixtureSeedIsIdempotent` |
+| 52 | MessageListEmptyUITestingSupport | the fixture only activates with its launch argument | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fixtureOnlyActivatesWithLaunchArgument` |
+
+> 说明：全部 **52 条单元场景**已在本包 `swift test` 中实跑通过（5 suites / 52 tests，约 0.02 s）；另有 5 条 UI 测试见下方章节。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
-- P1: 已覆盖 32 / 32
-- P2: 已覆盖 3 / 3
-- **合计: 41 / 41**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 10 / 10
+- P1: 已覆盖 38 / 38
+- P2: 已覆盖 4 / 4
+- **合计: 52 / 52**（仅表示清单场景，非源码覆盖率）
+- **UI 测试: 5 条**（3 通过 / 2 跳过，见「UI 测试」章节）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（32 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P1**: 其余功能性用例（38 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
+
+## UI 测试
+
+位置：`LumiUITests/LumiMessageListEmptyUITests.swift`（独立 target，不能 import 本包，常量需复述）。
+夹具：`Packages/PluginMessageListEmpty/Sources/PluginMessageListEmpty/MessageListEmptyUITestingSupport.swift`（DEBUG only）。
+
+启动参数：`--lumi-ui-testing-message-list-empty` + `--lumi-ui-testing-isolated-storage`。
+
+夹具植入三个会话：空会话（默认选中）、带 8 条跨 30 天历史消息的会话、仅含 1 条 tool 消息的会话。
+历史消息刻意放在**另一个**会话：活动条统计是跨会话的，放进当前空会话会让「空态 + 活动条」永不共存。
+
+| ID | 用例 | 结果 | 说明 |
+|----|------|------|------|
+| U1 | `testEmptyStateAppearsForConversationWithoutMessages` | ✅ 通过 | 选中无消息会话时空态出现 |
+| U2 | `testActivityStripAppearsAlongsideEmptyState` | ✅ 通过 | 空态与活动条同时出现（覆盖下述缺陷 1+2） |
+| U3 | `testActivityStripRendersSummaryText` | ✅ 通过 | 摘要文案渲染且带窗口天数 30 |
+| U4 | `testEmptyStateAndActivityStripYieldToConversationWithMessages` | ⏭️ 跳过 | 依赖会话列表容器，本环境 rail 未渲染 |
+| U5 | `testToolOnlyConversationStillShowsEmptyState` | ⏭️ 跳过 | 同上 |
+
+### 跳过的原因（环境限制，非产品缺陷）
+
+会话列表由 rail 侧栏承载（`WorkbenchSplitView` 要求 `railView != nil && isRailViewVisible`）。
+本次执行环境的窗口布局下 rail 未渲染，`lumi.conversation-list` 容器不存在。
+**既有的 `LumiMessageListSwitchUITests` 在同一环境下同样失败**（"大会话未出现在会话列表"），可确认与本插件无关。
+
+U4/U5 已实现为「容器不存在 → skip（附原因）；容器存在但找不到会话行 → fail」，
+两者分开归因，避免环境问题掩盖真实回归。
+
+## 由 UI 测试发现并修复的产品缺陷
+
+### 缺陷 1：活动条永不加载（`.task` 死锁）
+
+`ActivityFooterView.body` 原先把内容包在 `Group { if model.hasActivity { ... } }` 上挂 `.task`。
+首次渲染时 `totalMessages == nil`、`hasActivity == false`，`Group` 内容为空；
+SwiftUI 不会为空分支建立真实 view identity，**`.task` 因此从不执行**。
+于是 `loadIfNeeded` 永不被调用 → `hasActivity` 永远 false，构成死锁。
+
+实测证据（临时日志，已清理）：`body` 求值 3 次，`loadIfNeeded` 执行 0 次。
+
+修复：容器内加一个 0 高度、透明的 `Color.clear` 作为 `.task` 的挂载载体。
+
+### 缺陷 2：零结果被缓存门永久锁死
+
+`loadIfNeeded` 原有缓存门条件为 `totalMessages != nil`。
+App 启动时空态先渲染、跨会话统计稍后就绪，首次查询**本来就该是 0**；
+一旦得到 0 就被判定为「已加载」，此后永不重查。
+
+实测时序：查询返回 0 → 0.4s 后数据就绪（合计 9 条）→ 再次进入空态命中缓存门 → 活动条不显示。
+
+修复：只在 `totalMessages > 0` 时命中缓存门。零结果视为「可能还没准备好」，保持可重试。
+回归防护：`zeroResultDoesNotPinTheStrip`（已用变异测试验证：改回旧逻辑该用例即失败）。
+
+**用户可感知症状**：明明有历史数据，本次运行内底部活动条一直不出现。
 
 ## 未覆盖范围
 
-以下部分**没有**单元测试覆盖，属已知缺口，不得当作已验证：
+以下部分**没有**测试覆盖，属已知缺口，不得当作已验证：
 
-- **UI 呈现**：空态引导页、英雄图标、`EmptyStateAtmosphere`、建议 chip 的流式布局、chip 点击后执行 prompt、文件夹导入流程。
-- **底部活动条布局**：`bottomFixed` 槽位在矮窗口下不被挤出屏幕这一设计理由，目前仅靠代码评审保证，无 UI 测试。
-- **i18n 文案**：`summaryText` 的本地化模板渲染未做断言。
-
-补 UI 测试时建议最高优先级覆盖「矮窗口 + 有历史数据」组合，它直接验证 `bottomFixed` 存在的理由。
+- **矮窗口下活动条是否仍在视口内**（`bottomFixed` 槽位的核心设计理由）。
+  `XCUIElement.frame` 只读，XCUITest 没有稳定的 macOS 窗口 resize API；拖拽窗口边缘会引入 flake。
+  项目既有边界一致：`LumiMessageListBriefUITests` 同样把 resize 归为「纯视觉验证，以人工验收为主」。
+- **纯视觉细节**：热力图色阶、`EmptyStateAtmosphere` 渐变、chip 圆角与阴影。需截图回归，CI 成本过高。
+- **摘要文案的具体计数**：由夹具单测 `fixtureActivityCountsUseCrossConversationScope` 钉住，
+  UI 层只断言文案渲染与窗口天数，不在两层重复脆弱断言。
+- **文件夹导入 / 项目切换流程**：`fileImporter` 涉及系统面板，UI 测试无法可靠驱动。
 
 ## 跨平台说明
 
-- Package 声明: macOS 14+, iOS 17+
-- 41 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 单元测试：Package 声明 macOS 14+, iOS 17+，52 条用例位于 `Tests/`
+- UI 测试：仅 macOS（`LumiUITests` target），5 条用例
 
 ## 测试执行
 
 ```bash
+# 单元测试
 cd Packages/PluginMessageListEmpty
 swift test
+
+# UI 测试（macOS，需要能渲染 rail 侧栏的窗口布局）
+xcodebuild -project Lumi.xcodeproj -scheme Lumi -destination 'platform=macOS' \
+  -only-testing:LumiUITests/LumiMessageListEmptyUITests test
 ```
 
 ## 维护规则
