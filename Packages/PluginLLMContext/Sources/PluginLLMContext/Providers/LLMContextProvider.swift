@@ -32,15 +32,37 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
     /// 兼容旧测试和外部调用方；不再作为压缩的主触发条件。
     static let compactionMessageThreshold = 40
     /// 每次滚动摘要最多处理的消息数，超过后下一次继续推进覆盖水位。
-    static let maxSummaryMessages = 80
-    /// 每次摘要请求最多携带的估算 token 数。
-    static let maxSummaryInputTokens = 16_000
+    static let maxSummaryMessages = 400
+    /// 每次摘要请求最多携带的估算 token 数的上限。
+    static let maximumSummaryInputTokens = 128_000
     /// 摘要生成后至少保留的最近消息数；实际结果仍受 token 预算限制。
     static let minimumRecentMessageCount = 16
     /// 单条消息进入摘要请求的最大字符数。
     static let maxCharsPerMessage = 4_000
+    /// 压缩上下文中单条工具输出的最大字符数。
+    ///
+    /// 工具输出是上下文膨胀的首要来源：一次 `read` 或 `shell` 就能带来数万 token。
+    /// 对齐 OpenCode（1250 字符）、Gemini CLI（2048 字节）、Cline（2000 字符）。
+    static let maxToolResultChars = 4_000
+    /// 压缩时保持原样、不做裁剪的最近工具结果数量。
+    ///
+    /// 最近几条工具结果通常是模型正在依赖的内容，裁剪它们会直接破坏当前工作；
+    /// 更早的结果早已被后续推理覆盖，裁剪代价可以忽略。
+    static let preservedToolResultCount = 4
     /// 未知模型窗口时的保守 fallback。
     static let fallbackContextWindowTokens = 32_000
+
+    /// 每次摘要请求最多携带的估算 token 数。
+    ///
+    /// 容量必须随窗口一起放大。固定的小上限会让摘要水位追不上历史增长：历史每回合
+    /// 涨 100K 而摘要每轮只折叠 16K，未折叠的中间段就会持续堆积，压缩不得不每回合
+    /// 重新算一次摘要，这正是"频繁压缩"的第二个来源。
+    ///
+    /// 摘要请求走的是同一个模型，输入预算与正常请求一致，因此这里直接复用输入
+    /// 预算，上限用于兜住超大窗口下的超长摘要请求。
+    static func maxSummaryInputTokens(for budget: LLMContextBudget) -> Int {
+        min(budget.inputTokenLimit, Self.maximumSummaryInputTokens)
+    }
 
     private struct SummarySnapshot: Sendable {
         let text: String
@@ -54,6 +76,17 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         let messages: [Message]
         let coveredThroughMessageID: UUID
         let sourceLastMessageID: UUID
+    }
+
+    /// 一次压缩组装的结果。
+    private struct CompactedHistory {
+        let messages: [Message]
+        let estimate: Int
+        /// 尾部是否因为超出目标水位而被截断。
+        ///
+        /// 截断说明当前摘要的覆盖水位已经不够支撑最近区间，需要再折叠一轮历史
+        /// 才能把被丢弃的内容重新纳入摘要。
+        let tailTruncated: Bool
     }
 
     private let messages: any MessageManaging
@@ -94,7 +127,9 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         }
         let history = await llmHistory(for: request.conversationID)
         let key = calibrationKey(for: request)
-        let estimate = calibratedEstimate(of: history, key: key)
+        // 本地完整历史的估算只用于判断"是否必须压缩"，它不是模型实际收到的内容。
+        // 压缩不会删除本地消息，所以这个值只会单调增长。
+        let localEstimate = calibratedEstimate(of: history, key: key)
         let limit = request.budget.inputTokenLimit
         let softLimit = max(Int(Double(limit) * Self.softThresholdRatio), 1_024)
         let hardLimit = max(Int(Double(limit) * Self.hardThresholdRatio), softLimit + 1)
@@ -107,7 +142,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             return result(messages: history, estimate: 0, request: request)
         }
 
-        if estimate >= softLimit || isEmergency || unknownWindowPrewarm {
+        if localEstimate >= softLimit || isEmergency || unknownWindowPrewarm {
             scheduleBackgroundCompaction(for: request, delay: true)
         }
 
@@ -116,7 +151,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         // The soft threshold only starts background prewarming. Switching to a
         // compacted context below the hard threshold makes a short conversation
         // appear to have been compacted merely because a summary finished early.
-        let shouldUseCompactedContext = isEmergency || estimate >= hardLimit
+        let shouldUseCompactedContext = isEmergency || localEstimate >= hardLimit
         let compactionReason: MessageTimelineEvent.ContextCompactionReason
         if wasForced {
             compactionReason = .contextLimitRetry
@@ -127,19 +162,20 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         }
         if shouldUseCompactedContext,
            let snapshot = summaries[request.conversationID],
-           let compacted = compactedHistory(history, snapshot: snapshot, request: request) {
-            let compactedEstimate = calibratedEstimate(of: compacted, key: key)
+           let compacted = compactedHistory(history, snapshot: snapshot, request: request),
+           !compacted.tailTruncated {
+            let compactedEstimate = calibratedEstimate(of: compacted.messages, key: key)
             if compactedEstimate <= limit,
-               compactedEstimate < estimate {
+               compactedEstimate < localEstimate {
                 recordActualCompactionIfNeeded(
                     for: request,
                     snapshot: snapshot,
-                    originalEstimate: estimate,
+                    originalEstimate: localEstimate,
                     compactedEstimate: compactedEstimate,
                     reason: compactionReason
                 )
                 return result(
-                    messages: compacted,
+                    messages: compacted.messages,
                     estimate: compactedEstimate,
                     request: request,
                     didCompact: true
@@ -147,25 +183,25 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             }
         }
 
-        if estimate < hardLimit, !isEmergency {
-            return result(messages: history, estimate: estimate, request: request)
+        if localEstimate < hardLimit, !isEmergency {
+            return result(messages: history, estimate: localEstimate, request: request)
         }
 
         // 硬阈值前等待已有预热任务，或立即执行一次摘要生成。
         await ensureCompaction(for: request)
         if let snapshot = summaries[request.conversationID],
            let compacted = compactedHistory(history, snapshot: snapshot, request: request) {
-            let compactedEstimate = calibratedEstimate(of: compacted, key: key)
-            if compactedEstimate <= limit, compactedEstimate < estimate {
+            let compactedEstimate = calibratedEstimate(of: compacted.messages, key: key)
+            if compactedEstimate <= limit, compactedEstimate < localEstimate {
                 recordActualCompactionIfNeeded(
                     for: request,
                     snapshot: snapshot,
-                    originalEstimate: estimate,
+                    originalEstimate: localEstimate,
                     compactedEstimate: compactedEstimate,
                     reason: compactionReason
                 )
                 return result(
-                    messages: compacted,
+                    messages: compacted.messages,
                     estimate: compactedEstimate,
                     request: request,
                     didCompact: true
@@ -212,7 +248,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
                 await loadPersistedSummaryIfNeeded(for: conversationID)
                 if let snapshot = summaries[conversationID],
                    let compacted = compactedHistory(history, snapshot: snapshot, request: request) {
-                    let compactedEstimate = calibratedEstimate(of: compacted, key: key)
+                    let compactedEstimate = calibratedEstimate(of: compacted.messages, key: key)
                     if compactedEstimate <= limit, compactedEstimate < fullHistoryEstimate {
                         currentEstimate = compactedEstimate
                     } else {
@@ -418,17 +454,22 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             && existingSnapshot?.modelName == modelName
         guard let source = summarySource(
             from: history,
-            snapshot: compatibleSnapshot ? existingSnapshot : nil
+            snapshot: compatibleSnapshot ? existingSnapshot : nil,
+            budget: request.budget
         ) else {
             return
         }
 
+        // 已有摘要仍然覆盖得住最近区间时直接复用，不再调用摘要接口。
+        //
+        // 旧的判据是"压缩结果是否低于软阈值"，但在压缩结果贴着预算上限的实现下
+        // 这个条件几乎永远不成立，导致每回合都重新生成一次摘要。真正的复用条件
+        // 是"覆盖水位是否仍然够用"，也就是尾部会不会被截断。
         if compatibleSnapshot, let snapshot = existingSnapshot,
            snapshot.providerID == providerID,
            snapshot.modelName == modelName,
            let compacted = compactedHistory(history, snapshot: snapshot, request: request),
-           calibratedEstimate(of: compacted, key: calibrationKey(for: request))
-               <= max(Int(Double(request.budget.inputTokenLimit) * Self.softThresholdRatio), 1_024) {
+           !compacted.tailTruncated {
             return
         }
 
@@ -502,7 +543,8 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
 
     private func summarySource(
         from history: [Message],
-        snapshot: SummarySnapshot?
+        snapshot: SummarySnapshot?,
+        budget: LLMContextBudget
     ) -> SummarySource? {
         let eligible = history.filter {
             ($0.role == .system || $0.role == .user || $0.role == .assistant || $0.role == .tool)
@@ -530,7 +572,9 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             candidates = Array(eligible[..<tailStart])
         }
 
-        let bounded = boundedSummaryMessages(candidates)
+        // 上一轮摘要本身也要占用摘要请求的输入额度。
+        let prefixCost = LLMContextTokenEstimator.estimate(messages: summaryPrefix)
+        let bounded = boundedSummaryMessages(candidates, budget: budget, reservedTokens: prefixCost)
         guard let coveredThrough = bounded.last?.id,
               let sourceLast = history.last?.id else { return nil }
         summaryPrefix.append(contentsOf: bounded)
@@ -541,14 +585,19 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         )
     }
 
-    private func boundedSummaryMessages(_ candidates: [Message]) -> [Message] {
+    private func boundedSummaryMessages(
+        _ candidates: [Message],
+        budget: LLMContextBudget,
+        reservedTokens: Int = 0
+    ) -> [Message] {
+        let maxInputTokens = max(Self.maxSummaryInputTokens(for: budget) - reservedTokens, 0)
         var selected: [Message] = []
         var estimated = 0
         for message in candidates {
             let bounded = boundedMessage(message)
             let cost = LLMContextTokenEstimator.estimate(message: bounded)
             guard selected.count < Self.maxSummaryMessages,
-                  selected.isEmpty || estimated + cost <= Self.maxSummaryInputTokens else {
+                  selected.isEmpty || estimated + cost <= maxInputTokens else {
                 break
             }
             selected.append(bounded)
@@ -561,7 +610,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         _ history: [Message],
         snapshot: SummarySnapshot,
         request: LLMContextPreparationRequest
-    ) -> [Message]? {
+    ) -> CompactedHistory? {
         guard snapshot.providerID == request.providerID,
               snapshot.modelName == request.model,
               let coveredIndex = history.firstIndex(where: { $0.id == snapshot.coveredThroughMessageID }) else {
@@ -576,32 +625,47 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             metadata: ["llmContext": "summary"]
         )
         var compacted = Array(stableSystem) + [summaryMessage]
-        let limit = request.budget.inputTokenLimit
-        var remaining = limit - LLMContextTokenEstimator.estimate(messages: compacted)
-        guard remaining > 0 else { return nil }
 
+        // 目标水位：压缩结果不能把预算填满。填满预算会让压缩后的上下文仍停在
+        // 硬阈值之上，下一回合立刻再次触发压缩。剩余空间留给后续回合。
+        let limit = request.budget.inputTokenLimit
+        let target = min(request.budget.compactionTargetTokens, limit)
+        var remaining = target - LLMContextTokenEstimator.estimate(messages: compacted)
+        if remaining <= 0 {
+            // 摘要与稳定 system 消息本身就超出目标水位，退回硬上限，避免压缩直接失败。
+            remaining = limit - LLMContextTokenEstimator.estimate(messages: compacted)
+            guard remaining > 0 else { return nil }
+        }
+
+        // 工具输出先做零成本瘦身，再按预算挑选尾部。
+        let tailSource = trimmingToolOutputs(Array(history.dropFirst(coveredIndex + 1)))
         var tail: [Message] = []
-        for message in history.dropFirst(coveredIndex + 1).reversed() {
+        var tailSourceIndex = tailSource.count
+        var tailTruncated = false
+        for index in stride(from: tailSource.count - 1, through: 0, by: -1) {
+            let message = tailSource[index]
             let cost = LLMContextTokenEstimator.estimate(message: message)
             if cost <= remaining {
                 tail.insert(message, at: 0)
+                tailSourceIndex = index
                 remaining -= cost
                 continue
             }
 
+            tailTruncated = true
             if tail.isEmpty {
                 let bounded = boundedMessage(message, maxTokens: remaining)
                 if LLMContextTokenEstimator.estimate(message: bounded) <= remaining {
                     tail.insert(bounded, at: 0)
+                    tailSourceIndex = index
                 }
             }
             break
         }
 
         // 工具结果不能脱离对应的 assistant tool-call；预算不足时宁可一起去掉。
-        if let first = tail.first, first.role == .tool,
-           let index = history.firstIndex(where: { $0.id == first.id }), index > 0 {
-            let preceding = history[index - 1]
+        if let first = tail.first, first.role == .tool, tailSourceIndex > 0 {
+            let preceding = tailSource[tailSourceIndex - 1]
             let cost = LLMContextTokenEstimator.estimate(message: preceding)
             if cost <= remaining {
                 tail.insert(preceding, at: 0)
@@ -611,7 +675,61 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         }
 
         compacted.append(contentsOf: tail)
-        return LLMContextTokenEstimator.estimate(messages: compacted) <= limit ? compacted : nil
+        let estimate = LLMContextTokenEstimator.estimate(messages: compacted)
+        guard estimate <= limit else { return nil }
+        return CompactedHistory(
+            messages: compacted,
+            estimate: estimate,
+            tailTruncated: tailTruncated
+        )
+    }
+
+    /// 裁剪压缩上下文中较旧的工具输出。
+    ///
+    /// 工具结果是上下文膨胀的首要来源，一条长输出就能吃掉整个预算。裁剪只改
+    /// 工具负载本身，消息结构与 tool-call / tool-result 的配对关系保持不变。
+    private func trimmingToolOutputs(_ messages: [Message]) -> [Message] {
+        var result = messages
+        var intactCount = Self.preservedToolResultCount
+        for index in messages.indices.reversed() {
+            let message = messages[index]
+            let carriesToolResult = message.role == .tool || !(message.toolCalls ?? []).isEmpty
+            guard carriesToolResult else { continue }
+            if intactCount > 0 {
+                intactCount -= 1
+                continue
+            }
+            result[index] = truncatedToolOutputs(message)
+        }
+        return result
+    }
+
+    private func truncatedToolOutputs(_ message: Message) -> Message {
+        var copy = message
+        if copy.role == .tool, copy.content.count > Self.maxToolResultChars {
+            copy.content = String(copy.content.prefix(Self.maxToolResultChars)) + "…[truncated]"
+        }
+        if var toolCalls = copy.toolCalls {
+            toolCalls = toolCalls.map { call in
+                // 只裁剪工具返回的正文，不动调用参数：参数会被原样发给 provider，
+                // 截断后不再是合法 JSON，会让整次请求直接失败。
+                guard let result = call.result, result.content.count > Self.maxToolResultChars else {
+                    return call
+                }
+                var updated = call
+                updated.result = MessageToolResult(
+                    content: String(result.content.prefix(Self.maxToolResultChars)) + "…[truncated]",
+                    duration: result.duration,
+                    isError: result.isError,
+                    imageAttachments: result.imageAttachments,
+                    awaitingUserResponse: result.awaitingUserResponse,
+                    interactionState: result.interactionState
+                )
+                return updated
+            }
+            copy.toolCalls = toolCalls
+        }
+        return copy
     }
 
     private func deterministicFallback(
@@ -622,7 +740,10 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         var result: [Message] = []
         var remaining = limit
 
-        for message in history where message.role == .system {
+        // 降级路径同样先做工具输出瘦身，避免单条大输出吃掉整个预算。
+        let trimmed = trimmingToolOutputs(history)
+
+        for message in trimmed where message.role == .system {
             let cost = LLMContextTokenEstimator.estimate(message: message)
             if cost <= remaining {
                 result.append(message)
@@ -637,7 +758,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         }
 
         var tail: [Message] = []
-        for message in history.reversed() where message.role != .system {
+        for message in trimmed.reversed() where message.role != .system {
             let cost = LLMContextTokenEstimator.estimate(message: message)
             if cost <= remaining {
                 tail.insert(message, at: 0)
