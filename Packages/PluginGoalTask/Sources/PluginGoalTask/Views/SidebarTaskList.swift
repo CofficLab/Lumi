@@ -28,11 +28,13 @@ struct SidebarTaskList: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 4)
         }
-        // 让列表容器呈现「凹陷」质感:四周向内衰减的阴影,
-        // 复用 LumiUI 的输入面内阴影令牌,避免各插件各写一套内阴影。
-        .appInputSurface(cornerRadius: Self.containerCornerRadius)
+        // 让列表容器呈现「凹陷」质感:四周向内衰减的阴影。
+        // 这里用插件内的 `taskListSurface` 而非 LumiUI 的 `appInputSurface`:
+        // 后者按「上方来光」把挖空块整体下移,底边几乎没有阴影,
+        // 任务列表这种封闭容器看起来会像被切断,这里改成上下对称。
+        .taskListSurface(cornerRadius: Self.containerCornerRadius)
         // 与外层面板拉开距离,让容器左右两侧的圆角与内阴影完整可见。
-        // 放在 appInputSurface 之后,保证内阴影仍贴合缩小后的容器边缘。
+        // 放在 taskListSurface 之后,保证内阴影仍贴合缩小后的容器边缘。
         .padding(.horizontal, Self.containerHorizontalInset)
     }
 }
