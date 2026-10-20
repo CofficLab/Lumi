@@ -26,12 +26,32 @@ import Testing
     #expect(
         MessageListEmptyAccessibility.defaultTitleLabel == "How can I help you today?"
     )
+    #expect(
+        MessageListEmptyAccessibility.activityStripID == "lumi.message-list.empty.activity"
+    )
+    #expect(
+        MessageListEmptyAccessibility.activityCardID == "lumi.message-list.empty.activity-card"
+    )
+    #expect(
+        MessageListEmptyAccessibility.activityAnchorID == "lumi.message-list.empty.activity-anchor"
+    )
 
     // 两种空态必须能被分别定位。
     #expect(
         MessageListEmptyAccessibility.noConversationSelectedID
             != MessageListEmptyAccessibility.noMessagesID,
         "「未选中对话」与「当前会话无消息」必须使用不同标识符，否则 UI 测试无法分辨渲染的是哪种空态"
+    )
+
+    // 活动条、活动卡、锚点文案也必须能被分别定位：合卡之后 UI 测试要能
+    // 区分「条出现了」「卡出现了」「数字还在」这三件事。
+    #expect(
+        Set([
+            MessageListEmptyAccessibility.activityStripID,
+            MessageListEmptyAccessibility.activityCardID,
+            MessageListEmptyAccessibility.activityAnchorID,
+        ]).count == 3,
+        "活动条 / 活动卡 / 锚点文案必须使用互不相同的标识符"
     )
 
     // 与既有标识符不冲突，避免嵌套时空态抢走对话列表的行标识。

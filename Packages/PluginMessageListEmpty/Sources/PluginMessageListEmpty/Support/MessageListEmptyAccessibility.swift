@@ -31,11 +31,23 @@ public enum MessageListEmptyAccessibility {
     ///   启动的 UI 测试中断言**。定位不到时应优先怀疑语言参数没生效。
     public static let defaultTitleLabel = "How can I help you today?"
 
-    /// 底部活动条（30 天热力图 + 摘要 + token 趋势）。
+    /// 底部活动条（近 30 天的活动卡）。
     ///
     /// 它是独立的 `bottomFixed` 槽位，不与空态容器嵌套，因此需要自己的标识符：
     /// 断言「空态出现」不会顺带证明「活动条出现」。
     public static let activityStripID = "lumi.message-list.empty.activity"
+
+    /// 活动卡本体（热力图 + 分隔线 + token 曲线合成的那一张卡）。
+    ///
+    /// 单独给它标识符，是为了把「两块图合成了一张卡」这条契约变成可断言的：
+    /// 只断言活动条存在，无法区分「一张卡」与「两个并排的控件」。
+    public static let activityCardID = "lumi.message-list.empty.activity-card"
+
+    /// 活动卡顶部那行锚点文案（「近 30 天有多少条消息 · 消耗了多少 tokens」）。
+    ///
+    /// 它同时是这张卡的无障碍摘要：数字由文字给出，图形只负责形状。
+    /// 单独标识是为了让「数字没有随图形一起消失」这条不变量可被断言。
+    public static let activityAnchorID = "lumi.message-list.empty.activity-anchor"
 
     /// 建议 chip 的流式容器。
     public static let suggestionFlowID = "lumi.message-list.empty.suggestion-flow"

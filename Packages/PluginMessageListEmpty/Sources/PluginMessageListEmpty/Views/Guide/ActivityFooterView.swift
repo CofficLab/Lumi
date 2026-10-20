@@ -2,19 +2,23 @@ import Foundation
 import LumiUI
 import SwiftUI
 
-/// A quiet activity strip pinned under the chat empty state.
+/// A quiet activity card pinned under the chat empty state.
 ///
-/// The strip exists to give the empty state some substance: it reminds the
+/// The card exists to give the empty state some substance: it reminds the
 /// user that this workspace already has a history, without competing with the
 /// title or the prompt suggestions. It renders nothing when there is no
 /// activity, so a brand-new install keeps the clean composition it has today.
+///
+/// - Important: 卡片与中间的提示流共用一套视觉语言（墨翠低透明度填充、同宽
+///   基准、同一条底色），因此它读起来是提示流的延续，而不是另一个面板。
+///   改动配色或宽度时必须同时看 `ActivityFusionCard` 与 `PromptSuggestionFlow`。
 struct ActivityFooterView: View {
     let model: EmptyStateActivityViewModel
 
     /// Width the strip last received from its slot.
     ///
     /// Needed only to pick between the side-by-side and the stacked layout:
-    /// `AppLineChart` is built on a `GeometryReader`, so it happily shrinks to
+    /// the sparkline is built on a `GeometryReader`, so it happily shrinks to
     /// any width. `ViewThatFits` therefore cannot detect "too narrow" here —
     /// the flexible child always reports that it fits — and an explicit
     /// measurement is what makes the fallback real.
@@ -48,52 +52,15 @@ struct ActivityFooterView: View {
     }
 
     private func content(range: ClosedRange<Date>) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if placesTrendBesideHeatmap {
-                // 并排时两块在竖直方向居中：热力图窄而矮，折线图更高也更宽，
-                // 居中对齐让整条活动条读起来是一个整体而不是两个控件。
-                HStack(alignment: .center, spacing: ActivityFooterLayout.columnSpacing) {
-                    heatmap(range: range)
-                    trendView
-                }
-            } else {
-                heatmap(range: range)
-                if model.hasTokenActivity {
-                    trendView
-                        .padding(.top, 6)
-                }
-            }
-        }
-        .padding(.top, 18)
-        .frame(maxWidth: 620)
+        ActivityFusionCard(
+            model: model,
+            range: range,
+            placesSideBySide: placesSideBySide
+        )
+        .padding(.top, ActivityFooterLayout.topSpacing)
         .frame(maxWidth: .infinity)
         .accessibilityIdentifier(MessageListEmptyAccessibility.activityStripID)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(Text(summaryText))
-    }
-
-    private func heatmap(range: ClosedRange<Date>) -> some View {
-        AppActivityHeatmap(
-            days: model.days.map {
-                AppActivityHeatmapDay(
-                    date: $0.date,
-                    level: $0.level,
-                    accessibilityLabel: $0.accessibilityLabel
-                )
-            },
-            range: range,
-            cellSize: 9,
-            cellSpacing: 3,
-            levelCount: 5,
-            showsMonthLabels: false,
-            showsWeekdayLabels: false,
-            scrollsHorizontally: false,
-            showsLegend: false
-        )
-    }
-
-    private var trendView: some View {
-        ActivityTokenTrendView(model: model)
     }
 
     /// Reads the width the slot gives the strip without contributing any
@@ -109,57 +76,53 @@ struct ActivityFooterView: View {
         .accessibilityHidden(true)
     }
 
-    /// 只有「有 token 趋势」且「宽度够」两件事同时成立才并排，否则保持上下排布。
-    private var placesTrendBesideHeatmap: Bool {
-        model.hasTokenActivity
-            && ActivityFooterLayout.usesSideBySideLayout(availableWidth: availableWidth)
-    }
-
-    /// "62 messages in the last 30 days", phrased so the number reads as a
-    /// reward for past work rather than as a metric to judge.
-    ///
-    /// Not drawn any more — the strip shows only the two charts — but kept as
-    /// the strip's accessibility label so the message total is still announced.
-    ///
-    /// Lookup and formatting are two steps because `String(localized:)`
-    /// resolves the template from the module bundle but takes no format
-    /// arguments, while `pluginLocalization.string` resolves a key without
-    /// offering a formatting overload.
-    private var summaryText: String {
-        let format = String(
-            localized: "%lld messages in the last %lld days",
-            bundle: .module
-        )
-        return String(
-            format: format,
-            locale: pluginLocalization.preferredLocale(),
-            model.totalMessages ?? 0,
-            EmptyStateActivityViewModel.windowDayCount
-        )
+    /// 只有「宽度够」这一件事成立才并排，否则保持上下排布。
+    private var placesSideBySide: Bool {
+        ActivityFooterLayout.usesSideBySideLayout(availableWidth: availableWidth)
     }
 }
 
-/// 活动条两块图的排布判定。
+/// 活动卡片的排布判定。
 ///
 /// 抽成纯几何，让「多宽才并排」这条阈值可以被单测钉住：SwiftUI 里没有
 /// 稳定可测的横向自适应 API（见 `ActivityFooterView.availableWidth` 的注释），
 /// 所以阈值本身就是需要保护的契约。
 enum ActivityFooterLayout {
+    /// 卡片最大宽度，与提示胶囊流同宽。
+    static let cardMaxWidth: CGFloat = ActivityFusionCardMetrics.maxWidth
+    /// 卡片左右内边距。
+    static let cardHorizontalPadding: CGFloat = ActivityFusionCardMetrics.horizontalPadding
     /// 30 天窗口最多铺满 6 周；`cellSize` 9 + `cellSpacing` 3 时约 72pt。
     static let heatmapWidth: CGFloat = 72
-    /// 并排时两块之间的间距。
-    static let columnSpacing: CGFloat = 18
-    /// 折线图再窄就会把 30 个采样点挤成一团（点直径 6pt，间距不足 10pt 时
+    /// 两块图之间的间距。
+    static let contentSpacing: CGFloat = ActivityFusionCardMetrics.contentSpacing
+    /// 两块图之间分隔线的宽度。
+    static let separatorWidth: CGFloat = 1
+    /// 曲线再窄就会把 30 个采样点挤成一团（点直径 6pt，间距不足 10pt 时
     /// 曲线会糊成一条粗线），此时宁可上下排布。
-    static let minChartWidth: CGFloat = 300
+    static let minSparklineWidth: CGFloat = 180
+    /// 活动条与上方提示流之间的间距。
+    static let topSpacing: CGFloat = 24
 
-    /// 并排所需的最小可用宽度。
-    static var sideBySideMinWidth: CGFloat {
-        heatmapWidth + columnSpacing + minChartWidth
+    /// 并排时卡片内部需要的最小宽度。
+    static var sideBySideInnerWidth: CGFloat {
+        heatmapWidth + contentSpacing * 2 + separatorWidth + minSparklineWidth
     }
 
+    /// 并排所需的最小可用宽度（含卡片左右内边距）。
+    static var sideBySideMinWidth: CGFloat {
+        cardHorizontalPadding * 2 + sideBySideInnerWidth
+    }
+
+    /// 槽位宽度足够时，卡片内部才并排。
+    ///
+    /// 判定用的是**卡片的内宽**而不是槽位宽度：卡片本身封顶在
+    /// `cardMaxWidth`，再宽的窗口也不会让卡片变宽，因此超过封顶宽度之后
+    /// 判定结果必须保持不变。
     static func usesSideBySideLayout(availableWidth: CGFloat) -> Bool {
-        availableWidth >= sideBySideMinWidth
+        let cardWidth = min(availableWidth, cardMaxWidth)
+        let innerWidth = cardWidth - cardHorizontalPadding * 2
+        return innerWidth >= sideBySideInnerWidth
     }
 }
 

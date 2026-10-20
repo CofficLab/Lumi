@@ -24,7 +24,8 @@ import XCTest
 /// ## 覆盖什么
 ///
 /// - 空态在「选中但无消息」时出现；
-/// - 底部活动条在有历史时出现，且摘要文案真的渲染、带窗口天数；
+/// - 底部活动条在有历史时出现，锚点文案真的渲染、带窗口天数；
+/// - 活动卡与提示胶囊流共用同一条左右边界（合卡融合的契约）；
 /// - 切到有消息的会话后，空态**与**活动条一起消失（槽位正确让位）；
 /// - 仅含 tool 消息的会话仍算空（`includesToolMessages: false`）。
 ///
@@ -36,8 +37,9 @@ import XCTest
 ///   同样把 resize 归为「纯视觉验证，CI 成本高，以人工验收为主」。
 ///   该缺口登记在 `Tests/TestPlan.md` 的「未覆盖范围」。
 /// - 纯视觉细节（热力图色阶、氛围层渐变、chip 圆角）：需截图回归，CI 成本过高。
-/// - token 趋势线的绘制：判空规则由 `EmptyStateTokenTrendTests` 覆盖，
-///   UI 层只确认活动条整体存在。
+/// - token 曲线的绘制：判空规则由 `EmptyStateTokenTrendTests` 覆盖，
+///   曲线与画布的坐标映射由 `ActivitySparklineGeometryTests` 覆盖，
+///   UI 层只确认活动卡整体存在。
 ///
 /// - Note: 必须继承 `LumiUITestCase` 而不是 `XCTestCase`。基类提供的
 ///   `launchLumi` / `waitForMainWindow` / `element(...)` 以及「用剪贴板绕过
@@ -88,15 +90,14 @@ final class LumiMessageListEmptyUITests: LumiUITestCase {
         )
     }
 
-    /// 活动条的摘要必须可被无障碍读到，并且带窗口天数。
+    /// 活动卡的锚点文案必须真的渲染出来，并带窗口天数。
     ///
-    /// 摘要不再画在界面上（两块图并排后图下的两行说明成了噪声），只作为
-    /// 活动条容器的 accessibility label 存在。因此这条用例真正守的是
-    /// **无障碍摘要没被删空**：容器在但 label 为空，读屏用户就只剩下
-    /// 30 个日期格子，得不到「近 30 天共多少条」这一层语义。
+    /// 数字现在由文字给出（图形只负责形状），因此这条用例守的是
+    /// **数字没有随图形一起消失**：卡片在、却没有那行字，读屏用户与视力正常的
+    /// 用户都只剩下 30 个日期格子，得不到「近 30 天共多少条」这一层语义。
     ///
     /// 只断言文案的稳定片段、不断言具体数字：数字口径由夹具单测钉住（见类注释）。
-    func testActivityStripRendersSummaryText() throws {
+    func testActivityCardRendersAnchorSummary() throws {
         waitForMainWindow()
 
         let strip = element(identifier: MessageListEmptyA11yIDs.activityStrip)
@@ -105,16 +106,57 @@ final class LumiMessageListEmptyUITests: LumiUITestCase {
             "底部活动条未出现"
         )
 
-        // 摘要格式为「%lld messages in the last %lld days」，取其中最稳定的片段。
-        let summary = element(containingLabel: "messages in the last")
+        // 锚点是可见文字，因此按标识符定位，不按文案（文案随语言变化）。
+        let anchor = element(identifier: MessageListEmptyA11yIDs.activityAnchor)
         XCTAssertTrue(
-            summary.waitForExistence(timeout: 15),
-            "活动条已出现但摘要文案缺失（活动条 label：\(strip.label)）"
+            anchor.waitForExistence(timeout: 15),
+            "活动条已出现但锚点文案缺失（活动条 label：\(strip.label)）"
+        )
+        // 摘要格式为「%lld messages in the last %lld days · %@ tokens」，取其中最稳定的片段。
+        XCTAssertTrue(
+            anchor.label.contains("messages in the last"),
+            "活动卡锚点文案缺少消息摘要（label：\(anchor.label)）"
         )
         // 摘要里必须带上窗口天数，否则「近 30 天」这个语义就丢了。
         XCTAssertTrue(
-            summary.label.contains("30"),
-            "活动条摘要未包含窗口天数 30（label：\(summary.label)）"
+            anchor.label.contains("30"),
+            "活动卡锚点文案未包含窗口天数 30（label：\(anchor.label)）"
+        )
+    }
+
+    /// 热力图与 token 曲线必须合成**一张卡**，并与提示胶囊流共用同一条宽度基准。
+    ///
+    /// 这条守的是「融合」本身：活动卡此前是两块各自为政的控件，被一道系统
+    /// 分隔线切在空态之外。合卡之后，卡片的左右边界必须与中间的提示胶囊流
+    /// 对齐 —— 这正是「它们属于同一块画面」最直接的信号，也是最容易在
+    /// 日后的一次随手改动里丢掉的东西。
+    func testActivityCardAlignsWithThePromptFlow() throws {
+        waitForMainWindow()
+
+        let card = element(identifier: MessageListEmptyA11yIDs.activityCard)
+        XCTAssertTrue(
+            card.waitForExistence(timeout: 30),
+            "活动卡未出现"
+        )
+
+        let flow = element(identifier: MessageListEmptyA11yIDs.suggestionFlow)
+        XCTAssertTrue(
+            flow.waitForExistence(timeout: 15),
+            "提示胶囊流未出现，无法比较两者的横向基准"
+        )
+
+        // 卡片宽度封顶 520pt（与胶囊流同宽），不得再被拉宽。
+        XCTAssertLessThanOrEqual(
+            card.frame.width,
+            521,
+            "活动卡宽于 520pt 的共享基准（实际 \(card.frame.width)pt）"
+        )
+        // 两者都居中在同一个 620pt 的列里，水平中心应当重合。
+        XCTAssertEqual(
+            card.frame.midX,
+            flow.frame.midX,
+            accuracy: 2,
+            "活动卡与提示胶囊流没有共用同一条左右边界（卡 \(card.frame.midX) / 胶囊 \(flow.frame.midX)）"
         )
     }
 
@@ -225,6 +267,8 @@ enum MessageListEmptyA11yIDs {
     static let noMessages = "lumi.message-list.empty.no-messages"
     static let suggestionFlow = "lumi.message-list.empty.suggestion-flow"
     static let activityStrip = "lumi.message-list.empty.activity"
+    static let activityCard = "lumi.message-list.empty.activity-card"
+    static let activityAnchor = "lumi.message-list.empty.activity-anchor"
 }
 
 /// 夹具会话标题（复述 `MessageListEmptyUITestingSupport`）。
