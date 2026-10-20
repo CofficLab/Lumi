@@ -26,19 +26,27 @@ public struct AgentLoopFailure: Sendable, Equatable, Codable {
     public let providerID: String?
     public let modelName: String?
     public let httpStatusCode: Int?
+    /// 服务端建议的重试等待时间（秒），来自 `Retry-After` 响应头。
+    ///
+    /// `nil` 表示服务端未给出建议。回合级重试必须遵守它：回合重启是一次
+    /// **全新**的请求，仍需满足服务端要求的静默窗口，否则刚等完传输层的
+    /// 退避就立刻再打一次，等于没退避。
+    public let retryAfterSeconds: TimeInterval?
 
     public init(
         kind: Kind,
         message: String,
         providerID: String? = nil,
         modelName: String? = nil,
-        httpStatusCode: Int? = nil
+        httpStatusCode: Int? = nil,
+        retryAfterSeconds: TimeInterval? = nil
     ) {
         self.kind = kind
         self.message = message
         self.providerID = providerID
         self.modelName = modelName
         self.httpStatusCode = httpStatusCode
+        self.retryAfterSeconds = retryAfterSeconds
     }
 
     /// 是否适合由上层策略自动重试。
@@ -101,13 +109,14 @@ public struct AgentLoopFailure: Sendable, Equatable, Codable {
                     providerID: providerID,
                     modelName: modelName
                 )
-            case .httpStatus(let statusCode, let summary):
+            case .httpStatus(let statusCode, let summary, let retryAfterSeconds):
                 return AgentLoopFailure(
                     kind: Self.kind(forHTTPStatus: statusCode, summary: summary),
                     message: message,
                     providerID: providerID,
                     modelName: modelName,
-                    httpStatusCode: statusCode
+                    httpStatusCode: statusCode,
+                    retryAfterSeconds: retryAfterSeconds
                 )
             case .requestFailed(let details):
                 return AgentLoopFailure(

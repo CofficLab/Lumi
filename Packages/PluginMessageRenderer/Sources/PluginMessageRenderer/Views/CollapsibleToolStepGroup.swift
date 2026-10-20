@@ -45,9 +45,13 @@ struct CollapsibleToolStepGroup: View {
         resolvedToolCalls ?? toolCalls
     }
 
+    /// 授权状态也要纳入签名：用户处理完授权后消息里的
+    /// `authorizationState` 变成终态，而 `result` 前后都非 nil。
+    /// 只比较 `result != nil` 的话签名不变，解析任务不会重跑，
+    /// 行里留着过期的"等待授权"快照。
     private var resolutionTaskID: String {
         toolCalls
-            .map { "\($0.id):\($0.result != nil)" }
+            .map { "\($0.id):\($0.result != nil):\($0.authorizationState ?? "")" }
             .joined(separator: "|")
     }
 
@@ -64,9 +68,11 @@ struct CollapsibleToolStepGroup: View {
 
     @MainActor
     private func resolveResults() async {
-        guard resolvedToolCalls == nil else { return }
-
-        // 命中"完全解析"缓存时跳过逐个查询与 loading 态闪烁
+        // 命中"完全解析"缓存时跳过逐个查询与 loading 态闪烁。
+        //
+        // 缓存返回的是**合并结果**：持久化字段（授权状态等）以消息为准，
+        // 只用缓存补齐消息里还缺的结果。因此即便缓存里存的是用户授权
+        // 之前的快照，也不会把已处理的授权复活成"等待授权"。
         if let cached = ToolCallResolutionCache.shared.resolvedCalls(
             messageID: message.id,
             toolCalls: toolCalls

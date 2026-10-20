@@ -21,8 +21,8 @@ import Testing
 @Suite("ConversationInputObserver 事件路由")
 struct ConversationInputObserverTests {
 
-    @Test("文本变化触发整表刷新")
-    func textChangeRefreshesViewModel() {
+    @Test("文本变化只更新文本，不触发整表刷新")
+    func textChangeUpdatesTextWithoutFullRefresh() {
         let capability = SendActionBarTestCapability()
         let viewModel = ConversationInputViewModel(capability: capability)
         let observer = ConversationInputObserver(capability: capability, viewModel: viewModel)
@@ -31,8 +31,37 @@ struct ConversationInputObserverTests {
         capability.emitText("hello")
 
         #expect(viewModel.text == "hello")
-        // 文本变化应走 refresh（整表重算），而不是只更新一个字段。
-        #expect(viewModel.revision > revisionBefore)
+        #expect(viewModel.canSend, "文本变化后 canSend 仍需同步，不依赖 refresh()")
+
+        // - Important: 文本变化**不得**经 refresh()。
+        //   refresh 会重写整张状态表（附件、错误、焦点、高度、光标），而
+        //   `@Published` 不做等值比较，于是每个字符都广播十几次失效，把输入框
+        //   与附件预览整段拖进重建——这正是用户感知到的「打字卡顿」。
+        //   `revision` 只在 refresh() / enqueue() 里自增，用它当探针。
+        #expect(
+            viewModel.revision == revisionBefore,
+            "文本变化不应自增 revision（否则附件预览每键整段重建）"
+        )
+        observer.cancel()
+    }
+
+    @Test("观察者回灌不重复通知发送按钮")
+    func textObserverDoesNotRebroadcastToActionBar() {
+        let capability = SendActionBarTestCapability()
+        let viewModel = ConversationInputViewModel(capability: capability)
+        let observer = ConversationInputObserver(capability: capability, viewModel: viewModel)
+
+        var written: [String] = []
+        viewModel.onTextWritten = { written.append($0) }
+
+        capability.emitText("hello")
+
+        // 能力层的 didSet 已经把新文本送达 ActionBarInputObserver，
+        // 观察者若再回调一次 onTextWritten，就是同一份通知发两遍。
+        #expect(
+            written.isEmpty,
+            "观察者回灌路径不应回调 onTextWritten，实际回调 \(written.count) 次"
+        )
         observer.cancel()
     }
 
@@ -225,6 +254,8 @@ struct ConversationInputCapabilityDegradationTests {
         #expect(capability.selectedConversationID == nil)
         #expect(!capability.isSending(for: UUID()))
         #expect(!capability.isSending(for: nil))
+        #expect(!capability.canStop(for: UUID()))
+        #expect(!capability.canStop(for: nil))
     }
 
     @Test("指标能力缺失时 beginMetrics 返回 nil 且其余调用无副作用")

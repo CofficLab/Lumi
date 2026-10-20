@@ -17,8 +17,10 @@ import Testing
     let plugin = PluginMessageListEmptyPlugin()
 
     try plugin.onBoot(kernel: kernel)
-    // 插件常驻注册两个槽位：空态本体 + 底部 activity strip（a362063f1 新增）。
-    let expectedItemIDs = [plugin.id, plugin.activityItemID]
+    // 插件只注册一个槽位：空态本体。活动卡是它的子视图，不再单独占一个
+    // bottomFixed 槽位 —— 那样它会停在窗口底部，与提示流之间隔着一片空白，
+    // 底栏与内容区之间还会压着一条分隔线。
+    let expectedItemIDs = [plugin.id]
     #expect(chat.items.map(\.id) == expectedItemIDs)
     #expect(chat.items.first?.exclusiveGroup == "message-list")
     #expect(chat.items.first?.fillsRemainingHeight == true)
@@ -69,17 +71,23 @@ import Testing
     #expect(chat.items.isEmpty)
 }
 
+/// Lets the plugin's registration evaluation reach a settled conclusion.
+///
+/// The evaluation runs in a child task that performs an async SwiftData read
+/// and only then calls `applyRegistration`. Rather than guessing how many
+/// yields that takes, drain the main actor until no further work is pending:
+/// once the queue has no runnable item left, every task that was going to
+/// resolve has resolved. This replaces an earlier sleep loop that burned a fixed
+/// ~0.5 s per call and could still flake on a loaded machine.
 @MainActor
 private func settleRegistrationEvaluation() async {
-    // The plugin evaluates persisted state in a child task that performs an
-    // async read. `Task.yield()` does not advance wall-clock time, so give the
-    // evaluation real time to finish instead of guessing how many yields it takes.
-    for _ in 0..<100 {
-        try? await Task.sleep(nanoseconds: 5_000_000)
+    await Task.yield()
+    for _ in 0..<50 {
+        await Task.yield()
     }
 }
 
-/// 空态 item 现已常驻注册，可见性完全由 `isActive` 表达，
+/// Empty-state item 常驻注册，可见性完全由 `isActive` 表达，
 /// 因此断言「是否渲染空态」而非「是否注册 item」。
 private extension DefaultChatSectionProviding {
     var isEmptyStateRendering: Bool {
@@ -95,7 +103,7 @@ private extension DefaultChatSectionProviding {
 
     try plugin.onBoot(kernel: kernel)
 
-    #expect(chat.items.map(\.id) == [plugin.id, plugin.activityItemID])
+    #expect(chat.items.map(\.id) == [plugin.id])
     try plugin.onShutdown(kernel: kernel)
     #expect(chat.items.isEmpty)
 }

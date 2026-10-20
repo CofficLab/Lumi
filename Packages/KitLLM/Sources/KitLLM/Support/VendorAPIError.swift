@@ -12,8 +12,14 @@ public enum VendorAPIError: Error, LocalizedError, Sendable, Equatable {
     case emptyResponse
     /// 流式响应在收到协议终止信号前提前结束。
     case incompleteStream
-    /// HTTP 错误（状态码 + 摘要）。
-    case httpStatus(Int, String)
+    /// HTTP 错误（状态码 + 摘要 + 服务端建议的重试等待时间）。
+    ///
+    /// - Parameters:
+    ///   - statusCode: HTTP 状态码。
+    ///   - summary: 错误摘要（供 UI 展示与失败分类）。
+    ///   - retryAfterSeconds: `Retry-After` 响应头给出的建议等待时间（秒）。
+    ///     `nil` 表示服务端未给出建议，等待时长由本地指数退避决定。
+    case httpStatus(statusCode: Int, summary: String, retryAfterSeconds: TimeInterval?)
     /// 底层网络/序列化错误。
     case requestFailed(String)
     /// 供应商返回的数据无法解析。
@@ -31,13 +37,25 @@ public enum VendorAPIError: Error, LocalizedError, Sendable, Equatable {
             return "服务返回了空响应"
         case .incompleteStream:
             return "流式响应在收到结束信号前中断"
-        case .httpStatus(let code, let summary):
+        case .httpStatus(let code, let summary, _):
             return "服务返回 HTTP \(code)：\(summary)"
         case .requestFailed(let details):
             return "请求失败：\(details)"
         case .decodingFailed(let details):
             return "响应解析失败：\(details)"
         }
+    }
+}
+
+// MARK: - 便捷构造
+
+extension VendorAPIError {
+    /// 构造不带服务端退避建议的 HTTP 错误。
+    ///
+    /// 大多数调用点拿不到 `Retry-After`（响应头不存在、或错误并非由 HTTP
+    /// 响应产生），用这个重载可以保持调用处简洁。
+    public static func httpStatus(_ statusCode: Int, _ summary: String) -> VendorAPIError {
+        .httpStatus(statusCode: statusCode, summary: summary, retryAfterSeconds: nil)
     }
 }
 

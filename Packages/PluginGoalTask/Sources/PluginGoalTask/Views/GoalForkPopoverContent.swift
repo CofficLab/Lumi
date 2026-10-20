@@ -82,6 +82,7 @@ struct GoalForkPopoverContent: View {
                     .font(.headline)
                     .foregroundColor(theme.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier(GoalAccessibility.forkPopoverTitle)
 
                 if let description = goal.goalDescription, !description.isEmpty {
                     Text(description)
@@ -111,6 +112,7 @@ struct GoalForkPopoverContent: View {
                                     .foregroundColor(theme.textPrimary)
                                     .lineLimit(1)
                                     .truncationMode(.tail)
+                                    .accessibilityIdentifier(GoalAccessibility.forkPopoverTaskTitle)
 
                                 Spacer(minLength: 0)
                             }
@@ -160,6 +162,7 @@ struct GoalForkPopoverContent: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(isForking)
                 .keyboardShortcut(.defaultAction)
+                .accessibilityIdentifier(GoalAccessibility.forkPopoverConfirm)
 
                 Spacer(minLength: 0)
             }

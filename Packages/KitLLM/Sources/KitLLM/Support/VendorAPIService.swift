@@ -13,6 +13,12 @@ public final class VendorAPIService: @unchecked Sendable {
     private let networkProvider: (any LLMNetworkProviding)?
     private let maxAttempts: Int
     private let baseRetryDelay: Double
+    /// 重试前的等待实现。
+    ///
+    /// 抽出来是为了可测试：退避时长是重试策略的核心行为，但真实等待会让
+    /// 单测变慢（`Retry-After: 30` 意味着 60s）。生产环境默认用
+    /// `Task.sleep`，测试注入记录型实现即可断言等待序列。
+    private let sleeper: @Sendable (TimeInterval) async throws -> Void
 
     /// 默认使用长空闲超时的 session。
     ///
@@ -23,12 +29,16 @@ public final class VendorAPIService: @unchecked Sendable {
         session: URLSession? = nil,
         networkProvider: (any LLMNetworkProviding)? = nil,
         maxAttempts: Int = 3,
-        baseRetryDelay: Double = 1.0
+        baseRetryDelay: Double = 1.0,
+        sleeper: @escaping @Sendable (TimeInterval) async throws -> Void = { seconds in
+            try await Task.sleep(nanoseconds: UInt64(max(seconds, 0) * 1_000_000_000))
+        }
     ) {
         self.session = session ?? VendorAPIService.makeLongTimeoutSession()
         self.networkProvider = networkProvider
         self.maxAttempts = max(1, maxAttempts)
         self.baseRetryDelay = max(0, baseRetryDelay)
+        self.sleeper = sleeper
     }
 
     private static func makeLongTimeoutSession() -> URLSession {
@@ -147,13 +157,32 @@ public final class VendorAPIService: @unchecked Sendable {
         guard (200..<300).contains(httpResponse.statusCode) else {
             let summary = data.flatMap { String(data: $0, encoding: .utf8) } ?? ""
             let trimmed = summary.prefix(200)
-            throw VendorAPIError.httpStatus(httpResponse.statusCode, String(trimmed))
+            throw VendorAPIError.httpStatus(
+                statusCode: httpResponse.statusCode,
+                summary: String(trimmed),
+                retryAfterSeconds: Self.retryAfterSeconds(from: httpResponse)
+            )
         }
     }
 
+    /// 读取响应中的 `Retry-After` 建议。
+    ///
+    /// `HTTPURLResponse.value(forHTTPHeaderField:)` 本身大小写不敏感。
+    private static func retryAfterSeconds(from response: HTTPURLResponse) -> TimeInterval? {
+        guard let raw = response.value(forHTTPHeaderField: HTTPRetryAfter.headerName) else {
+            return nil
+        }
+        return HTTPRetryAfter.seconds(fromHeaderValue: raw)
+    }
+
     private func retryDecision(for error: Error, attempt: Int) -> ProviderRetryDecision {
-        if case let .httpStatus(statusCode, _) = error as? VendorAPIError {
-            return ProviderRetryPolicy.decision(statusCode: statusCode, retryAfter: nil, attempt: attempt, maxAttempts: maxAttempts)
+        if case let .httpStatus(statusCode, _, retryAfterSeconds) = error as? VendorAPIError {
+            return ProviderRetryPolicy.decision(
+                statusCode: statusCode,
+                retryAfter: retryAfterSeconds,
+                attempt: attempt,
+                maxAttempts: maxAttempts
+            )
         }
         if let httpError = error as? LLMHTTPErrorProviding, let statusCode = httpError.httpStatusCode {
             return ProviderRetryPolicy.decision(statusCode: statusCode, retryAfter: nil, attempt: attempt, maxAttempts: maxAttempts)
@@ -176,9 +205,17 @@ public final class VendorAPIService: @unchecked Sendable {
                 let decision = retryDecision(for: error, attempt: attempt)
                 let allowed = shouldRetry?(error, attempt) ?? decision.shouldRetry
                 guard allowed else { throw error }
-                let delay = decision.delaySeconds ?? baseRetryDelay * pow(2.0, Double(attempt - 1))
+                // 服务端给出 `Retry-After` 时精确遵守、不再叠加抖动：抖动会让
+                // 实际等待短于服务端要求的静默窗口，破坏它给出的退避建议。
+                // 没有建议时用带等抖动的指数退避，避免所有客户端在过载时同步
+                // 重试形成惊群。
+                let delay = decision.delaySeconds ?? ProviderRetryBackoff.delay(
+                    base: baseRetryDelay,
+                    attempt: attempt,
+                    randomUnit: Double.random(in: 0..<1)
+                )
                 if delay > 0 {
-                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                    try await sleeper(delay)
                 }
                 attempt += 1
             }

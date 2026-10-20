@@ -21,79 +21,20 @@ import XCTest
 ///   对 `preferredRendererID` 失配会**回落**到第一个能渲染的 renderer，
 ///   真实 App 中该占位只在所有 renderer 全部缺席的降级场景出现，UI 夹具
 ///   无法可靠构造，故不在 UI 层断言。
-final class LumiMessageListBriefUITests: XCTestCase {
-    private var app: XCUIApplication!
-
+final class LumiMessageListBriefUITests: LumiUITestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.terminate()
-        app.launchArguments += [
-            "-ApplePersistenceIgnoreState", "YES",
-            "-AppleLanguages", "(en)",
-            "-AppleLocale", "en_US",
+        launchLumi(extraArguments: [
             // 夹具：注入 4 个 turn 的 brief 模式确定性子会话。
             "--lumi-ui-testing-message-list-brief",
             // 隔离数据根目录，避免污染用户数据。
             "--lumi-ui-testing-isolated-storage",
-        ]
-        app.launch()
+        ])
     }
 
     override func tearDownWithError() throws {
-        // 等 App 真正退出：terminate() 是异步的，不等会让「上一个用例还在退出」
-        // 漂移成「下一个用例偶发失败」。本类继承 XCTestCase，故内联实现。
-        if app.state != .notRunning {
-            app.terminate()
-            let stopped = NSPredicate(
-                format: "state == %d",
-                XCUIApplication.State.notRunning.rawValue
-            )
-            _ = XCTWaiter().wait(
-                for: [XCTNSPredicateExpectation(predicate: stopped, object: app)],
-                timeout: 10
-            )
-        }
+        terminateAppAndWait()
         try super.tearDownWithError()
-    }
-
-    private func element(identifier: String) -> XCUIElement {
-        app.descendants(matching: .any).matching(identifier: identifier).firstMatch
-    }
-
-    private func element(anyLabelOf labels: [String]) -> XCUIElement {
-        app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label IN %@ OR value IN %@", labels, labels))
-            .firstMatch
-    }
-
-    /// label 或 value 包含指定片段的元素（disclosure 标题带耗时后缀，
-    /// 如「执行了3个步骤 · 5秒」；展开后的工具行文本由 SwiftUI StaticText
-    /// 以 value 暴露，如「正在步骤 1 — 查找项目文件…」）。
-    private func element(containingLabel fragment: String) -> XCUIElement {
-        app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", fragment, fragment))
-            .firstMatch
-    }
-
-    /// 隔离数据根目录会让新手引导重新出现（完成标记存在插件数据目录里），
-    /// 它覆盖在聊天区之上，不关掉就看不到消息列表。
-    private func dismissOnboardingIfPresent() {
-        for _ in 0..<8 {
-            let finish = app.buttons["Finish"]
-            let cont = app.buttons["Continue"]
-            let skip = app.buttons["Skip"]
-            if finish.exists, finish.isHittable {
-                finish.click()
-            } else if cont.exists, cont.isHittable {
-                cont.click()
-            } else if skip.exists, skip.isHittable {
-                skip.click()
-            } else {
-                return
-            }
-            sleep(1)
-        }
     }
 
     // MARK: - §1 First open
@@ -197,6 +138,11 @@ final class LumiMessageListBriefUITests: XCTestCase {
         // 在 10 秒窗口内被误报为「长期存在」。
         for title in ["正在发送消息…", "正在思考…", "正在生成回复…", "正在执行", "等待你的确认"] {
             let card = element(containingLabel: title)
+            if card.exists {
+                // 失败时把命中的元素原样打出来：`正在执行` 是 CONTAINS 匹配，
+                // 可能命中状态卡之外的任何同前缀文案。没有这行就只能靠猜。
+                print("📊 [status-card] matched title=\(title) element=\(card.debugDescription)")
+            }
             XCTAssertFalse(
                 card.exists,
                 "空闲时不应显示状态卡，却出现了「\(title)」"

@@ -59,6 +59,7 @@ struct GoalToolbarButton: View {
             }
             .buttonStyle(.plain)
             .help(helpText)
+            .accessibilityIdentifier(GoalAccessibility.toolbarButton)
             .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
                 GoalPopoverContent(
                     viewModel: viewModel,

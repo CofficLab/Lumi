@@ -38,6 +38,7 @@ struct SidebarHeader: View {
                 Text(progressText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .accessibilityIdentifier(GoalAccessibility.goalProgress)
             }
 
             descriptionButton
@@ -63,6 +64,7 @@ struct SidebarHeader: View {
                     .font(.headline)
                     .lineLimit(1)
                     .truncationMode(.tail)
+                    .accessibilityIdentifier(GoalAccessibility.goalTitle)
             }
         } else {
             Label(
@@ -70,6 +72,7 @@ struct SidebarHeader: View {
                 systemImage: "target"
             )
             .font(.headline)
+            .accessibilityIdentifier(GoalAccessibility.goalTitlePlaceholder)
         }
     }
 
@@ -94,6 +97,7 @@ struct SidebarHeader: View {
             .buttonStyle(.plain)
             .help(pluginLocalization.string("Goal description"))
             .accessibilityLabel(pluginLocalization.string("Goal description"))
+            .accessibilityIdentifier(GoalAccessibility.descriptionButton)
             .popover(isPresented: $showDescriptionPopover, arrowEdge: .bottom) {
                 GoalDescriptionPopoverContent(text: description)
             }
@@ -124,6 +128,7 @@ struct SidebarHeader: View {
             .buttonStyle(.plain)
             .help(pluginLocalization.string("Continue in a new conversation"))
             .accessibilityLabel(pluginLocalization.string("Continue in a new conversation"))
+            .accessibilityIdentifier(GoalAccessibility.forkButton)
             .popover(isPresented: $showForkPopover, arrowEdge: .bottom) {
                 GoalForkPopoverContent(
                     goal: goal,
@@ -145,5 +150,6 @@ struct SidebarHeader: View {
         }
         .buttonStyle(.borderless)
         .help(pluginLocalization.string(isCollapsed ? "Expand" : "Collapse"))
+        .accessibilityIdentifier(GoalAccessibility.collapseButton)
     }
 }

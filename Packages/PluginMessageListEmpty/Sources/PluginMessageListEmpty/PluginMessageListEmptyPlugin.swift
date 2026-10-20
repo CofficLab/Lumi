@@ -45,6 +45,17 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
     private var promptSuggestionsObserver: (any PromptSuggestionProvidingObserverHandle)?
     private var registrationEvaluationTask: Task<Void, Never>?
     private var isRegistered = false
+
+    /// Holds the UI-test fixture's one-shot observer so it stays alive.
+    ///
+    /// Declared outside `#if DEBUG` on purpose: a stored property that is only
+    /// assigned inside a conditional-compilation branch is legal in Release (it
+    /// is simply never written), so guarding it would only add noise. The
+    /// *type* is what must stay guarded, and it does — see the `#if DEBUG` block
+    /// in `onBoot`.
+    ///
+    /// - Note: `nil` in Release, which is correct: there is no fixture to retain.
+    private var uiTestingSeedHandle: (any ConversationObserverHandle)?
     /// 「当前会话是否没有消息」这个判定的结果。
     ///
     /// 判定依赖异步 SwiftData 查询，因此必须显式建模「尚未得出结论」，
@@ -57,14 +68,6 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         case resolved(Bool)
     }
     private var registrationState: RegistrationState = .evaluating
-
-    /// Slot id of the bottom activity strip. Derived from the plugin id so the
-    /// two slots stay namespaced together.
-    ///
-    /// Not `private`: 测试要断言注册进 ChatSection 的完整 item 集合，包含
-    /// 这条 activity strip。保持 internal 让测试复用同一个派生规则，
-    /// 避免在测试里硬编码 `"\(id).activity"` 而与实现悄悄脱钩。
-    var activityItemID: String { "\(id).activity" }
 
     /// Data source for the activity strip.
     ///
@@ -132,6 +135,18 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         // 常驻注册：可见性随后续判定变化，注册本身不再变动。
         register()
         scheduleRegistrationEvaluation()
+
+        #if DEBUG
+        // - Important: 调用点与夹具定义同处 `#if DEBUG`。夹具类型只在 DEBUG
+        //   存在，仅在调用点写守卫而把 seed 提到外面，会让 Release 构建报
+        //   "cannot find 'MessageListEmptyUITestingSupport' in scope"。
+        if let conversations, let messages, MessageListEmptyUITestingSupport.isEnabled {
+            uiTestingSeedHandle = MessageListEmptyUITestingSupport.seed(
+                conversations: conversations,
+                messages: messages
+            )
+        }
+        #endif
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -147,10 +162,11 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         chatObserver = nil
         promptSuggestionsObserver?.cancel()
         promptSuggestionsObserver = nil
+        uiTestingSeedHandle?.cancel()
+        uiTestingSeedHandle = nil
 
         if isRegistered {
             chat?.removeItem(id: id)
-            chat?.removeItem(id: activityItemID)
             isRegistered = false
         }
         activityModel = nil
@@ -261,34 +277,26 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
                 order: order,
                 exclusiveGroup: "message-list",
                 fillsRemainingHeight: true,
-                isActive: { @MainActor [weak self] in
-                    self?.shouldRenderEmptyState ?? false
-                },
-                content: { [weak guideState] in
-                    guard let services, let guideState else { return AnyView(EmptyView()) }
-                    return AnyView(MessageListEmptyContentView(services: services, guideState: guideState))
-                }
-            ),
-            // The activity strip is a separate bottom-fixed slot rather than a
-            // child of the empty-state view, because the empty state centers its
-            // content in a scroll view and a footer would be pushed off-screen
-            // on short windows.
-            //
-            // - Important: bottomFixed items do not join the `message-list`
-            //   exclusive group, so visibility must be gated by `isActive`
-            //   alone. Reusing `shouldRenderEmptyState` is what keeps the strip
-            //   from appearing under a conversation that has messages.
-            ChatSectionItem(
-                id: activityItemID,
-                order: order,
-                placement: .bottomFixed,
+                // - Important: 不画这道分隔线。
+                //
+                //   分隔线由宿主在 stack 与 bottomFixed 之间统一绘制，只要 stack
+                //   最后一项声明 `showsTrailingDivider`（默认 true）就会出现。空态
+                //   的内容与底部的活动卡属于同一段画面（同一套配色、同一条底色、
+                //   同一个宽度基准），留着这条线等于亲手把两块内容切成两个区域
+                //   —— 这正是活动卡此前读起来「割裂」的根源。
                 showsTrailingDivider: false,
                 isActive: { @MainActor [weak self] in
                     self?.shouldRenderEmptyState ?? false
                 },
-                content: { [weak activityModel] in
-                    guard let activityModel else { return AnyView(EmptyView()) }
-                    return AnyView(ActivityFooterView(model: activityModel))
+                content: { [weak guideState, weak activityModel] in
+                    guard let services, let guideState else { return AnyView(EmptyView()) }
+                    return AnyView(
+                        MessageListEmptyContentView(
+                            services: services,
+                            guideState: guideState,
+                            activity: activityModel
+                        )
+                    )
                 }
             ),
         ])
@@ -305,11 +313,25 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
 private struct MessageListEmptyContentView: View {
     let services: MessageListEmptyServices
     @ObservedObject var guideState: MessageListGuideState
+    /// 活动卡的数据源。随内容一起渲染，因此它排在提示流下面而不是底栏里。
+    let activity: EmptyStateActivityViewModel?
 
     var body: some View {
         if guideState.selectedConversationID == nil {
-            return AnyView(NoConversationSelectedView(services: services, guideState: guideState))
+            return AnyView(
+                NoConversationSelectedView(
+                    services: services,
+                    guideState: guideState,
+                    activity: activity
+                )
+            )
         }
-        return AnyView(MessageEmptyStateView(services: services, guideState: guideState))
+        return AnyView(
+            MessageEmptyStateView(
+                services: services,
+                guideState: guideState,
+                activity: activity
+            )
+        )
     }
 }

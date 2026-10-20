@@ -25,7 +25,7 @@ struct SendActionBarViewModelTests {
 
         let viewModel = SendActionBarViewModel(capability: capability)
 
-        #expect(viewModel.state.isSending)
+        #expect(viewModel.state.canStop)
         #expect(viewModel.state.canSend)
         #expect(viewModel.state.showsStopButton)
         #expect(!viewModel.state.showsSendButton)
@@ -37,9 +37,24 @@ struct SendActionBarViewModelTests {
 
         let viewModel = SendActionBarViewModel(capability: capability)
 
-        #expect(!viewModel.state.isSending)
+        #expect(!viewModel.state.canStop)
         #expect(!viewModel.state.canSend)
         #expect(viewModel.state.showsSendButton)
+    }
+
+    @Test("挂起等待用户时同样显示停止按钮")
+    func suspendedConversationShowsStopButton() {
+        let conversationID = UUID()
+        let capability = SendActionBarTestCapability()
+        capability.selectedConversationID = conversationID
+        capability.suspendedConversationIDs = [conversationID]
+
+        let viewModel = SendActionBarViewModel(capability: capability)
+
+        // 挂起也是「回合还没干完」：用户必须能停它。
+        #expect(viewModel.state.canStop)
+        #expect(viewModel.state.showsStopButton)
+        #expect(!viewModel.state.showsSendButton)
     }
 
     // MARK: - canSend
@@ -233,12 +248,12 @@ struct SendActionBarViewModelTests {
         capability.sendingConversationIDs = [second]
         let viewModel = SendActionBarViewModel(capability: capability)
 
-        #expect(!viewModel.state.isSending)
+        #expect(!viewModel.state.canStop)
 
         capability.selectedConversationID = second
         viewModel.refreshConversationState()
 
-        #expect(viewModel.state.isSending)
+        #expect(viewModel.state.canStop)
     }
 
     @Test("没有选中会话时刷新会复位发送中标记")
@@ -249,12 +264,12 @@ struct SendActionBarViewModelTests {
         capability.sendingConversationIDs = [conversationID]
         let viewModel = SendActionBarViewModel(capability: capability)
 
-        #expect(viewModel.state.isSending)
+        #expect(viewModel.state.canStop)
 
         capability.selectedConversationID = nil
         viewModel.refreshConversationState()
 
-        #expect(!viewModel.state.isSending)
+        #expect(!viewModel.state.canStop)
     }
 }
 
@@ -298,7 +313,20 @@ final class SendActionBarTestCapability: ConversationInputCapability {
 
     // MARK: - State
 
-    var text: String = ""
+    /// 模拟真实 `DefaultConversationInputProvider.text` 的 `didSet` 通知语义：
+    /// 文本**实际发生变化**时同步通知全部文本观察者。
+    ///
+    /// 默认关闭。既有测试大多直接赋值 `capability.text` 只为给 ViewModel 铺初始
+    /// 状态，并不关心通知；开启后会让这些用例多走一轮 Observer 回环。性能相关的
+    /// 测试需要显式打开，才能复现生产链路里「写能力层 → 观察者回灌」的完整回路。
+    var notifiesTextObserversOnSet = false
+
+    var text: String = "" {
+        didSet {
+            guard notifiesTextObserversOnSet, text != oldValue else { return }
+            notifyTextObservers(text)
+        }
+    }
     var inputHeight: CGFloat = 40
     var isInputFocused = false
     var inputCursorPosition = 0
@@ -306,7 +334,10 @@ final class SendActionBarTestCapability: ConversationInputCapability {
     var pendingImageAttachments: [UserImageAttachment] = []
     var pendingFileAttachments: [UserFileAttachment] = []
     var selectedConversationID: UUID?
+    /// 回合正在产出（`agentLoopState == .running`）的会话。
     var sendingConversationIDs: Set<UUID> = []
+    /// 回合挂在等用户授权/回答（`agentLoopState == .suspended`）的会话。
+    var suspendedConversationIDs: Set<UUID> = []
 
     // MARK: - Input
 
@@ -394,6 +425,12 @@ final class SendActionBarTestCapability: ConversationInputCapability {
         return sendingConversationIDs.contains(conversationID)
     }
 
+    func canStop(for conversationID: UUID?) -> Bool {
+        guard let conversationID else { return false }
+        return sendingConversationIDs.contains(conversationID)
+            || suspendedConversationIDs.contains(conversationID)
+    }
+
     // MARK: - Observation
 
     private var textObservers: [UUID: (String) -> Void] = [:]
@@ -451,10 +488,15 @@ final class SendActionBarTestCapability: ConversationInputCapability {
         return SendActionBarTestHandle(cancel: { [weak self] in self?.conversationStateObservers.removeValue(forKey: id) })
     }
 
+    /// 同步通知全部文本观察者。
+    private func notifyTextObservers(_ text: String) {
+        for callback in textObservers.values { callback(text) }
+    }
+
     /// 推送输入文本变化。
     func emitText(_ text: String) {
         self.text = text
-        for callback in textObservers.values { callback(text) }
+        notifyTextObservers(text)
     }
 
     /// 推送附件变化。

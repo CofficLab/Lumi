@@ -3,42 +3,54 @@ import AppKit
 
 /// 所有 `--lumi-ui-testing` UI 测试的共享基类。
 ///
-/// ## 为什么需要它：合成键盘事件不可靠
+/// ## 输入通道：为什么用 `typeText` 而不是剪贴板
 ///
-/// `XCUIElement.typeText` 是**逐字符派发合成键盘事件**，它有两个已被实测确认的缺陷，
-/// 且**都与被测代码无关**：
+/// 写入正文走 `typeText`（模拟用户逐字打字），**不走** `NSPasteboard` + `⌘V`。
+/// 理由是「像用户」：用户往输入框里打字走的就是这条链路，而 ⌘V 模拟的是
+/// 「复制一段文字粘过来」，那是**另一条**产品功能。输入框对绝大多数用例只是
+/// 「有文本、按钮可用」的前置条件载体，用 ⌘V 去搭这个前置条件，等于让一条
+/// 无关路径承担失败的 blame，同时还要占用剪贴板（用户的全局状态）。
 ///
-/// 1. **尾随空格必丢**。宿主系统启用了中文拼音输入法时，`typeText` 的按键事件会
-///    进入 IME 组合态，**最后一个空格被 IME 吞掉**——实测 `UI Testing Send Button Probe`
-///    （28 字符）只进入 27 字符的 `UI Testing Send ButtonProbe`，`PROBE MESSAGE UNIQUE TEXT`
-///    （25）进入 24，`Ask User Choice Probe`（21）进入 20，**每次都恰好少一个尾部空格**。
-/// 2. **候选栏吞 Return**。候选栏是系统模态层，随后的 `typeKey(.return)` 被它用于
-///    「上屏」而**从未到达 NSTextView**，于是回合永不启动。
+/// 历史上确实用过 ⌘V，原因是 `typeText` 在中文输入法下会**丢掉最后一个空格**：
+/// 合成按键进入 IME 组合态，空格被 IME 用于「上屏」而没进控件。实测三组对照：
 ///
-/// - Important: 症状依赖打字速度与长度（长 prompt 给 IME 更多弹候选的时间），
-///   因此表现为**间歇性失败**——短 prompt 的用例能过、长 prompt 的过不了。
-///   修的是输入通道这一根因，不是在特定用例上加重试。
+/// | 写入方式 | 期望 | 实际 |
+/// |---|---|---|
+/// | `typeText`（中文输入法下） | `UI Testing Send Button Probe`（28） | `…Probe`（27）❌ |
+/// | `typeText`（中文输入法下） | `PROBE MESSAGE UNIQUE TEXT`（25） | `PROBE MESSAGE UNIQUETEXT`（24）❌ |
+/// | 剪贴板粘贴 | 以上全部 | 完整无损 ✅ |
 ///
-/// ## 本基类的对策：绕开键盘事件链
+/// **现在 `launchLumi` 会在启动前把输入源切到英文 ASCII 布局**（tearDown 还原），
+/// IME 组合态不再出现，这条路径恢复正常。切换与还原的实现见
+/// `UITestInputSource`，那条实测对照表也留在那里作为依据。
 ///
-/// - **写入正文**：走 `NSPasteboard` + `⌘V`，绕开 IME 组合态。实测 3/3 完整无损。
-/// - **发送**：点发送按钮，而不是 `typeKey(.return)`，绕开模态候选栏。
-///
-/// 两条路径都不经过 `typeText`，因此对上述两个输入法干扰免疫。
-/// 粘贴需要 `⌘V`，它是一次性修饰键组合、瞬时完成，不会留下组合态残留。
+/// 发送仍然点发送按钮而不是 `typeKey(.return)`：候选栏是系统模态层，
+/// Return 会被它用于「上屏」而永不送达 NSTextView（这条与输入源无关）。
 ///
 /// - Note: `-AppleLanguages` / `-AppleLocale` 只影响**文案本地化**，
 ///   不影响**键盘输入源**。两者是正交的，缺一不可。
-/// - Note: `-AppleInputSourceOverride` 无法解决该问题——它只影响
-///   TIS 输入源选择，不阻止候选栏在 `typeText` 期间弹出。
+/// - Note: `-AppleInputSourceOverride` 解决不了输入源问题——它只影响
+///   TIS 输入源选择，不阻止候选栏弹出。正解是运行时用 TIS 切换
+///   （`UITestInputSource.switchToEnglish`），不走启动参数。
 class LumiUITestCase: XCTestCase {
     /// App 实例。子类直接使用，不要重复创建。
     var app: XCUIApplication!
+
+    /// 切换输入源前的原始输入源 ID，tearDown 时据此还原。
+    ///
+    /// - Important: 输入源是**用户的全局状态**，不还原会改掉开发者的输入法
+    ///   配置，比脏剪贴板更严重。详见 `UITestInputSource`。
+    private var originalInputSourceID: String?
 
     /// 以确定性 LLM 供应商 + 隔离存储启动 App。
     ///
     /// - Parameter extraArguments: 额外的启动参数（场景专属夹具）。
     func launchLumi(extraArguments: [String] = []) {
+        // - Important: 切换输入源放在 `launchLumi` 而**不是** `setUpWithError`：
+        //   绝大多数子类覆写 `setUpWithError` 后不调用 `super`，基类钩子
+        //   不会执行，挂在那里等于没挂。`launchLumi` 是所有用例的必经之路。
+        switchToEnglishInputSource()
+
         app = XCUIApplication()
         // 先确保没有残留实例：旧进程里保存着上一次的选中模型与对话，
         // 会让回合时机不可预测；若它还挂在后台，新实例拿不到前台激活。
@@ -52,24 +64,102 @@ class LumiUITestCase: XCTestCase {
         //   或元素处于 `Not Hittable`。它表现为随机的「某个元素突然找不到」，
         //   极易被误判成产品缺陷。
         terminateAppAndWait()
+        // 还要清掉**别的**同 bundle id 实例：见 `terminateOtherRunningInstances()`。
+        terminateOtherRunningInstances()
 
         app.launchArguments += Self.commonLaunchArguments + extraArguments
         app.launch()
+    }
+
+    /// 把输入源切到英文（ASCII），并在 tearDown 时还原。
+    ///
+    /// 切换失败**不中断用例**：切不过去只是退回原有的输入法行为
+    /// （可能丢尾部空格），不该让整批测试因此无法运行。
+    private func switchToEnglishInputSource() {
+        guard originalInputSourceID == nil else { return }
+        originalInputSourceID = UITestInputSource.switchToEnglish()
+    }
+
+    /// 还原输入源与剪贴板。
+    ///
+    /// 子类若覆写 `tearDownWithError`，通常会调 `super.tearDownWithError()`，
+    /// 因此正常情况下会自动走到这里。子类也可显式调用它做提前还原。
+    func restoreUserState() {
+        if let originalInputSourceID {
+            UITestInputSource.restore(originalInputSourceID)
+            self.originalInputSourceID = nil
+        }
+    }
+
+    override func tearDownWithError() throws {
+        // 还原输入源放在这里而不是让每个子类显式调：
+        // 所有子类都会调 `super.tearDownWithError()`，挂在基类才不会漏。
+        // 不还原会改掉开发者的输入法配置——比脏剪贴板更严重。
+        restoreUserState()
+        try super.tearDownWithError()
+    }
+
+    /// 结束同 bundle id 的其它残留实例。
+    ///
+    /// - Important: `XCUIApplication().state` 对**新建**实例恒为 `.notRunning`——
+    ///   它并不知道系统里已经有一个同 id 的 App 在跑。因此
+    ///   `terminateAppAndWait()` 在启动阶段什么也做不了。
+    ///
+    ///   而 `app.launch()` 在发现同 id 实例已存在时**不会新起进程**，
+    ///   只会去激活那个旧实例——一个缩在后台的残留进程就会让 launch 报
+    ///   `Failed to activate application … (current state: Running Background)`。
+    ///   错误信息指向「激活失败」，真实原因却是「上一次的进程还在」，
+    ///   两者毫无关联。
+    ///
+    ///   Lumi 的退出尤其慢（要卸载 240+ 个本地包），所以这一步不是可有可无的保险。
+    private func terminateOtherRunningInstances() {
+        // Debug 构建的 bundle id（见 `LumiApp/Config/Lumi-Debug.xcconfig`）。
+        //
+        // - Important: 必须是 **Debug** 专属 id，不能按 App 名匹配：
+        //   用户安装的正式版是 `com.coffic.lumi`，
+        //   按名字匹配会误杀用户正在运行的 App。
+        let bundleID = "com.coffic.lumi.debug"
+        let others = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+            .filter { $0 != NSRunningApplication.current }
+        guard !others.isEmpty else { return }
+
+        others.forEach { $0.terminate() }
+
+        // 等它们真的退出；等不到就强制结束。
+        let deadline = Date().addingTimeInterval(20)
+        while Date() < deadline {
+            let alive = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+                .filter { $0 != NSRunningApplication.current && !$0.isTerminated }
+            if alive.isEmpty { return }
+            Thread.sleep(forTimeInterval: 0.2)
+        }
+        NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+            .filter { $0 != NSRunningApplication.current && !$0.isTerminated }
+            .forEach { kill($0.processIdentifier, SIGKILL) }
     }
 
     /// 关闭新手引导。
     ///
     /// 隔离存储会让「已完成」标记文件缺失，引导重新出现并覆盖在聊天区上方，
     /// 不关掉就点不到输入框。
+    ///
+    /// - Important: 必须按**标识符**而不是按钮文案定位。按钮文案随语言变化
+    ///   （`Continue` / `Finish` / `Skip` ↔ 中文译文），按文案点击会让
+    ///   `-AppleLanguages` 为中文的用例永远关不掉引导；浮层留在窗口上后，
+    ///   后续对设置按钮 / 发送按钮的点击都落在浮层上，失败却报成
+    ///   「设置窗口没有出现」「模型弹窗未出现」，与真实原因完全无关。
     func dismissOnboardingIfPresent() {
+        // 引导是**异步**出现的（完成标记缺失后才渲染）。先给它一次出现机会，
+        // 否则「刚 launch 完就查一次」会在引导画出来之前返回，浮层随后盖上来。
+        guard element(identifier: Onboarding.primaryButton).waitForExistence(timeout: 8)
+            || element(identifier: Onboarding.skipButton).exists
+        else { return }
+
         for _ in 0..<8 {
-            let finish = app.buttons["Finish"]
-            let cont = app.buttons["Continue"]
-            let skip = app.buttons["Skip"]
-            if finish.exists, finish.isHittable {
-                finish.click()
-            } else if cont.exists, cont.isHittable {
-                cont.click()
+            let primary = element(identifier: Onboarding.primaryButton)
+            let skip = element(identifier: Onboarding.skipButton)
+            if primary.exists, primary.isHittable {
+                primary.click()
             } else if skip.exists, skip.isHittable {
                 skip.click()
             } else {
@@ -89,21 +179,38 @@ class LumiUITestCase: XCTestCase {
     /// 否则「上一个用例还在退出」会泄漏成「下一个用例偶发失败」——
     /// 这种失败点随机漂移，极难归因。
     ///
-    /// - Important: 用 `wait(for:)` 而不是固定 `sleep`：固定睡眠要么不够
-    ///   （问题复现），要么白白拖慢每个用例。这里等的是真实状态变化。
-    func terminateAppAndWait(timeout: TimeInterval = 10) {
+    /// - Important: Lumi 退出很慢（要卸载 240+ 个本地包），10s 往往不够。
+    ///   旧实例没退干净时，`launch()` 会复用那个后台实例，
+    ///   表现为 `Failed to activate application (current state: Running Background)`
+    ///   ——错误信息指向「激活失败」，真实原因却是「上一次的进程还在」，
+    ///   两者毫无关联，极易误判成产品缺陷。
+    ///
+    ///   因此这里等满 30s；仍未退出就升级为强制结束，
+    ///   把「进程没退干净」这件事变成确定的事实，而不是留给下一个用例的随机失败。
+    ///
+    /// - Important: 必须调用它而不是裸 `terminate()`，
+    ///   否则「上一个用例还在退出」会泄漏成「下一个用例偶发失败」——
+    ///   这种失败点随机漂移，极难归因。
+    func terminateAppAndWait(timeout: TimeInterval = 30) {
         guard app.state != .notRunning else { return }
         app.terminate()
         let stopped = NSPredicate(format: "state == %d", XCUIApplication.State.notRunning.rawValue)
         let expectation = XCTNSPredicateExpectation(predicate: stopped, object: app)
         let result = XCTWaiter().wait(for: [expectation], timeout: timeout)
         if result != .completed {
-            XCTFail(
-                """
-                App 未在 \(Int(timeout))s 内退出（当前状态：\(app.state.rawValue)）。\
-                后续交互会失败在「无法激活应用」而非真实断言上，请勿据此判定产品缺陷。
-                """
-            )
+            // 进程赖着不走：强制结束，否则它会一直占着 bundle id，
+            // 让下一个用例的 launch() 激活到旧实例上。
+            app.terminate()
+            let forced = NSPredicate(format: "state == %d", XCUIApplication.State.notRunning.rawValue)
+            let forcedExpectation = XCTNSPredicateExpectation(predicate: forced, object: app)
+            if XCTWaiter().wait(for: [forcedExpectation], timeout: 10) != .completed {
+                XCTFail(
+                    """
+                    App 未在 \(Int(timeout))s 内退出（当前状态：\(app.state.rawValue)）。\
+                    后续交互会失败在「无法激活应用」而非真实断言上，请勿据此判定产品缺陷。
+                    """
+                )
+            }
         }
     }
 
@@ -144,33 +251,20 @@ class LumiUITestCase: XCTestCase {
 
     /// 在输入框里输入文本并发送。
     ///
-    /// ## 为什么走剪贴板而不是 `typeText`
-    ///
-    /// `XCUIElement.typeText` 是逐字符派发合成键盘事件，会进入宿主输入法（中文拼音）
-    /// 的组合态，**必然丢掉最后一个空格**。实测三组对照：
-    ///
-    /// | 写入方式 | 期望 | 实际 |
-    /// |---|---|---|
-    /// | `typeText` | `UI Testing Send Button Probe`（28） | `UI Testing Send ButtonProbe`（27）❌ |
-    /// | `typeText` | `PROBE MESSAGE UNIQUE TEXT`（25） | `PROBE MESSAGE UNIQUETEXT`（24）❌ |
-    /// | 剪贴板粘贴 | 以上全部 | **完整无损** ✅ |
-    ///
-    /// 丢一个尾部空格会让「按完整文案断言消息是否上屏」的用例**必然失败**，
-    /// 且失败现象极具误导性——界面上的用户消息明明在，内容却对不上，
-    /// 很容易被误判成渲染缺陷或元素定位失败。
-    ///
     /// ## 为什么点按钮而不是按 Return
     ///
     /// 候选栏是系统模态层，`typeKey(.return)` 会被它用于「上屏」而**永远不会到达
     /// NSTextView**，于是回合永不启动。点击发送按钮不经过键盘事件链，不受影响。
     /// 按钮的 `disabled` 判定由空内容驱动，仍能覆盖「空内容不可发送」这一行为。
     ///
+    /// 写入正文本身走 `typeText`（见该方法注释），不进剪贴板。
+    ///
     /// - Returns: 是否成功写入并点下发送（失败时后续断言会给出更具体的原因）。
     @discardableResult
     func typeAndSend(_ text: String, editorIdentifier: String) -> Bool {
         let editor = element(identifier: editorIdentifier)
         guard editor.waitForExistence(timeout: 20) else { return false }
-        paste(text, into: editor)
+        typeText(text, into: editor)
 
         let send = element(identifier: SendActionBar.editorSend)
         // 等 canSend 生效：按钮变可用正是「状态层已收到文本」的可观测证据。
@@ -187,26 +281,62 @@ class LumiUITestCase: XCTestCase {
         return true
     }
 
-    /// 通过剪贴板把文本写入控件。
+    /// 逐字符把文本输入到控件（首选路径）。
     ///
-    /// 为什么不校验返回值：AX 快照里长文本的 `value` 会被**截断显示**
+    /// ## 为什么它现在是安全的
+    ///
+    /// 早期 `typeText` 会**丢掉最后一个空格**——合成按键进入了宿主中文拼音
+    /// 输入法的组合态，空格被 IME 用于「上屏」而没进控件（实测三组对照见
+    /// `UITestInputSource` 的类注释）。
+    ///
+    /// `launchLumi` 现在会在启动前把输入源切到英文 ASCII 布局，并在
+    /// tearDown 还原。IME 组合态只在非拉丁布局下出现，切走后这条路径不复存在，
+    /// `typeText` 恢复成真正的「模拟用户逐字打字」。
+    ///
+    /// 这比剪贴板更接近真实用户：用户往输入框里打字走的就是这条链路，
+    /// 而 ⌘V 模拟的是「复制一段文字粘过来」，那是另一条产品功能。
+    ///
+    /// ## 与 `paste` 的取舍
+    ///
+    /// - `typeText`：模拟用户输入，不碰剪贴板（用户全局状态），首选。
+    /// - `paste`：仅供**需要测真实粘贴行为**的用例使用。⌘V 依赖输入源正确
+    ///   路由修饰键，但切到英文后同样稳定。
+    ///
+    /// 写入是否成功不在这里校验：AX 快照里长文本的 `value` 会被**截断显示**
     /// （例如 `value: 'UI Testing Send Button Probe'` 显示成
     /// `value: 'UI Testing Send Button Pr…'`），那是快照的显示缩写，
     /// 不是控件真实内容。用它做全等比对会对长文案一律误报。
-    ///
-    /// 因此这里只负责「把文本送进去」，写入是否成功由调用方后续断言去判定——
-    /// `typeAndSend` 里等发送按钮变为可用，那才是真正可信的信号。
-    func paste(_ text: String, into element: XCUIElement) {
+    /// 真正的判据是调用方后续的断言（如 `typeAndSend` 等发送按钮变为可用）。
+    func typeText(_ text: String, into element: XCUIElement) {
         element.click()
+        element.typeText(text)
+    }
 
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
-        // 剪贴板写入到 App 收到 ⌘V 之间留一个稳定期。
-        // `⌘V` 是一次性组合、不进入 IME 组合态，但仍需要事件送达的时间。
-        sleep(1)
-        element.typeKey("v", modifierFlags: .command)
-        sleep(1)
+    /// 通过剪贴板把文本写入控件。
+    ///
+    /// ## 何时才该用
+    ///
+    /// 仅当用例要验证**真实粘贴**这条产品功能时。其余场景一律用 `typeText`——
+    /// 输入框对这些用例只是「有文本、按钮可用」的前置条件载体，
+    /// 用 ⌘V 去搭前置条件，等于让一条无关路径承担失败的 blame。
+    ///
+    /// 剪贴板是用户的全局状态，用完立即还原（见 `UITestClipboard`）。
+    func paste(_ text: String, into element: XCUIElement) {
+        // 剪贴板是全机器共享的系统资源，用完必须还原，否则会覆盖用户自己
+        // 复制的内容，并一直留到用户手动再复制一次为止。
+        // 详见 `UITestClipboard` 的说明。
+        UITestClipboard.preserving {
+            element.click()
+
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            pasteboard.setString(text, forType: .string)
+            // 剪贴板写入到 App 收到 ⌘V 之间留一个稳定期。
+            // `⌘V` 是一次性组合、不进入 IME 组合态，但仍需要事件送达的时间。
+            sleep(1)
+            element.typeKey("v", modifierFlags: .command)
+            sleep(1)
+        }
     }
 
     /// 等待元素拿得键盘焦点。
@@ -239,12 +369,21 @@ class LumiUITestCase: XCTestCase {
         static let editorSend = "lumi.conversation-input.send"
     }
 
+    /// 新手引导按钮的标识符（复述 `OnboardingAccessibility`）。
+    ///
+    /// UI 测试独立 target，不能 import 插件模块，因此在此复述常量。
+    /// 改动必须与 `Packages/PluginOnboarding/.../OnboardingAccessibility.swift` 同步。
+    enum Onboarding {
+        static let primaryButton = "lumi.onboarding.primary"
+        static let skipButton = "lumi.onboarding.skip"
+    }
+
     /// 所有 `--lumi-ui-testing` 用例共享的启动参数。
     ///
     /// - Note: 这里**刻意不设置** `-AppleInputSourceOverride`。实测该参数只影响
-    ///   TIS 输入源选择，不阻止候选栏在 `typeText` 期间弹出（失败时刻的 UI 树里
-    ///   `Candidate Bar` 依然存在），因此不能解决「Return 被吞」的问题。
-    ///   真正的修法是 `typeAndSend` 改点发送按钮。
+    ///   TIS 输入源选择，不阻止候选栏弹出，解决不了输入源问题。
+    ///   正解是运行时用 TIS 切换（`UITestInputSource`），由 `launchLumi` 调用，
+    ///   这样既能覆盖用户已启用的输入源，又能在 tearDown 还原。
     static let commonLaunchArguments = [
         "-ApplePersistenceIgnoreState", "YES",
         // 文案本地化：断言里的英文文案依赖这两项。

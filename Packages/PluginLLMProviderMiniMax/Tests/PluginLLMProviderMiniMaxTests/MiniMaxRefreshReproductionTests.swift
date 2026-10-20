@@ -21,8 +21,13 @@ struct MiniMaxRefreshReproductionTests {
     ///   真实的 MiniMax key**。本套件曾把用户的 key 覆盖成 `test-key`。
     ///
     ///   隔离后读写都落在一次性 service 上，测试进程退出即失效，无需还原。
+    ///
+    /// - Important: service 必须取自 ``TestKeychain/service``，**不能**每次生成
+    ///   随机 UUID。`keychainService` 是进程级全局状态，本套件若在并行执行的
+    ///   其他套件中途改写它，那些套件的写入与读取就会落到不同 service 上，
+    ///   表现为「单跑通过、全量失败」。
     private static func withIsolatedAPIKey(_ provider: MiniMaxOpenAIProvider) {
-        VendorAPIKeyTools.keychainService = "com.coffic.lumi.apikey.test.\(UUID().uuidString)"
+        TestKeychain.activate()
         VendorAPIKeyTools.set("test-key", storageKey: provider.providerInfo.apiKeyStorageKey)
     }
 

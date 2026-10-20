@@ -142,13 +142,13 @@ final class LumiSendActionBarUITests: LumiUITestCase {
     /// 核心闭环：回合运行时停止按钮取代发送按钮；停止后恢复发送按钮。
     ///
     /// 覆盖的是最容易出回归的一段：`SendActionBarState.showsSendButton` 与
-    /// `showsStopButton` 由 `isSending` 单一布尔决定，而 `isSending` 来自
-    /// `ConversationStateSnapshot.agentLoopState == .running`。这条链路任何一环
-    /// 断掉，用户看到的都是「按钮永远不变」或「两个按钮同时消失」。
+    /// `showsStopButton` 由 `canStop` 单一布尔决定，而 `canStop` 来自
+    /// `ConversationStateSnapshot.canStop`（回合在跑或挂在等用户时为真）。
+    /// 这条链路任何一环断掉，用户看到的都是「按钮永远不变」或「两个按钮同时消失」。
     ///
     /// 三个断言层层递进：
     /// 1. 输入前：发送按钮存在、停止按钮不存在（互斥）；
-    /// 2. 回合中：停止按钮出现、发送按钮消失 —— 说明 `isSending` 真的同步到了界面；
+    /// 2. 回合中：停止按钮出现、发送按钮消失 —— 说明 `canStop` 真的同步到了界面；
     /// 3. 停止后：发送按钮回来 —— 说明 `cancel()` 真的取消了回合，而不只是切了图标。
     func testSendButtonIsReplacedByStopButtonWhileRunningAndRestoredAfterStop() throws {
         waitForMainWindow()
@@ -191,7 +191,7 @@ final class LumiSendActionBarUITests: LumiUITestCase {
             sendButton.waitForExistence(timeout: 30),
             """
             点击停止后发送按钮未恢复，\
-            说明回合没有被真正取消（或取消后 isSending 没有复位）
+            说明回合没有被真正取消（或取消后 canStop 没有复位）
             """
         )
         XCTAssertFalse(
@@ -231,10 +231,11 @@ final class LumiSendActionBarUITests: LumiUITestCase {
         let editor = element(identifier: Identifiers.editor)
         XCTAssertTrue(editor.waitForExistence(timeout: 20), "未找到聊天输入框")
         let message = "UI Testing Send Button Probe"
-        // 走剪贴板而不是 typeText：后者逐字符合成按键，会被宿主输入法
-        // 吞掉最后一个空格，导致这里断言的完整文案永远匹配不上（详见
-        // `LumiUITestCase` 类注释的实测对照表）。
-        paste(message, into: editor)
+        // 输入框在本用例里只是「有文本、按钮可用」的前置条件载体，
+        // 被测行为是发送按钮能否启动回合。因此走 `typeText`（模拟用户打字），
+        // 不走 ⌘V：后者模拟的是「复制粘贴」这条**另一条**产品功能，
+        // 会让无关路径承担失败的 blame，且要占用剪贴板（用户全局状态）。
+        typeText(message, into: editor)
 
         // 输入后按钮应变为可用。
         let enabled = NSPredicate(format: "enabled == true")
@@ -286,7 +287,7 @@ final class LumiSendActionBarUITests: LumiUITestCase {
         let editor = element(identifier: Identifiers.editor)
         XCTAssertTrue(editor.waitForExistence(timeout: 20), "未找到聊天输入框")
         let message = "UI Testing Attachment Probe"
-        paste(message, into: editor)
+        typeText(message, into: editor)
 
         // 拖拽文件到输入框需要真实拖放手势，XCUITest 的坐标拖放在
         // SwiftUI 的 drop destination 上不稳定。这里改用 pasteboard 不可靠、
@@ -316,7 +317,7 @@ final class LumiSendActionBarUITests: LumiUITestCase {
     ///
     /// 覆盖 `SendActionBarConversationObserver` 的选中会话订阅：
     /// `refreshConversationState()` 依据 `capability.selectedConversationID`
-    /// 重新判断 `isSending`。这条链路一旦断掉，用户在一个正在跑的会话里
+    /// 重新判断 `canStop`。这条链路一旦断掉，用户在一个正在跑的会话里
     /// 切走或开新对话，会看到一个「点了没反应」的停止按钮——
     /// 这是 `SendActionBarState` 单布尔模型最容易出问题的地方。
     ///
@@ -374,7 +375,7 @@ final class LumiSendActionBarUITests: LumiUITestCase {
         )
         addButton.click()
 
-        // 切走后按钮必须立刻回到发送态：旧会话的 `isSending` 不该外溢到新状态。
+        // 切走后按钮必须立刻回到发送态：旧会话的 `canStop` 不该外溢到新状态。
         XCTAssertTrue(
             sendButton.waitForExistence(timeout: 30),
             """

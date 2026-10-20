@@ -15,19 +15,27 @@ public struct LLMContextBudget: Sendable, Equatable {
     public let toolSchemaTokens: Int
     public let safetyMarginTokens: Int
     public let fallbackContextWindowTokens: Int
+    /// 压缩后的目标水位，占输入预算的比例。
+    ///
+    /// 压缩结果必须落在这个水位以内，而不是把预算填满。填满预算会让压缩后的
+    /// 上下文仍然停在硬阈值之上，下一回合立刻再次触发压缩，并让每回合都重新
+    /// 生成一次摘要。对标 Cline（trigger × 0.7）、OpenCode（0.7 / 0.5 / 0.35）。
+    public let compactionTargetRatio: Double
 
     public init(
         contextWindowTokens: Int?,
         reservedOutputTokens: Int = 8_000,
         toolSchemaTokens: Int = 0,
         safetyMarginTokens: Int = 2_000,
-        fallbackContextWindowTokens: Int = 32_000
+        fallbackContextWindowTokens: Int = 32_000,
+        compactionTargetRatio: Double = 0.6
     ) {
         self.contextWindowTokens = contextWindowTokens
         self.reservedOutputTokens = max(reservedOutputTokens, 0)
         self.toolSchemaTokens = max(toolSchemaTokens, 0)
         self.safetyMarginTokens = max(safetyMarginTokens, 0)
         self.fallbackContextWindowTokens = max(fallbackContextWindowTokens, 4_096)
+        self.compactionTargetRatio = min(max(compactionTargetRatio, 0.1), 1.0)
     }
 
     public var effectiveContextWindowTokens: Int {
@@ -46,9 +54,17 @@ public struct LLMContextBudget: Sendable, Equatable {
 
     public var usesFallbackWindow: Bool { contextWindowTokens == nil }
 
+    /// 压缩后允许占用的 token 上限。
+    ///
+    /// 压缩结果贴近这个上限即可，剩余空间留给后续回合的新内容与工具结果。
+    public var compactionTargetTokens: Int {
+        max(Int(Double(inputTokenLimit) * compactionTargetRatio), 1_024)
+    }
+
     public static func conservative(
         contextWindowTokens: Int?,
-        toolSchemaTokens: Int = 0
+        toolSchemaTokens: Int = 0,
+        compactionTargetRatio: Double = 0.6
     ) -> Self {
         let window = contextWindowTokens ?? 32_000
         let outputReserve = min(max(window / 5, 8_000), 64_000)
@@ -57,7 +73,8 @@ public struct LLMContextBudget: Sendable, Equatable {
             contextWindowTokens: contextWindowTokens,
             reservedOutputTokens: outputReserve,
             toolSchemaTokens: toolSchemaTokens,
-            safetyMarginTokens: safety
+            safetyMarginTokens: safety,
+            compactionTargetRatio: compactionTargetRatio
         )
     }
 }

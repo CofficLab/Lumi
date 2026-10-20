@@ -72,7 +72,11 @@ final class StubAgentLoop: AgentLoopProviding {
 
     func state(for conversationID: UUID) -> AgentLoopState { currentState }
     func suspension(for conversationID: UUID) -> AgentLoopSuspension? { activeSuspension }
-    func isRunning(for conversationID: UUID) -> Bool { false }
+    /// 与真实 AgentLoop 一致：状态为 `.running` 才算在跑。
+    ///
+    /// 停止判定权在 AgentLoop 手上（见 `MessageSender.cancelCurrentRequest`），
+    /// 桩若恒返回 false 就测不出「sender 不知道的回合也必须能停」。
+    func isRunning(for conversationID: UUID) -> Bool { currentState == .running }
     func currentTurnID(for conversationID: UUID) -> UUID? { activeTurnID }
     func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
 }
