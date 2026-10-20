@@ -2,20 +2,24 @@ import Foundation
 import LumiUI
 import SwiftUI
 
-/// A quiet activity card pinned under the chat empty state.
+/// 活动卡在空态内容流里的位置。
 ///
-/// The card exists to give the empty state some substance: it reminds the
-/// user that this workspace already has a history, without competing with the
-/// title or the prompt suggestions. It renders nothing when there is no
-/// activity, so a brand-new install keeps the clean composition it has today.
+/// ## 为什么它必须待在内容流里，而不是底栏
 ///
-/// - Important: 卡片与中间的提示流共用一套视觉语言（墨翠低透明度填充、同宽
-///   基准、同一条底色），因此它读起来是提示流的延续，而不是另一个面板。
-///   改动配色或宽度时必须同时看 `ActivityFusionCard` 与 `PromptSuggestionFlow`。
-struct ActivityFooterView: View {
+/// 卡片早先被注册在 `bottomFixed` 槽位：它因此永远停在窗口最底部，与中间的
+/// 提示胶囊之间隔着一大片空白，底栏与内容区之间还压着一条分隔线 —— 无论
+/// 卡片本身画得多好，读起来仍然是「另一个面板」。只有让它**紧跟在提示胶囊
+/// 下面**，共用同一列、同一条底色，接缝才会真正消失。
+///
+/// ## 短窗口的取舍
+///
+/// 卡片现在位于 `ScrollView` 的内容里，窗口很矮时它可能落在首屏之外，需要
+/// 滚动才能看到。这是刻意的取舍：卡片是补充信息（历史活跃度），不是必须
+/// 立刻可见的主信息；反过来，底栏方案让「融合」彻底失败。
+struct ActivityCardSlot: View {
     let model: EmptyStateActivityViewModel
 
-    /// Width the strip last received from its slot.
+    /// Width the slot last received from its column.
     ///
     /// Needed only to pick between the side-by-side and the stacked layout:
     /// the sparkline is built on a `GeometryReader`, so it happily shrinks to
@@ -33,7 +37,7 @@ struct ActivityFooterView: View {
             //   若容器此刻是空的，SwiftUI 不会为该分支建立真实的 view
             //   identity，`.task` 于是**从不执行** —— 加载永远不会开始，
             //   `hasActivity` 永远保持 false，构成死锁。表现为：明明有历史
-            //   数据，活动条却始终不出现。
+            //   数据，活动卡却始终不出现。
             //
             //   实测证据：加日志后 `body` 求值多次而 `loadIfNeeded` 零次执行。
             //   一个 0 高度、透明的真实视图让 `.task` 有可挂载的载体。
@@ -42,7 +46,13 @@ struct ActivityFooterView: View {
                 .allowsHitTesting(false)
 
             if model.hasActivity, let range = model.visibleRange {
-                content(range: range)
+                ActivityFusionCard(
+                    model: model,
+                    range: range,
+                    placesSideBySide: placesSideBySide
+                )
+                .frame(maxWidth: ActivityCardLayout.cardMaxWidth)
+                .frame(maxWidth: .infinity)
             }
         }
         .background(alignment: .topLeading) { widthReader }
@@ -51,25 +61,9 @@ struct ActivityFooterView: View {
         }
     }
 
-    private func content(range: ClosedRange<Date>) -> some View {
-        ActivityFusionCard(
-            model: model,
-            range: range,
-            placesSideBySide: placesSideBySide
-        )
-        .padding(.top, ActivityFooterLayout.topSpacing)
-        .frame(maxWidth: .infinity)
-        // - Important: 这一层**不设标识符**。
-        //
-        //   标识符会向下传播并覆盖子孙自己的标识符：外层容器一旦带上
-        //   `activityStripID`，卡片就再也寻址不到（两者最终是同一个 id）。
-        //   活动条的可寻址元素是卡片本身 —— 它也是活动条的全部可见内容。
-        .accessibilityElement(children: .contain)
-    }
-
-    /// Reads the width the slot gives the strip without contributing any
-    /// layout of its own: a background `GeometryReader` takes the size of the
-    /// view it is attached to and is invisible to accessibility.
+    /// Reads the width the slot gives the card without contributing any layout
+    /// of its own: a background `GeometryReader` takes the size of the view it
+    /// is attached to and is invisible to accessibility.
     private var widthReader: some View {
         GeometryReader { proxy in
             Color.clear
@@ -82,16 +76,16 @@ struct ActivityFooterView: View {
 
     /// 只有「宽度够」这一件事成立才并排，否则保持上下排布。
     private var placesSideBySide: Bool {
-        ActivityFooterLayout.usesSideBySideLayout(availableWidth: availableWidth)
+        ActivityCardLayout.usesSideBySideLayout(availableWidth: availableWidth)
     }
 }
 
-/// 活动卡片的排布判定。
+/// 活动卡的排布判定。
 ///
 /// 抽成纯几何，让「多宽才并排」这条阈值可以被单测钉住：SwiftUI 里没有
-/// 稳定可测的横向自适应 API（见 `ActivityFooterView.availableWidth` 的注释），
+/// 稳定可测的横向自适应 API（见 `ActivityCardSlot.availableWidth` 的注释），
 /// 所以阈值本身就是需要保护的契约。
-enum ActivityFooterLayout {
+enum ActivityCardLayout {
     /// 卡片最大宽度，与提示胶囊流同宽。
     static let cardMaxWidth: CGFloat = ActivityFusionCardMetrics.maxWidth
     /// 卡片左右内边距。
@@ -105,8 +99,6 @@ enum ActivityFooterLayout {
     /// 曲线再窄就会把 30 个采样点挤成一团（点直径 6pt，间距不足 10pt 时
     /// 曲线会糊成一条粗线），此时宁可上下排布。
     static let minSparklineWidth: CGFloat = 180
-    /// 活动条与上方提示流之间的间距。
-    static let topSpacing: CGFloat = 24
 
     /// 并排时卡片内部需要的最小宽度。
     static var sideBySideInnerWidth: CGFloat {
@@ -135,7 +127,7 @@ enum ActivityFooterLayout {
 /// Deterministic sample window for previews, shaped like a real user's rhythm:
 /// steady on weekdays, quiet at the start of the window and on weekends.
 @MainActor
-private enum ActivityFooterPreview {
+private enum ActivityCardPreview {
     static func sampleModel() -> EmptyStateActivityViewModel {
         let calendar = Calendar(identifier: .gregorian)
         let today = calendar.startOfDay(for: .now)
@@ -168,20 +160,20 @@ private enum ActivityFooterPreview {
     }
 }
 
-#Preview("Activity footer") {
-    ActivityFooterView(model: ActivityFooterPreview.sampleModel())
+#Preview("Activity card slot") {
+    ActivityCardSlot(model: ActivityCardPreview.sampleModel())
         .padding(24)
         .frame(width: 620)
 }
 
-#Preview("Activity footer — narrow") {
-    ActivityFooterView(model: ActivityFooterPreview.sampleModel())
+#Preview("Activity card slot — narrow") {
+    ActivityCardSlot(model: ActivityCardPreview.sampleModel())
         .padding(24)
         .frame(width: 280)
 }
 
-#Preview("Activity footer — empty history") {
-    ActivityFooterView(
+#Preview("Activity card slot — empty history") {
+    ActivityCardSlot(
         model: EmptyStateActivityViewModel(
             messages: nil,
             calendar: Calendar(identifier: .gregorian),

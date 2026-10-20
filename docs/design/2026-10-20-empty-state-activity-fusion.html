@@ -276,12 +276,24 @@
     不是设计稿。
   </p>
   <figure class="shot">
-    <img src="2026-10-20-empty-state-fusion-implemented.png" alt="落地后的空态：提示流下方是一张墨翠活动卡">
+    <img src="2026-10-20-empty-state-fusion-real-ui.png" alt="真机运行画面：活动卡紧跟在提示胶囊下面，底部无分隔线">
     <figcaption>
-      热力图、1pt 分隔线与 token 曲线合成<strong>一张</strong>卡；卡宽 520pt 与胶囊流同宽居中；
-      顶行锚点文案给出数字；与空态之间的系统分隔线已移除。
+      <strong>真机运行画面</strong>（XCUITest 截图）：活动卡紧跟在提示胶囊下方，同一列、同一底色、
+      同一条左右边界；卡与输入区之间不再有任何分隔线。热力图、1pt 竖线与 token 曲线合成
+      <strong>一张</strong>卡，顶行锚点文案给出数字。
     </figcaption>
   </figure>
+
+  <div class="callout">
+    <b>第二轮修正：卡片的位置比卡片本身更要紧。</b>
+    第一轮只把两块图合成了一张卡，卡片却仍留在 <code>bottomFixed</code> 底栏槽位里 ——
+    结果它停在窗口最底部，与中间的提示之间隔着一大片空白，底栏与内容区之间还压着一条
+    分隔线。真机截图一看，「割裂」并没有消失，只是从「两个控件」变成了「一张卡 + 一条线」。
+    <br><br>
+    真正的融合要求卡片<b>紧跟在提示胶囊下面</b>：因此活动卡被移进空态的内容流
+    （<code>ActivityCardSlot</code>），底栏槽位随之取消。代价是矮窗口下卡片可能落在首屏之外、
+    需要滚动才能看到 —— 这是在「融合」与「永远可见」之间刻意做的取舍。
+  </div>
 </section>
 
 <!-- ============================ 1. 现状 ============================ -->
@@ -590,6 +602,12 @@
         <tr><th style="width:26%">改动点</th><th style="width:30%">现状</th><th>建议改法</th><th style="width:24%">文件</th></tr>
       </thead>
       <tbody>
+        <tr>
+          <td><b>卡片位置</b></td>
+          <td class="now">注册在 <code>bottomFixed</code> 底栏槽位 → 永远停在窗口最底部，与提示之间隔着一大片空白</td>
+          <td><b>移进空态内容流</b>，紧跟在提示胶囊下面：同一列、同一条底色。底栏槽位随之取消，两条分隔线同时消失</td>
+          <td><code>ActivityCardSlot.swift</code> / 两个空态变体</td>
+        </tr>
         <tr>
           <td><b>接缝分隔线</b></td>
           <td class="now">stack 与 bottomFixed 之间自动画 AppDivider</td>

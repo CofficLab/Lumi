@@ -7,12 +7,19 @@ import UniformTypeIdentifiers
 struct MessageEmptyStateView: View {
     @LumiTheme private var theme
     let services: MessageListEmptyServices
+    /// 近 30 天的活动卡。跟着提示流排在下面，而不是停在窗口底部的底栏里。
+    let activity: EmptyStateActivityViewModel?
     @ObservedObject private var guideState: MessageListGuideState
     @State private var importingFolder = false
     @State private var projectError: String?
 
-    init(services: MessageListEmptyServices, guideState: MessageListGuideState) {
+    init(
+        services: MessageListEmptyServices,
+        guideState: MessageListGuideState,
+        activity: EmptyStateActivityViewModel? = nil
+    ) {
         self.services = services
+        self.activity = activity
         _guideState = ObservedObject(wrappedValue: guideState)
     }
 
@@ -65,6 +72,13 @@ struct MessageEmptyStateView: View {
                         if !suggestions.isEmpty {
                             PromptSuggestionFlow(suggestions: suggestions, services: services) { importingFolder = true }
                                 .padding(.top, 24)
+                        }
+
+                        // 活动卡紧跟在提示流下面：同一列、同一条底色，
+                        // 两者之间不再有任何分隔线。
+                        if let activity {
+                            ActivityCardSlot(model: activity)
+                                .padding(.top, 28)
                         }
                     }
                     .frame(maxWidth: 620)

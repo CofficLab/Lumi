@@ -17,8 +17,10 @@ import Testing
     let plugin = PluginMessageListEmptyPlugin()
 
     try plugin.onBoot(kernel: kernel)
-    // 插件常驻注册两个槽位：空态本体 + 底部 activity strip（a362063f1 新增）。
-    let expectedItemIDs = [plugin.id, plugin.activityItemID]
+    // 插件只注册一个槽位：空态本体。活动卡是它的子视图，不再单独占一个
+    // bottomFixed 槽位 —— 那样它会停在窗口底部，与提示流之间隔着一片空白，
+    // 底栏与内容区之间还会压着一条分隔线。
+    let expectedItemIDs = [plugin.id]
     #expect(chat.items.map(\.id) == expectedItemIDs)
     #expect(chat.items.first?.exclusiveGroup == "message-list")
     #expect(chat.items.first?.fillsRemainingHeight == true)
@@ -101,7 +103,7 @@ private extension DefaultChatSectionProviding {
 
     try plugin.onBoot(kernel: kernel)
 
-    #expect(chat.items.map(\.id) == [plugin.id, plugin.activityItemID])
+    #expect(chat.items.map(\.id) == [plugin.id])
     try plugin.onShutdown(kernel: kernel)
     #expect(chat.items.isEmpty)
 }
