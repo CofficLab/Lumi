@@ -187,6 +187,20 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
                     ],
                 ]]
             }
+        case .goal:
+            if alreadyAnswered {
+                content = UITestFixtures.goalFollowUpResponse
+            } else {
+                content = ""
+                toolCalls = [[
+                    "id": UITestFixtures.goalToolCallID,
+                    "type": "function",
+                    "function": [
+                        "name": UITestFixtures.goalToolName,
+                        "arguments": UITestFixtures.goalArguments,
+                    ],
+                ]]
+            }
         }
 
         var message: [String: Any] = ["role": "assistant", "content": content]
@@ -194,7 +208,7 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
             message["tool_calls"] = toolCalls
         }
 
-        let usageValues: [String: Int] = (scenario == .tool || (scenario.isAskUser && !alreadyAnswered) || (scenario.isApproval && !alreadyAnswered))
+        let usageValues: [String: Int] = (scenario == .tool || (scenario.isAskUser && !alreadyAnswered) || (scenario.isApproval && !alreadyAnswered) || (scenario.isGoal && !alreadyAnswered))
             ? ["prompt_tokens": 30, "completion_tokens": 10, "total_tokens": 40]
             : ["prompt_tokens": 12, "completion_tokens": 6, "total_tokens": 18]
 
@@ -240,6 +254,8 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
             return try askUserEvents(for: scenario, alreadyAnswered: alreadyAnswered)
         case .approval:
             return try approvalEvents(for: scenario, alreadyAnswered: alreadyAnswered)
+        case .goal:
+            return try goalEvents(for: scenario, alreadyAnswered: alreadyAnswered)
         }
     }
 
@@ -350,6 +366,55 @@ final class UITestStubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendabl
                 "type": "function",
                 "function": [
                     "name": UITestFixtures.approvalToolName,
+                    "arguments": head,
+                ],
+            ]]], model: model),
+            try sse(delta: ["tool_calls": [[
+                "index": 0,
+                "function": ["arguments": tail],
+            ]]], model: model),
+            try sse(delta: [:], model: model, finishReason: "tool_calls"),
+            try sse(usage: usage(prompt: 30, completion: 10), model: model),
+            doneEvent(),
+        ]
+    }
+
+    /// goal 场景的两段式响应。
+    ///
+    /// - 未执行：发出 `create_goal` 工具调用 → 目标被真正创建 → goal 侧边栏出现。
+    /// - 已执行：普通文本 → 回合完成。
+    ///
+    /// 判据与 ask_user / approval 场景一致：请求体里出现 `role=tool` 消息
+    /// （即 `create_goal` 已执行并回传结果）时才收尾。
+    private static func goalEvents(
+        for scenario: UITestScenario,
+        alreadyAnswered: Bool
+    ) throws -> [String] {
+        let model = scenario.rawValue
+
+        guard !alreadyAnswered else {
+            return [
+                try sse(delta: ["content": UITestFixtures.goalFollowUpResponse], model: model),
+                try sse(usage: usage(prompt: 30, completion: 10), model: model),
+                doneEvent(),
+            ]
+        }
+
+        let arguments = UITestFixtures.goalArguments
+        let split = arguments.index(
+            arguments.startIndex,
+            offsetBy: min(16, arguments.count)
+        )
+        let head = String(arguments[arguments.startIndex..<split])
+        let tail = String(arguments[split...])
+
+        return [
+            try sse(delta: ["tool_calls": [[
+                "index": 0,
+                "id": UITestFixtures.goalToolCallID,
+                "type": "function",
+                "function": [
+                    "name": UITestFixtures.goalToolName,
                     "arguments": head,
                 ],
             ]]], model: model),

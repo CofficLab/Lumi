@@ -5,7 +5,7 @@
 PluginLLMProviderUITest UI 测试专用的确定性 LLM 供应商（**仅 DEBUG**）。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 38
+测试文件: 6 个，用例总数: 53
 
 ## 公开 API
 
@@ -22,7 +22,9 @@ PluginLLMProviderUITest UI 测试专用的确定性 LLM 供应商（**仅 DEBUG*
 
 - **UITestProviderAskUser**（6 条）：由 `firstRoundProducesCompleteToolCall`、`secondRoundEmitsFollowUpAfterToolResult`、`toolResultSurvivesRealSerialization` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **UITestProvider**（14 条）：由 `providerIdentityIsLocal`、`modelCatalogueCoversAllScenarios`、`hasNoRemoteModelList` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **UITestStubApprovalPayload**（7 条）：由 `firstRoundEmitsHighRiskToolCall`、`firstRoundCarriesToolIdentity`、`firstRoundStopsOnToolCalls` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **UITestStubAskUserPayload**（8 条）：由 `firstRoundEmitsAskUserToolCall`、`firstRoundCarriesToolIdentity`、`firstRoundStopsOnToolCalls` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **UITestStubGoalPayload**（8 条）：由 `firstRoundEmitsGoalToolCall`、`firstRoundCarriesToolIdentity`、`firstRoundStopsOnToolCalls` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **UITestStubPayload**（10 条）：由 `everyEventIsWellFormedSSE`、`everyEventPayloadIsValidJSON`、`successfulScenariosTerminateWithDone` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -49,45 +51,60 @@ PluginLLMProviderUITest UI 测试专用的确定性 LLM 供应商（**仅 DEBUG*
 | 18 | UITestProvider | 插件身份与元数据稳定 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `pluginIdentityAndMetadata` |
 | 19 | UITestProvider | 非 UI 测试启动时不注册供应商 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doesNotRegisterWithoutLaunchArgument` |
 | 20 | UITestProvider | onBoot 在缺少 LLM 管理器时不抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `onBootWithoutManagerDoesNotThrow` |
-| 21 | UITestStubAskUserPayload | 首轮发出 ask_user 工具调用，arguments 分两片下发 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstRoundEmitsAskUserToolCall` |
-| 22 | UITestStubAskUserPayload | 首轮首片带工具名与固定 call id | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstRoundCarriesToolIdentity` |
-| 23 | UITestStubAskUserPayload | 首轮 finish_reason 为 tool_calls，不产出任何正文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstRoundStopsOnToolCalls` |
-| 24 | UITestStubAskUserPayload | 已回答后产出固定收尾正文，并以 stop 正常结束 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `secondRoundEmitsFollowUpText` |
-| 25 | UITestStubAskUserPayload | 两段响应互不相同（避免首轮被误判为收尾） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `twoRoundsDiffer` |
-| 26 | UITestStubAskUserPayload | 三个 ask_user 场景的参数都是合法 JSON 且带必填字段 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `askUserArgumentsAreWellFormed` |
-| 27 | UITestStubAskUserPayload | 非 ask_user 场景没有工具参数，且 ask_user 场景声明支持工具 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `scenarioMetadataIsConsistent` |
-| 28 | UITestStubAskUserPayload | ask_user 场景模型可被供应商目录查到 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `askUserModelsAreRegistered` |
-| 29 | UITestStubPayload | 每个事件块都以 data: 前缀开头并以空行结尾 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `everyEventIsWellFormedSSE` |
-| 30 | UITestStubPayload | 每个非终止事件块的 data 载荷都是合法 JSON | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `everyEventPayloadIsValidJSON` |
-| 31 | UITestStubPayload | 成功场景以 [DONE] 收尾，错误场景以单个 error 事件终止 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `successfulScenariosTerminateWithDone` |
-| 32 | UITestStubPayload | 文本场景的分段拼接后等于约定正文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `textChunksConcatenateToExpectedReply` |
-| 33 | UITestStubPayload | 文本场景带 usage 统计与终止信号 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `textScenarioCarriesUsageAndStop` |
-| 34 | UITestStubPayload | 工具场景把 arguments 分两片下发，覆盖累加路径 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolScenarioSplitsArgumentsAcrossDeltas` |
-| 35 | UITestStubPayload | 工具场景首片带 id 与 name，finish_reason 为 tool_calls | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolScenarioProvidesIdentityAndStopReason` |
-| 36 | UITestStubPayload | 错误场景产出带 error.message 的事件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `errorScenarioCarriesMessage` |
-| 37 | UITestStubPayload | 长文本场景产出约定段数的正文增量 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `longScenarioEmitsFixedParagraphCount` |
-| 38 | UITestStubPayload | 慢速场景复用文本场景的正文，差异只在投递间隔 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `slowScenarioReusesTextBody` |
+| 21 | UITestStubApprovalPayload | 首轮发出 edit_file 工具调用，arguments 分两片下发 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstRoundEmitsHighRiskToolCall` |
+| 22 | UITestStubApprovalPayload | 首轮首片带工具名与固定 call id | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstRoundCarriesToolIdentity` |
+| 23 | UITestStubApprovalPayload | 首轮 finish_reason 为 tool_calls，不产出任何正文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstRoundStopsOnToolCalls` |
+| 24 | UITestStubApprovalPayload | 用户已决定后产出固定收尾正文，并以 stop 正常结束 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `secondRoundEmitsFollowUpText` |
+| 25 | UITestStubApprovalPayload | 两段响应互不相同（避免首轮被误判为收尾） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `twoRoundsDiffer` |
+| 26 | UITestStubApprovalPayload | 授权场景的参数是合法 JSON 且带 edit_file 的必填字段 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `approvalArgumentsAreWellFormed` |
+| 27 | UITestStubApprovalPayload | 授权场景声明支持工具，且可被供应商目录查到 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `approvalModelIsRegistered` |
+| 28 | UITestStubAskUserPayload | 首轮发出 ask_user 工具调用，arguments 分两片下发 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstRoundEmitsAskUserToolCall` |
+| 29 | UITestStubAskUserPayload | 首轮首片带工具名与固定 call id | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstRoundCarriesToolIdentity` |
+| 30 | UITestStubAskUserPayload | 首轮 finish_reason 为 tool_calls，不产出任何正文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstRoundStopsOnToolCalls` |
+| 31 | UITestStubAskUserPayload | 已回答后产出固定收尾正文，并以 stop 正常结束 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `secondRoundEmitsFollowUpText` |
+| 32 | UITestStubAskUserPayload | 两段响应互不相同（避免首轮被误判为收尾） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `twoRoundsDiffer` |
+| 33 | UITestStubAskUserPayload | 三个 ask_user 场景的参数都是合法 JSON 且带必填字段 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `askUserArgumentsAreWellFormed` |
+| 34 | UITestStubAskUserPayload | 非 ask_user 场景没有工具参数，且 ask_user 场景声明支持工具 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `scenarioMetadataIsConsistent` |
+| 35 | UITestStubAskUserPayload | ask_user 场景模型可被供应商目录查到 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `askUserModelsAreRegistered` |
+| 36 | UITestStubGoalPayload | 首轮发出 create_goal 工具调用，arguments 分两片下发 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstRoundEmitsGoalToolCall` |
+| 37 | UITestStubGoalPayload | 首轮首片带工具名与固定 call id | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstRoundCarriesToolIdentity` |
+| 38 | UITestStubGoalPayload | 首轮 finish_reason 为 tool_calls，不产出任何正文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstRoundStopsOnToolCalls` |
+| 39 | UITestStubGoalPayload | 工具执行后产出固定收尾正文，并以 stop 正常结束 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `secondRoundEmitsFollowUpText` |
+| 40 | UITestStubGoalPayload | 两段响应互不相同（避免首轮被误判为收尾） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `twoRoundsDiffer` |
+| 41 | UITestStubGoalPayload | goal 参数是合法 JSON，且带 title 与 tasks 必填字段 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `goalArgumentsAreWellFormed` |
+| 42 | UITestStubGoalPayload | goal 场景声明支持工具，且展示名可辨识 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `scenarioMetadataIsConsistent` |
+| 43 | UITestStubGoalPayload | goal 场景模型可被供应商目录查到 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `goalModelIsRegistered` |
+| 44 | UITestStubPayload | 每个事件块都以 data: 前缀开头并以空行结尾 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `everyEventIsWellFormedSSE` |
+| 45 | UITestStubPayload | 每个非终止事件块的 data 载荷都是合法 JSON | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `everyEventPayloadIsValidJSON` |
+| 46 | UITestStubPayload | 成功场景以 [DONE] 收尾，错误场景以单个 error 事件终止 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `successfulScenariosTerminateWithDone` |
+| 47 | UITestStubPayload | 文本场景的分段拼接后等于约定正文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `textChunksConcatenateToExpectedReply` |
+| 48 | UITestStubPayload | 文本场景带 usage 统计与终止信号 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `textScenarioCarriesUsageAndStop` |
+| 49 | UITestStubPayload | 工具场景把 arguments 分两片下发，覆盖累加路径 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolScenarioSplitsArgumentsAcrossDeltas` |
+| 50 | UITestStubPayload | 工具场景首片带 id 与 name，finish_reason 为 tool_calls | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolScenarioProvidesIdentityAndStopReason` |
+| 51 | UITestStubPayload | 错误场景产出带 error.message 的事件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `errorScenarioCarriesMessage` |
+| 52 | UITestStubPayload | 长文本场景产出约定段数的正文增量 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `longScenarioEmitsFixedParagraphCount` |
+| 53 | UITestStubPayload | 慢速场景复用文本场景的正文，差异只在投递间隔 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `slowScenarioReusesTextBody` |
 
-> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **53 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 1 / 1
-- P1: 已覆盖 35 / 35
-- P2: 已覆盖 2 / 2
-- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 49 / 49
+- P2: 已覆盖 3 / 3
+- **合计: 53 / 53**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（35 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
+- **P1**: 其余功能性用例（49 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 38 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 53 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

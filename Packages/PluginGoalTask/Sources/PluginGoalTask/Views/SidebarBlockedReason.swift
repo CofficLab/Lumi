@@ -28,5 +28,6 @@ struct SidebarBlockedReason: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .padding(.horizontal, 12)
+            .accessibilityIdentifier(GoalAccessibility.blockedReason)
     }
 }
