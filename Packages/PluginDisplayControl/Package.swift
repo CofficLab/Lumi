@@ -40,9 +40,6 @@ let package = Package(
             resources: [
                 .process("../../Resources/Localizable.xcstrings")
             ],
-            linkerSettings: [
-                .unsafeFlags(["-Xlinker", "-undefined", "-Xlinker", "dynamic_lookup"])
-            ]
         ),
         .testTarget(
             name: "DisplayControlPluginTests",
