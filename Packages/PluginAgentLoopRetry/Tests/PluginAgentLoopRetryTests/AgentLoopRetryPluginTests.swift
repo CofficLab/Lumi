@@ -50,6 +50,81 @@ struct AgentLoopRetryPluginTests {
         coordinator.cancel()
     }
 
+    @Test("服务端给出 Retry-After 时，重启回合前先等待")
+    func waitsBeforeRetryWhenServerAdvises() async {
+        let conversationID = UUID()
+        let messages = DefaultMessageManager()
+        let agentLoop = TestAgentLoop(outcomes: [.failed("network")])
+        // 由测试显式驱动失败序列，避免 retryTurn 内部的终态事件重复计数。
+        agentLoop.emitsTerminalEvent = false
+        let log = EventLog()
+        agentLoop.eventLog = log
+
+        let coordinator = AgentLoopRetryCoordinator(
+            loop: AgentLoopRetryCapabilityAdapter(agentLoop: agentLoop),
+            messages: AgentLoopRetryMessageCapabilityAdapter(messages: messages),
+            maxAttempts: 3,
+            sleeper: { seconds in
+                await log.append("wait:\(Int(seconds.rounded()))")
+            }
+        )
+
+        agentLoop.failure = AgentLoopFailure(
+            kind: .server,
+            message: "服务集群负载较高",
+            httpStatusCode: 529,
+            retryAfterSeconds: 30
+        )
+        agentLoop.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: "服务集群负载较高"))
+        await yieldUntil { agentLoop.retryCalls.count == 1 }
+
+        let events = await log.events
+        #expect(
+            events == ["wait:30", "retry"],
+            "必须先等待服务端建议的 30s，再重启回合"
+        )
+        #expect(agentLoop.retryCalls.count == 1)
+
+        // 时间线提示在等待之前就已写入，用户能看到「正在重试」。
+        let retryMessages = messages.messages(for: conversationID)
+            .filter(MessageTimelineEvent.isAgentLoopRetry)
+        #expect(retryMessages.count == 1)
+        #expect(retryMessages[0].metadata[MessageTimelineEvent.agentLoopRetryRetryAfterKey] == "30")
+
+        coordinator.cancel()
+    }
+
+    @Test("没有服务端建议时不额外等待")
+    func doesNotWaitWithoutServerAdvice() async {
+        let conversationID = UUID()
+        let messages = DefaultMessageManager()
+        let agentLoop = TestAgentLoop(outcomes: [.failed("network")])
+        agentLoop.emitsTerminalEvent = false
+        let log = EventLog()
+        agentLoop.eventLog = log
+
+        let coordinator = AgentLoopRetryCoordinator(
+            loop: AgentLoopRetryCapabilityAdapter(agentLoop: agentLoop),
+            messages: AgentLoopRetryMessageCapabilityAdapter(messages: messages),
+            maxAttempts: 3,
+            sleeper: { seconds in
+                await log.append("wait:\(Int(seconds.rounded()))")
+            }
+        )
+
+        agentLoop.failure = AgentLoopFailure(
+            kind: .network,
+            message: "连接被重置",
+            httpStatusCode: 503
+        )
+        agentLoop.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: "连接被重置"))
+        await yieldUntil { agentLoop.retryCalls.count == 1 }
+
+        let events = await log.events
+        #expect(events == ["retry"], "无服务端建议时不得引入等待")
+        coordinator.cancel()
+    }
+
     @Test("不可重试失败不会启动重试")
     func doesNotRetryNonRetryableFailure() async {
         let conversationID = UUID()
@@ -197,6 +272,8 @@ private final class TestAgentLoop: AgentLoopProviding {
     /// 每次 retryTurn 返回的终态。用尽后重复最后一项，而不是回退到
     /// `.completed`，否则测试桩会自己制造一次成功并让计数归零。
     var outcomes: [AgentLoopOutcome]
+    /// 可选的事件日志：用于断言「先等待、后重启回合」的时序。
+    var eventLog: EventLog?
     /// 由测试显式驱动终态事件时置为 false，避免 retryTurn 内部的终态事件
     /// 与测试手动 emit 的事件叠加，导致重试次数重复计费。
     var emitsTerminalEvent = true
@@ -237,6 +314,7 @@ private final class TestAgentLoop: AgentLoopProviding {
 
     func retryTurn(in conversationID: UUID, after failedTurnID: UUID) async throws -> AgentLoopOutcome {
         retryCalls.append(RetryCall(conversationID: conversationID, failedTurnID: failedTurnID))
+        await eventLog?.append("retry")
         let turnID = UUID()
         stateValue = .running
         emit(.started(conversationID: conversationID, turnID: turnID))
@@ -300,5 +378,16 @@ private func yieldUntil(
 ) async {
     for _ in 0..<100 where !condition() {
         try? await Task.sleep(for: .milliseconds(1))
+    }
+}
+
+/// 跨并发边界记录事件顺序的日志。
+///
+/// 用于断言「先等待服务端退避建议、再重启回合」这一时序要求。
+private actor EventLog {
+    private(set) var events: [String] = []
+
+    func append(_ event: String) {
+        events.append(event)
     }
 }

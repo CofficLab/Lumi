@@ -148,6 +148,41 @@ struct TokenPlanStatusFormattingTests {
         #expect(TokenPlanData.formatTimestamp(-1) == "—")
     }
 
+    // MARK: - 卡片文案
+
+    @Test("调用次数文案含已用与上限")
+    func usageTextShowsUsedAndTotal() {
+        let text = TokenPlanStatusLocalization.usageText(used: 19, total: 100)
+
+        #expect(text.contains("19"))
+        #expect(text.contains("100"))
+    }
+
+    @Test("无次数上限时说明不限次")
+    func usageTextFallsBackToUnlimited() {
+        let text = TokenPlanStatusLocalization.usageText(used: 0, total: 0)
+
+        #expect(!text.isEmpty)
+        #expect(!text.contains("0 / 0"))
+    }
+
+    @Test("重置倒计时文案只含相对时长")
+    func resetCountdownTextOmitsAbsoluteTime() {
+        let components = ResetTimeComponents(absolute: "08/01 12:00", relative: "2 小时 32 分")
+
+        let text = TokenPlanStatusLocalization.resetCountdownText(components)
+
+        #expect(text.contains("2 小时 32 分"))
+        #expect(!text.contains("08/01 12:00"))
+    }
+
+    @Test("剩余次数不为负")
+    func remainingCountNeverNegative() {
+        let plan = Self.makePlan(modelName: "video", intervalTotal: 20, intervalUsage: 25)
+
+        #expect(plan.intervalRemainingCount == 0)
+    }
+
     // MARK: - Helpers
 
     private static func makePlan(

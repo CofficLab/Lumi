@@ -8,10 +8,16 @@ public struct DeviceInfoMenuBarPopupView: View {
     // MARK: - Properties
 
     @ObservedObject private var viewModel: CPUManagerViewModel
+    @ObservedObject private var thermalViewModel: ThermalViewModel
     private let historyViewModel: DeviceHistoryViewModel<CPUDataPoint>
 
-    init(viewModel: CPUManagerViewModel, historyViewModel: DeviceHistoryViewModel<CPUDataPoint>) {
+    init(
+        viewModel: CPUManagerViewModel,
+        thermalViewModel: ThermalViewModel,
+        historyViewModel: DeviceHistoryViewModel<CPUDataPoint>
+    ) {
         self.viewModel = viewModel
+        self.thermalViewModel = thermalViewModel
         self.historyViewModel = historyViewModel
     }
 
@@ -33,16 +39,21 @@ public struct DeviceInfoMenuBarPopupView: View {
 
     private var liveCpuView: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(pluginLocalization.string("CPU Usage"))
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+            // 紧凑指标行:使用率 + 温度(标题与数值并排,提高信息密度)
+            HStack(spacing: 10) {
+                metric(
+                    label: pluginLocalization.string("Usage"),
+                    value: String(format: "%.1f%%", viewModel.cpuUsage),
+                    color: cpuColor
+                )
 
-                Spacer()
+                metric(
+                    label: pluginLocalization.string("Temperature"),
+                    value: temperatureText,
+                    color: thermalViewModel.peakColor
+                )
 
-                Text(String(format: "%.1f%%", viewModel.cpuUsage))
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(cpuColor)
+                Spacer(minLength: 0)
             }
 
             // 进度条
@@ -104,6 +115,25 @@ public struct DeviceInfoMenuBarPopupView: View {
     }
 
     // MARK: - Helpers
+
+    /// 单个「标签 + 数值」指标块,用于首行的紧凑排布。
+    private func metric(label: String, value: String, color: Color) -> some View {
+        HStack(spacing: 3) {
+            Text(label)
+                .font(.system(size: 10))
+                .foregroundColor(.secondary)
+
+            Text(value)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(color)
+        }
+    }
+
+    /// 最高温度文本;无温度传感器时用破折号占位(Intel Mac 等)。
+    private var temperatureText: String {
+        guard let peak = thermalViewModel.peakCelsius else { return "—" }
+        return String(format: "%.1f°C", peak)
+    }
 
     private var cpuColor: Color {
         let value = viewModel.cpuUsage

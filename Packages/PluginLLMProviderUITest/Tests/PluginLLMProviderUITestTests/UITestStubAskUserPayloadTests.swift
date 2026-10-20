@@ -78,7 +78,7 @@ struct UITestStubAskUserPayloadTests {
             let events = try UITestStubNetwork.sseEvents(for: scenario, alreadyAnswered: true)
             let deltas = try contentDeltas(in: events)
 
-            #expect(deltas.joined() == UITestFixtures.askUserFollowUpResponse)
+            #expect(deltas.joined() == scenario.askUserFollowUpResponse)
             #expect(UITestFixtures.askUserFollowUpResponse == "UI Testing Ask User Answered")
             // 已回答后不得再发工具调用，否则会再次挂起、界面反复弹问题。
             #expect(
@@ -100,7 +100,7 @@ struct UITestStubAskUserPayloadTests {
 
     // MARK: - 场景元数据
 
-    @Test("三个 ask_user 场景的参数都是合法 JSON 且带必填字段")
+    @Test("ask_user 场景的参数都是合法 JSON 且带必填字段")
     func askUserArgumentsAreWellFormed() throws {
         for scenario in askUserScenarios {
             let raw = try #require(scenario.askUserArguments)

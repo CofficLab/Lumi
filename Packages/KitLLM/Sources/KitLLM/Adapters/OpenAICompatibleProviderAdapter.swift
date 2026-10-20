@@ -132,10 +132,12 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         // 必须在此显式取出状态码：它既不遵循 `LLMHTTPErrorProviding`，也不是
         // `NSURLErrorDomain` 错误，若漏判会退化为「不可重试」，
         // 导致 429 / 5xx / 529 等可恢复状态不触发任何重试。
-        if case let .httpStatus(code, _) = error as? VendorAPIError {
+        if case let .httpStatus(code, _, retryAfterSeconds) = error as? VendorAPIError {
             return ProviderRetryPolicy.decision(
                 statusCode: code,
-                retryAfter: retryAfter,
+                // 错误自带的 `Retry-After` 优先：它来自实际响应头，比调用方
+                // 传入的猜测值更可靠。
+                retryAfter: retryAfterSeconds ?? retryAfter,
                 attempt: attempt,
                 maxAttempts: maxAttempts
             )

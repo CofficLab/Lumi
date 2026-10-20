@@ -64,6 +64,8 @@ class LumiUITestCase: XCTestCase {
         //   或元素处于 `Not Hittable`。它表现为随机的「某个元素突然找不到」，
         //   极易被误判成产品缺陷。
         terminateAppAndWait()
+        // 还要清掉**别的**同 bundle id 实例：见 `terminateOtherRunningInstances()`。
+        terminateOtherRunningInstances()
 
         app.launchArguments += Self.commonLaunchArguments + extraArguments
         app.launch()
@@ -95,6 +97,45 @@ class LumiUITestCase: XCTestCase {
         // 不还原会改掉开发者的输入法配置——比脏剪贴板更严重。
         restoreUserState()
         try super.tearDownWithError()
+    }
+
+    /// 结束同 bundle id 的其它残留实例。
+    ///
+    /// - Important: `XCUIApplication().state` 对**新建**实例恒为 `.notRunning`——
+    ///   它并不知道系统里已经有一个同 id 的 App 在跑。因此
+    ///   `terminateAppAndWait()` 在启动阶段什么也做不了。
+    ///
+    ///   而 `app.launch()` 在发现同 id 实例已存在时**不会新起进程**，
+    ///   只会去激活那个旧实例——一个缩在后台的残留进程就会让 launch 报
+    ///   `Failed to activate application … (current state: Running Background)`。
+    ///   错误信息指向「激活失败」，真实原因却是「上一次的进程还在」，
+    ///   两者毫无关联。
+    ///
+    ///   Lumi 的退出尤其慢（要卸载 240+ 个本地包），所以这一步不是可有可无的保险。
+    private func terminateOtherRunningInstances() {
+        // Debug 构建的 bundle id（见 `LumiApp/Config/Lumi-Debug.xcconfig`）。
+        //
+        // - Important: 必须是 **Debug** 专属 id，不能按 App 名匹配：
+        //   用户安装的正式版是 `com.coffic.lumi`，
+        //   按名字匹配会误杀用户正在运行的 App。
+        let bundleID = "com.coffic.lumi.debug"
+        let others = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+            .filter { $0 != NSRunningApplication.current }
+        guard !others.isEmpty else { return }
+
+        others.forEach { $0.terminate() }
+
+        // 等它们真的退出；等不到就强制结束。
+        let deadline = Date().addingTimeInterval(20)
+        while Date() < deadline {
+            let alive = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+                .filter { $0 != NSRunningApplication.current && !$0.isTerminated }
+            if alive.isEmpty { return }
+            Thread.sleep(forTimeInterval: 0.2)
+        }
+        NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+            .filter { $0 != NSRunningApplication.current && !$0.isTerminated }
+            .forEach { kill($0.processIdentifier, SIGKILL) }
     }
 
     /// 关闭新手引导。
@@ -138,21 +179,38 @@ class LumiUITestCase: XCTestCase {
     /// 否则「上一个用例还在退出」会泄漏成「下一个用例偶发失败」——
     /// 这种失败点随机漂移，极难归因。
     ///
-    /// - Important: 用 `wait(for:)` 而不是固定 `sleep`：固定睡眠要么不够
-    ///   （问题复现），要么白白拖慢每个用例。这里等的是真实状态变化。
-    func terminateAppAndWait(timeout: TimeInterval = 10) {
+    /// - Important: Lumi 退出很慢（要卸载 240+ 个本地包），10s 往往不够。
+    ///   旧实例没退干净时，`launch()` 会复用那个后台实例，
+    ///   表现为 `Failed to activate application (current state: Running Background)`
+    ///   ——错误信息指向「激活失败」，真实原因却是「上一次的进程还在」，
+    ///   两者毫无关联，极易误判成产品缺陷。
+    ///
+    ///   因此这里等满 30s；仍未退出就升级为强制结束，
+    ///   把「进程没退干净」这件事变成确定的事实，而不是留给下一个用例的随机失败。
+    ///
+    /// - Important: 必须调用它而不是裸 `terminate()`，
+    ///   否则「上一个用例还在退出」会泄漏成「下一个用例偶发失败」——
+    ///   这种失败点随机漂移，极难归因。
+    func terminateAppAndWait(timeout: TimeInterval = 30) {
         guard app.state != .notRunning else { return }
         app.terminate()
         let stopped = NSPredicate(format: "state == %d", XCUIApplication.State.notRunning.rawValue)
         let expectation = XCTNSPredicateExpectation(predicate: stopped, object: app)
         let result = XCTWaiter().wait(for: [expectation], timeout: timeout)
         if result != .completed {
-            XCTFail(
-                """
-                App 未在 \(Int(timeout))s 内退出（当前状态：\(app.state.rawValue)）。\
-                后续交互会失败在「无法激活应用」而非真实断言上，请勿据此判定产品缺陷。
-                """
-            )
+            // 进程赖着不走：强制结束，否则它会一直占着 bundle id，
+            // 让下一个用例的 launch() 激活到旧实例上。
+            app.terminate()
+            let forced = NSPredicate(format: "state == %d", XCUIApplication.State.notRunning.rawValue)
+            let forcedExpectation = XCTNSPredicateExpectation(predicate: forced, object: app)
+            if XCTWaiter().wait(for: [forcedExpectation], timeout: 10) != .completed {
+                XCTFail(
+                    """
+                    App 未在 \(Int(timeout))s 内退出（当前状态：\(app.state.rawValue)）。\
+                    后续交互会失败在「无法激活应用」而非真实断言上，请勿据此判定产品缺陷。
+                    """
+                )
+            }
         }
     }
 

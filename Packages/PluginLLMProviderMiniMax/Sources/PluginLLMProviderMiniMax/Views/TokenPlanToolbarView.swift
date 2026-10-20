@@ -1,5 +1,6 @@
 import Foundation
 import KitLLM
+import LumiUI
 import SwiftUI
 
 /// 工具栏 chip：显示 MiniMax Token Plan 剩余量，点击弹出详情面板。
@@ -10,6 +11,7 @@ import SwiftUI
 /// chip 不可见时不发请求。
 struct TokenPlanToolbarView: View {
     @ObservedObject private var viewModel: TokenPlanViewModel
+    @LumiTheme private var theme: any LumiUITheme
 
     @State private var isPopoverPresented = false
     @State private var poller: Timer?
@@ -47,8 +49,12 @@ extension TokenPlanToolbarView {
         .buttonStyle(.plain)
         .help(pluginLocalization.string("MiniMax Token Plan Quota"))
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            TokenPlanDetailView(status: viewModel.status, onRefresh: viewModel.refresh)
-                .frame(width: 360)
+            TokenPlanDetailView(
+                status: viewModel.status,
+                onRefresh: viewModel.refresh,
+                lastUpdatedAt: viewModel.lastUpdatedAt
+            )
+            .frame(width: TokenPlanToolbarMetrics.popoverWidth)
         }
     }
 
@@ -60,7 +66,7 @@ extension TokenPlanToolbarView {
                 .font(.system(size: TokenPlanToolbarMetrics.chipTextSize, weight: TokenPlanToolbarMetrics.chipTextWeight))
                 .monospacedDigit()
         }
-        .foregroundColor(.primary)
+        .foregroundColor(chipTint)
         .padding(.horizontal, TokenPlanToolbarMetrics.chipHorizontalPadding)
         .padding(.vertical, TokenPlanToolbarMetrics.chipVerticalPadding)
         .background(
@@ -73,6 +79,22 @@ extension TokenPlanToolbarView {
         chipLabel(text: pluginLocalization.string("Loading..."))
             .foregroundColor(.secondary)
             .help(pluginLocalization.string("MiniMax Token Plan Quota"))
+    }
+
+    /// chip 颜色跟随最紧张的一项配额：充足为绿、偏低为橙、告急为红。
+    private var chipTint: Color {
+        guard case let .success(plans) = viewModel.status else { return .primary }
+
+        let ratios = plans.flatMap { plan in
+            TokenPlanModelDisplayConfig.from(plan.modelName).remainingRatios(for: plan)
+        }
+        guard let tightest = ratios.min() else { return .primary }
+
+        switch tightest {
+        case 0.5...: return theme.success
+        case 0.2..<0.5: return theme.warning
+        default: return theme.error
+        }
     }
 }
 

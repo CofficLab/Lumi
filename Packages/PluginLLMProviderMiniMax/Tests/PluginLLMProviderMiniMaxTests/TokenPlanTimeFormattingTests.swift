@@ -37,6 +37,57 @@ struct TokenPlanTimeFormattingTests {
         #expect(plan.weeklyTimeRange == "— — —")
     }
 
+    // MARK: - 紧凑时间段
+
+    @Test("同一天的时间段省略结束日期")
+    func sameDayRangeOmitsEndDate() throws {
+        // 以「当天零点 + 2 小时」构造，跨时区也能保证两者落在同一自然日。
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: Date())
+        let end = try #require(calendar.date(byAdding: .hour, value: 2, to: start))
+        let startMs = Int64(start.timeIntervalSince1970 * 1000)
+        let endMs = Int64(end.timeIntervalSince1970 * 1000)
+
+        let text = TokenPlanData.formatTimeRange(start: startMs, end: endMs)
+
+        #expect(text == "\(TokenPlanData.formatTimestamp(startMs)) → \(TokenPlanData.formatClock(endMs))")
+    }
+
+    @Test("跨天的时间段保留完整时间戳")
+    func crossDayRangeKeepsBothDates() {
+        let start: Int64 = 1_787_500_000_000
+        let end: Int64 = 1_788_100_000_000
+
+        let text = TokenPlanData.formatTimeRange(start: start, end: end)
+
+        #expect(text == "\(TokenPlanData.formatTimestamp(start)) → \(TokenPlanData.formatTimestamp(end))")
+    }
+
+    @Test("时间戳缺失时紧凑时间段显示占位符")
+    func missingTimestampsShowPlaceholderInCompactRange() {
+        #expect(TokenPlanData.formatTimeRange(start: 0, end: 0) == "—")
+        #expect(TokenPlanData.formatTimeRange(start: 1_788_000_000_000, end: 0) == "—")
+    }
+
+    @Test("紧凑时间段属性跟随对应周期")
+    func compactRangesFollowPeriods() {
+        let plan = makePlan(
+            startTime: 1_788_000_000_000,
+            endTime: 1_788_018_000_000,
+            weeklyStartTime: 1_787_500_000_000,
+            weeklyEndTime: 1_788_100_000_000
+        )
+
+        #expect(plan.intervalTimeRangeCompact == TokenPlanData.formatTimeRange(
+            start: 1_788_000_000_000,
+            end: 1_788_018_000_000
+        ))
+        #expect(plan.weeklyTimeRangeCompact == TokenPlanData.formatTimeRange(
+            start: 1_787_500_000_000,
+            end: 1_788_100_000_000
+        ))
+    }
+
     // MARK: - 重置时间分量
 
     @Test("时段重置时间分量含绝对与相对两段")

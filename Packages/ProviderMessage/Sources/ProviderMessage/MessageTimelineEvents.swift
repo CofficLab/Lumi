@@ -15,6 +15,8 @@ public enum MessageTimelineEvent {
     public static let agentLoopRetryProviderIDKey = "agentLoopRetryProviderID"
     public static let agentLoopRetryModelNameKey = "agentLoopRetryModelName"
     public static let agentLoopRetryHTTPStatusCodeKey = "agentLoopRetryHTTPStatusCode"
+    /// 服务端建议的重试等待秒数（来自 `Retry-After` 响应头）。
+    public static let agentLoopRetryRetryAfterKey = "agentLoopRetryRetryAfter"
     public static let goalTaskContinuation = "goal-task-continuation"
     public static let goalTaskContinuationRenderKind = "goal-task-continuation"
     public static let goalTaskContinuationActionKey = "goalTaskContinuationAction"

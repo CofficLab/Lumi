@@ -12,4 +12,7 @@ enum TokenPlanToolbarMetrics {
 
     /// 定时轮询间隔：只用于推进 TTL 判定，真实请求受 ViewModel 的 5 分钟 TTL 抑制。
     static let pollInterval: TimeInterval = 60
+
+    /// 详情面板宽度：两张配额卡片并排时需要足够空间容纳时间段文本。
+    static let popoverWidth: CGFloat = 420
 }

@@ -14,7 +14,14 @@ struct TokenPlanViewModelTests {
     /// 5xx 响应会触发 `VendorAPIService` 的指数退避重试，单次刷新耗时
     /// 可达数秒；测试等待必须留足余量，否则会把「还没重试完」误判成失败。
     private static let slowFlushTimeout: Duration = .seconds(10)
-    private static let fastFlushTimeout: Duration = .seconds(2)
+
+    /// 常规刷新的等待预算。
+    ///
+    /// 刷新链路包含一次 Keychain 读取，且断言要等主线程上的 `revision` 自增；
+    /// 同一进程里并行跑其它 suite（如渲染视图的布局测试）时，主线程会被占住，
+    /// 2 秒预算偶发不够而误报失败。这里放宽到 5 秒：断言的是「刷新最终落地」，
+    /// 不是「刷新必须多快」。
+    private static let fastFlushTimeout: Duration = .seconds(5)
 
     // MARK: - 初始状态
 

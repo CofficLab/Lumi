@@ -25,7 +25,7 @@ struct SendActionBarViewModelTests {
 
         let viewModel = SendActionBarViewModel(capability: capability)
 
-        #expect(viewModel.state.isSending)
+        #expect(viewModel.state.canStop)
         #expect(viewModel.state.canSend)
         #expect(viewModel.state.showsStopButton)
         #expect(!viewModel.state.showsSendButton)
@@ -37,9 +37,24 @@ struct SendActionBarViewModelTests {
 
         let viewModel = SendActionBarViewModel(capability: capability)
 
-        #expect(!viewModel.state.isSending)
+        #expect(!viewModel.state.canStop)
         #expect(!viewModel.state.canSend)
         #expect(viewModel.state.showsSendButton)
+    }
+
+    @Test("挂起等待用户时同样显示停止按钮")
+    func suspendedConversationShowsStopButton() {
+        let conversationID = UUID()
+        let capability = SendActionBarTestCapability()
+        capability.selectedConversationID = conversationID
+        capability.suspendedConversationIDs = [conversationID]
+
+        let viewModel = SendActionBarViewModel(capability: capability)
+
+        // 挂起也是「回合还没干完」：用户必须能停它。
+        #expect(viewModel.state.canStop)
+        #expect(viewModel.state.showsStopButton)
+        #expect(!viewModel.state.showsSendButton)
     }
 
     // MARK: - canSend
@@ -233,12 +248,12 @@ struct SendActionBarViewModelTests {
         capability.sendingConversationIDs = [second]
         let viewModel = SendActionBarViewModel(capability: capability)
 
-        #expect(!viewModel.state.isSending)
+        #expect(!viewModel.state.canStop)
 
         capability.selectedConversationID = second
         viewModel.refreshConversationState()
 
-        #expect(viewModel.state.isSending)
+        #expect(viewModel.state.canStop)
     }
 
     @Test("没有选中会话时刷新会复位发送中标记")
@@ -249,12 +264,12 @@ struct SendActionBarViewModelTests {
         capability.sendingConversationIDs = [conversationID]
         let viewModel = SendActionBarViewModel(capability: capability)
 
-        #expect(viewModel.state.isSending)
+        #expect(viewModel.state.canStop)
 
         capability.selectedConversationID = nil
         viewModel.refreshConversationState()
 
-        #expect(!viewModel.state.isSending)
+        #expect(!viewModel.state.canStop)
     }
 }
 
@@ -319,7 +334,10 @@ final class SendActionBarTestCapability: ConversationInputCapability {
     var pendingImageAttachments: [UserImageAttachment] = []
     var pendingFileAttachments: [UserFileAttachment] = []
     var selectedConversationID: UUID?
+    /// 回合正在产出（`agentLoopState == .running`）的会话。
     var sendingConversationIDs: Set<UUID> = []
+    /// 回合挂在等用户授权/回答（`agentLoopState == .suspended`）的会话。
+    var suspendedConversationIDs: Set<UUID> = []
 
     // MARK: - Input
 
@@ -405,6 +423,12 @@ final class SendActionBarTestCapability: ConversationInputCapability {
     func isSending(for conversationID: UUID?) -> Bool {
         guard let conversationID else { return false }
         return sendingConversationIDs.contains(conversationID)
+    }
+
+    func canStop(for conversationID: UUID?) -> Bool {
+        guard let conversationID else { return false }
+        return sendingConversationIDs.contains(conversationID)
+            || suspendedConversationIDs.contains(conversationID)
     }
 
     // MARK: - Observation
