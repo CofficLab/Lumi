@@ -231,10 +231,11 @@ final class LumiSendActionBarUITests: LumiUITestCase {
         let editor = element(identifier: Identifiers.editor)
         XCTAssertTrue(editor.waitForExistence(timeout: 20), "未找到聊天输入框")
         let message = "UI Testing Send Button Probe"
-        // 走剪贴板而不是 typeText：后者逐字符合成按键，会被宿主输入法
-        // 吞掉最后一个空格，导致这里断言的完整文案永远匹配不上（详见
-        // `LumiUITestCase` 类注释的实测对照表）。
-        paste(message, into: editor)
+        // 输入框在本用例里只是「有文本、按钮可用」的前置条件载体，
+        // 被测行为是发送按钮能否启动回合。因此走 `typeText`（模拟用户打字），
+        // 不走 ⌘V：后者模拟的是「复制粘贴」这条**另一条**产品功能，
+        // 会让无关路径承担失败的 blame，且要占用剪贴板（用户全局状态）。
+        typeText(message, into: editor)
 
         // 输入后按钮应变为可用。
         let enabled = NSPredicate(format: "enabled == true")
@@ -286,7 +287,7 @@ final class LumiSendActionBarUITests: LumiUITestCase {
         let editor = element(identifier: Identifiers.editor)
         XCTAssertTrue(editor.waitForExistence(timeout: 20), "未找到聊天输入框")
         let message = "UI Testing Attachment Probe"
-        paste(message, into: editor)
+        typeText(message, into: editor)
 
         // 拖拽文件到输入框需要真实拖放手势，XCUITest 的坐标拖放在
         // SwiftUI 的 drop destination 上不稳定。这里改用 pasteboard 不可靠、

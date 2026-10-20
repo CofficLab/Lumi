@@ -106,9 +106,11 @@ final class LumiModelSelectorRefreshUITests: LumiUITestCase {
             NSPredicate(format: "placeholderValue == %@", "Search models")
         ).firstMatch
         XCTAssertTrue(searchField.waitForExistence(timeout: 5), "模型列表缺少搜索框（模型数达到阈值后应显示）")
-        // 用剪贴板粘贴而不是 typeText：后者逐字符合成按键，会被宿主输入法吞掉
-        // 尾部字符，搜不到目标模型（详见 `LumiUITestCase` 的实测对照表）。
-        paste("MiniMax-M2.1", into: searchField)
+        // 搜索框只需「有文本」作为前置条件，走 `typeText`（模拟用户打字），
+        // 不走剪贴板。本类继承的是 XCTestCase 而非 LumiUITestCase、不经
+        // `launchLumi`，因此切输入源由本类自己在 setUp / tearDown 里做。
+        searchField.click()
+        searchField.typeText("MiniMax-M2.1")
 
         let newModelRow = element(identifier: Identifiers.newModelRow)
         XCTAssertTrue(

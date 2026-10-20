@@ -250,7 +250,7 @@ final class LumiAskUserUITests: LumiUITestCase {
             "输入为空时提交按钮不应可用"
         )
 
-        paste(Stub.freeTextAnswer, into: field)
+        typeText(Stub.freeTextAnswer, into: field)
 
         let enabled = NSPredicate(format: "enabled == true")
         expectation(for: enabled, evaluatedWith: submit)
