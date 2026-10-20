@@ -13,15 +13,21 @@ struct EmptyStateAtmosphere: View {
             ZStack {
                 theme.background
 
+                // - Important: 渐变的中心与半径是为了让雾气**一直铺到画面底部**。
+                //
+                //   活动卡位于空态区域之下的底栏槽位，它与上方共用一张底色；
+                //   若渐变在半途收住，底部会突然"变平"，读起来就像换了一张纸。
+                //   中心下移、半径放大之后，尾部在接缝处已经很淡，
+                //   与底栏区域自然过渡。
                 RadialGradient(
                     colors: [
                         theme.primary.opacity(0.075),
                         theme.primarySecondary.opacity(0.025),
                         Color.clear,
                     ],
-                    center: UnitPoint(x: 0.5, y: 0.42),
+                    center: UnitPoint(x: 0.5, y: 0.46),
                     startRadius: 12,
-                    endRadius: max(proxy.size.width, proxy.size.height) * 0.68
+                    endRadius: max(proxy.size.width, proxy.size.height) * 0.8
                 )
 
                 Circle()

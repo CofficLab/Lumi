@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import PluginMessageListEmpty
 
-/// Covers the token series that feeds the trend line under the activity strip.
+/// Covers the token series that feeds the sparkline inside the activity card.
 ///
 /// These tests exercise the pure date-bucketing helpers rather than the async
 /// load path, so they stay deterministic without a live message store.
@@ -92,30 +92,31 @@ struct EmptyStateTokenTrendTests {
     }
 }
 
-/// The compact token formatter is used for both the chart tooltip and the
-/// caption, so its thresholds are part of the visible copy.
+/// The compact token formatter is used by the activity card's anchor line
+/// (the visible copy that replaced the charts' captions), so its thresholds
+/// are part of what the user reads.
 @Suite("Compact token formatting")
 struct CompactTokenCountTests {
     @Test("values below one thousand are shown verbatim")
     func smallValuesVerbatim() {
-        #expect(ActivityTokenTrendView.compactTokenCount(0) == "0")
-        #expect(ActivityTokenTrendView.compactTokenCount(999) == "999")
+        #expect(ActivityTokenFormat.compact(0) == "0")
+        #expect(ActivityTokenFormat.compact(999) == "999")
     }
 
     @Test("thousands switch to one decimal below one hundred units")
     func thousandsFormatting() {
-        #expect(ActivityTokenTrendView.compactTokenCount(1_000) == "1.0K")
-        #expect(ActivityTokenTrendView.compactTokenCount(12_345) == "12.3K")
+        #expect(ActivityTokenFormat.compact(1_000) == "1.0K")
+        #expect(ActivityTokenFormat.compact(12_345) == "12.3K")
         // At or above 100 units the decimal is noise and gets dropped.
-        #expect(ActivityTokenTrendView.compactTokenCount(150_000) == "150K")
+        #expect(ActivityTokenFormat.compact(150_000) == "150K")
     }
 
     @Test("millions and billions use their own suffixes")
     func largeMagnitudes() {
-        #expect(ActivityTokenTrendView.compactTokenCount(1_000_000) == "1.0M")
+        #expect(ActivityTokenFormat.compact(1_000_000) == "1.0M")
         // 43.98M is still below the 100-unit cutoff, so it keeps one decimal.
-        #expect(ActivityTokenTrendView.compactTokenCount(43_982_407) == "44.0M")
-        #expect(ActivityTokenTrendView.compactTokenCount(150_000_000) == "150M")
-        #expect(ActivityTokenTrendView.compactTokenCount(1_000_000_000) == "1.0B")
+        #expect(ActivityTokenFormat.compact(43_982_407) == "44.0M")
+        #expect(ActivityTokenFormat.compact(150_000_000) == "150M")
+        #expect(ActivityTokenFormat.compact(1_000_000_000) == "1.0B")
     }
 }

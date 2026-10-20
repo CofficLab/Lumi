@@ -375,36 +375,36 @@
         }
       }
     },
-    "%@ tokens in the last %lld days": {
+    "%lld messages in the last %lld days · %@ tokens": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%2$lld days · %1$@ tokens"
+            "value": "%1$lld messages in the last %2$lld days · %3$@ tokens"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "最近 %2$lld 天消耗 %1$@ tokens"
+            "value": "最近 %2$lld 天有 %1$lld 条消息 · %3$@ tokens"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "最近 %2$lld 天消耗 %1$@ tokens"
+            "value": "最近 %2$lld 天有 %1$lld 則訊息 · %3$@ tokens"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "最近 %2$lld 天消耗 %1$@ tokens"
+            "value": "最近 %2$lld 天有 %1$lld 則訊息 · %3$@ tokens"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "最近 %2$lld 天消耗 %1$@ tokens"
+            "value": "最近 %2$lld 天有 %1$lld 則訊息 · %3$@ tokens"
           }
         }
       }

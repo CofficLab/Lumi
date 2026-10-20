@@ -286,6 +286,14 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
                 order: order,
                 exclusiveGroup: "message-list",
                 fillsRemainingHeight: true,
+                // - Important: 不画这道分隔线。
+                //
+                //   分隔线由宿主在 stack 与 bottomFixed 之间统一绘制，只要 stack
+                //   最后一项声明 `showsTrailingDivider`（默认 true）就会出现。空态
+                //   的内容与底部的活动卡属于同一段画面（同一套配色、同一条底色、
+                //   同一个宽度基准），留着这条线等于亲手把两块内容切成两个区域
+                //   —— 这正是活动卡此前读起来「割裂」的根源。
+                showsTrailingDivider: false,
                 isActive: { @MainActor [weak self] in
                     self?.shouldRenderEmptyState ?? false
                 },

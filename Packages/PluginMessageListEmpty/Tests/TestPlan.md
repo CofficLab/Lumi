@@ -6,12 +6,13 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 并以常驻注册的 ChatSection 槽位参与 `message-list` 互斥竞争。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，单元用例总数: 54（另有 5 条 UI 测试，见「UI 测试」章节）
+测试文件: 12 个，单元用例总数: 62（另有 6 条 UI 测试，见「UI 测试」章节）
 
 核心组件（源码目录）:
 - `Models/`
 - `Observers/`
 - `Services/`
+- `Support/`
 - `ViewModels/`
 - `Views/`
 
@@ -26,6 +27,12 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 - `EmptyStateActivityDay`
 - `EmptyStateTokenDay`
 - `ActivityFooterView`
+- `ActivityFooterLayout`
+- `ActivityFusionCard`
+- `ActivityFusionCardMetrics`
+- `ActivitySparkline`
+- `ActivitySparklineGeometry`
+- `ActivityTokenFormat`
 - `EmptyStateAtmosphere`
 - `MessageEmptyStateView`
 - `NoConversationSelectedView`
@@ -44,8 +51,9 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 - **RegistrationEvaluationWindow**（2 条，P0）：由 `emptyStateStaysOutOfTheSlotWhileEvaluationIsInFlight`、`emptyStateOnlyAppearsAfterEvaluationSettles` 锁定。锁定 `registrationState = .evaluating` 期间**不参与** `message-list` 槽位竞争这一三态模型核心不变量；改动 `scheduleRegistrationEvaluation` / `shouldRenderEmptyState` 时必须优先跑该文件。
 - **EmptyStateActivityLoading**（7 条）：由 `loading fills the window and derives totals from both series`、`re-entering the empty state on the same day reuses the loaded window`、`a stale slow load cannot overwrite a newer window`、`a missing message provider degrades to an invisible strip` 锁定。覆盖 `loadIfNeeded(force:)` 的窗口填充、同日缓存门、`loadGeneration` 竞态防护、缺 provider 降级、token 与消息两级独立判空；改动 `EmptyStateActivityViewModel` 的加载路径时必须优先跑该文件。
 - **EmptyStateActivityWindow**（10 条）：由 `the window covers every calendar day including idle ones`、`a same-day merge keeps the larger count regardless of arrival order`、`levels are normalized against the busiest day in the window`、`a quiet day next to a busy one stays on the lowest active level` 锁定。覆盖 `makeDays` 的窗口填充、跨天归一化、同日合并取 max、level 相对峰值归一化与 ceiling 除法；改动热力图分桶逻辑时必须优先跑该文件。
-- **EmptyStateTokenTrend**（7 条）：由 `token days fill the whole window including idle days`、`no token consumption keeps the trend hidden`、`values below one thousand are shown verbatim` 等用例锁定；改动 token 趋势线或其紧凑数字格式化时优先跑对应测试文件。
-- **ActivityFooterLayout**（1 条）：由 `activityFooterOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth` 锁定。守住「热力图 + 折线图并排」的宽度阈值 `ActivityFooterLayout.sideBySideMinWidth`（及其三个组成常量）；改动活动条排布时必须优先跑该文件。
+- **EmptyStateTokenTrend**（7 条）：由 `token days fill the whole window including idle days`、`no token consumption keeps the trend hidden`、`values below one thousand are shown verbatim` 等用例锁定；改动 token 序列或它的紧凑数字格式化（`ActivityTokenFormat.compact`）时优先跑对应测试文件。
+- **ActivityFooterLayout**（2 条）：由 `activityCardOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth`、`activityCardLayoutIgnoresWidthBeyondTheCardCap` 锁定。守住「活动卡宽度够才并排」的阈值 `ActivityFooterLayout.sideBySideMinWidth`（及其组成常量），以及「卡片封顶 520pt 之后，槽位再宽也不改变排布」这条不变量；改动活动卡排布时必须优先跑该文件。
+- **ActivitySparklineGeometry**（7 条）：由 `every point stays inside the canvas`、`the series is normalized against its own peak`、`a flat series becomes a horizontal line` 等用例锁定。覆盖曲线与画布的坐标映射（归一化基准、峰值贴顶、等值序列成直线、单点居中）；改动曲线绘制时必须优先跑该文件。Canvas 里画错了不会让编译失败，只能靠这组几何断言守住。
 
 ## 测试用例清单
 
@@ -107,24 +115,32 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 
 | 53 | EmptyStateAccessibility | emptyStateAccessibilityIdentifiersAreStableAndDistinct | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emptyStateAccessibilityIdentifiersAreStableAndDistinct` |
 
-| 54 | ActivityFooterLayout | activityFooterOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activityFooterOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth` |
+| 54 | ActivityFooterLayout | activityCardOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activityCardOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth` |
+| 55 | ActivityFooterLayout | activityCardLayoutIgnoresWidthBeyondTheCardCap | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activityCardLayoutIgnoresWidthBeyondTheCardCap` |
+| 56 | ActivitySparklineGeometry | an empty series draws nothing | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptySeriesHasNoPoints` |
+| 57 | ActivitySparklineGeometry | a zero-sized canvas draws nothing | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `zeroSizedCanvasHasNoPoints` |
+| 58 | ActivitySparklineGeometry | the peak sits at the top of the canvas and the valley near the bottom | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `peakAndValleyAnchorToTheCanvas` |
+| 59 | ActivitySparklineGeometry | every point stays inside the canvas | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pointsStayInsideTheCanvas` |
+| 60 | ActivitySparklineGeometry | the series is normalized against its own peak | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `normalizationIsRelativeToThePeak` |
+| 61 | ActivitySparklineGeometry | a flat series becomes a horizontal line | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `flatSeriesIsHorizontal` |
+| 62 | ActivitySparklineGeometry | a single sample is centered horizontally | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `singleSampleIsCentered` |
 
-> 说明：全部 **54 条单元场景**已在本包 `swift test` 中实跑通过（5 suites / 54 tests，约 0.02 s）；另有 5 条 UI 测试见下方章节。
+> 说明：全部 **62 条单元场景**已在本包 `swift test` 中实跑通过（6 suites / 62 tests，约 0.02 s）；另有 6 条 UI 测试见下方章节。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 11 / 11
-- P1: 已覆盖 39 / 39
-- P2: 已覆盖 4 / 4
-- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
-- **UI 测试: 5 条**（3 通过 / 2 跳过，见「UI 测试」章节）
+- P1: 已覆盖 45 / 45
+- P2: 已覆盖 6 / 6
+- **合计: 62 / 62**（仅表示清单场景，非源码覆盖率）
+- **UI 测试: 6 条**（3 通过 / 2 跳过 / 1 未执行，见「UI 测试」章节）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（39 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
+- **P1**: 其余功能性用例（45 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## UI 测试
 
@@ -140,9 +156,15 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 |----|------|------|------|
 | U1 | `testEmptyStateAppearsForConversationWithoutMessages` | ✅ 通过 | 选中无消息会话时空态出现 |
 | U2 | `testActivityStripAppearsAlongsideEmptyState` | ✅ 通过 | 空态与活动条同时出现（覆盖下述缺陷 1+2） |
-| U3 | `testActivityStripRendersSummaryText` | ✅ 通过 | 无障碍摘要可读且带窗口天数 30（文案不再画在界面上） |
-| U4 | `testEmptyStateAndActivityStripYieldToConversationWithMessages` | ⏭️ 跳过 | 依赖会话列表容器，本环境 rail 未渲染 |
-| U5 | `testToolOnlyConversationStillShowsEmptyState` | ⏭️ 跳过 | 同上 |
+| U3 | `testActivityCardRendersAnchorSummary` | ✅ 通过 | 锚点文案可见、可读且带窗口天数 30（数字由文字给出） |
+| U4 | `testActivityCardAlignsWithThePromptFlow` | ⏳ 未执行 | 活动卡与提示胶囊流共用同一条左右边界（宽度 ≤ 520pt 且水平中心重合） |
+| U5 | `testEmptyStateAndActivityStripYieldToConversationWithMessages` | ⏭️ 跳过 | 依赖会话列表容器，本环境 rail 未渲染 |
+| U6 | `testToolOnlyConversationStillShowsEmptyState` | ⏭️ 跳过 | 同上 |
+
+> U4 的实现已完成且通过了类型检查（`swiftc -typecheck`），但**尚未在真机跑过**：
+> App 级构建被工作区里两处**与本插件无关的既有未解决合并冲突**挡住
+> （`LumiUITests/LumiUITestCase.swift` 与 `Packages/PluginLLMProviderMiniMax/Resources/Localizable.xcstrings`，
+> 二者均为 `UU` 状态）。冲突解决后需补跑本条，结果以实跑为准。
 
 ### 跳过的原因（环境限制，非产品缺陷）
 
@@ -162,7 +184,7 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 `testFreshInstallShowsEmptyStateInsteadOfBlankChat` 依赖 `no-conversation-selected`
 标识符，本次改名后它仍然通过。
 
-U4/U5 已实现为「容器不存在 → skip（附原因）；容器存在但找不到会话行 → fail」，
+U5/U6 已实现为「容器不存在 → skip（附原因）；容器存在但找不到会话行 → fail」，
 两者分开归因，避免环境问题掩盖真实回归。
 
 ## 由 UI 测试发现并修复的产品缺陷
@@ -199,14 +221,14 @@ App 启动时空态先渲染、跨会话统计稍后就绪，首次查询**本�
   `XCUIElement.frame` 只读，XCUITest 没有稳定的 macOS 窗口 resize API；拖拽窗口边缘会引入 flake。
   项目既有边界一致：`LumiMessageListBriefUITests` 同样把 resize 归为「纯视觉验证，以人工验收为主」。
 - **纯视觉细节**：热力图色阶、`EmptyStateAtmosphere` 渐变、chip 圆角与阴影。需截图回归，CI 成本过高。
-- **摘要文案的具体计数**：由夹具单测 `fixtureActivityCountsUseCrossConversationScope` 钉住，
+- **锚点文案的具体计数**：由夹具单测 `fixtureActivityCountsUseCrossConversationScope` 钉住，
   UI 层只断言文案渲染与窗口天数，不在两层重复脆弱断言。
 - **文件夹导入 / 项目切换流程**：`fileImporter` 涉及系统面板，UI 测试无法可靠驱动。
 
 ## 跨平台说明
 
-- 单元测试：Package 声明 macOS 14+, iOS 17+，54 条用例位于 `Tests/`
-- UI 测试：仅 macOS（`LumiUITests` target），5 条用例
+- 单元测试：Package 声明 macOS 14+, iOS 17+，62 条用例位于 `Tests/`
+- UI 测试：仅 macOS（`LumiUITests` target），6 条用例
 
 ## 测试执行
 
