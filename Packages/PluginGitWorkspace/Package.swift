@@ -20,7 +20,8 @@ let package = Package(
         .package(path: "../ProviderGit"),
         .package(path: "../ProviderGitRepositoryWatch"),
         .package(path: "../ProviderChatSection"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0"),
+        .package(path: "../PluginRootView")
     ],
     targets: [
         .target(
@@ -53,6 +54,7 @@ let package = Package(
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
+                .product(name: "PluginRootView", package: "PluginRootView"),
             ]
         ),
     ]
