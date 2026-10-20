@@ -56,7 +56,13 @@ struct ActivityFusionCard: View {
                 .stroke(theme.primary.opacity(ActivityFusionCardMetrics.strokeOpacity), lineWidth: 1)
         }
         .shadow(color: theme.primary.opacity(0.05), radius: 10, y: 2)
-        .accessibilityIdentifier(MessageListEmptyAccessibility.activityCardID)
+        // - Important: 卡片是这一块区域里**唯一**可寻址的无障碍元素。
+        //
+        //   标识符会向下传播并覆盖子孙自己的标识符：外层容器一旦带标识符，
+        //   卡片与卡内的锚点就都寻址不到（实测三者最终都变成同一个 id）。
+        //   所以标识符只留在卡片上，外层容器不设标识符。
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(MessageListEmptyAccessibility.activityStripID)
     }
 
     // MARK: - 组成
@@ -65,11 +71,18 @@ struct ActivityFusionCard: View {
     ///
     /// 图上没有可读的坐标轴，数字必须由文字给出来；这一行同时取代了两块图
     /// 各自曾经的 caption —— 只有一行，不会在图下堆出两行噪声。
+    ///
+    /// - Important: 这一行**不设标识符**。
+    ///
+    ///   标识符会向下传播并覆盖子孙自己的标识符，而卡片已经是这一块区域里
+    ///   唯一的可寻址元素。锚点靠它的**文字**定位（「… messages in the last
+    ///   … days」），这恰好也是它要被断言的东西：数字还在不在。
     private var anchor: some View {
         HStack(spacing: 6) {
             Image(systemName: "chart.bar.xaxis")
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(theme.primary.opacity(0.9))
+                .accessibilityHidden(true)
 
             Text(anchorText)
                 .font(.system(size: 11.5))
@@ -77,8 +90,6 @@ struct ActivityFusionCard: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.9)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier(MessageListEmptyAccessibility.activityAnchorID)
     }
 
     private var heatmap: some View {
