@@ -59,7 +59,11 @@ struct ActivityFooterView: View {
         )
         .padding(.top, ActivityFooterLayout.topSpacing)
         .frame(maxWidth: .infinity)
-        .accessibilityIdentifier(MessageListEmptyAccessibility.activityStripID)
+        // - Important: 这一层**不设标识符**。
+        //
+        //   标识符会向下传播并覆盖子孙自己的标识符：外层容器一旦带上
+        //   `activityStripID`，卡片就再也寻址不到（两者最终是同一个 id）。
+        //   活动条的可寻址元素是卡片本身 —— 它也是活动条的全部可见内容。
         .accessibilityElement(children: .contain)
     }
 

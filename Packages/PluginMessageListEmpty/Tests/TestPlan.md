@@ -156,15 +156,15 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 |----|------|------|------|
 | U1 | `testEmptyStateAppearsForConversationWithoutMessages` | ✅ 通过 | 选中无消息会话时空态出现 |
 | U2 | `testActivityStripAppearsAlongsideEmptyState` | ✅ 通过 | 空态与活动条同时出现（覆盖下述缺陷 1+2） |
-| U3 | `testActivityCardRendersAnchorSummary` | ✅ 通过 | 锚点文案可见、可读且带窗口天数 30（数字由文字给出） |
-| U4 | `testActivityCardAlignsWithThePromptFlow` | ⏳ 未执行 | 活动卡与提示胶囊流共用同一条左右边界（宽度 ≤ 520pt 且水平中心重合） |
+| U3 | `testActivityCardRendersAnchorSummary` | ✅ 通过 | 锚点文案可见、带窗口天数 30，且落在活动卡范围内（锚点靠**文字**定位，见「无障碍标识符的传播陷阱」） |
+| U4 | `testActivityCardAlignsWithThePromptFlow` | ✅ 通过 | 活动卡宽度 ≤ 520pt，且水平中心与提示胶囊流的并集中心重合 |
 | U5 | `testEmptyStateAndActivityStripYieldToConversationWithMessages` | ⏭️ 跳过 | 依赖会话列表容器，本环境 rail 未渲染 |
 | U6 | `testToolOnlyConversationStillShowsEmptyState` | ⏭️ 跳过 | 同上 |
 
-> U4 的实现已完成且通过了类型检查（`swiftc -typecheck`），但**尚未在真机跑过**：
-> App 级构建被工作区里两处**与本插件无关的既有未解决合并冲突**挡住
-> （`LumiUITests/LumiUITestCase.swift` 与 `Packages/PluginLLMProviderMiniMax/Resources/Localizable.xcstrings`，
-> 二者均为 `UU` 状态）。冲突解决后需补跑本条，结果以实跑为准。
+> U3/U4 均已在真机跑通（`-only-testing:LumiUITests/LumiMessageListEmptyUITests`）。
+> U4 的水平中心比较取「所有带 `suggestion-flow` 标识符的元素的并集」：
+> 胶囊流的标识符会传播到每一个 chip 上（见下节），单取第一个匹配元素会拿到
+> 某一个 chip，而不是整条流。
 
 ### 跳过的原因（环境限制，非产品缺陷）
 
@@ -186,6 +186,30 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 
 U5/U6 已实现为「容器不存在 → skip（附原因）；容器存在但找不到会话行 → fail」，
 两者分开归因，避免环境问题掩盖真实回归。
+
+## 无障碍标识符的传播陷阱（UI 测试实测）
+
+SwiftUI 的 `.accessibilityIdentifier` 会**向下传播**，并且会覆盖子孙元素自己的标识符。
+这条规则在合卡之后才暴露出来，实测结论如下：
+
+| 现象 | 实测 |
+|------|------|
+| 标识符挂在**非元素**的容器视图上 | 完全失效：既不生成元素，也不影响子孙（`activity-card` 曾因此永远找不到） |
+| 标识符挂在**元素**上（`.accessibilityElement(children:)`） | 元素自己可寻址；其子孙中**没有自己标识符**的会继承它 |
+| 祖先**元素**带标识符 | 覆盖子孙**元素**的标识符（活动条带 id 时，卡片的 id 被盖掉） |
+| 叶子文字自带标识符 | 能留住（锚点把标识符挂在 `Text` 上时可寻址） |
+| 自定义 `Layout`（`FlowLayout`）带标识符 | 传播到它排布的每个子视图，覆盖 chip 自己的 `suggestion.<id>` |
+
+因此本插件的活动条区域采用**只留一个可寻址元素**的策略：
+
+- `activityStripID` 挂在**活动卡**上（它也是活动条的全部可见内容）；
+- 活动条的外层容器**不设标识符**，否则会遮蔽卡片的标识符；
+- 卡内的锚点文案**不设标识符**，改由**文字**定位 —— 它要被断言的本来就是
+  它写着什么（「… messages in the last … days」），用文字定位更贴切。
+
+新增标识符前请先打印一次无障碍层级树（`app.debugDescription` 后过滤 `message-list`）
+确认它真的可寻址，再写断言 —— 标识符写错不会让编译失败，只会让 UI 测试在
+「元素找不到」上失败。
 
 ## 由 UI 测试发现并修复的产品缺陷
 

@@ -90,62 +90,76 @@ final class LumiMessageListEmptyUITests: LumiUITestCase {
         )
     }
 
-    /// 活动卡的锚点文案必须真的渲染出来，并带窗口天数。
+    /// 活动卡里的锚点文案必须真的渲染出来，并带窗口天数。
     ///
     /// 数字现在由文字给出（图形只负责形状），因此这条用例守的是
     /// **数字没有随图形一起消失**：卡片在、却没有那行字，读屏用户与视力正常的
     /// 用户都只剩下 30 个日期格子，得不到「近 30 天共多少条」这一层语义。
     ///
+    /// 锚点靠**文字**定位而不是标识符：标识符会向下传播并覆盖子孙自己的
+    /// 标识符，这一块区域里只有活动卡是唯一可寻址的元素（详见
+    /// `MessageListEmptyAccessibility.activityStripID` 的注释）。而锚点要被
+    /// 断言的本来就是它**写着什么**，用文字定位恰好更贴切。
+    ///
     /// 只断言文案的稳定片段、不断言具体数字：数字口径由夹具单测钉住（见类注释）。
     func testActivityCardRendersAnchorSummary() throws {
         waitForMainWindow()
 
-        let strip = element(identifier: MessageListEmptyA11yIDs.activityStrip)
+        let card = element(identifier: MessageListEmptyA11yIDs.activityStrip)
         XCTAssertTrue(
-            strip.waitForExistence(timeout: 30),
-            "底部活动条未出现"
+            card.waitForExistence(timeout: 30),
+            "活动条未出现"
         )
 
-        // 锚点是可见文字，因此按标识符定位，不按文案（文案随语言变化）。
-        let anchor = element(identifier: MessageListEmptyA11yIDs.activityAnchor)
+        // 摘要格式为「%lld messages in the last %lld days · %@ tokens」，取其中最稳定的片段。
+        let anchor = element(containingLabel: "messages in the last")
         XCTAssertTrue(
             anchor.waitForExistence(timeout: 15),
-            "活动条已出现但锚点文案缺失（活动条 label：\(strip.label)）"
+            "活动卡已出现但锚点文案缺失"
         )
-        // 摘要格式为「%lld messages in the last %lld days · %@ tokens」，取其中最稳定的片段。
-        XCTAssertTrue(
-            anchor.label.contains("messages in the last"),
-            "活动卡锚点文案缺少消息摘要（label：\(anchor.label)）"
-        )
+        // 合并后的无障碍元素可能把文字放在 label 上，也可能放在 value 上，
+        // 两处都要认，否则会出现「元素在、却读不到文字」的假阴性。
+        let anchorText = anchor.label.isEmpty ? (anchor.value as? String ?? "") : anchor.label
         // 摘要里必须带上窗口天数，否则「近 30 天」这个语义就丢了。
         XCTAssertTrue(
-            anchor.label.contains("30"),
-            "活动卡锚点文案未包含窗口天数 30（label：\(anchor.label)）"
+            anchorText.contains("30"),
+            "活动卡锚点文案未包含窗口天数 30（label：\(anchor.label) / value：\(anchor.value ?? "")）"
+        )
+        // 数字必须出现在**卡里**，而不是飘在别处。
+        XCTAssertTrue(
+            card.frame.contains(anchor.frame),
+            "锚点文案不在活动卡范围内（卡 \(card.frame) / 锚点 \(anchor.frame)）"
         )
     }
 
     /// 热力图与 token 曲线必须合成**一张卡**，并与提示胶囊流共用同一条宽度基准。
     ///
     /// 这条守的是「融合」本身：活动卡此前是两块各自为政的控件，被一道系统
-    /// 分隔线切在空态之外。合卡之后，卡片的左右边界必须与中间的提示胶囊流
-    /// 对齐 —— 这正是「它们属于同一块画面」最直接的信号，也是最容易在
+    /// 分隔线切在空态之外。合卡之后，卡片与中间的提示胶囊流必须共用同一条
+    /// 左右边界 —— 这正是「它们属于同一块画面」最直接的信号，也是最容易在
     /// 日后的一次随手改动里丢掉的东西。
     func testActivityCardAlignsWithThePromptFlow() throws {
         waitForMainWindow()
 
-        let card = element(identifier: MessageListEmptyA11yIDs.activityCard)
+        let card = element(identifier: MessageListEmptyA11yIDs.activityStrip)
         XCTAssertTrue(
             card.waitForExistence(timeout: 30),
             "活动卡未出现"
         )
 
-        let flow = element(identifier: MessageListEmptyA11yIDs.suggestionFlow)
-        XCTAssertTrue(
-            flow.waitForExistence(timeout: 15),
-            "提示胶囊流未出现，无法比较两者的横向基准"
-        )
+        // 胶囊流的外层标识符会传播到每一个 chip 上（SwiftUI 的行为），
+        // 因此这里取**所有**同名元素的并集，作为胶囊流实际占位。
+        let chipFrames = app.descendants(matching: .any)
+            .matching(identifier: MessageListEmptyA11yIDs.suggestionFlow)
+            .allElementsBoundByIndex
+            .map(\.frame)
+        guard let firstChip = chipFrames.first else {
+            XCTFail("提示胶囊流未出现，无法比较两者的横向基准")
+            return
+        }
+        let chipsBox = chipFrames.dropFirst().reduce(firstChip) { $0.union($1) }
 
-        // 卡片宽度封顶 520pt（与胶囊流同宽），不得再被拉宽。
+        // 卡片宽度封顶 520pt（与胶囊流同宽的基准），不得再被拉宽。
         XCTAssertLessThanOrEqual(
             card.frame.width,
             521,
@@ -154,9 +168,9 @@ final class LumiMessageListEmptyUITests: LumiUITestCase {
         // 两者都居中在同一个 620pt 的列里，水平中心应当重合。
         XCTAssertEqual(
             card.frame.midX,
-            flow.frame.midX,
+            chipsBox.midX,
             accuracy: 2,
-            "活动卡与提示胶囊流没有共用同一条左右边界（卡 \(card.frame.midX) / 胶囊 \(flow.frame.midX)）"
+            "活动卡与提示胶囊流没有共用同一条左右边界（卡 \(card.frame.midX) / 胶囊 \(chipsBox.midX)）"
         )
     }
 
@@ -266,9 +280,8 @@ enum MessageListEmptyA11yIDs {
     static let noSelection = "lumi.message-list.empty.no-conversation-selected"
     static let noMessages = "lumi.message-list.empty.no-messages"
     static let suggestionFlow = "lumi.message-list.empty.suggestion-flow"
+    /// 活动卡（活动条的全部可见内容，也是这一块唯一可寻址的元素）。
     static let activityStrip = "lumi.message-list.empty.activity"
-    static let activityCard = "lumi.message-list.empty.activity-card"
-    static let activityAnchor = "lumi.message-list.empty.activity-anchor"
 }
 
 /// 夹具会话标题（复述 `MessageListEmptyUITestingSupport`）。
