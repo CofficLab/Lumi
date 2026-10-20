@@ -829,7 +829,7 @@ extension AgentLoopManager {
     }
 
     func isContextLimitError(_ error: Error) -> Bool {
-        guard case let VendorAPIError.httpStatus(_, summary) = error else { return false }
+        guard case let VendorAPIError.httpStatus(_, summary, _) = error else { return false }
         let normalized = summary.lowercased()
         return normalized.contains("context")
             || normalized.contains("token limit")

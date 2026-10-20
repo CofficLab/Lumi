@@ -177,6 +177,34 @@ struct ProviderRootViewTests {
         #expect(pane.width == secondWidth.withIdealWidth(460))
     }
 
+    @Test("Rail 面板挂载条件跟随 Rail 内容")
+    func railContentFlagFollowsRailTabs() {
+        let provider = PluginRootView.DefaultRootViewProvider()
+        // 未绑定 Rail Provider 的宿主无法判断内容，保持旧行为：恒为可挂载。
+        #expect(provider.hasRailContent)
+
+        let rail = DefaultRailViewProviding()
+        provider.bindRailViewVisibility(to: rail)
+        #expect(!provider.hasRailContent)
+
+        // 标签动态出现（全新安装后首个会话注册 `chats` 标签）：必须变成可挂载，
+        // 否则 `WorkbenchSplitView` 不会重建已被折叠的 Rail 面板，列表永远不可见。
+        rail.registerTabs([
+            RailTabItem(id: "rail", category: .general, title: "Rail", systemImage: "sidebar") { Text("Rail") },
+        ])
+        #expect(provider.hasRailContent)
+
+        // 分类过滤把标签全部隐藏后，面板不应继续占位。
+        rail.setVisibleCategories([])
+        #expect(!provider.hasRailContent)
+
+        rail.setVisibleCategories(Set(RailViewCategory.allCases))
+        #expect(provider.hasRailContent)
+
+        rail.removeTabs(ids: ["rail"])
+        #expect(!provider.hasRailContent)
+    }
+
     @Test("Rail 可见性绑定到根布局")
     func railVisibilityFollowsProvider() {
         let provider = PluginRootView.DefaultRootViewProvider()

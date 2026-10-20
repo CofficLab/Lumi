@@ -117,7 +117,17 @@ final class EmptyStateActivityViewModel {
         guard let messages else { return }
 
         let today = calendar.startOfDay(for: .now)
-        if !force, let visibleRange, visibleRange.upperBound == today, totalMessages != nil {
+        // - Important: 只在**已经拿到非零结果**时才命中缓存门。
+        //
+        //   原先的条件是 `totalMessages != nil`，于是「首次查询得到 0」会把
+        //   结果永久钉死：启动早期数据库统计尚未就绪时，第一次查询本来就
+        //   应当是 0，等数据就绪后却再也不会重查。用户表现是本次运行内
+        //   活动条一直不出现（实测：查询返回 0 之后 0.4s，数据才带着 9 条
+        //   消息就绪，而缓存门已经拒绝重试）。
+        //
+        //   零结果是「可能还没准备好」而非「确定没有」，对它保持可重试；
+        //   非零结果才用「同一天内历史不变」这个前提换取不重复查库。
+        if !force, let visibleRange, visibleRange.upperBound == today, let total = totalMessages, total > 0 {
             return
         }
 
@@ -223,3 +233,4 @@ final class EmptyStateActivityViewModel {
         }
     }
 }
+

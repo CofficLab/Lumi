@@ -25,6 +25,14 @@ private struct MessageFingerprintV3: Equatable {
     let role: MessageRole
     let isToolExecutionOnly: Bool
     let toolCallResultState: [String]
+    /// 授权状态（`pendingAuthorization` → `userApproved` / `userRejected`）。
+    ///
+    /// 它与 `result` 一起决定渲染层要不要再弹一次授权卡片
+    /// （`ToolApprovalRowRenderer.canRender`），因此必须纳入指纹：
+    /// 只比较结果内容长度与 `awaitingUserResponse` 的话，
+    /// 「结果没变、只有授权状态变了」这种回写会被漏掉，
+    /// 历史行会继续持有「等待授权」的旧快照。
+    let toolCallAuthorizationState: [String]
 }
 
 /// Message List V3 View Model (detailed / 详细模式)
@@ -426,6 +434,9 @@ final class ListV3ViewModel: ObservableObject {
                             "\($0.content.count):\($0.awaitingUserResponse == true)"
                         } ?? "nil"
                         return "\($0.id):\(resultState)"
+                    } ?? [],
+                    toolCallAuthorizationState: $0.toolCalls?.map {
+                        "\($0.id):\($0.authorizationState ?? "nil")"
                     } ?? []
                 )
             }

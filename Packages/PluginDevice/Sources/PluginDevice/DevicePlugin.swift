@@ -93,7 +93,11 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
                 DeviceInfoMenuBarContentView(viewModel: viewModels.menuBar)
             })
             menuBar.addPopup(MenuBarPopupItem(id: "\(id).cpu", title: "CPU", order: order) {
-                DeviceInfoMenuBarPopupView(viewModel: viewModels.cpu, historyViewModel: viewModels.cpuHistory)
+                DeviceInfoMenuBarPopupView(
+                    viewModel: viewModels.cpu,
+                    thermalViewModel: viewModels.thermal,
+                    historyViewModel: viewModels.cpuHistory
+                )
             })
             menuBar.addPopup(MenuBarPopupItem(id: "\(id).memory", title: "内存", order: order) {
                 MemoryMenuBarPopupView(viewModel: viewModels.memory, historyViewModel: viewModels.memoryHistory)

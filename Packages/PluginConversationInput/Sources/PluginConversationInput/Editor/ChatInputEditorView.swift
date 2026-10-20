@@ -270,18 +270,19 @@ public struct ChatInputEditorView: NSViewRepresentable {
 
         let usedRect = layoutManager.usedRect(for: textContainer)
         let insetHeight = textView.textContainerInset.height * 2
-        guard let newHeight = Self.measuredHeight(
+        let measured = Self.measuredHeight(
             usedRectHeight: usedRect.height,
             insetHeight: insetHeight,
             availableWidth: textContainer.containerSize.width
-        ) else {
-            return
-        }
+        )
+        // `usedRect` 带亚像素误差。这里把高度量化到行数：行数没变就不上报，
+        // 避免 `.frame(height:)` 在极小范围内反复变动——该输入框是 bottomFixed
+        // 的，每次变动都会让整条消息列表重排。
+        let newHeight = Self.stabilizedHeight(measured, previous: height)
+        guard let scrollView = textView.enclosingScrollView else { return }
         let contentHeight = usedRect.height + insetHeight
 
-        if let scrollView = textView.enclosingScrollView {
-            scrollView.hasVerticalScroller = contentHeight > Self.maxHeight
-        }
+        scrollView.hasVerticalScroller = contentHeight > Self.maxHeight
 
         if height != newHeight {
             coordinator.scheduleHeightBindingUpdate(newHeight)
@@ -330,6 +331,42 @@ public struct ChatInputEditorView: NSViewRepresentable {
 
         let contentHeight = usedRectHeight + insetHeight
         return min(max(contentHeight, Self.minHeight), Self.maxHeight)
+    }
+
+    /// 行高。用于把连续的高度值换算成行数。
+    ///
+    /// 输入框用 15pt 系统字体，单行约 19pt。这里取该值做行数换算即可——
+    /// 目的是判断「有没有多一行 / 少一行」，不要求与实际行高完全一致。
+    static let nominalLineHeight: CGFloat = 19
+
+    /// 抑制亚像素抖动后再决定是否上报高度。
+    ///
+    /// - Important: 输入框是 `bottomFixed` 的，`height` binding 一变，SwiftUI
+    ///   就改 `.frame(height:)`，整条消息列表随之重排。而 AppKit 的
+    ///   `usedRect(for:)` 带亚像素误差：同一行内容下相邻两次测量可能相差零点几个点。
+    ///   若原样上报，frame 会在极小范围内反复变动，每个字符都触发一次全区重排。
+    ///
+    ///   做法是把高度量化到行数再取整：行数没变就沿用上一次高度，行数变了才上报。
+    ///
+    /// - Parameters:
+    ///   - measured: 本次测得的高度；`nil` 表示测量不可用（宽度为 0 的临时布局等）。
+    ///   - previous: 上一次已上报的高度。
+    ///   - lineHeight: 行高，用于行数换算。
+    /// - Returns: 应上报的高度。测量失败时沿用 ``previous``，不把输入框压回最小高度。
+    static func stabilizedHeight(
+        _ measured: CGFloat?,
+        previous: CGFloat,
+        lineHeight: CGFloat = nominalLineHeight
+    ) -> CGFloat {
+        guard let measured, measured.isFinite, lineHeight > 0 else { return previous }
+
+        // 行数一致 → 认为只是亚像素抖动，沿用上一次已上报的值。
+        guard Int((measured / lineHeight).rounded(.down)) != Int((previous / lineHeight).rounded(.down))
+        else {
+            return previous
+        }
+
+        return measured
     }
 }
 
@@ -618,7 +655,8 @@ extension ChatInputEditorView {
                 let attachment = PastePreviewAttachment(
                     originalText: block.text,
                     title: block.title,
-                    systemImage: block.systemImage
+                    systemImage: block.systemImage,
+                    font: textView.font
                 )
                 textView.hasPastePreviewAttachments = true
                 textView.insertText(
@@ -650,7 +688,10 @@ extension ChatInputEditorView {
                 return false
             }
 
-            let attachment = PastePreviewAttachment(originalText: text)
+            let attachment = PastePreviewAttachment(
+                originalText: text,
+                font: textView.font
+            )
             let attributed = NSAttributedString(attachment: attachment)
             textView.hasPastePreviewAttachments = true
             textView.insertText(attributed, replacementRange: textView.selectedRange())
@@ -1027,7 +1068,7 @@ final class EditorTextView: NSTextView {
 
         let popover = NSPopover()
         popover.behavior = .transient
-        popover.contentSize = NSSize(width: 620, height: 460)
+        popover.contentSize = PastePreviewPopoverViewController.contentSize
         popover.contentViewController = PastePreviewPopoverViewController(
             text: attachment.originalText,
             summaryText: attachment.summaryText,
@@ -1056,11 +1097,20 @@ final class PastePreviewAttachment: NSTextAttachment {
     let previewTitle: String
 
     /// 粘贴路径：不带来源标题与图标，chip 沿用「粘贴的文本」文案。
-    convenience init(originalText: String) {
-        self.init(originalText: originalText, title: nil, systemImage: nil)
+    @MainActor
+    convenience init(originalText: String, font: NSFont? = nil) {
+        self.init(originalText: originalText, title: nil, systemImage: nil, font: font)
     }
 
-    init(originalText: String, title: String?, systemImage: String?) {
+    @MainActor
+    convenience init(originalText: String, title: String?, systemImage: String?) {
+        self.init(originalText: originalText, title: title, systemImage: systemImage, font: nil)
+    }
+
+    /// - Parameter font: chip 所在编辑器的正文字体。传入后 chip 高度与该字号对齐；
+    ///   为 nil 时退回默认字号，行为与之前一致。
+    @MainActor
+    init(originalText: String, title: String?, systemImage: String?, font: NSFont?) {
         self.originalText = originalText
         self.characterCount = originalText.count
         self.lineCount = Self.lineCount(for: originalText)
@@ -1069,12 +1119,34 @@ final class PastePreviewAttachment: NSTextAttachment {
             countStyle: .file
         )
         self.previewTitle = title ?? pluginLocalization.string("Pasted text")
-        super.init(data: nil, ofType: nil)
-        self.attachmentCell = PasteButtonAttachmentCell(
-            title: title.map { "\($0) · \(Self.countText(self.characterCount))" }
-                ?? Self.chipTitle(characterCount: characterCount, lineCount: lineCount),
-            systemImage: systemImage
+        let chipTitle = Self.chipTitleText(
+            title: title,
+            characterCount: characterCount,
+            lineCount: lineCount
         )
+        super.init(data: nil, ofType: nil)
+        if let font {
+            self.attachmentCell = PasteButtonAttachmentCell(
+                title: chipTitle,
+                systemImage: systemImage,
+                font: font
+            )
+        } else {
+            self.attachmentCell = PasteButtonAttachmentCell(
+                title: chipTitle,
+                systemImage: systemImage
+            )
+        }
+    }
+
+    /// chip 上显示的一行文案。带来源标题时只追加字数，避免 chip 过长。
+    private static func chipTitleText(
+        title: String?,
+        characterCount: Int,
+        lineCount: Int
+    ) -> String {
+        title.map { "\($0) · \(Self.countText(characterCount))" }
+            ?? Self.chipTitle(characterCount: characterCount, lineCount: lineCount)
     }
 
     @available(*, unavailable)
@@ -1128,39 +1200,53 @@ final class PastePreviewAttachment: NSTextAttachment {
 /// 与正文基线对齐且只占一行。hover 时背景与描边加深，让用户知道这是个可点的按钮。
 /// 宽度在初始化时按文本测量并缓存，避免布局阶段反复测量字符串。
 final class PasteButtonAttachmentCell: NSTextAttachmentCell {
-    private static let titleFont = NSFont.systemFont(ofSize: 11, weight: .medium)
-    private static let symbolPointSize: CGFloat = 9
-    private static let symbolName = "doc.on.clipboard"
     private static let contentInset: CGFloat = 6
-    private static let iconSize: CGFloat = 11
-    private static let iconTitleSpacing: CGFloat = 4
     private static let maximumWidth: CGFloat = 260
-    private static let chipHeight: CGFloat = 18
-    private static let cornerRadius: CGFloat = 5
-    private static let baselineOffset: CGFloat = -4
     /// 描边宽度的一半，留给描边本身，避免描边被裁掉。
     private static let strokeInset: CGFloat = 1
+    /// chip 与正文行高之间的差值，让它与普通文字同高而不是撑满整行。
+    private static let lineHeightSlack: CGFloat = 2
+    /// 未指定图标时使用的默认符号。
+    private static let defaultSymbolName = "doc.on.clipboard"
 
-    private static var titleAttributes: [NSAttributedString.Key: Any] {
-        [
-            .font: titleFont,
-            .foregroundColor: NSColor.labelColor
-        ]
-    }
-
+    private let titleFont: NSFont
+    private let symbolPointSize: CGFloat
+    private let iconSize: CGFloat = 11
+    private let iconTitleSpacing: CGFloat = 4
+    private let chipHeight: CGFloat
+    private let cornerRadius: CGFloat
+    private let baselineOffset: CGFloat
     private let chipTitle: String
     private let chipTitleWidth: CGFloat
     /// chip 图标名。粘贴用剪贴板图标，外部内容由生产方指定（如代码文件的括号图标）。
     private let symbolName: String
 
-    init(title: String, systemImage: String? = nil) {
+    /// chip 文案使用的字体与颜色。字号随实例的 `titleFont` 变化，这里按需组装。
+    private static func titleAttributes(for font: NSFont) -> [NSAttributedString.Key: Any] {
+        [
+            .font: font,
+            .foregroundColor: NSColor.labelColor
+        ]
+    }
+
+    /// - Parameter font: chip 所在编辑器的正文字体。chip 的字号与高度都从这里派生，
+    ///   这样正文字号变化时 chip 会自动跟随，不会再出现「比文字高一圈」的情况。
+    init(title: String, systemImage: String? = nil, font: NSFont = .systemFont(ofSize: 15)) {
         self.chipTitle = title
-        self.symbolName = systemImage ?? Self.symbolName
-        let measured = ceil((title as NSString).size(withAttributes: Self.titleAttributes).width)
+        self.symbolName = systemImage ?? Self.defaultSymbolName
+        // chip 文字比正文小 4pt，但不低于 10pt，避免小字号正文下不可读。
+        self.titleFont = .systemFont(ofSize: max(10, font.pointSize - 4), weight: .medium)
+        self.symbolPointSize = max(8, titleFont.pointSize - 2)
+        let lineHeight = NSLayoutManager().defaultLineHeight(for: font)
+        // 比行高低 lineHeightSlack，使 chip 底边贴近基线、顶边不越过行高。
+        self.chipHeight = max(12, lineHeight - Self.lineHeightSlack)
+        self.cornerRadius = self.chipHeight / 3
+        self.baselineOffset = -(lineHeight - self.chipHeight) / 2
+        let measured = ceil((title as NSString).size(withAttributes: Self.titleAttributes(for: self.titleFont)).width)
         let maximum = Self.maximumWidth
             - Self.contentInset * 2
-            - Self.iconSize
-            - Self.iconTitleSpacing
+            - self.iconSize
+            - self.iconTitleSpacing
         self.chipTitleWidth = min(measured, maximum)
         super.init()
     }
@@ -1172,13 +1258,13 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
 
     override func cellSize() -> NSSize {
         NSSize(
-            width: Self.contentInset * 2 + Self.iconSize + Self.iconTitleSpacing + chipTitleWidth,
-            height: Self.chipHeight
+            width: Self.contentInset * 2 + iconSize + iconTitleSpacing + chipTitleWidth,
+            height: chipHeight
         )
     }
 
     override func cellBaselineOffset() -> NSPoint {
-        NSPoint(x: 0, y: Self.baselineOffset)
+        NSPoint(x: 0, y: baselineOffset)
     }
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView?) {
@@ -1194,8 +1280,8 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
 
         let path = NSBezierPath(
             roundedRect: chipRect,
-            xRadius: Self.cornerRadius,
-            yRadius: Self.cornerRadius
+            xRadius: cornerRadius,
+            yRadius: cornerRadius
         )
         path.lineWidth = 1
 
@@ -1211,14 +1297,14 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
 
         let iconRect = NSRect(
             x: chipRect.minX + Self.contentInset,
-            y: chipRect.midY - Self.iconSize / 2,
-            width: Self.iconSize,
-            height: Self.iconSize
+            y: chipRect.midY - iconSize / 2,
+            width: iconSize,
+            height: iconSize
         )
         symbolImage()?.draw(in: iconRect)
 
-        let lineHeight = ceil(Self.titleFont.ascender - Self.titleFont.descender)
-        let titleMinX = iconRect.maxX + Self.iconTitleSpacing
+        let lineHeight = ceil(titleFont.ascender - titleFont.descender)
+        let titleMinX = iconRect.maxX + iconTitleSpacing
         let titleRect = NSRect(
             x: titleMinX,
             y: chipRect.midY - lineHeight / 2,
@@ -1228,7 +1314,7 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
 
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineBreakMode = .byTruncatingTail
-        var attributes = Self.titleAttributes
+        var attributes = Self.titleAttributes(for: titleFont)
         attributes[.paragraphStyle] = paragraph
         (chipTitle as NSString).draw(in: titleRect, withAttributes: attributes)
     }
@@ -1238,7 +1324,7 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
             return nil
         }
         let configuration = NSImage.SymbolConfiguration(
-            pointSize: Self.symbolPointSize,
+            pointSize: symbolPointSize,
             weight: .semibold
         )
             .applying(NSImage.SymbolConfiguration(paletteColors: [.secondaryLabelColor]))
@@ -1268,6 +1354,15 @@ final class PastePreviewPopoverViewController: NSViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    /// 弹窗内容四周的内边距，让标题、正文与按钮都不贴在圆角边缘上。
+    private static let contentPadding: CGFloat = 16
+    /// 头部固定高度，正文区域吃掉剩余空间。
+    private static let headerHeight: CGFloat = 44
+    /// 弹窗总尺寸。宽度含 contentPadding，正文可用宽度需要再减去两侧内边距。
+    static let contentSize = NSSize(width: 620, height: 460)
+    /// 传给 scrollView 的文档宽度，只作为排版的初始值，最终由滚动区宽度决定。
+    private static var textWidth: CGFloat { contentSize.width - contentPadding * 2 }
+
     override func loadView() {
         let container = NSView()
         let scrollView = NSScrollView()
@@ -1275,6 +1370,7 @@ final class PastePreviewPopoverViewController: NSViewController {
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
 
         let textView = NSTextView()
         textView.isEditable = false
@@ -1283,10 +1379,11 @@ final class PastePreviewPopoverViewController: NSViewController {
         textView.drawsBackground = false
         textView.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
         textView.textColor = .labelColor
-        textView.textContainerInset = NSSize(width: 12, height: 12)
+        // 外层已有 contentPadding，正文内部不再重复内缩，避免双层留白。
+        textView.textContainerInset = .zero
         textView.textContainer?.widthTracksTextView = true
-        textView.textContainer?.containerSize = NSSize(width: 560, height: CGFloat.greatestFiniteMagnitude)
-        textView.frame = NSRect(x: 0, y: 0, width: 560, height: 360)
+        textView.textContainer?.containerSize = NSSize(width: Self.textWidth, height: CGFloat.greatestFiniteMagnitude)
+        textView.frame = NSRect(x: 0, y: 0, width: Self.textWidth, height: 320)
         textView.string = text
 
         scrollView.documentView = textView
@@ -1297,7 +1394,6 @@ final class PastePreviewPopoverViewController: NSViewController {
         header.distribution = .fill
         header.spacing = 10
         header.translatesAutoresizingMaskIntoConstraints = false
-        header.heightAnchor.constraint(equalToConstant: 44).isActive = true
 
         let titleStack = NSStackView()
         titleStack.orientation = .vertical
@@ -1337,16 +1433,18 @@ final class PastePreviewPopoverViewController: NSViewController {
 
         let stack = NSStackView(views: [header, scrollView])
         stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = 8
+        // 头部与正文都要横向撑满，否则滚动区宽度会退回文档宽度。
+        stack.alignment = .width
+        stack.spacing = 12
         stack.translatesAutoresizingMaskIntoConstraints = false
 
         container.addSubview(stack)
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: container.topAnchor),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: Self.contentPadding),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -Self.contentPadding),
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: Self.contentPadding),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -Self.contentPadding),
+            header.heightAnchor.constraint(equalToConstant: Self.headerHeight)
         ])
 
         view = container

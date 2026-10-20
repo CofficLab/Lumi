@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationState 的实现包，包含 5 个主要类型；当前测试覆盖 9 条用例。
+PluginConversationState 的实现包，包含 5 个主要类型；当前测试覆盖 10 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 9
+测试文件: 1 个，用例总数: 10
 
 核心组件（源码目录）:
 - `Observers/`
@@ -25,7 +25,7 @@ PluginConversationState 的实现包，包含 5 个主要类型；当前测试�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **综合**（9 条）：由 `pluginMetadataIsStable`、`providerPublishesStateEvents`、`partialUpdatePreservesUnchangedFields` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（10 条）：由 `pluginMetadataIsStable`、`providerPublishesStateEvents`、`partialUpdatePreservesUnchangedFields` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -34,33 +34,34 @@ PluginConversationState 的实现包，包含 5 个主要类型；当前测试�
 | 1 | 综合 | pluginMetadataIsStable | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `pluginMetadataIsStable` |
 | 2 | 综合 | providerPublishesStateEvents | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `providerPublishesStateEvents` |
 | 3 | 综合 | partialUpdatePreservesUnchangedFields | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `partialUpdatePreservesUnchangedFields` |
-| 4 | 综合 | clearFlagsResetActivityAndErrorWithoutTouchingOtherFields | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `clearFlagsResetActivityAndErrorWithoutTouchingOtherFields` |
-| 5 | 综合 | stateForUnknownConversationReturnsIdleDefault | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `stateForUnknownConversationReturnsIdleDefault` |
-| 6 | 综合 | removeUnknownConversationDoesNotNotify | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `removeUnknownConversationDoesNotNotify` |
-| 7 | 综合 | observerStopsReceivingAfterCancel | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `observerStopsReceivingAfterCancel` |
-| 8 | 综合 | jobActivityMergesIntoSnapshot | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `jobActivityMergesIntoSnapshot` |
-| 9 | 综合 | 恢复后的迟到 suspended 事件不会覆盖运行中状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `lateSuspendedEventDoesNotOverwriteResumedTurnState` |
+| 4 | 综合 | canStopCoversRunningAndSuspendedButNotTerminalStates | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `canStopCoversRunningAndSuspendedButNotTerminalStates` |
+| 5 | 综合 | clearFlagsResetActivityAndErrorWithoutTouchingOtherFields | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `clearFlagsResetActivityAndErrorWithoutTouchingOtherFields` |
+| 6 | 综合 | stateForUnknownConversationReturnsIdleDefault | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `stateForUnknownConversationReturnsIdleDefault` |
+| 7 | 综合 | removeUnknownConversationDoesNotNotify | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `removeUnknownConversationDoesNotNotify` |
+| 8 | 综合 | observerStopsReceivingAfterCancel | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `observerStopsReceivingAfterCancel` |
+| 9 | 综合 | jobActivityMergesIntoSnapshot | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `jobActivityMergesIntoSnapshot` |
+| 10 | 综合 | 恢复后的迟到 suspended 事件不会覆盖运行中状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `lateSuspendedEventDoesNotOverwriteResumedTurnState` |
 
-> 说明：全部 **9 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **10 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 7 / 7
+- P1: 已覆盖 8 / 8
 - P2: 已覆盖 2 / 2
-- **合计: 9 / 9**（仅表示清单场景，非源码覆盖率）
+- **合计: 10 / 10**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（7 条）
+- **P1**: 其余功能性用例（8 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 9 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 10 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

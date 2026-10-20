@@ -88,6 +88,7 @@ public struct ProviderDetailView: View {
                     AppButton("编辑", systemImage: "pencil", style: .secondary, size: .small) {
                         isEditorPresented = true
                     }
+                    .accessibilityIdentifier(ProviderSettingsAccessibility.editProviderButton)
                     AppButton("删除", systemImage: "trash", style: .destructive, size: .small) {
                         isDeleteConfirmationPresented = true
                     }

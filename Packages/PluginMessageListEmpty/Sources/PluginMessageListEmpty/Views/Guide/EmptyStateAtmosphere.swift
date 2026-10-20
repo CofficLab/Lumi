@@ -13,15 +13,21 @@ struct EmptyStateAtmosphere: View {
             ZStack {
                 theme.background
 
+                // - Important: 渐变的中心与半径是为了让雾气**一直铺到画面底部**。
+                //
+                //   活动卡位于空态区域之下的底栏槽位，它与上方共用一张底色；
+                //   若渐变在半途收住，底部会突然"变平"，读起来就像换了一张纸。
+                //   中心下移、半径放大之后，尾部在接缝处已经很淡，
+                //   与底栏区域自然过渡。
                 RadialGradient(
                     colors: [
                         theme.primary.opacity(0.075),
                         theme.primarySecondary.opacity(0.025),
                         Color.clear,
                     ],
-                    center: UnitPoint(x: 0.5, y: 0.42),
+                    center: UnitPoint(x: 0.5, y: 0.46),
                     startRadius: 12,
-                    endRadius: max(proxy.size.width, proxy.size.height) * 0.68
+                    endRadius: max(proxy.size.width, proxy.size.height) * 0.8
                 )
 
                 Circle()
@@ -61,39 +67,37 @@ struct EmptyStateAtmosphere: View {
 
 /// Static, low-contrast line art that hints at Lumi's capability groups.
 ///
-/// The four motifs sit at the perimeter as visual context, never as controls,
-/// so they never compete with the empty-state title or prompt suggestions.
+/// The four motifs sit along the top edge as a single row of visual context,
+/// never as controls, so they never compete with the empty-state title or
+/// prompt suggestions.
 private struct EmptyStateCapabilityBackdrop: View {
     var body: some View {
         GeometryReader { proxy in
             let shortestEdge = min(proxy.size.width, proxy.size.height)
-            // Scale down on compact windows instead of dropping the lower
-            // motifs, so resizing never makes two corners blink out.
+            // Scale down on compact windows so the row still fits instead of
+            // dropping motifs when the window narrows.
             let motifScale: CGFloat = shortestEdge < 620 ? 0.76 : 1
-            let insetX = max(82, proxy.size.width * 0.14)
-            let insetY = max(84, proxy.size.height * 0.2)
+            let motifWidth = CapabilityMotifGeometry.canvasSize.width
+            let motifHeight = CapabilityMotifGeometry.canvasSize.height
+            let spacing: CGFloat = 28
+            let totalWidth = motifWidth * 4 + spacing * 3
+            let availableWidth = max(totalWidth, proxy.size.width * 0.72)
+            let rowSpacing = (availableWidth - motifWidth * 4) / 3
+            let rowY = motifHeight / 2 + max(48, proxy.size.height * 0.08)
+            let rowStartX = (proxy.size.width - (motifWidth * 4 + rowSpacing * 3)) / 2 + motifWidth / 2
 
             ZStack {
                 CapabilityMotif(kind: .project)
-                    .position(x: insetX, y: insetY)
+                    .position(x: rowStartX, y: rowY)
 
                 CapabilityMotif(kind: .creative)
-                    .position(
-                        x: min(proxy.size.width - insetX, proxy.size.width * 0.86),
-                        y: insetY
-                    )
+                    .position(x: rowStartX + (motifWidth + rowSpacing), y: rowY)
 
                 CapabilityMotif(kind: .system)
-                    .position(
-                        x: insetX,
-                        y: min(proxy.size.height - insetY, proxy.size.height * 0.8)
-                    )
+                    .position(x: rowStartX + (motifWidth + rowSpacing) * 2, y: rowY)
 
                 CapabilityMotif(kind: .web)
-                    .position(
-                        x: min(proxy.size.width - insetX, proxy.size.width * 0.86),
-                        y: min(proxy.size.height - insetY, proxy.size.height * 0.8)
-                    )
+                    .position(x: rowStartX + (motifWidth + rowSpacing) * 3, y: rowY)
             }
             .scaleEffect(motifScale)
             .frame(maxWidth: .infinity, maxHeight: .infinity)

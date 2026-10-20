@@ -23,17 +23,25 @@ final class AgentLoopRetryCoordinator {
     private let loop: AgentLoopRetryCapability
     private let messages: AgentLoopRetryMessageCapability
     private let maxAttempts: Int
+    /// 等待器：用于在重启回合前遵守服务端给出的退避建议。
+    ///
+    /// 生产环境默认用 `Task.sleep`；测试注入可观测实现以避免真实等待。
+    private let sleeper: @Sendable (TimeInterval) async throws -> Void
     private var observerHandle: (any AgentLoopRetryObserverHandle)?
     private var states: [UUID: RetryState] = [:]
 
     init(
         loop: AgentLoopRetryCapability,
         messages: AgentLoopRetryMessageCapability,
-        maxAttempts: Int
+        maxAttempts: Int,
+        sleeper: @escaping @Sendable (TimeInterval) async throws -> Void = { seconds in
+            try await Task.sleep(nanoseconds: UInt64(max(seconds, 0) * 1_000_000_000))
+        }
     ) {
         self.loop = loop
         self.messages = messages
         self.maxAttempts = max(0, maxAttempts)
+        self.sleeper = sleeper
         observerHandle = loop.addTurnObserver { [weak self] event in
             self?.handle(event)
         }
@@ -123,12 +131,7 @@ final class AgentLoopRetryCoordinator {
         attempt: Int,
         failure: AgentLoopRetryFailure
     ) async {
-        guard !Task.isCancelled,
-              let state = states[conversationID],
-              state.attempts == attempt,
-              state.failedTurnID == failedTurnID,
-              state.retryStartPending,
-              loop.turnState(for: conversationID) == .failed else {
+        guard shouldProceed(conversationID: conversationID, failedTurnID: failedTurnID, attempt: attempt) else {
             return
         }
 
@@ -141,6 +144,23 @@ final class AgentLoopRetryCoordinator {
                 failure: failure
             )
         )
+
+        // 服务端给出的退避建议（如 `Retry-After`）必须跨回合边界生效。
+        // 传输层已经在自己的重试里等待过，但回合重启是一次**新**的请求，
+        // 仍需满足服务端要求的静默窗口；否则刚等完就立刻再打一次，
+        // 等于没有退避。时间线消息已先写入，用户能看到「正在重试」。
+        if let retryAfterSeconds = failure.retryAfterSeconds, retryAfterSeconds > 0 {
+            do {
+                try await sleeper(retryAfterSeconds)
+            } catch {
+                // 等待期间被取消：放弃本次重试，不产生新的请求。
+                return
+            }
+            // 等待期间回合可能已结束或被取消，重新校验后再重试。
+            guard shouldProceed(conversationID: conversationID, failedTurnID: failedTurnID, attempt: attempt) else {
+                return
+            }
+        }
 
         do {
             let outcome = try await loop.retryTurn(
@@ -166,6 +186,22 @@ final class AgentLoopRetryCoordinator {
             )
             states.removeValue(forKey: conversationID)
         }
+    }
+
+    /// 当前状态是否仍允许推进这次重试。
+    ///
+    /// 等待服务端退避建议之后必须重新校验：等待期间用户可能已取消回合，
+    /// 或回合已因其它路径进入终态。
+    private func shouldProceed(conversationID: UUID, failedTurnID: UUID, attempt: Int) -> Bool {
+        guard !Task.isCancelled,
+              let state = states[conversationID],
+              state.attempts == attempt,
+              state.failedTurnID == failedTurnID,
+              state.retryStartPending,
+              loop.turnState(for: conversationID) == .failed else {
+            return false
+        }
+        return true
     }
 
     private func clearState(for conversationID: UUID) {

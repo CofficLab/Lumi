@@ -44,7 +44,9 @@ class LumiLocalizationUITestCase: LumiUITestCase {
         ]
         app.launch()
         // 隔离存储下引导会重新出现，可能盖住设置窗口，先关掉。
-        dismissOnboardingIfPresent()
+        // 走基类的 `waitForMainWindow`：它会先等主窗口出现再关引导 ——
+        // 直接查一次引导按钮会在浮层画出来之前返回，浮层随后才盖上来。
+        waitForMainWindow()
     }
 
     override func tearDownWithError() throws {

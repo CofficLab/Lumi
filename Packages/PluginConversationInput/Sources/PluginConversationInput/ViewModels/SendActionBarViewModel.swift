@@ -23,7 +23,7 @@ final class SendActionBarViewModel: SuperLog {
     init(capability: any ConversationInputCapability) {
         self.capability = capability
         self.state = SendActionBarState(
-            isSending: capability.isSending(for: capability.selectedConversationID),
+            canStop: capability.canStop(for: capability.selectedConversationID),
             canSend: Self.canSend(
                 text: capability.text,
                 hasAttachments: !capability.pendingImageAttachments.isEmpty || !capability.pendingFileAttachments.isEmpty
@@ -54,10 +54,10 @@ final class SendActionBarViewModel: SuperLog {
 
     func refreshConversationState() {
         guard let conversationID = capability.selectedConversationID else {
-            state.isSending = false
+            state.canStop = false
             return
         }
-        state.isSending = capability.isSending(for: conversationID)
+        state.canStop = capability.canStop(for: conversationID)
     }
 
     // MARK: - Actions

@@ -101,12 +101,12 @@ public final class LLMNetworkProviderAdapter: LLMNetworkProviding {
         // 用锁保护：`onResponse` 是 `@Sendable` 闭包，直接捕获并修改局部变量
         // 会触发 Swift 6 并发检查（`mutation of captured var in
         // concurrently-executing code`）。同时它与 `onChunk` 无顺序保证。
-        let statusBox = StatusCodeBox()
+        let responseBox = ResponseMetadataBox()
         do {
             try await networkProvider.stream(
                 httpRequest,
                 onResponse: { metadata in
-                    statusBox.store(metadata.statusCode)
+                    responseBox.store(metadata)
                 },
                 onChunk: { chunk in
                     await onEvent(chunk)
@@ -116,25 +116,32 @@ public final class LLMNetworkProviderAdapter: LLMNetworkProviding {
             throw Self.normalized(error)
         }
 
-        if let statusCode = statusBox.load(), !(200 ..< 300).contains(statusCode) {
-            throw VendorAPIError.httpStatus(statusCode, "")
+        if let metadata = responseBox.load(), !(200 ..< 300).contains(metadata.statusCode) {
+            throw VendorAPIError.httpStatus(
+                statusCode: metadata.statusCode,
+                summary: "",
+                retryAfterSeconds: HTTPRetryAfter.seconds(from: metadata.headers)
+            )
         }
     }
 
-    /// 跨并发边界传递流式响应状态码的线程安全盒子。
+    /// 跨并发边界传递流式响应元数据的线程安全盒子。
     ///
     /// `onResponse` 以 `@Sendable` 闭包跨越并发域，且与 `onChunk` 之间
     /// 没有 happens-before 关系，因此不能用普通局部变量承载。
-    private final class StatusCodeBox: @unchecked Sendable {
+    ///
+    /// 需要连同响应头一起保存：状态码决定是否可重试，而 `Retry-After`
+    /// 响应头决定重试前该等多久。
+    private final class ResponseMetadataBox: @unchecked Sendable {
         private let lock = NSLock()
-        private var value: Int?
+        private var value: HTTPResponseMetadata?
 
-        func store(_ code: Int) {
+        func store(_ metadata: HTTPResponseMetadata) {
             lock.lock(); defer { lock.unlock() }
-            value = code
+            value = metadata
         }
 
-        func load() -> Int? {
+        func load() -> HTTPResponseMetadata? {
             lock.lock(); defer { lock.unlock() }
             return value
         }
@@ -156,7 +163,14 @@ public final class LLMNetworkProviderAdapter: LLMNetworkProviding {
         guard let networkError = error as? HTTPNetworkError else { return error }
 
         if let statusCode = networkError.statusCode {
-            return VendorAPIError.httpStatus(statusCode, Self.summary(from: networkError))
+            return VendorAPIError.httpStatus(
+                statusCode: statusCode,
+                summary: Self.summary(from: networkError),
+                // 服务端可能用 `Retry-After` 明确告知重试等待时间（429/529
+                // 常见）。必须一路带到重试策略，否则等待时长只能由本地退避
+                // 决定，会在服务端要求静默的窗口内继续加压。
+                retryAfterSeconds: HTTPRetryAfter.seconds(from: networkError.headers)
+            )
         }
 
         if let underlyingCode = networkError.underlyingCode {

@@ -138,6 +138,19 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
     }
 
     public func onReady(kernel: KernelCoreContainer) throws {
+        // UI 测试夹具：让附件预览稳定渲染出可点击的 ✕（拖放在 XCUITest 下不可靠，
+        // 详见 AttachmentPreviewUITestingSupport 的说明）。
+        //
+        // - Important: 调用点必须与夹具的 `#if DEBUG` 守卫**同等包裹**。
+        //   夹具整体定义在 `#if DEBUG` 内，只包住调用语句会让 Release 构建报
+        //   `cannot find 'AttachmentPreviewUITestingSupport' in scope`——本地 Debug
+        //   全绿而 CI Release 失败。
+        #if DEBUG
+        if let sender = kernel.resolveProvider((any MessageSendingProviding).self) {
+            AttachmentPreviewUITestingSupport.seedAttachments(into: sender)
+        }
+        #endif
+
         guard let capability,
               let viewModel = sendActionBarViewModel else {
             Self.logger.error("\(Self.t)Failed to initialize SendActionBar observers: required providers unavailable")

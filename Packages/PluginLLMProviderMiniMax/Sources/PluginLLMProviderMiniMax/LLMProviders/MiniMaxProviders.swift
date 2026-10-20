@@ -61,7 +61,7 @@ public final class MiniMaxOpenAIProvider: VendorLLMProvider {
                 models: MiniMaxVendorModels.all,
                 websiteURL: URL(string: "https://platform.minimaxi.com/")!,
                 apiFormat: .openAI,
-                apiKeyStorageKey: "DevAssistant_ApiKey_MiniMax"
+                apiKeyStorageKey: MiniMaxSharedConstants.apiKeyStorageKey
             ),
             apiService: apiService
         )

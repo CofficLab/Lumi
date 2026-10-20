@@ -201,6 +201,7 @@ private struct OnboardingCard: View {
                         size: .small,
                         action: finish
                     )
+                    .accessibilityIdentifier(OnboardingAccessibility.skipButton)
                 }
             }
             .padding(.horizontal, DesignTokens.Spacing.lg)
@@ -245,6 +246,7 @@ private struct OnboardingCard: View {
                         }
                     }
                 )
+                .accessibilityIdentifier(OnboardingAccessibility.primaryButton)
             }
             .padding(.horizontal, DesignTokens.Spacing.lg)
             .padding(.vertical, DesignTokens.Spacing.md + 4)

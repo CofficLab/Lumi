@@ -63,17 +63,41 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     // MARK: - Observer 入口（外部事件 → VM）
 
     /// 重新从能力层生成全部界面状态。
+    ///
+    /// - Important: 只用于「可能影响整张状态表」的事件：附件变化、错误提示变化、
+    ///   会话切换、附件增删。**逐键文本输入不走这里** —— 那会让每个字符重写全部
+    ///   `@Published`，把整个输入框视图树拖进无谓的失效广播。文本变化走
+    ///   ``updateText(_:notifyActionBar:)``。
     func refresh() {
-        text = capability.text
-        inputHeight = capability.inputHeight
-        isInputFocused = capability.isInputFocused
-        inputCursorPosition = capability.inputCursorPosition
-        errorMessage = capability.errorMessage
-        imageAttachments = capability.pendingImageAttachments
-        fileAttachments = capability.pendingFileAttachments
-        canSend = Self.canSend(text: text, hasAttachments: hasAttachments)
+        setTextInternal(capability.text)
+        setInputHeightInternal(capability.inputHeight)
+        setFocusedInternal(capability.isInputFocused)
+        setCursorPositionInternal(capability.inputCursorPosition)
+        setErrorMessageInternal(capability.errorMessage)
+        let images = capability.pendingImageAttachments
+        if images != attachmentSnapshot.imageAttachments {
+            attachmentSnapshot.imageAttachments = images
+            imageAttachments = images
+        }
+        let files = capability.pendingFileAttachments
+        if files != attachmentSnapshot.fileAttachments {
+            attachmentSnapshot.fileAttachments = files
+            fileAttachments = files
+        }
+        updateCanSend()
         revision &+= 1
     }
+
+    /// 附件快照。用于判断 `refresh()` 是否真的需要改写附件字段。
+    ///
+    /// `@Published` 不做等值比较，数组内容即便相同也会发 `objectWillChange`。
+    /// 逐键文本变化若经过 `refresh()`，即使附件没变也会重写这两个数组，
+    /// 白白触发附件预览整段重建。
+    private struct AttachmentSnapshot {
+        var imageAttachments: [UserImageAttachment] = []
+        var fileAttachments: [UserFileAttachment] = []
+    }
+    private var attachmentSnapshot = AttachmentSnapshot()
 
     /// 接收生产方递交的折叠块，转成编辑器可消费的请求。
     ///
@@ -118,20 +142,77 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     func setText(_ value: String) {
         capability.text = value
         // 本地同步 `text` 与 `canSend`，避免界面滞后于用户输入一拍。
-        text = value
-        canSend = Self.canSend(text: value, hasAttachments: hasAttachments)
+        //
+        // 顺序要紧：上面那行写能力层会同步触发 Provider 的 `didSet` →
+        // `ConversationInputObserver` → 本方法。因此这里必须走
+        // `setTextInternal` + `updateCanSend`（都不回调 onTextWritten），
+        // 而不是会二次通知按钮的版本，否则一次按键会沿
+        // 「编辑器 → binding → 能力层 → 观察者 → 本方法」形成回环。
+        setTextInternal(value)
+        updateCanSend()
         // 派生的发送按钮只经 addTextObserver 获知变化（见 onTextWritten 注释），
         // 直接写入的路径必须显式通知，否则按钮停在 disabled。
         onTextWritten?(value)
     }
 
-    func setInputHeight(_ value: CGFloat) {
+    /// 文本更新的单点实现：等值守卫 + `canSend` 重算。
+    ///
+    /// 与 ``setText(_:)`` 的区别是**不**无条件回调 `onTextWritten`。
+    ///
+    /// - Parameter notifyActionBar: 能力层直写（编辑器上报）时传 true；
+    ///   观察者回灌时传 false —— 那条路径能力层已经通知过按钮了。
+    func updateText(_ value: String, notifyActionBar: Bool) {
+        setTextInternal(value)
+        updateCanSend()
+        if notifyActionBar {
+            onTextWritten?(value)
+        }
+    }
+
+    /// 写入 `text`，值未变则不触发失效广播。
+    private func setTextInternal(_ value: String) {
+        guard text != value else { return }
+        text = value
+    }
+
+    /// 重算 `canSend`，结果未变则不触发失效广播。
+    private func updateCanSend() {
+        let resolved = Self.canSend(text: text, hasAttachments: hasAttachments)
+        guard canSend != resolved else { return }
+        canSend = resolved
+    }
+
+    /// 写入 `inputHeight`，值未变则不触发失效广播。
+    private func setInputHeightInternal(_ value: CGFloat) {
+        guard inputHeight != value else { return }
         inputHeight = value
+    }
+
+    /// 写入 `isInputFocused`，值未变则不触发失效广播。
+    private func setFocusedInternal(_ value: Bool) {
+        guard isInputFocused != value else { return }
+        isInputFocused = value
+    }
+
+    /// 写入 `inputCursorPosition`，值未变则不触发失效广播。
+    private func setCursorPositionInternal(_ value: Int) {
+        guard inputCursorPosition != value else { return }
+        inputCursorPosition = value
+    }
+
+    /// 写入 `errorMessage`，值未变则不触发失效广播。
+    private func setErrorMessageInternal(_ value: String?) {
+        guard errorMessage != value else { return }
+        errorMessage = value
+    }
+
+    func setInputHeight(_ value: CGFloat) {
+        setInputHeightInternal(value)
         capability.inputHeight = value
     }
 
     func setFocused(_ value: Bool) {
-        isInputFocused = value
+        setFocusedInternal(value)
         capability.isInputFocused = value
     }
 
@@ -140,7 +221,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         // an edit. Keep the ViewModel in sync before SwiftUI performs its next
         // update; otherwise updateNSView reads the old position and moves the
         // insertion point back to the left of the newly typed character.
-        inputCursorPosition = value
+        setCursorPositionInternal(value)
         capability.inputCursorPosition = value
     }
 

@@ -65,6 +65,46 @@ private enum ToolApprovalAction: Equatable {
             "xmark.circle.fill"
         }
     }
+
+    /// 该决定对应的无障碍标识符。
+    ///
+    /// UI 测试必须按标识符定位按钮，而不是按文案：按钮文案是随
+    /// `-AppleLanguages` 变化的本地化文本，按文案定位在非英文环境下必然失败。
+    var accessibilityIdentifier: String {
+        switch self {
+        case .allow:
+            ToolApprovalAccessibility.allow
+        case .alwaysAllow:
+            ToolApprovalAccessibility.alwaysAllow
+        case .reject:
+            ToolApprovalAccessibility.reject
+        case .other:
+            ToolApprovalAccessibility.other
+        }
+    }
+}
+
+/// 工具授权卡片的无障碍标识符。
+///
+/// 命名沿用仓库既有惯例（见 `AskUserAccessibility`）。
+enum ToolApprovalAccessibility {
+    /// 授权卡片容器。出现即代表有一个待用户处理的授权请求。
+    static let card = "lumi.tool-approval.card"
+
+    /// 授权问题正文。
+    static let question = "lumi.tool-approval.question"
+
+    /// 「允许」按钮。
+    static let allow = "lumi.tool-approval.allow"
+
+    /// 「始终允许」按钮。
+    static let alwaysAllow = "lumi.tool-approval.always-allow"
+
+    /// 「拒绝」按钮。
+    static let reject = "lumi.tool-approval.reject"
+
+    /// 不属于上述三种决定的按钮（兜底）。
+    static let other = "lumi.tool-approval.other"
 }
 
 @MainActor
@@ -254,6 +294,7 @@ struct ToolApprovalPendingView: View {
                     Text(request.question)
                         .font(.appCaption)
                         .foregroundColor(theme.textPrimary)
+                        .accessibilityIdentifier(ToolApprovalAccessibility.question)
                 }
 
                 HStack(spacing: 8) {
@@ -270,6 +311,7 @@ struct ToolApprovalPendingView: View {
                             submit(option)
                         }
                         .disabled(responded)
+                        .accessibilityIdentifier(action.accessibilityIdentifier)
                     }
                 }
 
@@ -280,6 +322,12 @@ struct ToolApprovalPendingView: View {
                 }
             }
         }
+        // - Important: 必须显式 `children: .contain`。否则 SwiftUI 会把卡片
+        //   当作一个整体元素，把容器上的 `accessibilityIdentifier` 覆盖到所有后代，
+        //   子元素最终统统报告同一个 id，UI 测试无法按标识符区分
+        //   「允许 / 始终允许 / 拒绝」（与 `AskUserPendingView` 同一坑）。
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(ToolApprovalAccessibility.card)
     }
 
     private func submit(_ answer: String) {

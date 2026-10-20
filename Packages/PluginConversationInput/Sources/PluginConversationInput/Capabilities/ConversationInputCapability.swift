@@ -59,6 +59,11 @@ protocol ConversationInputCapability: AnyObject {
     var selectedConversationID: UUID? { get }
     func isSending(for conversationID: UUID?) -> Bool
 
+    /// 该会话是否还有未完成的回合（运行中，或挂在等用户授权/回答）。
+    ///
+    /// 停止按钮的可见性由它决定：只要还有活没干完，就给用户一个停止入口。
+    func canStop(for conversationID: UUID?) -> Bool
+
     // MARK: - Observation
 
     @discardableResult
@@ -235,6 +240,11 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
     func isSending(for conversationID: UUID?) -> Bool {
         guard let conversationID else { return false }
         return conversationState?.state(for: conversationID).isSending ?? false
+    }
+
+    func canStop(for conversationID: UUID?) -> Bool {
+        guard let conversationID else { return false }
+        return conversationState?.state(for: conversationID).canStop ?? false
     }
 
     // MARK: - Observation
