@@ -12,25 +12,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "MiniMax 令牌套餐"
+            "value": "MiniMax Token Plan"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "MiniMax 權杖套餐"
+            "value": "MiniMax Token Plan"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "MiniMax 權杖套餐"
+            "value": "MiniMax Token Plan"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "MiniMax 權杖套餐"
+            "value": "MiniMax Token Plan"
           }
         }
       }
@@ -46,25 +46,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "MiniMax 令牌套餐配额"
+            "value": "MiniMax Token Plan Quota"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "MiniMax 權杖套餐配額"
+            "value": "MiniMax Token Plan Quota"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "MiniMax 權杖套餐配額"
+            "value": "MiniMax Token Plan Quota"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "MiniMax 權杖套餐配額"
+            "value": "MiniMax Token Plan Quota"
           }
         }
       }
@@ -80,25 +80,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "加载中..."
+            "value": "Loading..."
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "載入中..."
+            "value": "Loading..."
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "載入中..."
+            "value": "Loading..."
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "載入中..."
+            "value": "Loading..."
           }
         }
       }
@@ -114,25 +114,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "刷新"
+            "value": "Refresh"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "重新整理"
+            "value": "Refresh"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "重新整理"
+            "value": "Refresh"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "重新整理"
+            "value": "Refresh"
           }
         }
       }
@@ -148,25 +148,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "认证失败，请检查 API Key"
+            "value": "Authentication failed; please check your API Key"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "認證失敗，請檢查 API Key"
+            "value": "Authentication failed; please check your API Key"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "認證失敗，請檢查 API Key"
+            "value": "Authentication failed; please check your API Key"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "認證失敗，請檢查 API Key"
+            "value": "Authentication failed; please check your API Key"
           }
         }
       }
@@ -182,25 +182,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "无法获取配额信息"
+            "value": "Unable to fetch quota info"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "無法取得配額資訊"
+            "value": "Unable to fetch quota info"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "無法取得配額資訊"
+            "value": "Unable to fetch quota info"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "無法取得配額資訊"
+            "value": "Unable to fetch quota info"
           }
         }
       }
@@ -216,25 +216,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "模型："
+            "value": "Model:"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "模型："
+            "value": "Model:"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "模型："
+            "value": "Model:"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "模型："
+            "value": "Model:"
           }
         }
       }
@@ -250,25 +250,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "常规模型"
+            "value": "General Model"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "一般模型"
+            "value": "General Model"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "一般模型"
+            "value": "General Model"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "一般模型"
+            "value": "General Model"
           }
         }
       }
@@ -284,25 +284,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "视频模型"
+            "value": "Video Model"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "影片模型"
+            "value": "Video Model"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "影片模型"
+            "value": "Video Model"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "影片模型"
+            "value": "Video Model"
           }
         }
       }
@@ -318,25 +318,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "未知模型"
+            "value": "Unknown Model"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "未知模型"
+            "value": "Unknown Model"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "未知模型"
+            "value": "Unknown Model"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "未知模型"
+            "value": "Unknown Model"
           }
         }
       }
@@ -352,25 +352,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "5 小时窗口"
+            "value": "5-Hour Window"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "5 小時視窗"
+            "value": "5-Hour Window"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "5 小時視窗"
+            "value": "5-Hour Window"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "5 小時視窗"
+            "value": "5-Hour Window"
           }
         }
       }
@@ -386,25 +386,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "当前时段"
+            "value": "Current Interval"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "目前時段"
+            "value": "Current Interval"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "目前時段"
+            "value": "Current Interval"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "目前時段"
+            "value": "Current Interval"
           }
         }
       }
@@ -420,25 +420,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "常规模型的 5 小时调用限额"
+            "value": "General model 5-hour call limit"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "一般模型的 5 小時呼叫限額"
+            "value": "General model 5-hour call limit"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "一般模型的 5 小時呼叫限額"
+            "value": "General model 5-hour call limit"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "一般模型的 5 小時呼叫限額"
+            "value": "General model 5-hour call limit"
           }
         }
       }
@@ -454,25 +454,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "视频模型的 5 小时调用限额"
+            "value": "Video model 5-hour call limit"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "影片模型的 5 小時呼叫限額"
+            "value": "Video model 5-hour call limit"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "影片模型的 5 小時呼叫限額"
+            "value": "Video model 5-hour call limit"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "影片模型的 5 小時呼叫限額"
+            "value": "Video model 5-hour call limit"
           }
         }
       }
@@ -488,25 +488,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "本周配额"
+            "value": "Weekly Quota"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "本週配額"
+            "value": "Weekly Quota"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "本週配額"
+            "value": "Weekly Quota"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "本週配額"
+            "value": "Weekly Quota"
           }
         }
       }
@@ -522,25 +522,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "本周累计调用限额"
+            "value": "Weekly cumulative call limit"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "本週累計呼叫限額"
+            "value": "Weekly cumulative call limit"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "本週累計呼叫限額"
+            "value": "Weekly cumulative call limit"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "本週累計呼叫限額"
+            "value": "Weekly cumulative call limit"
           }
         }
       }
@@ -556,25 +556,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "剩余："
+            "value": "Remaining:"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "剩餘："
+            "value": "Remaining:"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "剩餘："
+            "value": "Remaining:"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "剩餘："
+            "value": "Remaining:"
           }
         }
       }
@@ -590,25 +590,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "状态："
+            "value": "Status:"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "狀態："
+            "value": "Status:"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "狀態："
+            "value": "Status:"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "狀態："
+            "value": "Status:"
           }
         }
       }
@@ -624,25 +624,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "正常"
+            "value": "Normal"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "正常"
+            "value": "Normal"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "正常"
+            "value": "Normal"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "正常"
+            "value": "Normal"
           }
         }
       }
@@ -658,25 +658,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已耗尽"
+            "value": "Exhausted"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "已耗盡"
+            "value": "Exhausted"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "已耗盡"
+            "value": "Exhausted"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "已耗盡"
+            "value": "Exhausted"
           }
         }
       }
@@ -692,25 +692,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "调用次数："
+            "value": "Call count:"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "呼叫次數："
+            "value": "Call count:"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "呼叫次數："
+            "value": "Call count:"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "呼叫次數："
+            "value": "Call count:"
           }
         }
       }
@@ -726,25 +726,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "时间段："
+            "value": "Time range:"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "時間區段："
+            "value": "Time range:"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "時間區段："
+            "value": "Time range:"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "時間區段："
+            "value": "Time range:"
           }
         }
       }
@@ -760,25 +760,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "重置时间："
+            "value": "Resets at:"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "重設時間："
+            "value": "Resets at:"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "重設時間："
+            "value": "Resets at:"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "重設時間："
+            "value": "Resets at:"
           }
         }
       }
@@ -794,25 +794,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "无限"
+            "value": "Unlimited"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "無限"
+            "value": "Unlimited"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "無限"
+            "value": "Unlimited"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "無限"
+            "value": "Unlimited"
           }
         }
       }
@@ -828,25 +828,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "配额不可用"
+            "value": "Quota unavailable"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "配額不可用"
+            "value": "Quota unavailable"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "配額不可用"
+            "value": "Quota unavailable"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "配額不可用"
+            "value": "Quota unavailable"
           }
         }
       }
@@ -862,25 +862,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "认证失败"
+            "value": "Authentication failed"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "認證失敗"
+            "value": "Authentication failed"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "認證失敗"
+            "value": "Authentication failed"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "認證失敗"
+            "value": "Authentication failed"
           }
         }
       }
@@ -896,25 +896,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 天"
+            "value": "%lld days"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 天"
+            "value": "%lld days"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 天"
+            "value": "%lld days"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 天"
+            "value": "%lld days"
           }
         }
       }
@@ -930,25 +930,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 小时"
+            "value": "%lld hours"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 小時"
+            "value": "%lld hours"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 小時"
+            "value": "%lld hours"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 小時"
+            "value": "%lld hours"
           }
         }
       }
@@ -964,25 +964,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 分钟"
+            "value": "%lld minutes"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 分鐘"
+            "value": "%lld minutes"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 分鐘"
+            "value": "%lld minutes"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 分鐘"
+            "value": "%lld minutes"
           }
         }
       }
@@ -998,25 +998,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 秒"
+            "value": "%lld seconds"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 秒"
+            "value": "%lld seconds"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 秒"
+            "value": "%lld seconds"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 秒"
+            "value": "%lld seconds"
           }
         }
       }
@@ -1032,25 +1032,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@（%2$@）"
+            "value": "%1$@ (%2$@)"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@（%2$@）"
+            "value": "%1$@ (%2$@)"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@（%2$@）"
+            "value": "%1$@ (%2$@)"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@（%2$@）"
+            "value": "%1$@ (%2$@)"
           }
         }
       }
