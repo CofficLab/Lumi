@@ -69,14 +69,6 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
     }
     private var registrationState: RegistrationState = .evaluating
 
-    /// Slot id of the bottom activity strip. Derived from the plugin id so the
-    /// two slots stay namespaced together.
-    ///
-    /// Not `private`: 测试要断言注册进 ChatSection 的完整 item 集合，包含
-    /// 这条 activity strip。保持 internal 让测试复用同一个派生规则，
-    /// 避免在测试里硬编码 `"\(id).activity"` 而与实现悄悄脱钩。
-    var activityItemID: String { "\(id).activity" }
-
     /// Data source for the activity strip.
     ///
     /// Held here rather than built inside the item closure: the model is
@@ -175,7 +167,6 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
 
         if isRegistered {
             chat?.removeItem(id: id)
-            chat?.removeItem(id: activityItemID)
             isRegistered = false
         }
         activityModel = nil
@@ -297,31 +288,15 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
                 isActive: { @MainActor [weak self] in
                     self?.shouldRenderEmptyState ?? false
                 },
-                content: { [weak guideState] in
+                content: { [weak guideState, weak activityModel] in
                     guard let services, let guideState else { return AnyView(EmptyView()) }
-                    return AnyView(MessageListEmptyContentView(services: services, guideState: guideState))
-                }
-            ),
-            // The activity strip is a separate bottom-fixed slot rather than a
-            // child of the empty-state view, because the empty state centers its
-            // content in a scroll view and a footer would be pushed off-screen
-            // on short windows.
-            //
-            // - Important: bottomFixed items do not join the `message-list`
-            //   exclusive group, so visibility must be gated by `isActive`
-            //   alone. Reusing `shouldRenderEmptyState` is what keeps the strip
-            //   from appearing under a conversation that has messages.
-            ChatSectionItem(
-                id: activityItemID,
-                order: order,
-                placement: .bottomFixed,
-                showsTrailingDivider: false,
-                isActive: { @MainActor [weak self] in
-                    self?.shouldRenderEmptyState ?? false
-                },
-                content: { [weak activityModel] in
-                    guard let activityModel else { return AnyView(EmptyView()) }
-                    return AnyView(ActivityFooterView(model: activityModel))
+                    return AnyView(
+                        MessageListEmptyContentView(
+                            services: services,
+                            guideState: guideState,
+                            activity: activityModel
+                        )
+                    )
                 }
             ),
         ])
@@ -338,11 +313,25 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
 private struct MessageListEmptyContentView: View {
     let services: MessageListEmptyServices
     @ObservedObject var guideState: MessageListGuideState
+    /// 活动卡的数据源。随内容一起渲染，因此它排在提示流下面而不是底栏里。
+    let activity: EmptyStateActivityViewModel?
 
     var body: some View {
         if guideState.selectedConversationID == nil {
-            return AnyView(NoConversationSelectedView(services: services, guideState: guideState))
+            return AnyView(
+                NoConversationSelectedView(
+                    services: services,
+                    guideState: guideState,
+                    activity: activity
+                )
+            )
         }
-        return AnyView(MessageEmptyStateView(services: services, guideState: guideState))
+        return AnyView(
+            MessageEmptyStateView(
+                services: services,
+                guideState: guideState,
+                activity: activity
+            )
+        )
     }
 }

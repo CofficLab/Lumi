@@ -26,8 +26,8 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 - `NoConversationSelectedToolbarCoordinator`
 - `EmptyStateActivityDay`
 - `EmptyStateTokenDay`
-- `ActivityFooterView`
-- `ActivityFooterLayout`
+- `ActivityCardSlot`
+- `ActivityCardLayout`
 - `ActivityFusionCard`
 - `ActivityFusionCardMetrics`
 - `ActivitySparkline`
@@ -52,7 +52,7 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 - **EmptyStateActivityLoading**（7 条）：由 `loading fills the window and derives totals from both series`、`re-entering the empty state on the same day reuses the loaded window`、`a stale slow load cannot overwrite a newer window`、`a missing message provider degrades to an invisible strip` 锁定。覆盖 `loadIfNeeded(force:)` 的窗口填充、同日缓存门、`loadGeneration` 竞态防护、缺 provider 降级、token 与消息两级独立判空；改动 `EmptyStateActivityViewModel` 的加载路径时必须优先跑该文件。
 - **EmptyStateActivityWindow**（10 条）：由 `the window covers every calendar day including idle ones`、`a same-day merge keeps the larger count regardless of arrival order`、`levels are normalized against the busiest day in the window`、`a quiet day next to a busy one stays on the lowest active level` 锁定。覆盖 `makeDays` 的窗口填充、跨天归一化、同日合并取 max、level 相对峰值归一化与 ceiling 除法；改动热力图分桶逻辑时必须优先跑该文件。
 - **EmptyStateTokenTrend**（7 条）：由 `token days fill the whole window including idle days`、`no token consumption keeps the trend hidden`、`values below one thousand are shown verbatim` 等用例锁定；改动 token 序列或它的紧凑数字格式化（`ActivityTokenFormat.compact`）时优先跑对应测试文件。
-- **ActivityFooterLayout**（2 条）：由 `activityCardOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth`、`activityCardLayoutIgnoresWidthBeyondTheCardCap` 锁定。守住「活动卡宽度够才并排」的阈值 `ActivityFooterLayout.sideBySideMinWidth`（及其组成常量），以及「卡片封顶 520pt 之后，槽位再宽也不改变排布」这条不变量；改动活动卡排布时必须优先跑该文件。
+- **ActivityCardLayout**（2 条）：由 `activityCardOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth`、`activityCardLayoutIgnoresWidthBeyondTheCardCap` 锁定。守住「活动卡宽度够才并排」的阈值 `ActivityCardLayout.sideBySideMinWidth`（及其组成常量），以及「卡片封顶 520pt 之后，槽位再宽也不改变排布」这条不变量；改动活动卡排布时必须优先跑该文件。
 - **ActivitySparklineGeometry**（7 条）：由 `every point stays inside the canvas`、`the series is normalized against its own peak`、`a flat series becomes a horizontal line` 等用例锁定。覆盖曲线与画布的坐标映射（归一化基准、峰值贴顶、等值序列成直线、单点居中）；改动曲线绘制时必须优先跑该文件。Canvas 里画错了不会让编译失败，只能靠这组几何断言守住。
 
 ## 测试用例清单
@@ -155,7 +155,7 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 | ID | 用例 | 结果 | 说明 |
 |----|------|------|------|
 | U1 | `testEmptyStateAppearsForConversationWithoutMessages` | ✅ 通过 | 选中无消息会话时空态出现 |
-| U2 | `testActivityStripAppearsAlongsideEmptyState` | ✅ 通过 | 空态与活动条同时出现（覆盖下述缺陷 1+2） |
+| U2 | `testActivityStripAppearsAlongsideEmptyState` | ✅ 通过 | 空态与活动卡同时出现（覆盖下述缺陷 1+2） |
 | U3 | `testActivityCardRendersAnchorSummary` | ✅ 通过 | 锚点文案可见、带窗口天数 30，且落在活动卡范围内（锚点靠**文字**定位，见「无障碍标识符的传播陷阱」） |
 | U4 | `testActivityCardAlignsWithThePromptFlow` | ✅ 通过 | 活动卡宽度 ≤ 520pt，且水平中心与提示胶囊流的并集中心重合 |
 | U5 | `testEmptyStateAndActivityStripYieldToConversationWithMessages` | ⏭️ 跳过 | 依赖会话列表容器，本环境 rail 未渲染 |
@@ -215,7 +215,7 @@ SwiftUI 的 `.accessibilityIdentifier` 会**向下传播**，并且会覆盖子�
 
 ### 缺陷 1：活动条永不加载（`.task` 死锁）
 
-`ActivityFooterView.body` 原先把内容包在 `Group { if model.hasActivity { ... } }` 上挂 `.task`。
+`ActivityCardSlot.body` 原先把内容包在 `Group { if model.hasActivity { ... } }` 上挂 `.task`。
 首次渲染时 `totalMessages == nil`、`hasActivity == false`，`Group` 内容为空；
 SwiftUI 不会为空分支建立真实 view identity，**`.task` 因此从不执行**。
 于是 `loadIfNeeded` 永不被调用 → `hasActivity` 永远 false，构成死锁。
@@ -241,7 +241,9 @@ App 启动时空态先渲染、跨会话统计稍后就绪，首次查询**本�
 
 以下部分**没有**测试覆盖，属已知缺口，不得当作已验证：
 
-- **矮窗口下活动条是否仍在视口内**（`bottomFixed` 槽位的核心设计理由）。
+- **矮窗口下活动卡是否仍在首屏可见**。
+  活动卡已从 `bottomFixed` 底栏槽位移入空态内容流（紧跟提示胶囊），
+  矮窗口时它可能落在首屏之外，需要滚动才能看到 —— 这是为「融合」刻意做的取舍。
   `XCUIElement.frame` 只读，XCUITest 没有稳定的 macOS 窗口 resize API；拖拽窗口边缘会引入 flake。
   项目既有边界一致：`LumiMessageListBriefUITests` 同样把 resize 归为「纯视觉验证，以人工验收为主」。
 - **纯视觉细节**：热力图色阶、`EmptyStateAtmosphere` 渐变、chip 圆角与阴影。需截图回归，CI 成本过高。
