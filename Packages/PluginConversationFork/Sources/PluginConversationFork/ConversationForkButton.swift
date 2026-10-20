@@ -5,72 +5,58 @@ import SwiftUI
 
 /// 「一键续接到新对话」按钮。
 ///
-/// 点击后：摘要当前对话 → 建新对话 → 摘要作为首条 user 消息 → 自动续写。
+/// 点击后**不再直接分叉**，而是弹出 `ConversationForkPopoverContent` 引导用户：
+/// 先把将被带走的上下文摊开给用户看，确认后才真正执行
+/// 摘要当前对话 → 建新对话 → 摘要作为首条 user 消息 → 自动续写。
 struct ConversationForkButton: View {
-    let conversations: any ConversationManaging
-    let messages: any MessageManaging
-    let sender: any MessageSendingProviding
-    let summarizer: ConversationSummarizer
+    let coordinator: ConversationForkCoordinator
 
-    @State private var isForking = false
-    @State private var lastFallbackNotice: String?
+    @State private var isPopoverPresented = false
+    /// 打开弹窗时锁定的源对话 ID，保证「用户看到的」与「实际分叉的」是同一份上下文。
+    @State private var targetConversationID: UUID?
+    @State private var preview: ConversationForkPreview?
+    @State private var isPreviewLoading = false
+    /// 每次打开弹窗自增，驱动预览重新加载（预览在弹窗弹出动画期间并行拉取）。
+    @State private var previewRevision = 0
 
     var body: some View {
-        Group {
-            if isForking {
-                ProgressView()
-                    .controlSize(.small)
-                    .help(pluginLocalization.string("Summarizing conversation…"))
-            } else {
-                Button {
-                    fork()
-                } label: {
-                    Image(systemName: "arrow.uturn.forward.circle")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.secondary)
-                        .padding(4)
-                }
-                .buttonStyle(.plain)
-                .help(pluginLocalization.string("Summarize the current conversation and continue it in a new chat"))
-            }
+        Button {
+            targetConversationID = coordinator.selectedConversationID
+            preview = nil
+            isPreviewLoading = true
+            previewRevision += 1
+            isPopoverPresented = true
+        } label: {
+            Image(systemName: "arrow.uturn.forward.circle")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.secondary)
+                .padding(4)
+        }
+        .buttonStyle(.plain)
+        .help(pluginLocalization.string("Summarize the current conversation and continue it in a new chat"))
+        .task(id: previewRevision) {
+            await loadPreview()
+        }
+        .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
+            ConversationForkPopoverContent(
+                conversationID: targetConversationID,
+                preview: preview,
+                isPreviewLoading: isPreviewLoading,
+                coordinator: coordinator,
+                isPresented: $isPopoverPresented
+            )
         }
     }
 
-    @MainActor
-    private func fork() {
-        guard !isForking,
-              conversations.selectedConversationID != nil else {
+    /// 拉取「将被带走的上下文」预览。
+    private func loadPreview() async {
+        guard let targetConversationID else {
+            preview = nil
+            isPreviewLoading = false
             return
         }
-
-        isForking = true
-        Task { @MainActor in
-            guard let currentID = conversations.selectedConversationID,
-                  !(await messages.messagesSnapshot(in: currentID)).isEmpty else {
-                isForking = false
-                return
-            }
-            let outcome = await summarizer.summarize(conversationID: currentID)
-            let summary = outcome.summary
-            lastFallbackNotice = outcome.usedFallback
-                ? "Summary generation failed, used a compact fallback."
-                : nil
-
-            // 透传旧对话的标题 / 项目 / 语言到新对话。
-            let oldSummary = conversations.conversations.first { $0.id == currentID }
-            let newID = (try? conversations.createConversation(
-                title: oldSummary?.title,
-                projectPath: oldSummary?.projectPath,
-                modelID: conversations.modelID(for: currentID)
-            )) ?? UUID()
-            conversations.selectConversation(id: newID)
-
-            do {
-                try await sender.sendMessage(summary, conversationID: newID)
-            } catch {
-                // 续写失败不致命：摘要已在输入区可见。
-            }
-            isForking = false
-        }
+        isPreviewLoading = true
+        preview = await coordinator.preview(for: targetConversationID)
+        isPreviewLoading = false
     }
 }

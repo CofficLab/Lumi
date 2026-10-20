@@ -9,11 +9,12 @@ import ProviderMessageSender
 import ProviderLLMManager
 import SwiftUI
 
-/// 对话分叉插件：一键把当前对话摘要后续接到新对话。
+/// 对话分叉插件：把当前对话摘要后续接到新对话。
 ///
 /// 复刻自旧版 `Plugins/ConversationForkPlugin`：
 /// - 在 Chat 分区 Action Bar 注册「续接到新对话」按钮；
-/// - 点击后用当前模型生成历史摘要（失败回退为本地精简摘要），
+/// - 点击按钮先弹出引导弹窗（展示将被带走的上下文），用户确认后
+///   才用当前模型生成历史摘要（失败回退为本地精简摘要），
 ///   创建新对话并把摘要作为首条 user 消息注入，自动开始续写。
 @MainActor
 public final class ConversationForkPlugin: SuperPlugin, SuperLog {
@@ -50,18 +51,20 @@ public final class ConversationForkPlugin: SuperPlugin, SuperLog {
             llmProvider: llmProvider
         )
 
+        let coordinator = ConversationForkCoordinator(
+            conversations: conversations,
+            messages: messages,
+            sender: sender,
+            summarizer: summarizer
+        )
+
         chat.addBarItems([
             ChatSectionBarItem(
                 id: "\(id).action-bar-button",
                 order: 80,
                 placement: .actionTrailing
             ) {
-                ConversationForkButton(
-                    conversations: conversations,
-                    messages: messages,
-                    sender: sender,
-                    summarizer: summarizer
-                )
+                ConversationForkButton(coordinator: coordinator)
             },
         ])
     }
