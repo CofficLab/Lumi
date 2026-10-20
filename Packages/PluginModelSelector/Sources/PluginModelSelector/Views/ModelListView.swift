@@ -121,20 +121,11 @@ struct ModelListView: View {
             // 搜索框与远程刷新入口共用一行：模型多到需要搜索时为「搜索框 + 刷新」，
             // 模型少到无需搜索时仍保留刷新按钮（靠右），不额外占用一行。
             if showsSearchOrRefresh {
-                HStack(spacing: 4) {
-                    if viewModel.showsModelSearchBar {
-                        AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(pluginLocalization.string("Search models")))
-                    } else {
-                        Spacer(minLength: 0)
-                    }
-
-                    if let providerID = viewModel.selectedProviderID,
-                       viewModel.canRefreshModels(providerID: providerID) {
-                        refreshButton(providerID: providerID)
-                    }
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
+                ModelSearchRow(
+                    text: $viewModel.searchText,
+                    showsSearchBar: viewModel.showsModelSearchBar,
+                    refreshAction: refreshAction
+                )
 
                 AppDivider()
             }
@@ -191,21 +182,13 @@ struct ModelListView: View {
         viewModel.showsModelSearchBar || canRefreshSelectedProvider
     }
 
-    /// 手动同步远程模型列表的按钮。
-    private func refreshButton(providerID: String) -> some View {
-        Button {
+    /// 刷新按钮的动作；当前供应商不支持远程刷新时为 `nil`（不显示按钮）。
+    private var refreshAction: (() -> Void)? {
+        guard let providerID = viewModel.selectedProviderID,
+              viewModel.canRefreshModels(providerID: providerID) else { return nil }
+        return { [viewModel] in
             Task { await viewModel.refreshModels(providerID: providerID) }
-        } label: {
-            Image(systemName: "arrow.clockwise")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(theme.textTertiary)
-                .frame(width: 28, height: 28)
-                .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .help(pluginLocalization.string("Refresh Models"))
-        .accessibilityLabel(pluginLocalization.string("Refresh Models"))
-        .accessibilityIdentifier("lumi.model-selector.refresh")
     }
 
     // MARK: - Filtering
@@ -214,10 +197,55 @@ struct ModelListView: View {
     /// `ModelSelectorViewModel.visibleModels(for:)`，此处不再重复实现。
 }
 
+/// 模型栏的搜索 / 刷新行。
+///
+/// 高度与内边距必须与 `ProviderSearchRow` 一致，否则左右两栏的分割线无法对齐。
+struct ModelSearchRow: View {
+    @LumiTheme private var theme
+
+    @Binding var text: String
+    /// 是否展示搜索框；为 `false` 时只保留右侧刷新按钮。
+    var showsSearchBar: Bool
+    /// 刷新按钮的动作；为 `nil` 时不显示按钮。
+    var refreshAction: (() -> Void)?
+
+    var body: some View {
+        HStack(spacing: 4) {
+            if showsSearchBar {
+                AppSearchBar(
+                    text: $text,
+                    placeholder: LocalizedStringKey(pluginLocalization.string("Search models"))
+                )
+            } else {
+                Spacer(minLength: 0)
+            }
+
+            if let refreshAction {
+                Button(action: refreshAction) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(theme.textTertiary)
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(pluginLocalization.string("Refresh Models"))
+                .accessibilityLabel(pluginLocalization.string("Refresh Models"))
+                .accessibilityIdentifier("lumi.model-selector.refresh")
+            }
+        }
+        // 行高锁死为搜索框高度：只剩刷新按钮时按钮本身比搜索框矮，
+        // 不锁高这一行会短 4pt，与左栏的分割线错开。
+        .frame(height: ModelSelectorLayout.searchRowContentHeight)
+        .padding(.horizontal, 8)
+        .padding(.vertical, ModelSelectorLayout.searchRowVerticalPadding)
+    }
+}
+
 /// 模型能力筛选栏：横向滚动的标签（全部 / 语言模型 / 视觉模型 / …）。
 ///
 /// 样式对齐 `AppTag`，选中态使用主题色填充。
-private struct ModelCategoryFilterBar: View {
+struct ModelCategoryFilterBar: View {
     @LumiTheme private var theme
 
     @Binding var selectedCategory: ModelCategory
@@ -229,11 +257,16 @@ private struct ModelCategoryFilterBar: View {
                     filterTag(for: category)
                 }
             }
+            // 内容高度锁死并垂直居中：标签本身高度随字号浮动，
+            // 不锁死的话这一行会比左栏的分段控件高，右侧分割线随之错位。
+            .frame(height: ModelSelectorLayout.filterRowContentHeight)
             .padding(.horizontal, 12)
-            // Important: 垂直内边距必须与 ProviderListView 的筛选栏保持一致，
-            // 否则左右两栏的分割线无法对齐。
-            .padding(.vertical, 6)
+            // Important: 垂直内边距与内容高度必须与 ProviderListView 的筛选栏
+            // 保持一致，否则左右两栏的分割线无法对齐。
+            .padding(.vertical, ModelSelectorLayout.filterRowVerticalPadding)
         }
+        .frame(height: ModelSelectorLayout.filterRowContentHeight
+            + ModelSelectorLayout.filterRowVerticalPadding * 2)
         .background(theme.surface)
     }
 
