@@ -213,14 +213,28 @@ public final class ProjectsStore: SuperLog {
         return try? JSONDecoder().decode(String.self, from: data)
     }
 
+    /// 原子写入 JSON 数据。
+    ///
+    /// ## 为什么临时文件名必须唯一
+    ///
+    /// `save` 是 `nonisolated`，可从后台线程并发调用（见 `ProjectsViewModel.persistAsync`）。
+    /// 若所有并发写共用同一个 `<文件名>.tmp`：线程 A 刚写完临时文件，线程 B 的写入就把它
+    /// 替换掉了；随后 A 执行 `replaceItemAt` 时源文件已不存在而抛错，catch 分支又会
+    /// 把 B 的待写内容一并删掉 —— **结果是 B 的数据静默丢失**（见 Issue #126）。
+    ///
+    /// 因此每次写入使用带 UUID 的独立临时文件，互不干扰。
     private nonisolated static func write<Value: Encodable>(_ value: Value, to fileURL: URL) {
         guard let data = try? JSONEncoder().encode(value) else {
+            logger.error("\(t)序列化失败, file: \(fileURL.path, privacy: .public)")
             return
         }
 
         let temporaryURL = fileURL
             .deletingLastPathComponent()
-            .appendingPathComponent("\(fileURL.lastPathComponent).tmp", isDirectory: false)
+            .appendingPathComponent(
+                "\(fileURL.lastPathComponent).\(UUID().uuidString).tmp",
+                isDirectory: false
+            )
 
         do {
             try data.write(to: temporaryURL, options: .atomic)
@@ -231,6 +245,10 @@ public final class ProjectsStore: SuperLog {
                 try FileManager.default.moveItem(at: temporaryURL, to: fileURL)
             }
         } catch {
+            // 静默失败会让数据丢失完全无感知，这里必须留痕。
+            logger.error(
+                "\(t)写入失败, file: \(fileURL.path, privacy: .public), error: \(error.localizedDescription, privacy: .public)"
+            )
             try? FileManager.default.removeItem(at: temporaryURL)
         }
     }
