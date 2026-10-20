@@ -3,6 +3,7 @@ import KernelCore
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderRailView
+import PluginRootView
 import ProviderRootView
 import SwiftUI
 @testable import TerminalPlugin
@@ -30,7 +31,7 @@ import SwiftUI
     let activityBar = DefaultActivityBarProviding()
     let chat = DefaultChatSectionProviding()
     let railView = DefaultRailViewProviding()
-    let rootView = DefaultRootViewProviding()
+    let rootView = PluginRootView.DefaultRootViewProvider()
 
     railView.addTabs([
         RailTabItem(id: "test.rail", category: .general, title: "Test", systemImage: "circle") {

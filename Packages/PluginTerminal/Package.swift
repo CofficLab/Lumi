@@ -22,7 +22,8 @@ let package = Package(
         .package(url: "https://github.com/migueldeicaza/SwiftTerm", .upToNextMajor(from: "1.5.0")),
         .package(path: "../KitTerminalCore"),
         .package(path: "../ProviderPanelBottom"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0"),
+        .package(path: "../PluginRootView")
     ],
     targets: [
         .target(
@@ -58,6 +59,7 @@ let package = Package(
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "PluginRootView", package: "PluginRootView"),
             ],
             path: "Tests"
         )
