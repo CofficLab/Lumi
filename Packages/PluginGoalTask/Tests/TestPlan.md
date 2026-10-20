@@ -5,7 +5,7 @@
 GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标）+ Task（任务）两层结构的任务追踪能力。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 129
+测试文件: 12 个，用例总数: 131
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -50,6 +50,7 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 - **GoalTaskV2**（9 条）：由 `preservesPluginIdentityAndPolicy`、`preservesLegacyToolNamesAndRequiredArguments`、`createGoalUsesExecutionConversation` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TaskListSurface**（4 条）：由 `bottomEdgeHasVisibleShadow`、`topAndBottomShadowAreSymmetric`、`bottomBandMirrorsTopBand` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalViewRender**（8 条）：由 `taskRowHeightIsThirtyPoints`、`taskRowUsesOrangeSurface`、`longTitleIsTruncatedAtRowEdge` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GoalTopShadow**（2 条）：由 `topShadowRendersAbovePanelEdge`、`noShadowWithoutActiveGoal` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -184,27 +185,29 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 | 127 | GoalViewRender | 容器高度按行数计算 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `containerHeightFollowsRowCount` |
 | 128 | GoalViewRender | 容器高度在 160pt 封顶 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `containerHeightIsCapped` |
 | 129 | GoalViewRender | 未超上限时按内容高度 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `containerHeightFollowsContentBelowCap` |
+| 130 | GoalTopShadow | 顶部阴影落在面板顶边之上并向顶边渐强 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `topShadowRendersAbovePanelEdge` |
+| 131 | GoalTopShadow | 没有活跃 goal 时不画顶部阴影 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `noShadowWithoutActiveGoal` |
 
-> 说明：全部 **129 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **131 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 9 / 9
-- P1: 已覆盖 105 / 105
+- P1: 已覆盖 107 / 107
 - P2: 已覆盖 15 / 15
-- **合计: 129 / 129**（仅表示清单场景，非源码覆盖率）
+- **合计: 131 / 131**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（105 条）
+- **P1**: 其余功能性用例（107 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 129 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 131 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
