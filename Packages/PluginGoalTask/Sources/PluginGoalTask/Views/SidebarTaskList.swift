@@ -52,16 +52,19 @@ struct TaskRowView: View {
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(displayItem.statusColor)
                 .frame(width: 14)
+                .accessibilityIdentifier(GoalAccessibility.taskStatusIcon)
 
             Text(displayItem.title)
                 .font(.subheadline)
                 .lineLimit(1)
                 .truncationMode(.tail)
+                .accessibilityIdentifier(GoalAccessibility.taskTitle)
 
             if let group = displayItem.parallelGroup {
                 Text(String(format: pluginLocalization.string("[%@]"), group))
                     .font(.system(size: 9))
                     .foregroundStyle(.secondary)
+                    .accessibilityIdentifier(GoalAccessibility.taskGroupBadge)
             }
 
             Spacer()

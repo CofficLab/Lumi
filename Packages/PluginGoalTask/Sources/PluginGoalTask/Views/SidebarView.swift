@@ -120,9 +120,21 @@ public struct SidebarView: View {
     }
 
     private var taskListHeight: CGFloat {
-        guard !viewModel.activeTasks.isEmpty else { return 0 }
-        let contentHeight = CGFloat(viewModel.activeTasks.count) * Self.rowHeight
-            + CGFloat(max(0, viewModel.activeTasks.count - 1)) * 4
+        Self.taskListHeight(forTaskCount: viewModel.activeTasks.count)
+    }
+
+    /// 任务列表容器的高度:内容高度与上限的较小值。
+    ///
+    /// 抽成 `internal static` 纯函数,是为了让「任务过多时容器封顶、列表内部滚动
+    /// 并裁掉最后一行」这条几何约束可以被单元测试直接钉住——它决定了任务列表
+    /// 实际能显示几行,却没有任何测试覆盖过。
+    ///
+    /// - Parameter count: 任务数量。
+    /// - Returns: 容器高度(点)。0 个任务时为 0,超过 `maxTaskListHeight` 时封顶。
+    static func taskListHeight(forTaskCount count: Int) -> CGFloat {
+        guard count > 0 else { return 0 }
+        let contentHeight = CGFloat(count) * Self.rowHeight
+            + CGFloat(max(0, count - 1)) * 4
             + 8
         return min(contentHeight, Self.maxTaskListHeight)
     }

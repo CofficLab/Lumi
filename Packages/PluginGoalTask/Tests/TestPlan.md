@@ -5,7 +5,7 @@
 GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标）+ Task（任务）两层结构的任务追踪能力。
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，用例总数: 121
+测试文件: 11 个，用例总数: 129
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -49,6 +49,7 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 - **GoalTaskTools**（20 条）：由 `addTasksAppendsAndReports`、`addTasksResolvesOmittedGoalId`、`addTasksFiltersEntriesWithoutTitle` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalTaskV2**（9 条）：由 `preservesPluginIdentityAndPolicy`、`preservesLegacyToolNamesAndRequiredArguments`、`createGoalUsesExecutionConversation` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TaskListSurface**（4 条）：由 `bottomEdgeHasVisibleShadow`、`topAndBottomShadowAreSymmetric`、`bottomBandMirrorsTopBand` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GoalViewRender**（8 条）：由 `taskRowHeightIsThirtyPoints`、`taskRowUsesOrangeSurface`、`longTitleIsTruncatedAtRowEdge` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -175,27 +176,35 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 | 119 | TaskListSurface | 顶边与底边阴影强度对称 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `topAndBottomShadowAreSymmetric` |
 | 120 | TaskListSurface | 底边阴影带与顶边逐行镜像 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bottomBandMirrorsTopBand` |
 | 121 | TaskListSurface | 顶边阴影强度保持不变 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `topEdgeShadowStaysStrong` |
+| 122 | GoalViewRender | 任务行高度为 30pt | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `taskRowHeightIsThirtyPoints` |
+| 123 | GoalViewRender | 任务行底色与描边为橙色系 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `taskRowUsesOrangeSurface` |
+| 124 | GoalViewRender | 任务行状态图标从 8pt 内边距处开始 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `taskRowIconStartsAtEightPointInset` |
+| 125 | GoalViewRender | 长标题被截断到行右边缘 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `longTitleIsTruncatedAtRowEdge` |
+| 126 | GoalViewRender | 阻塞原因卡片高度为 40pt | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `blockedReasonCardHeightIsFortyPoints` |
+| 127 | GoalViewRender | 容器高度按行数计算 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `containerHeightFollowsRowCount` |
+| 128 | GoalViewRender | 容器高度在 160pt 封顶 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `containerHeightIsCapped` |
+| 129 | GoalViewRender | 未超上限时按内容高度 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `containerHeightFollowsContentBelowCap` |
 
-> 说明：全部 **121 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **129 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 8 / 8
-- P1: 已覆盖 99 / 99
-- P2: 已覆盖 14 / 14
-- **合计: 121 / 121**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 9 / 9
+- P1: 已覆盖 105 / 105
+- P2: 已覆盖 15 / 15
+- **合计: 129 / 129**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
-- **P1**: 其余功能性用例（99 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（14 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
+- **P1**: 其余功能性用例（105 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 121 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 129 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

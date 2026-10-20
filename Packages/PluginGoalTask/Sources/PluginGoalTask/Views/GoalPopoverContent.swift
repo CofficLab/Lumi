@@ -29,6 +29,7 @@ struct GoalPopoverContent: View {
         HStack {
             Label(pluginLocalization.string("Goals"), systemImage: "target")
                 .font(.headline)
+                .accessibilityIdentifier(GoalAccessibility.popoverHeader)
 
             Spacer()
 
@@ -36,6 +37,7 @@ struct GoalPopoverContent: View {
                 Text("\(viewModel.goals.count)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .accessibilityIdentifier(GoalAccessibility.popoverCount)
             }
 
             if viewModel.isLoading {
@@ -89,6 +91,7 @@ struct GoalPopoverContent: View {
             Text(pluginLocalization.string("No goals yet"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .accessibilityIdentifier(GoalAccessibility.popoverEmptyText)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()

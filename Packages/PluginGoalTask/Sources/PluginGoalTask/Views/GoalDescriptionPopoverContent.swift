@@ -26,6 +26,7 @@ struct GoalDescriptionPopoverContent: View {
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(16)
+                    .accessibilityIdentifier(GoalAccessibility.descriptionText)
             }
             .scrollIndicators(.automatic)
         }

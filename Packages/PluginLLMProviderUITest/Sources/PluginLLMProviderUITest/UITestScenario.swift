@@ -70,6 +70,13 @@ enum UITestScenario: String, CaseIterable, Sendable {
     /// `role=tool` 消息），见 `UITestStubNetwork.hasToolResult`。
     case approval = "ui-test-approval"
 
+    /// 调用 `create_goal` 创建一个带任务的 Goal。用于验证 goal 侧边栏的端到端链路。
+    ///
+    /// 首轮返回 `create_goal` 工具调用 → 目标被真正创建 → goal 侧边栏出现；
+    /// 后续轮（请求体里已有 `role=tool` 消息，即工具已执行）返回收尾正文。
+    /// 两段式判据与 ask_user / approval 场景完全一致，桩无需维护跨请求状态。
+    case goal = "ui-test-goal"
+
     /// 未知模型时的默认场景，保证不返回意外结果。
     case unknown = "ui-test-unknown"
 
@@ -82,7 +89,7 @@ enum UITestScenario: String, CaseIterable, Sendable {
             supportsStreaming: true,
             supportsVision: false,
             // ask_user 是工具调用场景，必须声明支持工具，否则请求体里不会带 tools。
-            supportsTools: self == .tool || self.isAskUser || self == .text || self == .approval
+            supportsTools: self == .tool || self.isAskUser || self == .text || self == .approval || self == .goal
         )
     }
 
@@ -97,6 +104,11 @@ enum UITestScenario: String, CaseIterable, Sendable {
     /// 是否为高风险工具授权场景。
     var isApproval: Bool {
         self == .approval
+    }
+
+    /// 是否为 goal 创建场景。
+    var isGoal: Bool {
+        self == .goal
     }
 
     /// 该场景发起的 `ask_user` 工具调用参数 JSON。
@@ -141,6 +153,7 @@ enum UITestScenario: String, CaseIterable, Sendable {
         case .askUserChoice: return "UI Test Ask User Choice"
         case .askUserFreeText: return "UI Test Ask User Free Text"
         case .approval: return "UI Test Approval"
+        case .goal: return "UI Test Goal"
         case .unknown: return "UI Test Unknown"
         }
     }
@@ -276,6 +289,48 @@ enum UITestFixtures {
     /// 判据与 ask_user 场景相同：请求体里出现 `role=tool` 消息
     /// （即用户的授权决定已回传给模型）时才产出。
     static let approvalFollowUpResponse = "UI Testing Approval Resolved"
+
+    // MARK: - goal 场景
+
+    /// goal 场景调用的工具名。
+    ///
+    /// 与 `CreateGoalV2Tool.toolName` 一致。桩返回未经 sanitize 的原名，
+    /// 由 `VendorLLMProvider` 的 reverseMap 还原成注册名。
+    static let goalToolName = "create_goal"
+
+    /// goal 场景的工具调用 id。
+    static let goalToolCallID = "call_ui_test_goal"
+
+    /// 创建出来的 Goal 标题。
+    static let goalTitle = "UI Testing Goal"
+
+    /// 创建出来的任务标题。
+    ///
+    /// 刻意给 3 条：足以验证「任务逐行渲染 + 进度按 3 计数」，
+    /// 又不至于多到触发任务列表容器的高度封顶（封顶阈值见 `SidebarView.maxTaskListHeight`）。
+    static let goalTaskTitles = [
+        "UI Testing Task One",
+        "UI Testing Task Two",
+        "UI Testing Task Three",
+    ]
+
+    /// goal 工具调用参数。
+    ///
+    /// 字段与 `CreateGoalV2Tool.inputSchema` 保持一致：`title` 与 `tasks` 必填，
+    /// `tasks` 的每一项至少要有 `title`。桩与真实模型一样只按 schema 产出参数，
+    /// 不假设宿主如何解析。
+    static let goalArguments: String = {
+        let tasks = goalTaskTitles
+            .map { "{\"title\":\"\($0)\"}" }
+            .joined(separator: ",")
+        return "{\"title\":\"\(goalTitle)\",\"tasks\":[\(tasks)]}"
+    }()
+
+    /// 目标创建后，桩在后续轮给出的收尾正文。
+    ///
+    /// 判据与 ask_user / approval 场景相同：请求体里出现 `role=tool` 消息
+    /// （即 `create_goal` 已执行）时才产出。
+    static let goalFollowUpResponse = "UI Testing Goal Created"
 
     /// 慢速场景每段之间的延迟（秒）。
     static let slowChunkDelay: Double = 0.4

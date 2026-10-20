@@ -75,12 +75,14 @@ struct GoalRowView: View {
                         .fontWeight(.medium)
                         .lineLimit(1)
                         .truncationMode(.tail)
+                        .accessibilityIdentifier(GoalAccessibility.popoverGoalTitle)
 
                     Spacer(minLength: 4)
 
                     Text("\(completedCount)/\(tasks.count)")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
+                        .accessibilityIdentifier(GoalAccessibility.popoverGoalProgress)
 
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                         .font(.system(size: 9, weight: .semibold))
@@ -127,6 +129,7 @@ struct GoalRowView: View {
         .buttonStyle(.plain)
         .disabled(isForking)
         .help(pluginLocalization.string("Continue in a new conversation"))
+        .accessibilityIdentifier(GoalAccessibility.popoverForkButton)
     }
 
     /// fork 失败时的错误提示（就近展示，避免弹窗一闪而过）。
@@ -185,6 +188,7 @@ struct GoalRowView: View {
                         .font(.caption)
                         .lineLimit(1)
                         .truncationMode(.tail)
+                        .accessibilityIdentifier(GoalAccessibility.popoverTaskTitle)
 
                     Spacer()
                 }
