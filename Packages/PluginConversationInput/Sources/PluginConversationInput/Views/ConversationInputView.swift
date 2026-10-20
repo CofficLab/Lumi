@@ -25,7 +25,10 @@ struct ConversationInputView: View {
         let _ = viewModel.revision
 
         VStack(spacing: 0) {
-            AppDivider()
+            // 这里原本还有一条 `AppDivider()`：输入框做成悬浮卡片后，卡片自身
+            // 的投影已经承担了「与上方内容分开」的职责，再留一条通栏细线，
+            // 读起来是「细线 + 浮起来的卡片」两层分隔线叠在一起。
+            // 宿主在消息列表与底部固定区之间画的区域分隔线不受影响。
 
             if let errorMessage = viewModel.errorMessage {
                 InputErrorView(message: errorMessage, onDismiss: {

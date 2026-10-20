@@ -66,9 +66,9 @@ struct ComposerView: View {
             pendingBlock: viewModel.pendingBlock
         )
         .frame(height: viewModel.inputHeight)
-        .padding(.horizontal, 10)
-        .padding(.top, 8)
-        .padding(.bottom, 8)
-        .appSurface(style: .toolbar, cornerRadius: 0)
+        .padding(.horizontal, ComposerLayout.contentHorizontalInset)
+        .padding(.top, ComposerLayout.contentTopInset)
+        .padding(.bottom, ComposerLayout.contentBottomInset)
+        .composerSurface()
     }
 }
