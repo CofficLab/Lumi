@@ -1,4 +1,6 @@
 import Foundation
+import KitTestIsolation
+import KitTestSupport
 import Testing
 @testable import TextActionsPlugin
 
@@ -38,17 +40,30 @@ struct TextActionsRuntimeTests {
         #expect(TextActionsRuntime.settingsDirectory() == temp.url)
     }
 
-    @Test("重置后回到默认回退目录")
-    func resetsToFallbackDirectory() {
+    @Test("重置后清空注入目录，不再回退到本机真实数据目录")
+    func resetClearsInjectedDirectory() {
         let temp = TempDirectory()
         defer { temp.cleanup() }
         TextActionsRuntime.configure(settingsDirectory: temp.url)
 
         TextActionsRuntime.reset()
+        defer { TextActionsRuntime.reset() }
 
-        let path = TextActionsRuntime.settingsDirectory().path
-        #expect(path.hasSuffix("com.coffic.lumi.plugin.text-actions"))
-        #expect(path.contains("com.coffic.Lumi"))
+        #expect(TextActionsRuntime.injectedSettingsDirectory == nil)
+
+        // 重置之后不得再回退到本机真实数据目录：测试进程里这条路径必须被拒绝。
+        switch IsolatedDirectoryGuard.resolve(
+            injected: TextActionsRuntime.injectedSettingsDirectory,
+            owner: "TextActionsRuntime",
+            accessor: "settingsDirectory()",
+            fallback: { URL(fileURLWithPath: "/tmp/text-actions-fallback", isDirectory: true) }
+        ) {
+        case .resolved:
+            Issue.record("测试进程下未注入目录时不应回退到真实数据目录")
+        case let .refused(reason):
+            #expect(reason.contains("TextActionsRuntime"))
+            #expect(reason.contains("settingsDirectory()"))
+        }
     }
 }
 
