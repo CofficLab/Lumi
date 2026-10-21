@@ -212,7 +212,7 @@ func loadEarlierPrependsPage() async {
     #expect(windowBefore.count == 40, "首屏应保留 pageSize(40) 条")
     let expectedAnchor = windowBefore.first?.id
 
-    let returnedAnchor = await harness.viewModel.loadEarlier(isAtBottom: false)
+    let returnedAnchor = await harness.viewModel.loadEarlier()
 
     // 锚点是「翻页前窗口最早一条」，prepend 后应被钉回视口顶部
     #expect(returnedAnchor == expectedAnchor)
@@ -227,7 +227,7 @@ func loadEarlierNoOpWithoutWindow() async {
     let harness = ViewModelHarness(selected: conversationID, page: [])
     await harness.viewModel.activateCurrentConversation()
 
-    let anchor = await harness.viewModel.loadEarlier(isAtBottom: false)
+    let anchor = await harness.viewModel.loadEarlier()
     #expect(anchor == nil)
 }
 
@@ -253,7 +253,7 @@ func loadEarlierEvictsTailWhenAwayFromBottom() async {
     await harness.viewModel.activateCurrentConversation()
     let windowBefore = harness.viewModel.persistedMessages
 
-    _ = await harness.viewModel.loadEarlier(isAtBottom: false)
+    _ = await harness.viewModel.loadEarlier()
 
     // 44 条远小于 maxRetainedCount(300)，不触发回收，顺序为「更早在前」
     #expect(harness.viewModel.persistedMessages.map(\.id) == (earlier + windowBefore).map(\.id))

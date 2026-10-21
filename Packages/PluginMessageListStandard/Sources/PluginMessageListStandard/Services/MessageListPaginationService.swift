@@ -14,9 +14,9 @@ import ProviderMessage
 /// 1. **首屏加载** —— 加载最近一页（pageSize 条），并探测是否还有更早消息。
 /// 2. **向上翻页** —— 在当前最早一条之前加载更早一页并 prepend。
 /// 3. **尾部刷新** —— 重新取最近一页，与当前 `messages` 比对并覆盖尾部重叠区；
-///    无重叠且用户正在翻历史时不强行覆盖（避免破坏视觉位置）。
+///    窗口回收裁掉的空档会被逐页回填，避免中间段消息永久消失。
 /// 4. **窗口回收** —— 超过 `maxRetainedCount` 时丢弃尾部（较新、远离可视区的），
-///    仅在用户**不在底部**时执行（避免裁掉正在流式的尾部）。
+///    裁掉的部分由尾部刷新回填，不会丢失。
 @MainActor
 struct MessageListPaginationService {
     let pageSize: Int
@@ -228,11 +228,24 @@ struct MessageListPaginationService {
     }
 
     /// 窗口回收：超过 `maxRetainedCount` 时丢弃尾部较新消息。
-    /// **仅在用户不在底部时执行**（`isAtBottom == false`）——防止裁掉正在流式的尾部。
-    func evictTailIfNeeded(
-        messages: [Message], isAtBottom: Bool
-    ) -> [Message] {
-        guard messages.count > maxRetainedCount, !isAtBottom else { return messages }
+    ///
+    /// ## 为什么不再区分「是否在底部」
+    ///
+    /// 旧实现只在用户**离开底部**时回收，理由是「别裁掉用户正在看的内容」。
+    /// 但这让窗口上限形同虚设：用户在底部反复触发「加载更早消息」时，整个
+    /// 会话会被拉进内存（实测 2000 条），`historyRows` 同步重建，`ForEach`
+    /// 的 diff 集合也随之膨胀。
+    ///
+    /// 裁尾部在这两种场景下都可接受：
+    ///
+    /// - 用户离开底部时，尾部在视口之外，裁掉不影响当前阅读。
+    /// - 用户在底部时，裁掉的尾部会在下一次尾部刷新时被回填（见 `refreshTail`
+    ///   的空档回填），不会永久丢失。
+    ///
+    /// 之所以裁**尾部**而不是头部：头部正是「加载更早消息」刚取回来的那一段，
+    /// 裁掉它等于让该操作毫无效果。
+    func evictTailIfNeeded(messages: [Message]) -> [Message] {
+        guard messages.count > maxRetainedCount else { return messages }
         let overflow = messages.count - maxRetainedCount
         var trimmed = messages
         trimmed.removeLast(overflow)

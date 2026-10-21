@@ -205,7 +205,7 @@ final class ListV2ViewModel: ObservableObject {
 
     /// 向上翻页：加载更早一页并 prepend，触发窗口回收。
     /// - Returns: prepend 前最早一条消息的 id，View 应把它钉回视口顶部。
-    func loadEarlier(isAtBottom: Bool) async -> UUID? {
+    func loadEarlier() async -> UUID? {
         guard let conversationID = selectedConversationID,
               !isLoadingEarlier,
               let currentFirstID = persistedMessages.first?.id else { return nil }
@@ -221,9 +221,7 @@ final class ListV2ViewModel: ObservableObject {
         guard selectedConversationID == conversationID else { return nil }
         persistedMessages = result.earlier + persistedMessages
         hasEarlierMessages = result.hasEarlierMessages
-        persistedMessages = pagination.evictTailIfNeeded(
-            messages: persistedMessages, isAtBottom: isAtBottom
-        )
+        persistedMessages = pagination.evictTailIfNeeded(messages: persistedMessages)
         return result.anchorID
     }
 
