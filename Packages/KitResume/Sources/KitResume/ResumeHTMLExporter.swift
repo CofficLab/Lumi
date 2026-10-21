@@ -12,6 +12,7 @@ public enum ResumeExportError: LocalizedError, Equatable {
     case unexpectedPageSize(page: Int, expectedWidth: Double, expectedHeight: Double, actualWidth: Double, actualHeight: Double)
     case pageOverflow(pages: [Int])
     case pdfCreationFailed
+    case pdfCaptureTimedOut
     case pngEncodingFailed
 
     public var errorDescription: String? {
@@ -24,6 +25,7 @@ public enum ResumeExportError: LocalizedError, Equatable {
         case .pageOverflow(let pages):
             "Content overflows .resume-page container(s): \(pages.map { String($0 + 1) }.joined(separator: ", ")). Reduce content or add another page."
         case .pdfCreationFailed: "Failed to create PDF from resume HTML."
+        case .pdfCaptureTimedOut: "Timed out while capturing resume PDF."
         case .pngEncodingFailed: "Failed to encode resume PNG."
         }
     }
@@ -250,15 +252,53 @@ public enum ResumeHTMLExporter {
 
     // MARK: - Capture
 
-    private static func capturePDF(in webView: WKWebView, rect: CGRect) async throws -> Data {
+    private static func capturePDF(
+        in webView: WKWebView,
+        rect: CGRect,
+        timeout: TimeInterval = 20
+    ) async throws -> Data {
         let configuration = WKPDFConfiguration()
         configuration.rect = rect
+        // WebKit 的完成回调不保证送达；没有超时的话 continuation 永不恢复，
+        // 调用方会永久挂起（见 Issue #127）。
+        let state = PDFCaptureState()
         return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
+            state.attach(continuation)
+
             webView.createPDF(configuration: configuration) { result in
                 switch result {
-                case .success(let data): continuation.resume(returning: data)
-                case .failure(let error): continuation.resume(throwing: error)
+                case .success(let data): state.finish(.success(data))
+                case .failure(let error): state.finish(.failure(error))
                 }
+            }
+
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(timeout))
+                state.finish(.failure(ResumeExportError.pdfCaptureTimedOut))
+            }
+        }
+    }
+
+    /// `createPDF` 的一次性完成状态。
+    ///
+    /// WebKit 回调与超时任务都可能先到，用一次性 `finish` 保证 continuation 只被恢复一次。
+    @MainActor
+    final class PDFCaptureState {
+        private var continuation: CheckedContinuation<Data, Error>?
+        private var completed = false
+
+        func attach(_ continuation: CheckedContinuation<Data, Error>) {
+            self.continuation = continuation
+        }
+
+        func finish(_ result: Result<Data, Error>) {
+            guard !completed else { return }
+            completed = true
+            let pending = continuation
+            continuation = nil
+            switch result {
+            case .success(let data): pending?.resume(returning: data)
+            case .failure(let error): pending?.resume(throwing: error)
             }
         }
     }

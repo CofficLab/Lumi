@@ -26,11 +26,15 @@ struct HTMLScreenshotterCaptureTests {
         let delegate = NavigationWaiter()
         webView.navigationDelegate = delegate
         _ = try? await webView.loadHTMLString(html, baseURL: nil)
-        await delegate.waitForFinish(timeout: .seconds(3))
-        // 让 WebKit 完成首帧布局。
-        for _ in 0 ..< 3_000 {
-            await Task.yield()
-        }
+        await delegate.waitForFinish(timeout: .seconds(5))
+        // 等待真实布局就绪：`didFinish` 只表示文档已解析，页面高度未必已确定。
+        // 忙等（`Task.yield()` 循环）不会推进 WebKit 的渲染进程，必须轮询
+        // 真实的内容高度，否则 `createPDF` 可能因页面尚未布局而拿不到结果。
+        let layoutReady = await delegate.waitForLayout(
+            webView: webView,
+            timeout: .seconds(10)
+        )
+        #expect(layoutReady, "页面布局未在超时前就绪，WebKit 渲染可能未推进")
 
         let image = try await HTMLScreenshotter.capture(webView)
 
@@ -105,7 +109,8 @@ struct HTMLScreenshotterCaptureTests {
 
 
 /// 等待 WebKit 导航完成的辅助代理。
-/// 等待 WebKit 导航完成的辅助代理。
+///
+/// 导航委托是弱引用，因此该对象必须在整个等待期间强持有。
 @MainActor
 private final class NavigationWaiter: NSObject, WKNavigationDelegate {
     private var continuation: CheckedContinuation<Void, Never>?
@@ -122,6 +127,27 @@ private final class NavigationWaiter: NSObject, WKNavigationDelegate {
         }
         // 超时兜底：回调缺失时也不能永久挂起。
         try? await Task.sleep(for: timeout)
+    }
+
+    /// 轮询页面内容高度，直到布局真正生效或超时。
+    ///
+    /// `didFinish` 只表示文档已解析完毕，此时内容高度可能仍是 0 —— 布局由
+    /// WebKit 的渲染进程异步完成。忙等（`Task.yield()`）不会让出给渲染进程，
+    /// 只有真实的定时等待 + 轮询才能等到布局就绪。
+    func waitForLayout(webView: WKWebView, timeout: Duration) async -> Bool {
+        let deadline = ContinuousClock.now + timeout
+        while ContinuousClock.now < deadline {
+            let height = await contentHeight(of: webView)
+            if height > 0 { return true }
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        return false
+    }
+
+    private func contentHeight(of webView: WKWebView) async -> Double {
+        let script = "document.body ? document.body.scrollHeight : 0"
+        guard let value = try? await webView.evaluateJavaScript(script) as? NSNumber else { return 0 }
+        return value.doubleValue
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
