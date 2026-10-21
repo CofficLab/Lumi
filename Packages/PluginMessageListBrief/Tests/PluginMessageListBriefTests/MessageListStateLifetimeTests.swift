@@ -139,3 +139,57 @@ func listViewMustCarryRuntimeInStateObject() {
         """
     )
 }
+
+// MARK: - 不变式 3：容器成员实例必须稳定
+
+/// `MessageListRuntime` 的三个成员在多次访问之间必须是**同一实例**。
+///
+/// 容器是「同一性」的载体：若成员每次访问都新建，等于把原来的缺陷搬了个家。
+@MainActor
+@Test("简洁模式运行时容器：成员在多次访问之间必须保持同一实例")
+func runtimeMembersKeepStableIdentity() {
+    let runtime = MessageListRuntime()
+
+    #expect(runtime.atBottomBox === runtime.atBottomBox)
+    #expect(runtime.scrollCoordinator === runtime.scrollCoordinator)
+    #expect(runtime.bottomScrollController === runtime.bottomScrollController)
+}
+
+/// 容器必须真的持有这三个成员——缺一个就意味着对应状态无处安放。
+@MainActor
+@Test("简洁模式运行时容器：必须持有底部标记、滚动协调器与底部几何控制器")
+func runtimeCarriesAllThreeMembers() {
+    let runtime = MessageListRuntime()
+    let labels = Set(Mirror(reflecting: runtime).children.compactMap(\.label))
+
+    #expect(labels.contains("atBottomBox"))
+    #expect(labels.contains("scrollCoordinator"))
+    #expect(labels.contains("bottomScrollController"))
+    #expect(runtime.atBottomBox.value == true, "新容器的底部标记应为初值 true")
+}
+
+// MARK: - 不变式 4：容器不得发布任何 @Published
+
+/// 容器**不得**声明任何 `@Published`。
+///
+/// - Important: 容器实现 `ObservableObject` 只是为了满足 `@StateObject` 的要求。
+///   一旦它发布属性，成员（尤其 `AtBottomBox`）的写入就会进入 SwiftUI 的
+///   invalidation 图，重新打开底部锚点 Preference 反馈环
+///   （`@State` → body 重建 → 偏好重报 → 活锁）。
+///   详见 `AtBottomBox` 的类型注释。
+@MainActor
+@Test("简洁模式运行时容器：不得发布任何 @Published（避免重新打开 invalidation 反馈环）")
+func runtimePublishesNothing() {
+    let published = Mirror(reflecting: MessageListRuntime()).children.filter { child in
+        let typeName = String(describing: type(of: child.value))
+        return typeName.contains("Published<")
+    }
+
+    #expect(
+        published.isEmpty,
+        """
+        运行时容器发布了 @Published 属性：\(published.map { String(describing: type(of: $0.value)) }).
+        写入这些属性会触发 SwiftUI invalidation，重新打开底部锚点 Preference 反馈环。
+        """
+    )
+}
