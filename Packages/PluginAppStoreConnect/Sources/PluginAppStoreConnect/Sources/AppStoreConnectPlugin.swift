@@ -63,7 +63,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
 
         // 早期版本的回退实现把缓存直接写到 bundle 根目录下的
         // AppStoreConnectPlugin，升级时也要并入 ID 目录。
-        let legacyDirectory = AppStoreConnectPluginRuntimeBridge.fallbackRootDirectory
+        let legacyDirectory = AppStoreConnectPluginRuntimeBridge.productionFallbackRootDirectory
             .appendingPathComponent("AppStoreConnectPlugin", isDirectory: true)
         guard FileManager.default.fileExists(atPath: legacyDirectory.path) else { return }
         try FileManager.default.createDirectory(

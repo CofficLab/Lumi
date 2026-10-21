@@ -35,7 +35,7 @@ public final class AgentTempStoragePlugin: SuperPlugin, PluginDataMigrating, Sup
         )
 
         // 早期回退路径没有版本目录，仍需在首次升级时保留并复制其内容。
-        let legacyDirectory = AgentTempStoragePluginRuntimeBridge.fallbackRootDirectory
+        let legacyDirectory = AgentTempStoragePluginRuntimeBridge.productionFallbackRootDirectory
             .appendingPathComponent("AgentTempStorage", isDirectory: true)
         guard FileManager.default.fileExists(atPath: legacyDirectory.path) else { return }
         try FileManager.default.createDirectory(

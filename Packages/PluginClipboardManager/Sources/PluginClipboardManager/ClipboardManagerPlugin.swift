@@ -49,7 +49,7 @@ public final class ClipboardManagerPlugin: SuperPlugin, PluginDataMigrating, Sup
     public func onBoot(kernel: KernelCoreContainer) throws {
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             let pluginDirectory = storage.pluginDataDirectory(for: id)
-            ClipboardManagerRuntime.databaseDirectoryProvider = { pluginDirectory }
+            ClipboardManagerRuntime.injectedDatabaseDirectory = pluginDirectory
         }
         monitorObserver?.cancel()
         monitorObserver = ClipboardMonitorObserver()
