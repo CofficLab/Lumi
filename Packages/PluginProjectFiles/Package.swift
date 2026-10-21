@@ -28,7 +28,9 @@ let package = Package(
             name: "PluginProjectFilesTests",
             dependencies: [
                 "PluginProjectFiles",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
             ]
         ),
     ]
