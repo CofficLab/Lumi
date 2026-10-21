@@ -10,4 +10,5 @@
 | `MemoryModels.swift` | 内存时间范围与历史数据点 |
 | `MonitorModels.swift` | 系统监控聚合模型（系统指标、资源占用、网络、磁盘、进程） |
 | `StorageModels.swift` | 磁盘卷信息模型 |
+| `ThermalModels.swift` | CPU / die 温度历史数据点 |
 | `DeviceData.swift` | 设备信息聚合数据源（`@MainActor ObservableObject`，含定时刷新） |
