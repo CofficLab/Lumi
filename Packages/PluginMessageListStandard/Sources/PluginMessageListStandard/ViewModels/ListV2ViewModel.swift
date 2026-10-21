@@ -15,13 +15,18 @@ private struct HistoryBuildSignature: Equatable {
     /// 流式行可见性翻转时 status 行显隐不同，需纳入签名以触发重算。
     let hidesStatus: Bool
     /// Per persisted message — captures additions/removals/reordering AND
-    /// content edits while staying far cheaper than comparing full content strings.
+    /// content edits, at a fixed size per message.
     let fingerprints: [MessageFingerprint]
 }
 
 private struct MessageFingerprint: Equatable {
     let id: UUID
-    let contentLength: Int
+    /// 内容指纹。
+    ///
+    /// 用**哈希**而不是长度：等长替换（"AAAA" → "BBBB"）长度不变，按长度判定
+    /// 会漏掉这种更新，历史行会继续持有旧文本。消息的落库版本可能因为重写、
+    /// 重试覆盖而产生等长结果，这不是纯理论情况。
+    let contentHash: Int
     let role: MessageRole
     let isToolExecutionOnly: Bool
     /// 工具结果写回 assistant 消息时 content 本身可能不变，必须纳入
@@ -446,7 +451,7 @@ final class ListV2ViewModel: ObservableObject {
             fingerprints: persistedMessages.map {
                 MessageFingerprint(
                     id: $0.id,
-                    contentLength: $0.content.count,
+                    contentHash: $0.content.hashValue,
                     role: $0.role,
                     isToolExecutionOnly: $0.isToolExecutionOnly,
                     toolCallResultState: $0.toolCalls?.map {
