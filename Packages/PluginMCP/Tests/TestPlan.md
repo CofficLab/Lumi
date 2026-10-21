@@ -5,7 +5,7 @@
 PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添加"MCP 服务器"入口，用户可自由添加 / 配置任意 MCP 服务器；服务器暴露的工具自动桥接进 Agent 工具列表，随会话一起审批与执行。 ## 能力 - **通用 MCP 客户端**：stdio（本地子进程）与 Streamable HTTP 两种传输； - **Cursor 式设置页**：服务器列表、添加/编辑表单、内置模板（Xcode native 等）、工具清单与风险徽标、全局开关； - **工具桥接**：MCP 工具 → `SuperAgentTool`，注册进 `ToolManagerProviding`（归属本插件），LLM 可直接调用； - **风险分级**：默认分级表 + 未知工具默认 `high` + 单工具风险覆盖 + 注解启发（`readOnlyHint` / `destructiveHint`）； - **安全默认**：第三方服务器 = 本机任意代码执行面，添加时强提示；默认不自动连接。
 
 平台: macOS 14+
-测试文件: 4 个，用例总数: 23
+测试文件: 6 个，用例总数: 25
 
 核心组件（源码目录）:
 - `Managers/`
@@ -33,6 +33,7 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 
 - **MCPLocalization**（3 条）：由 `zhHansResolves`、`connectionStateKeys`、`miscKeys` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPPermissionPolicy**（6 条）：由 `xcodeExactTable`、`unknownDefault`、`overrideWins` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MCPPluginBoot**（2 条）：由 `bootResolvesPluginDataDirectory`、`refusesWithoutStorageProvider` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPServerRegistry**（7 条）：由 `seedsPreset`、`crud`、`persistenceRoundTrip` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MCPToolAdapter**（7 条）：由 `bridgeShape`、`riskLevels`、`executionCapability` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -49,41 +50,43 @@ PluginMCP 让 Lumi 成为 **Cursor 式通用 MCP 客户端**：在设置中添�
 | 7 | MCPPermissionPolicy | 注解启发：破坏性优先 high，只读 safe | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `annotations` |
 | 8 | MCPPermissionPolicy | 名称关键词启发 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `heuristics` |
 | 9 | MCPPermissionPolicy | 危险词优先于只读词（同一名称含两个特征） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `dangerBeforeRead` |
-| 10 | MCPServerRegistry | 贡献的内置预设（Xcode 与 GitHub）以禁用态落库 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `seedsPreset` |
-| 11 | MCPServerRegistry | CRUD：新增 / 更新 / 删除 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `crud` |
-| 12 | MCPServerRegistry | 持久化往返：重建实例后状态一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `persistenceRoundTrip` |
-| 13 | MCPServerRegistry | 重复初始化不重复写入贡献预设 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `noDuplicateSeed` |
-| 14 | MCPServerRegistry | 加载时按 id 去重（自愈历史重复数据） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `loadDeduplicatesById` |
-| 15 | MCPServerRegistry | 更新时替换全部同 id 条目，不产生重复 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `updateReplacesAllSameId` |
-| 16 | MCPServerRegistry | 模拟 boot 序列：先贡献 Xcode 再贡献 GitHub，两个都应 seed | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `simulateBootContributions` |
-| 17 | MCPToolAdapter | 桥接命名空间与 schema 直通 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bridgeShape` |
-| 18 | MCPToolAdapter | 风险分级：策略判定与用户覆盖 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `riskLevels` |
-| 19 | MCPToolAdapter | 只读工具声明并行，其余串行 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `executionCapability` |
-| 20 | MCPToolAdapter | executeResult 调用回传文本结果 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `executeText` |
-| 21 | MCPToolAdapter | 图片结果映射为 ImageAttachment | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `executeImage` |
-| 22 | MCPToolAdapter | 未连接会话调用报错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `notConnected` |
-| 23 | MCPToolAdapter | mcpbridge 已知错误翻译为可操作提示 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `friendlyErrorHints` |
+| 10 | MCPPluginBoot | 启动时从 StorageProviding 解析插件数据目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bootResolvesPluginDataDirectory` |
+| 11 | MCPPluginBoot | 未注册 StorageProviding 时守卫拒绝回退到真实数据目录 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `refusesWithoutStorageProvider` |
+| 12 | MCPServerRegistry | 贡献的内置预设（Xcode 与 GitHub）以禁用态落库 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `seedsPreset` |
+| 13 | MCPServerRegistry | CRUD：新增 / 更新 / 删除 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `crud` |
+| 14 | MCPServerRegistry | 持久化往返：重建实例后状态一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `persistenceRoundTrip` |
+| 15 | MCPServerRegistry | 重复初始化不重复写入贡献预设 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `noDuplicateSeed` |
+| 16 | MCPServerRegistry | 加载时按 id 去重（自愈历史重复数据） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `loadDeduplicatesById` |
+| 17 | MCPServerRegistry | 更新时替换全部同 id 条目，不产生重复 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `updateReplacesAllSameId` |
+| 18 | MCPServerRegistry | 模拟 boot 序列：先贡献 Xcode 再贡献 GitHub，两个都应 seed | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `simulateBootContributions` |
+| 19 | MCPToolAdapter | 桥接命名空间与 schema 直通 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bridgeShape` |
+| 20 | MCPToolAdapter | 风险分级：策略判定与用户覆盖 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `riskLevels` |
+| 21 | MCPToolAdapter | 只读工具声明并行，其余串行 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `executionCapability` |
+| 22 | MCPToolAdapter | executeResult 调用回传文本结果 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `executeText` |
+| 23 | MCPToolAdapter | 图片结果映射为 ImageAttachment | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `executeImage` |
+| 24 | MCPToolAdapter | 未连接会话调用报错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `notConnected` |
+| 25 | MCPToolAdapter | mcpbridge 已知错误翻译为可操作提示 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `friendlyErrorHints` |
 
-> 说明：全部 **23 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **25 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 4 / 4
-- P1: 已覆盖 16 / 16
+- P0: 已覆盖 5 / 5
+- P1: 已覆盖 17 / 17
 - P2: 已覆盖 3 / 3
-- **合计: 23 / 23**（仅表示清单场景，非源码覆盖率）
+- **合计: 25 / 25**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
-- **P1**: 其余功能性用例（16 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
+- **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 23 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 25 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
