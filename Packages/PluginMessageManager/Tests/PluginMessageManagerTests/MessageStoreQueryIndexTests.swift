@@ -73,7 +73,11 @@ struct MessageStoreQueryIndexTests {
             "查询计划退化成全表扫描：\(plan)"
         )
         #expect(
-            plan.contains("USING INDEX"),
+            !plan.contains("USE TEMP B-TREE FOR ORDER BY"),
+            "查询仍需临时排序，说明索引没有被用来承担排序：\(plan)"
+        )
+        #expect(
+            plan.contains("INDEX"),
             "查询计划未使用索引：\(plan)"
         )
     }
