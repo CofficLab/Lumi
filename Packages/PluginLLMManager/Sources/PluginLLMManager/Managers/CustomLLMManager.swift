@@ -93,10 +93,10 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
 
     public init() {
         // 启动时恢复持久化的选中；实际生效校验在首次注册后经 ensureValidSelection 完成。
-        selectedModelID = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModelID)
+        selectedModelID = LLMManagerUserDefaults.current.string(forKey: UserDefaultsKeys.selectedModelID)
             .flatMap(LLMModelID.init(rawValue:))
-        legacySelectedProviderID = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedProviderID)
-        legacySelectedModel = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModel)
+        legacySelectedProviderID = LLMManagerUserDefaults.current.string(forKey: UserDefaultsKeys.selectedProviderID)
+        legacySelectedModel = LLMManagerUserDefaults.current.string(forKey: UserDefaultsKeys.selectedModel)
         // 持久化 / 旧版本身已恢复出选中值，缺少可观察跃迁，故标记为待广播 `.appRestore`。
         pendingRestoreBroadcast = selectedModelID != nil || legacySelectedProviderID != nil
         if Self.verbose {
@@ -206,12 +206,12 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
 
     private func persistSelectedModelID() {
         if let selectedModelID {
-            UserDefaults.standard.set(selectedModelID.rawValue, forKey: UserDefaultsKeys.selectedModelID)
+            LLMManagerUserDefaults.current.set(selectedModelID.rawValue, forKey: UserDefaultsKeys.selectedModelID)
         } else {
-            UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedModelID)
+            LLMManagerUserDefaults.current.removeObject(forKey: UserDefaultsKeys.selectedModelID)
         }
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedProviderID)
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedModel)
+        LLMManagerUserDefaults.current.removeObject(forKey: UserDefaultsKeys.selectedProviderID)
+        LLMManagerUserDefaults.current.removeObject(forKey: UserDefaultsKeys.selectedModel)
         legacySelectedProviderID = nil
         legacySelectedModel = nil
     }
