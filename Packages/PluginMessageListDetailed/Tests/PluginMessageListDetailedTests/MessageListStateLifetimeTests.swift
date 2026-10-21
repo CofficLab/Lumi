@@ -146,6 +146,43 @@ func listViewMustCarryRuntimeInStateObject() {
     )
 }
 
+// MARK: - 不变式 3：首屏就绪必须由带超时兜底的编排器承载
+
+/// `ListV3View` 的首屏就绪判定必须由**带超时兜底的编排器**承载，
+/// 不能是一个裸 `@State` 布尔。
+///
+/// ## 缺陷背景
+///
+/// V3 曾用 `@State private var isInitialPositionReady` 表达「首屏已定位」。
+/// 这个布尔**只有一条置真路径**：收敛过程返回 `true`。
+///
+/// `MessageListScrollCoordinator.prepareInitialBottom` 的收敛是有界的
+/// （`bottomSettleMaxAttempts` 限制轮次），但它**可能返回 false** ——
+/// 条件失效（会话被换掉 / 进入加载）、行高迟迟不稳定、滚动视图绑定丢失……
+/// 一旦返回 false，`isInitialPositionReady` 就永远是 false，而遮罩的显示
+/// 条件是 `viewModel.isLoading || !isInitialPositionReady` ——
+///
+/// **没有任何兜底路径，遮罩就此永久挂起。**
+///
+/// V2 早已用 `InitialPositionGate` 解决：收敛成功、收敛失败、收敛挂死
+/// （超预算）三条路径都会放行遮罩。
+///
+/// - Note: 这里按**类型名字符串**断言，测试在修复前后都能编译。
+@MainActor
+@Test("详细模式消息列表视图：首屏就绪必须由带超时兜底的编排器承载")
+func listViewMustCarryInitialPositionGate() {
+    let stateObjects = stateObjectStorages(of: makeListV3View())
+
+    #expect(
+        stateObjects.contains { $0.contains("InitialPositionGate") },
+        """
+        视图上找不到由 StateObject 承载的 InitialPositionGate，实际有：\(stateObjects).
+        裸 @State 布尔只有「收敛返回 true」这一条置真路径：收敛失败或挂死时，
+        遮罩将永久挂起，没有任何兜底能救。
+        """
+    )
+}
+
 // MARK: - 不变式 3：容器成员实例必须稳定
 
 /// `MessageListRuntime` 的三个成员在多次访问之间必须是**同一实例**。
