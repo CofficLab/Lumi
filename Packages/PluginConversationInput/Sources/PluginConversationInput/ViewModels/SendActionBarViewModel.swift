@@ -77,8 +77,12 @@ final class SendActionBarViewModel: SuperLog {
         guard !trimmed.isEmpty || hasAttachments else { return }
 
         Self.logger.info("\(self.t)sending message, length=\(trimmed.count)")
+        // 发送瞬间的折叠块区间。草稿随后被清空，区间也必须同时作废，
+        // 否则下一次发送会带上上一条消息的区间。
+        let blocks = capability.collapsedBlocks
         capability.text = ""
         capability.errorMessage = nil
+        capability.collapsedBlocks = []
 
         if hasAttachments {
             Task { @MainActor in
@@ -87,6 +91,7 @@ final class SendActionBarViewModel: SuperLog {
                         trimmed,
                         imageAttachments: imageAttachments,
                         fileAttachments: fileAttachments,
+                        collapsedBlocks: blocks,
                         conversationID: nil
                     ) else { return }
                     Self.logger.info("\(self.t)message attachments encoded and committed")
@@ -105,6 +110,7 @@ final class SendActionBarViewModel: SuperLog {
                 trimmed,
                 imageAttachments: imageAttachments,
                 fileAttachments: fileAttachments,
+                collapsedBlocks: blocks,
                 conversationID: nil
             ) else { return }
             Self.logger.info("\(self.t)message committed successfully")
