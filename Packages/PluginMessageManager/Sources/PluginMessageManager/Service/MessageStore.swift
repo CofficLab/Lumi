@@ -2,6 +2,7 @@ import Foundation
 import os
 import ProviderMessage
 import LumiLoggingKit
+import SQLite3
 import SwiftData
 
 /// Message storage service using SwiftData
@@ -60,7 +61,9 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         )
 
         do {
-            return try ModelContainer(for: schema, configurations: [config])
+            let container = try ModelContainer(for: schema, configurations: [config])
+            Self.ensureConversationLookupIndex(at: dbURL)
+            return container
         } catch {
             if Self.verbose {
                 Self.logger.error("\(Self.t)打开消息数据库失败，准备重建：\(error.localizedDescription)")
@@ -71,9 +74,61 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         // 重建尝试
         do {
             try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
-            return try ModelContainer(for: schema, configurations: [config])
+            let container = try ModelContainer(for: schema, configurations: [config])
+            Self.ensureConversationLookupIndex(at: dbURL)
+            return container
         } catch {
             throw MessageStoreError.initializationFailed("MessageManagerPlugin 数据库重建失败: \(error.localizedDescription)")
+        }
+    }
+
+    /// 建立「按会话 + 时间倒序」取消息所需的复合索引。
+    ///
+    /// ## 为什么必须手工建
+    ///
+    /// SwiftData 的 `#Index` 宏要求 macOS 15，而本插件最低支持 macOS 14，
+    /// 因此直接用 SQLite 建等效索引（与 `HTTPExchangeStore.ensureStartedAtIndex` 同构）。
+    ///
+    /// ## 不建会怎样
+    ///
+    /// SwiftData 不会为「等值列 + 排序列」的组合自动建索引。没有这个索引时，
+    /// 按会话取消息的查询计划是 `SCAN ZMESSAGEMODEL` + `USE TEMP B-TREE FOR ORDER BY`：
+    /// 每次切换会话都要把整张消息表（生产库 5.6 万行 / 400MB）扫一遍再排序，
+    /// 实测单次 180–270ms；建上索引后降到 0–34ms。
+    ///
+    /// 列顺序与排序方向必须与查询一致：等值的 `ZCONVERSATIONID` 在前，
+    /// 排序列 `ZCREATEDAT DESC, ZID DESC` 在后，索引才能同时承担过滤与排序，
+    /// 不再需要临时 B-tree。`ZID` 作为次级排序键保证同一时间戳下的稳定分页。
+    private static func ensureConversationLookupIndex(at url: URL) {
+        var database: OpaquePointer?
+        let openResult = sqlite3_open_v2(
+            url.path,
+            &database,
+            SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX,
+            nil
+        )
+        guard openResult == SQLITE_OK, let database else {
+            if let database {
+                Self.logger.error("消息库 SQLite 索引连接失败: \(String(cString: sqlite3_errmsg(database)))")
+                sqlite3_close(database)
+            } else {
+                Self.logger.error("消息库 SQLite 索引连接失败，错误码: \(openResult)")
+            }
+            return
+        }
+        defer { sqlite3_close(database) }
+
+        let sql = """
+        CREATE INDEX IF NOT EXISTS ZMESSAGE_CONVERSATION_CREATED \
+        ON ZMESSAGEMODEL (ZCONVERSATIONID, ZCREATEDAT DESC, ZID DESC)
+        """
+        var errorMessage: UnsafeMutablePointer<Int8>?
+        let result = sqlite3_exec(database, sql, nil, nil, &errorMessage)
+        guard result == SQLITE_OK else {
+            let message = errorMessage.map { String(cString: $0) } ?? String(cString: sqlite3_errmsg(database))
+            sqlite3_free(errorMessage)
+            Self.logger.error("消息库 SQLite 索引创建失败: \(message)")
+            return
         }
     }
 
