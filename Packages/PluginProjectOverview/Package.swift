@@ -43,7 +43,13 @@ let package = Package(
         ),
         .testTarget(
             name: "ProjectOverviewPluginTests",
-            dependencies: ["ProjectOverviewPlugin"],
+            dependencies: [
+                "ProjectOverviewPlugin",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderProject", package: "LumiProviders"),
+                .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
+                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+            ],
             path: "Tests"
         )
     ]
