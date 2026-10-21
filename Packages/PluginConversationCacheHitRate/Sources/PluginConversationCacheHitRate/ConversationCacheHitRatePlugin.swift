@@ -27,7 +27,11 @@ public final class ConversationCacheHitRatePlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
-    private let toolbarState = CacheHitRateToolbarState()
+    /// 工具栏状态。
+    ///
+    /// 保持 internal 以便单元测试直接断言「Provider 事件 → 工具栏状态」的转发链路，
+    /// 对外仍不暴露任何 API。
+    let toolbarState = CacheHitRateToolbarState()
     private var observer: CacheHitRateObserver?
 
     public init() {}
