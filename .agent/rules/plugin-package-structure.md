@@ -170,6 +170,29 @@ Sources/
 
 当文件较多时可按 `Contracts/` + `Core/` 分层。
 
+### 2.6 兄弟插件之间的代码复制
+
+`PluginMessageListBrief`（V1 / 简洁）、`PluginMessageListStandard`（V2 / 标准）、
+`PluginMessageListDetailed`（V3 / 详细）是三个**互相独立**的插件包，各自按
+verbosity 注册。它们**互不依赖**，因此下列实现是**各包一份副本**，而不是共享代码：
+
+| 文件 | 作用 |
+|------|------|
+| `Views/AtBottomBox.swift` | 「是否在列表底部」的可变盒子（刻意不实现 `ObservableObject`） |
+| `Views/ScrollViewBottomTracker.swift` | 观察 `NSScrollView` 判定底部、承载几何控制器 |
+| `Services/MessageListScrollCoordinator.swift` | 首屏定位、底部收敛、锚点钉回 |
+| `Services/InitialPositionGate.swift` | 首屏就绪编排（含超时兜底） |
+| `Views/MessageListRuntime.swift` | 运行时状态容器（`@StateObject` 承载上述有状态对象） |
+
+**改一处必须同步另两处。** 这类缺陷往往是**跨模式同源**的：例如「用 `let`
+持有有状态对象导致状态每次宿主重绘都丢失」曾同时存在于三个包，
+「首屏遮罩没有超时兜底」也同时存在于 V1 与 V3。
+
+**做法**：在目标包写复现测试 → 修复 → 把同一份实现与同一组测试**按包改名**
+复制到另外两个包（三包的类型名与 import 不同：`@testable import
+PluginMessageListBrief` / `...Standard` / `...Detailed`）。复制后**必须**
+在每个包里单独跑一遍测试。
+
 ---
 
 ## 3. Views 二级分组规则
