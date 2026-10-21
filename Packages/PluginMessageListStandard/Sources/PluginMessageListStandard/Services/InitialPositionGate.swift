@@ -218,18 +218,37 @@ final class InitialPositionGate: ObservableObject {
         return true
     }
 
-    /// 会话切换时复位：作废当前等待并撤销就绪状态。
+    /// 会话切换时复位：撤销就绪状态，让遮罩重新出现。
+    ///
+    /// - Important: **不**取消在飞的收敛。
+    ///
+    ///   收敛是否还有效由它自己的 `stillRelevant` 判定（会话是否被换掉、是否仍在加载），
+    ///   而不是由这里无条件取消。若无条件取消，就会踩中「同一 update cycle 内
+    ///   **准备先于切换复位**到达」的顺序：View 的 `onChange(isLoading)`（转 false →
+    ///   触发准备）与 `onChange(selectedConversationID)`（→ 触发本方法）谁先到并不确定；
+    ///   复位晚到时那一轮收敛刚启动就被作废，而此后不再有任何触发点能重新准备 ——
+    ///   遮罩就此永久挂起。
+    ///
+    ///   旧会话那一轮也不会因此误放行遮罩：它的 `stillRelevant` 会因为会话已被换掉
+    ///   而返回 false，收敛结束时不会置为就绪。
     func resetForConversationSwitch() {
+        isReady = false
+    }
+
+    /// 加载开始时复位（用于切换会话后重新进入加载）。
+    ///
+    /// - Important: 这里**要**作废在飞的收敛：加载开始意味着窗口内的消息即将被整体
+    ///   替换，上一轮的收敛结果已经无意义。
+    ///
+    ///   注意它与会话切换复位的差别：加载开始一定会伴随随后的「加载完成 → 重新准备」，
+    ///   因此在这里作废是安全的；而会话切换复位可能与准备同处一个 update cycle，
+    ///   作废反而会切断刚启动的那一轮。
+    func resetForLoadingStart() {
         task?.cancel()
         task = nil
         isPreparing = false
         isReady = false
         pendingConversationID = nil
-    }
-
-    /// 加载开始时复位（用于切换会话后重新进入加载）。
-    func resetForLoadingStart() {
-        resetForConversationSwitch()
     }
 
     deinit {
