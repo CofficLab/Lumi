@@ -26,7 +26,13 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginAgentPlanStorageTests",
-            dependencies: ["PluginAgentPlanStorage", "KitAgentTool"],
+            dependencies: [
+                "PluginAgentPlanStorage",
+                "KitAgentTool",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
+                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+            ],
             path: "Tests/PluginAgentPlanStorageTests"
         ),
     ]
