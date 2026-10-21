@@ -37,7 +37,13 @@ let package = Package(
         ),
         .testTarget(
             name: "NettoPluginTests",
-            dependencies: [.target(name: "NettoPlugin")],
+            dependencies: [
+                .target(name: "NettoPlugin"),
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderContentView", package: "LumiProviders"),
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
+            ],
             path: "Tests"
         )
     ]
