@@ -152,3 +152,57 @@ func gateWithoutConversationIsImmediatelyReady() async {
     #expect(gate.isReady, "无选中会话无需定位")
     #expect(!gate.isPreparing)
 }
+
+@MainActor
+@Test("首屏遮罩：会话切换的复位不得作废已在当前会话上启动的收敛")
+func gateResetMustNotCancelConvergenceAlreadyStarted() async {
+    let conversationID = UUID()
+    let gate = InitialPositionGate(budgetNanoseconds: 3_000_000_000)
+
+    // 同一 update cycle 内的两种触发顺序不可保证：
+    //   `onChange(isLoading)`（转 false → 触发准备）与
+    //   `onChange(selectedConversationID)`（→ 触发会话切换复位）
+    // 谁先到取决于 SwiftUI 的更新与插件观察者回调的调度。
+    // 这里复现「准备先到、复位后到」：收敛已经启动，复位随后才来。
+    gate.request(
+        conversationID: conversationID,
+        settle: {
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            return true
+        },
+        stillRelevant: { true }
+    )
+
+    gate.resetForConversationSwitch()
+
+    let ready = await waitUntil({ gate.isReady }, timeoutMs: 2_000)
+    #expect(
+        ready,
+        """
+        复位把已启动的收敛作废后，遮罩再没有触发点能恢复 —— \
+        收敛是否还有效本应由它自己的 stillRelevant 判定，而不是由复位无条件取消。
+        """
+    )
+}
+
+@MainActor
+@Test("首屏遮罩：复位不得让已失效的旧一轮放行遮罩")
+func gateResetMustNotReleaseMaskFromStaleRound() async {
+    let staleConversationID = UUID()
+    let gate = InitialPositionGate(budgetNanoseconds: 3_000_000_000)
+
+    // 旧会话的一轮仍在飞行，但已经失效（会话已被换掉）。
+    gate.request(
+        conversationID: staleConversationID,
+        settle: {
+            try? await Task.sleep(nanoseconds: 120_000_000)
+            return true
+        },
+        stillRelevant: { false }
+    )
+
+    gate.resetForConversationSwitch()
+
+    try? await Task.sleep(nanoseconds: 300_000_000)
+    #expect(!gate.isReady, "已失效的一轮不得放行遮罩")
+}
