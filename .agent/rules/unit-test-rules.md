@@ -153,6 +153,31 @@ public func onBoot(kernel: KernelCoreContainer) throws {
 - [ ] 生产 target 依赖 `KitTestIsolation`
 - [ ] 存在「未注入即拒绝」的守卫用例
 
+### 判据：可达才加守卫
+
+**守卫的价值完全来自「测试进程可达」这一条路径。** 判据因此只有一条：
+
+> **凡测试进程可达的真实数据路径，必须在测试进程里失败。**
+
+这条判据**可验证**：跑一遍测试就知道。不需要人工维护「哪些点该加守卫」的清单——
+清单会过期，而且换个人做同样的改动未必会去逐条核查。
+
+**不可达的回退路径不必加守卫。** 加了是净负价值：
+
+- 为一个永不可达的断言，让公共基础包多一个生产依赖；
+- 把「不可达的路径」变成「可能终止进程的路径」。
+
+典型的「已核查、确认不可达、无需改造」：
+
+| 位置 | 为什么不可达 |
+|------|-------------|
+| `PluginFileLog` 的 `fallbackDirectory` | 目录来源是 `directoryOverride ?? FileLogRuntimeBridge.logsDirectory ?? fallback`，测试全部走前两层 |
+| `EditorConfigStore` | `static let store` 虽在首次访问固化目录，但测试只调纯函数 `settingsDirectoryURL(...)`，不触达 store |
+| `EditorKeybindingStore` | `shared` 首次访问会读真实目录，但测试全部用 `init(bindingsFileURL:)` 显式注入，不碰 `shared` |
+
+> 这三处的结论是**核查后的判断**，不是永久豁免。若将来某个测试开始触达它们，
+> 判据自动生效：可达了就必须加守卫或改为显式注入。
+
 ---
 
 ## 规则二：偏好与 Keychain 必须隔离
@@ -292,6 +317,7 @@ cd Packages/<PackageName> && swift test
 - [ ] 触碰的进程级单例在用例前后已清理
 - [ ] 断言只依赖自造数据，不依赖执行顺序
 - [ ] 持久化层测试用真实数据库（配临时目录），而非内存替身
+- [ ] 若插件的 `static let` store / 单例会固化目录，已确认注入发生在**首次访问之前**
 
 ---
 
