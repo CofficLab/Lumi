@@ -124,9 +124,13 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             .store(in: &cancellables)
             
         // React to sort changes
+        //
+        // 注意：@Published 在 willSet 阶段派发，sink 同步执行时 self.sortOption /
+        // self.sortDescending 仍然是旧值。因此这里必须使用发布流传下来的值来排序，
+        // 否则切换排序项后列表依旧按上一项排序。
         $sortOption.combineLatest($sortDescending)
-            .sink { [weak self] _, _ in
-                self?.filterAndSortImages()
+            .sink { [weak self] option, descending in
+                self?.filterAndSortImages(sortOption: option, sortDescending: descending)
             }
             .store(in: &cancellables)
     }
@@ -331,7 +335,12 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
         imageDetailsTask?.cancel()
     }
     
-    private func filterAndSortImages() {
+    private func filterAndSortImages(
+        sortOption newOption: SortOption? = nil,
+        sortDescending newDescending: Bool? = nil
+    ) {
+        let option = newOption ?? sortOption
+        let descending = newDescending ?? sortDescending
         var result = images
         
         // Filter
@@ -345,14 +354,14 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
         
         // Sort
         result.sort { (a, b) -> Bool in
-            switch sortOption {
+            switch option {
             case .name:
-                return sortDescending ? a.repository > b.repository : a.repository < b.repository
+                return descending ? a.repository > b.repository : a.repository < b.repository
             case .size:
-                return sortDescending ? a.sizeBytes > b.sizeBytes : a.sizeBytes < b.sizeBytes
+                return descending ? a.sizeBytes > b.sizeBytes : a.sizeBytes < b.sizeBytes
             case .created:
                 // createdAt is string "2023-..."
-                return sortDescending ? a.createdAt > b.createdAt : a.createdAt < b.createdAt
+                return descending ? a.createdAt > b.createdAt : a.createdAt < b.createdAt
             }
         }
         
