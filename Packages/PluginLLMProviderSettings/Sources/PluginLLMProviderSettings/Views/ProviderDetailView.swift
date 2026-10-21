@@ -127,13 +127,6 @@ public struct ProviderDetailView: View {
                         .textFieldStyle(.plain)
                         .font(.appBody)
                         .frame(width: 260)
-
-                        AppIconButton(
-                            systemImage: isAPIKeyRevealed ? "eye.slash" : "eye"
-                        ) {
-                            isAPIKeyRevealed.toggle()
-                        }
-                        .help(isAPIKeyRevealed ? "隐藏 API Key" : "显示 API Key")
                     }
                 }
 
