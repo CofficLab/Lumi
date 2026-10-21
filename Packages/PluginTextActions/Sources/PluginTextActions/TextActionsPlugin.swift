@@ -22,13 +22,21 @@ public final class TextActionsPlugin: SuperPlugin, PluginDataMigrating, SuperLog
 
     public init() {}
 
+    /// 读取旧版开关所在的 UserDefaults 域。
+    ///
+    /// 抽成可替换的入口，便于单测注入假域：测试进程里 `Bundle.main`
+    /// 是 xctest 可执行文件（没有 bundle identifier），拿不到 app 的持久化域。
+    nonisolated(unsafe) static var legacyDefaultsDomainProvider: () -> [String: Any]? = {
+        UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? "")
+    }
+
     /// 把 `UserDefaults.standard` 中的旧开关导入插件专属存储。
     ///
     /// 仅在插件存储尚无该键时导入，避免覆盖用户后续在设置页的修改。
     /// `UserDefaults` 原 key 保留，便于回退。
     public func migrateData(context: PluginDataMigrationContext) throws {
         let key = "TextActions.enabled"
-        guard let domain = UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? ""),
+        guard let domain = Self.legacyDefaultsDomainProvider(),
               let legacyValue = domain[key] as? Bool
         else {
             return
