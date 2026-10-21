@@ -34,6 +34,9 @@ public final class ConversationForkPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    /// 跟随「当前是否选中对话」的观察者：未选中对话时把分叉按钮从
+    /// Action Bar 撤掉。
+    private var selectionObserver: ConversationForkSelectionObserver?
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
@@ -58,18 +61,28 @@ public final class ConversationForkPlugin: SuperPlugin, SuperLog {
             summarizer: summarizer
         )
 
-        chat.addBarItems([
+        let itemID = "\(id).action-bar-button"
+        // 分叉的前提是有选中对话：没有选中对话时按钮没有意义，
+        // 因此由 observer 负责「选中时才把按钮放进 Action Bar」。
+        selectionObserver?.cancel()
+        selectionObserver = ConversationForkSelectionObserver(
+            chat: chat,
+            conversations: conversations,
+            itemID: itemID
+        ) {
             ChatSectionBarItem(
-                id: "\(id).action-bar-button",
+                id: itemID,
                 order: 80,
                 placement: .actionTrailing
             ) {
                 ConversationForkButton(coordinator: coordinator)
-            },
-        ])
+            }
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        selectionObserver?.cancel()
+        selectionObserver = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).action-bar-button")
     }

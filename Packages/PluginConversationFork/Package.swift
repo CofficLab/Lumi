@@ -43,6 +43,7 @@ let package = Package(
             name: "PluginConversationForkTests",
             dependencies: [
                 "PluginConversationFork",
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
