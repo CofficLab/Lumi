@@ -18,14 +18,16 @@ struct ListV2View: View, SuperLog {
 
     @LumiTheme private var theme
 
-    /// 用户是否停在列表底部附近；用于决定新消息到达时是否自动滚到底部
-    private let atBottomBox = AtBottomBox()
-
-    private let scrollCoordinator = MessageListScrollCoordinator()
+    /// 运行时状态容器：底部标记、滚动协调器、底部几何控制器。
+    ///
+    /// - Important: 必须是 `@StateObject`，不能用 `let`。
+    ///   宿主（`ChatStackView.body` 里的 `item.makeView()`）每重绘一次就会
+    ///   重新 `init` 本视图一次；`let` 持有的状态对象会被重建，状态全部清零。
+    ///   详见 `MessageListRuntime` 的类型注释。
+    @StateObject private var runtime = MessageListRuntime()
 
     /// 内容就绪信号：historyRows 首尾消息 id 变化时 +1。
     @State private var scrollTick: Int = 0
-    private let bottomScrollController = ScrollViewBottomController()
     /// 首屏定位的就绪编排（含超时兜底），见 InitialPositionGate。
     ///
     /// - Important: 必须是 `@StateObject`，不能用 `let`。gate 是引用类型且
@@ -62,7 +64,7 @@ struct ListV2View: View, SuperLog {
         }
         .task {
             // 首次出现/容器切换重建：重置滚动位置，加载当前选中会话。
-            atBottomBox.value = true
+            runtime.atBottomBox.value = true
             initialPositionGate.resetForLoadingStart()
             if Self.verbose {
                 Self.logger.debug("\(Self.t)activate conversation: \(viewModel.selectedConversationID?.uuidString ?? "nil")")
@@ -111,11 +113,11 @@ struct ListV2View: View, SuperLog {
                         // 锚点停在旧的内容底部，导致最后一行被输入框截断。
                         // 等布局完成后只保留最后一次滚动请求，避免多个
                         // scrollTo 同时驱动 macOS List 的行 materialize。
-                        scrollCoordinator.scheduleScrollToBottomAfterLayout(
+                        runtime.scrollCoordinator.scheduleScrollToBottomAfterLayout(
                             proxy: proxy,
                             messages: viewModel.historyRows,
                             animated: false,
-                            controller: bottomScrollController,
+                            controller: runtime.bottomScrollController,
                             condition: {
                                 conversationID == viewModel.selectedConversationID
                             }
@@ -128,12 +130,12 @@ struct ListV2View: View, SuperLog {
             .environment(\.preferOuterScroll, true)
             .background(
                 ScrollViewBottomTracker(
-                    onChange: { atBottomBox.value = $0 },
-                    controller: bottomScrollController
+                    onChange: { runtime.atBottomBox.value = $0 },
+                    controller: runtime.bottomScrollController
                 )
             )
             .onChange(of: historyBoundary) { _, _ in
-                if atBottomBox.value {
+                if runtime.atBottomBox.value {
                     scrollTick &+= 1
                 }
                 if !initialPositionGate.isReady, !viewModel.isLoading {
@@ -142,24 +144,24 @@ struct ListV2View: View, SuperLog {
             }
             .onChange(of: viewModel.isLoading) { _, isLoading in
                 if isLoading {
-                    scrollCoordinator.cancelPendingTasks()
+                    runtime.scrollCoordinator.cancelPendingTasks()
                     initialPositionGate.resetForLoadingStart()
                 } else {
                     prepareInitialPosition(proxy: proxy, messages: viewModel.historyRows)
                 }
             }
             .onChange(of: viewModel.selectedConversationID) { _, _ in
-                scrollCoordinator.cancelPendingTasks()
+                runtime.scrollCoordinator.cancelPendingTasks()
                 initialPositionGate.resetForConversationSwitch()
             }
             // 流式行出现或内容增长时跟随滚到底；内容增长期间沿用
-            // atBottomBox 判定（用户上滑则不跟随）。不能只监听 id，因为流式
+            // 底部标记判定（用户上滑则不跟随）。不能只监听 id，因为流式
             // token 更新保持同一个行 id，但会持续改变行高。
             .onChange(of: viewModel.streamingRow) { _, _ in
                 if Self.verbose, viewModel.streamingRow != nil {
-                    Self.logger.debug("\(Self.t)streaming row appeared, following to bottom: atBottom=\(atBottomBox.value)")
+                    Self.logger.debug("\(Self.t)streaming row appeared, following to bottom: atBottom=\(runtime.atBottomBox.value)")
                 }
-                guard viewModel.streamingRow != nil, atBottomBox.value else { return }
+                guard viewModel.streamingRow != nil, runtime.atBottomBox.value else { return }
                 scrollTick &+= 1
             }
             // 兜底：锚点出现（内容从无到有）时也补一次，覆盖首屏/慢加载。
@@ -167,18 +169,18 @@ struct ListV2View: View, SuperLog {
                 if !viewModel.isLoading {
                     prepareInitialPosition(proxy: proxy, messages: viewModel.historyRows)
                 }
-                if atBottomBox.value {
+                if runtime.atBottomBox.value {
                     scrollTick &+= 1
                 }
             }
             // 用户消息已经由插件转发的类型化事件直接应用；这里仅负责滚到底部。
             .onChange(of: viewModel.latestUserMessageID) { _, newID in
                 guard newID != nil else { return }
-                atBottomBox.value = true
+                runtime.atBottomBox.value = true
                 scrollTick &+= 1
             }
             .onDisappear {
-                scrollCoordinator.cancelPendingTasks()
+                runtime.scrollCoordinator.cancelPendingTasks()
             }
         }
     }
@@ -188,6 +190,10 @@ struct ListV2View: View, SuperLog {
         messages: [ProviderMessage.Message]
     ) {
         let conversationID = viewModel.selectedConversationID
+        // 先把成员取到局部常量：Swift 的捕获列表不能捕获成员路径，
+        // 且这样闭包持有的就是同一批实例，不随视图重建而变。
+        let scrollCoordinator = runtime.scrollCoordinator
+        let bottomScrollController = runtime.bottomScrollController
         initialPositionGate.request(
             conversationID: conversationID,
             settle: { [scrollCoordinator, bottomScrollController] in
@@ -274,11 +280,11 @@ struct ListV2View: View, SuperLog {
     }
 
     private func loadEarlier(proxy: ScrollViewProxy) async {
-        guard let anchorID = await viewModel.loadEarlier(isAtBottom: atBottomBox.value) else { return }
+        guard let anchorID = await viewModel.loadEarlier(isAtBottom: runtime.atBottomBox.value) else { return }
         if Self.verbose {
             Self.logger.debug("\(Self.t)loaded earlier messages, anchor=\(anchorID.uuidString)")
         }
-        await scrollCoordinator.pinToAnchor(proxy: proxy, anchorID: anchorID)
+        await runtime.scrollCoordinator.pinToAnchor(proxy: proxy, anchorID: anchorID)
     }
 }
 

@@ -7,7 +7,7 @@ import Testing
 ///
 /// ## 复现的缺陷
 ///
-/// `ListV2View` 把三个**有状态**的引用类型对象用 `let` 声明为普通存储属性：
+/// `ListV2View` 曾把三个**有状态**的引用类型对象用 `let` 声明为普通存储属性：
 ///
 /// ```swift
 /// private let atBottomBox = AtBottomBox()
@@ -38,9 +38,18 @@ import Testing
 /// ## 为什么用 Mirror 而不是加生产代码的观察缝
 ///
 /// Mirror 可以在**不改动任何生产代码**的前提下读到 struct 的存储属性，
-/// 于是「复现」与「修复」被彻底分开：本文件只描述不变式，修复后依然有效。
-/// 同一份 `ListV2View` 里 `initialPositionGate` 用的是 `@StateObject`
-/// （SwiftUI 按视图 identity 缓存实例），它就是正确写法的对照。
+/// 于是「复现」与「修复」被彻底分开。
+///
+/// ## 状态承载方式改变后，断言落在哪里
+///
+/// 修复把三个对象移进了 `MessageListRuntime` 容器，由视图以 `@StateObject`
+/// 持有。于是「状态不丢」这个保证由两件事共同承担：
+///
+/// 1. **视图必须用 identity 缓存机制承载容器** —— 否则容器本身也会被重建；
+/// 2. **容器成员的实例必须稳定** —— 否则成员之间会各持一份。
+///
+/// 下面第 1、2 条锁住前者，第 3 条锁住后者。端到端「切换后遮罩及时消失、
+/// 列表停在底部」由 `LumiUITests/LumiMessageListSwitchUITests.swift` 覆盖。
 @MainActor
 private func makeListV2View() -> ListV2View {
     let services = MessageListServices(
@@ -78,20 +87,21 @@ private func plainClassStorages(of view: Any) -> [String] {
     }
 }
 
-/// 按 label 取出视图存储的类实例。
-private func storedClassInstance(_ view: Any, _ label: String) -> AnyObject? {
-    for child in Mirror(reflecting: view).children where child.label == label {
-        guard Mirror(reflecting: child.value).displayStyle == .class else { return nil }
-        return child.value as AnyObject
+/// 取出视图用 `StateObject` 承载的存储属性类型名。
+private func stateObjectStorages(of view: Any) -> [String] {
+    Mirror(reflecting: view).children.compactMap { child in
+        guard let label = child.label, label.hasPrefix("_") else { return nil }
+        let typeName = String(describing: type(of: child.value))
+        guard typeName.contains("StateObject<") else { return nil }
+        return typeName
     }
-    return nil
 }
 
-// MARK: - 不变式：不得用普通存储属性持有引用类型状态
+// MARK: - 不变式 1：不得用普通存储属性持有引用类型状态
 
 /// `ListV2View` 不得用**普通存储属性**（非 property wrapper 承载）持有引用类型。
 ///
-/// - Important: 这条是根因不变式。只要有任何一个引用类型对象用普通存储属性
+/// - Important: 这是根因不变式。只要有任何一个引用类型对象用普通存储属性
 ///   持有，宿主每次重绘就会重建它，状态必然丢失。
 ///   `@StateObject` / `@State` 的 backing storage（label 以 `_` 开头）不受影响，
 ///   因为 SwiftUI 按视图 identity 缓存它们。
@@ -110,91 +120,109 @@ func listViewMustNotHoldReferenceStateInPlainStoredProperty() {
     )
 }
 
-// MARK: - 行为后果：重建后运行时状态必须仍是同一实例
+// MARK: - 不变式 2：运行时容器必须由 identity 缓存机制承载
 
-/// 两次构造视图（等价于宿主两次重绘）必须复用**同一批**运行时状态实例。
-@MainActor
-@Test("消息列表视图：重建后运行时状态对象必须仍是同一实例")
-func listViewRuntimeStateSurvivesReconstruction() {
-    let first = makeListV2View()
-    let second = makeListV2View()
-
-    for label in ["atBottomBox", "scrollCoordinator", "bottomScrollController"] {
-        let firstObject = storedClassInstance(first, label)
-        let secondObject = storedClassInstance(second, label)
-
-        guard let firstObject, let secondObject else {
-            Issue.record("视图上找不到存储属性 \(label)，无法验证其生命周期")
-            continue
-        }
-        #expect(
-            ObjectIdentifier(firstObject) == ObjectIdentifier(secondObject),
-            "\(label) 在视图重建后被换成了新实例，它攒的状态（滚动序号 / 底部标记 / 滚动视图绑定）全部丢失"
-        )
-    }
-}
-
-/// 「用户是否在底部」不得在视图重建后被重置回 `true`。
+/// `ListV2View` 必须用 `@StateObject` 承载运行时状态容器。
 ///
-/// 这是用户可直接感知的后果：用户已经上滚查看历史，视图一重建标记就变回
-/// `true`，随后新消息到达时 `ListV2View` 会把列表强行拉回底部。
+/// - Important: 上一条只保证「不用裸存储属性」，但换成 `@State` 同样不行 ——
+///   `@State` 存的是**值语义**的副本，装不下引用类型对象并保持同一性。
+///   只有 `@StateObject` 会按视图 identity 缓存实例，容器里的成员才能
+///   跨宿主重绘存活。
 @MainActor
-@Test("消息列表视图：重建后「是否在底部」标记不得被重置")
-func atBottomMarkerSurvivesReconstruction() {
-    let first = makeListV2View()
-    guard let box = storedClassInstance(first, "atBottomBox") as? AtBottomBox else {
-        Issue.record("视图上找不到 atBottomBox 存储属性")
-        return
-    }
-
-    box.value = false // 模拟用户向上滚动离开底部
-
-    let second = makeListV2View()
-    guard let rebuiltBox = storedClassInstance(second, "atBottomBox") as? AtBottomBox else {
-        Issue.record("视图上找不到 atBottomBox 存储属性")
-        return
-    }
+@Test("消息列表视图：运行时状态容器必须由 StateObject 承载")
+func listViewMustCarryRuntimeInStateObject() {
+    let stateObjects = stateObjectStorages(of: makeListV2View())
 
     #expect(
-        rebuiltBox.value == false,
-        "用户上滑后的底部标记在视图重建后被重置为 \(rebuiltBox.value)，流式跟随滚动会在用户已经上滚时继续把列表拉回底部"
+        stateObjects.contains { $0.contains("MessageListRuntime") },
+        """
+        视图上找不到由 StateObject 承载的 MessageListRuntime，实际有：\(stateObjects).
+        运行时容器若不由 StateObject 承载，它会随宿主每次重绘被重建，
+        容器成员攒下的状态（滚动序号 / 底部标记 / 滚动视图绑定）依旧会丢失。
+        """
     )
 }
 
-/// 滚动视图控制器在视图重建后必须仍然绑定着滚动视图。
+// MARK: - 不变式 3：容器成员实例必须稳定
+
+/// `MessageListRuntime` 的三个成员在多次访问之间必须是**同一实例**。
 ///
-/// 这是「切换会话后首屏定位不收敛」的直接原因：
-/// `MessageListScrollCoordinator.prepareInitialBottom` 只在
-/// `controller.isAttached == true` 时才进入 `settleBottom` 收敛循环；
-/// 控制器一旦被换新（`scrollView` 弱引用为 nil），首屏定位就退化成
-/// 「只 `scrollTo` 一次」，而 `List` 的行是逐帧 materialize 的——
-/// 底部锚点往往还没物化完，遮罩撤了但列表停在半路。
+/// 容器是「同一性」的载体：若成员每次访问都新建，等于把原来的缺陷搬了个家。
 @MainActor
-@Test("消息列表视图：重建后底部控制器不得丢失滚动视图绑定")
-func bottomControllerKeepsScrollViewBindingAcrossReconstruction() {
-    let first = makeListV2View()
-    guard let firstController = storedClassInstance(first, "bottomScrollController")
-        as? ScrollViewBottomController
-    else {
-        Issue.record("视图上找不到 bottomScrollController 存储属性")
-        return
-    }
+@Test("运行时容器：成员在多次访问之间必须保持同一实例")
+func runtimeMembersKeepStableIdentity() {
+    let runtime = MessageListRuntime()
 
-    // 给第一个控制器绑定一个真实滚动视图，模拟 tracker 完成 attach。
-    let host = NSScrollView()
-    firstController.attachForTesting(to: host)
-    #expect(firstController.isAttached)
+    #expect(runtime.atBottomBox === runtime.atBottomBox)
+    #expect(runtime.scrollCoordinator === runtime.scrollCoordinator)
+    #expect(runtime.bottomScrollController === runtime.bottomScrollController)
+}
 
-    let second = makeListV2View()
-    guard let rebuiltController = storedClassInstance(second, "bottomScrollController")
-        as? ScrollViewBottomController
-    else {
-        Issue.record("视图上找不到 bottomScrollController 存储属性")
-        return
+/// 容器必须真的持有这三个成员——缺一个就意味着对应状态无处安放。
+@MainActor
+@Test("运行时容器：必须持有底部标记、滚动协调器与底部几何控制器")
+func runtimeCarriesAllThreeMembers() {
+    let runtime = MessageListRuntime()
+    let labels = Set(Mirror(reflecting: runtime).children.compactMap(\.label))
+
+    #expect(labels.contains("atBottomBox"))
+    #expect(labels.contains("scrollCoordinator"))
+    #expect(labels.contains("bottomScrollController"))
+    #expect(runtime.atBottomBox.value == true, "新容器的底部标记应为初值 true")
+}
+
+// MARK: - 不变式 4：容器不得发布任何 @Published
+
+/// 容器**不得**声明任何 `@Published`。
+///
+/// - Important: 容器实现 `ObservableObject` 只是为了满足 `@StateObject` 的要求。
+///   一旦它发布属性，成员（尤其 `AtBottomBox`）的写入就会进入 SwiftUI 的
+///   invalidation 图，重新打开底部锚点 Preference 反馈环
+///   （`@State` → body 重建 → 偏好重报 → 活锁）。
+///   详见 `AtBottomBox` 的类型注释。
+@MainActor
+@Test("运行时容器：不得发布任何 @Published（避免重新打开 invalidation 反馈环）")
+func runtimePublishesNothing() {
+    let published = Mirror(reflecting: MessageListRuntime()).children.filter { child in
+        let typeName = String(describing: type(of: child.value))
+        return typeName.contains("Published<")
     }
 
     #expect(
-        rebuiltController.isAttached,
-        "底部控制器在视图重建后丢失了滚动视图绑定，首屏定位会退化为「只滚一次、不做几何收敛」"
+        published.isEmpty,
+        """
+        运行时容器发布了 @Published 属性：\(published.map { String(describing: type(of: $0.value)) }).
+        写入这些属性会触发 SwiftUI invalidation，重新打开底部锚点 Preference 反馈环。
+        """
     )
+}
+
+// MARK: - tracker 契约：控制器换实例后必须重新绑定滚动视图
+
+/// 底部 tracker 换掉控制器实例时，**新控制器必须被重新绑定**到已观察的滚动视图。
+///
+/// - Important: 曾经的实现只做 `bottomController = controller`，而
+///   `attachIfNeeded()` 因 `scrollView === observedScrollView` 提前返回 ——
+///   新控制器永远拿不到 `NSScrollView`，`isAttached` 恒为 false，
+///   `MessageListScrollCoordinator.prepareInitialBottom` 因此退化为
+///   「只 `scrollTo` 一次」，不再等待 `List` 懒加载行物化完成。
+@MainActor
+@Test("底部 tracker：控制器换实例后必须重新绑定滚动视图")
+func trackerRebindsReplacedController() {
+    let host = ScrollViewHost()
+    let tracker = TrackerView()
+    tracker.setObservedScrollViewForTesting(host.scrollView)
+
+    let first = ScrollViewBottomController()
+    tracker.setBottomController(first)
+    #expect(first.isAttached, "新装入的控制器应立即绑定到已观察的滚动视图")
+
+    let second = ScrollViewBottomController()
+    tracker.setBottomController(second)
+
+    #expect(
+        second.isAttached,
+        "换实例后新控制器没有重新绑定滚动视图，首屏定位会退化为「只滚一次、不做几何收敛」"
+    )
+    #expect(!first.isAttached, "被替换掉的旧控制器应当解绑")
 }
