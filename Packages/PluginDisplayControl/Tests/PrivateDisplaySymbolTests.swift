@@ -1,4 +1,5 @@
 import CoreGraphics
+import Foundation
 import Testing
 @testable import DisplayControlPlugin
 
@@ -41,6 +42,13 @@ func privateSymbolsDegradeGracefully() {
 @MainActor
 @Test("DisplayService 在私有符号缺失时不会崩溃")
 func displayServiceSurvivesMissingSymbols() {
+    // DisplayService.shared 会构造 DisplayControlPluginLocalStore.shared，
+    // 其目录来自守卫保护的运行时配置：必须先注入临时目录再访问。
+    DisplayControlRuntime.configure(
+        settingsDirectory: DisplayControlTestDoubles.makeTemporaryDirectory("private-symbols")
+    )
+    defer { DisplayControlRuntime.reset() }
+
     // 整条内置屏亮度路径都会经过 DisplayServices 私有符号。
     // 即使符号不可用，也必须安全返回而不是段错误。
     let service = DisplayService.shared
@@ -53,6 +61,12 @@ func displayServiceSurvivesMissingSymbols() {
 @MainActor
 @Test("DisplayService 对未知 display id 安全降级")
 func displayServiceHandlesUnknownDisplayID() {
+    // 同上：访问 DisplayService.shared 之前先注入运行时目录。
+    DisplayControlRuntime.configure(
+        settingsDirectory: DisplayControlTestDoubles.makeTemporaryDirectory("private-symbols-unknown")
+    )
+    defer { DisplayControlRuntime.reset() }
+
     let service = DisplayService.shared
     let unknownDisplayID: CGDirectDisplayID = 999_999
 

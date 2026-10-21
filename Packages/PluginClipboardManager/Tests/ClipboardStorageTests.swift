@@ -1,5 +1,7 @@
 import AppKit
 import Foundation
+import KitTestIsolation
+import KitTestSupport
 import Testing
 
 @testable import ClipboardManagerPlugin
@@ -326,7 +328,12 @@ struct ClipboardHistoryObserverTests {
     @Test("ClipboardHistoryObserver 把变化转发给回调")
     func observerForwardsChanges() {
         // `ClipboardHistoryObserver` 注册在共享的 `ClipboardHistoryChangeCenter` 上。
+        // 该单例的观察者注册表会跨用例残留：进入前先清空，避免收到别的用例
+        // 留下的通知导致计数漂移。
         let center = ClipboardHistoryChangeCenter.shared
+        center.removeAllObservers()
+        defer { center.removeAllObservers() }
+
         var changes = 0
         let observer = ClipboardHistoryObserver(onChange: { changes += 1 })
 
@@ -341,17 +348,47 @@ struct ClipboardHistoryObserverTests {
 
 // MARK: - Runtime
 
-@Suite("ClipboardManagerRuntime")
+/// 运行时目录守卫的测试。
+///
+/// `ClipboardManagerRuntime.databaseDirectory()` 在测试进程里未注入即拒绝
+/// （`fatalError`，直接终止整个测试进程），因此这里既不能依赖生产回退目录，
+/// 也不能让注入状态在用例之间互相污染。
+///
+/// 所有涉及注入状态的用例都标注 `@MainActor` 且不挂起：MainActor 是串行执行器，
+/// 这些用例因此不会并发读写同一份进程级注入状态。
+@Suite("ClipboardManagerRuntime", .serialized)
+@MainActor
 struct ClipboardManagerRuntimeTests {
 
-    @Test("databaseDirectory 走 provider，可在测试中替换")
-    func usesDatabaseDirectoryProvider() {
-        let original = ClipboardManagerRuntime.databaseDirectoryProvider
-        defer { ClipboardManagerRuntime.databaseDirectoryProvider = original }
+    @Test("注入目录后 databaseDirectory 返回该目录")
+    func usesInjectedDatabaseDirectory() throws {
+        let directory = try TemporaryDirectory.make("clipboard-runtime-injected")
+        defer { directory.remove() }
+        ClipboardManagerRuntime.injectedDatabaseDirectory = directory.url
+        defer { ClipboardManagerRuntime.injectedDatabaseDirectory = nil }
 
-        let injected = URL(fileURLWithPath: "/tmp/clipboard-runtime-test", isDirectory: true)
-        ClipboardManagerRuntime.databaseDirectoryProvider = { injected }
+        #expect(ClipboardManagerRuntime.databaseDirectory() == directory.url)
+    }
 
-        #expect(ClipboardManagerRuntime.databaseDirectory() == injected)
+    @Test("未注入目录时守卫拒绝回退到真实数据目录")
+    func refusesFallbackWithoutInjection() {
+        ClipboardManagerRuntime.injectedDatabaseDirectory = nil
+        defer { ClipboardManagerRuntime.injectedDatabaseDirectory = nil }
+
+        #expect(ClipboardManagerRuntime.injectedDatabaseDirectory == nil)
+
+        // 未注入目录时不得回退到本机真实数据目录：测试进程里这条路径必须被拒绝。
+        switch IsolatedDirectoryGuard.resolve(
+            injected: ClipboardManagerRuntime.injectedDatabaseDirectory,
+            owner: "ClipboardManagerRuntime",
+            accessor: "databaseDirectory()",
+            fallback: { URL(fileURLWithPath: "/tmp/clipboard-fallback", isDirectory: true) }
+        ) {
+        case .resolved:
+            Issue.record("测试进程下未注入目录时不应回退到真实数据目录")
+        case let .refused(reason):
+            #expect(reason.contains("ClipboardManagerRuntime"))
+            #expect(reason.contains("databaseDirectory()"))
+        }
     }
 }

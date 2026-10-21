@@ -1,5 +1,6 @@
 import Foundation
 import KitAgentTool
+import KitTestIsolation
 import KernelCore
 import ProviderStorage
 import ProviderToolManager
@@ -32,6 +33,20 @@ private func makeTemporaryDirectory(_ label: String) throws -> URL {
         .appendingPathComponent("PluginAgentPlanStorageTests-\(label)-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     return directory
+}
+
+/// 固定共享本地存储的目录。
+///
+/// 插件 `onBoot` 会创建后台清理任务，它在主线程空闲后才第一次读取
+/// `PlanFileStorageService.retentionDays` → `AgentPlanStoragePluginLocalStore.shared`。
+/// 该共享实例是**进程级懒加载单例**，首次初始化会调用
+/// `AgentPlanStorageRuntime.settingsDirectory()`；若那一刻运行时已被 `reset()`
+/// 清空注入，目录守卫会直接终止整个测试进程。
+///
+/// 在启动后（注入仍然有效时）立刻初始化它，单例就固定在本次注入的目录上，
+/// 后台任务再读也不会触发守卫。
+private func pinSharedLocalStore() {
+    _ = AgentPlanStoragePluginLocalStore.shared.retentionDays
 }
 
 // MARK: - 计划工具
@@ -264,17 +279,28 @@ struct AgentPlanStorageRuntimeTests {
         #expect(AgentPlanStorageRuntime.settingsDirectory() == directory)
     }
 
-    @Test("重置后回到默认回退目录")
-    func resetRestoresFallbackDirectory() throws {
+    @Test("重置后清空注入目录，不再回退到真实数据目录")
+    func resetClearsInjectedDirectory() throws {
         let directory = try makeTemporaryDirectory("runtime-reset")
         AgentPlanStorageRuntime.configure(settingsDirectory: directory)
         AgentPlanStorageRuntime.reset()
+        defer { AgentPlanStorageRuntime.reset() }
 
-        #expect(AgentPlanStorageRuntime.settingsDirectory() != directory)
-        #expect(
-            AgentPlanStorageRuntime.settingsDirectory().lastPathComponent
-                == "com.coffic.lumi.plugin.agent-plan-storage"
-        )
+        #expect(AgentPlanStorageRuntime.injectedSettingsDirectory == nil)
+
+        // 重置之后不得再回退到本机真实数据目录：测试进程里这条路径必须被拒绝。
+        switch IsolatedDirectoryGuard.resolve(
+            injected: AgentPlanStorageRuntime.injectedSettingsDirectory,
+            owner: "AgentPlanStorageRuntime",
+            accessor: "settingsDirectory()",
+            fallback: { URL(fileURLWithPath: "/tmp/agent-plan-storage-fallback", isDirectory: true) }
+        ) {
+        case .resolved:
+            Issue.record("测试进程下未注入目录时不应回退到真实数据目录")
+        case let .refused(reason):
+            #expect(reason.contains("AgentPlanStorageRuntime"))
+            #expect(reason.contains("settingsDirectory()"))
+        }
     }
 }
 
@@ -299,6 +325,7 @@ struct AgentPlanStoragePluginLifecycleTests {
         let plugin = AgentPlanStoragePlugin()
         try plugin.onBoot(kernel: kernel)
         defer { try? plugin.onShutdown(kernel: kernel) }
+        pinSharedLocalStore()
 
         #expect(toolManager.allTools().map(\.name) == ["write_plan", "read_plan", "list_plans", "delete_plan"])
     }
@@ -316,6 +343,7 @@ struct AgentPlanStoragePluginLifecycleTests {
         let plugin = AgentPlanStoragePlugin()
         try plugin.onBoot(kernel: kernel)
         defer { try? plugin.onShutdown(kernel: kernel) }
+        pinSharedLocalStore()
 
         let expected = root.appendingPathComponent(AgentPlanStoragePlugin.pluginID, isDirectory: true)
         #expect(AgentPlanStorageRuntime.settingsDirectory() == expected)
@@ -345,6 +373,7 @@ struct AgentPlanStoragePluginLifecycleTests {
 
         let plugin = AgentPlanStoragePlugin()
         try plugin.onBoot(kernel: kernel)
+        pinSharedLocalStore()
         try plugin.onShutdown(kernel: kernel)
 
         #expect(toolManager.allTools().isEmpty)
@@ -363,6 +392,7 @@ struct AgentPlanStoragePluginLifecycleTests {
         let plugin = AgentPlanStoragePlugin()
         try plugin.onBoot(kernel: kernel)
         defer { try? plugin.onShutdown(kernel: kernel) }
+        pinSharedLocalStore()
 
         #expect(AgentPlanStorageRuntime.settingsDirectory().lastPathComponent
             == AgentPlanStoragePlugin.pluginID)

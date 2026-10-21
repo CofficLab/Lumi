@@ -32,6 +32,9 @@ struct NettoViewModelTests {
 
     private func makeContext() -> (FirewallService, AppSettingRepo, NettoViewModel, TempDirectory) {
         let temp = TempDirectory()
+        // FirewallService 内部持有 AppSettingRepo.shared：先注入隔离目录，
+        // 否则守卫会拒绝并杀掉整个测试进程。
+        NettoSharedRepoIsolation.install()
         let service = FirewallService()
         let repo = AppSettingRepo(fileURL: temp.fileURL(), loadImmediately: false)
         let viewModel = NettoViewModel(service: service, repo: repo)
@@ -114,6 +117,9 @@ struct NettoObserverTests {
 
     private func makeContext() -> (FirewallService, AppSettingRepo, NettoViewModel, TempDirectory) {
         let temp = TempDirectory()
+        // FirewallService 内部持有 AppSettingRepo.shared：先注入隔离目录，
+        // 否则守卫会拒绝并杀掉整个测试进程。
+        NettoSharedRepoIsolation.install()
         let service = FirewallService()
         let repo = AppSettingRepo(fileURL: temp.fileURL(), loadImmediately: false)
         let viewModel = NettoViewModel(service: service, repo: repo)

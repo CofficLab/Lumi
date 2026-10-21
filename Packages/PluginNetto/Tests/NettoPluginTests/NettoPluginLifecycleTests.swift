@@ -42,6 +42,9 @@ struct NettoPluginLifecycleTests {
         try kernel.registerProvider((any ContentViewProviding).self, content)
         try kernel.registerProvider((any RootViewProviding).self, rootView)
 
+        // NettoViewModel 默认持有 AppSettingRepo.shared：先注入隔离目录，
+        // 否则守卫会拒绝并杀掉整个测试进程。
+        NettoSharedRepoIsolation.install()
         let plugin = NettoPlugin()
         try plugin.onBoot(kernel: kernel)
 
@@ -52,6 +55,7 @@ struct NettoPluginLifecycleTests {
     func bootWithoutRootViewProviderIsNoop() throws {
         let kernel = KernelCoreContainer()
 
+        NettoSharedRepoIsolation.install()
         try NettoPlugin().onBoot(kernel: kernel)
     }
 
@@ -63,6 +67,7 @@ struct NettoPluginLifecycleTests {
         try kernel.registerProvider((any ContentViewProviding).self, content)
         try kernel.registerProvider((any RootViewProviding).self, rootView)
 
+        NettoSharedRepoIsolation.install()
         let plugin = NettoPlugin()
         try plugin.onBoot(kernel: kernel)
         try plugin.onShutdown(kernel: kernel)
@@ -186,6 +191,9 @@ struct NettoIPCTests {
 
     @Test("扩展日志与审批请求不会抛错")
     func extensionHooksAreSafe() {
+        // FirewallService 内部持有 AppSettingRepo.shared：先注入隔离目录，
+        // 否则守卫会拒绝并杀掉整个测试进程。
+        NettoSharedRepoIsolation.install()
         let service = FirewallService()
 
         service.needApproval()
