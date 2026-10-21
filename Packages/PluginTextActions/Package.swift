@@ -37,7 +37,12 @@ let package = Package(
         ),
         .testTarget(
             name: "TextActionsPluginTests",
-            dependencies: ["TextActionsPlugin"],
+            dependencies: [
+                "TextActionsPlugin",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
+            ],
             path: "Tests"
         )
     ]
