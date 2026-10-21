@@ -22,6 +22,7 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
         .package(path: "../ProviderToolManager"),
+        .package(path: "../KitTestSupport"),
     ],
     targets: [
         .target(
@@ -46,6 +47,7 @@ let package = Package(
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderSkill", package: "LumiProviders"),
                 .product(name: "ProviderAgentRules", package: "LumiProviders"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             resources: [
                 .process("../../Resources/Localizable.xcstrings"),
@@ -70,6 +72,7 @@ let package = Package(
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderSkill", package: "LumiProviders"),
                 .product(name: "ProviderAgentRules", package: "LumiProviders"),
+                .product(name: "KitTestSupport", package: "KitTestSupport"),
             ],
             path: "Tests/PluginAppStoreConnectTests"
         ),

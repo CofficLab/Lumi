@@ -1,4 +1,5 @@
 import Foundation
+import KitTestIsolation
 
 /// MLX Provider 插件的运行时配置（KernelCore 体系）。
 ///
@@ -6,22 +7,26 @@ import Foundation
 /// 与 MLXModelPaths / MLXDownloadManager / MLXRuntime 共用同一根目录。
 @MainActor
 enum MLXProviderRuntime {
-    /// 插件数据目录。存根回退路径仅用于插件尚未 boot 的极早期访问，
-    /// 形状与内核 `StorageProviding` 的版本化数据根保持一致。
-    nonisolated(unsafe) static var settingsDirectoryProvider: () -> URL = {
-        fallbackDataRootDirectory
-            .appendingPathComponent("com.coffic.lumi.plugin.llm-provider-mlx", isDirectory: true)
-    }
+    /// `onBoot` 注入的插件数据目录。未注入时为 `nil`。
+    ///
+    /// 测试进程下未注入即失败，杜绝静默写入本机真实数据目录。
+    nonisolated(unsafe) static var injectedSettingsDirectory: URL?
 
     nonisolated static func settingsDirectory() -> URL {
-        settingsDirectoryProvider()
+        IsolatedDirectoryGuard.directory(
+            injected: injectedSettingsDirectory,
+            owner: "MLXProviderRuntime",
+            accessor: "settingsDirectory()",
+            fallback: { productionFallbackDataRootDirectory }
+        )
     }
 
     nonisolated static func configure(settingsDirectory: URL) {
-        settingsDirectoryProvider = { settingsDirectory }
+        injectedSettingsDirectory = settingsDirectory
     }
 
-    private nonisolated static let fallbackDataRootDirectory: URL = {
+    /// 生产环境兜底数据根目录。
+    private nonisolated static let productionFallbackDataRootDirectory: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         #if DEBUG
@@ -35,9 +40,6 @@ enum MLXProviderRuntime {
     }()
 
     static func reset() {
-        settingsDirectoryProvider = {
-            fallbackDataRootDirectory
-                .appendingPathComponent("com.coffic.lumi.plugin.llm-provider-mlx", isDirectory: true)
-        }
+        injectedSettingsDirectory = nil
     }
 }

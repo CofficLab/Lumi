@@ -12,7 +12,8 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1")
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../KitTestSupport"),
     ],
     targets: [
 .target(
@@ -29,7 +30,8 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
-                .product(name: "LumiLoggingKit", package: "LumiLogging")
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             path: "Sources/PluginInput",
             resources: [.process("../../Resources/Localizable.xcstrings")]
@@ -43,6 +45,9 @@ let package = Package(
                 .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "KitTestSupport", package: "KitTestSupport"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
             ],
             path: "Tests"
         )
