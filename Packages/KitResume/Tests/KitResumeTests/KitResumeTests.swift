@@ -229,5 +229,72 @@ struct KitResumeTests {
                 _ = try await ResumeHTMLExporter.exportPDF(html: html, fileURL: nil, paper: .a4)
             }
         }
+
+        /// 两页 `.resume-page` 的 HTML，用于覆盖批量导出路径。
+        private func twoPageHTML(paper: ResumePaperKind) -> String {
+            let preset = ResumePaperSpec.preset(for: paper)
+            return """
+            <!doctype html><html lang="en"><head><meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+              * { box-sizing: border-box; }
+              body { margin: 0; }
+              .resume-page { width: \(preset.cssWidth)px; height: \(preset.cssHeight)px; overflow: hidden; background: #fff; }
+            </style>
+            </head><body>
+              <section class="resume-page" data-page="1"><p>first page</p></section>
+              <section class="resume-page" data-page="2"><p>second page</p></section>
+            </body></html>
+            """
+        }
+
+        @Test func exportPNGsRendersEveryPage() async throws {
+            let html = twoPageHTML(paper: .a4)
+            let images = try await ResumeHTMLExporter.exportPNGs(
+                html: html,
+                fileURL: nil,
+                paper: .a4,
+                dpi: ResumeExportResolution.screen.rawValue
+            )
+            #expect(images.count == 2)
+            for data in images {
+                let image = try #require(NSBitmapImageRep(data: data))
+                let expected = ResumePaperSpec.preset(for: .a4).pixelSize(dpi: 96)
+                #expect(abs(image.pixelsWide - Int(expected.width)) <= 1)
+                #expect(abs(image.pixelsHigh - Int(expected.height)) <= 1)
+            }
+        }
+
+        @Test @MainActor func pngDataMatchesSinglePageExport() async throws {
+            let html = ResumeTemplateFactory.html(title: "Ada Lovelace", template: .minimal, paper: .letter)
+            let document = try await ResumeHTMLExporter.renderPDFDocument(html: html, fileURL: nil, paper: .letter)
+            let page = try #require(document.page(at: 0))
+            let data = try ResumeHTMLExporter.pngData(
+                page: page,
+                paper: .letter,
+                dpi: ResumeExportResolution.screen.rawValue
+            )
+            let image = try #require(NSBitmapImageRep(data: data))
+            let expected = ResumePaperSpec.preset(for: .letter).pixelSize(dpi: 96)
+            #expect(abs(image.pixelsWide - Int(expected.width)) <= 1)
+            #expect(abs(image.pixelsHigh - Int(expected.height)) <= 1)
+        }
+
+        @Test func exportPNGRejectsOutOfRangePageIndex() async throws {
+            let html = ResumeTemplateFactory.html(title: "Ada Lovelace", template: .classic, paper: .a4)
+            await #expect(throws: ResumeExportError.noPages) {
+                _ = try await ResumeHTMLExporter.exportPNG(html: html, fileURL: nil, paper: .a4, pageIndex: 7)
+            }
+        }
+
+        @Test func inspectPagesRejectsHTMLWithoutResumePage() async throws {
+            let html = """
+            <!doctype html><html lang="en"><head><meta charset="utf-8"></head>
+            <body><section class="other">no resume page</section></body></html>
+            """
+            await #expect(throws: ResumeExportError.noPages) {
+                _ = try await ResumeHTMLExporter.inspectPages(html: html, fileURL: nil, paper: .a4)
+            }
+        }
     }
 }
