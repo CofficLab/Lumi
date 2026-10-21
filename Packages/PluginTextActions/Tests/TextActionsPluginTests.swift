@@ -41,11 +41,23 @@ func localStoreWritesNoUserDefaults() throws {
         .appendingPathComponent("TextActionsStore-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    UserDefaults.standard.removeObject(forKey: "TextActions.enabled")
+    // - Important: 这里**只读** `UserDefaults.standard`，绝不写它。
+    //   写入会删掉开发者本机真实的「TextActions.enabled」设置（用户数据），
+    //   也会让断言受历史残留影响。改成「记录原值 → 写本地存储 → 断言原值未变」，
+    //   既验证了「本地存储不写 UserDefaults」，又不碰用户数据。
+    let key = "TextActions.enabled"
+    let original = UserDefaults.standard.object(forKey: key)
+
     let store = TextActionsPluginLocalStore(settingsDirectory: directory)
     store.setEnabled(true)
 
-    #expect(UserDefaults.standard.object(forKey: "TextActions.enabled") == nil)
+    // `object(forKey:)` 返回 `Any?`，无法直接比较；用描述串对比。
+    func describe(_ value: Any?) -> String {
+        value.map { String(describing: $0) } ?? "nil"
+    }
+    #expect(describe(UserDefaults.standard.object(forKey: key)) == describe(original))
+    // 实际状态落在插件自己的 plist 里。
+    #expect(store.isEnabled == true)
 }
 
 @Test

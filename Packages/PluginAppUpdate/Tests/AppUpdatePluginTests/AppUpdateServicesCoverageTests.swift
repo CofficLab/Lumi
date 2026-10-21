@@ -399,8 +399,14 @@ struct AppUpdateBootstrapTests {
             AppUpdateTestDoubles.StubStorageProvider(root: root)
         )
 
-        UserDefaults.standard.set("preview", forKey: AppUpdateChannel.userDefaultsKey)
-        defer { UserDefaults.standard.removeObject(forKey: AppUpdateChannel.userDefaultsKey) }
+        // legacy 偏好域必须隔离：读写 `UserDefaults.standard` 会污染开发者
+        // 本机的真实偏好，也会让断言受历史残留影响。
+        let isolated = AppUpdateTestDoubles.makeIsolatedDefaults()
+        defer { isolated.cleanup() }
+        isolated.defaults.set("preview", forKey: AppUpdateChannel.userDefaultsKey)
+        let previousLegacyDefaults = AppUpdateBootstrap.legacyUserDefaults
+        AppUpdateBootstrap.legacyUserDefaults = isolated.defaults
+        defer { AppUpdateBootstrap.legacyUserDefaults = previousLegacyDefaults }
 
         AppUpdateBootstrap.start(kernel: kernel)
         defer { AppUpdateBootstrap.stop() }
@@ -422,8 +428,12 @@ struct AppUpdateBootstrapTests {
             AppUpdateTestDoubles.StubStorageProvider(root: root)
         )
 
-        UserDefaults.standard.set("preview", forKey: AppUpdateChannel.userDefaultsKey)
-        defer { UserDefaults.standard.removeObject(forKey: AppUpdateChannel.userDefaultsKey) }
+        let isolated = AppUpdateTestDoubles.makeIsolatedDefaults()
+        defer { isolated.cleanup() }
+        isolated.defaults.set("preview", forKey: AppUpdateChannel.userDefaultsKey)
+        let previousLegacyDefaults = AppUpdateBootstrap.legacyUserDefaults
+        AppUpdateBootstrap.legacyUserDefaults = isolated.defaults
+        defer { AppUpdateBootstrap.legacyUserDefaults = previousLegacyDefaults }
 
         AppUpdateBootstrap.start(kernel: kernel)
         defer { AppUpdateBootstrap.stop() }

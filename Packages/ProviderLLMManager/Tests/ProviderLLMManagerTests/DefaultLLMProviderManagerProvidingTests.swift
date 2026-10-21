@@ -4,29 +4,45 @@ import ProviderMessage
 import Testing
 @testable import ProviderLLMManager
 
-/// 快照并在测试结束后还原 `UserDefaults.standard` 中的指定键。
+/// 把选中态持久化重定向到**隔离的偏好域**，并在测试结束后还原。
 ///
 /// - Important: Swift Testing 的 Suite 是 struct，**不能**写 `deinit`，
 ///   所以还原逻辑必须放在 trait 的 `deinit` 里（trait 可以是 class）。
 ///   `snapshot` 是可变状态，需锁保护以满足 Swift 6 的 Sendable 要求。
+/// - Important: 这里**不**使用 `UserDefaults.standard`——那是**用户级全局状态**。
+///   直接读写它既会污染开发者本机的真实偏好（可能改掉用户正在用的模型选择），
+///   也会让断言受历史残留影响。改用带 UUID 的 suite，物理隔离。
 final class DefaultsSnapshot: SuiteTrait, @unchecked Sendable {
     private let keys: [String]
     private let lock = NSLock()
     private var snapshot: [String: Any] = [:]
+    private let suiteName: String
+    private let isolated: UserDefaults
 
-    init(keys: [String]) { self.keys = keys }
+    init(keys: [String]) {
+        self.keys = keys
+        self.suiteName = "com.coffic.lumi.test.llm-manager.\(UUID().uuidString)"
+        // suiteName: 内部生成的固定格式字符串，失败只可能是系统异常。
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            preconditionFailure("无法创建隔离的 UserDefaults（suite: \(suiteName)）")
+        }
+        self.isolated = defaults
+    }
 
     func setUp() async throws {
-        let defaults = UserDefaults.standard
+        let defaults = isolated
+        defaults.removePersistentDomain(forName: suiteName)
         lock.withLock { snapshot = [:] }
         for key in keys {
             lock.withLock { snapshot[key] = defaults.object(forKey: key) }
             defaults.removeObject(forKey: key)
         }
+        // 让生产代码改用这份隔离偏好域。
+        LLMManagerUserDefaults.current = defaults
     }
 
     deinit {
-        let defaults = UserDefaults.standard
+        let defaults = isolated
         for key in keys {
             let value = lock.withLock { snapshot[key] }
             if let value {
@@ -35,12 +51,14 @@ final class DefaultsSnapshot: SuiteTrait, @unchecked Sendable {
                 defaults.removeObject(forKey: key)
             }
         }
+        defaults.removePersistentDomain(forName: suiteName)
+        LLMManagerUserDefaults.current = .standard
     }
 }
 
 /// 默认 LLM 管理器测试。
 ///
-/// - Important: 选中态持久化在 `UserDefaults.standard`，属**共享全局状态**。
+/// - Important: 选中态持久化在**隔离的偏好域**（`LLMManagerUserDefaults.current`），属共享全局状态。
 ///   每个用例前清空、结束后**还原**，既保证从干净状态开始，
 ///   又不破坏开发者在 App 里选好的模型。`.serialized` 防止并发互踩。
 @MainActor
@@ -160,7 +178,7 @@ struct DefaultLLMProviderManagerProvidingTests {
 
     @Test("旧版全局供应商和模型设置等所属 Provider 注册后再迁移")
     func legacyGlobalSelectionWaitsForItsProvider() throws {
-        let defaults = UserDefaults.standard
+        let defaults = LLMManagerUserDefaults.current
         let modelIDKey = "com.coffic.lumi.llmProviderManager.selectedModelID"
         let providerKey = "com.coffic.lumi.llmProviderManager.selectedProviderID"
         let modelKey = "com.coffic.lumi.llmProviderManager.selectedModel"
@@ -448,7 +466,7 @@ struct DefaultLLMProviderManagerProvidingTests {
 
     @Test("恢复持久化选中后，首次注册投递 .appRestore；后续注册回退为 .providerChanged")
     func restoredSelectionBroadcastsAppRestoreOnce() throws {
-        let defaults = UserDefaults.standard
+        let defaults = LLMManagerUserDefaults.current
         let modelIDKey = "com.coffic.lumi.llmProviderManager.selectedModelID"
         let restored = try #require(LLMModelID(providerID: "a", modelID: "a1"))
         defaults.set(restored.rawValue, forKey: modelIDKey)

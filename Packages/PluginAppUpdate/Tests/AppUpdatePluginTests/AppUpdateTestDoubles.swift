@@ -125,4 +125,21 @@ enum AppUpdateTestDoubles {
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
     }
+
+    /// 隔离的偏好域：legacy 通道导入用例会读写它。
+    ///
+    /// - Important: 不能用 `UserDefaults.standard`——那是**用户级全局状态**。
+    ///   读写它既会污染开发者本机的真实偏好，也会让断言受历史残留影响。
+    static func makeIsolatedDefaults() -> (defaults: UserDefaults, cleanup: () -> Void) {
+        let suiteName = "com.coffic.lumi.test.app-update.\(UUID().uuidString)"
+        // suiteName: 内部生成的固定格式字符串，失败只可能是系统异常。
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            preconditionFailure("无法创建隔离的 UserDefaults（suite: \(suiteName)）")
+        }
+        defaults.removePersistentDomain(forName: suiteName)
+        return (
+            defaults,
+            { defaults.removePersistentDomain(forName: suiteName) }
+        )
+    }
 }
