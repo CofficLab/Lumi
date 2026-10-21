@@ -280,7 +280,7 @@ struct ListV2View: View, SuperLog {
     }
 
     private func loadEarlier(proxy: ScrollViewProxy) async {
-        guard let anchorID = await viewModel.loadEarlier(isAtBottom: runtime.atBottomBox.value) else { return }
+        guard let anchorID = await viewModel.loadEarlier() else { return }
         if Self.verbose {
             Self.logger.debug("\(Self.t)loaded earlier messages, anchor=\(anchorID.uuidString)")
         }

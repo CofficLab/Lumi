@@ -230,7 +230,7 @@ func paginationBackfillsGapKeepingWindowOrdered() async {
 }
 
 @MainActor
-@Test("空窗口首刷补查 earlier，尾部回收只在离开底部时执行")
+@Test("空窗口首刷补查 earlier，窗口超上限时一律回收尾部")
 func paginationInitialRefreshAndTailEviction() async {
     let conversationID = UUID()
     let page = (0..<2).map { index in
@@ -243,13 +243,14 @@ func paginationInitialRefreshAndTailEviction() async {
     let service = MessageListPaginationService(pageSize: 2, maxRetainedCount: 2)
 
     let initial = await service.refreshTail(conversationID: conversationID, messageManager: manager, current: [])
-    let atBottom = service.evictTailIfNeeded(messages: retained, isAtBottom: true)
-    let awayFromBottom = service.evictTailIfNeeded(messages: retained, isAtBottom: false)
+    let overLimit = service.evictTailIfNeeded(messages: retained)
+    let withinLimit = service.evictTailIfNeeded(messages: Array(retained.prefix(2)))
 
     #expect(initial?.merged.map(\.id) == page.map(\.id))
     #expect(initial?.hasEarlierMessages == true)
-    #expect(atBottom.map(\.id) == retained.map(\.id))
-    #expect(awayFromBottom.map(\.id) == retained.prefix(2).map(\.id))
+    // 窗口上限无条件生效：超限时回收尾部，未超限时原样返回。
+    #expect(overLimit.map(\.id) == retained.prefix(2).map(\.id))
+    #expect(withinLimit.map(\.id) == retained.prefix(2).map(\.id))
 }
 
 @MainActor
