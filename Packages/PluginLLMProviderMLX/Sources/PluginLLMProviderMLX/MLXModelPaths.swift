@@ -1,16 +1,32 @@
 import Foundation
+import KitTestIsolation
 
 @MainActor
 enum MLXModelPaths {
-    private static let fallbackRoot = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        .appendingPathComponent("com.coffic.lumi/LLMProviderMLX", isDirectory: true)
+    /// `onBoot` 注入的模型根目录。未注入时为 `nil`。
+    ///
+    /// 测试进程下未注入即失败，杜绝静默写入本机真实数据目录。
+    nonisolated(unsafe) static var injectedRootDirectory: URL?
 
-    static var rootDirectory = fallbackRoot
+    /// 模型根目录。
+    static var rootDirectory: URL {
+        IsolatedDirectoryGuard.directory(
+            injected: injectedRootDirectory,
+            owner: "MLXModelPaths",
+            accessor: "rootDirectory",
+            fallback: { productionFallbackRoot }
+        )
+    }
 
     static func configure(rootDirectory: URL) {
-        self.rootDirectory = rootDirectory
+        injectedRootDirectory = rootDirectory
         try? FileManager.default.createDirectory(at: rootDirectory, withIntermediateDirectories: true)
     }
+
+    /// 生产环境兜底根目录。
+    private static let productionFallbackRoot = FileManager.default
+        .urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        .appendingPathComponent("com.coffic.lumi/LLMProviderMLX", isDirectory: true)
 
     static var modelsDirectory: URL {
         rootDirectory.appendingPathComponent("models", isDirectory: true)

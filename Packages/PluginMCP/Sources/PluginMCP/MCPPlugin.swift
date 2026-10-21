@@ -1,4 +1,5 @@
 import Foundation
+import KitTestIsolation
 import KernelCore
 import KitAgentTool
 import KitMCP
@@ -45,10 +46,18 @@ public final class MCPPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let contributor = MCPServerContributor()
-        let dataDir = kernel.resolveProvider((any StorageProviding).self)?
-            .pluginDataDirectory(for: id)
-            ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("PluginMCP", isDirectory: true)
+        // 测试进程下未解析到 StorageProviding 即失败：静默回退到本机真实目录
+        // 会让测试读写开发者本机的数据目录。
+        let dataDir = IsolatedDirectoryGuard.directory(
+            injected: kernel.resolveProvider((any StorageProviding).self)?
+                .pluginDataDirectory(for: id),
+            owner: "MCPPlugin",
+            accessor: "onBoot(kernel:)",
+            fallback: {
+                FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                    .appendingPathComponent("PluginMCP", isDirectory: true)
+            }
+        )
         let registry = MCPServerRegistry(directory: dataDir, contributor: contributor)
         let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
         let manager = MCPConnectionManager(

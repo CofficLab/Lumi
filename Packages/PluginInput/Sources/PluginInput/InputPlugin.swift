@@ -1,4 +1,5 @@
 import KernelCore
+import KitTestIsolation
 import ProviderActivityBar
 import ProviderToolbar
 import ProviderChatSection
@@ -14,19 +15,35 @@ import os
 enum InputPluginRuntimeBridge {
     nonisolated(unsafe) static var dataRootDirectory: URL?
     nonisolated(unsafe) static var pluginDirectory: URL?
-    static var fallbackRootDirectory: URL {
+
+    /// 生产环境兜底数据根目录。
+    static var productionFallbackRootDirectory: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
     }
-    static var fallbackPluginDirectory: URL {
+
+    /// 生产环境兜底插件目录。
+    static var productionFallbackPluginDirectory: URL {
         #if DEBUG
         let versionedRoot = "db_debug_v6"
         #else
         let versionedRoot = "db_production_v6"
         #endif
-        return fallbackRootDirectory
+        return productionFallbackRootDirectory
             .appendingPathComponent("com.coffic.Lumi", isDirectory: true)
             .appendingPathComponent(versionedRoot, isDirectory: true)
             .appendingPathComponent("com.coffic.lumi.plugin.input-manager", isDirectory: true)
+    }
+
+    /// 插件数据目录。
+    ///
+    /// 测试进程下未注入即失败，杜绝静默写入本机真实数据目录。
+    static var resolvedPluginDirectory: URL {
+        IsolatedDirectoryGuard.directory(
+            injected: pluginDirectory,
+            owner: "InputPluginRuntimeBridge",
+            accessor: "resolvedPluginDirectory",
+            fallback: { productionFallbackPluginDirectory }
+        )
     }
 }
 
@@ -60,6 +77,13 @@ public final class InputPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        // 存储目录注入必须早于 InputService.shared 的首次访问：
+        // InputService 初始化时会构造 InputPluginLocalStore，进而读取插件数据目录。
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            InputPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
+            InputPluginRuntimeBridge.pluginDirectory = storage.pluginDataDirectory(for: id)
+        }
+
         let inputService = InputService.shared
         let viewModel = InputSettingsViewModel()
         self.viewModel = viewModel
@@ -73,10 +97,6 @@ public final class InputPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
                 inputService?.handleInputSourceChange()
             }
         )
-        if let storage = kernel.resolveProvider((any StorageProviding).self) {
-            InputPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
-            InputPluginRuntimeBridge.pluginDirectory = storage.pluginDataDirectory(for: id)
-        }
 
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)

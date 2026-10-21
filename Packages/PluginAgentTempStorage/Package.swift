@@ -15,11 +15,17 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(path: "../ProviderToolManager"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../KitTestSupport"),
     ],
     targets: [
         .testTarget(
             name: "PluginAgentTempStorageTests",
-            dependencies: ["PluginAgentTempStorage", "KitAgentTool"]
+            dependencies: [
+                "PluginAgentTempStorage",
+                "KitAgentTool",
+                .product(name: "KitTestSupport", package: "KitTestSupport"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+            ]
         ),
         .target(
             name: "PluginAgentTempStorage",
@@ -30,6 +36,7 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 "ProviderToolManager",
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),

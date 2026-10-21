@@ -1,12 +1,26 @@
 import Foundation
+import KitTestIsolation
 
+/// ClipboardManager 插件的运行时目录持有。
+///
+/// 目录由主插件在 `onBoot` 中从 `StorageProviding` 注入。
+/// 测试进程下未注入即失败，杜绝静默写入本机真实数据目录。
 public enum ClipboardManagerRuntime {
-    nonisolated(unsafe) public static var databaseDirectoryProvider: () -> URL = {
-        fallbackDataRootDirectory
-            .appendingPathComponent("com.coffic.lumi.plugin.clipboard-manager", isDirectory: true)
+    /// `onBoot` 注入的插件数据目录。未注入时为 `nil`。
+    nonisolated(unsafe) public static var injectedDatabaseDirectory: URL?
+
+    /// 插件数据目录。
+    public static func databaseDirectory() -> URL {
+        IsolatedDirectoryGuard.directory(
+            injected: injectedDatabaseDirectory,
+            owner: "ClipboardManagerRuntime",
+            accessor: "databaseDirectory()",
+            fallback: { productionFallbackDataRootDirectory }
+        )
     }
 
-    private static let fallbackDataRootDirectory: URL = {
+    /// 生产环境兜底数据根目录。
+    private static let productionFallbackDataRootDirectory: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         #if DEBUG
@@ -18,8 +32,4 @@ public enum ClipboardManagerRuntime {
             .appendingPathComponent("com.coffic.Lumi", isDirectory: true)
             .appendingPathComponent(versionedRoot, isDirectory: true)
     }()
-
-    public static func databaseDirectory() -> URL {
-        databaseDirectoryProvider()
-    }
 }

@@ -20,6 +20,7 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderToolManager"),
+        .package(path: "../KitTestSupport"),
     ],
     targets: [
         .target(
@@ -41,6 +42,7 @@ let package = Package(
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KitKeychain", package: "KitKeychain"),
                 .product(name: "KitMail", package: "KitMail"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             path: "Sources/PluginMail",
             resources: [.process("../../Resources/Localizable.xcstrings")]
@@ -51,6 +53,8 @@ let package = Package(
                 "PluginMail",
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitMail", package: "KitMail"),
+                .product(name: "KitTestSupport", package: "KitTestSupport"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             path: "Tests"
         ),
