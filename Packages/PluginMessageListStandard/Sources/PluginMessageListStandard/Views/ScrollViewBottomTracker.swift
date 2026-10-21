@@ -103,7 +103,7 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
 
     func makeNSView(context: Context) -> TrackerView {
         let view = TrackerView()
-        view.bottomController = controller
+        view.setBottomController(controller)
         view.onChange = { [weak coordinator = context.coordinator] atBottom in
             coordinator?.onChange(atBottom)
         }
@@ -118,7 +118,7 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
         // SwiftUI 的尺寸协商，可能复活反馈环。仅同步回调句柄。
         context.coordinator.onChange = onChange
         context.coordinator.onLiveResizeEnd = onLiveResizeEnd
-        nsView.bottomController = controller
+        nsView.setBottomController(controller)
     }
 
     static func dismantleNSView(_ nsView: TrackerView, coordinator: Coordinator) {
@@ -238,6 +238,31 @@ final class TrackerView: NSView {
         }
         // 附着后立刻评估一次，把初始状态同步给回调。
         reevaluate()
+    }
+
+    /// 更换底部几何控制器。
+    ///
+    /// - Important: 控制器换了实例时**必须**把它重新绑定到当前观察的滚动视图。
+    ///   旧实现只做 `bottomController = controller`，而 `attachIfNeeded()` 因
+    ///   `scrollView === observedScrollView` 提前返回 —— 于是新控制器永远拿不到
+    ///   `NSScrollView`，`isAttached` 恒为 false，
+    ///   `MessageListScrollCoordinator.prepareInitialBottom` 因此退化为
+    ///   「只 `scrollTo` 一次」，不再等待 `List` 懒加载行物化完成。
+    internal func setBottomController(_ controller: ScrollViewBottomController?) {
+        guard bottomController !== controller else { return }
+        if let observedScrollView {
+            bottomController?.detach(from: observedScrollView)
+            controller?.attach(to: observedScrollView)
+        }
+        bottomController = controller
+    }
+
+    /// 供单测模拟「tracker 已观察到某个滚动视图」的状态。
+    ///
+    /// 生产路径由 `attachIfNeeded()` 依据视图层级自行发现滚动视图；
+    /// 单测无法构造真实层级，故提供此缝直接注入。
+    internal func setObservedScrollViewForTesting(_ scrollView: NSScrollView?) {
+        observedScrollView = scrollView
     }
 
     fileprivate func stopObserving() {
