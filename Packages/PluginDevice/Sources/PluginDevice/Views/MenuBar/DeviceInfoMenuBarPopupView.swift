@@ -10,21 +10,29 @@ public struct DeviceInfoMenuBarPopupView: View {
     @ObservedObject private var viewModel: CPUManagerViewModel
     @ObservedObject private var thermalViewModel: ThermalViewModel
     private let historyViewModel: DeviceHistoryViewModel<CPUDataPoint>
+    private let thermalHistoryViewModel: DeviceHistoryViewModel<ThermalDataPoint>
 
     init(
         viewModel: CPUManagerViewModel,
         thermalViewModel: ThermalViewModel,
-        historyViewModel: DeviceHistoryViewModel<CPUDataPoint>
+        historyViewModel: DeviceHistoryViewModel<CPUDataPoint>,
+        thermalHistoryViewModel: DeviceHistoryViewModel<ThermalDataPoint>
     ) {
         self.viewModel = viewModel
         self.thermalViewModel = thermalViewModel
         self.historyViewModel = historyViewModel
+        self.thermalHistoryViewModel = thermalHistoryViewModel
     }
 
     // MARK: - Body
 
     public var body: some View {
-        HoverableContainerView(detailView: CPUHistoryDetailView(viewModel: historyViewModel)) {
+        HoverableContainerView(
+            detailView: CPUHistoryDetailView(
+                viewModel: historyViewModel,
+                thermalViewModel: thermalHistoryViewModel
+            )
+        ) {
             VStack(spacing: 0) {
                 // 实时 CPU 负载显示
                 liveCpuView

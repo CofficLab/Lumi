@@ -16,3 +16,6 @@
 | `StorageService.swift` | 磁盘容量与卷信息采集 |
 | `ProcessService.swift` | 系统进程列表与 CPU/内存占用排序 |
 | `SystemMonitorService.swift` | 系统监控聚合服务（组合各硬件指标） |
+| `ThermalService.swift` | CPU / die 温度实时采集 |
+| `ThermalSensorReader.swift` | 通过 `IOHIDEventSystemClient` 读取 PMU 温度传感器 |
+| `ThermalHistoryService.swift` | 温度历史记录持久化与查询（存储目录由插件入口配置） |

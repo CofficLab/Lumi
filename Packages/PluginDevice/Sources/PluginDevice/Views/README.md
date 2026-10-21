@@ -11,6 +11,7 @@
 | `SystemMonitorView.swift` | 系统监控聚合页 |
 | `TopProcessesView.swift` | 进程占用排行视图 |
 | `MemoryHistoryGraphView.swift` / `MemoryHistoryDetailView.swift` | 内存历史图表与详情 |
-| `CPUHistoryGraphView.swift` / `CPUHistoryDetailView.swift` | CPU 历史图表与详情 |
+| `CPUHistoryGraphView.swift` / `CPUHistoryDetailView.swift` | CPU 历史图表与详情（详情页含 CPU 温度趋势图） |
+| `ThermalHistoryGraphView.swift` | CPU / die 温度历史图表（摄氏度 Y 轴，量程自适应） |
 | `GPUHistoryGraphView.swift` / `GPUHistoryDetailView.swift` | GPU 历史图表与详情 |
 | `WaveformView.swift` | 波形辅助视图 |

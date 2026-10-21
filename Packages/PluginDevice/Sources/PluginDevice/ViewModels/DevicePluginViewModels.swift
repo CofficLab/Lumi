@@ -33,6 +33,7 @@ final class DevicePluginViewModels: ObservableObject {
     let thermal: ThermalViewModel
     let menuBar: DeviceInfoMenuBarContentViewModel
     let cpuHistory = DeviceHistoryViewModel<CPUDataPoint>()
+    let thermalHistory = DeviceHistoryViewModel<ThermalDataPoint>()
     let gpuHistory = DeviceHistoryViewModel<GPUDataPoint>()
     let memoryHistory = DeviceHistoryViewModel<MemoryDataPoint>()
 
