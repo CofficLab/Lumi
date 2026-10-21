@@ -21,8 +21,7 @@ import ProviderToolManager
 /// - Network: on miss or `networkOnly` fetch policy
 final class ConnectAPICache: @unchecked Sendable {
     static let shared: ConnectAPICache = {
-        let pluginRoot = AppStoreConnectPluginRuntimeBridge.pluginSubdirectory
-            ?? AppStoreConnectPluginRuntimeBridge.fallbackPluginDirectory
+        let pluginRoot = AppStoreConnectPluginRuntimeBridge.resolvedPluginDirectory
         let root = pluginRoot
             .appendingPathComponent(ConnectAPICacheConfiguration.cacheDirectoryName, isDirectory: true)
         return ConnectAPICache(rootDirectory: root)
