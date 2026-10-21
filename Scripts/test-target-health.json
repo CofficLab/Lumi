@@ -44,11 +44,9 @@
     "hasTestPlan": false
   },
   "KitAppStorePromo": {
-    "status": "broken",
-    "errors": [
-      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
-    ],
-    "hasTestPlan": false
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": true
   },
   "KitCADDesigner": {
     "status": "broken",
@@ -100,11 +98,9 @@
     "hasTestPlan": false
   },
   "KitHTMLPreview": {
-    "status": "broken",
-    "errors": [
-      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
-    ],
-    "hasTestPlan": false
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": true
   },
   "KitHttp": {
     "status": "broken",
@@ -164,11 +160,9 @@
     "hasTestPlan": false
   },
   "KitResume": {
-    "status": "broken",
-    "errors": [
-      "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
-    ],
-    "hasTestPlan": false
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": true
   },
   "KitShell": {
     "status": "broken",
@@ -804,22 +798,9 @@
     "hasTestPlan": false
   },
   "PluginProjectOverview": {
-    "status": "broken",
-    "errors": [
-      "error: clang dependency scanning failure:",
-      "error: clang dependency scanning failure:",
-      "error: clang dependency scanning failure:",
-      "error: clang dependency scanning failure:",
-      "error: clang dependency scanning failure:",
-      "error: clang dependency scanning failure:",
-      "error: clang dependency scanning failure:",
-      "error: clang dependency scanning failure:",
-      "error: clang dependency scanning failure:",
-      "error: clang dependency scanning failure:",
-      "error: clang dependency scanning failure:",
-      "error: clang dependency scanning failure:"
-    ],
-    "hasTestPlan": false
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": true
   },
   "PluginProjectRAG": {
     "status": "ok",
