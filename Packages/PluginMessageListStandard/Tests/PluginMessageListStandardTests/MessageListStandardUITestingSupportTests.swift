@@ -22,7 +22,7 @@ import Testing
 ///   `swift build -c release` 会因找不到该类型而失败 —— 本地 Debug 通过
 ///   完全掩盖不了这一点。
 @MainActor
-@Test("夹具：seed 后两个会话都存在，且都带消息")
+@Test("夹具：seed 后三个会话都存在，且都带消息")
 func fixtureSeedsBothConversations() {
     let conversations = DefaultConversationManager()
     let messages = DefaultMessageManager()
@@ -41,12 +41,16 @@ func fixtureSeedsBothConversations() {
         titles.contains(MessageListStandardUITestingSupport.largeConversationTitle),
         "大会话未种出，实际种出：\(titles)"
     )
-    #expect(titles.count == 2, "夹具应恰好种出 2 个会话，实际 \(titles.count)：\(titles)")
+    #expect(
+        titles.contains(MessageListStandardUITestingSupport.hugeConversationTitle),
+        "超大会话未种出，实际种出：\(titles)"
+    )
+    #expect(titles.count == 3, "夹具应恰好种出 3 个会话，实际 \(titles.count)：\(titles)")
 }
 
-/// 两个会话都必须有消息，否则切换过去是空列表，无法覆盖遮罩收敛路径。
+/// 三个会话都必须有消息，否则切换过去是空列表，无法覆盖遮罩收敛路径。
 @MainActor
-@Test("夹具：两个会话都写入了消息")
+@Test("夹具：三个会话都写入了消息")
 func fixtureSeedsMessagesForBothConversations() {
     let conversations = DefaultConversationManager()
     let messages = DefaultMessageManager()
@@ -58,7 +62,8 @@ func fixtureSeedsMessagesForBothConversations() {
 
     for title in [
         MessageListStandardUITestingSupport.smallConversationTitle,
-        MessageListStandardUITestingSupport.largeConversationTitle
+        MessageListStandardUITestingSupport.largeConversationTitle,
+        MessageListStandardUITestingSupport.hugeConversationTitle
     ] {
         let conversation = conversations.conversations.first { $0.title == title }
         #expect(conversation != nil, "会话「\(title)」不存在")
@@ -66,6 +71,35 @@ func fixtureSeedsMessagesForBothConversations() {
         let seeded = messages.messages(for: conversation.id)
         #expect(!seeded.isEmpty, "会话「\(title)」没有消息")
     }
+}
+
+/// 超大会话必须**远超窗口上限**，否则「窗口裁剪」路径根本不会被触发。
+///
+/// `maxRetainedCount` = 300，而分页窗口 = 40。要让「翻页 → 裁剪 → 缺口」
+/// 这条链路在 UI 层可复现，消息数必须显著大于 300。
+@MainActor
+@Test("夹具：超大会话消息数远超窗口上限")
+func fixtureHugeConversationExceedsWindowLimit() {
+    let conversations = DefaultConversationManager()
+    let messages = DefaultMessageManager()
+
+    MessageListStandardUITestingSupport.seed(
+        conversations: conversations,
+        messages: messages
+    )
+
+    guard let id = conversations.conversations
+        .first(where: { $0.title == MessageListStandardUITestingSupport.hugeConversationTitle })?
+        .id
+    else {
+        Issue.record("超大会话未种出")
+        return
+    }
+    let count = messages.messages(for: id).count
+    #expect(
+        count > 300,
+        "超大会话应远超窗口上限 300，实际 \(count) 条"
+    )
 }
 
 /// 大会话必须是「更难收敛」的一侧——它是首屏遮罩的主要施压对象。
@@ -138,8 +172,8 @@ func fixtureSeedIsIdempotent() {
     MessageListStandardUITestingSupport.seed(conversations: conversations, messages: messages)
 
     #expect(
-        conversations.conversations.count == 2,
-        "重复 seed 后应仍为 2 个会话，实际 \(conversations.conversations.count)：\(conversations.conversations.compactMap(\.title))"
+        conversations.conversations.count == 3,
+        "重复 seed 后应仍为 3 个会话，实际 \(conversations.conversations.count)：\(conversations.conversations.compactMap(\.title))"
     )
 }
 #endif
