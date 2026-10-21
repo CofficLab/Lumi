@@ -16,17 +16,21 @@ struct ListV1View: View {
 
     @LumiTheme private var theme
 
-    /// 用户是否停在列表底部附近；用于决定新消息到达时是否自动滚到底部。
-    private let atBottomBox = AtBottomBox()
+    /// 运行时状态容器：底部标记、滚动协调器、底部几何控制器。
+    ///
+    /// - Important: 必须是 `@StateObject`，不能用 `let`。
+    ///   宿主（`ChatStackView.body` 里的 `item.makeView()`）每重绘一次就会
+    ///   重新 `init` 本视图一次；`let` 持有的状态对象会被重建，新旧两个滚动
+    ///   协调器会**同时驱动同一个 scroll view**（序号互不相识，`cancelPendingTasks()`
+    ///   也 cancel 不掉对方），几何收敛永远不稳定，首屏遮罩就此永久挂起。
+    ///   详见 `MessageListRuntime` 的类型注释。
+    @StateObject private var runtime = MessageListRuntime()
 
     // MARK: - Services
-
-    private let scrollCoordinator = MessageListScrollCoordinator()
 
     /// 内容完成一次更新后的滚动信号。触发器挂在底部锚点行上，确保新行已经
     /// 进入 List 布局后再执行 scrollTo，避免最后一行被底部输入框遮挡。
     @State private var scrollTick: Int = 0
-    private let bottomScrollController = ScrollViewBottomController()
     /// 发送新消息后，临时把最新回合定位在视口上方约四分之一处。
     @State private var usesPostSendPositioning = false
     @State private var viewportHeight: CGFloat = 0
@@ -56,7 +60,7 @@ struct ListV1View: View {
             }
         }
         .task {
-            atBottomBox.value = true
+            runtime.atBottomBox.value = true
             isInitialPositionReady = false
             isPreparingInitialPosition = false
             await messageListVM.activateCurrentConversation()
@@ -90,11 +94,11 @@ struct ListV1View: View {
                     .onChange(of: scrollTick) { _, _ in
                         guard isInitialPositionReady else { return }
                         let conversationID = selectedConversationID
-                        scrollCoordinator.scheduleScrollToBottomAfterLayout(
+                        runtime.scrollCoordinator.scheduleScrollToBottomAfterLayout(
                             proxy: proxy,
                             messages: displayedHistoryMessages,
                             animated: false,
-                            controller: bottomScrollController,
+                            controller: runtime.bottomScrollController,
                             condition: {
                                 conversationID == selectedConversationID
                             }
@@ -108,8 +112,8 @@ struct ListV1View: View {
             .environment(\.preferOuterScroll, true)
             .background(
                 ScrollViewBottomTracker(
-                    onChange: { atBottomBox.value = $0 },
-                    controller: bottomScrollController,
+                    onChange: { runtime.atBottomBox.value = $0 },
+                    controller: runtime.bottomScrollController,
                     onViewportHeightChange: updateViewportHeight
                 )
             )
@@ -118,7 +122,7 @@ struct ListV1View: View {
                 // 底部"作伪成 true 的，跟随滚动会把最新内容贴到视口底部，抵消
                 // 刚完成的"新回合停在视口上方"定位。定位结束后由
                 // handleTurnLifecycleChange 恢复常规跟随。
-                if atBottomBox.value, !usesPostSendPositioning {
+                if runtime.atBottomBox.value, !usesPostSendPositioning {
                     scrollTick &+= 1
                 }
                 if !isInitialPositionReady, !messageListVM.isLoading {
@@ -133,19 +137,19 @@ struct ListV1View: View {
             }
             .onChange(of: stateVM.activity) { _, _ in
                 guard isInitialPositionReady,
-                      atBottomBox.value,
+                      runtime.atBottomBox.value,
                       !usesPostSendPositioning else { return }
                 scrollTick &+= 1
             }
             .onChange(of: selectedConversationID) { _, _ in
                 usesPostSendPositioning = false
-                scrollCoordinator.cancelPendingTasks()
+                runtime.scrollCoordinator.cancelPendingTasks()
                 isInitialPositionReady = false
                 isPreparingInitialPosition = false
             }
             .onChange(of: messageListVM.isLoading) { _, isLoading in
                 if isLoading {
-                    scrollCoordinator.cancelPendingTasks()
+                    runtime.scrollCoordinator.cancelPendingTasks()
                     isInitialPositionReady = false
                     isPreparingInitialPosition = false
                 } else {
@@ -156,12 +160,12 @@ struct ListV1View: View {
                 if !messageListVM.isLoading {
                     prepareInitialPosition(proxy: proxy, messages: displayedHistoryMessages)
                 }
-                if atBottomBox.value {
+                if runtime.atBottomBox.value {
                     scrollTick &+= 1
                 }
             }
             .onDisappear {
-                scrollCoordinator.cancelPendingTasks()
+                runtime.scrollCoordinator.cancelPendingTasks()
             }
         }
     }
@@ -177,6 +181,10 @@ struct ListV1View: View {
         guard !isInitialPositionReady, !isPreparingInitialPosition else { return }
         let conversationID = selectedConversationID
         isPreparingInitialPosition = true
+        // 先把成员取到局部常量：闭包持有的就是同一批实例，
+        // 不随视图重建而变（视图是 struct，被捕获的是副本）。
+        let scrollCoordinator = runtime.scrollCoordinator
+        let bottomScrollController = runtime.bottomScrollController
         Task { @MainActor in
             let ready = await scrollCoordinator.prepareInitialBottom(
                 proxy: proxy,
@@ -213,7 +221,7 @@ struct ListV1View: View {
                     turnVM: messageListVM.agentTurnVM(for: item),
                     onDynamicContentChange: {
                         guard isInitialPositionReady,
-                              atBottomBox.value,
+                              runtime.atBottomBox.value,
                               !usesPostSendPositioning else { return }
                         scrollTick &+= 1
                     }
@@ -295,7 +303,7 @@ struct ListV1View: View {
 
     private func loadEarlier(proxy: ScrollViewProxy) async {
         guard let anchorID = await messageListVM.loadEarlier() else { return }
-        await scrollCoordinator.pinToAnchor(proxy: proxy, anchorID: anchorID)
+        await runtime.scrollCoordinator.pinToAnchor(proxy: proxy, anchorID: anchorID)
     }
 
     // MARK: - Post-send positioning
