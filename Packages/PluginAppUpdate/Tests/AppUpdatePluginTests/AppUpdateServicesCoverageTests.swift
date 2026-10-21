@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import KitTestIsolation
 import ProviderAppUpdate
 import ProviderNetwork
 import ProviderStorage
@@ -93,17 +94,28 @@ struct AppUpdateRuntimeTests {
         #expect(AppUpdateRuntime.settingsDirectory() == directory)
     }
 
-    @Test("重置后回到默认回退目录")
-    func resetRestoresFallbackDirectory() {
+    @Test("重置后清空注入目录，不再回退到真实数据目录")
+    func resetClearsInjectedDirectory() {
         let directory = AppUpdateTestDoubles.makeTemporaryDirectory("runtime-reset")
         AppUpdateRuntime.configure(settingsDirectory: directory)
         AppUpdateRuntime.reset()
+        defer { AppUpdateRuntime.reset() }
 
-        #expect(AppUpdateRuntime.settingsDirectory() != directory)
-        #expect(
-            AppUpdateRuntime.settingsDirectory().lastPathComponent
-                == "com.coffic.lumi.plugin.app-update"
-        )
+        #expect(AppUpdateRuntime.injectedSettingsDirectory == nil)
+
+        // 重置之后不得再回退到本机真实数据目录：测试进程里这条路径必须被拒绝。
+        switch IsolatedDirectoryGuard.resolve(
+            injected: AppUpdateRuntime.injectedSettingsDirectory,
+            owner: "AppUpdateRuntime",
+            accessor: "settingsDirectory()",
+            fallback: { URL(fileURLWithPath: "/tmp/app-update-fallback", isDirectory: true) }
+        ) {
+        case .resolved:
+            Issue.record("测试进程下未注入目录时不应回退到真实数据目录")
+        case let .refused(reason):
+            #expect(reason.contains("AppUpdateRuntime"))
+            #expect(reason.contains("settingsDirectory()"))
+        }
     }
 }
 
