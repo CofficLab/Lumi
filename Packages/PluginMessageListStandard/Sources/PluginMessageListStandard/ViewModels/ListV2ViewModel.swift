@@ -366,9 +366,12 @@ final class ListV2ViewModel: ObservableObject {
                     return $0.createdAt < $1.createdAt
                 }
             }
-            if next.count > pagination.maxRetainedCount {
-                next.removeFirst(next.count - pagination.maxRetainedCount)
-            }
+            // Important: 这里**不**按 `maxRetainedCount` 裁剪窗口头部。
+            //
+            // 裁掉的是**最旧**的消息 —— 用户可能刚翻到那里看历史，新消息一到
+            // 它们就从窗口里消失了。窗口长度由另外两条路径守住：
+            // 尾部刷新（`refreshTail` 用最近一页替换窗口尾部，长度保持不变）
+            // 与向上翻页时的窗口回收（`evictTailIfNeeded`）。
             persistedMessages = next
         case let .persisted(_, conversationID),
              let .updated(conversationID: conversationID),
