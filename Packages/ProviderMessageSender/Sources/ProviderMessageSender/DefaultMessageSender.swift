@@ -195,6 +195,25 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
             content,
             imageAttachments: imageAttachments,
             fileAttachments: fileAttachments,
+            collapsedBlocks: [],
+            conversationID: conversationID,
+            metadata: nil
+        )
+    }
+
+    @discardableResult
+    public func commitUserMessage(
+        _ content: String,
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
+        conversationID: UUID?
+    ) throws -> MessageSendCommit? {
+        try commitUserMessage(
+            content,
+            imageAttachments: imageAttachments,
+            fileAttachments: fileAttachments,
+            collapsedBlocks: collapsedBlocks,
             conversationID: conversationID,
             metadata: nil
         )
@@ -204,6 +223,22 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         _ content: String,
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
+        conversationID: UUID?
+    ) async throws -> MessageSendCommit? {
+        try await commitUserMessageInBackground(
+            content,
+            imageAttachments: imageAttachments,
+            fileAttachments: fileAttachments,
+            collapsedBlocks: [],
+            conversationID: conversationID
+        )
+    }
+
+    public func commitUserMessageInBackground(
+        _ content: String,
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
         conversationID: UUID?
     ) async throws -> MessageSendCommit? {
         // Resolve the target before the detached metadata work. The user may
@@ -220,6 +255,7 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
             content,
             imageAttachments: imageAttachments,
             fileAttachments: fileAttachments,
+            collapsedBlocks: collapsedBlocks,
             conversationID: targetID,
             metadata: metadata,
             // Preserve the existing behavior for callers that explicitly
@@ -244,6 +280,7 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         _ content: String,
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
         conversationID: UUID?,
         metadata: [String: String]?,
         selectTarget: Bool = true
@@ -257,6 +294,10 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
             return nil
         }
 
+        // 正文被 trim 后，折叠块区间必须跟着平移并重新归一化：
+        // 区间以未 trim 的文本为基准，不处理的话首行 chip 会整体错位。
+        let resolvedBlocks = Self.resolvedCollapsedBlocks(collapsedBlocks, content: content, trimmed: trimmed)
+
         let targetID = try resolveTargetConversationID(conversationID)
         // 新建会话必须成为当前时间线，否则消息落进不可见会话。
         if selectTarget, conversations.selectedConversationID != targetID {
@@ -269,7 +310,8 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
                 conversationID: targetID,
                 content: trimmed,
                 imageAttachments: imageAttachments,
-                fileAttachments: fileAttachments
+                fileAttachments: fileAttachments,
+                collapsedBlocks: resolvedBlocks
             ))
             notify(.pendingMessagesChanged(conversationID: targetID))
             clearSentAttachments(imageAttachments, fileAttachments)
@@ -280,10 +322,14 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         }
 
         // 附件编码进 metadata（图片 + 文件并行）。
-        let messageMetadata = metadata ?? Self.encodeAttachmentMetadata(
+        var messageMetadata = metadata ?? Self.encodeAttachmentMetadata(
             imageAttachments: imageAttachments,
             fileAttachments: fileAttachments
         )
+        // 折叠块区间同样进 metadata，渲染层据此还原 chip。
+        messageMetadata.merge(
+            CollapsedContentBlockMetadata.encodeCollapsedBlocks(resolvedBlocks)
+        ) { _, new in new }
 
         let userMessage = Message(
             conversationID: targetID,
@@ -310,6 +356,24 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         metadata.merge(UserAttachmentMetadata.encodeImageAttachments(imageAttachments)) { _, new in new }
         metadata.merge(UserAttachmentMetadata.encodeFileAttachments(fileAttachments)) { _, new in new }
         return metadata
+    }
+
+    /// 把折叠块区间从「未 trim 的正文」换算到「trim 后的正文」。
+    ///
+    /// 输入框的区间以编辑器里的完整文本为基准，而落库正文会 trim 掉首尾空白。
+    /// 两者的坐标系不一致，因此这里先按裁掉的空白量平移，再按正文长度归一化，
+    /// 保证落库的区间一定落在正文范围内。
+    private nonisolated static func resolvedCollapsedBlocks(
+        _ blocks: [CollapsedContentBlock],
+        content: String,
+        trimmed: String
+    ) -> [CollapsedContentBlock] {
+        guard !blocks.isEmpty else { return [] }
+        let rebased = CollapsedContentBlockMetadata.rebased(
+            blocks,
+            droppingLeadingWhitespaceOf: content
+        )
+        return CollapsedContentBlockMetadata.normalized(rebased, contentLength: trimmed.count)
     }
 
     public func startTurn(for commit: MessageSendCommit) async {
@@ -508,6 +572,11 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         var metadata: [String: String] = [:]
         metadata.merge(UserAttachmentMetadata.encodeImageAttachments(next.imageAttachments)) { _, new in new }
         metadata.merge(UserAttachmentMetadata.encodeFileAttachments(next.fileAttachments)) { _, new in new }
+        // 队列条目自带折叠块，回放时必须原样带回，否则排队期间折叠的内容
+        // 会在真正发出时退化成一大段文字。
+        metadata.merge(
+            CollapsedContentBlockMetadata.encodeCollapsedBlocks(next.collapsedBlocks)
+        ) { _, new in new }
         let userMessage = Message(
             conversationID: conversationID,
             role: .user,

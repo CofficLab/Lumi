@@ -60,6 +60,7 @@ struct ComposerView: View {
                 }
             },
             onBlockInserted: { id in viewModel.consumePendingBlock(id: id) },
+            onCollapsedBlocksChanged: { blocks in viewModel.updateCollapsedBlocks(blocks) },
             isFocused: focusedBinding,
             cursorPosition: cursorBinding,
             isImageDragHovering: .constant(false),
