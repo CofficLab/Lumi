@@ -53,17 +53,17 @@ struct IsolatedUserDefaultsTests {
     @Test("不影响 UserDefaults.standard")
     func doesNotTouchStandardDefaults() {
         let key = "com.coffic.lumi.test.isolation-probe"
+        // - Important: 这里**只读** `UserDefaults.standard`，绝不写它。
+        //   隔离实例用的是另一个 suite（物理上不同的 domain），写入不会传播到
+        //   standard；所以这里无需任何「写回原值」的清理动作。
         let original = UserDefaults.standard.string(forKey: key)
-        defer {
-            UserDefaults.standard.removeObject(forKey: key)
-            if let original { UserDefaults.standard.set(original, forKey: key) }
-        }
 
         let isolated = IsolatedUserDefaults.make(prefix: "standard-probe")
         defer { isolated.reset() }
         isolated.set("isolated-value", forKey: key)
 
         #expect(UserDefaults.standard.string(forKey: key) == original)
+        #expect(isolated.string(forKey: key) == "isolated-value")
     }
 
     @Test("不同实例之间互不可见")
