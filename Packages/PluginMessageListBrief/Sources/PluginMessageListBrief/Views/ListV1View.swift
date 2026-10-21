@@ -34,8 +34,14 @@ struct ListV1View: View {
     /// 发送新消息后，临时把最新回合定位在视口上方约四分之一处。
     @State private var usesPostSendPositioning = false
     @State private var viewportHeight: CGFloat = 0
-    @State private var isInitialPositionReady = false
-    @State private var isPreparingInitialPosition = false
+
+    /// 首屏定位的就绪编排（含超时兜底），见 InitialPositionGate。
+    ///
+    /// - Important: 必须是 `@StateObject`，不能用 `let`。gate 是引用类型且
+    ///   有生命周期；`let` 会在 View 每次 init 时新建实例，`isReady` 恒为
+    ///   false，遮罩「正在加载消息…」将永久不消失。`@StateObject` 同时提供
+    ///   跨重建的实例同一性与 `ObservableObject` 变更通知。
+    @StateObject private var initialPositionGate = InitialPositionGate()
 
     init(
         services: MessageListServices,
@@ -51,9 +57,9 @@ struct ListV1View: View {
         ZStack {
             messageScrollView
                 .id(selectedConversationID)
-                .opacity(isInitialPositionReady ? 1 : 0)
-                .allowsHitTesting(isInitialPositionReady)
-            if messageListVM.isLoading || !isInitialPositionReady {
+                .opacity(initialPositionGate.isReady ? 1 : 0)
+                .allowsHitTesting(initialPositionGate.isReady)
+            if messageListVM.isLoading || !initialPositionGate.isReady {
                 MessageLoadingView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(theme.surface.opacity(0.6))
@@ -61,8 +67,7 @@ struct ListV1View: View {
         }
         .task {
             runtime.atBottomBox.value = true
-            isInitialPositionReady = false
-            isPreparingInitialPosition = false
+            initialPositionGate.resetForLoadingStart()
             await messageListVM.activateCurrentConversation()
         }
     }
@@ -92,7 +97,7 @@ struct ListV1View: View {
                     .accessibilityHidden(true)
                     .plainMessageListRow(insets: EdgeInsets())
                     .onChange(of: scrollTick) { _, _ in
-                        guard isInitialPositionReady else { return }
+                        guard initialPositionGate.isReady else { return }
                         let conversationID = selectedConversationID
                         runtime.scrollCoordinator.scheduleScrollToBottomAfterLayout(
                             proxy: proxy,
@@ -125,7 +130,7 @@ struct ListV1View: View {
                 if runtime.atBottomBox.value, !usesPostSendPositioning {
                     scrollTick &+= 1
                 }
-                if !isInitialPositionReady, !messageListVM.isLoading {
+                if !initialPositionGate.isReady, !messageListVM.isLoading {
                     prepareInitialPosition(proxy: proxy, messages: displayedHistoryMessages)
                 }
             }
@@ -136,7 +141,7 @@ struct ListV1View: View {
                 handleTurnLifecycleChange(items)
             }
             .onChange(of: stateVM.activity) { _, _ in
-                guard isInitialPositionReady,
+                guard initialPositionGate.isReady,
                       runtime.atBottomBox.value,
                       !usesPostSendPositioning else { return }
                 scrollTick &+= 1
@@ -144,14 +149,12 @@ struct ListV1View: View {
             .onChange(of: selectedConversationID) { _, _ in
                 usesPostSendPositioning = false
                 runtime.scrollCoordinator.cancelPendingTasks()
-                isInitialPositionReady = false
-                isPreparingInitialPosition = false
+                initialPositionGate.resetForConversationSwitch()
             }
             .onChange(of: messageListVM.isLoading) { _, isLoading in
                 if isLoading {
                     runtime.scrollCoordinator.cancelPendingTasks()
-                    isInitialPositionReady = false
-                    isPreparingInitialPosition = false
+                    initialPositionGate.resetForLoadingStart()
                 } else {
                     prepareInitialPosition(proxy: proxy, messages: displayedHistoryMessages)
                 }
@@ -178,27 +181,29 @@ struct ListV1View: View {
         proxy: ScrollViewProxy,
         messages: [ProviderMessage.Message]
     ) {
-        guard !isInitialPositionReady, !isPreparingInitialPosition else { return }
         let conversationID = selectedConversationID
-        isPreparingInitialPosition = true
         // 先把成员取到局部常量：闭包持有的就是同一批实例，
         // 不随视图重建而变（视图是 struct，被捕获的是副本）。
         let scrollCoordinator = runtime.scrollCoordinator
         let bottomScrollController = runtime.bottomScrollController
-        Task { @MainActor in
-            let ready = await scrollCoordinator.prepareInitialBottom(
-                proxy: proxy,
-                messages: messages,
-                controller: bottomScrollController,
-                condition: {
-                    conversationID == selectedConversationID && !messageListVM.isLoading
-                }
-            )
-            isPreparingInitialPosition = false
-            if ready, conversationID == selectedConversationID, !messageListVM.isLoading {
-                isInitialPositionReady = true
+        let services = services
+        initialPositionGate.request(
+            conversationID: conversationID,
+            settle: { [scrollCoordinator, bottomScrollController] in
+                await scrollCoordinator.prepareInitialBottom(
+                    proxy: proxy,
+                    messages: messages,
+                    controller: bottomScrollController,
+                    condition: { true }
+                )
+            },
+            stillRelevant: { [messageListVM, services] in
+                // 期间会话被换掉、或又进入加载 → 本轮结果作废。
+                // gate 内部另有 pendingConversationID 校验，这里补上
+                // 真实选择状态与加载状态，双保险避免旧结果放行遮罩。
+                conversationID == services.selectedConversationID && !messageListVM.isLoading
             }
-        }
+        )
     }
 
     @ViewBuilder
@@ -220,7 +225,7 @@ struct ListV1View: View {
                     isDeveloperModeEnabled: messageListVM.isDeveloperModeEnabled,
                     turnVM: messageListVM.agentTurnVM(for: item),
                     onDynamicContentChange: {
-                        guard isInitialPositionReady,
+                        guard initialPositionGate.isReady,
                               runtime.atBottomBox.value,
                               !usesPostSendPositioning else { return }
                         scrollTick &+= 1
