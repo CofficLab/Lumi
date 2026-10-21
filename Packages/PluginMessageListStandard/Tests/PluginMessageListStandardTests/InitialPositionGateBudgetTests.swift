@@ -59,6 +59,8 @@ private func blockMainActor(seconds: Double) -> Double {
 @MainActor
 @Test("首屏遮罩：兜底预算是绝对期限，主线程被占用时不得再叠加一个完整预算")
 func gateBudgetIsAbsoluteNotAdditiveUnderMainActorContention() async {
+await MainActorTimingGate.acquire()
+defer { MainActorTimingGate.release() }
     // 预算远小于阻塞时长：阻塞结束时预算必然已经耗尽。
     let budget: UInt64 = 500_000_000   // 500ms
     let budgetSeconds = Double(budget) / 1_000_000_000

@@ -5,6 +5,45 @@ import ProviderToolManager
 import Testing
 @testable import PluginMessageListStandard
 
+/// 串行化「会占用主线程的墙钟测量」。
+///
+/// `InitialPositionGateBudgetTests` 里的预算语义用例会**故意占住主线程**
+/// （`Thread.sleep`）来制造 MainActor 竞争；而 `InitialPositionGateTimingTests`
+/// 的放行耗时断言对 MainActor 竞争极其敏感 —— 两者并发时，后者会读到被顶高
+/// 的延迟，误报成「收敛不再立即放行」。
+///
+/// Swift Testing 的 `.serialized` 只在 suite 内部串行，无法隔离不同 suite，
+/// 因此这里加一把显式门闩（与 `PluginAppUpdate` 的 `AppUpdateNotificationGate`
+/// 同构）。
+///
+/// - Important: 参与墙钟测量的用例必须**成对**调用 `acquire()` / `release()`；
+///   建议用 `defer { release() }` 保证异常路径也会释放。
+@MainActor
+enum MainActorTimingGate {
+    private static var isHeld = false
+    private static var waiters: [CheckedContinuation<Void, Never>] = []
+
+    /// 获取门闩。调用方必须配对调用 `release()`。
+    static func acquire() async {
+        if !isHeld {
+            isHeld = true
+            return
+        }
+        await withCheckedContinuation { continuation in
+            waiters.append(continuation)
+        }
+    }
+
+    /// 释放门闩，交给下一个等待者。
+    static func release() {
+        if waiters.isEmpty {
+            isHeld = false
+        } else {
+            waiters.removeFirst().resume()
+        }
+    }
+}
+
 /// 跨测试文件共享的消息工厂。
 func makeMessage(
     id: UUID = UUID(),
