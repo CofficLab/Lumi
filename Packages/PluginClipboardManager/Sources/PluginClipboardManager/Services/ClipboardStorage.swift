@@ -13,10 +13,15 @@ public actor ClipboardStorage: SuperLog {
 
     public static let shared = ClipboardStorage()
 
-    private let historyManager = ClipboardHistoryManager.shared
+    private let historyManager: ClipboardHistoryManager
     private let maxRecentItems = 500
 
-    private init() {
+    /// 注入历史管理器。
+    ///
+    /// 生产环境使用共享单例；单元测试注入指向临时目录的实例，
+    /// 避免污染用户的真实剪贴板数据库。
+    init(historyManager: ClipboardHistoryManager = ClipboardHistoryManager.shared) {
+        self.historyManager = historyManager
         // 启动时清理过期数据
         Task {
             await historyManager.cleanup()
