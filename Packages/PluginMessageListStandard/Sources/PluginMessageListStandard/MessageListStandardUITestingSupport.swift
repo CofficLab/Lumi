@@ -34,11 +34,23 @@ public enum MessageListStandardUITestingSupport {
     public static let smallConversationTitle = "Switch Target Small"
     /// 大会话标题（几何持续增长，最易挂住遮罩）。
     public static let largeConversationTitle = "Switch Target Large"
+    /// 超大会话标题（大数据量场景专用，见 `LumiMessageListScaleUITests`）。
+    ///
+    /// 与 `largeConversationTitle` 的区别：large 只有 40 轮，用来压「几何收敛」；
+    /// 本会话体量大得多，用来压「数据量」——翻页、窗口裁剪、消息缺口等
+    /// 只在消息数远超分页窗口时才会暴露的缺陷。
+    public static let hugeConversationTitle = "Scale Target Huge"
 
     private static let baseDate = Date(timeIntervalSince1970: 1_700_000_000)
 
     /// 大会话的 turn 数。足够让 List 懒加载多帧，逼近收敛上限。
     private static let largeTurnCount = 40
+    /// 超大会话的 turn 数。
+    ///
+    /// 600 轮 = 1200 条消息，是 `pageSize(40)` 的 30 倍、`maxRetainedCount(300)`
+    /// 的 4 倍。窗口上限与「永久缺口」缺陷都要到这个量级才会显形：
+    /// 翻 10 页（400 条）即触发裁剪，缺口随即出现。
+    private static let hugeTurnCount = 600
 
     static var isEnabled: Bool {
         ProcessInfo.processInfo.arguments.contains(launchArgument)
@@ -88,13 +100,22 @@ public enum MessageListStandardUITestingSupport {
             providerID: nil,
             modelName: nil
         ) else { return }
+        guard let huge = try? conversations.createConversation(
+            title: hugeConversationTitle,
+            projectPath: nil,
+            providerID: nil,
+            modelName: nil
+        ) else { return }
 
         seedSmall(conversations: conversations, messages: messages, conversationID: small)
         seedLarge(conversations: conversations, messages: messages, conversationID: large)
+        seedHuge(conversations: conversations, messages: messages, conversationID: huge)
 
         // 选中大会话：它是更难收敛的一侧，作为 UI 测试的起始态。
         conversations.selectConversation(id: large)
         conversations.setVerbosity(.standard, for: large)
+        // 超大会话同样按 standard 详细程度，否则 V2 列表槽位不会激活。
+        conversations.setVerbosity(.standard, for: huge)
     }
 
     /// 小会话：3 轮，几何很快稳定。
@@ -152,6 +173,43 @@ public enum MessageListStandardUITestingSupport {
                     conversationID: conversationID,
                     role: .assistant,
                     content: largeAssistantBody(index: index),
+                    createdAt: baseDate.addingTimeInterval(offset + 2),
+                    turnID: turnID
+                ),
+                to: conversationID
+            )
+        }
+    }
+
+    /// 超大会话：600 轮（1200 条消息），用于压「大数据量」路径。
+    ///
+    /// 正文刻意比 `largeAssistantBody` 轻（不含代码块）：这个会话的目的是
+    /// 让**消息条数**压过窗口上限（`maxRetainedCount` = 300），而不是让
+    /// 单行高度压几何收敛。代码块会让每条消息都撑高多行，1200 条下来
+    /// 文档高度过大，反而把测试变成「几何压力测试」，掩盖了数据量这条主线。
+    private static func seedHuge(
+        conversations: any ConversationManaging,
+        messages: any MessageManaging,
+        conversationID: UUID
+    ) {
+        for index in 0..<hugeTurnCount {
+            let turnID = UUID()
+            let offset = Double(index) * 10
+            messages.insertMessage(
+                message(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: "超大会话问题 \(index + 1)",
+                    createdAt: baseDate.addingTimeInterval(offset),
+                    turnID: turnID
+                ),
+                to: conversationID
+            )
+            messages.insertMessage(
+                message(
+                    conversationID: conversationID,
+                    role: .assistant,
+                    content: "超大会话回答 \(index + 1)",
                     createdAt: baseDate.addingTimeInterval(offset + 2),
                     turnID: turnID
                 ),

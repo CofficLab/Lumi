@@ -227,6 +227,7 @@ struct ListV2View: View, SuperLog {
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity)
             .plainMessageListRow(insets: EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+            .accessibilityIdentifier(ListV2Accessibility.loadEarlierButton)
         }
 
         ForEach(viewModel.historyRows) { message in
@@ -286,4 +287,17 @@ struct ListV2View: View, SuperLog {
 private struct HistoryBoundary: Equatable {
     let first: UUID?
     let last: UUID?
+}
+
+/// V2 列表的可访问性标识符。
+///
+/// - Important: UI 测试 target 无法 import 插件模块，因此常量在此定义、
+///   在 UI 测试侧复述。改动必须两边同步。
+enum ListV2Accessibility {
+    /// 顶部「加载更早消息」按钮。
+    ///
+    /// 之所以用标识符而不是文案定位：按钮固定在 `List` 首行，首屏停在底部时
+    /// 它处于视口外（AX 帧为 `0×0`），文案查询会命中消息正文里的同名文本，
+    /// 点击落在错误的元素上。标识符则唯一指向这一个按钮。
+    static let loadEarlierButton = "lumi.message-list.v2.load-earlier"
 }
