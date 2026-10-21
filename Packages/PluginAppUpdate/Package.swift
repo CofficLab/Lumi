@@ -21,6 +21,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.5.0"),
+        .package(path: "../KitTestSupport"),
     ],
     targets: [
         .target(
@@ -34,6 +35,7 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "Sparkle", package: "Sparkle"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             path: "Sources/PluginAppUpdate",
             resources: [
@@ -42,7 +44,11 @@ let package = Package(
         ),
         .testTarget(
             name: "AppUpdatePluginTests",
-            dependencies: ["AppUpdatePlugin"],
+            dependencies: [
+                "AppUpdatePlugin",
+                .product(name: "KitTestSupport", package: "KitTestSupport"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+            ],
             path: "Tests/AppUpdatePluginTests"
         )
     ]

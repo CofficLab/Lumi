@@ -1,26 +1,32 @@
 import Foundation
+import KitTestIsolation
 
 /// App Update 插件的运行时配置（KernelCore 体系）。
 ///
 /// 存储目录由主插件在 `onBoot` 中从 `StorageProviding` 注入。
 @MainActor
 enum AppUpdateRuntime {
-    /// 插件数据目录。存根回退路径仅用于插件尚未 boot 的极早期访问，
-    /// 形状与内核 `StorageProviding` 的版本化数据根保持一致。
-    nonisolated(unsafe) static var settingsDirectoryProvider: () -> URL = {
-        fallbackDataRootDirectory
-            .appendingPathComponent("com.coffic.lumi.plugin.app-update", isDirectory: true)
-    }
+    /// `onBoot` 注入的插件数据目录。未注入时为 `nil`。
+    nonisolated(unsafe) static var injectedSettingsDirectory: URL?
 
     nonisolated static func settingsDirectory() -> URL {
-        settingsDirectoryProvider()
+        IsolatedDirectoryGuard.directory(
+            injected: injectedSettingsDirectory,
+            owner: "AppUpdateRuntime",
+            accessor: "settingsDirectory()",
+            fallback: { productionFallbackDirectory }
+        )
     }
 
     nonisolated static func configure(settingsDirectory: URL) {
-        settingsDirectoryProvider = { settingsDirectory }
+        injectedSettingsDirectory = settingsDirectory
     }
 
-    private nonisolated static let fallbackDataRootDirectory: URL = {
+    /// 生产环境兜底目录。
+    ///
+    /// - Note: 保留兜底是为了「插件尚未 boot 的极早期访问」这类场景，
+    ///   但绝不能让它在测试里生效——那会让测试读写开发者本机的真实数据目录。
+    private nonisolated static let productionFallbackDirectory: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         #if DEBUG
@@ -34,9 +40,6 @@ enum AppUpdateRuntime {
     }()
 
     static func reset() {
-        settingsDirectoryProvider = {
-            fallbackDataRootDirectory
-                .appendingPathComponent("com.coffic.lumi.plugin.app-update", isDirectory: true)
-        }
+        injectedSettingsDirectory = nil
     }
 }
