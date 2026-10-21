@@ -1,0 +1,142 @@
+{
+  "createdAt" : "2026-10-21T07:13:16Z",
+  "device" : {
+    "height" : 800,
+    "kind" : "custom",
+    "scale" : 2,
+    "width" : 1280
+  },
+  "id" : "lumi-implicit-onboarding",
+  "schemaVersion" : 1,
+  "screens" : [
+    {
+      "createdAt" : "2026-10-21T07:14:22Z",
+      "hotspots" : [
+        {
+          "targetScreenID" : "01-first-launch"
+        },
+        {
+          "targetScreenID" : "02-first-message-rail-appears"
+        },
+        {
+          "targetScreenID" : "03-project-opened"
+        },
+        {
+          "targetScreenID" : "04-plugin-discovery"
+        },
+        {
+          "targetScreenID" : "05-mature-state"
+        }
+      ],
+      "htmlFileName" : "index.html",
+      "id" : "01-first-launch",
+      "order" : 0,
+      "title" : "全新安装首启",
+      "updatedAt" : "2026-10-21T07:55:53Z"
+    },
+    {
+      "createdAt" : "2026-10-21T07:19:12Z",
+      "hotspots" : [
+        {
+          "targetScreenID" : "01-first-launch"
+        },
+        {
+          "targetScreenID" : "02-first-message-rail-appears"
+        },
+        {
+          "targetScreenID" : "03-project-opened"
+        },
+        {
+          "targetScreenID" : "04-plugin-discovery"
+        },
+        {
+          "targetScreenID" : "05-mature-state"
+        }
+      ],
+      "htmlFileName" : "index.html",
+      "id" : "02-first-message-rail-appears",
+      "order" : 1,
+      "title" : "首条消息后对话列表出现",
+      "updatedAt" : "2026-10-21T07:57:35Z"
+    },
+    {
+      "createdAt" : "2026-10-21T07:20:49Z",
+      "hotspots" : [
+        {
+          "targetScreenID" : "01-first-launch"
+        },
+        {
+          "targetScreenID" : "02-first-message-rail-appears"
+        },
+        {
+          "targetScreenID" : "03-project-opened"
+        },
+        {
+          "targetScreenID" : "04-plugin-discovery"
+        },
+        {
+          "targetScreenID" : "05-mature-state"
+        }
+      ],
+      "htmlFileName" : "index.html",
+      "id" : "03-project-opened",
+      "order" : 2,
+      "title" : "打开项目后能力扩展",
+      "updatedAt" : "2026-10-21T07:59:00Z"
+    },
+    {
+      "createdAt" : "2026-10-21T07:22:55Z",
+      "hotspots" : [
+        {
+          "targetScreenID" : "01-first-launch"
+        },
+        {
+          "targetScreenID" : "02-first-message-rail-appears"
+        },
+        {
+          "targetScreenID" : "03-project-opened"
+        },
+        {
+          "targetScreenID" : "04-plugin-discovery"
+        },
+        {
+          "targetScreenID" : "05-mature-state"
+        }
+      ],
+      "htmlFileName" : "index.html",
+      "id" : "04-plugin-discovery",
+      "order" : 3,
+      "title" : "插件能力被发现",
+      "updatedAt" : "2026-10-21T08:22:14Z"
+    },
+    {
+      "createdAt" : "2026-10-21T07:25:22Z",
+      "hotspots" : [
+        {
+          "targetScreenID" : "01-first-launch"
+        },
+        {
+          "targetScreenID" : "02-first-message-rail-appears"
+        },
+        {
+          "targetScreenID" : "03-project-opened"
+        },
+        {
+          "targetScreenID" : "04-plugin-discovery"
+        },
+        {
+          "targetScreenID" : "05-mature-state"
+        }
+      ],
+      "htmlFileName" : "index.html",
+      "id" : "05-mature-state",
+      "order" : 4,
+      "title" : "成熟期：引导痕迹消失",
+      "updatedAt" : "2026-10-21T08:02:02Z"
+    }
+  ],
+  "startScreenID" : "01-first-launch",
+  "style" : "hiFi",
+  "title" : "Lumi 隐式引导原型（实现级）",
+  "updatedAt" : "2026-10-21T08:22:14Z"
+}
