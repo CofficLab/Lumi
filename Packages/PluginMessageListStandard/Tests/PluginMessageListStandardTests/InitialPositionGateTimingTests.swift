@@ -75,6 +75,8 @@ private let immediateReleaseUpperBound: Double = 750
 @MainActor
 @Test("首屏遮罩：收敛成功时立即放行，不等满预算")
 func gateReleasesImmediatelyWhenSettleSucceeds() async {
+await MainActorTimingGate.acquire()
+defer { MainActorTimingGate.release() }
     let measured = try! #require(
         await medianReadyLatencyMs {
             let gate = InitialPositionGate(budgetNanoseconds: 3_000_000_000)
@@ -94,6 +96,8 @@ func gateReleasesImmediatelyWhenSettleSucceeds() async {
 @MainActor
 @Test("首屏遮罩：收敛失败时立即放行，不等满预算")
 func gateReleasesImmediatelyWhenSettleFails() async {
+await MainActorTimingGate.acquire()
+defer { MainActorTimingGate.release() }
     let measured = try! #require(
         await medianReadyLatencyMs {
             let gate = InitialPositionGate(budgetNanoseconds: 3_000_000_000)
@@ -111,6 +115,8 @@ func gateReleasesImmediatelyWhenSettleFails() async {
 @MainActor
 @Test("首屏遮罩：成功与失败路径的放行耗时同量级（收敛结果未生效）")
 func gateTreatsSuccessAndFailureIdentically() async {
+await MainActorTimingGate.acquire()
+defer { MainActorTimingGate.release() }
     func medianLatency(settleResult: Bool) async -> Double? {
         await medianReadyLatencyMs {
             let gate = InitialPositionGate(budgetNanoseconds: 3_000_000_000)
@@ -147,6 +153,8 @@ func gateTreatsSuccessAndFailureIdentically() async {
 @MainActor
 @Test("首屏遮罩：收敛挂死时预算兜底仍在有限时间内放行")
 func gateStillReleasesWhenSettleHangs() async {
+await MainActorTimingGate.acquire()
+defer { MainActorTimingGate.release() }
     let budget: UInt64 = 400_000_000
     let latency = try! #require(
         await medianReadyLatencyMs {
@@ -180,6 +188,8 @@ func gateStillReleasesWhenSettleHangs() async {
 @MainActor
 @Test("首屏遮罩：旧轮次醒来不清掉新轮次的准备状态")
 func staleRoundDoesNotClearNewRoundPreparing() async {
+await MainActorTimingGate.acquire()
+defer { MainActorTimingGate.release() }
     let gate = InitialPositionGate(budgetNanoseconds: 300_000_000)
     let first = UUID()
     let second = UUID()
