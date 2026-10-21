@@ -137,20 +137,30 @@ func gateTreatsSuccessAndFailureIdentically() async {
 /// 收敛**永不返回**（几何永不收敛）时，预算兜底必须仍在有限时间内放行。
 ///
 /// 这是兜底存在的唯一理由，不能因为修好快速路径就把它一起删掉。
+///
+/// - Important: 同样取 **7 次采样的中位数**（`medianReadyLatencyMs`），
+///   而不是单次采样。兜底路径是「等满预算再放行」，单次采样把
+///   「机器当时忙」直接算进了延迟里：实测本用例在同批其它用例
+///   （尤其是大数据量用例）争抢 MainActor 时，单次采样会冲到 1154ms，
+///   越过 2× 预算的阈值而变红 —— 而兜底逻辑本身完全正常。
+///   这与本文件头部的既定策略一致：墙钟类断言一律取中位数。
 @MainActor
 @Test("首屏遮罩：收敛挂死时预算兜底仍在有限时间内放行")
 func gateStillReleasesWhenSettleHangs() async {
     let budget: UInt64 = 400_000_000
-    let gate = InitialPositionGate(budgetNanoseconds: budget)
-    gate.request(
-        conversationID: UUID(),
-        settle: {
-            while true { try? await Task.sleep(nanoseconds: 50_000_000) }
-        },
-        stillRelevant: { true }
+    let latency = try! #require(
+        await medianReadyLatencyMs {
+            let gate = InitialPositionGate(budgetNanoseconds: budget)
+            gate.request(
+                conversationID: UUID(),
+                settle: {
+                    while true { try? await Task.sleep(nanoseconds: 50_000_000) }
+                },
+                stillRelevant: { true }
+            )
+            return gate
+        }
     )
-
-    let latency = try! #require(await measureReadyLatencyMs(gate))
     #expect(latency >= Double(budget / 1_000_000) * 0.8, "兜底不应早于预算放行，实际 \(Int(latency))ms")
     #expect(latency < Double(budget / 1_000_000) * 2.0, "兜底严重超时，实际 \(Int(latency))ms")
 }
