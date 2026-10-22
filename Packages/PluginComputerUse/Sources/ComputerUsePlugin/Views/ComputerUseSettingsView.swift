@@ -37,7 +37,6 @@ struct ComputerUseSettingsView: View {
     private var permissionsSection: some View {
         AppSettingSection(
             title: pluginLocalization.string("System Permissions"),
-            footer: pluginLocalization.string("These permissions are required before Computer Use can operate."),
             titleAlignment: .leading
         ) {
             VStack(spacing: 0) {
@@ -84,7 +83,6 @@ struct ComputerUseSettingsView: View {
     private var applicationsSection: some View {
         AppSettingSection(
             title: pluginLocalization.string("Allowed Applications"),
-            footer: pluginLocalization.string("Select an application to manage its Computer Use access."),
             titleAlignment: .leading
         ) {
             HStack(spacing: 0) {
