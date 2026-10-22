@@ -128,6 +128,7 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
             var deleted: [String] = []
             var renamed: [String] = []
             var staged: [String] = []
+            var untracked: [String] = []
 
             for file in unstagedFiles {
                 switch file.changeType {
@@ -135,7 +136,7 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
                 case "A": added.append(file.file)
                 case "D": deleted.append(file.file)
                 case "R": renamed.append(file.file)
-                case "?": modified.append(file.file)
+                case "?": untracked.append(file.file)
                 default: modified.append(file.file)
                 }
             }
@@ -157,7 +158,8 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
                 added: added,
                 deleted: deleted,
                 renamed: renamed,
-                staged: staged
+                staged: staged,
+                untracked: untracked
             )
         }
     }
@@ -231,6 +233,24 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
                     count: Int,
                     skip: Int) async throws -> [GitCommitLog] {
         try await getLogWithSkip(path: path, count: count, skip: skip)
+    }
+
+    /// 实现 ``GitRepositoryReading/isRepository(atPath:)``。
+    ///
+    /// 转发给 ``isGitRepository(at:)``；`nil` 路径解析为当前工作目录。
+    /// 任何 libgit2 错误都按「非仓库」处理，契约层承诺不抛错。
+    public func isRepository(atPath path: String?) async -> Bool {
+        let resolved = Self.resolvePath(path)
+        return await isGitRepository(at: resolved)
+    }
+
+    /// 实现 ``GitRepositoryReading/commitChanges(atPath:hash:)``。
+    ///
+    /// 转发给 ``getCommitChangedFiles(path:hash:)`` 并把插件内部的
+    /// ``GitChangedFile`` 模型映射为契约层的 ``GitCommitChange``。
+    public func commitChanges(atPath path: String?, hash: String) async throws -> [GitCommitChange] {
+        let files = try await getCommitChangedFiles(path: path, hash: hash)
+        return files.map { GitCommitChange(path: $0.path, state: $0.changeType.toWorkingChangeState()) }
     }
 
     // MARK: - Log With Skip (for pagination)
@@ -580,6 +600,17 @@ extension GitChangeType {
         case "?", "UNTRACKED": return .untracked
         case "C", "COPIED": return .renamed
         default: return .modified
+        }
+    }
+
+    /// 映射到契约层 ``GitWorkingChangeState``。
+    public func toWorkingChangeState() -> GitWorkingChangeState {
+        switch self {
+        case .modified: return .modified
+        case .added: return .added
+        case .deleted: return .deleted
+        case .renamed: return .renamed
+        case .untracked: return .untracked
         }
     }
 }

@@ -39,6 +39,7 @@ import GitPlugin
 import PluginGitRepositoryWatch
 import PluginGitWorkspace
 import PluginGitToolbar
+import PluginGitChatToolbar
 import GoalTaskPlugin
 import PluginStorage
 import PluginToast
@@ -314,6 +315,7 @@ public struct DefaultPluginFactory: PluginFactory {
             GitRepositoryWatchPlugin(),
             GitWorkspacePlugin(),
             GitToolbarPlugin(),
+            GitChatToolbarPlugin(),
             GoalTaskPlugin(),
             NettoPlugin(),
             SkillPlugin(),
