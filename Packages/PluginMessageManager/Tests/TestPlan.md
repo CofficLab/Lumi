@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆盖 26 条用例。
+PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆盖 27 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 26
+测试文件: 4 个，用例总数: 27
 
 核心组件（源码目录）:
 - `Errors/`
@@ -31,7 +31,7 @@ PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆�
 - **MessageManager**（19 条）：由 `messageChangePublishesBeforePersistence`、`readYourWritesForAssistant`、`asyncSnapshotIncludesPendingMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageStore 会话查询索引**（2 条）：由 `storeCreatesConversationLookupIndex`、`conversationPageQueryPlanUsesIndex` 锁定——「按会话取消息」必须走 `(ZCONVERSATIONID, ZCREATEDAT)` 复合索引，不得退化成全表扫描。
 - **MessageStore 大数据量分页**（2 条）：由 `paginationStaysBoundedAtScale`、`hasEarlierIsBounded` 锁定——大数据量下分页查询耗时有界。
-- **MessageStore 日统计聚合**（3 条）：由 `dailyAggregationDoesNotRequireStoreLock`、`dailyAggregationMatchesRowByRowReference`、`dailyAggregationStaysBoundedAtScale` 锁定——日统计聚合只取「创建时间 + token 数」，不得物化整表、不得占用存储层写锁，且口径与逐条读取一致。
+- **MessageStore 日统计聚合**（4 条）：由 `dailyAggregationDoesNotRequireStoreLock`、`dailyAggregationMatchesRowByRowReference`、`dailyAggregationStaysBoundedAtScale` 锁定——日统计聚合只取「创建时间 + token 数」，不得物化整表、不得占用存储层写锁，且口径与逐条读取一致。
 
 ## 测试用例清单
 
@@ -63,27 +63,28 @@ PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆�
 | 24 | MessageStore 日统计聚合 | 日统计聚合不得占用存储层全局锁 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `dailyAggregationDoesNotRequireStoreLock` |
 | 25 | MessageStore 日统计聚合 | 日统计聚合口径必须与逐条读取一致 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `dailyAggregationMatchesRowByRowReference` |
 | 26 | MessageStore 日统计聚合 | 大数据量下日统计聚合必须保持有界 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `dailyAggregationStaysBoundedAtScale` |
+| 27 | MessageStore 日统计聚合 | 日统计聚合必须按 id 排除调用方指定的消息 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `dailyAggregateExcludesGivenIdentifiers` |
 
-> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
+- P0: 已覆盖 8 / 8
 - P1: 已覆盖 19 / 19
 - P2: 已覆盖 0 / 0
-- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
+- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
 - **P1**: 其余功能性用例（19 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 26 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
