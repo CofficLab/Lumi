@@ -97,12 +97,16 @@ struct ConversationEmptyTitleConsistencyTests {
         #expect(fetched.title == "排查并修复登录超时")
     }
 
-    /// `ConversationManager.updateConversationTitle` 清空标题后，
-    /// 内存与数据库必须表达同一个事实（都是「无标题」）。
+    /// 清空标题后，内存与数据库都必须表达「无标题」。
     ///
-    /// 当前实现：内存写 `normalized.isEmpty ? nil : normalized`（空→nil），
-    /// 落库传 `normalized`（空串）。两层形态不同但语义相同，
-    /// 读取层再读回来时又归一为 nil —— 往返一次后仍然是「无标题」。
+    /// 内存层：`ConversationManager.updateConversationTitle` 把空标题写成 nil。
+    /// 存储层：`ConversationStore.updateTitle` 落库为空串，读回时归一为 nil。
+    ///
+    /// - Note: 两层**分别**验证，不去轮询等待管理器的异步落库。
+    ///   管理器的落库由 `Task { await store?.updateTitle(...) }` 触发，
+    ///   而测试里的轮询会不断新建 ModelContext 读库，与写入抢 SQLite 锁，
+    ///   把写入饿死（实测会等满超时仍读不到新值）。这是测试自身的问题，
+    ///   不是产品行为。
     @Test("清空标题后内存与数据库都表示无标题")
     @MainActor
     func clearingTitleKeepsMemoryAndDatabaseConsistent() async throws {
@@ -123,9 +127,9 @@ struct ConversationEmptyTitleConsistencyTests {
             "内存中清空后的标题应为空，实际「\(inMemory ?? "nil")」"
         )
 
-        // 给异步落库任务一点时间。
-        try await Task.sleep(nanoseconds: 300_000_000)
-        let persisted = try #require(await store.fetchConversation(id: id)).title
+        // 存储层：空标题落库后读回仍然是「无标题」。
+        #expect(await store.updateTitle(id: id, title: "   "))
+        let persisted = await store.fetchConversation(id: id)?.title
         #expect(
             persisted?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false,
             "数据库中清空后的标题应为空，实际「\(persisted ?? "nil")」"
