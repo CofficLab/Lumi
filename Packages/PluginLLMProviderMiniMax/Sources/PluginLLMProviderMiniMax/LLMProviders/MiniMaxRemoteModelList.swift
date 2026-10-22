@@ -45,6 +45,11 @@ struct MiniMaxRemoteModelListLoader: Sendable {
     static let endpoint = URL(string: "https://api.minimaxi.com/v1/models")!
 
     /// 解析 `/v1/models` 响应为模型列表。
+    ///
+    /// 上游只返回 `id / object / created / owned_by`，**不含**上下文窗口与
+    /// 视觉能力（实测国内站与 Anthropic 兼容端点均如此）。因此解析时按模型
+    /// 家族补全这两项，让远程新增的模型不会退化成 `LLMContextBudget` 的
+    /// 32K 兜底预算。
     static func parse(data: Data) throws -> [LLMModelInfo] {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw VendorAPIError.decodingFailed("JSON 解析失败")
@@ -55,8 +60,8 @@ struct MiniMaxRemoteModelListLoader: Sendable {
 
         return entries.compactMap { entry in
             guard let id = entry["id"] as? String, !id.isEmpty else { return nil }
-            // 上游不返回上下文窗口与能力信息，交由静态清单补齐。
-            return LLMModelInfo(id: id)
+            // 上游不返回上下文窗口与能力信息，按家族规则补齐。
+            return MiniMaxModelFamily.enriched(id)
         }
     }
 
@@ -64,11 +69,14 @@ struct MiniMaxRemoteModelListLoader: Sendable {
 
     /// 合并静态清单与远程模型。
     ///
-    /// 与 CommandCode 的策略**相反**：远程响应只有模型 id，没有
-    /// `contextWindowSize` / `supportsVision`，若让远程覆盖同 id 元数据，
-    /// 刷一次就会把这些能力信息清空。因此：
-    /// - 同 id 保留静态元数据（远程不参与覆盖）；
+    /// 与 CommandCode 的策略**相反**：同 id 以静态清单为准，远程不参与覆盖。
+    /// 静态清单是人工核对的权威值（上下文窗口、视觉能力），远程只是模型
+    /// **存在性**的来源；即使远程按家族补全了元数据，也不覆盖静态值，避免
+    /// 家族规则变更时静默改写已核对的清单。
+    ///
     /// - 远程新增的 id 追加在静态清单之后；
+    /// - 远程新增模型若尚未带元数据，在此按家族补全——`merge` 是唯一入口，
+    ///   不能依赖调用方一定走 `parse`；
     /// - 远程返回为空时等价于返回静态清单。
     static func merge(base: [LLMModelInfo], remote: [LLMModelInfo]) -> [LLMModelInfo] {
         guard !remote.isEmpty else { return base }
@@ -78,9 +86,25 @@ struct MiniMaxRemoteModelListLoader: Sendable {
         var merged = base
 
         for model in remote where !seen.contains(model.id) {
-            merged.append(model)
+            merged.append(Self.enriching(model))
             seen.insert(model.id)
         }
         return merged
+    }
+
+    /// 为缺失元数据的模型补上家族推断值。
+    ///
+    /// 已有上下文窗口时保持原值（远程解析已补全过），仅在缺失时按家族推断。
+    private static func enriching(_ model: LLMModelInfo) -> LLMModelInfo {
+        guard model.contextWindowSize == nil else { return model }
+        let family = MiniMaxModelFamily.family(for: model.id)
+        return LLMModelInfo(
+            id: model.id,
+            displayName: model.displayName,
+            contextWindowSize: family.contextWindowSize,
+            supportsStreaming: model.supportsStreaming,
+            supportsVision: model.supportsVision || family.supportsVision,
+            supportsTools: model.supportsTools
+        )
     }
 }
