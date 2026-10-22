@@ -49,27 +49,50 @@ struct MiniMaxProviderPluginTests {
         let provider = MiniMaxOpenAIProvider()
         let info = provider.providerInfo
 
+        // id 与上游 `GET /v1/models` 逐字一致（2026-10 实测）
         #expect(info.modelIDs == [
-            "MiniMax-M3.1-Flash-Preview",
+            "MiniMax-M3.1-Flash",
             "MiniMax-M3", "MiniMax-M2.7", "MiniMax-M2.7-highspeed",
             "MiniMax-M2.5", "MiniMax-M2.5-highspeed",
+            "MiniMax-M2.1", "MiniMax-M2.1-highspeed", "MiniMax-M2",
         ])
-        #expect(info.models.count == 6)
+        #expect(info.models.count == 9)
         #expect(info.contains(model: info.defaultModel))
 
         // 三个协议变体共享同一批模型
-        #expect(MiniMaxVendorModels.all.count == 6)
+        #expect(MiniMaxVendorModels.all.count == 9)
         #expect(MiniMaxVendorModels.all.map(\.id) == info.modelIDs)
 
-        let flash = try #require(info.models.first(where: { $0.id == "MiniMax-M3.1-Flash-Preview" }))
+        // 清单里不得残留上游不存在的 id
+        #expect(!info.modelIDs.contains("MiniMax-M3.1-Flash-Preview"))
+
+        let flash = try #require(info.models.first(where: { $0.id == "MiniMax-M3.1-Flash" }))
         #expect(flash.contextWindowSize == 1_000_000)
         #expect(flash.supportsVision == true)
         let m3 = try #require(info.models.first(where: { $0.id == "MiniMax-M3" }))
         #expect(m3.contextWindowSize == 1_000_000)
         #expect(m3.supportsVision == true)
+
+        // M2 系列 204,800 且不支持图片输入
+        // （官方文档：M2.7 / M2.5 / M2.1 / M2 仅支持文本与工具调用）
+        let m27 = try #require(info.models.first(where: { $0.id == "MiniMax-M2.7" }))
+        #expect(m27.contextWindowSize == 204_800)
+        #expect(m27.supportsVision == false)
         let m25 = try #require(info.models.first(where: { $0.id == "MiniMax-M2.5" }))
         #expect(m25.contextWindowSize == 204_800)
         #expect(m25.supportsVision == false)
+        let m2 = try #require(info.models.first(where: { $0.id == "MiniMax-M2" }))
+        #expect(m2.contextWindowSize == 204_800)
+        #expect(m2.supportsVision == false)
+
+        // 清单元数据必须与家族推断规则一致，避免两处各自漂移
+        for model in info.models {
+            let family = MiniMaxModelFamily.family(for: model.id)
+            #expect(model.contextWindowSize == family.contextWindowSize,
+                    "\(model.id) 上下文窗口与家族规则不一致")
+            #expect(model.supportsVision == family.supportsVision,
+                    "\(model.id) 视觉能力与家族规则不一致")
+        }
     }
 
     @Test("MiniMax 指向 minimaxi.com 端点")
@@ -91,23 +114,35 @@ struct MiniMaxProviderPluginTests {
         #expect(provider.availableModels.contains { $0.id == provider.providerInfo.defaultModel })
     }
 
-    @Test("远程模型列表解析只提取模型 id")
+    @Test("远程模型列表解析按家族补全上下文窗口与视觉能力")
     func remoteModelListParsing() throws {
         let payload = """
         {"object":"list","data":[
           {"id":"MiniMax-M3","object":"model","created":1780272000,"owned_by":"minimax"},
           {"id":"MiniMax-M2.7","object":"model","created":1773799200,"owned_by":"minimax"},
           {"object":"model","created":1770948000,"owned_by":"minimax"},
-          {"id":"","object":"model"}
+          {"id":"","object":"model"},
+          {"id":"MiniMax-Speech-2.8-HD","object":"model"}
         ]}
         """
         let models = try MiniMaxRemoteModelListLoader.parse(data: Data(payload.utf8))
 
         // 缺少 id 与空 id 的条目被丢弃
-        #expect(models.map(\.id) == ["MiniMax-M3", "MiniMax-M2.7"])
-        // 上游不提供上下文窗口与能力信息
-        #expect(models.allSatisfy { $0.contextWindowSize == nil })
-        #expect(models.allSatisfy { !$0.supportsVision })
+        #expect(models.map(\.id) == ["MiniMax-M3", "MiniMax-M2.7", "MiniMax-Speech-2.8-HD"])
+
+        // 上游不提供上下文窗口与能力信息，解析时按家族规则补全
+        let m3 = try #require(models.first { $0.id == "MiniMax-M3" })
+        #expect(m3.contextWindowSize == 1_000_000)
+        #expect(m3.supportsVision == true)
+
+        let m27 = try #require(models.first { $0.id == "MiniMax-M2.7" })
+        #expect(m27.contextWindowSize == 204_800)
+        #expect(m27.supportsVision == false)
+
+        // 非语言模型（语音 / 视频等）无法推断家族，不猜测上下文窗口
+        let speech = try #require(models.first { $0.id == "MiniMax-Speech-2.8-HD" })
+        #expect(speech.contextWindowSize == nil)
+        #expect(speech.supportsVision == false)
     }
 
     @Test("远程列表解析失败时抛错而非返回空列表")

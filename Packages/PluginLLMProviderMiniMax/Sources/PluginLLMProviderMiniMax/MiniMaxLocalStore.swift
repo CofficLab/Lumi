@@ -28,6 +28,13 @@ final class MiniMaxLocalStore: SuperLog, @unchecked Sendable {
         let id: String
         let displayName: String?
         let contextWindowSize: Int?
+        /// 是否支持图片输入。
+        ///
+        /// 声明为可选：旧版本写盘的快照没有这个字段，`Codable` 合成的
+        /// `decodeIfPresent` 会把缺失键解成 `nil`。读取时由
+        /// ``MiniMaxModelFamily`` 按 id 推断回退，不会把历史缓存的视觉能力
+        /// 错误地抹成 `false`。
+        let supportsVision: Bool?
     }
 
     /// 数据新鲜度阈值（TTL），默认 24h。
@@ -87,7 +94,16 @@ final class MiniMaxLocalStore: SuperLog, @unchecked Sendable {
             return nil
         }
         return (
-            models: snapshot.models.map { LLMModelInfo(id: $0.id, displayName: $0.displayName, contextWindowSize: $0.contextWindowSize) },
+            models: snapshot.models.map { cached in
+                LLMModelInfo(
+                    id: cached.id,
+                    displayName: cached.displayName,
+                    contextWindowSize: cached.contextWindowSize
+                        ?? MiniMaxModelFamily.family(for: cached.id).contextWindowSize,
+                    supportsVision: cached.supportsVision
+                        ?? MiniMaxModelFamily.family(for: cached.id).supportsVision
+                )
+            },
             syncedAt: snapshot.syncedAt,
             isStale: Date().timeIntervalSince(snapshot.syncedAt) > Self.ttl
         )
@@ -97,7 +113,14 @@ final class MiniMaxLocalStore: SuperLog, @unchecked Sendable {
     func store(models: [LLMModelInfo], syncedAt: Date = Date()) {
         guard !models.isEmpty else { return }
         let snapshot = Snapshot(
-            models: models.map { CachedModel(id: $0.id, displayName: $0.displayName, contextWindowSize: $0.contextWindowSize) },
+            models: models.map { model in
+                CachedModel(
+                    id: model.id,
+                    displayName: model.displayName,
+                    contextWindowSize: model.contextWindowSize,
+                    supportsVision: model.supportsVision
+                )
+            },
             syncedAt: syncedAt
         )
         lock.lock(); defer { lock.unlock() }
