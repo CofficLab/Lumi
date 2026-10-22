@@ -7,15 +7,18 @@ import os
 
 private final class DisplayServicesBridge: Sendable {
     func getBrightness(displayID: CGDirectDisplayID) -> Float? {
+        // 符号缺失时降级为"读不到"，而不是调用 NULL 地址（见 Issue #122）。
+        guard let getBrightness = PrivateDisplaySymbol.displayServicesGetBrightness else { return nil }
         var value: Float = -1
-        let result = _DisplayServicesGetBrightness(displayID, &value)
+        let result = getBrightness(displayID, &value)
         guard result == 0, value >= 0 else { return nil }
         return min(1, max(0, value))
     }
 
     func setBrightness(displayID: CGDirectDisplayID, value: Float) -> Bool {
+        guard let setBrightness = PrivateDisplaySymbol.displayServicesSetBrightness else { return false }
         let clampedValue = min(1, max(0, value))
-        return _DisplayServicesSetBrightness(displayID, clampedValue) == 0
+        return setBrightness(displayID, clampedValue) == 0
     }
 }
 
@@ -239,7 +242,8 @@ final class DisplayService: ObservableObject, SuperLog {
     }
 
     private nonisolated static func displayName(for id: CGDirectDisplayID, isBuiltIn: Bool) -> String {
-        if let rawInfo = _CoreDisplay_DisplayCreateInfoDictionary(id),
+        if let createInfoDictionary = PrivateDisplaySymbol.coreDisplayCreateInfoDictionary,
+           let rawInfo = createInfoDictionary(id),
            let info = rawInfo as? [String: Any],
            let localizedNames = info["DisplayProductName"] as? [String: String]
         {

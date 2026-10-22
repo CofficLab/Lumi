@@ -56,10 +56,19 @@ final class StubToolManagerCapability: MessageListToolManagerCapability {
     var recordsByTurn: [UUID: [ToolCallRecord]] = [:]
     private(set) var cancelledTurnIDs: [UUID] = []
     private(set) var toolCallsRequestCount = 0
+    private(set) var queriedTurnIDs: [UUID] = []
 
     func toolCalls(for turnID: UUID) async -> [ToolCallRecord] {
         toolCallsRequestCount += 1
+        queriedTurnIDs.append(turnID)
         return recordsByTurn[turnID] ?? []
+    }
+
+    /// 批量查询算作**一次**请求 —— 真实实现走一条存储查询。
+    func toolCalls(forTurnIDs turnIDs: [UUID]) async -> [ToolCallRecord] {
+        toolCallsRequestCount += 1
+        queriedTurnIDs.append(contentsOf: turnIDs)
+        return turnIDs.flatMap { recordsByTurn[$0] ?? [] }
     }
 
     func cancelJobs(forTurnID turnID: UUID) { cancelledTurnIDs.append(turnID) }
@@ -212,7 +221,7 @@ func loadEarlierPrependsPage() async {
     #expect(windowBefore.count == 40, "首屏应保留 pageSize(40) 条")
     let expectedAnchor = windowBefore.first?.id
 
-    let returnedAnchor = await harness.viewModel.loadEarlier(isAtBottom: false)
+    let returnedAnchor = await harness.viewModel.loadEarlier()
 
     // 锚点是「翻页前窗口最早一条」，prepend 后应被钉回视口顶部
     #expect(returnedAnchor == expectedAnchor)
@@ -227,13 +236,13 @@ func loadEarlierNoOpWithoutWindow() async {
     let harness = ViewModelHarness(selected: conversationID, page: [])
     await harness.viewModel.activateCurrentConversation()
 
-    let anchor = await harness.viewModel.loadEarlier(isAtBottom: false)
+    let anchor = await harness.viewModel.loadEarlier()
     #expect(anchor == nil)
 }
 
 @MainActor
-@Test("向上翻页在超过窗口上限且离开底部时回收较新消息")
-func loadEarlierEvictsTailWhenAwayFromBottom() async {
+@Test("向上翻页在窗口未超上限时原样前插")
+func loadEarlierPrependsPageWhenWithinWindowLimit() async {
     let conversationID = UUID()
     // 大量消息 + 翻页补充 → 触发窗口回收
     let existing = (0..<8).map { index in
@@ -253,7 +262,7 @@ func loadEarlierEvictsTailWhenAwayFromBottom() async {
     await harness.viewModel.activateCurrentConversation()
     let windowBefore = harness.viewModel.persistedMessages
 
-    _ = await harness.viewModel.loadEarlier(isAtBottom: false)
+    _ = await harness.viewModel.loadEarlier()
 
     // 44 条远小于 maxRetainedCount(300)，不触发回收，顺序为「更早在前」
     #expect(harness.viewModel.persistedMessages.map(\.id) == (earlier + windowBefore).map(\.id))
@@ -498,8 +507,8 @@ func turnActivitySummariesAggregateRecords() async {
     )
     let toolManager = StubToolManagerCapability()
     toolManager.recordsByTurn[turnID] = [
-        makeToolCallRecord(id: "a", conversationID: conversationID, completed: true, duration: 1),
-        makeToolCallRecord(id: "b", conversationID: conversationID, completed: true, duration: 2, isError: true),
+        makeToolCallRecord(id: "a", turnID: turnID, conversationID: conversationID, completed: true, duration: 1),
+        makeToolCallRecord(id: "b", turnID: turnID, conversationID: conversationID, completed: true, duration: 2, isError: true),
     ]
     let harness = ViewModelHarness(
         selected: conversationID,

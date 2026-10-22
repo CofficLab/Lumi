@@ -13,6 +13,14 @@ public final class KeychainStore: @unchecked Sendable {
     private let backend: any KeychainBackend
     private let sleeper: (UInt64) -> Void
 
+    /// legacy 迁移读取的偏好域。
+    ///
+    /// - Important: 默认是 `UserDefaults.standard`，也就是**用户级全局状态**。
+    ///   测试必须注入隔离的偏好实例（`UserDefaults(suiteName:)`），
+    ///   否则会读写开发者本机的真实偏好——既污染数据，也让断言受残留影响。
+    ///   `KitTestSupport.IsolatedUserDefaults` 提供现成的隔离实现。
+    private let legacyUserDefaults: UserDefaults
+
     /// Maximum retry attempts (including initial attempt).
     public static let maxTransientAttempts = 4
 
@@ -20,6 +28,7 @@ public final class KeychainStore: @unchecked Sendable {
         service: String,
         useDataProtectionKeychain: Bool = false,
         backend: (any KeychainBackend)? = nil,
+        legacyUserDefaults: UserDefaults = .standard,
         sleeper: @escaping (UInt64) -> Void = { nanoseconds in
             Thread.sleep(forTimeInterval: TimeInterval(nanoseconds) / 1_000_000_000)
         }
@@ -28,6 +37,7 @@ public final class KeychainStore: @unchecked Sendable {
         self.backend = backend ?? SystemKeychainBackend(
             useDataProtectionKeychain: useDataProtectionKeychain
         )
+        self.legacyUserDefaults = legacyUserDefaults
         self.sleeper = sleeper
     }
 
@@ -212,13 +222,13 @@ public final class KeychainStore: @unchecked Sendable {
         }
 
         // 2. Legacy UserDefaults (same key) → migrate to Keychain
-        if let legacyUserDefaultsValue = UserDefaults.standard.string(forKey: key)?
+        if let legacyUserDefaultsValue = legacyUserDefaults.string(forKey: key)?
             .trimmingCharacters(in: .whitespacesAndNewlines),
            !legacyUserDefaultsValue.isEmpty {
             // Remove the legacy value only after the Keychain write succeeds.
             // Otherwise a transient Keychain failure would lose the only copy.
             try setReportingErrors(legacyUserDefaultsValue, forKey: key)
-            UserDefaults.standard.removeObject(forKey: key)
+            legacyUserDefaults.removeObject(forKey: key)
             return legacyUserDefaultsValue
         }
 

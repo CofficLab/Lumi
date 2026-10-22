@@ -1,5 +1,6 @@
 import AppKit
 import KernelCore
+import KitTestSupport
 import ProviderActivityBar
 import ProviderChatSection
 import SwiftData
@@ -17,6 +18,13 @@ import Testing
 
 @MainActor
 @Test func activatingPluginHidesChatSectionAndDeactivatingRestoresIt() throws {
+    // 插件 boot 会解析 `ClipboardHistoryManager.shared`，它按注入目录建库。
+    // 测试进程下目录必须显式注入，否则守卫会拒绝回退到本机真实数据目录。
+    let temporary = try TemporaryDirectory.make("clipboard-plugin-boot")
+    defer { temporary.remove() }
+    ClipboardManagerRuntime.injectedDatabaseDirectory = temporary.url
+    defer { ClipboardManagerRuntime.injectedDatabaseDirectory = nil }
+
     let kernel = KernelCoreContainer()
     let activityBar = DefaultActivityBarProviding()
     let chat = DefaultChatSectionProviding()

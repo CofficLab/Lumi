@@ -20,6 +20,7 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../KitLLM"),
+        .package(path: "../KitTestSupport"),
     ],
     targets: [
         .target(
@@ -37,6 +38,7 @@ let package = Package(
                 .product(name: "ProviderAgentRules", package: "LumiProviders"),
                 "ProviderLifecycleHooks",
                 "KitLLM",
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
@@ -49,6 +51,8 @@ let package = Package(
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderAgentRules", package: "LumiProviders"),
+                .product(name: "KitTestSupport", package: "KitTestSupport"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ]
         ),
     ]

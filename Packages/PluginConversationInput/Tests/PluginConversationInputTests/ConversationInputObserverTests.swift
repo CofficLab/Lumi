@@ -207,12 +207,14 @@ struct ConversationInputCapabilityDegradationTests {
             "hello",
             imageAttachments: [],
             fileAttachments: [],
+            collapsedBlocks: [],
             conversationID: nil
         )
         let asyncCommit = try await capability.commitUserMessageInBackground(
             "hello",
             imageAttachments: [],
             fileAttachments: [],
+            collapsedBlocks: [],
             conversationID: nil
         )
 

@@ -22,6 +22,13 @@ protocol ConversationInputCapability: AnyObject {
     var isInputFocused: Bool { get set }
     var inputCursorPosition: Int { get set }
     var errorMessage: String? { get set }
+    /// 草稿里的折叠块区间（以草稿文本为基准）。
+    ///
+    /// 放在能力层而不是某一个 ViewModel，是因为**两条发送路径**都要用到它：
+    /// 回车发送（`ConversationInputViewModel`）与发送按钮
+    /// （`SendActionBarViewModel`）。折叠块与正文一样属于草稿状态，
+    /// 能力层是它唯一的存放处，两个 ViewModel 都从这里读，天然一致。
+    var collapsedBlocks: [CollapsedContentBlock] { get set }
     func clearInput()
 
     // MARK: - Attachments
@@ -40,6 +47,7 @@ protocol ConversationInputCapability: AnyObject {
         _ content: String,
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
         conversationID: UUID?
     ) throws -> MessageSendCommit?
 
@@ -47,6 +55,7 @@ protocol ConversationInputCapability: AnyObject {
         _ content: String,
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
         conversationID: UUID?
     ) async throws -> MessageSendCommit?
 
@@ -112,6 +121,8 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
     private let conversations: (any ConversationManaging)?
     private let conversationState: (any ConversationStateProviding)?
     private let metrics: (any PerformanceMetricsProviding)?
+    /// 草稿里的折叠块区间。草稿级状态，随正文一起清空。
+    private var storedCollapsedBlocks: [CollapsedContentBlock] = []
 
     init(
         input: (any ConversationInputProviding)?,
@@ -156,7 +167,13 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
         set { input?.errorMessage = newValue }
     }
 
+    var collapsedBlocks: [CollapsedContentBlock] {
+        get { storedCollapsedBlocks }
+        set { storedCollapsedBlocks = newValue }
+    }
+
     func clearInput() {
+        storedCollapsedBlocks = []
         input?.clear()
     }
 
@@ -197,6 +214,7 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
         _ content: String,
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
         conversationID: UUID?
     ) throws -> MessageSendCommit? {
         guard let sender else { return nil }
@@ -204,6 +222,7 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
             content,
             imageAttachments: imageAttachments,
             fileAttachments: fileAttachments,
+            collapsedBlocks: collapsedBlocks,
             conversationID: conversationID
         )
     }
@@ -212,6 +231,7 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
         _ content: String,
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
         conversationID: UUID?
     ) async throws -> MessageSendCommit? {
         guard let sender else { return nil }
@@ -219,6 +239,7 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
             content,
             imageAttachments: imageAttachments,
             fileAttachments: fileAttachments,
+            collapsedBlocks: collapsedBlocks,
             conversationID: conversationID
         )
     }

@@ -75,6 +75,8 @@ private let immediateReleaseUpperBound: Double = 750
 @MainActor
 @Test("首屏遮罩：收敛成功时立即放行，不等满预算")
 func gateReleasesImmediatelyWhenSettleSucceeds() async {
+await MainActorTimingGate.acquire()
+defer { MainActorTimingGate.release() }
     let measured = try! #require(
         await medianReadyLatencyMs {
             let gate = InitialPositionGate(budgetNanoseconds: 3_000_000_000)
@@ -94,6 +96,8 @@ func gateReleasesImmediatelyWhenSettleSucceeds() async {
 @MainActor
 @Test("首屏遮罩：收敛失败时立即放行，不等满预算")
 func gateReleasesImmediatelyWhenSettleFails() async {
+await MainActorTimingGate.acquire()
+defer { MainActorTimingGate.release() }
     let measured = try! #require(
         await medianReadyLatencyMs {
             let gate = InitialPositionGate(budgetNanoseconds: 3_000_000_000)
@@ -111,6 +115,8 @@ func gateReleasesImmediatelyWhenSettleFails() async {
 @MainActor
 @Test("首屏遮罩：成功与失败路径的放行耗时同量级（收敛结果未生效）")
 func gateTreatsSuccessAndFailureIdentically() async {
+await MainActorTimingGate.acquire()
+defer { MainActorTimingGate.release() }
     func medianLatency(settleResult: Bool) async -> Double? {
         await medianReadyLatencyMs {
             let gate = InitialPositionGate(budgetNanoseconds: 3_000_000_000)
@@ -137,20 +143,32 @@ func gateTreatsSuccessAndFailureIdentically() async {
 /// 收敛**永不返回**（几何永不收敛）时，预算兜底必须仍在有限时间内放行。
 ///
 /// 这是兜底存在的唯一理由，不能因为修好快速路径就把它一起删掉。
+///
+/// - Important: 同样取 **7 次采样的中位数**（`medianReadyLatencyMs`），
+///   而不是单次采样。兜底路径是「等满预算再放行」，单次采样把
+///   「机器当时忙」直接算进了延迟里：实测本用例在同批其它用例
+///   （尤其是大数据量用例）争抢 MainActor 时，单次采样会冲到 1154ms，
+///   越过 2× 预算的阈值而变红 —— 而兜底逻辑本身完全正常。
+///   这与本文件头部的既定策略一致：墙钟类断言一律取中位数。
 @MainActor
 @Test("首屏遮罩：收敛挂死时预算兜底仍在有限时间内放行")
 func gateStillReleasesWhenSettleHangs() async {
+await MainActorTimingGate.acquire()
+defer { MainActorTimingGate.release() }
     let budget: UInt64 = 400_000_000
-    let gate = InitialPositionGate(budgetNanoseconds: budget)
-    gate.request(
-        conversationID: UUID(),
-        settle: {
-            while true { try? await Task.sleep(nanoseconds: 50_000_000) }
-        },
-        stillRelevant: { true }
+    let latency = try! #require(
+        await medianReadyLatencyMs {
+            let gate = InitialPositionGate(budgetNanoseconds: budget)
+            gate.request(
+                conversationID: UUID(),
+                settle: {
+                    while true { try? await Task.sleep(nanoseconds: 50_000_000) }
+                },
+                stillRelevant: { true }
+            )
+            return gate
+        }
     )
-
-    let latency = try! #require(await measureReadyLatencyMs(gate))
     #expect(latency >= Double(budget / 1_000_000) * 0.8, "兜底不应早于预算放行，实际 \(Int(latency))ms")
     #expect(latency < Double(budget / 1_000_000) * 2.0, "兜底严重超时，实际 \(Int(latency))ms")
 }
@@ -170,6 +188,8 @@ func gateStillReleasesWhenSettleHangs() async {
 @MainActor
 @Test("首屏遮罩：旧轮次醒来不清掉新轮次的准备状态")
 func staleRoundDoesNotClearNewRoundPreparing() async {
+await MainActorTimingGate.acquire()
+defer { MainActorTimingGate.release() }
     let gate = InitialPositionGate(budgetNanoseconds: 300_000_000)
     let first = UUID()
     let second = UUID()

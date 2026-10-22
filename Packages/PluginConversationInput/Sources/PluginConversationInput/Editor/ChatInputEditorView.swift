@@ -1,5 +1,6 @@
 import AppKit
 import os
+import ProviderMessage
 import SwiftUI
 
 #if DEBUG
@@ -35,6 +36,11 @@ public struct ChatInputEditorView: NSViewRepresentable {
     private let onFileDrop: ((URL) -> Void)?
     /// 编辑器插入完折叠块后的回调，ViewModel 据此清空待插入状态。
     private let onBlockInserted: ((UUID) -> Void)?
+    /// 编辑器内容里的折叠块区间变化时回调。
+    ///
+    /// 区间以「拍平后的正文」为基准（chip 的原文已还原进正文），
+    /// ViewModel 据此在发送时把折叠块一起落库，消息列表才能还原成 chip。
+    private let onCollapsedBlocksChanged: (([CollapsedContentBlock]) -> Void)?
     /// 待插入输入框的折叠块请求（如编辑器选区发送到对话）。
     /// 消费一次后由 ViewModel 置空，避免重复插入同一个 chip。
     private let pendingBlock: ConversationInputBlockRequest?
@@ -54,6 +60,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
         onEscape: (() -> Void)? = nil,
         onFileDrop: ((URL) -> Void)? = nil,
         onBlockInserted: ((UUID) -> Void)? = nil,
+        onCollapsedBlocksChanged: (([CollapsedContentBlock]) -> Void)? = nil,
         isFocused: Binding<Bool>,
         cursorPosition: Binding<Int>,
         isImageDragHovering: Binding<Bool>,
@@ -76,6 +83,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
         self.onEscape = onEscape
         self.onFileDrop = onFileDrop
         self.onBlockInserted = onBlockInserted
+        self.onCollapsedBlocksChanged = onCollapsedBlocksChanged
         self.pendingBlock = pendingBlock
     }
 
@@ -178,7 +186,8 @@ public struct ChatInputEditorView: NSViewRepresentable {
             return
         }
 
-        let currentText = resolvedText(from: textView)
+        let resolved = resolvedContent(from: textView)
+        let currentText = resolved.text
         let textChanged = currentText != text
 
         if textChanged, context.coordinator.shouldPublishEditorTextUp(currentText) {
@@ -194,6 +203,9 @@ public struct ChatInputEditorView: NSViewRepresentable {
             // 因此这里必须先判断方向：内容若是编辑器侧产生且从未上报过，
             // 就向上写入 binding，而不是向下覆盖编辑器。
             context.coordinator.publishEditorTextUp(currentText, from: textView)
+            // 文本未变但折叠块变了（用户删掉了 chip 之外的文字）也要上报，
+            // 否则上层会拿着过期的区间发送。
+            reportCollapsedBlocks(resolved.blocks)
             updatePlaceholder(for: textView)
             insertPendingBlockIfNeeded(in: textView, context: context)
             // 本轮不回写选区：编辑器刚被外部写入，binding 的 cursorPosition
@@ -208,6 +220,9 @@ public struct ChatInputEditorView: NSViewRepresentable {
             textView.string = text
             textView.delegate = context.coordinator
             context.coordinator.noteBindingTextPushedDown(text)
+            // 纯文本写回编辑器后，chip 已不存在，区间必须一并清空，
+            // 否则发送时会带着早已不存在的区间落库。
+            reportCollapsedBlocks([])
         }
 
         updatePlaceholder(for: textView)
@@ -289,34 +304,77 @@ public struct ChatInputEditorView: NSViewRepresentable {
         }
     }
 
-    private func resolvedText(from textView: NSTextView) -> String {
+    /// 编辑器内容拍平后的结果。
+    ///
+    /// `text` 是 chip 原文已还原的完整正文（发给上层的正是它）；
+    /// `blocks` 记录每个 chip 在该正文中的 Character 区间。
+    struct ResolvedEditorContent {
+        var text: String
+        var blocks: [CollapsedContentBlock]
+    }
+
+    /// 拍平编辑器内容，并顺带算出折叠块在拍平正文中的区间。
+    ///
+    /// 折叠 chip 只是编辑器里的 attachment，本身不携带「我在正文里的位置」。
+    /// 若不把区间一并上报，发送后消息里就只剩一长串纯文字——这正是
+    /// 「粘贴时是折叠块、发出后却展开成一大段」的根因。
+    private func resolvedContent(from textView: NSTextView) -> ResolvedEditorContent {
         guard let editorTextView = textView as? EditorTextView,
               editorTextView.hasPastePreviewAttachments,
               let textStorage = textView.textStorage,
               textStorage.length > 0 else {
-            return textView.string
+            return ResolvedEditorContent(text: textView.string, blocks: [])
         }
 
+        let flattened = Self.flattenedContent(from: textStorage)
+        if !flattened.hasAttachments {
+            editorTextView.hasPastePreviewAttachments = false
+            return ResolvedEditorContent(text: textView.string, blocks: [])
+        }
+        return ResolvedEditorContent(text: flattened.text, blocks: flattened.blocks)
+    }
+
+    /// 把带 chip 的富文本拍平成纯文本，并算出每个 chip 在纯文本中的区间。
+    ///
+    /// 抽成静态纯函数是为了能脱离 AppKit 视图单独验证：区间算错会让消息
+    /// 里的 chip 覆盖到错误的文字上。
+    static func flattenedContent(
+        from textStorage: NSTextStorage
+    ) -> (text: String, blocks: [CollapsedContentBlock], hasAttachments: Bool) {
         let fullRange = NSRange(location: 0, length: textStorage.length)
         var result = String()
         result.reserveCapacity(textStorage.length)
+        var blocks: [CollapsedContentBlock] = []
         var foundAttachment = false
 
         textStorage.enumerateAttributes(in: fullRange, options: []) { attributes, range, _ in
             if let attachment = attributes[.attachment] as? PastePreviewAttachment {
                 foundAttachment = true
+                // 区间以**已拍平的正文**为基准：`result.count` 是 chip 之前
+                // 已累积的 Character 数，正是该 chip 在正文里的起点。
+                let start = result.count
                 result += attachment.originalText
+                blocks.append(CollapsedContentBlock(
+                    start: start,
+                    length: attachment.originalText.count,
+                    title: attachment.chipTitle,
+                    systemImage: attachment.systemImage
+                ))
             } else {
                 result += textStorage.attributedSubstring(from: range).string
             }
         }
 
-        if !foundAttachment {
-            editorTextView.hasPastePreviewAttachments = false
-            return textView.string
-        }
+        return (result, blocks, foundAttachment)
+    }
 
-        return result
+    private func resolvedText(from textView: NSTextView) -> String {
+        resolvedContent(from: textView).text
+    }
+
+    /// 把折叠块区间上报给上层。
+    func reportCollapsedBlocks(_ blocks: [CollapsedContentBlock]) {
+        onCollapsedBlocksChanged?(blocks)
     }
 
     static func measuredHeight(
@@ -508,6 +566,9 @@ extension ChatInputEditorView {
         func publishEditorTextUp(_ editorText: String, from textView: NSTextView) {
             lastSyncedBindingText = editorText
             parent.text = editorText
+            // 补偿性回写同样要带上折叠块区间：粘贴不走 `textViewDidChange`，
+            // 只在这里上报，漏掉它就等于粘贴内容永远无法还原成 chip。
+            parent.reportCollapsedBlocks(parent.resolvedContent(from: textView).blocks)
             // 只同步「当前光标在文本中的位置」这一事实，不触发选区回写。
             lastSyncedCursorPosition = ChatInputEditorRules.utf16ToSwiftIndex(
                 textView.selectedRange().location,
@@ -625,13 +686,22 @@ extension ChatInputEditorView {
             publishCommittedText(from: textView)
         }
 
+        /// 测试入口：走与真实编辑路径完全相同的发布逻辑。
+        @MainActor
+        func publishCommittedTextForTesting(from textView: NSTextView) {
+            publishCommittedText(from: textView)
+        }
+
         @MainActor
         private func publishCommittedText(from textView: NSTextView) {
-            let resolved = parent.resolvedText(from: textView)
+            let resolved = parent.resolvedContent(from: textView)
             // 记录本次上报：binding 与编辑器就此一致，后续差异才能归因到
             // binding 侧（例如发送后清空草稿）而不是「编辑器有未知内容」。
-            lastSyncedBindingText = resolved
-            parent.text = resolved
+            lastSyncedBindingText = resolved.text
+            parent.text = resolved.text
+            // 折叠块区间与文本同源，必须在同一轮里一起上报：只报文本会让
+            // 上层拿不到区间，发送后消息就会退化成一大段纯文字。
+            parent.reportCollapsedBlocks(resolved.blocks)
 
             let utf16Location = textView.selectedRange().location
             let swiftLocation = ChatInputEditorRules.utf16ToSwiftIndex(utf16Location, in: textView.string)
@@ -1095,6 +1165,10 @@ final class PastePreviewAttachment: NSTextAttachment {
     let byteCountText: String
     /// 预览弹窗标题。粘贴固定为「粘贴的文本」，外部内容用来源标题（如文件名）。
     let previewTitle: String
+    /// chip 上显示的一行文案。随消息落库，渲染层据此还原同样的 chip。
+    let chipTitle: String
+    /// chip 图标（SF Symbol 名）。外部内容由生产方指定，粘贴走默认值。
+    let systemImage: String
 
     /// 粘贴路径：不带来源标题与图标，chip 沿用「粘贴的文本」文案。
     @MainActor
@@ -1119,22 +1193,23 @@ final class PastePreviewAttachment: NSTextAttachment {
             countStyle: .file
         )
         self.previewTitle = title ?? pluginLocalization.string("Pasted text")
-        let chipTitle = Self.chipTitleText(
+        self.chipTitle = Self.chipTitleText(
             title: title,
             characterCount: characterCount,
             lineCount: lineCount
         )
+        self.systemImage = systemImage ?? PasteButtonAttachmentCell.defaultSymbolName
         super.init(data: nil, ofType: nil)
         if let font {
             self.attachmentCell = PasteButtonAttachmentCell(
-                title: chipTitle,
-                systemImage: systemImage,
+                title: self.chipTitle,
+                systemImage: self.systemImage,
                 font: font
             )
         } else {
             self.attachmentCell = PasteButtonAttachmentCell(
-                title: chipTitle,
-                systemImage: systemImage
+                title: self.chipTitle,
+                systemImage: self.systemImage
             )
         }
     }
@@ -1207,7 +1282,7 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
     /// chip 与正文行高之间的差值，让它与普通文字同高而不是撑满整行。
     private static let lineHeightSlack: CGFloat = 2
     /// 未指定图标时使用的默认符号。
-    private static let defaultSymbolName = "doc.on.clipboard"
+    static let defaultSymbolName = "doc.on.clipboard"
 
     private let titleFont: NSFont
     private let symbolPointSize: CGFloat

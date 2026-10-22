@@ -37,12 +37,47 @@ public protocol GitRepositoryReading: Sendable {
     func log(atPath path: String?,
              count: Int,
              skip: Int) async throws -> [GitCommitLog]
+
+    /// 判断给定路径是否位于 Git 仓库内。
+    ///
+    /// 用于「非 Git 项目不显示 Git UI」这类判定，应始终返回 `false`
+    /// 而不抛错。
+    ///
+    /// 默认实现按文件系统向上查找 `.git`，实现方可按自身实现覆盖。
+    ///
+    /// - Parameter path: 任意路径；`nil` 表示使用进程当前目录。
+    func isRepository(atPath path: String?) async -> Bool
+
+    /// 读取某个 commit 的变更文件列表。
+    ///
+    /// 用于在 commit 列表中选中一条记录后，展示该 commit 修改了哪些文件。
+    ///
+    /// - Parameters:
+    ///   - path: 仓库路径。
+    ///   - hash: commit hash（完整或前缀均可，由实现方解析）。
+    func commitChanges(atPath path: String?, hash: String) async throws -> [GitCommitChange]
 }
 
 public extension GitRepositoryReading {
     /// 便捷重载：读取当前 HEAD 的最近提交。
     func recentCommits(atPath path: String?, count: Int) async throws -> [GitCommitLog] {
         try await log(atPath: path, count: count, branch: nil, file: nil)
+    }
+
+    /// 默认实现：沿路径向上查找 `.git`，命中即认为是 Git 仓库。
+    ///
+    /// 真实实现（`PluginGit` 的 `GitService`）会覆盖为 libgit2 判定，
+    /// 性能更好且语义一致；本默认实现保证未实现契约的替身也能工作。
+    func isRepository(atPath path: String?) async -> Bool {
+        var candidate = (path ?? FileManager.default.currentDirectoryPath)
+        for _ in 0..<128 {
+            let gitURL = URL(fileURLWithPath: candidate).appendingPathComponent(".git")
+            if FileManager.default.fileExists(atPath: gitURL.path) { return true }
+            let parent = URL(fileURLWithPath: candidate).deletingLastPathComponent().path
+            guard parent != candidate else { return false }
+            candidate = parent
+        }
+        return false
     }
 }
 
@@ -59,10 +94,19 @@ public final class InMemoryGitRepositoryReading: GitRepositoryReading, @unchecke
     private final class Storage: @unchecked Sendable {
         var statuses: [String: GitStatus]
         var commits: [String: [GitCommitLog]]
+        var commitChanges: [String: [String: [GitCommitChange]]]
+        var repositories: Set<String>
 
-        init(statuses: [String: GitStatus], commits: [String: [GitCommitLog]]) {
+        init(
+            statuses: [String: GitStatus],
+            commits: [String: [GitCommitLog]],
+            commitChanges: [String: [String: [GitCommitChange]]],
+            repositories: Set<String>
+        ) {
             self.statuses = statuses
             self.commits = commits
+            self.commitChanges = commitChanges
+            self.repositories = repositories
         }
     }
 
@@ -71,9 +115,16 @@ public final class InMemoryGitRepositoryReading: GitRepositoryReading, @unchecke
 
     public init(
         statuses: [String: GitStatus] = [:],
-        commits: [String: [GitCommitLog]] = [:]
+        commits: [String: [GitCommitLog]] = [:],
+        commitChanges: [String: [String: [GitCommitChange]]] = [:],
+        repositories: Set<String> = []
     ) {
-        storage = Storage(statuses: statuses, commits: commits)
+        storage = Storage(
+            statuses: statuses,
+            commits: commits,
+            commitChanges: commitChanges,
+            repositories: repositories
+        )
     }
 
     public func setStatus(_ status: GitStatus, forPath path: String) {
@@ -82,6 +133,25 @@ public final class InMemoryGitRepositoryReading: GitRepositoryReading, @unchecke
 
     public func setCommits(_ commits: [GitCommitLog], forPath path: String) {
         queue.sync { storage.commits[path] = commits }
+    }
+
+    /// 设置某个 commit 的变更文件列表（测试用）。
+    public func setCommitChanges(_ changes: [GitCommitChange], forPath path: String, hash: String) {
+        queue.sync {
+            var repo = storage.commitChanges[path] ?? [:]
+            repo[hash] = changes
+            storage.commitChanges[path] = repo
+        }
+    }
+
+    /// 把某个路径标记为 Git 仓库（测试用）。
+    public func addRepository(atPath path: String) {
+        queue.sync { _ = storage.repositories.insert(path) }
+    }
+
+    public func isRepository(atPath path: String?) async -> Bool {
+        guard let path else { return false }
+        return queue.sync { storage.repositories.contains(path) }
     }
 
     public func status(atPath path: String?) async throws -> GitStatus {
@@ -105,6 +175,13 @@ public final class InMemoryGitRepositoryReading: GitRepositoryReading, @unchecke
         let all = queue.sync { storage.commits[path] } ?? []
         guard skip < all.count else { return [] }
         return Array(all[skip..<min(skip + count, all.count)])
+    }
+
+    public func commitChanges(atPath path: String?, hash: String) async throws -> [GitCommitChange] {
+        guard let path else { throw GitReadError.repositoryNotFound(path: nil) }
+        let changes = queue.sync { storage.commitChanges[path]?[hash] }
+        guard changes != nil else { throw GitReadError.repositoryNotFound(path: path) }
+        return changes ?? []
     }
 }
 

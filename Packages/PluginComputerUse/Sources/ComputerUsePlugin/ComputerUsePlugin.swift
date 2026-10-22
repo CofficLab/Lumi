@@ -1,7 +1,9 @@
 import KitAgentTool
 import Foundation
 import KernelCore
+import ProviderAgentLoop
 import ProviderMessage
+import ProviderMessageRendering
 import ProviderSettingView
 import ProviderRootView
 import ProviderStorage
@@ -26,6 +28,12 @@ public final class ComputerUsePlugin: SuperPlugin, PluginDataMigrating, SuperLog
     /// 历史实现把授权白名单存在 `UserDefaults.standard`，未使用插件专属目录。
     /// 目录名未变过，无需版本根搬迁。
     public let legacyDataDirectoryNames: [String] = []
+
+    /// Computer Use 在设置侧边栏中的入口 ID。
+    ///
+    /// 设置入口与「打开 Lumi 设置」深链共用同一个 ID：后者通过
+    /// `SettingViewNavigation` 通知把 ID 传回宿主，宿主据此选中该入口。
+    public static let settingsEntryID = "com.coffic.lumi.plugin.computer-use.settings"
 
     private var settingsState: ComputerUseSettingsState?
     private var activationObserver: ApplicationActivationObserver?
@@ -86,7 +94,7 @@ public final class ComputerUsePlugin: SuperPlugin, PluginDataMigrating, SuperLog
         )
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
-                id: "\(id).settings",
+                id: Self.settingsEntryID,
                 title: pluginLocalization.string("Computer Use"),
                 systemImage: "cursorarrow.motionlines",
                 order: order
@@ -94,6 +102,16 @@ public final class ComputerUsePlugin: SuperPlugin, PluginDataMigrating, SuperLog
                 ComputerUseSettingsView(state: settingsState)
             },
         ])
+        // 聊天内授权卡片：工具挂起等待授权时，直接在消息列表里让用户决定。
+        ComputerUseAuthorizationBridge.shared.start(kernel: kernel)
+        kernel.resolveProvider((any ToolCallRenderingProviding).self)?.register(
+            ComputerUseAuthorizationRowRenderer()
+        )
+        // 系统权限提示卡：工具因缺少辅助功能/屏幕录制权限失败时，
+        // 在消息列表里给出直达系统设置与 Lumi 设置的按钮。
+        kernel.resolveProvider((any ToolCallRenderingProviding).self)?.register(
+            ComputerUseSystemPermissionRowRenderer()
+        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -104,14 +122,21 @@ public final class ComputerUsePlugin: SuperPlugin, PluginDataMigrating, SuperLog
         tools?.remove(id: "accessibility_act")
         NativeControlCoordinator.shared.shutdown()
         kernel.resolveProvider((any RootViewProviding).self)?.removeOverlays(ids: ["\(id).native-control"])
+        kernel.resolveProvider((any ToolCallRenderingProviding).self)?.unregister(
+            id: ComputerUseAuthorizationRowRenderer.id
+        )
+        kernel.resolveProvider((any ToolCallRenderingProviding).self)?.unregister(
+            id: ComputerUseSystemPermissionRowRenderer.id
+        )
+        ComputerUseAuthorizationBridge.shared.stop()
         activationObserver?.cancel()
         activationObserver = nil
         settingsState = nil
-        kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: ["\(id).settings"])
+        kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [Self.settingsEntryID])
     }
 }
 
-public struct ComputerObserveV2Tool: SuperAgentTool {
+public struct ComputerObserveV2Tool: SuperAgentTool, ComputerUseSuspendingTool {
     public static let toolName = "computer_observe"
     public let name = toolName
     private let service: ComputerUseService
@@ -143,18 +168,20 @@ public struct ComputerObserveV2Tool: SuperAgentTool {
     }
 
     public func executeResult(arguments: [String: ToolArgument]) async throws -> ToolCallResult {
-        let result = try await service.observe(
-            application: arguments["application"]?.value as? String,
-            windowTitle: arguments["window_title"]?.value as? String
-        )
-        return ToolCallResult(
-            content: ComputerUseV2Support.resultDescription(result),
-            images: [ComputerUseV2Support.imageAttachment(from: result.attachment)]
-        )
+        await executeWithAuthorizationSuspension(operation: "computer_observe") { [self] in
+            let result = try await service.observe(
+                application: arguments["application"]?.value as? String,
+                windowTitle: arguments["window_title"]?.value as? String
+            )
+            return ToolCallResult(
+                content: ComputerUseV2Support.resultDescription(result),
+                images: [ComputerUseV2Support.imageAttachment(from: result.attachment)]
+            )
+        }
     }
 }
 
-public struct ComputerActV2Tool: SuperAgentTool {
+public struct ComputerActV2Tool: SuperAgentTool, ComputerUseSuspendingTool {
     public static let toolName = "computer_act"
     public let name = toolName
     private let service: ComputerUseService
@@ -192,15 +219,17 @@ public struct ComputerActV2Tool: SuperAgentTool {
     }
 
     public func executeResult(arguments: [String: ToolArgument]) async throws -> ToolCallResult {
-        guard let rawID = arguments["observation_id"]?.value as? String,
-              let observationID = UUID(uuidString: rawID)
-        else { throw ComputerUseError.invalidArguments("observation_id must be a UUID") }
-        let actions = try ComputerUseV2Support.actions(from: arguments["actions"]?.value)
-        let result = try await service.act(observationID: observationID, actions: actions, reason: arguments["reason"]?.value as? String ?? "")
-        return ToolCallResult(
-            content: ComputerUseV2Support.resultDescription(result),
-            images: [ComputerUseV2Support.imageAttachment(from: result.attachment)]
-        )
+        await executeWithAuthorizationSuspension(operation: "computer_act") { [self] in
+            guard let rawID = arguments["observation_id"]?.value as? String,
+                  let observationID = UUID(uuidString: rawID)
+            else { throw ComputerUseError.invalidArguments("observation_id must be a UUID") }
+            let actions = try ComputerUseV2Support.actions(from: arguments["actions"]?.value)
+            let result = try await service.act(observationID: observationID, actions: actions, reason: arguments["reason"]?.value as? String ?? "")
+            return ToolCallResult(
+                content: ComputerUseV2Support.resultDescription(result),
+                images: [ComputerUseV2Support.imageAttachment(from: result.attachment)]
+            )
+        }
     }
 }
 

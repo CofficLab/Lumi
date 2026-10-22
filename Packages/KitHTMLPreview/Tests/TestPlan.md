@@ -5,7 +5,7 @@
 KitHTMLPreview A SwiftUI-based HTML preview component powered by `WKWebView`. ## Overview `KitHTMLPreview` provides a ready-to-use `HTMLPreviewView` that renders HTML content inside a SwiftUI view hierarchy. It supports two loading modes: - **File-based loading** — pass a `fileURL` to load a local `.html`/`.htm` file. Relative resources (CSS, JS, images) are resolved against the file's directory. - **String-based loading** — pass an `htmlText` string directly. When a `fileURL` is also provided, relative resources are resolved against the file's parent directory as the base URL. The view automatically detects whether the in-memory HTML string is still in sync with the on-disk file and loads
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 33
+测试文件: 8 个，用例总数: 39
 
 ## 公开 API
 
@@ -71,27 +71,33 @@ KitHTMLPreview A SwiftUI-based HTML preview component powered by `WKWebView`. ##
 | 31 | HTMLScreenshotterCapture | captures a rendered web page into a non-empty image spanning all content | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `capturesFullPage` |
 | 32 | HTMLScreenshotterCapture | throws an error for a web view with no rendered content | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `throwsForEmptyDocument` |
 | 33 | HTMLScreenshotterError | error descriptions are stable and user-readable | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `errorDescriptions` |
+| 34 | HTMLScreenshotterCapture | capture times out instead of hanging when the render never completes | 游离 WKWebView（不挂窗口） | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `captureTimesOutInsteadOfHanging` |
+| 35 | HTMLScreenshotterCapture | capture throws renderTimedOut when the render never completes | 游离 WKWebView（不挂窗口） | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `captureThrowsRenderTimedOut` |
+| 36 | HTMLScreenshotterTimeout | PDF 请求状态只会完成一次 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `pdfRequestStateCompletesOnce` |
+| 37 | HTMLScreenshotterTimeout | PDF 请求状态在未挂接 continuation 时也能安全完成 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pdfRequestStateFinishesWithoutContinuation` |
+| 38 | HTMLScreenshotterTimeout | render timed out error has a readable description | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `renderTimedOutDescription` |
+| 39 | HTMLScreenshotterTimeout | existing error descriptions are preserved | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `existingErrorDescriptionsPreserved` |
 
-> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **39 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
-- P1: 已覆盖 19 / 19
-- P2: 已覆盖 7 / 7
-- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 10 / 10
+- P1: 已覆盖 21 / 21
+- P2: 已覆盖 8 / 8
+- **合计: 39 / 39**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（19 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P1**: 其余功能性用例（21 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 33 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 39 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
@@ -99,6 +105,18 @@ KitHTMLPreview A SwiftUI-based HTML preview component powered by `WKWebView`. ##
 cd Packages/KitHTMLPreview
 swift test
 ```
+
+### 运行前提
+
+WebKit 渲染类用例（`HTMLScreenshotter capture`）依赖真实的 WebKit 渲染进程：
+
+- 需要**已登录的图形会话**（Aqua session）。无 GUI 会话时 WebKit 不推进渲染，
+  `createPDF` 的完成回调不会送达。
+- 渲染回调本身不保证送达，因此 `HTMLScreenshotter.capture` 带超时保护
+  （默认 30s，超时抛 `HTMLError.renderTimedOut`）。在无 GUI 会话或 WebKit 状态异常的
+  环境下，渲染用例会**以 `renderTimedOut` 失败**而不是永久挂起 —— 这是预期行为。
+- 若整包运行时出现 `renderTimedOut`，先确认当前环境有图形会话，再重跑；
+  机器负载过高时 WebKit 回调也会显著延迟。
 
 ## 维护规则
 

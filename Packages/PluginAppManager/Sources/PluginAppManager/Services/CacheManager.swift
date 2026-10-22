@@ -22,12 +22,12 @@ actor CacheManager: SuperLog {
     /// 显式注入的数据目录（测试用）；为 nil 时走插件目录解析器
     private let explicitDataDirectory: URL?
 
-    /// 延迟创建：首次真正读写缓存时才解析 `pluginDataDirectoryProvider`，
+    /// 延迟创建：首次真正读写缓存时才解析插件数据目录，
     /// 确保此时 `onReady` 已注入标准路径
     /// （`<Application Support>/<bundleID>/db_<mode>_v<major>/AppManagerPluginSupport/`），
     /// 避免在插件实例化阶段（onReady 之前）就把数据库建到 fallback 目录。
     private lazy var container: ModelContainer = Self.makeContainer(
-        pluginDataDirectory: explicitDataDirectory ?? AppManagerPluginSupport.pluginDataDirectoryProvider())
+        pluginDataDirectory: explicitDataDirectory ?? AppManagerPluginSupport.pluginDataDirectory())
 
     private(set) var stats = CacheStats()
 

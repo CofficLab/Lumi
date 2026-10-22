@@ -87,6 +87,9 @@ final class DeviceMetricsObserver {
                     readings: ThermalService.shared.readings,
                     peak: peak
                 )
+                if let peak {
+                    ThermalHistoryService.shared.recordDataPoint(celsius: peak)
+                }
             }
             .store(in: &cancellables)
 
@@ -94,6 +97,12 @@ final class DeviceMetricsObserver {
             .combineLatest(CPUHistoryService.shared.$longTermHistory)
             .sink { [weak self] recent, longTerm in
                 self?.viewModels.cpuHistory.apply(recent: recent, longTerm: longTerm)
+            }
+            .store(in: &cancellables)
+        ThermalHistoryService.shared.$recentHistory
+            .combineLatest(ThermalHistoryService.shared.$longTermHistory)
+            .sink { [weak self] recent, longTerm in
+                self?.viewModels.thermalHistory.apply(recent: recent, longTerm: longTerm)
             }
             .store(in: &cancellables)
         GPUHistoryService.shared.$recentHistory
@@ -134,6 +143,7 @@ final class DeviceMetricsObserver {
         ThermalService.shared.stopMonitoring()
         ProcessService.shared.stopMonitoring()
         CPUHistoryService.shared.stopRecording()
+        ThermalHistoryService.shared.stopRecording()
         GPUHistoryService.shared.stopRecording()
         MemoryHistoryService.shared.stopRecording()
         BatteryHistoryService.shared.stopRecording()

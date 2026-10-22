@@ -12,6 +12,7 @@ let package = Package(
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderToolManager"),
+        .package(path: "../KitTestSupport"),
     ],
     targets: [
         .target(
@@ -21,12 +22,21 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             path: "Sources/PluginAgentPlanStorage"
         ),
         .testTarget(
             name: "PluginAgentPlanStorageTests",
-            dependencies: ["PluginAgentPlanStorage", "KitAgentTool"],
+            dependencies: [
+                "PluginAgentPlanStorage",
+                "KitAgentTool",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
+                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "KitTestSupport", package: "KitTestSupport"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+            ],
             path: "Tests/PluginAgentPlanStorageTests"
         ),
     ]

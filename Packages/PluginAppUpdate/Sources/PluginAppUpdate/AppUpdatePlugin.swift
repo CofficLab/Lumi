@@ -59,8 +59,13 @@ public enum AppUpdateBootstrap {
     ///
     /// 该插件是 host-owned（不经 Kernel 的 PluginDataMigrating 流程），
     /// 因此在此处做一次性导入。`UserDefaults` 原 key 保留，便于回退。
+    ///
+    /// - Important: legacy 偏好域可注入。测试必须注入隔离的偏好实例，
+    ///   否则会读写开发者本机的真实偏好——既污染数据，也让断言受残留影响。
+    nonisolated(unsafe) public static var legacyUserDefaults: UserDefaults = .standard
+
     private static func importLegacyChannelIfNeeded(to directory: URL) {
-        guard let rawValue = UserDefaults.standard.string(forKey: AppUpdateChannel.userDefaultsKey),
+        guard let rawValue = legacyUserDefaults.string(forKey: AppUpdateChannel.userDefaultsKey),
               let channel = AppUpdateChannel(rawValue: rawValue)
         else {
             return

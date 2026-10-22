@@ -18,6 +18,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../KitTestSupport"),
     ],
     targets: [
 .target(
@@ -34,7 +35,8 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
-                .product(name: "ProviderStorage", package: "LumiProviders")
+                .product(name: "ProviderStorage", package: "LumiProviders"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             path: "Sources/PluginClipboardManager",
             resources: [
@@ -43,7 +45,11 @@ let package = Package(
         ),
         .testTarget(
             name: "ClipboardManagerPluginTests",
-            dependencies: [.target(name: "ClipboardManagerPlugin")],
+            dependencies: [
+                .target(name: "ClipboardManagerPlugin"),
+                .product(name: "KitTestSupport", package: "KitTestSupport"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+            ],
             path: "Tests"
         )
     ]

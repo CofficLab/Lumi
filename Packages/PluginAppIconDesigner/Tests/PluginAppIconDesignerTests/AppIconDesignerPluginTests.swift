@@ -126,6 +126,38 @@ struct AppIconDesignerPluginTests {
         IconDesignerRuntime.reset()
     }
 
+    @Test("加入项目不预建存储目录，真正写入时才创建")
+    func doesNotCreateStorageDirectoryUntilWrite() throws {
+        IconDesignerRuntime.reset()
+        let projectRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("IconLazyDir-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
+        defer {
+            IconDesignerRuntime.reset()
+            try? FileManager.default.removeItem(at: projectRoot)
+        }
+
+        let storage = projectRoot
+            .appendingPathComponent(".lumi", isDirectory: true)
+            .appendingPathComponent(IconDesignerRuntime.projectFolderName, isDirectory: true)
+
+        IconDesignerRuntime.updateProjectStorageDirectory(projectPath: projectRoot.path)
+
+        // 仅打开项目不应留下空目录。
+        #expect(!FileManager.default.fileExists(atPath: storage.path))
+        #expect(IconDocumentStore.shared.projectDocuments.isEmpty)
+
+        // 真正写入数据时才创建目录。
+        _ = IconDocumentStore.shared.createDocument(
+            title: "Lazy Icon",
+            width: 1024,
+            height: 1024,
+            background: .color("#00000000"),
+            scope: .project
+        )
+        #expect(FileManager.default.fileExists(atPath: storage.path))
+    }
+
     @Test("启动后 15 个 Agent 工具注册到 ToolManagerProviding，停止后移除")
     func registersAndRemovesAgentTools() async throws {
         let kernel = KernelCoreContainer()

@@ -11,6 +11,8 @@ struct NoConversationSelectedView: View {
     let services: MessageListEmptyServices
     /// 近 30 天的活动卡。跟着提示流排在下面，而不是停在窗口底部的底栏里。
     let activity: EmptyStateActivityViewModel?
+    /// 项目上下文卡的数据源。没有项目时整个卡片不渲染。
+    let projectContext: ProjectContextViewModel?
     @ObservedObject private var guideState: MessageListGuideState
     @State private var importingFolder = false
     @State private var projectError: String?
@@ -18,10 +20,12 @@ struct NoConversationSelectedView: View {
     init(
         services: MessageListEmptyServices,
         guideState: MessageListGuideState,
-        activity: EmptyStateActivityViewModel? = nil
+        activity: EmptyStateActivityViewModel? = nil,
+        projectContext: ProjectContextViewModel? = nil
     ) {
         self.services = services
         self.activity = activity
+        self.projectContext = projectContext
         _guideState = ObservedObject(wrappedValue: guideState)
     }
 
@@ -71,11 +75,22 @@ struct NoConversationSelectedView: View {
                                 .padding(.top, 24)
                         }
 
+                        // 项目卡紧跟在提示流下面：与活动卡同宽同族。
+                        // 这里不重复「项目身份行」——本视图的标题里已经带着项目名
+                        // （还带一个可切换的下拉），再说一遍路径是噪音。
+                        if let projectContext, projectContext.hasProject {
+                            ProjectContextCard(model: projectContext, services: services)
+                                .padding(.top, 26)
+                                .task {
+                                    await projectContext.loadIfNeeded()
+                                }
+                        }
+
                         // 活动卡紧跟在提示流下面：同一列、同一条底色，
                         // 两者之间不再有任何分隔线。
                         if let activity {
                             ActivityCardSlot(model: activity)
-                                .padding(.top, 28)
+                                .padding(.top, 26)
                         }
                     }
                     .frame(maxWidth: 620)

@@ -60,15 +60,16 @@ struct ComposerView: View {
                 }
             },
             onBlockInserted: { id in viewModel.consumePendingBlock(id: id) },
+            onCollapsedBlocksChanged: { blocks in viewModel.updateCollapsedBlocks(blocks) },
             isFocused: focusedBinding,
             cursorPosition: cursorBinding,
             isImageDragHovering: .constant(false),
             pendingBlock: viewModel.pendingBlock
         )
         .frame(height: viewModel.inputHeight)
-        .padding(.horizontal, 10)
-        .padding(.top, 8)
-        .padding(.bottom, 8)
-        .appSurface(style: .toolbar, cornerRadius: 0)
+        .padding(.horizontal, ComposerLayout.contentHorizontalInset)
+        .padding(.top, ComposerLayout.contentTopInset)
+        .padding(.bottom, ComposerLayout.contentBottomInset)
+        .composerSurface()
     }
 }

@@ -4,6 +4,9 @@ import SwiftUI
 public struct SidebarView: View {
     @ObservedObject var viewModel: GoalVM
 
+    /// 当前明暗外观：暗色主题下同样的黑色压不出层次，阴影浓度需要单独调。
+    @Environment(\.colorScheme) private var colorScheme
+
     /// 「在新对话中继续」的编排器,为 `nil` 时隐藏该入口(宿主缺少必需的 Provider)。
     let forkCoordinator: GoalForkCoordinator?
 
@@ -23,6 +26,12 @@ public struct SidebarView: View {
     /// 任务列表是容器内最后一个元素,没有下方的兄弟视图撑开间距,
     /// 直接贴住底边会显得拥挤,这里留一段固定底部内边距。
     private static let taskListBottomInset: CGFloat = 10
+
+    /// 顶部阴影的高度(点):阴影自面板顶边向上扩散的覆盖范围。
+    ///
+    /// 12pt 足够让「面板浮在聊天区之上」的层次读得出来,又不至于糊到上方
+    /// 消息列表的内容上。
+    static let topShadowHeight: CGFloat = 12
 
     /// 是否有可见的 Goal
     private var hasVisibleGoal: Bool {
@@ -82,8 +91,47 @@ public struct SidebarView: View {
                 }
             }
         }
+        .overlay(alignment: .top) {
+            topShadow
+        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(pluginLocalization.string("Goal & Tasks"))
+    }
+
+    // MARK: - Top Shadow
+
+    /// 顶边向上投射的柔和阴影。
+    ///
+    /// 面板本身没有底色(与聊天区同底),SwiftUI 的 `.shadow()` 只会把文字和图标
+    /// 的轮廓投影出去,画不出「整条面板浮起来」的层次,因此这里手绘一段朝上的
+    /// 渐变:紧贴顶边最实,向上快速衰减为透明。
+    ///
+    /// 阴影落在面板上方(消息列表一侧),把 Goal 面板与上方的对话内容分开,
+    /// 面板因此读起来是「压在聊天区之上的一层」。
+    @ViewBuilder
+    private var topShadow: some View {
+        if hasVisibleGoal {
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.black.opacity(0),
+                            Color.black.opacity(topShadowOpacity),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(height: Self.topShadowHeight)
+                // 上移到面板顶边之外:阴影要「压」在上方的内容上,而不是落在面板内部。
+                .offset(y: -Self.topShadowHeight)
+                .allowsHitTesting(false)
+        }
+    }
+
+    /// 顶部阴影的不透明度:暗色主题下同样的黑色几乎看不出层次,故暗色更重。
+    private var topShadowOpacity: Double {
+        colorScheme == .dark ? 0.42 : 0.14
     }
 
     // MARK: - Blocked Reason

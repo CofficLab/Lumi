@@ -5,7 +5,7 @@
 DisplayControlPlugin External display DDC (Display Data Channel) control for Lumi. - Brightness, Volume, Contrast control for external monitors via DDC/CI (VCP commands over I2C) - Built-in display brightness via DisplayServices - Apple Silicon DDC service matching (Arm64DDCMatcher) - Debounced writes (150ms) to prevent DDC overload - Unsupported controls are automatically disabled Based on reference implementation from [hagimi-monitor](https://github.com/Acerola-1/hagimi-monitor).
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 27
+测试文件: 7 个，用例总数: 33
 
 核心组件（源码目录）:
 - `Models/`
@@ -22,7 +22,10 @@ DisplayControlPlugin External display DDC (Display Data Channel) control for Lum
 - `DisplayControlKind`
 - `DisplayControlObserver`
 - `DDCVCPCode`
+- `DisplayControlPluginLocalStore`
+- `DisplayControlRuntime`
 - `DisplayServicesBridge`
+- `PrivateDisplaySymbol`
 - `DisplayControlViewModel`
 - `DisplayControlAboutView`
 - `DisplayControlManualView`
@@ -36,7 +39,9 @@ DisplayControlPlugin External display DDC (Display Data Channel) control for Lum
 - **DDCBridge**（12 条）：由 `bridgeReturnsNilWithoutService`、`bridgeReturnsNilAfterEmptyRefresh`、`bridgeRefreshWithInvalidIDs` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DisplayControlLocalization**（4 条）：由 `pluginBundleIncludesLocalizedStringsCatalog`、`loadsSimplifiedChineseStrings`、`stringCatalogDefinesRequiredLanguages` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DisplayControlPlugin**（9 条）：由 `pluginInfoIdentifier`、`pluginInfoDisplayName`、`pluginCategory` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DisplayControlRuntime**（3 条）：由 `usesInjectedDirectory`、`resetClearsInjectedDirectory`、`bootInjectsStorageDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（2 条）：由 `pluginInfoIsValid`、`controlKindDefaults` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **PrivateDisplaySymbol**（3 条）：由 `privateSymbolsDegradeGracefully`、`displayServiceSurvivesMissingSymbols`、`displayServiceHandlesUnknownDisplayID` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -67,29 +72,35 @@ DisplayControlPlugin External display DDC (Display Data Channel) control for Lum
 | 23 | DisplayControlPlugin | DisplayControlKind has correct cases | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `displayControlKinds` |
 | 24 | DisplayControlPlugin | DisplayControlKind default values are correct | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `displayControlKindDefaultValues` |
 | 25 | DisplayControlPlugin | ControlledDisplay initializes correctly | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `controlledDisplayInit` |
-| 26 | 综合 | Plugin info is valid | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginInfoIsValid` |
-| 27 | 综合 | DisplayControlKind defaults are in valid range | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `controlKindDefaults` |
+| 26 | DisplayControlRuntime | 注入目录后 settingsDirectory 返回该目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `usesInjectedDirectory` |
+| 27 | DisplayControlRuntime | 重置后清空注入目录，不再回退到真实数据目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resetClearsInjectedDirectory` |
+| 28 | DisplayControlRuntime | 启动时把存储目录注入运行时配置 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bootInjectsStorageDirectory` |
+| 29 | 综合 | Plugin info is valid | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginInfoIsValid` |
+| 30 | 综合 | DisplayControlKind defaults are in valid range | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `controlKindDefaults` |
+| 31 | PrivateDisplaySymbol | 私有符号解析不会崩溃，缺失时降级为不可用 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `privateSymbolsDegradeGracefully` |
+| 32 | PrivateDisplaySymbol | DisplayService 在私有符号缺失时不会崩溃 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `displayServiceSurvivesMissingSymbols` |
+| 33 | PrivateDisplaySymbol | DisplayService 对未知 display id 安全降级 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `displayServiceHandlesUnknownDisplayID` |
 
-> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 20 / 20
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 23 / 23
 - P2: 已覆盖 4 / 4
-- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
+- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（20 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（23 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 33 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
