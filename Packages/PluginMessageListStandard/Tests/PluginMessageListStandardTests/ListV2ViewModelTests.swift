@@ -241,8 +241,8 @@ func loadEarlierNoOpWithoutWindow() async {
 }
 
 @MainActor
-@Test("向上翻页在超过窗口上限且离开底部时回收较新消息")
-func loadEarlierEvictsTailWhenAwayFromBottom() async {
+@Test("向上翻页在窗口未超上限时原样前插")
+func loadEarlierPrependsPageWhenWithinWindowLimit() async {
     let conversationID = UUID()
     // 大量消息 + 翻页补充 → 触发窗口回收
     let existing = (0..<8).map { index in

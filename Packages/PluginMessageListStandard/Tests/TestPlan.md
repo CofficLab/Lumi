@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMessageListStandard 的实现包，包含 14 个主要类型；当前测试覆盖 73 条用例。
+PluginMessageListStandard 的实现包，包含 14 个主要类型；当前测试覆盖 103 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 73
+测试文件: 15 个，用例总数: 103
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -39,13 +39,17 @@ PluginMessageListStandard 的实现包，包含 14 个主要类型；当前测�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **BottomDecision**（8 条）：由 `bottomDecisionTrueAtExactBottom`、`bottomDecisionFalseFarFromBottom`、`bottomDecisionUsesHysteresisBand` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **InitialPositionGate**（8 条）：由 `gateBecomesReadyAfterSuccessfulSettle`、`gateReleasesEvenWhenSettleFails`、`gateReleasesWhenSettleHangs` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **InitialPositionGate**（16 条）：由 `gateBecomesReadyAfterSuccessfulSettle`、`gateReleasesEvenWhenSettleFails`、`gateReleasesWhenSettleHangs` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ListV2ViewModel**（24 条）：由 `activationLoadsFirstPage`、`activationWithoutConversationClearsState`、`activationResetsPreviousConversationState` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListBottomSettle**（3 条）：由 `bottomSettleStopsOnceGeometrySettles`、`bottomSettleToleratesSubPixelJitter`、`bottomSettleAbortsWhenGeometryUnavailable` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MessageListService**（9 条）：由 `messageRowsFilterAndMergeToolExecutionMessages`、`messageRowsPreserveUnscopedMessagesAndLegacyGroups`、`messageDerivedPredicatesDistinguishEmptyResponses` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MessageListService**（10 条）：由 `messageRowsFilterAndMergeToolExecutionMessages`、`messageRowsPreserveUnscopedMessagesAndLegacyGroups`、`messageDerivedPredicatesDistinguishEmptyResponses` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListServices**（6 条）：由 `activityMessageCoversSimpleStates`、`activityMessageUsesJobDescription`、`activityMessageFallsBackWithoutRunningJob` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListTurnActivity**（8 条）：由 `turnActivitySortsToolCallsStably`、`turnActivitySummarisesRecords`、`turnActivityHandlesEmptyAndUnfinished` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ScrollViewBottomController**（7 条）：由 `pinToBottomMovesOffsetToDocumentEnd`、`pinToBottomClampsOffsetWhenDocumentShorterThanViewport`、`controllerWithoutScrollViewIsNotAttached` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ScrollViewBottomController**（7 条）
+- **ListV2Authorization**（3 条）：由 `approvedToolCallKeepsTerminalStateAfterSwitchingBack`、`rejectedToolCallKeepsTerminalStateAfterSwitchingBack` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ListV2LargeData**（6 条）：由 `tailEvictionDoesNotCreatePermanentGap`、`windowStaysBoundedWhilePaging`、`toolCallQueriesDoNotScaleWithTurnCount` 等用例锁定；改动分页窗口与统计刷新时优先跑对应测试文件。
+- **MessageListStateLifetime**（6 条）：由 `listViewMustNotHoldReferenceStateInPlainStoredProperty`、`listViewMustCarryRuntimeInStateObject` 等用例锁定；改动视图状态持有方式时优先跑对应测试文件。
+- **MessageListUITestingSupport**（6 条）：由 `fixtureSeedIsIdempotent`、`fixtureSelectsLargeConversation` 等用例锁定；改动 UI 测试夹具时优先跑对应测试文件。：由 `pinToBottomMovesOffsetToDocumentEnd`、`pinToBottomClampsOffsetWhenDocumentShorterThanViewport`、`controllerWithoutScrollViewIsNotAttached` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -73,7 +77,7 @@ PluginMessageListStandard 的实现包，包含 14 个主要类型；当前测�
 | 20 | ListV2ViewModel | 切换到非当前会话的激活请求被忽略 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activationIgnoresStaleConversation` |
 | 21 | ListV2ViewModel | 向上翻页把更早一页前插，并保留已有更早标记 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `loadEarlierPrependsPage` |
 | 22 | ListV2ViewModel | 空窗口或无更早消息时向上翻页不产生锚点 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `loadEarlierNoOpWithoutWindow` |
-| 23 | ListV2ViewModel | 向上翻页在超过窗口上限且离开底部时回收较新消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `loadEarlierEvictsTailWhenAwayFromBottom` |
+| 23 | ListV2ViewModel | 向上翻页在窗口未超上限时原样前插 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `loadEarlierPrependsPageWhenWithinWindowLimit` |
 | 24 | ListV2ViewModel | 尾部刷新在内容变化时替换窗口并返回 true | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tailRefreshUpdatesWindow` |
 | 25 | ListV2ViewModel | 尾部刷新在内容未变化时返回 false 且不重复发布 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `tailRefreshSkipsIdenticalSnapshot` |
 | 26 | ListV2ViewModel | 尾部刷新在没有选中会话时直接返回 false | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tailRefreshWithoutConversation` |
@@ -100,7 +104,7 @@ PluginMessageListStandard 的实现包，包含 14 个主要类型；当前测�
 | 47 | MessageListService | 首屏取最近 pageSize 条并探测是否存在更早消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `paginationLoadsLatestPageAndDetectsEarlierMessages` |
 | 48 | MessageListService | 向上翻页保留锚点，并重新检查是否还有更早消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `paginationLoadsEarlierPageAroundAnchor` |
 | 49 | MessageListService | 尾部刷新覆盖重叠窗口，避免无重叠时打断历史浏览 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `paginationRefreshesOnlyAnOverlappingTail` |
-| 50 | MessageListService | 空窗口首刷补查 earlier，尾部回收只在离开底部时执行 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `paginationInitialRefreshAndTailEviction` |
+| 50 | MessageListService | 空窗口首刷补查 earlier，窗口超上限时一律回收尾部 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `paginationInitialRefreshAndTailEviction` |
 | 51 | MessageListService | 尾部刷新门将并发通知合并成当前轮和至多一轮尾随刷新 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `tailRefreshGateCoalescesOverlappingRequests` |
 | 52 | MessageListService | 通知按当前会话筛选，消息时间相同时按 UUID 稳定排序 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `messageNotificationAndOrderingAreStable` |
 | 53 | MessageListServices | 活动消息：sending / thinking / waitingForUser 各映射到对应文案 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `activityMessageCoversSimpleStates` |
@@ -124,27 +128,57 @@ PluginMessageListStandard 的实现包，包含 14 个主要类型；当前测�
 | 71 | ScrollViewBottomController | 视口高度为 0 时拒绝返回几何快照 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `pinToBottomRejectsZeroViewport` |
 | 72 | ScrollViewBottomController | 文档高度持续增长时，收敛循环可在高度稳定后退出 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `settleConvergesAfterDocumentHeightStabilizes` |
 | 73 | ScrollViewBottomController | 非有限或异常尺寸的文档不会被钉底 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `pinToBottomRejectsInvalidGeometry` |
+| 74 | InitialPositionGate | 首屏遮罩：兜底预算是绝对期限，主线程被占用时不得再叠加一个完整预算 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateBudgetIsAbsoluteNotAdditiveUnderMainActorContention` |
+| 75 | InitialPositionGate | 首屏遮罩：收敛失败时立即放行，不等满预算 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gateReleasesImmediatelyWhenSettleFails` |
+| 76 | InitialPositionGate | 首屏遮罩：收敛成功时立即放行，不等满预算 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gateReleasesImmediatelyWhenSettleSucceeds` |
+| 77 | InitialPositionGate | 首屏遮罩：会话切换的复位不得作废已在当前会话上启动的收敛 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateResetMustNotCancelConvergenceAlreadyStarted` |
+| 78 | InitialPositionGate | 首屏遮罩：复位不得让已失效的旧一轮放行遮罩 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateResetMustNotReleaseMaskFromStaleRound` |
+| 79 | InitialPositionGate | 首屏遮罩：收敛挂死时预算兜底仍在有限时间内放行 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateStillReleasesWhenSettleHangs` |
+| 80 | InitialPositionGate | 首屏遮罩：成功与失败路径的放行耗时同量级（收敛结果未生效） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gateTreatsSuccessAndFailureIdentically` |
+| 81 | InitialPositionGate | 首屏遮罩：旧轮次醒来不清掉新轮次的准备状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `staleRoundDoesNotClearNewRoundPreparing` |
+| 82 | ListV2Authorization | 已允许的工具调用在切走再切回后仍是授权终态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `approvedToolCallKeepsTerminalStateAfterSwitchingBack` |
+| 83 | ListV2Authorization | 授权状态变化本身就会触发历史行重建 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `authorizationStateChangeAloneTriggersRebuild` |
+| 84 | ListV2Authorization | 已拒绝的工具调用在切走再切回后仍是授权终态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rejectedToolCallKeepsTerminalStateAfterSwitchingBack` |
+| 85 | ListV2LargeData | 大窗口下重建历史行的耗时应保持有界 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rebuildHistoryRowsStaysFastAtScale` |
+| 86 | ListV2LargeData | 内容被等长替换时历史行必须更新 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `sameLengthContentEditRebuildsRows` |
+| 87 | ListV2LargeData | 翻页裁剪窗口后，新消息到达不得让中间段消息永久消失 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `tailEvictionDoesNotCreatePermanentGap` |
+| 88 | ListV2LargeData | 工具调用统计不应随窗口内 turn 数线性放大 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `toolCallQueriesDoNotScaleWithTurnCount` |
+| 89 | ListV2LargeData | 单个 turn 的大量工具消息合并后仍只产生一行 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolOnlyMessagesMergeIntoSingleRow` |
+| 90 | ListV2LargeData | 持续翻页时内存窗口不得无上限增长 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `windowStaysBoundedWhilePaging` |
+| 91 | MessageListService | 尾部刷新回填空档后，窗口必须保持时间升序且无重复 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `paginationBackfillsGapKeepingWindowOrdered` |
+| 92 | MessageListStateLifetime | 消息列表视图：运行时状态容器必须由 StateObject 承载 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listViewMustCarryRuntimeInStateObject` |
+| 93 | MessageListStateLifetime | 消息列表视图：不得用普通存储属性持有引用类型状态 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listViewMustNotHoldReferenceStateInPlainStoredProperty` |
+| 94 | MessageListStateLifetime | 运行时容器：必须持有底部标记、滚动协调器与底部几何控制器 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimeCarriesAllThreeMembers` |
+| 95 | MessageListStateLifetime | 运行时容器：成员在多次访问之间必须保持同一实例 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimeMembersKeepStableIdentity` |
+| 96 | MessageListStateLifetime | 运行时容器：不得发布任何 @Published（避免重新打开 invalidation 反馈环） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimePublishesNothing` |
+| 97 | MessageListStateLifetime | 底部 tracker：控制器换实例后必须重新绑定滚动视图 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `trackerRebindsReplacedController` |
+| 98 | MessageListUITestingSupport | 夹具：超大会话消息数远超窗口上限 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `fixtureHugeConversationExceedsWindowLimit` |
+| 99 | MessageListUITestingSupport | 夹具：大会话消息数显著多于小会话 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `fixtureLargeConversationIsHarder` |
+| 100 | MessageListUITestingSupport | 夹具：重复 seed 不产生重复会话 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `fixtureSeedIsIdempotent` |
+| 101 | MessageListUITestingSupport | 夹具：seed 后三个会话都存在，且都带消息 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `fixtureSeedsBothConversations` |
+| 102 | MessageListUITestingSupport | 夹具：三个会话都写入了消息 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `fixtureSeedsMessagesForBothConversations` |
+| 103 | MessageListUITestingSupport | 夹具：默认选中大会话且为 standard 详细程度 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `fixtureSelectsLargeConversation` |
 
-> 说明：全部 **73 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **103 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
-- P1: 已覆盖 53 / 53
-- P2: 已覆盖 9 / 9
-- **合计: 73 / 73**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 26 / 26
+- P1: 已覆盖 62 / 62
+- P2: 已覆盖 15 / 15
+- **合计: 103 / 103**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（53 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、消失、竞态、超时、必须、不得、不应等失效类信号的用例（26 条）
+- **P1**: 其余功能性用例（62 条）
+- **P2**: 稳定常量、占位、文案、空集合、夹具等边界用例（15 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 73 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 103 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
