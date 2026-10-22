@@ -402,6 +402,12 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, SuperLog {
         return await recordStore.fetchRecords(forTurnID: turnID)
     }
 
+    /// 一次查询取回多个 turn 的记录，避免逐 turn 查询退化成 N+1 次 IO。
+    public func toolCalls(forTurnIDs turnIDs: [UUID]) async -> [ToolCallRecord] {
+        guard let recordStore else { return [] }
+        return await recordStore.fetchRecords(forTurnIDs: turnIDs)
+    }
+
     /// 按原始 `ToolCall.id` 查询一次调用的结果。
     public func toolCallResult(for toolCallID: String) async -> ToolCallResult? {
         if let cached = resultCache[toolCallID] {
