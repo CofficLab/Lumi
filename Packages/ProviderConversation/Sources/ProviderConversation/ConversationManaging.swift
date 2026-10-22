@@ -77,6 +77,23 @@ public protocol ConversationManaging: AnyObject {
     /// 「全部对话」视图已等同于该项目，「当前项目」筛选入口冗余，应隐藏。
     func conversationProjectCount() async -> Int
 
+    /// 返回指定项目下、且在给定时间点之后仍有活动的会话 ID（`uuidString`）。
+    ///
+    /// ## 用途
+    ///
+    /// 消息统计需要「哪些消息属于这个项目」这个判定，但消息存储里只有会话 ID，
+    /// 项目归属存在会话存储里。会话集合由这里提供，消息存储再按会话 ID 过滤。
+    ///
+    /// ## 参数
+    ///
+    /// - Parameters:
+    ///   - projectPath: 项目根目录路径。
+    ///   - updatedSince: 只保留在该时间点之后仍有活动的会话；nil 表示不限时间。
+    ///     传入窗口起点（例如「近 30 天的起点」）可以把结果集限制在窗口内。
+    ///
+    /// - Returns: 会话 ID 字符串列表；项目下没有会话时为空数组。
+    func conversationIDs(projectPath: String, updatedSince: Date?) async -> [String]
+
     /// 数据存储目录
     var dataDirectory: URL { get }
 
@@ -223,6 +240,17 @@ public protocol ConversationManaging: AnyObject {
 }
 
 public extension ConversationManaging {
+    /// 默认实现：从已加载的会话摘要里筛出属于该项目且仍在活动期内的会话。
+    ///
+    /// 持久化实现应当走存储层查询，避免依赖「摘要已全部加载」这个前提。
+    func conversationIDs(projectPath: String, updatedSince: Date?) async -> [String] {
+        conversations.compactMap { summary in
+            guard summary.projectPath == projectPath else { return nil }
+            if let updatedSince, summary.updatedAt < updatedSince { return nil }
+            return summary.id.uuidString
+        }
+    }
+
     func modelID(for conversationID: UUID?) -> String? {
         guard let providerID = providerID(for: conversationID),
               let modelName = modelName(for: conversationID) else { return nil }
