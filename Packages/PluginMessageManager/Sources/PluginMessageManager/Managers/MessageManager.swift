@@ -194,14 +194,18 @@ public final class MessageManager: MessageManaging, SuperLog {
 
     /// 聚合日统计的公共合并逻辑（消息条数 / token 总数各传一个标记）。
     ///
-    /// - Important: pending 侧只补齐「**未落盘**」的增量。
+    /// - Important: 口径是「磁盘侧排除 pending + pending 侧全部补计」。
     ///   `persistLater` 分两步（先 `store.insertMessage`、再 `dequeuePending`），
     ///   中间存在窗口：磁盘**已**含该消息、pending**仍**保留它。两侧简单相加会
     ///   把同一条统计两次——实测 20 轮中第 13 轮 `dailyTokenCounts` 得到 27
     ///   （应为 17，input 的 10 被算了两遍）。
     ///
-    ///   去重判据由 `MessageStore.dailyAggregate` 在**同一把锁内**与聚合一起完成，
-    ///   不能拆成「先逐条探测再聚合」，否则探测与聚合之间仍有窗口。
+    ///   按 id 排除后，pending 里的消息**无论此刻是否已落盘，都只由 pending 侧计一次**，
+    ///   结果与两侧快照的先后顺序无关。反过来若「磁盘侧照算、再回报哪些已落盘让
+    ///   调用方跳过」，一旦消息已移出 pending 而磁盘尚不可见，两侧都不计 → 少算。
+    ///
+    /// - Important: pending 侧只补齐「创建时间不早于 `since`」的消息，
+    ///   与磁盘侧的过滤条件保持一致。
     private nonisolated static func mergeDailyAggregate(
         pendingMessages: [Message],
         since: Date,
@@ -216,21 +220,20 @@ public final class MessageManager: MessageManaging, SuperLog {
             return countTokens ? store.dailyTokenCounts(since: since) : store.dailyMessageCounts(since: since)
         }
 
-        let ids = Set(eligible.map { $0.id.uuidString })
         guard let store else {
             // store 未就绪：只靠 pending 尽力而为（read-your-writes）。
             return Self.aggregatePendingOnly(eligible, countTokens: countTokens)
         }
 
-        let (counts, alreadyPersisted) = store.dailyAggregate(
+        let ids = Set(eligible.map { $0.id.uuidString })
+        // 磁盘侧排除这批 id，pending 侧再全部补计 → 每条消息恰好计一次。
+        var result = store.dailyAggregate(
             since: since,
-            pendingIDs: ids,
+            excludingIDs: ids,
             countTokens: countTokens
         )
-        // 只有既未落盘、又尚未被移出 pending 的消息才需要补计。
-        var result = counts
         let calendar = Calendar.current
-        for message in eligible where !alreadyPersisted.contains(message.id.uuidString) {
+        for message in eligible {
             let value = countTokens
                 ? (message.inputTokenCount ?? 0) + (message.outputTokenCount ?? 0)
                 : 1
