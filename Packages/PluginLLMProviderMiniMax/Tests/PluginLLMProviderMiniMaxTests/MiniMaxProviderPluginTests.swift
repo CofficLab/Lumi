@@ -37,7 +37,7 @@ struct MiniMaxProviderPluginTests {
         #expect(info.id == "minimax-tokenplan")
         #expect(info.displayName == "MiniMax")
         #expect(info.description == "MiniMax Token Plan via OpenAI-compatible API")
-        #expect(info.defaultModel == "MiniMax-M2.7")
+        #expect(info.defaultModel == "MiniMax-M3.1-Flash")
         #expect(info.apiFormat.rawValue == "openAI")
         #expect(info.apiKeyStorageKey == "DevAssistant_ApiKey_MiniMax")
         #expect(info.providerType.rawValue == "cloudService")

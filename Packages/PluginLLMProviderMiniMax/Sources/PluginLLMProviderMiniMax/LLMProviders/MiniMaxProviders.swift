@@ -73,7 +73,7 @@ public final class MiniMaxOpenAIProvider: VendorLLMProvider {
                 id: "minimax-tokenplan",
                 displayName: "MiniMax",
                 description: "MiniMax Token Plan via OpenAI-compatible API",
-                defaultModel: "MiniMax-M2.7",
+                defaultModel: "MiniMax-M3.1-Flash",
                 models: MiniMaxVendorModels.all,
                 websiteURL: URL(string: "https://platform.minimaxi.com/")!,
                 apiFormat: .openAI,
