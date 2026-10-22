@@ -432,7 +432,19 @@ struct LLMProviderInfoTests {
         #expect(model.supportsStreaming)
         #expect(model.supportsVision == false)
         #expect(model.supportsTools)
+        // 退役标记缺省为 false：绝大多数供应商不涉及「上游下线」，
+        // 不能因为这个字段让它们的模型被误标。
+        #expect(model.isRetired == false)
         #expect(LLMModelInfo(id: "x", displayName: "X").displayName == "X")
+    }
+
+    @Test("退役标记可显式设置")
+    func modelInfoRetiredFlag() {
+        let retired = LLMModelInfo(id: "old-model", isRetired: true)
+        #expect(retired.isRetired == true)
+
+        // 显式传 false 与省略等价
+        #expect(LLMModelInfo(id: "m", isRetired: false).isRetired == false)
     }
 }
 
