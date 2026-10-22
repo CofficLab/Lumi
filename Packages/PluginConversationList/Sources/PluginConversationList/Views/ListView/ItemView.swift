@@ -97,7 +97,7 @@ struct ItemView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .overlay(alignment: .topTrailing) { statusIndicator }
-        .overlay(alignment: .leading) { automationLevelWatermark }
+        .overlay(alignment: .trailing) { automationLevelWatermark }
     }
 
     // MARK: - 自动化程度水印
@@ -135,16 +135,17 @@ struct ItemView: View {
         if let level = conversation.automationLevel {
             GeometryReader { proxy in
                 HStack {
+                    Spacer()
                     Image(systemName: level.iconName)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(height: proxy.size.height * 1.4)
                         .foregroundStyle(watermarkColor(for: level))
                         .opacity(0.10)
-                        // 负 leading padding 让图标超出 HStack leading 边缘，
-                        // 使裁切发生在 leading 侧（轻微溢出），保持「右对齐 + 轻微裁切」的对称语义。
-                        .padding(.leading, -proxy.size.height * 0.15)
-                    Spacer()
+                        // 负 trailing padding 让图标超出 HStack trailing 边缘，
+                        // 使裁切发生在 trailing 侧（轻微溢出），
+                        // 而非之前 Spacer 导致的 leading 侧裁切。
+                        .padding(.trailing, -proxy.size.height * 0.15)
                 }
                 .frame(width: proxy.size.width, height: proxy.size.height)
                 .clipped()
