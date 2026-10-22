@@ -48,6 +48,9 @@ public struct ProviderDetailView: View {
             } else {
                 modelSection
             }
+            if let modelRefreshError = viewModel.modelRefreshError {
+                AppErrorBanner(message: LocalizedStringKey(modelRefreshError))
+            }
         }
         .sheet(isPresented: $isEditorPresented) {
             if let editor = viewModel.makeCustomProviderEditor() {
@@ -94,6 +97,21 @@ public struct ProviderDetailView: View {
                     AppButton("删除", systemImage: "trash", style: .destructive, size: .small) {
                         isDeleteConfirmationPresented = true
                     }
+                }
+                if viewModel.canRefreshModels {
+                    AppButton(
+                        pluginLocalization.string(
+                            viewModel.isRefreshingModels ? "刷新中…" : "刷新模型列表"
+                        ),
+                        systemImage: "arrow.clockwise",
+                        style: .secondary,
+                        size: .small
+                    ) {
+                        Task { await viewModel.refreshModels() }
+                    }
+                    .disabled(viewModel.isRefreshingModels)
+                    .help(pluginLocalization.string("从供应商拉取最新的模型列表"))
+                    .accessibilityIdentifier(ProviderSettingsAccessibility.refreshModelsButton)
                 }
             }
             if !viewModel.providerDescription.isEmpty {
