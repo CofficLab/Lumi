@@ -239,40 +239,6 @@
         }
       }
     },
-    "Computer Use captures only the selected window. Password fields are blocked, stale screenshot coordinates are rejected, and state-changing batches require approval in Build mode.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Computer Use captures only the selected window. Password fields are blocked, stale screenshot coordinates are rejected, and state-changing batches require approval in Build mode."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Computer Use 仅捕获所选窗口。密码输入框会被屏蔽，过时的截图坐标会被拒绝，而改变状态的批量操作需在 Build 模式下获得批准。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Computer Use 僅擷取所選視窗。密碼輸入欄會被封鎖，過時的截圖座標會被拒絕，而改變狀態的批次操作需在 Build 模式下獲得批准。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Computer Use 僅擷取所選視窗。密碼輸入欄會被封鎖，過時的截圖座標會被拒絕，而改變狀態的批次操作需在 Build 模式下獲得批准。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Computer Use 僅擷取所選視窗。密碼輸入欄會被封鎖，過時的截圖座標會被拒絕，而改變狀態的批次操作需在 Build 模式下獲得批准。"
-          }
-        }
-      }
-    },
     "Computer Use requires a model that supports both vision and tools. Select a compatible model and try again.": {
       "localizations": {
         "en": {

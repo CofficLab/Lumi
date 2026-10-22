@@ -26,8 +26,6 @@ struct ComputerUseSettingsView: View {
             VStack(alignment: .leading, spacing: 14) {
                 permissionsSection
                 applicationsSection
-                Text(pluginLocalization.string("Computer Use captures only the selected window. Password fields are blocked, stale screenshot coordinates are rejected, and state-changing batches require approval in Build mode."))
-                    .font(.callout).foregroundStyle(theme.textSecondary).padding(.horizontal, 4)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
