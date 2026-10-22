@@ -5,6 +5,7 @@ import ProviderConversationState
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageStreaming
+import ProviderToolManager
 
 /// Cheap fingerprint of the inputs that decide `MessageListRowBuilder.buildHistory`
 /// output, used to skip the (O(rows × content) memberwise) `historyRows` array
@@ -309,15 +310,27 @@ final class ListV2ViewModel: ObservableObject {
             return
         }
 
+        // 一次批量查询取回窗口内所有 turn 的调用记录。
+        //
+        // 逐 turn 查询会让刷新成本随窗口内 turn 数线性放大：窗口有几十个 turn
+        // 时，每次消息事件（工具结果回写）都要发几十次查询，而这些统计在
+        // V2/V3 的视图里并没有消费点。
+        let records = await toolManager.toolCalls(forTurnIDs: Array(turnIDs))
+        var recordsByTurn: [UUID: [ToolCallRecord]] = [:]
+        for record in records {
+            guard let turnID = record.turnID else { continue }
+            recordsByTurn[turnID, default: []].append(record)
+        }
+
         var summaries: [UUID: LumiTurnActivitySummary] = [:]
         for turnID in turnIDs {
-            let records = await toolManager.toolCalls(for: turnID)
-            let durations = records.compactMap(\.duration)
+            let turnRecords = recordsByTurn[turnID] ?? []
+            let durations = turnRecords.compactMap(\.duration)
             summaries[turnID] = LumiTurnActivitySummary(
                 turnID: turnID,
-                totalCount: records.count,
-                completedCount: records.filter { $0.completedAt != nil }.count,
-                failedCount: records.filter(\.resultIsError).count,
+                totalCount: turnRecords.count,
+                completedCount: turnRecords.filter { $0.completedAt != nil }.count,
+                failedCount: turnRecords.filter(\.resultIsError).count,
                 totalDuration: durations.isEmpty ? nil : durations.reduce(0, +)
             )
         }
