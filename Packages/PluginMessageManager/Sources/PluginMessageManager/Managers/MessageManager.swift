@@ -210,14 +210,28 @@ public final class MessageManager: MessageManaging, SuperLog {
         pendingMessages: [Message],
         since: Date,
         store: MessageStore?,
-        countTokens: Bool
+        countTokens: Bool,
+        conversationIDs: [String]?
     ) -> [Date: Int] {
-        let eligible = pendingMessages.filter { $0.createdAt >= since }
+        // 范围里没有任何会话 → 结果必然为空，不要把全量拉出来再过滤。
+        if let conversationIDs, conversationIDs.isEmpty { return [:] }
+        let allowed = conversationIDs.map(Set.init)
+
+        let eligible = pendingMessages.filter { message in
+            guard message.createdAt >= since else { return false }
+            guard let allowed else { return true }
+            return allowed.contains(message.conversationID.uuidString)
+        }
         guard !eligible.isEmpty else {
             // pending 为空：直接用磁盘口径。必须按 countTokens 分派，
             // 不可无条件用 dailyMessageCounts——那会把 token 读成条数。
             guard let store else { return [:] }
-            return countTokens ? store.dailyTokenCounts(since: since) : store.dailyMessageCounts(since: since)
+            return store.dailyAggregate(
+                since: since,
+                excludingIDs: [],
+                countTokens: countTokens,
+                conversationIDs: conversationIDs
+            )
         }
 
         guard let store else {
@@ -230,7 +244,8 @@ public final class MessageManager: MessageManaging, SuperLog {
         var result = store.dailyAggregate(
             since: since,
             excludingIDs: ids,
-            countTokens: countTokens
+            countTokens: countTokens,
+            conversationIDs: conversationIDs
         )
         let calendar = Calendar.current
         for message in eligible {
@@ -264,12 +279,21 @@ public final class MessageManager: MessageManaging, SuperLog {
             pendingMessages: pending.snapshotAll(),
             since: since,
             store: store,
-            countTokens: false
+            countTokens: false,
+            conversationIDs: nil
         )
     }
 
     /// 在后台读取并聚合消息日统计，避免 Heatmap 打开或刷新时阻塞 MainActor。
     public func dailyMessageCountsAsync(since: Date) async -> [Date: Int] {
+        await dailyMessageCountsAsync(since: since, conversationIDs: nil)
+    }
+
+    /// 按会话集合过滤的消息日统计。
+    ///
+    /// `conversationIDs` 为 nil 表示不限会话；空数组表示该范围内没有任何会话，
+    /// 结果为空——绝不退化成全量统计。
+    public func dailyMessageCountsAsync(since: Date, conversationIDs: [String]?) async -> [Date: Int] {
         let store = self.store
         // 先在调用方快照 pending：detach 之后再取会拿到**另一个时间点**的缓冲，
         // 与随后的磁盘读取不构成同一组判据，导致漏算。
@@ -279,7 +303,8 @@ public final class MessageManager: MessageManaging, SuperLog {
                 pendingMessages: pendingSnapshot,
                 since: since,
                 store: store,
-                countTokens: false
+                countTokens: false,
+                conversationIDs: conversationIDs
             )
         }.value
     }
@@ -289,12 +314,18 @@ public final class MessageManager: MessageManaging, SuperLog {
             pendingMessages: pending.snapshotAll(),
             since: since,
             store: store,
-            countTokens: true
+            countTokens: true,
+            conversationIDs: nil
         )
     }
 
     /// 在后台读取并聚合 token 日统计，保留 pending 消息的 read-your-writes 语义。
     public func dailyTokenCountsAsync(since: Date) async -> [Date: Int] {
+        await dailyTokenCountsAsync(since: since, conversationIDs: nil)
+    }
+
+    /// 按会话集合过滤的 token 日统计，口径与消息日统计一致。
+    public func dailyTokenCountsAsync(since: Date, conversationIDs: [String]?) async -> [Date: Int] {
         let store = self.store
         // 先在调用方快照 pending：detach 之后再取会拿到**另一个时间点**的缓冲，
         // 与随后的磁盘读取不构成同一组判据，导致漏算。
@@ -304,7 +335,8 @@ public final class MessageManager: MessageManaging, SuperLog {
                 pendingMessages: pendingSnapshot,
                 since: since,
                 store: store,
-                countTokens: true
+                countTokens: true,
+                conversationIDs: conversationIDs
             )
         }.value
     }

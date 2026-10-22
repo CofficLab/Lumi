@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆盖 27 条用例。
+PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆盖 31 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 27
+测试文件: 4 个，用例总数: 31
 
 核心组件（源码目录）:
 - `Errors/`
@@ -32,6 +32,8 @@ PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆�
 - **MessageStore 会话查询索引**（2 条）：由 `storeCreatesConversationLookupIndex`、`conversationPageQueryPlanUsesIndex` 锁定——「按会话取消息」必须走 `(ZCONVERSATIONID, ZCREATEDAT)` 复合索引，不得退化成全表扫描。
 - **MessageStore 大数据量分页**（2 条）：由 `paginationStaysBoundedAtScale`、`hasEarlierIsBounded` 锁定——大数据量下分页查询耗时有界。
 - **MessageStore 日统计聚合**（4 条）：由 `dailyAggregationDoesNotRequireStoreLock`、`dailyAggregationMatchesRowByRowReference`、`dailyAggregationStaysBoundedAtScale` 锁定——日统计聚合只取「创建时间 + token 数」，不得物化整表、不得占用存储层写锁，且口径与逐条读取一致。
+
+- **MessageStore 项目维度日统计**（4 条）：由 `filtersByConversation`、`emptyConversationSetMeansEmpty`、`nilConversationSetMeansUnrestricted`、`chunksLargeConversationSets` 锁定——「本项目近 30 天」这类统计靠一组会话 ID 过滤消息；空集合必须意味着空结果（不得退化成全量），`nil` 意味着不限会话，会话数超过 SQLite 变量上限时按块查询再合并。改动按会话过滤的聚合路径时必须优先跑该文件。
 
 ## 测试用例清单
 
@@ -64,21 +66,25 @@ PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆�
 | 25 | MessageStore 日统计聚合 | 日统计聚合口径必须与逐条读取一致 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `dailyAggregationMatchesRowByRowReference` |
 | 26 | MessageStore 日统计聚合 | 大数据量下日统计聚合必须保持有界 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `dailyAggregationStaysBoundedAtScale` |
 | 27 | MessageStore 日统计聚合 | 日统计聚合必须按 id 排除调用方指定的消息 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `dailyAggregateExcludesGivenIdentifiers` |
+| 28 | MessageStore 项目维度日统计 | 会话过滤只统计指定会话的消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `filtersByConversation` |
+| 29 | MessageStore 项目维度日统计 | 空会话集合必须返回空结果而不是退化成全量 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emptyConversationSetMeansEmpty` |
+| 30 | MessageStore 项目维度日统计 | nil 会话集合表示不限会话 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nilConversationSetMeansUnrestricted` |
+| 31 | MessageStore 项目维度日统计 | 会话数超过单块上限时按块合并结果不变 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `chunksLargeConversationSets` |
 
-> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **31 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 8 / 8
-- P1: 已覆盖 19 / 19
+- P0: 已覆盖 9 / 9
+- P1: 已覆盖 22 / 22
 - P2: 已覆盖 0 / 0
-- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
+- **合计: 31 / 31**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
-- **P1**: 其余功能性用例（19 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
+- **P1**: 其余功能性用例（22 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
