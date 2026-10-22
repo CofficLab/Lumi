@@ -302,11 +302,14 @@ struct MessageListScrollCoordinatorTests {
         let target = StubScrollingTarget(isAttached: true, pinSnapshots: [nil])
 
         coordinator.scrollToBottom(target: target, messages: [makeRow()], animated: false)
-        try? await Task.sleep(
-            nanoseconds: MessageListScrollCoordinator.scrollRetryDelayNs
-                + MessageListScrollCoordinator.bottomSettleDelayNs + 80_000_000
-        )
 
+        // Important: 等「第一次钉底真的发生」，而不是睡一个固定时长。
+        //   收敛前有 100ms 的重试延迟，机器繁忙时固定 sleep 会在这之前就返回，
+        //   断言读到的 pinCount 还是 0 —— 失败原因是测量时机，不是收敛行为。
+        await waitUntil { target.pinCount >= 1 }
+
+        // 钉底返回 nil → 收敛必须立刻停止，不能再钉第二次。
+        try? await Task.sleep(nanoseconds: MessageListScrollCoordinator.bottomSettleDelayNs * 4)
         #expect(target.pinCount == 1)
     }
 

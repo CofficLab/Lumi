@@ -136,7 +136,11 @@ func gateResetClearsReady() async {
 @Test("首屏就绪：相关性失效时不置为就绪")
 func gateIgnoresResultWhenNoLongerRelevant() async {
     let conversationID = UUID()
-    let gate = InitialPositionGate(budgetNanoseconds: 500_000_000)
+    // Important: 预算给足（5s）。本用例要验的是「**失效的一轮**不得置为就绪」，
+    //   而 gate 现在还有一条独立的兜底计时器（遮罩寿命上界）。预算太短时，
+    //   兜底会在断言前开火，失败原因就不再是「失效的一轮放行了遮罩」，
+    //   而是被测机制被另一个机制抢跑掩盖了。
+    let gate = InitialPositionGate(budgetNanoseconds: 600_000_000_000)
 
     gate.request(
         conversationID: conversationID,
@@ -191,7 +195,10 @@ func gateResetMustNotCancelConvergenceAlreadyStarted() async {
 @Test("首屏遮罩：复位不得让已失效的旧一轮放行遮罩")
 func gateResetMustNotReleaseMaskFromStaleRound() async {
     let staleConversationID = UUID()
-    let gate = InitialPositionGate(budgetNanoseconds: 3_000_000_000)
+    // Important: 预算给足（30s）。本用例要验的是「**失效的一轮**不得放行遮罩」，
+    //   而 gate 还有一条独立的兜底计时器（遮罩寿命上界）。预算太短时兜底会
+    //   在断言前开火，失败原因就不再是被测机制本身（机器繁忙时 sleep 也会超时）。
+    let gate = InitialPositionGate(budgetNanoseconds: 30_000_000_000)
 
     // 旧会话的一轮仍在飞行，但已经失效（会话已被换掉）。
     gate.request(
