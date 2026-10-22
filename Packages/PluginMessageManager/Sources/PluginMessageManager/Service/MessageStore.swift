@@ -385,10 +385,35 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         excludingIDs: Set<String>,
         countTokens: Bool
     ) -> [Date: Int] {
+        dailyAggregate(
+            since: since,
+            excludingIDs: excludingIDs,
+            countTokens: countTokens,
+            conversationIDs: nil
+        )
+    }
+
+    /// 按会话集合过滤的日聚合。
+    ///
+    /// ## `conversationIDs` 的三种取值
+    ///
+    /// - `nil`：不限会话，统计全部消息；
+    /// - 空数组：该范围内没有任何会话，结果为空（不是「统计全部」）；
+    /// - 非空数组：只统计这些会话里的消息。
+    ///
+    /// 会话 ID 数量可能超过 SQLite 的变量上限，因此按块执行多条查询后合并——
+    /// 每个会话只属于一块，不会被重复计数。
+    func dailyAggregate(
+        since: Date,
+        excludingIDs: Set<String>,
+        countTokens: Bool,
+        conversationIDs: [String]?
+    ) -> [Date: Int] {
         if let counts = dailyAggregateViaSQL(
             since: since,
             excludingIDs: excludingIDs,
-            countTokens: countTokens
+            countTokens: countTokens,
+            conversationIDs: conversationIDs
         ) {
             return counts
         }
@@ -396,7 +421,8 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         return dailyAggregateViaCoreData(
             since: since,
             excludingIDs: excludingIDs,
-            countTokens: countTokens
+            countTokens: countTokens,
+            conversationIDs: conversationIDs
         )
     }
 
@@ -420,7 +446,8 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
     private func dailyAggregateViaSQL(
         since: Date,
         excludingIDs: Set<String>,
-        countTokens: Bool
+        countTokens: Bool,
+        conversationIDs: [String]?
     ) -> [Date: Int]? {
         // 排除条件用绑定参数，参数个数受 SQLite 变量上限约束；pending 缓冲无上限，
         // 极端情况下改走回退路径。
@@ -447,16 +474,66 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         //   非 WAL 时回退到 CoreData 自己的连接（由 CoreData 内部协调锁）。
         guard Self.isWALMode(database) else { return nil }
 
-        let sql = Self.dailyAggregateSQL(countTokens: countTokens, excludingCount: excludingIDs.count)
+        // 会话集合为空数组 = 该范围内没有任何会话 → 结果必然为空。
+        // 这里必须与「不限会话」区分开，否则会退化成全量统计。
+        let chunks: [[String]]
+        if let conversationIDs {
+            guard !conversationIDs.isEmpty else { return [:] }
+            chunks = Self.chunked(conversationIDs, into: Self.maxConversationIDsPerChunk)
+        } else {
+            chunks = [[]]
+        }
+
+        var merged: [Date: Int] = [:]
+        for chunk in chunks {
+            guard let counts = Self.runDailyAggregate(
+                database: database,
+                since: since,
+                excludingIDs: excludingIDs,
+                countTokens: countTokens,
+                conversationIDs: chunk
+            ) else {
+                // 任一块失败 → 整体回退，而不是返回半份统计。
+                return nil
+            }
+            for (day, value) in counts {
+                merged[day, default: 0] += value
+            }
+        }
+        return merged
+    }
+
+    /// 执行一次聚合查询并把结果按自然日归并。
+    ///
+    /// `conversationIDs` 为空数组表示不限会话；非空时追加 `ZCONVERSATIONID IN (...)`。
+    private static func runDailyAggregate(
+        database: OpaquePointer,
+        since: Date,
+        excludingIDs: Set<String>,
+        countTokens: Bool,
+        conversationIDs: [String]
+    ) -> [Date: Int]? {
+        let sql = dailyAggregateSQL(
+            countTokens: countTokens,
+            excludingCount: excludingIDs.count,
+            conversationCount: conversationIDs.count
+        )
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else {
             return nil
         }
         defer { sqlite3_finalize(statement) }
 
-        sqlite3_bind_double(statement, 1, since.timeIntervalSince1970)
-        for (offset, identifier) in excludingIDs.sorted().enumerated() {
-            sqlite3_bind_text(statement, Int32(2 + offset), identifier, -1, sqliteTransient)
+        var index: Int32 = 1
+        sqlite3_bind_double(statement, index, since.timeIntervalSince1970)
+        index += 1
+        for identifier in excludingIDs.sorted() {
+            sqlite3_bind_text(statement, index, identifier, -1, sqliteTransient)
+            index += 1
+        }
+        for identifier in conversationIDs {
+            sqlite3_bind_text(statement, index, identifier, -1, sqliteTransient)
+            index += 1
         }
 
         var counts: [Date: Int] = [:]
@@ -484,9 +561,14 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
     private func dailyAggregateViaCoreData(
         since: Date,
         excludingIDs: Set<String>,
-        countTokens: Bool
+        countTokens: Bool,
+        conversationIDs: [String]?
     ) -> [Date: Int] {
-        locked {
+        // 范围里没有任何会话 → 结果必然为空，不要把全量拉出来再过滤。
+        if let conversationIDs, conversationIDs.isEmpty { return [:] }
+        let allowed = conversationIDs.map(Set.init)
+
+        return locked {
             let context = ModelContext(container)
             let timestamp = since.timeIntervalSince1970
             var descriptor = FetchDescriptor<MessageModel>(
@@ -509,6 +591,7 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
                     : 1
                 guard value > 0 else { continue }
                 if excludingIDs.contains(model.id) { continue }
+                if let allowed, !allowed.contains(model.conversationId) { continue }
                 let day = calendar.startOfDay(for: Date(timeIntervalSince1970: model.createdAt))
                 counts[day, default: 0] += value
             }
@@ -521,7 +604,11 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
     /// - Important: 只 SELECT `ZCREATEDAT`（与 token 列）。SwiftData 生成的表把正文
     ///   `ZCONTENT` 排在 `ZCREATEDAT` **之后**，读正文列必须顺着记录跨过 overflow
     ///   页；只取前面的列则完全不碰正文，代价与正文体积无关。
-    private static func dailyAggregateSQL(countTokens: Bool, excludingCount: Int) -> String {
+    private static func dailyAggregateSQL(
+        countTokens: Bool,
+        excludingCount: Int,
+        conversationCount: Int = 0
+    ) -> String {
         let columns = countTokens
             ? "ZCREATEDAT, ZINPUTTOKENCOUNT, ZOUTPUTTOKENCOUNT"
             : "ZCREATEDAT"
@@ -529,6 +616,10 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         if excludingCount > 0 {
             let placeholders = Array(repeating: "?", count: excludingCount).joined(separator: ",")
             sql += " AND ZID NOT IN (\(placeholders))"
+        }
+        if conversationCount > 0 {
+            let placeholders = Array(repeating: "?", count: conversationCount).joined(separator: ",")
+            sql += " AND ZCONVERSATIONID IN (\(placeholders))"
         }
         return sql
     }
@@ -549,6 +640,30 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
 
     /// 单次聚合查询允许绑定的排除 id 个数（留足余量给 SQLite 的变量上限）。
     private static let maxExcludedIDsForSQL = 500
+
+    /// 单次聚合查询允许绑定的会话 id 个数。
+    ///
+    /// 会话过滤与排除过滤共用同一批绑定变量，因此这个值要比排除上限更保守：
+    /// 两者相加仍需留在 SQLite 的变量上限之内。
+    private static let maxConversationIDsPerChunk = 200
+
+    /// 把数组切成固定大小的块。
+    private static func chunked(_ values: [String], into size: Int) -> [[String]] {
+        guard size > 0 else { return [values] }
+        var chunks: [[String]] = []
+        var current: [String] = []
+        current.reserveCapacity(size)
+        for value in values {
+            current.append(value)
+            if current.count == size {
+                chunks.append(current)
+                current = []
+                current.reserveCapacity(size)
+            }
+        }
+        if !current.isEmpty { chunks.append(current) }
+        return chunks
+    }
 
     /// 一次性返回所有「在磁盘上至少有一条消息」的 conversationId 字符串集合。
     ///
