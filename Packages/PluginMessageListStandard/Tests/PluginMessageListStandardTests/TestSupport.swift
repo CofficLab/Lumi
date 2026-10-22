@@ -70,6 +70,7 @@ func makeMessage(
 /// 跨测试文件共享的工具调用记录工厂。
 func makeToolCallRecord(
     id: String,
+    turnID: UUID? = nil,
     conversationID: UUID,
     startedAt: Date = Date(timeIntervalSince1970: 0),
     completed: Bool = false,
@@ -81,7 +82,7 @@ func makeToolCallRecord(
         toolCallID: "call-\(id)",
         toolName: "tool_\(id)",
         toolDisplayName: "Tool \(id)",
-        turnID: nil,
+        turnID: turnID,
         conversationID: conversationID,
         createdAt: startedAt,
         startedAt: startedAt,

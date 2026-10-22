@@ -56,10 +56,19 @@ final class StubToolManagerCapability: MessageListToolManagerCapability {
     var recordsByTurn: [UUID: [ToolCallRecord]] = [:]
     private(set) var cancelledTurnIDs: [UUID] = []
     private(set) var toolCallsRequestCount = 0
+    private(set) var queriedTurnIDs: [UUID] = []
 
     func toolCalls(for turnID: UUID) async -> [ToolCallRecord] {
         toolCallsRequestCount += 1
+        queriedTurnIDs.append(turnID)
         return recordsByTurn[turnID] ?? []
+    }
+
+    /// 批量查询算作**一次**请求 —— 真实实现走一条存储查询。
+    func toolCalls(forTurnIDs turnIDs: [UUID]) async -> [ToolCallRecord] {
+        toolCallsRequestCount += 1
+        queriedTurnIDs.append(contentsOf: turnIDs)
+        return turnIDs.flatMap { recordsByTurn[$0] ?? [] }
     }
 
     func cancelJobs(forTurnID turnID: UUID) { cancelledTurnIDs.append(turnID) }
@@ -498,8 +507,8 @@ func turnActivitySummariesAggregateRecords() async {
     )
     let toolManager = StubToolManagerCapability()
     toolManager.recordsByTurn[turnID] = [
-        makeToolCallRecord(id: "a", conversationID: conversationID, completed: true, duration: 1),
-        makeToolCallRecord(id: "b", conversationID: conversationID, completed: true, duration: 2, isError: true),
+        makeToolCallRecord(id: "a", turnID: turnID, conversationID: conversationID, completed: true, duration: 1),
+        makeToolCallRecord(id: "b", turnID: turnID, conversationID: conversationID, completed: true, duration: 2, isError: true),
     ]
     let harness = ViewModelHarness(
         selected: conversationID,
