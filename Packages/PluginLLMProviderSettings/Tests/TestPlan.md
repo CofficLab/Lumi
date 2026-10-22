@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测试覆盖 67 条用例。
+PluginLLMProviderSettings 的实现包，包含 15 个主要类型；当前测试覆盖 75 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 67
+测试文件: 6 个，用例总数: 75
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -41,6 +41,7 @@ PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测�
 
 - **CustomCloudProviderForm**（17 条）：由 `parsesModelIDsSeparatedByNewlines`、`parsesModelIDsSeparatedByCommas`、`parsesModelIDsSeparatedByMixedDelimiters` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **LLMProviderSettingsPlugin**（6 条）：由 `pluginRegistersSettingEntries`、`pluginShutdownRemovesEntries`、`pluginBootWithoutManagerIsNoop` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ProviderDetailModelRefresh**（8 条）：由 `refreshUpdatesModels`、`refreshFailureKeepsOldModels`、`refreshBroadcastsModelsRefreshedEvent` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProviderSettingsPageViewModel**（14 条）：由 `listsNewlyAddedCloudProvider`、`customProviderRevisionIncrementsOnStoreChange`、`newlyAddedProviderIsSearchable` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **UserDefinedCloudProviderConfiguration**（17 条）：由 `rejectsEmptyOrWhitespaceDisplayName`、`trimsDisplayName`、`rejectsEmptyIdentifier` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **UserDefinedCloudProviderStore**（13 条）：由 `upsertPersistsAndRegistersProvider`、`upsertReplacesConfigurationWithSameIdentifier`、`upsertRejectsInvalidConfigurationWithoutSideEffects` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -116,27 +117,35 @@ PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测�
 | 65 | UserDefinedCloudProviderStore | 能识别某个 ID 是否为自定义供应商 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `reportsCustomProviderMembership` |
 | 66 | UserDefinedCloudProviderStore | 自定义供应商按所选 API 格式暴露对应配置 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `userDefinedProviderExposesFormatSpecificConfiguration` |
 | 67 | UserDefinedCloudProviderStore | 自定义供应商在管理器中暴露为云端供应商 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `userDefinedProviderIsRegisteredAsRemoteProvider` |
+| 68 | ProviderDetailModelRefresh | 远程模型源供应商显示刷新入口，静态供应商不显示 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `exposesRefreshEntryOnlyForRemoteProviders` |
+| 69 | ProviderDetailModelRefresh | 未注册的供应商没有刷新入口 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `noRefreshEntryForUnregisteredProvider` |
+| 70 | ProviderDetailModelRefresh | 刷新成功后模型列表同步为新的动态模型池 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `refreshUpdatesModels` |
+| 71 | ProviderDetailModelRefresh | 刷新失败时保留旧模型池并展示错误原因 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `refreshFailureKeepsOldModels` |
+| 72 | ProviderDetailModelRefresh | 刷新成功后清空上一次的错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `refreshSuccessClearsPreviousError` |
+| 73 | ProviderDetailModelRefresh | 不支持远程模型列表的供应商不触发刷新 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doesNotRefreshStaticProvider` |
+| 74 | ProviderDetailModelRefresh | 刷新成功会广播 modelsRefreshed 事件 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `refreshBroadcastsModelsRefreshedEvent` |
+| 75 | ProviderDetailModelRefresh | 刷新失败不广播 modelsRefreshed 事件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `refreshFailureDoesNotBroadcastEvent` |
 
-> 说明：全部 **67 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **75 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
-- P1: 已覆盖 48 / 48
-- P2: 已覆盖 10 / 10
-- **合计: 67 / 67**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 12 / 12
+- P1: 已覆盖 52 / 52
+- P2: 已覆盖 11 / 11
+- **合计: 75 / 75**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（48 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（10 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
+- **P1**: 其余功能性用例（52 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 67 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 75 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

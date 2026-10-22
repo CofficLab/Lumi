@@ -3,14 +3,28 @@ import Foundation
 import ProviderLLMManager
 
 /// MiniMax 供应商族：三个协议变体共用的模型列表。
+///
+/// 元数据来源（2026-10 实测国内站 `GET /v1/models` + 官方文档）：
+/// - 上下文窗口：官方文档标注 M3 系列为 1,000,000；M2 系列为 204,800
+///   （与服务端 `max_tokens` 上限报错 `> 196608` 相互印证）。
+/// - 视觉能力：官方文档明确「M2.7、M2.5、M2.1 和 M2 系列仅支持文本与工具
+///   调用相关内容块，不支持图片和视频输入」，仅 M3 / M3.1-Flash 支持图片。
+///
+/// - Important: id 必须与上游 `/v1/models` **完全一致**，否则远程刷新后
+///   会出现「清单里的旧 id」与「远程的真实 id」两个条目并存。历史清单里的
+///   `MiniMax-M3.1-Flash-Preview` 并不存在（真实 id 是 `MiniMax-M3.1-Flash`），
+///   已修正。
 enum MiniMaxVendorModels {
     static let all: [LLMModelInfo] = [
-        LLMModelInfo(id: "MiniMax-M3.1-Flash-Preview", contextWindowSize: 1_000_000, supportsVision: true),
+        LLMModelInfo(id: "MiniMax-M3.1-Flash", contextWindowSize: 1_000_000, supportsVision: true),
         LLMModelInfo(id: "MiniMax-M3", contextWindowSize: 1_000_000, supportsVision: true),
-        LLMModelInfo(id: "MiniMax-M2.7", contextWindowSize: 204_800, supportsVision: true),
-        LLMModelInfo(id: "MiniMax-M2.7-highspeed", contextWindowSize: 204_800, supportsVision: true),
+        LLMModelInfo(id: "MiniMax-M2.7", contextWindowSize: 204_800, supportsVision: false),
+        LLMModelInfo(id: "MiniMax-M2.7-highspeed", contextWindowSize: 204_800, supportsVision: false),
         LLMModelInfo(id: "MiniMax-M2.5", contextWindowSize: 204_800, supportsVision: false),
         LLMModelInfo(id: "MiniMax-M2.5-highspeed", contextWindowSize: 204_800, supportsVision: false),
+        LLMModelInfo(id: "MiniMax-M2.1", contextWindowSize: 204_800, supportsVision: false),
+        LLMModelInfo(id: "MiniMax-M2.1-highspeed", contextWindowSize: 204_800, supportsVision: false),
+        LLMModelInfo(id: "MiniMax-M2", contextWindowSize: 204_800, supportsVision: false),
     ]
 }
 
@@ -21,7 +35,9 @@ enum MiniMaxVendorModels {
 /// 2. 插件自有磁盘缓存（`models.json`），跨启动保留，拉取失败时兜底。
 /// 3. 下方 `MiniMaxVendorModels` 静态清单，含上下文窗口与视觉能力，完全无网时兜底。
 ///
-/// 上游新增模型无需改本文件——刷新一次即可拿到。
+/// 上游新增模型无需改本文件——刷新一次即可拿到。远程返回的 id 会经
+/// ``MiniMaxModelFamily`` 按家族补全上下文窗口与视觉能力（上游接口不返回
+/// 这两项），因此新模型不会退化成 32K 兜底预算。
 @MainActor
 public final class MiniMaxOpenAIProvider: VendorLLMProvider {
 

@@ -19,7 +19,6 @@ public final class MindMapStore: ObservableObject {
 
     private(set) var projectStorageDirectory: URL?
     private(set) var currentProjectPath: String?
-    private let fileManager = FileManager.default
 
     public init() {}
 
@@ -61,9 +60,8 @@ public final class MindMapStore: ObservableObject {
         guard self.currentProjectPath != pathToStore || self.projectStorageDirectory != resolvedDirectory else { return }
         self.currentProjectPath = pathToStore
         self.projectStorageDirectory = resolvedDirectory
-        if let projectStorageDirectory {
-            try? fileManager.createDirectory(at: projectStorageDirectory, withIntermediateDirectories: true)
-        }
+        // 不预建目录：底层 `MindMapFileStore.save` 在真正写入时才会创建。
+        // 否则项目一打开就会留下空的 `.lumi/mind-map`，让用户困惑。
         // 只有当前项目作用域，项目关闭时列表为空。
         selectedScope = .project
         reloadScope(.project)
