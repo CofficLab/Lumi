@@ -8,9 +8,12 @@ import Testing
 
 /// `TitleService` 的端到端链路测试：消息插入事件 → 标题决策 → 写库。
 ///
-/// 这批用例锁定的是自动标题的**行为边界**，尤其是三条「不写库」路径：
-/// 非首条用户消息、用户已有自定义标题、LLM 失败。三者任一被误改，
-/// 都会造成标题被意外覆盖或请求额度浪费。
+/// 这批用例锁定的是自动标题的**行为边界**，尤其是两条「不写库」路径：
+/// 非首条用户消息、用户已有自定义标题。
+///
+/// LLM 调用失败**不再**是「不写库」路径：标题生成失败时会写入占位标题
+/// （取自首条用户消息），避免对话永远停在无标题状态、在列表里显示成
+/// 一条空条目。详见 `TitleServiceFallbackTests`。
 @Suite("自动标题链路")
 @MainActor
 struct TitleServiceTests {
@@ -171,9 +174,12 @@ struct TitleServiceTests {
         #expect(conversations.title(of: conversationID) == "我手动写的标题")
     }
 
-    /// LLM 抛错时不得写入任何标题，会话应保持原状。
-    @Test("LLM 失败时不写库")
-    func doesNotPersistWhenLLMFails() async {
+    /// LLM 抛错时不得写入「生成标题」，但**必须**写入占位标题。
+    ///
+    /// 失败一次不等于永远没有标题：首条用户消息就是现成的标题素材。
+    /// 少了这一步，对话会永久停在无标题状态，列表里就是一条空条目。
+    @Test("LLM 失败时写入占位标题")
+    func appliesFallbackTitleWhenLLMFails() async {
         let conversationID = UUID()
         let conversations = TitleTestDoubles.StubConversationManager()
         conversations.appendSummary(id: conversationID, title: nil)
@@ -193,13 +199,15 @@ struct TitleServiceTests {
         await settle()
 
         #expect(llm.receivedRequests.count == 1)
-        #expect(conversations.titleUpdateRequests.isEmpty)
-        #expect(conversations.title(of: conversationID) == nil)
+        #expect(conversations.title(of: conversationID) == "首个问题")
     }
 
-    /// LLM 返回空标题时视为无结果，不写库。
-    @Test("LLM 返回空标题时不写库")
-    func doesNotPersistEmptyTitle() async {
+    /// LLM 返回空标题时同样写入占位标题。
+    ///
+    /// 这条路径比抛错更隐蔽：没有异常，只有一条 error 日志，对话却从此
+    /// 再也没有名字。
+    @Test("LLM 返回空标题时写入占位标题")
+    func appliesFallbackTitleWhenLLMReturnsEmptyTitle() async {
         let conversationID = UUID()
         let conversations = TitleTestDoubles.StubConversationManager()
         conversations.appendSummary(id: conversationID, title: nil)
@@ -217,8 +225,7 @@ struct TitleServiceTests {
         messages.emitInserted(userMessage("首个问题", in: conversationID))
         await settle()
 
-        #expect(conversations.titleUpdateRequests.isEmpty)
-        #expect(conversations.title(of: conversationID) == nil)
+        #expect(conversations.title(of: conversationID) == "首个问题")
     }
 
     /// 写库失败（Provider 返回 false）不应崩溃，也不能污染内存态。

@@ -19,7 +19,6 @@ struct ProjectContextCard: View {
     @LumiTheme private var theme
     let model: ProjectContextViewModel
     let services: MessageListEmptyServices
-    @State private var isExpanded = false
 
     var body: some View {
         if let identity = model.identity {
@@ -39,9 +38,7 @@ struct ProjectContextCard: View {
                 }
             }
 
-            if isExpanded {
-                detail
-            }
+            detail
         }
         .padding(.horizontal, ActivityFusionCardMetrics.horizontalPadding)
         .padding(.vertical, ActivityFusionCardMetrics.verticalPadding)
@@ -65,7 +62,7 @@ struct ProjectContextCard: View {
 
     // MARK: - 组成
 
-    /// 顶部一行锚点：项目名 + 就绪状态 + 展开开关。
+    /// 顶部一行锚点：项目名 + 就绪状态。
     private func anchor(_ identity: ProjectContextIdentity) -> some View {
         HStack(spacing: 6) {
             Image(systemName: identity.typeSymbol)
@@ -84,21 +81,6 @@ struct ProjectContextCard: View {
                 .lineLimit(1)
 
             Spacer(minLength: 8)
-
-            Button {
-                isExpanded.toggle()
-            } label: {
-                HStack(spacing: 3) {
-                    Text(isExpanded ? pluginLocalization.string("Collapse") : pluginLocalization.string("Details"))
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 9, weight: .bold))
-                }
-                .font(.system(size: 11))
-                .foregroundStyle(theme.textSecondary)
-            }
-            .buttonStyle(.plain)
-            .disabled(model.details.isEmpty && model.keyFiles.isEmpty)
-            .opacity(model.details.isEmpty && model.keyFiles.isEmpty ? 0.4 : 1)
         }
     }
 
@@ -139,41 +121,47 @@ struct ProjectContextCard: View {
         .buttonStyle(.plain)
     }
 
-    /// 展开态：键值对 + 关键文件标签。
+    /// 详情：键值对 + 关键文件标签。
+    ///
+    /// 卡片不再提供折叠开关——项目上下文本来就少，多一次点击才看到信息
+    /// 只会把它藏起来。默认展开，内容为空时整段不渲染。
+    @ViewBuilder
     private var detail: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Divider()
-                .overlay(theme.primary.opacity(0.18))
+        if !model.details.isEmpty || !model.keyFiles.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Divider()
+                    .overlay(theme.primary.opacity(0.18))
 
-            if !model.details.isEmpty {
-                VStack(alignment: .leading, spacing: 5) {
-                    ForEach(model.details) { item in
-                        HStack(alignment: .firstTextBaseline, spacing: 10) {
-                            Text(item.label)
-                                .font(.system(size: 11.5))
-                                .foregroundStyle(theme.textSecondary)
-                                .frame(width: 92, alignment: .leading)
-                            Text(item.value)
-                                .font(.system(size: 11.5))
-                                .foregroundStyle(theme.textPrimary)
-                                .lineLimit(1)
+                if !model.details.isEmpty {
+                    VStack(alignment: .leading, spacing: 5) {
+                        ForEach(model.details) { item in
+                            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                                Text(item.label)
+                                    .font(.system(size: 11.5))
+                                    .foregroundStyle(theme.textSecondary)
+                                    .frame(width: 92, alignment: .leading)
+                                Text(item.value)
+                                    .font(.system(size: 11.5))
+                                    .foregroundStyle(theme.textPrimary)
+                                    .lineLimit(1)
+                            }
                         }
                     }
                 }
-            }
 
-            if !model.keyFiles.isEmpty {
-                HStack(spacing: 6) {
-                    ForEach(model.keyFiles, id: \.self) { file in
-                        Text(file)
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(theme.textSecondary)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background {
-                                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .fill(theme.textPrimary.opacity(0.05))
-                            }
+                if !model.keyFiles.isEmpty {
+                    HStack(spacing: 6) {
+                        ForEach(model.keyFiles, id: \.self) { file in
+                            Text(file)
+                                .font(.system(size: 11, design: .monospaced))
+                                .foregroundStyle(theme.textSecondary)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
+                                .background {
+                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                        .fill(theme.textPrimary.opacity(0.05))
+                                }
+                        }
                     }
                 }
             }

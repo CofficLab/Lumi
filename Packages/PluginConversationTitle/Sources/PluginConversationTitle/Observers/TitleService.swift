@@ -60,6 +60,58 @@ final class TitleService: SuperLog {
         self.messageObserver = nil
     }
 
+    // MARK: - Backfill
+
+    /// 回填仍然没有标题的对话。
+    ///
+    /// ## 为什么需要回填
+    ///
+    /// 标题生成失败过一次，对话就会**永久**停在「无标题」状态：修复之后也没有
+    /// 新的「首条用户消息」事件来触发重试（自动标题只对首条用户消息生效）。
+    /// 这类历史遗留的对话在列表里只能显示通用占位符，看起来就是一条空条目——
+    /// 哪怕它有几百条消息。
+    ///
+    /// 回填用的是**首条用户消息**作为占位标题：用户自己说过的话，一定比通用
+    /// 占位符有用，而且零成本、零延迟。
+    ///
+    /// ## 为什么不调用 LLM
+    ///
+    /// 历史对话可能有成百上千条，逐条请求既慢又可能再次失败——鉴权或额度问题
+    /// 正是它们变成无标题的原因。占位标题已经足以让用户在列表里认出这条对话。
+    ///
+    /// - Returns: 实际补写了标题的对话数量。
+    @discardableResult
+    func backfillUntitledConversations() async -> Int {
+        let ids = await conversations.untitledConversationIDs(limit: Self.backfillLimit)
+        guard !ids.isEmpty else { return 0 }
+
+        var backfilled = 0
+        for id in ids {
+            // `fetchConversation` 会把这条对话放进内存缓存，
+            // `updateConversationTitle` 需要它在场才能写标题。
+            guard let summary = await conversations.fetchConversation(id: id) else { continue }
+            // 缓存可能比查询结果新：以缓存里的标题为准。
+            guard !summary.hasCustomTitle else { continue }
+            guard let firstUserMessage = await messages.firstUserMessage(in: id) else { continue }
+
+            let placeholder = Self.placeholderTitle(forFirstUserMessage: firstUserMessage.content)
+            guard !placeholder.isEmpty else { continue }
+            guard conversations.updateConversationTitle(placeholder, for: id) else { continue }
+            backfilled += 1
+        }
+
+        if backfilled > 0 {
+            Self.logger.info("Backfilled \(backfilled) untitled conversations with placeholder titles")
+        }
+        return backfilled
+    }
+
+    /// 单次回填最多处理多少条无标题对话。
+    ///
+    /// 上限是为了让启动开销有界：回填是「启动时做一点」的工作，不是一次性的
+    /// 全库重写。剩下的会在下次启动继续处理。
+    private static let backfillLimit = 200
+
     private func installObserver() {
         messageObserver = messages.addMessageInsertedObserver { [weak self] message, conversationID in
             guard message.role == .user else { return }
@@ -92,26 +144,86 @@ final class TitleService: SuperLog {
             return
         }
 
+        let generatedTitle: String
         do {
-            let title = try await generateTitle(for: message.content, conversationID: conversationID)
-            guard !title.isEmpty else {
-                Self.logger.error("\(Self.t)LLM returned an empty generated title for conversation \(conversationID, privacy: .public)")
-                return
-            }
-            guard await shouldApplyGeneratedTitle(
-                conversationID: conversationID,
-                firstUserMessageContent: message.content,
-                generatedTitle: title
-            ) else {
-                return
-            }
-            guard conversations.updateConversationTitle(title, for: conversationID) else {
-                Self.logger.error("\(Self.t)Failed to persist generated title for conversation \(conversationID, privacy: .public)")
-                return
-            }
+            generatedTitle = try await generateTitle(for: message.content, conversationID: conversationID)
         } catch {
             Self.logger.error("\(Self.t)Failed to generate conversation title for \(conversationID, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            await applyFallbackTitle(
+                conversationID: conversationID,
+                firstUserMessageContent: message.content,
+                reason: "title generation failed: \(error.localizedDescription)"
+            )
+            return
         }
+
+        guard !generatedTitle.isEmpty else {
+            Self.logger.error("\(Self.t)LLM returned an empty generated title for conversation \(conversationID, privacy: .public)")
+            await applyFallbackTitle(
+                conversationID: conversationID,
+                firstUserMessageContent: message.content,
+                reason: "title generation returned an empty title"
+            )
+            return
+        }
+
+        guard await shouldApplyGeneratedTitle(
+            conversationID: conversationID,
+            firstUserMessageContent: message.content,
+            generatedTitle: generatedTitle
+        ) else {
+            return
+        }
+        guard conversations.updateConversationTitle(generatedTitle, for: conversationID) else {
+            Self.logger.error("\(Self.t)Failed to persist generated title for conversation \(conversationID, privacy: .public)")
+            return
+        }
+    }
+
+    /// 兜底标题：取首条用户消息的占位文本。
+    ///
+    /// ## 为什么必须有兜底
+    ///
+    /// 标题生成依赖一次 LLM 调用，而这次调用失败（鉴权失败、额度耗尽、网络中断）
+    /// 是常态而不是例外。失败一次就意味着这条对话**永远**没有标题：列表里只能
+    /// 显示通用占位符，用户看到的就是一条「空的」条目——哪怕它有几百条消息。
+    ///
+    /// 首条用户消息本身就是最好的标题素材：它是用户自己说过的话，一定比通用
+    /// 占位符有用，而且零成本、零延迟、不消耗任何额度。
+    ///
+    /// 占位标题不是「锁死」的：后续 LLM 成功时，`shouldApplyGeneratedTitle`
+    /// 允许用生成标题替换它（它本来就是为此而写的）。
+    ///
+    /// ## 边界
+    ///
+    /// - **不覆盖用户手动改过的标题**：用户输入的优先级最高。
+    /// - **不覆盖子代理对话**：子对话不在列表里，没必要消耗额度。
+    @discardableResult
+    private func applyFallbackTitle(
+        conversationID: UUID,
+        firstUserMessageContent: String,
+        reason: String
+    ) async -> Bool {
+        let placeholder = Self.placeholderTitle(forFirstUserMessage: firstUserMessageContent)
+        guard !placeholder.isEmpty else {
+            Self.logger.error("\(Self.t)Skipped the fallback title for conversation \(conversationID, privacy: .public): the first user message has no usable text")
+            return false
+        }
+
+        // 再次确认当前仍然没有自定义标题：LLM 调用期间用户可能已经手动改过。
+        guard await shouldApplyGeneratedTitle(
+            conversationID: conversationID,
+            firstUserMessageContent: firstUserMessageContent
+        ) else {
+            return false
+        }
+
+        guard conversations.updateConversationTitle(placeholder, for: conversationID) else {
+            Self.logger.error("\(Self.t)Failed to persist the fallback title for conversation \(conversationID, privacy: .public)")
+            return false
+        }
+        Self.logger.info("\(Self.t)Applied a fallback title for conversation \(conversationID, privacy: .public) (\(reason, privacy: .public))")
+        return true
     }
 
     private func shouldApplyGeneratedTitle(
@@ -185,12 +297,35 @@ final class TitleService: SuperLog {
     private nonisolated static let placeholderTitleMaxLength = 40
 
     nonisolated static func placeholderTitle(forFirstUserMessage text: String) -> String {
-        let collapsed = text
+        let collapsed = strippingInjectedReminders(text)
             .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard collapsed.count > placeholderTitleMaxLength else { return collapsed }
         let end = collapsed.index(collapsed.startIndex, offsetBy: placeholderTitleMaxLength)
         return String(collapsed[..<end]) + "…"
+    }
+
+    /// 去掉消息开头注入的 `<system-reminder>` 块。
+    ///
+    /// ## 为什么需要去掉
+    ///
+    /// IDE 与编辑器客户端会在用户消息**前面**注入一段系统提醒（说明当前运行
+    /// 环境，例如「你现在处于 Xcode 之中」）。这段内容不是用户说的话，拿它当
+    /// 标题只会得到 `<system-reminder>## Xcode You are curre…` 这种没有信息量
+    /// 的标题——用户看到的是一段 XML 噪声，而不是自己的请求。
+    ///
+    /// 真正该用的是提醒块**之后**用户自己说的那句。
+    ///
+    /// ## 边界
+    ///
+    /// 只处理**开头**的提醒块：消息中间出现同名标签是用户自己的内容，不该动。
+    nonisolated static func strippingInjectedReminders(_ text: String) -> String {
+        var result = text
+        while result.range(of: "<system-reminder", options: .caseInsensitive)?.lowerBound == result.startIndex,
+              let closeRange = result.range(of: "</system-reminder>", options: .caseInsensitive) {
+            result = String(result[closeRange.upperBound...])
+        }
+        return result
     }
 
     nonisolated static func normalizeTitle(_ rawTitle: String) -> String {

@@ -498,6 +498,43 @@ public actor ConversationStore: SuperLog {
         return try? context.fetch(descriptor).first?.toLumiConversationSummary()
     }
 
+    /// 返回仍然**没有标题**的对话 ID。
+    ///
+    /// ## 为什么判定条件是空串
+    ///
+    /// 「无标题」在存储层就是空串：`ConversationModel.title` 是**非可选** `String`，
+    /// 而所有写入路径都会先 trim（`createConversation` / `updateTitle`），
+    /// 因此库里不可能存在纯空白标题，`title == ""` 就是完整的「无标题」判定。
+    ///
+    /// ## 为什么必须走存储层
+    ///
+    /// 内存里的会话摘要只是一个**有界窗口**（只保留最近的一部分），
+    /// 历史遗留的无标题对话很可能不在其中。按 ID 直接查库才能覆盖全量。
+    ///
+    /// ## 为什么排除子代理对话
+    ///
+    /// 子代理对话不进列表（列表只显示顶层对话），给它们补标题没有用户价值，
+    /// 反而会让每次启动都重复处理同一批子对话。
+    func untitledConversationIDs(limit: Int) -> [UUID] {
+        guard limit > 0 else { return [] }
+
+        let context = ModelContext(container)
+        normalizeEmptyParentConversationIDs(in: context)
+        var descriptor = FetchDescriptor<ConversationModel>(
+            predicate: #Predicate<ConversationModel> {
+                $0.title == "" && ($0.parentConversationID == nil || $0.parentConversationID == "")
+            }
+        )
+        descriptor.fetchLimit = limit
+
+        do {
+            return try context.fetch(descriptor).compactMap { UUID(uuidString: $0.id) }
+        } catch {
+            Self.logger.error("\(Self.t)查询无标题对话失败：\(error.localizedDescription)")
+            return []
+        }
+    }
+
     // MARK: - Update
 
     /// Update conversation title
