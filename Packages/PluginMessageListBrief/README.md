@@ -21,6 +21,63 @@ at any other level a different message list is shown instead.
 > it. Plugins communicate only through `Provider*` / `Kit*` contracts, assembled by the host
 > (`Factory*`). Cross-plugin references break independent loading and unloading.
 
+## 与兄弟包的关系
+
+V1 / V2 / V3 三个包**各自独立**，各自注册 `exclusiveGroup: "message-list"` 的常驻
+`ChatSectionItem`，由 `isActive` 闭包按当前会话 verbosity 决定谁真正渲染
+（`VerbosityObservationBox`）；同一时刻只有一个胜出。三包之间没有任何源码依赖。
+
+| 包 | verbosity | 布局单元 | 特有能力 |
+| --- | --- | --- | --- |
+| **本包** | `brief` | Agent Turn 分组 | 折叠过程区段、底部状态卡 |
+| `PluginMessageListStandard` | `standard` | 逐条消息行 | 工具执行合并为 `tool-step-group` |
+| `PluginMessageListDetailed` | `detailed` | 逐条消息行 | 显示思考内容 `reasoningContent` |
+
+另有 `PluginMessageListEmpty`（空态）同属该互斥组，按「未选中会话 / 无消息」参与竞争。
+
+## 结构
+
+```
+Sources/PluginMessageListBrief/
+├── PluginMessageListBriefPlugin.swift   # 装配入口：解析 Provider、注册 ChatSection 项
+├── VerbosityObservationBox.swift        # 常驻注册 + verbosity 切换时刷新可见性
+├── MessageListBriefUITestingSupport.swift  # UI 夹具（仅 DEBUG）
+├── Capabilities/                        # 收窄后的能力协议 + Adapter
+├── Models/                              # turn 投影、activity 投影、MessageListServices
+├── Observers/                           # 消息 / 会话状态 / 选中会话 / 开发者模式
+├── Services/                            # 分页、滚动协调、发送定位、disclosure 摘要
+├── ViewModels/                          # ConversationMessageListVM / ConversationStateVM / AgentTurnVM
+└── Views/                               # ListV1View、AgentTurnView、状态卡、底栏跟踪器…
+```
+
+## 关键设计约束
+
+改动下列模块前请先读源码注释，它们记录的是**踩过坑后的结论**而非风格偏好：
+
+- **有状态运行时对象必须是 `@StateObject`，不能用 `let`**
+  宿主 `ChatStackView.body` 每次重绘都会重新 `init` 本视图；`let` 持有的
+  `MessageListRuntime`（`AtBottomBox` / 滚动协调器 / 底部控制器）会被重建，
+  状态全部清零。`InitialPositionGate` 同理 —— 用 `let` 会让 `isReady` 恒为 `false`，
+  遮罩「正在加载消息…」永久不消失。
+- **`AtBottomBox` 刻意不实现 `ObservableObject`**
+  用于切断底部锚点 Preference 反馈环（`@State` → body 重建 → 偏好重报 → 活锁）。
+- **流式回复不进 turn**
+  回合进行中 `lastMessage` 为 nil，实时进度只由底部状态卡汇报。
+  这样 turn 的投影在一次回合内是**稳定快照**，不会随 token 增长反复重建富文本。
+- **发送后定位到视口上 1/4**（`MessageListSendPositioning.targetTopFraction == 0.25`）
+  贴底会把新 turn 藏在输入区后面；回合结束后再收敛回真实底部，预留空间随之消失。
+- **`#if DEBUG` 守卫必须覆盖整个函数体**
+  `MessageListBriefUITestingSupport` 只在 DEBUG 存在，引用点必须同等包裹，
+  否则 Release 构建报 `cannot find '...' in scope`。
+
+## 能力边界
+
+View / ViewModel 只依赖 `Sources/.../Capabilities/` 下的窄协议
+（`MessageListConversationCapability` / `MessageListMessageCapability` /
+`MessageListRenderingCapability` / `MessageListAgentLoopCapability` /
+`MessageListDeveloperModeCapability`），不直接持有 `any *Providing`。
+Adapter 在插件入口 `onBoot(kernel:)` 中构造并注入；Observer 仍使用完整 Provider 类型。
+
 ## Test cases
 
 测试矩阵按「自动化覆盖」与「仅人工验收」两栏区分。单元测试位于
@@ -134,8 +191,10 @@ The card sits below all turns, at the very bottom of the list.
 
 ## TestPlan
 
-完整测试计划（公开 API、行为契约、51 条自动化用例 + 18 条人工验收场景）见
-[`Tests/TestPlan.md`](Tests/TestPlan.md)。
+完整测试计划（核心组件、公开 API、关键行为契约、逐条用例与优先级）见
+[`Tests/TestPlan.md`](Tests/TestPlan.md)。用例表由
+`Scripts/generate-testplan.py` 生成、由 `Scripts/verify-testplan.py` 校验，
+改测试后须重新生成。
 
 ## Automated test entry points
 
