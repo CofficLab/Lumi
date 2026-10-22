@@ -22,6 +22,10 @@ final class ProviderDetailViewModel: ObservableObject {
     @Published private(set) var selectedModelID: String?
     @Published private(set) var downloadCapability: (any ModelDownloadCapability)?
     @Published private(set) var downloadViewModel: ProviderModelDownloadViewModel?
+    /// 远程模型列表是否正在刷新（刷新期间禁用刷新入口）。
+    @Published private(set) var isRefreshingModels = false
+    /// 最近一次刷新失败的原因（成功后清空）。
+    @Published private(set) var modelRefreshError: String?
 
     private let capability: any ProviderSettingsCapability
     private var customCancellable: AnyCancellable?
@@ -64,6 +68,11 @@ final class ProviderDetailViewModel: ObservableObject {
         isCustomProvider
     }
 
+    /// 当前供应商是否有远程模型源（决定是否展示刷新入口）。
+    var canRefreshModels: Bool {
+        capability.usesRemoteModelList(providerID: providerID)
+    }
+
     // MARK: - 用户意图
 
     func select(modelID: String) {
@@ -74,6 +83,22 @@ final class ProviderDetailViewModel: ObservableObject {
 
     func isModelSelected(_ modelID: String) -> Bool {
         capability.modelID(providerID: providerID, model: modelID) == selectedModelID
+    }
+
+    /// 刷新当前供应商的远程模型列表。
+    ///
+    /// 成功后由 `modelsUpdatedPublisher` 驱动 `models` 同步更新；
+    /// 失败时保留旧模型池，并把错误原因留在 `modelRefreshError` 供界面展示。
+    func refreshModels() async {
+        guard canRefreshModels, !isRefreshingModels else { return }
+        isRefreshingModels = true
+        modelRefreshError = nil
+        defer { isRefreshingModels = false }
+        do {
+            try await capability.refreshModels(providerID: providerID)
+        } catch {
+            modelRefreshError = error.localizedDescription
+        }
     }
 
     func saveAPIKey() {

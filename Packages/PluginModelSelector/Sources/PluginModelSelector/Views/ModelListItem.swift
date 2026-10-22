@@ -9,6 +9,10 @@ import SwiftUI
 /// 能力展示对齐新版 `LLMModelInfo` 元数据（Vision / Tools / 上下文窗口）；
 /// 旧版 `LumiModelCapabilities` 的 TTS / 思考档位 / 参数规模字段在新版模型
 /// 元数据中不存在，故不再展示。
+///
+/// 退役模型（`LLMModelInfo.isRetired`，即上游已不再提供）**仍可展示与选择**——
+/// 保留它们是为了离线兜底底座的稳定性——但用次级文字色与「Retired」角标
+/// 明确区分，避免用户选到调不通的模型。
 struct ModelListItem: View {
     @LumiTheme private var theme
 
@@ -18,6 +22,9 @@ struct ModelListItem: View {
     let modelInfo: LLMModelInfo?
     let onSelect: () -> Void
 
+    /// 当前模型是否已被上游下线。
+    private var isRetired: Bool { modelInfo?.isRetired == true }
+
     var body: some View {
         AppListRow(isSelected: isSelected, action: onSelect) {
             VStack(alignment: .leading, spacing: 4) {
@@ -25,7 +32,8 @@ struct ModelListItem: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(displayName)
                             .font(.appCallout)
-                            .foregroundColor(isSelected ? theme.primary : theme.textPrimary)
+                            .foregroundColor(titleColor)
+                            .strikethrough(isRetired, color: theme.textTertiary)
 
                         Text(model)
                             .font(.appMicro)
@@ -33,6 +41,11 @@ struct ModelListItem: View {
                     }
 
                     Spacer()
+
+                    if isRetired {
+                        AppTag(pluginLocalization.string("Retired"), systemImage: "clock.badge.xmark")
+                            .help(pluginLocalization.string("This model is no longer offered by the provider"))
+                    }
 
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
@@ -47,6 +60,14 @@ struct ModelListItem: View {
             }
         }
         .accessibilityIdentifier("lumi.model-selector.model.\(model)")
+    }
+
+    // MARK: - Styling
+
+    /// 标题颜色：退役模型退到次级色，仍保持与普通模型的层级差异。
+    private var titleColor: Color {
+        if isSelected { return theme.primary }
+        return isRetired ? theme.textSecondary : theme.textPrimary
     }
 
     // MARK: - Capability Row

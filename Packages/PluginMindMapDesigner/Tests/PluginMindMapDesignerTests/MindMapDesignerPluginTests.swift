@@ -113,6 +113,37 @@ struct MindMapDesignerPluginTests {
         #expect(!map.wouldCreateCycle(nodeId: a.id, newParentId: root.id))
     }
 
+    @Test("加入项目不预建存储目录，真正写入时才创建")
+    func doesNotCreateStorageDirectoryUntilWrite() throws {
+        MindMapDesignerRuntime.reset()
+        let projectRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("mindmap-lazy-dir-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
+        defer {
+            MindMapDesignerRuntime.reset()
+            try? FileManager.default.removeItem(at: projectRoot)
+        }
+
+        let storage = projectRoot
+            .appendingPathComponent(".lumi", isDirectory: true)
+            .appendingPathComponent(MindMapDesignerRuntime.projectFolderName, isDirectory: true)
+
+        MindMapDesignerRuntime.setProjectStorage(projectPath: projectRoot.path, projectStorageDirectory: storage)
+
+        // 仅打开项目不应留下空目录。
+        #expect(!FileManager.default.fileExists(atPath: storage.path))
+        #expect(MindMapStore.shared.projectMaps.isEmpty)
+
+        // 真正创建思维导图时才创建目录。
+        _ = MindMapStore.shared.createMindMap(
+            title: "Lazy Map",
+            rootText: "Root",
+            direction: .right,
+            scope: .project
+        )
+        #expect(FileManager.default.fileExists(atPath: storage.path))
+    }
+
     // MARK: - End-to-end agent tools
 
     @Test func agentToolsBuildAndGrowMapInProjectScope() async throws {

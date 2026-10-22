@@ -138,10 +138,10 @@ enum StubPayload {
      }]}
     """
 
-    /// 远程模型列表响应。
+    /// 远程模型列表响应（逐字对齐上游实测返回）。
     static let modelList = """
     {"object":"list","data":[
-      {"id":"MiniMax-M3.1-Flash-Preview"},
+      {"id":"MiniMax-M3.1-Flash"},
       {"id":"MiniMax-M3"},
       {"id":"MiniMax-M2.7"},
       {"id":"MiniMax-M2.7-highspeed"},
