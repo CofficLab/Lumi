@@ -254,7 +254,7 @@ struct ListV3ViewModelPaginationTests {
         #expect(harness.viewModel.hasEarlierMessages)
         #expect(harness.viewModel.persistedMessages.count == 2)
 
-        let anchorID = await harness.viewModel.loadEarlier(isAtBottom: false)
+        let anchorID = await harness.viewModel.loadEarlier()
 
         // 锚点 = prepend 前窗口的第一条，View 应把它钉回视口顶部。
         #expect(anchorID == window[1].id)
@@ -276,7 +276,7 @@ struct ListV3ViewModelPaginationTests {
         await harness.viewModel.activate(conversationID: conversationID)
         #expect(!harness.viewModel.hasEarlierMessages)
 
-        let anchorID = await harness.viewModel.loadEarlier(isAtBottom: true)
+        let anchorID = await harness.viewModel.loadEarlier()
 
         #expect(anchorID == nil)
         #expect(harness.viewModel.persistedMessages.count == 1)
@@ -288,7 +288,7 @@ struct ListV3ViewModelPaginationTests {
         let harness = Harness(conversationID: conversationID, page: [], hasEarlier: true)
         await harness.viewModel.activate(conversationID: conversationID)
 
-        #expect(await harness.viewModel.loadEarlier(isAtBottom: true) == nil)
+        #expect(await harness.viewModel.loadEarlier() == nil)
     }
 
     @Test("尾部刷新检测到新消息时覆盖窗口")
