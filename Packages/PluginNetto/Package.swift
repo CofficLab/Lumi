@@ -16,7 +16,8 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
+        .package(path: "../KitTestSupport"),
     ],
     targets: [
 .target(
@@ -28,7 +29,8 @@ let package = Package(
                 .product(name: "ProviderContentView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
-                .product(name: "LumiLoggingKit", package: "LumiLogging")
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             path: "Sources/PluginNetto",
             resources: [
@@ -37,7 +39,15 @@ let package = Package(
         ),
         .testTarget(
             name: "NettoPluginTests",
-            dependencies: [.target(name: "NettoPlugin")],
+            dependencies: [
+                .target(name: "NettoPlugin"),
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderContentView", package: "LumiProviders"),
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "KitTestSupport", package: "KitTestSupport"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+            ],
             path: "Tests"
         )
     ]

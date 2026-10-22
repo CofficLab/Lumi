@@ -36,9 +36,8 @@ final class WorkspaceStore: ObservableObject {
         guard self.currentProjectPath != path || self.projectStorageDirectory != resolved else { return }
         self.currentProjectPath = path
         self.projectStorageDirectory = resolved
-        if let resolved {
-            try? FileManager.default.createDirectory(at: resolved, withIntermediateDirectories: true)
-        }
+        // 不预建目录：底层 `ResumeDocumentStore` 在真正写入时才会创建。
+        // 否则项目一打开就会留下空的 `.lumi/resume-designer`，让用户困惑。
         reload()
     }
 

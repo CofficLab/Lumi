@@ -5,6 +5,7 @@ import ProviderRootView
 @MainActor
 struct WorkbenchSplitView: View {
     @ObservedObject var provider: LumiRootViewProvider
+    @LumiTheme private var theme
 
     private var showsRail: Bool {
         provider.railView != nil && provider.isRailViewVisible
@@ -30,6 +31,15 @@ struct WorkbenchSplitView: View {
                             restingShadow: false,
                             onResize: provider.saveRailViewWidth
                         )
+                        // Rail 右侧自绘 1pt 分隔线，与左侧 ActivityBar 的 1pt 分隔线
+                        // 视觉权重对齐。`appSplitDivider` 自带的分隔线只有 0.5pt，
+                        // 在 1x 屏上几乎不可见，会让 Rail 左右两侧看起来不对称。
+                        // 两处 overlay 作用于同一个 `.frame(...)` 结果，trailing 边完全重合。
+                        .overlay(alignment: .trailing) {
+                            Rectangle()
+                                .fill(theme.divider)
+                                .frame(width: 1)
+                        }
                     provider.hasActiveContent ? AnyView(mainContent) : AnyView(RootWelcomeView())
                 }
                 // Rail 首批标签是**动态**注册的（`chats` 要等会话数据首次加载完成）。

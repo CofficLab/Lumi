@@ -47,6 +47,18 @@ public enum MessageListEmptyAccessibility {
     /// 建议 chip 的流式容器。
     public static let suggestionFlowID = "lumi.message-list.empty.suggestion-flow"
 
+    /// 项目上下文卡。
+    ///
+    /// 与活动卡同理：这一块区域里**只保留一个可寻址元素**（卡片本身），
+    /// 标识符挂在更外层的容器上会覆盖掉卡片自己的标识符。
+    public static let projectContextCardID = "lumi.message-list.empty.project-context"
+
+    /// 项目身份行（路径 + 技术栈）。
+    public static let projectIdentityLineID = "lumi.message-list.empty.project-identity"
+
+    /// 活动卡里的「统计范围」切换项（项目 / 全部项目）。
+    public static let activityScopeSwitcherID = "lumi.message-list.empty.activity-scope"
+
     /// 单个建议 chip，后缀为 suggestion id。
     ///
     /// 带 id 后缀是为了让测试能点名具体 chip，而不是「点第一个」——

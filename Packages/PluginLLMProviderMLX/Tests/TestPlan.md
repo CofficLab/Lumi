@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMProviderMLX 的实现包，包含 14 个主要类型；当前测试覆盖 1 条用例。
+PluginLLMProviderMLX 的实现包，包含 14 个主要类型；当前测试覆盖 6 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 1
+测试文件: 2 个，用例总数: 6
 
 核心组件（源码目录）:
 - `LLMProviders/`
@@ -22,45 +22,50 @@ PluginLLMProviderMLX 的实现包，包含 14 个主要类型；当前测试覆�
 - `MLXProviderCatalog`
 - `MLXProviderError`
 - `MLXProviderPlugin`
+- `MLXProviderPluginLocalStore`
+- `MLXProviderRuntime`
 - `MLXRuntime`
 - `MLXTextAccumulator`
 - `CoderMLXProvider`
 - `DeepSeekMLXProvider`
-- `GemmaMLXProvider`
-- `LlamaMLXProvider`
 
 ## 关键行为契约（实现约定，非协议要求）
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **MLXProviderPlugin**（1 条）：由 `registersAllLocalProviders` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MLXProviderPlugin**（6 条）：由 `registersAllLocalProviders`、`bootInjectsStorageDirectory`、`modelPathsUseInjectedDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
 | ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
 |----|------|------|----------|----------|----------|------|------|----------|
 | 1 | MLXProviderPlugin | 注册 5.16.0 的七个本地 MLX 供应商 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registersAllLocalProviders` |
+| 2 | MLXProviderPlugin | 启动时把存储目录注入模型根目录与运行时目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bootInjectsStorageDirectory` |
+| 3 | MLXProviderPlugin | 注入目录后 rootDirectory 返回该目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `modelPathsUseInjectedDirectory` |
+| 4 | MLXProviderPlugin | 未注入目录时守卫拒绝回退到真实数据目录 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `modelPathsRefuseWithoutInjectedDirectory` |
+| 5 | MLXProviderPlugin | 注入目录后 settingsDirectory 返回该目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `providerRuntimeUseInjectedDirectory` |
+| 6 | MLXProviderPlugin | 重置后清空注入目录，不再回退到真实数据目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `providerRuntimeResetClearsInjectedDirectory` |
 
-> 说明：全部 **1 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **6 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
-- P1: 已覆盖 1 / 1
+- P0: 已覆盖 1 / 1
+- P1: 已覆盖 5 / 5
 - P2: 已覆盖 0 / 0
-- **合计: 1 / 1**（仅表示清单场景，非源码覆盖率）
+- **合计: 6 / 6**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（1 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
+- **P1**: 其余功能性用例（5 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 1 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 6 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

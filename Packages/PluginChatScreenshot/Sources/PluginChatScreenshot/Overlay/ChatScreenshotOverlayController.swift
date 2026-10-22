@@ -71,7 +71,8 @@ final class ChatScreenshotOverlayController {
 
     // MARK: - 私有
 
-    private func handleSelectionChanged(view: ChatScreenshotOverlayView, rect: CGRect) {
+    /// 可见性放宽到 internal 仅为便于单元测试覆盖多屏选区同步逻辑。
+    internal func handleSelectionChanged(view: ChatScreenshotOverlayView, rect: CGRect) {
         // 合并所有屏幕的局部 selection 为全局 selectionRect
         // 这里简单用最后触发事件的 view 的 selection 作为全局 rect;
         // 跨屏拖选场景极少,够用。

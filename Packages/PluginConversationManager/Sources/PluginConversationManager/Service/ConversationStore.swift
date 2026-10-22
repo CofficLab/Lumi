@@ -368,9 +368,38 @@ public actor ConversationStore: SuperLog {
         }
     }
 
-    /// Count conversations without materializing their summaries.
-    func conversationCount(includingChildConversations: Bool = true) -> Int {
+    /// 返回指定项目下、且在给定时间点之后仍有活动的会话 ID。
+    ///
+    /// 只取 ID 不物化摘要：消息统计只需要一个会话集合，载整张摘要表纯属浪费。
+    func conversationIDs(projectPath: String, updatedSince: Date? = nil) -> [String] {
         let context = ModelContext(container)
+        normalizeEmptyParentConversationIDs(in: context)
+        let timestamp = updatedSince?.timeIntervalSince1970
+        let descriptor: FetchDescriptor<ConversationModel>
+        if let timestamp {
+            descriptor = FetchDescriptor<ConversationModel>(
+                predicate: #Predicate<ConversationModel> {
+                    $0.projectPath == projectPath && $0.updatedAt >= timestamp
+                },
+                sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+            )
+        } else {
+            descriptor = FetchDescriptor<ConversationModel>(
+                predicate: #Predicate<ConversationModel> { $0.projectPath == projectPath },
+                sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+            )
+        }
+
+        do {
+            return try context.fetch(descriptor).map(\.id)
+        } catch {
+            Self.logger.error("\(Self.t)按项目查询会话 ID 失败：\(error.localizedDescription)")
+            return []
+        }
+    }
+
+    /// Count conversations without materializing their summaries.
+    func conversationCount(includingChildConversations: Bool = true) -> Int {        let context = ModelContext(container)
         normalizeEmptyParentConversationIDs(in: context)
         let descriptor: FetchDescriptor<ConversationModel> = includingChildConversations
             ? FetchDescriptor<ConversationModel>()

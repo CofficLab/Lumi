@@ -114,6 +114,15 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         revision &+= 1
     }
 
+    /// 接收编辑器上报的折叠块区间。
+    ///
+    /// 区间存放在能力层（草稿状态），这里只做转发。等值守卫放在写入侧，
+    /// 避免逐键输入时反复改写草稿状态。
+    func updateCollapsedBlocks(_ blocks: [CollapsedContentBlock]) {
+        guard capability.collapsedBlocks != blocks else { return }
+        capability.collapsedBlocks = blocks
+    }
+
     /// 编辑器插入完该块后回报，避免 SwiftUI 再次带着同一个块刷新。
     func consumePendingBlock(id: UUID) {
         guard pendingBlock?.id == id else { return }
@@ -235,6 +244,10 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         let hasAttachments = !imageAttachments.isEmpty || !fileAttachments.isEmpty
         guard !trimmed.isEmpty || hasAttachments else { return }
 
+        // 发送瞬间的折叠块区间。草稿随后被清空，区间也必须同时作废，
+        // 否则下一次发送会带上上一条消息的区间。
+        let blocks = capability.collapsedBlocks
+
         let trace = capability.beginMetrics(
             operation: "chat.send",
             metadata: ["attachments": hasAttachments ? "true" : "false"]
@@ -242,6 +255,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
 
         capability.text = ""
         capability.errorMessage = nil
+        capability.collapsedBlocks = []
         refresh()
 
         if hasAttachments {
@@ -251,6 +265,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
                         trimmed,
                         imageAttachments: imageAttachments,
                         fileAttachments: fileAttachments,
+                        collapsedBlocks: blocks,
                         conversationID: nil
                     ) else { return }
                     if Self.verbose {
@@ -275,6 +290,7 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
                 trimmed,
                 imageAttachments: imageAttachments,
                 fileAttachments: fileAttachments,
+                collapsedBlocks: blocks,
                 conversationID: nil
             ) else { return }
             if let trace {

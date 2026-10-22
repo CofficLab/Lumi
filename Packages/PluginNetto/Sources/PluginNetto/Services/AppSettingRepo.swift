@@ -1,10 +1,14 @@
 import Foundation
+import KitTestIsolation
 import os
 import LumiLoggingKit
 public class AppSettingRepo: ObservableObject, SuperLog, @unchecked Sendable {
     public static let shared = AppSettingRepo()
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
-    
+
+    /// 注入的默认目录（测试用临时目录）。未注入时为 `nil`。
+    nonisolated(unsafe) public static var injectedDefaultDirectory: URL?
+
     @Published var settings: [String: AppSetting] = [:]
     
     private let fileURL: URL
@@ -22,9 +26,15 @@ public class AppSettingRepo: ObservableObject, SuperLog, @unchecked Sendable {
     }
 
     private static func defaultSettingsFileURL() -> URL {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? FileManager.default.temporaryDirectory
-        let pluginDir = appSupport.appendingPathComponent("Lumi/NettoPlugin")
+        // 测试进程下不允许回退到本机真实目录：单例 `shared` 在测试里被首次访问时
+        // 就会走到这里，静默写入开发者真实目录既污染数据也影响断言稳定性。
+        // 测试应当注入隔离目录，或改用 `init(fileURL:)` 注入隔离文件。
+        let pluginDir = IsolatedDirectoryGuard.directory(
+            injected: injectedDefaultDirectory,
+            owner: "AppSettingRepo",
+            accessor: "defaultSettingsFileURL()",
+            fallback: { productionDefaultPluginDirectory }
+        )
         do {
             try FileManager.default.createDirectory(at: pluginDir, withIntermediateDirectories: true)
         } catch {
@@ -33,6 +43,13 @@ public class AppSettingRepo: ObservableObject, SuperLog, @unchecked Sendable {
         }
         return pluginDir.appendingPathComponent("settings.json")
     }
+
+    /// 生产环境插件目录。
+    private static let productionDefaultPluginDirectory: URL = {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        return appSupport.appendingPathComponent("Lumi/NettoPlugin")
+    }()
     
     public func load() {
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return }

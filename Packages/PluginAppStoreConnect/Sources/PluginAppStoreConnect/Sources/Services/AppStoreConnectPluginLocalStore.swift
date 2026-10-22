@@ -27,8 +27,7 @@ final class AppStoreConnectPluginLocalStore: @unchecked Sendable {
 
     init(pluginDirectory: URL? = nil) {
         let root = pluginDirectory
-            ?? AppStoreConnectPluginRuntimeBridge.pluginSubdirectory
-            ?? AppStoreConnectPluginRuntimeBridge.fallbackPluginDirectory
+            ?? AppStoreConnectPluginRuntimeBridge.resolvedPluginDirectory
         self.pluginDirectory = root
         self.settingsFileURL = root.appendingPathComponent("settings.plist")
         try? fileManager.createDirectory(at: root, withIntermediateDirectories: true)

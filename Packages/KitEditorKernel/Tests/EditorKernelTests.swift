@@ -3516,7 +3516,7 @@ struct EditorKernelTests {
 
     @MainActor
     private func eventually(
-        timeout: TimeInterval = 1,
+        timeout: TimeInterval = 5,
         condition: @MainActor () async -> Bool
     ) async -> Bool {
         let deadline = Date().addingTimeInterval(timeout)

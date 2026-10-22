@@ -293,6 +293,8 @@ struct SendActionBarTestCommit: Equatable {
     let imageAttachments: [UserImageAttachment]
     let fileAttachments: [UserFileAttachment]
     let usedBackgroundPath: Bool
+    /// 提交时携带的折叠块区间。
+    let collapsedBlocks: [CollapsedContentBlock]
 }
 
 /// 记录调用并可手动推送事件的 `ConversationInputCapability` 测试替身。
@@ -331,6 +333,8 @@ final class SendActionBarTestCapability: ConversationInputCapability {
     var isInputFocused = false
     var inputCursorPosition = 0
     var errorMessage: String?
+    /// 草稿里的折叠块区间（草稿级状态，随正文一起清空）。
+    var collapsedBlocks: [CollapsedContentBlock] = []
     var pendingImageAttachments: [UserImageAttachment] = []
     var pendingFileAttachments: [UserFileAttachment] = []
     var selectedConversationID: UUID?
@@ -344,6 +348,7 @@ final class SendActionBarTestCapability: ConversationInputCapability {
     func clearInput() {
         clearInputCount += 1
         text = ""
+        collapsedBlocks = []
     }
 
     // MARK: - Attachments
@@ -376,6 +381,7 @@ final class SendActionBarTestCapability: ConversationInputCapability {
         _ content: String,
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
         conversationID: UUID?
     ) throws -> MessageSendCommit? {
         commits.append(
@@ -384,7 +390,8 @@ final class SendActionBarTestCapability: ConversationInputCapability {
                 conversationID: conversationID,
                 imageAttachments: imageAttachments,
                 fileAttachments: fileAttachments,
-                usedBackgroundPath: false
+                usedBackgroundPath: false,
+                collapsedBlocks: collapsedBlocks
             )
         )
         if let commitError { throw commitError }
@@ -395,6 +402,7 @@ final class SendActionBarTestCapability: ConversationInputCapability {
         _ content: String,
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
         conversationID: UUID?
     ) async throws -> MessageSendCommit? {
         backgroundCommits.append(
@@ -403,7 +411,8 @@ final class SendActionBarTestCapability: ConversationInputCapability {
                 conversationID: conversationID,
                 imageAttachments: imageAttachments,
                 fileAttachments: fileAttachments,
-                usedBackgroundPath: true
+                usedBackgroundPath: true,
+                collapsedBlocks: collapsedBlocks
             )
         )
         if let commitError { throw commitError }

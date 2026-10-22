@@ -7,9 +7,11 @@ public class ClipboardManagerViewModel: ObservableObject {
     @Published var searchText: String = ""
     
     private var allItems: [ClipboardHistoryItem] = []
-    private let storage = ClipboardStorage.shared
-    
-    public init() {
+    private let storage: ClipboardStorage
+
+    /// 注入存储层。生产环境使用共享单例；单元测试注入临时数据库实例。
+    public init(storage: ClipboardStorage = ClipboardStorage.shared) {
+        self.storage = storage
         Task {
             await loadItems()
         }

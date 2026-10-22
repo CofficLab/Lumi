@@ -33,6 +33,10 @@ public enum ConversationListAccessibility {
     ///    也让 UI 测试无法定位，与「没有标识」是同一个缺陷的两面。
     /// 3. 空字符串的 provider / 模型一律跳过，避免产生 `"会话 B  "` 这类
     ///    带多余空格的名称（会破坏按标题精确定位的匹配）。
+    /// 4. **自动化等级必须显式拼入**。等级图标现在是整张卡片的背景水印
+    ///    （见 `ItemView.automationLevelWatermark`），不再是第三行的一枚可见文字。
+    ///    背景层不参与可访问性元素的合成，屏幕阅读器因此读不到它 ——
+    ///    等级信息会静默丢失，只能靠这里补回。
     ///
     /// - Important: 不能只依赖 `.accessibilityElement(children: .combine)`。
     ///   子元素过多时 SwiftUI 会截断拼接，标题可能被丢掉，因此必须由本函数
@@ -45,6 +49,9 @@ public enum ConversationListAccessibility {
         }
         if let modelName = conversation.modelName, !modelName.isEmpty {
             parts.append(modelName)
+        }
+        if let automationLevel = conversation.automationLevel {
+            parts.append(automationLevel.displayName)
         }
         return parts.joined(separator: " ")
     }

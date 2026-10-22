@@ -3,6 +3,7 @@ import KernelCore
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
+import ProviderStorage
 import Testing
 @testable import DisplayControlPlugin
 
@@ -44,9 +45,18 @@ func activationHidesChatSection() throws {
     try kernel.registerProvider((any ActivityBarProviding).self, activity)
     try kernel.registerProvider((any ChatSectionProviding).self, chat)
     try kernel.registerProvider((any ContentViewProviding).self, DefaultContentViewProviding())
+    // 存储 Provider 决定插件数据目录。测试进程里守卫拒绝回退到本机真实目录，
+    // 因此 boot 必须能拿到真实（临时目录）Provider 才能继续。
+    try kernel.registerProvider(
+        (any StorageProviding).self,
+        DisplayControlTestDoubles.StubStorageProvider(
+            root: DisplayControlTestDoubles.makeTemporaryDirectory("activation")
+        )
+    )
 
     let plugin = DisplayControlPlugin()
     try plugin.onBoot(kernel: kernel)
+    defer { DisplayControlRuntime.reset() }
 
     #expect(activity.activeItemID == "com.coffic.lumi.plugin.display-control.entry")
     #expect(!chat.isVisible)

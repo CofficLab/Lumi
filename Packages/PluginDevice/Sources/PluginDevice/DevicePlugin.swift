@@ -45,10 +45,11 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         metricsObserver?.cancel()
         metricsObserver = DeviceMetricsObserver(viewModels: viewModels)
 
-        // 0. 配置 MemoryHistoryService 存储目录
+        // 0. 配置历史服务的存储目录
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             let pluginStorageDir = storage.pluginDataDirectory(for: id)
             MemoryHistoryService.configure(storageDirectory: pluginStorageDir)
+            ThermalHistoryService.configure(storageDirectory: pluginStorageDir)
         }
 
         // 1. 注册 ActivityBar 入口；入口被激活时由插件切换自己的主内容，
@@ -96,7 +97,8 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
                 DeviceInfoMenuBarPopupView(
                     viewModel: viewModels.cpu,
                     thermalViewModel: viewModels.thermal,
-                    historyViewModel: viewModels.cpuHistory
+                    historyViewModel: viewModels.cpuHistory,
+                    thermalHistoryViewModel: viewModels.thermalHistory
                 )
             })
             menuBar.addPopup(MenuBarPopupItem(id: "\(id).memory", title: "内存", order: order) {

@@ -16,6 +16,7 @@ let package = Package(
             url: "https://github.com/ml-explore/mlx-swift-lm.git",
             revision: "bc3c20ef4644c86f2b347debcfe1efe4308712a6"
         ),
+        .package(path: "../KitTestSupport"),
     ],
     targets: [
         .target(
@@ -29,12 +30,20 @@ let package = Package(
                 .product(name: "KitDownload", package: "KitDownload"),
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),
                 .product(name: "MLXLMCommon", package: "mlx-swift-lm"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             path: "Sources/PluginLLMProviderMLX"
         ),
         .testTarget(
             name: "PluginLLMProviderMLXTests",
-            dependencies: ["PluginLLMProviderMLX", .product(name: "KernelCore", package: "LumiKernel"), .product(name: "ProviderLLMManager", package: "ProviderLLMManager")],
+            dependencies: [
+                "PluginLLMProviderMLX",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
+                .product(name: "KitTestSupport", package: "KitTestSupport"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+            ],
             path: "Tests/PluginLLMProviderMLXTests"
         ),
     ]

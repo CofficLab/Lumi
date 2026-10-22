@@ -62,6 +62,9 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
   否则粘贴、`typeText` 等直写路径点发送会静默失效
 - **装配降级**：四个 Provider（Input / Sender / Conversations / ConversationState）
   缺任一即不建发送栏 ViewModel，按钮降级为可点击的错误弹窗
+- **输入框必须悬浮**：输入框是一张浮起的卡片（圆角表面 + 描边 + 投影 + 与四周的
+  间距），不是贴在聊天区上的一条扁平色带。卡片几何写死在
+  `ComposerSurfaceTests` 里，动 `ComposerLayout` 的间距必须同步改测试
 
 ## 测试用例清单
 
@@ -148,7 +151,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 74 | 拖放 | 不可读文件错误提示可见 | 不存在的路径 | `attachFile` 后等待 | 错误提示非空，附件池为空 | P1 | ✅ 已覆盖 | `droppingUnreadableFileSurfacesError` |
 | 75 | 错误 | 错误提示可被显式清除 | 预置错误 | `dismissError()` | ViewModel 与能力层同时清空 | P2 | ✅ 已覆盖 | `dismissErrorClearsMessage` |
 | 76 | 绑定 | 焦点与高度绑定双向同步 | — | 依次 setFocused / setInputHeight | ViewModel 与能力层两侧一致，翻转也生效 | P2 | ✅ 已覆盖 | `focusAndHeightBindingsWriteThrough` |
-| 77 | 观察 | 文本变化触发整表刷新 | 装配 Observer | 推文本 | ViewModel 文本更新且 `revision` 递增（走整表 refresh） | P1 | ✅ 已覆盖 | `textChangeRefreshesViewModel` |
+| 77 | 观察 | 文本变化只更新文本，不触发整表刷新 | 装配 Observer | 推文本 | ViewModel 文本更新且 `revision` 不递增（逐键输入不再拖动整棵视图树） | P1 | ✅ 已覆盖 | `textChangeUpdatesTextWithoutFullRefresh` |
 | 78 | 观察 | 附件变化刷新，但回合事件被忽略 | 装配 Observer | 依次推附件 / `.started` / `.turnCompleted` | 附件事件刷新列表；回合事件**不**改变 `revision`（误路由会导致每轮回复重建输入框） | P1 | ✅ 已覆盖 | `attachmentEventRefreshesButTurnEventsAreIgnored` |
 | 79 | 观察 | 错误提示变化同步到 ViewModel | 装配 Observer | 推 `errorMessageChanged` | ViewModel 错误提示同步 | P1 | ✅ 已覆盖 | `errorMessageChangeIsSynchronized` |
 | 80 | 观察 | 折叠块递交后进入待插入状态 | 装配 Observer | 推 `blockSubmitted` | `pendingBlock` 的 id / 标题就位 | P1 | ✅ 已覆盖 | `blockSubmissionEnqueuesPendingBlock` |
@@ -201,6 +204,20 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 98 | i18n | Provider 错误文案含 en | 同上 | 校验 Provider Error 与配置错误文案 | 均含 en（否则英文界面把 key 显示出来） | P0 | ✅ 已覆盖 | `providerErrorKeysIncludeEnglish` |
 | 99 | i18n | 所有条目都含 4 种规范语言 | 同上 | 遍历全表 | 无条目缺语言 | P1 | ✅ 已覆盖 | `everyCatalogEntryCoversRequiredLanguages` |
 | 100 | i18n | 占位符在各语言间数量一致 | 同上 | 对每条比对 `%` 占位符个数 | 与 en 一致（否则运行期崩溃或丢值） | P1 | ✅ 已覆盖 | `placeholdersAreConsistentAcrossLanguages` |
+| 101 | 编辑器高度 | 同一行内容下的亚像素抖动不产生新高度 | 装配高度观察 | 同一行内容连续测量两次 | 两次高度相同（否则每个字符都触发一次全聊天区重排） | P1 | ✅ 已覆盖 | `subpixelJitterIsSuppressed` |
+| 102 | 编辑器高度 | 行数变化仍然上报 | 同上 | 内容增加一行 | 高度变化并被上报（行数是真变化，不能被当成抖动吞掉） | P1 | ✅ 已覆盖 | `lineCountChangeIsReported` |
+| 103 | 编辑器高度 | 归位到最小高度不会被误判为抖动 | 同上 | 内容清空回到最小高度 | 高度归位到 64pt 并上报 | P1 | ✅ 已覆盖 | `returnToMinHeightIsNotSwallowed` |
+| 104 | 编辑器高度 | 非法输入返回原值不做归一化 | 同上 | 传入非法高度 | 原样返回（不做归一化，避免把异常值写成合法高度） | P2 | ✅ 已覆盖 | `invalidHeightFallsBackToMeasured` |
+| 105 | 逐键失效 | 一次按键引发的失效广播不超过 3 次 | 记录 `objectWillChange` 次数 | 逐字输入一个字符 | 广播次数有上界（逐键输入不得拖动整棵输入区视图树） | P1 | ✅ 已覆盖 | `singleKeystrokeInvalidatesBoundedTimes` |
+| 106 | 逐键失效 | 失效次数不随已输入长度增长 | 同上 | 连续输入长文本 | 失效次数不随长度增长（否则长文本输入会越来越卡） | P1 | ✅ 已覆盖 | `invalidationCountDoesNotGrowWithTextLength` |
+| 107 | 逐键失效 | 文本变化不会连带改写附件列表 | 已有图片附件 | 输入文字 | 附件列表不被改写（文本与附件是两条独立的状态线） | P1 | ✅ 已覆盖 | `textChangeDoesNotRewriteAttachmentState` |
+| 108 | 逐键失效 | 重复写入同一文本不会产生任何失效广播 | 同上 | 重复写入同一段文本 | 零次广播（同值写入不应触发任何重绘） | P2 | ✅ 已覆盖 | `redundantWriteDoesNotInvalidate` |
+| 109 | 逐键失效 | 逐键输入不会反复回灌能力层 | 记录能力层写入次数 | 逐字输入 | 能力层不被逐键回灌（回灌会与 Observer 订阅形成回环） | P1 | ✅ 已覆盖 | `keystrokeDoesNotRebroadcastToCapability` |
+| 110 | 发送按钮 | 挂起等待用户时同样显示停止按钮 | 回合挂起等待用户 | 读取按钮状态 | 显示停止按钮（挂起中回合同样没干完，必须留停止入口） | P1 | ✅ 已覆盖 | `suspendedConversationShowsStopButton` |
+| 111 | 观察 | 观察者回灌不重复通知发送按钮 | 装配 Observer 与发送栏 | 触发一次文本变化 | 发送按钮只被通知一次（回环会让按钮状态与输入内容脱节） | P2 | ✅ 已覆盖 | `textObserverDoesNotRebroadcastToActionBar` |
+| 112 | 输入框卡片 | 输入框卡片与上下左右边缘留出间距 | 渲染 `composerSurface()` 卡片 | 逐像素定位卡片左缘与上缘 | 左缘 x=14、上缘 y=8（贴边的输入框读起来是聊天区的一部分，没有悬浮感） | P1 | ✅ 已覆盖 | `cardIsInsetFromEdges` |
+| 113 | 输入框卡片 | 输入框卡片四角为圆角 | 同上 | 取包围盒角内侧 1pt 处与卡片内部比亮度 | 角点仍是底色（直角会让卡片读起来是「一块色板」而非浮起的卡片） | P1 | ✅ 已覆盖 | `cardCornersAreRounded` |
+| 114 | 输入框卡片 | 输入框卡片下方有柔和投影 | 同上 | 比较卡片下缘紧邻行与远处底色、再比 12pt 之外 | 下缘更暗且随距离衰减（没有投影就没有悬浮感，投影是这条视觉契约的主体） | P1 | ✅ 已覆盖 | `cardCastsSoftShadowBelow` |
 
 > 本轮修复的缺陷（先由用例失败暴露，再补齐）：
 > - `Binary file` / `Text file` / `Remove image` / `Remove file` /
@@ -217,8 +234,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > 真实 App 点击 ✕）。注：文件 chip 的 3 条尚未在干净环境跑通——本机有
 > 用户安装的正式版 Lumi 占用同一 App 名，导致 UI 测试宿主启动失败。
 
-> 说明：全部 **100 条场景 / 105 个测试方法**已在 macOS 上实跑通过
-> （`swift test` → 105 tests in 13 suites passed）。
+> 说明：全部 **114 条场景 / 119 个测试方法**已在 macOS 上实跑通过
+> （`swift test` → 119 tests in 16 suites passed）。
 >
 > 实现中几条易错约定已在用例里显式锁定：
 > - **附件路径必须后台化**（ID 10）：同步 `commitUserMessage` 不做编码，附件消息走它会丢内容，
@@ -240,9 +257,9 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 ## 覆盖率统计
 
 - P0: 已覆盖 37 / 37
-- P1: 已覆盖 50 / 50
-- P2: 已覆盖 13 / 13
-- **合计: 100 / 100**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 61 / 61
+- P2: 已覆盖 16 / 16
+- **合计: 114 / 114**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -251,9 +268,11 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
   附件预览 ✕ 的端到端链路（ID 89–90）、本地化缺失（ID 97–98）
 - **P1**: 会话切换与状态刷新、附件生命周期与拖放、Observer 事件路由与初始快照、
   折叠块、拖放路径解析、错误提示、附件 ✕ 的幂等与陈旧 ID 容错（ID 91–95）、
-  全表语言完整性与占位符一致性（ID 99–100）
+  全表语言完整性与占位符一致性（ID 99–100）、逐键失效广播的次数上界
+  （ID 105–109）、输入框悬浮卡片的间距 / 圆角 / 投影（ID 112–114）
 - **P2**: Observer cancel 释放、编辑器延迟绑定与布局测量、placeholder 命中测试、
-  localhost 归一化、空文件容错、退订后的关闭行为（ID 96）
+  localhost 归一化、空文件容错、退订后的关闭行为（ID 96）、非法高度与同值写入
+  （ID 104 / 108）、观察者回灌去重（ID 111）
 
 ## 跨平台说明
 

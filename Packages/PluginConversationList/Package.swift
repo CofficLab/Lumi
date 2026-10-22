@@ -16,7 +16,8 @@ let package = Package(
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
+        .package(path: "../PluginRootView")
     ],
     targets: [.target(name: "PluginConversationList", dependencies: [
         .product(name: "KernelCore", package: "LumiKernel"),
@@ -40,6 +41,7 @@ let package = Package(
         dependencies: [
             "PluginConversationList",
             .product(name: "KitAgentTool", package: "KitAgentTool"),
+            .product(name: "PluginRootView", package: "PluginRootView"),
         ]
     )]
 )

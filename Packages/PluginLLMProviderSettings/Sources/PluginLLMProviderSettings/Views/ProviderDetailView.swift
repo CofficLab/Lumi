@@ -19,6 +19,8 @@ public struct ProviderDetailView: View {
     @State private var isDeleteConfirmationPresented = false
     /// API Key 是否以明文展示（仅本地 UI 状态，不落盘）。
     @State private var isAPIKeyRevealed = false
+    /// 复制 API Key 后短暂显示「已复制」反馈。
+    @State private var isAPIKeyCopied = false
 
     init(viewModel: ProviderDetailViewModel) {
         self.viewModel = viewModel
@@ -45,6 +47,9 @@ public struct ProviderDetailView: View {
                 )
             } else {
                 modelSection
+            }
+            if let modelRefreshError = viewModel.modelRefreshError {
+                AppErrorBanner(message: LocalizedStringKey(modelRefreshError))
             }
         }
         .sheet(isPresented: $isEditorPresented) {
@@ -93,6 +98,21 @@ public struct ProviderDetailView: View {
                         isDeleteConfirmationPresented = true
                     }
                 }
+                if viewModel.canRefreshModels {
+                    AppButton(
+                        pluginLocalization.string(
+                            viewModel.isRefreshingModels ? "刷新中…" : "刷新模型列表"
+                        ),
+                        systemImage: "arrow.clockwise",
+                        style: .secondary,
+                        size: .small
+                    ) {
+                        Task { await viewModel.refreshModels() }
+                    }
+                    .disabled(viewModel.isRefreshingModels)
+                    .help(pluginLocalization.string("从供应商拉取最新的模型列表"))
+                    .accessibilityIdentifier(ProviderSettingsAccessibility.refreshModelsButton)
+                }
             }
             if !viewModel.providerDescription.isEmpty {
                 Text(viewModel.providerDescription)
@@ -127,13 +147,6 @@ public struct ProviderDetailView: View {
                         .textFieldStyle(.plain)
                         .font(.appBody)
                         .frame(width: 260)
-
-                        AppIconButton(
-                            systemImage: isAPIKeyRevealed ? "eye.slash" : "eye"
-                        ) {
-                            isAPIKeyRevealed.toggle()
-                        }
-                        .help(isAPIKeyRevealed ? "隐藏 API Key" : "显示 API Key")
                     }
                 }
 
@@ -152,6 +165,17 @@ public struct ProviderDetailView: View {
                                 isAPIKeyRevealed.toggle()
                             }
                             .help(isAPIKeyRevealed ? "隐藏 API Key" : "显示 API Key")
+                        }
+
+                        if !copyableAPIKey.isEmpty {
+                            AppIconButton(
+                                systemImage: isAPIKeyCopied ? "checkmark" : "doc.on.doc",
+                                tint: isAPIKeyCopied ? theme.success : nil
+                            ) {
+                                copyAPIKey()
+                            }
+                            .help(isAPIKeyCopied ? "已复制" : "复制 API Key")
+                            .accessibilityIdentifier(ProviderSettingsAccessibility.copyAPIKeyButton)
                         }
 
                         AppButton("保存", systemImage: "checkmark", style: .primary, size: .small) {
@@ -235,6 +259,26 @@ public struct ProviderDetailView: View {
     }
 
     // MARK: - Helpers
+
+    /// 可复制的 API Key：优先已保存的值，无已保存值时复制输入框里的当前内容。
+    private var copyableAPIKey: String {
+        let saved = viewModel.savedAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !saved.isEmpty {
+            return saved
+        }
+        return viewModel.apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func copyAPIKey() {
+        let value = copyableAPIKey
+        guard !value.isEmpty else { return }
+        LumiPasteboard.copyString(value)
+        isAPIKeyCopied = true
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2))
+            isAPIKeyCopied = false
+        }
+    }
 
     private static func formatted(_ tokens: Int) -> String {
         if tokens >= 1_000_000 {

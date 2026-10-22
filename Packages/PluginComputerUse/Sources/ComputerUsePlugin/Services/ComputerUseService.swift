@@ -17,6 +17,10 @@ final class ComputerUseService: @unchecked Sendable {
     private var observations: [UUID: ComputerUseObservation] = [:]
     private var observationOrder: [UUID] = []
     private let authorizationStore: ComputerUseAuthorizationStore
+    /// 统一的授权判定器。挂起式授权请求与放行判定都从这里出发。
+    private var accessChecker: ComputerUseAccessChecker {
+        ComputerUseAccessChecker(authorization: authorizationStore)
+    }
 
     init(authorizationStore: ComputerUseAuthorizationStore = .shared) {
         self.authorizationStore = authorizationStore
@@ -37,10 +41,30 @@ final class ComputerUseService: @unchecked Sendable {
             )
         }
         guard let selection else { throw ComputerUseError.noMatchingWindow }
-        guard authorizationStore.isAllowed(selection.bundleIdentifier) else {
-            throw ComputerUseError.applicationNotAllowed(selection.applicationName)
-        }
+        try requireAuthorized(selection, operation: "observe")
         return try await capture(window: selection)
+    }
+
+    /// 校验目标应用是否已获授权。
+    ///
+    /// 命中未授权应用时抛出携带应用信息的 `authorizationRequired` 错误，
+    /// 由工具层转换成挂起回合的授权请求，而不是让整轮直接失败。
+    private func requireAuthorized(_ window: ComputerUseWindow, operation: String) throws {
+        switch accessChecker.outcome(
+            for: window.bundleIdentifier,
+            applicationName: window.applicationName
+        ) {
+        case .allowed:
+            return
+        case .needsAuthorization(let applicationName, let bundleIdentifier):
+            throw ComputerUseError.authorizationRequired(
+                applicationName: applicationName,
+                bundleIdentifier: bundleIdentifier,
+                operation: operation
+            )
+        case .forbidden(let reason):
+            throw ComputerUseError.forbiddenApplication(reason)
+        }
     }
 
     @MainActor
@@ -51,9 +75,7 @@ final class ComputerUseService: @unchecked Sendable {
             guard let observation = observation(id: observationID) else {
                 throw ComputerUseError.observationNotFound
             }
-            guard authorizationStore.isAllowed(observation.window.bundleIdentifier) else {
-                throw ComputerUseError.applicationNotAllowed(observation.window.applicationName)
-            }
+            try requireAuthorized(observation.window, operation: "act")
 
             let currentWindow = ComputerUseWindowProvider.availableWindows().first(where: { $0.id == observation.window.id })
             guard let currentWindow,

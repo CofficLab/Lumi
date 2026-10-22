@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMessageListDetailed 的实现包，包含 14 个主要类型；当前测试覆盖 73 条用例。
+PluginMessageListDetailed 的实现包，包含 14 个主要类型；当前测试覆盖 97 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 73
+测试文件: 9 个，用例总数: 97
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -41,7 +41,11 @@ PluginMessageListDetailed 的实现包，包含 14 个主要类型；当前测�
 - **BottomEdgeEvaluator**（8 条）：由 `flushBottomIsAtBottom`、`farFromBottomDoesNotNotify`、`hysteresisUsesLeaveToleranceWhenPreviouslyAtBottom` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ListV3ViewModel**（39 条）：由 `activateLoadsFirstPage`、`activateWithoutConversationStaysEmpty`、`activateIgnoresStaleConversation` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListScrollCoordinator**（17 条）：由 `prepareInitialBottomScrollsTwiceWhenNotAttached`、`prepareInitialBottomSkipsWhenNoMessages`、`prepareInitialBottomAbortsWhenConditionFails` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MessageListService**（9 条）：由 `messageRowsFilterAndMergeToolExecutionMessages`、`messageRowsPreserveUnscopedMessagesAndLegacyGroups`、`messageDerivedPredicatesDistinguishEmptyResponses` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MessageListService**（9 条）
+- **InitialPositionGate**（10 条）：由 `gateBecomesReadyAfterSuccessfulSettle`、`gateReleasesEvenWhenSettleFails`、`gateReleasesWhenSettleHangs` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ListV3Authorization**（3 条）：由 `approvedToolCallKeepsTerminalStateAfterSwitchingBack`、`rejectedToolCallKeepsTerminalStateAfterSwitchingBack` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ListV3LargeData**（5 条）：由 `tailEvictionDoesNotCreatePermanentGap`、`windowStaysBoundedWhilePaging`、`toolCallQueriesDoNotScaleWithTurnCount` 等用例锁定；改动分页窗口与统计刷新时优先跑对应测试文件。
+- **MessageListStateLifetime**（6 条）：由 `listViewMustNotHoldReferenceStateInPlainStoredProperty`、`listViewMustCarryRuntimeInStateObject` 等用例锁定；改动视图状态持有方式时优先跑对应测试文件。：由 `messageRowsFilterAndMergeToolExecutionMessages`、`messageRowsPreserveUnscopedMessagesAndLegacyGroups`、`messageDerivedPredicatesDistinguishEmptyResponses` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -120,27 +124,51 @@ PluginMessageListDetailed 的实现包，包含 14 个主要类型；当前测�
 | 71 | MessageListService | 空窗口首刷补查 earlier，尾部回收只在离开底部时执行 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `paginationInitialRefreshAndTailEviction` |
 | 72 | MessageListService | 尾部刷新门将并发通知合并成当前轮和至多一轮尾随刷新 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `tailRefreshGateCoalescesOverlappingRequests` |
 | 73 | MessageListService | 通知按当前会话筛选，消息时间相同时按 UUID 稳定排序 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `messageNotificationAndOrderingAreStable` |
+| 74 | InitialPositionGate | 首屏就绪：收敛成功后放行 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gateBecomesReadyAfterSuccessfulSettle` |
+| 75 | InitialPositionGate | 首屏就绪：同一会话重复请求被去重 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gateDeduplicatesSameConversation` |
+| 76 | InitialPositionGate | 首屏就绪：切换会话作废上一轮等待，不被旧结果污染 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gateDiscardsPreviousConversationOnSwitch` |
+| 77 | InitialPositionGate | 首屏就绪：相关性失效时不置为就绪 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateIgnoresResultWhenNoLongerRelevant` |
+| 78 | InitialPositionGate | 首屏就绪：收敛失败也在预算内放行，绝不永久卡死 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateReleasesEvenWhenSettleFails` |
+| 79 | InitialPositionGate | 首屏就绪：收敛挂死时由超时兜底放行 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateReleasesWhenSettleHangs` |
+| 80 | InitialPositionGate | 首屏就绪：会话切换复位后不再就绪 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gateResetClearsReady` |
+| 81 | InitialPositionGate | 首屏遮罩：会话切换的复位不得作废已在当前会话上启动的收敛 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateResetMustNotCancelConvergenceAlreadyStarted` |
+| 82 | InitialPositionGate | 首屏遮罩：复位不得让已失效的旧一轮放行遮罩 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateResetMustNotReleaseMaskFromStaleRound` |
+| 83 | InitialPositionGate | 首屏就绪：没有选中会话时直接就绪 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gateWithoutConversationIsImmediatelyReady` |
+| 84 | ListV3Authorization | 已允许的工具调用在切走再切回后仍是授权终态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `approvedToolCallKeepsTerminalStateAfterSwitchingBack` |
+| 85 | ListV3Authorization | 授权状态变化本身就会触发历史行重建 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `authorizationStateChangeAloneTriggersRebuild` |
+| 86 | ListV3Authorization | 已拒绝的工具调用在切走再切回后仍是授权终态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rejectedToolCallKeepsTerminalStateAfterSwitchingBack` |
+| 87 | ListV3LargeData | 大窗口下重建历史行的耗时应保持有界 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rebuildHistoryRowsStaysFastAtScale` |
+| 88 | ListV3LargeData | 内容被等长替换时历史行必须更新 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `sameLengthContentEditRebuildsRows` |
+| 89 | ListV3LargeData | 翻页裁剪窗口后，新消息到达不得让中间段消息永久消失 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `tailEvictionDoesNotCreatePermanentGap` |
+| 90 | ListV3LargeData | 工具调用统计不应随窗口内 turn 数线性放大 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `toolCallQueriesDoNotScaleWithTurnCount` |
+| 91 | ListV3LargeData | 持续翻页时内存窗口不得无上限增长 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `windowStaysBoundedWhilePaging` |
+| 92 | MessageListStateLifetime | 详细模式消息列表视图：首屏就绪必须由带超时兜底的编排器承载 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listViewMustCarryInitialPositionGate` |
+| 93 | MessageListStateLifetime | 详细模式消息列表视图：运行时状态容器必须由 StateObject 承载 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listViewMustCarryRuntimeInStateObject` |
+| 94 | MessageListStateLifetime | 详细模式消息列表视图：不得用普通存储属性持有引用类型状态 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listViewMustNotHoldReferenceStateInPlainStoredProperty` |
+| 95 | MessageListStateLifetime | 详细模式运行时容器：必须持有底部标记、滚动协调器与底部几何控制器 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimeCarriesAllThreeMembers` |
+| 96 | MessageListStateLifetime | 详细模式运行时容器：成员在多次访问之间必须保持同一实例 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimeMembersKeepStableIdentity` |
+| 97 | MessageListStateLifetime | 详细模式运行时容器：不得发布任何 @Published（避免重新打开 invalidation 反馈环） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimePublishesNothing` |
 
-> 说明：全部 **73 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **97 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
-- P1: 已覆盖 57 / 57
+- P0: 已覆盖 22 / 22
+- P1: 已覆盖 66 / 66
 - P2: 已覆盖 9 / 9
-- **合计: 73 / 73**（仅表示清单场景，非源码覆盖率）
+- **合计: 97 / 97**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（57 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、消失、竞态、超时、必须、不得、不应等失效类信号的用例（22 条）
+- **P1**: 其余功能性用例（66 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 73 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 97 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

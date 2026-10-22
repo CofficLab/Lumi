@@ -1,3 +1,4 @@
+import Foundation
 import Security
 import XCTest
 @testable import KitKeychain
@@ -5,13 +6,32 @@ import XCTest
 final class KeychainStoreCoverageTests: XCTestCase {
     private var legacyKey: String!
 
+    /// 隔离的偏好域：legacy 迁移用例会读写它。
+    ///
+    /// - Important: 不能用 `UserDefaults.standard`——那是**用户级全局状态**。
+    ///   读写它既会污染开发者本机的真实偏好，也会让断言受历史残留影响。
+    ///   这里用带 UUID 的 suite，保证每个用例互不可见。
+    private var isolatedDefaults: UserDefaults!
+    private var isolatedSuiteName: String!
+
     override func setUp() {
         super.setUp()
         legacyKey = "legacy-\(UUID().uuidString)"
+        isolatedSuiteName = "com.coffic.lumi.test.kit-keychain.\(UUID().uuidString)"
+        // suiteName: 内部生成的固定格式字符串，失败只可能是系统异常。
+        guard let defaults = UserDefaults(suiteName: isolatedSuiteName) else {
+            preconditionFailure("无法创建隔离的 UserDefaults（suite: \(isolatedSuiteName)）")
+        }
+        isolatedDefaults = defaults
+        defaults.removePersistentDomain(forName: isolatedSuiteName)
     }
 
     override func tearDown() {
-        UserDefaults.standard.removeObject(forKey: legacyKey!)
+        if let suiteName = isolatedSuiteName {
+            isolatedDefaults?.removePersistentDomain(forName: suiteName)
+        }
+        isolatedDefaults = nil
+        isolatedSuiteName = nil
         super.tearDown()
     }
 
@@ -80,7 +100,12 @@ final class KeychainStoreCoverageTests: XCTestCase {
 
     func testEmptyKeyShortCircuitsAllOperations() throws {
         let backend = RecordingKeychainBackend()
-        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
 
         XCTAssertNil(try store.stringReportingErrors(forKey: ""))
         XCTAssertNoThrow(try store.setReportingErrors("value", forKey: ""))
@@ -95,7 +120,12 @@ final class KeychainStoreCoverageTests: XCTestCase {
 
     func testWriteTrimsWhitespaceBeforeStoring() throws {
         let backend = RecordingKeychainBackend()
-        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
 
         try store.setReportingErrors("  secret \n", forKey: "account")
 
@@ -104,7 +134,12 @@ final class KeychainStoreCoverageTests: XCTestCase {
 
     func testWriteWhitespaceOnlyValueRemovesKey() throws {
         let backend = RecordingKeychainBackend()
-        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
 
         try store.setReportingErrors("   \n ", forKey: "account")
 
@@ -114,7 +149,12 @@ final class KeychainStoreCoverageTests: XCTestCase {
 
     func testWriteFailureDoesNotDeleteExistingValueFirst() {
         let backend = RecordingKeychainBackend(writeResult: errSecAuthFailed)
-        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
 
         XCTAssertThrowsError(try store.setReportingErrors("replacement", forKey: "account"))
         XCTAssertEqual(backend.writeCount, 1)
@@ -126,7 +166,12 @@ final class KeychainStoreCoverageTests: XCTestCase {
             readResult: KeychainResult(status: errSecItemNotFound, data: nil),
             deleteResult: KeychainResult(status: errSecAuthFailed, data: nil)
         )
-        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
 
         XCTAssertThrowsError(try store.removeReportingErrors(forKey: "account")) { error in
             XCTAssertEqual(error as? KeychainStoreError, .deleteFailed(errSecAuthFailed))
@@ -142,7 +187,12 @@ final class KeychainStoreCoverageTests: XCTestCase {
             writeResult: KeychainResult(status: errSecAuthFailed, data: nil),
             deleteResult: KeychainResult(status: errSecAuthFailed, data: nil)
         )
-        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
 
         XCTAssertNil(store.string(forKey: "account"))
         store.set("secret", forKey: "account")
@@ -154,7 +204,12 @@ final class KeychainStoreCoverageTests: XCTestCase {
 
     func testObservedStatusReceivesFinalStatus() throws {
         let backend = StubKeychainBackend(readResult: KeychainResult(status: errSecItemNotFound, data: nil))
-        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
 
         var observed: [OSStatus] = []
         XCTAssertNil(try store.stringReportingErrors(forKey: "account") { status in
@@ -165,7 +220,12 @@ final class KeychainStoreCoverageTests: XCTestCase {
 
     func testObservedStatusReceivesLastTransientStatus() {
         let backend = StubKeychainBackend(readResult: KeychainResult(status: errSecNotAvailable, data: nil))
-        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
 
         var observed: [OSStatus] = []
         XCTAssertThrowsError(try store.stringReportingErrors(forKey: "account") { status in
@@ -177,36 +237,51 @@ final class KeychainStoreCoverageTests: XCTestCase {
     // MARK: - Legacy UserDefaults migration
 
     func testLegacyMigrationMovesValueToKeychain() throws {
-        UserDefaults.standard.set("legacy-token", forKey: legacyKey)
+        isolatedDefaults.set("legacy-token", forKey: legacyKey)
         let backend = RecordingKeychainBackend()
-        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
 
         let value = try store.loadMigratingLegacyUserDefaultsReportingErrors(forKey: legacyKey)
 
         XCTAssertEqual(value, "legacy-token")
         XCTAssertEqual(backend.writtenData, [Data("legacy-token".utf8)])
-        XCTAssertNil(UserDefaults.standard.string(forKey: legacyKey))
+        XCTAssertNil(isolatedDefaults.string(forKey: legacyKey))
     }
 
     func testKeychainValueWinsOverLegacy() throws {
-        UserDefaults.standard.set("legacy-token", forKey: legacyKey)
+        isolatedDefaults.set("legacy-token", forKey: legacyKey)
         let backend = RecordingKeychainBackend(
             readData: Data("keychain-token".utf8)
         )
-        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
 
         let value = try store.loadMigratingLegacyUserDefaultsReportingErrors(forKey: legacyKey)
 
         XCTAssertEqual(value, "keychain-token")
         XCTAssertEqual(backend.writtenData, [])
         // 遗留值保持原样（不迁移也不清除）
-        XCTAssertEqual(UserDefaults.standard.string(forKey: legacyKey), "legacy-token")
+        XCTAssertEqual(isolatedDefaults.string(forKey: legacyKey), "legacy-token")
     }
 
     func testWhitespaceOnlyKeychainValueFallsBackToLegacy() throws {
-        UserDefaults.standard.set("legacy-token", forKey: legacyKey)
+        isolatedDefaults.set("legacy-token", forKey: legacyKey)
         let backend = RecordingKeychainBackend(readData: Data("   ".utf8))
-        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
 
         let value = try store.loadMigratingLegacyUserDefaultsReportingErrors(forKey: legacyKey)
 
@@ -216,7 +291,12 @@ final class KeychainStoreCoverageTests: XCTestCase {
 
     func testMigrationReturnsNilWhenBothSourcesEmpty() throws {
         let backend = RecordingKeychainBackend()
-        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
 
         XCTAssertNil(try store.loadMigratingLegacyUserDefaultsReportingErrors(forKey: legacyKey))
     }
@@ -312,9 +392,38 @@ private final class RecordingKeychainBackend: KeychainBackend, @unchecked Sendab
 /// 读取会永久阻塞在无人应答的对话框上。无提示模式通过传
 /// `kSecUseAuthenticationUIFail` 把该情况转为立即失败。
 final class KeychainNoPromptReadTests: XCTestCase {
+    /// 隔离的偏好域，避免 legacy 迁移路径碰到 `UserDefaults.standard`。
+    private var isolatedDefaults: UserDefaults!
+    private var isolatedSuiteName: String!
+
+    override func setUp() {
+        super.setUp()
+        isolatedSuiteName = "com.coffic.lumi.test.kit-keychain.\(UUID().uuidString)"
+        // suiteName: 内部生成的固定格式字符串，失败只可能是系统异常。
+        guard let defaults = UserDefaults(suiteName: isolatedSuiteName) else {
+            preconditionFailure("无法创建隔离的 UserDefaults（suite: \(isolatedSuiteName)）")
+        }
+        isolatedDefaults = defaults
+        defaults.removePersistentDomain(forName: isolatedSuiteName)
+    }
+
+    override func tearDown() {
+        if let suiteName = isolatedSuiteName {
+            isolatedDefaults?.removePersistentDomain(forName: suiteName)
+        }
+        isolatedDefaults = nil
+        isolatedSuiteName = nil
+        super.tearDown()
+    }
+
     func testPromptFreeReadPassesAllowInteractionFalse() throws {
         let backend = RecordingKeychainBackend(readData: Data("secret".utf8))
-        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
 
         XCTAssertEqual(try store.stringWithoutPromptReportingErrors(forKey: "account"), "secret")
         XCTAssertEqual(backend.interactionFlags, [false])
@@ -322,7 +431,12 @@ final class KeychainNoPromptReadTests: XCTestCase {
 
     func testDefaultReadStillAllowsInteraction() throws {
         let backend = RecordingKeychainBackend(readData: Data("secret".utf8))
-        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
 
         XCTAssertEqual(try store.stringReportingErrors(forKey: "account"), "secret")
         // 既有调用点行为不变：默认仍允许系统交互。
@@ -336,7 +450,12 @@ final class KeychainNoPromptReadTests: XCTestCase {
             writeResult: errSecSuccess,
             readStatus: errSecInteractionNotAllowed
         )
-        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+        let store = KeychainStore(
+            service: "test",
+            backend: backend,
+            legacyUserDefaults: isolatedDefaults,
+            sleeper: { _ in }
+        )
         // 折叠为 nil（视为不可读），不抛出、不阻塞。
         XCTAssertNil(store.stringWithoutPrompt(forKey: "account"))
     }

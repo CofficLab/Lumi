@@ -17,7 +17,8 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0"),
+        .package(path: "../KitTestSupport"),
     ],
     targets: [
 .target(
@@ -34,19 +35,22 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
-                .product(name: "LumiLoggingKit", package: "LumiLogging")
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             path: "Sources/PluginDisplayControl",
             resources: [
                 .process("../../Resources/Localizable.xcstrings")
             ],
-            linkerSettings: [
-                .unsafeFlags(["-Xlinker", "-undefined", "-Xlinker", "dynamic_lookup"])
-            ]
         ),
         .testTarget(
             name: "DisplayControlPluginTests",
-            dependencies: [.target(name: "DisplayControlPlugin")],
+            dependencies: [
+                .target(name: "DisplayControlPlugin"),
+                .product(name: "KitTestSupport", package: "KitTestSupport"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
+            ],
             path: "Tests"
         )
     ]

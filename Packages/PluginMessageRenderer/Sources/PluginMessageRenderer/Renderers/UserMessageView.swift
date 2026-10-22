@@ -34,7 +34,16 @@ struct UserMessageView: View {
                 }
 
                 if !message.content.isEmpty {
-                    CollapsiblePlainText(text: message.content)
+                    // 折叠块区间随消息存在 metadata 里（粘贴的大段文本、编辑器
+                    // 选区等）。有区间就把对应片段还原成可展开的 chip，与输入框里
+                    // 看到的形态一致；没有区间（旧数据）则退回纯文本渲染。
+                    CollapsedContentChips(
+                        text: message.content,
+                        blocks: CollapsedContentBlockMetadata.normalizedBlocks(
+                            from: message.metadata,
+                            contentLength: message.content.count
+                        )
+                    )
                 }
             }
             .modifier(UserMessagePresentationModifier(isBrief: isBrief, isError: message.isError))

@@ -7,9 +7,13 @@ import KitLLM
 /// 改走固定桩响应，不依赖真实网络与用户 API Key，保证 UI 测试确定性。
 /// 范式参照 Cisum 的 `--cisum-ui-testing` 夹具注入（见 PluginAudioDBData）。
 ///
-/// 桩响应包含 9 个模型：静态清单 6 个 + 远程新增 3 个
-/// （MiniMax-M2.1 / MiniMax-M2.1-highspeed / MiniMax-M2），
-/// 与用户报告的「磁盘 models.json 有 9 个」一致。
+/// 桩响应 = 上游实测的 9 个模型 + 一个上游独有、静态清单没有的 `MiniMax-M2.8`。
+///
+/// `MiniMax-M2.8` 是 UI 测试判定「刷新已生效」的信号：它只可能来自远程响应，
+/// 因此它出现在模型列表里，就证明 `.modelsRefreshed` 已广播、UI 快照已刷新。
+///
+/// - Important: 前 9 个 id 必须与上游真实返回 **逐字一致**。历史夹具用了
+///   不存在的 `MiniMax-M3.1-Flash-Preview`，会让 UI 测试断言一个调不通的模型名。
 #if DEBUG
 enum MiniMaxUITestingSupport {
 
@@ -21,7 +25,7 @@ enum MiniMaxUITestingSupport {
     }
 
     /// 用桩网络装配真实 MiniMax 供应商，并清空历史 models.json，
-    /// 保证每次 UI 测试启动时模型列表回到静态清单（6 个）的初始状态。
+    /// 保证每次 UI 测试启动时模型列表回到静态清单的初始状态。
     @MainActor
     static func makeProvider(modelListCache: MiniMaxLocalStore) -> MiniMaxOpenAIProvider {
         modelListCache.clear()
@@ -33,7 +37,7 @@ enum MiniMaxUITestingSupport {
         return provider
     }
 
-    /// 固定返回 9 模型 `/v1/models` 响应的网络桩。
+    /// 固定返回 `/v1/models` 响应的网络桩。
     private final class StubNetwork: NSObject, LLMNetworkProviding, @unchecked Sendable {
 
         func send(request: URLRequest, body: Data) async throws -> (Data, URLResponse) {
@@ -52,17 +56,20 @@ enum MiniMaxUITestingSupport {
             onEvent: @Sendable @escaping (Data) async -> Bool
         ) async throws {}
 
+        /// 前 9 个逐字取自上游真实响应（`created` 为 Unix 秒级时间戳），
+        /// 末尾追加上游独有的 `MiniMax-M2.8` 作为刷新生效信号。
         static let payload = """
         {"object":"list","data":[
-          {"id":"MiniMax-M3.1-Flash-Preview","object":"model","created":1780272000,"owned_by":"minimax"},
+          {"id":"MiniMax-M3.1-Flash","object":"model","created":1789556118,"owned_by":"minimax"},
           {"id":"MiniMax-M3","object":"model","created":1780272000,"owned_by":"minimax"},
           {"id":"MiniMax-M2.7","object":"model","created":1773799200,"owned_by":"minimax"},
           {"id":"MiniMax-M2.7-highspeed","object":"model","created":1773799200,"owned_by":"minimax"},
           {"id":"MiniMax-M2.5","object":"model","created":1770948000,"owned_by":"minimax"},
           {"id":"MiniMax-M2.5-highspeed","object":"model","created":1770948000,"owned_by":"minimax"},
-          {"id":"MiniMax-M2.1","object":"model","created":1770948000,"owned_by":"minimax"},
-          {"id":"MiniMax-M2.1-highspeed","object":"model","created":1770948000,"owned_by":"minimax"},
-          {"id":"MiniMax-M2","object":"model","created":1770948000,"owned_by":"minimax"}
+          {"id":"MiniMax-M2.1","object":"model","created":1766455200,"owned_by":"minimax"},
+          {"id":"MiniMax-M2.1-highspeed","object":"model","created":1766455200,"owned_by":"minimax"},
+          {"id":"MiniMax-M2","object":"model","created":1761530400,"owned_by":"minimax"},
+          {"id":"MiniMax-M2.8","object":"model","created":1760000000,"owned_by":"minimax"}
         ]}
         """
     }

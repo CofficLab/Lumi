@@ -1,13 +1,42 @@
 import Testing
+import Foundation
 import KernelCore
+import KitTestSupport
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
 import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
+import ProviderStorage
 import ProviderToolbar
 @testable import PluginAppStoreConnect
+
+/// 测试用存储 Provider：根落在临时目录，插件目录按 pluginID 分目录。
+///
+/// 插件 `onBoot` 会解析 `StorageProviding` 并注入运行时目录；测试进程下
+/// 目录守卫拒绝回退到本机真实数据目录，因此必须显式提供一个临时根。
+private final class TestStorageProvider: StorageProviding {
+    let dataRootDirectory: URL
+
+    init() {
+        dataRootDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PluginAppStoreConnectTests-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dataRootDirectory, withIntermediateDirectories: true)
+    }
+
+    func pluginDataDirectory(for pluginID: String) -> URL {
+        let directory = dataRootDirectory.appendingPathComponent(pluginID, isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
+    }
+
+    func coreDataDirectory() -> URL {
+        let directory = dataRootDirectory.appendingPathComponent("Core", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
+    }
+}
 
 @Test("plugin metadata follows the current integration conventions")
 @MainActor
@@ -29,6 +58,7 @@ func settingsEntry() throws {
     let kernel = KernelCoreContainer()
     let settings = DefaultSettingViewProviding()
     try kernel.registerProvider((any SettingViewProviding).self, settings)
+    try kernel.registerProvider((any StorageProviding).self, TestStorageProvider())
 
     let plugin = AppStoreConnectPlugin()
     try plugin.onBoot(kernel: kernel)
@@ -53,6 +83,7 @@ func activationKeepsChatToolbarCategoryVisible() throws {
     try kernel.registerProvider((any RailViewProviding).self, DefaultRailViewProviding())
     try kernel.registerProvider((any RootViewProviding).self, DefaultRootViewProviding())
     try kernel.registerProvider((any ToolbarProviding).self, toolbar)
+    try kernel.registerProvider((any StorageProviding).self, TestStorageProvider())
 
     let plugin = AppStoreConnectPlugin()
     try plugin.onBoot(kernel: kernel)

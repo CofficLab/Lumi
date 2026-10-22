@@ -43,6 +43,8 @@ public final class GitSourceControlPlugin: SuperPlugin, SuperLog {
         try kernel.registerProvider((any SourceControlProviding).self, GitSourceControlAdapter())
         // 发布只读 Git 契约，供不依赖本插件的插件消费（见 ProviderGit）。
         try kernel.registerProvider((any GitRepositoryReading).self, GitService.shared)
+        // 发布分支读写契约，供标题栏分支胶囊等 UI 插件消费。
+        try kernel.registerProvider((any GitBranchManaging).self, GitBranchProvider())
         let project = kernel.resolveProvider((any ProjectProviding).self)
         let projectCapability = project.map { GitProjectCapabilityAdapter(project: $0) }
         let tools: [any SuperAgentTool] = [
@@ -87,6 +89,7 @@ public final class GitSourceControlPlugin: SuperPlugin, SuperLog {
         Self.logger.info("\(Self.t)Shutting down Git source-control plugin")
         kernel.unregisterProvider((any SourceControlProviding).self)
         kernel.unregisterProvider((any GitRepositoryReading).self)
+        kernel.unregisterProvider((any GitBranchManaging).self)
         kernel.resolveProvider((any ToolCallRenderingProviding).self)?
             .unregister(id: GitLogRowRenderer.id)
         for name in GitV2ToolNames.all {

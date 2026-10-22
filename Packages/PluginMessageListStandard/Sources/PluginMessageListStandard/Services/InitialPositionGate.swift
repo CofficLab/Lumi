@@ -34,9 +34,16 @@ private final class InitialPositionRace {
     private var timeoutTask: Task<Void, Never>?
 
     /// 启动竞速并等待先完成方。返回后两个任务都已确定胜者。
+    ///
+    /// - Parameters:
+    ///   - settle: 收敛过程，返回 true 表示成功收敛。
+    ///   - deadlineUptimeNanoseconds: 预算的**绝对截止时刻**（`DispatchTime.uptimeNanoseconds` 口径）。
+    ///     必须是绝对时刻而不是时长：竞速的两个 Task 都要排在主线程队列上，
+    ///     主线程被占用时它们根本还没启动，这段排队时间同样算在用户等待里。
+    ///     若从头睡满整个时长，实际等待会变成「阻塞时长 + 完整预算」。
     func run(
         settle: @escaping @MainActor () async -> Bool,
-        budgetNanoseconds: UInt64
+        deadlineUptimeNanoseconds: UInt64
     ) async -> InitialPositionOutcome {
         await withCheckedContinuation { continuation in
             self.continuation = continuation
@@ -45,7 +52,15 @@ private final class InitialPositionRace {
                 finish(outcome)
             }
             timeoutTask = Task { @MainActor in
-                try? await Task.sleep(nanoseconds: budgetNanoseconds)
+                // 只睡到**截止时刻**，而不是从此刻起睡满整个预算。
+                // 减法需要防下溢：截止时刻可能已经过去（例如主线程长时间被占用）。
+                let now = DispatchTime.now().uptimeNanoseconds
+                let remaining: UInt64 = deadlineUptimeNanoseconds > now
+                    ? deadlineUptimeNanoseconds - now
+                    : 0
+                if remaining > 0 {
+                    try? await Task.sleep(nanoseconds: remaining)
+                }
                 finish(.timedOut)
             }
         }
@@ -91,6 +106,10 @@ private final class InitialPositionRace {
 @MainActor
 final class InitialPositionGate: ObservableObject {
     /// 收敛过程的预算上限。仅在**收敛挂死**时才会被等满。
+    ///
+    /// 语义是「从 `request()` 被调用那一刻起算的绝对时长」：预算**包含**
+    /// 竞速搭建之前在主线程队列上的排队时间。若把它当成「竞速启动后才计时的
+    /// 时长」，主线程被占用时用户的实际等待会变成「阻塞时长 + 完整预算」。
     private let budgetNanoseconds: UInt64
 
     /// 首屏是否就绪。必须 `@Published`：遮罩的显示条件依赖它，
@@ -143,6 +162,12 @@ final class InitialPositionGate: ObservableObject {
         isReady = false
         pendingConversationID = conversationID
 
+        // Important: 截止时刻必须在**进入 Task 之前**算。
+        //   竞速的两个 Task 都排在主线程队列上，主线程被占用时它们还没启动；
+        //   预算若从「竞速真正跑起来」才开始计时，用户实际等待就是
+        //   「主线程阻塞时长 + 完整预算」——正是「切换后遮罩又多挂一段」的成因。
+        let deadlineUptimeNanoseconds = DispatchTime.now().uptimeNanoseconds + budgetNanoseconds
+
         task = Task { @MainActor [weak self] in
             guard let self else { return }
 
@@ -161,7 +186,7 @@ final class InitialPositionGate: ObservableObject {
             let race = InitialPositionRace()
             let outcome = await race.run(
                 settle: settle,
-                budgetNanoseconds: self.budgetNanoseconds
+                deadlineUptimeNanoseconds: deadlineUptimeNanoseconds
             )
             race.cancelLoser(of: outcome)
 
@@ -193,18 +218,37 @@ final class InitialPositionGate: ObservableObject {
         return true
     }
 
-    /// 会话切换时复位：作废当前等待并撤销就绪状态。
+    /// 会话切换时复位：撤销就绪状态，让遮罩重新出现。
+    ///
+    /// - Important: **不**取消在飞的收敛。
+    ///
+    ///   收敛是否还有效由它自己的 `stillRelevant` 判定（会话是否被换掉、是否仍在加载），
+    ///   而不是由这里无条件取消。若无条件取消，就会踩中「同一 update cycle 内
+    ///   **准备先于切换复位**到达」的顺序：View 的 `onChange(isLoading)`（转 false →
+    ///   触发准备）与 `onChange(selectedConversationID)`（→ 触发本方法）谁先到并不确定；
+    ///   复位晚到时那一轮收敛刚启动就被作废，而此后不再有任何触发点能重新准备 ——
+    ///   遮罩就此永久挂起。
+    ///
+    ///   旧会话那一轮也不会因此误放行遮罩：它的 `stillRelevant` 会因为会话已被换掉
+    ///   而返回 false，收敛结束时不会置为就绪。
     func resetForConversationSwitch() {
+        isReady = false
+    }
+
+    /// 加载开始时复位（用于切换会话后重新进入加载）。
+    ///
+    /// - Important: 这里**要**作废在飞的收敛：加载开始意味着窗口内的消息即将被整体
+    ///   替换，上一轮的收敛结果已经无意义。
+    ///
+    ///   注意它与会话切换复位的差别：加载开始一定会伴随随后的「加载完成 → 重新准备」，
+    ///   因此在这里作废是安全的；而会话切换复位可能与准备同处一个 update cycle，
+    ///   作废反而会切断刚启动的那一轮。
+    func resetForLoadingStart() {
         task?.cancel()
         task = nil
         isPreparing = false
         isReady = false
         pendingConversationID = nil
-    }
-
-    /// 加载开始时复位（用于切换会话后重新进入加载）。
-    func resetForLoadingStart() {
-        resetForConversationSwitch()
     }
 
     deinit {
