@@ -441,6 +441,12 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         // 可能与 SwiftData 侧的写入撞上：短暂等待而不是立刻失败。
         sqlite3_busy_timeout(database, 2000)
 
+        // - Important: 只在 WAL 模式下走这条路。回滚日志模式下，独立连接的读事务
+        //   会持共享锁，从而挡住 SwiftData 的写事务——那等于把「聚合阻塞写入」
+        //   的老问题从存储层锁换成 SQLite 文件锁。CoreData 默认用 WAL，
+        //   非 WAL 时回退到 CoreData 自己的连接（由 CoreData 内部协调锁）。
+        guard Self.isWALMode(database) else { return nil }
+
         let sql = Self.dailyAggregateSQL(countTokens: countTokens, excludingCount: excludingIDs.count)
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else {
@@ -525,6 +531,20 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
             sql += " AND ZID NOT IN (\(placeholders))"
         }
         return sql
+    }
+
+    /// 读当前连接的日志模式，返回是否为 WAL。
+    private static func isWALMode(_ database: OpaquePointer) -> Bool {
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(database, "PRAGMA journal_mode", -1, &statement, nil) == SQLITE_OK else {
+            return false
+        }
+        defer { sqlite3_finalize(statement) }
+        guard sqlite3_step(statement) == SQLITE_ROW,
+              let text = sqlite3_column_text(statement, 0) else {
+            return false
+        }
+        return String(cString: text).lowercased() == "wal"
     }
 
     /// 单次聚合查询允许绑定的排除 id 个数（留足余量给 SQLite 的变量上限）。
