@@ -60,6 +60,17 @@ public final class ConversationTitlePlugin: SuperPlugin, SuperLog {
             messages: messages,
             llmProvider: llmProvider
         )
+
+        // 回填历史遗留的无标题对话。
+        //
+        // 标题生成失败过的对话会**永久**停在无标题状态：自动标题只对首条用户
+        // 消息生效，没有新的事件来触发重试。这些对话在列表里只能显示通用占位符，
+        // 看起来就是一条空条目。回填用首条用户消息作为占位标题，不消耗额度。
+        //
+        // headless agent 进程不参与：那里由 ACP 客户端自行管理会话标题。
+        if TitleService.isEnabled, let service = autoTitleService {
+            Task { await service.backfillUntitledConversations() }
+        }
         headerObserver?.cancel()
         headerObserver = ConversationTitleHeaderObserver(
             conversations: conversations,

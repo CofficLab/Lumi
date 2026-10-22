@@ -56,10 +56,15 @@ struct ListV1View: View {
     var body: some View {
         ZStack {
             messageScrollView
-                .id(selectedConversationID)
                 .opacity(initialPositionGate.isReady ? 1 : 0)
                 .allowsHitTesting(initialPositionGate.isReady)
-            if messageListVM.isLoading || !initialPositionGate.isReady {
+            // Important: 遮罩的显示条件**只**看 gate。
+            //   原先是 `isLoading || !gate.isReady`：`isLoading` 是一个可能停在
+            //   true 不再回落的布尔（激活被跳过、加载卡住……），一旦它卡住，
+            //   遮罩就再没有任何东西能把它撤掉 —— 用户界面上就是「正在加载消息…」
+            //   永不消失。现在遮罩的寿命由 gate 的**预算兜底**唯一决定：
+            //   挂起后最多一个预算，无论收敛有没有被启动、有没有成功。
+            if !initialPositionGate.isReady {
                 MessageLoadingView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(theme.surface.opacity(0.6))
@@ -76,52 +81,69 @@ struct ListV1View: View {
 
     private var messageScrollView: some View {
         ScrollViewReader { proxy in
-            List {
-                historyRows(proxy: proxy)
+            // Important: 观察者必须待在 `.id()` 作用域**之外**，但仍要在
+            //   `ScrollViewReader` 闭包**之内**（它们要用 `proxy`）。
+            //
+            //   `.id()` 会给被包裹的子树换一整套 identity：作用域内的 `onChange`
+            //   会随子树一起被重建，基线值被重置为**重建那一刻**的值。于是
+            //   「会话切换」这个变化本身永远不会被 `onChange` 观察到（基线已经是
+            //   新值），`resetForConversationSwitch()` 形同死代码；`onChange(isLoading)`
+            //   同理会在切换时丢掉「加载开始」那一次。
+            //
+            //   把 `.id()` 收窄到 List 本身（只重置行状态与滚动位置），观察者挂在
+            //   包裹它的 Group 上：切换时它们仍在、基线仍在，事件不再丢失。
+            Group {
+                List {
+                    historyRows(proxy: proxy)
 
-                if stateVM.activity != nil {
-                    ConversationStateView(stateVM: stateVM)
-                        .plainMessageListRow()
-                }
+                    if stateVM.activity != nil {
+                        ConversationStateView(stateVM: stateVM)
+                            .plainMessageListRow()
+                    }
 
-                if postSendTailReserve > 0 {
+                    if postSendTailReserve > 0 {
+                        Color.clear
+                            .frame(height: postSendTailReserve)
+                            .accessibilityHidden(true)
+                            .plainMessageListRow(insets: EdgeInsets())
+                    }
+
                     Color.clear
-                        .frame(height: postSendTailReserve)
+                        .frame(height: 16)
+                        .id(MessageListScrollCoordinator.bottomAnchorID)
                         .accessibilityHidden(true)
                         .plainMessageListRow(insets: EdgeInsets())
+                        .onChange(of: scrollTick) { _, _ in
+                            guard initialPositionGate.isReady else { return }
+                            let conversationID = selectedConversationID
+                            runtime.scrollCoordinator.scheduleScrollToBottomAfterLayout(
+                                proxy: proxy,
+                                messages: displayedHistoryMessages,
+                                animated: false,
+                                controller: runtime.bottomScrollController,
+                                condition: {
+                                    conversationID == selectedConversationID
+                                }
+                            )
+                        }
                 }
-
-                Color.clear
-                    .frame(height: 16)
-                    .id(MessageListScrollCoordinator.bottomAnchorID)
-                    .accessibilityHidden(true)
-                    .plainMessageListRow(insets: EdgeInsets())
-                    .onChange(of: scrollTick) { _, _ in
-                        guard initialPositionGate.isReady else { return }
-                        let conversationID = selectedConversationID
-                        runtime.scrollCoordinator.scheduleScrollToBottomAfterLayout(
-                            proxy: proxy,
-                            messages: displayedHistoryMessages,
-                            animated: false,
-                            controller: runtime.bottomScrollController,
-                            condition: {
-                                conversationID == selectedConversationID
-                            }
-                        )
-                    }
-            }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            // Code blocks must keep only horizontal scrolling. Let the List
-            // own vertical scrolling, matching V2/V3 behavior.
-            .environment(\.preferOuterScroll, true)
-            .background(
-                ScrollViewBottomTracker(
-                    onChange: { runtime.atBottomBox.value = $0 },
-                    controller: runtime.bottomScrollController,
-                    onViewportHeightChange: updateViewportHeight
+                    // 会话切换时重建 List：行状态与滚动位置回到初始。
+                    // 放在 List 之后的所有修饰（尤其是底部追踪器）都在这个作用域内，
+                    // 会随 List 一起重建，重新绑定到新的 NSScrollView。
+                    .id(selectedConversationID)
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                // Code blocks must keep only horizontal scrolling. Let the List
+                // own vertical scrolling, matching V2/V3 behavior.
+                .environment(\.preferOuterScroll, true)
+                .background(
+                    ScrollViewBottomTracker(
+                        onChange: { runtime.atBottomBox.value = $0 },
+                        controller: runtime.bottomScrollController,
+                        onViewportHeightChange: updateViewportHeight
+                    )
                 )
-            )
+            }
             .onChange(of: visibleRowIDs) { _, _ in
                 // 发送后定位期间不跟随滚到底：此时 atBottomBox 是被"滚到占位
                 // 底部"作伪成 true 的，跟随滚动会把最新内容贴到视口底部，抵消

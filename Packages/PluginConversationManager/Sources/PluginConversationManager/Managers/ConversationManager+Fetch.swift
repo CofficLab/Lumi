@@ -61,6 +61,14 @@ extension ConversationManager {
         return summary
     }
 
+    /// 返回仍然**没有标题**的对话 ID。
+    ///
+    /// 走存储层查询而不是内存摘要：内存里只保留最近的一部分对话，
+    /// 历史遗留的无标题对话大概率不在窗口里，按内存筛会漏掉它们。
+    public func untitledConversationIDs(limit: Int) async -> [UUID] {
+        await store?.untitledConversationIDs(limit: limit) ?? []
+    }
+
     /// Count conversations without loading their summaries.
     public func conversationCount(projectPath: String? = nil) async -> Int {
         await store?.conversationCount(projectPath: projectPath, includingChildConversations: false) ?? 0

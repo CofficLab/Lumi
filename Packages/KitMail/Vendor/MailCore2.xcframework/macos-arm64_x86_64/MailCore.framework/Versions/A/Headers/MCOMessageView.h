@@ -6,12 +6,12 @@
 //  Copyright (c) 2013 MailCore. All rights reserved.
 //
 
-#import <Cocoa/Cocoa.h>
+#import <UIKit/UIKit.h>
 #include <MailCore/MailCore.h>
 
 @protocol MCOMessageViewDelegate;
 
-@interface MCOMessageView : NSView
+@interface MCOMessageView : UIView
 
 @property (nonatomic, copy) NSString * folder;
 @property (nonatomic, strong) MCOAbstractMessage * message;

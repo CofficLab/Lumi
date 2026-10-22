@@ -85,11 +85,24 @@ extension AgentLoopManager {
         }
 
         let result = convertResult(toolResult)
+        // 工具挂起时必须把授权状态回落为 pendingAuthorization。
+        //
+        // 授权状态在 LLM 响应阶段就已写定：A3（完全授权）对话下
+        // `ToolManager.authorizationDecision` 一律返回 autoApproved。
+        // 但工具可以在执行阶段自己要求用户授权（如 Computer Use 遇到
+        // 未授权应用），此时回合进入挂起、等待用户决定。
+        //
+        // 若不回落，两个授权渲染器（都以 pendingAuthorization 为接管条件）
+        // 都不会画卡片，界面就只剩一条工具行，回合则等一个永远不会到来的
+        // 回答——对话永久停在「等待你的输入…」。
         messages.updateToolCallResult(
             result,
             toolCallID: toolCallID,
             assistantMessageID: assistantMessageID,
-            in: snapshot.conversationID
+            in: snapshot.conversationID,
+            authorizationState: result.awaitingUserResponse
+                ? ToolCallAuthorizationState.pendingAuthorization.rawValue
+                : nil
         )
 
         if result.awaitingUserResponse {
@@ -215,11 +228,15 @@ extension AgentLoopManager {
                 // 工具结果必须同时回写 assistant 消息中的嵌套 toolCall。
                 // 消息渲染器从这里读取 awaitingUserResponse；只插入独立的
                 // .tool 消息会让 UI 永远看到 result == nil，退化为 loading 行。
+                // 挂起时同样要回落授权状态，理由同 `handleToolJobTerminal`。
                 messages.updateToolCallResult(
                     result,
                     toolCallID: call.id,
                     assistantMessageID: assistantMessageID,
-                    in: conversationID
+                    in: conversationID,
+                    authorizationState: result.awaitingUserResponse
+                        ? ToolCallAuthorizationState.pendingAuthorization.rawValue
+                        : nil
                 )
                 if result.awaitingUserResponse {
                     // 等待授权/用户输入时不要创建独立 role=tool 消息；
@@ -263,7 +280,10 @@ extension AgentLoopManager {
                     approvalResult,
                     toolCallID: call.id,
                     assistantMessageID: assistantMessageID,
-                    in: conversationID
+                    in: conversationID,
+                    // 该分支天然是「等待用户决定」，授权状态必须显式回落，
+                    // 否则 A3 对话下渲染层不会画授权卡片。
+                    authorizationState: ToolCallAuthorizationState.pendingAuthorization.rawValue
                 )
                 suspension = interactionSuspension
             }
