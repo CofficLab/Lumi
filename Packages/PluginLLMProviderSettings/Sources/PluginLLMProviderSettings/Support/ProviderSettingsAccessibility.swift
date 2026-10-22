@@ -43,6 +43,8 @@ public enum ProviderSettingsAccessibility {
     public static let editProviderButton = "lumi.provider-settings.edit-provider"
     /// 供应商详情页的「复制 API Key」按钮。
     public static let copyAPIKeyButton = "lumi.provider-settings.copy-api-key"
+    /// 供应商详情页的「刷新模型列表」按钮（仅远程模型源供应商显示）。
+    public static let refreshModelsButton = "lumi.provider-settings.refresh-models"
     /// 供应商名称输入框。
     public static let nameField = "lumi.provider-settings.custom-provider.name"
     /// 描述输入框。
