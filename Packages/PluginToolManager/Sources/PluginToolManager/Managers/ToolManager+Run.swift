@@ -180,6 +180,12 @@ extension ToolManager {
         return await recordStore.fetchRecords(for: turnID)
     }
 
+    /// 一次查询取回多个 turn 的记录，避免逐 turn 查询退化成 N+1 次 IO。
+    public func toolCalls(forTurnIDs turnIDs: [UUID]) async -> [ToolCallRecord] {
+        guard let recordStore else { return [] }
+        return await recordStore.fetchRecords(forTurnIDs: turnIDs)
+    }
+
     public func toolCallResult(for toolCallID: String) async -> ToolCallResult? {
         guard let record = await recordStore?.fetchRecord(forToolCallID: toolCallID) else { return nil }
         return result(from: record)
