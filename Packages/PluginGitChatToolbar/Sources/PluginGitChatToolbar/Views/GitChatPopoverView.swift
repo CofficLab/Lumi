@@ -9,7 +9,7 @@ import SwiftUI
 ///   （`status.workingChanges()`），点击文件以预览方式切到该文件。
 /// - Commits 段：最近提交列表；选中 commit 后下方展开该 commit 的变更文件。
 ///
-/// 宽度 360，最大高度 480，与 `SkillChatToolbarView` 风格一致。
+/// 宽度 520，最大高度 480，与 `SkillChatToolbarView` 风格一致。
 struct GitChatPopoverView: View {
     @LumiTheme private var theme
     @ObservedObject var viewModel: GitChatToolbarViewModel
@@ -22,7 +22,7 @@ struct GitChatPopoverView: View {
             Divider()
             content
         }
-        .frame(width: 360)
+        .frame(width: 520)
         .frame(minHeight: 240, maxHeight: 480)
         .background(theme.surface)
     }
