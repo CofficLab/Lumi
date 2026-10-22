@@ -20,8 +20,11 @@ import Testing
     #expect(ConversationListAccessibility.itemID == "lumi.conversation-list.item")
     #expect(ConversationListAccessibility.listID == "lumi.conversation-list")
 
-    // 最小场景：只有标题。
-    let bare = ConversationListAccessibility.rowLabel(for: makeSummary(title: "只有标题"))
+    // 最小场景：只有标题（无等级时）。
+    let bare = ConversationListAccessibility.rowLabel(for: makeSummary(
+        title: "只有标题",
+        automationLevel: nil
+    ))
     #expect(bare == "只有标题", "label 应等于标题，实际「\(bare)」")
 
     // 标题 + provider + 模型：标题仍必须在最前。
@@ -30,15 +33,36 @@ import Testing
         providerID: "anthropic",
         modelName: "claude"
     ))
-    #expect(full == "会话 A anthropic claude", "实际「\(full)」")
+    #expect(full == "会话 A anthropic claude 构建", "实际「\(full)」")
     #expect(full.hasPrefix("会话 A"), "标题必须排在 label 最前，实际「\(full)」")
+}
+
+/// 自动化等级必须出现在 label 中。
+///
+/// 等级图标现在是整张卡片的**背景水印**（`ItemView.automationLevelWatermark`），
+/// 不再是第三行里的一枚可见文字。背景层不参与可访问性元素合成，
+/// 屏幕阅读器读不到它 —— 若不在这里显式补回，等级信息就静默丢失了。
+@Test @MainActor func rowAccessibilityLabelIncludesAutomationLevel() {
+    for level in AutomationLevel.allCases {
+        let row = ConversationListAccessibility.rowLabel(for: makeSummary(
+            title: "会话 C",
+            automationLevel: level
+        ))
+        #expect(
+            row == "会话 C \(level.displayName)",
+            "等级「\(level.displayName)」应出现在 label 中，实际「\(row)」"
+        )
+    }
 }
 
 /// 无标题时回退到「对话」，且不得返回空字符串。
 ///
 /// 空 label 会让屏幕阅读器跳过该行，也让 UI 测试无法定位 —— 是同一个缺陷的两面。
 @Test @MainActor func rowAccessibilityLabelFallsBackWhenTitleMissing() {
-    let row = ConversationListAccessibility.rowLabel(for: makeSummary(title: nil))
+    let row = ConversationListAccessibility.rowLabel(for: makeSummary(
+        title: nil,
+        automationLevel: nil
+    ))
     #expect(row == "对话", "无标题时应回退为「对话」，实际「\(row)」")
     #expect(!row.isEmpty, "label 不得为空串")
 }
@@ -51,7 +75,8 @@ import Testing
     let row = ConversationListAccessibility.rowLabel(for: makeSummary(
         title: "会话 B",
         providerID: "",
-        modelName: ""
+        modelName: "",
+        automationLevel: nil
     ))
     #expect(row == "会话 B", "空 provider/模型应被跳过，实际「\(row)」")
 }
@@ -61,7 +86,8 @@ import Testing
 private func makeSummary(
     title: String?,
     providerID: String? = nil,
-    modelName: String? = nil
+    modelName: String? = nil,
+    automationLevel: AutomationLevel? = .build
 ) -> ConversationSummary {
     let now = Date()
     return ConversationSummary(
@@ -73,7 +99,7 @@ private func makeSummary(
         verbosity: .standard,
         reasoningEffort: nil,
         language: .chinese,
-        automationLevel: .build,
+        automationLevel: automationLevel,
         providerID: providerID,
         modelName: modelName,
         projectPath: nil,
