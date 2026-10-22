@@ -65,6 +65,15 @@ public protocol ConversationManaging: AnyObject {
     /// Fetch one conversation summary by ID without requiring the full list.
     func fetchConversation(id: UUID) async -> ConversationSummary?
 
+    /// 返回仍然**没有标题**的对话 ID。
+    ///
+    /// 标题生成失败过的对话会永久停在「无标题」状态，在列表里只能显示通用
+    /// 占位符，看起来就是一条空条目。调用方拿到这些 ID 后可以为它们补写
+    /// 标题（例如用首条用户消息作为占位标题）。
+    ///
+    /// - Parameter limit: 最多返回多少个 ID。
+    func untitledConversationIDs(limit: Int) async -> [UUID]
+
     /// Count conversations without loading their summaries.
     func conversationCount(projectPath: String?) async -> Int
 
@@ -319,6 +328,18 @@ public extension ConversationManaging {
 
     func fetchConversation(id: UUID) async -> ConversationSummary? {
         conversations.first(where: { $0.id == id })
+    }
+
+    /// 默认实现：从已加载的会话摘要里筛出没有标题的对话。
+    ///
+    /// 持久化实现应当走存储层查询，避免依赖「摘要已全部加载」这个前提 ——
+    /// 已加载的摘要只是一个有界的窗口，历史遗留的无标题对话很可能不在其中。
+    func untitledConversationIDs(limit: Int) async -> [UUID] {
+        guard limit > 0 else { return [] }
+        return conversations
+            .filter { !$0.hasCustomTitle }
+            .prefix(limit)
+            .map(\.id)
     }
 
     func conversationCount(projectPath: String?) async -> Int { conversations.count }
