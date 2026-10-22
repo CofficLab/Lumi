@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumi 消息空态 · 项目上下文方案</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent:#10b981;
+    --accent-deep:#047857;
+    --accent-pale:#ecfdf5;
+    --ink:#111827;
+    --ink-2:#4b5563;
+    --ink-3:#9aa3ae;
+    --ink-4:#b9c0c8;
+    --line:#e6e9ec;
+    --line-soft:#eef1f3;
+    --bg:#f6f8f8;
+    --card-fill:rgba(16,185,129,.055);
+    --card-stroke:rgba(16,185,129,.17);
+    --chip-fill:rgba(16,185,129,.12);
+    --chip-stroke:rgba(16,185,129,.26);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Outfit',-apple-system,'PingFang SC','Hiragino Sans GB',sans-serif;
+    background:var(--bg);color:var(--ink);
+    font-size:15px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+  section{padding:44px 0}
+  .sep{border-top:1px solid var(--line)}
+
+  /* ---------- header ---------- */
+  header{padding:56px 0 36px}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:7px;
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent-deep);font-weight:600;margin-bottom:16px;
+  }
+  .eyebrow svg{width:13px;height:13px}
+  h1{font-size:34px;font-weight:600;letter-spacing:-.015em;line-height:1.25}
+  h1 em{font-style:normal;color:var(--accent-deep)}
+  .lede{margin-top:14px;max-width:640px;color:var(--ink-2);font-size:15px}
+
+  /* ---------- section head ---------- */
+  .s-head{display:flex;align-items:baseline;gap:12px;margin-bottom:22px}
+  .s-num{
+    font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent-deep);
+    border:1px solid rgba(16,185,129,.3);border-radius:6px;padding:2px 7px;background:var(--accent-pale);
+  }
+  h2{font-size:22px;font-weight:600;letter-spacing:-.01em}
+  .s-note{margin:-12px 0 22px;color:var(--ink-3);font-size:13.5px;max-width:680px}
+  .s-note code{
+    font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent-deep);
+    background:rgba(16,185,129,.08);padding:1px 5px;border-radius:4px;
+  }
+
+  /* ---------- app window mockup ---------- */
+  .stage{
+    background:linear-gradient(180deg,#eef2f2 0%,#e8eded 100%);
+    border:1px solid var(--line);border-radius:16px;padding:22px 24px 30px;
+    display:flex;flex-direction:column;align-items:center;
+  }
+  .win{
+    width:100%;max-width:800px;background:#fbfcfc;border-radius:12px;
+    box-shadow:0 20px 46px -18px rgba(16,32,28,.26),0 2px 8px rgba(16,32,28,.05);
+    overflow:hidden;border:1px solid rgba(16,32,28,.08);
+  }
+  .win-bar{
+    height:36px;display:flex;align-items:center;gap:8px;padding:0 13px;
+    background:linear-gradient(180deg,#f4f6f6,#ecefee);border-bottom:1px solid rgba(16,32,28,.07);
+  }
+  .dot{width:11px;height:11px;border-radius:50%}
+  .d1{background:#ff5f57}.d2{background:#febc2e}.d3{background:#28c840}
+  .win-title{margin-left:10px;font-size:11.5px;color:var(--ink-4);letter-spacing:.02em}
+  .win-body{display:flex;min-height:560px}
+  .rail{
+    width:58px;flex:0 0 58px;border-right:1px solid rgba(16,32,28,.07);
+    background:#f4f6f6;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 0;
+  }
+  .rail .r{
+    width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    color:var(--ink-4);
+  }
+  .rail .r.on{background:rgba(16,185,129,.13);color:var(--accent-deep)}
+  .rail .r svg{width:17px;height:17px}
+  .rail .sp{flex:1}
+  .chat{flex:1;position:relative;background:
+      radial-gradient(120% 70% at 50% 0%,rgba(16,185,129,.055) 0%,rgba(16,185,129,0) 58%),
+      #fbfcfc;}
+  .empty{
+    display:flex;flex-direction:column;align-items:center;
+    padding:54px 24px 44px;
+  }
+  .col{width:100%;max-width:620px;display:flex;flex-direction:column;align-items:center}
+
+  .hero{width:56px;height:56px;margin-bottom:18px}
+  .hero svg{width:100%;height:100%}
+  .empty-title{font-size:20px;font-weight:600;letter-spacing:-.01em;text-align:center}
+  .identity{
+    margin-top:9px;font-size:12.5px;color:var(--ink-3);display:flex;align-items:center;
+    justify-content:center;flex-wrap:wrap;gap:6px;max-width:100%;
+  }
+  .identity svg{width:12px;height:12px;flex:none}
+  .identity .sep{color:var(--ink-4);margin:0 1px}
+
+  /* suggestion chips */
+  .chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:22px;max-width:520px}
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:7px 13px;border-radius:999px;font-size:12.5px;color:var(--ink);
+    background:var(--chip-fill);border:1px solid var(--chip-stroke);
+  }
+  .chip svg{width:12px;height:12px;flex:none;opacity:.75}
+  .chip.dash{background:rgba(16,185,129,.055);border-style:dashed}
+
+  /* cards */
+  .card{
+    width:100%;max-width:520px;margin-top:26px;
+    background:var(--card-fill);border:1px solid var(--card-stroke);
+    border-radius:var(--radius);padding:13px 14px;
+    box-shadow:0 8px 20px -12px rgba(16,185,129,.18);
+    position:relative;
+  }
+  .card-anchor{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-2)}
+  .card-anchor .ic{color:var(--accent-deep);display:flex}
+  .card-anchor .ic svg{width:12px;height:12px}
+  .card-anchor .spacer{flex:1}
+  .card-anchor .toggle{display:flex;align-items:center;gap:3px;color:var(--ink-3);font-size:11px}
+  .card-anchor .toggle svg{width:10px;height:10px}
+  .card-anchor .switched{
+    font-size:10.5px;color:var(--ink-3);background:rgba(255,255,255,.72);
+    border:1px solid rgba(16,32,28,.08);border-radius:5px;padding:1px 6px;white-space:nowrap;
+  }
+
+  .rows{margin-top:11px;display:flex;flex-direction:column;gap:7px}
+  .row{
+    display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);
+    padding:4px 6px;margin:0 -6px;border-radius:7px;transition:background .18s;
+  }
+  .row.click{cursor:pointer}
+  .row.click:hover{background:rgba(16,185,129,.09)}
+  .row .ic{display:flex;color:var(--accent-deep);opacity:.85;flex:none}
+  .row .ic svg{width:12.5px;height:12.5px}
+  .row .txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .go{margin-left:auto;color:var(--ink-4);display:flex;flex:none}
+  .row .go svg{width:10px;height:10px}
+  .row .strong{color:var(--ink);font-weight:500}
+
+  .detail{margin-top:11px;padding-top:10px;border-top:1px dashed rgba(16,185,129,.28)}
+  .detail .kv{display:grid;grid-template-columns:74px 1fr;gap:6px 10px;font-size:11.5px}
+  .detail .kv dt{color:var(--ink-3)}
+  .detail .kv dd{color:var(--ink-2);margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tags{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+  .tag{
+    font-size:11px;color:var(--ink-2);background:rgba(255,255,255,.7);
+    border:1px solid rgba(16,32,28,.08);border-radius:6px;padding:3px 7px;
+  }
+  .tag.mono{font-family:'JetBrains Mono',monospace;font-size:10.5px}
+
+  /* activity card */
+  .act-body{display:flex;align-items:center;gap:14px;margin-top:10px}
+  .heat{display:block}
+  .vsep{width:1px;height:56px;background:rgba(16,185,129,.16);flex:none}
+  .spark{display:block;flex:1;min-width:0}
+  .act-foot{margin-top:9px;display:flex;align-items:center;gap:10px;font-size:11px;color:var(--ink-4)}
+  .act-foot .scope{
+    display:inline-flex;align-items:center;gap:4px;border:1px solid rgba(16,32,28,.1);
+    border-radius:5px;padding:1px 6px;color:var(--ink-3);background:rgba(255,255,255,.6)
+  }
+  .act-foot .scope.on{color:var(--accent-deep);border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.08)}
+
+  /* annotations */
+  .pin{
+    position:absolute;z-index:5;width:19px;height:19px;border-radius:50%;
+    background:var(--accent-deep);color:#fff;font-size:11px;font-weight:600;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 2px 6px rgba(4,120,87,.4);
+  }
+  .pin.l{left:-11px}
+  .pin.card-l{left:-11px}
+  .pin.detail-l{left:-22px}
+  .anno-box{
+    position:absolute;inset:-8px -10px;border:1px dashed rgba(4,120,87,.45);
+    border-radius:16px;pointer-events:none;
+  }
+  .stage-key{
+    display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:14px;
+    font-size:12px;color:var(--ink-3);
+  }
+  .stage-key i{
+    width:20px;height:12px;border:1px dashed rgba(4,120,87,.5);border-radius:4px;
+    display:inline-block;flex:none;
+  }
+  .marked{position:relative}
+
+  /* legend */
+  .legend{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:22px}
+  .lg{
+    background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 17px;
+    display:flex;gap:12px;
+  }
+  .lg .n{
+    flex:none;width:21px;height:21px;border-radius:50%;background:var(--accent-deep);color:#fff;
+    font-size:11.5px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-top:1px;
+  }
+  .lg h3{font-size:13.5px;font-weight:600;margin-bottom:3px}
+  .lg p{font-size:12.5px;color:var(--ink-3);line-height:1.55}
+  .lg code{
+    font-family:'JetBrains Mono',monospace;font-size:11px;background:#f2f4f4;
+    padding:1px 4px;border-radius:4px;color:var(--accent-deep);
+  }
+
+  /* variants */
+  .variants{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .variant{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .variant .vhead{
+    padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:12px;font-weight:600;
+    display:flex;align-items:center;gap:7px;background:#fafbfb;
+  }
+  .variant .vhead svg{width:13px;height:13px;color:var(--accent-deep)}
+  .variant .vbody{padding:16px 14px 18px;background:#fbfcfc;min-height:172px}
+
+  .mini-title{font-size:13px;font-weight:600;text-align:center}
+  .mini-sub{font-size:10.5px;color:var(--ink-3);text-align:center;margin-top:5px}
+  .mini-card{
+    margin-top:12px;border-radius:11px;padding:10px 11px;
+    background:var(--card-fill);border:1px solid var(--card-stroke);
+  }
+  .mini-row{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--ink-2);margin-top:6px}
+  .mini-row:first-child{margin-top:0}
+  .mini-row svg{width:10.5px;height:10.5px;color:var(--accent-deep);flex:none}
+  .ghost{
+    text-align:center;font-size:11px;color:var(--ink-4);margin-top:14px;
+    border:1px dashed rgba(16,32,28,.16);border-radius:10px;padding:16px 10px;
+  }
+  .ghost svg{width:16px;height:16px;color:var(--ink-4);margin-bottom:5px}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th{
+    text-align:left;font-size:11.5px;font-weight:600;color:var(--ink-3);letter-spacing:.04em;
+    text-transform:uppercase;padding:11px 15px;background:#fafbfb;border-bottom:1px solid var(--line);
+  }
+  td{padding:11px 15px;font-size:13px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td code{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--accent-deep)}
+  td .muted{color:var(--ink-3);font-size:12px}
+
+  /* anti-patterns */
+  .anti{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .an{
+    display:flex;gap:11px;align-items:flex-start;background:#fff;border:1px solid var(--line);
+    border-radius:12px;padding:14px 16px;position:relative;
+  }
+  .an .x{
+    flex:none;width:19px;height:19px;border-radius:50%;background:#fdeaea;color:#dc2626;
+    display:flex;align-items:center;justify-content:center;margin-top:1px;
+  }
+  .an .x svg{width:10px;height:10px}
+  .an h3{font-size:13px;font-weight:600;margin-bottom:2px}
+  .an p{font-size:12.5px;color:var(--ink-3);line-height:1.55}
+  .an .fix{display:block;margin-top:6px;font-size:12px;color:var(--accent-deep)}
+  .an .fix b{font-weight:600}
+
+  @media (max-width:860px){
+    table,tbody,tr,td{display:block;width:100%}
+    thead{display:none}
+    table{border-radius:12px}
+    tr{border-bottom:1px solid var(--line-soft);padding:12px 15px}
+    tr:last-child{border-bottom:none}
+    td{border:none;padding:5px 0}
+    td::before{
+      content:attr(data-label);display:block;font-size:10px;letter-spacing:.08em;
+      text-transform:uppercase;color:var(--ink-4);margin-bottom:3px;font-weight:600;
+    }
+    td.hd{font-weight:600;font-size:14px;color:var(--ink);padding-bottom:7px}
+    td.hd::before{display:none}
+  }
+  footer{padding:34px 0 60px;color:var(--ink-4);font-size:12px;border-top:1px solid var(--line)}
+  footer code{font-family:'JetBrains Mono',monospace}
+
+  @media (max-width:900px){
+    .wrap{padding:0 18px}
+    h1{font-size:27px}
+    .legend,.anti,.variants{grid-template-columns:1fr}
+    .stage{padding:16px 8px}
+    .win-body{min-height:auto}
+    .rail{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    Lumi · MessageListEmpty
+  </div>
+  <h1>空态不该只报出项目名，<br>它应该知道<em>自己站在哪个项目里</em></h1>
+  <p class="lede">
+    现在标题里出现了「Lumi」，但仅此而已——底部的活动卡又是 App 全局数字，与当前项目无关。
+    方案是在提示胶囊下方补一张 520pt 的<strong>项目上下文卡</strong>：身份行解决「我在哪」，
+    项目卡回答「这个项目现在能不能开工」，活动卡改为项目维度。
+  </p>
+</header>
+
+<section class="sep">
+  <div class="s-head"><span class="s-num">01</span><h2>最终界面</h2></div>
+  <p class="s-note">虚线框内为新增内容。胶囊流仍是首屏主角，<code>ProjectContextCard</code> 是它的上下文支撑，视觉上刻意更淡（<code>ActivityFusionCardMetrics</code>：填充 0.055 / 描边 0.16 / 圆角 14），与活动卡同族、同宽（520pt）。</p>
+
+  <div class="stage">
+    <div class="stage-key"><i></i> 虚线框内为本次新增区域</div>
+    <div class="win">
+      <div class="win-bar">
+        <span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span>
+        <span class="win-title">Lumi — Lumi</span>
+      </div>
+      <div class="win-body">
+        <aside class="rail">
+          <div class="r on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div class="r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg></div>
+          <div class="r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6l2 3h8v13H4z"/></svg></div>
+          <div class="r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.9 2.9M16.2 16.2l2.9 2.9M2 12h4M18 12h4M4.9 19.1l2.9-2.9M16.2 7.8l2.9-2.9"/></svg></div>
+          <div class="sp"></div>
+          <div class="r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></div>
+        </aside>
+
+        <div class="chat">
+          <div class="empty">
+            <div class="col">
+
+              <div class="hero">
+                <svg viewBox="0 0 56 56" fill="none">
+                  <defs>
+                    <linearGradient id="hg" x1="10" y1="6" x2="46" y2="50" gradientUnits="userSpaceOnUse">
+                      <stop stop-color="#ecfdf5"/><stop offset="1" stop-color="#c9f2e0"/>
+                    </linearGradient>
+                  </defs>
+                  <rect x="1" y="1" width="54" height="54" rx="16" fill="url(#hg)" stroke="rgba(16,185,129,.28)"/>
+                  <path d="M15 18.5A4.5 4.5 0 0 1 19.5 14h9a4.5 4.5 0 0 1 4.5 4.5v5a4.5 4.5 0 0 1-4.5 4.5h-5l-4.5 3.6V28h-.5A4.5 4.5 0 0 1 15 23.5z" stroke="#10b981" stroke-width="2" stroke-linejoin="round"/>
+                  <path d="M29 23.5A4.5 4.5 0 0 1 33.5 19h3A4.5 4.5 0 0 1 41 23.5v5a4.5 4.5 0 0 1-4.5 4.5h-.5V37L32 33.4h-2.5A4.5 4.5 0 0 1 25 28.9v-.4a4.4 4.4 0 0 1 4-4.5z" fill="#fff" stroke="#10b981" stroke-width="2" stroke-linejoin="round"/>
+                </svg>
+              </div>
+
+              <div class="empty-title">对于「Lumi」，我可以帮你做什么？</div>
+
+              <!-- ① 身份行 -->
+              <div class="identity marked">
+                <div class="anno-box"></div>
+                <span class="pin l" style="top:2px">1</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                <span>~/Code/CofficLab/Lumi</span>
+                <span class="sep">·</span>
+                <span>Swift (Xcode / SPM)</span>
+              </div>
+
+              <!-- 提示胶囊 -->
+              <div class="chips">
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>了解当前项目</span>
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>帮我设计一个应用图标</span>
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>帮我创建一张 App Store 宣传图</span>
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6M9 11h3"/></svg>帮我写一份简历</span>
+                <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg>设计一个产品原型</span>
+                <span class="chip dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4"/></svg>浏览插件</span>
+              </div>
+
+              <!-- ② 项目卡 -->
+              <div class="card marked">
+                <div class="anno-box"></div>
+                <span class="pin card-l" style="top:11px">2</span>
+
+                <div class="card-anchor">
+                  <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 9.5 8.5 4 11l5.5 2.5L12 19l2.5-5.5L20 11l-5.5-2.5z"/></svg></span>
+                  <span>Lumi · 已就绪</span>
+                  <span class="spacer"></span>
+                  <span class="toggle">收起
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                  </span>
+                </div>
+
+                <div class="rows">
+                  <div class="row click">
+                    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6l2 3h8v13H4z"/><path d="m9 14 2 2 4-4"/></svg></span>
+                    <span class="txt"><span class="strong">已索引 1,204 个文件</span> · 3 分钟前</span>
+                    <span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+                  </div>
+                  <div class="row click">
+                    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
+                    <span class="txt"><span class="strong">2 个文件有未提交改动</span></span>
+                    <span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+                  </div>
+                  <div class="row click">
+                    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+                    <span class="txt">上次在这里：修复登录跳转 · <span class="strong">2 小时前</span></span>
+                    <span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+                  </div>
+                </div>
+
+                <!-- ③ 展开详情 -->
+                <div class="detail marked">
+                  <div class="anno-box" style="inset:-8px -10px"></div>
+                  <span class="pin detail-l" style="top:4px">3</span>
+                  <dl class="kv">
+                    <dt>会话数</dt><dd>12</dd>
+                    <dt>最近会话</dt><dd>修复登录跳转</dd>
+                  </dl>
+                  <div class="tags">
+                    <span class="tag mono">Package.swift</span>
+                    <span class="tag mono">README.md</span>
+                    <span class="tag mono">AGENTS.md</span>
+                    <span class="tag mono">Lumi.xcodeproj</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ④ 活动卡 -->
+              <div class="card marked">
+                <div class="anno-box"></div>
+                <span class="pin card-l" style="top:11px">4</span>
+                <div class="card-anchor">
+                  <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg></span>
+                  <span>In this project, 86 messages in the last 30 days · 1.2M tokens</span>
+                  <span class="spacer"></span>
+                  <span class="switched">全局 → 本项目</span>
+                </div>
+                <div class="act-body">
+                  <svg class="heat" id="heat" width="72" height="60" viewBox="0 0 72 60"></svg>
+                  <span class="vsep"></span>
+                  <svg class="spark" id="spark" viewBox="0 0 260 56" preserveAspectRatio="none"></svg>
+                </div>
+                <div class="act-foot">
+                  <span class="scope on">
+                    <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6l2 3h8v13H4z"/></svg>
+                    本项目
+                  </span>
+                  <span class="scope">全部项目</span>
+                  <span style="margin-left:auto">点按切换统计范围</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="lg"><div class="n">1</div><div>
+      <h3>身份行 · 占位副标题，不新增卡片</h3>
+      <p>用路径尾巴消同名项目，用 manifest 推导的技术栈说明「这是个什么项目」。复用 <code>MessageEmptyStateView.swift:52-65</code> 的副标题槽位，零布局成本。</p>
+    </div></div>
+    <div class="lg"><div class="n">2</div><div>
+      <h3>项目卡 · 首屏最有价值的一块</h3>
+      <p>回答「能不能直接开工」。每行要么可点跳转，要么不显示——不可点又不可读的行是噪音。宽度锁定 520pt，与胶囊流同宽。</p>
+    </div></div>
+    <div class="lg"><div class="n">3</div><div>
+      <h3>展开详情 · 按需，不占首屏</h3>
+      <p>目录结构、关键文件、上下文文件放在折叠区。展开前不渲染，避免首屏出现大段文字。</p>
+    </div></div>
+    <div class="lg"><div class="n">4</div><div>
+      <h3>活动卡 · 从全局改项目维度</h3>
+      <p>全局的「近 30 天 51,853 条消息」对当前项目没有意义。默认切到本项目，全局做成可切换项，而不是并排两张卡。</p>
+    </div></div>
+  </div>
+</section>
+
+<section class="sep">
+  <div class="s-head"><span class="s-num">02</span><h2>降级与边界</h2></div>
+  <p class="s-note">每一项数据都可能缺失。规则是：缺失即隐藏整行，绝不显示「—」或「未知」，也绝不因为拿不到数据就多出一块占位。</p>
+
+  <div class="variants">
+    <div class="variant">
+      <div class="vhead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>未选择项目</div>
+      <div class="vbody">
+        <div class="mini-title">开始和 Lumi 聊天</div>
+        <div class="mini-sub">选一个例子，或在下方输入你的问题</div>
+        <div class="ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          <div>选择项目文件夹</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="vhead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.9 2.9M16.2 16.2l2.9 2.9M2 12h4M18 12h4M4.9 19.1l2.9-2.9M16.2 7.8l2.9-2.9"/></svg>非 Git 仓库</div>
+      <div class="vbody">
+        <div class="mini-title">对于「notes」，我可以帮你做什么？</div>
+        <div class="mini-sub">~/Documents/notes · Markdown</div>
+        <div class="mini-card">
+          <div class="mini-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6l2 3h8v13H4z"/><path d="m9 14 2 2 4-4"/></svg>
+            尚未建立索引 · 点按开始
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="vhead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>索引进行中</div>
+      <div class="vbody">
+        <div class="mini-title">对于「Lumi」，我可以帮你做什么？</div>
+        <div class="mini-sub">~/Code/CofficLab/Lumi · Swift (Xcode / SPM)</div>
+        <div class="mini-card">
+          <div class="mini-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+            正在索引…
+          </div>
+          <div class="mini-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            上次在这里：修复登录跳转 · 2 小时前
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sep">
+  <div class="s-head"><span class="s-num">03</span><h2>数据来源与点击行为</h2></div>
+  <p class="s-note">全部走 Provider 层，插件不直接依赖其它插件。仓库里已有的能力基本够用，<code>ProjectInfo</code> 不需要动。</p>
+  <table>
+    <thead>
+      <tr><th style="width:23%">卡片元素</th><th style="width:34%">数据来源</th><th style="width:21%">点击行为</th><th>改动</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="hd" data-label="元素">身份行 · 路径 / 技术栈</td>
+        <td data-label="数据来源"><code>ProjectInfo.path</code><br><span class="muted">+ manifest 检测（需新建 KitProjectDetect）</span></td>
+        <td data-label="点击行为" class="muted">不可点（纯定位信息）</td>
+        <td data-label="改动" class="muted">新建 1 个 Kit 包</td>
+      </tr>
+      <tr>
+        <td class="hd" data-label="元素">已索引 N 个文件</td>
+        <td data-label="数据来源"><code>ProjectRAGProviding.indexStatus</code><br><span class="muted">fileCount / lastIndexedAt / isStale</span></td>
+        <td data-label="点击行为">打开文件树</td>
+        <td data-label="改动" class="muted">只加依赖，0 行改动</td>
+      </tr>
+      <tr>
+        <td class="hd" data-label="元素">N 个文件有未提交改动</td>
+        <td data-label="数据来源"><code>GitRepositoryReading.status</code><br><span class="muted">GitStatus.modified / added / deleted</span></td>
+        <td data-label="点击行为">打开 Git 面板</td>
+        <td data-label="改动" class="muted">只加依赖，0 行改动</td>
+      </tr>
+      <tr>
+        <td class="hd" data-label="元素">上次在这里 · N 小时前</td>
+        <td data-label="数据来源"><code>ConversationManaging.fetchConversationPage</code><br><span class="muted">带 projectPath 过滤</span></td>
+        <td data-label="点击行为">恢复该会话</td>
+        <td data-label="改动" class="muted">只加依赖，0 行改动</td>
+      </tr>
+      <tr>
+        <td class="hd" data-label="元素">上下文文件 AGENTS.md</td>
+        <td data-label="数据来源">项目根目录文件存在性探测</td>
+        <td data-label="点击行为" class="muted">不可点（展开态内）</td>
+        <td data-label="改动" class="muted">纯本地 stat</td>
+      </tr>
+      <tr>
+        <td class="hd" data-label="元素">活动卡 · 项目维度</td>
+        <td data-label="数据来源"><code>dailyMessageCountsAsync</code> 目前仅全局</td>
+        <td data-label="点击行为" class="muted">切换统计范围</td>
+        <td data-label="改动" style="color:#b45309">代价高：需跨 store JOIN 会话表<br>建议第一版用「本项目 N 个会话」替代</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="sep">
+  <div class="s-head"><span class="s-num">04</span><h2>明确不显示的东西</h2></div>
+  <p class="s-note">空态是提问入口，不是仪表盘。以下内容即使技术上取得到，也一律不进首屏。</p>
+
+  <div class="anti">
+    <div class="an">
+      <div class="x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+      <div><h3>文件树预览</h3><p>重、且与左侧文件树重复，首屏还要做目录遍历 IO。</p>
+        <span class="fix">替代：<b>只给一行「目录 · N 个文件」</b>，放进展开态</span></div>
+    </div>
+    <div class="an">
+      <div class="x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+      <div><h3>README 摘要</h3><p>一大段文字会直接杀死首屏焦点，用户的视线会被拉进长文。</p>
+        <span class="fix">替代：<b>README.md 做成一个标签</b>，点开再看</span></div>
+    </div>
+    <div class="an">
+      <div class="x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+      <div><h3>分支名</h3><p>标题栏的 GitBranchToolbarButton 已经常驻显示，重复即噪音。</p>
+        <span class="fix">替代：<b>只补 dirty 计数</b>，分支名交给工具栏</span></div>
+    </div>
+    <div class="an">
+      <div class="x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+      <div><h3>记忆条数 / 规则条数</h3><p>ProviderAgentRules 只有 contributor 维度，没有项目维度；记忆插件同样没有对应 Provider。</p>
+        <span class="fix">替代：<b>「有 AGENTS.md」</b>——信息量更足，且只是本地 stat</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  设计稿 · 对应实现 <code>PluginMessageListEmpty</code> · 2026-10-22 ·
+  主战场 1 个包（新增 4 文件 / 改 5 文件），Provider 层 3 个只加依赖，
+  新建 <code>KitProjectDetect</code> 1 个包
+</footer>
+
+</div>
+
+<script>
+(function(){
+  // 热力图：30 天，5 行 × 6 列，列内自上而下，越靠右越活跃（形成阶梯轮廓）
+  var levels = [
+    0,0,0,0,0,  0,1,0,0,0,  0,0,1,0,2,  0,1,0,0,1,  1,0,2,1,0,  0,2,3,1,4
+  ];
+  var fills = ['rgba(16,185,129,.07)','rgba(16,185,129,.20)','rgba(16,185,129,.38)','rgba(16,185,129,.60)','rgba(16,185,129,.88)'];
+  var svg = document.getElementById('heat');
+  var cell = 9, gap = 3, cols = 6, rows = 5, x0 = 0, y0 = 0;
+  for (var c = 0; c < cols; c++) {
+    for (var r = 0; r < rows; r++) {
+      var lv = levels[c * rows + r] || 0;
+      var rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      rect.setAttribute('x', x0 + c * (cell + gap));
+      rect.setAttribute('y', y0 + r * (cell + gap));
+      rect.setAttribute('width', cell);
+      rect.setAttribute('height', cell);
+      rect.setAttribute('rx', 2);
+      rect.setAttribute('fill', fills[lv]);
+      svg.appendChild(rect);
+    }
+  }
+
+  // 折线：先平缓，右侧抬升并出现尖峰后回落
+  var pts = [30,30,30,30,31,30,30,31,30,30,31,32,31,32,33,34,36,42,38,44,52,40,46,56,44,52,60,58,54,52];
+  var w = 260, h = 56, max = 60, min = 28;
+  var path = '';
+  pts.forEach(function(v, i){
+    var x = (i / (pts.length - 1)) * w;
+    var y = h - ((v - min) / (max - min)) * (h - 6) - 3;
+    path += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(1) + ' ';
+  });
+  var line = document.createElementNS('http://www.w3.org/2000/svg','path');
+  line.setAttribute('d', path.trim());
+  line.setAttribute('fill','none');
+  line.setAttribute('stroke','#10b981');
+  line.setAttribute('stroke-width','2');
+  line.setAttribute('stroke-linecap','round');
+  line.setAttribute('stroke-linejoin','round');
+  line.setAttribute('vector-effect','non-scaling-stroke');
+  document.getElementById('spark').appendChild(line);
+
+  var last = pts.length - 1;
+  var lx = (last / (pts.length - 1)) * w;
+  var ly = h - ((pts[last] - min) / (max - min)) * (h - 6) - 3;
+  var dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  dot.setAttribute('cx', lx.toFixed(1));
+  dot.setAttribute('cy', ly.toFixed(1));
+  dot.setAttribute('r', 3);
+  dot.setAttribute('fill', '#10b981');
+  document.getElementById('spark').appendChild(dot);
+})();
+</script>
+</body>
+</html>

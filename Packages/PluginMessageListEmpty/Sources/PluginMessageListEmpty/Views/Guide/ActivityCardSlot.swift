@@ -45,7 +45,7 @@ struct ActivityCardSlot: View {
                 .frame(height: 0)
                 .allowsHitTesting(false)
 
-            if model.hasActivity, let range = model.visibleRange {
+            if model.isVisible, let range = model.visibleRange {
                 ActivityFusionCard(
                     model: model,
                     range: range,

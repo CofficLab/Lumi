@@ -6,7 +6,7 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 并以常驻注册的 ChatSection 槽位参与 `message-list` 互斥竞争。
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，单元用例总数: 62（另有 6 条 UI 测试，见「UI 测试」章节）
+测试文件: 12 个，单元用例总数: 76（另有 6 条 UI 测试，见「UI 测试」章节）
 
 核心组件（源码目录）:
 - `Models/`
@@ -54,6 +54,9 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 - **EmptyStateTokenTrend**（7 条）：由 `token days fill the whole window including idle days`、`no token consumption keeps the trend hidden`、`values below one thousand are shown verbatim` 等用例锁定；改动 token 序列或它的紧凑数字格式化（`ActivityTokenFormat.compact`）时优先跑对应测试文件。
 - **ActivityCardLayout**（2 条）：由 `activityCardOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth`、`activityCardLayoutIgnoresWidthBeyondTheCardCap` 锁定。守住「活动卡宽度够才并排」的阈值 `ActivityCardLayout.sideBySideMinWidth`（及其组成常量），以及「卡片封顶 520pt 之后，槽位再宽也不改变排布」这条不变量；改动活动卡排布时必须优先跑该文件。
 - **ActivitySparklineGeometry**（7 条）：由 `every point stays inside the canvas`、`the series is normalized against its own peak`、`a flat series becomes a horizontal line` 等用例锁定。覆盖曲线与画布的坐标映射（归一化基准、峰值贴顶、等值序列成直线、单点居中）；改动曲线绘制时必须优先跑该文件。Canvas 里画错了不会让编译失败，只能靠这组几何断言守住。
+
+- **Project context**（9 条）：由 `homeDirectoryIsFolded`、`detectsProjectType`、`indexRowAppears`、`indexingStateShowsProgress`、`gitRowFollowsTheWorkingTree`、`lastConversationRowAppears`、`detailsReportConversationCount`、`noProjectClearsEverything` 等用例锁定。覆盖项目身份（路径折叠 + 技术栈判定）、就绪状态行（索引 / Git / 上次会话）、展开详情与「没有项目就清空」这条不变量；改动 `ProjectContextViewModel` 的组装逻辑时必须优先跑该文件。
+- **Activity scope**（4 条）：由 `projectScopeFiltersByConversation`、`fallsBackToGlobalWithoutProject`、`projectScopeStaysVisibleWithoutActivity`、`switchingScopeReloads` 锁定。覆盖「项目维度只统计本项目消息」「没有项目退回全局」「项目维度没有历史仍然显示」「切换范围重新加载」四条语义；改动活动卡的统计口径时必须优先跑该文件。
 
 ## 测试用例清单
 
@@ -124,23 +127,37 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 | 60 | ActivitySparklineGeometry | the series is normalized against its own peak | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `normalizationIsRelativeToThePeak` |
 | 61 | ActivitySparklineGeometry | a flat series becomes a horizontal line | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `flatSeriesIsHorizontal` |
 | 62 | ActivitySparklineGeometry | a single sample is centered horizontally | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `singleSampleIsCentered` |
+| 63 | Project context | 家目录在展示路径里折叠成 ~ | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `homeDirectoryIsFolded` |
+| 64 | Project context | 项目类型由清单文件推断 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `detectsProjectType` |
+| 65 | Project context | 没有清单文件的项目没有类型标签 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `unknownTypeHasNoLabel` |
+| 66 | Project context | 索引行报告已索引的文件数 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `indexRowAppears` |
+| 67 | Project context | 只有存在未提交改动时才出现 Git 行 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gitRowFollowsTheWorkingTree` |
+| 68 | Project context | 上次会话行指向最近一次会话 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `lastConversationRowAppears` |
+| 69 | Project context | 详情报告本项目的会话数 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `detailsReportConversationCount` |
+| 70 | Project context | 入口文件变成标签 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `notableFilesBecomeLabels` |
+| 71 | Project context | 没有项目时清空全部状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `noProjectClearsEverything` |
+| 72 | Activity scope | 项目维度必须只统计这个项目的消息 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `projectScopeFiltersByConversation` |
+| 73 | Activity scope | 没有项目时退回全局口径 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fallsBackToGlobalWithoutProject` |
+| 74 | Activity scope | 项目维度没有历史时仍然显示 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `projectScopeStaysVisibleWithoutActivity` |
+| 75 | Activity scope | 切换统计范围会重新加载窗口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `switchingScopeReloads` |
+| 76 | Project context | 索引进行中时显示进行态而不是旧的文件数 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `indexingStateShowsProgress` |
 
-> 说明：全部 **62 条单元场景**已在本包 `swift test` 中实跑通过（6 suites / 62 tests，约 0.02 s）；另有 6 条 UI 测试见下方章节。
+> 说明：全部 **76 条单元场景**已在本包 `swift test` 中实跑通过（6 suites / 62 tests，约 0.02 s）；另有 6 条 UI 测试见下方章节。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
-- P1: 已覆盖 45 / 45
-- P2: 已覆盖 6 / 6
-- **合计: 62 / 62**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 13 / 13
+- P1: 已覆盖 55 / 55
+- P2: 已覆盖 8 / 8
+- **合计: 76 / 76**（仅表示清单场景，非源码覆盖率）
 - **UI 测试: 6 条**（3 通过 / 2 跳过 / 1 未执行，见「UI 测试」章节）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（45 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P1**: 其余功能性用例（55 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## UI 测试
 
@@ -253,7 +270,7 @@ App 启动时空态先渲染、跨会话统计稍后就绪，首次查询**本�
 
 ## 跨平台说明
 
-- 单元测试：Package 声明 macOS 14+, iOS 17+，62 条用例位于 `Tests/`
+- 单元测试：Package 声明 macOS 14+, iOS 17+，75 条用例位于 `Tests/`
 - UI 测试：仅 macOS（`LumiUITests` target），6 条用例
 
 ## 测试执行

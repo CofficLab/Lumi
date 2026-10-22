@@ -269,6 +269,84 @@ final class LumiMessageListEmptyUITests: LumiUITestCase {
     }
 }
 
+/// 项目上下文卡的 UI 测试。
+///
+/// 与上面的空态用例分开成一个 class，因为启动参数不同：项目上下文卡只在
+/// **有项目**时渲染，夹具必须真的打开一个项目。
+final class LumiMessageListEmptyProjectUITests: LumiUITestCase {
+    override func setUpWithError() throws {
+        continueAfterFailure = false
+        try super.setUpWithError()
+        launchLumi(extraArguments: [
+            "--lumi-ui-testing-message-list-empty",
+            "--lumi-ui-testing-message-list-empty-project",
+            "--lumi-ui-testing-isolated-storage",
+        ])
+    }
+
+    override func tearDownWithError() throws {
+        terminateAppAndWait()
+        try super.tearDownWithError()
+    }
+
+    /// 有项目时，身份行与项目上下文卡都必须出现。
+    ///
+    /// 这是本次改动的核心用户可感知变化：空态从「只有一句项目名」变成
+    /// 「知道自己站在哪个项目里、这个项目现在是什么状态」。
+    func testProjectContextAppearsAlongsideEmptyState() throws {
+        waitForMainWindow()
+
+        XCTAssertTrue(
+            element(identifier: MessageListEmptyA11yIDs.noMessages).waitForExistence(timeout: 30),
+            "起始态应为空态引导页"
+        )
+        XCTAssertTrue(
+            element(identifier: MessageListEmptyA11yIDs.projectIdentity).waitForExistence(timeout: 30),
+            "有项目时身份行（路径 + 技术栈）未出现"
+        )
+        XCTAssertTrue(
+            element(identifier: MessageListEmptyA11yIDs.projectContext).waitForExistence(timeout: 30),
+            "有项目时项目上下文卡未出现"
+        )
+    }
+
+    /// 项目卡必须与提示胶囊流共用同一条左右边界。
+    ///
+    /// 与活动卡的宽度契约同源：两张卡 + 胶囊流读起来是「同一块画面」，
+    /// 而不是三个各自为政的控件。
+    func testProjectContextAlignsWithThePromptFlow() throws {
+        waitForMainWindow()
+
+        let card = element(identifier: MessageListEmptyA11yIDs.projectContext)
+        XCTAssertTrue(
+            card.waitForExistence(timeout: 30),
+            "项目上下文卡未出现"
+        )
+
+        let chipFrames = app.descendants(matching: .any)
+            .matching(identifier: MessageListEmptyA11yIDs.suggestionFlow)
+            .allElementsBoundByIndex
+            .map(\.frame)
+        guard let firstChip = chipFrames.first else {
+            XCTFail("提示胶囊流未出现，无法比较两者的横向基准")
+            return
+        }
+        let chipsBox = chipFrames.dropFirst().reduce(firstChip) { $0.union($1) }
+
+        XCTAssertLessThanOrEqual(
+            card.frame.width,
+            521,
+            "项目卡宽于 520pt 的共享基准（实际 \(card.frame.width)pt）"
+        )
+        XCTAssertEqual(
+            card.frame.midX,
+            chipsBox.midX,
+            accuracy: 2,
+            "项目卡与提示胶囊流没有共用同一条左右边界（卡 \(card.frame.midX) / 胶囊 \(chipsBox.midX)）"
+        )
+    }
+}
+
 /// 空态视图的可访问性标识符（复述 `MessageListEmptyAccessibility`）。
 ///
 /// UI 测试是独立 target，不能 import 插件模块，因此在此复述常量。
@@ -282,6 +360,10 @@ enum MessageListEmptyA11yIDs {
     static let suggestionFlow = "lumi.message-list.empty.suggestion-flow"
     /// 活动卡（活动条的全部可见内容，也是这一块唯一可寻址的元素）。
     static let activityStrip = "lumi.message-list.empty.activity"
+    /// 项目上下文卡（这一块唯一可寻址的元素）。
+    static let projectContext = "lumi.message-list.empty.project-context"
+    /// 项目身份行（路径 + 技术栈）。
+    static let projectIdentity = "lumi.message-list.empty.project-identity"
 }
 
 /// 夹具会话标题（复述 `MessageListEmptyUITestingSupport`）。

@@ -27,8 +27,28 @@ Lumi 聊天区**空态**实现包：未选中会话，或当前会话没有可�
 
 1. 氛围背景（`EmptyStateAtmosphere`）
 2. 上下文图标 + 标题（按 `ChatContext` 切换：默认聊天 / 具名上下文 / 当前项目）
-3. 提示胶囊流（`PromptSuggestionFlow`，按项目可见性与 launcher scope 过滤）
-4. **近 30 天活动卡**（`ActivityFusionCard`，紧跟提示流下方，非底部固定栏）
+3. **项目身份行**（`ProjectIdentityLine`，有项目时占据副标题槽位：折叠后的路径 + 技术栈）
+4. 提示胶囊流（`PromptSuggestionFlow`，按项目可见性与 launcher scope 过滤）
+5. **项目上下文卡**（`ProjectContextCard`，紧跟提示流下方）
+6. **近 30 天活动卡**（`ActivityFusionCard`，紧跟项目卡下方，非底部固定栏）
+
+### 项目上下文卡
+
+有项目时，空态要回答用户的三个问题：**我在哪**、**这是个什么项目**、
+**现在能不能开工**。项目卡用三行可点击的状态回答后两个：
+
+| 行 | 数据来源 | 点击 |
+| --- | --- | --- |
+| 已索引 N 个文件 · 多久前 | `ProjectRAGProviding.indexStatus` | 打开文件树 |
+| N 个文件有未提交改动 | `GitRepositoryReading.status` | 打开 Git 面板 |
+| 上次在这里：<会话标题> · 多久前 | `ConversationManaging.fetchConversationPage(projectPath:)` | 回到该会话 |
+
+展开后另有「本项目会话数」与关键文件标签（`Package.swift` / `README.md` 等）。
+
+**每一行都必须可点**：一行状态如果既不能点、又不表达任何可执行动作，
+它就是噪音。因此模型层只产出**带动作**的行，拿不到数据的行直接不渲染。
+
+### 活动卡的统计范围
 
 活动卡把两段数据合成一张卡：
 
@@ -36,8 +56,14 @@ Lumi 聊天区**空态**实现包：未选中会话，或当前会话没有可�
 - **token 曲线**：同窗口的 token 消耗；无消耗时整段隐藏
 - 锚点文案：「近 30 天共 N 条消息 · 消耗 M tokens」
 
-统计是**跨会话**的（读 `MessageManaging` 的全量历史），
-与「当前会话是否为空」的判定范围不同 —— 这正是空态与活动卡能共存的原理。
+统计默认是**当前项目**维度（人在项目里，注意力就在这个项目上），
+卡片底部提供「本项目 / 全部项目」切换，而不是并排摆两张卡。
+项目维度靠一组会话 ID 过滤消息：会话集合由 `ProviderConversation` 按项目路径
+查出，再交给消息存储按会话 ID 过滤（`ProviderMessage` 的
+`dailyMessageCountsAsync(since:conversationIDs:)`）。
+
+项目维度没有历史时卡片仍然渲染（一行「本项目还没有任何消息」）——
+「这个项目还没人动过」本身就是一条信息，比一块空白热力图有用。
 
 ### 与兄弟包的关系
 
@@ -55,8 +81,8 @@ Sources/PluginMessageListEmpty/
 ├── Observers/                                # GuideObservers、NoConversationSelectedToolbarCoordinator
 ├── Services/                                 # PluginLocalization
 ├── Support/                                  # MessageListEmptyAccessibility、ActivityTokenFormat
-├── ViewModels/                               # EmptyStateActivityViewModel
-└── Views/Guide/                              # 两种空态视图、活动卡、热力图、提示流
+├── ViewModels/                               # EmptyStateActivityViewModel、ProjectContextViewModel
+└── Views/Guide/                              # 两种空态视图、项目卡、活动卡、热力图、提示流
 ```
 
 ## 关键设计约束

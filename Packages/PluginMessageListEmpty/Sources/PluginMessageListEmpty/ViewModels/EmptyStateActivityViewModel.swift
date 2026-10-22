@@ -27,6 +27,18 @@ struct EmptyStateTokenDay: Equatable, Sendable {
     var accessibilityLabel: String { "\(date.formatted(date: .long, time: .omitted)): \(count)" }
 }
 
+/// 活动卡的统计范围。
+///
+/// 空态有项目时，用户的注意力在**这个项目**上；全 App 的历史数字放在旁边
+/// 是信息错位。因此有项目时默认按项目统计，全局口径变成一个可切换项——
+/// 而不是并排摆两张卡。
+enum EmptyStateActivityScope: String, CaseIterable, Equatable, Sendable {
+    /// 当前项目。
+    case project
+    /// 全部项目。
+    case all
+}
+
 /// Fills the empty state with a quiet 30-day activity strip.
 ///
 /// This view model owns the only question the strip asks: how many messages
@@ -46,10 +58,15 @@ final class EmptyStateActivityViewModel {
     private static let levelCount = 5
 
     private let messages: (any MessageManaging)?
+    /// 提供「项目 → 会话集合」的映射。项目维度统计要用它过滤消息。
+    private let projectContext: ProjectContextViewModel?
     private let calendar: Calendar
     /// Guards against a slow load from an earlier window overwriting a newer
     /// result when the plugin reboots or the conversation selection changes.
     private var loadGeneration = 0
+
+    /// 用户选择的统计范围。
+    private(set) var scope: EmptyStateActivityScope = .project
 
     private(set) var days: [EmptyStateActivityDay] = []
     private(set) var isLoading = false
@@ -82,6 +99,47 @@ final class EmptyStateActivityViewModel {
         totalMessages.map { $0 > 0 } ?? false
     }
 
+    /// 实际生效的统计范围。
+    ///
+    /// 没有项目时项目维度无从谈起，直接退回全局口径——否则「本项目」会变成
+    /// 一个永远为空的口径。
+    var effectiveScope: EmptyStateActivityScope {
+        guard scope == .project else { return .all }
+        guard projectContext?.currentProjectPath != nil else { return .all }
+        return .project
+    }
+
+    /// 卡片是否应该渲染。
+    ///
+    /// 全局口径沿用旧规则：没有活动就不画（30 个空格读起来像「你从来没用过」）。
+    /// 项目口径则**始终**渲染：项目维度没有历史本身就是一条信息
+    /// ——「这个项目还没人动过」，比一块空白热力图有用得多。
+    var isVisible: Bool {
+        switch effectiveScope {
+        case .all:
+            return hasActivity
+        case .project:
+            return visibleRange != nil
+        }
+    }
+
+    /// 窗口内是否有可画的数据。没有时卡片只留一行文字说明。
+    var hasChartData: Bool {
+        totalMessages.map { $0 > 0 } ?? false
+    }
+
+    /// 是否提供统计范围切换。没有项目时项目维度无从谈起，切换项没有意义。
+    var canSwitchScope: Bool {
+        projectContext?.currentProjectPath != nil
+    }
+
+    /// 切换统计范围并重新加载。
+    public func setScope(_ newScope: EmptyStateActivityScope) async {
+        guard newScope != scope else { return }
+        scope = newScope
+        await loadIfNeeded(force: true)
+    }
+
     /// - Parameters:
     ///   - messages: Source of cross-conversation daily counts.
     ///   - calendar: Calendar used to normalize dates into day buckets.
@@ -93,11 +151,13 @@ final class EmptyStateActivityViewModel {
     ///     describe data that the real load path never produces.
     init(
         messages: (any MessageManaging)?,
+        projectContext: ProjectContextViewModel? = nil,
         calendar: Calendar = .current,
         seededDays: [EmptyStateActivityDay]? = nil,
         seededTokenDays: [EmptyStateTokenDay]? = nil
     ) {
         self.messages = messages
+        self.projectContext = projectContext
         self.calendar = calendar
         if let seededDays {
             days = seededDays
@@ -141,8 +201,18 @@ final class EmptyStateActivityViewModel {
             value: -(Self.windowDayCount - 1),
             to: today
         ) ?? today
-        let counts = await messages.dailyMessageCountsAsync(since: startDate)
-        let tokens = await messages.dailyTokenCountsAsync(since: startDate)
+        // 项目维度：先问出这个项目在窗口内仍有活动的会话，再让消息存储按会话过滤。
+        // `nil` 表示不限会话（全局口径），空数组表示该范围内没有会话。
+        let conversationIDs: [String]?
+        if effectiveScope == .project,
+           let projectContext,
+           let path = projectContext.currentProjectPath {
+            conversationIDs = await projectContext.conversationIDs(forProjectAt: path, since: startDate)
+        } else {
+            conversationIDs = nil
+        }
+        let counts = await messages.dailyMessageCountsAsync(since: startDate, conversationIDs: conversationIDs)
+        let tokens = await messages.dailyTokenCountsAsync(since: startDate, conversationIDs: conversationIDs)
         guard !Task.isCancelled, generation == loadGeneration else { return }
 
         days = Self.makeDays(counts: counts, startDate: startDate, endDate: today, calendar: calendar)

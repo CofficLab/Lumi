@@ -28,20 +28,30 @@ struct ActivityFusionCard: View {
         VStack(alignment: .leading, spacing: ActivityFusionCardMetrics.anchorSpacing) {
             anchor
 
-            if placesSideBySide {
-                // 并排时两块竖直居中：热力图窄而高，曲线宽而矮，
-                // 居中对齐让整张卡读起来是一个整体而不是两个控件。
-                HStack(alignment: .center, spacing: ActivityFusionCardMetrics.contentSpacing) {
-                    heatmap
-                    separator
-                    sparkline
+            if model.hasChartData {
+                if placesSideBySide {
+                    // 并排时两块竖直居中：热力图窄而高，曲线宽而矮，
+                    // 居中对齐让整张卡读起来是一个整体而不是两个控件。
+                    HStack(alignment: .center, spacing: ActivityFusionCardMetrics.contentSpacing) {
+                        heatmap
+                        separator
+                        sparkline
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: ActivityFusionCardMetrics.contentSpacing) {
+                        heatmap
+                        sparkline
+                            .frame(height: ActivityFusionCardMetrics.sparklineHeight)
+                    }
                 }
             } else {
-                VStack(alignment: .leading, spacing: ActivityFusionCardMetrics.contentSpacing) {
-                    heatmap
-                    sparkline
-                        .frame(height: ActivityFusionCardMetrics.sparklineHeight)
-                }
+                // 项目维度没有历史时，两块图都是空的：画出来只会像「数据坏了」。
+                // 一行文字把「这个项目还没人动过」说清楚就够了。
+                emptyNote
+            }
+
+            if model.canSwitchScope {
+                scopeSwitcher
             }
         }
         .padding(.horizontal, ActivityFusionCardMetrics.horizontalPadding)
@@ -112,6 +122,50 @@ struct ActivityFusionCard: View {
         )
     }
 
+    /// 没有数据时的那一行说明。
+    private var emptyNote: some View {
+        Text(pluginLocalization.string("No messages in this project yet"))
+            .font(.system(size: 11.5))
+            .foregroundStyle(theme.textSecondary)
+    }
+
+    /// 统计范围切换。
+    ///
+    /// 项目维度是默认口径（人在项目里，注意力就在这个项目上），
+    /// 全局口径作为对照项摆在这里，而不是再开一张卡。
+    private var scopeSwitcher: some View {
+        HStack(spacing: 6) {
+            scopeChip(.project, title: pluginLocalization.string("This project"))
+            scopeChip(.all, title: pluginLocalization.string("All projects"))
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func scopeChip(_ candidate: EmptyStateActivityScope, title: String) -> some View {
+        let isSelected = model.effectiveScope == candidate
+        return Button {
+            Task { await model.setScope(candidate) }
+        } label: {
+            Text(title)
+                .font(.system(size: 10.5))
+                .foregroundStyle(isSelected ? theme.primary : theme.textSecondary)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 2)
+                .background {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(isSelected ? theme.primary.opacity(0.12) : Color.clear)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .stroke(
+                            isSelected ? theme.primary.opacity(0.28) : theme.textSecondary.opacity(0.16),
+                            lineWidth: 1
+                        )
+                }
+        }
+        .buttonStyle(.plain)
+    }
+
     /// 两块图之间的竖向分隔线：1pt、极淡，只做区分不做分区。
     private var separator: some View {
         Rectangle()
@@ -134,30 +188,40 @@ struct ActivityFusionCard: View {
     /// 查表与格式化分两步：`String(localized:)` 能从模块 bundle 里取到模板，
     /// 但没有带参数的格式化重载；而 `pluginLocalization.string` 只解析 key，
     /// 不接受格式参数。因此先取模板，再交给 `String(format:locale:)` 填值。
+    ///
+    /// 项目维度只是把「近 30 天」前面加上「本项目」——句式保持一致，
+    /// 用户一眼能看出两个口径的差别。
     private var anchorText: String {
+        let isProjectScope = model.effectiveScope == .project
+        let window = EmptyStateActivityViewModel.windowDayCount
+
         if model.hasTokenActivity {
             let format = String(
-                localized: "%lld messages in the last %lld days · %@ tokens",
+                localized: isProjectScope
+                    ? "In this project, %lld messages in the last %lld days · %@ tokens"
+                    : "%lld messages in the last %lld days · %@ tokens",
                 bundle: .module
             )
             return String(
                 format: format,
                 locale: pluginLocalization.preferredLocale(),
                 model.totalMessages ?? 0,
-                EmptyStateActivityViewModel.windowDayCount,
+                window,
                 ActivityTokenFormat.compact(model.totalTokens ?? 0)
             )
         }
 
         let format = String(
-            localized: "%lld messages in the last %lld days",
+            localized: isProjectScope
+                ? "In this project, %lld messages in the last %lld days"
+                : "%lld messages in the last %lld days",
             bundle: .module
         )
         return String(
             format: format,
             locale: pluginLocalization.preferredLocale(),
             model.totalMessages ?? 0,
-            EmptyStateActivityViewModel.windowDayCount
+            window
         )
     }
 }

@@ -2,11 +2,15 @@ import KernelCore
 import LumiLoggingKit
 import LumiUI
 import os
+import ProviderActivityBar
 import ProviderChatSection
 import ProviderConversation
+import ProviderGit
 import ProviderMessage
 import ProviderProject
+import ProviderProjectRAG
 import ProviderPromptSuggestion
+import ProviderRailView
 import ProviderToolbar
 import SwiftUI
 
@@ -43,6 +47,7 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
     private var projectObserver: (any ProjectProvidingObserverHandle)?
     private var chatObserver: (any ChatSectionProvidingObserverHandle)?
     private var promptSuggestionsObserver: (any PromptSuggestionProvidingObserverHandle)?
+    private var ragObserver: (any ProjectRAGObserverHandle)?
     private var registrationEvaluationTask: Task<Void, Never>?
     private var isRegistered = false
 
@@ -76,6 +81,9 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
     /// across view rebuilds.
     private var activityModel: EmptyStateActivityViewModel?
 
+    /// 项目上下文卡的数据源。跨插件跳转与项目维度统计都从这里取。
+    private var projectContext: ProjectContextViewModel?
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -90,11 +98,20 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         let promptSuggestions = kernel.resolveProvider((any PromptSuggestionProviding).self)
         let promptSuggestionExecutor = kernel.resolveProvider((any PromptSuggestionExecuting).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let projectRAG = kernel.resolveProvider((any ProjectRAGProviding).self)
+        let git = kernel.resolveProvider((any GitRepositoryReading).self)
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
         let services = MessageListEmptyServices(
             project: project,
             promptSuggestions: promptSuggestions,
             promptSuggestionExecutor: promptSuggestionExecutor,
-            messages: messages
+            messages: messages,
+            conversations: conversations,
+            projectRAG: projectRAG,
+            git: git,
+            activityBar: activityBar,
+            railView: railView
         )
         let toolbarCoordinator = NoConversationSelectedToolbarCoordinator(
             project: project,
@@ -105,13 +122,20 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
             project: project,
             toolbarCoordinator: toolbarCoordinator
         )
+        let projectContext = ProjectContextViewModel(
+            project: project,
+            conversations: conversations,
+            projectRAG: projectRAG,
+            git: git
+        )
 
         self.chat = chat
         self.conversations = conversations
         self.messages = messages
         self.services = services
         self.guideState = guideState
-        self.activityModel = EmptyStateActivityViewModel(messages: messages)
+        self.projectContext = projectContext
+        self.activityModel = EmptyStateActivityViewModel(messages: messages, projectContext: projectContext)
 
         selectedConversationObserver = conversations?.addSelectedConversationObserver { [weak self] conversationID in
             self?.updateSelection(conversationID)
@@ -120,8 +144,14 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         messageChangeObserver = messages?.addMessageChangeObserver { [weak self] change in
             self?.handleMessageChange(change)
         }
-        projectObserver = project?.addObserver { [weak guideState, project] _ in
+        projectObserver = project?.addObserver { [weak guideState, weak projectContext, weak activityModel, project] _ in
             guideState?.handleProjectChange(project)
+            // 换了项目，项目上下文与项目维度的活动统计都得重算：
+            // 会话集合变了，旧窗口对不上新项目。
+            Task { @MainActor in
+                await projectContext?.loadIfNeeded(force: true)
+                await activityModel?.loadIfNeeded(force: true)
+            }
         }
         chatObserver = chat.addObserver { [weak guideState] event in
             guard case let .activeContextChanged(context) = event else { return }
@@ -129,6 +159,18 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         }
         promptSuggestionsObserver = promptSuggestions?.addObserver { [weak guideState] _ in
             guideState?.handlePromptSuggestionsChange()
+        }
+        // 索引状态会随着索引任务的推进变化；项目卡上的「已索引 N 个文件」
+        // 必须在索引完成时就地刷新，而不是等用户下次打开空态。
+        ragObserver = projectRAG?.addProjectRAGObserver { [weak projectContext] event in
+            switch event {
+            case .indexingStarted, .indexingFinished:
+                Task { @MainActor in
+                    await projectContext?.loadIfNeeded(force: true)
+                }
+            case .initialized, .projectChanged:
+                break
+            }
         }
 
         updateSelection(conversations?.selectedConversationID)
@@ -143,7 +185,8 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         if let conversations, let messages, MessageListEmptyUITestingSupport.isEnabled {
             uiTestingSeedHandle = MessageListEmptyUITestingSupport.seed(
                 conversations: conversations,
-                messages: messages
+                messages: messages,
+                project: project
             )
         }
         #endif
@@ -162,6 +205,8 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         chatObserver = nil
         promptSuggestionsObserver?.cancel()
         promptSuggestionsObserver = nil
+        ragObserver?.cancel()
+        ragObserver = nil
         uiTestingSeedHandle?.cancel()
         uiTestingSeedHandle = nil
 
@@ -170,6 +215,7 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
             isRegistered = false
         }
         activityModel = nil
+        projectContext = nil
         guideState?.toolbarCoordinator.deactivate()
         guideState = nil
         services = nil
@@ -288,13 +334,14 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
                 isActive: { @MainActor [weak self] in
                     self?.shouldRenderEmptyState ?? false
                 },
-                content: { [weak guideState, weak activityModel] in
+                content: { [weak guideState, weak activityModel, weak projectContext] in
                     guard let services, let guideState else { return AnyView(EmptyView()) }
                     return AnyView(
                         MessageListEmptyContentView(
                             services: services,
                             guideState: guideState,
-                            activity: activityModel
+                            activity: activityModel,
+                            projectContext: projectContext
                         )
                     )
                 }
@@ -315,6 +362,8 @@ private struct MessageListEmptyContentView: View {
     @ObservedObject var guideState: MessageListGuideState
     /// 活动卡的数据源。随内容一起渲染，因此它排在提示流下面而不是底栏里。
     let activity: EmptyStateActivityViewModel?
+    /// 项目上下文卡的数据源。
+    let projectContext: ProjectContextViewModel?
 
     var body: some View {
         if guideState.selectedConversationID == nil {
@@ -322,7 +371,8 @@ private struct MessageListEmptyContentView: View {
                 NoConversationSelectedView(
                     services: services,
                     guideState: guideState,
-                    activity: activity
+                    activity: activity,
+                    projectContext: projectContext
                 )
             )
         }
@@ -330,7 +380,8 @@ private struct MessageListEmptyContentView: View {
             MessageEmptyStateView(
                 services: services,
                 guideState: guideState,
-                activity: activity
+                activity: activity,
+                projectContext: projectContext
             )
         )
     }
