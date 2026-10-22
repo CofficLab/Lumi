@@ -50,8 +50,106 @@ final class ComputerUseAuthorizationStore: @unchecked Sendable {
             // 取消显式授权时同时撤销原生控制授权，保持两者语义一致。
             if !allowed {
                 plist[Self.nativeKey] = (plist[Self.nativeKey] ?? []).filter { $0 != bundleIdentifier }
+                // 显式授权被撤销时，一次性授权也必须失效：
+                // 否则「撤销」后旧的临时授权仍会让 agent 继续访问该应用。
+                Self.removeOneShot(&plist, bundleIdentifier: bundleIdentifier)
             }
         }
+    }
+
+    // MARK: - 一次性授权（聊天内授权卡片使用）
+
+    /// 授予一次性的应用访问权。
+    ///
+    /// 与 `setAllowed(true, ...)` 的区别：一次性授权**不写入显式白名单**，
+    /// 只在 `oneShot` 列表里登记一个带过期时间的条目。到期后自动失效。
+    ///
+    /// - Parameters:
+    ///   - bundleIdentifier: 目标应用。
+    ///   - ttl: 有效期，默认 5 分钟。授权本次操作后即失效是更严格的选择。
+    func grantOneShot(bundleIdentifier: String, ttl: TimeInterval = ComputerUseAuthorizationStore.defaultOneShotTTL) {
+        guard !bundleIdentifier.isEmpty else { return }
+        let expiry = Date().addingTimeInterval(ttl)
+        store.update { plist in
+            var entries = Self.oneShotEntries(plist)
+            entries[bundleIdentifier] = expiry
+            Self.writeOneShotEntries(entries, into: &plist)
+        }
+    }
+
+    /// 消费一次性授权：存在且未过期时返回 `true`，并立即清除该条目。
+    ///
+    /// 「允许一次」的语义是**仅本次操作**，因此授权在检查时即被消费，
+    /// 下一次操作必须重新申请。
+    func consumeOneShot(bundleIdentifier: String) -> Bool {
+        guard !bundleIdentifier.isEmpty else { return false }
+        var consumed = false
+        store.update { plist in
+            var entries = Self.oneShotEntries(plist)
+            // `oneShotEntries` 读取时已经过滤掉过期项，因此只要条目存在就有效。
+            if entries.removeValue(forKey: bundleIdentifier) != nil {
+                consumed = true
+            }
+            // 无论是否命中都回写：过期条目在这一步被一并清掉，不会无限累积。
+            Self.writeOneShotEntries(entries, into: &plist)
+        }
+        return consumed
+    }
+
+    /// 查询一次性授权是否仍然有效（不消费）。
+    func hasValidOneShot(bundleIdentifier: String) -> Bool {
+        guard !bundleIdentifier.isEmpty else { return false }
+        return store.read { Self.oneShotEntries($0)[bundleIdentifier] != nil }
+    }
+
+    /// 清理全部过期的一次性授权。
+    func purgeExpiredOneShots() {
+        store.update { plist in
+            // `oneShotEntries` 读取时已经过滤掉过期项，直接回写即可完成清理。
+            Self.writeOneShotEntries(Self.oneShotEntries(plist), into: &plist)
+        }
+    }
+
+    /// 从 plist 中移除某个应用的一次性授权。
+    private static func removeOneShot(_ plist: inout [String: [String]], bundleIdentifier: String) {
+        var entries = oneShotEntries(plist)
+        entries.removeValue(forKey: bundleIdentifier)
+        writeOneShotEntries(entries, into: &plist)
+    }
+
+    /// 读取一次性授权条目。**已过期的条目不会返回。**
+    ///
+    /// plist 顶层 key 映射到字符串数组，因此这里把每个条目编码成
+    /// `bundleIdentifier|过期时间戳` 一行存放。
+    private static func oneShotEntries(_ plist: [String: [String]]) -> [String: Date] {
+        let now = Date()
+        var result: [String: Date] = [:]
+        let stored: [String] = plist[oneShotKey] ?? []
+        for row in stored {
+            let parts = row.split(separator: "|", maxSplits: 1).map(String.init)
+            guard parts.count == 2,
+                  let timestamp = TimeInterval(parts[1]) else { continue }
+            let expiry = Date(timeIntervalSince1970: timestamp)
+            guard expiry > now else { continue }
+            result[parts[0]] = expiry
+        }
+        return result
+    }
+
+    /// 把一次性授权条目写回 plist。
+    private static func writeOneShotEntries(
+        _ entries: [String: Date],
+        into plist: inout [String: [String]]
+    ) {
+        guard !entries.isEmpty else {
+            plist.removeValue(forKey: oneShotKey)
+            return
+        }
+        var rows: [String] = []
+        for (key, expiry) in entries {
+            rows.append("\(key)|\(expiry.timeIntervalSince1970)")
+        }
+        plist[oneShotKey] = rows.sorted()
     }
 
     // MARK: - 原生控制授权白名单（NativeControlCoordinator 使用）
@@ -81,6 +179,19 @@ final class ComputerUseAuthorizationStore: @unchecked Sendable {
 
     private static let allowedKey = "ComputerUse.alwaysAllowedBundleIdentifiers"
     private static let nativeKey = "ComputerUse.nativeAllowedBundleIdentifiers"
+
+    /// 一次性授权条目。值为该条目的过期时间戳（Unix 时间，字符串形式）。
+    ///
+    /// 与显式白名单分开存放：一次性授权不应出现在设置界面的白名单里，
+    /// 也不应在应用重启后长期存活。
+    private static let oneShotKey = "ComputerUse.oneShotBundleIdentifiers"
+
+    /// 一次性授权的默认有效期。
+    ///
+    /// 卡片上的「允许一次」语义是「本次操作」，因此真正生效的是
+    /// `consumeOneShot` 的消费语义；TTL 只是兜底，防止用户点了卡片但
+    /// 工具没有立刻继续执行时，授权长期悬在存储里。
+    static let defaultOneShotTTL: TimeInterval = 300
 }
 
 // MARK: - Plist Backed Storage

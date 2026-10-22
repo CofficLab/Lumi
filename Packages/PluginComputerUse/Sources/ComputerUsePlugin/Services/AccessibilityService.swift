@@ -61,9 +61,7 @@ final class AccessibilityService {
         guard apps.count == 1, let app = apps.first, let bundleID = app.bundleIdentifier else {
             throw ComputerUseError.invalidArguments("Use the exact bundle identifier of one running application.")
         }
-        guard authorization.isAllowed(bundleID) else {
-            throw ComputerUseError.applicationNotAllowed(app.localizedName ?? bundleID)
-        }
+        try requireAuthorized(bundleID: bundleID, applicationName: app.localizedName ?? bundleID, operation: "accessibility_observe")
         let root = AXUIElementCreateApplication(app.processIdentifier)
         AXUIElementSetMessagingTimeout(root, 0.2)
         var refs: [String: AXUIElement] = [:]
@@ -130,7 +128,8 @@ final class AccessibilityService {
               let ref = stored.refs[elementID] else {
             throw ComputerUseError.invalidArguments("Expired or invalid AX element. Call accessibility_observe again.")
         }
-        guard authorization.isAllowed(stored.snapshot.bundleIdentifier) else {
+        guard authorization.isAllowed(stored.snapshot.bundleIdentifier)
+            || authorization.consumeOneShot(bundleIdentifier: stored.snapshot.bundleIdentifier) else {
             throw ComputerUseError.applicationNotAllowed(stored.snapshot.application)
         }
         guard string(ref, kAXSubroleAttribute) != kAXSecureTextFieldSubrole else { throw ComputerUseError.secureInputBlocked }
@@ -165,6 +164,32 @@ final class AccessibilityService {
     }
 
     static let allowedActions = [kAXPressAction, kAXPickAction, kAXIncrementAction, kAXDecrementAction, kAXConfirmAction]
+
+    /// 校验目标应用是否已获授权。
+    ///
+    /// 未授权时抛出 `authorizationRequired`，由工具层转换成挂起回合的
+    /// 授权请求，让用户在聊天里直接决定，而不是整轮失败。
+    private func requireAuthorized(
+        bundleID: String,
+        applicationName: String,
+        operation: String
+    ) throws {
+        switch ComputerUseAccessChecker(authorization: authorization).outcome(
+            for: bundleID,
+            applicationName: applicationName
+        ) {
+        case .allowed:
+            return
+        case .needsAuthorization(let name, let identifier):
+            throw ComputerUseError.authorizationRequired(
+                applicationName: name,
+                bundleIdentifier: identifier,
+                operation: operation
+            )
+        case .forbidden(let reason):
+            throw ComputerUseError.forbiddenApplication(reason)
+        }
+    }
 
     private func attribute(_ ref: AXUIElement, _ key: String) -> CFTypeRef? {
         var value: CFTypeRef?
