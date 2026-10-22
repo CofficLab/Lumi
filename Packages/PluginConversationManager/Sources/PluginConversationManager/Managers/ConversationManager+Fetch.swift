@@ -78,6 +78,14 @@ extension ConversationManager {
         await store?.conversationProjectCount() ?? 0
     }
 
+    /// 指定项目下、仍有活动的会话 ID。
+    ///
+    /// 走存储层查询而不是内存摘要：摘要列表未必已全量加载，
+    /// 用它筛会话会漏掉「已落库但未进入缓存」的会话。
+    public func conversationIDs(projectPath: String, updatedSince: Date? = nil) async -> [String] {
+        await store?.conversationIDs(projectPath: projectPath, updatedSince: updatedSince) ?? []
+    }
+
     /// Fetch daily conversation counts without loading conversation summaries.
     func fetchDailyCountSeries() async -> ConversationDailyCountSeries {
         await store?.fetchDailyCountSeries() ?? ConversationDailyCountSeries(points: [])
