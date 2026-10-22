@@ -35,44 +35,64 @@ struct ComputerUseSettingsView: View {
     }
 
     private var permissionsSection: some View {
-        AppSettingsSection(title: pluginLocalization.string("System Permissions"), subtitle: pluginLocalization.string("These permissions are required before Computer Use can operate."), spacing: 8) {
-            HStack(spacing: 8) {
-                permissionCard(title: pluginLocalization.string("Screen Recording"), detail: pluginLocalization.string("Allows Lumi to capture the selected application window."), granted: screenRecordingAllowed, icon: "rectangle.dashed.and.paperclip") {
+        AppSettingSection(
+            title: pluginLocalization.string("System Permissions"),
+            footer: pluginLocalization.string("These permissions are required before Computer Use can operate."),
+            titleAlignment: .leading
+        ) {
+            VStack(spacing: 0) {
+                permissionRow(
+                    title: pluginLocalization.string("Screen Recording"),
+                    detail: pluginLocalization.string("Allows Lumi to capture the selected application window."),
+                    granted: screenRecordingAllowed,
+                    icon: "rectangle.dashed.and.paperclip"
+                ) {
                     ComputerUsePermissionService.requestScreenRecordingPermission(); refresh()
                 }
-                permissionCard(title: pluginLocalization.string("Accessibility"), detail: pluginLocalization.string("Allows Lumi to click, type, scroll, and navigate."), granted: accessibilityAllowed, icon: "accessibility") {
+                Divider()
+                    .padding(.vertical, 8)
+                permissionRow(
+                    title: pluginLocalization.string("Accessibility"),
+                    detail: pluginLocalization.string("Allows Lumi to click, type, scroll, and navigate."),
+                    granted: accessibilityAllowed,
+                    icon: "accessibility"
+                ) {
                     ComputerUsePermissionService.requestAccessibilityPermission(); refresh()
                 }
             }
         }
     }
 
-    private func permissionCard(title: String, detail: String, granted: Bool, icon: String, request: @escaping () -> Void) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: icon).foregroundStyle(granted ? theme.success : theme.warning).frame(width: 24)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(.appCaptionEmphasized)
-                Text(detail).font(.appMicro).foregroundStyle(theme.textSecondary)
+    private func permissionRow(title: String, detail: String, granted: Bool, icon: String, request: @escaping () -> Void) -> some View {
+        AppSettingRow(
+            title: title,
+            description: detail,
+            icon: icon,
+            titleSuffix: {
+                Image(systemName: granted ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .foregroundStyle(granted ? theme.success : theme.warning)
             }
-            Spacer(minLength: 4)
-            if granted { Image(systemName: "checkmark.circle.fill").foregroundStyle(theme.success) }
-            else { AppButton(pluginLocalization.string("Grant Access"), size: .small, action: request) }
+        ) {
+            if granted {
+                EmptyView()
+            } else {
+                AppButton(pluginLocalization.string("Grant Access"), style: .secondary, size: .small, action: request)
+            }
         }
-        .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-        .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(theme.divider, lineWidth: 0.5) }
     }
 
     private var applicationsSection: some View {
-        AppSettingsSection(title: pluginLocalization.string("Allowed Applications"), subtitle: pluginLocalization.string("Select an application to manage its Computer Use access."), spacing: 0) {
+        AppSettingSection(
+            title: pluginLocalization.string("Allowed Applications"),
+            footer: pluginLocalization.string("Select an application to manage its Computer Use access."),
+            titleAlignment: .leading
+        ) {
             HStack(spacing: 0) {
                 applicationList.frame(width: 300)
                 AppDivider(.vertical)
-                applicationDetail.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                applicationDetail.frame(maxWidth: .infinity, alignment: .topLeading)
             }
-            .frame(minHeight: 300, maxHeight: .infinity)
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(theme.divider, lineWidth: 1) }
+            .frame(minHeight: 300)
         }
     }
 

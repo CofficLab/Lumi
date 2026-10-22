@@ -273,6 +273,40 @@
         }
       }
     },
+    "Control which applications Lumi can observe and interact with.": {
+      "localizations": {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Control which applications Lumi can observe and interact with."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "控制 Lumi 可以观察和操作哪些应用。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "控制 Lumi 可以觀察和操作哪些應用程式。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "控制 Lumi 可以觀察和操作哪些應用程式。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "控制 Lumi 可以觀察和操作哪些應用程式。"
+          }
+        }
+      }
+    },
     "Control of {app} is not allowed. Add it under Lumi Settings > Computer Use.": {
       "localizations": {
         "en": {
@@ -409,6 +443,40 @@
         }
       }
     },
+    "Select an application to manage its Computer Use access.": {
+      "localizations": {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select an application to manage its Computer Use access."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择要管理 Computer Use 访问权限的应用。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇要管理 Computer Use 存取權限的應用程式。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇要管理 Computer Use 存取權限的應用程式。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇要管理 Computer Use 存取權限的應用程式。"
+          }
+        }
+      }
+    },
     "Screen Recording": {
       "localizations": {
         "en": {
@@ -507,6 +575,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "系統權限"
+          }
+        }
+      }
+    },
+    "These permissions are required before Computer Use can operate.": {
+      "localizations": {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "These permissions are required before Computer Use can operate."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用 Computer Use 前需要授予以下权限。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用 Computer Use 前需要授予以下權限。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用 Computer Use 前需要授予以下權限。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用 Computer Use 前需要授予以下權限。"
           }
         }
       }
