@@ -145,4 +145,55 @@ struct ComputerUseAuthorizationCardVisibilityTests {
 
         #expect(!renderer.canRender(toolCall: completed))
     }
+
+    /// Computer Use 卡片必须先于通用授权卡片被选中。
+    ///
+    /// 渲染器按优先级降序取第一个 `canRender` 为真的（见
+    /// `ToolCallRenderingProviding.renderer(for:)`）。Computer Use 的优先级
+    /// 是 200，高于通用授权卡片的 120——这个顺序不能被破坏，否则
+    /// 「允许一次 / 始终允许 / 拒绝」会退化成「允许 / 拒绝」两按钮。
+    ///
+    /// 这条同时锁住通用渲染器不抢占：通用渲染器只接受
+    /// `kind == "permission"` 的载荷，Computer Use 载荷是
+    /// `computer_use_authorization`，两者不会互相误判。
+    @Test("Computer Use 授权卡片优先于通用授权卡片")
+    func computerUseCardOutranksGenericApproval() throws {
+        let (store, directory) = makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let coordinator = ComputerUseAuthorizationCoordinator(authorization: store)
+        let renderer = ComputerUseAuthorizationRowRenderer(coordinator: coordinator)
+
+        #expect(ComputerUseAuthorizationRowRenderer.priority > 120)
+
+        // A3 场景的挂起调用：载荷是 Computer Use 授权请求。
+        var suspended = ToolCall(
+            id: "call-priority",
+            name: "accessibility_observe",
+            arguments: #"{"application":"App Store"}"#,
+            result: coordinator.pendingResult(
+                applicationName: "App Store",
+                bundleIdentifier: "com.apple.AppStore",
+                operation: "accessibility_observe"
+            )
+        )
+        suspended.authorizationState = .autoApproved
+
+        // 通用授权卡片只接管 `kind == "permission"` 的载荷，
+        // 因此不会抢走 Computer Use 的授权请求。
+        let genericPayload = #"{"toolCallId":"approval:call-priority","kind":"permission","question":"是否允许执行？","options":["允许","拒绝"],"mode":"yes_no"}"#
+        let genericRequest = try #require(
+            try? JSONDecoder().decode(
+                GenericApprovalPayloadProbe.self,
+                from: Data(genericPayload.utf8)
+            )
+        )
+        #expect(genericRequest.kind == "permission")
+        #expect(genericRequest.kind != ComputerUseAuthorizationRequest.kind)
+        #expect(renderer.canRender(toolCall: suspended))
+    }
+}
+
+/// 通用授权载荷的最小探针：只用于断言两套载荷的 `kind` 不相同。
+private struct GenericApprovalPayloadProbe: Decodable {
+    let kind: String
 }
