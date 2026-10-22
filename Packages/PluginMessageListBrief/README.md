@@ -66,6 +66,11 @@ Sources/PluginMessageListBrief/
   这样 turn 的投影在一次回合内是**稳定快照**，不会随 token 增长反复重建富文本。
 - **发送后定位到视口上 1/4**（`MessageListSendPositioning.targetTopFraction == 0.25`）
   贴底会把新 turn 藏在输入区后面；回合结束后再收敛回真实底部，预留空间随之消失。
+- **消息窗口有上限（`maxRetainedCount = 300`），回收按 turn 整段裁且保护最新 turn**
+  翻页把更早一页整段加进窗口，不回收的话长会话会把整个会话拉进内存（实测 2000 条时，
+  三条大数据量用例耗时从 60s 降到 5s）。回收不能只按条数裁：brief 视图的行由窗口消息
+  按 `turnID` 聚合，裁半个 turn 会让那行显示成残缺内容；最新 turn 是用户当前所在的对话，
+  裁掉会让当前对话整行消失。裁掉的段落在下次尾部刷新时由空档回填接回，不会永久丢失。
 - **`#if DEBUG` 守卫必须覆盖整个函数体**
   `MessageListBriefUITestingSupport` 只在 DEBUG 存在，引用点必须同等包裹，
   否则 Release 构建报 `cannot find '...' in scope`。
@@ -138,6 +143,8 @@ Adapter 在插件入口 `onBoot(kernel:)` 中构造并注入；Observer 仍使�
 | 4.4 | Click repeatedly while a load is in flight | No duplicate or skipped turns. | ✅ `ListPresentationTests.loadEarlierDoesNotDuplicateWhenReentrant` |
 | 4.5 | Keep loading until the history runs out | The button disappears once no earlier history is left. | ✅ `ListPresentationTests.loadEarlierHidesButtonWhenExhausted` + `MessageListServicesTests.loadEarlierExhaustsAtTop` |
 | 4.6 | Switch conversations and come back | The button reappears if earlier history still exists, and the list returns to the bottom. | ✅ `ListPresentationTests.switchConversationClearsState` |
+| 4.7 | Keep clicking `Load earlier messages` long past the first page | The in-memory window stays capped (300 messages) instead of growing with the conversation; the newest turn never disappears from the list, and no turn is left half-rendered. | ✅ `ListV1LargeDataTests.windowStaysBoundedWhilePaging` / `evictionKeepsNewestTurnMessages` |
+| 4.8 | After the window was trimmed, trigger a refresh (new message arrives) | The trimmed middle segment comes back — no message is permanently missing from the list. | ✅ `ListV1LargeDataTests.refreshBackfillsTheEvictedGap` |
 
 ### 5. Scrolling behaviour
 

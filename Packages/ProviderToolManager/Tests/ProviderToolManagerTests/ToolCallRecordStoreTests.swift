@@ -48,9 +48,54 @@ struct ToolCallRecordStoreTests {
         #expect(byCallID?.duration == 0.5)
     }
 
-    @Test("deleteAll 删除记录并阻止后续写入")
-    func deleteAll() async throws {
+    /// 批量查询必须只返回指定 turn 的记录。
+    ///
+    /// 谓词写错（例如 `turnID ?? ""`）时 CoreData 无法生成 SQL，运行时直接
+    /// abort；谓词写得太宽则会多带出别的 turn 的记录。这条用例同时锁住
+    /// 「不崩」与「过滤精确」两件事。
+    @Test("批量按 turnID 查询只返回指定 turn 的记录")
+    func fetchRecordsForTurnIDs() async throws {
         let (store, dir) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let conversationID = UUID()
+        let wantedTurn = UUID()
+        let otherTurn = UUID()
+        let plan: [(String, UUID?)] = [
+            ("call-a1", wantedTurn),
+            ("call-a2", wantedTurn),
+            ("call-b1", otherTurn),
+            ("call-none", nil)
+        ]
+        for (toolCallID, turnID) in plan {
+            await store.record(
+                toolCallID: toolCallID,
+                toolName: "tool",
+                toolDisplayName: "tool",
+                turnID: turnID,
+                conversationID: conversationID,
+                createdAt: Date(),
+                startedAt: Date(),
+                completedAt: nil,
+                duration: nil,
+                argumentsJSON: "{}",
+                resultContent: toolCallID,
+                resultIsError: false,
+                riskLevel: "low"
+            )
+        }
+
+        let fetched = await store.fetchRecords(forTurnIDs: [wantedTurn])
+
+        #expect(fetched.count == 2)
+        #expect(Set(fetched.map(\.toolCallID)) == ["call-a1", "call-a2"])
+        #expect(fetched.allSatisfy { $0.turnID == wantedTurn })
+        #expect(await store.fetchRecords(forTurnIDs: []).isEmpty)
+        #expect(await store.fetchRecords(forTurnIDs: [wantedTurn, otherTurn]).count == 3)
+    }
+
+    @Test("deleteAll 删除记录并阻止后续写入")
+    func deleteAll() async throws {        let (store, dir) = try makeStore()
         defer { try? FileManager.default.removeItem(at: dir) }
 
         let conversationID = UUID()
