@@ -56,6 +56,38 @@ struct ResumeDesignerSuite {
         pairs.mapValues { ToolArgument($0) }
     }
 
+    @Test("加入项目不预建存储目录，真正写入时才创建")
+    func doesNotCreateStorageDirectoryUntilWrite() throws {
+        ResumeDesignerRuntime.reset()
+        let projectRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("resume-lazy-dir-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
+        defer {
+            ResumeDesignerRuntime.reset()
+            try? FileManager.default.removeItem(at: projectRoot)
+        }
+
+        let storage = projectRoot
+            .appendingPathComponent(".lumi", isDirectory: true)
+            .appendingPathComponent(ResumeDesignerRuntime.projectFolderName, isDirectory: true)
+
+        ResumeDesignerRuntime.setProjectStorage(projectPath: projectRoot.path, projectStorageDirectory: storage)
+
+        // 仅打开项目不应留下空目录。
+        #expect(!FileManager.default.fileExists(atPath: storage.path))
+        #expect(WorkspaceStore.shared.projectResumes.isEmpty)
+
+        // 真正创建简历时才创建目录。
+        _ = try WorkspaceStore.shared.documentStore.createResume(
+            storagePath: WorkspaceStore.shared.projectStoragePath,
+            slug: "lazy-resume",
+            title: "Lazy Resume",
+            paper: .a4,
+            template: .classic
+        )
+        #expect(FileManager.default.fileExists(atPath: storage.path))
+    }
+
     @Test("启动后注册 ActivityBar 入口、Rail 标签与 Docs 文档，停止后全部撤回")
     func registersAndActivatesContributions() async throws {
         let kernel = KernelCoreContainer()
