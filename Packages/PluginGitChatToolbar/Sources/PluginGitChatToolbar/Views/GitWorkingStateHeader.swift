@@ -25,11 +25,14 @@ struct GitWorkingStateHeader: View {
                 Text("·")
                     .font(.system(size: 10))
                     .foregroundStyle(theme.textTertiary)
-                Text(repositoryPath)
-                    .font(.system(size: 10))
-                    .foregroundStyle(theme.textSecondary)
-                    .lineLimit(1)
-                    .truncationMode(.head)
+
+                // 仓库路径过长时横向滚动查看完整路径。
+                GitPathText(
+                    path: repositoryPath,
+                    font: .system(size: 10),
+                    color: theme.textSecondary
+                )
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             Spacer(minLength: 0)
