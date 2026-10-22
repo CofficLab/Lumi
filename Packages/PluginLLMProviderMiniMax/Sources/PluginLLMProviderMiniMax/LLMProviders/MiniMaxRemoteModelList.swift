@@ -77,17 +77,23 @@ struct MiniMaxRemoteModelListLoader: Sendable {
     /// - 远程新增的 id 追加在静态清单之后；
     /// - 远程新增模型若尚未带元数据，在此按家族补全——`merge` 是唯一入口，
     ///   不能依赖调用方一定走 `parse`；
-    /// - 远程返回为空时等价于返回静态清单。
+    /// - **清单有但远程缺席**的模型会被标记 `isRetired`：上游已下线，但清单
+    ///   仍保留它作为离线兜底底座，UI 据此做视觉区分（不隐藏）；
+    /// - 远程返回为空时等价于返回静态清单，且**不标记任何退役**——此时没有
+    ///   任何上游信息，标记会把全部模型误判为已下线。
     static func merge(base: [LLMModelInfo], remote: [LLMModelInfo]) -> [LLMModelInfo] {
         guard !remote.isEmpty else { return base }
 
-        let baseIDs = Set(base.map(\.id))
-        var seen = baseIDs
-        var merged = base
+        let remoteIDs = Set(remote.map(\.id))
+        // 清单模型缺席于远程列表 → 上游已下线，标记退役（保留在列表中作为
+        // 离线兜底底座，UI 据此做视觉区分）。
+        var merged = base.map { model in
+            remoteIDs.contains(model.id) ? model : Self.markingRetired(model)
+        }
 
+        let seen = Set(base.map(\.id))
         for model in remote where !seen.contains(model.id) {
             merged.append(Self.enriching(model))
-            seen.insert(model.id)
         }
         return merged
     }
@@ -105,6 +111,19 @@ struct MiniMaxRemoteModelListLoader: Sendable {
             supportsStreaming: model.supportsStreaming,
             supportsVision: model.supportsVision || family.supportsVision,
             supportsTools: model.supportsTools
+        )
+    }
+
+    /// 把模型标记为「上游已不再提供」。
+    private static func markingRetired(_ model: LLMModelInfo) -> LLMModelInfo {
+        LLMModelInfo(
+            id: model.id,
+            displayName: model.displayName,
+            contextWindowSize: model.contextWindowSize,
+            supportsStreaming: model.supportsStreaming,
+            supportsVision: model.supportsVision,
+            supportsTools: model.supportsTools,
+            isRetired: true
         )
     }
 }
