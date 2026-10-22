@@ -90,24 +90,75 @@ struct ItemView: View {
                     Text(conversation.lastMessageAt.relativeTime)
                         .font(.footnote)
                         .foregroundColor(theme.textTertiary)
-
-                    if let automationLevel = conversation.automationLevel {
-                        Text("·")
-                            .foregroundColor(theme.textTertiary)
-
-                        Label(automationLevel.displayName, systemImage: automationLevel.iconName)
-                            .labelStyle(.titleAndIcon)
-                            .font(.footnote)
-                            .foregroundColor(theme.textTertiary)
-                            .lineLimit(1)
-                    }
                 }
             }
 
             Spacer()
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(automationLevelWatermark)
         .overlay(alignment: .topTrailing) {
             statusIndicator
+        }
+    }
+
+    // MARK: - 自动化程度水印
+
+    /// 自动化程度图标作为整张卡片的背景水印。
+    ///
+    /// ## 为什么做成背景而不是第三行的一枚图标
+    ///
+    /// 自动化等级只有三档（对话 / 构建 / 自主），是**整张卡片的属性**而不是
+    /// 某一行的元信息。放在第三行末尾时，它既挤占了一行高度，又因为行尾
+    /// 位置而被误读成「项目」或「时间」的一部分。
+    ///
+    /// 改为水印后：
+    /// - 第三行只保留「项目 · 时间」，语义更纯粹；
+    /// - 等级信息以背景存在，一眼扫过整列列表即可区分，无需逐行阅读文字。
+    ///
+    /// ## 为什么是「右对齐 + 轻微裁切」而不是铺满
+    ///
+    /// 卡片是**宽而矮**的（典型 340×62），而 SF Symbol 是正方形。若用
+    /// `.fill` 铺满，图标会被放大到 340×340 再裁切，露出的只是中段一条色带 ——
+    /// 完全认不出是哪个图标，等于白画。
+    ///
+    /// 因此改为：按 `fit` 等比缩放到略高于卡高（约 1.4×），右对齐并裁掉超出部分。
+    /// 这样图标**完整可辨**（仍然是「自主」的盾牌），只是上下被切一点，
+    /// 视觉上比卡内小图标更饱满，又不会像铺满那样退化成色块。
+    ///
+    /// ## 其他实现要点
+    ///
+    /// 1. `GeometryReader` 提供卡片实际尺寸 —— 卡片高度由文字决定、随内容变化，
+    ///    写死尺寸会在长标题换行时错位。
+    /// 2. `allowsHitTesting(false)` 保证水印不吞掉行的点击与右键菜单。
+    /// 3. 透明度压到 `0.10`：水印只需在余光中提示等级，不能与标题争夺注意力。
+    @ViewBuilder
+    private var automationLevelWatermark: some View {
+        if let level = conversation.automationLevel {
+            GeometryReader { proxy in
+                HStack {
+                    Spacer()
+                    Image(systemName: level.iconName)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: proxy.size.height * 1.4)
+                        .foregroundStyle(watermarkColor(for: level))
+                        .opacity(0.10)
+                }
+                .frame(width: proxy.size.width, height: proxy.size.height)
+                .clipped()
+            }
+            .allowsHitTesting(false)
+        }
+    }
+
+    /// 水印配色，与工具栏的等级 chip（`AutomationLevelToolbarView`）保持同一语义：
+    /// 对话=青、构建=橙、自主=绿。
+    private func watermarkColor(for level: AutomationLevel) -> Color {
+        switch level {
+        case .chat: .cyan
+        case .build: .orange
+        case .autonomous: .green
         }
     }
 
@@ -171,4 +222,40 @@ struct ItemView: View {
             .fill(color)
             .frame(width: 6, height: 6)
     }
+}
+
+// MARK: - 预览
+
+/// 预览三档自动化等级下的会话卡片，用于目视检查水印效果。
+#Preview("会话卡片 · 自动化等级水印") {
+    VStack(spacing: 4) {
+        ForEach(AutomationLevel.allCases) { level in
+            ItemView(
+                conversation: ConversationSummary(
+                    id: UUID(),
+                    title: "MiniMax 刷新模型后的默认上下文大小",
+                    preview: "",
+                    createdAt: Date(),
+                    updatedAt: Date(),
+                    verbosity: .standard,
+                    reasoningEffort: nil,
+                    language: .chinese,
+                    automationLevel: level,
+                    providerID: "minimax-tokenpl",
+                    modelName: "MiniMax-M3.1-Fl",
+                    projectPath: "/Users/colorfy/Code/CofficLab/Lumi",
+                    parentConversationID: nil
+                ),
+                conversationState: nil,
+                isSelected: false,
+                needsAttention: false,
+                onSelect: {},
+                onDelete: {}
+            )
+        }
+    }
+    .padding(.horizontal, 8)
+    .padding(.vertical, 4)
+    .frame(width: 340)
+    .background(Color.gray.opacity(0.12))
 }
