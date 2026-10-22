@@ -29,6 +29,12 @@ public final class ComputerUsePlugin: SuperPlugin, PluginDataMigrating, SuperLog
     /// 目录名未变过，无需版本根搬迁。
     public let legacyDataDirectoryNames: [String] = []
 
+    /// Computer Use 在设置侧边栏中的入口 ID。
+    ///
+    /// 设置入口与「打开 Lumi 设置」深链共用同一个 ID：后者通过
+    /// `SettingViewNavigation` 通知把 ID 传回宿主，宿主据此选中该入口。
+    public static let settingsEntryID = "com.coffic.lumi.plugin.computer-use.settings"
+
     private var settingsState: ComputerUseSettingsState?
     private var activationObserver: ApplicationActivationObserver?
 
@@ -88,7 +94,7 @@ public final class ComputerUsePlugin: SuperPlugin, PluginDataMigrating, SuperLog
         )
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
-                id: "\(id).settings",
+                id: Self.settingsEntryID,
                 title: pluginLocalization.string("Computer Use"),
                 systemImage: "cursorarrow.motionlines",
                 order: order
@@ -100,6 +106,11 @@ public final class ComputerUsePlugin: SuperPlugin, PluginDataMigrating, SuperLog
         ComputerUseAuthorizationBridge.shared.start(kernel: kernel)
         kernel.resolveProvider((any ToolCallRenderingProviding).self)?.register(
             ComputerUseAuthorizationRowRenderer()
+        )
+        // 系统权限提示卡：工具因缺少辅助功能/屏幕录制权限失败时，
+        // 在消息列表里给出直达系统设置与 Lumi 设置的按钮。
+        kernel.resolveProvider((any ToolCallRenderingProviding).self)?.register(
+            ComputerUseSystemPermissionRowRenderer()
         )
     }
 
@@ -114,11 +125,14 @@ public final class ComputerUsePlugin: SuperPlugin, PluginDataMigrating, SuperLog
         kernel.resolveProvider((any ToolCallRenderingProviding).self)?.unregister(
             id: ComputerUseAuthorizationRowRenderer.id
         )
+        kernel.resolveProvider((any ToolCallRenderingProviding).self)?.unregister(
+            id: ComputerUseSystemPermissionRowRenderer.id
+        )
         ComputerUseAuthorizationBridge.shared.stop()
         activationObserver?.cancel()
         activationObserver = nil
         settingsState = nil
-        kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: ["\(id).settings"])
+        kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [Self.settingsEntryID])
     }
 }
 
