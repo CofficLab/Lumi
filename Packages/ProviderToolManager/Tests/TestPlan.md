@@ -2,10 +2,10 @@
 
 ## 包概述
 
-ProviderToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 34 条用例。
+ProviderToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 35 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 34
+测试文件: 6 个，用例总数: 35
 
 ## 公开 API
 
@@ -31,7 +31,7 @@ ProviderToolManager 的实现包，包含 14 个主要类型；当前测试覆�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **DefaultToolManagerProviding**（13 条）：由 `executeSuccess`、`executePassesConversationContext`、`executeNotifiesObservers` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ToolCallRecordStore**（3 条）：由 `recordAndFetch`、`deleteAll`、`count` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ToolCallRecordStore**（4 条）：由 `recordAndFetch`、`deleteAll`、`count` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolJobRecordStore**（3 条）：由 `upsertAndFetchLifecycle`、`queryAndDeleteByScope`、`outputIsBounded` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolJob**（4 条）：由 `terminalStatuses`、`validTransitions`、`codableRoundTrip` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolManagerProviding**（11 条）：由 `addAndOrder`、`addMigratesOwnership`、`groupedByPlugin` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -74,27 +74,28 @@ ProviderToolManager 的实现包，包含 14 个主要类型；当前测试覆�
 | 32 | ToolManagerProviding | decode 保留 JSON 原始类型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `decodeTypes` |
 | 33 | ToolManagerProviding | decode 非对象 JSON 抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `decodeNonObjectThrows` |
 | 34 | ToolManagerProviding | encode 往返一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `encodeRoundTrip` |
+| 35 | ToolCallRecordStore | 批量按 turnID 查询只返回指定 turn 的记录 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fetchRecordsForTurnIDs` |
 
-> 说明：全部 **34 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **35 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
+- P0: 已覆盖 4 / 4
 - P1: 已覆盖 30 / 30
 - P2: 已覆盖 1 / 1
-- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
+- **合计: 35 / 35**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
 - **P1**: 其余功能性用例（30 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 34 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 35 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
