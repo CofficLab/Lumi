@@ -91,6 +91,39 @@ struct AppStorePromoDesignerPluginTests {
         #expect(tool.permissionRiskLevel(arguments: ["overwrite": ToolArgument(true)]) == .high)
     }
 
+    @Test("加入项目不预建存储目录，真正写入时才创建")
+    func doesNotCreateStorageDirectoryUntilWrite() throws {
+        PromoDesignerRuntime.reset()
+        let projectRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("promo-lazy-dir-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
+        defer {
+            PromoDesignerRuntime.reset()
+            try? FileManager.default.removeItem(at: projectRoot)
+        }
+
+        let storage = projectRoot
+            .appendingPathComponent(".lumi", isDirectory: true)
+            .appendingPathComponent(PromoDesignerRuntime.projectFolderName, isDirectory: true)
+
+        PromoDesignerRuntime.setProjectStorage(projectPath: projectRoot.path, projectStorageDirectory: storage)
+
+        // 仅打开项目不应留下空目录。
+        #expect(!FileManager.default.fileExists(atPath: storage.path))
+        #expect(WorkspaceStore.shared.projectTasks.isEmpty)
+
+        // 真正创建任务时才创建目录。
+        _ = try WorkspaceStore.shared.documentStore.createTask(
+            storagePath: WorkspaceStore.shared.projectStoragePath,
+            slug: "lazy-task",
+            title: "Lazy Task",
+            appName: "Lumi",
+            deviceFamily: .iphone,
+            localeIdentifier: "en-US"
+        )
+        #expect(FileManager.default.fileExists(atPath: storage.path))
+    }
+
     @Test func agentToolsCreateTaskWithMultipleImagesAndPersistInProjectStorage() async throws {
         PromoDesignerRuntime.reset()
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
