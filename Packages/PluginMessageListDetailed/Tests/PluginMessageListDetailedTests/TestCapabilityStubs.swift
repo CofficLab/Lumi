@@ -50,10 +50,19 @@ final class StubToolManagerCapability: MessageListToolManagerCapability {
     var recordsByTurn: [UUID: [ToolCallRecord]] = [:]
     private(set) var cancelledTurnIDs: [UUID] = []
     private(set) var queriedTurnIDs: [UUID] = []
+    private(set) var toolCallsRequestCount = 0
 
     func toolCalls(for turnID: UUID) async -> [ToolCallRecord] {
+        toolCallsRequestCount += 1
         queriedTurnIDs.append(turnID)
         return recordsByTurn[turnID] ?? []
+    }
+
+    /// 批量查询算作**一次**请求 —— 真实实现走一条存储查询。
+    func toolCalls(forTurnIDs turnIDs: [UUID]) async -> [ToolCallRecord] {
+        toolCallsRequestCount += 1
+        queriedTurnIDs.append(contentsOf: turnIDs)
+        return turnIDs.flatMap { recordsByTurn[$0] ?? [] }
     }
 
     func cancelJobs(forTurnID turnID: UUID) {

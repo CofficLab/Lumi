@@ -177,7 +177,60 @@ func paginationRefreshesOnlyAnOverlappingTail() async {
 }
 
 @MainActor
-@Test("空窗口首刷补查 earlier，尾部回收只在离开底部时执行")
+@Test("尾部刷新回填空档后，窗口必须保持时间升序且无重复")
+func paginationBackfillsGapKeepingWindowOrdered() async {
+    let conversationID = UUID()
+    let base = Date(timeIntervalSince1970: 1_700_000_000)
+    let window = (0..<2).map { index in
+        makeMessage(
+            conversationID: conversationID,
+            role: .user,
+            content: "w\(index)",
+            createdAt: base.addingTimeInterval(Double(index))
+        )
+    }
+    let gap = (0..<2).map { index in
+        makeMessage(
+            conversationID: conversationID,
+            role: .user,
+            content: "g\(index)",
+            createdAt: base.addingTimeInterval(Double(2 + index))
+        )
+    }
+    let page = (0..<2).map { index in
+        makeMessage(
+            conversationID: conversationID,
+            role: .user,
+            content: "p\(index)",
+            createdAt: base.addingTimeInterval(Double(4 + index))
+        )
+    }
+    // 本地刚插入、还没落库的消息：不在最近一页里，但必须留在窗口末尾。
+    let pending = makeMessage(
+        conversationID: conversationID,
+        role: .user,
+        content: "pending",
+        createdAt: base.addingTimeInterval(6)
+    )
+
+    let manager = StubMessageListMessageCapability(page: page, earlierPage: gap)
+    let service = MessageListPaginationService(pageSize: 2, maxRetainedCount: 10)
+
+    let result = await service.refreshTail(
+        conversationID: conversationID,
+        messageManager: manager,
+        current: window + [pending]
+    )
+    let ids = result?.merged.map(\.id) ?? []
+    let timestamps = result?.merged.map(\.createdAt) ?? []
+
+    #expect(ids == (window + gap + page + [pending]).map(\.id))
+    #expect(timestamps == timestamps.sorted(), "回填后的窗口必须保持时间升序")
+    #expect(Set(ids).count == ids.count, "回填后的窗口不得出现重复消息")
+}
+
+@MainActor
+@Test("空窗口首刷补查 earlier，窗口超上限时一律回收尾部")
 func paginationInitialRefreshAndTailEviction() async {
     let conversationID = UUID()
     let page = (0..<2).map { index in
@@ -190,13 +243,14 @@ func paginationInitialRefreshAndTailEviction() async {
     let service = MessageListPaginationService(pageSize: 2, maxRetainedCount: 2)
 
     let initial = await service.refreshTail(conversationID: conversationID, messageManager: manager, current: [])
-    let atBottom = service.evictTailIfNeeded(messages: retained, isAtBottom: true)
-    let awayFromBottom = service.evictTailIfNeeded(messages: retained, isAtBottom: false)
+    let overLimit = service.evictTailIfNeeded(messages: retained)
+    let withinLimit = service.evictTailIfNeeded(messages: Array(retained.prefix(2)))
 
     #expect(initial?.merged.map(\.id) == page.map(\.id))
     #expect(initial?.hasEarlierMessages == true)
-    #expect(atBottom.map(\.id) == retained.map(\.id))
-    #expect(awayFromBottom.map(\.id) == retained.prefix(2).map(\.id))
+    // 窗口上限无条件生效：超限时回收尾部，未超限时原样返回。
+    #expect(overLimit.map(\.id) == retained.prefix(2).map(\.id))
+    #expect(withinLimit.map(\.id) == retained.prefix(2).map(\.id))
 }
 
 @MainActor

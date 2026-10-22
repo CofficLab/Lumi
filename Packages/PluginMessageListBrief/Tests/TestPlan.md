@@ -58,6 +58,11 @@ PluginMessageListBrief 是消息列表 V1（Brief 模式）的实现包。它按
 - **流式回复不入 turn**：回合进行中 `lastMessage` 为 nil，实时进度仅由底部状态卡汇报
 - **发送后上 1/4 定位**：新 turn 顶部对齐视口 25% 处（`targetTopFraction == 0.25`）
 - **翻页无跳动**：prepend 后原顶部 turn 保持位置（`postPrependDelayNs == 50ms`）
+- **消息窗口有上限且回收按 turn 整段**：窗口上限 `maxRetainedCount = 300`。
+  翻页把更早一页整段加进窗口，不回收的话长会话会把整个会话拉进内存。
+  回收不能只按条数裁 —— brief 视图的行由窗口消息按 `turnID` 聚合，裁半个 turn
+  会让那行显示成残缺内容；最新 turn 是用户当前所在的对话，裁掉会让当前对话整行消失。
+  裁掉的段落在下次尾部刷新时由空档回填接回，不会永久丢失
 - **Activity 生命周期**：agent loop 进入端态（completed / failed / cancelled）后
   activity projection 立即为 nil；切换会话时 activity 被清空
 - **装配降级**：缺 Provider 时不注册 ChatSection 项，不抛错
@@ -131,6 +136,25 @@ PluginMessageListBrief 是消息列表 V1（Brief 模式）的实现包。它按
 | 63 | Verbosity | verbosity 变化时刷新 verbosity 框 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `verbosityBoxRefreshesOnVerbosityChange` |
 | 64 | Verbosity | verbosity 框激活态跟随 verbosity 值 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `verbosityBoxIsActiveFollowsVerbosity` |
 | 65 | Verbosity | verbosity 框 cancel 后停止刷新 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `verbosityBoxCancelStopsRefresh` |
+| 66 | InitialPositionGate | 首屏就绪：收敛成功后放行 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gateBecomesReadyAfterSuccessfulSettle` |
+| 67 | InitialPositionGate | 首屏就绪：同一会话重复请求被去重 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gateDeduplicatesSameConversation` |
+| 68 | InitialPositionGate | 首屏就绪：切换会话作废上一轮等待，不被旧结果污染 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gateDiscardsPreviousConversationOnSwitch` |
+| 69 | InitialPositionGate | 首屏就绪：相关性失效时不置为就绪 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateIgnoresResultWhenNoLongerRelevant` |
+| 70 | InitialPositionGate | 首屏就绪：收敛失败也在预算内放行，绝不永久卡死 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateReleasesEvenWhenSettleFails` |
+| 71 | InitialPositionGate | 首屏就绪：收敛挂死时由超时兜底放行 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateReleasesWhenSettleHangs` |
+| 72 | InitialPositionGate | 首屏就绪：会话切换复位后不再就绪 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gateResetClearsReady` |
+| 73 | InitialPositionGate | 首屏遮罩：会话切换的复位不得作废已在当前会话上启动的收敛 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateResetMustNotCancelConvergenceAlreadyStarted` |
+| 74 | InitialPositionGate | 首屏遮罩：复位不得让已失效的旧一轮放行遮罩 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateResetMustNotReleaseMaskFromStaleRound` |
+| 75 | InitialPositionGate | 首屏就绪：没有选中会话时直接就绪 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gateWithoutConversationIsImmediatelyReady` |
+| 76 | ListV1LargeData | 窗口回收不得裁掉最新 turn 的消息 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `evictionKeepsNewestTurnMessages` |
+| 77 | ListV1LargeData | 翻页裁剪窗口后，刷新必须把中间段消息接回来 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `refreshBackfillsTheEvictedGap` |
+| 78 | ListV1LargeData | 持续翻页时内存窗口不得无上限增长 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `windowStaysBoundedWhilePaging` |
+| 79 | MessageListStateLifetime | 简洁模式消息列表视图：首屏就绪必须由带超时兜底的编排器承载 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listViewMustCarryInitialPositionGate` |
+| 80 | MessageListStateLifetime | 简洁模式消息列表视图：运行时状态容器必须由 StateObject 承载 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listViewMustCarryRuntimeInStateObject` |
+| 81 | MessageListStateLifetime | 简洁模式消息列表视图：不得用普通存储属性持有引用类型状态 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listViewMustNotHoldReferenceStateInPlainStoredProperty` |
+| 82 | MessageListStateLifetime | 简洁模式运行时容器：必须持有底部标记、滚动协调器与底部几何控制器 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimeCarriesAllThreeMembers` |
+| 83 | MessageListStateLifetime | 简洁模式运行时容器：成员在多次访问之间必须保持同一实例 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimeMembersKeepStableIdentity` |
+| 84 | MessageListStateLifetime | 简洁模式运行时容器：不得发布任何 @Published（避免重新打开 invalidation 反馈环） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimePublishesNothing` |
 
 ## 仅人工验收场景
 
@@ -159,17 +183,18 @@ PluginMessageListBrief 是消息列表 V1（Brief 模式）的实现包。它按
 
 ## 覆盖率统计
 
-- P0: 已覆盖 31 / 31
-- P1: 已覆盖 31 / 31
+- P0: 已覆盖 45 / 45
+- P1: 已覆盖 36 / 36
 - P2: 已覆盖 3 / 3
-- **合计: 65 / 65**（仅表示清单场景，非源码覆盖率）
+- **合计: 84 / 84**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 首次加载定位、turn 分组正确性、流式回复隔离、底部状态卡生命周期、
-  翻页无跳动/无重复、会话切换安全、发送后定位常量
+  翻页无跳动/无重复、会话切换安全、发送后定位常量、首屏遮罩编排、
+  运行时状态持有方式、窗口上限与回收规则
 - **P1**: Disclosure 摘要文本、activity 防闪烁、VM 投影发布、边界条件（空对话/单页）、
-  服务层拼接逻辑、ScrollCoordinator 常量
+  服务层拼接逻辑、ScrollCoordinator 常量、大数据量下的回填与窗口有序性
 - **P2**: `bottomAnchorID` 稳定性
 
 ## 跨平台说明

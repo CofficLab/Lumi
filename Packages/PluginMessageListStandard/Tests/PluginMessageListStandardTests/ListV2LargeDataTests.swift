@@ -103,7 +103,7 @@ struct ListV2LargeDataTests {
 
         // 用户一路向上翻页（不在底部）→ 触发尾部裁剪。
         for _ in 0..<10 {
-            _ = await harness.viewModel.loadEarlier(isAtBottom: false)
+            _ = await harness.viewModel.loadEarlier()
         }
 
         let afterPaging = harness.viewModel.persistedMessages
@@ -200,7 +200,7 @@ struct ListV2LargeDataTests {
 
         // 在底部连续翻页 50 次（每页 40 条 → 理论可涨到 2000）。
         for _ in 0..<50 {
-            _ = await harness.viewModel.loadEarlier(isAtBottom: true)
+            _ = await harness.viewModel.loadEarlier()
         }
 
         #expect(
@@ -290,7 +290,7 @@ struct ListV2LargeDataTests {
 
         // 模拟「翻到很长的历史」后的窗口规模。
         for _ in 0..<50 {
-            _ = await harness.viewModel.loadEarlier(isAtBottom: true)
+            _ = await harness.viewModel.loadEarlier()
         }
 
         let start = Date()

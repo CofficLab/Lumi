@@ -269,7 +269,7 @@ struct ListV3View: View {
     }
 
     private func loadEarlier(proxy: ScrollViewProxy) async {
-        guard let anchorID = await viewModel.loadEarlier(isAtBottom: runtime.atBottomBox.value) else { return }
+        guard let anchorID = await viewModel.loadEarlier() else { return }
         await runtime.scrollCoordinator.pinToAnchor(
             target: ProxyMessageListScrollingTarget(
                 proxy: proxy,
