@@ -38,6 +38,17 @@ public struct MarkdownBlockRenderer: View {
     /// keeping full Markdown parsing off the main thread's first render.
     @State private var blocks: [MarkdownBlock]
     @Environment(\.preferOuterScroll) private var preferOuterScroll
+    /// 宿主注入的代码高亮器；为空时回落到内置的 tree-sitter 实现。
+    @Environment(\.codeHighlightProvider) private var injectedHighlightProvider
+    @Environment(\.colorScheme) private var colorScheme
+
+    /// 实际生效的代码高亮器。
+    ///
+    /// 宿主（App / 插件）显式注入时以注入为准；没有注入时使用内置实现，
+    /// 保证所有 Markdown 代码块默认带语法高亮，而不是退化成纯文本。
+    private var highlightProvider: (any CodeHighlightProviding)? {
+        injectedHighlightProvider ?? TreeSitterCodeHighlightProvider.shared(for: colorScheme)
+    }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: theme.blockSpacing) {
@@ -47,6 +58,7 @@ public struct MarkdownBlockRenderer: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .foregroundStyle(theme.textColor ?? .primary)
+        .environment(\.codeHighlightProvider, highlightProvider)
         .task(id: markdown) {
             // 缓存命中(init 已填充)时 blocks 不会变,这里是一次廉价的不变赋值;
             // miss 时解析在后台线程完成(注意:`.task` 继承视图的 MainActor,
