@@ -55,6 +55,36 @@ struct BootstrapEnvironmentTests {
         #expect(verdict == .unknown)
     }
 
+    // MARK: - 实际探测
+
+    @Test("已存在的目录能探测到卷可用容量")
+    func probeExistingDirectory() throws {
+        let base = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("bootstrap-probe-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: base) }
+        try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+
+        let bytes = BootstrapEnvironment.availableBytes(at: base)
+        #expect(bytes != nil)
+        #expect((bytes ?? 0) > 0)
+    }
+
+    @Test("目标目录不存在时向上找到最近的存在祖先，不因路径缺失而放弃预检")
+    func probeWalksUpToExistingAncestor() throws {
+        let base = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("bootstrap-probe-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: base) }
+        try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+
+        // 全新安装时数据目录还不存在
+        let missing = base.appendingPathComponent("not-created-yet/deep", isDirectory: true)
+        #expect(!FileManager.default.fileExists(atPath: missing.path))
+
+        let bytes = BootstrapEnvironment.availableBytes(at: missing)
+        #expect(bytes != nil)
+        #expect((bytes ?? 0) > 0)
+    }
+
     // MARK: - 失败归因
 
     @Test("磁盘不足时归因为磁盘空间不足，而不是插件原始报错")
