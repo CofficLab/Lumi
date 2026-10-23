@@ -27,15 +27,12 @@ struct MessageEmptyStateView: View {
         _guideState = ObservedObject(wrappedValue: guideState)
     }
 
+    /// 空态标题。
+    ///
+    /// 统一为「我可以帮你做什么？」：项目名曾内嵌在标题里并带一个切换菜单，
+    /// 但切换项目是工具栏控件的职责，空态里再放一份只会让标题读起来像半句话。
     private var emptyStateTitle: String {
-        let context = guideState.context
-        if context?.id == ChatContext.defaultChat.id {
-            return pluginLocalization.string("Start chatting with Lumi")
-        }
-        if let title = context?.title {
-            return String(format: pluginLocalization.string("For 「%@」, what can I help you with?"), title)
-        }
-        return pluginLocalization.string("Start chatting with Lumi")
+        pluginLocalization.string("How can I help you today?")
     }
 
     var body: some View {
