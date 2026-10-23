@@ -60,12 +60,18 @@ class LumiUITestCase: XCTestCase {
         case chinesePinyin
     }
 
+    /// 本次启动使用的输入法策略。
+    ///
+    /// 存下来是为了让 ``applyInputSourceStrategy()`` 能在 App 起来之后**再切一次**。
+    private var inputSourceStrategy: InputSourceStrategy = .englishASCII
+
     /// 以确定性 LLM 供应商 + 隔离存储启动 App。
     ///
     /// - Parameters:
     ///   - extraArguments: 额外的启动参数（场景专属夹具）。
     ///   - inputSource: 启动时切换到哪个输入法。默认英文 ASCII；中文输入法
-    ///     用例需要显式传 `.chinesePinyin`。
+    ///     用例需要显式传 `.chinesePinyin`，并在 App 起来后调用
+    ///     ``applyInputSourceStrategy()`` 重新切换一次。
     func launchLumi(
         extraArguments: [String] = [],
         inputSource: InputSourceStrategy = .englishASCII
@@ -73,6 +79,7 @@ class LumiUITestCase: XCTestCase {
         // - Important: 切换输入源放在 `launchLumi` 而**不是** `setUpWithError`：
         //   绝大多数子类覆写 `setUpWithError` 后不调用 `super`，基类钩子
         //   不会执行，挂在那里等于没挂。`launchLumi` 是所有用例的必经之路。
+        inputSourceStrategy = inputSource
         switch inputSource {
         case .englishASCII:
             switchToEnglishInputSource()
@@ -119,6 +126,32 @@ class LumiUITestCase: XCTestCase {
         guard originalInputSourceID == nil else { return }
         originalInputSourceID = UITestInputSource.switchToChinesePinyin()
         didSwitchInputSource = originalInputSourceID != nil
+    }
+
+    /// 在 App 已经起来并激活之后，**再**应用一次输入法策略。
+    ///
+    /// - Important: 中文输入法用例必须在 App 激活后重新切换，否则测不到 IME。
+    ///   macOS 的输入源属于**当前活动应用**：在 `launchLumi` 里（即 App 启动前）
+    ///   切换，改的是当时前台应用（xcodebuild / 测试宿主）的输入源；随后新起的
+    ///   Lumi 进程会拿回**它自己记住的**输入源。
+    ///   症状很有迷惑性：合成按键被直接落成 ASCII 字母（拼音原样留在输入框里，
+    ///   尾部空格也没被 IME 吃掉），看起来像「中文输入法坏了」，实际是切换时机不对。
+    ///
+    ///   调用方应先 `app.activate()`，再调本方法。
+    func applyInputSourceStrategy() {
+        switch inputSourceStrategy {
+        case .englishASCII:
+            switchToEnglishInputSource()
+        case .chinesePinyin:
+            // 还原后再切一次：`switchToChinesePinyinInputSource` 有
+            // `originalInputSourceID == nil` 的守卫，直接调用不会生效。
+            guard let originalID = originalInputSourceID else {
+                switchToChinesePinyinInputSource()
+                return
+            }
+            originalInputSourceID = originalID
+            didSwitchInputSource = UITestInputSource.switchToChinesePinyin() != nil
+        }
     }
 
     /// 还原输入源与剪贴板。
