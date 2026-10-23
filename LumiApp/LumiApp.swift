@@ -41,6 +41,12 @@ struct LumiApp: App {
     @StateObject private var menuBarController: LumiMenuBarController
     private let toastCenter: ToastCenter?
 
+    /// 启动前探测到的磁盘空间判定结果。
+    ///
+    /// 启动成功但空间不足时，用它给一个需要用户手动关闭的警告；启动失败时，
+    /// 用它把失败归因成「磁盘空间不足」。
+    private let spaceVerdict: BootstrapSpaceVerdict
+
     /// 应用数据目录，同时也是磁盘预检的探测目标。
     private static var applicationSupportDirectory: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
@@ -87,6 +93,7 @@ struct LumiApp: App {
         // 所以必须在装配内核**之前**主动探测卷容量，才能在插件失败时给出
         // 「磁盘空间不足」这种用户看得懂、也知道怎么做的提示。
         let space = BootstrapEnvironment.evaluateSpace(at: Self.applicationSupportDirectory)
+        spaceVerdict = space
 
         do {
             // 先在属性初始化阶段完成可能失败的装配。
@@ -171,6 +178,7 @@ struct LumiApp: App {
             }
             .onAppear {
                 menuBarController.install(kernel: kernel)
+                warnIfDiskSpaceLow()
                 // Launch Services may deliver a file before the main window
                 // has installed its Combine subscription. Consume the
                 // retained delegate value once the V2 window is ready.
@@ -198,6 +206,26 @@ struct LumiApp: App {
         .windowToolbarStyle(.unified(showsTitle: false))
         // Preserve the legacy `AppBootstrap.defaultSettingsWindowSize`.
         .defaultSize(width: 800, height: 500)
+    }
+
+    /// 启动成功、但磁盘空间不足以可靠工作时，给一个需要用户手动关闭的警告。
+    ///
+    /// 这种情况下应用还能起来，但插件随时可能因为 SQLite 写入失败而报错；
+    /// 与其等用户撞上「插件启动失败」这种看不懂的报错，不如提前说清楚。
+    ///
+    /// - Important: `ToastCenter` 是 `@MainActor`，这里必须显式标注，
+    ///   否则 Swift 6 严格并发下会报「call to main actor-isolated instance method
+    ///   in a synchronous nonisolated context」。
+    @MainActor
+    private func warnIfDiskSpaceLow() {
+        guard case .insufficient(let availableBytes, let requiredBytes) = spaceVerdict else { return }
+        toastCenter?.presentError(
+            title: "磁盘空间不足",
+            message: "Lumi 至少需要 \(BootstrapByteFormat.string(requiredBytes)) 的可用磁盘空间，"
+                + "当前只剩 \(BootstrapByteFormat.string(availableBytes))。"
+                + "空间不足会导致插件启动失败或数据写入失败，请尽快清理磁盘。",
+            sourceWindowID: nil
+        )
     }
 
     /// 与旧版 `MenuBarManagerPlugin.showMainWindow()` 保持相同行为：从状态栏
