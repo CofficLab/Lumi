@@ -292,10 +292,20 @@ private struct BootstrapFailureView: View {
                 + "释放磁盘空间后重新启动即可——数据目录里通常藏着可以清理的大文件。"
         case .pluginBootFailed:
             let plugin = failure.pluginID.map { "「\($0)」" } ?? "某个插件"
-            let phase = failure.phase ?? "启动"
-            return "插件 \(plugin) 在\(phase)阶段启动失败。原始报错在下方技术详情里，可复制后排查。"
+            return "插件 \(plugin) 在\(phaseDescription(failure.phase))阶段失败。"
+                + "原始报错在下方技术详情里，可复制后排查。"
         case .unknown:
             return "启动过程中发生未预期的错误。原始报错在下方技术详情里，可复制后排查。"
+        }
+    }
+
+    /// 把 KernelCore 的生命周期阶段名翻译成人话。
+    private func phaseDescription(_ phase: String?) -> String {
+        switch phase {
+        case "boot": return "启动"
+        case "ready": return "就绪"
+        case .some(let other): return other
+        case nil: return "启动"
         }
     }
 
