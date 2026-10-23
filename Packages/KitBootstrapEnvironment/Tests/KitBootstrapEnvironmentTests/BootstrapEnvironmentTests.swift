@@ -55,6 +55,20 @@ struct BootstrapEnvironmentTests {
         #expect(verdict == .unknown)
     }
 
+    @Test("阈值可被 LUMI_MIN_FREE_DISK_BYTES 覆盖，便于复现磁盘不足的启动失败页", .serialized)
+    func requiredFreeBytesHonorsEnvironmentOverride() {
+        setenv("LUMI_MIN_FREE_DISK_BYTES", "123456", 1)
+        defer { unsetenv("LUMI_MIN_FREE_DISK_BYTES") }
+
+        #expect(BootstrapEnvironment.requiredFreeBytes == 123456)
+    }
+
+    @Test("未设置环境变量时使用默认阈值", .serialized)
+    func requiredFreeBytesDefaults() {
+        unsetenv("LUMI_MIN_FREE_DISK_BYTES")
+        #expect(BootstrapEnvironment.requiredFreeBytes == BootstrapEnvironment.defaultRequiredFreeBytes)
+    }
+
     // MARK: - 实际探测
 
     @Test("已存在的目录能探测到卷可用容量")

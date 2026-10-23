@@ -29,6 +29,23 @@ public enum BootstrapEnvironment {
     /// 最终表现为「某个插件启动失败」这种用户完全看不懂的报错。
     public static let defaultRequiredFreeBytes: Int64 = 2 * 1024 * 1024 * 1024
 
+    /// 实际生效的阈值。
+    ///
+    /// 可用环境变量 `LUMI_MIN_FREE_DISK_BYTES`（字节数）覆盖，便于在**不必真的
+    /// 把磁盘写满**的前提下复现「磁盘空间不足」的启动失败页：
+    ///
+    /// ```sh
+    /// LUMI_MIN_FREE_DISK_BYTES=999999999999 open -a /Applications/Lumi.app
+    /// ```
+    public static var requiredFreeBytes: Int64 {
+        if let raw = ProcessInfo.processInfo.environment["LUMI_MIN_FREE_DISK_BYTES"],
+           let value = Int64(raw),
+           value > 0 {
+            return value
+        }
+        return defaultRequiredFreeBytes
+    }
+
     /// 判定给定可用空间是否够启动。
     ///
     /// - Parameters:
@@ -37,7 +54,7 @@ public enum BootstrapEnvironment {
     /// - Returns: 判定结果。探测失败时返回 `.unknown`，绝不据此阻断启动。
     public static func evaluate(
         availableBytes: Int64?,
-        requiredBytes: Int64 = defaultRequiredFreeBytes
+        requiredBytes: Int64 = requiredFreeBytes
     ) -> BootstrapSpaceVerdict {
         guard let availableBytes else { return .unknown }
         guard requiredBytes > 0 else { return .sufficient }
@@ -76,7 +93,7 @@ public enum BootstrapEnvironment {
     /// 一次性完成「探测 + 判定」。
     public static func evaluateSpace(
         at directory: URL,
-        requiredBytes: Int64 = defaultRequiredFreeBytes
+        requiredBytes: Int64 = requiredFreeBytes
     ) -> BootstrapSpaceVerdict {
         evaluate(
             availableBytes: availableBytes(at: directory),
