@@ -48,10 +48,24 @@ public enum BootstrapEnvironment {
 
     /// 探测某个目录所在卷的可用字节数。
     ///
+    /// - Important: 目标路径可能还不存在——全新安装时应用数据目录尚未创建。
+    ///   `URL.resourceValues(forKeys:)` 对不存在的路径会直接抛错，所以这里先
+    ///   向上找到最近一个**存在**的祖先目录再探测。否则「磁盘满」这个最需要
+    ///   提前告知用户的场景，反而会因为目录不存在而探测不到。
+    ///
     /// - Returns: 可用字节数；探测失败返回 `nil`。
     public static func availableBytes(at directory: URL) -> Int64? {
+        let fileManager = FileManager.default
+        var probe = directory
+        while !fileManager.fileExists(atPath: probe.path) {
+            let parent = probe.deletingLastPathComponent()
+            // 已经到根目录还找不到存在的祖先，放弃。
+            if parent.path == probe.path { return nil }
+            probe = parent
+        }
+
         do {
-            let values = try directory.resourceValues(forKeys: [.volumeAvailableCapacityKey])
+            let values = try probe.resourceValues(forKeys: [.volumeAvailableCapacityKey])
             guard let capacity = values.volumeAvailableCapacity else { return nil }
             return Int64(capacity)
         } catch {
