@@ -366,17 +366,21 @@ struct ListPresentationTests {
         #expect(vm.activity == nil)
     }
 
-    @Test("§6.3 缺 detail 时 ConversationStateView 的 detail 字符串使用 ' ' 占位")
-    func detailPlaceholderIsSingleSpace() {
+    @Test("§6.3 缺 detail 时状态行只显示标题，不留占位空格")
+    func statusLineWithoutDetailHasNoPlaceholder() {
         let projection = AgentActivityProjection(
             phase: .sending,
             title: "正在发送消息…",
             detail: nil
         )
-        // ConversationStateView 把 nil/空 detail 显示成 " "（占位字符串），
-        // 这样第二行永远存在但不可见 —— 防止 title 在 detail 缺失时跳动。
-        let renderedPlaceholder: String = projection.detail ?? " "
-        #expect(renderedPlaceholder == " ")
+        // 状态卡恒为一行：标题与细节合并到同一行，细节缺失时只显示标题。
+        // 历史版本用 " " 占位撑出第二行把细节藏起来，导致卡片时而一行时而两行。
+        #expect(projection.statusLineText == "正在发送消息…")
+        // 占位空格机制已移除：文本首尾都不会留下空白。
+        #expect(
+            projection.statusLineText.trimmingCharacters(in: .whitespaces) == projection.statusLineText,
+            "状态行不应残留占位空格"
+        )
     }
 
     // MARK: - §8.1 全新空对话

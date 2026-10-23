@@ -64,6 +64,10 @@ Sources/PluginMessageListBrief/
 - **流式回复不进 turn**
   回合进行中 `lastMessage` 为 nil，实时进度只由底部状态卡汇报。
   这样 turn 的投影在一次回合内是**稳定快照**，不会随 token 增长反复重建富文本。
+- **底部状态卡恒为一行**
+  标题与细节合并到同一行（`标题 · 细节`，见 `AgentActivityProjection.statusLineText`），
+  细节缺失时只显示标题。历史版本是上下两行、缺细节时用占位空格把第二行藏起来，
+  卡片于是时而一行时而两行；现在统一成一行，视觉不再随阶段抖动。
 - **发送后定位到视口上 1/4**（`MessageListSendPositioning.targetTopFraction == 0.25`）
   贴底会把新 turn 藏在输入区后面；回合结束后再收敛回真实底部，预留空间随之消失。
 - **消息窗口有上限（`maxRetainedCount = 300`），回收按 turn 整段裁且保护最新 turn**

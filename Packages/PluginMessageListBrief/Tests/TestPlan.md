@@ -15,7 +15,8 @@ PluginMessageListBrief 是消息列表 V1（Brief 模式）的实现包。它按
 - `AgentTurnVM` - 单个 turn 的 ViewModel（projection 发布、展开/折叠）
 - `ListV1Presentation` - 将原始消息序列投影为 turn 行（`ListV1Row`）
 - `AgentTurnSummaryBuilder` - 从 turn 记录构建 disclosure 摘要（步骤数 / 耗时）
-- `AgentActivityProjection` - 将 agent loop activity 映射为底部状态卡标题 / 详情
+- `AgentActivityProjection` - 将 agent loop activity 映射为底部状态卡标题 / 详情，
+  并用 `statusLineText` 合成状态卡那一行的完整文本
 - `MessageListPaginationService` - 首页加载 + 向前翻页
 - `MessageListScrollCoordinator` - 滚动锚点、append/prepend 延迟、自动跟随判定
 - `MessageListSendPositioning` - 发送后新 turn 定位到视口上 1/4
@@ -33,7 +34,7 @@ PluginMessageListBrief 是消息列表 V1（Brief 模式）的实现包。它按
 ### ConversationStateVM
 - `rows: [ListV1Row]` - turn 行集合
 - `isLoading` / `hasEarlierTurns` / `activity` / `timelineEvents`
-- `detailText` - 状态卡第二行详情（缺省使用 `" "` 占位）
+- `detailText` - 状态卡细节（与标题合并到同一行，缺省时只显示标题）
 - `turnVMs` - `[AgentTurnVM]` 字典，按 turnID 索引
 
 ### AgentTurnVM
@@ -102,7 +103,7 @@ PluginMessageListBrief 是消息列表 V1（Brief 模式）的实现包。它按
 | 29 | 翻页 | 翻页到顶后 `hasEarlierTurns` 翻转为 false 且行不重复 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `loadEarlierHidesButtonWhenExhausted` |
 | 30 | 状态卡 | agent loop 端态后 activity projection 为 nil | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `activityClearedOnTerminalState` |
 | 31 | 状态卡 | 非选中会话的 activity 不进入 stateVM | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `activityIsolatedPerSelectedConversation` |
-| 32 | 状态卡 | 缺 detail 时 detail 字符串使用单空格占位 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `detailPlaceholderIsSingleSpace` |
+| 32 | 状态卡 | 缺 detail 时状态行只显示标题，不留占位空格 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `statusLineWithoutDetailHasNoPlaceholder` |
 | 33 | 边界 | 空对话激活后 `isLoading == false`，列表为空 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emptyConversationLoadsCleanly` |
 | 34 | 边界 | 整段对话能放进一页时 `hasEarlierTurns == false` | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `singlePageConversationHasNoEarlier` |
 | 35 | 边界 | 快速切换会话后旧会话的加载任务不会泄漏到新会话 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rapidConversationSwitchingIsSafe` |
@@ -155,6 +156,13 @@ PluginMessageListBrief 是消息列表 V1（Brief 模式）的实现包。它按
 | 82 | MessageListStateLifetime | 简洁模式运行时容器：必须持有底部标记、滚动协调器与底部几何控制器 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimeCarriesAllThreeMembers` |
 | 83 | MessageListStateLifetime | 简洁模式运行时容器：成员在多次访问之间必须保持同一实例 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimeMembersKeepStableIdentity` |
 | 84 | MessageListStateLifetime | 简洁模式运行时容器：不得发布任何 @Published（避免重新打开 invalidation 反馈环） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimePublishesNothing` |
+| 85 | 状态卡 | 状态行在细节缺失时只显示标题 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `statusLineWithoutDetail` |
+| 86 | 状态卡 | 状态行在细节为空字符串时也不产生尾部分隔符 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `statusLineWithEmptyDetail` |
+| 87 | 状态卡 | 状态行把标题与细节合并到同一行 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `statusLineMergesDetail` |
+| 88 | 状态卡 | 状态行恒为单行文本，不含换行 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `statusLineIsSingleLine` |
+| 89 | 状态卡 | 每个活动阶段都能产出一行状态文本 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `everyStageProducesSingleLineStatusText` |
+| 90 | 状态卡 | 状态卡高度只容得下一行文字（渲染级，两行版式为 46pt 会失败） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `cardHeightFitsSingleLine` |
+| 91 | 状态卡 | 有无细节时状态卡高度不变（渲染级） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cardHeightStableWithoutDetail` |
 
 ## 仅人工验收场景
 
@@ -183,10 +191,10 @@ PluginMessageListBrief 是消息列表 V1（Brief 模式）的实现包。它按
 
 ## 覆盖率统计
 
-- P0: 已覆盖 45 / 45
-- P1: 已覆盖 36 / 36
+- P0: 已覆盖 48 / 48
+- P1: 已覆盖 40 / 40
 - P2: 已覆盖 3 / 3
-- **合计: 84 / 84**（仅表示清单场景，非源码覆盖率）
+- **合计: 91 / 91**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
