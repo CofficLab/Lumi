@@ -4,40 +4,6 @@
     "·" : {
 
     },
-    "」, what can I help you with?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "」, what can I help you with?"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "」，我可以帮你做什么？"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "」，我可以幫你做什麼？"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "」，我可以幫你做什麼？"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "」，我可以幫你做什麼？"
-          }
-        }
-      }
-    },
     "%lld" : {
       "localizations" : {
         "en" : {
@@ -170,40 +136,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "最近 %2$lld 天有 %1$lld 則訊息 · %3$@ tokens"
-          }
-        }
-      }
-    },
-    "Add Project…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add Project…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加项目…"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新增專案…"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新增專案…"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新增專案…"
           }
         }
       }
@@ -344,40 +276,6 @@
         }
       }
     },
-    "For 「" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "For 「"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "对于 「"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "對於 「"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "對於 「"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "對於 「"
-          }
-        }
-      }
-    },
     "For 「%@」, what can I help you with?" : {
       "localizations" : {
         "en" : {
@@ -423,25 +321,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "今天我能帮你做什么？"
+            "value" : "我可以帮你做什么？"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "今天我可以幫你做什麼？"
+            "value" : "我可以幫你做什麼？"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "今天我可以幫你做什麼？"
+            "value" : "我可以幫你做什麼？"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "今天我可以幫你做什麼？"
+            "value" : "我可以幫你做什麼？"
           }
         }
       }
@@ -782,40 +680,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "專案"
-          }
-        }
-      }
-    },
-    "Start chatting with Lumi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start chatting with Lumi"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "开始与 Lumi 聊天"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開始與 Lumi 聊天"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開始與 Lumi 聊天"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開始與 Lumi 聊天"
           }
         }
       }
