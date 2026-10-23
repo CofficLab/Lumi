@@ -554,11 +554,26 @@ do {
     let assembledKernel = try KernelFactory.makeKernel()
     kernel = assembledKernel
     mainView = (try? KernelFactory.makeMainView(kernel: assembledKernel))
-        ?? AnyView(BootstrapFailureView(message: "Failed to assemble main view"))
+        ?? AnyView(BootstrapFailureView(
+            failure: BootstrapFailureReport(
+                kind: .unknown,
+                technicalDetail: "Failed to assemble main view"
+            ),
+            dataDirectory: Self.applicationSupportDirectory
+        ))
 } catch {
     kernel = KernelCoreContainer()
-    bootstrapErrorDescription = error.localizedDescription
-    mainView = AnyView(BootstrapFailureView(message: error.localizedDescription))
+    // 失败必须**归因**后展示，而不是把原始报错字符串直接甩给用户：
+    // SwiftData 会把「磁盘满」折叠成 SwiftDataError code 1 + 空 userInfo，
+    // 原始报错里根本没有根因，所以要靠装配前主动探测到的卷容量来归因。
+    let report = BootstrapFailureClassifier.classify(
+        context: Self.failureContext(for: error),
+        space: space
+    )
+    mainView = AnyView(BootstrapFailureView(
+        failure: report,
+        dataDirectory: Self.applicationSupportDirectory
+    ))
 }
 ```
 
