@@ -59,6 +59,12 @@ enum UITestInputSource {
         return originalID
     }
 
+    /// 当前输入源 ID（诊断用）。
+    ///
+    /// 中文输入法用例在打字前打印它：若显示的不是 `com.apple.inputmethod.SCIM*`，
+    /// 说明 IME 根本没介入，合成按键会被直接落成 ASCII 字符。
+    static var currentInputSourceID: String? { currentID() }
+
     /// 把输入源还原为给定 ID。
     ///
     /// 还原失败不抛错：tearDown 里抛错会掩盖用例本身的真实失败。
