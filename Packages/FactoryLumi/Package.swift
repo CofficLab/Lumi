@@ -122,7 +122,7 @@ let package = Package(
         .package(name: "PluginRegistryManager", path: "../PluginRegistryManager"),
         .package(name: "PluginRClick", path: "../PluginRClick"),
         .package(name: "PluginInput", path: "../PluginInput"),
-        .package(url: "https://github.com/CofficLab/LumiPluginBookletMaker.git", from: "1.2.0"),
+        .package(url: "https://github.com/CofficLab/LumiPluginBookletMaker.git", from: "2.0.0"),
         .package(name: "PluginScreenRecorder", path: "../PluginScreenRecorder"),
         .package(name: "PluginStoryWriter", path: "../PluginStoryWriter"),
         .package(name: "PluginQuickFileSearch", path: "../PluginQuickFileSearch"),
