@@ -2,6 +2,10 @@ import LumiUI
 import SwiftUI
 
 /// 消息列表尾部的当前对话状态视图。
+///
+/// 状态卡恒为**一行**：标题与细节合并到同一行（`标题 · 细节`），没有细节时
+/// 只显示标题。历史版本是「标题 + 细节」上下两行，细节缺失时用占位空格把
+/// 第二行藏起来，导致卡片时而一行时而两行；现在统一成一行，视觉不再随阶段抖动。
 struct ConversationStateView: View {
     @ObservedObject private var stateVM: ConversationStateVM
 
@@ -18,19 +22,11 @@ struct ConversationStateView: View {
                     .font(.appCaptionEmphasized)
                     .foregroundColor(theme.primary)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(activity.title)
-                        .font(.appCaption)
-                        .foregroundColor(theme.textPrimary)
-                        .lineLimit(1)
-
-                    Text(activity.detail ?? " ")
-                        .font(.appMicro)
-                        .foregroundColor(theme.textSecondary)
-                        .lineLimit(1)
-                        .opacity(activity.detail?.isEmpty == false ? 1 : 0)
-                }
-                .frame(height: 30, alignment: .leading)
+                Text(activity.statusLineText)
+                    .font(.appMicro)
+                    .foregroundColor(theme.textPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
 
                 Spacer(minLength: 0)
 
@@ -39,7 +35,7 @@ struct ConversationStateView: View {
                     .tint(theme.primary)
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 8)
+            .padding(.vertical, 7)
             .background(
                 theme.primary.opacity(0.07),
                 in: RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -48,7 +44,7 @@ struct ConversationStateView: View {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .stroke(theme.primary.opacity(0.16), lineWidth: 0.5)
             )
-            .frame(height: 46)
+            .frame(minHeight: 30)
         }
     }
 }
