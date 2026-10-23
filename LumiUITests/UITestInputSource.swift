@@ -69,6 +69,63 @@ enum UITestInputSource {
         _ = TISSelectInputSource(source)
     }
 
+    // MARK: - 中文拼音
+
+    /// 简体中文拼音输入法的输入模式 ID。
+    ///
+    /// macOS 自带的「简体拼音」输入法。它不是普通键盘布局，而是挂在
+    /// `com.apple.inputmethod.SCIM` 下的一个**输入模式**——只有选中它，
+    /// 合成按键才会进入组合态（拼音缓冲区），而不是直接落成字符。
+    static let chinesePinyinInputModeID = "com.apple.inputmethod.SCIM.ITABC"
+
+    /// 切换到简体中文拼音输入法，返回原始输入源 ID 供后续还原。
+    ///
+    /// - Returns: 切换前的输入源 ID；**切换失败时返回 `nil`**。
+    ///   调用方**必须**在 tearDown 中还原，否则会改掉开发者的输入法配置。
+    ///
+    /// - Note: 与 ``switchToEnglish(timeout:)`` 不同，这里切不过去的概率
+    ///   明显更高——系统镜像不一定装了中文输入法。因此调用方应当把
+    ///   `nil` 当成「跳过用例」的理由，而不是当成产品缺陷。
+    @discardableResult
+    static func switchToChinesePinyin(timeout: TimeInterval = 5) -> String? {
+        let originalID = currentID()
+        guard let target = findChinesePinyinInputSource() else { return nil }
+        guard TISEnableInputSource(target) == noErr || isEnabled(target) else { return nil }
+        guard TISSelectInputSource(target) == noErr else { return nil }
+        guard waitForChinesePinyinActive(timeout: timeout) else { return nil }
+        return originalID
+    }
+
+    /// 找中文拼音输入源：优先精确匹配输入模式 ID，再回退到同一输入法下的
+    /// 其它输入模式。
+    private static func findChinesePinyinInputSource() -> TISInputSource? {
+        if let exact = inputSources(enabledOnly: true).first(where: { id(of: $0) == chinesePinyinInputModeID })
+            ?? inputSources(enabledOnly: false).first(where: { id(of: $0) == chinesePinyinInputModeID })
+        {
+            return exact
+        }
+        return inputSources(enabledOnly: true).first(where: { id(of: $0)?.hasPrefix("com.apple.inputmethod.SCIM") == true })
+            ?? inputSources(enabledOnly: false).first(where: { id(of: $0)?.hasPrefix("com.apple.inputmethod.SCIM") == true })
+    }
+
+    /// 等中文输入法真正接管键盘。
+    ///
+    /// - Important: 判定**不能**直接比输入模式 ID。中文输入法的
+    ///   `TISCopyCurrentKeyboardInputSource()` 报的是输入法本身
+    ///   （`com.apple.inputmethod.SCIM`），而不是输入模式
+    ///   （`com.apple.inputmethod.SCIM.ITABC`）——拼音只是该输入法下的
+    ///   一个模式。按模式 ID 比对会永远等不到，误判成「切换失败」。
+    private static func waitForChinesePinyinActive(timeout: TimeInterval) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if let current = currentID(), current.hasPrefix("com.apple.inputmethod.SCIM") {
+                return true
+            }
+            usleep(50_000)
+        }
+        return currentID()?.hasPrefix("com.apple.inputmethod.SCIM") == true
+    }
+
     // MARK: - 私有
 
     private static func currentID() -> String? {
@@ -101,16 +158,20 @@ enum UITestInputSource {
 
     /// 列出输入源。
     ///
-    /// `enabledOnly == false` 时用 `AppleEnabledInputSources` 过滤器拿到
-    /// **全部可选**输入源——用户没启用的 US 布局也能取到，再经
+    /// `enabledOnly == true` 走 `TISCreateInputSourceList(nil, false)`，
+    /// 拿到**已启用**的输入源；`enabledOnly == false` 走
+    /// `TISCreateInputSourceList(nil, true)`，拿到**全部已安装**的输入源
+    /// ——用户没启用的 US 布局 / 中文输入法也能取到，再经
     /// `TISEnableInputSource` 启用，不必去系统设置里手工勾选。
+    ///
+    /// - Important: 这里**不能**用 `kTISPropertyInputSourceCategory:
+    ///   "TISCategoryAll"` 过滤器。该过滤是**精确匹配**：没有任何输入源的
+    ///   category 等于 `"TISCategoryAll"`，因此它返回的是**空列表**，
+    ///   而不是「全部输入源」。实测本机 331 个输入源，过滤后剩 0 个。
+    ///   正确写法是传 `nil` 过滤器 + `includeAllInstalled = true`。
+    ///   （该缺陷此前让「用户没启用时的回退查找」变成死代码。）
     private static func inputSources(enabledOnly: Bool) -> [TISInputSource] {
-        if enabledOnly {
-            return TISCreateInputSourceList(nil, false)?.takeRetainedValue() as? [TISInputSource] ?? []
-        }
-        // kTISCategoryAll 未导入到 Swift，用其字面值（Carbon 头文件中的同一常量）。
-        let filter = [kTISPropertyInputSourceCategory: "TISCategoryAll"] as CFDictionary
-        return TISCreateInputSourceList(filter, true)?.takeRetainedValue() as? [TISInputSource] ?? []
+        TISCreateInputSourceList(nil, !enabledOnly)?.takeRetainedValue() as? [TISInputSource] ?? []
     }
 
     /// 找可用的 ASCII 输入源：优先 US 布局，回退到任意 ASCII 能力布局。
