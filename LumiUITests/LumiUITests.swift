@@ -109,7 +109,10 @@ final class LumiUITests: LumiUITestCase {
         )
     }
 
-    /// 外观页必须能进入，并提供主题搜索与主题筛选。
+    /// 外观页必须能进入，并提供主题筛选。
+    ///
+    /// 外观页已移除主题搜索：这里改用主题数量标签作为「详情已渲染」信号，
+    /// 并断言搜索框不再存在，防止功能回退。
     ///
     /// - Important: 侧边栏条目用英文 `Appearance`，与 `setUp` 的英文环境一致
     ///   （此处曾断言中文「外观」，该元素在英文环境下不存在）。
@@ -120,8 +123,6 @@ final class LumiUITests: LumiUITestCase {
         XCTAssertTrue(appearance.waitForExistence(timeout: 5), "设置侧边栏缺少 Appearance 条目")
         appearance.click()
 
-        let search = app.textFields.matching(NSPredicate(format: "placeholderValue IN %@", ["Search Themes", "搜索主题"])).firstMatch
-        XCTAssertTrue(search.waitForExistence(timeout: 8), "外观页缺少主题搜索入口")
         // 外观页提供主题筛选（全部/深色/浅色/跟随系统）与主题预览块。
         for filter in ["All", "Dark", "Light", "Follow System"] {
             XCTAssertTrue(
@@ -129,5 +130,13 @@ final class LumiUITests: LumiUITestCase {
                 "外观页缺少主题筛选：\(filter)"
             )
         }
+        // 主题数量标签（"19 Themes"）作为详情渲染完成的信号。
+        XCTAssertTrue(
+            element(containingLabel: "Themes").waitForExistence(timeout: 8),
+            "外观页没有渲染主题列表"
+        )
+        // 主题搜索已移除：外观页不应再出现主题搜索框。
+        let search = app.textFields.matching(NSPredicate(format: "placeholderValue IN %@", ["Search Themes", "搜索主题"])).firstMatch
+        XCTAssertFalse(search.exists, "外观页不应再提供主题搜索入口")
     }
 }
