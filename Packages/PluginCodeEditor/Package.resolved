@@ -1,5 +1,5 @@
 {
-  "originHash" : "d3296065210ac0479596bf0f7789591e385d82ff2ffe5152611ef8417fef993a",
+  "originHash" : "128dc25ff2fe86dda715f4a919ab5347a1c5ee07a9fe37bc637e6b0d647d60e5",
   "pins" : [
     {
       "identity" : "fseventswrapper",
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiProviders.git",
       "state" : {
-        "revision" : "947db244aa0a04ade2b5003307368564f7dec96a",
-        "version" : "1.11.0"
+        "revision" : "db6f0874337e01df039ef54c774803f1c737bc8d",
+        "version" : "1.12.0"
       }
     },
     {
@@ -132,8 +132,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections.git",
       "state" : {
-        "revision" : "35a1edcb8ebd2bfe251d587f0b69e62af28f508c",
-        "version" : "1.7.3"
+        "revision" : "844289ac455816e193f1dbbe014f3c4dbe429410",
+        "version" : "1.7.4"
       }
     },
     {
