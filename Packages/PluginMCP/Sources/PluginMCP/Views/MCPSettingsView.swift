@@ -23,19 +23,26 @@ struct MCPSettingsView: View {
     @State private var revision = 0
 
     var body: some View {
-        PluginSettingsScaffold(
-            title: MCPText.string("MCP Servers"),
-            subtitle: MCPText.string("Connect any Model Context Protocol server and let the agent use its tools."),
-            showHeader: false,
-            scrollsContent: false
-        ) {
-            VStack(alignment: .leading, spacing: 14) {
-                header
-                masterDetail
+        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
+            GeometryReader { proxy in
+                VStack(alignment: .leading, spacing: 0) {
+                    header
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 12)
+                    // 主体内容贴边后，用一条顶部分隔线把标题行与主从容器分开。
+                    AppDivider()
+                    masterDetail
+                }
+                // 共享 scaffold 给内容留了左右 24，这里把整列加宽 48 并左移 24，
+                // 使主从容器正好贴到窗口左右边缘；标题行再自行补回 24 留白。
+                .frame(width: proxy.size.width + 48, alignment: .topLeading)
+                .offset(x: -24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .padding(.bottom, 16)
+        // 插件贡献的内容里也会出现 AppCard，统一按 .subtle 渲染，
+        // 避免与其它设置页的卡片外观不一致。
+        .environment(\.appSettingsCardStyleOverride, .subtle)
         .id(revision)
         .sheet(isPresented: $showingAddSheet) {
             MCPServerEditSheet(registry: registry, manager: manager, server: nil) { _ in revision += 1 }
@@ -80,6 +87,8 @@ struct MCPSettingsView: View {
 
     // MARK: - Master–Detail
 
+    /// 主从容器整体贴边：不再有外框描边与圆角裁剪，
+    /// 只保留列表栏与详情栏之间的竖向分隔线。
     private var masterDetail: some View {
         HStack(spacing: 0) {
             sidebar
@@ -90,11 +99,6 @@ struct MCPSettingsView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .frame(maxHeight: .infinity)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .strokeBorder(theme.divider, lineWidth: 1)
-        }
     }
 
     // MARK: - Sidebar
@@ -233,31 +237,19 @@ struct MCPSettingsView: View {
             // 该服务器的工具列表
             let tools = manager.registeredTools
             if let adapters = tools[server.id], !adapters.isEmpty {
-                AppCard {
-                    AppSettingsSection(title: MCPText.string("Tools")) {
-                        ForEach(Array(adapters.enumerated()), id: \.element.name) { _, adapter in
-                            AppSettingsRow {
-                                HStack(spacing: 12) {
-                                    Image(systemName: "wrench.and.screwdriver")
-                                        .font(.appCallout)
-                                        .foregroundColor(theme.primary)
-                                        .frame(width: 24)
-
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(adapter.descriptor.name)
-                                            .font(.appBody)
-                                            .foregroundColor(theme.textPrimary)
-                                        if let description = adapter.descriptor.description {
-                                            Text(description)
-                                                .font(.appCaption)
-                                                .foregroundColor(theme.textSecondary)
-                                        }
-                                    }
-
-                                    Spacer()
-
-                                    EmptyView()
-                                }
+                AppSettingSection(title: MCPText.string("Tools"), titleAlignment: .leading) {
+                    VStack(spacing: 0) {
+                        ForEach(Array(adapters.enumerated()), id: \.element.name) { index, adapter in
+                            if index > 0 {
+                                Divider()
+                                    .padding(.vertical, 8)
+                            }
+                            AppSettingRow(
+                                title: adapter.descriptor.name,
+                                description: adapter.descriptor.description,
+                                icon: "wrench.and.screwdriver"
+                            ) {
+                                EmptyView()
                             }
                         }
                     }

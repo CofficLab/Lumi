@@ -69,6 +69,26 @@ struct SettingsLayoutConformanceTests {
         let kind: PageKind
         /// 详情栏内容内边距。`nil` 表示该页详情栏是「列表样式」（沿用列表的 8pt 留白）。
         let detailPadding: Int?
+        /// 该页是否采用「贴边」形态：主从容器直接贴到窗口左右与底边，
+        /// 不带外框描边，也没有页面底部留白。贴边页只校验列表栏宽度、
+        /// 详情栏内边距与「不得写死 minHeight」三项。
+        let isEdgeToEdge: Bool
+
+        init(
+            viewTypeNames: [String],
+            path: String,
+            relatedPaths: [String],
+            kind: PageKind,
+            detailPadding: Int?,
+            isEdgeToEdge: Bool = false
+        ) {
+            self.viewTypeNames = viewTypeNames
+            self.path = path
+            self.relatedPaths = relatedPaths
+            self.kind = kind
+            self.detailPadding = detailPadding
+            self.isEdgeToEdge = isEdgeToEdge
+        }
     }
 
     private static let auditedPages: [AuditedPage] = [
@@ -93,7 +113,8 @@ struct SettingsLayoutConformanceTests {
             path: "Packages/PluginMCP/Sources/PluginMCP/Views/MCPSettingsView.swift",
             relatedPaths: [],
             kind: .masterDetail,
-            detailPadding: 22
+            detailPadding: 22,
+            isEdgeToEdge: true
         ),
         AuditedPage(
             viewTypeNames: ["ConversationStoreSettingsView"],
@@ -217,13 +238,6 @@ struct SettingsLayoutConformanceTests {
             detailPadding: nil
         ),
         AuditedPage(
-            viewTypeNames: ["PerformanceMetricsSettingsView"],
-            path: "Packages/PluginPerformanceMetrics/Sources/PluginPerformanceMetrics/PerformanceMetricsPlugin.swift",
-            relatedPaths: [],
-            kind: .singleColumn,
-            detailPadding: nil
-        ),
-        AuditedPage(
             viewTypeNames: ["ScreenRecorderSettingsView"],
             path: "Packages/PluginScreenRecorder/Sources/ScreenRecorderPlugin/Views/ScreenRecorderSettingsView.swift",
             relatedPaths: [],
@@ -259,10 +273,15 @@ struct SettingsLayoutConformanceTests {
 
         for page in Self.auditedPages {
             let url = root.appendingPathComponent(page.path)
+            // 插件可能被整体移除（例如性能跑分插件被下线），此时源码文件不复存在。
+            // 没有源码就没有可审计的布局，跳过即可——「注册到设置窗口的入口是否
+            // 都被审计表覆盖」由 `everyRegisteredEntryIsAudited` 单独把关。
+            guard FileManager.default.fileExists(atPath: url.path) else { continue }
             let source = try String(contentsOf: url, encoding: .utf8)
             var combinedSource = source
             for relatedPath in page.relatedPaths {
                 let relatedURL = root.appendingPathComponent(relatedPath)
+                guard FileManager.default.fileExists(atPath: relatedURL.path) else { continue }
                 combinedSource += try String(contentsOf: relatedURL, encoding: .utf8)
             }
 
@@ -291,43 +310,35 @@ struct SettingsLayoutConformanceTests {
         }
     }
 
-    @Test("设置页统一使用自绘卡片体系（不用原生 GroupBox）")
-    func settingsPagesUseCustomCardSystem() throws {
+    @Test("设置入口详情页统一使用原生 GroupBox 卡片体系")
+    func settingsPagesUseNativeGroupBoxCards() throws {
         let root = try Self.repositoryRoot()
         var failures: [String] = []
 
-        for file in try Self.packageSourceFiles(root: root) {
-            let source = try String(contentsOf: file, encoding: .utf8)
-            let relative = Self.relativePath(of: file, root: root)
+        for (path, source) in try Self.cardFamilySources(root: root) {
+            // 先把注释与字符串字面量涂成空格，避免「注释里提到组件名」被误判。
+            let code = String(Self.blankOutStringsAndComments(source))
 
-            // 1) 不得再出现原生 GroupBox 家族。
-            for native in Self.nativeGroupBoxComponents {
-                if source.contains(native) {
-                    failures.append("- \(relative)：仍在使用原生卡片组件 \(native)，应改用 AppCard + AppSettings*Row")
+            // 1) 不得再出现自绘新卡片家族（玻璃拟态卡片）。
+            for custom in Self.customCardComponents {
+                if code.contains(custom) {
+                    failures.append(
+                        "- \(path)：仍在使用自绘卡片组件 \(custom)，"
+                        + "设置页应改用原生 AppSettingSection + AppSettingRow + 行间 Divider()"
+                    )
                 }
             }
-            if source.contains("GroupBox {") {
-                failures.append("- \(relative)：仍在使用原生 GroupBox")
-            }
 
-            // 2) 一组一卡：`AppSettingsSection` 必须落在某个 `AppCard { … }` 作用域里。
-            for line in Self.cardlessSectionLines(in: source) {
-                failures.append("- \(relative):\(line)：AppSettingsSection 必须包在 AppCard { … } 里（一组一卡）")
-            }
-
-            // 3) 卡片风格统一 `.subtle`：直接用 `AppSettingsContentScaffold` 的页面要自己注入。
-            if Self.needsSubtleCardStyleOverride(source) {
-                failures.append(
-                    "- \(relative)：直接使用 AppSettingsContentScaffold 且渲染了 AppCard，"
-                    + "必须注入 .environment(\\.appSettingsCardStyleOverride, .subtle)"
-                )
+            // 2) 不得手写 GroupBox（分组一律走 `AppSettingSection`）。
+            if code.contains("GroupBox {") {
+                failures.append("- \(path)：仍在手写 GroupBox，应改用 AppSettingSection")
             }
         }
 
         if !failures.isEmpty {
             Issue.record(
                 Comment(rawValue: """
-                设置入口详情页仍在使用原生 GroupBox 卡片体系：
+                设置入口详情页仍在使用自绘新卡片体系：
 
                 \(failures.joined(separator: "\n"))
                 """)
@@ -335,93 +346,64 @@ struct SettingsLayoutConformanceTests {
         }
     }
 
-    /// macOS 上渲染成系统 GroupBox 的原生组件（与自绘卡片体系不共存）。
-    private static let nativeGroupBoxComponents = [
-        "AppSettingSection(",
-        "AppSettingRow(",
-        "AppSettingToggleRow(",
-        "AppSettingPickerRow(",
-        "AppSettingCheckmarkRow(",
-        "AppSettingStepperRow(",
-        "AppSettingSegmentedPickerRow(",
-        "AppSettingReadOnlyRow(",
-        "AppSettingSecureFieldRow(",
+    /// 自绘新卡片家族（玻璃拟态、标题在卡外、每行一个独立圆角块）。
+    ///
+    /// 2026-10-25 起设置窗口不再使用这套组件——用户明确认为它的观感不如
+    /// 原生 GroupBox（标题在卡内、行间一条 `Divider()`）。
+    ///
+    /// 注意：这些名字与原生家族只差一个字母（`AppSettings…` vs `AppSetting…`），
+    /// 匹配时必须带右括号，否则两者会互相命中。
+    private static let customCardComponents = [
+        "AppCard",
+        "AppSettingsSection(",
+        "AppSettingsRow(",
+        "AppSettingsToggleRow(",
+        "AppSettingsStepperRow(",
+        "AppSettingsPickerRow(",
+        "AppSettingsSegmentedPickerRow(",
+        "AppSettingsReadOnlyRow(",
+        "AppSettingsSecureFieldRow(",
     ]
 
     // MARK: - 卡片体系源码扫描
 
-    /// 收集 `Packages/*/Sources` 下所有 Swift 源码（跳过 `.build` 等构建产物）。
-    private static func packageSourceFiles(root: URL) throws -> [URL] {
-        let packagesRoot = root.appendingPathComponent("Packages")
-        let fileManager = FileManager.default
-        let packages = try fileManager.contentsOfDirectory(
-            at: packagesRoot,
-            includingPropertiesForKeys: [.isDirectoryKey]
-        )
-        var files: [URL] = []
-        for package in packages {
-            let sources = package.appendingPathComponent("Sources")
-            guard fileManager.fileExists(atPath: sources.path) else { continue }
-            files.append(contentsOf: try swiftFiles(under: sources))
-        }
-        return files.sorted { $0.path < $1.path }
-    }
-
-    /// 相对仓库根的路径，用于测试报告。
-    private static func relativePath(of file: URL, root: URL) -> String {
-        let rootPath = root.path.hasSuffix("/") ? root.path : root.path + "/"
-        if file.path.hasPrefix(rootPath) {
-            return String(file.path.dropFirst(rootPath.count))
-        }
-        return file.lastPathComponent
-    }
-
-    /// 找出所有**不在** `AppCard { … }` 作用域里的 `AppSettingsSection(`，返回行号。
+    /// 不在设置窗口侧边栏、但同样属于「设置类界面」的插件面板文件。
     ///
-    /// 实现方式是词法扫描：先把字符串字面量与注释涂成空格（长度不变，行号不变），
-    /// 再用大括号栈还原作用域归属。
-    private static func cardlessSectionLines(in source: String) -> [Int] {
-        let cleaned = Self.blankOutStringsAndComments(source)
-        var stack: [Bool] = []   // true 表示该作用域由 `AppCard` 打开
-        var lines: [Int] = []
-        let marker = Array("AppSettingsSection(")
-        var index = 0
+    /// 它们与设置入口详情页共用同一套卡片组件，必须一起纳入检查，否则
+    /// 「统一成旧版 GroupBox 观感」会被这些页面破功。
+    private static let extraCardFamilyPaths = [
+        "Packages/PluginMail/Sources/PluginMail/Views/MailAccountFormView.swift",
+        "Packages/PluginClipboardManager/Sources/PluginClipboardManager/Views/ClipboardSettingsView.swift",
+        "Packages/PluginInput/Sources/PluginInput/Views/InputSettingsView.swift",
+        "Packages/PluginRClick/Sources/PluginRClick/Views/RClickSettingsView.swift",
+        "Packages/PluginSystemBenchmark/Sources/PluginSystemBenchmark/Views/SystemBenchmarkView.swift",
+        "Packages/PluginDevice/Sources/PluginDevice/Views/DeviceInfoView.swift",
+    ]
 
-        while index < cleaned.count {
-            let character = cleaned[index]
-            if character == "{" {
-                stack.append(Self.isAppCardOpener(cleaned, at: index))
-                index += 1
-                continue
-            }
-            if character == "}" {
-                if !stack.isEmpty { stack.removeLast() }
-                index += 1
-                continue
-            }
-            if index + marker.count <= cleaned.count,
-               Array(cleaned[index..<(index + marker.count)]) == marker {
-                if !stack.contains(true) {
-                    lines.append(Self.lineNumber(in: cleaned, at: index))
-                }
-                index += marker.count
-                continue
-            }
-            index += 1
+    /// 需要检查卡片体系的源码：受审设置入口页面（主体 + 相关文件）+ 插件面板设置页。
+    private static func cardFamilySources(root: URL) throws -> [(path: String, source: String)] {
+        var paths: [String] = []
+        for page in auditedPages {
+            paths.append(page.path)
+            paths.append(contentsOf: page.relatedPaths)
         }
-        return lines
-    }
+        paths.append(contentsOf: extraCardFamilyPaths)
 
-    /// 该 `{` 是否属于 `AppCard` 的调用（允许带参数，如 `AppCard(style: .subtle)`）。
-    private static func isAppCardOpener(_ characters: [Character], at braceIndex: Int) -> Bool {
-        let window = max(0, braceIndex - 240)
-        let context = String(characters[window..<braceIndex])
-        guard let range = context.range(of: "AppCard", options: .backwards) else { return false }
-        let tail = String(context[range.upperBound...])
-        return !tail.contains("{") && !tail.contains("}") && !tail.contains(";")
+        var seen = Set<String>()
+        var result: [(path: String, source: String)] = []
+        for path in paths where seen.insert(path).inserted {
+            let url = root.appendingPathComponent(path)
+            guard FileManager.default.fileExists(atPath: url.path) else { continue }
+            let source = try String(contentsOf: url, encoding: .utf8)
+            result.append((path, source))
+        }
+        return result
     }
 
     /// 把字符串字面量与注释替换成空格（保留换行，长度与行号不变）。
+    ///
+    /// 扫描卡片组件时必须先做这一步：注释里写「已改用 AppSettingsSection」这类
+    /// 说明文字不应该被判成违规。
     private static func blankOutStringsAndComments(_ source: String) -> [Character] {
         var result = Array(source)
         var index = 0
@@ -478,24 +460,6 @@ struct SettingsLayoutConformanceTests {
         return result
     }
 
-    /// 字符偏移对应的行号（从 1 开始）。
-    private static func lineNumber(in characters: [Character], at offset: Int) -> Int {
-        var line = 1
-        for position in 0..<min(offset, characters.count) where characters[position] == "\n" {
-            line += 1
-        }
-        return line
-    }
-
-    /// 直接使用 `AppSettingsContentScaffold` 的页面若自己渲染 `AppCard`，
-    /// 必须显式注入 `.subtle` 卡片风格（`PluginSettingsScaffold` 已代为注入）。
-    private static func needsSubtleCardStyleOverride(_ source: String) -> Bool {
-        guard source.contains("AppSettingsContentScaffold") else { return false }
-        guard source.contains("AppCard") else { return false }
-        if source.contains("PluginSettingsScaffold") { return false }
-        return !source.contains("appSettingsCardStyleOverride")
-    }
-
     @Test("仓库里每个注册到设置窗口的入口都被审计表覆盖")
     func everyRegisteredEntryIsAudited() throws {
         let root = try Self.repositoryRoot()
@@ -548,9 +512,12 @@ struct SettingsLayoutConformanceTests {
         if !source.contains(".frame(width: \(listWidth))") {
             failures.append("- \(page.path)：列表栏宽度应为 \(listWidth)")
         }
-        // 主从容器圆角。
-        if !source.contains("cornerRadius: \(splitCornerRadius)") {
-            failures.append("- \(page.path)：主从容器圆角应为 \(splitCornerRadius)")
+        // 贴边页：主从容器直接贴到窗口边缘，没有外框圆角 / 描边，也没有底部留白。
+        if !page.isEdgeToEdge {
+            // 主从容器圆角。
+            if !source.contains("cornerRadius: \(splitCornerRadius)") {
+                failures.append("- \(page.path)：主从容器圆角应为 \(splitCornerRadius)")
+            }
         }
         // 主从容器必须吃满剩余空间。
         if !source.contains(".frame(maxHeight: .infinity)") {
@@ -564,8 +531,9 @@ struct SettingsLayoutConformanceTests {
                 + "（会让整页超出窗口并被居中裁切，只保留 maxHeight: .infinity 即可）"
             )
         }
-        // 页面底部留白。
-        if !source.contains(".padding(.bottom, \(bottomPadding))") {
+        // 页面底部留白。贴边页底部直接贴到窗口边缘，不需要留白。
+        if !page.isEdgeToEdge,
+           !source.contains(".padding(.bottom, \(bottomPadding))") {
             failures.append("- \(page.path)：缺少 .padding(.bottom, \(bottomPadding)) 底部留白")
         }
         // 详情栏内容内边距。
@@ -584,8 +552,9 @@ struct SettingsLayoutConformanceTests {
                 failures.append("- \(page.path)：主从容器最小高度仍是 \(stale)")
             }
         }
-        // 主从容器必须保留描边（不能只 clip 不描边）。
-        if !source.contains("strokeBorder") {
+        // 主从容器必须保留描边（不能只 clip 不描边）。贴边页没有外框，不需要描边。
+        if !page.isEdgeToEdge,
+           !source.contains("strokeBorder") {
             failures.append("- \(page.path)：主从容器缺少 1px 描边")
         }
         return failures

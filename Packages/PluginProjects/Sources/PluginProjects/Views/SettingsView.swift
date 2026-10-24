@@ -64,7 +64,6 @@ public struct SettingsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .padding(.bottom, 16)
-        .environment(\.appSettingsCardStyleOverride, .subtle)
         .task {
             await loadOpenedFiles()
         }
@@ -178,45 +177,49 @@ public struct SettingsView: View {
         if let project = selectedProject {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    AppCard {
-                        AppSettingsSection(
-                            title: pluginLocalization.string("Overview")
-                        ) {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text(project.name)
-                                    .font(.title3.weight(.semibold))
-                                    .foregroundStyle(theme.textPrimary)
-                                    .lineLimit(2)
+                    AppSettingSection(
+                        title: pluginLocalization.string("Overview"),
+                        titleAlignment: .leading
+                    ) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text(project.name)
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(theme.textPrimary)
+                                .lineLimit(2)
 
-                                HStack(spacing: 6) {
-                                    Image(systemName: "folder")
-                                        .foregroundStyle(theme.textSecondary)
-                                    Text(project.path)
-                                        .font(.callout)
-                                        .foregroundStyle(theme.textSecondary)
-                                        .textSelection(.enabled)
-                                    Spacer()
-                                    AppButton(
-                                        pluginLocalization.string("Open in Finder"),
-                                        systemImage: "folder",
-                                        style: .secondary,
-                                        size: .small
-                                    ) {
-                                        NSWorkspace.shared.open(URL(fileURLWithPath: project.path))
-                                    }
+                            HStack(spacing: 6) {
+                                Image(systemName: "folder")
+                                    .foregroundStyle(theme.textSecondary)
+                                Text(project.path)
+                                    .font(.callout)
+                                    .foregroundStyle(theme.textSecondary)
+                                    .textSelection(.enabled)
+                                Spacer()
+                                AppButton(
+                                    pluginLocalization.string("Open in Finder"),
+                                    systemImage: "folder",
+                                    style: .secondary,
+                                    size: .small
+                                ) {
+                                    NSWorkspace.shared.open(URL(fileURLWithPath: project.path))
                                 }
                             }
                         }
                     }
 
-                    AppCard {
-                        AppSettingsSection(
-                            title: pluginLocalization.string("Basic Info")
-                        ) {
+                    AppSettingSection(
+                        title: pluginLocalization.string("Basic Info"),
+                        titleAlignment: .leading
+                    ) {
+                        VStack(spacing: 0) {
                             detailRow(title: pluginLocalization.string("Name"), icon: "text.cursor", value: project.name)
+                            Divider().padding(.vertical, 8)
                             detailRow(title: pluginLocalization.string("Path"), icon: "folder", value: project.path, monospace: true)
+                            Divider().padding(.vertical, 8)
                             detailRow(title: pluginLocalization.string("Language"), icon: "character.book.closed", value: project.language?.capitalized ?? pluginLocalization.string("Unknown"))
+                            Divider().padding(.vertical, 8)
                             detailRow(title: pluginLocalization.string("Last Used"), icon: "calendar", value: formattedDate(project.lastUsed))
+                            Divider().padding(.vertical, 8)
                             detailRow(
                                 title: pluginLocalization.string("Status"),
                                 icon: "star",
@@ -253,54 +256,53 @@ public struct SettingsView: View {
         let urls = opened?.openFileURLs ?? []
         let current = opened?.currentFileURL
 
-        AppCard {
-            AppSettingsSection(
-                title: pluginLocalization.string("Opened Files")
-            ) {
-                if isLoadingOpenedFiles {
-                    HStack(spacing: 8) {
-                        ProgressView()
-                            .controlSize(.small)
-                        Text(pluginLocalization.string("Loading opened files…"))
-                            .font(.appCaption)
-                            .foregroundStyle(theme.textSecondary)
-                    }
-                } else if urls.isEmpty {
-                    Text(pluginLocalization.string("No opened files recorded"))
-                        .font(.callout)
+        AppSettingSection(
+            title: pluginLocalization.string("Opened Files"),
+            titleAlignment: .leading
+        ) {
+            if isLoadingOpenedFiles {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(pluginLocalization.string("Loading opened files…"))
+                        .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
-                } else {
-                    VStack(alignment: .leading, spacing: 6) {
-                        if let current {
-                            HStack(spacing: 6) {
-                                Image(systemName: "doc.fill")
-                                    .foregroundStyle(.secondary)
-                                Text(current.lastPathComponent)
-                                    .font(.callout)
-                                    .foregroundStyle(theme.textPrimary)
-                                    .lineLimit(1)
-                                Spacer(minLength: 0)
-                                Text(pluginLocalization.string("Active"))
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        ForEach(Array(urls.prefix(20).enumerated()), id: \.offset) { _, url in
-                            HStack(spacing: 6) {
-                                Image(systemName: "doc")
-                                    .foregroundStyle(.secondary)
-                                Text(url.lastPathComponent)
-                                    .font(.callout)
-                                    .foregroundStyle(theme.textSecondary)
-                                    .lineLimit(1)
-                                Spacer(minLength: 0)
-                            }
-                        }
-                        if urls.count > 20 {
-                            Text(String(format: pluginLocalization.string("+%lld more"), urls.count - 20))
+                }
+            } else if urls.isEmpty {
+                Text(pluginLocalization.string("No opened files recorded"))
+                    .font(.callout)
+                    .foregroundStyle(theme.textSecondary)
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    if let current {
+                        HStack(spacing: 6) {
+                            Image(systemName: "doc.fill")
+                                .foregroundStyle(.secondary)
+                            Text(current.lastPathComponent)
+                                .font(.callout)
+                                .foregroundStyle(theme.textPrimary)
+                                .lineLimit(1)
+                            Spacer(minLength: 0)
+                            Text(pluginLocalization.string("Active"))
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
+                    }
+                    ForEach(Array(urls.prefix(20).enumerated()), id: \.offset) { _, url in
+                        HStack(spacing: 6) {
+                            Image(systemName: "doc")
+                                .foregroundStyle(.secondary)
+                            Text(url.lastPathComponent)
+                                .font(.callout)
+                                .foregroundStyle(theme.textSecondary)
+                                .lineLimit(1)
+                            Spacer(minLength: 0)
+                        }
+                    }
+                    if urls.count > 20 {
+                        Text(String(format: pluginLocalization.string("+%lld more"), urls.count - 20))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -308,28 +310,13 @@ public struct SettingsView: View {
     }
 
     private func detailRow(title: String, icon: String, value: String, monospace: Bool = false) -> some View {
-        AppSettingsRow {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.appCallout)
-                    .foregroundColor(theme.primary)
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.appBody)
-                        .foregroundColor(theme.textPrimary)
-                }
-
-                Spacer()
-
-                Text(value)
-                    .font(monospace ? .system(.callout, design: .monospaced) : .callout)
-                    .foregroundStyle(theme.textSecondary)
-                    .multilineTextAlignment(.trailing)
-                    .lineLimit(3)
-                    .textSelection(.enabled)
-            }
+        AppSettingRow(title: title, icon: icon) {
+            Text(value)
+                .font(monospace ? .system(.callout, design: .monospaced) : .callout)
+                .foregroundStyle(theme.textSecondary)
+                .multilineTextAlignment(.trailing)
+                .lineLimit(3)
+                .textSelection(.enabled)
         }
     }
 

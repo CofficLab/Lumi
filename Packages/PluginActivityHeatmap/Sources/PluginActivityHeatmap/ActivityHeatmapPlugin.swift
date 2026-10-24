@@ -400,7 +400,6 @@ public struct ActivityHeatmapSettingsView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .environment(\.appSettingsCardStyleOverride, .subtle)
         .task { await model.reload() }
     }
 
@@ -408,68 +407,64 @@ public struct ActivityHeatmapSettingsView: View {
         let totalMessages = model.heatmapDays.reduce(0) { $0 + $1.messages }
         let totalTokens = model.heatmapDays.reduce(0) { $0 + $1.tokens }
         let activeDays = model.heatmapDays.filter { $0.messages > 0 }.count
-        return AppCard {
-            AppSettingsSection {
-                HStack(spacing: 12) {
-                    metric(L("Messages"), value: "\(totalMessages)", symbol: "bubble.left.and.bubble.right")
-                    metric(L("Active days"), value: "\(activeDays)", symbol: "calendar")
-                    metric(L("Tokens"), value: TokenCountFormat.compact(totalTokens), symbol: "number")
-                }
-            }
+        return HStack(spacing: 12) {
+            metric(L("Messages"), value: "\(totalMessages)", symbol: "bubble.left.and.bubble.right")
+            metric(L("Active days"), value: "\(activeDays)", symbol: "calendar")
+            metric(L("Tokens"), value: TokenCountFormat.compact(totalTokens), symbol: "number")
         }
     }
 
     private func metric(_ title: String, value: String, symbol: String) -> some View {
-        AppSettingsRow {
-            VStack(alignment: .leading, spacing: 6) {
-                Label(title, systemImage: symbol).font(.caption).foregroundStyle(.secondary)
-                Text(value).font(.title3.weight(.semibold)).monospacedDigit()
-            }
+        VStack(alignment: .leading, spacing: 6) {
+            Label(title, systemImage: symbol).font(.caption).foregroundStyle(.secondary)
+            Text(value).font(.title3.weight(.semibold)).monospacedDigit()
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private var heatmap: some View {
-        AppCard {
-            AppSettingsSection(title: L("Daily activity")) {
-                VStack(alignment: .leading, spacing: 12) {
-                    GeometryReader { proxy in
-                        let layout = activityGridLayout(
-                            for: proxy.size.width,
-                            availableDayCount: model.heatmapDays.count
-                        )
-                        let visibleDays = columnMajorDays(
-                            Array(model.heatmapDays.suffix(layout.visibleDayCount)),
-                            columnCount: layout.columnCount
-                        )
-                        let maximum = max(visibleDays.map(\.messages).max() ?? 0, 1)
-                        LazyVGrid(
-                            columns: Array(
-                                repeating: GridItem(.fixed(layout.cellSize), spacing: Self.activityCellSpacing),
-                                count: layout.columnCount
-                            ),
-                            spacing: Self.activityCellSpacing
-                        ) {
-                            ForEach(visibleDays) { day in
-                                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                    .fill(levelColor(day.messages, maximum: maximum))
-                                    .frame(width: layout.cellSize, height: layout.cellSize)
-                                    .help("\(Self.dayFormatter.string(from: day.date)): \(day.messages) \(L("Messages").lowercased())")
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .frame(height: Self.activityCellMaximumSize * CGFloat(Self.activityRowCount)
-                        + Self.activityCellSpacing * CGFloat(Self.activityRowCount - 1))
-                    HStack(spacing: 6) {
-                        Text(L("Less")).font(.caption2).foregroundStyle(.secondary)
-                        ForEach(0...4, id: \.self) { level in
-                            RoundedRectangle(cornerRadius: 2).fill(levelColor(level, maximum: 4)).frame(width: 12, height: 12)
-                        }
-                        Text(L("More")).font(.caption2).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 12) {
+            Text(L("Daily activity")).font(.headline)
+            GeometryReader { proxy in
+                let layout = activityGridLayout(
+                    for: proxy.size.width,
+                    availableDayCount: model.heatmapDays.count
+                )
+                let visibleDays = columnMajorDays(
+                    Array(model.heatmapDays.suffix(layout.visibleDayCount)),
+                    columnCount: layout.columnCount
+                )
+                let maximum = max(visibleDays.map(\.messages).max() ?? 0, 1)
+                LazyVGrid(
+                    columns: Array(
+                        repeating: GridItem(.fixed(layout.cellSize), spacing: Self.activityCellSpacing),
+                        count: layout.columnCount
+                    ),
+                    spacing: Self.activityCellSpacing
+                ) {
+                    ForEach(visibleDays) { day in
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                            .fill(levelColor(day.messages, maximum: maximum))
+                            .frame(width: layout.cellSize, height: layout.cellSize)
+                            .help("\(Self.dayFormatter.string(from: day.date)): \(day.messages) \(L("Messages").lowercased())")
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(height: Self.activityCellMaximumSize * CGFloat(Self.activityRowCount)
+                + Self.activityCellSpacing * CGFloat(Self.activityRowCount - 1))
+            HStack(spacing: 6) {
+                Text(L("Less")).font(.caption2).foregroundStyle(.secondary)
+                ForEach(0...4, id: \.self) { level in
+                    RoundedRectangle(cornerRadius: 2).fill(levelColor(level, maximum: 4)).frame(width: 12, height: 12)
+                }
+                Text(L("More")).font(.caption2).foregroundStyle(.secondary)
             }
         }
+        .padding(16)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private func activityGridLayout(
@@ -534,26 +529,36 @@ public struct ActivityHeatmapSettingsView: View {
     private var tokenTrend: some View {
         let days = model.trendDays
         let totalTokens = days.reduce(0) { $0 + $1.tokens }
-        return AppCard {
-            AppSettingsSection(title: L("Token trend")) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(String(format: L("Total (last 30 days): %@ tokens"), TokenCountFormat.compact(totalTokens)))
-                        .font(.appCaption)
-                        .foregroundStyle(theme.textSecondary)
-                    ActivityTokenTrendChart(days: days)
-                        .frame(height: 132)
-                    if let peak = model.peakTokenDay {
-                        Text(String(
-                            format: L("Peak day: %@ · %@ tokens"),
-                            Self.dayFormatter.string(from: peak.date),
-                            TokenCountFormat.compact(peak.tokens)
-                        ))
-                        .font(.appMicro)
-                        .monospacedDigit()
-                        .foregroundStyle(theme.textSecondary)
-                    }
-                }
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Label(L("Token trend"), systemImage: "chart.xyaxis.line")
+                    .font(.appCaptionEmphasized)
+                    .foregroundStyle(theme.textPrimary)
+                Spacer(minLength: 0)
+                Text(String(format: L("Total (last 30 days): %@ tokens"), TokenCountFormat.compact(totalTokens)))
+                    .font(.appMicro)
+                    .monospacedDigit()
+                    .foregroundStyle(theme.textSecondary)
             }
+            ActivityTokenTrendChart(days: days)
+                .frame(height: 132)
+            if let peak = model.peakTokenDay {
+                Text(String(
+                    format: L("Peak day: %@ · %@ tokens"),
+                    Self.dayFormatter.string(from: peak.date),
+                    TokenCountFormat.compact(peak.tokens)
+                ))
+                .font(.appMicro)
+                .monospacedDigit()
+                .foregroundStyle(theme.textSecondary)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(theme.divider, lineWidth: 0.5)
         }
     }
 
@@ -628,27 +633,26 @@ private struct IdleTimeSummaryCard: View {
     }
 
     var body: some View {
-        AppCard {
-            AppSettingsSection(title: L("Idle time")) {
-                VStack(alignment: .leading, spacing: 12) {
-                    if let snapshot = state.snapshot {
-                        HStack(spacing: 8) {
-                            Text(L("Rest window")).font(.caption).foregroundStyle(.secondary)
-                            Text(restWindow(snapshot)).font(.subheadline.weight(.medium)).monospacedDigit()
-                            Spacer()
-                        }
-                        if !snapshot.bucketScores.isEmpty {
-                            IdleActivityTimeline(
-                                scores: snapshot.bucketScores,
-                                restWindow: snapshot.restWindow
-                            )
-                        }
-                    } else {
-                        ProgressView().controlSize(.small)
-                    }
+        VStack(alignment: .leading, spacing: 12) {
+            Label(L("Idle time"), systemImage: "moon.zzz").font(.headline)
+            if let snapshot = state.snapshot {
+                HStack(spacing: 8) {
+                    Text(L("Rest window")).font(.caption).foregroundStyle(.secondary)
+                    Text(restWindow(snapshot)).font(.subheadline.weight(.medium)).monospacedDigit()
+                    Spacer()
                 }
+                if !snapshot.bucketScores.isEmpty {
+                    IdleActivityTimeline(
+                        scores: snapshot.bucketScores,
+                        restWindow: snapshot.restWindow
+                    )
+                }
+            } else {
+                ProgressView().controlSize(.small)
             }
         }
+        .padding(16)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .task { state.refresh() }
     }
 

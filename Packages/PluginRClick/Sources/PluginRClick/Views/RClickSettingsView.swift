@@ -47,7 +47,7 @@ public struct RClickSettingsView: View {
     }
 
     private var finderExtensionCard: some View {
-        AppCard {
+        AppSettingSection(title: nil, titleAlignment: .leading) {
             VStack(alignment: .leading, spacing: 16) {
                 GlassSectionHeader(
                     icon: "puzzlepiece.extension",
@@ -71,19 +71,30 @@ public struct RClickSettingsView: View {
 
     // MARK: - General Actions
 
+    /// 「通用动作」分组里展示的菜单项（排除「新建文件」子菜单）。
+    private var generalActionItems: [RClickMenuItem] {
+        viewModel.config.items.filter { $0.type != .newFile }
+    }
+
     private var generalActionsCard: some View {
-        AppCard {
-            AppSettingsSection(title: pluginLocalization.string("General Actions")) {
-                ForEach(viewModel.config.items) { item in
-                    if item.type != .newFile {
-                        AppSettingsToggleRow(
-                            item.title,
-                            systemImage: item.type.iconName,
-                            isOn: Binding(
-                                get: { item.isEnabled },
-                                set: { _ in viewModel.toggleItem(item) }
-                            )
+        AppSettingSection(
+            title: pluginLocalization.string("General Actions"),
+            titleAlignment: .leading
+        ) {
+            VStack(spacing: 0) {
+                ForEach(Array(generalActionItems.enumerated()), id: \.element.id) { index, item in
+                    AppSettingToggleRow(
+                        item.title,
+                        icon: item.type.iconName,
+                        isOn: Binding(
+                            get: { item.isEnabled },
+                            set: { _ in viewModel.toggleItem(item) }
                         )
+                    )
+
+                    if index < generalActionItems.count - 1 {
+                        Divider()
+                            .padding(.vertical, 8)
                     }
                 }
             }
@@ -93,7 +104,7 @@ public struct RClickSettingsView: View {
     // MARK: - New File Menu
 
     private var newFileMenuCard: some View {
-        AppCard {
+        AppSettingSection(title: nil, titleAlignment: .leading) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text(pluginLocalization.string("New File Menu"))
@@ -104,51 +115,51 @@ public struct RClickSettingsView: View {
                         .frame(width: 120)
                 }
 
-                if let newFileItem = viewModel.newFileItem {
-                    AppSettingsToggleRow(
-                        pluginLocalization.string("Enable 'New File' Submenu"),
-                        systemImage: newFileItem.type.iconName,
-                        isOn: Binding(
-                            get: { newFileItem.isEnabled },
-                            set: { _ in viewModel.toggleItem(newFileItem) }
+                VStack(spacing: 0) {
+                    if let newFileItem = viewModel.newFileItem {
+                        AppSettingToggleRow(
+                            pluginLocalization.string("Enable 'New File' Submenu"),
+                            icon: newFileItem.type.iconName,
+                            isOn: Binding(
+                                get: { newFileItem.isEnabled },
+                                set: { _ in viewModel.toggleItem(newFileItem) }
+                            )
                         )
-                    )
-                }
+                    }
 
-                if viewModel.newFileItem?.isEnabled == true {
-                    ForEach(viewModel.config.fileTemplates) { template in
-                        AppSettingsRow {
-                            HStack(spacing: 12) {
-                                Image(systemName: "doc.badge.plus")
-                                    .font(.appCallout)
-                                    .foregroundColor(theme.primary)
-                                    .frame(width: 24)
+                    if viewModel.newFileItem?.isEnabled == true {
+                        ForEach(Array(viewModel.config.fileTemplates.enumerated()), id: \.element.id) { index, template in
+                            if index == 0 {
+                                Divider()
+                                    .padding(.vertical, 8)
+                            }
 
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(template.name)
-                                        .font(.appBody)
-                                        .foregroundColor(theme.textPrimary)
-                                    Text(".\(template.extensionName)")
-                                        .font(.appCaption)
-                                        .foregroundColor(theme.textSecondary)
+                            AppSettingRow(
+                                title: template.name,
+                                description: ".\(template.extensionName)",
+                                icon: "doc.badge.plus"
+                            ) {
+                                HStack(spacing: 12) {
+                                    Toggle("", isOn: Binding(
+                                        get: { template.isEnabled },
+                                        set: { _ in viewModel.toggleTemplate(template) }
+                                    ))
+                                    .labelsHidden()
+                                    .toggleStyle(.switch)
+                                    .controlSize(.small)
+
+                                    AppIconButton(
+                                        systemImage: "trash",
+                                        tint: theme.error,
+                                        action: { viewModel.deleteTemplate(template) }
+                                    )
+                                    .help(pluginLocalization.string("Delete Template"))
                                 }
+                            }
 
-                                Spacer()
-
-                                Toggle("", isOn: Binding(
-                                    get: { template.isEnabled },
-                                    set: { _ in viewModel.toggleTemplate(template) }
-                                ))
-                                .labelsHidden()
-                                .toggleStyle(.switch)
-                                .controlSize(.small)
-
-                                AppIconButton(
-                                    systemImage: "trash",
-                                    tint: theme.error,
-                                    action: { viewModel.deleteTemplate(template) }
-                                )
-                                .help(pluginLocalization.string("Delete Template"))
+                            if index < viewModel.config.fileTemplates.count - 1 {
+                                Divider()
+                                    .padding(.vertical, 8)
                             }
                         }
                     }
@@ -160,16 +171,13 @@ public struct RClickSettingsView: View {
     // MARK: - Reset
 
     private var resetCard: some View {
-        AppCard {
-            AppSettingsRow {
-                HStack {
-                    Text(pluginLocalization.string("Reset to Defaults"))
-                        .font(.appBodyEmphasized)
-                        .foregroundColor(theme.error)
-                    Spacer()
-                    AppButton(pluginLocalization.string("Reset"), style: .destructive, fillsWidth: true, action: { viewModel.resetToDefaults() })
-                        .frame(width: 100)
-                }
+        AppSettingSection(title: nil, titleAlignment: .leading) {
+            AppSettingRow(
+                title: pluginLocalization.string("Reset to Defaults"),
+                titleColor: theme.error
+            ) {
+                AppButton(pluginLocalization.string("Reset"), style: .destructive, fillsWidth: true, action: { viewModel.resetToDefaults() })
+                    .frame(width: 100)
             }
         }
     }
