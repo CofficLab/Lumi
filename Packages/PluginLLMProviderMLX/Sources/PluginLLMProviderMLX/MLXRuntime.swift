@@ -29,9 +29,12 @@ final class MLXRuntime {
         try await ensureModelDownloaded(modelID)
         if currentModelID != modelID {
             modelContainer = nil
-            let configuration = ModelConfiguration(directory: MLXModelPaths.modelDirectory(for: modelID))
+            let directory = MLXModelPaths.modelDirectory(for: modelID)
             do {
-                modelContainer = try await loadModelContainer(configuration: configuration) { _ in }
+                // mlx-swift-lm 3.x 要求显式提供 TokenizerLoader（权重下载由 Lumi 自行管理，
+                // 因此只需从本地目录加载权重与 tokenizer）。
+                let tokenizerLoader: any TokenizerLoader = MLXTokenizerLoader()
+                modelContainer = try await loadModelContainer(from: directory, using: tokenizerLoader)
             } catch {
                 throw MLXProviderError.loadFailed(error.localizedDescription)
             }
