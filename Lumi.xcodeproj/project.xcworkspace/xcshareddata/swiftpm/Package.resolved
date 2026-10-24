@@ -222,8 +222,8 @@
       "kind": "remoteSourceControl",
       "location": "https://github.com/CofficLab/LumiThemePack.git",
       "state": {
-        "revision": "dd9d2e5dfc37d2b0b836fb51e921bb0e2db05525",
-        "version": "1.0.10"
+        "revision": "98694ebd008b45733a4917e7e7d210545cdb6759",
+        "version": "1.0.11"
       }
     },
     {
