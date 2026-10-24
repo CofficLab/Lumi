@@ -2,10 +2,10 @@
 
 ## 包概述
 
-ProviderChatSection 的实现包，包含 3 个主要类型；当前测试覆盖 17 条用例。
+ProviderChatSection 的实现包，包含 3 个主要类型；当前测试覆盖 21 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 17
+测试文件: 2 个，用例总数: 21
 
 ## 公开 API
 
@@ -20,6 +20,7 @@ ProviderChatSection 的实现包，包含 3 个主要类型；当前测试覆盖
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **综合**（17 条）：由 `itemsAreSortedAndReplaced`、`dynamicItemRefreshCoalescesNotifications`、`barItemsAreSorted` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **工具栏横向滚动**（4 条）：由 `toolbarKeepsNaturalWidthWhenSpaceIsEnough`、`toolbarDoesNotCompressItemsWhenSpaceIsTight`、`multipleItemsKeepNaturalWidthWhenSpaceIsTight`、`itemsStayVerticallyCentered` 锁定「插件注入的 UI 宽度不足时不被压缩，而是横向滚动查看」；改动 `ChatToolbarRow` 时优先跑 `ChatToolbarScrollTests.swift`。
 
 ## 测试用例清单
 
@@ -42,27 +43,31 @@ ProviderChatSection 的实现包，包含 3 个主要类型；当前测试覆盖
 | 15 | 综合 | clamp pins width to min/max and rejects non-finite | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `widthClampBranches` |
 | 16 | 综合 | standard width allows arbitrary large values | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `standardWidthUpperUnbounded` |
 | 17 | 综合 | init normalizes invalid bounds | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `initNormalizesBounds` |
+| 18 | 工具栏横向滚动 | 宽度富余时工具栏内容按自然宽度左对齐，不被拉伸也不被压缩 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolbarKeepsNaturalWidthWhenSpaceIsEnough` |
+| 19 | 工具栏横向滚动 | 宽度不足时贡献项保持自然宽度，而不是被压缩成容器宽度 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `toolbarDoesNotCompressItemsWhenSpaceIsTight` |
+| 20 | 工具栏横向滚动 | 多个贡献项在窄容器下都保持自然宽度 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `multipleItemsKeepNaturalWidthWhenSpaceIsTight` |
+| 21 | 工具栏横向滚动 | 贡献项在工具栏内保持垂直居中 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `itemsStayVerticallyCentered` |
 
-> 说明：全部 **17 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **21 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 15 / 15
+- P0: 已覆盖 4 / 4
+- P1: 已覆盖 17 / 17
 - P2: 已覆盖 0 / 0
-- **合计: 17 / 17**（仅表示清单场景，非源码覆盖率）
+- **合计: 21 / 21**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（15 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
+- **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 17 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 21 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
