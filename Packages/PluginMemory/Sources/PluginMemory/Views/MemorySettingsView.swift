@@ -65,7 +65,7 @@ struct MemorySettingsView: View {
                     detailPane
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
-                .frame(minHeight: 520, maxHeight: .infinity)
+                .frame(maxHeight: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)

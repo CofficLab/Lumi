@@ -18,7 +18,7 @@ import Testing
 /// |------|------|
 /// | 列表栏宽度 | 300 |
 /// | 主从容器圆角 | 8 |
-/// | 主从容器最小高度 | 520 |
+/// | 主从容器高度 | 占满剩余空间（不得写死下限） |
 /// | 详情栏内容内边距 | 22 |
 /// | 页面底部留白 | 16 |
 ///
@@ -42,7 +42,8 @@ struct SettingsLayoutConformanceTests {
     private static let listWidth = 300
     /// 主从容器圆角。
     private static let splitCornerRadius = 8
-    /// 主从容器最小高度。
+    /// 主从容器**不得**写死的下限。写死后整页会超出窗口、被窗口居中裁切，
+    /// 顶部内容直接消失（详见 `.lumi/rules/settings-ui.md`）。
     private static let splitMinHeight = 520
     /// 页面底部留白。
     private static let bottomPadding = 16
@@ -551,9 +552,17 @@ struct SettingsLayoutConformanceTests {
         if !source.contains("cornerRadius: \(splitCornerRadius)") {
             failures.append("- \(page.path)：主从容器圆角应为 \(splitCornerRadius)")
         }
-        // 主从容器最小高度。
-        if !source.contains("minHeight: \(splitMinHeight)") {
-            failures.append("- \(page.path)：主从容器最小高度应为 \(splitMinHeight)")
+        // 主从容器必须吃满剩余空间。
+        if !source.contains(".frame(maxHeight: .infinity)") {
+            failures.append("- \(page.path)：主从容器必须用 .frame(maxHeight: .infinity) 占满剩余空间")
+        }
+        // 主从容器不得写死下限：页面比窗口高时，外层容器被撑大，窗口按居中裁切，
+        // 顶部与底部同时被切掉（顶部卡片标题会整块消失）。
+        if source.contains(".frame(minHeight: \(splitMinHeight)") {
+            failures.append(
+                "- \(page.path)：主从容器不得写死 minHeight: \(splitMinHeight)"
+                + "（会让整页超出窗口并被居中裁切，只保留 maxHeight: .infinity 即可）"
+            )
         }
         // 页面底部留白。
         if !source.contains(".padding(.bottom, \(bottomPadding))") {
@@ -572,7 +581,7 @@ struct SettingsLayoutConformanceTests {
         }
         for stale in staleMinHeights {
             if source.contains("minHeight: \(stale)") {
-                failures.append("- \(page.path)：主从容器最小高度仍是 \(stale)，应为 \(splitMinHeight)")
+                failures.append("- \(page.path)：主从容器最小高度仍是 \(stale)")
             }
         }
         // 主从容器必须保留描边（不能只 clip 不描边）。
