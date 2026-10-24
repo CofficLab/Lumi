@@ -16,14 +16,10 @@ struct AgentRulesChatToolbarView: View {
                 Image(systemName: "doc.text")
                     .font(.system(size: 10, weight: .medium))
 
-                if !viewModel.rules.isEmpty {
-                    Text("\(viewModel.rules.count)")
-                        .font(.system(size: 10, weight: .medium))
-                        .contentTransition(.numericText())
-                } else {
-                    Text(pluginLocalization.string("Rules"))
-                        .font(.system(size: 10, weight: .medium))
-                }
+                Text("\(viewModel.rules.count)")
+                    .font(.system(size: 10, weight: .medium))
+                    .contentTransition(.numericText())
+                    .monospacedDigit()
             }
             .foregroundColor(Color.accentColor)
             .padding(.horizontal, 6)
