@@ -31,7 +31,7 @@ content footer 中的 tab 容器；EditorPreview、Terminal 等插件只贡献�
 
 入口为空时宿主会自动撤回 footer 容器，无需消费方关心
 `RootViewProviding.setContentFooterView`。tab 的 `order` 应派生自插件的
-`order`（见 `.agent/rules/plugin-order-rules.md`），使相对顺序由插件目录统一决定。
+`order`（见 `.lumi/rules/plugin-order-rules.md`），使相对顺序由插件目录统一决定。
 
 ## 依赖与集成
 
