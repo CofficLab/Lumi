@@ -25,8 +25,9 @@ All settings surfaces — built-in core tabs, plugin-contributed sidebar tabs, a
 ### 分栏页：贴边（edge-to-edge）
 
 **分栏页统一采用贴边布局**：主体内容（列表栏 + 详情栏）直接贴到窗口左右与底边，
-没有外框描边，左右下也没有留白。当前采用该布局的有「插件管理」「MCP 服务器」
-「外观」三个入口。
+没有外框描边，左右下也没有留白。设置窗口里所有分栏入口都已经是这个形态：
+插件管理、MCP 服务器、外观、项目、会话存储、HTTP 日志、技能、Agent 规则、
+记忆、供应商。新增分栏页一律照抄下面的写法。
 
 写法要点：
 
@@ -34,8 +35,8 @@ All settings surfaces — built-in core tabs, plugin-contributed sidebar tabs, a
   外面套一层 `GeometryReader`；
 - 整列 `.frame(width: proxy.size.width + 48)` 再 `.offset(x: -24)`，抵消共享
   scaffold 的左右 24 留白，使主从容器正好贴到窗口左右边缘；
-- 头部行自行保留 24 的左右内边距，不要贴到窗口边缘；
-- 头部行与主体之间用一条 `AppDivider()` 分隔（代替原来的 VStack 间距 14）；
+- 头部内容（头部行、统计卡片等）自行保留 24 的左右内边距，不要贴到窗口边缘；
+- 头部内容与主体之间用一条 `AppDivider()` 分隔（代替原来的 VStack 间距 14）；
 - 主从容器不写圆角裁剪、不写 1px 描边（外框的左、右、下三条边都不存在）；
 - 底部不再加 `.padding(.bottom, 16)`；
 - 审计表里标记 `isEdgeToEdge: true`，豁免「圆角 8 / 1px 描边 / 底部留白 16」三项，

@@ -107,7 +107,8 @@ struct SettingsLayoutConformanceTests {
                 "Packages/PluginProjects/Sources/PluginProjects/Views/ProjectRAGStatusSection.swift",
             ],
             kind: .masterDetail,
-            detailPadding: 22
+            detailPadding: 22,
+            isEdgeToEdge: true
         ),
         AuditedPage(
             viewTypeNames: ["MCPSettingsView"],
@@ -122,35 +123,40 @@ struct SettingsLayoutConformanceTests {
             path: "Packages/PluginConversationManager/Sources/PluginConversationManager/Views/ConversationStoreSettingsView.swift",
             relatedPaths: [],
             kind: .masterDetail,
-            detailPadding: 22
+            detailPadding: 22,
+            isEdgeToEdge: true
         ),
         AuditedPage(
             viewTypeNames: ["HTTPExchangeSettingsView"],
             path: "Packages/PluginNetworkManager/Sources/PluginNetworkManager/Views/HTTPExchangeSettingsView.swift",
             relatedPaths: [],
             kind: .masterDetail,
-            detailPadding: 22
+            detailPadding: 22,
+            isEdgeToEdge: true
         ),
         AuditedPage(
             viewTypeNames: ["SkillSettingsView"],
             path: "Packages/PluginSkill/Sources/PluginSkill/Views/SkillSettingsView.swift",
             relatedPaths: [],
             kind: .masterDetail,
-            detailPadding: 22
+            detailPadding: 22,
+            isEdgeToEdge: true
         ),
         AuditedPage(
             viewTypeNames: ["AgentRulesSettingsView"],
             path: "Packages/PluginAgentRules/Sources/PluginAgentRules/Views/AgentRulesSettingsView.swift",
             relatedPaths: [],
             kind: .masterDetail,
-            detailPadding: nil
+            detailPadding: nil,
+            isEdgeToEdge: true
         ),
         AuditedPage(
             viewTypeNames: ["MemorySettingsView"],
             path: "Packages/PluginMemory/Sources/PluginMemory/Views/MemorySettingsView.swift",
             relatedPaths: [],
             kind: .masterDetail,
-            detailPadding: 22
+            detailPadding: 22,
+            isEdgeToEdge: true
         ),
         AuditedPage(
             viewTypeNames: ["ProviderSettingsPageContent", "CloudProviderSettingsPage", "LocalProviderSettingsPage"],
@@ -161,7 +167,8 @@ struct SettingsLayoutConformanceTests {
                 "Packages/PluginLLMProviderSettings/Sources/PluginLLMProviderSettings/Views/CustomCloudProviderEditor.swift",
             ],
             kind: .masterDetail,
-            detailPadding: 22
+            detailPadding: 22,
+            isEdgeToEdge: true
         ),
         AuditedPage(
             viewTypeNames: ["GeneralSettingsDetailView"],

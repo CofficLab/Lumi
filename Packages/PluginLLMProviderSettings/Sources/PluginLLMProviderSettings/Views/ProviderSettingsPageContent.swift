@@ -20,26 +20,31 @@ struct ProviderSettingsPageContent: View {
 
     var body: some View {
         AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
-            VStack(alignment: .leading, spacing: 14) {
-                header
-                HStack(spacing: 0) {
-                    sidebar
-                        .frame(width: 300)
-                        .frame(maxHeight: .infinity)
-                    AppDivider(.vertical)
-                    detailPane
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            GeometryReader { proxy in
+                VStack(alignment: .leading, spacing: 0) {
+                    header
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 12)
+                    // 主体内容贴边后，用一条顶部分隔线把头部行与主从容器分开。
+                    AppDivider()
+
+                    HStack(spacing: 0) {
+                        sidebar
+                            .frame(width: 300)
+                            .frame(maxHeight: .infinity)
+                        AppDivider(.vertical)
+                        detailPane
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    }
+                    .frame(maxHeight: .infinity)
                 }
-                .frame(maxHeight: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(theme.divider, lineWidth: 1)
-                }
+                // 共享 scaffold 给内容留了左右 24，这里把整列加宽 48 并左移 24，
+                // 使主从容器正好贴到窗口左右边缘；标题行再自行补回 24 留白。
+                .frame(width: proxy.size.width + 48, alignment: .topLeading)
+                .offset(x: -24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .padding(.bottom, 16)
         .environment(\.appSettingsCardStyleOverride, .subtle)
         .sheet(isPresented: $isCustomProviderEditorPresented) {
             if let editor = viewModel.makeNewCustomProviderEditor() {
