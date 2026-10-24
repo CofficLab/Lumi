@@ -8,6 +8,7 @@ import SwiftUI
 /// 只依赖 `QuickLauncherSettingsViewModel`；热键、录制与持久化配置
 /// 全部由 ViewModel 提供。
 public struct LauncherSettingsView: View {
+    @LumiTheme private var theme
     @ObservedObject private var viewModel: QuickLauncherSettingsViewModel
 
     init(viewModel: QuickLauncherSettingsViewModel) {
@@ -23,6 +24,7 @@ public struct LauncherSettingsView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .environment(\.appSettingsCardStyleOverride, .subtle)
         .onDisappear {
             viewModel.stopRecording()
         }
@@ -31,43 +33,58 @@ public struct LauncherSettingsView: View {
     // MARK: - Hotkey
 
     private var hotkeySection: some View {
-        AppSettingSection(
-            title: pluginLocalization.string("Global Hotkey"),
-            titleAlignment: .leading
-        ) {
-            AppSettingRow(
-                title: pluginLocalization.string("Toggle Launcher"),
-                description: pluginLocalization.string("Press the hotkey anywhere to open the launcher. Click Record, then press a key combination with ⌘/⌥/⌃."),
-                icon: "command"
+        AppCard {
+            AppSettingsSection(
+                title: pluginLocalization.string("Global Hotkey")
             ) {
-                HStack(spacing: 8) {
-                    AppTag(viewModel.currentComboDisplay, systemImage: "command", style: .accent)
+                AppSettingsRow {
+                    HStack(spacing: 12) {
+                        Image(systemName: "command")
+                            .font(.appCallout)
+                            .foregroundColor(theme.primary)
+                            .frame(width: 24)
 
-                    if viewModel.isRecording {
-                        AppButton(
-                            pluginLocalization.string("Cancel"),
-                            systemImage: "xmark",
-                            style: .secondary,
-                            size: .small
-                        ) {
-                            viewModel.stopRecording()
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(pluginLocalization.string("Toggle Launcher"))
+                                .font(.appBody)
+                                .foregroundColor(theme.textPrimary)
+                            Text(pluginLocalization.string("Press the hotkey anywhere to open the launcher. Click Record, then press a key combination with ⌘/⌥/⌃."))
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
                         }
-                    } else {
-                        AppButton(
-                            pluginLocalization.string("Record"),
-                            systemImage: "record.circle",
-                            style: .secondary,
-                            size: .small
-                        ) {
-                            viewModel.startRecording()
-                        }
-                        AppButton(
-                            pluginLocalization.string("Reset"),
-                            systemImage: "arrow.counterclockwise",
-                            style: .secondary,
-                            size: .small
-                        ) {
-                            viewModel.resetHotkey()
+
+                        Spacer()
+
+                        HStack(spacing: 8) {
+                            AppTag(viewModel.currentComboDisplay, systemImage: "command", style: .accent)
+
+                            if viewModel.isRecording {
+                                AppButton(
+                                    pluginLocalization.string("Cancel"),
+                                    systemImage: "xmark",
+                                    style: .secondary,
+                                    size: .small
+                                ) {
+                                    viewModel.stopRecording()
+                                }
+                            } else {
+                                AppButton(
+                                    pluginLocalization.string("Record"),
+                                    systemImage: "record.circle",
+                                    style: .secondary,
+                                    size: .small
+                                ) {
+                                    viewModel.startRecording()
+                                }
+                                AppButton(
+                                    pluginLocalization.string("Reset"),
+                                    systemImage: "arrow.counterclockwise",
+                                    style: .secondary,
+                                    size: .small
+                                ) {
+                                    viewModel.resetHotkey()
+                                }
+                            }
                         }
                     }
                 }
@@ -78,28 +95,23 @@ public struct LauncherSettingsView: View {
     // MARK: - Sources
 
     private var sourcesSection: some View {
-        AppSettingSection(
-            title: pluginLocalization.string("Search Sources"),
-            titleAlignment: .leading
-        ) {
-            VStack(spacing: 0) {
-                AppSettingToggleRow(
+        AppCard {
+            AppSettingsSection(
+                title: pluginLocalization.string("Search Sources")
+            ) {
+                AppSettingsToggleRow(
                     pluginLocalization.string("Applications"),
-                    icon: "app.fill",
+                    systemImage: "app.fill",
                     isOn: $viewModel.appsEnabled
                 )
-                Divider()
-                    .padding(.vertical, 8)
-                AppSettingToggleRow(
+                AppSettingsToggleRow(
                     pluginLocalization.string("Files (Spotlight)"),
-                    icon: "doc.text.magnifyingglass",
+                    systemImage: "doc.text.magnifyingglass",
                     isOn: $viewModel.filesEnabled
                 )
-                Divider()
-                    .padding(.vertical, 8)
-                AppSettingToggleRow(
+                AppSettingsToggleRow(
                     pluginLocalization.string("Commands"),
-                    icon: "terminal",
+                    systemImage: "terminal",
                     isOn: $viewModel.commandsEnabled
                 )
             }
@@ -109,39 +121,30 @@ public struct LauncherSettingsView: View {
     // MARK: - Usage
 
     private var usageSection: some View {
-        AppSettingSection(
-            title: pluginLocalization.string("How to Use"),
-            titleAlignment: .leading
-        ) {
-            VStack(spacing: 0) {
+        AppCard {
+            AppSettingsSection(
+                title: pluginLocalization.string("How to Use")
+            ) {
                 instructionRow(
                     key: viewModel.currentComboDisplay,
                     description: pluginLocalization.string("Open the launcher anywhere"),
                     icon: "command"
                 )
-                Divider()
-                    .padding(.vertical, 8)
                 instructionRow(
                     key: "?",
                     description: pluginLocalization.string("Prefix with ? to ask Lumi directly"),
                     icon: "questionmark"
                 )
-                Divider()
-                    .padding(.vertical, 8)
                 instructionRow(
                     key: "↑ ↓",
                     description: pluginLocalization.string("Navigate results"),
                     icon: "arrow.up.arrow.down"
                 )
-                Divider()
-                    .padding(.vertical, 8)
                 instructionRow(
                     key: "↩",
                     description: pluginLocalization.string("Open / execute selected result"),
                     icon: "return"
                 )
-                Divider()
-                    .padding(.vertical, 8)
                 instructionRow(
                     key: "Esc",
                     description: pluginLocalization.string("Close the launcher"),
@@ -152,11 +155,23 @@ public struct LauncherSettingsView: View {
     }
 
     private func instructionRow(key: String, description: String, icon: String) -> some View {
-        AppSettingRow(
-            title: description,
-            icon: icon
-        ) {
-            AppTag(key, style: .subtle)
+        AppSettingsRow {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.appCallout)
+                    .foregroundColor(theme.primary)
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(description)
+                        .font(.appBody)
+                        .foregroundColor(theme.textPrimary)
+                }
+
+                Spacer()
+
+                AppTag(key, style: .subtle)
+            }
         }
     }
 }

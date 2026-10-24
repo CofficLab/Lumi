@@ -29,12 +29,12 @@ struct AgentRulesSettingsView: View {
             showHeader: false,
             scrollsContent: false
         ) {
-            VStack(spacing: 12) {
+            VStack(spacing: 14) {
                 header
 
                 HStack(spacing: 0) {
                     sidebar
-                        .frame(width: 340)
+                        .frame(width: 300)
                         .frame(maxHeight: .infinity)
 
                     AppDivider(.vertical)
@@ -42,7 +42,7 @@ struct AgentRulesSettingsView: View {
                     detailPane
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
-                .frame(maxHeight: .infinity)
+                .frame(minHeight: 520, maxHeight: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -51,6 +51,7 @@ struct AgentRulesSettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+        .padding(.bottom, 16)
         .task { await viewModel.reload() }
         .onAppear { viewModel.seedSelectionIfNeeded() }
     }

@@ -23,53 +23,52 @@ struct GitActivityHeatmapProjectSection: View {
     }
 
     var body: some View {
-        AppSettingSection(
-            title: L("Commit Activity"),
-            titleAlignment: .leading
-        ) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(L("Commits in the last year"))
-                        .font(.appCaption)
-                        .foregroundStyle(theme.textSecondary)
-                    Spacer()
-                    if let snapshot = viewModel.snapshot {
-                        Text(summary(for: snapshot))
+        AppCard {
+            AppSettingsSection(title: L("Commit Activity")) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(L("Commits in the last year"))
                             .font(.appCaption)
                             .foregroundStyle(theme.textSecondary)
+                        Spacer()
+                        if let snapshot = viewModel.snapshot {
+                            Text(summary(for: snapshot))
+                                .font(.appCaption)
+                                .foregroundStyle(theme.textSecondary)
+                        }
+                        AppIconButton(systemImage: "arrow.clockwise") {
+                            viewModel.refresh()
+                        }
+                        .help(L("Refresh activity"))
                     }
-                    AppIconButton(systemImage: "arrow.clockwise") {
-                        viewModel.refresh()
-                    }
-                    .help(L("Refresh activity"))
-                }
 
-                if viewModel.isLoading {
-                    HStack(spacing: 8) {
-                        ProgressView().controlSize(.small)
-                        Text(L("Loading commit activity…"))
-                            .font(.appCaption)
-                            .foregroundStyle(theme.textSecondary)
+                    if viewModel.isLoading {
+                        HStack(spacing: 8) {
+                            ProgressView().controlSize(.small)
+                            Text(L("Loading commit activity…"))
+                                .font(.appCaption)
+                                .foregroundStyle(theme.textSecondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 20)
+                    } else if let snapshot = viewModel.snapshot {
+                        heatmap(snapshot)
+                        legend
+                    } else {
+                        VStack(spacing: 8) {
+                            Image(systemName: "chart.bar.xaxis")
+                                .font(.title3)
+                                .foregroundStyle(theme.textTertiary)
+                            Text(L("No Git commit activity available"))
+                                .font(.appCaption)
+                                .foregroundStyle(theme.textSecondary)
+                            Text(L("Make sure this project is a Git repository."))
+                                .font(.appMicro)
+                                .foregroundStyle(theme.textTertiary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
                     }
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 20)
-                } else if let snapshot = viewModel.snapshot {
-                    heatmap(snapshot)
-                    legend
-                } else {
-                    VStack(spacing: 8) {
-                        Image(systemName: "chart.bar.xaxis")
-                            .font(.title3)
-                            .foregroundStyle(theme.textTertiary)
-                        Text(L("No Git commit activity available"))
-                            .font(.appCaption)
-                            .foregroundStyle(theme.textSecondary)
-                        Text(L("Make sure this project is a Git repository."))
-                            .font(.appMicro)
-                            .foregroundStyle(theme.textTertiary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
                 }
             }
         }

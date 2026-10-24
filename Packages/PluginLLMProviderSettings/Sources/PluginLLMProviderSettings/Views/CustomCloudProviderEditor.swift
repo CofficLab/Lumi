@@ -65,58 +65,64 @@ public struct CustomCloudProviderEditor: View {
             ScrollView {
                 VStack(spacing: DesignTokens.Spacing.md) {
                     // 基本信息
-                    AppSettingSection(title: "基本信息") {
-                        AppInputField("供应商名称", text: $form.displayName)
-                            .accessibilityIdentifier(ProviderSettingsAccessibility.nameField)
-                        AppInputField("描述（可选）", text: $form.description)
-                            .accessibilityIdentifier(ProviderSettingsAccessibility.descriptionField)
-                        AppInputField("官网（可选）", text: $form.websiteURL)
-                            .accessibilityIdentifier(ProviderSettingsAccessibility.websiteField)
+                    AppCard {
+                        AppSettingsSection(title: "基本信息") {
+                            AppInputField("供应商名称", text: $form.displayName)
+                                .accessibilityIdentifier(ProviderSettingsAccessibility.nameField)
+                            AppInputField("描述（可选）", text: $form.description)
+                                .accessibilityIdentifier(ProviderSettingsAccessibility.descriptionField)
+                            AppInputField("官网（可选）", text: $form.websiteURL)
+                                .accessibilityIdentifier(ProviderSettingsAccessibility.websiteField)
+                        }
                     }
 
                     // 连接
-                    AppSettingSection {
-                        HStack {
-                            Text("连接")
-                                .font(.headline)
-                                .foregroundColor(.secondary)
-                            Spacer()
-                            Picker("", selection: $form.apiFormat) {
-                                ForEach(apiFormats, id: \.self) { format in
-                                    Text(Self.apiFormatTitle(format))
-                                        .tag(format)
+                    AppCard {
+                        AppSettingsSection {
+                            HStack {
+                                Text("连接")
+                                    .font(.headline)
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Picker("", selection: $form.apiFormat) {
+                                    ForEach(apiFormats, id: \.self) { format in
+                                        Text(Self.apiFormatTitle(format))
+                                            .tag(format)
+                                    }
                                 }
+                                .labelsHidden()
+                                .pickerStyle(.menu)
+                                .fixedSize()
+                                .accessibilityIdentifier(ProviderSettingsAccessibility.apiFormatPicker)
                             }
-                            .labelsHidden()
-                            .pickerStyle(.menu)
-                            .fixedSize()
-                            .accessibilityIdentifier(ProviderSettingsAccessibility.apiFormatPicker)
+                            .padding(.bottom, 8)
+                            AppInputField("API Endpoint URL", text: $form.baseURL)
+                                .accessibilityIdentifier(ProviderSettingsAccessibility.baseURLField)
                         }
-                        .padding(.bottom, 8)
-                        AppInputField("API Endpoint URL", text: $form.baseURL)
-                            .accessibilityIdentifier(ProviderSettingsAccessibility.baseURLField)
                     }
 
                     // 模型
-                    AppSettingSection(title: "模型") {
-                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                            Text("模型 ID（每行一个）")
-                                .font(DesignTokens.Typography.caption1)
-                                .foregroundColor(theme.textSecondary)
-                            TextEditor(text: $form.modelIDsText)
-                                .font(DesignTokens.Typography.body.monospaced())
-                                .foregroundColor(theme.textPrimary)
-                                .frame(minHeight: 90)
-                                .padding(8)
-                                .background(
-                                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                                        .fill(theme.appListRowBackground)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                                        .stroke(theme.appSubtleBorder, lineWidth: 1)
-                                )
-                                .accessibilityIdentifier(ProviderSettingsAccessibility.modelsField)
+                    AppCard {
+                        AppSettingsSection(title: "模型") {
+                            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+                                Text("模型 ID（每行一个）")
+                                    .font(DesignTokens.Typography.caption1)
+                                    .foregroundColor(theme.textSecondary)
+                                TextEditor(text: $form.modelIDsText)
+                                    .font(DesignTokens.Typography.body.monospaced())
+                                    .foregroundColor(theme.textPrimary)
+                                    .frame(minHeight: 90)
+                                    .padding(8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                                            .fill(theme.appListRowBackground)
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                                            .stroke(theme.appSubtleBorder, lineWidth: 1)
+                                    )
+                                    .accessibilityIdentifier(ProviderSettingsAccessibility.modelsField)
+                            }
                         }
                     }
 

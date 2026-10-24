@@ -70,20 +70,21 @@ public struct PerformanceMetricsSettingsView: View {
     }
 
     public var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+        AppSettingsContentScaffold(maxContentWidth: nil) {
+            VStack(alignment: .leading, spacing: 24) {
                 header
 
                 if isLoading && report == nil {
                     ProgressView()
                         .frame(maxWidth: .infinity, alignment: .center)
                 } else if let report, !report.summaries.isEmpty {
-                    Text(PerformanceMetricsLocalization.string("Latency summaries", bundle: .module))
-                        .font(.headline)
-
-                    LazyVStack(alignment: .leading, spacing: 10) {
-                        ForEach(report.summaries) { summary in
-                            summaryRow(summary)
+                    AppCard {
+                        AppSettingsSection(title: PerformanceMetricsLocalization.string("Latency summaries", bundle: .module)) {
+                            ForEach(report.summaries) { summary in
+                                AppSettingsRow {
+                                    summaryRowContent(summary)
+                                }
+                            }
                         }
                     }
 
@@ -99,8 +100,9 @@ public struct PerformanceMetricsSettingsView: View {
                     .frame(maxWidth: .infinity)
                 }
             }
-            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .environment(\.appSettingsCardStyleOverride, .subtle)
         .task { await reload() }
     }
 
@@ -135,7 +137,7 @@ public struct PerformanceMetricsSettingsView: View {
         }
     }
 
-    private func summaryRow(_ summary: PerformanceMetricSummary) -> some View {
+    private func summaryRowContent(_ summary: PerformanceMetricSummary) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("\(summary.operation) / \(summary.stage)")
@@ -153,9 +155,6 @@ public struct PerformanceMetricsSettingsView: View {
                 value("Max", summary.maxMilliseconds)
             }
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private func value(_ label: String, _ milliseconds: Double) -> some View {

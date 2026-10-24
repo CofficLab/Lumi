@@ -17,16 +17,14 @@ struct ToolManagerSettingsView: View {
 
     var body: some View {
         AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 14) {
                 tabBar
                 contentArea
-                    // The scaffold intentionally disables its outer scroll view
-                    // because each tab owns a full-height list. Keep a small
-                    // trailing inset so section borders remain fully visible.
-                    .padding(.trailing, -12)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+        .padding(.bottom, 16)
+        .environment(\.appSettingsCardStyleOverride, .subtle)
         .task {
             switch viewModel.selectedTabID {
             case .tools:
@@ -133,13 +131,9 @@ struct ToolManagerSettingsView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
                         ForEach(viewModel.groups, id: \.pluginID) { group in
-                            AppSettingSection(title: group.pluginID, titleAlignment: .leading) {
-                                VStack(spacing: 0) {
-                                    ForEach(Array(group.tools.enumerated()), id: \.element.name) { index, tool in
-                                        if index > 0 {
-                                            Divider()
-                                                .padding(.vertical, 8)
-                                        }
+                            AppCard {
+                                AppSettingsSection(title: group.pluginID) {
+                                    ForEach(Array(group.tools.enumerated()), id: \.element.name) { _, tool in
                                         ToolManagerToolRowView(tool: tool)
                                     }
                                 }
@@ -157,15 +151,31 @@ struct ToolManagerSettingsView: View {
 
 /// 单个工具行：名称 + 描述。
 private struct ToolManagerToolRowView: View {
+    @LumiTheme private var theme
+
     let tool: any SuperAgentTool
 
     var body: some View {
-        AppSettingRow(
-            title: tool.name,
-            description: tool.description(for: .chinese),
-            icon: "wrench.and.screwdriver"
-        ) {
-            EmptyView()
+        AppSettingsRow {
+            HStack(spacing: 12) {
+                Image(systemName: "wrench.and.screwdriver")
+                    .font(.appCallout)
+                    .foregroundColor(theme.primary)
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(tool.name)
+                        .font(.appBody)
+                        .foregroundColor(theme.textPrimary)
+                    Text(tool.description(for: .chinese))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
+                }
+
+                Spacer()
+
+                EmptyView()
+            }
         }
     }
 }

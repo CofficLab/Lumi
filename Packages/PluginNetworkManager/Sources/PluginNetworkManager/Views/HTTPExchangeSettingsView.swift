@@ -95,7 +95,7 @@ public struct HTTPExchangeSettingsView: View {
             showHeader: false,
             scrollsContent: false
         ) {
-            VStack(spacing: 12) {
+            VStack(spacing: 14) {
                 HStack {
                     Spacer()
                     totalCountButton
@@ -108,7 +108,7 @@ public struct HTTPExchangeSettingsView: View {
 
                 HStack(spacing: 0) {
                     sidebar
-                        .frame(width: 340)
+                        .frame(width: 300)
                         .frame(maxHeight: .infinity)
 
                     AppDivider(.vertical)
@@ -116,7 +116,7 @@ public struct HTTPExchangeSettingsView: View {
                     detailPane
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
-                .frame(maxHeight: .infinity)
+                .frame(minHeight: 520, maxHeight: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -125,6 +125,7 @@ public struct HTTPExchangeSettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+        .padding(.bottom, 16)
         .task {
             await reloadAsync()
         }
@@ -159,26 +160,25 @@ public struct HTTPExchangeSettingsView: View {
     }
 
     private var requestActivity: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                Label(pluginLocalization.string("Daily HTTP requests"), systemImage: "chart.xyaxis.line")
-                    .font(.appCaptionEmphasized)
-                    .foregroundStyle(theme.textPrimary)
-                Spacer(minLength: 0)
-                Text(pluginLocalization.string("Peak") + " (\(dailyCountSeries.peakCount))")
-                    .font(.appMicro)
-                    .monospacedDigit()
-                    .foregroundStyle(theme.textSecondary)
+        AppCard {
+            AppSettingsSection {
+                AppSettingsRow {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(alignment: .firstTextBaseline) {
+                            Label(pluginLocalization.string("Daily HTTP requests"), systemImage: "chart.xyaxis.line")
+                                .font(.appCaptionEmphasized)
+                                .foregroundStyle(theme.textPrimary)
+                            Spacer(minLength: 0)
+                            Text(pluginLocalization.string("Peak") + " (\(dailyCountSeries.peakCount))")
+                                .font(.appMicro)
+                                .monospacedDigit()
+                                .foregroundStyle(theme.textSecondary)
+                        }
+                        HTTPExchangeDailyCountChart(series: dailyCountSeries)
+                            .frame(height: 132)
+                    }
+                }
             }
-            HTTPExchangeDailyCountChart(series: dailyCountSeries)
-                .frame(height: 132)
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(theme.divider, lineWidth: 0.5)
         }
     }
 
@@ -361,50 +361,92 @@ public struct HTTPExchangeSettingsView: View {
 
     private func requestTab(for record: HTTPExchangeExportSnapshot) -> some View {
         detailScroll {
-            AppSettingSection(
-                title: pluginLocalization.string("Request"),
-                titleAlignment: .leading
-            ) {
-                VStack(spacing: 0) {
-                    AppSettingRow(
-                        title: pluginLocalization.string("Method"),
-                        icon: "arrow.left.arrow.right"
-                    ) {
-                        AppTag(record.method, systemImage: "arrow.up.right", style: .accent)
+            AppCard {
+                AppSettingsSection(title: pluginLocalization.string("Request")) {
+                    AppSettingsRow {
+                        HStack(spacing: 12) {
+                            Image(systemName: "arrow.left.arrow.right")
+                                .font(.appCallout)
+                                .foregroundColor(theme.primary)
+                                .frame(width: 24)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(pluginLocalization.string("Method"))
+                                    .font(.appBody)
+                                    .foregroundColor(theme.textPrimary)
+                            }
+
+                            Spacer()
+
+                            AppTag(record.method, systemImage: "arrow.up.right", style: .accent)
+                        }
                     }
 
-                    Divider()
-                        .padding(.vertical, 8)
+                    AppSettingsRow {
+                        HStack(spacing: 12) {
+                            Image(systemName: "link")
+                                .font(.appCallout)
+                                .foregroundColor(theme.primary)
+                                .frame(width: 24)
 
-                    AppSettingRow(
-                        title: pluginLocalization.string("URL"),
-                        description: record.url,
-                        icon: "link"
-                    ) {
-                        copyButton(record.url)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(pluginLocalization.string("URL"))
+                                    .font(.appBody)
+                                    .foregroundColor(theme.textPrimary)
+                                Text(record.url)
+                                    .font(.appCaption)
+                                    .foregroundColor(theme.textSecondary)
+                            }
+
+                            Spacer()
+
+                            copyButton(record.url)
+                        }
                     }
 
-                    Divider()
-                        .padding(.vertical, 8)
+                    AppSettingsRow {
+                        HStack(spacing: 12) {
+                            Image(systemName: "calendar")
+                                .font(.appCallout)
+                                .foregroundColor(theme.primary)
+                                .frame(width: 24)
 
-                    AppSettingRow(
-                        title: pluginLocalization.string("Started At"),
-                        description: formattedDate(record.startedAt),
-                        icon: "calendar"
-                    ) {
-                        EmptyView()
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(pluginLocalization.string("Started At"))
+                                    .font(.appBody)
+                                    .foregroundColor(theme.textPrimary)
+                                Text(formattedDate(record.startedAt))
+                                    .font(.appCaption)
+                                    .foregroundColor(theme.textSecondary)
+                            }
+
+                            Spacer()
+
+                            EmptyView()
+                        }
                     }
 
                     if let duration = record.duration {
-                        Divider()
-                            .padding(.vertical, 8)
+                        AppSettingsRow {
+                            HStack(spacing: 12) {
+                                Image(systemName: "clock")
+                                    .font(.appCallout)
+                                    .foregroundColor(theme.primary)
+                                    .frame(width: 24)
 
-                        AppSettingRow(
-                            title: pluginLocalization.string("Duration"),
-                            description: String(format: "%.3f s", duration),
-                            icon: "clock"
-                        ) {
-                            EmptyView()
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(pluginLocalization.string("Duration"))
+                                        .font(.appBody)
+                                        .foregroundColor(theme.textPrimary)
+                                    Text(String(format: "%.3f s", duration))
+                                        .font(.appCaption)
+                                        .foregroundColor(theme.textSecondary)
+                                }
+
+                                Spacer()
+
+                                EmptyView()
+                            }
                         }
                     }
                 }
@@ -433,7 +475,7 @@ public struct HTTPExchangeSettingsView: View {
         }
     }
 
-    /// Request-tab section: `AppSettingSection` chrome with an optional caption
+    /// Request-tab section: `AppSettingsSection` chrome with an optional caption
     /// above the payload, matching the settings pages that use this card style.
     @ViewBuilder
     private func payloadSection<Content: View>(
@@ -441,14 +483,16 @@ public struct HTTPExchangeSettingsView: View {
         caption: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        AppSettingSection(title: title, titleAlignment: .leading) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(caption)
-                    .font(.appCaption)
-                    .foregroundStyle(theme.textSecondary)
-                    .padding(.leading, 4)
+        AppCard {
+            AppSettingsSection(title: title) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(caption)
+                        .font(.appCaption)
+                        .foregroundStyle(theme.textSecondary)
+                        .padding(.leading, 4)
 
-                content()
+                    content()
+                }
             }
         }
     }
@@ -476,27 +520,29 @@ public struct HTTPExchangeSettingsView: View {
 
     private func responseTab(for record: HTTPExchangeExportSnapshot) -> some View {
         detailScroll {
-            AppSettingsSection(title: pluginLocalization.string("Response"), subtitle: pluginLocalization.string("HTTP response received from the server")) {
-                AppMetadataCard {
-                    AppMetadataRow(title: pluginLocalization.string("Status"), systemImage: "number") {
-                        AppTag(statusText(for: record), systemImage: statusIcon(for: record), style: .accent)
-                    }
-                    if let responseURL = record.responseURL {
-                        AppSettingsDivider()
-                        AppMetadataRow(title: pluginLocalization.string("URL"), systemImage: "link") {
-                            metadataValue(responseURL, monospace: true, copyable: true)
+            AppCard {
+                AppSettingsSection(title: pluginLocalization.string("Response"), subtitle: pluginLocalization.string("HTTP response received from the server")) {
+                    AppMetadataCard {
+                        AppMetadataRow(title: pluginLocalization.string("Status"), systemImage: "number") {
+                            AppTag(statusText(for: record), systemImage: statusIcon(for: record), style: .accent)
                         }
-                    }
-                    if let version = record.responseHTTPVersion {
-                        AppSettingsDivider()
-                        AppMetadataRow(title: pluginLocalization.string("HTTP Version"), systemImage: "globe") {
-                            metadataValue(version)
+                        if let responseURL = record.responseURL {
+                            AppSettingsDivider()
+                            AppMetadataRow(title: pluginLocalization.string("URL"), systemImage: "link") {
+                                metadataValue(responseURL, monospace: true, copyable: true)
+                            }
                         }
-                    }
-                    if let mimeType = record.responseMIMEType {
-                        AppSettingsDivider()
-                        AppMetadataRow(title: pluginLocalization.string("MIME Type"), systemImage: "doc.text") {
-                            metadataValue(mimeType)
+                        if let version = record.responseHTTPVersion {
+                            AppSettingsDivider()
+                            AppMetadataRow(title: pluginLocalization.string("HTTP Version"), systemImage: "globe") {
+                                metadataValue(version)
+                            }
+                        }
+                        if let mimeType = record.responseMIMEType {
+                            AppSettingsDivider()
+                            AppMetadataRow(title: pluginLocalization.string("MIME Type"), systemImage: "doc.text") {
+                                metadataValue(mimeType)
+                            }
                         }
                     }
                 }
@@ -516,19 +562,21 @@ public struct HTTPExchangeSettingsView: View {
     @ViewBuilder
     private func errorSection(for record: HTTPExchangeExportSnapshot) -> some View {
         if record.errorDescription != nil {
-            AppSettingsSection(title: pluginLocalization.string("Error"), subtitle: pluginLocalization.string("Transport or HTTP failure details")) {
-                VStack(alignment: .leading, spacing: 8) {
-                    if let errorDescription = record.errorDescription {
-                        Text(errorDescription)
-                            .foregroundStyle(theme.textPrimary)
-                    }
-                    if let domain = record.errorDomain, let code = record.errorCode {
-                        Text("\(domain) (\(code))")
-                            .font(.appCaption)
-                            .foregroundStyle(theme.textSecondary)
-                    }
-                    if let details = record.errorDetailsJSON {
-                        HTTPExchangePayloadView(data: details, fallback: "{}")
+            AppCard {
+                AppSettingsSection(title: pluginLocalization.string("Error"), subtitle: pluginLocalization.string("Transport or HTTP failure details")) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        if let errorDescription = record.errorDescription {
+                            Text(errorDescription)
+                                .foregroundStyle(theme.textPrimary)
+                        }
+                        if let domain = record.errorDomain, let code = record.errorCode {
+                            Text("\(domain) (\(code))")
+                                .font(.appCaption)
+                                .foregroundStyle(theme.textSecondary)
+                        }
+                        if let details = record.errorDetailsJSON {
+                            HTTPExchangePayloadView(data: details, fallback: "{}")
+                        }
                     }
                 }
             }
@@ -542,31 +590,33 @@ public struct HTTPExchangeSettingsView: View {
         let isJSON = record.responseMIMEType?.contains("json") == true
         let isLargePayload = (record.responseBody?.count ?? 0) > largePayloadByteThreshold
 
-        AppSettingsSection(
-            title: pluginLocalization.string("Response Body"),
-            subtitle: String(format: pluginLocalization.string("Original response body bytes (%@)"), byteCount(record.responseBody))
-        ) {
-            if isLargePayload {
-                HTTPExchangeLargePayloadView(
-                    bodyKind: .response,
-                    bodyData: record.responseBody,
-                    mimeType: record.responseMIMEType,
-                    recordID: record.id
-                )
-            } else if isJSON {
-                HTTPExchangeJSONBodyTabs(data: record.responseBody, fallback: "<empty>")
-            } else {
-                HTTPExchangePayloadView(data: record.responseBody, fallback: "<empty>")
+        AppCard {
+            AppSettingsSection(
+                title: pluginLocalization.string("Response Body"),
+                subtitle: String(format: pluginLocalization.string("Original response body bytes (%@)"), byteCount(record.responseBody))
+            ) {
+                if isLargePayload {
+                    HTTPExchangeLargePayloadView(
+                        bodyKind: .response,
+                        bodyData: record.responseBody,
+                        mimeType: record.responseMIMEType,
+                        recordID: record.id
+                    )
+                } else if isJSON {
+                    HTTPExchangeJSONBodyTabs(data: record.responseBody, fallback: "<empty>")
+                } else {
+                    HTTPExchangePayloadView(data: record.responseBody, fallback: "<empty>")
+                }
             }
         }
     }
 
     private func detailScroll<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 18) {
                 content()
             }
-            .padding(20)
+            .padding(22)
         }
     }
 
@@ -579,8 +629,10 @@ public struct HTTPExchangeSettingsView: View {
         data: Data?,
         fallback: String
     ) -> some View {
-        AppSettingsSection(title: title, subtitle: subtitle) {
-            HTTPExchangePayloadView(data: data, fallback: fallback)
+        AppCard {
+            AppSettingsSection(title: title, subtitle: subtitle) {
+                HTTPExchangePayloadView(data: data, fallback: fallback)
+            }
         }
     }
 
@@ -596,16 +648,18 @@ public struct HTTPExchangeSettingsView: View {
         recordID: UUID,
         mimeType: String?
     ) -> some View {
-        AppSettingsSection(title: title, subtitle: subtitle) {
-            if let data, data.count > largePayloadByteThreshold {
-                HTTPExchangeLargePayloadView(
-                    bodyKind: bodyKind,
-                    bodyData: data,
-                    mimeType: mimeType,
-                    recordID: recordID
-                )
-            } else {
-                HTTPExchangePayloadView(data: data, fallback: fallback)
+        AppCard {
+            AppSettingsSection(title: title, subtitle: subtitle) {
+                if let data, data.count > largePayloadByteThreshold {
+                    HTTPExchangeLargePayloadView(
+                        bodyKind: bodyKind,
+                        bodyData: data,
+                        mimeType: mimeType,
+                        recordID: recordID
+                    )
+                } else {
+                    HTTPExchangePayloadView(data: data, fallback: fallback)
+                }
             }
         }
     }

@@ -11,6 +11,7 @@
 
     },
     "Absolute path to the project directory containing .lumi/rules folder." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

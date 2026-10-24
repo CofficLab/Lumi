@@ -21,6 +21,8 @@ struct GeneralSettingsDetailView: View {
     /// App bundle 元数据（名称 / 包名 / 版本 / 构建）。
     private let bundleInfo = AppBundleInfo()
 
+    @LumiTheme private var theme
+
     var body: some View {
         AppSettingsContentScaffold(maxContentWidth: nil) {
             VStack(alignment: .leading, spacing: 24) {
@@ -33,6 +35,7 @@ struct GeneralSettingsDetailView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .environment(\.appSettingsCardStyleOverride, .subtle)
         .sheet(isPresented: $isPresentingManuals) {
             if !viewModel.manuals.isEmpty {
                 ManualsBrowserView(manuals: viewModel.manuals)
@@ -46,43 +49,67 @@ struct GeneralSettingsDetailView: View {
     // MARK: - 新手引导
 
     private var onboardingSection: some View {
-        AppSettingSection(
-            title: "新手引导",
-            titleAlignment: .leading
-        ) {
-            VStack(spacing: 0) {
-                AppSettingRow(
-                    title: "重新查看新手引导",
-                    description: "重放首次启动引导流程。",
-                    icon: "graduationcap"
-                ) {
-                    AppButton(
-                        "开始",
-                        systemImage: "arrow.right",
-                        style: .secondary,
-                        size: .small
-                    ) {
-                        viewModel.replayOnboarding()
-                    }
-                    .disabled(!viewModel.isOnboardingAvailable)
-                }
+        AppCard {
+            AppSettingsSection(
+                title: "新手引导"
+            ) {
+                AppSettingsRow {
+                    HStack(spacing: 12) {
+                        Image(systemName: "graduationcap")
+                            .font(.appCallout)
+                            .foregroundColor(theme.primary)
+                            .frame(width: 24)
 
-                if !viewModel.manuals.isEmpty {
-                    Divider()
-                        .padding(.vertical, 8)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("重新查看新手引导")
+                                .font(.appBody)
+                                .foregroundColor(theme.textPrimary)
+                            Text("重放首次启动引导流程。")
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
+                        }
 
-                    AppSettingRow(
-                        title: "说明书",
-                        description: "各功能的使用指南。",
-                        icon: "book"
-                    ) {
+                        Spacer()
+
                         AppButton(
-                            "打开",
-                            systemImage: "book.pages",
+                            "开始",
+                            systemImage: "arrow.right",
                             style: .secondary,
                             size: .small
                         ) {
-                            isPresentingManuals = true
+                            viewModel.replayOnboarding()
+                        }
+                        .disabled(!viewModel.isOnboardingAvailable)
+                    }
+                }
+
+                if !viewModel.manuals.isEmpty {
+                    AppSettingsRow {
+                        HStack(spacing: 12) {
+                            Image(systemName: "book")
+                                .font(.appCallout)
+                                .foregroundColor(theme.primary)
+                                .frame(width: 24)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("说明书")
+                                    .font(.appBody)
+                                    .foregroundColor(theme.textPrimary)
+                                Text("各功能的使用指南。")
+                                    .font(.appCaption)
+                                    .foregroundColor(theme.textSecondary)
+                            }
+
+                            Spacer()
+
+                            AppButton(
+                                "打开",
+                                systemImage: "book.pages",
+                                style: .secondary,
+                                size: .small
+                            ) {
+                                isPresentingManuals = true
+                            }
                         }
                     }
                 }
@@ -93,61 +120,126 @@ struct GeneralSettingsDetailView: View {
     // MARK: - Lumi（应用信息）
 
     private var lumiSection: some View {
-        AppSettingSection(
-            title: pluginLocalization.string("Lumi"),
-            titleAlignment: .leading
-        ) {
-            VStack(spacing: 0) {
-                AppSettingRow(
-                    title: pluginLocalization.string("Name"),
-                    description: bundleInfo.name,
-                    icon: "app"
-                ) {
-                    EmptyView()
-                }
-                Divider()
-                    .padding(.vertical, 8)
-                AppSettingRow(
-                    title: "Bundle ID",
-                    description: bundleInfo.bundleIdentifier,
-                    icon: "number"
-                ) {
-                    EmptyView()
-                }
-                Divider()
-                    .padding(.vertical, 8)
-                AppSettingRow(
-                    title: pluginLocalization.string("Version"),
-                    description: bundleInfo.version ?? "Not Set",
-                    icon: "info.circle"
-                ) {
-                    EmptyView()
-                }
-                Divider()
-                    .padding(.vertical, 8)
-                AppSettingRow(
-                    title: pluginLocalization.string("Build"),
-                    description: bundleInfo.build ?? "Not Set",
-                    icon: "hammer"
-                ) {
-                    EmptyView()
-                }
-                Divider()
-                    .padding(.vertical, 8)
-                AppSettingRow(
-                    title: "占用空间",
-                    description: viewModel.storageSizeDescription,
-                    icon: "internaldrive"
-                ) {
-                    AppButton(
-                        "打开数据库目录",
-                        systemImage: "folder",
-                        style: .secondary,
-                        size: .small
-                    ) {
-                        viewModel.openStorageDirectory()
+        AppCard {
+            AppSettingsSection(
+                title: pluginLocalization.string("Lumi")
+            ) {
+                AppSettingsRow {
+                    HStack(spacing: 12) {
+                        Image(systemName: "app")
+                            .font(.appCallout)
+                            .foregroundColor(theme.primary)
+                            .frame(width: 24)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(pluginLocalization.string("Name"))
+                                .font(.appBody)
+                                .foregroundColor(theme.textPrimary)
+                            Text(bundleInfo.name)
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
+                        }
+
+                        Spacer()
+
+                        EmptyView()
                     }
-                    .disabled(!viewModel.isStorageAvailable)
+                }
+
+                AppSettingsRow {
+                    HStack(spacing: 12) {
+                        Image(systemName: "number")
+                            .font(.appCallout)
+                            .foregroundColor(theme.primary)
+                            .frame(width: 24)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Bundle ID")
+                                .font(.appBody)
+                                .foregroundColor(theme.textPrimary)
+                            Text(bundleInfo.bundleIdentifier)
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
+                        }
+
+                        Spacer()
+
+                        EmptyView()
+                    }
+                }
+
+                AppSettingsRow {
+                    HStack(spacing: 12) {
+                        Image(systemName: "info.circle")
+                            .font(.appCallout)
+                            .foregroundColor(theme.primary)
+                            .frame(width: 24)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(pluginLocalization.string("Version"))
+                                .font(.appBody)
+                                .foregroundColor(theme.textPrimary)
+                            Text(bundleInfo.version ?? "Not Set")
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
+                        }
+
+                        Spacer()
+
+                        EmptyView()
+                    }
+                }
+
+                AppSettingsRow {
+                    HStack(spacing: 12) {
+                        Image(systemName: "hammer")
+                            .font(.appCallout)
+                            .foregroundColor(theme.primary)
+                            .frame(width: 24)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(pluginLocalization.string("Build"))
+                                .font(.appBody)
+                                .foregroundColor(theme.textPrimary)
+                            Text(bundleInfo.build ?? "Not Set")
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
+                        }
+
+                        Spacer()
+
+                        EmptyView()
+                    }
+                }
+
+                AppSettingsRow {
+                    HStack(spacing: 12) {
+                        Image(systemName: "internaldrive")
+                            .font(.appCallout)
+                            .foregroundColor(theme.primary)
+                            .frame(width: 24)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("占用空间")
+                                .font(.appBody)
+                                .foregroundColor(theme.textPrimary)
+                            Text(viewModel.storageSizeDescription)
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
+                        }
+
+                        Spacer()
+
+                        AppButton(
+                            "打开数据库目录",
+                            systemImage: "folder",
+                            style: .secondary,
+                            size: .small
+                        ) {
+                            viewModel.openStorageDirectory()
+                        }
+                        .disabled(!viewModel.isStorageAvailable)
+                    }
                 }
             }
         }
@@ -156,27 +248,42 @@ struct GeneralSettingsDetailView: View {
     // MARK: - 网站
 
     private var websiteSection: some View {
-        AppSettingSection(
-            title: "网站",
-            titleAlignment: .leading
-        ) {
-            AppSettingRow(
-                title: "官方网站",
-                description: "coffic.cn/lumi",
-                icon: "globe"
+        AppCard {
+            AppSettingsSection(
+                title: "网站"
             ) {
-                AppButton(
-                    "访问",
-                    systemImage: "arrow.up.forward.square",
-                    style: .secondary,
-                    size: .small
-                ) {
-                    if let url = URL(string: "https://coffic.cn/lumi") {
-                        #if canImport(AppKit)
-                        NSWorkspace.shared.open(url)
-                        #elseif canImport(UIKit)
-                        UIApplication.shared.open(url)
-                        #endif
+                AppSettingsRow {
+                    HStack(spacing: 12) {
+                        Image(systemName: "globe")
+                            .font(.appCallout)
+                            .foregroundColor(theme.primary)
+                            .frame(width: 24)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("官方网站")
+                                .font(.appBody)
+                                .foregroundColor(theme.textPrimary)
+                            Text("coffic.cn/lumi")
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
+                        }
+
+                        Spacer()
+
+                        AppButton(
+                            "访问",
+                            systemImage: "arrow.up.forward.square",
+                            style: .secondary,
+                            size: .small
+                        ) {
+                            if let url = URL(string: "https://coffic.cn/lumi") {
+                                #if canImport(AppKit)
+                                NSWorkspace.shared.open(url)
+                                #elseif canImport(UIKit)
+                                UIApplication.shared.open(url)
+                                #endif
+                            }
+                        }
                     }
                 }
             }
@@ -188,43 +295,73 @@ struct GeneralSettingsDetailView: View {
     /// `allowsAppUpdates` 的宿主（Lumi 直营）展示「检查更新」行，
     /// 点击广播 `checkForUpdates` 通知，由宿主（如 Sparkle 更新插件）消费。
     private var updatesSection: some View {
-        AppSettingSection(
-            title: pluginLocalization.string("Updates"),
-            titleAlignment: .leading
-        ) {
-            VStack(spacing: 0) {
-                AppSettingRow(
-                    title: pluginLocalization.string("Check for Updates"),
-                    description: "Check whether a newer version of Lumi is available.",
-                    icon: "arrow.down.circle"
-                ) {
-                    AppButton(
-                        pluginLocalization.string("Check..."),
-                        systemImage: "arrow.triangle.2.circlepath",
-                        style: .secondary,
-                        size: .small
-                    ) {
-                        viewModel.checkForUpdates()
+        AppCard {
+            AppSettingsSection(
+                title: pluginLocalization.string("Updates")
+            ) {
+                AppSettingsRow {
+                    HStack(spacing: 12) {
+                        Image(systemName: "arrow.down.circle")
+                            .font(.appCallout)
+                            .foregroundColor(theme.primary)
+                            .frame(width: 24)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(pluginLocalization.string("Check for Updates"))
+                                .font(.appBody)
+                                .foregroundColor(theme.textPrimary)
+                            Text("Check whether a newer version of Lumi is available.")
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
+                        }
+
+                        Spacer()
+
+                        AppButton(
+                            pluginLocalization.string("Check..."),
+                            systemImage: "arrow.triangle.2.circlepath",
+                            style: .secondary,
+                            size: .small
+                        ) {
+                            viewModel.checkForUpdates()
+                        }
                     }
                 }
 
                 if viewModel.isUpdateChannelAvailable {
-                    Divider()
-                        .padding(.vertical, 8)
+                    AppSettingsRow {
+                        HStack(spacing: 12) {
+                            Image(
+                                systemName: viewModel.selectedUpdateChannel == .preview
+                                    ? "flask"
+                                    : "checkmark.seal"
+                            )
+                            .font(.appCallout)
+                            .foregroundColor(theme.primary)
+                            .frame(width: 24)
 
-                    AppSettingRow(
-                        title: "更新通道",
-                        description: viewModel.selectedUpdateChannel == .preview
-                            ? "获取 pre 分支发布的预览版本，可能包含未修复的问题。"
-                            : "获取 main 分支发布的稳定版本。",
-                        icon: viewModel.selectedUpdateChannel == .preview ? "flask" : "checkmark.seal"
-                    ) {
-                        Picker("更新通道", selection: $viewModel.selectedUpdateChannel) {
-                            Text("稳定版").tag(AppUpdateChannel.stable)
-                            Text("预览版").tag(AppUpdateChannel.preview)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("更新通道")
+                                    .font(.appBody)
+                                    .foregroundColor(theme.textPrimary)
+                                Text(
+                                    viewModel.selectedUpdateChannel == .preview
+                                        ? "获取 pre 分支发布的预览版本，可能包含未修复的问题。"
+                                        : "获取 main 分支发布的稳定版本。"
+                                )
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
+                            }
+
+                            Spacer()
+
+                            Picker("更新通道", selection: $viewModel.selectedUpdateChannel) {
+                                Text("稳定版").tag(AppUpdateChannel.stable)
+                                Text("预览版").tag(AppUpdateChannel.preview)
+                            }
+                            .labelsHidden()
+                            .pickerStyle(.menu)
                         }
-                        .labelsHidden()
-                        .pickerStyle(.menu)
                     }
                 }
             }
@@ -234,30 +371,41 @@ struct GeneralSettingsDetailView: View {
     // MARK: - 诊断日志
 
     private var diagnosticsSection: some View {
-        AppSettingSection(
-            title: "诊断日志",
-            titleAlignment: .leading
-        ) {
-            VStack(spacing: 0) {
-                AppSettingRow(
-                    title: "导出日志",
-                    description: "打包最近的运行日志，便于提交问题反馈。",
-                    icon: "doc.badge.arrow.up"
-                ) {
-                    AppButton(
-                        viewModel.isExportingDiagnostics ? "导出中…" : "导出",
-                        systemImage: viewModel.isExportingDiagnostics ? "hourglass" : "square.and.arrow.up",
-                        style: .secondary,
-                        size: .small
-                    ) {
-                        viewModel.exportDiagnostics()
+        AppCard {
+            AppSettingsSection(
+                title: "诊断日志"
+            ) {
+                AppSettingsRow {
+                    HStack(spacing: 12) {
+                        Image(systemName: "doc.badge.arrow.up")
+                            .font(.appCallout)
+                            .foregroundColor(theme.primary)
+                            .frame(width: 24)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("导出日志")
+                                .font(.appBody)
+                                .foregroundColor(theme.textPrimary)
+                            Text("打包最近的运行日志，便于提交问题反馈。")
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
+                        }
+
+                        Spacer()
+
+                        AppButton(
+                            viewModel.isExportingDiagnostics ? "导出中…" : "导出",
+                            systemImage: viewModel.isExportingDiagnostics ? "hourglass" : "square.and.arrow.up",
+                            style: .secondary,
+                            size: .small
+                        ) {
+                            viewModel.exportDiagnostics()
+                        }
+                        .disabled(viewModel.isExportingDiagnostics || !viewModel.isDiagnosticsAvailable)
                     }
-                    .disabled(viewModel.isExportingDiagnostics || !viewModel.isDiagnosticsAvailable)
                 }
 
                 if let diagnosticsFeedback = viewModel.diagnosticsFeedback {
-                    Divider()
-                        .padding(.vertical, 8)
                     Text(diagnosticsFeedback)
                         .font(.appCaption)
                         .foregroundStyle(.secondary)
@@ -271,23 +419,38 @@ struct GeneralSettingsDetailView: View {
     // MARK: - 卸载 Lumi
 
     private var uninstallSection: some View {
-        AppSettingSection(
-            title: "卸载 Lumi",
-            titleAlignment: .leading
-        ) {
-            AppSettingRow(
-                title: "彻底卸载 Lumi",
-                description: "清除 Lumi 的插件数据、偏好设置、扩展数据和可选凭据。",
-                icon: "trash"
+        AppCard {
+            AppSettingsSection(
+                title: "卸载 Lumi"
             ) {
-                AppButton(
-                    "卸载…",
-                    systemImage: "trash",
-                    style: .destructive,
-                    size: .small
-                ) {
-                    viewModel.beginUninstall()
-                    isPresentingUninstall = true
+                AppSettingsRow {
+                    HStack(spacing: 12) {
+                        Image(systemName: "trash")
+                            .font(.appCallout)
+                            .foregroundColor(theme.primary)
+                            .frame(width: 24)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("彻底卸载 Lumi")
+                                .font(.appBody)
+                                .foregroundColor(theme.textPrimary)
+                            Text("清除 Lumi 的插件数据、偏好设置、扩展数据和可选凭据。")
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
+                        }
+
+                        Spacer()
+
+                        AppButton(
+                            "卸载…",
+                            systemImage: "trash",
+                            style: .destructive,
+                            size: .small
+                        ) {
+                            viewModel.beginUninstall()
+                            isPresentingUninstall = true
+                        }
+                    }
                 }
             }
         }
@@ -359,23 +522,31 @@ struct GeneralSettingsDetailView: View {
 
     @ViewBuilder
     private func uninstallSummary(scan: UninstallScan) -> some View {
-        AppSettingSection(
-            title: "将处理 \(scan.targets.count) 项 Lumi 数据，总计 \(formattedBytes(scan.totalSizeInBytes))。",
-            titleAlignment: .leading
-        ) {
-            VStack(spacing: 0) {
-                ForEach(Array(scan.targets.prefix(8).enumerated()), id: \.element.id) { index, target in
-                    AppSettingRow(
-                        title: target.kind.displayName,
-                        description: target.sizeInBytes > 0 ? formattedBytes(target.sizeInBytes) : "—",
-                        icon: uninstallIcon(for: target)
-                    ) {
-                        EmptyView()
-                    }
+        AppCard {
+            AppSettingsSection(
+                title: "将处理 \(scan.targets.count) 项 Lumi 数据，总计 \(formattedBytes(scan.totalSizeInBytes))。"
+            ) {
+                ForEach(Array(scan.targets.prefix(8).enumerated()), id: \.element.id) { _, target in
+                    AppSettingsRow {
+                        HStack(spacing: 12) {
+                            Image(systemName: uninstallIcon(for: target))
+                                .font(.appCallout)
+                                .foregroundColor(theme.primary)
+                                .frame(width: 24)
 
-                    if index < min(scan.targets.count, 8) - 1 {
-                        Divider()
-                            .padding(.vertical, 8)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(target.kind.displayName)
+                                    .font(.appBody)
+                                    .foregroundColor(theme.textPrimary)
+                                Text(target.sizeInBytes > 0 ? formattedBytes(target.sizeInBytes) : "—")
+                                    .font(.appCaption)
+                                    .foregroundColor(theme.textSecondary)
+                            }
+
+                            Spacer()
+
+                            EmptyView()
+                        }
                     }
                 }
 

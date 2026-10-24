@@ -47,7 +47,7 @@ struct MemorySettingsView: View {
             showHeader: false,
             scrollsContent: false
         ) {
-            VStack(spacing: 12) {
+            VStack(spacing: 14) {
                 HStack {
                     Spacer()
                     AppButton("刷新", systemImage: "arrow.clockwise", size: .small) {
@@ -57,7 +57,7 @@ struct MemorySettingsView: View {
 
                 HStack(spacing: 0) {
                     sidebar
-                        .frame(width: 320)
+                        .frame(width: 300)
                         .frame(maxHeight: .infinity)
 
                     AppDivider(.vertical)
@@ -65,7 +65,7 @@ struct MemorySettingsView: View {
                     detailPane
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
-                .frame(maxHeight: .infinity)
+                .frame(minHeight: 520, maxHeight: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -74,6 +74,7 @@ struct MemorySettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+        .padding(.bottom, 16)
         .task {
             await reloadItems()
         }
@@ -291,7 +292,7 @@ struct MemorySettingsView: View {
                         metadataTag(icon: "number", text: "ID: \(memory.id)", color: theme.textTertiary)
                     }
                 }
-                .padding(16)
+                .padding(22)
 
                 AppDivider()
 
@@ -302,7 +303,7 @@ struct MemorySettingsView: View {
                         .foregroundStyle(theme.textPrimary)
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(16)
+                        .padding(22)
                 }
             }
         } else {

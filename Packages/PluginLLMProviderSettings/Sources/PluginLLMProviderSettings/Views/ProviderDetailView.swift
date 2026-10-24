@@ -27,7 +27,7 @@ public struct ProviderDetailView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 18) {
             header
             if !viewModel.isLocal {
                 apiKeySection
@@ -129,91 +129,119 @@ public struct ProviderDetailView: View {
     // MARK: - API Key Section
 
     private var apiKeySection: some View {
-        AppSettingSection(title: "API 密钥") {
-            VStack(spacing: 0) {
-                AppSettingRow(
-                    title: "API Key",
-                    description: "配置访问凭证",
-                    icon: "key"
-                ) {
-                    HStack(spacing: 6) {
-                        Group {
-                            if isAPIKeyRevealed {
-                                TextField("输入 API Key", text: $viewModel.apiKey)
-                            } else {
-                                SecureField("输入 API Key", text: $viewModel.apiKey)
-                            }
+        AppCard {
+            AppSettingsSection(title: "API 密钥") {
+                AppSettingsRow {
+                    HStack(spacing: 12) {
+                        Image(systemName: "key")
+                            .font(.appCallout)
+                            .foregroundColor(theme.primary)
+                            .frame(width: 24)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("API Key")
+                                .font(.appBody)
+                                .foregroundColor(theme.textPrimary)
+                            Text("配置访问凭证")
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
                         }
-                        .textFieldStyle(.plain)
-                        .font(.appBody)
-                        .frame(width: 260)
+
+                        Spacer()
+
+                        HStack(spacing: 6) {
+                            Group {
+                                if isAPIKeyRevealed {
+                                    TextField("输入 API Key", text: $viewModel.apiKey)
+                                } else {
+                                    SecureField("输入 API Key", text: $viewModel.apiKey)
+                                }
+                            }
+                            .textFieldStyle(.plain)
+                            .font(.appBody)
+                            .frame(width: 260)
+                        }
                     }
                 }
 
-                Divider()
-                    .padding(.vertical, 8)
+                AppSettingsRow {
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("操作")
+                                .font(.appBody)
+                                .foregroundColor(theme.textPrimary)
+                            Text(viewModel.savedAPIKey.isEmpty ? "尚未保存 API Key" : "已保存 API Key")
+                                .font(.appCaption)
+                                .foregroundColor(theme.textSecondary)
+                        }
 
-                AppSettingRow(
-                    title: "操作",
-                    description: viewModel.savedAPIKey.isEmpty ? "尚未保存 API Key" : "已保存 API Key"
-                ) {
-                    HStack(spacing: 8) {
-                        if !viewModel.savedAPIKey.isEmpty {
-                            AppIconButton(
-                                systemImage: isAPIKeyRevealed ? "eye.slash" : "eye"
-                            ) {
-                                isAPIKeyRevealed.toggle()
+                        Spacer()
+
+                        HStack(spacing: 8) {
+                            if !viewModel.savedAPIKey.isEmpty {
+                                AppIconButton(
+                                    systemImage: isAPIKeyRevealed ? "eye.slash" : "eye"
+                                ) {
+                                    isAPIKeyRevealed.toggle()
+                                }
+                                .help(isAPIKeyRevealed ? "隐藏 API Key" : "显示 API Key")
                             }
-                            .help(isAPIKeyRevealed ? "隐藏 API Key" : "显示 API Key")
-                        }
 
-                        if !copyableAPIKey.isEmpty {
-                            AppIconButton(
-                                systemImage: isAPIKeyCopied ? "checkmark" : "doc.on.doc",
-                                tint: isAPIKeyCopied ? theme.success : nil
-                            ) {
-                                copyAPIKey()
+                            if !copyableAPIKey.isEmpty {
+                                AppIconButton(
+                                    systemImage: isAPIKeyCopied ? "checkmark" : "doc.on.doc",
+                                    tint: isAPIKeyCopied ? theme.success : nil
+                                ) {
+                                    copyAPIKey()
+                                }
+                                .help(isAPIKeyCopied ? "已复制" : "复制 API Key")
+                                .accessibilityIdentifier(ProviderSettingsAccessibility.copyAPIKeyButton)
                             }
-                            .help(isAPIKeyCopied ? "已复制" : "复制 API Key")
-                            .accessibilityIdentifier(ProviderSettingsAccessibility.copyAPIKeyButton)
-                        }
 
-                        AppButton("保存", systemImage: "checkmark", style: .primary, size: .small) {
-                            viewModel.saveAPIKey()
-                        }
-                        .disabled(
-                            viewModel.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                || viewModel.apiKey == viewModel.savedAPIKey
-                        )
-
-                        if !viewModel.savedAPIKey.isEmpty {
-                            AppButton("删除", systemImage: "trash", style: .destructive, size: .small) {
-                                viewModel.removeAPIKey()
+                            AppButton("保存", systemImage: "checkmark", style: .primary, size: .small) {
+                                viewModel.saveAPIKey()
                             }
-                        }
+                            .disabled(
+                                viewModel.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                    || viewModel.apiKey == viewModel.savedAPIKey
+                            )
 
-                        if !viewModel.savedAPIKey.isEmpty, viewModel.apiKey == viewModel.savedAPIKey {
-                            HStack(spacing: 4) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(theme.success)
-                                    .font(.appCaption)
-                                Text("已保存")
-                                    .font(.appCaption)
-                                    .foregroundColor(theme.success)
+                            if !viewModel.savedAPIKey.isEmpty {
+                                AppButton("删除", systemImage: "trash", style: .destructive, size: .small) {
+                                    viewModel.removeAPIKey()
+                                }
+                            }
+
+                            if !viewModel.savedAPIKey.isEmpty, viewModel.apiKey == viewModel.savedAPIKey {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(theme.success)
+                                        .font(.appCaption)
+                                    Text("已保存")
+                                        .font(.appCaption)
+                                        .foregroundColor(theme.success)
+                                }
                             }
                         }
                     }
                 }
 
                 if let apiKeySaveError = viewModel.apiKeySaveError {
-                    Divider()
-                        .padding(.vertical, 8)
+                    AppSettingsRow {
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("错误")
+                                    .font(.appBody)
+                                    .foregroundColor(theme.textPrimary)
+                                Text(apiKeySaveError)
+                                    .font(.appCaption)
+                                    .foregroundColor(theme.textSecondary)
+                            }
 
-                    AppSettingRow(
-                        title: "错误",
-                        description: apiKeySaveError
-                    ) {
-                        EmptyView()
+                            Spacer()
+
+                            EmptyView()
+                        }
                     }
                     .foregroundColor(theme.error)
                 }
@@ -224,13 +252,9 @@ public struct ProviderDetailView: View {
     // MARK: - Model Section
 
     private var modelSection: some View {
-        AppSettingSection(title: "可用模型") {
-            VStack(spacing: 0) {
-                ForEach(viewModel.models.enumerated().map({ $0 }), id: \.element.id) { index, model in
-                    if index > 0 {
-                        Divider()
-                            .padding(.vertical, 4)
-                    }
+        AppCard {
+            AppSettingsSection(title: "可用模型") {
+                ForEach(viewModel.models.enumerated().map({ $0 }), id: \.element.id) { _, model in
                     modelRow(model)
                 }
             }
@@ -239,17 +263,33 @@ public struct ProviderDetailView: View {
 
     private func modelRow(_ model: LLMModelInfo) -> some View {
         let isSelected = viewModel.isModelSelected(model.id)
-        return AppSettingRow(
-            title: model.displayName,
-            description: model.contextWindowSize.map { "上下文 \(Self.formatted($0))" },
-            icon: isSelected ? "checkmark.circle.fill" : (model.supportsVision ? "eye" : "cpu")
-        ) {
-            HStack(spacing: 6) {
-                if model.supportsVision {
-                    AppTag("视觉", systemImage: "eye", style: .accent)
+        return AppSettingsRow {
+            HStack(spacing: 12) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : (model.supportsVision ? "eye" : "cpu"))
+                    .font(.appCallout)
+                    .foregroundColor(theme.primary)
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(model.displayName)
+                        .font(.appBody)
+                        .foregroundColor(theme.textPrimary)
+                    if let contextWindow = model.contextWindowSize.map({ "上下文 \(Self.formatted($0))" }) {
+                        Text(contextWindow)
+                            .font(.appCaption)
+                            .foregroundColor(theme.textSecondary)
+                    }
                 }
-                if isSelected {
-                    AppTag("当前", systemImage: "checkmark", style: .accent)
+
+                Spacer()
+
+                HStack(spacing: 6) {
+                    if model.supportsVision {
+                        AppTag("视觉", systemImage: "eye", style: .accent)
+                    }
+                    if isSelected {
+                        AppTag("当前", systemImage: "checkmark", style: .accent)
+                    }
                 }
             }
         }

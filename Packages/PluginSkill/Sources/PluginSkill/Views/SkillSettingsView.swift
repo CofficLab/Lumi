@@ -32,12 +32,12 @@ struct SkillSettingsView: View {
             showHeader: false,
             scrollsContent: false
         ) {
-            VStack(spacing: 12) {
+            VStack(spacing: 14) {
                 header
 
                 HStack(spacing: 0) {
                     sidebar
-                        .frame(width: 340)
+                        .frame(width: 300)
                         .frame(maxHeight: .infinity)
 
                     AppDivider(.vertical)
@@ -45,7 +45,7 @@ struct SkillSettingsView: View {
                     detailPane
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
-                .frame(maxHeight: .infinity)
+                .frame(minHeight: 520, maxHeight: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -54,6 +54,7 @@ struct SkillSettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+        .padding(.bottom, 16)
         .task { await viewModel.reload() }
         .onAppear { viewModel.seedSelectionIfNeeded() }
     }
@@ -163,7 +164,7 @@ struct SkillSettingsView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 18) {
                         skillSection(
                             title: pluginLocalization.string("Project Skills"),
                             subtitle: pluginLocalization.string("From .lumi/skills directory"),
@@ -180,7 +181,7 @@ struct SkillSettingsView: View {
                             emptyTitle: pluginLocalization.string("No shared skills")
                         )
                     }
-                    .padding(12)
+                    .padding(22)
                 }
                 .frame(maxHeight: .infinity)
             }
