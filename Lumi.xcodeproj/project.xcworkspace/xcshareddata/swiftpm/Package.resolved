@@ -123,8 +123,8 @@
       "kind": "remoteSourceControl",
       "location": "https://github.com/CofficLab/LumiPluginActivityBar.git",
       "state": {
-        "revision": "e1be36eeb916ce5c086163757e7b75ff03d01bbf",
-        "version": "1.0.1"
+        "revision": "a6e05b3317cef76d69fee0115c552242d400e382",
+        "version": "1.0.2"
       }
     },
     {
@@ -173,12 +173,21 @@
       }
     },
     {
+      "identity": "lumipluginthememanager",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/CofficLab/LumiPluginThemeManager.git",
+      "state": {
+        "revision": "fa05b884d96b877b0ff4a88c114c0feb5924266e",
+        "version": "1.0.1"
+      }
+    },
+    {
       "identity": "lumipluginthemepack",
       "kind": "remoteSourceControl",
       "location": "https://github.com/CofficLab/LumiPluginThemePack.git",
       "state": {
-        "revision": "d1309c02faffc9910189557972bc87a120391721",
-        "version": "1.2.0"
+        "revision": "edbea8d186f804b1ffb6a2569fd2a00a074d7dfc",
+        "version": "1.2.1"
       }
     },
     {
