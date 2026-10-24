@@ -75,29 +75,31 @@ public struct ConversationStoreSettingsView: View {
     }
 
     private var conversationActivity: some View {
-        AppCard {
-            AppSettingsSection(
-                title: L("Conversation Activity"),
-                subtitle: L("Conversations created per day over the last 14 days"),
-                spacing: 12
-            ) {
-                AppSettingsRow {
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack(alignment: .firstTextBaseline) {
-                            Label(L("Daily conversations"), systemImage: "chart.xyaxis.line")
-                                .font(.appCaptionEmphasized)
-                                .foregroundStyle(theme.textPrimary)
-                            Spacer(minLength: 0)
-                            Text(String(format: L("Peak (%lld)"), viewModel.dailyCountSeries.peakCount))
-                                .font(.appMicro)
-                                .monospacedDigit()
-                                .foregroundStyle(theme.textSecondary)
-                        }
-                        ConversationDailyCountChart(series: viewModel.dailyCountSeries)
-                            .frame(height: 132)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+        AppSettingSection(
+            title: L("Conversation Activity"),
+            footer: L("Conversations created per day over the last 14 days"),
+            titleAlignment: .leading
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline) {
+                    Label(L("Daily conversations"), systemImage: "chart.xyaxis.line")
+                        .font(.appCaptionEmphasized)
+                        .foregroundStyle(theme.textPrimary)
+                    Spacer(minLength: 0)
+                    Text(String(format: L("Peak (%lld)"), viewModel.dailyCountSeries.peakCount))
+                        .font(.appMicro)
+                        .monospacedDigit()
+                        .foregroundStyle(theme.textSecondary)
                 }
+                ConversationDailyCountChart(series: viewModel.dailyCountSeries)
+                    .frame(height: 132)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(theme.divider, lineWidth: 0.5)
             }
         }
     }
@@ -237,126 +239,74 @@ public struct ConversationStoreSettingsView: View {
 
     /// 概览卡片：与 HTTP 日志详情页一致，标题下先给出说明文案，再放只读摘要。
     private func overviewSection(for conversation: ConversationSummary) -> some View {
-        AppCard {
-            AppSettingsSection(title: L("Overview")) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(L("Read-only summary of the selected conversation"))
+        AppSettingSection(title: L("Overview"), titleAlignment: .leading) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(L("Read-only summary of the selected conversation"))
+                    .font(.appCaption)
+                    .foregroundStyle(theme.textSecondary)
+                    .padding(.leading, 4)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(displayTitle(for: conversation))
+                        .font(.appBodyEmphasized)
+                        .foregroundStyle(theme.textPrimary)
+                        .lineLimit(2)
+                        .textSelection(.enabled)
+
+                    Text(conversation.preview.isEmpty ? L("No preview available") : conversation.preview)
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
-                        .padding(.leading, 4)
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(displayTitle(for: conversation))
-                            .font(.appBodyEmphasized)
-                            .foregroundStyle(theme.textPrimary)
-                            .lineLimit(2)
-                            .textSelection(.enabled)
-
-                        Text(conversation.preview.isEmpty ? L("No preview available") : conversation.preview)
-                            .font(.appCaption)
-                            .foregroundStyle(theme.textSecondary)
-                            .lineLimit(4)
-                            .textSelection(.enabled)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(12)
-                    .background(theme.surface.opacity(0.6), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        .lineLimit(4)
+                        .textSelection(.enabled)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(theme.surface.opacity(0.6), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             }
         }
     }
 
-    /// 基本信息：`AppSettingsRow` 行式布局，标签在左、取值作为描述在下方，
+    /// 基本信息：`AppSettingRow` 行式布局，标签在左、取值作为描述在下方，
     /// 右侧只保留复制这类操作按钮。
     private func basicInfoSection(for conversation: ConversationSummary) -> some View {
-        AppCard {
-            AppSettingsSection(title: L("Basic Info")) {
-                AppSettingsRow {
-                    HStack(spacing: 12) {
-                        Image(systemName: "number")
-                            .font(.appCallout)
-                            .foregroundColor(theme.primary)
-                            .frame(width: 24)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(L("Conversation ID"))
-                                .font(.appBody)
-                                .foregroundColor(theme.textPrimary)
-                            Text(conversation.id.uuidString)
-                                .font(.appCaption)
-                                .foregroundColor(theme.textSecondary)
-                        }
-
-                        Spacer()
-
-                        copyAction(for: conversation.id.uuidString)
-                    }
+        AppSettingSection(title: L("Basic Info"), titleAlignment: .leading) {
+            VStack(spacing: 0) {
+                AppSettingRow(
+                    title: L("Conversation ID"),
+                    description: conversation.id.uuidString,
+                    icon: "number"
+                ) {
+                    copyAction(for: conversation.id.uuidString)
                 }
 
-                AppSettingsRow {
-                    HStack(spacing: 12) {
-                        Image(systemName: "text.cursor")
-                            .font(.appCallout)
-                            .foregroundColor(theme.primary)
-                            .frame(width: 24)
+                detailDivider
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(L("Title"))
-                                .font(.appBody)
-                                .foregroundColor(theme.textPrimary)
-                            Text(displayTitle(for: conversation))
-                                .font(.appCaption)
-                                .foregroundColor(theme.textSecondary)
-                        }
-
-                        Spacer()
-
-                        EmptyView()
-                    }
+                AppSettingRow(
+                    title: L("Title"),
+                    description: displayTitle(for: conversation),
+                    icon: "text.cursor"
+                ) {
+                    EmptyView()
                 }
 
-                AppSettingsRow {
-                    HStack(spacing: 12) {
-                        Image(systemName: "calendar.badge.plus")
-                            .font(.appCallout)
-                            .foregroundColor(theme.primary)
-                            .frame(width: 24)
+                detailDivider
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(L("Created At"))
-                                .font(.appBody)
-                                .foregroundColor(theme.textPrimary)
-                            Text(formattedDate(conversation.createdAt))
-                                .font(.appCaption)
-                                .foregroundColor(theme.textSecondary)
-                        }
-
-                        Spacer()
-
-                        EmptyView()
-                    }
+                AppSettingRow(
+                    title: L("Created At"),
+                    description: formattedDate(conversation.createdAt),
+                    icon: "calendar.badge.plus"
+                ) {
+                    EmptyView()
                 }
 
-                AppSettingsRow {
-                    HStack(spacing: 12) {
-                        Image(systemName: "calendar.badge.clock")
-                            .font(.appCallout)
-                            .foregroundColor(theme.primary)
-                            .frame(width: 24)
+                detailDivider
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(L("Updated At"))
-                                .font(.appBody)
-                                .foregroundColor(theme.textPrimary)
-                            Text(formattedDate(conversation.updatedAt))
-                                .font(.appCaption)
-                                .foregroundColor(theme.textSecondary)
-                        }
-
-                        Spacer()
-
-                        EmptyView()
-                    }
+                AppSettingRow(
+                    title: L("Updated At"),
+                    description: formattedDate(conversation.updatedAt),
+                    icon: "calendar.badge.clock"
+                ) {
+                    EmptyView()
                 }
             }
         }
@@ -364,141 +314,72 @@ public struct ConversationStoreSettingsView: View {
 
     /// 路由：会话偏好与上下文绑定，取值缺省时回退到占位文案。
     private func routingSection(for conversation: ConversationSummary) -> some View {
-        AppCard {
-            AppSettingsSection(title: L("Routing")) {
-                AppSettingsRow {
-                    HStack(spacing: 12) {
-                        Image(systemName: "text.quote")
-                            .font(.appCallout)
-                            .foregroundColor(theme.primary)
-                            .frame(width: 24)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(L("Verbosity"))
-                                .font(.appBody)
-                                .foregroundColor(theme.textPrimary)
-                            Text(conversation.verbosity?.displayName ?? L("Default"))
-                                .font(.appCaption)
-                                .foregroundColor(theme.textSecondary)
-                        }
-
-                        Spacer()
-
-                        EmptyView()
-                    }
+        AppSettingSection(title: L("Routing"), titleAlignment: .leading) {
+            VStack(spacing: 0) {
+                AppSettingRow(
+                    title: L("Verbosity"),
+                    description: conversation.verbosity?.displayName ?? L("Default"),
+                    icon: "text.quote"
+                ) {
+                    EmptyView()
                 }
 
-                AppSettingsRow {
-                    HStack(spacing: 12) {
-                        Image(systemName: "character.book.closed")
-                            .font(.appCallout)
-                            .foregroundColor(theme.primary)
-                            .frame(width: 24)
+                detailDivider
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(L("Language"))
-                                .font(.appBody)
-                                .foregroundColor(theme.textPrimary)
-                            Text(conversation.language?.displayName ?? L("Default"))
-                                .font(.appCaption)
-                                .foregroundColor(theme.textSecondary)
-                        }
-
-                        Spacer()
-
-                        EmptyView()
-                    }
+                AppSettingRow(
+                    title: L("Language"),
+                    description: conversation.language?.displayName ?? L("Default"),
+                    icon: "character.book.closed"
+                ) {
+                    EmptyView()
                 }
 
-                AppSettingsRow {
-                    HStack(spacing: 12) {
-                        Image(systemName: conversation.automationLevel?.iconName ?? "gearshape.2")
-                            .font(.appCallout)
-                            .foregroundColor(theme.primary)
-                            .frame(width: 24)
+                detailDivider
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(L("Automation Level"))
-                                .font(.appBody)
-                                .foregroundColor(theme.textPrimary)
-                            Text(conversation.automationLevel?.displayName ?? L("Default"))
-                                .font(.appCaption)
-                                .foregroundColor(theme.textSecondary)
-                        }
-
-                        Spacer()
-
-                        EmptyView()
-                    }
+                AppSettingRow(
+                    title: L("Automation Level"),
+                    description: conversation.automationLevel?.displayName ?? L("Default"),
+                    icon: conversation.automationLevel?.iconName ?? "gearshape.2"
+                ) {
+                    EmptyView()
                 }
 
-                AppSettingsRow {
-                    HStack(spacing: 12) {
-                        Image(systemName: "cloud")
-                            .font(.appCallout)
-                            .foregroundColor(theme.primary)
-                            .frame(width: 24)
+                detailDivider
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(L("Provider"))
-                                .font(.appBody)
-                                .foregroundColor(theme.textPrimary)
-                            Text(rowValue(conversation.providerID))
-                                .font(.appCaption)
-                                .foregroundColor(theme.textSecondary)
-                        }
-
-                        Spacer()
-
-                        copyAction(for: conversation.providerID)
-                    }
+                AppSettingRow(
+                    title: L("Provider"),
+                    description: rowValue(conversation.providerID),
+                    icon: "cloud"
+                ) {
+                    copyAction(for: conversation.providerID)
                 }
 
-                AppSettingsRow {
-                    HStack(spacing: 12) {
-                        Image(systemName: "cpu")
-                            .font(.appCallout)
-                            .foregroundColor(theme.primary)
-                            .frame(width: 24)
+                detailDivider
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(L("Model"))
-                                .font(.appBody)
-                                .foregroundColor(theme.textPrimary)
-                            Text(rowValue(conversation.modelName))
-                                .font(.appCaption)
-                                .foregroundColor(theme.textSecondary)
-                        }
-
-                        Spacer()
-
-                        copyAction(for: conversation.modelName)
-                    }
+                AppSettingRow(
+                    title: L("Model"),
+                    description: rowValue(conversation.modelName),
+                    icon: "cpu"
+                ) {
+                    copyAction(for: conversation.modelName)
                 }
 
-                AppSettingsRow {
-                    HStack(spacing: 12) {
-                        Image(systemName: "folder")
-                            .font(.appCallout)
-                            .foregroundColor(theme.primary)
-                            .frame(width: 24)
+                detailDivider
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(L("Project Path"))
-                                .font(.appBody)
-                                .foregroundColor(theme.textPrimary)
-                            Text(rowValue(conversation.projectPath))
-                                .font(.appCaption)
-                                .foregroundColor(theme.textSecondary)
-                        }
-
-                        Spacer()
-
-                        copyAction(for: conversation.projectPath)
-                    }
+                AppSettingRow(
+                    title: L("Project Path"),
+                    description: rowValue(conversation.projectPath),
+                    icon: "folder"
+                ) {
+                    copyAction(for: conversation.projectPath)
                 }
             }
         }
+    }
+
+    /// 行内分隔：与 HTTP 日志详情页的 `Divider().padding(.vertical, 8)` 保持一致。
+    private var detailDivider: some View {
+        Divider().padding(.vertical, 8)
     }
 
     /// 仅对真实存在的取值展示复制按钮，占位文案不可复制。
@@ -523,23 +404,21 @@ public struct ConversationStoreSettingsView: View {
     @ViewBuilder
     private var messagesSection: some View {
         let messages = viewModel.messagesForSelected
-        AppCard {
-            AppSettingsSection(title: L("Messages")) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(String(format: L("Showing %lld of the most recent messages (read-only)"), messages.count))
-                        .font(.appCaption)
-                        .foregroundStyle(theme.textSecondary)
-                        .padding(.leading, 4)
+        AppSettingSection(title: L("Messages"), titleAlignment: .leading) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(String(format: L("Showing %lld of the most recent messages (read-only)"), messages.count))
+                    .font(.appCaption)
+                    .foregroundStyle(theme.textSecondary)
+                    .padding(.leading, 4)
 
-                    if messages.isEmpty {
-                        Text(L("No messages in this conversation"))
-                            .font(.appCallout)
-                            .foregroundStyle(theme.textSecondary)
-                    } else {
-                        LazyVStack(spacing: 10) {
-                            ForEach(messages) { message in
-                                messageRow(message)
-                            }
+                if messages.isEmpty {
+                    Text(L("No messages in this conversation"))
+                        .font(.appCallout)
+                        .foregroundStyle(theme.textSecondary)
+                } else {
+                    LazyVStack(spacing: 10) {
+                        ForEach(messages) { message in
+                            messageRow(message)
                         }
                     }
                 }

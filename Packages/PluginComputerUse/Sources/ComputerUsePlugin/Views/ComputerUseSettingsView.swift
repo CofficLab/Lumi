@@ -36,10 +36,11 @@ struct ComputerUseSettingsView: View {
     }
 
     private var permissionsSection: some View {
-        AppCard {
-            AppSettingsSection(
-                title: pluginLocalization.string("System Permissions")
-            ) {
+        AppSettingSection(
+            title: pluginLocalization.string("System Permissions"),
+            titleAlignment: .leading
+        ) {
+            VStack(spacing: 0) {
                 permissionRow(
                     title: pluginLocalization.string("Screen Recording"),
                     detail: pluginLocalization.string("Allows Lumi to capture the selected application window."),
@@ -48,6 +49,8 @@ struct ComputerUseSettingsView: View {
                 ) {
                     ComputerUsePermissionService.requestScreenRecordingPermission(); refresh()
                 }
+                Divider()
+                    .padding(.vertical, 8)
                 permissionRow(
                     title: pluginLocalization.string("Accessibility"),
                     detail: pluginLocalization.string("Allows Lumi to click, type, scroll, and navigate."),
@@ -61,49 +64,34 @@ struct ComputerUseSettingsView: View {
     }
 
     private func permissionRow(title: String, detail: String, granted: Bool, icon: String, request: @escaping () -> Void) -> some View {
-        AppSettingsRow {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.appCallout)
-                    .foregroundColor(theme.primary)
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 4) {
-                        Text(title)
-                            .font(.appBody)
-                            .foregroundColor(theme.textPrimary)
-                        Image(systemName: granted ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                            .foregroundStyle(granted ? theme.success : theme.warning)
-                    }
-                    Text(detail)
-                        .font(.appCaption)
-                        .foregroundColor(theme.textSecondary)
-                }
-
-                Spacer()
-
-                if granted {
-                    EmptyView()
-                } else {
-                    AppButton(pluginLocalization.string("Grant Access"), style: .secondary, size: .small, action: request)
-                }
+        AppSettingRow(
+            title: title,
+            description: detail,
+            icon: icon,
+            titleSuffix: {
+                Image(systemName: granted ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .foregroundStyle(granted ? theme.success : theme.warning)
+            }
+        ) {
+            if granted {
+                EmptyView()
+            } else {
+                AppButton(pluginLocalization.string("Grant Access"), style: .secondary, size: .small, action: request)
             }
         }
     }
 
     private var applicationsSection: some View {
-        AppCard {
-            AppSettingsSection(
-                title: pluginLocalization.string("Allowed Applications")
-            ) {
-                HStack(spacing: 0) {
-                    applicationList.frame(width: 300)
-                    AppDivider(.vertical)
-                    applicationDetail.frame(maxWidth: .infinity, alignment: .topLeading)
-                }
-                .frame(minHeight: 300)
+        AppSettingSection(
+            title: pluginLocalization.string("Allowed Applications"),
+            titleAlignment: .leading
+        ) {
+            HStack(spacing: 0) {
+                applicationList.frame(width: 300)
+                AppDivider(.vertical)
+                applicationDetail.frame(maxWidth: .infinity, alignment: .topLeading)
             }
+            .frame(minHeight: 300)
         }
     }
 
@@ -145,52 +133,15 @@ struct ComputerUseSettingsView: View {
                     }
                     AppDivider()
                     if ComputerUseAuthorizationStore.shared.isNativeAllowed(application.bundleIdentifier) {
-                        AppSettingsRow {
-                            HStack(spacing: 12) {
-                                Image(systemName: "cursorarrow.motionlines")
-                                    .font(.appCallout)
-                                    .foregroundColor(theme.primary)
-                                    .frame(width: 24)
-
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(pluginLocalization.string("Mouse and Keyboard Control"))
-                                        .font(.appBody)
-                                        .foregroundColor(theme.textPrimary)
-                                    Text(pluginLocalization.string("Lumi asks you to pause while it operates. Your input pauses the operation."))
-                                        .font(.appCaption)
-                                        .foregroundColor(theme.textSecondary)
-                                }
-
-                                Spacer()
-
-                                AppButton(pluginLocalization.string("Ask Next Time"), size: .small) {
-                                    ComputerUseAuthorizationStore.shared.revokeNative(application.bundleIdentifier)
-                                    revision += 1
-                                }
+                        AppSettingRow(title: pluginLocalization.string("Mouse and Keyboard Control"),
+                                      description: pluginLocalization.string("Lumi asks you to pause while it operates. Your input pauses the operation."), icon: "cursorarrow.motionlines") {
+                            AppButton(pluginLocalization.string("Ask Next Time"), size: .small) {
+                                ComputerUseAuthorizationStore.shared.revokeNative(application.bundleIdentifier)
+                                revision += 1
                             }
                         }
                     }
-                    AppSettingsRow {
-                        HStack(spacing: 12) {
-                            Image(systemName: "hand.raised")
-                                .font(.appCallout)
-                                .foregroundColor(theme.primary)
-                                .frame(width: 24)
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(pluginLocalization.string("Computer Use Access"))
-                                    .font(.appBody)
-                                    .foregroundColor(theme.textPrimary)
-                                Text(ComputerUseAuthorizationStore.shared.isAllowed(application.bundleIdentifier) ? pluginLocalization.string("Lumi can observe and interact with this application.") : pluginLocalization.string("Lumi must be allowed before it can interact with this application."))
-                                    .font(.appCaption)
-                                    .foregroundColor(theme.textSecondary)
-                            }
-
-                            Spacer()
-
-                            EmptyView()
-                        }
-                    }
+                    AppSettingRow(title: pluginLocalization.string("Computer Use Access"), description: ComputerUseAuthorizationStore.shared.isAllowed(application.bundleIdentifier) ? pluginLocalization.string("Lumi can observe and interact with this application.") : pluginLocalization.string("Lumi must be allowed before it can interact with this application."), icon: "hand.raised") { EmptyView() }
                 }.padding(22)
             }
         } else {

@@ -60,7 +60,7 @@ struct ACPSettingsView: View {
     // MARK: - Helper Path
 
     private var helperPathCard: some View {
-        AppCard {
+        AppSettingSection(titleAlignment: .leading) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
                     Image(systemName: "terminal")
@@ -168,7 +168,7 @@ struct ACPSettingsView: View {
     ]
 
     private func appGuideCard(_ guide: ACPAppGuide) -> some View {
-        AppCard {
+        AppSettingSection(titleAlignment: .leading) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
                     Image(systemName: guide.systemImage)

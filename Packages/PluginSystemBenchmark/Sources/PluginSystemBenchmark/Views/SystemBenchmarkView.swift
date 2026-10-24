@@ -50,15 +50,10 @@ private struct SystemBenchmarkDashboardView: View {
                 methodCard
             }
         }
-        .environment(\.appSettingsCardStyleOverride, .subtle)
     }
 
     private var hero: some View {
-        AppCard(
-            style: .elevated,
-            cornerRadius: 18,
-            glowColor: viewModel.isRunning ? theme.primary : nil
-        ) {
+        AppSettingSection(title: nil) {
             HStack(spacing: 14) {
                 ZStack {
                     Circle()
@@ -112,7 +107,7 @@ private struct SystemBenchmarkDashboardView: View {
     }
 
     private var progressCard: some View {
-        AppCard(style: .subtle, showShadow: false) {
+        AppSettingSection(title: nil) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Label(progressTitle, systemImage: progressIcon)
@@ -153,7 +148,7 @@ private struct SystemBenchmarkDashboardView: View {
     }
 
     private var emptyResults: some View {
-        AppCard(style: .subtle, showShadow: false) {
+        AppSettingSection(title: nil) {
             AppEmptyState(
                 icon: "chart.bar.xaxis",
                 title: BenchmarkLocalization.string("No benchmark yet"),
@@ -173,7 +168,7 @@ private struct SystemBenchmarkDashboardView: View {
                     .foregroundStyle(theme.textTertiary)
             }
 
-            AppCard(style: .subtle, showShadow: false) {
+            AppSettingSection(title: nil) {
                 VStack(alignment: .leading, spacing: 16) {
                     ForEach(BenchmarkKind.allCases) { kind in
                         let measurements = report.measurements.filter { $0.kind == kind }
@@ -187,7 +182,7 @@ private struct SystemBenchmarkDashboardView: View {
     }
 
     private var methodCard: some View {
-        AppCard(style: .subtle, showShadow: false) {
+        AppSettingSection(title: nil) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 8) {
                     Image(systemName: "info.circle")
@@ -197,30 +192,31 @@ private struct SystemBenchmarkDashboardView: View {
                         .foregroundStyle(theme.textPrimary)
                 }
 
-                AppSettingsSection(spacing: 10) {
-                    AppSettingsRow {
-                        AppInfoRow(
-                            icon: "cpu",
-                            title: BenchmarkLocalization.string("CPU compute"),
-                            description: BenchmarkLocalization.string("Fixed integer workload measured as operations per second."),
-                            tint: theme.info
-                        )
+                VStack(spacing: 0) {
+                    AppSettingRow(
+                        title: BenchmarkLocalization.string("CPU compute"),
+                        description: BenchmarkLocalization.string("Fixed integer workload measured as operations per second."),
+                        icon: "cpu"
+                    ) {
+                        EmptyView()
                     }
-                    AppSettingsRow {
-                        AppInfoRow(
-                            icon: "memorychip",
-                            title: BenchmarkLocalization.string("Memory bandwidth"),
-                            description: BenchmarkLocalization.string("Sequential write, copy, and read passes over a fixed buffer."),
-                            tint: theme.success
-                        )
+                    Divider()
+                        .padding(.vertical, 8)
+                    AppSettingRow(
+                        title: BenchmarkLocalization.string("Memory bandwidth"),
+                        description: BenchmarkLocalization.string("Sequential write, copy, and read passes over a fixed buffer."),
+                        icon: "memorychip"
+                    ) {
+                        EmptyView()
                     }
-                    AppSettingsRow {
-                        AppInfoRow(
-                            icon: "internaldrive",
-                            title: BenchmarkLocalization.string("Disk throughput"),
-                            description: BenchmarkLocalization.string("Sequential I/O against a temporary file; the file is removed afterwards."),
-                            tint: theme.warning
-                        )
+                    Divider()
+                        .padding(.vertical, 8)
+                    AppSettingRow(
+                        title: BenchmarkLocalization.string("Disk throughput"),
+                        description: BenchmarkLocalization.string("Sequential I/O against a temporary file; the file is removed afterwards."),
+                        icon: "internaldrive"
+                    ) {
+                        EmptyView()
                     }
                 }
 
@@ -266,7 +262,7 @@ private struct BenchmarkSuiteCard: View {
     let measurements: [BenchmarkMeasurement]
 
     var body: some View {
-        AppCard(style: .subtle, padding: EdgeInsets(top: 14, leading: 14, bottom: 12, trailing: 14), showShadow: false) {
+        AppSettingSection(title: nil) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 7) {
                     Image(systemName: kind.icon)

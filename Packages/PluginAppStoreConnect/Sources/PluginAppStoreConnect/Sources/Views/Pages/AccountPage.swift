@@ -7,7 +7,7 @@ struct AccountPage: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
-            AppCard {
+            AppSettingSection(title: nil, titleAlignment: .leading) {
                 HStack(alignment: .center, spacing: 12) {
                     Image(systemName: "questionmark.circle")
                         .font(.title3)
@@ -29,11 +29,11 @@ struct AccountPage: View {
                 }
             }
 
-            AppCard {
+            AppSettingSection(
+                title: AppStoreConnectLocalization.string("Global API Key"),
+                titleAlignment: .leading
+            ) {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text(AppStoreConnectLocalization.string("Global API Key"))
-                        .font(.headline)
-
                     GlassTextField(title: AppStoreConnectLocalization.string("Issuer ID"), text: $viewModel.credentials.issuerID)
                     GlassTextField(title: AppStoreConnectLocalization.string("Key ID"), text: $viewModel.credentials.keyID)
 
@@ -57,7 +57,7 @@ struct AccountPage: View {
                 }
             }
 
-            AppCard {
+            AppSettingSection(title: nil, titleAlignment: .leading) {
                 HStack {
                     AppButton(AppStoreConnectLocalization.string("Save Credentials"), systemImage: "key.fill", style: .primary) {
                         viewModel.saveCredentials()

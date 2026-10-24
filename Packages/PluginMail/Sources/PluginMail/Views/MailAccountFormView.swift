@@ -40,58 +40,101 @@ public struct MailAccountFormView: View {
     }
 
     public var body: some View {
-        AppCard {
-            AppSettingsSection(
+        VStack(alignment: .leading, spacing: 24) {
+            AppSettingSection(
                 title: accountID == nil ? "添加账户" : "编辑账户",
-                spacing: 12
+                titleAlignment: .leading
             ) {
                 providerRow
-                AppSettingsSection(title: "账户信息", spacing: 12) {
-                    AppSettingsRow {
+            }
+
+            AppSettingSection(title: "账户信息", titleAlignment: .leading) {
+                VStack(spacing: 0) {
+                    AppSettingRow(title: "显示名称（可选）") {
                         AppInputField("显示名称（可选）", text: $draft.displayName)
                     }
-                    AppSettingsRow {
+
+                    Divider()
+                        .padding(.vertical, 8)
+
+                    AppSettingRow(title: "邮箱地址") {
                         AppInputField("邮箱地址", text: $draft.email)
                     }
-                    AppSettingsRow {
+
+                    Divider()
+                        .padding(.vertical, 8)
+
+                    AppSettingRow(title: "登录用户名") {
                         AppInputField("登录用户名", text: $draft.username)
                     }
-                    AppSettingsSecureFieldRow(
-                        "密码 / 授权码",
-                        placeholder: "应用专用密码或授权码",
-                        allowsReveal: true,
-                        text: $draft.password
-                    )
+
+                    Divider()
+                        .padding(.vertical, 8)
+
+                    AppSettingRow(title: "密码 / 授权码") {
+                        GlassTextField(
+                            title: "",
+                            text: $draft.password,
+                            placeholder: "应用专用密码或授权码",
+                            isSecure: true,
+                            allowsReveal: true
+                        )
+                    }
                 }
-                AppSettingsSection(title: "服务器", spacing: 12) {
+            }
+
+            AppSettingSection(title: "服务器", titleAlignment: .leading) {
+                VStack(spacing: 0) {
                     serverHostRow("IMAP 服务器", host: $draft.imapHost)
+
+                    Divider()
+                        .padding(.vertical, 8)
+
                     portRow("IMAP 端口", port: $draft.imapPort)
+
+                    Divider()
+                        .padding(.vertical, 8)
+
                     serverHostRow("SMTP 服务器", host: $draft.smtpHost)
+
+                    Divider()
+                        .padding(.vertical, 8)
+
                     portRow("SMTP 端口", port: $draft.smtpPort)
-                    AppSettingsToggleRow("强制 TLS", isOn: $draft.useTLS)
+
+                    Divider()
+                        .padding(.vertical, 8)
+
+                    AppSettingToggleRow("强制 TLS", isOn: $draft.useTLS)
                 }
-                testRow
-                if let formError {
-                    Text(formError)
-                        .font(.appCaption)
-                        .foregroundColor(theme.error)
+            }
+
+            AppSettingSection(title: nil, titleAlignment: .leading) {
+                VStack(alignment: .leading, spacing: 12) {
+                    testRow
+                    if let formError {
+                        Text(formError)
+                            .font(.appCaption)
+                            .foregroundColor(theme.error)
+                    }
+                    actionsRow
                 }
-                actionsRow
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - 服务商预设
 
     private var providerRow: some View {
-        AppSettingsPickerRow(
-            "服务商",
-            systemImage: "server.rack",
-            selection: $draft.provider
-        ) {
-            ForEach(MailProviderPreset.allCases) { preset in
-                Text(preset.displayName).tag(preset)
+        AppSettingRow(title: "服务商", icon: "server.rack") {
+            Picker("服务商", selection: $draft.provider) {
+                ForEach(MailProviderPreset.allCases) { preset in
+                    Text(preset.displayName).tag(preset)
+                }
             }
+            .labelsHidden()
+            .pickerStyle(.menu)
         }
         .onChange(of: draft.provider) { _, newValue in
             draft.applyPresetDefaults()
@@ -100,14 +143,14 @@ public struct MailAccountFormView: View {
 
     // MARK: - 服务器字段
 
-    private func serverHostRow(_ title: LocalizedStringKey, host: Binding<String>) -> some View {
-        AppSettingsRow {
-            AppInputField(title, text: host)
+    private func serverHostRow(_ title: String, host: Binding<String>) -> some View {
+        AppSettingRow(title: title) {
+            AppInputField(LocalizedStringKey(title), text: host)
         }
     }
 
     private func portRow(_ title: String, port: Binding<Int>) -> some View {
-        AppSettingsRow {
+        AppSettingRow(title: title) {
             TextField(
                 title,
                 value: port,

@@ -37,16 +37,24 @@ struct ProviderModelDownloadView: View {
     }
 
     var body: some View {
-        AppCard {
-            AppSettingsSection(title: "模型下载") {
+        AppSettingSection(title: "模型下载") {
+            VStack(spacing: 0) {
                 cacheRow
+                
+                Divider()
+                    .padding(.vertical, 8)
+                
                 downloadSpeedRow
             }
         }
-
-        AppCard {
-            AppSettingsSection(title: "可用模型") {
-                ForEach(Array(models.enumerated()), id: \.element.id) { _, model in
+        
+        AppSettingSection(title: "可用模型") {
+            VStack(spacing: 0) {
+                ForEach(Array(models.enumerated()), id: \.element.id) { index, model in
+                    if index > 0 {
+                        Divider()
+                            .padding(.vertical, 4)
+                    }
                     modelRow(model)
                 }
             }
@@ -57,65 +65,37 @@ struct ProviderModelDownloadView: View {
     private var downloadState: LLMModelDownloadState { viewModel.downloadState }
 
     private var cacheRow: some View {
-        AppSettingsRow {
-            HStack(spacing: 12) {
-                Image(systemName: "internaldrive")
-                    .font(.appCallout)
-                    .foregroundColor(theme.primary)
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("缓存占用")
-                        .font(.appBody)
-                        .foregroundColor(theme.textPrimary)
-                    Text(ByteCountFormatter.string(fromByteCount: downloadState.cacheSizeBytes, countStyle: .file))
-                        .font(.appCaption)
-                        .foregroundColor(theme.textSecondary)
-                }
-
-                Spacer()
-
-                #if os(macOS)
-                AppButton("打开", systemImage: "folder", style: .secondary, size: .small) {
-                    NSWorkspace.shared.open(capability.modelCacheDirectoryURL)
-                }
-                #endif
+        AppSettingRow(
+            title: "缓存占用",
+            description: ByteCountFormatter.string(fromByteCount: downloadState.cacheSizeBytes, countStyle: .file),
+            icon: "internaldrive"
+        ) {
+            #if os(macOS)
+            AppButton("打开", systemImage: "folder", style: .secondary, size: .small) {
+                NSWorkspace.shared.open(capability.modelCacheDirectoryURL)
             }
+            #endif
         }
     }
 
     private var downloadSpeedRow: some View {
-        AppSettingsRow {
-            HStack(spacing: 12) {
-                Image(systemName: "speedometer")
-                    .font(.appCallout)
-                    .foregroundColor(theme.primary)
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("下载限速")
-                        .font(.appBody)
-                        .foregroundColor(theme.textPrimary)
-                    Text(speedLimitDescription)
-                        .font(.appCaption)
-                        .foregroundColor(theme.textSecondary)
-                }
-
-                Spacer()
-
-                Picker("", selection: $speedLimitBytes) {
-                    Text("不限速").tag(0)
-                    Text("512 KB/s").tag(512 * 1024)
-                    Text("1 MB/s").tag(1024 * 1024)
-                    Text("2 MB/s").tag(2 * 1024 * 1024)
-                    Text("5 MB/s").tag(5 * 1024 * 1024)
-                }
-                .labelsHidden()
-                .pickerStyle(.menu)
-                .frame(width: 120)
-                .onChange(of: speedLimitBytes) { _, value in
-                    capability.setDownloadSpeedLimit(bytesPerSecond: value > 0 ? value : nil)
-                }
+        AppSettingRow(
+            title: "下载限速",
+            description: speedLimitDescription,
+            icon: "speedometer"
+        ) {
+            Picker("", selection: $speedLimitBytes) {
+                Text("不限速").tag(0)
+                Text("512 KB/s").tag(512 * 1024)
+                Text("1 MB/s").tag(1024 * 1024)
+                Text("2 MB/s").tag(2 * 1024 * 1024)
+                Text("5 MB/s").tag(5 * 1024 * 1024)
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .frame(width: 120)
+            .onChange(of: speedLimitBytes) { _, value in
+                capability.setDownloadSpeedLimit(bytesPerSecond: value > 0 ? value : nil)
             }
         }
     }
@@ -155,47 +135,33 @@ struct ProviderModelDownloadView: View {
             return nil
         }()
         
-        AppSettingsRow {
-            HStack(spacing: 12) {
-                Image(systemName: rowIcon)
-                    .font(.appCallout)
-                    .foregroundColor(theme.primary)
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(model.displayName)
-                        .font(.appBody)
-                        .foregroundColor(theme.textPrimary)
-                    Text(rowDescription ?? model.id)
-                        .font(.appCaption)
-                        .foregroundColor(theme.textSecondary)
-                }
-
-                Spacer()
-
-                HStack(spacing: 6) {
-                    if isDownloading || isPaused {
-                        // 下载进度
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text("\(Int(downloadState.progress.fractionCompleted * 100))%")
+        AppSettingRow(
+            title: model.displayName,
+            description: rowDescription ?? model.id,
+            icon: rowIcon
+        ) {
+            HStack(spacing: 6) {
+                if isDownloading || isPaused {
+                    // 下载进度
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("\(Int(downloadState.progress.fractionCompleted * 100))%")
+                            .font(.appMicro)
+                            .foregroundStyle(theme.textSecondary)
+                        if isDownloading, let speed = downloadState.progress.speedBytesPerSecond, speed > 0 {
+                            Text(ByteCountFormatter.string(fromByteCount: Int64(speed), countStyle: .file) + "/s")
                                 .font(.appMicro)
                                 .foregroundStyle(theme.textSecondary)
-                            if isDownloading, let speed = downloadState.progress.speedBytesPerSecond, speed > 0 {
-                                Text(ByteCountFormatter.string(fromByteCount: Int64(speed), countStyle: .file) + "/s")
-                                    .font(.appMicro)
-                                    .foregroundStyle(theme.textSecondary)
-                            }
                         }
                     }
-
-                    // 操作按钮
-                    actionButtons(
-                        modelID: model.id,
-                        isDownloading: isDownloading,
-                        isPaused: isPaused,
-                        isCached: isCached
-                    )
                 }
+                
+                // 操作按钮
+                actionButtons(
+                    modelID: model.id,
+                    isDownloading: isDownloading,
+                    isPaused: isPaused,
+                    isCached: isCached
+                )
             }
         }
         .onTapGesture {

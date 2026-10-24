@@ -19,31 +19,32 @@ struct ProjectRAGStatusSection: View {
     }
 
     var body: some View {
-        AppCard {
-            AppSettingsSection(title: pluginLocalization.string("RAG Index")) {
-                VStack(alignment: .leading, spacing: 10) {
-                    switch viewModel.state {
-                    case .loading:
-                        statusRow(icon: "hourglass", title: pluginLocalization.string("Checking index status…"), color: theme.textSecondary)
-                    case .unavailable:
-                        statusRow(icon: "minus.circle", title: pluginLocalization.string("RAG unavailable"), color: theme.textSecondary)
-                    case .notIndexed:
-                        statusRow(icon: "circle.dashed", title: pluginLocalization.string("Not indexed"), color: .orange)
-                    case .indexed(let status):
-                        indexedContent(status)
-                    case .failed:
-                        statusRow(icon: "exclamationmark.triangle", title: pluginLocalization.string("Unable to read index status"), color: .orange)
-                    }
+        AppSettingSection(
+                        title: pluginLocalization.string("RAG Index"),
+                        titleAlignment: .leading
+                    ) {
+            VStack(alignment: .leading, spacing: 10) {
+                switch viewModel.state {
+                case .loading:
+                    statusRow(icon: "hourglass", title: pluginLocalization.string("Checking index status…"), color: theme.textSecondary)
+                case .unavailable:
+                    statusRow(icon: "minus.circle", title: pluginLocalization.string("RAG unavailable"), color: theme.textSecondary)
+                case .notIndexed:
+                    statusRow(icon: "circle.dashed", title: pluginLocalization.string("Not indexed"), color: .orange)
+                case .indexed(let status):
+                    indexedContent(status)
+                case .failed:
+                    statusRow(icon: "exclamationmark.triangle", title: pluginLocalization.string("Unable to read index status"), color: .orange)
+                }
 
-                    if !viewModel.isLoading {
-                        HStack {
-                            Spacer()
-                            Button(pluginLocalization.string("Refresh")) {
-                                Task { await viewModel.loadStatus() }
-                            }
-                            .buttonStyle(.borderless)
-                            .foregroundStyle(Color.accentColor)
+                if !viewModel.isLoading {
+                    HStack {
+                        Spacer()
+                        Button(pluginLocalization.string("Refresh")) {
+                            Task { await viewModel.loadStatus() }
                         }
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(Color.accentColor)
                     }
                 }
             }

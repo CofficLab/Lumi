@@ -149,11 +149,10 @@ final class TextActionMenuController {
 
 /// 文本操作设置页。
 ///
-/// 布局遵循 settings-ui 规范：`PluginSettingsScaffold` + `AppCard` +
-/// `AppSettings*Row`，不使用原生 `Form`——否则这一页会和其他设置入口
+/// 布局遵循 settings-ui 规范：`PluginSettingsScaffold` + `AppSettingSection` +
+/// `AppSettingRow`，不使用原生 `Form`——否则这一页会和其他设置入口
 /// 呈现完全不同的原生分组样式，间距也对不齐。
 struct TextActionsSettingsView: View {
-    @LumiTheme private var theme
     @State private var enabled = TextActionsSettings.isEnabled
 
     var body: some View {
@@ -165,12 +164,12 @@ struct TextActionsSettingsView: View {
             showHeader: false
         ) {
             VStack(alignment: .leading, spacing: 24) {
-                AppCard {
-                    AppSettingsSection(
-                        title: pluginLocalization.string("General"),
-                        spacing: 12
-                    ) {
-                        AppSettingsToggleRow(
+                AppSettingSection(
+                    title: pluginLocalization.string("General"),
+                    titleAlignment: .leading
+                ) {
+                    VStack(spacing: 0) {
+                        AppSettingToggleRow(
                             pluginLocalization.string("Enable selected-text actions"),
                             isOn: Binding(
                                 get: { enabled },
@@ -181,21 +180,18 @@ struct TextActionsSettingsView: View {
                             )
                         )
 
-                        AppSettingsRow {
-                            HStack(spacing: 12) {
-                                Text(pluginLocalization.string("Accessibility Permission"))
-                                    .font(.appBody)
-                                    .foregroundColor(theme.textPrimary)
+                        Divider()
+                            .padding(.vertical, 8)
 
-                                Spacer()
-
-                                AppButton(
-                                    pluginLocalization.string("Request Accessibility Permission"),
-                                    style: .secondary,
-                                    size: .small
-                                ) {
-                                    TextSelectionManager.shared.requestPermission()
-                                }
+                        AppSettingRow(
+                            title: pluginLocalization.string("Accessibility Permission")
+                        ) {
+                            AppButton(
+                                pluginLocalization.string("Request Accessibility Permission"),
+                                style: .secondary,
+                                size: .small
+                            ) {
+                                TextSelectionManager.shared.requestPermission()
                             }
                         }
                     }

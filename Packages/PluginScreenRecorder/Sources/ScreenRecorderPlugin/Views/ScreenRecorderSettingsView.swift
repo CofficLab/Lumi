@@ -4,8 +4,8 @@ import SwiftUI
 
 /// 屏幕录制设置页：权限状态、3 秒测试录制、行为说明。
 ///
-/// 布局遵循 settings-ui 规范：`PluginSettingsScaffold` + `AppCard` +
-/// `AppSettingsRow`，不使用原生 `Form`——否则这一页会和其他设置入口
+/// 布局遵循 settings-ui 规范：`PluginSettingsScaffold` + `AppSettingSection` +
+/// `AppSettingRow`，不使用原生 `Form`——否则这一页会和其他设置入口
 /// 呈现完全不同的原生分组样式，间距也对不齐。
 @MainActor
 struct ScreenRecorderSettingsView: View {
@@ -31,9 +31,9 @@ struct ScreenRecorderSettingsView: View {
             showHeader: false
         ) {
             VStack(alignment: .leading, spacing: 24) {
-                permissionsCard
-                verificationCard
-                notesCard
+                permissionsSection
+                verificationSection
+                notesSection
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -44,12 +44,12 @@ struct ScreenRecorderSettingsView: View {
 
     // MARK: - 权限
 
-    private var permissionsCard: some View {
-        AppCard {
-            AppSettingsSection(
-                title: ScreenRecorderLocalization.ui("Permissions", "权限"),
-                spacing: 12
-            ) {
+    private var permissionsSection: some View {
+        AppSettingSection(
+            title: ScreenRecorderLocalization.ui("Permissions", "权限"),
+            titleAlignment: .leading
+        ) {
+            VStack(spacing: 0) {
                 permissionRow(
                     title: ScreenRecorderLocalization.ui("Screen Recording", "屏幕录制"),
                     detail: ScreenRecorderLocalization.ui("Required to capture app windows or the screen.", "录制 app 窗口或屏幕所必需。"),
@@ -60,6 +60,10 @@ struct ScreenRecorderSettingsView: View {
                         refresh()
                     }
                 )
+
+                Divider()
+                    .padding(.vertical, 8)
+
                 permissionRow(
                     title: ScreenRecorderLocalization.ui("Microphone", "麦克风"),
                     detail: ScreenRecorderLocalization.ui("Only needed when recording your voice (include_microphone).", "仅在录制你的解说（include_microphone）时需要。"),
@@ -75,23 +79,17 @@ struct ScreenRecorderSettingsView: View {
 
     // MARK: - 验证
 
-    private var verificationCard: some View {
-        AppCard {
-            AppSettingsSection(
-                title: ScreenRecorderLocalization.ui("Verification", "验证"),
-                spacing: 12
-            ) {
-                AppSettingsRow {
+    private var verificationSection: some View {
+        AppSettingSection(
+            title: ScreenRecorderLocalization.ui("Verification", "验证"),
+            titleAlignment: .leading
+        ) {
+            VStack(spacing: 0) {
+                AppSettingRow(
+                    title: ScreenRecorderLocalization.ui("Record a 3-second test clip", "录制 3 秒测试片段"),
+                    icon: "record.circle"
+                ) {
                     HStack(spacing: 12) {
-                        Label(
-                            ScreenRecorderLocalization.ui("Record a 3-second test clip", "录制 3 秒测试片段"),
-                            systemImage: "record.circle"
-                        )
-                        .font(.appBody)
-                        .foregroundColor(theme.textPrimary)
-
-                        Spacer()
-
                         if testing {
                             ProgressView()
                                 .controlSize(.small)
@@ -109,11 +107,11 @@ struct ScreenRecorderSettingsView: View {
                 }
 
                 if let testMessage {
-                    AppSettingsRow {
-                        Text(testMessage)
-                            .font(.appCaption)
-                            .foregroundColor(theme.textSecondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                    Divider()
+                        .padding(.vertical, 8)
+
+                    AppSettingRow(title: testMessage) {
+                        EmptyView()
                     }
                 }
             }
@@ -122,40 +120,29 @@ struct ScreenRecorderSettingsView: View {
 
     // MARK: - 说明
 
-    private var notesCard: some View {
-        AppCard {
-            AppSettingsSection(
-                title: ScreenRecorderLocalization.ui("Notes", "说明"),
-                spacing: 8
-            ) {
-                Text(ScreenRecorderLocalization.ui(
-                    "Recording captures a single app window by default and excludes Lumi itself. Output goes to ~/Downloads as .mp4. A floating indicator with a Stop button appears while recording; recordings auto-stop when the target window closes or the duration elapses.",
-                    "默认录制单个 app 窗口，且不录制 Lumi 自身。输出为 .mp4 到 ~/Downloads。录制时会出现带「停止」按钮的浮层；目标窗口关闭或时长结束时会自动停止。"
-                ))
-                .font(.appBody)
-                .foregroundColor(theme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
+    private var notesSection: some View {
+        AppSettingSection(
+            title: ScreenRecorderLocalization.ui("Notes", "说明"),
+            titleAlignment: .leading
+        ) {
+            Text(ScreenRecorderLocalization.ui(
+                "Recording captures a single app window by default and excludes Lumi itself. Output goes to ~/Downloads as .mp4. A floating indicator with a Stop button appears while recording; recordings auto-stop when the target window closes or the duration elapses.",
+                "默认录制单个 app 窗口，且不录制 Lumi 自身。输出为 .mp4 到 ~/Downloads。录制时会出现带「停止」按钮的浮层；目标窗口关闭或时长结束时会自动停止。"
+            ))
+            .font(.appBody)
+            .foregroundColor(theme.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
     @ViewBuilder
     private func permissionRow(title: String, detail: String, granted: Bool, request: @escaping () -> Void) -> some View {
-        AppSettingsRow {
+        AppSettingRow(
+            title: title,
+            description: detail
+        ) {
             HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.appBody)
-                        .foregroundColor(theme.textPrimary)
-                    Text(detail)
-                        .font(.appCaption)
-                        .foregroundColor(theme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 12)
-
                 Label(
                     granted ? ScreenRecorderLocalization.ui("Granted", "已授权") : ScreenRecorderLocalization.ui("Required", "需要授权"),
                     systemImage: granted ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"

@@ -9,9 +9,9 @@ All settings surfaces — built-in core tabs, plugin-contributed sidebar tabs, a
 
 | 位置 | 数值 |
 |------|------|
-| 页面内容左右留白 | 24 |
+| 页面内容左右留白 | 24（贴边页除外） |
 | 页面内容顶部留白 | 24 |
-| 页面内容底部留白 | 分栏页 16；滚动页 24 |
+| 页面内容底部留白 | 分栏页 16；滚动页 24（贴边页除外） |
 | 分栏页外层 VStack 间距 | 14 |
 | 头部行 | `HStack(spacing: 10)` + `.appCaption` + 次要文字色 |
 | 主从容器圆角 | 8（描边 1px `theme.divider`） |
@@ -20,7 +20,21 @@ All settings surfaces — built-in core tabs, plugin-contributed sidebar tabs, a
 | 列表栏头部控件内边距 | 12 |
 | 列表内容 | `LazyVStack(spacing: 4)` + 内边距 8 |
 | 详情栏内容内边距 | 22 |
-| 单栏页分组间距 | 24（分组内 `AppSettingsSection` 间距 8、行间距 6） |
+| 单栏页分组间距 | 24（分组内 `AppSettingSection` 间距 12、行间距 0 + `Divider().padding(.vertical, 8)`） |
+
+### 贴边页（edge-to-edge）
+
+个别分栏页需要「主体内容贴到窗口左右与底边」的观感（主从容器没有外框，
+左右下没有留白）。这类页面在审计表里标记 `isEdgeToEdge: true`，豁免
+「圆角 8 / 1px 描边 / 底部留白 16」三项，其余基准（列表栏 300、详情栏内边距 22、
+不得写死 `minHeight`）照常生效。
+
+贴边页的写法要点：
+
+- 头部行自行保留 24 的左右内边距，不要贴到窗口边缘；
+- 主从容器加宽 48 并左移 24，抵消共享 scaffold 的左右 24 留白；
+- 顶部用一条 `AppDivider()` 把头部行与主体分开；
+- 底部不再加 `.padding(.bottom, 16)`。
 
 规则：
 
@@ -34,16 +48,17 @@ All settings surfaces — built-in core tabs, plugin-contributed sidebar tabs, a
   比窗口高，外层容器会被撑大，窗口按**居中**方式裁切，于是页面**顶部和底部同时
   被切掉**（顶部卡片标题会整块消失）。正确写法是只写 `.frame(maxHeight: .infinity)`，
   让主从容器吃满剩余空间；窗口变矮时它会自然收缩，而不是把页面顶出可视区。
-- 卡片风格统一 `.subtle`（`PluginSettingsScaffold` 会注入；直接用
+- 卡片用原生 `AppSettingSection`（见下文「Card system」）；若某个页面仍需渲染插件贡献的
+  自绘卡片，`PluginSettingsScaffold` 会注入 `.subtle` 卡片风格，直接用
   `AppSettingsContentScaffold` 的页面需自行注入
-  `.environment(\.appSettingsCardStyleOverride, .subtle)`）。
+  `.environment(\.appSettingsCardStyleOverride, .subtle)`。
 - 禁止自建外框内边距（如 `.padding(18)`）绕过共享 scaffold。
 
 `Packages/FactoryLumi/Tests/FactoryLumiTests/SettingsLayoutConformanceTests.swift`
 是上述基准的守卫测试，改动设置页布局时必须让它保持绿色。
 
-> 共享组件（`AppSettingsContentScaffold` / `PluginSettingsScaffold` / `AppCard` /
-> `AppSettings*Row`）来自**外部包 LumiUI**，本仓库 90+ 个包依赖它。改它要走
+> 共享组件（`AppSettingsContentScaffold` / `PluginSettingsScaffold` /
+> `AppSettingSection` / `AppSettingRow`）来自**外部包 LumiUI**，本仓库 90+ 个包依赖它。改它要走
 > 「LumiUI 仓库发版 → 本仓库 bump 依赖」的流程，不要直接改
 > `SourcePackages/checkouts/`（不入库，改动会丢）。设置页的间距问题优先在
 > 各插件包内按上面的基准对齐。
@@ -54,70 +69,90 @@ Use this structure (see `PluginSettingsScaffold`):
 
 ```swift
 PluginSettingsScaffold("Title", subtitle: "…") {
-    AppCard {
-        AppSettingsSection(title: "Section") {
-            AppSettingsToggleRow("Option", isOn: $flag)
+    AppSettingSection(title: "Section", titleAlignment: .leading) {
+        VStack(spacing: 0) {
+            AppSettingRow(title: "Option", description: "…", icon: "…") {
+                AppSettingToggleRow("Option", isOn: $flag)
+            }
         }
     }
 }
 ```
 
-Core tabs without `PluginSettingsScaffold` should still follow: fixed header `AppCard` + `ScrollView` with `AppCard` sections.
+Core tabs without `PluginSettingsScaffold` should still follow: fixed header + `ScrollView` with `AppSettingSection` groups.
 
 ## Row components
 
 | Control | Component |
 |---------|-----------|
-| Toggle | `AppSettingsToggleRow` |
-| Stepper | `AppSettingsStepperRow` |
-| Menu picker | `AppSettingsPickerRow` |
-| Segmented picker | `AppSettingsSegmentedPickerRow` |
-| Read-only badge | `AppSettingsReadOnlyRow` |
-| Secret / token field | `AppSettingsSecureFieldRow` |
-| Custom content | `AppSettingsRow { … }` |
+| Toggle | `AppSettingToggleRow` |
+| Read-only value | `AppSettingValueRow` |
+| Drill-down entry | `AppSettingDisclosureRow` |
+| Action row | `AppSettingActionRow` |
+| Custom content | `AppSettingRow(title:description:icon:) { … }` |
 
-Do **not** use `AppToggleRow` on settings pages (use `AppSettingsToggleRow`).
+原生家族**没有** Stepper / Picker / SegmentedPicker / SecureField / ReadOnly 版本——
+这些控件放进 `AppSettingRow(title:description:icon:) { … }` 的 content 里。
 
-## Card system（不用原生的）
+Do **not** use `AppToggleRow` on settings pages (use `AppSettingToggleRow`).
 
-设置页只有**一套**卡片体系：`AppCard` + `AppSettingsSection` + `AppSettings*Row`。
+## Card system（原生 GroupBox）
 
-**禁止**使用原生 GroupBox 家族：
-`AppSettingSection` / `AppSettingRow` / `AppSettingToggleRow` / `AppSettingPickerRow`
-/ `AppSettingCheckmarkRow`（macOS 上渲染成系统 `GroupBox`，标题在卡片内，与自绘卡片
-外观不一致）。它们只能出现在非设置场景（如工具栏右键菜单）。
+设置页的卡片**统一用原生 GroupBox 家族**：`AppSettingSection` + `AppSettingRow` +
+行间 `Divider()`。macOS 上 `AppSettingSection` 渲染成系统 `GroupBox`，**分组标题在卡片内部**。
 
 标准写法：
 
 ```swift
-AppCard {
-    AppSettingsSection(title: "Section") {
-        AppSettingsToggleRow("Option", isOn: $flag)
-        AppSettingsRow { /* 自定义行内容 */ }
+AppSettingSection(title: "新手引导", titleAlignment: .leading) {
+    VStack(spacing: 0) {
+        AppSettingRow(
+            title: "重新查看新手引导",
+            description: "重放首次启动引导流程。",
+            icon: "graduationcap"
+        ) {
+            AppButton("开始", systemImage: "arrow.right", style: .secondary, size: .small) {
+                viewModel.replayOnboarding()
+            }
+        }
+
+        Divider()
+            .padding(.vertical, 8)
+
+        AppSettingRow(
+            title: "说明书",
+            description: "各功能的使用指南。",
+            icon: "book"
+        ) {
+            AppButton("打开", systemImage: "book.pages", style: .secondary, size: .small) {
+                isPresentingManuals = true
+            }
+        }
     }
 }
 ```
 
-- 一组一卡：`AppSettingsSection` 必须落在某个 `AppCard { … }` 作用域里；不要写
-  「一个 AppCard 里塞多个带标题的分组」。
-- 一行一个独立圆角行块：原来的「GroupBox 里多行 + 行间 Divider」改成「每行一个独立圆角行块」，
-  行间不再需要 `Divider()`。
-- 不要自造卡片外观：禁止用 `.background(.quaternary, in: RoundedRectangle(cornerRadius: 10))`
-  这类手写圆角块冒充卡片，卡片的背景 / 描边 / 圆角一律交给 `AppCard`。
-- 卡片风格统一 `.subtle`：`PluginSettingsScaffold` 已注入；直接用
-  `AppSettingsContentScaffold` 的页面必须自己加
-  `.environment(\.appSettingsCardStyleOverride, .subtle)`，否则渲染成 `.glass` 玻璃风，
-  与其它设置页不一致。
+- **禁止**自绘新卡片家族：`AppCard` / `AppSettingsSection` / `AppSettingsRow` /
+  `AppSettingsToggleRow` / `AppSettingsStepperRow` / `AppSettingsPickerRow` /
+  `AppSettingsSegmentedPickerRow` / `AppSettingsReadOnlyRow` / `AppSettingsSecureFieldRow`。
+  这套是玻璃拟态卡片（标题在卡外、每行一个独立圆角行块），2026-10-25 起不再用于设置页。
+- 同一分组内的相邻行之间加 `Divider().padding(.vertical, 8)`。
+- 一个分组一张卡：不要把多个 `AppSettingSection` 塞进同一个外壳。
+- 不要手写 `GroupBox { }`，分组一律走 `AppSettingSection`。
+- 例外：**编辑器内核**（`EditorService` 的 `EditorToggleSettingRow` 等）继续用 `AppSettings*`
+  行组件，那是编辑器扩展的约定，不属于设置窗口。
+- 图表 / 指标面板（活动热力图、性能跑分、设备信息）可以用自绘圆角块承载图表，
+  但其中的**设置分组**仍走原生 `AppSettingSection`。
 
 `Packages/FactoryLumi/Tests/FactoryLumiTests/SettingsLayoutConformanceTests.swift`
-是本节的守卫测试（会全仓扫描 `Packages/*/Sources`），改设置页卡片时必须让它保持绿色。
+是本节的守卫测试（会扫描设置入口详情页与插件面板设置页），改设置页卡片时必须让它保持绿色。
 
 ## Avoid
 
 - `Form { }` / macOS `Section` in settings views
 - `Color(hex:)` / `Color.adaptive` for text or backgrounds
 - `.font(.system(size: …))` for settings copy (use `.appBody`, `.appCaption`, etc.)
-- Bare `List` for settings rows (prefer `AppSettingsRow` in `AppCard`)
+- Bare `List` for settings rows (prefer `AppSettingRow` inside `AppSettingSection`)
 
 ## Editor kernel
 
@@ -151,23 +186,29 @@ public func settingsTabItems(kernel: KernelLumi) -> [SettingsTabItem] {
                         "Configure integration options.", bundle: .module
                     )
                 ) {
-                    AppCard {
-                        AppSettingsSection(
-                            title: LumiLocalization.string("General", bundle: .module)
-                        ) {
-                            AppSettingsToggleRow(
+                    AppSettingSection(
+                        title: LumiLocalization.string("General", bundle: .module),
+                        titleAlignment: .leading
+                    ) {
+                        VStack(spacing: 0) {
+                            AppSettingToggleRow(
                                 LumiLocalization.string("Enable sync", bundle: .module),
                                 isOn: $syncEnabled
                             )
-                            AppSettingsPickerRow(
-                                LumiLocalization.string("Theme", bundle: .module),
-                                selection: $themeChoice,
-                                options: [
-                                    LumiLocalization.string("Light", bundle: .module),
-                                    LumiLocalization.string("Dark", bundle: .module),
-                                    LumiLocalization.string("Auto", bundle: .module),
-                                ]
-                            )
+
+                            Divider()
+                                .padding(.vertical, 8)
+
+                            AppSettingRow(
+                                title: LumiLocalization.string("Theme", bundle: .module)
+                            ) {
+                                Picker("", selection: $themeChoice) {
+                                    Text(LumiLocalization.string("Light", bundle: .module)).tag("light")
+                                    Text(LumiLocalization.string("Dark", bundle: .module)).tag("dark")
+                                    Text(LumiLocalization.string("Auto", bundle: .module)).tag("auto")
+                                }
+                                .labelsHidden()
+                            }
                         }
                     }
                 }
