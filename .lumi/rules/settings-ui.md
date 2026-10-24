@@ -15,7 +15,7 @@ All settings surfaces — built-in core tabs, plugin-contributed sidebar tabs, a
 | 分栏页外层 VStack 间距 | 14 |
 | 头部行 | `HStack(spacing: 10)` + `.appCaption` + 次要文字色 |
 | 主从容器圆角 | 8（描边 1px `theme.divider`） |
-| 主从容器最小高度 | 520 |
+| 主从容器高度 | **占满剩余空间**（`.frame(maxHeight: .infinity)`），常规窗口下约 520 |
 | 列表栏宽度 | 300 |
 | 列表栏头部控件内边距 | 12 |
 | 列表内容 | `LazyVStack(spacing: 4)` + 内边距 8 |
@@ -29,6 +29,11 @@ All settings surfaces — built-in core tabs, plugin-contributed sidebar tabs, a
   （它不给底部留白，页面会贴到窗口底边）。
 - 列表栏宽度统一 300，不允许 280 / 320 / 340 各写各的。
 - 圆角统一 8，不允许 10 / 12。
+- **主从容器不要写死 `minHeight`**（例如 `.frame(minHeight: 520, maxHeight: .infinity)`）。
+  设置窗口的内容区是「窗口高度 → 外层 ZStack → 详情页」的链式布局：详情页一旦
+  比窗口高，外层容器会被撑大，窗口按**居中**方式裁切，于是页面**顶部和底部同时
+  被切掉**（顶部卡片标题会整块消失）。正确写法是只写 `.frame(maxHeight: .infinity)`，
+  让主从容器吃满剩余空间；窗口变矮时它会自然收缩，而不是把页面顶出可视区。
 - 卡片风格统一 `.subtle`（`PluginSettingsScaffold` 会注入；直接用
   `AppSettingsContentScaffold` 的页面需自行注入
   `.environment(\.appSettingsCardStyleOverride, .subtle)`）。
