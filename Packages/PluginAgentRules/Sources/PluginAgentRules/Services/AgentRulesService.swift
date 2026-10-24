@@ -1,69 +1,91 @@
 import Foundation
+import KitAgentTool
 import ProviderAgentRules
 
 /// Agent 规则服务
 ///
-/// 负责管理 .agent/rules 目录中的规则文档
+/// 负责管理项目 `.lumi/rules` 目录中的规则文档。
+///
+/// **写入**只落 `.lumi/rules`；**读取**同时兼容历史目录 `.agent/rules`
+/// （`.lumi` 优先，同名以 `.lumi` 为准），旧项目无需迁移即可继续使用。
 public actor AgentRulesService {
     public static let shared = AgentRulesService()
 
-    /// 获取规则目录路径
+    /// 规则文档所在的子目录名。
+    private static let component = "rules"
+
+    /// 获取写入目标规则目录路径（`.lumi/rules`）。
     private func getRulesDirectoryURL(for projectPath: String) -> URL {
-        let projectURL = URL(fileURLWithPath: projectPath)
-        return projectURL.appending(path: ".agent/rules")
+        ProjectConfigDirectory.writeURL(projectPath: projectPath, component: Self.component)
+    }
+
+    /// 获取读取候选规则目录路径（`.lumi/rules` 优先，`.agent/rules` 兜底）。
+    private func getRulesDirectoryURLs(for projectPath: String) -> [URL] {
+        ProjectConfigDirectory.readURLs(projectPath: projectPath, component: Self.component)
     }
 
     /// 获取规则文档列表
+    ///
+    /// 合并 `.lumi/rules` 与历史目录 `.agent/rules`：同名文档以 `.lumi` 为准，
+    /// `.agent` 中的其余文档补充进来。
     public func listRules(projectPath: String) async throws -> [AgentRuleMetadata] {
-        let directoryURL = getRulesDirectoryURL(for: projectPath)
+        let directoryURLs = getRulesDirectoryURLs(for: projectPath)
 
-        // 确保目录存在
-        guard FileManager.default.fileExists(atPath: directoryURL.path()) else {
-            throw AgentRulesError.directoryNotFound(directoryURL.path())
+        // 两个目录都不存在时才算「目录缺失」。
+        guard directoryURLs.contains(where: {
+            FileManager.default.fileExists(atPath: $0.path())
+        }) else {
+            throw AgentRulesError.directoryNotFound(directoryURLs[0].path())
         }
 
-        // 获取目录中的所有 .md 文件
-        let files = try FileManager.default.contentsOfDirectory(
-            at: directoryURL,
-            includingPropertiesForKeys: [
-                .fileSizeKey,
-                .contentModificationDateKey,
-                .creationDateKey
-            ],
-            options: [.skipsHiddenFiles]
-        )
-
+        // 按文件名去重，`.lumi` 优先。
+        var seenFilenames = Set<String>()
         var rules: [AgentRuleMetadata] = []
 
-        for file in files where file.pathExtension == "md" {
-            let resourceValues = try file.resourceValues(forKeys: [
-                .fileSizeKey,
-                .contentModificationDateKey,
-                .creationDateKey
-            ])
+        for directoryURL in directoryURLs {
+            guard let files = try? FileManager.default.contentsOfDirectory(
+                at: directoryURL,
+                includingPropertiesForKeys: [
+                    .fileSizeKey,
+                    .contentModificationDateKey,
+                    .creationDateKey
+                ],
+                options: [.skipsHiddenFiles]
+            ) else { continue }
 
-            let fileSize = resourceValues.fileSize ?? 0
-            let modifiedAt = resourceValues.contentModificationDate ?? Date()
-            _ = resourceValues.creationDate ?? Date()
+            for file in files where file.pathExtension == "md" {
+                let filename = file.lastPathComponent
+                guard !seenFilenames.contains(filename) else { continue }
+                seenFilenames.insert(filename)
 
-            // 读取文件内容以提取标题和描述
-            let content = try readTextFile(at: file)
-            let (title, description) = extractTitleAndDescription(from: content)
+                let resourceValues = try file.resourceValues(forKeys: [
+                    .fileSizeKey,
+                    .contentModificationDateKey,
+                    .creationDateKey
+                ])
 
-            let filename = file.lastPathComponent
-            let id = filename.replacingOccurrences(of: ".md", with: "")
+                let fileSize = resourceValues.fileSize ?? 0
+                let modifiedAt = resourceValues.contentModificationDate ?? Date()
+                _ = resourceValues.creationDate ?? Date()
 
-            let rule = AgentRuleMetadata(
-                id: id,
-                filename: filename,
-                title: title,
-                description: description,
-                fileSize: Int64(fileSize),
-                modifiedAt: modifiedAt,
-                filePath: file.path()
-            )
+                // 读取文件内容以提取标题和描述
+                let content = try readTextFile(at: file)
+                let (title, description) = extractTitleAndDescription(from: content)
 
-            rules.append(rule)
+                let id = filename.replacingOccurrences(of: ".md", with: "")
+
+                let rule = AgentRuleMetadata(
+                    id: id,
+                    filename: filename,
+                    title: title,
+                    description: description,
+                    fileSize: Int64(fileSize),
+                    modifiedAt: modifiedAt,
+                    filePath: file.path()
+                )
+
+                rules.append(rule)
+            }
         }
 
         // 按修改时间排序（最新的在前）
@@ -74,43 +96,60 @@ public actor AgentRulesService {
 
     /// 加载项目规则的统一 Provider 表示，供 LLM 注入和插件规则合并使用。
     ///
+    /// 合并 `.lumi/rules` 与历史目录 `.agent/rules`（同名以 `.lumi` 为准）。
     /// 项目规则目录不存在或单个文件读取失败时返回可用的部分结果，避免规则
     /// 管理目录问题阻断正常对话。
     public func loadRuleDefinitions(projectPath: String) -> [AgentRuleDefinition] {
-        let directoryURL = getRulesDirectoryURL(for: projectPath)
-        guard let files = try? FileManager.default.contentsOfDirectory(
-            at: directoryURL,
-            includingPropertiesForKeys: [.contentModificationDateKey],
-            options: [.skipsHiddenFiles]
-        ) else {
-            return []
-        }
+        let directoryURLs = getRulesDirectoryURLs(for: projectPath)
 
-        return files
-            .filter { $0.pathExtension == "md" }
-            .sorted { $0.lastPathComponent < $1.lastPathComponent }
-            .compactMap { file in
-                guard let content = try? readTextFile(at: file) else { return nil }
-                let (title, description) = extractTitleAndDescription(from: content)
+        var seenIds = Set<String>()
+        var definitions: [AgentRuleDefinition] = []
+
+        for directoryURL in directoryURLs {
+            guard let files = try? FileManager.default.contentsOfDirectory(
+                at: directoryURL,
+                includingPropertiesForKeys: [.contentModificationDateKey],
+                options: [.skipsHiddenFiles]
+            ) else {
+                continue
+            }
+
+            for file in files.filter({ $0.pathExtension == "md" })
+                .sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
                 let id = file.deletingPathExtension().lastPathComponent
-                return AgentRuleDefinition(
-                    id: id,
-                    title: title,
-                    description: description,
-                    content: content,
-                    version: "project"
+                guard !seenIds.contains(id) else { continue }
+                guard let content = try? readTextFile(at: file) else { continue }
+                seenIds.insert(id)
+
+                let (title, description) = extractTitleAndDescription(from: content)
+                definitions.append(
+                    AgentRuleDefinition(
+                        id: id,
+                        title: title,
+                        description: description,
+                        content: content,
+                        version: "project"
+                    )
                 )
             }
+        }
+
+        return definitions
     }
 
     /// 读取规则文档内容
+    ///
+    /// 先查 `.lumi/rules`，未命中再查历史目录 `.agent/rules`。
     public func readRule(projectPath: String, filename: String) async throws -> AgentRule {
-        let directoryURL = getRulesDirectoryURL(for: projectPath)
-        let fileURL = directoryURL.appending(path: filename)
+        let directoryURLs = getRulesDirectoryURLs(for: projectPath)
 
-        // 确保文件存在
-        guard FileManager.default.fileExists(atPath: fileURL.path()) else {
-            throw AgentRulesError.fileNotFound(fileURL.path())
+        guard let fileURL = directoryURLs
+            .map({ $0.appending(path: filename) })
+            .first(where: { FileManager.default.fileExists(atPath: $0.path()) })
+        else {
+            throw AgentRulesError.fileNotFound(
+                directoryURLs[0].appending(path: filename).path()
+            )
         }
 
         // 读取文件内容

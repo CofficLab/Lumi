@@ -8,7 +8,7 @@ import SwiftUI
 /// Agent Rules 设置视图。
 ///
 /// - 左侧为项目列表。
-/// - 右侧为所选项目 `.agent/rules` 目录中的规则列表。
+/// - 右侧为所选项目 `.lumi/rules` 目录中的规则列表。
 ///
 /// 只依赖 `AgentRulesViewModel`；项目变化由 `AgentRulesProjectObserver`
 /// 直接写入 ViewModel，View 不再持有 Observer 或业务状态。
@@ -25,7 +25,7 @@ struct AgentRulesSettingsView: View {
     var body: some View {
         PluginSettingsScaffold(
             title: pluginLocalization.string("Agent Rules"),
-            subtitle: pluginLocalization.string("View and manage rule documents in .agent/rules directory"),
+            subtitle: pluginLocalization.string("View and manage rule documents in .lumi/rules directory"),
             showHeader: false,
             scrollsContent: false
         ) {
