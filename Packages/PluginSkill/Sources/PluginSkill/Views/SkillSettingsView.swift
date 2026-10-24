@@ -10,7 +10,7 @@ import SwiftUI
 ///
 /// - 左侧为项目列表。
 /// - 右侧为所选项目的技能列表，分两组：
-///   - 项目技能：`.agent/skills` 目录中的技能（项目层）；
+///   - 项目技能：`.lumi/skills` 目录中的技能（项目层）；
 ///   - 通用技能：插件贡献 + 内置技能（`SkillProviding` 聚合底座）。
 ///
 /// 只依赖 `SkillSettingsViewModel`；项目 / 底座变化由 `SkillSettingsObserver`
@@ -166,7 +166,7 @@ struct SkillSettingsView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         skillSection(
                             title: pluginLocalization.string("Project Skills"),
-                            subtitle: pluginLocalization.string("From .agent/skills directory"),
+                            subtitle: pluginLocalization.string("From .lumi/skills directory"),
                             count: viewModel.projectSkills.count,
                             skills: viewModel.projectSkills,
                             emptyTitle: pluginLocalization.string("No project skills yet")
