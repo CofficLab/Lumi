@@ -23,10 +23,10 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.7.3"),
-        .package(url: "https://github.com/lukilabs/beautiful-mermaid-swift", from: "1.0.1"),
+        .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.9.0"),
+        .package(url: "https://github.com/lukilabs/beautiful-mermaid-swift", from: "1.0.4"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
         // 代码块语法高亮：tree-sitter 运行时与内置语法。
         // 版本约束与 PluginCodeEditorLanguages 保持一致，保证解析结果一致。
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter.git", from: "0.25.0"),

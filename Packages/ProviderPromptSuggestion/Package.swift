@@ -12,8 +12,8 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(path: "../ProviderMessageSender"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0"),
-        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
     ],
     targets: [
         .target(name: "ProviderPromptSuggestion", dependencies: [
