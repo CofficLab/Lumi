@@ -4,7 +4,7 @@ import ProviderMessageSender
 import Testing
 @testable import PluginConversationInput
 
-/// `ConversationInputViewModel` 的附件生命周期、拖放与指标埋点。
+/// `ConversationInputViewModel` 的附件生命周期与拖放。
 ///
 /// 既有测试集中在「发送 / 停止」这条主链路（见 `SendActionBarViewModelTests` 与
 /// `ConversationInputViewModelInputSyncTests`）。本套件补的是另一侧：
@@ -13,8 +13,6 @@ import Testing
 ///   它们只透传到能力层，删错 ID 不会报错也没人拦——正因如此更需要断言。
 /// - **拖放分流**：目录 / 图片 / 普通文件三条路径的落点完全不同（插入文本 / 进图片池 /
 ///   进文件池），且异步读取失败必须落到错误提示而不是静默吞掉。
-/// - **性能指标**：`chat.send` 的 trace 在提交成功后必须收口（`mark` + `end`），
-///   否则诊断面板里的发送耗时只进不出。
 @MainActor
 @Suite("ConversationInputViewModel 附件与拖放")
 struct ConversationInputViewModelAttachmentTests {

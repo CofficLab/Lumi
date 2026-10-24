@@ -7,7 +7,6 @@ import ProviderConversationState
 import ProviderConversationInput
 import ProviderConversationInputBlock
 import ProviderMessageSender
-import ProviderPerformanceMetrics
 import LumiLoggingKit
 import SwiftUI
 
@@ -52,7 +51,6 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
         let input = kernel.resolveProvider((any ConversationInputProviding).self)
         let blocks = kernel.resolveProvider((any ConversationInputBlockProviding).self)
         let sender = kernel.resolveProvider((any MessageSendingProviding).self)
-        let metrics = kernel.resolveProvider((any PerformanceMetricsProviding).self)
         let conversations = kernel.resolveProvider((any ConversationManaging).self)
         let conversationState = kernel.resolveProvider((any ConversationStateProviding).self)
 
@@ -62,8 +60,7 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
             blocks: blocks,
             sender: sender,
             conversations: conversations,
-            conversationState: conversationState,
-            metrics: metrics
+            conversationState: conversationState
         )
         self.capability = capability
 

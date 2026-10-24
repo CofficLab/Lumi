@@ -5,7 +5,6 @@ import ProviderConversationInputBlock
 import ProviderConversationState
 import ProviderMessage
 import ProviderMessageSender
-import ProviderPerformanceMetrics
 import Testing
 @testable import PluginConversationInput
 
@@ -165,8 +164,7 @@ struct ConversationInputCapabilityDegradationTests {
             input: nil,
             sender: nil,
             conversations: nil,
-            conversationState: nil,
-            metrics: nil
+            conversationState: nil
         )
     }
 
@@ -260,18 +258,6 @@ struct ConversationInputCapabilityDegradationTests {
         #expect(!capability.canStop(for: nil))
     }
 
-    @Test("指标能力缺失时 beginMetrics 返回 nil 且其余调用无副作用")
-    func metricsDegradeGracefully() throws {
-        let capability = makeDegradedAdapter()
-
-        let trace = capability.beginMetrics(operation: "chat.send", metadata: [:])
-
-        #expect(trace == nil)
-        // trace 为 nil 时这两个调用不应当崩溃（发送路径无条件调用它们）。
-        capability.endMetrics(try! #require(PerformanceTraceBox.make()))
-        capability.markMetrics(try! #require(PerformanceTraceBox.make()), stage: "message.committed")
-    }
-
     @Test("订阅在 Provider 缺失时返回可安全 cancel 的空句柄")
     func observersDegradeToNoopHandles() {
         let capability = makeDegradedAdapter()
@@ -292,16 +278,5 @@ struct ConversationInputCapabilityDegradationTests {
         senderHandle.cancel()
         conversationHandle.cancel()
         stateHandle.cancel()
-    }
-}
-
-/// 构造一个真实 `PerformanceTrace`，用于验证 adapter 的降级调用不崩溃。
-///
-/// `PerformanceTrace.init` 是 `internal`，测试无法直接构造，只能经由
-/// `DefaultPerformanceMetricsProvider.begin` 取得。
-private enum PerformanceTraceBox {
-    @MainActor
-    static func make() -> PerformanceTrace? {
-        DefaultPerformanceMetricsProvider(directoryURL: nil).begin(operation: "test")
     }
 }
