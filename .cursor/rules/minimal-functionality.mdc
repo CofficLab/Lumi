@@ -4,6 +4,6 @@ alwaysApply: true
 
 # 最少功能原则 (Minimal Functionality Principle)
 
-请参考项目规范文档：`.agent/rules/minimal-functionality.md`
+请参考项目规范文档：`.lumi/rules/minimal-functionality.md`
 
 所有代码实现都应遵循最少功能原则，详细指导方针请参阅上述文档。
