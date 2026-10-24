@@ -148,8 +148,7 @@ private final class IMETypingHarness {
             input: input,
             sender: nil,
             conversations: nil,
-            conversationState: nil,
-            metrics: nil
+            conversationState: nil
         )
         let viewModel = ConversationInputViewModel(capability: capability)
         self.viewModel = viewModel

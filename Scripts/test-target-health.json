@@ -772,11 +772,6 @@
     "errors": [],
     "hasTestPlan": false
   },
-  "PluginPerformanceMetrics": {
-    "status": "ok",
-    "errors": [],
-    "hasTestPlan": false
-  },
   "PluginPluginManager": {
     "status": "ok",
     "errors": [],
@@ -1060,11 +1055,6 @@
     "hasTestPlan": false
   },
   "ProviderPanelBottom": {
-    "status": "ok",
-    "errors": [],
-    "hasTestPlan": false
-  },
-  "ProviderPerformanceMetrics": {
     "status": "ok",
     "errors": [],
     "hasTestPlan": false

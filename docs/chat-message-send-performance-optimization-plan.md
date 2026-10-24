@@ -238,26 +238,24 @@ send() 同步捕获并提交用户消息
 
 实现记录见 [`docs/plans/2026-09-02-persistence-queue-qos.md`](plans/2026-09-02-persistence-queue-qos.md)。
 
-#### P2-4：建立统一性能指标 Providing（MVP 已完成）
+#### P2-4：统一性能指标 Providing（已移除）
 
-已增加 `PerformanceMetricsProviding`，由 `PluginPerformanceMetrics` 注册为全局 Provider。插件只需要上报操作名、阶段、耗时和少量非敏感 metadata；Provider 在内存中做有界缓存，使用 `.utility` 队列批量落盘，设置页展示 P50/P95/P99/Max。
+> 2026-11 起该能力被整体下线：`ProviderPerformanceMetrics` 与
+> `PluginPerformanceMetrics` 两个包已删除，聊天输入发送链路上的
+> `chat.send` 计时上报、设置页的「性能指标」入口一并移除。
+> 本节保留原方案描述仅作历史记录，不再是待办事项。
 
-当前已接入聊天输入发送链路：
-
-```text
-Return
-  -> chat.send.begin
-  -> message.committed
-  -> chat.send.total
-```
-
-这条上报不会读取消息文本，也不会在 Return 同步路径执行文件 I/O。后续可以沿同一契约补充 `MessageChangePublished`、`MessageRowApplied` 和首帧等阶段。
+原方案：增加 `PerformanceMetricsProviding`，由 `PluginPerformanceMetrics` 注册为全局 Provider。插件只需要上报操作名、阶段、耗时和少量非敏感 metadata；Provider 在内存中做有界缓存，使用 `.utility` 队列批量落盘，设置页展示 P50/P95/P99/Max。
 
 ## 5. 推荐实施顺序
 
 ### 阶段一：建立可观测基线
 
-使用统一性能指标 Provider 增加计时：
+> 原方案依赖已下线的统一性能指标 Provider。若仍需要发送链路耗时，
+> 改用 Instruments / `os_signpost` 等系统级工具观测，不要在应用内
+> 重新引入指标采集与设置页。
+
+原方案（使用统一性能指标 Provider 增加计时）：
 
 ```text
 ReturnKey
@@ -402,7 +400,7 @@ sender.startAgentTurn(for: message)
 
 ## 9. 建议的下一批改动
 
-发送快速提交、附件编码、持久化 QoS 和统一指标 Provider 的第一版已完成。后续优化按本文档中 P1/P2 的顺序继续推进：
+发送快速提交、附件编码和持久化 QoS 的第一版已完成。后续优化按本文档中 P1/P2 的顺序继续推进：
 
 1. 让消息变化事件带上阶段信息，补齐 `MessageChangePublished` 与 `MessageRowApplied`；
 2. 增加首帧观测和 Instruments 性能基准；

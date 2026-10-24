@@ -21,7 +21,6 @@ let package = Package(
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageSender"),
-        .package(path: "../ProviderPerformanceMetrics"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
@@ -38,7 +37,6 @@ let package = Package(
                 .product(name: "ProviderConversationInput", package: "LumiProviders"),
                 "ProviderMessage",
                 "ProviderMessageSender",
-                "ProviderPerformanceMetrics",
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
             ],
             path: "Sources/PluginConversationInput",

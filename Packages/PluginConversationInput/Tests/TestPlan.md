@@ -42,7 +42,6 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 - 会话：`selectedConversationID`、`isSending(for:)`
 - 观察：`addTextObserver` / `addBlockObserver` / `addInputObserver` /
   `addMessageSenderObserver` / `addSelectedConversationObserver` / `addConversationStateObserver`
-- Metrics：`beginMetrics` / `markMetrics` / `endMetrics`
 
 ### SendActionBarViewModel
 - `state: SendActionBarState`（`private(set)`）
@@ -161,8 +160,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 84 | 降级 | 发送类操作返回 nil 而非抛错 | 全 Provider 缺失 | 同步 / 后台提交 + 取消 + 启动回合 | 两个提交均 nil，取消与启动回合为无害 no-op | P0 | ✅ 已覆盖 | `sendOperationsDegradeToNil` |
 | 85 | 降级 | 附件读回落到空集合 | 全 Provider 缺失 | 读池 + 增删 | 恒为空集合，增删静默丢弃 | P1 | ✅ 已覆盖 | `attachmentReadsFallBackToEmpty` |
 | 86 | 降级 | 会话查询回落到 nil / false | 全 Provider 缺失 | 读选中会话与 isSending | nil / false（含 nil 入参） | P1 | ✅ 已覆盖 | `conversationQueriesFallBack` |
-| 87 | 降级 | 指标缺失时 beginMetrics 返回 nil | 全 Provider 缺失 | 调 begin / mark / end | begin 返回 nil；用真实 trace 调 mark/end 不崩溃 | P2 | ✅ 已覆盖 | `metricsDegradeGracefully` |
-| 88 | 降级 | 订阅返回可安全 cancel 的空句柄 | 全 Provider 缺失 | 注册 6 个订阅并（含重复）cancel | 全部不崩溃——调用方无差别持有并 cancel | P0 | ✅ 已覆盖 | `observersDegradeToNoopHandles` |
+| 87 | 降级 | 订阅返回可安全 cancel 的空句柄 | 全 Provider 缺失 | 注册 6 个订阅并（含重复）cancel | 全部不崩溃——调用方无差别持有并 cancel | P0 | ✅ 已覆盖 | `observersDegradeToNoopHandles` |
 
 ### 补充轮次（ID 89–96）：附件预览关闭按钮
 

@@ -6,7 +6,6 @@ import ProviderConversationInputBlock
 import ProviderConversationState
 import ProviderMessage
 import ProviderMessageSender
-import ProviderPerformanceMetrics
 import Testing
 @testable import PluginConversationInput
 
@@ -546,12 +545,6 @@ final class SendActionBarTestCapability: ConversationInputCapability {
             callback(.turnCompleted(conversationID: conversationID, outcome: outcome))
         }
     }
-
-    // MARK: - Metrics
-
-    func beginMetrics(operation: String, metadata: [String: String]) -> PerformanceTrace? { nil }
-    func markMetrics(_ trace: PerformanceTrace, stage: String) {}
-    func endMetrics(_ trace: PerformanceTrace) {}
 }
 
 /// 同时满足插件能力协议里多种观察句柄要求的轻量句柄。

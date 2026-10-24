@@ -139,7 +139,6 @@ import PluginProjectRAG
 import PluginResumeDesigner
 import PluginSettingGeneral
 import PluginSettingView
-import PluginPerformanceMetrics
 import PluginSystemBenchmark
 import PluginSkill
 import PluginOnboarding
@@ -342,7 +341,6 @@ public struct DefaultPluginFactory: PluginFactory {
             // 设置视图管理器：替换 ProviderFactory 预注册的默认 SettingViewProviding 实现，
             // 必须先于各设置入口贡献插件（如 SettingGeneralPlugin order=200）。
             PluginSettingView(id: "com.coffic.lumi.plugin.setting-view"),
-            PerformanceMetricsPlugin(),
             // Logo 管理器：替换 ProviderFactory 预注册的默认 LogoProviding 实现，
             // 必须先于各 Logo 贡献插件（如 LogoCofficPlugin order=100）。
             PluginLogoManager(),

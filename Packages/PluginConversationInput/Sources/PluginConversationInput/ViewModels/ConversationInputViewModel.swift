@@ -248,11 +248,6 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         // 否则下一次发送会带上上一条消息的区间。
         let blocks = capability.collapsedBlocks
 
-        let trace = capability.beginMetrics(
-            operation: "chat.send",
-            metadata: ["attachments": hasAttachments ? "true" : "false"]
-        )
-
         capability.text = ""
         capability.errorMessage = nil
         capability.collapsedBlocks = []
@@ -270,10 +265,6 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
                     ) else { return }
                     if Self.verbose {
                         Self.logger.info("attachment commit completed queued=\(commit.wasQueued)")
-                    }
-                    if let trace {
-                        capability.markMetrics(trace, stage: "message.committed")
-                        capability.endMetrics(trace)
                     }
                     guard !commit.wasQueued else { return }
                     await capability.startTurn(for: commit)
@@ -293,10 +284,6 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
                 collapsedBlocks: blocks,
                 conversationID: nil
             ) else { return }
-            if let trace {
-                capability.markMetrics(trace, stage: "message.committed")
-                capability.endMetrics(trace)
-            }
             guard !commit.wasQueued else { return }
 
             // 用户消息已同步进入内存时间线；回合跟踪延后，不阻塞 Return → 首帧路径。
