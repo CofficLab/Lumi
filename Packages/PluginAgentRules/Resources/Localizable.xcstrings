@@ -10,36 +10,36 @@
     "%lld 个可用规则" : {
 
     },
-    "Absolute path to the project directory containing .agent/rules folder." : {
+    "Absolute path to the project directory containing .lumi/rules folder." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Absolute path to the project directory containing .agent/rules folder."
+            "value" : "Absolute path to the project directory containing .lumi/rules folder."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "包含 .agent/rules 文件夹的项目目录的绝对路径。"
+            "value" : "包含 .lumi/rules 文件夹的项目目录的绝对路径。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "包含 .agent/rules 文件夾的項目目錄的絕對路徑。"
+            "value" : "包含 .lumi/rules 文件夾的項目目錄的絕對路徑。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "包含 .agent/rules 文件夾的項目目錄的絕對路徑。"
+            "value" : "包含 .lumi/rules 文件夾的項目目錄的絕對路徑。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "包含 .agent/rules 檔案夾的項目目錄的絕對路徑。"
+            "value" : "包含 .lumi/rules 檔案夾的項目目錄的絕對路徑。"
           }
         }
       }
@@ -78,70 +78,70 @@
         }
       }
     },
-    "Create a new rule document in the .agent/rules directory of a project. The document will be created as a Markdown file with the specified title and content." : {
+    "Create a new rule document in the .lumi/rules directory of a project. The document will be created as a Markdown file with the specified title and content." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Create a new rule document in the .agent/rules directory of a project. The document will be created as a Markdown file with the specified title and content."
+            "value" : "Create a new rule document in the .lumi/rules directory of a project. The document will be created as a Markdown file with the specified title and content."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在项目的 .agent/rules 目录中创建新的规则文档。文档将创建为带有指定标题和内容的 Markdown 文件。"
+            "value" : "在项目的 .lumi/rules 目录中创建新的规则文档。文档将创建为带有指定标题和内容的 Markdown 文件。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在項目的 .agent/rules 目錄中創建新的規則文檔。文檔將創建為 Markdown 文件，包含指定的標題和內容。"
+            "value" : "在項目的 .lumi/rules 目錄中創建新的規則文檔。文檔將創建為 Markdown 文件，包含指定的標題和內容。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在項目的 .agent/rules 目錄中創建新的規則文檔。文檔將創建為 Markdown 文件，包含指定的標題和內容。"
+            "value" : "在項目的 .lumi/rules 目錄中創建新的規則文檔。文檔將創建為 Markdown 文件，包含指定的標題和內容。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在項目的 .agent/rules 目錄中創建新的規則文檔。文檔將創建為 Markdown 檔案，包含指定的標題和內容。"
+            "value" : "在項目的 .lumi/rules 目錄中創建新的規則文檔。文檔將創建為 Markdown 檔案，包含指定的標題和內容。"
           }
         }
       }
     },
-    "List all rule documents in the .agent/rules directory of a project. Returns metadata including filename, title, description, file size, and modification date for each rule document." : {
+    "List all rule documents in the .lumi/rules directory of a project. Returns metadata including filename, title, description, file size, and modification date for each rule document." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "List all rule documents in the .agent/rules directory of a project. Returns metadata including filename, title, description, file size, and modification date for each rule document."
+            "value" : "List all rule documents in the .lumi/rules directory of a project. Returns metadata including filename, title, description, file size, and modification date for each rule document."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "列出项目的 .agent/rules 目录中的所有规则文档。返回每个规则文档的元数据，包括文件名、标题、描述、文件大小和修改日期。"
+            "value" : "列出项目的 .lumi/rules 目录中的所有规则文档。返回每个规则文档的元数据，包括文件名、标题、描述、文件大小和修改日期。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "列出項目 .agent/rules 目錄中的所有規則文檔。返回每個規則文檔的元數據，包括文件名、標題、描述、文件大小和修改日期。"
+            "value" : "列出項目 .lumi/rules 目錄中的所有規則文檔。返回每個規則文檔的元數據，包括文件名、標題、描述、文件大小和修改日期。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "列出項目 .agent/rules 目錄中的所有規則文檔。返回每個規則文檔的元數據，包括文件名、標題、描述、文件大小和修改日期。"
+            "value" : "列出項目 .lumi/rules 目錄中的所有規則文檔。返回每個規則文檔的元數據，包括文件名、標題、描述、文件大小和修改日期。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "列出項目 .agent/rules 目錄中的所有規則文檔。返回每個規則文檔的元數據，包括檔案名、標題、描述、檔案大小和修改日期。"
+            "value" : "列出項目 .lumi/rules 目錄中的所有規則文檔。返回每個規則文檔的元數據，包括檔案名、標題、描述、檔案大小和修改日期。"
           }
         }
       }
@@ -588,36 +588,36 @@
         }
       }
     },
-    "View and manage rule documents in .agent/rules directory" : {
+    "View and manage rule documents in .lumi/rules directory" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "View and manage rule documents in .agent/rules directory"
+            "value" : "View and manage rule documents in .lumi/rules directory"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "查看并管理 .agent/rules 目录下的规则文档"
+            "value" : "查看并管理 .lumi/rules 目录下的规则文档"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "查看并管理 .agent/rules 目录下的规则文档"
+            "value" : "查看并管理 .lumi/rules 目录下的规则文档"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "查看并管理 .agent/rules 目录下的规则文档"
+            "value" : "查看并管理 .lumi/rules 目录下的规则文档"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "查看并管理 .agent/rules 目录下的规则文档"
+            "value" : "查看并管理 .lumi/rules 目录下的规则文档"
           }
         }
       }
