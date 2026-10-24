@@ -43,6 +43,10 @@
 
 只在 `#if DEBUG` 内定义的类型，其引用点（含函数体）必须同等包裹；改动夹具或 `#if DEBUG` 代码后需用 `swift build -c release` 验证。本地 Debug 通过不代表 Release 可编译。细则见 [条件编译（DEBUG / Release）规范](./debug-only-code-guards.md)。
 
+### 7. 项目配置目录
+
+项目级配置（规则、技能、命令）统一放在项目的 `.lumi/` 目录下；写入只落 `.lumi/`，读取兼容历史目录 `.agent/`。新增插件读写项目配置时必须复用 `KitAgentTool` 的 `ProjectConfigDirectory`，不要自行硬编码目录名。细则见 [项目配置目录规范](./project-config-directory-rules.md)。
+
 ---
 
 ## 相关规范
@@ -50,6 +54,7 @@
 - [内核与插件边界](./core-plugin-boundary-rules.md)
 - [SPM 依赖锁文件同步](./spm-package-lock-sync.md)
 - [条件编译 DEBUG / Release](./debug-only-code-guards.md)
+- [项目配置目录](./project-config-directory-rules.md)
 - [数据存储规范](./plugin-storage-rules.md)
 - [目录结构规范](./plugin-directory-rules.md)
 - [国际化规范](./plugin-i18n-rules.md)
