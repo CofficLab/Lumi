@@ -6,81 +6,79 @@ struct AccountPage: View {
     @Binding var showingAccountGuide: Bool
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                AppCard(style: .subtle, cornerRadius: 8, showShadow: false) {
-                    HStack(alignment: .center, spacing: 12) {
-                        Image(systemName: "questionmark.circle")
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 24) {
+            AppCard {
+                HStack(alignment: .center, spacing: 12) {
+                    Image(systemName: "questionmark.circle")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
 
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(AppStoreConnectLocalization.string("Need an App Store Connect API key?"))
-                                .font(.headline)
-                            Text(AppStoreConnectLocalization.string("Open the setup guide for where to find Issuer ID, Key ID, and the .p8 private key."))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer()
-
-                        AppButton(AppStoreConnectLocalization.string("Setup Guide"), systemImage: "book", size: .small) {
-                            showingAccountGuide = true
-                        }
-                    }
-                }
-
-                AppCard(style: .subtle, cornerRadius: 8, showShadow: false) {
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text(AppStoreConnectLocalization.string("Global API Key"))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(AppStoreConnectLocalization.string("Need an App Store Connect API key?"))
                             .font(.headline)
-
-                        GlassTextField(title: AppStoreConnectLocalization.string("Issuer ID"), text: $viewModel.credentials.issuerID)
-                        GlassTextField(title: AppStoreConnectLocalization.string("Key ID"), text: $viewModel.credentials.keyID)
-
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(AppStoreConnectLocalization.string("Private Key (.p8)"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            TextEditor(text: $viewModel.credentials.privateKey)
-                                .font(.system(.caption, design: .monospaced))
-                                .frame(minHeight: 140)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .stroke(Color.secondary.opacity(0.25))
-                                )
-                            if viewModel.hasStoredPrivateKey {
-                                Text(AppStoreConnectLocalization.string("A private key is stored in Keychain. Saving replaces it."))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                }
-
-                AppCard(style: .subtle, cornerRadius: 8, showShadow: false) {
-                    HStack {
-                        AppButton(AppStoreConnectLocalization.string("Save Credentials"), systemImage: "key.fill", style: .primary) {
-                            viewModel.saveCredentials()
-                        }
-
-                        AppButton(AppStoreConnectLocalization.string("Test Connection"), systemImage: "network") {
-                            Task { await viewModel.testConnection() }
-                        }
-                        .disabled(!viewModel.credentials.isComplete)
-
-                        AppButton(AppStoreConnectLocalization.string("Disconnect"), systemImage: "xmark.circle", style: .destructive) {
-                            viewModel.disconnect()
-                        }
-
-                        Spacer()
-                        Text(viewModel.connectionStatus)
+                        Text(AppStoreConnectLocalization.string("Open the setup guide for where to find Issuer ID, Key ID, and the .p8 private key."))
+                            .font(.caption)
                             .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    AppButton(AppStoreConnectLocalization.string("Setup Guide"), systemImage: "book", size: .small) {
+                        showingAccountGuide = true
                     }
                 }
             }
-            .padding()
+
+            AppCard {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text(AppStoreConnectLocalization.string("Global API Key"))
+                        .font(.headline)
+
+                    GlassTextField(title: AppStoreConnectLocalization.string("Issuer ID"), text: $viewModel.credentials.issuerID)
+                    GlassTextField(title: AppStoreConnectLocalization.string("Key ID"), text: $viewModel.credentials.keyID)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(AppStoreConnectLocalization.string("Private Key (.p8)"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        TextEditor(text: $viewModel.credentials.privateKey)
+                            .font(.system(.caption, design: .monospaced))
+                            .frame(minHeight: 140)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(Color.secondary.opacity(0.25))
+                            )
+                        if viewModel.hasStoredPrivateKey {
+                            Text(AppStoreConnectLocalization.string("A private key is stored in Keychain. Saving replaces it."))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+
+            AppCard {
+                HStack {
+                    AppButton(AppStoreConnectLocalization.string("Save Credentials"), systemImage: "key.fill", style: .primary) {
+                        viewModel.saveCredentials()
+                    }
+
+                    AppButton(AppStoreConnectLocalization.string("Test Connection"), systemImage: "network") {
+                        Task { await viewModel.testConnection() }
+                    }
+                    .disabled(!viewModel.credentials.isComplete)
+
+                    AppButton(AppStoreConnectLocalization.string("Disconnect"), systemImage: "xmark.circle", style: .destructive) {
+                        viewModel.disconnect()
+                    }
+
+                    Spacer()
+                    Text(viewModel.connectionStatus)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

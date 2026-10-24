@@ -274,12 +274,12 @@
       ],
       "package-product-members": [
         {
-          "package": "KitBootstrapEnvironment",
-          "product-name": "KitBootstrapEnvironment",
-          "build-phase": { "build-phase": "frameworks" },
-        }, {
           "package": "FactoryLumi",
           "product-name": "FactoryLumi",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": "KitBootstrapEnvironment",
+          "product-name": "KitBootstrapEnvironment",
           "build-phase": { "build-phase": "frameworks" },
         }, {
           "package": "PluginAppUpdate",

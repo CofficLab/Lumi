@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import LumiUI
 import ProviderLLMManager
 import SwiftUI
 
@@ -146,22 +147,61 @@ final class TextActionMenuController {
     func hide() { alert?.window.orderOut(nil); alert = nil }
 }
 
+/// 文本操作设置页。
+///
+/// 布局遵循 settings-ui 规范：`PluginSettingsScaffold` + `AppCard` +
+/// `AppSettings*Row`，不使用原生 `Form`——否则这一页会和其他设置入口
+/// 呈现完全不同的原生分组样式，间距也对不齐。
 struct TextActionsSettingsView: View {
+    @LumiTheme private var theme
     @State private var enabled = TextActionsSettings.isEnabled
 
     var body: some View {
-        Form {
-            Toggle(
-                pluginLocalization.string("Enable selected-text actions"),
-                isOn: $enabled
-            )
-            .onChange(of: enabled) { _, value in
-                TextActionsSettings.setEnabled(value)
+        PluginSettingsScaffold(
+            title: pluginLocalization.string("Text Actions"),
+            subtitle: pluginLocalization.string(
+                "Show copy, search, and translation actions for selected text in other macOS apps."
+            ),
+            showHeader: false
+        ) {
+            VStack(alignment: .leading, spacing: 24) {
+                AppCard {
+                    AppSettingsSection(
+                        title: pluginLocalization.string("General"),
+                        spacing: 12
+                    ) {
+                        AppSettingsToggleRow(
+                            pluginLocalization.string("Enable selected-text actions"),
+                            isOn: Binding(
+                                get: { enabled },
+                                set: { newValue in
+                                    enabled = newValue
+                                    TextActionsSettings.setEnabled(newValue)
+                                }
+                            )
+                        )
+
+                        AppSettingsRow {
+                            HStack(spacing: 12) {
+                                Text(pluginLocalization.string("Accessibility Permission"))
+                                    .font(.appBody)
+                                    .foregroundColor(theme.textPrimary)
+
+                                Spacer()
+
+                                AppButton(
+                                    pluginLocalization.string("Request Accessibility Permission"),
+                                    style: .secondary,
+                                    size: .small
+                                ) {
+                                    TextSelectionManager.shared.requestPermission()
+                                }
+                            }
+                        }
+                    }
+                }
             }
-            Button(pluginLocalization.string("Request Accessibility Permission")) {
-                TextSelectionManager.shared.requestPermission()
-            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding()
     }
 }

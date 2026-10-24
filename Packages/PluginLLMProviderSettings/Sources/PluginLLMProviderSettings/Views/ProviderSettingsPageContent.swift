@@ -19,25 +19,28 @@ struct ProviderSettingsPageContent: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            header
-            HStack(spacing: 0) {
-                sidebar
-                    .frame(width: 280)
-                    .frame(maxHeight: .infinity)
-                AppDivider(.vertical)
-                detailPane
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
+            VStack(alignment: .leading, spacing: 14) {
+                header
+                HStack(spacing: 0) {
+                    sidebar
+                        .frame(width: 300)
+                        .frame(maxHeight: .infinity)
+                    AppDivider(.vertical)
+                    detailPane
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
+                .frame(minHeight: 520, maxHeight: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(theme.divider, lineWidth: 1)
+                }
             }
-            .frame(minHeight: 460, maxHeight: .infinity)
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(theme.divider, lineWidth: 1)
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(.bottom, 16)
+        .environment(\.appSettingsCardStyleOverride, .subtle)
         .sheet(isPresented: $isCustomProviderEditorPresented) {
             if let editor = viewModel.makeNewCustomProviderEditor() {
                 editor

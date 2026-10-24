@@ -35,6 +35,7 @@ struct MCPSettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+        .padding(.bottom, 16)
         .id(revision)
         .sheet(isPresented: $showingAddSheet) {
             MCPServerEditSheet(registry: registry, manager: manager, server: nil) { _ in revision += 1 }
@@ -74,6 +75,7 @@ struct MCPSettingsView: View {
             }
         }
         .font(.appCaption)
+        .foregroundStyle(theme.textSecondary)
     }
 
     // MARK: - Master–Detail
@@ -81,13 +83,13 @@ struct MCPSettingsView: View {
     private var masterDetail: some View {
         HStack(spacing: 0) {
             sidebar
-                .frame(width: 280)
+                .frame(width: 300)
                 .frame(maxHeight: .infinity)
             AppDivider(.vertical)
             detailPane
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(minHeight: 460, maxHeight: .infinity)
+        .frame(minHeight: 520, maxHeight: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -231,19 +233,31 @@ struct MCPSettingsView: View {
             // 该服务器的工具列表
             let tools = manager.registeredTools
             if let adapters = tools[server.id], !adapters.isEmpty {
-                AppSettingSection(title: MCPText.string("Tools"), titleAlignment: .leading) {
-                    VStack(spacing: 0) {
-                        ForEach(Array(adapters.enumerated()), id: \.element.name) { index, adapter in
-                            if index > 0 {
-                                Divider()
-                                    .padding(.vertical, 8)
-                            }
-                            AppSettingRow(
-                                title: adapter.descriptor.name,
-                                description: adapter.descriptor.description,
-                                icon: "wrench.and.screwdriver"
-                            ) {
-                                EmptyView()
+                AppCard {
+                    AppSettingsSection(title: MCPText.string("Tools")) {
+                        ForEach(Array(adapters.enumerated()), id: \.element.name) { _, adapter in
+                            AppSettingsRow {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "wrench.and.screwdriver")
+                                        .font(.appCallout)
+                                        .foregroundColor(theme.primary)
+                                        .frame(width: 24)
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(adapter.descriptor.name)
+                                            .font(.appBody)
+                                            .foregroundColor(theme.textPrimary)
+                                        if let description = adapter.descriptor.description {
+                                            Text(description)
+                                                .font(.appCaption)
+                                                .foregroundColor(theme.textSecondary)
+                                        }
+                                    }
+
+                                    Spacer()
+
+                                    EmptyView()
+                                }
                             }
                         }
                     }

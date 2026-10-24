@@ -1,10 +1,16 @@
 import AppKit
+import LumiUI
 import SwiftUI
 
 /// 屏幕录制设置页：权限状态、3 秒测试录制、行为说明。
+///
+/// 布局遵循 settings-ui 规范：`PluginSettingsScaffold` + `AppCard` +
+/// `AppSettingsRow`，不使用原生 `Form`——否则这一页会和其他设置入口
+/// 呈现完全不同的原生分组样式，间距也对不齐。
 @MainActor
 struct ScreenRecorderSettingsView: View {
     @ObservedObject private var state: ScreenRecorderSettingsState
+    @LumiTheme private var theme
     @State private var screenRecordingAllowed = false
     @State private var microphoneAllowed = false
     @State private var revision = 0
@@ -16,8 +22,34 @@ struct ScreenRecorderSettingsView: View {
     }
 
     var body: some View {
-        Form {
-            Section(ScreenRecorderLocalization.ui("Permissions", "权限")) {
+        PluginSettingsScaffold(
+            title: ScreenRecorderLocalization.ui("Screen Recorder", "屏幕录制"),
+            subtitle: ScreenRecorderLocalization.ui(
+                "Grant permissions, verify the capture pipeline and check recording behavior.",
+                "授予权限、验证录制链路并了解录制行为。"
+            ),
+            showHeader: false
+        ) {
+            VStack(alignment: .leading, spacing: 24) {
+                permissionsCard
+                verificationCard
+                notesCard
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .id(revision)
+        .onAppear(perform: refresh)
+        .onChange(of: state.revision) { _, _ in refresh() }
+    }
+
+    // MARK: - 权限
+
+    private var permissionsCard: some View {
+        AppCard {
+            AppSettingsSection(
+                title: ScreenRecorderLocalization.ui("Permissions", "权限"),
+                spacing: 12
+            ) {
                 permissionRow(
                     title: ScreenRecorderLocalization.ui("Screen Recording", "屏幕录制"),
                     detail: ScreenRecorderLocalization.ui("Required to capture app windows or the screen.", "录制 app 窗口或屏幕所必需。"),
@@ -38,52 +70,108 @@ struct ScreenRecorderSettingsView: View {
                     }
                 )
             }
+        }
+    }
 
-            Section(ScreenRecorderLocalization.ui("Verification", "验证")) {
-                Button {
-                    runTestRecording()
-                } label: {
-                    Label(ScreenRecorderLocalization.ui("Record a 3-second test clip", "录制 3 秒测试片段"), systemImage: "record.circle")
+    // MARK: - 验证
+
+    private var verificationCard: some View {
+        AppCard {
+            AppSettingsSection(
+                title: ScreenRecorderLocalization.ui("Verification", "验证"),
+                spacing: 12
+            ) {
+                AppSettingsRow {
+                    HStack(spacing: 12) {
+                        Label(
+                            ScreenRecorderLocalization.ui("Record a 3-second test clip", "录制 3 秒测试片段"),
+                            systemImage: "record.circle"
+                        )
+                        .font(.appBody)
+                        .foregroundColor(theme.textPrimary)
+
+                        Spacer()
+
+                        if testing {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+
+                        AppButton(
+                            ScreenRecorderLocalization.ui("Start Test", "开始测试"),
+                            style: .secondary,
+                            size: .small
+                        ) {
+                            runTestRecording()
+                        }
+                        .disabled(testing || !screenRecordingAllowed)
+                    }
                 }
-                .disabled(testing || !screenRecordingAllowed)
-                if testing {
-                    ProgressView().controlSize(.small)
-                }
+
                 if let testMessage {
-                    Text(testMessage).font(.callout).foregroundStyle(.secondary)
+                    AppSettingsRow {
+                        Text(testMessage)
+                            .font(.appCaption)
+                            .foregroundColor(theme.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
             }
+        }
+    }
 
-            Section {
+    // MARK: - 说明
+
+    private var notesCard: some View {
+        AppCard {
+            AppSettingsSection(
+                title: ScreenRecorderLocalization.ui("Notes", "说明"),
+                spacing: 8
+            ) {
                 Text(ScreenRecorderLocalization.ui(
                     "Recording captures a single app window by default and excludes Lumi itself. Output goes to ~/Downloads as .mp4. A floating indicator with a Stop button appears while recording; recordings auto-stop when the target window closes or the duration elapses.",
                     "默认录制单个 app 窗口，且不录制 Lumi 自身。输出为 .mp4 到 ~/Downloads。录制时会出现带「停止」按钮的浮层；目标窗口关闭或时长结束时会自动停止。"
                 ))
-                .font(.callout)
-                .foregroundStyle(.secondary)
+                .font(.appBody)
+                .foregroundColor(theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .formStyle(.grouped)
-        .id(revision)
-        .onAppear(perform: refresh)
-        .onChange(of: state.revision) { _, _ in refresh() }
     }
 
     @ViewBuilder
     private func permissionRow(title: String, detail: String, granted: Bool, request: @escaping () -> Void) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                Text(detail).font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer()
-            Label(
-                granted ? ScreenRecorderLocalization.ui("Granted", "已授权") : ScreenRecorderLocalization.ui("Required", "需要授权"),
-                systemImage: granted ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
-            )
-            .foregroundStyle(granted ? .green : .orange)
-            if !granted {
-                Button(ScreenRecorderLocalization.ui("Grant Access", "去授权"), action: request)
+        AppSettingsRow {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.appBody)
+                        .foregroundColor(theme.textPrimary)
+                    Text(detail)
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 12)
+
+                Label(
+                    granted ? ScreenRecorderLocalization.ui("Granted", "已授权") : ScreenRecorderLocalization.ui("Required", "需要授权"),
+                    systemImage: granted ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+                )
+                .font(.appCaption)
+                .foregroundColor(granted ? theme.success : theme.warning)
+                .fixedSize()
+
+                if !granted {
+                    AppButton(
+                        ScreenRecorderLocalization.ui("Grant Access", "去授权"),
+                        style: .secondary,
+                        size: .small,
+                        action: request
+                    )
+                }
             }
         }
     }

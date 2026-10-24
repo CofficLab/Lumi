@@ -3,6 +3,8 @@ import SwiftUI
 
 /// 快速文件搜索设置视图
 public struct QuickFileSearchSettingsView: View {
+    @LumiTheme private var theme
+
     private let projectPath: String
 
     public init(projectPath: String) {
@@ -17,35 +19,62 @@ public struct QuickFileSearchSettingsView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .environment(\.appSettingsCardStyleOverride, .subtle)
     }
 
     private var statusSection: some View {
-        AppSettingSection(
-            title: pluginLocalization.string("Current Status"),
-            titleAlignment: .leading
-        ) {
-            VStack(spacing: 0) {
-                AppSettingRow(
-                    title: projectPath.isEmpty
-                        ? pluginLocalization.string("No project selected")
-                        : pluginLocalization.string("Project indexed"),
-                    description: projectPath.isEmpty
-                        ? pluginLocalization.string("Please select a project to enable file search")
-                        : URL(fileURLWithPath: projectPath).lastPathComponent,
-                    icon: projectPath.isEmpty ? "circle" : "checkmark.circle.fill"
-                ) {
-                    EmptyView()
+        AppCard {
+            AppSettingsSection(
+                title: pluginLocalization.string("Current Status")
+            ) {
+                AppSettingsRow {
+                    HStack(spacing: 12) {
+                        Image(systemName: projectPath.isEmpty ? "circle" : "checkmark.circle.fill")
+                            .font(.appCallout)
+                            .foregroundColor(theme.primary)
+                            .frame(width: 24)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(
+                                projectPath.isEmpty
+                                    ? pluginLocalization.string("No project selected")
+                                    : pluginLocalization.string("Project indexed")
+                            )
+                            .font(.appBody)
+                            .foregroundColor(theme.textPrimary)
+                            Text(
+                                projectPath.isEmpty
+                                    ? pluginLocalization.string("Please select a project to enable file search")
+                                    : URL(fileURLWithPath: projectPath).lastPathComponent
+                            )
+                            .font(.appCaption)
+                            .foregroundColor(theme.textSecondary)
+                        }
+
+                        Spacer()
+
+                        EmptyView()
+                    }
                 }
 
                 if !projectPath.isEmpty {
-                    Divider()
-                        .padding(.vertical, 8)
+                    AppSettingsRow {
+                        HStack(spacing: 12) {
+                            Image(systemName: "info.circle")
+                                .font(.appCallout)
+                                .foregroundColor(theme.primary)
+                                .frame(width: 24)
 
-                    AppSettingRow(
-                        title: pluginLocalization.string("File indexing is automatic when switching projects"),
-                        icon: "info.circle"
-                    ) {
-                        EmptyView()
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(pluginLocalization.string("File indexing is automatic when switching projects"))
+                                    .font(.appBody)
+                                    .foregroundColor(theme.textPrimary)
+                            }
+
+                            Spacer()
+
+                            EmptyView()
+                        }
                     }
                 }
             }
@@ -53,29 +82,25 @@ public struct QuickFileSearchSettingsView: View {
     }
 
     private var instructionsSection: some View {
-        AppSettingSection(
-            title: pluginLocalization.string("How to Use"),
-            titleAlignment: .leading
-        ) {
-            VStack(spacing: 0) {
+        AppCard {
+            AppSettingsSection(
+                title: pluginLocalization.string("How to Use")
+            ) {
                 instructionRow(
                     key: "Cmd+P",
                     description: pluginLocalization.string("Open file search"),
                     icon: "command"
                 )
-                Divider().padding(.vertical, 8)
                 instructionRow(
                     key: "↑ ↓",
                     description: pluginLocalization.string("Navigate results"),
                     icon: "arrow.up.arrow.down"
                 )
-                Divider().padding(.vertical, 8)
                 instructionRow(
                     key: "Enter",
                     description: pluginLocalization.string("Select file"),
                     icon: "return"
                 )
-                Divider().padding(.vertical, 8)
                 instructionRow(
                     key: "Esc",
                     description: pluginLocalization.string("Close search"),
@@ -86,8 +111,23 @@ public struct QuickFileSearchSettingsView: View {
     }
 
     private func instructionRow(key: String, description: String, icon: String) -> some View {
-        AppSettingRow(title: description, icon: icon) {
-            AppTag(key, style: .subtle)
+        AppSettingsRow {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.appCallout)
+                    .foregroundColor(theme.primary)
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(description)
+                        .font(.appBody)
+                        .foregroundColor(theme.textPrimary)
+                }
+
+                Spacer()
+
+                AppTag(key, style: .subtle)
+            }
         }
     }
 }

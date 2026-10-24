@@ -44,12 +44,13 @@ struct ACPSettingsView: View {
             title: ACPLocalization.string("ACP"),
             subtitle: ACPLocalization.string("Connect Lumi to external editors")
         ) {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 24) {
                 helperPathCard
                 ForEach(appGuides) { guide in
                     appGuideCard(guide)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .sheet(item: $activeGuide) { guide in
             ACPGuideSetupSheetView(guide: guide)

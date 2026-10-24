@@ -57,6 +57,9 @@ struct PluginManagementView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .padding(.bottom, 16)
+        // 插件贡献的「关于 / 详情」内容里也可能出现 AppCard，统一按 .subtle 渲染，
+        // 避免插件管理页里的卡片与其它设置页外观不一致。
+        .environment(\.appSettingsCardStyleOverride, .subtle)
         .onAppear {
             viewModel.normalizeSelection()
         }

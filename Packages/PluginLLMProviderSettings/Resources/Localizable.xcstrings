@@ -31,6 +31,9 @@
     "API Endpoint URL" : {
 
     },
+    "API Key" : {
+
+    },
     "Cloud Providers" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -174,6 +177,9 @@
     "上下文 %@" : {
 
     },
+    "下载限速" : {
+
+    },
     "不限速" : {
 
     },
@@ -303,6 +309,9 @@
     "官网（可选）" : {
 
     },
+    "尚未保存 API Key" : {
+
+    },
     "已保存" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -337,6 +346,9 @@
           }
         }
       }
+    },
+    "已保存 API Key" : {
+
     },
     "已复制" : {
 
@@ -381,6 +393,9 @@
           }
         }
       }
+    },
+    "操作" : {
+
     },
     "显示 API Key" : {
 
@@ -518,6 +533,12 @@
 
     },
     "配置兼容的 API 端点和模型列表" : {
+
+    },
+    "配置访问凭证" : {
+
+    },
+    "错误" : {
 
     },
     "隐藏 API Key" : {
