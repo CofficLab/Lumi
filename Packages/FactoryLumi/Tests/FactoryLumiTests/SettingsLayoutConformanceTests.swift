@@ -97,7 +97,8 @@ struct SettingsLayoutConformanceTests {
             path: "Packages/PluginPluginManager/Sources/PluginPluginManager/Views/PluginManagementView.swift",
             relatedPaths: ["Packages/PluginPluginManager/Sources/PluginPluginManager/Views/PluginSettingsDetailView.swift"],
             kind: .masterDetail,
-            detailPadding: 22
+            detailPadding: 22,
+            isEdgeToEdge: true
         ),
         AuditedPage(
             viewTypeNames: ["SettingsView"],

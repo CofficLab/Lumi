@@ -9,40 +9,42 @@ All settings surfaces — built-in core tabs, plugin-contributed sidebar tabs, a
 
 | 位置 | 数值 |
 |------|------|
-| 页面内容左右留白 | 24（贴边页除外） |
+| 页面内容左右留白 | 24（头部行）；主体分栏页贴边 |
 | 页面内容顶部留白 | 24 |
-| 页面内容底部留白 | 分栏页 16；滚动页 24（贴边页除外） |
-| 分栏页外层 VStack 间距 | 14 |
+| 页面内容底部留白 | 分栏页贴边；滚动页 24 |
+| 分栏页外层 VStack 间距 | 0（贴边布局用分隔线代替间距） |
 | 头部行 | `HStack(spacing: 10)` + `.appCaption` + 次要文字色 |
-| 主从容器圆角 | 8（描边 1px `theme.divider`） |
-| 主从容器高度 | **占满剩余空间**（`.frame(maxHeight: .infinity)`），常规窗口下约 520 |
+| 主从容器圆角 | 贴边页无外框；非贴边页 8（描边 1px `theme.divider`） |
+| 主从容器高度 | **占满剩余空间**（`.frame(maxHeight: .infinity)`） |
 | 列表栏宽度 | 300 |
 | 列表栏头部控件内边距 | 12 |
 | 列表内容 | `LazyVStack(spacing: 4)` + 内边距 8 |
 | 详情栏内容内边距 | 22 |
 | 单栏页分组间距 | 24（分组内 `AppSettingSection` 间距 12、行间距 0 + `Divider().padding(.vertical, 8)`） |
 
-### 贴边页（edge-to-edge）
+### 分栏页：贴边（edge-to-edge）
 
-个别分栏页需要「主体内容贴到窗口左右与底边」的观感（主从容器没有外框，
-左右下没有留白）。这类页面在审计表里标记 `isEdgeToEdge: true`，豁免
-「圆角 8 / 1px 描边 / 底部留白 16」三项，其余基准（列表栏 300、详情栏内边距 22、
-不得写死 `minHeight`）照常生效。
+**分栏页统一采用贴边布局**：主体内容（列表栏 + 详情栏）直接贴到窗口左右与底边，
+没有外框描边，左右下也没有留白。当前采用该布局的有「插件管理」「MCP 服务器」
+「外观」三个入口。
 
-贴边页的写法要点：
+写法要点：
 
+- 用 `AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil)`，
+  外面套一层 `GeometryReader`；
+- 整列 `.frame(width: proxy.size.width + 48)` 再 `.offset(x: -24)`，抵消共享
+  scaffold 的左右 24 留白，使主从容器正好贴到窗口左右边缘；
 - 头部行自行保留 24 的左右内边距，不要贴到窗口边缘；
-- 主从容器加宽 48 并左移 24，抵消共享 scaffold 的左右 24 留白；
-- 顶部用一条 `AppDivider()` 把头部行与主体分开；
-- 底部不再加 `.padding(.bottom, 16)`。
+- 头部行与主体之间用一条 `AppDivider()` 分隔（代替原来的 VStack 间距 14）；
+- 主从容器不写圆角裁剪、不写 1px 描边（外框的左、右、下三条边都不存在）；
+- 底部不再加 `.padding(.bottom, 16)`；
+- 审计表里标记 `isEdgeToEdge: true`，豁免「圆角 8 / 1px 描边 / 底部留白 16」三项，
+  其余基准（列表栏 300、详情栏内边距 22、不得写死 `minHeight`）照常生效。
 
 规则：
 
-- 分栏页统一用 `AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil)`
-  并显式加 `.padding(.bottom, 16)`；不要用 `PluginSettingsScaffold(scrollsContent: false)`
-  （它不给底部留白，页面会贴到窗口底边）。
 - 列表栏宽度统一 300，不允许 280 / 320 / 340 各写各的。
-- 圆角统一 8，不允许 10 / 12。
+- 非贴边页的圆角统一 8，不允许 10 / 12。
 - **主从容器不要写死 `minHeight`**（例如 `.frame(minHeight: 520, maxHeight: .infinity)`）。
   设置窗口的内容区是「窗口高度 → 外层 ZStack → 详情页」的链式布局：详情页一旦
   比窗口高，外层容器会被撑大，窗口按**居中**方式裁切，于是页面**顶部和底部同时
