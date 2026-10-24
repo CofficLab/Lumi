@@ -4,6 +4,6 @@ alwaysApply: true
 
 # 项目开发通用规则
 
-请参考项目规范文档：`.agent/rules/project-general-rules.md`
+请参考项目规范文档：`.lumi/rules/project-general-rules.md`
 
 所有项目开发都应遵循上述规范文档中的通用规则。
