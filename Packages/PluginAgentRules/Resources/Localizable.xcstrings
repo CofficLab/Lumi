@@ -386,6 +386,7 @@
       }
     },
     "Rules" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
