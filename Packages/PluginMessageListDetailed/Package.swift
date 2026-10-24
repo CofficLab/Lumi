@@ -8,7 +8,7 @@ let package = Package(
     products: [.library(name: "PluginMessageListDetailed", targets: ["PluginMessageListDetailed"])],
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
         .package(path: "../KitMarkdown"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(path: "../ProviderAgentLoop"),
@@ -21,7 +21,7 @@ let package = Package(
         .package(path: "../ProviderPromptSuggestion"),
         .package(path: "../ProviderToolManager"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.9.0")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0")
     ],
     targets: [
         .target(name: "PluginMessageListDetailed", dependencies: [
