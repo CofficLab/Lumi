@@ -554,6 +554,23 @@ struct SettingsLayoutConformanceTests {
            !source.contains(".padding(\(detailPadding))") {
             failures.append("- \(page.path)：详情栏内容内边距应为 \(detailPadding)")
         }
+        // 贴边分栏页必须直接用共享 scaffold：`PluginSettingsScaffold` 会在内容外多包
+        // 一层 `VStack(spacing: 24)` + `Spacer`，那 24pt 会从内容区里被吃掉，
+        // 主从容器比内容区矮一截，竖直分隔线到不了窗口底部（用户可见：线在半空断掉）。
+        //
+        // 匹配前先剔除注释与字符串字面量：页面里常写「不能套 PluginSettingsScaffold」
+        // 这样的说明，被当成真实调用就会误报。
+        if page.isEdgeToEdge,
+           !Self.pluginScaffoldDeviations.contains(page.path) {
+            let code = String(Self.blankOutStringsAndComments(source))
+            if code.contains("PluginSettingsScaffold") {
+                failures.append(
+                    "- \(page.path)：贴边分栏页不得使用 PluginSettingsScaffold"
+                    + "（会吃掉 24pt 高度，竖直分隔线到不了窗口底部），"
+                    + "应改用 AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil)"
+                )
+            }
+        }
         // 已登记的偏差值不得复活。
         for stale in staleListWidths {
             if source.contains(".frame(width: \(stale))") {
@@ -599,6 +616,20 @@ struct SettingsLayoutConformanceTests {
     private static let staleListWidths = [280, 320, 340]
     /// 曾经出现过的错误主从容器最小高度。
     private static let staleMinHeights = [300, 460, 560]
+
+    /// 已知偏差：仍是「贴边分栏页」、却还套着 `PluginSettingsScaffold` 的页面。
+    ///
+    /// 这些页面与「插件管理」页同属贴边分栏布局，但外层多包了一层
+    /// `PluginSettingsScaffold`，因此主从容器比内容区矮 24pt（竖直分隔线提前断掉）。
+    /// 每迁移一个（改成 `AppSettingsContentScaffold`）就从这里删掉一个。
+    ///
+    /// 布局守卫见 `Packages/PluginSkill/Tests/PluginSkillTests/SkillSettingsLayoutTests.swift`。
+    private static let pluginScaffoldDeviations: Set<String> = [
+        "Packages/PluginConversationManager/Sources/PluginConversationManager/Views/ConversationStoreSettingsView.swift",
+        "Packages/PluginNetworkManager/Sources/PluginNetworkManager/Views/HTTPExchangeSettingsView.swift",
+        "Packages/PluginAgentRules/Sources/PluginAgentRules/Views/AgentRulesSettingsView.swift",
+        "Packages/PluginMemory/Sources/PluginMemory/Views/MemorySettingsView.swift",
+    ]
 
     // MARK: - 源码扫描
 

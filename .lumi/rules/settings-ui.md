@@ -33,6 +33,12 @@ All settings surfaces — built-in core tabs, plugin-contributed sidebar tabs, a
 
 - 用 `AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil)`，
   外面套一层 `GeometryReader`；
+- **不要套 `PluginSettingsScaffold`**：它在内容外多包一层
+  `VStack(alignment: .leading, spacing: 24)` + `Spacer`，那 24pt 会从内容区里
+  「吃掉」高度，于是主从容器比内容区矮 24pt，竖直分隔线在离窗口底边 24pt 的
+  处就断了（2026-10-25「技能」页就是这样，插件管理页却到底）。改用
+  `AppSettingsContentScaffold` 后若页面需要 `.subtle` 卡片风格，自行注入
+  `.environment(\.appSettingsCardStyleOverride, .subtle)`；
 - 整列 `.frame(width: proxy.size.width + 48)` 再 `.offset(x: -24)`，抵消共享
   scaffold 的左右 24 留白，使主从容器正好贴到窗口左右边缘；
 - 头部内容（头部行、统计卡片等）自行保留 24 的左右内边距，不要贴到窗口边缘；
@@ -59,6 +65,11 @@ All settings surfaces — built-in core tabs, plugin-contributed sidebar tabs, a
 
 `Packages/FactoryLumi/Tests/FactoryLumiTests/SettingsLayoutConformanceTests.swift`
 是上述基准的守卫测试，改动设置页布局时必须让它保持绿色。
+
+其中「贴边分栏页不得使用 `PluginSettingsScaffold`」这一条由
+`Packages/PluginSkill/Tests/PluginSkillTests/SkillSettingsLayoutTests.swift`
+用真实布局测量配合（量页面的理想高度：贴边页应为「内容区顶部留白 24 +
+GeometryReader 基准 10 = 34」，套了 `PluginSettingsScaffold` 会变成 58）。
 
 > 共享组件（`AppSettingsContentScaffold` / `PluginSettingsScaffold` /
 > `AppSettingSection` / `AppSettingRow`）来自**外部包 LumiUI**，本仓库 90+ 个包依赖它。改它要走

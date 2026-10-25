@@ -26,12 +26,10 @@ struct SkillSettingsView: View {
     }
 
     var body: some View {
-        PluginSettingsScaffold(
-            title: pluginLocalization.string("Skills"),
-            subtitle: pluginLocalization.string("View project skills and contributed skills"),
-            showHeader: false,
-            scrollsContent: false
-        ) {
+        // 贴边分栏页直接用共享 scaffold（基准见 `.lumi/rules/settings-ui.md`「分栏页：贴边」）。
+        // 不能套 `PluginSettingsScaffold`：它在内容外多包一层 `VStack(spacing: 24)` + `Spacer`，
+        // 那 24pt 会从内容区里被吃掉，主从容器比内容区矮一截，竖直分隔线到不了窗口底部。
+        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
             GeometryReader { proxy in
                 VStack(spacing: 0) {
                     header
@@ -59,6 +57,8 @@ struct SkillSettingsView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         }
+        // `PluginSettingsScaffold` 会注入 .subtle 卡片风格，改用共享 scaffold 后需自行注入。
+        .environment(\.appSettingsCardStyleOverride, .subtle)
         .task { await viewModel.reload() }
         .onAppear { viewModel.seedSelectionIfNeeded() }
     }
