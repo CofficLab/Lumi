@@ -181,11 +181,16 @@ struct SettingsLayoutConformanceTests {
             viewTypeNames: ["ToolManagerSettingsView"],
             path: "Packages/PluginToolManager/Sources/PluginToolManager/Views/ToolManagerSettingsView.swift",
             relatedPaths: [
-                "Packages/PluginToolManager/Sources/PluginToolManager/Views/ToolCallLogSettingsView.swift",
-                "Packages/PluginToolManager/Sources/PluginToolManager/Views/ToolCallStatsSettingsView.swift",
+                "Packages/PluginToolManager/Sources/PluginToolManager/Views/ToolManagerToolListView.swift",
+                "Packages/PluginToolManager/Sources/PluginToolManager/Views/ToolManagerToolDetailView.swift",
+                "Packages/PluginToolManager/Sources/PluginToolManager/Views/ToolCallLogListView.swift",
+                "Packages/PluginToolManager/Sources/PluginToolManager/Views/ToolCallRecordDetailView.swift",
+                "Packages/PluginToolManager/Sources/PluginToolManager/Views/ToolCallStatsListView.swift",
+                "Packages/PluginToolManager/Sources/PluginToolManager/Views/ToolCallStatDetailView.swift",
             ],
-            kind: .singleColumn,
-            detailPadding: nil
+            kind: .masterDetail,
+            detailPadding: 22,
+            isEdgeToEdge: true
         ),
         AuditedPage(
             viewTypeNames: ["ComputerUseSettingsView"],
