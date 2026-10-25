@@ -17,8 +17,7 @@ let package = Package(
         .package(path: "../ProviderGit"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderProjectRAG"),
-        .package(path: "../ProviderPromptSuggestion"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.13.0")
     ],
     targets: [
         .target(
@@ -36,7 +35,7 @@ let package = Package(
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderProjectRAG", package: "ProviderProjectRAG"),
-                .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
+                .product(name: "ProviderPromptSuggestion", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
             ],
@@ -53,7 +52,7 @@ let package = Package(
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderProjectRAG", package: "ProviderProjectRAG"),
-                .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
+                .product(name: "ProviderPromptSuggestion", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
             ]
         ),

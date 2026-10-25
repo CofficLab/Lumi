@@ -2,11 +2,12 @@ import Foundation
 import LumiLocalizationKit
 import KernelCore
 import ProviderActivityBar
+import ProviderPromptSuggestion
+import ProviderPromptSuggestionExecutor
 import ProviderRailView
 import ProviderSettingView
 import SwiftUI
 import Testing
-@testable import ProviderPromptSuggestion
 
 @Suite("PromptSuggestionExecutor")
 @MainActor
@@ -21,14 +22,14 @@ struct PromptSuggestionExecutorTests {
         #expect(
             LumiLocalization.string(
                 "Plugin Enabled",
-                bundle: .module,
+                bundle: ProviderPromptSuggestionExecutorResources.bundle,
                 locale: Locale(identifier: "zh-Hans")
             ) == "插件已启用"
         )
         #expect(
             LumiLocalization.string(
                 "is now enabled.",
-                bundle: .module,
+                bundle: ProviderPromptSuggestionExecutorResources.bundle,
                 locale: Locale(identifier: "zh-Hans")
             ) == "已启用。"
         )

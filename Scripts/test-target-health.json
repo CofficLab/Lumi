@@ -772,11 +772,6 @@
     "errors": [],
     "hasTestPlan": false
   },
-  "PluginPluginManager": {
-    "status": "ok",
-    "errors": [],
-    "hasTestPlan": false
-  },
   "PluginPortManager": {
     "status": "ok",
     "errors": [],
@@ -1064,7 +1059,7 @@
     "errors": [],
     "hasTestPlan": false
   },
-  "ProviderPromptSuggestion": {
+  "ProviderPromptSuggestionExecutor": {
     "status": "ok",
     "errors": [],
     "hasTestPlan": false

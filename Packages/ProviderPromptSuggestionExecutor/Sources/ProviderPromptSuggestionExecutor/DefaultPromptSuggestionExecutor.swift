@@ -5,6 +5,7 @@ import ProviderActivityBar
 import ProviderMessageSender
 import ProviderPluginControl
 import ProviderPluginManaging
+import ProviderPromptSuggestion
 import ProviderRailView
 import ProviderSettingView
 import ProviderToast

@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginPrototypeDesigner", targets: ["PluginPrototypeDesigner"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.13.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitPrototype"),
@@ -19,7 +19,6 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../ProviderPromptSuggestion"),
     ],
     targets: [
         .target(
@@ -43,7 +42,7 @@ let package = Package(
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 "ProviderToolManager",
-                "ProviderPromptSuggestion",
+                .product(name: "ProviderPromptSuggestion", package: "LumiProviders"),
                 .product(name: "ProviderConversationInput", package: "LumiProviders"),
                 .product(name: "ProviderSkill", package: "LumiProviders"),
                 .product(name: "ProviderAgentRules", package: "LumiProviders"),
