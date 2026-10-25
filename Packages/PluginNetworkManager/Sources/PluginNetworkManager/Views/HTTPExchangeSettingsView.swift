@@ -107,8 +107,13 @@ public struct HTTPExchangeSettingsView: View {
                     .padding(.horizontal, 24)
                     .padding(.bottom, 12)
 
+                    // 请求统计区块的顶部分隔线：与下方那条一样贯通整宽，
+                    // 所以画在内容留白之外，而不是塞进区块内部。
+                    AppDivider()
+
                     requestActivity
                         .padding(.horizontal, 24)
+                        .padding(.top, 12)
                         .padding(.bottom, 12)
 
                     // 主体内容贴边后，用一条顶部分隔线把头部内容与主从容器分开。
@@ -166,28 +171,28 @@ public struct HTTPExchangeSettingsView: View {
         }
     }
 
+    /// 每日请求图表（扁平面板）。
+    ///
+    /// 与「会话存储」页的会话活动区块保持同一种基本样式：区块顶部的横线由父级
+    /// 统一画（贯通整宽），这里只放内容——左右不留白，图表铺满内容区整宽。
     private var requestActivity: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
                 Label(pluginLocalization.string("Daily HTTP requests"), systemImage: "chart.xyaxis.line")
                     .font(.appCaptionEmphasized)
                     .foregroundStyle(theme.textPrimary)
                 Spacer(minLength: 0)
-                Text(pluginLocalization.string("Peak") + " (\(dailyCountSeries.peakCount))")
+                Text(String(format: pluginLocalization.string("Peak (%lld)"), dailyCountSeries.peakCount))
                     .font(.appMicro)
                     .monospacedDigit()
                     .foregroundStyle(theme.textSecondary)
             }
+            .padding(.bottom, 10)
+
             HTTPExchangeDailyCountChart(series: dailyCountSeries)
                 .frame(height: 132)
         }
-        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(theme.divider, lineWidth: 0.5)
-        }
     }
 
     private var sidebar: some View {

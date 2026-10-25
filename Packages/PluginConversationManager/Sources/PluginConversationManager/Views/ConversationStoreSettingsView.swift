@@ -41,8 +41,13 @@ public struct ConversationStoreSettingsView: View {
                     .padding(.horizontal, 24)
                     .padding(.bottom, 12)
 
+                    // 会话活动区块的顶部分隔线：与下方那条一样贯通整宽，
+                    // 所以画在内容留白之外，而不是塞进区块内部。
+                    AppDivider()
+
                     conversationActivity
                         .padding(.horizontal, 24)
+                        .padding(.top, 12)
                         .padding(.bottom, 12)
 
                     // 主体内容贴边后，用一条顶部分隔线把头部内容与主从容器分开。
@@ -81,34 +86,28 @@ public struct ConversationStoreSettingsView: View {
         }
     }
 
+    /// 会话活动图表（扁平面板）。
+    ///
+    /// 区块顶部的横线由父级统一画（贯通整宽），这里只放内容：
+    /// 左右不留白，图表直接铺满内容区整宽。
     private var conversationActivity: some View {
-        AppSettingSection(
-            title: L("Conversation Activity"),
-            footer: L("Conversations created per day over the last 14 days"),
-            titleAlignment: .leading
-        ) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .firstTextBaseline) {
-                    Label(L("Daily conversations"), systemImage: "chart.xyaxis.line")
-                        .font(.appCaptionEmphasized)
-                        .foregroundStyle(theme.textPrimary)
-                    Spacer(minLength: 0)
-                    Text(String(format: L("Peak (%lld)"), viewModel.dailyCountSeries.peakCount))
-                        .font(.appMicro)
-                        .monospacedDigit()
-                        .foregroundStyle(theme.textSecondary)
-                }
-                ConversationDailyCountChart(series: viewModel.dailyCountSeries)
-                    .frame(height: 132)
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .firstTextBaseline) {
+                Label(L("Daily conversations"), systemImage: "chart.xyaxis.line")
+                    .font(.appCaptionEmphasized)
+                    .foregroundStyle(theme.textPrimary)
+                Spacer(minLength: 0)
+                Text(String(format: L("Peak (%lld)"), viewModel.dailyCountSeries.peakCount))
+                    .font(.appMicro)
+                    .monospacedDigit()
+                    .foregroundStyle(theme.textSecondary)
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(theme.divider, lineWidth: 0.5)
-            }
+            .padding(.bottom, 10)
+
+            ConversationDailyCountChart(series: viewModel.dailyCountSeries)
+                .frame(height: 132)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Total Count
