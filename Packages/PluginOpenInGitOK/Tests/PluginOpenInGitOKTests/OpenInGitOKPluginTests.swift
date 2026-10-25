@@ -1,6 +1,6 @@
 import Testing
 import KernelCore
-import OpenInKit
+import KitOpenIn
 import ProviderDocsView
 import ProviderToolManager
 import ProviderToolbar
