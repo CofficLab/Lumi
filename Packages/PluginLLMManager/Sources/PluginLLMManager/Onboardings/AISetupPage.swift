@@ -32,7 +32,7 @@ struct AISetupPage: View {
                 }
             }
 
-            Text(pluginLocalization.string("You can also configure providers anytime in Settings > Cloud Providers."))
+            Text(pluginLocalization.string("You can also configure providers anytime in Settings > Providers."))
                 .font(DesignTokens.Typography.caption1)
                 .foregroundStyle(theme.textSecondary)
                 .multilineTextAlignment(.center)

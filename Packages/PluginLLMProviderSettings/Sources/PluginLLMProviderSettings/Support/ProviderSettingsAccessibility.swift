@@ -24,6 +24,11 @@ import Foundation
 ///
 /// 因此这里的标识符**只挂在叶子控件上**，不给任何容器挂。
 public enum ProviderSettingsAccessibility {
+    /// 头部行右上角的「云端 / 本地」范围分段控件。
+    ///
+    /// 云端与本地合并成一个页面后，页内靠它切换范围；
+    /// UI 测试用它确认页面已就绪、或切到本地范围。
+    public static let scopeSwitcher = "lumi.provider-settings.scope-switcher"
     /// 「添加供应商」按钮（仅云端供应商页显示）。
     public static let addProviderButton = "lumi.provider-settings.add-provider"
     /// 供应商数量标签（表头的「N 个云端供应商」）。
