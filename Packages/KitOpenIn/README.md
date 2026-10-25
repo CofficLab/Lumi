@@ -1,10 +1,10 @@
-# OpenInKit
+# KitOpenIn
 
 Lumi 工具包。
 
 ## Package
 
-- Product: `OpenInKit`
+- Product: `KitOpenIn`
 - Platform: macOS 14+
 - Swift tools: 6.0
 
@@ -16,10 +16,10 @@ Lumi 工具包。
 
 ```swift
 dependencies: [
-    .package(path: "../OpenInKit"),
+    .package(path: "../KitOpenIn"),
 ],
 targets: [
-    .target(name: "YourTarget", dependencies: ["OpenInKit"]),
+    .target(name: "YourTarget", dependencies: ["KitOpenIn"]),
 ]
 ```
 

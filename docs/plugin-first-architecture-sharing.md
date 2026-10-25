@@ -1407,7 +1407,7 @@ Phase 1 必须在 Phase 3 之前完成，原因写得很直白：
 | 项目 | 数值 |
 | --- | --- |
 | 提交总数 | 10,152 |
-| `Packages/` 包数量 | 225（`Plugin*` 148、`Provider*` 47、`Kit*` 17、`Editor*` 6、`Factory*` 5、`KernelCore` 1、`OpenInKit` 1） |
+| `Packages/` 包数量 | 225（`Plugin*` 148、`Provider*` 47、`Kit*` 18、`Editor*` 6、`Factory*` 5、`KernelCore` 1） |
 | 默认装配插件数 | 146 |
 | 源码文件（`Sources/`） | 2,379 |
 | 测试文件（`Tests/`） | 456 |

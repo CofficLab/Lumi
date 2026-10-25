@@ -1,8 +1,8 @@
-# TestPlan — OpenInKit
+# TestPlan — KitOpenIn
 
 ## 包概述
 
-OpenInKit 的实现包，包含 3 个主要类型；当前测试覆盖 4 条用例。
+KitOpenIn 的实现包，包含 3 个主要类型；当前测试覆盖 4 条用例。
 
 平台: macOS 14+, iOS 17+
 测试文件: 1 个，用例总数: 4
@@ -54,7 +54,7 @@ OpenInKit 的实现包，包含 3 个主要类型；当前测试覆盖 4 条用�
 ## 测试执行
 
 ```bash
-cd Packages/OpenInKit
+cd Packages/KitOpenIn
 swift test
 ```
 

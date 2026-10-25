@@ -185,7 +185,7 @@
     ],
     "hasTestPlan": false
   },
-  "OpenInKit": {
+  "KitOpenIn": {
     "status": "broken",
     "errors": [
       "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"

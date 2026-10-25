@@ -2,7 +2,7 @@ import Foundation
 import KitAgentTool
 import ProviderProject
 import Testing
-@testable import OpenInKit
+@testable import KitOpenIn
 
 @Test func presetConfigurationsKeepStableToolNamesAndFallbacks() {
     let configurations: [OpenInTool.AppConfig] = [

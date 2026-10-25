@@ -2,11 +2,11 @@
 import PackageDescription
 
 let package = Package(
-    name: "OpenInKit",
+    name: "KitOpenIn",
     defaultLocalization: "zh-Hans",
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
-        .library(name: "OpenInKit", targets: ["OpenInKit"]),
+        .library(name: "KitOpenIn", targets: ["KitOpenIn"]),
     ],
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
@@ -15,19 +15,19 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "OpenInKit",
+            name: "KitOpenIn",
             dependencies: [
                 "KitAgentTool",
                 "LumiUI",
                 .product(name: "ProviderProject", package: "LumiProviders"),
             ],
-            path: "Sources/OpenInKit",
+            path: "Sources/KitOpenIn",
             resources: [.process("../../Resources")]
         ),
         .testTarget(
-            name: "OpenInKitTests",
+            name: "KitOpenInTests",
             dependencies: [
-                "OpenInKit",
+                "KitOpenIn",
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
             ]
