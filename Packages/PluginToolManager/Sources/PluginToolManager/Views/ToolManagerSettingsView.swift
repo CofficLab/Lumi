@@ -1,15 +1,17 @@
-import KitAgentTool
 import LumiUI
 import SwiftUI
 
-/// 工具管理器设置视图。
+/// 工具设置页：与「外观」页一致的主从（左侧列表 + 右侧详情）贴边布局。
 ///
-/// 顶部 Tab：Tools（可用工具列表）/ Execution Log（执行日志）/
-/// Usage Statistics（调用统计）。
-/// 只依赖 `ToolManagerViewModel`；工具分组、执行日志与统计状态
-/// 全部由 ViewModel 提供。
+/// 头部行右侧放模式分段控件（工具 / 执行日志 / 调用统计）——与「外观」页
+/// 头部行右侧放外观筛选控件是同一个位置。切换模式时左侧列表与右侧详情
+/// 一起更换，三块内容都保持「列表 + 详情」的形态。
+///
+/// 布局基准见 `.lumi/rules/settings-ui.md`：列表栏 300、详情栏内容内边距 22、
+/// 主体贴边（无外框描边 / 圆角 / 底部留白）、主从容器不写死 `minHeight`。
 struct ToolManagerSettingsView: View {
     @ObservedObject var viewModel: ToolManagerViewModel
+    @LumiTheme private var theme
 
     private func L(_ key: String) -> String {
         pluginLocalization.string(key)
@@ -17,156 +19,180 @@ struct ToolManagerSettingsView: View {
 
     var body: some View {
         AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
-            VStack(alignment: .leading, spacing: 14) {
-                tabBar
-                contentArea
-                    // The scaffold intentionally disables its outer scroll view
-                    // because each tab owns a full-height list. Keep a small
-                    // trailing inset so section borders remain fully visible.
-                    .padding(.trailing, -12)
+            GeometryReader { proxy in
+                VStack(alignment: .leading, spacing: 0) {
+                    header
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 12)
+                    // 主体内容贴边后，用一条顶部分隔线把标题行与主从容器分开。
+                    AppDivider()
+                    masterDetail
+                }
+                // 共享 scaffold 给内容留了左右 24，这里把整列加宽 48 并左移 24，
+                // 使主从容器正好贴到窗口左右边缘；标题行再自行补回 24 留白。
+                .frame(width: proxy.size.width + 48, alignment: .topLeading)
+                .offset(x: -24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .padding(.bottom, 16)
         .task {
-            switch viewModel.selectedTabID {
-            case .tools:
-                await viewModel.reloadTools()
-            case .executionLog, .toolStats:
-                break
-            }
+            await loadContent(for: viewModel.selectedMode)
         }
     }
 
-    // MARK: - Tab Bar
+    // MARK: - Header
 
-    private var tabBar: some View {
-        HStack(spacing: 8) {
-            tabButton(.tools)
-            if viewModel.hasLogStore {
-                tabButton(.executionLog)
-                tabButton(.toolStats)
+    private var header: some View {
+        HStack(spacing: 10) {
+            Label(headerTitle, systemImage: headerIcon)
+            if let current = currentItemName {
+                Text(String(format: L("Current: %@"), current))
+                    .lineLimit(1)
             }
             Spacer()
+            refreshButton
+            modeSwitcher
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .zIndex(1)
+        .font(.appCaption)
+        .foregroundStyle(theme.textSecondary)
     }
 
-    private func tabButton(_ tab: ToolManagerViewModel.Tab) -> some View {
-        AppButton(
-            tabTitle(tab),
-            systemImage: tabIcon(tab),
-            style: viewModel.selectedTabID == tab ? .primary : .secondary,
-            size: .small
-        ) {
-            viewModel.selectTab(tab)
-        }
-    }
-
-    private func tabTitle(_ tab: ToolManagerViewModel.Tab) -> String {
-        switch tab {
-        case .tools: L("Tools")
-        case .executionLog: L("Execution Log")
-        case .toolStats: L("Usage Statistics")
+    /// 头部标题随模式变化：分别是工具数、已加载记录数与总调用数。
+    private var headerTitle: String {
+        switch viewModel.selectedMode {
+        case .tools:
+            return String(format: L("%lld tools"), viewModel.totalToolCount)
+        case .executionLog:
+            return String(format: L("%lld records loaded"), viewModel.records.count)
+        case .toolStats:
+            return String(format: L("%lld total calls"), viewModel.totalCallCount)
         }
     }
 
-    private func tabIcon(_ tab: ToolManagerViewModel.Tab) -> String {
-        switch tab {
+    private var headerIcon: String {
+        switch viewModel.selectedMode {
         case .tools: "wrench.and.screwdriver"
         case .executionLog: "list.bullet.rectangle.portrait"
         case .toolStats: "chart.bar.xaxis"
         }
     }
 
-    // MARK: - Content
+    /// 头部右侧显示当前选中的条目名，与「外观」页的「Current: …」同义。
+    private var currentItemName: String? {
+        switch viewModel.selectedMode {
+        case .tools:
+            return viewModel.selectedTool?.tool.name
+        case .executionLog:
+            guard let record = viewModel.selectedRecord else { return nil }
+            return record.toolDisplayName.isEmpty ? record.toolName : record.toolDisplayName
+        case .toolStats:
+            return viewModel.selectedStat?.toolName
+        }
+    }
+
+    /// 刷新当前模式的数据。
+    private var refreshButton: some View {
+        AppButton("", systemImage: "arrow.clockwise", size: .small) {
+            viewModel.refreshCurrentModeRequested()
+        }
+        .help(L("Refresh"))
+    }
+
+    /// 模式分段控件：与「外观」页的外观筛选控件同一个位置（头部行右侧）。
+    private var modeSwitcher: some View {
+        AppSegmentedControl(
+            ToolManagerViewModel.Mode.allCases.map { modeTitle($0) },
+            selection: Binding(
+                get: { ToolManagerViewModel.Mode.allCases.firstIndex(of: viewModel.selectedMode) ?? 0 },
+                set: { viewModel.selectMode(ToolManagerViewModel.Mode.allCases[$0]) }
+            ),
+            maxWidth: .infinity
+        )
+        .frame(width: 260, height: 27)
+    }
+
+    private func modeTitle(_ mode: ToolManagerViewModel.Mode) -> String {
+        switch mode {
+        case .tools: L("Tools")
+        case .executionLog: L("Execution Log")
+        case .toolStats: L("Usage Statistics")
+        }
+    }
+
+    // MARK: - Master–Detail
+
+    /// 主从容器整体贴边：不再有外框描边与圆角裁剪，
+    /// 只保留列表栏与详情栏之间的竖向分隔线。
+    @ViewBuilder
+    private var masterDetail: some View {
+        if viewModel.selectedMode.requiresLogStore, !viewModel.hasLogStore {
+            unavailableState
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            HStack(spacing: 0) {
+                listPane
+                    .frame(width: 300)
+                    .frame(maxHeight: .infinity)
+                AppDivider(.vertical)
+                detailPane
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            }
+            .frame(maxHeight: .infinity)
+        }
+    }
+
+    // MARK: - Panes
 
     @ViewBuilder
-    private var contentArea: some View {
-        switch viewModel.selectedTabID {
+    private var listPane: some View {
+        switch viewModel.selectedMode {
         case .tools:
-            toolsContent
+            ToolManagerToolListView(viewModel: viewModel)
         case .executionLog:
-            if viewModel.hasLogStore {
-                ToolCallLogSettingsView(viewModel: viewModel)
-            } else {
-                AppEmptyState(
-                    icon: "list.bullet.rectangle.portrait",
-                    title: L("Execution Log unavailable"),
-                    description: L("Lumi storage is not configured, so tool call records cannot be persisted.")
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
+            ToolCallLogListView(viewModel: viewModel)
         case .toolStats:
-            if viewModel.hasLogStore {
-                ToolCallStatsSettingsView(viewModel: viewModel)
-            } else {
-                AppEmptyState(
-                    icon: "chart.bar.xaxis",
-                    title: L("Usage Statistics unavailable"),
-                    description: L("Lumi storage is not configured.")
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
+            ToolCallStatsListView(viewModel: viewModel)
         }
     }
 
-    // MARK: - Tools
-
-    private var toolsContent: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 10) {
-                Label(String(format: L("%lld tools"), viewModel.totalToolCount), systemImage: "wrench.and.screwdriver")
-                Spacer()
-            }
-            .font(.appCaption)
-            .foregroundStyle(.secondary)
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    if viewModel.groups.isEmpty {
-                        AppEmptyState(
-                            icon: "wrench.and.screwdriver",
-                            title: L("No Tools Registered"),
-                            description: L("No tools are currently registered in the kernel.")
-                        )
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else {
-                        ForEach(viewModel.groups, id: \.pluginID) { group in
-                            AppSettingSection(title: group.pluginID, titleAlignment: .leading) {
-                                VStack(spacing: 0) {
-                                    ForEach(Array(group.tools.enumerated()), id: \.element.name) { index, tool in
-                                        if index > 0 {
-                                            Divider()
-                                                .padding(.vertical, 8)
-                                        }
-                                        ToolManagerToolRowView(tool: tool)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                .padding(.bottom, 8)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    @ViewBuilder
+    private var detailPane: some View {
+        switch viewModel.selectedMode {
+        case .tools:
+            ToolManagerToolDetailView(viewModel: viewModel)
+        case .executionLog:
+            ToolCallRecordDetailView(viewModel: viewModel)
+        case .toolStats:
+            ToolCallStatDetailView(viewModel: viewModel)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
-}
 
-/// 单个工具行：名称 + 描述。
-private struct ToolManagerToolRowView: View {
-    let tool: any SuperAgentTool
+    /// 未配置调用记录存储时的空状态（日志 / 统计模式不可用）。
+    private var unavailableState: some View {
+        AppEmptyState(
+            icon: viewModel.selectedMode == .executionLog
+                ? "list.bullet.rectangle.portrait"
+                : "chart.bar.xaxis",
+            title: viewModel.selectedMode == .executionLog
+                ? L("Execution Log unavailable")
+                : L("Usage Statistics unavailable"),
+            description: viewModel.selectedMode == .executionLog
+                ? L("Lumi storage is not configured, so tool call records cannot be persisted.")
+                : L("Lumi storage is not configured.")
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
 
-    var body: some View {
-        AppSettingRow(
-            title: tool.name,
-            description: tool.description(for: .chinese),
-            icon: "wrench.and.screwdriver"
-        ) {
-            EmptyView()
+    // MARK: - Data
+
+    private func loadContent(for mode: ToolManagerViewModel.Mode) async {
+        switch mode {
+        case .tools:
+            await viewModel.reloadTools()
+        case .executionLog:
+            await viewModel.refreshLog()
+        case .toolStats:
+            await viewModel.reloadStats()
         }
     }
 }
