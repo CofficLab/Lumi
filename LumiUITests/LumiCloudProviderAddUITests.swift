@@ -1,7 +1,7 @@
 import XCTest
 import AppKit
 
-/// 「设置 → 云端供应商 → 添加供应商」端到端 UI 测试。
+/// 「设置 → 供应商 → 添加供应商」端到端 UI 测试。
 ///
 /// ## 为什么必须驱动真实 App
 ///
@@ -24,7 +24,7 @@ import AppKit
 /// 按**无障碍标识符**定位，而不是界面文案。
 /// 设置页里的「添加供应商」「保存」等是插件内硬编码的中文字面量，
 /// 不走 `String(localized:)`，不随 `-AppleLanguages` 变化；
-/// 而「Cloud Providers」这类条目走的是插件资源包的字符串目录，会随语言变。
+/// 而「Providers」这类条目走的是插件资源包的字符串目录，会随语言变。
 /// 混用两套判据会让用例在换语言时集体失效。
 final class LumiCloudProviderAddUITests: LumiUITestCase {
     /// 无障碍标识符（复述 `ProviderSettingsAccessibility`）。
@@ -35,6 +35,7 @@ final class LumiCloudProviderAddUITests: LumiUITestCase {
         static let addProvider = "lumi.provider-settings.add-provider"
         static let searchField = "lumi.provider-settings.search"
         static let providerCount = "lumi.provider-settings.provider-count"
+        static let scopeSwitcher = "lumi.provider-settings.scope-switcher"
         static let nameField = "lumi.provider-settings.custom-provider.name"
         static let baseURLField = "lumi.provider-settings.custom-provider.base-url"
         static let modelsField = "lumi.provider-settings.custom-provider.models"
@@ -269,9 +270,43 @@ final class LumiCloudProviderAddUITests: LumiUITestCase {
         )
     }
 
+    /// 云端 / 本地合并成一个页面后，头部行右上角的分段控件能切换范围：
+    /// 切到本地后，「添加供应商」（云端专属）消失，列表与表头换成本地供应商。
+    func testScopeSwitcherSwitchesToLocalProviders() throws {
+        _ = openCloudProvidersPage()
+
+        // 分段控件在（头部行最右侧）。
+        XCTAssertTrue(
+            element(identifier: Identifiers.scopeSwitcher).waitForExistence(timeout: Self.elementTimeout),
+            "供应商页缺少「云端 / 本地」分段控件"
+        )
+
+        // 切到本地。
+        let localSegment = app.buttons.matching(
+            NSPredicate(format: "label == %@", "本地")
+        ).firstMatch
+        XCTAssertTrue(
+            localSegment.waitForExistence(timeout: Self.elementTimeout),
+            "分段控件缺少「本地」页签"
+        )
+        localSegment.click()
+
+        // 「添加供应商」是云端专属：切到本地后它必须消失。
+        XCTAssertTrue(
+            waitForNonExistence(button(identifier: Identifiers.addProvider), timeout: Self.elementTimeout),
+            "切到本地范围后「添加供应商」按钮仍然存在"
+        )
+
+        // 表头计数也换成本地供应商。
+        XCTAssertTrue(
+            element(containingLabel: "个本地供应商").waitForExistence(timeout: Self.elementTimeout),
+            "切到本地范围后表头没有换成「N 个本地供应商」"
+        )
+    }
+
     // MARK: - Helpers
 
-    /// 打开设置窗口并切到「云端供应商」页，返回设置窗口。
+    /// 打开设置窗口并切到「供应商」页（云端 / 本地合并后的入口），返回设置窗口。
     @discardableResult
     private func openCloudProvidersPage() -> XCUIElement {
         let gear = app.buttons["Gear Shape"]
@@ -291,13 +326,15 @@ final class LumiCloudProviderAddUITests: LumiUITestCase {
             "设置窗口没有出现"
         )
 
-        // 「Cloud Providers」走的是插件资源包的字符串目录，英文环境下渲染为英文。
+        // 「Providers」走的是插件资源包的字符串目录，英文环境下渲染为英文。
+        // 云端与本地合并成了一个条目，页内用右上角的分段控件切换范围；
+        // 默认停在云端，所以「添加供应商」按钮直接可见。
         let entry = settingsWindow.buttons.matching(
-            NSPredicate(format: "label == %@", "Cloud Providers")
+            NSPredicate(format: "label == %@", "Providers")
         ).firstMatch
         XCTAssertTrue(
             entry.waitForExistence(timeout: Self.elementTimeout),
-            "设置侧边栏缺少 Cloud Providers 条目"
+            "设置侧边栏缺少 Providers 条目"
         )
         entry.click()
 
@@ -305,7 +342,7 @@ final class LumiCloudProviderAddUITests: LumiUITestCase {
         // 比按中文文案匹配表头更可靠。
         XCTAssertTrue(
             button(identifier: Identifiers.addProvider).waitForExistence(timeout: Self.elementTimeout),
-            "云端供应商页没有渲染出来"
+            "供应商页没有渲染出来"
         )
         return settingsWindow
     }

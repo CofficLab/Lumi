@@ -159,9 +159,10 @@ struct SettingsLayoutConformanceTests {
             isEdgeToEdge: true
         ),
         AuditedPage(
-            viewTypeNames: ["ProviderSettingsPageContent", "CloudProviderSettingsPage", "LocalProviderSettingsPage"],
+            viewTypeNames: ["ProviderSettingsPage", "ProviderSettingsPageContent"],
             path: "Packages/PluginLLMProviderSettings/Sources/PluginLLMProviderSettings/Views/ProviderSettingsPageContent.swift",
             relatedPaths: [
+                "Packages/PluginLLMProviderSettings/Sources/PluginLLMProviderSettings/Views/ProviderSettingsPage.swift",
                 "Packages/PluginLLMProviderSettings/Sources/PluginLLMProviderSettings/Views/ProviderDetailView.swift",
                 "Packages/PluginLLMProviderSettings/Sources/PluginLLMProviderSettings/Views/ProviderModelDownloadView.swift",
                 "Packages/PluginLLMProviderSettings/Sources/PluginLLMProviderSettings/Views/CustomCloudProviderEditor.swift",

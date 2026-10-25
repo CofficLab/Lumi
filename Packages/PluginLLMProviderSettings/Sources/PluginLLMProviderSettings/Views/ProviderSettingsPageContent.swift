@@ -7,15 +7,20 @@ import SwiftUI
 ///
 /// View 只依赖 `ProviderSettingsPageViewModel`，供应商列表、搜索、
 /// 选中态与自定义供应商变化都由 ViewModel 提供。
+///
+/// 「云端 / 本地」由外层 `ProviderSettingsPage` 持有：它把当前范围的
+/// ViewModel 传进来，并用 `scope` 绑定把头部行右上角的分段控件接上。
 @MainActor
 struct ProviderSettingsPageContent: View {
     @LumiTheme private var theme
 
     @ObservedObject private var viewModel: ProviderSettingsPageViewModel
+    @Binding private var scope: ProviderSettingsScope
     @State private var isCustomProviderEditorPresented = false
 
-    init(viewModel: ProviderSettingsPageViewModel) {
+    init(viewModel: ProviderSettingsPageViewModel, scope: Binding<ProviderSettingsScope>) {
         self.viewModel = viewModel
+        self._scope = scope
     }
 
     var body: some View {
@@ -75,9 +80,27 @@ struct ProviderSettingsPageContent: View {
                 }
                 .accessibilityIdentifier(ProviderSettingsAccessibility.addProviderButton)
             }
+            scopeSwitcher
         }
         .font(.appCaption)
         .foregroundStyle(theme.textSecondary)
+    }
+
+    /// 头部行右上角的「云端 / 本地」分段控件。
+    ///
+    /// 位置与「工具」页的模式分段控件一致（头部行最右侧），
+    /// 切换后左侧列表与右侧详情一起换成新范围的供应商。
+    private var scopeSwitcher: some View {
+        AppSegmentedControl(
+            ProviderSettingsScope.allCases.map(\.title),
+            selection: Binding(
+                get: { ProviderSettingsScope.allCases.firstIndex(of: scope) ?? 0 },
+                set: { scope = ProviderSettingsScope.allCases[$0] }
+            ),
+            maxWidth: .infinity
+        )
+        .frame(width: 140, height: 27)
+        .accessibilityIdentifier(ProviderSettingsAccessibility.scopeSwitcher)
     }
 
     private var sidebar: some View {
