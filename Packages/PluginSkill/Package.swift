@@ -53,6 +53,8 @@ let package = Package(
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
                 .product(name: "ProviderSkill", package: "LumiProviders"),
+                // 布局守卫测试需要直接对比两种共享脚手架（见 SkillSettingsLayoutTests）。
+                "LumiUI",
             ],
             path: "Tests/PluginSkillTests"
         ),
