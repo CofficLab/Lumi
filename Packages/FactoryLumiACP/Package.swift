@@ -54,7 +54,7 @@ let package = Package(
         .package(path: "../PluginAgentPlanStorage"),
         .package(path: "../PluginFileLog"),
         .package(path: "../PluginSkill"),
-        .package(url: "https://github.com/CofficLab/LumiPluginPluginManager.git", from: "1.0.0"),
+        .package(url: "https://github.com/CofficLab/LumiPluginPluginManager.git", from: "1.4.0"),
         .package(path: "../PluginLLMProviderSettings"),
         .package(path: "../PluginModelSelector"),
         .package(path: "../PluginMCP"),
