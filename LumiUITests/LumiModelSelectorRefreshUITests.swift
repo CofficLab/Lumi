@@ -33,9 +33,6 @@ final class LumiModelSelectorRefreshUITests: LumiUITestCase {
             // 隔离存储：否则本地 models.json 的真实条目会污染模型计数断言。
             "--lumi-ui-testing-isolated-storage",
         ])
-        // 基类在此等待主窗口并关掉新手引导：隔离存储会让引导重新出现，
-        // 它覆盖在聊天区之上，不关掉则点击「Select Model」会落在浮层上，
-        // popover 自然永远不会出现。
         waitForMainWindow()
     }
 

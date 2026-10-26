@@ -24,7 +24,7 @@ struct GeneralSettingsDetailView: View {
     var body: some View {
         AppSettingsContentScaffold(maxContentWidth: nil) {
             VStack(alignment: .leading, spacing: 24) {
-                onboardingSection
+                manualsSection
                 lumiSection
                 websiteSection
                 updatesSection
@@ -43,48 +43,25 @@ struct GeneralSettingsDetailView: View {
         }
     }
 
-    // MARK: - 新手引导
+    // MARK: - 说明书
 
-    private var onboardingSection: some View {
+    private var manualsSection: some View {
         AppSettingSection(
-            title: "新手引导",
+            title: "说明书",
             titleAlignment: .leading
         ) {
-            VStack(spacing: 0) {
-                AppSettingRow(
-                    title: "重新查看新手引导",
-                    description: "重放首次启动引导流程。",
-                    icon: "graduationcap"
+            AppSettingRow(
+                title: "说明书",
+                description: "各功能的使用指南。",
+                icon: "book"
+            ) {
+                AppButton(
+                    "打开",
+                    systemImage: "book.pages",
+                    style: .secondary,
+                    size: .small
                 ) {
-                    AppButton(
-                        "开始",
-                        systemImage: "arrow.right",
-                        style: .secondary,
-                        size: .small
-                    ) {
-                        viewModel.replayOnboarding()
-                    }
-                    .disabled(!viewModel.isOnboardingAvailable)
-                }
-
-                if !viewModel.manuals.isEmpty {
-                    Divider()
-                        .padding(.vertical, 8)
-
-                    AppSettingRow(
-                        title: "说明书",
-                        description: "各功能的使用指南。",
-                        icon: "book"
-                    ) {
-                        AppButton(
-                            "打开",
-                            systemImage: "book.pages",
-                            style: .secondary,
-                            size: .small
-                        ) {
-                            isPresentingManuals = true
-                        }
-                    }
+                    isPresentingManuals = true
                 }
             }
         }

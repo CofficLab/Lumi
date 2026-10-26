@@ -46,8 +46,6 @@ final class LumiMessageListBriefUITests: LumiUITestCase {
             element(identifier: "root.main").waitForExistence(timeout: 30),
             "主窗口未就绪"
         )
-        dismissOnboardingIfPresent()
-
         // 第一次 turn 的 user 文案应被渲染出来。
         let firstTurn = element(anyLabelOf: ["请帮我总结这段代码"])
         XCTAssertTrue(
@@ -64,8 +62,6 @@ final class LumiMessageListBriefUITests: LumiUITestCase {
         XCTAssertTrue(
             element(identifier: "root.main").waitForExistence(timeout: 30)
         )
-        dismissOnboardingIfPresent()
-
         // 触发第三个 turn 的 user 渲染（确保该 turn 已挂入）。
         XCTAssertTrue(
             element(anyLabelOf: ["执行三步操作"]).waitForExistence(timeout: 25),
@@ -87,8 +83,6 @@ final class LumiMessageListBriefUITests: LumiUITestCase {
         XCTAssertTrue(
             element(identifier: "root.main").waitForExistence(timeout: 30)
         )
-        dismissOnboardingIfPresent()
-
         XCTAssertTrue(
             element(anyLabelOf: ["执行三步操作"]).waitForExistence(timeout: 25)
         )
@@ -123,10 +117,8 @@ final class LumiMessageListBriefUITests: LumiUITestCase {
         XCTAssertTrue(
             element(identifier: "root.main").waitForExistence(timeout: 30)
         )
-        dismissOnboardingIfPresent()
-
-        // onboarding 完成后 App 可能短暂进入 streaming（欢迎语等副作用），
-        // 给 2 秒稳定期让瞬时 activity 结束，再断言状态卡不出现。
+        // App 可能短暂进入 streaming，给 2 秒稳定期让瞬时 activity 结束，
+        // 再断言状态卡不出现。
         sleep(2)
 
         XCTAssertTrue(

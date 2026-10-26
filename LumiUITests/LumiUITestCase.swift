@@ -212,37 +212,6 @@ class LumiUITestCase: XCTestCase {
             .forEach { kill($0.processIdentifier, SIGKILL) }
     }
 
-    /// 关闭新手引导。
-    ///
-    /// 隔离存储会让「已完成」标记文件缺失，引导重新出现并覆盖在聊天区上方，
-    /// 不关掉就点不到输入框。
-    ///
-    /// - Important: 必须按**标识符**而不是按钮文案定位。按钮文案随语言变化
-    ///   （`Continue` / `Finish` / `Skip` ↔ 中文译文），按文案点击会让
-    ///   `-AppleLanguages` 为中文的用例永远关不掉引导；浮层留在窗口上后，
-    ///   后续对设置按钮 / 发送按钮的点击都落在浮层上，失败却报成
-    ///   「设置窗口没有出现」「模型弹窗未出现」，与真实原因完全无关。
-    func dismissOnboardingIfPresent() {
-        // 引导是**异步**出现的（完成标记缺失后才渲染）。先给它一次出现机会，
-        // 否则「刚 launch 完就查一次」会在引导画出来之前返回，浮层随后盖上来。
-        guard element(identifier: Onboarding.primaryButton).waitForExistence(timeout: 8)
-            || element(identifier: Onboarding.skipButton).exists
-        else { return }
-
-        for _ in 0..<8 {
-            let primary = element(identifier: Onboarding.primaryButton)
-            let skip = element(identifier: Onboarding.skipButton)
-            if primary.exists, primary.isHittable {
-                primary.click()
-            } else if skip.exists, skip.isHittable {
-                skip.click()
-            } else {
-                return
-            }
-            sleep(1)
-        }
-    }
-
     /// 等待 App 进程彻底退出，必要时先请求终止。
     ///
     /// `terminate()` 是异步的：它发出终止请求后立刻返回，进程可能还在
@@ -288,13 +257,12 @@ class LumiUITestCase: XCTestCase {
         }
     }
 
-    /// 等待主窗口就绪并关掉新手引导。
+    /// 等待主窗口就绪。
     func waitForMainWindow() {
         XCTAssertTrue(
             element(identifier: "root.main").waitForExistence(timeout: 30),
             "主窗口未就绪"
         )
-        dismissOnboardingIfPresent()
     }
 
     // MARK: - Helpers
@@ -441,15 +409,6 @@ class LumiUITestCase: XCTestCase {
     enum SendActionBar {
         /// 发送按钮。点击它不经过键盘事件链，因此不受输入法候选栏影响。
         static let editorSend = "lumi.conversation-input.send"
-    }
-
-    /// 新手引导按钮的标识符（复述 `OnboardingAccessibility`）。
-    ///
-    /// UI 测试独立 target，不能 import 插件模块，因此在此复述常量。
-    /// 改动必须与 `Packages/PluginOnboarding/.../OnboardingAccessibility.swift` 同步。
-    enum Onboarding {
-        static let primaryButton = "lumi.onboarding.primary"
-        static let skipButton = "lumi.onboarding.skip"
     }
 
     /// 所有 `--lumi-ui-testing` 用例共享的启动参数。

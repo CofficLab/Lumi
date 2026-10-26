@@ -67,7 +67,6 @@ final class LumiCloudProviderAddUITests: LumiUITestCase {
             // 隔离存储：等价全新安装，避免历史自定义供应商干扰计数断言。
             "--lumi-ui-testing-isolated-storage",
         ])
-        // 基类在此等待主窗口并关掉新手引导。
         waitForMainWindow()
     }
 

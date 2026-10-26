@@ -4,7 +4,6 @@ import ProviderCommand
 import ProviderAppUpdate
 import ProviderDiagnostics
 import ProviderDocsView
-import ProviderOnboarding
 import ProviderStorage
 import ProviderUninstall
 import ProviderSettingView
@@ -15,7 +14,7 @@ import os
 /// 设置 - 通用 插件
 ///
 /// 在设置视图中注册「通用」入口，包含 `AppSettingsContentScaffold`
-/// 包裹的四个分组卡片（新手引导 / Lumi / 网站 / 更新），每行均为
+/// 包裹的分组卡片（说明书 / Lumi / 网站 / 更新），每行均为
 /// `AppSettingRow`（图标 + 标题 + 描述 + 右侧 `AppButton`）。
 ///
 /// 通过 `SuperPlugin.onBoot(kernel:)` 解析内核中的 `SettingViewProviding`
@@ -29,7 +28,7 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.setting-general",
         name: pluginLocalization.string("General Settings"),
-        description: pluginLocalization.string("Registers the General settings entry with onboarding, app info, website and updates."),
+        description: pluginLocalization.string("Registers the General settings entry with app info, website and updates."),
         category: .system,
         stage: .stable,
         policy: .alwaysOn
@@ -78,7 +77,6 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
         // 捕获 docs provider 引用，供详情视图读取。
         let docsProvider = kernel.resolveProvider((any DocsViewProviding).self)
         let diagnosticsProvider = kernel.resolveProvider((any DiagnosticsProviding).self)
-        let onboardingProvider = kernel.resolveProvider((any OnboardingProviding).self)
         let storageProvider = kernel.resolveProvider((any StorageProviding).self)
         let uninstallProvider = self.uninstallProvider
         let prepareForUninstall: @MainActor () async -> Void = {
@@ -90,16 +88,13 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
             title: pluginLocalization.string("General"),
             systemImage: "gearshape",
             order: 1
-        ) { [versionProvider, docsProvider, diagnosticsProvider, onboardingProvider, storageProvider, uninstallProvider, prepareForUninstall, kernel] in
+        ) { [versionProvider, docsProvider, diagnosticsProvider, storageProvider, uninstallProvider, prepareForUninstall, kernel] in
             // AppUpdateBootstrap is host-owned and may register after
             // plugin boot. Resolve it when the entry is materialized so
             // settings sees the provider in both Debug and Release.
             let docsCapability = GeneralSettingsDocsCapabilityAdapter(docsProvider: docsProvider)
             let updateChannelCapability = GeneralSettingsUpdateChannelCapabilityAdapter(
                 updateProvider: kernel.resolveProvider((any AppUpdateChannelProviding).self)
-            )
-            let onboardingCapability = GeneralSettingsOnboardingCapabilityAdapter(
-                onboardingProvider: onboardingProvider
             )
             let diagnosticsCapability = GeneralSettingsDiagnosticsCapabilityAdapter(
                 diagnosticsProvider: diagnosticsProvider
@@ -112,7 +107,6 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
             let viewModel = GeneralSettingsViewModel(
                 docsCapability: docsCapability,
                 updateChannelCapability: updateChannelCapability,
-                onboardingCapability: onboardingCapability,
                 diagnosticsCapability: diagnosticsCapability,
                 storageCapability: storageCapability,
                 uninstallCapability: uninstallCapability

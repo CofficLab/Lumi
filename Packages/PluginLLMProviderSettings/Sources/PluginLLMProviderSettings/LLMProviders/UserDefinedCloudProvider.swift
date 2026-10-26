@@ -5,7 +5,7 @@ import ProviderLLMManager
 
 /// 用户自定义云端供应商 Store 提供者协议。
 ///
-/// 用于跨插件共享 Store 引用（如 onboarding 页面和设置界面）。
+/// 用于跨插件共享 Store 引用。
 @MainActor
 public protocol UserDefinedCloudProviderStoreProviding: AnyObject {
     var store: UserDefinedCloudProviderStore { get }
