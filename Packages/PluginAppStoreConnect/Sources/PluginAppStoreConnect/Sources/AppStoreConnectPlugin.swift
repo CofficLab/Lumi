@@ -7,6 +7,8 @@ import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
+import ProviderMessage
+import ProviderMessageRendering
 import ProviderNetwork
 import ProviderRailView
 import ProviderRootView
@@ -102,6 +104,18 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
         } else {
             Self.logger.error("\(Self.t) ToolManagerProviding not found")
         }
+
+        // 注册提交审核时间线消息渲染器，并把消息管理器交给时间线桥，
+        // 让提交工具可以在会话里插入结构化的「即将提交什么」卡片。
+        if let rendering = kernel.resolveProvider((any MessageRenderingProviding).self) {
+            rendering.register(ASCSubmissionRenderer.item())
+            Self.logger.info("\(Self.t)Registered ASC submission message renderer")
+        } else {
+            Self.logger.warning("\(Self.t) MessageRenderingProviding not found; ASC submission renderer skipped")
+        }
+        ASCSubmissionTimelineBridge.configure(
+            messages: kernel.resolveProvider((any MessageManaging).self)
+        )
 
         if let skillProvider = kernel.resolveProvider((any SkillProviding).self) {
             if !skillProvider.isProviderRegistered(providerID: id) {
@@ -282,6 +296,9 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
         }
         kernel.resolveProvider((any SkillProviding).self)?.removeProvider(providerID: id)
         kernel.resolveProvider((any AgentRuleProviding).self)?.removeProvider(providerID: id)
+        kernel.resolveProvider((any MessageRenderingProviding).self)?
+            .unregister(id: ASCSubmissionTimeline.rendererID)
+        ASCSubmissionTimelineBridge.reset()
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: [Self.settingsEntryID])
