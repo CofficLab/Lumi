@@ -1,4 +1,5 @@
 import AppKit
+import CoreText
 import os
 import ProviderMessage
 import SwiftUI
@@ -1165,7 +1166,14 @@ final class PastePreviewAttachment: NSTextAttachment {
     let byteCountText: String
     /// 预览弹窗标题。粘贴固定为「粘贴的文本」，外部内容用来源标题（如文件名）。
     let previewTitle: String
-    /// chip 上显示的一行文案。随消息落库，渲染层据此还原同样的 chip。
+    /// chip 上的主标题。粘贴是「粘贴的文本」，外部内容是来源（如文件名）。
+    ///
+    /// 与 ``chipDetail`` 分开存放，是为了在视觉上把「这是什么」与「有多大」
+    /// 分成两层：标题与正文同号同色，统计信息小一号、用次级色。
+    let chipLabel: String
+    /// chip 上紧跟标题的统计信息（如「5,678 字 · 195 行」）。可为空。
+    let chipDetail: String
+    /// chip 的一行完整文案。随消息落库，消息端据此还原同样的 chip。
     let chipTitle: String
     /// chip 图标（SF Symbol 名）。外部内容由生产方指定，粘贴走默认值。
     let systemImage: String
@@ -1193,35 +1201,41 @@ final class PastePreviewAttachment: NSTextAttachment {
             countStyle: .file
         )
         self.previewTitle = title ?? pluginLocalization.string("Pasted text")
-        self.chipTitle = Self.chipTitleText(
-            title: title,
+        // 有来源标题时标题就是来源（如文件名），没有时用「粘贴的文本」。
+        // 统计信息始终另起一层，视觉上比标题弱一级。
+        self.chipLabel = title ?? pluginLocalization.string("Pasted text")
+        self.chipDetail = Self.chipDetailText(
             characterCount: characterCount,
             lineCount: lineCount
         )
+        self.chipTitle = "\(self.chipLabel) · \(self.chipDetail)"
         self.systemImage = systemImage ?? PasteButtonAttachmentCell.defaultSymbolName
         super.init(data: nil, ofType: nil)
         if let font {
             self.attachmentCell = PasteButtonAttachmentCell(
-                title: self.chipTitle,
+                title: self.chipLabel,
+                detail: self.chipDetail,
                 systemImage: self.systemImage,
                 font: font
             )
         } else {
             self.attachmentCell = PasteButtonAttachmentCell(
-                title: self.chipTitle,
+                title: self.chipLabel,
+                detail: self.chipDetail,
                 systemImage: self.systemImage
             )
         }
     }
 
-    /// chip 上显示的一行文案。带来源标题时只追加字数，避免 chip 过长。
-    private static func chipTitleText(
-        title: String?,
+    /// chip 上紧跟标题的统计信息，例如「12,480 字 · 312 行」。
+    private static func chipDetailText(
         characterCount: Int,
         lineCount: Int
     ) -> String {
-        title.map { "\($0) · \(Self.countText(characterCount))" }
-            ?? Self.chipTitle(characterCount: characterCount, lineCount: lineCount)
+        [
+            countText(characterCount),
+            lineText(lineCount)
+        ].joined(separator: " · ")
     }
 
     @available(*, unavailable)
@@ -1232,15 +1246,6 @@ final class PastePreviewAttachment: NSTextAttachment {
     /// 预览弹窗里展示的完整摘要。
     var summaryText: String {
         "\(Self.countText(characterCount)) · \(Self.lineText(lineCount)) · \(byteCountText)"
-    }
-
-    /// 内联 chip 上显示的一行文案，例如「粘贴的文本 · 12,480 字 · 312 行」。
-    static func chipTitle(characterCount: Int, lineCount: Int) -> String {
-        [
-            pluginLocalization.string("Pasted text"),
-            countText(characterCount),
-            lineText(lineCount)
-        ].joined(separator: " · ")
     }
 
     static func countText(_ count: Int) -> String {
@@ -1271,28 +1276,69 @@ final class PastePreviewAttachment: NSTextAttachment {
 
 /// 把折叠的大段粘贴绘制成一行内联的「小按钮」。
 ///
-/// 外观是一个圆角胶囊：淡色背景 + 细描边 + 图标 + 一行摘要文字，
-/// 与正文基线对齐且只占一行。hover 时背景与描边加深，让用户知道这是个可点的按钮。
+/// 外观是一个圆角胶囊：淡色背景 + 细描边 + 图标 + 标题 + 统计信息，
+/// hover 时背景与描边加深，让用户知道这是个可点的按钮。
+///
+/// ## 与文字行的融合
+///
+/// chip 要看起来像「长在这行文字里」而不是「浮在文字上」，必须满足两条：
+///
+/// 1. **基线一致**——chip 的文字基线与正文基线是同一条水平线。
+/// 2. **不撑高行**——chip 的行内占位高度与普通文字相同。
+///
+/// AppKit 的 attachment 几何（实测确认）：
+///
+/// ```
+/// cellFrame.maxY = 正文基线 - cellBaselineOffset
+/// cellFrame.minY = 正文基线 - cellBaselineOffset - cellHeight
+/// ```
+///
+/// 于是「文字基线 = cellFrame.minY + k」在 `k = offset + height` 时
+/// 恰好等于正文基线。取 `height = 自然行高`、`offset = -降部`，
+/// 既让基线对齐，又因为 cell 覆盖范围正好是行盒而不额外撑高行。
+///
+/// 胶囊本身用 CoreText 的字形墨迹边界计算高度，紧贴实际字形，
+/// 不会因为 CJK 与拉丁的升降部差异而忽高忽低。
+///
 /// 宽度在初始化时按文本测量并缓存，避免布局阶段反复测量字符串。
 final class PasteButtonAttachmentCell: NSTextAttachmentCell {
-    private static let contentInset: CGFloat = 6
-    private static let maximumWidth: CGFloat = 260
-    /// 描边宽度的一半，留给描边本身，避免描边被裁掉。
-    private static let strokeInset: CGFloat = 1
-    /// chip 与正文行高之间的差值，让它与普通文字同高而不是撑满整行。
-    private static let lineHeightSlack: CGFloat = 2
+    /// 胶囊左右内边距。
+    private static let horizontalPadding: CGFloat = 7
+    /// 胶囊上下内边距（相对字形墨迹边界）。
+    private static let capsulePadding: CGFloat = 3
+    /// 胶囊最大宽度。超出时截断标题而不是无限拉长。
+    private static let maximumWidth: CGFloat = 320
+    /// 图标尺寸与图标到标题的间距。
+    private static let iconSize: CGFloat = 13
+    private static let iconSpacing: CGFloat = 5
+    /// 标题与统计信息之间的间距。
+    private static let detailSpacing: CGFloat = 5
+    /// 统计信息比正文小一号。标题保持与正文同号，避免 chip 显得「小一号」。
+    private static let detailSizeDelta: CGFloat = -2
     /// 未指定图标时使用的默认符号。
     static let defaultSymbolName = "doc.on.clipboard"
 
     private let titleFont: NSFont
+    private let detailFont: NSFont
     private let symbolPointSize: CGFloat
-    private let iconSize: CGFloat = 11
-    private let iconTitleSpacing: CGFloat = 4
-    private let chipHeight: CGFloat
+    private let cellHeight: CGFloat
     private let cornerRadius: CGFloat
     private let baselineOffset: CGFloat
+    /// chip 文字基线相对 cellFrame.minY 的高度。
+    private let internalBaseline: CGFloat
     private let chipTitle: String
     private let chipTitleWidth: CGFloat
+    /// chip 副标题（统计信息）。为空时只画标题。
+    private let chipDetail: String
+    private let chipDetailWidth: CGFloat
+    /// chip 占位宽度：图标 + 标题 + 统计信息。初始化时算好。
+    private let contentWidth: CGFloat
+    /// 标题字形墨迹相对基线的上下边界。
+    private let titleInkAbove: CGFloat
+    private let titleInkBelow: CGFloat
+    /// 统计信息字形墨迹相对基线的上下边界。
+    private let detailInkAbove: CGFloat
+    private let detailInkBelow: CGFloat
     /// chip 图标名。粘贴用剪贴板图标，外部内容由生产方指定（如代码文件的括号图标）。
     private let symbolName: String
 
@@ -1304,25 +1350,79 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
         ]
     }
 
-    /// - Parameter font: chip 所在编辑器的正文字体。chip 的字号与高度都从这里派生，
-    ///   这样正文字号变化时 chip 会自动跟随，不会再出现「比文字高一圈」的情况。
-    init(title: String, systemImage: String? = nil, font: NSFont = .systemFont(ofSize: 15)) {
+    /// 文本墨迹相对基线的上下边界。
+    ///
+    /// 用 CoreText 的字形路径边界而非字体的 ascent/descent：CJK 与拉丁的
+    /// 实际墨迹范围差别很大，按字体度量算会让胶囊忽高忽低。
+    private static func inkBounds(of text: String, font: NSFont) -> (above: CGFloat, below: CGFloat) {
+        guard !text.isEmpty else { return (0, 0) }
+        let attributed = NSAttributedString(string: text, attributes: [.font: font])
+        let line = CTLineCreateWithAttributedString(attributed)
+        let bounds = CTLineGetBoundsWithOptions(line, .useGlyphPathBounds)
+        return (above: bounds.maxY, below: -bounds.minY)
+    }
+
+    /// - Parameters:
+    ///   - title: chip 主标题（如「粘贴的文本」）。
+    ///   - detail: chip 副标题（如「5,678 字 · 195 行」）。可为空。
+    ///   - font: chip 所在编辑器的正文字体。chip 的字号与高度都从这里派生，
+    ///     这样正文字号变化时 chip 会自动跟随。
+    init(
+        title: String,
+        detail: String = "",
+        systemImage: String? = nil,
+        font: NSFont = .systemFont(ofSize: 15)
+    ) {
         self.chipTitle = title
+        self.chipDetail = detail
         self.symbolName = systemImage ?? Self.defaultSymbolName
-        // chip 文字比正文小 4pt，但不低于 10pt，避免小字号正文下不可读。
-        self.titleFont = .systemFont(ofSize: max(10, font.pointSize - 4), weight: .medium)
-        self.symbolPointSize = max(8, titleFont.pointSize - 2)
+        // 标题与正文同字号同字重：chip 是正文的一部分，不该缩成小字。
+        self.titleFont = .systemFont(ofSize: font.pointSize, weight: .medium)
+        self.detailFont = .systemFont(ofSize: max(10, font.pointSize + Self.detailSizeDelta), weight: .regular)
+        self.symbolPointSize = Self.iconSize * 0.9
+
         let lineHeight = NSLayoutManager().defaultLineHeight(for: font)
-        // 比行高低 lineHeightSlack，使 chip 底边贴近基线、顶边不越过行高。
-        self.chipHeight = max(12, lineHeight - Self.lineHeightSlack)
-        self.cornerRadius = self.chipHeight / 3
-        self.baselineOffset = -(lineHeight - self.chipHeight) / 2
-        let measured = ceil((title as NSString).size(withAttributes: Self.titleAttributes(for: self.titleFont)).width)
-        let maximum = Self.maximumWidth
-            - Self.contentInset * 2
-            - self.iconSize
-            - self.iconTitleSpacing
-        self.chipTitleWidth = min(measured, maximum)
+        let descender = -font.descender
+        // cell 覆盖整个行盒，行高因此与普通文字一致。
+        self.cellHeight = lineHeight
+        self.baselineOffset = -descender
+        // 基线 = cellFrame.minY + internalBaseline = 正文基线
+        self.internalBaseline = lineHeight - descender
+
+        let titleAttributes = Self.titleAttributes(for: self.titleFont)
+        let measuredTitle = ceil((title as NSString).size(withAttributes: titleAttributes).width)
+        let measuredDetail = detail.isEmpty
+            ? 0
+            : ceil((detail as NSString).size(withAttributes: [.font: self.detailFont]).width)
+
+        // 宽度预算：先给统计信息留位置，剩余给标题；仍不够就整体舍弃统计信息。
+        let fixed = Self.horizontalPadding * 2 + Self.iconSize + Self.iconSpacing
+        let budget = Self.maximumWidth - fixed
+        let resolvedTitleWidth: CGFloat
+        let resolvedDetailWidth: CGFloat
+        if !detail.isEmpty, measuredTitle + Self.detailSpacing + measuredDetail <= budget {
+            resolvedTitleWidth = measuredTitle
+            resolvedDetailWidth = measuredDetail
+        } else {
+            resolvedTitleWidth = min(measuredTitle, budget)
+            resolvedDetailWidth = 0
+        }
+        self.chipTitleWidth = resolvedTitleWidth
+        self.chipDetailWidth = resolvedDetailWidth
+        // 占位宽度在初始化时算好，避免 cellSize() 里访问主线程隔离的属性。
+        self.contentWidth = fixed
+            + resolvedTitleWidth
+            + (resolvedDetailWidth > 0 ? Self.detailSpacing + resolvedDetailWidth : 0)
+
+        let titleInk = Self.inkBounds(of: title, font: self.titleFont)
+        self.titleInkAbove = titleInk.above
+        self.titleInkBelow = titleInk.below
+        let detailInk = detail.isEmpty ? (above: 0, below: 0) : Self.inkBounds(of: detail, font: self.detailFont)
+        self.detailInkAbove = detailInk.above
+        self.detailInkBelow = detailInk.below
+
+        // 胶囊圆角：高度的一半即半圆，与小字号标题协调。
+        self.cornerRadius = 5
         super.init()
     }
 
@@ -1332,10 +1432,7 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
     }
 
     override func cellSize() -> NSSize {
-        NSSize(
-            width: Self.contentInset * 2 + iconSize + iconTitleSpacing + chipTitleWidth,
-            height: chipHeight
-        )
+        NSSize(width: contentWidth, height: cellHeight)
     }
 
     override func cellBaselineOffset() -> NSPoint {
@@ -1344,13 +1441,20 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView?) {
         let isHighlighted = (controlView as? EditorTextView)?.hoveredPasteCell === self
+        // chip 文字基线：与正文基线重合。
+        let baselineY = cellFrame.minY + internalBaseline
 
-        // 描边占1pt，位于 cellFrame 外缘之内，所以左右各留 1pt 的描边空间。
+        // 胶囊高度取「标题与统计信息的墨迹并集」，上下各留一点内边距。
+        var inkAbove = max(titleInkAbove, detailInkAbove)
+        var inkBelow = max(titleInkBelow, detailInkBelow)
+        if inkAbove <= 0 { inkAbove = titleFont.ascender }
+        if inkBelow <= 0 { inkBelow = -titleFont.descender }
+
         let chipRect = NSRect(
-            x: cellFrame.minX + Self.strokeInset,
-            y: cellFrame.minY + 1,
-            width: cellFrame.width - Self.strokeInset * 2,
-            height: cellFrame.height - 2
+            x: cellFrame.minX,
+            y: baselineY - inkBelow - Self.capsulePadding,
+            width: cellFrame.width,
+            height: inkAbove + inkBelow + Self.capsulePadding * 2
         )
 
         let path = NSBezierPath(
@@ -1365,33 +1469,51 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
             path.fill()
             NSColor.controlAccentColor.withAlphaComponent(0.45).setStroke()
         } else {
-            NSColor.labelColor.withAlphaComponent(0.07).setFill()
+            // 底色与描边都压得很轻，避免胶囊盖过旁边的正文。
+            NSColor.labelColor.withAlphaComponent(0.055).setFill()
             path.fill()
-            NSColor.labelColor.withAlphaComponent(0.16).setStroke()
+            NSColor.labelColor.withAlphaComponent(0.13).setStroke()
         }
 
+        // 图标与字形盒视觉居中。
         let iconRect = NSRect(
-            x: chipRect.minX + Self.contentInset,
-            y: chipRect.midY - iconSize / 2,
-            width: iconSize,
-            height: iconSize
+            x: chipRect.minX + Self.horizontalPadding,
+            y: baselineY + (inkAbove - inkBelow) / 2 - Self.iconSize / 2,
+            width: Self.iconSize,
+            height: Self.iconSize
         )
         symbolImage()?.draw(in: iconRect)
 
-        let lineHeight = ceil(titleFont.ascender - titleFont.descender)
-        let titleMinX = iconRect.maxX + iconTitleSpacing
-        let titleRect = NSRect(
-            x: titleMinX,
-            y: chipRect.midY - lineHeight / 2,
-            width: max(0, chipRect.maxX - Self.contentInset - titleMinX),
-            height: lineHeight
-        )
+        var x = iconRect.maxX + Self.iconSpacing
 
+        // 标题（与正文同基线、同字号）。
+        let titleRect = NSRect(
+            x: x,
+            y: baselineY + titleFont.descender,
+            width: chipTitleWidth,
+            height: titleFont.ascender - titleFont.descender
+        )
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineBreakMode = .byTruncatingTail
         var attributes = Self.titleAttributes(for: titleFont)
         attributes[.paragraphStyle] = paragraph
         (chipTitle as NSString).draw(in: titleRect, withAttributes: attributes)
+        x = titleRect.maxX
+
+        // 统计信息：小一号、次级色，与标题拉开层次。
+        if chipDetailWidth > 0 {
+            x += Self.detailSpacing
+            let detailRect = NSRect(
+                x: x,
+                y: baselineY + detailFont.descender,
+                width: chipDetailWidth,
+                height: detailFont.ascender - detailFont.descender
+            )
+            (chipDetail as NSString).draw(in: detailRect, withAttributes: [
+                .font: detailFont,
+                .foregroundColor: NSColor.secondaryLabelColor
+            ])
+        }
     }
 
     private func symbolImage() -> NSImage? {
@@ -1400,7 +1522,7 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
         }
         let configuration = NSImage.SymbolConfiguration(
             pointSize: symbolPointSize,
-            weight: .semibold
+            weight: .medium
         )
             .applying(NSImage.SymbolConfiguration(paletteColors: [.secondaryLabelColor]))
         return symbol.withSymbolConfiguration(configuration)
