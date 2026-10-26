@@ -1,4 +1,5 @@
 import Foundation
+import KitTestIsolation
 import Security
 
 final class CredentialStore: @unchecked Sendable {
@@ -35,6 +36,14 @@ final class CredentialStore: @unchecked Sendable {
 
     private func string(forKey key: String) -> String? {
         guard !key.isEmpty else { return nil }
+
+        // 单元测试进程不读取开发者本机的真实钥匙串：
+        // 1. 文件式钥匙串忽略 `kSecUseAuthenticationUI`，需要授权的条目会阻塞在
+        //    无人应答的系统对话框上，表现为测试挂起；
+        // 2. 即使能读到，也会让断言依赖开发者本机的凭证残留，结果不可复现。
+        // 因此测试进程一律视为「无凭证」。
+        guard !TestProcessDetector.isTestProcess else { return nil }
+
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,

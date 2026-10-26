@@ -10,6 +10,7 @@ import ProviderDocsView
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderNetwork
+import ProviderProject
 import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
@@ -41,6 +42,8 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
     private static let submitToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.submit"
     private static let distributionToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.distribution"
     private static let refreshToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.refresh"
+    /// Chat Toolbar 上的 ASC 版本入口。
+    private static let chatToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.chat-toolbar"
 
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.app-store-connect",
@@ -54,6 +57,10 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
     public var name: String {
         AppStoreConnectLocalization.string("AppStoreConnect")
     }
+
+    /// Chat Toolbar ASC 面板的 ViewModel 与观察者（由入口持有，随插件生命周期存续）。
+    private var chatToolbarViewModel: ASCChatToolbarViewModel?
+    private var chatToolbarObserver: ASCChatToolbarObserver?
 
     public init() {}
 
@@ -184,6 +191,9 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
             )
         }
 
+        // Chat Toolbar：展示当前项目对应 App 的 ASC 版本列表。
+        registerChatToolbarItem(kernel: kernel, chat: chat)
+
         let entryID = "\(id).entry"
         let pluginID = id
         let refreshToolbarOrder = order
@@ -291,6 +301,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        unregisterChatToolbarItem(kernel: kernel)
         kernel.resolveProvider((any ToolManagerProviding).self).map { manager in
             Self.agentTools.forEach { manager.remove(id: $0.name) }
         }
@@ -328,6 +339,58 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    }
+
+    // MARK: - Chat Toolbar
+
+    /// 注册 Chat Toolbar 上的 ASC 版本入口。
+    ///
+    /// 入口对所有项目可见，但只有当前项目能解析出 ASC App 绑定时才渲染按钮
+    /// （未绑定时渲染 `EmptyView`，不占位）。
+    private func registerChatToolbarItem(
+        kernel: KernelCoreContainer,
+        chat: (any ChatSectionProviding)?
+    ) {
+        guard let chat else {
+            Self.logger.warning("\(Self.t) ChatSectionProviding not found; ASC chat toolbar entry skipped")
+            return
+        }
+        guard let project = kernel.resolveProvider((any ProjectProviding).self) else {
+            Self.logger.warning("\(Self.t) ProjectProviding not found; ASC chat toolbar entry skipped")
+            return
+        }
+
+        let viewModel = ASCChatToolbarViewModel(
+            clientCapability: ASCChatClientCapabilityAdapter { VM.shared.client }
+        )
+        self.chatToolbarViewModel = viewModel
+
+        let observer = ASCChatToolbarObserver(project: project, viewModel: viewModel)
+        self.chatToolbarObserver = observer
+
+        chat.removeBarItem(id: Self.chatToolbarItemID)
+        chat.addBarItems([
+            ChatSectionBarItem(
+                id: Self.chatToolbarItemID,
+                order: order,
+                placement: .toolbarTrailing
+            ) { [weak viewModel] in
+                if let viewModel {
+                    ASCChatToolbarButtonContainer(viewModel: viewModel)
+                } else {
+                    EmptyView()
+                }
+            },
+        ])
+    }
+
+    /// 撤回 Chat Toolbar 上的 ASC 版本入口。
+    private func unregisterChatToolbarItem(kernel: KernelCoreContainer) {
+        kernel.resolveProvider((any ChatSectionProviding).self)?
+            .removeBarItem(id: Self.chatToolbarItemID)
+        chatToolbarObserver?.cancel()
+        chatToolbarObserver = nil
+        chatToolbarViewModel = nil
     }
 
     public static let agentTools: [any SuperAgentTool] = [
