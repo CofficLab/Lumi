@@ -141,8 +141,6 @@ import PluginSettingGeneral
 import PluginSettingView
 import PluginSystemBenchmark
 import PluginSkill
-import PluginOnboarding
-import PluginWelcome
 import PluginThemePack
 import PluginThemeManager
 import PluginToolManager
@@ -319,8 +317,6 @@ public struct DefaultPluginFactory: PluginFactory {
             NettoPlugin(),
             SkillPlugin(),
             XcodeBuildPlugin(),
-            OnboardingPlugin(),
-            PluginWelcome(),
             MemoryPlugin(),
             ModelSelectorPlugin(),
             PluginMessageListEmptyPlugin(),

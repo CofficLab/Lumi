@@ -12,7 +12,6 @@ let package = Package(
         .library(name: "PluginLLMManager", targets: ["PluginLLMManager"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLLMManager"),
@@ -36,7 +35,6 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
-                .product(name: "ProviderOnboarding", package: "LumiProviders"),
             ],
             path: "Sources/PluginLLMManager",
             resources: [.process("../../Resources/Localizable.xcstrings")]

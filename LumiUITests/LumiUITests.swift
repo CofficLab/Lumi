@@ -5,8 +5,6 @@ import XCTest
 /// - Important: 必须带 `--lumi-ui-testing-isolated-storage`。它把数据根目录
 ///   重定向到临时目录（见 `KernelFactory.uiTestingDataRootDirectory()`），
 ///   等价于全新安装态：不读用户真实数据库，测试之间也不互相污染。
-///   缺了它，`testGeneralSettingsShowsAppInformation` 里「新手引导」入口的
-///   断言会取决于**本机引导是否跑过**——干净 CI 机器上必然失败。
 final class LumiUITests: LumiUITestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -41,8 +39,6 @@ final class LumiUITests: LumiUITestCase {
     @discardableResult
     func openSettings() -> XCUIElement {
         XCTAssertTrue(element(identifier: "root.main").waitForExistence(timeout: 20), "主窗口未就绪")
-        // 隔离存储下引导会被标记为「未完成」，可能浮在窗口上，先关掉。
-        dismissOnboardingIfPresent()
         // AppIconButton 的 AX label 是系统图标名 "Gear Shape"。
         let gear = app.buttons["Gear Shape"]
         XCTAssertTrue(gear.waitForExistence(timeout: 10), "工具栏缺少设置按钮")
@@ -83,12 +79,12 @@ final class LumiUITests: LumiUITestCase {
         }
     }
 
-    /// 通用页必须能进入，并展示应用信息区与新手引导入口。
+    /// 通用页必须能进入，并展示应用信息区。
     ///
     /// - Important: 侧边栏条目用英文 `General`，与 `setUp` 的英文环境一致。
     ///   这里曾断言中文「通用」，该元素在英文环境下根本不存在。
     ///
-    /// - Note: 这一页的中文文案（新手引导 / 说明书 / 占用空间…）是插件内硬编码的
+    /// - Note: 这一页的中文文案（说明书 / 占用空间…）是插件内硬编码的
     ///   字面量，不走 `String(localized:)`，因此不受 `-AppleLanguages` 影响。
     ///   这一点由上面的实测记录确认，不是猜测。
     func testGeneralSettingsShowsAppInformation() {
@@ -102,10 +98,6 @@ final class LumiUITests: LumiUITestCase {
         XCTAssertTrue(
             element(anyLabelOf: ["Lumi", "Bundle ID", "Version", "Build"]).waitForExistence(timeout: 8),
             "通用设置缺少应用信息区"
-        )
-        XCTAssertTrue(
-            element(anyLabelOf: ["新手引导", "重新查看新手引导"]).exists,
-            "通用设置缺少新手引导区"
         )
     }
 

@@ -732,11 +732,6 @@
     "errors": [],
     "hasTestPlan": false
   },
-  "PluginOnboarding": {
-    "status": "ok",
-    "errors": [],
-    "hasTestPlan": false
-  },
   "PluginOpenInAntigravity": {
     "status": "ok",
     "errors": [],
@@ -913,11 +908,6 @@
     "hasTestPlan": false
   },
   "PluginWebServer": {
-    "status": "ok",
-    "errors": [],
-    "hasTestPlan": false
-  },
-  "PluginWelcome": {
     "status": "ok",
     "errors": [],
     "hasTestPlan": false

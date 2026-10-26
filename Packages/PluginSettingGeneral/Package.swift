@@ -34,7 +34,6 @@ let package = Package(
                 .product(name: "ProviderDiagnostics", package: "ProviderDiagnostics"),
                 .product(name: "ProviderUninstall", package: "LumiProviders"),
                 .product(name: "ProviderCommand", package: "LumiProviders"),
-                .product(name: "ProviderOnboarding", package: "LumiProviders"),
                 .product(name: "ProviderAppUpdate", package: "LumiProviders"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),

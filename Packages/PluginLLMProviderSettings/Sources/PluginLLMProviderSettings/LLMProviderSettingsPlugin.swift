@@ -14,7 +14,7 @@ import SwiftUI
 /// 按 `isLocal` 区分云端和本地供应商——两者合并成一个设置入口，
 /// 页内用「云端 / 本地」分段控件切换范围。
 ///
-/// 同时创建并注册 `UserDefinedCloudProviderStore`，供 onboarding 页面
+/// 同时创建并注册 `UserDefinedCloudProviderStore`，供其他插件
 /// 和设置界面共享自定义供应商数据。
 @MainActor
 public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
@@ -58,7 +58,7 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
         )
         userProviderStore = store
 
-        // 注册 Store 为 Provider，供其他插件（如 PluginLLMManager 的 onboarding 页面）使用。
+        // 注册 Store 为 Provider，供其他插件共享自定义供应商数据。
         try kernel.registerProvider(
             (any UserDefinedCloudProviderStoreProviding).self,
             DefaultUserDefinedCloudProviderStoreProviding(store: store)

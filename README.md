@@ -53,7 +53,7 @@ graph TB
     PL --> UI
 ```
 
-- **LumiApp** is the application entry point. It creates the shared kernel and hosts the main, settings, onboarding, and menu-bar surfaces.
+- **LumiApp** is the application entry point. It creates the shared kernel and hosts the main, settings, and menu-bar surfaces.
 - **FactoryLumi** is the composition root. `KernelFactory` assembles providers, starts the default plugin catalog, and builds the main and settings views.
 - **KernelCore** is the small generic kernel. It provides typed provider registration/resolution and plugin lifecycle management without knowing concrete application services.
 - **Provider packages** define shared capability contracts such as conversations, LLMs, tools, projects, storage, web routes, and UI contributions.
