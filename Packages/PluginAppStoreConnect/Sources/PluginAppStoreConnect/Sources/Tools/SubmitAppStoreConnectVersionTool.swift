@@ -33,70 +33,135 @@ public struct SubmitAppStoreConnectVersionTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await run(arguments: arguments, timeline: nil).content
+    }
+
+    /// 无会话上下文的结构化执行入口。
+    ///
+    /// 拿不到会话信息时不插入时间线消息 —— 避免把消息写进一个
+    /// 不存在的会话里。
+    public func executeResult(arguments: [String: ToolArgument]) async throws -> ToolCallResult {
+        try await run(arguments: arguments, timeline: nil)
+    }
+
+    /// 带会话上下文的结构化执行入口。
+    ///
+    /// 借 `ToolExecutionContext` 拿到会话与回合 ID，在提交前 / 提交后
+    /// 各插入一条结构化时间线消息，让用户明确「当前将提交什么」。
+    /// 时间线消息只用于界面展示，不会回流到 LLM 上下文。
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        try await run(
+            arguments: arguments,
+            timeline: ASCSubmissionTimelineContext(
+                conversationID: context.conversationID,
+                turnID: context.turnID
+            )
+        )
+    }
+
+    // MARK: - Core
+
+    /// 提交审核的核心流程。
+    ///
+    /// - Parameters:
+    ///   - arguments: 工具参数。
+    ///   - timeline: 会话上下文；为 nil 时不产生时间线消息。
+    /// - Returns: 工具结果。
+    private func run(
+        arguments: [String: ToolArgument],
+        timeline: ASCSubmissionTimelineContext?
+    ) async throws -> ToolCallResult {
         guard let versionID = arguments["versionID"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
               !versionID.isEmpty else {
-            return "Missing or empty versionID."
+            return ToolCallResult(content: "Missing or empty versionID.", isError: true)
         }
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else {
+            let message = errorMessage ?? "Failed to initialize App Store Connect client."
+            return ToolCallResult(content: message, isError: true)
+        }
 
         do {
             // 前置检查 1：必须先关联 build
-            if try await client.readAssignedBuildID(versionID: versionID) == nil {
-                return "Cannot submit: no build is assigned to version id=\(versionID). Use assign-build first."
+            guard let assignedBuildID = try await client.readAssignedBuildID(versionID: versionID) else {
+                return ToolCallResult(
+                    content: "Cannot submit: no build is assigned to version id=\(versionID). Use assign-build first.",
+                    isError: true
+                )
             }
             // 前置检查 2：不能重复提交
             if try await client.readSubmissionID(versionID: versionID) != nil {
-                return "Cannot submit: version id=\(versionID) already has a pending submission."
-            }
-
-            // 前置检查 3：收集潜在问题并给出详细提示
-            var warnings: [String] = []
-
-            // 3a. 版本属性检查
-            let version = try await client.readVersion(id: versionID)
-            if version.copyright == nil || version.copyright?.trimmingCharacters(in: .whitespaces).isEmpty == true {
-                warnings.append("copyright is not set. Use update-version to set it if required.")
-            }
-
-            // 3b. 年龄分级检查（声明为 app 级资源，经 appInfo 读取）
-            let ageRating = try await client.readAgeRatingDeclaration(versionID: versionID)
-            if ageRating == nil {
-                warnings.append(
-                    "No age-rating declaration found. The ASC API cannot create one — "
-                    + "complete the questionnaire once for this app via the App Store Connect website "
-                    + "(App Information → Age Ratings → Set Up Age Ratings → Save), "
-                    + "then use set-age-rating to update programmatically."
+                return ToolCallResult(
+                    content: "Cannot submit: version id=\(versionID) already has a pending submission.",
+                    isError: true
                 )
             }
 
-            // 3c. 本地化信息检查
-            let localizations = try await client.listLocalizations(versionID: versionID)
-            if localizations.isEmpty {
-                warnings.append("No localizations found. Use create-localization to add at least one locale with description.")
-            } else {
-                for loc in localizations {
-                    if loc.description.trimmingCharacters(in: .whitespaces).isEmpty {
-                        warnings.append("Localization '\(loc.locale)' has an empty description. Update it before submitting.")
-                    }
-                }
-            }
+            // 提交前快照：明确「即将提交什么」，并列出还差什么。
+            var preview = await ASCSubmissionSnapshotBuilder.build(
+                client: client,
+                versionID: versionID,
+                assignedBuildID: assignedBuildID,
+                stage: .preview
+            )
+            await insertTimelineMessage(timeline: timeline, preview: preview)
 
-            if !warnings.isEmpty {
-                let warningText = warnings.map { "- \($0)" }.joined(separator: "\n")
-                return """
+            // 存在阻塞性风险时中止提交，把问题交回给 LLM 与用户。
+            if !preview.warnings.isEmpty {
+                let warningText = preview.warnings.map { "- \($0)" }.joined(separator: "\n")
+                let content = """
                 Cannot submit: version id=\(versionID) may be missing required configuration.
                 Warnings:
                 \(warningText)
                 Fix the issues above and try again.
                 """
+                preview.stage = .failed
+                preview.errorMessage = content
+                await insertTimelineMessage(timeline: timeline, preview: preview)
+                return ToolCallResult(content: content, isError: true)
             }
 
-            let submissionID = try await client.submitForReview(versionID: versionID)
-            return "Version id=\(versionID) submitted for review. submission id=\(submissionID)"
+            do {
+                let submissionID = try await client.submitForReview(versionID: versionID)
+                preview.stage = .submitted
+                preview.submissionID = submissionID
+                await insertTimelineMessage(timeline: timeline, preview: preview)
+                return ToolCallResult(
+                    content: "Version id=\(versionID) submitted for review. submission id=\(submissionID)"
+                )
+            } catch {
+                preview.stage = .failed
+                preview.errorMessage = error.localizedDescription
+                await insertTimelineMessage(timeline: timeline, preview: preview)
+                throw error
+            }
         } catch {
-            return "Failed to submit version: \(error.localizedDescription)"
+            return ToolCallResult(
+                content: "Failed to submit version: \(error.localizedDescription)",
+                isError: true
+            )
+        }
+    }
+
+    /// 插入一条提交审核时间线消息。
+    ///
+    /// 消息管理器是主线程隔离的，因此这里切到 MainActor 插入，
+    /// 保证「提交前 / 提交后」两条消息按调用顺序落在时间线上。
+    private func insertTimelineMessage(
+        timeline: ASCSubmissionTimelineContext?,
+        preview: ASCSubmissionPreview
+    ) async {
+        guard let timeline else { return }
+        await MainActor.run {
+            ASCSubmissionTimelineBridge.insert(
+                conversationID: timeline.conversationID,
+                turnID: timeline.turnID,
+                preview: preview
+            )
         }
     }
 }

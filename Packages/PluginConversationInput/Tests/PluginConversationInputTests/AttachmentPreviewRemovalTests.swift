@@ -197,8 +197,7 @@ private final class AttachmentRemovalChain {
             input: DefaultConversationInputProvider(),
             sender: sender,
             conversations: nil,
-            conversationState: nil,
-            metrics: nil
+            conversationState: nil
         )
         viewModel = ConversationInputViewModel(capability: capability)
         observer = ConversationInputObserver(capability: capability, viewModel: viewModel)

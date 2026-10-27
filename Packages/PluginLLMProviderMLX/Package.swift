@@ -6,7 +6,7 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginLLMProviderMLX", targets: ["PluginLLMProviderMLX"])],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderLLMManager"),
@@ -14,7 +14,11 @@ let package = Package(
         .package(path: "../KitDownload"),
         .package(
             url: "https://github.com/ml-explore/mlx-swift-lm.git",
-            revision: "bc3c20ef4644c86f2b347debcfe1efe4308712a6"
+            exact: "3.32.3"
+        ),
+        .package(
+            url: "https://github.com/huggingface/swift-transformers.git",
+            exact: "1.3.5"
         ),
         .package(path: "../KitTestSupport"),
     ],
@@ -30,6 +34,7 @@ let package = Package(
                 .product(name: "KitDownload", package: "KitDownload"),
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),
                 .product(name: "MLXLMCommon", package: "mlx-swift-lm"),
+                .product(name: "Tokenizers", package: "swift-transformers"),
                 .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             path: "Sources/PluginLLMProviderMLX"

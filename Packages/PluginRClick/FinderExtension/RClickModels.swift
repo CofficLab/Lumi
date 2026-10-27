@@ -8,6 +8,7 @@ enum RClickActionType: String, Codable {
     case copyPath = "copyPath"
     case openInTerminal = "openInTerminal"
     case openInVSCode = "openInVSCode"
+    case openInLumi = "openInLumi"
     case deleteFile = "deleteFile"
     case hideFile = "hideFile"
     case unhideFile = "unhideFile"

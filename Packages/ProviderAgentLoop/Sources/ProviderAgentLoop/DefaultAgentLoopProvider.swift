@@ -401,7 +401,10 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         if Self.verbose {
             Self.logger.debug("\(Self.t)request LLM conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))")
         }
+        // 仅用于界面时间线的消息（压缩标记、重试提示、Goal 续跑、提交审核卡片）
+        // 不应进入 LLM 上下文。
         let history = await messages.messagesSnapshot(in: conversationID)
+            .filter { !MessageTimelineEvent.isTimelineEvent($0) }
         let level = conversations.automationLevel(for: conversationID)
         let language = languagePreference(for: conversationID)
         let schemas = (level.allowsTools ? toolManager.allTools() : []).compactMap { tool in

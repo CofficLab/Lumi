@@ -54,6 +54,56 @@ import Testing
     #expect(viewModel.headerVisible)
     #expect(viewModel.headerTitle == "项目对话 (Two)")
     #expect(!viewModel.hasMultipleProjects)
+    // 徽标条数只统计当前项目的对话，不含其它项目的。
+    #expect(viewModel.conversationCount == 1)
+}
+
+@Test @MainActor func conversationCountReflectsScopeAndUpdatesOnChange() async throws {
+    let conversations = DefaultConversationManager()
+    let project = DefaultProjectProvider()
+    try await project.openProject(at: "/workspace/One")
+    _ = try conversations.createConversation(title: "One", projectPath: "/workspace/One", providerID: nil, modelName: nil)
+    try await project.openProject(at: "/workspace/Two")
+    _ = try conversations.createConversation(title: "Two", projectPath: "/workspace/Two", providerID: nil, modelName: nil)
+
+    let context = makeListContext(conversations: conversations, project: project)
+    // 观察器把「对话增删」转成上下文事件，ViewModel 收到后自动刷新条数。
+    let contextObserver = ConversationListContextObserver(
+        conversations: conversations,
+        conversationState: nil,
+        context: context
+    )
+
+    let allViewModel = ConversationListViewModel(
+        context: context,
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .all
+    )
+    await allViewModel.loadInitialIfNeeded()
+    // 「所有项目」统计全库顶层对话。
+    #expect(allViewModel.conversationCount == 2)
+
+    let currentViewModel = ConversationListViewModel(
+        context: context,
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .currentProject
+    )
+    await currentViewModel.loadInitialIfNeeded()
+    // 「当前项目」只统计当前项目下的对话。
+    #expect(currentViewModel.conversationCount == 1)
+
+    // 新建对话后条数随之更新。
+    _ = try conversations.createConversation(title: "Three", projectPath: "/workspace/Two", providerID: nil, modelName: nil)
+    let didUpdate = await waitUntil {
+        currentViewModel.conversationCount == 2
+    }
+    #expect(didUpdate)
+
+    currentViewModel.cancel()
+    allViewModel.cancel()
+    contextObserver.cancel()
 }
 
 @Test @MainActor func nextPageAppendsOnlyTheRemainingConversations() async throws {

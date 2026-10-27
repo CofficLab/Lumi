@@ -228,7 +228,7 @@ graph TD
 > **规则一：内核不得依赖插件。**
 > **规则二：插件不得依赖其他插件。**
 
-这两条规则被写进了仓库的 `.agent/rules/core-plugin-boundary-rules.md`，并且**同时是给人和给 AI 读的**（后面第 10 节会展开）。
+这两条规则被写进了仓库的 `.lumi/rules/core-plugin-boundary-rules.md`，并且**同时是给人和给 AI 读的**（后面第 10 节会展开）。
 
 ### 3.1 为什么「插件不能依赖插件」值得付出代价
 
@@ -554,11 +554,26 @@ do {
     let assembledKernel = try KernelFactory.makeKernel()
     kernel = assembledKernel
     mainView = (try? KernelFactory.makeMainView(kernel: assembledKernel))
-        ?? AnyView(BootstrapFailureView(message: "Failed to assemble main view"))
+        ?? AnyView(BootstrapFailureView(
+            failure: BootstrapFailureReport(
+                kind: .unknown,
+                technicalDetail: "Failed to assemble main view"
+            ),
+            dataDirectory: Self.applicationSupportDirectory
+        ))
 } catch {
     kernel = KernelCoreContainer()
-    bootstrapErrorDescription = error.localizedDescription
-    mainView = AnyView(BootstrapFailureView(message: error.localizedDescription))
+    // 失败必须**归因**后展示，而不是把原始报错字符串直接甩给用户：
+    // SwiftData 会把「磁盘满」折叠成 SwiftDataError code 1 + 空 userInfo，
+    // 原始报错里根本没有根因，所以要靠装配前主动探测到的卷容量来归因。
+    let report = BootstrapFailureClassifier.classify(
+        context: Self.failureContext(for: error),
+        space: space
+    )
+    mainView = AnyView(BootstrapFailureView(
+        failure: report,
+        dataDirectory: Self.applicationSupportDirectory
+    ))
 }
 ```
 
@@ -1085,7 +1100,7 @@ public func onBoot(kernel: KernelCoreContainer) throws {
 
 ### 8.1 规则即文档，同时给人读也给 AI 读
 
-仓库里有一个 `.agent/rules/` 目录，22 份规范，全部是 Markdown：
+仓库里有一个 `.lumi/rules/` 目录，22 份规范，全部是 Markdown：
 
 ```text
 core-plugin-boundary-rules.md   ← 承重墙：内核/插件边界
@@ -1124,7 +1139,7 @@ unit-test-rules.md / automation-system-rules.md
 
 ### 8.2 让 AI 读规则，而不是读提示词
 
-`.agent/rules/` 里的每一份文档都被 AI 编程助手（Claude Code / Cursor / 其他）自动加载。`.cursor/rules/*.mdc` 是同一批规则的另一份投影，`.agent/commands/` 提供 `/plan`、`/commit`、`/refactor-clean`、`/build-fix` 这类操作流程。
+`.lumi/rules/` 里的每一份文档都被 AI 编程助手（Claude Code / Cursor / 其他）自动加载。`.cursor/rules/*.mdc` 是同一批规则的另一份投影，`.lumi/commands/` 提供 `/plan`、`/commit`、`/refactor-clean`、`/build-fix` 这类操作流程。
 
 这套机制解决了一个具体问题：**在 146 个插件里，人无法同时记住所有边界规则。**
 
@@ -1154,7 +1169,7 @@ curl / 脚本
 
 > 通过本地 HTTP API 驱动应用行为，用于脚本或大模型验证功能，无需 Accessibility 注入。
 
-验证流程被写成了固定套路（`.agent/rules/automation-system-rules.md`）：
+验证流程被写成了固定套路（`.lumi/rules/automation-system-rules.md`）：
 
 ```text
 1. 启动应用（Debug 即可，自动拉起 Automation Server）
@@ -1392,7 +1407,7 @@ Phase 1 必须在 Phase 3 之前完成，原因写得很直白：
 | 项目 | 数值 |
 | --- | --- |
 | 提交总数 | 10,152 |
-| `Packages/` 包数量 | 225（`Plugin*` 148、`Provider*` 47、`Kit*` 17、`Editor*` 6、`Factory*` 5、`KernelCore` 1、`OpenInKit` 1） |
+| `Packages/` 包数量 | 225（`Plugin*` 148、`Provider*` 47、`Kit*` 18、`Editor*` 6、`Factory*` 5、`KernelCore` 1） |
 | 默认装配插件数 | 146 |
 | 源码文件（`Sources/`） | 2,379 |
 | 测试文件（`Tests/`） | 456 |
@@ -1413,7 +1428,7 @@ Phase 1 必须在 Phase 3 之前完成，原因写得很直白：
 - [`docs/plans/2026-09-03-plugin-observer-only.md`](./plans/2026-09-03-plugin-observer-only.md) — Observer 所有权迁移
 - [`docs/plans/2026-09-06-plugin-capabilities-directory.md`](./plans/2026-09-06-plugin-capabilities-directory.md) — Capabilities 收窄设计与迁移
 - [`docs/plans/2026-09-02-robust-context-compaction-design.md`](./plans/2026-09-02-robust-context-compaction-design.md) — 上下文压缩的预算 / 阈值 / 降级设计
-- [`.agent/rules/core-plugin-boundary-rules.md`](../.agent/rules/core-plugin-boundary-rules.md) — 内核与插件边界规范
+- [`.lumi/rules/core-plugin-boundary-rules.md`](../.lumi/rules/core-plugin-boundary-rules.md) — 内核与插件边界规范
 
 ---
 

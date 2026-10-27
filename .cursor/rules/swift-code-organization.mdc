@@ -4,6 +4,6 @@ alwaysApply: false
 
 # Swift 代码组织规范
 
-请参考项目规范文档：`.agent/rules/swift-code-organization.md`
+请参考项目规范文档：`.lumi/rules/swift-code-organization.md`
 
 所有 Swift 代码组织应遵循上述规范文档中的结构约定。

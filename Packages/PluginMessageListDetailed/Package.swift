@@ -8,7 +8,7 @@ let package = Package(
     products: [.library(name: "PluginMessageListDetailed", targets: ["PluginMessageListDetailed"])],
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
         .package(path: "../KitMarkdown"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(path: "../ProviderAgentLoop"),
@@ -18,10 +18,9 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../ProviderMessageStreaming"),
-        .package(path: "../ProviderPromptSuggestion"),
         .package(path: "../ProviderToolManager"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.9.0")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.13.0")
     ],
     targets: [
         .target(name: "PluginMessageListDetailed", dependencies: [
@@ -37,7 +36,7 @@ let package = Package(
             .product(name: "ProviderMessage", package: "ProviderMessage"),
             .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
             .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
-            .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
+            .product(name: "ProviderPromptSuggestion", package: "LumiProviders"),
             .product(name: "ProviderProject", package: "LumiProviders"),
             .product(name: "ProviderToolbar", package: "LumiProviders"),
             .product(name: "ProviderToolManager", package: "ProviderToolManager"),
@@ -50,7 +49,7 @@ let package = Package(
             .product(name: "ProviderConversation", package: "ProviderConversation"),
             .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             .product(name: "ProviderChatSection", package: "ProviderChatSection"),
-            .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
+            .product(name: "ProviderPromptSuggestion", package: "LumiProviders"),
             .product(name: "ProviderProject", package: "LumiProviders"),
             .product(name: "ProviderToolbar", package: "LumiProviders"),
         ]),

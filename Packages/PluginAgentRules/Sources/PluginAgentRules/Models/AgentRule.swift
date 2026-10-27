@@ -2,7 +2,7 @@ import Foundation
 
 /// Agent 规则文档模型
 ///
-/// 表示 .agent/rules 目录中的规则文档
+/// 表示 .lumi/rules 目录中的规则文档
 public struct AgentRule: Codable, Identifiable, Sendable {
     /// 文件名（不含扩展名）
     public let id: String

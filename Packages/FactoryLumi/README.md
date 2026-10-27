@@ -127,7 +127,7 @@ Provider 注册顺序由 `DefaultProviderFactory.registerProviders(into:)` 控�
 Storage → Theme → ContentView / ChatSection → Conversation → Message
 → LLMProvider → Streaming → LifecycleHooks → LLMManager → ToolManager
 → AgentLoop → MessageSender → ConversationInput → Rendering
-→ PromptSuggestion → Workspace → Onboarding → Command → IdleTime
+→ PromptSuggestion → Workspace → Command → IdleTime
 → LegacyData → PluginControl → PluginManaging → WebServer
 → ExternalFile → DocsView → MenuBar → Logo → Project → Toast
 → Network → Toolbar → RootView → ActivityBar → RailView → SettingView

@@ -15,20 +15,18 @@ public struct InputSettingsView: View {
             subtitle: pluginLocalization.string("Automatically switch input sources per application."),
             showHeader: false
         ) {
-            AppCard {
-                AppSettingsSection(spacing: 12) {
-                    AppSettingsToggleRow(
-                        pluginLocalization.string("Enable Auto Input Source Switching"),
-                        systemImage: "keyboard",
-                        isOn: Binding(
-                            get: { viewModel.isEnabled },
-                            set: { _ in viewModel.toggleEnabled() }
-                        )
+            AppSettingSection(title: nil, titleAlignment: .leading) {
+                AppSettingToggleRow(
+                    pluginLocalization.string("Enable Auto Input Source Switching"),
+                    icon: "keyboard",
+                    isOn: Binding(
+                        get: { viewModel.isEnabled },
+                        set: { _ in viewModel.toggleEnabled() }
                     )
-                }
+                )
             }
 
-            AppCard {
+            AppSettingSection(title: nil, titleAlignment: .leading) {
                 AddRuleFormView(
                     selectedApp: $viewModel.selectedApp,
                     selectedSourceID: $viewModel.selectedSourceID,
@@ -48,16 +46,21 @@ public struct InputSettingsView: View {
     @ViewBuilder
     private var rulesContent: some View {
         if viewModel.rules.isEmpty {
-            AppCard {
+            AppSettingSection(title: nil, titleAlignment: .leading) {
                 InputRulesEmptyStateView()
             }
         } else {
-            AppCard {
-                AppSettingsSection(
-                    title: pluginLocalization.string("Rules"),
-                    spacing: 6
-                ) {
+            AppSettingSection(
+                title: pluginLocalization.string("Rules"),
+                titleAlignment: .leading
+            ) {
+                VStack(spacing: 0) {
                     ForEach(Array(viewModel.rules.enumerated()), id: \.element.id) { index, rule in
+                        if index > 0 {
+                            Divider()
+                                .padding(.vertical, 8)
+                        }
+
                         InputRuleRowView(
                             rule: rule,
                             availableSources: viewModel.availableSources

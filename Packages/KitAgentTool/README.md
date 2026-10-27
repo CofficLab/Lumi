@@ -14,6 +14,7 @@
 |------|------|
 | `SuperAgentTool` | Agent 工具协议（名称、描述、schema、风险、执行） |
 | `LocalizedAgentTool` | 按语言包装工具描述与 input schema |
+| `ProjectConfigDirectory` | 项目级配置目录约定（`.lumi/` 写入，兼容读取 `.agent/`） |
 | `ToolCall` | 模型发起的工具调用（含本地授权状态） |
 | `ToolArgument` | 工具参数值（字符串、数字、布尔等） |
 | `ToolExecutionContext` | 单次调用的取消上下文，可转发到底层资源 |
@@ -73,6 +74,30 @@ struct ReadFileTool: SuperAgentTool {
     }
 }
 ```
+
+### 项目级配置目录
+
+项目级配置（规则 / 技能 / 命令）统一写在项目的 `.lumi/` 目录下；读取时兼容历史目录
+`.agent/`。插件读写这类配置时应复用 `ProjectConfigDirectory`，不要自行硬编码目录名。
+
+```swift
+// 写入目标：<project>/.lumi/rules
+let target = ProjectConfigDirectory.writeURL(projectPath: path, component: "rules")
+
+// 读取候选：<project>/.lumi/rules（优先）、<project>/.agent/rules（兜底）
+let candidates = ProjectConfigDirectory.readURLs(projectPath: path, component: "rules")
+
+// 定位单个条目实际所在的位置
+if let url = ProjectConfigDirectory.locate(
+    projectPath: path,
+    component: "skills",
+    name: "my-skill"
+) {
+    // url 可能是 .lumi/skills/my-skill，也可能是 .agent/skills/my-skill
+}
+```
+
+同名条目以 `.lumi` 为准；更新 / 删除历史目录中的条目时在**原位**操作，不做隐式迁移。
 
 ### 带取消的执行
 

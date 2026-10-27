@@ -185,7 +185,7 @@
     ],
     "hasTestPlan": false
   },
-  "OpenInKit": {
+  "KitOpenIn": {
     "status": "broken",
     "errors": [
       "error: InternalError(description: \"Internal error. Please file a bug at https://github.com/swiftlang/swift-package-manager/issues with this info. Failed to parse target info JSON from Swift frontend while executing comma"
@@ -732,11 +732,6 @@
     "errors": [],
     "hasTestPlan": false
   },
-  "PluginOnboarding": {
-    "status": "ok",
-    "errors": [],
-    "hasTestPlan": false
-  },
   "PluginOpenInAntigravity": {
     "status": "ok",
     "errors": [],
@@ -768,16 +763,6 @@
     "hasTestPlan": false
   },
   "PluginOpenInXcode": {
-    "status": "ok",
-    "errors": [],
-    "hasTestPlan": false
-  },
-  "PluginPerformanceMetrics": {
-    "status": "ok",
-    "errors": [],
-    "hasTestPlan": false
-  },
-  "PluginPluginManager": {
     "status": "ok",
     "errors": [],
     "hasTestPlan": false
@@ -927,11 +912,6 @@
     "errors": [],
     "hasTestPlan": false
   },
-  "PluginWelcome": {
-    "status": "ok",
-    "errors": [],
-    "hasTestPlan": false
-  },
   "PluginWhiteNoise": {
     "status": "ok",
     "errors": [],
@@ -1064,17 +1044,12 @@
     "errors": [],
     "hasTestPlan": false
   },
-  "ProviderPerformanceMetrics": {
-    "status": "ok",
-    "errors": [],
-    "hasTestPlan": false
-  },
   "ProviderProjectRAG": {
     "status": "ok",
     "errors": [],
     "hasTestPlan": false
   },
-  "ProviderPromptSuggestion": {
+  "ProviderPromptSuggestionExecutor": {
     "status": "ok",
     "errors": [],
     "hasTestPlan": false

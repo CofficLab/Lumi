@@ -95,27 +95,6 @@ final class LumiErrorRetryTurnUITests: XCTestCase {
             .firstMatch
     }
 
-    /// 隔离数据根目录会让新手引导重新出现（完成标记存在插件数据目录里），
-    /// 它是覆盖在聊天区之上的浮层，不关掉就看不到消息列表。
-    private func dismissOnboardingIfPresent() {
-        // 引导是多页的，需要一直点到结束。
-        for _ in 0..<8 {
-            let finish = app.buttons["Finish"]
-            let cont = app.buttons["Continue"]
-            let skip = app.buttons["Skip"]
-            if finish.exists, finish.isHittable {
-                finish.click()
-            } else if cont.exists, cont.isHittable {
-                cont.click()
-            } else if skip.exists, skip.isHittable {
-                skip.click()
-            } else {
-                return
-            }
-            sleep(1)
-        }
-    }
-
     /// 核心用例：失败回合的错误消息 header 上必须出现「重试」按钮，
     /// 且点击后必须真实重新发起回合并产出确定性回复。
     ///
@@ -136,7 +115,6 @@ final class LumiErrorRetryTurnUITests: XCTestCase {
             element(identifier: "root.main").waitForExistence(timeout: 30),
             "主窗口未就绪"
         )
-        dismissOnboardingIfPresent()
 
         // 夹具 error 行已渲染。
         XCTAssertTrue(

@@ -29,7 +29,10 @@ public struct PromoDesignerView: View {
         VStack(spacing: 0) {
             if workspace.projectTasks.isEmpty {
                 emptyToolbar
-                PromoOnboardingView(isProjectOpen: workspace.projectStorageDirectory != nil)
+                AppEmptyState(
+                    icon: "photo.artframe",
+                    title: PromoLocalization.string("Ask the Agent to create a promotional artwork task.")
+                )
             } else if let resolved = workspace.selectedImage {
                 topToolbar(for: resolved.task)
                 content

@@ -1,9 +1,8 @@
 import KitAgentTool
 import Foundation
-
 /// 创建项目技能工具
 ///
-/// 在指定项目的 `.agent/skills/<name>/` 下创建 `metadata.json` + `SKILL.md`，
+/// 在指定项目的 `.lumi/skills/<name>/` 下创建 `metadata.json` + `SKILL.md`，
 /// 创建后立即被 `SkillService` 扫描识别（同目录约定）。
 public struct CreateSkillTool: SuperAgentTool {
     public let name = "create_skill"
@@ -11,7 +10,7 @@ public struct CreateSkillTool: SuperAgentTool {
     public init() {}
 
     public func description(for language: LanguagePreference) -> String {
-        "Create a new skill in the .agent/skills directory of a project. The skill is written as metadata.json plus a SKILL.md body, and becomes available to the agent immediately."
+        "Create a new skill in the .lumi/skills directory of a project. The skill is written as metadata.json plus a SKILL.md body, and becomes available to the agent immediately."
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
@@ -20,7 +19,7 @@ public struct CreateSkillTool: SuperAgentTool {
             "properties": [
                 "project_path": [
                     "type": "string",
-                    "description": "Absolute path to the project directory containing .agent/skills folder.",
+                    "description": "Absolute path to the project directory containing the .lumi/skills folder. Defaults to the current project.",
                 ],
                 "name": [
                     "type": "string",
@@ -107,8 +106,9 @@ public struct CreateSkillTool: SuperAgentTool {
                 "description": skill.description,
                 "triggers": skill.triggers,
                 "version": skill.version,
-                "directory_path": URL(fileURLWithPath: projectPath)
-                    .appendingPathComponent(".agent/skills/\(skill.name)").path,
+                "directory_path": ProjectConfigDirectory
+                    .writeURL(projectPath: projectPath, component: "skills")
+                    .appendingPathComponent(skill.name).path,
                 "content_path": skill.contentPath,
             ],
         ]

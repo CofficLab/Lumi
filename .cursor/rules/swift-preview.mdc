@@ -6,6 +6,6 @@ alwaysApply: false
 
 # Swift 预览规范
 
-请参考项目规范文档：`.agent/rules/swift-preview.md`
+请参考项目规范文档：`.lumi/rules/swift-preview.md`
 
 所有 Swift 预览（#Preview）应遵循上述规范文档中的标准。

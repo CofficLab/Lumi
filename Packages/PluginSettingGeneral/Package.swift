@@ -17,10 +17,10 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
         .package(path: "../ProviderDiagnostics"),
         .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
-        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
     ],
     targets: [
@@ -34,7 +34,6 @@ let package = Package(
                 .product(name: "ProviderDiagnostics", package: "ProviderDiagnostics"),
                 .product(name: "ProviderUninstall", package: "LumiProviders"),
                 .product(name: "ProviderCommand", package: "LumiProviders"),
-                .product(name: "ProviderOnboarding", package: "LumiProviders"),
                 .product(name: "ProviderAppUpdate", package: "LumiProviders"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),

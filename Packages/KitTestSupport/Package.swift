@@ -22,7 +22,7 @@ let package = Package(
         // 避免引入本包时把它们连带提升到更高版本。
         // 只需 `StorageProviding` 协议本身——`allVersionDataRootDirectories`
         // 与 `dataRootDirectorySizeInBytes` 都有协议默认实现。
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
     ],
     targets: [
         .target(
