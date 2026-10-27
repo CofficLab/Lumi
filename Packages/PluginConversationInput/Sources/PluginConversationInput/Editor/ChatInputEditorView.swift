@@ -1450,12 +1450,22 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
         if inkAbove <= 0 { inkAbove = titleFont.ascender }
         if inkBelow <= 0 { inkBelow = -titleFont.descender }
 
+        // 计算墨迹总高度（含内边距），用于垂直居中。
+        let inkTotal = inkAbove + inkBelow + Self.capsulePadding * 2
+        // chip 高度严格等于行高，确保上下边缘与文字行对齐。
+        let chipHeight = cellFrame.height
+        // 垂直偏移：让墨迹在 chip 内垂直居中。
+        let verticalOffset = (chipHeight - inkTotal) / 2
+
         let chipRect = NSRect(
             x: cellFrame.minX,
-            y: baselineY - inkBelow - Self.capsulePadding,
+            y: cellFrame.minY,
             width: cellFrame.width,
-            height: inkAbove + inkBelow + Self.capsulePadding * 2
+            height: chipHeight
         )
+
+        // 绘制基线：考虑垂直偏移，让内容在 chip 内居中。
+        let drawBaselineY = baselineY + verticalOffset
 
         let path = NSBezierPath(
             roundedRect: chipRect,
@@ -1478,7 +1488,7 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
         // 图标与字形盒视觉居中。
         let iconRect = NSRect(
             x: chipRect.minX + Self.horizontalPadding,
-            y: baselineY + (inkAbove - inkBelow) / 2 - Self.iconSize / 2,
+            y: drawBaselineY + (inkAbove - inkBelow) / 2 - Self.iconSize / 2,
             width: Self.iconSize,
             height: Self.iconSize
         )
@@ -1489,7 +1499,7 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
         // 标题（与正文同基线、同字号）。
         let titleRect = NSRect(
             x: x,
-            y: baselineY + titleFont.descender,
+            y: drawBaselineY + titleFont.descender,
             width: chipTitleWidth,
             height: titleFont.ascender - titleFont.descender
         )
@@ -1505,7 +1515,7 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
             x += Self.detailSpacing
             let detailRect = NSRect(
                 x: x,
-                y: baselineY + detailFont.descender,
+                y: drawBaselineY + detailFont.descender,
                 width: chipDetailWidth,
                 height: detailFont.ascender - detailFont.descender
             )
