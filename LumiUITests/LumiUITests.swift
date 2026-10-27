@@ -5,8 +5,6 @@ import XCTest
 /// - Important: 必须带 `--lumi-ui-testing-isolated-storage`。它把数据根目录
 ///   重定向到临时目录（见 `KernelFactory.uiTestingDataRootDirectory()`），
 ///   等价于全新安装态：不读用户真实数据库，测试之间也不互相污染。
-///   缺了它，`testGeneralSettingsShowsAppInformation` 里「新手引导」入口的
-///   断言会取决于**本机引导是否跑过**——干净 CI 机器上必然失败。
 final class LumiUITests: LumiUITestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -41,8 +39,6 @@ final class LumiUITests: LumiUITestCase {
     @discardableResult
     func openSettings() -> XCUIElement {
         XCTAssertTrue(element(identifier: "root.main").waitForExistence(timeout: 20), "主窗口未就绪")
-        // 隔离存储下引导会被标记为「未完成」，可能浮在窗口上，先关掉。
-        dismissOnboardingIfPresent()
         // AppIconButton 的 AX label 是系统图标名 "Gear Shape"。
         let gear = app.buttons["Gear Shape"]
         XCTAssertTrue(gear.waitForExistence(timeout: 10), "工具栏缺少设置按钮")
@@ -83,12 +79,12 @@ final class LumiUITests: LumiUITestCase {
         }
     }
 
-    /// 通用页必须能进入，并展示应用信息区与新手引导入口。
+    /// 通用页必须能进入，并展示应用信息区。
     ///
     /// - Important: 侧边栏条目用英文 `General`，与 `setUp` 的英文环境一致。
     ///   这里曾断言中文「通用」，该元素在英文环境下根本不存在。
     ///
-    /// - Note: 这一页的中文文案（新手引导 / 说明书 / 占用空间…）是插件内硬编码的
+    /// - Note: 这一页的中文文案（说明书 / 占用空间…）是插件内硬编码的
     ///   字面量，不走 `String(localized:)`，因此不受 `-AppleLanguages` 影响。
     ///   这一点由上面的实测记录确认，不是猜测。
     func testGeneralSettingsShowsAppInformation() {
@@ -103,13 +99,12 @@ final class LumiUITests: LumiUITestCase {
             element(anyLabelOf: ["Lumi", "Bundle ID", "Version", "Build"]).waitForExistence(timeout: 8),
             "通用设置缺少应用信息区"
         )
-        XCTAssertTrue(
-            element(anyLabelOf: ["新手引导", "重新查看新手引导"]).exists,
-            "通用设置缺少新手引导区"
-        )
     }
 
-    /// 外观页必须能进入，并提供主题搜索与主题筛选。
+    /// 外观页必须能进入，并提供主题筛选。
+    ///
+    /// 外观页已移除主题搜索：这里改用主题数量标签作为「详情已渲染」信号，
+    /// 并断言搜索框不再存在，防止功能回退。
     ///
     /// - Important: 侧边栏条目用英文 `Appearance`，与 `setUp` 的英文环境一致
     ///   （此处曾断言中文「外观」，该元素在英文环境下不存在）。
@@ -120,8 +115,6 @@ final class LumiUITests: LumiUITestCase {
         XCTAssertTrue(appearance.waitForExistence(timeout: 5), "设置侧边栏缺少 Appearance 条目")
         appearance.click()
 
-        let search = app.textFields.matching(NSPredicate(format: "placeholderValue IN %@", ["Search Themes", "搜索主题"])).firstMatch
-        XCTAssertTrue(search.waitForExistence(timeout: 8), "外观页缺少主题搜索入口")
         // 外观页提供主题筛选（全部/深色/浅色/跟随系统）与主题预览块。
         for filter in ["All", "Dark", "Light", "Follow System"] {
             XCTAssertTrue(
@@ -129,5 +122,13 @@ final class LumiUITests: LumiUITestCase {
                 "外观页缺少主题筛选：\(filter)"
             )
         }
+        // 主题数量标签（"19 Themes"）作为详情渲染完成的信号。
+        XCTAssertTrue(
+            element(containingLabel: "Themes").waitForExistence(timeout: 8),
+            "外观页没有渲染主题列表"
+        )
+        // 主题搜索已移除：外观页不应再出现主题搜索框。
+        let search = app.textFields.matching(NSPredicate(format: "placeholderValue IN %@", ["Search Themes", "搜索主题"])).firstMatch
+        XCTAssertFalse(search.exists, "外观页不应再提供主题搜索入口")
     }
 }

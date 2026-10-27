@@ -1,16 +1,16 @@
 import KitAgentTool
 import Foundation
-
 /// 删除项目技能工具
 ///
-/// 递归删除 `.agent/skills/<name>/` 整个目录。
+/// 递归删除技能目录（`.lumi/skills/<name>/`，历史目录 `.agent/skills/<name>/`
+/// 中的技能同样可被删除）。
 public struct DeleteSkillTool: SuperAgentTool {
     public let name = "delete_skill"
 
     public init() {}
 
     public func description(for language: LanguagePreference) -> String {
-        "Delete a project skill from the .agent/skills directory, removing its metadata.json and SKILL.md. Built-in and plugin-contributed skills cannot be deleted this way."
+        "Delete a project skill from the .lumi/skills directory, removing its metadata.json and SKILL.md. Built-in and plugin-contributed skills cannot be deleted this way."
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
@@ -19,7 +19,7 @@ public struct DeleteSkillTool: SuperAgentTool {
             "properties": [
                 "project_path": [
                     "type": "string",
-                    "description": "Absolute path to the project directory containing .agent/skills folder. Defaults to the current project.",
+                    "description": "Absolute path to the project directory containing the .lumi/skills folder. Defaults to the current project.",
                 ],
                 "name": [
                     "type": "string",
@@ -55,8 +55,9 @@ public struct DeleteSkillTool: SuperAgentTool {
             "success": true,
             "message": "Skill deleted successfully",
             "name": name,
-            "directory_path": URL(fileURLWithPath: projectPath)
-                .appendingPathComponent(".agent/skills/\(name)").path,
+            "directory_path": ProjectConfigDirectory
+                .writeURL(projectPath: projectPath, component: "skills")
+                .appendingPathComponent(name).path,
         ]
         let data = try JSONSerialization.data(withJSONObject: result, options: [.prettyPrinted])
         return String(data: data, encoding: .utf8) ?? "{\"success\":false}"

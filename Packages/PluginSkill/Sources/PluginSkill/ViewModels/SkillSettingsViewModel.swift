@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import KitAgentTool
 import ProviderProject
 import ProviderSkill
 import SwiftUI
@@ -10,7 +11,7 @@ import SwiftUI
 /// 的外部变化由 `SkillSettingsObserver` 直接写入本 ViewModel，View 只读取它。
 ///
 /// 技能分两组展示：
-/// - `projectSkills`：当前项目 `.agent/skills` 目录下的技能（项目层）；
+/// - `projectSkills`：当前项目 `.lumi/skills` 目录下的技能（项目层）；
 /// - `baseSkills`：插件贡献 + 内置的通用技能（`SkillProviding` 聚合底座）。
 @MainActor
 final class SkillSettingsViewModel: ObservableObject {
@@ -20,7 +21,7 @@ final class SkillSettingsViewModel: ObservableObject {
     @Published private(set) var projects: [ProjectInfo] = []
     /// 当前选中的项目路径。
     @Published private(set) var selectedProjectPath: String?
-    /// 当前项目的技能列表（`.agent/skills` 目录，项目层）。
+    /// 当前项目的技能列表（`.lumi/skills` 目录，项目层）。
     @Published private(set) var projectSkills: [SkillMetadata] = []
     /// 通用技能底座（插件贡献 + 内置，由 `SkillProviding` 聚合）。
     @Published private(set) var baseSkills: [SkillMetadata] = []
@@ -120,6 +121,7 @@ final class SkillSettingsViewModel: ObservableObject {
     }
 
     private func getSkillsDirectory(for projectPath: String) -> URL {
-        URL(fileURLWithPath: projectPath).appendingPathComponent(".agent/skills")
+        // 写入目标统一为 `.lumi/skills`。
+        ProjectConfigDirectory.writeURL(projectPath: projectPath, component: "skills")
     }
 }

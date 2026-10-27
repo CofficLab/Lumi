@@ -389,8 +389,8 @@ public struct ActivityHeatmapSettingsView: View {
     }
 
     public var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+        AppSettingsContentScaffold(maxContentWidth: nil) {
+            VStack(alignment: .leading, spacing: 24) {
                 summary
                 heatmap
                 tokenTrend
@@ -398,7 +398,7 @@ public struct ActivityHeatmapSettingsView: View {
                     IdleTimeSummaryCard(state: idleTimeState)
                 }
             }
-            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .task { await model.reload() }
     }

@@ -24,9 +24,9 @@ let package = Package(
         ),
         .package(url: "https://github.com/tree-sitter/tree-sitter-json.git", exact: "0.24.8"),
         .package(url: "https://github.com/tree-sitter/tree-sitter-python.git", exact: "0.23.6"),
-        .package(url: "https://github.com/tree-sitter/tree-sitter-bash.git", exact: "0.23.3"),
-        .package(url: "https://github.com/tree-sitter-grammars/tree-sitter-markdown.git", exact: "0.3.2"),
-        .package(url: "https://github.com/tree-sitter-grammars/tree-sitter-yaml.git", exact: "0.6.1"),
+        .package(url: "https://github.com/tree-sitter/tree-sitter-bash.git", exact: "0.25.1"),
+        .package(url: "https://github.com/tree-sitter-grammars/tree-sitter-markdown.git", exact: "0.5.3"),
+        .package(url: "https://github.com/tree-sitter-grammars/tree-sitter-yaml.git", exact: "0.7.0"),
     ],
     targets: [
         .target(

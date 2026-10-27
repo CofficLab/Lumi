@@ -57,8 +57,6 @@ final class LumiFreshInstallEmptyStateUITests: LumiUITestCase {
             "--lumi-ui-testing",
             "--lumi-ui-testing-isolated-storage",
         ])
-        // 基类在等主窗口就绪后会关掉新手引导（隔离存储会让引导重新出现，
-        // 它是覆盖在聊天区之上的浮层，不关掉就点不到输入框）。
         waitForMainWindow()
     }
 

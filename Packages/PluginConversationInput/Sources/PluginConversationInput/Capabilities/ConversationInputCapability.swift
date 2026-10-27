@@ -5,14 +5,13 @@ import ProviderConversationInputBlock
 import ProviderConversationState
 import ProviderMessage
 import ProviderMessageSender
-import ProviderPerformanceMetrics
 import SwiftUI
 
 /// 输入框插件所需的最小输入/发送能力。
 ///
 /// 收敛 `ConversationInputProviding`、`MessageSendingProviding`、
-/// `ConversationManaging`、`ConversationStateProviding` 与
-/// `PerformanceMetricsProviding` 的调用面，ViewModel 与 Observer 只依赖本能力。
+/// `ConversationManaging` 与 `ConversationStateProviding` 的调用面，
+/// ViewModel 与 Observer 只依赖本能力。
 @MainActor
 protocol ConversationInputCapability: AnyObject {
     // MARK: - Input
@@ -104,12 +103,6 @@ protocol ConversationInputCapability: AnyObject {
     func addConversationStateObserver(
         _ callback: @escaping (ConversationStateEvent) -> Void
     ) -> any ConversationStateObserverHandle
-
-    // MARK: - Metrics
-
-    func beginMetrics(operation: String, metadata: [String: String]) -> PerformanceTrace?
-    func markMetrics(_ trace: PerformanceTrace, stage: String)
-    func endMetrics(_ trace: PerformanceTrace)
 }
 
 /// 将输入/发送相关 Provider 适配为插件能力。
@@ -120,7 +113,6 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
     private let sender: (any MessageSendingProviding)?
     private let conversations: (any ConversationManaging)?
     private let conversationState: (any ConversationStateProviding)?
-    private let metrics: (any PerformanceMetricsProviding)?
     /// 草稿里的折叠块区间。草稿级状态，随正文一起清空。
     private var storedCollapsedBlocks: [CollapsedContentBlock] = []
 
@@ -129,15 +121,13 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
         blocks: (any ConversationInputBlockProviding)? = nil,
         sender: (any MessageSendingProviding)?,
         conversations: (any ConversationManaging)?,
-        conversationState: (any ConversationStateProviding)?,
-        metrics: (any PerformanceMetricsProviding)?
+        conversationState: (any ConversationStateProviding)?
     ) {
         self.input = input
         self.blocks = blocks
         self.sender = sender
         self.conversations = conversations
         self.conversationState = conversationState
-        self.metrics = metrics
     }
 
     // MARK: - Input
@@ -304,20 +294,6 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
         _ callback: @escaping (ConversationStateEvent) -> Void
     ) -> any ConversationStateObserverHandle {
         conversationState?.addConversationStateObserver(callback) ?? NoopConversationStateObserverHandle()
-    }
-
-    // MARK: - Metrics
-
-    func beginMetrics(operation: String, metadata: [String: String]) -> PerformanceTrace? {
-        metrics?.begin(operation: operation, metadata: metadata)
-    }
-
-    func markMetrics(_ trace: PerformanceTrace, stage: String) {
-        metrics?.mark(trace, stage: stage)
-    }
-
-    func endMetrics(_ trace: PerformanceTrace) {
-        metrics?.end(trace)
     }
 }
 

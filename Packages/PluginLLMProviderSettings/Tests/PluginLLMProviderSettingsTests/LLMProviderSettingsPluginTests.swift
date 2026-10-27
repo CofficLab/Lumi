@@ -35,7 +35,7 @@ struct LLMProviderSettingsPluginTests {
         func removeApiKey() { storedKey = "" }
     }
 
-    @Test("onBoot 注册云端/本地两个设置入口")
+    @Test("onBoot 注册一个合并的供应商设置入口（云端 / 本地共用一页）")
     func pluginRegistersSettingEntries() throws {
         let kernel = KernelCoreContainer()
         let settings = DefaultSettingViewProviding()
@@ -46,9 +46,9 @@ struct LLMProviderSettingsPluginTests {
         let plugin = LLMProviderSettingsPlugin()
         try plugin.onBoot(kernel: kernel)
 
-        #expect(settings.entries.count == 2)
-        #expect(settings.entries.contains(where: { $0.id == "\(plugin.id).remote-providers" }))
-        #expect(settings.entries.contains(where: { $0.id == "\(plugin.id).local-providers" }))
+        // 云端与本地合并成一个入口：页内用分段控件切换范围。
+        #expect(settings.entries.count == 1)
+        #expect(settings.entries.contains(where: { $0.id == "\(plugin.id).providers" }))
 
         // 详情视图可渲染（不崩溃）。
         for entry in settings.entries {

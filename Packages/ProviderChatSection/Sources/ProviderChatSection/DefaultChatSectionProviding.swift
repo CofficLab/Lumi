@@ -389,16 +389,26 @@ private struct ChatHeaderRow: View {
 
 /// toolbar 栏：对应旧版 `ChatToolbarView`。尺寸、内边距、底部边框与阴影
 /// 由 `AppPanelBar` 统一承载，与侧栏同高度信息栏保持一致的视觉规格。
+///
+/// 插件通过 `ChatSectionBarItem` 注入的按钮数量不可控，窄窗口下内容总宽度
+/// 可能超出工具栏可用宽度。工具栏因此使用横向 `ScrollView` 承载插件贡献项：
+/// 宽度富余时表现与原来的 `HStack` 一致（内容按自然宽度左对齐，不拉伸），
+/// 宽度不足时内容保持自身尺寸并可横向滚动查看，不再被压缩或裁切。
 @MainActor
-private struct ChatToolbarRow: View {
+struct ChatToolbarRow: View {
     let items: [ChatSectionBarItem]
 
     var body: some View {
         AppPanelBar {
-            HStack(alignment: .center, spacing: AppPanelChromeMetrics.breadcrumbItemSpacing) {
-                ForEach(items) { $0.makeView() }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .center, spacing: AppPanelChromeMetrics.breadcrumbItemSpacing) {
+                    ForEach(items) { $0.makeView() }
+                }
+                // 保持贡献项的自然宽度：内容超出时由 ScrollView 负责滚动，
+                // 而不是让 SwiftUI 压缩插件注入的 UI。
+                .fixedSize(horizontal: true, vertical: false)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
         }
     }
 }

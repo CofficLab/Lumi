@@ -109,8 +109,7 @@ struct ChatInputEditorViewTests {
             input: input,
             sender: nil,
             conversations: nil,
-            conversationState: nil,
-            metrics: nil
+            conversationState: nil
         )
         let viewModel = ConversationInputViewModel(capability: capability)
 
@@ -248,8 +247,7 @@ struct ChatInputEditorViewTests {
             input: input,
             sender: sender,
             conversations: conversations,
-            conversationState: nil,
-            metrics: nil
+            conversationState: nil
         )
         let viewModel = ConversationInputViewModel(capability: capability)
         let observer = ActionBarConversationObserver(
@@ -280,8 +278,7 @@ struct ChatInputEditorViewTests {
             input: input,
             sender: nil,
             conversations: nil,
-            conversationState: nil,
-            metrics: nil
+            conversationState: nil
         )
         let viewModel = ConversationInputViewModel(capability: capability)
         let observer = ConversationInputObserver(capability: capability, viewModel: viewModel)
@@ -341,8 +338,7 @@ struct ConversationInputBlockRequestTests {
             input: input,
             sender: nil,
             conversations: nil,
-            conversationState: nil,
-            metrics: nil
+            conversationState: nil
         )
         let viewModel = ConversationInputViewModel(capability: capability)
         let block = ConversationInputBlock(

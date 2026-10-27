@@ -222,7 +222,7 @@ struct SkillCRUDToolsTests {
         ]))
 
         let body = try String(
-            contentsOf: project.appendingPathComponent(".agent/skills/seed-skill/SKILL.md"),
+            contentsOf: project.appendingPathComponent(".lumi/skills/seed-skill/SKILL.md"),
             encoding: .utf8
         )
         #expect(body.contains("新的正文"))
@@ -275,7 +275,7 @@ struct SkillCRUDToolsTests {
         #expect(output.contains("\"success\" : true"))
 
         #expect(!FileManager.default.fileExists(
-            atPath: project.appendingPathComponent(".agent/skills/seed-skill").path
+            atPath: project.appendingPathComponent(".lumi/skills/seed-skill").path
         ))
         #expect(SkillScanner().scanSkills(projectPath: project.path).isEmpty)
     }
@@ -325,7 +325,7 @@ struct SkillCRUDToolsTests {
             "project_path": project.path, "name": "lifecycle", "content": "正文 v2",
         ]))
         let updated = try String(
-            contentsOf: project.appendingPathComponent(".agent/skills/lifecycle/SKILL.md"),
+            contentsOf: project.appendingPathComponent(".lumi/skills/lifecycle/SKILL.md"),
             encoding: .utf8
         )
         #expect(updated.contains("正文 v2"))
@@ -346,7 +346,7 @@ struct SkillCRUDToolsTests {
         let project = try await seedProject()
         defer { try? FileManager.default.removeItem(at: project) }
 
-        let toolsDirectory = project.appendingPathComponent(".agent/skills")
+        let toolsDirectory = project.appendingPathComponent(".lumi/skills")
 
         // 名字只由分隔符组成 → sanitize 后为空 → 必须拒绝。
         await #expect(throws: SkillCreationError.self) { () -> Void in
@@ -358,6 +358,140 @@ struct SkillCRUDToolsTests {
         // skills 目录与其中的技能都还在。
         #expect(FileManager.default.fileExists(atPath: toolsDirectory.path))
         #expect(SkillScanner().scanSkills(projectPath: project.path).map(\.name) == ["seed-skill"])
+    }
+
+    // MARK: - 历史目录（.agent）兼容
+
+    /// 在项目的历史目录 `.agent/skills/<name>/` 下放置一个技能。
+    private func seedLegacySkill(project: URL, name: String) throws {
+        let directory = project
+            .appendingPathComponent(".agent/skills/\(name)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let metadata = """
+        {
+          "name": "\(name)",
+          "title": "Legacy \(name)",
+          "description": "历史目录中的技能",
+          "triggers": ["legacy"],
+          "version": "1.0.0"
+        }
+        """
+        try metadata.write(
+            to: directory.appendingPathComponent("metadata.json"),
+            atomically: true,
+            encoding: .utf8
+        )
+        try "# Legacy \(name)\n\n历史内容。".write(
+            to: directory.appendingPathComponent("SKILL.md"),
+            atomically: true,
+            encoding: .utf8
+        )
+    }
+
+    @Test("扫描器仍能发现历史目录 .agent/skills 中的技能")
+    func scannerReadsLegacyAgentDirectory() async throws {
+        let project = try makeProjectDir()
+        defer { try? FileManager.default.removeItem(at: project) }
+
+        try seedLegacySkill(project: project, name: "legacy-skill")
+
+        let scanned = SkillScanner().scanSkills(projectPath: project.path)
+        #expect(scanned.map(\.name) == ["legacy-skill"])
+        #expect(scanned.first?.title == "Legacy legacy-skill")
+    }
+
+    @Test("扫描器合并两个目录，同名技能以 .lumi 为准")
+    func scannerMergesBothDirectories() async throws {
+        let project = try makeProjectDir()
+        defer { try? FileManager.default.removeItem(at: project) }
+
+        try seedLegacySkill(project: project, name: "legacy-only")
+        _ = try await SkillCreationService.shared.createSkill(
+            projectPath: project.path,
+            name: "shared",
+            title: "Lumi Shared",
+            description: "当前目录中的技能"
+        )
+        try seedLegacySkill(project: project, name: "shared")
+
+        let scanned = SkillScanner().scanSkills(projectPath: project.path)
+        #expect(scanned.map(\.name) == ["legacy-only", "shared"])
+        #expect(scanned.first { $0.name == "shared" }?.title == "Lumi Shared")
+    }
+
+    @Test("read_skill 能读取历史目录中的技能")
+    func readToolReadsLegacyAgentDirectory() async throws {
+        let project = try makeProjectDir()
+        defer { try? FileManager.default.removeItem(at: project) }
+
+        try seedLegacySkill(project: project, name: "legacy-skill")
+
+        let output = try await ReadSkillTool().execute(arguments: arguments([
+            "project_path": project.path,
+            "name": "legacy-skill",
+        ]))
+        let data = try #require(output.data(using: .utf8))
+        let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let skill = try #require(json["skill"] as? [String: Any])
+        #expect(skill["title"] as? String == "Legacy legacy-skill")
+    }
+
+    @Test("update_skill 原位更新历史目录中的技能，不迁移目录")
+    func updateToolEditsLegacyAgentDirectoryInPlace() async throws {
+        let project = try makeProjectDir()
+        defer { try? FileManager.default.removeItem(at: project) }
+
+        try seedLegacySkill(project: project, name: "legacy-skill")
+
+        _ = try await UpdateSkillTool().execute(arguments: arguments([
+            "project_path": project.path,
+            "name": "legacy-skill",
+            "title": "重命名后的标题",
+        ]))
+
+        // 仍留在历史目录，未被搬到 .lumi。
+        #expect(!FileManager.default.fileExists(
+            atPath: project.appendingPathComponent(".lumi/skills/legacy-skill").path
+        ))
+        let body = try String(
+            contentsOf: project.appendingPathComponent(".agent/skills/legacy-skill/metadata.json"),
+            encoding: .utf8
+        )
+        #expect(body.contains("重命名后的标题"))
+    }
+
+    @Test("delete_skill 删除历史目录中的技能")
+    func deleteToolRemovesLegacyAgentDirectory() async throws {
+        let project = try makeProjectDir()
+        defer { try? FileManager.default.removeItem(at: project) }
+
+        try seedLegacySkill(project: project, name: "legacy-skill")
+
+        _ = try await DeleteSkillTool().execute(arguments: arguments([
+            "project_path": project.path,
+            "name": "legacy-skill",
+        ]))
+
+        #expect(!FileManager.default.fileExists(
+            atPath: project.appendingPathComponent(".agent/skills/legacy-skill").path
+        ))
+        #expect(SkillScanner().scanSkills(projectPath: project.path).isEmpty)
+    }
+
+    @Test("同名技能已存在于历史目录时拒绝创建，避免两个目录出现同名技能")
+    func createRejectsNameExistingInLegacyDirectory() async throws {
+        let project = try makeProjectDir()
+        defer { try? FileManager.default.removeItem(at: project) }
+
+        try seedLegacySkill(project: project, name: "duplicated")
+
+        await #expect(throws: SkillCreationError.self) {
+            _ = try await CreateSkillTool().execute(arguments: arguments([
+                "project_path": project.path,
+                "name": "duplicated",
+                "description": "重名",
+            ]))
+        }
     }
 
     // MARK: - SkillToolSupport

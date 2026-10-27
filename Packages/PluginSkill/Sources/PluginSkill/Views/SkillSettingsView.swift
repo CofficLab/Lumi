@@ -10,7 +10,7 @@ import SwiftUI
 ///
 /// - 左侧为项目列表。
 /// - 右侧为所选项目的技能列表，分两组：
-///   - 项目技能：`.agent/skills` 目录中的技能（项目层）；
+///   - 项目技能：`.lumi/skills` 目录中的技能（项目层）；
 ///   - 通用技能：插件贡献 + 内置技能（`SkillProviding` 聚合底座）。
 ///
 /// 只依赖 `SkillSettingsViewModel`；项目 / 底座变化由 `SkillSettingsObserver`
@@ -26,34 +26,39 @@ struct SkillSettingsView: View {
     }
 
     var body: some View {
-        PluginSettingsScaffold(
-            title: pluginLocalization.string("Skills"),
-            subtitle: pluginLocalization.string("View project skills and contributed skills"),
-            showHeader: false,
-            scrollsContent: false
-        ) {
-            VStack(spacing: 12) {
-                header
+        // 贴边分栏页直接用共享 scaffold（基准见 `.lumi/rules/settings-ui.md`「分栏页：贴边」）。
+        // 不能套 `PluginSettingsScaffold`：它在内容外多包一层 `VStack(spacing: 24)` + `Spacer`，
+        // 那 24pt 会从内容区里被吃掉，主从容器比内容区矮一截，竖直分隔线到不了窗口底部。
+        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
+            GeometryReader { proxy in
+                VStack(spacing: 0) {
+                    header
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 12)
+                    // 主体内容贴边后，用一条顶部分隔线把头部行与主从容器分开。
+                    AppDivider()
 
-                HStack(spacing: 0) {
-                    sidebar
-                        .frame(width: 340)
-                        .frame(maxHeight: .infinity)
+                    HStack(spacing: 0) {
+                        sidebar
+                            .frame(width: 300)
+                            .frame(maxHeight: .infinity)
 
-                    AppDivider(.vertical)
+                        AppDivider(.vertical)
 
-                    detailPane
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        detailPane
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    }
+                    .frame(maxHeight: .infinity)
                 }
-                .frame(maxHeight: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(theme.divider, lineWidth: 1)
-                }
+                // 共享 scaffold 给内容留了左右 24，这里把整列加宽 48 并左移 24，
+                // 使主从容器正好贴到窗口左右边缘；标题行再自行补回 24 留白。
+                .frame(width: proxy.size.width + 48, alignment: .topLeading)
+                .offset(x: -24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+        // `PluginSettingsScaffold` 会注入 .subtle 卡片风格，改用共享 scaffold 后需自行注入。
+        .environment(\.appSettingsCardStyleOverride, .subtle)
         .task { await viewModel.reload() }
         .onAppear { viewModel.seedSelectionIfNeeded() }
     }
@@ -163,10 +168,10 @@ struct SkillSettingsView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 18) {
                         skillSection(
                             title: pluginLocalization.string("Project Skills"),
-                            subtitle: pluginLocalization.string("From .agent/skills directory"),
+                            subtitle: pluginLocalization.string("From .lumi/skills directory"),
                             count: viewModel.projectSkills.count,
                             skills: viewModel.projectSkills,
                             emptyTitle: pluginLocalization.string("No project skills yet")
@@ -180,7 +185,7 @@ struct SkillSettingsView: View {
                             emptyTitle: pluginLocalization.string("No shared skills")
                         )
                     }
-                    .padding(12)
+                    .padding(22)
                 }
                 .frame(maxHeight: .infinity)
             }

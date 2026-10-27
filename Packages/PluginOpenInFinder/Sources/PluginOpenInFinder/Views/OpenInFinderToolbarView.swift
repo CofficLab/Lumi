@@ -1,4 +1,4 @@
-import OpenInKit
+import KitOpenIn
 import SwiftUI
 
 /// Open In Finder 的标题栏按钮。

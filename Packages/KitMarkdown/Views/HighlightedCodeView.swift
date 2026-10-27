@@ -12,13 +12,24 @@ struct HighlightedCodeView: View {
     /// 直接从环境中读取高亮提供者，确保 SwiftUI 能正确追踪依赖并响应主题切换。
     @Environment(\.codeHighlightProvider) private var highlightProvider
 
-    /// 缓存的高亮结果
-    @State private var attributedCode: AttributedString?
+    /// 已生成的高亮结果。
+    ///
+    /// 连同生成时的原始代码一起保存：代码块内容变化（流式输出）后，
+    /// 旧的高亮结果必须立即失效，否则视图会停在旧快照上不再跟随新内容。
+    @State private var highlighted: HighlightedCode?
+
+    /// 一次成功的高亮结果。
+    struct HighlightedCode {
+        /// 生成该结果时的原始代码
+        let source: String
+        /// 高亮后的文本
+        let attributed: AttributedString
+    }
 
     var body: some View {
         Group {
-            if let attributedCode {
-                codeScrollView(Text(attributedCode))
+            if let highlighted, highlighted.source == code {
+                codeScrollView(Text(highlighted.attributed))
             } else if let highlightProvider,
                       let cached = CodeHighlightCache.shared.cached(
                           code: code,
@@ -33,19 +44,31 @@ struct HighlightedCodeView: View {
             }
         }
         .task(id: codeHighlightTaskId) {
-            guard attributedCode == nil else { return }
             guard let highlightProvider else {
                 return
             }
+            // 已经是当前代码的高亮结果,无需重算。
+            guard highlighted?.source != code else { return }
 
-            let highlighted = CodeHighlightCache.shared.highlight(
-                code: code,
-                language: language,
-                provider: highlightProvider
-            )
-            if attributedCode != highlighted {
-                attributedCode = highlighted
-            }
+            // 流式输出时代码块内容持续变化，等内容稳定后再着色：
+            // 避免每一帧都重跑一遍 tree-sitter 解析，也让颜色不闪烁。
+            try? await Task.sleep(for: .milliseconds(100))
+            guard !Task.isCancelled else { return }
+
+            let code = code
+            let language = language
+            // 高亮在后台线程完成：tree-sitter 解析与查询执行不占用主线程。
+            let result = await Task.detached(priority: .userInitiated) {
+                CodeHighlightCache.shared.highlight(
+                    code: code,
+                    language: language,
+                    provider: highlightProvider
+                )
+            }.value
+            guard !Task.isCancelled else { return }
+            guard let result else { return }
+            guard highlighted?.source != code else { return }
+            highlighted = HighlightedCode(source: code, attributed: result)
         }
     }
 
@@ -56,7 +79,7 @@ struct HighlightedCodeView: View {
     private func codeScrollView(_ textContent: Text) -> some View {
         if preferOuterScroll {
             HorizontalScrollView(contentFingerprint: ScrollContentFingerprint(
-                displayed: attributedCode,
+                displayed: highlighted?.attributed,
                 code: code,
                 language: language,
                 font: font,
@@ -144,6 +167,10 @@ private final class CodeHighlightCache: @unchecked Sendable {
         }
 
         let highlighted = provider.highlight(code: code, language: language)
+
+        // 只缓存成功的高亮结果：失败（语言不支持、语法尚未就绪）时保持未缓存，
+        // 下次调用仍可重试，避免一次失败把该代码块永久钉死在纯文本上。
+        guard let highlighted else { return nil }
 
         lock.lock()
         defer { lock.unlock() }

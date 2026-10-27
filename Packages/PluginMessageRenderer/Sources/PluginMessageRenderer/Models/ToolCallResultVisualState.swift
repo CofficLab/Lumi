@@ -88,7 +88,6 @@ struct ToolJobActivityProjection: Equatable {
     let duration: TimeInterval
     let progressText: String?
     let outputTail: String
-    let canStop: Bool
     let isStale: Bool
 
     init(job: ToolJob, now: Date = Date()) {
@@ -99,7 +98,6 @@ struct ToolJobActivityProjection: Equatable {
         duration = max(0, end.timeIntervalSince(start))
         progressText = Self.progressText(for: job.latestProgress)
         outputTail = job.latestOutput
-        canStop = !job.status.isTerminal && job.status != .cancelling
         isStale = !job.status.isTerminal && now.timeIntervalSince(job.updatedAt) > 10
     }
 

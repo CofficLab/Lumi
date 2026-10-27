@@ -26,10 +26,23 @@ final class LumiAppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     private func handleFinderCommand(_ url: URL) -> Bool {
-        guard url.scheme == Self.urlScheme,
-              url.host == "finder",
-              url.path == "/show-hidden",
-              let value = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+        guard url.scheme == Self.urlScheme, url.host == "finder" else {
+            return false
+        }
+
+        switch url.path {
+        case "/show-hidden":
+            return handleShowHiddenCommand(url)
+        case "/open-project":
+            return handleOpenProjectCommand(url)
+        default:
+            return false
+        }
+    }
+
+    /// 处理 `lumi://finder/show-hidden?value=true|false`。
+    private func handleShowHiddenCommand(_ url: URL) -> Bool {
+        guard let value = URLComponents(url: url, resolvingAgainstBaseURL: false)?
                 .queryItems?.first(where: { $0.name == "value" })?.value,
               let showHiddenFiles = Bool(value) else {
             return false
@@ -49,6 +62,22 @@ final class LumiAppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         restart.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
         restart.arguments = ["Finder"]
         try? restart.run()
+        return true
+    }
+
+    /// 处理 `lumi://finder/open-project?path=<文件夹绝对路径>`。
+    ///
+    /// 该命令由 Finder 右键扩展的「在 Lumi 中打开」发出。这里只把路径交给
+    /// `pendingOpenPath`，由主视图按既有的外部路径流程切换当前项目，
+    /// 避免在 App Delegate 里直接依赖内核。
+    private func handleOpenProjectCommand(_ url: URL) -> Bool {
+        guard let path = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                .queryItems?.first(where: { $0.name == "path" })?.value,
+              !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return false
+        }
+
+        pendingOpenPath = (path as NSString).standardizingPath
         return true
     }
 

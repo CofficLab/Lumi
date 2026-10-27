@@ -31,40 +31,8 @@
     "API Endpoint URL" : {
 
     },
-    "Cloud Providers" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cloud Providers"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "云端供应商"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "雲端供應商"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "雲端供應商"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "雲端供應商"
-          }
-        }
-      }
+    "API Key" : {
+
     },
     "Delete API Key" : {
       "extractionState" : "stale",
@@ -101,37 +69,37 @@
         }
       }
     },
-    "Local Providers" : {
+    "Providers" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Local Providers"
+            "value" : "Providers"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "本地供应商"
+            "value" : "供应商"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "本機供應商"
+            "value" : "供應商"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "本機供應商"
+            "value" : "供應商"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "本機供應商"
+            "value" : "供應商"
           }
         }
       }
@@ -172,6 +140,9 @@
       }
     },
     "上下文 %@" : {
+
+    },
+    "下载限速" : {
 
     },
     "不限速" : {
@@ -303,6 +274,9 @@
     "官网（可选）" : {
 
     },
+    "尚未保存 API Key" : {
+
+    },
     "已保存" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -337,6 +311,9 @@
           }
         }
       }
+    },
+    "已保存 API Key" : {
+
     },
     "已复制" : {
 
@@ -382,11 +359,49 @@
         }
       }
     },
+    "操作" : {
+
+    },
     "显示 API Key" : {
 
     },
     "暂停下载" : {
 
+    },
+    "云端" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cloud"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "云端"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "雲端"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "雲端"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "雲端"
+          }
+        }
+      }
     },
     "本地" : {
       "extractionState" : "manual",
@@ -518,6 +533,12 @@
 
     },
     "配置兼容的 API 端点和模型列表" : {
+
+    },
+    "配置访问凭证" : {
+
+    },
+    "错误" : {
 
     },
     "隐藏 API Key" : {

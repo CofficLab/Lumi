@@ -2,7 +2,7 @@ import os
 import Foundation
 import KernelCore
 import LumiLoggingKit
-import OpenInKit
+import KitOpenIn
 import ProviderProject
 import ProviderDocsView
 import ProviderToolManager
