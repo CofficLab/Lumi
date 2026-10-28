@@ -125,6 +125,7 @@ import PluginOpenInCursor
 import PluginOpenInFinder
 import PluginOpenInGitHubDesktop
 import PluginOpenInGitOK
+import PluginOpenInRemote
 import PluginOpenInVSCode
 import PluginOpenInXcode
 import PluginPluginManager
@@ -272,6 +273,7 @@ public struct DefaultPluginFactory: PluginFactory {
             OpenInAntigravityPlugin(),
             OpenInGitHubDesktopPlugin(),
             OpenInGitOKPlugin(),
+            OpenInRemotePlugin(),
             AgentTurnNotificationPlugin(),
             // ACP Agent 端：GUI 下仅注册、不自启 stdio 服务（autoStartsServer=false），
             // 由 headless 入口（lumi-acp）解析该实例后显式启动。
