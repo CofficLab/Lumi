@@ -125,16 +125,35 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 7
 | 72 | RAGPureLogic | persistsChunkLineRange | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `persistsChunkLineRange` |
 | 73 | RAGPureLogic | removesOnlyIdenticalEvidence | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `removesOnlyIdenticalEvidence` |
 | 74 | RAGPureLogic | appliesResultLimitAfterDeduplication | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `appliesResultLimitAfterDeduplication` |
+| 75 | AppleNativeEmbedding | 并发 embed 不崩溃且维度一致 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `concurrentEmbedDoesNotCrash` |
+| 76 | AppleNativeEmbedding | 并发 embed 结果与串行一致（向量稳定性） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `concurrentEmbedMatchesSerial` |
+| 77 | AppleNativeEmbedding | 空文本返回零向量 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `emptyTextReturnsZeroVector` |
+| 78 | AppleNativeEmbedding | embedBatch 结果数量与输入一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `embedBatchPreservesCount` |
+| 79 | NLEmbeddingModelPool | 借出的泳道互不相同 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `borrowedLanesAreDistinct` |
+| 80 | NLEmbeddingModelPool | 容量至少为 1 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `capacityIsAtLeastOne` |
+| 81 | NLEmbeddingModelPool | 归还后可再次借出 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `releasedLaneCanBeBorrowedAgain` |
+| 82 | NLEmbeddingModelPool | 池耗尽时借出会阻塞，归还后解除 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `borrowBlocksWhenExhausted` |
+| 83 | NLEmbeddingModelPool | 同一泳道重复查询返回同一模型实例（缓存生效） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `laneCachesModelInstances` |
+| 84 | NLEmbeddingModelPool | 没有模型的语言返回 nil 且被记录为缺失 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `laneRecordsMissingModels` |
+| 85 | NativeEmbeddingCandidates | 检测语言排在首位 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `detectedLanguageComesFirst` |
+| 86 | NativeEmbeddingCandidates | 不支持的检测语言被忽略 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unsupportedDetectedLanguageIgnored` |
+| 87 | NativeEmbeddingCandidates | 候选无重复 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `candidatesAreUnique` |
+| 88 | WordLevelFallback | 整段文本的词级平均可用（不再返回 nil） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `averagedWordVectorWorksForLongText` |
+| 89 | WordLevelFallback | 空文本的词级平均返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `averagedWordVectorReturnsNilForEmptyText` |
+| 90 | WordLevelFallback | 词级平均对不同文本产生不同向量 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `averagedWordVectorDistinguishesTexts` |
+| 91 | EmbeddingThreshold | 长文本的 embed 显著快于句子级整段 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `longTextUsesWordLevelAveraging` |
+| 92 | EmbeddingThreshold | 短文本与长文本都能产出有效向量 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bothStrategiesProduceValidVectors` |
+| 93 | EmbeddingThreshold | 阈值常量合理 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `thresholdIsReasonable` |
 
 > 说明：全部 **74 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 64 / 64
-- P2: 已覆盖 8 / 8
-- **合计: 74 / 74**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 76 / 76
+- P2: 已覆盖 11 / 11
+- **合计: 93 / 93**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
