@@ -19,6 +19,12 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
     // Process info cache
     private var processDetails: [Int: (name: String, icon: NSImage?)] = [:]
 
+    /// 图标解析器。
+    ///
+    /// - Note: 走 `bundleIdentifier` 缓存 + `NSWorkspace.icon(forFile:)`，
+    ///   避开逐 PID 构造 `NSRunningApplication` 触发的 LaunchServices 同步 XPC。
+    private let iconResolver = ProcessIconResolver()
+
     // Background queue for icon fetching
     private let iconQueue = DispatchQueue(label: "com.coffic.lumi.process-icons", qos: .utility)
     
@@ -36,8 +42,42 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
     
     // Data publishing
     @Published var processes: [NetworkProcess] = []
-    
-    private init() {}
+
+    /// 启动 nettop 子进程的方式。
+    ///
+    /// - Note: 仅为测试可注入而存在；生产环境使用默认实现。
+    private let nettopLauncher: () -> Process?
+
+    private init(nettopLauncher: (() -> Process?)? = nil) {
+        self.nettopLauncher = nettopLauncher ?? { ProcessMonitorService.makeDefaultNettopProcess() }
+    }
+
+    /// 创建一个不启动真实 nettop 子进程的实例（仅测试用）。
+    ///
+    /// - Parameter launcher: 子进程构造器；返回 `nil` 表示模拟「启动失败」。
+    static func makeForTesting(nettopLauncher: @escaping () -> Process?) -> ProcessMonitorService {
+        ProcessMonitorService(nettopLauncher: nettopLauncher)
+    }
+
+    /// 当前 nettop 子进程是否在运行。
+    var isNettopRunning: Bool { task != nil }
+
+    /// 默认的 nettop 进程构造。
+    private static func makeDefaultNettopProcess() -> Process? {
+        #if os(macOS)
+        let task = Process()
+        task.launchPath = "/usr/bin/nettop"
+        // -P: collapse rows to parent process
+        // -L 0: loop forever
+        // -J: include columns (bytes_in, bytes_out)
+        // -d: delta mode (print difference since last update)
+        // -x: extended format (machine readable)
+        task.arguments = ["-P", "-L", "0", "-J", "bytes_in,bytes_out", "-d", "-x"]
+        return task
+        #else
+        return nil
+        #endif
+    }
     
     public func startMonitoring() {
         refCount += 1
@@ -56,15 +96,15 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
     
     private func startNettop() {
         #if os(macOS)
-        let task = Process()
-        task.launchPath = "/usr/bin/nettop"
-        // -P: collapse rows to parent process
-        // -L 0: loop forever
-        // -J: include columns (bytes_in, bytes_out)
-        // -d: delta mode (print difference since last update)
-        // -x: extended format (machine readable)
-        task.arguments = ["-P", "-L", "0", "-J", "bytes_in,bytes_out", "-d", "-x"]
-        
+        guard let task = nettopLauncher() else {
+            if NetworkManagerPlugin.verbose {
+                NetworkManagerPlugin.logger.error("\(self.t)nettop unavailable")
+            }
+            refCount = 0
+            cleanupMonitoringResources()
+            return
+        }
+
         let pipe = Pipe()
         task.standardOutput = pipe
         self.outputPipe = pipe
@@ -122,17 +162,28 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
         bufferTimer?.invalidate()
         bufferTimer = nil
 
-        task?.terminate()
+        // 只终止**确实在运行**的子进程。
+        //
+        // - Important: `Process.terminate()` 对未成功启动的进程会抛 ObjC 异常
+        //   （NSInvalidArgumentException），进而使 App 崩溃。
+        //   nettop 启动失败时（路径不存在、无权限等）会走到这里，必须先判断。
+        if let task, task.isRunning {
+            task.terminate()
+        }
         task = nil
 
         // 确定性回收 nettop 管道的读端 fd（写端由子进程持有，随进程退出释放）。
-        outputPipe?.fileHandleForReading.closeFile()
-        outputPipe = nil
+        // 关闭已关闭的文件同样会抛异常，故先置空再关闭，保证幂等。
+        if let pipe = outputPipe {
+            outputPipe = nil
+            pipe.fileHandleForReading.closeFile()
+        }
 
         rawDataBuffer.removeAll()
         partialLine = ""
         historyBuffer.removeAll()
         processDetails.removeAll()
+        iconResolver.clearCache()
         processes.removeAll()
     }
     
@@ -242,10 +293,13 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
         // Fetch icons in background
         if !newPIDs.isEmpty {
             iconQueue.async { [weak self] in
+                guard let self else { return }
                 var fetchedIcons: [(pid: Int, name: String, icon: NSImage?)] = []
                 for item in newPIDs {
-                    let icon = NSRunningApplication(processIdentifier: pid_t(item.pid))?.icon
-                        ?? NSWorkspace.shared.icon(forFile: "/bin/bash") // Fallback
+                    // 走 ProcessIconResolver：一次枚举 runningApplications，
+                    // 以 bundleIdentifier 为缓存键，避免逐 PID 触发
+                    // LaunchServices 同步 XPC。
+                    let icon = self.iconResolver.icon(forPID: item.pid)
                     fetchedIcons.append((item.pid, item.name, icon))
                 }
 
