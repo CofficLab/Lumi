@@ -28,7 +28,15 @@ final class NetworkMetricsObserver {
             }
             .store(in: &cancellables)
 
-        ProcessMonitorService.shared.startMonitoring()
+        // 注意：**不要**在这里调用 `ProcessMonitorService.shared.startMonitoring()`。
+        //
+        // `nettop` 子进程使用 `-L 0`（无限循环）参数，实测常驻即占 100%+ CPU。
+        // 它只应在「进程监控面板可见」时运行，由
+        // `NetworkManagerViewModel.showProcessMonitor` 的开关驱动
+        // （面板 `onAppear` 置 true、`onDisappear` 置 false）。
+        //
+        // 此前 observer 在 init 里无条件 startMonitoring()，使引用计数恒为 1，
+        // 面板关闭后 nettop 永不退出。
         ProcessMonitorService.shared.$processes
             .sink { [weak self] processes in self?.viewModels.network.updateProcesses(processes) }
             .store(in: &cancellables)
@@ -76,6 +84,8 @@ final class NetworkMetricsObserver {
         autosaveTimer = nil
         cancellables.removeAll()
         NetworkService.shared.stopMonitoring()
-        ProcessMonitorService.shared.stopMonitoring()
+        // 不在此处调用 `ProcessMonitorService.shared.stopMonitoring()`：
+        // 本 observer 从未 start 过（nettop 由面板可见性驱动），
+        // 多减一次会破坏 `ProcessMonitorService` 的引用计数。
     }
 }
