@@ -56,12 +56,32 @@ public protocol GitRepositoryReading: Sendable {
     ///   - path: 仓库路径。
     ///   - hash: commit hash（完整或前缀均可，由实现方解析）。
     func commitChanges(atPath path: String?, hash: String) async throws -> [GitCommitChange]
+
+    /// 读取仓库的远程地址（remote URL）。
+    ///
+    /// 用于「在浏览器中打开项目远程仓库」这类能力：消费方拿到 remote URL 后
+    /// 自行转换为 HTTPS web 链接。契约层只负责**读取原始 URL**，不做任何
+    /// 协议转换，避免把「Git 事实」与「Web 链接规则」耦合在一起。
+    ///
+    /// - Parameters:
+    ///   - path: 仓库路径。
+    ///   - remote: 远程名称，默认 `origin`。
+    /// - Returns: 远程地址；仓库不存在、没有该 remote 或读取失败时返回 `nil`。
+    ///
+    /// - Note: 返回的可能是 scp-like（`git@github.com:user/repo.git`）、
+    ///   `ssh://` 或 `https://` 形式，消费方需自行处理。
+    func remoteURL(atPath path: String?, remote: String) async -> String?
 }
 
 public extension GitRepositoryReading {
     /// 便捷重载：读取当前 HEAD 的最近提交。
     func recentCommits(atPath path: String?, count: Int) async throws -> [GitCommitLog] {
         try await log(atPath: path, count: count, branch: nil, file: nil)
+    }
+
+    /// 便捷重载：读取 `origin` 的远程地址。
+    func remoteURL(atPath path: String?) async -> String? {
+        await remoteURL(atPath: path, remote: "origin")
     }
 
     /// 默认实现：沿路径向上查找 `.git`，命中即认为是 Git 仓库。
@@ -96,17 +116,21 @@ public final class InMemoryGitRepositoryReading: GitRepositoryReading, @unchecke
         var commits: [String: [GitCommitLog]]
         var commitChanges: [String: [String: [GitCommitChange]]]
         var repositories: Set<String>
+        /// 远程地址：仓库路径 → (remote 名称 → URL)。
+        var remoteURLs: [String: [String: String]]
 
         init(
             statuses: [String: GitStatus],
             commits: [String: [GitCommitLog]],
             commitChanges: [String: [String: [GitCommitChange]]],
-            repositories: Set<String>
+            repositories: Set<String>,
+            remoteURLs: [String: [String: String]] = [:]
         ) {
             self.statuses = statuses
             self.commits = commits
             self.commitChanges = commitChanges
             self.repositories = repositories
+            self.remoteURLs = remoteURLs
         }
     }
 
@@ -117,13 +141,15 @@ public final class InMemoryGitRepositoryReading: GitRepositoryReading, @unchecke
         statuses: [String: GitStatus] = [:],
         commits: [String: [GitCommitLog]] = [:],
         commitChanges: [String: [String: [GitCommitChange]]] = [:],
-        repositories: Set<String> = []
+        repositories: Set<String> = [],
+        remoteURLs: [String: [String: String]] = [:]
     ) {
         storage = Storage(
             statuses: statuses,
             commits: commits,
             commitChanges: commitChanges,
-            repositories: repositories
+            repositories: repositories,
+            remoteURLs: remoteURLs
         )
     }
 
@@ -147,6 +173,13 @@ public final class InMemoryGitRepositoryReading: GitRepositoryReading, @unchecke
     /// 把某个路径标记为 Git 仓库（测试用）。
     public func addRepository(atPath path: String) {
         queue.sync { _ = storage.repositories.insert(path) }
+    }
+
+    /// 设置某个仓库的远程地址（测试用）。
+    public func setRemoteURL(_ url: String, forPath path: String, remote: String = "origin") {
+        queue.sync {
+            storage.remoteURLs[path, default: [:]][remote] = url
+        }
     }
 
     public func isRepository(atPath path: String?) async -> Bool {
@@ -182,6 +215,11 @@ public final class InMemoryGitRepositoryReading: GitRepositoryReading, @unchecke
         let changes = queue.sync { storage.commitChanges[path]?[hash] }
         guard changes != nil else { throw GitReadError.repositoryNotFound(path: path) }
         return changes ?? []
+    }
+
+    public func remoteURL(atPath path: String?, remote: String) async -> String? {
+        guard let path else { return nil }
+        return queue.sync { storage.remoteURLs[path]?[remote] }
     }
 }
 

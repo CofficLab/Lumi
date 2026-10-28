@@ -253,6 +253,26 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
         return files.map { GitCommitChange(path: $0.path, state: $0.changeType.toWorkingChangeState()) }
     }
 
+    /// 实现 ``GitRepositoryReading/remoteURL(atPath:remote:)``。
+    ///
+    /// 读取仓库的 remote 地址（默认 `origin`），返回**原始 URL**——不做任何
+    /// 协议转换（scp-like / `ssh://` / `https://` 原样返回），转换规则由消费方
+    /// 自行决定，避免把「Git 事实」与「Web 链接规则」耦合在契约层。
+    ///
+    /// 读取失败（非仓库、无该 remote、路径不存在）统一返回 `nil`，与契约
+    /// 「不抛错」的语义一致。
+    public func remoteURL(atPath path: String?, remote: String) async -> String? {
+        let repoPath = Self.resolvePath(path)
+
+        // 路径不存在时直接返回：libgit2 打开不存在的路径会进入一条会污染线程
+        // 栈展开状态的 C 路径（见 performOnGitQueue 的「路径存在性检查为何必须前置」）。
+        guard FileManager.default.fileExists(atPath: repoPath) else { return nil }
+
+        return try? await performOnGitQueue(repoPath: repoPath) {
+            LibGit2.getRemoteURL(at: repoPath, remote: remote)
+        }
+    }
+
     // MARK: - Log With Skip (for pagination)
 
     /// 带跳过的日志获取（分页加载）

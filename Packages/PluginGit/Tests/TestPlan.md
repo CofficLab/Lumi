@@ -5,7 +5,7 @@
 GitPlugin Git integration plugin for Lumi editor.
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 62
+测试文件: 14 个，用例总数: 70
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -47,6 +47,8 @@ GitPlugin Git integration plugin for Lumi editor.
 - **GitCommitToolPath**（8 条）：由 `absolutePathShouldBeConvertedToRelative`、`relativePathShouldRemainUnchanged`、`emptyFilesListShouldReturnEmpty` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitIgnoreService**（3 条）：由 `roundTripWriteAndRead`、`parsingRecognizesCommentAndNegationAndDirectory`、`templatesReturnNonEmptyContent` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitLogStructuredRenderer**（4 条）：由 `structuredPayloadRoundTrips`、`rendererExtractsJSONFromFullContent`、`canRenderMatchesGitLogWithPayload` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GitServiceReadingContract**（4 条）：由 `statusSeparatesUntrackedFiles`、`isRepositoryDetectsRepository`、`isRepositoryToleratesMissingPath` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GitServiceRemoteURL**（4 条）：由 `readsOriginRemoteURLVerbatim`、`readsNamedRemoteURL`、`returnsNilForUnknownRemote` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitService**（5 条）：由 `getStatusThrowsForNonGitDirectory`、`getStatusThrowsForNonexistentPath`、`getDiffThrowsForNonGitDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitSharedQueueHangRepro**（4 条）：由 `hungCallOnOneRepositoryDoesNotBlockOthers`、`queuedCallOnBusyRepositoryIsCancellable`、`queuedCallTimesOutInsteadOfWaitingForever` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitStashService**（3 条）：由 `pushPopRoundTrip`、`pushWithNoChangesReturnsNil`、`listAndCountMatch` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -95,51 +97,59 @@ GitPlugin Git integration plugin for Lumi editor.
 | 36 | GitLogStructuredRenderer | 渲染器从完整工具返回内容中提取 JSON 块 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rendererExtractsJSONFromFullContent` |
 | 37 | GitLogStructuredRenderer | canRender 命中 git_log 且包含 JSON 块 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `canRenderMatchesGitLogWithPayload` |
 | 38 | GitLogStructuredRenderer | canRender 对无 JSON 块或无结果返回 false | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `canRenderRejectsPlainResults` |
-| 39 | GitService | getStatus throws repositoryNotGit for non-git directory | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `getStatusThrowsForNonGitDirectory` |
-| 40 | GitService | getStatus throws repositoryNotGit for nonexistent path | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `getStatusThrowsForNonexistentPath` |
-| 41 | GitService | getDiff throws repositoryNotGit for non-git directory | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `getDiffThrowsForNonGitDirectory` |
-| 42 | GitService | repository root lookup rejects pathological paths quickly | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `repositoryRootRejectsPathologicalPath` |
-| 43 | GitService | getLog throws repositoryNotGit for non-git directory | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `getLogThrowsForNonGitDirectory` |
-| 44 | GitSharedQueueHangRepro | a hung call on one repository does not block other repositories | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `hungCallOnOneRepositoryDoesNotBlockOthers` |
-| 45 | GitSharedQueueHangRepro | a queued call on a busy repository can be cancelled promptly | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `queuedCallOnBusyRepositoryIsCancellable` |
-| 46 | GitSharedQueueHangRepro | a queued call times out instead of waiting forever | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `queuedCallTimesOutInsteadOfWaitingForever` |
-| 47 | GitSharedQueueHangRepro | nested queue.sync inside the body must not deadlock | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `nestedQueueSyncInsideBodyDoesNotDeadlock` |
-| 48 | GitStashService | pushPopRoundTrip | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pushPopRoundTrip` |
-| 49 | GitStashService | pushWithNoChangesReturnsNil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pushWithNoChangesReturnsNil` |
-| 50 | GitStashService | listAndCountMatch | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listAndCountMatch` |
-| 51 | GitSubmoduleService | submoduleListReturnsEmptyForRepoWithoutSubmodules | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `submoduleListReturnsEmptyForRepoWithoutSubmodules` |
-| 52 | 综合 | sourceControlPluginRegistersEditorContract | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `sourceControlPluginRegistersEditorContract` |
-| 53 | 综合 | v2PluginRegistersAllLegacyGitToolNames | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `v2PluginRegistersAllLegacyGitToolNames` |
-| 54 | 综合 | gitLogToolNormalizesCount | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gitLogToolNormalizesCount` |
-| 55 | 综合 | registeredGitToolsDefaultToTheCallingConversationsProject | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `registeredGitToolsDefaultToTheCallingConversationsProject` |
-| 56 | 综合 | validatePathRequiresAllowedDirectoryBoundary | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `validatePathRequiresAllowedDirectoryBoundary` |
-| 57 | 综合 | validatePathUsesCurrentProjectPathWhenToolPathIsBlank | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `validatePathUsesCurrentProjectPathWhenToolPathIsBlank` |
-| 58 | 综合 | gitServiceFindsRepositoryRootForFilePath | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gitServiceFindsRepositoryRootForFilePath` |
-| 59 | 综合 | validateBranchNameAcceptsCommonGitNames | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `validateBranchNameAcceptsCommonGitNames` |
-| 60 | 综合 | validateBranchNameRejectsInvalidGitNames | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `validateBranchNameRejectsInvalidGitNames` |
-| 61 | 综合 | remoteDisplayNamePreservesSpacesInLocalRemotePath | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `remoteDisplayNamePreservesSpacesInLocalRemotePath` |
-| 62 | 综合 | remoteDisplayNameKeepsSshRepositoryPath | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `remoteDisplayNameKeepsSshRepositoryPath` |
+| 39 | GitServiceReadingContract | getStatus 把未跟踪文件分流到 untracked | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `statusSeparatesUntrackedFiles` |
+| 40 | GitServiceReadingContract | isRepository 对仓库与非仓库目录判定正确 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `isRepositoryDetectsRepository` |
+| 41 | GitServiceReadingContract | isRepository 对不存在的路径返回 false 且不抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `isRepositoryToleratesMissingPath` |
+| 42 | GitServiceReadingContract | commitChanges 返回该 commit 的变更文件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `commitChangesReturnsFiles` |
+| 43 | GitServiceRemoteURL | 读取 origin 的远程地址并保持原始写法 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readsOriginRemoteURLVerbatim` |
+| 44 | GitServiceRemoteURL | 读取指定名称的远程地址 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readsNamedRemoteURL` |
+| 45 | GitServiceRemoteURL | 不存在的远程名称返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `returnsNilForUnknownRemote` |
+| 46 | GitServiceRemoteURL | 非仓库目录与不存在的路径返回 nil 且不抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `returnsNilForNonRepositoryPaths` |
+| 47 | GitService | getStatus throws repositoryNotGit for non-git directory | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `getStatusThrowsForNonGitDirectory` |
+| 48 | GitService | getStatus throws repositoryNotGit for nonexistent path | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `getStatusThrowsForNonexistentPath` |
+| 49 | GitService | getDiff throws repositoryNotGit for non-git directory | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `getDiffThrowsForNonGitDirectory` |
+| 50 | GitService | repository root lookup rejects pathological paths quickly | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `repositoryRootRejectsPathologicalPath` |
+| 51 | GitService | getLog throws repositoryNotGit for non-git directory | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `getLogThrowsForNonGitDirectory` |
+| 52 | GitSharedQueueHangRepro | a hung call on one repository does not block other repositories | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `hungCallOnOneRepositoryDoesNotBlockOthers` |
+| 53 | GitSharedQueueHangRepro | a queued call on a busy repository can be cancelled promptly | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `queuedCallOnBusyRepositoryIsCancellable` |
+| 54 | GitSharedQueueHangRepro | a queued call times out instead of waiting forever | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `queuedCallTimesOutInsteadOfWaitingForever` |
+| 55 | GitSharedQueueHangRepro | nested queue.sync inside the body must not deadlock | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `nestedQueueSyncInsideBodyDoesNotDeadlock` |
+| 56 | GitStashService | pushPopRoundTrip | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pushPopRoundTrip` |
+| 57 | GitStashService | pushWithNoChangesReturnsNil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pushWithNoChangesReturnsNil` |
+| 58 | GitStashService | listAndCountMatch | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listAndCountMatch` |
+| 59 | GitSubmoduleService | submoduleListReturnsEmptyForRepoWithoutSubmodules | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `submoduleListReturnsEmptyForRepoWithoutSubmodules` |
+| 60 | 综合 | sourceControlPluginRegistersEditorContract | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `sourceControlPluginRegistersEditorContract` |
+| 61 | 综合 | v2PluginRegistersAllLegacyGitToolNames | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `v2PluginRegistersAllLegacyGitToolNames` |
+| 62 | 综合 | gitLogToolNormalizesCount | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gitLogToolNormalizesCount` |
+| 63 | 综合 | registeredGitToolsDefaultToTheCallingConversationsProject | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `registeredGitToolsDefaultToTheCallingConversationsProject` |
+| 64 | 综合 | validatePathRequiresAllowedDirectoryBoundary | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `validatePathRequiresAllowedDirectoryBoundary` |
+| 65 | 综合 | validatePathUsesCurrentProjectPathWhenToolPathIsBlank | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `validatePathUsesCurrentProjectPathWhenToolPathIsBlank` |
+| 66 | 综合 | gitServiceFindsRepositoryRootForFilePath | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gitServiceFindsRepositoryRootForFilePath` |
+| 67 | 综合 | validateBranchNameAcceptsCommonGitNames | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `validateBranchNameAcceptsCommonGitNames` |
+| 68 | 综合 | validateBranchNameRejectsInvalidGitNames | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `validateBranchNameRejectsInvalidGitNames` |
+| 69 | 综合 | remoteDisplayNamePreservesSpacesInLocalRemotePath | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `remoteDisplayNamePreservesSpacesInLocalRemotePath` |
+| 70 | 综合 | remoteDisplayNameKeepsSshRepositoryPath | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `remoteDisplayNameKeepsSshRepositoryPath` |
 
-> 说明：全部 **62 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **70 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 48 / 48
+- P1: 已覆盖 56 / 56
 - P2: 已覆盖 9 / 9
-- **合计: 62 / 62**（仅表示清单场景，非源码覆盖率）
+- **合计: 70 / 70**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（48 条）
+- **P1**: 其余功能性用例（56 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 62 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 70 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
