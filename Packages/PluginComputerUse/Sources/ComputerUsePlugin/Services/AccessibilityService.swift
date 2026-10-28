@@ -139,6 +139,10 @@ final class AccessibilityService {
         }
         let before = valueText(ref)
         let result: AXError
+        // 遮罩必须在 AX 动作**之前**显示：动作是瞬时的，先显示再执行，
+        // 用户才可能看到「Lumi 正在操作这个窗口」。
+        let overlay = beginTargetOverlay(element: ref, snapshot: stored.snapshot, pid: stored.pid)
+        defer { overlay?.end() }
         if action == "set_value" {
             guard let value, value.utf8.count <= 20_000 else { throw ComputerUseError.invalidArguments("set_value requires text <= 20 KB") }
             var settable = DarwinBoolean(false)
@@ -164,6 +168,39 @@ final class AccessibilityService {
     }
 
     static let allowedActions = [kAXPressAction, kAXPickAction, kAXIncrementAction, kAXDecrementAction, kAXConfirmAction]
+
+    // MARK: - 目标窗口遮罩
+
+    /// 在目标窗口上显示「Lumi 正在操作」遮罩。
+    ///
+    /// AX 路径此前**完全没有桌面提示**：用户看到界面被改动，却无从判断
+    /// 是 Lumi 干的还是应用自己变的。遮罩补上了这个缺口。
+    ///
+    /// - Note: 读不到窗口几何时**不报错**。遮罩是提示而非操作必需项，
+    ///   几何查询失败不应让一次本来能成功的 AX 动作失败。
+    ///
+    /// - Returns: 已启动的遮罩会话；无法定位窗口时返回 `nil`。
+    private func beginTargetOverlay(
+        element: AXUIElement,
+        snapshot: Snapshot,
+        pid: pid_t
+    ) -> ComputerUseTargetOverlayController? {
+        guard let windowElement = ComputerUseTargetGeometryProvider.axWindowElement(of: element),
+              let rect = ComputerUseTargetGeometryProvider.axWindowRect(of: element) else {
+            return nil
+        }
+        let controller = ComputerUseTargetOverlayController.shared
+        controller.begin(
+            ComputerUseTargetOverlayController.Target(
+                quartzRect: rect,
+                applicationName: snapshot.application,
+                intensity: .subtle
+            ),
+            windowElement: windowElement,
+            processIdentifier: pid
+        )
+        return controller
+    }
 
     /// 校验目标应用是否已获授权。
     ///

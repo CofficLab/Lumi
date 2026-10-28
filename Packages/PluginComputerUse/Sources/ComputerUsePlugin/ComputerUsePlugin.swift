@@ -121,6 +121,8 @@ public final class ComputerUsePlugin: SuperPlugin, PluginDataMigrating, SuperLog
         tools?.remove(id: "accessibility_observe")
         tools?.remove(id: "accessibility_act")
         NativeControlCoordinator.shared.shutdown()
+        // 遮罩是桌面级浮层，插件卸载后必须立即移除，不能残留在用户桌面上。
+        ComputerUseTargetOverlayController.shared.removeImmediately()
         kernel.resolveProvider((any RootViewProviding).self)?.removeOverlays(ids: ["\(id).native-control"])
         kernel.resolveProvider((any ToolCallRenderingProviding).self)?.unregister(
             id: ComputerUseAuthorizationRowRenderer.id
