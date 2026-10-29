@@ -67,12 +67,13 @@ final class LumiToolCallGroupCollapseUITests: LumiUITestCase {
         launchLumi(extraArguments: [
             // 确定性 LLM 供应商 + 隔离存储 + 植入工具调用组会话。
             //
-            // - Important: `--lumi-ui-testing` 必须带上。夹具种入会话时会插入
-            //   **用户消息**，而 `PluginConversationTitle` 会对「首条用户消息」
-            //   发起一次**真实的** LLM 标题生成请求（见 `TitleService`）。
-            //   不挂桩供应商时这次请求会打到真实供应商：既慢又不确定，还可能
-            //   因失败回退成占位标题而覆盖夹具标题，表现为「会话在列表里不可见」
-            //   这类与被测行为无关的失败。
+            // - Important: `--lumi-ui-testing` 必须带上，它强制选中桩供应商
+            //   `ui-test`（否则会拿到 UserDefaults 里残留的真实供应商）。
+            //   夹具种入会话时会插入**用户消息**，`PluginAgentLoop.MessageObserver`
+            //   因此会为每个会话自动跑一个回合；那 4 个回合的完成时刻各不相同，
+            //   会把各会话的 `lastMessageAt` 推到「现在」并让会话列表顺序在
+            //   run-to-run 之间摇摆。夹具已通过 `setAutoReplySuppressed` 阻断
+            //   自动回合，但挂上桩供应商仍能保证「任何路径都不会打到真实供应商」。
             "--lumi-ui-testing",
             "--lumi-ui-testing-isolated-storage",
             "--lumi-ui-testing-message-list-standard",
