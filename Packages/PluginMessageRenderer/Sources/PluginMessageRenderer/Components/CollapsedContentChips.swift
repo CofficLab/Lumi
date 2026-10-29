@@ -18,8 +18,6 @@ struct CollapsedContentChips: View {
     /// 该折叠段是否已展开为正文。
     @State private var expandedBlocks: Set<Int> = []
 
-    private static let chipFont: Font = .system(size: 12, weight: .medium)
-
     var body: some View {
         // 区间已归一化：无折叠块时直接渲染纯文本，走与旧消息完全一致的路径。
         guard !blocks.isEmpty else {
@@ -118,6 +116,15 @@ private struct CollapsedContentChip: View {
     let content: String
     let onToggle: () -> Void
 
+    /// 标题与统计信息。
+    ///
+    /// metadata 里存的是一个拼好的标题串（「粘贴的文本 · 13,253 字 · 75 行」），
+    /// 这里按分隔符拆开，好让「这是什么」与「有多大」分成两层排版——与输入框
+    /// 里的 chip 一致。
+    private var parts: (label: String, detail: String?) {
+        CollapsedContentChipStyle.split(title: title)
+    }
+
     var body: some View {
         Button(action: onToggle) {
             if isExpanded {
@@ -133,32 +140,41 @@ private struct CollapsedContentChip: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(10)
                 .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: CollapsedContentChipStyle.cornerRadius, style: .continuous)
                         .fill(theme.textPrimary.opacity(0.05))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: CollapsedContentChipStyle.cornerRadius, style: .continuous)
                         .strokeBorder(theme.textPrimary.opacity(0.10), lineWidth: 1)
                 )
             } else {
-                HStack(spacing: 6) {
+                HStack(spacing: CollapsedContentChipStyle.iconSpacing) {
                     Image(systemName: systemImage)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: CollapsedContentChipStyle.iconSize, weight: .medium))
                         .foregroundColor(theme.textSecondary)
-                    Text(title)
-                        .font(CollapsedContentChip.font)
+
+                    // 标题与统计信息分层：标题用正文色，统计信息小一号用次级色。
+                    Text(parts.label)
+                        .font(.system(size: CollapsedContentChipStyle.titleSize, weight: .medium))
                         .foregroundColor(theme.textPrimary)
                         .lineLimit(1)
+
+                    if let detail = parts.detail {
+                        Text(detail)
+                            .font(.system(size: CollapsedContentChipStyle.detailSize))
+                            .foregroundColor(theme.textTertiary)
+                            .lineLimit(1)
+                    }
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
+                .padding(.horizontal, CollapsedContentChipStyle.horizontalPadding)
+                .padding(.vertical, CollapsedContentChipStyle.standaloneVerticalPadding)
                 .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(theme.textPrimary.opacity(0.06))
+                    RoundedRectangle(cornerRadius: CollapsedContentChipStyle.cornerRadius, style: .continuous)
+                        .fill(theme.textPrimary.opacity(CollapsedContentChipStyle.fillOpacity))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(theme.textPrimary.opacity(0.12), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: CollapsedContentChipStyle.cornerRadius, style: .continuous)
+                        .strokeBorder(theme.textPrimary.opacity(CollapsedContentChipStyle.strokeOpacity), lineWidth: 1)
                 )
             }
         }
@@ -166,20 +182,24 @@ private struct CollapsedContentChip: View {
     }
 
     private var header: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: CollapsedContentChipStyle.iconSpacing) {
             Image(systemName: systemImage)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: CollapsedContentChipStyle.iconSize, weight: .medium))
                 .foregroundColor(theme.textSecondary)
-            Text(title)
-                .font(CollapsedContentChip.font)
+            Text(parts.label)
+                .font(.system(size: CollapsedContentChipStyle.titleSize, weight: .medium))
                 .foregroundColor(theme.textPrimary)
                 .lineLimit(1)
+            if let detail = parts.detail {
+                Text(detail)
+                    .font(.system(size: CollapsedContentChipStyle.detailSize))
+                    .foregroundColor(theme.textTertiary)
+                    .lineLimit(1)
+            }
             Spacer(minLength: 0)
             Text(pluginLocalization.string("Show less"))
                 .font(.system(size: 10))
                 .foregroundColor(theme.textTertiary)
         }
     }
-
-    private static let font: Font = .system(size: 12, weight: .medium)
 }
