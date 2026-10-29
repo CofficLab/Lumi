@@ -64,7 +64,7 @@ public struct AddIconShapeTool: SuperAgentTool {
             let layer = try makeLayer(shapeName: shapeName, arguments: arguments)
             let (document, scope) = try await IconToolSupport.resolveDocument(arguments)
             let updated = try await MainActor.run {
-                try IconDocumentStore.shared.addLayer(layer, documentId: document.id, scope: scope)
+                try IconToolSupport.store().addLayer(layer, documentId: document.id, scope: scope)
             }
             await IconToolSupport.notify(scope: scope, documentId: document.id)
             switch language {
@@ -87,7 +87,7 @@ public struct AddIconShapeTool: SuperAgentTool {
             }
         } catch {
             await MainActor.run {
-                IconDocumentStore.shared.setError(error.localizedDescription)
+                IconToolSupport.store().setError(error.localizedDescription)
             }
             return IconToolSupport.error(error, language: language)
         }
