@@ -16,7 +16,7 @@ import Testing
 @Suite("PluginAppIconDesigner", .serialized)
 @MainActor
 struct AppIconDesignerPluginTests {
-    private final class TestStorage: StorageProviding {
+    final class TestStorage: StorageProviding {
         let dataRootDirectory: URL
 
         init() {

@@ -79,7 +79,7 @@ public struct ExportAppIconTool: SuperAgentTool {
 
             // 3. 回退：选中文档 → 选中 artifact → 报错。
             let exportSource = try await MainActor.run { () -> ExportSource in
-                if let document = IconDocumentStore.shared.selectedDocument {
+                if let document = IconToolSupport.store().selectedDocument {
                     return ExportSource.document(document)
                 }
                 if let artifact = AppIconArtifactStore.shared.selectedArtifact {
@@ -116,7 +116,7 @@ public struct ExportAppIconTool: SuperAgentTool {
     private func rememberExport(_ result: IconComposerExportService.ExportResult) async {
         await MainActor.run {
             AppIconArtifactStore.shared.setExportURL(result.iconURL)
-            IconDocumentStore.shared.setExportURL(result.iconURL)
+            IconToolSupport.store().setExportURL(result.iconURL)
         }
     }
 
