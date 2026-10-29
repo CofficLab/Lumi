@@ -125,13 +125,24 @@ public enum MessageListStandardUITestingSupport {
         // 必须抑制自动回复：下面每个会话都会插入 user 消息，而
         // `PluginAgentLoop.MessageObserver` 会对 user 消息自动 `runTurn`。
         // 自动回合会写回一条 `createdAt = now` 的助手消息，把该会话的
-        // `lastMessageAt` 推到「现在」——四个会话的自动回复完成时刻各不相同，
+        // `lastMessageAt` 推到「现在」——几个会话的自动回复完成时刻各不相同，
         // 于是会话列表的排序由这场竞态决定，run-to-run 不稳定
         // （实测同一夹具两次运行的顺序不同）。
         //
         // 范式参照 `PluginAgentLoop.ErrorRetryUITestingSupport`：它同样是因为
         // 插入 user 消息而必须显式抑制自动回复。
-        for conversationID in [small, large, huge, toolGroup] {
+        //
+        // - Important: 抑制**只覆盖 seed 阶段**，seed 结束必须解除。
+        //   有些 UI 测试会在夹具会话里**真的发一条消息**，期待模型回复
+        //   （如 `LumiToolApprovalSwitchUITests` 期待高风险工具的授权卡片）。
+        //   若抑制被永久留下，这些测试就再也收不到模型回复。
+        //
+        //   解除时机是安全的：`MessageObserver.handle` 里的
+        //   `isAutoReplySuppressed` 检查是**同步**的（`notifyMessageInsertedObservers`
+        //   就在调用栈上直接 invoke），seed 期间插入的 user 消息在 seed 返回前
+        //   就已经完成判定。
+        let seededConversationIDs = [small, large, huge, toolGroup]
+        for conversationID in seededConversationIDs {
             agentLoop?.setAutoReplySuppressed(true, for: conversationID)
         }
 
@@ -139,6 +150,11 @@ public enum MessageListStandardUITestingSupport {
         seedLarge(conversations: conversations, messages: messages, conversationID: large)
         seedHuge(conversations: conversations, messages: messages, conversationID: huge)
         seedToolGroup(conversations: conversations, messages: messages, conversationID: toolGroup)
+
+        // seed 结束：解除抑制，让 UI 测试可以在夹具会话里正常发消息。
+        for conversationID in seededConversationIDs {
+            agentLoop?.setAutoReplySuppressed(false, for: conversationID)
+        }
 
         // 选中大会话：它是更难收敛的一侧，作为 UI 测试的起始态。
         conversations.selectConversation(id: large)

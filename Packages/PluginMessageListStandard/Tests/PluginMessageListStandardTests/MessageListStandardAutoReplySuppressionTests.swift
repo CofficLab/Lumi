@@ -85,38 +85,30 @@ func fixtureSuppressesAutoReplyForEveryConversation() {
     let titles = conversations.conversations.compactMap(\.title)
     #expect(!titles.isEmpty, "夹具未种出任何会话")
 
-    // 每个会话都必须被抑制。
-    for conversation in conversations.conversations {
-        #expect(
-            agentLoop.isAutoReplySuppressed(for: conversation.id),
-            """
-            会话「\(conversation.title ?? "nil")」未抑制自动回复。
-            未抑制时 `PluginAgentLoop.MessageObserver` 会为该会话自动跑一个回合，
-            写回 `createdAt = now` 的助手消息，把 `lastMessageAt` 推到「现在」——
-            几个会话的自动回合完成时刻不同，会话列表顺序因此在 run-to-run 之间摇摆。
-            """
-        )
-    }
-
-    // 被抑制的会话数必须与种出的会话数一致（不多不少）。
+    // 抑制只覆盖 seed 阶段：seed 结束必须**解除**。
+    //
+    // 若抑制被永久留下，UI 测试就无法在夹具会话里真的发消息——
+    // 那些测试期待模型回复（如高风险工具的授权卡片）。
+    // 实测：抑制永久保留时 `LumiToolApprovalSwitchUITests` 的
+    // 「授权卡片未出现」两条用例全挂。
     #expect(
-        agentLoop.suppressed.count == conversations.conversations.count,
+        agentLoop.suppressed.isEmpty,
         """
-        抑制的会话数应与种出的会话数一致，实际 \
-        抑制=\(agentLoop.suppressed.count) 会话=\(conversations.conversations.count)
+        seed 结束后仍有会话被抑制：\(agentLoop.suppressed.map { $0.uuidString.prefix(8) })
+        抑制只应覆盖 seed 阶段，否则 UI 测试无法在夹具会话里正常发消息。
         """
     )
 }
 
-/// 抑制必须发生在**插入 user 消息之前**。
+/// 抑制必须发生在**插入 user 消息之前**，且在 seed 结束时解除。
 ///
 /// 若顺序颠倒，`MessageObserver` 会在 seed 期间就捕获到 user 消息并
 /// 自动跑回合——此时抑制还没生效，自动回合已经启动。
 ///
-/// 因此这里断言的是「seed 完成后会话已被抑制」，而不是「过程中被抑制过」：
-/// 前者能抓住「抑制代码被删掉」，后者不能。
+/// 反过来，抑制也**不能**永久保留：UI 测试需要在夹具会话里真的发消息，
+/// 期待模型回复。
 @MainActor
-@Test("夹具：抑制在插入 user 消息之前生效，不会漏掉自动回合")
+@Test("夹具：抑制在插入 user 消息之前生效，且在 seed 结束后解除")
 func fixtureSuppressesAutoReplyBeforeInsertingUserMessages() {
     let conversations = DefaultConversationManager()
     let messages = DefaultMessageManager()
@@ -124,6 +116,7 @@ func fixtureSuppressesAutoReplyBeforeInsertingUserMessages() {
 
     // 记录每次 insertMessage 时该会话是否已被抑制。
     var suppressionAtInsertTime: [UUID: Bool] = [:]
+    var suppressedAfterSeed: Set<UUID> = []
     let observer = messages.addMessageInsertedObserver { message, conversationID in
         guard message.role == .user else { return }
         suppressionAtInsertTime[conversationID] = agentLoop.isAutoReplySuppressed(for: conversationID)
@@ -135,6 +128,7 @@ func fixtureSuppressesAutoReplyBeforeInsertingUserMessages() {
         messages: messages,
         agentLoop: agentLoop
     )
+    suppressedAfterSeed = agentLoop.suppressed
 
     #expect(
         !suppressionAtInsertTime.isEmpty,
@@ -149,5 +143,13 @@ func fixtureSuppressesAutoReplyBeforeInsertingUserMessages() {
             """
         )
     }
+
+    // seed 之后必须全部解除。
+    #expect(
+        suppressedAfterSeed.isEmpty,
+        """
+        seed 结束后仍未解除抑制：\(suppressedAfterSeed.map { $0.uuidString.prefix(8) })
+        """
+    )
 }
 #endif

@@ -101,7 +101,9 @@ public enum MessageListBriefUITestingSupport {
         //
         // 范式参照 `PluginAgentLoop.ErrorRetryUITestingSupport`：它同样是因为
         // 插入 user 消息而必须显式抑制自动回复。
+        // 抑制**只覆盖 seed 阶段**，seed 结束必须解除（见 Standard 夹具的说明）。
         agentLoop?.setAutoReplySuppressed(true, for: conversationID)
+        defer { agentLoop?.setAutoReplySuppressed(false, for: conversationID) }
 
         // 4 个 turn，全部保持简短：总高度低于消息区视口，避免 macOS List
         // 懒加载把视口外的行裁掉导致 UI 测试找不到元素。
