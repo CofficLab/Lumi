@@ -11,7 +11,7 @@ let package = Package(
         .library(name: "PluginLLMProviderAliyun", targets: ["PluginLLMProviderAliyun"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),

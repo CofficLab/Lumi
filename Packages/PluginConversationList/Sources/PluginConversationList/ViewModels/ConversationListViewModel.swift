@@ -29,6 +29,11 @@ final class ConversationListViewModel: ObservableObject {
     /// 当前项目路径解析结果（用于 `.task(id:)` 感知项目切换）。
     @Published private(set) var resolvedProjectPath: String?
     @Published private(set) var hasMultipleProjects = false
+    /// 当前作用域内的对话总数（顶层对话，不含子 Agent 会话）。
+    ///
+    /// 用于标题栏右侧的条数徽标：与列表内容口径一致——
+    /// 「所有项目」统计全库顶层对话，「当前项目」统计该项目的顶层对话。
+    @Published private(set) var conversationCount = 0
 
     let scope: Scope
 
@@ -227,6 +232,7 @@ final class ConversationListViewModel: ObservableObject {
         }
 
         await refreshProjectVisibilityIfNeeded(path: path)
+        await refreshConversationCount(path: path)
         isLoading = false
     }
 
@@ -276,5 +282,19 @@ final class ConversationListViewModel: ObservableObject {
         let projectCount = await context.conversations.conversationProjectCount()
         guard effectiveProjectPath == path else { return }
         hasMultipleProjects = projectCount > 1
+    }
+
+    /// 刷新标题栏徽标用的对话条数。
+    ///
+    /// 统计口径与列表内容保持一致（顶层对话，不含子 Agent 会话）：
+    /// - `.all`：全库顶层对话数；
+    /// - `.currentProject`：当前项目下的顶层对话数。
+    ///
+    /// 项目切换期间查询结果可能已经过期，用 `path` 做一次失效检查，
+    /// 避免把上一个项目的条数写到当前项目的标题栏上。
+    private func refreshConversationCount(path: String?) async {
+        let count = await context.conversations.conversationCount(projectPath: path)
+        guard effectiveProjectPath == path else { return }
+        conversationCount = count
     }
 }

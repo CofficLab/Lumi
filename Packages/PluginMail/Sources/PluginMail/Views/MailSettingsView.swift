@@ -4,8 +4,8 @@ import KitMail
 
 /// 邮件账户设置页：账户列表 + 添加/编辑入口。
 ///
-/// 布局遵循 settings-ui 规范：`PluginSettingsScaffold` + `AppCard` +
-/// `AppSettings*Row`，不使用 `Form`。
+/// 布局遵循 settings-ui 规范：`PluginSettingsScaffold` + 原生 `AppSettingSection` /
+/// `AppSettingRow`，不使用 `Form`。
 public struct MailSettingsView: View {
     @LumiTheme private var theme: any LumiUITheme
 
@@ -47,17 +47,18 @@ public struct MailSettingsView: View {
     // MARK: - 账户列表
 
     private var accountListCard: some View {
-        AppCard {
-            AppSettingsSection(
-                title: "账户",
-                spacing: 12
-            ) {
+        AppSettingSection(title: "账户", titleAlignment: .leading) {
+            VStack(spacing: 0) {
                 if accounts.isEmpty {
                     Text("还没有邮件账户。点击下方「添加账户」开始配置。")
                         .font(.appBody)
                         .foregroundColor(theme.textSecondary)
                 } else {
-                    ForEach(accounts) { account in
+                    ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
+                        if index > 0 {
+                            Divider()
+                                .padding(.vertical, 8)
+                        }
                         accountRow(account)
                     }
                 }
@@ -71,39 +72,25 @@ public struct MailSettingsView: View {
     }
 
     private func accountRow(_ account: MailAccountConfig) -> some View {
-        AppSettingsRow {
-            HStack(spacing: 12) {
-                Image(systemName: "envelope")
-                    .font(.appCallout)
-                    .foregroundColor(theme.primary)
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(account.displayName)
-                        .font(.appBody)
-                        .foregroundColor(theme.textPrimary)
-                    Text("\(account.email) · \(account.imapHost)")
-                        .font(.appCaption)
-                        .foregroundColor(theme.textSecondary)
+        AppSettingRow(
+            title: account.displayName,
+            description: "\(account.email) · \(account.imapHost)",
+            icon: "envelope"
+        ) {
+            HStack(spacing: 8) {
+                if testingAccountID == account.id {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    AppButton("测试", style: .secondary, size: .small) {
+                        Task { await testConnection(account) }
+                    }
                 }
-
-                Spacer()
-
-                HStack(spacing: 8) {
-                    if testingAccountID == account.id {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else {
-                        AppButton("测试", style: .secondary, size: .small) {
-                            Task { await testConnection(account) }
-                        }
-                    }
-                    AppButton("编辑", style: .secondary, size: .small) {
-                        beginEditing(account)
-                    }
-                    AppButton("删除", style: .destructive, size: .small) {
-                        delete(account)
-                    }
+                AppButton("编辑", style: .secondary, size: .small) {
+                    beginEditing(account)
+                }
+                AppButton("删除", style: .destructive, size: .small) {
+                    delete(account)
                 }
             }
         }
@@ -112,11 +99,9 @@ public struct MailSettingsView: View {
     // MARK: - 添加入口
 
     private var addCard: some View {
-        AppCard {
-            AppSettingsSection(spacing: 12) {
-                AppButton("添加账户", style: .primary, fillsWidth: true) {
-                    beginAdding()
-                }
+        AppSettingSection(title: nil, titleAlignment: .leading) {
+            AppButton("添加账户", style: .primary, fillsWidth: true) {
+                beginAdding()
             }
         }
     }

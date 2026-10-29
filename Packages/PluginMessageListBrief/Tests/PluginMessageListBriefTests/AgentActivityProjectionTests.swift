@@ -136,4 +136,67 @@ struct AgentActivityProjectionTests {
 
         #expect(projection == nil)
     }
+
+    // MARK: - §6 状态行恒为一行
+
+    @Test("状态行在细节缺失时只显示标题")
+    func statusLineWithoutDetail() {
+        let projection = AgentActivityProjection(
+            phase: .thinking,
+            title: "正在思考…",
+            detail: nil
+        )
+
+        #expect(projection.statusLineText == "正在思考…")
+    }
+
+    @Test("状态行在细节为空字符串时也不产生尾部分隔符")
+    func statusLineWithEmptyDetail() {
+        let projection = AgentActivityProjection(
+            phase: .thinking,
+            title: "正在思考…",
+            detail: ""
+        )
+
+        #expect(projection.statusLineText == "正在思考…")
+    }
+
+    @Test("状态行把标题与细节合并到同一行")
+    func statusLineMergesDetail() {
+        let projection = AgentActivityProjection(
+            phase: .executingTool,
+            title: "正在执行",
+            detail: "正在读取 Sources/App.swift"
+        )
+
+        #expect(projection.statusLineText == "正在执行 · 正在读取 Sources/App.swift")
+    }
+
+    @Test("状态行恒为单行文本，不含换行")
+    func statusLineIsSingleLine() {
+        let projection = AgentActivityProjection(
+            phase: .executingTool,
+            title: "正在执行",
+            detail: "正在读取 Sources/App.swift"
+        )
+
+        #expect(!projection.statusLineText.contains("\n"))
+    }
+
+    @Test("每个活动阶段都能产出一行状态文本")
+    func everyStageProducesSingleLineStatusText() {
+        let stages: [MessageStreamingStage] = [.sending, .thinking, .generating]
+
+        for stage in stages {
+            guard let projection = AgentActivityProjection.resolve(
+                conversationState: nil,
+                streamingStage: stage
+            ) else {
+                Issue.record("\(stage) 阶段应产出活动投影")
+                continue
+            }
+            #expect(!projection.statusLineText.isEmpty, "\(stage) 阶段应产出非空状态文本")
+            #expect(!projection.statusLineText.contains("\n"), "\(stage) 阶段的状态文本不应换行")
+        }
+    }
 }

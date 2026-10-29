@@ -3,7 +3,7 @@ import Foundation
 
 /// 创建 Agent 规则文档工具
 ///
-/// 在指定项目的 .agent/rules 目录中创建新的规则文档。
+/// 在指定项目的 .lumi/rules 目录中创建新的规则文档。
 /// 由旧版 `LumiAgentTool` 迁移为 `SuperAgentTool`；`kernel.currentProjectPath`
 /// 改为 `AgentRulesRuntime.currentProjectPath`。
 public struct CreateAgentRuleTool: SuperAgentTool {
@@ -12,7 +12,7 @@ public struct CreateAgentRuleTool: SuperAgentTool {
     public init() {}
 
     public func description(for language: LanguagePreference) -> String {
-        "Create a new rule document in the .agent/rules directory of a project. The document will be created as a Markdown file with the specified title and content."
+        "Create a new rule document in the .lumi/rules directory of a project. The document will be created as a Markdown file with the specified title and content."
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
@@ -21,7 +21,7 @@ public struct CreateAgentRuleTool: SuperAgentTool {
             "properties": [
                 "project_path": [
                     "type": "string",
-                    "description": "Absolute path to the project directory containing .agent/rules folder.",
+                    "description": "Absolute path to the project directory containing the .lumi/rules folder.",
                 ],
                 "filename": [
                     "type": "string",

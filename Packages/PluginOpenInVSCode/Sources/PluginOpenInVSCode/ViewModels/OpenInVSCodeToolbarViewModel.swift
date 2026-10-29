@@ -1,5 +1,5 @@
 import Foundation
-import OpenInKit
+import KitOpenIn
 
 /// 为标题栏按钮提供当前项目状态，并在项目切换后刷新可用性。
 @MainActor

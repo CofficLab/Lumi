@@ -56,10 +56,15 @@ struct ListV3View: View {
     var body: some View {
         ZStack {
             messageScrollView
-                .id(viewModel.selectedConversationID)
                 .opacity(initialPositionGate.isReady ? 1 : 0)
                 .allowsHitTesting(initialPositionGate.isReady)
-            if viewModel.isLoading || !initialPositionGate.isReady {
+            // Important: 遮罩的显示条件**只**看 gate。
+            //   原先是 `isLoading || !gate.isReady`：`isLoading` 是一个可能停在
+            //   true 不再回落的布尔（激活被跳过、加载卡住……），一旦它卡住，
+            //   遮罩就再没有任何东西能把它撤掉 —— 用户界面上就是「正在加载消息…」
+            //   永不消失。现在遮罩的寿命由 gate 的**预算兜底**唯一决定：
+            //   挂起后最多一个预算，无论收敛有没有被启动、有没有成功。
+            if !initialPositionGate.isReady {
                 MessageLoadingView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(theme.surface.opacity(0.6))
@@ -77,55 +82,65 @@ struct ListV3View: View {
 
     private var messageScrollView: some View {
         ScrollViewReader { proxy in
-            // List(NSTableView)自带 cell 复用：只有可见行被 materialize。
+            // Important: 观察者必须待在 `.id()` 作用域**之外**，但仍要在
+            //   `ScrollViewReader` 闭包**之内**（它们要用 `proxy`）。
             //
-            // 历史行（`ForEach`）只含稳定的落库 id。流式行（`streamingRow`）作为
-            // 独立的、用进程级常量 `LumiStreamingRowID` 标识的尾行单独渲染 ——
-            // 它与落库行的随机 UUID 永不冲突，落库时流式行消失 + 真实行出现被
-            // SwiftUI 作为两次独立 diff 处理，无 id 交换、无闪烁。token 增长只
-            // 让这一行的内容变化，不触发 `historyRows` 全量 rebuild（避免活锁）。
-            List {
-                historyRows(proxy: proxy)
-                streamingRowView
-                activityRowView
+            //   `.id()` 会给被包裹的子树换一整套 identity：作用域内的 `onChange`
+            //   会随子树一起被重建，基线值被重置为**重建那一刻**的值。于是
+            //   「会话切换」这个变化本身永远不会被 `onChange` 观察到（基线已经是
+            //   新值），`resetForConversationSwitch()` 形同死代码；`onChange(isLoading)`
+            //   同理会在切换时丢掉「加载开始」那一次。
+            //
+            //   把 `.id()` 收窄到 List 本身（只重置行状态与滚动位置），观察者挂在
+            //   包裹它的 Group 上：切换时它们仍在、基线仍在，事件不再丢失。
+            Group {
+                List {
+                    historyRows(proxy: proxy)
+                    streamingRowView
+                    activityRowView
 
-                // 底部锚点行：纯占位 + 稳定 id（供 scrollTo 用），不报偏好。
-                // 是否在底部由 `ScrollViewBottomTracker` 观察 NSScrollView 判定。
-                Color.clear
-                    .frame(height: 16)
-                    .id(MessageListScrollCoordinator.bottomAnchorID)
-                    .accessibilityHidden(true)
-                    .plainMessageListRow(insets: EdgeInsets())
-                    .onChange(of: scrollTick) { _, _ in
-                        guard initialPositionGate.isReady else { return }
-                        let conversationID = viewModel.selectedConversationID
-                        // 新消息行可能还没有完成尺寸布局；立即 scrollTo 会把
-                        // 锚点停在旧的内容底部，导致最后一行被输入框截断。
-                        // 等布局完成后只保留最后一次滚动请求，避免多个
-                        // scrollTo 同时驱动 macOS List 的行 materialize。
-                        runtime.scrollCoordinator.scheduleScrollToBottomAfterLayout(
-                            target: ProxyMessageListScrollingTarget(
-                                proxy: proxy,
-                                controller: runtime.bottomScrollController
-                            ),
-                            messages: viewModel.historyRows,
-                            animated: false,
-                            condition: {
-                                conversationID == viewModel.selectedConversationID
-                            }
-                        )
-                    }
-            }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            // 让 Markdown 代码块使用 HorizontalScrollView，不捕获垂直滚动
-            .environment(\.preferOuterScroll, true)
-            .background(
-                ScrollViewBottomTracker(
-                    onChange: { runtime.atBottomBox.value = $0 },
-                    controller: runtime.bottomScrollController
+                    // 底部锚点行：纯占位 + 稳定 id（供 scrollTo 用），不报偏好。
+                    // 是否在底部由 `ScrollViewBottomTracker` 观察 NSScrollView 判定。
+                    Color.clear
+                        .frame(height: 16)
+                        .id(MessageListScrollCoordinator.bottomAnchorID)
+                        .accessibilityHidden(true)
+                        .plainMessageListRow(insets: EdgeInsets())
+                        .onChange(of: scrollTick) { _, _ in
+                            guard initialPositionGate.isReady else { return }
+                            let conversationID = viewModel.selectedConversationID
+                            // 新消息行可能还没有完成尺寸布局；立即 scrollTo 会把
+                            // 锚点停在旧的内容底部，导致最后一行被输入框截断。
+                            // 等布局完成后只保留最后一次滚动请求，避免多个
+                            // scrollTo 同时驱动 macOS List 的行 materialize。
+                            runtime.scrollCoordinator.scheduleScrollToBottomAfterLayout(
+                                target: ProxyMessageListScrollingTarget(
+                                    proxy: proxy,
+                                    controller: runtime.bottomScrollController
+                                ),
+                                messages: viewModel.historyRows,
+                                animated: false,
+                                condition: {
+                                    conversationID == viewModel.selectedConversationID
+                                }
+                            )
+                        }
+                }
+                    // 会话切换时重建 List：行状态与滚动位置回到初始。
+                    // 放在 List 之后的所有修饰（尤其是底部追踪器）都在这个作用域内，
+                    // 会随 List 一起重建，重新绑定到新的 NSScrollView。
+                    .id(viewModel.selectedConversationID)
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                // 让 Markdown 代码块使用 HorizontalScrollView，不捕获垂直滚动
+                .environment(\.preferOuterScroll, true)
+                .background(
+                    ScrollViewBottomTracker(
+                        onChange: { runtime.atBottomBox.value = $0 },
+                        controller: runtime.bottomScrollController
+                    )
                 )
-            )
+            }
             .onChange(of: historyBoundary) { _, _ in
                 if runtime.atBottomBox.value {
                     scrollTick &+= 1

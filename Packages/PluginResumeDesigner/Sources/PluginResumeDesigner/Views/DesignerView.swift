@@ -28,7 +28,10 @@ public struct DesignerView: View {
     public var body: some View {
         VStack(spacing: 0) {
             if workspace.projectResumes.isEmpty {
-                ResumeOnboardingView(isProjectOpen: workspace.projectStorageDirectory != nil)
+                AppEmptyState(
+                    icon: "doc.badge.gearshape",
+                    title: L.string("Ask the Agent to create a resume.")
+                )
             } else if let selected = workspace.selectedResume {
                 topToolbar(for: selected.document)
                 content(for: selected)

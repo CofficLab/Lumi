@@ -11,7 +11,7 @@ public struct UpdateSkillTool: SuperAgentTool {
     public init() {}
 
     public func description(for language: LanguagePreference) -> String {
-        "Update an existing project skill in the .agent/skills directory. Omitted fields keep their current values; provide 'content' to replace the SKILL.md body. Read the skill first with read_skill so the replacement is based on the existing content."
+        "Update an existing project skill in the .lumi/skills directory. Omitted fields keep their current values; provide 'content' to replace the SKILL.md body. Read the skill first with read_skill so the replacement is based on the existing content."
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
@@ -20,7 +20,7 @@ public struct UpdateSkillTool: SuperAgentTool {
             "properties": [
                 "project_path": [
                     "type": "string",
-                    "description": "Absolute path to the project directory containing .agent/skills folder. Defaults to the current project.",
+                    "description": "Absolute path to the project directory containing the .lumi/skills folder. Defaults to the current project.",
                 ],
                 "name": [
                     "type": "string",

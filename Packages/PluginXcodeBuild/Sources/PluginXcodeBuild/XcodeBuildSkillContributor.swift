@@ -6,7 +6,7 @@ import ProviderSkill
 /// 技能以标准目录格式存放在插件自己的资源目录（`Resources/Skills/`，
 /// 每个子目录一个技能：`metadata.json` + `SKILL.md`），通过
 /// `SkillDirectoryLoader` 解析——与`PluginSkill` 的内置目录、项目
-/// `.agent/skills/` 共用同一套目录约定与解析器。
+/// `.lumi/skills/` 共用同一套目录约定与解析器。
 ///
 /// Package.swift 中须用 `.copy("Resources/Skills")` 保留目录结构，
 /// 不能用 `.process`（后者可能扁平化/重命名资源导致目录遍历失败）。

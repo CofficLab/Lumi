@@ -26,7 +26,7 @@ struct ToolJobSummaryTests {
         }
     }
 
-    @Test("运行中的 Job 计算经过时间、进度和可停止状态")
+    @Test("运行中的 Job 计算经过时间和进度")
     func projectsLiveJob() {
         let job = makeJob(
             status: .running,
@@ -43,14 +43,24 @@ struct ToolJobSummaryTests {
         #expect(projection.duration == 138)
         #expect(projection.progressText == "读取文件 · 2/5")
         #expect(projection.outputTail == "line 1\nline 2")
-        #expect(projection.canStop)
     }
 
-    @Test("终态 Job 不再显示停止操作")
-    func terminalJobCannotStop() {
-        for status in [ToolJobStatus.completed, .failed, .cancelled, .timedOut, .cancelling] {
-            #expect(ToolJobActivityProjection(job: makeJob(status: status)).canStop == false)
+    @Test("终态 Job 不再标记为进行中")
+    func terminalJobIsNotStale() {
+        for status in [ToolJobStatus.completed, .failed, .cancelled, .timedOut] {
+            #expect(ToolJobActivityProjection(job: makeJob(status: status)).isStale == false)
         }
+    }
+
+    @Test("停止中的 Job 仍算进行中")
+    func cancellingJobIsStillInFlight() {
+        // `.cancelling` 不是终态：工具还没拿到终态快照，进度行继续显示。
+        let job = makeJob(status: .cancelling, startedAt: baseDate)
+        let projection = ToolJobActivityProjection(
+            job: job,
+            now: baseDate.addingTimeInterval(60)
+        )
+        #expect(projection.isStale)
     }
 
     @Test("步骤组摘要覆盖进行中、失败和完成")

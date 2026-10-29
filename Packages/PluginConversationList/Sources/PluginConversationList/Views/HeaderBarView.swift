@@ -28,6 +28,8 @@ struct HeaderBarView: View {
                             .lineLimit(1)
                             .truncationMode(.middle)
                         Spacer(minLength: 0)
+                        // 右侧展示当前作用域的对话条数。
+                        ConversationCountBadge(count: viewModel.conversationCount)
                     }
                 }
             }

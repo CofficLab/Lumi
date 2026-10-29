@@ -447,10 +447,6 @@ struct ToolCallRowView: View {
                     }
                 }
             }
-
-            if projection.canStop {
-                ToolJobStopButton(model: jobActivity)
-            }
         }
     }
 

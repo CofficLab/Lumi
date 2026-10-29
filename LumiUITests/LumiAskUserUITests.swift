@@ -80,8 +80,6 @@ final class LumiAskUserUITests: LumiUITestCase {
 
     // MARK: - Helpers
 
-    /// 隔离数据根目录会让新手引导重新出现（完成标记存在插件数据目录里），
-    /// 它覆盖在聊天区之上，不关掉就点不到输入框。
     private func selectStubModel(_ model: String) {
         let selectModelButton = app.buttons["Select Model"]
         XCTAssertTrue(

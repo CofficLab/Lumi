@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 27 条用例。
+PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 85 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 27
+测试文件: 12 个，用例总数: 85
 
 核心组件（源码目录）:
 - `Models/`
@@ -31,6 +31,9 @@ PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 
 - `ComputerUseService`
 - `ComputerUseWindowProvider`
 - `NativeControlBannerController`
+- `ComputerUseTargetGeometryProvider`
+- `ComputerUseTargetOverlayController`
+- `ComputerUseTargetOverlayPanel`
 
 ## 关键行为契约（实现约定，非协议要求）
 
@@ -44,6 +47,10 @@ PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 
 - **ComputerUseInputExecutor**（4 条）：由 `inputExecutorMapsInBoundsImageCoordinates`、`inputExecutorRejectsInvalidCoordinatesWithoutIntegerOverflow`、`keyCodeRecognizesLettersDigitsAndCommonKeys` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ComputerUseModels**（6 条）：由 `observationMapsImageCoordinatesIntoWindowCoordinates`、`observationFallsBackToWindowOriginForInvalidImageDimensions`、`actionsReportWhetherTheyChangeApplicationState` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **NativeControl**（6 条）：由 `revokedInputLeaseCannotBeRestarted`、`expiredLeaseRejectsFurtherInput`、`eventMarkerAloneCannotMasqueradeAsLumi` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ComputerUseTargetOverlay**（10 条）：由 `quartzRectConvertsToAppKitUsingHostingScreen`、`intensitiesDifferBetweenExecutionPaths`、`overlayPanelIgnoresMouseAndFocus` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ComputerUseAuthorizationCard**（27 条）：由 `pendingResultSuspendsTheTurn`、`allowOnceGrantsExactlyOneOperation`、`denyGrantsNothing` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ComputerUseAuthorizationCardVisibility**（5 条）：由 `suspendedRequestRendersCardEvenWhenAutoApproved`、`completedCallDoesNotRenderCard` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ComputerUseSystemPermission**（14 条）：由 `accessibilityBecomesPayloadFailure`、`rendererIgnoresAuthorizationSuspension` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -76,27 +83,86 @@ PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 25 | NativeControl | nativeControlHoldsExclusiveLeaseAndStopRequiresFreshConsent | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nativeControlHoldsExclusiveLeaseAndStopRequiresFreshConsent` |
 | 26 | NativeControl | resumeRequiresFreshObservationAndNeverReplaysBatch | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `resumeRequiresFreshObservationAndNeverReplaysBatch` |
 | 27 | NativeControl | cancellationWhileAwaitingConsentReleasesUI | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cancellationWhileAwaitingConsentReleasesUI` |
+| 28 | ComputerUseTargetOverlay | quartzRectConvertsToAppKitUsingHostingScreen | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `quartzRectConvertsToAppKitUsingHostingScreen` |
+| 29 | ComputerUseTargetOverlay | degenerateRectanglesAreRejected | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `degenerateRectanglesAreRejected` |
+| 30 | ComputerUseTargetOverlay | rectOutsideEveryScreenIsRejected | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rectOutsideEveryScreenIsRejected` |
+| 31 | ComputerUseTargetOverlay | convertedRectPreservesSize | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `convertedRectPreservesSize` |
+| 32 | ComputerUseTargetOverlay | intensitiesDifferBetweenExecutionPaths | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `intensitiesDifferBetweenExecutionPaths` |
+| 33 | ComputerUseTargetOverlay | badgeTextsDistinguishControlPaths | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `badgeTextsDistinguishControlPaths` |
+| 34 | ComputerUseTargetOverlay | overlayLingersBeforeFadingOut | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `overlayLingersBeforeFadingOut` |
+| 35 | ComputerUseTargetOverlay | followIntervalIsResponsiveButNotBusy | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `followIntervalIsResponsiveButNotBusy` |
+| 36 | ComputerUseTargetOverlay | overlayTargetIsEquatable | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `overlayTargetIsEquatable` |
+| 37 | ComputerUseTargetOverlay | overlayPanelIgnoresMouseAndFocus | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `overlayPanelIgnoresMouseAndFocus` |
 
-> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
+| 38 | ComputerUseAuthorizationCard | allowOnceGrantsExactlyOneOperation | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `allowOnceGrantsExactlyOneOperation` |
+| 39 | ComputerUseAuthorizationCard | allowOnceMessageStatesScope | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `allowOnceMessageStatesScope` |
+| 40 | ComputerUseAuthorizationCard | allowOnceStaysOutOfAllowlist | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `allowOnceStaysOutOfAllowlist` |
+| 41 | ComputerUseAuthorizationCard | alwaysAllowWritesExplicitAllowlist | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `alwaysAllowWritesExplicitAllowlist` |
+| 42 | ComputerUseAuthorizationCard | authorizationRequiredBecomesSuspension | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `authorizationRequiredBecomesSuspension` |
+| 43 | ComputerUseAuthorizationCard | denialMessageStopsThePath | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `denialMessageStopsThePath` |
+| 44 | ComputerUseAuthorizationCard | denyGrantsNothing | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `denyGrantsNothing` |
+| 45 | ComputerUseAuthorizationCard | denyIsTheOnlyRejection | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `denyIsTheOnlyRejection` |
+| 46 | ComputerUseAuthorizationCard | emptyIdentifierIsForbidden | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `emptyIdentifierIsForbidden` |
+| 47 | ComputerUseAuthorizationCard | emptyIdentifierIsIgnored | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `emptyIdentifierIsIgnored` |
+| 48 | ComputerUseAuthorizationCard | expiredOneShotIsRejected | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `expiredOneShotIsRejected` |
+| 49 | ComputerUseAuthorizationCard | explicitAllowlistPasses | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `explicitAllowlistPasses` |
+| 50 | ComputerUseAuthorizationCard | forbiddenDoesNotSuspend | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `forbiddenDoesNotSuspend` |
+| 51 | ComputerUseAuthorizationCard | foreignPayloadIsNotAnAuthorizationRequest | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `foreignPayloadIsNotAnAuthorizationRequest` |
+| 52 | ComputerUseAuthorizationCard | oneShotIsConsumedByTheCheck | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `oneShotIsConsumedByTheCheck` |
+| 53 | ComputerUseAuthorizationCard | otherErrorsDoNotSuspend | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `otherErrorsDoNotSuspend` |
+| 54 | ComputerUseAuthorizationCard | parsingIsForgiving | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `parsingIsForgiving` |
+| 55 | ComputerUseAuthorizationCard | pendingResultSuspendsTheTurn | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pendingResultSuspendsTheTurn` |
+| 56 | ComputerUseAuthorizationCard | purgingKeepsValidEntries | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `purgingKeepsValidEntries` |
+| 57 | ComputerUseAuthorizationCard | readOnlyCheckDoesNotConsume | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readOnlyCheckDoesNotConsume` |
+| 58 | ComputerUseAuthorizationCard | rendererOnlyClaimsItsOwnPayload | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rendererOnlyClaimsItsOwnPayload` |
+| 59 | ComputerUseAuthorizationCard | revokingExplicitAuthorizationAlsoRevokesOneShot | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `revokingExplicitAuthorizationAlsoRevokesOneShot` |
+| 60 | ComputerUseAuthorizationCard | revokingOneApplicationKeepsOthersOneShot | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `revokingOneApplicationKeepsOthersOneShot` |
+| 61 | ComputerUseAuthorizationCard | successfulResultPassesThrough | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `successfulResultPassesThrough` |
+| 62 | ComputerUseAuthorizationCard | tokensRoundTrip | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tokensRoundTrip` |
+| 63 | ComputerUseAuthorizationCard | unknownAnswerIsNil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unknownAnswerIsNil` |
+| 64 | ComputerUseAuthorizationCard | unknownApplicationNeedsAuthorization | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unknownApplicationNeedsAuthorization` |
+| 65 | ComputerUseAuthorizationCardVisibility | completedCallDoesNotRenderCard | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `completedCallDoesNotRenderCard` |
+| 66 | ComputerUseAuthorizationCardVisibility | computerUseCardOutranksGenericApproval | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `computerUseCardOutranksGenericApproval` |
+| 67 | ComputerUseAuthorizationCardVisibility | decidedRequestDoesNotRenderCard | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `decidedRequestDoesNotRenderCard` |
+| 68 | ComputerUseAuthorizationCardVisibility | suspendedRequestRendersCardEvenWhenAutoApproved | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `suspendedRequestRendersCardEvenWhenAutoApproved` |
+| 69 | ComputerUseAuthorizationCardVisibility | suspendedRequestRendersCardWhenPending | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `suspendedRequestRendersCardWhenPending` |
+| 70 | ComputerUseAuthorizationStore | authorizationStorePersistsAcrossInstances | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `authorizationStorePersistsAcrossInstances` |
+| 71 | ComputerUseAuthorizationStore | revokingExplicitAuthorizationAlsoRevokesNativeAuthorization | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `revokingExplicitAuthorizationAlsoRevokesNativeAuthorization` |
+| 72 | ComputerUseSystemPermission | accessibilityBecomesPayloadFailure | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `accessibilityBecomesPayloadFailure` |
+| 73 | ComputerUseSystemPermission | applicationAuthorizationStillSuspends | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `applicationAuthorizationStillSuspends` |
+| 74 | ComputerUseSystemPermission | everyPermissionHasDisplayText | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `everyPermissionHasDisplayText` |
+| 75 | ComputerUseSystemPermission | failureContentCarriesReadableReason | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `failureContentCarriesReadableReason` |
+| 76 | ComputerUseSystemPermission | foreignContentIsNotASystemPermissionRequest | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `foreignContentIsNotASystemPermissionRequest` |
+| 77 | ComputerUseSystemPermission | messageNamesThePermission | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `messageNamesThePermission` |
+| 78 | ComputerUseSystemPermission | otherErrorsRemainPlainFailures | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `otherErrorsRemainPlainFailures` |
+| 79 | ComputerUseSystemPermission | payloadRoundTrips | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `payloadRoundTrips` |
+| 80 | ComputerUseSystemPermission | rendererClaimsSystemPermissionFailure | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rendererClaimsSystemPermissionFailure` |
+| 81 | ComputerUseSystemPermission | rendererIgnoresAuthorizationSuspension | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rendererIgnoresAuthorizationSuspension` |
+| 82 | ComputerUseSystemPermission | rendererIgnoresOrdinaryFailure | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rendererIgnoresOrdinaryFailure` |
+| 83 | ComputerUseSystemPermission | rendererOutranksGenericApproval | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rendererOutranksGenericApproval` |
+| 84 | ComputerUseSystemPermission | screenRecordingBecomesPayloadFailure | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `screenRecordingBecomesPayloadFailure` |
+| 85 | ComputerUseSystemPermission | screenRecordingRoundTrips | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `screenRecordingRoundTrips` |
+
+> 说明：全部 **85 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 4 / 4
-- P1: 已覆盖 20 / 20
-- P2: 已覆盖 3 / 3
-- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 72 / 72
+- P2: 已覆盖 7 / 7
+- **合计: 85 / 85**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
-- **P1**: 其余功能性用例（20 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（72 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 85 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

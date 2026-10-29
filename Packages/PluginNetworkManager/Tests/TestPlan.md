@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 47
+测试文件: 4 个，用例总数: 61
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -97,21 +97,35 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 45 | 综合 | exportProgressTracksLifecycleAndFailure | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `exportProgressTracksLifecycleAndFailure` |
 | 46 | 综合 | emitSSEEventsSplitsByBlankLineAndKeepsTail | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `emitSSEEventsSplitsByBlankLineAndKeepsTail` |
 | 47 | 综合 | emitSSEEventsHonorsStopAndHandlesDelimiterVariants | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `emitSSEEventsHonorsStopAndHandlesDelimiterVariants` |
+| 48 | LLMNetworkProviderAdapterRetry | 529 携带 Retry-After 时，归一化错误保留服务端建议的等待时间 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `normalizedErrorCarriesRetryAfter` |
+| 49 | LLMNetworkProviderAdapterRetry | Retry-After 进入重试决策，成为实际等待时长 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `retryAfterBecomesRetryDelay` |
+| 50 | LLMNetworkProviderAdapterRetry | 流式路径同样保留 Retry-After | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `streamingPathCarriesRetryAfter` |
+| 51 | LLMNetworkProviderAdapterRetry | 没有 Retry-After 头时退避建议为空，交由本地抖动退避决定 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingRetryAfterYieldsNoAdvice` |
+| 52 | LLMNetworkProviderAdapterRetry | AgentLoopFailure 保留服务端退避建议，供整回合重试遵守 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `agentLoopFailureCarriesRetryAfter` |
+| 53 | ProcessMonitorLifecycle | start 后 nettop 处于运行状态 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `startMonitoringLaunchesNettop` |
+| 54 | ProcessMonitorLifecycle | stop 后 nettop 被终止 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `stopMonitoringTerminatesNettop` |
+| 55 | ProcessMonitorLifecycle | 多次 start 只启动一个 nettop | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `repeatedStartLaunchesSingleNettop` |
+| 56 | ProcessMonitorLifecycle | 引用计数归零后 nettop 退出 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `nettopStopsWhenRefCountReachesZero` |
+| 57 | ProcessMonitorLifecycle | stop 多于 start 不会崩溃且保持停止状态 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `extraStopKeepsServiceStopped` |
+| 58 | ProcessMonitorLifecycle | 观察者不再启动 nettop（#128 核心断言） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `observerDoesNotStartNettop` |
+| 59 | ProcessMonitorLifecycle | 面板开关切换会成对调用 start/stop | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `togglePairsStartAndStop` |
+| 60 | ProcessMonitorLifecycle | 面板开关重复赋值不会重复启停 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `repeatedAssignmentDoesNotDuplicateCalls` |
+| 61 | ProcessMonitorLifecycle | 面板可见时 nettop 启动，隐藏时退出（端到端联动） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `panelVisibilityDrivesNettopLifecycle` |
 
-> 说明：全部 **47 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **61 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 13 / 13
-- P1: 已覆盖 32 / 32
+- P0: 已覆盖 24 / 24
+- P1: 已覆盖 35 / 35
 - P2: 已覆盖 2 / 2
-- **合计: 47 / 47**（仅表示清单场景，非源码覆盖率）
+- **合计: 61 / 61**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
-- **P1**: 其余功能性用例（32 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（24 条）
+- **P1**: 其余功能性用例（35 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明

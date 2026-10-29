@@ -11,9 +11,10 @@ import SwiftUI
 /// LLM 供应商设置插件（KernelCore 生态）。
 ///
 /// 在设置界面把 `LLMManaging` 中注册的全部供应商展示出来，
-/// 按 `isLocal` 区分云端和本地供应商入口。
+/// 按 `isLocal` 区分云端和本地供应商——两者合并成一个设置入口，
+/// 页内用「云端 / 本地」分段控件切换范围。
 ///
-/// 同时创建并注册 `UserDefinedCloudProviderStore`，供 onboarding 页面
+/// 同时创建并注册 `UserDefinedCloudProviderStore`，供其他插件
 /// 和设置界面共享自定义供应商数据。
 @MainActor
 public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
@@ -57,7 +58,7 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
         )
         userProviderStore = store
 
-        // 注册 Store 为 Provider，供其他插件（如 PluginLLMManager 的 onboarding 页面）使用。
+        // 注册 Store 为 Provider，供其他插件共享自定义供应商数据。
         try kernel.registerProvider(
             (any UserDefinedCloudProviderStoreProviding).self,
             DefaultUserDefinedCloudProviderStoreProviding(store: store)
@@ -96,23 +97,20 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
             }
         )
         pageViewModels = [cloudViewModel, localViewModel]
+        // 云端与本地合并成一个页面：页内用分段控件切换范围。
+        let scopeViewModel = ProviderSettingsScopeViewModel(
+            cloudViewModel: cloudViewModel,
+            localViewModel: localViewModel
+        )
 
         settings.addEntries([
             SettingEntryItem(
-                id: "\(id).remote-providers",
-                title: pluginLocalization.string("Cloud Providers"),
-                systemImage: "cloud",
+                id: "\(id).providers",
+                title: pluginLocalization.string("Providers"),
+                systemImage: "network",
                 order: 100
             ) {
-                CloudProviderSettingsPage(viewModel: cloudViewModel)
-            },
-            SettingEntryItem(
-                id: "\(id).local-providers",
-                title: pluginLocalization.string("Local Providers"),
-                systemImage: "cpu",
-                order: 101
-            ) {
-                LocalProviderSettingsPage(viewModel: localViewModel)
+                ProviderSettingsPage(scopeViewModel: scopeViewModel)
             },
         ])
     }
@@ -130,7 +128,7 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
         userProviderStore = nil
         // 内核会按插件归属自动撤回 onBoot 注册的 UserDefinedCloudProviderStoreProviding。
         kernel.resolveProvider((any SettingViewProviding).self)?
-            .removeEntries(ids: ["\(id).remote-providers", "\(id).local-providers"])
+            .removeEntries(ids: ["\(id).providers"])
     }
 }
 

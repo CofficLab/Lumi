@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import KitAgentTool
 import ProviderProject
 import SwiftUI
 
@@ -81,10 +82,14 @@ final class AgentRulesViewModel: ObservableObject {
             rules = []
             return
         }
-        let rulesDirectory = getRulesDirectory(for: projectPath)
 
-        // Ensure directory exists
-        if !FileManager.default.fileExists(atPath: rulesDirectory.path()) {
+        // 规则可能位于 `.lumi/rules`（当前）或 `.agent/rules`（历史），
+        // 任一存在即尝试加载。
+        let hasRulesDirectory = ProjectConfigDirectory
+            .readURLs(projectPath: projectPath, component: "rules")
+            .contains { FileManager.default.fileExists(atPath: $0.path()) }
+
+        guard hasRulesDirectory else {
             rules = []
             return
         }
@@ -108,12 +113,7 @@ final class AgentRulesViewModel: ObservableObject {
     }
 
     private func getRulesDirectory(for projectPath: String) -> URL {
-        if projectPath.isEmpty {
-            // Global rules directory
-            let home = FileManager.default.homeDirectoryForCurrentUser
-            return home.appendingPathComponent(".agent/rules")
-        }
-        let projectURL = URL(fileURLWithPath: projectPath)
-        return projectURL.appendingPathComponent(".agent/rules")
+        // 写入目标统一为 `.lumi/rules`（项目路径为空时是全局 `~/.lumi/rules`）。
+        ProjectConfigDirectory.writeURL(projectPath: projectPath, component: "rules")
     }
 }

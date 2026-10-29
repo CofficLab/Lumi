@@ -6,6 +6,12 @@ import SwiftUI
 ///
 /// 数据来自外部注入的 `GoalVM`(由 `Plugin` 持有,与 `SidebarView` 共享同一份数据)。
 /// 弹窗内容与单行渲染分别位于 `GoalPopoverContent.swift` 与 `GoalRowView.swift`。
+///
+/// ## 何时显示
+///
+/// 只有一个 Goal 时侧栏(`SidebarView`)已把标题、进度、任务列表、描述与续跑
+/// 入口都展示出来了,按钮属于重复信息,故隐藏;多个 Goal 时侧栏装不下,
+/// 按钮是查看全量列表的唯一入口。可见性判定见 `GoalVM.shouldShowToolbarButton`。
 struct GoalToolbarButton: View {
     @ObservedObject var viewModel: GoalVM
     /// 为 `nil` 表示宿主缺少必需的 Provider，此时隐藏「在新对话中继续」入口。
@@ -31,7 +37,7 @@ struct GoalToolbarButton: View {
     }
 
     var body: some View {
-        if viewModel.goals.count > 0 {
+        if viewModel.shouldShowToolbarButton {
             Button {
                 Task {
                     await viewModel.refresh()

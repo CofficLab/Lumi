@@ -19,6 +19,12 @@ public enum MessageTimelineEvent {
     public static let agentLoopRetryRetryAfterKey = "agentLoopRetryRetryAfter"
     public static let goalTaskContinuation = "goal-task-continuation"
     public static let goalTaskContinuationRenderKind = "goal-task-continuation"
+    /// App Store Connect 提交审核的结构化时间线事件。
+    ///
+    /// 该消息把「即将提交的版本 / Build / 平台 / 状态 / 本地化」显式呈现给用户，
+    /// 只用于界面时间线，不应进入后续 LLM 上下文。
+    public static let appStoreSubmission = "app-store-submission"
+    public static let appStoreSubmissionRenderKind = "app-store-submission"
     public static let goalTaskContinuationActionKey = "goalTaskContinuationAction"
     public static let goalTaskContinuationAttemptKey = "goalTaskContinuationAttempt"
     public static let goalTaskContinuationMaxAttemptsKey = "goalTaskContinuationMaxAttempts"
@@ -60,9 +66,18 @@ public enum MessageTimelineEvent {
             || message.metadata[metadataKey] == goalTaskContinuation
     }
 
+    /// 是否属于 App Store Connect 提交审核的结构化时间线事件。
+    public static func isAppStoreSubmission(_ message: Message) -> Bool {
+        message.renderKind == appStoreSubmissionRenderKind
+            || message.metadata[metadataKey] == appStoreSubmission
+    }
+
     /// 仅用于界面时间线的消息不应被重新发送给 LLM。
     public static func isTimelineEvent(_ message: Message) -> Bool {
-        isContextCompaction(message) || isAgentLoopRetry(message) || isGoalTaskContinuation(message)
+        isContextCompaction(message)
+            || isAgentLoopRetry(message)
+            || isGoalTaskContinuation(message)
+            || isAppStoreSubmission(message)
     }
 
     /// 只有真正用于压缩上下文的事件才应显示在消息列表中。

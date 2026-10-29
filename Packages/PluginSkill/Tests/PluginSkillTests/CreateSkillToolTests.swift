@@ -46,7 +46,7 @@ struct CreateSkillToolTests {
         #expect(skill["name"] as? String == "swiftui-standards")
 
         // 目录结构符合 SkillDirectoryLoader 约定。
-        let dir = project.appendingPathComponent(".agent/skills/swiftui-standards")
+        let dir = project.appendingPathComponent(".lumi/skills/swiftui-standards")
         #expect(FileManager.default.fileExists(atPath: dir.appendingPathComponent("metadata.json").path))
         let skillMD = try String(contentsOf: dir.appendingPathComponent("SKILL.md"), encoding: .utf8)
         #expect(skillMD.hasPrefix("---"))
@@ -74,7 +74,7 @@ struct CreateSkillToolTests {
         ]))
 
         #expect(FileManager.default.fileExists(
-            atPath: project.appendingPathComponent(".agent/skills/my-skill").path
+            atPath: project.appendingPathComponent(".lumi/skills/my-skill").path
         ))
         let scanned = SkillScanner().scanSkills(projectPath: project.path)
         #expect(scanned.map(\.name) == ["my-skill"])
@@ -137,7 +137,7 @@ struct CreateSkillToolTests {
         ]))
 
         let skillMD = try String(
-            contentsOf: project.appendingPathComponent(".agent/skills/custom-skill/SKILL.md"),
+            contentsOf: project.appendingPathComponent(".lumi/skills/custom-skill/SKILL.md"),
             encoding: .utf8
         )
         #expect(skillMD == body + "\n")
@@ -195,7 +195,7 @@ struct CreateSkillToolTests {
             "description": "来自当前项目",
         ]))
         #expect(FileManager.default.fileExists(
-            atPath: project.appendingPathComponent(".agent/skills/fallback-skill").path
+            atPath: project.appendingPathComponent(".lumi/skills/fallback-skill").path
         ))
 
         SkillRuntime.reset()

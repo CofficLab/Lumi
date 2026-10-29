@@ -30,29 +30,36 @@ public struct ClipboardSettingsView: View {
     }
 
     private var generalSection: some View {
-        AppCard {
-            AppSettingsSection(
-                title: pluginLocalization.string("General"),
-                spacing: 12
-            ) {
-                AppSettingsToggleRow(
+        AppSettingSection(
+            title: pluginLocalization.string("General"),
+            titleAlignment: .leading
+        ) {
+            VStack(spacing: 0) {
+                AppSettingToggleRow(
                     pluginLocalization.string("Enable Clipboard Monitoring"),
-                    systemImage: "doc.on.clipboard",
+                    icon: "doc.on.clipboard",
                     isOn: $isMonitoringEnabled
                 )
                 .onChange(of: isMonitoringEnabled) { _, newValue in
                     store.set(newValue, forKey: monitoringKey)
                 }
 
-                AppSettingsPickerRow(
-                    pluginLocalization.string("History Size"),
-                    systemImage: "clock.arrow.circlepath",
-                    selection: $historySize
+                Divider()
+                    .padding(.vertical, 8)
+
+                AppSettingRow(
+                    title: pluginLocalization.string("History Size"),
+                    icon: "clock.arrow.circlepath"
                 ) {
-                    Text(verbatim: pluginLocalization.string("100")).tag(100)
-                    Text(verbatim: pluginLocalization.string("500")).tag(500)
-                    Text(verbatim: pluginLocalization.string("1000")).tag(1000)
-                    Text(pluginLocalization.string("Unlimited")).tag(Int.max)
+                    Picker("", selection: $historySize) {
+                        Text(verbatim: pluginLocalization.string("100")).tag(100)
+                        Text(verbatim: pluginLocalization.string("500")).tag(500)
+                        Text(verbatim: pluginLocalization.string("1000")).tag(1000)
+                        Text(pluginLocalization.string("Unlimited")).tag(Int.max)
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .frame(minWidth: 120)
                 }
                 .onChange(of: historySize) { _, newValue in
                     store.set(newValue, forKey: historySizeKey)
@@ -62,11 +69,11 @@ public struct ClipboardSettingsView: View {
     }
 
     private var dataSection: some View {
-        AppCard {
-            AppSettingsSection(
-                title: pluginLocalization.string("Data"),
-                spacing: 12
-            ) {
+        AppSettingSection(
+            title: pluginLocalization.string("Data"),
+            titleAlignment: .leading
+        ) {
+            VStack(spacing: 8) {
                 AppButton(
                     pluginLocalization.string("Clear All History"),
                     style: .destructive,

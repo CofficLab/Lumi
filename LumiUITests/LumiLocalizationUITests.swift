@@ -3,8 +3,8 @@ import XCTest
 struct LumiSidebarExpectation {
     let general: String
     let pluginManager: String
-    let cloudProviders: String
-    let localProviders: String
+    /// 供应商条目：云端与本地合并成一个页面（页内用分段控件切换范围）。
+    let providers: String
     let memories: String
 }
 
@@ -74,7 +74,7 @@ class LumiLocalizationUITestCase: LumiUITestCase {
         let settingsWindow = app.windows.matching(identifier: "lumi.settings").firstMatch
         XCTAssertTrue(settingsWindow.waitForExistence(timeout: 15), "设置窗口没有出现")
 
-        for text in [expected.general, expected.pluginManager, expected.cloudProviders, expected.localProviders, expected.memories] {
+        for text in [expected.general, expected.pluginManager, expected.providers, expected.memories] {
             let entry = settingsWindow.buttons.matching(NSPredicate(format: "label == %@", text)).firstMatch
             XCTAssertTrue(
                 entry.waitForExistence(timeout: 10),
@@ -91,9 +91,9 @@ class LumiLocalizationUITestCase: LumiUITestCase {
 
     private func staleTitles(for language: String) -> [String] {
         if language == "en" {
-            ["通用", "插件管理", "云端供应商", "本地供应商", "记忆"]
+            ["通用", "插件管理", "供应商", "记忆"]
         } else {
-            ["General", "Plugin Manager", "Cloud Providers", "Local Providers", "Memories"]
+            ["General", "Plugin Manager", "Providers", "Memories"]
         }
     }
 }
@@ -105,8 +105,7 @@ final class LumiEnglishLocalizationUITests: LumiLocalizationUITestCase {
         LumiSidebarExpectation(
             general: "General",
             pluginManager: "Plugin Manager",
-            cloudProviders: "Cloud Providers",
-            localProviders: "Local Providers",
+            providers: "Providers",
             memories: "Memories"
         )
     }
@@ -119,8 +118,7 @@ final class LumiChineseLocalizationUITests: LumiLocalizationUITestCase {
         LumiSidebarExpectation(
             general: "通用",
             pluginManager: "插件管理",
-            cloudProviders: "云端供应商",
-            localProviders: "本地供应商",
+            providers: "供应商",
             memories: "记忆"
         )
     }
