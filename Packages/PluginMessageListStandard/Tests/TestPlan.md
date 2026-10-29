@@ -5,7 +5,7 @@
 PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工具栏 **Response Detail** 处于 `V2 (标准)` 时， 聊天区由本包接管；`V1` / `V3` 分别由 `PluginMessageListBrief` / `PluginMessageListDetailed` 接管。
 
 平台: macOS 14+, iOS 17+
-测试文件: 16 个，用例总数: 107
+测试文件: 17 个，用例总数: 109
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -48,6 +48,7 @@ PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工�
 - **MessageListBottomSettle**（3 条）：由 `bottomSettleStopsOnceGeometrySettles`、`bottomSettleToleratesSubPixelJitter`、`bottomSettleAbortsWhenGeometryUnavailable` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListService**（10 条）：由 `messageRowsFilterAndMergeToolExecutionMessages`、`messageRowsPreserveUnscopedMessagesAndLegacyGroups`、`messageDerivedPredicatesDistinguishEmptyResponses` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListServices**（6 条）：由 `activityMessageCoversSimpleStates`、`activityMessageUsesJobDescription`、`activityMessageFallsBackWithoutRunningJob` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MessageListStandardAutoReplySuppression**（2 条）：由 `fixtureSuppressesAutoReplyForEveryConversation`、`fixtureSuppressesAutoReplyBeforeInsertingUserMessages` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListStandardUITestingSupport**（6 条）：由 `fixtureSeedsBothConversations`、`fixtureSeedsMessagesForBothConversations`、`fixtureHugeConversationExceedsWindowLimit` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListStateLifetime**（6 条）：由 `listViewMustNotHoldReferenceStateInPlainStoredProperty`、`listViewMustCarryRuntimeInStateObject`、`runtimeMembersKeepStableIdentity` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListTurnActivity**（8 条）：由 `turnActivitySortsToolCallsStably`、`turnActivitySummarisesRecords`、`turnActivityHandlesEmptyAndUnfinished` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -134,58 +135,60 @@ PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工�
 | 74 | MessageListServices | 活动消息：无活动或缺少会话/状态能力时返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activityMessageReturnsNilWhenUnavailable` |
 | 75 | MessageListServices | 服务容器：选中会话与详细程度经由会话能力透传 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `servicesProxyConversationCapability` |
 | 76 | MessageListServices | 服务容器：缺少会话能力时详细程度回落到默认值 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `servicesFallsBackWhenConversationCapabilityMissing` |
-| 77 | MessageListStandardUITestingSupport | 夹具：seed 后五个会话都存在，且都带消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureSeedsBothConversations` |
-| 78 | MessageListStandardUITestingSupport | 夹具：五个会话都写入了消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureSeedsMessagesForBothConversations` |
-| 79 | MessageListStandardUITestingSupport | 夹具：超大会话消息数远超窗口上限 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fixtureHugeConversationExceedsWindowLimit` |
-| 80 | MessageListStandardUITestingSupport | 夹具：大会话消息数显著多于小会话 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureLargeConversationIsHarder` |
-| 81 | MessageListStandardUITestingSupport | 夹具：默认选中大会话且为 standard 详细程度 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureSelectsLargeConversation` |
-| 82 | MessageListStandardUITestingSupport | 夹具：重复 seed 不产生重复会话 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fixtureSeedIsIdempotent` |
-| 83 | MessageListStateLifetime | 消息列表视图：不得用普通存储属性持有引用类型状态 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listViewMustNotHoldReferenceStateInPlainStoredProperty` |
-| 84 | MessageListStateLifetime | 消息列表视图：运行时状态容器必须由 StateObject 承载 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listViewMustCarryRuntimeInStateObject` |
-| 85 | MessageListStateLifetime | 运行时容器：成员在多次访问之间必须保持同一实例 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimeMembersKeepStableIdentity` |
-| 86 | MessageListStateLifetime | 运行时容器：必须持有底部标记、滚动协调器与底部几何控制器 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimeCarriesAllThreeMembers` |
-| 87 | MessageListStateLifetime | 运行时容器：不得发布任何 @Published（避免重新打开 invalidation 反馈环） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimePublishesNothing` |
-| 88 | MessageListStateLifetime | 底部 tracker：控制器换实例后必须重新绑定滚动视图 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `trackerRebindsReplacedController` |
-| 89 | MessageListTurnActivity | Turn 活动按开始时间升序排序，时间相同按 id 稳定排序 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `turnActivitySortsToolCallsStably` |
-| 90 | MessageListTurnActivity | Turn 活动统计总数、完成数、失败数与总时长 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `turnActivitySummarisesRecords` |
-| 91 | MessageListTurnActivity | Turn 活动无完成记录时总时长为 nil，失败计数不重复计入完成数 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `turnActivityHandlesEmptyAndUnfinished` |
-| 92 | MessageListTurnActivity | isToolExecutionOnly 仅对空白或省略号正文且带工具调用的助手消息成立 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolExecutionOnlyPredicateIsNarrow` |
-| 93 | MessageListTurnActivity | isEmptyResponse 排除错误消息与带工具调用的消息 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptyResponsePredicateExcludesErrorAndTools` |
-| 94 | MessageListTurnActivity | 开发者模式状态只传播真实变化，避免无效刷新 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `developerModeStateOnlyPublishesRealChanges` |
-| 95 | MessageListTurnActivity | 开发者模式观察器把外部初始值与变更事件写入共享状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `developerModeObserverBridgesProviderEvents` |
-| 96 | MessageListTurnActivity | 开发者模式观察器在 provider 缺失时按未启用处理 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `developerModeObserverToleratesMissingProvider` |
-| 97 | ScrollViewBottomController | 钉底后 contentOffset 落在 documentView 底边 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pinToBottomMovesOffsetToDocumentEnd` |
-| 98 | ScrollViewBottomController | 文档高度小于视口时 offset 夹紧为 0，不产生负偏移 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pinToBottomClampsOffsetWhenDocumentShorterThanViewport` |
-| 99 | ScrollViewBottomController | 未绑定滚动视图时 isAttached 为 false 且钉底返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `controllerWithoutScrollViewIsNotAttached` |
-| 100 | ScrollViewBottomController | 脱离绑定后 isAttached 回到 false | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `detachClearsAttachment` |
-| 101 | ScrollViewBottomController | 视口高度为 0 时拒绝返回几何快照 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `pinToBottomRejectsZeroViewport` |
-| 102 | ScrollViewBottomController | 文档高度持续增长时，收敛循环可在高度稳定后退出 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `settleConvergesAfterDocumentHeightStabilizes` |
-| 103 | ScrollViewBottomController | 非有限或异常尺寸的文档不会被钉底 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `pinToBottomRejectsInvalidGeometry` |
-| 104 | StuckLoadingMask | 首屏遮罩：加载开始后即使没有收敛轮次，遮罩也必须在预算内落下 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateReleasesMaskWithinBudgetWithoutAnySettleRound` |
-| 105 | StuckLoadingMask | 首屏遮罩：会话切换复位后即使没有收敛轮次，遮罩也必须在预算内落下 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateReleasesMaskWithinBudgetAfterConversationSwitch` |
-| 106 | StuckLoadingMask | 首屏遮罩：失效的一轮结束后，同一会话必须能重新开始一轮 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateAcceptsNewRoundForSameConversationAfterStaleRound` |
-| 107 | StuckLoadingMask | 首屏遮罩：失效的一轮不得放行遮罩，但必须允许后续轮次接手 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateStaleRoundMustNotReleaseMaskButMustHandOver` |
+| 77 | MessageListStandardAutoReplySuppression | 夹具：每个会话都抑制自动回复，否则会话列表顺序会摇摆 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureSuppressesAutoReplyForEveryConversation` |
+| 78 | MessageListStandardAutoReplySuppression | 夹具：抑制在插入 user 消息之前生效，不会漏掉自动回合 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureSuppressesAutoReplyBeforeInsertingUserMessages` |
+| 79 | MessageListStandardUITestingSupport | 夹具：seed 后四个会话都存在，且都带消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureSeedsBothConversations` |
+| 80 | MessageListStandardUITestingSupport | 夹具：四个会话都写入了消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureSeedsMessagesForBothConversations` |
+| 81 | MessageListStandardUITestingSupport | 夹具：超大会话消息数远超窗口上限 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fixtureHugeConversationExceedsWindowLimit` |
+| 82 | MessageListStandardUITestingSupport | 夹具：大会话消息数显著多于小会话 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureLargeConversationIsHarder` |
+| 83 | MessageListStandardUITestingSupport | 夹具：默认选中大会话且为 standard 详细程度 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureSelectsLargeConversation` |
+| 84 | MessageListStandardUITestingSupport | 夹具：重复 seed 不产生重复会话 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fixtureSeedIsIdempotent` |
+| 85 | MessageListStateLifetime | 消息列表视图：不得用普通存储属性持有引用类型状态 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listViewMustNotHoldReferenceStateInPlainStoredProperty` |
+| 86 | MessageListStateLifetime | 消息列表视图：运行时状态容器必须由 StateObject 承载 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listViewMustCarryRuntimeInStateObject` |
+| 87 | MessageListStateLifetime | 运行时容器：成员在多次访问之间必须保持同一实例 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimeMembersKeepStableIdentity` |
+| 88 | MessageListStateLifetime | 运行时容器：必须持有底部标记、滚动协调器与底部几何控制器 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimeCarriesAllThreeMembers` |
+| 89 | MessageListStateLifetime | 运行时容器：不得发布任何 @Published（避免重新打开 invalidation 反馈环） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `runtimePublishesNothing` |
+| 90 | MessageListStateLifetime | 底部 tracker：控制器换实例后必须重新绑定滚动视图 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `trackerRebindsReplacedController` |
+| 91 | MessageListTurnActivity | Turn 活动按开始时间升序排序，时间相同按 id 稳定排序 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `turnActivitySortsToolCallsStably` |
+| 92 | MessageListTurnActivity | Turn 活动统计总数、完成数、失败数与总时长 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `turnActivitySummarisesRecords` |
+| 93 | MessageListTurnActivity | Turn 活动无完成记录时总时长为 nil，失败计数不重复计入完成数 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `turnActivityHandlesEmptyAndUnfinished` |
+| 94 | MessageListTurnActivity | isToolExecutionOnly 仅对空白或省略号正文且带工具调用的助手消息成立 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolExecutionOnlyPredicateIsNarrow` |
+| 95 | MessageListTurnActivity | isEmptyResponse 排除错误消息与带工具调用的消息 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptyResponsePredicateExcludesErrorAndTools` |
+| 96 | MessageListTurnActivity | 开发者模式状态只传播真实变化，避免无效刷新 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `developerModeStateOnlyPublishesRealChanges` |
+| 97 | MessageListTurnActivity | 开发者模式观察器把外部初始值与变更事件写入共享状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `developerModeObserverBridgesProviderEvents` |
+| 98 | MessageListTurnActivity | 开发者模式观察器在 provider 缺失时按未启用处理 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `developerModeObserverToleratesMissingProvider` |
+| 99 | ScrollViewBottomController | 钉底后 contentOffset 落在 documentView 底边 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pinToBottomMovesOffsetToDocumentEnd` |
+| 100 | ScrollViewBottomController | 文档高度小于视口时 offset 夹紧为 0，不产生负偏移 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pinToBottomClampsOffsetWhenDocumentShorterThanViewport` |
+| 101 | ScrollViewBottomController | 未绑定滚动视图时 isAttached 为 false 且钉底返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `controllerWithoutScrollViewIsNotAttached` |
+| 102 | ScrollViewBottomController | 脱离绑定后 isAttached 回到 false | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `detachClearsAttachment` |
+| 103 | ScrollViewBottomController | 视口高度为 0 时拒绝返回几何快照 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `pinToBottomRejectsZeroViewport` |
+| 104 | ScrollViewBottomController | 文档高度持续增长时，收敛循环可在高度稳定后退出 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `settleConvergesAfterDocumentHeightStabilizes` |
+| 105 | ScrollViewBottomController | 非有限或异常尺寸的文档不会被钉底 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `pinToBottomRejectsInvalidGeometry` |
+| 106 | StuckLoadingMask | 首屏遮罩：加载开始后即使没有收敛轮次，遮罩也必须在预算内落下 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateReleasesMaskWithinBudgetWithoutAnySettleRound` |
+| 107 | StuckLoadingMask | 首屏遮罩：会话切换复位后即使没有收敛轮次，遮罩也必须在预算内落下 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateReleasesMaskWithinBudgetAfterConversationSwitch` |
+| 108 | StuckLoadingMask | 首屏遮罩：失效的一轮结束后，同一会话必须能重新开始一轮 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateAcceptsNewRoundForSameConversationAfterStaleRound` |
+| 109 | StuckLoadingMask | 首屏遮罩：失效的一轮不得放行遮罩，但必须允许后续轮次接手 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateStaleRoundMustNotReleaseMaskButMustHandOver` |
 
-> 说明：全部 **107 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **109 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 31 / 31
-- P1: 已覆盖 67 / 67
+- P1: 已覆盖 69 / 69
 - P2: 已覆盖 9 / 9
-- **合计: 107 / 107**（仅表示清单场景，非源码覆盖率）
+- **合计: 109 / 109**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（31 条）
-- **P1**: 其余功能性用例（67 条）
+- **P1**: 其余功能性用例（69 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 107 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 109 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
