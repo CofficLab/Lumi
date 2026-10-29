@@ -76,6 +76,16 @@ struct ItemView: View {
                 }
 
                 HStack(spacing: 4) {
+                    // 自动化程度：置于第三行首位，仅显示图标。
+                    if let automationLevel = conversation.automationLevel {
+                        Image(systemName: automationLevel.iconName)
+                            .font(.footnote)
+                            .foregroundColor(theme.textTertiary)
+
+                        Text("·")
+                            .foregroundColor(theme.textTertiary)
+                    }
+
                     if let projectPath = conversation.projectPath {
                         Text(URL(fileURLWithPath: projectPath).lastPathComponent)
                             .font(.footnote)
@@ -90,18 +100,6 @@ struct ItemView: View {
                     Text(conversation.lastMessageAt.relativeTime)
                         .font(.footnote)
                         .foregroundColor(theme.textTertiary)
-
-                    // 自动化程度：与「项目 · 时间」同处第三行，作为行内元信息展示。
-                    if let automationLevel = conversation.automationLevel {
-                        Text("·")
-                            .foregroundColor(theme.textTertiary)
-
-                        Label(automationLevel.displayName, systemImage: automationLevel.iconName)
-                            .labelStyle(.titleAndIcon)
-                            .font(.footnote)
-                            .foregroundColor(theme.textTertiary)
-                            .lineLimit(1)
-                    }
                 }
             }
 
