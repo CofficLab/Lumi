@@ -18,6 +18,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
         .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
         .package(path: "../ProviderGit"),
+        .package(path: "../ProviderGitRepositoryWatch"),
     ],
     targets: [
         .target(
@@ -28,6 +29,7 @@ let package = Package(
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderGit", package: "ProviderGit"),
+                .product(name: "ProviderGitRepositoryWatch", package: "ProviderGitRepositoryWatch"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
             ],
@@ -40,6 +42,7 @@ let package = Package(
                 "PluginGitToolbar",
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderGit", package: "ProviderGit"),
+                .product(name: "ProviderGitRepositoryWatch", package: "ProviderGitRepositoryWatch"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
             ],
