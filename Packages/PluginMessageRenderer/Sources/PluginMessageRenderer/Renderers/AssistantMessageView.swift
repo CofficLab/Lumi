@@ -50,6 +50,16 @@ private struct AssistantMessageBody: View {
     /// standard 以复用 V2 内容布局，但工具调用渲染需要区分"是否真的 V1"。
     let isV1: Bool
 
+    /// **原始**回复级别（未经升格）。
+    ///
+    /// `contentVerbosity` 只在 brief 时被升格成 standard，其余原样透传，
+    /// 因此「是 V1 则还原为 brief，否则用 contentVerbosity」即可无损还原。
+    /// 工具调用的折叠判定必须用它：折叠**只发生在 V2**，用升格后的值会
+    /// 把 V1 连坐成 V2 一并折叠。
+    private var originalVerbosity: ResponseVerbosity {
+        isV1 ? .brief : contentVerbosity
+    }
+
     private var reasoningContent: String? {
         guard let reasoning = message.reasoningContent,
               !reasoning.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -93,7 +103,10 @@ private struct AssistantMessageBody: View {
                     stateViewModel: stateViewModel,
                     message: message,
                     verbosity: contentVerbosity,
-                    allowsCustomToolRenderers: !isV1
+                    allowsCustomToolRenderers: !isV1,
+                    // 折叠判定需要**原始**级别：contentVerbosity 已把 brief
+                    // 升格成 standard，用它判断会把 V1 连坐成 V2 一并折叠。
+                    originalVerbosity: originalVerbosity
                 )
                     .padding(.top, shouldHideAssistantBody ? 0 : 4)
             }
