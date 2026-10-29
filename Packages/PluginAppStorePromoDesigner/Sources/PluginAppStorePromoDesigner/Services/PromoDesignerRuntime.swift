@@ -32,6 +32,20 @@ enum PromoDesignerRuntime {
 
     static let projectFolderName = "app-store-promo"
 
+    /// 指定项目路径对应的存储目录（`<项目>/.lumi/app-store-promo`）。
+    ///
+    /// 纯函数：不依赖 UI 当前打开的项目，供工具按「调用所属对话的项目」解析路径。
+    static func promoStorageDirectory(forProjectPath projectPath: String?) -> URL? {
+        guard let path = projectPath?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty else {
+            return nil
+        }
+        return URL(fileURLWithPath: path, isDirectory: true)
+            .appendingPathComponent(".lumi", isDirectory: true)
+            .appendingPathComponent(projectFolderName, isDirectory: true)
+            .standardizedFileURL
+    }
+
     static func configure(kernel: KernelCoreContainer) {
         conversationInput = kernel.resolveProvider((any ConversationInputProviding).self)
         updateProjectStorageDirectory(
@@ -45,12 +59,7 @@ enum PromoDesignerRuntime {
         let path = normalizedPath?.isEmpty == false ? normalizedPath : nil
         guard path != currentProjectPath || projectStorageDirectory != nil else { return }
         currentProjectPath = path
-        let resolved = path.map {
-            URL(fileURLWithPath: $0, isDirectory: true)
-                .appendingPathComponent(".lumi", isDirectory: true)
-                .appendingPathComponent(projectFolderName, isDirectory: true)
-                .standardizedFileURL
-        }
+        let resolved = promoStorageDirectory(forProjectPath: path)
         guard projectStorageDirectory != resolved else { return }
         projectStorageDirectory = resolved
         WorkspaceStore.shared.setProjectStorage(
