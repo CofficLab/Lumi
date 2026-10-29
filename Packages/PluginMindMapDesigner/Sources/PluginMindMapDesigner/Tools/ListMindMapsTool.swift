@@ -25,7 +25,7 @@ public struct ListMindMapsTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let language = MindMapToolSupport.language
-        let maps = await MainActor.run { MindMapStore.shared.projectMaps }
+        let maps = await MainActor.run { MindMapToolSupport.store().projectMaps }
 
         if maps.isEmpty {
             return language == .chinese ? "当前项目暂无思维导图。" : "No mind maps in the current project."
