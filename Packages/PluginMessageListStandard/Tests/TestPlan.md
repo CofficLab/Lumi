@@ -5,7 +5,7 @@
 PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工具栏 **Response Detail** 处于 `V2 (标准)` 时， 聊天区由本包接管；`V1` / `V3` 分别由 `PluginMessageListBrief` / `PluginMessageListDetailed` 接管。
 
 平台: macOS 14+, iOS 17+
-测试文件: 17 个，用例总数: 109
+测试文件: 19 个，用例总数: 114
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -168,16 +168,21 @@ PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工�
 | 107 | StuckLoadingMask | 首屏遮罩：会话切换复位后即使没有收敛轮次，遮罩也必须在预算内落下 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateReleasesMaskWithinBudgetAfterConversationSwitch` |
 | 108 | StuckLoadingMask | 首屏遮罩：失效的一轮结束后，同一会话必须能重新开始一轮 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateAcceptsNewRoundForSameConversationAfterStaleRound` |
 | 109 | StuckLoadingMask | 首屏遮罩：失效的一轮不得放行遮罩，但必须允许后续轮次接手 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateStaleRoundMustNotReleaseMaskButMustHandOver` |
+| 110 | BottomStickyPin | 文档在钉底之后继续变高（懒加载行物化 / Markdown 异步解析回填）时，列表必须重新钉住底沿，否则底部被输入框遮住 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `bottomStaysPinnedWhenDocumentGrowsAfterSettle` |
+| 111 | BottomStickyPin | 文档连续变高时每一轮都要重新钉底，只有最后一帧的位置算数 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bottomStaysPinnedAcrossConsecutiveGrowths` |
+| 112 | BottomStickyPin | 文档变高后「是否在底部」必须仍为 true，否则后续新消息彻底不再跟随滚到底 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `bottomStateStaysTrueAfterDocumentGrowth` |
+| 113 | BottomStickyPin | 用户已上滚时文档变高不得把列表拽回底部 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `bottomIsNotYankedBackWhenUserScrolledAway` |
+| 114 | BottomStickyPin | 解绑之后不得再自动钉底（换会话重建 List 时旧 tracker 不得继续操作） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `noAutoPinAfterDetach` |
 
 > 说明：全部 **109 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 31 / 31
-- P1: 已覆盖 69 / 69
+- P0: 已覆盖 34 / 34
+- P1: 已覆盖 71 / 71
 - P2: 已覆盖 9 / 9
-- **合计: 109 / 109**（仅表示清单场景，非源码覆盖率）
+- **合计: 114 / 114**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
