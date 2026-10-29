@@ -14,13 +14,33 @@ enum IconToolSupport {
 
     // MARK: - Scope & document resolution
 
-    /// 当前已打开项目的路径（来自 Runtime 缓存）。
-    static func currentProjectPath() async -> String? {
-        await MainActor.run {
-            IconDesignerRuntime.currentProjectPath?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .nilIfEmpty
+    /// 当前调用所属对话绑定的项目路径（规范化）。
+    ///
+    /// - 未绑定项目的对话、或非 Agent 调用时返回 `nil`（无约束）。
+    static func scopedProjectPath() -> String? {
+        if case .conversation(let projectPath) = IconConversationProjectScope.binding {
+            return normalizedProjectPath(projectPath)
         }
+        return nil
+    }
+
+    /// 当前调用所属项目的 store。
+    ///
+    /// 对话绑定了项目时使用该项目的 store（与 UI 当前项目不同时为隔离实例），
+    /// 避免用户在对话切换期间导致数据写进另一个对话的项目；
+    /// 对话未绑定项目时用 UI 当前项目的 store。
+    @MainActor
+    static func store() -> IconDocumentStore {
+        IconDesignerRuntime.store(forProjectPath: scopedProjectPath())
+    }
+
+    /// 标准化项目路径，便于与 UI 当前项目路径比较。
+    private static func normalizedProjectPath(_ path: String?) -> String? {
+        guard let path = path?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty else {
+            return nil
+        }
+        return URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL.path
     }
 
     /// 解析工具入参中的 scope：图标文档始终属于当前项目。
@@ -38,7 +58,7 @@ enum IconToolSupport {
     /// 指定 scope 的存储路径。无路径时抛 invalidStorageScope。
     static func storagePath(for scope: IconScope) async throws -> String {
         try await MainActor.run {
-            let path = IconDocumentStore.shared.storagePath(for: scope)
+            let path = store().storagePath(for: scope)
             guard !path.isEmpty else { throw IconDocumentStoreError.invalidStorageScope }
             return path
         }
@@ -54,7 +74,7 @@ enum IconToolSupport {
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
         return try await MainActor.run {
-            let store = IconDocumentStore.shared
+            let store = store()
             if let explicitId, !explicitId.isEmpty {
                 if let match = store.documents(for: scope).first(where: { $0.id == explicitId }) {
                     return (match, scope)
@@ -76,8 +96,15 @@ enum IconToolSupport {
     }
 
     /// 写操作完成后刷新 UI（按作用域重载并保持/切换选中）。
+    ///
+    /// 跨项目写入时不刷新 UI：面板展示的是「当前打开项目」的内容，
+    /// 刷新它只会把另一个项目的数据混进来。
     static func notify(scope: IconScope, documentId: String?) async {
         await MainActor.run {
+            if let scoped = scopedProjectPath(),
+               scoped != normalizedProjectPath(IconDocumentStore.shared.currentProjectPath) {
+                return
+            }
             IconDocumentStore.shared.reload(scope: scope, selectDocumentId: documentId)
         }
     }

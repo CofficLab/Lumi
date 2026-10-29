@@ -17,6 +17,20 @@ enum ResumeDesignerRuntime {
     /// 聊天输入框服务（宿主注入，可空）。用于把选中的区块预填进输入框待发送。
     static var conversationInput: (any ConversationInputProviding)?
 
+    /// 指定项目路径对应的存储目录（`<项目>/.lumi/resume-designer`）。
+    ///
+    /// 纯函数：不依赖 UI 当前打开的项目，供工具按「调用所属对话的项目」解析路径。
+    static func resumeStorageDirectory(forProjectPath projectPath: String?) -> URL? {
+        guard let path = projectPath?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty else {
+            return nil
+        }
+        return URL(fileURLWithPath: path, isDirectory: true)
+            .appendingPathComponent(".lumi", isDirectory: true)
+            .appendingPathComponent(projectFolderName, isDirectory: true)
+            .standardizedFileURL
+    }
+
     static func configure(kernel: KernelCoreContainer) {
         conversationInput = kernel.resolveProvider((any ConversationInputProviding).self)
         updateProjectStorageDirectory(
@@ -29,12 +43,7 @@ enum ResumeDesignerRuntime {
         let path = normalizedPath?.isEmpty == false ? normalizedPath : nil
         guard path != currentProjectPath || projectStorageDirectory != nil else { return }
         currentProjectPath = path
-        let resolved = path.map {
-            URL(fileURLWithPath: $0, isDirectory: true)
-                .appendingPathComponent(".lumi", isDirectory: true)
-                .appendingPathComponent(projectFolderName, isDirectory: true)
-                .standardizedFileURL
-        }
+        let resolved = resumeStorageDirectory(forProjectPath: path)
         guard projectStorageDirectory != resolved else { return }
         projectStorageDirectory = resolved
         WorkspaceStore.shared.setProjectStorage(

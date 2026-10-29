@@ -4,6 +4,7 @@ import LumiLoggingKit
 import LumiUI
 import os
 import ProviderGit
+import ProviderGitRepositoryWatch
 import ProviderProject
 import ProviderToolbar
 import SwiftUI
@@ -12,6 +13,9 @@ import SwiftUI
 ///
 /// - `onBoot` 中解析 `GitBranchManaging` 契约（由 `PluginGit` 发布），
 ///   装配 ViewModel 与项目观察者；
+/// - 订阅 `GitRepositoryWatching`（由 `PluginGitRepositoryWatch` 发布），
+///   使胶囊能跟随**外部**的分支变动刷新——终端 `git checkout`、IDE 切分支、
+///   Agent 调用 git 工具等都不会经过本插件，只能靠仓库监听感知；
 /// - 工具栏贡献按「当前项目是否为 Git 仓库」动态增删：非 Git 项目时
 ///   标题栏不出现任何分支相关控件；
 /// - 贡献使用 `placement: .center` 且 `order` 大于 `PluginProjects` 的 0，
@@ -28,6 +32,7 @@ public final class GitToolbarPlugin: SuperPlugin, SuperLog {
     public let order = 12
     public let dependencies = [
         "com.coffic.lumi.plugin.git",
+        "com.coffic.lumi.plugin.git-repository-watch",
         "com.coffic.lumi.plugin.projects",
     ]
     public let metadata = PluginMetadata(
@@ -59,10 +64,14 @@ public final class GitToolbarPlugin: SuperPlugin, SuperLog {
             return
         }
 
-        let capability = GitBranchCapabilityAdapter(provider: git)
+        // 仓库监听是可选能力：未注册 `GitRepositoryWatching` 时胶囊仍可用，
+        // 只是不会跟随外部的分支切换刷新。
+        let watch = kernel.resolveProvider((any GitRepositoryWatching).self)
+        let capability = GitBranchCapabilityAdapter(provider: git, watch: watch)
         let viewModel = GitBranchToolbarViewModel(capability: capability)
         self.viewModel = viewModel
         self.observer = GitBranchProjectObserver(project: project, viewModel: viewModel)
+        self.observer?.observeRepository(capability)
 
         // 工具栏 center 段按 order 升序排列；Projects 使用 order 0，
         // 这里用插件自身 order，保证分支胶囊落在项目胶囊右侧。
