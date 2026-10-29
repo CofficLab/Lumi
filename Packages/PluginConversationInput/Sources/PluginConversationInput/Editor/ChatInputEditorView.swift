@@ -1279,6 +1279,12 @@ final class PastePreviewAttachment: NSTextAttachment {
 /// 外观是一个圆角胶囊：淡色背景 + 细描边 + 图标 + 标题 + 统计信息，
 /// hover 时背景与描边加深，让用户知道这是个可点的按钮。
 ///
+/// ## 与消息列表对齐
+///
+/// 同一段折叠内容在消息列表里也渲染成一个 chip。两处必须看起来一样，
+/// 否则用户会以为输入框里是一个控件、发出去却变成了另一种东西。故
+/// 尺寸与配色统一由 ``CollapsedContentChipStyle`` 定义，两边各自引用。
+///
 /// ## 与文字行的融合
 ///
 /// chip 要看起来像「长在这行文字里」而不是「浮在文字上」，必须满足两条：
@@ -1297,24 +1303,32 @@ final class PastePreviewAttachment: NSTextAttachment {
 /// 恰好等于正文基线。取 `height = 自然行高`、`offset = -降部`，
 /// 既让基线对齐，又因为 cell 覆盖范围正好是行盒而不额外撑高行。
 ///
-/// 胶囊本身用 CoreText 的字形墨迹边界计算高度，紧贴实际字形，
+/// ## 胶囊贴着内容，而不是撑满行盒
+///
+/// cell 的行内占位高度必须等于行高（否则会撑高行），但**画出来的胶囊**
+/// 不必占满这个高度。早期实现把胶囊画成整个 cell 高度，于是胶囊底边
+/// 落到正文基线以下 13pt（实测），胶囊高 27pt——比 18pt 的行盒还高，
+/// 视觉上像一块底板压住文字。这正是输入框里的 chip 显得「乱」的主因。
+///
+/// 现在胶囊按「文字墨迹 + 上下内边距」计算高度，底边贴着墨迹下沿、
+/// 顶边贴着墨迹上沿，于是胶囊刚好裹住文字（实测 16pt 高，底边低于基线 2pt）。
+///
+/// 胶囊高度用 CoreText 的字形墨迹边界计算，紧贴实际字形，
 /// 不会因为 CJK 与拉丁的升降部差异而忽高忽低。
 ///
 /// 宽度在初始化时按文本测量并缓存，避免布局阶段反复测量字符串。
 final class PasteButtonAttachmentCell: NSTextAttachmentCell {
     /// 胶囊左右内边距。
-    private static let horizontalPadding: CGFloat = 7
+    private static var horizontalPadding: CGFloat { CollapsedContentChipStyle.horizontalPadding }
     /// 胶囊上下内边距（相对字形墨迹边界）。
-    private static let capsulePadding: CGFloat = 3
+    private static var capsulePadding: CGFloat { CollapsedContentChipStyle.inlineVerticalPadding }
     /// 胶囊最大宽度。超出时截断标题而不是无限拉长。
-    private static let maximumWidth: CGFloat = 320
+    private static var maximumWidth: CGFloat { CollapsedContentChipStyle.maximumWidth }
     /// 图标尺寸与图标到标题的间距。
-    private static let iconSize: CGFloat = 13
-    private static let iconSpacing: CGFloat = 5
+    private static var iconSize: CGFloat { CollapsedContentChipStyle.iconSize }
+    private static var iconSpacing: CGFloat { CollapsedContentChipStyle.iconSpacing }
     /// 标题与统计信息之间的间距。
-    private static let detailSpacing: CGFloat = 5
-    /// 统计信息比正文小一号。标题保持与正文同号，避免 chip 显得「小一号」。
-    private static let detailSizeDelta: CGFloat = -2
+    private static var detailSpacing: CGFloat { CollapsedContentChipStyle.detailSpacing }
     /// 未指定图标时使用的默认符号。
     static let defaultSymbolName = "doc.on.clipboard"
 
@@ -1365,8 +1379,10 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
     /// - Parameters:
     ///   - title: chip 主标题（如「粘贴的文本」）。
     ///   - detail: chip 副标题（如「5,678 字 · 195 行」）。可为空。
-    ///   - font: chip 所在编辑器的正文字体。chip 的字号与高度都从这里派生，
-    ///     这样正文字号变化时 chip 会自动跟随。
+    ///   - font: chip 所在编辑器的正文字体。chip 的**行内占位高度**由它派生
+    ///     （占位高度必须等于正文行高，否则会撑高文字行）；但 chip 的**字号**
+    ///     固定为 ``CollapsedContentChipStyle/titleSize``，不跟随正文缩放——
+    ///     否则同一个 chip 在输入框与消息列表里会是两种大小。
     init(
         title: String,
         detail: String = "",
@@ -1376,10 +1392,10 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
         self.chipTitle = title
         self.chipDetail = detail
         self.symbolName = systemImage ?? Self.defaultSymbolName
-        // 标题与正文同字号同字重：chip 是正文的一部分，不该缩成小字。
-        self.titleFont = .systemFont(ofSize: font.pointSize, weight: .medium)
-        self.detailFont = .systemFont(ofSize: max(10, font.pointSize + Self.detailSizeDelta), weight: .regular)
-        self.symbolPointSize = Self.iconSize * 0.9
+        // 字号固定，不跟随正文：输入框与消息列表必须一致。
+        self.titleFont = .systemFont(ofSize: CollapsedContentChipStyle.titleSize, weight: .medium)
+        self.detailFont = .systemFont(ofSize: CollapsedContentChipStyle.detailSize, weight: .regular)
+        self.symbolPointSize = Self.iconSize
 
         let lineHeight = NSLayoutManager().defaultLineHeight(for: font)
         let descender = -font.descender
@@ -1421,8 +1437,8 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
         self.detailInkAbove = detailInk.above
         self.detailInkBelow = detailInk.below
 
-        // 胶囊圆角：高度的一半即半圆，与小字号标题协调。
-        self.cornerRadius = 5
+        // 胶囊圆角：与消息列表一致。
+        self.cornerRadius = CollapsedContentChipStyle.cornerRadius
         super.init()
     }
 
@@ -1441,7 +1457,7 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView?) {
         let isHighlighted = (controlView as? EditorTextView)?.hoveredPasteCell === self
-        // chip 文字基线：与正文基线重合。
+        // chip 文字基线：与正文基线重合（chip 是这一行文字的一部分）。
         let baselineY = cellFrame.minY + internalBaseline
 
         // 胶囊高度取「标题与统计信息的墨迹并集」，上下各留一点内边距。
@@ -1450,22 +1466,21 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
         if inkAbove <= 0 { inkAbove = titleFont.ascender }
         if inkBelow <= 0 { inkBelow = -titleFont.descender }
 
-        // 计算墨迹总高度（含内边距），用于垂直居中。
-        let inkTotal = inkAbove + inkBelow + Self.capsulePadding * 2
-        // chip 高度严格等于行高，确保上下边缘与文字行对齐。
-        let chipHeight = cellFrame.height
-        // 垂直偏移：让墨迹在 chip 内垂直居中。
-        let verticalOffset = (chipHeight - inkTotal) / 2
-
+        // 胶囊**贴着内容**画，而不是撑满整个行盒。
+        //
+        // cell 的行内占位高度必须等于行高（否则会撑高文字行），但画出来的
+        // 胶囊不必占满这个高度。早期实现把胶囊画成整个 cell 高度：胶囊底边
+        // 因此落到正文基线以下十几点，视觉上像一块底板压住文字——这正是
+        // 输入框里的 chip 显得「乱」的主因。
+        //
+        // 这里改为：胶囊高度 = 墨迹高度 + 上下内边距，底边贴着墨迹下沿，
+        // 顶边贴着墨迹上沿，于是胶囊刚好裹住文字。
         let chipRect = NSRect(
             x: cellFrame.minX,
-            y: cellFrame.minY,
+            y: baselineY - inkBelow - Self.capsulePadding,
             width: cellFrame.width,
-            height: chipHeight
+            height: inkAbove + inkBelow + Self.capsulePadding * 2
         )
-
-        // 绘制基线：考虑垂直偏移，让内容在 chip 内居中。
-        let drawBaselineY = baselineY + verticalOffset
 
         let path = NSBezierPath(
             roundedRect: chipRect,
@@ -1480,15 +1495,15 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
             NSColor.controlAccentColor.withAlphaComponent(0.45).setStroke()
         } else {
             // 底色与描边都压得很轻，避免胶囊盖过旁边的正文。
-            NSColor.labelColor.withAlphaComponent(0.055).setFill()
+            NSColor.labelColor.withAlphaComponent(CollapsedContentChipStyle.fillOpacity).setFill()
             path.fill()
-            NSColor.labelColor.withAlphaComponent(0.13).setStroke()
+            NSColor.labelColor.withAlphaComponent(CollapsedContentChipStyle.strokeOpacity).setStroke()
         }
 
         // 图标与字形盒视觉居中。
         let iconRect = NSRect(
             x: chipRect.minX + Self.horizontalPadding,
-            y: drawBaselineY + (inkAbove - inkBelow) / 2 - Self.iconSize / 2,
+            y: baselineY + (inkAbove - inkBelow) / 2 - Self.iconSize / 2,
             width: Self.iconSize,
             height: Self.iconSize
         )
@@ -1496,10 +1511,10 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
 
         var x = iconRect.maxX + Self.iconSpacing
 
-        // 标题（与正文同基线、同字号）。
+        // 标题（与正文同基线）。
         let titleRect = NSRect(
             x: x,
-            y: drawBaselineY + titleFont.descender,
+            y: baselineY + titleFont.descender,
             width: chipTitleWidth,
             height: titleFont.ascender - titleFont.descender
         )
@@ -1515,7 +1530,7 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
             x += Self.detailSpacing
             let detailRect = NSRect(
                 x: x,
-                y: drawBaselineY + detailFont.descender,
+                y: baselineY + detailFont.descender,
                 width: chipDetailWidth,
                 height: detailFont.ascender - detailFont.descender
             )
