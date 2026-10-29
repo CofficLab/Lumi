@@ -67,6 +67,7 @@ let package = Package(
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
                 .product(name: "ProviderAgentRules", package: "LumiProviders"),
+                "ProviderToolManager",
             ]
         ),
     ]

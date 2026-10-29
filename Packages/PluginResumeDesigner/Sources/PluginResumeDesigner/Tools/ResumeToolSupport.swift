@@ -18,13 +18,41 @@ enum ResumeToolSupport {
 
     // MARK: - Storage & argument helpers
 
-    /// 当前项目存储路径。无路径时抛 invalidStoragePath。
+    /// 当前调用所属对话绑定的项目路径（规范化）。
+    ///
+    /// - 未绑定项目的对话、或非 Agent 调用时返回 `nil`（无约束）。
+    static func scopedProjectPath() -> String? {
+        if case .conversation(let projectPath) = ResumeConversationProjectScope.binding {
+            return normalizedProjectPath(projectPath)
+        }
+        return nil
+    }
+
+    /// 当前调用所属项目的存储路径。
+    ///
+    /// 对话绑定了项目时按该项目解析，避免用户在对话切换期间导致数据写进
+    /// 另一个对话的项目；对话未绑定项目时回退到当前打开项目
+    /// （此时内核不会因对话切换而改变当前项目，回退不会串项目）。
+    /// 无路径时抛 invalidStoragePath。
     static func storagePath() async throws -> String {
         try await MainActor.run {
+            if let scoped = scopedProjectPath(),
+               let directory = ResumeDesignerRuntime.resumeStorageDirectory(forProjectPath: scoped) {
+                return directory.path
+            }
             let path = WorkspaceStore.shared.projectStoragePath
             guard !path.isEmpty else { throw ResumeStoreError.invalidStoragePath }
             return path
         }
+    }
+
+    /// 标准化项目路径，便于与 UI 当前项目路径比较。
+    private static func normalizedProjectPath(_ path: String?) -> String? {
+        guard let path = path?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty else {
+            return nil
+        }
+        return URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL.path
     }
 
     static func required(_ key: String, _ arguments: [String: ToolArgument]) throws -> String {
@@ -34,8 +62,18 @@ enum ResumeToolSupport {
         return value
     }
 
+    /// 通知 UI 刷新。
+    ///
+    /// 跨项目写入时不刷新：UI 面板展示的是「当前打开项目」的内容，
+    /// 刷新它只会把另一个项目的数据混进来。
     static func notify(resumeID: String? = nil) async {
-        await MainActor.run { WorkspaceStore.shared.reload(selectResume: resumeID) }
+        await MainActor.run {
+            if let scoped = scopedProjectPath(),
+               scoped != normalizedProjectPath(WorkspaceStore.shared.currentProjectPath) {
+                return
+            }
+            WorkspaceStore.shared.reload(selectResume: resumeID)
+        }
     }
 
     static func resumeSummary(_ document: ResumeDocument) -> String {

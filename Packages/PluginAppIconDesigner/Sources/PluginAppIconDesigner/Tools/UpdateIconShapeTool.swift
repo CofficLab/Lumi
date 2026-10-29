@@ -49,7 +49,7 @@ public struct UpdateIconShapeTool: SuperAgentTool {
         do {
             let (document, scope) = try await IconToolSupport.resolveDocument(arguments)
             let updated = try await MainActor.run {
-                try IconDocumentStore.shared.updateLayer(id: layerId, documentId: document.id, scope: scope) { layer in
+                try IconToolSupport.store().updateLayer(id: layerId, documentId: document.id, scope: scope) { layer in
                     layer.shape = updatedShape(layer.shape, arguments: arguments)
                 }
             }
@@ -71,7 +71,7 @@ public struct UpdateIconShapeTool: SuperAgentTool {
             )
         } catch {
             await MainActor.run {
-                IconDocumentStore.shared.setError(error.localizedDescription)
+                IconToolSupport.store().setError(error.localizedDescription)
             }
             return IconToolSupport.error(error, language: language)
         }
