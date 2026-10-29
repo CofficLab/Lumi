@@ -116,13 +116,27 @@ public enum MessageListDetailedUITestingSupport {
         //
         // 范式参照 `PluginAgentLoop.ErrorRetryUITestingSupport`：它同样是因为
         // 插入 user 消息而必须显式抑制自动回复。
-        for conversationID in [small, large, toolGroup] {
+        //
+        // - Important: 抑制**只覆盖 seed 阶段**，seed 结束必须解除。
+        //   有些 UI 测试会在夹具会话里**真的发一条消息**，期待模型回复。
+        //   若抑制被永久留下，这些测试就再也收不到模型回复。
+        //
+        //   解除时机是安全的：`MessageObserver.handle` 里的
+        //   `isAutoReplySuppressed` 检查是**同步**的，seed 期间插入的 user 消息
+        //   在 seed 返回前就已经完成判定。
+        let seededConversationIDs = [small, large, toolGroup]
+        for conversationID in seededConversationIDs {
             agentLoop?.setAutoReplySuppressed(true, for: conversationID)
         }
 
         seedSmall(conversations: conversations, messages: messages, conversationID: small)
         seedLarge(conversations: conversations, messages: messages, conversationID: large)
         seedToolGroup(conversations: conversations, messages: messages, conversationID: toolGroup)
+
+        // seed 结束：解除抑制，让 UI 测试可以在夹具会话里正常发消息。
+        for conversationID in seededConversationIDs {
+            agentLoop?.setAutoReplySuppressed(false, for: conversationID)
+        }
 
         // 详细程度必须是 `.detailed`：V3 列表槽位只在详细程度为 detailed 时激活，
         // 否则 UI 测试测的是 V2 而不是 V3。
