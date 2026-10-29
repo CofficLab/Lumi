@@ -22,13 +22,33 @@ enum MindMapToolSupport {
 
     // MARK: - Project Map Resolution
 
-    /// 当前已打开项目的路径（来自 Runtime 缓存）。
-    static func currentProjectPath() async -> String? {
-        await MainActor.run {
-            MindMapDesignerRuntime.currentProjectPath?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .nilIfEmpty
+    /// 当前调用所属对话绑定的项目路径（规范化）。
+    ///
+    /// - 未绑定项目的对话、或非 Agent 调用时返回 `nil`（无约束）。
+    static func scopedProjectPath() -> String? {
+        if case .conversation(let projectPath) = MindMapConversationProjectScope.binding {
+            return normalizedProjectPath(projectPath)
         }
+        return nil
+    }
+
+    /// 当前调用所属项目的 store。
+    ///
+    /// 对话绑定了项目时使用该项目的 store（与 UI 当前项目不同时为隔离实例），
+    /// 避免用户在对话切换期间导致数据写进另一个对话的项目；
+    /// 对话未绑定项目时用 UI 当前项目的 store。
+    @MainActor
+    static func store() -> MindMapStore {
+        MindMapDesignerRuntime.store(forProjectPath: scopedProjectPath())
+    }
+
+    /// 标准化项目路径，便于与 UI 当前项目路径比较。
+    private static func normalizedProjectPath(_ path: String?) -> String? {
+        guard let path = path?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty else {
+            return nil
+        }
+        return URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL.path
     }
 
     /// 所有工具都固定操作当前项目内的思维导图。
@@ -43,7 +63,7 @@ enum MindMapToolSupport {
         let explicitId = string(arguments, "mapId")?.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return try await MainActor.run {
-            let store = MindMapStore.shared
+            let store = store()
             guard !store.projectStoragePath.isEmpty else {
                 throw MindMapStoreError.projectRequired
             }
@@ -67,8 +87,15 @@ enum MindMapToolSupport {
     }
 
     /// 写操作完成后刷新项目内列表并保持选中。
+    ///
+    /// 跨项目写入时不刷新 UI：面板展示的是「当前打开项目」的内容，
+    /// 刷新它只会把另一个项目的数据混进来。
     static func notify(scope: MindMapScope, mapId: String?) async {
         await MainActor.run {
+            if let scoped = scopedProjectPath(),
+               scoped != normalizedProjectPath(MindMapStore.shared.currentProjectPath) {
+                return
+            }
             MindMapStore.shared.reload(scope: scope, selectMapId: mapId)
         }
     }
