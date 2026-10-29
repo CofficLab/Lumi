@@ -22,7 +22,7 @@ import Testing
 ///   `swift build -c release` 会因找不到该类型而失败 —— 本地 Debug 通过
 ///   完全掩盖不了这一点。
 @MainActor
-@Test("夹具：seed 后三个会话都存在，且都带消息")
+@Test("夹具：seed 后四个会话都存在，且都带消息")
 func fixtureSeedsBothConversations() {
     let conversations = DefaultConversationManager()
     let messages = DefaultMessageManager()
@@ -45,12 +45,16 @@ func fixtureSeedsBothConversations() {
         titles.contains(MessageListStandardUITestingSupport.hugeConversationTitle),
         "超大会话未种出，实际种出：\(titles)"
     )
-    #expect(titles.count == 3, "夹具应恰好种出 3 个会话，实际 \(titles.count)：\(titles)")
+    #expect(
+        titles.contains(MessageListStandardUITestingSupport.toolGroupConversationTitle),
+        "工具调用组会话未种出，实际种出：\(titles)"
+    )
+    #expect(titles.count == 4, "夹具应恰好种出 4 个会话，实际 \(titles.count)：\(titles)")
 }
 
-/// 三个会话都必须有消息，否则切换过去是空列表，无法覆盖遮罩收敛路径。
+/// 四个会话都必须有消息，否则切换过去是空列表，无法覆盖遮罩收敛路径。
 @MainActor
-@Test("夹具：三个会话都写入了消息")
+@Test("夹具：四个会话都写入了消息")
 func fixtureSeedsMessagesForBothConversations() {
     let conversations = DefaultConversationManager()
     let messages = DefaultMessageManager()
@@ -63,7 +67,8 @@ func fixtureSeedsMessagesForBothConversations() {
     for title in [
         MessageListStandardUITestingSupport.smallConversationTitle,
         MessageListStandardUITestingSupport.largeConversationTitle,
-        MessageListStandardUITestingSupport.hugeConversationTitle
+        MessageListStandardUITestingSupport.hugeConversationTitle,
+        MessageListStandardUITestingSupport.toolGroupConversationTitle
     ] {
         let conversation = conversations.conversations.first { $0.title == title }
         #expect(conversation != nil, "会话「\(title)」不存在")
@@ -172,8 +177,9 @@ func fixtureSeedIsIdempotent() {
     MessageListStandardUITestingSupport.seed(conversations: conversations, messages: messages)
 
     #expect(
-        conversations.conversations.count == 3,
-        "重复 seed 后应仍为 3 个会话，实际 \(conversations.conversations.count)：\(conversations.conversations.compactMap(\.title))"
+        conversations.conversations.count == 4,
+        "重复 seed 后应仍为 4 个会话，实际 \(conversations.conversations.count)：\(conversations.conversations.compactMap(\.title))"
     )
 }
+
 #endif

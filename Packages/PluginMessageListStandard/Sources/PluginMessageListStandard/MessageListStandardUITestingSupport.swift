@@ -41,6 +41,12 @@ public enum MessageListStandardUITestingSupport {
     /// 只在消息数远超分页窗口时才会暴露的缺陷。
     public static let hugeConversationTitle = "Scale Target Huge"
 
+    /// 工具调用组会话标题（验证「多工具调用折叠为一行摘要」）。
+    ///
+    /// 该会话里的助手消息都**只含工具调用**（正文为空），因此会被数据层
+    /// 合并成 `turn-activity` 合成消息，渲染层再折叠成一行摘要。
+    public static let toolGroupConversationTitle = "Tool Group Target"
+
     private static let baseDate = Date(timeIntervalSince1970: 1_700_000_000)
 
     /// 大会话的 turn 数。足够让 List 懒加载多帧，逼近收敛上限。
@@ -106,10 +112,17 @@ public enum MessageListStandardUITestingSupport {
             providerID: nil,
             modelName: nil
         ) else { return }
+        guard let toolGroup = try? conversations.createConversation(
+            title: toolGroupConversationTitle,
+            projectPath: nil,
+            providerID: nil,
+            modelName: nil
+        ) else { return }
 
         seedSmall(conversations: conversations, messages: messages, conversationID: small)
         seedLarge(conversations: conversations, messages: messages, conversationID: large)
         seedHuge(conversations: conversations, messages: messages, conversationID: huge)
+        seedToolGroup(conversations: conversations, messages: messages, conversationID: toolGroup)
 
         // 选中大会话：它是更难收敛的一侧，作为 UI 测试的起始态。
         conversations.selectConversation(id: large)
@@ -216,6 +229,94 @@ public enum MessageListStandardUITestingSupport {
                 to: conversationID
             )
         }
+    }
+
+    /// 工具调用组会话：一条含**多个工具调用**的助手消息。
+    ///
+    /// 该消息正文为空 → 命中 `isToolExecutionOnly` → 数据层合成
+    /// `turn-activity` 消息 → 渲染层折叠成一行摘要。
+    ///
+    /// 另外插入一条**单个工具调用**的助手消息作为对照：
+    /// 单个调用不应被折叠，仍逐条铺开显示。
+    private static func seedToolGroup(
+        conversations: any ConversationManaging,
+        messages: any MessageManaging,
+        conversationID: UUID
+    ) {
+        let turnID = UUID()
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .user,
+                content: "工具调用组问题",
+                createdAt: baseDate,
+                turnID: turnID
+            ),
+            to: conversationID
+        )
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .assistant,
+                content: "",
+                createdAt: baseDate.addingTimeInterval(1),
+                turnID: turnID,
+                toolCalls: [
+                    toolCall(id: "group-1", name: "read_file", description: "读取文件"),
+                    toolCall(id: "group-2", name: "search", description: "搜索代码"),
+                    toolCall(id: "group-3", name: "run_command", description: "运行测试"),
+                ]
+            ),
+            to: conversationID
+        )
+
+        // 对照组：单个工具调用，不折叠。
+        let singleTurnID = UUID()
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .user,
+                content: "单个工具调用问题",
+                createdAt: baseDate.addingTimeInterval(10),
+                turnID: singleTurnID
+            ),
+            to: conversationID
+        )
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .assistant,
+                content: "",
+                createdAt: baseDate.addingTimeInterval(11),
+                turnID: singleTurnID,
+                toolCalls: [
+                    toolCall(id: "single-1", name: "read_file", description: "读取单个文件")
+                ]
+            ),
+            to: conversationID
+        )
+
+        conversations.setVerbosity(.standard, for: conversationID)
+    }
+
+    /// 构造一条已完成的工具调用。
+    private static func toolCall(
+        id: String,
+        name: String,
+        description: String
+    ) -> MessageToolCall {
+        MessageToolCall(
+            id: id,
+            name: name,
+            arguments: "{}",
+            result: MessageToolResult(
+                content: "ok",
+                duration: 1,
+                isError: false
+            ),
+            displayDescription: description,
+            authorizationState: "autoApproved"
+        )
     }
 
     /// 每轮交替使用 Markdown 标题、列表与代码块，制造多行富文本行高。
