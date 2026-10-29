@@ -7,6 +7,7 @@ import ProviderContentView
 import ProviderRailView
 import ProviderRootView
 import ProviderToolbar
+import ProviderToolManager
 import Testing
 @testable import PluginAppStorePromoDesigner
 
@@ -50,6 +51,25 @@ struct AppStorePromoDesignerPluginTests {
         #expect(PromoLocalization.string(key) != key)
         let noSelectionKey = "Select a task from the left, or ask the Agent to create a promotional artwork task."
         #expect(PromoLocalization.string(noSelectionKey) != noSelectionKey)
+    }
+
+    @Test("插件注册的 Agent 工具都带对话作用域包装")
+    func registeredToolsAreConversationScoped() async throws {
+        PromoDesignerRuntime.reset()
+        let kernel = KernelCoreContainer()
+        let toolManager = DefaultToolManagerProviding()
+
+        try kernel.registerProvider((any ToolManagerProviding).self, toolManager)
+        try kernel.start(plugins: [AppStorePromoDesignerPlugin()])
+        // 插件默认禁用，未 enable 时不会走 onBoot，工具也就没注册。
+        try await kernel.enablePlugin(id: AppStorePromoDesignerPlugin().id)
+
+        let registered = toolManager.allTools().filter { $0.name.hasPrefix("app_store_promo_") }
+        #expect(registered.count == AppStorePromoDesignerPlugin.agentTools.count)
+        // 未包装的工具会退回「UI 当前打开项目」，多对话并行时串项目。
+        #expect(registered.allSatisfy { $0 is ConversationScopedPromoTool })
+
+        try kernel.stop()
     }
 
     @Test func activatingPluginEntryShowsChatAndActivatesRail() async throws {
