@@ -31,6 +31,19 @@ public enum MessageListDetailedUITestingSupport {
     /// 大会话标题（几何持续增长，最易挂住遮罩）。
     public static let largeConversationTitle = "Detailed Target Large"
 
+    /// 工具调用组会话标题（验证「V3 保持多工具调用逐条铺开」）。
+    ///
+    /// 内容与 V2 的 `Tool Group Target` **完全相同**（同样 3 个 + 1 个工具调用），
+    /// 唯一区别是回复级别为 `.detailed`。
+    ///
+    /// - Important: 这个会话必须种在 **V3 的夹具**里，不能种在 V2 夹具里。
+    ///   V3 列表槽位只在「当前会话的详细程度为 `.detailed`」时激活
+    ///   （见 `VerbosityObservationBox.isActive`），而槽位激活靠
+    ///   `ChatSectionProviding.refreshItems()`——它是**异步**的
+    ///   （Task + `Task.yield()`）。把 `.detailed` 会话种在 V2 夹具里，
+    ///   切过去时 V3 槽位是否已激活会与刷新时序竞争，表现为偶发超时。
+    public static let toolGroupConversationTitle = "Detailed Tool Group Target"
+
     private static let baseDate = Date(timeIntervalSince1970: 1_700_000_000)
 
     /// 大会话的 turn 数。足够让 List 懒加载多帧，逼近收敛上限。
@@ -84,14 +97,22 @@ public enum MessageListDetailedUITestingSupport {
             providerID: nil,
             modelName: nil
         ) else { return }
+        guard let toolGroup = try? conversations.createConversation(
+            title: toolGroupConversationTitle,
+            projectPath: nil,
+            providerID: nil,
+            modelName: nil
+        ) else { return }
 
         seedSmall(conversations: conversations, messages: messages, conversationID: small)
         seedLarge(conversations: conversations, messages: messages, conversationID: large)
+        seedToolGroup(conversations: conversations, messages: messages, conversationID: toolGroup)
 
         // 详细程度必须是 `.detailed`：V3 列表槽位只在详细程度为 detailed 时激活，
         // 否则 UI 测试测的是 V2 而不是 V3。
         conversations.setVerbosity(.detailed, for: small)
         conversations.setVerbosity(.detailed, for: large)
+        conversations.setVerbosity(.detailed, for: toolGroup)
 
         // 选中大会话：它是更难收敛的一侧，作为 UI 测试的起始态。
         conversations.selectConversation(id: large)
@@ -158,6 +179,88 @@ public enum MessageListDetailedUITestingSupport {
                 to: conversationID
             )
         }
+    }
+
+    /// 工具调用组会话：一条含**多个工具调用**的助手消息 + 一条单调用对照。
+    ///
+    /// 内容与 V2 夹具的 `Tool Group Target` 完全一致，只有回复级别不同，
+    /// 因此「V2 折叠 / V3 不折叠」的对照才是有效的。
+    private static func seedToolGroup(
+        conversations: any ConversationManaging,
+        messages: any MessageManaging,
+        conversationID: UUID
+    ) {
+        let turnID = UUID()
+        messages.insertMessage(
+            message(
+                conversationID: conversationID,
+                role: .user,
+                content: "工具调用组问题",
+                createdAt: baseDate,
+                turnID: turnID
+            ),
+            to: conversationID
+        )
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .assistant,
+                // 正文**非空**：这样这条消息不会被数据层合并成
+                // `turn-activity` 合成消息，工具调用就**内联**在这条助手消息里
+                // ——正是 V3「保持逐条铺开」的原有形态。
+                content: "详细工具调用组回答",
+                createdAt: baseDate.addingTimeInterval(1),
+                turnID: turnID,
+                toolCalls: [
+                    toolCall(id: "group-1", name: "read_file", description: "读取文件"),
+                    toolCall(id: "group-2", name: "search", description: "搜索代码"),
+                    toolCall(id: "group-3", name: "run_command", description: "运行测试"),
+                ]
+            ),
+            to: conversationID
+        )
+
+        // 对照组：单个工具调用，任何级别都不折叠。
+        let singleTurnID = UUID()
+        messages.insertMessage(
+            message(
+                conversationID: conversationID,
+                role: .user,
+                content: "单个工具调用问题",
+                createdAt: baseDate.addingTimeInterval(10),
+                turnID: singleTurnID
+            ),
+            to: conversationID
+        )
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .assistant,
+                content: "",
+                createdAt: baseDate.addingTimeInterval(11),
+                turnID: singleTurnID,
+                toolCalls: [
+                    toolCall(id: "single-1", name: "read_file", description: "读取单个文件")
+                ]
+            ),
+            to: conversationID
+        )
+    }
+
+    /// 构造一条只含工具调用的助手消息所需的工具调用。
+    private static func toolCall(
+        id: String,
+        name: String,
+        description: String
+    ) -> MessageToolCall {
+        MessageToolCall(
+            id: id,
+            name: name,
+            arguments: "{}",
+            result: nil,
+            displayDescription: description,
+            authorizationState: "autoApproved"
+        )
     }
 
     /// 每轮交替使用 Markdown 标题、列表与代码块，制造多行富文本行高。
