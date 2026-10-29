@@ -154,13 +154,16 @@ public struct MarkdownBlockRenderer: View {
 
     @ViewBuilder
     private func codeBlockView(language: String?, code: String) -> some View {
+        let showsLanguageLabel = language.map { !$0.isEmpty } == true && theme.showLanguageLabel
         VStack(alignment: .leading, spacing: 0) {
-            if let language, !language.isEmpty, theme.showLanguageLabel {
-                HStack {
+            if showsLanguageLabel, let language {
+                HStack(spacing: 8) {
                     Text(language)
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(theme.secondaryTextColor ?? .secondary)
                     Spacer()
+                    // 复制按钮放在语言标签行右侧：既能看见，又不会盖住代码内容。
+                    CodeBlockCopyButton(code: code)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
@@ -180,6 +183,18 @@ public struct MarkdownBlockRenderer: View {
             RoundedRectangle(cornerRadius: 6)
                 .strokeBorder(Color.secondary.opacity(0.12), lineWidth: 1)
         )
+        // 没有语言标签时没有头部栏可放按钮，退化为悬浮在右上角。
+        //
+        // 用 overlay 而非在 VStack 里插入一行：避免改变代码块高度，
+        // 否则会让消息列表的行高测量缓存（`HorizontalFittingSizeCache`）
+        // 与实际内容不一致。
+        .overlay(alignment: .topTrailing) {
+            if !showsLanguageLabel {
+                CodeBlockCopyButton(code: code)
+                    .padding(.top, 6)
+                    .padding(.trailing, 6)
+            }
+        }
     }
 
     // MARK: - Table
