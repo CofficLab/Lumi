@@ -29,21 +29,21 @@ public enum ConversationListAccessibility {
     ///
     /// 1. **标题永远排在最前且一定在场**。标题是这一行唯一稳定、唯一的标识；
     ///    后面的 provider / 模型都可能为空或随时间变化。
-    /// 2. 标题为 `nil` 时回退为「对话」——空 label 会让屏幕阅读器跳过该行，
-    ///    也让 UI 测试无法定位，与「没有标识」是同一个缺陷的两面。
+    /// 2. 标题为 `nil`、空串或纯空白时回退为「对话」——空 label 会让屏幕阅读器
+    ///    跳过该行，也让 UI 测试无法定位，与「没有标识」是同一个缺陷的两面。
+    ///    三种「无标题」形态必须收敛到同一个占位文案，否则只堵住其中一种，
+    ///    另一种仍然产生空白行（见 `ConversationRowTitle`）。
     /// 3. 空字符串的 provider / 模型一律跳过，避免产生 `"会话 B  "` 这类
     ///    带多余空格的名称（会破坏按标题精确定位的匹配）。
-    /// 4. **自动化等级必须显式拼入**。等级图标现在是整张卡片的背景水印
-    ///    （见 `ItemView.automationLevelWatermark`），不再是第三行的一枚可见文字。
-    ///    背景层不参与可访问性元素的合成，屏幕阅读器因此读不到它 ——
-    ///    等级信息会静默丢失，只能靠这里补回。
+    /// 4. **自动化等级必须显式拼入**。等级标签位于第三行首位，
+    ///    是这一行的关键状态，因此固定拼在 label 尾部，保证屏幕阅读器与 UI 测试都能稳定拿到它。
     ///
     /// - Important: 不能只依赖 `.accessibilityElement(children: .combine)`。
     ///   子元素过多时 SwiftUI 会截断拼接，标题可能被丢掉，因此必须由本函数
     ///   显式产出并赋值。抽成独立函数是为了让这条规则可被单元测试直接锁定 ——
     ///   视图层私有计算属性无法在测试中构造。
     public static func rowLabel(for conversation: ConversationSummary) -> String {
-        var parts: [String] = [conversation.title ?? "对话"]
+        var parts: [String] = [ConversationRowTitle.resolve(conversation.title)]
         if let providerID = conversation.providerID, !providerID.isEmpty {
             parts.append(providerID)
         }

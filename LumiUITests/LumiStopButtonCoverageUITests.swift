@@ -67,9 +67,6 @@ final class LumiStopButtonCoverageUITests: LumiUITestCase {
             "--lumi-ui-testing",
             "--lumi-ui-testing-isolated-storage",
         ])
-        // 必须在这里把新手引导等掉：它一旦盖住输入区，
-        // 后面所有点击都会落在浮层上（消息看似发出、实则没有）。
-        dismissOnboardingWhenItAppears()
     }
 
     override func tearDownWithError() throws {
@@ -79,41 +76,6 @@ final class LumiStopButtonCoverageUITests: LumiUITestCase {
     }
 
     // MARK: - Helpers
-
-    /// 等新手引导出现并把它关掉。
-    ///
-    /// 隔离存储下「引导已完成」标记文件必然缺失，引导**一定会**出现，
-    /// 只是早晚不同：机器负载高时它可能三十秒后才盖上来（实测录屏）。
-    ///
-    /// 基类的 `dismissOnboardingIfPresent()` 只等 8s。错过这个窗口，引导就会在
-    /// 测试中途盖住输入区，点击落在浮层上——
-    /// 表现为「消息发出去了但回合没启动」「提问卡片不出现」，
-    /// 与真实原因毫无关联，还很容易被误判成产品缺陷。
-    ///
-    /// 这里改成「**先等它出现，再关掉**」：出现就点掉，之后不再出现；
-    /// 一直没出现说明这个环境本就不显示引导，到期即返回。
-    private func dismissOnboardingWhenItAppears(timeout: TimeInterval = 75) {
-        let deadline = Date().addingTimeInterval(timeout)
-        var sawOnboarding = false
-        while Date() < deadline {
-            let skip = element(identifier: "lumi.onboarding.skip")
-            let primary = element(identifier: "lumi.onboarding.primary")
-            if skip.exists || primary.exists {
-                sawOnboarding = true
-                // 先点「跳过」：它不要求任何配置，最不容易卡在需要填 API Key 的步骤上。
-                // 点了还在，就换另一个按钮继续，直到引导整个消失。
-                if skip.exists && skip.isHittable {
-                    skip.click()
-                } else if primary.exists && primary.isHittable {
-                    primary.click()
-                }
-                sleep(1)
-                continue
-            }
-            if sawOnboarding { return }
-            sleep(1)
-        }
-    }
 
     /// 切到指定桩模型。
     ///

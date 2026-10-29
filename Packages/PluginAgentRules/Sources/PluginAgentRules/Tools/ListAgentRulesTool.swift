@@ -3,7 +3,7 @@ import Foundation
 
 /// 列出 Agent 规则文档工具
 ///
-/// 返回指定项目 .agent/rules 目录中所有规则文档的列表。
+/// 返回指定项目 .lumi/rules 目录中所有规则文档的列表。
 /// 由旧版 `LumiAgentTool` 迁移为 `SuperAgentTool`；`kernel.currentProjectPath`
 /// 改为 `AgentRulesRuntime.currentProjectPath`。
 public struct ListAgentRulesTool: SuperAgentTool {
@@ -15,7 +15,7 @@ public struct ListAgentRulesTool: SuperAgentTool {
     public init() {}
 
     public func description(for language: LanguagePreference) -> String {
-        "List all rule documents in the .agent/rules directory of a project. Returns metadata including filename, title, description, file size, and modification date for each rule document."
+        "List all rule documents in the .lumi/rules directory of a project. Returns metadata including filename, title, description, file size, and modification date for each rule document."
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
@@ -24,7 +24,7 @@ public struct ListAgentRulesTool: SuperAgentTool {
             "properties": [
                 "project_path": [
                     "type": "string",
-                    "description": "Absolute path to the project directory containing .agent/rules folder.",
+                    "description": "Absolute path to the project directory containing the .lumi/rules folder.",
                 ],
                 "limit": [
                     "type": "integer",

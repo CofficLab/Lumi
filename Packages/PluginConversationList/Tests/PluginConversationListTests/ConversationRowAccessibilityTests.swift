@@ -39,9 +39,9 @@ import Testing
 
 /// 自动化等级必须出现在 label 中。
 ///
-/// 等级图标现在是整张卡片的**背景水印**（`ItemView.automationLevelWatermark`），
-/// 不再是第三行里的一枚可见文字。背景层不参与可访问性元素合成，
-/// 屏幕阅读器读不到它 —— 若不在这里显式补回，等级信息就静默丢失了。
+/// 等级标签位于第三行末尾（项目 · 时间 之后）。虽然行内已有 `.combine`，
+/// 但子元素过多时 SwiftUI 会截断拼接，因此等级必须由 `rowLabel` 显式补回，
+/// 保证屏幕阅读器与 UI 测试都能稳定拿到它。
 @Test @MainActor func rowAccessibilityLabelIncludesAutomationLevel() {
     for level in AutomationLevel.allCases {
         let row = ConversationListAccessibility.rowLabel(for: makeSummary(

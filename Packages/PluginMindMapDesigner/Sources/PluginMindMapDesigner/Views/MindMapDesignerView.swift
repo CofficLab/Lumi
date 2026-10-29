@@ -24,7 +24,10 @@ public struct MindMapDesignerView: View {
     public var body: some View {
         VStack(spacing: 0) {
             if store.projectStorageDirectory == nil || store.projectMaps.isEmpty {
-                MindMapOnboardingView(isProjectOpen: store.projectStorageDirectory != nil)
+                AppEmptyState(
+                    icon: "brain.head.profile",
+                    title: L.string("Ask the Agent to create a mind map.")
+                )
             } else if let map = store.selectedMap {
                 topToolbar(for: map)
 

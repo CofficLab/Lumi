@@ -2,7 +2,7 @@
 
 ## 包概述
 
-PluginSettingGeneral 的实现包，包含 14 个主要类型；当前测试覆盖 5 条用例。
+PluginSettingGeneral 的实现包，包含 13 个主要类型；当前测试覆盖 5 条用例。
 
 平台: macOS 14+, iOS 17+
 测试文件: 1 个，用例总数: 5
@@ -24,7 +24,6 @@ PluginSettingGeneral 的实现包，包含 14 个主要类型；当前测试覆�
 - `GeneralSettingsCapabilityError`
 - `GeneralSettingsDiagnosticsCapability`
 - `GeneralSettingsDocsCapability`
-- `GeneralSettingsOnboardingCapability`
 - `GeneralSettingsStorageCapability`
 - `GeneralSettingsUninstallCapability`
 - `GeneralSettingsUpdateChannelCapability`

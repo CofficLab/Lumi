@@ -32,7 +32,6 @@ final class GeneralSettingsViewModel: ObservableObject {
 
     private let docsCapability: any GeneralSettingsDocsCapability
     private let updateChannelCapability: any GeneralSettingsUpdateChannelCapability
-    private let onboardingCapability: any GeneralSettingsOnboardingCapability
     private let diagnosticsCapability: any GeneralSettingsDiagnosticsCapability
     private let storageCapability: any GeneralSettingsStorageCapability
     private let uninstallCapability: any GeneralSettingsUninstallCapability
@@ -69,14 +68,12 @@ final class GeneralSettingsViewModel: ObservableObject {
     init(
         docsCapability: any GeneralSettingsDocsCapability,
         updateChannelCapability: any GeneralSettingsUpdateChannelCapability,
-        onboardingCapability: any GeneralSettingsOnboardingCapability,
         diagnosticsCapability: any GeneralSettingsDiagnosticsCapability,
         storageCapability: any GeneralSettingsStorageCapability,
         uninstallCapability: any GeneralSettingsUninstallCapability
     ) {
         self.docsCapability = docsCapability
         self.updateChannelCapability = updateChannelCapability
-        self.onboardingCapability = onboardingCapability
         self.diagnosticsCapability = diagnosticsCapability
         self.storageCapability = storageCapability
         self.uninstallCapability = uninstallCapability
@@ -86,10 +83,6 @@ final class GeneralSettingsViewModel: ObservableObject {
     }
 
     // MARK: - 派生状态
-
-    var isOnboardingAvailable: Bool {
-        onboardingCapability.isOnboardingAvailable
-    }
 
     var isUpdateChannelAvailable: Bool {
         updateChannelCapability.isUpdateChannelAvailable
@@ -127,10 +120,6 @@ final class GeneralSettingsViewModel: ObservableObject {
     }
 
     // MARK: - 用户意图
-
-    func replayOnboarding() {
-        onboardingCapability.replayOnboarding()
-    }
 
     func openStorageDirectory() {
         storageCapability.openStorageDirectory()

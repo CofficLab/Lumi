@@ -46,6 +46,20 @@ final class GoalVM: ObservableObject, SuperLog {
         goals.contains { (item: GoalListItem) in item.goal.isTerminal == false }
     }
 
+    // MARK: - 工具栏按钮可见性
+
+    /// 工具栏上的 Goal 按钮是否需要显示。
+    ///
+    /// 工具栏弹窗(`GoalPopoverContent`)的价值在于「一屏看全所有 Goal」,
+    /// 而侧栏(`SidebarView`)只展示首个 Goal。因此:
+    /// - 存在多个 Goal:侧栏装不下,按钮是唯一入口,必须显示;
+    /// - 只有一个 Goal:侧栏已经充分呈现(标题、进度、任务列表、折叠、
+    ///   描述与续跑入口),按钮属于重复信息,隐藏。侧栏收起时同样隐藏——
+    ///   收起是用户自己的折叠选择,不该由工具栏按钮顶回来。
+    public var shouldShowToolbarButton: Bool {
+        goals.count > 1
+    }
+
     // MARK: - 侧栏派生态(从 `goals` 推导单一活跃 Goal)
 
     /// 当前活跃的 Goal(首个 Goal)。单一目标模式下供侧栏展示;

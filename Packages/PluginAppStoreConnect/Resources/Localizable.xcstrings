@@ -1,6 +1,209 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "App Store Connect versions for this project" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect versions for this project"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前项目的 App Store Connect 版本"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前專案的 App Store Connect 版本"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前專案的 App Store Connect 版本"
+          }
+        }
+      }
+    },
+    "No App Store Connect App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No App Store Connect App"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未绑定 App Store Connect 应用"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未綁定 App Store Connect 應用程式"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未綁定 App Store Connect 應用程式"
+          }
+        }
+      }
+    },
+    "This project is not linked to an App Store Connect app. Add .lumi/app-store-connect/app.json or an Xcode project with a bundle identifier." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This project is not linked to an App Store Connect app. Add .lumi/app-store-connect/app.json or an Xcode project with a bundle identifier."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前项目未关联 App Store Connect 应用。请添加 .lumi/app-store-connect/app.json，或使用带 Bundle Identifier 的 Xcode 工程。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前專案未關聯 App Store Connect 應用程式。請新增 .lumi/app-store-connect/app.json，或使用帶 Bundle Identifier 的 Xcode 專案。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前專案未關聯 App Store Connect 應用程式。請新增 .lumi/app-store-connect/app.json，或使用帶 Bundle Identifier 的 Xcode 專案。"
+          }
+        }
+      }
+    },
+    "This app has no App Store versions on App Store Connect yet." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This app has no App Store versions on App Store Connect yet."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该应用在 App Store Connect 上还没有版本记录。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "該應用程式在 App Store Connect 上還沒有版本記錄。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "該應用程式在 App Store Connect 上還沒有版本記錄。"
+          }
+        }
+      }
+    },
+    "No App Store Connect app matches this project. Check the bundle identifier or the app.json configuration." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No App Store Connect app matches this project. Check the bundle identifier or the app.json configuration."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 上没有与当前项目匹配的应用。请检查 Bundle Identifier 或 app.json 配置。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 上沒有與目前專案匹配的應用程式。請檢查 Bundle Identifier 或 app.json 設定。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 上沒有與目前專案匹配的應用程式。請檢查 Bundle Identifier 或 app.json 設定。"
+          }
+        }
+      }
+    },
+    "The App Store Connect app identifier is empty." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The App Store Connect app identifier is empty."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 应用标识为空。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 應用程式識別碼為空。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 應用程式識別碼為空。"
+          }
+        }
+      }
+    },
+    "The App Store Connect app was not found." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The App Store Connect app was not found."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到该 App Store Connect 应用。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到該 App Store Connect 應用程式。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到該 App Store Connect 應用程式。"
+          }
+        }
+      }
+    },
     "" : {
 
     },

@@ -4,7 +4,7 @@ import ProviderSkill
 
 /// 列出项目技能工具
 ///
-/// 返回 `.agent/skills` 下所有技能 + 可用的通用底座（插件贡献 / 内置），
+/// 返回 `.lumi/skills` 下所有技能 + 可用的通用底座（插件贡献 / 内置），
 /// 让模型知道当前能创建什么、修改什么、什么已经被占用。
 public struct ListSkillsTool: SuperAgentTool {
     static let maxLimit = 200
@@ -14,7 +14,7 @@ public struct ListSkillsTool: SuperAgentTool {
     public init() {}
 
     public func description(for language: LanguagePreference) -> String {
-        "List available skills. Returns project skills from the .agent/skills directory plus the shared base skills (built-in and plugin-contributed), including each skill's name, title, description, triggers and content path."
+        "List available skills. Returns project skills from the .lumi/skills directory plus the shared base skills (built-in and plugin-contributed), including each skill's name, title, description, triggers and content path."
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
@@ -23,7 +23,7 @@ public struct ListSkillsTool: SuperAgentTool {
             "properties": [
                 "project_path": [
                     "type": "string",
-                    "description": "Absolute path to the project directory containing .agent/skills folder. Defaults to the current project.",
+                    "description": "Absolute path to the project directory containing the .lumi/skills folder. Defaults to the current project.",
                 ],
                 "include_base": [
                     "type": "boolean",
@@ -74,7 +74,7 @@ public struct ListSkillsTool: SuperAgentTool {
         guard !skills.isEmpty else {
             let hint = projectPath == nil
                 ? "No project is selected and no base skills are available."
-                : "No skills found under .agent/skills, and no base skills are available."
+                : "No skills found under .lumi/skills, and no base skills are available."
             return hint
         }
 

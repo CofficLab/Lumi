@@ -29,6 +29,7 @@ struct ComputerUseSettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+        .padding(.bottom, 16)
         .id(revision)
         .onAppear(perform: refresh)
         .onChange(of: state.revision) { _, _ in refresh() }

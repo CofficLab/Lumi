@@ -5,6 +5,7 @@ import KitTestSupport
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
+import ProviderProject
 import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
@@ -105,6 +106,33 @@ func appStoreConnectSkill() {
     #expect(skills.count == 1)
     #expect(skills.first?.name == "app-store-connect")
     #expect(skills.first?.loadContent()?.contains("app_store_connect_create_version") == true)
+}
+
+@Test("plugin contributes an App Store Connect entry to the chat toolbar")
+@MainActor
+func chatToolbarEntryIsRegistered() throws {
+    let kernel = KernelCoreContainer()
+    let chat = DefaultChatSectionProviding()
+    let activity = DefaultActivityBarProviding()
+    let toolbar = DefaultToolbarProviding()
+
+    try kernel.registerProvider((any ActivityBarProviding).self, activity)
+    try kernel.registerProvider((any ChatSectionProviding).self, chat)
+    try kernel.registerProvider((any ContentViewProviding).self, DefaultContentViewProviding())
+    try kernel.registerProvider((any ProjectProviding).self, DefaultProjectProvider())
+    try kernel.registerProvider((any RailViewProviding).self, DefaultRailViewProviding())
+    try kernel.registerProvider((any RootViewProviding).self, DefaultRootViewProviding())
+    try kernel.registerProvider((any ToolbarProviding).self, toolbar)
+    try kernel.registerProvider((any StorageProviding).self, TestStorageProvider())
+
+    let plugin = AppStoreConnectPlugin()
+    try plugin.onBoot(kernel: kernel)
+
+    let chatToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.chat-toolbar"
+    #expect(chat.barItems.contains { $0.id == chatToolbarItemID })
+
+    try plugin.onShutdown(kernel: kernel)
+    #expect(!chat.barItems.contains { $0.id == chatToolbarItemID })
 }
 
 @Test("all restored agent tools use unique current names")

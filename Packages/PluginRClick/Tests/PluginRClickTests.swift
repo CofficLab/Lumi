@@ -241,3 +241,25 @@ import ProviderStorage
     #expect(store.set("Context Menu", forKey: "name") == false)
     #expect(store.string(forKey: "name") == nil)
 }
+
+@Test func openInLumiActionRoundTripsThroughJSON() throws {
+    let data = try JSONEncoder().encode(RClickActionType.openInLumi)
+    #expect(String(data: data, encoding: .utf8) == "\"openInLumi\"")
+    #expect(try JSONDecoder().decode(RClickActionType.self, from: data) == .openInLumi)
+}
+
+@Test func openInLumiActionIsEnabledByDefault() {
+    let item = RClickConfig.default.items.first { $0.type == .openInLumi }
+    #expect(item != nil)
+    #expect(item?.isEnabled == true)
+    // 标题走本地化，随系统语言变化；此处只断言它与「Open in Lumi」条目对应。
+    #expect(item?.title == pluginLocalization.string("Open in Lumi"))
+    #expect(item?.title.contains("Lumi") == true)
+}
+
+@Test func openInLumiActionSurvivesConfigNormalization() {
+    let normalized = RClickConfig(items: [], fileTemplates: []).normalizedForStorage
+    let item = normalized.items.first { $0.type == .openInLumi }
+    #expect(item != nil)
+    #expect(item?.isEnabled == true)
+}

@@ -13,8 +13,8 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "ProviderWebServer", path: "../ProviderWebServer"),
-        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0"),
-        .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "2.0.0"),
+        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.28.0"),
+        .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "2.13.0"),
     ],
     targets: [
         .target(

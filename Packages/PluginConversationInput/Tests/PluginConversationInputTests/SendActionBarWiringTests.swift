@@ -82,8 +82,7 @@ struct SendActionBarWiringTests {
                 )
                 : nil,
             conversations: includeConversations ? conversations : nil,
-            conversationState: includeState ? WiringTestConversationState() : nil,
-            metrics: nil
+            conversationState: includeState ? WiringTestConversationState() : nil
         )
 
         var missing: [String] = []

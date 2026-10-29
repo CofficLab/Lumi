@@ -733,7 +733,6 @@ ACP 流式状态按 conversation + run + assistantMessage/request 标识隔离�
 
 修改：
 
-- `Packages/ProviderPerformanceMetrics/Sources/ProviderPerformanceMetrics/PerformanceMetricsProviding.swift` 及其默认实现（若需要扩展契约）。
 - `Packages/FactoryLumi/Sources/FactoryLumi/PluginFactory.swift`、`Packages/FactoryLumi/Sources/FactoryLumi/ProviderFactory.swift` 的装配/能力配置。
 - ACP Factory 的能力装配，确保与桌面端协议版本一致。
 

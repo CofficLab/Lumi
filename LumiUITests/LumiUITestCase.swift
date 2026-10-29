@@ -42,14 +42,50 @@ class LumiUITestCase: XCTestCase {
     ///   配置，比脏剪贴板更严重。详见 `UITestInputSource`。
     private var originalInputSourceID: String?
 
+    /// 启动时是否成功切到了目标输入法。
+    ///
+    /// 中文拼音用例据此决定跳过：本机没装中文输入法时切不过去，
+    /// 用例的失败点会落在「输入法没切过去」而不是被测行为上。
+    private(set) var didSwitchInputSource = false
+
+    /// UI 测试启动时的输入法策略。
+    enum InputSourceStrategy {
+        /// 切到英文 ASCII 布局（默认）。
+        ///
+        /// IME 组合态不出现，`typeText` 稳定地逐字落成字符。
+        case englishASCII
+        /// 切到中文拼音输入法。
+        ///
+        /// 合成按键会进入 IME 组合态（拼音缓冲区），用来覆盖真实的中文输入路径。
+        case chinesePinyin
+    }
+
+    /// 本次启动使用的输入法策略。
+    ///
+    /// 存下来是为了让 ``applyInputSourceStrategy()`` 能在 App 起来之后**再切一次**。
+    private var inputSourceStrategy: InputSourceStrategy = .englishASCII
+
     /// 以确定性 LLM 供应商 + 隔离存储启动 App。
     ///
-    /// - Parameter extraArguments: 额外的启动参数（场景专属夹具）。
-    func launchLumi(extraArguments: [String] = []) {
+    /// - Parameters:
+    ///   - extraArguments: 额外的启动参数（场景专属夹具）。
+    ///   - inputSource: 启动时切换到哪个输入法。默认英文 ASCII；中文输入法
+    ///     用例需要显式传 `.chinesePinyin`，并在 App 起来后调用
+    ///     ``applyInputSourceStrategy()`` 重新切换一次。
+    func launchLumi(
+        extraArguments: [String] = [],
+        inputSource: InputSourceStrategy = .englishASCII
+    ) {
         // - Important: 切换输入源放在 `launchLumi` 而**不是** `setUpWithError`：
         //   绝大多数子类覆写 `setUpWithError` 后不调用 `super`，基类钩子
         //   不会执行，挂在那里等于没挂。`launchLumi` 是所有用例的必经之路。
-        switchToEnglishInputSource()
+        inputSourceStrategy = inputSource
+        switch inputSource {
+        case .englishASCII:
+            switchToEnglishInputSource()
+        case .chinesePinyin:
+            switchToChinesePinyinInputSource()
+        }
 
         app = XCUIApplication()
         // 先确保没有残留实例：旧进程里保存着上一次的选中模型与对话，
@@ -78,6 +114,44 @@ class LumiUITestCase: XCTestCase {
     private func switchToEnglishInputSource() {
         guard originalInputSourceID == nil else { return }
         originalInputSourceID = UITestInputSource.switchToEnglish()
+        didSwitchInputSource = originalInputSourceID != nil
+    }
+
+    /// 把输入源切到中文拼音，并在 tearDown 时还原。
+    ///
+    /// 与英文路径相反：这里切不过去意味着**用例测不到目标行为**
+    /// （本机没装中文输入法），因此用例应当据 `didSwitchInputSource` 跳过，
+    /// 而不是继续跑出一个必然失败的断言。
+    private func switchToChinesePinyinInputSource() {
+        guard originalInputSourceID == nil else { return }
+        originalInputSourceID = UITestInputSource.switchToChinesePinyin()
+        didSwitchInputSource = originalInputSourceID != nil
+    }
+
+    /// 在 App 已经起来并激活之后，**再**应用一次输入法策略。
+    ///
+    /// - Important: 中文输入法用例必须在 App 激活后重新切换，否则测不到 IME。
+    ///   macOS 的输入源属于**当前活动应用**：在 `launchLumi` 里（即 App 启动前）
+    ///   切换，改的是当时前台应用（xcodebuild / 测试宿主）的输入源；随后新起的
+    ///   Lumi 进程会拿回**它自己记住的**输入源。
+    ///   症状很有迷惑性：合成按键被直接落成 ASCII 字母（拼音原样留在输入框里，
+    ///   尾部空格也没被 IME 吃掉），看起来像「中文输入法坏了」，实际是切换时机不对。
+    ///
+    ///   调用方应先 `app.activate()`，再调本方法。
+    func applyInputSourceStrategy() {
+        switch inputSourceStrategy {
+        case .englishASCII:
+            switchToEnglishInputSource()
+        case .chinesePinyin:
+            // 还原后再切一次：`switchToChinesePinyinInputSource` 有
+            // `originalInputSourceID == nil` 的守卫，直接调用不会生效。
+            guard let originalID = originalInputSourceID else {
+                switchToChinesePinyinInputSource()
+                return
+            }
+            originalInputSourceID = originalID
+            didSwitchInputSource = UITestInputSource.switchToChinesePinyin() != nil
+        }
     }
 
     /// 还原输入源与剪贴板。
@@ -138,37 +212,6 @@ class LumiUITestCase: XCTestCase {
             .forEach { kill($0.processIdentifier, SIGKILL) }
     }
 
-    /// 关闭新手引导。
-    ///
-    /// 隔离存储会让「已完成」标记文件缺失，引导重新出现并覆盖在聊天区上方，
-    /// 不关掉就点不到输入框。
-    ///
-    /// - Important: 必须按**标识符**而不是按钮文案定位。按钮文案随语言变化
-    ///   （`Continue` / `Finish` / `Skip` ↔ 中文译文），按文案点击会让
-    ///   `-AppleLanguages` 为中文的用例永远关不掉引导；浮层留在窗口上后，
-    ///   后续对设置按钮 / 发送按钮的点击都落在浮层上，失败却报成
-    ///   「设置窗口没有出现」「模型弹窗未出现」，与真实原因完全无关。
-    func dismissOnboardingIfPresent() {
-        // 引导是**异步**出现的（完成标记缺失后才渲染）。先给它一次出现机会，
-        // 否则「刚 launch 完就查一次」会在引导画出来之前返回，浮层随后盖上来。
-        guard element(identifier: Onboarding.primaryButton).waitForExistence(timeout: 8)
-            || element(identifier: Onboarding.skipButton).exists
-        else { return }
-
-        for _ in 0..<8 {
-            let primary = element(identifier: Onboarding.primaryButton)
-            let skip = element(identifier: Onboarding.skipButton)
-            if primary.exists, primary.isHittable {
-                primary.click()
-            } else if skip.exists, skip.isHittable {
-                skip.click()
-            } else {
-                return
-            }
-            sleep(1)
-        }
-    }
-
     /// 等待 App 进程彻底退出，必要时先请求终止。
     ///
     /// `terminate()` 是异步的：它发出终止请求后立刻返回，进程可能还在
@@ -214,13 +257,12 @@ class LumiUITestCase: XCTestCase {
         }
     }
 
-    /// 等待主窗口就绪并关掉新手引导。
+    /// 等待主窗口就绪。
     func waitForMainWindow() {
         XCTAssertTrue(
             element(identifier: "root.main").waitForExistence(timeout: 30),
             "主窗口未就绪"
         )
-        dismissOnboardingIfPresent()
     }
 
     // MARK: - Helpers
@@ -367,15 +409,6 @@ class LumiUITestCase: XCTestCase {
     enum SendActionBar {
         /// 发送按钮。点击它不经过键盘事件链，因此不受输入法候选栏影响。
         static let editorSend = "lumi.conversation-input.send"
-    }
-
-    /// 新手引导按钮的标识符（复述 `OnboardingAccessibility`）。
-    ///
-    /// UI 测试独立 target，不能 import 插件模块，因此在此复述常量。
-    /// 改动必须与 `Packages/PluginOnboarding/.../OnboardingAccessibility.swift` 同步。
-    enum Onboarding {
-        static let primaryButton = "lumi.onboarding.primary"
-        static let skipButton = "lumi.onboarding.skip"
     }
 
     /// 所有 `--lumi-ui-testing` 用例共享的启动参数。

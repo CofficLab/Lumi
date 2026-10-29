@@ -350,23 +350,6 @@ struct PluginLLMManagerTests {
         #expect(manager.selectedModel == "echo-1")
     }
 
-    @Test("onboarding 供应商选择器仅包含云服务商")
-    func onboardingProviderSelectionFiltersRelaysAndLocalProviders() throws {
-        let cloud = EchoProvider(id: "cloud", model: "cloud-model", providerType: .cloudService)
-        let relay = EchoProvider(id: "relay", model: "relay-model", providerType: .relay)
-        let local = EchoProvider(id: "local", model: "local-model", providerType: .local, isLocal: true)
-
-        let manager = DefaultLLMManager()
-        try manager.register(cloud)
-        try manager.register(relay)
-        try manager.register(local)
-        let viewModel = AISetupViewModel(
-            capability: LLMManagerCapabilityAdapter(manager: manager)
-        )
-
-        #expect(viewModel.providers.map(\.providerID) == ["cloud"])
-    }
-
     /// 测试用最小 LLM 供应商：回显最后一条用户消息。
     @MainActor
     private final class EchoProvider: ManagedLLMProvider {

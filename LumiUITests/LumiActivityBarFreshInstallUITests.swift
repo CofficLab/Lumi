@@ -95,10 +95,6 @@ final class LumiActivityBarFreshInstallUITests: XCTestCase {
     }
 
     /// 等待主窗口就绪。
-    ///
-    /// 隔离存储会让新手引导重新出现（完成标记存在插件数据目录里），它是覆盖在
-    /// 聊天区之上的浮层。本测试断言的是左侧 ActivityBar 的有无，浮层不遮挡左侧
-    /// 竖栏，因此无需关闭引导 —— 保持引导开启反而更贴近真实全新安装首启画面。
     private func waitForMainWindow() {
         XCTAssertTrue(
             element(identifier: "root.main").waitForExistence(timeout: 30),

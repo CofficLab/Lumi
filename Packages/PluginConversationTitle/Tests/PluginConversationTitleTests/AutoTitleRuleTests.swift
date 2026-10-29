@@ -191,4 +191,29 @@ struct AutoTitleRuleTests {
     func placeholderEmpty() {
         #expect(AutoConversationTitleService.placeholderTitle(forFirstUserMessage: "  \n ") == "")
     }
+
+    /// IDE / 编辑器客户端会在用户消息**前面**注入 `<system-reminder>` 块。
+    /// 那不是用户说的话，拿它当标题只会得到一段 XML 噪声。
+    @Test("placeholderTitle：去掉开头的 system-reminder 注入块")
+    func placeholderStripsLeadingInjectedReminder() {
+        let injected = """
+        <system-reminder>## Xcode
+
+        你现在处于 Xcode 之中，请优先使用 xcode-tools MCP 服务。
+
+        </system-reminder>
+
+        帮我把这段 Swift 代码重构一下
+        """
+        let result = AutoConversationTitleService.placeholderTitle(forFirstUserMessage: injected)
+        #expect(result == "帮我把这段 Swift 代码重构一下")
+        #expect(!result.contains("system-reminder"))
+    }
+
+    /// 只处理**开头**的注入块：消息中间出现同名标签是用户自己的内容，不该动。
+    @Test("placeholderTitle：保留消息中间的同名标签")
+    func placeholderKeepsInnerReminderTag() {
+        let text = "解释一下 <system-reminder> 这个标签的用途"
+        #expect(AutoConversationTitleService.placeholderTitle(forFirstUserMessage: text) == text)
+    }
 }

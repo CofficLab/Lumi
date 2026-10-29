@@ -42,7 +42,6 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 - 会话：`selectedConversationID`、`isSending(for:)`
 - 观察：`addTextObserver` / `addBlockObserver` / `addInputObserver` /
   `addMessageSenderObserver` / `addSelectedConversationObserver` / `addConversationStateObserver`
-- Metrics：`beginMetrics` / `markMetrics` / `endMetrics`
 
 ### SendActionBarViewModel
 - `state: SendActionBarState`（`private(set)`）
@@ -161,8 +160,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 84 | 降级 | 发送类操作返回 nil 而非抛错 | 全 Provider 缺失 | 同步 / 后台提交 + 取消 + 启动回合 | 两个提交均 nil，取消与启动回合为无害 no-op | P0 | ✅ 已覆盖 | `sendOperationsDegradeToNil` |
 | 85 | 降级 | 附件读回落到空集合 | 全 Provider 缺失 | 读池 + 增删 | 恒为空集合，增删静默丢弃 | P1 | ✅ 已覆盖 | `attachmentReadsFallBackToEmpty` |
 | 86 | 降级 | 会话查询回落到 nil / false | 全 Provider 缺失 | 读选中会话与 isSending | nil / false（含 nil 入参） | P1 | ✅ 已覆盖 | `conversationQueriesFallBack` |
-| 87 | 降级 | 指标缺失时 beginMetrics 返回 nil | 全 Provider 缺失 | 调 begin / mark / end | begin 返回 nil；用真实 trace 调 mark/end 不崩溃 | P2 | ✅ 已覆盖 | `metricsDegradeGracefully` |
-| 88 | 降级 | 订阅返回可安全 cancel 的空句柄 | 全 Provider 缺失 | 注册 6 个订阅并（含重复）cancel | 全部不崩溃——调用方无差别持有并 cancel | P0 | ✅ 已覆盖 | `observersDegradeToNoopHandles` |
+| 87 | 降级 | 订阅返回可安全 cancel 的空句柄 | 全 Provider 缺失 | 注册 6 个订阅并（含重复）cancel | 全部不崩溃——调用方无差别持有并 cancel | P0 | ✅ 已覆盖 | `observersDegradeToNoopHandles` |
 
 ### 补充轮次（ID 89–96）：附件预览关闭按钮
 
@@ -188,7 +186,6 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > 把 `ConversationInputObserver` 的 `.attachmentsChanged` 改成 `break`，
 > 6 个用例失败；把 `ConversationInputCapabilityAdapter.removeImageAttachment`
 > 改成空实现，另 6 个（含退订用例）失败。两处均已还原。
-
 ### 补充轮次（ID 97–100）：本地化资源完整性
 
 > 这批用例由 UI 测试的失败倒逼而生：按文件名定位图片缩略图时**永远找不到**
@@ -234,8 +231,54 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > 真实 App 点击 ✕）。注：文件 chip 的 3 条尚未在干净环境跑通——本机有
 > 用户安装的正式版 Lumi 占用同一 App 名，导致 UI 测试宿主启动失败。
 
-> 说明：全部 **114 条场景 / 119 个测试方法**已在 macOS 上实跑通过
-> （`swift test` → 119 tests in 16 suites passed）。
+### 补充轮次（ID 115–117）：中文 IME 输入响应性
+
+> 这轮针对的是用户报告的「输入中文时不跟手」。该症状有两个可能的来源，
+> 修法完全不同：
+>
+> 1. **应用侧**：每个按键都把 SwiftUI 视图树拖进一次失效广播；
+> 2. **环境侧**：机器 CPU 被别的进程占满，连 AppKit 自己的排版都变慢。
+>
+> 因此这轮用例的判据分两层：**确定性判据**（组合态期间不得产生任何
+> SwiftUI 可见的状态写入，不依赖机器负载）与**性能判据**（单次按键的
+> 应用侧耗时落在帧预算内）。
+>
+> 关键设计是把「我们自己的处理耗时」与「AppKit 组合态排版耗时」**分开测**：
+> 前者稳定在零附近而后者偏高 → 症结在环境；反过来才是应用的问题。
+>
+> 实测（macOS，组合态 8 次按键）：应用侧中位 0.008ms / 最大 0.023ms，
+> 总耗时中位 0.501ms / 最大 1.200ms，组合态期间文本 / 高度 / 光标写入
+> 与失效广播**均为 0**。
+>
+> UI 测试侧见 `LumiUITests/LumiConversationInputIMEUITests.swift`（2 条）：
+> 整个 UI 套件历来把输入法切到英文 ASCII，中文输入路径此前从未被
+> 端到端测过；这 2 条把输入法切回中文拼音，覆盖「组合态不污染草稿」
+> 与「上屏进输入框且端到端耗时在预算内」。
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 115 | IME | 组合态期间不产生任何 SwiftUI 状态写入 | 真实 Provider + Adapter + Observer + 真实 `EditorTextView` | 依次推进组合态 `n`→`nihao` | 文本 / 高度 / 光标绑定写入均为 0、折叠块上报 0 次、失效广播 0 次、草稿为空（拼音进了草稿，用户会看到候选词被当成正文） | P0 | ✅ 已覆盖 | `compositionPhaseDoesNotWriteSwiftUIState` |
+| 116 | IME | 上屏后只发布一次已提交的汉字 | 同上 | 组合态推进后上屏「你好」 | 草稿为「你好」；文本绑定恰好写 1 次；失效广播 ≤ 3 次（多写会让发送按钮与输入框不同步） | P0 | ✅ 已覆盖 | `commitPublishesCommittedTextExactlyOnce` |
+| 117 | IME | 单次按键的应用侧开销落在帧预算内 | 同上 | 8 次组合态推进 | 应用侧最坏耗时 ≤ 8ms，且打印应用侧 / 总耗时两组实测值供人工判读 | P1 | ✅ 已覆盖 | `perKeystrokeAppCostFitsFrameBudget` |
+| 118 | 折叠块 | chip 拍平后保留原文，区间指向该段在正文中的位置 | 带 attachment 的 `NSTextStorage` | 拍平内容 | 正文含 chip 原文、chip 区间指向该段（区间算错会让消息里的 chip 盖住错误的文字） | P1 | ✅ 已覆盖 | `flattensChipIntoTextWithRange` |
+| 119 | 折叠块 | 多个 chip 的区间各自指向自己那一段 | 两个 chip 的存储 | 拍平内容 | 两段区间互不重叠、各自对应（否则第二个 chip 会盖住第一个的原文） | P1 | ✅ 已覆盖 | `tracksMultipleChips` |
+| 120 | 折叠块 | 没有 chip 时不产生区间 | 纯文本存储 | 拍平内容 | 区间数组为空（纯文本不该被误判成折叠块） | P2 | ✅ 已覆盖 | `producesNoBlocksForPlainText` |
+| 121 | 折叠块 | 编辑器把折叠块区间上报给上层 | 装配 Coordinator 的编辑器 | 触发区间上报回调 | 回调收到折叠块区间（漏掉它，发送时消息会退化成一大段纯文字） | P1 | ✅ 已覆盖 | `reportsCollapsedBlocksUpward` |
+
+> **鉴别力验证**：本轮用一处变异确认用例不是「恒绿」——把
+> `Coordinator.textDidChange` 里的两道 IME 守卫
+> （`hasMarkedText()` 与 `isIMEComposing`）移除后，
+> ID 115 / 116 两条用例失败，组合态 8 次按键产生
+> **文本写入 8 次 / 光标写入 8 次 / 失效广播 17 次**，
+> 草稿被拼音污染——正是用户报告的「中文输入不跟手」的成因。
+> 变异已还原（`git diff` 为空）。
+>
+> 注：变异必须精确落在 `textDidChange` 函数体内。`scheduleHeightUpdate`
+> 里有一份**代码完全相同**的守卫，全局替换第一处会改错函数，
+> 导致「用例仍然全绿」的假阴性。
+
+> 说明：全部 **121 条场景 / 126 个测试方法**已在 macOS 上实跑通过
+> （`swift test` → 126 tests in 18 suites passed）。
 >
 > 实现中几条易错约定已在用例里显式锁定：
 > - **附件路径必须后台化**（ID 10）：同步 `commitUserMessage` 不做编码，附件消息走它会丢内容，
@@ -256,20 +299,22 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 
 ## 覆盖率统计
 
-- P0: 已覆盖 37 / 37
-- P1: 已覆盖 61 / 61
-- P2: 已覆盖 16 / 16
-- **合计: 114 / 114**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 39 / 39
+- P1: 已覆盖 65 / 65
+- P2: 已覆盖 17 / 17
+- **合计: 121 / 121**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 装配降级、可发送判定、发送/停止按钮形态切换、提交失败上报、
   直写路径（`setText` / 回车 / 拖放清空）的回归、Observer 退订、UTF-16 索引换算、
-  附件预览 ✕ 的端到端链路（ID 89–90）、本地化缺失（ID 97–98）
+  附件预览 ✕ 的端到端链路（ID 89–90）、本地化缺失（ID 97–98）、
+  中文 IME 组合态的状态写入与上屏发布次数（ID 115–116）
 - **P1**: 会话切换与状态刷新、附件生命周期与拖放、Observer 事件路由与初始快照、
   折叠块、拖放路径解析、错误提示、附件 ✕ 的幂等与陈旧 ID 容错（ID 91–95）、
   全表语言完整性与占位符一致性（ID 99–100）、逐键失效广播的次数上界
-  （ID 105–109）、输入框悬浮卡片的间距 / 圆角 / 投影（ID 112–114）
+  （ID 105–109）、输入框悬浮卡片的间距 / 圆角 / 投影（ID 112–114）、
+  中文 IME 单次按键的应用侧耗时预算（ID 117）
 - **P2**: Observer cancel 释放、编辑器延迟绑定与布局测量、placeholder 命中测试、
   localhost 归一化、空文件容错、退订后的关闭行为（ID 96）、非法高度与同值写入
   （ID 104 / 108）、观察者回灌去重（ID 111）

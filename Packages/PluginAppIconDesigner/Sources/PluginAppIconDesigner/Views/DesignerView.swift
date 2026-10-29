@@ -23,7 +23,10 @@ public struct DesignerView: View {
         VStack(spacing: 0) {
             if viewModel.projectDocuments.isEmpty {
                 emptyToolbar
-                IconOnboardingView(isProjectOpen: !viewModel.projectStoragePath.isEmpty)
+                AppEmptyState(
+                    icon: "app.dashed",
+                    title: L.string("Ask the Agent to create an icon document.")
+                )
             } else if let document = viewModel.selectedDocument {
                 topToolbar(for: document)
                 preview(document: document)
