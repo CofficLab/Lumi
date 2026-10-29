@@ -1,5 +1,6 @@
 #if DEBUG
 import Foundation
+import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
 
@@ -65,13 +66,14 @@ public enum MessageListStandardUITestingSupport {
     @discardableResult
     static func seed(
         conversations: any ConversationManaging,
-        messages: any MessageManaging
+        messages: any MessageManaging,
+        agentLoop: (any AgentLoopProviding)? = nil
     ) -> any ConversationObserverHandle {
         guard !hasSeeded(conversations: conversations) else {
             return NoopObserverHandle()
         }
         if !conversations.isLoadingConversations {
-            doSeed(conversations: conversations, messages: messages)
+            doSeed(conversations: conversations, messages: messages, agentLoop: agentLoop)
             return NoopObserverHandle()
         }
         let box = OneShotObserverBox()
@@ -80,7 +82,7 @@ public enum MessageListStandardUITestingSupport {
             // 一次性：先注销自己，再 seed（seed 会再次触发 listChanged）。
             box.handle?.cancel()
             box.handle = nil
-            doSeed(conversations: conversations, messages: messages)
+            doSeed(conversations: conversations, messages: messages, agentLoop: agentLoop)
         }
         box.handle = handle
         return handle
@@ -92,7 +94,8 @@ public enum MessageListStandardUITestingSupport {
 
     private static func doSeed(
         conversations: any ConversationManaging,
-        messages: any MessageManaging
+        messages: any MessageManaging,
+        agentLoop: (any AgentLoopProviding)?
     ) {
         guard let small = try? conversations.createConversation(
             title: smallConversationTitle,
@@ -118,6 +121,19 @@ public enum MessageListStandardUITestingSupport {
             providerID: nil,
             modelName: nil
         ) else { return }
+
+        // 必须抑制自动回复：下面每个会话都会插入 user 消息，而
+        // `PluginAgentLoop.MessageObserver` 会对 user 消息自动 `runTurn`。
+        // 自动回合会写回一条 `createdAt = now` 的助手消息，把该会话的
+        // `lastMessageAt` 推到「现在」——四个会话的自动回复完成时刻各不相同，
+        // 于是会话列表的排序由这场竞态决定，run-to-run 不稳定
+        // （实测同一夹具两次运行的顺序不同）。
+        //
+        // 范式参照 `PluginAgentLoop.ErrorRetryUITestingSupport`：它同样是因为
+        // 插入 user 消息而必须显式抑制自动回复。
+        for conversationID in [small, large, huge, toolGroup] {
+            agentLoop?.setAutoReplySuppressed(true, for: conversationID)
+        }
 
         seedSmall(conversations: conversations, messages: messages, conversationID: small)
         seedLarge(conversations: conversations, messages: messages, conversationID: large)
