@@ -7,37 +7,50 @@ import SwiftUI
 ///
 /// View 只依赖 `ProviderSettingsPageViewModel`，供应商列表、搜索、
 /// 选中态与自定义供应商变化都由 ViewModel 提供。
+///
+/// 「云端 / 本地」由外层 `ProviderSettingsPage` 持有：它把当前范围的
+/// ViewModel 传进来，并用 `scope` 绑定把头部行右上角的分段控件接上。
 @MainActor
 struct ProviderSettingsPageContent: View {
     @LumiTheme private var theme
 
     @ObservedObject private var viewModel: ProviderSettingsPageViewModel
+    @Binding private var scope: ProviderSettingsScope
     @State private var isCustomProviderEditorPresented = false
 
-    init(viewModel: ProviderSettingsPageViewModel) {
+    init(viewModel: ProviderSettingsPageViewModel, scope: Binding<ProviderSettingsScope>) {
         self.viewModel = viewModel
+        self._scope = scope
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            header
-            HStack(spacing: 0) {
-                sidebar
-                    .frame(width: 280)
+        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
+            GeometryReader { proxy in
+                VStack(alignment: .leading, spacing: 0) {
+                    header
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 12)
+                    // 主体内容贴边后，用一条顶部分隔线把头部行与主从容器分开。
+                    AppDivider()
+
+                    HStack(spacing: 0) {
+                        sidebar
+                            .frame(width: 300)
+                            .frame(maxHeight: .infinity)
+                        AppDivider(.vertical)
+                        detailPane
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    }
                     .frame(maxHeight: .infinity)
-                AppDivider(.vertical)
-                detailPane
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            }
-            .frame(minHeight: 460, maxHeight: .infinity)
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(theme.divider, lineWidth: 1)
+                }
+                // 共享 scaffold 给内容留了左右 24，这里把整列加宽 48 并左移 24，
+                // 使主从容器正好贴到窗口左右边缘；标题行再自行补回 24 留白。
+                .frame(width: proxy.size.width + 48, alignment: .topLeading)
+                .offset(x: -24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .environment(\.appSettingsCardStyleOverride, .subtle)
         .sheet(isPresented: $isCustomProviderEditorPresented) {
             if let editor = viewModel.makeNewCustomProviderEditor() {
                 editor
@@ -58,21 +71,42 @@ struct ProviderSettingsPageContent: View {
                 viewModel.providerCountLabel,
                 systemImage: viewModel.headerSystemImage
             )
+            .accessibilityIdentifier(ProviderSettingsAccessibility.providerCountLabel)
             Text("\(viewModel.selectedModelCount) 个模型")
             Spacer()
             if !viewModel.isLocal {
                 AppButton("添加供应商", systemImage: "plus", style: .primary, size: .small) {
                     isCustomProviderEditorPresented = true
                 }
+                .accessibilityIdentifier(ProviderSettingsAccessibility.addProviderButton)
             }
+            scopeSwitcher
         }
         .font(.appCaption)
         .foregroundStyle(theme.textSecondary)
     }
 
+    /// 头部行右上角的「云端 / 本地」分段控件。
+    ///
+    /// 位置与「工具」页的模式分段控件一致（头部行最右侧），
+    /// 切换后左侧列表与右侧详情一起换成新范围的供应商。
+    private var scopeSwitcher: some View {
+        AppSegmentedControl(
+            ProviderSettingsScope.allCases.map(\.title),
+            selection: Binding(
+                get: { ProviderSettingsScope.allCases.firstIndex(of: scope) ?? 0 },
+                set: { scope = ProviderSettingsScope.allCases[$0] }
+            ),
+            maxWidth: .infinity
+        )
+        .frame(width: 140, height: 27)
+        .accessibilityIdentifier(ProviderSettingsAccessibility.scopeSwitcher)
+    }
+
     private var sidebar: some View {
         VStack(spacing: 0) {
             AppSearchBar(text: $viewModel.searchText, placeholder: "搜索供应商")
+                .accessibilityIdentifier(ProviderSettingsAccessibility.searchField)
                 .padding(12)
 
             AppDivider()
@@ -121,6 +155,7 @@ struct ProviderSettingsPageContent: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .accessibilityIdentifier(ProviderSettingsAccessibility.providerRow(info.id))
     }
 
     @ViewBuilder

@@ -9,7 +9,7 @@ Lumi 是一款面向 macOS 的 AI 驱动个人桌面助理应用。它将 LLM �
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Latest release](https://img.shields.io/badge/release-v5.17.0-blue.svg)](https://github.com/CofficLab/Lumi/releases)
 
-![Lumi 应用示意图](docs/hero3.png)
+![Lumi 应用示意图](docs/hero3.webp)
 
 ## 功能特性
 
@@ -53,7 +53,7 @@ graph TB
     PL --> UI
 ```
 
-- **LumiApp**：应用入口，创建共享内核，并承载主窗口、设置、引导和菜单栏界面。
+- **LumiApp**：应用入口，创建共享内核，并承载主窗口、设置和菜单栏界面。
 - **FactoryLumi**：应用装配根。`KernelFactory` 负责装配 Provider、启动默认插件目录，以及构建主视图和设置视图。
 - **KernelCore**：轻量通用内核，提供类型安全的 Provider 注册/解析和插件生命周期管理，不了解具体业务服务。
 - **Provider 包**：定义对话、LLM、工具、项目、存储、Web 路由和 UI 扩展等共享能力契约。

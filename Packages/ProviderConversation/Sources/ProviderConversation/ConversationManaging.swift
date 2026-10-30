@@ -65,6 +65,15 @@ public protocol ConversationManaging: AnyObject {
     /// Fetch one conversation summary by ID without requiring the full list.
     func fetchConversation(id: UUID) async -> ConversationSummary?
 
+    /// 返回仍然**没有标题**的对话 ID。
+    ///
+    /// 标题生成失败过的对话会永久停在「无标题」状态，在列表里只能显示通用
+    /// 占位符，看起来就是一条空条目。调用方拿到这些 ID 后可以为它们补写
+    /// 标题（例如用首条用户消息作为占位标题）。
+    ///
+    /// - Parameter limit: 最多返回多少个 ID。
+    func untitledConversationIDs(limit: Int) async -> [UUID]
+
     /// Count conversations without loading their summaries.
     func conversationCount(projectPath: String?) async -> Int
 
@@ -76,6 +85,23 @@ public protocol ConversationManaging: AnyObject {
     /// 用于判断按项目筛选是否有意义：当数量 ≤1 时，所有顶层对话都来自同一个项目，
     /// 「全部对话」视图已等同于该项目，「当前项目」筛选入口冗余，应隐藏。
     func conversationProjectCount() async -> Int
+
+    /// 返回指定项目下、且在给定时间点之后仍有活动的会话 ID（`uuidString`）。
+    ///
+    /// ## 用途
+    ///
+    /// 消息统计需要「哪些消息属于这个项目」这个判定，但消息存储里只有会话 ID，
+    /// 项目归属存在会话存储里。会话集合由这里提供，消息存储再按会话 ID 过滤。
+    ///
+    /// ## 参数
+    ///
+    /// - Parameters:
+    ///   - projectPath: 项目根目录路径。
+    ///   - updatedSince: 只保留在该时间点之后仍有活动的会话；nil 表示不限时间。
+    ///     传入窗口起点（例如「近 30 天的起点」）可以把结果集限制在窗口内。
+    ///
+    /// - Returns: 会话 ID 字符串列表；项目下没有会话时为空数组。
+    func conversationIDs(projectPath: String, updatedSince: Date?) async -> [String]
 
     /// 数据存储目录
     var dataDirectory: URL { get }
@@ -223,6 +249,17 @@ public protocol ConversationManaging: AnyObject {
 }
 
 public extension ConversationManaging {
+    /// 默认实现：从已加载的会话摘要里筛出属于该项目且仍在活动期内的会话。
+    ///
+    /// 持久化实现应当走存储层查询，避免依赖「摘要已全部加载」这个前提。
+    func conversationIDs(projectPath: String, updatedSince: Date?) async -> [String] {
+        conversations.compactMap { summary in
+            guard summary.projectPath == projectPath else { return nil }
+            if let updatedSince, summary.updatedAt < updatedSince { return nil }
+            return summary.id.uuidString
+        }
+    }
+
     func modelID(for conversationID: UUID?) -> String? {
         guard let providerID = providerID(for: conversationID),
               let modelName = modelName(for: conversationID) else { return nil }
@@ -291,6 +328,18 @@ public extension ConversationManaging {
 
     func fetchConversation(id: UUID) async -> ConversationSummary? {
         conversations.first(where: { $0.id == id })
+    }
+
+    /// 默认实现：从已加载的会话摘要里筛出没有标题的对话。
+    ///
+    /// 持久化实现应当走存储层查询，避免依赖「摘要已全部加载」这个前提 ——
+    /// 已加载的摘要只是一个有界的窗口，历史遗留的无标题对话很可能不在其中。
+    func untitledConversationIDs(limit: Int) async -> [UUID] {
+        guard limit > 0 else { return [] }
+        return conversations
+            .filter { !$0.hasCustomTitle }
+            .prefix(limit)
+            .map(\.id)
     }
 
     func conversationCount(projectPath: String?) async -> Int { conversations.count }

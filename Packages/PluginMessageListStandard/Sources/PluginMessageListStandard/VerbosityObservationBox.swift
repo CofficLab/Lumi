@@ -13,6 +13,9 @@ final class VerbosityObservationBox {
     private let conversations: (any ConversationManaging)?
     private let chat: any ChatSectionProviding
     private let pluginID: String
+    /// ChatSectionItem 的排序基准。由插件入口传入 `info.order`，
+    /// 避免在 UI 项上硬编码与插件顺序脱节的独立数字。
+    private let itemOrder: Int
     private let expectedVerbosity: ResponseVerbosity
     private let makeView: @MainActor @Sendable () -> AnyView
     private var conversationHandle: (any ConversationObserverHandle)?
@@ -24,12 +27,14 @@ final class VerbosityObservationBox {
         conversations: (any ConversationManaging)?,
         chat: any ChatSectionProviding,
         pluginID: String,
+        order: Int,
         expectedVerbosity: ResponseVerbosity,
         makeView: @escaping @MainActor @Sendable () -> AnyView
     ) {
         self.conversations = conversations
         self.chat = chat
         self.pluginID = pluginID
+        self.itemOrder = order
         self.expectedVerbosity = expectedVerbosity
         self.makeView = makeView
 
@@ -66,7 +71,7 @@ final class VerbosityObservationBox {
         chat.addItems([
             ChatSectionItem(
                 id: pluginID,
-                order: 82,
+                order: itemOrder,
                 scope: .global,
                 exclusiveGroup: "message-list",
                 fillsRemainingHeight: true,

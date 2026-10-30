@@ -134,6 +134,81 @@ struct GoalStateManagerTests {
         #expect(await manager.incrementContinuationCount(conversationId: "budget") == 1)
     }
     
+    /// 回归测试：续聊标记必须被消费且只生效一次。
+    ///
+    /// `markContinuation` 由 `GoalTaskTurnFinishedHook` 置位，
+    /// `consumeContinuation` 由 `GoalPromptInjectionHook` 在注入 prompt 时消费。
+    /// 历史上消费端随旧 Middleware 一起被删，标记只置不消，导致
+    /// `pendingContinuationConversationIDs` 无限增长且续聊轮拿不到指令。
+    @Test("Continuation marker is consumed exactly once")
+    func testContinuationMarkerConsumedOnce() async throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
+
+        #expect(await manager.consumeContinuation(conversationId: "marker") == false)
+
+        await manager.markContinuation(conversationId: "marker")
+        #expect(await manager.consumeContinuation(conversationId: "marker") == true)
+        #expect(await manager.consumeContinuation(conversationId: "marker") == false)
+    }
+    
+    /// 回归测试：自动代答 `ask_user` 有独立预算，耗尽后交回用户。
+    @Test("Ask user answer budget is independent and exhausts")
+    func testAskUserAnswerBudget() async throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
+
+        for expected in 1...GoalStateManager.maxAutomaticAskUserAnswers {
+            #expect(await manager.incrementAskUserAnswerCount(conversationId: "ask") == expected)
+        }
+        #expect(await manager.incrementAskUserAnswerCount(conversationId: "ask") == nil)
+    }
+    
+    /// 回归测试：任务推进同时重置续跑预算与代答预算。
+    @Test("Task progress resets both continuation and ask user budgets")
+    func testResetClearsBothBudgets() async throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
+
+        for _ in 0..<GoalStateManager.maxAutomaticAskUserAnswers {
+            _ = await manager.incrementAskUserAnswerCount(conversationId: "both")
+        }
+        #expect(await manager.incrementAskUserAnswerCount(conversationId: "both") == nil)
+
+        await manager.resetContinuationCount(conversationId: "both")
+        #expect(await manager.incrementAskUserAnswerCount(conversationId: "both") == 1)
+    }
+    
+    /// 回归测试：Goal 全部删除后必须清空内存态预算，
+    /// 否则新 Goal 建立的会话会继承上一轮的耗尽预算，一开局就续跑不了。
+    @Test("Deleting goals clears the conversation runtime budget")
+    func testDeleteGoalsClearsBudget() async throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
+        let cid = "delete-budget"
+
+        _ = try await manager.createGoal(
+            conversationId: cid,
+            title: "Goal",
+            description: nil,
+            successCriteria: nil,
+            tasks: [(title: "Task", description: nil, executionContext: nil, parallelGroup: nil)]
+        )
+        for _ in 0..<GoalStateManager.maxAutomaticContinuations {
+            _ = await manager.incrementContinuationCount(conversationId: cid)
+        }
+        #expect(await manager.incrementContinuationCount(conversationId: cid) == nil)
+
+        try await manager.deleteAllGoals(conversationId: cid)
+
+        #expect(await manager.incrementContinuationCount(conversationId: cid) == 1)
+        #expect(await manager.incrementAskUserAnswerCount(conversationId: cid) == 1)
+    }
+    
     @Test("Fetch goals by conversation")
     func testFetchGoals() async throws {
         let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())

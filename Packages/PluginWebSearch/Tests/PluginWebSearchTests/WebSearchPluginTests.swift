@@ -12,7 +12,7 @@ struct PluginWebSearchTests {
         #expect(WebSearchPlugin().name.isEmpty == false)
         #expect(WebSearchPlugin().metadata.category == .integration)
         #expect(WebSearchPlugin().order == 101)
-        #expect(WebSearchPlugin().metadata.policy == .enabledByDefault)
+        #expect(WebSearchPlugin().metadata.policy == .required)
     }
 
     @Test("plugin registers one web search tool")

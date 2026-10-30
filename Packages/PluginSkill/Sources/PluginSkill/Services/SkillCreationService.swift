@@ -1,11 +1,16 @@
 import Foundation
+import KitAgentTool
 import ProviderSkill
 
-/// 技能读写服务：`.agent/skills/<name>/` 下的 `metadata.json` + `SKILL.md`。
+/// 技能读写服务：`.lumi/skills/<name>/` 下的 `metadata.json` + `SKILL.md`。
 ///
 /// 目录约定与 `SkillDirectoryLoader` 完全一致，因此写入后能被同一套扫描器
 /// 立即识别，无需额外适配。所有 skill 工具（list / create / read / update /
 /// delete）都经由本服务落盘，避免每个工具各写一份文件系统逻辑。
+///
+/// **写入**只落 `.lumi/skills/`；**读取**兼容历史目录 `.agent/skills/`：
+/// - 新建技能一律写入 `.lumi/skills/<name>/`；
+/// - 更新 / 删除历史目录中的技能时，在其**原位**操作，不做隐式迁移。
 public actor SkillCreationService {
     public static let shared = SkillCreationService()
 
@@ -38,10 +43,14 @@ public actor SkillCreationService {
             throw SkillCreationError.invalidName("name is empty after normalization")
         }
 
-        let directoryURL = try makeSkillDirectory(projectPath: projectPath, name: name)
-        guard !fileManager.fileExists(atPath: directoryURL.path) else {
-            throw SkillCreationError.alreadyExists(directoryURL.path)
+        // 同名技能若已存在（无论在 `.lumi/skills` 还是历史目录 `.agent/skills`），
+        // 一律拒绝创建，避免两个目录出现同名技能导致读取歧义。
+        if let existing = locateSkillDirectory(projectPath: projectPath, name: name) {
+            throw SkillCreationError.alreadyExists(existing.path)
         }
+
+        // 新建技能一律写入 `.lumi/skills/<name>/`。
+        let directoryURL = try makeWriteDirectory(projectPath: projectPath, name: name)
 
         let metadata = SkillMetadata(
             name: name,
@@ -59,10 +68,14 @@ public actor SkillCreationService {
     // MARK: - Read
 
     /// 读取单个技能（含正文）。技能不存在或文件不完整时返回 `nil`。
+    ///
+    /// 先查 `.lumi/skills`，未命中再查历史目录 `.agent/skills`。
     public func readSkill(projectPath: String, name: String) throws -> SkillMetadata? {
         let name = Self.sanitize(name)
         guard !name.isEmpty else { return nil }
-        let directoryURL = try makeSkillDirectory(projectPath: projectPath, name: name)
+        guard let directoryURL = locateSkillDirectory(projectPath: projectPath, name: name) else {
+            return nil
+        }
         guard Self.isCompleteSkillDirectory(directoryURL) else { return nil }
         return Self.loadMetadata(name: name, from: directoryURL)
     }
@@ -74,6 +87,8 @@ public actor SkillCreationService {
     /// 两个写入内容都采用「`nil` 表示不改动」语义，保证只更新其中一个字段时
     /// 不会把另一个字段清空。
     ///
+    /// 技能位于历史目录 `.agent/skills` 时在**原位**更新，不做隐式迁移。
+    ///
     /// - Returns: 更新后的技能元数据。
     public func updateSkill(
         projectPath: String,
@@ -84,7 +99,15 @@ public actor SkillCreationService {
         content: String? = nil
     ) throws -> SkillMetadata {
         let name = Self.sanitize(name)
-        let directoryURL = try makeSkillDirectory(projectPath: projectPath, name: name)
+        guard let directoryURL = locateSkillDirectory(projectPath: projectPath, name: name) else {
+            throw SkillCreationError.notFound(
+                ProjectConfigDirectory.writeURL(
+                    projectPath: projectPath,
+                    component: SkillDirectoryNames.skills
+                )
+                .appendingPathComponent(name).path
+            )
+        }
         guard Self.isCompleteSkillDirectory(directoryURL) else {
             throw SkillCreationError.notFound(directoryURL.path)
         }
@@ -114,30 +137,53 @@ public actor SkillCreationService {
     // MARK: - Delete
 
     /// 删除技能目录（连同 `metadata.json` 与 `SKILL.md`）。
+    ///
+    /// 删除的是技能**实际所在**的目录（`.lumi/skills` 或历史目录 `.agent/skills`）。
     public func deleteSkill(projectPath: String, name: String) throws {
         let name = Self.sanitize(name)
-        let directoryURL = try makeSkillDirectory(projectPath: projectPath, name: name)
-        guard fileManager.fileExists(atPath: directoryURL.path) else {
-            throw SkillCreationError.notFound(directoryURL.path)
+        guard let directoryURL = locateSkillDirectory(projectPath: projectPath, name: name) else {
+            throw SkillCreationError.notFound(
+                ProjectConfigDirectory.writeURL(
+                    projectPath: projectPath,
+                    component: SkillDirectoryNames.skills
+                )
+                .appendingPathComponent(name).path
+            )
         }
         try fileManager.removeItem(at: directoryURL)
     }
 
     // MARK: - 内部
 
-    /// 解析技能目录 URL（不创建目录）。
-    private func makeSkillDirectory(projectPath: String, name: String) throws -> URL {
+    /// 定位技能目录（不创建目录）。
+    ///
+    /// 依次在 `.lumi/skills` 与历史目录 `.agent/skills` 中查找，返回第一个
+    /// 已存在的技能目录；都不存在时返回 `nil`。
+    private func locateSkillDirectory(projectPath: String, name: String) -> URL? {
+        guard !name.isEmpty else { return nil }
+        return ProjectConfigDirectory.locate(
+            projectPath: projectPath,
+            component: SkillDirectoryNames.skills,
+            name: name
+        )
+    }
+
+    /// 解析技能**写入**目录 URL（`.lumi/skills/<name>`，不创建目录）。
+    private func makeWriteDirectory(projectPath: String, name: String) throws -> URL {
         let trimmed = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             throw SkillCreationError.invalidName("project path is empty")
         }
         // 规范化后为空（如传入 "!!!"）会让路径退化到 skills 根目录，必须拒绝，
-        // 否则 delete 可能删掉整个 .agent/skills。
+        // 否则 delete 可能删掉整个 skills 目录。
         guard !name.isEmpty else {
             throw SkillCreationError.invalidName("name is empty after normalization")
         }
-        return URL(fileURLWithPath: trimmed)
-            .appendingPathComponent(".agent/skills/\(name)", isDirectory: true)
+        return ProjectConfigDirectory.writeURL(
+            projectPath: trimmed,
+            component: SkillDirectoryNames.skills
+        )
+        .appendingPathComponent(name, isDirectory: true)
     }
 
     /// 目录是否同时含 `metadata.json` 与 `SKILL.md`（扫描器的完整性要求）。

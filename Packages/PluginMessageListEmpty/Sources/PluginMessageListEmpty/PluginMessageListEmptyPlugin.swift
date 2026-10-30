@@ -2,11 +2,15 @@ import KernelCore
 import LumiLoggingKit
 import LumiUI
 import os
+import ProviderActivityBar
 import ProviderChatSection
 import ProviderConversation
+import ProviderGit
 import ProviderMessage
 import ProviderProject
+import ProviderProjectRAG
 import ProviderPromptSuggestion
+import ProviderRailView
 import ProviderToolbar
 import SwiftUI
 
@@ -43,8 +47,42 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
     private var projectObserver: (any ProjectProvidingObserverHandle)?
     private var chatObserver: (any ChatSectionProvidingObserverHandle)?
     private var promptSuggestionsObserver: (any PromptSuggestionProvidingObserverHandle)?
+    private var ragObserver: (any ProjectRAGObserverHandle)?
     private var registrationEvaluationTask: Task<Void, Never>?
     private var isRegistered = false
+
+    /// Holds the UI-test fixture's one-shot observer so it stays alive.
+    ///
+    /// Declared outside `#if DEBUG` on purpose: a stored property that is only
+    /// assigned inside a conditional-compilation branch is legal in Release (it
+    /// is simply never written), so guarding it would only add noise. The
+    /// *type* is what must stay guarded, and it does — see the `#if DEBUG` block
+    /// in `onBoot`.
+    ///
+    /// - Note: `nil` in Release, which is correct: there is no fixture to retain.
+    private var uiTestingSeedHandle: (any ConversationObserverHandle)?
+    /// 「当前会话是否没有消息」这个判定的结果。
+    ///
+    /// 判定依赖异步 SwiftData 查询，因此必须显式建模「尚未得出结论」，
+    /// 否则「还不知道」会被当成「答案是空」，让空态在判定窗口内抢占
+    /// `message-list` 槽位，用户看到有消息却显示空态引导页。
+    private enum RegistrationState {
+        /// 判定任务在途，此刻**不应**参与槽位竞争。
+        case evaluating
+        /// 判定已完成，关联值即结论。
+        case resolved(Bool)
+    }
+    private var registrationState: RegistrationState = .evaluating
+
+    /// Data source for the activity strip.
+    ///
+    /// Held here rather than built inside the item closure: the model is
+    /// `@Observable`, so it must have a stable owner to keep its loaded window
+    /// across view rebuilds.
+    private var activityModel: EmptyStateActivityViewModel?
+
+    /// 项目上下文卡的数据源。跨插件跳转与项目维度统计都从这里取。
+    private var projectContext: ProjectContextViewModel?
 
     public init() {}
 
@@ -60,10 +98,20 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         let promptSuggestions = kernel.resolveProvider((any PromptSuggestionProviding).self)
         let promptSuggestionExecutor = kernel.resolveProvider((any PromptSuggestionExecuting).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let projectRAG = kernel.resolveProvider((any ProjectRAGProviding).self)
+        let git = kernel.resolveProvider((any GitRepositoryReading).self)
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
         let services = MessageListEmptyServices(
             project: project,
             promptSuggestions: promptSuggestions,
-            promptSuggestionExecutor: promptSuggestionExecutor
+            promptSuggestionExecutor: promptSuggestionExecutor,
+            messages: messages,
+            conversations: conversations,
+            projectRAG: projectRAG,
+            git: git,
+            activityBar: activityBar,
+            railView: railView
         )
         let toolbarCoordinator = NoConversationSelectedToolbarCoordinator(
             project: project,
@@ -74,12 +122,20 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
             project: project,
             toolbarCoordinator: toolbarCoordinator
         )
+        let projectContext = ProjectContextViewModel(
+            project: project,
+            conversations: conversations,
+            projectRAG: projectRAG,
+            git: git
+        )
 
         self.chat = chat
         self.conversations = conversations
         self.messages = messages
         self.services = services
         self.guideState = guideState
+        self.projectContext = projectContext
+        self.activityModel = EmptyStateActivityViewModel(messages: messages, projectContext: projectContext)
 
         selectedConversationObserver = conversations?.addSelectedConversationObserver { [weak self] conversationID in
             self?.updateSelection(conversationID)
@@ -88,8 +144,14 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         messageChangeObserver = messages?.addMessageChangeObserver { [weak self] change in
             self?.handleMessageChange(change)
         }
-        projectObserver = project?.addObserver { [weak guideState, project] _ in
+        projectObserver = project?.addObserver { [weak guideState, weak projectContext, weak activityModel, project] _ in
             guideState?.handleProjectChange(project)
+            // 换了项目，项目上下文与项目维度的活动统计都得重算：
+            // 会话集合变了，旧窗口对不上新项目。
+            Task { @MainActor in
+                await projectContext?.loadIfNeeded(force: true)
+                await activityModel?.loadIfNeeded(force: true)
+            }
         }
         chatObserver = chat.addObserver { [weak guideState] event in
             guard case let .activeContextChanged(context) = event else { return }
@@ -98,9 +160,36 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         promptSuggestionsObserver = promptSuggestions?.addObserver { [weak guideState] _ in
             guideState?.handlePromptSuggestionsChange()
         }
+        // 索引状态会随着索引任务的推进变化；项目卡上的「已索引 N 个文件」
+        // 必须在索引完成时就地刷新，而不是等用户下次打开空态。
+        ragObserver = projectRAG?.addProjectRAGObserver { [weak projectContext] event in
+            switch event {
+            case .indexingStarted, .indexingFinished:
+                Task { @MainActor in
+                    await projectContext?.loadIfNeeded(force: true)
+                }
+            case .initialized, .projectChanged:
+                break
+            }
+        }
 
         updateSelection(conversations?.selectedConversationID)
+        // 常驻注册：可见性随后续判定变化，注册本身不再变动。
+        register()
         scheduleRegistrationEvaluation()
+
+        #if DEBUG
+        // - Important: 调用点与夹具定义同处 `#if DEBUG`。夹具类型只在 DEBUG
+        //   存在，仅在调用点写守卫而把 seed 提到外面，会让 Release 构建报
+        //   "cannot find 'MessageListEmptyUITestingSupport' in scope"。
+        if let conversations, let messages, MessageListEmptyUITestingSupport.isEnabled {
+            uiTestingSeedHandle = MessageListEmptyUITestingSupport.seed(
+                conversations: conversations,
+                messages: messages,
+                project: project
+            )
+        }
+        #endif
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -116,11 +205,17 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         chatObserver = nil
         promptSuggestionsObserver?.cancel()
         promptSuggestionsObserver = nil
+        ragObserver?.cancel()
+        ragObserver = nil
+        uiTestingSeedHandle?.cancel()
+        uiTestingSeedHandle = nil
 
         if isRegistered {
             chat?.removeItem(id: id)
             isRegistered = false
         }
+        activityModel = nil
+        projectContext = nil
         guideState?.toolbarCoordinator.deactivate()
         guideState = nil
         services = nil
@@ -160,6 +255,15 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         let selectedID = conversations?.selectedConversationID
         updateSelection(selectedID)
 
+        // 「判定中」：先退出槽位竞争，等结论出来再决定是否进入。
+        //
+        // - Important: 这是修复「有消息却显示空态」的关键。判定需要异步
+        //   SwiftData 查询，在结论出来之前若保持已注册状态，消息列表插件
+        //   会因 exclusiveGroup 排序而失去槽位；查询完成后撤销注册又需要
+        //   一个异步窗口，用户会在窗口内看到空态引导页。这里让「尚未得知」
+        //   明确表达为「暂不参与竞争」，而不是「答案是空」。
+        registrationState = .evaluating
+
         guard let selectedID else {
             applyRegistration(shouldShow: true)
             return
@@ -187,27 +291,68 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         }
     }
 
-    private func applyRegistration(shouldShow: Bool) {
-        guard let chat else { return }
-
-        if shouldShow, !isRegistered {
-            let services = services
-            chat.addItems([
-                ChatSectionItem(
-                    id: id,
-                    order: order,
-                    exclusiveGroup: "message-list",
-                    fillsRemainingHeight: true
-                ) { [weak guideState] in
-                    guard let services, let guideState else { return AnyView(EmptyView()) }
-                    return AnyView(MessageListEmptyContentView(services: services, guideState: guideState))
-                }
-            ])
-            isRegistered = true
-        } else if !shouldShow, isRegistered {
-            chat.removeItem(id: id)
-            isRegistered = false
+    /// 空态当前是否应当渲染。
+    ///
+    /// 判定依赖异步 SwiftData 查询，因此必然存在一个「尚未得出结论」的
+    /// 中间态。关键在于把它表达为 `false`（不渲染）而不是「答案是空」：
+    ///
+    /// `isActive` 在 `ChatSectionHostView.stackItems` 中先于 `exclusiveItems`
+    /// 求值，因此它同时决定本插件能否赢得 `message-list` 槽位。判定在途时
+    /// 返回 `false`，消息列表插件（常驻注册）即先渲染，用户不会看到「有消息
+    /// 却显示空态」的中间画面。
+    private var shouldRenderEmptyState: Bool {
+        switch registrationState {
+        case .evaluating:
+            return false
+        case .resolved(let value):
+            return value
         }
+    }
+
+    /// 常驻注册槽位 item。注册是一次性的，可见性完全由 `isActive` 表达——
+    /// 注册状态与可见状态刻意分离，避免二者脱节。
+    ///
+    /// 与 `VerbosityObservationBox` 采用同一范式：把状态收敛到单一数据源，
+    /// 才不会出现在「已移除 item 却仍需重新注册」这类不变量被破坏的路径上。
+    private func register() {
+        guard !isRegistered else { return }
+        let services = services
+        chat?.addItems([
+            ChatSectionItem(
+                id: id,
+                order: order,
+                exclusiveGroup: "message-list",
+                fillsRemainingHeight: true,
+                // - Important: 不画这道分隔线。
+                //
+                //   分隔线由宿主在 stack 与 bottomFixed 之间统一绘制，只要 stack
+                //   最后一项声明 `showsTrailingDivider`（默认 true）就会出现。空态
+                //   的内容与底部的活动卡属于同一段画面（同一套配色、同一条底色、
+                //   同一个宽度基准），留着这条线等于亲手把两块内容切成两个区域
+                //   —— 这正是活动卡此前读起来「割裂」的根源。
+                showsTrailingDivider: false,
+                isActive: { @MainActor [weak self] in
+                    self?.shouldRenderEmptyState ?? false
+                },
+                content: { [weak guideState, weak activityModel, weak projectContext] in
+                    guard let services, let guideState else { return AnyView(EmptyView()) }
+                    return AnyView(
+                        MessageListEmptyContentView(
+                            services: services,
+                            guideState: guideState,
+                            activity: activityModel,
+                            projectContext: projectContext
+                        )
+                    )
+                }
+            ),
+        ])
+        isRegistered = true
+    }
+
+    private func applyRegistration(shouldShow: Bool) {
+        registrationState = .resolved(shouldShow)
+        chat?.refreshItems()
     }
 }
 
@@ -215,11 +360,29 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
 private struct MessageListEmptyContentView: View {
     let services: MessageListEmptyServices
     @ObservedObject var guideState: MessageListGuideState
+    /// 活动卡的数据源。随内容一起渲染，因此它排在提示流下面而不是底栏里。
+    let activity: EmptyStateActivityViewModel?
+    /// 项目上下文卡的数据源。
+    let projectContext: ProjectContextViewModel?
 
     var body: some View {
         if guideState.selectedConversationID == nil {
-            return AnyView(NoConversationSelectedView(services: services, guideState: guideState))
+            return AnyView(
+                NoConversationSelectedView(
+                    services: services,
+                    guideState: guideState,
+                    activity: activity,
+                    projectContext: projectContext
+                )
+            )
         }
-        return AnyView(MessageEmptyStateView(services: services, guideState: guideState))
+        return AnyView(
+            MessageEmptyStateView(
+                services: services,
+                guideState: guideState,
+                activity: activity,
+                projectContext: projectContext
+            )
+        )
     }
 }

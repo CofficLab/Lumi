@@ -9,7 +9,7 @@ struct ProviderMenuBarTests {
 
     @Test("初始条目为空")
     func defaultProviderStartsEmpty() {
-        let provider = DefaultMenuBarProviding()
+        let provider = DefaultMenuBarManager()
 
         #expect(provider.contentItems.isEmpty)
         #expect(provider.popupItems.isEmpty)
@@ -17,7 +17,7 @@ struct ProviderMenuBarTests {
 
     @Test("追加内容与弹窗条目后可读取")
     func defaultProviderStoresItems() {
-        let provider = DefaultMenuBarProviding()
+        let provider = DefaultMenuBarManager()
         provider.addContent(MenuBarContentItem(id: "cpu", title: "CPU") { Text("cpu") })
         provider.addPopup(MenuBarPopupItem(id: "cpu", title: "CPU") { Text("cpu detail") })
 
@@ -31,7 +31,7 @@ struct ProviderMenuBarTests {
 
     @Test("菜单栏条目变化会发布类型化观察事件")
     func menuBarItemsAreObservable() {
-        let provider = DefaultMenuBarProviding()
+        let provider = DefaultMenuBarManager()
         var events: [String] = []
         let handle = provider.addMenuBarObserver { event in
             switch event {
@@ -54,7 +54,7 @@ struct ProviderMenuBarTests {
 
     @Test("同 id 追加去重")
     func defaultProviderDeduplicatesItems() {
-        let provider = DefaultMenuBarProviding()
+        let provider = DefaultMenuBarManager()
         provider.addContent(MenuBarContentItem(id: "cpu", title: "CPU") { Text("a") })
         provider.addContent(MenuBarContentItem(id: "cpu", title: "CPU") { Text("b") })
         provider.addPopup(MenuBarPopupItem(id: "mem", title: "Mem") { Text("a") })
@@ -66,7 +66,7 @@ struct ProviderMenuBarTests {
 
     @Test("makeContentView 与 makePopupView 可渲染")
     func defaultProviderRendersViews() {
-        let provider = DefaultMenuBarProviding()
+        let provider = DefaultMenuBarManager()
         provider.addContent(MenuBarContentItem(id: "cpu", title: "CPU") { Text("cpu") })
         provider.addPopup(MenuBarPopupItem(id: "cpu", title: "CPU") { Text("cpu detail") })
 
@@ -76,7 +76,7 @@ struct ProviderMenuBarTests {
 
     @Test("MenuBarProviding 可作为 any MenuBarProviding 使用")
     func providerAccessibleThroughProtocol() {
-        let provider: any MenuBarProviding = DefaultMenuBarProviding()
+        let provider: any MenuBarProviding = DefaultMenuBarManager()
         provider.addContent(MenuBarContentItem(id: "cpu", title: "CPU") { Text("cpu") })
         provider.addPopup(MenuBarPopupItem(id: "cpu", title: "CPU") { Text("cpu detail") })
 

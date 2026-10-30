@@ -120,6 +120,187 @@ struct ConversationForkPluginTests {
     }
 }
 
+@Suite("ConversationForkCoordinator")
+@MainActor
+struct ConversationForkCoordinatorTests {
+    /// 组装一套完整的分叉依赖（无 LLM 供应商 → 摘要走本地回退）。
+    private func makeCoordinator(
+        conversations: DefaultConversationManager,
+        messages: DefaultMessageManager
+    ) -> ConversationForkCoordinator {
+        let loop = StubAgentLoop(messages: messages)
+        let sender = DefaultMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: loop
+        )
+        let summarizer = ConversationSummarizer(
+            conversations: conversations,
+            messages: messages,
+            llmProvider: DefaultLLMProviderManagerProviding()
+        )
+        return ConversationForkCoordinator(
+            conversations: conversations,
+            messages: messages,
+            sender: sender,
+            summarizer: summarizer
+        )
+    }
+
+    @Test("preview 统计参与摘要的消息条数与提问轮数")
+    func previewCountsMessagesAndRequests() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let id = try conversations.createConversation(title: "旧对话", projectPath: "/tmp/proj", providerID: "openai", modelName: "gpt-4")
+        messages.insertMessage(Message(conversationID: id, role: .user, content: "第一条问题"), to: id)
+        messages.insertMessage(Message(conversationID: id, role: .assistant, content: "回答"), to: id)
+        messages.insertMessage(Message(conversationID: id, role: .user, content: "第二条问题"), to: id)
+        // system 消息不参与摘要，不应计入条数。
+        messages.insertMessage(Message(conversationID: id, role: .system, content: "系统提示"), to: id)
+
+        let preview = await makeCoordinator(conversations: conversations, messages: messages)
+            .preview(for: id)
+
+        #expect(preview.hasContent)
+        #expect(preview.messageCount == 3)
+        #expect(preview.requestCount == 2)
+        #expect(preview.title == "旧对话")
+        #expect(preview.lastRequest == "第二条问题")
+        #expect(preview.modelName == "gpt-4")
+        #expect(preview.projectPath == "/tmp/proj")
+    }
+
+    @Test("preview 对空对话标记为无内容")
+    func previewEmptyConversation() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let id = try conversations.createConversation(title: nil, projectPath: nil, providerID: nil, modelName: nil)
+
+        let preview = await makeCoordinator(conversations: conversations, messages: messages)
+            .preview(for: id)
+
+        #expect(!preview.hasContent)
+        #expect(preview.messageCount == 0)
+        #expect(preview.requestCount == 0)
+        #expect(preview.lastRequest == nil)
+    }
+
+    @Test("preview 以传入的源对话为准，不跟随当前选中对话")
+    func previewTargetsGivenConversation() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let sourceID = try conversations.createConversation(title: "源对话", projectPath: nil, providerID: nil, modelName: nil)
+        messages.insertMessage(Message(conversationID: sourceID, role: .user, content: "源问题"), to: sourceID)
+
+        let otherID = try conversations.createConversation(title: "别的对话", projectPath: nil, providerID: nil, modelName: nil)
+        messages.insertMessage(Message(conversationID: otherID, role: .user, content: "别的问题"), to: otherID)
+        conversations.selectConversation(id: otherID)
+
+        let preview = await makeCoordinator(conversations: conversations, messages: messages)
+            .preview(for: sourceID)
+
+        #expect(preview.title == "源对话")
+        #expect(preview.lastRequest == "源问题")
+    }
+
+    @Test("fork 建新对话、注入摘要并透传标题/项目/模型")
+    func forkCreatesConversationAndSendsSummary() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let sourceID = try conversations.createConversation(
+            title: "旧对话",
+            projectPath: "/tmp/proj",
+            providerID: "openai",
+            modelName: "gpt-4"
+        )
+        messages.insertMessage(Message(conversationID: sourceID, role: .user, content: "第一条问题"), to: sourceID)
+        messages.insertMessage(Message(conversationID: sourceID, role: .assistant, content: "回答"), to: sourceID)
+
+        let outcome = try await makeCoordinator(conversations: conversations, messages: messages)
+            .fork(conversationID: sourceID)
+
+        #expect(outcome.newConversationID != sourceID)
+        #expect(conversations.selectedConversationID == outcome.newConversationID)
+        // 摘要作为首条 user 消息写入新对话。
+        #expect(messages.messages(for: outcome.newConversationID).contains { $0.content == outcome.summary })
+
+        let forked = try #require(conversations.conversations.first { $0.id == outcome.newConversationID })
+        #expect(forked.title == "旧对话")
+        #expect(forked.projectPath == "/tmp/proj")
+        #expect(forked.modelName == "gpt-4")
+    }
+
+    @Test("fork 以传入的源对话为准，不跟随当前选中对话")
+    func forkTargetsGivenConversation() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let sourceID = try conversations.createConversation(title: "源对话", projectPath: nil, providerID: nil, modelName: nil)
+        messages.insertMessage(Message(conversationID: sourceID, role: .user, content: "源问题"), to: sourceID)
+
+        let otherID = try conversations.createConversation(title: "别的对话", projectPath: nil, providerID: nil, modelName: nil)
+        messages.insertMessage(Message(conversationID: otherID, role: .user, content: "别的问题"), to: otherID)
+        conversations.selectConversation(id: otherID)
+
+        let outcome = try await makeCoordinator(conversations: conversations, messages: messages)
+            .fork(conversationID: sourceID)
+
+        #expect(outcome.summary.contains("源问题"))
+        #expect(!outcome.summary.contains("别的问题"))
+    }
+
+    @Test("fork 对空对话抛出 emptyConversation，且不新建对话")
+    func forkEmptyConversationThrows() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let id = try conversations.createConversation(title: nil, projectPath: nil, providerID: nil, modelName: nil)
+        let before = conversations.conversations.count
+
+        await #expect(throws: ConversationForkCoordinator.ForkError.emptyConversation) {
+            try await makeCoordinator(conversations: conversations, messages: messages).fork(conversationID: id)
+        }
+
+        #expect(conversations.conversations.count == before)
+    }
+
+    @Test("displayTitle 回退到最后一条提问")
+    func displayTitleFallsBackToLastRequest() {
+        #expect(ConversationForkPreview(
+            title: nil,
+            messageCount: 1,
+            requestCount: 1,
+            lastRequest: "最后一条提问",
+            modelName: nil,
+            projectPath: nil
+        ).displayTitle == "最后一条提问")
+
+        #expect(ConversationForkPreview(
+            title: "  ",
+            messageCount: 1,
+            requestCount: 1,
+            lastRequest: "最后一条提问",
+            modelName: nil,
+            projectPath: nil
+        ).displayTitle == "最后一条提问")
+
+        #expect(ConversationForkPreview(
+            title: "标题",
+            messageCount: 1,
+            requestCount: 1,
+            lastRequest: "最后一条提问",
+            modelName: nil,
+            projectPath: nil
+        ).displayTitle == "标题")
+    }
+
+    @Test("truncate 截断超长文本并补省略号")
+    func truncateLongText() {
+        #expect(ConversationForkCoordinator.truncate("短文本", limit: 10) == "短文本")
+        #expect(ConversationForkCoordinator.truncate("  短文本  ", limit: 10) == "短文本")
+        let truncated = ConversationForkCoordinator.truncate(String(repeating: "x", count: 50), limit: 10)
+        #expect(truncated == String(repeating: "x", count: 10) + "…")
+    }
+}
+
 /// 测试用 AgentLoop 桩：保留 responder 语义，落库 assistant 消息。
 @MainActor
 private final class StubAgentLoop: AgentLoopProviding {

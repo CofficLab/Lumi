@@ -14,10 +14,14 @@ struct PluginCaffeinateTests {
         #expect(plugin.id == "com.coffic.lumi.plugin.caffeinate")
         #expect(plugin.name.isEmpty == false)
         #expect(plugin.order == 1)
-        #expect(plugin.metadata.policy == .enabledByDefault)
-        #expect(plugin.metadata.category == .system)
-        #expect(plugin.metadata.stage == .preview)
-        #expect(plugin.metadata.description.isEmpty == false)
+        // 与 `CaffeinatePlugin.metadata` 保持一致：
+        // 防休眠是系统级能力，因此 policy 为 `.required`、category 为 `.integration`、
+        // stage 已是 `.stable`（不再是 preview）。
+        #expect(plugin.metadata.id == "com.coffic.lumi.plugin.caffeinate")
+        #expect(plugin.metadata.name == "Caffeinate")
+        #expect(plugin.metadata.policy == .required)
+        #expect(plugin.metadata.category == .integration)
+        #expect(plugin.metadata.stage == .stable)
     }
 
     @Test
@@ -54,7 +58,12 @@ struct PluginCaffeinateTests {
     @Test
     func localizationCatalogIsPackaged() {
         let bundle = Bundle.module
-        #expect(bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
+        // `.xcstrings` 是**源**目录里的文件；SPM 打包时会被编译成各语言的
+        // `Localizable.strings`（`<lang>.lproj/Localizable.strings`），
+        // 原始 `.xcstrings` 不会进 bundle。只查 `.xcstrings` 恒为 nil。
+        let hasCatalog = bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil
+        let hasCompiledStrings = bundle.path(forResource: "zh-Hans", ofType: "lproj") != nil
+        #expect(hasCatalog || hasCompiledStrings)
         #expect(pluginLocalization.string("Caffeinate").isEmpty == false)
     }
 }

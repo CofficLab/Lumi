@@ -112,6 +112,46 @@ struct KernelFactoryInfrastructureTests {
         #expect(FileManager.default.fileExists(atPath: previousRoot.appendingPathComponent("LegacyProbe/legacy.txt").path))
     }
 
+    /// 迁移失败的插件不应阻断启动（回归：曾经一个坏迁移让整个 App 起不来）。
+    private final class FailingMigrationPlugin: SuperPlugin, PluginDataMigrating {
+        let id = "test.failing-migration-probe"
+        let metadata = PluginMetadata(
+            id: "test.failing-migration-probe",
+            name: "Failing migration probe",
+            description: "",
+            category: .general,
+            stage: .stable,
+            policy: .alwaysOn
+        )
+        var didBoot = false
+
+        func migrateData(context: PluginDataMigrationContext) throws {
+            throw CocoaError(.fileNoSuchFile)
+        }
+
+        func onBoot(kernel: KernelCoreContainer) throws {
+            didBoot = true
+        }
+    }
+
+    @Test("插件数据迁移失败不阻断内核启动")
+    func migrationFailureDoesNotBlockStartup() throws {
+        let parent = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FactoryLumiFailingMigration-\(UUID().uuidString)", isDirectory: true)
+        let currentRoot = parent.appendingPathComponent("db_production_v6", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: parent) }
+
+        let failing = FailingMigrationPlugin()
+
+        let kernel = try KernelFactory.makeKernel(
+            providerFactory: DefaultProviderFactory(dataRootDirectory: currentRoot),
+            pluginFactory: SinglePluginFactory(plugin: failing)
+        )
+
+        #expect(failing.didBoot)
+        #expect(kernel.resolveProvider((any StorageProviding).self) != nil)
+    }
+
     @Test("Factory 注册可替换 WebServer 与真实 PluginControl")
     func registersInfrastructureProviders() throws {
         let kernel = try KernelFactory.makeKernel()

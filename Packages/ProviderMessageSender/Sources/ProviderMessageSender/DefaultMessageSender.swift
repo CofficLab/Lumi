@@ -23,6 +23,14 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
     private let messages: any MessageManaging
     private let agentLoop: any AgentLoopProviding
     private var currentTasks: [UUID: Task<Void, Never>] = [:]
+    /// 每个会话的回合跟踪代号。
+    ///
+    /// 同一会话可能先后建立多个跟踪任务（`ask_user` 跳过时，新消息直接落库
+    /// 会另起一个跟踪任务）。代号让旧任务结束时只清理**自己**的账本条目，
+    /// 不误删后来者的条目。
+    private var turnGenerations: [UUID: Int] = [:]
+    /// 正在排空的会话；防止排空过程中的重入导致同一会话并发拉起两个回合。
+    private var drainingConversations: Set<UUID> = []
     /// 消息已同步提交，但回合跟踪任务尚未被调度；用于保留连续发送的串行语义。
     private var pendingTurnStarts: Set<UUID> = []
     private var pendingOutcomes: [UUID: [CheckedContinuation<AgentLoopOutcome, Never>]] = [:]
@@ -195,6 +203,25 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
             content,
             imageAttachments: imageAttachments,
             fileAttachments: fileAttachments,
+            collapsedBlocks: [],
+            conversationID: conversationID,
+            metadata: nil
+        )
+    }
+
+    @discardableResult
+    public func commitUserMessage(
+        _ content: String,
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
+        conversationID: UUID?
+    ) throws -> MessageSendCommit? {
+        try commitUserMessage(
+            content,
+            imageAttachments: imageAttachments,
+            fileAttachments: fileAttachments,
+            collapsedBlocks: collapsedBlocks,
             conversationID: conversationID,
             metadata: nil
         )
@@ -204,6 +231,22 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         _ content: String,
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
+        conversationID: UUID?
+    ) async throws -> MessageSendCommit? {
+        try await commitUserMessageInBackground(
+            content,
+            imageAttachments: imageAttachments,
+            fileAttachments: fileAttachments,
+            collapsedBlocks: [],
+            conversationID: conversationID
+        )
+    }
+
+    public func commitUserMessageInBackground(
+        _ content: String,
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
         conversationID: UUID?
     ) async throws -> MessageSendCommit? {
         // Resolve the target before the detached metadata work. The user may
@@ -220,6 +263,7 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
             content,
             imageAttachments: imageAttachments,
             fileAttachments: fileAttachments,
+            collapsedBlocks: collapsedBlocks,
             conversationID: targetID,
             metadata: metadata,
             // Preserve the existing behavior for callers that explicitly
@@ -244,6 +288,7 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         _ content: String,
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
         conversationID: UUID?,
         metadata: [String: String]?,
         selectTarget: Bool = true
@@ -257,6 +302,10 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
             return nil
         }
 
+        // 正文被 trim 后，折叠块区间必须跟着平移并重新归一化：
+        // 区间以未 trim 的文本为基准，不处理的话首行 chip 会整体错位。
+        let resolvedBlocks = Self.resolvedCollapsedBlocks(collapsedBlocks, content: content, trimmed: trimmed)
+
         let targetID = try resolveTargetConversationID(conversationID)
         // 新建会话必须成为当前时间线，否则消息落进不可见会话。
         if selectTarget, conversations.selectedConversationID != targetID {
@@ -264,12 +313,18 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         }
 
         // 同一会话发送中：入队，当前回合结束后依次发出。
-        if isSending(for: targetID) {
+        //
+        // 守门条件必须以 AgentLoop 回合状态机为准，而不是本类的私有账本：
+        // 账本只知道「本类发起的回合」，而会话是否真的在忙由 AgentLoop 说了算。
+        // 两者口径不一致时（回合挂起等授权、回合由 ACP/自动重试等外部路径拉起），
+        // 界面显示着停止按钮，用户按回车却把消息直接写进了消息列表。
+        if isSessionBusy(for: targetID) {
             pendingQueues[targetID, default: []].append(PendingChatMessage(
                 conversationID: targetID,
                 content: trimmed,
                 imageAttachments: imageAttachments,
-                fileAttachments: fileAttachments
+                fileAttachments: fileAttachments,
+                collapsedBlocks: resolvedBlocks
             ))
             notify(.pendingMessagesChanged(conversationID: targetID))
             clearSentAttachments(imageAttachments, fileAttachments)
@@ -280,10 +335,14 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         }
 
         // 附件编码进 metadata（图片 + 文件并行）。
-        let messageMetadata = metadata ?? Self.encodeAttachmentMetadata(
+        var messageMetadata = metadata ?? Self.encodeAttachmentMetadata(
             imageAttachments: imageAttachments,
             fileAttachments: fileAttachments
         )
+        // 折叠块区间同样进 metadata，渲染层据此还原 chip。
+        messageMetadata.merge(
+            CollapsedContentBlockMetadata.encodeCollapsedBlocks(resolvedBlocks)
+        ) { _, new in new }
 
         let userMessage = Message(
             conversationID: targetID,
@@ -312,6 +371,24 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         return metadata
     }
 
+    /// 把折叠块区间从「未 trim 的正文」换算到「trim 后的正文」。
+    ///
+    /// 输入框的区间以编辑器里的完整文本为基准，而落库正文会 trim 掉首尾空白。
+    /// 两者的坐标系不一致，因此这里先按裁掉的空白量平移，再按正文长度归一化，
+    /// 保证落库的区间一定落在正文范围内。
+    private nonisolated static func resolvedCollapsedBlocks(
+        _ blocks: [CollapsedContentBlock],
+        content: String,
+        trimmed: String
+    ) -> [CollapsedContentBlock] {
+        guard !blocks.isEmpty else { return [] }
+        let rebased = CollapsedContentBlockMetadata.rebased(
+            blocks,
+            droppingLeadingWhitespaceOf: content
+        )
+        return CollapsedContentBlockMetadata.normalized(rebased, contentLength: trimmed.count)
+    }
+
     public func startTurn(for commit: MessageSendCommit) async {
         guard let userMessageID = commit.userMessageID else { return }
         let task = beginTurn(
@@ -337,22 +414,40 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         await startTurn(for: commit)
     }
 
+    /// 取消当前会话正在进行的回合。
+    ///
+    /// - Important: **取消权归 AgentLoop**。回合是否还在跑由状态机说了算，
+    ///   本类的 `currentTasks` 账本只负责清理自己那一半。
+    ///   旧实现拿账本当守门条件，会把「AgentLoop 在跑但本类不知情」的回合
+    ///   （ACP 托管的会话、事件驱动的回合、自动重试拉起的回合、恢复回合）
+    ///   全部挡在门外：停止按钮亮着，按下去却什么都没发生。
     public func cancelCurrentRequest() {
         if Self.verbose {
             Self.logger.info("\(Self.t)cancel current request: activeTasks=\(self.currentTasks.count)")
         }
-        guard let conversationID = conversations.selectedConversationID,
-              currentTasks[conversationID] != nil || pendingTurnStarts.contains(conversationID) else {
-            return
-        }
+        guard let conversationID = conversations.selectedConversationID else { return }
+        let hasSenderWork = currentTasks[conversationID] != nil || pendingTurnStarts.contains(conversationID)
+        let hasAgentTurn = agentLoop.isRunning(for: conversationID)
+            || agentLoop.suspension(for: conversationID) != nil
+        guard hasSenderWork || hasAgentTurn else { return }
+
         currentTasks[conversationID]?.cancel()
         currentTasks.removeValue(forKey: conversationID)
         pendingTurnStarts.remove(conversationID)
+
+        // 无条件转交：cancelTurn 自身是幂等的，没有活回合时它就是 no-op。
+        // 这里不能按 hasAgentTurn 再筛一次——sender 的账本和 AgentLoop 的
+        // 状态机本来就可能各说各话，任一为真就意味着「有活没干完」。
         agentLoop.cancelTurn(in: conversationID)
-        handleAgentLoopEvent(.cancelled(
-            conversationID: conversationID,
-            turnID: agentLoop.currentTurnID(for: conversationID)
-        ))
+
+        if hasSenderWork {
+            // 合成 cancelled 事件唤醒本类的回合跟踪任务：它挂在 continuation
+            // 上，取消 Task 不会让它自己返回。
+            handleAgentLoopEvent(.cancelled(
+                conversationID: conversationID,
+                turnID: agentLoop.currentTurnID(for: conversationID)
+            ))
+        }
         if currentTasks.isEmpty && pendingTurnStarts.isEmpty {
             isSending = false
         }
@@ -373,9 +468,16 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         do {
             let outcome = try await agentLoop.resumeTurn(in: conversationID, request: request)
             notify(.turnCompleted(conversationID: conversationID, outcome: outcome))
+            // 恢复后的回合可能已到达终态。恢复路径没有回合跟踪任务，
+            // 队列没人排空——这里补上。
+            if outcome.isTerminal {
+                drainPendingQueue(conversationID: conversationID)
+            }
             return outcome
         } catch {
             notify(.turnFailed(conversationID: conversationID, reason: error.localizedDescription))
+            // 恢复失败**不**排空队列：无效的恢复请求会让 AgentLoop 重新发布
+            // 仍然有效的挂起状态，回合并未终结，队列必须继续等。
             throw error
         }
     }
@@ -384,6 +486,43 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
 
     private func isSending(for conversationID: UUID) -> Bool {
         currentTasks[conversationID] != nil || pendingTurnStarts.contains(conversationID)
+    }
+
+    /// 该会话是否「正在忙」，新消息需要排队等待。
+    ///
+    /// ## 事实来源
+    ///
+    /// 「忙不忙」由 AgentLoop 回合状态机决定，而不是本类的私有账本：
+    ///
+    /// - `.running`：回合正在跑（LLM 请求 / 工具执行）。
+    /// - `.suspended`：回合还活着，只是停在等用户回答或等工具授权的地方。
+    ///   它和 `.running` 一样是「没干完的活」——`ConversationStateSnapshot.canStop`
+    ///   正是用这两个状态决定界面显示停止还是发送按钮。
+    ///
+    /// 私有账本只覆盖「本类发起的回合」。回合由外部路径拉起时（ACP 托管、
+    /// 自动重试、Goal 续跑），账本一片空白而回合照跑——只看账本就会让新消息
+    /// 直接落库，抢在回合前面写进消息列表。
+    ///
+    /// ## `ask_user` 例外
+    ///
+    /// `ask_user` 只是模型向用户提问，用户**可以**用继续聊天来跳过它：这条新消息
+    /// 应当直接落库，由 `PluginAgentLoop` 的 `MessageObserver` 检测到 `ask_user`
+    /// 挂起后，用固定的「跳过问题」答案恢复原回合，并保留这条新消息。
+    ///
+    /// 工具授权（`kind == "permission"`）没有这个例外：授权是安全闸门，
+    /// 用户的新消息不能替代授权决定，必须继续排队。
+    private func isSessionBusy(for conversationID: UUID) -> Bool {
+        // 本类自己的账本也算「忙」：消息已提交但回合跟踪任务还没调度。
+        if isSending(for: conversationID) { return true }
+        let state = agentLoop.state(for: conversationID)
+        guard state == .running || state == .suspended else { return false }
+        // 挂起时区分 ask_user 提问与工具授权：只有提问可以被新消息跳过。
+        if state == .suspended,
+           let suspension = agentLoop.suspension(for: conversationID),
+           suspension.isAskUserSuspension {
+            return false
+        }
+        return true
     }
 
     /// 由 MessageSenderPlugin 注册的 AgentLoop 事件监听器调用。
@@ -417,6 +556,20 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         }
         for continuation in continuations {
             continuation.resume(returning: outcome)
+        }
+
+        // 回合由外部路径拉起时（ACP 托管、自动重试、Goal 续跑），本类没有
+        // 回合跟踪任务，队列就没人排空。终态事件到达时补一次排空。
+        // 挂起不是终态——回合还活着，队列必须继续等。
+        //
+        // - Important: 必须同时排除「本类即将发起的回合」。`pendingTurnStarts`
+        //   表示消息已提交但回合跟踪任务尚未调度；此刻收到终态事件，若抢先排空
+        //   会把队列内容发出并顺手清掉 `completedOutcomes`，随后真正开始的回合
+        //   就再也等不到自己的结果，任务会永久挂起。
+        if outcome.isTerminal,
+           currentTasks[conversationID] == nil,
+           !pendingTurnStarts.contains(conversationID) {
+            drainPendingQueue(conversationID: conversationID)
         }
     }
 
@@ -453,18 +606,22 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)turn started: conversation=\(conversationID.uuidString.prefix(8)), userMessage=\(userMessageID.uuidString.prefix(8))")
         }
+        // 代号随每个跟踪任务递增：同一会话可能先后建立多个跟踪任务
+        // （`ask_user` 被跳过时，新消息直接落库会另起一个任务）。
+        // 旧任务结束时只能清理自己的账本条目，不能误删后来者的。
+        let generation = (turnGenerations[conversationID] ?? 0) + 1
+        turnGenerations[conversationID] = generation
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
+            var outcome: AgentLoopOutcome = .cancelled
             defer {
-                self.currentTasks.removeValue(forKey: conversationID)
-                // 队列消费：当前回合结束后发下一条。
-                self.drainPendingQueue(conversationID: conversationID)
-                // `currentTasks` is per conversation; one conversation
-                // finishing must not clear the global flag while another is
-                // still running.
-                self.isSending = !self.currentTasks.isEmpty || !self.pendingTurnStarts.isEmpty
+                self.finishTurnTracking(
+                    conversationID: conversationID,
+                    generation: generation,
+                    outcome: outcome
+                )
             }
-            _ = await self.waitForAgentLoop(in: conversationID)
+            outcome = await self.waitForAgentLoop(in: conversationID)
             if Self.verbose {
                 Self.logger.info("\(Self.t)turn completed: conversation=\(conversationID.uuidString.prefix(8))")
             }
@@ -473,12 +630,41 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         return task
     }
 
+    /// 回合跟踪任务结束时的收尾。
+    ///
+    /// - Important: **只有终态才排空待发队列**。挂起（`.suspended`）意味着回合
+    ///   还活着——它停在等用户回答或等工具授权的地方，恢复后会继续跑。此时放行
+    ///   下一条消息，新消息就会抢在尚未结束的回合前面写进消息列表。
+    private func finishTurnTracking(
+        conversationID: UUID,
+        generation: Int,
+        outcome: AgentLoopOutcome
+    ) {
+        // 已有更新的跟踪任务接管该会话：旧任务不得清理账本，也不得排空队列。
+        guard turnGenerations[conversationID] == generation else { return }
+        turnGenerations.removeValue(forKey: conversationID)
+        currentTasks.removeValue(forKey: conversationID)
+        if outcome.isTerminal {
+            // 队列消费：当前回合结束后发下一条。
+            drainPendingQueue(conversationID: conversationID)
+        }
+        // `currentTasks` is per conversation; one conversation
+        // finishing must not clear the global flag while another is
+        // still running.
+        isSending = !currentTasks.isEmpty || !pendingTurnStarts.isEmpty
+    }
+
     /// 依次发送待发队列（同一会话串行）。
     private func drainPendingQueue(conversationID: UUID) {
+        // 在途守卫：排空过程中会 `beginTurn`，其收尾又可能触发排空。
+        // 不加守卫会让同一会话并发拉起两个回合。
+        guard !drainingConversations.contains(conversationID) else { return }
         guard var queue = pendingQueues[conversationID], !queue.isEmpty else {
             pendingQueues.removeValue(forKey: conversationID)
             return
         }
+        drainingConversations.insert(conversationID)
+        defer { drainingConversations.remove(conversationID) }
         let next = queue.removeFirst()
         if queue.isEmpty {
             pendingQueues.removeValue(forKey: conversationID)
@@ -490,6 +676,11 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         var metadata: [String: String] = [:]
         metadata.merge(UserAttachmentMetadata.encodeImageAttachments(next.imageAttachments)) { _, new in new }
         metadata.merge(UserAttachmentMetadata.encodeFileAttachments(next.fileAttachments)) { _, new in new }
+        // 队列条目自带折叠块，回放时必须原样带回，否则排队期间折叠的内容
+        // 会在真正发出时退化成一大段文字。
+        metadata.merge(
+            CollapsedContentBlockMetadata.encodeCollapsedBlocks(next.collapsedBlocks)
+        ) { _, new in new }
         let userMessage = Message(
             conversationID: conversationID,
             role: .user,

@@ -90,37 +90,37 @@
         }
       }
     },
-    "From .agent/skills directory" : {
+    "From .lumi/skills directory" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "From .agent/skills directory"
+            "value" : "From .lumi/skills directory"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "来自 .agent/skills 目录"
+            "value" : "来自 .lumi/skills 目录"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "來自 .agent/skills 目錄"
+            "value" : "來自 .lumi/skills 目錄"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "來自 .agent/skills 目錄"
+            "value" : "來自 .lumi/skills 目錄"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "來自 .agent/skills 目錄"
+            "value" : "來自 .lumi/skills 目錄"
           }
         }
       }

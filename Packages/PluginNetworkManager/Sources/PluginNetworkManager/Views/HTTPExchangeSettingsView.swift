@@ -95,35 +95,48 @@ public struct HTTPExchangeSettingsView: View {
             showHeader: false,
             scrollsContent: false
         ) {
-            VStack(spacing: 12) {
-                HStack {
-                    Spacer()
-                    totalCountButton
-                    AppButton(pluginLocalization.string("Refresh"), systemImage: "arrow.clockwise", size: .small) {
-                        Task { await reloadAsync() }
+            GeometryReader { proxy in
+                VStack(spacing: 0) {
+                    HStack {
+                        Spacer()
+                        totalCountButton
+                        AppButton(pluginLocalization.string("Refresh"), systemImage: "arrow.clockwise", size: .small) {
+                            Task { await reloadAsync() }
+                        }
                     }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 12)
+
+                    // 请求统计区块的顶部分隔线：与下方那条一样贯通整宽，
+                    // 所以画在内容留白之外，而不是塞进区块内部。
+                    AppDivider()
+
+                    requestActivity
+                        .padding(.horizontal, 24)
+                        .padding(.top, 12)
+                        .padding(.bottom, 12)
+
+                    // 主体内容贴边后，用一条顶部分隔线把头部内容与主从容器分开。
+                    AppDivider()
+
+                    HStack(spacing: 0) {
+                        sidebar
+                            .frame(width: 300)
+                            .frame(maxHeight: .infinity)
+
+                        AppDivider(.vertical)
+
+                        detailPane
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    }
+                    .frame(maxHeight: .infinity)
                 }
-
-                requestActivity
-
-                HStack(spacing: 0) {
-                    sidebar
-                        .frame(width: 340)
-                        .frame(maxHeight: .infinity)
-
-                    AppDivider(.vertical)
-
-                    detailPane
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                }
-                .frame(maxHeight: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(theme.divider, lineWidth: 1)
-                }
+                // 共享 scaffold 给内容留了左右 24，这里把整列加宽 48 并左移 24，
+                // 使主从容器正好贴到窗口左右边缘；头部内容再自行补回 24 留白。
+                .frame(width: proxy.size.width + 48, alignment: .topLeading)
+                .offset(x: -24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .task {
             await reloadAsync()
@@ -158,28 +171,28 @@ public struct HTTPExchangeSettingsView: View {
         }
     }
 
+    /// 每日请求图表（扁平面板）。
+    ///
+    /// 与「会话存储」页的会话活动区块保持同一种基本样式：区块顶部的横线由父级
+    /// 统一画（贯通整宽），这里只放内容——左右不留白，图表铺满内容区整宽。
     private var requestActivity: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
                 Label(pluginLocalization.string("Daily HTTP requests"), systemImage: "chart.xyaxis.line")
                     .font(.appCaptionEmphasized)
                     .foregroundStyle(theme.textPrimary)
                 Spacer(minLength: 0)
-                Text(pluginLocalization.string("Peak") + " (\(dailyCountSeries.peakCount))")
+                Text(String(format: pluginLocalization.string("Peak (%lld)"), dailyCountSeries.peakCount))
                     .font(.appMicro)
                     .monospacedDigit()
                     .foregroundStyle(theme.textSecondary)
             }
+            .padding(.bottom, 10)
+
             HTTPExchangeDailyCountChart(series: dailyCountSeries)
                 .frame(height: 132)
         }
-        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(theme.divider, lineWidth: 0.5)
-        }
     }
 
     private var sidebar: some View {
@@ -476,7 +489,7 @@ public struct HTTPExchangeSettingsView: View {
 
     private func responseTab(for record: HTTPExchangeExportSnapshot) -> some View {
         detailScroll {
-            AppSettingsSection(title: pluginLocalization.string("Response"), subtitle: pluginLocalization.string("HTTP response received from the server")) {
+            AppSettingSection(title: pluginLocalization.string("Response"), footer: pluginLocalization.string("HTTP response received from the server"), titleAlignment: .leading) {
                 AppMetadataCard {
                     AppMetadataRow(title: pluginLocalization.string("Status"), systemImage: "number") {
                         AppTag(statusText(for: record), systemImage: statusIcon(for: record), style: .accent)
@@ -516,7 +529,7 @@ public struct HTTPExchangeSettingsView: View {
     @ViewBuilder
     private func errorSection(for record: HTTPExchangeExportSnapshot) -> some View {
         if record.errorDescription != nil {
-            AppSettingsSection(title: pluginLocalization.string("Error"), subtitle: pluginLocalization.string("Transport or HTTP failure details")) {
+            AppSettingSection(title: pluginLocalization.string("Error"), footer: pluginLocalization.string("Transport or HTTP failure details"), titleAlignment: .leading) {
                 VStack(alignment: .leading, spacing: 8) {
                     if let errorDescription = record.errorDescription {
                         Text(errorDescription)
@@ -542,9 +555,10 @@ public struct HTTPExchangeSettingsView: View {
         let isJSON = record.responseMIMEType?.contains("json") == true
         let isLargePayload = (record.responseBody?.count ?? 0) > largePayloadByteThreshold
 
-        AppSettingsSection(
+        AppSettingSection(
             title: pluginLocalization.string("Response Body"),
-            subtitle: String(format: pluginLocalization.string("Original response body bytes (%@)"), byteCount(record.responseBody))
+            footer: String(format: pluginLocalization.string("Original response body bytes (%@)"), byteCount(record.responseBody)),
+            titleAlignment: .leading
         ) {
             if isLargePayload {
                 HTTPExchangeLargePayloadView(
@@ -563,10 +577,10 @@ public struct HTTPExchangeSettingsView: View {
 
     private func detailScroll<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 18) {
                 content()
             }
-            .padding(20)
+            .padding(22)
         }
     }
 
@@ -579,7 +593,7 @@ public struct HTTPExchangeSettingsView: View {
         data: Data?,
         fallback: String
     ) -> some View {
-        AppSettingsSection(title: title, subtitle: subtitle) {
+        AppSettingSection(title: title, footer: subtitle, titleAlignment: .leading) {
             HTTPExchangePayloadView(data: data, fallback: fallback)
         }
     }
@@ -596,7 +610,7 @@ public struct HTTPExchangeSettingsView: View {
         recordID: UUID,
         mimeType: String?
     ) -> some View {
-        AppSettingsSection(title: title, subtitle: subtitle) {
+        AppSettingSection(title: title, footer: subtitle, titleAlignment: .leading) {
             if let data, data.count > largePayloadByteThreshold {
                 HTTPExchangeLargePayloadView(
                     bodyKind: bodyKind,

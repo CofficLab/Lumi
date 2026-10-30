@@ -32,6 +32,10 @@ public final class MLXProviderPlugin: SuperPlugin, PluginDataMigrating, SuperLog
             context: context
         )
 
+        // 下载限速此前存在 UserDefaults，仅在插件存储尚无该键时导入。
+        // 须在下面的早退分支之前执行。
+        importLegacyDownloadSpeedLimit(to: context.currentPluginDataDirectory)
+
         // MLX 模型最初位于未版本化的 Application Support 目录；保留旧目录，
         // 将其中尚未存在于新目录的模型文件合并过去。
         guard let appSupport = FileManager.default.urls(
@@ -53,9 +57,28 @@ public final class MLXProviderPlugin: SuperPlugin, PluginDataMigrating, SuperLog
         )
     }
 
+    /// 把 `UserDefaults.standard` 中的旧下载限速导入插件专属存储。
+    ///
+    /// 仅在插件存储尚无该键时导入，避免覆盖用户后续的调整。
+    /// `UserDefaults` 原 key 保留，便于回退。
+    private func importLegacyDownloadSpeedLimit(to directory: URL) {
+        guard let domain = UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? ""),
+              let legacyValue = domain[MLXDownloadManager.downloadSpeedLimitKey] as? Int,
+              legacyValue > 0
+        else {
+            return
+        }
+        let settingsFile = directory.appendingPathComponent("settings.plist")
+        guard !FileManager.default.fileExists(atPath: settingsFile.path) else { return }
+        MLXProviderPluginLocalStore(settingsDirectory: directory)
+            .setDownloadSpeedLimit(legacyValue)
+        Self.logger.info("\(Self.t)Imported legacy download speed limit from UserDefaults: \(legacyValue)")
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             let rootDirectory = storage.pluginDataDirectory(for: id)
+            MLXProviderRuntime.configure(settingsDirectory: rootDirectory)
             MLXModelPaths.configure(rootDirectory: rootDirectory)
             MLXDownloadManager.shared.configure(rootDirectory: rootDirectory)
             MLXRuntime.shared.configure(rootDirectory: rootDirectory)

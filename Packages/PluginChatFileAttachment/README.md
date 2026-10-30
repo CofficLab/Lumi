@@ -36,3 +36,14 @@ From this package directory:
 swift test
 ```
 
+
+## 能力边界
+
+按钮原先直接持有 `KernelCoreContainer` 并在 `handle(_:)` 内部 `resolveProvider`，
+把「组装」漏进了 View 层。现改为注入窄能力：
+
+- `addFileAttachment(_:)` —— 追加待发送附件
+- `presentLoadError(_:)` —— 读取失败时写入输入区错误提示
+
+Adapter 在 `onBoot` 中解析 `MessageSendingProviding` 与 `ConversationInputProviding`
+后构造，View 不再接触 kernel。

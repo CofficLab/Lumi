@@ -38,6 +38,17 @@ public struct MarkdownBlockRenderer: View {
     /// keeping full Markdown parsing off the main thread's first render.
     @State private var blocks: [MarkdownBlock]
     @Environment(\.preferOuterScroll) private var preferOuterScroll
+    /// 宿主注入的代码高亮器；为空时回落到内置的 tree-sitter 实现。
+    @Environment(\.codeHighlightProvider) private var injectedHighlightProvider
+    @Environment(\.colorScheme) private var colorScheme
+
+    /// 实际生效的代码高亮器。
+    ///
+    /// 宿主（App / 插件）显式注入时以注入为准；没有注入时使用内置实现，
+    /// 保证所有 Markdown 代码块默认带语法高亮，而不是退化成纯文本。
+    private var highlightProvider: (any CodeHighlightProviding)? {
+        injectedHighlightProvider ?? TreeSitterCodeHighlightProvider.shared(for: colorScheme)
+    }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: theme.blockSpacing) {
@@ -47,6 +58,7 @@ public struct MarkdownBlockRenderer: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .foregroundStyle(theme.textColor ?? .primary)
+        .environment(\.codeHighlightProvider, highlightProvider)
         .task(id: markdown) {
             // 缓存命中(init 已填充)时 blocks 不会变,这里是一次廉价的不变赋值;
             // miss 时解析在后台线程完成(注意:`.task` 继承视图的 MainActor,
@@ -142,13 +154,16 @@ public struct MarkdownBlockRenderer: View {
 
     @ViewBuilder
     private func codeBlockView(language: String?, code: String) -> some View {
+        let showsLanguageLabel = language.map { !$0.isEmpty } == true && theme.showLanguageLabel
         VStack(alignment: .leading, spacing: 0) {
-            if let language, !language.isEmpty, theme.showLanguageLabel {
-                HStack {
+            if showsLanguageLabel, let language {
+                HStack(spacing: 8) {
                     Text(language)
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(theme.secondaryTextColor ?? .secondary)
                     Spacer()
+                    // 复制按钮放在语言标签行右侧：既能看见，又不会盖住代码内容。
+                    CodeBlockCopyButton(code: code)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
@@ -168,6 +183,18 @@ public struct MarkdownBlockRenderer: View {
             RoundedRectangle(cornerRadius: 6)
                 .strokeBorder(Color.secondary.opacity(0.12), lineWidth: 1)
         )
+        // 没有语言标签时没有头部栏可放按钮，退化为悬浮在右上角。
+        //
+        // 用 overlay 而非在 VStack 里插入一行：避免改变代码块高度，
+        // 否则会让消息列表的行高测量缓存（`HorizontalFittingSizeCache`）
+        // 与实际内容不一致。
+        .overlay(alignment: .topTrailing) {
+            if !showsLanguageLabel {
+                CodeBlockCopyButton(code: code)
+                    .padding(.top, 6)
+                    .padding(.trailing, 6)
+            }
+        }
     }
 
     // MARK: - Table

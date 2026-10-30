@@ -17,14 +17,13 @@ final class NativeControlCoordinator: ObservableObject {
     private var approved = false
     private var resumed = false
     private var stopped = false
-    private let defaults: UserDefaults
+    private let authorization: ComputerUseAuthorizationStore
     private let presentsUI: Bool
     private var bundleID = ""
     private var queue: [UUID] = []
-    private let permissionKey = "ComputerUse.nativeAllowedBundleIdentifiers"
 
-    init(defaults: UserDefaults = .standard, presentsUI: Bool = true) {
-        self.defaults = defaults
+    init(authorization: ComputerUseAuthorizationStore = .shared, presentsUI: Bool = true) {
+        self.authorization = authorization
         self.presentsUI = presentsUI
     }
 
@@ -56,7 +55,7 @@ final class NativeControlCoordinator: ObservableObject {
         self.bundleID = bundleID
         self.reason = String(reason.prefix(180))
         progress = ""
-        approved = (defaults.stringArray(forKey: permissionKey) ?? []).contains(bundleID)
+        approved = authorization.isNativeAllowed(bundleID)
         resumed = false
         stopped = false
         phase = approved ? .preparing : .permission
@@ -122,9 +121,7 @@ final class NativeControlCoordinator: ObservableObject {
 
     func allow() {
         guard phase == .permission else { return }
-        var allowed = Set(defaults.stringArray(forKey: permissionKey) ?? [])
-        allowed.insert(bundleID)
-        defaults.set(allowed.sorted(), forKey: permissionKey)
+        authorization.setNativeAllowed(true, bundleIdentifier: bundleID)
         approved = true
     }
 
@@ -133,9 +130,7 @@ final class NativeControlCoordinator: ObservableObject {
     func stop() {
         // An explicit Stop revokes the remembered permission. A model retry must
         // not silently start another batch after the user has stopped this one.
-        var allowed = Set(defaults.stringArray(forKey: permissionKey) ?? [])
-        allowed.remove(bundleID)
-        defaults.set(allowed.sorted(), forKey: permissionKey)
+        authorization.revokeNative(bundleID)
         cleanup()
     }
 

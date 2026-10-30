@@ -7,7 +7,6 @@ import ProviderConversationState
 import ProviderConversationInput
 import ProviderConversationInputBlock
 import ProviderMessageSender
-import ProviderPerformanceMetrics
 import LumiLoggingKit
 import SwiftUI
 
@@ -52,7 +51,6 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
         let input = kernel.resolveProvider((any ConversationInputProviding).self)
         let blocks = kernel.resolveProvider((any ConversationInputBlockProviding).self)
         let sender = kernel.resolveProvider((any MessageSendingProviding).self)
-        let metrics = kernel.resolveProvider((any PerformanceMetricsProviding).self)
         let conversations = kernel.resolveProvider((any ConversationManaging).self)
         let conversationState = kernel.resolveProvider((any ConversationStateProviding).self)
 
@@ -62,8 +60,7 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
             blocks: blocks,
             sender: sender,
             conversations: conversations,
-            conversationState: conversationState,
-            metrics: metrics
+            conversationState: conversationState
         )
         self.capability = capability
 
@@ -85,6 +82,13 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
             sendActionBarViewModel = SendActionBarViewModel(capability: capability)
         } else {
             sendActionBarViewModel = nil
+        }
+        // 发送按钮只经 `ActionBarInputObserver`（addTextObserver）获知文本变化，
+        // 而该通知只覆盖逐键输入。把「直接写入」也接到按钮上，否则粘贴、
+        // 语音输入与 UI 测试的 typeText 会让按钮停在 disabled。
+        let actionBar = sendActionBarViewModel
+        inputViewModel.onTextWritten = { [weak actionBar] text in
+            actionBar?.updateInputText(text)
         }
         missingActionBarProviders = missingProviders
         let actionBarViewModel = sendActionBarViewModel
@@ -131,6 +135,19 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
     }
 
     public func onReady(kernel: KernelCoreContainer) throws {
+        // UI 测试夹具：让附件预览稳定渲染出可点击的 ✕（拖放在 XCUITest 下不可靠，
+        // 详见 AttachmentPreviewUITestingSupport 的说明）。
+        //
+        // - Important: 调用点必须与夹具的 `#if DEBUG` 守卫**同等包裹**。
+        //   夹具整体定义在 `#if DEBUG` 内，只包住调用语句会让 Release 构建报
+        //   `cannot find 'AttachmentPreviewUITestingSupport' in scope`——本地 Debug
+        //   全绿而 CI Release 失败。
+        #if DEBUG
+        if let sender = kernel.resolveProvider((any MessageSendingProviding).self) {
+            AttachmentPreviewUITestingSupport.seedAttachments(into: sender)
+        }
+        #endif
+
         guard let capability,
               let viewModel = sendActionBarViewModel else {
             Self.logger.error("\(Self.t)Failed to initialize SendActionBar observers: required providers unavailable")

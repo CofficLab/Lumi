@@ -1,7 +1,6 @@
 import KernelCore
 import ProviderActivityBar
 import ProviderContentView
-import ProviderSettingView
 import SwiftUI
 import Testing
 @testable import PluginSystemBenchmark
@@ -26,20 +25,18 @@ struct BenchmarkTests {
         }
 
         let kernel = KernelCoreContainer()
-        let settings = DefaultSettingViewProviding()
         let activityBar = DefaultActivityBarProviding()
         let contentView = TrackingContentView()
         activityBar.registerItems([
             ActivityBarItem(id: "other", title: "Other", systemImage: "circle"),
         ])
-        try kernel.registerProvider((any SettingViewProviding).self, settings)
         try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
         try kernel.registerProvider((any ContentViewProviding).self, contentView)
 
         let plugin = SystemBenchmarkPlugin()
         try plugin.onBoot(kernel: kernel)
 
-        #expect(settings.entries.count == 1)
+        // 测速功能只通过 Activity Bar 暴露入口，不再注册设置项。
         let entry = activityBar.items.first { $0.id == "\(plugin.id).entry" }
         #expect(entry != nil)
         #expect(entry?.ownerPluginID == plugin.id)

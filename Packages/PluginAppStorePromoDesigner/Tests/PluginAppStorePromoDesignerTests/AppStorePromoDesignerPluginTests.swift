@@ -7,6 +7,7 @@ import ProviderContentView
 import ProviderRailView
 import ProviderRootView
 import ProviderToolbar
+import ProviderToolManager
 import Testing
 @testable import PluginAppStorePromoDesigner
 
@@ -52,6 +53,25 @@ struct AppStorePromoDesignerPluginTests {
         #expect(PromoLocalization.string(noSelectionKey) != noSelectionKey)
     }
 
+    @Test("插件注册的 Agent 工具都带对话作用域包装")
+    func registeredToolsAreConversationScoped() async throws {
+        PromoDesignerRuntime.reset()
+        let kernel = KernelCoreContainer()
+        let toolManager = DefaultToolManagerProviding()
+
+        try kernel.registerProvider((any ToolManagerProviding).self, toolManager)
+        try kernel.start(plugins: [AppStorePromoDesignerPlugin()])
+        // 插件默认禁用，未 enable 时不会走 onBoot，工具也就没注册。
+        try await kernel.enablePlugin(id: AppStorePromoDesignerPlugin().id)
+
+        let registered = toolManager.allTools().filter { $0.name.hasPrefix("app_store_promo_") }
+        #expect(registered.count == AppStorePromoDesignerPlugin.agentTools.count)
+        // 未包装的工具会退回「UI 当前打开项目」，多对话并行时串项目。
+        #expect(registered.allSatisfy { $0 is ConversationScopedPromoTool })
+
+        try kernel.stop()
+    }
+
     @Test func activatingPluginEntryShowsChatAndActivatesRail() async throws {
         PromoDesignerRuntime.reset()
         let kernel = KernelCoreContainer()
@@ -89,6 +109,39 @@ struct AppStorePromoDesignerPluginTests {
         let tool = ExportPromoTaskTool()
         #expect(tool.permissionRiskLevel(arguments: ["overwrite": ToolArgument(false)]) == .medium)
         #expect(tool.permissionRiskLevel(arguments: ["overwrite": ToolArgument(true)]) == .high)
+    }
+
+    @Test("加入项目不预建存储目录，真正写入时才创建")
+    func doesNotCreateStorageDirectoryUntilWrite() throws {
+        PromoDesignerRuntime.reset()
+        let projectRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("promo-lazy-dir-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
+        defer {
+            PromoDesignerRuntime.reset()
+            try? FileManager.default.removeItem(at: projectRoot)
+        }
+
+        let storage = projectRoot
+            .appendingPathComponent(".lumi", isDirectory: true)
+            .appendingPathComponent(PromoDesignerRuntime.projectFolderName, isDirectory: true)
+
+        PromoDesignerRuntime.setProjectStorage(projectPath: projectRoot.path, projectStorageDirectory: storage)
+
+        // 仅打开项目不应留下空目录。
+        #expect(!FileManager.default.fileExists(atPath: storage.path))
+        #expect(WorkspaceStore.shared.projectTasks.isEmpty)
+
+        // 真正创建任务时才创建目录。
+        _ = try WorkspaceStore.shared.documentStore.createTask(
+            storagePath: WorkspaceStore.shared.projectStoragePath,
+            slug: "lazy-task",
+            title: "Lazy Task",
+            appName: "Lumi",
+            deviceFamily: .iphone,
+            localeIdentifier: "en-US"
+        )
+        #expect(FileManager.default.fileExists(atPath: storage.path))
     }
 
     @Test func agentToolsCreateTaskWithMultipleImagesAndPersistInProjectStorage() async throws {

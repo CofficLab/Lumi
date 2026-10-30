@@ -6,22 +6,27 @@ import KitMail
 final class MailAgentToolsTests: XCTestCase {
     private var cache: MailCacheService!
     private var dbURL: URL!
+    private var fixture: MailAccountStoreFixture!
+    private var store: MailAccountStore!
     private let accountID = UUID(uuidString: "33333333-3333-3333-3333-333333333333")!
 
-    override func setUp() {
-        super.setUp()
-        MailAccountStore.reset()
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        // 账户存储用临时目录 + 内存 Keychain：不读写真实用户凭据。
+        fixture = try MailAccountStoreFixture()
+        store = fixture.store
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("MailAgentTests-\(UUID().uuidString)", isDirectory: true)
         dbURL = dir
         cache = MailCacheService(databaseDirectory: dir)
     }
 
-    override func tearDown() {
+    override func tearDownWithError() throws {
         cache = nil
         try? FileManager.default.removeItem(at: dbURL)
-        MailAccountStore.reset()
-        super.tearDown()
+        fixture = nil
+        store = nil
+        try super.tearDownWithError()
     }
 
     private func makeAccount() -> MailAccountConfig {
@@ -38,11 +43,12 @@ final class MailAgentToolsTests: XCTestCase {
     }
 
     private func makeService(session: MockMailSession) -> MailAgentToolService {
-        let manager = MailSessionManager(factory: SingleAgentSessionFactory(session: session))
+        let manager = MailSessionManager(factory: SingleAgentSessionFactory(session: session), accountStore: store)
         return MailAgentToolService(
             sessionManager: manager,
             cache: cache,
-            composer: MailComposerService(sessionManager: manager)
+            composer: MailComposerService(sessionManager: manager, accountStore: store),
+            accountStore: store
         )
     }
 
@@ -62,9 +68,10 @@ final class MailAgentToolsTests: XCTestCase {
 
     func testRiskLevelsAndCapabilities() {
         let service = MailAgentToolService(
-            sessionManager: MailSessionManager(factory: SingleAgentSessionFactory(session: MockMailSession(messages: []))),
+            sessionManager: MailSessionManager(factory: SingleAgentSessionFactory(session: MockMailSession(messages: [])), accountStore: store),
             cache: cache,
-            composer: MailComposerService(sessionManager: MailSessionManager(factory: SingleAgentSessionFactory(session: MockMailSession(messages: []))))
+            composer: MailComposerService(sessionManager: MailSessionManager(factory: SingleAgentSessionFactory(session: MockMailSession(messages: [])), accountStore: store), accountStore: store),
+            accountStore: store
         )
         XCTAssertEqual(MailListMessagesTool(service: service).permissionRiskLevel(arguments: [:]), .safe)
         XCTAssertEqual(MailReadMessageTool(service: service).permissionRiskLevel(arguments: [:]), .safe)
@@ -86,8 +93,8 @@ final class MailAgentToolsTests: XCTestCase {
     }
 
     func testListMessagesReturnsRecentSummaries() async throws {
-        MailAccountStore.upsertAccount(makeAccount())
-        MailAccountStore.setPassword("p", for: accountID)
+        store.upsertAccount(makeAccount())
+        store.setPassword("p", for: accountID)
         let session = MockMailSession(messages: [
             summary(uid: 1, subject: "Hello"),
             summary(uid: 2, subject: "World"),
@@ -104,8 +111,8 @@ final class MailAgentToolsTests: XCTestCase {
     }
 
     func testReadMessageMarksAsReadAndReturnsBody() async throws {
-        MailAccountStore.upsertAccount(makeAccount())
-        MailAccountStore.setPassword("p", for: accountID)
+        store.upsertAccount(makeAccount())
+        store.setPassword("p", for: accountID)
         let session = MockMailSession(messages: [summary(uid: 7, subject: "Report")])
         let service = makeService(session: session)
         let tool = MailReadMessageTool(service: service)
@@ -121,7 +128,7 @@ final class MailAgentToolsTests: XCTestCase {
     }
 
     func testSearchMessagesFindsCachedHits() async throws {
-        MailAccountStore.upsertAccount(makeAccount())
+        store.upsertAccount(makeAccount())
         try await cache.upsertMessages(
             [summary(uid: 1, subject: "Meeting notes")],
             accountID: accountID,
@@ -134,8 +141,8 @@ final class MailAgentToolsTests: XCTestCase {
     }
 
     func testSendMessageSendsAndAppends() async throws {
-        MailAccountStore.upsertAccount(makeAccount())
-        MailAccountStore.setPassword("p", for: accountID)
+        store.upsertAccount(makeAccount())
+        store.setPassword("p", for: accountID)
         let session = MockMailSession(messages: [])
         let service = makeService(session: session)
         let tool = MailSendMessageTool(service: service)

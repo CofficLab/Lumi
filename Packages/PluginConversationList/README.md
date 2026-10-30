@@ -36,3 +36,22 @@ From this package directory:
 swift test
 ```
 
+
+## 能力边界
+
+ViewModel 与 Agent 工具对外的依赖分两类：
+
+**ViewModel → `ConversationListContext`（插件自有聚合类型）**
+工具栏、Rail、Popover 的 ViewModel 全部只面向 `ConversationListContext` 编程，由它统一扇出
+项目 / 回合 / 会话状态 / 聊天区可见性，并提供自己的 `Event` 与 `ObserverHandle`。
+这是插件内部的聚合层，不涉及内核 Provider。
+
+**Tool → `ConversationListQueryCapability`（收窄内核 Provider）**
+`GetRecentConversationsTool` 原本直接持有 `ConversationManaging` 与 `ProjectProviding`，
+现改为只依赖三个查询操作：
+
+- `fetchRecentConversations(limit:)`
+- `conversationCount(projectPath:)`
+- `currentProjectPath`
+
+Adapter 在插件入口构造并注入，Tool 不再 import `ProviderProject`。

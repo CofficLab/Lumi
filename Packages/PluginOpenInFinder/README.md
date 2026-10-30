@@ -36,3 +36,20 @@ From this package directory:
 swift test
 ```
 
+
+## 能力边界
+
+标题栏 ViewModel 只关心「当前项目路径」和「项目切换事件」，因此插件声明自己的窄能力
+`OpenInProjectCapability`，由 `OpenInProjectCapabilityAdapter` 收窄内核的 `ProjectProviding`：
+
+- `currentProjectPath: String?`
+- `addProjectObserver(_:)` → 返回插件自有的 `OpenInProjectObserverHandle`
+
+内核的 `ProjectProvidingEvent` 与 `ProjectProvidingObserverHandle` 不泄漏给 ViewModel，
+Adapter 内部把 `currentProjectChanged(ProjectInfo?, reason:)` 映射为
+`OpenInProjectEvent.currentProjectChanged(String?)`。
+
+Provider 允许为 `nil`（未注册项目能力时）；此时能力退化为「无项目」语义，标题栏按钮保持禁用。
+
+Provider 解析与 Adapter 构造都在插件入口 `onBoot(kernel:)` 完成；ViewModel 以强引用持有
+Adapter，`onDisappear` 时调用 `cancel()` 释放观察订阅。

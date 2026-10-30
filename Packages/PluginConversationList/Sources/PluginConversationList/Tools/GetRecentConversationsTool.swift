@@ -1,7 +1,6 @@
 import KitAgentTool
 import Foundation
 import ProviderConversation
-import ProviderProject
 
 /// 获取最近对话列表的 Agent 工具（复刻旧版 ConversationListPlugin.GetRecentConversationsTool）。
 ///
@@ -10,12 +9,10 @@ import ProviderProject
 struct GetRecentConversationsTool: SuperAgentTool, @unchecked Sendable {
     let name = "get_recent_conversations"
 
-    private let conversations: (any ConversationManaging)?
-    private let project: (any ProjectProviding)?
+    private let capability: ConversationListQueryCapability
 
-    init(conversations: (any ConversationManaging)?, project: (any ProjectProviding)?) {
-        self.conversations = conversations
-        self.project = project
+    init(capability: ConversationListQueryCapability) {
+        self.capability = capability
     }
 
     func description(for language: LanguagePreference) -> String {
@@ -75,16 +72,14 @@ struct GetRecentConversationsTool: SuperAgentTool, @unchecked Sendable {
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         let limit = min(max((arguments["limit"]?.value as? Int) ?? 5, 1), 20)
 
-        // 对话 / 项目能力均约束在 MainActor，跨任务边界访问需包一层 MainActor 任务。
+        // 会话 / 项目能力均约束在 MainActor，跨任务边界访问需包一层 MainActor 任务。
         let (recent, allCount, currentProjectPath): ([ConversationSummary], Int, String?) =
             await Task { @MainActor in
-                let recent = await conversations?.fetchConversationPage(
-                    limit: limit,
-                    beforeUpdatedAt: nil,
-                    beforeID: nil
-                ) ?? []
-                let allCount = await conversations?.conversationCount(projectPath: nil) ?? 0
-                return (recent, allCount, project?.currentProject?.path)
+                (
+                    await capability.fetchRecentConversations(limit: limit),
+                    await capability.conversationCount(projectPath: nil),
+                    capability.currentProjectPath
+                )
             }.value
 
         let recentConversations: [ConversationInfo] = await Task { @MainActor in

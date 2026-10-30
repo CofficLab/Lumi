@@ -30,6 +30,9 @@ enum AgentLoopRetryTimeline {
         if let statusCode = failure.httpStatusCode {
             metadata[MessageTimelineEvent.agentLoopRetryHTTPStatusCodeKey] = "\(statusCode)"
         }
+        if let retryAfterSeconds = failure.retryAfterSeconds, retryAfterSeconds > 0 {
+            metadata[MessageTimelineEvent.agentLoopRetryRetryAfterKey] = "\(Int(retryAfterSeconds.rounded()))"
+        }
 
         let reason = failure.message.isEmpty ? failure.kind.rawValue : failure.message
         return Message(

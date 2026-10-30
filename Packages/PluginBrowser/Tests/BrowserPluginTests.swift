@@ -131,4 +131,26 @@ struct PluginBrowserTests {
         #expect(plugin.metadata.name == "Browser")
         #expect(plugin.order == 102)
     }
+
+    @Test("新用户安装后 Browser 插件默认不启动，ActivityBar 不出现浏览器图标")
+    func disabledByDefaultSkipsActivityBarItem() throws {
+        let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+
+        let plugin = BrowserPlugin()
+        // 确认 policy 为 disabledByDefault
+        #expect(plugin.metadata.policy == .disabledByDefault)
+
+        // 通过内核启动插件（模拟新用户首次安装）
+        try kernel.start(plugins: [plugin])
+
+        // 插件已注册但未启用
+        #expect(kernel.isPluginRegistered(id: "Browser"))
+        #expect(!kernel.isPluginEnabled(id: "Browser"))
+
+        // onBoot 被跳过，ActivityBar 没有浏览器图标
+        #expect(activityBar.items.isEmpty)
+        #expect(activityBar.activeItemID == nil)
+    }
 }

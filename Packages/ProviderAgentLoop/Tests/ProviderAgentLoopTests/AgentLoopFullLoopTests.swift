@@ -307,6 +307,59 @@ struct AgentLoopFullLoopTests {
         #expect(streaming.streamingMessage(for: conversationID) == nil)
     }
 
+    /// 判空失败（只有思考、没有正文与工具调用）时，思考内容必须留在错误消息上。
+    ///
+    /// 否则 `streaming.end()` 丢弃临时行后思考内容彻底消失，用户只看到一句
+    /// 「服务返回了空响应」，无法判断模型到底做了什么。
+    @Test("空响应失败时思考内容随错误消息落库")
+    func emptyResponseKeepsReasoningOnErrorMessage() async throws {
+        final class ReasoningOnlyProvider: SuperLLMProvider, LLMStreamingProviding, @unchecked Sendable {
+            nonisolated let providerID = "reasoning-only"
+            nonisolated let providerInfo = LLMProviderInfo(
+                id: "reasoning-only",
+                displayName: "Reasoning Only",
+                defaultModel: "",
+                models: [],
+                isLocal: true
+            )
+            func complete(_ request: LLMRequest) async throws -> LLMResponse {
+                LLMResponse(content: "", reasoningContent: "non-stream thinking")
+            }
+            func streamComplete(
+                _ request: LLMRequest,
+                onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
+            ) async throws -> LLMResponse {
+                await onChunk(LLMStreamChunk(reasoningContent: "先分析上下文，"))
+                await onChunk(LLMStreamChunk(reasoningContent: "再决定输出。"))
+                return LLMResponse(content: "", model: "reasoning-only", reasoningContent: "先分析上下文，再决定输出。")
+            }
+        }
+
+        let messages = DefaultMessageManager()
+        let conversationID = UUID()
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .user, content: "hi"),
+            to: conversationID
+        )
+        let streaming = DefaultMessageStreamingProviding()
+        let loop = makeLoop(
+            messages: messages,
+            provider: ReasoningOnlyProvider(),
+            streaming: streaming
+        )
+
+        let outcome = try await loop.runTurn(in: conversationID)
+
+        #expect(outcome != .completed)
+        #expect(streaming.streamingMessage(for: conversationID) == nil)
+        let error = messages.lastMessage(in: conversationID)
+        #expect(error?.role == .error)
+        #expect(
+            error?.reasoningContent == "先分析上下文，再决定输出。",
+            "错误消息应保留思考内容，实际: \(error?.reasoningContent ?? "nil")"
+        )
+    }
+
     @Test("工具调用循环：assistant 带工具 → 执行 → 结果回传 → 最终回复")
     func toolCallLoop() async throws {
         let tool = ScriptedTool(name: "fetch_weather", risk: .safe, result: ToolCallResult(content: "sunny"))

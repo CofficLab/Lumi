@@ -1,6 +1,4 @@
 import Foundation
-import ProviderAgentLoop
-import ProviderMessage
 
 /// 监听 AgentLoop 事件并在可重试失败后自动重启回合。
 ///
@@ -9,6 +7,9 @@ import ProviderMessage
 /// - 校验失败是否可重试、是否达到最大尝试次数；
 /// - 通过 `retryTurn`（带失败回合 ID 校验）重启回合；
 /// - 每次重试在时间线写入一条系统消息（不进入 LLM 上下文）。
+///
+/// 重试预算按**连续失败**计费：同一回合内只要 LLM 成功返回过一次
+/// （工具调用或正文），预算即回到满额，只有背靠背的失败才会消耗次数。
 @MainActor
 final class AgentLoopRetryCoordinator {
     /// 单个会话的重试跟踪状态。
@@ -19,21 +20,29 @@ final class AgentLoopRetryCoordinator {
         var retryTask: Task<Void, Never>?
     }
 
-    private let agentLoop: any AgentLoopProviding
-    private let messages: any MessageManaging
+    private let loop: AgentLoopRetryCapability
+    private let messages: AgentLoopRetryMessageCapability
     private let maxAttempts: Int
-    private var observerHandle: (any AgentLoopObserverHandle)?
+    /// 等待器：用于在重启回合前遵守服务端给出的退避建议。
+    ///
+    /// 生产环境默认用 `Task.sleep`；测试注入可观测实现以避免真实等待。
+    private let sleeper: @Sendable (TimeInterval) async throws -> Void
+    private var observerHandle: (any AgentLoopRetryObserverHandle)?
     private var states: [UUID: RetryState] = [:]
 
     init(
-        agentLoop: any AgentLoopProviding,
-        messages: any MessageManaging,
-        maxAttempts: Int
+        loop: AgentLoopRetryCapability,
+        messages: AgentLoopRetryMessageCapability,
+        maxAttempts: Int,
+        sleeper: @escaping @Sendable (TimeInterval) async throws -> Void = { seconds in
+            try await Task.sleep(nanoseconds: UInt64(max(seconds, 0) * 1_000_000_000))
+        }
     ) {
-        self.agentLoop = agentLoop
+        self.loop = loop
         self.messages = messages
         self.maxAttempts = max(0, maxAttempts)
-        observerHandle = agentLoop.addAgentLoopObserver { [weak self] event in
+        self.sleeper = sleeper
+        observerHandle = loop.addTurnObserver { [weak self] event in
             self?.handle(event)
         }
     }
@@ -45,7 +54,7 @@ final class AgentLoopRetryCoordinator {
         states.removeAll()
     }
 
-    private func handle(_ event: AgentLoopEvent) {
+    private func handle(_ event: AgentLoopRetryEvent) {
         switch event {
         case .started(let conversationID, let turnID):
             guard var state = states[conversationID] else { return }
@@ -59,20 +68,31 @@ final class AgentLoopRetryCoordinator {
                 states.removeValue(forKey: conversationID)
             }
 
-        case .failed(let conversationID, let turnID, _):
+        case .failed(let conversationID, let turnID):
             handleFailure(conversationID: conversationID, turnID: turnID)
 
-        case .completed(let conversationID, _),
-             .cancelled(let conversationID, _):
+        case .settled(let conversationID):
             clearState(for: conversationID)
 
-        case .toolCallsReceived, .llmResponseReceived, .suspended:
-            break
+        case .progressReceived(let conversationID):
+            // LLM 成功返回过一次（工具调用或正文）。回合仍在进行中，但失败
+            // 已经不再是背靠背的，重试预算回到满额。
+            resetAttempts(for: conversationID)
         }
     }
 
+    /// 成功响应后把重试预算恢复到满额。
+    ///
+    /// 只清零计数：失败回合身份、待启动标记和正在进行的重试任务都属于当前
+    /// 重试链，必须保留，否则会丢失已经发出的重试或让后续失败无法接续。
+    private func resetAttempts(for conversationID: UUID) {
+        guard var state = states[conversationID], state.attempts > 0 else { return }
+        state.attempts = 0
+        states[conversationID] = state
+    }
+
     private func handleFailure(conversationID: UUID, turnID: UUID) {
-        guard let failure = agentLoop.lastFailure(for: conversationID),
+        guard let failure = loop.lastFailure(for: conversationID),
               failure.isRetryable,
               maxAttempts > 0 else {
             clearState(for: conversationID)
@@ -109,30 +129,41 @@ final class AgentLoopRetryCoordinator {
         conversationID: UUID,
         failedTurnID: UUID,
         attempt: Int,
-        failure: AgentLoopFailure
+        failure: AgentLoopRetryFailure
     ) async {
-        guard !Task.isCancelled,
-              let state = states[conversationID],
-              state.attempts == attempt,
-              state.failedTurnID == failedTurnID,
-              state.retryStartPending,
-              agentLoop.state(for: conversationID) == .failed else {
+        guard shouldProceed(conversationID: conversationID, failedTurnID: failedTurnID, attempt: attempt) else {
             return
         }
 
-        messages.insertMessage(
+        messages.insertRetryNotice(
             AgentLoopRetryTimeline.message(
                 conversationID: conversationID,
                 failedTurnID: failedTurnID,
                 attempt: attempt,
                 maxAttempts: maxAttempts,
                 failure: failure
-            ),
-            to: conversationID
+            )
         )
 
+        // 服务端给出的退避建议（如 `Retry-After`）必须跨回合边界生效。
+        // 传输层已经在自己的重试里等待过，但回合重启是一次**新**的请求，
+        // 仍需满足服务端要求的静默窗口；否则刚等完就立刻再打一次，
+        // 等于没有退避。时间线消息已先写入，用户能看到「正在重试」。
+        if let retryAfterSeconds = failure.retryAfterSeconds, retryAfterSeconds > 0 {
+            do {
+                try await sleeper(retryAfterSeconds)
+            } catch {
+                // 等待期间被取消：放弃本次重试，不产生新的请求。
+                return
+            }
+            // 等待期间回合可能已结束或被取消，重新校验后再重试。
+            guard shouldProceed(conversationID: conversationID, failedTurnID: failedTurnID, attempt: attempt) else {
+                return
+            }
+        }
+
         do {
-            let outcome = try await agentLoop.retryTurn(
+            let outcome = try await loop.retryTurn(
                 in: conversationID,
                 after: failedTurnID
             )
@@ -155,6 +186,22 @@ final class AgentLoopRetryCoordinator {
             )
             states.removeValue(forKey: conversationID)
         }
+    }
+
+    /// 当前状态是否仍允许推进这次重试。
+    ///
+    /// 等待服务端退避建议之后必须重新校验：等待期间用户可能已取消回合，
+    /// 或回合已因其它路径进入终态。
+    private func shouldProceed(conversationID: UUID, failedTurnID: UUID, attempt: Int) -> Bool {
+        guard !Task.isCancelled,
+              let state = states[conversationID],
+              state.attempts == attempt,
+              state.failedTurnID == failedTurnID,
+              state.retryStartPending,
+              loop.turnState(for: conversationID) == .failed else {
+            return false
+        }
+        return true
     }
 
     private func clearState(for conversationID: UUID) {

@@ -1,6 +1,7 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "": {},
     "A macOS input event could not be created.": {
       "localizations": {
         "en": {
@@ -239,40 +240,6 @@
         }
       }
     },
-    "Computer Use captures only the selected window. Password fields are blocked, stale screenshot coordinates are rejected, and state-changing batches require approval in Build mode.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Computer Use captures only the selected window. Password fields are blocked, stale screenshot coordinates are rejected, and state-changing batches require approval in Build mode."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Computer Use 仅捕获所选窗口。密码输入框会被屏蔽，过时的截图坐标会被拒绝，而改变状态的批量操作需在 Build 模式下获得批准。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Computer Use 僅擷取所選視窗。密碼輸入欄會被封鎖，過時的截圖座標會被拒絕，而改變狀態的批次操作需在 Build 模式下獲得批准。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Computer Use 僅擷取所選視窗。密碼輸入欄會被封鎖，過時的截圖座標會被拒絕，而改變狀態的批次操作需在 Build 模式下獲得批准。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Computer Use 僅擷取所選視窗。密碼輸入欄會被封鎖，過時的截圖座標會被拒絕，而改變狀態的批次操作需在 Build 模式下獲得批准。"
-          }
-        }
-      }
-    },
     "Computer Use requires a model that supports both vision and tools. Select a compatible model and try again.": {
       "localizations": {
         "en": {
@@ -303,6 +270,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Computer Use 需要使用同時支援視覺與工具的模型。請選擇相容的模型後重試。"
+          }
+        }
+      }
+    },
+    "Control which applications Lumi can observe and interact with.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Control which applications Lumi can observe and interact with."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "控制 Lumi 可以观察和操作哪些应用。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "控制 Lumi 可以觀察和操作哪些應用程式。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "控制 Lumi 可以觀察和操作哪些應用程式。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "控制 Lumi 可以觀察和操作哪些應用程式。"
           }
         }
       }
@@ -706,6 +707,12 @@
             "state": "translated",
             "value": "允許 Lumi 操作電腦？"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允許 Lumi 操作電腦？"
+          }
         }
       }
     },
@@ -730,6 +737,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即將操作 {app}"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "即將操作 {app}"
@@ -762,6 +775,12 @@
             "state": "translated",
             "value": "Lumi 正在操作 {app}"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 正在操作 {app}"
+          }
         }
       }
     },
@@ -786,6 +805,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "電腦操作已暫停"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "電腦操作已暫停"
@@ -818,6 +843,12 @@
             "state": "translated",
             "value": "電腦操作已結束"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "電腦操作已結束"
+          }
         }
       }
     },
@@ -842,6 +873,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允許並繼續"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "允許並繼續"
@@ -874,6 +911,12 @@
             "state": "translated",
             "value": "繼續操作"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繼續操作"
+          }
         }
       }
     },
@@ -898,6 +941,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫不允許"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "暫不允許"
@@ -930,6 +979,12 @@
             "state": "translated",
             "value": "停止操作"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止操作"
+          }
         }
       }
     },
@@ -954,6 +1009,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此步驟需要使用目前電腦的滑鼠和鍵盤。允許後會記住此應用程式；你可以隨時停止。"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "此步驟需要使用目前電腦的滑鼠和鍵盤。允許後會記住此應用程式；你可以隨時停止。"
@@ -986,6 +1047,12 @@
             "state": "translated",
             "value": "{progress} · 請暫時不要使用滑鼠和鍵盤。你開始操作時，Lumi 會暫停。按 ⌘⇧Esc 停止。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{progress} · 請暫時不要使用滑鼠和鍵盤。你開始操作時，Lumi 會暫停。按 ⌘⇧Esc 停止。"
+          }
         }
       }
     },
@@ -1010,6 +1077,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你可以繼續使用電腦。選擇繼續後，Lumi 會重新檢查介面，不會重播之前的點擊。"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "你可以繼續使用電腦。選擇繼續後，Lumi 會重新檢查介面，不會重播之前的點擊。"
@@ -1042,6 +1115,12 @@
             "state": "translated",
             "value": "你可以繼續使用電腦。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你可以繼續使用電腦。"
+          }
         }
       }
     },
@@ -1066,6 +1145,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{seconds} 秒後開始"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "{seconds} 秒後開始"
@@ -1098,6 +1183,12 @@
             "state": "translated",
             "value": "正在執行第 {current}/{total} 步"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在執行第 {current}/{total} 步"
+          }
         }
       }
     },
@@ -1122,6 +1213,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "讀取應用程式控制項"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "讀取應用程式控制項"
@@ -1154,6 +1251,12 @@
             "state": "translated",
             "value": "操作應用程式控制項"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "操作應用程式控制項"
+          }
         }
       }
     },
@@ -1178,6 +1281,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "滑鼠和鍵盤操作"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "滑鼠和鍵盤操作"
@@ -1210,6 +1319,12 @@
             "state": "translated",
             "value": "Lumi 操作時會提示你暫時等待。你開始使用滑鼠或鍵盤時，操作會暫停。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 操作時會提示你暫時等待。你開始使用滑鼠或鍵盤時，操作會暫停。"
+          }
         }
       }
     },
@@ -1237,6 +1352,595 @@
           "stringUnit": {
             "state": "translated",
             "value": "下次詢問"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下次詢問"
+          }
+        }
+      }
+    },
+    "Allow Once": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Once"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允许一次"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允許一次"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允許一次"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允許一次"
+          }
+        }
+      }
+    },
+    "Always Allow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Always Allow"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "始终允许"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "始終允許"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "始終允許"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "始終允許"
+          }
+        }
+      }
+    },
+    "Deny": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deny"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拒绝"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拒絕"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拒絕"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拒絕"
+          }
+        }
+      }
+    },
+    "Lumi wants to use {app}": {
+      "comment": "{app} = display name of the target application",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi wants to use {app}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 想要使用 {app}"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 想要使用 {app}"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 想要使用 {app}"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 想要使用 {app}"
+          }
+        }
+      }
+    },
+    "Submitted: waiting to continue…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Submitted: waiting to continue…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已提交：等待继续执行…"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已提交：等待繼續執行…"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已提交：等待繼續執行…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已提交：等待繼續執行…"
+          }
+        }
+      }
+    },
+    "The user denied Computer Use access to {app}. Do not retry this application in this task.": {
+      "comment": "{app} = display name of the target application",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The user denied Computer Use access to {app}. Do not retry this application in this task."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用户拒绝了 Lumi 对 {app} 的电脑控制权限。本次任务中不要再尝试该应用。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用者拒絕了 Lumi 對 {app} 的電腦控制權限。本次任務中不要再嘗試該應用程式。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用者拒絕了 Lumi 對 {app} 的電腦控制權限。本次任務中不要再嘗試該應用程式。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用者拒絕了 Lumi 對 {app} 的電腦控制權限。本次任務中不要再嘗試該應用程式。"
+          }
+        }
+      }
+    },
+    "Access to {app} is granted for this operation only. Ask again before accessing it again.": {
+      "comment": "{app} = display name of the target application",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Access to {app} is granted for this operation only. Ask again before accessing it again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本次操作已获得 {app} 的访问授权。再次访问前需要重新申请。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本次操作已獲得 {app} 的存取授權。再次存取前需要重新申請。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本次操作已獲得 {app} 的存取授權。再次存取前需要重新申請。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本次操作已獲得 {app} 的存取授權。再次存取前需要重新申請。"
+          }
+        }
+      }
+    },
+    "Access to {app} is allowed. You may continue without asking again.": {
+      "comment": "{app} = display name of the target application",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Access to {app} is allowed. You may continue without asking again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已允许访问 {app}。可以继续执行，无需再次询问。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已允許存取 {app}。可以繼續執行，無需再次詢問。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已允許存取 {app}。可以繼續執行，無需再次詢問。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已允許存取 {app}。可以繼續執行，無需再次詢問。"
+          }
+        }
+      }
+    },
+    "Control of {app} requires the user's approval.": {
+      "comment": "{app} = display name of the target application",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Control of {app} requires the user's approval."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "控制 {app} 需要用户批准。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "控制 {app} 需要使用者批准。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "控制 {app} 需要使用者批准。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "控制 {app} 需要使用者批准。"
+          }
+        }
+      }
+    },
+    "Unknown application.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown application."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法识别的应用。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法辨識的應用程式。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法辨識的應用程式。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法辨識的應用程式。"
+          }
+        }
+      }
+    },
+    "Failed to create the Computer Use authorization request.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to create the Computer Use authorization request."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建电脑控制授权请求失败。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建立電腦控制授權請求失敗。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建立電腦控制授權請求失敗。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建立電腦控制授權請求失敗。"
+          }
+        }
+      }
+    },
+    "Open System Settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open System Settings"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开系统设置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟系統設定"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟系統設定"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟系統設定"
+          }
+        }
+      }
+    },
+    "Open Lumi Settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Lumi Settings"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开 Lumi 设置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟 Lumi 設定"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟 Lumi 設定"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟 Lumi 設定"
+          }
+        }
+      }
+    },
+    "{permission} permission is required": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{permission} permission is required"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要{permission}权限"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要{permission}權限"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要{permission}權限"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要{permission}權限"
+          }
+        }
+      }
+    },
+    "Permission granted. You can retry this operation.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permission granted. You can retry this operation."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "权限已授予，可以重试此操作。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "權限已授予，可以重試此操作。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "權限已授予，可以重試此操作。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "權限已授予，可以重試此操作。"
+          }
+        }
+      }
+    },
+    "{permission} permission granted": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{permission} permission granted"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{permission}权限已授予"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{permission}權限已授予"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{permission}權限已授予"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{permission}權限已授予"
+          }
+        }
+      }
+    },
+    "Lumi is controlling {app}": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi is controlling {app}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 正在接管 {app}"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 正在接管 {app}"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 正在接管 {app}"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 正在接管 {app}"
           }
         }
       }

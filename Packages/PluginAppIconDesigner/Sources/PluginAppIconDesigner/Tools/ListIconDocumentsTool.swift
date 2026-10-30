@@ -40,7 +40,7 @@ public struct ListIconDocumentsTool: SuperAgentTool {
         let snapshot = await MainActor.run { () -> [(IconScope, [IconDocument])] in
             // 列表以磁盘为准，确保 Agent 看到最新内容（包括尚未载入内存的文档）。
             var result: [(IconScope, [IconDocument])] = []
-            let store = IconDocumentStore.shared
+            let store = IconToolSupport.store()
             if scopeFilter == IconScope.project.rawValue {
                 let docs = IconDocumentFileStore.loadAll(storagePath: store.projectStoragePath)
                 result.append((.project, docs))

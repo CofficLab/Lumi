@@ -2,7 +2,14 @@ import Foundation
 import os
 import ProviderMessage
 import LumiLoggingKit
+import SQLite3
 import SwiftData
+
+/// `sqlite3_bind_text` 的析构回调：告诉 SQLite「绑定后请自行拷贝一份」。
+///
+/// Swift 的 SQLite3 模块没有导出 `SQLITE_TRANSIENT` 宏，这里按其定义
+/// （即 `(void*)-1`）构造等价值。
+private let sqliteTransient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
 /// Message storage service using SwiftData
 ///
@@ -20,12 +27,20 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
     // MARK: - Properties
 
     private let container: ModelContainer
+    /// 消息库文件路径——日统计聚合的原生 SQL 快路径直接读它。
+    private let databaseURL: URL
     private let lock = NSLock()
 
     // MARK: - Initialization
 
     public init(databaseRootURL: URL) throws {
-        self.container = try Self.makeContainer(databaseRootURL: databaseRootURL)
+        // `databaseRootURL` 已是插件专属数据目录，数据库文件固定为 messages.sqlite。
+        let databaseURL = databaseRootURL.appendingPathComponent("messages.sqlite")
+        self.databaseURL = databaseURL
+        self.container = try Self.makeContainer(
+            databaseRootURL: databaseRootURL,
+            databaseURL: databaseURL
+        )
     }
 
     /// Runs `body` while holding the store lock, making each operation atomic
@@ -36,13 +51,13 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         return try body()
     }
 
-    static func makeContainer(databaseRootURL: URL) throws -> ModelContainer {
+    static func makeContainer(databaseRootURL: URL, databaseURL: URL) throws -> ModelContainer {
         let schema = Schema([MessageModel.self])
         // `databaseRootURL` 已是插件专属数据目录（由调用方通过
         // `StorageProviding.pluginDataDirectory(for:)` 传入），直接作为数据库目录，
         // 不再追加插件名子目录（对齐 ConversationStore 的写法）。
         let dbDir = databaseRootURL
-        let dbURL = dbDir.appendingPathComponent("messages.sqlite")
+        let dbURL = databaseURL
         let fileManager = FileManager.default
 
         do {
@@ -60,7 +75,9 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         )
 
         do {
-            return try ModelContainer(for: schema, configurations: [config])
+            let container = try ModelContainer(for: schema, configurations: [config])
+            Self.ensureConversationLookupIndex(at: dbURL)
+            return container
         } catch {
             if Self.verbose {
                 Self.logger.error("\(Self.t)打开消息数据库失败，准备重建：\(error.localizedDescription)")
@@ -71,9 +88,61 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         // 重建尝试
         do {
             try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
-            return try ModelContainer(for: schema, configurations: [config])
+            let container = try ModelContainer(for: schema, configurations: [config])
+            Self.ensureConversationLookupIndex(at: dbURL)
+            return container
         } catch {
             throw MessageStoreError.initializationFailed("MessageManagerPlugin 数据库重建失败: \(error.localizedDescription)")
+        }
+    }
+
+    /// 建立「按会话 + 时间倒序」取消息所需的复合索引。
+    ///
+    /// ## 为什么必须手工建
+    ///
+    /// SwiftData 的 `#Index` 宏要求 macOS 15，而本插件最低支持 macOS 14，
+    /// 因此直接用 SQLite 建等效索引（与 `HTTPExchangeStore.ensureStartedAtIndex` 同构）。
+    ///
+    /// ## 不建会怎样
+    ///
+    /// SwiftData 不会为「等值列 + 排序列」的组合自动建索引。没有这个索引时，
+    /// 按会话取消息的查询计划是 `SCAN ZMESSAGEMODEL` + `USE TEMP B-TREE FOR ORDER BY`：
+    /// 每次切换会话都要把整张消息表（生产库 5.6 万行 / 400MB）扫一遍再排序，
+    /// 实测单次 180–270ms；建上索引后降到 0–34ms。
+    ///
+    /// 列顺序与排序方向必须与查询一致：等值的 `ZCONVERSATIONID` 在前，
+    /// 排序列 `ZCREATEDAT DESC, ZID DESC` 在后，索引才能同时承担过滤与排序，
+    /// 不再需要临时 B-tree。`ZID` 作为次级排序键保证同一时间戳下的稳定分页。
+    private static func ensureConversationLookupIndex(at url: URL) {
+        var database: OpaquePointer?
+        let openResult = sqlite3_open_v2(
+            url.path,
+            &database,
+            SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX,
+            nil
+        )
+        guard openResult == SQLITE_OK, let database else {
+            if let database {
+                Self.logger.error("消息库 SQLite 索引连接失败: \(String(cString: sqlite3_errmsg(database)))")
+                sqlite3_close(database)
+            } else {
+                Self.logger.error("消息库 SQLite 索引连接失败，错误码: \(openResult)")
+            }
+            return
+        }
+        defer { sqlite3_close(database) }
+
+        let sql = """
+        CREATE INDEX IF NOT EXISTS ZMESSAGE_CONVERSATION_CREATED \
+        ON ZMESSAGEMODEL (ZCONVERSATIONID, ZCREATEDAT DESC, ZID DESC)
+        """
+        var errorMessage: UnsafeMutablePointer<Int8>?
+        let result = sqlite3_exec(database, sql, nil, nil, &errorMessage)
+        guard result == SQLITE_OK else {
+            let message = errorMessage.map { String(cString: $0) } ?? String(cString: sqlite3_errmsg(database))
+            sqlite3_free(errorMessage)
+            Self.logger.error("消息库 SQLite 索引创建失败: \(message)")
+            return
         }
     }
 
@@ -295,42 +364,305 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         }
     }
 
+    /// 按本地自然日聚合消息条数或 token 总数。
+    ///
+    /// - Parameters:
+    ///   - since: 只统计创建时间不早于该时刻的消息。
+    ///   - excludingIDs: 这些消息 id **不计入**磁盘侧结果——它们由调用方按 pending
+    ///     口径补计，于是「同一条消息恰好被算一次」。
+    ///   - countTokens: 为 true 时聚合 token 总数，否则聚合消息条数。
+    ///
+    /// - Important: 磁盘侧**按 id 排除** pending，而不是「先算进磁盘、再回报哪些
+    ///   已落盘让调用方跳过」。两种做法在单次快照下等价，但排除法与两侧快照的
+    ///   先后顺序无关：pending 里的消息无论此刻是否已落盘，都只由 pending 侧计一次。
+    ///   旧做法在「消息已移出 pending、磁盘尚不可见」的窗口会两侧都不计 → 少算。
+    ///
+    /// - Important: 走原生 SQL 只取「创建时间 + token 数」，不物化整表。旧实现用
+    ///   SwiftData 取回区间内全部行（生产库 5.6 万行 / 400MB → 4.6 秒），且全程
+    ///   持有存储层写锁，把所有消息写入堵住近 5 秒。
+    func dailyAggregate(
+        since: Date,
+        excludingIDs: Set<String>,
+        countTokens: Bool
+    ) -> [Date: Int] {
+        dailyAggregate(
+            since: since,
+            excludingIDs: excludingIDs,
+            countTokens: countTokens,
+            conversationIDs: nil
+        )
+    }
+
+    /// 按会话集合过滤的日聚合。
+    ///
+    /// ## `conversationIDs` 的三种取值
+    ///
+    /// - `nil`：不限会话，统计全部消息；
+    /// - 空数组：该范围内没有任何会话，结果为空（不是「统计全部」）；
+    /// - 非空数组：只统计这些会话里的消息。
+    ///
+    /// 会话 ID 数量可能超过 SQLite 的变量上限，因此按块执行多条查询后合并——
+    /// 每个会话只属于一块，不会被重复计数。
+    func dailyAggregate(
+        since: Date,
+        excludingIDs: Set<String>,
+        countTokens: Bool,
+        conversationIDs: [String]?
+    ) -> [Date: Int] {
+        if let counts = dailyAggregateViaSQL(
+            since: since,
+            excludingIDs: excludingIDs,
+            countTokens: countTokens,
+            conversationIDs: conversationIDs
+        ) {
+            return counts
+        }
+        // 原生 SQL 不可用（库结构变化 / 连接失败）→ 回退到 SwiftData 口径（慢但一致）。
+        return dailyAggregateViaCoreData(
+            since: since,
+            excludingIDs: excludingIDs,
+            countTokens: countTokens,
+            conversationIDs: conversationIDs
+        )
+    }
+
     /// 返回指定日期（含）以来、按本地自然日聚合的消息数。
     func dailyMessageCounts(since: Date) -> [Date: Int] {
-        locked {
-            let context = ModelContext(container)
-            let timestamp = since.timeIntervalSince1970
-            var descriptor = FetchDescriptor<MessageModel>(
-                predicate: #Predicate<MessageModel> { $0.createdAt >= timestamp }
-            )
-            descriptor.propertiesToFetch = [\.createdAt]
-            guard let models = try? context.fetch(descriptor) else { return [:] }
-            let calendar = Calendar.current
-            return models.reduce(into: [:]) { counts, model in
-                let day = calendar.startOfDay(for: Date(timeIntervalSince1970: model.createdAt))
-                counts[day, default: 0] += 1
-            }
-        }
+        dailyAggregate(since: since, excludingIDs: [], countTokens: false)
     }
 
     /// 返回指定日期（含）以来、按本地自然日聚合的输入与输出 token 总数。
     func dailyTokenCounts(since: Date) -> [Date: Int] {
-        locked {
+        dailyAggregate(since: since, excludingIDs: [], countTokens: true)
+    }
+
+    /// 原生 SQL 快路径：只读「创建时间 + token 数」，逐行在 Swift 侧按自然日聚合。
+    ///
+    /// - Important: 这条路径**不持有存储层写锁**——它只读 SQLite，不碰 SwiftData
+    ///   的 ModelContext。WAL 模式下读不阻塞写，聚合因此不会拖住消息落盘。
+    ///
+    /// - Returns: nil 表示这条路不可用（连接失败 / 语句失败 / 库结构不符），
+    ///   调用方应回退到 SwiftData 口径。
+    private func dailyAggregateViaSQL(
+        since: Date,
+        excludingIDs: Set<String>,
+        countTokens: Bool,
+        conversationIDs: [String]?
+    ) -> [Date: Int]? {
+        // 排除条件用绑定参数，参数个数受 SQLite 变量上限约束；pending 缓冲无上限，
+        // 极端情况下改走回退路径。
+        guard excludingIDs.count <= Self.maxExcludedIDsForSQL else { return nil }
+
+        var database: OpaquePointer?
+        let openResult = sqlite3_open_v2(
+            databaseURL.path,
+            &database,
+            SQLITE_OPEN_READWRITE,
+            nil
+        )
+        guard openResult == SQLITE_OK, let database else {
+            if let database { sqlite3_close(database) }
+            return nil
+        }
+        defer { sqlite3_close(database) }
+        // 可能与 SwiftData 侧的写入撞上：短暂等待而不是立刻失败。
+        sqlite3_busy_timeout(database, 2000)
+
+        // - Important: 只在 WAL 模式下走这条路。回滚日志模式下，独立连接的读事务
+        //   会持共享锁，从而挡住 SwiftData 的写事务——那等于把「聚合阻塞写入」
+        //   的老问题从存储层锁换成 SQLite 文件锁。CoreData 默认用 WAL，
+        //   非 WAL 时回退到 CoreData 自己的连接（由 CoreData 内部协调锁）。
+        guard Self.isWALMode(database) else { return nil }
+
+        // 会话集合为空数组 = 该范围内没有任何会话 → 结果必然为空。
+        // 这里必须与「不限会话」区分开，否则会退化成全量统计。
+        let chunks: [[String]]
+        if let conversationIDs {
+            guard !conversationIDs.isEmpty else { return [:] }
+            chunks = Self.chunked(conversationIDs, into: Self.maxConversationIDsPerChunk)
+        } else {
+            chunks = [[]]
+        }
+
+        var merged: [Date: Int] = [:]
+        for chunk in chunks {
+            guard let counts = Self.runDailyAggregate(
+                database: database,
+                since: since,
+                excludingIDs: excludingIDs,
+                countTokens: countTokens,
+                conversationIDs: chunk
+            ) else {
+                // 任一块失败 → 整体回退，而不是返回半份统计。
+                return nil
+            }
+            for (day, value) in counts {
+                merged[day, default: 0] += value
+            }
+        }
+        return merged
+    }
+
+    /// 执行一次聚合查询并把结果按自然日归并。
+    ///
+    /// `conversationIDs` 为空数组表示不限会话；非空时追加 `ZCONVERSATIONID IN (...)`。
+    private static func runDailyAggregate(
+        database: OpaquePointer,
+        since: Date,
+        excludingIDs: Set<String>,
+        countTokens: Bool,
+        conversationIDs: [String]
+    ) -> [Date: Int]? {
+        let sql = dailyAggregateSQL(
+            countTokens: countTokens,
+            excludingCount: excludingIDs.count,
+            conversationCount: conversationIDs.count
+        )
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else {
+            return nil
+        }
+        defer { sqlite3_finalize(statement) }
+
+        var index: Int32 = 1
+        sqlite3_bind_double(statement, index, since.timeIntervalSince1970)
+        index += 1
+        for identifier in excludingIDs.sorted() {
+            sqlite3_bind_text(statement, index, identifier, -1, sqliteTransient)
+            index += 1
+        }
+        for identifier in conversationIDs {
+            sqlite3_bind_text(statement, index, identifier, -1, sqliteTransient)
+            index += 1
+        }
+
+        var counts: [Date: Int] = [:]
+        var dayIndex = DayStartIndex()
+        var stepResult = sqlite3_step(statement)
+        while stepResult == SQLITE_ROW {
+            let timestamp = sqlite3_column_double(statement, 0)
+            let value = countTokens
+                ? Int(sqlite3_column_int(statement, 1)) + Int(sqlite3_column_int(statement, 2))
+                : 1
+            // 0-token 的消息在 token 口径下不计入；若某天因此没有任何 token，
+            // 该日不应出现在结果里（与旧口径一致）。
+            if value > 0 {
+                let day = dayIndex.dayStart(for: timestamp)
+                counts[Date(timeIntervalSince1970: day), default: 0] += value
+            }
+            stepResult = sqlite3_step(statement)
+        }
+        // 中途失败（BUSY / IOERR）时结果是残缺的，必须回退而不是返回半份统计。
+        guard stepResult == SQLITE_DONE else { return nil }
+        return counts
+    }
+
+    /// SwiftData 回退路径：原生 SQL 不可用时使用，慢但口径一致。
+    private func dailyAggregateViaCoreData(
+        since: Date,
+        excludingIDs: Set<String>,
+        countTokens: Bool,
+        conversationIDs: [String]?
+    ) -> [Date: Int] {
+        // 范围里没有任何会话 → 结果必然为空，不要把全量拉出来再过滤。
+        if let conversationIDs, conversationIDs.isEmpty { return [:] }
+        let allowed = conversationIDs.map(Set.init)
+
+        return locked {
             let context = ModelContext(container)
             let timestamp = since.timeIntervalSince1970
             var descriptor = FetchDescriptor<MessageModel>(
                 predicate: #Predicate<MessageModel> { $0.createdAt >= timestamp }
             )
-            descriptor.propertiesToFetch = [\.createdAt, \.inputTokenCount, \.outputTokenCount]
-            guard let models = try? context.fetch(descriptor) else { return [:] }
+            descriptor.propertiesToFetch = countTokens
+                ? [\.id, \.createdAt, \.inputTokenCount, \.outputTokenCount]
+                : [\.id, \.createdAt]
+
+            guard let models = try? context.fetch(descriptor) else {
+                // 取不到磁盘数据：全部交给 pending 侧补齐，diskCounts 为空。
+                return [:]
+            }
+
             let calendar = Calendar.current
-            return models.reduce(into: [:]) { counts, model in
-                let tokens = (model.inputTokenCount ?? 0) + (model.outputTokenCount ?? 0)
-                guard tokens > 0 else { return }
+            var counts: [Date: Int] = [:]
+            for model in models {
+                let value = countTokens
+                    ? (model.inputTokenCount ?? 0) + (model.outputTokenCount ?? 0)
+                    : 1
+                guard value > 0 else { continue }
+                if excludingIDs.contains(model.id) { continue }
+                if let allowed, !allowed.contains(model.conversationId) { continue }
                 let day = calendar.startOfDay(for: Date(timeIntervalSince1970: model.createdAt))
-                counts[day, default: 0] += tokens
+                counts[day, default: 0] += value
+            }
+            return counts
+        }
+    }
+
+    /// 聚合查询语句。
+    ///
+    /// - Important: 只 SELECT `ZCREATEDAT`（与 token 列）。SwiftData 生成的表把正文
+    ///   `ZCONTENT` 排在 `ZCREATEDAT` **之后**，读正文列必须顺着记录跨过 overflow
+    ///   页；只取前面的列则完全不碰正文，代价与正文体积无关。
+    private static func dailyAggregateSQL(
+        countTokens: Bool,
+        excludingCount: Int,
+        conversationCount: Int = 0
+    ) -> String {
+        let columns = countTokens
+            ? "ZCREATEDAT, ZINPUTTOKENCOUNT, ZOUTPUTTOKENCOUNT"
+            : "ZCREATEDAT"
+        var sql = "SELECT \(columns) FROM ZMESSAGEMODEL WHERE ZCREATEDAT >= ?"
+        if excludingCount > 0 {
+            let placeholders = Array(repeating: "?", count: excludingCount).joined(separator: ",")
+            sql += " AND ZID NOT IN (\(placeholders))"
+        }
+        if conversationCount > 0 {
+            let placeholders = Array(repeating: "?", count: conversationCount).joined(separator: ",")
+            sql += " AND ZCONVERSATIONID IN (\(placeholders))"
+        }
+        return sql
+    }
+
+    /// 读当前连接的日志模式，返回是否为 WAL。
+    private static func isWALMode(_ database: OpaquePointer) -> Bool {
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(database, "PRAGMA journal_mode", -1, &statement, nil) == SQLITE_OK else {
+            return false
+        }
+        defer { sqlite3_finalize(statement) }
+        guard sqlite3_step(statement) == SQLITE_ROW,
+              let text = sqlite3_column_text(statement, 0) else {
+            return false
+        }
+        return String(cString: text).lowercased() == "wal"
+    }
+
+    /// 单次聚合查询允许绑定的排除 id 个数（留足余量给 SQLite 的变量上限）。
+    private static let maxExcludedIDsForSQL = 500
+
+    /// 单次聚合查询允许绑定的会话 id 个数。
+    ///
+    /// 会话过滤与排除过滤共用同一批绑定变量，因此这个值要比排除上限更保守：
+    /// 两者相加仍需留在 SQLite 的变量上限之内。
+    private static let maxConversationIDsPerChunk = 200
+
+    /// 把数组切成固定大小的块。
+    private static func chunked(_ values: [String], into size: Int) -> [[String]] {
+        guard size > 0 else { return [values] }
+        var chunks: [[String]] = []
+        var current: [String] = []
+        current.reserveCapacity(size)
+        for value in values {
+            current.append(value)
+            if current.count == size {
+                chunks.append(current)
+                current = []
+                current.reserveCapacity(size)
             }
         }
+        if !current.isEmpty { chunks.append(current) }
+        return chunks
     }
 
     /// 一次性返回所有「在磁盘上至少有一条消息」的 conversationId 字符串集合。
@@ -498,5 +830,57 @@ public extension MessageStore {
     /// Default database root URL (temporary directory)
     static var defaultDatabaseRootURL: URL {
         FileManager.default.temporaryDirectory.appendingPathComponent("Lumi/MessageManager")
+    }
+}
+
+// MARK: - Day Start Index
+
+/// 把时间戳映射到它所属「本地自然日」的起点。
+///
+/// - Important: 逐行调用 `Calendar.startOfDay` 是日统计聚合的主要 CPU 开销
+///   （5.6 万行 ≈ 60ms Release，Debug 更慢）。消息在表里并非按时间有序，
+///   「上一行还在同一天」这种单槽缓存命中率极低，因此这里维护一份
+///   **已出现日期的有序边界数组**并二分查找：`Calendar` 调用次数从「行数」
+///   降到「天数」（生产库 29 天）。
+///
+/// - Important: 语义与逐行调用 `Calendar.current.startOfDay(for:)` **完全一致**——
+///   夏令时、闰日、非公历历法都交给 `Calendar` 处理，这里只做缓存与查找。
+private struct DayStartIndex {
+    private let calendar: Calendar
+    /// 已缓存日期的起点（秒级时间戳），保持升序。
+    private var starts: [TimeInterval] = []
+    /// 与 `starts` 一一对应的「该日结束」时刻（次日起点）。
+    private var ends: [TimeInterval] = []
+
+    init(calendar: Calendar = .current) {
+        self.calendar = calendar
+    }
+
+    /// 返回时间戳所属自然日的起点（秒级时间戳）。
+    mutating func dayStart(for timestamp: TimeInterval) -> TimeInterval {
+        // 二分定位第一个 > timestamp 的下标；于是 low - 1 是最后一个 <= timestamp 的已缓存日期。
+        var low = 0
+        var high = starts.count
+        while low < high {
+            let mid = (low + high) / 2
+            if starts[mid] <= timestamp {
+                low = mid + 1
+            } else {
+                high = mid
+            }
+        }
+        // 命中缓存：该日边界已算过，且时间戳确实落在这一日内。
+        if low > 0, timestamp < ends[low - 1] {
+            return starts[low - 1]
+        }
+        // 未命中：交给 Calendar 算出这一天的边界，再插到有序位置。
+        // 插入点 low 满足「前面的日期都更早、后面的日期都更晚」，因此数组仍然有序。
+        let dayStart = calendar.startOfDay(for: Date(timeIntervalSince1970: timestamp))
+        let nextDay = calendar.date(byAdding: .day, value: 1, to: dayStart)
+        let dayEnd = nextDay.flatMap { calendar.startOfDay(for: $0) }
+            ?? dayStart.addingTimeInterval(86_400)
+        starts.insert(dayStart.timeIntervalSince1970, at: low)
+        ends.insert(dayEnd.timeIntervalSince1970, at: low)
+        return dayStart.timeIntervalSince1970
     }
 }

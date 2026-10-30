@@ -29,17 +29,33 @@ struct ProviderChatSectionTests {
         ])
 
         var refreshCount = 0
-        let handle = provider.addObserver { event in
-            if case .itemsChanged = event {
-                refreshCount += 1
+        // 显式等待通知到达，而不是靠固定 sleep 猜时间：
+        // `refreshItems()` 内部是「Task + Task.yield()」的异步合并，
+        // 整包并行执行时主线程被其它用例占用，通知可能远晚于 1ms 才送达。
+        //
+        // `confirmation` 负责确认「通知确实送达」；两次 refresh 是否被合并为一次，
+        // 由 `refreshCount` 断言负责。
+        await confirmation("itemsChanged", expectedCount: 1) { firstNotification in
+            let handle = provider.addObserver { event in
+                if case .itemsChanged = event {
+                    refreshCount += 1
+                    firstNotification.confirm()
+                }
+            }
+            defer { handle.cancel() }
+
+            provider.refreshItems()
+            provider.refreshItems()
+
+            // 让出主线程，等 `refreshItems()` 内部的合并 Task 跑完并送达通知。
+            // 用有界等待而非无限忙等：通知永不到达时循环自然结束，
+            // 由 `confirmation` 的 miscount 报失败，而不是把测试挂死。
+            for _ in 0 ..< 10_000 where refreshCount == 0 {
+                await Task.yield()
             }
         }
-        defer { handle.cancel() }
 
-        provider.refreshItems()
-        provider.refreshItems()
-        try await Task.sleep(nanoseconds: 1_000_000)
-
+        // 两次 refresh 应合并为一次通知。
         #expect(refreshCount == 1)
         #expect(provider.items.map(\.id) == ["dynamic"])
     }

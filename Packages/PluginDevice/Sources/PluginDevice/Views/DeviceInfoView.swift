@@ -44,42 +44,28 @@ public struct DeviceInfoView: View {
                     SystemMonitorView(
                         viewModel: viewModels.systemMonitor,
                         gpuViewModel: viewModels.gpu,
-                        batteryViewModel: viewModels.battery
+                        batteryViewModel: viewModels.battery,
+                        thermalViewModel: viewModels.thermal
                     )
                 }
             }
             .padding()
         }
-        // 让容器页里的 AppCard 走 subtle 风格，移除默认的 glass shadow / glow，
-        // 与 RailView 中其他扁平卡片保持一致。
-        .environment(\.appSettingsCardStyleOverride, .subtle)
     }
 }
 
 private struct DeviceInfoHeaderView: View {
-    @LumiTheme private var theme
-
     let deviceName: String
     let osVersion: String
 
     var body: some View {
-        AppCard {
-            HStack(spacing: 12) {
-                Image(systemName: "macbook.and.iphone")
-                    .font(.title)
-                    .foregroundStyle(theme.primary)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(deviceName)
-                        .font(.appBody)
-                        .fontWeight(.semibold)
-                        .foregroundColor(theme.textPrimary)
-                    Text(osVersion)
-                        .font(.appCaption)
-                        .foregroundColor(theme.textSecondary)
-                }
-
-                Spacer()
+        AppSettingSection(title: nil) {
+            AppSettingRow(
+                title: deviceName,
+                description: osVersion,
+                icon: "macbook.and.iphone"
+            ) {
+                EmptyView()
             }
         }
     }
@@ -343,32 +329,23 @@ private struct ExternalVolumesView: View {
 
     var body: some View {
         if !storage.externalVolumes.isEmpty {
-            VStack(spacing: 12) {
-                ForEach(storage.externalVolumes) { volume in
-                    AppCard {
-                        AppSettingsRow {
-                            HStack(spacing: 12) {
-                                Image(systemName: "externaldrive")
-                                    .font(.appCallout)
-                                    .foregroundStyle(theme.warning)
-                                    .frame(width: 24)
+            AppSettingSection(title: nil) {
+                VStack(spacing: 0) {
+                    ForEach(Array(storage.externalVolumes.enumerated()), id: \.element.id) { index, volume in
+                        AppSettingRow(
+                            title: volume.name,
+                            description: "\(volume.usedString) / \(volume.totalString)",
+                            icon: "externaldrive"
+                        ) {
+                            Text("\(volume.usagePercent)%")
+                                .font(.appBody)
+                                .fontWeight(.semibold)
+                                .foregroundColor(theme.textPrimary)
+                        }
 
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(volume.name)
-                                        .font(.appBody)
-                                        .foregroundColor(theme.textPrimary)
-                                    Text("\(volume.usedString) / \(volume.totalString)")
-                                        .font(.appCaption)
-                                        .foregroundColor(theme.textSecondary)
-                                }
-
-                                Spacer()
-
-                                Text("\(volume.usagePercent)%")
-                                    .font(.appBody)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(theme.textPrimary)
-                            }
+                        if index < storage.externalVolumes.count - 1 {
+                            Divider()
+                                .padding(.vertical, 8)
                         }
                     }
                 }
@@ -424,8 +401,8 @@ private struct DeviceInfoCard<Content: View>: View {
     }
 
     var body: some View {
-        AppCard {
-            AppSettingsSection(spacing: 8) {
+        AppSettingSection(title: nil) {
+            VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
                     Image(systemName: icon)
                         .font(.appCaption)

@@ -10,7 +10,7 @@ public struct ReadSkillTool: SuperAgentTool {
     public init() {}
 
     public func description(for language: LanguagePreference) -> String {
-        "Read a single project skill from the .agent/skills directory, including its metadata and the full SKILL.md body. Use this before updating a skill so you edit the existing content instead of replacing it blindly."
+        "Read a single project skill from the .lumi/skills directory, including its metadata and the full SKILL.md body. Use this before updating a skill so you edit the existing content instead of replacing it blindly."
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
@@ -19,11 +19,11 @@ public struct ReadSkillTool: SuperAgentTool {
             "properties": [
                 "project_path": [
                     "type": "string",
-                    "description": "Absolute path to the project directory containing .agent/skills folder. Defaults to the current project.",
+                    "description": "Absolute path to the project directory containing the .lumi/skills folder. Defaults to the current project.",
                 ],
                 "name": [
                     "type": "string",
-                    "description": "Skill name (kebab-case), matching the directory name under .agent/skills.",
+                    "description": "Skill name (kebab-case), matching the directory name under .lumi/skills.",
                 ],
             ],
             "required": ["name"],
@@ -51,7 +51,7 @@ public struct ReadSkillTool: SuperAgentTool {
             projectPath: projectPath,
             name: name
         ) else {
-            throw SkillCreationError.notFound("<project>/.agent/skills/\(name)")
+            throw SkillCreationError.notFound("<project>/.lumi/skills/\(name)")
         }
 
         let result: [String: Any] = [

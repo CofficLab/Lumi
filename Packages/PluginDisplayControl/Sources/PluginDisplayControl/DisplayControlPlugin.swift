@@ -1,3 +1,4 @@
+import Foundation
 import KernelCore
 import ProviderActivityBar
 import ProviderToolbar
@@ -6,12 +7,13 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
 import ProviderRootView
+import ProviderStorage
 import SwiftUI
 import LumiLoggingKit
 import os
 
 @MainActor
-public final class DisplayControlPlugin: SuperPlugin, SuperLog {
+public final class DisplayControlPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.display-control", category: "DisplayControl")
     public let id = "com.coffic.lumi.plugin.display-control"
     public let order = 210
@@ -24,10 +26,39 @@ public final class DisplayControlPlugin: SuperPlugin, SuperLog {
         policy: .disabledByDefault
     )
 
+    /// 历史实现把各显示器的记忆值存在 `UserDefaults.standard`，
+    /// 键名形如 `displayControl.value.<displayStorageID>.<kind>`。
+    /// 目录名未变过，无需版本根搬迁。
+    public let legacyDataDirectoryNames: [String] = []
+
     private var viewModel: DisplayControlViewModel?
     private var observer: DisplayControlObserver?
 
     public init() {}
+
+    /// 把 `UserDefaults.standard` 中的旧显示器记忆值导入插件专属存储。
+    ///
+    /// 仅导入插件存储中尚不存在的键，避免覆盖插件内的后续修改。
+    /// `UserDefaults` 原 key 保留，便于回退。
+    public func migrateData(context: PluginDataMigrationContext) throws {
+        let prefix = "displayControl.value."
+        guard let domain = UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? "") else {
+            return
+        }
+        let legacyEntries = domain.filter { $0.key.hasPrefix(prefix) }
+        guard !legacyEntries.isEmpty else { return }
+
+        let store = DisplayControlPluginLocalStore(settingsDirectory: context.currentPluginDataDirectory)
+        var imported = 0
+        for (key, value) in legacyEntries {
+            guard let doubleValue = value as? Double, !store.contains(key) else { continue }
+            store.set(doubleValue, forKey: key)
+            imported += 1
+        }
+        if imported > 0 {
+            Self.logger.info("\(Self.t)Imported \(imported) display value entries from UserDefaults")
+        }
+    }
 
     public func onRegister(kernel: KernelCoreContainer) throws {
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
@@ -37,6 +68,10 @@ public final class DisplayControlPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        // 存储目录注入必须早于 DisplayControlPluginLocalStore.shared 的首次访问。
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            DisplayControlRuntime.configure(settingsDirectory: storage.pluginDataDirectory(for: id))
+        }
         let viewModel = DisplayControlViewModel()
         self.viewModel = viewModel
         observer?.cancel()

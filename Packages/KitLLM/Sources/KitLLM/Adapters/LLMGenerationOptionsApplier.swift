@@ -2,7 +2,15 @@ import Foundation
 
 /// OpenAI 兼容 API 的生成参数映射。
 public enum OpenAICompatibleGenerationOptionsApplier {
-    public static func apply(config: LLMConfig, model: String, to body: inout [String: Any]) {
+    /// 所有 OpenAI 兼容网关都接受的基础档位。
+    private static let baseReasoningEfforts: Set<String> = ["minimal", "low", "medium", "high"]
+
+    public static func apply(
+        config: LLMConfig,
+        model: String,
+        additionalReasoningEfforts: [String] = [],
+        to body: inout [String: Any]
+    ) {
         if let temperature = config.temperature {
             body["temperature"] = temperature
         }
@@ -15,16 +23,30 @@ public enum OpenAICompatibleGenerationOptionsApplier {
             }
         }
 
-        if let reasoningEffort = normalizedReasoningEffort(config.reasoningEffort) {
+        if let reasoningEffort = normalizedReasoningEffort(
+            config.reasoningEffort,
+            additionalReasoningEfforts: additionalReasoningEfforts
+        ) {
             body["reasoning_effort"] = reasoningEffort
         }
     }
 
-    private static func normalizedReasoningEffort(_ value: String?) -> String? {
+    /// 把请求档位归一化为可发送的 `reasoning_effort`。
+    ///
+    /// - Parameters:
+    ///   - value: 用户选择的档位原始字符串。
+    ///   - additionalReasoningEfforts: 供应商额外支持的档位（见
+    ///     `OpenAICompatibleProviderConfiguration.additionalReasoningEfforts`）。
+    ///   - Returns: 归一化后的档位；该档位不被接受时返回 `nil`（不下发该参数）。
+    static func normalizedReasoningEffort(
+        _ value: String?,
+        additionalReasoningEfforts: [String] = []
+    ) -> String? {
         guard let value else { return nil }
         let normalized = value.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalized != "auto", normalized != "automatic" else { return nil }
-        guard ["minimal", "low", "medium", "high"].contains(normalized) else { return nil }
+        guard baseReasoningEfforts.contains(normalized)
+                || additionalReasoningEfforts.contains(normalized) else { return nil }
         return normalized
     }
 }

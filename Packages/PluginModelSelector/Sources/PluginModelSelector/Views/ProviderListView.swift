@@ -28,62 +28,19 @@ enum ProviderScope: String, CaseIterable {
 struct ProviderListView: View {
     @LumiTheme private var theme
     @ObservedObject private var viewModel: ModelSelectorViewModel
-    var onClose: (() -> Void)? = nil
 
-    init(viewModel: ModelSelectorViewModel, onClose: (() -> Void)? = nil) {
+    init(viewModel: ModelSelectorViewModel) {
         self.viewModel = viewModel
-        self.onClose = onClose
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text(pluginLocalization.string("Providers"))
-                    .font(.appCallout)
-                Spacer()
-                if let onClose {
-                    Button {
-                        onClose()
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(theme.textTertiary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(theme.surface)
-
-            AppDivider()
-
-            // 常用/云端/本地筛选
-            HStack(spacing: 8) {
-                Picker("", selection: $viewModel.selectedScope) {
-                    Text(pluginLocalization.string("Frequent"))
-                        .tag(ProviderScope.frequent)
-                    Text(pluginLocalization.string("Cloud"))
-                        .tag(ProviderScope.cloud)
-                    Text(pluginLocalization.string("Local"))
-                        .tag(ProviderScope.local)
-                }
-                .labelsHidden()
-                .pickerStyle(.segmented)
-                .frame(width: 210)
-
-                Spacer(minLength: 8)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            ProviderScopeFilterRow(selectedScope: $viewModel.selectedScope)
 
             AppDivider()
 
             // Search
-            AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(pluginLocalization.string("Search providers")))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
+            ProviderSearchRow(text: $viewModel.searchText)
 
             AppDivider()
 
@@ -106,7 +63,8 @@ struct ProviderListView: View {
                                 ForEach(cloudProviders, id: \.id) { info in
                                     ProviderListItem(
                                         info: info,
-                                        isSelected: info.id == viewModel.selectedProviderID,
+                                        isBrowsing: info.id == viewModel.selectedProviderID,
+                                        isActive: info.id == viewModel.activeProviderID,
                                         onSelect: {
                                             viewModel.selectedProviderID = info.id
                                         },
@@ -123,7 +81,8 @@ struct ProviderListView: View {
                                     ForEach(relayProviders, id: \.id) { info in
                                         ProviderListItem(
                                             info: info,
-                                            isSelected: info.id == viewModel.selectedProviderID,
+                                            isBrowsing: info.id == viewModel.selectedProviderID,
+                                            isActive: info.id == viewModel.activeProviderID,
                                             onSelect: {
                                                 viewModel.selectedProviderID = info.id
                                             },
@@ -139,7 +98,8 @@ struct ProviderListView: View {
                                 ForEach(providers, id: \.id) { info in
                                     ProviderListItem(
                                         info: info,
-                                        isSelected: info.id == viewModel.selectedProviderID,
+                                        isBrowsing: info.id == viewModel.selectedProviderID,
+                                        isActive: info.id == viewModel.activeProviderID,
                                         onSelect: {
                                             viewModel.selectedProviderID = info.id
                                         },
@@ -217,5 +177,59 @@ struct ProviderListView: View {
             $0.displayName.localizedCaseInsensitiveContains(viewModel.searchText)
                 || $0.id.localizedCaseInsensitiveContains(viewModel.searchText)
         }
+    }
+}
+
+/// 供应商栏的范围筛选行（常用 / 云端 / 本地）。
+///
+/// 高度与内边距必须与 `ModelCategoryFilterBar` 一致，
+/// 否则左右两栏的分割线无法对齐。
+struct ProviderScopeFilterRow: View {
+    @Binding var selectedScope: ProviderScope
+
+    var body: some View {
+        // 两侧各留一个 Spacer，使分段控件在 300pt 栏内居中
+        HStack(spacing: 8) {
+            Spacer(minLength: 0)
+
+            Picker("", selection: $selectedScope) {
+                Text(pluginLocalization.string("Frequent"))
+                    .tag(ProviderScope.frequent)
+                Text(pluginLocalization.string("Cloud"))
+                    .tag(ProviderScope.cloud)
+                Text(pluginLocalization.string("Local"))
+                    .tag(ProviderScope.local)
+            }
+            .labelsHidden()
+            .pickerStyle(.segmented)
+            .frame(width: 210)
+
+            Spacer(minLength: 0)
+        }
+        // 行内容高度锁死：分段控件自身高度会随系统版本/外观浮动，
+        // 不锁高的话这一行会比右栏的标签行矮，左右分割线随之错位。
+        .frame(height: ModelSelectorLayout.filterRowContentHeight)
+        .padding(.horizontal, 12)
+        // Important: 垂直内边距与内容高度必须与 ModelCategoryFilterBar 保持一致，
+        // 否则左右两栏的分割线无法对齐。
+        .padding(.vertical, ModelSelectorLayout.filterRowVerticalPadding)
+    }
+}
+
+/// 供应商栏的搜索行。
+///
+/// 高度与内边距必须与 `ModelSearchRow` 一致，否则左右两栏的分割线无法对齐。
+struct ProviderSearchRow: View {
+    @Binding var text: String
+
+    var body: some View {
+        AppSearchBar(
+            text: $text,
+            placeholder: LocalizedStringKey(pluginLocalization.string("Search providers"))
+        )
+        // 行高锁死为搜索框高度，与右栏的搜索/刷新行保持一致。
+        .frame(height: ModelSelectorLayout.searchRowContentHeight)
+        .padding(.horizontal, 8)
+        .padding(.vertical, ModelSelectorLayout.searchRowVerticalPadding)
     }
 }

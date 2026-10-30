@@ -1,4 +1,6 @@
 import Foundation
+import KernelCore
+import os
 import Testing
 @testable import PluginXcodeMCP
 import ProviderMCP
@@ -38,8 +40,10 @@ struct PluginXcodeMCPTests {
     func initDoesNotCrash() {
         let plugin = PluginXcodeMCP()
         #expect(plugin.id == "com.coffic.lumi.plugin.xcode-mcp")
-        #expect(PluginXcodeMCP.logger.subsystem == "com.coffic.lumi.plugin.xcode-mcp")
-        #expect(PluginXcodeMCP.logger.category == "XcodeMCP")
+        // os.Logger 未公开 subsystem/category，也不遵循 Equatable；
+        // 这里只锁定「logger 可用且日志调用不崩溃」，子系统字符串的
+        // 一致性由 Lumi 日志规范与 grep 日志时的过滤来保证。
+        PluginXcodeMCP.logger.debug("lumi-test: logger reachable")
     }
 
     @Test("onShutdown 不抛错")

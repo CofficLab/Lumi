@@ -10,15 +10,19 @@ let package = Package(
         .executable(name: "AXFixture", targets: ["AXFixture"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderToolManager"),
-        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
         .package(path: "../ProviderMessage"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(path: "../ProviderMessageSender"),
+        .package(path: "../ProviderMessageRendering"),
+        .package(path: "../ProviderAgentLoop"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
+        .package(path: "../KitTestSupport"),
     ],
     targets: [
         .target(
@@ -29,10 +33,15 @@ let package = Package(
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
+                .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
+                .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             path: "Sources/ComputerUsePlugin",
             resources: [.process("../../Resources/Localizable.xcstrings")]
@@ -41,6 +50,7 @@ let package = Package(
             name: "ComputerUsePluginTests",
             dependencies: [
                 "ComputerUsePlugin",
+                .product(name: "KitTestSupport", package: "KitTestSupport"),
             ],
             path: "Tests/ComputerUsePluginTests"
         ),

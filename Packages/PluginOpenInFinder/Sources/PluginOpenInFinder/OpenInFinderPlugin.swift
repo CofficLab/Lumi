@@ -2,7 +2,7 @@ import os
 import Foundation
 import KernelCore
 import LumiLoggingKit
-import OpenInKit
+import KitOpenIn
 import ProviderProject
 import ProviderDocsView
 import ProviderToolManager
@@ -42,6 +42,7 @@ public final class OpenInFinderPlugin: SuperPlugin, SuperLog {
         let tool = OpenInTool(config: OpenInTool.finder, project: project)
 
         if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
+            let projectCapability = OpenInProjectCapabilityAdapter(project: project)
             toolbar.addToolbarItems([
                 ToolbarItem(
                     id: "\(id).toolbar",
@@ -50,7 +51,7 @@ public final class OpenInFinderPlugin: SuperPlugin, SuperLog {
                     category: .global,
                     order: order
                 ) {
-                    OpenInFinderToolbarView(tool: tool, project: project)
+                    OpenInFinderToolbarView(tool: tool, projectCapability: projectCapability)
                 },
             ])
         }

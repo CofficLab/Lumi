@@ -1,4 +1,5 @@
 import AppKit
+import Foundation
 import Testing
 @testable import TextActionsPlugin
 
@@ -7,7 +8,56 @@ import Testing
 func pluginMetadata() {
     let plugin = TextActionsPlugin()
     #expect(plugin.id == "com.coffic.lumi.plugin.text-actions")
-    #expect(plugin.viewContainers(kernel: .init()).count == 1)
+    #expect(plugin.metadata.name == pluginLocalization.string("Text Actions"))
+    #expect(plugin.metadata.category == .system)
+}
+
+@Test
+func localStorePersistsEnabledFlagInBinaryPlist() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("TextActionsStore-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let store = TextActionsPluginLocalStore(settingsDirectory: directory)
+    #expect(!store.isEnabled)
+
+    store.setEnabled(true)
+    #expect(store.isEnabled)
+
+    // 重新构造实例，确认已落盘而非仅在内存中生效。
+    let reloaded = TextActionsPluginLocalStore(settingsDirectory: directory)
+    #expect(reloaded.isEnabled)
+
+    let plistURL = directory.appendingPathComponent("settings.plist")
+    let data = try Data(contentsOf: plistURL)
+    var format = PropertyListSerialization.PropertyListFormat.xml
+    _ = try PropertyListSerialization.propertyList(from: data, options: [], format: &format)
+    #expect(format == .binary)
+}
+
+@Test
+func localStoreWritesNoUserDefaults() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("TextActionsStore-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    // - Important: 这里**只读** `UserDefaults.standard`，绝不写它。
+    //   写入会删掉开发者本机真实的「TextActions.enabled」设置（用户数据），
+    //   也会让断言受历史残留影响。改成「记录原值 → 写本地存储 → 断言原值未变」，
+    //   既验证了「本地存储不写 UserDefaults」，又不碰用户数据。
+    let key = "TextActions.enabled"
+    let original = UserDefaults.standard.object(forKey: key)
+
+    let store = TextActionsPluginLocalStore(settingsDirectory: directory)
+    store.setEnabled(true)
+
+    // `object(forKey:)` 返回 `Any?`，无法直接比较；用描述串对比。
+    func describe(_ value: Any?) -> String {
+        value.map { String(describing: $0) } ?? "nil"
+    }
+    #expect(describe(UserDefaults.standard.object(forKey: key)) == describe(original))
+    // 实际状态落在插件自己的 plist 里。
+    #expect(store.isEnabled == true)
 }
 
 @Test
@@ -31,7 +81,8 @@ func translationRequestUsesSelectedTextAndTranslationInstruction() {
     #expect(request.messages.count == 2)
     #expect(request.messages[0].content.contains("Simplified Chinese"))
     #expect(request.messages[1].content == "Hello world")
-    #expect(request.maxTokens == 2_000)
+    #expect(request.messages[0].role == .system)
+    #expect(request.messages[1].role == .user)
 }
 
 @Test

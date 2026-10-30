@@ -79,24 +79,29 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
     }
 
     // MARK: - API Key
+    //
+    // 以下五个方法以 `open` 声明（而非 `public`），理由同 `availableModels`：
+    // 子类需要覆盖它们才能保证动态派发到覆盖实现。典型场景是 UI 测试专用
+    // 供应商——它必须在**完全不碰 Keychain** 的前提下返回一个固定假 Key，
+    // 否则 UI 测试会因 Keychain 授权弹窗而阻塞，或因未配置 Key 而稳定失败。
 
-    public func hasApiKey() -> Bool {
+    open func hasApiKey() -> Bool {
         VendorAPIKeyTools.has(storageKey: providerInfo.apiKeyStorageKey)
     }
 
-    public func getApiKey() -> String {
+    open func getApiKey() -> String {
         VendorAPIKeyTools.get(storageKey: providerInfo.apiKeyStorageKey)
     }
 
-    public func setApiKey(_ apiKey: String) {
+    open func setApiKey(_ apiKey: String) {
         VendorAPIKeyTools.set(apiKey, storageKey: providerInfo.apiKeyStorageKey)
     }
 
-    public func removeApiKey() {
+    open func removeApiKey() {
         VendorAPIKeyTools.remove(storageKey: providerInfo.apiKeyStorageKey)
     }
 
-    public func resolveAPIKey() throws -> String {
+    open func resolveAPIKey() throws -> String {
         try VendorAPIKeyTools.resolve(
             storageKey: providerInfo.apiKeyStorageKey,
             displayName: providerInfo.displayName
@@ -121,6 +126,7 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
         OpenAICompatibleGenerationOptionsApplier.apply(
             config: makeConfig(model: model, request: request),
             model: model,
+            additionalReasoningEfforts: configuration.additionalReasoningEfforts,
             to: &body
         )
         nonisolated(unsafe) let finalBody = body
@@ -244,14 +250,22 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             body: body
         ) { data in
             do {
-                var chunk = try adapter.parseStreamChunk(data: data)
-                if let reverseMap, !reverseMap.isEmpty, let toolCalls = chunk?.toolCalls {
-                    chunk = chunk?.withToolCalls(
-                        toolCalls.map { ToolCall(id: $0.id, name: reverseMap[$0.name] ?? $0.name, arguments: $0.arguments) }
-                    )
+                var parsed = try adapter.parseStreamChunks(data: data)
+                if let reverseMap, !reverseMap.isEmpty {
+                    parsed = parsed.map { chunk in
+                        guard let toolCalls = chunk.toolCalls else { return chunk }
+                        return chunk.withToolCalls(
+                            toolCalls.map { ToolCall(id: $0.id, name: reverseMap[$0.name] ?? $0.name, arguments: $0.arguments) }
+                        )
+                    }
                 }
-                guard let chunk else { return true }
-                return await accumulator.consume(chunk, onChunk: onChunk)
+                // 单个 SSE 事件可产出多个 chunk（思考与正文同 delta 时的
+                // interleaved thinking 形态），必须逐个喂给累积器；
+                // 只要有任一 chunk 请求终止，就停止读取后续事件。
+                for chunk in parsed {
+                    guard await accumulator.consume(chunk, onChunk: onChunk) else { return false }
+                }
+                return true
             } catch {
                 accumulator.fail(error)
                 return false
@@ -462,9 +476,18 @@ final class StreamingAccumulator: @unchecked Sendable {
         if let rawEvent = chunk.rawEvent { rawStreamEvents.append(rawEvent) }
 
         // 思考增量
+        //
+        // - Important: 这里**只**带 `reasoningContent`，不带 `content`。
+        //   思考增量与正文增量是两种不同的东西，把同一段文本同时塞进两个字段
+        //   会让下游把它当成「正文」再写一遍：AgentLoop 的分派是
+        //   `appendThinking(reasoning)` 后 `appendContent(content)`，于是同一个
+        //   chunk 会走两趟，第二趟把流式阶段从 `.thinking` 翻成 `.generating`。
+        //   思考模型（MiniMax M3 等默认开启思考）的每个思考 token 都会触发一次
+        //   「正在思考…」→「正在生成回复…」的来回翻转，V1 的底部状态卡因此
+        //   逐 token 抖动。GoProvider 走的就是「只带 reasoningContent」这条路。
         if chunk.eventType == .thinkingDelta, let piece = chunk.content {
             reasoningContent += piece
-            await onChunk(LLMStreamChunk(content: piece, reasoningContent: piece))
+            await onChunk(LLMStreamChunk(reasoningContent: piece))
         }
 
         // 正文增量

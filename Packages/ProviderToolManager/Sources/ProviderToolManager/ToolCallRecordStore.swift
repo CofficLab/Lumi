@@ -138,6 +138,27 @@ public actor ToolCallRecordStore {
         return models.map(Self.convert)
     }
 
+    /// 批量查询多个 AgentTurn 的工具调用记录，按开始时间升序返回。
+    ///
+    /// 消息列表的窗口里可能有几十个 turn，逐 turn 查询会退化成 N+1 次 IO。
+    ///
+    /// - Important: 谓词必须写成 `turnID != nil && ids.contains(turnID!)`。
+    ///   SwiftData 会把 `turnID ?? ""` 编译成 TERNARY，CoreData 无法为它生成
+    ///   SQL —— 运行时会直接 abort，不是返回空结果。
+    public func fetchRecords(forTurnIDs turnIDs: [UUID]) -> [ToolCallRecord] {
+        guard !turnIDs.isEmpty else { return [] }
+        flush()
+        let turnIDStrings = turnIDs.map(\.uuidString)
+        let descriptor = FetchDescriptor<ToolCallRecordModel>(
+            predicate: #Predicate<ToolCallRecordModel> { model in
+                model.turnID != nil && turnIDStrings.contains(model.turnID!)
+            },
+            sortBy: [SortDescriptor(\.startedAt, order: .forward)]
+        )
+        guard let models = try? modelContext.fetch(descriptor) else { return [] }
+        return models.map(Self.convert)
+    }
+
     /// 查询某个会话的全部记录，按开始时间倒序返回。
     public func fetchRecords(for conversationID: UUID) -> [ToolCallRecord] {
         flush()

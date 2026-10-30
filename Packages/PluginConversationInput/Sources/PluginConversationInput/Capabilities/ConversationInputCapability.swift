@@ -5,14 +5,13 @@ import ProviderConversationInputBlock
 import ProviderConversationState
 import ProviderMessage
 import ProviderMessageSender
-import ProviderPerformanceMetrics
 import SwiftUI
 
 /// 输入框插件所需的最小输入/发送能力。
 ///
 /// 收敛 `ConversationInputProviding`、`MessageSendingProviding`、
-/// `ConversationManaging`、`ConversationStateProviding` 与
-/// `PerformanceMetricsProviding` 的调用面，ViewModel 与 Observer 只依赖本能力。
+/// `ConversationManaging` 与 `ConversationStateProviding` 的调用面，
+/// ViewModel 与 Observer 只依赖本能力。
 @MainActor
 protocol ConversationInputCapability: AnyObject {
     // MARK: - Input
@@ -22,6 +21,13 @@ protocol ConversationInputCapability: AnyObject {
     var isInputFocused: Bool { get set }
     var inputCursorPosition: Int { get set }
     var errorMessage: String? { get set }
+    /// 草稿里的折叠块区间（以草稿文本为基准）。
+    ///
+    /// 放在能力层而不是某一个 ViewModel，是因为**两条发送路径**都要用到它：
+    /// 回车发送（`ConversationInputViewModel`）与发送按钮
+    /// （`SendActionBarViewModel`）。折叠块与正文一样属于草稿状态，
+    /// 能力层是它唯一的存放处，两个 ViewModel 都从这里读，天然一致。
+    var collapsedBlocks: [CollapsedContentBlock] { get set }
     func clearInput()
 
     // MARK: - Attachments
@@ -40,6 +46,7 @@ protocol ConversationInputCapability: AnyObject {
         _ content: String,
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
         conversationID: UUID?
     ) throws -> MessageSendCommit?
 
@@ -47,6 +54,7 @@ protocol ConversationInputCapability: AnyObject {
         _ content: String,
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
         conversationID: UUID?
     ) async throws -> MessageSendCommit?
 
@@ -58,6 +66,11 @@ protocol ConversationInputCapability: AnyObject {
 
     var selectedConversationID: UUID? { get }
     func isSending(for conversationID: UUID?) -> Bool
+
+    /// 该会话是否还有未完成的回合（运行中，或挂在等用户授权/回答）。
+    ///
+    /// 停止按钮的可见性由它决定：只要还有活没干完，就给用户一个停止入口。
+    func canStop(for conversationID: UUID?) -> Bool
 
     // MARK: - Observation
 
@@ -90,12 +103,6 @@ protocol ConversationInputCapability: AnyObject {
     func addConversationStateObserver(
         _ callback: @escaping (ConversationStateEvent) -> Void
     ) -> any ConversationStateObserverHandle
-
-    // MARK: - Metrics
-
-    func beginMetrics(operation: String, metadata: [String: String]) -> PerformanceTrace?
-    func markMetrics(_ trace: PerformanceTrace, stage: String)
-    func endMetrics(_ trace: PerformanceTrace)
 }
 
 /// 将输入/发送相关 Provider 适配为插件能力。
@@ -106,22 +113,21 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
     private let sender: (any MessageSendingProviding)?
     private let conversations: (any ConversationManaging)?
     private let conversationState: (any ConversationStateProviding)?
-    private let metrics: (any PerformanceMetricsProviding)?
+    /// 草稿里的折叠块区间。草稿级状态，随正文一起清空。
+    private var storedCollapsedBlocks: [CollapsedContentBlock] = []
 
     init(
         input: (any ConversationInputProviding)?,
         blocks: (any ConversationInputBlockProviding)? = nil,
         sender: (any MessageSendingProviding)?,
         conversations: (any ConversationManaging)?,
-        conversationState: (any ConversationStateProviding)?,
-        metrics: (any PerformanceMetricsProviding)?
+        conversationState: (any ConversationStateProviding)?
     ) {
         self.input = input
         self.blocks = blocks
         self.sender = sender
         self.conversations = conversations
         self.conversationState = conversationState
-        self.metrics = metrics
     }
 
     // MARK: - Input
@@ -151,7 +157,13 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
         set { input?.errorMessage = newValue }
     }
 
+    var collapsedBlocks: [CollapsedContentBlock] {
+        get { storedCollapsedBlocks }
+        set { storedCollapsedBlocks = newValue }
+    }
+
     func clearInput() {
+        storedCollapsedBlocks = []
         input?.clear()
     }
 
@@ -192,6 +204,7 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
         _ content: String,
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
         conversationID: UUID?
     ) throws -> MessageSendCommit? {
         guard let sender else { return nil }
@@ -199,6 +212,7 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
             content,
             imageAttachments: imageAttachments,
             fileAttachments: fileAttachments,
+            collapsedBlocks: collapsedBlocks,
             conversationID: conversationID
         )
     }
@@ -207,6 +221,7 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
         _ content: String,
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
         conversationID: UUID?
     ) async throws -> MessageSendCommit? {
         guard let sender else { return nil }
@@ -214,6 +229,7 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
             content,
             imageAttachments: imageAttachments,
             fileAttachments: fileAttachments,
+            collapsedBlocks: collapsedBlocks,
             conversationID: conversationID
         )
     }
@@ -235,6 +251,11 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
     func isSending(for conversationID: UUID?) -> Bool {
         guard let conversationID else { return false }
         return conversationState?.state(for: conversationID).isSending ?? false
+    }
+
+    func canStop(for conversationID: UUID?) -> Bool {
+        guard let conversationID else { return false }
+        return conversationState?.state(for: conversationID).canStop ?? false
     }
 
     // MARK: - Observation
@@ -273,20 +294,6 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
         _ callback: @escaping (ConversationStateEvent) -> Void
     ) -> any ConversationStateObserverHandle {
         conversationState?.addConversationStateObserver(callback) ?? NoopConversationStateObserverHandle()
-    }
-
-    // MARK: - Metrics
-
-    func beginMetrics(operation: String, metadata: [String: String]) -> PerformanceTrace? {
-        metrics?.begin(operation: operation, metadata: metadata)
-    }
-
-    func markMetrics(_ trace: PerformanceTrace, stage: String) {
-        metrics?.mark(trace, stage: stage)
-    }
-
-    func endMetrics(_ trace: PerformanceTrace) {
-        metrics?.end(trace)
     }
 }
 

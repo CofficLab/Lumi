@@ -173,10 +173,11 @@ func testRetryTurnRequiresMatchingFailedTurn() async throws {
 func testLLMFailureKeepsStructuredError() throws {
     let result = AgentLoopManager.LLMRequestResult.failure(
         error: VendorAPIError.missingAPIKey("OpenCode Go"),
-        recoverable: false
+        recoverable: false,
+        reasoningContent: nil
     )
 
-    guard case let .failure(error, recoverable) = result else {
+    guard case let .failure(error, recoverable, _) = result else {
         Issue.record("Expected an LLM failure result")
         return
     }

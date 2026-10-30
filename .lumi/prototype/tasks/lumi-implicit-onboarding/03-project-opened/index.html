@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280, initial-scale=1">
+<title>03 打开项目</title>
+<style>
+  :root{
+    --bg:#14151a; --ab-bg:#1b1c22; --rail-bg:#21222a; --panel:#181a1f;
+    --raised:#262830; --line:rgba(255,255,255,0.10);
+    --text:#ebedf2; --text2:#a7acbb; --text3:#737888;
+    --accent:#7c6fff; --green:#30d158; --orange:#ff9f0a;
+    --sans:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+    --mono:ui-monospace,'SF Mono',Menlo,monospace;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{background:#000;font-family:var(--sans);color:var(--text)}
+  .win{width:1280px;height:800px;display:flex;flex-direction:column;background:var(--bg);
+    overflow:hidden;position:relative;padding-bottom:28px}
+  .titlebar{display:flex;align-items:center;gap:8px;padding:0 13px;height:38px;
+    background:rgba(0,0,0,0.24);flex-shrink:0}
+  .tl{width:12px;height:12px;border-radius:50%}
+  .tl-r{background:#ff453a}.tl-o{background:#ff9f0a}.tl-g{background:#30d158}
+  .title{flex:1;text-align:center;font-size:13px;font-weight:500;color:var(--text2)}
+  .body{flex:1;display:flex;min-height:0}
+  .ab{width:48px;display:flex;flex-direction:column;align-items:center;padding-top:4px;
+    background:var(--ab-bg);flex-shrink:0}
+  .ab-item{position:relative;width:48px;height:42px;display:flex;align-items:center;justify-content:center}
+  .ab-item svg{width:20px;height:20px;fill:none;stroke:var(--text3);stroke-width:1.6;
+    stroke-linecap:round;stroke-linejoin:round}
+  .ab-item.on svg{stroke:var(--text)}
+  .ab-item.on::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+    width:3px;height:22px;border-radius:0 2px 2px 0;background:var(--accent)}
+  .ab-item.locked svg{stroke-dasharray:3 3;opacity:0.38}
+  .ab-spacer{flex:1}
+
+  .rail{width:240px;display:flex;flex-direction:column;background:var(--rail-bg);flex-shrink:0;
+    border-right:1px solid rgba(255,255,255,0.06)}
+  .rail-tabs{display:flex;gap:2px;padding:8px 8px 0}
+  .rtab{display:flex;align-items:center;gap:5px;padding:5px 9px;border-radius:6px;
+    font-size:11.5px;color:var(--text3)}
+  .rtab.active{color:var(--text);background:rgba(255,255,255,0.06)}
+  .rtab svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round}
+  .rail-content{flex:1;padding:8px;overflow:hidden}
+  .conv{padding:8px 9px;border-radius:7px;margin-bottom:4px;background:rgba(24,25,30,0.5)}
+  .conv.sel{background:rgba(124,111,255,0.16)}
+  .conv-t{font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .conv-m{font-size:10.5px;color:var(--text3);display:flex;gap:4px;align-items:center}
+  .dot{width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0}
+
+  .main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+  .project-bar{display:flex;align-items:center;gap:7px;padding:0 22px;height:34px;flex-shrink:0;
+    background:rgba(255,255,255,0.035);border-bottom:1px solid var(--line);font-size:12px;color:var(--text2)}
+  .project-bar svg{width:13px;height:13px;fill:none;stroke:var(--accent);stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round}
+  .project-bar b{color:var(--text);font-weight:600}
+  .project-bar .switch{margin-left:auto;font-size:11.5px;color:var(--text3);
+    display:flex;align-items:center;gap:4px}
+
+  .messages{flex:1;padding:20px 22px 8px;display:flex;flex-direction:column;gap:16px;overflow:hidden}
+  .msg{display:flex;flex-direction:column;gap:5px;max-width:620px}
+  .msg.user{align-self:flex-end;align-items:flex-end}
+  .bubble{padding:10px 13px;border-radius:13px;font-size:13px;line-height:1.6}
+  .msg.user .bubble{background:var(--raised);color:var(--text);border-bottom-right-radius:5px}
+  .msg.agent .bubble{background:rgba(124,111,255,0.12);color:var(--text);
+    border:1px solid rgba(124,111,255,0.16);border-bottom-left-radius:5px}
+  .bubble code{font-family:var(--mono);font-size:12px;color:var(--orange)}
+  .role{font-size:11px;font-weight:700;color:var(--text3)}
+
+  .tool-card{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;
+    background:rgba(38,40,48,0.55);border:1px solid var(--line);align-self:flex-start;max-width:400px}
+  .tool-ic{width:22px;height:22px;border-radius:6px;background:rgba(48,209,88,0.14);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .tool-ic svg{width:12px;height:12px;fill:none;stroke:var(--green);stroke-width:2.4;
+    stroke-linecap:round;stroke-linejoin:round}
+  .tool-t{font-size:12px;font-weight:600;color:var(--text)}
+  .tool-d{font-size:10.5px;color:var(--text3);margin-top:1px;font-family:var(--mono)}
+
+  .composer-zone{padding:8px 14px 8px;flex-shrink:0}
+  .composer{background:var(--raised);border:1px solid var(--line);border-radius:16px;
+    padding:10px 12px;box-shadow:0 8px 20px rgba(0,0,0,0.30)}
+  .ph{font-size:13px;color:var(--text3);min-height:36px}
+  .bar{display:flex;align-items:center;gap:8px}
+  .pill-btn{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:6px;
+    background:rgba(255,255,255,0.05);font-size:12px;color:var(--text2)}
+  .pill-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.6;
+    stroke-linecap:round;stroke-linejoin:round}
+  .pill-btn .chev{width:9px;height:9px;stroke-width:2}
+  .icon-btn{width:26px;height:26px;display:flex;align-items:center;justify-content:center}
+  .icon-btn svg{width:16px;height:16px;fill:none;stroke:var(--text3);stroke-width:1.6;
+    stroke-linecap:round;stroke-linejoin:round}
+  .send{margin-left:auto;width:26px;height:26px;border-radius:50%;background:var(--accent);
+    display:flex;align-items:center;justify-content:center}
+  .send svg{width:11px;height:11px;fill:#fff;stroke:none}
+
+  .nav{position:absolute;left:0;right:0;bottom:0;height:28px;display:flex;align-items:center;
+    justify-content:center;gap:6px;background:#0d0e13;border-top:1px solid rgba(255,255,255,0.06);z-index:30}
+  .fstep{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:12px;
+    font-size:11px;color:var(--text3);background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.08);text-decoration:none}
+  .fstep .n{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.10);
+    color:var(--text2);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .fstep.current{background:rgba(124,111,255,0.16);border-color:rgba(124,111,255,0.42);color:var(--text)}
+  .fstep.current .n{background:var(--accent);color:#fff}
+  .fsep{color:#4a4d58;font-size:10px}
+</style>
+</head>
+<body>
+<div class="win">
+  <div class="titlebar">
+    <span class="tl tl-r"></span><span class="tl tl-o"></span><span class="tl tl-g"></span>
+    <span class="title">Lumi</span>
+  </div>
+  <div class="body">
+    <div class="ab" data-block="activity-bar" data-block-label="ActivityBar">
+      <div class="ab-item on" data-block="ab-chat" data-block-label="Chat 入口">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div class="ab-item locked" data-block="ab-locked" data-block-label="未解锁入口（虚线）">
+        <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      </div>
+    </div>
+
+    <div class="rail" data-block="rail" data-block-label="对话列表 Rail">
+      <div class="rail-tabs">
+        <div class="rtab active" data-block="tab-chats" data-block-label="对话标签">
+          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          对话
+        </div>
+        <div class="rtab" data-block="tab-project" data-block-label="项目标签">
+          <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          项目
+        </div>
+      </div>
+      <div class="rail-content">
+        <div class="conv sel" data-block="conversation-item" data-block-label="对话项">
+          <div class="conv-t">帮我总结一下这个项目</div>
+          <div class="conv-m">
+            <span class="dot"></span><span>Claude</span><span>·</span><span>Lumi</span><span>·</span><span>刚刚</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="project-bar" data-block="project-bar" data-block-label="项目上下文条">
+        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span>当前项目 <b>Lumi</b></span>
+        <span class="switch">切换
+          <svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:2.4"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </div>
+
+      <div class="messages">
+        <div class="msg user">
+          <div class="bubble">帮我总结一下这个项目</div>
+        </div>
+
+        <div class="tool-card" data-block="tool-card" data-block-label="工具执行卡片">
+          <div class="tool-ic"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div>
+            <div class="tool-t">读取了 12 个文件</div>
+            <div class="tool-d">Packages/…</div>
+          </div>
+        </div>
+
+        <div class="msg agent" data-block="agent-message" data-block-label="助手回复">
+          <div class="role">Lumi</div>
+          <div class="bubble">
+            这是一个 macOS 桌面应用，采用插件化架构。<br>
+            现在我能直接读写这个项目里的文件了 —— 之前不能。
+          </div>
+        </div>
+      </div>
+
+      <div class="composer-zone">
+        <div class="composer">
+          <div class="ph">输入消息，按 Return 发送…</div>
+          <div class="bar">
+            <span class="pill-btn" data-block="model-pill" data-block-label="模型选择">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              Claude
+              <svg class="chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+            <span class="icon-btn" data-block="attach" data-block-label="附件">
+              <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            </span>
+            <span class="send" data-block="send-button" data-block-label="发送">
+              <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <a class="fstep" href="#" data-prototype-link="01-first-launch"><span class="n">1</span>首启空态</a>
+    <span class="fsep">›</span>
+    <a class="fstep" href="#" data-prototype-link="02-first-message-rail-appears"><span class="n">2</span>首条消息</a>
+    <span class="fsep">›</span>
+    <a class="fstep current" href="#" data-prototype-link="03-project-opened"><span class="n">3</span>打开项目</a>
+    <span class="fsep">›</span>
+    <a class="fstep" href="#" data-prototype-link="04-plugin-discovery"><span class="n">4</span>插件设置</a>
+    <span class="fsep">›</span>
+    <a class="fstep" href="#" data-prototype-link="05-mature-state"><span class="n">5</span>成熟期</a>
+  </div>
+</div>
+</body>
+</html>

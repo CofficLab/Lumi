@@ -3,18 +3,30 @@ import SwiftUI
 
 /// SidebarView 顶部状态行。
 ///
-/// 展示当前活跃 Goal 的图标/标题/进度文本,并提供描述弹窗、折叠
-/// 两个操作入口。所有回调由 `SidebarView` 注入,本组件不持有状态机。
+/// 展示当前活跃 Goal 的图标/标题/进度文本,并提供描述弹窗、在新对话中继续、
+/// 折叠三个操作入口。所有回调由 `SidebarView` 注入,本组件不持有状态机。
 struct SidebarHeader: View {
     @LumiTheme private var theme
 
     @State private var showDescriptionPopover = false
+    @State private var showForkPopover = false
 
     let activeGoal: GoalDisplayItem?
     let progressText: String
     let isCollapsed: Bool
 
+    /// 为 `nil` 表示宿主缺少必需的 Provider,此时隐藏「在新对话中继续」入口。
+    let forkCoordinator: GoalForkCoordinator?
+    /// 当前活跃 Goal 的任务,用于 fork 弹窗预览未完成项。
+    let tasks: [GoalTaskDisplayItem]
+
     let onToggleCollapsed: () -> Void
+
+    /// 仅活跃 Goal 可继续推进;终态 Goal 没有未完成的上下文。
+    private var canFork: Bool {
+        guard let goal = activeGoal else { return false }
+        return !goal.isTerminal && forkCoordinator != nil
+    }
 
     var body: some View {
         HStack(spacing: 6) {
@@ -26,9 +38,11 @@ struct SidebarHeader: View {
                 Text(progressText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .accessibilityIdentifier(GoalAccessibility.goalProgress)
             }
 
             descriptionButton
+            forkButton
             collapseButton
         }
         .padding(.horizontal, 12)
@@ -50,6 +64,7 @@ struct SidebarHeader: View {
                     .font(.headline)
                     .lineLimit(1)
                     .truncationMode(.tail)
+                    .accessibilityIdentifier(GoalAccessibility.goalTitle)
             }
         } else {
             Label(
@@ -57,6 +72,7 @@ struct SidebarHeader: View {
                 systemImage: "target"
             )
             .font(.headline)
+            .accessibilityIdentifier(GoalAccessibility.goalTitlePlaceholder)
         }
     }
 
@@ -81,8 +97,44 @@ struct SidebarHeader: View {
             .buttonStyle(.plain)
             .help(pluginLocalization.string("Goal description"))
             .accessibilityLabel(pluginLocalization.string("Goal description"))
+            .accessibilityIdentifier(GoalAccessibility.descriptionButton)
             .popover(isPresented: $showDescriptionPopover, arrowEdge: .bottom) {
                 GoalDescriptionPopoverContent(text: description)
+            }
+        }
+    }
+
+    /// 「在新对话中继续」按钮:把当前 Goal 复制到新对话并开跑。
+    ///
+    /// 视觉与 info 按钮对齐(同尺寸圆形底 + `.plain`),位置紧随其后。
+    /// 终态 Goal 或缺少 `MessageSendingProviding` 时整体隐藏。
+    @ViewBuilder
+    private var forkButton: some View {
+        if let goal = activeGoal, let forkCoordinator, canFork {
+            Button {
+                showForkPopover.toggle()
+            } label: {
+                Image(systemName: "arrow.branch")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(showForkPopover ? theme.primary : theme.textSecondary)
+                    .frame(width: 24, height: 24)
+                    .background(
+                        showForkPopover
+                            ? theme.primary.opacity(0.12)
+                            : theme.textPrimary.opacity(0.06),
+                        in: Circle()
+                    )
+            }
+            .buttonStyle(.plain)
+            .help(pluginLocalization.string("Continue in a new conversation"))
+            .accessibilityLabel(pluginLocalization.string("Continue in a new conversation"))
+            .accessibilityIdentifier(GoalAccessibility.forkButton)
+            .popover(isPresented: $showForkPopover, arrowEdge: .bottom) {
+                GoalForkPopoverContent(
+                    goal: goal,
+                    tasks: tasks,
+                    forkCoordinator: forkCoordinator
+                )
             }
         }
     }
@@ -98,5 +150,6 @@ struct SidebarHeader: View {
         }
         .buttonStyle(.borderless)
         .help(pluginLocalization.string(isCollapsed ? "Expand" : "Collapse"))
+        .accessibilityIdentifier(GoalAccessibility.collapseButton)
     }
 }

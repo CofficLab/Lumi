@@ -5,6 +5,7 @@ import ProviderConversationState
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageStreaming
+import ProviderToolManager
 
 /// Cheap fingerprint of the inputs that decide `MessageListRowBuilder.buildHistory`
 /// output, used to skip the (O(rows × content) memberwise) `historyRows` array
@@ -15,18 +16,31 @@ private struct HistoryBuildSignature: Equatable {
     /// 流式行可见性翻转时 status 行显隐不同，需纳入签名以触发重算。
     let hidesStatus: Bool
     /// Per persisted message — captures additions/removals/reordering AND
-    /// content edits while staying far cheaper than comparing full content strings.
+    /// content edits, at a fixed size per message.
     let fingerprints: [MessageFingerprint]
 }
 
 private struct MessageFingerprint: Equatable {
     let id: UUID
-    let contentLength: Int
+    /// 内容指纹。
+    ///
+    /// 用**哈希**而不是长度：等长替换（"AAAA" → "BBBB"）长度不变，按长度判定
+    /// 会漏掉这种更新，历史行会继续持有旧文本。消息的落库版本可能因为重写、
+    /// 重试覆盖而产生等长结果，这不是纯理论情况。
+    let contentHash: Int
     let role: MessageRole
     let isToolExecutionOnly: Bool
     /// 工具结果写回 assistant 消息时 content 本身可能不变，必须纳入
     /// 指纹，否则历史行会继续持有 result == nil 的旧快照。
     let toolCallResultState: [String]
+    /// 授权状态（`pendingAuthorization` → `userApproved` / `userRejected`）。
+    ///
+    /// 它与 `result` 一起决定渲染层要不要再弹一次授权卡片
+    /// （`ToolApprovalRowRenderer.canRender`），因此必须纳入指纹：
+    /// 只比较结果内容长度与 `awaitingUserResponse` 的话，
+    /// 「结果没变、只有授权状态变了」这种回写会被漏掉，
+    /// 历史行会继续持有「等待授权」的旧快照。
+    let toolCallAuthorizationState: [String]
 }
 
 /// Message List View Model (V2 / standard)
@@ -197,7 +211,7 @@ final class ListV2ViewModel: ObservableObject {
 
     /// 向上翻页：加载更早一页并 prepend，触发窗口回收。
     /// - Returns: prepend 前最早一条消息的 id，View 应把它钉回视口顶部。
-    func loadEarlier(isAtBottom: Bool) async -> UUID? {
+    func loadEarlier() async -> UUID? {
         guard let conversationID = selectedConversationID,
               !isLoadingEarlier,
               let currentFirstID = persistedMessages.first?.id else { return nil }
@@ -213,9 +227,7 @@ final class ListV2ViewModel: ObservableObject {
         guard selectedConversationID == conversationID else { return nil }
         persistedMessages = result.earlier + persistedMessages
         hasEarlierMessages = result.hasEarlierMessages
-        persistedMessages = pagination.evictTailIfNeeded(
-            messages: persistedMessages, isAtBottom: isAtBottom
-        )
+        persistedMessages = pagination.evictTailIfNeeded(messages: persistedMessages)
         return result.anchorID
     }
 
@@ -298,15 +310,27 @@ final class ListV2ViewModel: ObservableObject {
             return
         }
 
+        // 一次批量查询取回窗口内所有 turn 的调用记录。
+        //
+        // 逐 turn 查询会让刷新成本随窗口内 turn 数线性放大：窗口有几十个 turn
+        // 时，每次消息事件（工具结果回写）都要发几十次查询，而这些统计在
+        // V2/V3 的视图里并没有消费点。
+        let records = await toolManager.toolCalls(forTurnIDs: Array(turnIDs))
+        var recordsByTurn: [UUID: [ToolCallRecord]] = [:]
+        for record in records {
+            guard let turnID = record.turnID else { continue }
+            recordsByTurn[turnID, default: []].append(record)
+        }
+
         var summaries: [UUID: LumiTurnActivitySummary] = [:]
         for turnID in turnIDs {
-            let records = await toolManager.toolCalls(for: turnID)
-            let durations = records.compactMap(\.duration)
+            let turnRecords = recordsByTurn[turnID] ?? []
+            let durations = turnRecords.compactMap(\.duration)
             summaries[turnID] = LumiTurnActivitySummary(
                 turnID: turnID,
-                totalCount: records.count,
-                completedCount: records.filter { $0.completedAt != nil }.count,
-                failedCount: records.filter(\.resultIsError).count,
+                totalCount: turnRecords.count,
+                completedCount: turnRecords.filter { $0.completedAt != nil }.count,
+                failedCount: turnRecords.filter(\.resultIsError).count,
                 totalDuration: durations.isEmpty ? nil : durations.reduce(0, +)
             )
         }
@@ -358,9 +382,12 @@ final class ListV2ViewModel: ObservableObject {
                     return $0.createdAt < $1.createdAt
                 }
             }
-            if next.count > pagination.maxRetainedCount {
-                next.removeFirst(next.count - pagination.maxRetainedCount)
-            }
+            // Important: 这里**不**按 `maxRetainedCount` 裁剪窗口头部。
+            //
+            // 裁掉的是**最旧**的消息 —— 用户可能刚翻到那里看历史，新消息一到
+            // 它们就从窗口里消失了。窗口长度由另外两条路径守住：
+            // 尾部刷新（`refreshTail` 用最近一页替换窗口尾部，长度保持不变）
+            // 与向上翻页时的窗口回收（`evictTailIfNeeded`）。
             persistedMessages = next
         case let .persisted(_, conversationID),
              let .updated(conversationID: conversationID),
@@ -437,7 +464,7 @@ final class ListV2ViewModel: ObservableObject {
             fingerprints: persistedMessages.map {
                 MessageFingerprint(
                     id: $0.id,
-                    contentLength: $0.content.count,
+                    contentHash: $0.content.hashValue,
                     role: $0.role,
                     isToolExecutionOnly: $0.isToolExecutionOnly,
                     toolCallResultState: $0.toolCalls?.map {
@@ -446,6 +473,9 @@ final class ListV2ViewModel: ObservableObject {
                             "\($0.content.count):\($0.awaitingUserResponse == true)"
                         } ?? "nil"
                         return "\($0.id):\(resultState)"
+                    } ?? [],
+                    toolCallAuthorizationState: $0.toolCalls?.map {
+                        "\($0.id):\($0.authorizationState ?? "nil")"
                     } ?? []
                 )
             }

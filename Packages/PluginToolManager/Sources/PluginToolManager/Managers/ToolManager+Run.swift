@@ -4,14 +4,6 @@ import LumiLoggingKit
 import os
 import ProviderToolManager
 
-private struct ToolInteractionPayload: Codable {
-    let toolCallID: String
-    let kind: String
-    let question: String
-    let options: [String]
-    let mode: String
-}
-
 // MARK: - Tool Execution
 
 extension ToolManager {
@@ -180,6 +172,12 @@ extension ToolManager {
         return await recordStore.fetchRecords(for: turnID)
     }
 
+    /// 一次查询取回多个 turn 的记录，避免逐 turn 查询退化成 N+1 次 IO。
+    public func toolCalls(forTurnIDs turnIDs: [UUID]) async -> [ToolCallRecord] {
+        guard let recordStore else { return [] }
+        return await recordStore.fetchRecords(forTurnIDs: turnIDs)
+    }
+
     public func toolCallResult(for toolCallID: String) async -> ToolCallResult? {
         guard let record = await recordStore?.fetchRecord(forToolCallID: toolCallID) else { return nil }
         return result(from: record)
@@ -238,15 +236,11 @@ extension ToolManager {
     /// 各写一份 JSON，导致文案或字段不一致。
     private func approvalPayload(for toolCall: ToolCall) -> String {
         let risk = riskLevel(for: toolCall) ?? .high
-        let payload = ToolInteractionPayload(
+        return ToolInteractionPayload.permission(
             toolCallID: "approval:\(toolCall.id)",
-            kind: "permission",
-            question: "此操作被判定为\(risk.displayName)，是否允许执行？\n\(displayDescription(for: toolCall) ?? toolCall.name)",
-            options: ["允许", "拒绝"],
-            mode: "yes_no"
-        )
-        return (try? String(data: JSONEncoder().encode(payload), encoding: .utf8))
-            ?? "Unable to create tool interaction request."
+            riskLevelName: risk.displayName,
+            operation: displayDescription(for: toolCall) ?? toolCall.name
+        ).encoded()
     }
 
     func logToolCall(toolCallID: String, toolName: String, toolDisplayName: String, turnID: UUID?, conversationID: UUID, createdAt: Date, startedAt: Date, completedAt: Date?, duration: TimeInterval?, argumentsJSON: String, resultContent: String, result: ToolCallResult, resultIsError: Bool, riskLevel: String) {

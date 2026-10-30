@@ -82,6 +82,22 @@ public protocol MessageManaging: AnyObject {
     func dailyTokenCounts(since: Date) -> [Date: Int]
     /// 异步返回指定日期（含）以来的 token 总量，持久化实现应将读取放到后台。
     func dailyTokenCountsAsync(since: Date) async -> [Date: Int]
+    /// 返回指定日期（含）以来、**限定在一组会话内**的按日消息数量。
+    ///
+    /// ## `conversationIDs` 的三种取值
+    ///
+    /// - `nil`：不限会话，统计全部消息（与 `dailyMessageCounts(since:)` 等价）；
+    /// - 空数组：该范围内没有任何会话，结果必然为空；
+    /// - 非空数组：只统计这些会话里的消息。
+    ///
+    /// 「本项目近 30 天」这类按项目维度的统计靠这个接口实现：会话集合由会话存储
+    /// 按 `projectPath` 查出，再交给消息存储过滤。
+    ///
+    /// - Important: 默认实现返回**空结果**而不是全局结果。全局数字冒充
+    ///   「本项目数字」是错误的展示，比不展示更难发现。
+    func dailyMessageCountsAsync(since: Date, conversationIDs: [String]?) async -> [Date: Int]
+    /// 与 ``dailyMessageCountsAsync(since:conversationIDs:)`` 同口径的 token 统计。
+    func dailyTokenCountsAsync(since: Date, conversationIDs: [String]?) async -> [Date: Int]
     func insertMessage(_ message: Message, to conversationID: UUID)
     func updateMessage(id: UUID, in conversationID: UUID, content: String)
     func deleteMessage(id: UUID, in conversationID: UUID)
@@ -205,6 +221,20 @@ public extension MessageManaging {
 
     func dailyTokenCountsAsync(since: Date) async -> [Date: Int] {
         dailyTokenCounts(since: since)
+    }
+
+    func dailyMessageCountsAsync(since: Date, conversationIDs: [String]?) async -> [Date: Int] {
+        guard let conversationIDs else {
+            return await dailyMessageCountsAsync(since: since)
+        }
+        return [:]
+    }
+
+    func dailyTokenCountsAsync(since: Date, conversationIDs: [String]?) async -> [Date: Int] {
+        guard let conversationIDs else {
+            return await dailyTokenCountsAsync(since: since)
+        }
+        return [:]
     }
 
     func updateToolCallResult(
