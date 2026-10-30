@@ -11,7 +11,10 @@ import Foundation
 /// 故所有尺寸只在这里定义一次，两边各自引用。
 public enum CollapsedContentChipStyle {
     /// 胶囊圆角。
-    public static let cornerRadius: CGFloat = 8
+    ///
+    /// 取 4pt：芯片高度约 14.7pt，8pt 会让它变成全圆胶囊；
+    /// 4pt 只给四个角一点轻微弧度，视觉更轻、与正文更协调。
+    public static let cornerRadius: CGFloat = 4
 
     /// 胶囊左右内边距。
     public static let horizontalPadding: CGFloat = 10
@@ -36,6 +39,13 @@ public enum CollapsedContentChipStyle {
 
     /// 胶囊描边不透明度。
     public static let strokeOpacity: CGFloat = 0.12
+
+    /// 胶囊描边宽度。
+    ///
+    /// 两侧共用同一个宽度：输入框侧是 AppKit 的 `NSBezierPath.lineWidth`，
+    /// 消息列表侧是 SwiftUI 的 `strokeBorder(_:lineWidth:)`。描边宽度不同
+    /// 会让同一个胶囊看起来一边更「实」、一边更「虚」。
+    public static let strokeWidth: CGFloat = 1
 
     /// 悬停时的胶囊底色不透明度。
     ///
