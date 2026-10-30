@@ -10,16 +10,49 @@ import ProviderMessageRendering
 import ProviderToolManager
 import SwiftUI
 
-struct ToolPermissionRequest: Codable {
+/// 工具授权请求（渲染层视图模型）。
+///
+/// - Note: **不是** `Codable`。解析走 `decode(from:)` 而不是 `JSONDecoder`，
+///   因为载荷的键名在不同生产者之间并不统一（见 `decode(from:)` 的说明），
+///   走 `Codable` 会在键名不匹配时整体解码失败。
+struct ToolPermissionRequest {
     let toolCallID: String
     let kind: String
     let question: String
     let options: [String]
     let mode: String
 
-    enum CodingKeys: String, CodingKey {
-        case toolCallID = "toolCallId"
-        case kind, question, options, mode
+    /// 从工具结果内容里解析授权请求。
+    ///
+    /// - Note: 载荷里的 `toolCallId` 键名在不同生产者之间并不统一——
+    ///   `ToolManager+Run.swift` 的 `ToolInteractionPayload` 没有显式
+    ///   CodingKeys，编码出的是 `toolCallID`（大写 D）。因此这里**不依赖
+    ///   键名**：`toolCallID` 只是展示用的占位，判定「是不是授权请求」
+    ///   一律以 `kind` 为准。
+    static func decode(from content: String) -> ToolPermissionRequest? {
+        guard let data = content.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data),
+              let dictionary = object as? [String: Any],
+              let kind = dictionary["kind"] as? String,
+              kind == ToolSuspensionKind.permission
+        else { return nil }
+
+        // 键名两种写法都试一遍：显式 CodingKeys 的生产者写 `toolCallId`，
+        // 没有 CodingKeys 的生产者写 `toolCallID`。
+        let toolCallID = dictionary["toolCallId"] as? String
+            ?? dictionary["toolCallID"] as? String
+            ?? ""
+        let question = dictionary["question"] as? String ?? ""
+        let options = dictionary["options"] as? [String] ?? []
+        let mode = dictionary["mode"] as? String ?? "yes_no"
+
+        return ToolPermissionRequest(
+            toolCallID: toolCallID,
+            kind: kind,
+            question: question,
+            options: options,
+            mode: mode
+        )
     }
 }
 
@@ -144,11 +177,7 @@ final class ToolApprovalBridge: SuperLog {
 
     func permissionRequest(for toolCall: ToolCall) -> ToolPermissionRequest? {
         if let content = toolCall.result?.content,
-           let request = try? JSONDecoder().decode(
-               ToolPermissionRequest.self,
-               from: Data(content.utf8)
-           ),
-           request.kind == "permission" {
+           let request = ToolPermissionRequest.decode(from: content) {
             if Self.verbose {
                 Self.logger.info(
                     "\(Self.t)使用工具结果中的授权请求 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public)"
@@ -168,7 +197,7 @@ final class ToolApprovalBridge: SuperLog {
         
         return ToolPermissionRequest(
             toolCallID: "approval:\(toolCall.id)",
-            kind: "permission",
+            kind: ToolSuspensionKind.permission,
             question: "此操作被判定为\(risk.displayName)，是否允许执行？\n\(toolManager?.displayDescription(for: toolCall) ?? toolCall.name)",
             options: ["允许", "拒绝"],
             mode: "yes_no"
@@ -236,7 +265,25 @@ public struct ToolApprovalRowRenderer: ToolCallRowRenderer, SuperLog {
         // 从 pending 改成 userApproved/userRejected。只有仍在等待授权时才展示。
         let isWaitingForAuthorization = toolCall.result == nil || toolCall.result?.awaitingUserResponse == true
         let shouldRender = isPending && isWaitingForAuthorization
-        return shouldRender
+        guard shouldRender else { return false }
+
+        // - Important: 载荷必须确实是**授权请求**。
+        //   挂起有两种语义：授权（等用户点允许/拒绝）与交互（等用户回答问题，
+        //   如 `ask_user`）。两者在消息里的形态几乎一样，只靠 `pendingAuthorization`
+        //   无法区分。而交互载荷不是授权载荷——授权卡片构造不出请求，
+        //   只会渲染出「无法解析工具审批请求」这句兜底文案。
+        //
+        //   载荷里的 `kind` 字段是可靠证据（见 `ToolSuspensionKind`）。
+        //
+        //   - Note: `result == nil` 时无法判别载荷，返回 true 保留旧行为：
+        //     由 `render` 按风险等级兜底构造，兼容只落库了状态、没落库载荷的
+        //     旧数据。有载荷时则以载荷为准——载荷明确是别的交互（如 `ask_user`）
+        //     时绝不能接管，那正是误接管的来源。
+        //     「非结构化」的旧载荷（如纯文本）同样保留旧行为：无法判别它是什么，
+        //     只能交给风险等级兜底。
+        guard let content = toolCall.result?.content else { return true }
+        guard ToolSuspensionKind.hasStructuredPayload(content) else { return true }
+        return ToolSuspensionKind.isPermissionRequest(content)
     }
 
     @MainActor
