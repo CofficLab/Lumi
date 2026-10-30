@@ -476,9 +476,18 @@ final class StreamingAccumulator: @unchecked Sendable {
         if let rawEvent = chunk.rawEvent { rawStreamEvents.append(rawEvent) }
 
         // 思考增量
+        //
+        // - Important: 这里**只**带 `reasoningContent`，不带 `content`。
+        //   思考增量与正文增量是两种不同的东西，把同一段文本同时塞进两个字段
+        //   会让下游把它当成「正文」再写一遍：AgentLoop 的分派是
+        //   `appendThinking(reasoning)` 后 `appendContent(content)`，于是同一个
+        //   chunk 会走两趟，第二趟把流式阶段从 `.thinking` 翻成 `.generating`。
+        //   思考模型（MiniMax M3 等默认开启思考）的每个思考 token 都会触发一次
+        //   「正在思考…」→「正在生成回复…」的来回翻转，V1 的底部状态卡因此
+        //   逐 token 抖动。GoProvider 走的就是「只带 reasoningContent」这条路。
         if chunk.eventType == .thinkingDelta, let piece = chunk.content {
             reasoningContent += piece
-            await onChunk(LLMStreamChunk(content: piece, reasoningContent: piece))
+            await onChunk(LLMStreamChunk(reasoningContent: piece))
         }
 
         // 正文增量
