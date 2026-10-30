@@ -12,9 +12,10 @@ import SwiftUI
 
 /// 工具授权请求（渲染层视图模型）。
 ///
-/// - Note: **不是** `Codable`。解析走 `decode(from:)` 而不是 `JSONDecoder`，
-///   因为载荷的键名在不同生产者之间并不统一（见 `decode(from:)` 的说明），
-///   走 `Codable` 会在键名不匹配时整体解码失败。
+/// - Note: 载荷的编解码由 `KitAgentTool.ToolInteractionPayload` 负责——
+///   它是这份跨层契约的唯一归属。渲染层只做「展示」与「决定」，不再
+///   自己定义一份副本（历史上这里有一份副本，且键名与生产者不一致，
+///   导致授权载荷解码必然失败）。
 struct ToolPermissionRequest {
     let toolCallID: String
     let kind: String
@@ -22,37 +23,42 @@ struct ToolPermissionRequest {
     let options: [String]
     let mode: String
 
+    init(
+        toolCallID: String,
+        kind: String,
+        question: String,
+        options: [String],
+        mode: String
+    ) {
+        self.toolCallID = toolCallID
+        self.kind = kind
+        self.question = question
+        self.options = options
+        self.mode = mode
+    }
+
+    /// 从工具结果内容里解析授权请求。
+    init?(payload: ToolInteractionPayload) {
+        self.init(
+            toolCallID: payload.toolCallID,
+            kind: payload.kind,
+            question: payload.question,
+            options: payload.options,
+            mode: payload.mode
+        )
+    }
+
     /// 从工具结果内容里解析授权请求。
     ///
-    /// - Note: 载荷里的 `toolCallId` 键名在不同生产者之间并不统一——
-    ///   `ToolManager+Run.swift` 的 `ToolInteractionPayload` 没有显式
-    ///   CodingKeys，编码出的是 `toolCallID`（大写 D）。因此这里**不依赖
-    ///   键名**：`toolCallID` 只是展示用的占位，判定「是不是授权请求」
-    ///   一律以 `kind` 为准。
+    /// - Returns: 载荷确实是**通用工具授权**请求时返回该请求；否则 `nil`。
+    ///
+    /// - Note: Computer Use 的应用授权载荷（`kind == "computer_use_authorization"`）
+    ///   不属于此类——它由 Computer Use 自己的渲染器接管。
     static func decode(from content: String) -> ToolPermissionRequest? {
-        guard let data = content.data(using: .utf8),
-              let object = try? JSONSerialization.jsonObject(with: data),
-              let dictionary = object as? [String: Any],
-              let kind = dictionary["kind"] as? String,
-              kind == ToolSuspensionKind.permission
-        else { return nil }
-
-        // 键名两种写法都试一遍：显式 CodingKeys 的生产者写 `toolCallId`，
-        // 没有 CodingKeys 的生产者写 `toolCallID`。
-        let toolCallID = dictionary["toolCallId"] as? String
-            ?? dictionary["toolCallID"] as? String
-            ?? ""
-        let question = dictionary["question"] as? String ?? ""
-        let options = dictionary["options"] as? [String] ?? []
-        let mode = dictionary["mode"] as? String ?? "yes_no"
-
-        return ToolPermissionRequest(
-            toolCallID: toolCallID,
-            kind: kind,
-            question: question,
-            options: options,
-            mode: mode
-        )
+        guard let payload = ToolInteractionPayload.decodePermission(from: content) else {
+            return nil
+        }
+        return ToolPermissionRequest(payload: payload)
     }
 }
 

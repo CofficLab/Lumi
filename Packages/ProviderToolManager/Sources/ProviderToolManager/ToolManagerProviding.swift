@@ -1,19 +1,6 @@
 import KitAgentTool
 import Foundation
 
-private struct ToolInteractionPayload: Codable {
-    let toolCallID: String
-    let kind: String
-    let question: String
-    let options: [String]
-    let mode: String
-
-    enum CodingKeys: String, CodingKey {
-        case toolCallID = "toolCallId"
-        case kind, question, options, mode
-    }
-}
-
 /// Agent 工具管理与执行能力。
 @MainActor
 public protocol ToolManagerProviding: AnyObject {
@@ -360,16 +347,12 @@ public extension ToolManagerProviding {
                 let riskLevel = self.riskLevel(for: toolCall) ?? .high
                 if riskLevel.requiresPermission {
                     let operation = displayDescription(for: toolCall) ?? toolCall.name
-                    let payload = ToolInteractionPayload(
+                    let payload = ToolInteractionPayload.permission(
                         toolCallID: "approval:\(toolCall.id)",
-                        kind: "permission",
-                        question: "此操作被判定为\(riskLevel.displayName)，是否允许执行？\n\(operation)",
-                        options: ["允许", "拒绝"],
-                        mode: "yes_no"
+                        riskLevelName: riskLevel.displayName,
+                        operation: operation
                     )
-                    let content = (try? String(data: JSONEncoder().encode(payload), encoding: .utf8))
-                        ?? "Unable to create tool interaction request."
-                    results.append(.needsUserResponse(payload: content))
+                    results.append(.needsUserResponse(payload: payload.encoded()))
                 } else {
                     let result = await execute(toolCall, conversationID: conversationID, turnID: turnID)
                     results.append(.executed(result))

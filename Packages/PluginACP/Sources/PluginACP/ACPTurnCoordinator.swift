@@ -1,4 +1,5 @@
 import Foundation
+import KitAgentTool
 import ProviderACP
 import ProviderAgentLoop
 import ProviderMessage
@@ -308,8 +309,10 @@ public final class ACPTurnCoordinator {
 
         let payload = Self.jsonObject(from: suspension.payload)
 
-        // 工具授权挂起：内核以 payload.kind == "permission" 标记（见 ToolManager+Run）。
-        if payload?["kind"] as? String == "permission" {
+        // 工具授权挂起：内核以 payload.kind == "permission" 标记。
+        // 判据来自共享契约（`ToolSuspensionKind`），不硬编码字面量——
+        // 契约的键名与取值由 `KitAgentTool` 统一拥有。
+        if ToolSuspensionKind.isPermissionRequest(suspension.payload) {
             presentToolPermission(suspension, payload: payload, sessionID: sessionID)
             return
         }
