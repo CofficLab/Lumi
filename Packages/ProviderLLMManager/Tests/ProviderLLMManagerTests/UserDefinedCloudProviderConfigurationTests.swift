@@ -1,7 +1,7 @@
 import Foundation
 import KitLLM
 import Testing
-@testable import PluginLLMProviderSettings
+@testable import ProviderLLMManager
 
 /// 用户自定义云端供应商配置的校验规则。
 ///

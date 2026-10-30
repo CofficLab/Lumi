@@ -1,5 +1,6 @@
 import KitLLM
 import LumiUI
+import ProviderLLMManager
 import SwiftUI
 
 /// 新增或编辑用户自定义云端供应商。

@@ -1,5 +1,6 @@
 import Foundation
 import KitLLM
+import ProviderLLMManager
 import Testing
 @testable import PluginLLMProviderSettings
 

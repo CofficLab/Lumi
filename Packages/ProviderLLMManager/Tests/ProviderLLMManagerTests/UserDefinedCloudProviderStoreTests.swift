@@ -1,8 +1,7 @@
 import Foundation
 import KitLLM
-import ProviderLLMManager
 import Testing
-@testable import PluginLLMProviderSettings
+@testable import ProviderLLMManager
 
 /// 用户自定义云端供应商 Store 的落盘、注册与失败回滚行为。
 ///
