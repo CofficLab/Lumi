@@ -139,7 +139,7 @@ extension BrowserSession {
     /// - Parameters:
     ///   - action: 导航动作。
     ///   - url: `goto` 时的目标地址；其他动作忽略。
-    func navigate(action: BrowserNavigationAction, url: URL?, allowLocalAccess: Bool) async throws -> String {
+    func navigate(action: BrowserNavigationAction, url: URL?, localAccessApproved: Bool) async throws -> String {
         switch action {
         case .back:
             guard webView.canGoBack else {
@@ -160,7 +160,7 @@ extension BrowserSession {
             guard let url else {
                 throw BrowserSession.SessionError.invalidURL
             }
-            try await navigate(to: url, allowLocalAccess: allowLocalAccess)
+            try await navigate(to: url, localAccessApproved: localAccessApproved)
         }
         return "Title: \(title)\nURL: \(urlString)"
     }

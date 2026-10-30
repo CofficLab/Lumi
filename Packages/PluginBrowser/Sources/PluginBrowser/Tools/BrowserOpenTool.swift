@@ -45,10 +45,14 @@ public struct BrowserOpenTool: SuperAgentTool {
         guard let url = arguments["url"]?.value as? String else {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing url")
         }
+        // 审批发生在工具执行**之前**：本地地址的风险等级是 .high，
+        // 用户批准后才会走到这里。因此此刻 `requiresLocalAccessApproval`
+        // 为真就意味着「用户已经批准了访问这个本地地址」。
+        let approvedForLocalAccess = BrowserSessionManager.requiresLocalAccessApproval(url)
         return ToolCallResult(content: try await sessions.open(
             url,
             conversationID: context.conversationID,
-            allowLocalAccess: BrowserSessionManager.requiresLocalAccessApproval(url)
+            localAccessApproved: approvedForLocalAccess
         ))
     }
 }
