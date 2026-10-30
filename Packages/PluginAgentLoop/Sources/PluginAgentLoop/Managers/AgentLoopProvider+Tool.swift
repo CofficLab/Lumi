@@ -85,7 +85,7 @@ extension AgentLoopManager {
         }
 
         let result = convertResult(toolResult)
-        // 工具挂起时必须把授权状态回落为 pendingAuthorization。
+        // 授权挂起时必须把授权状态回落为 pendingAuthorization。
         //
         // 授权状态在 LLM 响应阶段就已写定：A3（完全授权）对话下
         // `ToolManager.authorizationDecision` 一律返回 autoApproved。
@@ -95,14 +95,19 @@ extension AgentLoopManager {
         // 若不回落，两个授权渲染器（都以 pendingAuthorization 为接管条件）
         // 都不会画卡片，界面就只剩一条工具行，回合则等一个永远不会到来的
         // 回答——对话永久停在「等待你的输入…」。
+        //
+        // - Important: 回落只适用于**授权挂起**。挂起有两种语义：
+        //   授权（等用户点允许/拒绝）与交互（等用户回答问题，如 `ask_user`）。
+        //   后者不需要授权，把它标成 pendingAuthorization 等于告诉渲染层
+        //   「这里有一次待处理的工具授权」——通用授权卡片会接管这条工具行，
+        //   却构造不出授权请求，界面就会渲染出「无法解析工具审批请求」。
+        //   判据是载荷里的 kind 字段（见 `ToolSuspensionKind`）。
         messages.updateToolCallResult(
             result,
             toolCallID: toolCallID,
             assistantMessageID: assistantMessageID,
             in: snapshot.conversationID,
-            authorizationState: result.awaitingUserResponse
-                ? ToolCallAuthorizationState.pendingAuthorization.rawValue
-                : nil
+            authorizationState: Self.authorizationStateForSuspension(result)
         )
 
         if result.awaitingUserResponse {
@@ -234,9 +239,7 @@ extension AgentLoopManager {
                     toolCallID: call.id,
                     assistantMessageID: assistantMessageID,
                     in: conversationID,
-                    authorizationState: result.awaitingUserResponse
-                        ? ToolCallAuthorizationState.pendingAuthorization.rawValue
-                        : nil
+                    authorizationState: Self.authorizationStateForSuspension(result)
                 )
                 if result.awaitingUserResponse {
                     // 等待授权/用户输入时不要创建独立 role=tool 消息；
@@ -283,7 +286,11 @@ extension AgentLoopManager {
                     in: conversationID,
                     // 该分支天然是「等待用户决定」，授权状态必须显式回落，
                     // 否则 A3 对话下渲染层不会画授权卡片。
-                    authorizationState: ToolCallAuthorizationState.pendingAuthorization.rawValue
+                    //
+                    // 载荷由 `executeBatch` 在 `requireApprovalForHighRisk` 策略下
+                    // 产出，必然带 `kind == "permission"`；仍走同一个判据函数，
+                    // 避免两处逻辑各自演化。
+                    authorizationState: Self.authorizationStateForSuspension(approvalResult)
                 )
                 suspension = interactionSuspension
             }
@@ -499,6 +506,23 @@ extension AgentLoopManager {
             finishTurn(conversationID: conversationID, turnID: turnID, outcome: outcome)
         }
         continueAfterToolResults(runtime: runtime, conversationID: conversationID, turnID: turnID)
+    }
+
+    /// 挂起结果应当写入的授权状态。
+    ///
+    /// - Returns: 授权挂起返回 `pendingAuthorization`（等待用户点允许/拒绝）；
+    ///   交互挂起（如 `ask_user` 等用户回答问题）返回 `nil`——不改动授权状态。
+    ///
+    /// - Important: 判据是**载荷**，不是挂起本身。两者在消息里的形态几乎一样，
+    ///   只能靠载荷里的 `kind` 字段区分（见 `ToolSuspensionKind`）。
+    ///   把交互挂起也标成 `pendingAuthorization` 会让通用授权卡片接管该工具行，
+    ///   而它构造不出授权请求，界面就会渲染出「无法解析工具审批请求」。
+    static func authorizationStateForSuspension(
+        _ result: MessageToolResult
+    ) -> String? {
+        guard result.awaitingUserResponse else { return nil }
+        guard ToolSuspensionKind.isAuthorizationRequest(result.content) else { return nil }
+        return ToolCallAuthorizationState.pendingAuthorization.rawValue
     }
 
     /// 找到承载指定工具调用的 assistant 消息 ID。
