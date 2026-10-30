@@ -17,6 +17,7 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         case missingTextForAction(BrowserInteractionAction)
         case waitTimedOut(String)
         case navigationUnavailable(String)
+        case localNavigationNeedsApproval(String)
         case scriptTooLong
         case scriptFailed(String)
         case screenshotUnavailable
@@ -43,6 +44,9 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
                 "Timed out waiting for \(what)."
             case .navigationUnavailable(let reason):
                 reason
+            case .localNavigationNeedsApproval(let host):
+                "That link points to the local network address \(host). Opening it needs its own approval. "
+                    + "Open it directly with browser_open so the user can approve it."
             case .scriptTooLong:
                 "The script is too long. Keep it under 20000 characters."
             case .scriptFailed(let reason):
@@ -97,7 +101,12 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         canGoForward = webView.canGoForward
     }
 
-    func navigate(to url: URL, allowLocalAccess: Bool = false) async throws {
+    /// 导航到指定地址。
+    ///
+    /// - Parameter localAccessApproved: 用户是否**已明确批准**访问本地/内网地址。
+    ///   注意这是「已批准」而不是「是否需要批准」——早期用 `allowLocalAccess`
+    ///   命名导致调用处把判断结果反向传参，审批语义一度漂移。
+    func navigate(to url: URL, localAccessApproved: Bool = false) async throws {
         if navigationContinuation != nil {
             finishNavigation(.failure(SessionError.navigationReplaced), token: navigationToken)
             webView.stopLoading()
@@ -105,7 +114,7 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
 
         let token = UUID()
         navigationToken = token
-        approvedLocalHost = allowLocalAccess ? url.host?.lowercased() : nil
+        approvedLocalHost = localAccessApproved ? url.host?.lowercased() : nil
         isLoading = true
         try await withCheckedThrowingContinuation { continuation in
             navigationContinuation = continuation
@@ -351,6 +360,15 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         canGoForward = webView.canGoForward
     }
 
+    /// 本次会话中已获批准访问的本地主机（小写）。
+    var approvedLocalHostName: String? { approvedLocalHost }
+
+    /// 某个本地主机是否已获批准。
+    func hasApprovedLocalHost(_ host: String) -> Bool {
+        guard let approved = approvedLocalHost else { return false }
+        return approved == host.lowercased()
+    }
+
     func waitForInteractionNavigation() async {
         var started = webView.isLoading
         for _ in 0..<5 where !started {
@@ -391,18 +409,21 @@ public final class BrowserSessionManager: ObservableObject {
         activeSession = conversationID.flatMap { sessions[$0] }
     }
 
-    func open(_ rawAddress: String, conversationID: UUID, allowLocalAccess: Bool = false) async throws -> String {
+    /// 打开一个地址。
+    ///
+    /// - Parameter localAccessApproved: 用户是否**已明确批准**访问本地/内网地址。
+    func open(_ rawAddress: String, conversationID: UUID, localAccessApproved: Bool = false) async throws -> String {
         guard let url = Self.normalizedURL(rawAddress) else {
             throw BrowserSession.SessionError.invalidURL
         }
-        if Self.isLocalHost(url.host ?? ""), !allowLocalAccess {
+        if Self.isLocalHost(url.host ?? ""), !localAccessApproved {
             throw BrowserSession.SessionError.blockedLocalNavigation
         }
         onRequestPresentation?()
         let session = session(for: conversationID)
         activeConversationID = conversationID
         activeSession = session
-        try await session.navigate(to: url, allowLocalAccess: allowLocalAccess)
+        try await session.navigate(to: url, localAccessApproved: localAccessApproved)
         return "Opened \(session.title) (\(session.urlString)). Use browser_read to inspect the page."
     }
 
@@ -434,10 +455,20 @@ public final class BrowserSessionManager: ObservableObject {
         // 不能因为「用户已经批准了这次点击」就一并放行本地地址。
         // 否则用户批准一次普通点击，就能被页面静默重定向到内网服务。
         if let destination = result.navigationTarget {
+            let host = destination.host?.lowercased() ?? ""
+            let isLocal = BrowserSessionManager.isLocalHost(host)
+
+            // 用户批准的是「点击这个元素」，不是「访问内网地址」。
+            // 因此指向内网的链接不能顺带放行，必须让内网访问单独走一次审批。
+            // 但同一会话内已经批准过的主机可以继续访问——否则用户批准了
+            // localhost:3000 后，在站内点链接反而会被拦下。
+            if isLocal, !session.hasApprovedLocalHost(host) {
+                throw BrowserSession.SessionError.localNavigationNeedsApproval(host)
+            }
             return try await open(
                 destination.absoluteString,
                 conversationID: conversationID,
-                allowLocalAccess: true
+                localAccessApproved: isLocal
             )
         }
         return result.message
@@ -508,8 +539,11 @@ public final class BrowserSessionManager: ObservableObject {
             destination = parsed
         }
 
-        let needsApproval = destination.map { Self.isLocalHost($0.host ?? "") } ?? false
-        return try await session.navigate(action: action, url: destination, allowLocalAccess: needsApproval)
+        // `goto` 的审批由工具层按目标地址判定（本地地址 → .high → 先审批）。
+        // 走到这里说明审批已通过，因此本地地址视为「已批准」。
+        // 其它动作（back/forward/reload）不涉及新地址，不受此影响。
+        let approvedForLocalAccess = destination.map { Self.isLocalHost($0.host ?? "") } ?? false
+        return try await session.navigate(action: action, url: destination, localAccessApproved: approvedForLocalAccess)
     }
 
     /// 执行页面 JavaScript。
@@ -540,7 +574,8 @@ public final class BrowserSessionManager: ObservableObject {
 
     func navigateAddressBar(_ address: String) {
         let conversationID = activeConversationID ?? standaloneSessionID
-        Task { try? await open(address, conversationID: conversationID, allowLocalAccess: true) }
+        // 用户亲手在地址栏输入地址，属于主动行为，视为已批准访问该地址。
+        Task { try? await open(address, conversationID: conversationID, localAccessApproved: true) }
     }
 
     private func session(for conversationID: UUID) -> BrowserSession {
