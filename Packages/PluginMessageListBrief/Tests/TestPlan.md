@@ -163,6 +163,15 @@ PluginMessageListBrief 是消息列表 V1（Brief 模式）的实现包。它按
 | 89 | 状态卡 | 每个活动阶段都能产出一行状态文本 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `everyStageProducesSingleLineStatusText` |
 | 90 | 状态卡 | 状态卡高度只容得下一行文字（渲染级，两行版式为 46pt 会失败） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `cardHeightFitsSingleLine` |
 | 91 | 状态卡 | 有无细节时状态卡高度不变（渲染级） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cardHeightStableWithoutDetail` |
+| 92 | BottomStickyPin | 文档在钉底之后继续变高（懒加载行物化 / Markdown 异步解析回填）时，列表必须重新钉住底沿，否则底部被输入框遮住 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `bottomStaysPinnedWhenDocumentGrowsAfterSettle` |
+| 93 | BottomStickyPin | 文档连续变高时每一轮都要重新钉底，只有最后一帧的位置算数 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bottomStaysPinnedAcrossConsecutiveGrowths` |
+| 94 | BottomStickyPin | 文档变高后「是否在底部」必须仍为 true，否则后续新消息彻底不再跟随滚到底 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `bottomStateStaysTrueAfterDocumentGrowth` |
+| 95 | BottomStickyPin | 用户已上滚时文档变高不得把列表拽回底部 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `bottomIsNotYankedBackWhenUserScrolledAway` |
+| 96 | BottomStickyPin | 解绑之后不得再自动钉底（换会话重建 List 时旧 tracker 不得继续操作） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `noAutoPinAfterDetach` |
+| 97 | StuckLoadingMask | 首屏遮罩：没有任何收敛轮次时也在预算内放行 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateReleasesMaskWithinBudgetWithoutAnySettleRound` |
+| 98 | StuckLoadingMask | 首屏遮罩：会话切换后在预算内放行 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateReleasesMaskWithinBudgetAfterConversationSwitch` |
+| 99 | StuckLoadingMask | 首屏遮罩：同一会话的新一轮可以覆盖已失效的旧轮 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gateAcceptsNewRoundForSameConversationAfterStaleRound` |
+| 100 | StuckLoadingMask | 首屏遮罩：已失效的旧轮不得放行遮罩，但必须把手交出去 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateStaleRoundMustNotReleaseMaskButMustHandOver` |
 
 ## 仅人工验收场景
 
@@ -191,10 +200,10 @@ PluginMessageListBrief 是消息列表 V1（Brief 模式）的实现包。它按
 
 ## 覆盖率统计
 
-- P0: 已覆盖 48 / 48
-- P1: 已覆盖 40 / 40
+- P0: 已覆盖 54 / 54
+- P1: 已覆盖 43 / 43
 - P2: 已覆盖 3 / 3
-- **合计: 91 / 91**（仅表示清单场景，非源码覆盖率）
+- **合计: 100 / 100**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

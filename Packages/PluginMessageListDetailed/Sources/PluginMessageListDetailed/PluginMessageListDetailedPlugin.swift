@@ -134,7 +134,8 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
         if MessageListDetailedUITestingSupport.isEnabled, let conversations, let messages {
             uiTestingSeedHandle = MessageListDetailedUITestingSupport.seed(
                 conversations: conversations,
-                messages: messages
+                messages: messages,
+                agentLoop: agentTurn
             )
         }
         #endif
