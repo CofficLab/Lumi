@@ -1,5 +1,6 @@
 #if DEBUG
 import Foundation
+import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
 
@@ -54,13 +55,14 @@ public enum MessageListBriefUITestingSupport {
     @discardableResult
     static func seed(
         conversations: any ConversationManaging,
-        messages: any MessageManaging
+        messages: any MessageManaging,
+        agentLoop: (any AgentLoopProviding)? = nil
     ) -> any ConversationObserverHandle {
         guard !hasSeeded(conversations: conversations) else {
             return NoopObserverHandle()
         }
         if !conversations.isLoadingConversations {
-            doSeed(conversations: conversations, messages: messages)
+            doSeed(conversations: conversations, messages: messages, agentLoop: agentLoop)
             return NoopObserverHandle()
         }
         let box = OneShotObserverBox()
@@ -69,7 +71,7 @@ public enum MessageListBriefUITestingSupport {
             // 一次性：先注销自己，再 seed（seed 会再次触发 listChanged）。
             box.handle?.cancel()
             box.handle = nil
-            doSeed(conversations: conversations, messages: messages)
+            doSeed(conversations: conversations, messages: messages, agentLoop: agentLoop)
         }
         box.handle = handle
         return handle
@@ -82,7 +84,8 @@ public enum MessageListBriefUITestingSupport {
 
     private static func doSeed(
         conversations: any ConversationManaging,
-        messages: any MessageManaging
+        messages: any MessageManaging,
+        agentLoop: (any AgentLoopProviding)?
     ) {
         guard let conversationID = try? conversations.createConversation(
             title: conversationTitle,
@@ -90,6 +93,17 @@ public enum MessageListBriefUITestingSupport {
             providerID: nil,
             modelName: nil
         ) else { return }
+
+        // 必须抑制自动回复：下面插入的 user 消息会被
+        // `PluginAgentLoop.MessageObserver` 捕获并自动 `runTurn`。
+        // 自动回合会写回一条 `createdAt = now` 的助手消息，把该会话的
+        // `lastMessageAt` 推到「现在」，让会话列表的排序由竞态决定。
+        //
+        // 范式参照 `PluginAgentLoop.ErrorRetryUITestingSupport`：它同样是因为
+        // 插入 user 消息而必须显式抑制自动回复。
+        // 抑制**只覆盖 seed 阶段**，seed 结束必须解除（见 Standard 夹具的说明）。
+        agentLoop?.setAutoReplySuppressed(true, for: conversationID)
+        defer { agentLoop?.setAutoReplySuppressed(false, for: conversationID) }
 
         // 4 个 turn，全部保持简短：总高度低于消息区视口，避免 macOS List
         // 懒加载把视口外的行裁掉导致 UI 测试找不到元素。

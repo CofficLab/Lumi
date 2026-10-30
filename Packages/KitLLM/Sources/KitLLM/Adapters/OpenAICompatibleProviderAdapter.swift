@@ -1,4 +1,5 @@
 import Foundation
+import KitAgentTool
 
 public struct OpenAICompatibleProviderAdapter: Sendable {
     public let configuration: OpenAICompatibleProviderConfiguration
@@ -325,12 +326,13 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
 
     /// 授权流程产生的临时消息不是工具执行结果，不应发送给 LLM。
     /// 旧会话可能已经持久化了这类消息，因此发送层也要做兼容清理。
+    ///
+    /// - Note: 判据来自共享契约 `ToolSuspensionKind`（`KitAgentTool`）。
+    ///   这里硬编码 `"permission"` 字面量的话，契约一旦改名，本函数会
+    ///   静默返回 false——授权占位消息被原样发给 LLM，进而产生非法的
+    ///   连续 tool 消息并触发上游 400。症状与根因相隔很远，极难归因。
     private static func isPermissionPlaceholder(_ content: String) -> Bool {
-        guard let data = content.data(using: .utf8),
-              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            return false
-        }
-        return object["kind"] as? String == "permission"
+        ToolSuspensionKind.isPermissionRequest(content)
     }
 
     public func formatTool(_ tool: any LLMToolSchemaProviding) -> [String: Any] {

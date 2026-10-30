@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆盖 29 条用例。
+PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆盖 49 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 29
+测试文件: 6 个，用例总数: 49
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -28,6 +28,7 @@ PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆
 - `ToolPermissionRequest`
 - `MessageRendererCapability`
 - `BorderedUtilityContent`
+- `CollapsedContentChips`
 - `CollapsiblePlainText`
 - `CompactMessageHeaderView`
 - `ErrorTransportDetailsButton`
@@ -36,7 +37,6 @@ PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆
 - `MessageInfoButton`
 - `ResendMessageButton`
 - `RetryTurnButton`
-- `ThinkingPopoverContent`
 
 ## 关键行为契约（实现约定，非协议要求）
 
@@ -44,8 +44,10 @@ PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆
 
 - **MessageRendererPlugin**（15 条）：由 `assistantContentVerbosity`、`v1DoesNotUseCustomToolRenderers`、`formatsToolCallArguments` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RetryTurnButton**（6 条）：由 `retryableWhenTurnMatches`、`notRetryableAfterTurnSuperseded`、`notRetryableWithoutTurnID` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ToolApprovalAfterConversationSwitch**（5 条）：由 `approvalCardDoesNotReappearAfterSwitchingBack`、`approvalCardDoesNotReappearAfterRejecting`、`cacheDoesNotResurrectAwaitingUserResponseResult` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolApprovalVisibilityAfterResolution**（4 条）：由 `showsApprovalWhilePending`、`hidesApprovalAfterUserApproved`、`hidesApprovalAfterUserRejected` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ToolJobSummary**（4 条）：由 `mapsAllStatuses`、`projectsLiveJob`、`terminalJobCannotStop` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ToolCallGroupCollapsePolicy**（14 条）：由 `singleCallIsNotCollapsed`、`emptyGroupIsNotCollapsed`、`multipleCompletedCallsAreCollapsed` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ToolJobSummary**（5 条）：由 `mapsAllStatuses`、`projectsLiveJob`、`terminalJobIsNotStale` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -72,35 +74,55 @@ PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆
 | 19 | RetryTurnButton | 没有 capability 时不可重试（插件未装配 AgentLoop） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `notRetryableWithoutCapability` |
 | 20 | RetryTurnButton | 重试请求携带触发消息的回合 ID 与会话 ID | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `retryRequestCarriesTurnAndConversation` |
 | 21 | RetryTurnButton | 不可重试的消息不应发出任何重试请求 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `noRetryRequestWhenNotRetryable` |
-| 22 | ToolApprovalVisibilityAfterResolution | 等待授权时显示授权卡片 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `showsApprovalWhilePending` |
-| 23 | ToolApprovalVisibilityAfterResolution | 用户已允许后重新打开不再显示授权卡片 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `hidesApprovalAfterUserApproved` |
-| 24 | ToolApprovalVisibilityAfterResolution | 用户已拒绝后重新打开不再显示授权卡片 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `hidesApprovalAfterUserRejected` |
-| 25 | ToolApprovalVisibilityAfterResolution | 授权状态丢失的形态会重新显示授权卡片（症状定义） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `stalePendingFormRedisplayApproval` |
-| 26 | ToolJobSummary | 所有 Job 状态都有稳定的用户文案 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `mapsAllStatuses` |
-| 27 | ToolJobSummary | 运行中的 Job 计算经过时间、进度和可停止状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `projectsLiveJob` |
-| 28 | ToolJobSummary | 终态 Job 不再显示停止操作 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `terminalJobCannotStop` |
-| 29 | ToolJobSummary | 步骤组摘要覆盖进行中、失败和完成 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summarizesJobGroup` |
+| 22 | ToolApprovalAfterConversationSwitch | 用户已允许后切换对话再切回，授权卡片不再出现 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `approvalCardDoesNotReappearAfterSwitchingBack` |
+| 23 | ToolApprovalAfterConversationSwitch | 用户已拒绝后切换对话再切回，授权卡片不再出现 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `approvalCardDoesNotReappearAfterRejecting` |
+| 24 | ToolApprovalAfterConversationSwitch | 缓存命中不得复活等待授权的占位结果 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `cacheDoesNotResurrectAwaitingUserResponseResult` |
+| 25 | ToolApprovalAfterConversationSwitch | 缓存仍可补齐消息里缺失的工具结果 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cacheStillFillsMissingResults` |
+| 26 | ToolApprovalAfterConversationSwitch | 未处理的授权仍然显示授权卡片 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pendingApprovalStillRendersCard` |
+| 27 | ToolApprovalVisibilityAfterResolution | 等待授权时显示授权卡片 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `showsApprovalWhilePending` |
+| 28 | ToolApprovalVisibilityAfterResolution | 用户已允许后重新打开不再显示授权卡片 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `hidesApprovalAfterUserApproved` |
+| 29 | ToolApprovalVisibilityAfterResolution | 用户已拒绝后重新打开不再显示授权卡片 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `hidesApprovalAfterUserRejected` |
+| 30 | ToolApprovalVisibilityAfterResolution | 授权状态丢失的形态会重新显示授权卡片（症状定义） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `stalePendingFormRedisplayApproval` |
+| 31 | ToolCallGroupCollapsePolicy | 单个工具调用不折叠 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `singleCallIsNotCollapsed` |
+| 32 | ToolCallGroupCollapsePolicy | 空组不折叠 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptyGroupIsNotCollapsed` |
+| 33 | ToolCallGroupCollapsePolicy | 多个已完成的工具调用折叠 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `multipleCompletedCallsAreCollapsed` |
+| 34 | ToolCallGroupCollapsePolicy | 多个进行中的工具调用折叠 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `multipleRunningCallsAreCollapsed` |
+| 35 | ToolCallGroupCollapsePolicy | V3（detailed）保持逐条铺开，不折叠 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `detailedIsNotCollapsed` |
+| 36 | ToolCallGroupCollapsePolicy | V1（brief）保持逐条铺开，不折叠 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `briefIsNotCollapsed` |
+| 37 | ToolCallGroupCollapsePolicy | brief 会被升格为 standard，折叠判定必须用原始级别 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `briefIsUpgradedToStandard` |
+| 38 | ToolCallGroupCollapsePolicy | 等待授权的调用不折叠 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pendingAuthorizationIsNotCollapsed` |
+| 39 | ToolCallGroupCollapsePolicy | 等待用户作答的调用不折叠 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `awaitingUserResponseIsNotCollapsed` |
+| 40 | ToolCallGroupCollapsePolicy | 授权状态缺失且结果未出时按等待授权处理 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingAuthorizationStateWithoutResultIsTreatedAsPending` |
+| 41 | ToolCallGroupCollapsePolicy | 授权状态缺失但已有结果时不算挂起 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingAuthorizationStateWithResultIsNotPending` |
+| 42 | ToolCallGroupCollapsePolicy | 用户已授权的调用不阻止折叠 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `approvedCallDoesNotBlockCollapsing` |
+| 43 | ToolCallGroupCollapsePolicy | 用户已拒绝的调用不阻止折叠 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectedCallDoesNotBlockCollapsing` |
+| 44 | ToolCallGroupCollapsePolicy | 挂起检测只看组内是否有交互调用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `detectsAwaitingInteraction` |
+| 45 | ToolJobSummary | 所有 Job 状态都有稳定的用户文案 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `mapsAllStatuses` |
+| 46 | ToolJobSummary | 运行中的 Job 计算经过时间和进度 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `projectsLiveJob` |
+| 47 | ToolJobSummary | 终态 Job 不再标记为进行中 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `terminalJobIsNotStale` |
+| 48 | ToolJobSummary | 停止中的 Job 仍算进行中 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cancellingJobIsStillInFlight` |
+| 49 | ToolJobSummary | 步骤组摘要覆盖进行中、失败和完成 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summarizesJobGroup` |
 
-> 说明：全部 **29 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **49 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
-- P1: 已覆盖 18 / 18
-- P2: 已覆盖 1 / 1
-- **合计: 29 / 29**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 14 / 14
+- P1: 已覆盖 33 / 33
+- P2: 已覆盖 2 / 2
+- **合计: 49 / 49**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（18 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
+- **P1**: 其余功能性用例（33 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 29 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 49 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

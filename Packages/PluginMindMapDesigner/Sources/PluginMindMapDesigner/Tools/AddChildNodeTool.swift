@@ -50,7 +50,7 @@ public struct AddChildNodeTool: SuperAgentTool {
         do {
             let (map, scope) = try await MindMapToolSupport.resolveMap(arguments)
             let (_, created) = try await MainActor.run {
-                try MindMapStore.shared.addChildNodes(mapId: map.id, parentId: parentId, texts: nonEmptyTexts, color: color, scope: scope)
+                try MindMapToolSupport.store().addChildNodes(mapId: map.id, parentId: parentId, texts: nonEmptyTexts, color: color, scope: scope)
             }
             await MindMapToolSupport.notify(scope: scope, mapId: map.id)
 
@@ -73,7 +73,7 @@ public struct AddChildNodeTool: SuperAgentTool {
                 """
             }
         } catch {
-            await MainActor.run { MindMapStore.shared.setError(error.localizedDescription) }
+            await MainActor.run { MindMapToolSupport.store().setError(error.localizedDescription) }
             return MindMapToolSupport.error(error, language: language)
         }
     }

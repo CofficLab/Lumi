@@ -4,6 +4,7 @@ import KernelCore
 import ProviderLLMManager
 import ProviderStorage
 import ProviderChatSection
+import ProviderConversation
 import KitLLM
 import LumiLoggingKit
 /// MiniMax 供应商装配插件（KernelCore 生态）。
@@ -44,6 +45,7 @@ public final class MiniMaxProviderPlugin: SuperPlugin, SuperLog {
     private var tokenPlanViewModel: TokenPlanViewModel?
     private var selectionGate: MiniMaxSelectionGate?
     private var selectionObserver: MiniMaxSelectionObserver?
+    private var quotaCapability: MiniMaxQuotaCapabilityAdapter?
 
     public init() {}
 
@@ -89,6 +91,8 @@ public final class MiniMaxProviderPlugin: SuperPlugin, SuperLog {
         selectionObserver?.cancel()
         selectionObserver = nil
         selectionGate = nil
+        quotaCapability?.cancel()
+        quotaCapability = nil
         tokenPlanViewModel?.cancelPendingFetch()
         tokenPlanViewModel = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
@@ -131,9 +135,17 @@ public final class MiniMaxProviderPlugin: SuperPlugin, SuperLog {
             },
         ])
 
-        // 强引用保留观察者：LLM 选中态变化驱动 chip 可见性与首刷。
+        // 「生效供应商」= 对话钉选优先、否则回落到全局选中（与 AgentLoop 路由同口径）。
+        // 只看全局选中项会让配额 chip 与实际请求去向脱节。
+        let capability = MiniMaxQuotaCapabilityAdapter(
+            llmManager: manager,
+            conversations: kernel.resolveProvider((any ConversationManaging).self)
+        )
+        quotaCapability = capability
+
+        // 强引用保留观察者：生效供应商变化驱动 chip 可见性与首刷。
         let observer = MiniMaxSelectionObserver(
-            manager: manager,
+            capability: capability,
             gate: gate,
             onSelect: { [weak viewModel] in viewModel?.refreshIfNeeded() },
             onDeselect: { [weak viewModel] in viewModel?.cancelPendingFetch() }

@@ -118,7 +118,8 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
         if let conversations, let messages, MessageListBriefUITestingSupport.isEnabled {
             uiTestingSeedHandle = MessageListBriefUITestingSupport.seed(
                 conversations: conversations,
-                messages: messages
+                messages: messages,
+                agentLoop: agentTurn
             )
         }
         #endif

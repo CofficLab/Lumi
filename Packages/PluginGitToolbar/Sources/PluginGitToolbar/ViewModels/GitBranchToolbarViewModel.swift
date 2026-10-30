@@ -22,6 +22,12 @@ final class GitBranchToolbarViewModel: ObservableObject {
 
     private let capability: any GitBranchCapability
     private var loadTask: Task<Void, Never>?
+    /// 加载代次：只有最新一次加载的结果才允许写入状态。
+    ///
+    /// 仓库 watch 事件可能连续到达（切分支会同时改 HEAD 与 refs），单靠
+    /// `Task.isCancelled` 不足以区分「已取消」与「结果已过期」——取消发生在
+    /// 挂起点之间时，旧读取仍可能带着旧分支名返回。代次号让过期结果被丢弃。
+    private var loadGeneration: UInt64 = 0
 
     init(capability: any GitBranchCapability) {
         self.capability = capability
@@ -42,7 +48,8 @@ final class GitBranchToolbarViewModel: ObservableObject {
         loadTask?.cancel()
         guard let path, !path.isEmpty else { return }
         loadTask = Task { [weak self] in
-            await self?.reload(path: path)
+            guard let self else { return }
+            await self.reload(path: path, generation: self.nextGeneration())
         }
     }
 
@@ -51,7 +58,8 @@ final class GitBranchToolbarViewModel: ObservableObject {
         guard let path = projectPath, !path.isEmpty else { return }
         loadTask?.cancel()
         loadTask = Task { [weak self] in
-            await self?.reload(path: path)
+            guard let self else { return }
+            await self.reload(path: path, generation: self.nextGeneration())
         }
     }
 
@@ -68,10 +76,10 @@ final class GitBranchToolbarViewModel: ObservableObject {
         defer { isBusy = false }
         do {
             try await capability.checkout(branch: branch.name, atPath: path)
-            await reload(path: path)
+            await reload(path: path, generation: nextGeneration())
         } catch {
             errorMessage = Self.describe(error)
-            await reload(path: path)
+            await reload(path: path, generation: nextGeneration())
         }
     }
 
@@ -86,10 +94,10 @@ final class GitBranchToolbarViewModel: ObservableObject {
         defer { isBusy = false }
         do {
             try await capability.createBranch(named: trimmed, atPath: path)
-            await reload(path: path)
+            await reload(path: path, generation: nextGeneration())
         } catch {
             errorMessage = Self.describe(error)
-            await reload(path: path)
+            await reload(path: path, generation: nextGeneration())
         }
     }
 
@@ -100,9 +108,19 @@ final class GitBranchToolbarViewModel: ObservableObject {
 
     // MARK: - 加载
 
-    private func reload(path: String) async {
+    /// 分配新的加载代次，并让此前所有在途加载作废。
+    private func nextGeneration() -> UInt64 {
+        loadGeneration &+= 1
+        return loadGeneration
+    }
+
+    /// 重新加载分支信息。
+    ///
+    /// - Parameter path: 仓库路径。
+    /// - Parameter generation: 本次加载的代次；与当前代次不一致时结果作废。
+    private func reload(path: String, generation: UInt64) async {
         let isRepository = await capability.isRepository(atPath: path)
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, generation == loadGeneration else { return }
         guard isRepository else {
             isGitRepository = false
             currentBranch = nil
@@ -115,11 +133,11 @@ final class GitBranchToolbarViewModel: ObservableObject {
             async let current = capability.currentBranch(atPath: path)
             async let list = capability.listBranches(atPath: path, includeRemote: true)
             let (resolvedCurrent, resolvedList) = try await (current, list)
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, generation == loadGeneration else { return }
             currentBranch = resolvedCurrent
             branches = Self.sorted(resolvedList)
         } catch {
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, generation == loadGeneration else { return }
             currentBranch = nil
             branches = []
             errorMessage = Self.describe(error)
