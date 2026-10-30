@@ -22,12 +22,6 @@ import Foundation
 /// - `"computer_use_authorization"`：Computer Use 应用授权。
 ///
 /// 两者都是「等用户做一个授权决定」，都需要 `pendingAuthorization`。
-///
-/// ## 键名陷阱
-///
-/// 载荷里 `toolCallId` 的键名在不同生产者之间并不统一：有的用
-/// `toolCallId`（小写 d），有的用 `toolCallID`（大写 D）。因此本判据
-/// **只读 `kind`**——它不依赖那个有争议的键名。
 public enum ToolSuspensionKind {
     /// 通用工具授权载荷的种类。
     public static let permission = "permission"
@@ -37,12 +31,9 @@ public enum ToolSuspensionKind {
     /// - Returns: 载荷带 `kind` 字段时返回其值，否则返回 `nil`。
     public static func kind(of content: String?) -> String? {
         guard let content,
-              let data = content.data(using: .utf8),
-              let object = try? JSONSerialization.jsonObject(with: data),
-              let dictionary = object as? [String: Any],
-              let kind = dictionary["kind"] as? String
+              let dictionary = ToolInteractionPayload.jsonObject(from: content)
         else { return nil }
-        return kind
+        return dictionary["kind"] as? String
     }
 
     /// 载荷是否表示一次**授权**挂起（等用户做授权决定）。
@@ -80,11 +71,7 @@ public enum ToolSuspensionKind {
     ///
     /// - Note: 数组 / 标量也算「非结构化」——它们不是载荷对象。
     public static func hasStructuredPayload(_ content: String?) -> Bool {
-        guard let content,
-              let data = content.data(using: .utf8),
-              let object = try? JSONSerialization.jsonObject(with: data),
-              object is [String: Any]
-        else { return false }
-        return true
+        guard let content else { return false }
+        return ToolInteractionPayload.jsonObject(from: content) != nil
     }
 }
