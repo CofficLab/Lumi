@@ -460,10 +460,22 @@ public actor ConversationStore: SuperLog {
     }
 
     /// Build a recent daily conversation-count series with bounded count queries.
-    func fetchDailyCountSeries(days: Int = 14, endingAt date: Date = Date()) -> ConversationDailyCountSeries {
+    ///
+    /// - Parameters:
+    ///   - days: 序列长度（向前回溯的天数）。
+    ///   - projectPath: 只统计该项目的对话；`nil` 表示全部项目。
+    ///   - includingChildConversations: 是否把子 Agent 会话计入。
+    ///   - endingAt: 序列的最后一天。
+    func fetchDailyCountSeries(
+        days: Int = 14,
+        projectPath: String? = nil,
+        includingChildConversations: Bool = true,
+        endingAt date: Date = Date()
+    ) -> ConversationDailyCountSeries {
         guard days > 0 else { return ConversationDailyCountSeries(points: []) }
 
         let context = ModelContext(container)
+        normalizeEmptyParentConversationIDs(in: context)
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: date)
         let firstDay = calendar.date(byAdding: .day, value: -(days - 1), to: today) ?? today
@@ -475,15 +487,123 @@ public actor ConversationStore: SuperLog {
 
             let startTimestamp = day.timeIntervalSince1970
             let endTimestamp = nextDay.timeIntervalSince1970
-            let descriptor = FetchDescriptor<ConversationModel>(
-                predicate: #Predicate<ConversationModel> {
-                    $0.createdAt >= startTimestamp && $0.createdAt < endTimestamp
-                }
-            )
-            let count = (try? context.fetchCount(descriptor)) ?? 0
+            let count = (try? context.fetchCount(dailyCountDescriptor(
+                startTimestamp: startTimestamp,
+                endTimestamp: endTimestamp,
+                projectPath: projectPath,
+                includingChildConversations: includingChildConversations
+            ))) ?? 0
             return ConversationDailyCountPoint(day: day, count: count)
         }
         return ConversationDailyCountSeries(points: points)
+    }
+
+    /// 单日区间内的对话计数条件。
+    private func dailyCountDescriptor(
+        startTimestamp: TimeInterval,
+        endTimestamp: TimeInterval,
+        projectPath: String?,
+        includingChildConversations: Bool
+    ) -> FetchDescriptor<ConversationModel> {
+        if let projectPath {
+            return FetchDescriptor<ConversationModel>(
+                predicate: #Predicate<ConversationModel> {
+                    $0.createdAt >= startTimestamp &&
+                    $0.createdAt < endTimestamp &&
+                    $0.projectPath == projectPath &&
+                    (includingChildConversations || $0.parentConversationID == nil)
+                }
+            )
+        }
+        return FetchDescriptor<ConversationModel>(
+            predicate: #Predicate<ConversationModel> {
+                $0.createdAt >= startTimestamp &&
+                $0.createdAt < endTimestamp &&
+                (includingChildConversations || $0.parentConversationID == nil)
+            }
+        )
+    }
+
+    /// 查找「创建于 `cutoff` 之前」的对话 ID。
+    ///
+    /// - Parameters:
+    ///   - cutoff: 时间分界点；`createdAt` 早于它的会话命中。
+    ///   - projectPath: 只查该项目的对话；`nil` 表示全部项目。
+    ///   - includingChildConversations: 是否把子 Agent 会话计入。
+    func conversationIDs(
+        createdBefore cutoff: Date,
+        projectPath: String? = nil,
+        includingChildConversations: Bool = true
+    ) -> [UUID] {
+        let context = ModelContext(container)
+        normalizeEmptyParentConversationIDs(in: context)
+        let cutoffTimestamp = cutoff.timeIntervalSince1970
+
+        let descriptor: FetchDescriptor<ConversationModel>
+        if let projectPath {
+            descriptor = FetchDescriptor<ConversationModel>(
+                predicate: #Predicate<ConversationModel> {
+                    $0.createdAt < cutoffTimestamp &&
+                    $0.projectPath == projectPath &&
+                    (includingChildConversations || $0.parentConversationID == nil)
+                }
+            )
+        } else {
+            descriptor = FetchDescriptor<ConversationModel>(
+                predicate: #Predicate<ConversationModel> {
+                    $0.createdAt < cutoffTimestamp &&
+                    (includingChildConversations || $0.parentConversationID == nil)
+                }
+            )
+        }
+
+        do {
+            return try context.fetch(descriptor).compactMap { UUID(uuidString: $0.id) }
+        } catch {
+            Self.logger.error("\(Self.t)查询待清理对话失败：\(error.localizedDescription)")
+            return []
+        }
+    }
+
+    /// 统计「创建于 `cutoff` 之前」的对话数量。
+    ///
+    /// - Parameters:
+    ///   - cutoff: 时间分界点；`createdAt` 早于它的会话命中。
+    ///   - projectPath: 只统计该项目的对话；`nil` 表示全部项目。
+    ///   - includingChildConversations: 是否把子 Agent 会话计入。
+    func conversationCount(
+        createdBefore cutoff: Date,
+        projectPath: String? = nil,
+        includingChildConversations: Bool = true
+    ) -> Int {
+        let context = ModelContext(container)
+        normalizeEmptyParentConversationIDs(in: context)
+        let cutoffTimestamp = cutoff.timeIntervalSince1970
+
+        let descriptor: FetchDescriptor<ConversationModel>
+        if let projectPath {
+            descriptor = FetchDescriptor<ConversationModel>(
+                predicate: #Predicate<ConversationModel> {
+                    $0.createdAt < cutoffTimestamp &&
+                    $0.projectPath == projectPath &&
+                    (includingChildConversations || $0.parentConversationID == nil)
+                }
+            )
+        } else {
+            descriptor = FetchDescriptor<ConversationModel>(
+                predicate: #Predicate<ConversationModel> {
+                    $0.createdAt < cutoffTimestamp &&
+                    (includingChildConversations || $0.parentConversationID == nil)
+                }
+            )
+        }
+
+        do {
+            return try context.fetchCount(descriptor)
+        } catch {
+            Self.logger.error("\(Self.t)统计待清理对话失败：\(error.localizedDescription)")
+            return 0
+        }
     }
 
     /// Fetch a single conversation by ID
