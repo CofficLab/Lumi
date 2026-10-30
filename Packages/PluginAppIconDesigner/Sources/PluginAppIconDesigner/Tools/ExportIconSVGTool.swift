@@ -39,7 +39,7 @@ public struct ExportIconSVGTool: SuperAgentTool {
             try svg.write(to: outputURL, atomically: true, encoding: .utf8)
 
             await MainActor.run {
-                IconDocumentStore.shared.setExportURL(outputURL)
+                IconToolSupport.store().setExportURL(outputURL)
             }
 
             return IconToolSupport.localized(
@@ -57,7 +57,7 @@ public struct ExportIconSVGTool: SuperAgentTool {
             )
         } catch {
             await MainActor.run {
-                IconDocumentStore.shared.setError(error.localizedDescription)
+                IconToolSupport.store().setError(error.localizedDescription)
             }
             return IconToolSupport.error(error, language: language)
         }

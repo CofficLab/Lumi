@@ -35,7 +35,7 @@ public struct DeleteNodeTool: SuperAgentTool {
             let (map, scope) = try await MindMapToolSupport.resolveMap(arguments)
             let removedCount = map.descendantIds(of: nodeId).count + 1
             let updated = try await MainActor.run {
-                try MindMapStore.shared.deleteNode(mapId: map.id, nodeId: nodeId, scope: scope)
+                try MindMapToolSupport.store().deleteNode(mapId: map.id, nodeId: nodeId, scope: scope)
             }
             await MindMapToolSupport.notify(scope: scope, mapId: map.id)
             switch language {
@@ -45,7 +45,7 @@ public struct DeleteNodeTool: SuperAgentTool {
                 return "Deleted node \(nodeId.prefix(8)) and \(removedCount - 1) descendant(s).\nmapId: \(updated.id)\nremainingNodes: \(updated.nodes.count)"
             }
         } catch {
-            await MainActor.run { MindMapStore.shared.setError(error.localizedDescription) }
+            await MainActor.run { MindMapToolSupport.store().setError(error.localizedDescription) }
             return MindMapToolSupport.error(error, language: language)
         }
     }

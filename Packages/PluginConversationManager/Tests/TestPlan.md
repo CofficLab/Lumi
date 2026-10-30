@@ -5,7 +5,7 @@
 PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 30 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 30
+测试文件: 10 个，用例总数: 40
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -86,16 +86,26 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 28 | ConversationStore 项目会话 ID | 只返回该项目的会话 ID | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `returnsOnlyProjectConversations` |
 | 29 | ConversationStore 项目会话 ID | 活动窗口把会话集合限制在窗口内 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `limitsToTheActivityWindow` |
 | 30 | ConversationStore 项目会话 ID | 项目下没有会话时返回空数组 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `emptyProjectReturnsEmptyArray` |
+| 31 | ConversationModelSelection | 钉选模型后会话的 modelID 必须被写入 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectModelWritesConversationModelID` |
+| 32 | ConversationModelSelection | 会话列表重载后模型钉选不得丢失 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `modelSelectionSurvivesConversationReload` |
+| 33 | ConversationStoreUntitledQuery | 无标题会话查询只命中真正无标题的会话 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `findsOnlyUntitledConversations` |
+| 34 | ConversationStoreUntitledQuery | 无标题会话查询排除子代理会话 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `excludesChildConversations` |
+| 35 | ConversationStoreUntitledQuery | 无标题查询遵守 limit | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `respectsLimit` |
+| 36 | ConversationEmptyTitleConsistency | 空标题在内存与数据库两层都表示「没有标题」 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `emptyTitleMeansNoTitleInBothLayers` |
+| 37 | ConversationEmptyTitleConsistency | 真实标题经过存取往返后保持不变 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `realTitleSurvivesRoundTrip` |
+| 38 | ConversationEmptyTitleConsistency | 清空标题后内存与数据库仍然一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `clearingTitleKeepsMemoryAndDatabaseConsistent` |
+| 39 | ConversationEmptyTitleConsistency | 只有空白的标题等同于没有标题（两层一致） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `treatsWhitespaceOnlyTitleAsUntitled` |
+| 40 | ConversationStoreUntitledQuery | 只有空白的标题等同于没有标题 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `whitespaceOnlyTitleIsEquivalentToNoTitle` |
 
 > 说明：全部 **30 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 23 / 23
+- P0: 已覆盖 3 / 3
+- P1: 已覆盖 32 / 32
 - P2: 已覆盖 5 / 5
-- **合计: 30 / 30**（仅表示清单场景，非源码覆盖率）
+- **合计: 40 / 40**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

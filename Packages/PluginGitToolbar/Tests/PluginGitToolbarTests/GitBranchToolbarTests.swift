@@ -1,6 +1,7 @@
 import Foundation
 import KernelCore
 import ProviderGit
+import ProviderGitRepositoryWatch
 import ProviderProject
 import ProviderToolbar
 import Testing
@@ -131,5 +132,150 @@ struct GitBranchToolbarTests {
 
         #expect(viewModel.currentBranch == "feature/new")
         #expect(viewModel.branches.contains { $0.name == "feature/new" })
+    }
+
+    // MARK: - 仓库监听（外部改动分支）
+
+    /// 装配「ViewModel + Observer + 仓库监听」的完整链路。
+    private func makeObservedViewModel(
+        git: InMemoryGitBranchManaging,
+        watch: StubGitRepositoryWatching,
+        path: String = "/tmp/repo"
+    ) -> (viewModel: GitBranchToolbarViewModel, observer: GitBranchProjectObserver) {
+        let project = StubProjectProvider()
+        project.currentProject = ProjectInfo(name: "repo", path: path)
+
+        let capability = GitBranchCapabilityAdapter(provider: git, watch: watch)
+        let viewModel = GitBranchToolbarViewModel(capability: capability)
+        let observer = GitBranchProjectObserver(project: project, viewModel: viewModel)
+        observer.observeRepository(capability)
+        return (viewModel, observer)
+    }
+
+    @Test("外部切分支后胶囊随之刷新")
+    func externalBranchChangeRefreshesBranch() async throws {
+        let git = InMemoryGitBranchManaging()
+        git.addRepository(atPath: "/tmp/repo")
+        git.setCurrentBranch("main", forPath: "/tmp/repo")
+        git.setBranches([GitBranchInfo(name: "main", isCurrent: true)], forPath: "/tmp/repo")
+
+        let watch = StubGitRepositoryWatching()
+        let (viewModel, observer) = makeObservedViewModel(git: git, watch: watch)
+        defer { observer.cancel() }
+        try await Task.sleep(for: .milliseconds(100))
+
+        #expect(viewModel.currentBranch == "main")
+
+        // 模拟「在终端 / IDE 里切了分支」：仓库状态变化后由 watch 广播事件。
+        git.setCurrentBranch("feature", forPath: "/tmp/repo")
+        git.setBranches(
+            [
+                GitBranchInfo(name: "main", isCurrent: false),
+                GitBranchInfo(name: "feature", isCurrent: true),
+            ],
+            forPath: "/tmp/repo"
+        )
+        watch.send(.headChanged(previousHead: "aaa", head: "bbb"))
+
+        try await Task.sleep(for: .milliseconds(100))
+
+        #expect(viewModel.currentBranch == "feature")
+    }
+
+    @Test("外部新建分支后分支列表随之更新")
+    func externalBranchCreationUpdatesList() async throws {
+        let git = InMemoryGitBranchManaging()
+        git.addRepository(atPath: "/tmp/repo")
+        git.setCurrentBranch("main", forPath: "/tmp/repo")
+        git.setBranches([GitBranchInfo(name: "main", isCurrent: true)], forPath: "/tmp/repo")
+
+        let watch = StubGitRepositoryWatching()
+        let (viewModel, observer) = makeObservedViewModel(git: git, watch: watch)
+        defer { observer.cancel() }
+        try await Task.sleep(for: .milliseconds(100))
+
+        #expect(viewModel.branches.count == 1)
+
+        git.setBranches(
+            [
+                GitBranchInfo(name: "main", isCurrent: true),
+                GitBranchInfo(name: "feature", isCurrent: false),
+            ],
+            forPath: "/tmp/repo"
+        )
+        watch.send(.refsChanged)
+
+        try await Task.sleep(for: .milliseconds(100))
+
+        #expect(viewModel.branches.contains { $0.name == "feature" })
+    }
+
+    @Test("与分支无关的仓库事件不触发刷新")
+    func unrelatedRepositoryEventDoesNotRefresh() async throws {
+        let git = InMemoryGitBranchManaging()
+        git.addRepository(atPath: "/tmp/repo")
+        git.setCurrentBranch("main", forPath: "/tmp/repo")
+        git.setBranches([GitBranchInfo(name: "main", isCurrent: true)], forPath: "/tmp/repo")
+
+        let watch = StubGitRepositoryWatching()
+        let (viewModel, observer) = makeObservedViewModel(git: git, watch: watch)
+        defer { observer.cancel() }
+        try await Task.sleep(for: .milliseconds(100))
+
+        // 外部改了仓库状态，但当前分支没变；胶囊不应被无谓地刷新。
+        git.setCurrentBranch("feature", forPath: "/tmp/repo")
+        watch.send(.indexChanged)
+        watch.send(.workingTreeChanged)
+        watch.send(.stashChanged)
+
+        try await Task.sleep(for: .milliseconds(100))
+
+        #expect(viewModel.currentBranch == "main")
+    }
+
+    @Test("未启用仓库监听时胶囊仍可正常工作")
+    func worksWithoutRepositoryWatch() async throws {
+        let git = InMemoryGitBranchManaging()
+        git.addRepository(atPath: "/tmp/repo")
+        git.setCurrentBranch("main", forPath: "/tmp/repo")
+        git.setBranches([GitBranchInfo(name: "main", isCurrent: true)], forPath: "/tmp/repo")
+
+        // 不传 watch：模拟未安装 PluginGitRepositoryWatch 的环境。
+        let capability = GitBranchCapabilityAdapter(provider: git)
+        let viewModel = GitBranchToolbarViewModel(capability: capability)
+        viewModel.updateProject(path: "/tmp/repo")
+        try await Task.sleep(for: .milliseconds(100))
+
+        #expect(viewModel.isGitRepository)
+        #expect(viewModel.currentBranch == "main")
+    }
+
+    @Test("插件装配后订阅仓库监听，外部切分支可刷新胶囊")
+    func pluginSubscribesRepositoryWatch() async throws {
+        let kernel = KernelCoreContainer()
+        let toolbar = DefaultToolbarProviding()
+        try kernel.registerProvider((any ToolbarProviding).self, toolbar)
+
+        let project = StubProjectProvider()
+        project.currentProject = ProjectInfo(name: "repo", path: "/tmp/repo")
+        try kernel.registerProvider((any ProjectProviding).self, project)
+
+        let git = InMemoryGitBranchManaging()
+        git.addRepository(atPath: "/tmp/repo")
+        git.setCurrentBranch("main", forPath: "/tmp/repo")
+        git.setBranches([GitBranchInfo(name: "main", isCurrent: true)], forPath: "/tmp/repo")
+        try kernel.registerProvider((any GitBranchManaging).self, git)
+
+        let watch = StubGitRepositoryWatching()
+        try kernel.registerProvider((any GitRepositoryWatching).self, watch)
+
+        let plugin = GitToolbarPlugin()
+        try plugin.onBoot(kernel: kernel)
+        defer { try? plugin.onShutdown(kernel: kernel) }
+
+        try await Task.sleep(for: .milliseconds(100))
+
+        #expect(watch.observerCount == 1)
+        #expect(toolbar.toolbarItems.count == 1)
     }
 }

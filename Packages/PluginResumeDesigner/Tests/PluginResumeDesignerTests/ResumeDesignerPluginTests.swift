@@ -19,7 +19,7 @@ import Testing
 @Suite("PluginResumeDesigner 综合测试", .serialized)
 @MainActor
 struct ResumeDesignerSuite {
-    private final class TestStorage: StorageProviding {
+    final class TestStorage: StorageProviding {
         let dataRootDirectory: URL
 
         init() {

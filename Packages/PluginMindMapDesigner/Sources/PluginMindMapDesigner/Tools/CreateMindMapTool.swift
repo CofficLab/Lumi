@@ -36,7 +36,7 @@ public struct CreateMindMapTool: SuperAgentTool {
         guard let rootText = MindMapToolSupport.nonEmpty(MindMapToolSupport.string(arguments, "rootText")) else {
             return MindMapToolSupport.missingParameter("rootText", language: language)
         }
-        guard await MainActor.run(body: { !MindMapStore.shared.projectStoragePath.isEmpty }) else {
+        guard await MainActor.run(body: { !MindMapToolSupport.store().projectStoragePath.isEmpty }) else {
             return MindMapToolSupport.error(MindMapStoreError.projectRequired, language: language)
         }
 
@@ -50,7 +50,7 @@ public struct CreateMindMapTool: SuperAgentTool {
         }()
 
         let map = await MainActor.run {
-            MindMapStore.shared.createMindMap(title: title, rootText: rootText, direction: direction, scope: scope)
+            MindMapToolSupport.store().createMindMap(title: title, rootText: rootText, direction: direction, scope: scope)
         }
         await MindMapToolSupport.notify(scope: scope, mapId: map.id)
 

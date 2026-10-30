@@ -1,5 +1,6 @@
 import Foundation
 import ProviderGit
+import ProviderGitRepositoryWatch
 
 /// 标题栏分支胶囊需要的最小 Git 能力。
 ///
@@ -21,6 +22,16 @@ protocol GitBranchCapability: AnyObject, Sendable {
 
     /// 创建新分支并切换过去。
     func createBranch(named name: String, atPath path: String) async throws
+
+    /// 订阅仓库 HEAD / refs 变化事件。
+    ///
+    /// 返回 `nil` 表示当前环境没有启用仓库监听（例如未安装
+    /// `PluginGitRepositoryWatch`），此时胶囊仍可正常工作，只是不会跟随
+    /// 外部工具的分支切换刷新。
+    @discardableResult
+    func addRepositoryObserver(
+        _ callback: @escaping (GitRepositoryWatchingEvent) -> Void
+    ) -> (any GitRepositoryWatchingObserverHandle)?
 }
 
 /// 将内核的 `GitBranchManaging` 收窄为插件能力。
@@ -31,8 +42,12 @@ final class GitBranchCapabilityAdapter: GitBranchCapability, @unchecked Sendable
     /// 适配器由插件入口持有，且契约实现由内核注册表持有，二者不构成循环引用。
     private let provider: (any GitBranchManaging)?
 
-    init(provider: any GitBranchManaging) {
+    /// 仓库监听能力；未注册 `GitRepositoryWatching` 时为 `nil`。
+    private let watch: (any GitRepositoryWatching)?
+
+    init(provider: any GitBranchManaging, watch: (any GitRepositoryWatching)? = nil) {
         self.provider = provider
+        self.watch = watch
     }
 
     func isRepository(atPath path: String) async -> Bool {
@@ -57,5 +72,12 @@ final class GitBranchCapabilityAdapter: GitBranchCapability, @unchecked Sendable
     func createBranch(named name: String, atPath path: String) async throws {
         guard let provider else { throw GitBranchError.notARepository(path: path) }
         try await provider.createBranch(named: name, atPath: path)
+    }
+
+    @discardableResult
+    func addRepositoryObserver(
+        _ callback: @escaping (GitRepositoryWatchingEvent) -> Void
+    ) -> (any GitRepositoryWatchingObserverHandle)? {
+        watch?.addObserver(callback)
     }
 }
