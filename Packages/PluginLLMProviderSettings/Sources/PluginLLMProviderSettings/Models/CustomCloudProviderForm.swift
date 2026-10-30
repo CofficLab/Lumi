@@ -1,5 +1,6 @@
 import Foundation
 import KitLLM
+import ProviderLLMManager
 
 /// 「添加 / 编辑云端供应商」表单的草稿状态。
 ///
