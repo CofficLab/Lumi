@@ -95,6 +95,7 @@ import PluginLLMProviderOpenCode
 import PluginLLMProviderCommandCode
 import PluginLLMProviderOpenRouter
 import PluginLLMProviderSettings
+import PluginToolLLMProvider
 import PluginLLMProviderStepFun
 import PluginLLMProviderSublyx
 import PluginLLMProviderTencent
@@ -373,6 +374,10 @@ public struct DefaultPluginFactory: PluginFactory {
             ZhipuProviderPlugin(),
             MLXProviderPlugin(),
             LLMProviderSettingsPlugin(),
+            // 「用对话添加 LLM 供应商」：工具 + 提案卡片。
+            // order=120，必须晚于上面的供应商设置插件（order=100），
+            // 否则自定义供应商 Store 还没注册进内核。
+            PluginLLMProviderToolPlugin(),
         ]
         // UI 测试专用供应商（仅 DEBUG + --lumi-ui-testing 时才真正注册）。
         // 追加在数组末尾，保持 order=900 排在其他供应商之后，使其强制选中最后生效。

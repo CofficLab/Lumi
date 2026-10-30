@@ -34,6 +34,7 @@ import PluginLLMProviderOpenAI
 import PluginLLMProviderOpenCode
 import PluginLLMProviderOpenRouter
 import PluginLLMProviderSettings
+import PluginToolLLMProvider
 import PluginLLMProviderStepFun
 import PluginLLMProviderSublyx
 import PluginLLMProviderTencent
@@ -130,6 +131,9 @@ public struct ACPPluginFactory: PluginFactory {
             SkillPlugin(),
             PluginPluginManager(),
             LLMProviderSettingsPlugin(),
+            // 「用对话添加 LLM 供应商」：工具 + 提案卡片。
+            // order=120，必须晚于上面的供应商设置插件（order=100）。
+            PluginLLMProviderToolPlugin(),
             ModelSelectorPlugin(),
             MCPPlugin(),
             WebFetchPlugin(),
