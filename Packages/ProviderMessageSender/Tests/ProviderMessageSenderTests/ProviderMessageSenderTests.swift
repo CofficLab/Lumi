@@ -343,6 +343,7 @@ struct ProviderMessageSenderTests {
         let messages = DefaultMessageManager()
         let loop = StubAgentLoop(messages: messages)
         loop.responseContent = "resumed"
+        loop.resumeError = AgentLoopError.invalidResumeRequest
         let sender = DefaultMessageSender(
             conversations: conversations,
             messages: messages,
@@ -366,12 +367,24 @@ struct ProviderMessageSenderTests {
 
 /// 测试用 AgentLoop 桩：最小实现，直接返回预设内容。
 @MainActor
-private final class StubAgentLoop: AgentLoopProviding {
+final class StubAgentLoop: AgentLoopProviding {
     private let messages: any MessageManaging
     private var messageObserver: (any MessageInsertedObserverHandle)?
     private var observers: [UUID: (AgentLoopEvent) -> Void] = [:]
     var responseContent: String = ""
     var onRunTurn: ((@MainActor (UUID) async throws -> AgentLoopOutcome))?
+
+    // MARK: 回合状态（供守门逻辑断言）
+    //
+    // 「会话忙不忙」的事实来源是 AgentLoop 回合状态机，因此桩必须可配置
+    // 状态、当前回合与挂起点，否则测不出「外部拉起的回合」这类场景。
+    var currentState: AgentLoopState = .idle
+    var activeTurnID: UUID?
+    var activeSuspension: AgentLoopSuspension?
+    /// `resumeTurn` 的结果；默认 `.completed`。
+    var resumeOutcome: AgentLoopOutcome = .completed
+    /// 非 nil 时 `resumeTurn` 抛出该错误，覆盖失败分支。
+    var resumeError: (any Error)?
 
     init(messages: any MessageManaging) {
         self.messages = messages
@@ -410,16 +423,16 @@ private final class StubAgentLoop: AgentLoopProviding {
     }
 
     func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome {
-        throw AgentLoopError.invalidResumeRequest
+        if let resumeError { throw resumeError }
+        return resumeOutcome
     }
 
     func cancelTurn(in conversationID: UUID) {}
-    func state(for conversationID: UUID) -> AgentLoopState { .idle }
-    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { nil }
-    func isRunning(for conversationID: UUID) -> Bool { false }
-    func currentTurnID(for conversationID: UUID) -> UUID? { nil }
+    func state(for conversationID: UUID) -> AgentLoopState { currentState }
+    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { activeSuspension }
+    func isRunning(for conversationID: UUID) -> Bool { currentState == .running }
+    func currentTurnID(for conversationID: UUID) -> UUID? { activeTurnID }
     func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
-
 }
 
 @MainActor
