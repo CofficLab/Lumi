@@ -8,19 +8,24 @@ public struct BrowserOpenTool: SuperAgentTool {
     public init(sessions: BrowserSessionManager) { self.sessions = sessions }
 
     public func description(for language: LanguagePreference) -> String {
-        "Open an HTTP or HTTPS page in Lumi's visible browser workspace. The page is isolated to the current conversation."
+        BrowserToolText.openDescription(language)
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
-            "properties": ["url": ["type": "string", "description": "The HTTP or HTTPS URL to open"]],
+            "properties": [
+                "url": [
+                    "type": "string",
+                    "description": BrowserToolText.urlArgumentProperty(language),
+                ],
+            ],
             "required": ["url"],
         ]
     }
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        "打开网页"
+        BrowserToolText.displayOpen(.current)
     }
 
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
