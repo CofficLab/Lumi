@@ -25,10 +25,7 @@ public enum CollapsedContentChipStyle {
     /// 标题与统计信息之间的间距。
     public static let detailSpacing: CGFloat = 6
 
-    /// 标题字号。
-    ///
-    /// 固定 12pt，不随所在正文字号变化：chip 在消息列表里是独立胶囊，
-    /// 在输入框里是行内元素，两处必须看起来一样，故不跟随环境缩放。
+    /// 消息列表独立胶囊的标题字号。输入框的内联 chip 使用正文字号。
     public static let titleSize: CGFloat = 12
 
     /// 统计信息字号。比标题小一级，用次级色，与标题拉开层次。
@@ -40,14 +37,31 @@ public enum CollapsedContentChipStyle {
     /// 胶囊描边不透明度。
     public static let strokeOpacity: CGFloat = 0.12
 
+    /// 悬停时的胶囊底色不透明度。
+    ///
+    /// 悬停必须比常态**更明显**，但不能用系统强调色：强调色是用户设定的
+    /// 品牌色（青绿、紫色……），用它画 chip 会让输入框里的胶囊与消息列表里
+    /// 那颗安静的灰胶囊完全不是一回事。改为同色系加深，语义统一。
+    public static let hoverFillOpacity: CGFloat = 0.10
+
+    /// 悬停时的胶囊描边不透明度。
+    public static let hoverStrokeOpacity: CGFloat = 0.24
+
     /// 胶囊最大宽度。超出时截断标题而不是无限拉长。
     public static let maximumWidth: CGFloat = 320
 
     /// 行内 chip（输入框）的上下内边距。
     ///
+    /// 这个内边距是**相对正文那一行的字形墨迹**加的：胶囊的高度取正文
+    /// 墨迹高再加上下各一个内边距，于是胶囊上沿与正文的字顶齐平、下沿与
+    /// 正文的字底齐平——chip 看起来是「长在这一行字里」。
+    ///
+    /// 取 1pt：正文 15pt 的墨迹高约 12.7pt，加上下各 1pt 得 14.7pt，
+    /// 稳稳落在 18pt 的行盒里；再加就会溢出到相邻行。
+    ///
     /// 比独立胶囊小得多：行内 chip 必须待在文字行里，撑到独立胶囊那么高
-    /// 会溢出行盒、压到相邻行。留 2pt 既让胶囊贴住文字，又不越界。
-    public static let inlineVerticalPadding: CGFloat = 2
+    /// 会溢出行盒、压到相邻行。
+    public static let inlineVerticalPadding: CGFloat = 1
 
     /// 独立胶囊（消息列表）的上下内边距。
     public static let standaloneVerticalPadding: CGFloat = 6

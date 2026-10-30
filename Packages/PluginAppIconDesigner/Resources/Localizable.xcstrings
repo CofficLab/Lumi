@@ -620,6 +620,7 @@
       }
     },
     "Creating an Icon" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -841,6 +842,7 @@
       }
     },
     "Export the finished asset." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1167,6 +1169,7 @@
       }
     },
     "Icon documents are stored with the current project." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1456,6 +1459,7 @@
       }
     },
     "Layered vectors" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2053,6 +2057,7 @@
       }
     },
     "Refine colors, shapes, layers, and composition in the conversation." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2069,6 +2074,7 @@
       }
     },
     "Review and iterate on the generated icon." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
