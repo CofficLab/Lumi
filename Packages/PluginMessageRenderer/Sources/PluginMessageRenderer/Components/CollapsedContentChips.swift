@@ -109,12 +109,21 @@ struct CollapsedContentChips: View {
 /// 单个折叠块 chip：点击在「一行摘要」与「完整原文」之间切换。
 private struct CollapsedContentChip: View {
     @LumiTheme private var theme
+    @LumiMotionPreferenceReader private var motionPreference
 
     let title: String
     let systemImage: String
     let isExpanded: Bool
     let content: String
     let onToggle: () -> Void
+
+    /// 是否悬停在 chip 上。
+    ///
+    /// 输入框那侧的 chip 有 hover（底色与描边同色系加深），消息列表这侧
+    /// 原本没有——同一个 chip 在两个地方长成两个样子。悬停态取同一份
+    /// ``CollapsedContentChipStyle`` 的 `hoverFillOpacity` / `hoverStrokeOpacity`，
+    /// 保证两边加深幅度一致。
+    @State private var isHovered = false
 
     /// 标题与统计信息。
     ///
@@ -123,6 +132,24 @@ private struct CollapsedContentChip: View {
     /// 里的 chip 一致。
     private var parts: (label: String, detail: String?) {
         CollapsedContentChipStyle.split(title: title)
+    }
+
+    /// chip 底色。悬停时同色系加深。
+    private var fillColor: Color {
+        theme.textPrimary.opacity(
+            isHovered
+                ? CollapsedContentChipStyle.hoverFillOpacity
+                : CollapsedContentChipStyle.fillOpacity
+        )
+    }
+
+    /// chip 描边色。悬停时同色系加深。
+    private var strokeColor: Color {
+        theme.textPrimary.opacity(
+            isHovered
+                ? CollapsedContentChipStyle.hoverStrokeOpacity
+                : CollapsedContentChipStyle.strokeOpacity
+        )
     }
 
     var body: some View {
@@ -141,11 +168,11 @@ private struct CollapsedContentChip: View {
                 .padding(10)
                 .background(
                     RoundedRectangle(cornerRadius: CollapsedContentChipStyle.cornerRadius, style: .continuous)
-                        .fill(theme.textPrimary.opacity(0.05))
+                        .fill(fillColor)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: CollapsedContentChipStyle.cornerRadius, style: .continuous)
-                        .strokeBorder(theme.textPrimary.opacity(0.10), lineWidth: 1)
+                        .strokeBorder(strokeColor, lineWidth: CollapsedContentChipStyle.strokeWidth)
                 )
             } else {
                 HStack(spacing: CollapsedContentChipStyle.iconSpacing) {
@@ -170,15 +197,21 @@ private struct CollapsedContentChip: View {
                 .padding(.vertical, CollapsedContentChipStyle.standaloneVerticalPadding)
                 .background(
                     RoundedRectangle(cornerRadius: CollapsedContentChipStyle.cornerRadius, style: .continuous)
-                        .fill(theme.textPrimary.opacity(CollapsedContentChipStyle.fillOpacity))
+                        .fill(fillColor)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: CollapsedContentChipStyle.cornerRadius, style: .continuous)
-                        .strokeBorder(theme.textPrimary.opacity(CollapsedContentChipStyle.strokeOpacity), lineWidth: 1)
+                        .strokeBorder(strokeColor, lineWidth: CollapsedContentChipStyle.strokeWidth)
                 )
             }
         }
         .buttonStyle(.plain)
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
+                isHovered = hovering
+            }
+        }
     }
 
     private var header: some View {

@@ -1569,7 +1569,6 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
             xRadius: cornerRadius,
             yRadius: cornerRadius
         )
-        path.lineWidth = 1
 
         if isHighlighted {
             palette.hoverFill.setFill()
@@ -1580,6 +1579,23 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
             palette.stroke.setStroke()
         }
         path.fill()
+
+        // - Important: 描边必须真的描出来。只 `setStroke()` 而不 `stroke()`，
+        //   胶囊就只剩一层底色、没有边框——而消息列表那侧是 `strokeBorder`，
+        //   两边看起来就不是同一个东西（一边有边、一边没边）。
+        //
+        //   且描边要压在**形状内侧**：SwiftUI 的 `strokeBorder` 把描边画在形状
+        //   内部，胶囊的外边界仍等于形状本身；AppKit 的 `stroke()` 默认是
+        //   **居中**描边，会向外溢出半个线宽，于是两边的胶囊轮廓差出 0.5pt，
+        //   且输入框这侧会撑破正文的字带（chip 会比正文高出一圈）。
+        //   故这里先按形状裁剪、再居中描边——可见的描边落在形状内部，
+        //   外边界回到 chipRect，与消息列表那侧一致。
+        let strokeWidth = CollapsedContentChipStyle.strokeWidth
+        NSGraphicsContext.saveGraphicsState()
+        path.setClip()
+        path.lineWidth = strokeWidth
+        path.stroke()
+        NSGraphicsContext.restoreGraphicsState()
 
         // 图标与字形盒视觉居中。
         let iconRect = NSRect(
