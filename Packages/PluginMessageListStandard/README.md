@@ -23,6 +23,8 @@ Lumi 消息列表 **V2（标准）** 实现包。工具栏 **Response Detail** �
 - 独立的流式尾行：LLM 回复期间逐字增长，稳定 id `LumiStreamingRowID`
 - 活动消息行：sending / thinking / executingTool / waitingForUser 各阶段文案
 - turn 工具调用汇总（`LumiTurnActivity`）
+- 多工具调用折叠为一行摘要，点击后在 popover 中逐条展开
+  （折叠策略见 `PluginMessageRenderer` 的 `ToolCallGroupCollapsePolicy`）
 - 开发者模式：消息行右上角叠加当前 `renderer.id` 徽章 + 同色细边框
 - 首屏遮罩（`MessageLoadingView`）与首屏定位编排（`InitialPositionGate`，含超时兜底）
 
@@ -31,12 +33,21 @@ Lumi 消息列表 **V2（标准）** 实现包。工具栏 **Response Detail** �
 | 包 | verbosity | 布局单元 | 特有能力 |
 | --- | --- | --- | --- |
 | `PluginMessageListBrief` | `brief` | Agent Turn 分组 | 折叠过程区段、底部状态卡 |
-| **本包** | `standard` | 逐条消息行 | 工具执行合并为 `tool-step-group` |
+| **本包** | `standard` | 逐条消息行 | 工具执行合并为 `tool-step-group`，多调用折叠为摘要 |
 | `PluginMessageListDetailed` | `detailed` | 逐条消息行 | 显示 `reasoningContent` |
 
 三个包**各自独立**、各自注册 `exclusiveGroup: "message-list"` 的常驻
 `ChatSectionItem`，由 `isActive` 闭包按当前会话 verbosity 决定谁真正渲染；
 同一时刻只有一个胜出。三包之间没有任何源码依赖。
+
+> **折叠发生在渲染层，不在本包**：数据层已把连续的「只含工具调用的助手消息」
+> 合并成一条合成消息（`renderKind == "turn-activity"`），折叠由
+> `PluginMessageRenderer` 的 `ToolCallRowsView` 决定。
+>
+> **折叠只发生在 V2**：V1（brief）与 V3（detailed）都保持逐条铺开——
+> V1 走 `CollapsibleToolStepGroup` 分支；V3 的定位是「展示更多细节」，
+> 折叠与该定位相悖。因此本包与 `PluginMessageListDetailed` 的工具调用
+> 呈现形态**不同**，尽管两者都复用同一个渲染器。
 
 ## 结构
 
