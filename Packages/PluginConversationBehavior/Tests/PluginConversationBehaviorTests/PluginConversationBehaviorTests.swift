@@ -147,8 +147,19 @@ struct PluginConversationBehaviorTests {
 @MainActor
 private final class RecordingToastProvider: ToastProviding {
     private(set) var shownToasts: [LumiToast] = []
+    private(set) var presentedErrors: [(title: String, message: String, sourceWindowID: String?)] = []
+    private(set) var dismissErrorCount = 0
 
     func show(_ toast: LumiToast) {
         shownToasts.append(toast)
+    }
+
+    // `ToastProviding` 的持久化错误面没有默认实现，mock 必须显式提供。
+    func presentError(title: String, message: String, sourceWindowID: String?) {
+        presentedErrors.append((title, message, sourceWindowID))
+    }
+
+    func dismissError() {
+        dismissErrorCount += 1
     }
 }

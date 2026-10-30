@@ -6,6 +6,6 @@ alwaysApply: false
 
 # Swift 注释规范
 
-请参考项目规范文档：`.agent/rules/swift-comment.md`
+请参考项目规范文档：`.lumi/rules/swift-comment.md`
 
 所有 Swift 代码注释应遵循上述规范文档中的标准。

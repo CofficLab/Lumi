@@ -205,40 +205,6 @@
         }
       }
     },
-    "Conversation Activity": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conversation Activity"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "会话活动"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "對話活動"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "對話活動"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "對話活動"
-          }
-        }
-      }
-    },
     "Conversation ID": {
       "localizations": {
         "en": {
@@ -337,40 +303,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "對話"
-          }
-        }
-      }
-    },
-    "Conversations created per day over the last 14 days": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conversations created per day over the last 14 days"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最近 14 天每日创建的会话数"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最近 14 天每日建立的對話數"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最近 14 天每日建立的對話數"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最近 14 天每日建立的對話數"
           }
         }
       }

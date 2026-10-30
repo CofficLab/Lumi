@@ -53,11 +53,7 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
     public private(set) var channel: AppUpdateChannel
 
     private static func loadChannel() -> AppUpdateChannel {
-        guard let rawValue = UserDefaults.standard.string(forKey: AppUpdateChannel.userDefaultsKey),
-              let channel = AppUpdateChannel(rawValue: rawValue) else {
-            return .stable
-        }
-        return channel
+        AppUpdatePluginLocalStore.shared.channel
     }
 
     /// Convenience access to the underlying `SPUUpdater`.
@@ -90,7 +86,7 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
         guard self.channel != channel else { return }
 
         self.channel = channel
-        UserDefaults.standard.set(channel.rawValue, forKey: AppUpdateChannel.userDefaultsKey)
+        AppUpdatePluginLocalStore.shared.setChannel(channel)
         resolvedFeedURL = UpdateFeedURLProvider.primary(for: channel)
         feedPreparationTask?.cancel()
         feedPreparationTask = nil

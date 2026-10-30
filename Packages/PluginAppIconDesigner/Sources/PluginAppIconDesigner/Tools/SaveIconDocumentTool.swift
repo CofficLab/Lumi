@@ -37,7 +37,7 @@ public struct SaveIconDocumentTool: SuperAgentTool {
             try IconDocumentFileService().save(document: document, to: outputURL)
 
             await MainActor.run {
-                IconDocumentStore.shared.setExportURL(outputURL)
+                IconToolSupport.store().setExportURL(outputURL)
             }
 
             return IconToolSupport.localized(
@@ -55,7 +55,7 @@ public struct SaveIconDocumentTool: SuperAgentTool {
             )
         } catch {
             await MainActor.run {
-                IconDocumentStore.shared.setError(error.localizedDescription)
+                IconToolSupport.store().setError(error.localizedDescription)
             }
             return IconToolSupport.error(error, language: language)
         }

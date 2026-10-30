@@ -4,35 +4,10 @@ import IOKit
 import os
 import LumiLoggingKit
 // MARK: - Private API Declarations
-
-@_silgen_name("DisplayServicesGetBrightness")
-func _DisplayServicesGetBrightness(_: CGDirectDisplayID, _: UnsafeMutablePointer<Float>) -> Int32
-
-@_silgen_name("DisplayServicesSetBrightness")
-func _DisplayServicesSetBrightness(_: CGDirectDisplayID, _: Float) -> Int32
-
-// CoreDisplay_DisplayCreateInfoDictionary follows Create rule — returns retained CFDictionary (or NULL).
-@_silgen_name("CoreDisplay_DisplayCreateInfoDictionary")
-func _CoreDisplay_DisplayCreateInfoDictionary(_: CGDirectDisplayID) -> CFDictionary?
-
-@_silgen_name("IOAVServiceWriteI2C")
-func _IOAVServiceWriteI2C(_: CFTypeRef, _: UInt32, _: UInt32, _: UnsafePointer<UInt8>, _: UInt32) -> Bool
-
-@_silgen_name("IOAVServiceReadI2C")
-func _IOAVServiceReadI2C(_: CFTypeRef, _: UInt32, _: UInt32, _: UnsafeMutablePointer<UInt8>, _: UInt32) -> Bool
-
-// IOAVServiceCreateWithService is a private IOKit function.
-// It follows the Core Foundation "Create" rule — returns a retained CFTypeRef or NULL.
-// We use dlsym to call it dynamically to avoid @_silgen_name ABI issues that cause crashes.
-// Note: allocator param should be NULL (not kCFAllocatorDefault) since kCFAllocatorDefault is nil on macOS.
-// Made optional so that missing symbol is handled gracefully instead of crashing at launch.
-private let ioAVServiceCreateWithService: (@convention(c) (UnsafeRawPointer?, io_service_t) -> UnsafeRawPointer?)? = {
-    guard let sym = dlsym(dlopen(nil, RTLD_LAZY), "IOAVServiceCreateWithService") else {
-        DisplayService.logger.warning("\(DisplayDDCBridge.t)DDC: IOAVServiceCreateWithService symbol not found — DDC control unavailable")
-        return nil
-    }
-    return unsafeBitCast(sym, to: (@convention(c) (UnsafeRawPointer?, io_service_t) -> UnsafeRawPointer?).self)
-}()
+//
+// 这些私有符号的解析与降级统一由 `PrivateDisplaySymbol` 负责。
+// 早前这里用 `@_silgen_name` 直接声明，配合 `-undefined dynamic_lookup` 弱链接，
+// 在框架未被进程加载时符号地址为 NULL，调用即 SIGSEGV（见 Issue #122）。
 
 // MARK: - DDC VCP Codes
 
@@ -196,8 +171,10 @@ private enum DDCTransport {
                 usleep(10000)
                 let packetCount = UInt32(packet.count)
                 success = packet.withUnsafeMutableBufferPointer { buffer in
-                    guard let baseAddress = buffer.baseAddress else { return false }
-                    return _IOAVServiceWriteI2C(
+                    guard let baseAddress = buffer.baseAddress,
+                          let writeI2C = PrivateDisplaySymbol.ioAVServiceWriteI2C
+                    else { return false }
+                    return writeI2C(
                         service,
                         UInt32(Self.sevenBitAddress),
                         UInt32(Self.dataAddress),
@@ -213,8 +190,10 @@ private enum DDCTransport {
                 usleep(50000)
                 let replyCount = UInt32(reply.count)
                 success = reply.withUnsafeMutableBufferPointer { buffer in
-                    guard let baseAddress = buffer.baseAddress else { return false }
-                    return _IOAVServiceReadI2C(
+                    guard let baseAddress = buffer.baseAddress,
+                          let readI2C = PrivateDisplaySymbol.ioAVServiceReadI2C
+                    else { return false }
+                    return readI2C(
                         service,
                         UInt32(Self.sevenBitAddress),
                         0,
@@ -297,7 +276,7 @@ private final class Arm64DDCMatcher: SuperLog {
     /// Safety wrapper for creating AV service — logs failures instead of crashing.
     /// Passes NULL for the allocator (kCFAllocatorDefault is nil on macOS, meaning "use default").
     private func safeCreateAVService(entry: io_service_t) -> CFTypeRef? {
-        guard let createService = ioAVServiceCreateWithService else {
+        guard let createService = PrivateDisplaySymbol.ioAVServiceCreateWithService else {
             return nil
         }
         guard let rawPtr = createService(nil, entry) else {
@@ -422,7 +401,9 @@ private final class Arm64DDCMatcher: SuperLog {
     }
 
     private func matchScore(displayID: CGDirectDisplayID, registryService: RegistryService) -> Int {
-        guard let infoDict = _CoreDisplay_DisplayCreateInfoDictionary(displayID) else {
+        guard let createInfoDictionary = PrivateDisplaySymbol.coreDisplayCreateInfoDictionary,
+              let infoDict = createInfoDictionary(displayID)
+        else {
             return 0
         }
         let info = infoDict as NSDictionary

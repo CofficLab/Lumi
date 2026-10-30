@@ -26,7 +26,7 @@ import SwiftUI
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        if let storage = kernel.resolveProvider((any StorageProviding).self) { AppManagerPluginSupport.pluginDataDirectoryProvider = { [pluginID = id] in storage.pluginDataDirectory(for: pluginID) } }
+        if let storage = kernel.resolveProvider((any StorageProviding).self) { AppManagerPluginSupport.injectedPluginDataDirectory = storage.pluginDataDirectory(for: id) }
         let content = kernel.resolveProvider((any ContentViewProviding).self); let chat = kernel.resolveProvider((any ChatSectionProviding).self); let rail = kernel.resolveProvider((any RailViewProviding).self); let root = kernel.resolveProvider((any RootViewProviding).self); let toolbar = kernel.resolveProvider((any ToolbarProviding).self); let entry = "\(id).entry"
         rail?.addTabs([RailTabItem(id: AppManagerPluginSupport.railTabID, category: .system, title: pluginLocalization.string("Apps"), systemImage: "apps.ipad", order: order) { AppRailView(viewModel: self.viewModel) }])
         if let bar = kernel.resolveProvider((any ActivityBarProviding).self) {

@@ -55,7 +55,19 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
     private var lastPolledDate = Date.distantPast
     private var pollTimer: DispatchSourceTimer?
     private var pendingRecords: [LogRecord] = []
+
+    /// 已写入记录的键集合，用于去重。
+    ///
+    /// - Important: 必须有上界。该集合此前只增不减，长时间运行的 App
+    ///   会持续累积（每条日志一个字符串），造成内存泄漏。
     private var seenRecordKeys: Set<String> = []
+    private var seenRecordKeyOrder: [String] = []
+
+    /// `seenRecordKeys` 的最大容量。
+    ///
+    /// 远大于单次轮询可能读到的条数，保证去重不会误伤。
+    static let seenRecordKeysCapacity = 20_000
+
     private var pollInFlight = false
 
     /// 心跳节流计数：每次 OSLog 轮询 tick 自增，每 N 次打一条日志。
@@ -91,8 +103,8 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
         maxFileSize: Int = 5 * 1024 * 1024,
         maxDirectorySize: Int = 50 * 1024 * 1024,
         maxRetentionDays: Int = 7,
-        pollInterval: TimeInterval = 2.0,
-        writeDelay: TimeInterval = 3.0
+        pollInterval: TimeInterval = 15.0,
+        writeDelay: TimeInterval = 1.0
     ) {
         self.directoryOverride = logsDirectory
         self.maxFileSize = maxFileSize
@@ -108,9 +120,12 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
             guard !isRunning else { return }
             isRunning = true
             isFileLoggingDisabled = false
+            // 起点取「当前时刻 - writeDelay」：writeDelay 只用于让刚写入的日志
+            // 在 logd 里落稳，不应让读窗口整体后移一轮。
             lastPolledDate = Date().addingTimeInterval(-writeDelay)
             pendingRecords = []
             seenRecordKeys = []
+            seenRecordKeyOrder = []
             if Self.verbose { Self.logger.info("\(Self.t)启动 OSLog 轮询(间隔 \(self.pollInterval)s)，写入 \(self.logsDirectory.path)") }
             purgeExpiredLogs()
             purgeOversizedLogs()
@@ -254,13 +269,30 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
                 guard self.isRunning, !self.isFileLoggingDisabled else { return }
                 guard let records else { return }
 
-                self.lastPolledDate = pollDate.addingTimeInterval(-self.writeDelay)
-                for record in records where !self.seenRecordKeys.contains(record.key) {
-                    self.seenRecordKeys.insert(record.key)
-                    self.pendingRecords.append(record)
+                // 读窗口推进到「本次实际读到的最后一条日志时间」。
+                //
+                // - Important: 不能用 `pollDate - writeDelay`——那会让读窗口
+                //   永远滞后于实际进度，导致重复读取窗口内的旧条目。
+                //   `records` 已经过 `seenRecordKeys` 去重，直接用最后一条的
+                //   时间戳作为新的起点即可。
+                if let latest = records.map(\.date).max(), latest > self.lastPolledDate {
+                    self.lastPolledDate = latest
                 }
 
-                let wroteRecords = self.writePendingRecords(upTo: pollDate.addingTimeInterval(-self.writeDelay))
+                for record in records where !self.seenRecordKeys.contains(record.key) {
+                    self.seenRecordKeys.insert(record.key)
+                    self.seenRecordKeyOrder.append(record.key)
+                    self.pendingRecords.append(record)
+                }
+                self.trimSeenRecordKeys()
+
+                // 写盘 cutoff 用 `pollDate` 而非 `pollDate - writeDelay`。
+                //
+                // - Note: `writeDelay` 的本意是「等日志在 logd 里落稳再读」，
+                //   属于**读取**阶段的延迟。读到的记录其产生时刻必然早于
+                //   `pollDate`，再减一次 `writeDelay` 会让每条日志额外
+                //   多等一轮（实测平均落盘延迟 6.86s），并使 pending 持续积压。
+                let wroteRecords = self.writePendingRecords(upTo: pollDate)
                 if wroteRecords {
                     self.flushCurrentFile()
                     if !self.isFileLoggingDisabled {
@@ -382,6 +414,19 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
         } catch {
             handleFileWriteFailure(error)
         }
+    }
+
+    /// 裁剪 `seenRecordKeys`，避免长时间运行时无界增长。
+    ///
+    /// 按插入顺序淘汰最旧的键（FIFO）。容量远大于单次轮询可能读到的条数，
+    /// 因此淘汰不会导致近期日志被重复写入。
+    private func trimSeenRecordKeys() {
+        guard seenRecordKeyOrder.count > Self.seenRecordKeysCapacity else { return }
+        let overflow = seenRecordKeyOrder.count - Self.seenRecordKeysCapacity
+        for key in seenRecordKeyOrder.prefix(overflow) {
+            seenRecordKeys.remove(key)
+        }
+        seenRecordKeyOrder.removeFirst(overflow)
     }
 
     @discardableResult

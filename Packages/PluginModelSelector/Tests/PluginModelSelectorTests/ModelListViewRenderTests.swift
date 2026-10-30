@@ -32,7 +32,7 @@ struct ModelListViewRenderTests {
         let viewModel = ModelSelectorViewModel(
             box: box,
             usageStore: ProviderUsageStore(directory: nil),
-            toast: nil
+            toastCapability: ModelSelectorToastCapabilityAdapter(toast: nil)
         )
         viewModel.selectedProviderID = provider.providerID
 
@@ -61,7 +61,7 @@ struct ModelListViewRenderTests {
         let viewModel = ModelSelectorViewModel(
             box: box,
             usageStore: ProviderUsageStore(directory: nil),
-            toast: nil
+            toastCapability: ModelSelectorToastCapabilityAdapter(toast: nil)
         )
         viewModel.selectedProviderID = provider.providerID
 
@@ -86,7 +86,7 @@ struct ModelListViewRenderTests {
         let viewModel = ModelSelectorViewModel(
             box: box,
             usageStore: ProviderUsageStore(directory: nil),
-            toast: nil
+            toastCapability: ModelSelectorToastCapabilityAdapter(toast: nil)
         )
         viewModel.selectedProviderID = provider.providerID
 

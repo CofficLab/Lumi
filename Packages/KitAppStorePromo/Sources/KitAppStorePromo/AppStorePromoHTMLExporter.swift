@@ -6,6 +6,7 @@ import WebKit
 public enum AppStorePromoExportError: LocalizedError, Equatable {
     case loadTimedOut
     case resourcesTimedOut
+    case snapshotTimedOut
     case unexpectedImageSize(expectedWidth: Int, expectedHeight: Int, actualWidth: Int, actualHeight: Int)
     case pngEncodingFailed
 
@@ -13,6 +14,7 @@ public enum AppStorePromoExportError: LocalizedError, Equatable {
         switch self {
         case .loadTimedOut: "Timed out while loading promotional HTML."
         case .resourcesTimedOut: "Timed out while waiting for images and fonts."
+        case .snapshotTimedOut: "Timed out while capturing promotional PNG."
         case .unexpectedImageSize(let expectedWidth, let expectedHeight, let actualWidth, let actualHeight):
             "Exported image size \(actualWidth)x\(actualHeight) does not match expected \(expectedWidth)x\(expectedHeight)."
         case .pngEncodingFailed: "Failed to encode promotional PNG."
@@ -84,14 +86,51 @@ public enum AppStorePromoHTMLExporter {
         return data
     }
 
-    private static func captureViewport(of webView: WKWebView) async throws -> NSImage {
-        try await withCheckedThrowingContinuation { continuation in
+    private static func captureViewport(
+        of webView: WKWebView,
+        timeout: TimeInterval = 20
+    ) async throws -> NSImage {
+        // WebKit 的完成回调不保证送达；没有超时的话 continuation 永不恢复，
+        // 调用方会永久挂起（见 Issue #127）。
+        let state = SnapshotState()
+        return try await withCheckedThrowingContinuation { continuation in
+            state.attach(continuation)
+
             webView.takeSnapshot(with: nil) { image, error in
                 if let image {
-                    continuation.resume(returning: image)
+                    state.finish(.success(image))
                 } else {
-                    continuation.resume(throwing: error ?? AppStorePromoExportError.pngEncodingFailed)
+                    state.finish(.failure(error ?? AppStorePromoExportError.pngEncodingFailed))
                 }
+            }
+
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(timeout))
+                state.finish(.failure(AppStorePromoExportError.snapshotTimedOut))
+            }
+        }
+    }
+
+    /// `takeSnapshot` 的一次性完成状态。
+    ///
+    /// WebKit 回调与超时任务都可能先到，用一次性 `finish` 保证 continuation 只被恢复一次。
+    @MainActor
+    final class SnapshotState {
+        private var continuation: CheckedContinuation<NSImage, Error>?
+        private var completed = false
+
+        func attach(_ continuation: CheckedContinuation<NSImage, Error>) {
+            self.continuation = continuation
+        }
+
+        func finish(_ result: Result<NSImage, Error>) {
+            guard !completed else { return }
+            completed = true
+            let pending = continuation
+            continuation = nil
+            switch result {
+            case .success(let image): pending?.resume(returning: image)
+            case .failure(let error): pending?.resume(throwing: error)
             }
         }
     }

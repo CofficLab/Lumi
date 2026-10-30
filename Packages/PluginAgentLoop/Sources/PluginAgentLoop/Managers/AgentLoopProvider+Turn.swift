@@ -1,4 +1,5 @@
 import Foundation
+import KitAgentTool
 import KitLLM
 import ProviderAgentLoop
 import ProviderMessage
@@ -60,6 +61,19 @@ extension AgentLoopManager {
             conversationID: conversationID,
             turnID: turnID
         ))
+        // 恢复过程中用户可能已经按下停止：回合已被标记为 cancelled。
+        // 这里必须核对**当前**运行时，不能拿函数入口处捕获的旧快照写回——
+        // 否则旧快照会把 .cancelled 覆盖成 .executingTools，回合「复活」，
+        // 用户按了停止却看着 Agent 继续干活。
+        guard let liveRuntime = runtimes[conversationID],
+              !liveRuntime.cancelRequested,
+              liveRuntime.isAwaitingUser else {
+            Self.logger.info(
+                "\(Self.t)恢复回合前检测到回合已被取消，放弃本次恢复 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))"
+            )
+            resumingConversations.remove(conversationID)
+            return .cancelled
+        }
         messages.updateToolCallResult(result, toolCallID: toolCallID, assistantMessageID: assistantMessage.id, in: conversationID)
         if let pending = (await messages.messagesSnapshot(in: conversationID)).last(where: { $0.role == .tool && $0.toolCallID == toolCallID }) {
             messages.updateMessage(id: pending.id, in: conversationID, content: result.content)
@@ -108,8 +122,19 @@ extension AgentLoopManager {
     public func cancelTurn(in conversationID: UUID) {
         guard var runtime = runtimes[conversationID], let turnID = runtime.turnID else { return }
         guard runtime.isRunning else { return }
+        // 挂起回合（等工具授权、等用户回答）同样是「还没干完」，必须能被取消。
+        // 但授权卡片是渲染自已落库消息的，回合取消不会自动改写消息——先把
+        // 占位写成终态，否则卡片会留在界面上等一个已经不存在的回合作答。
+        settlePendingAuthorization(in: conversationID, runtime: runtime)
         let (updated, _) = TurnReducer.reduce(runtime, event: .cancel)
         runtime = updated
+        // 挂起时 finishTurn(.suspended) 已经投递过一次「完成」，
+        // completionDelivered 因此是 true。若不重置，后面的
+        // finishTurn(.cancelled) 会被守门条件当成重复投递直接跳过，
+        // 终态事件根本发不出去——会话状态会永远停在 .suspended，
+        // 用户按下停止后按钮不回落，看起来像「点了没反应」。
+        // 恢复路径在 resumeTurn 里也做了同样的重置。
+        runtime.completionDelivered = false
         runtime.task?.cancel()
         runtime.task = nil
         // 先写入 cancelled 状态，再取消底层 Job。cancelJobs 可能在同一个
@@ -118,6 +143,36 @@ extension AgentLoopManager {
         runtimes[conversationID] = runtime
         toolManager.cancelJobs(forTurnID: turnID)
         finishTurn(conversationID: conversationID, turnID: turnID, outcome: .cancelled)
+    }
+
+    /// 把「等待授权」的工具调用写成终态。
+    ///
+    /// 授权卡片由消息里的 `authorizationState == pendingAuthorization` 且
+    /// `result.awaitingUserResponse == true` 判定（见 `ToolApprovalRowRenderer`），
+    /// 回合被取消不会自动改写这些字段。不写回终态的话，卡片会一直留在界面
+    /// 上，而背后的回合已经死了——用户点「允许」只会拿到 invalidResumeRequest。
+    private func settlePendingAuthorization(in conversationID: UUID, runtime: TurnRuntime) {
+        guard case .awaitingUser(_, let assistantMessageID, _, let suspension) = runtime.phase,
+              let toolCallID = suspension.toolCallID,
+              let message = messages.message(id: assistantMessageID, in: conversationID),
+              let toolCall = message.toolCalls?.first(where: { $0.id == toolCallID }),
+              toolCall.authorizationState == ToolCallAuthorizationState.pendingAuthorization.rawValue
+        else { return }
+        messages.updateToolCallResult(
+            MessageToolResult(
+                content: "Tool execution was cancelled because the turn was stopped.",
+                isError: true
+            ),
+            toolCallID: toolCallID,
+            assistantMessageID: assistantMessageID,
+            in: conversationID,
+            authorizationState: ToolCallAuthorizationState.userRejected.rawValue
+        )
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t)回合取消：授权占位已写成终态 conversation=\(conversationID.uuidString.prefix(8)), tool=\(toolCall.name, privacy: .public)"
+            )
+        }
     }
 }
 
@@ -278,7 +333,7 @@ extension AgentLoopManager {
                         ) } ?? []
                     )
                 }
-            case .failure(let error, let recoverable):
+            case .failure(let error, let recoverable, let reasoningContent):
                 let reason = String(describing: error)
                 let event: TurnEvent = recoverable
                     ? .llmRetryableFailure(reason: reason)
@@ -293,7 +348,12 @@ extension AgentLoopManager {
                 }
                 runtimes[conversationID] = updated
                 if let outcome {
-                    await appendError(in: conversationID, error: error, turnID: currentTurnID)
+                    await appendError(
+                        in: conversationID,
+                        error: error,
+                        turnID: currentTurnID,
+                        reasoningContent: reasoningContent
+                    )
                     finishTurn(conversationID: conversationID, turnID: currentTurnID, outcome: outcome)
                 } else {
                     // 当前任务仍在进行中；释放本轮 Task 后再启动下一次 LLM 请求。

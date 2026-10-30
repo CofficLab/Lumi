@@ -55,7 +55,7 @@ public struct MindMapManualView: View {
             ManualBulletList(items: [
                 .init(L("Mind maps are stored in the current project's `.lumi/mind-map` folder.")),
                 .init(L("The root node cannot be deleted; delete the whole map from the top bar or the rail list instead.")),
-                .init(L("With no project mind map, the main area shows an onboarding view and the Rail is hidden.")),
+                .init(L("With no project mind map, the main area shows an empty state and the Rail is hidden.")),
             ])
         }
         .frame(maxWidth: 620, alignment: .leading)

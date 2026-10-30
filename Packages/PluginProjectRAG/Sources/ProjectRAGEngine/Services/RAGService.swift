@@ -45,7 +45,9 @@ public actor RAGService: SuperLog {
     private let backgroundCancellationGate = RAGBackgroundCancellationGate()
 
     /// 索引进度回调
-    private let onProgress: ((RAGIndexProgressEvent) -> Void)?
+    ///
+    /// - Note: 标注 `@Sendable` 以便传递给同样要求 `Sendable` 的 `RAGIndexer`。
+    private let onProgress: (@Sendable (RAGIndexProgressEvent) -> Void)?
 
     /// 非阻塞地检查服务是否已初始化
     public nonisolated var isInitialized: Bool {
@@ -103,7 +105,7 @@ public actor RAGService: SuperLog {
         self.indexer = RAGIndexer(
             store: store,
             embeddingProvider: embeddingProvider,
-            onProgress: onProgress
+            onProgress: self.onProgress
         )
         self.retriever = RAGRetriever(store: store, cache: cache)
         self.embeddingProvider = embeddingProvider
@@ -204,7 +206,7 @@ public actor RAGService: SuperLog {
             if Self.verbose {
                 Self.logger.info("\(Self.t)♻️ 执行全量重建索引")
             }
-            let stats = try indexer.rebuildProjectIndex(
+            let stats = try await indexer.rebuildProjectIndex(
                 at: normalized,
                 background: background,
                 shouldContinue: { [backgroundCancellationGate] in backgroundCancellationGate.isActive }
@@ -248,7 +250,7 @@ public actor RAGService: SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)🔁 执行增量索引")
         }
-        let stats = try indexer.indexProjectIncrementally(
+        let stats = try await indexer.indexProjectIncrementally(
             at: normalized,
             background: background,
             shouldContinue: { [backgroundCancellationGate] in backgroundCancellationGate.isActive }
@@ -387,7 +389,7 @@ public actor RAGService: SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)🔁 执行全量重建索引")
         }
-        _ = try indexer.rebuildProjectIndex(at: normalized)
+        _ = try await indexer.rebuildProjectIndex(at: normalized)
         if Self.verbose {
             Self.logger.info("\(Self.t)✅ 全量重建完成")
         }

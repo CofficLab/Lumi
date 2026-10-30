@@ -13,23 +13,6 @@ import Testing
 @MainActor
 @Suite("ChatInputEditorView")
 struct ChatInputEditorViewTests {
-    @Test("active turn only shows the stop control")
-    func activeTurnOnlyShowsStop() {
-        let state = SendActionBarState(isSending: true, canSend: true)
-
-        #expect(!state.showsSendButton)
-        #expect(state.showsStopButton)
-        #expect(state.canSend)
-    }
-
-    @Test("idle state only needs the send control")
-    func idleStateOnlyShowsSend() {
-        let state = SendActionBarState(isSending: false, canSend: false)
-
-        #expect(state.showsSendButton)
-        #expect(!state.showsStopButton)
-    }
-
     @Test("common image files are recognized for chat attachment drops")
     func imageDropRuleRecognizesCommonImages() {
         #expect(ChatInputEditorRules.isChatImageFileURL(URL(fileURLWithPath: "/tmp/photo.PNG")))
@@ -126,8 +109,7 @@ struct ChatInputEditorViewTests {
             input: input,
             sender: nil,
             conversations: nil,
-            conversationState: nil,
-            metrics: nil
+            conversationState: nil
         )
         let viewModel = ConversationInputViewModel(capability: capability)
 
@@ -265,8 +247,7 @@ struct ChatInputEditorViewTests {
             input: input,
             sender: sender,
             conversations: conversations,
-            conversationState: nil,
-            metrics: nil
+            conversationState: nil
         )
         let viewModel = ConversationInputViewModel(capability: capability)
         let observer = ActionBarConversationObserver(
@@ -297,8 +278,7 @@ struct ChatInputEditorViewTests {
             input: input,
             sender: nil,
             conversations: nil,
-            conversationState: nil,
-            metrics: nil
+            conversationState: nil
         )
         let viewModel = ConversationInputViewModel(capability: capability)
         let observer = ConversationInputObserver(capability: capability, viewModel: viewModel)
@@ -358,8 +338,7 @@ struct ConversationInputBlockRequestTests {
             input: input,
             sender: nil,
             conversations: nil,
-            conversationState: nil,
-            metrics: nil
+            conversationState: nil
         )
         let viewModel = ConversationInputViewModel(capability: capability)
         let block = ConversationInputBlock(

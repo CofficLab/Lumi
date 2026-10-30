@@ -41,6 +41,12 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
     private var messageObserver: MessageObserver?
     private var toolManagerObserver: ToolManagerObserver?
     private var toolJobObserver: ToolJobObserver?
+    /// 本插件创建的具体实现；UI 测试夹具需要写 `runtimes`，故保留强引用。
+    private var manager: AgentLoopManager?
+    /// UI 测试夹具等待会话加载完成的观察句柄（仅 DEBUG 使用）。
+    private var uiTestingSeedHandle: (any ConversationObserverHandle)?
+    /// UI 测试夹具旁听回合启动的观察句柄（仅 DEBUG 使用）。
+    private var uiTestingTurnObserver: (any AgentLoopObserverHandle)?
 
     public init() {}
 
@@ -80,6 +86,7 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
             conversations: conversations,
             contextProvider: contextProvider
         )
+        self.manager = agentLoop
         toolJobObserver = ToolJobObserver(toolManager: toolManager) { [weak agentLoop] event in
             agentLoop?.handleToolJobEvent(event)
         }
@@ -100,6 +107,9 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
         toolManagerObserver = nil
         toolJobObserver?.cancel()
         toolJobObserver = nil
+        uiTestingTurnObserver?.cancel()
+        uiTestingTurnObserver = nil
+        manager = nil
         // 插件卸载时，内核会自动按归属移除 Provider
     }
 
@@ -117,5 +127,90 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
 
         messageObserver = MessageObserver(messages: messages, agentLoop: agentLoop)
         toolManagerObserver = ToolManagerObserver(toolManager: toolManager, agentLoop: agentLoop)
+
+        #if DEBUG
+        if let manager {
+            seedErrorRetryUITestingFixtureIfNeeded(
+                agentLoop: manager,
+                messages: messages,
+                kernel: kernel
+            )
+        }
+        #endif
     }
+
+    /// UI 测试夹具（仅 DEBUG）：为「重试该回合」按钮造一个确定性失败回合。
+    ///
+    /// 只在 `--lumi-ui-testing-error-retry` 启动参数下生效；见
+    /// `ErrorRetryUITestingSupport`。
+    ///
+    /// - Note: 必须等会话列表加载完成后再植入。`loadConversations()` 会整体替换
+    ///   会话列表并在未选中时清空选中态；若过早植入，夹具会话会被这次加载覆盖，
+    ///   表现为「侧栏里看不到测试会话、消息区空白」。
+    ///
+    /// - Important: 函数体必须与 `ErrorRetryUITestingSupport.swift` 一样整体处于
+    ///   `#if DEBUG` 内。该夹具类型仅在 DEBUG 定义，若只包裹调用点，Release 构建
+    /// 会报 `cannot find 'ErrorRetryUITestingSupport' in scope`。
+    #if DEBUG
+    private func seedErrorRetryUITestingFixtureIfNeeded(
+        agentLoop: AgentLoopManager,
+        messages: any MessageManaging,
+        kernel: KernelCoreContainer
+    ) {
+        guard ErrorRetryUITestingSupport.isEnabled else { return }
+        guard let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
+            Self.logger.error("\(Self.emoji)UI 测试夹具缺少 ConversationManaging")
+            return
+        }
+
+        let seed: @MainActor () -> Void = { [weak self] in
+            guard let self else { return }
+            guard let conversationID = try? conversations.createConversation(
+                title: ErrorRetryUITestingSupport.conversationTitle,
+                projectPath: nil,
+                providerID: nil,
+                modelName: nil
+            ) else {
+                Self.logger.error("\(Self.emoji)UI 测试夹具创建会话失败")
+                return
+            }
+            ErrorRetryUITestingSupport.seedFailedTurn(
+                in: agentLoop,
+                conversationID: conversationID,
+                messages: messages
+            )
+            self.uiTestingTurnObserver = ErrorRetryUITestingSupport.observeTurnStarts(
+                manager: agentLoop,
+                messages: messages,
+                conversationID: conversationID
+            )
+            // createConversation 已自动选中，这里再显式选一次，确保消息区切到夹具会话。
+            conversations.selectConversation(id: conversationID)
+            // header 操作按钮只在 detailed 级别常驻显示，直接设好省去 UI 交互。
+            conversations.setVerbosity(ErrorRetryUITestingSupport.verbosity, for: conversationID)
+            Self.logger.info("\(Self.emoji)UI 测试夹具已植入失败回合 conversation=\(conversationID.uuidString.prefix(8))")
+        }
+
+        if conversations.isLoadingConversations {
+            // 等待加载完成；句柄存到属性上以便重复 cancel 语义清晰。
+            let box = ObserverHandleBox()
+            let handle = conversations.addConversationObserver { event in
+                guard case .listChanged = event else { return }
+                box.handle?.cancel()
+                box.handle = nil
+                self.uiTestingSeedHandle = nil
+                seed()
+            }
+            box.handle = handle
+            uiTestingSeedHandle = handle
+        } else {
+            seed()
+        }
+    }
+    #endif
+}
+
+/// 让观察者闭包能引用到自己的注销句柄（自取消的一次性观察）。
+private final class ObserverHandleBox {
+    var handle: (any ConversationObserverHandle)?
 }

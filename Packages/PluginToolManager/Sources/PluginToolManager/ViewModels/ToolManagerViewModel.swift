@@ -4,17 +4,38 @@ import ProviderToolManager
 
 /// 工具管理器设置页的唯一数据来源。
 ///
-/// 负责工具分组、执行日志分页、调用统计与选中 Tab 等业务状态；
-/// 所有外部操作经 `ToolManagerCapability` 收敛，View 只读取本 ViewModel。
+/// 负责工具分组、工具 / 执行日志 / 调用统计三块内容的选中状态、执行日志分页
+/// 与调用统计；所有外部操作经 `ToolManagerCapability` 收敛，View 只读取本 ViewModel。
 @MainActor
 final class ToolManagerViewModel: ObservableObject {
-    /// 顶部 Tab。
-    enum Tab: String, Identifiable {
+    /// 设置页的三种视图模式，由头部行的分段控件切换。
+    ///
+    /// 三种模式共用同一个主从（列表 + 详情）骨架：左侧列表与右侧详情
+    /// 随模式一起更换，而不是把三种内容叠在同一个页面里。
+    enum Mode: String, Identifiable, CaseIterable {
         case tools
         case executionLog
         case toolStats
 
         var id: String { rawValue }
+
+        /// 该模式是否依赖调用记录存储。
+        ///
+        /// 未配置存储时执行日志与调用统计都拿不到数据，需要给出明确的空状态，
+        /// 而不是渲染一个永远为空的列表。
+        var requiresLogStore: Bool {
+            switch self {
+            case .tools: return false
+            case .executionLog, .toolStats: return true
+            }
+        }
+    }
+
+    /// 左侧列表里的一条工具：工具本体 + 归属插件。
+    struct ToolEntry: Identifiable {
+        var id: String { tool.name }
+        let pluginID: String
+        let tool: any SuperAgentTool
     }
 
     private let capability: any ToolManagerCapability
@@ -24,10 +45,14 @@ final class ToolManagerViewModel: ObservableObject {
 
     // MARK: - Published State (供 View 展示)
 
-    @Published private(set) var selectedTabID: Tab = .tools
+    /// 当前视图模式。
+    @Published private(set) var selectedMode: Mode = .tools
 
     /// 按插件分组的可用工具列表。
     @Published private(set) var groups: [(pluginID: String, tools: [any SuperAgentTool])] = []
+
+    /// 当前选中的工具名。
+    @Published private(set) var selectedToolName: String?
 
     // 执行日志
     @Published private(set) var records: [ToolCallRecord] = []
@@ -39,6 +64,7 @@ final class ToolManagerViewModel: ObservableObject {
 
     // 调用统计
     @Published private(set) var stats: [ToolStatEntry] = []
+    @Published private(set) var selectedStatToolName: String?
     @Published private(set) var totalCallCount = 0
 
     init(capability: any ToolManagerCapability) {
@@ -55,24 +81,37 @@ final class ToolManagerViewModel: ObservableObject {
         groups.reduce(0) { $0 + $1.tools.count }
     }
 
+    /// 扁平化后的工具条目（保持分组顺序），右侧详情按工具名定位。
+    var toolEntries: [ToolEntry] {
+        groups.flatMap { group in
+            group.tools.map { ToolEntry(pluginID: group.pluginID, tool: $0) }
+        }
+    }
+
+    /// 当前选中的工具条目。
+    var selectedTool: ToolEntry? {
+        guard let selectedToolName else { return nil }
+        return toolEntries.first { $0.tool.name == selectedToolName }
+    }
+
+    /// 当前选中的调用记录。
     var selectedRecord: ToolCallRecord? {
         guard let selectedRecordID else { return nil }
         return records.first { $0.id == selectedRecordID }
     }
 
-    var tabTitle: [Tab: String] {
-        [
-            .tools: L("Tools"),
-            .executionLog: L("Execution Log"),
-            .toolStats: L("Usage Statistics"),
-        ]
+    /// 当前选中的统计条目。
+    var selectedStat: ToolStatEntry? {
+        guard let selectedStatToolName else { return nil }
+        return stats.first { $0.toolName == selectedStatToolName }
     }
 
     // MARK: - 用户意图
 
-    func selectTab(_ tab: Tab) {
-        selectedTabID = tab
-        switch tab {
+    /// 切换视图模式，并按新模式加载对应数据。
+    func selectMode(_ mode: Mode) {
+        selectedMode = mode
+        switch mode {
         case .tools:
             Task { await reloadTools() }
         case .executionLog:
@@ -82,8 +121,28 @@ final class ToolManagerViewModel: ObservableObject {
         }
     }
 
+    /// 头部刷新按钮：按当前模式重新加载。
+    func refreshCurrentModeRequested() {
+        switch selectedMode {
+        case .tools:
+            Task { await reloadTools() }
+        case .executionLog:
+            Task { await refreshLog() }
+        case .toolStats:
+            Task { await reloadStats() }
+        }
+    }
+
+    func selectTool(named name: String) {
+        selectedToolName = name
+    }
+
     func selectRecord(id: String?) {
         selectedRecordID = id
+    }
+
+    func selectStat(named name: String) {
+        selectedStatToolName = name
     }
 
     func refreshLogRequested() {
@@ -99,6 +158,12 @@ final class ToolManagerViewModel: ObservableObject {
     func reloadTools() async {
         await Task.yield()
         groups = capability.toolsGroupedByPlugin
+        // 选中的工具若已下线（插件停用），回落到列表里的第一个。
+        if let selectedToolName,
+           toolEntries.contains(where: { $0.tool.name == selectedToolName }) {
+            return
+        }
+        selectedToolName = toolEntries.first?.tool.name
     }
 
     func refreshLog() async {
@@ -184,10 +249,13 @@ final class ToolManagerViewModel: ObservableObject {
             )
         }
         .sorted { $0.totalCount > $1.totalCount }
-    }
 
-    private func L(_ key: String) -> String {
-        pluginLocalization.string(key)
+        // 选中的统计项若已不存在，回落到调用次数最多的那一项。
+        if let selectedStatToolName,
+           stats.contains(where: { $0.toolName == selectedStatToolName }) {
+            return
+        }
+        selectedStatToolName = stats.first?.toolName
     }
 }
 
@@ -198,6 +266,12 @@ struct ToolStatEntry: Identifiable {
     let errorCount: Int
     let totalCount: Int
     let averageDuration: Double
+
+    /// 错误率（百分比）。
+    var errorRate: Double {
+        guard totalCount > 0 else { return 0 }
+        return Double(errorCount) / Double(totalCount) * 100
+    }
 }
 
 private struct Accumulator {

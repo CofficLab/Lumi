@@ -9,6 +9,140 @@ import ProviderMessage
 @Suite("ProviderMessageSender")
 @MainActor
 struct ProviderMessageSenderTests {
+    @Test("折叠块随用户消息落库，区间落在正文范围内")
+    func commitsCollapsedBlocksIntoMetadata() throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
+        let sender = DefaultMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: loop
+        )
+
+        let content = "hello world"
+        let commit = try #require(
+            try sender.commitUserMessage(
+                content,
+                imageAttachments: [],
+                fileAttachments: [],
+                collapsedBlocks: [
+                    CollapsedContentBlock(start: 6, length: 5, title: "粘贴的文本"),
+                ],
+                conversationID: nil
+            )
+        )
+        let conversationID = try #require(conversations.selectedConversationID)
+        let message = try #require(messages.messages(for: conversationID).first)
+
+        let blocks = CollapsedContentBlockMetadata.normalizedBlocks(
+            from: message.metadata,
+            contentLength: message.content.count
+        )
+        #expect(blocks.count == 1)
+        #expect(blocks.first?.start == 6)
+        #expect(blocks.first?.length == 5)
+        #expect(blocks.first?.title == "粘贴的文本")
+        #expect(commit.userMessageID == message.id)
+    }
+
+    @Test("正文被 trim 后折叠块区间同步平移")
+    func rebasesCollapsedBlocksAfterTrim() throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
+        let sender = DefaultMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: loop
+        )
+
+        let content = "  hello world  "
+        _ = try #require(
+            try sender.commitUserMessage(
+                content,
+                imageAttachments: [],
+                fileAttachments: [],
+                collapsedBlocks: [
+                    CollapsedContentBlock(start: 8, length: 5, title: "粘贴的文本"),
+                ],
+                conversationID: nil
+            )
+        )
+        let conversationID = try #require(conversations.selectedConversationID)
+        let message = try #require(messages.messages(for: conversationID).first)
+
+        #expect(message.content == "hello world")
+        let blocks = CollapsedContentBlockMetadata.normalizedBlocks(
+            from: message.metadata,
+            contentLength: message.content.count
+        )
+        #expect(blocks.count == 1)
+        #expect(blocks.first?.start == 6)
+    }
+
+    @Test("不携带折叠块时 metadata 里没有折叠块 key")
+    func omitsCollapsedBlocksKeyWhenAbsent() throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
+        let sender = DefaultMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: loop
+        )
+
+        _ = try #require(try sender.commitUserMessage("plain", conversationID: nil))
+        let conversationID = try #require(conversations.selectedConversationID)
+        let message = try #require(messages.messages(for: conversationID).first)
+
+        #expect(message.metadata[CollapsedContentBlockMetadata.collapsedBlocksKey] == nil)
+    }
+
+    @Test("排队中的消息在回放时保留折叠块")
+    func preservesCollapsedBlocksThroughQueue() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
+        loop.responseContent = "response"
+        let sender = DefaultMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: loop
+        )
+
+        let firstCommit = try #require(
+            try sender.commitUserMessage("first", conversationID: nil)
+        )
+        // 第二次发送发生在回合运行期间，会进入 pending 队列。
+        let secondCommit = try #require(
+            try sender.commitUserMessage(
+                "second",
+                imageAttachments: [],
+                fileAttachments: [],
+                collapsedBlocks: [
+                    CollapsedContentBlock(start: 0, length: 6, title: "粘贴的文本"),
+                ],
+                conversationID: nil
+            )
+        )
+        #expect(secondCommit.wasQueued)
+
+        let conversationID = try #require(conversations.selectedConversationID)
+        #expect(sender.pendingMessages(for: conversationID).first?.collapsedBlocks.count == 1)
+
+        await sender.startTurn(for: firstCommit)
+        let queued = try #require(
+            messages.messages(for: conversationID).first { $0.content == "second" }
+        )
+        let blocks = CollapsedContentBlockMetadata.normalizedBlocks(
+            from: queued.metadata,
+            contentLength: queued.content.count
+        )
+        #expect(blocks.count == 1)
+        #expect(blocks.first?.title == "粘贴的文本")
+    }
+
     @Test("用户消息提交完成后即可读取，回合执行可随后启动")
     func commitsUserMessageBeforeStartingTurn() async throws {
         let conversations = DefaultConversationManager()
@@ -209,6 +343,7 @@ struct ProviderMessageSenderTests {
         let messages = DefaultMessageManager()
         let loop = StubAgentLoop(messages: messages)
         loop.responseContent = "resumed"
+        loop.resumeError = AgentLoopError.invalidResumeRequest
         let sender = DefaultMessageSender(
             conversations: conversations,
             messages: messages,
@@ -232,12 +367,24 @@ struct ProviderMessageSenderTests {
 
 /// 测试用 AgentLoop 桩：最小实现，直接返回预设内容。
 @MainActor
-private final class StubAgentLoop: AgentLoopProviding {
+final class StubAgentLoop: AgentLoopProviding {
     private let messages: any MessageManaging
     private var messageObserver: (any MessageInsertedObserverHandle)?
     private var observers: [UUID: (AgentLoopEvent) -> Void] = [:]
     var responseContent: String = ""
     var onRunTurn: ((@MainActor (UUID) async throws -> AgentLoopOutcome))?
+
+    // MARK: 回合状态（供守门逻辑断言）
+    //
+    // 「会话忙不忙」的事实来源是 AgentLoop 回合状态机，因此桩必须可配置
+    // 状态、当前回合与挂起点，否则测不出「外部拉起的回合」这类场景。
+    var currentState: AgentLoopState = .idle
+    var activeTurnID: UUID?
+    var activeSuspension: AgentLoopSuspension?
+    /// `resumeTurn` 的结果；默认 `.completed`。
+    var resumeOutcome: AgentLoopOutcome = .completed
+    /// 非 nil 时 `resumeTurn` 抛出该错误，覆盖失败分支。
+    var resumeError: (any Error)?
 
     init(messages: any MessageManaging) {
         self.messages = messages
@@ -276,16 +423,16 @@ private final class StubAgentLoop: AgentLoopProviding {
     }
 
     func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome {
-        throw AgentLoopError.invalidResumeRequest
+        if let resumeError { throw resumeError }
+        return resumeOutcome
     }
 
     func cancelTurn(in conversationID: UUID) {}
-    func state(for conversationID: UUID) -> AgentLoopState { .idle }
-    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { nil }
-    func isRunning(for conversationID: UUID) -> Bool { false }
-    func currentTurnID(for conversationID: UUID) -> UUID? { nil }
+    func state(for conversationID: UUID) -> AgentLoopState { currentState }
+    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { activeSuspension }
+    func isRunning(for conversationID: UUID) -> Bool { currentState == .running }
+    func currentTurnID(for conversationID: UUID) -> UUID? { activeTurnID }
     func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
-
 }
 
 @MainActor

@@ -9,14 +9,15 @@ let package = Package(
         .library(name: "PluginTextActions", targets: ["TextActionsPlugin"])
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../KitLLM"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderLLMManager"),
-        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0")
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
+        .package(path: "../KitTestSupport"),
     ],
     targets: [
         .target(
@@ -28,15 +29,23 @@ let package = Package(
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
-                .product(name: "ProviderSettingView", package: "LumiSettings")
+                .product(name: "ProviderSettingView", package: "LumiSettings"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             path: "Sources/PluginTextActions",
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "TextActionsPluginTests",
-            dependencies: ["TextActionsPlugin"],
+            dependencies: [
+                "TextActionsPlugin",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
+                .product(name: "KitTestSupport", package: "KitTestSupport"),
+            ],
             path: "Tests"
         )
     ]

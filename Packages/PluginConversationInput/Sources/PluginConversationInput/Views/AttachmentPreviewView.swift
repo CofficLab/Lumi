@@ -69,10 +69,14 @@ private struct FileAttachmentChip: View {
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                Text(attachment.textContent == nil ? "Binary file" : "Text file")
-                    .font(.system(size: 10))
-                    .foregroundColor(theme.textTertiary)
-                    .lineLimit(1)
+                Text(
+                    attachment.textContent == nil
+                        ? pluginLocalization.string("Binary file")
+                        : pluginLocalization.string("Text file")
+                )
+                .font(.system(size: 10))
+                .foregroundColor(theme.textTertiary)
+                .lineLimit(1)
             }
             .frame(maxWidth: 150, alignment: .leading)
 
@@ -81,7 +85,8 @@ private struct FileAttachmentChip: View {
                     .foregroundColor(theme.textTertiary)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Remove file")
+            .accessibilityIdentifier(AttachmentPreviewAccessibility.removeFileButton)
+            .accessibilityLabel(pluginLocalization.string("Remove file"))
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
@@ -104,13 +109,19 @@ private struct AttachmentThumbnail: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             thumbnail
+                // - Important: 缩略图本身必须可访问且带文件名。`.help()` 只是
+                //   tooltip，**不进 AX 树**，因此在没有这行时 VoiceOver 只会
+                //   念出「移除图片」按钮，完全无法区分是哪张图。
+                .accessibilityElement()
+                .accessibilityLabel(attachment.fileName ?? attachment.mimeType)
 
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")
                     .foregroundStyle(.white, .black.opacity(0.55))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Remove image")
+            .accessibilityIdentifier(AttachmentPreviewAccessibility.removeImageButton)
+            .accessibilityLabel(pluginLocalization.string("Remove image"))
             .offset(x: 6, y: -6)
         }
         .help(attachment.fileName ?? attachment.mimeType)

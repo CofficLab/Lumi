@@ -7,15 +7,18 @@ import os
 
 private final class DisplayServicesBridge: Sendable {
     func getBrightness(displayID: CGDirectDisplayID) -> Float? {
+        // 符号缺失时降级为"读不到"，而不是调用 NULL 地址（见 Issue #122）。
+        guard let getBrightness = PrivateDisplaySymbol.displayServicesGetBrightness else { return nil }
         var value: Float = -1
-        let result = _DisplayServicesGetBrightness(displayID, &value)
+        let result = getBrightness(displayID, &value)
         guard result == 0, value >= 0 else { return nil }
         return min(1, max(0, value))
     }
 
     func setBrightness(displayID: CGDirectDisplayID, value: Float) -> Bool {
+        guard let setBrightness = PrivateDisplaySymbol.displayServicesSetBrightness else { return false }
         let clampedValue = min(1, max(0, value))
-        return _DisplayServicesSetBrightness(displayID, clampedValue) == 0
+        return setBrightness(displayID, clampedValue) == 0
     }
 }
 
@@ -34,7 +37,7 @@ final class DisplayService: ObservableObject, SuperLog {
 
     private let ddc = DisplayDDCBridge()
     private let displayServicesBridge = DisplayServicesBridge()
-    private let defaults = UserDefaults.standard
+    private let store = DisplayControlPluginLocalStore.shared
     private var fallbackValues: [CGDirectDisplayID: [DisplayControlKind: Double]] = [:]
 
     // Debounce
@@ -47,7 +50,7 @@ final class DisplayService: ObservableObject, SuperLog {
     func refresh() {
         let ddc = self.ddc
         let displayServicesBridge = self.displayServicesBridge
-        let defaults = self.defaults
+        let store = self.store
 
         Task { @MainActor in
             let displayIDs = Self.onlineDisplayIDs()
@@ -63,9 +66,9 @@ final class DisplayService: ObservableObject, SuperLog {
                 let ddcBrightness = isBuiltIn ? nil : ddc.read(.brightness, displayID: id)
                 let ddcVolume = isBuiltIn ? nil : ddc.read(.volume, displayID: id)
                 let ddcContrast = isBuiltIn ? nil : ddc.read(.contrast, displayID: id)
-                let storedBrightness = Self.storedValue(for: .brightness, displayStorageID: storageID, defaults: defaults)
-                let storedVolume = Self.storedValue(for: .volume, displayStorageID: storageID, defaults: defaults)
-                let storedContrast = Self.storedValue(for: .contrast, displayStorageID: storageID, defaults: defaults)
+                let storedBrightness = Self.storedValue(for: .brightness, displayStorageID: storageID, store: store)
+                let storedVolume = Self.storedValue(for: .volume, displayStorageID: storageID, store: store)
+                let storedContrast = Self.storedValue(for: .contrast, displayStorageID: storageID, store: store)
 
                 let display = ControlledDisplay(
                     id: id,
@@ -122,7 +125,7 @@ final class DisplayService: ObservableObject, SuperLog {
                 Self.removeStoredValue(
                     for: control,
                     displayStorageID: display.storageID,
-                    defaults: defaults
+                    store: store
                 )
             }
         }
@@ -187,7 +190,7 @@ final class DisplayService: ObservableObject, SuperLog {
 
         if success {
             if !display.isBuiltIn {
-                Self.saveStoredValue(value, for: control, displayStorageID: display.storageID, defaults: defaults)
+                Self.saveStoredValue(value, for: control, displayStorageID: display.storageID, store: store)
             }
             updateLocalValue(value, for: control, displayID: key.displayID)
             fallbackValues[key.displayID, default: [:]][key.control] = value
@@ -195,7 +198,7 @@ final class DisplayService: ObservableObject, SuperLog {
             // DDC writes can fail transiently (busy bus, monitor OSD, etc.).
             // Keep the control enabled and persist the desired value locally.
             if !display.isBuiltIn {
-                Self.saveStoredValue(value, for: control, displayStorageID: display.storageID, defaults: defaults)
+                Self.saveStoredValue(value, for: control, displayStorageID: display.storageID, store: store)
             }
             updateLocalValue(value, for: control, displayID: key.displayID)
             fallbackValues[key.displayID, default: [:]][key.control] = value
@@ -239,7 +242,8 @@ final class DisplayService: ObservableObject, SuperLog {
     }
 
     private nonisolated static func displayName(for id: CGDirectDisplayID, isBuiltIn: Bool) -> String {
-        if let rawInfo = _CoreDisplay_DisplayCreateInfoDictionary(id),
+        if let createInfoDictionary = PrivateDisplaySymbol.coreDisplayCreateInfoDictionary,
+           let rawInfo = createInfoDictionary(id),
            let info = rawInfo as? [String: Any],
            let localizedNames = info["DisplayProductName"] as? [String: String]
         {
@@ -271,25 +275,26 @@ final class DisplayService: ObservableObject, SuperLog {
         return "\(role).\(sanitizedName).\(vendor).\(model).\(serial)"
     }
 
-    // MARK: - UserDefaults Persistence (static for Sendable safety)
+    // MARK: - Persistence
 
     private nonisolated static func storedValue(
         for control: DisplayControlKind,
         displayStorageID: String,
-        defaults: UserDefaults
+        store: DisplayControlPluginLocalStore
     ) -> Double? {
         let key = storedValueKey(for: control, displayStorageID: displayStorageID)
-        guard defaults.object(forKey: key) != nil else { return nil }
-        return min(100, max(0, defaults.double(forKey: key)))
+        guard store.contains(key) else { return nil }
+        guard let value = store.double(forKey: key) else { return nil }
+        return min(100, max(0, value))
     }
 
     private nonisolated static func saveStoredValue(
         _ value: Double,
         for control: DisplayControlKind,
         displayStorageID: String,
-        defaults: UserDefaults
+        store: DisplayControlPluginLocalStore
     ) {
-        defaults.set(
+        store.set(
             min(100, max(0, value)),
             forKey: storedValueKey(for: control, displayStorageID: displayStorageID)
         )
@@ -298,11 +303,9 @@ final class DisplayService: ObservableObject, SuperLog {
     private nonisolated static func removeStoredValue(
         for control: DisplayControlKind,
         displayStorageID: String,
-        defaults: UserDefaults
+        store: DisplayControlPluginLocalStore
     ) {
-        defaults.removeObject(
-            forKey: storedValueKey(for: control, displayStorageID: displayStorageID)
-        )
+        store.removeObject(forKey: storedValueKey(for: control, displayStorageID: displayStorageID))
     }
 
     private nonisolated static func storedValueKey(

@@ -22,16 +22,26 @@ struct ListV3View: View {
 
     @LumiTheme private var theme
 
-    /// 用户是否停在列表底部附近；用于决定新消息到达时是否自动滚到底部
-    private let atBottomBox = AtBottomBox()
-
-    private let scrollCoordinator = MessageListScrollCoordinator()
+    /// 运行时状态容器：底部标记、滚动协调器、底部几何控制器。
+    ///
+    /// - Important: 必须是 `@StateObject`，不能用 `let`。
+    ///   宿主（`ChatStackView.body` 里的 `item.makeView()`）每重绘一次就会
+    ///   重新 `init` 本视图一次；`let` 持有的状态对象会被重建，新旧两个滚动
+    ///   协调器会**同时驱动同一个 scroll view**（序号互不相识，`cancelPendingTasks()`
+    ///   也 cancel 不掉对方），几何收敛永远不稳定，首屏遮罩就此永久挂起。
+    ///   详见 `MessageListRuntime` 的类型注释。
+    @StateObject private var runtime = MessageListRuntime()
 
     /// 内容就绪信号：historyRows 首尾消息 id 变化时 +1。
     @State private var scrollTick: Int = 0
-    private let bottomScrollController = ScrollViewBottomController()
-    @State private var isInitialPositionReady = false
-    @State private var isPreparingInitialPosition = false
+
+    /// 首屏定位的就绪编排（含超时兜底），见 InitialPositionGate。
+    ///
+    /// - Important: 必须是 `@StateObject`，不能用 `let`。gate 是引用类型且
+    ///   有生命周期；`let` 会在 View 每次 init 时新建实例，`isReady` 恒为
+    ///   false，遮罩「正在加载消息…」将永久不消失。`@StateObject` 同时提供
+    ///   跨重建的实例同一性与 `ObservableObject` 变更通知。
+    @StateObject private var initialPositionGate = InitialPositionGate()
 
     init(
         services: MessageListServices,
@@ -46,10 +56,15 @@ struct ListV3View: View {
     var body: some View {
         ZStack {
             messageScrollView
-                .id(viewModel.selectedConversationID)
-                .opacity(isInitialPositionReady ? 1 : 0)
-                .allowsHitTesting(isInitialPositionReady)
-            if viewModel.isLoading || !isInitialPositionReady {
+                .opacity(initialPositionGate.isReady ? 1 : 0)
+                .allowsHitTesting(initialPositionGate.isReady)
+            // Important: 遮罩的显示条件**只**看 gate。
+            //   原先是 `isLoading || !gate.isReady`：`isLoading` 是一个可能停在
+            //   true 不再回落的布尔（激活被跳过、加载卡住……），一旦它卡住，
+            //   遮罩就再没有任何东西能把它撤掉 —— 用户界面上就是「正在加载消息…」
+            //   永不消失。现在遮罩的寿命由 gate 的**预算兜底**唯一决定：
+            //   挂起后最多一个预算，无论收敛有没有被启动、有没有成功。
+            if !initialPositionGate.isReady {
                 MessageLoadingView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(theme.surface.opacity(0.6))
@@ -57,9 +72,8 @@ struct ListV3View: View {
         }
         .task {
             // 首次出现/容器切换重建：重置滚动位置，加载当前选中会话。
-            atBottomBox.value = true
-            isInitialPositionReady = false
-            isPreparingInitialPosition = false
+            runtime.atBottomBox.value = true
+            initialPositionGate.resetForLoadingStart()
             await viewModel.activateCurrentConversation()
         }
     }
@@ -68,80 +82,90 @@ struct ListV3View: View {
 
     private var messageScrollView: some View {
         ScrollViewReader { proxy in
-            // List(NSTableView)自带 cell 复用：只有可见行被 materialize。
+            // Important: 观察者必须待在 `.id()` 作用域**之外**，但仍要在
+            //   `ScrollViewReader` 闭包**之内**（它们要用 `proxy`）。
             //
-            // 历史行（`ForEach`）只含稳定的落库 id。流式行（`streamingRow`）作为
-            // 独立的、用进程级常量 `LumiStreamingRowID` 标识的尾行单独渲染 ——
-            // 它与落库行的随机 UUID 永不冲突，落库时流式行消失 + 真实行出现被
-            // SwiftUI 作为两次独立 diff 处理，无 id 交换、无闪烁。token 增长只
-            // 让这一行的内容变化，不触发 `historyRows` 全量 rebuild（避免活锁）。
-            List {
-                historyRows(proxy: proxy)
-                streamingRowView
-                activityRowView
+            //   `.id()` 会给被包裹的子树换一整套 identity：作用域内的 `onChange`
+            //   会随子树一起被重建，基线值被重置为**重建那一刻**的值。于是
+            //   「会话切换」这个变化本身永远不会被 `onChange` 观察到（基线已经是
+            //   新值），`resetForConversationSwitch()` 形同死代码；`onChange(isLoading)`
+            //   同理会在切换时丢掉「加载开始」那一次。
+            //
+            //   把 `.id()` 收窄到 List 本身（只重置行状态与滚动位置），观察者挂在
+            //   包裹它的 Group 上：切换时它们仍在、基线仍在，事件不再丢失。
+            Group {
+                List {
+                    historyRows(proxy: proxy)
+                    streamingRowView
+                    activityRowView
 
-                // 底部锚点行：纯占位 + 稳定 id（供 scrollTo 用），不报偏好。
-                // 是否在底部由 `ScrollViewBottomTracker` 观察 NSScrollView 判定。
-                Color.clear
-                    .frame(height: 16)
-                    .id(MessageListScrollCoordinator.bottomAnchorID)
-                    .accessibilityHidden(true)
-                    .plainMessageListRow(insets: EdgeInsets())
-                    .onChange(of: scrollTick) { _, _ in
-                        guard isInitialPositionReady else { return }
-                        let conversationID = viewModel.selectedConversationID
-                        // 新消息行可能还没有完成尺寸布局；立即 scrollTo 会把
-                        // 锚点停在旧的内容底部，导致最后一行被输入框截断。
-                        // 等布局完成后只保留最后一次滚动请求，避免多个
-                        // scrollTo 同时驱动 macOS List 的行 materialize。
-                        scrollCoordinator.scheduleScrollToBottomAfterLayout(
-                            proxy: proxy,
-                            messages: viewModel.historyRows,
-                            animated: false,
-                            controller: bottomScrollController,
-                            condition: {
-                                conversationID == viewModel.selectedConversationID
-                            }
-                        )
-                    }
-            }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            // 让 Markdown 代码块使用 HorizontalScrollView，不捕获垂直滚动
-            .environment(\.preferOuterScroll, true)
-            .background(
-                ScrollViewBottomTracker(
-                    onChange: { atBottomBox.value = $0 },
-                    controller: bottomScrollController
+                    // 底部锚点行：纯占位 + 稳定 id（供 scrollTo 用），不报偏好。
+                    // 是否在底部由 `ScrollViewBottomTracker` 观察 NSScrollView 判定。
+                    Color.clear
+                        .frame(height: 16)
+                        .id(MessageListScrollCoordinator.bottomAnchorID)
+                        .accessibilityHidden(true)
+                        .plainMessageListRow(insets: EdgeInsets())
+                        .onChange(of: scrollTick) { _, _ in
+                            guard initialPositionGate.isReady else { return }
+                            let conversationID = viewModel.selectedConversationID
+                            // 新消息行可能还没有完成尺寸布局；立即 scrollTo 会把
+                            // 锚点停在旧的内容底部，导致最后一行被输入框截断。
+                            // 等布局完成后只保留最后一次滚动请求，避免多个
+                            // scrollTo 同时驱动 macOS List 的行 materialize。
+                            runtime.scrollCoordinator.scheduleScrollToBottomAfterLayout(
+                                target: ProxyMessageListScrollingTarget(
+                                    proxy: proxy,
+                                    controller: runtime.bottomScrollController
+                                ),
+                                messages: viewModel.historyRows,
+                                animated: false,
+                                condition: {
+                                    conversationID == viewModel.selectedConversationID
+                                }
+                            )
+                        }
+                }
+                    // 会话切换时重建 List：行状态与滚动位置回到初始。
+                    // 放在 List 之后的所有修饰（尤其是底部追踪器）都在这个作用域内，
+                    // 会随 List 一起重建，重新绑定到新的 NSScrollView。
+                    .id(viewModel.selectedConversationID)
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                // 让 Markdown 代码块使用 HorizontalScrollView，不捕获垂直滚动
+                .environment(\.preferOuterScroll, true)
+                .background(
+                    ScrollViewBottomTracker(
+                        onChange: { runtime.atBottomBox.value = $0 },
+                        controller: runtime.bottomScrollController
+                    )
                 )
-            )
+            }
             .onChange(of: historyBoundary) { _, _ in
-                if atBottomBox.value {
+                if runtime.atBottomBox.value {
                     scrollTick &+= 1
                 }
-                if !isInitialPositionReady, !viewModel.isLoading {
+                if !initialPositionGate.isReady, !viewModel.isLoading {
                     prepareInitialPosition(proxy: proxy, messages: viewModel.historyRows)
                 }
             }
             .onChange(of: viewModel.isLoading) { _, isLoading in
                 if isLoading {
-                    scrollCoordinator.cancelPendingTasks()
-                    isInitialPositionReady = false
-                    isPreparingInitialPosition = false
+                    runtime.scrollCoordinator.cancelPendingTasks()
+                    initialPositionGate.resetForLoadingStart()
                 } else {
                     prepareInitialPosition(proxy: proxy, messages: viewModel.historyRows)
                 }
             }
             .onChange(of: viewModel.selectedConversationID) { _, _ in
-                scrollCoordinator.cancelPendingTasks()
-                isInitialPositionReady = false
-                isPreparingInitialPosition = false
+                runtime.scrollCoordinator.cancelPendingTasks()
+                initialPositionGate.resetForConversationSwitch()
             }
             // 流式行出现或内容增长时跟随滚到底；内容增长期间沿用
             // atBottomBox 判定（用户上滑则不跟随）。不能只监听 id，因为流式
             // token 更新保持同一个行 id，但会持续改变行高。
             .onChange(of: viewModel.streamingRow) { _, _ in
-                guard viewModel.streamingRow != nil, atBottomBox.value else { return }
+                guard viewModel.streamingRow != nil, runtime.atBottomBox.value else { return }
                 scrollTick &+= 1
             }
             // 兜底：锚点出现（内容从无到有）时也补一次，覆盖首屏/慢加载。
@@ -149,18 +173,18 @@ struct ListV3View: View {
                 if !viewModel.isLoading {
                     prepareInitialPosition(proxy: proxy, messages: viewModel.historyRows)
                 }
-                if atBottomBox.value {
+                if runtime.atBottomBox.value {
                     scrollTick &+= 1
                 }
             }
             // 用户消息已经由插件转发的类型化事件直接应用；这里仅负责滚到底部。
             .onChange(of: viewModel.latestUserMessageID) { _, newID in
                 guard newID != nil else { return }
-                atBottomBox.value = true
+                runtime.atBottomBox.value = true
                 scrollTick &+= 1
             }
             .onDisappear {
-                scrollCoordinator.cancelPendingTasks()
+                runtime.scrollCoordinator.cancelPendingTasks()
             }
         }
     }
@@ -169,25 +193,30 @@ struct ListV3View: View {
         proxy: ScrollViewProxy,
         messages: [ProviderMessage.Message]
     ) {
-        guard !isInitialPositionReady, !isPreparingInitialPosition else { return }
         let conversationID = viewModel.selectedConversationID
-        isPreparingInitialPosition = true
-        Task { @MainActor in
-            let ready = await scrollCoordinator.prepareInitialBottom(
-                proxy: proxy,
-                messages: messages,
-                controller: bottomScrollController,
-                condition: {
-                    conversationID == viewModel.selectedConversationID && !viewModel.isLoading
-                }
-            )
-            isPreparingInitialPosition = false
-            if ready,
-               conversationID == viewModel.selectedConversationID,
-               !viewModel.isLoading {
-                isInitialPositionReady = true
+        // 先把成员取到局部常量：闭包持有的就是同一批实例，
+        // 不随视图重建而变（视图是 struct，被捕获的是副本）。
+        let scrollCoordinator = runtime.scrollCoordinator
+        let bottomScrollController = runtime.bottomScrollController
+        initialPositionGate.request(
+            conversationID: conversationID,
+            settle: { [scrollCoordinator, bottomScrollController] in
+                await scrollCoordinator.prepareInitialBottom(
+                    target: ProxyMessageListScrollingTarget(
+                        proxy: proxy,
+                        controller: bottomScrollController
+                    ),
+                    messages: messages,
+                    condition: { true }
+                )
+            },
+            stillRelevant: { [viewModel] in
+                // 期间会话被换掉、或又进入加载 → 本轮结果作废。
+                // gate 内部另有 pendingConversationID 校验，这里补上
+                // 真实选择状态与加载状态，双保险避免旧结果放行遮罩。
+                conversationID == viewModel.selectedConversationID && !viewModel.isLoading
             }
-        }
+        )
     }
 
     /// Stable historical rows. Pure database-driven; rebuilt only when the
@@ -255,8 +284,14 @@ struct ListV3View: View {
     }
 
     private func loadEarlier(proxy: ScrollViewProxy) async {
-        guard let anchorID = await viewModel.loadEarlier(isAtBottom: atBottomBox.value) else { return }
-        await scrollCoordinator.pinToAnchor(proxy: proxy, anchorID: anchorID)
+        guard let anchorID = await viewModel.loadEarlier() else { return }
+        await runtime.scrollCoordinator.pinToAnchor(
+            target: ProxyMessageListScrollingTarget(
+                proxy: proxy,
+                controller: runtime.bottomScrollController
+            ),
+            anchorID: anchorID
+        )
     }
 }
 

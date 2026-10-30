@@ -17,6 +17,7 @@ let package = Package(
     dependencies: [
         .package(path: "../KitLLM"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../KitTestSupport"),
     ],
     targets: [
         .target(
@@ -24,12 +25,13 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             path: "Sources/ProviderConversation"
         ),
         .testTarget(
             name: "ProviderConversationTests",
-            dependencies: ["ProviderConversation"]
+            dependencies: ["ProviderConversation", .product(name: "KitTestSupport", package: "KitTestSupport")]
         )
     ]
 )

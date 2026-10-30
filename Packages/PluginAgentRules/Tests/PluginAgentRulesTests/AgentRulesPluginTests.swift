@@ -64,7 +64,7 @@ import ProviderProject
     @Test func listRulesReadsUTF16MarkdownMetadata() async throws {
     let projectURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("AgentRulesTests-\(UUID().uuidString)", isDirectory: true)
-    let rulesURL = projectURL.appending(path: ".agent/rules")
+    let rulesURL = projectURL.appending(path: ".lumi/rules")
     try FileManager.default.createDirectory(at: rulesURL, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: projectURL) }
 
@@ -86,7 +86,7 @@ import ProviderProject
     @Test func readRuleReturnsUTF16MarkdownContent() async throws {
     let projectURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("AgentRulesTests-\(UUID().uuidString)", isDirectory: true)
-    let rulesURL = projectURL.appending(path: ".agent/rules")
+    let rulesURL = projectURL.appending(path: ".lumi/rules")
     try FileManager.default.createDirectory(at: rulesURL, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: projectURL) }
 
@@ -101,6 +101,107 @@ import ProviderProject
 
     #expect(rule.title == "Review Rules")
     #expect(rule.content == content)
+}
+
+@MainActor
+    @Test func createRuleWritesIntoLumiDirectory() async throws {
+    let projectURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("AgentRulesTests-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: projectURL) }
+
+    let rule = try await AgentRulesService.shared.createRule(
+        projectPath: projectURL.path(),
+        filename: "created",
+        title: "Created Rule",
+        content: "Body."
+    )
+
+    #expect(rule.filePath == projectURL.appending(path: ".lumi/rules/created.md").path)
+    #expect(FileManager.default.fileExists(atPath: rule.filePath))
+    #expect(!FileManager.default.fileExists(
+        atPath: projectURL.appending(path: ".agent/rules/created.md").path
+    ))
+}
+
+@MainActor
+    @Test func listRulesStillReadsLegacyAgentDirectory() async throws {
+    let projectURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("AgentRulesTests-\(UUID().uuidString)", isDirectory: true)
+    let legacyRulesURL = projectURL.appending(path: ".agent/rules")
+    try FileManager.default.createDirectory(at: legacyRulesURL, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: projectURL) }
+
+    try "# Legacy Rule\n\nFrom the old directory.".write(
+        to: legacyRulesURL.appending(path: "legacy.md"),
+        atomically: true,
+        encoding: .utf8
+    )
+
+    let rules = try await AgentRulesService.shared.listRules(projectPath: projectURL.path())
+    let rule = try #require(rules.first)
+
+    #expect(rule.filename == "legacy.md")
+    #expect(rule.title == "Legacy Rule")
+}
+
+@MainActor
+    @Test func listRulesMergesBothDirectoriesAndPrefersLumi() async throws {
+    let projectURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("AgentRulesTests-\(UUID().uuidString)", isDirectory: true)
+    let lumiRulesURL = projectURL.appending(path: ".lumi/rules")
+    let legacyRulesURL = projectURL.appending(path: ".agent/rules")
+    try FileManager.default.createDirectory(at: lumiRulesURL, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: legacyRulesURL, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: projectURL) }
+
+    try "# Shared\n\nFrom .lumi.".write(
+        to: lumiRulesURL.appending(path: "shared.md"),
+        atomically: true,
+        encoding: .utf8
+    )
+    try "# Shared\n\nFrom .agent.".write(
+        to: legacyRulesURL.appending(path: "shared.md"),
+        atomically: true,
+        encoding: .utf8
+    )
+    try "# Only Legacy\n\nFrom .agent.".write(
+        to: legacyRulesURL.appending(path: "only-legacy.md"),
+        atomically: true,
+        encoding: .utf8
+    )
+
+    let rules = try await AgentRulesService.shared.listRules(projectPath: projectURL.path())
+    let filenames = Set(rules.map(\.filename))
+
+    #expect(filenames == ["shared.md", "only-legacy.md"])
+    let shared = try #require(rules.first { $0.filename == "shared.md" })
+    #expect(
+        URL(fileURLWithPath: shared.filePath).resolvingSymlinksInPath().path
+            == lumiRulesURL.resolvingSymlinksInPath().appending(path: "shared.md").path
+    )
+}
+
+@MainActor
+    @Test func readRuleFallsBackToLegacyAgentDirectory() async throws {
+    let projectURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("AgentRulesTests-\(UUID().uuidString)", isDirectory: true)
+    let legacyRulesURL = projectURL.appending(path: ".agent/rules")
+    try FileManager.default.createDirectory(at: legacyRulesURL, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: projectURL) }
+
+    try "# Legacy Only\n\nKept in .agent.".write(
+        to: legacyRulesURL.appending(path: "legacy-only.md"),
+        atomically: true,
+        encoding: .utf8
+    )
+
+    let rule = try await AgentRulesService.shared.readRule(
+        projectPath: projectURL.path(),
+        filename: "legacy-only.md"
+    )
+
+    #expect(rule.title == "Legacy Only")
+    #expect(rule.filePath == legacyRulesURL.appending(path: "legacy-only.md").path)
 }
 
 @MainActor

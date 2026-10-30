@@ -15,13 +15,13 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.13.0"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitShell"),
+        .package(path: "../KitProjectDetect"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../ProviderPromptSuggestion"),
     ],
     targets: [
         .target(
@@ -32,9 +32,10 @@ let package = Package(
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KitShell", package: "KitShell"),
+                .product(name: "KitProjectDetect", package: "KitProjectDetect"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
-                .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
+                .product(name: "ProviderPromptSuggestion", package: "LumiProviders"),
             ],
             path: "Sources/PluginProjectOverview",
             resources: [
@@ -43,7 +44,13 @@ let package = Package(
         ),
         .testTarget(
             name: "ProjectOverviewPluginTests",
-            dependencies: ["ProjectOverviewPlugin"],
+            dependencies: [
+                "ProjectOverviewPlugin",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderProject", package: "LumiProviders"),
+                .product(name: "ProviderPromptSuggestion", package: "LumiProviders"),
+                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+            ],
             path: "Tests"
         )
     ]

@@ -63,9 +63,10 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
         }
 
         // 注册 Agent 工具到 ToolManagerProviding。
+        // 工具必须按「调用所属对话」的项目读写，避免多对话并行时串项目。
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {
-                toolManager.add(tool, pluginID: id)
+                toolManager.add(ConversationScopedMindMapTool(tool), pluginID: id)
             }
         }
 

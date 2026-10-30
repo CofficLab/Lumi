@@ -1,13 +1,12 @@
-import OpenInKit
-import ProviderProject
+import KitOpenIn
 import SwiftUI
 
 /// Open In Cursor 的标题栏按钮。
 struct OpenInCursorToolbarView: View {
     @StateObject private var model: OpenInCursorToolbarViewModel
 
-    init(tool: OpenInTool, project: (any ProjectProviding)?) {
-        _model = StateObject(wrappedValue: OpenInCursorToolbarViewModel(tool: tool, project: project))
+    init(tool: OpenInTool, projectCapability: OpenInProjectCapability) {
+        _model = StateObject(wrappedValue: OpenInCursorToolbarViewModel(tool: tool, projectCapability: projectCapability))
     }
 
     var body: some View {
@@ -31,6 +30,6 @@ struct OpenInCursorToolbarView: View {
 // MARK: - 预览
 
 #Preview("Open In Cursor Toolbar") {
-    OpenInCursorToolbarView(tool: OpenInTool(config: OpenInTool.cursor, project: nil), project: nil)
+    OpenInCursorToolbarView(tool: OpenInTool(config: OpenInTool.cursor, project: nil), projectCapability: OpenInProjectCapabilityAdapter(project: nil))
         .padding()
 }

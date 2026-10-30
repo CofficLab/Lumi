@@ -87,7 +87,10 @@ private struct HTTPExchangeCodeTextView: NSViewRepresentable {
         textView.font = NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
         textView.textContainerInset = NSSize(width: 10, height: 10)
         textView.textContainer?.widthTracksTextView = false
-        textView.textContainer?.heightTracksTextView = false
+        textView.textContainer?.containerSize = NSSize(
+            width: CGFloat.greatestFiniteMagnitude,
+            height: CGFloat.greatestFiniteMagnitude
+        )
         textView.isHorizontallyResizable = true
         textView.isVerticallyResizable = true
         textView.autoresizingMask = [.width]

@@ -9,18 +9,19 @@ let package = Package(
         .library(name: "PluginMCP", targets: ["PluginMCP"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderToolManager"),
-        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
         .package(path: "../KitMCP"),
         .package(path: "../ProviderMCP"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
         // 测试 target 需要直接构造 mock MCP Server（与 KitMCP 同版本，保证类型一致）。
         .package(url: "https://github.com/modelcontextprotocol/swift-sdk.git", exact: "0.12.1"),
+        .package(path: "../KitTestSupport"),
     ],
     targets: [
         .target(
@@ -36,6 +37,7 @@ let package = Package(
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             path: "Sources/PluginMCP",
             resources: [.process("../../Resources/Localizable.xcstrings")]
@@ -46,6 +48,10 @@ let package = Package(
                 "PluginMCP",
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "MCP", package: "swift-sdk"),
+                .product(name: "ProviderMCP", package: "ProviderMCP"),
+                .product(name: "ProviderStorage", package: "LumiProviders"),
+                .product(name: "KitTestSupport", package: "KitTestSupport"),
+                .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             path: "Tests/PluginMCPTests"
         ),

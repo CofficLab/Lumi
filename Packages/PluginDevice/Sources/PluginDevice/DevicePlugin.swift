@@ -45,26 +45,14 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         metricsObserver?.cancel()
         metricsObserver = DeviceMetricsObserver(viewModels: viewModels)
 
-        // 0. 配置 MemoryHistoryService 存储目录
+        // 0. 配置历史服务的存储目录
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             let pluginStorageDir = storage.pluginDataDirectory(for: id)
             MemoryHistoryService.configure(storageDirectory: pluginStorageDir)
+            ThermalHistoryService.configure(storageDirectory: pluginStorageDir)
         }
 
-        // 1. 设置视图入口
-        if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
-            let entry = SettingEntryItem(
-                id: "\(id).memory-settings",
-                title: pluginLocalization.string("Memory Monitor"),
-                systemImage: "memorychip",
-                order: order
-            ) {
-                MemorySettingsView(viewModel: viewModels.memorySettings)
-            }
-            settings.addEntries([entry])
-        }
-
-        // 2. 注册 ActivityBar 入口；入口被激活时由插件切换自己的主内容，
+        // 1. 注册 ActivityBar 入口；入口被激活时由插件切换自己的主内容，
         //    并隐藏侧边栏 Rail（本插件不贡献 Rail 内容，直接全屏展示主视图）。
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
@@ -106,7 +94,12 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
                 DeviceInfoMenuBarContentView(viewModel: viewModels.menuBar)
             })
             menuBar.addPopup(MenuBarPopupItem(id: "\(id).cpu", title: "CPU", order: order) {
-                DeviceInfoMenuBarPopupView(viewModel: viewModels.cpu, historyViewModel: viewModels.cpuHistory)
+                DeviceInfoMenuBarPopupView(
+                    viewModel: viewModels.cpu,
+                    thermalViewModel: viewModels.thermal,
+                    historyViewModel: viewModels.cpuHistory,
+                    thermalHistoryViewModel: viewModels.thermalHistory
+                )
             })
             menuBar.addPopup(MenuBarPopupItem(id: "\(id).memory", title: "内存", order: order) {
                 MemoryMenuBarPopupView(viewModel: viewModels.memory, historyViewModel: viewModels.memoryHistory)
@@ -118,8 +111,6 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         metricsObserver?.cancel()
         metricsObserver = nil
         viewModels = nil
-        kernel.resolveProvider((any SettingViewProviding).self)?
-            .removeEntries(ids: ["\(id).memory-settings"])
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         activityBar?.removeItems(ids: ["\(id).entry"])
         // 恢复 Rail 可见性（本插件激活时可能已将其隐藏）。

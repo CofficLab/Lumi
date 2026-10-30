@@ -63,7 +63,9 @@ public final class ChatScreenshotState {
     // MARK: - 私有
 
     /// 选区完成后裁剪出 CGImage(由主类负责 downscale + JPEG 编码)
-    private func handleCompletion(
+    ///
+    /// 可见性放宽到 internal 仅为便于单元测试覆盖选区尺寸门槛。
+    internal func handleCompletion(
         image: CGImage,
         captureFrame: CGRect,
         selection: CGRect?

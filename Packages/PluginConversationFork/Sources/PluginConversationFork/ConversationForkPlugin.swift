@@ -9,11 +9,12 @@ import ProviderMessageSender
 import ProviderLLMManager
 import SwiftUI
 
-/// 对话分叉插件：一键把当前对话摘要后续接到新对话。
+/// 对话分叉插件：把当前对话摘要后续接到新对话。
 ///
 /// 复刻自旧版 `Plugins/ConversationForkPlugin`：
 /// - 在 Chat 分区 Action Bar 注册「续接到新对话」按钮；
-/// - 点击后用当前模型生成历史摘要（失败回退为本地精简摘要），
+/// - 点击按钮先弹出引导弹窗（展示将被带走的上下文），用户确认后
+///   才用当前模型生成历史摘要（失败回退为本地精简摘要），
 ///   创建新对话并把摘要作为首条 user 消息注入，自动开始续写。
 @MainActor
 public final class ConversationForkPlugin: SuperPlugin, SuperLog {
@@ -28,11 +29,14 @@ public final class ConversationForkPlugin: SuperPlugin, SuperLog {
         description: "",
         category: .chat,
         stage: .stable,
-        policy: .disabled
+        policy: .alwaysOn
     )
 
     public init() {}
 
+    /// 跟随「当前是否选中对话」的观察者：未选中对话时把分叉按钮从
+    /// Action Bar 撤掉。
+    private var selectionObserver: ConversationForkSelectionObserver?
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
@@ -50,23 +54,35 @@ public final class ConversationForkPlugin: SuperPlugin, SuperLog {
             llmProvider: llmProvider
         )
 
-        chat.addBarItems([
+        let coordinator = ConversationForkCoordinator(
+            conversations: conversations,
+            messages: messages,
+            sender: sender,
+            summarizer: summarizer
+        )
+
+        let itemID = "\(id).action-bar-button"
+        // 分叉的前提是有选中对话：没有选中对话时按钮没有意义，
+        // 因此由 observer 负责「选中时才把按钮放进 Action Bar」。
+        selectionObserver?.cancel()
+        selectionObserver = ConversationForkSelectionObserver(
+            chat: chat,
+            conversations: conversations,
+            itemID: itemID
+        ) {
             ChatSectionBarItem(
-                id: "\(id).action-bar-button",
+                id: itemID,
                 order: 80,
                 placement: .actionTrailing
             ) {
-                ConversationForkButton(
-                    conversations: conversations,
-                    messages: messages,
-                    sender: sender,
-                    summarizer: summarizer
-                )
-            },
-        ])
+                ConversationForkButton(coordinator: coordinator)
+            }
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        selectionObserver?.cancel()
+        selectionObserver = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).action-bar-button")
     }

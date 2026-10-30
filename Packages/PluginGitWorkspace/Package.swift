@@ -15,12 +15,13 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderGit"),
         .package(path: "../ProviderGitRepositoryWatch"),
         .package(path: "../ProviderChatSection"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
+        .package(path: "../PluginRootView")
     ],
     targets: [
         .target(
@@ -53,6 +54,7 @@ let package = Package(
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
+                .product(name: "PluginRootView", package: "PluginRootView"),
             ]
         ),
     ]

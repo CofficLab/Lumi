@@ -2,11 +2,13 @@ import Testing
 import Foundation
 import SwiftUI
 import KernelCore
+import KitTestIsolation
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
 import ProviderRailView
 import ProviderRootView
+import ProviderStorage
 @testable import InputPlugin
 @testable import ProviderRootView
 
@@ -32,6 +34,14 @@ import ProviderRootView
     try kernel.registerProvider((any ContentViewProviding).self, contentView)
     try kernel.registerProvider((any RailViewProviding).self, railView)
     try kernel.registerProvider((any RootViewProviding).self, rootView)
+    // 存储 Provider 决定插件数据目录。测试进程里守卫拒绝回退到本机真实目录，
+    // 因此 boot 必须能拿到真实（临时目录）Provider 才能继续。
+    try kernel.registerProvider(
+        (any StorageProviding).self,
+        InputPluginTestDoubles.StubStorageProvider(
+            root: InputPluginTestDoubles.makeTemporaryDirectory("activation")
+        )
+    )
 
     let plugin = InputPlugin()
     try plugin.onBoot(kernel: kernel)
@@ -66,6 +76,14 @@ import ProviderRootView
     try kernel.registerProvider((any ContentViewProviding).self, contentView)
     try kernel.registerProvider((any RailViewProviding).self, railView)
     try kernel.registerProvider((any RootViewProviding).self, rootView)
+    // 存储 Provider 决定插件数据目录。测试进程里守卫拒绝回退到本机真实目录，
+    // 因此 boot 必须能拿到真实（临时目录）Provider 才能继续。
+    try kernel.registerProvider(
+        (any StorageProviding).self,
+        InputPluginTestDoubles.StubStorageProvider(
+            root: InputPluginTestDoubles.makeTemporaryDirectory("compact-host")
+        )
+    )
 
     let plugin = InputPlugin()
     try plugin.onBoot(kernel: kernel)
@@ -165,6 +183,11 @@ import ProviderRootView
 
 @MainActor
 @Test func removeRuleIgnoresStaleOffsets() {
+    // InputSettingsViewModel 会触碰 InputService.shared，进而读取插件数据目录。
+    // 测试进程里守卫拒绝回退到本机真实目录，因此必须先注入临时目录。
+    InputPluginRuntimeBridge.pluginDirectory = InputPluginTestDoubles.makeTemporaryDirectory("remove-rule")
+    defer { InputPluginRuntimeBridge.pluginDirectory = nil }
+
     let viewModel = InputSettingsViewModel()
     viewModel.rules = [
         InputRule(appBundleID: "com.example.one", appName: "One", inputSourceID: "source.one")
@@ -173,4 +196,68 @@ import ProviderRootView
     viewModel.removeRule(at: IndexSet([2]))
 
     #expect(viewModel.rules.count == 1)
+}
+
+// MARK: - 运行时目录
+
+/// 运行时目录守卫的测试。
+///
+/// `InputPluginRuntimeBridge.resolvedPluginDirectory` 在测试进程里未注入即拒绝
+/// （`fatalError`，直接终止整个测试进程），因此这里既不能依赖生产回退目录，
+/// 也不能让注入状态在用例之间互相污染。
+///
+/// 所有涉及注入状态的用例都标注 `@MainActor` 且不同步挂起：MainActor 是串行
+/// 执行器，这些用例因此不会并发读写同一份进程级注入状态。
+@Suite("Input 运行时目录", .serialized)
+@MainActor
+struct InputPluginRuntimeTests {
+
+    @Test("注入目录后 resolvedPluginDirectory 返回该目录")
+    func usesInjectedDirectory() {
+        let directory = InputPluginTestDoubles.makeTemporaryDirectory("runtime-injected")
+        InputPluginRuntimeBridge.pluginDirectory = directory
+        defer { InputPluginRuntimeBridge.pluginDirectory = nil }
+
+        #expect(InputPluginRuntimeBridge.resolvedPluginDirectory == directory)
+    }
+
+    @Test("未注入目录时守卫拒绝回退到真实数据目录")
+    func refusesWithoutInjectedDirectory() {
+        InputPluginRuntimeBridge.pluginDirectory = nil
+
+        #expect(InputPluginRuntimeBridge.pluginDirectory == nil)
+
+        // 未注入时不得回退到本机真实数据目录：测试进程里这条路径必须被拒绝。
+        switch IsolatedDirectoryGuard.resolve(
+            injected: InputPluginRuntimeBridge.pluginDirectory,
+            owner: "InputPluginRuntimeBridge",
+            accessor: "resolvedPluginDirectory",
+            fallback: { URL(fileURLWithPath: "/tmp/input-plugin-fallback", isDirectory: true) }
+        ) {
+        case .resolved:
+            Issue.record("测试进程下未注入目录时不应回退到真实数据目录")
+        case let .refused(reason):
+            #expect(reason.contains("InputPluginRuntimeBridge"))
+            #expect(reason.contains("resolvedPluginDirectory"))
+        }
+    }
+
+    @Test("启动时把存储目录注入运行时配置")
+    func bootInjectsStorageDirectory() throws {
+        let root = InputPluginTestDoubles.makeTemporaryDirectory("runtime-boot")
+        let kernel = KernelCoreContainer()
+        try kernel.registerProvider(
+            (any StorageProviding).self,
+            InputPluginTestDoubles.StubStorageProvider(root: root)
+        )
+
+        let plugin = InputPlugin()
+        try plugin.onBoot(kernel: kernel)
+        defer { InputPluginRuntimeBridge.pluginDirectory = nil }
+
+        #expect(
+            InputPluginRuntimeBridge.resolvedPluginDirectory
+                == root.appendingPathComponent("com.coffic.lumi.plugin.input-manager", isDirectory: true)
+        )
+    }
 }

@@ -6,8 +6,8 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [.library(name: "PluginCADDesigner", targets: ["PluginCADDesigner"])],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitCADDesigner"),
         .package(path: "../ProviderToolManager"),

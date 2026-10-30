@@ -9,12 +9,12 @@ let package = Package(
         .library(name: "PluginOpenInFinder", targets: ["PluginOpenInFinder"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(path: "../OpenInKit"),
+        .package(path: "../KitOpenIn"),
         .package(path: "../ProviderToolManager"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0")
     ],
     targets: [
         .target(
@@ -23,7 +23,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
-                "OpenInKit",
+                "KitOpenIn",
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 "ProviderToolManager",
@@ -37,7 +37,7 @@ let package = Package(
             dependencies: [
                 "PluginOpenInFinder",
                 .product(name: "KernelCore", package: "LumiKernel"),
-                .product(name: "OpenInKit", package: "OpenInKit"),
+                .product(name: "KitOpenIn", package: "KitOpenIn"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),

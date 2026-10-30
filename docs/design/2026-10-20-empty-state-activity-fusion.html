@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>空态活动条 × 提示流 · 融合方案</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f7f5f0;
+    --card:#ffffff;
+    --ink:#14171e;
+    --ink2:#3a4256;
+    --muted:#7c7a72;
+    --line:#e9e3d6;
+    --line-soft:#f0ebe1;
+    --primary:#059669;
+    --primary-soft:rgba(5,150,105,.10);
+    --primary-line:rgba(5,150,105,.24);
+    --primary-faint:rgba(5,150,105,.055);
+    --amber:#d97706;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Outfit','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+    font-size:14.5px;
+    line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:56px 24px 88px;}
+
+  /* ---------- header ---------- */
+  header{border-bottom:1px solid var(--line);padding-bottom:28px;margin-bottom:44px;}
+  .kicker{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--primary);font-weight:600;margin-bottom:14px;
+  }
+  .kicker::before{content:"";width:22px;height:1px;background:var(--primary);opacity:.5;}
+  h1{
+    font-family:'DM Serif Display',serif;font-weight:400;
+    font-size:34px;line-height:1.22;letter-spacing:-.01em;margin:0 0 12px;
+  }
+  .lede{max-width:74ch;color:var(--ink2);margin:0;font-size:15.5px;}
+  .meta{margin-top:18px;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);}
+
+  section{margin-bottom:64px;}
+  h2{
+    font-family:'DM Serif Display',serif;font-weight:400;font-size:24px;
+    margin:0 0 6px;letter-spacing:-.005em;
+  }
+  .sec-sub{color:var(--muted);margin:0 0 26px;font-size:13.5px;max-width:80ch;}
+
+  /* ---------- layout ---------- */
+  .split{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:34px;align-items:start;}
+  @media (max-width:900px){.split{grid-template-columns:1fr;gap:26px;}}
+
+  /* ---------- app replica ---------- */
+  .stage{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;box-shadow:0 4px 16px -2px rgba(0,0,0,.06);
+  }
+  .stage-label{
+    display:flex;align-items:center;gap:8px;margin-bottom:14px;
+    font-size:11.5px;font-family:'JetBrains Mono',monospace;color:var(--muted);
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--primary);}
+  .dot.warn{background:var(--amber);}
+
+  .app{
+    position:relative;overflow:hidden;border-radius:12px;border:1px solid #eceae4;
+    background:#fdfcfa;display:flex;flex-direction:column;
+  }
+  .app::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(520px 320px at 50% 34%, rgba(5,150,105,.075), transparent 70%),
+      radial-gradient(320px 260px at 12% 18%, rgba(5,150,105,.05), transparent 70%);
+  }
+  .app-fusion::before{
+    background:
+      radial-gradient(560px 420px at 50% 44%, rgba(5,150,105,.075), transparent 72%),
+      radial-gradient(300px 240px at 12% 16%, rgba(5,150,105,.05), transparent 70%);
+  }
+  .app-body{position:relative;padding:26px 22px 0;}
+
+  .hero{
+    width:62px;height:62px;border-radius:50%;margin:0 auto 16px;
+    background:rgba(5,150,105,.085);
+    border:1px solid rgba(5,150,105,.14);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--primary);
+  }
+  .hero svg{width:30px;height:30px;}
+  .title{
+    text-align:center;font-size:17px;font-weight:600;color:#1c1917;margin:0;
+    letter-spacing:.01em;
+  }
+  .title .proj{color:var(--primary);font-weight:600;}
+  .subtitle{text-align:center;font-size:12.5px;color:#57534e;margin:7px 0 0;}
+
+  .chips{
+    display:flex;flex-wrap:wrap;gap:8px;justify-content:center;
+    max-width:520px;margin:20px auto 0;
+  }
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:7px 13px;border-radius:999px;font-size:12.5px;line-height:1.2;
+    color:#1c1917;background:rgba(5,150,105,.12);
+    border:1px solid rgba(5,150,105,.24);
+    box-shadow:0 1px 6px rgba(5,150,105,.055);
+    white-space:nowrap;
+  }
+  .chip svg{width:13px;height:13px;opacity:.85;}
+  .chip.ghost{
+    background:rgba(28,25,23,.05);color:#57534e;
+    border:1px dashed rgba(5,150,105,.38);box-shadow:none;
+  }
+
+  /* divider seam (current state) */
+  .seam{height:1px;background:#e9e6df;margin:0 0 0;}
+
+  /* ---------- current activity strip ---------- */
+  .strip{padding:16px 0 0;display:flex;flex-direction:column;align-items:center;}
+  .strip-row{display:flex;align-items:center;gap:18px;max-width:620px;width:100%;padding:0 22px;}
+
+  .hm{display:grid;grid-template-columns:repeat(6,9px);grid-auto-rows:9px;gap:3px;flex:none;}
+  .hm i{display:block;width:9px;height:9px;border-radius:2px;background:rgba(5,150,105,.08);}
+  .hm i[data-l="1"]{background:rgba(5,150,105,.40);}
+  .hm i[data-l="2"]{background:rgba(5,150,105,.60);}
+  .hm i[data-l="3"]{background:rgba(5,150,105,.80);}
+  .hm i[data-l="4"]{background:rgba(5,150,105,1);}
+
+  .chartcard{
+    position:relative;flex:1;height:104px;border-radius:8px;
+    background:rgba(5,150,105,.05);border:1px solid rgba(5,150,105,.12);
+  }
+  .chartcard svg{position:absolute;inset:0;width:100%;height:100%;}
+  .axis{
+    position:absolute;bottom:4px;font-size:9px;color:#a8a29e;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .axis.l{left:12px;} .axis.r{right:12px;}
+
+  /* ---------- proposed unified card ---------- */
+  .fusion-wrap{
+    display:flex;justify-content:center;padding:26px 22px 0;
+  }
+  .fusion{
+    width:100%;max-width:520px;border-radius:14px;
+    background:rgba(5,150,105,.055);
+    border:1px solid rgba(5,150,105,.16);
+    box-shadow:0 4px 14px -4px rgba(5,150,105,.10);
+    padding:12px 14px 13px;
+  }
+  .fusion-head{
+    display:flex;align-items:center;gap:7px;
+    font-size:11.5px;color:#57534e;margin-bottom:11px;
+  }
+  .fusion-head svg{width:13px;height:13px;color:var(--primary);opacity:.9;}
+  .fusion-head b{font-weight:600;color:#1c1917;}
+  .fusion-head .sep{color:#a8a29e;}
+  .fusion-body{display:flex;align-items:center;gap:14px;}
+  .vdiv{width:1px;align-self:stretch;background:rgba(5,150,105,.14);margin:1px 0;}
+  .spark{flex:1;height:42px;position:relative;}
+  .spark svg{position:absolute;inset:0;width:100%;height:100%;}
+
+  /* ---------- input bar ---------- */
+  .composer{margin-top:auto;padding:14px 22px 16px;position:relative;}
+  .composer-inner{
+    border:1px solid #eceae4;border-radius:12px;background:#fff;
+    padding:11px 13px;font-size:12.5px;color:#a8a29e;box-shadow:0 1px 4px rgba(0,0,0,.03);
+  }
+  .composer-tools{display:flex;align-items:center;gap:8px;margin-top:10px;}
+  .tool{
+    display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px;
+    border-radius:7px;border:1px solid #eceae4;background:#fff;
+    font-size:11px;color:#57534e;font-family:'JetBrains Mono',monospace;
+  }
+  .tool svg{width:12px;height:12px;}
+
+  /* ---------- annotations ---------- */
+  .notes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:18px;}
+  .note{display:grid;grid-template-columns:26px 1fr;gap:12px;align-items:start;}
+  .badge{
+    width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:11.5px;font-weight:600;font-family:'JetBrains Mono',monospace;
+    background:var(--primary-faint);color:var(--primary);border:1px solid var(--primary-line);
+  }
+  .badge.warn{background:rgba(217,119,6,.08);color:var(--amber);border-color:rgba(217,119,6,.3);}
+  .note h3{margin:0 0 3px;font-size:14px;font-weight:600;letter-spacing:.01em;}
+  .note p{margin:0;color:var(--ink2);font-size:13px;line-height:1.6;}
+  .note code{
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;
+    background:#efece4;padding:1px 5px;border-radius:4px;color:#3a4256;
+  }
+  .note .file{
+    display:block;margin-top:6px;font-family:'JetBrains Mono',monospace;
+    font-size:11px;color:var(--muted);
+  }
+
+  /* ---------- generic blocks ---------- */
+  .kv{
+    display:grid;grid-template-columns:104px 1fr;row-gap:9px;column-gap:16px;margin:0;
+    font-size:13px;
+  }
+  .kv dt{color:var(--muted);border-bottom:1px dashed var(--line);padding-bottom:7px;}
+  .kv dd{margin:0;border-bottom:1px dashed var(--line);padding-bottom:7px;color:var(--ink2);}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;background:var(--card);}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top;}
+  th{
+    font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    font-weight:600;background:#fbf9f4;border-bottom:1px solid var(--line);
+  }
+  td code{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink2);}
+  td .now{color:#a8a29e;}
+  tbody tr:last-child td{border-bottom:none;}
+  .tbl-wrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+
+  .opt{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;
+  }
+  .opt h3{margin:0 0 4px;font-size:15px;font-weight:600;}
+  .opt .tag{
+    display:inline-block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--primary);font-weight:600;margin-bottom:8px;
+  }
+  .opt p{margin:0 0 10px;color:var(--ink2);font-size:13px;}
+  .opt ul{margin:0;padding-left:18px;color:var(--ink2);font-size:12.5px;line-height:1.65;}
+  .opt li{margin-bottom:4px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media (max-width:760px){.grid2{grid-template-columns:1fr;}}
+
+  .shot{margin:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;}
+  .shot img{width:100%;display:block;border-radius:8px;border:1px solid var(--line-soft);}
+  .shot figcaption{margin-top:12px;font-size:12.5px;color:var(--muted);}
+  .shot strong{color:var(--ink2);}
+  .status-badge{
+    display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;
+    color:#fff;background:var(--primary);padding:3px 10px;border-radius:999px;margin-right:10px;
+  }
+  .callout{
+    border-left:2px solid var(--primary);background:rgba(5,150,105,.045);
+    padding:14px 18px;border-radius:0 10px 10px 0;margin-top:24px;font-size:13.5px;color:var(--ink2);
+  }
+  .callout b{color:var(--ink);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">Lumi · PluginMessageListEmpty</div>
+  <h1>让活动条长在提示流里，而不是掉进另一个面板</h1>
+  <p class="lede">
+    空态底部那两块图（30 天热力图 + token 趋势线）现在是「设置面板」的图表语言，
+    被一道系统分隔线切到了空态的「提示流」下面，所以读起来像两张贴上去的卡片。
+    下面先定位割裂的具体来源，再给一个可以直接落地的融合方案。
+  </p>
+  <div class="meta">2026-10-20 · 涉及：PluginMessageListEmpty / ProviderChatSection / LumiUI(AppLineChart)</div>
+</header>
+
+
+<!-- ============================ 0. 实施状态 ============================ -->
+<section>
+  <h2>0 · 实施状态：已按方案 A 落地</h2>
+  <p class="sec-sub">
+    2026-10-20 在 <code>PluginMessageListEmpty</code> 中实现完毕。
+    下图是<strong>真实渲染</strong>（SwiftUI <code>ImageRenderer</code> 快照，浅色主题），
+    不是设计稿。
+  </p>
+  <figure class="shot">
+    <img src="2026-10-20-empty-state-fusion-real-ui.png" alt="真机运行画面：活动卡紧跟在提示胶囊下面，底部无分隔线">
+    <figcaption>
+      <strong>真机运行画面</strong>（XCUITest 截图）：活动卡紧跟在提示胶囊下方，同一列、同一底色、
+      同一条左右边界；卡与输入区之间不再有任何分隔线。热力图、1pt 竖线与 token 曲线合成
+      <strong>一张</strong>卡，顶行锚点文案给出数字。
+    </figcaption>
+  </figure>
+
+  <div class="callout">
+    <b>第二轮修正：卡片的位置比卡片本身更要紧。</b>
+    第一轮只把两块图合成了一张卡，卡片却仍留在 <code>bottomFixed</code> 底栏槽位里 ——
+    结果它停在窗口最底部，与中间的提示之间隔着一大片空白，底栏与内容区之间还压着一条
+    分隔线。真机截图一看，「割裂」并没有消失，只是从「两个控件」变成了「一张卡 + 一条线」。
+    <br><br>
+    真正的融合要求卡片<b>紧跟在提示胶囊下面</b>：因此活动卡被移进空态的内容流
+    （<code>ActivityCardSlot</code>），底栏槽位随之取消。代价是矮窗口下卡片可能落在首屏之外、
+    需要滚动才能看到 —— 这是在「融合」与「永远可见」之间刻意做的取舍。
+  </div>
+</section>
+
+<!-- ============================ 1. 现状 ============================ -->
+<section>
+  <h2>1 · 现状：两条并行的视觉体系</h2>
+  <p class="sec-sub">
+    左侧是当前空态的真实结构复刻：中间是「墨翠胶囊」提示流，下方被一条 divider 切开，
+    底部是两块自带卡片语言的图表。
+  </p>
+
+  <div class="split">
+    <div class="stage">
+      <div class="stage-label"><span class="dot warn"></span> CURRENT · 复刻自线上截图</div>
+      <div class="app">
+        <div class="app-body">
+          <div class="hero">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.2-.6L3 21l1.7-4.6A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4Z"/>
+            </svg>
+          </div>
+          <p class="title">对于 <span class="proj">「kuaizhi-web」</span>，我可以帮你做什么？</p>
+          <p class="subtitle">挑一个例子，或在下面输入你的问题。</p>
+          <div class="chips">
+            <span class="chip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+              了解当前项目</span>
+            <span class="chip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.2"/></svg>
+              帮我设计一个应用图标</span>
+            <span class="chip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4 17 5-4 4 3 3-2 4 3"/></svg>
+              帮我创建一张 App Store 宣传图</span>
+            <span class="chip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg>
+              帮我写一份简历</span>
+            <span class="chip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+              设计一个产品原型</span>
+            <span class="chip ghost">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+              浏览插件</span>
+          </div>
+        </div>
+
+        <div class="seam"></div>
+
+        <div class="strip">
+          <div class="strip-row">
+            <div class="hm" id="hm-current"></div>
+            <div class="chartcard">
+              <svg viewBox="0 0 320 104" preserveAspectRatio="none" id="chart-current"></svg>
+              <span class="axis l">9/21</span>
+              <span class="axis r">10/20</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="composer">
+          <div class="composer-inner">输入消息，按 Return 发送…</div>
+          <div class="composer-tools">
+            <span class="tool">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/></svg>
+              HIGH</span>
+            <span class="tool">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/></svg>
+              MiniMax · M3.1-Flash</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ul class="notes">
+      <li class="note">
+        <span class="badge warn">1</span>
+        <div>
+          <h3>一道系统分隔线把两个区域物理切开</h3>
+          <p>空态容器在 <code>stack</code> 槽位，活动条在 <code>bottomFixed</code> 槽位，
+             二者之间由宿主统一画了一条 <code>AppDivider()</code>。任何内容只要落到这条线以下，
+             就自动变成"另一个区域"。</p>
+          <span class="file">ProviderChatSection/DefaultChatSectionProviding.swift:308</span>
+        </div>
+      </li>
+      <li class="note">
+        <span class="badge warn">2</span>
+        <div>
+          <h3>折线图用的是「设置面板」词汇</h3>
+          <p>它自带卡片底色、边框、三条网格线和 <code>9/21 · 10/20</code> 坐标轴日期——
+             这套语言属于设置页的统计图。空态里没有坐标轴可读，日期只是噪声，
+             但它让整块看起来像从别处搬过来的。</p>
+          <span class="file">LumiUI/Components/AppLineChart.swift:53-60, 136-145</span>
+        </div>
+      </li>
+      <li class="note">
+        <span class="badge warn">3</span>
+        <div>
+          <h3>两块图之间没有共同容器</h3>
+          <p>热力图 72pt 宽、折线图吃掉剩余全部宽度，中间只有 18pt 空隙。
+             一个是裸方块、一个是带框卡片，读者会把它们当成两个独立控件，
+             而不是"一段时间的两种视图"。</p>
+          <span class="file">PluginMessageListEmpty/ActivityFooterView.swift:55, 147-162</span>
+        </div>
+      </li>
+      <li class="note">
+        <span class="badge warn">4</span>
+        <div>
+          <h3>图形失去了文字锚点</h3>
+          <p>上一版为了避免两行 caption 互相打架，把两块图各自的说明文字都删了。
+             数字只剩在无障碍标签里，视觉上就成了两张"无主的图"。</p>
+          <span class="file">PluginMessageListEmpty/ActivityFooterView.swift:118-128</span>
+        </div>
+      </li>
+      <li class="note">
+        <span class="badge warn">5</span>
+        <div>
+          <h3>底色在中间断了一次</h3>
+          <p>空态的氛围是一层径向渐变，中心在 42% 高度；再往下就是纯背景色。
+             中间有雾、底部发平，两个区域在"纸面"上也不是同一张纸。</p>
+          <span class="file">PluginMessageListEmpty/EmptyStateAtmosphere.swift:17-25</span>
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================ 2. 方案 ============================ -->
+<section>
+  <h2>2 · 推荐方案：一张墨翠卡，接在提示流下面</h2>
+  <p class="sec-sub">
+    核心是把"两个控件"改回"一个元素"：合成一张与胶囊同源的卡，共用同一条 30 天时间基线，
+    去掉分隔线和坐标轴，再用一行同源的小字把图形锚住。
+  </p>
+
+  <div class="split">
+    <div class="stage">
+      <div class="stage-label"><span class="dot"></span> PROPOSED · 方案 A（推荐）</div>
+      <div class="app app-fusion">
+        <div class="app-body">
+          <div class="hero">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.2-.6L3 21l1.7-4.6A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4Z"/>
+            </svg>
+          </div>
+          <p class="title">对于 <span class="proj">「kuaizhi-web」</span>，我可以帮你做什么？</p>
+          <p class="subtitle">挑一个例子，或在下面输入你的问题。</p>
+          <div class="chips">
+            <span class="chip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+              了解当前项目</span>
+            <span class="chip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.2"/></svg>
+              帮我设计一个应用图标</span>
+            <span class="chip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4 17 5-4 4 3 3-2 4 3"/></svg>
+              帮我创建一张 App Store 宣传图</span>
+            <span class="chip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg>
+              帮我写一份简历</span>
+            <span class="chip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+              设计一个产品原型</span>
+            <span class="chip ghost">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+              浏览插件</span>
+          </div>
+        </div>
+
+        <!-- 融合卡：无分隔线，与胶囊流同宽 520 -->
+        <div class="fusion-wrap">
+          <div class="fusion">
+            <div class="fusion-head">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+              <span><b>近 30 天</b> · 62 条对话 · 128K tokens</span>
+            </div>
+            <div class="fusion-body">
+              <div class="hm" id="hm-proposed"></div>
+              <div class="vdiv"></div>
+              <div class="spark">
+                <svg viewBox="0 0 300 42" preserveAspectRatio="none" id="spark-proposed"></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="composer">
+          <div class="composer-inner">输入消息，按 Return 发送…</div>
+          <div class="composer-tools">
+            <span class="tool">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/></svg>
+              HIGH</span>
+            <span class="tool">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/></svg>
+              MiniMax · M3.1-Flash</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ul class="notes">
+      <li class="note">
+        <span class="badge">1</span>
+        <div>
+          <h3>合成一张卡：一个圆角、一个填充、一条描边</h3>
+          <p>热力图与曲线住进同一个 <code>RoundedRectangle(14)</code>，
+             填充 <code>primary@5.5%</code>、描边 <code>primary@16%</code>、柔阴影 <code>primary@5%</code>——
+             与胶囊卡（12% / 24% / 5.5%）同一族，只是大卡略淡。
+             中间用 1px <code>primary@14%</code> 竖线分隔，两侧不再是两个控件。</p>
+        </div>
+      </li>
+      <li class="note">
+        <span class="badge">2</span>
+        <div>
+          <h3>两个图共享同一条 30 天时间基线</h3>
+          <p>热力图最左列对齐曲线的第一个点、最右列对齐最后一个点，颜色共用同一套
+             <code>primary</code> 透明度阶梯（8% → 40% → 60% → 80% → 100%）。
+             一个回答"有没有发生"，一个回答"用了多少"，读起来是同一段时间的两种视图。</p>
+        </div>
+      </li>
+      <li class="note">
+        <span class="badge">3</span>
+        <div>
+          <h3>删掉设置面板词汇：网格线、坐标轴日期、卡片边框</h3>
+          <p>空态里的曲线不需要 X/Y 刻度。用一个本地轻量 <code>ActivitySparkline</code>（Canvas 手绘，
+             无网格、无坐标轴、末点加重），<code>AppLineChart</code> 保持原样继续服务设置页与 HTTP 统计。</p>
+        </div>
+      </li>
+      <li class="note">
+        <span class="badge">4</span>
+        <div>
+          <h3>一行同源小字，把图形锚住</h3>
+          <p>「近 30 天 · 62 条对话 · 128K tokens」放在卡片顶部，图标 + 文字的组合与胶囊一致。
+             它取代两块图各自的 caption——只有一行，不构成噪声，同时把数字还给用户。</p>
+        </div>
+      </li>
+      <li class="note">
+        <span class="badge">5</span>
+        <div>
+          <h3>左右边界与胶囊流完全对齐</h3>
+          <p>卡片宽度取 <code>520</code>，与 <code>PromptSuggestionFlow</code> 的 520 同一基准，
+             居中。中部与底部共用同一条左右边界，这是"同一个页面"的第一个视觉信号。</p>
+        </div>
+      </li>
+      <li class="note">
+        <span class="badge">6</span>
+        <div>
+          <h3>接缝与底色</h3>
+          <p>给空态 item 设 <code>showsTrailingDivider: false</code> 去掉那条系统分隔线；
+             同时把氛围渐变的中心从 42% 下移到 50%、半径放大，让雾气自然覆盖到底部卡片区域。
+             图表区与输入框之间的分隔线保留——那是真正的功能分区。</p>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="callout">
+    <b>为什么仍然留在 bottomFixed 槽位？</b>
+    活动条现在是独立底栏，是因为空态内容在 ScrollView 里居中，矮窗口时页脚会被推出视口。
+    融合不靠"把两块图搬进中间的内容流"，而靠<b>去掉接缝 + 同源样式 + 同一左右基准</b>——
+    这样既保住矮窗口下的可见性，也不破坏底栏语义。
+  </div>
+</section>
+
+<!-- ============================ 3. 备选 ============================ -->
+<section>
+  <h2>3 · 备选方案</h2>
+  <p class="sec-sub">如果 A 方案的改动量太大，可以按 B / C 逐级落地；两者互不冲突，可叠加。</p>
+
+  <div class="grid2">
+    <div class="opt">
+      <span class="tag">Option B · 最小改动</span>
+      <h3>只做去缝 + 同色</h3>
+      <p>不动布局槽位、不换组件，只做三件事，拿到约七成收益。</p>
+      <ul>
+        <li>去掉 stack 与 bottomFixed 之间的 <code>AppDivider()</code></li>
+        <li>热力图与折线图包进同一个圆角容器，共用填充与描边</li>
+        <li>折线图隐藏网格线与坐标轴日期（给 <code>AppLineChart</code> 加 <code>showsGrid</code> / <code>showsAxisLabels</code> 开关，默认值保持现状）</li>
+      </ul>
+      <p style="margin-top:10px;color:var(--muted);font-size:12px;">
+        代价：底部与中部仍是两个区域，"接缝"只是被弱化而非消失；卡片宽度仍是 620 而非 520。
+      </p>
+    </div>
+
+    <div class="opt">
+      <span class="tag">Option C · 复合图</span>
+      <h3>日历 + 曲线叠成一张图</h3>
+      <p>把热力图的 30 个格子当作 x 轴底座，曲线直接浮在格子正上方，共用一条时间轴与一个边框。</p>
+      <ul>
+        <li>融合度最高：读者一眼看到"哪天发生了什么、消耗多少"</li>
+        <li>卡片更矮（约 76pt），比并排方案省约 30pt 高度</li>
+        <li>需要精确对位，窗口变窄时曲线与格子容易糊在一起</li>
+      </ul>
+      <p style="margin-top:10px;color:var(--muted);font-size:12px;">
+        适合作为 A 方案落地稳定后的第二阶段，而不是第一步。
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 4. 落地清单 ============================ -->
+<section>
+  <h2>4 · 落地清单（方案 A）</h2>
+  <p class="sec-sub">改动集中在 <code>PluginMessageListEmpty</code> 一个包内，加一处宿主层的分隔线开关。</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr><th style="width:26%">改动点</th><th style="width:30%">现状</th><th>建议改法</th><th style="width:24%">文件</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>卡片位置</b></td>
+          <td class="now">注册在 <code>bottomFixed</code> 底栏槽位 → 永远停在窗口最底部，与提示之间隔着一大片空白</td>
+          <td><b>移进空态内容流</b>，紧跟在提示胶囊下面：同一列、同一条底色。底栏槽位随之取消，两条分隔线同时消失</td>
+          <td><code>ActivityCardSlot.swift</code> / 两个空态变体</td>
+        </tr>
+        <tr>
+          <td><b>接缝分隔线</b></td>
+          <td class="now">stack 与 bottomFixed 之间自动画 AppDivider</td>
+          <td>空态 item 显式声明 <code>showsTrailingDivider: false</code>，仅对该次注册生效</td>
+          <td><code>PluginMessageListEmptyPlugin.swift</code></td>
+        </tr>
+        <tr>
+          <td><b>活动条结构</b></td>
+          <td class="now">HStack 里两个独立视图，间距 18pt</td>
+          <td>改为一张 <code>ActivityFusionCard</code>：内含 heatmap + 1px 竖线 + sparkline</td>
+          <td><code>ActivityFooterView.swift</code></td>
+        </tr>
+        <tr>
+          <td><b>曲线组件</b></td>
+          <td class="now">复用 <code>AppLineChart</code>，自带卡片底 / 网格 / 坐标轴</td>
+          <td>新增本地 <code>ActivitySparkline</code>（Canvas 手绘，无网格无坐标轴，末点加重）</td>
+          <td>新增 <code>ActivitySparkline.swift</code>（几何抽成 <code>ActivitySparklineGeometry</code>）</td>
+        </tr>
+        <tr>
+          <td><b>锚点文案</b></td>
+          <td class="now">两块图各自 caption 已删除，只剩无障碍标签</td>
+          <td>卡内顶部新增一行 11.5pt 文案：近 30 天 · 对话数 · token 数</td>
+          <td><code>ActivityFusionCard.swift</code></td>
+        </tr>
+        <tr>
+          <td><b>宽度基准</b></td>
+          <td class="now">活动条 620pt，胶囊流 520pt</td>
+          <td>统一为 520pt，与 <code>PromptSuggestionFlow</code> 同宽同居中（已由 UI 测试钉住水平中心重合）</td>
+          <td><code>ActivityFooterView.swift</code></td>
+        </tr>
+        <tr>
+          <td><b>氛围底色</b></td>
+          <td class="now">径向渐变中心 0.42，底部为纯背景色</td>
+          <td>中心下移至 0.5、endRadius 放大，让雾气覆盖到活动条区域</td>
+          <td><code>EmptyStateAtmosphere.swift</code></td>
+        </tr>
+        <tr>
+          <td><b>排布阈值</b></td>
+          <td class="now"><code>sideBySideMinWidth = 72 + 18 + 300</code></td>
+          <td>合卡后按<strong>卡片内宽</strong>判定（≥281pt 才并排），窄窗退化为纵向堆叠；卡片封顶 520pt 后槽位再宽也不改变排布</td>
+          <td><code>ActivityFooterLayout</code> + 单测</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout" style="margin-top:22px;">
+    <b>回归点提醒：</b>活动条有 UI 测试断言（可见性、矮窗口仍在视口内、图表并存）。
+    合卡后要同步更新 <code>LumiMessageListEmptyUITests</code> 中"两块图各自可寻址"的用例，
+    并保留 <code>ActivityFooterLayoutTests</code> 对阈值常量的保护。
+  </div>
+</section>
+
+</div>
+
+<script>
+/* 30 天 token 序列：前段平静、后段爬升，末段有一次尖峰后回落 */
+const SERIES = [
+  0.03,0.04,0.05,0.04,0.06,0.05,0.07,0.06,0.08,0.07,0.09,0.08,0.10,0.09,0.12,0.10,
+  0.15,0.22,0.30,0.42,0.45,0.48,0.50,0.78,0.40,0.18,0.08,0.12,0.55,0.45
+];
+
+/* 6 列 × 7 行的热力图：右两列更密，与曲线末段爬升对得上 */
+const HEAT = [
+  [0,0,0,0,0,0,0],
+  [0,0,0,1,0,0,0],
+  [0,0,0,0,0,0,0],
+  [0,1,0,1,0,0,1],
+  [0,0,0,1,0,0,0],
+  [0,0,1,2,0,1,3]
+];
+
+function buildHeatmap(id){
+  const host = document.getElementById(id);
+  if(!host) return;
+  HEAT.forEach(col => col.forEach(level => {
+    const cell = document.createElement('i');
+    cell.dataset.l = level;
+    host.appendChild(cell);
+  }));
+}
+
+function points(series, w, h, pad){
+  const max = Math.max(...series);
+  return series.map((v,i)=>[
+    pad + (w-2*pad) * (i/(series.length-1)),
+    h - pad - (h-2*pad) * (v/max)
+  ]);
+}
+function polyline(pts){
+  return pts.map((p,i)=> (i? 'L':'M') + p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join(' ');
+}
+
+function buildCurrentChart(){
+  const svg = document.getElementById('chart-current');
+  if(!svg) return;
+  const w=320,h=104,pad=14;
+  const pts = points(SERIES,w,h,pad);
+  let s = '';
+  for(let k=0;k<=2;k++){
+    const y = pad + (h-pad-24)*k/2;
+    s += `<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="#e9e6df" stroke-width="1"/>`;
+  }
+  s += `<path d="${polyline(pts)}" fill="none" stroke="#059669" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  pts.forEach(p=>{ s += `<circle cx="${p[0].toFixed(2)}" cy="${p[1].toFixed(2)}" r="3" fill="#059669"/>`; });
+  svg.innerHTML = s;
+}
+
+function buildSpark(){
+  const svg = document.getElementById('spark-proposed');
+  if(!svg) return;
+  const w=300,h=42,pad=3;
+  const pts = points(SERIES,w,h,pad);
+  const area = polyline(pts) + ` L ${pts[pts.length-1][0].toFixed(2)} ${h} L ${pts[0][0].toFixed(2)} ${h} Z`;
+  let s = `<defs><linearGradient id="sparkfill" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#059669" stop-opacity=".18"/>
+    <stop offset="100%" stop-color="#059669" stop-opacity="0"/>
+  </linearGradient></defs>`;
+  s += `<path d="${area}" fill="url(#sparkfill)"/>`;
+  s += `<path d="${polyline(pts)}" fill="none" stroke="#059669" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const last = pts[pts.length-1];
+  s += `<circle cx="${last[0].toFixed(2)}" cy="${last[1].toFixed(2)}" r="3" fill="#059669"/>`;
+  svg.innerHTML = s;
+}
+
+buildHeatmap('hm-current');
+buildHeatmap('hm-proposed');
+buildCurrentChart();
+buildSpark();
+</script>
+</body>
+</html>

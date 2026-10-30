@@ -67,10 +67,40 @@ public enum KernelFactory {
         additionalPlugins: [any SuperPlugin] = []
     ) throws -> KernelCoreContainer {
         try makeKernel(
-            providerFactory: DefaultProviderFactory(),
+            providerFactory: DefaultProviderFactory(dataRootDirectory: uiTestingDataRootDirectory()),
             pluginFactory: DefaultPluginFactory(),
             additionalPlugins: additionalPlugins
         )
+    }
+
+    /// UI 测试专用的隔离数据根目录（仅 DEBUG）。
+    ///
+    /// UI 测试需要造会话、消息等持久化数据。若沿用用户真实目录，测试会污染用户
+    /// 的会话列表（每次运行多出一条「测试会话」），而且测试之间的数据互相污染
+    /// 让断言不可靠。
+    ///
+    /// - Important: 由**显式开关** `--lumi-ui-testing-isolated-storage` 启用，
+    ///   而不是复用 `--lumi-ui-testing`。后者已被既有的 MiniMax 刷新模型 UI 测试
+    ///   与 UI 测试专用 LLM 供应商（`PluginLLMProviderUITest`）使用：
+    ///   前者依赖真实供应商配置与磁盘 models.json，后者依赖它自己的桩网络。
+    ///   一旦连带重定向存储，会改变那些测试的既有前提，属于行为回归。
+    ///
+    /// - Note: **不隔离 UserDefaults**。`CustomLLMManager` 的选中模型持久化在
+    ///   `UserDefaults.standard`，因此 UI 测试会跨启动读写同一个 key：
+    ///   `PluginUITestProvider` 注册时强制选中自己的模型（避免回落到用户上次
+    ///   的真实供应商），非测试启动时再主动清除这份残留选中态。
+    /// - Note: 每次启动使用独立子目录，保证测试之间不互相污染。
+    private static func uiTestingDataRootDirectory() -> URL? {
+        #if DEBUG
+        guard ProcessInfo.processInfo.arguments.contains(
+            "--lumi-ui-testing-isolated-storage"
+        ) else { return nil }
+        return FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiUITestingData", isDirectory: true)
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        #else
+        return nil
+        #endif
     }
 
     /// 异步插件目录的装配入口。
@@ -82,7 +112,7 @@ public enum KernelFactory {
         additionalPlugins: [any SuperPlugin] = []
     ) async throws -> KernelCoreContainer {
         try await makeKernelAsync(
-            providerFactory: DefaultProviderFactory(),
+            providerFactory: DefaultProviderFactory(dataRootDirectory: uiTestingDataRootDirectory()),
             pluginFactory: DefaultPluginFactory(),
             additionalPlugins: additionalPlugins
         )
@@ -97,6 +127,9 @@ public enum KernelFactory {
         // `startAsync` 原子安装真实目录。后续宿主切换为异步启动时无需复制装配图。
         let kernel = KernelCoreContainer()
         try providerFactory.registerProviders(into: kernel)
+        // Provider 就位后回填宿主工厂，使依赖容器的闭包（如 Booklet Maker
+        // 的聊天区显隐）能在插件启动后正常解析。
+        pluginFactory.didRegisterProviders(in: kernel)
         // 将完整插件目录交给 Kernel 注册；Kernel 会对禁用插件跳过 Boot/Ready，
         // 但仍执行 onRegister，以便贡献提示词等目录型能力。
         let plugins = makePlugins(
@@ -105,7 +138,7 @@ public enum KernelFactory {
             additionalPlugins: additionalPlugins
         )
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
-            try PluginDataMigrationCoordinator(storage: storage).run(for: plugins)
+            PluginDataMigrationCoordinator(storage: storage).run(for: plugins)
         }
         try await kernel.startAsync(plugins: plugins)
         resetSettingsSelectionToFirstEntry(in: kernel)
@@ -137,6 +170,9 @@ public enum KernelFactory {
     ) throws -> KernelCoreContainer {
         let kernel = KernelCoreContainer()
         try providerFactory.registerProviders(into: kernel)
+        // Provider 就位后回填宿主工厂，使依赖容器的闭包（如 Booklet Maker
+        // 的聊天区显隐）能在插件启动后正常解析。
+        pluginFactory.didRegisterProviders(in: kernel)
 
         let plugins = makePlugins(
             providerFactory: providerFactory,
@@ -144,7 +180,7 @@ public enum KernelFactory {
             additionalPlugins: additionalPlugins
         )
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
-            try PluginDataMigrationCoordinator(storage: storage).run(for: plugins)
+            PluginDataMigrationCoordinator(storage: storage).run(for: plugins)
         }
 
         // 默认目录与宿主附加插件在同一个依赖图中统一校验、排序、原子启动。

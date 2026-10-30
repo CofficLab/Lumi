@@ -75,12 +75,34 @@ public protocol MessageSendingProviding: AnyObject {
         conversationID: UUID?
     ) throws -> MessageSendCommit?
 
+    /// 携带折叠块提交用户消息。
+    ///
+    /// - Parameter collapsedBlocks: 正文中被折叠成 chip 的区间。渲染层据此把
+    ///   区间还原成可展开的 chip，而不是摊开成一大段文字。
+    @discardableResult
+    func commitUserMessage(
+        _ content: String,
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
+        conversationID: UUID?
+    ) throws -> MessageSendCommit?
+
     /// 在后台完成附件 metadata 编码后，再回主线程提交用户消息。
     /// 纯文字消息不应走此路径，以保持最短的同步提交链路。
     func commitUserMessageInBackground(
         _ content: String,
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
+        conversationID: UUID?
+    ) async throws -> MessageSendCommit?
+
+    /// 在后台完成附件 metadata 编码后，再回主线程提交用户消息（携带折叠块）。
+    func commitUserMessageInBackground(
+        _ content: String,
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
         conversationID: UUID?
     ) async throws -> MessageSendCommit?
 
@@ -95,6 +117,13 @@ public protocol MessageSendingProviding: AnyObject {
         fileAttachments: [UserFileAttachment],
         conversationID: UUID?
     ) async throws
+    /// 取消当前选中会话正在进行的回合。
+    ///
+    /// - Important: **取消权归 AgentLoop**。实现必须以「AgentLoop 认为该会话
+    ///   还有未完成的回合」为准（运行中，或挂在等用户授权/回答），
+    ///   不得用发送器自己的任务账本做守门条件。否则「AgentLoop 在跑但发送器
+    ///   不知情」的回合（ACP 托管、事件驱动、自动重试、恢复回合）停不掉——
+    ///   用户按下停止按钮却什么都没发生。
     func cancelCurrentRequest()
 
     // MARK: - Resume
@@ -131,6 +160,43 @@ public extension MessageSendingProviding {
     ) -> any MessageSenderObserverHandle {
         NoopMessageSenderObserverHandle()
     }
+
+    /// 默认实现：忽略折叠块，退化为旧的无折叠块提交。
+    ///
+    /// 折叠块是**可选**的展示信息，协议不该因此强加实现责任：任何既有发送器
+    /// 实现（外部、自定义、测试替身）都无需改动即可继续编译。默认丢弃折叠块
+    /// 的代价只是消息里重新摊开成纯文字，与改造前一致，不算回归。
+    @discardableResult
+    func commitUserMessage(
+        _ content: String,
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
+        conversationID: UUID?
+    ) throws -> MessageSendCommit? {
+        try commitUserMessage(
+            content,
+            imageAttachments: imageAttachments,
+            fileAttachments: fileAttachments,
+            conversationID: conversationID
+        )
+    }
+
+    /// 默认实现：忽略折叠块，退化为旧的无折叠块后台提交。
+    func commitUserMessageInBackground(
+        _ content: String,
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
+        conversationID: UUID?
+    ) async throws -> MessageSendCommit? {
+        try await commitUserMessageInBackground(
+            content,
+            imageAttachments: imageAttachments,
+            fileAttachments: fileAttachments,
+            conversationID: conversationID
+        )
+    }
 }
 
 @MainActor
@@ -145,18 +211,23 @@ public struct PendingChatMessage: Identifiable, Equatable, Sendable {
     public let content: String
     public let imageAttachments: [UserImageAttachment]
     public let fileAttachments: [UserFileAttachment]
+    /// 正文中被折叠成 chip 的区间。队列回放时必须原样带回，否则排队期间
+    /// 才折叠的内容会在真正发出时退化成一大段文字。
+    public let collapsedBlocks: [CollapsedContentBlock]
 
     public init(
         id: UUID = UUID(),
         conversationID: UUID,
         content: String,
         imageAttachments: [UserImageAttachment] = [],
-        fileAttachments: [UserFileAttachment] = []
+        fileAttachments: [UserFileAttachment] = [],
+        collapsedBlocks: [CollapsedContentBlock] = []
     ) {
         self.id = id
         self.conversationID = conversationID
         self.content = content
         self.imageAttachments = imageAttachments
         self.fileAttachments = fileAttachments
+        self.collapsedBlocks = collapsedBlocks
     }
 }

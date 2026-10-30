@@ -17,6 +17,10 @@ final class ComputerUseService: @unchecked Sendable {
     private var observations: [UUID: ComputerUseObservation] = [:]
     private var observationOrder: [UUID] = []
     private let authorizationStore: ComputerUseAuthorizationStore
+    /// 统一的授权判定器。挂起式授权请求与放行判定都从这里出发。
+    private var accessChecker: ComputerUseAccessChecker {
+        ComputerUseAccessChecker(authorization: authorizationStore)
+    }
 
     init(authorizationStore: ComputerUseAuthorizationStore = .shared) {
         self.authorizationStore = authorizationStore
@@ -37,10 +41,30 @@ final class ComputerUseService: @unchecked Sendable {
             )
         }
         guard let selection else { throw ComputerUseError.noMatchingWindow }
-        guard authorizationStore.isAllowed(selection.bundleIdentifier) else {
-            throw ComputerUseError.applicationNotAllowed(selection.applicationName)
-        }
+        try requireAuthorized(selection, operation: "observe")
         return try await capture(window: selection)
+    }
+
+    /// 校验目标应用是否已获授权。
+    ///
+    /// 命中未授权应用时抛出携带应用信息的 `authorizationRequired` 错误，
+    /// 由工具层转换成挂起回合的授权请求，而不是让整轮直接失败。
+    private func requireAuthorized(_ window: ComputerUseWindow, operation: String) throws {
+        switch accessChecker.outcome(
+            for: window.bundleIdentifier,
+            applicationName: window.applicationName
+        ) {
+        case .allowed:
+            return
+        case .needsAuthorization(let applicationName, let bundleIdentifier):
+            throw ComputerUseError.authorizationRequired(
+                applicationName: applicationName,
+                bundleIdentifier: bundleIdentifier,
+                operation: operation
+            )
+        case .forbidden(let reason):
+            throw ComputerUseError.forbiddenApplication(reason)
+        }
     }
 
     @MainActor
@@ -51,9 +75,7 @@ final class ComputerUseService: @unchecked Sendable {
             guard let observation = observation(id: observationID) else {
                 throw ComputerUseError.observationNotFound
             }
-            guard authorizationStore.isAllowed(observation.window.bundleIdentifier) else {
-                throw ComputerUseError.applicationNotAllowed(observation.window.applicationName)
-            }
+            try requireAuthorized(observation.window, operation: "act")
 
             let currentWindow = ComputerUseWindowProvider.availableWindows().first(where: { $0.id == observation.window.id })
             guard let currentWindow,
@@ -95,6 +117,10 @@ final class ComputerUseService: @unchecked Sendable {
             try coordinator.validateOwner(session)
             NSRunningApplication(processIdentifier: currentWindow.processIdentifier)?.activate(options: [])
             try await Task.sleep(for: .milliseconds(150))
+            // 目标窗口遮罩：原生输入路径是**独占桌面**操作，遮罩强度更高，
+            // 明确告知用户「这个窗口现在归 Lumi 管」。
+            let overlay = beginTargetOverlay(for: currentWindow)
+            defer { overlay?.end() }
             for (index, action) in actions.enumerated() {
                 try coordinator.validateOwner(session)
                 coordinator.updateProgress(computerUseText("Step {current} of {total}", ["current": String(index + 1), "total": String(actions.count)]))
@@ -120,6 +146,32 @@ final class ComputerUseService: @unchecked Sendable {
 
     func observation(id: UUID) -> ComputerUseObservation? {
         stateLock.withLock { observations[id] }
+    }
+
+    // MARK: - 目标窗口遮罩
+
+    /// 在目标窗口上显示「Lumi 正在操作」遮罩。
+    ///
+    /// 原生输入路径已经用桌面横幅告知了用户，但横幅在**屏幕角落**，
+    /// 用户真正盯着的目标窗口上没有任何提示。遮罩把提示搬到用户视线所及之处。
+    ///
+    /// - Note: 几何查询失败不阻断操作：遮罩是提示，不是操作的前置条件。
+    ///
+    /// - Returns: 已启动的遮罩会话；无法定位窗口时返回 `nil`。
+    @MainActor
+    private func beginTargetOverlay(for window: ComputerUseWindow) -> ComputerUseTargetOverlayController? {
+        guard let rect = ComputerUseTargetGeometryProvider.quartzRect(forWindowID: window.id) else {
+            return nil
+        }
+        let controller = ComputerUseTargetOverlayController.shared
+        controller.begin(
+            ComputerUseTargetOverlayController.Target(
+                quartzRect: rect,
+                applicationName: window.applicationName,
+                intensity: .blocking
+            )
+        )
+        return controller
     }
 
     func isApplicationAllowed(for observationID: UUID) -> Bool {

@@ -9,9 +9,9 @@ let package = Package(
         .library(name: "PluginProjectFiles", targets: ["PluginProjectFiles"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
     ],
     targets: [
         .target(
@@ -28,7 +28,9 @@ let package = Package(
             name: "PluginProjectFilesTests",
             dependencies: [
                 "PluginProjectFiles",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
             ]
         ),
     ]

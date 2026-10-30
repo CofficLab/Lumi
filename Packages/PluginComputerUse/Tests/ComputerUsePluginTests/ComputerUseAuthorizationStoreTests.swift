@@ -2,11 +2,11 @@ import Foundation
 import Testing
 @testable import ComputerUsePlugin
 
-@Test func authorizationStoreAddsRemovesAndIgnoresEmptyIdentifiers() {
-    let suiteName = "PluginComputerUseTests.\(UUID().uuidString)"
-    let defaults = UserDefaults(suiteName: suiteName)!
-    defer { defaults.removePersistentDomain(forName: suiteName) }
-    let store = ComputerUseAuthorizationStore(defaults: defaults)
+@Test func authorizationStoreAddsRemovesAndIgnoresEmptyIdentifiers() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ComputerUseAuthStore-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let store = ComputerUseAuthorizationStore(dataDirectory: directory)
 
     #expect(store.allowedBundleIdentifiers().isEmpty)
     store.setAllowed(true, bundleIdentifier: "com.example.editor")
@@ -20,3 +20,29 @@ import Testing
     #expect(store.allowedBundleIdentifiers() == ["com.example.browser"])
     #expect(!store.isAllowed("com.example.editor"))
 }
+
+@Test func revokingExplicitAuthorizationAlsoRevokesNativeAuthorization() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ComputerUseAuthStore-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let store = ComputerUseAuthorizationStore(dataDirectory: directory)
+
+    store.setNativeAllowed(true, bundleIdentifier: "com.example.editor")
+    #expect(store.isNativeAllowed("com.example.editor"))
+
+    store.setAllowed(false, bundleIdentifier: "com.example.editor")
+    #expect(!store.isNativeAllowed("com.example.editor"))
+}
+
+@Test func authorizationStorePersistsAcrossInstances() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ComputerUseAuthStore-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let store = ComputerUseAuthorizationStore(dataDirectory: directory)
+    store.setNativeAllowed(true, bundleIdentifier: "com.example.editor")
+
+    let reloaded = ComputerUseAuthorizationStore(dataDirectory: directory)
+    #expect(reloaded.isNativeAllowed("com.example.editor"))
+}
+

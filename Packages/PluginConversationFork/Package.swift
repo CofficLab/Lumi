@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginConversationFork", targets: ["PluginConversationFork"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
@@ -19,7 +19,7 @@ let package = Package(
         .package(path: "../KitLLM"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderLifecycleHooks"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
     ],
     targets: [
@@ -43,6 +43,7 @@ let package = Package(
             name: "PluginConversationForkTests",
             dependencies: [
                 "PluginConversationFork",
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
