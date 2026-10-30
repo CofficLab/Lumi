@@ -64,7 +64,8 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
             project: project,
             agentTurn: agentTurn,
             conversationState: conversationState,
-            chat: chat
+            chat: chat,
+            statsCapability: ConversationStatsCapabilityAdapter(conversations: conversations)
         )
         self.context = context
 

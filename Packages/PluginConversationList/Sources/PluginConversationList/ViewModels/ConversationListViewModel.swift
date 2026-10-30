@@ -115,6 +115,18 @@ final class ConversationListViewModel: ObservableObject {
         }
     }
 
+    // MARK: - 统计面板
+
+    /// 统计面板需要的最小会话能力（每日计数 + 按时间批量清理）。
+    var statsCapability: any ConversationStatsCapability {
+        context.statsCapability
+    }
+
+    /// 统计面板的作用域：全库为 `nil`，当前项目为该项目的路径。
+    var statsProjectPath: String? {
+        effectiveProjectPath
+    }
+
     func needsAttention(for conversationID: UUID) -> Bool {
         attentionStore.needsAttention(for: conversationID)
     }

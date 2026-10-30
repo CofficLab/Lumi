@@ -42,6 +42,8 @@ final class ConversationListContext {
     let agentTurn: (any AgentLoopProviding)?
     let conversationState: (any ConversationStateProviding)?
     let chat: (any ChatSectionProviding)?
+    /// 统计面板（每日计数 + 按时间批量清理）所需的最小会话能力。
+    let statsCapability: any ConversationStatsCapability
     /// 当前选中的对话 ID，由 `ConversationListContextObserver` 同步更新。
     private(set) var selectedConversationID: UUID?
     private var observers: [UUID: (Event) -> Void] = [:]
@@ -51,13 +53,16 @@ final class ConversationListContext {
         project: (any ProjectProviding)?,
         agentTurn: (any AgentLoopProviding)?,
         conversationState: (any ConversationStateProviding)?,
-        chat: (any ChatSectionProviding)?
+        chat: (any ChatSectionProviding)?,
+        statsCapability: any ConversationStatsCapability? = nil
     ) {
         self.conversations = conversations
         self.project = project
         self.agentTurn = agentTurn
         self.conversationState = conversationState
         self.chat = chat
+        self.statsCapability = statsCapability
+            ?? ConversationStatsCapabilityAdapter(conversations: conversations)
         self.selectedConversationID = conversations.selectedConversationID
     }
 
