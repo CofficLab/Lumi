@@ -94,8 +94,29 @@ extension ConversationManager {
         await store?.conversationIDs(projectPath: projectPath, updatedSince: updatedSince) ?? []
     }
 
+    /// Count conversations created before a cutoff date.
+    public func conversationCount(
+        createdBefore cutoff: Date,
+        projectPath: String?,
+        includingChildConversations: Bool
+    ) async -> Int {
+        await store?.conversationCount(
+            createdBefore: cutoff,
+            projectPath: projectPath,
+            includingChildConversations: includingChildConversations
+        ) ?? 0
+    }
+
     /// Fetch daily conversation counts without loading conversation summaries.
-    func fetchDailyCountSeries() async -> ConversationDailyCountSeries {
-        await store?.fetchDailyCountSeries() ?? ConversationDailyCountSeries(points: [])
+    public func fetchDailyCountSeries(
+        days: Int = 14,
+        projectPath: String? = nil,
+        includingChildConversations: Bool = false
+    ) async -> ConversationDailyCountSeries {
+        await store?.fetchDailyCountSeries(
+            days: days,
+            projectPath: projectPath,
+            includingChildConversations: includingChildConversations
+        ) ?? ConversationDailyCountSeries(points: [])
     }
 }
