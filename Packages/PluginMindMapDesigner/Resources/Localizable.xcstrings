@@ -56,6 +56,7 @@
       }
     },
     "Agent-driven maps" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -184,6 +185,7 @@
       }
     },
     "Canvas editing" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -395,6 +397,7 @@
       }
     },
     "Creating a Mind Map" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -443,6 +446,7 @@
       }
     },
     "Describe a topic, planning problem, or Markdown outline in the conversation." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -670,6 +674,7 @@
 
     },
     "Markdown export" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -788,6 +793,7 @@
       }
     },
     "Mind maps are stored in the current project." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -804,6 +810,7 @@
       }
     },
     "Mind maps are stored in the current project's .lumi folder." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -820,6 +827,7 @@
       }
     },
     "Mind maps are stored with the current project and available only to it." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1207,6 +1215,7 @@
       }
     },
     "Review and grow the branches." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1272,6 +1281,7 @@
       }
     },
     "Select a node to add a child or sibling, or edit its text inline." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1481,6 +1491,7 @@
       }
     },
     "Use the bottom toolbar to export Markdown or JSON." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

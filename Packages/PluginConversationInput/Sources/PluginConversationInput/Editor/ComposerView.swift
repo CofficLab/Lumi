@@ -48,6 +48,7 @@ struct ComposerView: View {
             height: heightBinding,
             textColor: NSColor(theme.textPrimary),
             placeholder: "输入消息，按 Return 发送…",
+            chipPalette: PasteChipPalette(theme: theme),
             onSubmit: onSend,
             onEnter: onSend,
             onFileDrop: { url in
