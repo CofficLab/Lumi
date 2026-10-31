@@ -37,7 +37,13 @@ func messageRowsFilterAndMergeToolExecutionMessages() {
     )
 
     #expect(rows.count == 2)
-    #expect(rows[0].id == firstToolMessage.id)
+    // 合成行的 id 由**组内成员集合**派生，不再复用首条消息的 id。
+    // 原因：V2/V3 用 `ForEach(historyRows)` + `.id(message.id)` 作为行的身份，
+    // id 不变时组内新增成员不会触发重新物化，新并入的挂起工具行
+    // （及其授权卡片）就画不出来 —— 用户只看到「等待你的输入…」。
+    // 参见 `MessageListSuspendedToolRowIdentityTests`。
+    #expect(rows[0].id != firstToolMessage.id)
+    #expect(rows[0].id != secondToolMessage.id)
     #expect(rows[0].turnID == turnID)
     #expect(rows[0].renderKind == "turn-activity")
     #expect(rows[0].toolCalls?.map(\.id) == ["call-1", "call-2"])
@@ -177,7 +183,60 @@ func paginationRefreshesOnlyAnOverlappingTail() async {
 }
 
 @MainActor
-@Test("空窗口首刷补查 earlier，尾部回收只在离开底部时执行")
+@Test("尾部刷新回填空档后，窗口必须保持时间升序且无重复")
+func paginationBackfillsGapKeepingWindowOrdered() async {
+    let conversationID = UUID()
+    let base = Date(timeIntervalSince1970: 1_700_000_000)
+    let window = (0..<2).map { index in
+        makeMessage(
+            conversationID: conversationID,
+            role: .user,
+            content: "w\(index)",
+            createdAt: base.addingTimeInterval(Double(index))
+        )
+    }
+    let gap = (0..<2).map { index in
+        makeMessage(
+            conversationID: conversationID,
+            role: .user,
+            content: "g\(index)",
+            createdAt: base.addingTimeInterval(Double(2 + index))
+        )
+    }
+    let page = (0..<2).map { index in
+        makeMessage(
+            conversationID: conversationID,
+            role: .user,
+            content: "p\(index)",
+            createdAt: base.addingTimeInterval(Double(4 + index))
+        )
+    }
+    // 本地刚插入、还没落库的消息：不在最近一页里，但必须留在窗口末尾。
+    let pending = makeMessage(
+        conversationID: conversationID,
+        role: .user,
+        content: "pending",
+        createdAt: base.addingTimeInterval(6)
+    )
+
+    let manager = StubMessageListMessageCapability(page: page, earlierPage: gap)
+    let service = MessageListPaginationService(pageSize: 2, maxRetainedCount: 10)
+
+    let result = await service.refreshTail(
+        conversationID: conversationID,
+        messageManager: manager,
+        current: window + [pending]
+    )
+    let ids = result?.merged.map(\.id) ?? []
+    let timestamps = result?.merged.map(\.createdAt) ?? []
+
+    #expect(ids == (window + gap + page + [pending]).map(\.id))
+    #expect(timestamps == timestamps.sorted(), "回填后的窗口必须保持时间升序")
+    #expect(Set(ids).count == ids.count, "回填后的窗口不得出现重复消息")
+}
+
+@MainActor
+@Test("空窗口首刷补查 earlier，窗口超上限时一律回收尾部")
 func paginationInitialRefreshAndTailEviction() async {
     let conversationID = UUID()
     let page = (0..<2).map { index in
@@ -190,13 +249,14 @@ func paginationInitialRefreshAndTailEviction() async {
     let service = MessageListPaginationService(pageSize: 2, maxRetainedCount: 2)
 
     let initial = await service.refreshTail(conversationID: conversationID, messageManager: manager, current: [])
-    let atBottom = service.evictTailIfNeeded(messages: retained, isAtBottom: true)
-    let awayFromBottom = service.evictTailIfNeeded(messages: retained, isAtBottom: false)
+    let overLimit = service.evictTailIfNeeded(messages: retained)
+    let withinLimit = service.evictTailIfNeeded(messages: Array(retained.prefix(2)))
 
     #expect(initial?.merged.map(\.id) == page.map(\.id))
     #expect(initial?.hasEarlierMessages == true)
-    #expect(atBottom.map(\.id) == retained.map(\.id))
-    #expect(awayFromBottom.map(\.id) == retained.prefix(2).map(\.id))
+    // 窗口上限无条件生效：超限时回收尾部，未超限时原样返回。
+    #expect(overLimit.map(\.id) == retained.prefix(2).map(\.id))
+    #expect(withinLimit.map(\.id) == retained.prefix(2).map(\.id))
 }
 
 @MainActor
@@ -249,60 +309,4 @@ func messageNotificationAndOrderingAreStable() {
     #expect(!MessageListNotificationFilter.shouldHandle(eventConversationID: nil, selectedConversationID: nil))
     #expect(messageOrdering(earlier, later))
     #expect(!messageOrdering(later, earlier))
-}
-
-private func makeMessage(
-    id: UUID = UUID(),
-    conversationID: UUID,
-    role: MessageRole,
-    content: String,
-    createdAt: Date = Date(),
-    turnID: UUID? = nil,
-    isError: Bool = false,
-    toolCalls: [MessageToolCall]? = nil
-) -> Message {
-    Message(
-        id: id,
-        conversationID: conversationID,
-        role: role,
-        content: content,
-        createdAt: createdAt,
-        turnID: turnID,
-        isError: isError,
-        toolCalls: toolCalls
-    )
-}
-
-@MainActor
-private final class StubMessageListMessageCapability: MessageListMessageCapability {
-    let page: [Message]
-    let hasEarlier: Bool
-    private(set) var pageRequests: [(limit: Int, beforeMessageID: UUID?, includesToolMessages: Bool)] = []
-    private(set) var earlierRequests: [(beforeMessageID: UUID?, includesToolMessages: Bool)] = []
-
-    init(page: [Message], hasEarlier: Bool = false) {
-        self.page = page
-        self.hasEarlier = hasEarlier
-    }
-
-    func messagesSnapshot(in conversationID: UUID) async -> [Message] { page }
-
-    func messagePageAsync(
-        for conversationID: UUID,
-        limit: Int,
-        beforeMessageID: UUID?,
-        includesToolMessages: Bool
-    ) async -> [Message] {
-        pageRequests.append((limit, beforeMessageID, includesToolMessages))
-        return page
-    }
-
-    func hasEarlierMessagesAsync(
-        for conversationID: UUID,
-        beforeMessageID: UUID?,
-        includesToolMessages: Bool
-    ) async -> Bool {
-        earlierRequests.append((beforeMessageID, includesToolMessages))
-        return hasEarlier
-    }
 }

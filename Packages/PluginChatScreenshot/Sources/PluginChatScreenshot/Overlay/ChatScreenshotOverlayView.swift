@@ -103,7 +103,8 @@ final class ChatScreenshotOverlayView: NSView {
 
     // MARK: - Helpers
 
-    private func rectBetween(_ start: CGPoint, _ end: CGPoint) -> CGRect {
+    /// 可见性放宽到 internal 仅为便于单元测试覆盖选区矩形的归一化规则。
+    func rectBetween(_ start: CGPoint, _ end: CGPoint) -> CGRect {
         CGRect(
             x: min(start.x, end.x),
             y: min(start.y, end.y),
@@ -113,7 +114,9 @@ final class ChatScreenshotOverlayView: NSView {
     }
 
     /// 把全局屏幕坐标 selectionRect 转 local(view bounds)
-    private var localSelectionRect: CGRect? {
+    ///
+    /// 可见性放宽到 internal 仅为便于单元测试覆盖屏幕坐标 → 本地坐标的换算。
+    var localSelectionRect: CGRect? {
         let intersection = selectionRect.intersection(screenFrame)
         guard !intersection.isNull, !intersection.isEmpty else { return nil }
         return intersection.offsetBy(dx: -screenFrame.minX, dy: -screenFrame.minY)

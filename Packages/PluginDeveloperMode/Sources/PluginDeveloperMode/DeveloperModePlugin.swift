@@ -65,27 +65,11 @@ public final class DeveloperModePlugin: SuperPlugin, SuperLog {
             }
         )
 #endif
-#if DEBUG
-        toolbarItems.append(
-            ProviderToolbar.ToolbarItem(
-                id: "\(id).badge",
-                title: pluginLocalization.string("Running a Debug build"),
-                placement: .leading,
-                category: .global,
-                order: 900
-            ) {
-                DebugBadgeView()
-            }
-        )
-#endif
         toolbar.addToolbarItems(toolbarItems)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        var toolbarItemIDs = ["\(id).toggle"]
-#if DEBUG
-        toolbarItemIDs.append("\(id).badge")
-#endif
+        let toolbarItemIDs = ["\(id).toggle"]
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(
             ids: Set(toolbarItemIDs)
         )

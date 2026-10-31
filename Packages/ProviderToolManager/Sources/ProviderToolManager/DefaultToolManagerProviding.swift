@@ -3,19 +3,6 @@ import Foundation
 import LumiLoggingKit
 import os
 
-private struct DefaultToolInteractionPayload: Codable {
-    let toolCallID: String
-    let kind: String
-    let question: String
-    let options: [String]
-    let mode: String
-
-    enum CodingKeys: String, CodingKey {
-        case toolCallID = "toolCallId"
-        case kind, question, options, mode
-    }
-}
-
 /// `ToolManagerProviding` 的默认实现。
 @MainActor
 public final class DefaultToolManagerProviding: ToolManagerProviding, SuperLog {
@@ -371,16 +358,12 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, SuperLog {
                         turnID: turnID,
                         toolCall: toolCall
                     ))
-                    let payload = DefaultToolInteractionPayload(
+                    let payload = ToolInteractionPayload.permission(
                         toolCallID: "approval:\(toolCall.id)",
-                        kind: "permission",
-                        question: "此操作被判定为\(risk.displayName)，是否允许执行？\n\(displayDescription(for: toolCall) ?? toolCall.name)",
-                        options: ["允许", "拒绝"],
-                        mode: "yes_no"
+                        riskLevelName: risk.displayName,
+                        operation: displayDescription(for: toolCall) ?? toolCall.name
                     )
-                    let content = (try? String(data: JSONEncoder().encode(payload), encoding: .utf8))
-                        ?? "Unable to create tool interaction request."
-                    results.append(.needsUserResponse(payload: content))
+                    results.append(.needsUserResponse(payload: payload.encoded()))
                     // 授权是批次的暂停点；后续调用必须等用户决定后再处理。
                     break batchLoop
                 } else {
@@ -400,6 +383,12 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, SuperLog {
     public func toolCalls(for turnID: UUID) async -> [ToolCallRecord] {
         guard let recordStore else { return [] }
         return await recordStore.fetchRecords(forTurnID: turnID)
+    }
+
+    /// 一次查询取回多个 turn 的记录，避免逐 turn 查询退化成 N+1 次 IO。
+    public func toolCalls(forTurnIDs turnIDs: [UUID]) async -> [ToolCallRecord] {
+        guard let recordStore else { return [] }
+        return await recordStore.fetchRecords(forTurnIDs: turnIDs)
     }
 
     /// 按原始 `ToolCall.id` 查询一次调用的结果。

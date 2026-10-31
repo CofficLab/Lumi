@@ -11,6 +11,16 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         case navigationReplaced
         case navigationCancelled
         case blockedLocalNavigation
+        case invalidElementRef(String)
+        case staleElementRef(String, detail: String)
+        case interactionFailed(String)
+        case missingTextForAction(BrowserInteractionAction)
+        case waitTimedOut(String)
+        case navigationUnavailable(String)
+        case localNavigationNeedsApproval(String)
+        case scriptTooLong
+        case scriptFailed(String)
+        case screenshotUnavailable
 
         var errorDescription: String? {
             switch self {
@@ -20,6 +30,29 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
             case .navigationReplaced: "The page navigation was replaced by a newer request."
             case .navigationCancelled: "Page loading was cancelled."
             case .blockedLocalNavigation: "Navigation to a local or private network address was blocked. Open that address directly and approve the access request first."
+            case .invalidElementRef(let raw):
+                raw.isEmpty
+                    ? "This action needs an element reference from browser_snapshot."
+                    : "\"\(raw)\" is not a valid element reference. Use a ref from browser_snapshot, such as @lumi-3."
+            case .staleElementRef(_, let detail):
+                detail
+            case .interactionFailed(let reason):
+                reason.isEmpty ? "The interaction could not be completed." : reason
+            case .missingTextForAction(let action):
+                "The \(action.rawValue) action needs a text argument."
+            case .waitTimedOut(let what):
+                "Timed out waiting for \(what)."
+            case .navigationUnavailable(let reason):
+                reason
+            case .localNavigationNeedsApproval(let host):
+                "That link points to the local network address \(host). Opening it needs its own approval. "
+                    + "Open it directly with browser_open so the user can approve it."
+            case .scriptTooLong:
+                "The script is too long. Keep it under 20000 characters."
+            case .scriptFailed(let reason):
+                "The script failed: \(reason)"
+            case .screenshotUnavailable:
+                "A screenshot could not be captured from this page."
             }
         }
     }
@@ -39,6 +72,8 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
     private var navigationToken: UUID?
     private var approvedLocalHost: String?
     private var urlObservation: NSKeyValueObservation?
+    /// ref 登记簿：记录已见过的元素特征，用于诊断失效 ref。
+    private let refStore = BrowserElementRefStore()
 
     init(conversationID: UUID) {
         self.conversationID = conversationID
@@ -66,7 +101,12 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         canGoForward = webView.canGoForward
     }
 
-    func navigate(to url: URL, allowLocalAccess: Bool = false) async throws {
+    /// 导航到指定地址。
+    ///
+    /// - Parameter localAccessApproved: 用户是否**已明确批准**访问本地/内网地址。
+    ///   注意这是「已批准」而不是「是否需要批准」——早期用 `allowLocalAccess`
+    ///   命名导致调用处把判断结果反向传参，审批语义一度漂移。
+    func navigate(to url: URL, localAccessApproved: Bool = false) async throws {
         if navigationContinuation != nil {
             finishNavigation(.failure(SessionError.navigationReplaced), token: navigationToken)
             webView.stopLoading()
@@ -74,7 +114,7 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
 
         let token = UUID()
         navigationToken = token
-        approvedLocalHost = allowLocalAccess ? url.host?.lowercased() : nil
+        approvedLocalHost = localAccessApproved ? url.host?.lowercased() : nil
         isLoading = true
         try await withCheckedThrowingContinuation { continuation in
             navigationContinuation = continuation
@@ -88,6 +128,56 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
                 return
             }
         }
+    }
+
+    /// 采集可访问性快照。
+    ///
+    /// 返回的是**结构化树**而非扁平文本：LLM 需要知道元素之间的从属关系
+    /// （「这个按钮属于哪个表单」），才能决定操作顺序。
+    func accessibilitySnapshot(interactiveOnly: Bool = false) async throws -> BrowserAccessibilitySnapshot {
+        let script = BrowserAccessibilityScript.script(operation: "snapshot")
+        guard let page = try await webView.evaluateJavaScript(script) as? [String: Any] else {
+            throw SessionError.noPage
+        }
+        let rawNodes = page["nodes"] as? [[String: Any]] ?? []
+        let nodes = BrowserAccessibilityNode.parseList(rawNodes)
+        let tree = BrowserAccessibilityNode.buildTree(from: nodes)
+
+        // 登记本次看到的元素特征，供后续交互诊断 stale ref。
+        var signatures: [String: BrowserElementRefStore.ElementSignature] = [:]
+        for node in nodes {
+            signatures[node.ref] = BrowserElementRefStore.ElementSignature(role: node.role, name: node.name)
+        }
+        refStore.register(signatures: signatures)
+
+        return BrowserAccessibilitySnapshot(
+            pageTitle: title,
+            pageURL: urlString,
+            roots: tree,
+            totalNodeCount: (page["total"] as? Int) ?? nodes.count
+        )
+    }
+
+    /// 按 role / name / text 查找元素，返回匹配项的 ref。
+    ///
+    /// - Parameters:
+    ///   - role: 角色名（如 `button`）；nil 表示不限。
+    ///   - name: 可访问名（支持子串匹配）；nil 表示不限。
+    ///   - text: 可见文本（支持子串匹配）；nil 表示不限。
+    ///   - limit: 最多返回多少条。
+    func findElements(role: String?, name: String?, text: String?, limit: Int = 20) async throws -> [BrowserAccessibilityNode] {
+        let options: [String: Any] = [
+            "role": role ?? "",
+            "name": name ?? "",
+            "text": text ?? "",
+            "limit": limit,
+        ]
+        let script = BrowserAccessibilityScript.script(operation: "find", options: options)
+        guard let page = try await webView.evaluateJavaScript(script) as? [String: Any] else {
+            throw SessionError.noPage
+        }
+        let matches = page["matches"] as? [[String: Any]] ?? []
+        return BrowserAccessibilityNode.parseList(matches)
     }
 
     func readPage(maxCharacters: Int) async throws -> String {
@@ -127,7 +217,8 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         }
         let pageTitle = page["title"] as? String ?? title
         let pageURL = page["url"] as? String ?? urlString
-        let text = page["text"] as? String ?? ""
+        // 页面正文里可能藏着伪造的边界标记，先中和再交给上层包裹。
+        let text = BrowserContentBoundary.neutralize(page["text"] as? String ?? "")
         let truncated = page["truncated"] as? Bool ?? false
         let controls = (page["controls"] as? [[String: Any]] ?? []).map { item in
             let ref = item["ref"] as? String ?? ""
@@ -148,51 +239,63 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         """
     }
 
-    func click(elementRef: String) async throws -> URL? {
-        guard Self.isValidElementRef(elementRef) else { throw SessionError.noPage }
-        let script = """
-        (() => {
-          const el = document.querySelector('[data-lumi-browser-ref="\(elementRef)"]');
-          if (!el) throw new Error("Element reference is stale. Read the page again.");
-          if (el.tagName === "A" && el.href) return { href: el.href };
-          el.click();
-          return { href: "" };
-        })()
-        """
-        guard let result = try await webView.evaluateJavaScript(script) as? [String: Any] else {
+    /// 执行一次交互动作。
+    ///
+    /// 所有动作共用同一条链路：解析 ref → 执行 → 诊断 stale → 返回结果。
+    /// stale 的诊断在这里统一处理，避免 LLM 拿到一句笼统的失败后反复重试死 ref。
+    func performInteraction(
+        action: BrowserInteractionAction,
+        elementRef: String?,
+        text: String?
+    ) async throws -> BrowserInteractionResult {
+        let normalizedRef = elementRef.flatMap { refStore.normalize($0) }
+        if action.requiresElement && normalizedRef == nil {
+            throw SessionError.invalidElementRef(elementRef ?? "")
+        }
+        if action.requiresText && (text?.isEmpty ?? true) {
+            throw SessionError.missingTextForAction(action)
+        }
+
+        let script = BrowserInteractionScript.script(action: action, ref: normalizedRef, text: text)
+        let raw = try await webView.evaluateJavaScript(script)
+        guard let result = raw as? [String: Any] else {
             throw SessionError.noPage
         }
-        guard let href = result["href"] as? String, !href.isEmpty else {
-            await waitForInteractionNavigation()
-            return nil
-        }
-        guard let url = URL(string: href), ["http", "https"].contains(url.scheme?.lowercased() ?? "") else {
-            throw SessionError.invalidURL
-        }
-        return url
-    }
 
-    func type(_ text: String, into elementRef: String) async throws {
-        guard Self.isValidElementRef(elementRef), text.count <= 10_000 else { throw SessionError.noPage }
-        let encoded = try JSONSerialization.data(withJSONObject: [text])
-        guard let literal = String(data: encoded, encoding: .utf8) else { throw SessionError.noPage }
-        let script = """
-        (() => {
-          const el = document.querySelector('[data-lumi-browser-ref="\(elementRef)"]');
-          if (!el) throw new Error("Element reference is stale. Read the page again.");
-          if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) || ["password", "file", "hidden"].includes((el.type || "").toLowerCase())) {
-            throw new Error("This control does not accept text entry.");
-          }
-          const value = \(literal)[0];
-          const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), "value")?.set;
-          if (!setter) throw new Error("This control cannot be edited.");
-          setter.call(el, value);
-          el.dispatchEvent(new Event("input", { bubbles: true }));
-          el.dispatchEvent(new Event("change", { bubbles: true }));
-          return true;
-        })()
-        """
-        _ = try await webView.evaluateJavaScript(script)
+        let ok = (result["ok"] as? Bool) ?? false
+        let message = (result["message"] as? String) ?? ""
+
+        guard ok else {
+            // stale ref：元素已不在页面上。
+            if message.hasPrefix("STALE_REF:") {
+                let missingRef = String(message.dropFirst("STALE_REF:".count))
+                refStore.markStale(ref: missingRef, reason: "it is no longer present in the DOM")
+                let detail = refStore.staleMessage(for: missingRef)
+                    ?? "The element @\(missingRef) is no longer on the page."
+                throw SessionError.staleElementRef(missingRef, detail: detail)
+            }
+            throw SessionError.interactionFailed(message)
+        }
+
+        // 点击链接时给出目标地址，交由上层决定是否发起导航。
+        var destination: URL?
+        if let href = result["href"] as? String, !href.isEmpty {
+            if let url = URL(string: href), ["http", "https"].contains(url.scheme?.lowercased() ?? "") {
+                destination = url
+            }
+        }
+
+        // 非链接交互后等待可能的页面跳转，避免调用方立刻读到旧页面。
+        if destination == nil, action == .click || action == .press {
+            await waitForInteractionNavigation()
+        }
+
+        let target = normalizedRef.map { "@\($0)" } ?? "the page"
+        let detail = message.isEmpty ? "Done." : message
+        return BrowserInteractionResult(
+            navigationTarget: destination,
+            message: "\(detail) (\(target)). Read the page to inspect the result."
+        )
     }
 
     private static func isValidElementRef(_ value: String) -> Bool {
@@ -257,7 +360,16 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         canGoForward = webView.canGoForward
     }
 
-    private func waitForInteractionNavigation() async {
+    /// 本次会话中已获批准访问的本地主机（小写）。
+    var approvedLocalHostName: String? { approvedLocalHost }
+
+    /// 某个本地主机是否已获批准。
+    func hasApprovedLocalHost(_ host: String) -> Bool {
+        guard let approved = approvedLocalHost else { return false }
+        return approved == host.lowercased()
+    }
+
+    func waitForInteractionNavigation() async {
         var started = webView.isLoading
         for _ in 0..<5 where !started {
             try? await Task.sleep(nanoseconds: 100_000_000)
@@ -297,18 +409,21 @@ public final class BrowserSessionManager: ObservableObject {
         activeSession = conversationID.flatMap { sessions[$0] }
     }
 
-    func open(_ rawAddress: String, conversationID: UUID, allowLocalAccess: Bool = false) async throws -> String {
+    /// 打开一个地址。
+    ///
+    /// - Parameter localAccessApproved: 用户是否**已明确批准**访问本地/内网地址。
+    func open(_ rawAddress: String, conversationID: UUID, localAccessApproved: Bool = false) async throws -> String {
         guard let url = Self.normalizedURL(rawAddress) else {
             throw BrowserSession.SessionError.invalidURL
         }
-        if Self.isLocalHost(url.host ?? ""), !allowLocalAccess {
+        if Self.isLocalHost(url.host ?? ""), !localAccessApproved {
             throw BrowserSession.SessionError.blockedLocalNavigation
         }
         onRequestPresentation?()
         let session = session(for: conversationID)
         activeConversationID = conversationID
         activeSession = session
-        try await session.navigate(to: url, allowLocalAccess: allowLocalAccess)
+        try await session.navigate(to: url, localAccessApproved: localAccessApproved)
         return "Opened \(session.title) (\(session.urlString)). Use browser_read to inspect the page."
     }
 
@@ -321,25 +436,134 @@ public final class BrowserSessionManager: ObservableObject {
         return try await session.readPage(maxCharacters: maxCharacters)
     }
 
-    func interact(action: String, elementRef: String, text: String?, conversationID: UUID) async throws -> String {
+    func interact(
+        action: BrowserInteractionAction,
+        elementRef: String?,
+        text: String?,
+        conversationID: UUID
+    ) async throws -> String {
         guard let session = sessions[conversationID] else {
             throw BrowserSession.SessionError.noPage
         }
         activeConversationID = conversationID
         activeSession = session
-        switch action {
-        case "click":
-            if let destination = try await session.click(elementRef: elementRef) {
-                return try await open(destination.absoluteString, conversationID: conversationID, allowLocalAccess: true)
+        let result = try await session.performInteraction(action: action, elementRef: elementRef, text: text)
+
+        // 点击链接后由上层发起导航。
+        //
+        // 关键：`allowLocalAccess` 必须反映**目标地址**的真实属性，
+        // 不能因为「用户已经批准了这次点击」就一并放行本地地址。
+        // 否则用户批准一次普通点击，就能被页面静默重定向到内网服务。
+        if let destination = result.navigationTarget {
+            let host = destination.host?.lowercased() ?? ""
+            let isLocal = BrowserSessionManager.isLocalHost(host)
+
+            // 用户批准的是「点击这个元素」，不是「访问内网地址」。
+            // 因此指向内网的链接不能顺带放行，必须让内网访问单独走一次审批。
+            // 但同一会话内已经批准过的主机可以继续访问——否则用户批准了
+            // localhost:3000 后，在站内点链接反而会被拦下。
+            if isLocal, !session.hasApprovedLocalHost(host) {
+                throw BrowserSession.SessionError.localNavigationNeedsApproval(host)
             }
-            return "Clicked @\(elementRef). Read the page to inspect the result."
-        case "type":
-            guard let text else { throw BrowserSession.SessionError.noPage }
-            try await session.type(text, into: elementRef)
-            return "Entered text into @\(elementRef). The page was not submitted. Read the page to verify the field."
-        default:
+            return try await open(
+                destination.absoluteString,
+                conversationID: conversationID,
+                localAccessApproved: isLocal
+            )
+        }
+        return result.message
+    }
+
+    /// 采集可访问性快照。
+    func snapshot(interactiveOnly: Bool, conversationID: UUID) async throws -> BrowserAccessibilitySnapshot {
+        guard let session = sessions[conversationID] else {
             throw BrowserSession.SessionError.noPage
         }
+        activeConversationID = conversationID
+        activeSession = session
+        return try await session.accessibilitySnapshot(interactiveOnly: interactiveOnly)
+    }
+
+    /// 按 role / name / text 查找元素。
+    func findElements(
+        role: String?,
+        name: String?,
+        text: String?,
+        limit: Int,
+        conversationID: UUID
+    ) async throws -> [BrowserAccessibilityNode] {
+        guard let session = sessions[conversationID] else {
+            throw BrowserSession.SessionError.noPage
+        }
+        activeConversationID = conversationID
+        activeSession = session
+        return try await session.findElements(role: role, name: name, text: text, limit: limit)
+    }
+
+    /// 等待页面满足某个条件。
+    func wait(
+        condition: BrowserWaitCondition,
+        value: String?,
+        timeout: TimeInterval,
+        conversationID: UUID
+    ) async throws -> String {
+        guard let session = sessions[conversationID] else {
+            throw BrowserSession.SessionError.noPage
+        }
+        activeConversationID = conversationID
+        activeSession = session
+        let result = try await session.wait(condition: condition, value: value, timeout: timeout)
+        if result.timedOut {
+            throw BrowserSession.SessionError.waitTimedOut(result.detail)
+        }
+        return result.detail
+    }
+
+    /// 执行导航。
+    func navigate(
+        action: BrowserNavigationAction,
+        url: String?,
+        conversationID: UUID
+    ) async throws -> String {
+        guard let session = sessions[conversationID] else {
+            throw BrowserSession.SessionError.noPage
+        }
+        activeConversationID = conversationID
+        activeSession = session
+
+        var destination: URL?
+        if action == .goto {
+            guard let raw = url, let parsed = Self.normalizedURL(raw) else {
+                throw BrowserSession.SessionError.invalidURL
+            }
+            destination = parsed
+        }
+
+        // `goto` 的审批由工具层按目标地址判定（本地地址 → .high → 先审批）。
+        // 走到这里说明审批已通过，因此本地地址视为「已批准」。
+        // 其它动作（back/forward/reload）不涉及新地址，不受此影响。
+        let approvedForLocalAccess = destination.map { Self.isLocalHost($0.host ?? "") } ?? false
+        return try await session.navigate(action: action, url: destination, localAccessApproved: approvedForLocalAccess)
+    }
+
+    /// 执行页面 JavaScript。
+    func evaluate(script: String, conversationID: UUID) async throws -> String {
+        guard let session = sessions[conversationID] else {
+            throw BrowserSession.SessionError.noPage
+        }
+        activeConversationID = conversationID
+        activeSession = session
+        return try await session.evaluate(script: script)
+    }
+
+    /// 截取当前页面。
+    func screenshot(fullPage: Bool, conversationID: UUID) async throws -> Data {
+        guard let session = sessions[conversationID] else {
+            throw BrowserSession.SessionError.noPage
+        }
+        activeConversationID = conversationID
+        activeSession = session
+        return try await session.screenshot(fullPage: fullPage)
     }
 
     /// Returns the current page title and URL for a conversation, or nil if no session exists.
@@ -350,7 +574,8 @@ public final class BrowserSessionManager: ObservableObject {
 
     func navigateAddressBar(_ address: String) {
         let conversationID = activeConversationID ?? standaloneSessionID
-        Task { try? await open(address, conversationID: conversationID, allowLocalAccess: true) }
+        // 用户亲手在地址栏输入地址，属于主动行为，视为已批准访问该地址。
+        Task { try? await open(address, conversationID: conversationID, localAccessApproved: true) }
     }
 
     private func session(for conversationID: UUID) -> BrowserSession {

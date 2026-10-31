@@ -85,11 +85,29 @@ extension AgentLoopManager {
         }
 
         let result = convertResult(toolResult)
+        // 授权挂起时必须把授权状态回落为 pendingAuthorization。
+        //
+        // 授权状态在 LLM 响应阶段就已写定：A3（完全授权）对话下
+        // `ToolManager.authorizationDecision` 一律返回 autoApproved。
+        // 但工具可以在执行阶段自己要求用户授权（如 Computer Use 遇到
+        // 未授权应用），此时回合进入挂起、等待用户决定。
+        //
+        // 若不回落，两个授权渲染器（都以 pendingAuthorization 为接管条件）
+        // 都不会画卡片，界面就只剩一条工具行，回合则等一个永远不会到来的
+        // 回答——对话永久停在「等待你的输入…」。
+        //
+        // - Important: 回落只适用于**授权挂起**。挂起有两种语义：
+        //   授权（等用户点允许/拒绝）与交互（等用户回答问题，如 `ask_user`）。
+        //   后者不需要授权，把它标成 pendingAuthorization 等于告诉渲染层
+        //   「这里有一次待处理的工具授权」——通用授权卡片会接管这条工具行，
+        //   却构造不出授权请求，界面就会渲染出「无法解析工具审批请求」。
+        //   判据是载荷里的 kind 字段（见 `ToolSuspensionKind`）。
         messages.updateToolCallResult(
             result,
             toolCallID: toolCallID,
             assistantMessageID: assistantMessageID,
-            in: snapshot.conversationID
+            in: snapshot.conversationID,
+            authorizationState: Self.authorizationStateForSuspension(result)
         )
 
         if result.awaitingUserResponse {
@@ -215,11 +233,13 @@ extension AgentLoopManager {
                 // 工具结果必须同时回写 assistant 消息中的嵌套 toolCall。
                 // 消息渲染器从这里读取 awaitingUserResponse；只插入独立的
                 // .tool 消息会让 UI 永远看到 result == nil，退化为 loading 行。
+                // 挂起时同样要回落授权状态，理由同 `handleToolJobTerminal`。
                 messages.updateToolCallResult(
                     result,
                     toolCallID: call.id,
                     assistantMessageID: assistantMessageID,
-                    in: conversationID
+                    in: conversationID,
+                    authorizationState: Self.authorizationStateForSuspension(result)
                 )
                 if result.awaitingUserResponse {
                     // 等待授权/用户输入时不要创建独立 role=tool 消息；
@@ -263,7 +283,14 @@ extension AgentLoopManager {
                     approvalResult,
                     toolCallID: call.id,
                     assistantMessageID: assistantMessageID,
-                    in: conversationID
+                    in: conversationID,
+                    // 该分支天然是「等待用户决定」，授权状态必须显式回落，
+                    // 否则 A3 对话下渲染层不会画授权卡片。
+                    //
+                    // 载荷由 `executeBatch` 在 `requireApprovalForHighRisk` 策略下
+                    // 产出，必然带 `kind == "permission"`；仍走同一个判据函数，
+                    // 避免两处逻辑各自演化。
+                    authorizationState: Self.authorizationStateForSuspension(approvalResult)
                 )
                 suspension = interactionSuspension
             }
@@ -387,6 +414,34 @@ extension AgentLoopManager {
         toolCall: AgentLoopToolCall,
         result toolResult: ToolCallResult
     ) async {
+        let result = convertResult(toolResult)
+
+        // 授权终态先于状态机落库。
+        //
+        // 「用户已允许/已拒绝」必须持久化，因为它决定渲染层还会不会再弹一次
+        // 授权卡片（见 `ToolApprovalRowRenderer.canRender`）。而回合状态机此时
+        // 可能已经不可靠：应用重启后 `runtimes` 为空、回合可能已结束或被取消、
+        // 事件的 turnID 也可能与消息落库的 turnID 不一致。若把落库挂在状态机的
+        // guard 之后，这三种情况都会静默丢弃授权终态，用户下次打开消息列表
+        // 就会再次被要求授权——尽管上一轮已经明确做过决定。
+        //
+        // 因此这里以**消息**（唯一可靠来源）定位落库目标，与状态机解耦；
+        // 下面的 guard 只决定「能否推进回合状态机」，不再决定「要不要落库」。
+        if let assistantMessageID = await assistantMessageID(
+            containingToolCallID: toolCall.id,
+            in: conversationID
+        ) {
+            messages.updateToolCallResult(
+                result,
+                toolCallID: toolCall.id,
+                assistantMessageID: assistantMessageID,
+                in: conversationID,
+                authorizationState: toolCall.authorizationState.rawValue
+            )
+        } else if Self.verbose {
+            Self.logger.error("\(Self.t)授权工具结果落库失败：找不到承载该调用的 assistant 消息 toolCallID=\(toolCall.id), conversation=\(conversationID.uuidString.prefix(8))")
+        }
+
         guard await prepareRuntimeForToolResult(
             conversationID: conversationID,
             eventTurnID: eventTurnID,
@@ -394,37 +449,28 @@ extension AgentLoopManager {
         ),
         var runtime = runtimes[conversationID] else {
             if Self.verbose {
-                Self.logger.error("\(Self.t)忽略授权工具结果：找不到会话运行时 conversation=\(conversationID.uuidString.prefix(8))")
+                Self.logger.error("\(Self.t)授权工具结果不推进回合：找不到会话运行时（结果已落库）conversation=\(conversationID.uuidString.prefix(8))")
             }
             return
         }
-        guard case .executingTools(let turnID, let assistantMessageID, let pending) = runtime.phase else {
+        guard case .executingTools(let turnID, _, let pending) = runtime.phase else {
             if Self.verbose {
-                Self.logger.error("\(Self.t)忽略授权工具结果：当前状态不是 executingTools，conversation=\(conversationID.uuidString.prefix(8))")
+                Self.logger.error("\(Self.t)授权工具结果不推进回合：当前状态不是 executingTools（结果已落库），conversation=\(conversationID.uuidString.prefix(8))")
             }
             return
         }
         guard eventTurnID == nil || eventTurnID == turnID else {
             if Self.verbose {
-                Self.logger.error("\(Self.t)忽略授权工具结果：turnID 不匹配，conversation=\(conversationID.uuidString.prefix(8))")
+                Self.logger.error("\(Self.t)授权工具结果不推进回合：turnID 不匹配（结果已落库），conversation=\(conversationID.uuidString.prefix(8))")
             }
             return
         }
         guard pending.contains(where: { $0.id == toolCall.id }) else {
             if Self.verbose {
-                Self.logger.error("\(Self.t)忽略未等待的授权工具结果：toolCallID=\(toolCall.id), conversation=\(conversationID.uuidString.prefix(8))")
+                Self.logger.error("\(Self.t)授权工具结果不推进回合：未等待该调用（结果已落库），toolCallID=\(toolCall.id), conversation=\(conversationID.uuidString.prefix(8))")
             }
             return
         }
-
-        let result = convertResult(toolResult)
-        messages.updateToolCallResult(
-            result,
-            toolCallID: toolCall.id,
-            assistantMessageID: assistantMessageID,
-            in: conversationID,
-            authorizationState: toolCall.authorizationState.rawValue
-        )
 
         if result.awaitingUserResponse {
             // 仍在等待用户输入时只更新 assistant 内嵌状态，避免把临时
@@ -462,10 +508,50 @@ extension AgentLoopManager {
         continueAfterToolResults(runtime: runtime, conversationID: conversationID, turnID: turnID)
     }
 
+    /// 挂起结果应当写入的授权状态。
+    ///
+    /// - Returns: 授权挂起返回 `pendingAuthorization`（等待用户点允许/拒绝）；
+    ///   交互挂起（如 `ask_user` 等用户回答问题）返回 `nil`——不改动授权状态。
+    ///
+    /// - Important: 判据是**载荷**，不是挂起本身。两者在消息里的形态几乎一样，
+    ///   只能靠载荷里的 `kind` 字段区分（见 `ToolSuspensionKind`）。
+    ///   把交互挂起也标成 `pendingAuthorization` 会让通用授权卡片接管该工具行，
+    ///   而它构造不出授权请求，界面就会渲染出「无法解析工具审批请求」。
+    static func authorizationStateForSuspension(
+        _ result: MessageToolResult
+    ) -> String? {
+        guard result.awaitingUserResponse else { return nil }
+        guard ToolSuspensionKind.isAuthorizationRequest(result.content) else { return nil }
+        return ToolCallAuthorizationState.pendingAuthorization.rawValue
+    }
+
+    /// 找到承载指定工具调用的 assistant 消息 ID。
+    ///
+    /// 授权终态的落库目标以**消息**为准，而不是回合状态机：消息同时保存了
+    /// turnID、assistant 消息 ID 与完整工具调用列表，是重启后仍然可靠的来源
+    /// （`prepareRuntimeForToolResult` 的恢复分支用的是同一套查找逻辑）。
+    ///
+    /// - Note: 这里取**最后一条**匹配的消息。同一会话可能存在多个回合，
+    ///   工具调用 ID 在不同回合间可能复用，只有最近的 assistant 消息才
+    ///   持有当前这次调用的展示快照。
+    private func assistantMessageID(
+        containingToolCallID toolCallID: String,
+        in conversationID: UUID
+    ) async -> UUID? {
+        await messages.messagesSnapshot(in: conversationID).reversed().first { message in
+            message.role == .assistant
+                && message.toolCalls?.contains(where: { $0.id == toolCallID }) == true
+        }?.id
+    }
+
     enum LLMRequestResult {
         case success(LLMResponse, assistantMessageID: UUID)
         /// 保留原始错误，避免在落库前丢失专用 renderer 所需的元数据。
-        case failure(error: Error, recoverable: Bool)
+        ///
+        /// `reasoningContent` 承载本次请求已经流式收到的思考内容：判空失败时
+        /// `streaming.end()` 会丢弃临时行，若不外带思考内容就会彻底丢失。错误
+        /// 消息落库后由 `MessageViewChrome` 直接渲染思考入口。
+        case failure(error: Error, recoverable: Bool, reasoningContent: String?)
         case cancelled
     }
 
@@ -578,7 +664,7 @@ extension AgentLoopManager {
         guard let streamingManager = llmManager as? any LLMStreamingProviding else {
             streaming.end(conversationID: conversationID)
             let error = AgentLoopError.unsupportedStreaming
-            return .failure(error: error, recoverable: false)
+            return .failure(error: error, recoverable: false, reasoningContent: nil)
         }
 
         let timingRecorder = LLMStreamTimingRecorder()
@@ -620,12 +706,17 @@ extension AgentLoopManager {
 
             // 空终态响应（无工具调用且无正文）视为请求失败：不落库空
             // assistant 消息，走失败链路交给自动重试插件接管时间线与重试，
-            // 与网络错误的处理方式一致。
+            // 与网络错误的处理方式一致。思考内容可能已经流式输出过，随
+            // 错误一起保留到错误消息，避免用户看到内容凭空消失。
             if response.toolCalls?.isEmpty ?? true,
                response.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Self.logger.warning("\(Self.t)⚠️ 模型返回空响应，按失败处理 model=\(response.model ?? "unknown")")
                 streaming.end(conversationID: conversationID)
-                return .failure(error: VendorAPIError.emptyResponse, recoverable: false)
+                return .failure(
+                    error: VendorAPIError.emptyResponse,
+                    recoverable: false,
+                    reasoningContent: response.reasoningContent
+                )
             }
 
             let timing = timingRecorder.finish()
@@ -742,16 +833,17 @@ extension AgentLoopManager {
                     "\(Self.t)LLM request failed recoverable=\(recoverable), conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), error=\(error.localizedDescription)"
                 )
             }
-            return .failure(error: error, recoverable: recoverable)
+            return .failure(error: error, recoverable: recoverable, reasoningContent: nil)
         }
     }
 
-    private func estimateToolSchemaTokens(_ schemas: [LLMFunctionSchema]) -> Int {
+    // - Important: 这三个纯函数保持 internal 而非 private，供 `@testable` 直接覆盖。
+    //   它们没有任何外部调用方，收窄可见性只会让错误分类逻辑无法被单测验证。
+
+    /// 估算全部工具 schema 占用的 token 数，用于上下文预算的保守预留。
+    func estimateToolSchemaTokens(_ schemas: [LLMFunctionSchema]) -> Int {
         schemas.reduce(0) { total, schema in
-            let parameters = (try? JSONSerialization.data(
-                withJSONObject: schema.parameters,
-                options: [.sortedKeys]
-            )).flatMap { String(data: $0, encoding: .utf8) } ?? String(describing: schema.parameters)
+            let parameters = Self.jsonText(for: schema.parameters)
             return total
                 + LLMContextTokenEstimator.estimate(text: schema.name)
                 + LLMContextTokenEstimator.estimate(text: schema.description)
@@ -760,8 +852,28 @@ extension AgentLoopManager {
         }
     }
 
-    private func isContextLimitError(_ error: Error) -> Bool {
-        guard case let VendorAPIError.httpStatus(_, summary) = error else { return false }
+    /// 把工具参数序列化为键序稳定的 JSON 文本，供 token 估算使用。
+    ///
+    /// - Important: 必须先用 `isValidJSONObject` 预检，不能只靠 `try?`。
+    ///   `JSONSerialization.data(withJSONObject:)` 遇到非 JSON 类型（闭包、
+    ///   `Date`、`Data`、`NaN` 等）时抛的是 ObjC `NSException` 而非 Swift
+    ///   `Error`，`try?` 捕获不到，会直接 abort 整个进程（signal 6）。
+    ///   因此畸形工具 schema 必须先降级为文本估算，而不是让回合崩溃。
+    private static func jsonText(for parameters: [String: Any]) -> String {
+        guard JSONSerialization.isValidJSONObject(parameters),
+              let data = try? JSONSerialization.data(
+                withJSONObject: parameters,
+                options: [.sortedKeys]
+              ),
+              let text = String(data: data, encoding: .utf8)
+        else {
+            return String(describing: parameters)
+        }
+        return text
+    }
+
+    func isContextLimitError(_ error: Error) -> Bool {
+        guard case let VendorAPIError.httpStatus(_, summary, _) = error else { return false }
         let normalized = summary.lowercased()
         return normalized.contains("context")
             || normalized.contains("token limit")
@@ -772,7 +884,7 @@ extension AgentLoopManager {
 
     /// LLM 工具协议错误不会改变用户任务本身，允许在同一回合内重试。
     /// 认证、权限、上下文长度等错误仍然直接终止，避免无意义地重复请求。
-    private func isRecoverableLLMFailure(_ error: Error) -> Bool {
+    func isRecoverableLLMFailure(_ error: Error) -> Bool {
         if error is LLMToolCallValidationError {
             return true
         }

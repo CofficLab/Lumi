@@ -245,6 +245,58 @@ extension ConversationManager {
         }
     }
 
+    /// 批量删除「创建于 `cutoff` 之前」的对话。
+    ///
+    /// 清理链路与单条删除一致：取消回合、清消息、删工具调用、删库行。
+    /// 与单条删除不同，这里是**同步等待**完成的——调用方（清理入口）需要
+    /// 立刻知道删掉了多少条，才能给出准确反馈。
+    @discardableResult
+    public func deleteConversations(
+        createdBefore cutoff: Date,
+        projectPath: String?,
+        includingChildConversations: Bool
+    ) async -> [UUID] {
+        let ids = await store?.conversationIDs(
+            createdBefore: cutoff,
+            projectPath: projectPath,
+            includingChildConversations: includingChildConversations
+        ) ?? []
+        guard !ids.isEmpty else { return [] }
+
+        // 连带删除子 Agent 会话：父对话被删时，它的子会话也是孤儿。
+        var allIDs = Set(ids)
+        for id in ids {
+            let descendants = await store?.conversationIDsToDelete(id: id) ?? [id]
+            allIDs.formUnion(descendants)
+        }
+
+        for conversationID in allIDs {
+            agentTurn?.cancelTurn(in: conversationID)
+            messageManager?.clearMessages(in: conversationID)
+            await toolManager?.deleteToolCalls(for: conversationID)
+        }
+        _ = await store?.deleteConversations(ids: Array(allIDs))
+
+        // 同步内存缓存，保证列表与徽标立即反映清理结果。
+        conversations.removeAll { allIDs.contains($0.id) }
+        if let selectedConversationID, allIDs.contains(selectedConversationID) {
+            self.selectedConversationID = conversations.first?.id
+            updateCurrentTitle()
+            persistSelectedConversationID()
+            notifySelectedConversationChanged()
+        }
+
+        for id in allIDs {
+            notifyConversationObservers(.deleted(id))
+        }
+        notifyConversationsChanged()
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)批量删除 \(allIDs.count) 个过期对话")
+        }
+        return Array(allIDs)
+    }
+
     public func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool {
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
             return false

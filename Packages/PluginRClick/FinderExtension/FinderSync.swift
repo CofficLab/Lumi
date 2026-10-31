@@ -116,12 +116,24 @@ class FinderSync: FIFinderSync, SuperLog {
             return colored
         }
 
+        // 「在 Lumi 中打开」只对文件夹生效：选中项中至少有一个目录时才显示。
+        let hasDirectorySelection = cachedSelectedURLs.contains { url in
+            isDirectory(url)
+        }
+
         for item in items {
             switch item.type {
             case .openInVSCode:
                 let vscodeItem = menu.addItem(withTitle: item.customTitle ?? "在 VS Code 中打开", action: #selector(openInVSCode(_:)), keyEquivalent: "")
                 if showIcons {
                     vscodeItem.image = menuIcon("chevron.left.forwardslash.chevron.right")
+                }
+
+            case .openInLumi:
+                guard hasDirectorySelection else { continue }
+                let lumiItem = menu.addItem(withTitle: item.customTitle ?? "在 Lumi 中打开", action: #selector(openInLumi(_:)), keyEquivalent: "")
+                if showIcons {
+                    lumiItem.image = menuIcon("sparkles")
                 }
 
             case .openInTerminal:
@@ -372,6 +384,7 @@ class FinderSync: FIFinderSync, SuperLog {
         let defaultItems = [
             RClickMenuItem(id: "default-open-vscode", type: .openInVSCode, isEnabled: true),
             RClickMenuItem(id: "default-open-terminal", type: .openInTerminal, isEnabled: true),
+            RClickMenuItem(id: "default-open-lumi", type: .openInLumi, isEnabled: true),
             RClickMenuItem(id: "default-copy-path", type: .copyPath, isEnabled: true),
             RClickMenuItem(id: "default-new-file", type: .newFile, isEnabled: true),
             RClickMenuItem(id: "default-delete", type: .deleteFile, isEnabled: false),
@@ -411,13 +424,14 @@ class FinderSync: FIFinderSync, SuperLog {
             items: [
                 RClickMenuItem(id: "1", type: .openInVSCode, isEnabled: true),
                 RClickMenuItem(id: "2", type: .openInTerminal, isEnabled: true),
-                RClickMenuItem(id: "3", type: .copyPath, isEnabled: true),
-                RClickMenuItem(id: "4", type: .newFile, isEnabled: true),
-                RClickMenuItem(id: "5", type: .deleteFile, isEnabled: false),
-                RClickMenuItem(id: "6", type: .hideFile, isEnabled: false),
-                RClickMenuItem(id: "7", type: .unhideFile, isEnabled: false),
-                RClickMenuItem(id: "8", type: .showHiddenFiles, isEnabled: false),
-                RClickMenuItem(id: "9", type: .hideHiddenFiles, isEnabled: false)
+                RClickMenuItem(id: "3", type: .openInLumi, isEnabled: true),
+                RClickMenuItem(id: "4", type: .copyPath, isEnabled: true),
+                RClickMenuItem(id: "5", type: .newFile, isEnabled: true),
+                RClickMenuItem(id: "6", type: .deleteFile, isEnabled: false),
+                RClickMenuItem(id: "7", type: .hideFile, isEnabled: false),
+                RClickMenuItem(id: "8", type: .unhideFile, isEnabled: false),
+                RClickMenuItem(id: "9", type: .showHiddenFiles, isEnabled: false),
+                RClickMenuItem(id: "10", type: .hideHiddenFiles, isEnabled: false)
             ],
             fileTemplates: defaultTemplates()
         )

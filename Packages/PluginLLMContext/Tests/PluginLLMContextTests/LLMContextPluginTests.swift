@@ -576,6 +576,247 @@ struct LLMContextPluginTests {
         #expect(restored.contains { $0.content.contains("摘要结果") })
         #expect(summaryProvider.completeCalls == 1)
     }
+
+    @Test("压缩结果落在目标水位内，不会把预算填满")
+    func compactionResultStaysUnderTargetWatermark() async {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let summaryProvider = SummaryLLMProvider()
+        try? llm.register(summaryProvider)
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        for index in 0..<400 {
+            messages.insertMessage(
+                Message(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: String(repeating: "长对话内容 ", count: 150) + "\(index)"
+                ),
+                to: conversationID
+            )
+        }
+
+        let budget = LLMContextBudget(
+            contextWindowTokens: 200_000,
+            reservedOutputTokens: 8_000,
+            safetyMarginTokens: 4_000
+        )
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: summaryProvider.providerID,
+            model: "summary-model",
+            budget: budget,
+            mode: .beforeSend
+        )
+        let result = await provider.prepareContext(for: request)
+
+        #expect(result.didCompact)
+        #expect(result.estimatedInputTokens <= budget.compactionTargetTokens)
+        #expect(result.estimatedInputTokens < budget.inputTokenLimit)
+    }
+
+    @Test("摘要仍然覆盖得住最近区间时不会重新生成")
+    func validSnapshotIsReusedWithoutNewSummary() async {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let summaryProvider = SummaryLLMProvider()
+        try? llm.register(summaryProvider)
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        for index in 0..<400 {
+            messages.insertMessage(
+                Message(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: String(repeating: "长对话内容 ", count: 150) + "\(index)"
+                ),
+                to: conversationID
+            )
+        }
+
+        let budget = LLMContextBudget(
+            contextWindowTokens: 200_000,
+            reservedOutputTokens: 8_000,
+            safetyMarginTokens: 4_000
+        )
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: summaryProvider.providerID,
+            model: "summary-model",
+            budget: budget,
+            mode: .beforeSend
+        )
+
+        let first = await provider.prepareContext(for: request)
+        #expect(first.didCompact)
+
+        // 摘要水位需要先把未折叠的中间段吸收掉，压缩结果落进目标水位后即���收敛。
+        var converged = false
+        for _ in 0..<8 {
+            let result = await provider.prepareContext(for: request)
+            if result.estimatedInputTokens <= Int(Double(budget.compactionTargetTokens) * 0.8) {
+                converged = true
+                break
+            }
+        }
+        #expect(converged)
+        let callsAfterConvergence = summaryProvider.completeCalls
+
+        // 收敛之后继续推进对话，不应再触发新的摘要。
+        for index in 0..<3 {
+            messages.insertMessage(
+                Message(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: String(repeating: "新增内容 ", count: 150) + "\(index)"
+                ),
+                to: conversationID
+            )
+        }
+        let second = await provider.prepareContext(for: request)
+
+        #expect(second.didCompact)
+        #expect(second.estimatedInputTokens <= budget.compactionTargetTokens)
+        #expect(summaryProvider.completeCalls == callsAfterConvergence)
+    }
+
+    @Test("压缩上下文会裁剪超大的旧工具输出")
+    func oversizedToolOutputIsTruncatedInCompactedContext() async {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let summaryProvider = SummaryLLMProvider()
+        try? llm.register(summaryProvider)
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        for index in 0..<100 {
+            messages.insertMessage(
+                Message(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: String(repeating: "长对话内容 ", count: 150) + "\(index)"
+                ),
+                to: conversationID
+            )
+        }
+        // 一条超大的旧工具输出：必须被裁剪，否则它会吃掉整个预算。
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .tool,
+                content: String(repeating: "工具输出", count: 25_000),
+                toolCallID: "call-huge"
+            ),
+            to: conversationID
+        )
+        // 最近几条工具结果保持原样，模型可能仍在依赖它们。
+        for index in 0..<4 {
+            messages.insertMessage(
+                Message(
+                    conversationID: conversationID,
+                    role: .tool,
+                    content: "最近工具结果 \(index)",
+                    toolCallID: "call-recent-\(index)"
+                ),
+                to: conversationID
+            )
+        }
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .user, content: "继续"),
+            to: conversationID
+        )
+
+        let budget = LLMContextBudget(
+            contextWindowTokens: 100_000,
+            reservedOutputTokens: 8_000,
+            safetyMarginTokens: 2_000
+        )
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: summaryProvider.providerID,
+            model: "summary-model",
+            budget: budget,
+            mode: .beforeSend
+        )
+        let result = await provider.prepareContext(for: request)
+
+        #expect(result.didCompact)
+        let hugeTool = result.messages.first {
+            $0.role == .tool && $0.toolCallID == "call-huge"
+        }
+        #expect(hugeTool != nil)
+        #expect(hugeTool?.content.count ?? 0 <= LLMContextProvider.maxToolResultChars + 32)
+        #expect(hugeTool?.content.contains("[truncated]") == true)
+        // 最近的工具结果保持原样。
+        #expect(result.messages.contains { $0.toolCallID == "call-recent-3" && !$0.content.contains("[truncated]") })
+    }
+
+    @Test("保留窗口本身就超预算时仍然产出不超过预算的上下文")
+    func irreducibleProtectedWindowStillProducesValidContext() async {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let summaryProvider = SummaryLLMProvider()
+        try? llm.register(summaryProvider)
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        // 单条消息就接近整个输入预算，保留窗口无论如何都装不下。
+        for index in 0..<60 {
+            messages.insertMessage(
+                Message(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: String(repeating: "超长单条内容 ", count: 600) + "\(index)"
+                ),
+                to: conversationID
+            )
+        }
+
+        let budget = LLMContextBudget(
+            contextWindowTokens: 20_000,
+            reservedOutputTokens: 2_000,
+            safetyMarginTokens: 1_000
+        )
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: summaryProvider.providerID,
+            model: "summary-model",
+            budget: budget,
+            mode: .beforeSend
+        )
+
+        let result = await provider.prepareContext(for: request)
+
+        // 即使保留窗口装不下，也必须产出不超过硬上限的上下文。
+        #expect(result.estimatedInputTokens <= budget.inputTokenLimit)
+        #expect(result.messages.contains { $0.metadata["llmContext"] == "summary" })
+    }
 }
 
 @MainActor

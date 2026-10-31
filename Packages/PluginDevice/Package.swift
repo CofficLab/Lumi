@@ -15,12 +15,12 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
         .package(path: "../ProviderMenuBar"),
-        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
@@ -40,6 +40,7 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                "PluginDeviceThermalBridge",
             ],
             path: ".",
             exclude: [
@@ -52,10 +53,17 @@ let package = Package(
                 "Sources/PluginDevice/Views/README.md",
                 "Sources/PluginDevice/Views/MenuBar/README.md",
                 "Sources/PluginDevice/Support/README.md",
+                "Sources/PluginDeviceThermalBridge",
             ],
             resources: [
                 .process("Resources")
             ]
+        ),
+        // 温度采集桥接层:纯 ObjC,封装 IOKit 私有 HID API。
+        // SwiftPM 单 target 不支持混编,故拆为独立 target。
+        .target(
+            name: "PluginDeviceThermalBridge",
+            path: "Sources/PluginDeviceThermalBridge"
         ),
         .testTarget(
             name: "PluginDeviceTests",

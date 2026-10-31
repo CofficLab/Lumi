@@ -6,6 +6,6 @@ alwaysApply: false
 
 # Swift 日志记录规范
 
-请参考项目规范文档：`.agent/rules/swift-log.md`
+请参考项目规范文档：`.lumi/rules/swift-log.md`
 
 所有 Swift 日志记录应遵循上述规范文档中的标准，使用 `os.Logger` 并添加 `self.t` 前缀。

@@ -82,11 +82,12 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
             selection: selectionCapability
         )
         self.selectionBox = box
-        let toast = kernel.resolveProvider((any ToastProviding).self)
         let viewModel = ModelSelectorViewModel(
             box: box,
             usageStore: usageStore,
-            toast: toast
+            toastCapability: ModelSelectorToastCapabilityAdapter(
+                toast: kernel.resolveProvider((any ToastProviding).self)
+            )
         )
         self.viewModel = viewModel
 

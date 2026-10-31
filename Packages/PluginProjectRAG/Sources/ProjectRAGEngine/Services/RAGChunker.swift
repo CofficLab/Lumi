@@ -1,6 +1,6 @@
 import Foundation
 
-public struct RAGChunker {
+public struct RAGChunker: Sendable {
     public let maxLines: Int
     public let overlapLines: Int
     public let maxCharsPerChunk: Int

@@ -295,6 +295,22 @@
         }
       }
     },
+    "Conversation input is unavailable." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversation input is unavailable."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对话输入不可用。"
+          }
+        }
+      }
+    },
     "Core Capabilities" : {
       "localizations" : {
         "en" : {
@@ -499,6 +515,7 @@
       }
     },
     "Describe your product and the screens you need in the chat." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -765,6 +782,7 @@
       }
     },
     "Exact Device Export" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -850,6 +868,7 @@
       }
     },
     "Export when the flow reads correctly." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1808,6 +1827,7 @@
       }
     },
     "Prototypes are stored in the current project's .lumi directory." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1836,6 +1856,7 @@
       }
     },
     "Prototypes are stored with the current project and available only to it." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1864,6 +1885,7 @@
       }
     },
     "Prototypes live in the project's .lumi/prototype directory." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1948,6 +1970,7 @@
       }
     },
     "Render every screen as a PNG at the device's exact pixel size." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1976,6 +1999,7 @@
       }
     },
     "Review the rendered screen in the preview." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2061,6 +2085,7 @@
       }
     },
     "Right-click a region to draft an edit request for that block." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2263,6 +2288,22 @@
         }
       }
     },
+    "Selection changed; please try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selection changed; please try again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择已变更，请重试。"
+          }
+        }
+      }
+    },
     "Selector" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2294,6 +2335,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "定位"
+          }
+        }
+      }
+    },
+    "Sent to Conversation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent to Conversation"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已发送到对话"
           }
         }
       }
@@ -2551,6 +2608,7 @@
       }
     },
     "The Agent picks a device canvas, then writes each screen's HTML." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2777,54 +2835,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "線框圖"
-          }
-        }
-      }
-    },
-    "Sent to Conversation" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sent to Conversation"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已发送到对话"
-          }
-        }
-      }
-    },
-    "Conversation input is unavailable." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conversation input is unavailable."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "对话输入不可用。"
-          }
-        }
-      }
-    },
-    "Selection changed; please try again." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selection changed; please try again."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择已变更，请重试。"
           }
         }
       }

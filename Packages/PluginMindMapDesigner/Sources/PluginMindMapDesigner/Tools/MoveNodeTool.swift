@@ -38,7 +38,7 @@ public struct MoveNodeTool: SuperAgentTool {
         do {
             let (map, scope) = try await MindMapToolSupport.resolveMap(arguments)
             let updated = try await MainActor.run {
-                try MindMapStore.shared.moveNode(mapId: map.id, nodeId: nodeId, toParentId: toParentId, scope: scope)
+                try MindMapToolSupport.store().moveNode(mapId: map.id, nodeId: nodeId, toParentId: toParentId, scope: scope)
             }
             await MindMapToolSupport.notify(scope: scope, mapId: map.id)
             switch language {
@@ -48,7 +48,7 @@ public struct MoveNodeTool: SuperAgentTool {
                 return "Moved node \(nodeId.prefix(8)) under parent \(toParentId.prefix(8)).\nmapId: \(updated.id)"
             }
         } catch {
-            await MainActor.run { MindMapStore.shared.setError(error.localizedDescription) }
+            await MainActor.run { MindMapToolSupport.store().setError(error.localizedDescription) }
             return MindMapToolSupport.error(error, language: language)
         }
     }

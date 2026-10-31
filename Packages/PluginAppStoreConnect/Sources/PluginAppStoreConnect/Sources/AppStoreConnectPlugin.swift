@@ -7,7 +7,10 @@ import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
+import ProviderMessage
+import ProviderMessageRendering
 import ProviderNetwork
+import ProviderProject
 import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
@@ -39,6 +42,8 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
     private static let submitToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.submit"
     private static let distributionToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.distribution"
     private static let refreshToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.refresh"
+    /// Chat Toolbar 上的 ASC 版本入口。
+    private static let chatToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.chat-toolbar"
 
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.app-store-connect",
@@ -53,6 +58,10 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
         AppStoreConnectLocalization.string("AppStoreConnect")
     }
 
+    /// Chat Toolbar ASC 面板的 ViewModel 与观察者（由入口持有，随插件生命周期存续）。
+    private var chatToolbarViewModel: ASCChatToolbarViewModel?
+    private var chatToolbarObserver: ASCChatToolbarObserver?
+
     public init() {}
 
     public func migrateData(context: PluginDataMigrationContext) throws {
@@ -63,7 +72,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
 
         // 早期版本的回退实现把缓存直接写到 bundle 根目录下的
         // AppStoreConnectPlugin，升级时也要并入 ID 目录。
-        let legacyDirectory = AppStoreConnectPluginRuntimeBridge.fallbackRootDirectory
+        let legacyDirectory = AppStoreConnectPluginRuntimeBridge.productionFallbackRootDirectory
             .appendingPathComponent("AppStoreConnectPlugin", isDirectory: true)
         guard FileManager.default.fileExists(atPath: legacyDirectory.path) else { return }
         try FileManager.default.createDirectory(
@@ -102,6 +111,18 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
         } else {
             Self.logger.error("\(Self.t) ToolManagerProviding not found")
         }
+
+        // 注册提交审核时间线消息渲染器，并把消息管理器交给时间线桥，
+        // 让提交工具可以在会话里插入结构化的「即将提交什么」卡片。
+        if let rendering = kernel.resolveProvider((any MessageRenderingProviding).self) {
+            rendering.register(ASCSubmissionRenderer.item())
+            Self.logger.info("\(Self.t)Registered ASC submission message renderer")
+        } else {
+            Self.logger.warning("\(Self.t) MessageRenderingProviding not found; ASC submission renderer skipped")
+        }
+        ASCSubmissionTimelineBridge.configure(
+            messages: kernel.resolveProvider((any MessageManaging).self)
+        )
 
         if let skillProvider = kernel.resolveProvider((any SkillProviding).self) {
             if !skillProvider.isProviderRegistered(providerID: id) {
@@ -169,6 +190,9 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
                     .appendingPathComponent("rail-view-width.plist")
             )
         }
+
+        // Chat Toolbar：展示当前项目对应 App 的 ASC 版本列表。
+        registerChatToolbarItem(kernel: kernel, chat: chat)
 
         let entryID = "\(id).entry"
         let pluginID = id
@@ -277,11 +301,15 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        unregisterChatToolbarItem(kernel: kernel)
         kernel.resolveProvider((any ToolManagerProviding).self).map { manager in
             Self.agentTools.forEach { manager.remove(id: $0.name) }
         }
         kernel.resolveProvider((any SkillProviding).self)?.removeProvider(providerID: id)
         kernel.resolveProvider((any AgentRuleProviding).self)?.removeProvider(providerID: id)
+        kernel.resolveProvider((any MessageRenderingProviding).self)?
+            .unregister(id: ASCSubmissionTimeline.rendererID)
+        ASCSubmissionTimelineBridge.reset()
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: [Self.settingsEntryID])
@@ -311,6 +339,58 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    }
+
+    // MARK: - Chat Toolbar
+
+    /// 注册 Chat Toolbar 上的 ASC 版本入口。
+    ///
+    /// 入口对所有项目可见，但只有当前项目能解析出 ASC App 绑定时才渲染按钮
+    /// （未绑定时渲染 `EmptyView`，不占位）。
+    private func registerChatToolbarItem(
+        kernel: KernelCoreContainer,
+        chat: (any ChatSectionProviding)?
+    ) {
+        guard let chat else {
+            Self.logger.warning("\(Self.t) ChatSectionProviding not found; ASC chat toolbar entry skipped")
+            return
+        }
+        guard let project = kernel.resolveProvider((any ProjectProviding).self) else {
+            Self.logger.warning("\(Self.t) ProjectProviding not found; ASC chat toolbar entry skipped")
+            return
+        }
+
+        let viewModel = ASCChatToolbarViewModel(
+            clientCapability: ASCChatClientCapabilityAdapter { VM.shared.client }
+        )
+        self.chatToolbarViewModel = viewModel
+
+        let observer = ASCChatToolbarObserver(project: project, viewModel: viewModel)
+        self.chatToolbarObserver = observer
+
+        chat.removeBarItem(id: Self.chatToolbarItemID)
+        chat.addBarItems([
+            ChatSectionBarItem(
+                id: Self.chatToolbarItemID,
+                order: order,
+                placement: .toolbarTrailing
+            ) { [weak viewModel] in
+                if let viewModel {
+                    ASCChatToolbarButtonContainer(viewModel: viewModel)
+                } else {
+                    EmptyView()
+                }
+            },
+        ])
+    }
+
+    /// 撤回 Chat Toolbar 上的 ASC 版本入口。
+    private func unregisterChatToolbarItem(kernel: KernelCoreContainer) {
+        kernel.resolveProvider((any ChatSectionProviding).self)?
+            .removeBarItem(id: Self.chatToolbarItemID)
+        chatToolbarObserver?.cancel()
+        chatToolbarObserver = nil
+        chatToolbarViewModel = nil
     }
 
     public static let agentTools: [any SuperAgentTool] = [

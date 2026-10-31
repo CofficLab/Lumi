@@ -50,7 +50,7 @@ public struct ApplyIconPresetTool: SuperAgentTool {
         let scope = try await IconToolSupport.resolveScope(arguments)
         let title = IconToolSupport.string(arguments, "title")
         let document = await MainActor.run {
-            IconDocumentStore.shared.createDocument(from: preset, title: title, scope: scope)
+            IconToolSupport.store().createDocument(from: preset, title: title, scope: scope)
         }
         await IconToolSupport.notify(scope: scope, documentId: document.id)
 

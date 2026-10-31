@@ -269,14 +269,21 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
             body: body
         ) { data in
             do {
-                var chunk = try adapter.parseStreamChunk(data: data)
-                if let reverseMap, !reverseMap.isEmpty, let toolCalls = chunk?.toolCalls {
-                    chunk = chunk?.withToolCalls(
-                        toolCalls.map { ToolCall(id: $0.id, name: reverseMap[$0.name] ?? $0.name, arguments: $0.arguments) }
-                    )
+                var parsed = try adapter.parseStreamChunks(data: data)
+                if let reverseMap, !reverseMap.isEmpty {
+                    parsed = parsed.map { chunk in
+                        guard let toolCalls = chunk.toolCalls else { return chunk }
+                        return chunk.withToolCalls(
+                            toolCalls.map { ToolCall(id: $0.id, name: reverseMap[$0.name] ?? $0.name, arguments: $0.arguments) }
+                        )
+                    }
                 }
-                guard let chunk else { return true }
-                return await accumulator.consume(chunk, onChunk: onChunk)
+                // 单个 SSE 事件可能产出多个 chunk（如思考与正文同 delta），
+                // 必须逐个喂给累积器，否则会丢掉其中一段内容。
+                for chunk in parsed {
+                    guard await accumulator.consume(chunk, onChunk: onChunk) else { return false }
+                }
+                return true
             } catch {
                 accumulator.fail(error)
                 return false

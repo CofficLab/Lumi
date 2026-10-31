@@ -7,9 +7,11 @@ import KitMail
 /// 成功后 IMAP APPEND 到已发送文件夹（失败降级：仅本地记录，不阻断成功态）。
 public actor MailComposerService {
     private let sessionManager: MailSessionManager
+    private let accountStore: MailAccountStore
 
-    public init(sessionManager: MailSessionManager) {
+    public init(sessionManager: MailSessionManager, accountStore: MailAccountStore) {
         self.sessionManager = sessionManager
+        self.accountStore = accountStore
     }
 
     /// 发送一封邮件。成功返回（已尝试归档到 Sent）；失败抛 `MailError`。
@@ -21,7 +23,7 @@ public actor MailComposerService {
         draft: MimeMessageDraft,
         account: MailAccountConfig
     ) async throws {
-        guard let password = MailAccountStore.password(for: account.id) else {
+        guard let password = accountStore.password(for: account.id) else {
             throw MailError.authFailed
         }
         let mime = try MimeMessageBuilder.build(draft)
@@ -48,7 +50,7 @@ public actor MailComposerService {
         draft: MimeMessageDraft,
         account: MailAccountConfig
     ) async throws {
-        guard let password = MailAccountStore.password(for: account.id) else {
+        guard let password = accountStore.password(for: account.id) else {
             throw MailError.authFailed
         }
         let mime = try MimeMessageBuilder.build(draft)

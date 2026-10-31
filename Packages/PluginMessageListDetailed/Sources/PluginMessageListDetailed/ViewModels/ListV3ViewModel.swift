@@ -5,6 +5,7 @@ import ProviderConversationState
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageStreaming
+import ProviderToolManager
 
 /// Cheap fingerprint of the inputs that decide `MessageListRowBuilder.buildHistory`
 /// output, used to skip the (O(rows × content) memberwise) `historyRows` array
@@ -21,10 +22,23 @@ private struct HistoryBuildSignatureV3: Equatable {
 
 private struct MessageFingerprintV3: Equatable {
     let id: UUID
-    let contentLength: Int
+    /// 内容指纹。
+    ///
+    /// 用**哈希**而不是长度：等长替换（"AAAA" → "BBBB"）长度不变，按长度判定
+    /// 会漏掉这种更新，历史行会继续持有旧文本。消息的落库版本可能因为重写、
+    /// 重试覆盖而产生等长结果，这不是纯理论情况。
+    let contentHash: Int
     let role: MessageRole
     let isToolExecutionOnly: Bool
     let toolCallResultState: [String]
+    /// 授权状态（`pendingAuthorization` → `userApproved` / `userRejected`）。
+    ///
+    /// 它与 `result` 一起决定渲染层要不要再弹一次授权卡片
+    /// （`ToolApprovalRowRenderer.canRender`），因此必须纳入指纹：
+    /// 只比较结果内容长度与 `awaitingUserResponse` 的话，
+    /// 「结果没变、只有授权状态变了」这种回写会被漏掉，
+    /// 历史行会继续持有「等待授权」的旧快照。
+    let toolCallAuthorizationState: [String]
 }
 
 /// Message List V3 View Model (detailed / 详细模式)
@@ -41,7 +55,21 @@ private struct MessageFingerprintV3: Equatable {
 @MainActor
 final class ListV3ViewModel: ObservableObject {
     /// 流式逐字显示开关。
-    static var streamingDisplayEnabled = false
+    ///
+    /// 曾是 `static` 全局开关，测试并行执行时会互相覆盖，导致同一 suite
+    /// 内单跑通过、并行失败。改为实例属性 + 构造注入后不再有共享状态。
+    /// 生产代码从不设置它，默认关闭。
+    private let streamingDisplayEnabled: Bool
+
+    init(
+        services: MessageListServices,
+        pagination: MessageListPaginationService = MessageListPaginationService(),
+        streamingDisplayEnabled: Bool = false
+    ) {
+        self.services = services
+        self.pagination = pagination
+        self.streamingDisplayEnabled = streamingDisplayEnabled
+    }
 
     // MARK: - Published State (供 View 展示)
 
@@ -77,7 +105,7 @@ final class ListV3ViewModel: ObservableObject {
     // MARK: - Dependencies & Internal State
 
     private let services: MessageListServices
-    private let pagination = MessageListPaginationService()
+    private let pagination: MessageListPaginationService
     private let rowBuilder = MessageListRowBuilder()
     private let tailRefreshGate = MessageListTailRefreshGate()
 
@@ -92,12 +120,7 @@ final class ListV3ViewModel: ObservableObject {
     /// 激活序列号，用于防止并发切换时旧的异步加载结果回写。
     private var activationSequence: UInt64 = 0
 
-    init(services: MessageListServices) {
-        self.services = services
-    }
-
     // MARK: - Read-only Accessors (View 展示用)
-
     var selectedConversationID: UUID? {
         services.selectedConversationID
     }
@@ -179,7 +202,7 @@ final class ListV3ViewModel: ObservableObject {
 
     /// 向上翻页：加载更早一页并 prepend，触发窗口回收。
     /// - Returns: prepend 前最早一条消息的 id，View 应把它钉回视口顶部。
-    func loadEarlier(isAtBottom: Bool) async -> UUID? {
+    func loadEarlier() async -> UUID? {
         guard let conversationID = selectedConversationID,
               !isLoadingEarlier,
               let currentFirstID = persistedMessages.first?.id else { return nil }
@@ -195,9 +218,7 @@ final class ListV3ViewModel: ObservableObject {
         guard selectedConversationID == conversationID else { return nil }
         persistedMessages = result.earlier + persistedMessages
         hasEarlierMessages = result.hasEarlierMessages
-        persistedMessages = pagination.evictTailIfNeeded(
-            messages: persistedMessages, isAtBottom: isAtBottom
-        )
+        persistedMessages = pagination.evictTailIfNeeded(messages: persistedMessages)
         return result.anchorID
     }
 
@@ -280,15 +301,27 @@ final class ListV3ViewModel: ObservableObject {
             return
         }
 
+        // 一次批量查询取回窗口内所有 turn 的调用记录。
+        //
+        // 逐 turn 查询会让刷新成本随窗口内 turn 数线性放大：窗口有几十个 turn
+        // 时，每次消息事件（工具结果回写）都要发几十次查询，而这些统计在
+        // V2/V3 的视图里并没有消费点。
+        let records = await toolManager.toolCalls(forTurnIDs: Array(turnIDs))
+        var recordsByTurn: [UUID: [ToolCallRecord]] = [:]
+        for record in records {
+            guard let turnID = record.turnID else { continue }
+            recordsByTurn[turnID, default: []].append(record)
+        }
+
         var summaries: [UUID: LumiTurnActivitySummary] = [:]
         for turnID in turnIDs {
-            let records = await toolManager.toolCalls(for: turnID)
-            let durations = records.compactMap(\.duration)
+            let turnRecords = recordsByTurn[turnID] ?? []
+            let durations = turnRecords.compactMap(\.duration)
             summaries[turnID] = LumiTurnActivitySummary(
                 turnID: turnID,
-                totalCount: records.count,
-                completedCount: records.filter { $0.completedAt != nil }.count,
-                failedCount: records.filter(\.resultIsError).count,
+                totalCount: turnRecords.count,
+                completedCount: turnRecords.filter { $0.completedAt != nil }.count,
+                failedCount: turnRecords.filter(\.resultIsError).count,
                 totalDuration: durations.isEmpty ? nil : durations.reduce(0, +)
             )
         }
@@ -337,9 +370,12 @@ final class ListV3ViewModel: ObservableObject {
                     return $0.createdAt < $1.createdAt
                 }
             }
-            if next.count > pagination.maxRetainedCount {
-                next.removeFirst(next.count - pagination.maxRetainedCount)
-            }
+            // Important: 这里**不**按 `maxRetainedCount` 裁剪窗口头部。
+            //
+            // 裁掉的是**最旧**的消息 —— 用户可能刚翻到那里看历史，新消息一到
+            // 它们就从窗口里消失了。窗口长度由另外两条路径守住：
+            // 尾部刷新（`refreshTail` 用最近一页替换窗口尾部，长度保持不变）
+            // 与向上翻页时的窗口回收（`evictTailIfNeeded`）。
             persistedMessages = next
         case let .persisted(_, conversationID),
              let .updated(conversationID: conversationID),
@@ -363,7 +399,7 @@ final class ListV3ViewModel: ObservableObject {
 
     /// 从流式服务读取当前状态，更新 `streamingRow`。可见性规则同 V2。
     private func applyStreamingState() {
-        guard Self.streamingDisplayEnabled, verbosity != .brief else {
+        guard streamingDisplayEnabled, verbosity != .brief else {
             updateStreamingRow(nil)
             return
         }
@@ -408,7 +444,7 @@ final class ListV3ViewModel: ObservableObject {
             fingerprints: persistedMessages.map {
                 MessageFingerprintV3(
                     id: $0.id,
-                    contentLength: $0.content.count,
+                    contentHash: $0.content.hashValue,
                     role: $0.role,
                     isToolExecutionOnly: $0.isToolExecutionOnly,
                     toolCallResultState: $0.toolCalls?.map {
@@ -417,6 +453,9 @@ final class ListV3ViewModel: ObservableObject {
                             "\($0.content.count):\($0.awaitingUserResponse == true)"
                         } ?? "nil"
                         return "\($0.id):\(resultState)"
+                    } ?? [],
+                    toolCallAuthorizationState: $0.toolCalls?.map {
+                        "\($0.id):\($0.authorizationState ?? "nil")"
                     } ?? []
                 )
             }

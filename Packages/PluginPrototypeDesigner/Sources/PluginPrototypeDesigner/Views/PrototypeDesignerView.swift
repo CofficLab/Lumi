@@ -2,6 +2,7 @@ import AppKit
 import os
 import KitHTMLPreview
 import KitPrototype
+import LumiUI
 import ProviderToast
 import SwiftUI
 
@@ -33,8 +34,10 @@ public struct PrototypeDesignerView: View {
     public var body: some View {
         VStack(spacing: 0) {
             if workspace.projects.isEmpty {
-                // 空态不放工具栏：引导内容自身已完整，刷新入口在侧边栏 Rail。
-                PrototypeOnboardingView(isProjectOpen: workspace.projectStorageDirectory != nil)
+                AppEmptyState(
+                    icon: "rectangle.on.rectangle.angled",
+                    title: PrototypeLocalization.string("Ask the Agent to create a prototype.")
+                )
             } else if let resolved = workspace.selectedScreen {
                 PrototypeDesignerTopToolbar(
                     workspace: workspace,

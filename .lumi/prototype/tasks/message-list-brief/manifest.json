@@ -1,0 +1,105 @@
+{
+  "createdAt" : "2026-10-21T07:26:28Z",
+  "device" : {
+    "height" : 900,
+    "kind" : "desktop",
+    "scale" : 2,
+    "width" : 1440
+  },
+  "id" : "message-list-brief",
+  "schemaVersion" : 1,
+  "screens" : [
+    {
+      "createdAt" : "2026-10-21T07:29:35Z",
+      "hotspots" : [
+        {
+          "targetScreenID" : "01-message-list"
+        },
+        {
+          "targetScreenID" : "02-process-expanded"
+        },
+        {
+          "targetScreenID" : "03-live-status"
+        },
+        {
+          "targetScreenID" : "04-loading-state"
+        }
+      ],
+      "htmlFileName" : "index.html",
+      "id" : "01-message-list",
+      "order" : 0,
+      "title" : "简洁消息列表主界面",
+      "updatedAt" : "2026-10-21T07:30:25Z"
+    },
+    {
+      "createdAt" : "2026-10-21T07:29:38Z",
+      "hotspots" : [
+        {
+          "targetScreenID" : "01-message-list"
+        },
+        {
+          "targetScreenID" : "02-process-expanded"
+        },
+        {
+          "targetScreenID" : "03-live-status"
+        },
+        {
+          "targetScreenID" : "04-loading-state"
+        }
+      ],
+      "htmlFileName" : "index.html",
+      "id" : "02-process-expanded",
+      "order" : 1,
+      "title" : "过程条展开：查看工具步骤",
+      "updatedAt" : "2026-10-21T07:31:06Z"
+    },
+    {
+      "createdAt" : "2026-10-21T07:29:45Z",
+      "hotspots" : [
+        {
+          "targetScreenID" : "01-message-list"
+        },
+        {
+          "targetScreenID" : "02-process-expanded"
+        },
+        {
+          "targetScreenID" : "03-live-status"
+        },
+        {
+          "targetScreenID" : "04-loading-state"
+        }
+      ],
+      "htmlFileName" : "index.html",
+      "id" : "03-live-status",
+      "order" : 2,
+      "title" : "运行中：底部实时状态卡",
+      "updatedAt" : "2026-10-21T07:31:59Z"
+    },
+    {
+      "createdAt" : "2026-10-21T07:29:48Z",
+      "hotspots" : [
+        {
+          "targetScreenID" : "01-message-list"
+        },
+        {
+          "targetScreenID" : "02-process-expanded"
+        },
+        {
+          "targetScreenID" : "03-live-status"
+        },
+        {
+          "targetScreenID" : "04-loading-state"
+        }
+      ],
+      "htmlFileName" : "index.html",
+      "id" : "04-loading-state",
+      "order" : 3,
+      "title" : "加载态与加载更早消息",
+      "updatedAt" : "2026-10-21T07:33:26Z"
+    }
+  ],
+  "startScreenID" : "01-message-list",
+  "style" : "hiFi",
+  "title" : "Message List Brief（消息列表·简洁）",
+  "updatedAt" : "2026-10-21T07:33:26Z"
+}

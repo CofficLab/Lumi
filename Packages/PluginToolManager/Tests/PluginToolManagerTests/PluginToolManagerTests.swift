@@ -901,9 +901,14 @@ private struct ProjectPathProbeTool: SuperAgentTool, @unchecked Sendable {
 @MainActor
 @Test func unboundConversationFallsBackToGlobalWorkspaceRoot() async throws {
     // Register builtin tools with a global workspaceRootProvider that returns
-    // "Lumi" — simulating the global ProjectProviding.currentProject.
+    // a temporary directory — simulating the global ProjectProviding.currentProject.
+    let workspaceRoot = FileManager.default.temporaryDirectory
+        .appendingPathComponent("PluginToolManagerTests-workspace-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: workspaceRoot, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: workspaceRoot) }
+
     let manager = ToolManager()
-    manager.registerBuiltinTools(workspaceRootProvider: { "/Users/colorfy/Code/CofficLab/Lumi" })
+    manager.registerBuiltinTools(workspaceRootProvider: { workspaceRoot.path })
 
     let conversationManager = DefaultConversationManager()
     manager.conversationManager = conversationManager
@@ -920,10 +925,11 @@ private struct ProjectPathProbeTool: SuperAgentTool, @unchecked Sendable {
         call, conversationID: unboundConvID, turnID: UUID()
     )
 
-    // The tool runs in Lumi's directory — this is the "串台" symptom:
+    // The tool runs in the workspace root — this is the "串台" symptom:
     // the conversation has no project binding, so it silently inherits the
     // global current project.
-    #expect(result.content.trimmingCharacters(in: .whitespacesAndNewlines)
-            == "/Users/colorfy/Code/CofficLab/Lumi",
+    // Note: `pwd` may resolve symlinks differently than Swift's URL APIs
+    // (e.g. /var vs /private/var on macOS), so we use contains as a fuzzy match.
+    #expect(result.content.contains(workspaceRoot.lastPathComponent),
            "Unbound conversation should fall back to global workspaceRoot, got: \(result.content)")
 }

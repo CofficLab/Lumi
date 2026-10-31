@@ -28,36 +28,49 @@ public struct ConversationStoreSettingsView: View {
             showHeader: false,
             scrollsContent: false
         ) {
-            VStack(spacing: 12) {
-                HStack {
-                    Spacer()
-                    if viewModel.isMigrationActive {
-                        ProgressView()
-                            .controlSize(.small)
+            GeometryReader { proxy in
+                VStack(spacing: 0) {
+                    HStack {
+                        Spacer()
+                        if viewModel.isMigrationActive {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                        totalCountButton
                     }
-                    totalCountButton
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 12)
+
+                    // 会话活动区块的顶部分隔线：与下方那条一样贯通整宽，
+                    // 所以画在内容留白之外，而不是塞进区块内部。
+                    AppDivider()
+
+                    conversationActivity
+                        .padding(.horizontal, 24)
+                        .padding(.top, 12)
+                        .padding(.bottom, 12)
+
+                    // 主体内容贴边后，用一条顶部分隔线把头部内容与主从容器分开。
+                    AppDivider()
+
+                    HStack(spacing: 0) {
+                        sidebar
+                            .frame(width: 300)
+                            .frame(maxHeight: .infinity)
+
+                        AppDivider(.vertical)
+
+                        detailPane
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    }
+                    .frame(maxHeight: .infinity)
                 }
-
-                conversationActivity
-
-                HStack(spacing: 0) {
-                    sidebar
-                        .frame(width: 340)
-                        .frame(maxHeight: .infinity)
-
-                    AppDivider(.vertical)
-
-                    detailPane
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                }
-                .frame(maxHeight: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(theme.divider, lineWidth: 1)
-                }
+                // 共享 scaffold 给内容留了左右 24，这里把整列加宽 48 并左移 24，
+                // 使主从容器正好贴到窗口左右边缘；头部内容再自行补回 24 留白。
+                .frame(width: proxy.size.width + 48, alignment: .topLeading)
+                .offset(x: -24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .task {
             await viewModel.loadInitialIfNeeded()
@@ -73,34 +86,28 @@ public struct ConversationStoreSettingsView: View {
         }
     }
 
+    /// 会话活动图表（扁平面板）。
+    ///
+    /// 区块顶部的横线由父级统一画（贯通整宽），这里只放内容：
+    /// 左右不留白，图表直接铺满内容区整宽。
     private var conversationActivity: some View {
-        AppSettingsSection(
-            title: L("Conversation Activity"),
-            subtitle: L("Conversations created per day over the last 14 days"),
-            spacing: 12
-        ) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .firstTextBaseline) {
-                    Label(L("Daily conversations"), systemImage: "chart.xyaxis.line")
-                        .font(.appCaptionEmphasized)
-                        .foregroundStyle(theme.textPrimary)
-                    Spacer(minLength: 0)
-                    Text(String(format: L("Peak (%lld)"), viewModel.dailyCountSeries.peakCount))
-                        .font(.appMicro)
-                        .monospacedDigit()
-                        .foregroundStyle(theme.textSecondary)
-                }
-                ConversationDailyCountChart(series: viewModel.dailyCountSeries)
-                    .frame(height: 132)
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .firstTextBaseline) {
+                Label(L("Daily conversations"), systemImage: "chart.xyaxis.line")
+                    .font(.appCaptionEmphasized)
+                    .foregroundStyle(theme.textPrimary)
+                Spacer(minLength: 0)
+                Text(String(format: L("Peak (%lld)"), viewModel.dailyCountSeries.peakCount))
+                    .font(.appMicro)
+                    .monospacedDigit()
+                    .foregroundStyle(theme.textSecondary)
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(theme.divider, lineWidth: 0.5)
-            }
+            .padding(.bottom, 10)
+
+            ConversationDailyCountChart(series: viewModel.dailyCountSeries)
+                .frame(height: 132)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Total Count
@@ -206,7 +213,7 @@ public struct ConversationStoreSettingsView: View {
     private var detailPane: some View {
         if let conversation = viewModel.selectedConversation {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 18) {
                     overviewSection(for: conversation)
 
                     basicInfoSection(for: conversation)
@@ -215,7 +222,7 @@ public struct ConversationStoreSettingsView: View {
 
                     messagesSection
                 }
-                .padding(20)
+                .padding(22)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

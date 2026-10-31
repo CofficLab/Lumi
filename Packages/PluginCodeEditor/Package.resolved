@@ -1,5 +1,5 @@
 {
-  "originHash" : "25ac3ef267e8c28661ca110ea1be4c5d953d29243acf4e60c9b51c01898f0502",
+  "originHash" : "128dc25ff2fe86dda715f4a919ab5347a1c5ee07a9fe37bc637e6b0d647d60e5",
   "pins" : [
     {
       "identity" : "fseventswrapper",
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiKernel.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "4a30c5f4d6e3b24be61e87a036b14720ef0f1654"
+        "revision" : "b1a0e8028b40777cce0c9ee71ba7728350d9a52b",
+        "version" : "1.1.0"
       }
     },
     {
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiProviders.git",
       "state" : {
-        "revision" : "f6a0117032d646ce20e561b5c10fd461e3a347b3",
-        "version" : "1.9.0"
+        "revision" : "db6f0874337e01df039ef54c774803f1c737bc8d",
+        "version" : "1.12.0"
       }
     },
     {
@@ -78,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiUI.git",
       "state" : {
-        "revision" : "188ec1668846d4a3f840bcfd61b167d07d6c0a0b",
-        "version" : "1.8.0"
+        "revision" : "cafd284e4cb9b026c32f9a09dc9b8baa3c039c46",
+        "version" : "1.11.1"
       }
     },
     {
@@ -132,8 +132,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections.git",
       "state" : {
-        "revision" : "35a1edcb8ebd2bfe251d587f0b69e62af28f508c",
-        "version" : "1.7.3"
+        "revision" : "844289ac455816e193f1dbbe014f3c4dbe429410",
+        "version" : "1.7.4"
       }
     },
     {

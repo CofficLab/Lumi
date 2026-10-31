@@ -4,7 +4,6 @@ import os
 import ProviderConversation
 import ProviderLLMManager
 import ProviderMessageRendering
-import ProviderOnboarding
 import KitLLM
 import LumiLoggingKit
 /// LLM 供应商管理器插件。
@@ -74,43 +73,15 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
         }
     }
 
-    private static let onboardingPageID = "onboarding-ai-setup"
-
     /// 对话绑定的供应商/模型通过 `LLMRequest.providerID` 显式传递，避免
     /// 切换对话时改写全局选中状态；未绑定对话才使用全局选中项。
     public func onReady(kernel: KernelCoreContainer) throws {
-        guard let manager else { return }
-
-        // 必须在 onboarding guard 之前：用户主动切换对话的供应商/模型时同步到全局
-        // 选中，使下次新建对话继承用户最近一次的选择。
+        // 用户主动切换对话的供应商/模型时同步到全局选中，使下次新建对话
+        // 继承用户最近一次的选择。
         // TEMP-DISABLED observeConversationProviderChanges(kernel: kernel, manager: manager)
-
-        let onboarding = kernel.resolveProvider((any OnboardingProviding).self)
-
-        // 如果 onboarding 不可用，无法注册页面
-        guard let onboarding else {
-            if Self.verbose {
-                Self.logger.info("\(Self.t)OnboardingProviding not resolved, onboarding page skipped")
-            }
-            return
-        }
-
-        let resolvedCapability = capability ?? LLMManagerCapabilityAdapter(manager: manager)
-
-        onboarding.register(
-            OnboardingPageItem(
-                id: Self.onboardingPageID,
-                title: pluginLocalization.string("Set up your AI provider")
-            ) { [resolvedCapability] in
-                AISetupPage(viewModel: AISetupViewModel(capability: resolvedCapability))
-            }
-        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        if let onboarding = kernel.resolveProvider((any OnboardingProviding).self) {
-            onboarding.unregister(id: Self.onboardingPageID)
-        }
         conversationProviderObserver?.cancel()
         conversationProviderObserver = nil
         capability = nil

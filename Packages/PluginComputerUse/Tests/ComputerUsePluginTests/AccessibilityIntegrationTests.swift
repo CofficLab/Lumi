@@ -13,10 +13,10 @@ func accessibilityOperatesBackgroundFixtureWithoutMovingCursorOrActivatingIt() a
     fixture.executableURL = URL(fileURLWithPath: executable)
     try fixture.run()
     defer { if fixture.isRunning { fixture.terminate() } }
-    let suite = "ComputerUse.AXFixture.\(UUID())"
-    let defaults = try #require(UserDefaults(suiteName: suite))
-    defer { defaults.removePersistentDomain(forName: suite) }
-    let store = ComputerUseAuthorizationStore(defaults: defaults)
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ComputerUseAX-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let store = ComputerUseAuthorizationStore(dataDirectory: directory)
     store.setAllowed(true, bundleIdentifier: "com.coffic.lumi.tests.axfixture")
     let service = AccessibilityService(authorization: store)
     var observed: String?

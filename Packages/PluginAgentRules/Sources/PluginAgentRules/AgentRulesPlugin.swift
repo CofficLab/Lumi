@@ -5,6 +5,7 @@ import ProviderAgentRules
 import ProviderLifecycleHooks
 import ProviderProject
 import ProviderSettingView
+import ProviderStorage
 import ProviderToolManager
 import SwiftUI
 import LumiLoggingKit
@@ -23,7 +24,7 @@ import os
 /// - `settingsTabItems` → `SettingViewProviding.addEntries`（`SettingEntryItem`）；
 /// - `kernel.currentProjectPath` / `kernel.project` → `AgentRulesRuntime` 持有的 `ProjectProviding`。
 @MainActor
-public final class AgentRulesPlugin: SuperPlugin, SuperLog {
+public final class AgentRulesPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.agent-rules", category: "AgentRules")
     public let id = "com.coffic.lumi.plugin.agent-rules"
     public let order = 50
@@ -36,7 +37,47 @@ public final class AgentRulesPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
+    /// 历史实现把配置写在 `~/Library/Application Support/Lumi/PluginSettings/AgentRules.plist`，
+    /// 该目录与其它插件共用、且不在版本化数据根内。改名会导致存量配置失联。
+    public let legacyDataDirectoryNames: [String] = []
+
     public init() {}
+
+    /// 把旧版共用的 `PluginSettings/AgentRules.plist` 复制到插件专属目录。
+    ///
+    /// 旧路径不在 `db_{debug|production}_v*` 版本根内，因此无法用
+    /// `copyLegacyDirectories` 的版本扫描，需要按 Application Support 直接定位。
+    /// 复制而非移动，保留原文件以便回退；目标已存在时不覆盖。
+    public func migrateData(context: PluginDataMigrationContext) throws {
+        let fileManager = FileManager.default
+        guard let applicationSupport = fileManager.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first else {
+            return
+        }
+
+        let legacyFile = applicationSupport
+            .appending(path: "Lumi", directoryHint: .isDirectory)
+            .appending(path: "PluginSettings", directoryHint: .isDirectory)
+            .appending(path: "AgentRules.plist")
+        guard fileManager.fileExists(atPath: legacyFile.path) else { return }
+
+        let destination = context.currentPluginDataDirectory
+            .appending(path: "settings", directoryHint: .isDirectory)
+        try fileManager.createDirectory(at: destination, withIntermediateDirectories: true)
+
+        let target = destination.appending(path: "AgentRules.plist")
+        guard !fileManager.fileExists(atPath: target.path) else { return }
+
+        do {
+            try fileManager.copyItem(at: legacyFile, to: target)
+            Self.logger.info("\(Self.t)Migrated Agent Rules settings from legacy shared directory")
+        } catch {
+            Self.logger.error("\(Self.t)Migrate Agent Rules settings failed: \(error.localizedDescription)")
+            throw error
+        }
+    }
 
     public var name: String {
         pluginLocalization.string("Agent Rules")
@@ -59,6 +100,13 @@ public final class AgentRulesPlugin: SuperPlugin, SuperLog {
         for handle in lifecycleHandles { handle.cancel() }
         lifecycleHandles.removeAll()
         ruleInjectionHook = nil
+
+        // 存储运行时：插件专属数据目录（迁移已在 onBoot 之前完成）。
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            AgentRulesRuntime.configure(
+                settingsDirectory: storage.pluginDataDirectory(for: id).appending(path: "settings", directoryHint: .isDirectory)
+            )
+        }
 
         // 配置运行时：项目服务（工具 fallback 到当前项目路径）。
         let project = kernel.resolveProvider((any ProjectProviding).self)

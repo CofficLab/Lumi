@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginConversationBehavior", targets: ["PluginConversationBehavior"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../KitLLM"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderChatSection"),
@@ -17,9 +17,9 @@ let package = Package(
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderAgentLoop"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0")
     ],
     targets: [
         .target(

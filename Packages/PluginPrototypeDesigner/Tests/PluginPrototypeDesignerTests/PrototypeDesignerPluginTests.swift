@@ -134,6 +134,42 @@ struct PrototypeDesignerPluginTests {
         PrototypeDesignerRuntime.reset()
     }
 
+    @Test("加入项目不预建存储目录，真正写入时才创建")
+    func doesNotCreateStorageDirectoryUntilWrite() throws {
+        PrototypeDesignerRuntime.reset()
+        let projectRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("prototype-lazy-dir-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
+        defer {
+            PrototypeDesignerRuntime.reset()
+            try? FileManager.default.removeItem(at: projectRoot)
+        }
+
+        let storage = projectRoot
+            .appendingPathComponent(".lumi", isDirectory: true)
+            .appendingPathComponent(PrototypeDesignerRuntime.projectFolderName, isDirectory: true)
+
+        PrototypeDesignerRuntime.setProjectStorage(
+            projectPath: projectRoot.path,
+            projectStorageDirectory: storage
+        )
+
+        // 仅打开项目不应留下空目录。
+        #expect(!FileManager.default.fileExists(atPath: storage.path))
+        #expect(WorkspaceStore.shared.projects.isEmpty)
+
+        // 真正创建原型项目时才创建目录。
+        let device = try #require(PrototypeDeviceKind.iPhone15Pro.preset)
+        _ = try WorkspaceStore.shared.documentStore.createProject(
+            storagePath: WorkspaceStore.shared.projectStoragePath,
+            slug: "lazy-flow",
+            title: "Lazy Flow",
+            style: .hiFi,
+            device: device
+        )
+        #expect(FileManager.default.fileExists(atPath: storage.path))
+    }
+
     @Test func storagePathIsEmptyWithoutOpenProject() {
         PrototypeDesignerRuntime.reset()
         #expect(WorkspaceStore.shared.projectStoragePath.isEmpty)
@@ -141,7 +177,7 @@ struct PrototypeDesignerPluginTests {
         #expect(WorkspaceStore.shared.lastError == nil)
     }
 
-    /// 空态（无原型项目）时不应有任何可渲染的选中态，主面板直接展示 onboarding 引导。
+    /// 空态（无原型项目）时不应有任何可渲染的选中态，主面板直接展示空状态。
     ///
     /// 该分支曾额外渲染一个只含刷新按钮的顶部工具栏，与引导内容重复；
     /// 刷新入口已在侧边栏 Rail 提供，因此该工具栏已移除。这里锁定触发条件，

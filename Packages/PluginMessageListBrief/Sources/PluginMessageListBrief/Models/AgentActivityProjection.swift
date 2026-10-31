@@ -31,6 +31,19 @@ struct AgentActivityProjection: Equatable, Sendable {
     let title: String
     let detail: String?
 
+    /// 状态卡那一行的完整文本。
+    ///
+    /// 状态卡恒为**一行**：标题与细节合并到同一行，中间用「·」分隔；
+    /// 细节缺失或为空时只显示标题。
+    ///
+    /// 历史上状态卡是「标题 + 细节」上下两行，细节缺失时用占位空格把第二行
+    /// 藏起来，于是用户看到的状态卡时而一行时而两行。现在统一成一行，
+    /// 视觉不再随阶段抖动。
+    var statusLineText: String {
+        guard let detail, !detail.isEmpty else { return title }
+        return "\(title) · \(detail)"
+    }
+
     static func resolve(
         conversationState: ConversationStateSnapshot?,
         streamingStage: MessageStreamingStage

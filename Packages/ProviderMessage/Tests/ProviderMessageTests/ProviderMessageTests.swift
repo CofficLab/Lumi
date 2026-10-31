@@ -290,6 +290,24 @@ struct ProviderMessageTests {
         #expect(!MessageTimelineEvent.isContextCompaction(retry))
     }
 
+    @Test("App Store Connect 提交时间线事件可识别且不回流 LLM")
+    func appStoreSubmissionTimelineDetection() {
+        let conv = UUID()
+        let submission = Message(
+            conversationID: conv,
+            role: .system,
+            content: "即将提交审核：1.2.0 · iOS",
+            metadata: [MessageTimelineEvent.metadataKey: MessageTimelineEvent.appStoreSubmission],
+            renderKind: MessageTimelineEvent.appStoreSubmissionRenderKind
+        )
+
+        #expect(MessageTimelineEvent.isAppStoreSubmission(submission))
+        #expect(MessageTimelineEvent.isTimelineEvent(submission))
+        #expect(!MessageTimelineEvent.isContextCompaction(submission))
+        #expect(!MessageTimelineEvent.isAgentLoopRetry(submission))
+        #expect(!MessageTimelineEvent.isGoalTaskContinuation(submission))
+    }
+
     @Test("isActualContextCompaction requires the actual marker")
     func actualCompactionRequiresMarker() {
         let conv = UUID()

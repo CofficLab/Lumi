@@ -13,7 +13,7 @@ import Testing
 @MainActor
 struct PluginDeviceTests {
 
-    @Test("onBoot 注册设置入口、主内容与文档")
+    @Test("onBoot 不再注册内存监控设置入口，但仍注册主内容与文档")
     func onBootRegistersEntryContentViewAndDocs() throws {
         let kernel = KernelCoreContainer()
         let settings = DefaultSettingViewProviding()
@@ -24,14 +24,12 @@ struct PluginDeviceTests {
         try kernel.registerProvider((any DocsViewProviding).self, docs)
 
         let plugin = DevicePlugin()
+        // 文档条目在 onRegister 注册，设置/内容入口在 onBoot 注册
+        try plugin.onRegister(kernel: kernel)
         try plugin.onBoot(kernel: kernel)
 
-        // 设置入口
-        #expect(settings.entries.count == 1)
-        let entry = settings.entries[0]
-        #expect(entry.id == "\(plugin.id).memory-settings")
-        #expect(entry.title == "Memory Monitor")
-        #expect(type(of: entry.makeDetailView()) == AnyView.self)
+        // 设置入口：内存监控已移除，插件不再贡献任何设置项
+        #expect(settings.entries.isEmpty)
 
         // 主内容视图
         #expect(type(of: contentView.makeContentView()) == AnyView.self)
@@ -58,8 +56,8 @@ struct PluginDeviceTests {
         let plugin = DevicePlugin() // order 150
         try plugin.onBoot(kernel: kernel)
 
-        #expect(settings.entries.count == 2)
-        #expect(settings.entries.map(\.id) == ["\(plugin.id).memory-settings", "general"])
+        #expect(settings.entries.count == 1)
+        #expect(settings.entries.map(\.id) == ["general"])
     }
 
     @Test("设置视图未注册时 onBoot 优雅降级")
@@ -81,8 +79,8 @@ struct PluginDeviceTests {
         try kernel.start(plugins: [plugin])
 
         #expect(kernel.isPluginRegistered(id: plugin.id))
-        #expect(settings.entries.count == 1)
-        #expect(settings.entries[0].id == "\(plugin.id).memory-settings")
+        // 内存监控已移除：启动后不再贡献设置项
+        #expect(settings.entries.isEmpty)
     }
 
     @Test("ActivityBar 激活设备入口时切换主内容")

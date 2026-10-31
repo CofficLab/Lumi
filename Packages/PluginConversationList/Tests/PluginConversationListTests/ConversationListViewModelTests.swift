@@ -54,6 +54,56 @@ import Testing
     #expect(viewModel.headerVisible)
     #expect(viewModel.headerTitle == "项目对话 (Two)")
     #expect(!viewModel.hasMultipleProjects)
+    // 徽标条数只统计当前项目的对话，不含其它项目的。
+    #expect(viewModel.conversationCount == 1)
+}
+
+@Test @MainActor func conversationCountReflectsScopeAndUpdatesOnChange() async throws {
+    let conversations = DefaultConversationManager()
+    let project = DefaultProjectProvider()
+    try await project.openProject(at: "/workspace/One")
+    _ = try conversations.createConversation(title: "One", projectPath: "/workspace/One", providerID: nil, modelName: nil)
+    try await project.openProject(at: "/workspace/Two")
+    _ = try conversations.createConversation(title: "Two", projectPath: "/workspace/Two", providerID: nil, modelName: nil)
+
+    let context = makeListContext(conversations: conversations, project: project)
+    // 观察器把「对话增删」转成上下文事件，ViewModel 收到后自动刷新条数。
+    let contextObserver = ConversationListContextObserver(
+        conversations: conversations,
+        conversationState: nil,
+        context: context
+    )
+
+    let allViewModel = ConversationListViewModel(
+        context: context,
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .all
+    )
+    await allViewModel.loadInitialIfNeeded()
+    // 「所有项目」统计全库顶层对话。
+    #expect(allViewModel.conversationCount == 2)
+
+    let currentViewModel = ConversationListViewModel(
+        context: context,
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .currentProject
+    )
+    await currentViewModel.loadInitialIfNeeded()
+    // 「当前项目」只统计当前项目下的对话。
+    #expect(currentViewModel.conversationCount == 1)
+
+    // 新建对话后条数随之更新。
+    _ = try conversations.createConversation(title: "Three", projectPath: "/workspace/Two", providerID: nil, modelName: nil)
+    let didUpdate = await waitUntil {
+        currentViewModel.conversationCount == 2
+    }
+    #expect(didUpdate)
+
+    currentViewModel.cancel()
+    allViewModel.cancel()
+    contextObserver.cancel()
 }
 
 @Test @MainActor func nextPageAppendsOnlyTheRemainingConversations() async throws {
@@ -143,10 +193,26 @@ import Testing
     )
     await viewModel.reload()
 
+    // - Important: 「未受影响」的基准必须是**创建时的实际值**，不能假定为 nil。
+    //   `createConversation` 会把 `globalAutomationLevel`（默认 `.build`）
+    //   写入每个新会话，因此 `automationLevel` 实际恒非 nil。曾经这里断言
+    //   `== nil`，于是该用例长期失败 —— 但失败的不是产品，而是断言基准错了：
+    //   它把「默认值」误当成了「缺省值」。
+    let untouchedBaseline = viewModel.conversations
+        .first(where: { $0.id == secondID })?.automationLevel
+    #expect(
+        untouchedBaseline == .build,
+        "新会话应继承全局自动化等级 .build，实际 \(String(describing: untouchedBaseline))"
+    )
+
     conversations.setAutomationLevel(.autonomous, for: firstID)
 
     #expect(viewModel.conversations.first(where: { $0.id == firstID })?.automationLevel == .autonomous)
-    #expect(viewModel.conversations.first(where: { $0.id == secondID })?.automationLevel == nil)
+    // 未被修改的会话必须**保持原值**，而不是变成 nil 或跟着变。
+    #expect(
+        viewModel.conversations.first(where: { $0.id == secondID })?.automationLevel == untouchedBaseline,
+        "第二个会话不应被这次修改影响"
+    )
     viewModel.cancel()
     contextObserver.cancel()
 }

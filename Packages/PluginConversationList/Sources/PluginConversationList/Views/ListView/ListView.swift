@@ -74,6 +74,10 @@ struct ListView: View {
                 .padding(.vertical, 4)
             }
             .scrollContentBackground(.hidden)
+            // 给容器一个稳定标识：UI 测试需要把查询范围收窄到列表内部，
+            // 否则「按标题定位会话」会误命中消息列表正文里的同名文本
+            // （实测夹具文案「大会话问题 N」就同时出现在消息区）。
+            .accessibilityIdentifier(ConversationListAccessibility.listID)
         }
     }
 }

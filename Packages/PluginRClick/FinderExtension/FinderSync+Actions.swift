@@ -50,6 +50,56 @@ extension FinderSync {
         openURLs(urlsToOpen, withAppBundleIdentifier: "com.microsoft.VSCode")
     }
 
+    @IBAction nonisolated func openInLumi(_ sender: AnyObject?) {
+        performSelector(onMainThread: #selector(performOpenInLumi(_:)), with: sender, waitUntilDone: false)
+    }
+
+    @objc @MainActor
+    private func performOpenInLumi(_ sender: AnyObject?) {
+        if Self.verbose {
+            FinderSync.logger.info("\(self.t)触发「在 Lumi 中打开」操作")
+        }
+
+        let items = cachedSelectedURLs.isEmpty ? (getSelectedURLs() ?? []) : cachedSelectedURLs
+        // 只取文件夹：Lumi 的「项目」语义是目录根。
+        let folders = items.filter { isDirectory($0) }
+        guard let target = folders.first else {
+            if Self.verbose {
+                FinderSync.logger.warning("\(self.t)没有选中文件夹，无法在 Lumi 中打开")
+            }
+            return
+        }
+
+        guard let url = Self.openProjectRequestURL(for: target) else {
+            FinderSync.logger.error("\(self.t)无法生成「在 Lumi 中打开」请求")
+            return
+        }
+
+        guard NSWorkspace.shared.open(url) else {
+            FinderSync.logger.error("\(self.t)无法请求 Lumi 主应用打开项目")
+            return
+        }
+
+        if Self.verbose {
+            FinderSync.logger.info("\(self.t)已请求 Lumi 打开项目: \(target.path)")
+        }
+    }
+
+    /// 构造 `lumi://finder/open-project?path=<绝对路径>` 请求。
+    ///
+    /// 路径通过 URL query 传递，由 `URLComponents` 负责百分号编码，
+    /// 避免路径中的空格、`#`、`&` 等字符破坏 URL。
+    private static func openProjectRequestURL(for directory: URL) -> URL? {
+        var components = URLComponents()
+        components.scheme = FinderRuntimeEnvironment.urlScheme
+        components.host = "finder"
+        components.path = "/open-project"
+        components.queryItems = [
+            URLQueryItem(name: "path", value: directory.standardizedFileURL.path)
+        ]
+        return components.url
+    }
+
     @IBAction nonisolated func openInTerminal(_ sender: AnyObject?) {
         performSelector(onMainThread: #selector(performOpenInTerminal(_:)), with: sender, waitUntilDone: false)
     }

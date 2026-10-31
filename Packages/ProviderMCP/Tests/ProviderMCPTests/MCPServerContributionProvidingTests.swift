@@ -83,6 +83,8 @@ struct MCPServerContributionProvidingTests {
         let same: any MCPServerContributionProviding = providerA
         // AnyObject 约束使 === 可用。
         #expect(providerA === same)
-        #expect((providerA as AnyObject) !== (providerB as AnyObject))
+        // 直接用 existential 的 `!==`，避免 `as AnyObject` 转换——
+        // 后者在 @MainActor 类型上会触发 Swift 前端崩溃（ASTLoweringRequest）。
+        #expect(same !== providerB)
     }
 }

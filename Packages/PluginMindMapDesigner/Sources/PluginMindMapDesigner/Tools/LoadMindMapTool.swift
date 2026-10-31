@@ -35,11 +35,11 @@ public struct LoadMindMapTool: SuperAgentTool {
         do {
             try await MainActor.run {
                 // 先确保该作用域磁盘数据已载入，再选中。
-                MindMapStore.shared.reload(scope: scope)
-                try MindMapStore.shared.selectMindMap(id: mapId, scope: scope)
+                MindMapToolSupport.store().reload(scope: scope)
+                try MindMapToolSupport.store().selectMindMap(id: mapId, scope: scope)
             }
             await MindMapToolSupport.notify(scope: scope, mapId: mapId)
-            let map = await MainActor.run { MindMapStore.shared.maps(for: scope).first { $0.id == mapId } }
+            let map = await MainActor.run { MindMapToolSupport.store().maps(for: scope).first { $0.id == mapId } }
             switch language {
             case .chinese:
                 return "已加载思维导图到画布。\n作用域: \(scope.rawValue)\n思维导图ID: \(mapId)\n标题: \(map?.title ?? "?")\n节点数: \(map?.nodes.count ?? 0)"
@@ -47,7 +47,7 @@ public struct LoadMindMapTool: SuperAgentTool {
                 return "Loaded mind map onto canvas.\nscope=\(scope.rawValue)\nmapId: \(mapId)\ntitle: \(map?.title ?? "?")\nnodes: \(map?.nodes.count ?? 0)"
             }
         } catch {
-            await MainActor.run { MindMapStore.shared.setError(error.localizedDescription) }
+            await MainActor.run { MindMapToolSupport.store().setError(error.localizedDescription) }
             return MindMapToolSupport.error(error, language: language)
         }
     }

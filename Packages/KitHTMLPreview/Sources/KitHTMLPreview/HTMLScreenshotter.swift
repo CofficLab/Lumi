@@ -11,19 +11,16 @@ public struct HTMLScreenshotter {
 
     /// 截取 WebView 完整页面内容，返回 `NSImage`。
     ///
-    /// - Parameter webView: 已加载 HTML 内容的 `WKWebView` 实例
+    /// - Parameters:
+    ///   - webView: 已加载 HTML 内容的 `WKWebView` 实例
+    ///   - timeout: 等待 WebKit 生成 PDF 的最长时间（秒）。超时抛 `HTMLError.renderTimedOut`。
     /// - Returns: 包含完整页面内容的 `NSImage`
-    public static func capture(_ webView: WKWebView) async throws -> NSImage {
-        let pdfData = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-            webView.createPDF { result in
-                switch result {
-                case .success(let data):
-                    continuation.resume(returning: data)
-                case .failure(let error):
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
+    ///
+    /// - Note: `WKWebView.createPDF` 的完成回调**不保证**一定送达。若 WebKit 进程
+    ///   状态异常或页面始终无法完成布局，回调可能永不到达，此时 continuation 永不恢复，
+    ///   调用方（以及 `swift test` 进程）会永久挂起。因此这里必须带超时保护。
+    public static func capture(_ webView: WKWebView, timeout: TimeInterval = 30) async throws -> NSImage {
+        let pdfData = try await createPDF(from: webView, timeout: timeout)
 
         guard let pdfDocument = PDFDocument(data: pdfData) else {
             throw HTMLError.pdfCreationFailed
@@ -87,6 +84,59 @@ public struct HTMLScreenshotter {
         image.unlockFocus()
         return image
     }
+
+    /// 调用 `WKWebView.createPDF` 并等待结果，带超时保护。
+    ///
+    /// WebKit 的完成回调不保证送达；没有超时的话，未送达时 continuation 永不恢复，
+    /// 调用方会永久挂起（见 Issue #127）。
+    private static func createPDF(from webView: WKWebView, timeout: TimeInterval) async throws -> Data {
+        let state = PDFRequestState()
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
+            state.attach(continuation)
+
+            webView.createPDF { result in
+                switch result {
+                case .success(let data):
+                    state.finish(.success(data))
+                case .failure(let error):
+                    state.finish(.failure(error))
+                }
+            }
+
+            // 超时兜底：回调永不到达时也要恢复 continuation，否则调用方永久挂起。
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(timeout))
+                state.finish(.failure(HTMLError.renderTimedOut))
+            }
+        }
+    }
+
+    /// `createPDF` 的一次性完成状态。
+    ///
+    /// WebKit 回调与超时任务都可能先到，用一次性 `finish` 保证 continuation 只被恢复一次。
+    @MainActor
+    final class PDFRequestState {
+        private var continuation: CheckedContinuation<Data, Error>?
+        private var completed = false
+
+        /// 是否已经完成（用于断言「continuation 只被恢复一次」）。
+        var isCompleted: Bool { completed }
+
+        func attach(_ continuation: CheckedContinuation<Data, Error>) {
+            self.continuation = continuation
+        }
+
+        func finish(_ result: Result<Data, Error>) {
+            guard !completed else { return }
+            completed = true
+            let pending = continuation
+            continuation = nil
+            switch result {
+            case .success(let data): pending?.resume(returning: data)
+            case .failure(let error): pending?.resume(throwing: error)
+            }
+        }
+    }
 }
 
 // MARK: - Error
@@ -96,6 +146,8 @@ extension HTMLScreenshotter {
         case pdfCreationFailed
         case emptyDocument
         case renderingFailed(String)
+        /// 等待 WebKit 渲染结果超时。
+        case renderTimedOut
 
         public var errorDescription: String? {
             switch self {
@@ -105,6 +157,8 @@ extension HTMLScreenshotter {
                 return "PDF document is empty"
             case .renderingFailed(let msg):
                 return "Rendering failed: \(msg)"
+            case .renderTimedOut:
+                return "Timed out while rendering HTML content"
             }
         }
     }

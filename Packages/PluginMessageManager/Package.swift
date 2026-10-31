@@ -9,8 +9,8 @@ let package = Package(
         .library(name: "PluginMessageManager", targets: ["PluginMessageManager"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.6.0"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderAgentLoop"),

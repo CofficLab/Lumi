@@ -1,9 +1,16 @@
 import Foundation
+import KitAgentTool
 import ProviderSkill
 
 /// Skill 扫描器协议（可注入 mock 测试）。
 public protocol SkillScanning: Sendable {
     func scanSkills(projectPath: String) -> [SkillMetadata]
+}
+
+/// 技能目录名常量。
+enum SkillDirectoryNames {
+    /// 项目技能子目录名（位于 `.lumi/` 与历史目录 `.agent/` 之下）。
+    static let skills = "skills"
 }
 
 /// 内置技能提供者协议：返回应用随包携带的技能元数据。
@@ -81,8 +88,11 @@ public enum SkillMergePolicy {
     }
 }
 
-/// 默认文件系统扫描器：扫描 `.agent/skills/` 目录，解析 metadata.json，
+/// 默认文件系统扫描器：扫描 `.lumi/skills/` 目录，解析 metadata.json，
 /// 验证 SKILL.md 存在。复刻旧版 `SkillScanner`。
+///
+/// 同时兼容历史目录 `.agent/skills/`：两个目录的技能合并返回，同名技能
+/// 以 `.lumi/skills/` 为准（旧项目因此无需迁移即可继续使用）。
 ///
 /// 内部复用 `SkillDirectoryLoader`（与内置 / 插件贡献共用同一套目录约定）。
 public struct SkillScanner: SkillScanning {
@@ -98,9 +108,24 @@ public struct SkillScanner: SkillScanning {
     }
 
     public func scanSkills(projectPath: String) -> [SkillMetadata] {
-        let directoryURL = URL(fileURLWithPath: projectPath)
-            .appendingPathComponent(".agent/skills")
-        return loader.loadSkills(from: directoryURL)
+        let directories = ProjectConfigDirectory.readURLs(
+            projectPath: projectPath,
+            component: SkillDirectoryNames.skills
+        )
+
+        // 逐目录扫描并按技能名去重：`.lumi/skills` 先扫，优先保留。
+        var seenNames = Set<String>()
+        var skills: [SkillMetadata] = []
+
+        for directory in directories {
+            for skill in loader.loadSkills(from: directory) {
+                guard !seenNames.contains(skill.name) else { continue }
+                seenNames.insert(skill.name)
+                skills.append(skill)
+            }
+        }
+
+        return skills.sorted { $0.name < $1.name }
     }
 }
 

@@ -46,6 +46,11 @@ struct AgentLoopRetryMessageView: View {
         message.metadata[MessageTimelineEvent.agentLoopRetryHTTPStatusCodeKey]
     }
 
+    /// 服务端建议的重试等待秒数。存在时说明重试不会立即发生。
+    private var retryAfterSeconds: String? {
+        message.metadata[MessageTimelineEvent.agentLoopRetryRetryAfterKey]
+    }
+
     private var providerID: String? {
         message.metadata[MessageTimelineEvent.agentLoopRetryProviderIDKey]
     }
@@ -107,6 +112,9 @@ struct AgentLoopRetryMessageView: View {
             }
             if let httpStatus, !httpStatus.isEmpty {
                 detailRow(title: "HTTP 状态码", body: httpStatus)
+            }
+            if let retryAfterSeconds, !retryAfterSeconds.isEmpty {
+                detailRow(title: "等待", body: "\(retryAfterSeconds) 秒后重试")
             }
             if let providerID, !providerID.isEmpty {
                 detailRow(title: "Provider", body: providerID)

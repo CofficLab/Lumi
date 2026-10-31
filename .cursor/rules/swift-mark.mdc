@@ -6,6 +6,6 @@ alwaysApply: false
 
 # Swift 标记规范
 
-请参考项目规范文档：`.agent/rules/swift-mark.md`
+请参考项目规范文档：`.lumi/rules/swift-mark.md`
 
 所有 Swift 代码的 MARK 注释应遵循上述规范文档中的标准。

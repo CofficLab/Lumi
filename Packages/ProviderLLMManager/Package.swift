@@ -31,6 +31,7 @@ let package = Package(
             name: "ProviderLLMManagerTests",
             dependencies: [
                 "ProviderLLMManager",
+                .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
             ],
             path: "Tests/ProviderLLMManagerTests"

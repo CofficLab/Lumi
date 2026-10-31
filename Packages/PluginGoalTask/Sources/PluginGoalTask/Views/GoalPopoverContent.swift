@@ -12,6 +12,7 @@ import SwiftUI
 struct GoalPopoverContent: View {
     @LumiTheme private var theme
     @ObservedObject var viewModel: GoalVM
+    let forkCoordinator: GoalForkCoordinator?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -28,6 +29,7 @@ struct GoalPopoverContent: View {
         HStack {
             Label(pluginLocalization.string("Goals"), systemImage: "target")
                 .font(.headline)
+                .accessibilityIdentifier(GoalAccessibility.popoverHeader)
 
             Spacer()
 
@@ -35,6 +37,7 @@ struct GoalPopoverContent: View {
                 Text("\(viewModel.goals.count)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .accessibilityIdentifier(GoalAccessibility.popoverCount)
             }
 
             if viewModel.isLoading {
@@ -72,7 +75,7 @@ struct GoalPopoverContent: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     ForEach(viewModel.goals) { item in
-                        GoalRowView(item: item)
+                        GoalRowView(item: item, forkCoordinator: forkCoordinator)
                     }
                 }
                 .padding(12)
@@ -88,6 +91,7 @@ struct GoalPopoverContent: View {
             Text(pluginLocalization.string("No goals yet"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .accessibilityIdentifier(GoalAccessibility.popoverEmptyText)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()

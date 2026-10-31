@@ -1,6 +1,8 @@
+import Foundation
 import KernelCore
 import ProviderAppUpdate
 import ProviderNetwork
+import ProviderStorage
 
 /// Lumi distribution-level update bootstrap.
 ///
@@ -10,10 +12,20 @@ import ProviderNetwork
 /// registered `NetworkProviding`, preserving the old plugin's boot behavior.
 @MainActor
 public enum AppUpdateBootstrap {
+    /// 插件数据目录所用的 pluginID。该插件不注册进 Kernel 插件目录，
+    /// 自行声明以保持与存储目录一致。
+    static let pluginID = "com.coffic.lumi.plugin.app-update"
+
     private static var requestObserver: UpdateRequestObserver?
     private static weak var registeredKernel: KernelCoreContainer?
 
     public static func start(kernel: KernelCoreContainer) {
+        // 存储目录注入必须早于 UpdateService.shared 的首次访问（其 init 会读取通道）。
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            let directory = storage.pluginDataDirectory(for: pluginID)
+            AppUpdateRuntime.configure(settingsDirectory: directory)
+            importLegacyChannelIfNeeded(to: directory)
+        }
         let service = UpdateService.shared
         // This is a host-owned provider: the updater is intentionally not
         // part of the generic plugin catalog, but settings can still use the
@@ -41,5 +53,25 @@ public enum AppUpdateBootstrap {
         requestObserver = nil
         registeredKernel?.unregisterProvider((any AppUpdateChannelProviding).self)
         registeredKernel = nil
+    }
+
+    /// 更新通道此前存在 `UserDefaults.standard`，仅在插件存储尚无记录时导入。
+    ///
+    /// 该插件是 host-owned（不经 Kernel 的 PluginDataMigrating 流程），
+    /// 因此在此处做一次性导入。`UserDefaults` 原 key 保留，便于回退。
+    ///
+    /// - Important: legacy 偏好域可注入。测试必须注入隔离的偏好实例，
+    ///   否则会读写开发者本机的真实偏好——既污染数据，也让断言受残留影响。
+    nonisolated(unsafe) public static var legacyUserDefaults: UserDefaults = .standard
+
+    private static func importLegacyChannelIfNeeded(to directory: URL) {
+        guard let rawValue = legacyUserDefaults.string(forKey: AppUpdateChannel.userDefaultsKey),
+              let channel = AppUpdateChannel(rawValue: rawValue)
+        else {
+            return
+        }
+        let settingsFile = directory.appendingPathComponent("settings.plist")
+        guard !FileManager.default.fileExists(atPath: settingsFile.path) else { return }
+        AppUpdatePluginLocalStore(settingsDirectory: directory).setChannel(channel)
     }
 }

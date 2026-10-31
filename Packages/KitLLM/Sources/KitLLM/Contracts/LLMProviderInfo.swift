@@ -119,13 +119,25 @@ public struct LLMModelInfo: Sendable, Equatable {
     /// 是否支持工具调用。
     public let supportsTools: Bool
 
+    /// 上游是否已不再提供该模型（退役标记）。
+    ///
+    /// 远程型供应商（如 MiniMax）会在静态清单之外再做一次远程刷新。当上游
+    /// 下线了某模型，`/v1/models` 不再返回它，但清单仍会把它留在列表里——
+    /// 保留是为离线兜底底座的稳定性（网络抖动不该让模型凭空消失）。
+    /// 本字段让 UI 能对这类模型做视觉区分（灰显 / 角标），**不隐藏**。
+    ///
+    /// - Note: 只有在「远程列表已成功刷新」的前提下该标记才有意义。远程未就绪
+    ///   或刷新失败时必须保持 `false`，否则会把全部模型误标为退役。
+    public let isRetired: Bool
+
     public init(
         id: String,
         displayName: String? = nil,
         contextWindowSize: Int? = nil,
         supportsStreaming: Bool = true,
         supportsVision: Bool = false,
-        supportsTools: Bool = true
+        supportsTools: Bool = true,
+        isRetired: Bool = false
     ) {
         self.id = id
         self.displayName = displayName ?? id
@@ -133,6 +145,7 @@ public struct LLMModelInfo: Sendable, Equatable {
         self.supportsStreaming = supportsStreaming
         self.supportsVision = supportsVision
         self.supportsTools = supportsTools
+        self.isRetired = isRetired
     }
 }
 

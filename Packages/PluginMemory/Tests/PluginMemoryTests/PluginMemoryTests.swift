@@ -81,7 +81,7 @@ struct MemoryPluginTests {
         let (storage, root) = makeTempStorage()
         defer { try? FileManager.default.removeItem(at: root) }
 
-        let tool = SaveMemoryTool(storage: storage, project: nil)
+        let tool = SaveMemoryTool(storage: storage, projectCapability: MemoryProjectCapabilityAdapter(project: nil))
         let result = try await tool.execute(arguments: [
             "id": ToolArgument("test-mem"),
             "name": ToolArgument("Test"),
@@ -97,7 +97,7 @@ struct MemoryPluginTests {
         let (storage, root) = makeTempStorage()
         defer { try? FileManager.default.removeItem(at: root) }
 
-        let tool = RecallMemoryTool(storage: storage, project: nil)
+        let tool = RecallMemoryTool(storage: storage, projectCapability: MemoryProjectCapabilityAdapter(project: nil))
         let result = try await tool.execute(arguments: ["id": ToolArgument("nonexistent")])
         #expect(result.contains("Not Found"))
     }

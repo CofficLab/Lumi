@@ -1,5 +1,6 @@
 import AppKit
 import ProviderEditor
+import ProviderStorage
 import EditorLanguageRuntime
 import EditorService
 import EditorSource
@@ -10,6 +11,9 @@ import LumiLoggingKit
 import os
 
 /// KernelCore 的编辑器宿主：提供与旧宿主相同的 SourceEditor 语法高亮能力。
+///
+/// 不实现 `PluginDataMigrating`：旧数据目录 `Application Support/<storageDirectoryName>/`
+/// 不作搬迁，配置与键位从新目录重新生成。
 @MainActor
 public final class CodeEditorHostPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.editor-host", category: "EditorHost")
@@ -33,6 +37,14 @@ public final class CodeEditorHostPlugin: SuperPlugin, SuperLog {
     private var embeddedEditorProvider: EmbeddedEditorSurfaceProvider?
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        // 存储路径注入必须早于任何 EditorService / Store 的首次访问：
+        // `EditorConfigStore.store` 是 static let，首次访问即固化路径。
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            EditorSettingsLifecycle.hostPersistenceRootURL = {
+                storage.pluginDataDirectory(for: self.id)
+            }
+        }
+
         let registry = EditorExtensionRegistry()
         let service = EditorService(editorExtensionRegistry: registry)
         let contributions = EditorContributionRegistry(registry: registry)

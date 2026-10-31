@@ -20,7 +20,6 @@ public final class IconDocumentStore: ObservableObject {
     private var redoStack: [IconDocument] = []
     private(set) var projectStorageDirectory: URL?
     private(set) var currentProjectPath: String?
-    private let fileManager = FileManager.default
 
     public init() {}
 
@@ -70,9 +69,8 @@ public final class IconDocumentStore: ObservableObject {
         guard self.currentProjectPath != pathToStore else { return }
         self.currentProjectPath = pathToStore
         self.projectStorageDirectory = projectStorageDirectory?.standardizedFileURL
-        if let projectStorageDirectory {
-            try? fileManager.createDirectory(at: projectStorageDirectory, withIntermediateDirectories: true)
-        }
+        // 不预建目录：底层 `IconDocumentFileStore.save` 在真正写入时才会创建。
+        // 否则项目一打开就会留下空的 `.lumi/app-icon-designer`，让用户困惑。
         // 只有当前项目作用域，项目关闭时保留作用域但不显示文档。
         selectedScope = .project
         reloadScope(.project)

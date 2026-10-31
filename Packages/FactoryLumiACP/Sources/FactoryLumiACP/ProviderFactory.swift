@@ -26,6 +26,7 @@ import ProviderConversationInput
 import ProviderMessageStreaming
 import ProviderMessageRendering
 import ProviderPromptSuggestion
+import ProviderPromptSuggestionExecutor
 import ProviderCommand
 import ProviderIdleTime
 import ProviderLegacyData
