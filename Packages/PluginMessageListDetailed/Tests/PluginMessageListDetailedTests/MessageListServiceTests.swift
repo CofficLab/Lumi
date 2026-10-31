@@ -37,7 +37,12 @@ func messageRowsFilterAndMergeToolExecutionMessages() {
     )
 
     #expect(rows.count == 2)
-    #expect(rows[0].id == firstToolMessage.id)
+    // 合成行的 id 由**组内成员集合**派生，不再复用首条消息的 id。
+    // 原因：V3 用 `ForEach(historyRows)` + `.id(message.id)` 作为行的身份，
+    // id 不变时组内新增成员不会触发重新物化，新并入的挂起工具行
+    // （及其授权卡片）就画不出来 —— 用户只看到「等待你的输入…」。
+    #expect(rows[0].id != firstToolMessage.id)
+    #expect(rows[0].id != secondToolMessage.id)
     #expect(rows[0].turnID == turnID)
     #expect(rows[0].renderKind == "turn-activity")
     #expect(rows[0].toolCalls?.map(\.id) == ["call-1", "call-2"])
