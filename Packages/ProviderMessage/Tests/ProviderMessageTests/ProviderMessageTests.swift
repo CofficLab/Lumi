@@ -308,6 +308,41 @@ struct ProviderMessageTests {
         #expect(!MessageTimelineEvent.isGoalTaskContinuation(submission))
     }
 
+    @Test("模型切换时间线事件可识别且不回流 LLM")
+    func modelSwitchedTimelineDetection() {
+        let conv = UUID()
+        let switched = Message(
+            conversationID: conv,
+            role: .system,
+            content: "已从 openai · gpt-5 切换到 anthropic · claude-opus",
+            metadata: [MessageTimelineEvent.metadataKey: MessageTimelineEvent.modelSwitched],
+            renderKind: MessageTimelineEvent.modelSwitchedRenderKind
+        )
+
+        #expect(MessageTimelineEvent.isModelSwitched(switched))
+        #expect(MessageTimelineEvent.isTimelineEvent(switched))
+        // 不应被其它时间线事件类型误判
+        #expect(!MessageTimelineEvent.isContextCompaction(switched))
+        #expect(!MessageTimelineEvent.isAgentLoopRetry(switched))
+        #expect(!MessageTimelineEvent.isGoalTaskContinuation(switched))
+        #expect(!MessageTimelineEvent.isAppStoreSubmission(switched))
+    }
+
+    @Test("模型切换事件仅凭 renderKind 也可识别")
+    func modelSwitchedDetectionByRenderKind() {
+        let conv = UUID()
+        let byRenderKind = Message(
+            conversationID: conv,
+            role: .system,
+            content: "",
+            renderKind: MessageTimelineEvent.modelSwitchedRenderKind
+        )
+        let plain = Message(conversationID: conv, role: .system, content: "普通系统消息")
+
+        #expect(MessageTimelineEvent.isModelSwitched(byRenderKind))
+        #expect(!MessageTimelineEvent.isModelSwitched(plain))
+    }
+
     @Test("isActualContextCompaction requires the actual marker")
     func actualCompactionRequiresMarker() {
         let conv = UUID()
