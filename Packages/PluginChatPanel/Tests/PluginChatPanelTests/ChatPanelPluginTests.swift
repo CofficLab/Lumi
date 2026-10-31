@@ -109,6 +109,132 @@ struct ChatPanelPluginTests {
         try plugin.onShutdown(kernel: kernel)
     }
 
+    @Test("Chat 激活时 Rail 视图已注入且可见")
+    func chatActivationInjectsAndShowsRailView() throws {
+        let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
+        let chat = DefaultChatSectionProviding()
+        let rootView = DefaultRootViewProviding()
+        let railView = DefaultRailViewProviding()
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
+        try kernel.registerProvider((any RootViewProviding).self, rootView)
+        try kernel.registerProvider((any RailViewProviding).self, railView)
+
+        let plugin = ChatPanelPlugin()
+        try plugin.onBoot(kernel: kernel)
+
+        // Rail 必须「可渲染」而不仅是可见：WorkbenchSplitView 的判据是
+        // `railView != nil && isRailViewVisible`，两者缺一 Rail 都不出现。
+        #expect(rootView.view(for: .rail) != nil)
+        #expect(rootView.isRailViewVisible)
+        try plugin.onShutdown(kernel: kernel)
+    }
+
+    /// 全新安装态：宿主 `bindRailViewVisibility` 用 `hasVisibleTabs == false`
+    /// 覆盖 Chat 的可见性，Chat 必须把 Rail 拉回来。
+    ///
+    /// - Important: 这是真实启动顺序（`ViewFactory.makeMainView` 在
+    ///   `kernel.start` 之后才执行绑定），也是最容易回归的一条——观察者
+    ///   一旦漏掉 `.railViewVisibilityChanged(false)`，全新用户的 Chat 首屏
+    ///   就会没有 Rail 栏，且不会报任何错。
+    @Test("无任何可见 Rail tab 的全新安装态下，Chat 仍保持 Rail 可见")
+    func chatKeepsRailVisibleWhenHostBindsWithoutVisibleTabs() throws {
+        let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
+        let chat = DefaultChatSectionProviding()
+        let rootView = DefaultRootViewProviding()
+        let railView = DefaultRailViewProviding()
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
+        try kernel.registerProvider((any RootViewProviding).self, rootView)
+        try kernel.registerProvider((any RailViewProviding).self, railView)
+
+        let plugin = ChatPanelPlugin()
+        try plugin.onBoot(kernel: kernel)
+
+        // 对话列表 / 项目文件树尚未注册 tab，`hasVisibleTabs` 为 false。
+        #expect(!railView.hasVisibleTabs)
+
+        // 宿主视图工厂在插件启动后绑定 Rail 可见性。
+        rootView.bindRailViewVisibility(to: railView)
+
+        #expect(rootView.view(for: .rail) != nil)
+        #expect(rootView.isRailViewVisible)
+        try plugin.onShutdown(kernel: kernel)
+    }
+
+    /// 其它插件异步收敛 Rail tab 时也会写 `setRailViewVisible(hasVisibleTabs)`，
+    /// Chat 激活期间必须能顶回。
+    @Test("Chat 激活期间 Rail 可见类别被清空时仍保持 Rail 可见")
+    func chatKeepsRailVisibleWhenVisibleCategoriesEmpty() throws {
+        let storageRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ChatPanelPluginRailVisibilityTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: storageRoot) }
+
+        let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
+        let chat = DefaultChatSectionProviding()
+        let rootView = DefaultRootViewProviding()
+        let railView = DefaultRailViewProviding()
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
+        try kernel.registerProvider((any RootViewProviding).self, rootView)
+        try kernel.registerProvider((any RailViewProviding).self, railView)
+        try kernel.registerProvider(
+            (any StorageProviding).self,
+            DefaultStorageProvider(dataRootDirectory: storageRoot)
+        )
+
+        railView.registerTabs([
+            RailTabItem(id: "chat.tab-a", category: .chat, title: "A", systemImage: "a.circle") { AnyView(EmptyView()) },
+        ])
+
+        let plugin = ChatPanelPlugin()
+        try plugin.onBoot(kernel: kernel)
+        rootView.bindRailViewVisibility(to: railView)
+        #expect(rootView.isRailViewVisible)
+
+        // 某个插件把 Chat 可见类别全部过滤掉 → Rail 内容变空。
+        railView.setVisibleCategories([])
+        #expect(!railView.hasVisibleTabs)
+        // Rail 栏本身必须仍在（内容区空白），否则 Chat 首屏布局整体左移。
+        #expect(rootView.isRailViewVisible)
+        #expect(rootView.view(for: .rail) != nil)
+
+        try plugin.onShutdown(kernel: kernel)
+    }
+
+    /// 切走再切回 Chat：Rail 必须重新出现，不能停留在别的插件留下的隐藏态。
+    @Test("切到其它入口再切回 Chat 时 Rail 恢复可见")
+    func railRestoresWhenReactivatingChat() throws {
+        let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
+        let chat = DefaultChatSectionProviding()
+        let rootView = DefaultRootViewProviding()
+        let railView = DefaultRailViewProviding()
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
+        try kernel.registerProvider((any RootViewProviding).self, rootView)
+        try kernel.registerProvider((any RailViewProviding).self, railView)
+
+        let plugin = ChatPanelPlugin()
+        try plugin.onBoot(kernel: kernel)
+
+        // 模拟一个「全屏插件」激活：清空 Rail 可见 tab 并隐藏 Rail。
+        activityBar.addItems([ActivityBarItem(
+            id: "test.other.entry", title: "Other", systemImage: "square"
+        )])
+        activityBar.activateItem(id: "test.other.entry")
+        railView.setVisibleCategories([])
+        #expect(!rootView.isRailViewVisible)
+
+        activityBar.activateItem(id: plugin.id + ".entry")
+        #expect(rootView.view(for: .rail) != nil)
+        #expect(rootView.isRailViewVisible)
+        try plugin.onShutdown(kernel: kernel)
+    }
+
     @Test("Chat 在 tab 延迟注册后仍恢复保存的 Rail active tab")
     func chatRestoresTabRegisteredAfterReady() throws {
         let storageRoot = FileManager.default.temporaryDirectory

@@ -22,6 +22,21 @@ import SwiftUI
 /// 跨物化缓存后重物化只做一次字典命中。
 /// 仅缓存全部结果到位的解析;命中时校验工具调用 id 序列与当前消息一致,
 /// 不一致(消息被编辑等罕见情形)按未命中处理。
+///
+/// ## 缓存只缓存"结果",不缓存"授权状态"
+///
+/// 命中时**不得整体返回缓存里的旧快照**,只能拿它补齐当前消息里
+/// 还没有的结果(`result == nil`)那几项。其余字段——尤其是
+/// `authorizationState`——必须以消息为准。
+///
+/// 原因:高风险工具等待授权时,消息里的工具调用形态是
+/// 「占位结果 + `pendingAuthorization`」。用户点过「允许/拒绝」后,
+/// 消息被回写成授权终态(`userApproved` / `userRejected`)并落库。
+/// 若缓存整体覆盖,渲染层会再次看到 `pendingAuthorization`,
+/// `ToolApprovalRowRenderer.canRender` 判定为"需要授权"——
+/// **用户明明已经处理过,切走再切回却又被要求授权一次**。
+/// 切换对话会重建 `List`、重新物化工具行,必然重新查缓存,
+/// 因此这条路径是稳定可复现的。
 final class ToolCallResolutionCache: @unchecked Sendable {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.message-renderer", category: "ToolCallResolution")
 
@@ -40,7 +55,15 @@ final class ToolCallResolutionCache: @unchecked Sendable {
         let currentIDs = current.map(\.id)
         let cachedIDs = cached.map(\.id)
         guard currentIDs == cachedIDs else { return nil }
-        return cached
+        // 缓存只补齐"消息里还没有的结果"。其余字段以消息为准：
+        // `authorizationState` 是用户已经做出的决定（已落库），
+        // 用缓存里的旧值覆盖它会让已处理的授权重新弹出授权卡片。
+        return zip(current, cached).map { fresh, stale in
+            guard fresh.result == nil, let staleResult = stale.result else { return fresh }
+            var merged = fresh
+            merged.result = staleResult
+            return merged
+        }
     }
 
     func storeIfFullyResolved(messageID: UUID, toolCalls: [MessageToolCall]) {
@@ -73,6 +96,11 @@ struct ToolCallRowsView: View {
     /// 这样 ask_user 等挂起交互不会在消息正文渲染完整交互视图（V1 由底部
     /// 固定区单独展示），仅保留默认工具行摘要。
     let allowsCustomToolRenderers: Bool
+    /// **原始**回复级别（未经 `AssistantMessageView.contentVerbosity` 升格）。
+    ///
+    /// 折叠判定必须用原始级别：`verbosity` 里 brief 已被升格成 standard，
+    /// 用它判断会把 V1 连坐成 V2 一并折叠。
+    let originalVerbosity: ResponseVerbosity
 
     /// 根据"是否为 V1（原始 brief）"决定是否允许自定义工具渲染器。
     /// V1：不允许（ask_user 等挂起交互只由底部固定区展示）；V2/V3：允许。
@@ -89,13 +117,15 @@ struct ToolCallRowsView: View {
         stateViewModel: MessageRendererStateViewModel,
         message: Message,
         verbosity: ResponseVerbosity,
-        allowsCustomToolRenderers: Bool
+        allowsCustomToolRenderers: Bool,
+        originalVerbosity: ResponseVerbosity
     ) {
         self.capability = capability
         self.stateViewModel = stateViewModel
         self.message = message
         self.verbosity = verbosity
         self.allowsCustomToolRenderers = allowsCustomToolRenderers
+        self.originalVerbosity = originalVerbosity
     }
 
     private var toolCalls: [MessageToolCall] {
@@ -104,9 +134,14 @@ struct ToolCallRowsView: View {
 
     /// 结果从 nil 变为已完成时必须重新触发解析任务；否则第一次惰性
     /// 物化留下的 nil 快照会一直遮住消息后续回写的 toolCall.result。
+    ///
+    /// 授权状态同样必须纳入签名：用户点过「允许/拒绝」后，消息里的
+    /// `authorizationState` 从 `pendingAuthorization` 变成终态，而
+    /// `result` 前后都非 nil。只比较 `result != nil` 的话签名不变，
+    /// 解析任务不会重跑，授权卡片就会一直挂在原地不消失。
     private var resolutionTaskID: String {
         (message.toolCalls ?? [])
-            .map { "\($0.id):\($0.result != nil)" }
+            .map { "\($0.id):\($0.result != nil):\($0.authorizationState ?? "")" }
             .joined(separator: "|")
     }
 
@@ -180,6 +215,35 @@ struct ToolCallRowsView: View {
     }
 
     private var lumiCardRows: some View {
+        Group {
+            // 多个工具调用折叠成一行摘要，点击后在 popover 里逐条展开。
+            // 单个调用、以及任何「等用户处理」的调用都直接铺开——
+            // 后者若被藏进 popover，授权卡片就没人看得见，回合会永远卡住。
+            //
+            // - Important: 判定用 **originalVerbosity**（原始级别），
+            //   不能用 `verbosity`：brief 在进入这里之前已被升格成 standard，
+            //   用升格后的值会把 V1 连坐成 V2 一并折叠。
+            if ToolCallGroupCollapsePolicy.shouldCollapse(
+                toolCalls,
+                verbosity: originalVerbosity
+            ) {
+                ToolCallGroupSummaryRow(
+                    toolCalls: toolCalls
+                ) {
+                    AnyView(
+                        ToolCallGroupPopoverContent(toolCalls: toolCalls) {
+                            AnyView(cardRows)
+                        }
+                    )
+                }
+            } else {
+                cardRows
+            }
+        }
+    }
+
+    /// 逐条工具行。折叠态在 popover 内展示，铺开态直接展示。
+    private var cardRows: some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(toolCalls) { toolCall in
                 toolCallRow(for: toolCall)
@@ -337,6 +401,10 @@ struct ToolCallRowView: View {
                         .font(.appCaption)
                         .foregroundColor(visualState.isFailure ? theme.error : theme.textPrimary)
                         .lineLimit(1)
+                        // 标识符按 **工具调用 id** 而非文案：文案是本地化文本
+                        // 且会被 `lineLimit(1)` 截断，按文案定位在非英文环境
+                        // 或长描述下必然失败。
+                        .accessibilityIdentifier(ToolCallRowAccessibility.row(toolCall.id))
                 }
 
                 Spacer(minLength: 12)
@@ -418,10 +486,6 @@ struct ToolCallRowView: View {
                         ToolJobOutputPopover(job: job)
                     }
                 }
-            }
-
-            if projection.canStop {
-                ToolJobStopButton(model: jobActivity)
             }
         }
     }

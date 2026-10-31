@@ -9,11 +9,11 @@ Lumi is an AI-powered personal desktop assistant for macOS. It combines LLM chat
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Latest release](https://img.shields.io/badge/release-v5.17.0-blue.svg)](https://github.com/CofficLab/Lumi/releases)
 
-![Lumi Application](docs/hero3.png)
+![Lumi Application](docs/hero3.webp)
 
 ## Features
 
-- **Multi-provider LLM chat** — 20+ built-in provider integrations, including OpenAI, Anthropic, DeepSeek, Zhipu, MiniMax, Kimi Code, Aliyun, StepFun, Xiaomi, OpenRouter, Codex, and local MLX models. Several integrations expose more than one provider implementation.
+- **Multi-provider LLM chat** — 20+ built-in provider integrations, including OpenAI, Anthropic, DeepSeek, Zhipu, MiniMax, Kimi Code, Aliyun, StepFun, Xiaomi, OpenRouter, and local MLX models. Several integrations expose more than one provider implementation.
 - **Agent with tool use** — read and edit files, run shell commands, fetch and search the web, use browser and computer-control tools, inspect images, and request user input during a task.
 - **Built-in code editor** — project file tree, syntax highlighting, fuzzy file search, outline, references, call hierarchy, problems, language services, and Markdown preview.
 - **Developer tools** — native terminal, Git/GitHub integration, SQLite/MySQL/PostgreSQL/Redis database tools, Docker, Homebrew, ports and hosts management, and project diagnostics.
@@ -53,7 +53,7 @@ graph TB
     PL --> UI
 ```
 
-- **LumiApp** is the application entry point. It creates the shared kernel and hosts the main, settings, onboarding, and menu-bar surfaces.
+- **LumiApp** is the application entry point. It creates the shared kernel and hosts the main, settings, and menu-bar surfaces.
 - **FactoryLumi** is the composition root. `KernelFactory` assembles providers, starts the default plugin catalog, and builds the main and settings views.
 - **KernelCore** is the small generic kernel. It provides typed provider registration/resolution and plugin lifecycle management without knowing concrete application services.
 - **Provider packages** define shared capability contracts such as conversations, LLMs, tools, projects, storage, web routes, and UI contributions.

@@ -147,15 +147,14 @@ public final class MLXDownloadManager: ObservableObject {
 
     public func updateDownloadSpeed(bytesPerSecond: Int?) {
         downloadSpeedLimit = bytesPerSecond
-        UserDefaults.standard.set(bytesPerSecond ?? 0, forKey: Self.downloadSpeedLimitKey)
+        MLXProviderPluginLocalStore.shared.setDownloadSpeedLimit(bytesPerSecond)
         let manager = downloadManager
         Task { await manager.setMaxBytesPerSecond(bytesPerSecond) }
         refreshDownloadState()
     }
 
     nonisolated public func currentSpeedLimitBytes() -> Int {
-        let value = UserDefaults.standard.object(forKey: Self.downloadSpeedLimitKey) as? Int ?? 0
-        return max(0, value)
+        return max(0, MLXProviderPluginLocalStore.shared.downloadSpeedLimit ?? 0)
     }
 
     private func runDownload(modelID: String, operationID: UUID) async {
@@ -435,7 +434,6 @@ public final class MLXDownloadManager: ObservableObject {
     }
 
     private static func readSpeedLimit() -> Int? {
-        let value = UserDefaults.standard.object(forKey: downloadSpeedLimitKey) as? Int ?? 0
-        return value > 0 ? value : nil
+        MLXProviderPluginLocalStore.shared.downloadSpeedLimit
     }
 }

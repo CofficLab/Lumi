@@ -35,13 +35,36 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
     /// 在调用 body 之前先验证路径是否为有效 Git 仓库，
     /// 避免 libgit2 C 层在无效仓库上触发 abort() 导致 EXC_BREAKPOINT 崩溃。
     ///
+    /// ## 路径存在性检查为何必须前置
+    ///
+    /// 这里的 `isGitRepository(at:)` 会被调用两次（一次在本 guard，一次在 body 内），
+    /// 看似冗余，但第一次的作用不是判仓库而是**挡掉不存在的路径**。
+    ///
+    /// libgit2 的 `git_repository_open_ext` 在打开**不存在的路径**时会进入一条
+    /// 会污染调用线程栈展开状态的 C 路径；此后该线程上的 Swift `throw` 若触发
+    /// `swift_willThrow`，栈回溯会失败。实测：先在 `DispatchQueue.global()` 上
+    /// 调一次 `isGitRepository(不存在路径)`、再从同一线程 resume 一个错误，
+    /// 进程 100% 以 `EXC_BREAKPOINT`（signal 5）崩溃；换成**存在但非仓库**的目录
+    /// 则不崩。崩溃点精确落在本 guard 的 `throw` 行。
+    ///
+    /// - Important: 这不只是测试环境的问题。生产路径上任何对已删除目录的
+    ///   Git 调用都会命中同一分支（用户删除项目目录后仍有进行中的操作、
+    ///   Git 工具传入了失效路径等）。因此检查放在**进入 libgit2 之前**，
+    ///   而不是等 `isGitRepository` 返回。
+    ///
     /// 串行域按仓库根隔离（见 ``gitQueue(for:)``）；等待受
     /// `GitAsyncBridge` 的超时/取消保护，不会无限排队。
     private func performOnGitQueue<T: Sendable>(
         repoPath: String,
         body: @escaping @Sendable () throws -> T
     ) async throws -> T {
-        try await GitAsyncBridge.perform(on: Self.gitQueue(for: repoPath)) {
+        // 前置：路径不存在时直接拒绝，绝不让 libgit2 碰到不存在的路径。
+        // 见上方「路径存在性检查为何必须前置」。
+        guard FileManager.default.fileExists(atPath: repoPath) else {
+            throw GitServiceError.repositoryNotGit(path: repoPath)
+        }
+
+        return try await GitAsyncBridge.perform(on: Self.gitQueue(for: repoPath)) {
             guard LibGit2.isGitRepository(at: repoPath) else {
                 throw GitServiceError.repositoryNotGit(path: repoPath)
             }
@@ -53,8 +76,38 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
     /// 保证同一仓库的 libgit2 访问串行、不同仓库互不阻塞。
     static func gitQueue(for path: String) -> DispatchQueue {
         let resolved = resolvePath(path)
-        let key = (try? repositoryRoot(containing: resolved)) ?? resolved
+        // 用非抛出变体而非 `try? repositoryRoot(...)`：错误在这里必然被丢弃，
+        // 真正 `throw` 一次没有任何收益，却会触发 `swift_willThrow`。
+        //
+        // - Important: 这不只是洁癖。Swift Testing 在 `#expect(throws:)` 上下文中
+        //   会安装 `swift_willThrow` 钩子为抛出的 error 捕获 backtrace；在
+        //   macOS 27 上该捕获会 trap（`Backtrace.current` → `pthread_self`），
+        //   使整个测试进程以 signal 5 退出。实测「对不存在路径调用 `getStatus`」
+        //   100% 稳定崩溃，崩溃栈精确落在 `repositoryRoot` 的 `throw` 行。
+        //   产品代码行为完全正确，崩溃来自框架的 backtrace 捕获路径。
+        let key = repositoryRootOrNil(containing: resolved) ?? resolved
         return GitAccessCoordinator.queue(for: key)
+    }
+
+    /// `repositoryRoot(containing:)` 的非抛出变体：找不到仓库根时返回 `nil`。
+    ///
+    /// 与 `repositoryRoot` 共用同一套搜索逻辑，仅把「抛 `repositoryNotGit`」
+    /// 换成「返回 `nil`」。
+    private static func repositoryRootOrNil(containing path: String) -> String? {
+        guard path.utf8.count <= maximumPathLength else { return nil }
+
+        var candidate = repositorySearchStart(for: path)
+        for _ in 0..<maximumRepositorySearchDepth {
+            if FileManager.default.fileExists(atPath: URL(fileURLWithPath: candidate).appendingPathComponent(".git").path) {
+                return candidate
+            }
+
+            let parent = URL(fileURLWithPath: candidate).deletingLastPathComponent().path
+            guard parent != candidate else { return nil }
+            candidate = parent
+        }
+
+        return nil
     }
 
     // MARK: - Git Status
@@ -75,6 +128,7 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
             var deleted: [String] = []
             var renamed: [String] = []
             var staged: [String] = []
+            var untracked: [String] = []
 
             for file in unstagedFiles {
                 switch file.changeType {
@@ -82,7 +136,7 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
                 case "A": added.append(file.file)
                 case "D": deleted.append(file.file)
                 case "R": renamed.append(file.file)
-                case "?": modified.append(file.file)
+                case "?": untracked.append(file.file)
                 default: modified.append(file.file)
                 }
             }
@@ -104,7 +158,8 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
                 added: added,
                 deleted: deleted,
                 renamed: renamed,
-                staged: staged
+                staged: staged,
+                untracked: untracked
             )
         }
     }
@@ -178,6 +233,44 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
                     count: Int,
                     skip: Int) async throws -> [GitCommitLog] {
         try await getLogWithSkip(path: path, count: count, skip: skip)
+    }
+
+    /// 实现 ``GitRepositoryReading/isRepository(atPath:)``。
+    ///
+    /// 转发给 ``isGitRepository(at:)``；`nil` 路径解析为当前工作目录。
+    /// 任何 libgit2 错误都按「非仓库」处理，契约层承诺不抛错。
+    public func isRepository(atPath path: String?) async -> Bool {
+        let resolved = Self.resolvePath(path)
+        return await isGitRepository(at: resolved)
+    }
+
+    /// 实现 ``GitRepositoryReading/commitChanges(atPath:hash:)``。
+    ///
+    /// 转发给 ``getCommitChangedFiles(path:hash:)`` 并把插件内部的
+    /// ``GitChangedFile`` 模型映射为契约层的 ``GitCommitChange``。
+    public func commitChanges(atPath path: String?, hash: String) async throws -> [GitCommitChange] {
+        let files = try await getCommitChangedFiles(path: path, hash: hash)
+        return files.map { GitCommitChange(path: $0.path, state: $0.changeType.toWorkingChangeState()) }
+    }
+
+    /// 实现 ``GitRepositoryReading/remoteURL(atPath:remote:)``。
+    ///
+    /// 读取仓库的 remote 地址（默认 `origin`），返回**原始 URL**——不做任何
+    /// 协议转换（scp-like / `ssh://` / `https://` 原样返回），转换规则由消费方
+    /// 自行决定，避免把「Git 事实」与「Web 链接规则」耦合在契约层。
+    ///
+    /// 读取失败（非仓库、无该 remote、路径不存在）统一返回 `nil`，与契约
+    /// 「不抛错」的语义一致。
+    public func remoteURL(atPath path: String?, remote: String) async -> String? {
+        let repoPath = Self.resolvePath(path)
+
+        // 路径不存在时直接返回：libgit2 打开不存在的路径会进入一条会污染线程
+        // 栈展开状态的 C 路径（见 performOnGitQueue 的「路径存在性检查为何必须前置」）。
+        guard FileManager.default.fileExists(atPath: repoPath) else { return nil }
+
+        return try? await performOnGitQueue(repoPath: repoPath) {
+            LibGit2.getRemoteURL(at: repoPath, remote: remote)
+        }
     }
 
     // MARK: - Log With Skip (for pagination)
@@ -527,6 +620,17 @@ extension GitChangeType {
         case "?", "UNTRACKED": return .untracked
         case "C", "COPIED": return .renamed
         default: return .modified
+        }
+    }
+
+    /// 映射到契约层 ``GitWorkingChangeState``。
+    public func toWorkingChangeState() -> GitWorkingChangeState {
+        switch self {
+        case .modified: return .modified
+        case .added: return .added
+        case .deleted: return .deleted
+        case .renamed: return .renamed
+        case .untracked: return .untracked
         }
     }
 }

@@ -3,6 +3,7 @@ import KitAgentTool
 import KernelCore
 import ProviderStorage
 import ProviderToolManager
+import os
 
 /// Provides the Agent with a durable, plugin-owned place for plan documents.
 @MainActor
@@ -34,10 +35,43 @@ public final class AgentPlanStoragePlugin: SuperPlugin, PluginDataMigrating {
 
     public var name: String { "Agent Plan Storage" }
 
+    public func migrateData(context: PluginDataMigrationContext) throws {
+        try PluginDataMigrationUtility.copyLegacyDirectories(
+            legacyDirectoryNames: legacyDataDirectoryNames,
+            context: context
+        )
+
+        // 保留天数此前存在 UserDefaults，仅在插件存储尚无该键时导入。
+        importLegacyRetentionDays(to: context.currentPluginDataDirectory)
+    }
+
+    /// 把 `UserDefaults.standard` 中的旧保留天数导入插件专属存储。
+    private func importLegacyRetentionDays(to directory: URL) {
+        guard let domain = UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? ""),
+              let legacyValue = domain["AgentPlanStorage.retentionDays"] as? Int
+        else {
+            return
+        }
+        let fileURL = directory.appendingPathComponent("settings.plist")
+        guard !FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        AgentPlanStoragePluginLocalStore(settingsDirectory: directory).retentionDays = legacyValue
+        Self.migrationLogger.info(
+            "Imported legacy retentionDays from UserDefaults: \(legacyValue)"
+        )
+    }
+
+    private static let migrationLogger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.agent-plan-storage.migration"
+    )
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
             throw KernelCoreError.providerNotRegistered(type: StorageProviding.self)
         }
+
+        // 配置目录注入必须早于 AgentPlanStoragePluginLocalStore.shared 的首次访问。
+        AgentPlanStorageRuntime.configure(settingsDirectory: storage.pluginDataDirectory(for: id))
 
         let directory = storage
             .pluginDataDirectory(for: id)

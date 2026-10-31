@@ -295,7 +295,7 @@ jobs:
             filename=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["dmg_filenames"][sys.argv[2]])' "${RELEASE_METADATA}" "${arch}")
             .github/scripts/sign-dmg.sh "${FINAL_ASSETS}/${filename}" "${SIGNING_IDENTITY}"
           done
-      - name: Notarize, staple, and validate DMGs
+      - name: Submit DMGs for notarization
         if: steps.recovery.outputs.reuse != 'true'
         env:
           API_KEY_PATH: ${{ steps.signing.outputs.api_key_path }}
@@ -307,6 +307,14 @@ jobs:
             filename=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["dmg_filenames"][sys.argv[2]])' "${RELEASE_METADATA}" "${arch}")
             .github/scripts/notarize-dmg.sh "${FINAL_ASSETS}/${filename}" "${arch}" "notary-records/${arch}.json"
           done
+      - name: Wait for notarization, staple, and validate DMGs
+        env:
+          API_KEY_PATH: ${{ steps.signing.outputs.api_key_path }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          .github/scripts/wait-notarization.sh notary-records
       - name: Prepare release notes and dSYMs
         if: steps.recovery.outputs.reuse != 'true'
         run: |

@@ -26,7 +26,7 @@ struct ProviderRootViewTests {
 
     @Test("根叠层按顺序注册且可独立撤回")
     func rootOverlaysRegisterAndRemoveByID() {
-        let provider = DefaultRootViewProvider()
+        let provider = PluginRootView.DefaultRootViewProvider()
         provider.addOverlays([
             RootOverlayItem(id: "later", order: 20) { $0 },
             RootOverlayItem(id: "first", order: 10) { $0 },
@@ -42,7 +42,7 @@ struct ProviderRootViewTests {
 
     @Test("根视图状态变化会发布类型化观察事件")
     func rootViewChangesAreObservable() {
-        let provider = DefaultRootViewProvider()
+        let provider = PluginRootView.DefaultRootViewProvider()
         var events: [String] = []
         let handle = provider.addRootViewObserver { event in
             switch event {
@@ -73,7 +73,7 @@ struct ProviderRootViewTests {
 
     @Test("DefaultRootViewProvider 无工具栏时返回根视图")
     func defaultProviderReturnsRootViewWithoutToolbar() {
-        let provider = DefaultRootViewProvider()
+        let provider = PluginRootView.DefaultRootViewProvider()
 
         let view = provider.makeRootView()
 
@@ -177,9 +177,37 @@ struct ProviderRootViewTests {
         #expect(pane.width == secondWidth.withIdealWidth(460))
     }
 
+    @Test("Rail 面板挂载条件跟随 Rail 内容")
+    func railContentFlagFollowsRailTabs() {
+        let provider = PluginRootView.DefaultRootViewProvider()
+        // 未绑定 Rail Provider 的宿主无法判断内容，保持旧行为：恒为可挂载。
+        #expect(provider.hasRailContent)
+
+        let rail = DefaultRailViewProviding()
+        provider.bindRailViewVisibility(to: rail)
+        #expect(!provider.hasRailContent)
+
+        // 标签动态出现（全新安装后首个会话注册 `chats` 标签）：必须变成可挂载，
+        // 否则 `WorkbenchSplitView` 不会重建已被折叠的 Rail 面板，列表永远不可见。
+        rail.registerTabs([
+            RailTabItem(id: "rail", category: .general, title: "Rail", systemImage: "sidebar") { Text("Rail") },
+        ])
+        #expect(provider.hasRailContent)
+
+        // 分类过滤把标签全部隐藏后，面板不应继续占位。
+        rail.setVisibleCategories([])
+        #expect(!provider.hasRailContent)
+
+        rail.setVisibleCategories(Set(RailViewCategory.allCases))
+        #expect(provider.hasRailContent)
+
+        rail.removeTabs(ids: ["rail"])
+        #expect(!provider.hasRailContent)
+    }
+
     @Test("Rail 可见性绑定到根布局")
     func railVisibilityFollowsProvider() {
-        let provider = DefaultRootViewProvider()
+        let provider = PluginRootView.DefaultRootViewProvider()
         let rail = DefaultRailViewProviding()
 
         provider.bindRailViewVisibility(to: rail)
@@ -196,7 +224,7 @@ struct ProviderRootViewTests {
 
     @Test("重新绑定 Rail 显隐时取消旧观察者")
     func rebindingRailVisibilityCancelsPreviousObserver() {
-        let provider = DefaultRootViewProvider()
+        let provider = PluginRootView.DefaultRootViewProvider()
         let firstRail = DefaultRailViewProviding()
         let secondRail = DefaultRailViewProviding()
 
@@ -220,7 +248,7 @@ struct ProviderRootViewTests {
 
     @Test("Rail 宽度绑定并转发用户拖拽回调")
     func railWidthFollowsProviderAndForwardsResize() async {
-        let provider = DefaultRootViewProvider()
+        let provider = PluginRootView.DefaultRootViewProvider()
         let rail = DefaultRailViewProviding()
         var resizedWidth: CGFloat?
 
@@ -241,7 +269,7 @@ struct ProviderRootViewTests {
 
     @Test("Content Footer 高度 profile 支持恢复约束并保存拖拽结果")
     func contentFooterHeightProfileRestoresAndSaves() {
-        let provider = DefaultRootViewProvider()
+        let provider = PluginRootView.DefaultRootViewProvider()
         let recommended = ContentFooterHeight(minHeight: 120, idealHeight: 280, maxHeight: 520)
         let fileURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("ProviderRootViewTests-\(UUID().uuidString).plist")
@@ -257,7 +285,7 @@ struct ProviderRootViewTests {
         provider.saveCurrentContentFooterHeight(460)
         #expect(provider.contentFooterHeight.idealHeight == 460)
 
-        let reloadedProvider = DefaultRootViewProvider()
+        let reloadedProvider = PluginRootView.DefaultRootViewProvider()
         reloadedProvider.activateContentFooterHeightProfile(
             ownerID: "plugin.editor-preview",
             recommended: recommended,
@@ -271,7 +299,7 @@ struct ProviderRootViewTests {
 
     @Test("没有容器时可通过 trailing pane 渲染")
     func visibleTrailingPaneCountsAsActiveContentWithoutContainer() {
-        let provider = DefaultRootViewProvider()
+        let provider = PluginRootView.DefaultRootViewProvider()
         let pane = RootTrailingPane(id: "chat", content: AnyView(Text("chat")))
         provider.setTrailingPane(pane)
 
@@ -282,7 +310,7 @@ struct ProviderRootViewTests {
 
     @Test("注入工具栏后返回根视图")
     func defaultProviderReturnsRootViewWithToolbar() {
-        let provider = DefaultRootViewProvider()
+        let provider = PluginRootView.DefaultRootViewProvider()
         provider.setToolbarView(AnyView(Text("toolbar")))
 
         let view = provider.makeRootView()
@@ -292,7 +320,7 @@ struct ProviderRootViewTests {
 
     @Test("注入 ActivityBar 后返回根视图")
     func defaultProviderReturnsRootViewWithActivityBar() {
-        let provider = DefaultRootViewProvider()
+        let provider = PluginRootView.DefaultRootViewProvider()
         provider.setActivityBarView(AnyView(Text("activity bar")))
 
         let view = provider.makeRootView()
@@ -302,7 +330,7 @@ struct ProviderRootViewTests {
 
     @Test("同时注入工具栏与 ActivityBar 后返回根视图")
     func defaultProviderReturnsRootViewWithToolbarAndActivityBar() {
-        let provider = DefaultRootViewProvider()
+        let provider = PluginRootView.DefaultRootViewProvider()
         provider.setToolbarView(AnyView(Text("toolbar")))
         provider.setActivityBarView(AnyView(Text("activity bar")))
 
@@ -313,7 +341,7 @@ struct ProviderRootViewTests {
 
     @Test("同时注入工具栏、ActivityBar、Rail 与内容后返回根视图")
     func defaultProviderReturnsRootViewWithAllInjections() {
-        let provider = DefaultRootViewProvider()
+        let provider = PluginRootView.DefaultRootViewProvider()
         provider.setToolbarView(AnyView(Text("toolbar")))
         provider.setActivityBarView(AnyView(Text("activity bar")))
         provider.setRailView(AnyView(Text("rail")))
@@ -329,7 +357,7 @@ struct ProviderRootViewTests {
 
     @Test("RootViewProviding 可作为 any RootViewProviding 使用")
     func providerAccessibleThroughProtocol() {
-        let provider: any RootViewProviding = DefaultRootViewProvider()
+        let provider: any RootViewProviding = PluginRootView.DefaultRootViewProvider()
         provider.setToolbarView(AnyView(Text("toolbar")))
         provider.setActivityBarView(AnyView(Text("activity bar")))
         provider.setRailView(AnyView(Text("rail")))
@@ -408,7 +436,7 @@ struct ProviderRootViewTests {
 
     @Test("Footer 注入后被视为主内容并返回根视图")
     func contentFooterCountsAsActiveContent() {
-        let provider = DefaultRootViewProvider()
+        let provider = PluginRootView.DefaultRootViewProvider()
         provider.setContentFooterView(AnyView(Text("content footer")))
 
         #expect(provider.hasActiveContent)
@@ -429,7 +457,7 @@ struct ProviderRootViewTests {
     // MARK: - 注入守卫（值相同则跳过赋值，避免无意义事件）
 
     /// 订阅工具栏视图事件并返回发送次数计数。
-    private func makeChangeCounter(for provider: DefaultRootViewProvider) -> (() -> Int, any RootViewObserverHandle) {
+    private func makeChangeCounter(for provider: PluginRootView.DefaultRootViewProvider) -> (() -> Int, any RootViewObserverHandle) {
         var count = 0
         let handle = provider.addRootViewObserver { event in
             if case .toolbarViewChanged = event {
@@ -441,7 +469,7 @@ struct ProviderRootViewTests {
 
     @Test("重复注入相同类型视图时跳过赋值（不发布类型化事件）")
     func repeatedSameTypeInjectionSkipsPublish() {
-        let provider = DefaultRootViewProvider()
+        let provider = PluginRootView.DefaultRootViewProvider()
         let (count, cancellable) = makeChangeCounter(for: provider)
 
         provider.setToolbarView(AnyView(Text("toolbar")))
@@ -457,7 +485,7 @@ struct ProviderRootViewTests {
 
     @Test("注入状态变化（nil ↔ 非 nil）时正常更新（发布类型化事件）")
     func valueTransitionStillPublishes() {
-        let provider = DefaultRootViewProvider()
+        let provider = PluginRootView.DefaultRootViewProvider()
         let (count, cancellable) = makeChangeCounter(for: provider)
 
         provider.setToolbarView(nil)
@@ -477,7 +505,7 @@ struct ProviderRootViewTests {
 
     @Test("重复注入 nil 时跳过赋值（不发布类型化事件）")
     func repeatedNilInjectionSkipsPublish() {
-        let provider = DefaultRootViewProvider()
+        let provider = PluginRootView.DefaultRootViewProvider()
         let (count, cancellable) = makeChangeCounter(for: provider)
 
         provider.setToolbarView(nil)

@@ -4,6 +4,7 @@ import ProviderChatSection
 import ProviderConversation
 import ProviderStorage
 import SwiftUI
+import os
 
 /// AppIconDesigner 的内核工厂。
 ///
@@ -11,6 +12,12 @@ import SwiftUI
 /// `ViewFactory`，使主窗口和设置窗口能够共享同一个内核实例。
 @MainActor
 public enum KernelFactory {
+    nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "kernel.factory.app-icon-designer"
+    )
+    nonisolated static let emoji = "📦"
+
     public static func makeKernel(
         additionalPlugins: [any SuperPlugin] = []
     ) throws -> KernelCoreContainer {
@@ -32,7 +39,16 @@ public enum KernelFactory {
             + pluginFactory.makePlugins()
             + additionalPlugins
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
-            try PluginDataMigrationRunner(storage: storage).run(for: plugins)
+            // 迁移失败不阻断启动：单个插件的历史数据搬不动，最多退回默认配置。
+            for plugin in plugins {
+                do {
+                    try PluginDataMigrationRunner(storage: storage).run(for: [plugin])
+                } catch {
+                    Self.logger.error(
+                        "\(Self.emoji) | KernelFactory | 插件 \(plugin.id, privacy: .public) 数据迁移失败，已跳过并继续启动：\(error.localizedDescription, privacy: .public)"
+                    )
+                }
+            }
         }
         try kernel.start(plugins: plugins)
         if let chat = kernel.resolveProvider((any ChatSectionProviding).self),

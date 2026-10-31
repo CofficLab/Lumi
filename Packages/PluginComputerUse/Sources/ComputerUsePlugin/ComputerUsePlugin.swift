@@ -1,15 +1,18 @@
 import KitAgentTool
 import Foundation
 import KernelCore
+import ProviderAgentLoop
 import ProviderMessage
+import ProviderMessageRendering
 import ProviderSettingView
 import ProviderRootView
+import ProviderStorage
 import ProviderToolManager
 import LumiLoggingKit
 import os
 
 @MainActor
-public final class ComputerUsePlugin: SuperPlugin, SuperLog {
+public final class ComputerUsePlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.computer-use", category: "ComputerUse")
     public let id = "com.coffic.lumi.plugin.computer-use"
     public let order = 278
@@ -22,12 +25,52 @@ public final class ComputerUsePlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
+    /// 历史实现把授权白名单存在 `UserDefaults.standard`，未使用插件专属目录。
+    /// 目录名未变过，无需版本根搬迁。
+    public let legacyDataDirectoryNames: [String] = []
+
+    /// Computer Use 在设置侧边栏中的入口 ID。
+    ///
+    /// 设置入口与「打开 Lumi 设置」深链共用同一个 ID：后者通过
+    /// `SettingViewNavigation` 通知把 ID 传回宿主，宿主据此选中该入口。
+    public static let settingsEntryID = "com.coffic.lumi.plugin.computer-use.settings"
+
     private var settingsState: ComputerUseSettingsState?
     private var activationObserver: ApplicationActivationObserver?
 
     public init() {}
 
+    /// 把 `UserDefaults.standard` 中的旧授权白名单并入插件专属存储。
+    ///
+    /// 只在目标 plist 尚无记录时导入，避免覆盖用户在插件内的后续修改。
+    /// `UserDefaults` 内的原 key 保留，便于回退。
+    public func migrateData(context: PluginDataMigrationContext) throws {
+        let legacyKey = "ComputerUse.nativeAllowedBundleIdentifiers"
+        let legacyAllowedKey = "ComputerUse.alwaysAllowedBundleIdentifiers"
+        guard let defaults = UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? "") else {
+            return
+        }
+        let nativeValues = (defaults[legacyKey] as? [String]) ?? []
+        let allowedValues = (defaults[legacyAllowedKey] as? [String]) ?? []
+        guard !nativeValues.isEmpty || !allowedValues.isEmpty else { return }
+
+        let store = ComputerUseAuthorizationStore(dataDirectory: context.currentPluginDataDirectory)
+        if !nativeValues.isEmpty, store.allowedBundleIdentifiers().isEmpty, store.isNativeAllowed(nativeValues[0]) == false {
+            for bundleIdentifier in nativeValues {
+                store.setNativeAllowed(true, bundleIdentifier: bundleIdentifier)
+            }
+            Self.logger.info("\(Self.t)Imported \(nativeValues.count) native authorization entries from UserDefaults")
+        }
+        for bundleIdentifier in allowedValues {
+            store.setAllowed(true, bundleIdentifier: bundleIdentifier)
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
+        // 存储目录注入必须早于 ComputerUseAuthorizationStore.shared 的首次访问。
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            ComputerUseRuntime.configure(settingsDirectory: storage.pluginDataDirectory(for: id))
+        }
         let settingsState = ComputerUseSettingsState()
         self.settingsState = settingsState
         let tools = kernel.resolveProvider((any ToolManagerProviding).self)
@@ -51,7 +94,7 @@ public final class ComputerUsePlugin: SuperPlugin, SuperLog {
         )
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
-                id: "\(id).settings",
+                id: Self.settingsEntryID,
                 title: pluginLocalization.string("Computer Use"),
                 systemImage: "cursorarrow.motionlines",
                 order: order
@@ -59,6 +102,16 @@ public final class ComputerUsePlugin: SuperPlugin, SuperLog {
                 ComputerUseSettingsView(state: settingsState)
             },
         ])
+        // 聊天内授权卡片：工具挂起等待授权时，直接在消息列表里让用户决定。
+        ComputerUseAuthorizationBridge.shared.start(kernel: kernel)
+        kernel.resolveProvider((any ToolCallRenderingProviding).self)?.register(
+            ComputerUseAuthorizationRowRenderer()
+        )
+        // 系统权限提示卡：工具因缺少辅助功能/屏幕录制权限失败时，
+        // 在消息列表里给出直达系统设置与 Lumi 设置的按钮。
+        kernel.resolveProvider((any ToolCallRenderingProviding).self)?.register(
+            ComputerUseSystemPermissionRowRenderer()
+        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -68,15 +121,24 @@ public final class ComputerUsePlugin: SuperPlugin, SuperLog {
         tools?.remove(id: "accessibility_observe")
         tools?.remove(id: "accessibility_act")
         NativeControlCoordinator.shared.shutdown()
+        // 遮罩是桌面级浮层，插件卸载后必须立即移除，不能残留在用户桌面上。
+        ComputerUseTargetOverlayController.shared.removeImmediately()
         kernel.resolveProvider((any RootViewProviding).self)?.removeOverlays(ids: ["\(id).native-control"])
+        kernel.resolveProvider((any ToolCallRenderingProviding).self)?.unregister(
+            id: ComputerUseAuthorizationRowRenderer.id
+        )
+        kernel.resolveProvider((any ToolCallRenderingProviding).self)?.unregister(
+            id: ComputerUseSystemPermissionRowRenderer.id
+        )
+        ComputerUseAuthorizationBridge.shared.stop()
         activationObserver?.cancel()
         activationObserver = nil
         settingsState = nil
-        kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: ["\(id).settings"])
+        kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [Self.settingsEntryID])
     }
 }
 
-public struct ComputerObserveV2Tool: SuperAgentTool {
+public struct ComputerObserveV2Tool: SuperAgentTool, ComputerUseSuspendingTool {
     public static let toolName = "computer_observe"
     public let name = toolName
     private let service: ComputerUseService
@@ -108,18 +170,20 @@ public struct ComputerObserveV2Tool: SuperAgentTool {
     }
 
     public func executeResult(arguments: [String: ToolArgument]) async throws -> ToolCallResult {
-        let result = try await service.observe(
-            application: arguments["application"]?.value as? String,
-            windowTitle: arguments["window_title"]?.value as? String
-        )
-        return ToolCallResult(
-            content: ComputerUseV2Support.resultDescription(result),
-            images: [ComputerUseV2Support.imageAttachment(from: result.attachment)]
-        )
+        await executeWithAuthorizationSuspension(operation: "computer_observe") { [self] in
+            let result = try await service.observe(
+                application: arguments["application"]?.value as? String,
+                windowTitle: arguments["window_title"]?.value as? String
+            )
+            return ToolCallResult(
+                content: ComputerUseV2Support.resultDescription(result),
+                images: [ComputerUseV2Support.imageAttachment(from: result.attachment)]
+            )
+        }
     }
 }
 
-public struct ComputerActV2Tool: SuperAgentTool {
+public struct ComputerActV2Tool: SuperAgentTool, ComputerUseSuspendingTool {
     public static let toolName = "computer_act"
     public let name = toolName
     private let service: ComputerUseService
@@ -157,15 +221,17 @@ public struct ComputerActV2Tool: SuperAgentTool {
     }
 
     public func executeResult(arguments: [String: ToolArgument]) async throws -> ToolCallResult {
-        guard let rawID = arguments["observation_id"]?.value as? String,
-              let observationID = UUID(uuidString: rawID)
-        else { throw ComputerUseError.invalidArguments("observation_id must be a UUID") }
-        let actions = try ComputerUseV2Support.actions(from: arguments["actions"]?.value)
-        let result = try await service.act(observationID: observationID, actions: actions, reason: arguments["reason"]?.value as? String ?? "")
-        return ToolCallResult(
-            content: ComputerUseV2Support.resultDescription(result),
-            images: [ComputerUseV2Support.imageAttachment(from: result.attachment)]
-        )
+        await executeWithAuthorizationSuspension(operation: "computer_act") { [self] in
+            guard let rawID = arguments["observation_id"]?.value as? String,
+                  let observationID = UUID(uuidString: rawID)
+            else { throw ComputerUseError.invalidArguments("observation_id must be a UUID") }
+            let actions = try ComputerUseV2Support.actions(from: arguments["actions"]?.value)
+            let result = try await service.act(observationID: observationID, actions: actions, reason: arguments["reason"]?.value as? String ?? "")
+            return ToolCallResult(
+                content: ComputerUseV2Support.resultDescription(result),
+                images: [ComputerUseV2Support.imageAttachment(from: result.attachment)]
+            )
+        }
     }
 }
 

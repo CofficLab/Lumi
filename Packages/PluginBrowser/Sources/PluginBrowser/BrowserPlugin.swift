@@ -26,7 +26,7 @@ public final class BrowserPlugin: SuperPlugin, SuperLog {
         description: "Control web browser for viewing and interacting with web pages.",
         category: .integration,
         stage: .preview,
-        policy: .alwaysOn
+        policy: .disabledByDefault
     )
 
     public init() {}
@@ -104,9 +104,14 @@ public final class BrowserPlugin: SuperPlugin, SuperLog {
 
         let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
         toolManager?.add(BrowserOpenTool(sessions: sessions), pluginID: id)
+        toolManager?.add(BrowserSnapshotTool(sessions: sessions), pluginID: id)
         toolManager?.add(BrowserReadTool(sessions: sessions), pluginID: id)
         toolManager?.add(BrowserStatusTool(sessions: sessions), pluginID: id)
         toolManager?.add(BrowserInteractTool(sessions: sessions), pluginID: id)
+        toolManager?.add(BrowserWaitTool(sessions: sessions), pluginID: id)
+        toolManager?.add(BrowserScreenshotTool(sessions: sessions), pluginID: id)
+        toolManager?.add(BrowserNavigateTool(sessions: sessions), pluginID: id)
+        toolManager?.add(BrowserEvaluateTool(sessions: sessions), pluginID: id)
     }
 
     /// Register Chrome DevTools after every plugin has completed booting, so
@@ -134,10 +139,13 @@ public final class BrowserPlugin: SuperPlugin, SuperLog {
         rootViewObserver = nil
         let wasActive = isBrowserActive || activityBar?.activeItemID == entryID
         activityBar?.removeItems(ids: [entryID])
-        kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: "browser_open")
-        kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: "browser_read")
-        kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: "browser_status")
-        kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: "browser_interact")
+        for toolID in [
+            "browser_open", "browser_snapshot", "browser_read", "browser_status",
+            "browser_interact", "browser_wait", "browser_screenshot", "browser_navigate",
+            "browser_evaluate",
+        ] {
+            kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: toolID)
+        }
         if wasActive {
             isBrowserActive = false
             contentView?.setContentView(nil)

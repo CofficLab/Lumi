@@ -4,6 +4,7 @@ import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
 import ProviderConversationInput
+import ProviderConversationInputBlock
 import ProviderDocsView
 import ProviderProject
 import ProviderRailView
@@ -103,7 +104,8 @@ public final class CodeEditorPlugin: SuperPlugin, SuperLog {
         )
         try uninstallContributions()
         let sendSelectionContributor = SendSelectionToConversationContributor(
-            conversationInput: kernel.resolveProvider((any ConversationInputProviding).self)
+            conversationInput: kernel.resolveProvider((any ConversationInputProviding).self),
+            conversationBlocks: kernel.resolveProvider((any ConversationInputBlockProviding).self)
         )
         let contributionBundle = EditorContributionBundle(
             pluginID: id,

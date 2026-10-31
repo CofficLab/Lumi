@@ -1,8 +1,12 @@
 import KitLLM
 import LumiUI
+import ProviderLLMManager
 import SwiftUI
 
 /// 新增或编辑用户自定义云端供应商。
+///
+/// 表单的文本解析与配置构造委托给 `CustomCloudProviderForm`，
+/// 本 View 只负责渲染与提交。
 @MainActor
 public struct CustomCloudProviderEditor: View {
     @LumiTheme private var theme
@@ -11,16 +15,10 @@ public struct CustomCloudProviderEditor: View {
 
     private let existingConfiguration: UserDefinedCloudProviderConfiguration?
 
-    @State private var displayName: String
-    @State private var description: String
-    @State private var baseURL: String
-    @State private var apiFormatIndex: Int
-    @State private var modelIDs: String
-    @State private var websiteURL: String
+    @State private var form: CustomCloudProviderForm
     @State private var errorMessage: String?
 
     private var apiFormats: [LLMProviderAPIFormat] { LLMProviderAPIFormat.allCases }
-    private var apiFormat: LLMProviderAPIFormat { apiFormats[apiFormatIndex] }
 
     public init(
         store: UserDefinedCloudProviderStore,
@@ -28,14 +26,10 @@ public struct CustomCloudProviderEditor: View {
     ) {
         self._store = ObservedObject(wrappedValue: store)
         self.existingConfiguration = configuration
-        self._displayName = State(initialValue: configuration?.displayName ?? "")
-        self._description = State(initialValue: configuration?.description ?? "")
-        self._baseURL = State(initialValue: configuration?.baseURL ?? "")
-        let initialFormat = configuration?.apiFormat ?? .openAI
-        let initialIndex = LLMProviderAPIFormat.allCases.firstIndex(of: initialFormat) ?? 0
-        self._apiFormatIndex = State(initialValue: initialIndex)
-        self._modelIDs = State(initialValue: configuration?.models.map(\.id).joined(separator: "\n") ?? "")
-        self._websiteURL = State(initialValue: configuration?.websiteURLString ?? "")
+        self._form = State(
+            initialValue: configuration.map(CustomCloudProviderForm.init(configuration:))
+                ?? CustomCloudProviderForm()
+        )
     }
 
     public var body: some View {
@@ -55,10 +49,12 @@ public struct CustomCloudProviderEditor: View {
                     AppButton("取消", style: .secondary, size: .small) {
                         dismiss()
                     }
+                    .accessibilityIdentifier(ProviderSettingsAccessibility.cancelButton)
                     AppButton("保存", style: .primary, size: .small) {
                         save()
                     }
-                    .disabled(displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(!form.canSave)
+                    .accessibilityIdentifier(ProviderSettingsAccessibility.saveButton)
                 }
             }
             .padding(.horizontal, DesignTokens.Spacing.lg)
@@ -71,9 +67,12 @@ public struct CustomCloudProviderEditor: View {
                 VStack(spacing: DesignTokens.Spacing.md) {
                     // 基本信息
                     AppSettingSection(title: "基本信息") {
-                        AppInputField("供应商名称", text: $displayName)
-                        AppInputField("描述（可选）", text: $description)
-                        AppInputField("官网（可选）", text: $websiteURL)
+                        AppInputField("供应商名称", text: $form.displayName)
+                            .accessibilityIdentifier(ProviderSettingsAccessibility.nameField)
+                        AppInputField("描述（可选）", text: $form.description)
+                            .accessibilityIdentifier(ProviderSettingsAccessibility.descriptionField)
+                        AppInputField("官网（可选）", text: $form.websiteURL)
+                            .accessibilityIdentifier(ProviderSettingsAccessibility.websiteField)
                     }
 
                     // 连接
@@ -83,18 +82,20 @@ public struct CustomCloudProviderEditor: View {
                                 .font(.headline)
                                 .foregroundColor(.secondary)
                             Spacer()
-                            Picker("", selection: $apiFormatIndex) {
-                                ForEach(apiFormats.indices, id: \.self) { index in
-                                    Text(Self.apiFormatTitle(apiFormats[index]))
-                                        .tag(index)
+                            Picker("", selection: $form.apiFormat) {
+                                ForEach(apiFormats, id: \.self) { format in
+                                    Text(Self.apiFormatTitle(format))
+                                        .tag(format)
                                 }
                             }
                             .labelsHidden()
                             .pickerStyle(.menu)
                             .fixedSize()
+                            .accessibilityIdentifier(ProviderSettingsAccessibility.apiFormatPicker)
                         }
                         .padding(.bottom, 8)
-                        AppInputField("API Endpoint URL", text: $baseURL)
+                        AppInputField("API Endpoint URL", text: $form.baseURL)
+                            .accessibilityIdentifier(ProviderSettingsAccessibility.baseURLField)
                     }
 
                     // 模型
@@ -103,7 +104,7 @@ public struct CustomCloudProviderEditor: View {
                             Text("模型 ID（每行一个）")
                                 .font(DesignTokens.Typography.caption1)
                                 .foregroundColor(theme.textSecondary)
-                            TextEditor(text: $modelIDs)
+                            TextEditor(text: $form.modelIDsText)
                                 .font(DesignTokens.Typography.body.monospaced())
                                 .foregroundColor(theme.textPrimary)
                                 .frame(minHeight: 90)
@@ -116,12 +117,14 @@ public struct CustomCloudProviderEditor: View {
                                     RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                                         .stroke(theme.appSubtleBorder, lineWidth: 1)
                                 )
+                                .accessibilityIdentifier(ProviderSettingsAccessibility.modelsField)
                         }
                     }
 
                     // Error
                     if let errorMessage {
                         AppErrorBanner(message: LocalizedStringKey(errorMessage))
+                            .accessibilityIdentifier(ProviderSettingsAccessibility.errorBanner)
                     }
                 }
                 .padding(.horizontal, DesignTokens.Spacing.lg)
@@ -131,25 +134,7 @@ public struct CustomCloudProviderEditor: View {
     }
 
     private func save() {
-        let ids = modelIDs
-            .split(whereSeparator: { $0 == "\n" || $0 == "," })
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-        let oldModels = Dictionary(uniqueKeysWithValues: (existingConfiguration?.models ?? []).map { ($0.id, $0) })
-        let models = ids.map { id in
-            oldModels[id] ?? UserDefinedCloudModel(id: id)
-        }
-        let resolvedDefaultModel = models.first?.id ?? ""
-        let configuration = UserDefinedCloudProviderConfiguration(
-            id: existingConfiguration?.id ?? "user-\(UUID().uuidString.lowercased())",
-            displayName: displayName,
-            description: description,
-            baseURL: baseURL,
-            apiFormat: apiFormat,
-            defaultModel: resolvedDefaultModel,
-            models: models,
-            websiteURLString: websiteURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : websiteURL
-        )
+        let configuration = form.makeConfiguration(existing: existingConfiguration)
 
         do {
             try store.upsert(configuration)

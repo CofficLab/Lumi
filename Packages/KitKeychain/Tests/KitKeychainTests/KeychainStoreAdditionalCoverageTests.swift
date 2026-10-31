@@ -56,9 +56,34 @@ private let missingResult = KeychainResult(status: errSecItemNotFound, data: nil
 @Suite("KeychainStore 补充覆盖二")
 struct KeychainStoreRetryMigrationTests {
 
-    private func makeStore(backend: ScriptedBackend) -> KeychainStore {
+    /// 隔离的偏好域：legacy 迁移用例会读写它。
+    ///
+    /// - Important: 不能用 `UserDefaults.standard`——那是**用户级全局状态**。
+    ///   读写它既会污染开发者本机的真实偏好，也会让断言受历史残留影响。
+    private func makeIsolatedDefaults() -> (defaults: UserDefaults, cleanup: () -> Void) {
+        let suiteName = "com.coffic.lumi.test.kit-keychain.\(UUID().uuidString)"
+        // suiteName: 内部生成的固定格式字符串，失败只可能是系统异常。
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            preconditionFailure("无法创建隔离的 UserDefaults（suite: \(suiteName)）")
+        }
+        defaults.removePersistentDomain(forName: suiteName)
+        return (
+            defaults,
+            { defaults.removePersistentDomain(forName: suiteName) }
+        )
+    }
+
+    private func makeStore(
+        backend: ScriptedBackend,
+        legacyUserDefaults: UserDefaults = .standard
+    ) -> KeychainStore {
         // 注入空 sleeper，避免真实等待。
-        KeychainStore(service: "com.lumi.tests", backend: backend, sleeper: { _ in })
+        KeychainStore(
+            service: "com.lumi.tests",
+            backend: backend,
+            legacyUserDefaults: legacyUserDefaults,
+            sleeper: { _ in }
+        )
     }
 
     // MARK: - 瞬时失败后重试成功
@@ -103,11 +128,12 @@ struct KeychainStoreRetryMigrationTests {
     @Test("无提示迁移：keychain 为空时从 UserDefaults 迁移并写回 keychain")
     func noPromptMigrationMigratesLegacyValue() throws {
         let key = "lumi-migrate-\(UUID().uuidString)"
-        UserDefaults.standard.set("legacy-token", forKey: key)
-        defer { UserDefaults.standard.removeObject(forKey: key) }
+        let isolated = makeIsolatedDefaults()
+        defer { isolated.cleanup() }
+        isolated.defaults.set("legacy-token", forKey: key)
 
         let backend = ScriptedBackend(readResults: [missingResult])
-        let store = makeStore(backend: backend)
+        let store = makeStore(backend: backend, legacyUserDefaults: isolated.defaults)
 
         let result = try store.loadMigratingLegacyUserDefaultsWithoutPromptReportingErrors(forKey: key)
 
@@ -118,20 +144,21 @@ struct KeychainStoreRetryMigrationTests {
         #expect(backend.writes.count == 1)
         #expect(String(data: backend.writes[0].0, encoding: .utf8) == "legacy-token")
         // legacy 值已被清理
-        #expect(UserDefaults.standard.string(forKey: key) == nil)
+        #expect(isolated.defaults.string(forKey: key) == nil)
     }
 
     @Test("迁移时 keychain 写入失败则抛错且保留 legacy 值不丢失")
     func migrationPropagatesWriteFailure() throws {
         let key = "lumi-migrate-fail-\(UUID().uuidString)"
-        UserDefaults.standard.set("do-not-lose-me", forKey: key)
-        defer { UserDefaults.standard.removeObject(forKey: key) }
+        let isolated = makeIsolatedDefaults()
+        defer { isolated.cleanup() }
+        isolated.defaults.set("do-not-lose-me", forKey: key)
 
         let backend = ScriptedBackend(
             readResults: [missingResult],
             writeResult: KeychainResult(status: errSecAuthFailed, data: nil)
         )
-        let store = makeStore(backend: backend)
+        let store = makeStore(backend: backend, legacyUserDefaults: isolated.defaults)
 
         do {
             _ = try store.loadMigratingLegacyUserDefaultsReportingErrors(forKey: key)
@@ -147,17 +174,18 @@ struct KeychainStoreRetryMigrationTests {
         }
 
         // 写失败 → legacy 值必须原样保留
-        #expect(UserDefaults.standard.string(forKey: key) == "do-not-lose-me")
+        #expect(isolated.defaults.string(forKey: key) == "do-not-lose-me")
     }
 
     @Test("keychain 已有值时不触发 UserDefaults 迁移")
     func prefersKeychainOverLegacy() throws {
         let key = "lumi-prefer-\(UUID().uuidString)"
-        UserDefaults.standard.set("legacy", forKey: key)
-        defer { UserDefaults.standard.removeObject(forKey: key) }
+        let isolated = makeIsolatedDefaults()
+        defer { isolated.cleanup() }
+        isolated.defaults.set("legacy", forKey: key)
 
         let backend = ScriptedBackend(readResults: [valueResult("keychain-value")])
-        let store = makeStore(backend: backend)
+        let store = makeStore(backend: backend, legacyUserDefaults: isolated.defaults)
 
         let result = try store.loadMigratingLegacyUserDefaultsReportingErrors(forKey: key)
 
@@ -165,7 +193,7 @@ struct KeychainStoreRetryMigrationTests {
         // 不应写回（keychain 已有）
         #expect(backend.writes.isEmpty)
         // legacy 值保留（未迁移）
-        #expect(UserDefaults.standard.string(forKey: key) == "legacy")
+        #expect(isolated.defaults.string(forKey: key) == "legacy")
     }
 
     // MARK: - KeychainBackend 扩展默认参数

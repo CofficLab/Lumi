@@ -1,5 +1,7 @@
 import AppKit
+import CoreText
 import os
+import ProviderMessage
 import SwiftUI
 
 #if DEBUG
@@ -26,6 +28,8 @@ public struct ChatInputEditorView: NSViewRepresentable {
     private let textColor: NSColor
     private let placeholder: String
     private let isVerbose: Bool
+    /// chip 配色。由 SwiftUI 层按主题注入，保证与消息列表里的 chip 一致。
+    private let chipPalette: PasteChipPalette
     private let log: (String) -> Void
     private let onSubmit: () -> Void
     private let onArrowUp: (() -> Void)?
@@ -33,6 +37,16 @@ public struct ChatInputEditorView: NSViewRepresentable {
     private let onEnter: (() -> Void)?
     private let onEscape: (() -> Void)?
     private let onFileDrop: ((URL) -> Void)?
+    /// 编辑器插入完折叠块后的回调，ViewModel 据此清空待插入状态。
+    private let onBlockInserted: ((UUID) -> Void)?
+    /// 编辑器内容里的折叠块区间变化时回调。
+    ///
+    /// 区间以「拍平后的正文」为基准（chip 的原文已还原进正文），
+    /// ViewModel 据此在发送时把折叠块一起落库，消息列表才能还原成 chip。
+    private let onCollapsedBlocksChanged: (([CollapsedContentBlock]) -> Void)?
+    /// 待插入输入框的折叠块请求（如编辑器选区发送到对话）。
+    /// 消费一次后由 ViewModel 置空，避免重复插入同一个 chip。
+    private let pendingBlock: ConversationInputBlockRequest?
 
     public init(
         text: Binding<String>,
@@ -41,6 +55,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
         textColor: NSColor = .textColor,
         placeholder: String = "",
         isVerbose: Bool = false,
+        chipPalette: PasteChipPalette = .fallback,
         log: @escaping (String) -> Void = { _ in },
         onSubmit: @escaping () -> Void,
         onArrowUp: (() -> Void)? = nil,
@@ -48,9 +63,12 @@ public struct ChatInputEditorView: NSViewRepresentable {
         onEnter: (() -> Void)? = nil,
         onEscape: (() -> Void)? = nil,
         onFileDrop: ((URL) -> Void)? = nil,
+        onBlockInserted: ((UUID) -> Void)? = nil,
+        onCollapsedBlocksChanged: (([CollapsedContentBlock]) -> Void)? = nil,
         isFocused: Binding<Bool>,
         cursorPosition: Binding<Int>,
-        isImageDragHovering: Binding<Bool>
+        isImageDragHovering: Binding<Bool>,
+        pendingBlock: ConversationInputBlockRequest? = nil
     ) {
         self._text = text
         self._height = height
@@ -61,6 +79,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
         self.textColor = textColor
         self.placeholder = placeholder
         self.isVerbose = isVerbose
+        self.chipPalette = chipPalette
         self.log = log
         self.onSubmit = onSubmit
         self.onArrowUp = onArrowUp
@@ -68,6 +87,9 @@ public struct ChatInputEditorView: NSViewRepresentable {
         self.onEnter = onEnter
         self.onEscape = onEscape
         self.onFileDrop = onFileDrop
+        self.onBlockInserted = onBlockInserted
+        self.onCollapsedBlocksChanged = onCollapsedBlocksChanged
+        self.pendingBlock = pendingBlock
     }
 
     public func makeNSView(context: Context) -> NSScrollView {
@@ -116,6 +138,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
             height: CGFloat.greatestFiniteMagnitude
         )
         textView.textContainerInset = NSSize(width: 4, height: 4)
+        textView.setAccessibilityIdentifier("lumi.conversation-input.editor")
 
         scrollView.documentView = textView
         context.coordinator.attach(to: textView)
@@ -168,13 +191,43 @@ public struct ChatInputEditorView: NSViewRepresentable {
             return
         }
 
-        let currentText = resolvedText(from: textView)
+        let resolved = resolvedContent(from: textView)
+        let currentText = resolved.text
         let textChanged = currentText != text
+
+        if textChanged, context.coordinator.shouldPublishEditorTextUp(currentText) {
+            // 补偿性回写：编辑器里有 binding 尚不知道的内容。
+            //
+            // 正常输入靠 `textViewDidChange` → `publishCommittedText` 上报。
+            // 但不是所有写入都会产生该通知——粘贴、语音输入、以及 UI 测试的
+            // `typeText`（一次性合成整段文本）都只改 `textView.string`。
+            // 此时 binding 仍是旧值，若按下面的分支把 binding 灌回编辑器，
+            // 用户刚输入的内容会被静默清空；即使侥幸没清空，状态层也永远
+            // 不知道「输入框有字」，导致发送按钮停在 disabled。
+            //
+            // 因此这里必须先判断方向：内容若是编辑器侧产生且从未上报过，
+            // 就向上写入 binding，而不是向下覆盖编辑器。
+            context.coordinator.publishEditorTextUp(currentText, from: textView)
+            // 文本未变但折叠块变了（用户删掉了 chip 之外的文字）也要上报，
+            // 否则上层会拿着过期的区间发送。
+            reportCollapsedBlocks(resolved.blocks)
+            updatePlaceholder(for: textView)
+            insertPendingBlockIfNeeded(in: textView, context: context)
+            // 本轮不回写选区：编辑器刚被外部写入，binding 的 cursorPosition
+            // 还是上一次同步的陈旧值，用它恢复选区会把刚输入的末尾字符吃掉
+            // （实测 `typeText("ZZVERIFY1")` 后只剩 `ZZVERIFY`）。
+            return
+        }
+
         if textChanged {
             textView.delegate = nil
             textView.hasPastePreviewAttachments = false
             textView.string = text
             textView.delegate = context.coordinator
+            context.coordinator.noteBindingTextPushedDown(text)
+            // 纯文本写回编辑器后，chip 已不存在，区间必须一并清空，
+            // 否则发送时会带着早已不存在的区间落库。
+            reportCollapsedBlocks([])
         }
 
         updatePlaceholder(for: textView)
@@ -192,6 +245,22 @@ public struct ChatInputEditorView: NSViewRepresentable {
                 context.coordinator.scheduleHeightUpdate(for: textView, immediately: true)
             }
         }
+
+        insertPendingBlockIfNeeded(in: textView, context: context)
+    }
+
+    /// 把外部递交的折叠块插进编辑器。
+    ///
+    /// 超过块自带的折叠阈值时插入 chip（一行内联按钮），否则按纯文本插入，
+    /// 让用户仍能在发送前直接改写短内容。
+    private func insertPendingBlockIfNeeded(in textView: EditorTextView, context: Context) {
+        guard let block = pendingBlock,
+              context.coordinator.lastInsertedBlockID != block.id else {
+            return
+        }
+        context.coordinator.lastInsertedBlockID = block.id
+        context.coordinator.insert(block, in: textView)
+        onBlockInserted?(block.id)
     }
 
     public func makeCoordinator() -> Coordinator {
@@ -221,52 +290,96 @@ public struct ChatInputEditorView: NSViewRepresentable {
 
         let usedRect = layoutManager.usedRect(for: textContainer)
         let insetHeight = textView.textContainerInset.height * 2
-        guard let newHeight = Self.measuredHeight(
+        let measured = Self.measuredHeight(
             usedRectHeight: usedRect.height,
             insetHeight: insetHeight,
             availableWidth: textContainer.containerSize.width
-        ) else {
-            return
-        }
+        )
+        // `usedRect` 带亚像素误差。这里把高度量化到行数：行数没变就不上报，
+        // 避免 `.frame(height:)` 在极小范围内反复变动——该输入框是 bottomFixed
+        // 的，每次变动都会让整条消息列表重排。
+        let newHeight = Self.stabilizedHeight(measured, previous: height)
+        guard let scrollView = textView.enclosingScrollView else { return }
         let contentHeight = usedRect.height + insetHeight
 
-        if let scrollView = textView.enclosingScrollView {
-            scrollView.hasVerticalScroller = contentHeight > Self.maxHeight
-        }
+        scrollView.hasVerticalScroller = contentHeight > Self.maxHeight
 
         if height != newHeight {
             coordinator.scheduleHeightBindingUpdate(newHeight)
         }
     }
 
-    private func resolvedText(from textView: NSTextView) -> String {
+    /// 编辑器内容拍平后的结果。
+    ///
+    /// `text` 是 chip 原文已还原的完整正文（发给上层的正是它）；
+    /// `blocks` 记录每个 chip 在该正文中的 Character 区间。
+    struct ResolvedEditorContent {
+        var text: String
+        var blocks: [CollapsedContentBlock]
+    }
+
+    /// 拍平编辑器内容，并顺带算出折叠块在拍平正文中的区间。
+    ///
+    /// 折叠 chip 只是编辑器里的 attachment，本身不携带「我在正文里的位置」。
+    /// 若不把区间一并上报，发送后消息里就只剩一长串纯文字——这正是
+    /// 「粘贴时是折叠块、发出后却展开成一大段」的根因。
+    private func resolvedContent(from textView: NSTextView) -> ResolvedEditorContent {
         guard let editorTextView = textView as? EditorTextView,
               editorTextView.hasPastePreviewAttachments,
               let textStorage = textView.textStorage,
               textStorage.length > 0 else {
-            return textView.string
+            return ResolvedEditorContent(text: textView.string, blocks: [])
         }
 
+        let flattened = Self.flattenedContent(from: textStorage)
+        if !flattened.hasAttachments {
+            editorTextView.hasPastePreviewAttachments = false
+            return ResolvedEditorContent(text: textView.string, blocks: [])
+        }
+        return ResolvedEditorContent(text: flattened.text, blocks: flattened.blocks)
+    }
+
+    /// 把带 chip 的富文本拍平成纯文本，并算出每个 chip 在纯文本中的区间。
+    ///
+    /// 抽成静态纯函数是为了能脱离 AppKit 视图单独验证：区间算错会让消息
+    /// 里的 chip 覆盖到错误的文字上。
+    static func flattenedContent(
+        from textStorage: NSTextStorage
+    ) -> (text: String, blocks: [CollapsedContentBlock], hasAttachments: Bool) {
         let fullRange = NSRange(location: 0, length: textStorage.length)
         var result = String()
         result.reserveCapacity(textStorage.length)
+        var blocks: [CollapsedContentBlock] = []
         var foundAttachment = false
 
         textStorage.enumerateAttributes(in: fullRange, options: []) { attributes, range, _ in
             if let attachment = attributes[.attachment] as? PastePreviewAttachment {
                 foundAttachment = true
+                // 区间以**已拍平的正文**为基准：`result.count` 是 chip 之前
+                // 已累积的 Character 数，正是该 chip 在正文里的起点。
+                let start = result.count
                 result += attachment.originalText
+                blocks.append(CollapsedContentBlock(
+                    start: start,
+                    length: attachment.originalText.count,
+                    title: attachment.chipTitle,
+                    systemImage: attachment.systemImage
+                ))
             } else {
                 result += textStorage.attributedSubstring(from: range).string
             }
         }
 
-        if !foundAttachment {
-            editorTextView.hasPastePreviewAttachments = false
-            return textView.string
-        }
+        return (result, blocks, foundAttachment)
+    }
 
-        return result
+    private func resolvedText(from textView: NSTextView) -> String {
+        resolvedContent(from: textView).text
+    }
+
+    /// 把折叠块区间上报给上层。
+    func reportCollapsedBlocks(_ blocks: [CollapsedContentBlock]) {
+        onCollapsedBlocksChanged?(blocks)
     }
 
     static func measuredHeight(
@@ -281,6 +394,42 @@ public struct ChatInputEditorView: NSViewRepresentable {
 
         let contentHeight = usedRectHeight + insetHeight
         return min(max(contentHeight, Self.minHeight), Self.maxHeight)
+    }
+
+    /// 行高。用于把连续的高度值换算成行数。
+    ///
+    /// 输入框用 15pt 系统字体，单行约 19pt。这里取该值做行数换算即可——
+    /// 目的是判断「有没有多一行 / 少一行」，不要求与实际行高完全一致。
+    static let nominalLineHeight: CGFloat = 19
+
+    /// 抑制亚像素抖动后再决定是否上报高度。
+    ///
+    /// - Important: 输入框是 `bottomFixed` 的，`height` binding 一变，SwiftUI
+    ///   就改 `.frame(height:)`，整条消息列表随之重排。而 AppKit 的
+    ///   `usedRect(for:)` 带亚像素误差：同一行内容下相邻两次测量可能相差零点几个点。
+    ///   若原样上报，frame 会在极小范围内反复变动，每个字符都触发一次全区重排。
+    ///
+    ///   做法是把高度量化到行数再取整：行数没变就沿用上一次高度，行数变了才上报。
+    ///
+    /// - Parameters:
+    ///   - measured: 本次测得的高度；`nil` 表示测量不可用（宽度为 0 的临时布局等）。
+    ///   - previous: 上一次已上报的高度。
+    ///   - lineHeight: 行高，用于行数换算。
+    /// - Returns: 应上报的高度。测量失败时沿用 ``previous``，不把输入框压回最小高度。
+    static func stabilizedHeight(
+        _ measured: CGFloat?,
+        previous: CGFloat,
+        lineHeight: CGFloat = nominalLineHeight
+    ) -> CGFloat {
+        guard let measured, measured.isFinite, lineHeight > 0 else { return previous }
+
+        // 行数一致 → 认为只是亚像素抖动，沿用上一次已上报的值。
+        guard Int((measured / lineHeight).rounded(.down)) != Int((previous / lineHeight).rounded(.down))
+        else {
+            return previous
+        }
+
+        return measured
     }
 }
 
@@ -303,11 +452,61 @@ private final class ChatInputScrollView: NSScrollView {
     }
 }
 
+// MARK: - ConversationInputBlockRequest
+
+/// 待插入输入框的折叠块请求。
+///
+/// 与 Provider 层的 `ConversationInputBlock` 内容一致，但在插件内部多一层
+/// 传递：ViewModel 把它作为可发布状态交给 SwiftUI，编辑器消费后由
+/// ``ChatInputEditorView/Coordinator/lastInsertedBlockID`` 去重，避免同一个块
+/// 在后续的 `updateNSView` 中被反复插入。
+public struct ConversationInputBlockRequest: Equatable {
+    public let id: UUID
+    public let text: String
+    public let title: String
+    public let systemImage: String
+    /// 折叠阈值：文本短于此值时按纯文本插入，方便用户直接改写。
+    public let collapseThreshold: Int
+
+    public init(
+        id: UUID = UUID(),
+        text: String,
+        title: String,
+        systemImage: String,
+        collapseThreshold: Int
+    ) {
+        self.id = id
+        self.text = text
+        self.title = title
+        self.systemImage = systemImage
+        self.collapseThreshold = collapseThreshold
+    }
+
+    public var shouldCollapse: Bool {
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && text.count >= max(0, collapseThreshold)
+    }
+}
+
 extension ChatInputEditorView {
-    @MainActor
     public final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: ChatInputEditorView
         var lastSyncedCursorPosition: Int?
+        /// 最近一次已插入的折叠块 ID。用于在多次 `updateNSView` 之间去重。
+        var lastInsertedBlockID: UUID?
+        /// 最近一次已同步的文本，无论同步方向是「binding → 编辑器」还是
+        /// 「编辑器 → binding」。
+        ///
+        /// `updateNSView` 发现两边不一致时，必须先回答「这个差异是谁造成的」，
+        /// 否则就会把方向判反：
+        /// - binding 变了（典型：发送后清空草稿）→ 必须下发到编辑器；
+        /// - 编辑器变了且 binding 不知情（粘贴、`typeText` 等一次性写入）
+        ///   → 必须上报到 binding。
+        ///
+        /// - Important: 上报路径**必须**也记录在这里。只有「binding → 编辑器」
+        ///   的下发被记录时，逐字输入后再发送的场景会被误判成「编辑器有未知
+        ///   新内容」，把已清空的草稿又写回 binding，输入框停留在原地。
+        private var lastSyncedBindingText: String?
         private var pendingHeightWorkItem: DispatchWorkItem?
         private var pendingHeightBindingWorkItem: DispatchWorkItem?
         private var heightScheduleID = UUID()
@@ -335,6 +534,52 @@ extension ChatInputEditorView {
 
         func accepts(_ textView: NSTextView) -> Bool {
             isActive && representedTextView === textView
+        }
+
+        // MARK: - 文本方向判定（binding ⇄ 编辑器）
+
+        /// binding 的文本刚被我们灌进编辑器时，编辑器与 binding「本该一致」。
+        /// 此时若仍不相等，说明是绑定侧的后续变更（或编辑器被外部改写后
+        /// binding 又动过），应按「binding → 编辑器」处理。
+        func noteBindingTextPushedDown(_ text: String) {
+            lastSyncedBindingText = text
+        }
+
+        /// 编辑器里的差异是否应判定为「编辑器侧变更」并向上发布。
+        ///
+        /// 仅当差异内容**不是**我们最近一次同步过的文本时才成立。这样区分了两个方向：
+        /// - 差异 == 最近同步值 → binding 变了，需要下发（正常路径）
+        /// - 差异 != 最近同步值 → 编辑器被写入且 binding 不知情，需要上报
+        func shouldPublishEditorTextUp(_ editorText: String) -> Bool {
+            if let synced = lastSyncedBindingText {
+                // 刚同步过：编辑器和该值不同说明用户/外部又改了，视为编辑器侧变更。
+                return editorText != synced
+            }
+            // 从未同步过：binding 与编辑器的任何差异都来自编辑器侧。
+            return true
+        }
+
+        /// 把编辑器内容向上发布到 binding。
+        ///
+        /// - Important: 这里**不**写 `parent.cursorPosition`。本方法只在
+        ///   「编辑器已被外部写入、binding 不知情」时调用，此时 binding 的
+        ///   `cursorPosition` 仍是上一次同步的值；若把它写回，`updateNSView`
+        ///   随后的光标恢复分支会用这个陈旧位置重设选区，把刚输入的末尾字符
+        ///   吃掉（实测 `typeText("ZZVERIFY1")` 后只剩 `ZZVERIFY`）。
+        ///   编辑器自身的选区已是正确位置，无需干预。
+        @MainActor
+        func publishEditorTextUp(_ editorText: String, from textView: NSTextView) {
+            lastSyncedBindingText = editorText
+            parent.text = editorText
+            // 补偿性回写同样要带上折叠块区间：粘贴不走 `textViewDidChange`，
+            // 只在这里上报，漏掉它就等于粘贴内容永远无法还原成 chip。
+            parent.reportCollapsedBlocks(parent.resolvedContent(from: textView).blocks)
+            // 只同步「当前光标在文本中的位置」这一事实，不触发选区回写。
+            lastSyncedCursorPosition = ChatInputEditorRules.utf16ToSwiftIndex(
+                textView.selectedRange().location,
+                in: textView.string
+            )
+            scheduleHeightUpdate(for: textView)
         }
 
         func invalidate() {
@@ -446,9 +691,22 @@ extension ChatInputEditorView {
             publishCommittedText(from: textView)
         }
 
+        /// 测试入口：走与真实编辑路径完全相同的发布逻辑。
+        @MainActor
+        func publishCommittedTextForTesting(from textView: NSTextView) {
+            publishCommittedText(from: textView)
+        }
+
         @MainActor
         private func publishCommittedText(from textView: NSTextView) {
-            parent.text = parent.resolvedText(from: textView)
+            let resolved = parent.resolvedContent(from: textView)
+            // 记录本次上报：binding 与编辑器就此一致，后续差异才能归因到
+            // binding 侧（例如发送后清空草稿）而不是「编辑器有未知内容」。
+            lastSyncedBindingText = resolved.text
+            parent.text = resolved.text
+            // 折叠块区间与文本同源，必须在同一轮里一起上报：只报文本会让
+            // 上层拿不到区间，发送后消息就会退化成一大段纯文字。
+            parent.reportCollapsedBlocks(resolved.blocks)
 
             let utf16Location = textView.selectedRange().location
             let swiftLocation = ChatInputEditorRules.utf16ToSwiftIndex(utf16Location, in: textView.string)
@@ -458,6 +716,41 @@ extension ChatInputEditorView {
             lastSyncedCursorPosition = swiftLocation
 
             scheduleHeightUpdate(for: textView)
+        }
+
+        @MainActor
+        /// 插入外部递交的折叠块。
+        ///
+        /// 达到折叠阈值时插入 chip（一行内联按钮），否则按纯文本插入，
+        /// 让短内容在发送前仍可直接改写。两条路径都在末尾把光标移到插入点之后。
+        func insert(_ block: ConversationInputBlockRequest, in textView: EditorTextView) {
+            let insertionRange = textView.selectedRange()
+
+            if block.shouldCollapse {
+                let attachment = PastePreviewAttachment(
+                    originalText: block.text,
+                    title: block.title,
+                    systemImage: block.systemImage,
+                    font: textView.font,
+                    palette: parent.chipPalette
+                )
+                textView.hasPastePreviewAttachments = true
+                textView.insertText(
+                    NSAttributedString(attachment: attachment),
+                    replacementRange: insertionRange
+                )
+                // chip 的 hover 依赖 tracking area，立即挂上不等 AppKit 的布局回调。
+                textView.syncPasteHoverTracking()
+            } else {
+                // 已有内容时留一个空行，避免和用户已写的文字黏在一起。
+                let separator = insertionRange.location > 0 ? "\n" : ""
+                textView.insertText(separator + block.text, replacementRange: insertionRange)
+            }
+
+            // insertText 会通过 delegate 发布文本；这里直接同步一次，
+            // 让草稿立刻带上新内容，不必等下一轮 SwiftUI 更新。
+            publishCommittedText(from: textView)
+            scheduleHeightUpdate(for: textView, immediately: true)
         }
 
         @MainActor
@@ -471,7 +764,11 @@ extension ChatInputEditorView {
                 return false
             }
 
-            let attachment = PastePreviewAttachment(originalText: text)
+            let attachment = PastePreviewAttachment(
+                originalText: text,
+                font: textView.font,
+                palette: parent.chipPalette
+            )
             let attributed = NSAttributedString(attachment: attachment)
             textView.hasPastePreviewAttachments = true
             textView.insertText(attributed, replacementRange: textView.selectedRange())
@@ -848,10 +1145,11 @@ final class EditorTextView: NSTextView {
 
         let popover = NSPopover()
         popover.behavior = .transient
-        popover.contentSize = NSSize(width: 620, height: 460)
+        popover.contentSize = PastePreviewPopoverViewController.contentSize
         popover.contentViewController = PastePreviewPopoverViewController(
             text: attachment.originalText,
-            summaryText: attachment.summaryText
+            summaryText: attachment.summaryText,
+            title: attachment.previewTitle
         )
         popover.show(relativeTo: rect, of: self, preferredEdge: .maxY)
         pastePreviewPopover = popover
@@ -864,13 +1162,71 @@ final class EditorTextView: NSTextView {
 ///
 /// 通过 ``PasteButtonAttachmentCell`` 在正文里绘制成一行内联的「小按钮」chip，
 /// 视觉上只占用一行、随文本一起排版；点击后弹出可滚动的预览 popover。
+///
+/// 粘贴与大段内容的折叠共用这一种 attachment：区别只在 chip 上显示的标题与图标，
+/// 发送时都还原为 `originalText`。
 final class PastePreviewAttachment: NSTextAttachment {
     let originalText: String
     let characterCount: Int
     let lineCount: Int
     let byteCountText: String
+    /// 预览弹窗标题。粘贴固定为「粘贴的文本」，外部内容用来源标题（如文件名）。
+    let previewTitle: String
+    /// chip 上的主标题。粘贴是「粘贴的文本」，外部内容是来源（如文件名）。
+    ///
+    /// 与 ``chipDetail`` 分开存放，是为了在视觉上把「这是什么」与「有多大」
+    /// 分成两层：标题与正文同号同色，统计信息小一号、用次级色。
+    let chipLabel: String
+    /// chip 上紧跟标题的统计信息（如「5,678 字 · 195 行」）。可为空。
+    let chipDetail: String
+    /// chip 的一行完整文案。随消息落库，消息端据此还原同样的 chip。
+    let chipTitle: String
+    /// chip 图标（SF Symbol 名）。外部内容由生产方指定，粘贴走默认值。
+    let systemImage: String
 
-    init(originalText: String) {
+    /// 粘贴路径：不带来源标题与图标，chip 沿用「粘贴的文本」文案。
+    @MainActor
+    convenience init(
+        originalText: String,
+        font: NSFont? = nil,
+        palette: PasteChipPalette = .fallback
+    ) {
+        self.init(
+            originalText: originalText,
+            title: nil,
+            systemImage: nil,
+            font: font,
+            palette: palette
+        )
+    }
+
+    @MainActor
+    convenience init(
+        originalText: String,
+        title: String?,
+        systemImage: String?,
+        palette: PasteChipPalette = .fallback
+    ) {
+        self.init(
+            originalText: originalText,
+            title: title,
+            systemImage: systemImage,
+            font: nil,
+            palette: palette
+        )
+    }
+
+    /// - Parameter font: chip 所在编辑器的正文字体。传入后 chip 高度与该字号对齐；
+    ///   为 nil 时退回默认字号，行为与之前一致。
+    /// - Parameter palette: chip 配色。由 SwiftUI 层按主题注入，与消息列表共用。
+    @MainActor
+    init(
+        originalText: String,
+        title: String?,
+        systemImage: String?,
+        font: NSFont?,
+        palette: PasteChipPalette = .fallback
+    ) {
         self.originalText = originalText
         self.characterCount = originalText.count
         self.lineCount = Self.lineCount(for: originalText)
@@ -878,10 +1234,44 @@ final class PastePreviewAttachment: NSTextAttachment {
             fromByteCount: Int64(originalText.utf8.count),
             countStyle: .file
         )
-        super.init(data: nil, ofType: nil)
-        self.attachmentCell = PasteButtonAttachmentCell(
-            title: Self.chipTitle(characterCount: characterCount, lineCount: lineCount)
+        self.previewTitle = title ?? pluginLocalization.string("Pasted text")
+        // 有来源标题时标题就是来源（如文件名），没有时用「粘贴的文本」。
+        // 统计信息始终另起一层，视觉上比标题弱一级。
+        self.chipLabel = title ?? pluginLocalization.string("Pasted text")
+        self.chipDetail = Self.chipDetailText(
+            characterCount: characterCount,
+            lineCount: lineCount
         )
+        self.chipTitle = "\(self.chipLabel) · \(self.chipDetail)"
+        self.systemImage = systemImage ?? PasteButtonAttachmentCell.defaultSymbolName
+        super.init(data: nil, ofType: nil)
+        if let font {
+            self.attachmentCell = PasteButtonAttachmentCell(
+                title: self.chipLabel,
+                detail: self.chipDetail,
+                systemImage: self.systemImage,
+                font: font,
+                palette: palette
+            )
+        } else {
+            self.attachmentCell = PasteButtonAttachmentCell(
+                title: self.chipLabel,
+                detail: self.chipDetail,
+                systemImage: self.systemImage,
+                palette: palette
+            )
+        }
+    }
+
+    /// chip 上紧跟标题的统计信息，例如「12,480 字 · 312 行」。
+    private static func chipDetailText(
+        characterCount: Int,
+        lineCount: Int
+    ) -> String {
+        [
+            countText(characterCount),
+            lineText(lineCount)
+        ].joined(separator: " · ")
     }
 
     @available(*, unavailable)
@@ -892,15 +1282,6 @@ final class PastePreviewAttachment: NSTextAttachment {
     /// 预览弹窗里展示的完整摘要。
     var summaryText: String {
         "\(Self.countText(characterCount)) · \(Self.lineText(lineCount)) · \(byteCountText)"
-    }
-
-    /// 内联 chip 上显示的一行文案，例如「粘贴的文本 · 12,480 字 · 312 行」。
-    static func chipTitle(characterCount: Int, lineCount: Int) -> String {
-        [
-            pluginLocalization.string("Pasted text"),
-            countText(characterCount),
-            lineText(lineCount)
-        ].joined(separator: " · ")
     }
 
     static func countText(_ count: Int) -> String {
@@ -931,41 +1312,216 @@ final class PastePreviewAttachment: NSTextAttachment {
 
 /// 把折叠的大段粘贴绘制成一行内联的「小按钮」。
 ///
-/// 外观是一个圆角胶囊：淡色背景 + 细描边 + 图标 + 一行摘要文字，
-/// 与正文基线对齐且只占一行。hover 时背景与描边加深，让用户知道这是个可点的按钮。
+/// 外观是一个圆角胶囊：淡色背景 + 细描边 + 图标 + 标题 + 统计信息，
+/// hover 时背景与描边加深，让用户知道这是个可点的按钮。
+///
+/// ## 与消息列表对齐
+///
+/// 同一段折叠内容在消息列表里也渲染成一个 chip。两处共用圆角、间距与配色；
+/// 输入框里的主标题则跟随正文字体，保证与同一行的普通文字对齐。
+///
+/// ## 与文字行的融合
+///
+/// chip 要看起来像「长在这行文字里」而不是「浮在文字上」，必须满足两条：
+///
+/// 1. **基线一致**——chip 的文字基线与正文基线是同一条水平线。
+/// 2. **不撑高行**——chip 的行内占位高度与普通文字相同。
+///
+/// ### 基线必须与 AppKit 的摆放规则同源
+///
+/// AppKit 摆放 attachment cell 的规则（实测确认）：
+///
+/// ```
+/// 正文基线 = cellFrame.minY + cellBaselineOffset.y + cellHeight
+/// ```
+///
+/// 于是「绘制时的基线 = cellFrame.minY + internalBaseline」要正好等于正文
+/// 基线，就必须有 `internalBaseline == cellBaselineOffset.y + cellHeight`。
+///
+/// - Important: 这个等式**不能靠两处各算一遍**。早期实现里
+///   `internalBaseline` 与 `cellHeight` 各自来自字体度量，看着相等，实则
+///   只要有一处被改动（cell 高度变了、行高变了……），误差会**原样放大成
+///   整块 chip 的下沉/上浮**：差 12pt 就是 chip 整块掉到正文下面 12pt——
+///   用户截图里的观感。故现在 `internalBaseline` 直接由那两个量推导。
+///
+/// - Note: 早期还试过「向文本系统问基线」，但那条路走不通：AppKit 绘制
+///   attachment cell 时传的 `controlView` 是 **nil**，cell 拿不到文本视图。
+///
+/// ## 胶囊贴着内容，而不是撑满行盒
+///
+/// cell 的行内占位高度必须等于行高（否则会撑高行），但**画出来的胶囊**
+/// 不必占满这个高度。早期实现把胶囊画成整个 cell 高度，于是胶囊底边
+/// 落到正文基线以下 13pt（实测），胶囊高 27pt——比 18pt 的行盒还高，
+/// 视觉上像一块底板压住文字。这正是输入框里的 chip 显得「乱」的主因。
+///
+/// 现在胶囊按**正文的字形墨迹**计算高度：上沿与正文的字顶齐平、下沿与
+/// 正文的字底齐平，上下各留一点内边距，于是胶囊刚好裹住这一行的文字，
+/// 看起来是「长在行里」而不是「压在字下」。
+///
+/// 胶囊高度用 CoreText 的字形墨迹边界计算，紧贴实际字形，
+/// 不会因为 CJK 与拉丁的升降部差异而忽高忽低。
+///
 /// 宽度在初始化时按文本测量并缓存，避免布局阶段反复测量字符串。
 final class PasteButtonAttachmentCell: NSTextAttachmentCell {
-    private static let titleFont = NSFont.systemFont(ofSize: 11, weight: .medium)
-    private static let symbolPointSize: CGFloat = 9
-    private static let symbolName = "doc.on.clipboard"
-    private static let contentInset: CGFloat = 6
-    private static let iconSize: CGFloat = 11
-    private static let iconTitleSpacing: CGFloat = 4
-    private static let maximumWidth: CGFloat = 260
-    private static let chipHeight: CGFloat = 18
-    private static let cornerRadius: CGFloat = 5
-    private static let baselineOffset: CGFloat = -4
-    /// 描边宽度的一半，留给描边本身，避免描边被裁掉。
-    private static let strokeInset: CGFloat = 1
+    /// 胶囊左右内边距。
+    private static var horizontalPadding: CGFloat { CollapsedContentChipStyle.horizontalPadding }
+    /// 胶囊上下内边距（相对字形墨迹边界）。
+    private static var capsulePadding: CGFloat { CollapsedContentChipStyle.inlineVerticalPadding }
+    /// 胶囊最大宽度。超出时截断标题而不是无限拉长。
+    private static var maximumWidth: CGFloat { CollapsedContentChipStyle.maximumWidth }
+    /// 图标尺寸与图标到标题的间距。
+    private static var iconSize: CGFloat { CollapsedContentChipStyle.iconSize }
+    private static var iconSpacing: CGFloat { CollapsedContentChipStyle.iconSpacing }
+    /// 标题与统计信息之间的间距。
+    private static var detailSpacing: CGFloat { CollapsedContentChipStyle.detailSpacing }
+    /// 未指定图标时使用的默认符号。
+    static let defaultSymbolName = "doc.on.clipboard"
 
-    private static var titleAttributes: [NSAttributedString.Key: Any] {
+    /// 量正文墨迹时使用的代表性中文。
+    ///
+    /// 中文是输入框正文的主要字符，且它的墨迹相对基线偏上——正是胶囊需要
+    /// 对齐的那个偏移。
+    private static let bodyInkSample = "国"
+
+    private let titleFont: NSFont
+    private let detailFont: NSFont
+    private let symbolPointSize: CGFloat
+    private let cellHeight: CGFloat
+    /// 测试专用的 cell 占位高度覆盖值。生产路径恒为 nil。
+    ///
+    /// `nonisolated(unsafe)`：`cellSize()` 是 AppKit 的非隔离覆写，读不到
+    /// 主 actor 的状态。这个值只在主线程上由测试改一次，故可以安全地
+    /// 绕过隔离检查。
+    nonisolated(unsafe) private var cellHeightForTesting: CGFloat?
+    private let cornerRadius: CGFloat
+    private let baselineOffset: CGFloat
+    /// chip 文字基线相对 cellFrame.minY 的高度。
+    ///
+    /// **必须等于 `cellBaselineOffset.y + cellSize().height`**——这正是
+    /// AppKit 摆放 attachment cell 的规则（实测确认）：
+    ///
+    /// ```
+    /// 正文基线 = cellFrame.minY + cellBaselineOffset.y + cellHeight
+    /// ```
+    ///
+    /// 于是「绘制时的基线 = cellFrame.minY + internalBaseline」恰好等于正文
+    /// 基线。
+    ///
+    /// - Important: 这个等式**不能靠两处各算一遍**。早期实现里
+    ///   `internalBaseline` 与 `cellHeight` 各自来自字体度量，看似相等，
+    ///   实则只要有一处被改动（cell 高度变了、行高变了……），误差会**原样
+    ///   放大成整块 chip 的下沉/上浮**：差 12pt 就是 chip 整块掉到正文下面
+    ///   12pt，正是用户截图里的观感。故此处直接由那两个量推导。
+    private var internalBaseline: CGFloat {
+        baselineOffset + effectiveCellHeight
+    }
+    /// cell 的行内占位高度。`cellSize()` 与 ``internalBaseline`` 都用它。
+    private var effectiveCellHeight: CGFloat {
+        cellHeightForTesting ?? cellHeight
+    }
+    private let chipTitle: String
+    private let chipTitleWidth: CGFloat
+    /// chip 副标题（统计信息）。为空时只画标题。
+    private let chipDetail: String
+    private let chipDetailWidth: CGFloat
+    /// chip 占位宽度：图标 + 标题 + 统计信息。初始化时算好。
+    private let contentWidth: CGFloat
+    /// chip 图标名。粘贴用剪贴板图标，外部内容由生产方指定（如代码文件的括号图标）。
+    private let symbolName: String
+    /// 正文字体墨迹相对基线的上下边界。
+    private let bodyInkAbove: CGFloat
+    private let bodyInkBelow: CGFloat
+    /// chip 配色。由 SwiftUI 层按主题注入，保证与消息列表一致。
+    private let palette: PasteChipPalette
+
+    /// chip 文案使用的字体与颜色。字号随实例的 `titleFont` 变化，这里按需组装。
+    ///
+    /// 颜色取自 ``PasteChipPalette``，与消息列表的 chip 共用同一套色。
+    private static func titleAttributes(
+        for font: NSFont,
+        color: NSColor
+    ) -> [NSAttributedString.Key: Any] {
         [
-            .font: titleFont,
-            .foregroundColor: NSColor.labelColor
+            .font: font,
+            .foregroundColor: color
         ]
     }
 
-    private let chipTitle: String
-    private let chipTitleWidth: CGFloat
+    /// 文本墨迹相对基线的上下边界。
+    ///
+    /// 用 CoreText 的字形路径边界而非字体的 ascent/descent：CJK 与拉丁的
+    /// 实际墨迹范围差别很大，按字体度量算会让胶囊忽高忽低。
+    private static func inkBounds(of text: String, font: NSFont) -> (above: CGFloat, below: CGFloat) {
+        guard !text.isEmpty else { return (0, 0) }
+        let attributed = NSAttributedString(string: text, attributes: [.font: font])
+        let line = CTLineCreateWithAttributedString(attributed)
+        let bounds = CTLineGetBoundsWithOptions(line, .useGlyphPathBounds)
+        return (above: bounds.maxY, below: -bounds.minY)
+    }
 
-    init(title: String) {
+    /// - Parameters:
+    ///   - title: chip 主标题（如「粘贴的文本」）。
+    ///   - detail: chip 副标题（如「5,678 字 · 195 行」）。可为空。
+    ///   - font: chip 所在编辑器的正文字体。主标题、行内占位高度和胶囊高度
+    ///     都以它为参照，保证 chip 与两侧正文的字顶、字底和基线一致。
+    ///   - palette: chip 配色。由 SwiftUI 层按主题注入，与消息列表共用同一套色。
+    init(
+        title: String,
+        detail: String = "",
+        systemImage: String? = nil,
+        font: NSFont = .systemFont(ofSize: 15),
+        palette: PasteChipPalette = .fallback
+    ) {
         self.chipTitle = title
-        let measured = ceil((title as NSString).size(withAttributes: Self.titleAttributes).width)
-        let maximum = Self.maximumWidth
-            - Self.contentInset * 2
-            - Self.iconSize
-            - Self.iconTitleSpacing
-        self.chipTitleWidth = min(measured, maximum)
+        self.chipDetail = detail
+        self.symbolName = systemImage ?? Self.defaultSymbolName
+        self.palette = palette
+        self.titleFont = font
+        self.detailFont = .systemFont(ofSize: CollapsedContentChipStyle.detailSize, weight: .regular)
+        self.symbolPointSize = Self.iconSize
+
+        let lineHeight = NSLayoutManager().defaultLineHeight(for: font)
+        let descender = -font.descender
+        // cell 覆盖整个行盒，行高因此与普通文字一致。
+        self.cellHeight = lineHeight
+        // cell 帧里，基线离底边的距离。AppKit 摆放 attachment 时用它把
+        // chip 的基线对到正文基线上。
+        self.baselineOffset = -descender
+        // internalBaseline 由上面两个量推导（见其注释），不在这里另算一遍。
+
+        let titleAttributes = Self.titleAttributes(for: self.titleFont, color: palette.title)
+        let measuredTitle = ceil((title as NSString).size(withAttributes: titleAttributes).width)
+        let measuredDetail = detail.isEmpty
+            ? 0
+            : ceil((detail as NSString).size(withAttributes: [.font: self.detailFont]).width)
+
+        // 宽度预算：先给统计信息留位置，剩余给标题；仍不够就整体舍弃统计信息。
+        let fixed = Self.horizontalPadding * 2 + Self.iconSize + Self.iconSpacing
+        let budget = Self.maximumWidth - fixed
+        let resolvedTitleWidth: CGFloat
+        let resolvedDetailWidth: CGFloat
+        if !detail.isEmpty, measuredTitle + Self.detailSpacing + measuredDetail <= budget {
+            resolvedTitleWidth = measuredTitle
+            resolvedDetailWidth = measuredDetail
+        } else {
+            resolvedTitleWidth = min(measuredTitle, budget)
+            resolvedDetailWidth = 0
+        }
+        self.chipTitleWidth = resolvedTitleWidth
+        self.chipDetailWidth = resolvedDetailWidth
+        // 占位宽度在初始化时算好，避免 cellSize() 里访问主线程隔离的属性。
+        self.contentWidth = fixed
+            + resolvedTitleWidth
+            + (resolvedDetailWidth > 0 ? Self.detailSpacing + resolvedDetailWidth : 0)
+
+        // 正文的墨迹边界。取一段代表性中文来量：中文的墨迹相对基线偏上，
+        // 且与拉丁差别很大，用字体度量（ascent/descent）会算错。
+        let bodyInk = Self.inkBounds(of: Self.bodyInkSample, font: font)
+        self.bodyInkAbove = bodyInk.above
+        self.bodyInkBelow = bodyInk.below
+
+        // 胶囊圆角：与消息列表一致。
+        self.cornerRadius = CollapsedContentChipStyle.cornerRadius
         super.init()
     }
 
@@ -975,74 +1531,128 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
     }
 
     override func cellSize() -> NSSize {
-        NSSize(
-            width: Self.contentInset * 2 + Self.iconSize + Self.iconTitleSpacing + chipTitleWidth,
-            height: Self.chipHeight
-        )
+        NSSize(width: contentWidth, height: effectiveCellHeight)
+    }
+
+    /// 仅供测试：改掉 cell 的行内占位高度。
+    ///
+    /// 用来模拟「cell 的占位高度与算基线时用的高度不一致」的情形——早期
+    /// 实现里这两处各算一遍，一旦不一致，误差会整块放大成 chip 的下沉。
+    /// 这条缝只给测试开，生产路径永远走真实高度。
+    @MainActor
+    func setCellHeightForTesting(_ height: CGFloat) {
+        cellHeightForTesting = height
     }
 
     override func cellBaselineOffset() -> NSPoint {
-        NSPoint(x: 0, y: Self.baselineOffset)
+        NSPoint(x: 0, y: baselineOffset)
     }
 
     override func draw(withFrame cellFrame: NSRect, in controlView: NSView?) {
         let isHighlighted = (controlView as? EditorTextView)?.hoveredPasteCell === self
+        let isFlipped = NSGraphicsContext.current?.isFlipped == true
+        let baselineY = cellFrame.minY + internalBaseline
 
-        // 描边占1pt，位于 cellFrame 外缘之内，所以左右各留 1pt 的描边空间。
+        let bodyInkHeight = bodyInkAbove + bodyInkBelow
+        let bodyInkCenter = (bodyInkAbove - bodyInkBelow) / 2
+        let contentCenterY = isFlipped ? baselineY - bodyInkCenter : baselineY + bodyInkCenter
+        let chipHeight = min(bodyInkHeight + Self.capsulePadding * 2, cellFrame.height)
         let chipRect = NSRect(
-            x: cellFrame.minX + Self.strokeInset,
-            y: cellFrame.minY + 1,
-            width: cellFrame.width - Self.strokeInset * 2,
-            height: cellFrame.height - 2
+            x: cellFrame.minX,
+            y: contentCenterY - chipHeight / 2,
+            width: cellFrame.width,
+            height: chipHeight
         )
 
         let path = NSBezierPath(
             roundedRect: chipRect,
-            xRadius: Self.cornerRadius,
-            yRadius: Self.cornerRadius
+            xRadius: cornerRadius,
+            yRadius: cornerRadius
         )
-        path.lineWidth = 1
 
         if isHighlighted {
-            NSColor.controlAccentColor.withAlphaComponent(0.16).setFill()
-            path.fill()
-            NSColor.controlAccentColor.withAlphaComponent(0.45).setStroke()
+            palette.hoverFill.setFill()
+            palette.hoverStroke.setStroke()
         } else {
-            NSColor.labelColor.withAlphaComponent(0.07).setFill()
-            path.fill()
-            NSColor.labelColor.withAlphaComponent(0.16).setStroke()
+            // 底色与描边都压得很轻，避免胶囊盖过旁边的正文。
+            palette.fill.setFill()
+            palette.stroke.setStroke()
         }
+        path.fill()
 
+        // - Important: 描边必须真的描出来。只 `setStroke()` 而不 `stroke()`，
+        //   胶囊就只剩一层底色、没有边框——而消息列表那侧是 `strokeBorder`，
+        //   两边看起来就不是同一个东西（一边有边、一边没边）。
+        //
+        //   且描边要压在**形状内侧**：SwiftUI 的 `strokeBorder` 把描边画在形状
+        //   内部，胶囊的外边界仍等于形状本身；AppKit 的 `stroke()` 默认是
+        //   **居中**描边，会向外溢出半个线宽，于是两边的胶囊轮廓差出 0.5pt，
+        //   且输入框这侧会撑破正文的字带（chip 会比正文高出一圈）。
+        //   故这里先按形状裁剪、再居中描边——可见的描边落在形状内部，
+        //   外边界回到 chipRect，与消息列表那侧一致。
+        let strokeWidth = CollapsedContentChipStyle.strokeWidth
+        NSGraphicsContext.saveGraphicsState()
+        path.setClip()
+        path.lineWidth = strokeWidth
+        path.stroke()
+        NSGraphicsContext.restoreGraphicsState()
+
+        // 图标与字形盒视觉居中。
         let iconRect = NSRect(
-            x: chipRect.minX + Self.contentInset,
-            y: chipRect.midY - Self.iconSize / 2,
+            x: chipRect.minX + Self.horizontalPadding,
+            y: contentCenterY - Self.iconSize / 2,
             width: Self.iconSize,
             height: Self.iconSize
         )
-        Self.symbolImage()?.draw(in: iconRect)
+        symbolImage()?.draw(in: iconRect)
 
-        let lineHeight = ceil(Self.titleFont.ascender - Self.titleFont.descender)
-        let titleMinX = iconRect.maxX + Self.iconTitleSpacing
-        let titleRect = NSRect(
-            x: titleMinX,
-            y: chipRect.midY - lineHeight / 2,
-            width: max(0, chipRect.maxX - Self.contentInset - titleMinX),
-            height: lineHeight
+        func drawText(
+            _ text: String,
+            width: CGFloat,
+            attributes: [NSAttributedString.Key: Any],
+            at x: CGFloat
+        ) {
+            guard let graphicsContext = NSGraphicsContext.current?.cgContext else { return }
+            let line = CTLineCreateWithAttributedString(
+                NSAttributedString(string: text, attributes: attributes)
+            )
+            let drawableLine = CTLineCreateTruncatedLine(line, Double(width), .end, nil) ?? line
+            graphicsContext.saveGState()
+            if isFlipped {
+                graphicsContext.textMatrix = CGAffineTransform(scaleX: 1, y: -1)
+            }
+            graphicsContext.textPosition = CGPoint(x: x, y: baselineY)
+            CTLineDraw(drawableLine, graphicsContext)
+            graphicsContext.restoreGState()
+        }
+
+        var x = iconRect.maxX + Self.iconSpacing
+        drawText(
+            chipTitle,
+            width: chipTitleWidth,
+            attributes: Self.titleAttributes(for: titleFont, color: palette.title),
+            at: x
         )
+        x += chipTitleWidth
 
-        let paragraph = NSMutableParagraphStyle()
-        paragraph.lineBreakMode = .byTruncatingTail
-        var attributes = Self.titleAttributes
-        attributes[.paragraphStyle] = paragraph
-        (chipTitle as NSString).draw(in: titleRect, withAttributes: attributes)
+        if chipDetailWidth > 0 {
+            x += Self.detailSpacing
+            drawText(chipDetail, width: chipDetailWidth, attributes: [
+                .font: detailFont,
+                .foregroundColor: palette.detail
+            ], at: x)
+        }
     }
 
-    private static func symbolImage() -> NSImage? {
+    private func symbolImage() -> NSImage? {
         guard let symbol = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil) else {
             return nil
         }
-        let configuration = NSImage.SymbolConfiguration(pointSize: symbolPointSize, weight: .semibold)
-            .applying(NSImage.SymbolConfiguration(paletteColors: [.secondaryLabelColor]))
+        let configuration = NSImage.SymbolConfiguration(
+            pointSize: symbolPointSize,
+            weight: .medium
+        )
+            .applying(NSImage.SymbolConfiguration(paletteColors: [palette.icon]))
         return symbol.withSymbolConfiguration(configuration)
     }
 }
@@ -1052,12 +1662,15 @@ final class PasteButtonAttachmentCell: NSTextAttachmentCell {
 final class PastePreviewPopoverViewController: NSViewController {
     private let text: String
     private let summaryText: String
+    /// 弹窗标题。粘贴显示「粘贴的文本」，外部内容显示来源（如文件名）。
+    private let displayTitle: String
     private weak var copyButton: NSButton?
     private var copyFeedbackResetItem: DispatchWorkItem?
 
-    init(text: String, summaryText: String) {
+    init(text: String, summaryText: String, title: String = "") {
         self.text = text
         self.summaryText = summaryText
+        self.displayTitle = title.isEmpty ? pluginLocalization.string("Pasted text") : title
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -1066,6 +1679,15 @@ final class PastePreviewPopoverViewController: NSViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    /// 弹窗内容四周的内边距，让标题、正文与按钮都不贴在圆角边缘上。
+    private static let contentPadding: CGFloat = 16
+    /// 头部固定高度，正文区域吃掉剩余空间。
+    private static let headerHeight: CGFloat = 44
+    /// 弹窗总尺寸。宽度含 contentPadding，正文可用宽度需要再减去两侧内边距。
+    static let contentSize = NSSize(width: 620, height: 460)
+    /// 传给 scrollView 的文档宽度，只作为排版的初始值，最终由滚动区宽度决定。
+    private static var textWidth: CGFloat { contentSize.width - contentPadding * 2 }
+
     override func loadView() {
         let container = NSView()
         let scrollView = NSScrollView()
@@ -1073,6 +1695,7 @@ final class PastePreviewPopoverViewController: NSViewController {
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
 
         let textView = NSTextView()
         textView.isEditable = false
@@ -1081,10 +1704,11 @@ final class PastePreviewPopoverViewController: NSViewController {
         textView.drawsBackground = false
         textView.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
         textView.textColor = .labelColor
-        textView.textContainerInset = NSSize(width: 12, height: 12)
+        // 外层已有 contentPadding，正文内部不再重复内缩，避免双层留白。
+        textView.textContainerInset = .zero
         textView.textContainer?.widthTracksTextView = true
-        textView.textContainer?.containerSize = NSSize(width: 560, height: CGFloat.greatestFiniteMagnitude)
-        textView.frame = NSRect(x: 0, y: 0, width: 560, height: 360)
+        textView.textContainer?.containerSize = NSSize(width: Self.textWidth, height: CGFloat.greatestFiniteMagnitude)
+        textView.frame = NSRect(x: 0, y: 0, width: Self.textWidth, height: 320)
         textView.string = text
 
         scrollView.documentView = textView
@@ -1095,7 +1719,6 @@ final class PastePreviewPopoverViewController: NSViewController {
         header.distribution = .fill
         header.spacing = 10
         header.translatesAutoresizingMaskIntoConstraints = false
-        header.heightAnchor.constraint(equalToConstant: 44).isActive = true
 
         let titleStack = NSStackView()
         titleStack.orientation = .vertical
@@ -1104,7 +1727,7 @@ final class PastePreviewPopoverViewController: NSViewController {
         titleStack.translatesAutoresizingMaskIntoConstraints = false
 
         let titleLabel = NSTextField(
-            labelWithString: pluginLocalization.string("Pasted text")
+            labelWithString: displayTitle
         )
         titleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
         titleLabel.textColor = .labelColor
@@ -1135,16 +1758,18 @@ final class PastePreviewPopoverViewController: NSViewController {
 
         let stack = NSStackView(views: [header, scrollView])
         stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = 8
+        // 头部与正文都要横向撑满，否则滚动区宽度会退回文档宽度。
+        stack.alignment = .width
+        stack.spacing = 12
         stack.translatesAutoresizingMaskIntoConstraints = false
 
         container.addSubview(stack)
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: container.topAnchor),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: Self.contentPadding),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -Self.contentPadding),
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: Self.contentPadding),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -Self.contentPadding),
+            header.heightAnchor.constraint(equalToConstant: Self.headerHeight)
         ])
 
         view = container

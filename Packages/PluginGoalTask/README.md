@@ -78,3 +78,15 @@ LLM 执行并行组 B 的任务
 3. 可选提供 `suggested_actions` 建议用户选择
 4. 系统会通知用户并暂停任务执行
 5. 用户回复后，LLM 继续处理
+
+## 能力边界
+
+`GoalForkCoordinator` 需要同时协调三个 Provider（建对话 → 复制 Goal → 发消息启动回合）。
+这条链路原先直接持有 `ConversationManaging` 与 `MessageSendingProviding`，现收敛到
+`GoalForkCapability`：
+
+- `createConversation(title:)` / `discardConversation(id:)`
+- `forkGoal(id:into:)`
+- `commitUserMessage(_:conversationID:)` / `startTurn(for:)`
+
+Adapter 在 `onBoot` 中构造并注入 Coordinator，因此该事务编排层可以不跑真实回合地测试。

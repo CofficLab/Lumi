@@ -23,6 +23,8 @@ final class MailComposeViewModel: ObservableObject {
     private let composer: MailComposerService
     private let account: MailAccountConfig
     private let sessionManager: MailSessionManager
+    /// 插件数据目录（由 `MailPlugin` 经 `StorageProviding` 解析后注入）。
+    private let dataDirectory: URL
 
     // 模式与上下文
     let mode: MailComposeMode
@@ -41,7 +43,7 @@ final class MailComposeViewModel: ObservableObject {
 
     /// 本地草稿文件路径（自动保存）。
     private var draftURL: URL? {
-        let dir = MailPluginRuntime.dataDirectory()
+        let dir = dataDirectory
             .appendingPathComponent("drafts", isDirectory: true)
         let key = "\(account.id.uuidString)-\(mode.key)-\(originalDetail?.summary.uid ?? 0)"
         return dir.appendingPathComponent("\(key).json")
@@ -51,12 +53,14 @@ final class MailComposeViewModel: ObservableObject {
         composer: MailComposerService,
         sessionManager: MailSessionManager,
         account: MailAccountConfig,
+        dataDirectory: URL,
         mode: MailComposeMode,
         originalDetail: MailMessageDetail? = nil
     ) {
         self.composer = composer
         self.sessionManager = sessionManager
         self.account = account
+        self.dataDirectory = dataDirectory
         self.mode = mode
         self.originalDetail = originalDetail
         applyModeDefaults()

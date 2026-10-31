@@ -47,11 +47,22 @@ final class ToolManagerStateObserver: SuperLog {
              .batchCompleted(let id, let turn, _, _):
             provider.update(conversationID: id, turnID: turn, toolState: .completed)
         case .authorizedCompleted(let id, let turn, _, _):
+            // 授权已解决（无论允许还是拒绝），「等待用户」这个状态到此结束。
+            //
+            // - Important: 这里**必须**清掉 activity。授权路径**不产生**
+            //   ToolJobEvent（需要授权的调用走 `executeBatch` 兼容路径，
+            //   既不调 `submit(...)` 也不发 job 事件），因此
+            //   `authorizedCompleted` 是授权链路**唯一**的收尾事件——
+            //   若不在这里清理，activity 会永远停在 `.waitingForUser`，
+            //   界面上就一直挂着「等待你的输入…」，而此时已无任何卡片可回答。
+            //
+            //   参见 `AuthorizationActivityResidueTests` 的取证。
             provider.update(
                 conversationID: id,
                 turnID: turn,
                 toolState: .completed,
-                authorizationState: ConversationAuthorizationState.none
+                authorizationState: ConversationAuthorizationState.none,
+                clearActivity: true
             )
         }
     }

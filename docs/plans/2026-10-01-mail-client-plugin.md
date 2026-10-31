@@ -3,7 +3,7 @@
 Status: proposed, 2026-10-01.
 
 > **For the executing agent:** 按 Phase → Task 逐项执行，每个 Task 完成其「验证」行后
-> 按 [Commit 规范](../.agent/rules/commit-convention.md) 单独提交（`feat(KitMail): …` /
+> 按 [Commit 规范](../.lumi/rules/commit-convention.md) 单独提交（`feat(KitMail): …` /
 > `feat(PluginMail): …`）。不相关的变更拆分为多次提交。
 
 ## 1. 产品定位与决策
@@ -186,9 +186,9 @@ public let metadata = PluginMetadata(
 ## 7. UI 设计
 
 **入口**：`ActivityBarItem`（SF Symbol `envelope`，order 派生自 `info.order`，
-遵守 [插件 UI 项 order 规范](../.agent/rules/plugin-order-rules.md)）→ 激活时切换
+遵守 [插件 UI 项 order 规范](../.lumi/rules/plugin-order-rules.md)）→ 激活时切换
 `ContentViewProviding.setContentView(MailWorkspaceView)`（参照
-`DatabaseManagerSuperPlugin` 的激活/还原对称写法：激活设 content + 隐藏 chat +
+`DatabaseManagerPlugin` 的激活/还原对称写法：激活设 content + 隐藏 chat +
 加 toolbar 标题项，还原全部撤销）。
 
 **三栏布局**：
@@ -203,7 +203,7 @@ public let metadata = PluginMetadata(
 └──────────┴────────────────┴───────────────────────────┘
 ```
 
-- 设置页：走 [Settings UI 规范](../.agent/rules/settings-ui.md)——
+- 设置页：走 [Settings UI 规范](../.lumi/rules/settings-ui.md)——
   `settingsTabItems(kernel:)` 返回 `PluginSettingsScaffold` + `AppCard` +
   `AppSettingsToggleRow/PickerRow`；账户管理列表 + 添加/编辑表单页。
 - 错误处理（项目通用规则 §3）：连接失败/认证失败/发送失败必须有可见错误视图
@@ -431,11 +431,11 @@ public let metadata = PluginMetadata(
 
 ## 11. 相关规范
 
-- [插件目录结构规范](../.agent/rules/plugin-directory-rules.md)
-- [插件数据存储规范](../.agent/rules/plugin-storage-rules.md)
-- [插件国际化规范](../.agent/rules/plugin-i18n-rules.md)
-- [Settings UI (LumiUI)](../.agent/rules/settings-ui.md)
-- [内核与插件边界规范](../.agent/rules/core-plugin-boundary-rules.md)
-- [插件 UI 项 order 规范](../.agent/rules/plugin-order-rules.md)
-- [Swift 日志记录规范](../.agent/rules/swift-log.md)
-- [Commit 规范](../.agent/rules/commit-convention.md)
+- [插件目录结构规范](../.lumi/rules/plugin-directory-rules.md)
+- [插件数据存储规范](../.lumi/rules/plugin-storage-rules.md)
+- [插件国际化规范](../.lumi/rules/plugin-i18n-rules.md)
+- [Settings UI (LumiUI)](../.lumi/rules/settings-ui.md)
+- [内核与插件边界规范](../.lumi/rules/core-plugin-boundary-rules.md)
+- [插件 UI 项 order 规范](../.lumi/rules/plugin-order-rules.md)
+- [Swift 日志记录规范](../.lumi/rules/swift-log.md)
+- [Commit 规范](../.lumi/rules/commit-convention.md)

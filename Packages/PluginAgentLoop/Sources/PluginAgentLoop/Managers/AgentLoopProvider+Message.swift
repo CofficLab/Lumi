@@ -46,7 +46,15 @@ extension AgentLoopManager {
         messages.insertMessage(errorMessage, to: conversationID)
     }
 
-    func appendError(in conversationID: UUID, error: Error, turnID: UUID? = nil) async {
+    /// - Parameter reasoningContent: 本次请求已经收到的思考内容。判空失败时模型
+    ///   可能只输出了思考就结束，落库后由 `MessageViewChrome` 渲染思考入口，
+    ///   避免用户看到思考流式出现后又凭空消失。
+    func appendError(
+        in conversationID: UUID,
+        error: Error,
+        turnID: UUID? = nil,
+        reasoningContent: String? = nil
+    ) async {
         let renderInfo = error as? any LLMErrorRenderInfo
         let errorMessage = Message(
             conversationID: conversationID,
@@ -55,7 +63,8 @@ extension AgentLoopManager {
             turnID: turnID,
             providerID: resolvedProviderID(for: conversationID),
             rawErrorDetail: renderInfo?.rawErrorDetail,
-            renderKind: renderInfo?.renderKind
+            renderKind: renderInfo?.renderKind,
+            reasoningContent: reasoningContent
         )
         messages.insertMessage(errorMessage, to: conversationID)
     }

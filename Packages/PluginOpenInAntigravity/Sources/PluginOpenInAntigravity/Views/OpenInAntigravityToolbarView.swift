@@ -1,13 +1,12 @@
-import OpenInKit
-import ProviderProject
+import KitOpenIn
 import SwiftUI
 
 /// Open In Antigravity 的标题栏按钮。
 struct OpenInAntigravityToolbarView: View {
     @StateObject private var model: OpenInAntigravityToolbarViewModel
 
-    init(tool: OpenInTool, project: (any ProjectProviding)?) {
-        _model = StateObject(wrappedValue: OpenInAntigravityToolbarViewModel(tool: tool, project: project))
+    init(tool: OpenInTool, projectCapability: OpenInProjectCapability) {
+        _model = StateObject(wrappedValue: OpenInAntigravityToolbarViewModel(tool: tool, projectCapability: projectCapability))
     }
 
     var body: some View {
@@ -31,6 +30,6 @@ struct OpenInAntigravityToolbarView: View {
 // MARK: - 预览
 
 #Preview("Open In Antigravity Toolbar") {
-    OpenInAntigravityToolbarView(tool: OpenInTool(config: OpenInTool.antigravity, project: nil), project: nil)
+    OpenInAntigravityToolbarView(tool: OpenInTool(config: OpenInTool.antigravity, project: nil), projectCapability: OpenInProjectCapabilityAdapter(project: nil))
         .padding()
 }

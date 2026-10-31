@@ -45,8 +45,8 @@ public final class AgentLoopRetryPlugin: SuperPlugin, SuperLog {
 
         coordinator?.cancel()
         coordinator = AgentLoopRetryCoordinator(
-            agentLoop: agentLoop,
-            messages: messages,
+            loop: AgentLoopRetryCapabilityAdapter(agentLoop: agentLoop),
+            messages: AgentLoopRetryMessageCapabilityAdapter(messages: messages),
             maxAttempts: Self.defaultMaxAttempts
         )
     }

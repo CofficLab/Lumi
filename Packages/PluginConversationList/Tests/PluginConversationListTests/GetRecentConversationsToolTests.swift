@@ -6,7 +6,9 @@ import Testing
 @testable import PluginConversationList
 
 @Test @MainActor func emptyConversationListReturnsHelpfulStatus() async throws {
-    let tool = GetRecentConversationsTool(conversations: DefaultConversationManager(), project: nil)
+    let tool = GetRecentConversationsTool(
+        capability: ConversationListQueryCapabilityAdapter(conversations: DefaultConversationManager(), project: nil)
+    )
 
     let result = try await tool.execute(arguments: [:])
 
@@ -30,7 +32,7 @@ import Testing
         providerID: nil,
         modelName: nil
     )
-    let tool = GetRecentConversationsTool(conversations: conversations, project: project)
+    let tool = GetRecentConversationsTool(capability: ConversationListQueryCapabilityAdapter(conversations: conversations, project: project))
 
     let result = try await tool.execute(arguments: [:])
 
@@ -51,7 +53,7 @@ import Testing
             modelName: nil
         )
     }
-    let tool = GetRecentConversationsTool(conversations: conversations, project: nil)
+    let tool = GetRecentConversationsTool(capability: ConversationListQueryCapabilityAdapter(conversations: conversations, project: nil))
 
     let defaultResult = try await tool.execute(arguments: [:])
     let lowerBoundResult = try await tool.execute(arguments: ["limit": ToolArgument(0)])
@@ -65,8 +67,8 @@ import Testing
     #expect(!upperBoundResult.contains("| 21 |"))
 }
 
-@Test func recentConversationToolMetadataSupportsBothLanguages() {
-    let tool = GetRecentConversationsTool(conversations: nil, project: nil)
+@Test @MainActor func recentConversationToolMetadataSupportsBothLanguages() {
+    let tool = GetRecentConversationsTool(capability: ConversationListQueryCapabilityAdapter(conversations: nil, project: nil))
 
     #expect(tool.name == "get_recent_conversations")
     #expect(tool.description(for: .chinese).contains("最近的对话列表"))

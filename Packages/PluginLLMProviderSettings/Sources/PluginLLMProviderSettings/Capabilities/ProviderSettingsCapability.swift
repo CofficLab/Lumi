@@ -27,6 +27,17 @@ protocol ProviderSettingsCapability: AnyObject {
     /// 指定供应商的动态模型池：远程型读 `availableModels`，静态型读 `providerInfo.models`。
     func availableModels(for providerID: String) -> [LLMModelInfo]
 
+    // MARK: 远程模型刷新
+
+    /// 供应商是否有远程模型源（决定 UI 是否展示刷新入口）。
+    func usesRemoteModelList(providerID: String) -> Bool
+
+    /// 刷新指定供应商的远程模型列表。
+    ///
+    /// 成功后必须广播 `modelsRefreshed` 事件，让所有订阅者（设置页、模型选择器）
+    /// 重新读取动态模型池。失败时抛错，调用方保留旧模型池。
+    func refreshModels(providerID: String) async throws
+
     // MARK: API Key
 
     func apiKey(for providerID: String) -> String
@@ -111,6 +122,17 @@ final class ProviderSettingsCapabilityAdapter: ProviderSettingsCapability {
         // 协议属性：静态供应商返回 providerInfo.models，
         // 远程供应商返回「远程快照 / 缓存 / 基线」合并池。
         manager.provider(id: providerID)?.availableModels ?? []
+    }
+
+    func usesRemoteModelList(providerID: String) -> Bool {
+        manager.provider(id: providerID)?.usesRemoteModelList ?? false
+    }
+
+    func refreshModels(providerID: String) async throws {
+        guard let provider = manager.provider(id: providerID) else { return }
+        try await provider.refreshModels()
+        // 广播成功事件：设置页与模型选择器据此重读动态模型池。
+        manager.notifyModelsRefreshed(providerID: providerID)
     }
 
     func apiKey(for providerID: String) -> String {

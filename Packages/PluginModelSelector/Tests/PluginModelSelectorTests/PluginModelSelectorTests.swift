@@ -158,7 +158,7 @@ struct ModelSearchBarVisibilityTests {
         return ModelSelectorViewModel(
             box: box,
             usageStore: ProviderUsageStore(directory: nil),
-            toast: nil
+            toastCapability: ModelSelectorToastCapabilityAdapter(toast: nil)
         )
     }
 }

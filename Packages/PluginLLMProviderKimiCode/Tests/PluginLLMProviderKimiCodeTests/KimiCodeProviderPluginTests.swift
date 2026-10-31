@@ -10,8 +10,8 @@ struct KimiCodeProviderPluginTests {
     @Test("onBoot 把 KimiCode 供应商注册进管理器")
     func pluginRegistersProviders() throws {
         let kernel = KernelCoreContainer()
-        let manager = DefaultLLMProviderManagerProviding()
-        try kernel.registerProvider((any LLMProviderManagerProviding).self, manager)
+        let manager = DefaultLLMManager()
+        try kernel.registerProvider((any LLMManaging).self, manager)
 
         let plugin = KimiCodeProviderPlugin()
         try plugin.onBoot(kernel: kernel)

@@ -15,8 +15,7 @@ struct AppStoreConnectSettingsView: View {
         PluginSettingsScaffold(
             title: AppStoreConnectLocalization.string("AppStoreConnect"),
             subtitle: AppStoreConnectLocalization.string("Configure App Store Connect API credentials and connection status."),
-            showHeader: true,
-            scrollsContent: false
+            showHeader: true
         ) {
             AccountPage(
                 viewModel: viewModel,

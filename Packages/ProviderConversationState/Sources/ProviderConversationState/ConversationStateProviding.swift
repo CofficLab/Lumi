@@ -65,6 +65,18 @@ public struct ConversationStateSnapshot: Equatable, Sendable {
         agentLoopState == .running
     }
 
+    /// 当前会话是否可以被用户中止。
+    ///
+    /// 挂起（等工具授权、等 `ask_user` 回答）同样是「回合还没干完」——
+    /// 用户在输入区必须能停它，否则只能把整条对话晾在那里干等。
+    ///
+    /// - Important: 这与 `isSending` 是两件事。`isSending` 描述「正在产出」，
+    ///   `canStop` 描述「还有没干完的活」。操作栏的发送/停止互斥由 `canStop`
+    ///   决定，用户任何时候都只会看到一个能用的按钮。
+    public var canStop: Bool {
+        agentLoopState == .running || agentLoopState == .suspended
+    }
+
     public init(
         conversationID: UUID,
         turnID: UUID? = nil,

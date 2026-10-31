@@ -1,19 +1,6 @@
 import KitAgentTool
 import Foundation
 
-private struct ToolInteractionPayload: Codable {
-    let toolCallID: String
-    let kind: String
-    let question: String
-    let options: [String]
-    let mode: String
-
-    enum CodingKeys: String, CodingKey {
-        case toolCallID = "toolCallId"
-        case kind, question, options, mode
-    }
-}
-
 /// Agent 工具管理与执行能力。
 @MainActor
 public protocol ToolManagerProviding: AnyObject {
@@ -153,6 +140,12 @@ public protocol ToolManagerProviding: AnyObject {
     /// 查询某个 AgentTurn 下全部已持久化的工具调用。
     func toolCalls(for turnID: UUID) async -> [ToolCallRecord]
 
+    /// 批量查询多个 AgentTurn 下已持久化的工具调用，按开始时间升序返回。
+    ///
+    /// 消息列表的窗口里可能有几十个 turn，逐 turn 查询会退化成 N+1 次 IO。
+    /// 实现了批量存储查询的实现者应覆写本方法，用一次查询取回全部记录。
+    func toolCalls(forTurnIDs turnIDs: [UUID]) async -> [ToolCallRecord]
+
     /// 按原始 `ToolCall.id` 查询一次调用的结果。
     ///
     /// 调用未知、尚未完成或结果存储不可用时返回 `nil`。
@@ -174,6 +167,17 @@ public protocol ToolManagerProviding: AnyObject {
 // MARK: - Default registration
 
 public extension ToolManagerProviding {
+    /// 尚未提供批量查询能力的实现者退化为逐 turn 查询。
+    ///
+    /// 真实实现应覆写本方法，用一次存储查询取回全部记录。
+    func toolCalls(forTurnIDs turnIDs: [UUID]) async -> [ToolCallRecord] {
+        var records: [ToolCallRecord] = []
+        for turnID in turnIDs {
+            records.append(contentsOf: await toolCalls(for: turnID))
+        }
+        return records
+    }
+
     /// 尚未提供 Job 查询能力的自定义 ToolManager 默认返回空集合。
     func jobs(forConversationID conversationID: UUID) -> [ToolJob] {
         _ = conversationID
@@ -343,16 +347,12 @@ public extension ToolManagerProviding {
                 let riskLevel = self.riskLevel(for: toolCall) ?? .high
                 if riskLevel.requiresPermission {
                     let operation = displayDescription(for: toolCall) ?? toolCall.name
-                    let payload = ToolInteractionPayload(
+                    let payload = ToolInteractionPayload.permission(
                         toolCallID: "approval:\(toolCall.id)",
-                        kind: "permission",
-                        question: "此操作被判定为\(riskLevel.displayName)，是否允许执行？\n\(operation)",
-                        options: ["允许", "拒绝"],
-                        mode: "yes_no"
+                        riskLevelName: riskLevel.displayName,
+                        operation: operation
                     )
-                    let content = (try? String(data: JSONEncoder().encode(payload), encoding: .utf8))
-                        ?? "Unable to create tool interaction request."
-                    results.append(.needsUserResponse(payload: content))
+                    results.append(.needsUserResponse(payload: payload.encoded()))
                 } else {
                     let result = await execute(toolCall, conversationID: conversationID, turnID: turnID)
                     results.append(.executed(result))

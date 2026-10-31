@@ -13,6 +13,9 @@ final class MailWorkspaceViewModel: ObservableObject {
     private let sessionManager: MailSessionManager
     private let cache: MailCacheService
     private let sync: MailSyncService?
+    private let accountStore: MailAccountStore
+    /// 插件数据目录（由 `MailPlugin` 经 `StorageProviding` 解析后注入）。
+    private let dataDirectory: URL
     let composer: MailComposerService
 
     // 状态
@@ -41,13 +44,20 @@ final class MailWorkspaceViewModel: ObservableObject {
     init(
         sessionManager: MailSessionManager,
         cache: MailCacheService,
+        accountStore: MailAccountStore,
+        dataDirectory: URL,
         sync: MailSyncService? = nil,
         composer: MailComposerService? = nil
     ) {
         self.sessionManager = sessionManager
         self.cache = cache
+        self.accountStore = accountStore
+        self.dataDirectory = dataDirectory
         self.sync = sync
-        self.composer = composer ?? MailComposerService(sessionManager: sessionManager)
+        self.composer = composer ?? MailComposerService(
+            sessionManager: sessionManager,
+            accountStore: accountStore
+        )
     }
 
     // MARK: - 撰写入口
@@ -78,6 +88,7 @@ final class MailWorkspaceViewModel: ObservableObject {
                     smtpHost: "",
                     username: ""
                 ),
+                dataDirectory: dataDirectory,
                 mode: composeMode,
                 originalDetail: composeDetail
             )
@@ -86,6 +97,7 @@ final class MailWorkspaceViewModel: ObservableObject {
             composer: composer,
             sessionManager: sessionManager,
             account: account,
+            dataDirectory: dataDirectory,
             mode: composeMode,
             originalDetail: composeDetail
         )
@@ -94,7 +106,7 @@ final class MailWorkspaceViewModel: ObservableObject {
     // MARK: - 生命周期
 
     func load() async {
-        accounts = MailAccountStore.loadAccounts()
+        accounts = accountStore.loadAccounts()
         if let first = accounts.first {
             await selectAccount(id: first.id)
         }

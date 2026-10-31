@@ -8,19 +8,24 @@ public struct BrowserOpenTool: SuperAgentTool {
     public init(sessions: BrowserSessionManager) { self.sessions = sessions }
 
     public func description(for language: LanguagePreference) -> String {
-        "Open an HTTP or HTTPS page in Lumi's visible browser workspace. The page is isolated to the current conversation."
+        BrowserToolText.openDescription(language)
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
         [
             "type": "object",
-            "properties": ["url": ["type": "string", "description": "The HTTP or HTTPS URL to open"]],
+            "properties": [
+                "url": [
+                    "type": "string",
+                    "description": BrowserToolText.urlArgumentProperty(language),
+                ],
+            ],
             "required": ["url"],
         ]
     }
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        "打开网页"
+        BrowserToolText.displayOpen(.current)
     }
 
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
@@ -40,10 +45,14 @@ public struct BrowserOpenTool: SuperAgentTool {
         guard let url = arguments["url"]?.value as? String else {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing url")
         }
+        // 审批发生在工具执行**之前**：本地地址的风险等级是 .high，
+        // 用户批准后才会走到这里。因此此刻 `requiresLocalAccessApproval`
+        // 为真就意味着「用户已经批准了访问这个本地地址」。
+        let approvedForLocalAccess = BrowserSessionManager.requiresLocalAccessApproval(url)
         return ToolCallResult(content: try await sessions.open(
             url,
             conversationID: context.conversationID,
-            allowLocalAccess: BrowserSessionManager.requiresLocalAccessApproval(url)
+            localAccessApproved: approvedForLocalAccess
         ))
     }
 }

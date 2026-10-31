@@ -82,4 +82,15 @@ public protocol PluginFactory {
     /// （如 SettingGeneralPlugin 注册「通用」入口、DevicePlugin 注册
     ///  「设备信息」入口与主内容、SettingsToolbarPlugin 注册工具栏设置按钮）。
     func makePlugins() -> [any SuperPlugin]
+
+    /// Provider 注册完成、插件启动之前调用一次。
+    ///
+    /// 供需要在 `makePlugins()` 之后才能拿到内核容器的宿主逻辑使用：
+    /// `makePlugins()` 早于 `registerProviders`，此刻 Provider 尚未就位。
+    /// 默认空实现，既有实现无需改动。
+    func didRegisterProviders(in kernel: KernelCoreContainer)
+}
+
+extension PluginFactory {
+    public func didRegisterProviders(in kernel: KernelCoreContainer) {}
 }

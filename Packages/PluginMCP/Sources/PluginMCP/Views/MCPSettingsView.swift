@@ -23,18 +23,26 @@ struct MCPSettingsView: View {
     @State private var revision = 0
 
     var body: some View {
-        PluginSettingsScaffold(
-            title: MCPText.string("MCP Servers"),
-            subtitle: MCPText.string("Connect any Model Context Protocol server and let the agent use its tools."),
-            showHeader: false,
-            scrollsContent: false
-        ) {
-            VStack(alignment: .leading, spacing: 14) {
-                header
-                masterDetail
+        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
+            GeometryReader { proxy in
+                VStack(alignment: .leading, spacing: 0) {
+                    header
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 12)
+                    // 主体内容贴边后，用一条顶部分隔线把标题行与主从容器分开。
+                    AppDivider()
+                    masterDetail
+                }
+                // 共享 scaffold 给内容留了左右 24，这里把整列加宽 48 并左移 24，
+                // 使主从容器正好贴到窗口左右边缘；标题行再自行补回 24 留白。
+                .frame(width: proxy.size.width + 48, alignment: .topLeading)
+                .offset(x: -24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+        // 插件贡献的内容里也会出现 AppCard，统一按 .subtle 渲染，
+        // 避免与其它设置页的卡片外观不一致。
+        .environment(\.appSettingsCardStyleOverride, .subtle)
         .id(revision)
         .sheet(isPresented: $showingAddSheet) {
             MCPServerEditSheet(registry: registry, manager: manager, server: nil) { _ in revision += 1 }
@@ -74,25 +82,23 @@ struct MCPSettingsView: View {
             }
         }
         .font(.appCaption)
+        .foregroundStyle(theme.textSecondary)
     }
 
     // MARK: - Master–Detail
 
+    /// 主从容器整体贴边：不再有外框描边与圆角裁剪，
+    /// 只保留列表栏与详情栏之间的竖向分隔线。
     private var masterDetail: some View {
         HStack(spacing: 0) {
             sidebar
-                .frame(width: 280)
+                .frame(width: 300)
                 .frame(maxHeight: .infinity)
             AppDivider(.vertical)
             detailPane
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(minHeight: 460, maxHeight: .infinity)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .strokeBorder(theme.divider, lineWidth: 1)
-        }
+        .frame(maxHeight: .infinity)
     }
 
     // MARK: - Sidebar

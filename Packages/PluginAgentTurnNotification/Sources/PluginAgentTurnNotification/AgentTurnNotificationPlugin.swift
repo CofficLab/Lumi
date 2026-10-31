@@ -23,9 +23,17 @@ public final class AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
     ///
     /// 判据是存在 bundle identifier：未签名/无 bundle 的可执行文件
     /// （如 `lumi-acp` 独立调试产物）取不到它，此时系统框架会直接抛异常。
+    ///
+    /// - Note: 可写是为了让测试能显式声明环境。`swift test` 的 runner 没有
+    ///   bundle identifier，按真实环境判定为 false，测试就会在 `onBoot` 的
+    ///   环境探测处被短路，断言覆盖不到真正的 hook 注册链路。
     public static var isNotificationDeliveryAvailable: Bool {
-        Bundle.main.bundleIdentifier != nil
+        get { isNotificationDeliveryAvailableOverride ?? (Bundle.main.bundleIdentifier != nil) }
+        set { isNotificationDeliveryAvailableOverride = newValue }
     }
+
+    /// `isNotificationDeliveryAvailable` 的测试注入值；`nil` 表示按真实环境判定。
+    nonisolated(unsafe) static var isNotificationDeliveryAvailableOverride: Bool?
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.turn-notification"
     public let order = 99

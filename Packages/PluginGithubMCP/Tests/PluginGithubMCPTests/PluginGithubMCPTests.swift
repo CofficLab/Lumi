@@ -1,4 +1,5 @@
 import Foundation
+import KernelCore
 import Testing
 @testable import PluginGithubMCP
 import ProviderMCP
@@ -34,13 +35,12 @@ struct PluginGithubMCPTests {
         #expect(plugin.metadata.policy.rawValue == "required")
     }
 
-    @Test("init 不崩溃且 logger 子系统正确")
+    @Test("init 不崩溃且插件 ID 正确")
     func initDoesNotCrash() {
         let plugin = PluginGithubMCP()
         #expect(plugin.id == "com.coffic.lumi.plugin.github-mcp")
-        // logger is nonisolated static, verify subsystem
-        #expect(PluginGithubMCP.logger.subsystem == "com.coffic.lumi.plugin.github-mcp")
-        #expect(PluginGithubMCP.logger.category == "GithubMCP")
+        // `Logger` 的 `subsystem` / `category` 不是公开访问器，
+        // 不在此断言；插件 ID 已通过 `plugin.id` 覆盖。
     }
 
     @Test("onShutdown 不抛错")
@@ -69,7 +69,7 @@ struct PluginGithubMCPTests {
 
         #expect(recorder.contributed.count == 1)
         let server = recorder.contributed[0]
-        #expect(server.name == "GitHub")
+        #expect(server.name == "GitHub (official)")
         #expect(server.command == "docker")
         #expect(server.arguments.contains("ghcr.io/github/github-mcp-server"))
         #expect(server.arguments.contains("run"))

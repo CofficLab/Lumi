@@ -5,6 +5,8 @@ public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Senda
     case copyPath = "copyPath"
     case openInTerminal = "openInTerminal"
     case openInVSCode = "openInVSCode"
+    /// 在 Lumi 中打开该文件夹，并把 Lumi 的当前项目切换为该文件夹。
+    case openInLumi = "openInLumi"
     case deleteFile = "deleteFile"
     case hideFile = "hideFile"
     case unhideFile = "unhideFile"
@@ -20,6 +22,7 @@ public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Senda
         case .copyPath: return pluginLocalization.string("Copy Path")
         case .openInTerminal: return pluginLocalization.string("Open in Terminal")
         case .openInVSCode: return pluginLocalization.string("Open in VS Code")
+        case .openInLumi: return pluginLocalization.string("Open in Lumi")
         case .deleteFile: return pluginLocalization.string("Delete File")
         case .hideFile: return pluginLocalization.string("Hide File")
         case .unhideFile: return pluginLocalization.string("Unhide File")
@@ -34,6 +37,7 @@ public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Senda
         case .copyPath: return "doc.on.doc"
         case .openInTerminal: return "apple.terminal"
         case .openInVSCode: return "chevron.left.forwardslash.chevron.right"
+        case .openInLumi: return "sparkles"
         case .deleteFile: return "trash"
         case .hideFile: return "eye.slash"
         case .unhideFile: return "eye"
@@ -143,6 +147,7 @@ public struct RClickConfig: Codable, Equatable, Sendable {
         items: [
             RClickMenuItem(type: .openInVSCode),
             RClickMenuItem(type: .openInTerminal),
+            RClickMenuItem(type: .openInLumi),
             RClickMenuItem(type: .copyPath),
             RClickMenuItem(type: .newFile),
             RClickMenuItem(type: .deleteFile, isEnabled: false),

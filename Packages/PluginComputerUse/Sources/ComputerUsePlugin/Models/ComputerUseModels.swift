@@ -87,6 +87,12 @@ enum ComputerUseError: LocalizedError, Equatable {
     case accessibilityPermissionRequired
     case noMatchingWindow
     case applicationNotAllowed(String)
+    /// 目标应用尚未授权，但允许向用户申请。
+    ///
+    /// 工具层捕获这个错误后会转成挂起回合的授权请求，而不是把整轮判为失败。
+    case authorizationRequired(applicationName: String, bundleIdentifier: String, operation: String)
+    /// 命中明确禁止的场景，不允许申请授权。
+    case forbiddenApplication(String)
     case observationNotFound
     case staleObservation
     case invalidArguments(String)
@@ -106,6 +112,11 @@ enum ComputerUseError: LocalizedError, Equatable {
         case .applicationNotAllowed(let name):
             pluginLocalization.string("Control of {app} is not allowed. Add it under Lumi Settings > Computer Use.")
                 .replacingOccurrences(of: "{app}", with: name)
+        case .authorizationRequired(let name, _, _):
+            pluginLocalization.string("Control of {app} requires the user's approval.")
+                .replacingOccurrences(of: "{app}", with: name)
+        case .forbiddenApplication(let reason):
+            reason
         case .observationNotFound:
             pluginLocalization.string("The observation does not exist. Call computer_observe again.")
         case .staleObservation:

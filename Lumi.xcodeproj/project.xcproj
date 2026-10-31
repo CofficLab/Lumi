@@ -22,6 +22,9 @@
       },
     }, {
       "kind": "local",
+      "path": "Packages/KitBootstrapEnvironment",
+    }, {
+      "kind": "local",
       "path": "Packages/FactoryLumi",
     }, {
       "kind": "local",
@@ -35,9 +38,6 @@
     }, {
       "kind": "local",
       "path": "Packages/FactoryDatabaseManager",
-    }, {
-      "kind": "local",
-      "path": "Packages/PluginLLMProviderCodex",
     },
   ],
   "files": [
@@ -278,12 +278,12 @@
           "product-name": "FactoryLumi",
           "build-phase": { "build-phase": "frameworks" },
         }, {
-          "package": "PluginAppUpdate",
-          "product-name": "AppUpdatePlugin",
+          "package": "KitBootstrapEnvironment",
+          "product-name": "KitBootstrapEnvironment",
           "build-phase": { "build-phase": "frameworks" },
         }, {
-          "package": "PluginLLMProviderCodex",
-          "product-name": "PluginLLMProviderCodex",
+          "package": "PluginAppUpdate",
+          "product-name": "AppUpdatePlugin",
           "build-phase": { "build-phase": "frameworks" },
         },
       ],

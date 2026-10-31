@@ -32,9 +32,12 @@ final class ConversationMessageListVM: ObservableObject {
     /// 激活序列号，用于防止并发 activate 的竞态。
     private var activationSequence: UInt64 = 0
 
-    init(services: MessageListServices, pageSize: Int = 40) {
+    init(services: MessageListServices, pageSize: Int = 40, maxRetainedCount: Int = 300) {
         self.services = services
-        self.pagination = MessageListPaginationService(pageSize: pageSize)
+        self.pagination = MessageListPaginationService(
+            pageSize: pageSize,
+            maxRetainedCount: maxRetainedCount
+        )
     }
 
     /// ListV1View 的唯一数据源：每一项都对应一个 AgentTurnView。
@@ -179,6 +182,9 @@ final class ConversationMessageListVM: ObservableObject {
 
         messageWindow = result.earlier + messageWindow
         hasEarlierTurns = result.hasEarlierMessages
+        // 窗口上限：翻页会把更早一页整段加进来，不回收的话长会话会把整个
+        // 会话拉进内存（展示投影也要跟着整体重建）。
+        messageWindow = pagination.evictTailIfNeeded(messages: messageWindow)
         rebuildWindow(for: conversationID, sequence: activationSequence)
         return anchorID
     }

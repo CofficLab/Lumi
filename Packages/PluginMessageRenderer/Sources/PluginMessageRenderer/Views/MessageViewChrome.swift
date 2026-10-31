@@ -10,6 +10,8 @@ struct MessageViewChrome<Content: View>: View {
     var capability: (any MessageRendererCapability)? = nil
     let message: Message
     var showsResendButton = false
+    /// 失败消息是否提供「重试」入口（错误消息行）。是否真能重试由回合状态决定。
+    var showsRetryButton = false
     var showsHeader = true
     var errorTransportDetails: ResolvedErrorTransportDetails?
     let verbosity: ResponseVerbosity
@@ -81,6 +83,10 @@ struct MessageViewChrome<Content: View>: View {
 
                         if showsActions, showsResendButton, capability != nil, !message.content.isEmpty {
                             ResendMessageButton(capability: capability, message: message)
+                        }
+
+                        if showsActions, showsRetryButton, capability != nil {
+                            RetryTurnButton(capability: capability, message: message)
                         }
 
                         if showsActions, thinking != nil, verbosity != .detailed {

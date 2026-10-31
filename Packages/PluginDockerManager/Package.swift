@@ -9,12 +9,12 @@ let package = Package(
         .library(name: "PluginDockerManager", targets: ["DockerManagerPlugin"])
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.7.0"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(path: "../KitShell"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.7.0")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0")
     ],
     targets: [
 .target(
@@ -37,7 +37,16 @@ let package = Package(
         ),
         .testTarget(
             name: "DockerManagerPluginTests",
-            dependencies: [.target(name: "DockerManagerPlugin")],
+            dependencies: [
+                .target(name: "DockerManagerPlugin"),
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
+                .product(name: "ProviderContentView", package: "LumiProviders"),
+                .product(name: "ProviderDocsView", package: "LumiProviders"),
+                .product(name: "ProviderRailView", package: "LumiProviders"),
+                .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "ProviderToolbar", package: "LumiProviders"),
+            ],
             path: "Tests"
         )
     ]

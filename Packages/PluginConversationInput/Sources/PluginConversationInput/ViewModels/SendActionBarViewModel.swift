@@ -23,7 +23,7 @@ final class SendActionBarViewModel: SuperLog {
     init(capability: any ConversationInputCapability) {
         self.capability = capability
         self.state = SendActionBarState(
-            isSending: capability.isSending(for: capability.selectedConversationID),
+            canStop: capability.canStop(for: capability.selectedConversationID),
             canSend: Self.canSend(
                 text: capability.text,
                 hasAttachments: !capability.pendingImageAttachments.isEmpty || !capability.pendingFileAttachments.isEmpty
@@ -38,6 +38,11 @@ final class SendActionBarViewModel: SuperLog {
             text: text,
             hasAttachments: !capability.pendingImageAttachments.isEmpty || !capability.pendingFileAttachments.isEmpty
         )
+        // - Important: 必须把文本写回能力层。`send()` 直接读 `capability.text`
+        //   而不是 `state` 里的副本；若这里只更新 `canSend` 判定，调用方
+        //   （直接写入路径，如粘贴、UI 测试的 typeText）点发送时会因为
+        //   `capability.text` 仍为空而静默 return——按钮亮着、点了没反应。
+        capability.text = text
     }
 
     func updateAttachments() {
@@ -49,10 +54,10 @@ final class SendActionBarViewModel: SuperLog {
 
     func refreshConversationState() {
         guard let conversationID = capability.selectedConversationID else {
-            state.isSending = false
+            state.canStop = false
             return
         }
-        state.isSending = capability.isSending(for: conversationID)
+        state.canStop = capability.canStop(for: conversationID)
     }
 
     // MARK: - Actions
@@ -72,8 +77,12 @@ final class SendActionBarViewModel: SuperLog {
         guard !trimmed.isEmpty || hasAttachments else { return }
 
         Self.logger.info("\(self.t)sending message, length=\(trimmed.count)")
+        // 发送瞬间的折叠块区间。草稿随后被清空，区间也必须同时作废，
+        // 否则下一次发送会带上上一条消息的区间。
+        let blocks = capability.collapsedBlocks
         capability.text = ""
         capability.errorMessage = nil
+        capability.collapsedBlocks = []
 
         if hasAttachments {
             Task { @MainActor in
@@ -82,6 +91,7 @@ final class SendActionBarViewModel: SuperLog {
                         trimmed,
                         imageAttachments: imageAttachments,
                         fileAttachments: fileAttachments,
+                        collapsedBlocks: blocks,
                         conversationID: nil
                     ) else { return }
                     Self.logger.info("\(self.t)message attachments encoded and committed")
@@ -100,6 +110,7 @@ final class SendActionBarViewModel: SuperLog {
                 trimmed,
                 imageAttachments: imageAttachments,
                 fileAttachments: fileAttachments,
+                collapsedBlocks: blocks,
                 conversationID: nil
             ) else { return }
             Self.logger.info("\(self.t)message committed successfully")

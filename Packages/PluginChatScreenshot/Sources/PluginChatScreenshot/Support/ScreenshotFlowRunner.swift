@@ -38,7 +38,9 @@ enum ScreenshotFlowRunner {
     // MARK: - 私有
 
     /// 将裁剪结果编码为图片附件，加入发送器挂起池供输入框预览。
-    private static func insert(kernel: KernelCoreContainer, image: CGImage) {
+    ///
+    /// 可见性放宽到 internal 仅为便于单元测试覆盖「编码 → 挂起池」这条链路。
+    internal static func insert(kernel: KernelCoreContainer, image: CGImage) {
         guard let sender = kernel.resolveProvider((any MessageSendingProviding).self) else {
             logger.error("Failed to resolve MessageSendingProviding from kernel")
             return

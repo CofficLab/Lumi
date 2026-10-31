@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import EditorKernel
 
@@ -61,8 +62,9 @@ struct LSPViewportSchedulerTests {
         // Cancel all immediately
         scheduler.cancelAll()
 
-        // Wait a bit to ensure task would have started if not cancelled
-        try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+        // Wait well past the debounce window to ensure the task would have
+        // started if it had not been cancelled.
+        try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
 
         #expect(executed == false)
     }
@@ -89,8 +91,8 @@ struct LSPViewportSchedulerTests {
             codeActionsExecuted = true
         }
 
-        // Wait for tasks to potentially execute
-        try? await Task.sleep(nanoseconds: 200_000_000) // 200ms
+        // Wait for the highest priority task to actually run.
+        _ = await waitUntil { codeActionsExecuted }
 
         #expect(inlayHintsExecuted == false)
         #expect(diagnosticsExecuted == false)
@@ -120,8 +122,8 @@ struct LSPViewportSchedulerTests {
         // Cancel below medium priority (should cancel low priority only)
         scheduler.cancelBelow(.medium)
 
-        // Wait for tasks to potentially execute
-        try? await Task.sleep(nanoseconds: 200_000_000) // 200ms
+        // Wait for the tasks that must run to actually run.
+        _ = await waitUntil { codeActionsExecuted && diagnosticsExecuted }
 
         #expect(inlayHintsExecuted == false)
         #expect(diagnosticsExecuted == true)
@@ -144,11 +146,29 @@ struct LSPViewportSchedulerTests {
             codeActionsExecuted = true
         }
 
-        // Wait for tasks to potentially execute
-        try? await Task.sleep(nanoseconds: 200_000_000) // 200ms
+        // Wait for both tasks to actually run.
+        _ = await waitUntil { codeActionsExecuted && inlayHintsExecuted }
 
         // Both should execute because we disabled cancellation
         #expect(inlayHintsExecuted == true)
         #expect(codeActionsExecuted == true)
     }
+
+    /// 轮询等待条件成立。
+    ///
+    /// 调度器使用 100ms 防抖，原实现用固定 sleep 等待；在高负载机器上
+    /// 定时器回调可能晚于 sleep 结束，导致误报。改为轮询后语义不变，
+    /// 但不再依赖机器负载。
+    private func waitUntil(
+        _ condition: @MainActor () -> Bool,
+        timeout: TimeInterval = 5
+    ) async -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition() { return true }
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        return condition()
+    }
+
 }

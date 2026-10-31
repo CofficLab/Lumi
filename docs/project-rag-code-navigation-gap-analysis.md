@@ -14,7 +14,7 @@ Lumi 已经具备完整的 Project RAG 基础设施：项目索引、SQLite 存�
 
 ### 2.1 ProjectRAG 已经被装配
 
-`DefaultPluginFactory` 显式装配了 `ProjectRAGSuperPlugin`。插件在 `onBoot` 中：
+`DefaultPluginFactory` 显式装配了 `ProjectRAGPlugin`。插件在 `onBoot` 中：
 
 1. 创建 `RAGService`。
 2. 注册 `ProjectRAGProviding`。
@@ -120,7 +120,7 @@ LLM 自行选择工具
 
 ### 3.4 项目恢复和后台索引之间存在时序风险
 
-`ProjectsPlugin` 恢复当前项目是异步任务；`ProjectRAGSuperPlugin` 也在后台读取当前项目路径。如果 RAG 任务执行时项目尚未恢复，它可能直接结束，直到下一次显式搜索才触发索引。
+`ProjectsPlugin` 恢复当前项目是异步任务；`ProjectRAGPlugin` 也在后台读取当前项目路径。如果 RAG 任务执行时项目尚未恢复，它可能直接结束，直到下一次显式搜索才触发索引。
 
 该问题需要通过日志和集成测试确认，但当前结构确实缺少“项目打开事件 → RAG 确保索引”的明确连接。
 

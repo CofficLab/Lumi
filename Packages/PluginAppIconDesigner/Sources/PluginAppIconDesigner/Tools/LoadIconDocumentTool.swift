@@ -39,9 +39,9 @@ public struct LoadIconDocumentTool: SuperAgentTool {
 
             let document = try await MainActor.run {
                 if replaceSelected {
-                    return try IconDocumentStore.shared.replaceDocument(loadedDocument, scope: scope)
+                    return try IconToolSupport.store().replaceDocument(loadedDocument, scope: scope)
                 }
-                return IconDocumentStore.shared.importDocument(loadedDocument, scope: scope)
+                return IconToolSupport.store().importDocument(loadedDocument, scope: scope)
             }
             await IconToolSupport.notify(scope: scope, documentId: document.id)
 
@@ -64,7 +64,7 @@ public struct LoadIconDocumentTool: SuperAgentTool {
             )
         } catch {
             await MainActor.run {
-                IconDocumentStore.shared.setError(error.localizedDescription)
+                IconToolSupport.store().setError(error.localizedDescription)
             }
             return IconToolSupport.error(error, language: language)
         }

@@ -11,7 +11,7 @@ let package = Package(
         .library(name: "PluginLLMProviderOpenAI", targets: ["PluginLLMProviderOpenAI"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", branch: "main"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),

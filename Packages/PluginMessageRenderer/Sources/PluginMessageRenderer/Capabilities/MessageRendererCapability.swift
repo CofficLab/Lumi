@@ -1,6 +1,7 @@
 import Foundation
 import KernelCore
 import KitAgentTool
+import ProviderAgentLoop
 import ProviderConversation
 import ProviderDeveloperMode
 import ProviderMessageRendering
@@ -9,7 +10,7 @@ import ProviderToolManager
 
 /// 消息渲染器需要的外部操作集合。
 ///
-/// 收敛 ToolManager / MessageSending / ToolCallRendering / DeveloperMode 的调用面，
+/// 收敛 ToolManager / AgentLoop / MessageSending / ToolCallRendering / DeveloperMode 的调用面，
 /// 渲染 View 只通过本能力发起外部操作，不再直接解析 Kernel。
 @MainActor
 protocol MessageRendererCapability: AnyObject {
@@ -26,6 +27,14 @@ protocol MessageRendererCapability: AnyObject {
 
     /// 以相同内容重发消息（等价于内核发送）。
     func resendMessage(content: String, conversationID: UUID) async
+
+    // MARK: 重试失败回合
+
+    /// 当前会话是否仍停留在该失败回合上（可重试）。
+    func canRetryTurn(turnID: UUID, conversationID: UUID) -> Bool
+
+    /// 重跑指定失败回合；回合已失效时 Provider 会抛出，调用方忽略。
+    func retryTurn(turnID: UUID, conversationID: UUID) async
 
     // MARK: 自定义工具行渲染器
 
@@ -53,12 +62,14 @@ protocol MessageRendererCapability: AnyObject {
 @MainActor
 final class MessageRendererCapabilityAdapter: MessageRendererCapability {
     private weak var toolManager: (any ToolManagerProviding)?
+    private weak var agentLoop: (any AgentLoopProviding)?
     private weak var messageSending: (any MessageSendingProviding)?
     private weak var toolCallRendering: (any ToolCallRenderingProviding)?
     private weak var developerMode: (any DeveloperModeProviding)?
 
     init(kernel: KernelCoreContainer) {
         toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
+        agentLoop = kernel.resolveProvider((any AgentLoopProviding).self)
         messageSending = kernel.resolveProvider((any MessageSendingProviding).self)
         toolCallRendering = kernel.resolveProvider((any ToolCallRenderingProviding).self)
         developerMode = kernel.resolveProvider((any DeveloperModeProviding).self)
@@ -78,6 +89,18 @@ final class MessageRendererCapabilityAdapter: MessageRendererCapability {
 
     func resendMessage(content: String, conversationID: UUID) async {
         try? await messageSending?.sendMessage(content, conversationID: conversationID)
+    }
+
+    func canRetryTurn(turnID: UUID, conversationID: UUID) -> Bool {
+        guard let agentLoop else { return false }
+        return agentLoop.state(for: conversationID) == .failed
+            && agentLoop.currentTurnID(for: conversationID) == turnID
+    }
+
+    func retryTurn(turnID: UUID, conversationID: UUID) async {
+        guard let agentLoop else { return }
+        // 回合可能已被新回合取代，此时 Provider 抛错；用户点击重试无需报错。
+        _ = try? await agentLoop.retryTurn(in: conversationID, after: turnID)
     }
 
     func toolCallRenderer(for toolCall: ToolCall) -> (any ToolCallRowRenderer)? {

@@ -66,6 +66,58 @@ struct MessageRendererPluginTests {
         #expect(renderer.canRender(toolCall: waiting) == true)
     }
 
+    @Test("用户授权后不显示授权界面")
+    func userApprovedToolCallDoesNotRenderApproval() {
+        let renderer = ToolApprovalRowRenderer()
+
+        // 用户已授权：authorizationState = .userApproved
+        let approved = ToolCall(
+            id: "call-approved",
+            name: "write",
+            arguments: "{}",
+            authorizationState: .userApproved,
+            result: ToolCallResult(content: "file written")
+        )
+
+        // 用户已授权但结果尚未写入（边界情况）
+        let approvedNoResult = ToolCall(
+            id: "call-approved-no-result",
+            name: "write",
+            arguments: "{}",
+            authorizationState: .userApproved,
+            result: nil
+        )
+
+        #expect(renderer.canRender(toolCall: approved) == false)
+        #expect(renderer.canRender(toolCall: approvedNoResult) == false)
+    }
+
+    @Test("用户拒绝后不显示授权界面")
+    func userRejectedToolCallDoesNotRenderApproval() {
+        let renderer = ToolApprovalRowRenderer()
+
+        // 用户已拒绝：authorizationState = .userRejected
+        let rejected = ToolCall(
+            id: "call-rejected",
+            name: "write",
+            arguments: "{}",
+            authorizationState: .userRejected,
+            result: ToolCallResult(content: "Tool execution was rejected by the user.", isError: true)
+        )
+
+        // 用户已拒绝但结果尚未写入（边界情况）
+        let rejectedNoResult = ToolCall(
+            id: "call-rejected-no-result",
+            name: "write",
+            arguments: "{}",
+            authorizationState: .userRejected,
+            result: nil
+        )
+
+        #expect(renderer.canRender(toolCall: rejected) == false)
+        #expect(renderer.canRender(toolCall: rejectedNoResult) == false)
+    }
+
     @Test("V1 风险审批只显示在当前 brief 会话")
     func riskApprovalVisibility() {
         let conversationID = UUID()

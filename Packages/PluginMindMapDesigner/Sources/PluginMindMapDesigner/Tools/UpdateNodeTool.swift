@@ -52,7 +52,7 @@ public struct UpdateNodeTool: SuperAgentTool {
         do {
             let (map, scope) = try await MindMapToolSupport.resolveMap(arguments)
             let updated = try await MainActor.run {
-                try MindMapStore.shared.updateNode(
+                try MindMapToolSupport.store().updateNode(
                     mapId: map.id, nodeId: nodeId, scope: scope,
                     text: text, note: note, color: color, collapsed: hasCollapsed ? collapsed : nil
                 )
@@ -65,7 +65,7 @@ public struct UpdateNodeTool: SuperAgentTool {
                 return "Updated node \(nodeId.prefix(8)).\nmapId: \(updated.id)"
             }
         } catch {
-            await MainActor.run { MindMapStore.shared.setError(error.localizedDescription) }
+            await MainActor.run { MindMapToolSupport.store().setError(error.localizedDescription) }
             return MindMapToolSupport.error(error, language: language)
         }
     }

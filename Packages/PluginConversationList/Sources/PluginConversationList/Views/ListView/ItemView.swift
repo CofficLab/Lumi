@@ -30,12 +30,28 @@ struct ItemView: View {
                 Label("删除", systemImage: "trash")
             }
         }
+        // Important: 必须合并子元素并显式给出可访问性名称与标识。
+        //
+        // 此前本文件没有任何 accessibility 修饰，行是 `Button` 内嵌
+        // `HStack`（标题 + provider + 模型 + 项目 + 时间等若干 `Text`）。
+        // SwiftUI 不会为这种组合自动合成行级元素，结果是：
+        //   - 屏幕阅读器用户**读不到会话标题**（真实无障碍缺陷）；
+        //   - UI 测试无法按标题定位会话行，只能盲点坐标。
+        // 两者是同一个根因，因此在这里一并修。
+        //
+        // - Note: label 用 `.combine` 把子文本拼进来，并额外显式赋值，
+        //   保证标题一定出现在可访问性名称里（combine 在子元素过多时
+        //   可能只截断拼接，标题必须由我们自己保证在场）。
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(ConversationListAccessibility.itemID)
+        .accessibilityLabel(ConversationListAccessibility.rowLabel(for: conversation))
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 
     private var content: some View {
         HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(conversation.title ?? "对话")
+                Text(ConversationRowTitle.resolve(conversation.title))
                     .font(.appMicroEmphasized)
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(1)
@@ -60,6 +76,16 @@ struct ItemView: View {
                 }
 
                 HStack(spacing: 4) {
+                    // 自动化程度：置于第三行首位，仅显示图标。
+                    if let automationLevel = conversation.automationLevel {
+                        Image(systemName: automationLevel.iconName)
+                            .font(.footnote)
+                            .foregroundColor(theme.textTertiary)
+
+                        Text("·")
+                            .foregroundColor(theme.textTertiary)
+                    }
+
                     if let projectPath = conversation.projectPath {
                         Text(URL(fileURLWithPath: projectPath).lastPathComponent)
                             .font(.footnote)
@@ -74,25 +100,13 @@ struct ItemView: View {
                     Text(conversation.lastMessageAt.relativeTime)
                         .font(.footnote)
                         .foregroundColor(theme.textTertiary)
-
-                    if let automationLevel = conversation.automationLevel {
-                        Text("·")
-                            .foregroundColor(theme.textTertiary)
-
-                        Label(automationLevel.displayName, systemImage: automationLevel.iconName)
-                            .labelStyle(.titleAndIcon)
-                            .font(.footnote)
-                            .foregroundColor(theme.textTertiary)
-                            .lineLimit(1)
-                    }
                 }
             }
 
             Spacer()
         }
-        .overlay(alignment: .topTrailing) {
-            statusIndicator
-        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .overlay(alignment: .topTrailing) { statusIndicator }
     }
 
     @ViewBuilder
@@ -155,4 +169,40 @@ struct ItemView: View {
             .fill(color)
             .frame(width: 6, height: 6)
     }
+}
+
+// MARK: - 预览
+
+/// 预览三档自动化等级下的会话卡片，用于目视检查第三行等级标签的显示效果。
+#Preview("会话卡片 · 自动化等级") {
+    VStack(spacing: 4) {
+        ForEach(AutomationLevel.allCases) { level in
+            ItemView(
+                conversation: ConversationSummary(
+                    id: UUID(),
+                    title: "MiniMax 刷新模型后的默认上下文大小",
+                    preview: "",
+                    createdAt: Date(),
+                    updatedAt: Date(),
+                    verbosity: .standard,
+                    reasoningEffort: nil,
+                    language: .chinese,
+                    automationLevel: level,
+                    providerID: "minimax-tokenpl",
+                    modelName: "MiniMax-M3.1-Fl",
+                    projectPath: "/Users/colorfy/Code/CofficLab/Lumi",
+                    parentConversationID: nil
+                ),
+                conversationState: nil,
+                isSelected: false,
+                needsAttention: false,
+                onSelect: {},
+                onDelete: {}
+            )
+        }
+    }
+    .padding(.horizontal, 8)
+    .padding(.vertical, 4)
+    .frame(width: 340)
+    .background(Color.gray.opacity(0.12))
 }

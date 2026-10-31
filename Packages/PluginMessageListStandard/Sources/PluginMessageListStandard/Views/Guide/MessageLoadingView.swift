@@ -22,5 +22,13 @@ struct MessageLoadingView: View {
         }
         .foregroundStyle(theme.textSecondary)
         .accessibilityElement(children: .combine)
+        // 稳定标识符：供 UI 测试直接观测遮罩的存在与消失，
+        // 而不必依赖「正在加载消息…」这类可能随文案变化的文案断言。
+        .accessibilityIdentifier(MessageLoadingView.identifier)
     }
+}
+
+extension MessageLoadingView {
+    /// 首屏遮罩的稳定标识符。
+    static let identifier = "lumi.message-list.loading-mask"
 }

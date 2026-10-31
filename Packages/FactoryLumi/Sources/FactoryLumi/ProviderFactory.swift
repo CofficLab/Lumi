@@ -23,9 +23,11 @@ import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
 import ProviderConversationInput
+import ProviderConversationInputBlock
 import ProviderMessageStreaming
 import ProviderMessageRendering
 import ProviderPromptSuggestion
+import ProviderPromptSuggestionExecutor
 import ProviderCommand
 import ProviderIdleTime
 import ProviderLegacyData
@@ -185,6 +187,10 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     public func makeConversationInputProvider() -> any ConversationInputProviding {
         DefaultConversationInputProvider()
+    }
+
+    public func makeConversationInputBlockProvider() -> any ConversationInputBlockProviding {
+        DefaultConversationInputBlockProvider()
     }
 
     public func makeMessageStreamingProvider() -> any MessageStreamingProviding {
@@ -359,6 +365,11 @@ public struct DefaultProviderFactory: ProviderFactory {
         try kernel.registerProvider(
             (any ConversationInputProviding).self,
             makeConversationInputProvider()
+        )
+        // 跨插件递交的折叠内容块（如编辑器选区发送到对话）由输入插件消费。
+        try kernel.registerProvider(
+            (any ConversationInputBlockProviding).self,
+            makeConversationInputBlockProvider()
         )
         try kernel.registerProvider((any MessageRenderingProviding).self, makeMessageRenderingProvider())
         try kernel.registerProvider((any ToolCallRenderingProviding).self, makeToolCallRenderingProvider())

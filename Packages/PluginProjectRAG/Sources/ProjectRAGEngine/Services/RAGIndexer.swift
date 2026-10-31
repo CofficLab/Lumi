@@ -2,7 +2,7 @@ import Foundation
 import LumiLoggingKit
 import os
 
-public struct RAGIndexer: SuperLog {
+public struct RAGIndexer: SuperLog, Sendable {
     public nonisolated static let emoji = "📇"
     public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag.indexer")
@@ -10,14 +10,20 @@ public struct RAGIndexer: SuperLog {
     private let store: any RAGStore
     private let chunker: RAGChunker
     private let embeddingProvider: RAGEmbeddingProvider
-    private let onProgress: ((RAGIndexProgressEvent) -> Void)?
+
+    /// 索引进度回调。
+    ///
+    /// - Note: 标注 `@Sendable` 是为了满足 Swift 6 的严格并发检查——
+    ///   索引方法会在 `await`（让出时间片）后跨线程恢复，因此索引器本身
+    ///   必须是 `Sendable`。
+    private let onProgress: (@Sendable (RAGIndexProgressEvent) -> Void)?
 
     private static let progressLogInterval = 50
 
     init(
         store: any RAGStore,
         embeddingProvider: RAGEmbeddingProvider,
-        onProgress: ((RAGIndexProgressEvent) -> Void)? = nil
+        onProgress: (@Sendable (RAGIndexProgressEvent) -> Void)? = nil
     ) {
         self.store = store
         self.chunker = RAGChunker()
@@ -29,7 +35,7 @@ public struct RAGIndexer: SuperLog {
         at projectPath: String,
         background: Bool = false,
         shouldContinue: @escaping @Sendable () -> Bool = { true }
-    ) throws -> RAGIndexStats {
+    ) async throws -> RAGIndexStats {
         let files = RAGFileScanner.discoverFiles(in: projectPath)
         let indexedStates = try store.fetchIndexedFileStates(projectPath: projectPath)
         if Self.verbose {
@@ -41,7 +47,7 @@ public struct RAGIndexer: SuperLog {
             try store.deleteFileState(projectPath: projectPath, filePath: state.filePath)
         }
 
-        var stats = try indexFiles(files, projectPath: projectPath, background: background, shouldContinue: shouldContinue)
+        var stats = try await indexFiles(files, projectPath: projectPath, background: background, shouldContinue: shouldContinue)
         let fileCount = try store.countProjectFiles(projectPath: projectPath)
         let chunkCount = try store.countProjectChunks(projectPath: projectPath)
         try store.upsertProjectIndexState(
@@ -64,12 +70,12 @@ public struct RAGIndexer: SuperLog {
         at projectPath: String,
         background: Bool = false,
         shouldContinue: @escaping @Sendable () -> Bool = { true }
-    ) throws -> RAGIndexStats {
+    ) async throws -> RAGIndexStats {
         let files = RAGFileScanner.discoverFiles(in: projectPath)
         if Self.verbose {
             Self.logger.info("\(Self.t)增量索引开始 files=\(files.count)")
         }
-        var stats = try indexFiles(files, projectPath: projectPath, background: background, shouldContinue: shouldContinue)
+        var stats = try await indexFiles(files, projectPath: projectPath, background: background, shouldContinue: shouldContinue)
 
         // 删除已被移除的文件索引
         let existing = try store.fetchIndexedFileStates(projectPath: projectPath)
@@ -104,7 +110,7 @@ public struct RAGIndexer: SuperLog {
         projectPath: String,
         background: Bool,
         shouldContinue: @escaping @Sendable () -> Bool
-    ) throws -> RAGIndexStats {
+    ) async throws -> RAGIndexStats {
         let existingStates = try store.fetchIndexedFileStates(projectPath: projectPath)
         var stats = RAGIndexStats()
 
@@ -171,6 +177,11 @@ public struct RAGIndexer: SuperLog {
             stats.indexedFiles += 1
             stats.chunkCount += chunks.count
             logProgressIfNeeded(stats: stats, total: files.count, currentFilePath: filePath, projectPath: projectPath)
+
+            // 向量化是 CPU 密集且内部多核并行的操作。连续处理多个文件会让
+            // 当前协作线程长期霸占 CPU，导致主 actor 调度延迟上升（实测主线程
+            // 事件循环间隔从 50ms 尖刺到 150ms）。让出时间片把 CPU 归还给前台。
+            await Task.yield()
         }
 
         return stats

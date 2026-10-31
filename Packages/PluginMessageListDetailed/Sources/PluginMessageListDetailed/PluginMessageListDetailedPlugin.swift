@@ -41,6 +41,8 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
     private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
     private var conversationObserver: (any ConversationObserverHandle)?
     private var verbosityObservation: VerbosityObservationBox?
+    /// UI 测试夹具的 seed 句柄（仅 DEBUG 下存在）。
+    private var uiTestingSeedHandle: (any ConversationObserverHandle)?
 
     public init() {}
 
@@ -125,6 +127,18 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
                 viewModel?.refreshConversationSettingsIfNeeded()
             }
         }
+
+        // - Important: 整段（含 seed 调用与句柄赋值）必须在 `#if DEBUG` 内，
+        //   否则 Release 下会引用只在 DEBUG 定义的类型而编译失败。
+        #if DEBUG
+        if MessageListDetailedUITestingSupport.isEnabled, let conversations, let messages {
+            uiTestingSeedHandle = MessageListDetailedUITestingSupport.seed(
+                conversations: conversations,
+                messages: messages,
+                agentLoop: agentTurn
+            )
+        }
+        #endif
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -140,6 +154,8 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
         conversationObserver = nil
         verbosityObservation?.cancel()
         verbosityObservation = nil
+        uiTestingSeedHandle?.cancel()
+        uiTestingSeedHandle = nil
         developerModeObserver?.cancel()
         developerModeObserver = nil
         viewModel = nil

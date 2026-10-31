@@ -401,7 +401,10 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         if Self.verbose {
             Self.logger.debug("\(Self.t)request LLM conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))")
         }
+        // 仅用于界面时间线的消息（压缩标记、重试提示、Goal 续跑、提交审核卡片）
+        // 不应进入 LLM 上下文。
         let history = await messages.messagesSnapshot(in: conversationID)
+            .filter { !MessageTimelineEvent.isTimelineEvent($0) }
         let level = conversations.automationLevel(for: conversationID)
         let language = languagePreference(for: conversationID)
         let schemas = (level.allowsTools ? toolManager.allTools() : []).compactMap { tool in
@@ -446,12 +449,18 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         }
         // 空终态响应（无工具调用且无正文）视为请求失败：不落库空 assistant
         // 消息，走失败链路交给自动重试插件接管时间线与重试（与 AgentLoopManager 一致）。
+        // 思考内容可能已经流式输出过，随错误一起保留，避免用户看到内容凭空消失。
         if response.toolCalls?.isEmpty ?? true,
            response.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             Self.logger.warning("\(Self.t)⚠️ 模型返回空响应，按失败处理")
             streaming.end(conversationID: conversationID)
             let error = VendorAPIError.emptyResponse
-            await appendError(in: conversationID, error: error, turnID: turnID)
+            await appendError(
+                in: conversationID,
+                error: error,
+                turnID: turnID,
+                reasoningContent: response.reasoningContent
+            )
             throw error
         }
         let timing = timingRecorder.finish()
@@ -659,7 +668,12 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                 Self.logger.warning("\(Self.t)⚠️ 模型返回空响应，按失败处理")
                 streaming.end(conversationID: conversationID)
                 let error = VendorAPIError.emptyResponse
-                await appendError(in: conversationID, error: error, turnID: turnID)
+                await appendError(
+                    in: conversationID,
+                    error: error,
+                    turnID: turnID,
+                    reasoningContent: response.reasoningContent
+                )
                 failedConversations.insert(conversationID)
                 return .failed(String(describing: error))
             }
@@ -971,7 +985,15 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     /// 从 `Error` 构造错误消息，透传渲染元数据（`renderKind` / `rawErrorDetail`），
     /// 让 Key 缺失等错误命中专用渲染器（如 API Key 输入卡）；同时带上会话绑定的
     /// 供应商 id，供渲染器解析供应商（否则 provider==nil 会把输入框 disabled）。
-    private func appendError(in conversationID: UUID, error: Error, turnID: UUID? = nil) async {
+    ///
+    /// - Parameter reasoningContent: 判空失败时模型可能已输出的思考内容。一并落库后
+    ///   由 `MessageViewChrome` 渲染思考入口，避免思考流式出现后又凭空消失。
+    private func appendError(
+        in conversationID: UUID,
+        error: Error,
+        turnID: UUID? = nil,
+        reasoningContent: String? = nil
+    ) async {
         let renderInfo = error as? any LLMErrorRenderInfo
         let errorMessage = Message(
             conversationID: conversationID,
@@ -980,7 +1002,8 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             turnID: turnID,
             providerID: resolvedProviderID(for: conversationID),
             rawErrorDetail: renderInfo?.rawErrorDetail,
-            renderKind: renderInfo?.renderKind
+            renderKind: renderInfo?.renderKind,
+            reasoningContent: reasoningContent
         )
         messages.insertMessage(errorMessage, to: conversationID)
     }

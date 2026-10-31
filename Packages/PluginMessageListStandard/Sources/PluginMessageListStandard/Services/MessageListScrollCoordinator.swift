@@ -38,8 +38,15 @@ final class MessageListScrollCoordinator {
     static let bottomSettleStableFrames = 3
 
     private var pendingBottomScrollTask: Task<Void, Never>?
+    /// `bottomSettleDelayNs` 的可覆盖副本，仅供测试把收敛循环压到毫秒级。
+    /// 生产代码不设置，行为与常量完全一致。
+    private let settleDelayOverrideNs: UInt64?
     private var preparationSequence: UInt64 = 0
     private var scrollGeneration: UInt64 = 0
+
+    init(settleDelayOverrideNs: UInt64? = nil) {
+        self.settleDelayOverrideNs = settleDelayOverrideNs
+    }
 
     deinit {
         pendingBottomScrollTask?.cancel()
@@ -100,6 +107,15 @@ final class MessageListScrollCoordinator {
         return isPreparationActive(sequence) && condition()
     }
 
+    /// 仅供测试驱动收敛循环。收敛判据是本组件最易回归的部分，
+    /// 但它依赖真实滚动视图，必须留出无窗口依赖的测试缝。
+    func settleBottomForTesting(
+        controller: any MessageListBottomGeometry,
+        condition: @escaping @MainActor () -> Bool = { true }
+    ) async {
+        await settleBottom(controller: controller, condition: condition)
+    }
+
     private func isPreparationActive(_ sequence: UInt64) -> Bool {
         sequence == preparationSequence && !Task.isCancelled
     }
@@ -150,11 +166,19 @@ final class MessageListScrollCoordinator {
 
     /// 在底层滚动视图中反复钉住真实 document 底边，等待 List 的 lazy 行布局稳定。
     private func settleBottom(
-        controller: ScrollViewBottomController,
+        controller: any MessageListBottomGeometry,
         condition: @escaping @MainActor () -> Bool
     ) async {
         var previous: ScrollViewBottomController.Snapshot?
         var stableFrames = 0
+
+        // - Important: 控制器未绑定滚动视图时**立即放弃**，不要进入循环。
+        //   切换会话会让 List 因 `.id(selectedConversationID)` 重建，tracker 的
+        //   `attachIfNeeded()` 尚未完成；此时 `pinToBottom()` 必然返回 nil。
+        //   不预先检查就会白白消耗一轮，并在 50ms 睡眠后才 return，
+        //   让「遮罩撤除」整体后移。调用方虽有 `isAttached` 判断，但那存在
+        //   检查与进入之间的时序窗口，此处的检查才是权威判定。
+        guard controller.isAttached else { return }
 
         for _ in 0..<Self.bottomSettleMaxAttempts {
             guard !Task.isCancelled, condition() else { return }
@@ -172,7 +196,7 @@ final class MessageListScrollCoordinator {
             previous = current
 
             do {
-                try await Task.sleep(nanoseconds: Self.bottomSettleDelayNs)
+                try await Task.sleep(nanoseconds: settleDelayOverrideNs ?? Self.bottomSettleDelayNs)
             } catch {
                 return
             }

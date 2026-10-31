@@ -22,7 +22,8 @@
    "newPackage 仅标记 FactoryLumi 当前已装配的 14 个新版包；其余待迁移",
    "EditorKernelPlugin/EditorProviderPlugin/SubAgentProviderPlugin/VerbosityPlugin 目录无源码或已迁移至 Packages/",
    "Phase 0 Task 3 反向差距审计：14 个新版包评级 parityReview 9 个（量级相当，进入逐项对照）/ implementing 5 个（明显简化，需继续完善）；ProviderMessageStreaming/MessageRendering/ConversationInput/AgentTurn/Workspace 为空包，聊天主链 Provider 层未建。",
-   "Phase 0 Task 3 反向差距审计：14 个新版包评级 parityReview 9 个（量级相当，进入逐项对照）/ implementing 5 个（明显简化，需继续完善）；ProviderMessageStreaming/MessageRendering/ConversationInput/AgentTurn/Workspace 为空包，聊天主链 Provider 层未建。"
+   "Phase 0 Task 3 反向差距审计：14 个新版包评级 parityReview 9 个（量级相当，进入逐项对照）/ implementing 5 个（明显简化，需继续完善）；ProviderMessageStreaming/MessageRendering/ConversationInput/AgentTurn/Workspace 为空包，聊天主链 Provider 层未建。",
+   "2026-10-27 更新：首次启动引导功能已整体移除（PluginOnboarding / PluginWelcome / PluginLLMManager 引导页 / 设置重放入口 / 5 个设计器空态引导页）。本台账中的 OnboardingPlugin 条目保留为 v1→v2 迁移的历史记录，不再对应当前实现。"
   ],
   "gapAuditCounts": {
    "parityReview": 7,

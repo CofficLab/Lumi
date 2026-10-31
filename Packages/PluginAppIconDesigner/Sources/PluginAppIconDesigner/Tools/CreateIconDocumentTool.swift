@@ -36,7 +36,7 @@ public struct CreateIconDocumentTool: SuperAgentTool {
         let background = IconToolSupport.color(arguments, "background", default: "#00000000")
 
         let document = await MainActor.run {
-            IconDocumentStore.shared.createDocument(
+            IconToolSupport.store().createDocument(
                 title: title,
                 width: width,
                 height: height,

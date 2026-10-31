@@ -218,5 +218,5 @@ public func registerEditorExtensions(into registry: EditorExtensionRegistry) {
 ## 相关文档
 
 - [插件 Package 化架构](./plugin-package-architecture.md)
-- [内核与插件边界规范](../.agent/rules/core-plugin-boundary-rules.md)
+- [内核与插件边界规范](../.lumi/rules/core-plugin-boundary-rules.md)
 - [编辑器性能分析](./editor-performance-analysis.md)

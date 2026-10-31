@@ -62,6 +62,34 @@ struct ProviderAgentLoopTests {
         #expect(!unauthorized.isRetryable)
     }
 
+    @Test("529 过载失败保留服务端给出的退避建议")
+    func overloadedFailureCarriesRetryAfter() {
+        let failure = AgentLoopFailure.from(
+            error: VendorAPIError.httpStatus(
+                statusCode: 529,
+                summary: "当前服务集群负载较高，请稍后重试",
+                retryAfterSeconds: 30
+            ),
+            providerID: "minimax-tokenplan",
+            modelName: "MiniMax-M3"
+        )
+
+        #expect(failure.kind == .server)
+        #expect(failure.isRetryable)
+        #expect(failure.httpStatusCode == 529)
+        #expect(failure.retryAfterSeconds == 30, "整回合重试需要知道该等多久")
+        #expect(failure.providerID == "minimax-tokenplan")
+        #expect(failure.modelName == "MiniMax-M3")
+    }
+
+    @Test("没有服务端建议时退避时长为空")
+    func failureWithoutRetryAfterHasNoDelay() {
+        let failure = AgentLoopFailure.from(
+            error: VendorAPIError.httpStatus(529, "当前服务集群负载较高")
+        )
+        #expect(failure.retryAfterSeconds == nil)
+    }
+
     @Test("鉴权、配置和上下文错误默认不可自动重试")
     func nonRetryableFailuresRemainNonRetryable() {
         let missingKey = AgentLoopFailure.from(

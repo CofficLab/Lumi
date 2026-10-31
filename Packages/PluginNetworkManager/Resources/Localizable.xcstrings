@@ -1490,73 +1490,42 @@
         }
       }
     },
-    "Peak" : {
+    "Peak (%lld)" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Peak"
+            "value" : "Peak (%lld)"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "峰值"
+            "value" : "峰值 (%lld)"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "峯值"
+            "value" : "峰值 (%lld)"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "峯值"
+            "value" : "峰值 (%lld)"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "峰值"
+            "value" : "峰值 (%lld)"
           }
         }
       }
     },
     "Peak (series.peakCount), total (series.totalCount)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Peak (series.peakCount), total (series.totalCount)"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "峰值（series.peakCount），总计（series.totalCount）"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "峰值（series.peakCount），总计（series.totalCount）"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "峰值（series.peakCount），总计（series.totalCount）"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "峰值（series.peakCount），总计（series.totalCount）"
-          }
-        }
-      }
+
     },
     "Pending" : {
       "localizations" : {

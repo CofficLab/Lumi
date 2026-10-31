@@ -64,7 +64,8 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
             project: project,
             agentTurn: agentTurn,
             conversationState: conversationState,
-            chat: chat
+            chat: chat,
+            statsCapability: ConversationStatsCapabilityAdapter(conversations: conversations)
         )
         self.context = context
 
@@ -144,7 +145,12 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
 
         // 3. Agent 工具。
         kernel.resolveProvider((any ToolManagerProviding).self)?.add(
-            GetRecentConversationsTool(conversations: conversations, project: project),
+            GetRecentConversationsTool(
+                capability: ConversationListQueryCapabilityAdapter(
+                    conversations: conversations,
+                    project: project
+                )
+            ),
             pluginID: id
         )
     }

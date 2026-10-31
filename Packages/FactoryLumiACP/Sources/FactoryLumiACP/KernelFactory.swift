@@ -21,7 +21,7 @@ public enum KernelFactory {
             + pluginFactory.makePlugins()
             + additionalPlugins
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
-            try PluginDataMigrationCoordinator(storage: storage).run(for: plugins)
+            PluginDataMigrationCoordinator(storage: storage).run(for: plugins)
         }
         try kernel.start(plugins: plugins)
 

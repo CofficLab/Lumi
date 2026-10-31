@@ -1,4 +1,5 @@
 import Foundation
+import KitTestIsolation
 import KitLLM
 import os
 import LumiLoggingKit
@@ -50,12 +51,23 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
 
     /// 数据存储目录；内存实现默认使用 Application Support 下的会话目录，
     /// 供未来持久化 / 选中状态写盘使用。
+    ///
+    /// - Important: 测试进程下**不允许**回退到本机真实目录——那会让测试
+    ///   读写开发者本机的数据目录。测试应通过 `init(dataDirectory:)` 注入隔离目录。
     public var dataDirectory: URL {
-        Self.defaultDataDirectory
+        IsolatedDirectoryGuard.directory(
+            injected: injectedDataDirectory,
+            owner: "DefaultConversationManager",
+            accessor: "dataDirectory",
+            fallback: { Self.productionDefaultDataDirectory }
+        )
     }
 
-    /// 默认数据目录：`~/Library/Application Support/LumiMinimal/Conversations`。
-    nonisolated private static let defaultDataDirectory: URL = {
+    /// 显式注入的数据目录（测试用）。
+    private let injectedDataDirectory: URL?
+
+    /// 生产环境默认数据目录：`~/Library/Application Support/LumiMinimal/Conversations`。
+    nonisolated private static let productionDefaultDataDirectory: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSTemporaryDirectory())
         return base
@@ -63,7 +75,8 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
             .appendingPathComponent("Conversations", isDirectory: true)
     }()
 
-    public init() {
+    public init(dataDirectory: URL? = nil) {
+        self.injectedDataDirectory = dataDirectory
         if Self.verbose {
             Self.logger.info("\(self.t)dataDirectory=\(self.dataDirectory.path, privacy: .public)")
         }

@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import KitLLM
+import ProviderLLMManager
 
 /// 云端 / 本地供应商设置页面唯一的数据来源与交互入口。
 ///
