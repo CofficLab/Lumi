@@ -124,32 +124,39 @@ struct ToolCallGroupSummaryRow: View {
 ///
 /// 宽度固定，与既有「调用参数 / 调用结果」popover（`ToolDetailPopoverView`，
 /// 宽 500）保持一致，避免同一条消息里出现两种宽度的弹层。
+///
+/// ## 为什么必须有高度上限 + 滚动
+///
+/// 折叠组可能包含几十条工具调用（长回合里常见）。若只固定宽度而不限制高度，
+/// popover 会被内容撑到超出屏幕高度，SwiftUI 的 popover 一旦超出屏幕就会被
+/// **裁掉**（而不是自动加滚动条），底部那几条工具行既看不见也滚不到。
+///
+/// 因此这里给滚动区加固定的高度上限，让超出部分进入 `ScrollView`。
 struct ToolCallGroupPopoverContent: View {
     @LumiTheme private var theme
 
     let toolCalls: [MessageToolCall]
     let rows: () -> AnyView
 
+    /// 滚动区高度上限（不含标题与内边距）。
+    ///
+    /// 取值参考同项目其它弹层（`ASCChatToolbarPopoverView` 460、
+    /// `ToolbarPopoverContent` 360）：既能一次看到十来条，又不至于顶到屏幕边缘。
+    private static let maxContentHeight: CGFloat = 420
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: "wrench.and.screwdriver")
-                    .font(.appCaptionEmphasized)
-                    .foregroundColor(theme.textSecondary)
+            header
 
-                Text(pluginLocalization.string("工具调用"))
-                    .font(.appCallout)
-                    .foregroundColor(theme.textPrimary)
-
-                Spacer(minLength: 12)
-
-                Text("\(toolCalls.count)")
-                    .font(.appMicro)
-                    .foregroundColor(theme.textTertiary)
-                    .monospacedDigit()
+            // - Important: 滚动只包住列表本身，标题栏固定不动。
+            //   若把标题也放进 ScrollView，长列表滚动后用户会失去
+            //   「这是工具调用列表」的上下文。
+            ScrollView(.vertical) {
+                rows()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.bottom, 4)
             }
-
-            rows()
+            .frame(maxHeight: Self.maxContentHeight)
         }
         .padding(12)
         .frame(width: 500, alignment: .leading)
@@ -160,6 +167,26 @@ struct ToolCallGroupPopoverContent: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(ToolCallGroupAccessibility.popover)
+    }
+
+    /// 标题栏：图标 + 「工具调用」+ 数量。
+    private var header: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "wrench.and.screwdriver")
+                .font(.appCaptionEmphasized)
+                .foregroundColor(theme.textSecondary)
+
+            Text(pluginLocalization.string("工具调用"))
+                .font(.appCallout)
+                .foregroundColor(theme.textPrimary)
+
+            Spacer(minLength: 12)
+
+            Text("\(toolCalls.count)")
+                .font(.appMicro)
+                .foregroundColor(theme.textTertiary)
+                .monospacedDigit()
+        }
     }
 }
 
