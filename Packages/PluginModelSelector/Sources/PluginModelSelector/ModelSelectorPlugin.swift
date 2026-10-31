@@ -5,6 +5,7 @@ import LumiLoggingKit
 import ProviderChatSection
 import ProviderConversation
 import ProviderLLMManager
+import ProviderMessage
 import ProviderStorage
 import ProviderToast
 
@@ -62,7 +63,10 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
 
         let selectionCapability = ModelSelectionCapabilityAdapter(
             conversations: conversations,
-            llmManager: manager
+            llmManager: manager,
+            timelineRecorder: ModelSwitchTimelineRecorder(
+                messages: kernel.resolveProvider((any MessageManaging).self)
+            )
         )
         self.selectionCapability = selectionCapability
 

@@ -17,6 +17,7 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLLMManager"),
+        .package(path: "../ProviderMessage"),
         .package(path: "../KitLLM"),
     ],
     targets: [
@@ -29,6 +30,7 @@ let package = Package(
                 "ProviderChatSection",
                 "ProviderConversation",
                 "ProviderLLMManager",
+                "ProviderMessage",
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 "KitLLM",
                 .product(name: "ProviderToast", package: "LumiProviders"),
@@ -37,7 +39,10 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginModelSelectorTests",
-            dependencies: ["PluginModelSelector"]
+            dependencies: [
+                "PluginModelSelector",
+                "ProviderMessage",
+            ]
         ),
     ]
 )
