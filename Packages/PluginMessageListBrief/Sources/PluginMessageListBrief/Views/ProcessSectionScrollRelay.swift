@@ -44,6 +44,9 @@ final class ProcessSectionScrollRelay {
     /// 事件监视器句柄。
     private var monitor: Any?
 
+    /// app 终止通知的观察句柄。
+    private var terminationObservation: NSObjectProtocol?
+
     /// 已转发的次数（供单测断言）。
     private(set) var forwardedScrollCount = 0
 
@@ -59,13 +62,30 @@ final class ProcessSectionScrollRelay {
     }
 
     /// 注销一个折叠区内层滚动视图。
+    ///
+    /// - Important: 最后一个观察者注销时**移除事件监视器**。
+    ///   `NSEvent.addLocalMonitorForEvents` 注册的监视器会让 app 无法
+    ///   正常退出（实测：UI 测试 teardown 报「Failed to terminate」，
+    ///   禁用监视器后恢复）—— 监视器持有 app 的事件循环引用。
+    ///   折叠区全部收起时没有接力需求，监视器就该消失。
     func unregister(_ scrollView: NSScrollView) {
         registered.remove(scrollView)
+        if registered.count == 0 {
+            stopMonitoring()
+        }
     }
 
     /// 该滚动视图是否已登记。
     func isRegistered(_ scrollView: NSScrollView) -> Bool {
         registered.contains(scrollView)
+    }
+
+    /// 滚轮事件监视器当前是否处于启用状态。
+    ///
+    /// - Important: 供测试断言监视器的生命周期。监视器残留会让 app
+    ///   无法正常退出（见 ``stopMonitoring()``）。
+    var isMonitoring: Bool {
+        monitor != nil
     }
 
     // MARK: - 事件监视
@@ -77,6 +97,25 @@ final class ProcessSectionScrollRelay {
             // 返回 nil 表示事件已被消费，不再往下传。
             return self.handle(event) ? nil : event
         }
+        observeAppTerminationIfNeeded()
+    }
+
+    /// 监听 app 终止，移除事件监视器。
+    ///
+    /// - Important: `NSEvent.addLocalMonitorForEvents` 注册的监视器持有 app
+    ///   的事件循环引用，app 退出时若监视器还在，app 可能无法正常结束
+    ///   （实测：UI 测试 teardown 报「Failed to terminate」，禁用监视器后
+    ///   恢复正常）。因此除了「最后一个观察者注销时移除」，还要在 app
+    ///   终止时兜底移除 —— 用户完全可能让折叠区一直展开着直到退出。
+    private func observeAppTerminationIfNeeded() {
+        guard terminationObservation == nil else { return }
+        terminationObservation = NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.stopMonitoring()
+        }
     }
 
     /// 停止监视（供测试与 teardown 使用）。
@@ -84,6 +123,10 @@ final class ProcessSectionScrollRelay {
         if let monitor {
             NSEvent.removeMonitor(monitor)
             self.monitor = nil
+        }
+        if let terminationObservation {
+            NotificationCenter.default.removeObserver(terminationObservation)
+            self.terminationObservation = nil
         }
     }
 

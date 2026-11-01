@@ -121,4 +121,48 @@ struct ProcessSectionScrollRelayTests {
         relay.unregister(scrollView)
         #expect(!relay.isRegistered(scrollView))
     }
+
+    // MARK: - 监视器生命周期
+
+    @Test("最后一个观察者注销后移除滚轮监视器")
+    func removesMonitorWhenLastObserverUnregisters() {
+        let relay = ProcessSectionScrollRelay.shared
+        let first = NSScrollView()
+        let second = NSScrollView()
+
+        relay.register(first)
+        relay.register(second)
+        #expect(relay.isMonitoring, "有观察者时应保持监视")
+
+        relay.unregister(first)
+        #expect(
+            relay.isMonitoring,
+            "还有一个观察者时监视器应保留"
+        )
+
+        relay.unregister(second)
+        #expect(
+            !relay.isMonitoring,
+            """
+            最后一个观察者注销后必须移除监视器。\
+            `NSEvent.addLocalMonitorForEvents` 注册的监视器持有 app 的事件循环\
+            引用，残留时 app 可能无法正常退出（实测：UI 测试 teardown 报\
+            「Failed to terminate」）。
+            """
+        )
+    }
+
+    @Test("重新登记会重新启用监视器")
+    func reactivatesMonitorOnNewRegistration() {
+        let relay = ProcessSectionScrollRelay.shared
+        let scrollView = NSScrollView()
+
+        relay.register(scrollView)
+        relay.unregister(scrollView)
+        #expect(!relay.isMonitoring)
+
+        relay.register(scrollView)
+        #expect(relay.isMonitoring, "新的观察者应重新启用监视器")
+        relay.unregister(scrollView)
+    }
 }

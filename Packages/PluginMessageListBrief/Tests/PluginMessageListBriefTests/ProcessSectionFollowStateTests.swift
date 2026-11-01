@@ -2,134 +2,95 @@ import Foundation
 import Testing
 @testable import PluginMessageListBrief
 
-/// 过程折叠区的贴底跟随。
+/// 过程折叠区的**贴底跟随状态**。
 ///
 /// 跟随的语义是「终端式」：内容增长时，若用户仍停在底部就跟着往下走；
 /// 用户一旦主动上滚就停下来（不打扰阅读），滚回底部后恢复跟随。
+///
+/// - Note: 真实行为由 AppKit 的两个通知驱动（内容增长 / 用户滚动），
+///   渲染级验证见 `ProcessSectionAutoPinRenderTests`。
+///   这里锁定的是与之对应的**纯逻辑**部分 —— 跟随开关的语义。
 @MainActor
 struct ProcessSectionFollowStateTests {
-    /// 贴底跟随的状态机。
+    /// 跟随开关的纯逻辑模型。
     ///
-    /// - Note: 这是一个**纯逻辑**模型，与 `BoundedProcessSection` 的
-    ///   `@State isPinnedToBottom` 语义一一对应。抽出来是为了让
-    ///   「用户上滚后不再被拽回底部」这条规则可被单测锁定。
+    /// - Note: 与 `BoundedProcessSection` 的 `@State isFollowing` 语义一致。
     struct FollowState: Equatable {
-        /// 用户是否仍贴在底部。
-        private(set) var isPinnedToBottom: Bool
+        /// 用户是否仍贴在底部（跟随是否生效）。
+        private(set) var isFollowing: Bool
 
-        init(isPinnedToBottom: Bool = true) {
-            self.isPinnedToBottom = isPinnedToBottom
+        init(isFollowing: Bool = true) {
+            self.isFollowing = isFollowing
         }
 
         /// 贴底状态变化（由滚动观察器驱动）。
+        ///
+        /// - Note: 只有**回到**底部才恢复跟随；离开底部由
+        ///   `userScrolledAway` 单独处理，避免「刚展开就不在底部」
+        ///   被误判成用户上滚。
         mutating func updateAtBottom(_ atBottom: Bool) {
-            isPinnedToBottom = atBottom
+            if atBottom {
+                isFollowing = true
+            }
         }
 
-        /// 内容增长时是否应当跟随到新底部。
-        var shouldFollow: Bool {
-            isPinnedToBottom
+        /// 用户主动上滚：打断跟随。
+        mutating func userScrolledAway() {
+            isFollowing = false
+        }
+
+        /// 内容增长时是否应当钉到底部。
+        var shouldPinToBottom: Bool {
+            isFollowing
         }
     }
 
     @Test("初始状态跟随底部")
     func followsByDefault() {
-        var state = FollowState()
-        #expect(state.shouldFollow)
+        let state = FollowState()
+        #expect(state.shouldPinToBottom)
     }
 
     @Test("用户上滚后不再被拽回底部")
     func stopsFollowingAfterUserScrollsUp() {
         var state = FollowState()
-        state.updateAtBottom(false)
-        #expect(!state.shouldFollow, "用户已上滚，内容增长时不得强制跳回底部")
+        state.userScrolledAway()
+        #expect(
+            !state.shouldPinToBottom,
+            "用户已上滚，内容增长时不得强制跳回底部"
+        )
     }
 
     @Test("用户滚回底部后恢复跟随")
     func resumesFollowingWhenUserReturnsToBottom() {
         var state = FollowState()
-        state.updateAtBottom(false)
-        #expect(!state.shouldFollow)
+        state.userScrolledAway()
+        #expect(!state.shouldPinToBottom)
 
         state.updateAtBottom(true)
-        #expect(state.shouldFollow, "用户滚回底部后应恢复跟随")
-    }
-
-    @Test("停在底部时的轻微抖动不打断跟随")
-    func toleratesJitterAtBottom() {
-        var state = FollowState()
-        // 观察器用 1pt 容差判定贴底；这里模拟容差内的状态翻转。
-        state.updateAtBottom(true)
-        #expect(state.shouldFollow)
+        #expect(state.shouldPinToBottom, "用户滚回底部后应恢复跟随")
     }
 
     @Test("上滚后再次贴底，跟随恢复")
     func recoversAfterRepeatedInterruptions() {
         var state = FollowState()
-        state.updateAtBottom(false)
+        state.userScrolledAway()
         state.updateAtBottom(true)
-        state.updateAtBottom(false)
-        #expect(!state.shouldFollow)
+        state.userScrolledAway()
+        #expect(!state.shouldPinToBottom)
 
         state.updateAtBottom(true)
-        #expect(state.shouldFollow)
+        #expect(state.shouldPinToBottom)
     }
 
-    // MARK: - 首次评估不算「用户上滚」
+    @Test("离开底部但未回到底部时，跟随保持关闭")
+    func leavingBottomAloneDoesNotResumeFollowing() {
+        var state = FollowState()
+        state.userScrolledAway()
 
-    /// 折叠区观察器的判定模型：只有**非首次**评估中离开底部才算用户上滚。
-    ///
-    /// 展开一个内容超长的折叠区时，初始偏移量就在顶部（offset = 0），
-    /// 这时若把「不在底部」当成「用户上滚」，贴底跟随会在第一次内容增长时
-    /// 就被打断 —— 违背「自动跟随底部（可被用户打断）」的预期。
-    struct ObserverModel: Equatable {
-        private(set) var isPinnedToBottom = true
-        private(set) var hasEvaluatedOnce = false
-        /// 用户主动上滚的次数。
-        private(set) var userScrollCount = 0
-
-        mutating func evaluate(atBottom: Bool) {
-            let isFirst = !hasEvaluatedOnce
-            hasEvaluatedOnce = true
-
-            if atBottom != isPinnedToBottom {
-                isPinnedToBottom = atBottom
-            }
-            if !atBottom && !isFirst {
-                userScrollCount += 1
-            }
-        }
-    }
-
-    @Test("首次评估在顶部不算用户上滚，不打断跟随")
-    func firstEvaluationAtTopIsNotUserScroll() {
-        var model = ObserverModel()
-        // 展开一个超长折叠区：初始就在顶部，不在底部。
-        model.evaluate(atBottom: false)
-
-        #expect(model.userScrollCount == 0, "首次评估不得记为用户上滚")
-        #expect(
-            !model.isPinnedToBottom,
-            "状态应如实反映「当前不在底部」"
-        )
-    }
-
-    @Test("非首次评估离开底部才记为用户上滚")
-    func laterEvaluationAwayFromBottomIsUserScroll() {
-        var model = ObserverModel()
-        model.evaluate(atBottom: false)
-        model.evaluate(atBottom: false)
-
-        #expect(model.userScrollCount == 1, "第二次离开底部应记为用户上滚一次")
-    }
-
-    @Test("首次评估在底部也不打断跟随")
-    func firstEvaluationAtBottomKeepsFollowing() {
-        var model = ObserverModel()
-        model.evaluate(atBottom: true)
-
-        #expect(model.userScrollCount == 0)
-        #expect(model.isPinnedToBottom)
+        // 观察器报告「不在底部」—— 不应恢复跟随。
+        state.updateAtBottom(false)
+        #expect(!state.shouldPinToBottom)
     }
 }
 

@@ -25,6 +25,22 @@ import SwiftUI
 /// `ListV1View` 明确警告过：不要用 `GeometryReader + PreferenceKey` 测量
 /// **活跃行**的高度 —— 流式 token → 高度 → 布局 → 高度 的反馈环会让
 /// 列表反复重算行高。交给 SwiftUI 的固有尺寸就没有这个环。
+///
+/// ## 自动跟随底部（「不停在底部出现」）
+///
+/// 内容增长时自动把内层视口钉到底部，新内容始终出现在底部 —— 营造
+/// 「agent 一直在干活」的持续工作感。
+///
+/// 跟随的开关是 ``isFollowing``：
+///
+/// - 内容增长（`documentView.frameDidChange`）→ 仍处于跟随态 → 钉底；
+/// - 用户上滚（`clipView.boundsDidChange`）→ 离开底部 → **打断跟随**；
+/// - 用户滚回底部 → 恢复跟随。
+///
+/// - Important: **不使用** SwiftUI 的 `.defaultScrollAnchor(.bottom)`。
+///   实测它虽然也会在内容增长时贴底，但用户上滚后会被下一次内容增长
+///   **拽回底部**，无法打断 —— 与「用户可打断」的预期冲突。
+///   两个 AppKit 信号（内容增长 / 用户滚动）天然互斥，据此自行实现。
 struct BoundedProcessSection<Content: View>: View {
     /// 折叠区内容。
     let content: Content
@@ -32,15 +48,17 @@ struct BoundedProcessSection<Content: View>: View {
     /// 高度上限（由 ``ProcessSectionLayout`` 依据视口高度算出）。
     let maxHeight: CGFloat
 
-    /// 内容版本号：内容变化时递增，用于触发贴底跟随。
+    /// 内容版本号：内容变化时递增，用于重新触发初始定位。
     ///
     /// - Important: 不直接用内容本身做 identity。内容是一组 `Message`，
-    ///   其相等判定与「是否增长」无关；而跟随逻辑只关心
+    ///   其相等判定与「是否增长」无关；而定位逻辑只关心
     ///   「有没有新内容进来」。
     let contentVersion: Int
 
-    /// 用户是否正停在底部。`false` 表示用户主动上滚过，跟随被打断。
-    @State private var isPinnedToBottom = true
+    /// 是否处于「跟随底部」状态。
+    ///
+    /// 初始为 `true`：刚展开时用户没有表达过偏好，应当跟随新内容。
+    @State private var isFollowing = true
 
     init(
         maxHeight: CGFloat,
@@ -53,130 +71,128 @@ struct BoundedProcessSection<Content: View>: View {
     }
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.vertical) {
-                content
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background(alignment: .bottom) {
-                        // 底部锚点：贴底跟随时把视口滚到这里。
-                        Color.clear
-                            .frame(height: 1)
-                            .id(ProcessSectionAnchor.bottomID)
-                    }
-            }
-            .frame(maxHeight: maxHeight)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(nsColor: .textBackgroundColor))
-            )
-            .overlay(
-                // 内凹阴影：四边对称，营造「下陷」感。
-                ZStack {
-                    // 垂直方向：上下阴影
-                    RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(
-                            LinearGradient(
-                                stops: [
-                                    .init(color: .black.opacity(0.12), location: 0),
-                                    .init(color: .black.opacity(0.04), location: 0.3),
-                                    .init(color: .clear, location: 0.5),
-                                    .init(color: .black.opacity(0.04), location: 0.7),
-                                    .init(color: .black.opacity(0.12), location: 1)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ),
-                            lineWidth: 1
-                        )
-
-                    // 水平方向：左右阴影
-                    RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(
-                            LinearGradient(
-                                stops: [
-                                    .init(color: .black.opacity(0.12), location: 0),
-                                    .init(color: .black.opacity(0.04), location: 0.3),
-                                    .init(color: .clear, location: 0.5),
-                                    .init(color: .black.opacity(0.04), location: 0.7),
-                                    .init(color: .black.opacity(0.12), location: 1)
-                                ],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            ),
-                            lineWidth: 1
-                        )
+        ScrollView(.vertical) {
+            content
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(alignment: .bottom) {
+                    // 底部锚点：贴底跟随时把视口滚到这里。
+                    Color.clear
+                        .frame(height: 1)
+                        .id(ProcessSectionAnchor.bottomID)
                 }
-            )
-            .overlay(
-                // 内阴影：四边对称，强化凹陷感。
-                VStack(spacing: 0) {
-                    // 顶部阴影
-                    LinearGradient(
-                        colors: [.black.opacity(0.08), .clear],
-                        startPoint: .top,
-                        endPoint: .bottom
+                .overlay(alignment: .bottomTrailing) {
+                    // 观察器放在**内容内部**。
+                    //
+                    // - Important: 不能放在 `.background` 里。`.background`
+                    //   的视图挂在 `ScrollView` **外面**，不在滚动视图的视图
+                    //   子树中，它的 `enclosingScrollView` 恒为 `nil` ——
+                    //   观察器会静默失效（实测确认）。放在内容内部时，
+                    //   `enclosingScrollView` 立刻拿到 `HostingScrollView`。
+                    // - Important: 零尺寸 + `allowsHitTesting(false)`，
+                    //   不参与布局也不拦截点击。
+                    BoundedProcessSectionScrollObserver(
+                        isFollowing: isFollowing,
+                        onAtBottomChange: { atBottom in
+                            // 用户滚回底部 → 恢复跟随。
+                            if atBottom {
+                                isFollowing = true
+                            }
+                        },
+                        onUserScrolledAway: {
+                            // 用户主动上滚：打断跟随，内容不再把视口拽回底部。
+                            isFollowing = false
+                        }
                     )
-                    .frame(height: 8)
-
-                    HStack(spacing: 0) {
-                        // 左侧阴影
-                        LinearGradient(
-                            colors: [.black.opacity(0.06), .clear],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                        .frame(width: 6)
-
-                        Spacer()
-
-                        // 右侧阴影
-                        LinearGradient(
-                            colors: [.clear, .black.opacity(0.06)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                        .frame(width: 6)
-                    }
-
-                    // 底部阴影
-                    LinearGradient(
-                        colors: [.clear, .black.opacity(0.08)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 8)
+                    .frame(width: 0, height: 0)
+                    .allowsHitTesting(false)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .allowsHitTesting(false)
-            )
-            .background {
-                // 观察内层滚动位置，判定「是否贴底」；同时把内层滚动视图
-                // 注册到接力表（内层到底时把剩余增量转给外层列表）。
-                BoundedProcessSectionScrollObserver(
-                    onAtBottomChange: { atBottom in
-                        isPinnedToBottom = atBottom
-                    },
-                    onUserScrolledAway: {
-                        // 用户主动上滚：打断贴底跟随。
-                        isPinnedToBottom = false
-                    }
-                )
-            }
-            .onChange(of: contentVersion) { _, _ in
-                followBottomIfNeeded(proxy: proxy)
-            }
         }
-    }
+        .frame(maxHeight: maxHeight)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(nsColor: .textBackgroundColor))
+        )
+        .overlay(
+            // 内凹阴影：四边对称，营造「下陷」感。
+            ZStack {
+                // 垂直方向：上下阴影
+                RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(
+                        LinearGradient(
+                            stops: [
+                                .init(color: .black.opacity(0.12), location: 0),
+                                .init(color: .black.opacity(0.04), location: 0.3),
+                                .init(color: .clear, location: 0.5),
+                                .init(color: .black.opacity(0.04), location: 0.7),
+                                .init(color: .black.opacity(0.12), location: 1)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 1
+                    )
 
-    /// 内容增长后，若用户仍停在底部则跟随到新的底部。
-    ///
-    /// - Important: 跟随的开关完全由「是否贴底」决定：用户一旦主动上滚
-    ///   （`isPinnedToBottom` 变 false），后续内容增长就不再拽他回底部；
-    ///   等他手动滚回底部，跟随自动恢复。
-    private func followBottomIfNeeded(proxy: ScrollViewProxy) {
-        guard isPinnedToBottom else { return }
-        proxy.scrollTo(ProcessSectionAnchor.bottomID, anchor: .bottom)
+                // 水平方向：左右阴影
+                RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(
+                        LinearGradient(
+                            stops: [
+                                .init(color: .black.opacity(0.12), location: 0),
+                                .init(color: .black.opacity(0.04), location: 0.3),
+                                .init(color: .clear, location: 0.5),
+                                .init(color: .black.opacity(0.04), location: 0.7),
+                                .init(color: .black.opacity(0.12), location: 1)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        lineWidth: 1
+                    )
+            }
+        )
+        .overlay(
+            // 内阴影：四边对称，强化凹陷感。
+            VStack(spacing: 0) {
+                // 顶部阴影
+                LinearGradient(
+                    colors: [.black.opacity(0.08), .clear],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 8)
+
+                HStack(spacing: 0) {
+                    // 左侧阴影
+                    LinearGradient(
+                        colors: [.black.opacity(0.06), .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: 6)
+
+                    Spacer()
+
+                    // 右侧阴影
+                    LinearGradient(
+                        colors: [.clear, .black.opacity(0.06)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: 6)
+                }
+
+                // 底部阴影
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.08)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 8)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .allowsHitTesting(false)
+        )
     }
 }
