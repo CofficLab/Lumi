@@ -78,6 +78,27 @@ Sources/PluginMessageListBrief/
 - **`#if DEBUG` 守卫必须覆盖整个函数体**
   `MessageListBriefUITestingSupport` 只在 DEBUG 存在，引用点必须同等包裹，
   否则 Release 构建报 `cannot find '...' in scope`。
+- **展开的过程区限高在视口的 60%（`ProcessSectionLayout.maxHeightFraction`）**
+  展开后的过程区可能包含整段 LLM 回复正文与大量工具步骤，不限高时一次展开
+  就能把整屏撑满、把外层列表顶出视口。内容短于上限时高度自适应，超出则
+  在区内垂直滚动。**回合结束后移到折叠区外的那条最终回复不受此限**。
+- **限高不靠手动测高，靠 `ScrollView` 的固有尺寸**
+  `ScrollView` 配 `.frame(maxHeight:)` 的固有高度就是 `min(内容高, 上限)`，
+  而 `List` 的行高正好取这个值（渲染级测试 `BoundedProcessSectionRenderTests`
+  锁定了这条几何事实）。**不要**改用 `GeometryReader + PreferenceKey` 测高 ——
+  那会踩中本文件已记录的反馈环（流式 token → 高度 → 布局 → 高度）。
+- **macOS 嵌套滚动视图默认没有滚动链**
+  实测：内层 `NSScrollView` 到底后继续拖动，外层列表纹丝不动。接力必须自己
+  实现 —— 见 `ProcessSectionScrollRelay`（应用层滚轮事件监视器 + `hitTest`
+  沿 `superview` 链定位内层 + 边界判定后转发给外层 `enclosingScrollView`）。
+  边界判定留 1pt 容差，避免「差一点点就卡住」。
+- **贴底跟随时「首次评估」不算用户上滚**
+  展开一个内容超长的折叠区时初始偏移就在顶部；若把「不在底部」当成用户上滚，
+  跟随会在第一次内容增长时就被打断。只有**非首次**评估中离开底部才算打断。
+- **内容版本号必须用跨进程稳定的哈希**
+  `String.hashValue` / `UUID.hashValue` 的种子**每个进程启动都会变**，
+  同一条消息在不同进程里版本号不同，视图 identity 随之漂移。用
+  `UUID.stableHashValue`（原始字节哈希）。
 
 ## 能力边界
 
@@ -136,6 +157,13 @@ Adapter 在插件入口 `onBoot(kernel:)` 中构造并注入；Observer 仍使�
 | 3.6 | Watch the disclosure row of a running turn | The summary uses the running label plus the step count, and the duration **ticks every second**. | ✅ `AgentTurnProjectionTests.runningDisclosureTitleUsesRunningLabel` |
 | 3.7 | Expand and collapse repeatedly | The expand/collapse animates. Rows outside the turn do not jump and Markdown content does not flash. | 🖱 |
 | 3.8 | Click inside an expanded process message | The click reaches the message content; it is not swallowed by the disclosure row. | 🖱（依赖 SwiftUI Button 命中测试） |
+| 3.9 | Expand a process section whose content is short | The section takes only the height it needs — no blank space is reserved up to the cap. | ✅ `BoundedProcessSectionRenderTests.shortContentUsesContentHeight` |
+| 3.10 | Expand a process section whose content is long (a full streamed reply) | The section is capped at **60% of the list viewport** and scrolls inside itself; the turn row no longer grows past the cap. | ✅ `BoundedProcessSectionRenderTests.overflowingContentIsCapped` + 🔧 `ProcessSectionLayout.maxHeightFraction == 0.6` |
+| 3.11 | Scroll inside the expanded section to its end, then keep scrolling | The remaining scroll is handed to the outer list, so the conversation keeps moving instead of feeling stuck. | 🖱 + ✅ `ProcessSectionScrollRelayTests.forwardsWhenInnerReachesBottom`（边界判定）+ 🔧 事件转发需真实鼠标 |
+| 3.12 | Scroll up inside the expanded section while a reply streams | The section stops auto-following and stays where you put it; it is not pulled back to the bottom. | 🖱 + ✅ `ProcessSectionFollowStateTests.stopsFollowingAfterUserScrollsUp` |
+| 3.13 | Scroll back to the bottom of the section | Auto-follow resumes; new content keeps arriving at the bottom. | 🖱 + ✅ `ProcessSectionFollowStateTests.resumesFollowingWhenUserReturnsToBottom` |
+| 3.14 | Expand a long section and let the reply stream without touching the scroll | The section stays pinned to the bottom, so the newest text is always the visible one. | 🖱 + ✅ `ProcessSectionFollowStateTests.firstEvaluationAtTopIsNotUserScroll`（首次评估不误判为用户上滚） |
+| 3.15 | Read the final reply of a finished turn | The final reply below the disclosure is **not** capped — it still renders at full height. | 🖱（未改动该路径） |
 
 ### 4. Load earlier messages
 

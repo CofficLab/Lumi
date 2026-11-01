@@ -15,6 +15,9 @@ struct AgentTurnView: View {
     let verbosity: ResponseVerbosity
     let isDeveloperModeEnabled: Bool
 
+    /// 消息列表视口高度。过程折叠区的高度上限由它算出（视口的 60%）。
+    let viewportHeight: CGFloat
+
     @ObservedObject private var turnVM: AgentTurnVM
     let onDynamicContentChange: (@MainActor () -> Void)?
     @State private var isProcessExpanded = false
@@ -24,6 +27,7 @@ struct AgentTurnView: View {
         item: AgentTurnPresentationItem,
         verbosity: ResponseVerbosity,
         isDeveloperModeEnabled: Bool,
+        viewportHeight: CGFloat,
         turnVM: AgentTurnVM,
         onDynamicContentChange: (@MainActor () -> Void)? = nil
     ) {
@@ -31,6 +35,7 @@ struct AgentTurnView: View {
         self.item = item
         self.verbosity = verbosity
         self.isDeveloperModeEnabled = isDeveloperModeEnabled
+        self.viewportHeight = viewportHeight
         _turnVM = ObservedObject(wrappedValue: turnVM)
         self.onDynamicContentChange = onDynamicContentChange
     }
@@ -48,7 +53,6 @@ struct AgentTurnView: View {
             if let lastMessage = turnVM.projection.lastMessage {
                 messageRow(lastMessage)
             }
-
         }
         .task { await turnVM.activate() }
         .onChange(of: item) { _, newItem in
@@ -70,9 +74,22 @@ struct AgentTurnView: View {
             }
 
             if isProcessExpanded {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(turnVM.projection.processMessages) { message in
-                        messageRow(message)
+                // 展开后的过程区限高（视口的 60%），超出部分在区内垂直滚动。
+                //
+                // - Important: 必须限高。过程区可能包含整段 LLM 回复正文与
+                //   大量工具步骤，不限高时一次展开就能把整屏撑满、把外层
+                //   列表顶出视口。
+                // - Important: 高度上限依赖 `viewportHeight`，而它由
+                //   `ListV1View` 的滚动底栏跟踪器测得。视口未就绪时
+                //   `ProcessSectionLayout` 会回退到绝对下限，折叠区不会消失。
+                BoundedProcessSection(
+                    maxHeight: ProcessSectionLayout.maxHeight(viewportHeight: viewportHeight),
+                    contentVersion: processContentVersion
+                ) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(turnVM.projection.processMessages) { message in
+                            messageRow(message)
+                        }
                     }
                 }
             }
@@ -82,6 +99,23 @@ struct AgentTurnView: View {
         // which causes the surrounding rows to jump and the Markdown content
         // to flash while the process section is inserted.
         .animation(.easeInOut(duration: 0.2), value: isProcessExpanded)
+    }
+
+    /// 过程区内容的版本号：内容每次变化递增，用于触发贴底跟随。
+    ///
+    /// - Important: 用「消息 id + 内容长度」的组合而不是消息数组本身。
+    ///   消息数组的相等判定与「是否增长」无关（同样的消息集合可能对应
+    ///   完全相同的状态），而贴底跟随只关心「有没有新内容进来」。
+    /// - Important: 不使用 `String.hashValue`。它是**每次进程启动都会变的
+    ///   随机种子**：同一条消息在不同进程里会得到不同的版本号，视图 identity
+    ///   随之漂移。这里改用 UUID 的原始字节 —— 稳定、跨进程一致、无碰撞。
+    private var processContentVersion: Int {
+        var version = turnVM.projection.processMessages.count
+        for message in turnVM.projection.processMessages {
+            version = version &* 31 &+ message.id.stableHashValue
+            version = version &* 31 &+ message.content.count
+        }
+        return version
     }
 
     private func processDisclosureButton(now: Date) -> some View {
