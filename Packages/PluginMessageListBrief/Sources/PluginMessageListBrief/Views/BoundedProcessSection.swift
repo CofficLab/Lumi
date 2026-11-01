@@ -57,6 +57,8 @@ struct BoundedProcessSection<Content: View>: View {
             ScrollView(.vertical) {
                 content
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
                     .background(alignment: .bottom) {
                         // 底部锚点：贴底跟随时把视口滚到这里。
                         Color.clear
