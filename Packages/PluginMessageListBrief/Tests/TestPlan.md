@@ -5,7 +5,7 @@
 PluginMessageListBrief — Message List V1 (Brief) Manual + automated test reference for the V1 message list. V1 groups a conversation by **Agent Turn** and keeps everything else out of the way. Each turn shows the user message that triggered it, a collapsible process section, and the final reply. Live progress is reported by a single status card pinned to the bottom of the list, not inside the turns.
 
 平台: macOS 14+, iOS 17+
-测试文件: 20 个，用例总数: 130
+测试文件: 23 个，用例总数: 145
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -32,7 +32,7 @@ PluginMessageListBrief — Message List V1 (Brief) Manual + automated test refer
 - `ListV1Presentation`
 - `MessageListServices`
 - `ProcessSectionAnchor`
-- `ProcessSectionLayout`
+- `ProcessSectionExpansionState`
 
 ## 关键行为契约（实现约定，非协议要求）
 
@@ -52,9 +52,12 @@ PluginMessageListBrief — Message List V1 (Brief) Manual + automated test refer
 - **MessageListServices**（11 条）：由 `tailGateCollapsesBursts`、`overlappingRunnersReturnFalse`、`loadFirstPageProbesEarlier` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListStateLifetime**（6 条）：由 `listViewMustNotHoldReferenceStateInPlainStoredProperty`、`listViewMustCarryRuntimeInStateObject`、`listViewMustCarryInitialPositionGate` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Observer**（18 条）：由 `messageObserverForwardsChanges`、`messageObserverIgnoresOtherConversations`、`messageObserverCancelStopsDelivery` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ProcessSectionFollowState**（11 条）：由 `followsByDefault`、`stopsFollowingAfterUserScrollsUp`、`resumesFollowingWhenUserReturnsToBottom` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ProcessSectionAutoExpandRender**（3 条）：由 `activeTurnShowsProcessByDefault`、`historicalTurnHidesProcessByDefault`、`activeTurnIsTallerThanHistoricalTurn` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ProcessSectionAutoPinRender**（4 条）：由 `initialPositionIsAtBottom`、`contentGrowthPinsToBottom`、`userScrollBreaksAutoPin` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ProcessSectionExpansion**（9 条）：由 `activeTurnExpandsByDefault`、`historicalTurnCollapsesByDefault`、`userCollapseIsNotOverridden` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ProcessSectionFollowState**（8 条）：由 `followsByDefault`、`stopsFollowingAfterUserScrollsUp`、`resumesFollowingWhenUserReturnsToBottom` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProcessSectionLayout**（9 条）：由 `maxHeightUsesViewportFraction`、`maxHeightFallsBackToMinimum`、`maxHeightHandlesInvalidViewport` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ProcessSectionScrollRelay**（8 条）：由 `forwardsWhenInnerReachesBottom`、`keepsScrollInsideInnerWhenNotAtBoundary`、`forwardsWhenInnerReachesTop` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ProcessSectionScrollRelay**（10 条）：由 `forwardsWhenInnerReachesBottom`、`keepsScrollInsideInnerWhenNotAtBoundary`、`forwardsWhenInnerReachesTop` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **StuckLoadingMask**（4 条）：由 `gateReleasesMaskWithinBudgetWithoutAnySettleRound`、`gateReleasesMaskWithinBudgetAfterConversationSwitch`、`gateAcceptsNewRoundForSameConversationAfterStaleRound` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -159,59 +162,74 @@ PluginMessageListBrief — Message List V1 (Brief) Manual + automated test refer
 | 96 | Observer | VerbosityObservationBox 在 verbosity 变化时请求刷新 item | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `verbosityBoxRefreshesOnVerbosityChange` |
 | 97 | Observer | VerbosityObservationBox 的 isActive 跟随选中会话的详细程度 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `verbosityBoxIsActiveFollowsVerbosity` |
 | 98 | Observer | VerbosityObservationBox cancel 后不再刷新 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `verbosityBoxCancelStopsRefresh` |
-| 99 | ProcessSectionFollowState | 初始状态跟随底部 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `followsByDefault` |
-| 100 | ProcessSectionFollowState | 用户上滚后不再被拽回底部 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `stopsFollowingAfterUserScrollsUp` |
-| 101 | ProcessSectionFollowState | 用户滚回底部后恢复跟随 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resumesFollowingWhenUserReturnsToBottom` |
-| 102 | ProcessSectionFollowState | 停在底部时的轻微抖动不打断跟随 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toleratesJitterAtBottom` |
-| 103 | ProcessSectionFollowState | 上滚后再次贴底，跟随恢复 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `recoversAfterRepeatedInterruptions` |
-| 104 | ProcessSectionFollowState | 首次评估在顶部不算用户上滚，不打断跟随 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstEvaluationAtTopIsNotUserScroll` |
-| 105 | ProcessSectionFollowState | 非首次评估离开底部才记为用户上滚 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `laterEvaluationAwayFromBottomIsUserScroll` |
-| 106 | ProcessSectionFollowState | 首次评估在底部也不打断跟随 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstEvaluationAtBottomKeepsFollowing` |
-| 107 | ProcessSectionFollowState | 同一 UUID 的稳定哈希恒定 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `stableHashIsDeterministic` |
-| 108 | ProcessSectionFollowState | 不同 UUID 的稳定哈希不同 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `stableHashDistinguishesIDs` |
-| 109 | ProcessSectionFollowState | 稳定哈希非负 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `stableHashIsNonNegative` |
-| 110 | ProcessSectionLayout | 上限取视口的 60% | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `maxHeightUsesViewportFraction` |
-| 111 | ProcessSectionLayout | 视口过矮时上限落到绝对下限，不会小到看不见 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `maxHeightFallsBackToMinimum` |
-| 112 | ProcessSectionLayout | 视口未就绪时退回下限，折叠区不会消失 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `maxHeightHandlesInvalidViewport` |
-| 113 | ProcessSectionLayout | 内容短于上限时高度自适应，不补空白 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shortContentUsesContentHeight` |
-| 114 | ProcessSectionLayout | 内容超过上限时封顶 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `longContentIsCapped` |
-| 115 | ProcessSectionLayout | 内容恰好等于上限时按上限取值 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `exactContentUsesMaxHeight` |
-| 116 | ProcessSectionLayout | 尚未测量时先按上限占位，内容不会凭空消失 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `unmeasuredContentUsesMaxHeight` |
-| 117 | ProcessSectionLayout | 内容超出上限才判定为溢出 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `overflowDetection` |
-| 118 | ProcessSectionLayout | 非法高度不判定为溢出 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `overflowIgnoresInvalidHeights` |
-| 119 | ProcessSectionScrollRelay | 内层已到底时向下滚，增量让给外层 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `forwardsWhenInnerReachesBottom` |
-| 120 | ProcessSectionScrollRelay | 内层未到底时向下滚，增量留在内层 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `keepsScrollInsideInnerWhenNotAtBoundary` |
-| 121 | ProcessSectionScrollRelay | 内层已到顶时向上滚，增量让给外层 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `forwardsWhenInnerReachesTop` |
-| 122 | ProcessSectionScrollRelay | 内层不在顶部时向上滚，增量留在内层 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `keepsScrollInsideInnerWhenNotAtTop` |
-| 123 | ProcessSectionScrollRelay | 边界判定留 1pt 容差，不会出现「差一点点就卡住」 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `boundaryUsesOnePointTolerance` |
-| 124 | ProcessSectionScrollRelay | 内容不足以滚动时不接力 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doesNotForwardWhenContentFits` |
-| 125 | ProcessSectionScrollRelay | 零增量与非法几何不接力 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectsInvalidInput` |
-| 126 | ProcessSectionScrollRelay | 登记与注销是幂等的 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registrationIsIdempotent` |
-| 127 | StuckLoadingMask | 首屏遮罩：加载开始后即使没有收敛轮次，遮罩也必须在预算内落下 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateReleasesMaskWithinBudgetWithoutAnySettleRound` |
-| 128 | StuckLoadingMask | 首屏遮罩：会话切换复位后即使没有收敛轮次，遮罩也必须在预算内落下 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateReleasesMaskWithinBudgetAfterConversationSwitch` |
-| 129 | StuckLoadingMask | 首屏遮罩：失效的一轮结束后，同一会话必须能重新开始一轮 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateAcceptsNewRoundForSameConversationAfterStaleRound` |
-| 130 | StuckLoadingMask | 首屏遮罩：失效的一轮不得放行遮罩，但必须允许后续轮次接手 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateStaleRoundMustNotReleaseMaskButMustHandOver` |
+| 99 | ProcessSectionAutoExpandRender | 活跃回合的过程区默认展开：用户不用点按钮就能看到 agent 的动作 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `activeTurnShowsProcessByDefault` |
+| 100 | ProcessSectionAutoExpandRender | 历史回合的过程区默认折叠：长会话不会被过程区刷屏 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `historicalTurnHidesProcessByDefault` |
+| 101 | ProcessSectionAutoExpandRender | 活跃回合比历史回合高：差值就是自动展开的过程区 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activeTurnIsTallerThanHistoricalTurn` |
+| 102 | ProcessSectionAutoPinRender | 展开后初始即定位到底部，最新内容在底部可见 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `initialPositionIsAtBottom` |
+| 103 | ProcessSectionAutoPinRender | 内容增长时自动钉到底部，新内容始终在底部出现 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `contentGrowthPinsToBottom` |
+| 104 | ProcessSectionAutoPinRender | 用户上滚打断后，内容增长不再把视口拽回底部 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `userScrollBreaksAutoPin` |
+| 105 | ProcessSectionAutoPinRender | 用户滚回底部后，跟随恢复 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resumesFollowingWhenBackAtBottom` |
+| 106 | ProcessSectionExpansion | 活跃回合默认展开：用户发送消息后不用点按钮就能看到过程 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `activeTurnExpandsByDefault` |
+| 107 | ProcessSectionExpansion | 历史回合默认折叠：长会话不会被几十个过程区刷屏 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `historicalTurnCollapsesByDefault` |
+| 108 | ProcessSectionExpansion | 用户手动折叠后，自动展开不覆盖用户的选择 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `userCollapseIsNotOverridden` |
+| 109 | ProcessSectionExpansion | 用户手动展开后保持展开 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `userExpandSticks` |
+| 110 | ProcessSectionExpansion | 回合结束后保持用户最后看到的状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `turnEndKeepsCurrentState` |
+| 111 | ProcessSectionExpansion | 用户手动折叠后，回合结束仍保持折叠 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `userCollapseSurvivesTurnEnd` |
+| 112 | ProcessSectionExpansion | 自动展开态不等于用户展开态：前者可被自动逻辑覆盖 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `automaticStateIsDistinctFromUserState` |
+| 113 | ProcessSectionExpansion | 折叠态不展开 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `collapsedIsNotExpanded` |
+| 114 | ProcessSectionExpansion | 用户切换状态：展开↔折叠双向 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `userToggleSwitchesBothWays` |
+| 115 | ProcessSectionFollowState | 初始状态跟随底部 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `followsByDefault` |
+| 116 | ProcessSectionFollowState | 用户上滚后不再被拽回底部 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `stopsFollowingAfterUserScrollsUp` |
+| 117 | ProcessSectionFollowState | 用户滚回底部后恢复跟随 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resumesFollowingWhenUserReturnsToBottom` |
+| 118 | ProcessSectionFollowState | 上滚后再次贴底，跟随恢复 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `recoversAfterRepeatedInterruptions` |
+| 119 | ProcessSectionFollowState | 离开底部但未回到底部时，跟随保持关闭 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `leavingBottomAloneDoesNotResumeFollowing` |
+| 120 | ProcessSectionFollowState | 同一 UUID 的稳定哈希恒定 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `stableHashIsDeterministic` |
+| 121 | ProcessSectionFollowState | 不同 UUID 的稳定哈希不同 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `stableHashDistinguishesIDs` |
+| 122 | ProcessSectionFollowState | 稳定哈希非负 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `stableHashIsNonNegative` |
+| 123 | ProcessSectionLayout | 上限取视口的 60% | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `maxHeightUsesViewportFraction` |
+| 124 | ProcessSectionLayout | 视口过矮时上限落到绝对下限，不会小到看不见 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `maxHeightFallsBackToMinimum` |
+| 125 | ProcessSectionLayout | 视口未就绪时退回下限，折叠区不会消失 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `maxHeightHandlesInvalidViewport` |
+| 126 | ProcessSectionLayout | 内容短于上限时高度自适应，不补空白 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shortContentUsesContentHeight` |
+| 127 | ProcessSectionLayout | 内容超过上限时封顶 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `longContentIsCapped` |
+| 128 | ProcessSectionLayout | 内容恰好等于上限时按上限取值 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `exactContentUsesMaxHeight` |
+| 129 | ProcessSectionLayout | 尚未测量时先按上限占位，内容不会凭空消失 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `unmeasuredContentUsesMaxHeight` |
+| 130 | ProcessSectionLayout | 内容超出上限才判定为溢出 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `overflowDetection` |
+| 131 | ProcessSectionLayout | 非法高度不判定为溢出 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `overflowIgnoresInvalidHeights` |
+| 132 | ProcessSectionScrollRelay | 内层已到底时向下滚，增量让给外层 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `forwardsWhenInnerReachesBottom` |
+| 133 | ProcessSectionScrollRelay | 内层未到底时向下滚，增量留在内层 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `keepsScrollInsideInnerWhenNotAtBoundary` |
+| 134 | ProcessSectionScrollRelay | 内层已到顶时向上滚，增量让给外层 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `forwardsWhenInnerReachesTop` |
+| 135 | ProcessSectionScrollRelay | 内层不在顶部时向上滚，增量留在内层 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `keepsScrollInsideInnerWhenNotAtTop` |
+| 136 | ProcessSectionScrollRelay | 边界判定留 1pt 容差，不会出现「差一点点就卡住」 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `boundaryUsesOnePointTolerance` |
+| 137 | ProcessSectionScrollRelay | 内容不足以滚动时不接力 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doesNotForwardWhenContentFits` |
+| 138 | ProcessSectionScrollRelay | 零增量与非法几何不接力 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectsInvalidInput` |
+| 139 | ProcessSectionScrollRelay | 登记与注销是幂等的 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registrationIsIdempotent` |
+| 140 | ProcessSectionScrollRelay | 最后一个观察者注销后移除滚轮监视器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `removesMonitorWhenLastObserverUnregisters` |
+| 141 | ProcessSectionScrollRelay | 重新登记会重新启用监视器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `reactivatesMonitorOnNewRegistration` |
+| 142 | StuckLoadingMask | 首屏遮罩：加载开始后即使没有收敛轮次，遮罩也必须在预算内落下 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateReleasesMaskWithinBudgetWithoutAnySettleRound` |
+| 143 | StuckLoadingMask | 首屏遮罩：会话切换复位后即使没有收敛轮次，遮罩也必须在预算内落下 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateReleasesMaskWithinBudgetAfterConversationSwitch` |
+| 144 | StuckLoadingMask | 首屏遮罩：失效的一轮结束后，同一会话必须能重新开始一轮 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateAcceptsNewRoundForSameConversationAfterStaleRound` |
+| 145 | StuckLoadingMask | 首屏遮罩：失效的一轮不得放行遮罩，但必须允许后续轮次接手 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateStaleRoundMustNotReleaseMaskButMustHandOver` |
 
-> 说明：全部 **130 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **145 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 32 / 32
-- P1: 已覆盖 78 / 78
-- P2: 已覆盖 20 / 20
-- **合计: 130 / 130**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 89 / 89
+- P2: 已覆盖 24 / 24
+- **合计: 145 / 145**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（32 条）
-- **P1**: 其余功能性用例（78 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（20 条）
+- **P1**: 其余功能性用例（89 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（24 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 130 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 145 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

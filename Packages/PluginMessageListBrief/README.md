@@ -78,6 +78,11 @@ Sources/PluginMessageListBrief/
 - **`#if DEBUG` 守卫必须覆盖整个函数体**
   `MessageListBriefUITestingSupport` 只在 DEBUG 存在，引用点必须同等包裹，
   否则 Release 构建报 `cannot find '...' in scope`。
+- **活跃回合的过程区自动展开；历史回合默认折叠**
+  用户发送消息后，过程区自动展开、agent 的动作实时可见 —— 不用点任何按钮。
+  展开状态由 `ProcessSectionExpansion` 管理，它记住**用户是否曾手动操作过**：
+  自动展开只在用户从未表达偏好时生效，用户手动折叠后不再被覆盖（否则就成了
+  「强制展开」）。历史回合默认折叠，否则长会话会被几十个过程区刷屏。
 - **展开的过程区限高在视口的 60%（`ProcessSectionLayout.maxHeightFraction`）**
   展开后的过程区可能包含整段 LLM 回复正文与大量工具步骤，不限高时一次展开
   就能把整屏撑满、把外层列表顶出视口。内容短于上限时高度自适应，超出则
@@ -95,6 +100,23 @@ Sources/PluginMessageListBrief/
 - **贴底跟随时「首次评估」不算用户上滚**
   展开一个内容超长的折叠区时初始偏移就在顶部；若把「不在底部」当成用户上滚，
   跟随会在第一次内容增长时就被打断。只有**非首次**评估中离开底部才算打断。
+- **贴底跟随靠两个互斥的 AppKit 通知，不用 `defaultScrollAnchor(.bottom)`**
+  实测：`documentView.frameDidChange`（内容变高）✅ 触发、
+  `clipView.boundsDidChange`（用户滚动）✅ 触发，二者**完全互斥**。
+  `defaultScrollAnchor(.bottom)` 虽然也会在内容增长时贴底，但**用户上滚后会被
+  下一次内容增长拽回底部**，无法打断 —— 与「用户可打断」的预期冲突。
+  - Important: 观察器**必须放在 `ScrollView` 的内容内部**。放在 `.background`
+    里（ScrollView 外面）时 `enclosingScrollView` 恒为 `nil`，观察器**静默失效**
+    （实测确认）。
+  - Important: 通知用 `queue: nil`（同步处理）。用 `queue: .main` 会把钉底
+    推迟到下一个 runloop 迭代，表现为「内容已经出现了，但视口还没跟上」。
+  - Important: 钉底会改 `clipView.bounds`，**同步**触发 `boundsDidChange` ——
+    必须用 `isPinning` 标志排除，否则钉底动作自己会被当成「用户上滚」而打断跟随。
+- **全局滚轮事件监视器必须在最后一个观察者注销时移除**
+  `NSEvent.addLocalMonitorForEvents` 注册的监视器持有 app 的事件循环引用，
+  残留时 **app 可能无法正常退出**（实测：UI 测试 teardown 报
+  「Failed to terminate」，禁用监视器后恢复正常）。折叠区全部收起时没有接力
+  需求，监视器就该消失；另在 `willTerminateNotification` 兜底移除。
 - **内容版本号必须用跨进程稳定的哈希**
   `String.hashValue` / `UUID.hashValue` 的种子**每个进程启动都会变**，
   同一条消息在不同进程里版本号不同，视图 identity 随之漂移。用
@@ -162,7 +184,11 @@ Adapter 在插件入口 `onBoot(kernel:)` 中构造并注入；Observer 仍使�
 | 3.11 | Scroll inside the expanded section to its end, then keep scrolling | The remaining scroll is handed to the outer list, so the conversation keeps moving instead of feeling stuck. | 🖱 + ✅ `ProcessSectionScrollRelayTests.forwardsWhenInnerReachesBottom`（边界判定）+ 🔧 事件转发需真实鼠标 |
 | 3.12 | Scroll up inside the expanded section while a reply streams | The section stops auto-following and stays where you put it; it is not pulled back to the bottom. | 🖱 + ✅ `ProcessSectionFollowStateTests.stopsFollowingAfterUserScrollsUp` |
 | 3.13 | Scroll back to the bottom of the section | Auto-follow resumes; new content keeps arriving at the bottom. | 🖱 + ✅ `ProcessSectionFollowStateTests.resumesFollowingWhenUserReturnsToBottom` |
-| 3.14 | Expand a long section and let the reply stream without touching the scroll | The section stays pinned to the bottom, so the newest text is always the visible one. | 🖱 + ✅ `ProcessSectionFollowStateTests.firstEvaluationAtTopIsNotUserScroll`（首次评估不误判为用户上滚） |
+| 3.14 | Expand a long section and let the reply stream without touching the scroll | The section stays pinned to the bottom, so the newest text is always the visible one. | ✅ `ProcessSectionAutoPinRenderTests.contentGrowthPinsToBottom` |
+| 3.16 | Send a message and watch the process area | The process area **expands on its own** — no click needed — and the agent's steps appear as they are written. | ✅ `ProcessSectionAutoExpandRenderTests.activeTurnShowsProcessByDefault` + 🖱（真实 LLM 回合） |
+| 3.17 | Open a long conversation with finished turns | Finished turns keep their process area **collapsed** — the list is not flooded with dozens of open process areas. | ✅ `ProcessSectionAutoExpandRenderTests.historicalTurnHidesProcessByDefault` |
+| 3.18 | Manually collapse the process area, then let the next turn run | The area stays collapsed — automatic expansion must not override an explicit user choice. | ✅ `ProcessSectionExpansionTests.userCollapseIsNotOverridden` + 🖱（下一回合的真实交互） |
+| 3.19 | Expand a long process area | The view is already positioned at the bottom, so the newest step is visible without scrolling. | ✅ `ProcessSectionAutoPinRenderTests.initialPositionIsAtBottom` |
 | 3.15 | Read the final reply of a finished turn | The final reply below the disclosure is **not** capped — it still renders at full height. | 🖱（未改动该路径） |
 
 ### 4. Load earlier messages

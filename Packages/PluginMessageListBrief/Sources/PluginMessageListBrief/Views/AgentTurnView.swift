@@ -20,7 +20,17 @@ struct AgentTurnView: View {
 
     @ObservedObject private var turnVM: AgentTurnVM
     let onDynamicContentChange: (@MainActor () -> Void)?
-    @State private var isProcessExpanded = false
+
+    /// 过程折叠区的展开状态。
+    ///
+    /// - Important: 用 ``ProcessSectionExpansion`` 而不是裸 `@State Bool`。
+    ///   它记住「用户是否曾手动操作过」，自动展开只在用户从未表达过
+    ///   偏好时生效 —— 否则用户手动折叠后，每一轮流式更新都会把折叠区
+    ///   又撑开，变成「强制展开」。
+    /// - Important: 初始值按 `item.isShowingProcess` 构造 —— 活跃回合
+    ///   默认展开（用户不用点按钮就能看到 agent 在干什么），历史回合
+    ///   默认折叠（否则长会话会被几十个过程区刷屏）。
+    @State private var expansion: ProcessSectionExpansion
 
     init(
         services: MessageListServices,
@@ -38,6 +48,7 @@ struct AgentTurnView: View {
         self.viewportHeight = viewportHeight
         _turnVM = ObservedObject(wrappedValue: turnVM)
         self.onDynamicContentChange = onDynamicContentChange
+        _expansion = State(initialValue: ProcessSectionExpansion(isActive: item.isShowingProcess))
     }
 
     var body: some View {
@@ -58,6 +69,11 @@ struct AgentTurnView: View {
         .onChange(of: item) { _, newItem in
             Task { await turnVM.update(item: newItem) }
         }
+        .onChange(of: item.isShowingProcess) { _, isActive in
+            // 回合开始（进入活跃状态）→ 自动展开过程区。
+            // 若用户此前手动折叠过，这个调用不会覆盖用户的选择。
+            expansion.turnStateChanged(isActive: isActive)
+        }
         .onChange(of: turnVM.projection) { _, _ in
             onDynamicContentChange?()
         }
@@ -73,7 +89,7 @@ struct AgentTurnView: View {
                 processDisclosureButton(now: .now)
             }
 
-            if isProcessExpanded {
+            if expansion.isExpanded {
                 // 展开后的过程区限高（视口的 60%），超出部分在区内垂直滚动。
                 //
                 // - Important: 必须限高。过程区可能包含整段 LLM 回复正文与
@@ -98,14 +114,14 @@ struct AgentTurnView: View {
         // turn by message IDs makes List re-layout every child row at once,
         // which causes the surrounding rows to jump and the Markdown content
         // to flash while the process section is inserted.
-        .animation(.easeInOut(duration: 0.2), value: isProcessExpanded)
+        .animation(.easeInOut(duration: 0.2), value: expansion.isExpanded)
     }
 
-    /// 过程区内容的版本号：内容每次变化递增，用于触发贴底跟随。
+    /// 过程区内容的版本号：内容每次变化递增，用于触发一次重新定位。
     ///
     /// - Important: 用「消息 id + 内容长度」的组合而不是消息数组本身。
     ///   消息数组的相等判定与「是否增长」无关（同样的消息集合可能对应
-    ///   完全相同的状态），而贴底跟随只关心「有没有新内容进来」。
+    ///   完全相同的状态），而定位逻辑只关心「有没有新内容进来」。
     /// - Important: 不使用 `String.hashValue`。它是**每次进程启动都会变的
     ///   随机种子**：同一条消息在不同进程里会得到不同的版本号，视图 identity
     ///   随之漂移。这里改用 UUID 的原始字节 —— 稳定、跨进程一致、无碰撞。
@@ -121,10 +137,10 @@ struct AgentTurnView: View {
     private func processDisclosureButton(now: Date) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Button {
-                isProcessExpanded.toggle()
+                expansion.userToggled(toExpanded: !expansion.isExpanded)
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: isProcessExpanded ? "chevron.down" : "chevron.right")
+                    Image(systemName: expansion.isExpanded ? "chevron.down" : "chevron.right")
                     Text(AgentTurnVM.processDisclosureTitle(
                         item: item,
                         userMessages: turnVM.projection.userMessages,
