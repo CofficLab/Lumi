@@ -57,7 +57,11 @@ struct AgentTurnView: View {
                 messageRow(message)
             }
 
-            if item.isShowingProcess || !turnVM.projection.processMessages.isEmpty {
+            // 有实际过程内容时才显示折叠区：
+            // - 历史回合有过程消息（工具调用 / 中间状态）→ 显示
+            // - 活跃回合有过程消息（已开始工具调用）→ 显示
+            // - 活跃回合仅处于思考阶段、还没有过程消息 → 隐藏，由底部状态卡承担提示
+            if !turnVM.projection.processMessages.isEmpty {
                 processDisclosure
             }
 
