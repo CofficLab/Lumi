@@ -65,6 +65,90 @@ struct BoundedProcessSection<Content: View>: View {
                     }
             }
             .frame(maxHeight: maxHeight)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(nsColor: .textBackgroundColor))
+            )
+            .overlay(
+                // 内凹阴影：四边对称，营造「下陷」感。
+                ZStack {
+                    // 垂直方向：上下阴影
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: .black.opacity(0.12), location: 0),
+                                    .init(color: .black.opacity(0.04), location: 0.3),
+                                    .init(color: .clear, location: 0.5),
+                                    .init(color: .black.opacity(0.04), location: 0.7),
+                                    .init(color: .black.opacity(0.12), location: 1)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 1
+                        )
+
+                    // 水平方向：左右阴影
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: .black.opacity(0.12), location: 0),
+                                    .init(color: .black.opacity(0.04), location: 0.3),
+                                    .init(color: .clear, location: 0.5),
+                                    .init(color: .black.opacity(0.04), location: 0.7),
+                                    .init(color: .black.opacity(0.12), location: 1)
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ),
+                            lineWidth: 1
+                        )
+                }
+            )
+            .overlay(
+                // 内阴影：四边对称，强化凹陷感。
+                VStack(spacing: 0) {
+                    // 顶部阴影
+                    LinearGradient(
+                        colors: [.black.opacity(0.08), .clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 8)
+
+                    HStack(spacing: 0) {
+                        // 左侧阴影
+                        LinearGradient(
+                            colors: [.black.opacity(0.06), .clear],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .frame(width: 6)
+
+                        Spacer()
+
+                        // 右侧阴影
+                        LinearGradient(
+                            colors: [.clear, .black.opacity(0.06)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .frame(width: 6)
+                    }
+
+                    // 底部阴影
+                    LinearGradient(
+                        colors: [.clear, .black.opacity(0.08)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 8)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .allowsHitTesting(false)
+            )
             .background {
                 // 观察内层滚动位置，判定「是否贴底」；同时把内层滚动视图
                 // 注册到接力表（内层到底时把剩余增量转给外层列表）。
