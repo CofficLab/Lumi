@@ -88,15 +88,57 @@ Sources/PluginMessageListBrief/
   就能把整屏撑满、把外层列表顶出视口。内容短于上限时高度自适应，超出则
   在区内垂直滚动。**回合结束后移到折叠区外的那条最终回复不受此限**。
 - **限高不靠手动测高，靠 `ScrollView` 的固有尺寸**
-  `ScrollView` 配 `.frame(maxHeight:)` 的固有高度就是 `min(内容高, 上限)`，
+  `ScrollView` 配限高 frame 的固有高度就是 `min(内容高, 上限)`，
   而 `List` 的行高正好取这个值（渲染级测试 `BoundedProcessSectionRenderTests`
   锁定了这条几何事实）。**不要**改用 `GeometryReader + PreferenceKey` 测高 ——
   那会踩中本文件已记录的反馈环（流式 token → 高度 → 布局 → 高度）。
+- **限高 frame 必须带 `minHeight`，否则内层 clipView 的可视高度会塌成 0**
+  曾出现「拖右侧滚动条能滚、滚轮不能滚」。根因是只用 `.frame(maxHeight:)`：
+  `ScrollView` 的固有高度等于**内容高度**，`List` 把这一行裁到上限时，
+  SwiftUI 会把内层 clipView 的可视高度一并压成 **0** ——
+  内层于是**没有可视区域**，滚轮与拖拽都无处可滚；而拖动滚动条直接操作
+  scroller 的几何、不依赖可视区域，所以仍能拖动。
+  真实 app 实测（DEBUG 几何探针读数）：
+
+  | 写法 | document | visible（clipView 可视高度） |
+  | --- | --- | --- |
+  | `.frame(maxHeight:)` | 3576 | **0** |
+  | `.frame(height:)` | 3576 | 160 |
+  | `.frame(minHeight: 1, maxHeight:)` | 3576 | **160** |
+
+  给出 `minHeight` 后 SwiftUI 拿到确定下界，clipView 不再塌成 0。
+  `minHeight: 1`（而不是 `maxHeight`）保留了「内容短于上限时自适应」的语义
+  （实测：3 步骤的折叠区 doc=150 / visible=150，未占满上限 160）。
+  - Note: 这是**另一个**独立问题。「向上滑看更早的过程内容时内层不动、
+    外层滚动条动」的根因是滚轮方向语义相反，见下一条。
 - **macOS 嵌套滚动视图默认没有滚动链**
   实测：内层 `NSScrollView` 到底后继续拖动，外层列表纹丝不动。接力必须自己
   实现 —— 见 `ProcessSectionScrollRelay`（应用层滚轮事件监视器 + `hitTest`
   沿 `superview` 链定位内层 + 边界判定后转发给外层 `enclosingScrollView`）。
   边界判定留 1pt 容差，避免「差一点点就卡住」。
+- **SwiftUI 内层的滚轮方向与原生相反，接力必须主动驱动它**
+  曾出现「在过程区滚动，触发的是**外部的滚动条**，它自己根本不滚动」。
+
+  实测的方向语义（macOS）：
+
+  | 接收方 | `deltaY = -40`（触控板向上滑）时 offset 的变化 |
+  | --- | --- |
+  | 原生 `NSScrollView` | `+40`（offset 增大，内容向下走） |
+  | SwiftUI `HostingScrollView` | **−40**（offset 减小，内容向上走） |
+
+  过程折叠区展开时自动**钉在底部**（offset = 文档高 − 视口高）。用户
+  「向上滑看更早的过程内容」（`deltaY < 0`）时：
+
+  - SwiftUI 语义要求 offset **增大** → 已在最大值 → 没有空间 → **内层纹丝不动**；
+  - 事件继续往下传 → 被外层**原生** List 消费 → **外层滚动条动**。
+
+  修复：relay 命中内层时**主动驱动**它 —— 直接改 `clipView.bounds`，
+  方向用**原生**语义（`offset += deltaY`），不沿用 SwiftUI 的反向语义。
+  - Important: 不能只是「放行」让 SwiftUI 自己的手势处理 —— 实测放行后
+    内层偏移**同样**纹丝不动（嵌套在 `List` 行里时它不处理这类事件）。
+  - Important: 不能调用 `scrollView.scrollWheel(with:)` —— 它对 SwiftUI 的
+    `HostingScrollView` 无效（实测：调用后偏移不变）。直接改
+    `clipView.bounds` 与自动钉底（`pinToBottom`）同一范式。
 - **贴底跟随时「首次评估」不算用户上滚**
   展开一个内容超长的折叠区时初始偏移就在顶部；若把「不在底部」当成用户上滚，
   跟随会在第一次内容增长时就被打断。只有**非首次**评估中离开底部才算打断。
