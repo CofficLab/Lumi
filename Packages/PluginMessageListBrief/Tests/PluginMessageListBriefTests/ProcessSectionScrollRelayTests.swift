@@ -109,6 +109,7 @@ struct ProcessSectionScrollRelayTests {
     @Test("登记与注销是幂等的")
     func registrationIsIdempotent() {
         let relay = ProcessSectionScrollRelay.shared
+        relay.resetForTesting()
         let scrollView = NSScrollView()
         defer { relay.unregister(scrollView) }
 
@@ -127,6 +128,9 @@ struct ProcessSectionScrollRelayTests {
     @Test("最后一个观察者注销后移除滚轮监视器")
     func removesMonitorWhenLastObserverUnregisters() {
         let relay = ProcessSectionScrollRelay.shared
+        // 进程级单例的登记会跨用例残留（SwiftUI 拆除视图是异步的，
+        // 上一条用例渲染的折叠区可能还登记着它的内层滚动视图）。
+        relay.resetForTesting()
         let first = NSScrollView()
         let second = NSScrollView()
 
@@ -155,6 +159,7 @@ struct ProcessSectionScrollRelayTests {
     @Test("重新登记会重新启用监视器")
     func reactivatesMonitorOnNewRegistration() {
         let relay = ProcessSectionScrollRelay.shared
+        relay.resetForTesting()
         let scrollView = NSScrollView()
 
         relay.register(scrollView)
