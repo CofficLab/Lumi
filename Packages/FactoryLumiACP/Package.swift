@@ -36,7 +36,7 @@ let package = Package(
         .package(path: "../PluginACP"),
         .package(url: "https://github.com/CofficLab/LumiPluginStorage.git", from: "1.1.1"),
         .package(url: "https://github.com/CofficLab/LumiPluginCommand.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiPluginToast.git", from: "1.2.1"),
+        .package(url: "https://github.com/CofficLab/LumiPluginToast.git", from: "1.2.2"),
         .package(path: "../PluginLLMManager"),
         .package(path: "../PluginToolManager"),
         .package(path: "../PluginAgentLoop"),

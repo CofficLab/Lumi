@@ -138,7 +138,7 @@ let package = Package(
         .package(name: "PluginGoalTask", path: "../PluginGoalTask"),
         .package(name: "PluginNetto", path: "../PluginNetto"),
         .package(url: "https://github.com/CofficLab/LumiPluginStorage.git", from: "1.1.1"),
-        .package(url: "https://github.com/CofficLab/LumiPluginToast.git", from: "1.2.1"),
+        .package(url: "https://github.com/CofficLab/LumiPluginToast.git", from: "1.2.2"),
         .package(url: "https://github.com/CofficLab/LumiPluginCommand.git", from: "1.0.1"),
         .package(path: "../PluginXcodeBuild"),
         .package(path: "../ProviderConversation"),
