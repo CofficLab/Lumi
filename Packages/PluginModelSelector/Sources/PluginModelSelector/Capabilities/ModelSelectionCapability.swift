@@ -42,13 +42,17 @@ public extension ModelSelectionCapability {
 final class ModelSelectionCapabilityAdapter: ModelSelectionCapability {
     private let conversations: (any ConversationManaging)?
     private let llmManager: any LLMManaging
+    /// 模型切换时间线记录器；为 nil 时不写时间线（消息管理器不可用）。
+    private let timelineRecorder: ModelSwitchTimelineRecorder?
 
     init(
         conversations: (any ConversationManaging)?,
-        llmManager: any LLMManaging
+        llmManager: any LLMManaging,
+        timelineRecorder: ModelSwitchTimelineRecorder? = nil
     ) {
         self.conversations = conversations
         self.llmManager = llmManager
+        self.timelineRecorder = timelineRecorder
     }
 
     var selectedConversationID: UUID? {
@@ -84,11 +88,49 @@ final class ModelSelectionCapabilityAdapter: ModelSelectionCapability {
     func select(modelID rawValue: String) {
         guard let modelID = LLMModelID(rawValue: rawValue),
               llmManager.modelRoute(for: modelID) != nil else { return }
-        if let conversationID = selectedConversationID, let conversations {
+        // 切换**前**的模型快照：必须在写入之前取，否则拿到的已是新模型。
+        let previousModelID = selectedModelID.flatMap(LLMModelID.init(rawValue:))
+        let conversationID = selectedConversationID
+
+        if let conversationID, let conversations {
             conversations.selectModel(id: modelID.rawValue, for: conversationID)
         } else {
             llmManager.select(modelID: modelID, reason: .userSelected)
         }
+
+        recordSwitch(
+            conversationID: conversationID,
+            previous: previousModelID,
+            current: modelID
+        )
+    }
+
+    /// 把本次模型切换写进会话时间线。
+    ///
+    /// 只有「有选中会话」才记录：没有会话时模型只改了全局默认，
+    /// 不存在「这个会话换了模型」这件事可写。
+    private func recordSwitch(
+        conversationID: UUID?,
+        previous: LLMModelID?,
+        current: LLMModelID
+    ) {
+        guard let timelineRecorder, let conversationID else { return }
+        // 确认切换**确实生效**再记录。
+        //
+        // 写入会话可能静默失败（会话已被整表重载替换、不在缓存数组里时
+        // `selectModel` 的 guard 会直接返回），此时模型其实没换，写一条
+        // 「已切换」的时间线消息就是误导。
+        guard let effective = selectedModelID.flatMap(LLMModelID.init(rawValue:)),
+              effective == current else { return }
+        timelineRecorder.record(
+            conversationID: conversationID,
+            transition: ModelSwitchTimelineRecorder.Transition(
+                fromProviderID: previous?.providerID,
+                fromModelName: previous?.modelID,
+                toProviderID: current.providerID,
+                toModelName: current.modelID
+            )
+        )
     }
 
     func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle {

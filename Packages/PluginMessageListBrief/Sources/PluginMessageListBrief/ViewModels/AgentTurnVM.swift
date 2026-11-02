@@ -130,7 +130,7 @@ final class AgentTurnVM: ObservableObject {
             ? "执行中"
             : "执行了\(stepCount)个步骤"
         return item.isShowingProcess
-            ? "\(summary) · \(stepCount)个步骤 · \(formattedDuration(elapsed))"
+            ? "\(summary)\(stepCount > 0 ? " · \(stepCount)个步骤" : "") · \(formattedDuration(elapsed))"
             : "\(summary) · \(formattedDuration(elapsed))"
     }
 
