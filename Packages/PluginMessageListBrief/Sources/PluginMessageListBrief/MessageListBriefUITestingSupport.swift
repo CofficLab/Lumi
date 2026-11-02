@@ -7,7 +7,7 @@ import ProviderMessage
 /// PluginMessageListBrief 的 UI 测试夹具（仅 DEBUG）。
 ///
 /// 当 App 以 `--lumi-ui-testing-message-list-brief` 启动时，本夹具在 Chat
-/// 会话里植入**一个** brief 模式确定性子会话 + 4 条预先构造好的 turns，
+/// 会话里植入**一个** brief 模式确定性子会话 + 5 个预先构造好的 turns，
 /// 用于无 LLM/无网络地驱动 `LumiMessageListBriefUITests`。
 ///
 /// ## 夹具结构
@@ -34,7 +34,7 @@ public enum MessageListBriefUITestingSupport {
     /// 强制 verbosity = brief（README §1 要求的「Response Detail = L (Brief)」）。
     public static let verbosity: ResponseVerbosity = .brief
 
-    /// 植入的 4 个 turn 起始时间（基准时间）。
+    /// 植入的 5 个 turn 起始时间（基准时间）。
     private static let baseDate = Date(timeIntervalSince1970: 1_700_000_000)
 
     static var isEnabled: Bool {
@@ -105,7 +105,7 @@ public enum MessageListBriefUITestingSupport {
         agentLoop?.setAutoReplySuppressed(true, for: conversationID)
         defer { agentLoop?.setAutoReplySuppressed(false, for: conversationID) }
 
-        // 4 个 turn，全部保持简短：总高度低于消息区视口，避免 macOS List
+        // 4 个短 turn：总高度低于消息区视口，避免 macOS List
         // 懒加载把视口外的行裁掉导致 UI 测试找不到元素。
         // 「3 步工具 turn」放在最后（视口锚定在底部时必然可见）。
         let turn1User = makeMessage(
@@ -165,8 +165,7 @@ public enum MessageListBriefUITestingSupport {
         messages.insertMessage(turn3User, to: conversationID)
         messages.insertMessage(turn3Final, to: conversationID)
 
-        // 最后一个 turn：3 个工具调用，便于 UI 测试断言 §3.2「执行了3个步骤」。
-        // 放在列表末尾 —— 初始定位在底部时必然在视口内。
+        // 第 4 个 turn：3 个工具调用，便于 UI 测试断言 §3.2「执行了3个步骤」。
         let turn4ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4"
         let turn4User = makeMessage(
             id: "44444444-1111-1111-1111-111111111111",
@@ -203,6 +202,55 @@ public enum MessageListBriefUITestingSupport {
         messages.insertMessage(turn4User, to: conversationID)
         messages.insertMessage(turn4Assistant, to: conversationID)
         messages.insertMessage(turn4Final, to: conversationID)
+
+        // 第 5 个 turn：**超长过程内容**，用于验证过程折叠区的滚动。
+        //
+        // - Important: 过程折叠区限高为视口的 60%（下限 160pt）。内容
+        //   必须明显超过这个上限，折叠区才会进入滚动模式 —— 否则测的
+        //   是「本来就不用滚」的短内容。
+        // - Important: 这几条消息必须排在**最后**：List 首屏定位在底部，
+        //   只有末尾的 turn 才必然在视口内（前面的 turn 会被懒加载裁掉）。
+        let turn5ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa5"
+        let turn5User = makeMessage(
+            id: "55555555-1111-1111-1111-111111111111",
+            conversationID: conversationID,
+            role: .user,
+            content: "执行长流程操作",
+            createdAt: baseDate.addingTimeInterval(40),
+            turnID: turn5ID
+        )
+        messages.insertMessage(turn5User, to: conversationID)
+
+        // 12 条过程消息，每条 6 个工具调用 —— 远超折叠区高度上限。
+        for index in 0..<12 {
+            let message = makeMessage(
+                id: "55555555-\(String(format: "%04d", index))-2222-2222-2222-111111111111",
+                conversationID: conversationID,
+                role: .assistant,
+                content: "长流程阶段 \(index + 1) 的中间说明。",
+                createdAt: baseDate.addingTimeInterval(41 + Double(index)),
+                turnID: turn5ID,
+                toolCalls: (0..<6).map { toolIndex in
+                    MessageToolCall(
+                        id: "c5-\(index)-\(toolIndex)",
+                        name: "read",
+                        arguments: "{}",
+                        displayDescription: "阶段 \(index + 1) 步骤 \(toolIndex + 1) — 读取文件"
+                    )
+                }
+            )
+            messages.insertMessage(message, to: conversationID)
+        }
+
+        let turn5Final = makeMessage(
+            id: "55555555-9999-9999-9999-111111111111",
+            conversationID: conversationID,
+            role: .assistant,
+            content: "长流程全部完成。",
+            createdAt: baseDate.addingTimeInterval(60),
+            turnID: turn5ID
+        )
+        messages.insertMessage(turn5Final, to: conversationID)
 
         // 显式选回夹具会话 + 设 brief 详细度，触发 ListV1View 注册。
         conversations.selectConversation(id: conversationID)

@@ -112,6 +112,7 @@ struct AgentTurnView: View {
                         }
                     }
                 }
+                .accessibilityIdentifier(ProcessSectionAccessibility.container)
             }
         }
         // Only animate the disclosure container's height. Animating the whole
@@ -171,4 +172,20 @@ struct AgentTurnView: View {
         )
         .id(message.id)
     }
+}
+
+/// 过程折叠区的无障碍标识符。
+///
+/// UI 测试必须按标识符定位：折叠区的标题文案是随 `-AppleLanguages`
+/// 变化的本地化文本，按文案定位在非英文环境下必然失败。
+enum ProcessSectionAccessibility {
+    /// 展开后的过程区容器。
+    static let container = "lumi.message-list-brief.process-section"
+
+    /// 内层滚动视图的实时几何（`offset/documentHeight/visibleHeight`）。
+    ///
+    /// - Note: 仅 DEBUG 存在。它是 UI 测试**唯一**能读到内层真实偏移的
+    ///   通道 —— AX 帧对未物化的行会给出恒定的列表坐标，合成滚轮事件
+    ///   又不被 SwiftUI 的 `ScrollView` 接受。
+    static let geometry = "lumi.message-list-brief.process-section.geometry"
 }

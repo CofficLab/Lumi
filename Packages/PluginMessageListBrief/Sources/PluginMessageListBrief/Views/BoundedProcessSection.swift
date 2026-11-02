@@ -16,9 +16,13 @@ import SwiftUI
 /// - 内容短于上限 → 高度自适应（不补空白、无滚动条）；
 /// - 内容超过上限 → 封顶并在区内垂直滚动。
 ///
-/// 这一语义**不需要手动测量内容高度**：`ScrollView` 配合 `.frame(maxHeight:)`
-/// 的固有高度就是「内容高度与上限的较小值」，而 `List` 的行高正好取这个值
+/// 这一语义**不需要手动测量内容高度**：`ScrollView` 配合限高 frame 的
+/// 固有高度就是「内容高度与上限的较小值」，而 `List` 的行高正好取这个值
 /// （渲染级测试 `BoundedProcessSectionRenderTests` 锁定了这条几何事实）。
+///
+/// - Important: 限高 frame **必须带 `minHeight`** —— 否则折叠区内层
+///   clipView 的可视高度会塌成 0，内层滚动无处可落
+///   （详见 body 里 `.frame(minHeight:maxHeight:)` 的注释）。
 ///
 /// ## 为什么不自己测高
 ///
@@ -59,6 +63,16 @@ struct BoundedProcessSection<Content: View>: View {
     ///
     /// 初始为 `true`：刚展开时用户没有表达过偏好，应当跟随新内容。
     @State private var isFollowing = true
+
+    #if DEBUG
+    /// 内层滚动视图的实时几何（`offset/documentHeight/visibleHeight`）。
+    ///
+    /// - Important: 仅 DEBUG。它是 UI 测试**唯一**能读到内层真实偏移的
+    ///   通道 —— AX 帧对未物化的行会给出恒定的列表坐标，合成滚轮事件
+    ///   又不被 SwiftUI 的 `ScrollView` 接受，两者都会让「滚不动」的
+    ///   结论变成伪结论。
+    @State private var geometryLabel = ""
+    #endif
 
     init(
         maxHeight: CGFloat,
@@ -107,9 +121,59 @@ struct BoundedProcessSection<Content: View>: View {
                     )
                     .frame(width: 0, height: 0)
                     .allowsHitTesting(false)
+
+                    #if DEBUG
+                    ProcessSectionGeometryProbeView(
+                        onChange: { raw in geometryLabel = raw }
+                    )
+                    .frame(width: 0, height: 0)
+                    .allowsHitTesting(false)
+                    #endif
                 }
+                #if DEBUG
+                // 几何探针的 AX 载体：放在**内容内部**。
+                //
+                // - Important: 不能挂在 `ScrollView` 外面（`.overlay`）——
+                //   那时它落在 `List` 行的宿主视图里，AX 树里根本不会出现
+                //   这个元素（实测：探针元素查不到）。
+                // - Important: 不能给 `ScrollView` 本身加 `accessibilityValue`
+                //   —— 那会让 SwiftUI 把折叠区整体变成一个 `AXScrollArea`
+                //   容器，UI 测试随即报「Unable to find hit point for ScrollView」。
+                .overlay(alignment: .topLeading) {
+                    Text(geometryLabel)
+                        .font(.system(size: 1))
+                        .opacity(0.001)
+                        .accessibilityIdentifier(ProcessSectionAccessibility.geometry)
+                        .accessibilityValue(geometryLabel)
+                        .allowsHitTesting(false)
+                }
+                #endif
         }
-        .frame(maxHeight: maxHeight)
+        // 限高：**必须**带 `minHeight`。
+        //
+        // - Important: 只有 `maxHeight` 时，折叠区在 `List` 行里**不能用滚轮滚动**
+        //   （用户报告：「拖右侧滚动条能滚，滚轮不能滚」）。
+        //
+        //   机制（真实 app 实测，DEBUG 几何探针读数）：
+        //
+        //   | 写法 | document | visible（clipView 可视高度） |
+        //   | --- | --- | --- |
+        //   | `.frame(maxHeight:)` | 3576 | **0** |
+        //   | `.frame(height:)` | 3576 | 160 |
+        //   | `.frame(minHeight: 1, maxHeight:)` | 3576 | **160** |
+        //
+        //   `ScrollView` 的固有高度等于**内容高度**（3576），`List` 把这一行
+        //   裁到上限（160）时，SwiftUI 会把内层 clipView 的可视高度一并压成 0 ——
+        //   内层于是**没有可视区域**，滚轮与拖拽都无处可滚；
+        //   而拖动滚动条直接操作 scroller 的几何、不依赖可视区域，所以仍能拖动。
+        //   这正是「能拖不能滚」的成因。
+        //
+        //   给出 `minHeight` 后，SwiftUI 拿到一个确定的下界，clipView 不再塌成 0。
+        //
+        //   `minHeight: 1` 而不是 `minHeight: maxHeight`：短内容仍按内容高度
+        //   自适应（实测：3 步骤的折叠区 doc=150 / visible=150，未占满上限 160），
+        //   只有超限内容才封顶并进入滚动模式。
+        .frame(minHeight: 1, maxHeight: maxHeight)
         .background(
             RoundedRectangle(cornerRadius: 8)
                 .fill(Color(nsColor: .textBackgroundColor))
