@@ -59,48 +59,49 @@ struct MessageListRowBuilder {
         return Self.mergeConsecutiveToolExecutionMessages(filtered)
     }
 
-    /// 把同一 Turn 中连续的 `isToolExecutionOnly` 助手消息合并成一条活动消息。
+    /// 把**时间上相邻**的 `isToolExecutionOnly` 助手消息合并成一条活动消息。
     /// 新消息使用 `renderKind == "turn-activity"`；没有 turnID 的历史消息继续使用
     /// `"tool-step-group"`，保持旧数据的展示兼容。
     ///
     /// 单条此类消息也走合成路径（行为等价，仅多一个 renderKind 标记）。
-    /// 合成消息复用组内首条消息的 id/conversationID/createdAt，保证稳定。
+    /// 合成消息复用组内首条消息的 id/conversationID，保证稳定。
+    ///
+    /// - Important: 「相邻」指的是**时间上相邻**，而不是「同一个 turn」。
+    ///
+    ///   曾经的实现按 turnID 分桶：同一回合的所有工具消息无论中间隔着什么
+    ///   都被并进一组。那会把跨越整段正文回复的两批工具执行合成一行，
+    ///   而这一行锚定在**组首**（最早那条工具消息）的时间上。
+    ///
+    ///   真实后果（2026-11-03 08:35，会话 E709F960）：回合里 08:29:43~08:29:56
+    ///   的工具消息与 08:34:05~08:35:09 的工具消息被并成一行，其中最后一条
+    ///   是等待用户授权的挂起点。合成行落在 08:29:43，于是 08:30 的正文回复
+    ///   被渲染到授权卡片**下方**——用户看到「授权后没暂停，继续往下跑」，
+    ///   而回合其实早已 suspended。
+    ///
+    ///   因此：任何**非**工具执行的消息都必须**终止**当前工具组，
+    ///   工具组只合并时间上紧挨着的那些消息。
+    ///
+    /// - Note: 工具组内允许跨 turnID 合并。相邻两批工具消息即使属于不同
+    ///   回合（如恢复回合后的第一批），只要在时间上紧挨着，合并成一行也更
+    ///   符合「一串工具执行」的视觉语义。组内成员按时间排序，时间相同按 id
+    ///   稳定排序，保证同一组无论以何种顺序到达都得到同一个结果。
     private static func mergeConsecutiveToolExecutionMessages(
         _ messages: [Message]
     ) -> [Message] {
         var result: [Message] = []
         var currentGroup: [Message] = []
-        var currentTurnID: UUID?
-        var turnGroups: [UUID: [Message]] = [:]
-        var turnGroupIndices: [UUID: Int] = [:]
 
         func flushGroup() {
             guard !currentGroup.isEmpty else { return }
             result.append(makeToolStepGroup(from: currentGroup))
             currentGroup = []
-            currentTurnID = nil
         }
 
         for message in messages {
             if message.isToolExecutionOnly {
-                if let turnID = message.turnID {
-                    flushGroup()
-                    turnGroups[turnID, default: []].append(message)
-                    let group = turnGroups[turnID] ?? []
-                    if let index = turnGroupIndices[turnID] {
-                        result[index] = makeToolStepGroup(from: group)
-                    } else {
-                        turnGroupIndices[turnID] = result.count
-                        result.append(makeToolStepGroup(from: group))
-                    }
-                } else {
-                    if !currentGroup.isEmpty, currentTurnID != nil {
-                        flushGroup()
-                    }
-                    currentGroup.append(message)
-                    currentTurnID = nil
-                }
+                currentGroup.append(message)
             } else {
+                // 非工具执行的消息（正文回复、用户消息等）**终止**当前工具组。
                 flushGroup()
                 result.append(message)
             }
@@ -127,12 +128,25 @@ struct MessageListRowBuilder {
     ///
     ///   因此这里用**成员 id 的集合**派生一个确定性 UUID：成员集合不变 → id 不变
     ///   （不触发无谓的整列表重新物化），成员集合变化 → id 变化（强制重新物化）。
+    ///
+    /// - Important: **组内成员按时间排序，时间锚点取组内最早成员。**
+    ///
+    ///   合成行代表整组工具执行，它的位置必须落在组内所有成员的覆盖区间内。
+    ///   若沿用「首条成员」的时间，而首条并非时间最早的那条（例如分页回填
+    ///   或乱序插入），合成行就会被锚定到一个错误的位置——排在它本该包含的
+    ///   挂起点**之前**，于是承载的授权卡片出现在旧内容上方。
+    ///
+    ///   同样地，组内 `toolCalls` 必须按时间顺序平铺，折叠摘要里的步骤顺序
+    ///   才与真实执行顺序一致。
     private static func makeToolStepGroup(from messages: [Message]) -> Message {
-        let head = messages.first
+        // 组内按时间排序，时间相同按 id 稳定排序：同一组无论以何种顺序
+        // 到达都得到同一个结果。
+        let ordered = messages.sorted(by: messageOrdering)
+        let head = ordered.first
             ?? Message(conversationID: UUID(), role: .assistant, content: "")
-        let allToolCalls = messages.flatMap { $0.toolCalls ?? [] }
+        let allToolCalls = ordered.flatMap { $0.toolCalls ?? [] }
         return Message(
-            id: derivedGroupID(head: head, messages: messages),
+            id: derivedGroupID(head: head, messages: ordered),
             conversationID: head.conversationID,
             role: .assistant,
             content: head.content,
