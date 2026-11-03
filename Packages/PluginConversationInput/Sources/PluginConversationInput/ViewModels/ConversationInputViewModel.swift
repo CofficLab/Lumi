@@ -302,6 +302,22 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         refresh()
     }
 
+    /// 把拖入的一个文件按类型分流到对应的落点。
+    ///
+    /// 输入框与附件预览是**两条独立的拖放路径**（前者是 AppKit 的
+    /// `NSTextView`，后者是 SwiftUI 的 `.onDrop`），但分流规则必须一致：
+    /// 同一个文件拖到输入框里是图片附件，拖到预览区里也得是图片附件。
+    /// 规则因此收敛在 ViewModel 一处，两条路径共用，避免两套规则悄悄漂移。
+    func attach(droppedURL url: URL) {
+        if ChatInputEditorRules.isDirectoryURL(url) {
+            insertDirectoryPath(url)
+        } else if ChatInputEditorRules.isChatImageFileURL(url) {
+            attachImage(url)
+        } else {
+            attachFile(url)
+        }
+    }
+
     /// 将拖入目录的路径作为文本插入输入框。
     func insertDirectoryPath(_ url: URL) {
         guard !url.path.isEmpty else { return }
