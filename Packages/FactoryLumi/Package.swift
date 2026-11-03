@@ -96,7 +96,7 @@ let package = Package(
         .package(path: "../PluginMessageManager"),
         .package(path: "../PluginLLMContext"),
         .package(path: "../PluginMessageSender"),
-        .package(url: "https://github.com/CofficLab/LumiPluginPluginManager.git", from: "1.4.0"),
+        .package(url: "https://github.com/CofficLab/LumiPluginPluginManager.git", from: "1.7.0"),
         .package(path: "../PluginAgentLoop"),
         .package(path: "../PluginAgentLoopRetry"),
         .package(path: "../PluginToolManager"),
