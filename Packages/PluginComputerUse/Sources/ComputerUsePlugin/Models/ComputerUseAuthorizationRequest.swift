@@ -2,20 +2,22 @@ import Foundation
 
 /// 聊天内 Computer Use 授权卡片的用户决策。
 ///
-/// 三个选项与设置界面的白名单语义一一对应：
-/// - `allowOnce`：仅本次操作有效，不写入显式白名单；
-/// - `alwaysAllow`：写入显式白名单，与设置界面「允许」共用同一份存储；
+/// 只有两个选项：
+/// - `allowForTask`：在本会话内放行这个应用（后续访问不再打扰），不写入任何
+///   跨会话的持久白名单；
 /// - `deny`：拒绝本次操作，agent 收到明确错误并停止该路径。
+///
+/// - Note: 旧版有第三个选项「始终允许」，写入跨会话的持久白名单。
+///   它已被删除：白名单要求用户手工维护，且与会话的自动化等级重复表达
+///   同一件事。A3 会话根本不会弹这张卡；A2 会话的授权天然限定在本会话内。
 public enum ComputerUseAuthorizationDecision: String, Codable, Equatable, Sendable, CaseIterable {
-    case allowOnce
-    case alwaysAllow
+    case allowForTask
     case deny
 
     /// 卡片上展示的按钮文案。
     public var displayTitle: String {
         switch self {
-        case .allowOnce: return pluginLocalization.string("Allow Once")
-        case .alwaysAllow: return pluginLocalization.string("Always Allow")
+        case .allowForTask: return pluginLocalization.string("Allow for This Task")
         case .deny: return pluginLocalization.string("Deny")
         }
     }
@@ -23,8 +25,7 @@ public enum ComputerUseAuthorizationDecision: String, Codable, Equatable, Sendab
     /// 按钮图标。
     public var systemImage: String {
         switch self {
-        case .allowOnce: return "checkmark.circle.fill"
-        case .alwaysAllow: return "bolt.shield.fill"
+        case .allowForTask: return "checkmark.circle.fill"
         case .deny: return "xmark.circle.fill"
         }
     }
@@ -68,8 +69,7 @@ public enum ComputerUseAuthorizationResolver {
     ///
     /// 工具侧的 `resolveUserResponse` 只认识这些常量；UI 也用同一组常量回传，
     /// 两边共用一份定义，避免文案漂移。
-    public static let allowOnceToken = "computer_use.allow_once"
-    public static let alwaysAllowToken = "computer_use.always_allow"
+    public static let allowForTaskToken = "computer_use.allow_for_task"
     public static let denyToken = "computer_use.deny"
 
     /// 解析用户决策。
@@ -79,10 +79,8 @@ public enum ComputerUseAuthorizationResolver {
     public static func decision(for answer: String) -> ComputerUseAuthorizationDecision? {
         let normalized = answer.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         switch normalized {
-        case allowOnceToken, "允许一次", "仅此一次", "allow once", "allow_once":
-            return .allowOnce
-        case alwaysAllowToken, "始终允许", "总是允许", "always allow", "always_allow":
-            return .alwaysAllow
+        case allowForTaskToken, "允许本次任务", "本任务内允许", "允许", "allow for this task", "allow_for_task":
+            return .allowForTask
         case denyToken, "拒绝", "不允许", "deny", "reject", "no":
             return .deny
         default:
@@ -93,8 +91,7 @@ public enum ComputerUseAuthorizationResolver {
     /// 决策对应的回传标记。
     public static func token(for decision: ComputerUseAuthorizationDecision) -> String {
         switch decision {
-        case .allowOnce: return allowOnceToken
-        case .alwaysAllow: return alwaysAllowToken
+        case .allowForTask: return allowForTaskToken
         case .deny: return denyToken
         }
     }
@@ -109,19 +106,12 @@ public enum ComputerUseAuthorizationResolver {
             .replacingOccurrences(of: "{app}", with: applicationName)
     }
 
-    /// 允许一次后回传给 agent 的说明。
+    /// 允许后回传给 agent 的说明。
     ///
-    /// 明确告知「仅本次有效」，避免 agent 把一次授权当成长期授权反复使用。
-    public static func allowOnceMessage(applicationName: String) -> String {
+    /// 明确告知「仅本任务内有效」，避免 agent 把一次授权当成长期授权反复使用。
+    public static func allowForTaskMessage(applicationName: String) -> String {
         pluginLocalization
-            .string("Access to {app} is granted for this operation only. Ask again before accessing it again.")
-            .replacingOccurrences(of: "{app}", with: applicationName)
-    }
-
-    /// 始终允许后回传给 agent 的说明。
-    public static func alwaysAllowMessage(applicationName: String) -> String {
-        pluginLocalization
-            .string("Access to {app} is allowed. You may continue without asking again.")
+            .string("Access to {app} is granted for this task only. Ask again in another conversation.")
             .replacingOccurrences(of: "{app}", with: applicationName)
     }
 }

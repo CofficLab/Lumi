@@ -17,14 +17,18 @@ func accessibilityOperatesBackgroundFixtureWithoutMovingCursorOrActivatingIt() a
         .appendingPathComponent("ComputerUseAX-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
     let store = ComputerUseAuthorizationStore(dataDirectory: directory)
-    store.setAllowed(true, bundleIdentifier: "com.coffic.lumi.tests.axfixture")
     let service = AccessibilityService(authorization: store)
+    // A3（自主）会话：完全放行，不产生任何应用授权卡片。
+    let access = ComputerUseAccessContext(
+        conversationID: UUID(),
+        automationLevel: .autonomous
+    )
     var observed: String?
     var diagnostic = "No observation"
     for _ in 0..<40 {
         try await Task.sleep(for: .milliseconds(100))
         do {
-            let text = try service.observe(application: "com.coffic.lumi.tests.axfixture")
+            let text = try service.observe(application: "com.coffic.lumi.tests.axfixture", context: access)
             diagnostic = text
             if text.contains("Fixture Toggle") { observed = text; break }
         } catch { diagnostic = error.localizedDescription }
@@ -41,20 +45,38 @@ func accessibilityOperatesBackgroundFixtureWithoutMovingCursorOrActivatingIt() a
     let toggle = try #require(snapshot.elements.first { $0.label == "Fixture Toggle" })
     let cursor = CGEvent(source: nil)?.location
     let foreground = NSWorkspace.shared.frontmostApplication?.processIdentifier
-    let output = try service.act(observationID: snapshot.observationID, elementID: toggle.id, action: "AXPress", value: nil)
+    let output = try service.act(
+        observationID: snapshot.observationID,
+        elementID: toggle.id,
+        action: "AXPress",
+        value: nil,
+        context: access
+    )
     #expect(output.contains("action_dispatched"))
     #expect(CGEvent(source: nil)?.location == cursor)
     #expect(NSWorkspace.shared.frontmostApplication?.processIdentifier == foreground)
     #expect(throws: (any Error).self) {
-        try service.act(observationID: snapshot.observationID, elementID: toggle.id, action: "AXPress", value: nil)
+        try service.act(
+            observationID: snapshot.observationID,
+            elementID: toggle.id,
+            action: "AXPress",
+            value: nil,
+            context: access
+        )
     }
-    let afterJSON = try service.observe(application: "com.coffic.lumi.tests.axfixture")
+    let afterJSON = try service.observe(application: "com.coffic.lumi.tests.axfixture", context: access)
     let after = try JSONDecoder().decode(AccessibilityService.Snapshot.self, from: Data(afterJSON.utf8))
     #expect(after.elements.first { $0.label == "Fixture Toggle" }?.value != toggle.value)
     let text = try #require(after.elements.first { $0.label == "Fixture Text" })
     #expect(text.valueSettable)
-    _ = try service.act(observationID: after.observationID, elementID: text.id, action: "set_value", value: "updated by AX")
-    let finalJSON = try service.observe(application: "com.coffic.lumi.tests.axfixture")
+    _ = try service.act(
+        observationID: after.observationID,
+        elementID: text.id,
+        action: "set_value",
+        value: "updated by AX",
+        context: access
+    )
+    let finalJSON = try service.observe(application: "com.coffic.lumi.tests.axfixture", context: access)
     #expect(finalJSON.contains("updated by AX"))
     #expect(!finalJSON.contains("fixture-secret-not-for-model"))
     #expect(NSWorkspace.shared.frontmostApplication?.processIdentifier == foreground)

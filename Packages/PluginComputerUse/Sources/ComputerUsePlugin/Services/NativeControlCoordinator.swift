@@ -30,7 +30,17 @@ final class NativeControlCoordinator: ObservableObject {
     var blocksLumi: Bool { phase == .preparing || phase == .running }
     var isBusy: Bool { session != nil }
 
-    func acquireWhenAvailable(application: String, bundleID: String, reason: String) async throws -> NativeControlSession {
+    /// 等待桌面控制空闲后获取独占租约。
+    ///
+    /// - Parameter unattended: 自主会话（A3）。原生控制不再等待用户点
+    ///   「允许」——那会让自主模式名存实亡。但「停止」的通道保持可用：
+    ///   用户随时可以中断正在进行的操作。
+    func acquireWhenAvailable(
+        application: String,
+        bundleID: String,
+        reason: String,
+        unattended: Bool = false
+    ) async throws -> NativeControlSession {
         let ticket = UUID()
         queue.append(ticket)
         defer { queue.removeAll { $0 == ticket } }
@@ -41,11 +51,25 @@ final class NativeControlCoordinator: ObservableObject {
             try await Task.sleep(for: .milliseconds(100))
         }
         try Task.checkCancellation()
-        return try acquire(application: application, bundleID: bundleID, reason: reason)
+        return try acquire(
+            application: application,
+            bundleID: bundleID,
+            reason: reason,
+            unattended: unattended
+        )
     }
 
     /// A real lease is held across awaits. Actor isolation alone is reentrant.
-    func acquire(application: String, bundleID: String, reason: String) throws -> NativeControlSession {
+    ///
+    /// - Parameter unattended: 自主会话（A3）。原生控制不再等待用户点
+    ///   「允许」——那会让自主模式名存实亡。但「停止」的通道保持可用：
+    ///   用户随时可以中断正在进行的操作。
+    func acquire(
+        application: String,
+        bundleID: String,
+        reason: String,
+        unattended: Bool = false
+    ) throws -> NativeControlSession {
         guard session == nil else {
             throw ComputerUseError.invalidArguments("Another computer operation is active or awaiting the user. Wait; do not retry through shell commands.")
         }
@@ -55,7 +79,7 @@ final class NativeControlCoordinator: ObservableObject {
         self.bundleID = bundleID
         self.reason = String(reason.prefix(180))
         progress = ""
-        approved = authorization.isNativeAllowed(bundleID)
+        approved = unattended || authorization.isNativeAllowed(bundleID)
         resumed = false
         stopped = false
         phase = approved ? .preparing : .permission

@@ -1,15 +1,30 @@
 import Foundation
 
-/// ComputerUse 插件的授权白名单存储。
+/// Computer Use 的授权存储。
 ///
-/// 这是「允许哪些 App 使用电脑控制」这份数据的**唯一所有者**：设置界面、
-/// 原生控制协调器等都通过它读写，避免多处持有独立持久化后端写同一份事实。
+/// ## 现在存什么
 ///
-/// 落盘在插件专属目录下的 Binary Plist（见 `computer_use.json` 迁移说明）。
+/// 只剩两类数据：
+///
+/// 1. **会话作用域的访问授权**（`grantKey`）：A2 会话里用户点过「允许」
+///    之后，该 App 在**本会话内**不再打扰。键是 `会话ID|bundleID`。
+/// 2. **原生控制授权**（`nativeKey`）：原生鼠标键盘独占授权。这不是应用白名单，
+///    而是「Lumi 现在要接管你的鼠标键盘」的运行时确认，且用户随时可以在
+///    桌面横幅上停止并撤销。
+///
+/// ## 不再存什么
+///
+/// **显式应用白名单**（旧 `allowedKey`）已删除。它要求用户逐个 App 手工维护，
+/// 与会话的自动化等级重复表达同一件事，却多出一份需要长期同步的持久状态。
+/// 现在应用访问权由会话等级决定：
+///
+/// - A3：完全放行，不打扰；
+/// - A2：会话内授权一次即可。
+///
+/// 旧数据通过 `ComputerUsePlugin.migrateData` 清理（见该文件的迁移说明）。
 final class ComputerUseAuthorizationStore: @unchecked Sendable {
     static let shared = ComputerUseAuthorizationStore()
 
-    private let lock = NSLock()
     private let store: PlistBackedStringArrayStore
 
     private init() {
@@ -27,129 +42,106 @@ final class ComputerUseAuthorizationStore: @unchecked Sendable {
         )
     }
 
-    // MARK: - 显式授权白名单（工具/设置界面使用）
+    // MARK: - 会话作用域的访问授权（聊天内授权卡片使用）
 
-    func allowedBundleIdentifiers() -> Set<String> {
-        store.read { Set($0[Self.allowedKey] ?? []) }
-    }
-
-    func isAllowed(_ bundleIdentifier: String) -> Bool {
-        allowedBundleIdentifiers().contains(bundleIdentifier)
-    }
-
-    func setAllowed(_ allowed: Bool, bundleIdentifier: String) {
-        guard !bundleIdentifier.isEmpty else { return }
-        store.update { plist in
-            var values = Set(plist[Self.allowedKey] ?? [])
-            if allowed {
-                values.insert(bundleIdentifier)
-            } else {
-                values.remove(bundleIdentifier)
-            }
-            plist[Self.allowedKey] = values.sorted()
-            // 取消显式授权时同时撤销原生控制授权，保持两者语义一致。
-            if !allowed {
-                plist[Self.nativeKey] = (plist[Self.nativeKey] ?? []).filter { $0 != bundleIdentifier }
-                // 显式授权被撤销时，一次性授权也必须失效：
-                // 否则「撤销」后旧的临时授权仍会让 agent 继续访问该应用。
-                Self.removeOneShot(&plist, bundleIdentifier: bundleIdentifier)
-            }
-        }
-    }
-
-    // MARK: - 一次性授权（聊天内授权卡片使用）
-
-    /// 授予一次性的应用访问权。
+    /// 授予会话内的应用访问权。
     ///
-    /// 与 `setAllowed(true, ...)` 的区别：一次性授权**不写入显式白名单**，
-    /// 只在 `oneShot` 列表里登记一个带过期时间的条目。到期后自动失效。
+    /// 与旧版「显式白名单」的区别有两处：
+    /// 1. **不写入白名单**——授权只在本次会话内有效，不跨会话、不跨重启。
+    /// 2. **按会话隔离**——A 会话里授权过的 App，不会让 B 会话也获得访问权。
+    ///
+    /// - Note: 授权**不会在检查时被消费**。一条授权要覆盖整个会话里的
+    ///   多次访问（观察 → 操作 → 再验证）；如果在第一次检查时就消费掉，
+    ///   紧接着的操作会被自己的授权挡下——用户明明点了允许，Agent 却
+    ///   立刻收到「该应用未被允许」。授权的边界是**会话**，不是单次操作。
     ///
     /// - Parameters:
     ///   - bundleIdentifier: 目标应用。
-    ///   - ttl: 有效期，默认 5 分钟。授权本次操作后即失效是更严格的选择。
-    func grantOneShot(bundleIdentifier: String, ttl: TimeInterval = ComputerUseAuthorizationStore.defaultOneShotTTL) {
+    ///   - conversationID: 授权所属会话。
+    ///   - ttl: 兜底有效期，默认 4 小时。会话结束才是真正的边界；
+    ///     TTL 只是防止会话已删但授权仍悬在存储里。
+    func grantSessionAccess(
+        bundleIdentifier: String,
+        conversationID: UUID,
+        ttl: TimeInterval = ComputerUseAuthorizationStore.defaultGrantTTL
+    ) {
         guard !bundleIdentifier.isEmpty else { return }
         let expiry = Date().addingTimeInterval(ttl)
         store.update { plist in
-            var entries = Self.oneShotEntries(plist)
-            entries[bundleIdentifier] = expiry
-            Self.writeOneShotEntries(entries, into: &plist)
+            var entries = Self.grantEntries(plist)
+            entries[Self.grantKey(for: bundleIdentifier, conversationID: conversationID)] = expiry
+            Self.writeGrantEntries(entries, into: &plist)
         }
     }
 
-    /// 消费一次性授权：存在且未过期时返回 `true`，并立即清除该条目。
+    /// 查询会话内授权是否有效（不消费）。
+    func hasSessionAccess(bundleIdentifier: String, conversationID: UUID) -> Bool {
+        guard !bundleIdentifier.isEmpty else { return false }
+        return store.read {
+            Self.grantEntries($0)[Self.grantKey(for: bundleIdentifier, conversationID: conversationID)] != nil
+        }
+    }
+
+    /// 清理全部过期的会话授权。
+    func purgeExpiredGrants() {
+        store.update { plist in
+            // `grantEntries` 读取时已经过滤掉过期项，直接回写即可完成清理。
+            Self.writeGrantEntries(Self.grantEntries(plist), into: &plist)
+        }
+    }
+
+    /// 清理指定会话的全部访问授权。
     ///
-    /// 「允许一次」的语义是**仅本次操作**，因此授权在检查时即被消费，
-    /// 下一次操作必须重新申请。
-    func consumeOneShot(bundleIdentifier: String) -> Bool {
-        guard !bundleIdentifier.isEmpty else { return false }
-        var consumed = false
+    /// 会话删除时调用：会话都没了，它的授权不该继续生效。
+    func revokeSessionAccess(conversationID: UUID) {
         store.update { plist in
-            var entries = Self.oneShotEntries(plist)
-            // `oneShotEntries` 读取时已经过滤掉过期项，因此只要条目存在就有效。
-            if entries.removeValue(forKey: bundleIdentifier) != nil {
-                consumed = true
-            }
-            // 无论是否命中都回写：过期条目在这一步被一并清掉，不会无限累积。
-            Self.writeOneShotEntries(entries, into: &plist)
-        }
-        return consumed
-    }
-
-    /// 查询一次性授权是否仍然有效（不消费）。
-    func hasValidOneShot(bundleIdentifier: String) -> Bool {
-        guard !bundleIdentifier.isEmpty else { return false }
-        return store.read { Self.oneShotEntries($0)[bundleIdentifier] != nil }
-    }
-
-    /// 清理全部过期的一次性授权。
-    func purgeExpiredOneShots() {
-        store.update { plist in
-            // `oneShotEntries` 读取时已经过滤掉过期项，直接回写即可完成清理。
-            Self.writeOneShotEntries(Self.oneShotEntries(plist), into: &plist)
+            var entries = Self.grantEntries(plist)
+            let prefix = "\(conversationID.uuidString)|"
+            entries = entries.filter { !$0.key.hasPrefix(prefix) }
+            Self.writeGrantEntries(entries, into: &plist)
         }
     }
 
-    /// 从 plist 中移除某个应用的一次性授权。
-    private static func removeOneShot(_ plist: inout [String: [String]], bundleIdentifier: String) {
-        var entries = oneShotEntries(plist)
-        entries.removeValue(forKey: bundleIdentifier)
-        writeOneShotEntries(entries, into: &plist)
+    /// 会话授权条目的键。
+    ///
+    /// 会话 ID 在前，保证 `revokeSessionAccess(conversationID:)` 能按前缀批量清理。
+    private static func grantKey(for bundleIdentifier: String, conversationID: UUID) -> String {
+        "\(conversationID.uuidString)|\(bundleIdentifier)"
     }
 
-    /// 读取一次性授权条目。**已过期的条目不会返回。**
+    /// 读取会话授权条目。**已过期的条目不会返回。**
     ///
     /// plist 顶层 key 映射到字符串数组，因此这里把每个条目编码成
-    /// `bundleIdentifier|过期时间戳` 一行存放。
-    private static func oneShotEntries(_ plist: [String: [String]]) -> [String: Date] {
+    /// `会话ID|bundleID|过期时间戳` 一行存放。
+    private static func grantEntries(_ plist: [String: [String]]) -> [String: Date] {
         let now = Date()
         var result: [String: Date] = [:]
-        let stored: [String] = plist[oneShotKey] ?? []
+        let stored: [String] = plist[grantKey] ?? []
         for row in stored {
-            let parts = row.split(separator: "|", maxSplits: 1).map(String.init)
-            guard parts.count == 2,
-                  let timestamp = TimeInterval(parts[1]) else { continue }
+            let parts = row.split(separator: "|", maxSplits: 2).map(String.init)
+            guard parts.count == 3,
+                  let timestamp = TimeInterval(parts[2]) else { continue }
             let expiry = Date(timeIntervalSince1970: timestamp)
             guard expiry > now else { continue }
-            result[parts[0]] = expiry
+            result["\(parts[0])|\(parts[1])"] = expiry
         }
         return result
     }
 
-    /// 把一次性授权条目写回 plist。
-    private static func writeOneShotEntries(
+    /// 把会话授权条目写回 plist。
+    private static func writeGrantEntries(
         _ entries: [String: Date],
         into plist: inout [String: [String]]
     ) {
         guard !entries.isEmpty else {
-            plist.removeValue(forKey: oneShotKey)
+            plist.removeValue(forKey: grantKey)
             return
         }
         var rows: [String] = []
         for (key, expiry) in entries {
             rows.append("\(key)|\(expiry.timeIntervalSince1970)")
         }
-        plist[oneShotKey] = rows.sorted()
+        plist[grantKey] = rows.sorted()
     }
 
     // MARK: - 原生控制授权白名单（NativeControlCoordinator 使用）
@@ -175,23 +167,35 @@ final class ComputerUseAuthorizationStore: @unchecked Sendable {
         setNativeAllowed(false, bundleIdentifier: bundleIdentifier)
     }
 
+    // MARK: - 迁移
+
+    /// 清除旧版的显式应用白名单。
+    ///
+    /// 旧白名单不再参与任何判定，留着只会让用户以为自己还能在设置里
+    /// 管理一份实际无效的名单。
+    func purgeLegacyExplicitAllowlist() {
+        store.update { plist in
+            plist.removeValue(forKey: Self.legacyAllowedKey)
+        }
+    }
+
     // MARK: - Keys
 
-    private static let allowedKey = "ComputerUse.alwaysAllowedBundleIdentifiers"
     private static let nativeKey = "ComputerUse.nativeAllowedBundleIdentifiers"
 
-    /// 一次性授权条目。值为该条目的过期时间戳（Unix 时间，字符串形式）。
-    ///
-    /// 与显式白名单分开存放：一次性授权不应出现在设置界面的白名单里，
-    /// 也不应在应用重启后长期存活。
-    private static let oneShotKey = "ComputerUse.oneShotBundleIdentifiers"
+    /// 旧版显式白名单的 plist key。仅用于迁移清理。
+    static let legacyAllowedKey = "ComputerUse.alwaysAllowedBundleIdentifiers"
 
-    /// 一次性授权的默认有效期。
+    /// 会话访问授权条目。值为该条目的过期时间戳（Unix 时间，字符串形式）。
     ///
-    /// 卡片上的「允许一次」语义是「本次操作」，因此真正生效的是
-    /// `consumeOneShot` 的消费语义；TTL 只是兜底，防止用户点了卡片但
-    /// 工具没有立刻继续执行时，授权长期悬在存储里。
-    static let defaultOneShotTTL: TimeInterval = 300
+    /// 与原生控制授权分开存放：会话授权不应出现在设置界面里，
+    /// 也不应在应用重启后长期存活。
+    private static let grantKey = "ComputerUse.sessionGrantBundleIdentifiers"
+
+    /// 会话授权的兜底有效期。
+    ///
+    /// 真正的授权边界是「会话结束」；TTL 只是防止会话已删但授权仍悬在存储里。
+    static let defaultGrantTTL: TimeInterval = 14400
 }
 
 // MARK: - Plist Backed Storage
