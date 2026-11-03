@@ -10,7 +10,9 @@ import os
 /// 2. **决策方向**：用户在卡片上做出决定后，把决定落到授权存储。
 ///
 /// 决策落地后，工具会被重新执行一次；这一次授权已经生效，工具直接放行。
-/// 「允许一次」的授权在这次检查时被消费，因此它**只对紧接着的这一���操作有效**。
+/// 授权的边界是**会话**：本次会话里对该应用的后续访问都不再打扰，
+/// 换一个会话则必须重新申请。
+///
 /// - Note: 不做 actor 隔离。渲染器的 `canRender` 是非隔离调用点，
 ///   而它需要读取挂起载荷；协调器只触碰线程安全的授权存储与值类型结果。
 final class ComputerUseAuthorizationCoordinator: SuperLog, @unchecked Sendable {
@@ -74,31 +76,29 @@ final class ComputerUseAuthorizationCoordinator: SuperLog, @unchecked Sendable {
 
     /// 落地上下文中的用户决策。
     ///
+    /// - Parameters:
+    ///   - decision: 用户在卡片上做出的决定。
+    ///   - request: 授权请求（目标应用等）。
+    ///   - conversationID: 授权所属会话。授权只在该会话内有效。
     /// - Returns: 回传给 agent 的结果文本。
     func apply(
         decision: ComputerUseAuthorizationDecision,
-        request: ComputerUseAuthorizationRequest
+        request: ComputerUseAuthorizationRequest,
+        conversationID: UUID
     ) -> String {
         switch decision {
-        case .allowOnce:
-            authorization.grantOneShot(bundleIdentifier: request.bundleIdentifier)
-            if Self.verbose {
-                Self.logger.info(
-                    "\(Self.t)授予一次性授权 app=\(request.bundleIdentifier, privacy: .public)"
-                )
-            }
-            return ComputerUseAuthorizationResolver.allowOnceMessage(
-                applicationName: request.applicationName
+        case .allowForTask:
+            // 会话作用域的访问授权：不写入任何跨会话的持久白名单。
+            authorization.grantSessionAccess(
+                bundleIdentifier: request.bundleIdentifier,
+                conversationID: conversationID
             )
-        case .alwaysAllow:
-            // 与设置界面的「允许」写入同一份白名单，两条路径共用同一存储。
-            authorization.setAllowed(true, bundleIdentifier: request.bundleIdentifier)
             if Self.verbose {
                 Self.logger.info(
-                    "\(Self.t)授予持久授权 app=\(request.bundleIdentifier, privacy: .public)"
+                    "\(Self.t)授予会话内授权 app=\(request.bundleIdentifier, privacy: .public) conversation=\(conversationID.uuidString, privacy: .public)"
                 )
             }
-            return ComputerUseAuthorizationResolver.alwaysAllowMessage(
+            return ComputerUseAuthorizationResolver.allowForTaskMessage(
                 applicationName: request.applicationName
             )
         case .deny:

@@ -12,14 +12,41 @@ public struct AccessibilityObserveTool: SuperAgentTool, ComputerUseSuspendingToo
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { computerUseText("Read Application Controls") }
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let application = arguments["application"]?.value as? String else { throw ComputerUseError.invalidArguments("application is required") }
-        return try await AccessibilityService.shared.observe(application: application)
+        let access = await ComputerUseAccessContextResolver.resolve(nil)
+        return try await performObserve(arguments: arguments, access: access)
     }
     /// 未授权应用时挂起回合，让用户在聊天里直接授权。
     public func executeResult(arguments: [String: ToolArgument]) async throws -> ToolCallResult {
-        await executeWithAuthorizationSuspension(operation: "accessibility_observe") { [self] in
-            ToolCallResult(content: try await execute(arguments: arguments))
+        await performExecute(context: nil, arguments: arguments)
+    }
+
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        await performExecute(context: context, arguments: arguments)
+    }
+
+    /// 读取辅助功能树。`context` 为 `nil` 时按 A2 保守处理。
+    private func performExecute(
+        context: ToolExecutionContext?,
+        arguments: [String: ToolArgument]
+    ) async -> ToolCallResult {
+        let access = await ComputerUseAccessContextResolver.resolve(context)
+        return await executeWithAuthorizationSuspension(operation: "accessibility_observe") { [self] in
+            ToolCallResult(content: try await performObserve(arguments: arguments, access: access))
         }
+    }
+
+    /// 带访问上下文的观察执行体。
+    private func performObserve(
+        arguments: [String: ToolArgument],
+        access: ComputerUseAccessContext
+    ) async throws -> String {
+        guard let application = arguments["application"]?.value as? String else {
+            throw ComputerUseError.invalidArguments("application is required")
+        }
+        return try await AccessibilityService.shared.observe(application: application, context: access)
     }
 }
 
@@ -38,14 +65,39 @@ public struct AccessibilityActTool: SuperAgentTool, ComputerUseSuspendingTool {
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .high }
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { computerUseText("Operate Application Control") }
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let observation = arguments["observation_id"]?.value as? String, let element = arguments["element_id"]?.value as? String,
-              let action = arguments["action"]?.value as? String else { throw ComputerUseError.invalidArguments("observation_id, element_id and action are required") }
-        return try await AccessibilityService.shared.act(observationID: observation, elementID: element, action: action, value: arguments["value"]?.value as? String)
+        let access = await ComputerUseAccessContextResolver.resolve(nil)
+        return try await performAct(arguments: arguments, access: access)
     }
     /// 未授权应用时挂起回合，让用户在聊天里直接授权。
     public func executeResult(arguments: [String: ToolArgument]) async throws -> ToolCallResult {
-        await executeWithAuthorizationSuspension(operation: "accessibility_act") { [self] in
-            ToolCallResult(content: try await execute(arguments: arguments))
+        await performExecute(context: nil, arguments: arguments)
+    }
+
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        await performExecute(context: context, arguments: arguments)
+    }
+
+    /// 执行辅助功能操作。`context` 为 `nil` 时按 A2 保守处理。
+    private func performExecute(
+        context: ToolExecutionContext?,
+        arguments: [String: ToolArgument]
+    ) async -> ToolCallResult {
+        let access = await ComputerUseAccessContextResolver.resolve(context)
+        return await executeWithAuthorizationSuspension(operation: "accessibility_act") { [self] in
+            ToolCallResult(content: try await performAct(arguments: arguments, access: access))
         }
+    }
+
+    /// 带访问上下文的操作执行体。
+    private func performAct(
+        arguments: [String: ToolArgument],
+        access: ComputerUseAccessContext
+    ) async throws -> String {
+        guard let observation = arguments["observation_id"]?.value as? String, let element = arguments["element_id"]?.value as? String,
+              let action = arguments["action"]?.value as? String else { throw ComputerUseError.invalidArguments("observation_id, element_id and action are required") }
+        return try await AccessibilityService.shared.act(observationID: observation, elementID: element, action: action, value: arguments["value"]?.value as? String, context: access)
     }
 }

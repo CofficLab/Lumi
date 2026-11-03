@@ -48,7 +48,7 @@ public final class OpenInCursorPlugin: SuperPlugin, SuperLog {
                     id: "\(id).toolbar",
                     title: OpenInCursorLocalization.string("Open In Cursor"),
                     placement: .leading,
-                    category: .global,
+                    category: .project,
                     order: order
                 ) {
                     OpenInCursorToolbarView(tool: tool, projectCapability: projectCapability)

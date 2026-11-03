@@ -39,6 +39,7 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
         "core-context-compaction",
         "core-agent-loop-retry",
         "core-goal-task-continuation",
+        "core-model-switched",
         "core-status-message",
         "core-error-message",
         "core-tool-message",
@@ -139,6 +140,17 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             },
             render: { message, _ in
                 AnyView(GoalTaskContinuationMessageView(message: message))
+            }
+        ))
+
+        manager.register(MessageRendererItem(
+            id: "core-model-switched",
+            order: base + 316,
+            canRender: { message in
+                MessageTimelineEvent.isModelSwitched(message)
+            },
+            render: { message, _ in
+                AnyView(ModelSwitchMessageView(message: message))
             }
         ))
 

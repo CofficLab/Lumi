@@ -71,7 +71,7 @@ public final class OpenInRemotePlugin: SuperPlugin, SuperLog {
                     id: "\(id).toolbar",
                     title: OpenInRemoteLocalization.string("Open In Remote"),
                     placement: .leading,
-                    category: .global,
+                    category: .project,
                     order: order
                 ) {
                     OpenInRemoteToolbarView(

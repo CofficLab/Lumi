@@ -202,7 +202,19 @@ final class ConversationMessageListVM: ObservableObject {
         // 检查序列号，确保本次重建仍然有效
         guard sequence == activationSequence,
               selectedConversationID == conversationID else { return }
-        let conversationState = services.agentTurn?.state(for: conversationID) ?? .idle
+        // 当存在未被任何 turn 认领的用户消息时，说明新 turn 正在启动、
+        // 旧 turn 已经结束。此时不应把旧 turn 标记为 .running，否则旧 turn
+        // 的 summaryMessage 会走 .running 分支（只看 finalAssistant），
+        // 导致包含工具调用的旧回复从投影中消失。
+        let rawConversationState = services.agentTurn?.state(for: conversationID) ?? .idle
+        let hasPendingUserMessages = messageWindow.contains { message in
+            message.role == .user
+                && message.conversationID == conversationID
+                && message.turnID == nil
+        }
+        let conversationState: AgentLoopState = hasPendingUserMessages && rawConversationState == .running
+            ? .completed
+            : rawConversationState
         let records = AgentTurnRecordBuilder.records(
             from: messageWindow,
             conversationID: conversationID,

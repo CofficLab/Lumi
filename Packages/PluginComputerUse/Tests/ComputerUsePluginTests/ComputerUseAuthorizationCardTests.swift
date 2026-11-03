@@ -1,96 +1,152 @@
 import Foundation
 import KitAgentTool
+import ProviderConversation
 import Testing
 @testable import ComputerUsePlugin
 
-/// 授权存储的一次性授权行为。
+/// 会话作用域的应用访问授权。
 ///
-/// 「允许一次」是本特性最容易出错的地方：它必须在**下一次**操作前失效，
-/// 否则用户以为只是临时放行，实际却变成了长期授权。
-@Suite("Computer Use 一次性授权")
-struct ComputerUseOneShotAuthorizationTests {
+/// 授权的边界是**会话**，不是单次操作：一次授权要覆盖整个会话里的
+/// 多次访问（观察 → 操作 → 再验证）。
+@Suite("Computer Use 会话作用域授权")
+struct ComputerUseSessionGrantTests {
 
     private func makeStore() -> (store: ComputerUseAuthorizationStore, directory: URL) {
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("ComputerUseOneShot-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("ComputerUseSessionGrant-\(UUID().uuidString)", isDirectory: true)
         return (ComputerUseAuthorizationStore(dataDirectory: directory), directory)
     }
 
-    @Test("允许一次只放行一次，第二次必须重新申请")
-    func allowOnceGrantsExactlyOneOperation() throws {
+    @Test("授权在本会话内持续有效，不被消费")
+    func grantIsNotConsumedWithinTheSession() throws {
         let (store, directory) = makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }
+        let conversationID = UUID()
 
-        store.grantOneShot(bundleIdentifier: "com.example.editor")
+        store.grantSessionAccess(bundleIdentifier: "com.example.editor", conversationID: conversationID)
 
-        #expect(store.consumeOneShot(bundleIdentifier: "com.example.editor"))
-        // 「仅本次」：紧接着的第二次检查必须失败。
-        #expect(!store.consumeOneShot(bundleIdentifier: "com.example.editor"))
+        // 观察之后紧接着的操作、再次观察、再次操作——全都必须放行。
+        // 授权若在第一次检查时被消费，紧接着的操作就会被自己的授权挡下。
+        #expect(store.hasSessionAccess(bundleIdentifier: "com.example.editor", conversationID: conversationID))
+        #expect(store.hasSessionAccess(bundleIdentifier: "com.example.editor", conversationID: conversationID))
     }
 
-    @Test("一次性授权过期后不再放行")
-    func expiredOneShotIsRejected() throws {
+    @Test("授权不跨会话生效")
+    func grantDoesNotLeakAcrossConversations() throws {
         let (store, directory) = makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }
+        let granted = UUID()
+        let other = UUID()
 
-        // 用负 TTL 立即构造一个已过期的授权。
-        store.grantOneShot(bundleIdentifier: "com.example.editor", ttl: -1)
+        store.grantSessionAccess(bundleIdentifier: "com.example.editor", conversationID: granted)
 
-        #expect(!store.hasValidOneShot(bundleIdentifier: "com.example.editor"))
-        #expect(!store.consumeOneShot(bundleIdentifier: "com.example.editor"))
+        #expect(store.hasSessionAccess(bundleIdentifier: "com.example.editor", conversationID: granted))
+        #expect(!store.hasSessionAccess(bundleIdentifier: "com.example.editor", conversationID: other))
     }
 
-    @Test("撤销显式授权会连带清除该应用的一次性授权")
-    func revokingExplicitAuthorizationAlsoRevokesOneShot() throws {
+    @Test("授权过期后不再有效")
+    func expiredGrantIsRejected() throws {
         let (store, directory) = makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }
+        let conversationID = UUID()
 
-        store.setAllowed(true, bundleIdentifier: "com.example.editor")
-        store.grantOneShot(bundleIdentifier: "com.example.editor")
+        store.grantSessionAccess(
+            bundleIdentifier: "com.example.editor",
+            conversationID: conversationID,
+            ttl: -1
+        )
 
-        store.setAllowed(false, bundleIdentifier: "com.example.editor")
-
-        #expect(!store.isAllowed("com.example.editor"))
-        #expect(!store.hasValidOneShot(bundleIdentifier: "com.example.editor"))
+        #expect(!store.hasSessionAccess(bundleIdentifier: "com.example.editor", conversationID: conversationID))
     }
 
-    @Test("撤销一个应用的授权不影响其他应用的一次性授权")
-    func revokingOneApplicationKeepsOthersOneShot() throws {
+    @Test("撤销会话授权不影响其他会话")
+    func revokingOneSessionKeepsOthers() throws {
         let (store, directory) = makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }
+        let revoked = UUID()
+        let kept = UUID()
 
-        store.setAllowed(true, bundleIdentifier: "com.example.editor")
-        store.grantOneShot(bundleIdentifier: "com.example.browser")
+        store.grantSessionAccess(bundleIdentifier: "com.example.editor", conversationID: revoked)
+        store.grantSessionAccess(bundleIdentifier: "com.example.browser", conversationID: kept)
 
-        store.setAllowed(false, bundleIdentifier: "com.example.editor")
+        store.revokeSessionAccess(conversationID: revoked)
 
-        // 撤销只作用于目标应用，不应波及无关应用的一次性授权。
-        #expect(store.hasValidOneShot(bundleIdentifier: "com.example.browser"))
-    }
-
-    @Test("清理过期条目不会影响仍然有效的授权")
-    func purgingKeepsValidEntries() throws {
-        let (store, directory) = makeStore()
-        defer { try? FileManager.default.removeItem(at: directory) }
-
-        store.grantOneShot(bundleIdentifier: "com.example.valid", ttl: 300)
-        store.grantOneShot(bundleIdentifier: "com.example.expired", ttl: -1)
-
-        store.purgeExpiredOneShots()
-
-        #expect(store.hasValidOneShot(bundleIdentifier: "com.example.valid"))
-        #expect(!store.hasValidOneShot(bundleIdentifier: "com.example.expired"))
+        #expect(!store.hasSessionAccess(bundleIdentifier: "com.example.editor", conversationID: revoked))
+        #expect(store.hasSessionAccess(bundleIdentifier: "com.example.browser", conversationID: kept))
     }
 
     @Test("空 bundle identifier 一律不产生授权")
     func emptyIdentifierIsIgnored() throws {
         let (store, directory) = makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }
+        let conversationID = UUID()
 
-        store.grantOneShot(bundleIdentifier: "")
+        store.grantSessionAccess(bundleIdentifier: "", conversationID: conversationID)
 
-        #expect(!store.consumeOneShot(bundleIdentifier: ""))
-        #expect(!store.hasValidOneShot(bundleIdentifier: ""))
+        #expect(!store.hasSessionAccess(bundleIdentifier: "", conversationID: conversationID))
+    }
+}
+
+/// 访问判定的上下文语义。
+@Suite("Computer Use 访问上下文")
+struct ComputerUseAccessContextTests {
+
+    @Test("A3 会话允许无人值守访问")
+    func autonomousAllowsUnattendedAccess() {
+        let context = ComputerUseAccessContext(
+            conversationID: UUID(),
+            automationLevel: .autonomous
+        )
+        #expect(context.allowsUnattendedAccess)
+    }
+
+    @Test("A2 会话不允许无人值守访问")
+    func buildDoesNotAllowUnattendedAccess() {
+        let context = ComputerUseAccessContext(
+            conversationID: UUID(),
+            automationLevel: .build
+        )
+        #expect(!context.allowsUnattendedAccess)
+    }
+
+    @Test("A1 会话不允许无人值守访问")
+    func chatDoesNotAllowUnattendedAccess() {
+        // A1（对话）不执行工具，因此不会走到访问判定；
+        // 但万一走到了，按 A2 保守处理而不是静默放行。
+        let context = ComputerUseAccessContext(
+            conversationID: UUID(),
+            automationLevel: .chat
+        )
+        #expect(!context.allowsUnattendedAccess)
+    }
+
+    @Test("A3 会话在共享判定入口上不产生任何授权请求")
+    func autonomousSessionNeverRequestsAuthorization() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ComputerUseA3-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = ComputerUseAuthorizationStore(dataDirectory: directory)
+        let checker = ComputerUseAccessChecker(authorization: store)
+        let context = ComputerUseAccessContext(
+            conversationID: UUID(),
+            automationLevel: .autonomous
+        )
+
+        // 四个工具（AX 观察、AX 操作、截图观察、原生操作）共享同一个判定入口。
+        // A3 下无论哪个应用都不需要授权，因此不会产生任何授权卡片或挂起。
+        for bundleIdentifier in ["com.apple.Safari", "com.apple.Terminal", "com.unknown.app"] {
+            #expect(checker.outcome(
+                for: bundleIdentifier,
+                applicationName: bundleIdentifier,
+                context: context
+            ) == .allowed)
+        }
+
+        // 存储里也没有留下任何会话授权：判定完全由等级驱动。
+        #expect(!store.hasSessionAccess(
+            bundleIdentifier: "com.apple.Safari",
+            conversationID: context.conversationID
+        ))
     }
 }
 
@@ -108,10 +164,9 @@ struct ComputerUseAuthorizationResolverTests {
 
     @Test("容忍空白、大小写与中英文表述")
     func parsingIsForgiving() {
-        #expect(ComputerUseAuthorizationResolver.decision(for: "  ALLOW ONCE  ") == .allowOnce)
-        #expect(ComputerUseAuthorizationResolver.decision(for: "允许一次") == .allowOnce)
-        #expect(ComputerUseAuthorizationResolver.decision(for: "始终允许") == .alwaysAllow)
-        #expect(ComputerUseAuthorizationResolver.decision(for: "Always Allow") == .alwaysAllow)
+        #expect(ComputerUseAuthorizationResolver.decision(for: "  ALLOW FOR THIS TASK  ") == .allowForTask)
+        #expect(ComputerUseAuthorizationResolver.decision(for: "允许本次任务") == .allowForTask)
+        #expect(ComputerUseAuthorizationResolver.decision(for: "Allow for This Task") == .allowForTask)
         #expect(ComputerUseAuthorizationResolver.decision(for: "拒绝") == .deny)
         #expect(ComputerUseAuthorizationResolver.decision(for: "DENY") == .deny)
     }
@@ -124,13 +179,19 @@ struct ComputerUseAuthorizationResolverTests {
 
     @Test("只有 deny 不算放行")
     func denyIsTheOnlyRejection() {
-        #expect(ComputerUseAuthorizationDecision.allowOnce.isApproved)
-        #expect(ComputerUseAuthorizationDecision.alwaysAllow.isApproved)
+        #expect(ComputerUseAuthorizationDecision.allowForTask.isApproved)
         #expect(!ComputerUseAuthorizationDecision.deny.isApproved)
     }
 
-    @Test("拒绝文案明确要求不要重试")
-    func denialMessageStopsThePath() {
+    @Test("卡片只有两个选项")
+    func cardHasExactlyTwoOptions() {
+        // 「始终允许」已随显式白名单一起下线：白名单要求用户手工维护，
+        // 且与会话的自动化等级重复表达同一件事。
+        #expect(ComputerUseAuthorizationDecision.allCases == [.allowForTask, .deny])
+    }
+
+    @Test("拒绝文案点名目标应用")
+    func denialMessageNamesTheApplication() {
         let message = ComputerUseAuthorizationResolver.denialMessage(applicationName: "Safari")
 
         // 只断言与应用名、与语言无关的契约：拒绝必须点名目标应用，
@@ -138,9 +199,9 @@ struct ComputerUseAuthorizationResolverTests {
         #expect(message.contains("Safari"))
     }
 
-    @Test("允许一次的文案说明仅本次有效")
-    func allowOnceMessageStatesScope() {
-        let message = ComputerUseAuthorizationResolver.allowOnceMessage(applicationName: "Safari")
+    @Test("放行文案说明仅本任务有效")
+    func allowMessageStatesScope() {
+        let message = ComputerUseAuthorizationResolver.allowForTaskMessage(applicationName: "Safari")
 
         #expect(message.contains("Safari"))
     }
@@ -156,13 +217,21 @@ struct ComputerUseAccessCheckerTests {
         return (ComputerUseAuthorizationStore(dataDirectory: directory), directory)
     }
 
-    @Test("未授权的应用返回需要授权，并带上应用信息")
-    func unknownApplicationNeedsAuthorization() throws {
+    private func context(_ level: AutomationLevel, _ conversationID: UUID) -> ComputerUseAccessContext {
+        ComputerUseAccessContext(conversationID: conversationID, automationLevel: level)
+    }
+
+    @Test("A2 会话中未授权的应用返回需要授权，并带上应用信息")
+    func unknownApplicationNeedsAuthorizationInBuildMode() throws {
         let (store, directory) = makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }
 
         let outcome = ComputerUseAccessChecker(authorization: store)
-            .outcome(for: "com.example.unknown", applicationName: "Unknown")
+            .outcome(
+                for: "com.example.unknown",
+                applicationName: "Unknown",
+                context: context(.build, UUID())
+            )
 
         #expect(outcome == .needsAuthorization(
             applicationName: "Unknown",
@@ -170,41 +239,84 @@ struct ComputerUseAccessCheckerTests {
         ))
     }
 
-    @Test("显式白名单内的应用直接放行")
-    func explicitAllowlistPasses() throws {
+    @Test("A3 会话中任何应用都直接放行，不打扰用户")
+    func autonomousModeAllowsEveryApplication() throws {
         let (store, directory) = makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }
-        store.setAllowed(true, bundleIdentifier: "com.example.editor")
 
         let outcome = ComputerUseAccessChecker(authorization: store)
-            .outcome(for: "com.example.editor", applicationName: "Editor")
+            .outcome(
+                for: "com.example.unknown",
+                applicationName: "Unknown",
+                context: context(.autonomous, UUID())
+            )
 
         #expect(outcome == .allowed)
     }
 
-    @Test("一次性授权被消费后放行，第二次重新申请")
-    func oneShotIsConsumedByTheCheck() throws {
+    @Test("A2 会话授权过一次后放行，且授权在会话内不被消费")
+    func sessionGrantPassesWithoutBeingConsumed() throws {
         let (store, directory) = makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }
-        store.grantOneShot(bundleIdentifier: "com.example.editor")
+        let conversationID = UUID()
+        store.grantSessionAccess(bundleIdentifier: "com.example.editor", conversationID: conversationID)
 
         let checker = ComputerUseAccessChecker(authorization: store)
-        #expect(checker.outcome(for: "com.example.editor", applicationName: "Editor") == .allowed)
-        #expect(checker.outcome(for: "com.example.editor", applicationName: "Editor")
-            == .needsAuthorization(applicationName: "Editor", bundleIdentifier: "com.example.editor"))
+        let access = context(.build, conversationID)
+
+        // 连续两次判定都必须放行：授权覆盖整个会话，而不是单次操作。
+        #expect(checker.outcome(for: "com.example.editor", applicationName: "Editor", context: access) == .allowed)
+        #expect(checker.outcome(for: "com.example.editor", applicationName: "Editor", context: access) == .allowed)
     }
 
-    @Test("只读查询不会消耗掉一次性授权")
+    @Test("A2 会话的授权不跨会话")
+    func sessionGrantDoesNotLeakAcrossConversations() throws {
+        let (store, directory) = makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let granted = UUID()
+        store.grantSessionAccess(bundleIdentifier: "com.example.editor", conversationID: granted)
+
+        let checker = ComputerUseAccessChecker(authorization: store)
+        #expect(checker.outcome(
+            for: "com.example.editor",
+            applicationName: "Editor",
+            context: context(.build, granted)
+        ) == .allowed)
+        #expect(checker.outcome(
+            for: "com.example.editor",
+            applicationName: "Editor",
+            context: context(.build, UUID())
+        ) == .needsAuthorization(
+            applicationName: "Editor",
+            bundleIdentifier: "com.example.editor"
+        ))
+    }
+
+    @Test("只读查询不会消耗掉授权")
     func readOnlyCheckDoesNotConsume() throws {
         let (store, directory) = makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }
-        store.grantOneShot(bundleIdentifier: "com.example.editor")
+        let conversationID = UUID()
+        store.grantSessionAccess(bundleIdentifier: "com.example.editor", conversationID: conversationID)
 
         let checker = ComputerUseAccessChecker(authorization: store)
-        #expect(checker.isAuthorizedWithoutConsuming("com.example.editor"))
+        let access = context(.build, conversationID)
+        #expect(checker.isAuthorizedWithoutConsuming("com.example.editor", context: access))
         // 查询之后授权必须仍然可用。
-        #expect(checker.isAuthorizedWithoutConsuming("com.example.editor"))
-        #expect(checker.outcome(for: "com.example.editor", applicationName: "Editor") == .allowed)
+        #expect(checker.isAuthorizedWithoutConsuming("com.example.editor", context: access))
+        #expect(checker.outcome(for: "com.example.editor", applicationName: "Editor", context: access) == .allowed)
+    }
+
+    @Test("A3 会话的只读查询恒为已授权")
+    func autonomousReadOnlyCheckIsAlwaysAuthorized() throws {
+        let (store, directory) = makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let checker = ComputerUseAccessChecker(authorization: store)
+        #expect(checker.isAuthorizedWithoutConsuming(
+            "com.example.never-granted",
+            context: context(.autonomous, UUID())
+        ))
     }
 
     @Test("空 bundle identifier 视为禁止，不允许申请授权")
@@ -213,7 +325,11 @@ struct ComputerUseAccessCheckerTests {
         defer { try? FileManager.default.removeItem(at: directory) }
 
         let outcome = ComputerUseAccessChecker(authorization: store)
-            .outcome(for: "", applicationName: "")
+            .outcome(
+                for: "",
+                applicationName: "",
+                context: context(.build, UUID())
+            )
 
         guard case .forbidden = outcome else {
             Issue.record("空 bundle identifier 应返回 forbidden，实际：\(outcome)")
@@ -342,31 +458,28 @@ struct ComputerUseAuthorizationApplyTests {
         operation: "computer_observe"
     )
 
-    @Test("始终允许写入显式白名单，与设置界面共用同一存储")
-    func alwaysAllowWritesExplicitAllowlist() throws {
+    @Test("本任务内允许只产生会话作用域的授权")
+    func allowForTaskGrantsSessionScopedAccess() throws {
         let (store, directory) = makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }
         let coordinator = ComputerUseAuthorizationCoordinator(authorization: store)
+        let conversationID = UUID()
 
-        coordinator.apply(decision: .alwaysAllow, request: request)
+        coordinator.apply(
+            decision: .allowForTask,
+            request: request,
+            conversationID: conversationID
+        )
 
-        // 这条断言同时锁定了「两条路径共用同一存储」这个契约。
-        #expect(store.isAllowed("com.apple.Safari"))
-        #expect(store.allowedBundleIdentifiers().contains("com.apple.Safari"))
-        // 始终允许不应留下一次性授权。
-        #expect(!store.hasValidOneShot(bundleIdentifier: "com.apple.Safari"))
-    }
-
-    @Test("允许一次只产生一次性授权，不进白名单")
-    func allowOnceStaysOutOfAllowlist() throws {
-        let (store, directory) = makeStore()
-        defer { try? FileManager.default.removeItem(at: directory) }
-        let coordinator = ComputerUseAuthorizationCoordinator(authorization: store)
-
-        coordinator.apply(decision: .allowOnce, request: request)
-
-        #expect(!store.isAllowed("com.apple.Safari"))
-        #expect(store.hasValidOneShot(bundleIdentifier: "com.apple.Safari"))
+        #expect(store.hasSessionAccess(
+            bundleIdentifier: "com.apple.Safari",
+            conversationID: conversationID
+        ))
+        // 授权不跨会话：换一个对话必须重新申请。
+        #expect(!store.hasSessionAccess(
+            bundleIdentifier: "com.apple.Safari",
+            conversationID: UUID()
+        ))
     }
 
     @Test("拒绝不产生任何授权")
@@ -374,11 +487,18 @@ struct ComputerUseAuthorizationApplyTests {
         let (store, directory) = makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }
         let coordinator = ComputerUseAuthorizationCoordinator(authorization: store)
+        let conversationID = UUID()
 
-        let message = coordinator.apply(decision: .deny, request: request)
+        let message = coordinator.apply(
+            decision: .deny,
+            request: request,
+            conversationID: conversationID
+        )
 
-        #expect(!store.isAllowed("com.apple.Safari"))
-        #expect(!store.hasValidOneShot(bundleIdentifier: "com.apple.Safari"))
+        #expect(!store.hasSessionAccess(
+            bundleIdentifier: "com.apple.Safari",
+            conversationID: conversationID
+        ))
         // 拒绝必须点名目标应用，模型才知道该放弃哪个目标。
         // 文案措辞随本地化变化，只断言与语言无关的契约。
         #expect(message.contains("Safari"))

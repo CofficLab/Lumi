@@ -86,6 +86,48 @@ public protocol ConversationManaging: AnyObject {
     /// 「全部对话」视图已等同于该项目，「当前项目」筛选入口冗余，应隐藏。
     func conversationProjectCount() async -> Int
 
+    /// 每日对话计数序列（按创建日聚合）。
+    ///
+    /// - Parameters:
+    ///   - days: 序列长度（向前回溯的天数）。
+    ///   - projectPath: 只统计该项目的对话；`nil` 表示全部项目。
+    ///   - includingChildConversations: 是否把子 Agent 会话计入。
+    func fetchDailyCountSeries(
+        days: Int,
+        projectPath: String?,
+        includingChildConversations: Bool
+    ) async -> ConversationDailyCountSeries
+
+    /// 统计「创建于 `cutoff` 之前」的对话数量。
+    ///
+    /// 用于在执行批量清理前告知用户将被删除的条数。
+    ///
+    /// - Parameters:
+    ///   - cutoff: 时间分界点；`createdAt` 早于它的会话命中。
+    ///   - projectPath: 只统计该项目的对话；`nil` 表示全部项目。
+    ///   - includingChildConversations: 是否把子 Agent 会话计入。
+    func conversationCount(
+        createdBefore cutoff: Date,
+        projectPath: String?,
+        includingChildConversations: Bool
+    ) async -> Int
+
+    /// 删除「创建于 `cutoff` 之前」的对话，返回被删除的会话 ID。
+    ///
+    /// 用于「清理 N 天前的对话」这类按时间批量清理的入口。
+    ///
+    /// - Parameters:
+    ///   - cutoff: 时间分界点；`createdAt` 早于它的会话会被删除。
+    ///   - projectPath: 只清理该项目的对话；`nil` 表示全部项目。
+    ///   - includingChildConversations: 是否连带删除子 Agent 会话。
+    /// - Returns: 被删除的会话 ID 列表。
+    @discardableResult
+    func deleteConversations(
+        createdBefore cutoff: Date,
+        projectPath: String?,
+        includingChildConversations: Bool
+    ) async -> [UUID]
+
     /// 返回指定项目下、且在给定时间点之后仍有活动的会话 ID（`uuidString`）。
     ///
     /// ## 用途
@@ -345,6 +387,61 @@ public extension ConversationManaging {
     func conversationCount(projectPath: String?) async -> Int { conversations.count }
     func conversationCount(projectPath: String?, includingChildConversations: Bool) async -> Int { conversations.count }
     func conversationProjectCount() async -> Int { Set(conversations.compactMap(\.projectPath)).count }
+
+    /// 默认实现：从已加载的会话摘要聚合每日计数。
+    ///
+    /// 持久化实现应当走存储层查询，避免依赖「摘要已全部加载」这个前提。
+    func fetchDailyCountSeries(
+        days: Int,
+        projectPath: String?,
+        includingChildConversations: Bool
+    ) async -> ConversationDailyCountSeries {
+        let records = conversations.map {
+            ConversationCreationRecord(
+                createdAt: $0.createdAt,
+                projectPath: $0.projectPath,
+                isChildConversation: $0.parentConversationID != nil
+            )
+        }
+        return ConversationDailyCountSeries.build(
+            from: records,
+            days: days,
+            projectPath: projectPath,
+            includingChildConversations: includingChildConversations
+        )
+    }
+
+    /// 默认实现：逐条删除命中的会话。
+    func deleteConversations(
+        createdBefore cutoff: Date,
+        projectPath: String?,
+        includingChildConversations: Bool
+    ) async -> [UUID] {
+        let targets = conversations.filter { summary in
+            guard summary.createdAt < cutoff else { return false }
+            if !includingChildConversations, summary.parentConversationID != nil { return false }
+            if let projectPath, summary.projectPath != projectPath { return false }
+            return true
+        }
+        for summary in targets {
+            deleteConversation(id: summary.id)
+        }
+        return targets.map(\.id)
+    }
+
+    /// 默认实现：统计命中「创建于 `cutoff` 之前」的会话数量。
+    func conversationCount(
+        createdBefore cutoff: Date,
+        projectPath: String?,
+        includingChildConversations: Bool
+    ) async -> Int {
+        conversations.filter { summary in
+            guard summary.createdAt < cutoff else { return false }
+            if !includingChildConversations, summary.parentConversationID != nil { return false }
+            if let projectPath, summary.projectPath != projectPath { return false }
+            return true
+        }.count
+    }
 }
 
 /// no-op 注册令牌：注册后不接收任何通知。
