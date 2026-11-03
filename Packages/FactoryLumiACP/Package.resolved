@@ -1,5 +1,5 @@
 {
-  "originHash" : "6fc2fa5ff16569f206cc6b350f11f663b45b4f11843241a462f860df884ba255",
+  "originHash" : "32399601a7a3341ad0757779187317e426472d3f7aa4b747c113b1610033d640",
   "pins" : [
     {
       "identity" : "eventsource",
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiPluginToast.git",
       "state" : {
-        "revision" : "72b6380e3076c077f162258935979bcc218ba6db",
-        "version" : "1.2.1"
+        "revision" : "923f9a84262958b3cc1fde33bfb0bd53cc38b401",
+        "version" : "1.2.2"
       }
     },
     {
