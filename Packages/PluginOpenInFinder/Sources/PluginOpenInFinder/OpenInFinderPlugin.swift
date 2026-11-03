@@ -48,7 +48,7 @@ public final class OpenInFinderPlugin: SuperPlugin, SuperLog {
                     id: "\(id).toolbar",
                     title: OpenInFinderLocalization.string("Open In Finder"),
                     placement: .leading,
-                    category: .global,
+                    category: .project,
                     order: order
                 ) {
                     OpenInFinderToolbarView(tool: tool, projectCapability: projectCapability)

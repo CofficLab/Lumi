@@ -48,7 +48,7 @@ public final class OpenInVSCodePlugin: SuperPlugin, SuperLog {
                     id: "\(id).toolbar",
                     title: OpenInVSCodeLocalization.string("Open In VS Code"),
                     placement: .leading,
-                    category: .global,
+                    category: .project,
                     order: order
                 ) {
                     OpenInVSCodeToolbarView(tool: tool, projectCapability: projectCapability)
