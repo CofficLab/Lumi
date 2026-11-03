@@ -18,9 +18,11 @@ enum ComputerUseAccessOutcome: Equatable {
 /// （截图、AX 读、AX 写、原生输入）都必须经过它，避免各处自行判断导致
 /// 授权语义不一致。
 ///
-/// 判定顺序：
-/// 1. 显式白名单（设置界面「允许」，聊天卡片「始终允许」共用）→ 放行；
-/// 2. 一次性授权（聊天卡片「允许一次」）→ 消费并放行；
+/// ## 判定顺序
+///
+/// 1. **A3（自主会话）** → 直接放行。用户已经通过选择模式表达过充分授权，
+///    再弹卡片会让自主模式名存实亡。
+/// 2. **会话内访问授权**（A2 会话里用户点过「允许」）→ 放行。
 /// 3. 否则 → 需要用户授权。
 ///
 /// - Note: 不做 actor 隔离。存储本身是线程安全的，而执行路径既有
@@ -37,19 +39,25 @@ struct ComputerUseAccessChecker: Sendable {
     /// - Parameters:
     ///   - bundleIdentifier: 目标应用。
     ///   - applicationName: 目标应用显示名，用于卡片展示。
+    ///   - context: 本次操作的会话上下文（会话 ID 与自动化等级）。
     /// - Returns: 判定结果。
     func outcome(
         for bundleIdentifier: String,
-        applicationName: String
+        applicationName: String,
+        context: ComputerUseAccessContext
     ) -> ComputerUseAccessOutcome {
         guard !bundleIdentifier.isEmpty else {
             return .forbidden(reason: pluginLocalization.string("Unknown application."))
         }
-        if authorization.isAllowed(bundleIdentifier) {
+        // A3 免打扰：自主会话里用户已充分授权，不再产生任何授权卡片。
+        if context.allowsUnattendedAccess {
             return .allowed
         }
-        // 一次性授权在检查时即被消费：只对紧接着的这一步操作有效。
-        if authorization.consumeOneShot(bundleIdentifier: bundleIdentifier) {
+        // A2：会话内授权一次即可，后续访问不再打扰。
+        if authorization.hasSessionAccess(
+            bundleIdentifier: bundleIdentifier,
+            conversationID: context.conversationID
+        ) {
             return .allowed
         }
         return .needsAuthorization(
@@ -58,11 +66,17 @@ struct ComputerUseAccessChecker: Sendable {
         )
     }
 
-    /// 不消费一次性授权的只读判定。
+    /// 是否已获授权（不消费任何状态）。
     ///
-    /// 用于「是否已有授权」这类展示性查询，避免仅仅查看状态就消耗掉授权。
-    func isAuthorizedWithoutConsuming(_ bundleIdentifier: String) -> Bool {
-        authorization.isAllowed(bundleIdentifier)
-            || authorization.hasValidOneShot(bundleIdentifier: bundleIdentifier)
+    /// 用于「是否已有授权」这类展示性查询。
+    func isAuthorizedWithoutConsuming(
+        _ bundleIdentifier: String,
+        context: ComputerUseAccessContext
+    ) -> Bool {
+        if context.allowsUnattendedAccess { return true }
+        return authorization.hasSessionAccess(
+            bundleIdentifier: bundleIdentifier,
+            conversationID: context.conversationID
+        )
     }
 }

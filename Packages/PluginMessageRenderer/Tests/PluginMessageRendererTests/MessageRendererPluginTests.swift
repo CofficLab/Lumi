@@ -197,11 +197,11 @@ struct MessageRendererPluginTests {
         )
     }
 
-    @Test("12 个内置渲染器全部注册")
+    @Test("13 个内置渲染器全部注册")
     func registersAllBuiltinRenderers() throws {
         let kernel = try makeKernel()
         let manager = try #require(kernel.resolveProvider((any MessageRenderingProviding).self))
-        #expect(manager.allRenderers.count == 12)
+        #expect(manager.allRenderers.count == 13)
         let ids = Set(manager.allRenderers.map(\.id))
         #expect(ids.contains("core-user-message"))
         #expect(ids.contains("core-assistant-message"))
@@ -213,6 +213,7 @@ struct MessageRendererPluginTests {
         #expect(ids.contains("core-context-compaction"))
         #expect(ids.contains("core-agent-loop-retry"))
         #expect(ids.contains("core-goal-task-continuation"))
+        #expect(ids.contains("core-model-switched"))
         #expect(ids.contains("core-tool-step-group"))
         #expect(ids.contains("core-default-markdown"))
     }
@@ -242,6 +243,9 @@ struct MessageRendererPluginTests {
         #expect(manager.renderer(for: message(role: .assistant, renderKind: "tool-step-group"))?.id == "core-tool-step-group")
         #expect(manager.renderer(for: message(role: .system, renderKind: MessageTimelineEvent.contextCompactionRenderKind))?.id == "core-context-compaction")
         #expect(manager.renderer(for: message(role: .status, renderKind: MessageTimelineEvent.agentLoopRetryRenderKind))?.id == "core-agent-loop-retry")
+        // 模型切换时间线：role 为 system 时也必须走专用渲染器，
+        // 而不是被通用的 core-system-message 接管。
+        #expect(manager.renderer(for: message(role: .system, renderKind: MessageTimelineEvent.modelSwitchedRenderKind))?.id == "core-model-switched")
         // 错误消息
         #expect(manager.renderer(for: message(role: .assistant, isError: true))?.id == "core-error-message")
     }

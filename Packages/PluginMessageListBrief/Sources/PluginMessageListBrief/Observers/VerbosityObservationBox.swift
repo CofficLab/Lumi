@@ -70,6 +70,13 @@ final class VerbosityObservationBox {
                 scope: .global,
                 exclusiveGroup: "message-list",
                 fillsRemainingHeight: true,
+                // - Important: 不画这条分隔线。
+                //
+                //   分隔线由宿主在 stack 与 bottomFixed 之间统一绘制，只要本项
+                //   声明 `showsTrailingDivider`（默认 true）就会出现。消息列表与
+                //   底部输入卡片属于同一段画面（同一条底色、同一个宽度基准），
+                //   留着这条线等于把两块内容切成两个区域。
+                showsTrailingDivider: false,
                 isActive: { @MainActor in
                     guard let selectedID = conversations?.selectedConversationID else { return false }
                     return conversations?.verbosity(for: selectedID) == expectedVerbosity

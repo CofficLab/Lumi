@@ -19,6 +19,20 @@ public enum MessageTimelineEvent {
     public static let agentLoopRetryRetryAfterKey = "agentLoopRetryRetryAfter"
     public static let goalTaskContinuation = "goal-task-continuation"
     public static let goalTaskContinuationRenderKind = "goal-task-continuation"
+    /// 用户主动切换模型的结构化时间线事件。
+    ///
+    /// 该消息把「从哪个供应商/模型切到了哪个供应商/模型」显式呈现给用户，
+    /// 只用于界面时间线，不应进入后续 LLM 上下文。
+    public static let modelSwitched = "model-switched"
+    public static let modelSwitchedRenderKind = "model-switched"
+    /// 切换前的供应商 ID。
+    public static let modelSwitchedFromProviderIDKey = "modelSwitchedFromProviderID"
+    /// 切换前的模型名。
+    public static let modelSwitchedFromModelNameKey = "modelSwitchedFromModelName"
+    /// 切换后的供应商 ID。
+    public static let modelSwitchedToProviderIDKey = "modelSwitchedToProviderID"
+    /// 切换后的模型名。
+    public static let modelSwitchedToModelNameKey = "modelSwitchedToModelName"
     /// App Store Connect 提交审核的结构化时间线事件。
     ///
     /// 该消息把「即将提交的版本 / Build / 平台 / 状态 / 本地化」显式呈现给用户，
@@ -72,12 +86,19 @@ public enum MessageTimelineEvent {
             || message.metadata[metadataKey] == appStoreSubmission
     }
 
+    /// 是否属于「用户主动切换模型」的结构化时间线事件。
+    public static func isModelSwitched(_ message: Message) -> Bool {
+        message.renderKind == modelSwitchedRenderKind
+            || message.metadata[metadataKey] == modelSwitched
+    }
+
     /// 仅用于界面时间线的消息不应被重新发送给 LLM。
     public static func isTimelineEvent(_ message: Message) -> Bool {
         isContextCompaction(message)
             || isAgentLoopRetry(message)
             || isGoalTaskContinuation(message)
             || isAppStoreSubmission(message)
+            || isModelSwitched(message)
     }
 
     /// 只有真正用于压缩上下文的事件才应显示在消息列表中。

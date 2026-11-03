@@ -40,29 +40,31 @@ public final class ComputerUsePlugin: SuperPlugin, PluginDataMigrating, SuperLog
 
     public init() {}
 
-    /// 把 `UserDefaults.standard` 中的旧授权白名单并入插件专属存储。
+    /// 把 `UserDefaults.standard` 中的旧授权数据并入插件专属存储。
     ///
-    /// 只在目标 plist 尚无记录时导入，避免覆盖用户在插件内的后续修改。
-    /// `UserDefaults` 内的原 key 保留，便于回退。
+    /// 只导入**原生控制授权**（`ComputerUse.nativeAllowedBundleIdentifiers`）：
+    /// 它记录的是「Lumi 接管过这个 App 的鼠标键盘」，与运行时横幅的确认直接相关，
+    /// 升级后应当延续。
+    ///
+    /// 旧版的**显式应用白名单**（`ComputerUse.alwaysAllowedBundleIdentifiers`）
+    /// 不再导入，并从存储中清除：应用访问权现在由会话的自动化等级决定，
+    /// 留着这份名单只会让用户以为自己还能管理一份实际无效的名单。
     public func migrateData(context: PluginDataMigrationContext) throws {
         let legacyKey = "ComputerUse.nativeAllowedBundleIdentifiers"
-        let legacyAllowedKey = "ComputerUse.alwaysAllowedBundleIdentifiers"
         guard let defaults = UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? "") else {
             return
         }
         let nativeValues = (defaults[legacyKey] as? [String]) ?? []
-        let allowedValues = (defaults[legacyAllowedKey] as? [String]) ?? []
-        guard !nativeValues.isEmpty || !allowedValues.isEmpty else { return }
 
         let store = ComputerUseAuthorizationStore(dataDirectory: context.currentPluginDataDirectory)
-        if !nativeValues.isEmpty, store.allowedBundleIdentifiers().isEmpty, store.isNativeAllowed(nativeValues[0]) == false {
+        // 清除旧版显式白名单：它不再参与任何判定。
+        store.purgeLegacyExplicitAllowlist()
+        guard !nativeValues.isEmpty else { return }
+        if store.isNativeAllowed(nativeValues[0]) == false {
             for bundleIdentifier in nativeValues {
                 store.setNativeAllowed(true, bundleIdentifier: bundleIdentifier)
             }
             Self.logger.info("\(Self.t)Imported \(nativeValues.count) native authorization entries from UserDefaults")
-        }
-        for bundleIdentifier in allowedValues {
-            store.setAllowed(true, bundleIdentifier: bundleIdentifier)
         }
     }
 
@@ -114,7 +116,16 @@ public final class ComputerUsePlugin: SuperPlugin, PluginDataMigrating, SuperLog
         )
     }
 
+    /// 会话自动化等级的取数入口在 `onReady` 注入。
+    ///
+    /// `onReady` 在全部插件 `onBoot` 之后执行，此时 `ConversationManaging`
+    /// 一定可以解析；`onBoot` 阶段解析会拿到空引用。
+    public func onReady(kernel: KernelCoreContainer) throws {
+        ComputerUseAutomationLevelProvider.shared.start(kernel: kernel)
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        ComputerUseAutomationLevelProvider.shared.stop()
         let tools = kernel.resolveProvider((any ToolManagerProviding).self)
         tools?.remove(id: ComputerObserveV2Tool.toolName)
         tools?.remove(id: ComputerActV2Tool.toolName)
@@ -170,10 +181,27 @@ public struct ComputerObserveV2Tool: SuperAgentTool, ComputerUseSuspendingTool {
     }
 
     public func executeResult(arguments: [String: ToolArgument]) async throws -> ToolCallResult {
-        await executeWithAuthorizationSuspension(operation: "computer_observe") { [self] in
+        await performExecute(context: nil, arguments: arguments)
+    }
+
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        await performExecute(context: context, arguments: arguments)
+    }
+
+    /// 执行观察。`context` 为 `nil` 时按 A2 保守处理（仍会弹一次性授权卡片）。
+    private func performExecute(
+        context: ToolExecutionContext?,
+        arguments: [String: ToolArgument]
+    ) async -> ToolCallResult {
+        let access = await ComputerUseAccessContextResolver.resolve(context)
+        return await executeWithAuthorizationSuspension(operation: "computer_observe") { [self] in
             let result = try await service.observe(
                 application: arguments["application"]?.value as? String,
-                windowTitle: arguments["window_title"]?.value as? String
+                windowTitle: arguments["window_title"]?.value as? String,
+                context: access
             )
             return ToolCallResult(
                 content: ComputerUseV2Support.resultDescription(result),
@@ -208,10 +236,10 @@ public struct ComputerActV2Tool: SuperAgentTool, ComputerUseSuspendingTool {
     }
 
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
-        guard let rawID = arguments["observation_id"]?.value as? String,
-              let observationID = UUID(uuidString: rawID),
-              service.isApplicationAllowed(for: observationID),
-              let actions = try? ComputerUseV2Support.actions(from: arguments["actions"]?.value)
+        // 目标应用是否获授权取决于会话上下文（等级 + 会话授权），
+        // 而风险评估接口拿不到上下文。因此这里只按「动作是否会改变状态」判断：
+        // 改变状态的原生输入一律高风险；观察与截图是低风险。
+        guard let actions = try? ComputerUseV2Support.actions(from: arguments["actions"]?.value)
         else { return .high }
         return actions.contains(where: \.changesState) ? .high : .low
     }
@@ -221,12 +249,33 @@ public struct ComputerActV2Tool: SuperAgentTool, ComputerUseSuspendingTool {
     }
 
     public func executeResult(arguments: [String: ToolArgument]) async throws -> ToolCallResult {
-        await executeWithAuthorizationSuspension(operation: "computer_act") { [self] in
+        await performExecute(context: nil, arguments: arguments)
+    }
+
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        await performExecute(context: context, arguments: arguments)
+    }
+
+    /// 执行原生输入操作。`context` 为 `nil` 时按 A2 保守处理。
+    private func performExecute(
+        context: ToolExecutionContext?,
+        arguments: [String: ToolArgument]
+    ) async -> ToolCallResult {
+        let access = await ComputerUseAccessContextResolver.resolve(context)
+        return await executeWithAuthorizationSuspension(operation: "computer_act") { [self] in
             guard let rawID = arguments["observation_id"]?.value as? String,
                   let observationID = UUID(uuidString: rawID)
             else { throw ComputerUseError.invalidArguments("observation_id must be a UUID") }
             let actions = try ComputerUseV2Support.actions(from: arguments["actions"]?.value)
-            let result = try await service.act(observationID: observationID, actions: actions, reason: arguments["reason"]?.value as? String ?? "")
+            let result = try await service.act(
+                observationID: observationID,
+                actions: actions,
+                reason: arguments["reason"]?.value as? String ?? "",
+                context: access
+            )
             return ToolCallResult(
                 content: ComputerUseV2Support.resultDescription(result),
                 images: [ComputerUseV2Support.imageAttachment(from: result.attachment)]
@@ -251,7 +300,7 @@ private enum ComputerUseV2Support {
 
     static func resultDescription(_ result: ComputerUseService.ObservationResult) -> String {
         let observation = result.observation
-        let allowed = result.isApplicationAllowed ? "allowed" : "not_allowed"
+        let authorized = result.isApplicationAuthorized ? "authorized" : "not_authorized"
         return """
         Observation captured.
         observation_id: \(observation.id.uuidString)
@@ -259,7 +308,7 @@ private enum ComputerUseV2Support {
         bundle_identifier: \(observation.window.bundleIdentifier)
         window_title: \(observation.window.windowTitle.isEmpty ? "(untitled)" : observation.window.windowTitle)
         image_coordinate_space: \(observation.imageWidth)x\(observation.imageHeight), origin is top-left
-        application_control: \(allowed)
+        application_control: \(authorized)
         Use only coordinates inside this image. Do not guess coordinates from an older observation.
         """
     }

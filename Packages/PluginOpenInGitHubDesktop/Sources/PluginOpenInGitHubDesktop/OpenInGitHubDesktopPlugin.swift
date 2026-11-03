@@ -48,7 +48,7 @@ public final class OpenInGitHubDesktopPlugin: SuperPlugin, SuperLog {
                     id: "\(id).toolbar",
                     title: OpenInGitHubDesktopLocalization.string("Open In GitHub Desktop"),
                     placement: .leading,
-                    category: .global,
+                    category: .project,
                     order: order
                 ) {
                     OpenInGitHubDesktopToolbarView(tool: tool, projectCapability: projectCapability)

@@ -48,7 +48,7 @@ public final class OpenInXcodePlugin: SuperPlugin, SuperLog {
                     id: "\(id).toolbar",
                     title: OpenInXcodeLocalization.string("Open In Xcode"),
                     placement: .leading,
-                    category: .global,
+                    category: .project,
                     order: order
                 ) {
                     OpenInXcodeToolbarView(tool: tool, project: project)

@@ -245,6 +245,7 @@ struct ListV1View: View {
                     item: item,
                     verbosity: verbosity,
                     isDeveloperModeEnabled: messageListVM.isDeveloperModeEnabled,
+                    viewportHeight: viewportHeight,
                     turnVM: messageListVM.agentTurnVM(for: item),
                     onDynamicContentChange: {
                         guard initialPositionGate.isReady,
