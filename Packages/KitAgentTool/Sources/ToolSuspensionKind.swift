@@ -55,7 +55,7 @@ public enum ToolSuspensionKind {
     /// 用于通用授权卡片（`ToolApprovalRowRenderer`）判定「该不该由我接管」。
     /// Computer Use 的应用授权载荷（`kind == "computer_use_authorization"`）
     /// 不属于此类——它由 Computer Use 自己的渲染器接管，语义也不同
-    /// （「允许一次 / 始终允许 / 拒绝」而非「允许 / 始终允许 / 拒绝」）。
+    /// （「本任务内允许 / 拒绝」而非「允许 / 始终允许 / 拒绝」）。
     public static func isPermissionRequest(_ content: String?) -> Bool {
         kind(of: content) == permission
     }

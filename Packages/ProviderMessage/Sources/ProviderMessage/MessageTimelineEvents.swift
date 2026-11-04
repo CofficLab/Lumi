@@ -39,6 +39,13 @@ public enum MessageTimelineEvent {
     /// 只用于界面时间线，不应进入后续 LLM 上下文。
     public static let appStoreSubmission = "app-store-submission"
     public static let appStoreSubmissionRenderKind = "app-store-submission"
+    /// Finder 插件的卡片时间线事件。
+    ///
+    /// 插件在工具执行后插入一条带该标记的消息，由插件自己注册的渲染器
+    /// 画成可交互卡片。这条消息只是给人看的界面产物，不是一次对话轮次，
+    /// 因此不应进入后续 LLM 上下文。
+    public static let finder = "finder"
+    public static let finderRenderKind = "finder-card"
     public static let goalTaskContinuationActionKey = "goalTaskContinuationAction"
     public static let goalTaskContinuationAttemptKey = "goalTaskContinuationAttempt"
     public static let goalTaskContinuationMaxAttemptsKey = "goalTaskContinuationMaxAttempts"
@@ -92,6 +99,12 @@ public enum MessageTimelineEvent {
             || message.metadata[metadataKey] == modelSwitched
     }
 
+    /// 是否属于 Finder 插件的卡片时间线事件。
+    public static func isFinder(_ message: Message) -> Bool {
+        message.renderKind == finderRenderKind
+            || message.metadata[metadataKey] == finder
+    }
+
     /// 仅用于界面时间线的消息不应被重新发送给 LLM。
     public static func isTimelineEvent(_ message: Message) -> Bool {
         isContextCompaction(message)
@@ -99,6 +112,7 @@ public enum MessageTimelineEvent {
             || isGoalTaskContinuation(message)
             || isAppStoreSubmission(message)
             || isModelSwitched(message)
+            || isFinder(message)
     }
 
     /// 只有真正用于压缩上下文的事件才应显示在消息列表中。
