@@ -48,7 +48,7 @@ public final class OpenInGitOKPlugin: SuperPlugin, SuperLog {
                     id: "\(id).toolbar",
                     title: OpenInGitOKLocalization.string("Open In GitOK"),
                     placement: .leading,
-                    category: .global,
+                    category: .project,
                     order: order
                 ) {
                     OpenInGitOKToolbarView(tool: tool, projectCapability: projectCapability)

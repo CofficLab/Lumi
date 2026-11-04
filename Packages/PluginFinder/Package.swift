@@ -1,0 +1,51 @@
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "PluginFinder",
+    defaultLocalization: "en",
+    platforms: [.macOS(.v14), .iOS(.v17)],
+    products: [
+        .library(
+            name: "PluginFinder",
+            targets: ["PluginFinder"]
+        ),
+    ],
+    dependencies: [
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
+        .package(path: "../KitAgentTool"),
+        .package(path: "../ProviderMessage"),
+        .package(path: "../ProviderMessageRendering"),
+        .package(path: "../ProviderToolManager"),
+    ],
+    targets: [
+        .target(
+            name: "PluginFinder",
+            dependencies: [
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                .product(name: "LumiUI", package: "LumiUI"),
+                "KitAgentTool",
+                "ProviderMessage",
+                "ProviderMessageRendering",
+                "ProviderToolManager",
+            ],
+            path: "Sources/PluginFinder",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
+        ),
+        .testTarget(
+            name: "PluginFinderTests",
+            dependencies: [
+                "PluginFinder",
+                "KitAgentTool",
+                "ProviderMessage",
+                "ProviderMessageRendering",
+            ],
+            path: "Tests/PluginFinderTests"
+        ),
+    ]
+)

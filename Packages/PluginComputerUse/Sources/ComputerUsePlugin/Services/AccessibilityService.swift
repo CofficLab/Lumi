@@ -48,7 +48,7 @@ final class AccessibilityService {
         inspections[bundleID].map { Date().timeIntervalSince($0) < 120 } ?? false
     }
 
-    func observe(application query: String) throws -> String {
+    func observe(application query: String, context: ComputerUseAccessContext) throws -> String {
         guard ComputerUsePermissionService.hasAccessibilityPermission else {
             throw ComputerUseError.accessibilityPermissionRequired
         }
@@ -61,7 +61,12 @@ final class AccessibilityService {
         guard apps.count == 1, let app = apps.first, let bundleID = app.bundleIdentifier else {
             throw ComputerUseError.invalidArguments("Use the exact bundle identifier of one running application.")
         }
-        try requireAuthorized(bundleID: bundleID, applicationName: app.localizedName ?? bundleID, operation: "accessibility_observe")
+        try requireAuthorized(
+            bundleID: bundleID,
+            applicationName: app.localizedName ?? bundleID,
+            operation: "accessibility_observe",
+            context: context
+        )
         let root = AXUIElementCreateApplication(app.processIdentifier)
         AXUIElementSetMessagingTimeout(root, 0.2)
         var refs: [String: AXUIElement] = [:]
@@ -117,7 +122,13 @@ final class AccessibilityService {
         return try json(snapshot)
     }
 
-    func act(observationID: String, elementID: String, action: String, value: String?) throws -> String {
+    func act(
+        observationID: String,
+        elementID: String,
+        action: String,
+        value: String?,
+        context: ComputerUseAccessContext
+    ) throws -> String {
         guard !NativeControlCoordinator.shared.isBusy else {
             throw ComputerUseError.invalidArguments("A native operation is active or paused. Wait for the user; do not change its target through Accessibility.")
         }
@@ -128,10 +139,14 @@ final class AccessibilityService {
               let ref = stored.refs[elementID] else {
             throw ComputerUseError.invalidArguments("Expired or invalid AX element. Call accessibility_observe again.")
         }
-        guard authorization.isAllowed(stored.snapshot.bundleIdentifier)
-            || authorization.consumeOneShot(bundleIdentifier: stored.snapshot.bundleIdentifier) else {
-            throw ComputerUseError.applicationNotAllowed(stored.snapshot.application)
-        }
+        // 快照可能来自另一次 observe 调用（观察与操作是两次独立工具调用），
+        // 因此这里必须**重新判定**授权，不能假设 observe 时已经通过。
+        try requireAuthorized(
+            bundleID: stored.snapshot.bundleIdentifier,
+            applicationName: stored.snapshot.application,
+            operation: "accessibility_act",
+            context: context
+        )
         guard string(ref, kAXSubroleAttribute) != kAXSecureTextFieldSubrole else { throw ComputerUseError.secureInputBlocked }
         guard attribute(ref, kAXRoleAttribute) != nil,
               (attribute(ref, kAXEnabledAttribute) as? Bool) != false else {
@@ -209,11 +224,13 @@ final class AccessibilityService {
     private func requireAuthorized(
         bundleID: String,
         applicationName: String,
-        operation: String
+        operation: String,
+        context: ComputerUseAccessContext
     ) throws {
         switch ComputerUseAccessChecker(authorization: authorization).outcome(
             for: bundleID,
-            applicationName: applicationName
+            applicationName: applicationName,
+            context: context
         ) {
         case .allowed:
             return

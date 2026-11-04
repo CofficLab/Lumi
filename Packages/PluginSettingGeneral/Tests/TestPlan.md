@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginSettingGeneral 的实现包，包含 13 个主要类型；当前测试覆盖 5 条用例。
+PluginSettingGeneral 的实现包，包含 14 个主要类型；当前测试覆盖 17 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 5
+测试文件: 3 个，用例总数: 17
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -28,46 +28,61 @@ PluginSettingGeneral 的实现包，包含 13 个主要类型；当前测试覆�
 - `GeneralSettingsUninstallCapability`
 - `GeneralSettingsUpdateChannelCapability`
 - `GeneralSettingsObserver`
+- `CLIInstallViewModel`
 - `GeneralSettingsViewModel`
+- `CLIInstallDetailView`
 - `GeneralSettingsDetailView`
-- `ManualsBrowserView`
 
 ## 关键行为契约（实现约定，非协议要求）
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
+- **CLIInstallViewModel**（10 条）：由 `initialStatusIsNotInstalled`、`installedStatusWhenOnPath`、`installedNotOnPathStatusCarriesDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GeneralSettingsCLISection**（2 条）：由 `generalSettingsRendersCLISection`、`clisectionWorksWithoutOptionalProviders` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（5 条）：由 `onBootRegistersGeneralEntry`、`onBootAppendsToExistingEntries`、`onBootNoOpsWithoutSettingView` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
 | ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
 |----|------|------|----------|----------|----------|------|------|----------|
-| 1 | 综合 | onBoot 在设置视图中注册「通用」入口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `onBootRegistersGeneralEntry` |
-| 2 | 综合 | onBoot 追加语义不覆盖已有入口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `onBootAppendsToExistingEntries` |
-| 3 | 综合 | 设置视图未注册时 onBoot 优雅降级 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `onBootNoOpsWithoutSettingView` |
-| 4 | 综合 | 插件可经 kernel.start 启动并注册入口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `startViaKernelBootsPlugin` |
-| 5 | 综合 | AppVersion 可从 Info.plist 读取或返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `appVersionReadsBundle` |
+| 1 | CLIInstallViewModel | 未安装时状态为 notInstalled | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `initialStatusIsNotInstalled` |
+| 2 | CLIInstallViewModel | 已安装且在 PATH 中时状态为 installed | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `installedStatusWhenOnPath` |
+| 3 | CLIInstallViewModel | 已安装但不在 PATH 中时状态带目录提示 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `installedNotOnPathStatusCarriesDirectory` |
+| 4 | CLIInstallViewModel | 状态检查完成前处于 checking 状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `statusIsCheckingWhileResolving` |
+| 5 | CLIInstallViewModel | install 成功后刷新为已安装状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `installSucceedsThenRefreshesStatus` |
+| 6 | CLIInstallViewModel | 安装失败时记录错误且不改变安装状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `installFailureRecordsError` |
+| 7 | CLIInstallViewModel | 安装到不在 PATH 的目录时仍算已安装 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `installButNotOnPathStillInstalled` |
+| 8 | CLIInstallViewModel | uninstall 成功后刷新为未安装状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `uninstallSucceedsThenRefreshesStatus` |
+| 9 | CLIInstallViewModel | 卸载失败时记录错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `uninstallFailureRecordsError` |
+| 10 | CLIInstallViewModel | 忙碌标志在操作结束后复位 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `busyFlagResetsAfterOperation` |
+| 11 | GeneralSettingsCLISection | 通用设置详情视图可渲染命令行工具分区 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `generalSettingsRendersCLISection` |
+| 12 | GeneralSettingsCLISection | 命令行工具分区不要求内核 Provider 即可工作 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `clisectionWorksWithoutOptionalProviders` |
+| 13 | 综合 | onBoot 在设置视图中注册「通用」入口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `onBootRegistersGeneralEntry` |
+| 14 | 综合 | onBoot 追加语义不覆盖已有入口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `onBootAppendsToExistingEntries` |
+| 15 | 综合 | 设置视图未注册时 onBoot 优雅降级 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `onBootNoOpsWithoutSettingView` |
+| 16 | 综合 | 插件可经 kernel.start 启动并注册入口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `startViaKernelBootsPlugin` |
+| 17 | 综合 | AppVersion 可从 Info.plist 读取或返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `appVersionReadsBundle` |
 
-> 说明：全部 **5 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **17 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 5 / 5
+- P1: 已覆盖 17 / 17
 - P2: 已覆盖 0 / 0
-- **合计: 5 / 5**（仅表示清单场景，非源码覆盖率）
+- **合计: 17 / 17**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（5 条）
+- **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 5 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 17 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

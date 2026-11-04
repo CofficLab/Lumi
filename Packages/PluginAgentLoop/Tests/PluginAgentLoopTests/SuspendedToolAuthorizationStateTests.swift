@@ -248,7 +248,7 @@ struct SuspendedToolAuthorizationStateTests {
     // MARK: - 夹具
 
     /// Computer Use 应用级授权的挂起载荷，形状与生产一致。
-    private let authorizationPayload = #"{"kind":"computer_use_authorization","request":{"applicationName":"App Store","bundleIdentifier":"com.apple.AppStore","operation":"accessibility_observe"},"options":["allowOnce","alwaysAllow","deny"]}"#
+    private let authorizationPayload = #"{"kind":"computer_use_authorization","request":{"applicationName":"App Store","bundleIdentifier":"com.apple.AppStore","operation":"accessibility_observe"},"options":["allowForTask","deny"]}"#
 
     /// 构造一条 A3 对话下 LLM 响应刚落库时的 assistant 消息。
     ///
