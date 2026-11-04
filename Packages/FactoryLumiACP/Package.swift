@@ -13,7 +13,7 @@ let package = Package(
         .package(path: "../KitLLM"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderChatSection"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.13.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
         // 显式声明：与主工程 lock 对齐 LumiUI 版本，避免 ACP lock 停留在旧 revision
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
         .package(path: "../ProviderConversation"),
@@ -36,7 +36,7 @@ let package = Package(
         .package(path: "../PluginACP"),
         .package(url: "https://github.com/CofficLab/LumiPluginStorage.git", from: "1.1.1"),
         .package(url: "https://github.com/CofficLab/LumiPluginCommand.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiPluginToast.git", from: "1.2.2"),
+        .package(url: "https://github.com/CofficLab/LumiPluginToast.git", from: "1.2.3"),
         .package(path: "../PluginLLMManager"),
         .package(path: "../PluginToolManager"),
         .package(path: "../PluginAgentLoop"),

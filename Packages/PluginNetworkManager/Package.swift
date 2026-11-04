@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginNetworkManager", targets: ["PluginNetworkManager"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitHttp"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),

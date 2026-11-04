@@ -6,7 +6,7 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginLLMProviderMLX", targets: ["PluginLLMProviderMLX"])],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderLLMManager"),
@@ -18,7 +18,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/huggingface/swift-transformers.git",
-            exact: "1.3.5"
+            exact: "1.4.0"
         ),
         .package(path: "../KitTestSupport"),
     ],

@@ -11,22 +11,20 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderEditor"),
+        .package(path: "../KitTreeSitterGrammars"),
         .package(path: "../PluginCodeEditorHost"),
         .package(path: "../KitEditorLanguageRuntime"),
         .package(
             url: "https://github.com/alex-pinkus/tree-sitter-swift.git",
             revision: "31d17fe7e818a2048c808b5c6fdc2dc792f4f5b5"
         ),
-        .package(url: "https://github.com/tree-sitter/tree-sitter-javascript.git", exact: "0.23.1"),
         .package(
             url: "https://github.com/tree-sitter/tree-sitter-typescript.git",
             revision: "f975a621f4e7f532fe322e13c4f79495e0a7b2e7"
         ),
         .package(url: "https://github.com/tree-sitter/tree-sitter-json.git", exact: "0.24.8"),
-        .package(url: "https://github.com/tree-sitter/tree-sitter-python.git", exact: "0.23.6"),
         .package(url: "https://github.com/tree-sitter/tree-sitter-bash.git", exact: "0.25.1"),
-        .package(url: "https://github.com/tree-sitter-grammars/tree-sitter-markdown.git", exact: "0.5.3"),
-        .package(url: "https://github.com/tree-sitter-grammars/tree-sitter-yaml.git", exact: "0.7.0"),
+        .package(url: "https://github.com/tree-sitter-grammars/tree-sitter-markdown.git", exact: "0.5.4"),
     ],
     targets: [
         .target(
@@ -36,13 +34,13 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "TreeSitterSwift", package: "tree-sitter-swift"),
-                .product(name: "TreeSitterJavaScript", package: "tree-sitter-javascript"),
+                .product(name: "TreeSitterJavaScript", package: "KitTreeSitterGrammars"),
                 .product(name: "TreeSitterTypeScript", package: "tree-sitter-typescript"),
                 .product(name: "TreeSitterJSON", package: "tree-sitter-json"),
-                .product(name: "TreeSitterPython", package: "tree-sitter-python"),
+                .product(name: "TreeSitterPython", package: "KitTreeSitterGrammars"),
                 .product(name: "TreeSitterBash", package: "tree-sitter-bash"),
                 .product(name: "TreeSitterMarkdown", package: "tree-sitter-markdown"),
-                .product(name: "TreeSitterYAML", package: "tree-sitter-yaml"),
+                .product(name: "TreeSitterYAML", package: "KitTreeSitterGrammars"),
             ],
             resources: [.copy("../../Resources")]
         ),
