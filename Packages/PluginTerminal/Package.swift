@@ -22,7 +22,7 @@ let package = Package(
         .package(url: "https://github.com/migueldeicaza/SwiftTerm", .upToNextMajor(from: "1.20.0")),
         .package(path: "../KitTerminalCore"),
         .package(path: "../ProviderPanelBottom"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
         .package(path: "../PluginRootView")
     ],
     targets: [
