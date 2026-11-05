@@ -10,7 +10,7 @@ enum ComposerLayout {
     static let contentHorizontalInset: CGFloat = 12
 
     /// 卡片内文字的上内边距(点)。
-    static let contentTopInset: CGFloat = 10
+    static let contentTopInset: CGFloat = 0
 
     /// 卡片内文字的下内边距(点)。
     static let contentBottomInset: CGFloat = 10
@@ -21,7 +21,7 @@ enum ComposerLayout {
     static let outerHorizontalInset: CGFloat = 14
 
     /// 卡片与上方内容之间的间距(点)。
-    static let outerTopInset: CGFloat = 8
+    static let outerTopInset: CGFloat = 0
 
     /// 卡片与下方操作栏之间的间距(点)。
     static let outerBottomInset: CGFloat = 8
