@@ -29,8 +29,7 @@ let package = Package(
                 "WebPagination.swift",
                 "WebRequestActivity.swift",
                 "WebRoute.swift",
-                "WebRouteContribution.swift",
-                "WebRouteContributionRegistry.swift",
+                "WebRouteBuilder.swift",
                 "WebServerExtendedProviding.swift",
                 "WebServerProviding.swift",
             ]

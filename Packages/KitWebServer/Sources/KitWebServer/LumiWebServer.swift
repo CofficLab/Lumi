@@ -612,8 +612,7 @@ public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendabl
     }
 
     private static func makeResponse(from webResponse: WebRouteResponse, requestID: String? = nil) -> Response {
-        var buffer = ByteBufferAllocator().buffer(capacity: webResponse.body.count)
-        buffer.writeBytes(webResponse.body)
+        let buffer = ByteBuffer(bytes: webResponse.body)
         var response = Response(
             status: HTTPResponse.Status(code: webResponse.statusCode),
             body: ResponseBody(byteBuffer: buffer)
@@ -638,8 +637,7 @@ public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendabl
             // 编码失败只可能是编码器本身的问题;退化为固定 JSON。
             body = Data("{\"error\":{\"code\":\"internal_error\",\"message\":\"Internal server error\"}}".utf8)
         }
-        var buffer = ByteBufferAllocator().buffer(capacity: body.count)
-        buffer.writeBytes(body)
+        let buffer = ByteBuffer(bytes: body)
         var response = Response(
             status: HTTPResponse.Status(code: error.statusCode),
             body: ResponseBody(byteBuffer: buffer)
@@ -651,7 +649,7 @@ public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendabl
 
     /// 构造 CORS 预检响应。
     private static func makeCORSPreflightResponse(policy: WebCORSPolicy) -> Response {
-        var buffer = ByteBufferAllocator().buffer(capacity: 0)
+        let buffer = ByteBufferAllocator().buffer(capacity: 0)
         var response = Response(
             status: .noContent,
             body: ResponseBody(byteBuffer: buffer)
