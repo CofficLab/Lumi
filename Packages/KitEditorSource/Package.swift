@@ -19,7 +19,7 @@ let package = Package(
         .package(path: "../KitEditorLanguageRuntime"),
         .package(
             url: "https://github.com/ChimeHQ/TextFormation",
-            from: "0.8.2"
+            from: "0.9.0"
         )
     ],
     targets: [
