@@ -2,13 +2,12 @@
 
 ## 包概述
 
-PluginTextActions 的实现包，包含 8 个主要类型；当前测试覆盖 51 条用例。
+PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 61 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 51
+测试文件: 4 个，用例总数: 61
 
 核心组件（源码目录）:
-- `Observers/`
 - `Views/`
 
 ## 公开 API
@@ -16,12 +15,17 @@ PluginTextActions 的实现包，包含 8 个主要类型；当前测试覆盖 5
 包内主要类型（按声明顺序抽取，供定位被测对象）:
 
 - `TextSelectionReadPolicy`
+- `TextActionCoordinates`
+- `TextActionMenuLayout`
+- `TextActionDismissPolicy`
 - `TextActionsManualView`
 - `TextActionsPlugin`
 - `TextActionsPluginLocalStore`
 - `TextActionsRuntime`
 - `TextActionsSettings`
-- `TextSelectionObserver`
+- `TextSelectionManager`
+- `TextActionMenuController`
+- `TextActionMenuPanel`
 - `TextActionsAboutView`
 
 ## 关键行为契约（实现约定，非协议要求）
@@ -29,7 +33,7 @@ PluginTextActions 的实现包，包含 8 个主要类型；当前测试覆盖 5
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **TextActionsPlugin**（16 条）：由 `pluginMetadata`、`localStorePersistsEnabledFlagInBinaryPlist`、`localStoreWritesNoUserDefaults` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **TextActionsCore**（14 条）：由 `doesNotPresentMenuForBlankText`、`presentsMenuForRealText`、`retryConstants` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **TextActionsCore**（24 条）：由 `doesNotPresentMenuForBlankText`、`presentsMenuForRealText`、`retryConstants` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionsPluginLifecycle**（11 条）：由 `registerAddsDocsEntries`、`registerWithoutDocsProviderIsNoop`、`bootInjectsStorageDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionsStorage**（10 条）：由 `usesConfiguredDirectory`、`resetsToFallbackDirectory`、`roundTripsValue` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -56,17 +60,26 @@ PluginTextActions 的实现包，包含 8 个主要类型；当前测试覆盖 5
 | 17 | TextActionsCore | 空白与空选区不弹菜单 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doesNotPresentMenuForBlankText` |
 | 18 | TextActionsCore | 有内容的选区弹菜单 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `presentsMenuForRealText` |
 | 19 | TextActionsCore | 重试节奏常量固定 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `retryConstants` |
-| 20 | TextActionsCore | 锚点居中时水平居中、垂直下移 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `centersOnAnchor` |
-| 21 | TextActionsCore | 靠左时夹到屏幕左边 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `clampsToLeftEdge` |
-| 22 | TextActionsCore | 靠右时夹到屏幕右边 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `clampsToRightEdge` |
-| 23 | TextActionsCore | 靠上时夹到屏幕上边 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `clampsToTopEdge` |
-| 24 | TextActionsCore | 自定义边距与偏移生效 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `respectsCustomMarginAndOffset` |
-| 25 | TextActionsCore | 三个动作可枚举且标识稳定 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `actionsAreCaseIterable` |
-| 26 | TextActionsCore | 每个动作有标题与图标 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `actionsHaveTitlesAndIcons` |
-| 27 | TextActionsCore | 搜索地址用百分号编码查询词 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `buildsSearchURL` |
-| 28 | TextActionsCore | 翻译请求带固定的 system 指令与原文 user 消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `buildsTranslationRequest` |
-| 29 | TextActionsCore | 旧版翻译请求与新版语义一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `legacyTranslationRequestMatchesV2` |
-| 30 | TextActionsCore | 选区结果按值比较 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectedTextIsEquatable` |
+| 20 | TextActionsCore | Quartz 左上原点翻转为 Cocoa 左下原点 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `flipsVerticalOrigin` |
+| 21 | TextActionsCore | 多屏下主屏左侧的负坐标保持不变 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `keepsNegativeCoordinates` |
+| 22 | TextActionsCore | 菜单显示在选区上方居中 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `placesAboveSelectionCentered` |
+| 23 | TextActionsCore | 上方空间不足时放到选区下方 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fallsBelowWhenNoRoomAbove` |
+| 24 | TextActionsCore | 选区靠左时夹到屏幕左边距 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `clampsToLeftEdge` |
+| 25 | TextActionsCore | 选区靠右时夹到屏幕右边距 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `clampsToRightEdge` |
+| 26 | TextActionsCore | 无选区 bounds 时回退到锚点上方 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fallsBackToAnchor` |
+| 27 | TextActionsCore | 上下都放不下时夹回屏幕内 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `clampsVerticallyWhenNeitherSideFits` |
+| 28 | TextActionsCore | 自定义边距与间距生效 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `respectsCustomMarginAndGap` |
+| 29 | TextActionsCore | 普通按键与快捷键让菜单消失 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `keyDownDismisses` |
+| 30 | TextActionsCore | 仅 Shift 的组合不消失——正在调整选区 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `shiftOnlyDoesNotDismiss` |
+| 31 | TextActionsCore | 菜单不可见时只有带修饰键的 keyUp 触发重读 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `keyUpEvaluationGating` |
+| 32 | TextActionsCore | 滚动阈值固定 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `scrollThresholdIsStable` |
+| 33 | TextActionsCore | 三个动作可枚举且标识稳定 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `actionsAreCaseIterable` |
+| 34 | TextActionsCore | 每个动作有标题与图标 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `actionsHaveTitlesAndIcons` |
+| 35 | TextActionsCore | 搜索地址用百分号编码查询词 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `buildsSearchURL` |
+| 36 | TextActionsCore | 翻译请求带固定的 system 指令与原文 user 消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `buildsTranslationRequest` |
+| 37 | TextActionsCore | 旧版翻译请求与新版语义一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `legacyTranslationRequestMatchesV2` |
+| 38 | TextActionsCore | 选区结果按值比较 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectedTextIsEquatable` |
+| 39 | TextActionsCore | 携带选区 bounds 参与比较 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `carriesSelectionRect` |
 | 31 | TextActionsPluginLifecycle | 注册时写入关于与说明书文档条目 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registerAddsDocsEntries` |
 | 32 | TextActionsPluginLifecycle | 缺少文档 Provider 时注册不抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registerWithoutDocsProviderIsNoop` |
 | 33 | TextActionsPluginLifecycle | 启动时把存储目录注入运行时 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bootInjectsStorageDirectory` |
@@ -89,26 +102,26 @@ PluginTextActions 的实现包，包含 8 个主要类型；当前测试覆盖 5
 | 50 | TextActionsStorage | 损坏的 plist 被当作空字典 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `treatsCorruptFileAsEmpty` |
 | 51 | TextActionsStorage | 不同实例使用各自隔离的目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `isolatesInstancesByDirectory` |
 
-> 说明：全部 **51 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **61 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 41 / 41
-- P2: 已覆盖 7 / 7
-- **合计: 51 / 51**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 4 / 4
+- P1: 已覆盖 49 / 49
+- P2: 已覆盖 8 / 8
+- **合计: 61 / 61**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（41 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
+- **P1**: 其余功能性用例（49 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 51 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 61 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
