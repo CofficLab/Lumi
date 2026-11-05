@@ -120,21 +120,28 @@ func nonEmptySelectionPresentsMenu(_ text: String) {
 
 @Test
 func menuLayoutClampsToScreenEdges() {
-    let frame = TextActionMenuLayout.frame(
-        for: CGPoint(x: 0, y: 0),
-        menuSize: CGSize(width: 200, height: 60),
-        screenFrame: CGRect(x: 0, y: 0, width: 1_000, height: 800)
-    )
-    #expect(frame.minX == 0)
-    #expect(frame.minY == 18)
+    let screen = CGRect(x: 0, y: 0, width: 1_000, height: 800)
+    let size = CGSize(width: 200, height: 60)
 
+    // 无选区 bounds：回退锚点上方，水平夹到左边距。
+    let frame = TextActionMenuLayout.frame(
+        selectionRect: nil,
+        anchor: CGPoint(x: 0, y: 0),
+        menuSize: size,
+        screenFrame: screen
+    )
+    #expect(frame.minX == 8)
+    #expect(frame.minY == 14)
+
+    // 有选区 bounds：靠右时夹到右边距；上方空间不足时放到选区下方。
     let topRightFrame = TextActionMenuLayout.frame(
-        for: CGPoint(x: 1_000, y: 790),
-        menuSize: CGSize(width: 200, height: 60),
-        screenFrame: CGRect(x: 0, y: 0, width: 1_000, height: 800)
+        selectionRect: CGRect(x: 940, y: 770, width: 60, height: 20),
+        anchor: CGPoint(x: 1_000, y: 790),
+        menuSize: size,
+        screenFrame: screen
     )
     #expect(topRightFrame.maxX == 992)
-    #expect(topRightFrame.maxY == 792)
+    #expect(topRightFrame.maxY == 770 - 6)
 }
 
 @MainActor
