@@ -15,16 +15,42 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
         .package(path: "../ProviderWebServer"),
         .package(path: "../KitWebServer"),
+        .package(path: "../KitWebAPI"),
+        .package(path: "../ProviderConversation"),
+        .package(path: "../ProviderMessage"),
+        .package(path: "../ProviderToolManager"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(
             name: "PluginWebServer",
-            dependencies: [.product(name: "KernelCore", package: "LumiKernel"), .product(name: "ProviderTheme", package: "LumiProviders"), .product(name: "ProviderSettingView", package: "LumiSettings"),.product(name: "ProviderToast", package: "LumiProviders"), "ProviderWebServer", "KitWebServer", .product(name: "LumiLoggingKit", package: "LumiLogging"), "LumiUI"]
+            dependencies: [
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderTheme", package: "LumiProviders"),
+                .product(name: "ProviderToast", package: "LumiProviders"),
+                .product(name: "ProviderPluginControl", package: "LumiProviders"),
+                .product(name: "ProviderPluginManaging", package: "LumiProviders"),
+                .product(name: "ProviderSettingView", package: "LumiSettings"),
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                "ProviderWebServer",
+                "KitWebServer",
+                "KitWebAPI",
+                .product(name: "LumiLoggingKit", package: "LumiLogging"),
+                "LumiUI",
+            ]
         ),
         .testTarget(
             name: "PluginWebServerTests",
-            dependencies: ["PluginWebServer", .product(name: "KernelCore", package: "LumiKernel"), .product(name: "ProviderTheme", package: "LumiProviders"), "ProviderWebServer", "KitWebServer"]
+            dependencies: [
+                "PluginWebServer",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderTheme", package: "LumiProviders"),
+                "ProviderWebServer",
+                "KitWebServer",
+                "KitWebAPI",
+            ]
         ),
     ]
 )
