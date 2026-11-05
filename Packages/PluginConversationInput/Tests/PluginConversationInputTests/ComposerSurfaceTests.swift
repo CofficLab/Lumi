@@ -85,13 +85,15 @@ struct ComposerSurfaceTests {
     /// 期望值 14 是**写死的数字**,不是从 `ComposerLayout` 反推的:
     /// 反推等于拿实现校验实现,常量一改断言跟着改,永远不会失败。
     /// 写死之后,任何人动这块间距都必须同时想清楚「要不要改这里」。
+    ///
+    /// - Note: 上边缘**不**留间距(`outerTopInset == 0`),输入卡片紧贴上方内容。
     @Test("输入框卡片与上下左右边缘留出间距")
     func cardIsInsetFromEdges() throws {
         let canvas = 300
         let rep = try render(placed(markedCard(), canvas: canvas), width: canvas, height: 120)
 
         // 卡片中部那一行上,标记色的起点即卡片左缘。
-        let row = 8 + 20
+        let row = 0 + 20
         var markerStart: Int?
         for x in 0..<rep.pixelsWide where isMarker(rep, x: x, y: row) {
             markerStart = x
@@ -114,8 +116,8 @@ struct ComposerSurfaceTests {
         let top = try #require(markerTop, "卡片上缘没有找到标记色")
 
         #expect(
-            abs(top - 8) <= 1,
-            "卡片上缘落在 y=\(top),与预期的 8 不符"
+            abs(top - 0) <= 1,
+            "卡片上缘落在 y=\(top),与预期的 0 不符"
         )
     }
 
@@ -129,7 +131,7 @@ struct ComposerSurfaceTests {
 
         // 与上一条同理:期望几何写死,不被实现常量带跑。
         let left = 14
-        let top = 8
+        let top = 0
 
         // 角点处:应是底色(圆弧之外)。
         let corner = brightness(rep, x: left + 1, y: top + 1)
@@ -150,7 +152,7 @@ struct ComposerSurfaceTests {
         let canvas = 300
         let rep = try render(placed(plainCard(), canvas: canvas), width: canvas, height: 120)
 
-        let top = 8
+        let top = 0
         let cardBottom = top + 40
 
         // 远处底色(画布底部)。
