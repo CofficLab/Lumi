@@ -52,6 +52,7 @@ import PluginAppStorePromoDesigner
 import PluginPrototypeDesigner
 import PluginAskUser
 import PluginFinder
+import PluginHTMLCanvas
 import PluginCaffeinate
 import PluginChatFileAttachment
 import PluginChatPanel
@@ -271,6 +272,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationExportPlugin(),
             AskUserPlugin(),
             FinderPlugin(),
+            HTMLCanvasPlugin(),
             OpenInFinderPlugin(),
             OpenInXcodePlugin(),
             OpenInCursorPlugin(),
