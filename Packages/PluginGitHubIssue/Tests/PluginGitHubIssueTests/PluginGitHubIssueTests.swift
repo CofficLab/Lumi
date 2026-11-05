@@ -58,6 +58,54 @@ struct PluginGitHubIssueTests {
         #expect(desc.contains("Lumi"))
     }
 
+    @Test("input schema states English requirement")
+    func schemaStatesEnglishRequirement() throws {
+        let tool = CreateGitHubIssueTool()
+        let schema = tool.inputSchema(for: .english)
+        let properties = try #require(schema["properties"] as? [String: Any])
+
+        let titleDesc = try #require((properties["title"] as? [String: Any])?["description"] as? String)
+        #expect(titleDesc.lowercased().contains("english"))
+
+        let bodyDesc = try #require((properties["body"] as? [String: Any])?["description"] as? String)
+        #expect(bodyDesc.lowercased().contains("english"))
+    }
+
+    @Test("rendered body contains no non-Latin characters")
+    func renderedBodyIsEnglish() {
+        // 诊断表是工具自动追加的，随 issue 一起提交——必须全英文。
+        let body = CreateGitHubIssueTool.renderedBodyForTesting(
+            userBody: "The read_file tool returned an empty string for a non-empty file."
+        )
+        #expect(
+            !EnglishLanguageGuard.containsNonEnglishContent(body),
+            "rendered body must be pure English, got: \(body)"
+        )
+        #expect(body.contains("Environment"))
+        #expect(body.contains("Lumi version"))
+    }
+
+    @Test("english violation is reported for Chinese title")
+    func englishViolationDetectsChinese() {
+        let violation = CreateGitHubIssueTool.englishViolationForTesting(
+            title: "工具返回空结果",
+            body: "This body is English."
+        )
+        #expect(violation != nil)
+        // 拒绝提示本身必须是英文，LLM 才读得懂。
+        let message = try? #require(violation)
+        #expect(message?.contains("English") == true)
+    }
+
+    @Test("english violation is nil for pure English content")
+    func englishViolationPassesEnglish() {
+        let violation = CreateGitHubIssueTool.englishViolationForTesting(
+            title: "Tool returns empty result",
+            body: "The read_file tool returned an empty string for a non-empty file."
+        )
+        #expect(violation == nil)
+    }
+
     @Test("description is non-empty")
     func descriptionNonEmpty() {
         let tool = CreateGitHubIssueTool()
