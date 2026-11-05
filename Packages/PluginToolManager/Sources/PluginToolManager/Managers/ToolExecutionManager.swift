@@ -177,7 +177,18 @@ final class ToolExecutionManager {
         if let result = resultsByID[jobID] {
             return result
         }
-        guard jobsByID[jobID] != nil else { return nil }
+        guard let job = jobsByID[jobID] else { return nil }
+
+        // 终态 Job 的结果在启动恢复时**没有**被物化（那会让启动成本随
+        // Job 总量线性增长），这里按需从库里取一次。
+        //
+        // 终态 Job 不会再有 `finish` 事件来唤醒等待者，所以必须在这里返回，
+        // 否则等待者会永久挂起。
+        if job.status.isTerminal {
+            guard let store = jobRecordStore else { return nil }
+            return await store.fetchRecord(forJobID: jobID)?.result
+        }
+
         return await withCheckedContinuation { continuation in
             if let result = resultsByID[jobID] {
                 continuation.resume(returning: result)
