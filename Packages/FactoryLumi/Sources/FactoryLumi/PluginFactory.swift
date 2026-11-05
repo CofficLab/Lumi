@@ -51,6 +51,7 @@ import PluginAppStoreConnect
 import PluginAppStorePromoDesigner
 import PluginPrototypeDesigner
 import PluginAskUser
+import PluginFinder
 import PluginCaffeinate
 import PluginChatFileAttachment
 import PluginChatPanel
@@ -68,6 +69,7 @@ import PluginConversationStats
 import PluginConversationSpeed
 import PluginConversationNew
 import PluginConversationPendingMessage
+import PluginConversationResume
 import PluginConversationTitle
 import PluginConversationState
 import PluginDevice
@@ -264,9 +266,11 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationTitlePlugin(),
             ConversationStatePlugin(),
             ConversationPendingMessagePlugin(),
+            ConversationResumePlugin(),
             ConversationForkPlugin(),
             ConversationExportPlugin(),
             AskUserPlugin(),
+            FinderPlugin(),
             OpenInFinderPlugin(),
             OpenInXcodePlugin(),
             OpenInCursorPlugin(),

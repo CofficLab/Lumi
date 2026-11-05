@@ -237,10 +237,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
 
         if textChanged || cursorBindingChanged {
             let position = ChatInputEditorRules.swiftToUTF16Index(cursorPosition, in: text)
-            DispatchQueue.main.async { [weak coordinator = context.coordinator, weak textView] in
-                guard let coordinator, let textView, coordinator.accepts(textView) else { return }
-                textView.setSelectedRange(NSRange(location: position, length: 0))
-            }
+            context.coordinator.scheduleCursorRestore(position, in: textView)
             if textChanged {
                 context.coordinator.scheduleHeightUpdate(for: textView, immediately: true)
             }
@@ -593,6 +590,18 @@ extension ChatInputEditorView {
             pendingHeightBindingWorkItem?.cancel()
             pendingHeightBindingWorkItem = nil
             heightScheduleID = UUID()
+        }
+
+        @MainActor
+        func scheduleCursorRestore(_ position: Int, in textView: EditorTextView) {
+            DispatchQueue.main.async { [weak self, weak textView] in
+                guard let self,
+                      let textView,
+                      self.accepts(textView),
+                      !textView.hasMarkedText(),
+                      !textView.isIMEComposing else { return }
+                textView.setSelectedRange(NSRange(location: position, length: 0))
+            }
         }
 
         @MainActor
