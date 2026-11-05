@@ -23,8 +23,15 @@ let package = Package(
             sources: [
                 "DefaultWebServerProviding.swift",
                 "HTTPMethod.swift",
+                "WebAPIError.swift",
+                "WebAuthPolicy.swift",
+                "WebCORSPolicy.swift",
+                "WebPagination.swift",
                 "WebRequestActivity.swift",
                 "WebRoute.swift",
+                "WebRouteContribution.swift",
+                "WebRouteContributionRegistry.swift",
+                "WebServerExtendedProviding.swift",
                 "WebServerProviding.swift",
             ]
         ),
