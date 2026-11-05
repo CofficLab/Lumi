@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 61 条用例。
+PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 71 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 61
+测试文件: 4 个，用例总数: 71
 
 核心组件（源码目录）:
 - `Views/`
@@ -36,6 +36,7 @@ PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 
 - **TextActionsCore**（24 条）：由 `doesNotPresentMenuForBlankText`、`presentsMenuForRealText`、`retryConstants` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionsPluginLifecycle**（11 条）：由 `registerAddsDocsEntries`、`registerWithoutDocsProviderIsNoop`、`bootInjectsStorageDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionsStorage**（10 条）：由 `usesConfiguredDirectory`、`resetsToFallbackDirectory`、`roundTripsValue` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **TextActionMenuPanel**（10 条）：由 `initialStateIsActions`、`performForwardsToHandler`、`stateChangeNotifies` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -101,27 +102,37 @@ PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 
 | 49 | TextActionsStorage | 存储落在 settings.plist 且能被新实例读回 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `persistsAcrossInstances` |
 | 50 | TextActionsStorage | 损坏的 plist 被当作空字典 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `treatsCorruptFileAsEmpty` |
 | 51 | TextActionsStorage | 不同实例使用各自隔离的目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `isolatesInstancesByDirectory` |
+| 52 | TextActionMenuPanel | 初始状态是动作条 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `initialStateIsActions` |
+| 53 | TextActionMenuPanel | perform 转发给注入的处理器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `performForwardsToHandler` |
+| 54 | TextActionMenuPanel | 状态切换触发 onStateChange | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `stateChangeNotifies` |
+| 55 | TextActionMenuPanel | 文本变化不自动重置状态——由控制器决定何时回到动作条 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `textChangeDoesNotResetState` |
+| 56 | TextActionMenuPanel | 动作条渲染出内容 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `actionsStateRendersContent` |
+| 57 | TextActionMenuPanel | 复制反馈渲染出内容 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `copiedStateRendersContent` |
+| 58 | TextActionMenuPanel | 翻译结果渲染出内容 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `translatedStateRendersContent` |
+| 59 | TextActionMenuPanel | 翻译失败渲染出内容 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `failedStateRendersContent` |
+| 60 | TextActionMenuPanel | 面板不抢焦点、不在后台隐藏 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `panelIsNonActivatingAndPersistent` |
+| 61 | TextActionMenuPanel | 面板跨 Space 且可叠加在全屏应用上 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `panelCollectionBehavior` |
 
-> 说明：全部 **61 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **71 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 4 / 4
-- P1: 已覆盖 49 / 49
+- P0: 已覆盖 5 / 5
+- P1: 已覆盖 58 / 58
 - P2: 已覆盖 8 / 8
-- **合计: 61 / 61**（仅表示清单场景，非源码覆盖率）
+- **合计: 71 / 71**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
-- **P1**: 其余功能性用例（49 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
+- **P1**: 其余功能性用例（58 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 61 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 71 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
