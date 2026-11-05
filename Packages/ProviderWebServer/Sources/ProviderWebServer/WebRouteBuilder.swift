@@ -1,52 +1,5 @@
 import Foundation
 
-// MARK: - Route Contribution
-
-/// 插件贡献的一组 HTTP 路由。
-///
-/// 插件无需自己解析 HTTP 请求：只要声明一组 `WebRoute`，服务端就会完成
-/// 路径匹配、参数解析、鉴权、错误映射与日志记录。
-///
-/// 贡献与插件生命周期绑定：插件被禁用或卸载时，其贡献的路由自动下线。
-public struct WebRouteContribution: Sendable {
-    /// 贡献的标识。同一插件重复贡献同一 id 时后者覆盖前者。
-    public let id: String
-
-    /// 贡献的路由列表。
-    public let routes: [WebRoute]
-
-    /// 创建一份路由贡献。
-    ///
-    /// - Parameters:
-    ///   - id: 贡献标识。建议带插件前缀，如 `"theme-manager"`。
-    ///   - routes: 该贡献包含的路由。
-    public init(id: String, routes: [WebRoute]) {
-        self.id = id
-        self.routes = routes
-    }
-}
-
-// MARK: - Route Contributor
-
-/// 提供 HTTP 路由贡献的能力。
-///
-/// 宿主在插件启动后向所有 `WebRouteContributor` 询问路由，并聚合到 Web 服务。
-/// 插件只需实现本协议并返回路由，无需关心注册、注销与生命周期。
-///
-/// - Note: 协议刻意 **不** 标 `@MainActor`：贡献者可能被后台线程查询。
-///   实现若需要主线程状态，应自行在实现内部切换。
-public protocol WebRouteContributor: Sendable {
-    /// 贡献的路由列表。
-    func webRoutes() -> [WebRoute]
-
-    /// 贡献标识。用于日志与诊断；默认取插件 id。
-    var webContributionID: String { get }
-}
-
-public extension WebRouteContributor {
-    var webContributionID: String { "" }
-}
-
 // MARK: - Route Builder
 
 /// 声明式构造 `WebRoute` 的构建器。
@@ -55,7 +8,7 @@ public extension WebRouteContributor {
 /// 这样的长参数列表，同时保证 `id` 与 `path` 保持一致。
 ///
 /// ```swift
-/// WebRouteBuilder(id: "theme-manager")
+/// WebRouteBuilder(prefix: "theme-manager")
 ///     .get("/themes", description: "列出全部主题") { _ in
 ///         try .json(["ok": true])
 ///     }
