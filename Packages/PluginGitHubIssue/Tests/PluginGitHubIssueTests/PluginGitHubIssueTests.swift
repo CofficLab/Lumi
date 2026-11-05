@@ -25,15 +25,22 @@ struct PluginGitHubIssueTests {
         #expect(CreateGitHubIssueTool().name == "github_create_issue")
     }
 
-    @Test("input schema requires title and body and disallows extras")
+    @Test("default target repository is CofficLab/Lumi")
+    func defaultRepositoryIsLumi() {
+        #expect(CreateGitHubIssueTool.defaultRepository == "CofficLab/Lumi")
+    }
+
+    @Test("input schema requires title and body, disallows extras, no repository field")
     func inputSchemaContract() throws {
         let tool = CreateGitHubIssueTool()
         let schema = tool.inputSchema(for: .english)
 
         let properties = try #require(schema["properties"] as? [String: Any])
-        for key in ["title", "body", "labels", "repository"] {
+        // 只有 title / body / labels 三项；不再允许 LLM 指定 repository。
+        for key in ["title", "body", "labels"] {
             #expect(properties[key] != nil, "missing property: \(key)")
         }
+        #expect(properties["repository"] == nil, "repository field should be removed")
 
         let required = try #require(schema["required"] as? [String])
         #expect(required.contains("title"))
@@ -41,6 +48,14 @@ struct PluginGitHubIssueTests {
 
         let additional = schema["additionalProperties"] as? Bool
         #expect(additional == false)
+    }
+
+    @Test("description mentions Lumi's own repo")
+    func descriptionMentionsLumiRepo() {
+        let tool = CreateGitHubIssueTool()
+        let desc = tool.description(for: .english)
+        #expect(desc.contains("CofficLab/Lumi"))
+        #expect(desc.contains("Lumi"))
     }
 
     @Test("description is non-empty")

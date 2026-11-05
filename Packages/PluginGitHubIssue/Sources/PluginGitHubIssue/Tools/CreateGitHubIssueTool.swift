@@ -3,26 +3,33 @@ import KitAgentTool
 import LumiLoggingKit
 import os
 
-/// 把 Agent 遇到的工具故障 / 问题提交成 GitHub issue。
+/// 把 LLM 在运行过程中发现的 Lumi 自身问题提交成 GitHub issue。
 ///
 /// 设计要点：
-/// - 依赖本地 `gh` CLI：认证与仓库定位由 `gh` 自身管理，插件不碰 token / Keychain。
+/// - 目标仓库**固定为 `CofficLab/Lumi`**（Lumi 自己的 GitHub 仓库），
+///   因为本工具的目的是让 LLM 把发现的 Lumi bug 反馈给维护者。
+/// - 依赖本地 `gh` CLI：认证由 `gh` 自身管理，插件不碰 token / Keychain。
 /// - `execute` 入口先做可用性检查（`which gh` + `gh auth status`），任一失败就
 ///   **直接放弃提交**并返回清晰错误文本给 LLM——避免把失败伪装成「issue 已创建」。
-/// - 仓库优先由 `gh` 从对话绑定项目的 cwd git remote 推断；LLM 可用 `repository`
-///   参数显式覆盖（`owner/repo`）。
+/// - issue body 自动追加 Lumi / macOS 环境诊断信息，便于维护者复现。
 /// - 风险等级 `.medium`：访问网络并向外部仓库创建内容，属于跨边界写操作，
 ///   但不修改本地文件。
 public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
     public static let toolName = "github_create_issue"
     public let name = Self.toolName
 
+    /// Lumi 自身的 GitHub 仓库。issue 统一提交到这里。
+    public static let defaultRepository = "CofficLab/Lumi"
+
     public init() {}
 
     public func description(for language: LanguagePreference) -> String {
         """
-        Submit a GitHub issue via the local `gh` CLI. Use when you hit a tool bug, \
-        an unexplained failure, or any reproducible problem worth tracking. \
+        Submit an issue to Lumi's own GitHub repository (\(Self.defaultRepository)) \
+        via the local `gh` CLI. Use this when you discover a problem in the Lumi \
+        application itself while helping the user — for example a tool that returned \
+        wrong results, a UI glitch, a crash, a misleading error message, or any \
+        reproducible defect in Lumi's behavior. \
         The tool will abort early (no network call, no issue created) if `gh` is \
         missing or not authenticated — in that case, tell the user to install or \
         log in to `gh` locally.
@@ -35,20 +42,22 @@ public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
             "properties": [
                 "title": [
                     "type": "string",
-                    "description": "Short, descriptive issue title. Summarize the symptom, not the cause.",
+                    "description": "Short, descriptive issue title. Summarize the symptom in Lumi, not the cause.",
                 ],
                 "body": [
                     "type": "string",
-                    "description": "Issue body in Markdown. Include: which tool failed, inputs you passed, expected behavior, actual behavior, and any relevant error output. Append environment / diagnostics info when useful.",
+                    "description": """
+                    Issue body in Markdown. Include: what the user was trying to do, \
+                    what Lumi did wrong, what you expected to happen, any relevant \
+                    error output or tool call details. The tool will automatically \
+                    append environment diagnostics (Lumi version, macOS version, \
+                    architecture) — do not duplicate them.
+                    """,
                 ],
                 "labels": [
                     "type": "array",
                     "items": ["type": "string"],
-                    "description": "Optional labels to apply. Use labels that exist in the target repo.",
-                ],
-                "repository": [
-                    "type": "string",
-                    "description": "Optional target repository in `owner/repo` form. Defaults to the repo inferred from the current project's git remote.",
+                    "description": "Optional labels to apply. Use labels that exist in the \(Self.defaultRepository) repo (e.g. `bug`).",
                 ],
             ],
             "required": ["title", "body"],
@@ -61,25 +70,23 @@ public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
     }
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        guard let title = arguments.stringValue("title") else { return "提交 GitHub issue" }
+        guard let title = arguments.stringValue("title") else { return "提交 Lumi issue" }
         let preview = title.count > 40 ? String(title.prefix(40)) + "…" : title
-        return "提交 GitHub issue：\(preview)"
+        return "提交 Lumi issue：\(preview)"
     }
 
-    /// 带上下文的执行入口：需要 `context` 拿到对话绑定的项目路径作为 gh 的 cwd。
+    /// 带上下文的执行入口。
     public func executeResult(
         context: ToolExecutionContext,
         arguments: [String: ToolArgument]
     ) async throws -> ToolCallResult {
-        ToolCallResult(content: try await run(context: context, arguments: arguments))
+        _ = context
+        return ToolCallResult(content: try await run(arguments: arguments))
     }
 
     // MARK: - 内部
 
-    private func run(
-        context: ToolExecutionContext,
-        arguments: [String: ToolArgument]
-    ) async throws -> String {
+    private func run(arguments: [String: ToolArgument]) async throws -> String {
         guard let title = arguments.stringValue("title"),
               let body = arguments.stringValue("body"),
               !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -107,19 +114,18 @@ public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
 
         // 3. 解析可选参数
         let labels = Self.extractStrings(arguments["labels"]?.value)
-        let repository = arguments.stringValue("repository")
 
-        // 4. cwd = 对话绑定项目路径。gh 据此从 git remote 推断目标仓库。
-        let cwd = await context.conversationProjectPath()
+        // 4. 拼接完整 body：LLM 提供的内容 + 自动诊断信息。
+        let fullBody = Self.renderedBody(userBody: body)
 
-        // 5. 创建
+        // 5. 创建（目标仓库固定）
         let result = await GitHubCLI.createIssue(
             ghPath: ghPath,
-            workingDirectory: cwd,
+            workingDirectory: nil,
             title: title,
-            body: body,
+            body: fullBody,
             labels: labels,
-            repository: repository
+            repository: Self.defaultRepository
         )
 
         guard result.isSuccess, !result.issueURL.isEmpty else {
@@ -131,10 +137,34 @@ public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
         }
 
         return """
-        ✅ Issue 已创建：\(result.issueURL)
+        ✅ Lumi issue 已提交到 \(Self.defaultRepository)：\(result.issueURL)
 
-        - 仓库：\(repository ?? "（由 gh 从 cwd git remote 推断）")
         - 标签：\(labels.isEmpty ? "无" : labels.joined(separator: ", "))
+        - 已自动附加 Lumi / macOS 环境诊断信息
+        """
+    }
+
+    // MARK: - body 渲染
+
+    /// 在 LLM 提供的 body 末尾追加环境诊断信息。
+    ///
+    /// 这样维护者能直接看到 Lumi 版本、macOS 版本、架构，无需再问用户。
+    private static func renderedBody(userBody: String) -> String {
+        let diagnostics = Diagnostics.current()
+        return """
+        \(userBody)
+
+        ---
+
+        _Automatically attached by Lumi `github_create_issue` tool._
+
+        | 环境 | 值 |
+        |---|---|
+        | Lumi 版本 | \(diagnostics.lumiVersion) |
+        | Lumi Build | \(diagnostics.lumiBuild) |
+        | macOS | \(diagnostics.macOSVersion) |
+        | 架构 | \(diagnostics.architecture) |
+        | 语言偏好 | \(diagnostics.preferredLanguage) |
         """
     }
 
@@ -142,7 +172,7 @@ public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
 
     /// 不可用场景统一格式：LLM 看到这个文本就知道放弃提交。
     private static func unavailableMessage(reason: String) -> String {
-        "⚠️ 无法提交 GitHub issue：\(reason) 已放弃本次提交。"
+        "⚠️ 无法提交 Lumi issue：\(reason) 已放弃本次提交。"
     }
 
     /// gh 创建失败：把原始输出原样交给 LLM，便于二次诊断。
@@ -174,6 +204,39 @@ public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
             return decoded.compactMap { $0 as? String }
         }
         return []
+    }
+}
+
+// MARK: - 环境诊断
+
+private struct Diagnostics {
+    let lumiVersion: String
+    let lumiBuild: String
+    let macOSVersion: String
+    let architecture: String
+    let preferredLanguage: String
+
+    static func current() -> Diagnostics {
+        let info = Bundle.main.infoDictionary ?? [:]
+        let version = (info["CFBundleShortVersionString"] as? String) ?? "unknown"
+        let build = (info["CFBundleVersion"] as? String) ?? "unknown"
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+        let osString = "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
+        #if arch(arm64)
+        let arch = "arm64 (Apple Silicon)"
+        #elseif arch(x86_64)
+        let arch = "x86_64 (Intel)"
+        #else
+        let arch = "unknown"
+        #endif
+        let locale = Locale.preferredLanguages.first ?? "unknown"
+        return Diagnostics(
+            lumiVersion: version,
+            lumiBuild: build,
+            macOSVersion: osString,
+            architecture: arch,
+            preferredLanguage: locale
+        )
     }
 }
 
