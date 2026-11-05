@@ -8,14 +8,24 @@ import AppKit
 ///
 /// ## 为什么单独测
 ///
-/// 顶部阴影是**溢出**面板顶边、画在上方区域里的一层渐变:面板本身没有底色
+/// 顶部阴影是**溢出**面板顶边、画在上方区域里的一层阴影:面板本身没有底色
 /// (与聊天区同底),SwiftUI 的 `.shadow()` 画不出这种「整条面板浮起来」的层次,
-/// 只能手绘渐变并把它上移到面板之外。
+/// 只能手绘并把它上移到面板之外。
 ///
 /// 这层效果有三个只能靠渲染发现的失效点:
-/// - 渐变没画出来(阴影被裁掉 / 面板没有底色导致 `.shadow()` 失效);
+/// - 阴影没画出来(阴影被裁掉 / 面板没有底色导致 `.shadow()` 失效);
 /// - 渐变方向反了(阴影落到面板内部,变成一条脏兮兮的内阴影);
 /// - 没有活跃 goal 时阴影没跟着收起(面板高度为 0,却在上方留一条黑边)。
+///
+/// ## 为什么断言「顶端可辨衰减」而不是「顶端纯白」
+///
+/// 阴影改成与面板下方任务列表容器同源的「模糊挖空」写法后,顶端不再是一条
+/// 硬边,而是由高斯衰减自然渐隐。旧实现是线性渐变,顶端直接落到全透明,
+/// 因此旧测试断言 `> 250`(纯白)。
+///
+/// 新的契约是:**从上沿到面板顶边,亮度必须单调递减**——这正是「阴影在衰减」
+/// 的可测量表述。若有人改回硬边渐变(上沿处出现可见的亮度突变),
+/// 这条断言会立刻失败。
 @MainActor
 @Suite("Goal Top Shadow Tests")
 struct GoalTopShadowTests {
@@ -91,9 +101,9 @@ struct GoalTopShadowTests {
 
         let rep = try render(composite, width: 300, height: header + 44)
 
-        // 阴影带最上沿:此时渐变已衰减为透明,应当还是白底。
-        let shadowTop = rowBrightness(rep, y: header - Int(SidebarView.topShadowHeight))
-        #expect(shadowTop > 250, "阴影带上沿亮度 \(shadowTop) 过低,阴影范围超出了预期")
+        // 阴影带最上沿:高斯衰减后已很淡,但不能是纯白——那说明阴影根本没铺到这。
+        let shadowTop = rowBrightness(rep, y: header - Int(GoalTopShadowView.bandHeight))
+        #expect(shadowTop < 255, "阴影带上沿亮度 \(shadowTop) 是纯白,阴影没有覆盖到这一行")
 
         // 紧贴面板顶边的一行:阴影最重,必须明显比上沿暗。
         let shadowEdge = rowBrightness(rep, y: header - 1)
@@ -105,6 +115,42 @@ struct GoalTopShadowTests {
         // 阴影不得渗进面板内部(否则会变成一条压在上沿的内阴影)。
         let inside = rowBrightness(rep, y: header + 2)
         #expect(inside > 250, "面板内部亮度 \(inside) 过低,阴影渗进了面板内")
+    }
+
+    /// 阴影带必须**单调衰减**:越往上越淡。
+    ///
+    /// 这是「模糊挖空」写法的核心契约。旧实现是线性渐变,顶端直接落到全透明,
+    /// 于是上沿处存在可见的亮度突变;改成高斯衰减后,整条带上不存在突变。
+    ///
+    /// 若有人把实现改回硬边渐变或加上一段突兀的遮罩,这条断言会失败。
+    @Test("顶部阴影沿高度单调衰减,顶端无亮度突变")
+    func topShadowFadesMonotonically() throws {
+        let header = 40
+        let composite = VStack(spacing: 0) {
+            Color.white.frame(height: CGFloat(header))
+            SidebarView(viewModel: makeViewModel(), forkCoordinator: nil)
+        }
+        .frame(width: 300)
+
+        let rep = try render(composite, width: 300, height: header + 44)
+
+        let bandHeight = Int(GoalTopShadowView.bandHeight)
+        var profile: [Double] = []
+        for y in (header - bandHeight)..<header {
+            profile.append(rowBrightness(rep, y: y))
+        }
+
+        // 上沿必须可见(否则说明阴影整体没画出来)。
+        #expect(profile[0] < 255, "阴影带上沿是纯白,阴影没有铺到这一行")
+
+        // 逐行朝面板顶边走,亮度必须单调不增(越靠近顶边阴影越重 = 越暗)。
+        // 容差 1.5 是为了吸收抗锯齿带来的 ±1 抖动。
+        for index in 1..<profile.count {
+            #expect(
+                profile[index] <= profile[index - 1] + 1.5,
+                "第 \(index) 行亮度 \(profile[index]) 比上一行 \(profile[index - 1]) 更亮,阴影衰减不单调"
+            )
+        }
     }
 
     /// 没有活跃 goal 时不画阴影。
