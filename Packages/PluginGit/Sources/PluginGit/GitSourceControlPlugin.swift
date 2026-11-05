@@ -4,7 +4,6 @@ import KitAgentTool
 import LumiLoggingKit
 import os
 import ProviderGit
-import ProviderMessageRendering
 import ProviderProject
 import ProviderSkill
 import ProviderToolManager
@@ -64,11 +63,6 @@ public final class GitSourceControlPlugin: SuperPlugin, SuperLog {
             toolManager.add(ConversationScopedGitTool(tool), pluginID: id)
         }
         
-        // 注册 git_log 工具结果的专用行渲染器：
-        // LLM 调用 git_log 后，消息列表以 commit 卡片形式展示最近提交。
-        kernel.resolveProvider((any ToolCallRenderingProviding).self)?
-            .register(GitLogRowRenderer())
-        
         // 向 SkillProviding 贡献 Git 技能（幂等注入）。
         if let skillProvider = kernel.resolveProvider((any SkillProviding).self) {
             if !skillProvider.isProviderRegistered(providerID: id) {
@@ -90,8 +84,6 @@ public final class GitSourceControlPlugin: SuperPlugin, SuperLog {
         kernel.unregisterProvider((any SourceControlProviding).self)
         kernel.unregisterProvider((any GitRepositoryReading).self)
         kernel.unregisterProvider((any GitBranchManaging).self)
-        kernel.resolveProvider((any ToolCallRenderingProviding).self)?
-            .unregister(id: GitLogRowRenderer.id)
         for name in GitV2ToolNames.all {
             kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: name)
         }

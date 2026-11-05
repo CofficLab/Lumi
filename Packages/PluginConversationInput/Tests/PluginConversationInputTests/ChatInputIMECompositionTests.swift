@@ -95,6 +95,23 @@ struct ChatInputIMECompositionTests {
         )
     }
 
+    @Test("已排队的光标恢复不会打断 IME 组合态")
+    func queuedCursorRestoreDoesNotInterruptComposition() async {
+        let harness = IMETypingHarness()
+        defer { harness.tearDown() }
+
+        harness.textView.string = "abc"
+        harness.scheduleCursorRestore(0)
+        harness.typeMarked("ni")
+        let markedSelection = harness.textView.selectedRange()
+
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        #expect(harness.textView.hasMarkedText())
+        #expect(harness.textView.isIMEComposing)
+        #expect(harness.textView.selectedRange() == markedSelection)
+    }
+
     @Test("单次按键的应用侧开销落在帧预算内")
     func perKeystrokeAppCostFitsFrameBudget() {
         let harness = IMETypingHarness()
@@ -232,6 +249,10 @@ private final class IMETypingHarness {
     /// `cancel()`；测试用例显式收尾更清楚。
     func tearDown() {
         observer.cancel()
+    }
+
+    func scheduleCursorRestore(_ position: Int) {
+        coordinator.scheduleCursorRestore(position, in: textView)
     }
 
     /// 模拟一次 IME 按键：组合态往前推进一格。
