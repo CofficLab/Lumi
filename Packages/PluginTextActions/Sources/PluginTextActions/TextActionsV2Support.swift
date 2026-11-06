@@ -6,6 +6,14 @@ import SwiftUI
 
 enum TextActionsSettings {
     /// 配置落盘在插件专属目录（Binary Plist），不再使用 UserDefaults。
+    ///
+    /// - Important: 缺省为 **true**（开）。划词是一个「装上就该能用」的
+    ///   功能，而它的失效方式是**完全静默**的：不弹菜单、不报错、不留痕迹。
+    ///   若缺省关闭，新装用户会得到一个「看起来没生效」的功能，
+    ///   且没有任何线索指向「去设置里打开它」。
+    ///
+    ///   插件整体已由 `policy: .enabledByDefault` 保证默认启用；
+    ///   这里再缺省开启，保证「插件已启用」时功能就是开的。
     static var isEnabled: Bool {
         TextActionsPluginLocalStore.shared.isEnabled
     }
@@ -33,7 +41,7 @@ enum TextActionsSettings {
 /// - 菜单因键盘输入消失后，同一选区不会因随后的 keyUp 复活
 ///   （`suppressedKeyboardText`，覆盖 Cmd+C 复制场景）。
 @MainActor
-final class TextSelectionManager {
+final class TextSelectionManager: TextSelectionMonitoring {
     static let shared = TextSelectionManager()
 
     private(set) var isPermissionGranted = false
@@ -41,6 +49,12 @@ final class TextSelectionManager {
     private let selectedTextProvider: any SelectedTextProviding
     private let permissionChecker: () -> Bool
     private var monitor: Any?
+
+    /// 监听是否已注册。
+    ///
+    /// - Note: 划词功能失效时既不报错也不弹菜单，用户完全无从判断原因。
+    ///   这个状态把「监听没起来」变成可观测事实，而不是静默失败。
+    var isMonitoring: Bool { monitor != nil }
 
     /// 单调递增的评估代次：每次触发与每次外部消失都会使其递增，
     /// 进行中的异步读取在落地前比对代次，过期即弃——防止
