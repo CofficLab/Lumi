@@ -48,6 +48,52 @@ public struct WebRouteRequest: Sendable {
     public func decodeBody<T: Decodable>(as type: T.Type = T.self) throws -> T {
         try JSONDecoder().decode(T.self, from: body)
     }
+
+    /// 解码 JSON 请求体，失败时抛出统一的 `WebAPIError.badRequest`。
+    ///
+    /// 让插件处理器不必各自处理「请求体不是合法 JSON」这类异常。
+    public func decodeBodyOrThrow<T: Decodable>(
+        _ type: T.Type = T.self,
+        field: String? = nil
+    ) throws -> T {
+        guard !body.isEmpty else {
+            throw WebAPIError.badRequest(message: "Request body is required", field: field)
+        }
+        do {
+            return try JSONDecoder().decode(T.self, from: body)
+        } catch {
+            throw WebAPIError.badRequest(
+                message: "Request body is not valid JSON for the expected type",
+                field: field
+            )
+        }
+    }
+
+    /// 读取必需的路径参数，缺失时抛出 `WebAPIError.badRequest`。
+    public func requirePathParameter(_ name: String) throws -> String {
+        guard let value = pathParameters[name], !value.isEmpty else {
+            throw WebAPIError.badRequest(message: "Missing path parameter '\(name)'", field: name)
+        }
+        return value
+    }
+
+    /// 读取必需的查询参数，缺失时抛出 `WebAPIError.badRequest`。
+    public func requireQueryParameter(_ name: String) throws -> String {
+        guard let value = queryParameters[name], !value.isEmpty else {
+            throw WebAPIError.badRequest(message: "Missing query parameter '\(name)'", field: name)
+        }
+        return value
+    }
+
+    /// 读取可选的查询参数。
+    public func queryParameter(_ name: String) -> String? {
+        queryParameters[name]
+    }
+
+    /// 当前请求的分页参数。
+    public var pagination: WebPagination {
+        WebPagination(query: queryParameters)
+    }
 }
 
 // MARK: - Web Route Response
@@ -85,6 +131,37 @@ public struct WebRouteResponse: Sendable {
     public static func text(_ string: String, statusCode: Int = 200) -> WebRouteResponse {
         let headers = ["Content-Type": "text/plain; charset=utf-8"]
         return WebRouteResponse(statusCode: statusCode, headers: headers, body: Data(string.utf8))
+    }
+
+    /// 返回统一封装的 JSON 响应（`{"data": ..., "version": ...}`）。
+    ///
+    /// 核心控制面端点统一用它，调用方只需一套解析逻辑。
+    public static func api<Value: Encodable & Sendable>(
+        _ value: Value,
+        statusCode: Int = 200,
+        requestID: String? = nil,
+        version: WebAPIVersion = .current
+    ) throws -> WebRouteResponse {
+        try .json(WebAPIEnvelope(data: value, requestID: requestID, version: version), statusCode: statusCode)
+    }
+
+    /// 返回统一封装的分页 JSON 响应。
+    public static func apiPage<Item: Encodable & Sendable>(
+        _ result: WebPageResult<Item>,
+        requestID: String? = nil,
+        version: WebAPIVersion = .current
+    ) throws -> WebRouteResponse {
+        try .api(result, requestID: requestID, version: version)
+    }
+
+    /// 返回统一错误格式的 JSON 响应。
+    ///
+    /// 服务端在捕获 `WebAPIError` 时自动调用；插件也可以主动使用。
+    public static func apiError(
+        _ error: WebAPIError,
+        requestID: String? = nil
+    ) throws -> WebRouteResponse {
+        try .json(WebErrorResponse(error, requestID: requestID), statusCode: error.statusCode)
     }
 
     /// 404 Not Found。

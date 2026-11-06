@@ -60,6 +60,7 @@ public extension WebServerProviding {
     }
 }
 
+/// 空实现的观察者句柄。
 public final class NoopWebServerObserverHandle: WebServerObserverHandle, @unchecked Sendable {
     public init() {}
     public func cancel() {}
