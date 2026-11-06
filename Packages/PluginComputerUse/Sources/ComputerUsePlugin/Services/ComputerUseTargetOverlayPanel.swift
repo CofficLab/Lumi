@@ -47,13 +47,22 @@ enum ComputerUseTargetOverlayIntensity {
     }
 }
 
-/// 遮罩的可观察状态，供 SwiftUI 视图渲染。
+/// 目标窗口遮罩的可观察状态，供 SwiftUI 视图渲染。
 @MainActor
 final class ComputerUseTargetOverlayModel: ObservableObject {
     @Published var applicationName: String = ""
     @Published var intensity: ComputerUseTargetOverlayIntensity = .subtle
     /// 淡出阶段为 true，此时角标降低存在感但仍然可见。
     @Published var isFading: Bool = false
+    /// 目标窗口**真正可见**的区域，坐标原点在目标窗口左上角、y 向下。
+    ///
+    /// 遮罩只画在这些区域里：被别的窗口挡住的部分不属于目标窗口，
+    /// 画上去就会把「Lumi 正在操作 A」的提示压在遮挡者 B 身上。
+    @Published var visibleRegions: [CGRect] = []
+    /// 角标的锚点区域（同样使用左上角原点坐标）。
+    ///
+    /// 角标必须落在可见区域里，否则提示语会指向错误的窗口。
+    @Published var badgeRegion: CGRect?
 }
 
 /// 目标窗口上的提示遮罩。
@@ -68,6 +77,10 @@ final class ComputerUseTargetOverlayModel: ObservableObject {
 ///   `CGEvent` 合成点击，如果遮罩吞掉这些事件，Lumi 的点击会打在遮罩上
 ///   而不是目标应用上，操作会静默失效。遮罩只做**视觉**提示，
 ///   绝不参与输入分发。
+///
+/// - Note: 面板本身仍然铺满目标窗口的完整矩形，但**只有可见区域被着色**。
+///   面板矩形与目标窗口一致，角标才能贴着窗口左上角定位；
+///   而着色被裁剪到可见区域，提示才不会落到遮挡者身上。
 @MainActor
 final class ComputerUseTargetOverlayPanel: NSPanel {
     init(contentRect: NSRect) {
@@ -94,21 +107,41 @@ final class ComputerUseTargetOverlayPanel: NSPanel {
     override var canBecomeMain: Bool { false }
 }
 
-/// 遮罩层视图：整窗色调 + 标题栏位置的角标。
+/// 遮罩层视图：可见区域的色调 + 标题栏位置的角标。
 struct ComputerUseTargetOverlayView: View {
     @ObservedObject var model: ComputerUseTargetOverlayModel
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            Color.accentColor
-                .opacity(model.intensity.tintOpacity)
+            Color.clear
+            tint
             badge
-                .padding(.top, 6)
-                .padding(.leading, 10)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    /// 只给目标窗口真正露出来的部分上色。
+    @ViewBuilder
+    private var tint: some View {
+        ForEach(Array(model.visibleRegions.enumerated()), id: \.offset) { _, region in
+            Rectangle()
+                .fill(Color.accentColor.opacity(model.intensity.tintOpacity))
+                .frame(width: region.width, height: region.height)
+                .offset(x: region.minX, y: region.minY)
         }
     }
 
+    @ViewBuilder
     private var badge: some View {
+        if let region = model.badgeRegion {
+            badgeContent
+                .padding(.top, 6)
+                .padding(.leading, 10)
+                .offset(x: region.minX, y: region.minY)
+        }
+    }
+
+    private var badgeContent: some View {
         HStack(spacing: 6) {
             Image(systemName: "cursorarrow.motionlines")
                 .font(.system(size: 11, weight: .semibold))

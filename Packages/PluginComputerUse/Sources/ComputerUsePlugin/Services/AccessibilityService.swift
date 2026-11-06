@@ -209,7 +209,10 @@ final class AccessibilityService {
             ComputerUseTargetOverlayController.Target(
                 quartzRect: rect,
                 applicationName: snapshot.application,
-                intensity: .subtle
+                intensity: .subtle,
+                // AX 路径拿不到 CGWindowID，靠「进程 + 矩形重叠」近似匹配遮挡关系。
+                windowID: nil,
+                processIdentifier: pid
             ),
             windowElement: windowElement,
             processIdentifier: pid

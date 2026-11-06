@@ -42,6 +42,10 @@ final class ComputerUseTargetOverlayController: SuperLog {
     private var geometryObserver: ComputerUseWindowGeometryObserver?
     private var lingerTask: Task<Void, Never>?
     private var followTask: Task<Void, Never>?
+    /// 目标窗口的 `CGWindowID`；AX 路径拿不到时为 `nil`。
+    private var targetWindowID: CGWindowID?
+    /// 目标窗口所属进程。
+    private var targetProcessIdentifier: pid_t?
 
     /// 一次遮罩的目标描述。
     struct Target: Equatable {
@@ -51,6 +55,10 @@ final class ComputerUseTargetOverlayController: SuperLog {
         let applicationName: String
         /// 遮罩强度。
         let intensity: ComputerUseTargetOverlayIntensity
+        /// 目标窗口的 `CGWindowID`；AX 路径拿不到时为 `nil`。
+        let windowID: CGWindowID?
+        /// 目标窗口所属进程；用于在没有窗口 ID 时近似匹配遮挡关系。
+        let processIdentifier: pid_t?
     }
 
     private init() {}
@@ -63,12 +71,18 @@ final class ComputerUseTargetOverlayController: SuperLog {
     ///   - target: 目标描述。
     ///   - windowElement: 用于跟随的 AX 窗口元素；为 `nil` 时只按初始矩形显示。
     ///   - processIdentifier: `windowElement` 所属进程，跟随时用于建立 AX 观察。
-    func begin(_ target: Target, windowElement: AXUIElement? = nil, processIdentifier: pid_t? = nil) {
+    func begin(
+        _ target: Target,
+        windowElement: AXUIElement? = nil,
+        processIdentifier: pid_t? = nil
+    ) {
         lingerTask?.cancel()
         lingerTask = nil
         model.applicationName = target.applicationName
         model.intensity = target.intensity
         model.isFading = false
+        targetWindowID = target.windowID
+        targetProcessIdentifier = target.processIdentifier ?? processIdentifier
 
         guard let appKitRect = ScreenCoordinateConverter.appKitRect(fromQuartz: target.quartzRect),
               appKitRect.width >= 40, appKitRect.height >= 40 else {
@@ -81,6 +95,8 @@ final class ComputerUseTargetOverlayController: SuperLog {
         let panel = self.panel ?? makePanel()
         self.panel = panel
         panel.setFrame(appKitRect, display: true)
+        // 可见区域必须在面板显示前算好：否则会先闪出一块盖住遮挡者的色调。
+        applyVisibleRegions(for: target.quartzRect)
         panel.orderFrontRegardless()
 
         if let windowElement, let processIdentifier {
@@ -150,6 +166,50 @@ final class ComputerUseTargetOverlayController: SuperLog {
         guard let appKitRect = ScreenCoordinateConverter.appKitRect(fromQuartz: quartzRect) else { return }
         guard appKitRect != panel?.frame else { return }
         panel?.setFrame(appKitRect, display: true)
+        // 位置变了，可见区域也要跟着重算：遮挡关系可能同时发生变化。
+        applyVisibleRegions(for: quartzRect)
+    }
+
+    /// 重新计算目标窗口的可见区域，并同步到视图模型。
+    ///
+    /// 遮罩只覆盖目标窗口**真正露出来**的部分。被别的窗口挡住的部分
+    /// 属于遮挡者，画上色调与角标会让用户误以为 Lumi 在操作那个窗口。
+    private func applyVisibleRegions(for quartzRect: CGRect) {
+        guard let regions = ComputerUseWindowVisibility.visibleRegions(
+            target: quartzRect,
+            targetWindowID: targetWindowID,
+            processIdentifier: targetProcessIdentifier
+        ) else {
+            // 无法定位目标窗口（可能在别的 Space、已最小化）。
+            // 此时不能假设它完全可见，否则遮罩会盖到遮挡者身上。
+            model.visibleRegions = []
+            model.badgeRegion = nil
+            return
+        }
+        let localRegions = regions.map { region in
+            CGRect(
+                x: region.minX - quartzRect.minX,
+                y: region.minY - quartzRect.minY,
+                width: region.width,
+                height: region.height
+            )
+        }
+        model.visibleRegions = localRegions
+        model.badgeRegion = badgeRegion(in: localRegions)
+    }
+
+    /// 挑选安放角标的区域。
+    ///
+    /// 角标优先落在最大的可见区域的左上角——那通常是窗口标题栏的位置，
+    /// 用户视线第一落点。若最大区域太窄放不下角标，则退而选择第一个
+    /// 放得下的区域；都放不下就只保留色调，不画角标。
+    private func badgeRegion(in regions: [CGRect]) -> CGRect? {
+        let badgeSize = CGSize(width: 200, height: 28)
+        for region in regions {
+            guard region.width >= badgeSize.width, region.height >= badgeSize.height else { continue }
+            return region
+        }
+        return nil
     }
 
     private func fadeOut() {
