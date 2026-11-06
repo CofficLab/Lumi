@@ -34,6 +34,10 @@ func pluginRegistersAndRemovesToolDocumentationAndToolbarItem() throws {
     #expect(tools.toolsGroupedByPlugin().first?.pluginID == plugin.id)
     #expect(toolbar.toolbarItems.map(\.id) == ["\(plugin.id).toolbar"])
     #expect(toolbar.toolbarItems.first?.placement == .leading)
+    #expect(toolbar.toolbarItems.first?.category == .project)
+    // 按钮作用于「当前项目」，系统类工作区（如系统测速）不应显示它。
+    toolbar.setVisibleCategories([.global, .system])
+    #expect(toolbar.visibleToolbarItems.isEmpty)
 
     try plugin.onShutdown(kernel: kernel)
 

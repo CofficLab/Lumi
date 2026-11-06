@@ -57,6 +57,32 @@ import Testing
 }
 
 @MainActor
+@Test func autonomousSessionSkipsNativeConsentButKeepsStopAvailable() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ComputerUseNativeUnattended-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let controller = NativeControlCoordinator(
+        authorization: ComputerUseAuthorizationStore(dataDirectory: directory),
+        presentsUI: false
+    )
+
+    // A3（自主）会话：不等待用户点「允许」，直接进入准备阶段。
+    // 否则原生输入路径会一直等一个不会到来的回答。
+    let session = try controller.acquire(
+        application: "Fixture",
+        bundleID: "test.app",
+        reason: "Test",
+        unattended: true
+    )
+    #expect(controller.phase == .preparing)
+
+    // 「停止」的通道保持可用：用户随时可以中断正在进行的操作。
+    controller.stop()
+    #expect(!controller.blocksLumi)
+    controller.release(session)
+}
+
+@MainActor
 @Test func resumeRequiresFreshObservationAndNeverReplaysBatch() async throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("ComputerUseResume-\(UUID().uuidString)", isDirectory: true)

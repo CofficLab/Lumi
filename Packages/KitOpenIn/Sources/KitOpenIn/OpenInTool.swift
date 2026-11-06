@@ -171,7 +171,7 @@ public extension OpenInTool {
         toolName: "open_in_gitok",
         displayName: "GitOK",
         systemImage: "arrow.triangle.branch",
-        bundleIdentifier: "com.bytedance.GitOK",
+        bundleIdentifier: "com.yueyi.GitOK",
         fallbackPath: "/Applications/GitOK.app"
     )
 }

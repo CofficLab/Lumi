@@ -48,7 +48,7 @@ public final class OpenInAntigravityPlugin: SuperPlugin, SuperLog {
                     id: "\(id).toolbar",
                     title: OpenInAntigravityLocalization.string("Open In Antigravity"),
                     placement: .leading,
-                    category: .global,
+                    category: .project,
                     order: order
                 ) {
                     OpenInAntigravityToolbarView(tool: tool, projectCapability: projectCapability)

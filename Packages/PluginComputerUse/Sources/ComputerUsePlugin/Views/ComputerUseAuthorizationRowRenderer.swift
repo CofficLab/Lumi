@@ -29,14 +29,13 @@ enum ComputerUseAuthorizationAccessibility {
 ///
 /// - Note: 判定**不以 `authorizationState == .pendingAuthorization` 为前提**。
 ///   授权状态在 LLM 响应阶段就已写定：A3（完全授权）对话下一律是
-///   `autoApproved`，而工具可以在执行阶段自己要求用户授权（如 Computer Use
-///   遇到未授权应用）。若强依赖 `pendingAuthorization`，这类挂起就不会画卡片，
-///   回合会等一个永远不会到来的回答，界面永久停在「等待你的输入…」。
+///   `autoApproved`，而工具可以在执行阶段自己要求用户授权（如 A2 会话里
+///   Computer Use 遇到未授权应用）。若强依赖 `pendingAuthorization`，
+///   这类挂起就不会画卡片，回合会等一个永远不会到来的回答。
 ///   载荷本身才是「这是一次 Computer Use 授权请求」的可靠证据。
-///
 /// - Note: priority 必须高于通用工具授权卡片（`ToolApprovalRowRenderer`
 ///   的 120），否则 Computer Use 的授权请求会被通用渲染器抢走，
-///   退化成「允许 / 拒绝」两按钮，失去「允许一次 / 始终允许」语义。
+///   退化成「允许 / 拒绝」两按钮，丢掉「本任务内允许」的语义。
 struct ComputerUseAuthorizationRowRenderer: ToolCallRowRenderer {
     static let id = "computer-use-authorization-row"
     static let priority = 200
@@ -76,7 +75,7 @@ struct ComputerUseAuthorizationRowRenderer: ToolCallRowRenderer {
 
 /// Computer Use 授权卡片视图。
 ///
-/// 展示目标应用与即将执行的操作，提供「允许一次 / 始终允许 / 拒绝」三个决定。
+/// 展示目标应用与即将执行的操作，提供「本任务内允许 / 拒绝」两个决定。
 struct ComputerUseAuthorizationCard: View {
     @LumiTheme private var theme
 
@@ -161,8 +160,7 @@ struct ComputerUseAuthorizationCard: View {
 
     private func buttonStyle(for decision: ComputerUseAuthorizationDecision) -> AppButton.Style {
         switch decision {
-        case .allowOnce: return .primary
-        case .alwaysAllow: return .warning
+        case .allowForTask: return .primary
         case .deny: return .destructive
         }
     }
@@ -214,7 +212,11 @@ final class ComputerUseAuthorizationBridge {
         decision: ComputerUseAuthorizationDecision
     ) {
         // 先落授权再恢复：恢复后工具会被重新执行，届时授权必须已经生效。
-        let message = coordinator.apply(decision: decision, request: request)
+        let message = coordinator.apply(
+            decision: decision,
+            request: request,
+            conversationID: conversationID
+        )
         let answer = "\(ComputerUseAuthorizationResolver.token(for: decision))\n\(message)"
 
         guard let messageSender else {

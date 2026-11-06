@@ -33,8 +33,19 @@ final class TextActionsPluginLocalStore: SuperLog, @unchecked Sendable {
 
     // MARK: - 配置项
 
+    /// 划词功能是否启用。
+    ///
+    /// - Important: **缺省为 true**。这个开关控制的划词功能，其失效方式是
+    ///   **完全静默**的——不弹菜单、不报错、不留任何痕迹。若缺省关闭，
+    ///   新装用户会得到一个「装上却像没装」的功能，且没有任何线索指向
+    ///   「去设置里把它打开」。
+    ///
+    ///   只有用户**显式**关掉它（写入 `false`）时才关闭。
+    ///   注意这与 `bool(forKey:)` 的通用语义（缺省 false）相反，
+    ///   因此这里不复用通用读取，而是单独处理「键不存在」这一情形。
     var isEnabled: Bool {
-        bool(forKey: Key.enabled)
+        guard let value = object(forKey: Key.enabled) else { return true }
+        return (value as? Bool) ?? true
     }
 
     func setEnabled(_ enabled: Bool) {

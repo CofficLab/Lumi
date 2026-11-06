@@ -1,5 +1,5 @@
 {
-  "originHash" : "0cb216585a7e7033bba7fff31387683b277a8c685115a25c5160736ff254a58e",
+  "originHash" : "52d232faa0a456746ab28726c60a5fbba07ed3b0e8cfa53b10833dae4a7168d1",
   "pins" : [
     {
       "identity" : "beautiful-mermaid-swift",
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiProviders.git",
       "state" : {
-        "revision" : "db6f0874337e01df039ef54c774803f1c737bc8d",
-        "version" : "1.12.0"
+        "revision" : "8e487eed0c5ebf2d30794f153c91197d6460fef7",
+        "version" : "1.19.0"
       }
     },
     {
@@ -60,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiUI.git",
       "state" : {
-        "revision" : "cafd284e4cb9b026c32f9a09dc9b8baa3c039c46",
-        "version" : "1.11.1"
+        "revision" : "6786ab3b708f4ffe5b8412b95ac4d932936364b7",
+        "version" : "1.12.0"
       }
     },
     {
@@ -110,15 +110,6 @@
       }
     },
     {
-      "identity" : "tree-sitter-javascript",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter-javascript.git",
-      "state" : {
-        "revision" : "3a837b6f3658ca3618f2022f8707e29739c91364",
-        "version" : "0.23.1"
-      }
-    },
-    {
       "identity" : "tree-sitter-json",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tree-sitter/tree-sitter-json.git",
@@ -132,17 +123,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tree-sitter-grammars/tree-sitter-markdown.git",
       "state" : {
-        "revision" : "f969cd3ae3f9fbd4e43205431d0ae286014c05b5",
-        "version" : "0.5.3"
-      }
-    },
-    {
-      "identity" : "tree-sitter-python",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter-python.git",
-      "state" : {
-        "revision" : "bffb65a8cfe4e46290331dfef0dbf0ef3679de11",
-        "version" : "0.23.6"
+        "revision" : "41ff24a6c775492c543b09228aeb98d1cd2b3a0f",
+        "version" : "0.5.4"
       }
     },
     {
@@ -159,15 +141,6 @@
       "location" : "https://github.com/tree-sitter/tree-sitter-typescript.git",
       "state" : {
         "revision" : "f975a621f4e7f532fe322e13c4f79495e0a7b2e7"
-      }
-    },
-    {
-      "identity" : "tree-sitter-yaml",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter-grammars/tree-sitter-yaml.git",
-      "state" : {
-        "revision" : "b733d3f5f5005890f324333dd57e1f0badec5c87",
-        "version" : "0.7.0"
       }
     }
   ],
