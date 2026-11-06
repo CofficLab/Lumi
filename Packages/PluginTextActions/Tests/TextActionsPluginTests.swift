@@ -140,8 +140,8 @@ func menuLayoutClampsToScreenEdges() {
         menuSize: size,
         screenFrame: screen
     )
-    #expect(topRightFrame.maxX == 992)
-    #expect(topRightFrame.maxY == 770 - 6)
+    #expect(topRightFrame.maxX == 992.0)
+    #expect(topRightFrame.maxY == 764.0)
 }
 
 @MainActor
