@@ -189,7 +189,9 @@ final class ComputerUseService: @unchecked Sendable {
             ComputerUseTargetOverlayController.Target(
                 quartzRect: rect,
                 applicationName: window.applicationName,
-                intensity: .blocking
+                intensity: .blocking,
+                windowID: window.id,
+                processIdentifier: window.processIdentifier
             )
         )
         return controller

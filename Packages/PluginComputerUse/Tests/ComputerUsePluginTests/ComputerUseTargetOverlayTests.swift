@@ -106,17 +106,23 @@ struct ComputerUseTargetOverlayTests {
         let first = ComputerUseTargetOverlayController.Target(
             quartzRect: rect,
             applicationName: "Notes",
-            intensity: .subtle
+            intensity: .subtle,
+            windowID: 1,
+            processIdentifier: 100
         )
         let second = ComputerUseTargetOverlayController.Target(
             quartzRect: rect,
             applicationName: "Notes",
-            intensity: .subtle
+            intensity: .subtle,
+            windowID: 1,
+            processIdentifier: 100
         )
         let different = ComputerUseTargetOverlayController.Target(
             quartzRect: rect,
             applicationName: "Notes",
-            intensity: .blocking
+            intensity: .blocking,
+            windowID: 1,
+            processIdentifier: 100
         )
         #expect(first == second)
         #expect(first != different)
