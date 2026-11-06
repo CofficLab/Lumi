@@ -69,16 +69,22 @@ final class TextSelectionManager {
         isPermissionGranted = permissionChecker()
     }
 
-    func requestPermission() {
-        let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
-        isPermissionGranted = AXIsProcessTrustedWithOptions(options)
-        if !isPermissionGranted {
-            NSWorkspace.shared.open(
-                URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
-            )
-        } else if TextActionsSettings.isEnabled {
+    /// 请求辅助功能权限，并把结果同步回 `isPermissionGranted`。
+    ///
+    /// - Important: 系统弹窗是异步的，`AXIsProcessTrustedWithOptions` 在
+    ///   调用返回时通常仍是未授权状态。因此**不能**用返回值来判断用户
+    ///   是否已同意——真正的状态要在用户切回 Lumi 时重新读取
+    ///   （见 `TextActionsSettingsView` 的激活监听）。
+    ///
+    /// - Returns: 请求发起后的状态，供调用方展示提示。
+    @discardableResult
+    func requestPermission() -> TextActionsPermissionService.Status {
+        let status = TextActionsPermissionService.requestPermission()
+        isPermissionGranted = status.isGranted
+        if status.isGranted, TextActionsSettings.isEnabled {
             startMonitoring()
         }
+        return status
     }
 
     /// 幂等：重复调用不会注册第二个监听器。
@@ -429,7 +435,13 @@ final class TextActionMenuController {
 /// `AppSettingRow`，不使用原生 `Form`——否则这一页会和其他设置入口
 /// 呈现完全不同的原生分组样式，间距也对不齐。
 struct TextActionsSettingsView: View {
+    @ObservedObject private var permissionState: TextActionsPermissionState
+    @LumiTheme private var theme
     @State private var enabled = TextActionsSettings.isEnabled
+
+    init(permissionState: TextActionsPermissionState) {
+        self._permissionState = ObservedObject(wrappedValue: permissionState)
+    }
 
     var body: some View {
         PluginSettingsScaffold(
@@ -459,21 +471,63 @@ struct TextActionsSettingsView: View {
                         Divider()
                             .padding(.vertical, 8)
 
-                        AppSettingRow(
-                            title: pluginLocalization.string("Accessibility Permission")
-                        ) {
-                            AppButton(
-                                pluginLocalization.string("Request Accessibility Permission"),
-                                style: .secondary,
-                                size: .small
-                            ) {
-                                TextSelectionManager.shared.requestPermission()
-                            }
-                        }
+                        permissionRow
                     }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    /// 辅助功能权限行。
+    ///
+    /// - Important: 这一行**必须**同时展示「当前状态」和「下一步动作」。
+    ///   原文案只有一个「请求权限」按钮，而系统的授权弹窗在用户拒绝过一次
+    ///   之后就不再出现——按钮会变成纯粹的空操作，用户既看不到状态，
+    ///   也不知道还能做什么。现在显式区分三种情况：
+    ///   - 已授权：只显示 ✅ 状态，按钮消失（没有可做的事）；
+    ///   - 未授权：显示「请求权限」按钮（触发系统弹窗）；
+    ///   - 并始终提供「打开系统设置」作为**兜底出口**——它是唯一在
+    ///     系统弹窗失效后仍然有效的路径。
+    private var permissionRow: some View {
+        AppSettingRow(
+            title: pluginLocalization.string("Accessibility Permission"),
+            description: pluginLocalization.string(
+                "Allows Lumi to read selected text in other apps."
+            ),
+            icon: "accessibility",
+            titleSuffix: {
+                Image(systemName: isGranted ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .foregroundStyle(isGranted ? theme.success : theme.warning)
+            }
+        ) {
+            HStack(spacing: 8) {
+                if !isGranted {
+                    AppButton(
+                        pluginLocalization.string("Request Accessibility Permission"),
+                        style: .secondary,
+                        size: .small
+                    ) {
+                        permissionState.request()
+                    }
+                }
+                AppButton(
+                    pluginLocalization.string("Open System Settings"),
+                    systemImage: "gearshape.fill",
+                    style: .secondary,
+                    size: .small
+                ) {
+                    permissionState.openSystemSettings()
+                }
+            }
+        }
+    }
+
+    /// 是否已获得辅助功能权限。
+    ///
+    /// `permissionState.revision` 参与依赖，激活监听刷新后视图才会重绘。
+    private var isGranted: Bool {
+        _ = permissionState.revision
+        return permissionState.status.isGranted
     }
 }
