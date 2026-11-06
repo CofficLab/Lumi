@@ -255,4 +255,72 @@ public extension MessageModel {
             streamingDurationMs: streamingDurationMs
         )
     }
+
+    /// Convert to `ProviderMessage.Message`，但**只保留 LLM 上下文需要的字段**。
+    ///
+    /// ## 为什么需要这个窄版本
+    ///
+    /// `toMessage()` 会把**每一列**都搬进 `Message`，并对 JSON 列逐条解码：
+    ///
+    /// ```swift
+    /// let metadata = metadataJson.flatMap { try? decoder.decode([String: String].self, ...) }
+    /// let toolCalls = toolCallsJson.flatMap { try? decoder.decode([MessageToolCall].self, ...) }
+    /// ```
+    ///
+    /// 但 LLM 上下文（`LLMContextProvider.prepareContext`）只需要
+    /// `content` + `reasoningContent` + `toolCalls` 三样。
+    ///
+    /// 生产库实测被浪费掉的体积：
+    ///
+    /// | 列 | 体积 | LLM 需要吗 |
+    /// |---|---|---|
+    /// | `ZTOOLCALLSJSON` | 281 MB | 需要 |
+    /// | `ZCONTENT` | 121 MB | 需要 |
+    /// | `ZREASONINGCONTENT` | 54 MB | 需要 |
+    /// | `ZRAWSTREAMEVENTSJSON` | 47 MB | **不需要** |
+    /// | `ZMETADATAJSON` | 35 MB | **不需要** |
+    ///
+    /// 后两列合计 82MB，在每次 LLM 回合里被读取、拷贝、JSON 解码，
+    /// 然后永远不用 —— 纯浪费。
+    ///
+    /// ## 放弃了什么
+    ///
+    /// - `metadata`：LLM 上下文不使用消息元数据。
+    /// - `rawStreamEventsJSON` / `rawResponseJSON`：原始 SSE 事件流与响应体，
+    ///   只在写入与调试路径有意义，LLM 上下文不需要。
+    /// - `httpBody` / `rawErrorDetail`：错误详情由 UI 渲染路径读取，
+    ///   LLM 上下文用的是 `content`。
+    ///
+    /// UI 渲染路径继续用 `toMessage()`，行为不变。
+    func toLLMContextMessage() -> Message? {
+        guard let uuid = UUID(uuidString: id),
+              let conversationUUID = UUID(uuidString: conversationId),
+              let role = MessageRole(rawValue: role) else {
+            return nil
+        }
+
+        let toolCalls: [MessageToolCall]? = toolCallsJson.flatMap {
+            try? JSONDecoder().decode([MessageToolCall].self, from: Data($0.utf8))
+        }
+
+        return Message(
+            id: uuid,
+            conversationID: conversationUUID,
+            role: role,
+            content: content,
+            createdAt: Date(timeIntervalSince1970: createdAt),
+            turnID: turnId.flatMap(UUID.init(uuidString:)),
+            metadata: [:],
+            isError: isError,
+            toolCallID: toolCallId,
+            reasoningContent: reasoningContent,
+            toolCalls: toolCalls,
+            inputTokenCount: inputTokenCount,
+            outputTokenCount: outputTokenCount,
+            cachedInputTokenCount: cachedInputTokenCount,
+            cacheWriteInputTokenCount: cacheWriteInputTokenCount,
+            cacheTotalInputTokenCount: cacheTotalInputTokenCount,
+            stopReason: stopReason
+        )
+    }
 }

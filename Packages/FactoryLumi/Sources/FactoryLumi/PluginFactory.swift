@@ -18,6 +18,7 @@ import ComputerUsePlugin
 import PluginMCP
 import PluginXcodeMCP
 import PluginGithubMCP
+import PluginGitHubIssue
 import BrewManagerPlugin
 import DisplayControlPlugin
 import PortManagerPlugin
@@ -52,6 +53,7 @@ import PluginAppStorePromoDesigner
 import PluginPrototypeDesigner
 import PluginAskUser
 import PluginFinder
+import PluginHTMLCanvas
 import PluginCaffeinate
 import PluginChatFileAttachment
 import PluginChatPanel
@@ -271,6 +273,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationExportPlugin(),
             AskUserPlugin(),
             FinderPlugin(),
+            HTMLCanvasPlugin(),
             OpenInFinderPlugin(),
             OpenInXcodePlugin(),
             OpenInCursorPlugin(),
@@ -295,6 +298,7 @@ public struct DefaultPluginFactory: PluginFactory {
             MCPPlugin(),
             PluginXcodeMCP(),
             PluginGithubMCP(),
+            GitHubIssuePlugin(),
             BrewManagerPlugin(),
             DisplayControlPlugin(),
             PortManagerPlugin(),

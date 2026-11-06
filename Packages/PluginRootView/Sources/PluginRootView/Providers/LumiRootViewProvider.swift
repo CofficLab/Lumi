@@ -132,7 +132,7 @@ public final class LumiRootViewProvider: DefaultRootViewProviding, SuperLog {
                 // 内容集合本身变了（例如全新安装后首个会话注册 `chats` 标签）：
                 // 必须重新求值，否则无法把已折叠的 Rail 面板重新挂载起来。
                 self?.refreshHasRailContent()
-            case .activeTabChanged, .widthChanged:
+            case .activeTabChanged, .widthChanged, .bottomItemsChanged:
                 break
             }
         }

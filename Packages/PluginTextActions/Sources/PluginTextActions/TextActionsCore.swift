@@ -22,27 +22,100 @@ enum TextSelectionReadPolicy {
     }
 }
 
+// MARK: - 坐标换算
+
+/// Quartz 屏幕坐标（原点在主屏左上角、y 向下）与 Cocoa 屏幕坐标
+///（原点在主屏左下角、y 向上）之间的换算。
+///
+/// Accessibility API 返回的选区 bounds 是 Quartz 坐标；`NSWindow.frame`
+/// 与 `NSEvent.mouseLocation` 是 Cocoa 坐标。多屏环境下该换算同样成立
+/// ——AX 坐标以主屏左上角为全局原点。
+enum TextActionCoordinates {
+    static func quartzToCocoa(_ rect: CGRect, primaryScreenHeight: CGFloat) -> CGRect {
+        CGRect(
+            x: rect.minX,
+            y: primaryScreenHeight - rect.maxY,
+            width: rect.width,
+            height: rect.height
+        )
+    }
+}
+
 // MARK: - 菜单布局
 
-/// 菜单浮层的纯布局计算：把锚点转成不越界的矩形。
+/// 菜单浮层的纯布局计算：相对选区定位并夹取到屏幕内。
 ///
-/// 抽成纯函数后，屏幕边缘的夹取逻辑可被直接断言，无需真实窗口。
+/// 交互对齐 PopClip / Easydict：菜单出现在**选区上方居中**；上方空间不足
+/// 时放到选区下方；两侧都放不下时夹回屏幕内。没有选区 bounds（部分应用
+/// 不实现 `AXBoundsForRange`）时退回锚点（鼠标位置）上方。
 struct TextActionMenuLayout {
     static func frame(
-        for anchor: CGPoint,
+        selectionRect: CGRect?,
+        anchor: CGPoint,
         menuSize: CGSize,
         screenFrame: CGRect,
         margin: CGFloat = 8,
-        verticalOffset: CGFloat = 18
+        gap: CGFloat = 6
     ) -> CGRect {
+        let centerX: CGFloat
+        let aboveY: CGFloat
+        let belowY: CGFloat
+        if let selectionRect {
+            centerX = selectionRect.midX
+            aboveY = selectionRect.maxY + gap
+            belowY = selectionRect.minY - menuSize.height - gap
+        } else {
+            centerX = anchor.x
+            aboveY = anchor.y + 14
+            belowY = anchor.y - menuSize.height - 14
+        }
+
+        let minX = screenFrame.minX + margin
         let maxX = screenFrame.maxX - menuSize.width - margin
-        let maxY = screenFrame.maxY - menuSize.height - margin
-        return CGRect(
-            x: min(max(anchor.x - menuSize.width / 2, screenFrame.minX), maxX),
-            y: min(anchor.y + verticalOffset, maxY),
-            width: menuSize.width,
-            height: menuSize.height
-        )
+        let x = min(max(centerX - menuSize.width / 2, minX), max(minX, maxX))
+
+        let maxY = screenFrame.maxY - margin
+        let minY = screenFrame.minY + margin
+        let y: CGFloat
+        if aboveY + menuSize.height <= maxY {
+            y = aboveY
+        } else if belowY >= minY {
+            y = belowY
+        } else {
+            y = min(max(aboveY, minY), max(minY, maxY - menuSize.height))
+        }
+
+        return CGRect(x: x, y: y, width: menuSize.width, height: menuSize.height)
+    }
+}
+
+// MARK: - 消失策略
+
+/// 菜单消失判定的纯逻辑，与全局事件监听解耦以便单测。
+///
+/// 规则参考 Easydict / Xpop 的实测体验：
+/// - 点击菜单外任意处、滚动超过阈值、按键输入 → 消失；
+/// - 仅按 Shift（Shift+方向键调整选区）不消失——消失交给 keyUp 后的
+///   选区重读来更新位置，否则调整选区时菜单会闪烁。
+enum TextActionDismissPolicy {
+    /// 滚动消失的累计阈值（pt）。轻微触控板滚动不应收起菜单。
+    static let scrollThreshold: CGFloat = 60
+
+    /// 键盘按下是否应让菜单消失。
+    ///
+    /// 组合键中只有 Shift（选区调整）豁免；Cmd+C 等快捷键与普通输入都消失。
+    static func shouldDismissOnKeyDown(modifiers: NSEvent.ModifierFlags) -> Bool {
+        modifiers.intersection([.shift, .command, .control, .option]) == [.shift] ? false : true
+    }
+
+    /// keyUp 是否值得触发一次选区重读。
+    ///
+    /// 普通打字的 keyUp 不读 AX——菜单已被 keyDown 收起，且每次击键都读
+    /// AX 是不必要的开销。只有可能改变选区的按键（带修饰键，如
+    /// Shift+方向键、Cmd+A）或菜单仍在显示时才重读。
+    static func shouldEvaluateOnKeyUp(modifiers: NSEvent.ModifierFlags, menuVisible: Bool) -> Bool {
+        if menuVisible { return true }
+        return modifiers.intersection([.shift, .command, .control, .option]).isEmpty == false
     }
 }
 
@@ -97,6 +170,10 @@ enum TextAction: CaseIterable, Identifiable {
         v2TranslationRequest(for: text)
     }
 
+    /// 同步动作（复制 / 搜索）的执行入口。
+    ///
+    /// 翻译是异步 LLM 调用且要在浮层内展示进度与结果，由
+    /// `TextActionMenuController` 接管，不走这里。
     func perform(with text: String) {
         switch self {
         case .copy:
@@ -135,12 +212,15 @@ protocol SelectedTextProviding {
 /// 一次成功的选区读取结果。
 struct SelectedText: Sendable, Equatable {
     let text: String
+    /// 触发时的鼠标位置（Cocoa 坐标），无选区 bounds 时的定位回退。
     let anchor: CGPoint
+    /// 选区在屏幕上的 bounds（Cocoa 坐标）；应用不支持 `AXBoundsForRange` 时为 nil。
+    var selectionRect: CGRect? = nil
 }
 
 @MainActor
 struct AccessibilitySelectedTextProvider: SelectedTextProviding {
-    nonisolated func readSelectedText(anchor: CGPoint) -> SelectedText? {
+    func readSelectedText(anchor: CGPoint) -> SelectedText? {
         let systemWide = AXUIElementCreateSystemWide()
         var focusedValue: CFTypeRef?
         guard AXUIElementCopyAttributeValue(
@@ -153,6 +233,14 @@ struct AccessibilitySelectedTextProvider: SelectedTextProviding {
               CFGetTypeID(focusedValue) == AXUIElementGetTypeID() else { return nil }
         let focused = focusedValue as! AXUIElement
 
+        // 密码框不弹菜单。多数安全输入框的 AXSelectedText 本就取不到值，
+        // 这里再显式排除一层，避免未来 macOS 行为变化带来泄露风险。
+        var roleValue: CFTypeRef?
+        if AXUIElementCopyAttributeValue(focused, kAXRoleAttribute as CFString, &roleValue) == .success,
+           (roleValue as? String) == "AXSecureTextField" {
+            return nil
+        }
+
         var selectedValue: CFTypeRef?
         guard AXUIElementCopyAttributeValue(
             focused,
@@ -161,7 +249,44 @@ struct AccessibilitySelectedTextProvider: SelectedTextProviding {
         ) == .success,
         let text = selectedValue as? String else { return nil }
 
-        return SelectedText(text: text, anchor: anchor)
+        return SelectedText(text: text, anchor: anchor, selectionRect: selectionBounds(of: focused))
+    }
+
+    /// 读取选区的屏幕 bounds，并换算成 Cocoa 坐标。
+    ///
+    /// 链路：`AXSelectedTextRange` → 作为参数传给 `AXBoundsForRange`。
+    /// 任一环节失败（应用不实现、选区跨多行只取首段等）都回退 nil，
+    /// 由布局层改用鼠标锚点。
+    private func selectionBounds(of element: AXUIElement) -> CGRect? {
+        var rangeValue: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            element,
+            kAXSelectedTextRangeAttribute as CFString,
+            &rangeValue
+        ) == .success,
+        let rangeValue,
+        CFGetTypeID(rangeValue) == AXValueGetTypeID() else { return nil }
+        let rangeAX = rangeValue as! AXValue
+        guard AXValueGetType(rangeAX) == .cfRange else { return nil }
+
+        var boundsValue: CFTypeRef?
+        guard AXUIElementCopyParameterizedAttributeValue(
+            element,
+            kAXBoundsForRangeParameterizedAttribute as CFString,
+            rangeAX,
+            &boundsValue
+        ) == .success,
+        let boundsValue,
+        CFGetTypeID(boundsValue) == AXValueGetTypeID() else { return nil }
+        let boundsAX = boundsValue as! AXValue
+        guard AXValueGetType(boundsAX) == .cgRect else { return nil }
+
+        var quartzRect = CGRect.zero
+        guard AXValueGetValue(boundsAX, .cgRect, &quartzRect),
+              quartzRect.width > 0, quartzRect.height > 0 else { return nil }
+
+        guard let primaryHeight = NSScreen.screens.first?.frame.height else { return nil }
+        return TextActionCoordinates.quartzToCocoa(quartzRect, primaryScreenHeight: primaryHeight)
     }
 }
 
