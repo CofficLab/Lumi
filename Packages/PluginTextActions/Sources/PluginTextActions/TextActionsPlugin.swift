@@ -19,6 +19,13 @@ public final class TextActionsPlugin: SuperPlugin, PluginDataMigrating, SuperLog
     /// 目录名未变过，无需版本根搬迁。
     public let legacyDataDirectoryNames: [String] = []
 
+    /// 辅助功能权限状态，由设置页共享。
+    ///
+    /// 授权状态会在应用之外变化（系统授权弹窗、系统设置里的开关），
+    /// 只能靠「应用重新激活」来重新读取。该监听随本对象生命周期存在，
+    /// 因此状态对象必须由插件持有，而不是由设置页临时创建。
+    private var permissionState: TextActionsPermissionState?
+
     public init() {}
 
     /// 读取旧版开关所在的 UserDefaults 域。
@@ -61,7 +68,17 @@ public final class TextActionsPlugin: SuperPlugin, PluginDataMigrating, SuperLog
             TextActionsRuntime.configure(settingsDirectory: storage.pluginDataDirectory(for: id))
         }
         if let llm = kernel.resolveProvider((any LLMManaging).self) { TextActionMenuController.shared.configure(translationProvider: llm) }
-        kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([SettingEntryItem(id: id, title: metadata.name, systemImage: "text.cursor", order: order) { TextActionsSettingsView() }])
+        // 权限状态由插件持有，设置页只读它——授权状态在应用外部变化
+        // （系统弹窗、系统设置开关），只有插件级对象能持续监听到。
+        let permissionState = TextActionsPermissionState()
+        // 用户在系统设置里打开权限后，必须补启动选区监听，否则划词功能
+        // 仍然不工作，且没有任何报错。
+        permissionState.onPermissionGranted = { [weak self] in
+            guard self != nil, TextActionsSettings.isEnabled else { return }
+            TextSelectionManager.shared.startMonitoring()
+        }
+        self.permissionState = permissionState
+        kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([SettingEntryItem(id: id, title: metadata.name, systemImage: "text.cursor", order: order) { TextActionsSettingsView(permissionState: permissionState) }])
     }
 
     public func onEnable(kernel: KernelCoreContainer) async throws {
@@ -75,6 +92,9 @@ public final class TextActionsPlugin: SuperPlugin, PluginDataMigrating, SuperLog
     public func onShutdown(kernel: KernelCoreContainer) throws {
         TextSelectionManager.shared.stopMonitoring()
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
+        // 摘掉权限状态的应用激活监听，并释放状态对象。
+        permissionState?.stop()
+        permissionState = nil
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
