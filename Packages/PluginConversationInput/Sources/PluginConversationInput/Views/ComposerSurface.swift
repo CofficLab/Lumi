@@ -10,7 +10,11 @@ enum ComposerLayout {
     static let contentHorizontalInset: CGFloat = 12
 
     /// 卡片内文字的上内边距(点)。
-    static let contentTopInset: CGFloat = 0
+    ///
+    /// 与 `outerTopInset` 是两件事:后者是卡片与上方内容的间距(可以为 0),
+    /// 这里管的是卡片**内部**文字离卡片上缘的距离 —— 文字顶到卡片边缘会显得
+    /// 被裁切,必须留出内边距。
+    static let contentTopInset: CGFloat = 10
 
     /// 卡片内文字的下内边距(点)。
     static let contentBottomInset: CGFloat = 10
@@ -75,5 +79,16 @@ extension View {
     /// 把视图变成输入框的悬浮卡片。
     func composerSurface() -> some View {
         modifier(ComposerSurfaceModifier())
+    }
+
+    /// 卡片**内部**的内容内边距。
+    ///
+    /// 单独成 modifier 而不是内联写在 `ComposerView` 里,是为了让渲染级测试能
+    /// 走上与生产完全相同的这条路径 —— 测试若自己复刻一遍 `padding`,改实现
+    /// 时测试不会变红,等于没测。
+    func composerContentInsets() -> some View {
+        padding(.horizontal, ComposerLayout.contentHorizontalInset)
+            .padding(.top, ComposerLayout.contentTopInset)
+            .padding(.bottom, ComposerLayout.contentBottomInset)
     }
 }
