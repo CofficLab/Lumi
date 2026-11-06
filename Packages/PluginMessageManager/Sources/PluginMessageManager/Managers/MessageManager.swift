@@ -4,6 +4,16 @@ import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
 import LumiLoggingKit
+
+/// 消息读取的范围。
+///
+/// - `.full`：物化全部列，UI 渲染路径用（需要 `metadata`、错误详情等）。
+/// - `.llmContext`：只物化 LLM 上下文需要的列，避免读取与 LLM 无关的大字段。
+enum MessageReadScope {
+    case full
+    case llmContext
+}
+
 /// Message Manager Service
 @MainActor
 public final class MessageManager: MessageManaging, SuperLog {
@@ -152,17 +162,26 @@ public final class MessageManager: MessageManaging, SuperLog {
 
     /// LLM 回合读取属于发送关键路径，使用较高优先级，但仍不在 MainActor 执行。
     public func messagesForLLM(in conversationID: UUID) async -> [Message] {
-        await readSnapshot(in: conversationID, priority: .userInitiated)
+        await readSnapshot(in: conversationID, priority: .userInitiated, scope: .llmContext)
     }
 
     private func readSnapshot(
         in conversationID: UUID,
-        priority: TaskPriority
+        priority: TaskPriority,
+        scope: MessageReadScope = .full
     ) async -> [Message] {
         let store = self.store
         let pending = self.pending
         return await Task.detached(priority: priority) {
-            let diskMessages = store?.fetchMessages(conversationId: conversationID) ?? []
+            // LLM 上下文只需要 content + reasoningContent + toolCalls，
+            // 用窄读取避开 `metadataJson`（35MB）与 `rawStreamEventsJSON`（47MB）
+            // 这两类与 LLM 无关的大字段。
+            let diskMessages: [Message] = switch scope {
+            case .full:
+                store?.fetchMessages(conversationId: conversationID) ?? []
+            case .llmContext:
+                store?.fetchMessagesForLLMContext(conversationId: conversationID) ?? []
+            }
             let pendingMessages = pending.snapshot(for: conversationID)
             let diskIDs = Set(diskMessages.map(\.id))
             var all = diskMessages
