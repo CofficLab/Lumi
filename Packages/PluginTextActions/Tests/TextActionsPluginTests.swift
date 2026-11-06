@@ -19,14 +19,16 @@ func localStorePersistsEnabledFlagInBinaryPlist() throws {
     defer { try? FileManager.default.removeItem(at: directory) }
 
     let store = TextActionsPluginLocalStore(settingsDirectory: directory)
-    #expect(!store.isEnabled)
-
-    store.setEnabled(true)
+    // 缺省为启用（从未写过该键）：划词失效时完全静默，
+    // 缺省关闭会让新装用户拿到一个「装上却像没装」的功能。
     #expect(store.isEnabled)
+
+    store.setEnabled(false)
+    #expect(!store.isEnabled)
 
     // 重新构造实例，确认已落盘而非仅在内存中生效。
     let reloaded = TextActionsPluginLocalStore(settingsDirectory: directory)
-    #expect(reloaded.isEnabled)
+    #expect(!reloaded.isEnabled)
 
     let plistURL = directory.appendingPathComponent("settings.plist")
     let data = try Data(contentsOf: plistURL)
@@ -99,7 +101,9 @@ func v2PluginPreservesIdentityAndOptInPolicy() {
     let plugin = TextActionsPlugin()
     #expect(plugin.id == "com.coffic.lumi.plugin.text-actions")
     #expect(plugin.order == 275)
-    #expect(plugin.metadata.policy == .disabledByDefault)
+    // 划词是「装上就该能用」的功能，且失效时完全静默，
+    // 因此插件必须默认启用，而不是要求用户先手动开启。
+    #expect(plugin.metadata.policy == .enabledByDefault)
 }
 
 @Test

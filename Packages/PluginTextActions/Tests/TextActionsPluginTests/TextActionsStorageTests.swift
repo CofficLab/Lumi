@@ -132,6 +132,31 @@ struct TextActionsPluginLocalStoreTests {
         #expect(store.isEnabled == false)
     }
 
+    @Test("从未写过开关时缺省为启用")
+    func defaultsToEnabledWhenNeverWritten() {
+        let temp = TempDirectory()
+        defer { temp.cleanup() }
+        let store = TextActionsPluginLocalStore(settingsDirectory: temp.url)
+
+        // 缺省开启：划词功能失效时完全静默（不弹菜单、不报错），
+        // 若缺省关闭，新装用户会得到一个「装上却像没装」的功能。
+        #expect(store.isEnabled)
+    }
+
+    @Test("显式关闭后保持关闭")
+    func staysDisabledAfterExplicitlyDisabled() {
+        let temp = TempDirectory()
+        defer { temp.cleanup() }
+        let store = TextActionsPluginLocalStore(settingsDirectory: temp.url)
+
+        store.setEnabled(false)
+        #expect(store.isEnabled == false)
+
+        // 重新读取实例后仍为关闭——用户显式的选择必须被尊重。
+        let reloaded = TextActionsPluginLocalStore(settingsDirectory: temp.url)
+        #expect(reloaded.isEnabled == false)
+    }
+
     @Test("存储落在 settings.plist 且能被新实例读回")
     func persistsAcrossInstances() {
         let temp = TempDirectory()
@@ -155,7 +180,8 @@ struct TextActionsPluginLocalStoreTests {
         let store = TextActionsPluginLocalStore(settingsDirectory: temp.url)
 
         #expect(store.object(forKey: "any") == nil)
-        #expect(store.isEnabled == false)
+        // 损坏的 plist 读不出任何键 → 回到「缺省启用」。
+        #expect(store.isEnabled)
     }
 
     @Test("不同实例使用各自隔离的目录")
@@ -168,9 +194,9 @@ struct TextActionsPluginLocalStoreTests {
         }
         let storeA = TextActionsPluginLocalStore(settingsDirectory: first.url)
         let storeB = TextActionsPluginLocalStore(settingsDirectory: second.url)
-        storeA.setEnabled(true)
+        storeA.setEnabled(false)
 
-        #expect(storeA.isEnabled)
-        #expect(storeB.isEnabled == false)
+        #expect(storeA.isEnabled == false)
+        #expect(storeB.isEnabled)
     }
 }

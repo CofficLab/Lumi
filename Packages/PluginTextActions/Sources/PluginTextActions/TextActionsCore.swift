@@ -203,6 +203,26 @@ protocol TextEventMonitoring {
     func removeMonitor(_ monitor: Any)
 }
 
+/// 选区监听启停的最小契约。
+///
+/// 插件只依赖「启动 / 停止监听」两件事，抽出协议后单测可注入替身，
+/// 从而**不注册真实的全局事件监听**就能断言监听是否被启动——
+/// 这正是回归「冷启动不启动监听」所必需的可观测点。
+@MainActor
+public protocol TextSelectionMonitoring: AnyObject {
+    /// 监听当前是否已注册。
+    ///
+    /// - Note: 划词功能失效时既不报错也不弹菜单，用户完全无从判断原因。
+    ///   这个状态让「监听没起来」变成可观测事实，而不是静默失败。
+    var isMonitoring: Bool { get }
+
+    /// 启动选区监听。幂等：重复调用不会注册第二个监听器。
+    func startMonitoring()
+
+    /// 停止选区监听。
+    func stopMonitoring()
+}
+
 /// 读取当前焦点元素的选区文本。
 @MainActor
 protocol SelectedTextProviding {
