@@ -107,10 +107,10 @@ struct ToolInteractionPayloadContractTests {
     ///
     /// 两者都需要 `pendingAuthorization`（都在等用户做授权决定），
     /// 但只有通用授权请求该由通用授权卡片渲染——Computer Use 有自己的卡片
-    /// （「允许一次 / 始终允许 / 拒绝」）。
+    /// （「本任务内允许 / 拒绝」）。
     @Test("Computer Use 授权载荷是授权但不是通用授权")
     func computerUsePayloadIsAuthorizationButNotPermission() {
-        let computerUse = #"{"kind":"computer_use_authorization","request":{"applicationName":"App Store","bundleIdentifier":"com.apple.AppStore","operation":"accessibility_observe"},"options":["allowOnce","alwaysAllow","deny"]}"#
+        let computerUse = #"{"kind":"computer_use_authorization","request":{"applicationName":"App Store","bundleIdentifier":"com.apple.AppStore","operation":"accessibility_observe"},"options":["allowForTask","deny"]}"#
 
         #expect(ToolSuspensionKind.isAuthorizationRequest(computerUse))
         #expect(!ToolSuspensionKind.isPermissionRequest(computerUse))

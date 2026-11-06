@@ -28,6 +28,7 @@ struct GeneralSettingsDetailView: View {
                 lumiSection
                 websiteSection
                 updatesSection
+                cliSection
                 diagnosticsSection
                 uninstallSection
             }
@@ -206,6 +207,13 @@ struct GeneralSettingsDetailView: View {
                 }
             }
         }
+    }
+
+    // MARK: - 命令行工具
+
+    /// `lumi` 命令的安装分区。
+    private var cliSection: some View {
+        CLIInstallDetailView()
     }
 
     // MARK: - 诊断日志

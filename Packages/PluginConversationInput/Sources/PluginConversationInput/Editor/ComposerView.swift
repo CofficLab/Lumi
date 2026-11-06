@@ -52,13 +52,8 @@ struct ComposerView: View {
             onSubmit: onSend,
             onEnter: onSend,
             onFileDrop: { url in
-                if ChatInputEditorRules.isDirectoryURL(url) {
-                    viewModel.insertDirectoryPath(url)
-                } else if ChatInputEditorRules.isChatImageFileURL(url) {
-                    viewModel.attachImage(url)
-                } else {
-                    viewModel.attachFile(url)
-                }
+                // 分流规则收敛在 ViewModel，输入框与附件预览共用同一份。
+                viewModel.attach(droppedURL: url)
             },
             onBlockInserted: { id in viewModel.consumePendingBlock(id: id) },
             onCollapsedBlocksChanged: { blocks in viewModel.updateCollapsedBlocks(blocks) },
@@ -68,9 +63,7 @@ struct ComposerView: View {
             pendingBlock: viewModel.pendingBlock
         )
         .frame(height: viewModel.inputHeight)
-        .padding(.horizontal, ComposerLayout.contentHorizontalInset)
-        .padding(.top, ComposerLayout.contentTopInset)
-        .padding(.bottom, ComposerLayout.contentBottomInset)
+        .composerContentInsets()
         .composerSurface()
     }
 }
