@@ -52,6 +52,8 @@ public actor DatabaseAgentToolService {
 
     private let manager = DatabaseManagerCore.shared
     private let registry = DatabaseAgentConnectionRegistry.shared
+    /// 每个连接建立时使用的配置快照，用于判断是否可以复用。
+    private var connectedConfigs: [UUID: DatabaseConfig] = [:]
 
     private init() {}
 
@@ -158,10 +160,16 @@ public actor DatabaseAgentToolService {
 
     private func connection(for config: DatabaseConfig) async throws -> any DatabaseConnection {
         await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
-        if let connection = await manager.getConnection(for: config.id), await connection.isAlive() {
+        // 连接必须与建立时的配置一致；配置被编辑（同一 id 换库/换地址）后，
+        // 直接复用旧连接会继续读写编辑前的位置。
+        if connectedConfigs[config.id] == config,
+           let connection = await manager.getConnection(for: config.id),
+           await connection.isAlive() {
             return connection
         }
-        return try await manager.connect(config: config)
+        let connection = try await manager.connect(config: config)
+        connectedConfigs[config.id] = config
+        return connection
     }
 
     public static func connectionId(from value: Any?) throws -> UUID {
