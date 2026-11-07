@@ -5,7 +5,7 @@
 PluginAppStoreConnect Current `KernelCore` implementation of the App Store Connect integration. - Product/module: `PluginAppStoreConnect` - Plugin id: `com.coffic.lumi.plugin.app-store-connect` - Rail tab: `app-store-connect.sidebar` - Enable policy: disabled by default The plugin provides App Store Connect account, app/version, localization, screenshot, release, and Xcode Cloud management through the workbench and the `app_store_connect_*` Agent tools.
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 26
+测试文件: 5 个，用例总数: 52
 
 核心组件（源码目录）:
 - `Sources/`
@@ -36,6 +36,9 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 - **ASCSubmissionTimeline**（13 条）：由 `submissionPreviewBuildLabel`、`submissionPreviewSummaries`、`submissionPreviewCodableRoundTrip` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AppStoreConnectPlugin**（9 条）：由 `pluginMetadata`、`settingsEntry`、`activationKeepsChatToolbarCategoryVisible` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AppStoreConnectRuleContributor**（1 条）：由 `loadsReleaseSafetyRuleFromResource` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConnectCacheInvalidator**（12 条）：由 `ageRatingPatchInvalidatesDeclarationRead`、`versionPatchInvalidatesDetailAndList` 等用例锁定；改动写操作后的缓存失效策略或缓存 key 结构时优先跑对应测试文件。
+- **ASC Chat Toolbar binding**（8 条）：由 `appConfigurationProvidesAppID`、`bundleIDIsDetectedFromXcodeProject` 等用例锁定；改动聊天工具栏的项目绑定解析时优先跑对应测试文件。
+- **StubClientCapability**（5 条）：由 `appIDBindingLoadsVersions`、`switchingProjectsClearsState` 等用例锁定；改动聊天工具栏 ViewModel 的项目切换与绑定时优先跑对应测试文件。
 - **VMBusy**（3 条）：由 `nestedRunBusyIsReentrant`、`fastOperationSkipsOverlay`、`slowOperationShowsOverlay` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -68,27 +71,53 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 | 24 | VMBusy | nested runBusy keeps one continuous loading overlay | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nestedRunBusyIsReentrant` |
 | 25 | VMBusy | a fast operation never shows the overlay | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fastOperationSkipsOverlay` |
 | 26 | VMBusy | a slow operation shows and then hides the overlay | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `slowOperationShowsOverlay` |
+| 27 | ConnectCacheInvalidator | 年龄分级 PATCH 后失效 appInfo 声明读取缓存 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `ageRatingPatchInvalidatesDeclarationRead` |
+| 28 | ConnectCacheInvalidator | 年龄分级 PATCH 不影响无关的缓存条目 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `ageRatingPatchKeepsUnrelatedEntries` |
+| 29 | ConnectCacheInvalidator | 版本 PATCH 后失效版本详情与版本列表缓存 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `versionPatchInvalidatesDetailAndList` |
+| 30 | ConnectCacheInvalidator | 版本 PATCH 不影响其它版本的详情 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `versionPatchKeepsOtherVersions` |
+| 31 | ConnectCacheInvalidator | 截图预约上传后失效截图列表缓存 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `screenshotReserveInvalidatesLists` |
+| 32 | ConnectCacheInvalidator | 截图上传完成后失效截图列表缓存 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `screenshotCompletionInvalidatesLists` |
+| 33 | ConnectCacheInvalidator | 截图删除后失效截图列表缓存 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `screenshotDeleteInvalidatesLists` |
+| 34 | ConnectCacheInvalidator | 创建审核提交后失效提交列表缓存 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `submissionCreateInvalidatesList` |
+| 35 | ConnectCacheInvalidator | 触发提交后失效提交项缓存 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `submissionTriggerInvalidatesItems` |
+| 36 | ConnectCacheInvalidator | 撤回提交后失效提交列表缓存 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `submissionWithdrawInvalidatesList` |
+| 37 | ConnectCacheInvalidator | accountKey 含分隔符时内存缓存同样被失效 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `memoryCacheIsInvalidatedWhenAccountKeyContainsSeparator` |
+| 38 | ConnectCacheInvalidator | 内存缓存失效不影响其它账户的条目 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `memoryInvalidationIsScopedToAccount` |
+| 39 | ASC Chat Toolbar binding | 应用配置提供 App ID | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `appConfigurationProvidesAppID` |
+| 40 | ASC Chat Toolbar binding | 应用配置提供 Bundle ID | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `appConfigurationProvidesBundleID` |
+| 41 | ASC Chat Toolbar binding | 空白值被当作缺省处理 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `blankValuesAreTreatedAsAbsent` |
+| 42 | ASC Chat Toolbar binding | 从 Xcode 工程解析出 Bundle ID | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bundleIDIsDetectedFromXcodeProject` |
+| 43 | ASC Chat Toolbar binding | 仅含占位符的工程解析不出 Bundle ID | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `pbxprojParsingReturnsNilForPlaceholdersOnly` |
+| 44 | ASC Chat Toolbar binding | 工程解析跳过占位符 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pbxprojParsingSkipsPlaceholders` |
+| 45 | ASC Chat Toolbar binding | Swift Package 检测不出 Bundle ID | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `bundleIDDetectionReturnsNilForSwiftPackage` |
+| 46 | ASC Chat Toolbar binding | 缺少配置时不产生绑定 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingConfigurationYieldsNoBinding` |
+| 47 | StubClientCapability | App ID 绑定后加载版本列表 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `appIDBindingLoadsVersions` |
+| 48 | StubClientCapability | Bundle ID 绑定后解析出应用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bundleIDBindingResolvesApp` |
+| 49 | StubClientCapability | 切换项目后清空状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `switchingProjectsClearsState` |
+| 50 | StubClientCapability | 未匹配的 Bundle ID 报告错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unmatchedBundleIDReportsError` |
+| 51 | StubClientCapability | 无绑定的项目报告无绑定 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `projectWithoutBindingReportsNoBinding` |
+| 52 | TestStorageProvider | 聊天工具栏入口已注册 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `chatToolbarEntryIsRegistered` |
 
-> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **52 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 22 / 22
-- P2: 已覆盖 2 / 2
-- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 11 / 11
+- P1: 已覆盖 37 / 37
+- P2: 已覆盖 4 / 4
+- **合计: 52 / 52**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（22 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
+- **P1**: 其余功能性用例（37 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 26 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 52 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

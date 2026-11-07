@@ -109,7 +109,7 @@ final class ConnectAPICache: @unchecked Sendable {
         diskStore.invalidate(accountKey: accountKey, where: predicate)
         memoryCache.invalidate { key in
             guard key.hasPrefix("\(accountKey)|") else { return false }
-            return Self.memoryKeyMatches(key: key, predicate: predicate)
+            return Self.memoryKeyMatches(key: key, accountKey: accountKey, predicate: predicate)
         }
     }
 
@@ -133,7 +133,7 @@ final class ConnectAPICache: @unchecked Sendable {
         diskStore.pruneVersions(keepingVersionIDs: keepingVersionIDs, accountKey: accountKey)
         memoryCache.invalidate { key in
             guard key.hasPrefix("\(accountKey)|") else { return false }
-            for versionID in extractVersionIDs(fromMemoryKey: key) {
+            for versionID in extractVersionIDs(fromMemoryKey: key, accountKey: accountKey) {
                 if !keepingVersionIDs.contains(versionID) {
                     return true
                 }
@@ -164,14 +164,19 @@ final class ConnectAPICache: @unchecked Sendable {
         return appID.isEmpty ? nil : appID
     }
 
+    /// 从内存缓存 key 还原出一条用于谓词匹配的合成条目。
+    ///
+    /// key 格式为 `accountKey|method|path|query`，而 accountKey 本身是
+    /// `issuerID|keyID`（含分隔符），所以必须先剥掉 accountKey 前缀，
+    /// 再按剩余部分解析 method / path —— 直接按 `|` 切分整个 key 会错位。
     private static func memoryKeyMatches(
         key: String,
+        accountKey: String,
         predicate: (ConnectAPICacheEntry) -> Bool
     ) -> Bool {
-        let parts = key.split(separator: "|", maxSplits: 3, omittingEmptySubsequences: false)
-        guard parts.count >= 3 else { return false }
-        let method = String(parts[1])
-        let path = String(parts[2])
+        guard let (method, path) = memoryKeyComponents(key: key, accountKey: accountKey) else {
+            return false
+        }
         let synthetic = ConnectAPICacheEntry(
             key: key,
             objectName: "",
@@ -186,14 +191,25 @@ final class ConnectAPICache: @unchecked Sendable {
         return predicate(synthetic)
     }
 
-    private func extractVersionIDs(fromMemoryKey key: String) -> [String] {
-        let parts = key.split(separator: "|", maxSplits: 3, omittingEmptySubsequences: false)
-        guard parts.count >= 3 else { return [] }
-        let path = String(parts[2])
+    private func extractVersionIDs(fromMemoryKey key: String, accountKey: String) -> [String] {
+        guard let (_, path) = Self.memoryKeyComponents(key: key, accountKey: accountKey) else { return [] }
         let prefix = "/v1/appStoreVersions/"
         guard path.hasPrefix(prefix) else { return [] }
         let remainder = path.dropFirst(prefix.count)
         guard let versionID = remainder.split(separator: "/").first else { return [] }
         return [String(versionID)]
+    }
+
+    /// 剥掉 accountKey 前缀，按剩余部分解析出 (method, path)。
+    ///
+    /// 剩余部分格式为 `method|path|query`，query 本身也可能含 `|`，
+    /// 因此 path 取第二段即可。
+    private static func memoryKeyComponents(key: String, accountKey: String) -> (method: String, path: String)? {
+        let prefix = "\(accountKey)|"
+        guard key.hasPrefix(prefix) else { return nil }
+        let remainder = String(key.dropFirst(prefix.count))
+        let parts = remainder.split(separator: "|", maxSplits: 2, omittingEmptySubsequences: false)
+        guard parts.count >= 2 else { return nil }
+        return (String(parts[0]), String(parts[1]))
     }
 }
