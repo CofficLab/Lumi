@@ -22,11 +22,8 @@ enum RemoteWebURLResolver {
         guard !trimmed.isEmpty else { return nil }
 
         let lowercased = trimmed.lowercased()
-        if lowercased.hasPrefix("ssh://") {
-            return sshWebURL(from: trimmed)
-        }
-        if lowercased.hasPrefix("git://") {
-            return hostPathWebURL(String(trimmed.dropFirst("git://".count)))
+        if lowercased.hasPrefix("ssh://") || lowercased.hasPrefix("git://") {
+            return schemeWebURL(from: trimmed)
         }
         if lowercased.hasPrefix("http://") || lowercased.hasPrefix("https://") {
             return webURL(strippingGitSuffix: trimmed)
@@ -42,10 +39,11 @@ enum RemoteWebURLResolver {
 
     // MARK: - 私有转换
 
-    /// `ssh://[user@]host[:port]/path` → `https://host/path`。
+    /// `scheme://[user@]host[:port]/path` → `https://host/path`。
     ///
-    /// 端口被丢弃：Web 页面走 HTTPS 的标准端口，SSH 端口对浏览器无意义。
-    private static func sshWebURL(from remote: String) -> URL? {
+    /// 端口一律丢弃：SSH 与 Git 协议端口（如 `:22`、`:9418`）对浏览器访问的
+    /// HTTPS 页面没有意义，继承到 web 链接只会连到错误端口。
+    private static func schemeWebURL(from remote: String) -> URL? {
         guard let components = URLComponents(string: remote),
               let host = components.host,
               !host.isEmpty else {

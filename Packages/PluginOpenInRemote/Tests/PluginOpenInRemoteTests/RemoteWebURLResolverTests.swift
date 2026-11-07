@@ -52,11 +52,16 @@ struct RemoteWebURLResolverTests {
         )
     }
 
-    @Test("git:// 地址转换为 HTTPS web 链接")
+    @Test("git:// 地址转换为 HTTPS web 链接并丢弃 Git 协议端口")
     func convertsGitProtocolRemote() {
         #expect(
             RemoteWebURLResolver.webURL(fromRemote: "git://github.com/user/repo.git")?
                 .absoluteString == "https://github.com/user/repo"
+        )
+        // 9418 是 Git 协议默认端口，不能继承到 HTTPS 地址上，否则浏览器会连错端口。
+        #expect(
+            RemoteWebURLResolver.webURL(fromRemote: "git://github.com:9418/acme/repo.git")?
+                .absoluteString == "https://github.com/acme/repo"
         )
     }
 
