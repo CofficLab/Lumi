@@ -144,21 +144,40 @@ struct ToolCallGroupPopoverContent: View {
     /// `ToolbarPopoverContent` 360）：既能一次看到十来条，又不至于顶到屏幕边缘。
     private static let maxContentHeight: CGFloat = 420
 
+    /// 内容区左右内边距。
+    ///
+    /// - Important: 这段内边距**必须加在 ScrollView 的内容里**，不能加在
+    ///   ScrollView 外层，更不能加在 popover 最外层的 `.padding(12)` 上。
+    ///
+    ///   原因：`.padding()` 加在 ScrollView **外面**会让 ScrollView 自身
+    ///   变窄，滚动条（overlay 样式，浮在 ScrollView 右缘内侧）也就跟着
+    ///   内缩，于是滚动条离 popover 右边缘多出一整个 padding 的距离。
+    ///   实测（NSHostingView + NSPopover 量测）：外层 padding 12 时滚动条
+    ///   距 popover 内容右缘 12pt；把 padding 下放到内容里后，ScrollView
+    ///   铺满整个 popover 内容宽度，滚动条紧贴右缘。
+    private static let contentHorizontalPadding: CGFloat = 12
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
+                .padding(.horizontal, Self.contentHorizontalPadding)
 
             // - Important: 滚动只包住列表本身，标题栏固定不动。
             //   若把标题也放进 ScrollView，长列表滚动后用户会失去
             //   「这是工具调用列表」的上下文。
             ScrollView(.vertical) {
                 rows()
+                    // - Important: 先 padding 再 frame(maxWidth:)，
+                    //   顺序反了会把内边距算到滚动区宽度之外。
+                    .padding(.horizontal, Self.contentHorizontalPadding)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.bottom, 4)
             }
             .frame(maxHeight: Self.maxContentHeight)
         }
-        .padding(12)
+        // 只保留竖向内边距：横向内边距下放到 header 与滚动内容，
+        // 让滚动区铺满 popover 宽度，滚动条紧贴右侧。
+        .padding(.vertical, 12)
         .frame(width: 500, alignment: .leading)
         .appSurface(style: .popover, cornerRadius: 12, borderColor: theme.divider)
         .appThemedAppearance()
