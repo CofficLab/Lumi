@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 74 条用例。
+PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 95 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 74
+测试文件: 3 个，用例总数: 95
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -144,27 +144,29 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 7
 | 91 | EmbeddingThreshold | 长文本的 embed 显著快于句子级整段 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `longTextUsesWordLevelAveraging` |
 | 92 | EmbeddingThreshold | 短文本与长文本都能产出有效向量 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bothStrategiesProduceValidVectors` |
 | 93 | EmbeddingThreshold | 阈值常量合理 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `thresholdIsReasonable` |
+| 94 | ProjectRAGPlugin | search_code 未传 project_path 时使用会话绑定项目 | 会话绑定一个不存在的项目路径 | 调用 `executeResult(context:arguments:)` | 报错路径为会话项目而非当前项目 | P1 | ✅ 已覆盖 | `usesConversationProject` |
+| 95 | ProjectRAGPlugin | search_code 显式 project_path 优先于会话绑定项目 | 会话绑定项目 A，显式传 B | 调用 `executeResult(context:arguments:)` | 报错路径为 B，不含 A | P1 | ✅ 已覆盖 | `explicitPathBeatsConversationProject` |
 
-> 说明：全部 **74 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **95 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 6 / 6
-- P1: 已覆盖 76 / 76
+- P1: 已覆盖 78 / 78
 - P2: 已覆盖 11 / 11
-- **合计: 93 / 93**（仅表示清单场景，非源码覆盖率）
+- **合计: 95 / 95**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（64 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（78 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 74 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 95 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

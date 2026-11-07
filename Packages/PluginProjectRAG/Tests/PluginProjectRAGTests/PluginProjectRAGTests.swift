@@ -27,6 +27,50 @@ struct ProjectRAGSuperPluginTests {
         try plugin.onShutdown(kernel: kernel)
         #expect(kernel.resolveProvider((any ProjectRAGProviding).self) == nil)
     }
+
+    private func makeContext(projectPath: String?) -> KitAgentTool.ToolExecutionContext {
+        KitAgentTool.ToolExecutionContext(
+            jobID: UUID().uuidString,
+            conversationID: UUID(),
+            conversationProjectPathProvider: { projectPath }
+        )
+    }
+
+    private func missingPath(_ name: String) -> String {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-\(name)-\(UUID().uuidString)")
+            .path
+    }
+
+    @Test("search_code 未传 project_path 时使用会话绑定项目")
+    func usesConversationProject() async throws {
+        let conversationPath = missingPath("conversation")
+
+        let result = try await RAGCodeSearchTool().executeResult(
+            context: makeContext(projectPath: conversationPath),
+            arguments: ["query": ToolArgument("handleRequest")]
+        )
+
+        #expect(result.content.contains("Project path does not exist"))
+        #expect(result.content.contains(conversationPath))
+    }
+
+    @Test("search_code 显式 project_path 优先于会话绑定项目")
+    func explicitPathBeatsConversationProject() async throws {
+        let conversationPath = missingPath("conversation")
+        let explicitPath = missingPath("explicit")
+
+        let result = try await RAGCodeSearchTool().executeResult(
+            context: makeContext(projectPath: conversationPath),
+            arguments: [
+                "query": ToolArgument("handleRequest"),
+                "project_path": ToolArgument(explicitPath),
+            ]
+        )
+
+        #expect(result.content.contains(explicitPath))
+        #expect(!result.content.contains(conversationPath))
+    }
 }
 
 @MainActor
