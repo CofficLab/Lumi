@@ -149,4 +149,93 @@ public enum SQLStatementParser {
         commitCurrentStatement()
         return result
     }
+
+    /// 剥离字符串字面量、注释与带引号标识符，只保留「代码骨架」。
+    ///
+    /// 用于只读策略判定：安全检查关心的是**代码里出现了什么**，
+    /// 而不是文本内容里出现了什么。
+    /// `SELECT 'DROP' AS word` 的骨架是 `SELECT  AS word` —— 里面没有写操作；
+    /// `SELECT * FROM t WHERE x = DROP()` 的骨架里 `DROP` 仍是裸关键字，仍会被拦下。
+    ///
+    /// 尊重的语法与 ``split(_:)`` 一致：
+    /// - 单引号字符串字面量（含 `''` 转义）
+    /// - 双引号标识符（含 `""` 转义）
+    /// - 反引号标识符（MySQL，含 `` `` `` 转义）
+    /// - 行注释（`--` 到行尾）与块注释（`/* ... */`，可嵌套）
+    public static func stripLiteralsAndComments(_ sql: String) -> String {
+        var result = ""
+        var index = sql.startIndex
+        var inString: Character? = nil
+        var inLineComment = false
+        var blockCommentDepth = 0
+
+        while index < sql.endIndex {
+            let ch = sql[index]
+            let next = sql.index(index, offsetBy: 1, limitedBy: sql.endIndex)
+
+            if inLineComment {
+                if ch == "\n" {
+                    inLineComment = false
+                    result.append(ch)
+                }
+                index = sql.index(after: index)
+                continue
+            }
+
+            if blockCommentDepth > 0 {
+                if ch == "/" && next != nil && sql[next!] == "*" {
+                    blockCommentDepth += 1
+                    index = sql.index(after: next!)
+                    continue
+                }
+                if ch == "*" && next != nil && sql[next!] == "/" {
+                    blockCommentDepth -= 1
+                    index = sql.index(after: next!)
+                    continue
+                }
+                index = sql.index(after: index)
+                continue
+            }
+
+            if let quote = inString {
+                if ch == quote {
+                    // 转义：两个连续引号
+                    if let n = next, n < sql.endIndex, sql[n] == quote {
+                        index = sql.index(after: n)
+                        continue
+                    }
+                    inString = nil
+                }
+                index = sql.index(after: index)
+                continue
+            }
+
+            // 进入字符串 / 标识符：整段丢弃，只留一个空格占位。
+            if ch == "\'" || ch == "\"" || ch == "`" {
+                inString = ch
+                result.append(" ")
+                index = sql.index(after: index)
+                continue
+            }
+
+            // 进入行注释
+            if ch == "-" && next != nil && sql[next!] == "-" {
+                inLineComment = true
+                index = sql.index(after: index)
+                continue
+            }
+
+            // 进入块注释
+            if ch == "/" && next != nil && sql[next!] == "*" {
+                blockCommentDepth = 1
+                index = sql.index(after: next!)
+                continue
+            }
+
+            result.append(ch)
+            index = sql.index(after: index)
+        }
+
+        return result
+    }
 }
