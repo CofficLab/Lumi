@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 78
+测试文件: 7 个，用例总数: 81
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -129,27 +129,30 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 76 | ProcessMonitorParsing | 截断到同名的不同进程按完整名称区分，不会错误合并 | 两行截断名均为 `com.apple.WebKi`、PID 100/101，注入完整名称 | 解析 + flush | 得到 2 条记录，名称分别为 WebContent 与 Networking | P1 | ✅ 已覆盖 | `truncatedNamesAreResolvedAndNotMerged` |
 | 77 | ProcessMonitorParsing | 无法解析完整名称时回退 nettop 原名 | 假 PID 无法通过 proc_pidpath 解析 | 解析 + flush | 名称保留为 `Lumi` | P2 | ✅ 已覆盖 | `fallsBackToNettopNameWhenResolutionFails` |
 | 78 | ProcessMonitorParsing | 首个有效 delta 发布后才标记快照就绪 | 首帧仅累计值，第二帧为 delta | 解析 + flush | 首帧后未就绪，第二帧后置位 | P2 | ✅ 已覆盖 | `snapshotFlagTurnsReadyAfterFirstDelta` |
+| 79 | TopNetworkProcesses | 内联进程列表按总速率降序、最多 5 条并排除零值与显示为 0 的速率 | 构造 8 条不同速率的进程，其中 1 条零速率、1 条亚字节速率 | 读取 `topNetworkProcesses` | 得到 5 条且顺序为速率降序 | P1 | ✅ 已覆盖 | `sortsLimitsAndFiltersZeroSpeed` |
+| 80 | TopNetworkProcesses | 速率格式化随量级切换单位与小数位 | 512 B/s、16 KB/s、1.5 MB/s、2 GB/s | 调用 `formatForStatusBar` | 分别输出 512B/s、16KB/s、1.5MB/s、2.0GB/s | P2 | ✅ 已覆盖 | `rateFormattingSwitchesUnitsAndDecimals` |
+| 81 | TopNetworkProcesses | 内联列表与详情浮层同时可见时不会提前停止监控 | 连续 acquire 两次后 release 一次 | 观察启动/停止次数 | 启动 1 次、停止 0 次；再次 release 后停止 1 次 | P1 | ✅ 已覆盖 | `concurrentVisibilityKeepsMonitoring` |
 
-> 说明：全部 **78 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **81 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 32 / 32
-- P1: 已覆盖 42 / 42
-- P2: 已覆盖 4 / 4
-- **合计: 78 / 78**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 44 / 44
+- P2: 已覆盖 5 / 5
+- **合计: 81 / 81**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（32 条）
-- **P1**: 其余功能性用例（42 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
+- **P1**: 其余功能性用例（44 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 78 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 81 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

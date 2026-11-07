@@ -68,12 +68,12 @@ public struct ProcessNetworkListView: View {
         }
         .onAppear {
             DispatchQueue.main.async {
-                viewModel.showProcessMonitor = true
+                viewModel.acquireProcessMonitor()
             }
         }
         .onDisappear {
             DispatchQueue.main.async {
-                viewModel.showProcessMonitor = false
+                viewModel.releaseProcessMonitor()
             }
         }
         .infiniteWidth()
