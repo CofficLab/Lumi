@@ -119,7 +119,7 @@ struct SendActionBarViewModelTests {
     }
 
     @Test("纯文本走同步提交并随后启动回合")
-    func sendCommitsTrimmedTextSynchronously() async throws {
+    func sendCommitsDraftTextSynchronously() async throws {
         let conversationID = UUID()
         let capability = SendActionBarTestCapability()
         capability.text = "  hello world  "
@@ -129,7 +129,8 @@ struct SendActionBarViewModelTests {
         viewModel.send()
 
         let commit = try #require(capability.commits.first)
-        #expect(commit.content == "hello world")
+        // 传原文而非预 trim 文本：折叠块区间以原文为坐标系，trim 由 sender 做。
+        #expect(commit.content == "  hello world  ")
         // 发送时显式传 nil，由发送能力解析目标会话。
         #expect(commit.conversationID == nil)
         #expect(commit.usedBackgroundPath == false)

@@ -77,7 +77,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 6 | 判定 | 仅有附件时同样可以发送 | 无文本 + 一张图片 | 先 `updateAttachments()` 再挂附件 | 无附件不可发；有附件后可发 | P0 | ✅ 已覆盖 | `attachmentsAloneEnableSend` |
 | 7 | 判定 | 附件被移除后恢复为不可发送 | 一个文件附件 | 移除附件后 `updateAttachments()` | `canSend` 由 true 回到 false | P1 | ✅ 已覆盖 | `removingAttachmentsDisablesSend` |
 | 8 | 发送 | 空白输入且无附件时不提交任何消息 | text 为 `"   "` | `send()` | 同步/后台提交均零调用、**输入框内容不清空**、不启动回合 | P0 | ✅ 已覆盖 | `sendIgnoresBlankInput` |
-| 9 | 发送 | 纯文本走同步提交并随后启动回合 | text 带前后空格 | `send()` | 内容被 trim；`conversationID` 显式传 `nil`；输入框立即清空、错误复位；同步路径命中、后台路径零调用；回合随后启动且会话 ID 正确 | P0 | ✅ 已覆盖 | `sendCommitsTrimmedTextSynchronously` |
+| 9 | 发送 | 纯文本走同步提交并随后启动回合 | text 带前后空格 | `send()` | 内容按**原文**交给发送端（trim 由发送端完成，保证折叠块区间与正文同一坐标系）；`conversationID` 显式传 `nil`；输入框立即清空、错误复位；同步路径命中、后台路径零调用；回合随后启动且会话 ID 正确 | P0 | ✅ 已覆盖 | `sendCommitsDraftTextSynchronously` |
 | 10 | 发送 | 带附件的消息强制走后台编码提交 | text + 一张图片 | `send()` | 同步提交零调用；后台提交被调用且附件完整；回合随后启动 | P0 | ✅ 已覆盖 | `sendUsesBackgroundPathForAttachments` |
 | 11 | 发送 | 排队的消息不会启动回合 | `userMessageID == nil`（已排队） | `send()` 后等待调度结束 | 提交一次，`startTurn` 零调用 | P0 | ✅ 已覆盖 | `queuedCommitDoesNotStartTurn` |
 | 12 | 发送 | 提交返回 nil 时不启动回合 | 能力层返回 `nil` | `send()` 后等待调度结束 | 提交一次，`startTurn` 零调用 | P1 | ✅ 已覆盖 | `nilCommitDoesNotStartTurn` |
@@ -268,6 +268,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 123 | 发送 | 带附件发送在编码完成前消费附件，编码窗口内再次发送被忽略 | text + 一个文件附件 | `send()` 后立即再 `send()` | 附件在异步编码前离开挂起池、`canSend` 转 false；第二次发送不再提交，后台提交仅 1 次且附件完整 | P0 | ✅ 已覆盖 | `sendWithAttachmentsConsumesThemBeforeEncoding` |
 | 124 | 发送 | 发送按钮路径同样在编码完成前消费附件 | text + 一张图片 | `send()` 后立即再 `send()` | 附件池清空、按钮熄灭；后台提交仅 1 次 | P0 | ✅ 已覆盖 | `sendingWithAttachmentsReservesThemBeforeEncoding` |
 | 125 | 错误 | 附件提交失败时附件回到挂起池 | 后台提交抛错 | `send()` 后等待错误回填 | `errorMessage` 非空，附件重新出现在挂起池与预览中，可直接重试 | P1 | ✅ 已覆盖 | `failedAttachmentCommitRestoresAttachments` |
+| 126 | 折叠块 | 折叠块前插入换行后发送，chip 区间仍指向原文本（**回归**） | 真实 Sender + Adapter + ViewModel；正文 `"\n" + body`，区间 `{start:1, length:body.count}` | 走回车发送路径 | 落库正文为 trim 后的 body；metadata 区间平移为 `{start:0, length:body.count}` 且精确指向 body（预 trim 会让区间越界被丢弃） | P0 | ✅ 已覆盖 | `leadingNewlineBeforeChipKeepsBlock` |
+| 127 | 折叠块 | 发送按钮路径同样保留 chip 区间（**回归**） | 真实链路；正文 `"  " + body + "\n"`，区间 `{start:2, length:body.count}` | 走发送按钮路径 | 区间随 trim 平移后仍精确指向 body，chip 不退化为纯文本 | P0 | ✅ 已覆盖 | `sendButtonKeepsBlockAfterTrim` |
 
 > **鉴别力验证**：本轮用一处变异确认用例不是「恒绿」——把
 > `Coordinator.textDidChange` 里的两道 IME 守卫
@@ -281,8 +283,9 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > 里有一份**代码完全相同**的守卫，全局替换第一处会改错函数，
 > 导致「用例仍然全绿」的假阴性。
 
-> 说明：全部 **125 条场景 / 130 个测试方法**已在 macOS 上实跑通过
-> （`swift test` → 130 tests in 18 suites passed）。
+> 说明：全部 **127 条场景 / 132 个测试方法**已在 macOS 上实跑通过
+> （`swift test` → 164 tests in 25 suites；其中 6 条 chip 几何用例在本机
+> Xcode 27.2 SDK 下失败，已在未改动的 HEAD 上复现，属既有环境问题）。
 >
 > 实现中几条易错约定已在用例里显式锁定：
 > - **附件路径必须后台化**（ID 10）：同步 `commitUserMessage` 不做编码，附件消息走它会丢内容，
@@ -303,10 +306,10 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 
 ## 覆盖率统计
 
-- P0: 已覆盖 41 / 41
+- P0: 已覆盖 43 / 43
 - P1: 已覆盖 67 / 67
 - P2: 已覆盖 16 / 16
-- **合计: 124 / 124**（仅表示清单场景，非源码覆盖率）
+- **合计: 126 / 126**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
