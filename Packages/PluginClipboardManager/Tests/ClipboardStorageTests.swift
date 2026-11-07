@@ -21,6 +21,16 @@ private func makeStorage() throws -> (ClipboardStorage, URL) {
     return (ClipboardStorage(historyManager: manager), root)
 }
 
+private func makeSolidImage() -> NSImage {
+    let size = NSSize(width: 8, height: 8)
+    let image = NSImage(size: size)
+    image.lockFocus()
+    NSColor.systemBlue.setFill()
+    NSRect(origin: .zero, size: size).fill()
+    image.unlockFocus()
+    return image
+}
+
 // MARK: - Storage
 
 @Suite("ClipboardStorage")
@@ -117,6 +127,63 @@ struct ClipboardStorageTests {
         await storage.add(item: ClipboardItem(type: .text, content: "same", richTextHTML: html))
 
         #expect(await storage.getItems().count == 1)
+    }
+
+    @Test("连续复制同一图片只保留一条记录，并清理旧文件")
+    @MainActor
+    func deduplicatesIdenticalImageContent() async throws {
+        let (storage, root) = try makeStorage()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let pasteboard = NSPasteboard.withUniqueName()
+        let image = makeSolidImage()
+        pasteboard.clearContents()
+        pasteboard.writeObjects([image])
+
+        let imageDirectory = root.appendingPathComponent("images", isDirectory: true)
+        try FileManager.default.createDirectory(at: imageDirectory, withIntermediateDirectories: true)
+
+        let firstItems = await ClipboardMonitor.itemsAsync(
+            from: pasteboard,
+            appName: nil,
+            imageDirectory: imageDirectory
+        )
+        let first = try #require(firstItems.first)
+        await storage.add(item: first)
+
+        // 模拟从历史执行 Copy：同一张图再次被采集，路径每次都不同。
+        let secondItems = await ClipboardMonitor.itemsAsync(
+            from: pasteboard,
+            appName: nil,
+            imageDirectory: imageDirectory
+        )
+        let second = try #require(secondItems.first)
+        #expect(second.content != first.content)
+        await storage.add(item: second)
+
+        let items = await storage.getItems()
+        #expect(items.count == 1)
+        #expect(items.first?.content == second.content)
+        #expect(!FileManager.default.fileExists(atPath: first.content))
+    }
+
+    @Test("不同图片内容仍各自保留")
+    @MainActor
+    func keepsDifferentImages() async throws {
+        let (storage, root) = try makeStorage()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let imageDirectory = root.appendingPathComponent("images", isDirectory: true)
+        try FileManager.default.createDirectory(at: imageDirectory, withIntermediateDirectories: true)
+        let firstPath = imageDirectory.appendingPathComponent("first.png")
+        let secondPath = imageDirectory.appendingPathComponent("second.png")
+        try Data("image-a".utf8).write(to: firstPath)
+        try Data("image-b".utf8).write(to: secondPath)
+
+        await storage.add(item: ClipboardItem(type: .image, content: firstPath.path))
+        await storage.add(item: ClipboardItem(type: .image, content: secondPath.path))
+
+        #expect(await storage.getItems().count == 2)
     }
 
     @Test("已有项被固定时，重复内容不去重")

@@ -35,14 +35,16 @@ public actor ClipboardStorage: SuperLog {
         // 去重：如果与第一项内容相同，则更新（或忽略）。
         // 富文本负载也算身份的一部分：纯文本相同但格式不同时应各留一条。
         let recentItems = await historyManager.getLatest(limit: 1)
-        if let first = recentItems.first,
-           first.content == item.content,
-           first.type == item.type.rawValue,
-           first.richTextRTF == item.richTextRTF,
-           first.richTextHTML == item.richTextHTML {
+        if let first = recentItems.first, isDuplicate(item, of: first) {
             // 如果是固定项则保留，否则移除旧的
             if !first.isPinned {
                 await historyManager.delete(id: first.id)
+                // 图片内容相同但每次采集都会生成新路径；旧文件已无条目引用，
+                // 删除它避免同一张图片在磁盘上不断累积。
+                if first.type == ClipboardItemType.image.rawValue,
+                   first.content != item.content {
+                    try? FileManager.default.removeItem(atPath: first.content)
+                }
             }
         }
 
@@ -55,6 +57,24 @@ public actor ClipboardStorage: SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)➕ 已添加剪贴板项：\(item.content.prefix(50))...")
         }
+    }
+
+    /// 判断新条目是否与最近一条重复。
+    ///
+    /// 图片每次采集都会写入随机文件名，路径不能作为身份；按文件内容比较，
+    /// 否则同一张图片反复复制会不断新增记录。
+    private nonisolated func isDuplicate(_ item: ClipboardItem, of first: ClipboardHistoryItem) -> Bool {
+        guard first.type == item.type.rawValue,
+              first.richTextRTF == item.richTextRTF,
+              first.richTextHTML == item.richTextHTML else {
+            return false
+        }
+        guard item.type == .image else {
+            return first.content == item.content
+        }
+        // 路径相同代表同一次采集；否则比较落盘内容。旧文件缺失时视为不同。
+        return first.content != item.content
+            && FileManager.default.contentsEqual(atPath: item.content, andPath: first.content)
     }
 
     /// 获取所有项
