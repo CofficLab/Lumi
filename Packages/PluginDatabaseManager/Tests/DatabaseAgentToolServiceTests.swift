@@ -365,3 +365,66 @@ import Foundation
         #expect(payload.truncated == true)
     }
 }
+
+/// 针对真实 SQLite 连接的复用规则测试。
+@Suite(.serialized) struct DatabaseAgentToolServiceConnectionTests {
+
+    @Test func queryReadonlyUsesUpdatedConfigWhenSavedConnectionIsEdited() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DatabaseAgentConfig-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let oldURL = directory.appending(path: "old.sqlite")
+        let newURL = directory.appending(path: "new.sqlite")
+        try await Self.createSQLiteFile(at: oldURL, table: "old_table")
+        try await Self.createSQLiteFile(at: newURL, table: "new_table")
+
+        let id = UUID()
+        let sql = "SELECT name FROM sqlite_master WHERE type = 'table'"
+        var config = DatabaseConfig(id: id, name: "Agent", type: .sqlite, database: oldURL.path)
+        await DatabaseAgentConnectionRegistry.shared.upsert(config)
+        defer {
+            Task {
+                await DatabaseAgentConnectionRegistry.shared.remove(id: id)
+                await DatabaseManagerCore.shared.disconnect(configId: id)
+            }
+        }
+
+        let oldResult = try await DatabaseAgentToolService.shared.queryReadonly(
+            connectionId: id, sql: sql, limit: 10
+        )
+        #expect(oldResult.contains("old_table"))
+
+        // 编辑已保存连接（保留 id、换成新库）后，不能继续复用旧连接。
+        config.database = newURL.path
+        await DatabaseAgentConnectionRegistry.shared.upsert(config)
+
+        let newResult = try await DatabaseAgentToolService.shared.queryReadonly(
+            connectionId: id, sql: sql, limit: 10
+        )
+        #expect(newResult.contains("new_table"))
+        #expect(!newResult.contains("old_table"))
+
+        // 主动断开后再次查询应重连到当前配置。
+        await DatabaseManagerCore.shared.disconnect(configId: id)
+        let afterDisconnect = try await DatabaseAgentToolService.shared.queryReadonly(
+            connectionId: id, sql: sql, limit: 10
+        )
+        #expect(afterDisconnect.contains("new_table"))
+    }
+
+    private static func createSQLiteFile(at url: URL, table: String) async throws {
+        let manager = DatabaseManagerCore()
+        // 直接注册驱动：`DatabaseDriverBootstrap` 是进程级一次性注册，
+        // 这里不能抢先把它消耗掉，否则共享 manager 拿不到驱动。
+        await manager.register(driver: SQLiteDriver())
+        let connection = try await manager.connect(
+            config: DatabaseConfig(name: table, type: .sqlite, database: url.path)
+        )
+        _ = try await connection.execute(
+            "CREATE TABLE \(table) (id INTEGER PRIMARY KEY)", params: nil
+        )
+        await connection.close()
+    }
+}
