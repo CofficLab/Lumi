@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationFork 的实现包，包含 6 个主要类型；当前测试覆盖 25 条用例。
+PluginConversationFork 的实现包，包含 6 个主要类型；当前测试覆盖 27 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 25
+测试文件: 2 个，用例总数: 27
 
 核心组件（源码目录）:
 - `Observers/`
@@ -27,7 +27,7 @@ PluginConversationFork 的实现包，包含 6 个主要类型；当前测试覆
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **ConversationForkSelectionObserver**（3 条）：由 `buttonHiddenWithoutSelectedConversation`、`buttonFollowsSelectionState`、`doesNotRegisterTwice` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **综合**（22 条）：由 `summarizerEmptyFallback`、`summarizerFallbackWithHistory`、`renderHistory` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（24 条）：由 `summarizerEmptyFallback`、`summarizerFallbackWithHistory`、`renderHistory` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -58,27 +58,29 @@ PluginConversationFork 的实现包，包含 6 个主要类型；当前测试覆
 | 23 | 综合 | 正文为空但带工具调用的 assistant 消息仍参与摘要 | assistant 消息 content 为空、toolCalls 非空 | `filteredMessages` 处理该消息 | 消息被保留并包含工具名 | P1 | ✅ 已覆盖 | `filteredMessagesKeepsToolCallOnlyAssistant` |
 | 24 | 综合 | 工具结果超长时按上限截断 | `.tool` 消息正文超过 `maxToolResultChars` | `filteredMessages` 处理该消息 | 内容带 `…[truncated]` 且不超过上限 | P0 | ✅ 已覆盖 | `filteredMessagesTruncatesLongToolResult` |
 | 25 | 综合 | 回退摘要包含工具动作与结果 | 历史含带 toolCalls 的 assistant 与 `.tool` 结果 | LLM 摘要不可用时调用 `summarize` | 回退摘要包含工具名与工具输出 | P1 | ✅ 已覆盖 | `summarizerFallbackIncludesToolActivity` |
+| 26 | 综合 | fork 继承源对话的自动化级别、推理强度与详细程度 | 全局 New Chat 为 Build/low/standard，源对话为 Chat/max/detailed | 执行 `fork` | 新对话取 Chat/max/detailed，而非全局值 | P1 | ✅ 已覆盖 | `forkInheritsConversationPreferences` |
+| 27 | 综合 | 源对话关闭推理时 fork 不继承全局推理强度 | 全局推理为 low，源对话显式关闭推理（nil） | 执行 `fork` | 新对话 `reasoningEffort` 仍为 nil | P1 | ✅ 已覆盖 | `forkKeepsReasoningDisabledWhenSourceDisablesIt` |
 
-> 说明：全部 **25 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 6 / 6
-- P1: 已覆盖 13 / 13
+- P1: 已覆盖 15 / 15
 - P2: 已覆盖 6 / 6
-- **合计: 25 / 25**（仅表示清单场景，非源码覆盖率）
+- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（13 条）
+- **P1**: 其余功能性用例（15 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 25 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

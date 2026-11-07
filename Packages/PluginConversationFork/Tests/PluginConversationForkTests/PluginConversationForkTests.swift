@@ -389,6 +389,49 @@ struct ConversationForkCoordinatorTests {
         #expect(forked.modelName == "gpt-4")
     }
 
+    @Test("fork 继承源对话的自动化级别、推理强度与详细程度")
+    func forkInheritsConversationPreferences() async throws {
+        let conversations = DefaultConversationManager()
+        // 全局 New Chat 默认值与源对话不同，分叉不应取这些值。
+        conversations.setGlobalAutomationLevel(.build)
+        conversations.setGlobalReasoningEffort(.low)
+        conversations.setGlobalVerbosity(.standard)
+
+        let messages = DefaultMessageManager()
+        let sourceID = try conversations.createConversation(title: "Chat 对话", projectPath: nil, providerID: nil, modelName: nil)
+        conversations.setAutomationLevel(.chat, for: sourceID)
+        conversations.setReasoningEffort(.max, for: sourceID)
+        conversations.setVerbosity(.detailed, for: sourceID)
+        messages.insertMessage(Message(conversationID: sourceID, role: .user, content: "问题"), to: sourceID)
+        messages.insertMessage(Message(conversationID: sourceID, role: .assistant, content: "回答"), to: sourceID)
+
+        let outcome = try await makeCoordinator(conversations: conversations, messages: messages)
+            .fork(conversationID: sourceID)
+
+        let forked = try #require(conversations.conversations.first { $0.id == outcome.newConversationID })
+        #expect(forked.automationLevel == .chat)
+        #expect(forked.reasoningEffort == .max)
+        #expect(forked.verbosity == .detailed)
+    }
+
+    @Test("源对话关闭推理时 fork 不继承全局推理强度")
+    func forkKeepsReasoningDisabledWhenSourceDisablesIt() async throws {
+        let conversations = DefaultConversationManager()
+        conversations.setGlobalReasoningEffort(.low)
+
+        let messages = DefaultMessageManager()
+        let sourceID = try conversations.createConversation(title: "无推理对话", projectPath: nil, providerID: nil, modelName: nil)
+        conversations.clearReasoningEffort(for: sourceID)
+        messages.insertMessage(Message(conversationID: sourceID, role: .user, content: "问题"), to: sourceID)
+        messages.insertMessage(Message(conversationID: sourceID, role: .assistant, content: "回答"), to: sourceID)
+
+        let outcome = try await makeCoordinator(conversations: conversations, messages: messages)
+            .fork(conversationID: sourceID)
+
+        let forked = try #require(conversations.conversations.first { $0.id == outcome.newConversationID })
+        #expect(forked.reasoningEffort == nil)
+    }
+
     @Test("fork 以传入的源对话为准，不跟随当前选中对话")
     func forkTargetsGivenConversation() async throws {
         let conversations = DefaultConversationManager()
