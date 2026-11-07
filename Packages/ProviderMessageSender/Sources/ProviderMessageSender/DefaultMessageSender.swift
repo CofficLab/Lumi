@@ -37,6 +37,13 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
     private var completedOutcomes: [UUID: AgentLoopOutcome] = [:]
     private var agentLoopObserver: (any AgentLoopObserverHandle)?
     private var messageSenderObservers: [UUID: (MessageSenderEvent) -> Void] = [:]
+    /// 后台提交（附件编码 + 落库）的队尾：新提交排在它之后。
+    ///
+    /// 附件编码在 `Task.detached` 里跑，两个并发发送之间没有任何顺序保证；
+    /// 用户连续发送时，后一条可能先编码完并抢先落库，反转操作顺序。
+    private var backgroundCommitTail: Task<Void, Never>?
+    /// 测试用：按正文注入编码延迟，构造「并发发送、乱序完成」的窗口。
+    var backgroundCommitDelayForTesting: (@MainActor (String) -> Duration)?
 
     public private(set) var isSending = false {
         didSet {
@@ -249,6 +256,32 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         collapsedBlocks: [CollapsedContentBlock],
         conversationID: UUID?
     ) async throws -> MessageSendCommit? {
+        // 串行化后台提交，保证「先触发的发送先落库」。
+        let previous = backgroundCommitTail
+        let work = Task { @MainActor in
+            await previous?.value
+            return try await self.performBackgroundCommit(
+                content,
+                imageAttachments: imageAttachments,
+                fileAttachments: fileAttachments,
+                collapsedBlocks: collapsedBlocks,
+                conversationID: conversationID
+            )
+        }
+        backgroundCommitTail = Task { _ = try? await work.value }
+        return try await work.value
+    }
+
+    private func performBackgroundCommit(
+        _ content: String,
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
+        conversationID: UUID?
+    ) async throws -> MessageSendCommit? {
+        if let delay = backgroundCommitDelayForTesting?(content), delay > .zero {
+            try? await Task.sleep(for: delay)
+        }
         // Resolve the target before the detached metadata work. The user may
         // switch conversations while attachments are being encoded; the
         // message must stay assigned to the conversation active at send time.

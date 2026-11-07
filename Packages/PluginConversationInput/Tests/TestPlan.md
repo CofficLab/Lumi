@@ -265,6 +265,9 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 120 | 折叠块 | 没有 chip 时不产生区间 | 纯文本存储 | 拍平内容 | 区间数组为空（纯文本不该被误判成折叠块） | P2 | ✅ 已覆盖 | `producesNoBlocksForPlainText` |
 | 121 | 折叠块 | 编辑器把折叠块区间上报给上层 | 装配 Coordinator 的编辑器 | 触发区间上报回调 | 回调收到折叠块区间（漏掉它，发送时消息会退化成一大段纯文字） | P1 | ✅ 已覆盖 | `reportsCollapsedBlocksUpward` |
 | 122 | 输入框卡片 | 输入框卡片内部保留内容内边距 | 渲染走完整 `composerContentInsets()` + `composerSurface()` 链路的标记色卡片 | 比较标记色块上缘（文字上缘）与卡片上缘之差 | 差值为 10pt（文字顶到卡片边缘会被读成「被裁切」；这条与「卡片与聊天区的外间距」是两回事，不许一起清零） | P1 | ✅ 已覆盖 | `cardKeepsContentInsets` |
+| 123 | 发送 | 带附件发送在编码完成前消费附件，编码窗口内再次发送被忽略 | text + 一个文件附件 | `send()` 后立即再 `send()` | 附件在异步编码前离开挂起池、`canSend` 转 false；第二次发送不再提交，后台提交仅 1 次且附件完整 | P0 | ✅ 已覆盖 | `sendWithAttachmentsConsumesThemBeforeEncoding` |
+| 124 | 发送 | 发送按钮路径同样在编码完成前消费附件 | text + 一张图片 | `send()` 后立即再 `send()` | 附件池清空、按钮熄灭；后台提交仅 1 次 | P0 | ✅ 已覆盖 | `sendingWithAttachmentsReservesThemBeforeEncoding` |
+| 125 | 错误 | 附件提交失败时附件回到挂起池 | 后台提交抛错 | `send()` 后等待错误回填 | `errorMessage` 非空，附件重新出现在挂起池与预览中，可直接重试 | P1 | ✅ 已覆盖 | `failedAttachmentCommitRestoresAttachments` |
 
 > **鉴别力验证**：本轮用一处变异确认用例不是「恒绿」——把
 > `Coordinator.textDidChange` 里的两道 IME 守卫
@@ -278,8 +281,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > 里有一份**代码完全相同**的守卫，全局替换第一处会改错函数，
 > 导致「用例仍然全绿」的假阴性。
 
-> 说明：全部 **122 条场景 / 127 个测试方法**已在 macOS 上实跑通过
-> （`swift test` → 127 tests in 18 suites passed）。
+> 说明：全部 **125 条场景 / 130 个测试方法**已在 macOS 上实跑通过
+> （`swift test` → 130 tests in 18 suites passed）。
 >
 > 实现中几条易错约定已在用例里显式锁定：
 > - **附件路径必须后台化**（ID 10）：同步 `commitUserMessage` 不做编码，附件消息走它会丢内容，
@@ -300,10 +303,10 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 
 ## 覆盖率统计
 
-- P0: 已覆盖 39 / 39
-- P1: 已覆盖 66 / 66
-- P2: 已覆盖 17 / 17
-- **合计: 122 / 122**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 41 / 41
+- P1: 已覆盖 67 / 67
+- P2: 已覆盖 16 / 16
+- **合计: 124 / 124**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

@@ -170,6 +170,34 @@ struct SendActionBarViewModelTests {
         }
     }
 
+    @Test("带附件发送在编码完成前消费附件，编码窗口内再次发送被忽略")
+    func sendingWithAttachmentsReservesThemBeforeEncoding() async throws {
+        let conversationID = UUID()
+        let capability = SendActionBarTestCapability()
+        capability.text = "first"
+        let image = UserImageAttachment(mimeType: "image/png", base64Data: "AAAA")
+        capability.pendingImageAttachments = [image]
+        capability.commit = MessageSendCommit(conversationID: conversationID, userMessageID: UUID())
+        let viewModel = SendActionBarViewModel(capability: capability)
+
+        viewModel.send()
+
+        // 附件在进入异步编码前就离开挂起池，按钮随之熄灭。
+        #expect(capability.pendingImageAttachments.isEmpty)
+        #expect(!viewModel.state.canSend)
+
+        // 编码尚未完成时再次点发送：没有正文也没有附件，必须被忽略。
+        viewModel.send()
+
+        await waitUntil("附件消息未走后台提交") {
+            !capability.backgroundCommits.isEmpty
+        }
+        // 只提交一次，且提交的正是发出去的那张图。
+        #expect(capability.backgroundCommits.count == 1)
+        let commit = try #require(capability.backgroundCommits.first)
+        #expect(commit.imageAttachments.map(\.id) == [image.id])
+    }
+
     @Test("排队的消息不会启动回合")
     func queuedCommitDoesNotStartTurn() async throws {
         let capability = SendActionBarTestCapability()

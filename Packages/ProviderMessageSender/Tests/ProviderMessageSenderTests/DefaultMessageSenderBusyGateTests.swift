@@ -261,6 +261,54 @@ struct DefaultMessageSenderBusyGateTests {
         #expect(fixture.sender.pendingMessages(for: conversationID).isEmpty)
     }
 
+    // MARK: - 并发发送顺序
+
+    /// 两条带附件的消息同时编码时，先触发的那条必须先落库。
+    ///
+    /// 附件编码各自在 `Task.detached` 里跑，完成顺序与触发顺序无关。若不做串行化，
+    /// 编码慢的第一条会被编码快的第二条抢先：时间线里先出现第二条，第一条反而进了
+    /// 待发队列——用户看到的顺序与操作顺序相反。
+    @Test("并发带附件发送按触发顺序落库")
+    func concurrentAttachmentSendsKeepCallOrder() async throws {
+        let fixture = SenderFixture()
+        let conversationID = try fixture.conversations.createConversation(
+            title: nil, projectPath: nil, providerID: nil, modelName: nil
+        )
+        fixture.sender.backgroundCommitDelayForTesting = { content in
+            content == "first" ? .milliseconds(150) : .zero
+        }
+
+        let image = UserImageAttachment(mimeType: "image/png", base64Data: "AAAA")
+        let first = Task { @MainActor in
+            try await fixture.sender.commitUserMessageInBackground(
+                "first",
+                imageAttachments: [image],
+                fileAttachments: [],
+                conversationID: conversationID
+            )
+        }
+        // 让第一条先进入编码窗口；第二条编码更快，没有串行化就会抢先落库。
+        try await Task.sleep(for: .milliseconds(30))
+        let second = Task { @MainActor in
+            try await fixture.sender.commitUserMessageInBackground(
+                "second",
+                imageAttachments: [image],
+                fileAttachments: [],
+                conversationID: conversationID
+            )
+        }
+
+        _ = try await first.value
+        _ = try await second.value
+
+        let timeline = fixture.messages.messages(for: conversationID)
+            .filter { $0.role == .user }
+            .map(\.content)
+        let pending = fixture.sender.pendingMessages(for: conversationID).map(\.content)
+        #expect(timeline == ["first"], "第一条必须先落库；顺序反转时这里会出现 second")
+        #expect(pending == ["second"], "第二条应在第一条之后进入待发队列")
+    }
+
     // MARK: - Helpers
 
     /// `ask_user` 提问的挂起点。

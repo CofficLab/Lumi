@@ -237,6 +237,51 @@ struct ConversationInputViewModelAttachmentTests {
         #expect(capability.errorMessage == nil)
     }
 
+    // MARK: - 发送即消费
+
+    @Test("带附件发送在编码完成前消费附件，编码窗口内再次发送被忽略")
+    func sendWithAttachmentsConsumesThemBeforeEncoding() async {
+        let capability = SendActionBarTestCapability()
+        let file = UserFileAttachment(fileName: "notes.txt", mimeType: "text/plain", textContent: "notes")
+        capability.pendingFileAttachments = [file]
+        capability.text = "first"
+        capability.commit = MessageSendCommit(conversationID: UUID(), userMessageID: UUID())
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        viewModel.send()
+
+        // 附件在进入异步编码前就离开挂起池，输入框也已清空。
+        #expect(capability.pendingFileAttachments.isEmpty)
+        #expect(!viewModel.canSend)
+
+        // 编码尚未完成时再次按回车：没有正文也没有附件，必须被忽略。
+        viewModel.send()
+
+        await waitUntil("附件消息未走后台提交") {
+            !capability.backgroundCommits.isEmpty
+        }
+        #expect(capability.backgroundCommits.count == 1)
+        #expect(capability.backgroundCommits.first?.fileAttachments.map(\.id) == [file.id])
+    }
+
+    @Test("附件提交失败时附件回到挂起池，可直接重试")
+    func failedAttachmentCommitRestoresAttachments() async {
+        let capability = SendActionBarTestCapability()
+        let file = UserFileAttachment(fileName: "notes.txt", mimeType: "text/plain", textContent: "notes")
+        capability.pendingFileAttachments = [file]
+        capability.text = "first"
+        capability.commitError = SendActionBarTestError.failed
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        viewModel.send()
+
+        await waitUntil("附件提交失败后错误未回填") {
+            viewModel.errorMessage != nil
+        }
+        #expect(capability.pendingFileAttachments.map(\.id) == [file.id])
+        #expect(viewModel.fileAttachments.map(\.id) == [file.id])
+    }
+
     // MARK: - 焦点 / 高度绑定
 
     @Test("焦点与高度绑定双向同步到能力层")

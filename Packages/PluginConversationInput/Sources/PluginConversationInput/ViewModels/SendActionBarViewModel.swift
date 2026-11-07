@@ -83,6 +83,12 @@ final class SendActionBarViewModel: SuperLog {
         capability.text = ""
         capability.errorMessage = nil
         capability.collapsedBlocks = []
+        // 附件与正文一样，在被这条消息取走时就该离开挂起池。若等到异步编码
+        // 结束再清理，编码窗口内再次触发发送会把同一批附件当成新消息再提交一次。
+        if hasAttachments {
+            capability.clearAttachments()
+            updateAttachments()
+        }
 
         if hasAttachments {
             Task { @MainActor in
@@ -99,7 +105,11 @@ final class SendActionBarViewModel: SuperLog {
                     await capability.startTurn(for: commit)
                 } catch {
                     Self.logger.error("\(self.t)send failed ➡️ \(error.localizedDescription, privacy: .public)")
+                    // 提交失败：附件已被消费，放回挂起池让用户直接重试。
+                    imageAttachments.forEach(capability.addImageAttachment)
+                    fileAttachments.forEach(capability.addFileAttachment)
                     capability.errorMessage = error.localizedDescription
+                    updateAttachments()
                 }
             }
             return
