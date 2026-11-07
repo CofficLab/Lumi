@@ -38,10 +38,6 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
     public let name = "run_command"
     public let executionCapability: ToolExecutionCapability = .serialSideEffect
 
-    private static let highRiskCommands: Set<String> = [
-        "rm", "rmdir", "mv", "sudo", "kill", "killall", "chmod", "chown", "dd", "shutdown", "reboot"
-    ]
-
     /// Upper bound for a caller-supplied `max_output_bytes` (16 MiB per stream).
     static let maxOutputBytesCeiling = 16 * 1024 * 1024
 
@@ -76,13 +72,7 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         guard let command = arguments.stringValue("command") else { return .high }
         if arguments.boolValue("unsandboxed") == true { return .high }
-        let base = command
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .split(whereSeparator: { $0.isWhitespace })
-            .first
-            .map(String.init)?
-            .lowercased() ?? ""
-        return Self.highRiskCommands.contains(base) ? .high : .low
+        return ShellCommandRiskAnalyzer.riskLevel(for: command)
     }
 
     /// An unsandboxed call is declared as needing explicit approval.
