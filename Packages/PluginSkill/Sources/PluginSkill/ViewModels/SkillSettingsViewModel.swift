@@ -47,9 +47,9 @@ final class SkillSettingsViewModel: ObservableObject {
         return projects.first { $0.path == selectedProjectPath }
     }
 
-    /// 全部可用技能数（项目层 + 通用底座），用于 header 计数。
+    /// 合并去重后的可用技能数（项目层 + 通用底座，同名项目技能覆盖底座），与运行时注入规则一致。
     var availableSkillCount: Int {
-        projectSkills.count + baseSkills.count
+        SkillMergePolicy.merge(builtin: baseSkills, project: projectSkills).count
     }
 
     // MARK: - Observer 写入

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 38 条用例。
+PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 40 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 38
+测试文件: 3 个，用例总数: 40
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -41,7 +41,7 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 38 条
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **CreateSkillTool**（10 条）：由 `createsScannableSkill`、`keepsExistingH1WithoutDuplicatingTitle`、`makeSkillMarkdownEdgeCases`、`normalizesName`、`rejectsDuplicateSkill` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **综合**（10 条）：由 `promptBuilder`、`mergePolicy`、`serviceMergesBuiltin` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（12 条）：由 `promptBuilder`、`mergePolicy`、`serviceMergesBuiltin`、`settingsAvailableCountDeduplicatesOverriddenBaseSkills` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **SkillCRUDTools**（18 条）：由 `listReturnsProjectSkills`、`listIncludesContentOnDemand`、`listMergesBuiltinBase` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -68,45 +68,47 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 38 条
 | 18 | 综合 | SkillSettingsViewModel 无选中项目时清空技能 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `settingsViewModelEmptyWithoutProject` |
 | 19 | 综合 | SkillSettingsObserver 同步项目列表与技能底座 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `settingsObserverSyncsProjectsAndBase` |
 | 20 | 综合 | 当前项目和技能贡献变化会更新工具栏 ViewModel | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolbarObserverUpdatesViewModel` |
-| 21 | SkillCRUDTools | list_skills 列出项目技能并标记来源 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listReturnsProjectSkills` |
-| 22 | SkillCRUDTools | list_skills 传 include_content 时返回正文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listIncludesContentOnDemand` |
-| 23 | SkillCRUDTools | list_skills 混合内置底座并按名称排序 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listMergesBuiltinBase` |
-| 24 | SkillCRUDTools | list_skills limit 截断结果 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listRespectsLimit` |
-| 25 | SkillCRUDTools | list_skills 无项目且无底座时返回提示文案而非 JSON | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `listEmptyProjectReturnsHint` |
-| 26 | SkillCRUDTools | read_skill 返回元数据与正文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readReturnsMetadataAndBody` |
-| 27 | SkillCRUDTools | read_skill 技能不存在时抛 notFound | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readMissingSkillThrows` |
-| 28 | SkillCRUDTools | update_skill 只改指定字段，其余保持原值 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `updatePreservesUntouchedFields` |
-| 29 | SkillCRUDTools | update_skill 传空数组清空 triggers，未传则保留 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `updateTriggersClearSemantics` |
-| 30 | SkillCRUDTools | update_skill 替换正文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `updateReplacesBody` |
-| 31 | SkillCRUDTools | update_skill 未传任何可改字段时抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `updateRequiresAField` |
-| 32 | SkillCRUDTools | update_skill 技能不存在时抛 notFound | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `updateMissingSkillThrows` |
-| 33 | SkillCRUDTools | delete_skill 移除技能目录，扫描器不再返回 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `deleteRemovesSkill` |
-| 34 | SkillCRUDTools | delete_skill 技能不存在时抛 notFound | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `deleteMissingSkillThrows` |
-| 35 | SkillCRUDTools | 创建 → 列出 → 读取 → 更新 → 删除 全链路 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fullCrudLifecycle` |
-| 36 | SkillCRUDTools | delete_skill 拒绝规范化后为空的 name，不会删掉整个 skills 目录 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `deleteRejectsEmptyNormalizedName` |
-| 37 | SkillCRUDTools | SkillToolSupport 参数解析边界 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `supportParsers` |
-| 38 | SkillCRUDTools | SkillToolSupport 无当前项目且未传路径时返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `supportProjectPathNil` |
+| 21 | 综合 | 可用技能总数按合并规则去重，同名项目技能覆盖底座 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `settingsAvailableCountDeduplicatesOverriddenBaseSkills` |
+| 22 | 综合 | 无同名技能时可用技能总数为两组之和 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `settingsAvailableCountSumsDistinctSkills` |
+| 23 | SkillCRUDTools | list_skills 列出项目技能并标记来源 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listReturnsProjectSkills` |
+| 24 | SkillCRUDTools | list_skills 传 include_content 时返回正文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listIncludesContentOnDemand` |
+| 25 | SkillCRUDTools | list_skills 混合内置底座并按名称排序 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listMergesBuiltinBase` |
+| 26 | SkillCRUDTools | list_skills limit 截断结果 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `listRespectsLimit` |
+| 27 | SkillCRUDTools | list_skills 无项目且无底座时返回提示文案而非 JSON | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `listEmptyProjectReturnsHint` |
+| 28 | SkillCRUDTools | read_skill 返回元数据与正文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readReturnsMetadataAndBody` |
+| 29 | SkillCRUDTools | read_skill 技能不存在时抛 notFound | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readMissingSkillThrows` |
+| 30 | SkillCRUDTools | update_skill 只改指定字段，其余保持原值 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `updatePreservesUntouchedFields` |
+| 31 | SkillCRUDTools | update_skill 传空数组清空 triggers，未传则保留 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `updateTriggersClearSemantics` |
+| 32 | SkillCRUDTools | update_skill 替换正文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `updateReplacesBody` |
+| 33 | SkillCRUDTools | update_skill 未传任何可改字段时抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `updateRequiresAField` |
+| 34 | SkillCRUDTools | update_skill 技能不存在时抛 notFound | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `updateMissingSkillThrows` |
+| 35 | SkillCRUDTools | delete_skill 移除技能目录，扫描器不再返回 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `deleteRemovesSkill` |
+| 36 | SkillCRUDTools | delete_skill 技能不存在时抛 notFound | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `deleteMissingSkillThrows` |
+| 37 | SkillCRUDTools | 创建 → 列出 → 读取 → 更新 → 删除 全链路 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fullCrudLifecycle` |
+| 38 | SkillCRUDTools | delete_skill 拒绝规范化后为空的 name，不会删掉整个 skills 目录 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `deleteRejectsEmptyNormalizedName` |
+| 39 | SkillCRUDTools | SkillToolSupport 参数解析边界 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `supportParsers` |
+| 40 | SkillCRUDTools | SkillToolSupport 无当前项目且未传路径时返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `supportProjectPathNil` |
 
-> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **40 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 6 / 6
-- P1: 已覆盖 26 / 26
+- P1: 已覆盖 28 / 28
 - P2: 已覆盖 6 / 6
-- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
+- **合计: 40 / 40**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（26 条）
+- **P1**: 其余功能性用例（28 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 38 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 40 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
