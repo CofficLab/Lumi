@@ -29,6 +29,16 @@ public class InputSettingsViewModel: ObservableObject {
         runningApps = NSWorkspace.shared.runningApplications
             .filter { $0.activationPolicy == .regular }
     }
+
+    /// 重新枚举系统输入源并同步到界面。
+    ///
+    /// 输入源列表此前只在 `InputService` 单例初始化时读取一次，运行期间通过
+    /// macOS 设置新增的键盘不会出现，必须重启 Lumi。设置页出现时调用这里，
+    /// 保证候选列表反映当前系统状态。
+    public func refreshSources() {
+        service.refreshSources()
+        availableSources = service.availableInputSources
+    }
     
     public func addRule() {
         guard let app = selectedApp, !selectedSourceID.isEmpty else { return }
