@@ -109,6 +109,17 @@ final class ConversationForkCoordinator {
         }
         conversations.selectConversation(id: newID)
 
+        // 新建对话默认取全局 New Chat 设置；分叉应沿用源对话的会话级设置，
+        // 否则 Chat 对话会分叉成 Build 并重新获得工具能力，推理档位与详细程度也会被重置。
+        conversations.setAutomationLevel(conversations.automationLevel(for: conversationID), for: newID)
+        conversations.setVerbosity(conversations.verbosity(for: conversationID), for: newID)
+        // 源对话可能显式关闭推理（存 nil）；此时不能回退到全局档位。
+        if let effort = oldSummary?.reasoningEffort {
+            conversations.setReasoningEffort(effort, for: newID)
+        } else {
+            conversations.clearReasoningEffort(for: newID)
+        }
+
         // 续写失败不致命：摘要已作为首条消息写入新对话，用户可以在输入区重试。
         try? await sender.sendMessage(summaryOutcome.summary, conversationID: newID)
 
