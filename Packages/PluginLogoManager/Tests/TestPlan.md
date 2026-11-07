@@ -5,7 +5,7 @@
 PluginLogoManager Logo 管理器插件（KernelCore 生态）。 以自研 `LogoManager` 替换 `ProviderFactory` 预注册的 `DefaultLogoProviding`， 提供带结构化日志的 `LogoProviding` 实现。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 5
+测试文件: 1 个，用例总数: 6
 
 ## 公开 API
 
@@ -18,7 +18,7 @@ PluginLogoManager Logo 管理器插件（KernelCore 生态）。 以自研 `Logo
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **LogoManager**（5 条）：由 `registerAndSort`、`registerOverwrite`、`unregister` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **LogoManager**（6 条）：由 `registerAndSort`、`registerOverwrite`、`unregister` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -29,16 +29,17 @@ PluginLogoManager Logo 管理器插件（KernelCore 生态）。 以自研 `Logo
 | 3 | LogoManager | 注销 Logo 项 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unregister` |
 | 4 | LogoManager | 清空所有贡献 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `clearAll` |
 | 5 | LogoManager | 高亮状态切换 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `highlightToggle` |
+| 6 | LogoManager | 状态变化通过 objectWillChange 通知菜单栏宿主重绘 | — | 注册 Logo、切换高亮（含重复设置同一状态） | 每次真实变化触发一次 objectWillChange，重复设置不触发 | P1 | ✅ 已覆盖 | `stateChangesPublishObjectWillChange` |
 
-> 说明：全部 **5 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **6 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 5 / 5
+- P1: 已覆盖 6 / 6
 - P2: 已覆盖 0 / 0
-- **合计: 5 / 5**（仅表示清单场景，非源码覆盖率）
+- **合计: 6 / 6**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
