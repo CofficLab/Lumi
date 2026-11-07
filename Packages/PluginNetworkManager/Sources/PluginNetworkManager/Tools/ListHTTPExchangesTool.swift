@@ -59,7 +59,7 @@ struct ListHTTPExchangesTool: SuperAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let limit = min(NetworkToolSupport.int(arguments, "limit") ?? 20, 100)
+        let limit = NetworkToolSupport.limit(arguments, default: 20, max: 100)
         let method = NetworkToolSupport.string(arguments, "method")?.uppercased()
         let urlContains = NetworkToolSupport.string(arguments, "url_contains")
         let statusCode = NetworkToolSupport.int(arguments, "status_code")

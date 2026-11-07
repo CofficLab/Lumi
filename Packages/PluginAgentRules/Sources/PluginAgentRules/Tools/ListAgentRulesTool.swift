@@ -86,18 +86,7 @@ public struct ListAgentRulesTool: SuperAgentTool {
     }
 
     static func normalizedLimit(_ value: Any?) -> Int? {
-        let raw: Int?
-        if let int = value as? Int {
-            raw = int
-        } else if let double = value as? Double {
-            raw = Int(double)
-        } else if let string = value as? String, let int = Int(string) {
-            raw = int
-        } else {
-            raw = nil
-        }
-
-        guard let raw else { return nil }
+        guard let raw = ToolArgumentNumber.int(value) else { return nil }
         return min(max(raw, Self.minLimit), Self.maxLimit)
     }
 

@@ -32,12 +32,7 @@ enum AppStoreConnectToolSchemaValue {
 
 extension ToolArgument {
     var stringValue: String? { value as? String }
-    var intValue: Int? {
-        if let value = value as? Int { return value }
-        if let value = value as? NSNumber { return value.intValue }
-        if let value = value as? String { return Int(value) }
-        return nil
-    }
+    var intValue: Int? { ToolArgumentNumber.int(value) }
     var boolValue: Bool? {
         if let value = value as? Bool { return value }
         if let value = value as? NSNumber { return value.boolValue }

@@ -48,7 +48,7 @@ struct GetHTTPDomainLogTool: SuperAgentTool, SuperLog {
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         let domain = NetworkToolSupport.string(arguments, "domain") ?? ""
         let pathPrefix = NetworkToolSupport.string(arguments, "path_prefix")
-        let limit = min(NetworkToolSupport.int(arguments, "limit") ?? 50, 200)
+        let limit = NetworkToolSupport.limit(arguments, default: 50, max: 200)
         let hours = min(NetworkToolSupport.int(arguments, "hours") ?? 24, 720)
 
         guard !domain.isEmpty else {

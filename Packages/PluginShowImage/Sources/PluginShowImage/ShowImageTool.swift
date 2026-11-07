@@ -173,26 +173,8 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
     // MARK: - Helpers
 
     static func normalizedMaxWidth(_ value: Any?) -> Int {
-        let rawMaxWidth: Int?
-        if let int = value as? Int {
-            rawMaxWidth = int
-        } else if let double = value as? Double {
-            if double.isNaN {
-                rawMaxWidth = nil
-            } else if double < Double(minMaxWidth) {
-                rawMaxWidth = minMaxWidth
-            } else if double > Double(maxMaxWidth) {
-                rawMaxWidth = maxMaxWidth
-            } else {
-                rawMaxWidth = Int(double)
-            }
-        } else if let string = value as? String, let int = Int(string) {
-            rawMaxWidth = int
-        } else {
-            rawMaxWidth = nil
-        }
-
-        return min(max(rawMaxWidth ?? defaultMaxWidth, minMaxWidth), maxMaxWidth)
+        let rawMaxWidth = ToolArgumentNumber.int(value) ?? defaultMaxWidth
+        return min(max(rawMaxWidth, minMaxWidth), maxMaxWidth)
     }
 
     static func normalizedSource(from source: String) throws -> ShowImageSource {

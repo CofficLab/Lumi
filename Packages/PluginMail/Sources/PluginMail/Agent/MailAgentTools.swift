@@ -277,7 +277,7 @@ public struct MailReadMessageTool: SuperAgentTool {
     public var executionCapability: ToolExecutionCapability { .parallelReadOnly }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let uid = MailToolSupport.optionalInt(arguments, "uid") else {
+        guard let uid = MailToolSupport.optionalInt(arguments, "uid"), uid > 0 else {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "缺少必需参数: uid")
         }
         return try await service.readMessage(
@@ -403,12 +403,8 @@ private enum MailToolSupport {
     }
 
     static func optionalInt(_ arguments: [String: ToolArgument], _ key: String) -> Int? {
-        guard let value = arguments[key]?.value else { return nil }
-        if let int = value as? Int { return int }
-        if let int = value as? Int64 { return Int(int) }
-        if let double = value as? Double { return Int(double) }
-        if let string = value as? String { return Int(string) }
-        return nil
+        if let int64 = arguments[key]?.value as? Int64 { return Int(int64) }
+        return ToolArgumentNumber.int(arguments[key]?.value)
     }
 
     static func optionalUUID(_ arguments: [String: ToolArgument], _ key: String) -> UUID? {

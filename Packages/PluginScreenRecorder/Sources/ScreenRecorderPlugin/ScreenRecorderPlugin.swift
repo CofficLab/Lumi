@@ -208,9 +208,7 @@ private enum ScreenRecorderV2Support {
     }
 
     static func integer(_ arguments: [String: ToolArgument], _ key: String) -> Int? {
-        if let value = arguments[key]?.value as? Int { return value }
-        if let value = arguments[key]?.value as? NSNumber { return value.intValue }
-        return nil
+        ToolArgumentNumber.int(arguments[key]?.value)
     }
 
     static func boolean(_ arguments: [String: ToolArgument], _ key: String) -> Bool {

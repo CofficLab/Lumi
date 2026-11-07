@@ -42,7 +42,7 @@ struct GetHTTPSlowRequestsTool: SuperAgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         let threshold = NetworkToolSupport.double(arguments, "threshold_seconds") ?? 1.0
-        let limit = min(NetworkToolSupport.int(arguments, "limit") ?? 20, 100)
+        let limit = NetworkToolSupport.limit(arguments, default: 20, max: 100)
         let hours = min(NetworkToolSupport.int(arguments, "hours") ?? 24, 720)
 
         let result = await MainActor.run { () -> String in
