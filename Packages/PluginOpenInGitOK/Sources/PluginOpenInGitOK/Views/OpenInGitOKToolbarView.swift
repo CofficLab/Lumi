@@ -5,8 +5,16 @@ import SwiftUI
 struct OpenInGitOKToolbarView: View {
     @StateObject private var model: OpenInGitOKToolbarViewModel
 
-    init(tool: OpenInTool, projectCapability: OpenInProjectCapability) {
-        _model = StateObject(wrappedValue: OpenInGitOKToolbarViewModel(tool: tool, projectCapability: projectCapability))
+    init(
+        tool: OpenInTool,
+        projectCapability: OpenInProjectCapability,
+        failureReporter: any OpenInFailureReporting
+    ) {
+        _model = StateObject(wrappedValue: OpenInGitOKToolbarViewModel(
+            tool: tool,
+            projectCapability: projectCapability,
+            failureReporter: failureReporter
+        ))
     }
 
     var body: some View {
@@ -30,6 +38,10 @@ struct OpenInGitOKToolbarView: View {
 // MARK: - 预览
 
 #Preview("Open In GitOK Toolbar") {
-    OpenInGitOKToolbarView(tool: OpenInTool(config: OpenInTool.gitOK, project: nil), projectCapability: OpenInProjectCapabilityAdapter(project: nil))
+    OpenInGitOKToolbarView(
+        tool: OpenInTool(config: OpenInTool.gitOK, project: nil),
+        projectCapability: OpenInProjectCapabilityAdapter(project: nil),
+        failureReporter: NoopOpenInFailureReporter()
+    )
         .padding()
 }

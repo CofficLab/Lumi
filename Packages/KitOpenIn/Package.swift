@@ -20,6 +20,7 @@ let package = Package(
                 "KitAgentTool",
                 "LumiUI",
                 .product(name: "ProviderProject", package: "LumiProviders"),
+                .product(name: "ProviderToast", package: "LumiProviders"),
             ],
             path: "Sources/KitOpenIn",
             resources: [.process("../../Resources")]
@@ -30,6 +31,7 @@ let package = Package(
                 "KitOpenIn",
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
+                .product(name: "ProviderToast", package: "LumiProviders"),
             ]
         ),
     ]

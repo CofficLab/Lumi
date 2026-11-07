@@ -5,6 +5,7 @@ import LumiLoggingKit
 import KitOpenIn
 import ProviderProject
 import ProviderDocsView
+import ProviderToast
 import ProviderToolManager
 import ProviderToolbar
 import SwiftUI
@@ -43,6 +44,9 @@ public final class OpenInXcodePlugin: SuperPlugin, SuperLog {
         let tool = OpenInTool(config: OpenInTool.xcode, project: project)
 
         if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
+            let failureReporter = OpenInFailureToastReporter(
+                toast: kernel.resolveProvider((any ToastProviding).self)
+            )
             toolbar.addToolbarItems([
                 ToolbarItem(
                     id: "\(id).toolbar",
@@ -51,7 +55,11 @@ public final class OpenInXcodePlugin: SuperPlugin, SuperLog {
                     category: .project,
                     order: order
                 ) {
-                    OpenInXcodeToolbarView(tool: tool, project: project)
+                    OpenInXcodeToolbarView(
+                        tool: tool,
+                        project: project,
+                        failureReporter: failureReporter
+                    )
                 },
             ])
         }
@@ -81,8 +89,16 @@ public final class OpenInXcodePlugin: SuperPlugin, SuperLog {
 private struct OpenInXcodeToolbarView: View {
     @StateObject private var model: OpenInXcodeToolbarModel
 
-    init(tool: OpenInTool, project: (any ProjectProviding)?) {
-        _model = StateObject(wrappedValue: OpenInXcodeToolbarModel(tool: tool, project: project))
+    init(
+        tool: OpenInTool,
+        project: (any ProjectProviding)?,
+        failureReporter: any OpenInFailureReporting
+    ) {
+        _model = StateObject(wrappedValue: OpenInXcodeToolbarModel(
+            tool: tool,
+            project: project,
+            failureReporter: failureReporter
+        ))
     }
 
     var body: some View {
@@ -108,12 +124,18 @@ private struct OpenInXcodeToolbarView: View {
 private final class OpenInXcodeToolbarModel: ObservableObject {
     let tool: OpenInTool
     private var projectObserver: (any ProjectProvidingObserverHandle)?
+    private let failureReporter: any OpenInFailureReporting
 
     @Published private(set) var currentProjectPath: String?
     @Published private(set) var isOpening = false
 
-    init(tool: OpenInTool, project: (any ProjectProviding)?) {
+    init(
+        tool: OpenInTool,
+        project: (any ProjectProviding)?,
+        failureReporter: any OpenInFailureReporting
+    ) {
         self.tool = tool
+        self.failureReporter = failureReporter
         self.currentProjectPath = project?.currentProject?.path
         self.projectObserver = project?.addObserver { [weak self] event in
             guard case let .currentProjectChanged(currentProject, _) = event else { return }
@@ -137,6 +159,11 @@ private final class OpenInXcodeToolbarModel: ObservableObject {
                 _ = try await tool.execute(arguments: [:])
             } catch {
                 OpenInXcodePlugin.logger.error("\(OpenInXcodePlugin.t)Failed to open project in Xcode: \(error.localizedDescription)")
+                // 失败不能无声：向用户展示具体原因。
+                failureReporter.reportOpenFailure(
+                    title: OpenInXcodeLocalization.string("Cannot open project"),
+                    detail: "\(OpenInTool.xcode.displayName): \(error.localizedDescription)"
+                )
             }
         }
     }

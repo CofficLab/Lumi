@@ -5,8 +5,16 @@ import SwiftUI
 struct OpenInVSCodeToolbarView: View {
     @StateObject private var model: OpenInVSCodeToolbarViewModel
 
-    init(tool: OpenInTool, projectCapability: OpenInProjectCapability) {
-        _model = StateObject(wrappedValue: OpenInVSCodeToolbarViewModel(tool: tool, projectCapability: projectCapability))
+    init(
+        tool: OpenInTool,
+        projectCapability: OpenInProjectCapability,
+        failureReporter: any OpenInFailureReporting
+    ) {
+        _model = StateObject(wrappedValue: OpenInVSCodeToolbarViewModel(
+            tool: tool,
+            projectCapability: projectCapability,
+            failureReporter: failureReporter
+        ))
     }
 
     var body: some View {
@@ -32,7 +40,8 @@ struct OpenInVSCodeToolbarView: View {
 #Preview("Open In VS Code Toolbar") {
     OpenInVSCodeToolbarView(
         tool: OpenInTool(config: OpenInTool.vscode, project: nil),
-        projectCapability: OpenInProjectCapabilityAdapter(project: nil)
+        projectCapability: OpenInProjectCapabilityAdapter(project: nil),
+        failureReporter: NoopOpenInFailureReporter()
     )
     .padding()
 }

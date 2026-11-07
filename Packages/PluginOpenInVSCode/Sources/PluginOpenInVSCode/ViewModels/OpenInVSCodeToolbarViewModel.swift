@@ -7,14 +7,20 @@ final class OpenInVSCodeToolbarViewModel: ObservableObject {
     let tool: OpenInTool
     /// 强引用能力 Adapter，保证 ViewModel 存续期间能力始终可用。
     private let projectCapability: OpenInProjectCapability
+    private let failureReporter: any OpenInFailureReporting
     private var projectObserver: (any OpenInProjectObserverHandle)?
 
     @Published private(set) var currentProjectPath: String?
     @Published private(set) var isOpening = false
 
-    init(tool: OpenInTool, projectCapability: OpenInProjectCapability) {
+    init(
+        tool: OpenInTool,
+        projectCapability: OpenInProjectCapability,
+        failureReporter: any OpenInFailureReporting
+    ) {
         self.tool = tool
         self.projectCapability = projectCapability
+        self.failureReporter = failureReporter
         self.currentProjectPath = projectCapability.currentProjectPath
         self.projectObserver = projectCapability.addProjectObserver { [weak self] event in
             guard case let .currentProjectChanged(path) = event else { return }
@@ -38,6 +44,11 @@ final class OpenInVSCodeToolbarViewModel: ObservableObject {
                 _ = try await tool.execute(arguments: [:])
             } catch {
                 OpenInVSCodePlugin.logger.error("\(OpenInVSCodePlugin.t)Failed to open project in VS Code: \(error.localizedDescription)")
+                // 失败不能无声：向用户展示具体原因。
+                failureReporter.reportOpenFailure(
+                    title: OpenInVSCodeLocalization.string("Cannot open project"),
+                    detail: "\(OpenInTool.vscode.displayName): \(error.localizedDescription)"
+                )
             }
         }
     }

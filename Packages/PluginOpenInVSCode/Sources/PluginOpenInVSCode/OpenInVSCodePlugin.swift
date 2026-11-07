@@ -4,6 +4,7 @@ import KernelCore
 import LumiLoggingKit
 import KitOpenIn
 import ProviderProject
+import ProviderToast
 import ProviderDocsView
 import ProviderToolManager
 import ProviderToolbar
@@ -43,6 +44,9 @@ public final class OpenInVSCodePlugin: SuperPlugin, SuperLog {
 
         if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
             let projectCapability = OpenInProjectCapabilityAdapter(project: project)
+            let failureReporter = OpenInFailureToastReporter(
+                toast: kernel.resolveProvider((any ToastProviding).self)
+            )
             toolbar.addToolbarItems([
                 ToolbarItem(
                     id: "\(id).toolbar",
@@ -51,7 +55,11 @@ public final class OpenInVSCodePlugin: SuperPlugin, SuperLog {
                     category: .project,
                     order: order
                 ) {
-                    OpenInVSCodeToolbarView(tool: tool, projectCapability: projectCapability)
+                    OpenInVSCodeToolbarView(
+                        tool: tool,
+                        projectCapability: projectCapability,
+                        failureReporter: failureReporter
+                    )
                 },
             ])
         }
