@@ -149,7 +149,7 @@ public actor ClipboardHistoryManager: SuperLog {
         // 定期清理过期数据（每 50 条数据检查一次）
         let descriptor = FetchDescriptor<ClipboardHistoryItem>()
         if let count = try? context.fetchCount(descriptor), count > maxRecords + 100 {
-            await cleanupOldData(context: context)
+            cleanupOldData(context: context)
         }
 
         let saved = save(context, operation: "保存剪贴板项")

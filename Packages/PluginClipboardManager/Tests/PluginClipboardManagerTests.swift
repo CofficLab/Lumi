@@ -58,6 +58,78 @@ import Testing
 }
 
 @MainActor
+@Test func writesRichTextHistoryItemToPasteboard() {
+    let pasteboard = NSPasteboard.withUniqueName()
+    let rtf = Data("{\\rtf1\\ansi rich}".utf8)
+    let html = "<p><a href=\"https://example.com\">rich</a></p>"
+    let item = ClipboardHistoryItem(
+        type: ClipboardItemType.text.rawValue,
+        content: "rich",
+        searchKeywords: "rich",
+        richTextRTF: rtf,
+        richTextHTML: html
+    )
+
+    let didWrite = ClipboardManagerViewModel.write(item, to: pasteboard)
+
+    #expect(didWrite)
+    #expect(pasteboard.string(forType: .string) == "rich")
+    #expect(pasteboard.data(forType: .rtf) == rtf)
+    #expect(pasteboard.string(forType: .html) == html)
+}
+
+@MainActor
+@Test func writesLegacyTextItemAsPlainText() {
+    // 旧库条目没有富文本字段，回写仍必须成功并给出纯文本。
+    let pasteboard = NSPasteboard.withUniqueName()
+    let item = ClipboardHistoryItem(
+        type: ClipboardItemType.text.rawValue,
+        content: "legacy",
+        searchKeywords: "legacy"
+    )
+
+    let didWrite = ClipboardManagerViewModel.write(item, to: pasteboard)
+
+    #expect(didWrite)
+    #expect(pasteboard.string(forType: .string) == "legacy")
+    #expect(pasteboard.data(forType: .rtf) == nil)
+    #expect(pasteboard.string(forType: .html) == nil)
+}
+
+@MainActor
+@Test func monitorCapturesRichTextRepresentations() async {
+    let rtf = Data("{\\rtf1\\ansi hello}".utf8)
+    let html = "<p>hello <a href=\"https://example.com\">world</a></p>"
+    let pasteboard = NSPasteboard.withUniqueName()
+    pasteboard.clearContents()
+    pasteboard.setString("hello world", forType: .string)
+    pasteboard.setData(rtf, forType: .rtf)
+    pasteboard.setString(html, forType: .html)
+
+    let items = await ClipboardMonitor.itemsAsync(from: pasteboard, appName: "TestApp")
+
+    #expect(items.count == 1)
+    #expect(items.first?.type == .text)
+    #expect(items.first?.content == "hello world")
+    #expect(items.first?.richTextRTF == rtf)
+    #expect(items.first?.richTextHTML == html)
+}
+
+@Test func oversizedRichTextFallsBackToPlainText() {
+    let oversizedRTF = Data(count: ClipboardItem.maxRichTextPayloadBytes + 1)
+    let item = ClipboardItem(
+        type: .text,
+        content: "big",
+        richTextRTF: oversizedRTF,
+        richTextHTML: "<p>big</p>"
+    )
+
+    #expect(item.content == "big")
+    #expect(item.richTextRTF == nil)
+    #expect(item.richTextHTML == nil)
+}
+
+@MainActor
 @Test func writesImageHistoryItemToPasteboard() throws {
     let imageURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("clipboard-history-\(UUID().uuidString).png")

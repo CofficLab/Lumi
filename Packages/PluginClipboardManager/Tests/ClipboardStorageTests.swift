@@ -67,6 +67,58 @@ struct ClipboardStorageTests {
         #expect(items.count == 2)
     }
 
+    @Test("富文本负载随条目持久化并可读回")
+    func preservesRichTextPayloads() async throws {
+        let (storage, root) = try makeStorage()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let rtf = Data("{\\rtf1\\ansi styled}".utf8)
+        let html = "<p><a href=\"https://example.com\">styled</a></p>"
+        await storage.add(item: ClipboardItem(
+            type: .text,
+            content: "styled",
+            richTextRTF: rtf,
+            richTextHTML: html
+        ))
+
+        let items = await storage.getItems()
+        #expect(items.count == 1)
+        #expect(items.first?.richTextRTF == rtf)
+        #expect(items.first?.richTextHTML == html)
+    }
+
+    @Test("纯文本相同但富文本负载不同时保留为两条")
+    func keepsSameTextWithDifferentRichPayloads() async throws {
+        let (storage, root) = try makeStorage()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        await storage.add(item: ClipboardItem(
+            type: .text,
+            content: "same",
+            richTextHTML: "<p>same</p>"
+        ))
+        await storage.add(item: ClipboardItem(
+            type: .text,
+            content: "same",
+            richTextHTML: "<p><b>same</b></p>"
+        ))
+
+        let items = await storage.getItems()
+        #expect(items.count == 2)
+    }
+
+    @Test("纯文本与富文本负载都相同时去重")
+    func deduplicatesIdenticalRichPayloads() async throws {
+        let (storage, root) = try makeStorage()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let html = "<p>same</p>"
+        await storage.add(item: ClipboardItem(type: .text, content: "same", richTextHTML: html))
+        await storage.add(item: ClipboardItem(type: .text, content: "same", richTextHTML: html))
+
+        #expect(await storage.getItems().count == 1)
+    }
+
     @Test("已有项被固定时，重复内容不去重")
     func keepsPinnedDuplicate() async throws {
         let (storage, root) = try makeStorage()
