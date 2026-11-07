@@ -1,38 +1,11 @@
-import SwiftUI
 import AppKit
 import LumiUI
+import SwiftUI
 
 struct TopProcessesView: View {
     // MARK: - Properties
 
     let processes: [ProcessMetric]
-
-    private var displayProcesses: [DisplayProcessMetric] {
-        let totalCPUUsage = processes.reduce(0.0) { $0 + max($1.cpuUsage, 0) }
-        guard totalCPUUsage > 0 else {
-            return processes.map { DisplayProcessMetric(process: $0, cpuShare: 0) }
-        }
-
-        let rawShares = processes.map { process in
-            max(process.cpuUsage, 0) / totalCPUUsage * 100.0
-        }
-        var integerShares = rawShares.map { Int($0.rounded(.down)) }
-        let remainder = max(0, 100 - integerShares.reduce(0, +))
-
-        rawShares
-            .enumerated()
-            .sorted { lhs, rhs in
-                let lhsFraction = lhs.element - floor(lhs.element)
-                let rhsFraction = rhs.element - floor(rhs.element)
-                return lhsFraction == rhsFraction ? lhs.offset < rhs.offset : lhsFraction > rhsFraction
-            }
-            .prefix(remainder)
-            .forEach { integerShares[$0.offset] += 1 }
-
-        return zip(processes, integerShares).map { process, cpuShare in
-            DisplayProcessMetric(process: process, cpuShare: cpuShare)
-        }
-    }
 
     // MARK: - Body
 
@@ -59,8 +32,8 @@ struct TopProcessesView: View {
                     .padding(.vertical, 4)
             } else {
                 VStack(spacing: 2) {
-                    ForEach(displayProcesses) { displayProcess in
-                        processRow(displayProcess)
+                    ForEach(processes) { process in
+                        processRow(process)
                     }
                 }
             }
@@ -71,10 +44,8 @@ struct TopProcessesView: View {
 
     // MARK: - 私有方法
 
-    private func processRow(_ displayProcess: DisplayProcessMetric) -> some View {
-        let process = displayProcess.process
-
-        return HStack(spacing: 8) {
+    private func processRow(_ process: ProcessMetric) -> some View {
+        HStack(spacing: 8) {
             // 进程图标
             iconForProcess(process)
                 .resizable()
@@ -88,13 +59,13 @@ struct TopProcessesView: View {
                 .truncationMode(.tail)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            // CPU%
-            Text("\(displayProcess.cpuShare)%")
+            // CPU%：直接展示服务端算出的真实占用，不做前 N 名归一化。
+            Text(process.formattedCPUUsage)
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundColor(.blue)
-                .frame(width: 36, alignment: .trailing)
+                .frame(width: 40, alignment: .trailing)
 
-            // 进度条
+            // 进度条：以单核 100% 为满格。
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Capsule()
@@ -102,7 +73,7 @@ struct TopProcessesView: View {
 
                     Capsule()
                         .fill(Color.blue.opacity(0.7))
-                        .frame(width: geometry.size.width * min(Double(displayProcess.cpuShare) / 100.0, 1.0))
+                        .frame(width: geometry.size.width * CGFloat(process.cpuBarFraction))
                 }
             }
             .frame(width: 40, height: 4)
@@ -119,11 +90,22 @@ struct TopProcessesView: View {
     }
 }
 
-private struct DisplayProcessMetric: Identifiable {
-    let process: ProcessMetric
-    let cpuShare: Int
+// MARK: - 展示口径
 
-    var id: Int32 { process.id }
+extension ProcessMetric {
+    /// 展示用 CPU 百分比。
+    ///
+    /// `ProcessService` 返回的 `cpuUsage` 已经是相对单核的真实占用
+    /// （100% = 占满一个核心，多线程进程可超过 100%），直接展示即可；
+    /// 不能按前 N 名进程重新归一化，否则数值会被系统性放大。
+    var formattedCPUUsage: String {
+        String(format: "%.0f%%", cpuUsage)
+    }
+
+    /// 进度条比例：单核 100% 为满格，超过 100% 的部分截断。
+    var cpuBarFraction: Double {
+        min(max(cpuUsage / 100.0, 0), 1)
+    }
 }
 
 // MARK: - 预览
