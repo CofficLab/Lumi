@@ -123,11 +123,10 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let rawSource = arguments["source"]?.value as? String else {
+        guard let source = arguments["source"]?.value as? String else {
             return "Error: Missing required 'source' parameter. Please provide a local file path or a remote URL."
         }
-        let source = rawSource.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !source.isEmpty else {
+        guard !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return "Error: Missing required 'source' parameter. Please provide a local file path or a remote URL."
         }
 
@@ -151,7 +150,11 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
             guard FileManager.default.fileExists(atPath: path) else {
                 return "Error: File not found: \(path)"
             }
-            let ext = fileURL.pathExtension.lowercased()
+            // 只用于判断格式；文件名本身仍按原始路径读取。`URL.pathExtension`
+            // 对「name.png␠」这类文件名返回空，这里先去空白再取扩展名。
+            let extensionName = (fileURL.lastPathComponent as NSString)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let ext = (extensionName as NSString).pathExtension.lowercased()
             let supportedExtensions = ["png", "jpg", "jpeg", "gif", "tiff", "tif", "bmp", "heic", "heif", "webp", "ico", "icns", "svg"]
             guard supportedExtensions.contains(ext) else {
                 return "Error: Unsupported image format '\(ext)'. Supported formats: \(supportedExtensions.joined(separator: ", "))"
@@ -178,11 +181,13 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
     }
 
     static func normalizedSource(from source: String) throws -> ShowImageSource {
-        let trimmed = source.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
+        guard !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw SourceError.missingSource
         }
 
+        // URL 可能被粘贴时带上首尾空白，按 trim 后解析；本地路径则必须逐字节保留，
+        // 因为首尾空白可以属于真实文件名，裁剪会指向另一个文件。
+        let trimmed = source.trimmingCharacters(in: .whitespacesAndNewlines)
         if let url = URL(string: trimmed), let scheme = url.scheme {
             switch scheme.lowercased() {
             case "http", "https":
@@ -194,7 +199,7 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
             }
         }
 
-        return .local(trimmed)
+        return .local(source)
     }
 
     enum SourceError: LocalizedError, Equatable {
