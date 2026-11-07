@@ -58,8 +58,9 @@ public enum MindMapMarkdownCodec {
             let (indent, content) = parseListItem(raw)
             guard !content.isEmpty else { continue }
 
-            // 第一个无缩进的标题行（# 开头）作为文档标题而非节点。
+            // 非列表行（indent == -1）：标题行作为文档标题，裸文本行作为根节点。
             if indent == -1 {
+                // 第一个无缩进的标题行（# 开头）作为文档标题而非节点。
                 if nodes.isEmpty, content.hasPrefix("#") {
                     let trimmed = content.drop(while: { $0 == "#" || $0 == " " })
                     if !trimmed.isEmpty {
@@ -75,6 +76,10 @@ public enum MindMapMarkdownCodec {
                     stack = [node.id]
                     continue
                 }
+                // 根节点之后的普通段落/标题没有层级含义，忽略。
+                // 不能让它带着 indent == -1 落进下面的列表层级逻辑，
+                // 否则 safeIndex 会算成 -1 并访问 stack[-1] 触发越界 trap。
+                continue
             }
 
             // 列表项：缩进决定父节点。
@@ -91,7 +96,9 @@ public enum MindMapMarkdownCodec {
                 parentId = rootId
                 stack = [rootId!]
             } else {
-                let safeIndex = min(indent, stack.count - 1)
+                // stack 至少要有第 0 层（根），否则无处可挂。
+                guard !stack.isEmpty else { continue }
+                let safeIndex = min(max(indent, 0), stack.count - 1)
                 parentId = stack[safeIndex]
                 // stack 裁剪到 safeIndex，再追加当前
                 if safeIndex < stack.count - 1 {

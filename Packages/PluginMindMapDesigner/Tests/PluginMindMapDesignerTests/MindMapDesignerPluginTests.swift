@@ -69,7 +69,6 @@ struct MindMapDesignerPluginTests {
     }
 
     // MARK: - Layout engine
-
     @Test func layoutEngineProducesPositions() throws {
         let root = MindMapNode(parentId: nil, text: "Root")
         let child1 = MindMapNode(parentId: root.id, text: "Child 1")
@@ -222,5 +221,59 @@ struct MindMapDesignerPluginTests {
             return nil
         }
         return String(output[range])
+    }
+}
+
+// MARK: - 大纲解析的健壮性
+
+/// 大纲文本由用户或模型提供，任何输入都不能让解析器崩溃。
+@Suite("MindMapMarkdownCodec 健壮性")
+struct MindMapMarkdownCodecRobustnessTests {
+
+    @Test("根节点之后的普通文本被忽略而不崩溃")
+    func ignoresPlainTextAfterRoot() {
+        // 旧实现：第二个裸文本行带着 indent == -1 落进列表层级逻辑，
+        // safeIndex 算成 -1，访问 stack[-1] 触发越界 trap。
+        let map = MindMapMarkdownCodec.decode(markdown: "Root\nNotes", title: nil)
+
+        #expect(map.nodes.count == 1)
+        #expect(map.nodes.first?.text == "Root")
+    }
+
+    @Test("根节点之后的标题行被忽略而不崩溃")
+    func ignoresHeadingAfterRoot() {
+        let map = MindMapMarkdownCodec.decode(markdown: "# Root\n- Child\n## Notes", title: nil)
+
+        #expect(map.nodes.count == 2)
+        #expect(map.nodes.contains { $0.text == "Child" })
+        #expect(!map.nodes.contains { $0.text == "Notes" })
+    }
+
+    @Test("列表项之间的普通文本被忽略而不崩溃")
+    func ignoresPlainTextBetweenListItems() {
+        let map = MindMapMarkdownCodec.decode(
+            markdown: "- Branch A\nSome prose\n- Branch B",
+            title: nil
+        )
+
+        #expect(map.nodes.count == 3)
+        #expect(!map.nodes.contains { $0.text == "Some prose" })
+    }
+
+    @Test("纯文本大纲仍能创建根节点")
+    func plainTextOutlineStillCreatesRoot() {
+        let map = MindMapMarkdownCodec.decode(markdown: "Just A Root", title: nil)
+
+        #expect(map.nodes.count == 1)
+        #expect(map.nodes.first?.text == "Just A Root")
+        #expect(map.nodes.first?.parentId == nil)
+    }
+
+    @Test("空大纲得到一个兜底根节点")
+    func emptyOutlineProducesFallbackRoot() {
+        let map = MindMapMarkdownCodec.decode(markdown: "   \n  \n", title: nil)
+
+        #expect(map.nodes.count == 1)
+        #expect(map.nodes.first?.parentId == nil)
     }
 }
