@@ -97,21 +97,23 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 | 50 | StubClientCapability | 未匹配的 Bundle ID 报告错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unmatchedBundleIDReportsError` |
 | 51 | StubClientCapability | 无绑定的项目报告无绑定 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `projectWithoutBindingReportsNoBinding` |
 | 52 | TestStorageProvider | 聊天工具栏入口已注册 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `chatToolbarEntryIsRegistered` |
+| 53 | VM 截图刷新 | 强制刷新截图时绕过内存字典 | 字典里有旧列表 | `reloadScreenshotsForSelectedDisplayType(forceRefresh: true)` | 真的发起请求（无传输时上报错误），不再静默返回旧列表 | P0 | ✅ 已覆盖 | `forceRefreshBypassesScreenshotDictionary` |
+| 54 | VM 截图刷新 | 普通切换展示类型时复用内存字典 | 字典里有当前展示类型的列表 | `reloadScreenshotsForSelectedDisplayType()` | 不发起请求、无错误，直接展示字典内容 | P1 | ✅ 已覆盖 | `regularReloadReusesScreenshotDictionary` |
 
-> 说明：全部 **52 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
-- P1: 已覆盖 37 / 37
+- P0: 已覆盖 12 / 12
+- P1: 已覆盖 38 / 38
 - P2: 已覆盖 4 / 4
-- **合计: 52 / 52**（仅表示清单场景，非源码覆盖率）
+- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（37 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
+- **P1**: 其余功能性用例（38 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明

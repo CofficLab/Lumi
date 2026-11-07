@@ -12,13 +12,18 @@ extension VM {
         }
     }
 
-    func loadScreenshots() async throws {
+    /// 载入当前展示类型的截图。
+    ///
+    /// - Parameter forceRefresh: 上传/删除后必须传 `true`。此时内存字典里是变更前的列表，
+    ///   直接返回它会让界面继续显示已删除的截图（或漏掉刚上传的截图），
+    ///   即使调用方已经切到 networkOnly。
+    func loadScreenshots(forceRefresh: Bool = false) async throws {
         guard let set = selectedScreenshotSet else {
             screenshots = []
             return
         }
 
-        if let cached = screenshotsBySetID[set.id] {
+        if !forceRefresh, let cached = screenshotsBySetID[set.id] {
             screenshots = cached
             return
         }
@@ -30,7 +35,7 @@ extension VM {
 
     func reloadScreenshotsForSelectedDisplayType(forceRefresh: Bool = false) async {
         await runBusy(forceRefresh: forceRefresh) {
-            try await loadScreenshots()
+            try await loadScreenshots(forceRefresh: forceRefresh)
         }
     }
 
