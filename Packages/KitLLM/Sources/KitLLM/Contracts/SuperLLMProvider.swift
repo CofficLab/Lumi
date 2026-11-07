@@ -45,6 +45,12 @@ public protocol SuperLLMProvider: AnyObject, Sendable {
     /// 写入 API Key。
     func setApiKey(_ apiKey: String)
 
+    /// 写入 API Key；凭据未能落盘时抛错。
+    ///
+    /// 默认实现退化为 ``setApiKey(_:)``，适用于不保存凭据的轻量供应商。
+    /// 需要向用户报告「凭据没有保存」的实现应覆盖本方法。
+    func setApiKeyReportingErrors(_ apiKey: String) throws
+
     /// 删除 API Key。
     func removeApiKey()
 }
@@ -76,6 +82,7 @@ public extension SuperLLMProvider {
         return key
     }
     func setApiKey(_ apiKey: String) {}
+    func setApiKeyReportingErrors(_ apiKey: String) throws { setApiKey(apiKey) }
     func removeApiKey() {}
 }
 

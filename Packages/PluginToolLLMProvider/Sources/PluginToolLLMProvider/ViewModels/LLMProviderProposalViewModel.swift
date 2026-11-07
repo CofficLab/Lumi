@@ -162,7 +162,17 @@ final class LLMProviderProposalViewModel: ObservableObject {
         // API Key 只写 Keychain，不进配置、不进对话。
         let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmedKey.isEmpty {
-            manager?.provider(id: providerID)?.setApiKey(trimmedKey)
+            // 凭据写入失败必须让用户看见：保留输入并报错，不能显示 Added。
+            guard let provider = manager?.provider(id: providerID) else {
+                phase = .failed(Self.errorMessage("The provider was saved, but the API key could not be stored. Please try again."))
+                return
+            }
+            do {
+                try provider.setApiKeyReportingErrors(trimmedKey)
+            } catch {
+                phase = .failed(Self.errorMessage("The provider was saved, but the API key could not be stored. Please try again."))
+                return
+            }
             apiKey = ""
         }
 

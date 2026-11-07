@@ -97,6 +97,10 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
         VendorAPIKeyTools.set(apiKey, storageKey: providerInfo.apiKeyStorageKey)
     }
 
+    open func setApiKeyReportingErrors(_ apiKey: String) throws {
+        try VendorAPIKeyTools.setReportingErrors(apiKey, storageKey: providerInfo.apiKeyStorageKey)
+    }
+
     open func removeApiKey() {
         VendorAPIKeyTools.remove(storageKey: providerInfo.apiKeyStorageKey)
     }
