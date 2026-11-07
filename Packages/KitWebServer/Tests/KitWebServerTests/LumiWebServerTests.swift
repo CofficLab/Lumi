@@ -45,6 +45,26 @@ final class LumiWebServerTests: XCTestCase {
         XCTAssertFalse(server.isRunning)
     }
 
+    /// 启动尚未完成时调用 stop，必须等启动结束后关闭监听器，而不是直接返回。
+    func testStopDuringStartClosesListenerAndAllowsRestart() async throws {
+        let server = LumiWebServer(port: 0)
+        server.startupDelayForTesting = .milliseconds(150)
+
+        let startTask = Task { try await server.start() }
+        try await Task.sleep(for: .milliseconds(30))
+        await server.stop()
+
+        _ = try? await startTask.value
+        XCTAssertFalse(server.isRunning)
+        XCTAssertNil(server.boundPort)
+
+        // 状态应复位为 idle，之后可以再次正常启动。
+        try await server.start()
+        XCTAssertTrue(server.isRunning)
+        XCTAssertNotNil(server.boundPort)
+        await server.stop()
+    }
+
     /// 未匹配路径返回 404。
     func testNotFound() async throws {
         let server = LumiWebServer(port: 0)
