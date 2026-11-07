@@ -106,6 +106,28 @@ struct LLMProviderProposalViewModelTests {
         #expect(manager.provider(id: "custom-acme")?.getApiKey() == "sk-test-secret")
     }
 
+    /// 回归 #542：凭据没写进 Keychain 时不能报告 Added，也不能清空输入。
+    @Test("API Key 写入失败时保留输入并报错")
+    func saveSurfacesAPIKeyWriteFailure() throws {
+        let manager = FailingKeyLLMManager(providerID: "custom-acme")
+        let (store, fileURL) = makeStore(manager: manager)
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        let viewModel = LLMProviderProposalViewModel(
+            proposal: makeProposal(),
+            store: store,
+            manager: manager
+        )
+        viewModel.apiKey = "sk-test-secret"
+        viewModel.save()
+
+        guard case .failed = viewModel.phase else {
+            Issue.record("凭据写入失败时不应显示 Added")
+            return
+        }
+        #expect(viewModel.apiKey == "sk-test-secret", "失败后必须保留用户输入")
+    }
+
     @Test("端点不合规时保存失败且不落盘")
     func saveRejectsInsecureEndpoint() throws {
         let manager = DefaultLLMProviderManagerProviding()
@@ -240,5 +262,70 @@ struct LLMProviderProposalViewModelTests {
 
         #expect(manager.selectedProviderID == "custom-acme")
         #expect(manager.selectedModel == "acme-large")
+    }
+}
+
+/// 写入 API Key 必然失败的供应商，用于验证卡片把凭据失败暴露出来。
+@MainActor
+private final class FailingAPIKeyProvider: ManagedLLMProvider {
+    let providerInfo: LLMProviderInfo
+
+    init(id: String) {
+        providerInfo = LLMProviderInfo(
+            id: id,
+            displayName: "Failing",
+            defaultModel: "model-a",
+            models: [LLMModelInfo(id: "model-a")],
+            apiKeyStorageKey: "test.\(id)"
+        )
+    }
+
+    var providerID: String { providerInfo.id }
+    func complete(_ request: LLMRequest) async throws -> LLMResponse {
+        LLMResponse(content: "", model: request.model)
+    }
+    func setApiKey(_ apiKey: String) {}
+    func setApiKeyReportingErrors(_ apiKey: String) throws {
+        throw VendorAPIKeyStorageError.writeFailed
+    }
+    func removeApiKey() {}
+}
+
+/// 最小可用的 manager：注册照常成功，但取到的供应商写入凭据必然失败。
+@MainActor
+private final class FailingKeyLLMManager: LLMManaging {
+    let providerInfo = LLMProviderInfo(
+        id: "failing-manager",
+        displayName: "Failing Manager",
+        defaultModel: "model-a",
+        models: [LLMModelInfo(id: "model-a")]
+    )
+    var providerID: String { providerInfo.id }
+    func complete(_ request: LLMRequest) async throws -> LLMResponse {
+        LLMResponse(content: "", model: request.model)
+    }
+
+    private var registered: [any SuperLLMProvider] = []
+    private let failingProvider: FailingAPIKeyProvider
+
+    init(providerID: String) {
+        failingProvider = FailingAPIKeyProvider(id: providerID)
+    }
+
+    func allProviders() -> [any SuperLLMProvider] { registered }
+    func provider(id: String) -> (any SuperLLMProvider)? {
+        if id == failingProvider.providerID { return failingProvider }
+        return registered.first { $0.providerID == id }
+    }
+    var providerCount: Int { registered.count }
+    func register(_ provider: any SuperLLMProvider) throws { registered.append(provider) }
+    func unregister(id: String) { registered.removeAll { $0.providerID == id } }
+
+    var selectedProviderID: String?
+    var selectedModel: String?
+    func models(for providerID: String) -> [String] { [] }
+    func select(providerID: String, model: String?, reason: ModelSelectionReason) {
+        selectedProviderID = providerID
+        selectedModel = model
     }
 }
