@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationFork 的实现包，包含 6 个主要类型；当前测试覆盖 18 条用例。
+PluginConversationFork 的实现包，包含 6 个主要类型；当前测试覆盖 21 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 18
+测试文件: 2 个，用例总数: 21
 
 核心组件（源码目录）:
 - `Observers/`
@@ -27,7 +27,7 @@ PluginConversationFork 的实现包，包含 6 个主要类型；当前测试覆
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **ConversationForkSelectionObserver**（3 条）：由 `buttonHiddenWithoutSelectedConversation`、`buttonFollowsSelectionState`、`doesNotRegisterTwice` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **综合**（15 条）：由 `summarizerEmptyFallback`、`summarizerFallbackWithHistory`、`renderHistory` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（18 条）：由 `summarizerEmptyFallback`、`summarizerFallbackWithHistory`、`renderHistory` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -51,27 +51,30 @@ PluginConversationFork 的实现包，包含 6 个主要类型；当前测试覆
 | 16 | 综合 | fork 对空对话抛出 emptyConversation，且不新建对话 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `forkEmptyConversationThrows` |
 | 17 | 综合 | displayTitle 回退到最后一条提问 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `displayTitleFallsBackToLastRequest` |
 | 18 | 综合 | truncate 截断超长文本并补省略号 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `truncateLongText` |
+| 19 | 综合 | 仅带附件的消息参与摘要，图片只列名称/类型，不注入 base64 | 用户消息正文为空、metadata 含文本与图片附件 | `filteredMessages` 处理该消息 | 消息被保留，包含文件名与文本内容，不包含 base64 | P0 | ✅ 已覆盖 | `filteredMessagesKeepsAttachmentOnlyMessages` |
+| 20 | 综合 | 二进制附件以文件名与本地路径表示 | 文件附件无 textContent、有 localPath | `summaryText(for:)` | 输出包含文件名与本地路径 | P1 | ✅ 已覆盖 | `binaryAttachmentDescription` |
+| 21 | 综合 | 纯附件对话在 preview 中仍有内容并可 fork | 对话只有一条带附件的空正文 user 消息 | 调用 `preview` 与 `fork` | `hasContent` 为真、标题回退到附件名，fork 摘要包含附件名 | P0 | ✅ 已覆盖 | `attachmentOnlyConversationCanFork` |
 
-> 说明：全部 **18 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **21 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 9 / 9
+- P0: 已覆盖 5 / 5
+- P1: 已覆盖 10 / 10
 - P2: 已覆盖 6 / 6
-- **合计: 18 / 18**（仅表示清单场景，非源码覆盖率）
+- **合计: 21 / 21**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（9 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
+- **P1**: 其余功能性用例（10 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 18 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 21 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
