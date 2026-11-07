@@ -4,14 +4,17 @@ import LumiUI
 struct CPUHistoryDetailView: View {
     @ObservedObject private var viewModel: DeviceHistoryViewModel<CPUDataPoint>
     @ObservedObject private var thermalViewModel: DeviceHistoryViewModel<ThermalDataPoint>
+    @ObservedObject private var processViewModel: CPUManagerViewModel
     @State private var selectedRange: CPUTimeRange = .hour1
 
     init(
         viewModel: DeviceHistoryViewModel<CPUDataPoint>,
-        thermalViewModel: DeviceHistoryViewModel<ThermalDataPoint>
+        thermalViewModel: DeviceHistoryViewModel<ThermalDataPoint>,
+        processViewModel: CPUManagerViewModel
     ) {
         self.viewModel = viewModel
         self.thermalViewModel = thermalViewModel
+        self.processViewModel = processViewModel
     }
 
     var body: some View {
@@ -65,6 +68,40 @@ struct CPUHistoryDetailView: View {
             }
             .background(Color.secondary.opacity(0.06))
             .frame(height: 180)
+
+            // 全部进程：主弹窗只展示前 5 条，这里给出完整列表。
+            HStack {
+                Text(pluginLocalization.string("All Processes"))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.secondary)
+
+                Spacer()
+
+                Text("\(processViewModel.topProcesses.count)")
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 12)
+
+            VStack(spacing: 0) {
+                if processViewModel.topProcesses.isEmpty {
+                    Text(pluginLocalization.string("Collecting..."))
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 2) {
+                            ForEach(processViewModel.topProcesses) { metric in
+                                ProcessMetricRow(process: metric)
+                            }
+                        }
+                        .padding(.vertical, 6)
+                    }
+                }
+            }
+            .background(Color.secondary.opacity(0.06))
+            .frame(height: 160)
             .padding(.bottom, 12)
         }
     }

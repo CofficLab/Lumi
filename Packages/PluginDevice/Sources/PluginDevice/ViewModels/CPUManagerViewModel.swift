@@ -40,7 +40,12 @@ class CPUManagerViewModel: ObservableObject {
     }
     
     // MARK: - Computed Properties
-    
+
+    /// 主弹窗只展示前 5 条；完整列表在详情页查看。
+    var topProcessesPreview: [ProcessMetric] {
+        Array(topProcesses.prefix(5))
+    }
+
     var formattedLoadAverage: String {
         loadAverage.map { String(format: "%.2f", $0) }.joined(separator: "  ")
     }
