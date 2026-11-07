@@ -43,6 +43,44 @@ import Testing
     #expect(result.contains("Other"))
 }
 
+@Test @MainActor func recentConversationTableEscapesProjectNamesAndKeepsFiveColumns() async throws {
+    let conversations = DefaultConversationManager()
+    let project = DefaultProjectProvider()
+    try await project.openProject(at: "/workspace/Road|Map")
+    let pipedID = try conversations.createConversation(
+        title: "Piped project",
+        projectPath: "/workspace/Road|Map",
+        providerID: nil,
+        modelName: nil
+    )
+    _ = try conversations.createConversation(
+        title: "Multiline project",
+        projectPath: "/workspace/Line\nBreak",
+        providerID: nil,
+        modelName: nil
+    )
+    let tool = GetRecentConversationsTool(capability: ConversationListQueryCapabilityAdapter(conversations: conversations, project: project))
+
+    let result = try await tool.execute(arguments: [:])
+
+    #expect(result.contains(pipedID.uuidString))
+    #expect(result.contains("Road\\|Map (current)"))
+    #expect(!result.contains("Road|Map"))
+    #expect(result.contains("Line Break"))
+    #expect(!result.contains("Line\nBreak"))
+
+    // 表头 + 2 条数据行；项目名里的换行若不转义会额外拆出行。
+    let tableRows = result.split(separator: "\n").filter { $0.hasPrefix("| ") }
+    #expect(tableRows.count == 3)
+    for row in tableRows {
+        let unescapedPipeCount = row
+            .replacingOccurrences(of: "\\|", with: "")
+            .filter { $0 == "|" }
+            .count
+        #expect(unescapedPipeCount == 6)
+    }
+}
+
 @Test @MainActor func recentConversationLimitDefaultsAndClampsToOneThroughTwenty() async throws {
     let conversations = DefaultConversationManager()
     for index in 0..<22 {
