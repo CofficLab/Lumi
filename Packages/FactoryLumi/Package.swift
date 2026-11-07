@@ -101,7 +101,7 @@ let package = Package(
         .package(path: "../PluginLLMContext"),
         .package(path: "../PluginMessageSender"),
         .package(path: "../../Vendor/LumiPluginPluginManager"),
-        .package(path: "../../Vendor/LumiPluginAbout"),
+        .package(url: "https://github.com/CofficLab/LumiPluginAbout.git", from: "2.0.0"),
         .package(path: "../PluginAgentLoop"),
         .package(path: "../PluginAgentLoopRetry"),
         .package(path: "../PluginToolManager"),
