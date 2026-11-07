@@ -18,10 +18,45 @@ public actor ConversationStore: SuperLog {
 
     private let container: ModelContainer
 
+    /// 每日对话条数账本。
+    ///
+    /// 统计与「会话是否还在库里」解耦：清理旧对话不会让历史计数塌陷。
+    /// 详见 `ConversationCountLedger`。
+    private let ledger: ConversationCountLedger
+
     // MARK: - Initialization
 
     public init(databaseRootURL: URL) throws {
-        self.container = try Self.makeContainer(databaseRootURL: databaseRootURL)
+        let container = try Self.makeContainer(databaseRootURL: databaseRootURL)
+        self.container = container
+        let ledger = ConversationCountLedger(
+            fileURL: databaseRootURL.appendingPathComponent(ConversationCountLedger.fileName)
+        )
+        self.ledger = ledger
+        // 必须在任何删除发生之前完成对齐：账本一旦记下「某天有 N 个对话」，
+        // 后续删除会话就不会再改动它。若推迟到用户打开统计面板才回填，
+        // 这期间被清理掉的历史就永远补不回来了。
+        Self.seedLedger(ledger: ledger, container: container)
+    }
+
+    /// 用会话表的现状回填账本（仅首次建立账本时执行）。
+    private static func seedLedger(ledger: ConversationCountLedger, container: ModelContainer) {
+        // 先读盘再判断：否则每次启动都会认为账本是空的，把整张会话表重扫一遍。
+        ledger.load()
+        guard !ledger.isSeededFromTable else { return }
+        let context = ModelContext(container)
+        let descriptor = FetchDescriptor<ConversationModel>()
+        guard let models = try? context.fetch(descriptor) else { return }
+        var buckets: [ConversationCountLedger.BucketKey: Int] = [:]
+        for model in models {
+            let key = ConversationCountLedger.BucketKey(
+                day: ConversationCountLedger.dayKey(for: Date(timeIntervalSince1970: model.createdAt)),
+                projectPath: model.projectPath,
+                isChildConversation: model.parentConversationID != nil
+            )
+            buckets[key, default: 0] += 1
+        }
+        ledger.mergeSeeded(tableCounts: buckets)
     }
 
     static func makeContainer(databaseRootURL: URL) throws -> ModelContainer {
@@ -150,11 +185,30 @@ public actor ConversationStore: SuperLog {
         context.insert(model)
         try context.save()
 
+        // 记入统计账本：计数独立于会话行存在，删除会话不会让它回落。
+        recordCount(createdAt: createdAt, projectPath: projectPath, parentConversationID: parentConversationID)
+
         if Self.verbose {
             Self.logger.info("\(Self.t)创建对话：\(title ?? "nil"), 模型 ID：\(modelID ?? "nil"), 项目：\(projectPath ?? "nil")")
         }
 
         return model
+    }
+
+    /// 把一次会话创建记入统计账本。
+    private func recordCount(
+        createdAt: Date,
+        projectPath: String?,
+        parentConversationID: UUID?
+    ) {
+        ledger.apply([
+            ConversationCountLedger.Increment(
+                day: ConversationCountLedger.dayKey(for: createdAt),
+                projectPath: projectPath,
+                isChildConversation: parentConversationID != nil,
+                count: 1
+            )
+        ])
     }
 
     /// 将旧 SwiftData providerId + modelName 行一次性折叠为单一 modelID。
@@ -205,10 +259,19 @@ public actor ConversationStore: SuperLog {
         }()
 
         var inserted = 0
+        var increments: [ConversationCountLedger.Increment] = []
         for summary in summaries {
             let idString = summary.id.uuidString
             guard !existingIDs.contains(idString) else { continue }
             context.insert(ConversationModel.from(summary: summary))
+            increments.append(
+                ConversationCountLedger.Increment(
+                    day: ConversationCountLedger.dayKey(for: summary.createdAt),
+                    projectPath: summary.projectPath,
+                    isChildConversation: summary.parentConversationID != nil,
+                    count: 1
+                )
+            )
             inserted += 1
         }
 
@@ -216,6 +279,8 @@ public actor ConversationStore: SuperLog {
 
         do {
             try context.save()
+            // 迁移来的历史会话同样计入账本，否则旧数据不会出现在统计里。
+            ledger.apply(increments)
             if Self.verbose {
                 Self.logger.info("\(Self.t)迁移导入 \(inserted) 条历史会话")
             }
@@ -459,7 +524,10 @@ public actor ConversationStore: SuperLog {
         }
     }
 
-    /// Build a recent daily conversation-count series with bounded count queries.
+    /// Build a recent daily conversation-count series.
+    ///
+    /// 数据来自**统计账本**而非会话表：会话被清理（删除 7/30 天前的对话）后，
+    /// 历史计数依然保留，曲线不会塌陷。详见 `ConversationCountLedger`。
     ///
     /// - Parameters:
     ///   - days: 序列长度（向前回溯的天数）。
@@ -474,54 +542,21 @@ public actor ConversationStore: SuperLog {
     ) -> ConversationDailyCountSeries {
         guard days > 0 else { return ConversationDailyCountSeries(points: []) }
 
-        let context = ModelContext(container)
-        normalizeEmptyParentConversationIDs(in: context)
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: date)
         let firstDay = calendar.date(byAdding: .day, value: -(days - 1), to: today) ?? today
+        let dailyCounts = ledger.dailyCounts(
+            projectPath: projectPath,
+            includingChildConversations: includingChildConversations
+        )
         let points = (0..<days).compactMap { offset -> ConversationDailyCountPoint? in
-            guard let day = calendar.date(byAdding: .day, value: offset, to: firstDay),
-                  let nextDay = calendar.date(byAdding: .day, value: 1, to: day) else {
+            guard let day = calendar.date(byAdding: .day, value: offset, to: firstDay) else {
                 return nil
             }
-
-            let startTimestamp = day.timeIntervalSince1970
-            let endTimestamp = nextDay.timeIntervalSince1970
-            let count = (try? context.fetchCount(dailyCountDescriptor(
-                startTimestamp: startTimestamp,
-                endTimestamp: endTimestamp,
-                projectPath: projectPath,
-                includingChildConversations: includingChildConversations
-            ))) ?? 0
+            let count = dailyCounts[ConversationCountLedger.dayKey(for: day)] ?? 0
             return ConversationDailyCountPoint(day: day, count: count)
         }
         return ConversationDailyCountSeries(points: points)
-    }
-
-    /// 单日区间内的对话计数条件。
-    private func dailyCountDescriptor(
-        startTimestamp: TimeInterval,
-        endTimestamp: TimeInterval,
-        projectPath: String?,
-        includingChildConversations: Bool
-    ) -> FetchDescriptor<ConversationModel> {
-        if let projectPath {
-            return FetchDescriptor<ConversationModel>(
-                predicate: #Predicate<ConversationModel> {
-                    $0.createdAt >= startTimestamp &&
-                    $0.createdAt < endTimestamp &&
-                    $0.projectPath == projectPath &&
-                    (includingChildConversations || $0.parentConversationID == nil)
-                }
-            )
-        }
-        return FetchDescriptor<ConversationModel>(
-            predicate: #Predicate<ConversationModel> {
-                $0.createdAt >= startTimestamp &&
-                $0.createdAt < endTimestamp &&
-                (includingChildConversations || $0.parentConversationID == nil)
-            }
-        )
     }
 
     /// 查找「创建于 `cutoff` 之前」的对话 ID。
