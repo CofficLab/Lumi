@@ -54,6 +54,7 @@ import PluginPrototypeDesigner
 import PluginAskUser
 import PluginFinder
 import PluginHTMLCanvas
+import PluginDiskSpeedTest
 import PluginCaffeinate
 import PluginChatFileAttachment
 import PluginChatPanel
@@ -274,6 +275,7 @@ public struct DefaultPluginFactory: PluginFactory {
             AskUserPlugin(),
             FinderPlugin(),
             HTMLCanvasPlugin(),
+            DiskSpeedTestPlugin(),
             OpenInFinderPlugin(),
             OpenInXcodePlugin(),
             OpenInCursorPlugin(),
