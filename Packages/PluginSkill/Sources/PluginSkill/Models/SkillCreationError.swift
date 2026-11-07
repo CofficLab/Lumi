@@ -7,6 +7,8 @@ public enum SkillCreationError: LocalizedError, Equatable {
     case alreadyExists(String)
     case notFound(String)
     case directoryUnavailable(String)
+    /// 元数据超出扫描器可读的上限；写入被拒绝，技能不会落盘。
+    case metadataTooLarge(path: String, byteCount: Int, limit: Int)
 
     public var errorDescription: String? {
         switch self {
@@ -20,6 +22,9 @@ public enum SkillCreationError: LocalizedError, Equatable {
             return "Skill not found: \(path)"
         case .directoryUnavailable(let path):
             return "Skills directory is not available: \(path)"
+        case .metadataTooLarge(let path, let byteCount, let limit):
+            return "Skill metadata is too large (\(byteCount) bytes, limit \(limit)): \(path). "
+                + "Shorten the description or triggers so the skill stays loadable."
         }
     }
 }
