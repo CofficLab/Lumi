@@ -81,9 +81,7 @@ struct GetHTTPDomainLogTool: SuperAgentTool, SuperLog {
                 return true
             }
 
-            let results = Array(filtered.prefix(limit))
-
-            if results.isEmpty {
+            if filtered.isEmpty {
                 return "No HTTP logs found for domain '\(domain)'."
             }
 
@@ -91,7 +89,7 @@ struct GetHTTPDomainLogTool: SuperAgentTool, SuperLog {
             var methodCounts: [String: Int] = [:]
             var statusCounts: [Int: Int] = [:]
 
-            for record in results {
+            for record in filtered {
                 if let url = URL(string: record.requestURL) {
                     pathCounts[url.path, default: 0] += 1
                 }
@@ -104,7 +102,7 @@ struct GetHTTPDomainLogTool: SuperAgentTool, SuperLog {
             var sections: [String] = []
             sections.append("## HTTP Logs for \(domain)")
             sections.append("")
-            sections.append("**Total Requests**: \(results.count)")
+            sections.append("**Total Requests**: \(filtered.count)")
             sections.append("")
             sections.append("### Request Methods")
             for (method, count) in methodCounts.sorted(by: { $0.value > $1.value }) {
@@ -117,7 +115,8 @@ struct GetHTTPDomainLogTool: SuperAgentTool, SuperLog {
             }
             sections.append("")
             sections.append("### Top Paths")
-            for (path, count) in pathCounts.sorted(by: { $0.value > $1.value }).prefix(10) {
+            // `limit` 只约束明细条数，汇总始终覆盖全部匹配记录。
+            for (path, count) in pathCounts.sorted(by: { $0.value > $1.value }).prefix(min(10, limit)) {
                 sections.append("- \(path): \(count)")
             }
 
