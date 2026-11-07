@@ -170,16 +170,16 @@ public enum ACPToolError: Error, LocalizedError, Equatable {
 // MARK: - 参数访问
 
 /// 桥接工具的参数读取辅助（与内置文件工具的参数命名保持一致）。
-private extension [String: ToolArgument] {
+extension [String: ToolArgument] {
     func stringValue(_ key: String) -> String? {
         self[key]?.value as? String
     }
 
+    /// 读取整型参数。
+    ///
+    /// 转换必须先检查范围：JSON 数字会桥接成 `Double`，而 `Int(_:)` 对超出
+    /// `Int` 范围的 `Double` 会触发运行时陷阱，直接终止宿主进程。
     func intValue(_ key: String) -> Int? {
-        guard let value = self[key]?.value else { return nil }
-        if let int = value as? Int { return int }
-        if let double = value as? Double { return Int(double) }
-        if let string = value as? String { return Int(string.trimmingCharacters(in: .whitespacesAndNewlines)) }
-        return nil
+        ToolArgumentNumber.int(self[key]?.value)
     }
 }

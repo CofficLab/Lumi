@@ -5,7 +5,7 @@
 PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 68 条用例。
 
 平台: macOS 14+
-测试文件: 5 个，用例总数: 68
+测试文件: 5 个，用例总数: 73
 
 核心组件（源码目录）:
 - `Views/`
@@ -111,27 +111,32 @@ PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 68 条�
 | 66 | ACPTurnCoordinator | testTextExtraction | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testTextExtraction` |
 | 67 | ACPTurnCoordinator | testToolKindInference | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testToolKindInference` |
 | 68 | ACPTurnCoordinator | testChoiceOptionsParsing | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testChoiceOptionsParsing` |
+| 69 | ACP 文件桥参数 | 超大 limit 返回 nil 而不是崩溃 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `oversizedLimitReturnsNil` |
+| 70 | ACP 文件桥参数 | 超大 line 返回 nil 而不是崩溃 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `oversizedLineReturnsNil` |
+| 71 | ACP 文件桥参数 | 非有限值返回 nil | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `nonFiniteReturnsNil` |
+| 72 | ACP 文件桥参数 | 范围内的整数正常解析 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `inRangeIntegersParse` |
+| 73 | ACP 文件桥参数 | 缺失或非数值参数返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingOrNonNumericReturnsNil` |
 
-> 说明：全部 **68 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **73 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 14 / 14
-- P1: 已覆盖 53 / 53
+- P0: 已覆盖 17 / 17
+- P1: 已覆盖 55 / 55
 - P2: 已覆盖 1 / 1
-- **合计: 68 / 68**（仅表示清单场景，非源码覆盖率）
+- **合计: 73 / 73**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
-- **P1**: 其余功能性用例（53 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
+- **P1**: 其余功能性用例（55 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 68 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 73 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
