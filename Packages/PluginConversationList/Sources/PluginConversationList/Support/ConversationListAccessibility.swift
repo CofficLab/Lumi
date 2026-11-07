@@ -23,6 +23,9 @@ public enum ConversationListAccessibility {
     /// 对话列表容器的标识符。
     public static let listID = "lumi.conversation-list"
 
+    /// popover 内图钉按钮的标识符。
+    public static let pinButtonID = "lumi.conversation-list.pin"
+
     /// 组装一行会话的可访问性名称。
     ///
     /// ## 规则
