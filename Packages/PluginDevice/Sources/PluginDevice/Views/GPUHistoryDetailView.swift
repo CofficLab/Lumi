@@ -35,7 +35,7 @@ struct GPUHistoryDetailView: View {
 
             VStack(spacing: 0) {
                 GPUHistoryGraphView(
-                    dataPoints: selectedRange == .hour1 ? historyViewModel.recentHistory : historyViewModel.longTermHistory,
+                    dataPoints: historyViewModel.data(for: selectedRange),
                     timeRange: selectedRange
                 )
             }

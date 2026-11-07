@@ -1,6 +1,6 @@
 import Foundation
 
-public enum GPUTimeRange: String, CaseIterable, Identifiable {
+public enum GPUTimeRange: String, CaseIterable, Identifiable, DeviceHistoryRange {
     case hour1
     case hour4
     case hour24
@@ -25,9 +25,14 @@ public enum GPUTimeRange: String, CaseIterable, Identifiable {
         case .month1: return 2592000
         }
     }
+
+    /// 仅 1 小时范围使用秒级高频缓冲,更长范围使用分钟级聚合缓冲。
+    public var usesHighResolutionBuffer: Bool {
+        self == .hour1
+    }
 }
 
-public struct GPUDataPoint: Codable, Identifiable, Equatable, Sendable {
+public struct GPUDataPoint: Codable, Identifiable, Equatable, Sendable, DeviceHistorySample {
     public var id: TimeInterval { timestamp }
     public let timestamp: TimeInterval
     public let usage: Double

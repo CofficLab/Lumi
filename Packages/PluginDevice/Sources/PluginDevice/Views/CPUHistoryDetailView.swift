@@ -40,7 +40,7 @@ struct CPUHistoryDetailView: View {
             // Graph
             VStack(spacing: 0) {
                 CPUHistoryGraphView(
-                    dataPoints: selectedRange == .hour1 ? viewModel.recentHistory : viewModel.longTermHistory,
+                    dataPoints: viewModel.data(for: selectedRange),
                     timeRange: selectedRange
                 )
             }
@@ -59,9 +59,7 @@ struct CPUHistoryDetailView: View {
 
             VStack(spacing: 0) {
                 ThermalHistoryGraphView(
-                    dataPoints: selectedRange == .hour1
-                        ? thermalViewModel.recentHistory
-                        : thermalViewModel.longTermHistory,
+                    dataPoints: thermalViewModel.data(for: selectedRange),
                     timeRange: selectedRange
                 )
             }

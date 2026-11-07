@@ -11,3 +11,4 @@
 | `BatteryManagerViewModel.swift` | 电池详情页数据状态 |
 | `SystemMonitorViewModel.swift` | 系统监控聚合页数据状态 |
 | `DeviceInfoMenuBarContentViewModel.swift` | 菜单栏 CPU/内存柱状图的共享 ViewModel（含快照与指标模型） |
+| `DevicePluginViewModels.swift` | 插件 ViewModel 集合，含 `DeviceHistoryViewModel`（历史数据按时间范围裁剪） |
