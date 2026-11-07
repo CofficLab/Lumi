@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Testing
 @testable import PluginNetworkManager
@@ -239,15 +240,18 @@ struct ProcessMonitorVisibilityTests {
 @Suite("ProcessIconResolver 批量解析")
 struct ProcessIconResolverBatchTests {
 
-    @Test("每个请求的 PID 都返回图标，不存在的 PID 使用兜底图标")
-    func batchResolvesEveryRequestedPID() {
+    @Test("只返回能解析到运行程序的 PID，不存在的 PID 不给兜底图标")
+    func batchSkipsPIDsWithoutRunningApplication() throws {
         let resolver = ProcessIconResolver()
-        let currentPID = Int(getpid())
+        let app = try #require(
+            NSWorkspace.shared.runningApplications.first { $0.bundleIdentifier != nil }
+        )
+        let appPID = Int(app.processIdentifier)
         let missingPID = 999_999
-        let icons = resolver.icons(forPIDs: [currentPID, missingPID])
+        let icons = resolver.icons(forPIDs: [appPID, missingPID])
 
-        #expect(icons.count == 2)
-        #expect(icons[currentPID] != nil)
-        #expect(icons[missingPID] != nil)
+        #expect(icons.count == 1)
+        #expect(icons[appPID] != nil)
+        #expect(icons[missingPID] == nil)
     }
 }

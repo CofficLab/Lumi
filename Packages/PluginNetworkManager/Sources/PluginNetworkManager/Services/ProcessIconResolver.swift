@@ -39,23 +39,17 @@ final class ProcessIconResolver: @unchecked Sendable {
     /// 无 bundle identifier 的进程（如系统内核任务）用其可执行路径兜底。
     private var iconCache: [String: NSImage] = [:]
 
-    /// 兜底图标（取不到程序图标时使用）。
-    private let fallbackIcon: NSImage
-
     /// 线程安全锁。
     private let lock = NSLock()
-
-    init() {
-        fallbackIcon = NSWorkspace.shared.icon(forFile: "/bin/bash")
-    }
 
     /// 批量解析指定 PID 的图标。
     ///
     /// - Parameter pids: 进程 ID 列表。
-    /// - Returns: PID → 图标；找不到对应程序时返回兜底图标。
+    /// - Returns: PID → 图标；只包含能解析到运行程序的 PID。
     ///
     /// - Note: `runningApplications` 只枚举一次，随后按 PID 查表；
-    ///   避免调用方对每个 PID 各枚举一次。
+    ///   避免调用方对每个 PID 各枚举一次。无法解析的 PID 不返回图标，
+    ///   由 UI 使用中性图标，避免给系统守护进程套上 `/bin/bash` 图标。
     func icons(forPIDs pids: [Int]) -> [Int: NSImage] {
         let running = NSWorkspace.shared.runningApplications
         var appsByPID: [pid_t: NSRunningApplication] = [:]
@@ -66,7 +60,6 @@ final class ProcessIconResolver: @unchecked Sendable {
         var result: [Int: NSImage] = [:]
         for pid in Set(pids) {
             guard let app = appsByPID[pid_t(pid)] else {
-                result[pid] = fallbackIcon
                 continue
             }
 
@@ -84,8 +77,10 @@ final class ProcessIconResolver: @unchecked Sendable {
             let icon: NSImage
             if let bundleURL = app.bundleURL {
                 icon = NSWorkspace.shared.icon(forFile: bundleURL.path)
+            } else if let appIcon = app.icon {
+                icon = appIcon
             } else {
-                icon = app.icon ?? fallbackIcon
+                continue
             }
 
             lock.lock()

@@ -116,7 +116,7 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 63 | ProcessMonitorLifecycle | 默认 nettop 环境包含 `NSUnbufferedIO=YES` | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `defaultNettopEnablesUnbufferedOutput` |
 | 64 | ProcessMonitorLifecycle | start 为子进程保留阻塞 stdin 管道 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `startRetainsInputPipe` |
 | 65 | ProcessMonitorLifecycle | stop 释放 stdin 管道与 nettop 进程 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `stopReleasesInputPipeAndProcess` |
-| 66 | ProcessMonitorLifecycle | 批量图标解析为每个请求的 PID 返回图标 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `batchResolvesEveryRequestedPID` |
+| 66 | ProcessMonitorLifecycle | 只返回能解析到运行程序的 PID，不存在的 PID 不给兜底图标 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `batchSkipsPIDsWithoutRunningApplication` |
 | 67 | 网络历史范围裁剪 | 1 小时范围取高频缓冲并剔除过期样本 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `oneHourRangeUsesHighResolutionBuffer` |
 | 68 | 网络历史范围裁剪 | 4 小时范围剔除超出范围的长期样本 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fourHourRangeTrimsLongTermBuffer` |
 | 69 | 网络历史范围裁剪 | 24 小时与 30 天范围返回不同的数据量 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `differentLongRangesReturnDifferentData` |
