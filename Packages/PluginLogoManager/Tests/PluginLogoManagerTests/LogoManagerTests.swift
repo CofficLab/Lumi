@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import Testing
 @testable import PluginLogoManager
@@ -65,5 +66,28 @@ struct LogoManagerTests {
         #expect(manager.isLogoHighlighted == true)
         manager.setLogoHighlighted(false)
         #expect(manager.isLogoHighlighted == false)
+    }
+
+    @Test("状态变化通过 objectWillChange 通知菜单栏宿主重绘")
+    func stateChangesPublishObjectWillChange() {
+        let manager = LogoManager()
+        var notifications = 0
+        // 宿主 `ProviderRefreshModel` 依赖这个具体 publisher 类型做类型转换。
+        let cancellable = manager.objectWillChange.sink { _ in notifications &+= 1 }
+
+        manager.registerLogoItem(LogoItem(id: "a", order: 100) { _ in EmptyView() })
+        #expect(notifications == 1)
+
+        manager.setLogoHighlighted(true)
+        #expect(notifications == 2)
+
+        // 重复设置相同状态不改变数据，也不应触发重绘。
+        manager.setLogoHighlighted(true)
+        #expect(notifications == 2)
+
+        manager.setLogoHighlighted(false)
+        #expect(notifications == 3)
+
+        cancellable.cancel()
     }
 }
