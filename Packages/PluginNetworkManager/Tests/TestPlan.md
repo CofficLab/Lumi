@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 61
+测试文件: 5 个，用例总数: 70
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -44,6 +44,7 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 
 - **LLMNetworkProviderAdapterRetry**（9 条）：由 `errorIsNormalizedToRetryableHTTPStatus`、`normalizedErrorIsClassifiedRetryable`、`agentLoopFailureIsRetryable` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **NetworkSpeedFormatter**（13 条）：由 `formatsGigabytesPerSecond`、`formatsMegabytesPerSecond`、`formatsKilobytesPerSecond` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **网络历史范围裁剪**（4 条）：由 `oneHourRangeUsesHighResolutionBuffer`、`fourHourRangeTrimsLongTermBuffer` 等用例锁定；改动历史时间范围语义或视图取数方式时优先跑对应测试文件。
 - **综合**（25 条）：由 `brotliSSEDecompressionHandlesHighCompressionRatio`、`publicIPRefreshUsesCache`、`publicIPRefreshCanBeForced` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -111,27 +112,36 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 59 | ProcessMonitorLifecycle | 面板开关切换会成对调用 start/stop | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `togglePairsStartAndStop` |
 | 60 | ProcessMonitorLifecycle | 面板开关重复赋值不会重复启停 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `repeatedAssignmentDoesNotDuplicateCalls` |
 | 61 | ProcessMonitorLifecycle | 面板可见时 nettop 启动，隐藏时退出（端到端联动） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `panelVisibilityDrivesNettopLifecycle` |
+| 62 | ProcessMonitorLifecycle | 默认 nettop 参数包含 `-n` 与 `-s 1` | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `defaultNettopArgumentsIncludeNameResolutionOffAndInterval` |
+| 63 | ProcessMonitorLifecycle | 默认 nettop 环境包含 `NSUnbufferedIO=YES` | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `defaultNettopEnablesUnbufferedOutput` |
+| 64 | ProcessMonitorLifecycle | start 为子进程保留阻塞 stdin 管道 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `startRetainsInputPipe` |
+| 65 | ProcessMonitorLifecycle | stop 释放 stdin 管道与 nettop 进程 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `stopReleasesInputPipeAndProcess` |
+| 66 | ProcessMonitorLifecycle | 批量图标解析为每个请求的 PID 返回图标 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `batchResolvesEveryRequestedPID` |
+| 67 | 网络历史范围裁剪 | 1 小时范围取高频缓冲并剔除过期样本 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `oneHourRangeUsesHighResolutionBuffer` |
+| 68 | 网络历史范围裁剪 | 4 小时范围剔除超出范围的长期样本 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fourHourRangeTrimsLongTermBuffer` |
+| 69 | 网络历史范围裁剪 | 24 小时与 30 天范围返回不同的数据量 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `differentLongRangesReturnDifferentData` |
+| 70 | 网络历史范围裁剪 | 迷你趋势图按时间窗口取样而非按条数 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `miniTrendUsesTimeWindow` |
 
-> 说明：全部 **61 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **70 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 24 / 24
-- P1: 已覆盖 35 / 35
+- P0: 已覆盖 30 / 30
+- P1: 已覆盖 38 / 38
 - P2: 已覆盖 2 / 2
-- **合计: 61 / 61**（仅表示清单场景，非源码覆盖率）
+- **合计: 70 / 70**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（24 条）
-- **P1**: 其余功能性用例（35 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（30 条）
+- **P1**: 其余功能性用例（38 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 47 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 70 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
