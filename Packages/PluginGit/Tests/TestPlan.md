@@ -5,7 +5,7 @@
 GitPlugin Git integration plugin for Lumi editor.
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 66
+测试文件: 13 个，用例总数: 71
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -123,27 +123,32 @@ GitPlugin Git integration plugin for Lumi editor.
 | 64 | 综合 | validateBranchNameRejectsInvalidGitNames | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `validateBranchNameRejectsInvalidGitNames` |
 | 65 | 综合 | remoteDisplayNamePreservesSpacesInLocalRemotePath | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `remoteDisplayNamePreservesSpacesInLocalRemotePath` |
 | 66 | 综合 | remoteDisplayNameKeepsSshRepositoryPath | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `remoteDisplayNameKeepsSshRepositoryPath` |
+| 67 | GitLogTool count | 超大 Double 退回默认值而不是崩溃 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `oversizedDoubleFallsBackToDefault` |
+| 68 | GitLogTool count | 非有限值退回默认值 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `nonFiniteFallsBackToDefault` |
+| 69 | GitLogTool count | 可表示但超范围的值被钳制 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `representableOutOfRangeIsClamped` |
+| 70 | GitLogTool count | 范围内的值原样保留 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `inRangeIsKept` |
+| 71 | GitLogTool count | 缺失或非法值使用默认值 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingOrInvalidUsesDefault` |
 
-> 说明：全部 **66 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **71 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 4 / 4
-- P1: 已覆盖 53 / 53
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 56 / 56
 - P2: 已覆盖 9 / 9
-- **合计: 66 / 66**（仅表示清单场景，非源码覆盖率）
+- **合计: 71 / 71**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
-- **P1**: 其余功能性用例（53 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（56 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 66 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 71 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
