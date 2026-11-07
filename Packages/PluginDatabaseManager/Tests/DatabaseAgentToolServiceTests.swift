@@ -182,6 +182,30 @@ import Foundation
         #expect(result == "EXPLAIN SELECT * FROM users")
     }
 
+    // MARK: - PostgreSQL schema 过滤（#703）
+
+    @Test func postgresSchemaFilterListsAllNonSystemSchemasByDefault() {
+        let filter = DatabaseAgentToolService.postgresSchemaFilter(schema: nil)
+        // 不能写死 public：analytics 之类的普通 schema 也要能被描述。
+        #expect(filter.sql.contains("NOT IN ('pg_catalog', 'information_schema')"))
+        #expect(!filter.sql.contains("'public'"))
+        #expect(filter.params.isEmpty)
+    }
+
+    @Test func postgresSchemaFilterBindsRequestedSchemaAsParameter() {
+        let filter = DatabaseAgentToolService.postgresSchemaFilter(schema: "analytics")
+        #expect(filter.sql.contains("table_schema = $1"))
+        // schema 名必须走绑定参数，不能拼进 SQL。
+        #expect(!filter.sql.contains("analytics"))
+        #expect(filter.params == [.string("analytics")])
+    }
+
+    @Test func postgresSchemaFilterTreatsBlankSchemaAsUnspecified() {
+        let filter = DatabaseAgentToolService.postgresSchemaFilter(schema: "   ")
+        #expect(filter.sql.contains("NOT IN"))
+        #expect(filter.params.isEmpty)
+    }
+
     // MARK: - quoteIdentifier
 
     @Test func quoteIdentifierMySQLUsesBackticks() {

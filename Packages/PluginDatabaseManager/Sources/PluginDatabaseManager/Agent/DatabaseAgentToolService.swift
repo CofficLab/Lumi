@@ -69,7 +69,10 @@ public actor DatabaseAgentToolService {
         return try Self.encodeJSON(summaries)
     }
 
-    public func describeSchema(connectionId: UUID, limit: Int) async throws -> String {
+    /// 描述连接的表结构。
+    ///
+    /// - Parameter schemaName: 只描述某个 schema（PostgreSQL）。为空时描述全部非系统 schema。
+    public func describeSchema(connectionId: UUID, limit: Int, schemaName: String? = nil) async throws -> String {
         let limit = try Self.normalizedLimit(limit)
         let config = try await config(for: connectionId)
         let connection = try await connection(for: config)
@@ -104,15 +107,20 @@ public actor DatabaseAgentToolService {
             )
             return try Self.encodeJSON(Self.rowsAsDictionaries(result, limit: limit))
         case .postgresql:
+            // 不写死 public：应用表常在 analytics 之类的普通 schema 里。
+            // 未指定 schema 时列出所有非系统 schema。
+            let requested = schemaName?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let hasRequested = !(requested?.isEmpty ?? true)
+            let (schemaSQL, params) = Self.postgresSchemaFilter(schema: requested)
             let result = try await connection.query(
                 """
-                SELECT table_name, column_name, data_type, is_nullable
+                SELECT table_schema, table_name, column_name, data_type, is_nullable
                 FROM information_schema.columns
-                WHERE table_schema = 'public'
-                ORDER BY table_name, ordinal_position
+                WHERE true \(schemaSQL)
+                ORDER BY table_schema, table_name, ordinal_position
                 LIMIT \(limit)
                 """,
-                params: nil
+                params: params.isEmpty ? nil : params
             )
             return try Self.encodeJSON(Self.rowsAsDictionaries(result, limit: limit))
         case .redis:
@@ -239,6 +247,22 @@ public actor DatabaseAgentToolService {
             return statement
         }
         return "\(statement) LIMIT \(limit)"
+    }
+
+    /// PostgreSQL schema 过滤条件。
+    ///
+    /// - 指定 schema 时用绑定参数 `$1`（不拼进 SQL，避免注入）；
+    /// - 未指定时列出所有非系统 schema —— 应用表常在 analytics 之类的普通 schema 里，
+    ///   写死 public 会让这些表完全无法被发现。
+    static func postgresSchemaFilter(schema: String?) -> (sql: String, params: [DatabaseValue]) {
+        let trimmed = schema?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty else {
+            return (
+                "AND table_schema NOT IN ('pg_catalog', 'information_schema')",
+                []
+            )
+        }
+        return ("AND table_schema = $1", [.string(trimmed)])
     }
 
     public static func rowsAsDictionaries(_ result: QueryResult, limit: Int) -> DatabaseQueryPayload {
