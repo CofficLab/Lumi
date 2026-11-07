@@ -46,7 +46,7 @@ PluginConversationList 的实现包，包含 14 个主要类型；当前测试�
 - **ConversationListViewModel**（5 条）：由 `initialLoadAndHeaderReflectConversationAndProjectState`、`currentProjectScopeFiltersReloadAndUpdatesProjectTitle`、`nextPageAppendsOnlyTheRemainingConversations` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationRailTabController**（2 条）：由 `railTabsFollowConversationAndCurrentProjectAvailability`、`stoppingRailControllerCancelsRefreshSubscriptions` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationSortStabilizer**（3 条）：由 `sortTimeStaysAnchoredUntilTheHoldWindowExpires`、`markingViewedAnchorsTheConversationAtTheCurrentTime`、`cleanupKeepsRecentAnchorsAndDropsOldOnes` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **GetRecentConversationsTool**（4 条）：由 `emptyConversationListReturnsHelpfulStatus`、`recentConversationTableEscapesTitlesAndMarksCurrentProject`、`recentConversationLimitDefaultsAndClampsToOneThroughTwenty` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GetRecentConversationsTool**（5 条）：由 `emptyConversationListReturnsHelpfulStatus`、`recentConversationTableEscapesTitlesAndMarksCurrentProject`、`recentConversationTableEscapesProjectNamesAndKeepsFiveColumns`、`recentConversationLimitDefaultsAndClampsToOneThroughTwenty` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RelativeTime**（3 条）：由 `relativeTimeFormatsPastMinutesHoursAndDays`、`relativeTimeTreatsRecentAndFutureDatesAsJustNow`、`conversationPageCursorKeepsItsTimestampAndIdentifier` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -77,30 +77,31 @@ PluginConversationList 的实现包，包含 14 个主要类型；当前测试�
 | 22 | GetRecentConversationsTool | recentConversationTableEscapesTitlesAndMarksCurrentProject | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `recentConversationTableEscapesTitlesAndMarksCurrentProject` |
 | 23 | GetRecentConversationsTool | recentConversationLimitDefaultsAndClampsToOneThroughTwenty | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `recentConversationLimitDefaultsAndClampsToOneThroughTwenty` |
 | 24 | GetRecentConversationsTool | recentConversationToolMetadataSupportsBothLanguages | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `recentConversationToolMetadataSupportsBothLanguages` |
-| 25 | RelativeTime | relativeTimeFormatsPastMinutesHoursAndDays | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `relativeTimeFormatsPastMinutesHoursAndDays` |
-| 26 | RelativeTime | relativeTimeTreatsRecentAndFutureDatesAsJustNow | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `relativeTimeTreatsRecentAndFutureDatesAsJustNow` |
-| 27 | RelativeTime | conversationPageCursorKeepsItsTimestampAndIdentifier | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `conversationPageCursorKeepsItsTimestampAndIdentifier` |
+| 25 | GetRecentConversationsTool | recentConversationTableEscapesProjectNamesAndKeepsFiveColumns | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `recentConversationTableEscapesProjectNamesAndKeepsFiveColumns` |
+| 26 | RelativeTime | relativeTimeFormatsPastMinutesHoursAndDays | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `relativeTimeFormatsPastMinutesHoursAndDays` |
+| 27 | RelativeTime | relativeTimeTreatsRecentAndFutureDatesAsJustNow | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `relativeTimeTreatsRecentAndFutureDatesAsJustNow` |
+| 28 | RelativeTime | conversationPageCursorKeepsItsTimestampAndIdentifier | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `conversationPageCursorKeepsItsTimestampAndIdentifier` |
 
-> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **28 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
 - P1: 已覆盖 23 / 23
-- P2: 已覆盖 4 / 4
-- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
+- P2: 已覆盖 5 / 5
+- **合计: 28 / 28**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
 - **P1**: 其余功能性用例（23 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 28 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -120,7 +120,7 @@ struct GetRecentConversationsTool: SuperAgentTool, @unchecked Sendable {
         result += "|---|----------------|-------|---------|---------|\n"
 
         for (index, info) in recentConversations.enumerated() {
-            result += "| \(index + 1) | `\(info.id)` | \(info.title.escapedForTable()) | \(info.project) | \(info.created) |\n"
+            result += "| \(index + 1) | `\(info.id)` | \(info.title.escapedForTable()) | \(info.project.escapedForTable()) | \(info.created) |\n"
         }
 
         return result
