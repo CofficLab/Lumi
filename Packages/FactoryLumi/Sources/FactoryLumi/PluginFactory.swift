@@ -135,6 +135,7 @@ import PluginOpenInRemote
 import PluginOpenInVSCode
 import PluginOpenInXcode
 import PluginPluginManager
+import PluginAbout
 import PluginProjects
 import PluginProjectFileTree
 import PluginProjectFiles
@@ -347,6 +348,17 @@ public struct DefaultPluginFactory: PluginFactory {
             AgentLoopRetryPlugin(),
             MessageSenderPlugin(),
             PluginPluginManager(),
+            // 「关于」入口（共享远程包 LumiPluginAbout，注入 Lumi 品牌配置）。
+            // 与 PluginSettingGeneral 的「网站」分组内容重叠——「关于」页承载
+            // 更完整的信息（旗下应用 + 官网 + 法律链接），故该分组从通用页移除。
+            AboutPlugin(
+                id: "com.coffic.lumi.plugin.about",
+                configuration: AboutConfiguration(
+                    officialWebsiteURLString: "https://coffic.cn/lumi",
+                    privacyPolicyURLString: "https://coffic.cn/privacy",
+                    termsOfServiceURLString: "https://coffic.cn/terms"
+                )
+            ),
             // 设置视图管理器：替换 ProviderFactory 预注册的默认 SettingViewProviding 实现，
             // 必须先于各设置入口贡献插件（如 SettingGeneralPlugin order=200）。
             PluginSettingView(id: "com.coffic.lumi.plugin.setting-view"),

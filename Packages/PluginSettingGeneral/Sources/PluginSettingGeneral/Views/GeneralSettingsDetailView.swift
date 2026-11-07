@@ -26,7 +26,6 @@ struct GeneralSettingsDetailView: View {
             VStack(alignment: .leading, spacing: 24) {
                 manualsSection
                 lumiSection
-                websiteSection
                 updatesSection
                 cliSection
                 diagnosticsSection
@@ -126,36 +125,6 @@ struct GeneralSettingsDetailView: View {
                         viewModel.openStorageDirectory()
                     }
                     .disabled(!viewModel.isStorageAvailable)
-                }
-            }
-        }
-    }
-
-    // MARK: - 网站
-
-    private var websiteSection: some View {
-        AppSettingSection(
-            title: "网站",
-            titleAlignment: .leading
-        ) {
-            AppSettingRow(
-                title: "官方网站",
-                description: "coffic.cn/lumi",
-                icon: "globe"
-            ) {
-                AppButton(
-                    "访问",
-                    systemImage: "arrow.up.forward.square",
-                    style: .secondary,
-                    size: .small
-                ) {
-                    if let url = URL(string: "https://coffic.cn/lumi") {
-                        #if canImport(AppKit)
-                        NSWorkspace.shared.open(url)
-                        #elseif canImport(UIKit)
-                        UIApplication.shared.open(url)
-                        #endif
-                    }
                 }
             }
         }
