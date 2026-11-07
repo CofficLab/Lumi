@@ -124,9 +124,10 @@ struct PluginConversationBehaviorTests {
         #expect(toast.shownToasts.count == 1)
     }
 
-    @Test("Reasoning selection updates conversation and global preference")
-    func reasoningSelectionUpdatesPreferencesAndToast() throws {
+    @Test("选中会话时调整 Reasoning 只影响该会话，不改全局默认")
+    func reasoningSelectionDoesNotChangeGlobalDefault() throws {
         let conversations = DefaultConversationManager()
+        conversations.setGlobalReasoningEffort(.medium)
         let conversationID = try makeConversation(in: conversations)
         let toast = RecordingToastProvider()
         let view = ReasoningActionBarButton(conversations: conversations, toast: toast)
@@ -134,11 +135,29 @@ struct PluginConversationBehaviorTests {
         view.apply(.effort(.low))
 
         #expect(conversations.reasoningEffortOptional(for: conversationID) == .low)
-        #expect(conversations.globalReasoningEffort == .low)
+        // 修改已有会话不能连带改掉 New Chat 的默认档位。
+        #expect(conversations.globalReasoningEffort == .medium)
         #expect(toast.shownToasts.last?.detail == "LOW")
 
         view.apply(.off)
-        #expect(conversations.reasoningEffortOptional(for: conversationID) == nil)
+        // 清除会回落到全局默认（既有语义）；关键仍是全局默认未被改写。
+        #expect(conversations.reasoningEffortOptional(for: conversationID) == .medium)
+        #expect(conversations.globalReasoningEffort == .medium)
+        #expect(toast.shownToasts.count == 2)
+    }
+
+    @Test("New Chat（无选中会话）调整 Reasoning 才更新全局默认")
+    func reasoningSelectionWithoutConversationUpdatesGlobalDefault() {
+        let conversations = DefaultConversationManager()
+        let toast = RecordingToastProvider()
+        let view = ReasoningActionBarButton(conversations: conversations, toast: toast)
+
+        view.apply(.effort(.high))
+
+        #expect(conversations.selectedConversationID == nil)
+        #expect(conversations.globalReasoningEffort == .high)
+
+        view.apply(.off)
         #expect(conversations.globalReasoningEffort == nil)
         #expect(toast.shownToasts.count == 2)
     }
