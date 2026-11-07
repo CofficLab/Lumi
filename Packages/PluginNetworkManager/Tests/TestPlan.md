@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 73
+测试文件: 6 个，用例总数: 75
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -124,27 +124,29 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 71 | get_http_exchange_detail | schema 允许仅传 id 或仅传 url | 读取工具 inputSchema | 检查 required/anyOf | 不存在全局 required；anyOf 同时包含 id 与 url 的 required 分支 | P0 | ✅ 已覆盖 | `httpExchangeDetailSchemaAcceptsIDOrURL` |
 | 72 | NetworkManager 菜单栏生命周期 | 禁用自动撤回，重新启用恢复贡献 | 真实 kernel 启停插件 | 禁用/启用插件 | 禁用后贡献为空，启用后恢复 speed 与 popup 贡献 | P1 | ✅ 已覆盖 | `disableAndEnableRestoresContributions` |
 | 73 | HTTP 统计工具 | limit 只裁剪明细，不改变匹配总数 | 60 条记录（30×200 / 30×500，500 均 2.5s），limit 分别取 10/10/20 | 调用 domain / failed / slow 三个工具 | Total=60、Summary=30、5xx=30、Found=30，且明细数量受限 | P0 | ✅ 已覆盖 | `summariesCountAllMatchesWhileLimitOnlyCapsDetails` |
+| 74 | ProcessMonitorParsing | nettop 首帧的累计字节不会作为瞬时速度发布 | 注入首帧 900MB/100MB 累计值 | 解析 + flush | processes 为空 | P1 | ✅ 已覆盖 | `firstSampleIsIgnored` |
+| 75 | ProcessMonitorParsing | 第二帧才按周期 delta 发布速度 | 首帧累计值 + 第二帧 1024/2048 | 解析 + flush | 仅一条进程记录，速度为 1024/2048 | P1 | ✅ 已覆盖 | `secondSamplePublishesDeltaSpeed` |
 
-> 说明：全部 **73 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **75 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 32 / 32
-- P1: 已覆盖 39 / 39
+- P1: 已覆盖 41 / 41
 - P2: 已覆盖 2 / 2
-- **合计: 73 / 73**（仅表示清单场景，非源码覆盖率）
+- **合计: 75 / 75**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（30 条）
-- **P1**: 其余功能性用例（38 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（32 条）
+- **P1**: 其余功能性用例（41 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 70 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 75 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
