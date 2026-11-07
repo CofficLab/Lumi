@@ -67,7 +67,7 @@ PluginOpenInRemote Lumi 编辑器插件：在默认浏览器中打开当前项�
 | 19 | RemoteWebURLResolver | scp-like 地址保留多级分组路径 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `convertsScpLikeRemoteWithGroupPath` |
 | 20 | RemoteWebURLResolver | scp-like 地址丢弃 user@ 前缀 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `stripsUserPrefixFromScpLikeRemote` |
 | 21 | RemoteWebURLResolver | ssh:// 地址转换为 HTTPS web 链接并丢弃 SSH 端口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `convertsSSHRemote` |
-| 22 | RemoteWebURLResolver | git:// 地址转换为 HTTPS web 链接 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `convertsGitProtocolRemote` |
+| 22 | RemoteWebURLResolver | git:// 地址转换为 HTTPS web 链接并丢弃 Git 协议端口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `convertsGitProtocolRemote` |
 | 23 | RemoteWebURLResolver | https 地址保持不变并去掉 .git 后缀 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `normalizesHTTPSRemote` |
 | 24 | RemoteWebURLResolver | 忽略首尾空白字符 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `trimsWhitespaceAroundRemote` |
 | 25 | RemoteWebURLResolver | 去掉结尾多余的斜杠 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `stripsTrailingSlash` |
