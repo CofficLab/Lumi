@@ -22,6 +22,14 @@ struct CreateSkillToolTests {
         pairs.mapValues { ToolArgument($0) }
     }
 
+    private func makeContext(projectPath: String?) -> ToolExecutionContext {
+        ToolExecutionContext(
+            jobID: UUID().uuidString,
+            conversationID: UUID(),
+            conversationProjectPathProvider: { projectPath }
+        )
+    }
+
     // MARK: - Tests
 
     @Test("创建后写入 metadata.json + SKILL.md，并被扫描器识别")
@@ -268,5 +276,55 @@ struct CreateSkillToolTests {
         #expect(tool.permissionRiskLevel(arguments: [:]) == .medium)
         let description = tool.displayDescription(for: arguments(["name": "my-skill"]))
         #expect(description.contains("my-skill"))
+    }
+
+    @Test("未传 project_path 时写入会话绑定项目")
+    @MainActor
+    func writesIntoConversationProject() async throws {
+        let projectA = try makeProjectDir()
+        let projectB = try makeProjectDir()
+        defer {
+            try? FileManager.default.removeItem(at: projectA)
+            try? FileManager.default.removeItem(at: projectB)
+        }
+
+        _ = try await CreateSkillTool().executeResult(
+            context: makeContext(projectPath: projectA.path),
+            arguments: arguments(["name": "scoped-skill", "description": "来自会话项目"])
+        )
+
+        #expect(FileManager.default.fileExists(
+            atPath: projectA.appendingPathComponent(".lumi/skills/scoped-skill").path
+        ))
+        #expect(!FileManager.default.fileExists(
+            atPath: projectB.appendingPathComponent(".lumi/skills/scoped-skill").path
+        ))
+    }
+
+    @Test("显式 project_path 优先于会话绑定项目")
+    @MainActor
+    func explicitPathBeatsConversationProject() async throws {
+        let projectA = try makeProjectDir()
+        let projectB = try makeProjectDir()
+        defer {
+            try? FileManager.default.removeItem(at: projectA)
+            try? FileManager.default.removeItem(at: projectB)
+        }
+
+        _ = try await CreateSkillTool().executeResult(
+            context: makeContext(projectPath: projectA.path),
+            arguments: arguments([
+                "project_path": projectB.path,
+                "name": "explicit-skill",
+                "description": "显式项目",
+            ])
+        )
+
+        #expect(FileManager.default.fileExists(
+            atPath: projectB.appendingPathComponent(".lumi/skills/explicit-skill").path
+        ))
+        #expect(!FileManager.default.fileExists(
+            atPath: projectA.appendingPathComponent(".lumi/skills/explicit-skill").path
+        ))
     }
 }
