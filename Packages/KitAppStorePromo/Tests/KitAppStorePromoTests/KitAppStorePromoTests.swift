@@ -11,6 +11,20 @@ struct KitAppStorePromoTests {
         #expect(Set(presets.map(\.displayType)).count == presets.count)
         #expect(presets.allSatisfy { $0.width > 0 && $0.height > 0 })
         #expect(AppStorePromoDisplaySpec.preset(for: "APP_DESKTOP")?.width == 1280)
+        let expectedSizes: [String: (Int, Int)] = [
+            "APP_IPHONE_67": (1290, 2796),
+            "APP_IPHONE_65": (1284, 2778),
+            "APP_IPHONE_61": (1170, 2532),
+            "APP_IPHONE_58": (1125, 2436),
+            "APP_IPAD_PRO_3GEN_129": (2048, 2732),
+            "APP_IPAD_PRO_3GEN_11": (1668, 2388),
+            "APP_DESKTOP": (1280, 800),
+        ]
+        for (displayType, size) in expectedSizes {
+            let preset = AppStorePromoDisplaySpec.preset(for: displayType)
+            #expect(preset?.width == size.0, "Unexpected width for \(displayType)")
+            #expect(preset?.height == size.1, "Unexpected height for \(displayType)")
+        }
     }
 
     @Test func linterRejectsRemoteAndExecutableHTML() {
