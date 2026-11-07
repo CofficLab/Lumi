@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 52 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 62 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 52
+测试文件: 5 个，用例总数: 62
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -42,6 +42,7 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 - **综合**（27 条）：由 `toolManagerBatchStopsAtApproval`、`authorizedToolReusesExistingResultInsteadOfExecutingAgain`、`unknownToolSkipsAuthorizationAndReturnsNotFoundResult` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ShellDesktopSandbox**（15 条）：由 `desktopSandboxAllowsTerminalCommandsAndNestedChildren`、`desktopSandboxRejectsAppleEventsFromNestedInterpreter`、`compiledHelperInheritsDesktopServiceDenials` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolExecutionScheduling**（7 条）：由 `toolContextResolvesProjectForOwningConversation`、`readOnlyJobsRunInParallelWithPerTurnLimit`、`sideEffectJobsCreateAnOrderingBarrier` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ShellCommandRisk**（10 条）：由 `readOnlyCommandsStayLow`、`networkExfiltrationAndDownloadExecuteAreHigh`、`shellToolUsesChainAwareRisk` 等用例锁定；改动风险评估时优先跑 `ShellCommandRiskTests`。
 - **ToolJobPersistence**（3 条）：由 `executionLifecycleIsPersisted`、`unfinishedJobsAreSettledAfterRestart`、`deletingConversationCancelsJobsAndClearsRecords` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -100,27 +101,37 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 50 | ToolJobPersistence | ToolExecutionManager 持久化 Job 生命周期和结果 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `executionLifecycleIsPersisted` |
 | 51 | ToolJobPersistence | 启动时未完成的 Job 被安全标记为失败且不自动重跑 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `unfinishedJobsAreSettledAfterRestart` |
 | 52 | ToolJobPersistence | 删除会话会取消运行中的 Job 并阻止迟到持久化 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `deletingConversationCancelsJobsAndClearsRecords` |
+| 53 | ShellCommandRisk | 只读命令与无副作用参数判低风险 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readOnlyCommandsStayLow` |
+| 54 | ShellCommandRisk | 引号与转义内的分隔符不拆分命令链 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `quotedAndEscapedSeparatorsStayLow` |
+| 55 | ShellCommandRisk | 网络外发与下载即执行判高风险 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `networkExfiltrationAndDownloadExecuteAreHigh` |
+| 56 | ShellCommandRisk | 嵌套命令替换与解释器间接执行判高风险 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nestedSubstitutionAndInterpreterExecutionAreHigh` |
+| 57 | ShellCommandRisk | 只读命令替换不误判 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nestedReadOnlySubstitutionStaysLow` |
+| 58 | ShellCommandRisk | 破坏性操作、提权与敏感路径判高风险 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `destructivePrivilegeAndSensitivePathsAreHigh` |
+| 59 | ShellCommandRisk | 白名单之外的命令 fail-safe 判高风险 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unknownCommandsFailSafeToHigh` |
+| 60 | ShellCommandRisk | 安全重定向与畸形输入边界 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `harmlessRedirectionAndMalformedInputs` |
+| 61 | ShellCommandRisk | 超长输入不崩溃且判高风险 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `oversizedInputDoesNotCrash` |
+| 62 | ShellCommandRisk | ShellTool 接入链式风险分析 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shellToolUsesChainAwareRisk` |
 
-> 说明：全部 **52 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **62 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 43 / 43
-- P2: 已覆盖 4 / 4
-- **合计: 52 / 52**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 51 / 51
+- P2: 已覆盖 6 / 6
+- **合计: 62 / 62**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（43 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
+- **P1**: 其余功能性用例（51 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 52 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 62 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
