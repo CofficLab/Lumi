@@ -432,6 +432,26 @@ struct ConversationForkCoordinatorTests {
         #expect(forked.reasoningEffort == nil)
     }
 
+    @Test("fork 继承源对话语言，不受摘要期间切换会话影响")
+    func forkUsesSourceConversationLanguage() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let sourceID = try conversations.createConversation(title: "English", projectPath: nil, providerID: nil, modelName: nil)
+        conversations.setLanguage(.english, for: sourceID)
+        let otherID = try conversations.createConversation(title: "中文", projectPath: nil, providerID: nil, modelName: nil)
+        conversations.setLanguage(.chinese, for: otherID)
+        // 模拟摘要期间用户从源对话切到另一个中文对话。
+        conversations.selectConversation(id: otherID)
+        messages.insertMessage(Message(conversationID: sourceID, role: .user, content: "Question"), to: sourceID)
+        messages.insertMessage(Message(conversationID: sourceID, role: .assistant, content: "Answer"), to: sourceID)
+
+        let outcome = try await makeCoordinator(conversations: conversations, messages: messages)
+            .fork(conversationID: sourceID)
+
+        let forked = try #require(conversations.conversations.first { $0.id == outcome.newConversationID })
+        #expect(forked.language == .english)
+    }
+
     @Test("fork 以传入的源对话为准，不跟随当前选中对话")
     func forkTargetsGivenConversation() async throws {
         let conversations = DefaultConversationManager()
