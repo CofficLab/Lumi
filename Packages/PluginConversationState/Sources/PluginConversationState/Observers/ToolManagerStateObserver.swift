@@ -68,6 +68,14 @@ final class ToolManagerStateObserver: SuperLog {
     }
 
     private func consume(jobEvent: ToolJobEvent) {
+        // 启动恢复是一批终态历史任务，逐条并入状态机。
+        if case .restored(let jobs) = jobEvent {
+            for job in jobs {
+                ingest(job)
+            }
+            return
+        }
+
         let job: ToolJob
         switch jobEvent {
         case .created(let snapshot), .started(let snapshot), .waitingForUser(let snapshot):
@@ -76,8 +84,14 @@ final class ToolManagerStateObserver: SuperLog {
              .completed(_, _, let snapshot), .failed(_, _, let snapshot),
              .cancelled(_, _, let snapshot), .timedOut(_, _, let snapshot):
             job = snapshot
+        case .restored:
+            return
         }
 
+        ingest(job)
+    }
+
+    private func ingest(_ job: ToolJob) {
         if turnByConversation[job.conversationID] != job.turnID {
             jobsByConversation[job.conversationID] = [:]
             turnByConversation[job.conversationID] = job.turnID

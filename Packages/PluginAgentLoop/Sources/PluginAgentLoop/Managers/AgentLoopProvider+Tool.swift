@@ -19,6 +19,9 @@ extension AgentLoopManager {
     /// 终态，兼容路径继续消费 ToolManagerEvent，避免同一个工具结果被写回两次。
     func handleToolJobEvent(_ event: ToolJobEvent) {
         switch event {
+        case .restored:
+            // 启动恢复的历史任务属于已结束的回合，无需重建运行态。
+            break
         case .created(let job), .started(let job), .waitingForUser(let job):
             registerToolJob(job)
         case .output, .progress:

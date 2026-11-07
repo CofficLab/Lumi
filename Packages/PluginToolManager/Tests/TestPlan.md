@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 62 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 63 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 62
+测试文件: 5 个，用例总数: 63
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -111,16 +111,17 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 60 | ShellCommandRisk | 安全重定向与畸形输入边界 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `harmlessRedirectionAndMalformedInputs` |
 | 61 | ShellCommandRisk | 超长输入不崩溃且判高风险 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `oversizedInputDoesNotCrash` |
 | 62 | ShellCommandRisk | ShellTool 接入链式风险分析 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shellToolUsesChainAwareRisk` |
+| 63 | ToolJobPersistence | 启动恢复终态 Job 后发布 restored 批量快照（**回归 #544**） | Job 记录库中已有终态记录 | 挂载记录库等待恢复 | 观察者收到一次 `.restored`，且可按会话查到该 Job | P1 | ✅ 已覆盖 | `restorePublishesSnapshotEvent` |
 
-> 说明：全部 **62 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **63 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 51 / 51
+- P1: 已覆盖 52 / 52
 - P2: 已覆盖 6 / 6
-- **合计: 62 / 62**（仅表示清单场景，非源码覆盖率）
+- **合计: 63 / 63**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -131,7 +132,7 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 62 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 63 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

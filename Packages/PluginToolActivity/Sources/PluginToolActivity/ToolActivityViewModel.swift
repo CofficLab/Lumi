@@ -95,6 +95,12 @@ final class ToolActivityViewModel: ObservableObject {
     }
 
     private func handle(_ event: ToolJobEvent) {
+        // 启动恢复是批量快照，直接重读当前会话的完整列表。
+        if case .restored = event {
+            refresh()
+            return
+        }
+
         let snapshot: ToolJob
         switch event {
         case .created(let job), .started(let job), .waitingForUser(let job):
@@ -104,6 +110,8 @@ final class ToolActivityViewModel: ObservableObject {
         case .completed(_, _, let job), .failed(_, _, let job),
              .cancelled(_, _, let job), .timedOut(_, _, let job):
             snapshot = job
+        case .restored:
+            return
         }
 
         guard snapshot.conversationID == conversations.selectedConversationID else { return }
