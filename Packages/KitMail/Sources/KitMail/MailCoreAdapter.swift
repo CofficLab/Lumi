@@ -107,8 +107,10 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
     ) async throws -> [MailMessageSummary] {
         let messages: [MCOIMAPMessage]
         if let sinceUID {
-            // 增量：uid > sinceUID 的全部新邮件
-            let range = MCORangeMake(UInt64(sinceUID) + 1, UINT64_MAX - UInt64(sinceUID))
+            // 增量：uid > sinceUID 的全部新邮件。
+            // 游标同样必须先校验，避免 +1 在 UInt64.max 上溢出。
+            let cursor = try Self.validatedUID(sinceUID)
+            let range = MCORangeMake(UInt64(cursor) + 1, UINT64_MAX - UInt64(cursor))
             let uids = MCOIndexSet(range: range)
             messages = try await perform { completion in
                 guard let op = self.imapSession.fetchMessagesOperation(
@@ -156,8 +158,11 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
     }
 
     public func fetchBody(uid: UInt64, folder: String) async throws -> MailMessageDetail {
+        // MailCore 的接口只接受 UInt32；越界 UID 在这里转为参数错误，
+        // 而不是在 `UInt32(uid)` 处 trap。
+        let uid32 = try Self.validatedUID(uid)
         let rawData: Data = try await perform { completion in
-            guard let op = self.imapSession.fetchMessageOperation(withFolder: folder, uid: UInt32(uid)) else {
+            guard let op = self.imapSession.fetchMessageOperation(withFolder: folder, uid: uid32) else {
                 completion(nil, MailError.protocolError("operation creation failed"))
                 return
             }
@@ -189,7 +194,7 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
 
         let html = parser.htmlRendering(with: nil)
         let plain = parser.plainTextRendering()
-        let attachments = try await fetchAttachments(for: parser, uid: uid, folder: folder)
+        let attachments = try await fetchAttachments(for: parser, uid: uid32, folder: folder)
 
         return MailMessageDetail(
             summary: summary,
@@ -206,6 +211,7 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
         isRead: Bool?,
         isFlagged: Bool?
     ) async throws {
+        let uid32 = try Self.validatedUID(uid)
         var pending: [(kind: MCOIMAPStoreFlagsRequestKind, flags: MCOMessageFlag)] = []
         if let isRead {
             pending.append((isRead ? .add : .remove, .seen))
@@ -217,7 +223,7 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
             try await perform { completion in
                 guard let op = self.imapSession.storeFlagsOperation(
                     withFolder: folder,
-                    uids: MCOIndexSet(index: UInt64(uid)),
+                    uids: MCOIndexSet(index: UInt64(uid32)),
                     kind: kind,
                     flags: flags
                 ) else {
@@ -341,7 +347,7 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
     /// 遍历消息结构，对需要网络的附件 part 下载并落盘。
     private func fetchAttachments(
         for parser: MCOMessageParser,
-        uid: UInt64,
+        uid: UInt32,
         folder: String
     ) async throws -> [MailAttachment] {
         let parts = parser.attachments as? [MCOAbstractPart] ?? []
@@ -377,7 +383,7 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
             let data: Data = try await perform { completion in
                 guard let op = self.imapSession.fetchMessageAttachmentOperation(
                     withFolder: folder,
-                    uid: UInt32(uid),
+                    uid: uid,
                     partID: partID,
                     encoding: imapPart.encoding
                 ) else {
@@ -401,6 +407,16 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
             )
         }
         return results
+    }
+
+    /// 收窄 UID 前的统一校验：非法值转为 `MailError.invalidArgument`。
+    private static func validatedUID(_ uid: UInt64) throws -> UInt32 {
+        guard let value = MailUID.validated(uid) else {
+            throw MailError.invalidArgument(
+                "uid must be between 1 and \(MailUID.maximum), got \(uid)"
+            )
+        }
+        return value
     }
 
     private func attachmentDirectory() -> URL {

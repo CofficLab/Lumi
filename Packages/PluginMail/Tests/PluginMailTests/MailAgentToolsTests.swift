@@ -127,6 +127,28 @@ final class MailAgentToolsTests: XCTestCase {
         XCTAssertEqual(flags.first?.isRead, true)
     }
 
+    func testReadMessageRejectsUIDAboveUInt32() async throws {
+        store.upsertAccount(makeAccount())
+        store.setPassword("p", for: accountID)
+        let session = MockMailSession(messages: [])
+        let tool = MailReadMessageTool(service: makeService(session: session))
+
+        do {
+            _ = try await tool.execute(arguments: [
+                "uid": ToolArgument(4_294_967_296),
+            ])
+            XCTFail("超过 UInt32.max 的 uid 应在工具层被拒绝")
+        } catch let error as ToolExecutionError {
+            XCTAssertTrue(
+                (error.errorDescription ?? "").contains("uid"),
+                "错误信息应指出 uid 非法"
+            )
+        }
+
+        let flags = await session.flagUpdates
+        XCTAssertTrue(flags.isEmpty, "非法 uid 不应触达会话层")
+    }
+
     func testSearchMessagesFindsCachedHits() async throws {
         store.upsertAccount(makeAccount())
         try await cache.upsertMessages(

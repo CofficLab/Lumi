@@ -277,8 +277,16 @@ public struct MailReadMessageTool: SuperAgentTool {
     public var executionCapability: ToolExecutionCapability { .parallelReadOnly }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let uid = MailToolSupport.optionalInt(arguments, "uid"), uid > 0 else {
+        guard let rawUID = MailToolSupport.optionalInt(arguments, "uid"), rawUID > 0 else {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "缺少必需参数: uid")
+        }
+        // UID 的上界是所有转换点共享的 IMAP 协议约束；这里提前收住，
+        // 避免把非法值带进会话层。
+        guard let uid = MailUID.validated(UInt64(rawUID)) else {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "uid 超出 IMAP 允许范围（1...\(MailUID.maximum)）"
+            )
         }
         return try await service.readMessage(
             accountID: MailToolSupport.optionalUUID(arguments, "account_id"),
