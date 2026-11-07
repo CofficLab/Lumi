@@ -1,0 +1,57 @@
+//
+// This source file is part of the Hummingbird server framework project
+// Copyright (c) the Hummingbird authors
+//
+// See LICENSE.txt for license information
+// SPDX-License-Identifier: Apache-2.0
+//
+
+public import Hummingbird
+
+/// Protocol for route handler object.
+///
+/// Requires a function that returns a HTTP response from a HTTP request and context.
+@_documentation(visibility: internal)
+public protocol _RouteHandlerProtocol<Context>: Sendable {
+    associatedtype Context: RouterRequestContext
+    func handle(_ request: Request, context: Context) async throws -> Response
+}
+
+/// Implementatinon of ``_RouteHandlerProtocol`` that uses a closure to produce a response.
+///
+/// This is used internally to implement `Route` when it is initialized with a closure.
+@_documentation(visibility: internal)
+public struct _RouteHandlerClosure<RouteOutput: ResponseGenerator, Context: RouterRequestContext>: _RouteHandlerProtocol {
+    @usableFromInline
+    let closure: @Sendable (Request, Context) async throws -> RouteOutput
+
+    @inlinable
+    public func handle(_ request: Request, context: Context) async throws -> Response {
+        try await self.closure(request, context).response(from: request, context: context)
+    }
+}
+
+/// Implementatinon of ``_RouteHandlerProtocol`` that uses a MiddlewareStack to produce a resposne
+///
+/// This is used internally to implement `Route` when it is initialized with a middleware built
+/// from the ``RouteBuilder`` result builder.
+@_documentation(visibility: internal)
+public struct _RouteHandlerMiddleware<M0: MiddlewareProtocol>: _RouteHandlerProtocol
+where M0.Input == Request, M0.Output == Response, M0.Context: RouterRequestContext {
+    public typealias Context = M0.Context
+
+    /// Dummy function passed to middleware handle
+    @usableFromInline
+    static func notFound(_: Request, context: Context) -> Response {
+        context.coreContext.endpointPath.value = "NotFound"
+        return .init(status: .notFound)
+    }
+
+    @usableFromInline
+    let middleware: M0
+
+    @inlinable
+    public func handle(_ request: Request, context: Context) async throws -> Response {
+        try await self.middleware.handle(request, context: context, next: Self.notFound)
+    }
+}

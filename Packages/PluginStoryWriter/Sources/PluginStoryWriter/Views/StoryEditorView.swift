@@ -87,7 +87,7 @@ struct StoryEditorView: View {
             }
             .padding(20)
         }
-        .onChange(of: story.synopsis) { _, _ in
+        .onChange(of: story.synopsis) { _ in
             saveStory()
         }
     }

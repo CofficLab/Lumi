@@ -4,19 +4,18 @@ import PackageDescription
 let package = Package(
     name: "PluginCaffeinate",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginCaffeinate", targets: ["PluginCaffeinate"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
+        .package(path: "../../Vendor/LumiProviders"),
         .package(path: "../KitAgentTool"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
-        .package(path: "../ProviderMenuBar"),
+        .package(path: "../../Vendor/LumiKernel"),
+        .package(path: "../../Vendor/LumiLocalization"),
+        .package(path: "../../Vendor/LumiUI"),
         .package(path: "../ProviderToolManager"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiLogging"),
     ],
     targets: [
         .target(
@@ -28,7 +27,7 @@ let package = Package(
                 "LumiUI",
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderLogo", package: "LumiProviders"),
-                "ProviderMenuBar",
+                .product(name: "ProviderMenuBar", package: "LumiProviders"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
                 "ProviderToolManager",
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
@@ -40,6 +39,8 @@ let package = Package(
             dependencies: [
                 "PluginCaffeinate",
                 "KitAgentTool",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderMenuBar", package: "LumiProviders"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
             ]
         ),

@@ -4,12 +4,12 @@ import PackageDescription
 let package = Package(
     name: "PluginACP",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS("14.0")],
     products: [
         .library(name: "PluginACP", targets: ["PluginACP"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
+        .package(path: "../../Vendor/LumiKernel"),
         .package(path: "../ProviderACP"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderConversation"),
@@ -17,9 +17,9 @@ let package = Package(
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../KitAgentTool"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
+        .package(path: "../../Vendor/LumiLocalization"),
+        .package(path: "../../Vendor/LumiSettings"),
+        .package(path: "../../Vendor/LumiUI"),
     ],
     targets: [
         .target(

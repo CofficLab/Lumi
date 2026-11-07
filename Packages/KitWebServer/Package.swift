@@ -5,7 +5,7 @@ let package = Package(
     name: "KitWebServer",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("13.1"),
         .iOS(.v17)
     ],
     products: [
@@ -13,7 +13,7 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "ProviderWebServer", path: "../ProviderWebServer"),
-        .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.28.1"),
+        .package(path: "../../Vendor/hummingbird"),
         .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "2.13.0"),
     ],
     targets: [

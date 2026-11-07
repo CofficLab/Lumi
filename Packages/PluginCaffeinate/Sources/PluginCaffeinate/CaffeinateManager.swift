@@ -2,14 +2,12 @@ import Foundation
 import IOKit.pwr_mgt
 import LumiLocalizationKit
 import KernelCore
-import Observation
 import ProviderLogo
 import ProviderStorage
 import LumiLoggingKit
 /// Caffeinate Manager: Responsible for managing system power state
 @MainActor
-@Observable
-final class CaffeinateManager: SuperLog {
+final class CaffeinateManager: ObservableObject, SuperLog {
     nonisolated static let emoji = "🍽️"
     nonisolated static let verbose: Bool = false
 
@@ -20,24 +18,24 @@ final class CaffeinateManager: SuperLog {
     // MARK: - Properties
 
     /// Whether caffeinate is currently active
-    private(set) var isActive: Bool = false
+    @Published private(set) var isActive: Bool = false
 
     /// Activation start time
-    private(set) var startTime: Date?
+    @Published private(set) var startTime: Date?
 
     /// Preset duration (seconds), 0 means indefinite
-    private(set) var duration: TimeInterval = 0
+    @Published private(set) var duration: TimeInterval = 0
 
-    private(set) var mode: SleepMode = .systemAndDisplay
+    @Published private(set) var mode: SleepMode = .systemAndDisplay
 
     /// Whether the current activation was requested with the immediate display-off action.
-    private(set) var isDisplayOffRequested = false
+    @Published private(set) var isDisplayOffRequested = false
 
     /// 用户在 ViewContainer 配置的「启动时默认模式」。
     ///
     /// 实际生效还需要 Agent 工具 / MenuBar Popup / ViewContainer 在激活时调用
     /// `applyDefaultModeIfNeeded()`，它会读取 LocalStore 并在未激活时按下一次模式。
-    private(set) var persistedDefaultMode: SleepMode?
+    @Published private(set) var persistedDefaultMode: SleepMode?
 
     /// IOKit assertion ID
     private var assertionID: IOPMAssertionID = 0

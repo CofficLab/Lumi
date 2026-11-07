@@ -25,7 +25,7 @@ struct PanelBottomView: View {
         }
         .debugViewBadge("Panel Bottom", alignment: .bottomLeading)
         .onAppear { mountActiveItem() }
-        .onChange(of: provider.activeItemID) { _, _ in
+        .onChange(of: provider.activeItemID) { _ in
             mountActiveItem()
         }
     }

@@ -1,0 +1,100 @@
+{
+  "Merge PDFs": {
+    "en": "Merge PDFs",
+    "zh-Hans": "合并 PDF",
+    "zh-Hant": "合併 PDF",
+    "zh-HK": "合併 PDF",
+    "zh-TW": "合併 PDF"
+  },
+  "Combine several PDFs into one": {
+    "en": "Combine several PDFs into one",
+    "zh-Hans": "把多个 PDF 合成一个",
+    "zh-Hant": "把多個 PDF 合成一個",
+    "zh-HK": "把多個 PDF 合成一個",
+    "zh-TW": "把多個 PDF 合成一個"
+  },
+  "Ready to merge your PDFs?": {
+    "en": "Ready to merge your PDFs?",
+    "zh-Hans": "准备好合并了吗？",
+    "zh-Hant": "準備好合併了嗎？",
+    "zh-HK": "準備好合併了嗎？",
+    "zh-TW": "準備好合併了嗎？"
+  },
+  "Pick two or more PDFs and arrange them in the order you want. They become a single file with all pages in sequence.": {
+    "en": "Pick two or more PDFs and arrange them in the order you want. They become a single file with all pages in sequence.",
+    "zh-Hans": "选择两个或更多 PDF，并按需要的顺序排列。它们会合并成一个文件，所有页面按顺序排列。",
+    "zh-Hant": "選擇兩個或更多 PDF，並按需要的順序排列。它們會合併成一個檔案，所有頁面按順序排列。",
+    "zh-HK": "選擇兩個或更多 PDF，並按需要的順序排列。它們會合併成一個檔案，所有頁面按順序排列。",
+    "zh-TW": "選擇兩個或更多 PDF，並按需要的順序排列。它們會合併成一個檔案，所有頁面按順序排列。"
+  },
+  "Add your PDFs, drag them into the right order, then merge. Nothing is uploaded — every file stays on this device.": {
+    "en": "Add your PDFs, drag them into the right order, then merge. Nothing is uploaded — every file stays on this device.",
+    "zh-Hans": "添加 PDF，拖动调整顺序，然后合并。不会上传任何内容——所有文件都留在本机。",
+    "zh-Hant": "加入 PDF，拖曳調整順序，然後合併。不會上傳任何內容——所有檔案都留在本機。",
+    "zh-HK": "加入 PDF，拖曳調整順序，然後合併。不會上傳任何內容——所有檔案都留在本機。",
+    "zh-TW": "加入 PDF，拖曳調整順序，然後合併。不會上傳任何內容——所有檔案都留在本機。"
+  },
+  "One PDF": {
+    "en": "One PDF",
+    "zh-Hans": "一个 PDF",
+    "zh-Hant": "一個 PDF",
+    "zh-HK": "一個 PDF",
+    "zh-TW": "一個 PDF"
+  },
+  "Combine several PDFs into one file, in any order.": {
+    "en": "Combine several PDFs into one file, in any order.",
+    "zh-Hans": "按任意顺序把多个 PDF 合成一个文件。",
+    "zh-Hant": "按任意順序把多個 PDF 合成一個檔案。",
+    "zh-HK": "按任意順序把多個 PDF 合成一個檔案。",
+    "zh-TW": "按任意順序把多個 PDF 合成一個檔案。"
+  },
+  "Reorder pages for folded, double-sided printing.": {
+    "en": "Reorder pages for folded, double-sided printing.",
+    "zh-Hans": "重新排列页面，便于双面打印后折叠。",
+    "zh-Hant": "重新排列頁面，便於雙面列印後摺疊。",
+    "zh-HK": "重新排列頁面，便於雙面列印後摺疊。",
+    "zh-TW": "重新排列頁面，便於雙面列印後摺疊。"
+  },
+  "Mark page breaks and export separate files.": {
+    "en": "Mark page breaks and export separate files.",
+    "zh-Hans": "标记分页位置，导出多个独立文件。",
+    "zh-Hant": "標記分頁位置，匯出多個獨立檔案。",
+    "zh-HK": "標記分頁位置，匯出多個獨立檔案。",
+    "zh-TW": "標記分頁位置，匯出多個獨立檔案。"
+  },
+  "Your documents stay on this device. Nothing is uploaded.": {
+    "en": "Your documents stay on this device. Nothing is uploaded.",
+    "zh-Hans": "你的文档只保留在本机，不会上传到任何地方。",
+    "zh-Hant": "你的文件只保留在本機，不會上傳到任何地方。",
+    "zh-HK": "你的文件只保留在本機，不會上傳到任何地方。",
+    "zh-TW": "你的文件只保留在本機，不會上傳到任何地方。"
+  },
+  "View the booklet guide": {
+    "en": "View the booklet guide",
+    "zh-Hans": "查看小册子引导",
+    "zh-Hant": "查看小冊子引導",
+    "zh-HK": "查看小冊子引導",
+    "zh-TW": "查看小冊子引導"
+  },
+  "View the split guide": {
+    "en": "View the split guide",
+    "zh-Hans": "查看拆分引导",
+    "zh-Hant": "查看拆分引導",
+    "zh-HK": "查看拆分引導",
+    "zh-TW": "查看拆分引導"
+  },
+  "View the merge guide": {
+    "en": "View the merge guide",
+    "zh-Hans": "查看合并引导",
+    "zh-Hant": "查看合併引導",
+    "zh-HK": "查看合併引導",
+    "zh-TW": "查看合併引導"
+  },
+  "Choose Merge PDFs, add two or more files, drag them into the order you want, then merge them into a single PDF.": {
+    "en": "Choose Merge PDFs, add two or more files, drag them into the order you want, then merge them into a single PDF.",
+    "zh-Hans": "选择「合并 PDF」，添加两个或更多文件，拖动调整成想要的顺序，然后合并成一个 PDF。",
+    "zh-Hant": "選擇「合併 PDF」，加入兩個或更多檔案，拖曳調整成想要的順序，然後合併成一個 PDF。",
+    "zh-HK": "選擇「合併 PDF」，加入兩個或更多檔案，拖曳調整成想要的順序，然後合併成一個 PDF。",
+    "zh-TW": "選擇「合併 PDF」，加入兩個或更多檔案，拖曳調整成想要的順序，然後合併成一個 PDF。"
+  }
+}

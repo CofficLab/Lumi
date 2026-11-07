@@ -43,7 +43,7 @@ struct ToolbarButton: View {
         .task {
             await viewModel.refreshConversationPresence()
         }
-        .onChange(of: viewModel.contextRevision) { _, _ in
+        .onChange(of: viewModel.contextRevision) { _ in
             Task { await viewModel.refreshConversationPresence() }
         }
     }

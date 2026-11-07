@@ -8,15 +8,14 @@ import LumiLoggingKit
 /// the model and invokes its actions. All external operations go through
 /// `ConversationInputCapability`.
 @MainActor
-@Observable
-final class SendActionBarViewModel: SuperLog {
+final class SendActionBarViewModel: ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin-conversation-input", category: "SendActionBarButton")
     nonisolated public static let emoji = "🔘"
     nonisolated static let verbose = true
 
     private let capability: any ConversationInputCapability
 
-    private(set) var state: SendActionBarState
+    @Published private(set) var state: SendActionBarState
 
     // MARK: - Lifecycle
 
@@ -34,9 +33,12 @@ final class SendActionBarViewModel: SuperLog {
     // MARK: - State updates
 
     func updateInputText(_ text: String) {
-        state.canSend = Self.canSend(
-            text: text,
-            hasAttachments: !capability.pendingImageAttachments.isEmpty || !capability.pendingFileAttachments.isEmpty
+        state = SendActionBarState(
+            canStop: state.canStop,
+            canSend: Self.canSend(
+                text: text,
+                hasAttachments: !capability.pendingImageAttachments.isEmpty || !capability.pendingFileAttachments.isEmpty
+            )
         )
         // - Important: 必须把文本写回能力层。`send()` 直接读 `capability.text`
         //   而不是 `state` 里的副本；若这里只更新 `canSend` 判定，调用方
@@ -46,18 +48,24 @@ final class SendActionBarViewModel: SuperLog {
     }
 
     func updateAttachments() {
-        state.canSend = Self.canSend(
-            text: capability.text,
-            hasAttachments: !capability.pendingImageAttachments.isEmpty || !capability.pendingFileAttachments.isEmpty
+        state = SendActionBarState(
+            canStop: state.canStop,
+            canSend: Self.canSend(
+                text: capability.text,
+                hasAttachments: !capability.pendingImageAttachments.isEmpty || !capability.pendingFileAttachments.isEmpty
+            )
         )
     }
 
     func refreshConversationState() {
         guard let conversationID = capability.selectedConversationID else {
-            state.canStop = false
+            state = SendActionBarState(canStop: false, canSend: state.canSend)
             return
         }
-        state.canStop = capability.canStop(for: conversationID)
+        state = SendActionBarState(
+            canStop: capability.canStop(for: conversationID),
+            canSend: state.canSend
+        )
     }
 
     // MARK: - Actions

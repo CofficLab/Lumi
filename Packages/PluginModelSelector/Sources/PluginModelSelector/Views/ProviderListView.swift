@@ -128,10 +128,10 @@ struct ProviderListView: View {
             viewModel.prepareInitialScope()
             viewModel.selectProviderInCurrentScopeIfNeeded()
         }
-        .onChange(of: viewModel.selectedProviderID) { _, _ in
+        .onChange(of: viewModel.selectedProviderID) { _ in
             viewModel.synchronizeScopeWithSelection()
         }
-        .onChange(of: viewModel.selectedScope) { _, _ in
+        .onChange(of: viewModel.selectedScope) { _ in
             viewModel.selectProviderInCurrentScopeIfNeeded()
         }
     }

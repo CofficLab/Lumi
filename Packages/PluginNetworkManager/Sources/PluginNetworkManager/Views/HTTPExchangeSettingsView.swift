@@ -141,19 +141,19 @@ public struct HTTPExchangeSettingsView: View {
         .task {
             await reloadAsync()
         }
-        .onChange(of: state.revision) { _, _ in
+        .onChange(of: state.revision) { _ in
             Task { await reloadAsync() }
         }
-        .onChange(of: selectedDomain) { _, _ in
+        .onChange(of: selectedDomain) { _ in
             Task { await reloadAsync() }
         }
-        .onChange(of: selectedFilter) { _, _ in
+        .onChange(of: selectedFilter) { _ in
             Task { await reloadAsync() }
         }
-        .onChange(of: selectedTimeRange) { _, _ in
+        .onChange(of: selectedTimeRange) { _ in
             Task { await reloadAsync() }
         }
-        .onChange(of: HTTPExportProgress.shared.errorMessage) { _, newValue in
+        .onChange(of: HTTPExportProgress.shared.errorMessage) { newValue in
             if let newValue {
                 exportErrorMessage = newValue
             }

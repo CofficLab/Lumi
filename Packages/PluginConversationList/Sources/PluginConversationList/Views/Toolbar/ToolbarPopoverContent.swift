@@ -43,7 +43,7 @@ struct ToolbarPopoverContent: View {
         .task(id: viewModel.currentProjectPath) {
             await viewModel.refreshProjectScopeVisibility()
         }
-        .onChange(of: viewModel.contextRevision) { _, _ in
+        .onChange(of: viewModel.contextRevision) { _ in
             Task { await viewModel.refreshProjectScopeVisibility() }
         }
     }

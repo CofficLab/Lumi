@@ -51,7 +51,7 @@ public struct SidebarView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .animation(.easeInOut(duration: 0.32), value: viewModel.sidebarMode)
-        .onChange(of: viewModel.isConnected) { _, isConnected in
+        .onChange(of: viewModel.isConnected) { isConnected in
             // 连接成功 → 自动翻回数据浏览，让用户直接看表
             if isConnected, viewModel.sidebarMode == .connections {
                 withAnimation(.easeInOut(duration: 0.32)) {

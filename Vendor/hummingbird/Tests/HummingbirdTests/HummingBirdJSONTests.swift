@@ -1,0 +1,71 @@
+//
+// This source file is part of the Hummingbird server framework project
+// Copyright (c) the Hummingbird authors
+//
+// See LICENSE.txt for license information
+// SPDX-License-Identifier: Apache-2.0
+//
+
+import Foundation
+import Hummingbird
+import HummingbirdTesting
+import Logging
+import NIOFoundationEssentialsCompat
+import Testing
+
+struct JSONCodingTests {
+    struct User: ResponseCodable {
+        let name: String
+        let email: String
+        let age: Int
+    }
+
+    struct Error: Swift.Error {}
+
+    @Test func testDecode() async throws {
+        let router = Router()
+        router.put("/user") { request, context -> HTTPResponse.Status in
+            guard let user = try? await request.decode(as: User.self, context: context) else { throw HTTPError(.badRequest) }
+            #expect(user.name == "John Smith")
+            #expect(user.email == "john.smith@email.com")
+            #expect(user.age == 25)
+            return .ok
+        }
+        let app = Application(responder: router.buildResponder())
+        try await app.test(.router) { client in
+            let body = #"{"name": "John Smith", "email": "john.smith@email.com", "age": 25}"#
+            try await client.execute(uri: "/user", method: .put, body: ByteBufferAllocator().buffer(string: body)) {
+                #expect($0.status == .ok)
+            }
+        }
+    }
+
+    @Test func testEncode() async throws {
+        let router = Router()
+        router.get("/user") { _, _ -> User in
+            User(name: "John Smith", email: "john.smith@email.com", age: 25)
+        }
+        let app = Application(responder: router.buildResponder())
+        try await app.test(.router) { client in
+            try await client.execute(uri: "/user", method: .get) { response in
+                let user = try JSONDecoder().decode(User.self, from: response.body)
+                #expect(user.name == "John Smith")
+                #expect(user.email == "john.smith@email.com")
+                #expect(user.age == 25)
+            }
+        }
+    }
+
+    @Test func testEncode2() async throws {
+        let router = Router()
+        router.get("/json") { _, _ in
+            ["message": "Hello, world!"]
+        }
+        let app = Application(responder: router.buildResponder())
+        try await app.test(.router) { client in
+            try await client.execute(uri: "/json", method: .get) { response in
+                #expect(String(buffer: response.body) == #"{"message":"Hello, world!"}"#)
+            }
+        }
+    }
+}

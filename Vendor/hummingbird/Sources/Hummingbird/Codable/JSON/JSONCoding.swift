@@ -1,0 +1,47 @@
+//
+// This source file is part of the Hummingbird server framework project
+// Copyright (c) the Hummingbird authors
+//
+// See LICENSE.txt for license information
+// SPDX-License-Identifier: Apache-2.0
+//
+
+private import NIOFoundationEssentialsCompat
+
+#if canImport(FoundationEssentials)
+public import FoundationEssentials
+#else
+public import Foundation
+#endif
+
+extension JSONEncoder: ResponseEncoder {
+    /// Extend JSONEncoder to support generating a ``HummingbirdCore/Response``. Sets body and header values
+    /// - Parameters:
+    ///   - value: Value to encode
+    ///   - request: Request used to generate response
+    ///   - context: Request context
+    public func encode(_ value: some Encodable, from request: Request, context: some RequestContext) throws -> Response {
+        let data = try self.encode(value)
+        let buffer = ByteBuffer(bytes: data)
+        return Response(
+            status: .ok,
+            headers: .defaultHummingbirdHeaders(
+                contentType: "application/json; charset=utf-8",
+                contentLength: data.count
+            ),
+            body: .init(byteBuffer: buffer)
+        )
+    }
+}
+
+extension JSONDecoder: RequestDecoder {
+    /// Extend JSONDecoder to decode from ``HummingbirdCore/Request``.
+    /// - Parameters:
+    ///   - type: Type to decode
+    ///   - request: Request to decode from
+    ///   - context: Request context
+    public func decode<T: Decodable>(_ type: T.Type, from request: Request, context: some RequestContext) async throws -> T {
+        let buffer = try await request.body.collect(upTo: context.maxUploadSize)
+        return try self.decode(T.self, from: buffer)
+    }
+}

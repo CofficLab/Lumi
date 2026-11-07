@@ -49,7 +49,7 @@ struct DistributionPage: View {
                 )
             }
         }
-        .onChange(of: viewModel.selectedScreenshotDisplayType) { _, _ in
+        .onChange(of: viewModel.selectedScreenshotDisplayType) { _ in
             Task { await viewModel.reloadScreenshotsForSelectedDisplayType() }
         }
     }

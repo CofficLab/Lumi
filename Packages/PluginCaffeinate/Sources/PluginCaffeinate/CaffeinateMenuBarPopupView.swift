@@ -4,7 +4,7 @@ import LumiLocalizationKit
 
 /// 防休眠插件的菜单栏弹窗视图
 struct CaffeinateMenuBarPopupView: View {
-    @State private var manager = CaffeinateManager.shared
+    @ObservedObject private var manager = CaffeinateManager.shared
     @State private var selectedDuration: TimeInterval = 0
 
     // 快捷操作类型

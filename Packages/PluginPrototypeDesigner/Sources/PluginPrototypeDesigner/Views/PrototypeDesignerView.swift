@@ -61,7 +61,7 @@ public struct PrototypeDesignerView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { notifyProjectAvailability() }
-        .onChange(of: workspace.projects.count) { _, _ in notifyProjectAvailability() }
+        .onChange(of: workspace.projects.count) { _ in notifyProjectAvailability() }
         .alert(
             PrototypeLocalization.string("Operation Failed"),
             isPresented: errorBinding

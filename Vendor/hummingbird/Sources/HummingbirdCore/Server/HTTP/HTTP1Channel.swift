@@ -1,0 +1,156 @@
+//
+// This source file is part of the Hummingbird server framework project
+// Copyright (c) the Hummingbird authors
+//
+// See LICENSE.txt for license information
+// SPDX-License-Identifier: Apache-2.0
+//
+
+import HTTPTypes
+public import Logging
+public import NIOCore
+import NIOHTTP1
+public import NIOHTTPTypes
+import NIOHTTPTypesHTTP1
+
+/// Child channel for processing HTTP1
+@available(hummingbird 2.0, *)
+public struct HTTP1Channel: ServerChildChannel, HTTPChannelHandler {
+    public typealias Value = NIOAsyncChannel<HTTPRequestPart, HTTPResponsePart>
+
+    /// HTTP1Channel configuration
+    public struct Configuration: Sendable {
+        /// HTTP1 Decoder configuration
+        public struct DecoderConfiguration: Sendable {
+            /// Maximum size for a header field
+            public var maxHeaderFieldSize: Int
+            /// Maximum size for all header fields
+            public var maxHeaderListSize: Int
+            /// Maximum number of headers
+            public var maxHeaderFieldCount: Int
+
+            ///  Initialize DecoderConfiguration
+            /// - Parameters:
+            ///   - maxHeaderFieldSize: Maximum size for a header field
+            ///   - maxHeaderListSize: Maximum size for all header fields
+            ///   - maxHeaderFieldCount: Maximum number of headers
+            public init(maxHeaderFieldSize: Int = 80 * 1024, maxHeaderListSize: Int = 80 * 1024, maxHeaderFieldCount: Int = 1000) {
+                self.maxHeaderFieldSize = maxHeaderFieldSize
+                self.maxHeaderListSize = maxHeaderListSize
+                self.maxHeaderFieldCount = maxHeaderFieldCount
+            }
+        }
+        /// Additional channel handlers to add to channel pipeline after HTTP part decoding and before HTTP request handling
+        public var additionalChannelHandlers: @Sendable () -> [any RemovableChannelHandler]
+        /// Time before closing an idle channel.
+        public var idleTimeout: TimeAmount?
+        /// Internal flag for enabling/disabling pipeline assistance
+        package var pipliningAssistance: Bool = false
+        /// HTTP Decoder configuration
+        public var httpDecoder: DecoderConfiguration
+
+        ///  Initialize HTTP1Channel.Configuration
+        /// - Parameters:
+        ///   - additionalChannelHandlers: Additional channel handlers to add to channel pipeline after HTTP part decoding and
+        ///         before HTTP request processing
+        ///   - idleTimeout: Time before closing an idle channel
+        public init(
+            additionalChannelHandlers: @autoclosure @escaping @Sendable () -> [any RemovableChannelHandler] = [],
+            idleTimeout: TimeAmount? = nil
+        ) {
+            self.additionalChannelHandlers = additionalChannelHandlers
+            self.idleTimeout = idleTimeout
+            self.httpDecoder = .init()
+        }
+
+        ///  Initialize HTTP1Channel.Configuration
+        /// - Parameters:
+        ///   - additionalChannelHandlers: Additional channel handlers to add to channel pipeline after HTTP part decoding and
+        ///         before HTTP request processing
+        ///   - idleTimeout: Time before closing an idle channel
+        ///   - httpDecoderConfiguration: HTTP decoder configuration
+        public init(
+            additionalChannelHandlers: @autoclosure @escaping @Sendable () -> [any RemovableChannelHandler] = [],
+            idleTimeout: TimeAmount? = nil,
+            httpDecoderConfiguration: DecoderConfiguration
+        ) {
+            self.additionalChannelHandlers = additionalChannelHandlers
+            self.idleTimeout = idleTimeout
+            self.httpDecoder = httpDecoderConfiguration
+        }
+    }
+
+    ///  Initialize HTTP1Channel
+    /// - Parameters:
+    ///   - responder: Function returning a HTTP response for a HTTP request
+    ///   - additionalChannelHandlers: Additional channel handlers to add to channel pipeline after HTTP part decoding and
+    ///         before HTTP request processing
+    @available(*, deprecated, renamed: "HTTP1Channel(responder:configuration:)")
+    public init(
+        responder: @escaping HTTPChannelHandler.Responder,
+        additionalChannelHandlers: @escaping @Sendable () -> [any RemovableChannelHandler]
+    ) {
+        self.configuration = .init(additionalChannelHandlers: additionalChannelHandlers())
+        self.responder = responder
+    }
+
+    ///  Initialize HTTP1Channel
+    /// - Parameters:
+    ///   - responder: Function returning a HTTP response for a HTTP request
+    ///   - configuration: HTTP1 channel configuration
+    public init(
+        responder: @escaping HTTPChannelHandler.Responder,
+        configuration: Configuration = .init()
+    ) {
+        self.configuration = configuration
+        self.responder = responder
+    }
+
+    /// Setup child channel for HTTP1
+    /// - Parameters:
+    ///   - channel: Child channel
+    ///   - logger: Logger used during setup
+    /// - Returns: Object to process input/output on child channel
+    public func setup(channel: any Channel, logger: Logger) -> EventLoopFuture<Value> {
+        channel.eventLoop.makeCompletedFuture {
+            var decoderLimitsConfiguration = NIOHTTPDecoderLimitConfiguration()
+            decoderLimitsConfiguration.maxHeaderFieldSize = self.configuration.httpDecoder.maxHeaderFieldSize
+            decoderLimitsConfiguration.maxHeaderListSize = self.configuration.httpDecoder.maxHeaderListSize
+            decoderLimitsConfiguration.maxHeaderFieldCount = self.configuration.httpDecoder.maxHeaderFieldCount
+            try channel.pipeline.syncOperations.configureHTTPServerPipeline(
+                withPipeliningAssistance: self.configuration.pipliningAssistance,  // HTTP is pipelined by NIOAsyncChannel
+                withErrorHandling: false,  // We doing the error handling in Application
+                withOutboundHeaderValidation: false,  // Swift HTTP Types are already doing this validation
+                withEncoderConfiguration: .init(),
+                withDecoderLimitConfiguration: decoderLimitsConfiguration
+            )
+            try channel.pipeline.syncOperations.addHandler(HTTP1ToHTTPServerCodec(secure: false))
+            try channel.pipeline.syncOperations.addHandlers(self.configuration.additionalChannelHandlers())
+            try channel.pipeline.syncOperations.addHandler(
+                HTTPConnectionStateHandler(idleTimeout: self.configuration.idleTimeout.map { .init($0) }, logger: logger)
+            )
+            return try NIOAsyncChannel(
+                wrappingChannelSynchronously: channel,
+                configuration: .init(isOutboundHalfClosureEnabled: true)
+            )
+        }
+    }
+
+    /// handle HTTP messages being passed down the channel pipeline
+    /// - Parameters:
+    ///   - asyncChannel: NIOAsyncChannel handling HTTP parts
+    ///   - logger: Logger to use while processing messages
+    @inlinable
+    public func handle(
+        value asyncChannel: NIOCore.NIOAsyncChannel<HTTPRequestPart, HTTPResponsePart>,
+        logger: Logging.Logger
+    ) async {
+        await handleHTTP(asyncChannel: asyncChannel, logger: logger)
+    }
+
+    public let responder: HTTPChannelHandler.Responder
+    public let configuration: Configuration
+}
+
+/// Extend NIOAsyncChannel to ServerChildChannelValue so it can be used in a ServerChildChannel
+extension NIOAsyncChannel: ServerChildChannelValue {}

@@ -45,7 +45,7 @@ public struct PromoDesignerView: View {
         .onAppear {
             notifyTaskAvailability()
         }
-        .onChange(of: workspace.projectTasks.count) { _, _ in
+        .onChange(of: workspace.projectTasks.count) { _ in
             notifyTaskAvailability()
         }
         .alert(

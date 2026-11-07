@@ -10,7 +10,7 @@ struct AppManagerView: View {
     var body: some View {
         detailView
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .onChange(of: viewModel.selectedApp) { _, newApp in
+            .onChange(of: viewModel.selectedApp) { newApp in
                 if let app = newApp {
                     viewModel.scanRelatedFiles(for: app)
                 } else {

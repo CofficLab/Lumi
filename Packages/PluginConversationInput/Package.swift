@@ -4,15 +4,15 @@ import PackageDescription
 let package = Package(
     name: "PluginConversationInput",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginConversationInput", targets: ["PluginConversationInput"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
+        .package(path: "../../Vendor/LumiProviders"),
+        .package(path: "../../Vendor/LumiKernel"),
+        .package(path: "../../Vendor/LumiLocalization"),
+        .package(path: "../../Vendor/LumiUI"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversationInputBlock"),
         .package(path: "../ProviderConversation"),
@@ -21,7 +21,7 @@ let package = Package(
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageSender"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiLogging"),
     ],
     targets: [
         .target(

@@ -60,7 +60,7 @@ struct ProviderSettingsPageContent: View {
         .onAppear {
             viewModel.synchronizeSelection()
         }
-        .onChange(of: viewModel.customProviderRevision) { _, _ in
+        .onChange(of: viewModel.customProviderRevision) { _ in
             viewModel.synchronizeSelection()
         }
     }

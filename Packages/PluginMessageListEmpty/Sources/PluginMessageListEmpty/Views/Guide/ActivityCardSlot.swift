@@ -68,7 +68,7 @@ struct ActivityCardSlot: View {
         GeometryReader { proxy in
             Color.clear
                 .onAppear { availableWidth = proxy.size.width }
-                .onChange(of: proxy.size.width) { _, width in availableWidth = width }
+                .onChange(of: proxy.size.width) { width in availableWidth = width }
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)

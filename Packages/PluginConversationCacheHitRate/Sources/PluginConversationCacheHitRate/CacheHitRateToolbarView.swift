@@ -48,7 +48,7 @@ struct CacheHitRateToolbarView: View {
             )
             .frame(width: 420)
         }
-        .onChange(of: selectedConversationID) { _, newValue in
+        .onChange(of: selectedConversationID) { newValue in
             if newValue == nil {
                 isPopoverPresented = false
             }

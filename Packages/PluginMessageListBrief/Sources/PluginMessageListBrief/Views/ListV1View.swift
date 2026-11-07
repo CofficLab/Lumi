@@ -35,6 +35,12 @@ struct ListV1View: View {
     @State private var usesPostSendPositioning = false
     @State private var viewportHeight: CGFloat = 0
 
+    /// 上一帧的已展示用户消息 ID 集合。
+    ///
+    /// macOS 13 的 `onChange(of:)` 单参数版拿不到旧值，这里手动保存上一帧的
+    /// 快照，由 `handleUserMessageInsertion` 求差集得到新插入的消息。
+    @State private var previousUserMessageIDs: Set<UUID> = []
+
     /// 首屏定位的就绪编排（含超时兜底），见 InitialPositionGate。
     ///
     /// - Important: 必须是 `@StateObject`，不能用 `let`。gate 是引用类型且
@@ -113,7 +119,7 @@ struct ListV1View: View {
                         .id(MessageListScrollCoordinator.bottomAnchorID)
                         .accessibilityHidden(true)
                         .plainMessageListRow(insets: EdgeInsets())
-                        .onChange(of: scrollTick) { _, _ in
+                        .onChange(of: scrollTick) { _ in
                             guard initialPositionGate.isReady else { return }
                             let conversationID = selectedConversationID
                             runtime.scrollCoordinator.scheduleScrollToBottomAfterLayout(
@@ -144,7 +150,7 @@ struct ListV1View: View {
                     )
                 )
             }
-            .onChange(of: visibleRowIDs) { _, _ in
+            .onChange(of: visibleRowIDs) { _ in
                 // 发送后定位期间不跟随滚到底：此时 atBottomBox 是被"滚到占位
                 // 底部"作伪成 true 的，跟随滚动会把最新内容贴到视口底部，抵消
                 // 刚完成的"新回合停在视口上方"定位。定位结束后由
@@ -156,24 +162,26 @@ struct ListV1View: View {
                     prepareInitialPosition(proxy: proxy, messages: displayedHistoryMessages)
                 }
             }
-            .onChange(of: displayedUserMessageIDs) { oldIDs, newIDs in
-                handleUserMessageInsertion(oldIDs: oldIDs, newIDs: newIDs)
+            .onChange(of: displayedUserMessageIDs) { newIDs in
+                let oldIDs = previousUserMessageIDs
+                previousUserMessageIDs = Set(newIDs)
+                handleUserMessageInsertion(oldIDs: Array(oldIDs), newIDs: newIDs)
             }
-            .onChange(of: messageListVM.agentTurns) { _, items in
+            .onChange(of: messageListVM.agentTurns) { items in
                 handleTurnLifecycleChange(items)
             }
-            .onChange(of: stateVM.activity) { _, _ in
+            .onChange(of: stateVM.activity) { _ in
                 guard initialPositionGate.isReady,
                       runtime.atBottomBox.value,
                       !usesPostSendPositioning else { return }
                 scrollTick &+= 1
             }
-            .onChange(of: selectedConversationID) { _, _ in
+            .onChange(of: selectedConversationID) { _ in
                 usesPostSendPositioning = false
                 runtime.scrollCoordinator.cancelPendingTasks()
                 initialPositionGate.resetForConversationSwitch()
             }
-            .onChange(of: messageListVM.isLoading) { _, isLoading in
+            .onChange(of: messageListVM.isLoading) { isLoading in
                 if isLoading {
                     runtime.scrollCoordinator.cancelPendingTasks()
                     initialPositionGate.resetForLoadingStart()

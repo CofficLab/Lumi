@@ -81,10 +81,10 @@ public final class CodeEditorHostPlugin: SuperPlugin, SuperLog {
 
 private struct EditorHostUnavailableView: View {
     var body: some View {
-        ContentUnavailableView(
-            CodeEditorHostLocalization.string("Editor unavailable"),
-            systemImage: "exclamationmark.triangle",
-            description: Text(CodeEditorHostLocalization.string("The editor service is no longer available."))
+        AppEmptyState(
+            icon: "exclamationmark.triangle",
+            title: CodeEditorHostLocalization.string("Editor unavailable"),
+            description: CodeEditorHostLocalization.string("The editor service is no longer available.")
         )
     }
 }

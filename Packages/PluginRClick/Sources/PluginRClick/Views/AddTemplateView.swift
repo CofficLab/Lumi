@@ -25,13 +25,13 @@ public struct AddTemplateView: View {
                     title: pluginLocalization.string("Name (e.g. Python Script)"),
                     text: $name
                 )
-                .onChange(of: name) { _, _ in showNameError = false }
+                .onChange(of: name) { _ in showNameError = false }
 
                 GlassTextField(
                     title: pluginLocalization.string("Extension (e.g. py)"),
                     text: $ext
                 )
-                .onChange(of: ext) { _, _ in showExtensionError = false }
+                .onChange(of: ext) { _ in showExtensionError = false }
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(pluginLocalization.string("Default Content"))

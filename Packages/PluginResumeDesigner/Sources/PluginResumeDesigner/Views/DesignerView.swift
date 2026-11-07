@@ -49,7 +49,7 @@ public struct DesignerView: View {
         .onAppear {
             notifyResumeAvailability()
         }
-        .onChange(of: workspace.projectResumes.count) { _, _ in
+        .onChange(of: workspace.projectResumes.count) { _ in
             notifyResumeAvailability()
         }
         .alert(

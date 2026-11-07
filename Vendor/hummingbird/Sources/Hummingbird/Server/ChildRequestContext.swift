@@ -1,0 +1,40 @@
+//
+// This source file is part of the Hummingbird server framework project
+// Copyright (c) the Hummingbird authors
+//
+// See LICENSE.txt for license information
+// SPDX-License-Identifier: Apache-2.0
+//
+public import Logging
+
+/// A RequestContext that can be initialized from another RequestContext.
+///
+/// The init for the context is marked throwing as it is allowed to fail. If
+/// it fails then the error is passed back up the middleware stack
+///
+/// ```
+/// struct MyRequestContext: ChildRequestContext {
+///     init(context: MyParentRequestContext) throws {
+///         self.coreContext = context.coreContext
+///     }
+/// }
+/// ```
+public protocol ChildRequestContext<ParentContext>: RequestContext where Source == Never {
+    associatedtype ParentContext: RequestContext
+    /// Initialise RequestContext from source
+    init(context: ParentContext) throws
+}
+
+extension ChildRequestContext {
+    public init(source: Source) {
+        // ChildRequestContext can never be created from it's Source `Never` so add preconditionFailure
+        preconditionFailure("Cannot reach this.")
+    }
+}
+
+/// Extend Never to conform to ``RequestContextSource``
+extension Never: RequestContextSource {
+    public var logger: Logger {
+        preconditionFailure("Cannot reach this.")
+    }
+}

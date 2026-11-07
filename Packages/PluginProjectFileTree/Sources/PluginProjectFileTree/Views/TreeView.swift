@@ -61,7 +61,7 @@ public struct TreeView: View, SuperLog {
         }
         .environmentObject(selectionState)
         .frame(maxHeight: .infinity)
-        .onChange(of: viewModel.currentProjectPath) { _, newPath in
+        .onChange(of: viewModel.currentProjectPath) { newPath in
             projectPathDidChange(to: newPath)
         }
         .onAppear(perform: onAppear)

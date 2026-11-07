@@ -39,7 +39,7 @@ struct ScreenRecorderSettingsView: View {
         }
         .id(revision)
         .onAppear(perform: refresh)
-        .onChange(of: state.revision) { _, _ in refresh() }
+        .onChange(of: state.revision) { _ in refresh() }
     }
 
     // MARK: - 权限

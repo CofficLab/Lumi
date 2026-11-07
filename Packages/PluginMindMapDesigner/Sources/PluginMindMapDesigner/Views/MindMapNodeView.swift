@@ -96,7 +96,7 @@ struct MindMapNodeView: View {
         .onTapGesture(count: 2, perform: onDoubleTap)
         .onTapGesture(count: 1, perform: onTap)
         // 进入编辑态时刷新草稿。
-        .onChange(of: isEditing) { _, newValue in
+        .onChange(of: isEditing) { newValue in
             if newValue { draft = node.text }
         }
     }

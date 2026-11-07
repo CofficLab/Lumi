@@ -165,7 +165,9 @@ public extension MessageManaging {
         let all = messages(for: conversationID)
             .filter { includesToolMessages || $0.role != .tool }
             .sorted {
-                if $0.createdAt == $1.createdAt { return $0.id < $1.id }
+                // `UUID: Comparable` 是 macOS 14 才有的 conformance，改用
+                // `uuidString` 做字典序比较以兼容 macOS 13。
+                if $0.createdAt == $1.createdAt { return $0.id.uuidString < $1.id.uuidString }
                 return $0.createdAt < $1.createdAt
             }
         guard let beforeMessageID else { return Array(all.suffix(limit)) }

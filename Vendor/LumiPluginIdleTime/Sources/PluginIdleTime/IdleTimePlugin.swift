@@ -1,0 +1,65 @@
+import AppKit
+import KernelCore
+import ProviderDocsView
+import ProviderIdleTime
+import SwiftUI
+import LumiLoggingKit
+import os
+
+/// 空闲时间插件（KernelCore 版本）。
+///
+/// 由旧版 `Plugins/IdleTimePlugin`（KernelLumi / LumiPlugin 架构）复刻而来：
+/// - onBoot 解析内核注册的 `IdleTimeProviding`（FactoryLumi 已装配完整服务），
+///   注册活动事件监听（应用激活 / 编辑器保存），把事件喂给服务做休息窗口推断；
+/// - 贡献关于文档与使用手册；
+/// - onShutdown 全部撤回。
+@MainActor
+public final class IdleTimePlugin: SuperPlugin, PluginDataMigrating, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.idle-time", category: "IdleTime")
+    public let id = "com.coffic.lumi.plugin.idle-time"
+    public let legacyDataDirectoryNames = ["IdleTime"]
+    public let order = 96
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.idle-time",
+        name: "Idle Time",
+        description: "",
+        category: .system,
+        stage: .stable,
+        policy: .required
+    )
+
+    private var eventObserver: IdleTimeEventObserver?
+    private var provider: (any IdleTimeProviding)?
+
+    public init() {}
+
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: pluginLocalization.string("Idle Time")) { IdleTimeAboutView() })
+            docs.addManual(DocsEntry(id: id, name: pluginLocalization.string("Idle Time")) { IdleTimeManualView() })
+        }
+    }
+
+    public func onBoot(kernel: KernelCoreContainer) throws {
+        // 1. 解析 IdleTimeProviding（FactoryLumi 已装配真实 IdleTimeService）。
+        let provider = kernel.resolveProvider((any IdleTimeProviding).self)
+        self.provider = provider
+
+        // 2. 注册活动事件监听（替代旧版 IdleTimeRootObserver 的职责）。
+        if let provider {
+            eventObserver = IdleTimeEventObserver(provider: provider)
+        }
+    }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        // 撤回事件监听。
+        eventObserver?.cancel()
+        eventObserver = nil
+        provider = nil
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    }
+
+}
