@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 40 条用例。
+PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 54 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 40
+测试文件: 4 个，用例总数: 54
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -43,6 +43,7 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 40 条
 - **CreateSkillTool**（10 条）：由 `createsScannableSkill`、`keepsExistingH1WithoutDuplicatingTitle`、`makeSkillMarkdownEdgeCases`、`normalizesName`、`rejectsDuplicateSkill` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（12 条）：由 `promptBuilder`、`mergePolicy`、`serviceMergesBuiltin`、`settingsAvailableCountDeduplicatesOverriddenBaseSkills` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **SkillCRUDTools**（18 条）：由 `listReturnsProjectSkills`、`listIncludesContentOnDemand`、`listMergesBuiltinBase` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **SkillCRUD 与扫描器一致性**（6 条）：由 `readFallsBackToValidLegacySkill`、`oversizedMetadataIsRejected` 等用例锁定；改动 Skill 读写的有效性判定或大小约束时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -88,27 +89,43 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 40 条
 | 38 | SkillCRUDTools | delete_skill 拒绝规范化后为空的 name，不会删掉整个 skills 目录 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `deleteRejectsEmptyNormalizedName` |
 | 39 | SkillCRUDTools | SkillToolSupport 参数解析边界 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `supportParsers` |
 | 40 | SkillCRUDTools | SkillToolSupport 无当前项目且未传路径时返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `supportProjectPathNil` |
+| 41 | SkillCRUD 与扫描器一致性 | 残缺的 .lumi 条目不会让 read_skill 找不到历史技能 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `readFallsBackToValidLegacySkill` |
+| 42 | SkillCRUD 与扫描器一致性 | 残缺的 .lumi 条目不会让 update_skill 失败 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `updateFallsBackToValidLegacySkill` |
+| 43 | SkillCRUD 与扫描器一致性 | 只有残缺条目时读取返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readReturnsNilWhenOnlyBrokenSkillExists` |
+| 44 | SkillCRUD 与扫描器一致性 | 超出扫描器上限的元数据被拒绝写入 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `oversizedMetadataIsRejected` |
+| 45 | SkillCRUD 与扫描器一致性 | 更新到超限元数据被拒绝，不会让技能从列表消失 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `oversizedUpdateIsRejected` |
+| 46 | SkillCRUD 与扫描器一致性 | 正常大小的元数据可以正常创建并被扫描到 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `normalMetadataIsAccepted` |
 
-> 说明：全部 **40 条场景**已在本包 `swift test` 中实跑通过。
+| 47 | SkillCRUDTools | 创建时拒绝与历史目录同名的技能 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `createRejectsNameExistingInLegacyDirectory` |
+| 48 | SkillCRUDTools | 读取工具能读到历史目录中的技能 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readToolReadsLegacyAgentDirectory` |
+| 49 | SkillCRUDTools | 删除工具删掉历史目录中的技能 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `deleteToolRemovesLegacyAgentDirectory` |
+| 50 | SkillCRUDTools | 扫描器同时读取两个目录的技能 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `scannerMergesBothDirectories` |
+| 51 | SkillSettingsLayout | 插件设置 scaffold 会吃掉垂直空间 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginSettingsScaffoldEatsVerticalSpace` |
+
+| 52 | SkillCRUDTools | 扫描器能读到历史目录中的技能 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `scannerReadsLegacyAgentDirectory` |
+| 53 | SkillCRUDTools | 更新工具在历史目录原位更新技能 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `updateToolEditsLegacyAgentDirectoryInPlace` |
+| 54 | SkillSettingsLayout | 技能页面不增加垂直留白 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `skillPageAddsNoVerticalSlack` |
+
+> 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
-- P1: 已覆盖 28 / 28
+- P0: 已覆盖 10 / 10
+- P1: 已覆盖 38 / 38
 - P2: 已覆盖 6 / 6
-- **合计: 40 / 40**（仅表示清单场景，非源码覆盖率）
+- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（28 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P1**: 其余功能性用例（38 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 40 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 54 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
