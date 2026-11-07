@@ -6,38 +6,62 @@ extension VM {
             Self.logger.warning("\(self.t)loadVersions skipped: no selectedApp")
             return
         }
-        guard !isLoadingVersions else { return }
+        // 同一个 App 的重复加载才跳过；切到别的 App 时必须重新发起，
+        // 否则旧请求还在跑就会把新 App 的加载整个吞掉。
+        guard !(isLoadingVersions && versionLoadAppID == app.id) else { return }
+        let generation = selectionGeneration
         isLoadingVersions = true
-        defer { isLoadingVersions = false }
+        versionLoadAppID = app.id
+        defer {
+            if generation == selectionGeneration {
+                isLoadingVersions = false
+                versionLoadAppID = nil
+            }
+        }
 
         Self.logger.info("\(self.t)loadVersions starting for app: \(app.name) (id: \(app.id), platform: \(app.platform ?? "nil"))")
         await runBusy {
             let rawVersions = try await client.listVersions(appID: app.id)
             Self.logger.info("\(self.t)raw versions fetched: \(rawVersions.count)")
-            versions = rawVersions
-            let versionCount = versions.count
-            let filteredVersions = sidebarVersions
-            Self.logger.info("\(self.t)versions set: \(versionCount), platform filter: \(app.platform ?? "nil")")
-            Self.logger.info("\(self.t)sidebarVersions after filter: \(filteredVersions.count)")
-            if Self.verbose {
-                filteredVersions.forEach { v in
-                    Self.logger.info("\(self.t)  - \(v.versionString) (state: \(v.appStoreState), platform: \(v.platform))")
-                }
+            // 请求期间用户可能已经切走：迟到的结果既不能覆盖当前 App，
+            // 也不能继续给当前 App 挑版本、拉本地化和发布信息。
+            guard applyLoadedVersions(rawVersions, for: app.id, generation: generation) else {
+                Self.logger.info("\(self.t)discarded stale versions for app: \(app.id)")
+                return
             }
-            selectedVersion = filteredVersions.first
-            if selectedVersion != nil {
-                await loadLocalizations()
-            } else {
+            guard selectedVersion != nil else {
                 Self.logger.warning("\(self.t)no sidebarVersions to select")
+                return
             }
+
+            await loadLocalizations()
 
             // 初次打开分发页时，版本列表加载流程不会经过 selectVersion，
             // 因此需要在默认选中版本后主动加载构建和提交状态。放在同一个
             // 忙碌范围内，让整个切换过程只显示一次 loading。
-            if selectedVersion != nil {
-                await loadReleaseInfo()
+            await loadReleaseInfo()
+        }
+    }
+
+    /// 把版本列表落到当前选择上；结果不属于当前 App（或已被更新的选择取代）时返回 `false`。
+    @discardableResult
+    func applyLoadedVersions(
+        _ rawVersions: [AppStoreVersion],
+        for appID: String,
+        generation: Int
+    ) -> Bool {
+        guard generation == selectionGeneration, selectedApp?.id == appID else { return false }
+        versions = rawVersions
+        Self.logger.info("\(self.t)versions set: \(rawVersions.count), platform filter: \(self.selectedApp?.platform ?? "nil")")
+        let filteredVersions = sidebarVersions
+        Self.logger.info("\(self.t)sidebarVersions after filter: \(filteredVersions.count)")
+        if Self.verbose {
+            filteredVersions.forEach { v in
+                Self.logger.info("\(self.t)  - \(v.versionString) (state: \(v.appStoreState), platform: \(v.platform))")
             }
         }
+        selectedVersion = filteredVersions.first
+        return true
     }
 
     func selectVersion(_ version: AppStoreVersion) {

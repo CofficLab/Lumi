@@ -5,7 +5,7 @@
 PluginAppStoreConnect Current `KernelCore` implementation of the App Store Connect integration. - Product/module: `PluginAppStoreConnect` - Plugin id: `com.coffic.lumi.plugin.app-store-connect` - Rail tab: `app-store-connect.sidebar` - Enable policy: disabled by default The plugin provides App Store Connect account, app/version, localization, screenshot, release, and Xcode Cloud management through the workbench and the `app_store_connect_*` Agent tools.
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 52
+测试文件: 9 个，用例总数: 57
 
 核心组件（源码目录）:
 - `Sources/`
@@ -40,6 +40,7 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 - **ASC Chat Toolbar binding**（8 条）：由 `appConfigurationProvidesAppID`、`bundleIDIsDetectedFromXcodeProject` 等用例锁定；改动聊天工具栏的项目绑定解析时优先跑对应测试文件。
 - **StubClientCapability**（5 条）：由 `appIDBindingLoadsVersions`、`switchingProjectsClearsState` 等用例锁定；改动聊天工具栏 ViewModel 的项目切换与绑定时优先跑对应测试文件。
 - **VMBusy**（3 条）：由 `nestedRunBusyIsReentrant`、`fastOperationSkipsOverlay`、`slowOperationShowsOverlay` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **VM App 切换**（3 条）：由 `loadingAnotherAppIsNotSkipped`、`lateVersionsFromPreviousAppAreDiscarded`、`currentVersionsAreApplied` 等用例锁定；改动 App 选择、版本加载或代次校验时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -99,27 +100,30 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 | 52 | TestStorageProvider | 聊天工具栏入口已注册 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `chatToolbarEntryIsRegistered` |
 | 53 | VM 截图刷新 | 强制刷新截图时绕过内存字典 | 字典里有旧列表 | `reloadScreenshotsForSelectedDisplayType(forceRefresh: true)` | 真的发起请求（无传输时上报错误），不再静默返回旧列表 | P0 | ✅ 已覆盖 | `forceRefreshBypassesScreenshotDictionary` |
 | 54 | VM 截图刷新 | 普通切换展示类型时复用内存字典 | 字典里有当前展示类型的列表 | `reloadScreenshotsForSelectedDisplayType()` | 不发起请求、无错误，直接展示字典内容 | P1 | ✅ 已覆盖 | `regularReloadReusesScreenshotDictionary` |
+| 55 | VM App 切换 | 切到别的 App 时，加载不会被上一 App 的进行中请求挡住 | 上一 App 的加载标记仍在 | 切到 App B 后调用 `loadVersions()` | 真正发起 B 的加载并清理自己的标记 | P0 | ✅ 已覆盖 | `loadingAnotherAppIsNotSkipped` |
+| 56 | VM App 切换 | 上一 App 迟到的版本结果不会写入当前选择 | 已从 App A 切到 App B | 用 A 的代次调用 `applyLoadedVersions` | 返回 false，`versions` 与 `selectedVersion` 保持为空 | P0 | ✅ 已覆盖 | `lateVersionsFromPreviousAppAreDiscarded` |
+| 57 | VM App 切换 | 当前 App 与代次的版本结果正常写入 | 已选中 App A | 用当前代次调用 `applyLoadedVersions` | 返回 true，写入版本并选中第一个 | P1 | ✅ 已覆盖 | `currentVersionsAreApplied` |
 
-> 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **57 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 12 / 12
-- P1: 已覆盖 38 / 38
+- P0: 已覆盖 14 / 14
+- P1: 已覆盖 39 / 39
 - P2: 已覆盖 4 / 4
-- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
+- **合计: 57 / 57**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
-- **P1**: 其余功能性用例（38 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
+- **P1**: 其余功能性用例（39 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 52 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 57 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
