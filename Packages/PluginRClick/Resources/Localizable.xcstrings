@@ -456,6 +456,22 @@
         }
       }
     },
+    "Couldn't save the template. Check that Lumi can write its configuration, then try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't save the template. Check that Lumi can write its configuration, then try again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法保存模板。请确认 Lumi 有写入配置的权限后重试。"
+          }
+        }
+      }
+    },
     "Create files from user-defined templates." : {
       "localizations" : {
         "en" : {
