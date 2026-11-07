@@ -160,6 +160,26 @@ public protocol ConversationManaging: AnyObject {
         parentConversationID: UUID?
     ) throws -> UUID
 
+    /// 按显式项目绑定创建新对话。
+    ///
+    /// 与 `projectPath` 版本的区别：`ProjectBinding` 能表达「明确不绑定」，
+    /// 而 `projectPath: nil` 在支持当前项目的实现里会回退到当前项目。
+    func createConversation(
+        title: String?,
+        binding: ProjectBinding,
+        providerID: String?,
+        modelName: String?
+    ) throws -> UUID
+
+    /// 按显式项目绑定创建新对话，可指定父会话。
+    func createConversation(
+        title: String?,
+        binding: ProjectBinding,
+        providerID: String?,
+        modelName: String?,
+        parentConversationID: UUID?
+    ) throws -> UUID
+
     /// 选择对话
     func selectConversation(id: UUID)
 
@@ -320,6 +340,56 @@ public extension ConversationManaging {
             projectPath: projectPath,
             providerID: parsed?.providerID,
             modelName: parsed?.modelID
+        )
+    }
+
+    func createConversation(
+        title: String?,
+        binding: ProjectBinding = .inheritCurrent,
+        modelID: String?
+    ) throws -> UUID {
+        let parsed = modelID.flatMap(LLMModelID.init(rawValue:))
+        return try createConversation(
+            title: title,
+            binding: binding,
+            providerID: parsed?.providerID,
+            modelName: parsed?.modelID
+        )
+    }
+
+    /// 默认实现：把绑定意图折回旧接口。
+    ///
+    /// 没有「当前项目」概念的实现里，`.inheritCurrent` 与 `.none` 都落成
+    /// `nil`，语义正确。**支持当前项目回退的实现必须重写本方法**，否则
+    /// `.none` 会被旧接口解释成「沿用当前项目」。
+    func createConversation(
+        title: String?,
+        binding: ProjectBinding = .inheritCurrent,
+        providerID: String?,
+        modelName: String?,
+        parentConversationID: UUID?
+    ) throws -> UUID {
+        try createConversation(
+            title: title,
+            projectPath: binding.resolvedProjectPath(inheriting: nil),
+            providerID: providerID,
+            modelName: modelName,
+            parentConversationID: parentConversationID
+        )
+    }
+
+    func createConversation(
+        title: String?,
+        binding: ProjectBinding = .inheritCurrent,
+        providerID: String?,
+        modelName: String?
+    ) throws -> UUID {
+        try createConversation(
+            title: title,
+            binding: binding,
+            providerID: providerID,
+            modelName: modelName,
+            parentConversationID: nil
         )
     }
 

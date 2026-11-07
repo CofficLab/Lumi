@@ -96,12 +96,15 @@ final class ConversationForkCoordinator {
         let summaryOutcome = await summarizer.summarize(conversationID: conversationID)
 
         // 透传旧对话的标题 / 项目 / 模型到新对话。
+        // 项目必须用显式绑定：源对话无项目时传 `.none`，否则旧接口会把
+        // `nil` 解释成「沿用当前项目」，副本被悄悄挂到当前项目上。
         let oldSummary = conversations.conversations.first { $0.id == conversationID }
+        let binding: ProjectBinding = oldSummary?.projectPath.map(ProjectBinding.project) ?? .none
         let newID: UUID
         do {
             newID = try conversations.createConversation(
                 title: oldSummary?.title,
-                projectPath: oldSummary?.projectPath,
+                binding: binding,
                 modelID: conversations.modelID(for: conversationID)
             )
         } catch {

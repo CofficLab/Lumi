@@ -61,27 +61,29 @@ PluginConversationFork 的实现包，包含 6 个主要类型；当前测试覆
 | 26 | 综合 | fork 继承源对话的自动化级别、推理强度与详细程度 | 全局 New Chat 为 Build/low/standard，源对话为 Chat/max/detailed | 执行 `fork` | 新对话取 Chat/max/detailed，而非全局值 | P1 | ✅ 已覆盖 | `forkInheritsConversationPreferences` |
 | 27 | 综合 | 源对话关闭推理时 fork 不继承全局推理强度 | 全局推理为 low，源对话显式关闭推理（nil） | 执行 `fork` | 新对话 `reasoningEffort` 仍为 nil | P1 | ✅ 已覆盖 | `forkKeepsReasoningDisabledWhenSourceDisablesIt` |
 | 28 | 综合 | fork 继承源对话语言，不受摘要期间切换会话影响 | 源对话英文，另一个中文对话在摘要前被选中 | 执行 `fork` | 新对话语言为英文 | P1 | ✅ 已覆盖 | `forkUsesSourceConversationLanguage` |
+| 29 | 项目绑定 | 无项目源对话 fork 后副本仍无项目（**回归**） | 生产等价实现：当前项目存在，源对话由 `.none` 创建 | 执行 `fork` | 副本 `projectPath` 为 nil，不被挂到当前项目 | P0 | ✅ 已覆盖 | `forkOfUnboundConversationStaysUnbound` |
+| 30 | 项目绑定 | 有项目源对话 fork 后沿用同一项目 | 当前项目 `/tmp/current-project`，源对话绑定 `/tmp/source-project` | 执行 `fork` | 副本 `projectPath` 为 `/tmp/source-project`，不受当前项目影响 | P1 | ✅ 已覆盖 | `forkOfBoundConversationKeepsItsProject` |
 
-> 说明：全部 **28 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **30 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
-- P1: 已覆盖 16 / 16
+- P0: 已覆盖 7 / 7
+- P1: 已覆盖 17 / 17
 - P2: 已覆盖 6 / 6
-- **合计: 28 / 28**（仅表示清单场景，非源码覆盖率）
+- **合计: 30 / 30**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（16 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 28 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 30 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

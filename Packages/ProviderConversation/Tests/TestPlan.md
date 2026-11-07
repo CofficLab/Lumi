@@ -47,27 +47,32 @@ ProviderConversation 的实现包，包含 8 个主要类型；当前测试覆�
 | 15 | 综合 | testSelectedConversationObserverAutoUnregistersOnDeinit | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testSelectedConversationObserverAutoUnregistersOnDeinit` |
 | 16 | 综合 | testConversationObserverReceivesSemanticChanges | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testConversationObserverReceivesSemanticChanges` |
 | 17 | 综合 | testMultipleSelectedConversationObservers | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testMultipleSelectedConversationObservers` |
+| 18 | 项目绑定 | `.none` 即使存在当前项目也解析为无项目 | 当前项目 `/tmp/current` | 调用 `resolvedProjectPath(inheriting:)` | 返回 nil，不回退当前项目 | P1 | ✅ 已覆盖 | `testProjectBindingNoneResolvesToNilEvenWithCurrentProject` |
+| 19 | 项目绑定 | `.inheritCurrent` 沿用当前项目 | 当前项目 `/tmp/current` | 调用 `resolvedProjectPath(inheriting:)` | 返回 `/tmp/current`；无当前项目时返回 nil | P1 | ✅ 已覆盖 | `testProjectBindingInheritUsesCurrentProject` |
+| 20 | 项目绑定 | `.project` 使用显式路径 | 当前项目 `/tmp/current`，显式 `/tmp/proj` | 调用 `resolvedProjectPath(inheriting:)` | 返回 `/tmp/proj` | P1 | ✅ 已覆盖 | `testProjectBindingProjectUsesExplicitPath` |
+| 21 | 项目绑定 | 空字符串项目标识不会写入数据层 | 显式 `.project("")` | 创建对话后读取 `projectPath` | `projectPath` 为 nil，不是空字符串 | P0 | ✅ 已覆盖 | `testProjectBindingEmptyPathIsNeverPersisted` |
+| 22 | 项目绑定 | 默认实现下 `.none` 与 `.inheritCurrent` 均不绑定 | 无当前项目概念 | 分别创建对话 | 两条对话的 `projectPath` 均为 nil | P1 | ✅ 已覆盖 | `testDefaultManagerBindingNoneAndInheritBothStayUnbound` |
 
-> 说明：全部 **17 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **22 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
-- P1: 已覆盖 13 / 13
+- P0: 已覆盖 1 / 1
+- P1: 已覆盖 17 / 17
 - P2: 已覆盖 4 / 4
-- **合计: 17 / 17**（仅表示清单场景，非源码覆盖率）
+- **合计: 22 / 22**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（13 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
+- **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 17 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 22 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
