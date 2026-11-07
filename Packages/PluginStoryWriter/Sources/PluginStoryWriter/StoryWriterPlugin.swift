@@ -164,7 +164,7 @@ private enum StoryWriterV2Support {
     }
     static func string(_ arguments: [String: ToolArgument], _ key: String) -> String? { arguments[key]?.value as? String }
     static func id(_ arguments: [String: ToolArgument], _ key: String) -> UUID? { string(arguments, key).flatMap(UUID.init(uuidString:)) }
-    static func integer(_ arguments: [String: ToolArgument], _ key: String) -> Int? { (arguments[key]?.value as? Int) ?? (arguments[key]?.value as? NSNumber)?.intValue }
+    static func integer(_ arguments: [String: ToolArgument], _ key: String) -> Int? { ToolArgumentNumber.int(arguments[key]?.value) }
     @MainActor static func store() -> StoryStore? { guard let directory = StoryWriterStorage.v2Directory else { return nil }; return StoryStore(pluginDirectory: directory) }
     static func execute(name: String, arguments: [String: ToolArgument]) async -> String {
         guard let store = await MainActor.run(body: { store() }) else { return "Error: Story Writer storage is not available." }

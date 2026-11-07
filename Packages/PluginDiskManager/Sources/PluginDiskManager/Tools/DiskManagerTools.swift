@@ -57,11 +57,7 @@ enum DiskManagerToolSupport {
     }
 
     static func int(_ arguments: [String: ToolArgument], _ key: String) -> Int? {
-        guard let value = arguments[key]?.value else { return nil }
-        if let int = value as? Int { return int }
-        if let number = value as? NSNumber { return number.intValue }
-        if let string = value as? String { return Int(string) }
-        return nil
+        ToolArgumentNumber.int(arguments[key]?.value)
     }
 
     static func stringArray(_ arguments: [String: ToolArgument], _ key: String) -> [String]? {

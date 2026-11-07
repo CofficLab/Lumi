@@ -42,7 +42,7 @@ struct GetHTTPFailedRequestsTool: SuperAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let limit = min(NetworkToolSupport.int(arguments, "limit") ?? 20, 100)
+        let limit = NetworkToolSupport.limit(arguments, default: 20, max: 100)
         let hours = min(NetworkToolSupport.int(arguments, "hours") ?? 24, 720)
         let errorTypes = NetworkToolSupport.stringArray(arguments, "error_types")
 

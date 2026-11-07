@@ -1,4 +1,5 @@
 import Foundation
+import KitAgentTool
 
 public struct DatabaseConnectionSummary: Encodable {
     public let id: String
@@ -175,16 +176,10 @@ public actor DatabaseAgentToolService {
 
     public static func normalizedLimit(_ value: Any?) throws -> Int {
         if value == nil { return defaultRows }
-        if let int = value as? Int {
-            return try normalizedLimit(int)
+        guard let int = ToolArgumentNumber.int(value) else {
+            throw DatabaseAgentToolError.invalidLimit
         }
-        if let double = value as? Double {
-            return try normalizedLimit(Int(double))
-        }
-        if let string = value as? String, let int = Int(string) {
-            return try normalizedLimit(int)
-        }
-        throw DatabaseAgentToolError.invalidLimit
+        return try normalizedLimit(int)
     }
 
     public static func normalizedLimit(_ limit: Int) throws -> Int {

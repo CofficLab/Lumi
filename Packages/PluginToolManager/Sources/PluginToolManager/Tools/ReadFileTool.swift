@@ -38,8 +38,10 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
         guard let path = arguments.stringValue("path") else { return "读取文件" }
         let fileName = URL(fileURLWithPath: path).lastPathComponent
-        if let offset = arguments.intValue("offset") {
-            if let limit = arguments.intValue("limit") {
+        // 审批/渲染阶段先于执行：这里的整型读取同样必须安全，
+        // 越界或非有限的参数只能降级为「不展示」，不能在 UI 线程 trap。
+        if let offset = arguments.toolInt("offset") {
+            if let limit = arguments.toolInt("limit") {
                 return "读取 \(fileName)（第 \(offset) 行起，最多 \(limit) 行）"
             }
             return "读取 \(fileName)（从第 \(offset) 行起）"
@@ -84,22 +86,36 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
             let lines = rawText.components(separatedBy: "\n")
             let totalLines = lines.count
 
-            let requestedOffset = arguments.intValue("offset")
-            let requestedLimit = arguments.intValue("limit")
+            let requestedOffset = arguments.toolInt("offset")
+            let requestedLimit = arguments.toolInt("limit")
 
-            let (startIndex, limit): (Int, Int)
+            // 越界 / NaN / 非有限值无法安全表示，必须作为参数错误返回。
+            if arguments["offset"]?.value != nil, requestedOffset == nil {
+                return "Error: 'offset' must be an integer line number."
+            }
+            if arguments["limit"]?.value != nil, requestedLimit == nil {
+                return "Error: 'limit' must be a positive integer."
+            }
+            if let requestedLimit, requestedLimit <= 0 {
+                return "Error: 'limit' must be a positive integer."
+            }
+
+            let limit = min(requestedLimit ?? Self.defaultLineLimit, Self.maxLineLimit)
+            let startIndex: Int
             if let requestedOffset {
                 if requestedOffset < 0 {
-                    startIndex = max(0, totalLines + requestedOffset)
+                    // 负 offset 从末尾倒数。`Int.min` 时 `totalLines + offset` 会
+                    // 整数溢出 trap，这里用带溢出报告的加法，溢出即钳到文件开头。
+                    let sum = totalLines.addingReportingOverflow(requestedOffset)
+                    startIndex = sum.overflow ? 0 : max(0, sum.partialValue)
                 } else {
                     startIndex = min(max(0, requestedOffset - 1), totalLines)
                 }
-                limit = min(requestedLimit ?? Self.defaultLineLimit, Self.maxLineLimit)
             } else {
                 startIndex = 0
-                limit = min(requestedLimit ?? Self.defaultLineLimit, Self.maxLineLimit)
             }
 
+            // limit 已保证为正且不超过上限，endIndex 不会小于 startIndex。
             let endIndex = min(startIndex + limit, totalLines)
             guard startIndex < totalLines else {
                 return "Error: Offset \(requestedOffset ?? 1) is beyond the file's \(totalLines) lines."

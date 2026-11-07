@@ -229,10 +229,9 @@ public struct AddLLMProviderTool: SuperAgentTool, SuperLog, @unchecked Sendable 
 
     /// JSON 值转整数（兼容 `NSNumber` 与 `Double`）。
     static func integerValue(_ value: Any?) -> Int? {
-        if let int = value as? Int { return int }
-        if let double = value as? Double, double.rounded() == double { return Int(double) }
-        if let number = value as? NSNumber { return number.intValue }
-        return nil
+        // 保留旧行为：非整数的小数不是合法长度。
+        if let double = value as? Double, double.rounded() != double { return nil }
+        return ToolArgumentNumber.int(value)
     }
 
     /// JSON 值转布尔。
