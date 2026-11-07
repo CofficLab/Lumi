@@ -20,7 +20,7 @@ ProviderMessageSender Lumi 编辑器 Provider。
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **综合**（8 条）：由 `commitsUserMessageBeforeStartingTurn`、`preservesQueueBeforeDeferredTurnStart`、`sendsMessageThroughLoop` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（9 条）：由 `commitsUserMessageBeforeStartingTurn`、`preservesQueueBeforeDeferredTurnStart`、`sendsMessageThroughLoop` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -34,20 +34,21 @@ ProviderMessageSender Lumi 编辑器 Provider。
 | 6 | 综合 | 仅附件也可以发送，且正文保持为空 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `sendsAttachmentOnlyMessage` |
 | 7 | 综合 | 同一会话发送中时新消息进入 pending 队列，回合结束后依次发出 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `queuesWhileSending` |
 | 8 | 综合 | resumeTurn 转发到 AgentLoop（无匹配挂起点时抛出明确错误） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resumesTurn` |
+| 9 | 综合 | 并发带附件发送按触发顺序落库 | 第一条编码慢、第二条编码快 | 先后触发两次 `commitUserMessageInBackground` | 时间线先出现第一条，第二条进入待发队列（顺序不反转） | P0 | ✅ 已覆盖 | `concurrentAttachmentSendsKeepCallOrder` |
 
-> 说明：全部 **8 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **9 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
+- P0: 已覆盖 1 / 1
 - P1: 已覆盖 8 / 8
 - P2: 已覆盖 0 / 0
-- **合计: 8 / 8**（仅表示清单场景，非源码覆盖率）
+- **合计: 9 / 9**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
 - **P1**: 其余功能性用例（8 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
