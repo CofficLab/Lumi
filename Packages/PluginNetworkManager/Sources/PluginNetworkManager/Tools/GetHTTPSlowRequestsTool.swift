@@ -59,16 +59,18 @@ struct GetHTTPSlowRequestsTool: SuperAgentTool, SuperLog {
                     return record.startedAt >= cutoff
                 }
                 .sorted { ($0.duration ?? 0) > ($1.duration ?? 0) }
-                .prefix(limit)
 
             if slowRequests.isEmpty {
                 return "No slow requests (>=\(String(format: "%.1f", threshold))s) found."
             }
 
+            // `limit` 只限制明细条数，总数仍按全部匹配记录统计。
+            let shownRequests = Array(slowRequests.prefix(limit))
+
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
 
-            let lines = slowRequests.enumerated().map { index, record in
+            let lines = shownRequests.enumerated().map { index, record in
                 var line = "\(index + 1). [\(record.requestMethod)] \(record.requestURL)"
                 line += String(format: "\n   Duration: %.2fs", record.duration ?? 0)
                 line += "\n   Time: \(dateFormatter.string(from: record.startedAt))"
@@ -79,7 +81,7 @@ struct GetHTTPSlowRequestsTool: SuperAgentTool, SuperLog {
             }
 
             return """
-            Found \(slowRequests.count) slow requests (>=\(String(format: "%.1f", threshold))s):
+            Found \(slowRequests.count) slow requests (>=\(String(format: "%.1f", threshold))s), showing \(shownRequests.count):
 
             \(lines.joined(separator: "\n\n"))
             """
