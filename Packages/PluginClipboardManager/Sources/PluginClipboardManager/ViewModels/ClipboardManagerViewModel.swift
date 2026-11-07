@@ -69,7 +69,17 @@ public class ClipboardManagerViewModel: ObservableObject {
         pasteboard.clearContents()
         
         switch ClipboardItemType(rawValue: item.type) {
-        case .text, .html, .color:
+        case .text:
+            // 纯文本 + 富文本负载一起写回，接收方可按能力选择 RTF / HTML 恢复格式与链接。
+            var succeeded = pasteboard.setString(item.content, forType: .string)
+            if let rtf = item.richTextRTF {
+                succeeded = pasteboard.setData(rtf, forType: .rtf) && succeeded
+            }
+            if let html = item.richTextHTML {
+                succeeded = pasteboard.setString(html, forType: .html) && succeeded
+            }
+            return succeeded
+        case .html, .color:
             return pasteboard.setString(item.content, forType: .string)
         case .file:
             return pasteboard.writeObjects([URL(fileURLWithPath: item.content) as NSPasteboardWriting])

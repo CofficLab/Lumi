@@ -32,10 +32,14 @@ public actor ClipboardStorage: SuperLog {
 
     /// 添加剪贴板项
     public func add(item: ClipboardItem) async {
-        // 去重：如果与第一项内容相同，则更新（或忽略）
+        // 去重：如果与第一项内容相同，则更新（或忽略）。
+        // 富文本负载也算身份的一部分：纯文本相同但格式不同时应各留一条。
         let recentItems = await historyManager.getLatest(limit: 1)
         if let first = recentItems.first,
-           first.content == item.content && first.type == item.type.rawValue {
+           first.content == item.content,
+           first.type == item.type.rawValue,
+           first.richTextRTF == item.richTextRTF,
+           first.richTextHTML == item.richTextHTML {
             // 如果是固定项则保留，否则移除旧的
             if !first.isPinned {
                 await historyManager.delete(id: first.id)
