@@ -1,4 +1,4 @@
-import DatabaseManagerPlugin
+@testable import DatabaseManagerPlugin
 import KernelCore
 import ProviderEditor
 import PluginCodeEditorHost
@@ -76,5 +76,32 @@ struct DatabaseManagerV2PluginTests {
         #expect(rootView.isContentHeaderViewHidden == false)
         #expect(!externalFiles.open(URL(fileURLWithPath: "/tmp/lumi-v2.sqlite")))
         #expect(tools.tool(named: DatabaseListConnectionsV2Tool.toolName) == nil)
+    }
+}
+
+@Suite struct DatabaseConnectionDraftTests {
+    private func sqliteDraft(path: String) -> DatabaseConnectionDraft {
+        DatabaseConnectionDraft(
+            name: "Local",
+            type: .sqlite,
+            host: "",
+            portText: "",
+            database: "",
+            username: "",
+            password: "",
+            sqlitePath: path
+        )
+    }
+
+    @Test func sqlitePathIsStoredVerbatim() throws {
+        // 首尾空格可以是合法文件名的一部分，不能裁剪，否则会打开/新建另一个数据库。
+        let config = try sqliteDraft(path: "/tmp/lumi db.sqlite ").makeConfig()
+        #expect(config.database == "/tmp/lumi db.sqlite ")
+    }
+
+    @Test func sqlitePathRejectsWhitespaceOnlyInput() {
+        #expect(throws: DatabaseConnectionDraftError.missingSQLitePath) {
+            _ = try sqliteDraft(path: "  \n ").makeConfig()
+        }
     }
 }
