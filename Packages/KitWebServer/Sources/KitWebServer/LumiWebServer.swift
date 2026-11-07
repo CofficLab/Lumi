@@ -141,6 +141,25 @@ public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendabl
     /// 服务启动时刻，用于计算运行时长。
     private var startedAt: Date?
 
+    /// 生命周期阶段，串行化 start/stop 的重叠调用。
+    private enum LifecyclePhase {
+        case idle
+        case starting
+        case running
+        case stopping
+    }
+
+    private let lifecycleLock = NSLock()
+    private var lifecyclePhase: LifecyclePhase = .idle
+    /// 进行中的启动任务；stop 会等待它结束后再关闭服务组。
+    private var startupTask: Task<Int, Error>?
+    /// 进行中的关闭任务；并发的 stop 会等待同一个关闭任务。
+    private var shutdownTask: Task<Void, Never>?
+    /// 生命周期轮次；每次 start 递增，用于识别「已被后续 start 取代」的旧启动。
+    private var lifecycleGeneration = 0
+    /// 测试用启动延迟，便于确定性地覆盖启动/停止重叠路径。
+    var startupDelayForTesting: Duration = .zero
+
     // 路由表(pluginID -> routes)与派发用的扁平匹配器列表,统一用锁保护。
     private let lock = NSLock()
     private var routesByPlugin: [String: [WebRoute]] = [:]
@@ -279,8 +298,63 @@ public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendabl
 
     // MARK: WebServerProviding - Lifecycle
 
+    private func withLifecycleLock<T>(_ body: () -> T) -> T {
+        lifecycleLock.lock()
+        defer { lifecycleLock.unlock() }
+        return body()
+    }
+
     public func start() async throws {
-        guard !isRunning else { return }
+        let registration: (task: Task<Int, Error>, generation: Int)? = withLifecycleLock {
+            guard lifecyclePhase == .idle else { return nil }
+            lifecycleGeneration += 1
+            let generation = lifecycleGeneration
+            let task = Task { [self] in
+                try await performStart()
+            }
+            startupTask = task
+            lifecyclePhase = .starting
+            return (task, generation)
+        }
+        guard let registration else { return }
+        let startup = registration.task
+
+        do {
+            let actualPort = try await startup.value
+
+            // 启动期间已被 stop 接管时不再标记为运行中：由 stop 负责关闭服务组。
+            withLifecycleLock {
+                // 已被 stop 关闭、或被后续 start 取代时，不能再修改运行状态。
+                guard lifecyclePhase == .starting,
+                      lifecycleGeneration == registration.generation else { return }
+                lifecyclePhase = .running
+                startupTask = nil
+                boundPort = actualPort
+                startedAt = Date()
+                isRunning = true
+            }
+        } catch {
+            let waitTask: Task<Void, Never>? = withLifecycleLock {
+                // 本次启动已被后续生命周期操作取代，关闭工作由取代者负责。
+                guard lifecycleGeneration == registration.generation else { return nil }
+                if lifecyclePhase == .stopping { return shutdownTask }
+                // 保持 stopping 直到 shutdown 完成，阻止新的 start 与旧服务组重叠。
+                lifecyclePhase = .stopping
+                let task = Task<Void, Never> { [weak self] in
+                    _ = await self?.shutdown()
+                }
+                shutdownTask = task
+                return task
+            }
+            await waitTask?.value
+            throw error
+        }
+    }
+
+    private func performStart() async throws -> Int {
+        if startupDelayForTesting > .zero {
+            try? await Task.sleep(for: startupDelayForTesting)
+        }
 
         let gate = StartGate()
         let router = Router()
@@ -310,32 +384,66 @@ public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendabl
         }
         self.runTask = runTask
 
-        do {
-            // 等待服务真正绑定端口;若启动期间出错(如端口被占用)则抛出。
-            let actualPort = try await withCheckedThrowingContinuation { continuation in
-                gate.arm(continuation)
-            }
-            self.boundPort = actualPort
-            self.startedAt = Date()
-            self.isRunning = true
-        } catch {
-            await stop()
-            throw error
+        // 等待服务真正绑定端口;若启动期间出错(如端口被占用)则抛出。
+        return try await withCheckedThrowingContinuation { continuation in
+            gate.arm(continuation)
         }
     }
 
     public func stop() async {
-        guard isRunning else { return }
-        isRunning = false
-        let group = serviceGroup
-        serviceGroup = nil
-        if let group {
-            await group.triggerGracefulShutdown()
-            _ = await runTask?.value
+        let waitTask: Task<Void, Never>? = withLifecycleLock {
+            switch lifecyclePhase {
+            case .idle:
+                return nil
+            case .stopping:
+                if let existing = shutdownTask { return existing }
+                // 异常状态兜底：仍等待启动结束后关闭，避免遗留监听器。
+                let startup = startupTask
+                let task = Task { [weak self] in
+                    _ = try? await startup?.value
+                    await self?.shutdown()
+                }
+                shutdownTask = task
+                return task
+            case .starting, .running:
+                lifecyclePhase = .stopping
+                let startup = startupTask
+                let task = Task { [weak self] in
+                    _ = try? await startup?.value
+                    await self?.shutdown()
+                }
+                shutdownTask = task
+                return task
+            }
         }
-        runTask = nil
-        boundPort = nil
-        startedAt = nil
+        await waitTask?.value
+    }
+
+    /// 关闭服务组并复位状态；调用方负责把 phase 置为 `.stopping` 或确保没有并发 start。
+    private func shutdown() async {
+        let resources: (ServiceGroup?, Task<Void, Never>?) = withLifecycleLock {
+            isRunning = false
+            let group = serviceGroup
+            let runTask = self.runTask
+            serviceGroup = nil
+            self.runTask = nil
+            return (group, runTask)
+        }
+
+        if let group = resources.0 {
+            await group.triggerGracefulShutdown()
+            _ = await resources.1?.value
+        }
+
+        withLifecycleLock {
+            boundPort = nil
+            startedAt = nil
+            if lifecyclePhase == .stopping {
+                lifecyclePhase = .idle
+            }
+            startupTask = nil
+            shutdownTask = nil
+        }
     }
 
     // MARK: Request Dispatch
