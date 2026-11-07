@@ -196,12 +196,16 @@ public actor DatabaseAgentToolService {
             throw DatabaseAgentToolError.missingArgument("sql")
         }
 
-        let withoutTrailingSemicolon = trimmed.hasSuffix(";") ? String(trimmed.dropLast()) : trimmed
-        if withoutTrailingSemicolon.contains(";") {
+        // 判定用「代码骨架」：字符串字面量与注释里的内容不是代码。
+        // `SELECT 'DROP' AS word` 是合法读取，`SELECT 1; DROP TABLE t` 才是写操作。
+        // 执行用的仍是原始 SQL —— 骨架只用于判断，绝不替代语句本身。
+        let skeleton = SQLStatementParser.stripLiteralsAndComments(trimmed)
+        let skeletonWithoutTrailingSemicolon = skeleton.hasSuffix(";") ? String(skeleton.dropLast()) : skeleton
+        if skeletonWithoutTrailingSemicolon.contains(";") {
             throw DatabaseAgentToolError.unsafeSQL("multiple statements are not allowed")
         }
 
-        let first = withoutTrailingSemicolon
+        let first = skeletonWithoutTrailingSemicolon
             .split(whereSeparator: { $0.isWhitespace || $0 == "(" })
             .first?
             .uppercased() ?? ""
@@ -222,16 +226,19 @@ public actor DatabaseAgentToolService {
             throw DatabaseAgentToolError.unsafeSQL("only read-only statements are allowed")
         }
 
-        let upper = withoutTrailingSemicolon.uppercased()
+        let upper = skeletonWithoutTrailingSemicolon.uppercased()
         let forbidden = ["INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "TRUNCATE", "CREATE", "REPLACE", "GRANT", "REVOKE", "CALL", "COPY", "LOAD", "ATTACH", "DETACH"]
         if forbidden.contains(where: { upper.range(of: "\\b\($0)\\b", options: .regularExpression) != nil }) {
             throw DatabaseAgentToolError.unsafeSQL("write or administrative keyword detected")
         }
 
+        // 返回给执行层的是原始 SQL：字面量与注释必须原样保留。
+        let statement = trimmed.hasSuffix(";") ? String(trimmed.dropLast()) : trimmed
+
         guard first == "SELECT", upper.range(of: "\\bLIMIT\\b", options: .regularExpression) == nil else {
-            return withoutTrailingSemicolon
+            return statement
         }
-        return "\(withoutTrailingSemicolon) LIMIT \(limit)"
+        return "\(statement) LIMIT \(limit)"
     }
 
     public static func rowsAsDictionaries(_ result: QueryResult, limit: Int) -> DatabaseQueryPayload {

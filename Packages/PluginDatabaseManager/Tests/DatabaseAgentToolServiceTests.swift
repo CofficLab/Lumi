@@ -93,6 +93,87 @@ import Foundation
         }
     }
 
+    // MARK: - 字面量与注释不参与只读判定
+
+    @Test func readonlySQLAllowsWriteKeywordInsideStringLiteral() throws {
+        // 字面量里的 DROP 不是代码，不该被当成写操作。
+        let result = try DatabaseAgentToolService.readonlySQL(
+            "SELECT 'DROP' AS word", type: .sqlite, limit: 100
+        )
+        #expect(result == "SELECT 'DROP' AS word LIMIT 100")
+    }
+
+    @Test func readonlySQLAllowsWriteKeywordInsideComparisonLiteral() throws {
+        let result = try DatabaseAgentToolService.readonlySQL(
+            "SELECT id FROM t WHERE body = 'UPDATE'", type: .sqlite, limit: 100
+        )
+        #expect(result == "SELECT id FROM t WHERE body = 'UPDATE' LIMIT 100")
+    }
+
+    @Test func readonlySQLAllowsSemicolonInsideStringLiteral() throws {
+        // 字面量里的分号不是语句分隔符。
+        let result = try DatabaseAgentToolService.readonlySQL(
+            "SELECT 'a;b' AS s", type: .sqlite, limit: 100
+        )
+        #expect(result == "SELECT 'a;b' AS s LIMIT 100")
+    }
+
+    @Test func readonlySQLAllowsWriteKeywordInsideComment() throws {
+        let result = try DatabaseAgentToolService.readonlySQL(
+            "SELECT 1 -- DROP TABLE users", type: .sqlite, limit: 100
+        )
+        #expect(result == "SELECT 1 -- DROP TABLE users LIMIT 100")
+    }
+
+    @Test func readonlySQLAllowsWriteKeywordInsideBlockComment() throws {
+        let result = try DatabaseAgentToolService.readonlySQL(
+            "SELECT 1 /* DELETE FROM users */", type: .sqlite, limit: 100
+        )
+        #expect(result == "SELECT 1 /* DELETE FROM users */ LIMIT 100")
+    }
+
+    @Test func readonlySQLPreservesLiteralContentInReturnedStatement() throws {
+        // 判定用骨架，但执行用的必须是原始 SQL。
+        let result = try DatabaseAgentToolService.readonlySQL(
+            "SELECT 'DROP; DELETE' AS payload, x FROM t", type: .sqlite, limit: 50
+        )
+        #expect(result == "SELECT 'DROP; DELETE' AS payload, x FROM t LIMIT 50")
+    }
+
+    @Test func readonlySQLStillRejectsMultipleStatements() throws {
+        // 剥离字面量后，真正的第二条语句仍然会被拦下。
+        #expect(throws: DatabaseAgentToolError.self) {
+            _ = try DatabaseAgentToolService.readonlySQL(
+                "SELECT 'a' AS x; DROP TABLE users", type: .sqlite, limit: 100
+            )
+        }
+    }
+
+    @Test func readonlySQLStillRejectsWriteKeywordOutsideLiteral() throws {
+        // 裸关键字仍然必须被拦下。
+        #expect(throws: DatabaseAgentToolError.self) {
+            _ = try DatabaseAgentToolService.readonlySQL(
+                "SELECT * FROM t WHERE x = DROP()", type: .sqlite, limit: 100
+            )
+        }
+    }
+
+    @Test func readonlySQLStillRejectsWriteStatementAfterLiteral() throws {
+        #expect(throws: DatabaseAgentToolError.self) {
+            _ = try DatabaseAgentToolService.readonlySQL(
+                "SELECT 'ok' AS x FROM t WHERE 1=1 UNION DELETE FROM users", type: .sqlite, limit: 100
+            )
+        }
+    }
+
+    @Test func readonlySQLHandlesEscapedQuoteInsideLiteral() throws {
+        // `''` 是转义的单引号，剥离时不能提前结束字面量。
+        let result = try DatabaseAgentToolService.readonlySQL(
+            "SELECT 'it''s DROP' AS s", type: .sqlite, limit: 100
+        )
+        #expect(result == "SELECT 'it''s DROP' AS s LIMIT 100")
+    }
+
     @Test func readonlySQLDoesNotAutoInjectLimitForExplain() throws {
         // EXPLAIN is allowed but not a SELECT, so no LIMIT should be appended.
         let result = try DatabaseAgentToolService.readonlySQL(
