@@ -97,8 +97,8 @@ struct PluginConversationBehaviorTests {
         #expect(await hooks.runWillSendToLLM(context).messages == [original])
     }
 
-    @Test("Language selection updates conversation and global preference")
-    func languageSelectionUpdatesPreferencesAndToast() throws {
+    @Test("选中会话时切换语言只影响该会话，不改全局默认")
+    func languageSelectionDoesNotChangeGlobalDefault() throws {
         let conversations = DefaultConversationManager()
         let conversationID = try makeConversation(in: conversations)
         let toast = RecordingToastProvider()
@@ -107,7 +107,8 @@ struct PluginConversationBehaviorTests {
         view.select(.english)
 
         #expect(conversations.language(for: conversationID) == .english)
-        #expect(conversations.globalLanguage == .english)
+        // 修改已有会话不能连带改掉 New Chat 的默认语言（默认 .chinese）。
+        #expect(conversations.globalLanguage == .chinese)
         #expect(toast.shownToasts.last?.detail == "EN")
     }
 
