@@ -78,7 +78,7 @@ public struct ExportPrototypeTool: SuperAgentTool {
             )
             guard report.isValid else { throw PrototypeStoreError.invalidHTML(report.errors) }
 
-            let filename = String(format: "%02d-%@.png", screen.order + 1, screen.id)
+            let filename = PrototypeExportNaming.filename(for: screen)
             let destinationURL = outputDirectory.appendingPathComponent(filename)
             if fileManager.fileExists(atPath: destinationURL.path), !overwrite {
                 throw PrototypeStoreError.alreadyExists(destinationURL.path)

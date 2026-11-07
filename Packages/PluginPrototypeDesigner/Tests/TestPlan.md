@@ -5,7 +5,7 @@
 PluginPrototypeDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 26 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 26
+测试文件: 5 个，用例总数: 34
 
 核心组件（源码目录）:
 - `Conversation/`
@@ -72,27 +72,35 @@ PluginPrototypeDesigner 的实现包，包含 14 个主要类型；当前测试�
 | 24 | PrototypeElementConversationAction | appends the screen HTML file URL without submitting | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `appendsFileURL` |
 | 25 | PrototypeElementConversationAction | returns unavailable when no input provider exists | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unavailableInput` |
 | 26 | PrototypeElementConversationAction | discards stale screen selections | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `discardsStaleSelection` |
+| 27 | PrototypeDocumentStore 素材目录 | 项目不存在时素材目录请求抛出 notFound 且不创建目录 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `missingProjectThrowsWithoutCreatingDirectory` |
+| 28 | PrototypeDocumentStore 素材目录 | 项目不存在时导入素材失败且 slug 仍可被创建 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `missingProjectDoesNotBlockLaterCreation` |
+| 29 | PrototypeDocumentStore 素材目录 | 项目存在时返回其素材目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `existingProjectReturnsAssetsDirectory` |
+| 30 | PrototypeExportNaming | 文件名按顺序编号 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `filenamesAreOrderedAndNumbered` |
+| 31 | PrototypeExportNaming | 目标目录为空时没有冲突 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `noConflictsInEmptyDirectory` |
+| 32 | PrototypeExportNaming | 已存在的同名文件被识别为冲突 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `detectsExistingFiles` |
+| 33 | PrototypeExportNaming | 未参与导出的同名文件不算冲突 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `ignoresUnrelatedFiles` |
+| 34 | PrototypeDesignerPlugin | 加入项目不预建存储目录，真正写入时才创建 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doesNotCreateStorageDirectoryUntilWrite` |
 
-> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **34 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 19 / 19
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 24 / 24
 - P2: 已覆盖 4 / 4
-- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
+- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（19 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（24 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 26 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 34 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
