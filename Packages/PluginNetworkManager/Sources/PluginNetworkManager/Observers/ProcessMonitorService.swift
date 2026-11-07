@@ -23,7 +23,7 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
     ///
     /// - Note: 走 `bundleIdentifier` 缓存 + `NSWorkspace.icon(forFile:)`，
     ///   避开逐 PID 构造 `NSRunningApplication` 触发的 LaunchServices 同步 XPC。
-    private let iconResolver = ProcessIconResolver()
+    private nonisolated let iconResolver = ProcessIconResolver()
 
     // Background queue for icon fetching
     private let iconQueue = DispatchQueue(label: "com.coffic.lumi.process-icons", qos: .utility)
@@ -33,6 +33,11 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
     private var refCount = 0
     private var task: Process?
     private var outputPipe: Pipe?
+    /// nettop 的 stdin 管道。
+    ///
+    /// - Important: 父进程必须一直持有写端且永不写入。nettop 会轮询 stdin，
+    ///   若 stdin 是 `/dev/null` 或已关闭的管道，`-L 0` 会退化成忙循环并占用 100%+ CPU。
+    private(set) var inputPipe: Pipe?
     private var dataAvailableObserver: NSObjectProtocol?
 
     /// 心跳节流计数：nettop 子进程(-L 0 永久循环)每次输出回调自增，每 N 次打一条。
@@ -63,7 +68,7 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
     var isNettopRunning: Bool { task != nil }
 
     /// 默认的 nettop 进程构造。
-    private static func makeDefaultNettopProcess() -> Process? {
+    static func makeDefaultNettopProcess() -> Process? {
         #if os(macOS)
         let task = Process()
         task.launchPath = "/usr/bin/nettop"
@@ -72,7 +77,15 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
         // -J: include columns (bytes_in, bytes_out)
         // -d: delta mode (print difference since last update)
         // -x: extended format (machine readable)
-        task.arguments = ["-P", "-L", "0", "-J", "bytes_in,bytes_out", "-d", "-x"]
+        // -n: 不做地址反查，避免每个采样周期的 DNS 查询
+        // -s 1: 每秒采样一次
+        task.arguments = ["-P", "-L", "0", "-J", "bytes_in,bytes_out", "-d", "-x", "-n", "-s", "1"]
+
+        // nettop 在 stdout 非 TTY 时使用块缓冲，4 KB 才 flush 一次，导致数据
+        // 每 4~5 秒才批量到达。`NSUnbufferedIO` 让每次采样立即写出。
+        var environment = ProcessInfo.processInfo.environment
+        environment["NSUnbufferedIO"] = "YES"
+        task.environment = environment
         return task
         #else
         return nil
@@ -108,6 +121,12 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
         let pipe = Pipe()
         task.standardOutput = pipe
         self.outputPipe = pipe
+
+        // 父进程持有写端且永不写入：nettop 读 stdin 时会阻塞而不是空转。
+        let inputPipe = Pipe()
+        task.standardInput = inputPipe
+        self.inputPipe = inputPipe
+
         self.task = task
         
         pipe.fileHandleForReading.waitForDataInBackgroundAndNotify()
@@ -171,6 +190,14 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
             task.terminate()
         }
         task = nil
+
+        // 必须先 terminate 再关闭 stdin：
+        // 若先关闭写端，nettop 会在 stdin EOF 上重新忙循环，直到进程退出。
+        if let inputPipe {
+            self.inputPipe = nil
+            inputPipe.fileHandleForReading.closeFile()
+            inputPipe.fileHandleForWriting.closeFile()
+        }
 
         // 确定性回收 nettop 管道的读端 fd（写端由子进程持有，随进程退出释放）。
         // 关闭已关闭的文件同样会抛异常，故先置空再关闭，保证幂等。
@@ -274,8 +301,8 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
         
         var aggregated: [String: (pid: Int, bytesIn: Double, bytesOut: Double)] = [:]
         
-        // Collect new PIDs that need icon fetching
-        var newPIDs: [(pid: Int, name: String)] = []
+        // 收集需要取图标的新 PID；以 PID 去重，避免同一批次里重复入队。
+        var newPIDs: [Int: String] = [:]
 
         for item in rawData {
             if let existing = aggregated[item.name] {
@@ -284,30 +311,36 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
                 aggregated[item.name] = (item.pid, item.bytesIn, item.bytesOut)
             }
 
-            // Collect new PIDs for background icon fetching
-            if processDetails[item.pid] == nil {
-                newPIDs.append((item.pid, item.name))
+            // PID 被系统回收后可能对应新进程：名称不一致时视为缓存失效。
+            if processDetails[item.pid]?.name != item.name {
+                newPIDs[item.pid] = item.name
+                // 先清掉旧图标，避免这一帧复用已失效的 PID 图标。
+                processDetails[item.pid] = (item.name, nil)
             }
         }
 
-        // Fetch icons in background
+        // 本轮未出现的进程详情直接剔除，避免字典增长与 PID 复用残留。
+        let livePIDs = Set(rawData.map(\.pid))
+        processDetails = processDetails.filter { livePIDs.contains($0.key) }
+
+        // 一次批量枚举 runningApplications，再按 PID 分发图标。
         if !newPIDs.isEmpty {
+            // 用不可变快照跨线程传递，避免可变字典同时被后台与主线程闭包捕获。
+            let iconNames = newPIDs
+            let pidsToFetch = Array(iconNames.keys)
+            let resolver = iconResolver
+
             iconQueue.async { [weak self] in
-                guard let self else { return }
-                var fetchedIcons: [(pid: Int, name: String, icon: NSImage?)] = []
-                for item in newPIDs {
-                    // 走 ProcessIconResolver：一次枚举 runningApplications，
-                    // 以 bundleIdentifier 为缓存键，避免逐 PID 触发
-                    // LaunchServices 同步 XPC。
-                    let icon = self.iconResolver.icon(forPID: item.pid)
-                    fetchedIcons.append((item.pid, item.name, icon))
-                }
+                let icons = resolver.icons(forPIDs: pidsToFetch)
 
                 // Update cache on main thread
-                Task { @MainActor [weak self] in
+                Task { @MainActor in
                     guard let self else { return }
-                    for item in fetchedIcons {
-                        self.processDetails[item.pid] = (item.name, item.icon)
+                    for (pid, icon) in icons {
+                        // 异步结果返回时进程可能已退出或 PID 已被复用，丢弃过期结果。
+                        guard let name = iconNames[pid],
+                              self.processDetails[pid]?.name == name else { continue }
+                        self.processDetails[pid] = (name, icon)
                     }
                 }
             }
@@ -354,17 +387,8 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
             }
         }
         
-        // 清理过期的历史数据 (可选：移除不再活跃的进程)
-        // 简单策略：如果 name 不在本次 aggregated 中，可以从 historyBuffer 移除，
-        // 但为了防止闪烁，可以保留一会儿。这里暂时简单处理：仅保留本次有的。
-        // 为了性能，我们可以定期清理，或者直接在这里重建 buffer（不推荐，因为要保留历史）。
-        // 修正策略：historyBuffer 应该只保留最近活跃的。
-        // 遍历 historyBuffer 的 keys，如果不在 aggregated 中，移除。
-        for key in historyBuffer.keys {
-            if aggregated[key] == nil {
-                historyBuffer.removeValue(forKey: key)
-            }
-        }
+        // 剔除本轮未出现的进程历史，避免长期运行时字典增长。
+        historyBuffer = historyBuffer.filter { aggregated[$0.key] != nil }
         
         // 回调
         if !resultProcesses.isEmpty {
