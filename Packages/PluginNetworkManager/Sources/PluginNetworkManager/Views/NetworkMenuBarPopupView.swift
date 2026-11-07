@@ -73,7 +73,7 @@ public struct NetworkMenuBarPopupView: View {
     // MARK: - Mini Trend View
 
     private var miniTrendView: some View {
-        let recentData = Array(historyViewModel.recentHistory.suffix(60))
+        let recentData = historyViewModel.points(inLastSeconds: 60)
         let maxSpeed = max(
             recentData.map(\.downloadSpeed).max() ?? 0,
             recentData.map(\.uploadSpeed).max() ?? 0,

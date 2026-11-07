@@ -39,7 +39,7 @@ public struct NetworkHistoryDetailView: View {
 
             // Graph
             NetworkHistoryGraphView(
-                dataPoints: selectedRange == .hour1 ? historyViewModel.recentHistory : historyViewModel.longTermHistory,
+                dataPoints: historyViewModel.data(for: selectedRange),
                 timeRange: selectedRange
             )
             .frame(height: 140)
