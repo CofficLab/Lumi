@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 70
+测试文件: 5 个，用例总数: 72
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -121,16 +121,18 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 68 | 网络历史范围裁剪 | 4 小时范围剔除超出范围的长期样本 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fourHourRangeTrimsLongTermBuffer` |
 | 69 | 网络历史范围裁剪 | 24 小时与 30 天范围返回不同的数据量 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `differentLongRangesReturnDifferentData` |
 | 70 | 网络历史范围裁剪 | 迷你趋势图按时间窗口取样而非按条数 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `miniTrendUsesTimeWindow` |
+| 71 | get_http_exchange_detail | schema 允许仅传 id 或仅传 url | 读取工具 inputSchema | 检查 required/anyOf | 不存在全局 required；anyOf 同时包含 id 与 url 的 required 分支 | P0 | ✅ 已覆盖 | `httpExchangeDetailSchemaAcceptsIDOrURL` |
+| 72 | NetworkManager 菜单栏生命周期 | 禁用自动撤回，重新启用恢复贡献 | 真实 kernel 启停插件 | 禁用/启用插件 | 禁用后贡献为空，启用后恢复 speed 与 popup 贡献 | P1 | ✅ 已覆盖 | `disableAndEnableRestoresContributions` |
 
-> 说明：全部 **70 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **72 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 30 / 30
-- P1: 已覆盖 38 / 38
+- P0: 已覆盖 31 / 31
+- P1: 已覆盖 39 / 39
 - P2: 已覆盖 2 / 2
-- **合计: 70 / 70**（仅表示清单场景，非源码覆盖率）
+- **合计: 72 / 72**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

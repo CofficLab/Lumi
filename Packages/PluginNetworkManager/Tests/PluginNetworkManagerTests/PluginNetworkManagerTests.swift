@@ -646,3 +646,14 @@ private final class ProcessMonitorCounter {
     var starts = 0
     var stops = 0
 }
+
+@Test func httpExchangeDetailSchemaAcceptsIDOrURL() throws {
+    let schema = GetHTTPExchangeDetailTool().inputSchema(for: .english)
+
+    // 只要求 id 或 url 其中一个，不能把 url 无条件设为必填。
+    #expect(schema["required"] == nil)
+
+    let anyOf = try #require(schema["anyOf"] as? [[String: [String]]])
+    #expect(anyOf.contains(["required": ["id"]]))
+    #expect(anyOf.contains(["required": ["url"]]))
+}

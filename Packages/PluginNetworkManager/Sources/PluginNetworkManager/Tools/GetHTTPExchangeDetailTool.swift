@@ -29,7 +29,11 @@ struct GetHTTPExchangeDetailTool: SuperAgentTool, SuperLog {
                     "description": "Whether to include full bodies. Default: false.",
                 ],
             ],
-            "required": ["url"],
+            // id 或 url 二选一即可，任意一个都能定位记录。
+            "anyOf": [
+                ["required": ["id"]],
+                ["required": ["url"]],
+            ],
         ]
     }
 
