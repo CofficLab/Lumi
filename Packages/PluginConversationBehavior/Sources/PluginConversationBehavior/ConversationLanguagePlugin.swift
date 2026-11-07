@@ -151,10 +151,13 @@ struct LanguageToolbarView: View {
     }
 
     func select(_ language: ConversationLanguage) {
+        // 选中会话时只改该会话；只有 New Chat（无选中会话）才改全局默认值，
+        // 否则调整一个已有会话会连带改掉之后新建会话的默认语言。
         if let conversationID = conversations.selectedConversationID {
             conversations.setLanguage(language, for: conversationID)
+        } else {
+            conversations.setGlobalLanguage(language)
         }
-        conversations.setGlobalLanguage(language)
         ConversationBehaviorToast.show(
             toast,
             title: pluginLocalization.string("Response Language"),

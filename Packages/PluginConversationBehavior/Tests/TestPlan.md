@@ -36,7 +36,7 @@ PluginConversationBehavior 的实现包，包含 5 个主要类型；当前测�
 | 3 | 综合 | Language hook prepends localized transient system instruction | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `languageHookInjectsPreferenceAndPreservesHistory` |
 | 4 | 综合 | Language hook leaves context unchanged after manager deallocation | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `languageHookWithoutManagerIsNoop` |
 | 5 | 综合 | Language plugin registers and cancels its toolbar and lifecycle hook | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `languagePluginLifecycle` |
-| 6 | 综合 | Language selection updates conversation and global preference | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `languageSelectionUpdatesPreferencesAndToast` |
+| 6 | 综合 | 选中会话时切换语言只影响该会话，不改全局默认 | 全局默认 `.chinese`，已选中会话 | 选择 `.english` | 会话语言变化，全局默认仍为 `.chinese` | P1 | ✅ 已覆盖 | `languageSelectionDoesNotChangeGlobalDefault` |
 | 7 | 综合 | Language selection without a selected conversation updates global preference | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `languageSelectionWithoutConversationUpdatesGlobalPreference` |
 | 8 | 综合 | 选中会话时调整 Reasoning 只影响该会话，不改全局默认 | 全局默认 `.medium`，已选中会话 | apply `.low`、再 apply `.off` | 会话档位变化，全局默认始终为 `.medium` | P1 | ✅ 已覆盖 | `reasoningSelectionDoesNotChangeGlobalDefault` |
 | 9 | 综合 | New Chat（无选中会话）调整 Reasoning 才更新全局默认 | 未选中任何会话 | apply `.high`、再 apply `.off` | 全局默认依次变为 `.high`、`nil` | P1 | ✅ 已覆盖 | `reasoningSelectionWithoutConversationUpdatesGlobalDefault` |
