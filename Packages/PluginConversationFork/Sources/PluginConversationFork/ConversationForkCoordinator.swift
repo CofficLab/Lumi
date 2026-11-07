@@ -119,6 +119,9 @@ final class ConversationForkCoordinator {
         } else {
             conversations.clearReasoningEffort(for: newID)
         }
+        // 创建对话时语言取自当时的 UI 选中会话；摘要期间可能已切换，
+        // 这里按启动时锁定的源对话重新设置，避免继承另一个会话的语言。
+        conversations.setLanguage(conversations.language(for: conversationID), for: newID)
 
         // 续写失败不致命：摘要已作为首条消息写入新对话，用户可以在输入区重试。
         try? await sender.sendMessage(summaryOutcome.summary, conversationID: newID)
