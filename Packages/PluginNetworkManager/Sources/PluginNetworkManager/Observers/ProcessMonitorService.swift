@@ -19,6 +19,13 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
     // Process info cache
     private var processDetails: [Int: (name: String, icon: NSImage?)] = [:]
 
+    /// 已经出现过至少一次的 PID。
+    ///
+    /// nettop `-d` 的首帧对每个进程输出的是累计值（自进程启动以来），
+    /// 而不是本采样周期内的 delta。首帧必须丢弃，否则历史累计字节会被
+    /// 当成「1 秒速度」，并被移动平均保留数秒。
+    private var seenPIDs: Set<Int> = []
+
     /// 图标解析器。
     ///
     /// - Note: 走 `bundleIdentifier` 缓存 + `NSWorkspace.icon(forFile:)`，
@@ -210,6 +217,7 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
         partialLine = ""
         historyBuffer.removeAll()
         processDetails.removeAll()
+        seenPIDs.removeAll()
         iconResolver.clearCache()
         processes.removeAll()
     }
@@ -219,7 +227,7 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
     private var bufferTimer: Timer?
     private var partialLine = ""
     
-    private func processOutput(_ data: Data) {
+    func processOutput(_ data: Data) {
         guard let string = String(data: data, encoding: .utf8) else { return }
 
         let fullString = partialLine + string
@@ -262,6 +270,11 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
                     
                     let nameComponents = namePart.components(separatedBy: ".")
                     if let pidStr = nameComponents.last, let pid = Int(pidStr) {
+                        // 丢弃每个 PID 的首帧累计值，只接受后续的周期 delta。
+                        if seenPIDs.insert(pid).inserted {
+                            continue
+                        }
+
                         let name = nameComponents.dropLast().joined(separator: ".")
                         rawDataBuffer.append(RawProcessData(pid: pid, name: name, bytesIn: bytesIn, bytesOut: bytesOut))
                     }
@@ -278,7 +291,7 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
         }
     }
     
-    private func flushBuffer() {
+    func flushBuffer() {
         guard !rawDataBuffer.isEmpty else { return }
         aggregateAndPublish(rawDataBuffer)
         rawDataBuffer.removeAll()
