@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 41
+测试文件: 2 个，用例总数: 54
 
 核心组件（源码目录）:
 - `Agent/`
@@ -41,7 +41,9 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **DatabaseAgentToolService**（40 条）：由 `readonlySQLAcceptsSelect`、`readonlySQLPreservesExistingLimit`、`readonlySQLAcceptsPragmaForSQLite` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DatabaseAgentToolService**（27 条）：由 `readonlySQLAcceptsSelect`、`readonlySQLPreservesExistingLimit`、`readonlySQLAcceptsPragmaForSQLite` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **只读策略**（10 条）：由 `readonlySQLAllowsWriteKeywordInsideStringLiteral`、`readonlySQLStillRejectsWriteKeywordOutsideLiteral` 等用例锁定；改动只读 SQL 判定或字面量/注释剥离时优先跑对应测试文件。
+- **PostgreSQL schema**（3 条）：由 `postgresSchemaFilterListsAllNonSystemSchemasByDefault`、`postgresSchemaFilterBindsRequestedSchemaAsParameter` 等用例锁定；改动 schema 描述的过滤条件时优先跑对应测试文件。
 - **DatabaseManagerV2Plugin**（1 条）：由 `restoresDatabaseWorkspace` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -90,15 +92,29 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 40 | DatabaseAgentToolService | rowsAsDictionariesTruncatesAndFlags | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rowsAsDictionariesTruncatesAndFlags` |
 | 41 | DatabaseManagerV2Plugin | V2 plugin restores workspace, SQL grammar, and SQLite external-file routing | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `restoresDatabaseWorkspace` |
 
-> 说明：全部 **41 条场景**已在本包 `swift test` 中实跑通过。
+| 42 | 只读策略 | 字面量里的写关键字不触发拒绝 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `readonlySQLAllowsWriteKeywordInsideStringLiteral` |
+| 43 | 只读策略 | 比较条件字面量里的写关键字不触发拒绝 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `readonlySQLAllowsWriteKeywordInsideComparisonLiteral` |
+| 44 | 只读策略 | 字面量里的分号不视为多语句 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `readonlySQLAllowsSemicolonInsideStringLiteral` |
+| 45 | 只读策略 | 行注释里的写关键字不触发拒绝 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `readonlySQLAllowsWriteKeywordInsideComment` |
+| 46 | 只读策略 | 块注释里的写关键字不触发拒绝 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `readonlySQLAllowsWriteKeywordInsideBlockComment` |
+| 47 | 只读策略 | 返回给执行层的语句保留字面量原文 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `readonlySQLPreservesLiteralContentInReturnedStatement` |
+| 48 | 只读策略 | 字面量之外的多语句仍被拒绝 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `readonlySQLStillRejectsMultipleStatements` |
+| 49 | 只读策略 | 字面量之外的裸写关键字仍被拒绝 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `readonlySQLStillRejectsWriteKeywordOutsideLiteral` |
+| 50 | 只读策略 | 字面量之后的写语句仍被拒绝 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `readonlySQLStillRejectsWriteStatementAfterLiteral` |
+| 51 | 只读策略 | 字面量内的转义引号不影响剥离 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `readonlySQLHandlesEscapedQuoteInsideLiteral` |
+| 52 | PostgreSQL schema | 未指定 schema 时列出所有非系统 schema | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `postgresSchemaFilterListsAllNonSystemSchemasByDefault` |
+| 53 | PostgreSQL schema | 指定 schema 时走绑定参数 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `postgresSchemaFilterBindsRequestedSchemaAsParameter` |
+| 54 | PostgreSQL schema | 空白 schema 视为未指定 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `postgresSchemaFilterTreatsBlankSchemaAsUnspecified` |
+
+> 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 15 / 15
-- P1: 已覆盖 25 / 25
+- P0: 已覆盖 27 / 27
+- P1: 已覆盖 26 / 26
 - P2: 已覆盖 1 / 1
-- **合计: 41 / 41**（仅表示清单场景，非源码覆盖率）
+- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -109,7 +125,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 41 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 54 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
