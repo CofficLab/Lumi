@@ -20,9 +20,12 @@ public class RClickConfigManager: ObservableObject, SuperLog {
     private let legacyConfigKey = "rClickConfig"
     private let customAppGroupConfigFileURL: URL?
     
+    /// 最近一次写盘是否成功。UI 用它区分「已保存」与「仅内存变更」。
+    @Published public private(set) var lastSaveSucceeded = true
+
     @Published var config: RClickConfig {
         didSet {
-            saveConfig()
+            lastSaveSucceeded = saveConfig()
         }
     }
     
@@ -75,7 +78,8 @@ public class RClickConfigManager: ObservableObject, SuperLog {
     
     /// 切换菜单项启用状态
     public func toggleItem(_ item: RClickMenuItem) {
-        if let index = config.items.firstIndex(where: { $0.id == item.id }) {
+        mutateConfig { config in
+            guard let index = config.items.firstIndex(where: { $0.id == item.id }) else { return }
             config.items[index].isEnabled.toggle()
         }
     }
@@ -84,7 +88,8 @@ public class RClickConfigManager: ObservableObject, SuperLog {
     
     /// 切换模板启用状态
     public func toggleTemplate(_ template: NewFileTemplate) {
-        if let index = config.fileTemplates.firstIndex(where: { $0.id == template.id }) {
+        mutateConfig { config in
+            guard let index = config.fileTemplates.firstIndex(where: { $0.id == template.id }) else { return }
             config.fileTemplates[index].isEnabled.toggle()
         }
     }
@@ -96,30 +101,30 @@ public class RClickConfigManager: ObservableObject, SuperLog {
             return false
         }
 
-        config.fileTemplates.append(normalized)
-        return true
+        return mutateConfig { $0.fileTemplates.append(normalized) }
     }
     
     /// 删除模板
     public func deleteTemplate(at offsets: IndexSet) {
-        config.fileTemplates.remove(atOffsets: offsets)
+        mutateConfig { $0.fileTemplates.remove(atOffsets: offsets) }
     }
 
     /// 删除模板（按 id）
     public func deleteTemplate(_ template: NewFileTemplate) {
-        config.fileTemplates.removeAll { $0.id == template.id }
+        mutateConfig { $0.fileTemplates.removeAll { $0.id == template.id } }
     }
     
     /// 更新模板
     @discardableResult
     public func updateTemplate(_ template: NewFileTemplate) -> Bool {
-        guard let normalized = template.normalizedForStorage,
-              let index = config.fileTemplates.firstIndex(where: { $0.id == template.id }) else {
+        guard let normalized = template.normalizedForStorage else {
             return false
         }
 
-        config.fileTemplates[index] = normalized
-        return true
+        return mutateConfig { config in
+            guard let index = config.fileTemplates.firstIndex(where: { $0.id == normalized.id }) else { return }
+            config.fileTemplates[index] = normalized
+        }
     }
     
     /// 重置为默认配置
@@ -138,6 +143,20 @@ public class RClickConfigManager: ObservableObject, SuperLog {
     }
 
     // MARK: - Private
+
+    /// 应用一次配置变更；写盘失败时回滚内存状态，避免界面把未持久化的变更当成已保存。
+    ///
+    /// `config` 的 `didSet` 会同步写盘并更新 `lastSaveSucceeded`，因此这里能立刻拿到结果。
+    @discardableResult
+    private func mutateConfig(_ change: (inout RClickConfig) -> Void) -> Bool {
+        let previous = config
+        change(&config)
+        guard lastSaveSucceeded else {
+            config = previous
+            return false
+        }
+        return true
+    }
 
     nonisolated static func sharedConfigURL(in containerURL: URL) -> URL {
         containerURL.appendingPathComponent(sharedConfigFilename, isDirectory: false)
