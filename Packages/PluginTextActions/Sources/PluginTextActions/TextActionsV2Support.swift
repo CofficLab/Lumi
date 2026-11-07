@@ -230,7 +230,7 @@ final class TextActionMenuController {
     var onDismiss: (@MainActor (TextActionMenuDismissReason) -> Void)?
 
     private var panel: TextActionMenuPanel?
-    private var hostingView: NSHostingView<TextActionMenuView>?
+    private var hostingView: TextActionMenuHostingView?
     private let model = TextActionMenuModel()
     private var selection: SelectedText?
     private var dismissMonitor: Any?
@@ -247,9 +247,6 @@ final class TextActionMenuController {
     init() {
         model.onPerform = { [weak self] action in
             self?.perform(action)
-        }
-        model.onStateChange = { [weak self] _ in
-            self?.layoutPanel(animated: true)
         }
     }
 
@@ -363,7 +360,13 @@ final class TextActionMenuController {
 
     private func ensurePanel() {
         guard panel == nil else { return }
-        let hosting = NSHostingView(rootView: TextActionMenuView(model: model))
+        let hosting = TextActionMenuHostingView(rootView: TextActionMenuView(model: model))
+        // 状态切换（动作条 ↔ 翻译卡片）由 SwiftUI 的实际布局结果驱动重排，
+        // 不在 `onStateChange` 里同步量尺寸——那时 SwiftUI 还没刷新，
+        // `fittingSize` 仍是上一状态的值，会把译文卡片裁在旧高度里。
+        hosting.onIntrinsicSizeChange = { [weak self] size in
+            self?.resizePanel(to: size, animated: true)
+        }
         let panel = TextActionMenuPanel()
         panel.contentView = hosting
         self.hostingView = hosting
@@ -371,10 +374,15 @@ final class TextActionMenuController {
     }
 
     private func layoutPanel(animated: Bool) {
-        guard let panel, let hostingView, let selection else { return }
+        guard let hostingView else { return }
         hostingView.invalidateIntrinsicContentSize()
-        let size = hostingView.fittingSize
-        guard size.width > 0, size.height > 0 else { return }
+        resizePanel(to: hostingView.fittingSize, animated: animated)
+    }
+
+    private func resizePanel(to size: CGSize, animated: Bool) {
+        guard let panel, let selection, size.width > 0, size.height > 0 else { return }
+        // 初始展示时面板尚未 orderFront，不能以 isVisible 作为前置条件。
+        guard !isFadingOut else { return }
 
         let anchor = selection.anchor
         let screen = NSScreen.screens.first(where: { NSMouseInRect(anchor, $0.frame, false) })
@@ -388,6 +396,7 @@ final class TextActionMenuController {
             menuSize: size,
             screenFrame: screen.visibleFrame
         )
+        guard frame != panel.frame else { return }
         if animated {
             panel.setFrame(frame, display: true, animate: true)
         } else {

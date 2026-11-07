@@ -35,7 +35,11 @@ let package = Package(
                 .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             path: "Sources/PluginTextActions",
-            resources: [.process("../../Resources/Localizable.xcstrings")]
+            resources: [
+                .process("../../Resources/Localizable.xcstrings"),
+                // Lumi 品牌标识：复用 App 图标，避免插件包另画一套风格不一致的符号
+                .process("../../Resources/LumiBrandMark.png"),
+            ]
         ),
         .testTarget(
             name: "TextActionsPluginTests",

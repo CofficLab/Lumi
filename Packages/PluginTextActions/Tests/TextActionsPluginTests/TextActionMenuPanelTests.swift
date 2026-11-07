@@ -119,6 +119,82 @@ struct TextActionMenuViewRenderTests {
     }
 }
 
+// MARK: - 浮层尺寸跟随布局
+
+/// 回归：面板尺寸必须等 SwiftUI 真正布局完成后再量。
+///
+/// 旧实现在 `model.state` 的 `didSet` 里同步读取 `fittingSize`，那时
+/// SwiftUI 还没刷新，拿到的是上一个状态（例如「翻译中」270×46）的尺寸，
+/// 译文卡片只剩标题栏、正文高度为 0。这里锁定宿主视图在布局完成后
+/// 上报的新尺寸。
+@MainActor
+@Suite("Text Actions 浮层尺寸")
+struct TextActionMenuSizingTests {
+
+    /// 等待主队列把 SwiftUI 的布局与尺寸回调跑完。
+    private func waitUntil(
+        timeout: Duration = .seconds(2),
+        _ condition: @MainActor () -> Bool
+    ) async -> Bool {
+        let deadline = ContinuousClock.now + timeout
+        while ContinuousClock.now < deadline {
+            if condition() { return true }
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        return condition()
+    }
+
+    private func makeHosting() -> (TextActionMenuModel, TextActionMenuHostingView, TextActionMenuPanel) {
+        let model = TextActionMenuModel()
+        let hosting = TextActionMenuHostingView(rootView: TextActionMenuView(model: model))
+        // 视图挂进窗口后 AppKit 才会驱动 SwiftUI 布局；无需真的显示面板。
+        let panel = TextActionMenuPanel()
+        panel.contentView = hosting
+        return (model, hosting, panel)
+    }
+
+    @Test("译文卡片在 SwiftUI 布局完成后上报实际尺寸")
+    func translatedIntrinsicSizeFollowsLayout() async {
+        let (model, hosting, panel) = makeHosting()
+        defer { panel.contentView = nil }
+        var sizes: [CGSize] = []
+        hosting.onIntrinsicSizeChange = { sizes.append($0) }
+
+        model.state = .translating
+        let measuredTranslating = await waitUntil { sizes.contains { $0.width == 270 } }
+        #expect(measuredTranslating)
+
+        model.state = .translated("插件系统基准测试")
+        let measuredTranslation = await waitUntil {
+            sizes.last.map { $0.width == 310 && (74...90).contains($0.height) } ?? false
+        }
+        // 若仍停留在「翻译中」的 46pt 高度，这里会失败。
+        #expect(measuredTranslation, "译文卡片必须撑到正文高度，而不是沿用翻译中的高度")
+    }
+
+    @Test("品牌标识使用 App 图标资源")
+    func brandMarkUsesBundledAppIcon() {
+        // 回退的系统符号只有 16pt；App 图标资源 >= 64pt 才能通过，
+        // 防止资源没随包分发时悄悄退化成别的符号。
+        #expect(LumiBrandMark.image.size.width >= 64)
+        #expect(LumiBrandMark.image.size.height >= 64)
+    }
+
+    @Test("长译文把浮层撑到滚动上限")
+    func longTranslationExpandsPanel() async {
+        let (model, hosting, panel) = makeHosting()
+        defer { panel.contentView = nil }
+        var sizes: [CGSize] = []
+        hosting.onIntrinsicSizeChange = { sizes.append($0) }
+
+        model.state = .translated(String(repeating: "这是一段很长的译文，用来验证滚动区域。", count: 30))
+        let measured = await waitUntil {
+            sizes.last.map { $0.width == 310 && $0.height > 190 } ?? false
+        }
+        #expect(measured, "长译文应在 180pt 滚动上限内撑开面板")
+    }
+}
+
 // MARK: - 浮层面板配置
 
 @MainActor
