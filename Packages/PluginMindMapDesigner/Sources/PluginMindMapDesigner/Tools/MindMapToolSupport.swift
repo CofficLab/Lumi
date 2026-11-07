@@ -68,6 +68,8 @@ enum MindMapToolSupport {
                 throw MindMapStoreError.projectRequired
             }
             if let explicitId, !explicitId.isEmpty {
+                // 内存快照可能是缓存的旧状态，先与磁盘对齐再解析。
+                store.reload()
                 if let match = store.maps(for: scope).first(where: { $0.id == explicitId }) {
                     return (match, scope)
                 }
@@ -79,6 +81,9 @@ enum MindMapToolSupport {
                 }
                 throw MindMapStoreError.mapNotFound(explicitId)
             }
+            // 未指定 mapId 时也以磁盘为准：缓存的 store 可能还没看到
+            // 别的入口新建的导图。
+            store.reload()
             guard let selected = store.selectedMap else {
                 throw MindMapStoreError.noSelectedMap
             }

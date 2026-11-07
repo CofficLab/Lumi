@@ -5,7 +5,7 @@
 PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 8 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 20
+测试文件: 3 个，用例总数: 23
 
 核心组件（源码目录）:
 - `Models/`
@@ -39,6 +39,7 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 
 - **MindMapDesignerPlugin**（8 条）：由 `contributesRailTabAndCompleteToolSet`、`activatingPluginShowsChatSectionAndDeactivatingRestoresIt`、`markdownCodecRoundTrip` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MindMapMarkdownCodec 健壮性**（5 条）：由 `ignoresPlainTextAfterRoot`、`ignoresHeadingAfterRoot`、`emptyOutlineProducesFallbackRoot` 等用例锁定；改动大纲解析的层级与容错逻辑时优先跑对应测试文件。
+- **MindMapStore 写前同步**（3 条）：由 `writeDoesNotClobberNodesAddedElsewhere`、`createDoesNotDropExistingMaps`、`deleteUsesDiskState` 等用例锁定；改动 store 的读写顺序或缓存策略时优先跑对应测试文件。
 - **MindMapConversationScope**（7 条）：由 `conversationScopedToolReadsFromItsOwnProject`、`crossProjectWriteDoesNotPolluteSharedStore` 等用例锁定；改动会话作用域隔离时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -65,27 +66,30 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 | 18 | MindMapConversationScope | 注册的工具都按会话解析作用域 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registeredToolsAreConversationScoped` |
 | 19 | MindMapConversationScope | 未绑定作用域的会话回退到当前项目 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unscopedConversationFallsBackToCurrentProject` |
 | 20 | MindMapConversationScope | 同一项目复用同一份存储 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `sameProjectReusesSharedStore` |
+| 21 | MindMapStore 写前同步 | 写操作前与磁盘对齐，不覆盖别处新增的节点 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `writeDoesNotClobberNodesAddedElsewhere` |
+| 22 | MindMapStore 写前同步 | 新建导图不会挤掉磁盘上已有的导图 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `createDoesNotDropExistingMaps` |
+| 23 | MindMapStore 写前同步 | 删除别处创建的导图时以磁盘状态为准 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `deleteUsesDiskState` |
 
-> 说明：全部 **20 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **23 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
+- P0: 已覆盖 6 / 6
 - P1: 已覆盖 17 / 17
 - P2: 已覆盖 0 / 0
-- **合计: 20 / 20**（仅表示清单场景，非源码覆盖率）
+- **合计: 23 / 23**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
 - **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 20 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 23 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
