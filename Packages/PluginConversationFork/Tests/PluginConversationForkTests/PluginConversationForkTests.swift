@@ -254,7 +254,7 @@ struct ConversationForkPluginTests {
 struct ConversationForkCoordinatorTests {
     /// 组装一套完整的分叉依赖（无 LLM 供应商 → 摘要走本地回退）。
     private func makeCoordinator(
-        conversations: DefaultConversationManager,
+        conversations: any ConversationManaging,
         messages: DefaultMessageManager
     ) -> ConversationForkCoordinator {
         let loop = StubAgentLoop(messages: messages)
@@ -521,6 +521,55 @@ struct ConversationForkCoordinatorTests {
         let truncated = ConversationForkCoordinator.truncate(String(repeating: "x", count: 50), limit: 10)
         #expect(truncated == String(repeating: "x", count: 10) + "…")
     }
+
+    // MARK: - 项目绑定
+
+    @Test("无项目源对话 fork 后副本仍无项目")
+    func forkOfUnboundConversationStaysUnbound() async throws {
+        // 复现生产实现：当前项目存在时，旧接口把 `projectPath: nil`
+        // 解释成「沿用当前项目」。修复前 fork 正是这样传的。
+        let conversations = CurrentProjectFallbackConversations(
+            currentProjectPath: "/tmp/current-project"
+        )
+        let messages = DefaultMessageManager()
+        let sourceID = try conversations.createConversation(
+            title: "无项目对话",
+            binding: .none,
+            providerID: nil,
+            modelName: nil
+        )
+        messages.insertMessage(Message(conversationID: sourceID, role: .user, content: "问题"), to: sourceID)
+        messages.insertMessage(Message(conversationID: sourceID, role: .assistant, content: "回答"), to: sourceID)
+
+        let outcome = try await makeCoordinator(conversations: conversations, messages: messages)
+            .fork(conversationID: sourceID)
+
+        let forked = try #require(conversations.conversations.first { $0.id == outcome.newConversationID })
+        #expect(forked.projectPath == nil)
+        #expect(forked.projectPath != "")
+    }
+
+    @Test("有项目源对话 fork 后沿用同一项目，不受当前项目影响")
+    func forkOfBoundConversationKeepsItsProject() async throws {
+        let conversations = CurrentProjectFallbackConversations(
+            currentProjectPath: "/tmp/current-project"
+        )
+        let messages = DefaultMessageManager()
+        let sourceID = try conversations.createConversation(
+            title: "有项目对话",
+            binding: .project("/tmp/source-project"),
+            providerID: nil,
+            modelName: nil
+        )
+        messages.insertMessage(Message(conversationID: sourceID, role: .user, content: "问题"), to: sourceID)
+        messages.insertMessage(Message(conversationID: sourceID, role: .assistant, content: "回答"), to: sourceID)
+
+        let outcome = try await makeCoordinator(conversations: conversations, messages: messages)
+            .fork(conversationID: sourceID)
+
+        let forked = try #require(conversations.conversations.first { $0.id == outcome.newConversationID })
+        #expect(forked.projectPath == "/tmp/source-project")
+    }
 }
 
 /// 测试用 AgentLoop 桩：保留 responder 语义，落库 assistant 消息。
@@ -582,5 +631,157 @@ private final class StubAgentLoopObserverHandle: AgentLoopObserverHandle {
     func cancel() {
         cancelAction?()
         cancelAction = nil
+    }
+}
+
+// MARK: - 当前项目回退替身
+
+/// 模拟生产 `ConversationManager` 的项目解析：旧接口收到 `projectPath: nil`
+/// 时回退到当前项目；`ProjectBinding` 版本则尊重 `.none`。
+///
+/// 其余能力全部委托给 `DefaultConversationManager`，只替换「项目从哪来」
+/// 这一层，以便在 fork 包内复现 #625。
+@MainActor
+private final class CurrentProjectFallbackConversations: ConversationManaging {
+    private let base = DefaultConversationManager()
+    private let currentProjectPath: String?
+
+    init(currentProjectPath: String?) {
+        self.currentProjectPath = currentProjectPath
+    }
+
+    var conversations: [ConversationSummary] { base.conversations }
+    var selectedConversationID: UUID? { base.selectedConversationID }
+    var currentTitle: String { base.currentTitle }
+    var dataDirectory: URL { base.dataDirectory }
+
+    func createConversation(
+        title: String?,
+        projectPath: String?,
+        providerID: String?,
+        modelName: String?
+    ) throws -> UUID {
+        try base.createConversation(
+            title: title,
+            projectPath: projectPath ?? currentProjectPath,
+            providerID: providerID,
+            modelName: modelName
+        )
+    }
+
+    func createConversation(
+        title: String?,
+        projectPath: String?,
+        providerID: String?,
+        modelName: String?,
+        parentConversationID: UUID?
+    ) throws -> UUID {
+        try base.createConversation(
+            title: title,
+            projectPath: projectPath ?? currentProjectPath,
+            providerID: providerID,
+            modelName: modelName,
+            parentConversationID: parentConversationID
+        )
+    }
+
+    func createConversation(
+        title: String?,
+        binding: ProjectBinding,
+        providerID: String?,
+        modelName: String?
+    ) throws -> UUID {
+        try base.createConversation(
+            title: title,
+            projectPath: binding.resolvedProjectPath(inheriting: currentProjectPath),
+            providerID: providerID,
+            modelName: modelName
+        )
+    }
+
+    func createConversation(
+        title: String?,
+        binding: ProjectBinding,
+        providerID: String?,
+        modelName: String?,
+        parentConversationID: UUID?
+    ) throws -> UUID {
+        try base.createConversation(
+            title: title,
+            projectPath: binding.resolvedProjectPath(inheriting: currentProjectPath),
+            providerID: providerID,
+            modelName: modelName,
+            parentConversationID: parentConversationID
+        )
+    }
+
+    func selectConversation(id: UUID) { base.selectConversation(id: id) }
+    func deselectConversation() { base.deselectConversation() }
+    func deleteConversation(id: UUID) { base.deleteConversation(id: id) }
+    func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool {
+        base.updateConversationTitle(title, for: conversationID)
+    }
+    func markConversationActive(id: UUID, messageDate: Date) {
+        base.markConversationActive(id: id, messageDate: messageDate)
+    }
+    func isSending(for conversationID: UUID?) -> Bool { base.isSending(for: conversationID) }
+    func providerID(for conversationID: UUID?) -> String? { base.providerID(for: conversationID) }
+    func modelName(for conversationID: UUID?) -> String? { base.modelName(for: conversationID) }
+    func selectProvider(id: String, model: String?, for conversationID: UUID?) {
+        base.selectProvider(id: id, model: model, for: conversationID)
+    }
+
+    var globalVerbosity: ResponseVerbosity { base.globalVerbosity }
+    func setGlobalVerbosity(_ verbosity: ResponseVerbosity) { base.setGlobalVerbosity(verbosity) }
+    func setVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) {
+        base.setVerbosity(verbosity, for: conversationID)
+    }
+    func verbosity(for conversationID: UUID?) -> ResponseVerbosity { base.verbosity(for: conversationID) }
+
+    var globalReasoningEffort: ReasoningEffort? { base.globalReasoningEffort }
+    func setGlobalReasoningEffort(_ reasoningEffort: ReasoningEffort?) {
+        base.setGlobalReasoningEffort(reasoningEffort)
+    }
+    func reasoningEffort(for conversationID: UUID?) -> ReasoningEffort {
+        base.reasoningEffort(for: conversationID)
+    }
+    func reasoningEffortOptional(for conversationID: UUID?) -> ReasoningEffort? {
+        base.reasoningEffortOptional(for: conversationID)
+    }
+    func setReasoningEffort(_ reasoningEffort: ReasoningEffort, for conversationID: UUID?) {
+        base.setReasoningEffort(reasoningEffort, for: conversationID)
+    }
+    func clearReasoningEffort(for conversationID: UUID?) {
+        base.clearReasoningEffort(for: conversationID)
+    }
+
+    var globalAutomationLevel: AutomationLevel { base.globalAutomationLevel }
+    func setGlobalAutomationLevel(_ automationLevel: AutomationLevel) {
+        base.setGlobalAutomationLevel(automationLevel)
+    }
+    func automationLevel(for conversationID: UUID?) -> AutomationLevel {
+        base.automationLevel(for: conversationID)
+    }
+    func setAutomationLevel(_ automationLevel: AutomationLevel, for conversationID: UUID?) {
+        base.setAutomationLevel(automationLevel, for: conversationID)
+    }
+
+    var globalLanguage: ConversationLanguage { base.globalLanguage }
+    func setGlobalLanguage(_ language: ConversationLanguage) { base.setGlobalLanguage(language) }
+    func language(for conversationID: UUID?) -> ConversationLanguage { base.language(for: conversationID) }
+    func setLanguage(_ language: ConversationLanguage, for conversationID: UUID?) {
+        base.setLanguage(language, for: conversationID)
+    }
+
+    func addSelectedConversationObserver(
+        _ callback: @escaping (UUID?) -> Void
+    ) -> any SelectedConversationObserverHandle {
+        base.addSelectedConversationObserver(callback)
+    }
+
+    func conversationIDs(projectPath: String, updatedSince: Date?) async -> [String] {
+        base.conversations
+            .filter { $0.projectPath == projectPath }
+            .map { $0.id.uuidString }
     }
 }

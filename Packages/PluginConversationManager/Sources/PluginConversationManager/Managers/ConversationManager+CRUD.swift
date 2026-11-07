@@ -44,7 +44,52 @@ extension ConversationManager {
 
     public func createConversation(
         title: String?,
+        binding: ProjectBinding,
+        providerID: String?,
+        modelName: String?
+    ) throws -> UUID {
+        try createConversation(
+            title: title,
+            binding: binding,
+            modelID: legacyModelID(providerID: providerID, modelName: modelName),
+            parentConversationID: nil
+        )
+    }
+
+    public func createConversation(
+        title: String?,
+        binding: ProjectBinding,
+        providerID: String?,
+        modelName: String?,
+        parentConversationID: UUID?
+    ) throws -> UUID {
+        try createConversation(
+            title: title,
+            binding: binding,
+            modelID: legacyModelID(providerID: providerID, modelName: modelName),
+            parentConversationID: parentConversationID
+        )
+    }
+
+    public func createConversation(
+        title: String?,
         projectPath: String?,
+        modelID: String?,
+        parentConversationID: UUID?
+    ) throws -> UUID {
+        // 旧接口的 nil 语义是「沿用当前项目」，这里显式映射，
+        // 真正的落库解析统一走 ProjectBinding。
+        try createConversation(
+            title: title,
+            binding: projectPath.map(ProjectBinding.project) ?? .inheritCurrent,
+            modelID: modelID,
+            parentConversationID: parentConversationID
+        )
+    }
+
+    public func createConversation(
+        title: String?,
+        binding: ProjectBinding,
         modelID: String?,
         parentConversationID: UUID?
     ) throws -> UUID {
@@ -53,8 +98,10 @@ extension ConversationManager {
         let conversationTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedTitle = conversationTitle?.isEmpty == true ? nil : conversationTitle
 
-        // 如果未指定 projectPath，则自动使用当前项目
-        let effectiveProjectPath = projectPath ?? project?.currentProject?.path
+        // `.inheritCurrent` 才回退当前项目；`.none` 明确不绑定。
+        let effectiveProjectPath = binding.resolvedProjectPath(
+            inheriting: project?.currentProject?.path
+        )
         let effectiveModelID = modelID.flatMap { LLMModelID(rawValue: $0)?.rawValue }
             ?? llmProviderManager?.selectedModelID?.rawValue
         // 继承全局设置（详细程度、推理强度、对话模式）

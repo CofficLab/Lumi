@@ -296,4 +296,59 @@ final class ProviderConversationTests: XCTestCase {
         XCTAssertEqual(firstCount, 1, "已注销的观察者不再收到通知")
         XCTAssertEqual(secondCount, 2)
     }
+
+    // MARK: - ProjectBinding
+
+    func testProjectBindingNoneResolvesToNilEvenWithCurrentProject() {
+        XCTAssertNil(ProjectBinding.none.resolvedProjectPath(inheriting: "/tmp/current"))
+    }
+
+    func testProjectBindingInheritUsesCurrentProject() {
+        XCTAssertEqual(
+            ProjectBinding.inheritCurrent.resolvedProjectPath(inheriting: "/tmp/current"),
+            "/tmp/current"
+        )
+        XCTAssertNil(ProjectBinding.inheritCurrent.resolvedProjectPath(inheriting: nil))
+    }
+
+    func testProjectBindingProjectUsesExplicitPath() {
+        XCTAssertEqual(
+            ProjectBinding.project("/tmp/proj").resolvedProjectPath(inheriting: "/tmp/current"),
+            "/tmp/proj"
+        )
+    }
+
+    func testProjectBindingEmptyPathIsNeverPersisted() throws {
+        XCTAssertNil(ProjectBinding.project("").resolvedProjectPath(inheriting: "/tmp/current"))
+
+        let manager = DefaultConversationManager()
+        _ = try manager.createConversation(
+            title: nil,
+            binding: .project(""),
+            providerID: nil,
+            modelName: nil
+        )
+        XCTAssertNil(manager.conversations.first?.projectPath)
+        XCTAssertNotEqual(manager.conversations.first?.projectPath, "")
+    }
+
+    func testDefaultManagerBindingNoneAndInheritBothStayUnbound() throws {
+        let manager = DefaultConversationManager()
+
+        let noneID = try manager.createConversation(
+            title: "无项目",
+            binding: .none,
+            providerID: nil,
+            modelName: nil
+        )
+        XCTAssertNil(manager.conversations.first { $0.id == noneID }?.projectPath)
+
+        let inheritID = try manager.createConversation(
+            title: "默认",
+            binding: .inheritCurrent,
+            providerID: nil,
+            modelName: nil
+        )
+        XCTAssertNil(manager.conversations.first { $0.id == inheritID }?.projectPath)
+    }
 }

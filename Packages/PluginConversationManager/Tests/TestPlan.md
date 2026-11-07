@@ -96,27 +96,32 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 38 | ConversationEmptyTitleConsistency | 清空标题后内存与数据库仍然一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `clearingTitleKeepsMemoryAndDatabaseConsistent` |
 | 39 | ConversationEmptyTitleConsistency | 只有空白的标题等同于没有标题（两层一致） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `treatsWhitespaceOnlyTitleAsUntitled` |
 | 40 | ConversationStoreUntitledQuery | 只有空白的标题等同于没有标题 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `whitespaceOnlyTitleIsEquivalentToNoTitle` |
+| 41 | 项目绑定 | 显式 `.none` 不会回退到当前项目（**回归**） | 当前项目 `/tmp/current-project` | `createConversation(binding: .none)` | 新对话 `projectPath` 为 nil，不被挂到当前项目 | P0 | ✅ 已覆盖 | `noneDoesNotFallBackToCurrentProject` |
+| 42 | 项目绑定 | `.inheritCurrent` 沿用当前项目 | 当前项目 `/tmp/current-project` | `createConversation(binding: .inheritCurrent)` | 新对话 `projectPath` 为 `/tmp/current-project` | P1 | ✅ 已覆盖 | `inheritCurrentUsesCurrentProject` |
+| 43 | 项目绑定 | `.project` 覆盖当前项目 | 当前项目 `/tmp/current-project`，显式 `/tmp/source-project` | `createConversation(binding: .project(...))` | 新对话 `projectPath` 为 `/tmp/source-project` | P1 | ✅ 已覆盖 | `explicitProjectOverridesCurrent` |
+| 44 | 项目绑定 | 旧接口 `projectPath: nil` 仍沿用当前项目 | 当前项目 `/tmp/current-project` | `createConversation(projectPath: nil)` | 行为不变，`projectPath` 为当前项目 | P1 | ✅ 已覆盖 | `legacyNilStillInheritsCurrentProject` |
+| 45 | 项目绑定 | 空字符串项目标识不会写入数据层 | 显式 `.project("")` 与旧接口 `projectPath: ""` | 分别创建对话 | 两条对话 `projectPath` 均为 nil，存储层无空字符串 | P0 | ✅ 已覆盖 | `emptyProjectPathIsNeverStored` |
 
-> 说明：全部 **30 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **45 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 32 / 32
+- P0: 已覆盖 5 / 5
+- P1: 已覆盖 35 / 35
 - P2: 已覆盖 5 / 5
-- **合计: 40 / 40**（仅表示清单场景，非源码覆盖率）
+- **合计: 45 / 45**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（23 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
+- **P1**: 其余功能性用例（35 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 45 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
