@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import Darwin
 import Foundation
 import os
 import LumiLoggingKit
@@ -14,8 +15,17 @@ public final class ProcessService: ObservableObject, SuperLog {
     // MARK: - Constants
 
     private nonisolated static let processLimit = 5
-    /// `proc_taskinfo.pti_total_user/system` reports CPU time in 100ns ticks.
-    private nonisolated static let processTimeTicksPerSecond = 10000000.0
+
+    /// `proc_taskinfo.pti_total_user/system` 返回的是 mach absolute time ticks。
+    ///
+    /// 每秒 tick 数由 `mach_timebase_info` 决定：Apple Silicon 为 24 MHz，
+    /// Intel 为 1 GHz。不能按固定 100ns 换算，否则 Apple Silicon 上数值
+    /// 放大约 2.4 倍、Intel 上放大约 100 倍。
+    nonisolated(unsafe) static let timebase: mach_timebase_info_data_t = {
+        var info = mach_timebase_info_data_t()
+        mach_timebase_info(&info)
+        return info
+    }()
 
     // MARK: - Published Properties
 
@@ -204,9 +214,12 @@ public final class ProcessService: ObservableObject, SuperLog {
 
     nonisolated static func cpuPercent(
         forProcessTimeDelta totalDelta: UInt64,
-        elapsedSeconds deltaTime: TimeInterval
+        elapsedSeconds deltaTime: TimeInterval,
+        timebase: mach_timebase_info_data_t = ProcessService.timebase
     ) -> Double {
         guard deltaTime > 0 else { return 0 }
-        return Double(totalDelta) / (deltaTime * processTimeTicksPerSecond) * 100.0
+        // mach ticks → 纳秒 → CPU 秒数；100% 表示占满一个核心。
+        let nanoseconds = Double(totalDelta) * Double(timebase.numer) / Double(timebase.denom)
+        return nanoseconds / (deltaTime * 1_000_000_000.0) * 100.0
     }
 }
