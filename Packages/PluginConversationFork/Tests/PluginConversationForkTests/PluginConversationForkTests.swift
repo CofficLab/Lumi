@@ -49,19 +49,100 @@ struct ConversationForkPluginTests {
         #expect(outcome.summary.contains("快速排序"))
     }
 
-    @Test("renderHistory 渲染 user/assistant 前缀")
+    @Test("renderHistory 渲染 user/assistant/tool 前缀")
     func renderHistory() {
         let id = UUID()
         let history = [
             Message(conversationID: id, role: .user, content: "hi"),
             Message(conversationID: id, role: .assistant, content: "hello"),
+            Message(conversationID: id, role: .tool, content: "42", toolCallID: "call-1"),
         ]
         let rendered = ConversationSummarizer.renderHistory(history)
         #expect(rendered.contains("User: hi"))
         #expect(rendered.contains("Assistant: hello"))
+        #expect(rendered.contains("Tool: 42"))
     }
 
-    @Test("filteredMessages 只保留 user/assistant 且非空消息")
+    @Test("filteredMessages 保留工具调用与配对的工具结果")
+    func filteredMessagesKeepsToolCallsAndResults() {
+        let id = UUID()
+        let call = MessageToolCall(
+            id: "call-1",
+            name: "run_command",
+            arguments: #"{"command":"cat answer.txt"}"#
+        )
+        let history = [
+            Message(conversationID: id, role: .user, content: "读取答案"),
+            Message(conversationID: id, role: .assistant, content: "Done.", toolCalls: [call]),
+            Message(conversationID: id, role: .tool, content: "42", toolCallID: "call-1"),
+        ]
+
+        let result = ConversationSummarizer.filteredMessages(history)
+
+        #expect(result.count == 3)
+        #expect(result[1].content.contains("[Tool call: run_command]"))
+        #expect(result[1].content.contains("cat answer.txt"))
+        #expect(result[2].content.contains("[Tool result for run_command]"))
+        #expect(result[2].content.contains("42"))
+    }
+
+    @Test("正文为空的工具调用消息仍参与摘要")
+    func filteredMessagesKeepsToolCallOnlyAssistant() {
+        let id = UUID()
+        let call = MessageToolCall(id: "call-1", name: "search_code", arguments: #"{"query":"foo"}"#)
+        let result = ConversationSummarizer.filteredMessages([
+            Message(conversationID: id, role: .assistant, content: "", toolCalls: [call]),
+        ])
+
+        #expect(result.count == 1)
+        #expect(result[0].content.contains("[Tool call: search_code]"))
+    }
+
+    @Test("工具结果超长时按上限截断")
+    func filteredMessagesTruncatesLongToolResult() {
+        let id = UUID()
+        let long = String(repeating: "y", count: ConversationSummarizer.maxToolResultChars + 100)
+        let result = ConversationSummarizer.filteredMessages([
+            Message(conversationID: id, role: .tool, content: long, toolCallID: "call-1"),
+        ])
+
+        #expect(result.count == 1)
+        #expect(result[0].content.contains("[Tool result]"))
+        #expect(result[0].content.hasSuffix("…[truncated]"))
+        #expect(result[0].content.count <= ConversationSummarizer.maxToolResultChars
+            + "[Tool result]\n\n".count + "…[truncated]".count)
+    }
+
+    @Test("回退摘要包含工具动作与结果")
+    func summarizerFallbackIncludesToolActivity() async {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let llmProvider = DefaultLLMProviderManagerProviding()
+        let id = UUID()
+        let call = MessageToolCall(id: "call-1", name: "run_command", arguments: #"{"command":"cat answer.txt"}"#)
+        messages.insertMessage(Message(conversationID: id, role: .user, content: "读取答案"), to: id)
+        messages.insertMessage(
+            Message(conversationID: id, role: .assistant, content: "Done.", toolCalls: [call]),
+            to: id
+        )
+        messages.insertMessage(
+            Message(conversationID: id, role: .tool, content: "42", toolCallID: "call-1"),
+            to: id
+        )
+
+        let summarizer = ConversationSummarizer(
+            conversations: conversations,
+            messages: messages,
+            llmProvider: llmProvider
+        )
+        let outcome = await summarizer.summarize(conversationID: id)
+
+        #expect(outcome.usedFallback)
+        #expect(outcome.summary.contains("run_command"))
+        #expect(outcome.summary.contains("42"))
+    }
+
+    @Test("filteredMessages 丢弃 system 与空白消息")
     func filteredMessagesDropsIrrelevantRolesAndEmpty() {
         let id = UUID()
         let history = [
