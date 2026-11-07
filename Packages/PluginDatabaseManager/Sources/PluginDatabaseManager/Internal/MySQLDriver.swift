@@ -161,6 +161,13 @@ public actor MySQLConnection: DatabaseConnection {
         return trimmed
     }
 
+    /// 零行结果时探测列名。
+    ///
+    /// MySQL 协议在零行时不会把列定义交给客户端，驱动拿不到列名。
+    /// 这里用会话临时表复制查询结构，再读它的列定义。
+    ///
+    /// 注意：会话临时表**不**出现在 `INFORMATION_SCHEMA.COLUMNS` 中
+    /// （该 catalog 只列永久表），所以必须用 `SHOW COLUMNS` 读取。
     private func queryColumnNames(for sql: String, params: [DatabaseValue]) async throws -> [String] {
         guard let conn else { throw DatabaseError.connectionFailed("Not connected") }
 
@@ -170,19 +177,10 @@ public actor MySQLConnection: DatabaseConnection {
 
         do {
             _ = try await conn.query(createSQL, toMySQLData(params)).get()
-            let rows = try await conn.query(
-                """
-                SELECT COLUMN_NAME
-                FROM INFORMATION_SCHEMA.COLUMNS
-                WHERE TABLE_SCHEMA = DATABASE()
-                    AND TABLE_NAME = ?
-                ORDER BY ORDINAL_POSITION
-                """,
-                [MySQLData(string: tableName)]
-            ).get()
+            let rows = try await conn.query("SHOW COLUMNS FROM \(tableIdentifier)").get()
             try await dropTemporaryTable(tableIdentifier)
             return rows.compactMap { row in
-                row.column("COLUMN_NAME")?.string ?? row.column("column_name")?.string
+                row.column("Field")?.string ?? row.column("field")?.string
             }
         } catch {
             try? await dropTemporaryTable(tableIdentifier)
