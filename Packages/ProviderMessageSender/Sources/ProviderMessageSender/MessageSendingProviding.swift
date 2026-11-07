@@ -77,6 +77,9 @@ public protocol MessageSendingProviding: AnyObject {
 
     /// 携带折叠块提交用户消息。
     ///
+    /// - Parameter content: 编辑器原文，**不得预先 trim**。`collapsedBlocks`
+    ///   以它为坐标系；接收方负责 trim 正文并把区间同步平移，若调用方先
+    ///   trim，前导空白信息丢失，chip 区间会被判为越界而丢弃。
     /// - Parameter collapsedBlocks: 正文中被折叠成 chip 的区间。渲染层据此把
     ///   区间还原成可展开的 chip，而不是摊开成一大段文字。
     @discardableResult

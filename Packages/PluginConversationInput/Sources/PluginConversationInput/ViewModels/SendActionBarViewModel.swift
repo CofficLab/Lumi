@@ -70,7 +70,11 @@ final class SendActionBarViewModel: SuperLog {
 
     /// Send the current input text. Clears the input field on success.
     func send() {
-        let trimmed = capability.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        // 交给发送端的是编辑器原文，而不是预 trim 后的文本：
+        // 折叠块区间以原文为基准，预 trim 会让 sender 失去前导空白，
+        // 无法把区间平移到 trim 后的正文上。trim 统一由 sender 完成。
+        let content = capability.text
+        let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
         let imageAttachments = capability.pendingImageAttachments
         let fileAttachments = capability.pendingFileAttachments
         let hasAttachments = !imageAttachments.isEmpty || !fileAttachments.isEmpty
@@ -94,7 +98,7 @@ final class SendActionBarViewModel: SuperLog {
             Task { @MainActor in
                 do {
                     guard let commit = try await capability.commitUserMessageInBackground(
-                        trimmed,
+                        content,
                         imageAttachments: imageAttachments,
                         fileAttachments: fileAttachments,
                         collapsedBlocks: blocks,
@@ -117,7 +121,7 @@ final class SendActionBarViewModel: SuperLog {
 
         do {
             guard let commit = try capability.commitUserMessage(
-                trimmed,
+                content,
                 imageAttachments: imageAttachments,
                 fileAttachments: fileAttachments,
                 collapsedBlocks: blocks,
