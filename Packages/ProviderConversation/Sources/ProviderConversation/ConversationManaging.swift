@@ -151,6 +151,18 @@ public protocol ConversationManaging: AnyObject {
     /// 创建新对话
     func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID
 
+    /// 创建新对话并等待持久化完成。
+    ///
+    /// 与同步版本的区别：持久化失败必须向上抛错，调用方据此避免把尚未落库的
+    /// 会话当成创建成功（例如 Agent 工具返回成功卡片）。默认实现直接复用
+    /// 同步接口，适用于没有持久化层的轻量实现。
+    func createConversationAndWait(
+        title: String?,
+        projectPath: String?,
+        modelID: String?,
+        parentConversationID: UUID?
+    ) async throws -> UUID
+
     /// Creates a conversation with an optional parent conversation.
     func createConversation(
         title: String?,
@@ -405,6 +417,21 @@ public extension ConversationManaging {
             projectPath: projectPath,
             providerID: parsed?.providerID,
             modelName: parsed?.modelID,
+            parentConversationID: parentConversationID
+        )
+    }
+
+    /// 默认实现：没有持久化层的实现直接从同步接口返回。
+    func createConversationAndWait(
+        title: String?,
+        projectPath: String?,
+        modelID: String?,
+        parentConversationID: UUID?
+    ) async throws -> UUID {
+        try createConversation(
+            title: title,
+            projectPath: projectPath,
+            modelID: modelID,
             parentConversationID: parentConversationID
         )
     }

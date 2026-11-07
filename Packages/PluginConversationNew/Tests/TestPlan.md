@@ -47,8 +47,8 @@ PluginConversationNew 的实现包，包含 9 个主要类型；当前测试覆�
 | 3 | CreateNewConversationTool | title 缺省或空白时由 task 推导 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `titleFallsBackToDerived` |
 | 4 | CreateNewConversationTool | 显式 title 优先于推导标题 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `explicitTitleWins` |
 | 5 | CreateNewConversationTool | 创建对话后选中态被恢复为原对话 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectionIsRestoredAfterCreate` |
-| 6 | CreateNewConversationTool | 创建失败时同样恢复选中态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectionIsRestoredOnFailure` |
-| 7 | CreateNewConversationTool | 无能力时返回失败文本且不抛出 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingCapabilityReturnsFailureText` |
+| 6 | CreateNewConversationTool | 落库失败时抛错并恢复选中态，不显示成功卡片 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectionIsRestoredAndErrorSurfacesOnFailure` |
+| 7 | CreateNewConversationTool | 无能力时抛出执行失败 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingCapabilityThrows` |
 | 8 | CreateNewConversationTool | 返回内容包含可被渲染器解析的 payload | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resultContainsDecodablePayload` |
 | 9 | CreateNewConversationTool | 创建对话时透传当前项目与模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `createInheritsProjectAndModel` |
 | 10 | CreateNewConversationTool | derivedTitleUsesFirstSentence | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `derivedTitleUsesFirstSentence` |

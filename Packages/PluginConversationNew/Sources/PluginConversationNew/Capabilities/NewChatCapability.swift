@@ -22,11 +22,14 @@ protocol NewChatCapability: AnyObject {
     var currentProjectPath: String? { get }
 
     /// 创建一个顶层对话（会进入侧边栏列表）。
+    ///
+    /// 等待持久化完成：落库失败会抛错，调用方必须把失败如实反馈给用户，
+    /// 不能显示「已准备成功」。
     func createTopLevelConversation(
         title: String?,
         projectPath: String?,
         modelID: String?
-    ) throws -> UUID
+    ) async throws -> UUID
 
     /// 切换到指定对话。
     func selectConversation(id: UUID)
@@ -68,11 +71,11 @@ final class NewChatCapabilityAdapter: NewChatCapability {
         title: String?,
         projectPath: String?,
         modelID: String?
-    ) throws -> UUID {
+    ) async throws -> UUID {
         guard let conversations else {
             throw NewChatCapabilityError.providerUnavailable
         }
-        return try conversations.createConversation(
+        return try await conversations.createConversationAndWait(
             title: title,
             projectPath: projectPath,
             modelID: modelID,
