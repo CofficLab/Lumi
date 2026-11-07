@@ -75,4 +75,9 @@ struct ProcessAggregationTests {
         #expect(viewModel.topProcessesPreview.count == 5)
         #expect(viewModel.topProcessesPreview.first?.name == "Process 1")
     }
+
+    @Test("CPU 采样间隔与网络区块统一为 1 秒")
+    func samplingIntervalMatchesNetworkBlock() {
+        #expect(ProcessService.samplingInterval == 1.0)
+    }
 }

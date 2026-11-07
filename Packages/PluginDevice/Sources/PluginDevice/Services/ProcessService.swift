@@ -17,6 +17,10 @@ public final class ProcessService: ObservableObject, SuperLog {
 
     // MARK: - Constants
 
+    /// 进程采样间隔。与网络区块的 nettop 采样统一为 1 秒，避免两块榜单
+    /// 的刷新节奏不一致。
+    nonisolated static let samplingInterval: TimeInterval = 1.0
+
     /// `proc_taskinfo.pti_total_user/system` 返回的是 mach absolute time ticks。
     ///
     /// 每秒 tick 数由 `mach_timebase_info` 决定：Apple Silicon 为 24 MHz，
@@ -55,7 +59,7 @@ public final class ProcessService: ObservableObject, SuperLog {
             previousTimestamp = Date().timeIntervalSince1970
             sampleProcesses()
 
-            monitoringTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
+            monitoringTimer = Timer.scheduledTimer(withTimeInterval: Self.samplingInterval, repeats: true) { [weak self] _ in
                 Task { @MainActor [weak self] in
                     self?.sampleProcesses()
                 }
