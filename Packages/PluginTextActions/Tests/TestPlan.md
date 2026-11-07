@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 70 条用例。
+PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 72 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 70
+测试文件: 4 个，用例总数: 72
 
 核心组件（源码目录）:
 - `Views/`
@@ -36,7 +36,7 @@ PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 
 - **TextActionsCore**（24 条）：由 `doesNotPresentMenuForBlankText`、`presentsMenuForRealText`、`retryConstants` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionsPluginLifecycle**（11 条）：由 `registerAddsDocsEntries`、`registerWithoutDocsProviderIsNoop`、`bootInjectsStorageDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionsStorage**（10 条）：由 `usesConfiguredDirectory`、`resetsToFallbackDirectory`、`roundTripsValue` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **TextActionMenuPanel**（10 条）：由 `initialStateIsActions`、`performForwardsToHandler`、`stateChangeNotifies` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **TextActionMenuPanel**（13 条）：由 `initialStateIsActions`、`performForwardsToHandler`、`stateChangeNotifies` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -112,27 +112,30 @@ PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 
 | 59 | TextActionMenuPanel | 翻译失败渲染出内容 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `failedStateRendersContent` |
 | 60 | TextActionMenuPanel | 面板不抢焦点、不在后台隐藏 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `panelIsNonActivatingAndPersistent` |
 | 61 | TextActionMenuPanel | 面板跨 Space 且可叠加在全屏应用上 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `panelCollectionBehavior` |
+| 62 | TextActionMenuPanel | 译文卡片在 SwiftUI 布局完成后上报实际尺寸 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `translatedIntrinsicSizeFollowsLayout` |
+| 63 | TextActionMenuPanel | 长译文把浮层撑到滚动上限 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `longTranslationExpandsPanel` |
+| 64 | TextActionMenuPanel | 品牌标识使用 App 图标资源 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `brandMarkUsesBundledAppIcon` |
 
-> 说明：全部 **70 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **73 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 57 / 57
+- P1: 已覆盖 60 / 60
 - P2: 已覆盖 8 / 8
-- **合计: 70 / 70**（仅表示清单场景，非源码覆盖率）
+- **合计: 73 / 73**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（57 条）
+- **P1**: 其余功能性用例（60 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 70 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 73 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
