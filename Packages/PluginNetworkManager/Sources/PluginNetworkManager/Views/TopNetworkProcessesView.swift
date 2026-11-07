@@ -1,3 +1,4 @@
+import AppKit
 import LumiUI
 import SwiftUI
 import KernelCore
@@ -52,16 +53,19 @@ public struct TopNetworkProcessesView: View {
         }
         .padding(.vertical, 8)
         .background(Color.secondary.opacity(0.06))
-        .onAppear {
-            DispatchQueue.main.async {
-                viewModel.acquireProcessMonitor()
+        .background(
+            // 菜单栏主弹窗的 NSPopover 会被复用，onAppear/onDisappear 不能可靠
+            // 反映弹窗开关；改为监听视图所在窗口的可见性来启停 nettop。
+            WindowVisibilityObserver { isVisible in
+                if isVisible {
+                    viewModel.acquireProcessMonitor()
+                } else {
+                    viewModel.releaseProcessMonitor()
+                }
             }
-        }
-        .onDisappear {
-            DispatchQueue.main.async {
-                viewModel.releaseProcessMonitor()
-            }
-        }
+            .frame(width: 1, height: 1)
+            .allowsHitTesting(false)
+        )
     }
 
     // MARK: - 私有方法
@@ -115,6 +119,75 @@ public struct TopNetworkProcessesView: View {
     private func barFraction(for process: NetworkProcess, maxSpeed: Double) -> CGFloat {
         guard maxSpeed > 0 else { return 0 }
         return CGFloat(min(max(process.totalSpeed / maxSpeed, 0), 1))
+    }
+}
+
+// MARK: - 窗口可见性
+
+/// 观察 SwiftUI 视图所在 NSWindow 的可见性。
+///
+/// 菜单栏主弹窗复用一个 `NSPopover` 与其 `NSHostingController`，视图不会随
+/// 弹窗关闭而销毁，因此 `onAppear/onDisappear` 无法用来启停 nettop。
+private struct WindowVisibilityObserver: NSViewRepresentable {
+    let onChange: (Bool) -> Void
+
+    func makeNSView(context: Context) -> WindowVisibilityTrackingView {
+        let view = WindowVisibilityTrackingView()
+        view.onChange = onChange
+        return view
+    }
+
+    func updateNSView(_ nsView: WindowVisibilityTrackingView, context: Context) {
+        nsView.onChange = onChange
+    }
+}
+
+private final class WindowVisibilityTrackingView: NSView {
+    var onChange: ((Bool) -> Void)?
+
+    private weak var trackedWindow: NSWindow?
+    private var timer: Timer?
+    private var lastValue: Bool?
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+
+        guard let window else {
+            timer?.invalidate()
+            timer = nil
+            trackedWindow = nil
+            evaluateVisibility()
+            return
+        }
+
+        trackedWindow = window
+        lastValue = nil
+        startTimer()
+        evaluateVisibility()
+    }
+
+    private func startTimer() {
+        guard timer == nil else { return }
+        let timer = Timer(
+            timeInterval: 0.75,
+            target: self,
+            selector: #selector(handleTick),
+            userInfo: nil,
+            repeats: true
+        )
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
+    }
+
+    @objc private func handleTick() {
+        evaluateVisibility()
+    }
+
+    private func evaluateVisibility() {
+        let isVisible = trackedWindow?.isVisible ?? false
+        guard lastValue != isVisible else { return }
+        lastValue = isVisible
+        onChange?(isVisible)
     }
 }
 
