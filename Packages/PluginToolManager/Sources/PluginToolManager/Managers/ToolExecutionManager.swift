@@ -593,6 +593,7 @@ final class ToolExecutionManager {
 
     private func restore(_ records: [ToolJobRecord]) {
         let message = "工具进程在应用重启后无法恢复，未自动重试。"
+        var restoredTerminalJobs: [ToolJob] = []
         for record in records where jobsByID[record.id] == nil {
             if record.status.isTerminal {
                 let toolCall = ToolCall(
@@ -618,6 +619,7 @@ final class ToolExecutionManager {
                 if let result = record.result {
                     resultsByID[job.id] = result
                 }
+                restoredTerminalJobs.append(job)
                 continue
             }
 
@@ -647,6 +649,11 @@ final class ToolExecutionManager {
             persist(job, result: result)
             emit(.created(job))
             emit(.failed(jobID: job.id, result: result, snapshot: job))
+        }
+
+        // 终态历史记录没有逐条事件；用一次批量快照让打开中的 UI 补齐列表。
+        if !restoredTerminalJobs.isEmpty {
+            emit(.restored(restoredTerminalJobs))
         }
     }
 }

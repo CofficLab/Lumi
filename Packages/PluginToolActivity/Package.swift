@@ -12,6 +12,8 @@ let package = Package(
         .package(path: "../../Vendor/LumiKernel"),
         .package(path: "../../Vendor/LumiLocalization"),
         .package(path: "../../Vendor/LumiLogging"),
+        .package(path: "../KitAgentTool"),
+        .package(path: "../KitLLM"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderToolManager"),
@@ -34,7 +36,10 @@ let package = Package(
             name: "PluginToolActivityTests",
             dependencies: [
                 "PluginToolActivity",
+                "ProviderConversation",
                 "ProviderToolManager",
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
+                .product(name: "KitLLM", package: "KitLLM"),
             ],
             path: "Tests/PluginToolActivityTests"
         ),
