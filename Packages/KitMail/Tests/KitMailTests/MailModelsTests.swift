@@ -121,6 +121,7 @@ final class MailModelsTests: XCTestCase {
     func testMailErrorRoundTrip() throws {
         let errors: [MailError] = [
             .authFailed, .network, .protocolError("x"), .notFound, .offline, .unsupported("oauth2"),
+            .invalidArgument("uid"),
         ]
         for error in errors {
             let data = try JSONEncoder().encode(error)
@@ -134,5 +135,6 @@ final class MailModelsTests: XCTestCase {
         XCTAssertEqual(MailError.offline.localizedDescriptionKey, "Mail.Error.Offline")
         XCTAssertFalse(MailError.network.fallbackDescription.isEmpty)
         XCTAssertEqual(MailError.authFailed.logLabel, "authFailed")
+        XCTAssertEqual(MailError.invalidArgument("uid").localizedDescriptionKey, "Mail.Error.InvalidArgument")
     }
 }

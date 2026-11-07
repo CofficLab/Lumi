@@ -17,6 +17,8 @@ public enum MailError: Error, Sendable, Codable, Hashable {
     case offline
     /// 暂不支持的能力（如 OAuth2 首版未实现、POP3 明确不做）
     case unsupported(String)
+    /// 调用参数不合法（如 UID 超出 IMAP 协议范围）
+    case invalidArgument(String)
 
     /// 本地化描述键（`Mail.Error.AuthFailed` 等），供 xcstrings 使用。
     public var localizedDescriptionKey: String {
@@ -27,6 +29,7 @@ public enum MailError: Error, Sendable, Codable, Hashable {
         case .notFound: return "Mail.Error.NotFound"
         case .offline: return "Mail.Error.Offline"
         case .unsupported: return "Mail.Error.Unsupported"
+        case .invalidArgument: return "Mail.Error.InvalidArgument"
         }
     }
 
@@ -39,6 +42,7 @@ public enum MailError: Error, Sendable, Codable, Hashable {
         case .notFound: return "The requested message or folder was not found."
         case .offline: return "You are offline. Showing cached messages."
         case .unsupported(let feature): return "Not supported: \(feature)"
+        case .invalidArgument(let detail): return "Invalid mail request: \(detail)"
         }
     }
 
@@ -51,6 +55,7 @@ public enum MailError: Error, Sendable, Codable, Hashable {
         case .notFound: return "notFound"
         case .offline: return "offline"
         case .unsupported: return "unsupported"
+        case .invalidArgument: return "invalidArgument"
         }
     }
 }
