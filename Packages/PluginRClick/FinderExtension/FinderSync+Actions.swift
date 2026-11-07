@@ -264,6 +264,7 @@ extension FinderSync {
             return
         }
 
+        var failures: [(url: URL, error: Error)] = []
         for url in items {
             do {
                 try FileManager.default.trashItem(at: url, resultingItemURL: nil)
@@ -273,13 +274,37 @@ extension FinderSync {
                     }
                 }
             } catch {
-                if Self.verbose {
-                    if FinderSync.verbose {
-                        FinderSync.logger.error("\(self.t)移至废纸篓失败: \(url.path)，错误: \(error.localizedDescription)")
-                    }
-                }
+                FinderSync.logger.error("\(self.t)移至废纸篓失败: \(url.path)，错误: \(error.localizedDescription)")
+                failures.append((url, error))
             }
         }
+
+        // 失败不静默：部分失败也要明确告诉用户哪些项目还留在原处。
+        guard !failures.isEmpty else { return }
+        showTrashError(failures: failures, total: items.count)
+    }
+
+    /// 移至废纸篓失败（含部分失败）时提示用户。
+    @MainActor
+    private func showTrashError(failures: [(url: URL, error: Error)], total: Int) {
+        let listed = failures.prefix(5)
+            .map { "• \($0.url.lastPathComponent)：\($0.error.localizedDescription)" }
+            .joined(separator: "\n")
+        let remainder = failures.count > 5 ? "\n…以及另外 \(failures.count - 5) 项" : ""
+
+        let alert = NSAlert()
+        alert.messageText = failures.count == total
+            ? "无法移至废纸篓"
+            : "部分项目未能移至废纸篓"
+        alert.informativeText = """
+        共 \(total) 项，\(failures.count) 项失败。
+        \(listed)\(remainder)
+
+        失败的项目仍留在原处。请检查 Lumi 是否已被授予对应的文件访问权限（系统设置 → 隐私与安全性 → 文件与文件夹）。
+        """
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "好")
+        alert.runModal()
     }
 
     @IBAction nonisolated func hideFile(_ sender: AnyObject?) {
