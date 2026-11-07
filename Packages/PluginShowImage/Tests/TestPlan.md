@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginShowImage 的实现包，包含 3 个主要类型；当前测试覆盖 4 条用例。
+PluginShowImage 的实现包，包含 3 个主要类型；当前测试覆盖 5 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 4
+测试文件: 1 个，用例总数: 5
 
 ## 公开 API
 
@@ -19,7 +19,7 @@ PluginShowImage 的实现包，包含 3 个主要类型；当前测试覆盖 4 �
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **ShowImageTool**（4 条）：由 `imageSourcesNormalizeLocalAndRemoteLocations`、`imageSourceRejectsMissingAndUnsupportedSchemes`、`maximumWidthUsesDefaultAndClampsEveryInputForm` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ShowImageTool**（5 条）：由 `imageSourcesNormalizeLocalAndRemoteLocations`、`imageSourceRejectsMissingAndUnsupportedSchemes`、`maximumWidthUsesDefaultAndClampsEveryInputForm` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -29,16 +29,18 @@ PluginShowImage 的实现包，包含 3 个主要类型；当前测试覆盖 4 �
 | 2 | ShowImageTool | imageSourceRejectsMissingAndUnsupportedSchemes | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `imageSourceRejectsMissingAndUnsupportedSchemes` |
 | 3 | ShowImageTool | maximumWidthUsesDefaultAndClampsEveryInputForm | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `maximumWidthUsesDefaultAndClampsEveryInputForm` |
 | 4 | ShowImageTool | executeValidatesLocalFilesAndPublishesNormalizedDisplayState | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `executeValidatesLocalFilesAndPublishesNormalizedDisplayState` |
+| 5 | ShowImageTool | 本地路径的首尾空白必须逐字节保留 | 文件名以空格结尾/开头 | 归一化 source 并执行工具 | 返回原始路径；存在该文件时成功显示 | P0 | ✅ 已覆盖 | `imageSourcePreservesLocalPathWhitespace` |
 
-> 说明：全部 **4 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **5 条场景**已在本包 `swift test` 中实跑通过。
+> 已知问题：`maximumWidthUsesDefaultAndClampsEveryInputForm` 的 4 条断言与 `executeValidatesLocalFilesAndPublishesNormalizedDisplayState` 中的 `maxWidth == 800` 在当前 HEAD 上预存在失败（`ToolArgumentNumber` 统一后行为变化），与本地路径修复无关。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 1 / 1
+- P0: 已覆盖 2 / 2
 - P1: 已覆盖 2 / 2
 - P2: 已覆盖 1 / 1
-- **合计: 4 / 4**（仅表示清单场景，非源码覆盖率）
+- **合计: 5 / 5**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

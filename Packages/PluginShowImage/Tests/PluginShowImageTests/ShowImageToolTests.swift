@@ -17,7 +17,13 @@ import Testing
 
     let fileURL = URL(fileURLWithPath: "/tmp/image with spaces.png")
     #expect(try ShowImageTool.normalizedSource(from: fileURL.absoluteString) == .local(fileURL.path))
-    #expect(try ShowImageTool.normalizedSource(from: " /tmp/plain.png ") == .local("/tmp/plain.png"))
+}
+
+@Test func imageSourcePreservesLocalPathWhitespace() throws {
+    // 首尾空白可能属于真实文件名，本地路径必须逐字节保留。
+    #expect(try ShowImageTool.normalizedSource(from: "/tmp/lumi-preview.png ") == .local("/tmp/lumi-preview.png "))
+    #expect(try ShowImageTool.normalizedSource(from: " /tmp/lumi-preview.png") == .local(" /tmp/lumi-preview.png"))
+    #expect(try ShowImageTool.normalizedSource(from: "/tmp/plain.png") == .local("/tmp/plain.png"))
 }
 
 @Test func imageSourceRejectsMissingAndUnsupportedSchemes() {
@@ -68,7 +74,7 @@ import Testing
     try Data([0x89, 0x50, 0x4E, 0x47]).write(to: imageURL)
     defer { try? FileManager.default.removeItem(at: imageURL) }
     let result = try await tool.execute(arguments: [
-        "source": ToolArgument("  \(imageURL.path)  "),
+        "source": ToolArgument(imageURL.path),
         "title": ToolArgument("  Diagram  "),
         "caption": ToolArgument(" \n "),
         "maxWidth": ToolArgument(Double.infinity),
@@ -79,6 +85,18 @@ import Testing
     #expect(state.displayItem?.title == "Diagram")
     #expect(state.displayItem?.caption == nil)
     #expect(state.displayItem?.maxWidth == 800)
+
+    // 文件名末尾的空格是合法字符，不能被裁剪成另一个路径。
+    let spacedImageURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("valid-image-\(UUID()).png ")
+    try Data([0x89, 0x50, 0x4E, 0x47]).write(to: spacedImageURL)
+    defer { try? FileManager.default.removeItem(at: spacedImageURL) }
+    let spacedResult = try await tool.execute(arguments: [
+        "source": ToolArgument(spacedImageURL.path),
+    ])
+    #expect(spacedResult.contains("File not found") == false)
+    #expect(state.displayItem?.source == .local(spacedImageURL.path))
+
     state.clear()
     #expect(state.displayItem == nil)
 }
