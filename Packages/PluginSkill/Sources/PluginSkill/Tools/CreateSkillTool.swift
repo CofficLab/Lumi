@@ -56,12 +56,29 @@ public struct CreateSkillTool: SuperAgentTool {
         .medium
     }
 
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        ToolCallResult(content: try await execute(
+            arguments: arguments,
+            conversationProjectPath: await context.conversationProjectPath()
+        ))
+    }
+
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        // 优先使用显式参数，fallback 到当前项目。
+        try await execute(arguments: arguments, conversationProjectPath: nil)
+    }
+
+    private func execute(
+        arguments: [String: ToolArgument],
+        conversationProjectPath: String?
+    ) async throws -> String {
+        // 优先使用显式参数，其次工具调用所属会话绑定的项目，最后回退到当前项目。
         let explicitPath = (arguments["project_path"]?.value as? String)?
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let currentPath: String? = await MainActor.run { SkillRuntime.currentProjectPath }
-        let projectPath = explicitPath ?? currentPath
+        let projectPath = explicitPath ?? conversationProjectPath ?? currentPath
 
         guard let projectPath, !projectPath.isEmpty else {
             throw SkillCreationError.invalidName("project_path is required (no current project selected)")

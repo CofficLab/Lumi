@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 54 条用例。
+PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 56 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 54
+测试文件: 4 个，用例总数: 56
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -40,7 +40,7 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 54 条
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **CreateSkillTool**（10 条）：由 `createsScannableSkill`、`keepsExistingH1WithoutDuplicatingTitle`、`makeSkillMarkdownEdgeCases`、`normalizesName`、`rejectsDuplicateSkill` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **CreateSkillTool**（12 条）：由 `createsScannableSkill`、`keepsExistingH1WithoutDuplicatingTitle`、`makeSkillMarkdownEdgeCases`、`normalizesName`、`rejectsDuplicateSkill`、`writesIntoConversationProject` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（12 条）：由 `promptBuilder`、`mergePolicy`、`serviceMergesBuiltin`、`settingsAvailableCountDeduplicatesOverriddenBaseSkills` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **SkillCRUDTools**（18 条）：由 `listReturnsProjectSkills`、`listIncludesContentOnDemand`、`listMergesBuiltinBase` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **SkillCRUD 与扫描器一致性**（6 条）：由 `readFallsBackToValidLegacySkill`、`oversizedMetadataIsRejected` 等用例锁定；改动 Skill 读写的有效性判定或大小约束时优先跑对应测试文件。
@@ -105,27 +105,29 @@ PluginSkill 的实现包，包含 14 个主要类型；当前测试覆盖 54 条
 | 52 | SkillCRUDTools | 扫描器能读到历史目录中的技能 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `scannerReadsLegacyAgentDirectory` |
 | 53 | SkillCRUDTools | 更新工具在历史目录原位更新技能 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `updateToolEditsLegacyAgentDirectoryInPlace` |
 | 54 | SkillSettingsLayout | 技能页面不增加垂直留白 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `skillPageAddsNoVerticalSlack` |
+| 55 | CreateSkillTool | 未传 project_path 时写入会话绑定项目 | 会话绑定项目 A，UI 当前为 B | 调用 `executeResult(context:arguments:)` | 技能目录创建在 A，B 无新目录 | P1 | ✅ 已覆盖 | `writesIntoConversationProject` |
+| 56 | CreateSkillTool | 显式 project_path 优先于会话绑定项目 | 会话绑定 A，显式传 B | 调用 `executeResult(context:arguments:)` | 技能目录创建在 B，A 无新目录 | P1 | ✅ 已覆盖 | `explicitPathBeatsConversationProject` |
 
-> 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **56 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 10 / 10
-- P1: 已覆盖 38 / 38
+- P1: 已覆盖 40 / 40
 - P2: 已覆盖 6 / 6
-- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
+- **合计: 56 / 56**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（38 条）
+- **P1**: 其余功能性用例（40 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 54 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 56 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
