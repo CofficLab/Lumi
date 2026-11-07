@@ -5,7 +5,7 @@
 PluginOpenInRemote Lumi 编辑器插件：在默认浏览器中打开当前项目的远程仓库。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 27
+测试文件: 4 个，用例总数: 29
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -73,27 +73,29 @@ PluginOpenInRemote Lumi 编辑器插件：在默认浏览器中打开当前项�
 | 25 | RemoteWebURLResolver | 去掉结尾多余的斜杠 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `stripsTrailingSlash` |
 | 26 | RemoteWebURLResolver | 空地址与无法识别的地址返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `returnsNilForUnusableRemote` |
 | 27 | RemoteWebURLResolver | webURLString 与 webURL 结果一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `webURLStringMatchesWebURL` |
+| 28 | OpenInRemoteTool | 会话绑定项目优先于当前项目，显式 path 仍最优先 | 显式/会话/当前三条路径同时存在 | 调用 `resolvedTargetPath` | 依次取显式、会话、当前 | P1 | ✅ 已覆盖 | `conversationProjectWinsOverCurrentProject` |
+| 29 | OpenInRemoteTool | 未传 path 时使用会话绑定项目 | 当前项目 `/current`，会话绑定 `/conversation` | 调用 `executeResult(context:arguments:)` | 输出指向 `/conversation`，不含 `/current` | P1 | ✅ 已覆盖 | `usesConversationProject` |
 
-> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **29 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 2 / 2
-- P1: 已覆盖 24 / 24
+- P1: 已覆盖 26 / 26
 - P2: 已覆盖 1 / 1
-- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
+- **合计: 29 / 29**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（24 条）
+- **P1**: 其余功能性用例（26 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 29 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
