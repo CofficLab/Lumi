@@ -26,6 +26,11 @@ public struct NetworkMenuBarPopupView: View {
 
                 // History trend chart (last 60 seconds)
                 miniTrendView
+
+                Divider()
+
+                // Top network processes (inline, same presentation as the CPU block)
+                TopNetworkProcessesView(viewModel: viewModel)
             }
         }
     }
