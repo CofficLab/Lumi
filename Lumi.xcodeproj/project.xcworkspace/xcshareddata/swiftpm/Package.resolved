@@ -119,6 +119,15 @@
       }
     },
     {
+      "identity" : "lumipluginabout",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiPluginAbout.git",
+      "state" : {
+        "revision" : "12e2cc088510c23333394dfeddb2bdc0cd17aa3e",
+        "version" : "2.0.0"
+      }
+    },
+    {
       "identity" : "lumipluginactivitybar",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiPluginActivityBar.git",
