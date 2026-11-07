@@ -1985,6 +1985,40 @@
           }
         }
       }
+    },
+    "Available sizes: iPhone 6.7\" (1290×2796), iPhone 6.5\" (1284×2778), iPhone 6.1\" (1170×2532), iPhone 5.8\" (1125×2436), iPad Pro 12.9\" (2048×2732), iPad Pro 11\" (1668×2388), and Desktop (1280×800)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Available sizes: iPhone 6.7\" (1290×2796), iPhone 6.5\" (1284×2778), iPhone 6.1\" (1170×2532), iPhone 5.8\" (1125×2436), iPad Pro 12.9\" (2048×2732), iPad Pro 11\" (1668×2388), and Desktop (1280×800)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可用尺寸：iPhone 6.7\"（1290×2796）、iPhone 6.5\"（1284×2778）、iPhone 6.1\"（1170×2532）、iPhone 5.8\"（1125×2436）、iPad Pro 12.9\"（2048×2732）、iPad Pro 11\"（1668×2388）以及 Desktop（1280×800）。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可用尺寸：iPhone 6.7\"（1290×2796）、iPhone 6.5\"（1284×2778）、iPhone 6.1\"（1170×2532）、iPhone 5.8\"（1125×2436）、iPad Pro 12.9\"（2048×2732）、iPad Pro 11\"（1668×2388）以及 Desktop（1280×800）。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可用尺寸：iPhone 6.7\"（1290×2796）、iPhone 6.5\"（1284×2778）、iPhone 6.1\"（1170×2532）、iPhone 5.8\"（1125×2436）、iPad Pro 12.9\"（2048×2732）、iPad Pro 11\"（1668×2388）以及 Desktop（1280×800）。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可用尺寸：iPhone 6.7\"（1290×2796）、iPhone 6.5\"（1284×2778）、iPhone 6.1\"（1170×2532）、iPhone 5.8\"（1125×2436）、iPad Pro 12.9\"（2048×2732）、iPad Pro 11\"（1668×2388）以及 Desktop（1280×800）。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
