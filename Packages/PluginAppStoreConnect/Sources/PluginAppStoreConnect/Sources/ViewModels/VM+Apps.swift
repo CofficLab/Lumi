@@ -31,6 +31,7 @@ extension VM {
         selectedApp = app
         localStore.setSelectedAppID(app.id, for: credentials)
         if appChanged {
+            selectionGeneration += 1
             selectedVersion = nil
             versions = []
             localizations = []

@@ -121,6 +121,10 @@ final class VM: ObservableObject, SuperLog {
     let localStore: AppStoreConnectPluginLocalStore
     var isLoadingApps = false
     var isLoadingVersions = false
+    /// 正在加载版本的 App；用于区分「同一 App 重复加载」与「切到别的 App 需要重新加载」。
+    var versionLoadAppID: String?
+    /// 选择上下文代次：每次切换 App 递增。迟到的请求结果据此判断是否已过期。
+    var selectionGeneration = 0
 
     /// 同一用户动作可能串起多个 `runBusy` 操作（嵌套或并发）。
     /// 由计数决定遮罩的生命周期，避免内层调用中途关掉外层已显示的遮罩。
