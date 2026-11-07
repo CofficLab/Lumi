@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 57
+测试文件: 3 个，用例总数: 59
 
 核心组件（源码目录）:
 - `Agent/`
@@ -47,6 +47,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **PostgreSQL schema**（3 条）：由 `postgresSchemaFilterListsAllNonSystemSchemasByDefault`、`postgresSchemaFilterBindsRequestedSchemaAsParameter` 等用例锁定；改动 schema 描述的过滤条件时优先跑对应测试文件。
 - **DatabaseConnectionDraft**（2 条）：由 `sqlitePathIsStoredVerbatim`、`sqlitePathRejectsWhitespaceOnlyInput` 锁定，防止连接表单改动合法文件路径。
 - **DatabaseManagerV2Plugin**（1 条）：由 `restoresDatabaseWorkspace` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DatabaseViewModelConnectionRace**（2 条）：由 `slowQueryFromPreviousConnectionDoesNotOverwriteNewConnection`、`slowerConnectDoesNotReplaceNewerSelection` 锁定，防止旧连接/慢查询覆盖当前连接状态。
 
 ## 测试用例清单
 
@@ -110,27 +111,29 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 55 | 连接复用 | 编辑已保存连接后 Agent 不复用旧连接 | 旧库与新库各有一张表，同 id 换库 | 先查询旧库，再更新配置后查询 | 第二次查询读到新库表，且不再出现旧库表；断开后重连到当前配置 | P0 | ✅ 已覆盖 | `queryReadonlyUsesUpdatedConfigWhenSavedConnectionIsEdited` |
 | 56 | 连接草稿 | SQLite 路径原样保存 | 路径含首尾空格 | 调用 `makeConfig` | `database` 与输入逐字节一致 | P0 | ✅ 已覆盖 | `sqlitePathIsStoredVerbatim` |
 | 57 | 连接草稿 | 全空白 SQLite 路径被拒绝 | — | 调用 `makeConfig` | 抛出 `missingSQLitePath` | P0 | ✅ 已覆盖 | `sqlitePathRejectsWhitespaceOnlyInput` |
+| 58 | 连接竞态 | 慢查询返回后不得覆盖已切换的连接状态 | 连接 A 执行挂起的慢查询，期间连接 B | 挂起 A 查询 → 连接 B → 放行 A 查询 | `selectedConfig` 仍为 B，`queryResult`/`errorMessage` 不被 A 写入，`isLoading` 为 false | P0 | ✅ 已覆盖 | `slowQueryFromPreviousConnectionDoesNotOverwriteNewConnection` |
+| 59 | 连接竞态 | 更慢的旧连接完成后不得抢占新选中连接 | A 连接被挂起，B 先连接成功 | 挂起 A 连接 → 连接 B → 放行 A 连接 | `selectedConfig` 仍为 B，A 的陈旧连接被回收关闭 | P0 | ✅ 已覆盖 | `slowerConnectDoesNotReplaceNewerSelection` |
 
-> 说明：全部 **57 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **59 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 30 / 30
+- P0: 已覆盖 32 / 32
 - P1: 已覆盖 26 / 26
 - P2: 已覆盖 1 / 1
-- **合计: 57 / 57**（仅表示清单场景，非源码覆盖率）
+- **合计: 59 / 59**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
-- **P1**: 其余功能性用例（25 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（32 条）
+- **P1**: 其余功能性用例（26 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 54 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 59 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
