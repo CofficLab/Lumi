@@ -77,13 +77,34 @@ public struct TopNetworkProcessesView: View {
                 .resizable()
                 .frame(width: 16, height: 16)
 
-            // 进程名
-            Text(process.name)
-                .font(.system(size: 11))
-                .foregroundColor(.primary)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            // 进程名 + 同名份数 + 本应用标注
+            HStack(spacing: 4) {
+                Text(process.name)
+                    .font(.system(size: 11))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .layoutPriority(1)
+
+                if process.instanceCount > 1 {
+                    Text("×\(process.instanceCount)")
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundColor(.secondary)
+                        .fixedSize()
+                }
+
+                if process.isCurrentApp {
+                    Text(pluginLocalization.string("This app"))
+                        .font(.system(size: 9))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                        .fixedSize()
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(Color.secondary.opacity(0.12)))
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             // 当前速率：按速率展示，单位随量级切换；已过滤零速率进程。
             Text(SpeedFormatter.formatForStatusBar(process.totalSpeed))

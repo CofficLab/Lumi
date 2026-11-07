@@ -96,6 +96,61 @@ struct ProcessMonitorParsingTests {
         #expect(service.hasPublishedSample)
     }
 
+    @Test("同名进程聚合为一条并标注份数，本应用组单独标记")
+    func sameNameProcessesAggregateWithCountAndSelfFlag() async throws {
+        let selfPID = Int(getpid())
+        let service = ProcessMonitorService.makeForTesting(nettopLauncher: { nil }) { pid in
+            switch pid {
+            case 100, 101: return "Same Name Helper"
+            case selfPID: return "Lumi"
+            default: return nil
+            }
+        }
+
+        service.processOutput(sample(rows: [
+            ("Trunc.Helper", 100, 100, 100),
+            ("Trunc.Helper", 101, 100, 100),
+            ("Lumi", selfPID, 50, 50),
+        ]))
+        service.flushBuffer()
+        service.processOutput(sample(rows: [
+            ("Trunc.Helper", 100, 1024, 0),
+            ("Trunc.Helper", 101, 1024, 0),
+            ("Lumi", selfPID, 512, 0),
+        ]))
+        service.flushBuffer()
+        try await Task.sleep(nanoseconds: 100_000_000)
+
+        #expect(service.processes.count == 2)
+
+        let helper = try #require(service.processes.first { $0.name == "Same Name Helper" })
+        #expect(helper.instanceCount == 2)
+        #expect(helper.downloadSpeed == 2048)
+        #expect(!helper.isCurrentApp)
+
+        let lumi = try #require(service.processes.first { $0.name == "Lumi" })
+        #expect(lumi.isCurrentApp)
+        #expect(lumi.instanceCount == 1)
+    }
+
+    @Test("单次 flush 合并多帧时按采样跨度归一化速率")
+    func coalescedFramesNormalizeBySampleSpan() async throws {
+        let service = makeService()
+
+        // 首帧只用于建立该 PID 的基线，会被丢弃。
+        service.processOutput(sample(rows: [("Lumi", 4242, 900_000_000, 0)]))
+        service.flushBuffer()
+
+        // 一次输出里包含两帧，每帧各 1024 字节：合计 2048 字节覆盖 2 秒。
+        var text = header + "Lumi.4242,1024,0,\n"
+        text += header + "Lumi.4242,1024,0,\n"
+        service.processOutput(Data(text.utf8))
+        service.flushBuffer()
+        try await Task.sleep(nanoseconds: 100_000_000)
+
+        #expect(service.processes.first?.downloadSpeed == 1024)
+    }
+
     private func sample(name: String, pid: Int, bytesIn: Double, bytesOut: Double) -> Data {
         sample(rows: [(name, pid, bytesIn, bytesOut)])
     }

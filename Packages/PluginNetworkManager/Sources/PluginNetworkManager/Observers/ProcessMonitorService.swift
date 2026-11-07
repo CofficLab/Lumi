@@ -10,7 +10,8 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
     public nonisolated static let verbose: Bool = false
     
     // Sampling interval
-    private let interval: TimeInterval = 1.0
+    nonisolated static let samplingInterval: TimeInterval = 1.0
+    private var interval: TimeInterval { Self.samplingInterval }
     
     // 3-point moving average queue
     private var historyBuffer: [String: [(Double, Double)]] = [:] // Name -> [(In, Out)]
@@ -25,6 +26,12 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
     /// 而不是本采样周期内的 delta。首帧必须丢弃，否则历史累计字节会被
     /// 当成「1 秒速度」，并被移动平均保留数秒。
     private var seenPIDs: Set<Int> = []
+
+    /// 当前 nettop 采样帧序号。
+    ///
+    /// nettop 每个采样周期输出一次表头；一次 flush 可能合并多帧，
+    /// 需要用帧数还原每段 delta 实际覆盖的采样跨度。
+    private var frameIndex = 0
 
     /// 图标解析器。
     ///
@@ -240,6 +247,7 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
         historyBuffer.removeAll()
         processDetails.removeAll()
         seenPIDs.removeAll()
+        frameIndex = 0
         nameResolver.removeAll()
         iconResolver.clearCache()
         processes.removeAll()
@@ -272,8 +280,12 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
         }
         
         for line in lines.dropLast() {
-            // Skip Header or empty lines
-            if line.contains("bytes_in") || line.isEmpty { continue }
+            // 每帧表头出现一次：据此递增帧序号，用于归一化跨帧合并的 delta。
+            if line.contains("bytes_in") {
+                frameIndex += 1
+                continue
+            }
+            if line.isEmpty { continue }
             
             let components = line.components(separatedBy: ",")
             
@@ -301,7 +313,13 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
 
                         let fallbackName = nameComponents.dropLast().joined(separator: ".")
                         let displayName = nameResolver.resolve(pid: pid, fallback: fallbackName)
-                        rawDataBuffer.append(RawProcessData(pid: pid, name: displayName, bytesIn: bytesIn, bytesOut: bytesOut))
+                        rawDataBuffer.append(RawProcessData(
+                            pid: pid,
+                            name: displayName,
+                            bytesIn: bytesIn,
+                            bytesOut: bytesOut,
+                            frameIndex: frameIndex
+                        ))
                     }
                 }
             }
@@ -327,26 +345,46 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
         let name: String
         let bytesIn: Double
         let bytesOut: Double
+        /// 该行所属的 nettop 采样帧序号。
+        let frameIndex: Int
     }
-    
+
+    /// 按进程名聚合，并把每个 PID 的整段 delta 归一化到实际覆盖的采样跨度。
+    ///
+    /// 正常情况下一次 flush 只含一帧（1 秒）；若主线程繁忙导致一次 flush 合并了
+    /// 多帧，同一 PID 的 delta 会覆盖多秒。这里用该 PID 在本批次出现的帧数还原
+    /// 速率，避免「单次 flush 合并多个采样」造成流量高估。
+    ///
+    /// 已知限制：若 nettop 对某个 PID 重新输出的首行又退回累计值（例如进程短暂
+    /// 从输出中消失后再次出现），本批次无法识别，该进程速率可能失真；本地无法
+    /// 稳定复现该场景，因此未做额外处理，记录为已知限制。
     private func aggregateAndPublish(_ rawData: [RawProcessData]) {
-        // 1. Aggregate multi-instances (by name)
-        // Requirement: If multiple instances of the same process name appear, fold them into one record and accumulate bandwidth
-        // But do we need to keep PID? If aggregated, PID can be the main PID or -1.
-        // User requirements say "Table columns: icon, name, PID...", if aggregated, what to show for PID?
-        // Usually show "Multi-instance" or main process PID.
-        // Here we aggregate by Name, and take the largest PID (usually the latest started) or the first one.
-        
-        var aggregated: [String: (pid: Int, bytesIn: Double, bytesOut: Double)] = [:]
-        
+        // 1. 先按 PID 汇总：记录该 PID 覆盖的帧集合与总字节。
+        struct PIDSample {
+            var name: String
+            var frames: Set<Int>
+            var bytesIn: Double
+            var bytesOut: Double
+        }
+
+        var perPID: [Int: PIDSample] = [:]
+
         // 收集需要取图标的新 PID；以 PID 去重，避免同一批次里重复入队。
         var newPIDs: [Int: String] = [:]
 
         for item in rawData {
-            if let existing = aggregated[item.name] {
-                aggregated[item.name] = (existing.pid, existing.bytesIn + item.bytesIn, existing.bytesOut + item.bytesOut)
+            if var sample = perPID[item.pid] {
+                sample.bytesIn += item.bytesIn
+                sample.bytesOut += item.bytesOut
+                sample.frames.insert(item.frameIndex)
+                perPID[item.pid] = sample
             } else {
-                aggregated[item.name] = (item.pid, item.bytesIn, item.bytesOut)
+                perPID[item.pid] = PIDSample(
+                    name: item.name,
+                    frames: [item.frameIndex],
+                    bytesIn: item.bytesIn,
+                    bytesOut: item.bytesOut
+                )
             }
 
             // PID 被系统回收后可能对应新进程：名称不一致时视为缓存失效。
@@ -384,17 +422,40 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
             }
         }
         
-        // 2. Simple Moving Average (SMA)
+        // 2. 归一化到采样跨度：frames.count 个 delta 覆盖 frames.count × interval 秒。
+        var aggregated: [String: (pid: Int, download: Double, upload: Double, count: Int, icon: NSImage?, isCurrentApp: Bool)] = [:]
+        let selfPID = Int(getpid())
+
+        for (pid, sample) in perPID {
+            let coveredFrames = max(sample.frames.count, 1)
+            let coverageSeconds = Double(coveredFrames) * interval
+            let download = sample.bytesIn / coverageSeconds
+            let upload = sample.bytesOut / coverageSeconds
+            let icon = processDetails[pid]?.icon
+            let isSelf = pid == selfPID
+
+            if var existing = aggregated[sample.name] {
+                existing.download += download
+                existing.upload += upload
+                existing.count += 1
+                existing.pid = min(existing.pid, pid)
+                if existing.icon == nil { existing.icon = icon }
+                existing.isCurrentApp = existing.isCurrentApp || isSelf
+                aggregated[sample.name] = existing
+            } else {
+                aggregated[sample.name] = (pid, download, upload, 1, icon, isSelf)
+            }
+        }
+
+        // 3. 平滑只作用于展示值：首帧立即发布（按已有样本取均值），不额外等待。
         var resultProcesses: [NetworkProcess] = []
         
         for (name, data) in aggregated {
-            let pid = data.pid
-            
             // Get history data
             var history = historyBuffer[name] ?? []
             
             // Add new data point
-            history.append((data.bytesIn, data.bytesOut))
+            history.append((data.download, data.upload))
             
             // Maintain window size
             if history.count > smoothingWindow {
@@ -412,14 +473,15 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
             
             // 只有当速度 > 0 才创建记录，或者为了列表稳定，保留最近活跃的
             if avgIn > 0 || avgOut > 0 {
-                let icon = processDetails[pid]?.icon
                 let process = NetworkProcess(
-                    id: pid,
+                    id: data.pid,
                     name: name,
-                    icon: icon,
+                    icon: data.icon,
                     downloadSpeed: avgIn,
                     uploadSpeed: avgOut,
-                    timestamp: Date()
+                    timestamp: Date(),
+                    instanceCount: data.count,
+                    isCurrentApp: data.isCurrentApp
                 )
                 resultProcesses.append(process)
             }
