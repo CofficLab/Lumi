@@ -27,6 +27,12 @@ public struct ConversationSummarizer: @unchecked Sendable {
     public static let maxCharsPerMessage = 4_000
     /// 单个文本附件注入摘要的正文截断上限，避免一个附件挤占整段历史预算。
     public static let maxAttachmentTextChars = 1_500
+    /// 单次工具调用的参数截断上限。
+    public static let maxToolArgumentChars = 800
+    /// 单条工具结果的截断上限，避免大型输出挤占整段历史预算。
+    public static let maxToolResultChars = 1_500
+    /// 回退摘要中保留的最近工具事件数。
+    public static let maxToolEvents = 12
     /// 参与摘要的最大消息条数（取最近 N 条）。
     public static let maxMessages = 60
 
@@ -88,17 +94,20 @@ public struct ConversationSummarizer: @unchecked Sendable {
     // MARK: - Private
 
     static func filteredMessages(_ history: [Message]) -> [Message] {
+        let toolNames = toolNamesByCallID(history)
         let visible = history
-            .filter { $0.role == .user || $0.role == .assistant }
+            .filter { $0.role == .user || $0.role == .assistant || $0.role == .tool }
             .compactMap { message -> Message? in
-                guard var text = summaryText(for: message) else { return nil }
-                guard text.count > Self.maxCharsPerMessage else {
+                guard var text = summaryText(for: message, toolNames: toolNames) else { return nil }
+                // 工具结果单独限流：一次命令输出可能远大于普通正文。
+                let limit = message.role == .tool ? Self.maxToolResultChars : Self.maxCharsPerMessage
+                guard text.count > limit else {
                     guard text != message.content else { return message }
                     var copy = message
                     copy.content = text
                     return copy
                 }
-                let head = text.prefix(Self.maxCharsPerMessage)
+                let head = text.prefix(limit)
                 text = "\(head)…[truncated]"
                 var copy = message
                 copy.content = text
@@ -107,20 +116,55 @@ public struct ConversationSummarizer: @unchecked Sendable {
         return Array(visible.suffix(Self.maxMessages))
     }
 
-    /// 单条消息用于摘要的文字：正文非空，或带有已发送的附件时才算有效历史。
+    /// 工具调用 ID 到工具名的映射，用于给工具结果标注来源。
+    static func toolNamesByCallID(_ history: [Message]) -> [String: String] {
+        var names: [String: String] = [:]
+        for message in history {
+            for call in message.toolCalls ?? [] {
+                names[call.id] = call.name
+            }
+        }
+        return names
+    }
+
+    /// 单条消息用于摘要的文字：正文非空，或带有已发送的附件、工具调用时才算有效历史。
     ///
     /// 附件内容只做文字化描述，不把图片 base64 混入提示词；文本附件附带截断后的
     /// 正文，二进制附件给出文件名、类型和本地路径，避免附件里的需求被整体忽略。
+    /// 工具调用与工具结果同样文字化，使关键发现、修改和失败原因能延续到新对话。
     /// 没有附件时返回原始正文，保持既有截断行为不变。
-    static func summaryText(for message: Message) -> String? {
+    static func summaryText(
+        for message: Message,
+        toolNames: [String: String] = [:]
+    ) -> String? {
         let attachments = attachmentDescriptions(from: message.metadata)
         let hasContent = !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        guard hasContent || !attachments.isEmpty else { return nil }
-        guard !attachments.isEmpty else { return message.content }
 
-        let parts = ([message.content] + attachments)
-            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        var parts: [String] = []
+        if hasContent {
+            parts.append(message.content)
+        }
+        parts.append(contentsOf: attachments)
+
+        if message.role == .tool {
+            let name = message.toolCallID.flatMap { toolNames[$0] }
+            let label = name.map { "[Tool result for \($0)]" } ?? "[Tool result]"
+            parts.insert(label, at: 0)
+        }
+        if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
+            parts.append(contentsOf: toolCalls.map(toolCallDescription))
+        }
+
+        guard !parts.isEmpty else { return nil }
         return parts.joined(separator: "\n\n")
+    }
+
+    /// 一次工具调用的文字化描述，参数按上限截断。
+    static func toolCallDescription(_ call: MessageToolCall) -> String {
+        let arguments = call.arguments.count > Self.maxToolArgumentChars
+            ? String(call.arguments.prefix(Self.maxToolArgumentChars)) + "…[truncated]"
+            : call.arguments
+        return "[Tool call: \(call.name)]\n\(arguments)"
     }
 
     /// 把消息 metadata 中的附件渲染成摘要可用的文字。
@@ -165,11 +209,26 @@ public struct ConversationSummarizer: @unchecked Sendable {
             .content
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .prefix(800)
+        // 工具动作往往承载唯一发现、修改或失败原因，回退摘要也要带上最近几条。
+        let toolEvents = history
+            .filter { $0.role == .tool || !($0.toolCalls ?? []).isEmpty }
+            .suffix(Self.maxToolEvents)
+            .compactMap { message -> String? in
+                let text = message.content.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !text.isEmpty else { return nil }
+                let bounded = text.count > 300 ? String(text.prefix(300)) + "…" : text
+                return "• \(bounded)"
+            }
 
         var lines: [String] = []
         if !userTurns.isEmpty {
             lines.append("Recent requests:")
             lines.append(contentsOf: userTurns)
+        }
+        if !toolEvents.isEmpty {
+            lines.append("")
+            lines.append("Recent tool activity:")
+            lines.append(contentsOf: toolEvents)
         }
         if let lastAssistant, !lastAssistant.isEmpty {
             lines.append("")
@@ -192,7 +251,15 @@ public struct ConversationSummarizer: @unchecked Sendable {
 
     nonisolated static func renderHistory(_ messages: [Message]) -> String {
         messages.map { message in
-            let prefix = message.role == .user ? "User" : "Assistant"
+            let prefix: String
+            switch message.role {
+            case .user:
+                prefix = "User"
+            case .tool:
+                prefix = "Tool"
+            default:
+                prefix = "Assistant"
+            }
             return "\(prefix): \(message.content)"
         }.joined(separator: "\n\n")
     }
