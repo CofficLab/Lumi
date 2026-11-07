@@ -262,11 +262,12 @@ public actor SkillCreationService {
         lines.append("description: \(metadata.description)")
         lines.append("---")
         lines.append("")
-        lines.append("# \(metadata.title)")
-        if !body.isEmpty {
-            if body.hasPrefix("# ") {
-                lines.append(body)
-            } else {
+        if body.hasPrefix("# ") {
+            // 正文自带一级标题，仅补 frontmatter，避免生成重复 H1。
+            lines.append(body)
+        } else {
+            lines.append("# \(metadata.title)")
+            if !body.isEmpty {
                 lines.append("")
                 lines.append(body)
             }

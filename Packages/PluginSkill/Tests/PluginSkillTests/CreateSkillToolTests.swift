@@ -61,6 +61,67 @@ struct CreateSkillToolTests {
         #expect(scanned[0].triggers == ["swiftui", "swift"])
     }
 
+    @Test("正文已带一级标题时不再追加 title，只保留一个 H1")
+    func keepsExistingH1WithoutDuplicatingTitle() async throws {
+        let project = try makeProjectDir()
+        defer { try? FileManager.default.removeItem(at: project) }
+
+        let tool = CreateSkillTool()
+        let output = try await tool.execute(arguments: arguments([
+            "project_path": project.path,
+            "name": "existing-heading",
+            "title": "Generated Title",
+            "description": "示例",
+            "content": "# Existing Title\n\nBody",
+        ]))
+
+        let data = try #require(output.data(using: .utf8))
+        let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect(json["success"] as? Bool == true)
+
+        let skillMD = try String(
+            contentsOf: project.appendingPathComponent(".lumi/skills/existing-heading/SKILL.md"),
+            encoding: .utf8
+        )
+        #expect(skillMD.contains("# Existing Title"))
+        #expect(!skillMD.contains("# Generated Title"))
+        let headings = skillMD.split(separator: "\n").filter { $0.hasPrefix("# ") }
+        #expect(headings.count == 1)
+    }
+
+    @Test("makeSkillMarkdown 边界情况：空白、空正文、无空格 #、多个 H1")
+    func makeSkillMarkdownEdgeCases() {
+        let metadata = SkillMetadata(name: "edge", title: "Generated Title", description: "d")
+
+        // 前导空白与换行会被裁剪，仍按已有 H1 处理。
+        let leadingWhitespace = SkillCreationService.makeSkillMarkdown(
+            metadata: metadata,
+            content: "\n\n  # Existing Title\n\nBody"
+        )
+        #expect(!leadingWhitespace.contains("# Generated Title"))
+        #expect(leadingWhitespace.contains("# Existing Title"))
+
+        // `#` 后没有空格不是合法 H1，仍补标题。
+        let hashWithoutSpace = SkillCreationService.makeSkillMarkdown(
+            metadata: metadata,
+            content: "#Heading\n\nBody"
+        )
+        #expect(hashWithoutSpace.contains("# Generated Title"))
+
+        // 空正文只写 frontmatter 与标题。
+        let emptyBody = SkillCreationService.makeSkillMarkdown(metadata: metadata, content: "")
+        #expect(emptyBody.contains("# Generated Title"))
+
+        // 正文含多个 H1 时原样保留，不再额外添加 title。
+        let multipleH1 = SkillCreationService.makeSkillMarkdown(
+            metadata: metadata,
+            content: "# One\n\n# Two"
+        )
+        #expect(multipleH1.contains("# One"))
+        #expect(multipleH1.contains("# Two"))
+        #expect(!multipleH1.contains("# Generated Title"))
+    }
+
     @Test("技能名自动规范化为 kebab-case，title 缺省回落为 name")
     func normalizesName() async throws {
         let project = try makeProjectDir()
