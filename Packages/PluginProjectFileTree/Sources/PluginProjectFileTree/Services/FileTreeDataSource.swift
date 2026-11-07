@@ -313,7 +313,7 @@ final class FileTreeDataSource: SuperLog {
         if expandedPaths.contains(relativePath) {
             expandedPaths.remove(relativePath)
             expandedPathStore.removeExpandedPath(relativePath, for: projectRootPath)
-            collapseChildren(of: url)
+            collapseDescendants(of: relativePath)
         } else {
             expandedPaths.insert(relativePath)
             expandedPathStore.addExpandedPath(relativePath, for: projectRootPath)
@@ -321,9 +321,18 @@ final class FileTreeDataSource: SuperLog {
         rebuildItems()
     }
 
-    private func collapseChildren(of url: URL) {
-        let urlPath = url.path
-        expandedPaths = expandedPaths.filter { !$0.hasPrefix(urlPath) }
+    /// 清除指定目录所有后代的展开状态（含持久化）。
+    ///
+    /// `expandedPaths` 存的是项目相对路径（如 `/src/Views`），不能用绝对路径做前缀匹配，
+    /// 否则后代路径永远命中不了。补上路径分隔符，避免 `/src/Views` 误伤 `/src/ViewsOld`。
+    private func collapseDescendants(of relativePath: String) {
+        let prefix = relativePath.hasSuffix("/") ? relativePath : relativePath + "/"
+        let descendants = expandedPaths.filter { $0.hasPrefix(prefix) }
+        guard !descendants.isEmpty else { return }
+        expandedPaths.subtract(descendants)
+        for path in descendants {
+            expandedPathStore.removeExpandedPath(path, for: projectRootPath)
+        }
     }
 
     /// 精准刷新：仅重载指定目录的子节点

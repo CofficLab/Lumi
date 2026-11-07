@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFileTree 的实现包，包含 14 个主要类型；当前测试覆盖 2 条用例。
+PluginProjectFileTree 的实现包，包含 14 个主要类型；当前测试覆盖 3 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 2
+测试文件: 2 个，用例总数: 3
 
 核心组件（源码目录）:
 - `Models/`
@@ -38,6 +38,7 @@ PluginProjectFileTree 的实现包，包含 14 个主要类型；当前测试覆
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **ProjectFileTreePlugin**（2 条）：由 `explorerTabFollowsCurrentProject`、`gitStatusProviderDrainsLargeOutput` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **FileTreeDataSource**（1 条）：由 `collapsingParentClearsDescendantExpansion` 锁定；改动展开/折叠状态或展开路径持久化时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -45,27 +46,28 @@ PluginProjectFileTree 的实现包，包含 14 个主要类型；当前测试覆
 |----|------|------|----------|----------|----------|------|------|----------|
 | 1 | ProjectFileTreePlugin | 文件树仅在存在当前项目时显示 Explorer | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `explorerTabFollowsCurrentProject` |
 | 2 | ProjectFileTreePlugin | Git 状态扫描可处理超过 pipe 缓冲区的大量输出 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gitStatusProviderDrainsLargeOutput` |
+| 3 | FileTreeDataSource | 折叠父目录会同时清除后代的展开状态与持久化记录 | 已展开 `src` 及其子目录 `src/Views` | 折叠 `src` 后再次展开 | 子目录保持折叠，持久化中不再包含 `/src/Views` | P0 | ✅ 已覆盖 | `collapsingParentClearsDescendantExpansion` |
 
-> 说明：全部 **2 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **3 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
+- P0: 已覆盖 1 / 1
 - P1: 已覆盖 2 / 2
 - P2: 已覆盖 0 / 0
-- **合计: 2 / 2**（仅表示清单场景，非源码覆盖率）
+- **合计: 3 / 3**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
 - **P1**: 其余功能性用例（2 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 2 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 3 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
