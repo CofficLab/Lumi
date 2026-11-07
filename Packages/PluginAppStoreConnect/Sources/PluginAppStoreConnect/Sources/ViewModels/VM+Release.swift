@@ -132,7 +132,7 @@ extension VM {
             return false
         }
         await runBusy(forceRefresh: true) {
-            try await loadScreenshots()
+            try await loadScreenshots(forceRefresh: true)
         }
         if !failures.isEmpty {
             errorMessage = failures.joined(separator: "\n")
@@ -144,7 +144,7 @@ extension VM {
         guard !isReadOnlyVersion else { return }
         await runBusy(forceRefresh: true) {
             try await client.deleteScreenshot(id: screenshot.id)
-            try await loadScreenshots()
+            try await loadScreenshots(forceRefresh: true)
         }
     }
 
