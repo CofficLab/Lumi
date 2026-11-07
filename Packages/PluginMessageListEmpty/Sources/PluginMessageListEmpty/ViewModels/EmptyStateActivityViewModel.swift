@@ -46,8 +46,7 @@ enum EmptyStateActivityScope: String, CaseIterable, Equatable, Sendable {
 /// statistics from ``MessageManaging`` so the strip reflects the user's actual
 /// history rather than the empty conversation being displayed.
 @MainActor
-@Observable
-final class EmptyStateActivityViewModel {
+final class EmptyStateActivityViewModel: ObservableObject {
     /// How many trailing calendar days the strip covers.
     ///
     /// `nonisolated` because it is an immutable literal that the pure bucketing
@@ -66,19 +65,19 @@ final class EmptyStateActivityViewModel {
     private var loadGeneration = 0
 
     /// 用户选择的统计范围。
-    private(set) var scope: EmptyStateActivityScope = .project
+    @Published private(set) var scope: EmptyStateActivityScope = .project
 
-    private(set) var days: [EmptyStateActivityDay] = []
-    private(set) var isLoading = false
+    @Published private(set) var days: [EmptyStateActivityDay] = []
+    @Published private(set) var isLoading = false
 
     /// Total messages inside the window. `nil` until the first load resolves.
-    private(set) var totalMessages: Int?
+    @Published private(set) var totalMessages: Int?
 
     /// Daily token consumption over the same window as ``days``.
-    private(set) var tokenDays: [EmptyStateTokenDay] = []
+    @Published private(set) var tokenDays: [EmptyStateTokenDay] = []
 
     /// Tokens consumed inside the window, or `nil` before the first load.
-    private(set) var totalTokens: Int?
+    @Published private(set) var totalTokens: Int?
 
     /// Zero tokens means the trend line would be a flat axis with nothing to
     /// say, so the chart is omitted rather than drawn empty.

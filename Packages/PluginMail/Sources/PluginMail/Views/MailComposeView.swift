@@ -42,7 +42,7 @@ struct MailComposeView: View {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .stroke(isDropTargeted ? theme.primary : .clear, lineWidth: 2)
         )
-        .onChange(of: viewModel.phase) { _, phase in
+        .onChange(of: viewModel.phase) { phase in
             if phase == .sent {
                 onClose()
             }
@@ -97,7 +97,7 @@ struct MailComposeView: View {
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
                             .fill(theme.appListRowBackground)
                     )
-                    .onChange(of: viewModel.body) { _, _ in
+                    .onChange(of: viewModel.body) { _ in
                         viewModel.saveDraftNow()
                     }
             }

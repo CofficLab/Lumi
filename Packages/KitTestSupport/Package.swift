@@ -12,7 +12,7 @@ import PackageDescription
 // testTarget，各插件在生产代码里就无从引用。边界必须切开。
 let package = Package(
     name: "KitTestSupport",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("13.1"), .iOS(.v17)],
     products: [
         .library(name: "KitTestIsolation", targets: ["KitTestIsolation"]),
         .library(name: "KitTestSupport", targets: ["KitTestSupport"]),
@@ -22,7 +22,7 @@ let package = Package(
         // 避免引入本包时把它们连带提升到更高版本。
         // 只需 `StorageProviding` 协议本身——`allVersionDataRootDirectories`
         // 与 `dataRootDirectorySizeInBytes` 都有协议默认实现。
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
+        .package(path: "../../Vendor/LumiProviders"),
     ],
     targets: [
         .target(

@@ -72,7 +72,7 @@ public struct SettingsView: View {
             await loadOpenedFiles()
         }
         .onAppear { seedSelectionIfNeeded() }
-        .onChange(of: projectPaths) { _, _ in syncSelectionAfterProjectChange() }
+        .onChange(of: projectPaths) { _ in syncSelectionAfterProjectChange() }
     }
 
     // MARK: - Header

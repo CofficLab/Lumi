@@ -34,7 +34,7 @@ struct PropertyPanelView: View {
             }
         }
         .background(Color(nsColor: .controlBackgroundColor))
-        .onChange(of: viewModel.selectedComponent?.id) { _, _ in
+        .onChange(of: viewModel.selectedComponent?.id) { _ in
             syncFromSelection()
         }
         .onAppear { syncFromSelection() }

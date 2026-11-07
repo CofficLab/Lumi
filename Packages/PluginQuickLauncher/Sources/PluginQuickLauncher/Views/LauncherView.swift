@@ -45,8 +45,25 @@ public struct LauncherView: View {
         .onAppear {
             isInputFocused = true
         }
-        .onKeyPress { keyPress in
-            handleKeyPress(keyPress)
+        // macOS 13 兼容实现：`onKeyPress` 是 macOS 14 独占 API。上下箭头用
+        // SwiftUI 的 `onMoveCommand`（macOS 11+）区分方向，Esc 用
+        // `onExitCommand`（macOS 11+），二者合起来覆盖原 `onKeyPress` 的行为。
+        .onMoveCommand { direction in
+            switch direction {
+            case .up:
+                if searchModel.selectedIndex > 0 {
+                    searchModel.selectedIndex -= 1
+                }
+            case .down:
+                if searchModel.selectedIndex < searchModel.results.count - 1 {
+                    searchModel.selectedIndex += 1
+                }
+            default:
+                break
+            }
+        }
+        .onExitCommand {
+            dismiss()
         }
     }
 
@@ -199,30 +216,6 @@ public struct LauncherView: View {
         LauncherWindowController.shared.hide()
     }
 
-    // MARK: - Keyboard
-
-    private func handleKeyPress(_ keyPress: KeyPress) -> KeyPress.Result {
-        switch keyPress.key {
-        case .upArrow:
-            if searchModel.selectedIndex > 0 {
-                searchModel.selectedIndex -= 1
-            }
-            return .handled
-
-        case .downArrow:
-            if searchModel.selectedIndex < searchModel.results.count - 1 {
-                searchModel.selectedIndex += 1
-            }
-            return .handled
-
-        case .escape:
-            dismiss()
-            return .handled
-
-        default:
-            return .ignored
-        }
-    }
 }
 
 // MARK: - Section Header

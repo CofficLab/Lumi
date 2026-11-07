@@ -5,7 +5,7 @@ let package = Package(
     name: "KitMCP",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("13.1"),
         .iOS(.v17)
     ],
     products: [

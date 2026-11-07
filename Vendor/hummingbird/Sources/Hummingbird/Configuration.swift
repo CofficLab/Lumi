@@ -1,0 +1,133 @@
+//
+// This source file is part of the Hummingbird server framework project
+// Copyright (c) the Hummingbird authors
+//
+// See LICENSE.txt for license information
+// SPDX-License-Identifier: Apache-2.0
+//
+
+public import HummingbirdCore
+import Logging
+import NIOCore
+
+#if canImport(Network)
+import Network
+#endif
+
+// MARK: Configuration
+
+/// Application configuration
+public struct ApplicationConfiguration: Sendable {
+    // MARK: Member variables
+
+    /// Bind address for server
+    public var address: BindAddress
+    /// Server name to return in "server" header
+    public var serverName: String?
+    /// Defines the maximum length for the queue of pending connections
+    public var backlog: Int
+    /// Allows socket to be bound to an address that is already in use.
+    public var reuseAddress: Bool
+    /// Object deciding on when we should accept new connection. Use ``HummingbirdCore/MaximumAvailableConnections``
+    /// to set the maximum allowed connections.
+    public var availableConnectionsDelegate: (any AvailableConnectionsDelegate)?
+    #if canImport(Network)
+    /// TLS options for NIO Transport services
+    public var tlsOptions: TSTLSOptions
+    #endif
+
+    // MARK: Initialization
+
+    /// Initialize Application configuration
+    ///
+    /// - Parameters:
+    ///   - address: Bind address for server
+    ///   - serverName: Server name to return in "server" header
+    ///   - backlog: the maximum length for the queue of pending connections.  If a connection request
+    ///         arrives with the queue full, the client may receive an error with an indication of ECONNREFUSE
+    ///   - reuseAddress: Allows socket to be bound to an address that is already in use.
+    ///   - availableConnectionsDelegate: Object deciding on when we should accept new connection. Use
+    ///         ``HummingbirdCore/MaximumAvailableConnections`` to set the maximum allowed connections.
+    public init(
+        address: BindAddress = .hostname(),
+        serverName: String? = nil,
+        backlog: Int = 256,
+        reuseAddress: Bool = true,
+        availableConnectionsDelegate: (any AvailableConnectionsDelegate)? = nil
+    ) {
+        self.address = address
+        self.serverName = serverName
+        self.backlog = backlog
+        self.reuseAddress = reuseAddress
+        self.availableConnectionsDelegate = availableConnectionsDelegate
+        #if canImport(Network)
+        self.tlsOptions = .none
+        #endif
+    }
+
+    #if canImport(Network)
+    /// Initialize Application configuration
+    ///
+    /// - Parameters:
+    ///   - address: Bind address for server
+    ///   - serverName: Server name to return in "server" header
+    ///   - reuseAddress: Allows socket to be bound to an address that is already in use.
+    ///   - availableConnectionsDelegate: Object deciding on when we should accept new connection. Use
+    ///         ``HummingbirdCore/MaximumAvailableConnections`` to set the maximum allowed connections.
+    ///   - tlsOptions: TLS options for when you are using NIOTransportServices
+    public init(
+        address: BindAddress = .hostname(),
+        serverName: String? = nil,
+        reuseAddress: Bool = true,
+        availableConnectionsDelegate: (any AvailableConnectionsDelegate)? = nil,
+        tlsOptions: TSTLSOptions
+    ) {
+        self.address = address
+        self.serverName = serverName
+        self.backlog = 256  // not used by Network framework
+        self.reuseAddress = reuseAddress
+        self.availableConnectionsDelegate = availableConnectionsDelegate
+        self.tlsOptions = tlsOptions
+    }
+
+    #endif
+
+    /// Create new configuration struct with updated values
+    public func with(
+        address: BindAddress? = nil,
+        serverName: String? = nil,
+        backlog: Int? = nil,
+        reuseAddress: Bool? = nil
+    ) -> Self {
+        .init(
+            address: address ?? self.address,
+            serverName: serverName ?? self.serverName,
+            backlog: backlog ?? self.backlog,
+            reuseAddress: reuseAddress ?? self.reuseAddress
+        )
+    }
+
+    /// return HTTP server configuration
+    #if canImport(Network)
+    var httpServer: ServerConfiguration {
+        .init(
+            address: self.address,
+            serverName: self.serverName,
+            backlog: self.backlog,
+            reuseAddress: self.reuseAddress,
+            availableConnectionsDelegate: self.availableConnectionsDelegate,
+            tlsOptions: self.tlsOptions
+        )
+    }
+    #else
+    var httpServer: ServerConfiguration {
+        .init(
+            address: self.address,
+            serverName: self.serverName,
+            backlog: self.backlog,
+            reuseAddress: self.reuseAddress,
+            availableConnectionsDelegate: self.availableConnectionsDelegate
+        )
+    }
+    #endif
+}

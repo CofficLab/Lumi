@@ -5,7 +5,7 @@ let package = Package(
     name: "PluginAppUpdate",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("13.1"),
         .iOS(.v17)
     ],
     products: [
@@ -15,11 +15,11 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiProviders"),
+        .package(path: "../../Vendor/LumiKernel"),
+        .package(path: "../../Vendor/LumiLocalization"),
+        .package(path: "../../Vendor/LumiUI"),
+        .package(path: "../../Vendor/LumiLogging"),
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.10.0"),
         .package(path: "../KitTestSupport"),
     ],

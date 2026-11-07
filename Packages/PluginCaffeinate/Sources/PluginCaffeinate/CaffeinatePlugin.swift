@@ -67,12 +67,11 @@ public final class CaffeinatePlugin: SuperPlugin, PluginDataMigrating, SuperLog 
             }
         }
 
-        // 菜单栏弹窗（沿用旧版 menuBarPopupItems）。
-        if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
-            menuBar.addPopup(MenuBarPopupItem(id: "\(id).popup", title: name, order: order) {
-                CaffeinateMenuBarPopupView()
-            })
-        }
+        try contributeMenuBar(to: kernel)
+    }
+
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        try contributeMenuBar(to: kernel)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -81,12 +80,26 @@ public final class CaffeinatePlugin: SuperPlugin, PluginDataMigrating, SuperLog 
                 toolManager.remove(id: tool.name)
             }
         }
-        kernel.resolveProvider((any MenuBarProviding).self)?
-            .removeItems(ids: ["\(id).popup"])
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    }
+
+    private func contributeMenuBar(to kernel: KernelCoreContainer) throws {
+        guard let menuBar = kernel.resolveProvider((any MenuBarProviding).self) else { return }
+        let ownerID = id
+        try kernel.trackContribution {
+            menuBar.removeItems(ownedBy: ownerID)
+        }
+        menuBar.addPopup(MenuBarContribution(
+            id: "\(id).popup",
+            title: name,
+            order: order,
+            ownerPluginID: id
+        ) {
+            CaffeinateMenuBarPopupView()
+        })
     }
 
     // MARK: - Agent Tools

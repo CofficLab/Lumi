@@ -1,0 +1,168 @@
+//
+// This source file is part of the Hummingbird server framework project
+// Copyright (c) the Hummingbird authors
+//
+// See LICENSE.txt for license information
+// SPDX-License-Identifier: Apache-2.0
+//
+
+import HTTPTypes
+import HummingbirdCore
+import HummingbirdTesting
+import Logging
+import NIOCore
+import NIOSSL
+import ServiceLifecycle
+import UnixSignals
+
+public enum TestErrors: Error {
+    case timeout
+}
+
+/// Basic responder that just returns "Hello" in body
+@Sendable func helloResponder(to request: Request, responseWriter: consuming ResponseWriter, channel: any Channel) async throws {
+    let responseBody = channel.allocator.buffer(string: "Hello")
+    var bodyWriter = try await responseWriter.writeHead(.init(status: .ok))
+    try await bodyWriter.write(responseBody)
+    try await bodyWriter.finish(nil)
+}
+
+/// Helper function for testing a server
+func testServer<Value: Sendable>(
+    responder: @escaping HTTPChannelHandler.Responder,
+    httpChannelSetup: HTTPServerBuilder,
+    configuration: ServerConfiguration,
+    eventLoopGroup: any EventLoopGroup,
+    logger: Logger,
+    _ test: @escaping @Sendable (Int) async throws -> Value
+) async throws -> Value {
+    try await withThrowingTaskGroup(of: Void.self) { group in
+        let promise = Promise<Int>()
+        let server = try httpChannelSetup.buildServer(
+            configuration: configuration,
+            eventLoopGroup: eventLoopGroup,
+            logger: logger,
+            responder: responder,
+            onServerRunning: { await promise.complete($0.localAddress!.port!) }
+        )
+        let serviceGroup = ServiceGroup(
+            configuration: .init(
+                services: [server],
+                gracefulShutdownSignals: [.sigterm, .sigint],
+                logger: logger
+            )
+        )
+
+        group.addTask {
+            try await serviceGroup.run()
+        }
+        let value = try await test(promise.wait())
+        await serviceGroup.triggerGracefulShutdown()
+        return value
+    }
+}
+
+/// Helper function for test a server
+///
+/// Creates test client, runs test function abd ensures everything is
+/// shutdown correctly
+func testServer<Value: Sendable>(
+    responder: @escaping HTTPChannelHandler.Responder,
+    httpChannelSetup: HTTPServerBuilder = .http1(),
+    configuration: ServerConfiguration,
+    eventLoopGroup: any EventLoopGroup,
+    logger: Logger,
+    clientConfiguration: TestClient.Configuration = .init(),
+    test: @escaping @Sendable (TestClient) async throws -> Value
+) async throws -> Value {
+    try await withThrowingTaskGroup(of: Void.self) { group in
+        let promise = Promise<Int>()
+        let server = try httpChannelSetup.buildServer(
+            configuration: configuration,
+            eventLoopGroup: eventLoopGroup,
+            logger: logger,
+            responder: responder,
+            onServerRunning: { await promise.complete($0.localAddress!.port!) }
+        )
+        let serviceGroup = ServiceGroup(
+            configuration: .init(
+                services: [server],
+                gracefulShutdownSignals: [.sigterm, .sigint],
+                logger: logger
+            )
+        )
+
+        group.addTask {
+            try await serviceGroup.run()
+        }
+        let port = await promise.wait()
+        let client = TestClient(
+            host: "localhost",
+            port: port,
+            configuration: clientConfiguration
+        )
+        client.connect()
+        let value = try await test(client)
+        try? await client.shutdown()
+        await serviceGroup.triggerGracefulShutdown()
+        return value
+    }
+}
+
+/// Run process with a timeout
+/// - Parameters:
+///   - timeout: Amount of time before timeout error is thrown
+///   - process: Process to run
+func withTimeout(_ timeout: TimeAmount, _ process: @escaping @Sendable () async throws -> Void) async throws {
+    try await withThrowingTaskGroup(of: Void.self) { group in
+        group.addTask {
+            try await Task.sleep(nanoseconds: numericCast(timeout.nanoseconds))
+            throw TestErrors.timeout
+        }
+        group.addTask {
+            try await process()
+        }
+        try await group.next()
+        group.cancelAll()
+    }
+}
+
+/// Promise type.
+actor Promise<Value: Sendable> {
+    enum State {
+        case blocked([CheckedContinuation<Value, Never>])
+        case unblocked(Value)
+    }
+
+    var state: State
+
+    init() {
+        self.state = .blocked([])
+    }
+
+    /// wait from promise to be completed
+    func wait() async -> Value {
+        switch self.state {
+        case .blocked(var continuations):
+            return await withCheckedContinuation { cont in
+                continuations.append(cont)
+                self.state = .blocked(continuations)
+            }
+        case .unblocked(let value):
+            return value
+        }
+    }
+
+    /// complete promise with value
+    func complete(_ value: Value) {
+        switch self.state {
+        case .blocked(let continuations):
+            for cont in continuations {
+                cont.resume(returning: value)
+            }
+            self.state = .unblocked(value)
+        case .unblocked:
+            break
+        }
+    }
+}

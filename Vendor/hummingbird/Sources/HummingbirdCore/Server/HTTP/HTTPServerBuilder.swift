@@ -1,0 +1,89 @@
+//
+// This source file is part of the Hummingbird server framework project
+// Copyright (c) the Hummingbird authors
+//
+// See LICENSE.txt for license information
+// SPDX-License-Identifier: Apache-2.0
+//
+
+public import Logging
+public import NIOCore
+public import ServiceLifecycle
+
+/// Build server that takes an HTTP responder
+///
+/// Used when building an ``Hummingbird/Application``. It delays the building
+/// of the ``ServerChildChannel`` and ``Server`` until the HTTP responder has been built.
+public struct HTTPServerBuilder: Sendable {
+    /// build child channel from HTTP responder
+    package let buildChildChannel: @Sendable (@escaping HTTPChannelHandler.Responder) throws -> any ServerChildChannel
+
+    /// Initialize HTTPServerBuilder
+    /// - Parameter build: closure building child channel from HTTP responder
+    public init(_ build: @escaping @Sendable (@escaping HTTPChannelHandler.Responder) throws -> any ServerChildChannel) {
+        self.buildChildChannel = build
+    }
+
+    ///  Build server
+    /// - Parameters:
+    ///   - configuration: Server configuration
+    ///   - eventLoopGroup: EventLoopGroup used by server
+    ///   - logger: Logger used by server
+    ///   - responder: HTTP responder
+    ///   - onServerRunning: Closure to run once server is up and running
+    /// - Returns: Server Service
+    @available(hummingbird 2.0, *)
+    public func buildServer(
+        configuration: ServerConfiguration,
+        eventLoopGroup: any EventLoopGroup,
+        logger: Logger,
+        responder: @escaping HTTPChannelHandler.Responder,
+        onServerRunning: (@Sendable (any Channel) async -> Void)? = nil
+    ) throws -> any Service {
+        let childChannel = try buildChildChannel(responder)
+        return childChannel.server(configuration: configuration, onServerRunning: onServerRunning, eventLoopGroup: eventLoopGroup, logger: logger)
+    }
+}
+
+@available(hummingbird 2.0, *)
+extension HTTPServerBuilder {
+    ///  Return a `HTTPServerBuilder` that will build a HTTP1 server
+    ///
+    /// Use in ``Hummingbird/Application`` initialization.
+    /// ```
+    /// let app = Application(
+    ///     router: router,
+    ///     server: .http1()
+    /// )
+    /// ```
+    /// - Parameter additionalChannelHandlers: Additional channel handlers to add to channel pipeline after HTTP part decoding and
+    ///     before HTTP request processing
+    /// - Returns: HTTPServerBuilder builder
+    @available(*, deprecated, renamed: "http1(configuration:)")
+    public static func http1(
+        additionalChannelHandlers: @autoclosure @escaping @Sendable () -> [any RemovableChannelHandler]
+    ) -> HTTPServerBuilder {
+        .init { responder in
+            HTTP1Channel(responder: responder, additionalChannelHandlers: additionalChannelHandlers)
+        }
+    }
+
+    ///  Return a `HTTPServerBuilder` that will build a HTTP1 server
+    ///
+    /// Use in ``Hummingbird/Application`` initialization.
+    /// ```
+    /// let app = Application(
+    ///     router: router,
+    ///     server: .http1(configuration: .init(idleTimeout: .seconds(30)))
+    /// )
+    /// ```
+    /// - Parameter configuration: HTTP1 channel configuration
+    /// - Returns: HTTPServerBuilder builder
+    public static func http1(
+        configuration: HTTP1Channel.Configuration = .init()
+    ) -> HTTPServerBuilder {
+        .init { responder in
+            HTTP1Channel(responder: responder, configuration: configuration)
+        }
+    }
+}

@@ -3,6 +3,7 @@ import KernelCore
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
+import ProviderMenuBar
 import ProviderSettingView
 import SwiftUI
 import Testing
@@ -111,6 +112,29 @@ struct PluginDeviceTests {
         activityBar.activateItem(id: "\(plugin.id).entry")
 
         #expect(contentView.setCount == 1)
+    }
+
+    @Test("禁用自动撤回，重新启用恢复菜单栏贡献")
+    func disableAndEnableRestoresMenuBarContributions() async throws {
+        let kernel = KernelCoreContainer()
+        let menuBar = DefaultMenuBarProviding()
+        try kernel.registerProvider((any MenuBarProviding).self, menuBar)
+        let plugin = DevicePlugin()
+        try kernel.start(plugins: [plugin])
+        try await kernel.enablePlugin(id: plugin.id)
+
+        #expect(menuBar.contentItems.map(\.id) == ["\(plugin.id).metrics"])
+        #expect(menuBar.popupItems.map(\.id) == ["\(plugin.id).cpu", "\(plugin.id).memory"])
+
+        try await kernel.disablePlugin(id: plugin.id)
+        #expect(menuBar.contentItems.isEmpty)
+        #expect(menuBar.popupItems.isEmpty)
+
+        try await kernel.enablePlugin(id: plugin.id)
+        #expect(menuBar.contentItems.map(\.id) == ["\(plugin.id).metrics"])
+        #expect(menuBar.popupItems.map(\.id) == ["\(plugin.id).cpu", "\(plugin.id).memory"])
+
+        try kernel.stop()
     }
 
     @Test("DeviceData 采集静态系统信息")

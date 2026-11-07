@@ -20,7 +20,7 @@ struct ASCChatToolbarButton: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             ASCChatToolbarPopoverView(viewModel: viewModel)
         }
-        .onChange(of: viewModel.projectPath) { _, _ in
+        .onChange(of: viewModel.projectPath) { _ in
             // 项目切换：关闭弹层避免显示旧项目的版本数据。
             isPopoverPresented = false
         }

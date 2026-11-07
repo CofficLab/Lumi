@@ -44,7 +44,7 @@ public struct DesignerView: View {
         .onAppear {
             notifyDocumentAvailability()
         }
-        .onChange(of: viewModel.projectDocuments.count) { _, _ in
+        .onChange(of: viewModel.projectDocuments.count) { _ in
             notifyDocumentAvailability()
         }
     }

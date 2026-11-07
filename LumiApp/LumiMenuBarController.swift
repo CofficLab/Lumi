@@ -2,6 +2,7 @@ import AppKit
 import Combine
 import AppUpdatePlugin
 import KernelCore
+import MenuBarHostKit
 import ProviderLogo
 import ProviderMenuBar
 import SwiftUI
@@ -12,60 +13,27 @@ import SwiftUI
 /// width and height, including the two-line network view and device charts.
 @MainActor
 final class LumiMenuBarController: NSObject, ObservableObject {
-    private var statusItem: NSStatusItem?
-    private var hostingView: LumiMenuBarHostingView<LumiMenuBarStatusView>?
-    private var popover: NSPopover?
+    private let menuBarHost = MenuBarHost()
 
     func install(kernel: KernelCoreContainer) {
-        guard statusItem == nil else { return }
+        guard !menuBarHost.isInstalled else { return }
 
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        guard let button = item.button else { return }
-        button.title = ""
-        button.image = nil
-        button.target = self
-        button.action = #selector(togglePopover(_:))
-
-        let view = LumiMenuBarHostingView(
-            rootView: LumiMenuBarStatusView(
+        menuBarHost.install(
+            statusView: AnyView(LumiMenuBarStatusView(
                 logo: kernel.resolveProvider((any LogoProviding).self),
                 menuBar: kernel.resolveProvider((any MenuBarProviding).self)
+            )),
+            configuration: MenuBarHostConfiguration(
+                accessibilityIdentifier: "lumi.menu-bar",
+                accessibilityLabel: "Lumi"
             )
-        )
-        view.translatesAutoresizingMaskIntoConstraints = false
-        button.subviews.forEach { $0.removeFromSuperview() }
-        button.addSubview(view)
-        NSLayoutConstraint.activate([
-            view.leadingAnchor.constraint(equalTo: button.leadingAnchor),
-            view.trailingAnchor.constraint(equalTo: button.trailingAnchor),
-            view.centerYAnchor.constraint(equalTo: button.centerYAnchor),
-            view.heightAnchor.constraint(equalToConstant: 22)
-        ])
-
-        let popup = NSPopover()
-        popup.behavior = .transient
-        popup.animates = true
-        popup.contentViewController = NSHostingController(
-            rootView: LumiMenuBarPopoverHost(
+        ) { [weak self] in
+            AnyView(LumiMenuBarPopoverHost(
                 kernel: kernel,
-                onShowMainWindow: { self.showMainWindow() },
+                onShowMainWindow: { self?.showMainWindow() },
                 onCheckForUpdates: { UpdateService.shared.checkForUpdates() },
                 onQuit: { NSApp.terminate(nil) }
-            )
-        )
-
-        statusItem = item
-        hostingView = view
-        popover = popup
-    }
-
-    @objc private func togglePopover(_ sender: Any?) {
-        guard let button = statusItem?.button, let popover else { return }
-        if popover.isShown {
-            popover.performClose(sender)
-        } else {
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            popover.contentViewController?.view.window?.makeKey()
+            ))
         }
     }
 
@@ -74,12 +42,6 @@ final class LumiMenuBarController: NSObject, ObservableObject {
         NSApp.windows.first(where: { $0.identifier == LumiWindowIdentity.main })?
             .makeKeyAndOrderFront(nil)
     }
-}
-
-/// The legacy host deliberately lets mouse hit-testing fall through to the
-/// status button, while still allowing the hosted SwiftUI view to draw freely.
-final class LumiMenuBarHostingView<Content: View>: NSHostingView<Content> {
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
 
 struct LumiMenuBarStatusView: View {
@@ -176,14 +138,14 @@ final class ProviderRefreshModel: ObservableObject {
 /// 状态栏 Popover 的宿主外壳。插件只贡献其业务区块；应用级操作由宿主统一
 /// 提供，这与旧版 `MenuBarPopupView` 的职责划分一致。
 struct LumiMenuBarPopover: View {
-    let items: [MenuBarPopupItem]
+    let items: [MenuBarContribution]
     let onShowMainWindow: () -> Void
     let onCheckForUpdates: () -> Void
     let onQuit: () -> Void
 
     @Environment(\.dismiss) private var dismiss
 
-    private var sortedItems: [MenuBarPopupItem] {
+    private var sortedItems: [MenuBarContribution] {
         items.sorted {
             if $0.order == $1.order { return $0.id < $1.id }
             return $0.order < $1.order

@@ -58,7 +58,7 @@ struct MCPSettingsView: View {
                 selectedServerID = first.id
             }
         }
-        .onChange(of: registry.servers.count) { _, _ in
+        .onChange(of: registry.servers.count) { _ in
             if selectedServerID == nil, let first = registry.servers.first {
                 selectedServerID = first.id
             }

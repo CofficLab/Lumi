@@ -25,6 +25,9 @@
       "path": "Packages/KitBootstrapEnvironment",
     }, {
       "kind": "local",
+      "path": "Vendor/LumiProviders",
+    }, {
+      "kind": "local",
       "path": "Packages/FactoryLumi",
     }, {
       "kind": "local",
@@ -280,6 +283,10 @@
         }, {
           "package": "KitBootstrapEnvironment",
           "product-name": "KitBootstrapEnvironment",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": "LumiProviders",
+          "product-name": "MenuBarHostKit",
           "build-phase": { "build-phase": "frameworks" },
         }, {
           "package": "PluginAppUpdate",

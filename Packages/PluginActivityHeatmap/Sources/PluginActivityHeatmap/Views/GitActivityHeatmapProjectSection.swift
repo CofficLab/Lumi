@@ -73,7 +73,7 @@ struct GitActivityHeatmapProjectSection: View {
                 }
             }
         }
-        .onChange(of: projectPath) { _, path in
+        .onChange(of: projectPath) { path in
             viewModel.update(projectPath: path)
         }
         .task(id: projectPath) {

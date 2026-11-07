@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "ProviderMCP",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS("13.1")],
     products: [
         .library(name: "ProviderMCP", targets: ["ProviderMCP"]),
     ],

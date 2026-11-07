@@ -1,0 +1,137 @@
+name: BookletMakerUITests
+options:
+  bundleIdPrefix: com.coffic
+  deploymentTarget:
+    macOS: "14.0"
+    iOS: "17.0"
+  groupSortPosition: top
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: '6.0'
+    MACOSX_DEPLOYMENT_TARGET: '14.0'
+    CODE_SIGN_IDENTITY: '-'
+    CODE_SIGNING_REQUIRED: 'YES'
+    CODE_SIGNING_ALLOWED: 'YES'
+
+targets:
+  BookletMakerTestHost:
+    type: application
+    platform: macOS
+    sources:
+      - path: BookletMakerUITestHost/Sources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.coffic.bookletmaker.testhost
+        INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 Coffic Lab. All rights reserved."
+        INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.developer-tools"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - package: LumiPluginBookletMaker
+        product: PluginBookletMaker
+      - package: LumiPluginBookletMaker
+        product: BookletMakerCore
+      - package: LumiKernel
+        product: KernelCore
+      - package: LumiProviders
+        product: ProviderActivityBar
+      - package: LumiProviders
+        product: ProviderRailView
+      - package: LumiProviders
+        product: ProviderRootView
+      - package: LumiProviders
+        product: ProviderContentView
+      - package: LumiProviders
+        product: ProviderToolbar
+      - package: LumiProviders
+        product: ProviderStorage
+      - package: LumiProviders
+        product: ProviderDocsView
+      - package: LumiProviders
+        product: ProviderTheme
+      - package: LumiUI
+        product: LumiUI
+      - package: LumiLogging
+        product: LumiLoggingKit
+      - package: LumiLocalization
+        product: LumiLocalizationKit
+      - package: LumiThemePack
+        product: LumiThemePack
+
+  BookletMakerUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - path: BookletMakerUITestHost/UITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.coffic.bookletmaker.uitests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: BookletMakerTestHost
+
+  # ---- iOS ----
+  #
+  # iOS 侧不经过 Kernel：插件以 BookletMakerMobileRootView 的形态整体呈现，
+  # 因此宿主只需构造 BookletMakerMobileFeature 并挂载根视图，无需装配任何
+  # Provider。与 macOS 宿主的依赖列表刻意保持不同，不要互相照搬。
+
+  BookletMakerMobileTestHost:
+    type: application
+    platform: iOS
+    sources:
+      - path: BookletMakerUITestHost/Sources-ios
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.coffic.bookletmaker.mobile.testhost
+        GENERATE_INFOPLIST_FILE: YES
+        # 模拟器不需要签名，避免无证书环境下无法构建。
+        CODE_SIGNING_REQUIRED: 'NO'
+        CODE_SIGNING_ALLOWED: 'NO'
+        CODE_SIGN_IDENTITY: ''
+        TARGETED_DEVICE_FAMILY: '1'
+        SUPPORTS_MACCATALYST: 'NO'
+    dependencies:
+      - package: LumiPluginBookletMaker
+        product: PluginBookletMaker
+
+  BookletMakerMobileUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: BookletMakerUITestHost/MobileUITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.coffic.bookletmaker.mobile.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_REQUIRED: 'NO'
+        CODE_SIGNING_ALLOWED: 'NO'
+        CODE_SIGN_IDENTITY: ''
+        TARGETED_DEVICE_FAMILY: '1'
+        SUPPORTS_MACCATALYST: 'NO'
+    dependencies:
+      - target: BookletMakerMobileTestHost
+
+packages:
+  LumiPluginBookletMaker:
+    path: .
+  LumiKernel:
+    url: https://github.com/CofficLab/LumiKernel.git
+    from: 1.0.0
+  LumiProviders:
+    url: https://github.com/CofficLab/LumiProviders.git
+    from: 1.9.0
+  LumiUI:
+    url: https://github.com/CofficLab/LumiUI.git
+    from: 1.10.0
+  LumiLogging:
+    url: https://github.com/CofficLab/LumiLogging.git
+    from: 1.0.1
+  LumiLocalization:
+    url: https://github.com/CofficLab/LumiLocalization.git
+    from: 1.0.1
+  LumiThemePack:
+    url: https://github.com/CofficLab/LumiThemePack.git
+    from: 1.0.6

@@ -29,7 +29,7 @@ struct ListView: View {
             await viewModel.loadInitialIfNeeded()
         }
         // 项目切换或列表结构变化时刷新。
-        .onChange(of: viewModel.resolvedProjectPath) { _, _ in
+        .onChange(of: viewModel.resolvedProjectPath) { _ in
             Task { @MainActor in
                 await viewModel.reload()
             }

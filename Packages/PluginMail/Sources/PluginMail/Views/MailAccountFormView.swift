@@ -136,7 +136,7 @@ public struct MailAccountFormView: View {
             .labelsHidden()
             .pickerStyle(.menu)
         }
-        .onChange(of: draft.provider) { _, newValue in
+        .onChange(of: draft.provider) { newValue in
             draft.applyPresetDefaults()
         }
     }

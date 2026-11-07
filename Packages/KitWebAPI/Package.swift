@@ -11,7 +11,7 @@ let package = Package(
     name: "KitWebAPI",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("14.0"),
         .iOS(.v17)
     ],
     products: [
@@ -21,7 +21,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
+        .package(path: "../../Vendor/LumiProviders"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),

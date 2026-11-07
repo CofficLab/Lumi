@@ -94,7 +94,7 @@ struct ProviderModelDownloadView: View {
             .labelsHidden()
             .pickerStyle(.menu)
             .frame(width: 120)
-            .onChange(of: speedLimitBytes) { _, value in
+            .onChange(of: speedLimitBytes) { value in
                 capability.setDownloadSpeedLimit(bytesPerSecond: value > 0 ? value : nil)
             }
         }

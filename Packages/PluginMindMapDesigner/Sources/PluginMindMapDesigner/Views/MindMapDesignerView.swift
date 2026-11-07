@@ -75,7 +75,7 @@ public struct MindMapDesignerView: View {
         .onAppear {
             notifyMapAvailability()
         }
-        .onChange(of: store.projectMaps.count) { _, _ in
+        .onChange(of: store.projectMaps.count) { _ in
             notifyMapAvailability()
         }
     }

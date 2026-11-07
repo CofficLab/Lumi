@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - '**.swift'
+    - '**.yml'
+  pull_request:
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-ci
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  macOS:
+    runs-on: macos-26
+    timeout-minutes: 15
+    steps:
+    - name: Select appropriate Xcode version
+      uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
+      with:
+        xcode-version: latest-stable
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+    - name: Build
+      run: |
+        swift build
+
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        image: ["swift:6.2", "swift:6.3", "swift:6.4"]
+    container:
+      image: ${{ matrix.image }}
+    env:
+      ENABLE_HB_BENCHMARKS: true
+    steps:
+    - name: Install curl
+      run: apt-get update -yq && apt-get install -y curl
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+    - name: Install libjemalloc-dev
+      run: |
+        apt-get -q update
+        apt-get install -y libjemalloc-dev
+
+    - name: Test
+      run: |
+        swift test --enable-code-coverage
+    - name: Upload coverage data
+      uses: vapor/swift-codecov-action@c93caea6600dbe3af0266a8ef6ee195c00181f04  # v0.3.7
+      with:
+        codecov_token: ${{ secrets.CODECOV_TOKEN }}

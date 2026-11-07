@@ -70,15 +70,15 @@ struct AgentTurnView: View {
             }
         }
         .task { await turnVM.activate() }
-        .onChange(of: item) { _, newItem in
+        .onChange(of: item) { newItem in
             Task { await turnVM.update(item: newItem) }
         }
-        .onChange(of: item.isShowingProcess) { _, isActive in
+        .onChange(of: item.isShowingProcess) { isActive in
             // 回合开始（进入活跃状态）→ 自动展开过程区。
             // 若用户此前手动折叠过，这个调用不会覆盖用户的选择。
             expansion.turnStateChanged(isActive: isActive)
         }
-        .onChange(of: turnVM.projection) { _, _ in
+        .onChange(of: turnVM.projection) { _ in
             onDynamicContentChange?()
         }
     }

@@ -4,20 +4,20 @@ import PackageDescription
 let package = Package(
     name: "PluginMessageSender",
     platforms: [
-        .macOS(.v14),
+        .macOS("14.0"),
         .iOS(.v17)
     ],
     products: [
         .library(name: "PluginMessageSender", targets: ["PluginMessageSender"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
+        .package(path: "../../Vendor/LumiKernel"),
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiLogging"),
     ],
     targets: [
         .target(

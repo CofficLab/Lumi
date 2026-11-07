@@ -33,7 +33,7 @@ struct ToolActivityToolbarView: View {
                 .frame(width: 380, height: 430)
         }
         .onAppear { viewModel.refresh() }
-        .onChange(of: viewModel.selectedConversationID) { _, newValue in
+        .onChange(of: viewModel.selectedConversationID) { newValue in
             if newValue == nil {
                 isPresented = false
             }

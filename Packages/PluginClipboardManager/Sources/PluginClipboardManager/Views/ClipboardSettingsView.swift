@@ -40,7 +40,7 @@ public struct ClipboardSettingsView: View {
                     icon: "doc.on.clipboard",
                     isOn: $isMonitoringEnabled
                 )
-                .onChange(of: isMonitoringEnabled) { _, newValue in
+                .onChange(of: isMonitoringEnabled) { newValue in
                     store.set(newValue, forKey: monitoringKey)
                 }
 
@@ -61,7 +61,7 @@ public struct ClipboardSettingsView: View {
                     .pickerStyle(.menu)
                     .frame(minWidth: 120)
                 }
-                .onChange(of: historySize) { _, newValue in
+                .onChange(of: historySize) { newValue in
                     store.set(newValue, forKey: historySizeKey)
                 }
             }

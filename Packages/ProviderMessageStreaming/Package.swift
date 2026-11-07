@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "ProviderMessageStreaming",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("13.1"), .iOS(.v17)],
     products: [
         .library(name: "ProviderMessageStreaming", targets: ["ProviderMessageStreaming"]),
     ],

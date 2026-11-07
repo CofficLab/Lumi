@@ -5,7 +5,7 @@ let package = Package(
     name: "PluginTerminal",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("13.1"),
         .iOS(.v17)
     ],
     products: [
@@ -15,14 +15,14 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
+        .package(path: "../../Vendor/LumiKernel"),
         .package(path: "../ProviderChatSection"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiLocalization"),        .package(path: "../../Vendor/LumiUI"),
+        .package(path: "../../Vendor/LumiLogging"),
         .package(url: "https://github.com/migueldeicaza/SwiftTerm", .upToNextMajor(from: "1.20.0")),
         .package(path: "../KitTerminalCore"),
         .package(path: "../ProviderPanelBottom"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
+        .package(path: "../../Vendor/LumiProviders"),
         .package(path: "../PluginRootView")
     ],
     targets: [
