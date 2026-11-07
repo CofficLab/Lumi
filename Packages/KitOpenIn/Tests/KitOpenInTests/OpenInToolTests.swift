@@ -57,6 +57,34 @@ import Testing
     #expect(OpenInTool.resolvedTargetPath(explicitPath: nil, currentProjectPath: nil) == nil)
 }
 
+@Test func conversationProjectOverridesCurrentProject() {
+    #expect(OpenInTool.resolvedTargetPath(
+        explicitPath: nil,
+        conversationProjectPath: "/workspace/Conversation",
+        currentProjectPath: "/workspace/Current"
+    ) == "/workspace/Conversation")
+    #expect(OpenInTool.resolvedTargetPath(
+        explicitPath: "/workspace/Explicit",
+        conversationProjectPath: "/workspace/Conversation",
+        currentProjectPath: "/workspace/Current"
+    ) == "/workspace/Explicit")
+    #expect(OpenInTool.resolvedTargetPath(
+        explicitPath: nil,
+        conversationProjectPath: nil,
+        currentProjectPath: "/workspace/Current"
+    ) == "/workspace/Current")
+}
+
+@Test @MainActor func conversationProjectIsPlumbedIntoResolution() async throws {
+    let provider = DefaultProjectProvider()
+    try await provider.openProject(at: "/workspace/Current")
+    let tool = OpenInTool(config: OpenInTool.finder, project: provider)
+
+    let resolved = await tool.resolvedPath([:], conversationProjectPath: "/workspace/Conversation")
+
+    #expect(resolved == "/workspace/Conversation")
+}
+
 @Test @MainActor func executionReturnsReadableErrorWhenNoPathOrProjectExists() async throws {
     let tool = OpenInTool(config: OpenInTool.finder, project: DefaultProjectProvider())
 

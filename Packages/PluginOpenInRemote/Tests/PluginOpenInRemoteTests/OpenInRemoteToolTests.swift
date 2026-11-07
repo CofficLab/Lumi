@@ -114,6 +114,44 @@ struct OpenInRemoteToolTests {
         #expect(output.contains("/explicit"))
         #expect(!output.contains("/current"))
     }
+
+    @Test("会话绑定项目优先于当前项目")
+    func conversationProjectWinsOverCurrentProject() {
+        #expect(
+            OpenInRemoteTool.resolvedTargetPath(
+                explicitPath: nil,
+                conversationProjectPath: "/conversation",
+                currentProjectPath: "/current"
+            ) == "/conversation"
+        )
+        #expect(
+            OpenInRemoteTool.resolvedTargetPath(
+                explicitPath: "/explicit",
+                conversationProjectPath: "/conversation",
+                currentProjectPath: "/current"
+            ) == "/explicit"
+        )
+    }
+
+    @Test("未传 path 时使用会话绑定项目")
+    func usesConversationProject() async throws {
+        let tool = OpenInRemoteTool(
+            projectCapability: StubProjectCapability(currentProjectPath: "/current"),
+            resolver: RemoteRepositoryResolver(
+                gitCapability: OpenInRemoteGitCapabilityAdapter(provider: nil)
+            )
+        )
+        let context = KitAgentTool.ToolExecutionContext(
+            jobID: UUID().uuidString,
+            conversationID: UUID(),
+            conversationProjectPathProvider: { "/conversation" }
+        )
+
+        let output = try await tool.executeResult(context: context, arguments: [:])
+
+        #expect(output.content.contains("/conversation"))
+        #expect(!output.content.contains("/current"))
+    }
 }
 
 /// 测试用的空观察句柄。

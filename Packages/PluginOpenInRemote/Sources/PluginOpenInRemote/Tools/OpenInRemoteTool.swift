@@ -48,12 +48,30 @@ struct OpenInRemoteTool: SuperAgentTool, @unchecked Sendable {
         return "在浏览器中打开当前项目的远程仓库"
     }
 
+    func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        ToolCallResult(content: try await execute(
+            arguments: arguments,
+            conversationProjectPath: await context.conversationProjectPath()
+        ))
+    }
+
     func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await execute(arguments: arguments, conversationProjectPath: nil)
+    }
+
+    private func execute(
+        arguments: [String: ToolArgument],
+        conversationProjectPath: String?
+    ) async throws -> String {
         let explicitPath = arguments["path"]?.value as? String
         let currentProjectPath = await projectCapability.currentProjectPath
 
         guard let path = Self.resolvedTargetPath(
             explicitPath: explicitPath,
+            conversationProjectPath: conversationProjectPath,
             currentProjectPath: currentProjectPath
         ) else {
             return """
@@ -92,9 +110,14 @@ struct OpenInRemoteTool: SuperAgentTool, @unchecked Sendable {
         """
     }
 
-    /// 解析目标路径：显式参数 > 当前项目路径。
-    static func resolvedTargetPath(explicitPath: String?, currentProjectPath: String?) -> String? {
+    /// 解析目标路径：显式参数 > 会话绑定项目 > 当前项目路径。
+    static func resolvedTargetPath(
+        explicitPath: String?,
+        conversationProjectPath: String? = nil,
+        currentProjectPath: String?
+    ) -> String? {
         if let explicitPath, !explicitPath.isEmpty { return explicitPath }
+        if let conversationProjectPath, !conversationProjectPath.isEmpty { return conversationProjectPath }
         return currentProjectPath
     }
 }
