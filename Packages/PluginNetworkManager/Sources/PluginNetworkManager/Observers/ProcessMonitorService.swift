@@ -58,6 +58,12 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
     // Data publishing
     @Published var processes: [NetworkProcess] = []
 
+    /// 是否已经发布过至少一个有效的周期 delta。
+    ///
+    /// nettop 启动后的首帧累计值会被丢弃，在第一次有效发布之前，
+    /// UI 应显示「收集数据中」而不是「没有活跃进程」。
+    @Published public private(set) var hasPublishedSample = false
+
     /// 启动 nettop 子进程的方式。
     ///
     /// - Note: 仅为测试可注入而存在；生产环境使用默认实现。
@@ -237,6 +243,7 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
         nameResolver.removeAll()
         iconResolver.clearCache()
         processes.removeAll()
+        hasPublishedSample = false
     }
     
     // Buffering related
@@ -432,6 +439,7 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
         
         DispatchQueue.main.async {
             self.processes = resultProcesses
+            self.hasPublishedSample = true
         }
     }
     

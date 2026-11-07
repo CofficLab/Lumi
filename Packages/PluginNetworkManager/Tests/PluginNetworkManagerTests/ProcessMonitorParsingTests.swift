@@ -81,6 +81,21 @@ struct ProcessMonitorParsingTests {
         #expect(service.processes.first?.name == "Lumi")
     }
 
+    @Test("首个有效 delta 发布后才标记快照就绪")
+    func snapshotFlagTurnsReadyAfterFirstDelta() async throws {
+        let service = makeService()
+
+        service.processOutput(sample(name: "Lumi", pid: 4242, bytesIn: 900_000_000, bytesOut: 100_000_000))
+        service.flushBuffer()
+        try await Task.sleep(nanoseconds: 100_000_000)
+        #expect(!service.hasPublishedSample)
+
+        service.processOutput(sample(name: "Lumi", pid: 4242, bytesIn: 1024, bytesOut: 2048))
+        service.flushBuffer()
+        try await Task.sleep(nanoseconds: 100_000_000)
+        #expect(service.hasPublishedSample)
+    }
+
     private func sample(name: String, pid: Int, bytesIn: Double, bytesOut: Double) -> Data {
         sample(rows: [(name, pid, bytesIn, bytesOut)])
     }
