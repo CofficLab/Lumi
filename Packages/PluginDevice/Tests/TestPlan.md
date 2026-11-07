@@ -5,7 +5,7 @@
 PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内存 / GPU / 电池 / 存储）与历史趋势， 支持主内容视图、菜单栏图表、设置页与文档页等贡献点。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 21
+测试文件: 5 个，用例总数: 26
 
 核心组件（源码目录）:
 - `Models/`
@@ -72,27 +72,32 @@ PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内�
 | 19 | 历史范围裁剪 | 4 小时范围截断超出范围的长期样本 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fourHourRangeTrimsLongTermBuffer` |
 | 20 | 历史范围裁剪 | 24 小时与 30 天范围返回不同的数据量 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `differentLongRangesReturnDifferentData` |
 | 21 | 历史范围裁剪 | 内存历史同样按范围截断 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `memoryHistoryTrimsByRange` |
+| 22 | CPU 进程监控 | Apple Silicon 24MHz ticks 下占满单核为 100% | 注入 timebase 125/3 | 计算 CPU 百分比 | 结果为 100 | P1 | ✅ 已覆盖 | `appleSiliconTimebaseYieldsOneHundredPercent` |
+| 23 | CPU 进程监控 | Intel 1GHz ticks 下占满单核为 100% | 注入 timebase 1/1 | 计算 CPU 百分比 | 结果为 100 | P1 | ✅ 已覆盖 | `intelTimebaseYieldsOneHundredPercent` |
+| 24 | CPU 进程监控 | 多线程进程可以超过 100% | 注入 timebase 125/3，1 秒内 2 核 ticks | 计算 CPU 百分比 | 结果为 200 | P1 | ✅ 已覆盖 | `multiCoreUsageExceedsOneHundredPercent` |
+| 25 | CPU 进程监控 | 零采样间隔返回 0 | 注入 elapsed=0 | 计算 CPU 百分比 | 结果为 0 | P2 | ✅ 已覆盖 | `zeroElapsedReturnsZero` |
+| 26 | 综合 | 禁用自动撤回，重新启用恢复菜单栏贡献 | 真实 kernel 启停插件 | 禁用/启用插件 | 禁用后贡献为空，启用后恢复 CPU 与内存弹窗贡献 | P1 | ✅ 已覆盖 | `disableAndEnableRestoresMenuBarContributions` |
 
-> 说明：全部 **21 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 4 / 4
-- P1: 已覆盖 12 / 12
-- P2: 已覆盖 5 / 5
-- **合计: 21 / 21**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 16 / 16
+- P2: 已覆盖 6 / 6
+- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
-- **P1**: 其余功能性用例（12 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
+- **P1**: 其余功能性用例（16 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 21 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 26 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
