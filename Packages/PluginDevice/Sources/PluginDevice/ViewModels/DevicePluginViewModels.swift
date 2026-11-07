@@ -11,13 +11,23 @@ final class StorageManagerViewModel: ObservableObject {
 }
 
 @MainActor
-final class DeviceHistoryViewModel<Point>: ObservableObject {
+final class DeviceHistoryViewModel<Point: DeviceHistorySample>: ObservableObject {
     @Published private(set) var recentHistory: [Point] = []
     @Published private(set) var longTermHistory: [Point] = []
 
     func apply(recent: [Point], longTerm: [Point]) {
         recentHistory = recent
         longTermHistory = longTerm
+    }
+
+    /// 按时间范围裁剪历史数据。
+    ///
+    /// 1 小时范围取秒级高频缓冲,更长范围取分钟级聚合缓冲;
+    /// 两者都按 `range.duration` 剔除过期样本,避免不同范围展示同一份数据。
+    func data(for range: some DeviceHistoryRange) -> [Point] {
+        let cutoff = Date().timeIntervalSince1970 - range.duration
+        let buffer = range.usesHighResolutionBuffer ? recentHistory : longTermHistory
+        return buffer.filter { $0.timestamp >= cutoff }
     }
 }
 

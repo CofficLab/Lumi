@@ -5,7 +5,7 @@
 PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内存 / GPU / 电池 / 存储）与历史趋势， 支持主内容视图、菜单栏图表、设置页与文档页等贡献点。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 17
+测试文件: 4 个，用例总数: 21
 
 核心组件（源码目录）:
 - `Models/`
@@ -23,6 +23,8 @@ PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内�
 - `BatteryPowerSource`
 - `CPUTimeRange`
 - `DeviceData`
+- `DeviceHistoryRange`
+- `DeviceHistorySample`
 - `GPUTimeRange`
 - `MemoryTimeRange`
 - `SystemMetrics`
@@ -43,6 +45,7 @@ PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内�
 - **综合**（9 条）：由 `onBootRegistersEntryContentViewAndDocs`、`onBootAppendsToExistingEntries`、`onBootNoOpsWithoutSettingView` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **温度历史**（3 条）：由 `recordsRecentPoints`、`filtersRecentByRange`、`usesLongTermBufferForLongerRanges` 等用例锁定；改动温度历史采集或时间范围语义时优先跑对应测试文件。
 - **温度传感器**（5 条）：由 `privateSymbolsAvailable`、`sortedByIndex`、`readingsInRange` 等用例锁定；改动底层传感器读取时优先跑对应测试文件。
+- **历史范围裁剪**（4 条）：由 `oneHourRangeUsesHighResolutionBuffer`、`fourHourRangeTrimsLongTermBuffer` 等用例锁定；改动历史时间范围语义或视图取数方式时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -65,27 +68,31 @@ PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内�
 | 15 | 温度传感器 | 读数处于物理合理区间 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `readingsInRange` |
 | 16 | 温度传感器 | 峰值等于同批次最大值 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `peakIsMaximum` |
 | 17 | 温度传感器 | 可用性与非空读数一致 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `availabilityMatchesRead` |
+| 18 | 历史范围裁剪 | 1 小时范围取高频缓冲并截断过期样本 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `oneHourRangeUsesHighResolutionBuffer` |
+| 19 | 历史范围裁剪 | 4 小时范围截断超出范围的长期样本 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fourHourRangeTrimsLongTermBuffer` |
+| 20 | 历史范围裁剪 | 24 小时与 30 天范围返回不同的数据量 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `differentLongRangesReturnDifferentData` |
+| 21 | 历史范围裁剪 | 内存历史同样按范围截断 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `memoryHistoryTrimsByRange` |
 
-> 说明：全部 **17 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **21 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
+- P0: 已覆盖 4 / 4
 - P1: 已覆盖 12 / 12
 - P2: 已覆盖 5 / 5
-- **合计: 17 / 17**（仅表示清单场景，非源码覆盖率）
+- **合计: 21 / 21**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
 - **P1**: 其余功能性用例（12 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 17 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 21 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

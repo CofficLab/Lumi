@@ -33,7 +33,7 @@ struct MemoryHistoryDetailView: View {
 
             VStack(spacing: 0) {
                 MemoryHistoryGraphView(
-                    dataPoints: selectedRange == .hour1 ? viewModel.recentHistory : viewModel.longTermHistory,
+                    dataPoints: viewModel.data(for: selectedRange),
                     timeRange: selectedRange
                 )
             }
