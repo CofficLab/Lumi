@@ -54,9 +54,29 @@ public struct ProjectOverviewV2Tool: SuperAgentTool, @unchecked Sendable {
     public func inputSchema(for language: LanguagePreference) -> [String: Any] { ["type": "object", "properties": ["path": ["type": "string", "description": "Project root path. Omit to use the current project or working directory."]], "additionalProperties": false] }
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { "查看项目概览" }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        ToolCallResult(content: try await execute(
+            arguments: arguments,
+            conversationProjectPath: await context.conversationProjectPath()
+        ))
+    }
+
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let path = (arguments["path"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let rootPath = (path?.isEmpty == false ? path : await MainActor.run { project?.currentProject?.path }) ?? FileManager.default.currentDirectoryPath
+        try await execute(arguments: arguments, conversationProjectPath: nil)
+    }
+
+    private func execute(
+        arguments: [String: ToolArgument],
+        conversationProjectPath: String?
+    ) async throws -> String {
+        let explicitPath = (arguments["path"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let path = explicitPath?.isEmpty == false ? explicitPath : nil
+        let currentPath = await MainActor.run { project?.currentProject?.path }
+        // 优先显式参数，其次工具调用所属会话绑定的项目，最后才是 UI 当前项目。
+        let rootPath = path ?? conversationProjectPath ?? currentPath ?? FileManager.default.currentDirectoryPath
         let root = URL(fileURLWithPath: rootPath).standardizedFileURL
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: root.path, isDirectory: &isDirectory), isDirectory.boolValue else { return "Error: Path does not exist or is not a directory: \(rootPath)" }
