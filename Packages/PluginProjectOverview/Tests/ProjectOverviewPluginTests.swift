@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import KitAgentTool
 import ProviderProject
 import ProviderPromptSuggestion
 import ProviderToolManager
@@ -121,5 +122,74 @@ struct PluginProjectOverviewTests {
         let hasCompiledStrings = bundle.path(forResource: "zh-Hans", ofType: "lproj") != nil
         #expect(hasCatalog || hasCompiledStrings)
         #expect(pluginLocalization.string("Project Overview").isEmpty == false)
+    }
+}
+
+/// 工具必须按调用所属会话的项目读取，而不是 UI 当前打开的项目。
+@Suite("ProjectOverviewConversationScope")
+@MainActor
+struct ProjectOverviewConversationScopeTests {
+
+    private func makeProject() throws -> URL {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("overview-scope-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try "// swift-tools-version: 6.0\nimport PackageDescription\nlet package = Package(name: \"Scope\")"
+            .write(to: root.appendingPathComponent("Package.swift"), atomically: true, encoding: .utf8)
+        return root
+    }
+
+    private func path(in content: String) -> String {
+        content
+            .split(separator: "\n")
+            .first { $0.hasPrefix("**Path**: ") }
+            .map { String($0.dropFirst("**Path**: ".count)) } ?? ""
+    }
+
+    private func makeContext(projectPath: String?) -> ToolExecutionContext {
+        ToolExecutionContext(
+            jobID: UUID().uuidString,
+            conversationID: UUID(),
+            conversationProjectPathProvider: { projectPath }
+        )
+    }
+
+    @Test("未传 path 时读取会话绑定项目，而不是 UI 当前项目")
+    func usesConversationProject() async throws {
+        let projectA = try makeProject()
+        let projectB = try makeProject()
+        defer {
+            try? FileManager.default.removeItem(at: projectA)
+            try? FileManager.default.removeItem(at: projectB)
+        }
+        let provider = DefaultProjectProvider()
+        try await provider.openProject(at: projectB.path)
+        let tool = ProjectOverviewV2Tool(project: provider)
+
+        let result = try await tool.executeResult(
+            context: makeContext(projectPath: projectA.path),
+            arguments: [:]
+        )
+
+        #expect(path(in: result.content) == projectA.standardizedFileURL.path)
+        #expect(!result.content.contains(projectB.standardizedFileURL.path))
+    }
+
+    @Test("显式 path 优先于会话绑定项目")
+    func explicitPathWins() async throws {
+        let projectA = try makeProject()
+        let projectB = try makeProject()
+        defer {
+            try? FileManager.default.removeItem(at: projectA)
+            try? FileManager.default.removeItem(at: projectB)
+        }
+        let tool = ProjectOverviewV2Tool(project: nil)
+
+        let result = try await tool.executeResult(
+            context: makeContext(projectPath: projectA.path),
+            arguments: ["path": ToolArgument(projectB.path)]
+        )
+
+        #expect(path(in: result.content) == projectB.standardizedFileURL.path)
     }
 }
