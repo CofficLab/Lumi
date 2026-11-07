@@ -32,6 +32,9 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
     ///   避开逐 PID 构造 `NSRunningApplication` 触发的 LaunchServices 同步 XPC。
     private nonisolated let iconResolver = ProcessIconResolver()
 
+    /// 进程名补全器：nettop 的进程名会截断到 15 字符，按 PID 补全为完整可执行文件名。
+    private var nameResolver: ProcessNameResolver
+
     // Background queue for icon fetching
     private let iconQueue = DispatchQueue(label: "com.coffic.lumi.process-icons", qos: .utility)
     
@@ -60,15 +63,28 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
     /// - Note: 仅为测试可注入而存在；生产环境使用默认实现。
     private let nettopLauncher: () -> Process?
 
-    private init(nettopLauncher: (() -> Process?)? = nil) {
+    private init(
+        nettopLauncher: (() -> Process?)? = nil,
+        nameProvider: ProcessNameResolver.NameProvider? = nil
+    ) {
         self.nettopLauncher = nettopLauncher ?? { ProcessMonitorService.makeDefaultNettopProcess() }
+        if let nameProvider {
+            self.nameResolver = ProcessNameResolver(nameProvider: nameProvider)
+        } else {
+            self.nameResolver = ProcessNameResolver()
+        }
     }
 
     /// 创建一个不启动真实 nettop 子进程的实例（仅测试用）。
     ///
-    /// - Parameter launcher: 子进程构造器；返回 `nil` 表示模拟「启动失败」。
-    static func makeForTesting(nettopLauncher: @escaping () -> Process?) -> ProcessMonitorService {
-        ProcessMonitorService(nettopLauncher: nettopLauncher)
+    /// - Parameters:
+    ///   - launcher: 子进程构造器；返回 `nil` 表示模拟「启动失败」。
+    ///   - nameProvider: 进程名解析器，仅测试可注入，生产环境默认按 PID 读取可执行文件路径。
+    static func makeForTesting(
+        nettopLauncher: @escaping () -> Process?,
+        nameProvider: ProcessNameResolver.NameProvider? = nil
+    ) -> ProcessMonitorService {
+        ProcessMonitorService(nettopLauncher: nettopLauncher, nameProvider: nameProvider)
     }
 
     /// 当前 nettop 子进程是否在运行。
@@ -218,6 +234,7 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
         historyBuffer.removeAll()
         processDetails.removeAll()
         seenPIDs.removeAll()
+        nameResolver.removeAll()
         iconResolver.clearCache()
         processes.removeAll()
     }
@@ -275,8 +292,9 @@ public class ProcessMonitorService: ObservableObject, SuperLog {
                             continue
                         }
 
-                        let name = nameComponents.dropLast().joined(separator: ".")
-                        rawDataBuffer.append(RawProcessData(pid: pid, name: name, bytesIn: bytesIn, bytesOut: bytesOut))
+                        let fallbackName = nameComponents.dropLast().joined(separator: ".")
+                        let displayName = nameResolver.resolve(pid: pid, fallback: fallbackName)
+                        rawDataBuffer.append(RawProcessData(pid: pid, name: displayName, bytesIn: bytesIn, bytesOut: bytesOut))
                     }
                 }
             }
