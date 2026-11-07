@@ -72,7 +72,8 @@ struct ClipboardHistoryManagerTests {
         defer { try? FileManager.default.removeItem(at: root) }
 
         let manager = ClipboardHistoryManager(databaseDirectory: root)
-        let base = Date(timeIntervalSince1970: 1_700_000_000)
+        // 相对当前时间构造，避免被 30 天保留策略清理掉。
+        let base = Date().addingTimeInterval(-200)
         #expect(await manager.addBatch([
             makeHistoryItem(content: "oldest", timestamp: base),
             makeHistoryItem(content: "newest", timestamp: base.addingTimeInterval(100)),
@@ -89,7 +90,8 @@ struct ClipboardHistoryManagerTests {
         defer { try? FileManager.default.removeItem(at: root) }
 
         let manager = ClipboardHistoryManager(databaseDirectory: root)
-        let base = Date(timeIntervalSince1970: 1_700_000_000)
+        // 相对当前时间构造，避免被 30 天保留策略清理掉。
+        let base = Date().addingTimeInterval(-200)
         #expect(await manager.addBatch([
             makeHistoryItem(content: "before", timestamp: base),
             makeHistoryItem(content: "inside", timestamp: base.addingTimeInterval(50)),
@@ -213,6 +215,24 @@ struct ClipboardHistoryManagerTests {
 
         await manager.cleanup()
 
+        let remaining = await manager.getAll()
+        #expect(Set(remaining.map(\.content)) == ["expired-pinned", "fresh"])
+    }
+
+    @Test("长期运行中，列表查询会按需清理过期记录")
+    func listAccessCleansExpiredWithoutRestart() async throws {
+        let root = try makeTemporaryDirectory("clipm-cleanup-runtime")
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let manager = ClipboardHistoryManager(databaseDirectory: root)
+        let old = Date().addingTimeInterval(-40 * 24 * 60 * 60)
+        #expect(await manager.addBatch([
+            makeHistoryItem(content: "expired", timestamp: old),
+            makeHistoryItem(content: "expired-pinned", timestamp: old, isPinned: true),
+            makeHistoryItem(content: "fresh"),
+        ]))
+
+        // 不重启、不显式调用 cleanup：仅访问历史列表就应回收过期未固定项。
         let remaining = await manager.getAll()
         #expect(Set(remaining.map(\.content)) == ["expired-pinned", "fresh"])
     }
