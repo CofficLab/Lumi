@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 15 条用例。
+PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 18 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 15
+测试文件: 4 个，用例总数: 18
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -42,6 +42,7 @@ PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **AgentRulePromptBuilder**（2 条）：由 `projectRulesTakePrecedence`、`emptyRulesProduceNoPrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AgentRulesPlugin**（11 条）：由 `packageLoads`、`pluginHasRequiredMetadata`、`localStoreQuarantinesInvalidSettingsFileAndRecovers` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AgentRulesRuntimeDirectory**（2 条）：由 `usesInjectedDirectory`、`resetClearsInjectedDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **AgentRulesConversationScope**（3 条）：由 `listToolUsesConversationProject`、`createToolWritesIntoConversationProject`、`explicitProjectPathBeatsConversationProject` 锁定；工具必须按调用所属会话的项目读写，显式参数优先。
 
 ## 测试用例清单
 
@@ -62,27 +63,30 @@ PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 13 | AgentRulesPlugin | A late rule-list response cannot replace the newly selected project | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `staleProjectLoadIsIgnored` |
 | 14 | AgentRulesRuntimeDirectory | 注入目录后 settingsDirectory 返回该目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `usesInjectedDirectory` |
 | 15 | AgentRulesRuntimeDirectory | 重置后清空注入目录，不再回退到真实数据目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resetClearsInjectedDirectory` |
+| 16 | AgentRulesConversationScope | list_agent_rules 读取会话绑定项目而非 UI 当前项目 | 会话绑定项目 A，UI 当前为 B | 调用 `executeResult(context:arguments:)` | 只返回项目 A 的规则 | P0 | ✅ 已覆盖 | `listToolUsesConversationProject` |
+| 17 | AgentRulesConversationScope | create_agent_rule 写入会话绑定项目而非 UI 当前项目 | 会话绑定项目 A，UI 当前为 B | 调用 `executeResult(context:arguments:)` | 规则落在 A 的 `.lumi/rules`，B 无文件 | P0 | ✅ 已覆盖 | `createToolWritesIntoConversationProject` |
+| 18 | AgentRulesConversationScope | 显式 project_path 优先于会话绑定项目 | 会话绑定 A，显式传 B | 调用 `executeResult(context:arguments:)` | 规则落在 B 的 `.lumi/rules`，A 无文件 | P1 | ✅ 已覆盖 | `explicitProjectPathBeatsConversationProject` |
 
-> 说明：全部 **15 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **18 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 1 / 1
-- P1: 已覆盖 13 / 13
+- P0: 已覆盖 3 / 3
+- P1: 已覆盖 14 / 14
 - P2: 已覆盖 1 / 1
-- **合计: 15 / 15**（仅表示清单场景，非源码覆盖率）
+- **合计: 18 / 18**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（13 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P1**: 其余功能性用例（14 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 15 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 18 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
