@@ -45,19 +45,51 @@ struct TopProcessesView: View {
     // MARK: - 私有方法
 
     private func processRow(_ process: ProcessMetric) -> some View {
+        ProcessMetricRow(process: process)
+    }
+}
+
+/// 单条进程记录：图标 / 名称（含份数与本应用标注）/ CPU% / 迷你进度条。
+///
+/// 主弹窗只展示前 5 条，详情页复用同一行视图展示完整列表。
+struct ProcessMetricRow: View {
+    let process: ProcessMetric
+
+    var body: some View {
         HStack(spacing: 8) {
             // 进程图标
             iconForProcess(process)
                 .resizable()
                 .frame(width: 16, height: 16)
 
-            // 进程名
-            Text(process.name)
-                .font(.system(size: 11))
-                .foregroundColor(.primary)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            // 进程名 + 同名份数 + 本应用标注
+            HStack(spacing: 4) {
+                Text(process.name)
+                    .font(.system(size: 11))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .layoutPriority(1)
+
+                if process.instanceCount > 1 {
+                    Text("×\(process.instanceCount)")
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundColor(.secondary)
+                        .fixedSize()
+                }
+
+                if process.isCurrentApp {
+                    Text(pluginLocalization.string("This app"))
+                        .font(.system(size: 9))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                        .fixedSize()
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(Color.secondary.opacity(0.12)))
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             // CPU%：直接展示服务端算出的真实占用，不做前 N 名归一化。
             Text(process.formattedCPUUsage)
