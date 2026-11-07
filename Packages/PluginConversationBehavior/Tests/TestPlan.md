@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationBehavior 的实现包，包含 5 个主要类型；当前测试覆盖 8 条用例。
+PluginConversationBehavior 的实现包，包含 5 个主要类型；当前测试覆盖 9 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 8
+测试文件: 1 个，用例总数: 9
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -25,7 +25,7 @@ PluginConversationBehavior 的实现包，包含 5 个主要类型；当前测�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **综合**（8 条）：由 `reasoningRegisters`、`reasoningRoundTrip`、`languageHookInjectsPreferenceAndPreservesHistory` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（9 条）：由 `reasoningRegisters`、`reasoningRoundTrip`、`languageHookInjectsPreferenceAndPreservesHistory` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -38,28 +38,29 @@ PluginConversationBehavior 的实现包，包含 5 个主要类型；当前测�
 | 5 | 综合 | Language plugin registers and cancels its toolbar and lifecycle hook | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `languagePluginLifecycle` |
 | 6 | 综合 | Language selection updates conversation and global preference | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `languageSelectionUpdatesPreferencesAndToast` |
 | 7 | 综合 | Language selection without a selected conversation updates global preference | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `languageSelectionWithoutConversationUpdatesGlobalPreference` |
-| 8 | 综合 | Reasoning selection updates conversation and global preference | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `reasoningSelectionUpdatesPreferencesAndToast` |
+| 8 | 综合 | 选中会话时调整 Reasoning 只影响该会话，不改全局默认 | 全局默认 `.medium`，已选中会话 | apply `.low`、再 apply `.off` | 会话档位变化，全局默认始终为 `.medium` | P1 | ✅ 已覆盖 | `reasoningSelectionDoesNotChangeGlobalDefault` |
+| 9 | 综合 | New Chat（无选中会话）调整 Reasoning 才更新全局默认 | 未选中任何会话 | apply `.high`、再 apply `.off` | 全局默认依次变为 `.high`、`nil` | P1 | ✅ 已覆盖 | `reasoningSelectionWithoutConversationUpdatesGlobalDefault` |
 
-> 说明：全部 **8 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **9 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 8 / 8
+- P1: 已覆盖 9 / 9
 - P2: 已覆盖 0 / 0
-- **合计: 8 / 8**（仅表示清单场景，非源码覆盖率）
+- **合计: 9 / 9**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（8 条）
+- **P1**: 其余功能性用例（9 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 8 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 9 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
