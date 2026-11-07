@@ -118,6 +118,54 @@ struct ConversationForkPluginTests {
         let newID = try #require(conversations.selectedConversationID)
         #expect(messages.messages(for: newID).contains { $0.content == "摘要内容" })
     }
+
+    @Test("filteredMessages 保留仅带附件的消息，且不注入 base64")
+    func filteredMessagesKeepsAttachmentOnlyMessages() {
+        let id = UUID()
+        let base64 = Data("secret-bytes".utf8).base64EncodedString()
+        let file = UserFileAttachment(
+            fileName: "requirements.md",
+            mimeType: "text/markdown",
+            textContent: "必须支持导出"
+        )
+        let image = UserImageAttachment(
+            mimeType: "image/png",
+            base64Data: base64,
+            fileName: "mock.png"
+        )
+        var metadata = UserAttachmentMetadata.encodeFileAttachments([file])
+        metadata.merge(UserAttachmentMetadata.encodeImageAttachments([image])) { _, new in new }
+
+        let result = ConversationSummarizer.filteredMessages([
+            Message(conversationID: id, role: .user, content: "   ", metadata: metadata),
+        ])
+
+        #expect(result.count == 1)
+        #expect(result[0].content.contains("requirements.md"))
+        #expect(result[0].content.contains("必须支持导出"))
+        #expect(result[0].content.contains("mock.png"))
+        #expect(!result[0].content.contains(base64))
+    }
+
+    @Test("二进制附件以文件名与本地路径表示")
+    func binaryAttachmentDescription() {
+        let file = UserFileAttachment(
+            fileName: "design.zip",
+            mimeType: "application/zip",
+            base64Data: Data("zip-bytes".utf8).base64EncodedString(),
+            localPath: "/tmp/design.zip"
+        )
+        let text = ConversationSummarizer.summaryText(for: Message(
+            conversationID: UUID(),
+            role: .user,
+            content: "",
+            metadata: UserAttachmentMetadata.encodeFileAttachments([file])
+        ))
+
+        let rendered = text ?? ""
+        #expect(rendered.contains("design.zip"))
+        #expect(rendered.contains("/tmp/design.zip"))
+    }
 }
 
 @Suite("ConversationForkCoordinator")
@@ -201,6 +249,36 @@ struct ConversationForkCoordinatorTests {
 
         #expect(preview.title == "源对话")
         #expect(preview.lastRequest == "源问题")
+    }
+
+    @Test("纯附件对话在 preview 中仍有内容并可 fork")
+    func attachmentOnlyConversationCanFork() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let id = try conversations.createConversation(title: nil, projectPath: nil, providerID: nil, modelName: nil)
+        let file = UserFileAttachment(
+            fileName: "requirements.md",
+            mimeType: "text/markdown",
+            textContent: "必须支持导出"
+        )
+        messages.insertMessage(
+            Message(
+                conversationID: id,
+                role: .user,
+                content: "",
+                metadata: UserAttachmentMetadata.encodeFileAttachments([file])
+            ),
+            to: id
+        )
+
+        let coordinator = makeCoordinator(conversations: conversations, messages: messages)
+        let preview = await coordinator.preview(for: id)
+        #expect(preview.hasContent)
+        #expect(preview.requestCount == 1)
+        #expect(preview.displayTitle.contains("requirements.md"))
+
+        let outcome = try await coordinator.fork(conversationID: id)
+        #expect(outcome.summary.contains("requirements.md"))
     }
 
     @Test("fork 建新对话、注入摘要并透传标题/项目/模型")

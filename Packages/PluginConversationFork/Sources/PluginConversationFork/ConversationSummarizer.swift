@@ -25,6 +25,8 @@ extension Message {
 public struct ConversationSummarizer: @unchecked Sendable {
     /// 单条消息正文的截断上限。
     public static let maxCharsPerMessage = 4_000
+    /// 单个文本附件注入摘要的正文截断上限，避免一个附件挤占整段历史预算。
+    public static let maxAttachmentTextChars = 1_500
     /// 参与摘要的最大消息条数（取最近 N 条）。
     public static let maxMessages = 60
 
@@ -88,15 +90,69 @@ public struct ConversationSummarizer: @unchecked Sendable {
     static func filteredMessages(_ history: [Message]) -> [Message] {
         let visible = history
             .filter { $0.role == .user || $0.role == .assistant }
-            .filter { !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-        let recent = visible.suffix(Self.maxMessages)
-        return Array(recent).map { message in
-            guard message.content.count > Self.maxCharsPerMessage else { return message }
-            let head = message.content.prefix(Self.maxCharsPerMessage)
-            var truncated = message
-            truncated.content = "\(head)…[truncated]"
-            return truncated
+            .compactMap { message -> Message? in
+                guard var text = summaryText(for: message) else { return nil }
+                guard text.count > Self.maxCharsPerMessage else {
+                    guard text != message.content else { return message }
+                    var copy = message
+                    copy.content = text
+                    return copy
+                }
+                let head = text.prefix(Self.maxCharsPerMessage)
+                text = "\(head)…[truncated]"
+                var copy = message
+                copy.content = text
+                return copy
+            }
+        return Array(visible.suffix(Self.maxMessages))
+    }
+
+    /// 单条消息用于摘要的文字：正文非空，或带有已发送的附件时才算有效历史。
+    ///
+    /// 附件内容只做文字化描述，不把图片 base64 混入提示词；文本附件附带截断后的
+    /// 正文，二进制附件给出文件名、类型和本地路径，避免附件里的需求被整体忽略。
+    /// 没有附件时返回原始正文，保持既有截断行为不变。
+    static func summaryText(for message: Message) -> String? {
+        let attachments = attachmentDescriptions(from: message.metadata)
+        let hasContent = !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        guard hasContent || !attachments.isEmpty else { return nil }
+        guard !attachments.isEmpty else { return message.content }
+
+        let parts = ([message.content] + attachments)
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        return parts.joined(separator: "\n\n")
+    }
+
+    /// 把消息 metadata 中的附件渲染成摘要可用的文字。
+    static func attachmentDescriptions(from metadata: [String: String]) -> [String] {
+        guard !metadata.isEmpty else { return [] }
+
+        var descriptions: [String] = []
+        for image in UserAttachmentMetadata.decodeImageAttachments(from: metadata) {
+            let name = image.fileName ?? image.mimeType
+            descriptions.append("[Image attachment: \(name) (\(image.mimeType))]")
         }
+
+        for file in UserAttachmentMetadata.decodeFileAttachments(from: metadata) {
+            if let text = file.textContent?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !text.isEmpty {
+                let body = text.count > Self.maxAttachmentTextChars
+                    ? String(text.prefix(Self.maxAttachmentTextChars)) + "…[truncated]"
+                    : text
+                descriptions.append(
+                    "[File attachment: \(file.fileName) (\(file.mimeType))]\n\(body)"
+                )
+            } else if let localPath = file.localPath, !localPath.isEmpty {
+                descriptions.append(
+                    "[Binary file attachment: \(file.fileName) (\(file.mimeType)), local path: \(localPath)]"
+                )
+            } else {
+                descriptions.append(
+                    "[Binary file attachment: \(file.fileName) (\(file.mimeType))]"
+                )
+            }
+        }
+        return descriptions
     }
 
     private func fallbackSummary(from history: [Message]) -> String {
