@@ -49,8 +49,10 @@ struct DatabaseConnectionDraft {
 
         switch type {
         case .sqlite:
-            let path = sqlitePath.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !path.isEmpty else {
+            // 文件系统路径的首尾空白可能是文件名的一部分，必须原样保存；
+            // 仅把「全为空白」视为未填写。
+            let path = sqlitePath
+            guard !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 throw DatabaseConnectionDraftError.missingSQLitePath
             }
             return DatabaseConfig(

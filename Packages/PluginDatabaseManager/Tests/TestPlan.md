@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 55
+测试文件: 2 个，用例总数: 57
 
 核心组件（源码目录）:
 - `Agent/`
@@ -45,6 +45,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **DatabaseAgentToolServiceConnectionTests**（1 条）：真实 SQLite 连接复用规则，由 `queryReadonlyUsesUpdatedConfigWhenSavedConnectionIsEdited` 锁定。：由 `readonlySQLAcceptsSelect`、`readonlySQLPreservesExistingLimit`、`readonlySQLAcceptsPragmaForSQLite` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **只读策略**（10 条）：由 `readonlySQLAllowsWriteKeywordInsideStringLiteral`、`readonlySQLStillRejectsWriteKeywordOutsideLiteral` 等用例锁定；改动只读 SQL 判定或字面量/注释剥离时优先跑对应测试文件。
 - **PostgreSQL schema**（3 条）：由 `postgresSchemaFilterListsAllNonSystemSchemasByDefault`、`postgresSchemaFilterBindsRequestedSchemaAsParameter` 等用例锁定；改动 schema 描述的过滤条件时优先跑对应测试文件。
+- **DatabaseConnectionDraft**（2 条）：由 `sqlitePathIsStoredVerbatim`、`sqlitePathRejectsWhitespaceOnlyInput` 锁定，防止连接表单改动合法文件路径。
 - **DatabaseManagerV2Plugin**（1 条）：由 `restoresDatabaseWorkspace` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -107,16 +108,18 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 53 | PostgreSQL schema | 指定 schema 时走绑定参数 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `postgresSchemaFilterBindsRequestedSchemaAsParameter` |
 | 54 | PostgreSQL schema | 空白 schema 视为未指定 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `postgresSchemaFilterTreatsBlankSchemaAsUnspecified` |
 | 55 | 连接复用 | 编辑已保存连接后 Agent 不复用旧连接 | 旧库与新库各有一张表，同 id 换库 | 先查询旧库，再更新配置后查询 | 第二次查询读到新库表，且不再出现旧库表；断开后重连到当前配置 | P0 | ✅ 已覆盖 | `queryReadonlyUsesUpdatedConfigWhenSavedConnectionIsEdited` |
+| 56 | 连接草稿 | SQLite 路径原样保存 | 路径含首尾空格 | 调用 `makeConfig` | `database` 与输入逐字节一致 | P0 | ✅ 已覆盖 | `sqlitePathIsStoredVerbatim` |
+| 57 | 连接草稿 | 全空白 SQLite 路径被拒绝 | — | 调用 `makeConfig` | 抛出 `missingSQLitePath` | P0 | ✅ 已覆盖 | `sqlitePathRejectsWhitespaceOnlyInput` |
 
-> 说明：全部 **55 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **57 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 28 / 28
+- P0: 已覆盖 30 / 30
 - P1: 已覆盖 26 / 26
 - P2: 已覆盖 1 / 1
-- **合计: 55 / 55**（仅表示清单场景，非源码覆盖率）
+- **合计: 57 / 57**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
