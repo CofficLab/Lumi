@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 77
+测试文件: 6 个，用例总数: 78
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -128,27 +128,28 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 75 | ProcessMonitorParsing | 第二帧才按周期 delta 发布速度 | 首帧累计值 + 第二帧 1024/2048 | 解析 + flush | 仅一条进程记录，速度为 1024/2048 | P1 | ✅ 已覆盖 | `secondSamplePublishesDeltaSpeed` |
 | 76 | ProcessMonitorParsing | 截断到同名的不同进程按完整名称区分，不会错误合并 | 两行截断名均为 `com.apple.WebKi`、PID 100/101，注入完整名称 | 解析 + flush | 得到 2 条记录，名称分别为 WebContent 与 Networking | P1 | ✅ 已覆盖 | `truncatedNamesAreResolvedAndNotMerged` |
 | 77 | ProcessMonitorParsing | 无法解析完整名称时回退 nettop 原名 | 假 PID 无法通过 proc_pidpath 解析 | 解析 + flush | 名称保留为 `Lumi` | P2 | ✅ 已覆盖 | `fallsBackToNettopNameWhenResolutionFails` |
+| 78 | ProcessMonitorParsing | 首个有效 delta 发布后才标记快照就绪 | 首帧仅累计值，第二帧为 delta | 解析 + flush | 首帧后未就绪，第二帧后置位 | P2 | ✅ 已覆盖 | `snapshotFlagTurnsReadyAfterFirstDelta` |
 
-> 说明：全部 **77 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **78 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 32 / 32
 - P1: 已覆盖 42 / 42
-- P2: 已覆盖 3 / 3
-- **合计: 77 / 77**（仅表示清单场景，非源码覆盖率）
+- P2: 已覆盖 4 / 4
+- **合计: 78 / 78**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（32 条）
 - **P1**: 其余功能性用例（42 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 77 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 78 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

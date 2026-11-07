@@ -17,6 +17,10 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
     
     // Process monitoring related
     @Published var processes: [NetworkProcess] = []
+    /// 是否已经收到至少一个有效的进程采样。
+    ///
+    /// 首次采样发布前，进程明细应显示「收集数据中」而不是「没有活跃进程」。
+    @Published var hasProcessSnapshot = false
     @Published var showProcessMonitor = false {
         didSet {
             guard oldValue != showProcessMonitor else { return }
@@ -75,6 +79,10 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
 
     public func updateProcesses(_ processes: [NetworkProcess]) {
         self.processes = processes
+    }
+
+    public func updateProcessSnapshotReady(_ isReady: Bool) {
+        hasProcessSnapshot = isReady
     }
 
     // Removed updateStats() as it is replaced by Combine subscription
