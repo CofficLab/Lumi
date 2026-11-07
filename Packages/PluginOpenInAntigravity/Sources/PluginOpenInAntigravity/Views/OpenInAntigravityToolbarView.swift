@@ -5,8 +5,16 @@ import SwiftUI
 struct OpenInAntigravityToolbarView: View {
     @StateObject private var model: OpenInAntigravityToolbarViewModel
 
-    init(tool: OpenInTool, projectCapability: OpenInProjectCapability) {
-        _model = StateObject(wrappedValue: OpenInAntigravityToolbarViewModel(tool: tool, projectCapability: projectCapability))
+    init(
+        tool: OpenInTool,
+        projectCapability: OpenInProjectCapability,
+        failureReporter: any OpenInFailureReporting
+    ) {
+        _model = StateObject(wrappedValue: OpenInAntigravityToolbarViewModel(
+            tool: tool,
+            projectCapability: projectCapability,
+            failureReporter: failureReporter
+        ))
     }
 
     var body: some View {
@@ -30,6 +38,10 @@ struct OpenInAntigravityToolbarView: View {
 // MARK: - 预览
 
 #Preview("Open In Antigravity Toolbar") {
-    OpenInAntigravityToolbarView(tool: OpenInTool(config: OpenInTool.antigravity, project: nil), projectCapability: OpenInProjectCapabilityAdapter(project: nil))
+    OpenInAntigravityToolbarView(
+        tool: OpenInTool(config: OpenInTool.antigravity, project: nil),
+        projectCapability: OpenInProjectCapabilityAdapter(project: nil),
+        failureReporter: NoopOpenInFailureReporter()
+    )
         .padding()
 }

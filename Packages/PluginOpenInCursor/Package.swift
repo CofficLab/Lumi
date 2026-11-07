@@ -25,6 +25,7 @@ let package = Package(
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 "KitOpenIn",
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
+                .product(name: "ProviderToast", package: "LumiProviders"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 "ProviderToolManager",
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
@@ -39,6 +40,8 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitOpenIn", package: "KitOpenIn"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
+                .product(name: "ProviderProject", package: "LumiProviders"),
+                .product(name: "ProviderToast", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
             ]
