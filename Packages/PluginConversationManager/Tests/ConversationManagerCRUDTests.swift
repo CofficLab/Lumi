@@ -51,6 +51,30 @@ struct ConversationManagerCRUDTests {
         try await Task.sleep(for: .milliseconds(20))
     }
 
+    /// 回归 #541：等待落库的创建接口返回时，会话必须已经能从库里读到。
+    @Test func createAndWaitPersistsBeforeReturningAndCachesRoot() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationCreateAndWait-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = try ConversationStore(databaseRootURL: directory)
+        let manager = ConversationManager(store: store, dataDirectory: directory)
+
+        let id = try await manager.createConversationAndWait(
+            title: "Waited",
+            projectPath: nil,
+            modelID: nil,
+            parentConversationID: nil
+        )
+
+        // 不 sleep：返回即代表已落库。
+        let stored = await store.fetchConversation(id: id)
+        #expect(stored?.title == "Waited")
+        #expect(manager.conversations.contains(where: { $0.id == id }))
+        #expect(manager.selectedConversationID == id)
+    }
+
     @Test func selectionTitleActivityAndDeletionUpdateCachedStateAndEvents() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("ConversationCRUDTests-\(UUID().uuidString)", isDirectory: true)

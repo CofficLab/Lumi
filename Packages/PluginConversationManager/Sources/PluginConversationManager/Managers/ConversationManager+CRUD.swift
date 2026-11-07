@@ -93,8 +93,125 @@ extension ConversationManager {
         modelID: String?,
         parentConversationID: UUID?
     ) throws -> UUID {
-        let now = Date()
-        let id = UUID()
+        let draft = makeConversationDraft(
+            title: title,
+            binding: binding,
+            modelID: modelID,
+            parentConversationID: parentConversationID
+        )
+
+        // Add to the bounded in-memory cache immediately.
+        if draft.parentConversationID == nil {
+            cache(draft.summary)
+            selectedConversationID = draft.id
+            updateCurrentTitle()
+            persistSelectedConversationID()
+            notifySelectedConversationChanged()
+            notifyConversationObservers(.created(draft.id))
+        }
+
+        // Persist first, then notify the list. Otherwise the list may query the
+        // database before this conversation is stored and conclude that nothing
+        // changed.
+        Task {
+            do {
+                try await persist(draft)
+                self.notifyConversationsChanged()
+            } catch {
+                if Self.verbose {
+                    Self.logger.error("\(Self.t)Failed to persist conversation: \(error)")
+                }
+            }
+        }
+
+        return draft.id
+    }
+
+    /// 创建对话并等待落库完成；持久化失败直接抛错。
+    ///
+    /// 与同步版本不同：先落库、后进入内存缓存。这样失败时不会留下一条
+    /// 「只在内存里可见、重启就消失」的会话，调用方也能收到真实错误。
+    public func createConversationAndWait(
+        title: String?,
+        projectPath: String?,
+        modelID: String?,
+        parentConversationID: UUID?
+    ) async throws -> UUID {
+        let draft = makeConversationDraft(
+            title: title,
+            binding: projectPath.map(ProjectBinding.project) ?? .inheritCurrent,
+            modelID: modelID,
+            parentConversationID: parentConversationID
+        )
+
+        guard store != nil else {
+            // 没有持久化层：与其它轻量实现保持一致，直接走内存缓存。
+            if draft.parentConversationID == nil {
+                cache(draft.summary)
+                selectedConversationID = draft.id
+                updateCurrentTitle()
+                persistSelectedConversationID()
+                notifySelectedConversationChanged()
+                notifyConversationObservers(.created(draft.id))
+            }
+            return draft.id
+        }
+
+        try await persist(draft)
+
+        if draft.parentConversationID == nil {
+            cache(draft.summary)
+            selectedConversationID = draft.id
+            updateCurrentTitle()
+            persistSelectedConversationID()
+            notifySelectedConversationChanged()
+            notifyConversationObservers(.created(draft.id))
+        }
+        notifyConversationsChanged()
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Created conversation \(draft.id.uuidString.prefix(8))... (waited for persistence)")
+        }
+        return draft.id
+    }
+
+    /// 创建对话所需的全部已解析字段，供同步/异步两条创建路径共用。
+    private struct ConversationDraft {
+        let id: UUID
+        let title: String?
+        let createdAt: Date
+        let projectPath: String?
+        let modelID: String?
+        let verbosity: ResponseVerbosity
+        let reasoningEffort: ReasoningEffort?
+        let automationLevel: AutomationLevel
+        let language: ConversationLanguage
+        let parentConversationID: UUID?
+
+        var summary: ConversationSummary {
+            ConversationSummary(
+                id: id,
+                title: title,
+                preview: "",
+                createdAt: createdAt,
+                updatedAt: createdAt,
+                verbosity: verbosity,
+                reasoningEffort: reasoningEffort,
+                language: language,
+                automationLevel: automationLevel,
+                modelID: modelID,
+                projectPath: projectPath,
+                parentConversationID: parentConversationID
+            )
+        }
+    }
+
+    private func makeConversationDraft(
+        title: String?,
+        binding: ProjectBinding,
+        modelID: String?,
+        parentConversationID: UUID?
+    ) -> ConversationDraft {
         let conversationTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedTitle = conversationTitle?.isEmpty == true ? nil : conversationTitle
 
@@ -104,76 +221,44 @@ extension ConversationManager {
         )
         let effectiveModelID = modelID.flatMap { LLMModelID(rawValue: $0)?.rawValue }
             ?? llmProviderManager?.selectedModelID?.rawValue
-        // 继承全局设置（详细程度、推理强度、对话模式）
-        let effectiveVerbosity = self.globalVerbosity
-        let effectiveReasoningEffort = self.globalReasoningEffort
-        let effectiveAutomationLevel = self.globalAutomationLevel
-        let effectiveLanguage = self.language(for: selectedConversationID)
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)创建对话：\(normalizedTitle ?? "nil"), 项目：\(effectiveProjectPath ?? "nil"), 模型 ID：\(effectiveModelID ?? "nil"), 详细程度：\(effectiveVerbosity.rawValue)")
+            Self.logger.info("\(Self.t)创建对话：\(normalizedTitle ?? "nil"), 项目：\(effectiveProjectPath ?? "nil"), 模型 ID：\(effectiveModelID ?? "nil"), 详细程度：\(self.globalVerbosity.rawValue)")
         }
 
-        let conversation = ConversationSummary(
-            id: id,
+        return ConversationDraft(
+            id: UUID(),
             title: normalizedTitle,
-            preview: "",
-            createdAt: now,
-            updatedAt: now,
-            verbosity: effectiveVerbosity,
-            reasoningEffort: effectiveReasoningEffort,
-            language: effectiveLanguage,
-            automationLevel: effectiveAutomationLevel,
-            modelID: effectiveModelID,
+            createdAt: Date(),
             projectPath: effectiveProjectPath,
+            modelID: effectiveModelID,
+            verbosity: globalVerbosity,
+            reasoningEffort: globalReasoningEffort,
+            automationLevel: globalAutomationLevel,
+            language: language(for: selectedConversationID),
             parentConversationID: parentConversationID
         )
+    }
 
-        // Add to the bounded in-memory cache immediately.
-        if parentConversationID == nil {
-            cache(conversation)
-            selectedConversationID = id
-            updateCurrentTitle()
-            persistSelectedConversationID()
-            notifySelectedConversationChanged()
-            notifyConversationObservers(.created(id))
-        }
-
-        // Persist first, then notify the list. Otherwise the list may query the
-        // database before this conversation is stored and conclude that nothing
-        // changed.
-        Task {
-            do {
-                try await store?.createConversation(
-                    id: id,
-                    title: normalizedTitle,
-                    preview: "",
-                    createdAt: now,
-                    verbosity: effectiveVerbosity,
-                    modelID: effectiveModelID,
-                    projectPath: effectiveProjectPath,
-                    parentConversationID: parentConversationID,
-                    reasoningEffort: effectiveReasoningEffort,
-                    automationLevel: effectiveAutomationLevel
-                )
-                self.eventBus?.publishAsLegacy(
-                    ConversationDidCreateEvent(conversationID: id),
-                    notificationName: .lumiConversationDidCreate,
-                    userInfo: ["conversationID": id]
-                )
-                self.notifyConversationsChanged()
-            } catch {
-                if Self.verbose {
-                    Self.logger.error("\(Self.t)Failed to persist conversation: \(error)")
-                }
-            }
-        }
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)Created conversation \(id.uuidString.prefix(8))...")
-        }
-
-        return id
+    /// 落库并广播创建事件；失败时原样抛出。
+    private func persist(_ draft: ConversationDraft) async throws {
+        try await store?.createConversation(
+            id: draft.id,
+            title: draft.title,
+            preview: "",
+            createdAt: draft.createdAt,
+            verbosity: draft.verbosity,
+            modelID: draft.modelID,
+            projectPath: draft.projectPath,
+            parentConversationID: draft.parentConversationID,
+            reasoningEffort: draft.reasoningEffort,
+            automationLevel: draft.automationLevel
+        )
+        eventBus?.publishAsLegacy(
+            ConversationDidCreateEvent(conversationID: draft.id),
+            notificationName: .lumiConversationDidCreate,
+            userInfo: ["conversationID": draft.id]
+        )
     }
 
     private func legacyModelID(providerID: String?, modelName: String?) -> String? {

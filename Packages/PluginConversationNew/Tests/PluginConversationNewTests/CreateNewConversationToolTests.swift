@@ -68,8 +68,8 @@ struct CreateNewConversationToolTests {
         #expect(output.contains("New Conversation Prepared"))
     }
 
-    @Test("创建失败时同样恢复选中态")
-    func selectionIsRestoredOnFailure() async throws {
+    @Test("落库失败时抛错并恢复选中态，不显示成功卡片")
+    func selectionIsRestoredAndErrorSurfacesOnFailure() async throws {
         struct Boom: Error {}
         let original = UUID()
         let capability = MockNewChatCapability()
@@ -77,18 +77,20 @@ struct CreateNewConversationToolTests {
         capability.createError = Boom()
 
         let tool = CreateNewConversationTool(conversations: capability)
-        let output = try await tool.execute(arguments: ["task": ToolArgument("Do an unrelated task here")])
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: ["task": ToolArgument("Do an unrelated task here")])
+        }
 
         #expect(capability.selectedConversationID == original, "失败路径不得把用户留在空对话里")
         #expect(capability.restoredSelections.last == original)
-        #expect(output.contains("New Conversation Not Prepared"))
     }
 
-    @Test("无能力时返回失败文本且不抛出")
-    func missingCapabilityReturnsFailureText() async throws {
+    @Test("无能力时抛出执行失败")
+    func missingCapabilityThrows() async {
         let tool = CreateNewConversationTool(conversations: nil)
-        let output = try await tool.execute(arguments: ["task": ToolArgument("Do something")])
-        #expect(output.contains("New Conversation Not Prepared"))
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: ["task": ToolArgument("Do something")])
+        }
     }
 
     // MARK: - 返回结构

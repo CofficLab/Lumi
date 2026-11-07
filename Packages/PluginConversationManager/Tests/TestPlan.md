@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 30 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 53 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，用例总数: 40
+测试文件: 10 个，用例总数: 53
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -42,7 +42,7 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **ConversationLegacyMigration**（6 条）：由 `readerCopiesLegacyDatabaseMapsFieldsReusesAndReleasesItsSnapshot`、`readerReportsMissingAndInvalidLegacyDatabases`、`locatorPrefersProductionAndUsesDebugFallback` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ConversationManagerCRUD**（2 条）：由 `creationInheritsGlobalPreferencesAndKeepsChildOutOfRootCache`、`selectionTitleActivityAndDeletionUpdateCachedStateAndEvents` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationManagerCRUD**（3 条）：由 `creationInheritsGlobalPreferencesAndKeepsChildOutOfRootCache`、`createAndWaitPersistsBeforeReturningAndCachesRoot`、`selectionTitleActivityAndDeletionUpdateCachedStateAndEvents` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationManagerObserverTransfer**（1 条）：由 `transferredObserversStayAliveAndCancelWithTheirOriginalHandles` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationManagerPreference**（2 条）：由 `automationPreferenceDoesNotPublishStructuralListChange`、`globalAndConversationPreferencesUpdateCacheAndNotifyObservers` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationStoreObserver**（2 条）：由 `forwardsEventsAndMigrationStateUntilCancelled`、`capabilityAdapterUsesManagerAndEmptyMessageFallbacks` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -101,16 +101,24 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 43 | 项目绑定 | `.project` 覆盖当前项目 | 当前项目 `/tmp/current-project`，显式 `/tmp/source-project` | `createConversation(binding: .project(...))` | 新对话 `projectPath` 为 `/tmp/source-project` | P1 | ✅ 已覆盖 | `explicitProjectOverridesCurrent` |
 | 44 | 项目绑定 | 旧接口 `projectPath: nil` 仍沿用当前项目 | 当前项目 `/tmp/current-project` | `createConversation(projectPath: nil)` | 行为不变，`projectPath` 为当前项目 | P1 | ✅ 已覆盖 | `legacyNilStillInheritsCurrentProject` |
 | 45 | 项目绑定 | 空字符串项目标识不会写入数据层 | 显式 `.project("")` 与旧接口 `projectPath: ""` | 分别创建对话 | 两条对话 `projectPath` 均为 nil，存储层无空字符串 | P0 | ✅ 已覆盖 | `emptyProjectPathIsNeverStored` |
+| 46 | ConversationManagerCRUD | 等待落库的创建接口返回时会话已可从库里读到（**回归 #541**） | 有持久化层的 manager | `createConversationAndWait` | 返回后立即 `fetchConversation` 命中，内存缓存与选中态同步 | P1 | ✅ 已覆盖 | `createAndWaitPersistsBeforeReturningAndCachesRoot` |
+| 47 | ConversationStoreStats | 每日计数按自然日分桶 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `countsPerCalendarDay` |
+| 48 | ConversationStoreStats | 项目作用域只统计该项目 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `scopesToProject` |
+| 49 | ConversationStoreStats | 「创建于 cutoff 之前」按 createdAt 判定 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectsByCreatedAt` |
+| 50 | ConversationStoreStats | 清理父会话时连带清掉子 Agent 会话 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `deletesDescendantsAlongsideParent` |
+| 51 | ConversationCountLedger | 删除会话后每日计数保持不变 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `countsSurviveDeletion` |
+| 52 | ConversationCountLedger | 批量清理旧对话后统计保持不变 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `countsSurviveBulkCleanup` |
+| 53 | ConversationCountLedger | 重启后账本从磁盘恢复，不重复回填 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `ledgerSurvivesRestart` |
 
-> 说明：全部 **45 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **53 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 35 / 35
+- P1: 已覆盖 43 / 43
 - P2: 已覆盖 5 / 5
-- **合计: 45 / 45**（仅表示清单场景，非源码覆盖率）
+- **合计: 53 / 53**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -121,7 +129,7 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 45 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 53 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
