@@ -35,7 +35,7 @@ public struct ExportIconSVGTool: SuperAgentTool {
                 withIntermediateDirectories: true
             )
 
-            let svg = IconSVGRenderer().render(document: document)
+            let svg = try await IconSVGRenderer().render(document: document)
             try svg.write(to: outputURL, atomically: true, encoding: .utf8)
 
             await MainActor.run {

@@ -392,6 +392,83 @@ struct AppIconDesignerPluginTests {
         #expect(largeCorner.blueComponent > 0.8)
     }
 
+    @Test("SVG 导出保留渐变、阴影与模糊，不丢失视觉效果")
+    func svgExportPreservesGradientsShadowAndBlur() async throws {
+        let document = IconDocument(
+            title: "Effects",
+            width: 1024,
+            height: 1024,
+            background: .linearGradient(
+                colors: ["#111827", "#2563eb", "#38bdf8"],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            layers: [
+                IconLayer(
+                    name: "Glow",
+                    shape: .circle(cx: 512, cy: 512, radius: 330),
+                    fill: .radialGradient(
+                        colors: ["#ffffff55", "#ffffff00"],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 330
+                    ),
+                    opacity: 0.72,
+                    blurRadius: 8
+                ),
+                IconLayer(
+                    name: "Card",
+                    shape: .rectangle(x: 200, y: 200, width: 624, height: 624, cornerRadius: 120),
+                    fill: .color("#ffffff"),
+                    shadow: IconShadow(color: "#00000055", radius: 32, x: 0, y: 20)
+                ),
+            ]
+        )
+
+        let svg = try await IconSVGRenderer().render(document: document)
+
+        #expect(svg.contains("<linearGradient"))
+        #expect(svg.contains("<radialGradient"))
+        #expect(svg.contains("fill=\"url(#linear-gradient-"))
+        #expect(svg.contains("fill=\"url(#radial-gradient-"))
+        // 渐变保留全部色标，而不是降为第一种颜色。
+        #expect(svg.contains("stop-color=\"#111827\""))
+        #expect(svg.contains("stop-color=\"#38BDF8\""))
+        #expect(svg.contains("stop-opacity=\""))
+        // 阴影与模糊输出为真实滤镜，而不是被忽略。
+        #expect(svg.contains("<filter"))
+        #expect(svg.contains("feGaussianBlur"))
+        #expect(svg.contains("feFlood"))
+    }
+
+    @Test("SVG 导出不得把 SF Symbol 输出为字面名称")
+    func svgExportRasterizesSymbolsInsteadOfLiteralNames() async throws {
+        let document = IconDocument(
+            title: "Symbol",
+            width: 1024,
+            height: 1024,
+            background: .color("#f8fafc"),
+            layers: [
+                IconLayer(
+                    name: "Glyph",
+                    shape: .symbol(name: "sparkles", x: 512, y: 512, size: 420, weight: "semibold"),
+                    fill: .color("#0f172a"),
+                    shadow: IconShadow(color: "#00000055", radius: 20, x: 0, y: 12)
+                ),
+            ]
+        )
+
+        let svg = try await IconSVGRenderer().render(document: document)
+
+        #expect(!svg.contains("<text"))
+        #expect(!svg.contains(">sparkles<"))
+        #expect(svg.contains("<image"))
+        #expect(svg.contains("data:image/png;base64,"))
+        #expect(svg.contains("width=\"420\""))
+        // 阴影同样作用于光栅化后的符号。
+        #expect(svg.contains("<filter"))
+    }
+
     private func pixelColor(in pngData: Data, x: Int, y: Int) throws -> NSColor {
         let bitmap = try #require(NSBitmapImageRep(data: pngData))
         return try #require(bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB))
