@@ -143,6 +143,29 @@ struct FileLogCoordinatorTests {
         #expect(FileManager.default.fileExists(atPath: legacyDirectory.path))
     }
 
+    @Test func migrationMigratesHiddenLogsAndNeverDeletesUncheckedHiddenFiles() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PluginFileLogHiddenMigrationTests-\(UUID().uuidString)", isDirectory: true)
+        let legacyDirectory = root.appendingPathComponent("FileLog", isDirectory: true)
+        let currentDirectory = root.appendingPathComponent(FileLogPlugin.pluginID, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        try FileManager.default.createDirectory(at: legacyDirectory, withIntermediateDirectories: true)
+        try Data("hidden log".utf8).write(to: legacyDirectory.appendingPathComponent(".important.log"))
+        try Data("keep me".utf8).write(to: legacyDirectory.appendingPathComponent(".keep"))
+
+        try FileLogCoordinator.migrateLegacyDirectory(from: legacyDirectory, to: currentDirectory)
+
+        let migrated = currentDirectory.appendingPathComponent(".important.log")
+        #expect(FileManager.default.fileExists(atPath: migrated.path), "隐藏日志也必须迁移")
+        #expect(try String(contentsOf: migrated, encoding: .utf8) == "hidden log")
+        #expect(
+            try String(contentsOf: legacyDirectory.appendingPathComponent(".keep"), encoding: .utf8) == "keep me",
+            "未被迁移逻辑检查的隐藏文件不得随目录删除"
+        )
+        #expect(FileManager.default.fileExists(atPath: legacyDirectory.path), "旧目录非空时不得递归删除")
+    }
+
     @Test func migrationSkipsMissingOrIdenticalDirectoriesAndRemovesAnEmptyLegacyDirectory() throws {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("PluginFileLogEmptyMigrationTests-\(UUID().uuidString)", isDirectory: true)
