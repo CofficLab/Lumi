@@ -5,7 +5,7 @@
 PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内存 / GPU / 电池 / 存储）与历史趋势， 支持主内容视图、菜单栏图表、设置页与文档页等贡献点。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 32
+测试文件: 8 个，用例总数: 36
 
 核心组件（源码目录）:
 - `Models/`
@@ -46,6 +46,7 @@ PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内�
 - **温度历史**（3 条）：由 `recordsRecentPoints`、`filtersRecentByRange`、`usesLongTermBufferForLongerRanges` 等用例锁定；改动温度历史采集或时间范围语义时优先跑对应测试文件。
 - **温度传感器**（5 条）：由 `privateSymbolsAvailable`、`sortedByIndex`、`readingsInRange` 等用例锁定；改动底层传感器读取时优先跑对应测试文件。
 - **历史范围裁剪**（4 条）：由 `oneHourRangeUsesHighResolutionBuffer`、`fourHourRangeTrimsLongTermBuffer` 等用例锁定；改动历史时间范围语义或视图取数方式时优先跑对应测试文件。
+- **历史图表几何**（4 条）：由 `xMapsTimestampsProportionally`、`longGapKeepsProportionalWidth`、`xClampsOutOfRangeTimestamps`、`hoverSelectsNearestTimestamp` 锁定，防止绘线或悬浮选点退回数组等距映射。
 
 ## 测试用例清单
 
@@ -83,27 +84,31 @@ PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内�
 | 30 | CPU 进程监控 | 不同完整名称的进程不会被误合并 | WebKit WebContent / Networking 两条采样 | 执行聚合 | 保持两条独立记录，份数均为 1 | P1 | ✅ 已覆盖 | `keepsDistinctNamesSeparate` |
 | 31 | CPU 进程监控 | 主弹窗只展示前 5 条，完整列表保留 | 7 条进程指标 | 读取预览与完整列表 | 预览 5 条，完整列表 7 条 | P2 | ✅ 已覆盖 | `previewLimitsToFive` |
 | 32 | CPU 进程监控 | CPU 采样间隔与网络区块统一为 1 秒 | 读取采样间隔常量 | 断言常量 | 等于 1.0 | P1 | ✅ 已覆盖 | `samplingIntervalMatchesNetworkBlock` |
+| 33 | 历史图表几何 | X 坐标按时间戳比例映射 | 时间戳 0 / 3600 / 7200，宽 200 | 调用 `DeviceHistoryChartGeometry.x` | 分别为 0 / 100 / 200 | P1 | ✅ 已覆盖 | `xMapsTimestampsProportionally` |
+| 34 | 历史图表几何 | 长时间空洞占据真实水平距离 | 时间戳 0 / 60 / 3660，宽 100 | 计算 60s 的 X 坐标 | 约 1.639，而非等距的 50 | P1 | ✅ 已覆盖 | `longGapKeepsProportionalWidth` |
+| 35 | 历史图表几何 | 超出时间范围的值被钳制在边界 | 时间范围 0...100，宽 50 | 传入 -10 / 200 / 起止相同 | 分别为 0 / 50 / 0 | P1 | ✅ 已覆盖 | `xClampsOutOfRangeTimestamps` |
+| 36 | 历史图表几何 | 悬浮选点按时间轴就近命中 | 时间戳 0 / 60 / 3660，宽 100 | 传入 x=1.639 / 50 / 99 / 0 / 空数组 | 命中下标 1 / 1 / 2 / 0 / nil | P1 | ✅ 已覆盖 | `hoverSelectsNearestTimestamp` |
 
-> 说明：全部 **32 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **36 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 4 / 4
-- P1: 已覆盖 20 / 20
+- P1: 已覆盖 24 / 24
 - P2: 已覆盖 8 / 8
-- **合计: 32 / 32**（仅表示清单场景，非源码覆盖率）
+- **合计: 36 / 36**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
-- **P1**: 其余功能性用例（20 条）
+- **P1**: 其余功能性用例（24 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 32 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 36 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
