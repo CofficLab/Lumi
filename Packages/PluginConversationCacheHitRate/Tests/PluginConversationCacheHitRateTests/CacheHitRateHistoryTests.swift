@@ -1,5 +1,6 @@
 import Foundation
 import ProviderMessage
+import SwiftUI
 import Testing
 @testable import PluginConversationCacheHitRate
 
@@ -185,4 +186,32 @@ private func assistantMessage(
     #expect(CacheHitRateLineChart.percentText(0.1) == "10%")
     #expect(CacheHitRateLineChart.percentText(0.625) == "62%")
     #expect(CacheHitRateLineChart.percentText(1) == "100%")
+}
+
+// MARK: - 平滑曲线范围（回归 #874）
+
+@Test func smoothedPathNeverOvershootsSegmentEndpoints() {
+    // 与生产 0% → 100% → 100% 采样对应的像素坐标（y 向下）。
+    let points = [
+        CGPoint(x: 0, y: 100),
+        CGPoint(x: 1, y: 0),
+        CGPoint(x: 2, y: 0),
+    ]
+    let path = CacheHitRateLineChart.smoothedPath(points: points)
+
+    var segmentIndex = 0
+    path.forEach { element in
+        guard case let .curve(to: end, control1: control1, control2: control2) = element else { return }
+        let start = points[segmentIndex]
+        segmentIndex += 1
+
+        let minY = min(start.y, end.y)
+        let maxY = max(start.y, end.y)
+        #expect(control1.y >= minY && control1.y <= maxY)
+        #expect(control2.y >= minY && control2.y <= maxY)
+
+        let midY = (start.y + 3 * control1.y + 3 * control2.y + end.y) / 8
+        #expect(midY >= minY && midY <= maxY)
+    }
+    #expect(segmentIndex == points.count - 1)
 }
