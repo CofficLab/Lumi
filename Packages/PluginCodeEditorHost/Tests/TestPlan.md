@@ -5,7 +5,7 @@
 PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆盖 202 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 22 个，用例总数: 202
+测试文件: 23 个，用例总数: 204
 
 核心组件（源码目录）:
 - `Editor/`
@@ -271,16 +271,18 @@ PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆�
 | 200 | LSPCoordinatorJumpToDefinition | testRequestDefinitionWaitsForInFlightOpenTask | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testRequestDefinitionWaitsForInFlightOpenTask` |
 | 201 | CodeEditorHostSuperPlugin | registers the shared editor service and every host capability | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registersEditorServices` |
 | 202 | CodeEditorHostSuperPlugin | removes every editor capability during shutdown | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `removesEditorServices` |
+| 203 | EditorDocumentEncoding | 打开 UTF-16 文本时记录检测到的编码，按该编码写回字节不变 | sample.txt 以 UTF-16 写入 | 调用 `loadDocument` 后按记录编码写回 | 编码非 UTF-8，写回字节与原文件完全一致（含 BOM） | P0 | ✅ 已覆盖 | `loadTextDocumentCapturesDetectedEncoding` |
+| 204 | EditorDocumentEncoding | UTF-8 文本记录的编码仍为 UTF-8 | sample.txt 以 UTF-8 写入 | 调用 `loadDocument` | 编码为 UTF-8 | P1 | ✅ 已覆盖 | `loadUTF8DocumentKeepsUTF8` |
 
 > 说明：全部 **202 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 15 / 15
-- P1: 已覆盖 168 / 168
+- P0: 已覆盖 16 / 16
+- P1: 已覆盖 169 / 169
 - P2: 已覆盖 19 / 19
-- **合计: 202 / 202**（仅表示清单场景，非源码覆盖率）
+- **合计: 204 / 204**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

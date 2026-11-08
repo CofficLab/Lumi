@@ -882,6 +882,10 @@ public final class EditorState: ObservableObject, SuperLog {
     /// 文件名
     @Published var fileName: String = ""
 
+    /// 打开文本文件时检测到的原始编码；保存时按此编码写回，避免静默改写编码/BOM。
+    /// 对二进制、截断预览与未关联文件保持 UTF-8。
+    var originalFileEncoding: String.Encoding = .utf8
+
     var isEditingProjectPBXProj: Bool {
         currentFileURL?.lastPathComponent == "project.pbxproj"
     }
@@ -1910,6 +1914,7 @@ public final class EditorState: ObservableObject, SuperLog {
                             self.isTruncated = document.isTruncated
                             self.fileExtension = document.fileExtension
                             self.fileName = document.fileName
+                            self.originalFileEncoding = document.encoding
                             self.hasUnsavedChanges = false
                             self.saveState = .idle
                             self.autoSaveScheduler.cancel()
@@ -2414,6 +2419,7 @@ public final class EditorState: ObservableObject, SuperLog {
             isTruncated = false
             fileExtension = ""
             fileName = ""
+            originalFileEncoding = .utf8
             hasUnsavedChanges = false
             currentPeekPresentation = nil
             currentInlineRenameState = nil
@@ -2504,6 +2510,7 @@ public final class EditorState: ObservableObject, SuperLog {
             resetViewportObservation()
             fileExtension = binaryDocument.fileExtension
             fileName = binaryDocument.fileName
+            originalFileEncoding = .utf8
             hasUnsavedChanges = false
             saveState = .idle
             detectedLanguage = nil

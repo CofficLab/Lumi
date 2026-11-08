@@ -18,6 +18,8 @@ final class EditorDocumentController: SuperLog {
         let largeFileMode: LargeFileMode
         let fileExtension: String
         let fileName: String
+        /// 打开时检测到的文件编码，保存时按原编码写回。
+        let encoding: String.Encoding
     }
 
     struct LoadedBinaryDocument {
@@ -160,10 +162,10 @@ final class EditorDocumentController: SuperLog {
 
         let shouldTruncate = !forceFullLoad && shouldUseTruncatedPreview(for: url, fileSize: fileSize)
         let content: String
+        var detectedEncoding = String.Encoding.utf8
         if shouldTruncate {
             content = try readTruncatedContent(from: url, maxBytes: truncationReadBytes)
         } else {
-            var detectedEncoding = String.Encoding.utf8
             content = try String(contentsOf: url, usedEncoding: &detectedEncoding)
         }
 
@@ -174,7 +176,8 @@ final class EditorDocumentController: SuperLog {
                 isTruncated: shouldTruncate,
                 largeFileMode: largeFileMode,
                 fileExtension: fileExtension,
-                fileName: fileName
+                fileName: fileName,
+                encoding: detectedEncoding
             )
         )
     }

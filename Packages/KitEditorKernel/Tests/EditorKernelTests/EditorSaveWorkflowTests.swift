@@ -181,6 +181,42 @@ struct EditorSaveWorkflowControllerExtraTests {
         #expect(clearScheduled)
     }
 
+    @Test("按打开时记录的原编码写回文件，保留 UTF-16 与 BOM")
+    func performSaveUsesProvidedEncoding() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let fileURL = root.appendingPathComponent("sample.txt")
+        try "old".write(to: fileURL, atomically: true, encoding: .utf16)
+        let originalBytes = try Data(contentsOf: fileURL)
+
+        let controller = EditorSaveWorkflowController()
+        var states: [EditorSaveState] = []
+
+        controller.performSave(
+            content: "new content",
+            url: fileURL,
+            encoding: .utf16,
+            verbose: false,
+            logInfo: { _ in },
+            logError: { _ in },
+            setSaveState: { states.append($0) },
+            saveController: EditorSaveController(),
+            saveStateController: EditorSaveStateController(),
+            markPersistedText: { _ in },
+            clearConflict: {},
+            syncSession: {},
+            scheduleSuccessClear: {},
+            notifyDidSave: { _ in },
+            setHasUnsavedChanges: { _ in }
+        )
+
+        #expect(await waitUntil { states.contains(.saved) })
+
+        let savedBytes = try Data(contentsOf: fileURL)
+        #expect(savedBytes.prefix(2) == originalBytes.prefix(2), "BOM 应保留")
+        #expect(try String(contentsOf: fileURL, encoding: .utf16) == "new content")
+    }
+
     @Test("文件已不存在时报告失败并进入 error 状态")
     func performSaveFailsWhenFileMissing() async throws {
         let root = try makeTemporaryDirectory()
