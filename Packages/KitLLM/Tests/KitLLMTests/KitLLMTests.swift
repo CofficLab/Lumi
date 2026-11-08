@@ -184,6 +184,40 @@ struct KitLLMTests {
         }
     }
 
+    @Test("非推理模型不下发 reasoning_effort，避免 400（回归 #985）")
+    func openAIAdapterDropsReasoningEffortForNonReasoningModels() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://api.openai.com/v1/chat/completions")
+        )
+        for model in ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo", "gpt-4.1"] {
+            let body = try adapter.buildStreamingRequestBody(
+                messages: [LLMMessage(role: .user, content: "hi")],
+                model: model,
+                tools: nil,
+                systemPrompt: "",
+                config: LLMConfig(model: model, providerId: "openai", reasoningEffort: "high")
+            )
+            #expect(body["reasoning_effort"] == nil, "\(model) 不支持 reasoning_effort，不应下发")
+        }
+    }
+
+    @Test("推理模型仍正常下发 reasoning_effort")
+    func openAIAdapterSendsReasoningEffortForReasoningModels() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://api.openai.com/v1/chat/completions")
+        )
+        for model in ["gpt-5", "gpt-5-mini", "o1", "o3-mini", "some-model"] {
+            let body = try adapter.buildStreamingRequestBody(
+                messages: [LLMMessage(role: .user, content: "hi")],
+                model: model,
+                tools: nil,
+                systemPrompt: "",
+                config: LLMConfig(model: model, providerId: "openai", reasoningEffort: "high")
+            )
+            #expect(body["reasoning_effort"] as? String == "high", "\(model) 应当保留 reasoning_effort")
+        }
+    }
+
     @Test("档位归一化忽略大小写与空白，并拒绝 auto")
     func reasoningEffortNormalization() {
         #expect(OpenAICompatibleGenerationOptionsApplier.normalizedReasoningEffort(" HIGH ") == "high")

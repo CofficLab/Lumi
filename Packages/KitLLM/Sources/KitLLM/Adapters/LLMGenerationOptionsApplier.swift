@@ -5,6 +5,18 @@ public enum OpenAICompatibleGenerationOptionsApplier {
     /// 所有 OpenAI 兼容网关都接受的基础档位。
     private static let baseReasoningEfforts: Set<String> = ["minimal", "low", "medium", "high"]
 
+    /// 不支持 `reasoning_effort` 的模型族前缀。
+    ///
+    /// OpenAI Chat Completions 收到未支持的档位会直接返回 400（不可重试），
+    /// 因此这些模型必须整条参数省略。只拦截已知的非推理模型族；未知模型
+    /// （中转站自定义模型等）保持原有透传行为，避免误伤可用的第三方模型。
+    private static let nonReasoningModelPrefixes = ["gpt-4", "gpt-3.5", "chatgpt-4o"]
+
+    static func supportsReasoningEffort(model: String) -> Bool {
+        let normalized = model.lowercased()
+        return !nonReasoningModelPrefixes.contains { normalized.hasPrefix($0) }
+    }
+
     public static func apply(
         config: LLMConfig,
         model: String,
@@ -23,10 +35,11 @@ public enum OpenAICompatibleGenerationOptionsApplier {
             }
         }
 
-        if let reasoningEffort = normalizedReasoningEffort(
-            config.reasoningEffort,
-            additionalReasoningEfforts: additionalReasoningEfforts
-        ) {
+        if supportsReasoningEffort(model: model),
+           let reasoningEffort = normalizedReasoningEffort(
+               config.reasoningEffort,
+               additionalReasoningEfforts: additionalReasoningEfforts
+           ) {
             body["reasoning_effort"] = reasoningEffort
         }
     }
