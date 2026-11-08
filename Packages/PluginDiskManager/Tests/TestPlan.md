@@ -99,16 +99,18 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 51 | DiskManagerLumiTools | clean-projects 删除带末尾空格的路径时不影响同名兄弟目录 | 临时目录下 `lumi-target` 与 `lumi-target ` 两个目录 | 只传 `lumi-target ` 调用 `CleanProjectsTool.execute` | 后者被删除，前者保留 | P0 | ✅ 已覆盖 | `cleanProjectsToolDeletesExactPathWithTrailingWhitespace` |
 | 52 | DiskManagerLumiTools | delete-files 删除带末尾空格的路径时不影响同名兄弟目录 | 临时目录下 `lumi-target` 与 `lumi-target ` 两个目录 | 只传 `lumi-target ` 调用 `DeleteFilesTool.execute` | 后者被删除，前者保留 | P0 | ✅ 已覆盖 | `deleteFilesToolDeletesExactPathWithTrailingWhitespace` |
 | 53 | DiskManagerLumiTools | 三个清理工具删除失败时抛出错误而非返回成功文本 | 不存在的绝对路径 | 调用 `executeResult` | 均抛出 `ToolExecutionError.executionFailed` | P0 | ✅ 已覆盖 | `cleanToolsThrowWhenDeletionFails` |
+| 54 | ProjectCleaner | 根目录本身是可清理项目时仍会扫描 monorepo 子包 | 临时 monorepo：根与 `packages/app` 各有 `package.json` + `node_modules` | 调用 `ProjectCleanerService.scanDirectory` | 同时返回根与子包两个项目 | P1 | ✅ 已覆盖 | `scanDirectoryFindsNestedProjectsUnderCleanableRoot` |
+| 55 | ProjectCleaner | 递归时不进入 node_modules 等可清理产物目录 | `node_modules/left-pad/packages/inner` 下放 `package.json` + `node_modules` | 调用 `ProjectCleanerService.scanDirectory` | 结果为空 | P2 | ✅ 已覆盖 | `scanDirectoryDoesNotEnterCleanableDirectories` |
 
-> 说明：全部 **53 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **55 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 8 / 8
-- P1: 已覆盖 38 / 38
-- P2: 已覆盖 7 / 7
-- **合计: 53 / 53**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 39 / 39
+- P2: 已覆盖 8 / 8
+- **合计: 55 / 55**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -119,7 +121,7 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 53 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 55 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

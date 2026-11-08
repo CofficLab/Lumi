@@ -49,7 +49,16 @@ public final class ProjectCleanerService: @unchecked Sendable {
         return projects.sorted { $0.totalSize > $1.totalSize }
     }
 
-    nonisolated fileprivate static func scanDirectory(_ path: String, depth: Int, maxDepth: Int) async -> [ProjectInfo] {
+    /// 这些目录本身就是可清理产物，内部不会再有独立项目，递归进去只浪费时间。
+    private nonisolated static let cleanableDirectoryNames: Set<String> = [
+        "node_modules",
+        "target",
+        ".build",
+        "venv",
+        ".venv",
+    ]
+
+    nonisolated static func scanDirectory(_ path: String, depth: Int, maxDepth: Int) async -> [ProjectInfo] {
         if Task.isCancelled { return [] }
         if depth > maxDepth { return [] }
         let fileManager = FileManager.default
@@ -57,19 +66,20 @@ public final class ProjectCleanerService: @unchecked Sendable {
         var projects: [ProjectInfo] = []
         let url = URL(fileURLWithPath: path)
 
+        // 记录当前项目后仍要扫描子目录：monorepo 的子包本身也是独立项目。
         if let project = await detectProject(at: url) {
             projects.append(project)
-            return projects
         }
 
         guard let contents = try? fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]) else {
-            return []
+            return projects
         }
 
         for contentUrl in contents {
             if Task.isCancelled { break }
             var isDir: ObjCBool = false
             if fileManager.fileExists(atPath: contentUrl.path, isDirectory: &isDir), isDir.boolValue {
+                if Self.cleanableDirectoryNames.contains(contentUrl.lastPathComponent) { continue }
                 let subProjects = await Self.scanDirectory(contentUrl.path, depth: depth + 1, maxDepth: maxDepth)
                 projects.append(contentsOf: subProjects)
             }
