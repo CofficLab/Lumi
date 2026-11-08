@@ -8,6 +8,11 @@ final class ClipboardMonitorObserver {
 
     init(monitor: ClipboardMonitor = .shared) {
         self.monitor = monitor
+    }
+
+    /// 开始轮询；重复调用无副作用。
+    func start() {
+        guard timer == nil else { return }
         monitor.startMonitoring()
         timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             self?.monitor.poll()
