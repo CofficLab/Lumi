@@ -53,6 +53,51 @@ enum DirectoryTreeScanError: LocalizedError {
     }
 }
 
+/// Raised when a scan root cannot be enumerated so callers never confuse a
+/// failed scan with a successful empty result.
+enum DiskManagerScanError: LocalizedError {
+    case rootUnavailable(path: String, reason: String)
+
+    var errorDescription: String? {
+        switch self {
+        case .rootUnavailable(let path, let reason):
+            return "Cannot scan \(path): \(reason)."
+        }
+    }
+}
+
+enum ScanRootEnumerator {
+    static func make(
+        at rootURL: URL,
+        includingPropertiesForKeys keys: [URLResourceKey],
+        options: FileManager.DirectoryEnumerationOptions
+    ) throws -> FileManager.DirectoryEnumerator {
+        let fileManager = FileManager.default
+        let path = rootURL.path
+        var isDirectory: ObjCBool = false
+        // `enumerator(at:)` returns a non-nil enumerator for missing paths on
+        // macOS and simply yields nothing, so validate the root up front to
+        // keep failed scans distinguishable from empty results.
+        guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory) else {
+            throw DiskManagerScanError.rootUnavailable(path: path, reason: "the path does not exist")
+        }
+        guard isDirectory.boolValue else {
+            throw DiskManagerScanError.rootUnavailable(path: path, reason: "the path is not a directory")
+        }
+        guard fileManager.isReadableFile(atPath: path) else {
+            throw DiskManagerScanError.rootUnavailable(path: path, reason: "the directory is not readable")
+        }
+        guard let enumerator = fileManager.enumerator(
+            at: rootURL,
+            includingPropertiesForKeys: keys,
+            options: options
+        ) else {
+            throw DiskManagerScanError.rootUnavailable(path: path, reason: "the directory could not be enumerated")
+        }
+        return enumerator
+    }
+}
+
 // MARK: - Coordinator
 
 actor DirectoryTreeScanCoordinator {
@@ -188,15 +233,12 @@ actor DirectoryTreeScanCoordinator {
         start: Date,
         progress: @escaping @Sendable (ScanProgress) async -> Void
     ) async throws -> [DirectoryEntry] {
-        let fileManager = FileManager.default
         let rootURL = URL(fileURLWithPath: rootPath)
-        guard let enumerator = fileManager.enumerator(
+        let enumerator = try ScanRootEnumerator.make(
             at: rootURL,
             includingPropertiesForKeys: [.isDirectoryKey, .isPackageKey, .fileSizeKey],
             options: [.skipsHiddenFiles, .skipsPackageDescendants]
-        ) else {
-            return []
-        }
+        )
 
         var summaries: [String: SummaryNode] = [:]
         var scannedFiles = 0
@@ -294,9 +336,8 @@ actor DirectoryTreeScanCoordinator {
         start: Date,
         progress: @escaping @Sendable (ScanProgress) async -> Void
     ) async throws -> [DirectoryEntry] {
-        let fileManager = FileManager.default
         let rootURL = URL(fileURLWithPath: rootPath)
-        guard let enumerator = fileManager.enumerator(
+        let enumerator = try ScanRootEnumerator.make(
             at: rootURL,
             includingPropertiesForKeys: [
                 .isDirectoryKey,
@@ -306,9 +347,7 @@ actor DirectoryTreeScanCoordinator {
                 .contentAccessDateKey,
             ],
             options: [.skipsHiddenFiles, .skipsPackageDescendants]
-        ) else {
-            return []
-        }
+        )
 
         let root = MutableScanNode(path: rootPath, isDirectory: true)
         var nodes: [String: MutableScanNode] = [rootPath: root]

@@ -104,6 +104,33 @@ struct DirectoryTreeServiceTests {
         }
     }
 
+    @Test func missingScanRootThrowsRootUnavailable() async {
+        let missing = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-missing-tree-\(UUID().uuidString)", isDirectory: true)
+
+        do {
+            _ = try await DirectoryTreeService().scanTopLevelDirectoryUsage(atPath: missing.path)
+            Issue.record("Expected a missing scan root to throw")
+        } catch let error as DiskManagerScanError {
+            guard case .rootUnavailable(_, let reason) = error else {
+                Issue.record("Unexpected scan error: \(error)")
+                return
+            }
+            #expect(reason == "the path does not exist")
+            #expect(error.localizedDescription.contains(missing.lastPathComponent))
+        } catch {
+            Issue.record("Unexpected error type: \(error)")
+        }
+    }
+
+    @Test func emptyScanRootReturnsEmptyResult() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let entries = try await DirectoryTreeService().scanTopLevelDirectoryUsage(atPath: root.path)
+        #expect(entries.isEmpty)
+    }
+
     private func makeTemporaryDirectory() throws -> URL {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("lumi-directory-scan-\(UUID().uuidString)", isDirectory: true)
@@ -120,6 +147,39 @@ private actor ProgressRecorder {
     }
 
     var count: Int { values.count }
+}
+
+@Suite(.serialized)
+struct LargeFilesServiceTests {
+
+    @Test func largeFileScanThrowsForMissingRoot() async {
+        let missing = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-missing-large-files-\(UUID().uuidString)", isDirectory: true)
+
+        do {
+            _ = try await LargeFilesService.shared.scanLargeFiles(atPath: missing.path)
+            Issue.record("Expected a missing scan root to throw")
+        } catch let error as DiskManagerScanError {
+            guard case .rootUnavailable(_, let reason) = error else {
+                Issue.record("Unexpected scan error: \(error)")
+                return
+            }
+            #expect(reason == "the path does not exist")
+            #expect(error.localizedDescription.contains(missing.lastPathComponent))
+        } catch {
+            Issue.record("Unexpected error type: \(error)")
+        }
+    }
+
+    @Test func largeFileScanReturnsEmptyForExistingEmptyRoot() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-empty-large-files-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let files = try await LargeFilesService.shared.scanLargeFiles(atPath: root.path)
+        #expect(files.isEmpty)
+    }
 }
 
 @MainActor
@@ -177,5 +237,25 @@ private actor ProgressRecorder {
             let description = tool.displayDescription(for: paths)
             #expect(description.contains("2"))
         }
+    }
+
+    @Test func scanLargeFilesToolReportsMissingRootAsFailure() async throws {
+        let missing = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-missing-tool-large-\(UUID().uuidString)", isDirectory: true)
+
+        let output = try await ScanLargeFilesTool().execute(arguments: ["path": ToolArgument(missing.path)])
+
+        #expect(output.contains("Failed to scan large files"))
+        #expect(!output.contains("No files larger than 50 MB were found"))
+    }
+
+    @Test func scanDirectoryTreeToolReportsMissingRootAsFailure() async throws {
+        let missing = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-missing-tool-tree-\(UUID().uuidString)", isDirectory: true)
+
+        let output = try await ScanDirectoryTreeTool().execute(arguments: ["path": ToolArgument(missing.path)])
+
+        #expect(output.contains("Failed to analyze directory tree"))
+        #expect(!output.contains("No entries were found"))
     }
 }
