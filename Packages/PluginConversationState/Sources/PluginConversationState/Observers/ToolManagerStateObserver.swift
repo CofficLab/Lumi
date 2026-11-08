@@ -43,9 +43,28 @@ final class ToolManagerStateObserver: SuperLog {
             provider.update(conversationID: id, turnID: turn, toolState: .executing, activity: .executingTool)
         case .authorizationRequired(let id, let turn, _):
             provider.update(conversationID: id, turnID: turn, authorizationState: .required, activity: .waitingForUser)
-        case .completed(let id, let turn, _, _),
-             .batchCompleted(let id, let turn, _, _):
+        case .completed(let id, let turn, _, _):
             provider.update(conversationID: id, turnID: turn, toolState: .completed)
+        case .batchCompleted(let id, let turn, _, let results):
+            // 批次结束意味着这批调用已全部有结果：要么执行完，要么被策略拦截。
+            //
+            // - Important: Chat 模式的 `.blockAll` 只生成 blocked 结果，不执行
+            //   工具、也不创建 ToolJob，因此 Job 终态路径的 activity 清理永远不会
+            //   触发。若这里不清理，`.executingTool` 会一路带到下一次 LLM 请求，
+            //   界面上持续显示「正在执行」，而实际没有任何工具在跑（#992）。
+            //
+            //   仍有需要用户授权的调用时保留 `waitingForUser`，交给后续的
+            //   `authorizedCompleted` 收尾。
+            let hasPendingApproval = results.contains { result in
+                if case .needsUserResponse = result { return true }
+                return false
+            }
+            provider.update(
+                conversationID: id,
+                turnID: turn,
+                toolState: .completed,
+                clearActivity: !hasPendingApproval
+            )
         case .authorizedCompleted(let id, let turn, _, _):
             // 授权已解决（无论允许还是拒绝），「等待用户」这个状态到此结束。
             //
