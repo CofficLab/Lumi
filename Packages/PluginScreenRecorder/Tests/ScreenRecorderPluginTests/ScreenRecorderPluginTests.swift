@@ -23,6 +23,27 @@ struct ScreenRecorderPluginTests {
         #expect(tooLow.frameRate == 1)
     }
 
+    @Test("分辨率高度与时长被钳制到安全范围")
+    func resolutionHeightAndDurationClamping() {
+        let tooHigh = RecordingConfig(
+            target: .display(),
+            resolutionHeight: Int.max,
+            maxDurationSeconds: Int.max,
+            outputDirectory: URL(fileURLWithPath: "/tmp")
+        )
+        #expect(tooHigh.resolutionHeight == RecordingConfig.maxResolutionHeight)
+        #expect(tooHigh.maxDurationSeconds == RecordingConfig.maxDurationLimit)
+
+        let tooLow = RecordingConfig(
+            target: .display(),
+            resolutionHeight: -1,
+            maxDurationSeconds: -5,
+            outputDirectory: URL(fileURLWithPath: "/tmp")
+        )
+        #expect(tooLow.resolutionHeight == 1)
+        #expect(tooLow.maxDurationSeconds == 1)
+    }
+
     @Test("错误描述非空")
     func errorDescriptions() {
         #expect((RecordingError.permissionDenied.errorDescription ?? "").isEmpty == false)

@@ -24,6 +24,11 @@ public enum RecordingTarget: Sendable, Equatable {
 
 /// 一次录制会话的配置（由工具在 `execute` 内解析并校验后传入会话管理器）。
 public struct RecordingConfig: Sendable {
+    /// 分辨率高度上限：异常的大整数会在像素换算时溢出 `Int`。
+    static let maxResolutionHeight = 4320
+    /// 单次录制时长上限（秒），与工具 schema 保持一致。
+    static let maxDurationLimit = 3600
+
     public let sessionID: UUID
     public let target: RecordingTarget
     public var frameRate: Int
@@ -51,11 +56,11 @@ public struct RecordingConfig: Sendable {
         self.sessionID = sessionID
         self.target = target
         self.frameRate = max(1, min(60, frameRate))
-        self.resolutionHeight = resolutionHeight
+        self.resolutionHeight = resolutionHeight.map { max(1, min(Self.maxResolutionHeight, $0)) }
         self.includeAppAudio = includeAppAudio
         self.includeMicrophone = includeMicrophone
         self.showCursor = showCursor
-        self.maxDurationSeconds = maxDurationSeconds
+        self.maxDurationSeconds = maxDurationSeconds.map { max(1, min(Self.maxDurationLimit, $0)) }
         self.outputDirectory = outputDirectory
         self.filename = filename
     }
