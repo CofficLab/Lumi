@@ -132,9 +132,9 @@ private struct ToolActivityRow: View {
                     .lineLimit(2)
                 HStack(spacing: 5) {
                     Text(viewModel.statusTitle(for: job))
-                    if let duration = duration {
+                    if let duration = viewModel.elapsedDuration(for: job) {
                         Text("·")
-                        Text(formatDuration(duration))
+                        Text(viewModel.formatDuration(duration))
                     }
                 }
                 .font(.caption2)
@@ -184,16 +184,5 @@ private struct ToolActivityRow: View {
         case .cancelled, .cancelling: return .secondary
         case .queued, .running: return .accentColor
         }
-    }
-
-    private var duration: TimeInterval? {
-        guard let startedAt = job.startedAt else { return nil }
-        return (job.completedAt ?? Date()).timeIntervalSince(startedAt)
-    }
-
-    private func formatDuration(_ value: TimeInterval) -> String {
-        if value < 1 { return "<1s" }
-        if value < 60 { return String(format: "%.1fs", value) }
-        return String(format: "%.1fm", value / 60)
     }
 }
