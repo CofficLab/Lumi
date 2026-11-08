@@ -29,6 +29,14 @@ public protocol StatusBarProviding: AnyObject, ObservableObject
 public extension StatusBarProviding {
     var visibleStatusBarItems: [StatusBarItem] { statusBarItems }
 
+    /// 状态栏是否存在可渲染的贡献。
+    ///
+    /// 语义：`visibleStatusBarItems` 为空表示「没有任何插件贡献」，
+    /// 此时整条状态栏不应渲染；非空表示「存在贡献」，即使某个贡献的内容
+    /// 当前渲染为空，也由贡献方负责撤回该项（见 `StatusBarItem` 的约定）。
+    /// 容器只依据贡献列表判断可见性，不通过渲染内容测量来推断。
+    var hasVisibleStatusBarItems: Bool { !visibleStatusBarItems.isEmpty }
+
     /// 追加状态栏项（保留已有项）：供多个插件各自贡献时使用，互不覆盖。
     ///
     /// 默认实现合入已有项并按 `order` 排序（同 id 去重，保留先注册者）。
