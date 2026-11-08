@@ -299,6 +299,29 @@ struct LargeFilesServiceTests {
         #expect(FileManager.default.fileExists(atPath: fixture.unspacedPath))
     }
 
+    // MARK: - 回归 #870：普通文件根路径必须报告真实释放字节
+
+    @Test func cleanCachesToolReportsActualSizeForRegularFile() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-regular-file-cache-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let fileURL = root.appendingPathComponent("plain-cache.bin")
+        let byteCount = 8_192
+        try Data(repeating: 0, count: byteCount).write(to: fileURL)
+
+        let measured = await DiskManagerToolSupport.sizeOfPath(fileURL.path)
+        #expect(measured == Int64(byteCount))
+
+        let output = try await CleanCachesTool().execute(
+            arguments: ["paths": ToolArgument([fileURL.path])]
+        )
+        #expect(output.contains(DiskManagerToolSupport.formatBytes(Int64(byteCount))))
+        #expect(!output.contains(DiskManagerToolSupport.formatBytes(0)))
+        #expect(!FileManager.default.fileExists(atPath: fileURL.path))
+    }
+
     @Test func cleanXcodeCachesToolDeletesExactPathWithTrailingWhitespace() async throws {
         let fixture = try makeTrailingWhitespaceFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
