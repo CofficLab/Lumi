@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 72 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 74 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 72
+测试文件: 11 个，用例总数: 74
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -44,7 +44,7 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 - **ConversationLegacyMigration**（6 条）：由 `readerCopiesLegacyDatabaseMapsFieldsReusesAndReleasesItsSnapshot`、`readerReportsMissingAndInvalidLegacyDatabases`、`locatorPrefersProductionAndUsesDebugFallback` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationManagerCRUD**（3 条）：由 `creationInheritsGlobalPreferencesAndKeepsChildOutOfRootCache`、`createAndWaitPersistsBeforeReturningAndCachesRoot`、`selectionTitleActivityAndDeletionUpdateCachedStateAndEvents` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationManagerObserverTransfer**（1 条）：由 `transferredObserversStayAliveAndCancelWithTheirOriginalHandles` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ConversationManagerPreference**（6 条）：由 `automationPreferenceDoesNotPublishStructuralListChange`、`globalAndConversationPreferencesUpdateCacheAndNotifyObservers`、`globalLanguagePersistsAcrossRestartWithoutSelectedConversation`、`evictedConversationKeepsItsOwnLanguage`、`globalVerbosityPersistsAcrossRestartWithoutSelectedConversation`、`evictedConversationKeepsItsBoundModel` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationManagerPreference**（8 条）：由 `automationPreferenceDoesNotPublishStructuralListChange`、`globalAndConversationPreferencesUpdateCacheAndNotifyObservers`、`globalLanguagePersistsAcrossRestartWithoutSelectedConversation`、`evictedConversationKeepsItsOwnLanguage`、`globalVerbosityPersistsAcrossRestartWithoutSelectedConversation`、`evictedConversationKeepsItsBoundModel`、`evictedConversationKeepsItsAutomationLevel`、`unknownConversationStillDefaultsToBuild` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationStoreObserver**（2 条）：由 `forwardsEventsAndMigrationStateUntilCancelled`、`capabilityAdapterUsesManagerAndEmptyMessageFallbacks` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationStoreSettingsViewModel**（5 条）：由 `loadsPagesCountsMessagesAndSelectedConversation`、`selectionFallsBackWhenMissingAndReloadsForStructuralEvents`、`emptyLoadsFinishAndMessagesClearWithoutSelection`、`preferenceEventsRefreshCachedSummaries`、`reopeningRefreshesStaleSummaries` 等用例锁定；模型与偏好事件必须按 ID 就地刷新摘要，重进页面不得沿用陈旧快照。
 - **ConversationListRefresh**（1 条）：由 `activeUpdatesAreDebounced` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -129,27 +129,29 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 70 | ConversationStoreSettingsViewModel | 消息变化刷新计数与选中会话预览（**回归 #995**） | 选中会话已有 2 条消息，后台会话 1 条 | 插入一条消息产生 `.inserted`，再对后台会话产生 `.updated` | 选中会话计数变 3、预览追加新消息；后台会话只更新计数 | P1 | ✅ 已覆盖 | `messageChangeRefreshesCountAndSelectedPreview` |
 | 71 | ConversationStoreObserver | 消息变化转发到设置页，取消后停止（**回归 #995**） | 能力层已注册消息观察者 | 发送 `.inserted` 后取消 observer 再发送 `.updated` | 首次计数更新，取消后不再写入 | P1 | ✅ 已覆盖 | `forwardsMessageChangesUntilCancelled` |
 | 72 | ConversationPagedMutation | 回填加载触发缓存淘汰后仍能写入标题（**回归 #996**） | 81 条历史会话，冷启动缓存 40 条 | 逐条 `fetchConversation` 把候选补进缓存越过 80 上限，目标被同步淘汰后更新标题 | 目标不在缓存中，更新返回 true 且标题落库 | P1 | ✅ 已覆盖 | `renamesConversationEvictedRightAfterBackfillFetch` |
+| 73 | ConversationManagerPreference | 被挤出缓存的会话保留自己的自动化级别（**回归 #1008**） | 后台会话 Autonomous | 写入 100 条更新的顶层会话把后台会话挤出窗口后调用 `automationLevel(for:)` | 仍返回 `.autonomous`，不再回退 `.build` | P1 | ✅ 已覆盖 | `evictedConversationKeepsItsAutomationLevel` |
+| 74 | ConversationManagerPreference | 未知会话与 nil 仍回退 Build（**回归 #1008** 护栏） | 缓存中已有 Autonomous 会话 | 对 nil 与随机 UUID 调用 `automationLevel(for:)` | 均返回 `.build`，不被其它会话的级别污染 | P1 | ✅ 已覆盖 | `unknownConversationStillDefaultsToBuild` |
 
-> 说明：全部 **72 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **74 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 8 / 8
-- P1: 已覆盖 59 / 59
+- P1: 已覆盖 61 / 61
 - P2: 已覆盖 5 / 5
-- **合计: 72 / 72**（仅表示清单场景，非源码覆盖率）
+- **合计: 74 / 74**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
-- **P1**: 其余功能性用例（56 条）
+- **P1**: 其余功能性用例（61 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 69 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 74 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

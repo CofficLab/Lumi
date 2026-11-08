@@ -27,6 +27,9 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     /// 缓存数组之外的会话语言；后台会话被挤出有界缓存后，下一次请求仍须用它自己的
     /// 语言而不是 New Chat 的全局默认值（issue #984）。
     var languageOverrides: [UUID: ConversationLanguage] = [:]
+    /// 缓存数组之外的会话自动化级别；后台会话被挤出有界缓存后，工具可用性与
+    /// 授权策略仍须按用户为该会话选择的值执行（issue #1008）。
+    var automationLevelOverrides: [UUID: AutomationLevel] = [:]
     public internal(set) var selectedConversationID: UUID? {
         didSet {
             guard selectedConversationID != oldValue else { return }
@@ -259,6 +262,11 @@ public final class ConversationManager: ConversationManaging, SuperLog {
         // 按 ID 查询模型，丢失后会静默改用全局模型（issue #987）。
         if let modelID = summary.modelID {
             modelIDOverrides[summary.id] = modelID
+        }
+        // 自动化级别同样要跨缓存淘汰保留：后台回合在淘汰后仍会按会话 ID
+        // 查询该值，丢失后会回退 Build，改变工具授权策略（issue #1008）。
+        if let automationLevel = summary.automationLevel {
+            automationLevelOverrides[summary.id] = automationLevel
         }
         if let index = conversations.firstIndex(where: { $0.id == summary.id }) {
             conversations[index] = summary

@@ -218,4 +218,48 @@ struct ConversationManagerPreferenceTests {
         #expect(manager.modelID(for: backgroundID) == modelID.rawValue)
         #expect(manager.providerID(for: backgroundID) == "gpt-a")
     }
+
+    /// 回归 #1008：后台会话被挤出有界缓存后，仍须使用它自己的自动化级别。
+    @Test func evictedConversationKeepsItsAutomationLevel() {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationAutomationEvictionTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let manager = ConversationManager(store: nil, dataDirectory: directory)
+
+        let backgroundID = UUID()
+        manager.cache(ConversationSummary(
+            id: backgroundID,
+            createdAt: Date(timeIntervalSince1970: 1),
+            automationLevel: .autonomous
+        ))
+
+        // 用 100 条更新的顶层会话把 background 挤出 80 条的有界窗口。
+        for index in 0..<100 {
+            manager.cache(ConversationSummary(
+                id: UUID(),
+                createdAt: Date(timeIntervalSince1970: TimeInterval(100 + index))
+            ))
+        }
+
+        #expect(!manager.conversations.contains { $0.id == backgroundID })
+        #expect(manager.automationLevel(for: backgroundID) == .autonomous)
+    }
+
+    /// 护栏 #1008：缓存外仍未知的会话不能被其他会话的级别污染，nil 仍回退 Build。
+    @Test func unknownConversationStillDefaultsToBuild() {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationAutomationUnknownTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let manager = ConversationManager(store: nil, dataDirectory: directory)
+        manager.cache(ConversationSummary(
+            id: UUID(),
+            createdAt: Date(timeIntervalSince1970: 1),
+            automationLevel: .autonomous
+        ))
+
+        #expect(manager.automationLevel(for: nil) == .build)
+        #expect(manager.automationLevel(for: UUID()) == .build)
+    }
 }
