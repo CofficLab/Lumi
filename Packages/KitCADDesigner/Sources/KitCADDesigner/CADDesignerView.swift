@@ -158,7 +158,7 @@ public struct CADDesignerView: View {
     private func saveDocument() {
         guard let document = store.selectedDocument else { return }
         let panel = NSSavePanel()
-        panel.allowedContentTypes = [.json]
+        panel.allowedContentTypes = [.cadDesignerProject]
         panel.nameFieldStringValue = "\(document.name.fileSafeName).cadproj"
         panel.canCreateDirectories = true
 
@@ -168,7 +168,9 @@ public struct CADDesignerView: View {
 
     private func loadDocument() {
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.json]
+        // Native `.cadproj` files must be selectable, while older `.json`
+        // exports remain openable.
+        panel.allowedContentTypes = [.cadDesignerProject, .json]
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
@@ -209,6 +211,11 @@ public struct CADDesignerView: View {
         }
         return nil
     }
+}
+
+extension UTType {
+    /// Native CAD Designer project type: JSON payload with a `.cadproj` extension.
+    static let cadDesignerProject = UTType(filenameExtension: "cadproj", conformingTo: .json) ?? .json
 }
 
 private extension String {

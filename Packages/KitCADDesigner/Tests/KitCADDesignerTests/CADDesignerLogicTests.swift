@@ -1,4 +1,5 @@
 import Foundation
+import UniformTypeIdentifiers
 @testable import KitCADDesigner
 
 import XCTest
@@ -181,5 +182,15 @@ final class CADDesignerLogicTests: XCTestCase {
         XCTAssertEqual(document.id, loaded.id)
         XCTAssertEqual(document.name, loaded.name)
         XCTAssertEqual(document.components.count, loaded.components.count)
+    }
+
+    func testNativeProjectContentTypeAcceptsCadprojExtension() {
+        let type = UTType.cadDesignerProject
+        let extensions = type.tags[.filenameExtension] ?? []
+        XCTAssertTrue(
+            extensions.contains("cadproj") || type.preferredFilenameExtension == "cadproj",
+            "Load/Save panels must accept the native .cadproj extension"
+        )
+        XCTAssertTrue(type.conforms(to: .json))
     }
 }

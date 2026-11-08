@@ -50,27 +50,28 @@ KitCADDesigner 铝型材 3D 设计引擎（参考 MayCAD）—— 通过 3D 视�
 | 12 | CADDesignerLogic | testComponentLibraryHasConnectors | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testComponentLibraryHasConnectors` |
 | 13 | CADDesignerLogic | testProfileWeightByLength | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testProfileWeightByLength` |
 | 14 | CADDesignerLogic | testProjectSaveLoadRoundTrip | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testProjectSaveLoadRoundTrip` |
+| 15 | CADDesignerLogic | 原生 .cadproj 扩展可被 Load/Save 面板接受 | — | 执行该用例 | `.cadDesignerProject` 声明 cadproj 扩展并 conform 到 JSON | P1 | ✅ 已覆盖 | `testNativeProjectContentTypeAcceptsCadprojExtension` |
 
-> 说明：全部 **14 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **15 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 13 / 13
+- P1: 已覆盖 14 / 14
 - P2: 已覆盖 1 / 1
-- **合计: 14 / 14**（仅表示清单场景，非源码覆盖率）
+- **合计: 15 / 15**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（13 条）
+- **P1**: 其余功能性用例（14 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 14 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 15 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
