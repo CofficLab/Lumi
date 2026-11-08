@@ -112,6 +112,39 @@ struct PluginProjectOverviewTests {
         try? FileManager.default.removeItem(at: tempDir)
     }
 
+    /// 回归 #978：传入仓库子目录时，GitSection 只检查 `子目录/.git` 就直接返回
+    /// "Not a Git repository."，而 Git 本身能向祖先目录发现工作树。
+    @Test("GitSection detects the enclosing worktree from a subdirectory")
+    func gitSectionDetectsEnclosingWorktree() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("test_git_subdir_\(UUID().uuidString)", isDirectory: true)
+        let subdirectory = root.appendingPathComponent("Sources", isDirectory: true)
+        try FileManager.default.createDirectory(at: subdirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let git = URL(fileURLWithPath: "/usr/bin/git")
+        let process = Process()
+        process.executableURL = git
+        process.arguments = ["init", "-q", root.path]
+        process.standardError = FileHandle.nullDevice
+        process.standardOutput = FileHandle.nullDevice
+        try process.run()
+        process.waitUntilExit()
+        #expect(process.terminationStatus == 0)
+
+        try "let value = 1\n".write(
+            to: subdirectory.appendingPathComponent("Untracked.swift"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let result = GitSection.render(at: subdirectory)
+
+        #expect(result.contains("Repository: Yes"))
+        #expect(result.contains("Status: Uncommitted changes"))
+        #expect(!result.contains("Not a Git repository."))
+    }
+
     @Test("localization catalog is packaged")
     func localizationCatalogIsPackaged() {
         let bundle = pluginLocalization.bundle
