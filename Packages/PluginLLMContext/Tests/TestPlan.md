@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 27 条用例。
+PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 31 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 27
+测试文件: 3 个，用例总数: 31
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -34,7 +34,7 @@ PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 2
 
 - **ContextPopoverLayout**（5 条）：由 `trendMarkersHeightIsConstrained`、`trendMarkersRendersInTightSpace`、`popoverHeightIsConstrainedWithManyEvents` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ContextUsageHistory**（9 条）：由 `emptyHistory`、`samplesUseReportedInputTokens`、`assistantOutputExcludedFromInput` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **LLMContextPlugin**（13 条）：由 `timelineMessagesAreExcludedFromLLMHistory`、`shortConversationUsesFullHistory`、`contextWindowUsageMatchesPreparedRequest` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **LLMContextPlugin**（17 条）：由 `timelineMessagesAreExcludedFromLLMHistory`、`shortConversationUsesFullHistory`、`contextWindowUsageMatchesPreparedRequest` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -67,27 +67,31 @@ PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 2
 | 25 | LLMContextPlugin | 成功请求会逐步修正过高的历史校准倍率 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `successfulUsageReducesInflatedCalibration` |
 | 26 | LLMContextPlugin | 超过原先消息上限后仍能滚动生成摘要 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rollingSummaryContinuesPastLegacyMessageLimit` |
 | 27 | LLMContextPlugin | 重新创建 Provider 后复用磁盘摘要 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `persistedSummarySurvivesProviderRecreation` |
+| 28 | LLMContextPlugin | 压缩结果落在目标水位内，不会把预算填满 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compactionResultStaysUnderTargetWatermark` |
+| 29 | LLMContextPlugin | 摘要仍然覆盖得住最近区间时不会重新生成 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `validSnapshotIsReusedWithoutNewSummary` |
+| 30 | LLMContextPlugin | 压缩上下文会裁剪超大的旧工具输出 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `oversizedToolOutputIsTruncatedInCompactedContext` |
+| 31 | LLMContextPlugin | 保留窗口本身就超预算时仍然产出不超过预算的上下文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `irreducibleProtectedWindowStillProducesValidContext` |
 
-> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **31 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 25 / 25
+- P1: 已覆盖 29 / 29
 - P2: 已覆盖 2 / 2
-- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
+- **合计: 31 / 31**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（25 条）
+- **P1**: 其余功能性用例（29 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 31 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
