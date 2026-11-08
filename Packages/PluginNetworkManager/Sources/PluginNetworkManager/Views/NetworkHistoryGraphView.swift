@@ -28,7 +28,11 @@ public struct NetworkHistoryGraphView: View {
 
                         if !dataPoints.isEmpty {
                             // Download Graph (Green)
-                            MiniGraphArea(data: dataPoints.map { $0.downloadSpeed }, maxValue: maxValue)
+                            MiniGraphArea(
+                                data: dataPoints.map { $0.downloadSpeed },
+                                maxValue: maxValue,
+                                xFractions: timeFractions
+                            )
                                 .fill(
                                     LinearGradient(
                                         gradient: Gradient(colors: [Color.green.opacity(0.5), Color.green.opacity(0.1)]),
@@ -37,11 +41,19 @@ public struct NetworkHistoryGraphView: View {
                                     )
                                 )
 
-                            MiniGraphLine(data: dataPoints.map { $0.downloadSpeed }, maxValue: maxValue)
+                            MiniGraphLine(
+                                data: dataPoints.map { $0.downloadSpeed },
+                                maxValue: maxValue,
+                                xFractions: timeFractions
+                            )
                                 .stroke(.green, lineWidth: 1.5)
 
                             // Upload Graph (Red)
-                            MiniGraphArea(data: dataPoints.map { $0.uploadSpeed }, maxValue: maxValue)
+                            MiniGraphArea(
+                                data: dataPoints.map { $0.uploadSpeed },
+                                maxValue: maxValue,
+                                xFractions: timeFractions
+                            )
                                 .fill(
                                     LinearGradient(
                                         gradient: Gradient(colors: [Color.red.opacity(0.5), Color.red.opacity(0.1)]),
@@ -50,7 +62,11 @@ public struct NetworkHistoryGraphView: View {
                                     )
                                 )
 
-                            MiniGraphLine(data: dataPoints.map { $0.uploadSpeed }, maxValue: maxValue)
+                            MiniGraphLine(
+                                data: dataPoints.map { $0.uploadSpeed },
+                                maxValue: maxValue,
+                                xFractions: timeFractions
+                            )
                                 .stroke(.red, lineWidth: 1.5)
                         } else {
                             Text(pluginLocalization.string("Collecting data..."))
@@ -200,13 +216,52 @@ public struct NetworkHistoryGraphView: View {
     }
 
     private func updateHoverDataPoint(at x: CGFloat, width: CGFloat) {
-        guard !dataPoints.isEmpty else { return }
-        // Map x to index
-        // x=0 -> index 0, x=width -> index count-1
-        let ratio = x / width
-        let index = Int(ratio * CGFloat(dataPoints.count - 1))
-        let clampedIndex = min(max(index, 0), dataPoints.count - 1)
-        hoverDataPoint = dataPoints[clampedIndex]
+        guard !dataPoints.isEmpty, width > 0 else { return }
+        let fraction = Double(min(max(x / width, 0), 1))
+        if let index = Self.nearestIndex(forXFraction: fraction, in: dataPoints) {
+            hoverDataPoint = dataPoints[index]
+        }
+    }
+
+    /// 每个点在图表中的水平位置（0...1），按真实时间戳线性映射。
+    /// 点数不足或时间跨度为 0 时返回 nil，交由图表退回等距布局。
+    static func timeFractions(for points: [NetworkDataPoint]) -> [Double]? {
+        guard points.count > 1,
+              let first = points.first?.timestamp,
+              let last = points.last?.timestamp,
+              last > first
+        else { return nil }
+        let span = last - first
+        return points.map { min(max(($0.timestamp - first) / span, 0), 1) }
+    }
+
+    /// 按同一时间映射把水平位置换算为目标时间，取最接近的数据点下标。
+    static func nearestIndex(forXFraction fraction: Double, in points: [NetworkDataPoint]) -> Int? {
+        guard !points.isEmpty else { return nil }
+        guard timeFractions(for: points) != nil,
+              let first = points.first?.timestamp,
+              let last = points.last?.timestamp
+        else {
+            // 单点或同一时刻：没有可用的时间轴，退回数组下标。
+            let clamped = min(max(fraction, 0), 1)
+            let index = Int((clamped * Double(points.count - 1)).rounded())
+            return min(max(index, 0), points.count - 1)
+        }
+        let target = first + min(max(fraction, 0), 1) * (last - first)
+        var bestIndex = 0
+        var bestDelta = Double.infinity
+        for (index, point) in points.enumerated() {
+            let delta = abs(point.timestamp - target)
+            if delta < bestDelta {
+                bestDelta = delta
+                bestIndex = index
+            }
+        }
+        return bestIndex
+    }
+
+    private var timeFractions: [Double]? {
+        Self.timeFractions(for: dataPoints)
     }
 
     private func clampedX(_ x: CGFloat, width: CGFloat) -> CGFloat {
