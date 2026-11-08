@@ -87,4 +87,40 @@ struct ConversationManagerPreferenceTests {
         #expect(events.contains(.automationChanged(conversationID)))
         #expect(events.contains(.languageChanged(conversationID)))
     }
+
+    /// 回归 #983：New Chat 的默认回复语言没有会话承载，必须跨重启保留。
+    @Test func globalLanguagePersistsAcrossRestartWithoutSelectedConversation() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationLanguagePersistenceTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let manager = ConversationManager(store: nil, dataDirectory: directory)
+        manager.setGlobalLanguage(.english)
+
+        // 写盘在串行队列上异步完成，等 state.json 落盘后再模拟重启。
+        let stateURL = directory.appendingPathComponent("state.json")
+        var persisted: ConversationLanguage?
+        for _ in 0..<100 {
+            if let data = try? Data(contentsOf: stateURL),
+               let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let raw = object["globalLanguage"] as? String,
+               let language = ConversationLanguage(rawValue: raw) {
+                persisted = language
+                break
+            }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(persisted == .english)
+
+        let store = try ConversationStore(databaseRootURL: directory)
+        let restarted = ConversationManager(store: store, dataDirectory: directory)
+        restarted.loadConversations()
+        for _ in 0..<100 where restarted.isLoadingConversations {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+
+        #expect(!restarted.isLoadingConversations)
+        #expect(restarted.selectedConversationID == nil)
+        #expect(restarted.globalLanguage == .english)
+    }
 }
