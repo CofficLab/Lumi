@@ -195,15 +195,31 @@ enum ProjectContextNavigator {
     static let fileTreeTabID = "explorer"
     /// Git 工作区插件的 id。
     static let gitWorkspacePluginID = "com.coffic.lumi.plugin.git-workspace"
+    /// Chat 工作区插件的 id。Chat 负责挂载并显示 Rail。
+    static let chatPanelPluginID = "com.coffic.lumi.plugin.chat-panel"
 
     /// 打开项目文件树。
     static func openFileTree(services: MessageListEmptyServices) {
+        // Browser 等工作区会 `setRailView(nil)` 并隐藏 Rail，只激活隐藏 provider
+        // 里的 tab 不会产生任何可见结果。先切回 Chat，让 Chat 重新挂载并显示 Rail。
+        activateChat(services: services)
         guard let rail = services.railView else { return }
         // 优先按分类找（rail tab 自己声明了业务分类），找不到再退回约定 id。
         if let tab = rail.tabs.first(where: { $0.category == .fileTree }) {
             rail.activateTab(id: tab.id)
         } else {
             rail.activateTabWhenAvailable(id: fileTreeTabID)
+        }
+    }
+
+    /// 切换到 Chat 工作区。Chat 的激活回调会恢复 Rail 视图并设为可见；
+    /// 找不到入口时保持现状，由后续 rail 操作尽力而为。
+    private static func activateChat(services: MessageListEmptyServices) {
+        guard let activityBar = services.activityBar else { return }
+        if let item = activityBar.items.first(where: { $0.ownerPluginID == chatPanelPluginID }) {
+            activityBar.activateItem(id: item.id)
+        } else {
+            activityBar.activateItem(id: "\(chatPanelPluginID).entry")
         }
     }
 
