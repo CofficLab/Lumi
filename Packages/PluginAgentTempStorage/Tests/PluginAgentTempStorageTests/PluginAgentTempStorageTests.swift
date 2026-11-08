@@ -141,9 +141,51 @@ struct PluginAgentTempStorageTests {
             ofItemAtPath: root.appendingPathComponent("old.md").path
         )
 
-        await service.purgeExpiredFiles()
+        try await service.purgeExpiredFiles()
         let remaining = try await service.listFiles()
         #expect(remaining.map(\.name) == ["fresh.md"])
+    }
+
+    @Test
+    func unreadableSettingsAbortPurgeAndSurfaceError() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let files = root.appendingPathComponent("files", isDirectory: true)
+        try FileManager.default.createDirectory(at: files, withIntermediateDirectories: true)
+
+        let store = AgentTempStoragePluginLocalStore(settingsDirectory: root)
+        store.retentionDays = 14
+        #expect(try store.resolvedRetentionDays() == 14)
+
+        let keep = files.appendingPathComponent("report.md")
+        try "keep".write(to: keep, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes(
+            [.modificationDate: Date(timeIntervalSinceNow: -8 * 24 * 60 * 60)],
+            ofItemAtPath: keep.path
+        )
+
+        // 已有配置在保存成功后才损坏：不能把读取故障当成「未配置」。
+        try Data("not a plist".utf8).write(to: root.appendingPathComponent("settings.plist"))
+
+        let service = TempFileStorageService(
+            directory: files,
+            retentionDaysProvider: { try store.resolvedRetentionDays() }
+        )
+
+        await #expect {
+            _ = try await service.read(filename: "report.md")
+        } throws: { error in
+            guard case .settingsUnavailable = error as? TempFileStorageError else { return false }
+            return true
+        }
+
+        // 按 14 天策略仍然有效的 8 天文件必须保留。
+        #expect(FileManager.default.fileExists(atPath: keep.path))
+        #expect(try String(contentsOf: keep, encoding: .utf8) == "keep")
+
+        // 配置确实不存在时才允许回退默认值。
+        try FileManager.default.removeItem(at: root.appendingPathComponent("settings.plist"))
+        #expect(try store.resolvedRetentionDays() == 7)
     }
 
     @Test
@@ -152,6 +194,7 @@ struct PluginAgentTempStorageTests {
         #expect(!TempFileStorageError.pathTraversal.errorDescription!.isEmpty)
         #expect(TempFileStorageError.fileNotFound("x").errorDescription?.contains("x") == true)
         #expect(TempFileStorageError.readFailed("boom").errorDescription?.contains("boom") == true)
+        #expect(TempFileStorageError.settingsUnavailable("boom").errorDescription?.contains("boom") == true)
     }
 
     private func makeTemporaryDirectory() throws -> URL {
