@@ -100,6 +100,41 @@ import ProviderMessage
     #expect(viewModel.unavailabilityReason == .waitingForResponse)
 }
 
+@Test @MainActor func speedViewModelShowsLatestResponseWhenItLacksMetrics() {
+    let conversationID = UUID()
+    let earlier = Message(
+        conversationID: conversationID,
+        role: .assistant,
+        content: "response A",
+        createdAt: Date(timeIntervalSince1970: 100),
+        providerID: "provider-a",
+        modelName: "model-a",
+        outputTokenCount: 120,
+        streamingDurationMs: 6_000
+    )
+    let latest = Message(
+        conversationID: conversationID,
+        role: .assistant,
+        content: "response B",
+        createdAt: Date(timeIntervalSince1970: 200),
+        providerID: "provider-b",
+        modelName: "model-b",
+        outputTokenCount: nil,
+        streamingDurationMs: 6_000
+    )
+    let viewModel = ConversationSpeedViewModel()
+
+    viewModel.selectConversation(conversationID, messages: [earlier, latest])
+
+    // 最新响应缺少 outputTokenCount：Current speed 不可用，且详情必须来自 B 而非 A。
+    #expect(viewModel.cachedTPS == nil)
+    #expect(viewModel.unavailabilityReason == .missingOutputTokens)
+    #expect(viewModel.modelName == "model-b")
+    #expect(viewModel.providerID == "provider-b")
+    #expect(viewModel.outputTokens == nil)
+    #expect(viewModel.speedHistory.map(\.id) == [earlier.id])
+}
+
 @Test @MainActor func speedViewModelUsesAssistantMetricsInsteadOfUserMessageMetadata() {
     let conversationID = UUID()
     let assistant = Message(
