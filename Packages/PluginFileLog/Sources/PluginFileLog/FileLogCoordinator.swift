@@ -533,10 +533,11 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
               fileManager.fileExists(atPath: legacyDirectory.path) else { return }
 
         try prepareLogsDirectory(currentDirectory, fileManager: fileManager)
+        // 不能跳过隐藏文件：否则 `.important.log` 不会被迁移，而下面判断目录为空时
+        // 同样看不见它，最终 `removeItem` 会递归删掉从未检查过的内容（#999）。
         let legacyFiles = try fileManager.contentsOfDirectory(
             at: legacyDirectory,
-            includingPropertiesForKeys: nil,
-            options: .skipsHiddenFiles
+            includingPropertiesForKeys: nil
         ).filter { $0.pathExtension.lowercased() == "log" }
 
         for legacyFile in legacyFiles {
@@ -553,10 +554,11 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
             try fileManager.moveItem(at: legacyFile, to: destination)
         }
 
+        // 只有包含隐藏条目在内的完整枚举确认目录为空才删除；`removeItem` 对目录是
+        // 递归删除，跳过隐藏文件时的空数组不能当作“目录已空”。
         if (try? fileManager.contentsOfDirectory(
             at: legacyDirectory,
-            includingPropertiesForKeys: nil,
-            options: .skipsHiddenFiles
+            includingPropertiesForKeys: nil
         ).isEmpty) == true {
             try? fileManager.removeItem(at: legacyDirectory)
         }
