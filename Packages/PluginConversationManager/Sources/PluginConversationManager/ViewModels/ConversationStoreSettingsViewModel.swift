@@ -53,9 +53,14 @@ final class ConversationStoreSettingsViewModel: ObservableObject {
         switch event {
         case .listChanged, .created, .deleted, .updated:
             scheduleReload()
-        case .selected, .markedActive, .providerChanged, .verbosityChanged,
-             .reasoningChanged, .automationChanged, .languageChanged:
+        case .selected, .markedActive:
             break
+        case .providerChanged(let id):
+            refreshSummary(id)
+        case .verbosityChanged(let id), .reasoningChanged(let id),
+             .automationChanged(let id), .languageChanged(let id):
+            // 全局偏好（id 为 nil）不会改变每条会话展示的显式取值，无需刷新。
+            if let id { refreshSummary(id) }
         }
     }
 
@@ -74,8 +79,15 @@ final class ConversationStoreSettingsViewModel: ObservableObject {
     // MARK: - 数据加载
 
     /// 首次进入页面时加载第一页会话、总数与统计。
+    ///
+    /// 再次进入时已有快照可能落后于 Manager（例如设置页长期持有 ViewModel），
+    /// 就地刷新已加载的摘要；不整页重载，避免丢掉用户翻过的分页。
     func loadInitialIfNeeded() async {
-        guard conversations.isEmpty, isLoadingConversations else { return }
+        guard isLoadingConversations else {
+            await refreshLoadedSummaries()
+            return
+        }
+        guard conversations.isEmpty else { return }
         await performReload(initial: true)
     }
 
@@ -156,6 +168,25 @@ final class ConversationStoreSettingsViewModel: ObservableObject {
     }
 
     // MARK: - Private
+
+    /// 偏好变更后按 ID 就地更新对应摘要，不重载整页（保留已加载的分页）。
+    private func refreshSummary(_ id: UUID) {
+        guard conversations.contains(where: { $0.id == id }) else { return }
+        Task { [weak self] in
+            guard let self else { return }
+            guard let fresh = await self.capability.fetchConversationSummary(id: id) else { return }
+            guard let index = self.conversations.firstIndex(where: { $0.id == id }) else { return }
+            self.conversations[index] = fresh
+        }
+    }
+
+    private func refreshLoadedSummaries() async {
+        for id in conversations.map(\.id) {
+            guard let fresh = await capability.fetchConversationSummary(id: id) else { continue }
+            guard let index = conversations.firstIndex(where: { $0.id == id }) else { continue }
+            conversations[index] = fresh
+        }
+    }
 
     private func scheduleReload() {
         if isReloading {

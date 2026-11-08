@@ -24,6 +24,9 @@ protocol ConversationStoreCapability: AnyObject {
 
     func messagesSnapshot(in conversationID: UUID) async -> [Message]
 
+    /// 读取一条会话的最新摘要：优先管理器内存（偏好变更会先同步到这里），回退存储层。
+    func fetchConversationSummary(id: UUID) async -> ConversationSummary?
+
     func messageCount(for conversationID: UUID) -> Int
 
     @discardableResult
@@ -75,6 +78,10 @@ final class ConversationStoreCapabilityAdapter: ConversationStoreCapability {
 
     func messagesSnapshot(in conversationID: UUID) async -> [Message] {
         await messageManager?.messagesSnapshot(in: conversationID) ?? []
+    }
+
+    func fetchConversationSummary(id: UUID) async -> ConversationSummary? {
+        await manager.fetchConversation(id: id)
     }
 
     func messageCount(for conversationID: UUID) -> Int {
