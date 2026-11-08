@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 83
+测试文件: 8 个，用例总数: 86
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -44,6 +44,7 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 
 - **LLMNetworkProviderAdapterRetry**（9 条）：由 `errorIsNormalizedToRetryableHTTPStatus`、`normalizedErrorIsClassifiedRetryable`、`agentLoopFailureIsRetryable` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **NetworkSpeedFormatter**（13 条）：由 `formatsGigabytesPerSecond`、`formatsMegabytesPerSecond`、`formatsKilobytesPerSecond` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **NetworkHistoryGraphGeometry**（3 条）：由 `timeFractionsReflectSamplingGap`、`hoverPicksPointByTimestamp` 等用例锁定；改动历史图表时间轴或悬停命中逻辑时优先跑对应测试文件。
 - **网络历史范围裁剪**（4 条）：由 `oneHourRangeUsesHighResolutionBuffer`、`fourHourRangeTrimsLongTermBuffer` 等用例锁定；改动历史时间范围语义或视图取数方式时优先跑对应测试文件。
 - **综合**（25 条）：由 `brotliSSEDecompressionHandlesHighCompressionRatio`、`publicIPRefreshUsesCache`、`publicIPRefreshCanBeForced` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -134,6 +135,9 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 81 | TopNetworkProcesses | 内联列表与详情浮层同时可见时不会提前停止监控 | 连续 acquire 两次后 release 一次 | 观察启动/停止次数 | 启动 1 次、停止 0 次；再次 release 后停止 1 次 | P1 | ✅ 已覆盖 | `concurrentVisibilityKeepsMonitoring` |
 | 82 | ProcessMonitorParsing | 同名进程聚合为一条并标注份数，本应用组单独标记 | 两个同名 Helper + Lumi 自身 PID | 解析 + flush | Helper 一条且份数 2、速率相加；Lumi 标记为本应用 | P1 | ✅ 已覆盖 | `sameNameProcessesAggregateWithCountAndSelfFlag` |
 | 83 | ProcessMonitorParsing | 单次 flush 合并多帧时按采样跨度归一化速率 | 一次输出两帧、每帧 1024 字节 | 解析 + flush | 速率为 1024 B/s 而非 2048 | P1 | ✅ 已覆盖 | `coalescedFramesNormalizeBySampleSpan` |
+| 84 | NetworkHistoryGraphGeometry | 历史图表按真实时间戳布置点位，采样空档占据对应水平距离 | 10 个点，中间有 600s 空档 | 计算水平比例 | 第 5 点为 40/680，空档后点 > 0.9，非等距 5/9 | P1 | ✅ 已覆盖 | `timeFractionsReflectSamplingGap` |
+| 85 | NetworkHistoryGraphGeometry | 悬停按时间映射命中最近点，空档中间不误选相邻序号 | 同上不规则时间序列 | 以 0.5 比例求最近点 | 命中空档两端更近者；0/1 分别命中首末点 | P1 | ✅ 已覆盖 | `hoverPicksPointByTimestamp` |
+| 86 | NetworkHistoryGraphGeometry | 单点或时间戳相同时退回等距布局，空输入返回 nil | 单点、同时间戳两点、空数组 | 求值比例与最近点 | 比例为 nil，最近点按下标钳制，空数组为 nil | P2 | ✅ 已覆盖 | `degenerateInputsFallBackToEvenSpacing` |
 
 > 说明：全部 **83 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
@@ -141,8 +145,8 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 ## 覆盖率统计
 
 - P0: 已覆盖 32 / 32
-- P1: 已覆盖 46 / 46
-- P2: 已覆盖 5 / 5
+- P1: 已覆盖 48 / 48
+- P2: 已覆盖 6 / 6
 - **合计: 83 / 83**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
