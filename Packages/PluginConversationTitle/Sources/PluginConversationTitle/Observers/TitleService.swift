@@ -87,8 +87,8 @@ final class TitleService: SuperLog {
 
         var backfilled = 0
         for id in ids {
-            // `fetchConversation` 会把这条对话放进内存缓存，
-            // `updateConversationTitle` 需要它在场才能写标题。
+            // 补缓存是为了复核 Store 中的最新标题；标题写入本身按 ID 落库，
+            // 不要求这条摘要此刻仍留在有界缓存里（#996）。
             guard let summary = await conversations.fetchConversation(id: id) else { continue }
             // 缓存可能比查询结果新：以缓存里的标题为准。
             guard !summary.hasCustomTitle else { continue }

@@ -55,6 +55,48 @@ struct ConversationPagedMutationTests {
         #expect(renamed, "未缓存会话的标题没有落库")
     }
 
+    @Test("回填加载触发缓存淘汰后仍能写入标题（#996）")
+    func renamesConversationEvictedRightAfterBackfillFetch() async throws {
+        let (store, dir) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let manager = ConversationManager(store: store, dataDirectory: dir)
+
+        // 81 条：最早创建的会话在按最近更新时间排序时排最后。
+        var ids: [UUID] = []
+        for _ in 0..<81 {
+            let id = UUID()
+            try await store.createConversation(id: id, title: "历史会话")
+            ids.append(id)
+            try await Task.sleep(for: .milliseconds(2))
+        }
+        let oldest = ids[0]
+
+        manager.loadConversations()
+        let initialLoaded = await waitUntil { manager.conversations.count == 40 }
+        #expect(initialLoaded)
+
+        // 模拟回填：逐条 fetchConversation 把剩余候选补进缓存。总数越过 80 后，
+        // 最旧的会话会在 fetch 返回前被这一步自身的裁剪淘汰（#996 的触发条件）。
+        let allSummaries = try await store.fetchConversationPage(limit: 200)
+        let uncached = allSummaries.map(\.id).filter { id in
+            !manager.conversations.contains { $0.id == id }
+        }
+        for id in uncached {
+            _ = await manager.fetchConversation(id: id)
+        }
+
+        #expect(
+            !manager.conversations.contains { $0.id == oldest },
+            "前置条件不成立：目标会话仍留在缓存里，没有复现同步淘汰"
+        )
+        #expect(manager.updateConversationTitle("Investigate login timeout", for: oldest))
+
+        let renamed = await waitUntil {
+            await store.fetchConversation(id: oldest)?.title == "Investigate login timeout"
+        }
+        #expect(renamed, "缓存外的会话标题没有落库")
+    }
+
     @Test("未缓存的会话也能保存偏好")
     func persistsPreferencesForUncachedConversation() async throws {
         let (store, dir) = try makeStore()

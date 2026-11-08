@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 71 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 72 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 71
+测试文件: 11 个，用例总数: 72
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -128,16 +128,17 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 69 | ConversationManagerPreference | 被挤出缓存的会话保留绑定的模型（**回归 #987**） | 后台会话绑定 `gpt-a/model-a` | 写入 100 条更新的顶层会话把后台会话挤出窗口后读取 `modelID(for:)` | 仍返回原模型与供应商，而非全局模型 | P1 | ✅ 已覆盖 | `evictedConversationKeepsItsBoundModel` |
 | 70 | ConversationStoreSettingsViewModel | 消息变化刷新计数与选中会话预览（**回归 #995**） | 选中会话已有 2 条消息，后台会话 1 条 | 插入一条消息产生 `.inserted`，再对后台会话产生 `.updated` | 选中会话计数变 3、预览追加新消息；后台会话只更新计数 | P1 | ✅ 已覆盖 | `messageChangeRefreshesCountAndSelectedPreview` |
 | 71 | ConversationStoreObserver | 消息变化转发到设置页，取消后停止（**回归 #995**） | 能力层已注册消息观察者 | 发送 `.inserted` 后取消 observer 再发送 `.updated` | 首次计数更新，取消后不再写入 | P1 | ✅ 已覆盖 | `forwardsMessageChangesUntilCancelled` |
+| 72 | ConversationPagedMutation | 回填加载触发缓存淘汰后仍能写入标题（**回归 #996**） | 81 条历史会话，冷启动缓存 40 条 | 逐条 `fetchConversation` 把候选补进缓存越过 80 上限，目标被同步淘汰后更新标题 | 目标不在缓存中，更新返回 true 且标题落库 | P1 | ✅ 已覆盖 | `renamesConversationEvictedRightAfterBackfillFetch` |
 
-> 说明：全部 **71 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **72 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 8 / 8
-- P1: 已覆盖 58 / 58
+- P1: 已覆盖 59 / 59
 - P2: 已覆盖 5 / 5
-- **合计: 71 / 71**（仅表示清单场景，非源码覆盖率）
+- **合计: 72 / 72**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
