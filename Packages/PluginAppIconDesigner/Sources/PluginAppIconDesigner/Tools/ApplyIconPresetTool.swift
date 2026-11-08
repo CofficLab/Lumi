@@ -49,6 +49,10 @@ public struct ApplyIconPresetTool: SuperAgentTool {
 
         let scope = try await IconToolSupport.resolveScope(arguments)
         let title = IconToolSupport.string(arguments, "title")
+
+        // 同 create_icon_document：没有落盘路径时不能先改内存再报成功。
+        _ = try await IconToolSupport.storagePath(for: scope)
+
         let document = await MainActor.run {
             IconToolSupport.store().createDocument(from: preset, title: title, scope: scope)
         }

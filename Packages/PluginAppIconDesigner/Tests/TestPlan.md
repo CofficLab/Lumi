@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAppIconDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 8 条用例。
+PluginAppIconDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 17 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 8
+测试文件: 2 个，用例总数: 17
 
 核心组件（源码目录）:
 - `Models/`
@@ -53,27 +53,36 @@ PluginAppIconDesigner 的实现包，包含 14 个主要类型；当前测试覆
 | 6 | AppIconDesignerPlugin | create_icon_document 工具可执行并创建文档 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `executeCreateIconDocumentTool` |
 | 7 | AppIconDesignerPlugin | preview_icon 工具返回带 PNG 图片附件的结构化结果 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `executePreviewIconToolReturnsImage` |
 | 8 | AppIconDesignerRuleContributor | 图标设计插件贡献自己的 Agent Rule | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `contributesAppIconRule` |
+| 9 | Agent 工具 | 没有项目存储时 create_icon_document 在改状态前失败 | 未打开项目 | 调用工具 | 抛 `invalidStorageScope`，内存中无新文档 | P1 | ✅ 已覆盖 | `createIconDocumentFailsWithoutProjectStorage` |
+| 10 | Agent 工具 | 没有项目存储时 apply_icon_preset 在改状态前失败 | 未打开项目 | 调用工具 | 抛 `invalidStorageScope`，内存中无新文档 | P1 | ✅ 已覆盖 | `applyIconPresetFailsWithoutProjectStorage` |
+| 11 | 跨对话隔离 | 对话 A 的工具调用写入对话 A 的项目 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `conversationScopedToolWritesIntoItsOwnProject` |
+| 12 | 跨对话隔离 | 对话 A 的工具调用读取对话 A 的项目 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `conversationScopedToolReadsFromItsOwnProject` |
+| 13 | 跨对话隔离 | 跨项目写入不污染 UI 当前项目的 store | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `crossProjectWriteDoesNotPolluteSharedStore` |
+| 14 | 跨对话隔离 | 对话项目与当前项目相同时复用 shared store | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `sameProjectReusesSharedStore` |
+| 15 | 跨对话隔离 | 对话未绑定项目时回退到当前项目 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unscopedConversationFallsBackToCurrentProject` |
+| 16 | 跨对话隔离 | 15 个工具都按对话项目路由 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registeredToolsAreConversationScoped` |
+| 17 | 存储 | 加入项目不预建存储目录，真正写入时才创建 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doesNotCreateStorageDirectoryUntilWrite` |
 
-> 说明：全部 **8 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **17 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 3 / 3
-- P2: 已覆盖 5 / 5
-- **合计: 8 / 8**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 11 / 11
+- P2: 已覆盖 6 / 6
+- **合计: 17 / 17**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（3 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
+- **P1**: 其余功能性用例（11 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 8 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 17 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
