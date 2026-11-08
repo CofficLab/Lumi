@@ -108,7 +108,7 @@ struct GoalRowView: View {
             Task {
                 defer { isForking = false }
                 do {
-                    try await forkCoordinator.forkAndStart(goal: goal, tasks: tasks)
+                    try await forkCoordinator.forkAndStart(goal: goal)
                 } catch {
                     forkErrorMessage = error.localizedDescription
                 }

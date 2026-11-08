@@ -448,7 +448,7 @@ public actor GoalStateManager: SuperLog {
     ///
     /// - Returns: 新建的副本 Goal，可直接用于发起新一轮回合。
     @discardableResult
-    func forkGoal(id: String, into conversationId: String) throws -> Goal {
+    func forkGoal(id: String, into conversationId: String) throws -> ForkedGoal {
         let context = ModelContext(container)
 
         guard let source = fetchGoal(id: id, context: context) else {
@@ -469,6 +469,7 @@ public actor GoalStateManager: SuperLog {
         )
         context.insert(forked)
 
+        var copies: [GoalTask] = []
         for task in fetchAllTasks(goalId: source.id, context: context) {
             let copy = GoalTask(
                 goalId: forked.id,
@@ -483,6 +484,7 @@ public actor GoalStateManager: SuperLog {
             copy.errorMessage = task.errorMessage
             copy.completedAt = task.completedAt
             context.insert(copy)
+            copies.append(copy)
         }
 
         // 源 Goal 退出活跃集合，避免两个会话争抢同一目标。
@@ -495,7 +497,7 @@ public actor GoalStateManager: SuperLog {
             Self.logger.info("\(Self.t)fork Goal \(id) -> \(forked.id) 到会话 \(conversationId)")
         }
 
-        return forked
+        return ForkedGoal(goal: forked, tasks: copies)
     }
 
     // MARK: - Automatic Continuation
