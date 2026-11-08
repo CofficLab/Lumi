@@ -244,7 +244,7 @@ extension LibGit2 {
 
     /// 获取指定提交修改的文件列表
     /// - Parameters:
-    ///   - commitHash: 提交哈希
+    ///   - commitHash: 提交哈希（完整或缩写）
     ///   - path: 仓库路径
     /// - Returns: 差异文件列表
     public static func getCommitDiffFiles(atCommit commitHash: String, at path: String) throws -> [GitDiffFile] {
@@ -252,11 +252,8 @@ extension LibGit2 {
             let repo = try openRepository(at: path)
             defer { git_repository_free(repo) }
 
-            // 获取指定commit
-            var oid = git_oid()
-            guard git_oid_fromstr(&oid, commitHash) == 0 else {
-                throw LibGit2Error.invalidValue
-            }
+            // 获取指定commit（支持 `git_log` 输出的短哈希）
+            var oid = try resolveCommitOID(commitHash, repo: repo)
 
             var commit: OpaquePointer? = nil
             defer { if commit != nil { git_commit_free(commit) } }

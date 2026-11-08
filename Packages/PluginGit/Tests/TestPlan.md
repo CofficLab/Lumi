@@ -5,7 +5,7 @@
 GitPlugin Git integration plugin for Lumi editor.
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 73
+测试文件: 14 个，用例总数: 75
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -51,6 +51,7 @@ GitPlugin Git integration plugin for Lumi editor.
 - **GitSharedQueueHangRepro**（4 条）：由 `hungCallOnOneRepositoryDoesNotBlockOthers`、`queuedCallOnBusyRepositoryIsCancellable`、`queuedCallTimesOutInsteadOfWaitingForever` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitStashService**（3 条）：由 `pushPopRoundTrip`、`pushWithNoChangesReturnsNil`、`listAndCountMatch` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitSubmoduleService**（1 条）：由 `submoduleListReturnsEmptyForRepoWithoutSubmodules` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GitShowShortHash**（2 条）：由 `shortHashResolvesDetailAndChangedFiles`、`unknownShortHashStillThrows` 锁定；`git_show` 必须接受 `git_log` 输出的 7 位短哈希，详情与变更文件两条路径都用解析后的完整 OID。
 - **综合**（11 条）：由 `sourceControlPluginRegistersEditorContract`、`v2PluginRegistersAllLegacyGitToolNames`、`gitLogToolNormalizesCount` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -130,16 +131,18 @@ GitPlugin Git integration plugin for Lumi editor.
 | 71 | GitLogTool count | 缺失或非法值使用默认值 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingOrInvalidUsesDefault` |
 | 72 | GitServiceReadingContract | getDiff 指定单个文件时 filesChanged 只统计该文件 | 临时仓库有两处未暂存修改 | 分别按 `a.txt` 与不存在的 `missing.txt` 取 diff | `a.txt` 的 filesChanged 为 1 且 patch 不含 `b.txt`；不存在文件无 patch 且 stats 为 nil | P1 | ✅ 已覆盖 | `diffFileFilterCountsOnlyRequestedFile` |
 | 73 | GitChangeType | countsContentStartingWithDoubleSign（以 `++`/`--` 开头的正文行正常计数） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `countsContentStartingWithDoubleSign` |
+| 74 | GitShowShortHash | 7 位短哈希可查到 commit 详情与变更文件 | 临时仓库有一次提交 | 用 `git_log` 返回哈希的前 7 位调用 `getCommitDetail` / `getCommitChangedFiles` | 返回完整哈希、消息与变更文件 | P0 | ✅ 已覆盖 | `shortHashResolvesDetailAndChangedFiles` |
+| 75 | GitShowShortHash | 无法匹配的短哈希仍然报错 | 同上 | 用 `0000000` 调用 `getCommitDetail` | 抛出错误而非返回空结果 | P1 | ✅ 已覆盖 | `unknownShortHashStillThrows` |
 
-> 说明：全部 **73 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **75 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
-- P1: 已覆盖 57 / 57
+- P0: 已覆盖 8 / 8
+- P1: 已覆盖 58 / 58
 - P2: 已覆盖 9 / 9
-- **合计: 73 / 73**（仅表示清单场景，非源码覆盖率）
+- **合计: 75 / 75**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -150,7 +153,7 @@ GitPlugin Git integration plugin for Lumi editor.
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 73 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 75 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
