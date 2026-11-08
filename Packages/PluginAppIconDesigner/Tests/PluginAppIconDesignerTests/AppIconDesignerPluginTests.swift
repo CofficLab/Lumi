@@ -222,6 +222,38 @@ struct AppIconDesignerPluginTests {
         IconDesignerRuntime.reset()
     }
 
+    @Test("没有项目存储时 create_icon_document 在改状态前失败")
+    func createIconDocumentFailsWithoutProjectStorage() async throws {
+        IconDesignerRuntime.reset()
+        defer { IconDesignerRuntime.reset() }
+
+        let tool = CreateIconDocumentTool()
+        let arguments: [String: ToolArgument] = [
+            "scope": ToolArgument(IconScope.project.rawValue),
+            "title": ToolArgument("No Project Icon"),
+        ]
+
+        await #expect(throws: IconDocumentStoreError.invalidStorageScope) {
+            _ = try await tool.execute(arguments: arguments)
+        }
+        #expect(IconDocumentStore.shared.projectDocuments.isEmpty, "失败时不得留下内存中的文档")
+    }
+
+    @Test("没有项目存储时 apply_icon_preset 在改状态前失败")
+    func applyIconPresetFailsWithoutProjectStorage() async throws {
+        IconDesignerRuntime.reset()
+        defer { IconDesignerRuntime.reset() }
+
+        let preset = try #require(IconPresetLibrary.all.first)
+        let tool = ApplyIconPresetTool()
+        let arguments: [String: ToolArgument] = ["presetId": ToolArgument(preset.id)]
+
+        await #expect(throws: IconDocumentStoreError.invalidStorageScope) {
+            _ = try await tool.execute(arguments: arguments)
+        }
+        #expect(IconDocumentStore.shared.projectDocuments.isEmpty, "失败时不得留下内存中的文档")
+    }
+
     @Test("preview_icon 工具返回带 PNG 图片附件的结构化结果")
     func executePreviewIconToolReturnsImage() async throws {
         let directory = FileManager.default.temporaryDirectory

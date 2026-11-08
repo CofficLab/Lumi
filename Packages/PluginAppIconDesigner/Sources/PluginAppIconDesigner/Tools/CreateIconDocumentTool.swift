@@ -35,6 +35,10 @@ public struct CreateIconDocumentTool: SuperAgentTool {
         let height = IconToolSupport.double(arguments, "height", default: 1024)
         let background = IconToolSupport.color(arguments, "background", default: "#00000000")
 
+        // 没有可用的项目存储时必须在改动 store 之前失败：否则文档只存在于内存，
+        // 工具却返回「已创建」，用户重启后丢失。
+        _ = try await IconToolSupport.storagePath(for: scope)
+
         let document = await MainActor.run {
             IconToolSupport.store().createDocument(
                 title: title,
