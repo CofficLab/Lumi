@@ -155,9 +155,11 @@ final class ImageToPDFService: SuperLog, @unchecked Sendable {
     }
 
     /// Draw `image` into `context` so that it fills a page sized
-    /// `pageSize` points. The CoreGraphics PDF coordinate system has a
-    /// bottom-left origin, so the image's natural top-left origin is
-    /// flipped before drawing.
+    /// `pageSize` points.
+    ///
+    /// 不做额外垂直翻转：`CGContext.draw` 在 PDF 上下文中已经按图片自身的
+    /// 行顺序写入 image XObject，再叠加 `translate` + `scale(y: -1)` 会让
+    /// 输出上下镜像（文字倒置）。
     private static func drawImage(
         _ image: NSImage,
         in context: CGContext,
@@ -168,8 +170,6 @@ final class ImageToPDFService: SuperLog, @unchecked Sendable {
         }
         context.saveGState()
         defer { context.restoreGState() }
-        context.translateBy(x: 0, y: pageSize.height)
-        context.scaleBy(x: 1, y: -1)
         let rect = CGRect(origin: .zero, size: pageSize)
         context.draw(cgImage, in: rect)
     }
