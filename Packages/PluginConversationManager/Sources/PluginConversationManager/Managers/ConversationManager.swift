@@ -255,6 +255,11 @@ public final class ConversationManager: ConversationManaging, SuperLog {
         if let language = summary.language {
             languageOverrides[summary.id] = language
         }
+        // 显式模型绑定同样要跨缓存淘汰保留：后台会话的排队回合会在新回合开始时
+        // 按 ID 查询模型，丢失后会静默改用全局模型（issue #987）。
+        if let modelID = summary.modelID {
+            modelIDOverrides[summary.id] = modelID
+        }
         if let index = conversations.firstIndex(where: { $0.id == summary.id }) {
             conversations[index] = summary
         } else {
