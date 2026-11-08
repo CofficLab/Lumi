@@ -55,10 +55,14 @@ struct GitBranchToolbarButton: View {
         .animation(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference), value: isHighlighted)
     }
 
-    /// 胶囊标题：优先显示当前分支名，无分支时回退到占位文案。
+    /// 胶囊标题：优先显示当前分支名；detached HEAD 时标注状态并附短哈希，
+    /// 避免把 40 位 OID 直接当分支名展示。
     private var displayTitle: String {
         if let currentBranch = viewModel.currentBranch, !currentBranch.isEmpty {
             return currentBranch
+        }
+        if let hash = viewModel.detachedHeadCommitHash, !hash.isEmpty {
+            return "\(pluginLocalization.string("Detached HEAD")) (\(hash.prefix(7)))"
         }
         return pluginLocalization.string("Branch")
     }

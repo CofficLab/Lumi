@@ -89,6 +89,23 @@ struct GitBranchToolbarTests {
         #expect(item.order > 0)
     }
 
+    @Test("detached HEAD 时 ViewModel 不再把 OID 当分支名")
+    func detachedHeadKeepsBranchEmptyAndExposesHash() async throws {
+        let fullHash = "8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c"
+        let git = InMemoryGitBranchManaging()
+        git.addRepository(atPath: "/tmp/repo")
+        git.setCurrentBranch(nil, forPath: "/tmp/repo")
+        git.setDetachedHeadCommitHash(fullHash, forPath: "/tmp/repo")
+
+        let capability = GitBranchCapabilityAdapter(provider: git)
+        let viewModel = GitBranchToolbarViewModel(capability: capability)
+        viewModel.updateProject(path: "/tmp/repo")
+        try await Task.sleep(for: .milliseconds(100))
+
+        #expect(viewModel.currentBranch == nil)
+        #expect(viewModel.detachedHeadCommitHash == fullHash)
+    }
+
     @Test("切换到其它分支后 ViewModel 的当前分支随之更新")
     func switchingBranchUpdatesCurrentBranch() async throws {
         let git = InMemoryGitBranchManaging()

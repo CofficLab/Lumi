@@ -11,6 +11,8 @@ final class GitBranchToolbarViewModel: ObservableObject {
     @Published private(set) var projectPath: String?
     /// 当前分支名；`nil` 表示 detached HEAD 或尚未加载。
     @Published private(set) var currentBranch: String?
+    /// detached HEAD 时 HEAD 指向的完整 commit hash；在分支上时为 `nil`。
+    @Published private(set) var detachedHeadCommitHash: String?
     /// 可切换的分支列表。
     @Published private(set) var branches: [GitBranchInfo] = []
     /// 当前路径是否为 Git 仓库。非 Git 项目时整个胶囊不显示。
@@ -42,6 +44,7 @@ final class GitBranchToolbarViewModel: ObservableObject {
         guard projectPath != path else { return }
         projectPath = path
         currentBranch = nil
+        detachedHeadCommitHash = nil
         branches = []
         errorMessage = nil
         isGitRepository = false
@@ -124,6 +127,7 @@ final class GitBranchToolbarViewModel: ObservableObject {
         guard isRepository else {
             isGitRepository = false
             currentBranch = nil
+            detachedHeadCommitHash = nil
             branches = []
             return
         }
@@ -131,14 +135,17 @@ final class GitBranchToolbarViewModel: ObservableObject {
         isGitRepository = true
         do {
             async let current = capability.currentBranch(atPath: path)
+            async let detachedHash = capability.detachedHeadCommitHash(atPath: path)
             async let list = capability.listBranches(atPath: path, includeRemote: true)
-            let (resolvedCurrent, resolvedList) = try await (current, list)
+            let (resolvedCurrent, resolvedDetachedHash, resolvedList) = try await (current, detachedHash, list)
             guard !Task.isCancelled, generation == loadGeneration else { return }
             currentBranch = resolvedCurrent
+            detachedHeadCommitHash = resolvedDetachedHash
             branches = Self.sorted(resolvedList)
         } catch {
             guard !Task.isCancelled, generation == loadGeneration else { return }
             currentBranch = nil
+            detachedHeadCommitHash = nil
             branches = []
             errorMessage = Self.describe(error)
         }
