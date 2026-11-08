@@ -23,6 +23,7 @@ final class AgentRulesToolbarViewModel: ObservableObject {
     private var detailRequestID = 0
     private var rulesTask: Task<Void, Never>?
     private var detailTask: Task<Void, Never>?
+    private var rulesDidChangeObserver: NSObjectProtocol?
 
     init(
         loadRules: @escaping RulesLoader = { path in
@@ -34,6 +35,17 @@ final class AgentRulesToolbarViewModel: ObservableObject {
     ) {
         self.loadRules = loadRules
         self.loadRule = loadRule
+        // 工具在后台创建规则后发出通知；同一项目的工具栏需要立即重新读取。
+        rulesDidChangeObserver = NotificationCenter.default.addObserver(
+            forName: .agentRulesDidChange,
+            object: nil,
+            queue: nil
+        ) { [weak self] notification in
+            let path = notification.userInfo?[AgentRulesChange.projectPathKey] as? String
+            Task { @MainActor [weak self] in
+                self?.handleRulesDidChange(projectPath: path)
+            }
+        }
     }
 
     /// Called by the project observer whenever the active project changes.
@@ -54,6 +66,15 @@ final class AgentRulesToolbarViewModel: ObservableObject {
 
     func refresh() {
         loadCurrentProjectRules()
+    }
+
+    /// 项目规则文件发生变化时由通知触发；仅当变化属于当前项目时才重新加载。
+    func handleRulesDidChange(projectPath: String?) {
+        guard let projectPath, let currentProjectPath else { return }
+        let changed = URL(fileURLWithPath: projectPath).standardizedFileURL.path
+        let current = URL(fileURLWithPath: currentProjectPath).standardizedFileURL.path
+        guard changed == current else { return }
+        refresh()
     }
 
     func selectRule(_ rule: AgentRuleMetadata) {
@@ -91,6 +112,10 @@ final class AgentRulesToolbarViewModel: ObservableObject {
     }
 
     func cancel() {
+        if let rulesDidChangeObserver {
+            NotificationCenter.default.removeObserver(rulesDidChangeObserver)
+        }
+        rulesDidChangeObserver = nil
         projectGeneration &+= 1
         rulesRequestID &+= 1
         detailRequestID &+= 1
