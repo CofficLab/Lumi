@@ -39,6 +39,20 @@ import KitAgentTool
         #expect(DiskManagerToolSupport.resolveScanPath("~") == home)
         #expect(DiskManagerToolSupport.resolveScanPath("~/Downloads") == "\(home)/Downloads")
     }
+
+    @Test func resolveScanPathAnchorsRelativePathsToHome() {
+        let home = URL(fileURLWithPath: FileManager.default.homeDirectoryForCurrentUser.path)
+        let documents = home.appendingPathComponent("Documents").path
+
+        #expect(DiskManagerToolSupport.resolveScanPath("Documents") == documents)
+        #expect(DiskManagerToolSupport.resolveScanPath("  Documents  ") == documents)
+        #expect(
+            DiskManagerToolSupport.resolveScanPath("Documents/Invoices")
+                == home.appendingPathComponent("Documents").appendingPathComponent("Invoices").path
+        )
+        // 绝对路径保持原样。
+        #expect(DiskManagerToolSupport.resolveScanPath("/tmp") == "/tmp")
+    }
 }
 
 @Suite(.serialized)

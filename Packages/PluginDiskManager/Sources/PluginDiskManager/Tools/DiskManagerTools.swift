@@ -30,17 +30,21 @@ enum DiskManagerToolSupport {
     /// Returns the home directory when the input is missing/empty so the tool
     /// always has a usable root.
     static func resolveScanPath(_ raw: String?) -> String {
-        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        let home = FileManager.default.homeDirectoryForCurrentUser
         let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let candidate: String
         if trimmed.isEmpty || trimmed == "~" {
-            candidate = home
-        } else if trimmed.hasPrefix("~/") {
-            candidate = home + String(trimmed.dropFirst())
-        } else {
-            candidate = (trimmed as NSString).expandingTildeInPath
+            return home.path
         }
-        return candidate
+        if trimmed.hasPrefix("~/") {
+            return home.appendingPathComponent(String(trimmed.dropFirst(2))).path
+        }
+        // 其余路径先展开 ~user，仍非绝对路径时锚定到用户主目录，
+        // 避免被 FileManager 按进程工作目录解释。
+        let expanded = (trimmed as NSString).expandingTildeInPath
+        if (expanded as NSString).isAbsolutePath {
+            return expanded
+        }
+        return home.appendingPathComponent(expanded).path
     }
 
     /// Measure the on-disk size of a path before deletion so cleanup tools can
