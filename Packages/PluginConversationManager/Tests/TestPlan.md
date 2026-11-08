@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 69 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 71 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 69
+测试文件: 11 个，用例总数: 71
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -126,16 +126,18 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 67 | ConversationManagerPreference | 被挤出缓存的会话保留自己的语言（**回归 #984**） | 后台会话 English，全局 Chinese | 写入 100 条更新的顶层会话把后台会话挤出窗口后调用 `language(for:)` | 仍返回该会话的 English，而非全局 Chinese | P1 | ✅ 已覆盖 | `evictedConversationKeepsItsOwnLanguage` |
 | 68 | ConversationManagerPreference | New Chat 默认详细度跨重启保留（**回归 #986**） | 未选中任何会话 | `setGlobalVerbosity(.brief)` 后新建 Manager 并 `loadConversations()` | 重启后 `globalVerbosity` 仍为 brief | P1 | ✅ 已覆盖 | `globalVerbosityPersistsAcrossRestartWithoutSelectedConversation` |
 | 69 | ConversationManagerPreference | 被挤出缓存的会话保留绑定的模型（**回归 #987**） | 后台会话绑定 `gpt-a/model-a` | 写入 100 条更新的顶层会话把后台会话挤出窗口后读取 `modelID(for:)` | 仍返回原模型与供应商，而非全局模型 | P1 | ✅ 已覆盖 | `evictedConversationKeepsItsBoundModel` |
+| 70 | ConversationStoreSettingsViewModel | 消息变化刷新计数与选中会话预览（**回归 #995**） | 选中会话已有 2 条消息，后台会话 1 条 | 插入一条消息产生 `.inserted`，再对后台会话产生 `.updated` | 选中会话计数变 3、预览追加新消息；后台会话只更新计数 | P1 | ✅ 已覆盖 | `messageChangeRefreshesCountAndSelectedPreview` |
+| 71 | ConversationStoreObserver | 消息变化转发到设置页，取消后停止（**回归 #995**） | 能力层已注册消息观察者 | 发送 `.inserted` 后取消 observer 再发送 `.updated` | 首次计数更新，取消后不再写入 | P1 | ✅ 已覆盖 | `forwardsMessageChangesUntilCancelled` |
 
-> 说明：全部 **69 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **71 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 8 / 8
-- P1: 已覆盖 56 / 56
+- P1: 已覆盖 58 / 58
 - P2: 已覆盖 5 / 5
-- **合计: 69 / 69**（仅表示清单场景，非源码覆盖率）
+- **合计: 71 / 71**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

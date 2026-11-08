@@ -24,6 +24,7 @@ final class ConversationStoreSettingsViewModel: ObservableObject {
     private var didSeedSelection = false
     private var isReloading = false
     private var pendingReload = false
+    private var messageRefreshTask: Task<Void, Never>?
 
     let conversationPageSize = 40
     let messageDisplayLimit = 40
@@ -122,6 +123,34 @@ final class ConversationStoreSettingsViewModel: ObservableObject {
         hasMoreConversations = page.count == conversationPageSize
         syncSelectionAfterConversationChange()
         await loadMessageCounts(for: page)
+    }
+
+    /// 由 Observer 转发的消息变化。
+    ///
+    /// 新消息不会改变 `ConversationSummary` 的身份，也只可能微调 `lastMessageAt`，
+    /// 因此会话事件这条路收不到通知；不订阅消息变化，计数与当前会话预览就一直
+    /// 停在打开页面时的快照（#995）。
+    func handleMessageChange(_ change: MessageChange) {
+        let conversationID: UUID
+        switch change {
+        case .inserted(_, let id), .persisted(_, let id):
+            conversationID = id
+        case .updated(let id), .cleared(let id):
+            conversationID = id
+        case .deleted(_, let id):
+            conversationID = id
+        }
+
+        messageCounts[conversationID] = capability.messageCount(for: conversationID)
+
+        guard conversationID == selectedConversationID else { return }
+        // 流式回复会连续产生变化事件，合并成一次快照读取。
+        messageRefreshTask?.cancel()
+        messageRefreshTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(120))
+            guard !Task.isCancelled else { return }
+            await self?.loadMessages()
+        }
     }
 
     /// 加载当前选中会话的最近一页消息。

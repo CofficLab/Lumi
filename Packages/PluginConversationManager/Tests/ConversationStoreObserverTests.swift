@@ -1,5 +1,6 @@
 import Foundation
 import ProviderConversation
+import ProviderMessage
 import Testing
 @testable import PluginConversationManager
 
@@ -47,6 +48,34 @@ struct ConversationStoreObserverTests {
         #expect(viewModel.conversations == [third])
         #expect(!viewModel.isMigrationActive)
         #expect(capability.pageRequests.count == 3)
+    }
+
+    @Test func forwardsMessageChangesUntilCancelled() async {
+        let capability = StubConversationStoreCapability()
+        let conversation = ConversationSummary(title: "conversation")
+        capability.initialPage = [conversation]
+        capability.selectedConversationID = conversation.id
+        capability.messageCounts[conversation.id] = 1
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        let observer = ConversationStoreObserver(
+            capability: capability,
+            viewModel: viewModel,
+            migrationProgress: nil
+        )
+        defer { observer.cancel() }
+
+        await waitUntil { viewModel.conversations == [conversation] }
+        await waitUntil { viewModel.messageCounts[conversation.id] == 1 }
+
+        let inserted = Message(conversationID: conversation.id, role: .assistant, content: "new")
+        capability.messageCounts[conversation.id] = 2
+        capability.emitMessageChange(.inserted(inserted, conversationID: conversation.id))
+        #expect(viewModel.messageCounts[conversation.id] == 2)
+
+        observer.cancel()
+        capability.messageCounts[conversation.id] = 9
+        capability.emitMessageChange(.updated(conversationID: conversation.id))
+        #expect(viewModel.messageCounts[conversation.id] == 2, "取消订阅后不得继续写入设置页状态")
     }
 
     @Test func capabilityAdapterUsesManagerAndEmptyMessageFallbacks() async {
