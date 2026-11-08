@@ -68,6 +68,15 @@ enum DiskManagerToolSupport {
         guard let array = arguments[key]?.value as? [Any] else { return nil }
         return array.compactMap { $0 as? String }
     }
+
+    /// 解析路径数组，保留原始字符串。
+    ///
+    /// 裁剪空白只用于判断条目是否为空；绝不能把裁剪后的字符串交给删除逻辑，
+    /// 因为 `"/tmp/cache "` 和 `"/tmp/cache"` 是两个不同的路径，裁剪会静默删错目录。
+    static func paths(_ arguments: [String: ToolArgument], _ key: String) -> [String]? {
+        guard let raw = stringArray(arguments, key) else { return nil }
+        return raw.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    }
 }
 
 // MARK: - Disk Usage
@@ -361,9 +370,7 @@ struct CleanCachesTool: SuperAgentTool {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let paths = DiskManagerToolSupport.stringArray(arguments, "paths")?
-            .map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) })
-            .filter({ !$0.isEmpty }) else {
+        guard let paths = DiskManagerToolSupport.paths(arguments, "paths") else {
             return "Missing or invalid 'paths'. Provide an array of cache directory paths."
         }
         guard !paths.isEmpty else { return "No cache paths were provided." }
@@ -478,9 +485,7 @@ struct CleanXcodeCachesTool: SuperAgentTool {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let paths = DiskManagerToolSupport.stringArray(arguments, "paths")?
-            .map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) })
-            .filter({ !$0.isEmpty }) else {
+        guard let paths = DiskManagerToolSupport.paths(arguments, "paths") else {
             return "Missing or invalid 'paths'. Provide an array of Xcode cache paths."
         }
         guard !paths.isEmpty else { return "No Xcode cache paths were provided." }
@@ -592,9 +597,7 @@ struct CleanProjectsTool: SuperAgentTool {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let paths = DiskManagerToolSupport.stringArray(arguments, "paths")?
-            .map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) })
-            .filter({ !$0.isEmpty }) else {
+        guard let paths = DiskManagerToolSupport.paths(arguments, "paths") else {
             return "Missing or invalid 'paths'. Provide an array of project dependency paths."
         }
         guard !paths.isEmpty else { return "No project dependency paths were provided." }
@@ -656,9 +659,7 @@ struct DeleteFilesTool: SuperAgentTool {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let paths = DiskManagerToolSupport.stringArray(arguments, "paths")?
-            .map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) })
-            .filter({ !$0.isEmpty }) else {
+        guard let paths = DiskManagerToolSupport.paths(arguments, "paths") else {
             return "Missing or invalid 'paths'. Provide an array of absolute paths."
         }
         guard !paths.isEmpty else { return "No paths were provided." }
