@@ -49,3 +49,23 @@
 - **回归测试**：每个修复点至少有一个测试用延迟/门闩构造「旧请求晚到」，断言新状态不被覆盖；只测最终成功路径不算覆盖此约定。
 
 适用范围：`Packages/` 下所有 `Task` / `async` 方法中在 `await` 后写 `@Published`、`private(set) var` 或共享 service 状态的位置。
+
+## 迁移到新工作副本后的完整性核查
+
+把仓库复制到新磁盘/新路径后，不要直接开工。先确认副本是「可用的仓库」，而不是一堆文件。复制过程可能丢对象、丢引用，或把工作区停留在旧提交上。
+
+1. **先看仓库能不能读**
+   - `git status` 能正常输出，且不出现 `bad object HEAD` / `fatal: not a git repository`。
+   - `git rev-parse HEAD` 与 `git cat-file -t <HEAD>` 都能找到对象；`git log -1` 能打印提交。对象缺失时先 `git fetch origin`，通常能补齐。
+2. **与 origin 对齐，量化差距**
+   - `git fetch origin`，然后 `git rev-list --count HEAD..origin/dev` 看落后多少提交。
+   - 落后数量与预期不符（例如刚提交过却落后几十条），说明副本是旧快照，不能当基线。
+   - `git remote -v` 确认远端指向真实仓库，而不是旧路径或本地目录。
+3. **判定工作区未提交改动的归属**（关键，不要一上来就 reset）
+   - `git status --short` 列出改动，再逐文件与旧副本的 HEAD 版本比对：`diff -q <新副本文件> <旧副本文件>`。
+   - 内容与旧副本 HEAD 一致 → 这些「改动」只是旧快照差异，可安全丢弃；内容有旧副本没有的东西 → 先 `git stash push -u -m "<日期>-pre-sync"` 保留，再对齐。
+   - 旧副本里未提交的改动也要单独判断：先确认它是否已作为提交存在于新副本的 origin 历史中，再决定搬运还是丢弃。
+4. **对齐方式**
+   - 新副本没有本地独有提交时，优先 `git merge --ff-only origin/dev`；工作区有会冲突的改动就先 stash。
+   - 不要在未确认改动归属前执行 `git reset --hard` / `git checkout -- .`。
+5. **收尾确认**：`git status` 干净或只剩明确无关的改动，`git rev-parse HEAD` 与 `origin/dev` 一致，再开始编译与提交。外接卷上构建较慢时，先怀疑 I/O 或锁文件，不要误判为代码错误。
