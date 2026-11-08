@@ -68,7 +68,14 @@ final class GoalForkCapabilityAdapter: GoalForkCapability {
     }
 
     func commitUserMessage(_ text: String, conversationID: UUID) throws -> MessageSendCommit? {
-        try messageSender.commitUserMessage(text, conversationID: conversationID)
+        // 必须走显式附件重载并传空数组：便捷重载会消费发送器全局挂起的
+        // 图片/文件附件，把这些本应随用户下一条消息发出的附件偷走。
+        try messageSender.commitUserMessage(
+            text,
+            imageAttachments: [],
+            fileAttachments: [],
+            conversationID: conversationID
+        )
     }
 
     func startTurn(for commit: MessageSendCommit) async {
