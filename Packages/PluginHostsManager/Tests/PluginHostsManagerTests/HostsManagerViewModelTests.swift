@@ -74,6 +74,29 @@ struct HostsManagerViewModelTests {
         #expect(model.entries.contains { $0.ip == "127.0.0.1" } == false)
     }
 
+    @Test("keeps an ungrouped entry out of the trailing named group")
+    func ungroupedEntryStaysBeforeFirstGroup() async throws {
+        let file = StubHostsFileForMutations()
+        file.seed("127.0.0.1 localhost\n# GROUP: Work\n10.0.0.1 work.test\n")
+        let model = HostsManagerViewModel(
+            readHostsFile: { try await file.read() },
+            writeHostsFile: { try await file.write($0) }
+        )
+        await model.loadHosts()
+
+        model.addEntry(ip: "192.168.0.5", domain: "loose.test", comment: nil, group: "  ")
+        await waitForSave(count: 1, model: model, file: file)
+
+        let saved = try #require(file.writes.first)
+        let lines = saved.split(separator: "\n", omittingEmptySubsequences: false)
+        let entryLine = try #require(lines.firstIndex { $0.contains("loose.test") })
+        let groupLine = try #require(lines.firstIndex { $0.contains("# GROUP: Work") })
+        #expect(entryLine < groupLine)
+
+        model.selectedGroup = "Work"
+        #expect(!model.filteredEntries.contains { $0.domains == ["loose.test"] })
+    }
+
     private func waitForSave(count: Int, model: HostsManagerViewModel, file: StubHostsFileForMutations) async {
         for _ in 0..<100 {
             if file.writes.count >= count, !model.isLoading { return }
@@ -88,6 +111,8 @@ private final class StubHostsFileForMutations {
     private(set) var writes: [String] = []
 
     func read() async throws -> String { content }
+
+    func seed(_ value: String) { content = value }
 
     func write(_ value: String) async throws {
         writes.append(value)
