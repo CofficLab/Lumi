@@ -110,27 +110,28 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 52 | ConversationCountLedger | 批量清理旧对话后统计保持不变 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `countsSurviveBulkCleanup` |
 | 53 | ConversationCountLedger | 重启后账本从磁盘恢复，不重复回填 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `ledgerSurvivesRestart` |
 | 54 | ConversationManagerCRUD | 删除父会话时子会话也收到 `.deleted` 通知 | 根会话与一个子会话 | 删除根会话 | 观察者依次收到根与子会话的 `.deleted`（**回归 #771**） | P1 | ✅ 已覆盖 | `deletingRootNotifiesDescendantConversations` |
+| 55 | ConversationStoreSettings | 刷新落地后旧分页结果不追加 | 首屏 40 条，翻页延迟 400ms | 翻页途中刷新列表 | 最终列表等于刷新结果，无旧分页条目 | P0 | ✅ 已覆盖 | `loadMoreDoesNotAppendStalePageAfterReload` |
 
 > 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
+- P0: 已覆盖 6 / 6
 - P1: 已覆盖 44 / 44
 - P2: 已覆盖 5 / 5
-- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
+- **合计: 55 / 55**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
 - **P1**: 其余功能性用例（35 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 54 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 55 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
