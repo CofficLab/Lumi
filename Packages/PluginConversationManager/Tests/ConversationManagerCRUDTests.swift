@@ -168,7 +168,19 @@ struct ConversationManagerCRUDTests {
             try await Task.sleep(for: .milliseconds(20))
         }
 
+        // `.deleted` 在持久化删除之前发出；等数据库行真正消失再清理临时目录，
+        // 否则 defer 删库时后台 Task 仍在 fault，会触发 CoreData I/O 崩溃。
+        var rootRemaining = await store.fetchConversation(id: rootID)
+        var childRemaining = await store.fetchConversation(id: childID)
+        for _ in 0..<100 where rootRemaining != nil || childRemaining != nil {
+            try await Task.sleep(for: .milliseconds(20))
+            rootRemaining = await store.fetchConversation(id: rootID)
+            childRemaining = await store.fetchConversation(id: childID)
+        }
+
         #expect(events.contains(.deleted(rootID)))
         #expect(events.contains(.deleted(childID)))
+        #expect(rootRemaining == nil)
+        #expect(childRemaining == nil)
     }
 }

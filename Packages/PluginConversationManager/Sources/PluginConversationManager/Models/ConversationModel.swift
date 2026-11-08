@@ -27,6 +27,13 @@ final public class ConversationModel: @unchecked Sendable {
     /// Optional to allow lightweight migration — old records have NULL; callers default to `createdAt`.
     public var lastMessageAt: TimeInterval?
 
+    /// 单调排序键：毫秒时间戳左移 20 位，低 20 位放会话 ID 的稳定哈希。
+    ///
+    /// 不能把 `id` 当次级排序键：SwiftData 对字符串次级排序不可靠，实测同一批数据
+    /// 在多次查询中顺序不同，keyset 分页会因此漏项/重复。数值主键可以保证强一致排序，
+    /// 同时 20 位哈希让同一毫秒内的会话仍有稳定且几乎不重复的顺序。
+    public var sortKey: Int64 = 0
+
     /// Verbosity level
     public var verbosityRaw: String?
 
@@ -75,6 +82,10 @@ final public class ConversationModel: @unchecked Sendable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.lastMessageAt = lastMessageAt ?? createdAt
+        self.sortKey = ConversationModel.makeSortKey(
+            date: lastMessageAt ?? createdAt,
+            id: id
+        )
         self.verbosityRaw = verbosityRaw
         self.reasoningEffortRaw = reasoningEffortRaw
         self.languageRaw = languageRaw
@@ -86,6 +97,22 @@ final public class ConversationModel: @unchecked Sendable {
         self.modelName = nil
         self.projectPath = projectPath
         self.parentConversationID = parentConversationID
+    }
+}
+
+// MARK: - Sorting
+
+public extension ConversationModel {
+    /// 生成 `(毫秒时间戳, id 哈希)` 的单调排序键，供数据库排序与 keyset 游标共用。
+    static func makeSortKey(date: TimeInterval, id: String) -> Int64 {
+        let millis = Int64((date * 1_000).rounded())
+        var hash: UInt64 = 0xCBF2_9CE4_8422_2325
+        for byte in id.utf8 {
+            hash ^= UInt64(byte)
+            hash = hash &* 0x0000_0100_0000_01B3
+        }
+        let tiebreak = Int64(hash & 0x000F_FFFF)
+        return (millis << 20) | tiebreak
     }
 }
 

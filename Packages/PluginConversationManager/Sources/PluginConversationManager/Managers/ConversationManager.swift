@@ -50,7 +50,9 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     public var sortedConversations: [ConversationSummary] {
         conversations.sorted { lhs, rhs in
             if lhs.lastMessageAt == rhs.lastMessageAt {
-                return lhs.createdAt > rhs.createdAt
+                // 与数据库 keyset 的 `sortKey` 一样需要稳定 tie-break。哈希细节留在 Store，
+                // 内存列表只需保证同一时间戳下顺序确定。
+                return lhs.id.uuidString > rhs.id.uuidString
             }
             return lhs.lastMessageAt > rhs.lastMessageAt
         }
