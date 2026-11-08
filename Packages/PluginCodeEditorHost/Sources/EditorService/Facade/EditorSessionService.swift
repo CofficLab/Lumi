@@ -49,7 +49,7 @@ public final class EditorSessionService {
         }
 
         if state.currentFileURL != url {
-            state.loadFile(from: url)
+            state.loadFile(from: url, restoringSession: session)
         }
     }
 
@@ -72,7 +72,7 @@ public final class EditorSessionService {
         }
 
         if state.currentFileURL != fileURL {
-            state.loadFile(from: fileURL)
+            state.loadFile(from: fileURL, restoringSession: session)
         }
     }
 
