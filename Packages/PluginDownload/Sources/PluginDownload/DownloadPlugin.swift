@@ -45,15 +45,29 @@ public struct DownloadBatchV2Tool: SuperAgentTool {
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { "批量下载" }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let rawURLs: [String]
-        if let values = arguments["urls"]?.value as? [String] { rawURLs = values }
-        else if let values = arguments["urls"]?.value as? [Any] { rawURLs = values.compactMap { $0 as? String } }
-        else { rawURLs = [] }
-        let urls = rawURLs.compactMap(URL.init(string:)).filter { ["http", "https"].contains($0.scheme?.lowercased() ?? "") }
-        guard !urls.isEmpty else { return "❌ 错误：urls 参数必需且必须是 HTTP/HTTPS 字符串数组" }
+        let rawValues: [String]
+        if let values = arguments["urls"]?.value as? [String] { rawValues = values }
+        else if let values = arguments["urls"]?.value as? [Any] {
+            rawValues = values.map { ($0 as? String) ?? String(describing: $0) }
+        }
+        else { rawValues = [] }
+
+        let items = DownloadPluginSupport.classifyBatchURLs(rawValues)
+        guard items.contains(where: { $0.url != nil }) else { return "❌ 错误：urls 参数必需且必须是 HTTP/HTTPS 字符串数组" }
         let directory = (arguments["directory"]?.value as? String).map { URL(fileURLWithPath: $0, isDirectory: true) } ?? DownloadPluginSupport.defaultDownloadDirectory()
-        var lines = ["📊 下载完成", "保存目录: \(directory.path)"]
-        for url in urls { let id = UUID().uuidString; let name = DownloadPluginSupport.extractFilename(from: url); let task = DownloadTask(id: id, url: url, destination: directory.appendingPathComponent(name), expectedSize: nil); await DownloadRuntime.tasks.remember(task); do { _ = try await DownloadRuntime.manager.download(task); lines.append("✅ \(name)\n任务 ID: \(id)") } catch { lines.append("❌ 失败: \(name) — \(error.localizedDescription)\n任务 ID: \(id)") } }
-        return lines.joined(separator: "\n")
+        var lines: [String] = []
+        var succeeded = 0
+        for item in items {
+            guard let url = item.url else {
+                // 无效项必须出现在结果里，不能静默丢弃
+                lines.append("❌ 无效 URL: \(item.raw)")
+                continue
+            }
+            let id = UUID().uuidString; let name = DownloadPluginSupport.extractFilename(from: url); let task = DownloadTask(id: id, url: url, destination: directory.appendingPathComponent(name), expectedSize: nil); await DownloadRuntime.tasks.remember(task)
+            do { _ = try await DownloadRuntime.manager.download(task); succeeded += 1; lines.append("✅ \(name)\n任务 ID: \(id)") }
+            catch { lines.append("❌ 失败: \(name) — \(error.localizedDescription)\n任务 ID: \(id)") }
+        }
+        let header = DownloadPluginSupport.batchSummary(succeeded: succeeded, total: items.count)
+        return ([header, "保存目录: \(directory.path)"] + lines).joined(separator: "\n")
     }
 }
