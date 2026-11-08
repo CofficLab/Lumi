@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 86
+测试文件: 8 个，用例总数: 89
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -138,27 +138,30 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 84 | NetworkHistoryGraphGeometry | 历史图表按真实时间戳布置点位，采样空档占据对应水平距离 | 10 个点，中间有 600s 空档 | 计算水平比例 | 第 5 点为 40/680，空档后点 > 0.9，非等距 5/9 | P1 | ✅ 已覆盖 | `timeFractionsReflectSamplingGap` |
 | 85 | NetworkHistoryGraphGeometry | 悬停按时间映射命中最近点，空档中间不误选相邻序号 | 同上不规则时间序列 | 以 0.5 比例求最近点 | 命中空档两端更近者；0/1 分别命中首末点 | P1 | ✅ 已覆盖 | `hoverPicksPointByTimestamp` |
 | 86 | NetworkHistoryGraphGeometry | 单点或时间戳相同时退回等距布局，空输入返回 nil | 单点、同时间戳两点、空数组 | 求值比例与最近点 | 比例为 nil，最近点按下标钳制，空数组为 nil | P2 | ✅ 已覆盖 | `degenerateInputsFallBackToEvenSpacing` |
+| 87 | HTTP 统计工具 | exchange store 不可用时抛出而非返回错误字符串 | 清空 store | 依次调用 summary / failed / slow / list / detail | 五次均抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `toolsThrowWhenExchangeStoreIsUnavailable` |
+| 88 | HTTP 统计工具 | 参数非法时抛出而非返回错误字符串 | 无 | 调用 domain 工具缺 domain、下载工具传非法 URL | 两次均抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `toolsThrowForInvalidArguments` |
+| 89 | get_http_exchange_detail | 记录不存在时抛出而非返回 "not found" 字符串 | 空 store | 调用 detail 工具传随机 id | 抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `exchangeDetailThrowsWhenRecordIsMissing` |
 
-> 说明：全部 **83 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **89 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 32 / 32
-- P1: 已覆盖 48 / 48
+- P1: 已覆盖 51 / 51
 - P2: 已覆盖 6 / 6
-- **合计: 83 / 83**（仅表示清单场景，非源码覆盖率）
+- **合计: 89 / 89**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（32 条）
-- **P1**: 其余功能性用例（46 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
+- **P1**: 其余功能性用例（51 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 83 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 89 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -47,6 +47,57 @@ struct HTTPSummaryToolLimitTests {
         #expect(slow.contains("showing 20"))
     }
 
+    /// 回归：这些失败曾经返回 "Error: ..." / "❌ ..." 字符串，默认
+    /// `executeResult` 会把它包成 `isError == false` 的成功结果。
+    @Test func toolsThrowWhenExchangeStoreIsUnavailable() async throws {
+        let previousStore = NetworkService.shared.currentExchangeStore
+        NetworkService.shared.configureHTTPExchangeStore(nil)
+        defer { NetworkService.shared.configureHTTPExchangeStore(previousStore) }
+
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await GetHTTPSummaryTool().executeResult(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await GetHTTPFailedRequestsTool().executeResult(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await GetHTTPSlowRequestsTool().executeResult(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await ListHTTPExchangesTool().executeResult(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await GetHTTPExchangeDetailTool().executeResult(arguments: [:])
+        }
+    }
+
+    @Test func toolsThrowForInvalidArguments() async throws {
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await GetHTTPDomainLogTool().executeResult(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await DownloadFileTool().executeResult(arguments: ["url": ToolArgument("not a url")])
+        }
+    }
+
+    @Test func exchangeDetailThrowsWhenRecordIsMissing() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("HTTPDetail-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = HTTPExchangeStore(directory: directory, startsRetentionMaintenance: false)
+        let previousStore = NetworkService.shared.currentExchangeStore
+        NetworkService.shared.configureHTTPExchangeStore(store)
+        defer { NetworkService.shared.configureHTTPExchangeStore(previousStore) }
+
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await GetHTTPExchangeDetailTool().executeResult(arguments: [
+                "id": ToolArgument(UUID().uuidString),
+            ])
+        }
+    }
+
     private func record(
         _ store: HTTPExchangeStore,
         url: URL,

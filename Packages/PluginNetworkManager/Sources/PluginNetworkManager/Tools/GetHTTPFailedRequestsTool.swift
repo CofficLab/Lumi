@@ -46,9 +46,9 @@ struct GetHTTPFailedRequestsTool: SuperAgentTool, SuperLog {
         let hours = min(NetworkToolSupport.int(arguments, "hours") ?? 24, 720)
         let errorTypes = NetworkToolSupport.stringArray(arguments, "error_types")
 
-        let result = await MainActor.run { () -> String in
+        let result = try await MainActor.run { () throws -> String in
             guard let store = NetworkService.shared.currentExchangeStore else {
-                return "Error: HTTP exchange store not available"
+                throw ToolExecutionError.executionFailed(toolName: name, reason: "HTTP exchange store not available")
             }
 
             let cutoff = Date().addingTimeInterval(-Double(hours) * 3600)

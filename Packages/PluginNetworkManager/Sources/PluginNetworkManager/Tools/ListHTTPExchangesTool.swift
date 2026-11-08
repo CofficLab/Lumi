@@ -83,9 +83,9 @@ struct ListHTTPExchangesTool: SuperAgentTool, SuperLog {
             before = nil
         }
 
-        let result = await MainActor.run { () -> String in
+        let result = try await MainActor.run { () throws -> String in
             guard let store = NetworkService.shared.currentExchangeStore else {
-                return "Error: HTTP exchange store not available"
+                throw ToolExecutionError.executionFailed(toolName: name, reason: "HTTP exchange store not available")
             }
 
             let allRecords = store.fetchPage(limit: 1000)
