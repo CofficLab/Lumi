@@ -9,7 +9,7 @@ struct CADViewportView: View {
     var body: some View {
         ZStack {
             CADViewportSceneView(sceneController: viewModel.sceneController) { componentId in
-                viewModel.selectComponent(id: componentId)
+                viewModel.handleViewportPick(id: componentId)
             }
 
             if viewModel.document?.components.isEmpty ?? true {
