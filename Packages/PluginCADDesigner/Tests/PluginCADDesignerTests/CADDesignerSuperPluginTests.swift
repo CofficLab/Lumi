@@ -136,6 +136,26 @@ struct CADDesignerSuperPluginTests {
         #expect(CADDocumentStore.shared.selectedDocument?.components.isEmpty == true)
     }
 
+    @Test("reports save and load I/O failures as tool errors")
+    func reportsSaveAndLoadIOFailuresAsToolErrors() async throws {
+        CADDocumentStore.shared.resetForTests()
+        _ = CADDocumentStore.shared.createDocument(name: "V2 IO Failure")
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let unsavable = directory.appendingPathComponent("missing-parent").appendingPathComponent("project.cadproj")
+
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await SaveCADProjectV2Tool().executeResult(arguments: ["path": ToolArgument(unsavable.path)])
+        }
+        #expect(!FileManager.default.fileExists(atPath: unsavable.path))
+
+        let missingSource = directory.appendingPathComponent("absent.cadproj")
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await LoadCADProjectV2Tool().executeResult(arguments: ["path": ToolArgument(missingSource.path)])
+        }
+        #expect(CADDocumentStore.shared.selectedDocument?.components.isEmpty == true)
+    }
+
     @Test("tool failures throw instead of returning error strings")
     func toolFailuresThrow() async {
         CADDocumentStore.shared.resetForTests()
