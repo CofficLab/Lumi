@@ -159,15 +159,42 @@ final class GeneralSettingsViewModel: ObservableObject {
                     return
                 }
 
-                if FileManager.default.fileExists(atPath: destination.path) {
-                    try FileManager.default.removeItem(at: destination)
-                }
-                try FileManager.default.copyItem(at: archive.url, to: destination)
+                try Self.installDiagnosticsArchive(from: archive.url, to: destination)
                 diagnosticsFeedback = "日志已导出：\(destination.lastPathComponent)"
             } catch {
                 diagnosticsFeedback = "导出失败：\(error.localizedDescription)"
             }
         }
+    }
+
+    /// 把诊断 archive 安装到用户选择的位置。
+    ///
+    /// 先在同目录复制出临时文件，确认写入成功后才替换目标。复制阶段（空间不足、
+    /// I/O 错误）失败时目标文件完全没被触碰；替换阶段失败则把原文件移回原位。
+    /// 不能先 `removeItem(destination)` 再 copy——那会在失败时直接丢掉用户数据（#997）。
+    static func installDiagnosticsArchive(from source: URL, to destination: URL) throws {
+        let fileManager = FileManager.default
+        let directory = destination.deletingLastPathComponent()
+        let staging = directory.appendingPathComponent(".lumi-diagnostics-\(UUID().uuidString).zip")
+        defer { try? fileManager.removeItem(at: staging) }
+
+        try fileManager.copyItem(at: source, to: staging)
+
+        guard fileManager.fileExists(atPath: destination.path) else {
+            try fileManager.moveItem(at: staging, to: destination)
+            return
+        }
+
+        let backup = directory.appendingPathComponent(".lumi-diagnostics-backup-\(UUID().uuidString).zip")
+        try fileManager.moveItem(at: destination, to: backup)
+        do {
+            try fileManager.moveItem(at: staging, to: destination)
+        } catch {
+            // 替换失败时回滚，失败路径同样不允许丢数据。
+            try? fileManager.moveItem(at: backup, to: destination)
+            throw error
+        }
+        try? fileManager.removeItem(at: backup)
     }
 
     func beginUninstall() {
