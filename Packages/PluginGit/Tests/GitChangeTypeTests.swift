@@ -79,13 +79,29 @@ import SwiftUI
         #expect(dels == 1)
     }
 
-    @Test func countsContentStartingWithPlusPlus() {
-        // A real added line whose content begins with "++" is currently skipped
-        // (mistaken for a header). Document this known limitation.
-        let diff = "++ added line that looks like a header"
+    @Test func countsSourceLinesStartingWithPlusOrMinus() {
+        // 源码行 `++i;` / `--i;` 的 diff 行是 `+++i;` / `---i;`，
+        // 只有带空白的 `+++ ` / `--- ` 才是文件头。
+        let diff = [
+            "diff --git a/counter.c b/counter.c",
+            "index 111..222 100644",
+            "--- a/counter.c",
+            "+++ b/counter.c",
+            "@@ -1,1 +1,1 @@",
+            "---i;",
+            "+++i;",
+        ].joined(separator: "\n")
         let (ins, dels) = GitDiffStats.countInsertionsDeletions(in: diff)
-        #expect(ins == 0)
-        #expect(dels == 0)
+        #expect(ins == 1)
+        #expect(dels == 1)
+    }
+
+    @Test func countsContentStartingWithDoubleSign() {
+        let diff = ["++ added line", "+ added line", "-- dropped line", "- dropped line"]
+            .joined(separator: "\n")
+        let (ins, dels) = GitDiffStats.countInsertionsDeletions(in: diff)
+        #expect(ins == 2)
+        #expect(dels == 2)
     }
 
     @Test func ignoresContextAndHunkHeaders() {

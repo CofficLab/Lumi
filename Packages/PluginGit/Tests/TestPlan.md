@@ -5,7 +5,7 @@
 GitPlugin Git integration plugin for Lumi editor.
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 72
+测试文件: 13 个，用例总数: 73
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -76,7 +76,7 @@ GitPlugin Git integration plugin for Lumi editor.
 | 17 | GitChangeType | displayLabelMatchesRawValue | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `displayLabelMatchesRawValue` |
 | 18 | GitChangeType | countsSimpleAdditionsAndDeletions | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `countsSimpleAdditionsAndDeletions` |
 | 19 | GitChangeType | skipsFileHeaders | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `skipsFileHeaders` |
-| 20 | GitChangeType | countsContentStartingWithPlusPlus | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `countsContentStartingWithPlusPlus` |
+| 20 | GitChangeType | countsSourceLinesStartingWithPlusOrMinus（`+++i;` / `---i;` 必须计入，只有带空白的文件头才排除） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `countsSourceLinesStartingWithPlusOrMinus` |
 | 21 | GitChangeType | ignoresContextAndHunkHeaders | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `ignoresContextAndHunkHeaders` |
 | 22 | GitChangeType | emptyDiffHasZeroCounts | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptyDiffHasZeroCounts` |
 | 23 | GitChangeType | multipleChangesAccumulate | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `multipleChangesAccumulate` |
@@ -129,27 +129,28 @@ GitPlugin Git integration plugin for Lumi editor.
 | 70 | GitLogTool count | 范围内的值原样保留 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `inRangeIsKept` |
 | 71 | GitLogTool count | 缺失或非法值使用默认值 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingOrInvalidUsesDefault` |
 | 72 | GitServiceReadingContract | getDiff 指定单个文件时 filesChanged 只统计该文件 | 临时仓库有两处未暂存修改 | 分别按 `a.txt` 与不存在的 `missing.txt` 取 diff | `a.txt` 的 filesChanged 为 1 且 patch 不含 `b.txt`；不存在文件无 patch 且 stats 为 nil | P1 | ✅ 已覆盖 | `diffFileFilterCountsOnlyRequestedFile` |
+| 73 | GitChangeType | countsContentStartingWithDoubleSign（以 `++`/`--` 开头的正文行正常计数） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `countsContentStartingWithDoubleSign` |
 
-> 说明：全部 **72 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **73 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
+- P0: 已覆盖 7 / 7
 - P1: 已覆盖 57 / 57
 - P2: 已覆盖 9 / 9
-- **合计: 72 / 72**（仅表示清单场景，非源码覆盖率）
+- **合计: 73 / 73**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
 - **P1**: 其余功能性用例（57 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 72 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 73 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

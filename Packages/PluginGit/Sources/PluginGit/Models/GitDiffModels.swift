@@ -31,20 +31,34 @@ public struct GitDiffStats: Codable, Sendable {
     /// Count added/removed lines in unified diff content.
     ///
     /// Lines beginning with a single `+`/`-` are counted as insertions/deletions.
-    /// Diff headers (`+++ b/file`, `--- a/file`) are skipped because they begin
-    /// with `++`/`--`. Context lines, hunk markers (`@@`), and metadata
-    /// (`diff --git`, `index`) start with neither and are ignored.
+    /// Only real diff headers (`+++ <path>`, `--- <path>`) are skipped: they are
+    /// the sole `+++`/`---` lines followed by whitespace, so source lines such as
+    /// `++i;` (whose diff line is `+++i;`) still count.
+    /// Context lines, hunk markers (`@@`), and metadata (`diff --git`, `index`)
+    /// start with neither and are ignored.
     public static func countInsertionsDeletions(in content: String) -> (insertions: Int, deletions: Int) {
         var insertions = 0
         var deletions = 0
         for line in content.components(separatedBy: "\n") {
-            if line.hasPrefix("+") && !line.hasPrefix("++") {
+            guard !isFileHeader(line) else { continue }
+            if line.hasPrefix("+") {
                 insertions += 1
-            } else if line.hasPrefix("-") && !line.hasPrefix("--") {
+            } else if line.hasPrefix("-") {
                 deletions += 1
             }
         }
         return (insertions, deletions)
+    }
+
+    /// `+++ b/file`、`--- a/file`（含 tab 分隔）才是文件头；
+    /// `+++i;`、`---i;` 这类紧贴内容的行是真实增删行。
+    private static func isFileHeader(_ line: String) -> Bool {
+        for marker in ["+++", "---"] where line.hasPrefix(marker) {
+            guard line.count > marker.count else { return true }
+            let next = line[line.index(line.startIndex, offsetBy: marker.count)]
+            return next == " " || next == "\t"
+        }
+        return false
     }
 }
 
