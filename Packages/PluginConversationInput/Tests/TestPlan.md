@@ -65,6 +65,14 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
   间距），不是贴在聊天区上的一条扁平色带。卡片几何写死在
   `ComposerSurfaceTests` 里，动 `ComposerLayout` 的间距必须同步改测试
 
+- **附件预览区拖放**（10 条）：由 `fileURLProviderResolvesToLocalURL`、`plainTextProviderResolvesToLocalURL` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **附件预览区拖放类型声明**（4 条）：由 `previewDeclaresFileURLOnly`、`swiftUIKeepsFileURLForImage` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **中文 IME 输入响应性**（1 条）：由 `queuedCursorRestoreDoesNotInterruptComposition` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **CollapsedContentChip 排版**（5 条）：由 `alignsChipBaselineWithBody`、`keepsBodyLineHeight` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **CollapsedContentChip 胶囊几何**（3 条）：由 `keepsPillAboveBodyBaseline`、`pillHugsContentInsteadOfLineBox` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **CollapsedContentChip 配色一致性**（4 条）：由 `usesInjectedFillColor`、`usesInjectedTitleColor` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **CollapsedContentChip 垂直对齐**（5 条）：由 `alignsChipTitleWithBodyText`、`alignsPillWithBodyTextBand` 等用例锁定；改动该模块时优先跑对应测试文件。
+
 ## 测试用例清单
 
 | ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
@@ -173,14 +181,14 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 
 | ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
 |----|------|------|----------|----------|----------|------|------|----------|
-| 89 | 附件✕ | 点图片 ✕ 后缩略图立即消失，**不调 `refresh()`** | 真实 Sender + Adapter + Observer，两个图片附件 | 移除其一 | ViewModel 列表已更新（证明事件真的走通全链路） | P0 | ✅ 已覆盖 | `closingImageUpdatesPreviewWithoutManualRefresh` |
-| 90 | 附件✕ | 关闭最后一张图片后预览行整体消失 | 单张图片附件 | 移除它 | `hasAttachments == false`（`AttachmentPreviewView` 整行不渲染） | P0 | ✅ 已覆盖 | `closingLastImageHidesPreviewRow` |
-| 91 | 附件✕ | 关闭图片不影响文件附件 | 图片 + 文件各一 | 移除图片 | 文件保留，`hasAttachments` 仍为真 | P1 | ✅ 已覆盖 | `closingImageKeepsFileAttachments` |
-| 92 | 附件✕ | 连点同一个 ✕ 幂等，不误删其他图片 | 两个图片附件 | 同一 ID 连移除两次 | 另一个不受影响，无越界删除 | P1 | ✅ 已覆盖 | `closingSameImageTwiceIsIdempotent` |
-| 93 | 附件✕ | 附件池被外部清空后点陈旧 ✕ 是安全空操作 | 先 `handleConversationSwitched()` 清空 | 用已失效的 ID 移除 | 池保持为空，无崩溃 | P1 | ✅ 已覆盖 | `closingStaleThumbnailIsSafeNoOp` |
-| 94 | 附件✕ | 关闭图片后发送按钮状态随之回落 | 仅一张图片、正文为空 | 移除它 | `canSend` 由 true 回到 false | P1 | ✅ 已覆盖 | `closingLastImageDisablesSend` |
-| 95 | 附件✕ | 点文件 chip 的 ✕ 后立即移除 | 两个文件附件 | 移除其一 | 列表与 Sender 池同步为剩余项 | P1 | ✅ 已覆盖 | `closingFileChipUpdatesPreview` |
-| 96 | 附件✕ | Observer 退订后 ✕ 仍移除附件，但预览不再刷新（**回归**） | 装配 Observer 后 `cancel()` | 移除其一 | Sender 池已删；ViewModel 停在旧状态（锁住「句柄必须显式 cancel」） | P2 | ✅ 已覆盖 | `removalAfterObserverCancelStopsRefreshingPreview` |
+| 88 | 附件✕ | 点图片 ✕ 后缩略图立即消失，**不调 `refresh()`** | 真实 Sender + Adapter + Observer，两个图片附件 | 移除其一 | ViewModel 列表已更新（证明事件真的走通全链路） | P0 | ✅ 已覆盖 | `closingImageUpdatesPreviewWithoutManualRefresh` |
+| 89 | 附件✕ | 关闭最后一张图片后预览行整体消失 | 单张图片附件 | 移除它 | `hasAttachments == false`（`AttachmentPreviewView` 整行不渲染） | P0 | ✅ 已覆盖 | `closingLastImageHidesPreviewRow` |
+| 90 | 附件✕ | 关闭图片不影响文件附件 | 图片 + 文件各一 | 移除图片 | 文件保留，`hasAttachments` 仍为真 | P1 | ✅ 已覆盖 | `closingImageKeepsFileAttachments` |
+| 91 | 附件✕ | 连点同一个 ✕ 幂等，不误删其他图片 | 两个图片附件 | 同一 ID 连移除两次 | 另一个不受影响，无越界删除 | P1 | ✅ 已覆盖 | `closingSameImageTwiceIsIdempotent` |
+| 92 | 附件✕ | 附件池被外部清空后点陈旧 ✕ 是安全空操作 | 先 `handleConversationSwitched()` 清空 | 用已失效的 ID 移除 | 池保持为空，无崩溃 | P1 | ✅ 已覆盖 | `closingStaleThumbnailIsSafeNoOp` |
+| 93 | 附件✕ | 关闭图片后发送按钮状态随之回落 | 仅一张图片、正文为空 | 移除它 | `canSend` 由 true 回到 false | P1 | ✅ 已覆盖 | `closingLastImageDisablesSend` |
+| 94 | 附件✕ | 点文件 chip 的 ✕ 后立即移除 | 两个文件附件 | 移除其一 | 列表与 Sender 池同步为剩余项 | P1 | ✅ 已覆盖 | `closingFileChipUpdatesPreview` |
+| 95 | 附件✕ | Observer 退订后 ✕ 仍移除附件，但预览不再刷新（**回归**） | 装配 Observer 后 `cancel()` | 移除其一 | Sender 池已删；ViewModel 停在旧状态（锁住「句柄必须显式 cancel」） | P2 | ✅ 已覆盖 | `removalAfterObserverCancelStopsRefreshingPreview` |
 
 > **鉴别力验证**：本轮用两处变异确认用例不是「恒绿」——
 > 把 `ConversationInputObserver` 的 `.attachmentsChanged` 改成 `break`，
@@ -197,24 +205,24 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 
 | ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
 |----|------|------|----------|----------|----------|------|------|----------|
-| 97 | i18n | 已上屏文案都有 4 种语言翻译 | 读取本包 xcstrings | 校验 Remove image / Remove file / Binary file / Text file / Missing provider(s) | 每条均含 en / zh-Hans / zh-HK / zh-TW | P0 | ✅ 已覆盖 | `accessibilityLabelsAreFullyLocalized` |
-| 98 | i18n | Provider 错误文案含 en | 同上 | 校验 Provider Error 与配置错误文案 | 均含 en（否则英文界面把 key 显示出来） | P0 | ✅ 已覆盖 | `providerErrorKeysIncludeEnglish` |
-| 99 | i18n | 所有条目都含 4 种规范语言 | 同上 | 遍历全表 | 无条目缺语言 | P1 | ✅ 已覆盖 | `everyCatalogEntryCoversRequiredLanguages` |
-| 100 | i18n | 占位符在各语言间数量一致 | 同上 | 对每条比对 `%` 占位符个数 | 与 en 一致（否则运行期崩溃或丢值） | P1 | ✅ 已覆盖 | `placeholdersAreConsistentAcrossLanguages` |
-| 101 | 编辑器高度 | 同一行内容下的亚像素抖动不产生新高度 | 装配高度观察 | 同一行内容连续测量两次 | 两次高度相同（否则每个字符都触发一次全聊天区重排） | P1 | ✅ 已覆盖 | `subpixelJitterIsSuppressed` |
-| 102 | 编辑器高度 | 行数变化仍然上报 | 同上 | 内容增加一行 | 高度变化并被上报（行数是真变化，不能被当成抖动吞掉） | P1 | ✅ 已覆盖 | `lineCountChangeIsReported` |
-| 103 | 编辑器高度 | 归位到最小高度不会被误判为抖动 | 同上 | 内容清空回到最小高度 | 高度归位到 64pt 并上报 | P1 | ✅ 已覆盖 | `returnToMinHeightIsNotSwallowed` |
-| 104 | 编辑器高度 | 非法输入返回原值不做归一化 | 同上 | 传入非法高度 | 原样返回（不做归一化，避免把异常值写成合法高度） | P2 | ✅ 已覆盖 | `invalidHeightFallsBackToMeasured` |
-| 105 | 逐键失效 | 一次按键引发的失效广播不超过 3 次 | 记录 `objectWillChange` 次数 | 逐字输入一个字符 | 广播次数有上界（逐键输入不得拖动整棵输入区视图树） | P1 | ✅ 已覆盖 | `singleKeystrokeInvalidatesBoundedTimes` |
-| 106 | 逐键失效 | 失效次数不随已输入长度增长 | 同上 | 连续输入长文本 | 失效次数不随长度增长（否则长文本输入会越来越卡） | P1 | ✅ 已覆盖 | `invalidationCountDoesNotGrowWithTextLength` |
-| 107 | 逐键失效 | 文本变化不会连带改写附件列表 | 已有图片附件 | 输入文字 | 附件列表不被改写（文本与附件是两条独立的状态线） | P1 | ✅ 已覆盖 | `textChangeDoesNotRewriteAttachmentState` |
-| 108 | 逐键失效 | 重复写入同一文本不会产生任何失效广播 | 同上 | 重复写入同一段文本 | 零次广播（同值写入不应触发任何重绘） | P2 | ✅ 已覆盖 | `redundantWriteDoesNotInvalidate` |
-| 109 | 逐键失效 | 逐键输入不会反复回灌能力层 | 记录能力层写入次数 | 逐字输入 | 能力层不被逐键回灌（回灌会与 Observer 订阅形成回环） | P1 | ✅ 已覆盖 | `keystrokeDoesNotRebroadcastToCapability` |
-| 110 | 发送按钮 | 挂起等待用户时同样显示停止按钮 | 回合挂起等待用户 | 读取按钮状态 | 显示停止按钮（挂起中回合同样没干完，必须留停止入口） | P1 | ✅ 已覆盖 | `suspendedConversationShowsStopButton` |
-| 111 | 观察 | 观察者回灌不重复通知发送按钮 | 装配 Observer 与发送栏 | 触发一次文本变化 | 发送按钮只被通知一次（回环会让按钮状态与输入内容脱节） | P2 | ✅ 已覆盖 | `textObserverDoesNotRebroadcastToActionBar` |
-| 112 | 输入框卡片 | 输入框卡片与上下左右边缘留出间距 | 渲染 `composerSurface()` 卡片 | 逐像素定位卡片左缘与上缘 | 左缘 x=14、上缘 y=0（贴边的输入框读起来是聊天区的一部分，没有悬浮感；上缘为 0 是刻意让卡片紧贴上方内容） | P1 | ✅ 已覆盖 | `cardIsInsetFromEdges` |
-| 113 | 输入框卡片 | 输入框卡片四角为圆角 | 同上 | 取包围盒角内侧 1pt 处与卡片内部比亮度 | 角点仍是底色（直角会让卡片读起来是「一块色板」而非浮起的卡片） | P1 | ✅ 已覆盖 | `cardCornersAreRounded` |
-| 114 | 输入框卡片 | 输入框卡片下方有柔和投影 | 同上 | 比较卡片下缘紧邻行与远处底色、再比 12pt 之外 | 下缘更暗且随距离衰减（没有投影就没有悬浮感，投影是这条视觉契约的主体） | P1 | ✅ 已覆盖 | `cardCastsSoftShadowBelow` |
+| 96 | i18n | 已上屏文案都有 4 种语言翻译 | 读取本包 xcstrings | 校验 Remove image / Remove file / Binary file / Text file / Missing provider(s) | 每条均含 en / zh-Hans / zh-HK / zh-TW | P0 | ✅ 已覆盖 | `accessibilityLabelsAreFullyLocalized` |
+| 97 | i18n | Provider 错误文案含 en | 同上 | 校验 Provider Error 与配置错误文案 | 均含 en（否则英文界面把 key 显示出来） | P0 | ✅ 已覆盖 | `providerErrorKeysIncludeEnglish` |
+| 98 | i18n | 所有条目都含 4 种规范语言 | 同上 | 遍历全表 | 无条目缺语言 | P1 | ✅ 已覆盖 | `everyCatalogEntryCoversRequiredLanguages` |
+| 99 | i18n | 占位符在各语言间数量一致 | 同上 | 对每条比对 `%` 占位符个数 | 与 en 一致（否则运行期崩溃或丢值） | P1 | ✅ 已覆盖 | `placeholdersAreConsistentAcrossLanguages` |
+| 100 | 编辑器高度 | 同一行内容下的亚像素抖动不产生新高度 | 装配高度观察 | 同一行内容连续测量两次 | 两次高度相同（否则每个字符都触发一次全聊天区重排） | P1 | ✅ 已覆盖 | `subpixelJitterIsSuppressed` |
+| 101 | 编辑器高度 | 行数变化仍然上报 | 同上 | 内容增加一行 | 高度变化并被上报（行数是真变化，不能被当成抖动吞掉） | P1 | ✅ 已覆盖 | `lineCountChangeIsReported` |
+| 102 | 编辑器高度 | 归位到最小高度不会被误判为抖动 | 同上 | 内容清空回到最小高度 | 高度归位到 64pt 并上报 | P1 | ✅ 已覆盖 | `returnToMinHeightIsNotSwallowed` |
+| 103 | 编辑器高度 | 非法输入返回原值不做归一化 | 同上 | 传入非法高度 | 原样返回（不做归一化，避免把异常值写成合法高度） | P2 | ✅ 已覆盖 | `invalidHeightFallsBackToMeasured` |
+| 104 | 逐键失效 | 一次按键引发的失效广播不超过 3 次 | 记录 `objectWillChange` 次数 | 逐字输入一个字符 | 广播次数有上界（逐键输入不得拖动整棵输入区视图树） | P1 | ✅ 已覆盖 | `singleKeystrokeInvalidatesBoundedTimes` |
+| 105 | 逐键失效 | 失效次数不随已输入长度增长 | 同上 | 连续输入长文本 | 失效次数不随长度增长（否则长文本输入会越来越卡） | P1 | ✅ 已覆盖 | `invalidationCountDoesNotGrowWithTextLength` |
+| 106 | 逐键失效 | 文本变化不会连带改写附件列表 | 已有图片附件 | 输入文字 | 附件列表不被改写（文本与附件是两条独立的状态线） | P1 | ✅ 已覆盖 | `textChangeDoesNotRewriteAttachmentState` |
+| 107 | 逐键失效 | 重复写入同一文本不会产生任何失效广播 | 同上 | 重复写入同一段文本 | 零次广播（同值写入不应触发任何重绘） | P2 | ✅ 已覆盖 | `redundantWriteDoesNotInvalidate` |
+| 108 | 逐键失效 | 逐键输入不会反复回灌能力层 | 记录能力层写入次数 | 逐字输入 | 能力层不被逐键回灌（回灌会与 Observer 订阅形成回环） | P1 | ✅ 已覆盖 | `keystrokeDoesNotRebroadcastToCapability` |
+| 109 | 发送按钮 | 挂起等待用户时同样显示停止按钮 | 回合挂起等待用户 | 读取按钮状态 | 显示停止按钮（挂起中回合同样没干完，必须留停止入口） | P1 | ✅ 已覆盖 | `suspendedConversationShowsStopButton` |
+| 110 | 观察 | 观察者回灌不重复通知发送按钮 | 装配 Observer 与发送栏 | 触发一次文本变化 | 发送按钮只被通知一次（回环会让按钮状态与输入内容脱节） | P2 | ✅ 已覆盖 | `textObserverDoesNotRebroadcastToActionBar` |
+| 111 | 输入框卡片 | 输入框卡片与上下左右边缘留出间距 | 渲染 `composerSurface()` 卡片 | 逐像素定位卡片左缘与上缘 | 左缘 x=14、上缘 y=0（贴边的输入框读起来是聊天区的一部分，没有悬浮感；上缘为 0 是刻意让卡片紧贴上方内容） | P1 | ✅ 已覆盖 | `cardIsInsetFromEdges` |
+| 112 | 输入框卡片 | 输入框卡片四角为圆角 | 同上 | 取包围盒角内侧 1pt 处与卡片内部比亮度 | 角点仍是底色（直角会让卡片读起来是「一块色板」而非浮起的卡片） | P1 | ✅ 已覆盖 | `cardCornersAreRounded` |
+| 113 | 输入框卡片 | 输入框卡片下方有柔和投影 | 同上 | 比较卡片下缘紧邻行与远处底色、再比 12pt 之外 | 下缘更暗且随距离衰减（没有投影就没有悬浮感，投影是这条视觉契约的主体） | P1 | ✅ 已覆盖 | `cardCastsSoftShadowBelow` |
 
 > 本轮修复的缺陷（先由用例失败暴露，再补齐）：
 > - `Binary file` / `Text file` / `Remove image` / `Remove file` /
@@ -257,21 +265,53 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 
 | ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
 |----|------|------|----------|----------|----------|------|------|----------|
-| 115 | IME | 组合态期间不产生任何 SwiftUI 状态写入 | 真实 Provider + Adapter + Observer + 真实 `EditorTextView` | 依次推进组合态 `n`→`nihao` | 文本 / 高度 / 光标绑定写入均为 0、折叠块上报 0 次、失效广播 0 次、草稿为空（拼音进了草稿，用户会看到候选词被当成正文） | P0 | ✅ 已覆盖 | `compositionPhaseDoesNotWriteSwiftUIState` |
-| 116 | IME | 上屏后只发布一次已提交的汉字 | 同上 | 组合态推进后上屏「你好」 | 草稿为「你好」；文本绑定恰好写 1 次；失效广播 ≤ 3 次（多写会让发送按钮与输入框不同步） | P0 | ✅ 已覆盖 | `commitPublishesCommittedTextExactlyOnce` |
-| 117 | IME | 单次按键的应用侧开销落在帧预算内 | 同上 | 8 次组合态推进 | 应用侧最坏耗时 ≤ 8ms，且打印应用侧 / 总耗时两组实测值供人工判读 | P1 | ✅ 已覆盖 | `perKeystrokeAppCostFitsFrameBudget` |
-| 118 | 折叠块 | chip 拍平后保留原文，区间指向该段在正文中的位置 | 带 attachment 的 `NSTextStorage` | 拍平内容 | 正文含 chip 原文、chip 区间指向该段（区间算错会让消息里的 chip 盖住错误的文字） | P1 | ✅ 已覆盖 | `flattensChipIntoTextWithRange` |
-| 119 | 折叠块 | 多个 chip 的区间各自指向自己那一段 | 两个 chip 的存储 | 拍平内容 | 两段区间互不重叠、各自对应（否则第二个 chip 会盖住第一个的原文） | P1 | ✅ 已覆盖 | `tracksMultipleChips` |
-| 120 | 折叠块 | 没有 chip 时不产生区间 | 纯文本存储 | 拍平内容 | 区间数组为空（纯文本不该被误判成折叠块） | P2 | ✅ 已覆盖 | `producesNoBlocksForPlainText` |
-| 121 | 折叠块 | 编辑器把折叠块区间上报给上层 | 装配 Coordinator 的编辑器 | 触发区间上报回调 | 回调收到折叠块区间（漏掉它，发送时消息会退化成一大段纯文字） | P1 | ✅ 已覆盖 | `reportsCollapsedBlocksUpward` |
-| 122 | 输入框卡片 | 输入框卡片内部保留内容内边距 | 渲染走完整 `composerContentInsets()` + `composerSurface()` 链路的标记色卡片 | 比较标记色块上缘（文字上缘）与卡片上缘之差 | 差值为 10pt（文字顶到卡片边缘会被读成「被裁切」；这条与「卡片与聊天区的外间距」是两回事，不许一起清零） | P1 | ✅ 已覆盖 | `cardKeepsContentInsets` |
-| 123 | 发送 | 带附件发送在编码完成前消费附件，编码窗口内再次发送被忽略 | text + 一个文件附件 | `send()` 后立即再 `send()` | 附件在异步编码前离开挂起池、`canSend` 转 false；第二次发送不再提交，后台提交仅 1 次且附件完整 | P0 | ✅ 已覆盖 | `sendWithAttachmentsConsumesThemBeforeEncoding` |
-| 124 | 发送 | 发送按钮路径同样在编码完成前消费附件 | text + 一张图片 | `send()` 后立即再 `send()` | 附件池清空、按钮熄灭；后台提交仅 1 次 | P0 | ✅ 已覆盖 | `sendingWithAttachmentsReservesThemBeforeEncoding` |
-| 125 | 错误 | 附件提交失败时附件回到挂起池 | 后台提交抛错 | `send()` 后等待错误回填 | `errorMessage` 非空，附件重新出现在挂起池与预览中，可直接重试 | P1 | ✅ 已覆盖 | `failedAttachmentCommitRestoresAttachments` |
-| 126 | 折叠块 | 折叠块前插入换行后发送，chip 区间仍指向原文本（**回归**） | 真实 Sender + Adapter + ViewModel；正文 `"\n" + body`，区间 `{start:1, length:body.count}` | 走回车发送路径 | 落库正文为 trim 后的 body；metadata 区间平移为 `{start:0, length:body.count}` 且精确指向 body（预 trim 会让区间越界被丢弃） | P0 | ✅ 已覆盖 | `leadingNewlineBeforeChipKeepsBlock` |
-| 127 | 折叠块 | 发送按钮路径同样保留 chip 区间（**回归**） | 真实链路；正文 `"  " + body + "\n"`，区间 `{start:2, length:body.count}` | 走发送按钮路径 | 区间随 trim 平移后仍精确指向 body，chip 不退化为纯文本 | P0 | ✅ 已覆盖 | `sendButtonKeepsBlockAfterTrim` |
-| 128 | 拖放 | 非空但不可解码的字节不算有效图片 | 只有 PNG 前两字节 / 纯文本 / 空数据 / 真实 1×1 PNG | 调用 `ChatInputEditorRules.isDecodableImageData` | 前三种为 false，真实 PNG 为 true | P1 | ✅ 已覆盖 | `undecodableImageBytesAreRejected` |
-| 129 | 拖放 | 拖入非空但不可解码的图片时报错且不进图片池 | `fake.png` 内容为纯文本 | `attachImage` 后等待 `errorMessage` | 错误提示包含文件名，挂起池为空（**回归** #764） | P0 | ✅ 已覆盖 | `droppingCorruptImageSurfacesErrorAndSkipsPool` |
+| 114 | IME | 组合态期间不产生任何 SwiftUI 状态写入 | 真实 Provider + Adapter + Observer + 真实 `EditorTextView` | 依次推进组合态 `n`→`nihao` | 文本 / 高度 / 光标绑定写入均为 0、折叠块上报 0 次、失效广播 0 次、草稿为空（拼音进了草稿，用户会看到候选词被当成正文） | P0 | ✅ 已覆盖 | `compositionPhaseDoesNotWriteSwiftUIState` |
+| 115 | IME | 上屏后只发布一次已提交的汉字 | 同上 | 组合态推进后上屏「你好」 | 草稿为「你好」；文本绑定恰好写 1 次；失效广播 ≤ 3 次（多写会让发送按钮与输入框不同步） | P0 | ✅ 已覆盖 | `commitPublishesCommittedTextExactlyOnce` |
+| 116 | IME | 单次按键的应用侧开销落在帧预算内 | 同上 | 8 次组合态推进 | 应用侧最坏耗时 ≤ 8ms，且打印应用侧 / 总耗时两组实测值供人工判读 | P1 | ✅ 已覆盖 | `perKeystrokeAppCostFitsFrameBudget` |
+| 117 | 折叠块 | chip 拍平后保留原文，区间指向该段在正文中的位置 | 带 attachment 的 `NSTextStorage` | 拍平内容 | 正文含 chip 原文、chip 区间指向该段（区间算错会让消息里的 chip 盖住错误的文字） | P1 | ✅ 已覆盖 | `flattensChipIntoTextWithRange` |
+| 118 | 折叠块 | 多个 chip 的区间各自指向自己那一段 | 两个 chip 的存储 | 拍平内容 | 两段区间互不重叠、各自对应（否则第二个 chip 会盖住第一个的原文） | P1 | ✅ 已覆盖 | `tracksMultipleChips` |
+| 119 | 折叠块 | 没有 chip 时不产生区间 | 纯文本存储 | 拍平内容 | 区间数组为空（纯文本不该被误判成折叠块） | P2 | ✅ 已覆盖 | `producesNoBlocksForPlainText` |
+| 120 | 折叠块 | 编辑器把折叠块区间上报给上层 | 装配 Coordinator 的编辑器 | 触发区间上报回调 | 回调收到折叠块区间（漏掉它，发送时消息会退化成一大段纯文字） | P1 | ✅ 已覆盖 | `reportsCollapsedBlocksUpward` |
+| 121 | 输入框卡片 | 输入框卡片内部保留内容内边距 | 渲染走完整 `composerContentInsets()` + `composerSurface()` 链路的标记色卡片 | 比较标记色块上缘（文字上缘）与卡片上缘之差 | 差值为 10pt（文字顶到卡片边缘会被读成「被裁切」；这条与「卡片与聊天区的外间距」是两回事，不许一起清零） | P1 | ✅ 已覆盖 | `cardKeepsContentInsets` |
+| 122 | 发送 | 带附件发送在编码完成前消费附件，编码窗口内再次发送被忽略 | text + 一个文件附件 | `send()` 后立即再 `send()` | 附件在异步编码前离开挂起池、`canSend` 转 false；第二次发送不再提交，后台提交仅 1 次且附件完整 | P0 | ✅ 已覆盖 | `sendWithAttachmentsConsumesThemBeforeEncoding` |
+| 123 | 发送 | 发送按钮路径同样在编码完成前消费附件 | text + 一张图片 | `send()` 后立即再 `send()` | 附件池清空、按钮熄灭；后台提交仅 1 次 | P0 | ✅ 已覆盖 | `sendingWithAttachmentsReservesThemBeforeEncoding` |
+| 124 | 错误 | 附件提交失败时附件回到挂起池 | 后台提交抛错 | `send()` 后等待错误回填 | `errorMessage` 非空，附件重新出现在挂起池与预览中，可直接重试 | P1 | ✅ 已覆盖 | `failedAttachmentCommitRestoresAttachments` |
+| 125 | 折叠块 | 折叠块前插入换行后发送，chip 区间仍指向原文本（**回归**） | 真实 Sender + Adapter + ViewModel；正文 `"\n" + body`，区间 `{start:1, length:body.count}` | 走回车发送路径 | 落库正文为 trim 后的 body；metadata 区间平移为 `{start:0, length:body.count}` 且精确指向 body（预 trim 会让区间越界被丢弃） | P0 | ✅ 已覆盖 | `leadingNewlineBeforeChipKeepsBlock` |
+| 126 | 折叠块 | 发送按钮路径同样保留 chip 区间（**回归**） | 真实链路；正文 `"  " + body + "\n"`，区间 `{start:2, length:body.count}` | 走发送按钮路径 | 区间随 trim 平移后仍精确指向 body，chip 不退化为纯文本 | P0 | ✅ 已覆盖 | `sendButtonKeepsBlockAfterTrim` |
+| 127 | 拖放 | 非空但不可解码的字节不算有效图片 | 只有 PNG 前两字节 / 纯文本 / 空数据 / 真实 1×1 PNG | 调用 `ChatInputEditorRules.isDecodableImageData` | 前三种为 false，真实 PNG 为 true | P1 | ✅ 已覆盖 | `undecodableImageBytesAreRejected` |
+| 128 | 拖放 | 拖入非空但不可解码的图片时报错且不进图片池 | `fake.png` 内容为纯文本 | `attachImage` 后等待 `errorMessage` | 错误提示包含文件名，挂起池为空（**回归** #764） | P0 | ✅ 已覆盖 | `droppingCorruptImageSurfacesErrorAndSkipsPool` |
+| 129 | 附件预览区拖放 | file-url 表示的 provider 被解析为文件 URL | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fileURLProviderResolvesToLocalURL` |
+| 130 | 附件预览区拖放 | 纯文本路径的 provider 被解析为文件 URL | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `plainTextProviderResolvesToLocalURL` |
+| 131 | 附件预览区拖放 | 归档过的纯文本表示同样能解出路径 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `archivedPlainTextProviderResolvesToLocalURL` |
+| 132 | 附件预览区拖放 | 空 provider 列表产出空结果 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptyProviderListYieldsNoURL` |
+| 133 | 附件预览区拖放 | 声称有文本表示却取不出内容的 provider 不会崩溃 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `providerWithUnreadableRepresentationDoesNotCrash` |
+| 134 | 附件预览区拖放 | 多个 provider 的解析结果按拖放顺序排列 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `multipleProvidersKeepDropOrder` |
+| 135 | 附件预览区拖放 | 拖入预览区的图片进入图片池 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `droppedImageGoesToImagePool` |
+| 136 | 附件预览区拖放 | 拖入预览区的普通文件进入文件池 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `droppedFileGoesToFilePool` |
+| 137 | 附件预览区拖放 | 拖入预览区的目录路径插入输入框文本 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `droppedDirectoryInsertsPathIntoText` |
+| 138 | 附件预览区拖放 | 预览区与输入框共用同一套分流规则 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `previewAndEditorShareTheSameRoutingRule` |
+| 139 | 附件预览区拖放类型声明 | 预览区的 onDrop 只声明 .fileURL | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `previewDeclaresFileURLOnly` |
+| 140 | 附件预览区拖放类型声明 | SwiftUI 交付的 provider 仍带 public.file-url（图片） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `swiftUIKeepsFileURLForImage` |
+| 141 | 附件预览区拖放类型声明 | SwiftUI 交付的 provider 仍带 public.file-url（文本文件） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `swiftUIKeepsFileURLForTextFile` |
+| 142 | 附件预览区拖放类型声明 | 图片拖到预览区后能解析出路径并进入图片池 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `droppedImageReachesImagePool` |
+| 143 | 中文 IME 输入响应性 | 已排队的光标恢复不会打断 IME 组合态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `queuedCursorRestoreDoesNotInterruptComposition` |
+| 144 | CollapsedContentChip 排版 | chip 的文字基线与正文基线重合 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `alignsChipBaselineWithBody` |
+| 145 | CollapsedContentChip 排版 | chip 不撑高文字行 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `keepsBodyLineHeight` |
+| 146 | CollapsedContentChip 排版 | chip 占位高度等于正文的自然行高 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `usesBodyLineHeightAsCellHeight` |
+| 147 | CollapsedContentChip 排版 | chip 宽度包含图标、标题与统计信息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `measuresChipWidth` |
+| 148 | CollapsedContentChip 排版 | 统计信息太长时舍弃统计信息，保留标题 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `dropsDetailWhenTooLong` |
+| 149 | CollapsedContentChip 胶囊几何 | 胶囊底边不落到正文基线以下 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `keepsPillAboveBodyBaseline` |
+| 150 | CollapsedContentChip 胶囊几何 | 胶囊紧贴文字，不撑满整个行盒 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pillHugsContentInsteadOfLineBox` |
+| 151 | CollapsedContentChip 胶囊几何 | chip 主标题随正文字号变化 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `matchesBodyFontSize` |
+| 152 | CollapsedContentChip 配色一致性 | 胶囊底色用注入的配色，而不是系统强调色 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `usesInjectedFillColor` |
+| 153 | CollapsedContentChip 配色一致性 | 标题用注入的主色 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `usesInjectedTitleColor` |
+| 154 | CollapsedContentChip 配色一致性 | 统计信息用注入的次级色 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `usesInjectedDetailColor` |
+| 155 | CollapsedContentChip 配色一致性 | 默认兜底配色不是系统强调色 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fallbackAvoidsAccentColor` |
+| 156 | CollapsedContentChip 垂直对齐 | chip 标题与正文的字顶、字底和基线一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `alignsChipTitleWithBodyText` |
+| 157 | CollapsedContentChip 垂直对齐 | 胶囊与正文的上下沿齐平（不偏上也不偏下） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `alignsPillWithBodyTextBand` |
+| 158 | CollapsedContentChip 垂直对齐 | 胶囊不越过正文的行盒 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `staysWithinLineBox` |
+| 159 | CollapsedContentChip 垂直对齐 | chip 不侵入下一行文字 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `staysAboveFollowingLine` |
+| 160 | CollapsedContentChip 垂直对齐 | 行盒与 cell 高度不一致时，chip 仍与正文同基线 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `keepsBaselineWhenCellIsMisplaced` |
 
 > **鉴别力验证**：本轮用一处变异确认用例不是「恒绿」——把
 > `Coordinator.textDidChange` 里的两道 IME 守卫
@@ -285,7 +325,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > 里有一份**代码完全相同**的守卫，全局替换第一处会改错函数，
 > 导致「用例仍然全绿」的假阴性。
 
-> 说明：全部 **129 条场景 / 134 个测试方法**已在 macOS 上实跑通过
+> 说明：全部 **160 条场景 / 164 个测试方法**已在 macOS 上实跑通过
 > （`swift test` → 164 tests in 25 suites；其中 6 条 chip 几何用例在本机
 > Xcode 27.2 SDK 下失败，已在未改动的 HEAD 上复现，属既有环境问题）。
 >
@@ -308,10 +348,10 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 
 ## 覆盖率统计
 
-- P0: 已覆盖 44 / 44
-- P1: 已覆盖 69 / 69
-- P2: 已覆盖 16 / 16
-- **合计: 129 / 129**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 45 / 45
+- P1: 已覆盖 97 / 97
+- P2: 已覆盖 18 / 18
+- **合计: 160 / 160**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
