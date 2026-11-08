@@ -5,7 +5,7 @@
 StoryWriterPlugin A two-pane story writing workspace. - **Left pane (rail tab)**: story picker dropdown + chapter tree - **Right pane (ActivityBar view container)**: selected node editor (chapter markdown / story metadata) - **AI assistance**: via a dedicated ChatSection flow (configured separately) - **Persistence**: self-managed JSON under `~/Library/Application Support/.../StoryWriter/`
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 13
+测试文件: 4 个，用例总数: 15
 
 核心组件（源码目录）:
 - `Models/`
@@ -38,9 +38,9 @@ StoryWriterPlugin A two-pane story writing workspace. - **Left pane (rail tab)**
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **StoryStore**（4 条）：由 `storyChapterAndCharacterCRUDPersistsRelationships`、`storyListUsesUpdatedTimeAndIgnoresMalformedRecords`、`markdownExportIncludesSynopsisChaptersAndOptionalCharacterDetails` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **StoryStore**（5 条）：由 `storyChapterAndCharacterCRUDPersistsRelationships`、`storyListUsesUpdatedTimeAndIgnoresMalformedRecords`、`markdownExportIncludesSynopsisChaptersAndOptionalCharacterDetails`、`deletingMissingTargetsReportsNoDeletion` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **StoryWriterPlugin**（3 条）：由 `v2PluginPreservesWorkspaceAndToolCatalog`、`activationScopesRailView`、`documentationEntriesAreRemovedWhenPluginUnregisters` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **StoryWriterTool**（3 条）：由 `publicToolsExposeConsistentSchemasDescriptionsAndRisks`、`toolsValidateArgumentsAndSupportStoryChapterLifecycle`、`toolsReportUnavailableStorage` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **StoryWriterTool**（4 条）：由 `publicToolsExposeConsistentSchemasDescriptionsAndRisks`、`deletingMissingStoryOrChapterReportsNotFound`、`toolsValidateArgumentsAndSupportStoryChapterLifecycle`、`toolsReportUnavailableStorage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **StoryWriterViewModel**（3 条）：由 `selectionCrudAndMarkdownFlowsStayInSyncWithStore`、`reloadPreservesExistingSelectionAndFallsBackAfterDeletion`、`changeObserverBroadcastsAndCancellationIsIdempotent` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -60,27 +60,29 @@ StoryWriterPlugin A two-pane story writing workspace. - **Left pane (rail tab)**
 | 11 | StoryWriterViewModel | selectionCrudAndMarkdownFlowsStayInSyncWithStore | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectionCrudAndMarkdownFlowsStayInSyncWithStore` |
 | 12 | StoryWriterViewModel | reloadPreservesExistingSelectionAndFallsBackAfterDeletion | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `reloadPreservesExistingSelectionAndFallsBackAfterDeletion` |
 | 13 | StoryWriterViewModel | changeObserverBroadcastsAndCancellationIsIdempotent | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `changeObserverBroadcastsAndCancellationIsIdempotent` |
+| 14 | StoryStore | 删除不存在的故事/章节返回 false 且不误删现存对象 | 已有故事与章节 | 用随机 UUID 及错误 storyID 调用删除，再删真实对象 | 不存在时返回 false 且现存对象保留；真实删除返回 true | P1 | ✅ 已覆盖 | `deletingMissingTargetsReportsNoDeletion` |
+| 15 | StoryWriterTool | 删除不存在的故事/章节不报告成功 | 有效存储目录 | 调用 delete_story / delete_chapter 传入随机 UUID | 分别返回 `Error: story not found` / `Error: chapter not found`；真实删除仍成功 | P1 | ✅ 已覆盖 | `deletingMissingStoryOrChapterReportsNotFound` |
 
-> 说明：全部 **13 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **15 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 13 / 13
+- P1: 已覆盖 15 / 15
 - P2: 已覆盖 0 / 0
-- **合计: 13 / 13**（仅表示清单场景，非源码覆盖率）
+- **合计: 15 / 15**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（13 条）
+- **P1**: 其余功能性用例（15 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 13 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 15 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

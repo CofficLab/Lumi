@@ -25,6 +25,35 @@ struct StoryWriterToolTests {
         #expect(!schemaProperties(for: "list_stories").contains("story_id"))
     }
 
+    @Test func deletingMissingStoryOrChapterReportsNotFound() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer {
+            StoryWriterStorage.configureV2(directory: nil)
+            try? FileManager.default.removeItem(at: directory)
+        }
+        StoryWriterStorage.configureV2(directory: directory)
+
+        let missing = UUID().uuidString
+        #expect(try await tool("delete_story").execute(arguments: ["story_id": .init(missing)]) == "Error: story not found")
+
+        _ = try await tool("create_story").execute(arguments: ["title": .init("Keep")])
+        let store = StoryStore(pluginDirectory: directory)
+        guard let story = await store.loadAllStories().first else {
+            Issue.record("create_story did not persist a story")
+            return
+        }
+        let storyID = story.id.uuidString
+
+        #expect(try await tool("delete_chapter").execute(arguments: [
+            "story_id": .init(storyID),
+            "chapter_id": .init(missing)
+        ]) == "Error: chapter not found")
+        #expect(await store.loadStory(id: story.id) != nil)
+
+        #expect(try await tool("delete_story").execute(arguments: ["story_id": .init(storyID)]) == "🗑️ Deleted story \(storyID).")
+        #expect(await store.loadStory(id: story.id) == nil)
+    }
+
     @Test func toolsValidateArgumentsAndSupportStoryChapterLifecycle() async throws {
         let directory = try makeTemporaryDirectory()
         defer {
