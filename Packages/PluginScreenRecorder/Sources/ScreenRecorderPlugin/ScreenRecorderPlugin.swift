@@ -108,8 +108,8 @@ public struct StartRecordingV2Tool: SuperAgentTool {
             "duration_seconds": ["type": "integer", "minimum": 1, "maximum": 3600],
             "include_app_audio": ["type": "boolean", "default": false],
             "include_microphone": ["type": "boolean", "default": false],
-            "frame_rate": ["type": "integer", "default": 30],
-            "resolution_height": ["type": "integer"],
+            "frame_rate": ["type": "integer", "minimum": 1, "maximum": 60, "default": 30],
+            "resolution_height": ["type": "integer", "minimum": 1, "maximum": 4320],
             "output_directory": ["type": "string"],
             "filename": ["type": "string"],
         ], "additionalProperties": false]
