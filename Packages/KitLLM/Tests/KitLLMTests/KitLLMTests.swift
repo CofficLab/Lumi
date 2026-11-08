@@ -229,6 +229,21 @@ struct KitLLMTests {
         #expect(!sanitized.contains("."))
     }
 
+    @Test("超长工具名截断到 64 字符且稳定不撞名")
+    func longToolNameIsTruncatedToProtocolLimit() {
+        // MCP 适配器会给工具名加 `serverID.` 前缀；单个工具即可超过 64 字符。
+        let longName = "s." + String(repeating: "a", count: 64)
+        let sanitized = LLMToolNameSanitizer.sanitize(longName)
+
+        #expect(sanitized.count == 64, "Anthropic / OpenAI 的 function name 上限是 64 字符")
+        #expect(sanitized.hasPrefix("s_"))
+        #expect(LLMToolNameSanitizer.sanitize(longName) == sanitized, "同一工具名必须得到稳定结果")
+
+        // 只有末尾不同、截断前缀相同的名字也必须区分开。
+        let sibling = "s." + String(repeating: "a", count: 63) + "b"
+        #expect(LLMToolNameSanitizer.sanitize(sibling) != sanitized)
+    }
+
     @Test("OpenAI adapter 构建请求体")
     func openAIAdapterBuildsBody() throws {
         let adapter = OpenAICompatibleProviderAdapter(

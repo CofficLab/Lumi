@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 198 条用例。
+KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 199 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 198
+测试文件: 9 个，用例总数: 199
 
 核心组件（源码目录）:
 - `Adapters/`
@@ -249,27 +249,28 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 198 条用�
 | 196 | 综合 | 思考增量只带 reasoningContent，不伪造正文 | 使用 StreamingAccumulator | 消费 `.thinkingDelta` 片段 | 回调只带 `reasoningContent`，`content` 保持为空 | P1 | ✅ 已覆盖 | `thinkingDeltaChunkDoesNotCarryContent` |
 | 197 | 综合 | 正文增量只带 content，不带 reasoningContent | 使用 StreamingAccumulator | 消费 `.textDelta` 片段 | 回调只带 `content`，`reasoningContent` 保持为空 | P1 | ✅ 已覆盖 | `textDeltaChunkDoesNotCarryReasoning` |
 | 198 | ProviderErrorAndContract | 退役标记可显式设置 | — | 分别以 `isRetired: true` / `false` / 缺省构造模型信息 | 标记与传入值一致，缺省为未退役 | P1 | ✅ 已覆盖 | `modelInfoRetiredFlag` |
+| 199 | 综合 | 超长工具名截断到 64 字符且稳定不撞名 | 工具名为 `s.` + 64 个字母 | 连续调用 sanitize 并比较相邻超长名 | 结果长度恰为 64、带稳定前缀、同名结果一致、不同原文不撞名 | P0 | ✅ 已覆盖 | `longToolNameIsTruncatedToProtocolLimit` |
 
-> 说明：全部 **198 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **199 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 39 / 39
+- P0: 已覆盖 40 / 40
 - P1: 已覆盖 145 / 145
 - P2: 已覆盖 14 / 14
-- **合计: 198 / 198**（仅表示清单场景，非源码覆盖率）
+- **合计: 199 / 199**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（39 条）
-- **P1**: 其余功能性用例（142 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（40 条）
+- **P1**: 其余功能性用例（145 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（14 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 198 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 199 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
