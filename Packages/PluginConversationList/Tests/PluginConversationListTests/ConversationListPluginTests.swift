@@ -109,6 +109,33 @@ import Testing
     try plugin.onShutdown(kernel: kernel)
 }
 
+@Test @MainActor func pluginStopsTrackingAndClearsAttentionWhenConversationIsDeleted() throws {
+    let kernel = KernelCoreContainer()
+    let conversations = DefaultConversationManager()
+    let chat = DefaultChatSectionProviding()
+    let agentLoop = TestAgentLoop()
+    try kernel.registerProvider((any ConversationManaging).self, conversations)
+    try kernel.registerProvider((any ChatSectionProviding).self, chat)
+    try kernel.registerProvider((any AgentLoopProviding).self, agentLoop)
+    let plugin = ConversationListPlugin()
+    try plugin.onBoot(kernel: kernel)
+
+    let conversationID = try conversations.createConversation(
+        title: "Background",
+        projectPath: nil,
+        providerID: nil,
+        modelName: nil
+    )
+    try plugin.onReady(kernel: kernel)
+
+    // 未读提示已存在；删除会话后必须同步清掉，否则会留下永远点不到的红点。
+    plugin.attentionStore.markNeedsAttention(conversationID: conversationID)
+    conversations.deleteConversation(id: conversationID)
+    #expect(!plugin.attentionStore.needsAttention(for: conversationID))
+
+    try plugin.onShutdown(kernel: kernel)
+}
+
 @MainActor
 private func waitUntil(
     timeout: Duration = .seconds(1),
