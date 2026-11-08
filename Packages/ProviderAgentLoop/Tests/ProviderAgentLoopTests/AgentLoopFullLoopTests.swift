@@ -360,6 +360,35 @@ struct AgentLoopFullLoopTests {
         )
     }
 
+    @Test("缓存 token 用量随 assistant 消息落库")
+    func persistsCacheTokenUsage() async throws {
+        let provider = ScriptedLLMProvider(responses: [
+            LLMResponse(
+                content: "命中缓存",
+                inputTokenCount: 20,
+                outputTokenCount: 5,
+                cachedInputTokenCount: 80,
+                cacheWriteInputTokenCount: 7,
+                cacheTotalInputTokenCount: 100
+            )
+        ])
+
+        let messages = DefaultMessageManager()
+        let conversationID = UUID()
+        messages.insertMessage(Message(conversationID: conversationID, role: .user, content: "hi"), to: conversationID)
+        let loop = makeLoop(messages: messages, provider: provider)
+
+        let outcome = try await loop.runTurn(in: conversationID)
+
+        #expect(outcome == .completed)
+        let assistant = try #require(messages.lastMessage(in: conversationID))
+        #expect(assistant.role == .assistant)
+        // 回归 #762：Cache Hit Rate 依赖这三个字段生成样本。
+        #expect(assistant.cachedInputTokenCount == 80)
+        #expect(assistant.cacheWriteInputTokenCount == 7)
+        #expect(assistant.cacheTotalInputTokenCount == 100)
+    }
+
     @Test("工具调用循环：assistant 带工具 → 执行 → 结果回传 → 最终回复")
     func toolCallLoop() async throws {
         let tool = ScriptedTool(name: "fetch_weather", risk: .safe, result: ToolCallResult(content: "sunny"))
