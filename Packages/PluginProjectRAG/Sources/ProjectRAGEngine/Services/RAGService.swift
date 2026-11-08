@@ -199,12 +199,12 @@ public actor RAGService: SuperLog {
             )
         }
 
+        // 模型不匹配时必须在后台完成一次全量重建：所有生产入口
+        // （检索、项目生命周期 Hook、idle scheduler）都以 background 方式
+        // 请求索引，拒绝后台迁移会让旧向量永远得不到重建。
         if force || modelMismatch {
-            if background && modelMismatch && !force {
-                throw RAGError.dbError("后台索引暂不执行 embedding 模型迁移，请在前台重建索引")
-            }
             if Self.verbose {
-                Self.logger.info("\(Self.t)♻️ 执行全量重建索引")
+                Self.logger.info("\(Self.t)♻️ 执行全量重建索引 background=\(background) modelMismatch=\(modelMismatch)")
             }
             let stats = try await indexer.rebuildProjectIndex(
                 at: normalized,
