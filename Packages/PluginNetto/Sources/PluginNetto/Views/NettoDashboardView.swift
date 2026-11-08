@@ -1,8 +1,11 @@
+import AppKit
+import Combine
 import SwiftUI
 import LumiUI
 
 public struct NettoDashboardView: View {
     @ObservedObject private var viewModel: NettoViewModel
+    @StateObject private var runningApps = NettoRunningAppsStore()
 
     init(viewModel: NettoViewModel) {
         self.viewModel = viewModel
@@ -40,7 +43,7 @@ public struct NettoDashboardView: View {
                         .padding(.top)
                     
                     List {
-                        ForEach(SmartApp.appList) { app in
+                        ForEach(runningApps.apps) { app in
                             NettoAppRow(app: app, isAllowed: viewModel.isAllowed(appId: app.id)) { allowed in
                                 viewModel.setAllowed(appId: app.id, allowed: allowed)
                             }
@@ -62,6 +65,15 @@ public struct NettoDashboardView: View {
                 }
                 .frame(minWidth: 300, maxWidth: .infinity)
             }
+        }
+        .onAppear {
+            runningApps.refresh()
+        }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didLaunchApplicationNotification)) { _ in
+            runningApps.refresh()
+        }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didTerminateApplicationNotification)) { _ in
+            runningApps.refresh()
         }
     }
 }
