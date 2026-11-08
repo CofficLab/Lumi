@@ -22,6 +22,8 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     public nonisolated static let verbose = false
 
     public internal(set) var conversations: [ConversationSummary] = []
+    /// 缓存数组之外的会话模型选择；列表整表重载或旧会话不在窗口内时仍然生效。
+    var modelIDOverrides: [UUID: String] = [:]
     public internal(set) var selectedConversationID: UUID? {
         didSet {
             guard selectedConversationID != oldValue else { return }

@@ -5,7 +5,7 @@
 PluginModelSelector Model Selector 插件（KernelCore 体系），由旧版 `Plugins/ModelSelectorPlugin` （KernelLumi / LumiPlugin 架构）完美复刻而来。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 32
+测试文件: 8 个，用例总数: 34
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -73,27 +73,29 @@ PluginModelSelector Model Selector 插件（KernelCore 体系），由旧版 `Pl
 | 30 | 生产路径 | 退役模型仍然可见 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `retiredModelRemainsVisible` |
 | 31 | 生产路径 | 退役模型可被搜索到 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `retiredModelIsSearchable` |
 | 32 | 生产路径 | 退役模型遵循分类筛选规则 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `retiredModelFollowsCategoryRules` |
+| 33 | ModelSelectorViewModel | capability 丢弃选择时不记用量、不提示成功（**回归 #880**） | 选择 capability 忽略写入 | 调用 `select` | `select` 被调用但用量为 0、无 Toast | P0 | ✅ 已覆盖 | `droppedSelectionProducesNoSuccessFeedback` |
+| 34 | ModelSelectorViewModel | 选择真正生效后记录用量并提示成功 | 选择 capability 接受写入 | 调用 `select` | 用量 +1、收到一条 Toast | P1 | ✅ 已覆盖 | `appliedSelectionProducesSuccessFeedback` |
 
-> 说明：全部 **32 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **34 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 29 / 29
+- P0: 已覆盖 4 / 4
+- P1: 已覆盖 30 / 30
 - P2: 已覆盖 0 / 0
-- **合计: 32 / 32**（仅表示清单场景，非源码覆盖率）
+- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（29 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
+- **P1**: 其余功能性用例（30 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 32 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 34 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

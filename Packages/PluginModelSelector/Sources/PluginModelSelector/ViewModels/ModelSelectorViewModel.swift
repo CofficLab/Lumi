@@ -239,6 +239,10 @@ final class ModelSelectorViewModel: ObservableObject {
         guard let model,
               let modelID = box.modelID(providerID: providerID, model: model) else { return }
         box.select(modelID: modelID)
+        // box.select 会同步刷新快照；若选中态没有变成目标模型，说明写入被静默丢弃，
+        // 不能记用量或提示「已切换」。
+        guard box.selectedModelID == modelID else { return }
+
         usageStore.recordUse(providerID: providerID)
 
         let providerDisplayName = providerInfo(id: providerID)?.displayName ?? providerID
