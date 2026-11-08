@@ -11,6 +11,13 @@ final class AppService: @unchecked Sendable, SuperLog {
     // 单例构建，保证首次使用时数据目录已按项目约定解析。
     private lazy var cacheManager = CacheManager.shared
 
+    /// 用户主目录；测试可注入临时目录，生产环境使用 NSHomeDirectory()。
+    private let homeDirectory: String
+
+    init(homeDirectory: String = NSHomeDirectory()) {
+        self.homeDirectory = homeDirectory
+    }
+
     // 标准应用安装路径
     private let standardPaths = [
         "/Applications",
@@ -194,7 +201,7 @@ final class AppService: @unchecked Sendable, SuperLog {
                             AppManagerPluginSupport.logger.info("\(self.t)开始扫描关联文件：\(app.displayName) (\(bundleId))")
             }
         }
-        let home = NSHomeDirectory()
+        let home = homeDirectory
         var relatedFiles: [RelatedFile] = []
 
         // 1. 添加 App 本身
@@ -220,10 +227,14 @@ final class AppService: @unchecked Sendable, SuperLog {
                     }
 
                     // 策略 B: 匹配 App Name (主要针对 Application Support)
-                    if libSubPath.contains("Application Support") {
+                    if libSubPath.contains("Application Support"),
+                       AppModel.isValidPathComponent(bundleName) {
                         // 使用 app.displayName 可能不准确，尽量用 bundleName
                         let candidatePath2 = "\(fullPath)/\(bundleName)"
-                        if fileManager.fileExists(atPath: candidatePath2) {
+                        // standardized 后必须仍位于 Application Support 内，防止 `..` 逃逸
+                        // 或空名称把候选路径折叠成 Application Support 根目录本身。
+                        if AppService.isContained(path: candidatePath2, in: fullPath),
+                           fileManager.fileExists(atPath: candidatePath2) {
                             // 简单匹配
                             let size = await AppService.calculateSize(for: URL(fileURLWithPath: candidatePath2))
                             return RelatedFile(path: candidatePath2, size: size, type: AppService.getType(from: libSubPath))
@@ -265,6 +276,14 @@ final class AppService: @unchecked Sendable, SuperLog {
             }
         }
         return relatedFiles
+    }
+
+    /// standardized 后判断 path 是否为 directory 的直接子项（不包含目录本身）。
+    static func isContained(path: String, in directoryPath: String) -> Bool {
+        let root = URL(fileURLWithPath: directoryPath, isDirectory: true).standardizedFileURL.path
+        let candidate = URL(fileURLWithPath: path).standardizedFileURL.path
+        let rootPrefix = root.hasSuffix("/") ? root : "\(root)/"
+        return candidate != root && candidate.hasPrefix(rootPrefix)
     }
 
     private static func getType(from path: String) -> RelatedFile.RelatedFileType {
