@@ -50,7 +50,12 @@ public struct PreviewPromoImageTool: SuperAgentTool {
                 localeIdentifier: image.localeIdentifier
             )
             guard report.isValid else { throw AppStorePromoStoreError.invalidHTML(report.errors) }
-            let data = try await AppStorePromoHTMLExporter.exportPNG(html: image.html, fileURL: image.htmlURL, preset: preset)
+            let data = try await AppStorePromoHTMLExporter.exportPNG(
+                html: image.html,
+                fileURL: image.htmlURL,
+                readAccessRootURL: image.directoryURL,
+                preset: preset
+            )
 
             let content = "Rendered promotional image at \(preset.width)x\(preset.height) for \(type) (locale=\(image.localeIdentifier)). The PNG is attached for visual inspection."
             return ToolCallResult(

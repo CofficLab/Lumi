@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitAppStorePromo 的实现包，包含 6 个主要类型；当前测试覆盖 57 条用例。
+KitAppStorePromo 的实现包，包含 6 个主要类型；当前测试覆盖 59 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 53
+测试文件: 4 个，用例总数: 59
 
 ## 公开 API
 
@@ -88,21 +88,23 @@ KitAppStorePromo 的实现包，包含 6 个主要类型；当前测试覆盖 57
 | 55 | AppStorePromoHTMLExporterTimeout | 截图状态在未挂接 continuation 时也能安全完成 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `snapshotStateFinishesWithoutContinuation` |
 | 56 | AppStorePromoHTMLExporterTimeout | 截图超时错误有可读描述 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `snapshotTimedOutDescription` |
 | 57 | AppStorePromoHTMLExporterTimeout | 既有错误描述保持不变 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `existingErrorDescriptionsPreserved` |
+| 58 | AppStorePromoDocumentStore | 本地化复制后仍能读取图片根目录下的共享素材（**回归 #1009**） | 主语言 HTML 引用 `./assets/hero.png`，素材实际在 `images/hero/assets/` | 添加 zh-Hans 本地化并分别读回主语言与本地化 HTML | 主语言保持不变；本地化为 `../assets/hero.png`；图片根目录为资源根；lint 通过 | P1 | ✅ 已覆盖 | `localizationResolvesSharedAssetsFromImageRoot` |
+| 59 | AppStorePromoHTMLLinter | 上级素材只在图片根目录内放行（**回归 #1009**） | 图片根目录含 `assets/hero.png`，HTML 位于 `localizations/` | 以 `documentDirectory` + `htmlDirectory` 执行 lint | `../assets/hero.png` 通过；只有 `../../outside.png` 被报 `unsafe_asset_path` | P1 | ✅ 已覆盖 | `parentAssetsAreAllowedOnlyInsideDocumentDirectory` |
 
-> 说明：全部 **57 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **59 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 9 / 9
-- P1: 已覆盖 42 / 42
+- P1: 已覆盖 44 / 44
 - P2: 已覆盖 6 / 6
-- **合计: 57 / 57**（仅表示清单场景，非源码覆盖率）
+- **合计: 59 / 59**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（42 条）
+- **P1**: 其余功能性用例（44 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
