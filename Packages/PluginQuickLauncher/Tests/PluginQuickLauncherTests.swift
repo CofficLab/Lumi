@@ -169,4 +169,77 @@ struct QuickLauncherTests {
         #expect(model.executionError == nil)
         #expect(openedPaths == [item.path])
     }
+
+    // MARK: - 回归 #754：异步文件结果插入后保持选中项身份
+
+    @Test func asyncFileResultsPreserveSelectedItemIdentity() throws {
+        let fileSearch = FileSearchService.shared
+        let appSearch = AppSearchService.shared
+        let model = LauncherSearchModel.shared
+        defer {
+            fileSearch.setResultsForTesting([])
+            appSearch.setAppsForTesting([])
+            LauncherBridge.commandGroupsProvider = nil
+            model.reset()
+        }
+
+        appSearch.setAppsForTesting([
+            LauncherAppItem(
+                id: "reg754.app",
+                name: "Find754App",
+                path: "/Applications/Find754App.app",
+                bundleIdentifier: "reg754.app"
+            )
+        ])
+        LauncherBridge.commandGroupsProvider = {
+            [
+                LauncherCommandGroup(
+                    id: "reg754",
+                    name: "Group754",
+                    items: [LauncherCommandItem(id: "run754", title: "Find754 Run", action: {})]
+                )
+            ]
+        }
+
+        model.query = "find754"
+        #expect(model.results.map(\.id) == ["app:reg754.app", "command:Group754/run754"])
+
+        // 用户在文件结果到达前选中命令。
+        model.selectedIndex = 1
+        let selectedID = model.results[model.selectedIndex].id
+        #expect(selectedID == "command:Group754/run754")
+
+        // Spotlight 文件结果异步返回，插入到应用与命令之间。
+        fileSearch.setResultsForTesting([
+            LauncherFileItem(id: "/tmp/find754.txt", name: "find754.txt", path: "/tmp/find754.txt", isDirectory: false)
+        ])
+        model.rebuildResults()
+
+        #expect(model.results.count == 3)
+        #expect(model.results[model.selectedIndex].id == selectedID)
+    }
+
+    @Test func disappearingSelectionFallsBackToClampedIndex() throws {
+        let fileSearch = FileSearchService.shared
+        let model = LauncherSearchModel.shared
+        defer {
+            fileSearch.setResultsForTesting([])
+            model.reset()
+        }
+
+        fileSearch.setResultsForTesting([
+            LauncherFileItem(id: "/tmp/reg754-a.txt", name: "reg754-a.txt", path: "/tmp/reg754-a.txt", isDirectory: false),
+            LauncherFileItem(id: "/tmp/reg754-b.txt", name: "reg754-b.txt", path: "/tmp/reg754-b.txt", isDirectory: false),
+        ])
+        model.query = "reg754"
+        #expect(model.results.count == 2)
+
+        model.selectedIndex = 1
+        // 选中的文件消失：下标越界时按既有规则回到 0。
+        fileSearch.setResultsForTesting([])
+        model.rebuildResults()
+
+        #expect(model.results.isEmpty)
+        #expect(model.selectedIndex == 0)
+    }
 }

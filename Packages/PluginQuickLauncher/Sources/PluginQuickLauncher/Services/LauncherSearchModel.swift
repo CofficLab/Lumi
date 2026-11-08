@@ -201,7 +201,10 @@ public final class LauncherSearchModel: ObservableObject, SuperLog {
 
     /// 根据当前查询词重建聚合结果
     func rebuildResults() {
-        defer { clampSelection() }
+        // 重建前记录选中项的身份：Spotlight 文件结果异步插入后数组顺序会变，
+        // 只保存数字下标会让 Return 落到另一个条目上。
+        let previousSelectionID = results.indices.contains(selectedIndex) ? results[selectedIndex].id : nil
+        defer { restoreSelection(preferring: previousSelectionID) }
 
         let trimmed = query.trimmingCharacters(in: .whitespaces)
 
@@ -261,6 +264,17 @@ public final class LauncherSearchModel: ObservableObject, SuperLog {
             }
         }
         return found
+    }
+
+    /// 重建后按结果 ID 恢复选中项。
+    ///
+    /// 只有用户选中的条目确实消失时才退回原来的下标钳制规则。
+    private func restoreSelection(preferring id: String?) {
+        if let id, let index = results.firstIndex(where: { $0.id == id }) {
+            selectedIndex = index
+        } else {
+            clampSelection()
+        }
     }
 
     private func clampSelection() {
