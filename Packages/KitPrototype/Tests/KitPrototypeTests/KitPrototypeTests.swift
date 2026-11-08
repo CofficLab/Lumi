@@ -727,3 +727,31 @@ struct KitPrototypeTests {
         try data.write(to: url, options: .atomic)
     }
 }
+
+@Suite("设备尺寸边界")
+struct PrototypeDeviceMetricsTests {
+    @Test func oversizedDimensionsAreRejectedAndNeverTrap() {
+        let device = PrototypeDevice(kind: .custom, width: 1e20, height: 800, scale: 1)
+        #expect(device.hasRenderableMetrics == false)
+        // 即使构造成功（例如旧文档），像素/逻辑尺寸也必须夹在 Int 范围内而不是 trap。
+        #expect(device.pixelWidth == Int.max)
+        #expect(device.logicalWidthInt == Int.max)
+        #expect(device.logicalHeightInt == 800)
+    }
+
+    @Test func nonFiniteOrNonPositiveMetricsAreRejected() {
+        #expect(PrototypeDevice(kind: .custom, width: .nan, height: 800, scale: 1).hasRenderableMetrics == false)
+        #expect(PrototypeDevice(kind: .custom, width: .infinity, height: 800, scale: 1).hasRenderableMetrics == false)
+        #expect(PrototypeDevice(kind: .custom, width: 0, height: 800, scale: 1).hasRenderableMetrics == false)
+        #expect(PrototypeDevice(kind: .custom, width: 393, height: 852, scale: 0).hasRenderableMetrics == false)
+        // 单值合法但乘积溢出，导出时同样不安全。
+        #expect(PrototypeDevice(kind: .custom, width: 1e15, height: 800, scale: 1e6).hasRenderableMetrics == false)
+    }
+
+    @Test func normalPresetMetricsStayValid() {
+        let device = PrototypeDevice(kind: .iPhone15Pro, width: 393, height: 852, scale: 3)
+        #expect(device.hasRenderableMetrics)
+        #expect(device.pixelWidth == 1179)
+        #expect(device.pixelHeight == 2556)
+    }
+}

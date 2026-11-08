@@ -251,6 +251,38 @@ struct PrototypeDesignerPluginTests {
         }
     }
 
+    @Test func oversizedDeviceMetricsAreRejectedBeforeWritingProject() async throws {
+        try await withProjectStorage { root in
+            await #expect(throws: (any Error).self) {
+                _ = try await CreatePrototypeProjectTool().execute(arguments: [
+                    "slug": ToolArgument("overflow"),
+                    "title": ToolArgument("Overflow"),
+                    "style": ToolArgument("wireframe"),
+                    "deviceKind": ToolArgument("custom"),
+                    "deviceWidth": ToolArgument(1e20),
+                    "deviceHeight": ToolArgument(800),
+                    "deviceScale": ToolArgument(1),
+                ])
+            }
+            #expect(
+                !FileManager.default.fileExists(atPath: root.appendingPathComponent("tasks/overflow").path),
+                "参数被拒绝时不得留下部分项目目录"
+            )
+
+            // 预设设备叠加超大倍率同样要在写盘前拒绝。
+            await #expect(throws: (any Error).self) {
+                _ = try await CreatePrototypeProjectTool().execute(arguments: [
+                    "slug": ToolArgument("overflow-scale"),
+                    "title": ToolArgument("Overflow Scale"),
+                    "style": ToolArgument("wireframe"),
+                    "deviceKind": ToolArgument("iPhone15Pro"),
+                    "deviceScale": ToolArgument(1e20),
+                ])
+            }
+            #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("tasks/overflow-scale").path))
+        }
+    }
+
     @Test func patchToolAppliesExactUniqueReplacement() async throws {
         try await withProjectStorage { root in
             _ = try await CreatePrototypeProjectTool().execute(arguments: [

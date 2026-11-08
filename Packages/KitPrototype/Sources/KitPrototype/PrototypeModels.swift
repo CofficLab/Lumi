@@ -58,9 +58,43 @@ public struct PrototypeDevice: Codable, Equatable, Sendable {
 
     public var logicalSize: CGSize { CGSize(width: width, height: height) }
 
+    /// 可安全转为 `Int` 的正数上界（2^63）。`Double(Int.max)` 恰好等于 2^63，
+    /// 用它做上界仍会在 `Int(...)` 时 trap，所以必须严格小于。
+    static let safeMagnitudeLimit = 9_223_372_036_854_775_808.0
+
+    /// 尺寸/倍率能否安全参与 `Int` 转换与像素尺寸计算。
+    ///
+    /// 工具参数来自 JSON `number`：`1e20` 是有限正数，能通过 `> 0` 校验，
+    /// 但 `Int(1e20)` 会在运行时 trap。所有入口共用这一个判定（#1000）。
+    public static func isValidDimension(_ value: Double) -> Bool {
+        value.isFinite && value > 0 && value < safeMagnitudeLimit
+    }
+
+    /// 逻辑尺寸与倍率（含导出像素尺寸）是否都能安全落盘、摘要和导出。
+    public var hasRenderableMetrics: Bool {
+        Self.isValidDimension(width)
+            && Self.isValidDimension(height)
+            && Self.isValidDimension(scale)
+            && Self.isValidDimension(width * scale)
+            && Self.isValidDimension(height * scale)
+    }
+
+    /// 夹在 `Int` 范围内的像素值。用于文档加载等可能绕过参数校验的路径，
+    /// 保证 `pixelWidth` / `pixelHeight` 永不在运行时 trap。
+    private static func clampedPixel(_ value: Double) -> Int {
+        let rounded = value.rounded()
+        guard rounded.isFinite else { return value.sign == .minus ? 0 : Int.max }
+        if rounded >= safeMagnitudeLimit { return Int.max }
+        if rounded <= 0 { return 0 }
+        return Int(rounded)
+    }
+
+    public var logicalWidthInt: Int { Self.clampedPixel(width) }
+    public var logicalHeightInt: Int { Self.clampedPixel(height) }
+
     /// 导出后的像素尺寸。
-    public var pixelWidth: Int { Int((width * scale).rounded()) }
-    public var pixelHeight: Int { Int((height * scale).rounded()) }
+    public var pixelWidth: Int { Self.clampedPixel(width * scale) }
+    public var pixelHeight: Int { Self.clampedPixel(height * scale) }
 
     public var isPortrait: Bool { height >= width }
 
