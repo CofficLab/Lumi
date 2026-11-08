@@ -110,18 +110,24 @@ final class ImageToPDFViewModel: ObservableObject {
                 let outputURL = stagingDirectory.appendingPathComponent(item.outputName)
 
                 let stream = service.convert(source: item.source, to: outputURL)
-                for await value in stream {
-                    runningItems[index].progress = value
-                    outputItems = runningItems
-                }
+                do {
+                    for try await value in stream {
+                        runningItems[index].progress = value
+                        outputItems = runningItems
+                    }
 
-                if FileManager.default.fileExists(atPath: outputURL.path) {
-                    runningItems[index].status = .done(outputURL)
-                    runningItems[index].progress = 1
-                } else {
-                    runningItems[index].status = .failed(
-                        ImageToPDFLocalization.string("Unknown error")
-                    )
+                    if FileManager.default.fileExists(atPath: outputURL.path) {
+                        runningItems[index].status = .done(outputURL)
+                        runningItems[index].progress = 1
+                    } else {
+                        runningItems[index].status = .failed(
+                            ImageToPDFLocalization.string("Unknown error")
+                        )
+                    }
+                } catch {
+                    // 失败时清掉可能残留的旧目标，避免用户导出上一轮的内容。
+                    try? FileManager.default.removeItem(at: outputURL)
+                    runningItems[index].status = .failed(error.localizedDescription)
                 }
                 outputItems = runningItems
             }

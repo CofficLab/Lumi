@@ -42,8 +42,10 @@ struct ImageToPDFViewModelTests {
         let source = ImageItem(url: sourceURL)
 
         var progress: [Double] = []
-        for await value in ImageToPDFService().convert(source: source, to: outputURL) {
-            progress.append(value)
+        await #expect(throws: (any Error).self) {
+            for try await value in ImageToPDFService().convert(source: source, to: outputURL) {
+                progress.append(value)
+            }
         }
 
         #expect(progress == [0.1])
@@ -104,6 +106,44 @@ struct ImageToPDFViewModelTests {
             .contentsOfDirectory(atPath: exportDirectory.path)
             .filter { $0.hasSuffix(".pdf") }
         #expect(exported.count == 2)
+    }
+
+    @Test("转换失败时不把暂存目录里的旧同名 PDF 标记为成功")
+    func failedConversionDoesNotReportStalePDFAsDone() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let inputs = root.appendingPathComponent("inputs", isDirectory: true)
+        try FileManager.default.createDirectory(at: inputs, withIntermediateDirectories: true)
+        let sourceURL = inputs.appendingPathComponent("photo.png")
+        try Data("not an image".utf8).write(to: sourceURL)
+
+        // 模拟上一轮转换遗留的同名 PDF。
+        let staging = root.appendingPathComponent("staging", isDirectory: true)
+        try FileManager.default.createDirectory(at: staging, withIntermediateDirectories: true)
+        let stalePDF = staging.appendingPathComponent("photo.pdf")
+        try Data("stale pdf".utf8).write(to: stalePDF)
+
+        ImageToPDFRuntimeBridge.directoryURL = staging
+        defer { ImageToPDFRuntimeBridge.directoryURL = nil }
+
+        let model = ImageToPDFViewModel()
+        model.addImages(from: [sourceURL])
+        model.convertAll()
+        while model.isConverting {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        let item = try #require(model.outputItems.first)
+        guard case .failed(let message) = item.status else {
+            Issue.record("本次转换失败，旧 PDF 不应被标记为 Done")
+            return
+        }
+        // 失败原因必须来自本次转换，而不是「目标文件不存在」的兜底文案。
+        #expect(message.contains("photo.png"))
+        #expect(!FileManager.default.fileExists(atPath: stalePDF.path))
+        #expect(model.lastErrorMessage != nil)
     }
 
     /// 1×1 PNG，足够让 `NSImage` 解码并产生一页 PDF。
