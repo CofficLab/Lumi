@@ -35,14 +35,17 @@ import Testing
 @Test func maximumWidthUsesDefaultAndClampsEveryInputForm() {
     #expect(ShowImageTool.normalizedMaxWidth(nil) == 400)
     #expect(ShowImageTool.normalizedMaxWidth("bad") == 400)
-    #expect(ShowImageTool.normalizedMaxWidth(" 500 ") == 400)
+    // 字符串会先 trim 再解析，`" 500 "` 是合法请求。
+    #expect(ShowImageTool.normalizedMaxWidth(" 500 ") == 500)
     #expect(ShowImageTool.normalizedMaxWidth(99) == 100)
     #expect(ShowImageTool.normalizedMaxWidth(300.8) == 300)
     #expect(ShowImageTool.normalizedMaxWidth("650") == 650)
     #expect(ShowImageTool.normalizedMaxWidth(801) == 800)
-    #expect(ShowImageTool.normalizedMaxWidth(1e100) == 800)
-    #expect(ShowImageTool.normalizedMaxWidth(Double.infinity) == 800)
-    #expect(ShowImageTool.normalizedMaxWidth(-Double.infinity) == 100)
+    // `ToolArgumentNumber` 的约定：无法安全表示的数值（越界 / 非有限）
+    // 视为非法输入退回默认值，而不是当作「超大但合法」钳到上界。
+    #expect(ShowImageTool.normalizedMaxWidth(1e100) == 400)
+    #expect(ShowImageTool.normalizedMaxWidth(Double.infinity) == 400)
+    #expect(ShowImageTool.normalizedMaxWidth(-Double.infinity) == 400)
     #expect(ShowImageTool.normalizedMaxWidth(Double.nan) == 400)
 }
 
@@ -84,7 +87,7 @@ import Testing
     #expect(state.displayItem?.source == .local(imageURL.path))
     #expect(state.displayItem?.title == "Diagram")
     #expect(state.displayItem?.caption == nil)
-    #expect(state.displayItem?.maxWidth == 800)
+    #expect(state.displayItem?.maxWidth == 400)
 
     // 文件名末尾的空格是合法字符，不能被裁剪成另一个路径。
     let spacedImageURL = FileManager.default.temporaryDirectory
