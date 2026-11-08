@@ -1278,6 +1278,24 @@ struct EditorKernelTests {
     }
 
     @Test
+    func saveParticipantKeepsExistingCRFinalNewline() {
+        let result = EditorSaveParticipantController.prepare(
+            text: "xone\rtwo\r",
+            options: .init(trimTrailingWhitespace: true, insertFinalNewline: true)
+        )
+        #expect(result.text == "xone\rtwo\r", "CR 结尾已满足最终换行，不应再追加")
+        #expect(result.didInsertFinalNewline == false)
+
+        // 幂等：重复保存不得继续增加空行。
+        let repeated = EditorSaveParticipantController.prepare(
+            text: result.text,
+            options: .init(trimTrailingWhitespace: true, insertFinalNewline: true)
+        )
+        #expect(repeated.text == result.text)
+        #expect(repeated.didInsertFinalNewline == false)
+    }
+
+    @Test
     @MainActor
     func savePipelineControllerAppliesFormattingAndDeferredActions() async {
         let result = await EditorSavePipelineController.prepare(
