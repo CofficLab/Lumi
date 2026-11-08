@@ -28,7 +28,7 @@ struct PDFOutputRow: View {
                 actions
             }
 
-            if item.progress > 0 && item.progress < 1 {
+            if item.showsProgress {
                 ProgressView(value: item.progress)
                     .progressViewStyle(.linear)
             }
