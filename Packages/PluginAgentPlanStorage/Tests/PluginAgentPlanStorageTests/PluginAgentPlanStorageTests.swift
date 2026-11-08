@@ -89,6 +89,41 @@ struct PluginAgentPlanStorageTests {
     }
 
     @Test
+    func deletingInternalSymlinkRemovesLinkNotTarget() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = try PlanFileStorageService(directory: root, retentionDays: 30)
+
+        _ = try await service.write(filename: "real.md", content: "important")
+        let target = root.appendingPathComponent("real.md")
+        let alias = root.appendingPathComponent("alias.md")
+        try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: target)
+
+        try await service.delete(filename: "alias.md")
+
+        #expect(FileManager.default.fileExists(atPath: target.path))
+        #expect(try await service.read(filename: "real.md") == "important")
+        #expect(!FileManager.default.fileExists(atPath: alias.path))
+    }
+
+    @Test
+    func deletingDanglingSymlinkRemovesOnlyTheLink() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = try PlanFileStorageService(directory: root, retentionDays: 30)
+
+        let alias = root.appendingPathComponent("dangling.md")
+        try FileManager.default.createSymbolicLink(
+            at: alias,
+            withDestinationURL: root.appendingPathComponent("missing.md")
+        )
+
+        try await service.delete(filename: "dangling.md")
+
+        #expect(!FileManager.default.fileExists(atPath: alias.path))
+    }
+
+    @Test
     func emptyOrWhitespaceFilenamesAreInvalid() async throws {
         let root = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
