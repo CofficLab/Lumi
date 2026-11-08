@@ -219,6 +219,66 @@ import ProviderProject
     #expect(ListAgentRulesTool.normalizedLimit("  ") == nil)
 }
 
+/// `.lumi/rules` 被普通文件占住时，即使 `.agent/rules` 里有可用规则，也必须报错，
+/// 不能把「读不到」伪装成空列表或不完整列表。
+@MainActor
+    @Test func listRulesThrowsWhenRulesPathIsNotADirectory() async throws {
+    let projectURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("AgentRulesTests-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: projectURL) }
+
+    let legacyRulesURL = projectURL.appending(path: ".agent/rules")
+    try FileManager.default.createDirectory(at: legacyRulesURL, withIntermediateDirectories: true)
+    try "# Legacy\n\nStill readable.".write(
+        to: legacyRulesURL.appending(path: "legacy.md"),
+        atomically: true,
+        encoding: .utf8
+    )
+    try FileManager.default.createDirectory(
+        at: projectURL.appending(path: ".lumi"),
+        withIntermediateDirectories: true
+    )
+    try "not a directory".write(
+        to: projectURL.appending(path: ".lumi/rules"),
+        atomically: true,
+        encoding: .utf8
+    )
+
+    await #expect(throws: AgentRulesError.self) {
+        _ = try await AgentRulesService.shared.listRules(projectPath: projectURL.path())
+    }
+}
+
+/// 目录存在但无法枚举时必须上抛，而不是成功返回 count=0。
+@MainActor
+    @Test func listRulesThrowsWhenRulesDirectoryIsUnreadable() async throws {
+    let projectURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("AgentRulesTests-\(UUID().uuidString)", isDirectory: true)
+    let rulesURL = projectURL.appending(path: ".lumi/rules")
+    try FileManager.default.createDirectory(at: rulesURL, withIntermediateDirectories: true)
+    defer {
+        try? FileManager.default.setAttributes(
+            [.posixPermissions: 0o755],
+            ofItemAtPath: rulesURL.path()
+        )
+        try? FileManager.default.removeItem(at: projectURL)
+    }
+
+    try "# Style\n\nHidden by permissions.".write(
+        to: rulesURL.appending(path: "style.md"),
+        atomically: true,
+        encoding: .utf8
+    )
+    try FileManager.default.setAttributes(
+        [.posixPermissions: 0o000],
+        ofItemAtPath: rulesURL.path()
+    )
+
+    await #expect(throws: AgentRulesError.self) {
+        _ = try await AgentRulesService.shared.listRules(projectPath: projectURL.path())
+    }
+}
+
 @Suite("AgentRulesToolbar")
 @MainActor
 struct AgentRulesToolbarTests {
