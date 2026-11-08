@@ -4,6 +4,8 @@ import KernelCore
 import KitAgentTool
 import KitLLM
 import ProviderLifecycleHooks
+import ProviderIdleTime
+import ProviderProject
 import ProviderProjectRAG
 import Testing
 
@@ -307,5 +309,76 @@ struct CodeNavigationCoordinatorTests {
         #expect(response.results.contains { result in
             result.source == "Sources/Router.swift" && result.matchKind == .filesystemPath
         })
+    }
+}
+
+@MainActor
+private final class StubProjectProvider: ProjectProviding {
+    var currentProject: ProjectInfo?
+    var projects: [ProjectInfo]
+    var openFileURLs: [URL] = []
+    var currentFileURL: URL?
+
+    init(currentProject: ProjectInfo?, projects: [ProjectInfo] = []) {
+        self.currentProject = currentProject
+        self.projects = projects
+    }
+
+    func openProject(at path: String, reason: ProjectChangeReason) async throws {
+        currentProject = ProjectInfo(name: path, path: path)
+    }
+
+    func updateCurrentFile(_ fileURL: URL?) {
+        currentFileURL = fileURL
+    }
+
+    func updateOpenFiles(_ fileURLs: [URL]) {
+        openFileURLs = fileURLs
+    }
+
+    func closeFile(_ fileURL: URL) {
+        openFileURLs.removeAll { $0 == fileURL }
+    }
+
+    func closeProject(reason: ProjectChangeReason) async {
+        currentProject = nil
+    }
+
+    func refreshProjects() async throws {}
+
+    func synchronizeProjects(_ projects: [ProjectInfo]) {
+        self.projects = projects
+    }
+}
+
+/// Regression coverage for issue #925: launching without a current project used
+/// to return from the boot task before the idle scheduler ever started, so RAG
+/// indexing stayed disabled for the whole session.
+@Suite("ProjectRAGPlugin 启动调度")
+@MainActor
+struct ProjectRAGBootSchedulingTests {
+
+    @Test("启动时没有当前项目也会启动 idle 调度")
+    func startsIdleSchedulerWithoutCurrentProject() async throws {
+        let kernel = KernelCoreContainer()
+        let project = StubProjectProvider(
+            currentProject: nil,
+            projects: [ProjectInfo(name: "known", path: "/tmp/known-project")]
+        )
+        try kernel.registerProvider((any ProjectProviding).self, project)
+        try kernel.registerProvider((any IdleTimeProviding).self, DefaultIdleTimeProviding())
+
+        let plugin = ProjectRAGPlugin()
+        try plugin.onBoot(kernel: kernel)
+
+        for _ in 0..<200 where plugin.scheduler == nil {
+            try await Task.sleep(for: .milliseconds(25))
+        }
+
+        #expect(project.currentProject == nil)
+        #expect(plugin.scheduler != nil, "没有当前项目时 idle 调度没有启动")
+
+        try plugin.onShutdown(kernel: kernel)
+        #expect(plugin.scheduler == nil)
     }
 }

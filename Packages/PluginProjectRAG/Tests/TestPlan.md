@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 97 条用例。
+PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 98 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 97
+测试文件: 5 个，用例总数: 98
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -43,7 +43,8 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 9
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **综合**（11 条）：由 `retainsStableIdentifiers`、`registersProvider`、`injectsContextOnce` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（12 条）：由 `retainsStableIdentifiers`、`registersProvider`、`injectsContextOnce` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ProjectRAGPlugin 启动调度**（1 条）：由 `startsIdleSchedulerWithoutCurrentProject` 锁定；启动时没有当前项目也必须启动 idle 调度，否则整轮会话的后台索引都会被跳过。
 - **RAGIndexScheduling**（4 条）：由 `selectsMissingIndexBeforeStaleIndex`、`neverSelectsCurrentProject`、`failedProjectUsesExponentialBackoff` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RAGPureLogic**（59 条）：由 `chunkEmptyInputReturnsEmpty`、`chunkSingleBlockProducesOneChunk`、`chunkProducesOverlapAcrossBlocks` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RAGSQLiteStoreConcurrency**（1 条）：由 `concurrentWritersOnOneConnectionDoNotCollide` 用例锁定；该用例用 8 个线程同时向同一 store 写入不同项目，移除 `RAGSQLiteStore` 的连接锁后必定因「cannot start a transaction within a transaction」失败。
@@ -150,27 +151,28 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 9
 | 95 | ProjectRAGPlugin | search_code 显式 project_path 优先于会话绑定项目 | 会话绑定项目 A，显式传 B | 调用 `executeResult(context:arguments:)` | 报错路径为 B，不含 A | P1 | ✅ 已覆盖 | `explicitPathBeatsConversationProject` |
 | 96 | RAGSQLiteStoreConcurrency | 并发索引不同项目不会因同一连接的嵌套事务互相失败 | 单一 `RAGSQLiteStore` 连接 | 8 个线程同时释放并各写入一个不同项目的 200 个 chunk | 全部写入成功，每个项目都有完整的文件状态与 chunk | P0 | ✅ 已覆盖 | `concurrentWritersOnOneConnectionDoNotCollide` |
 | 97 | RAGServiceModelMigration | 模型不匹配时后台索引仍完成全量重建 | 索引状态记录旧 embedding 模型，维度与当前一致 | 以 `background: true` 调用 `ensureIndexed` | 重建完成，索引状态与 chunk 数量更新为新模型 | P1 | ✅ 已覆盖 | `backgroundIndexRebuildsWhenEmbeddingModelChanged` |
+| 98 | ProjectRAGPlugin 启动调度 | 启动时没有当前项目也会启动 idle 调度 | kernel 注册了项目与 idle 能力，但当前项目为 nil | 调用 `onBoot` 并等待后台任务 | `scheduler` 非 nil；关闭后恢复 nil | P1 | ✅ 已覆盖 | `startsIdleSchedulerWithoutCurrentProject` |
 
-> 说明：全部 **97 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **98 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 7 / 7
-- P1: 已覆盖 79 / 79
+- P1: 已覆盖 80 / 80
 - P2: 已覆盖 11 / 11
-- **合计: 97 / 97**（仅表示清单场景，非源码覆盖率）
+- **合计: 98 / 98**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（79 条）
+- **P1**: 其余功能性用例（80 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 97 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 98 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
