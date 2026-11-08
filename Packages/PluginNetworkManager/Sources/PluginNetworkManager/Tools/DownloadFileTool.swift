@@ -53,11 +53,11 @@ struct DownloadFileTool: SuperAgentTool, SuperLog {
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let urlString = NetworkToolSupport.string(arguments, "url"),
               let url = URL(string: urlString) else {
-            return "❌ 错误：无效的 URL"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "无效的 URL")
         }
 
         guard url.scheme == "http" || url.scheme == "https" else {
-            return "❌ 错误：仅支持 HTTP/HTTPS 协议"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "仅支持 HTTP/HTTPS 协议")
         }
 
         // 确定文件名
@@ -74,7 +74,10 @@ struct DownloadFileTool: SuperAgentTool, SuperLog {
             let dirURL = URL(fileURLWithPath: dirPath, isDirectory: true)
             var isDirectory: ObjCBool = false
             if !FileManager.default.fileExists(atPath: dirPath, isDirectory: &isDirectory) || !isDirectory.boolValue {
-                return "❌ 错误：目录不存在或不是有效的目录: \(dirPath)"
+                throw ToolExecutionError.executionFailed(
+                    toolName: name,
+                    reason: "目录不存在或不是有效的目录: \(dirPath)"
+                )
             }
             directory = dirURL
         } else {
@@ -90,7 +93,10 @@ struct DownloadFileTool: SuperAgentTool, SuperLog {
             guard let httpResponse = response as? HTTPURLResponse,
                   (200..<300).contains(httpResponse.statusCode) else {
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                return "❌ 下载失败: HTTP \(statusCode)\nURL: \(url.absoluteString)"
+                throw ToolExecutionError.executionFailed(
+                    toolName: name,
+                    reason: "下载失败: HTTP \(statusCode)\nURL: \(url.absoluteString)"
+                )
             }
 
             try data.write(to: destination)
@@ -101,8 +107,13 @@ struct DownloadFileTool: SuperAgentTool, SuperLog {
             大小: \(size)
             路径: \(destination.path)
             """
+        } catch let error as ToolExecutionError {
+            throw error
         } catch {
-            return "❌ 下载失败: \(error.localizedDescription)\nURL: \(url.absoluteString)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "下载失败: \(error.localizedDescription)\nURL: \(url.absoluteString)"
+            )
         }
     }
 

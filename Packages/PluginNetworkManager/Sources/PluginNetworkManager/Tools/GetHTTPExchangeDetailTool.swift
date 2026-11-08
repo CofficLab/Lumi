@@ -50,9 +50,9 @@ struct GetHTTPExchangeDetailTool: SuperAgentTool, SuperLog {
         let url = NetworkToolSupport.string(arguments, "url")
         let includeBody = NetworkToolSupport.bool(arguments, "include_body") ?? false
 
-        let result = await MainActor.run { () -> String in
+        let result = try await MainActor.run { () throws -> String in
             guard let store = NetworkService.shared.currentExchangeStore else {
-                return "Error: HTTP exchange store not available"
+                throw ToolExecutionError.executionFailed(toolName: name, reason: "HTTP exchange store not available")
             }
 
             let records = store.fetchPage(limit: 1000)
@@ -68,7 +68,10 @@ struct GetHTTPExchangeDetailTool: SuperAgentTool, SuperLog {
             }
 
             guard let record else {
-                return "HTTP exchange not found."
+                throw ToolExecutionError.executionFailed(
+                    toolName: name,
+                    reason: "HTTP exchange not found."
+                )
             }
 
             let dateFormatter = DateFormatter()
