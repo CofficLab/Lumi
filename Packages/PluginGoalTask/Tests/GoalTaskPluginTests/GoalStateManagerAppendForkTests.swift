@@ -206,7 +206,7 @@ struct GoalStateManagerAppendForkTests {
         )
 
         let targetConversation = "fork-target"
-        let forked = try await manager.forkGoal(id: source.goal.id, into: targetConversation)
+        let forked = try await manager.forkGoal(id: source.goal.id, into: targetConversation).goal
 
         #expect(forked.id != source.goal.id)
         #expect(forked.conversationId == targetConversation)
@@ -252,7 +252,7 @@ struct GoalStateManagerAppendForkTests {
         )
         _ = try await manager.updateGoalStatus(id: source.goal.id, status: .completed)
 
-        let forked = try await manager.forkGoal(id: source.goal.id, into: "fork-terminal-target")
+        let forked = try await manager.forkGoal(id: source.goal.id, into: "fork-terminal-target").goal
 
         #expect(forked.status == .pending)
         #expect(forked.completedAt == nil)
@@ -311,7 +311,7 @@ struct GoalStateManagerAppendForkTests {
         )
         _ = try await manager.updateGoalStatus(id: stale.goal.id, status: .failed)
 
-        let forked = try await manager.forkGoal(id: source.goal.id, into: "fork-term-target")
+        let forked = try await manager.forkGoal(id: source.goal.id, into: "fork-term-target").goal
         #expect(forked.title == "Source")
         #expect(await manager.fetchGoals(conversationId: "fork-term-target").count == 2)
     }

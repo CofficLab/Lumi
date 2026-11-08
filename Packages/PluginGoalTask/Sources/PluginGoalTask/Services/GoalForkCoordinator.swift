@@ -16,14 +16,14 @@ final class GoalForkCoordinator {
     /// 把 `goal` 复制到一个全新对话，并在该对话里发起第一轮。
     ///
     /// - Throws: 建对话或复制 Goal 失败时抛出，调用方负责呈现错误。
-    func forkAndStart(goal: GoalDisplayItem, tasks: [GoalTaskDisplayItem]) async throws {
+    func forkAndStart(goal: GoalDisplayItem) async throws {
         let conversationID = try capability.createConversation(title: goal.title)
 
         do {
             let forked = try await capability.forkGoal(id: goal.id, into: conversationID)
             GoalChangeCenter.shared.notify(conversationID: conversationID)
 
-            let prompt = Self.resumePrompt(for: forked, tasks: tasks)
+            let prompt = Self.resumePrompt(for: forked.goal, tasks: forked.tasks)
             guard let commit = try capability.commitUserMessage(prompt, conversationID: conversationID) else {
                 throw GoalForkError.emptyPrompt
             }
@@ -39,7 +39,7 @@ final class GoalForkCoordinator {
     ///
     /// 只陈述事实（目标与未完成任务），**不**下「继续执行」这类指令：
     /// 是否推进由模型基于当前上下文自行判断，用户可能只想在新对话里接着聊。
-    private static func resumePrompt(for goal: Goal, tasks: [GoalTaskDisplayItem]) -> String {
+    private static func resumePrompt(for goal: Goal, tasks: [GoalTask]) -> String {
         var lines: [String] = ["这个对话延续自另一个对话中的目标："]
         lines.append("")
         lines.append("## Goal [\(goal.id)]: \(goal.title)")

@@ -2,6 +2,13 @@ import Foundation
 import ProviderConversation
 import ProviderMessageSender
 
+/// Goal 复制结果：新 Goal 与其任务副本（任务副本使用新的 ID）。
+@MainActor
+struct ForkedGoal {
+    let goal: Goal
+    let tasks: [GoalTask]
+}
+
 /// 「在新对话中继续」需要的最小能力边界。
 ///
 /// 事务编排（建对话 → 复制 Goal → 发消息启动回合）只依赖下面五个操作，
@@ -15,8 +22,8 @@ protocol GoalForkCapability: AnyObject {
     /// 回收复制失败留下的空对话。
     func discardConversation(id: UUID)
 
-    /// 把 Goal 复制到目标对话，返回复制后的 Goal。
-    func forkGoal(id: String, into conversationID: UUID) async throws -> Goal
+    /// 把 Goal 复制到目标对话，返回复制后的 Goal 及其任务副本。
+    func forkGoal(id: String, into conversationID: UUID) async throws -> ForkedGoal
 
     /// 以指定对话 ID 提交一条用户消息；空内容时返回 `nil`。
     func commitUserMessage(_ text: String, conversationID: UUID) throws -> MessageSendCommit?
@@ -53,7 +60,7 @@ final class GoalForkCapabilityAdapter: GoalForkCapability {
         conversations.deleteConversation(id: id)
     }
 
-    func forkGoal(id: String, into conversationID: UUID) async throws -> Goal {
+    func forkGoal(id: String, into conversationID: UUID) async throws -> ForkedGoal {
         guard let manager = Plugin.currentManager() else {
             throw GoalForkError.managerUnavailable
         }
