@@ -71,23 +71,30 @@ struct EditorNavigationHistory {
     }
 
     mutating func remove(_ sessionID: EditorSession.ID) {
-        guard let removedIndex = entries.firstIndex(where: { $0.sessionID == sessionID }) else { return }
-        entries.remove(at: removedIndex)
+        // 同一 Session 在历史里可能有多个非相邻条目（A → B → A），关闭标签时
+        // 必须全部删除，否则后退/前进仍会选中已不存在的 Session。
+        let removedIndices = entries.indices.filter { entries[$0].sessionID == sessionID }
+        guard !removedIndices.isEmpty else { return }
+
+        let previousIndex = currentIndex
+        entries.removeAll { $0.sessionID == sessionID }
 
         guard !entries.isEmpty else {
             currentIndex = nil
             return
         }
 
-        guard let currentIndex else {
-            self.currentIndex = min(removedIndex, entries.count - 1)
+        guard let previousIndex else {
+            currentIndex = min(removedIndices[0], entries.count - 1)
             return
         }
 
-        if removedIndex < currentIndex {
-            self.currentIndex = currentIndex - 1
-        } else if removedIndex == currentIndex {
-            self.currentIndex = min(currentIndex, entries.count - 1)
+        let removedBeforeCurrent = removedIndices.filter { $0 < previousIndex }.count
+        if removedIndices.contains(previousIndex) {
+            // 当前项也被删除：停在原位置（越界则回到最后一项）。
+            currentIndex = min(previousIndex - removedBeforeCurrent, entries.count - 1)
+        } else {
+            currentIndex = previousIndex - removedBeforeCurrent
         }
     }
 
