@@ -47,6 +47,7 @@ public final class BrowserPlugin: SuperPlugin, SuperLog {
     /// ProjectFiles 的判断（项目没打开文件时反而露出空条）。因此记录原值再还原。
     private var contentHeaderVisibilityBeforeActivation = false
     private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
+    private var conversationObserver: (any ConversationObserverHandle)?
     private let entryID = "Browser.entry"
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -79,6 +80,11 @@ public final class BrowserPlugin: SuperPlugin, SuperLog {
             sessions.selectConversation(conversations.selectedConversationID)
             selectedConversationObserver = conversations.addSelectedConversationObserver { [weak sessions] conversationID in
                 sessions?.selectConversation(conversationID)
+            }
+            // 会话删除后必须立刻释放对应 BrowserSession/WKWebView，否则
+            // 历史会话的浏览器实例会一直累积到插件关闭（issue #929）。
+            conversationObserver = conversations.addConversationObserver { [weak sessions] event in
+                sessions?.handleConversationEvent(event)
             }
         }
 
@@ -135,6 +141,8 @@ public final class BrowserPlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         selectedConversationObserver?.cancel()
         selectedConversationObserver = nil
+        conversationObserver?.cancel()
+        conversationObserver = nil
         rootViewObserver?.cancel()
         rootViewObserver = nil
         let wasActive = isBrowserActive || activityBar?.activeItemID == entryID

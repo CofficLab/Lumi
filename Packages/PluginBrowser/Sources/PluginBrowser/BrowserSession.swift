@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import ProviderConversation
 import WebKit
 
 @MainActor
@@ -92,6 +93,21 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
                 self?.syncPageState(from: webView)
             }
         }
+    }
+
+    /// 释放页面资源。
+    ///
+    /// 会话被删除后必须立刻调用：`sessions` 字典移除只是丢掉强引用，
+    /// WKWebView 的 KVO 观察、导航任务与未完成的 continuation 仍需主动收尾，
+    /// 否则 WebContent 进程和回调会在页面之外继续存活。
+    func tearDown() {
+        urlObservation?.invalidate()
+        urlObservation = nil
+        navigationTimeoutTask?.cancel()
+        navigationTimeoutTask = nil
+        finishNavigation(.failure(SessionError.navigationCancelled), token: navigationToken)
+        webView.stopLoading()
+        webView.navigationDelegate = nil
     }
 
     private func syncPageState(from webView: WKWebView) {
@@ -407,6 +423,29 @@ public final class BrowserSessionManager: ObservableObject {
     func selectConversation(_ conversationID: UUID?) {
         activeConversationID = conversationID
         activeSession = conversationID.flatMap { sessions[$0] }
+    }
+
+    /// 会话被删除后立刻释放它的 BrowserSession 与 WKWebView。
+    func closeSession(for conversationID: UUID) {
+        guard let session = sessions.removeValue(forKey: conversationID) else { return }
+        if activeConversationID == conversationID {
+            activeConversationID = nil
+        }
+        if activeSession === session {
+            activeSession = nil
+        }
+        session.tearDown()
+    }
+
+    /// 处理对话领域事件：只有删除会释放浏览器会话，其它事件不影响实例。
+    func handleConversationEvent(_ event: ConversationEvent) {
+        guard case .deleted(let conversationID) = event else { return }
+        closeSession(for: conversationID)
+    }
+
+    /// 是否仍持有该会话的浏览器实例。
+    func hasSession(for conversationID: UUID) -> Bool {
+        sessions[conversationID] != nil
     }
 
     /// 打开一个地址。
