@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 8 条用例。
+PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 24 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 23
+测试文件: 3 个，用例总数: 24
 
 核心组件（源码目录）:
 - `Models/`
@@ -69,20 +69,21 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 | 21 | MindMapStore 写前同步 | 写操作前与磁盘对齐，不覆盖别处新增的节点 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `writeDoesNotClobberNodesAddedElsewhere` |
 | 22 | MindMapStore 写前同步 | 新建导图不会挤掉磁盘上已有的导图 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `createDoesNotDropExistingMaps` |
 | 23 | MindMapStore 写前同步 | 删除别处创建的导图时以磁盘状态为准 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `deleteUsesDiskState` |
+| 24 | MindMapConversationScope | 列表返回完整 ID 且可直接用于加载（**回归 #1001**） | 项目中一张导图，list → 取 `[id]` → load | 依次调用 `list_mind_maps`、`load_mind_map` | 发现的 ID 等于完整 UUID，加载结果包含标题 | P0 | ✅ 已覆盖 | `listedIdentifierCanBeLoadedDirectly` |
 
-> 说明：全部 **23 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **24 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
+- P0: 已覆盖 7 / 7
 - P1: 已覆盖 17 / 17
 - P2: 已覆盖 0 / 0
-- **合计: 23 / 23**（仅表示清单场景，非源码覆盖率）
+- **合计: 24 / 24**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
 - **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 

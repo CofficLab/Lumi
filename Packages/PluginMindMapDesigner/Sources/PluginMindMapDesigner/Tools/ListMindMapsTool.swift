@@ -37,8 +37,10 @@ public struct ListMindMapsTool: SuperAgentTool {
             return language == .chinese ? "当前项目暂无思维导图。" : "No mind maps in the current project."
         }
 
+        // 必须返回完整 ID：load / 编辑 / 导出工具都按完整 ID 精确匹配，
+        // 截断后 Agent 无法完成列表发现 → 加载的工作流（#1001）。
         let entries = maps.map { map in
-            "- [\(map.id.prefix(8))] \(map.title) (\(map.nodes.count) nodes)"
+            "- [\(map.id)] \(map.title) (\(map.nodes.count) nodes)"
         }.joined(separator: "\n")
 
         return language == .chinese
