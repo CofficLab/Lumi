@@ -121,7 +121,12 @@ public actor RegistryService {
             case .pip:
                 // pip config list returns all configs.
                 // pip config get global.index-url might fail if not set.
-                let output = try await execute("pip config get global.index-url")
+                // Python 3 环境常常只装 `pip3` 或只有 `python3 -m pip`，
+                // 必须按可用性选择入口，否则会误报未安装。
+                guard let pip = await availablePipCommand() else {
+                    return "Not Installed"
+                }
+                let output = try await execute("\(pip) config get global.index-url")
                 return output.isEmpty ? "Default (PyPI)" : output
             case .go:
                 return try await execute("go env GOPROXY")
@@ -147,12 +152,26 @@ public actor RegistryService {
         case .docker:
             try await setDockerRegistry(url: url)
         case .pip:
-            _ = try await execute("pip config set global.index-url \(url)")
+            guard let pip = await availablePipCommand() else {
+                throw RegistryServiceError.pipUnavailable
+            }
+            _ = try await execute("\(pip) config set global.index-url \(url)")
         case .go:
             _ = try await execute("go env -w GOPROXY=\(url)")
         }
     }
     
+    /// 按可用性选择 Pip 入口；全都不存在时才返回 nil（真正的未安装）。
+    private func availablePipCommand() async -> String? {
+        var available: Set<String> = []
+        for candidate in PipCommand.candidates {
+            guard let output = try? await execute(PipCommand.probeCommand(for: candidate)),
+                  !output.isEmpty else { continue }
+            available.insert(candidate)
+        }
+        return PipCommand.firstAvailable(among: available)
+    }
+
     private func getDockerRegistry() async throws -> String {
         let path = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".docker/daemon.json")
         guard let data = try? Data(contentsOf: path),
@@ -218,11 +237,29 @@ enum DockerDaemonConfig {
 public enum RegistryServiceError: LocalizedError, Equatable {
     /// 现有 daemon.json 无法读取或解析，未做任何写入。
     case dockerDaemonConfigUnreadable(String)
+    /// `pip`、`pip3`、`python3 -m pip` 全都不可用。
+    case pipUnavailable
 
     public var errorDescription: String? {
         switch self {
         case .dockerDaemonConfigUnreadable(let detail):
             return "daemon.json could not be read or parsed, so the Docker registry was not changed. Fix the file and try again. (\(detail))"
+        case .pipUnavailable:
+            return "Pip could not be found. Install pip or make sure `pip3` or `python3 -m pip` is available on PATH."
         }
+    }
+}
+
+/// Pip 入口探测：不同 Python 环境可能只提供 `pip`、`pip3` 或 `python3 -m pip`。
+enum PipCommand {
+    static let candidates = ["pip", "pip3", "python3 -m pip"]
+
+    /// `python3 -m pip` 不是单个可执行文件，`command -v` 无法探测它。
+    static func probeCommand(for candidate: String) -> String {
+        candidate == "python3 -m pip" ? "python3 -m pip --version" : "command -v \(candidate)"
+    }
+
+    static func firstAvailable(among available: Set<String>) -> String? {
+        candidates.first { available.contains($0) }
     }
 }

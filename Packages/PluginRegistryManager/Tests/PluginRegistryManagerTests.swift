@@ -142,3 +142,19 @@ func dockerDaemonMergeCreatesConfigWhenMissing() throws {
     #expect(json.count == 1)
     #expect(json["registry-mirrors"] as? [String] == ["https://new.example/"])
 }
+
+// MARK: - Pip 入口探测（回归 #662）
+
+@Test("只装了 pip3 时改用 pip3，而不是报告未安装")
+func pipCommandFallsBackToPip3WhenPipIsMissing() {
+    #expect(PipCommand.firstAvailable(among: ["pip3", "python3 -m pip"]) == "pip3")
+    #expect(PipCommand.firstAvailable(among: ["pip", "pip3"]) == "pip")
+}
+
+@Test("所有 Pip 入口都不可用时才返回 nil，模块入口用 --version 探测")
+func pipCommandReturnsNilOnlyWhenEveryEntryIsUnavailable() {
+    #expect(PipCommand.probeCommand(for: "python3 -m pip") == "python3 -m pip --version")
+    #expect(PipCommand.probeCommand(for: "pip3") == "command -v pip3")
+
+    #expect(PipCommand.firstAvailable(among: []) == nil)
+}
