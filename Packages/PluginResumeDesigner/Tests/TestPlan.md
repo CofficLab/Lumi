@@ -37,7 +37,7 @@ PluginResumeDesigner 的实现包，包含 14 个主要类型；当前测试覆�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **ResumeDesignerPlugin**（3 条）：由 `registersAndActivatesContributions`、`promptSuggestionLocalizationResolves`、`registersAndRemovesAgentTools` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ResumeDesignerPlugin**（4 条）：由 `registersAndActivatesContributions`、`promptSuggestionLocalizationResolves`、`promptSuggestionActivatesPluginEntry`、`registersAndRemovesAgentTools` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ResumeDesignerRuleContributor**（1 条）：由 `loadsResumeRuleFromResource` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ResumeDocumentStore**（4 条）：由 `fullCRUD`、`rejectsInvalidSlugAndDuplicate`、`patchRequiresUniqueOldText` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ResumeTools**（7 条）：由 `createResumeToolCreatesDocument`、`listResumesToolListsDocuments`、`readResumeToolReturnsMetadata` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -71,27 +71,28 @@ PluginResumeDesigner 的实现包，包含 14 个主要类型；当前测试覆�
 | 20 | ResumeDesignerSuite | 对话绑定的项目路径无效时不会写进别的项目 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `scopedConversationWithMissingProjectNeverWritesElsewhere` |
 | 21 | ResumeDesignerSuite | 插件注册的 Agent 工具都带对话作用域包装 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registeredToolsAreConversationScoped` |
 | 22 | TestStorage | 加入项目不预建存储目录，真正写入时才创建 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doesNotCreateStorageDirectoryUntilWrite` |
+| 23 | ResumeDesignerPlugin | 启动器建议激活完整插件入口而不是只切换 Rail（**回归 #1006**） | 构造插件实例 | 读取 `promptSuggestion.action` | 为 `.activatePluginEntry`，ActivityBar 入口为 `<id>.entry`，Rail tab 为 `railTabID` | P1 | ✅ 已覆盖 | `promptSuggestionActivatesPluginEntry` |
 
-> 说明：全部 **22 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **23 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 16 / 16
+- P1: 已覆盖 17 / 17
 - P2: 已覆盖 1 / 1
-- **合计: 22 / 22**（仅表示清单场景，非源码覆盖率）
+- **合计: 23 / 23**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（16 条）
+- **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 22 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 23 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
