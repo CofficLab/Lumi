@@ -35,6 +35,7 @@ struct PluginLocalizationIntegrityTests {
             "Binary file",
             "Text file",
             "Missing provider(s): %@",
+            "Type a message, press Return to send…",
         ]
 
         let catalog = try Self.loadCatalog()
@@ -50,6 +51,18 @@ struct PluginLocalizationIntegrityTests {
                 "「\(key)」缺少语言翻译：\(missing.sorted().joined(separator: ", "))"
             )
         }
+    }
+
+    @Test("英文界面下 Composer 占位文案为英文，不回落中文（回归 #989）")
+    func composerPlaceholderHasEnglishText() throws {
+        let key = "Type a message, press Return to send…"
+        let entry = try #require(
+            try Self.loadCatalog()[key],
+            "Composer 占位文案未进入本地化资源"
+        )
+        let english = try #require(entry.localizations["en"], "占位文案缺 en 翻译")
+        #expect(english == key)
+        #expect(entry.localizations["zh-Hans"] != english, "中文翻译不应与英文相同")
     }
 
     @Test("Provider 错误文案含 en 翻译，不会在英文界面退化成 key")
