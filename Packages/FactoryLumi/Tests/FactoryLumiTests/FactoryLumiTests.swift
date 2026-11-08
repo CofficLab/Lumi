@@ -124,6 +124,14 @@ struct FactoryLumiTests {
         #expect(mail.metadata.category == .system)
     }
 
+    @Test("默认目录包含共享喝水提醒插件")
+    func defaultFactoryIncludesHydrationReminder() throws {
+        let plugins = DefaultPluginFactory().makePlugins()
+        let hydration = try #require(plugins.first { $0.id == "com.coffic.lumi.plugin.hydration" })
+
+        #expect(hydration.metadata.policy == .enabledByDefault)
+    }
+
     private final class AdditionalPlugin: SuperPlugin {
         let id = "test.additional-plugin"
         let metadata = PluginMetadata(
