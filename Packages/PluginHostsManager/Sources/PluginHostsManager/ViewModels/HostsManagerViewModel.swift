@@ -112,6 +112,10 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
         do {
             let content = try await readHostsFile()
             self.entries = HostsParser.parse(content: content)
+            // 导入/外部刷新后分组集合可能变化：旧分组若已不存在，继续用它过滤会让全部条目隐藏。
+            if let selectedGroup, !groups.contains(selectedGroup) {
+                self.selectedGroup = nil
+            }
             if Self.verbose {
                 if HostsManagerPlugin.verbose {
                                     HostsManagerPlugin.logger.info("\(self.t)Hosts file loaded successfully: \(self.entries.count) entries")
