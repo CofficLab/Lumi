@@ -7,6 +7,8 @@ private final class Box<T>: @unchecked Sendable { var value: T; init(_ v: T) { v
 /// URLProtocol 桩：拦截 DefaultHTTPClient 的 URLSession 请求，不发真实网络
 final class DownloadStubURLProtocol: URLProtocol {
     nonisolated(unsafe) static var handler: ((URLRequest) -> (HTTPURLResponse, Data))?
+    /// 非 nil 时，发送满指定字节后模拟连接中断，用于验证中途失败的回滚行为。
+    nonisolated(unsafe) static var failAfterBytes: Int?
 
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
@@ -20,10 +22,17 @@ final class DownloadStubURLProtocol: URLProtocol {
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         // 分块投递以驱动流式写入路径
         let chunk = 16
+        let failAfter = Self.failAfterBytes
+        var sent = 0
         var offset = data.startIndex
         while offset < data.endIndex {
+            if let failAfter, sent >= failAfter {
+                client?.urlProtocol(self, didFailWithError: URLError(.networkConnectionLost))
+                return
+            }
             let end = data.index(offset, offsetBy: chunk, limitedBy: data.endIndex) ?? data.endIndex
             client?.urlProtocol(self, didLoad: data.subdata(in: offset..<end))
+            sent += data.distance(from: offset, to: end)
             offset = end
         }
         client?.urlProtocolDidFinishLoading(self)
@@ -150,6 +159,35 @@ struct DefaultHTTPClientTests {
         )
         #expect(written == 1000)
         #expect(try Data(contentsOf: dest) == full)
+    }
+
+    @Test func replacementFailureKeepsExistingFileAndRemovesTemporaryFile() async throws {
+        let url = URL(string: "https://example.com/file.bin")!
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("kit-download-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let dest = directory.appendingPathComponent("file.bin")
+        let original = Data("original artifact".utf8)
+        try original.write(to: dest)
+
+        // 服务器忽略 Range 返回 200，发送一部分新内容后断开连接。
+        DownloadStubURLProtocol.failAfterBytes = 100
+        defer { DownloadStubURLProtocol.failAfterBytes = nil }
+        DownloadStubURLProtocol.handler = { _ in
+            self.respond(
+                status: 200, headers: ["Content-Length": "1000"], body: Data(repeating: 0xCC, count: 1000)
+            )
+        }
+
+        await #expect(throws: (any Error).self) {
+            _ = try await self.makeClient().download(
+                from: url, to: dest, existingBytes: Int64(original.count), maxBytesPerSecond: nil,
+                progressHandler: { _, _ in }, onCancelled: { _ in }
+            )
+        }
+        #expect(try Data(contentsOf: dest) == original)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: directory.path) == ["file.bin"])
     }
 
     @Test func customHeadersReachServerRequest() async throws {

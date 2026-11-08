@@ -5,7 +5,7 @@
 KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，用例总数: 79
+测试文件: 10 个，用例总数: 80
 
 ## 公开 API
 
@@ -119,20 +119,21 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 | 77 | ResumeHandler | 追加数据到文件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `appendData` |
 | 78 | ResumeHandler | 完成下载重命名文件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `finalizeDownload` |
 | 79 | ResumeHandler | 完成下载覆盖已存在的文件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `finalizeDownloadOverwrite` |
+| 80 | DefaultHTTPClient | 服务器忽略 Range 时中途失败保留旧文件并清理临时文件 | 目标已有文件，服务器返回 200 且传一部分后断连 | 调用 `download(existingBytes: 旧文件大小)` | 抛错，目标文件内容不变，目录中无临时文件 | P0 | ✅ 已覆盖 | `replacementFailureKeepsExistingFileAndRemovesTemporaryFile` |
 
-> 说明：全部 **79 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **80 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 4 / 4
+- P0: 已覆盖 5 / 5
 - P1: 已覆盖 67 / 67
 - P2: 已覆盖 8 / 8
-- **合计: 79 / 79**（仅表示清单场景，非源码覆盖率）
+- **合计: 80 / 80**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
 - **P1**: 其余功能性用例（67 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
