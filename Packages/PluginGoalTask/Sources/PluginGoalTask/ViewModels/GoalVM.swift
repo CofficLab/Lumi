@@ -51,7 +51,7 @@ final class GoalVM: ObservableObject, SuperLog {
     /// 工具栏上的 Goal 按钮是否需要显示。
     ///
     /// 工具栏弹窗(`GoalPopoverContent`)的价值在于「一屏看全所有 Goal」,
-    /// 而侧栏(`SidebarView`)只展示首个 Goal。因此:
+    /// 而侧栏(`SidebarView`)只展示当前活跃的 Goal。因此:
     /// - 存在多个 Goal:侧栏装不下,按钮是唯一入口,必须显示;
     /// - 只有一个 Goal:侧栏已经充分呈现(标题、进度、任务列表、折叠、
     ///   描述与续跑入口),按钮属于重复信息,隐藏。侧栏收起时同样隐藏——
@@ -60,17 +60,34 @@ final class GoalVM: ObservableObject, SuperLog {
         goals.count > 1
     }
 
-    // MARK: - 侧栏派生态(从 `goals` 推导单一活跃 Goal)
+    // MARK: - 侧栏派生态(从 `goals` 推导当前活跃 Goal)
 
-    /// 当前活跃的 Goal(首个 Goal)。单一目标模式下供侧栏展示;
+    /// 侧栏展示的 Goal。
+    ///
+    /// 不能无条件取 `goals.first`:列表按创建时间升序,完成一个旧 Goal 再创建新
+    /// Goal 后,首个永远是已完成的旧项,真正在推进的新 Goal 会被藏起来。
+    /// 优先级:最新的非终态 Goal → 最新且仍有未结束任务的 Goal → 最新 Goal。
+    private var sidebarItem: GoalListItem? {
+        if let index = goals.lastIndex(where: { (item: GoalListItem) in item.goal.isTerminal == false }) {
+            return goals[index]
+        }
+        if let index = goals.lastIndex(where: { (item: GoalListItem) in
+            item.tasks.contains { $0.status == .pending || $0.status == .inProgress }
+        }) {
+            return goals[index]
+        }
+        return goals.last
+    }
+
+    /// 当前活跃的 Goal。单一目标模式下供侧栏展示;
     /// 是否真正可见由 `hasActiveWork` 结合状态与任务进度判定。
     public var activeGoal: GoalDisplayItem? {
-        goals.first?.goal
+        sidebarItem?.goal
     }
 
     /// 当前活跃 Goal 的 Tasks。
     public var activeTasks: [GoalTaskDisplayItem] {
-        goals.first?.tasks ?? []
+        sidebarItem?.tasks ?? []
     }
 
     /// 是否有可见的 Goal(需要展示侧栏)。
