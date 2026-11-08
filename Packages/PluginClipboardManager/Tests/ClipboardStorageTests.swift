@@ -18,7 +18,8 @@ private func makeTemporaryDirectory(_ prefix: String) throws -> URL {
 private func makeStorage() throws -> (ClipboardStorage, URL) {
     let root = try makeTemporaryDirectory("clipm-storage")
     let manager = ClipboardHistoryManager(databaseDirectory: root)
-    return (ClipboardStorage(historyManager: manager), root)
+    // 固定上限，避免测试读取真实设置文件而依赖开发者本机状态。
+    return (ClipboardStorage(historyManager: manager, historyLimitProvider: { 500 }), root)
 }
 
 private func makeSolidImage() -> NSImage {
@@ -75,6 +76,41 @@ struct ClipboardStorageTests {
 
         let items = await storage.getItems()
         #expect(items.count == 2)
+    }
+
+    @Test("历史大小设置会裁剪超出的非固定项")
+    func respectsConfiguredHistoryLimit() async throws {
+        let root = try makeTemporaryDirectory("clipm-limit")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let storage = ClipboardStorage(
+            historyManager: ClipboardHistoryManager(databaseDirectory: root),
+            historyLimitProvider: { 2 }
+        )
+
+        for content in ["one", "two", "three"] {
+            await storage.add(item: ClipboardItem(type: .text, content: content))
+        }
+
+        let items = await storage.getItems()
+        #expect(items.count == 2)
+        #expect(Set(items.map(\.content)) == ["two", "three"])
+    }
+
+    @Test("Unlimited 设置不裁剪历史")
+    func unlimitedHistorySkipsTrim() async throws {
+        let root = try makeTemporaryDirectory("clipm-unlimited")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let storage = ClipboardStorage(
+            historyManager: ClipboardHistoryManager(databaseDirectory: root),
+            historyLimitProvider: { Int.max }
+        )
+
+        for content in ["one", "two", "three"] {
+            await storage.add(item: ClipboardItem(type: .text, content: content))
+        }
+
+        let items = await storage.getItems()
+        #expect(items.count == 3)
     }
 
     @Test("富文本负载随条目持久化并可读回")

@@ -3,6 +3,7 @@ import KernelCore
 import KitTestSupport
 import ProviderActivityBar
 import ProviderChatSection
+import ProviderSettingView
 import SwiftData
 import Testing
 @testable import ClipboardManagerPlugin
@@ -28,18 +29,25 @@ import Testing
     let kernel = KernelCoreContainer()
     let activityBar = DefaultActivityBarProviding()
     let chat = DefaultChatSectionProviding()
+    let settings = DefaultSettingViewProviding()
     try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
     try kernel.registerProvider((any ChatSectionProviding).self, chat)
+    try kernel.registerProvider((any SettingViewProviding).self, settings)
 
     let plugin = ClipboardManagerPlugin()
     try plugin.onBoot(kernel: kernel)
 
     #expect(activityBar.activeItemID == "\(plugin.id).entry")
     #expect(!chat.isVisible)
+    let settingsEntry = "\(plugin.id).settings"
+    #expect(settings.entries.contains { $0.id == settingsEntry })
 
     activityBar.activateItem(id: nil)
 
     #expect(chat.isVisible)
+
+    try plugin.onShutdown(kernel: kernel)
+    #expect(!settings.entries.contains { $0.id == settingsEntry })
 }
 
 @MainActor

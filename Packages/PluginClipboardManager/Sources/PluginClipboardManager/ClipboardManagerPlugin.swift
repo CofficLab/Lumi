@@ -6,6 +6,7 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
 import ProviderRootView
+import ProviderSettingView
 import ProviderStorage
 import SwiftUI
 import os
@@ -52,7 +53,10 @@ public final class ClipboardManagerPlugin: SuperPlugin, PluginDataMigrating, Sup
             ClipboardManagerRuntime.injectedDatabaseDirectory = pluginDirectory
         }
         monitorObserver?.cancel()
-        monitorObserver = ClipboardMonitorObserver()
+        monitorObserver = nil
+        if ClipboardSettings.isMonitoringEnabled {
+            startClipboardMonitoring()
+        }
         let viewModel = ClipboardManagerViewModel()
         self.viewModel = viewModel
         historyObserver = ClipboardHistoryObserver { [weak viewModel] in
@@ -92,14 +96,50 @@ public final class ClipboardManagerPlugin: SuperPlugin, PluginDataMigrating, Sup
         } else {
             content?.setContentView(AnyView(ClipboardHistoryView(viewModel: viewModel)))
         }
+
+        let settingsEntry = "\(id).settings"
+        kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
+            SettingEntryItem(
+                id: settingsEntry,
+                title: metadata.name,
+                systemImage: "doc.on.clipboard",
+                order: order
+            ) { [weak self] in
+                ClipboardSettingsView { enabled in
+                    self?.setMonitoringEnabled(enabled)
+                }
+            },
+        ])
+    }
+
+    /// 按设置启停剪贴板轮询。
+    private func setMonitoringEnabled(_ enabled: Bool) {
+        if enabled {
+            startClipboardMonitoring()
+        } else {
+            stopClipboardMonitoring()
+        }
+    }
+
+    private func startClipboardMonitoring() {
+        guard monitorObserver == nil else { return }
+        let observer = ClipboardMonitorObserver()
+        observer.start()
+        monitorObserver = observer
+    }
+
+    private func stopClipboardMonitoring() {
+        monitorObserver?.cancel()
+        monitorObserver = nil
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        monitorObserver?.cancel()
-        monitorObserver = nil
+        stopClipboardMonitoring()
         historyObserver?.cancel()
         historyObserver = nil
         viewModel = nil
+        kernel.resolveProvider((any SettingViewProviding).self)?
+            .removeEntries(ids: ["\(id).settings"])
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
@@ -112,5 +152,7 @@ public final class ClipboardManagerPlugin: SuperPlugin, PluginDataMigrating, Sup
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+        kernel.resolveProvider((any SettingViewProviding).self)?
+            .removeEntries(ids: ["\(id).settings"])
     }
 }

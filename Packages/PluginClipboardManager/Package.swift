@@ -14,6 +14,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Vendor/LumiProviders"),
         .package(path: "../../Vendor/LumiKernel"),
+        .package(path: "../../Vendor/LumiSettings"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../../Vendor/LumiUI"),
         .package(path: "../../Vendor/LumiLocalization"),
@@ -32,6 +33,7 @@ let package = Package(
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
@@ -49,6 +51,7 @@ let package = Package(
                 .target(name: "ClipboardManagerPlugin"),
                 .product(name: "KitTestSupport", package: "KitTestSupport"),
                 .product(name: "KitTestIsolation", package: "KitTestSupport"),
+                .product(name: "ProviderSettingView", package: "LumiSettings"),
             ],
             path: "Tests"
         )

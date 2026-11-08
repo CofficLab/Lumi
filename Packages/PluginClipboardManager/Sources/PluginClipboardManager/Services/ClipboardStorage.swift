@@ -14,14 +14,19 @@ public actor ClipboardStorage: SuperLog {
     public static let shared = ClipboardStorage()
 
     private let historyManager: ClipboardHistoryManager
-    private let maxRecentItems = 500
+    /// 每次清理时读取最新的历史上限，用户改设置后无需重启插件。
+    private let historyLimitProvider: @Sendable () -> Int
 
     /// 注入历史管理器。
     ///
     /// 生产环境使用共享单例；单元测试注入指向临时目录的实例，
     /// 避免污染用户的真实剪贴板数据库。
-    init(historyManager: ClipboardHistoryManager = ClipboardHistoryManager.shared) {
+    init(
+        historyManager: ClipboardHistoryManager = ClipboardHistoryManager.shared,
+        historyLimitProvider: @escaping @Sendable () -> Int = { ClipboardSettings.historyLimit }
+    ) {
         self.historyManager = historyManager
+        self.historyLimitProvider = historyLimitProvider
         // 启动时清理过期数据
         Task {
             await historyManager.cleanup()
@@ -79,7 +84,7 @@ public actor ClipboardStorage: SuperLog {
 
     /// 获取所有项
     public func getItems() async -> [ClipboardHistoryItem] {
-        return await historyManager.getAll(limit: maxRecentItems)
+        return await historyManager.getAll(limit: ClipboardHistoryManager.maxFetchLimit)
     }
 
     /// 获取最新的 N 项
@@ -162,11 +167,15 @@ public actor ClipboardStorage: SuperLog {
 
     /// 清理超出限制的非固定项
     private func cleanupIfNeeded() async {
-        let allItems = await historyManager.getAll(limit: maxRecentItems + 100)
+        let configuredLimit = historyLimitProvider()
+        // “Unlimited” 时不清理；否则按用户设置的上限裁剪。
+        guard configuredLimit != ClipboardSettings.unlimitedHistorySize else { return }
+        let limit = max(1, min(configuredLimit, ClipboardHistoryManager.maxFetchLimit))
+        let allItems = await historyManager.getAll(limit: limit + 100)
         let nonPinnedItems = allItems.filter { !$0.isPinned }
 
-        if nonPinnedItems.count > maxRecentItems {
-            let itemsToDelete = nonPinnedItems.suffix(from: maxRecentItems).map { $0.id }
+        if nonPinnedItems.count > limit {
+            let itemsToDelete = nonPinnedItems.suffix(from: limit).map { $0.id }
             await historyManager.delete(ids: Array(itemsToDelete))
 
             if Self.verbose {
