@@ -57,9 +57,11 @@ public actor MailAgentToolService {
         } catch {
             throw error
         }
-        // 同步增量（离线时用缓存兜底）
-        let session = try await sessionManager.session(for: account)
+        // 同步增量（离线时用缓存兜底）。会话创建也在兜底范围内：
+        // 冷启动断网时 `session(for:)` 会直接抛连接错误。
+        var usedCacheFallback = false
         do {
+            let session = try await sessionManager.session(for: account)
             let summaries = try await session.fetchMessages(
                 folder: folder,
                 sinceUID: nil,
@@ -67,14 +69,19 @@ public actor MailAgentToolService {
             )
             try await cache.upsertMessages(summaries, accountID: account.id, folder: folder)
         } catch {
-            // 离线降级：继续读缓存
+            usedCacheFallback = true
         }
         let items = try await cache.messages(accountID: account.id, folder: folder)
         let recent = items.suffix(limit).reversed()
         guard !recent.isEmpty else {
-            return "「\(folder)」暂无邮件。"
+            return usedCacheFallback
+                ? "「\(folder)」暂无邮件（当前离线，未能连接服务器）。"
+                : "「\(folder)」暂无邮件。"
         }
         var lines = ["账户 \(account.email) / \(folder) 最近 \(recent.count) 封邮件："]
+        if usedCacheFallback {
+            lines.append("提示：当前无法连接邮件服务器，以下内容来自本地缓存。")
+        }
         for item in recent {
             lines.append("- uid=\(item.uid) \(unreadMarker(item))「\(item.subject.isEmpty ? "(无主题)" : item.subject)」 \(sender(item)) \(item.date.formatted(date: .abbreviated, time: .shortened))")
         }

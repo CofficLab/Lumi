@@ -110,6 +110,32 @@ final class MailAgentToolsTests: XCTestCase {
         XCTAssertTrue(result.contains("【未读】"))
     }
 
+    func testListMessagesFallsBackToCacheWhenSessionConnectFails() async throws {
+        store.upsertAccount(makeAccount())
+        store.setPassword("p", for: accountID)
+        try await cache.upsertMessages(
+            [summary(uid: 9, subject: "Cached hello")],
+            accountID: accountID,
+            folder: "INBOX"
+        )
+        let manager = MailSessionManager(
+            factory: MockMailSessionFactory(behavior: .init(failConnect: true)),
+            accountStore: store
+        )
+        let service = MailAgentToolService(
+            sessionManager: manager,
+            cache: cache,
+            composer: MailComposerService(sessionManager: manager, accountStore: store),
+            accountStore: store
+        )
+        let tool = MailListMessagesTool(service: service)
+
+        let result = try await tool.execute(arguments: ["limit": ToolArgument(5)])
+
+        XCTAssertTrue(result.contains("Cached hello"), "断网冷启动应读取本地缓存")
+        XCTAssertTrue(result.contains("本地缓存"), "断网结果应明确标识来自缓存")
+    }
+
     func testListMessagesRejectsOutOfRangeLimit() async throws {
         store.upsertAccount(makeAccount())
         store.setPassword("p", for: accountID)
