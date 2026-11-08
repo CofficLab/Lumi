@@ -41,6 +41,7 @@ struct ToolFailureSemanticsTests {
         await expectThrows(ListAppStoreConnectCiBuildRunsTool())
         await expectThrows(ReadAppStoreConnectCiWorkflowTool())
         await expectThrows(StartAppStoreConnectCiBuildRunTool())
+        await expectThrows(SubmitAppStoreConnectVersionTool())
     }
 
     @Test("空白参数等同于缺失，同样抛出")

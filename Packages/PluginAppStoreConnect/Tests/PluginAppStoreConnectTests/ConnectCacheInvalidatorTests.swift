@@ -120,6 +120,40 @@ struct ConnectCacheInvalidatorTests {
         #expect(isCached(cache, path: other))
     }
 
+    // MARK: - 关联 build (#668)
+
+    @Test("关联 build 后失效该版本的关系读取缓存")
+    func buildAssignmentPatchInvalidatesRelationshipRead() throws {
+        let (cache, directory) = try makeCache()
+        defer { directory.remove() }
+
+        // 关联前的读取缓存是 {"data": null}，若生命周期结束后仍被复用，
+        // 提交前置检查会误判「没有 build」。
+        let path = "/v1/appStoreVersions/version-1/relationships/build"
+        seed(cache, path: path)
+        #expect(isCached(cache, path: path))
+
+        let body = try JSONSerialization.data(withJSONObject: [
+            "data": ["type": "builds", "id": "build-1"]
+        ])
+        invalidate(cache, method: "PATCH", path: path, body: body)
+
+        #expect(!isCached(cache, path: path))
+    }
+
+    @Test("关联 build 不影响其它版本的关系读取缓存")
+    func buildAssignmentPatchKeepsOtherVersions() throws {
+        let (cache, directory) = try makeCache()
+        defer { directory.remove() }
+
+        let other = "/v1/appStoreVersions/version-2/relationships/build"
+        seed(cache, path: other)
+
+        invalidate(cache, method: "PATCH", path: "/v1/appStoreVersions/version-1/relationships/build")
+
+        #expect(isCached(cache, path: other))
+    }
+
     // MARK: - 截图变更 (#715)
 
     @Test("截图预约上传后失效截图列表缓存")

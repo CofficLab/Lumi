@@ -48,10 +48,15 @@ extension ConnectClient {
     }
 
     /// 读取版本当前已关联的 build id；未关联时返回 nil。
-    func readAssignedBuildID(versionID: String) async throws -> String? {
+    /// - Parameter cachePolicy: 单次读取的缓存策略；nil 表示沿用 client 的全局策略。
+    func readAssignedBuildID(
+        versionID: String,
+        cachePolicy: ConnectFetchPolicy? = nil
+    ) async throws -> String? {
         Self.logger.info("\(Self.t)readAssignedBuildID versionID=\(versionID)")
         let response: AppStoreConnectOptionalRelationshipResponse = try await request(
-            path: "/v1/appStoreVersions/\(versionID)/relationships/build"
+            path: "/v1/appStoreVersions/\(versionID)/relationships/build",
+            cachePolicy: cachePolicy
         )
         return response.data?.id
     }
