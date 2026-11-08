@@ -31,6 +31,25 @@ final class ChatScreenshotOverlayController {
         self.screens = NSScreen.screens
     }
 
+    /// 给遮罩视图装配回调。
+    ///
+    /// 闭包一律弱捕获 `self` 与 `view`：视图强持有闭包，若闭包再强捕获视图，
+    /// 就形成 `view → closure → view` 的引用环，`finish()` 清空数组后视图仍无法释放。
+    ///
+    /// 可见性放宽到 internal 仅为便于单元测试验证回调不构成引用环。
+    internal func wireCallbacks(on view: ChatScreenshotOverlayView) {
+        view.onSelectionChanged = { [weak self, weak view] rect in
+            guard let self, let view else { return }
+            self.handleSelectionChanged(view: view, rect: rect)
+        }
+        view.onSelectionCompleted = { [weak self] rect in
+            self?.finish(selection: rect)
+        }
+        view.onCancel = { [weak self] in
+            self?.finish(selection: nil)
+        }
+    }
+
     func show() {
         guard !screens.isEmpty else {
             onComplete(nil)
@@ -39,16 +58,7 @@ final class ChatScreenshotOverlayController {
 
         for screen in screens {
             let view = ChatScreenshotOverlayView(screenFrame: screen.frame)
-            view.onSelectionChanged = { [weak self] rect in
-                guard let self else { return }
-                self.handleSelectionChanged(view: view, rect: rect)
-            }
-            view.onSelectionCompleted = { [weak self] rect in
-                self?.finish(selection: rect)
-            }
-            view.onCancel = { [weak self] in
-                self?.finish(selection: nil)
-            }
+            wireCallbacks(on: view)
 
             let window = ChatScreenshotOverlayWindow(screenFrame: screen.frame, view: view)
             windows.append(window)
