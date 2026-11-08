@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 53 条用例。
+PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 54 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 53
+测试文件: 13 个，用例总数: 54
 
 核心组件（源码目录）:
 - `Helpers/`
@@ -110,21 +110,22 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 | 51 | ConversationAttentionScanner | 从未观测为运行的会话结束时不得生成未读提示 | 缓存含 A，跟踪表为空，A 已结束 | 执行一轮扫描 | `finished` 与 `stillRunning` 均为空 | P0 | ✅ 已覆盖 | `neverRunningConversationDoesNotFinish` |
 | 52 | ConversationAttentionScanner | 缓存内的会话完成后停止跟踪 | 缓存与跟踪表均含 A，A 已结束 | 执行一轮扫描 | `finished` 含 A，`stillRunning` 为空 | P1 | ✅ 已覆盖 | `cachedConversationFinishesOnce` |
 | 53 | ConversationListPlugin | 会话删除后必须停止跟踪并清掉残留未读提示 | 已存在未读提示 | 删除会话 | `needsAttention` 变为 false | P0 | ✅ 已覆盖 | `pluginStopsTrackingAndClearsAttentionWhenConversationIsDeleted` |
+| 54 | GetRecentConversationsTool | 标题中的反斜杠加管道符仍留在单个单元格（**#994**） | 标题为字面 `A\|B` | 执行工具并解析数据行 | 输出 `A\\\|B`，数据行未转义管道符恰为 6 个 | P1 | ✅ 已覆盖 | `recentConversationTitleWithBackslashAndPipeStaysInSingleCell` |
 
-> 说明：全部 **53 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 3 / 3
-- P1: 已覆盖 39 / 39
+- P1: 已覆盖 40 / 40
 - P2: 已覆盖 11 / 11
-- **合计: 53 / 53**（仅表示清单场景，非源码覆盖率）
+- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（39 条）
+- **P1**: 其余功能性用例（40 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明

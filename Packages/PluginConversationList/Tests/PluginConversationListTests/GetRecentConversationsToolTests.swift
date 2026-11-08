@@ -81,6 +81,49 @@ import Testing
     }
 }
 
+@Test @MainActor func recentConversationTitleWithBackslashAndPipeStaysInSingleCell() async throws {
+    let conversations = DefaultConversationManager()
+    let title = "A\\|B" // 字面字符：A \ | B
+    _ = try conversations.createConversation(
+        title: title,
+        projectPath: nil,
+        providerID: nil,
+        modelName: nil
+    )
+    let tool = GetRecentConversationsTool(
+        capability: ConversationListQueryCapabilityAdapter(conversations: conversations, project: nil)
+    )
+
+    let result = try await tool.execute(arguments: [:])
+
+    // 反斜杠必须先于管道符转义，输出为 A\\\|B（三个反斜杠）而不是 A\\|B。
+    #expect(result.contains("A\\\\\\|B"), "标题中的反斜杠未先转义，管道符会重新变成列分隔符")
+    let dataRow = try #require(
+        result.split(separator: "\n").first { $0.contains("A\\") }
+    )
+    #expect(
+        unescapedPipeCount(String(dataRow)) == 6,
+        "五行表格的数据行必须恰好有 6 个未转义管道符，否则单元格错位"
+    )
+}
+
+/// 统计真正会拆分行结构的管道符：只有被奇数个反斜杠转义的管道符才不算分隔符。
+private func unescapedPipeCount(_ line: String) -> Int {
+    var count = 0
+    var backslashes = 0
+    for character in line {
+        if character == "\\" {
+            backslashes += 1
+            continue
+        }
+        if character == "|", backslashes.isMultiple(of: 2) {
+            count += 1
+        }
+        backslashes = 0
+    }
+    return count
+}
+
 @Test @MainActor func recentConversationLimitDefaultsAndClampsToOneThroughTwenty() async throws {
     let conversations = DefaultConversationManager()
     for index in 0..<22 {
