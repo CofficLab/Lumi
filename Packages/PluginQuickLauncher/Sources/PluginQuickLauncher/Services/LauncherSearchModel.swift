@@ -145,6 +145,9 @@ public final class LauncherSearchModel: ObservableObject, SuperLog {
     /// 键盘选中索引
     @Published public var selectedIndex: Int = 0
 
+    /// 最近一次执行失败的原因；执行成功或输入变化后清空。
+    @Published public private(set) var executionError: String?
+
     /// 各内容源开关（持久化 key）
     static let sourceDefaultsKeys: [LauncherResultKind: String] = [
         .app: "QuickLauncher.Source.apps",
@@ -184,6 +187,7 @@ public final class LauncherSearchModel: ObservableObject, SuperLog {
     // MARK: - Search
 
     private func queryDidUpdate() {
+        executionError = nil
         rebuildResults()
         queryDebounceTask?.cancel()
         queryDebounceTask = Task { [weak self] in
@@ -265,43 +269,55 @@ public final class LauncherSearchModel: ObservableObject, SuperLog {
 
     // MARK: - Execution
 
-    /// 执行选中的结果，返回是否由调用方负责关闭窗口（始终 true，命令执行失败仅记录日志）
+    /// 执行选中的结果，返回是否真正执行成功；调用方只应在成功时关闭面板。
     @discardableResult
     public func execute(at index: Int) -> Bool {
         guard index >= 0 && index < results.count else { return false }
         let result = results[index]
+        executionError = nil
 
         switch result.kind {
         case .app:
-            if let app = result.app {
-                appSearch.launchApp(app)
-            }
+            guard let app = result.app else { return false }
+            appSearch.launchApp(app)
+            return true
         case .file:
-            if let file = result.file {
-                fileSearch.openFile(file)
+            guard let file = result.file else { return false }
+            guard fileSearch.openFile(file) else {
+                executionError = "\(pluginLocalization.string("Could not open")) \(file.name)"
+                return false
             }
+            return true
         case .command:
-            executeCommand(matching: result)
-        case .ai:
-            if let question = result.aiQuery {
-                LauncherBridge.askAIHandler?(question)
+            guard executeCommand(matching: result) else {
+                executionError = pluginLocalization.string("Could not run this item")
+                return false
             }
+            return true
+        case .ai:
+            guard let question = result.aiQuery, let handler = LauncherBridge.askAIHandler else {
+                executionError = pluginLocalization.string("Could not run this item")
+                return false
+            }
+            handler(question)
+            return true
         }
-        return true
     }
 
     /// 按结果 id 找到原始命令并执行（避免闭包非 Sendable 存进结果）。
-    private func executeCommand(matching result: LauncherResult) {
-        guard let groups = LauncherBridge.commandGroupsProvider?() else { return }
+    /// 返回是否找到并执行了对应命令。
+    private func executeCommand(matching result: LauncherResult) -> Bool {
+        guard let groups = LauncherBridge.commandGroupsProvider?() else { return false }
         for group in groups {
             for item in group.items where result.id == "command:\(group.name)/\(item.id)" {
                 item.action()
-                return
+                return true
             }
         }
         if Self.verbose {
             QuickLauncherPluginSupport.logger.info("\(self.t)未找到命令结果对应的原始项: \(result.title)")
         }
+        return false
     }
 
     // MARK: - Reset
@@ -310,6 +326,7 @@ public final class LauncherSearchModel: ObservableObject, SuperLog {
     public func reset() {
         query = ""
         selectedIndex = 0
+        executionError = nil
         fileSearch.cancelSearch()
     }
 }
