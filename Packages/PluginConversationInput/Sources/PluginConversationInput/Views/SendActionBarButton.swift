@@ -1,3 +1,4 @@
+import Foundation
 import LumiUI
 import ProviderConversationInput
 import ProviderMessageSender
@@ -56,13 +57,27 @@ struct SendActionBarButton: View {
                 Text(pluginLocalization.string("Provider Error"))
                     .font(.headline)
             }
-            Text("Missing provider(s): \(missingProviders.joined(separator: ", "))")
+            Text(MissingProviderMessage.text(for: missingProviders))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(12)
         .frame(minWidth: 200)
+    }
+}
+
+// MARK: - MissingProviderMessage
+
+/// 缺失 Provider 诊断文案。
+///
+/// 单独抽出是为了让单测能验证「插值后仍是本地化文案」，而不只是校验资源条目存在。
+enum MissingProviderMessage {
+    static func text(for providers: [String], locale: Locale = .current) -> String {
+        String(
+            format: pluginLocalization.string("Missing provider(s): %@", locale: locale),
+            providers.joined(separator: ", ")
+        )
     }
 }
 
