@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import KitLLM
 import XCTest
 @testable import ProviderConversation
 
@@ -53,6 +54,29 @@ final class ProviderConversationTests: XCTestCase {
         manager.deleteConversation(id: second)
         XCTAssertEqual(manager.conversations.count, 1)
         XCTAssertEqual(manager.conversations.first?.id, first)
+    }
+
+    /// 回归 #880：会话不在 `conversations` 缓存数组里时，模型选择不能被静默丢弃。
+    ///
+    /// 子代理对话不进入顶层缓存，这里借它构造「窗口外旧会话」的场景。
+    func testModelSelectionOutsideCacheIsNotDropped() throws {
+        let manager = DefaultConversationManager()
+        let staleID = try manager.createConversation(
+            title: "stale",
+            projectPath: nil,
+            providerID: nil,
+            modelName: nil,
+            parentConversationID: UUID()
+        )
+        XCTAssertFalse(manager.conversations.contains { $0.id == staleID })
+        manager.selectConversation(id: staleID)
+
+        let modelID = try XCTUnwrap(LLMModelID(providerID: "ui-test", modelID: "ui-test-long"))
+        manager.selectModel(id: modelID.rawValue, for: staleID)
+
+        XCTAssertEqual(manager.modelID(for: staleID), modelID.rawValue)
+        XCTAssertEqual(manager.providerID(for: staleID), "ui-test")
+        XCTAssertEqual(manager.modelName(for: staleID), "ui-test-long")
     }
 
     func testSortedConversationsByLastMessage() throws {

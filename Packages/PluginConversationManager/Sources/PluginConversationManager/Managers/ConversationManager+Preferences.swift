@@ -17,14 +17,18 @@ extension ConversationManager {
 
     public func modelID(for conversationID: UUID?) -> String? {
         guard let conversationID else { return nil }
-        return conversations.first { $0.id == conversationID }?.modelID
+        // 缓存数组外的会话（窗口外旧会话/整表重载）也要保留刚选中的模型；
+        // 否则 selectModel 的 guard 会让选择静默消失。
+        return modelIDOverrides[conversationID]
+            ?? conversations.first { $0.id == conversationID }?.modelID
     }
 
     public func selectModel(id: String, for conversationID: UUID?) {
-        guard let conversationID,
-              let index = conversations.firstIndex(where: { $0.id == conversationID }),
-              LLMModelID(rawValue: id) != nil else { return }
-        conversations[index].modelID = id
+        guard let conversationID, LLMModelID(rawValue: id) != nil else { return }
+        modelIDOverrides[conversationID] = id
+        if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
+            conversations[index].modelID = id
+        }
         notifyConversationObservers(.providerChanged(conversationID))
 
         Task {
