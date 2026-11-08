@@ -253,14 +253,17 @@ public struct SettingsView: View {
         let key = ProjectsStore.normalizedPath(project.path)
         // 读取 ViewModel 中的缓存：它跟随 Store 变更刷新，避免显示首次进入时的旧快照。
         let opened = viewModel.openedFilesByPath[key]
-        let urls = opened?.openFileURLs ?? []
-        let current = opened?.currentFileURL
+        let state = Self.openedFilesSectionState(
+            isLoading: viewModel.isLoadingOpenedFiles,
+            opened: opened
+        )
 
         AppSettingSection(
             title: pluginLocalization.string("Opened Files"),
             titleAlignment: .leading
         ) {
-            if viewModel.isLoadingOpenedFiles {
+            switch state {
+            case .loading:
                 HStack(spacing: 8) {
                     ProgressView()
                         .controlSize(.small)
@@ -268,11 +271,11 @@ public struct SettingsView: View {
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
                 }
-            } else if urls.isEmpty {
+            case .empty:
                 Text(pluginLocalization.string("No opened files recorded"))
                     .font(.callout)
                     .foregroundStyle(theme.textSecondary)
-            } else {
+            case .content(let urls, let current):
                 VStack(alignment: .leading, spacing: 6) {
                     if let current {
                         HStack(spacing: 6) {
@@ -307,6 +310,29 @@ public struct SettingsView: View {
                 }
             }
         }
+    }
+
+    /// Opened Files 区域的展示状态。
+    ///
+    /// Explorer 单击产生的 preview 文件只写入 `currentFileURL`，`openFileURLs`
+    /// 仍为空；这种 preview-only 状态必须显示 Active 行，而不是「没有打开文件」。
+    enum OpenedFilesSectionState: Equatable {
+        case loading
+        case empty
+        case content(urls: [URL], current: URL?)
+    }
+
+    static func openedFilesSectionState(
+        isLoading: Bool,
+        opened: ProjectOpenedFiles?
+    ) -> OpenedFilesSectionState {
+        guard !isLoading else { return .loading }
+        let urls = opened?.openFileURLs ?? []
+        let current = opened?.currentFileURL
+        guard urls.isEmpty && current == nil else {
+            return .content(urls: urls, current: current)
+        }
+        return .empty
     }
 
     private func detailRow(title: String, icon: String, value: String, monospace: Bool = false) -> some View {
