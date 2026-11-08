@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试覆盖 2 条用例。
+PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试覆盖 23 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 2
+测试文件: 2 个，用例总数: 23
 
 核心组件（源码目录）:
 - `Providers/`
@@ -25,6 +25,9 @@ PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **综合**（2 条）：由 `nonGitDirectoryIsIgnored`、`pluginRegistersProvider` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **Git目录解析**（6 条）：由 `resolvesGitDirectory`、`resolvesAbsoluteGitFile`、`picksGitDirLineFromMultiLineFile` 等用例锁定。
+- **Git目录快照**（9 条）：由 `readsDirectHeadHash`、`fallsBackToPackedRefs`、`readsFullSnapshot` 等用例锁定。
+- **Git仓库监听Provider**（6 条）：由 `startsWatchingRepository`、`broadcastsStopped`、`cancelledObserverStopsReceiving` 等用例锁定。
 
 ## 测试用例清单
 
@@ -32,27 +35,48 @@ PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试�
 |----|------|------|----------|----------|----------|------|------|----------|
 | 1 | 综合 | non-git directory does not leave an active watcher | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nonGitDirectoryIsIgnored` |
 | 2 | 综合 | watch plugin registers the reusable provider | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginRegistersProvider` |
+| 3 | Git目录解析 | .git 是目录时直接返回该目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resolvesGitDirectory` |
+| 4 | Git目录解析 | .git 指向绝对路径时原样返回 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resolvesAbsoluteGitFile` |
+| 5 | Git目录解析 | .git 指向相对路径时相对项目目录解析 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resolvesRelativeGitFile` |
+| 6 | Git目录解析 | .git 文件多行时取含 gitdir: 的那一行 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `picksGitDirLineFromMultiLineFile` |
+| 7 | Git目录解析 | .git 不存在时抛出未找到错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `throwsWhenGitDirectoryMissing` |
+| 8 | Git目录解析 | .git 文件缺少 gitdir: 行时抛出非法文件错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `throwsWhenGitFileInvalid` |
+| 9 | Git目录快照 | HEAD 是直接 hash 时返回该 hash | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readsDirectHeadHash` |
+| 10 | Git目录快照 | HEAD 指向 ref 时读取对应 ref 文件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readsHeadRef` |
+| 11 | Git目录快照 | ref 文件缺失时回退到 packed-refs | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fallsBackToPackedRefs` |
+| 12 | Git目录快照 | packed-refs 中也没有该 ref 时返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `returnsNilWhenRefMissingEverywhere` |
+| 13 | Git目录快照 | HEAD 文件缺失时返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `returnsNilWhenHeadMissing` |
+| 14 | Git目录快照 | 内容指纹对相同内容稳定、对不同内容不同 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fingerprintIsStableAndContentSensitive` |
+| 15 | Git目录快照 | 文件不存在时指纹为 nil | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `fingerprintOfMissingFileIsNil` |
+| 16 | Git目录快照 | 快照同时汇总 head / index / stash / refs | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readsFullSnapshot` |
+| 17 | Git目录快照 | 空仓库的快照四项均为 nil | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptyRepositorySnapshotIsAllNil` |
+| 18 | Git仓库监听Provider | 监听真实仓库时广播 started 且监听器就绪 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `startsWatchingRepository` |
+| 19 | Git仓库监听Provider | 监听非仓库目录时不广播 started | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `ignoresNonRepository` |
+| 20 | Git仓库监听Provider | 停止监听时广播 stopped | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `broadcastsStopped` |
+| 21 | Git仓库监听Provider | 重复监听同一目录是幂等的 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `repeatedStartIsIdempotent` |
+| 22 | Git仓库监听Provider | 注销观察者后不再收到事件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cancelledObserverStopsReceiving` |
+| 23 | Git仓库监听Provider | 未监听就停止是安全的 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `stopWithoutStartIsSafe` |
 
-> 说明：全部 **2 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **23 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 2 / 2
-- P2: 已覆盖 0 / 0
-- **合计: 2 / 2**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 19 / 19
+- P2: 已覆盖 4 / 4
+- **合计: 23 / 23**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（2 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
+- **P1**: 其余功能性用例（19 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 2 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 23 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
