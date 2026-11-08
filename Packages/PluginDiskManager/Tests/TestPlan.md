@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 39 条用例。
+PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 45 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 39
+测试文件: 3 个，用例总数: 45
 
 核心组件（源码目录）:
 - `Internal/`
@@ -37,7 +37,7 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **DiskManagerLumiTools**（13 条）：由 `formatBytesProducesHumanReadableString`、`formatBytesHandlesZero`、`formatDateReturnsUnknownForNil` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DiskManagerLumiTools**（19 条）：由 `formatBytesProducesHumanReadableString`、`formatBytesHandlesZero`、`formatDateReturnsUnknownForNil` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DiskModelsPureLogic**（19 条）：由 `classifiesImages`、`classifiesVideos`、`classifiesAudio` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（7 条）：由 `pluginMetadataIsStable`、`agentToolsContributionIsAvailable`、`railTabIDIsStable` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -84,27 +84,33 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 37 | 综合 | scanURLAcceptsUnescapedFileURL | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `scanURLAcceptsUnescapedFileURL` |
 | 38 | 综合 | scanURLAcceptsLocalPathAndTilde | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `scanURLAcceptsLocalPathAndTilde` |
 | 39 | DiskManagerLumiTools | 相对扫描路径锚定到用户主目录，绝对路径保持不变 | 主目录路径 | 解析 `Documents`、带空格的同名路径、`Documents/Invoices`、`/tmp` | 前三个得到 `~/Documents` 或 `~/Documents/Invoices`，`/tmp` 原样返回 | P1 | ✅ 已覆盖 | `resolveScanPathAnchorsRelativePathsToHome` |
+| 40 | DiskManagerLumiTools | 不存在的目录树扫描根抛出可诊断错误 | 不存在的路径 | 调用 `scanTopLevelDirectoryUsage` | 抛出 `DiskManagerScanError.rootUnavailable`，说明路径不存在 | P1 | ✅ 已覆盖 | `missingScanRootThrowsRootUnavailable` |
+| 41 | DiskManagerLumiTools | 存在的空目录树返回空结果而非错误 | 空临时目录 | 调用 `scanTopLevelDirectoryUsage` | 返回空数组，不抛错 | P2 | ✅ 已覆盖 | `emptyScanRootReturnsEmptyResult` |
+| 42 | DiskManagerLumiTools | 不存在的大文件扫描根抛出可诊断错误 | 不存在的路径 | 调用 `LargeFilesService.scanLargeFiles` | 抛出 `DiskManagerScanError.rootUnavailable`，说明路径不存在 | P1 | ✅ 已覆盖 | `largeFileScanThrowsForMissingRoot` |
+| 43 | DiskManagerLumiTools | 存在的空目录大文件扫描返回空结果 | 空临时目录 | 调用 `LargeFilesService.scanLargeFiles` | 返回空数组，不抛错 | P2 | ✅ 已覆盖 | `largeFileScanReturnsEmptyForExistingEmptyRoot` |
+| 44 | DiskManagerLumiTools | 大文件工具对缺失根返回失败文案 | 不存在的路径参数 | 调用 `ScanLargeFilesTool.execute` | 输出 `Failed to scan large files`，不输出空扫描成功文案 | P1 | ✅ 已覆盖 | `scanLargeFilesToolReportsMissingRootAsFailure` |
+| 45 | DiskManagerLumiTools | 目录树工具对缺失根返回失败文案 | 不存在的路径参数 | 调用 `ScanDirectoryTreeTool.execute` | 输出 `Failed to analyze directory tree`，不输出空扫描成功文案 | P1 | ✅ 已覆盖 | `scanDirectoryTreeToolReportsMissingRootAsFailure` |
 
-> 说明：全部 **39 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **45 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 34 / 34
-- P2: 已覆盖 5 / 5
-- **合计: 39 / 39**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 38 / 38
+- P2: 已覆盖 7 / 7
+- **合计: 45 / 45**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（34 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
+- **P1**: 其余功能性用例（38 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 39 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 45 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
