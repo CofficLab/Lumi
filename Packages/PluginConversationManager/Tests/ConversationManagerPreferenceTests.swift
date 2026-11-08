@@ -1,4 +1,5 @@
 import Foundation
+import KitLLM
 import ProviderConversation
 import Testing
 @testable import PluginConversationManager
@@ -187,5 +188,34 @@ struct ConversationManagerPreferenceTests {
         #expect(!restarted.isLoadingConversations)
         #expect(restarted.selectedConversationID == nil)
         #expect(restarted.globalVerbosity == .brief)
+    }
+
+    /// 回归 #987：后台会话被挤出缓存后，排队回合仍须使用会话绑定的模型。
+    @Test func evictedConversationKeepsItsBoundModel() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationModelEvictionTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let manager = ConversationManager(store: nil, dataDirectory: directory)
+        let modelID = try #require(LLMModelID(providerID: "gpt-a", modelID: "model-a"))
+
+        let backgroundID = UUID()
+        manager.cache(ConversationSummary(
+            id: backgroundID,
+            createdAt: Date(timeIntervalSince1970: 1),
+            modelID: modelID.rawValue
+        ))
+
+        // 用 100 条更新的顶层会话把 background 挤出 80 条的有界窗口。
+        for index in 0..<100 {
+            manager.cache(ConversationSummary(
+                id: UUID(),
+                createdAt: Date(timeIntervalSince1970: TimeInterval(100 + index))
+            ))
+        }
+
+        #expect(!manager.conversations.contains { $0.id == backgroundID })
+        #expect(manager.modelID(for: backgroundID) == modelID.rawValue)
+        #expect(manager.providerID(for: backgroundID) == "gpt-a")
     }
 }
