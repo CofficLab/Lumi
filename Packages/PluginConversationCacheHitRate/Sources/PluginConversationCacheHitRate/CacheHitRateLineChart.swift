@@ -34,7 +34,7 @@ struct CacheHitRateLineChart: View {
             let cumulativePoints = geometry.points(for: samples, value: \.cumulativeHitRate)
 
             // Fill area under the cumulative curve
-            var fill = smoothedPath(points: cumulativePoints)
+            var fill = Self.smoothedPath(points: cumulativePoints)
             fill.addLine(to: CGPoint(x: cumulativePoints.last?.x ?? Self.inset.leading, y: Self.inset.top + geometry.plotHeight))
             fill.addLine(to: CGPoint(x: cumulativePoints.first?.x ?? Self.inset.leading, y: Self.inset.top + geometry.plotHeight))
             fill.closeSubpath()
@@ -46,14 +46,14 @@ struct CacheHitRateLineChart: View {
 
             // Per-request line (thin, secondary)
             context.stroke(
-                smoothedPath(points: perRequestPoints),
+                Self.smoothedPath(points: perRequestPoints),
                 with: .color(.teal.opacity(0.55)),
                 lineWidth: 1.4
             )
 
             // Cumulative line (thick, primary)
             context.stroke(
-                smoothedPath(points: cumulativePoints),
+                Self.smoothedPath(points: cumulativePoints),
                 with: .color(.teal),
                 lineWidth: 2.4
             )
@@ -174,7 +174,7 @@ struct CacheHitRateLineChart: View {
         return formatter
     }()
 
-    private func smoothedPath(points: [CGPoint]) -> Path {
+    static func smoothedPath(points: [CGPoint]) -> Path {
         var path = Path()
         guard let first = points.first else { return path }
         path.move(to: first)
@@ -189,13 +189,19 @@ struct CacheHitRateLineChart: View {
             let next = points[index + 1]
             let previous = index > 0 ? points[index - 1] : current
             let afterNext = index + 2 < points.count ? points[index + 2] : next
+
+            // 纵轴固定 0–100%，且采样点本身已钳制到该范围；若控制点不受限，
+            // 0% → 100% → 100% 这类合法序列会让曲线在两个 100% 点之间拱到 106.25%。
+            // 将控制点的 y 限制在本段两端之间，借助 Bézier 的凸包性质保证曲线不越界。
+            let segmentMinY = min(current.y, next.y)
+            let segmentMaxY = max(current.y, next.y)
             let control1 = CGPoint(
                 x: current.x + (next.x - previous.x) / 6,
-                y: current.y + (next.y - previous.y) / 6
+                y: min(max(current.y + (next.y - previous.y) / 6, segmentMinY), segmentMaxY)
             )
             let control2 = CGPoint(
                 x: next.x - (afterNext.x - current.x) / 6,
-                y: next.y - (afterNext.y - current.y) / 6
+                y: min(max(next.y - (afterNext.y - current.y) / 6, segmentMinY), segmentMaxY)
             )
             path.addCurve(to: next, control1: control1, control2: control2)
         }
