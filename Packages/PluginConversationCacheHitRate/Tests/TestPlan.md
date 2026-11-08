@@ -5,7 +5,7 @@
 PluginConversationCacheHitRate Lumi 编辑器插件。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 27
+测试文件: 4 个，用例总数: 52
 
 核心组件（源码目录）:
 - `Models/`
@@ -30,6 +30,11 @@ PluginConversationCacheHitRate Lumi 编辑器插件。
 
 - **CacheHitRateHistory**（11 条）：由 `historyBuildsOneSamplePerUsableAssistantMessage`、`historyAssignsSequentialIndexesInChronologicalOrder`、`historyCumulativeHitRateIsTokenWeighted` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（16 条）：由 `cacheHitRatePluginInstantiates`、`cacheHitRateToolbarStateForwardsTypedEvents`、`cacheHitRateStatsUseTypedTokenFields` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **缓存命中率Observer**（5 条）：由 `observerReplaysCurrentSelectionOnInit`、`observerForwardsSelectionChanges`、`observerCancelReleasesSubscriptions` 等用例锁定。
+- **缓存命中率插件生命周期**（7 条）：由 `bootRegistersToolbarButton`、`selectionChangeUpdatesToolbarState`、`shutdownRemovesButtonAndCancelsObserver` 等用例锁定。
+- **缓存命中率工具栏状态**（5 条）：由 `multipleObserversReceiveEvents`、`messagesChangedCarriesConversationID`、`selectionChangedCarriesConversationID` 等用例锁定。
+- **缓存命中率采样解析**（5 条）：由 `typedFieldsWinOverMetadata`、`cachedTokensAreClamped`、`nonAssistantMessageIsSkipped` 等用例锁定。
+- **缓存命中率历史**（3 条）：由 `sameTimestampIsOrderedByUUID`、`cumulativeRateIsTokenWeighted`、`previewMessagesProduceHistory` 等用例锁定。
 
 ## 测试用例清单
 
@@ -62,27 +67,52 @@ PluginConversationCacheHitRate Lumi 编辑器插件。
 | 25 | 综合 | cacheHitRateSkipsRequestsWithNonPositiveTotal | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cacheHitRateSkipsRequestsWithNonPositiveTotal` |
 | 26 | 综合 | cacheHitRateSkipsRequestsWithNegativeCachedTokens | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cacheHitRateSkipsRequestsWithNegativeCachedTokens` |
 | 27 | 综合 | cacheHitRateFallsBackToInputTokenCountWhenTotalIsMissing | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cacheHitRateFallsBackToInputTokenCountWhenTotalIsMissing` |
+| 28 | 缓存命中率Observer | 初始化时立即回放当前选中会话 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `observerReplaysCurrentSelectionOnInit` |
+| 29 | 缓存命中率Observer | 选中会话变化时转发新的会话 ID | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `observerForwardsSelectionChanges` |
+| 30 | 缓存命中率Observer | 五类消息变化事件都转发所属会话 ID | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `observerForwardsEveryMessageChangeKind` |
+| 31 | 缓存命中率Observer | 取消后释放两个订阅并停止转发 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `observerCancelReleasesSubscriptions` |
+| 32 | 缓存命中率Observer | 重复取消是幂等的 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `observerCancelIsIdempotent` |
+| 33 | 缓存命中率插件生命周期 | 启动后注册工具栏按钮 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bootRegistersToolbarButton` |
+| 34 | 缓存命中率插件生命周期 | 缺少必需 Provider 时不注册按钮也不抛错 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `bootWithoutProvidersIsNoop` |
+| 35 | 缓存命中率插件生命周期 | 启动时把当前选中会话同步到工具栏状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bootSyncsSelectedConversationToToolbarState` |
+| 36 | 缓存命中率插件生命周期 | 选中会话变化后工具栏状态跟随更新 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectionChangeUpdatesToolbarState` |
+| 37 | 缓存命中率插件生命周期 | 重复启动会注销上一轮的观察者 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `secondBootCancelsPreviousObserver` |
+| 38 | 缓存命中率插件生命周期 | 关闭时移除工具栏按钮并注销观察者 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shutdownRemovesButtonAndCancelsObserver` |
+| 39 | 缓存命中率插件生命周期 | 未启动就关闭不会抛错 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `shutdownWithoutBootIsSafe` |
+| 40 | 缓存命中率工具栏状态 | 多个观察者都能收到事件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `multipleObserversReceiveEvents` |
+| 41 | 缓存命中率工具栏状态 | 注销一个观察者不影响另一个 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cancellingOneObserverKeepsOther` |
+| 42 | 缓存命中率工具栏状态 | 重复注销同一个观察者只生效一次 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `cancellingTwiceIsIdempotent` |
+| 43 | 缓存命中率工具栏状态 | 消息变化事件携带会话 ID | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `messagesChangedCarriesConversationID` |
+| 44 | 缓存命中率工具栏状态 | 选中会话变化事件携带新的会话 ID | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectionChangedCarriesConversationID` |
+| 45 | 缓存命中率采样解析 | metadata 中非数字的缓存用量被忽略 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `metadataWithNonNumericValueIsRejected` |
+| 46 | 缓存命中率采样解析 | metadata 只有缓存用量、没有总量时返回 nil | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `metadataWithoutTotalIsRejected` |
+| 47 | 缓存命中率采样解析 | 强类型字段优先于 metadata 回退 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `typedFieldsWinOverMetadata` |
+| 48 | 缓存命中率采样解析 | 缓存用量被夹取到不超过总输入量 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cachedTokensAreClamped` |
+| 49 | 缓存命中率采样解析 | 非 assistant 消息不参与采样 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nonAssistantMessageIsSkipped` |
+| 50 | 缓存命中率历史 | 同一时间戳按 UUID 排序保证稳定顺序 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `sameTimestampIsOrderedByUUID` |
+| 51 | 缓存命中率历史 | 累计命中率按 token 加权而非算术平均 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cumulativeRateIsTokenWeighted` |
+| 52 | 缓存命中率历史 | 预览样例消息可构造出非空历史 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `previewMessagesProduceHistory` |
 
-> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **52 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 1 / 1
-- P1: 已覆盖 23 / 23
-- P2: 已覆盖 3 / 3
-- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 41 / 41
+- P2: 已覆盖 10 / 10
+- **合计: 52 / 52**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（23 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
+- **P1**: 其余功能性用例（41 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（10 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 52 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
