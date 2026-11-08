@@ -93,7 +93,7 @@ public actor AgentRulesService {
                 let content = try readTextFile(at: file)
                 let (title, description) = extractTitleAndDescription(from: content)
 
-                let id = filename.replacingOccurrences(of: ".md", with: "")
+                let id = ruleID(forFilename: filename)
 
                 let rule = AgentRuleMetadata(
                     id: id,
@@ -195,7 +195,7 @@ public actor AgentRulesService {
         // 提取标题和描述
         let (title, description) = extractTitleAndDescription(from: content)
 
-        let id = filename.replacingOccurrences(of: ".md", with: "")
+        let id = ruleID(forFilename: filename)
 
         return AgentRule(
             id: id,
@@ -250,7 +250,7 @@ public actor AgentRulesService {
         try finalContent.write(to: fileURL, atomically: true, encoding: .utf8)
 
         let now = Date()
-        let id = finalFilename.replacingOccurrences(of: ".md", with: "")
+        let id = ruleID(forFilename: finalFilename)
 
         return AgentRule(
             id: id,
@@ -266,6 +266,12 @@ public actor AgentRulesService {
     }
 
     // MARK: - Private Helpers
+
+    /// 规则 ID 等于文件名去掉最后一个路径扩展名；不能删除文件名内部的 `.md` 片段，
+    /// 否则 `foo.md` 与 `foo.md.md` 会得到相同的公开 ID。
+    private func ruleID(forFilename filename: String) -> String {
+        (filename as NSString).deletingPathExtension
+    }
 
     /// 读取用户编辑的规则文件，允许系统按 BOM 或文件内容检测编码。
     private func readTextFile(at url: URL) throws -> String {
