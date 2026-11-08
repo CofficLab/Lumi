@@ -179,6 +179,63 @@ struct StoryWriterToolTests {
             _ = try await tool("get_story").executeResult(arguments: ["story_id": .init(UUID().uuidString)])
         }
     }
+
+    @Test func chapterStatusRoundTripsThroughReadAndUpdate() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer {
+            StoryWriterStorage.configureV2(directory: nil)
+            try? FileManager.default.removeItem(at: directory)
+        }
+        StoryWriterStorage.configureV2(directory: directory)
+
+        let storyOutput = try await tool("create_story").execute(arguments: ["title": .init("Roundtrip")])
+        let storyID = try #require(firstUUID(in: storyOutput))
+        _ = try await tool("create_chapter").execute(arguments: [
+            "story_id": .init(storyID), "title": .init("One"), "content": .init("Hello"),
+        ])
+        let listOutput = try await tool("list_chapters").execute(arguments: ["story_id": .init(storyID)])
+        let chapterID = try #require(firstUUID(in: listOutput))
+
+        let read = try await tool("get_chapter").execute(arguments: [
+            "story_id": .init(storyID), "chapter_id": .init(chapterID),
+        ])
+        #expect(read.contains("status: in_progress"), "读取应输出公开 schema 的令牌")
+        #expect(!read.contains("inProgress"), "读取不应泄漏 Swift rawValue")
+
+        // 按 get_chapter 的输出原样读改写，必须被 update_chapter 接受。
+        let statusToken = try #require(
+            read.components(separatedBy: "status: ").dropFirst().first?
+                .components(separatedBy: "\n").first
+        )
+        let updated = try await tool("update_chapter").execute(arguments: [
+            "story_id": .init(storyID),
+            "chapter_id": .init(chapterID),
+            "status": .init(statusToken),
+            "title": .init("Renamed"),
+        ])
+        #expect(updated.contains("Renamed"))
+
+        let reread = try await tool("get_chapter").execute(arguments: [
+            "story_id": .init(storyID), "chapter_id": .init(chapterID),
+        ])
+        #expect(reread.contains("status: in_progress"))
+
+        // 历史版本输出过的 rawValue 仍被接受，避免旧会话中途失败。
+        _ = try await tool("update_chapter").execute(arguments: [
+            "story_id": .init(storyID),
+            "chapter_id": .init(chapterID),
+            "status": .init("inProgress"),
+        ])
+    }
+}
+
+private func firstUUID(in text: String) -> String? {
+    let pattern = #"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"#
+    guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+    let range = NSRange(text.startIndex..., in: text)
+    guard let match = regex.firstMatch(in: text, range: range),
+          let matchRange = Range(match.range, in: text) else { return nil }
+    return String(text[matchRange])
 }
 
 @MainActor
