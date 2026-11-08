@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆盖 202 条用例。
+PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆盖 205 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 23 个，用例总数: 204
+测试文件: 23 个，用例总数: 205
 
 核心组件（源码目录）:
 - `Editor/`
@@ -58,7 +58,7 @@ PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆�
 - **EditorProjectContextLSPRefresh**（24 条）：由 `testBuildServerPathChangeRequiresServerRestart`、`testLegacyReuseLogicIgnoredBuildServerPathChange`、`testBuildServerKindExtractsInitializationOption` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorProvidingV2AdapterCapability**（15 条）：由 `testOpenDocumentLoadsContentAndActivatesSession`、`testOpenDocumentInBackgroundDoesNotActivate`、`testDiagnosticsSnapshotMapsSeverityMessageAndDocumentURI` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorSelectionSet**（11 条）：由 `testInitialSelection`、`testEmptySelectionsFallbackToInitial`、`testMultipleSelectionsAreSortedByLocation` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **EditorServiceFacade**（11 条）：由 `testOpenFileSessionOnlySignalsPendingContentLoadForActiveSession`、`testOpenFileCreatesAndActivatesSession`、`testOpenFileReusesExistingSessionForSameURL` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **EditorServiceFacade**（12 条）：由 `testOpenFileSessionOnlySignalsPendingContentLoadForActiveSession`、`testOpenFileCreatesAndActivatesSession`、`testOpenFileReusesExistingSessionForSameURL` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorStateTheme**（2 条）：由 `testThemeObserverCancellationStopsCallbacks`、`testSameThemeNotificationRefreshesThemeAfterContributorRegistration` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorSyntaxThemeResolver**（2 条）：由 `testResolveUsesRegisteredContributorPalette`、`testRegisterOrReplaceThemeContributorOverridesFallback` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorViewportRuntime**（14 条）：由 `testViewportRenderControllerComputesBufferedRenderRange`、`testViewportRenderControllerClampsAtDocumentBounds`、`testViewportRenderControllerDebounceDecisionTracksScrollDelta` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -273,27 +273,28 @@ PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆�
 | 202 | CodeEditorHostSuperPlugin | removes every editor capability during shutdown | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `removesEditorServices` |
 | 203 | EditorDocumentEncoding | 打开 UTF-16 文本时记录检测到的编码，按该编码写回字节不变 | sample.txt 以 UTF-16 写入 | 调用 `loadDocument` 后按记录编码写回 | 编码非 UTF-8，写回字节与原文件完全一致（含 BOM） | P0 | ✅ 已覆盖 | `loadTextDocumentCapturesDetectedEncoding` |
 | 204 | EditorDocumentEncoding | UTF-8 文本记录的编码仍为 UTF-8 | sample.txt 以 UTF-8 写入 | 调用 `loadDocument` | 编码为 UTF-8 | P1 | ✅ 已覆盖 | `loadUTF8DocumentKeepsUTF8` |
+| 205 | EditorServiceFacade | 切回已加载过的文件时异步加载完成后恢复该 Session 保存的视图状态（**回归 #980**） | A 文件 Session 保存第 20 行光标与多光标状态，切换到 B 后再切回 A，触发异步重新加载 | 调用 `open(at:)` 并等待 A 重新加载完成 | 活动 Session 仍为 A，`cursorLine == 20`、`cursorColumn == 1`，不再被当前视图状态覆盖 | P1 | ✅ 已覆盖 | `testReopeningExistingSessionRestoresSavedStateAfterAsyncLoad` |
 
-> 说明：全部 **202 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **205 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 16 / 16
-- P1: 已覆盖 169 / 169
+- P1: 已覆盖 170 / 170
 - P2: 已覆盖 19 / 19
-- **合计: 204 / 204**（仅表示清单场景，非源码覆盖率）
+- **合计: 205 / 205**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
-- **P1**: 其余功能性用例（168 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
+- **P1**: 其余功能性用例（170 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（19 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 202 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 205 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

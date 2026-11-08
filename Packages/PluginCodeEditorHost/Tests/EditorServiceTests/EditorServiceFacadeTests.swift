@@ -206,6 +206,57 @@ final class EditorServiceFacadeTests: XCTestCase {
         XCTAssertFalse(service.files.isFileLoadInProgress)
     }
 
+    /// 回归 #980：切回一个已加载过的文件时，异步加载完成后必须恢复该 Session
+    /// 保存的视图状态，而不是把切换前的当前视图状态同步进目标 Session。
+    func testReopeningExistingSessionRestoresSavedStateAfterAsyncLoad() async throws {
+        let service = makeService()
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("EditorServiceFacadeTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let aURL = directory.appendingPathComponent("RestoreA.swift")
+        let bURL = directory.appendingPathComponent("RestoreB.swift")
+        let aContent = (1...30).map { "let value\($0) = \($0)" }.joined(separator: "\n") + "\n"
+        try aContent.write(to: aURL, atomically: true, encoding: .utf8)
+        try "let b = 2\n".write(to: bURL, atomically: true, encoding: .utf8)
+
+        service.sessions.open(at: aURL)
+        try await waitUntil("A loaded") {
+            service.files.currentFileURL == aURL && service.files.content?.string == aContent
+        }
+
+        // 模拟 A 的 Session 里已保存的光标（用户停在更深的第 20 行）。
+        // 真实会话会同时保存 multiCursorState 与 viewState.cursorPositions，
+        // 这里按同样结构构造，避免只写行号走不到真实恢复路径。
+        let line20Offset = (aContent as NSString).range(of: "let value20").location
+        let cursor = CursorPosition(line: 20, column: 1)
+        let aSession = try XCTUnwrap(service.sessions.activeSession)
+        aSession.multiCursorState = MultiCursorState(
+            primary: MultiCursorSelection(location: line20Offset, length: 0)
+        )
+        aSession.viewState = EditorViewState(
+            primaryCursorLine: 20,
+            primaryCursorColumn: 1,
+            cursorPositions: [cursor]
+        )
+
+        // 切到 B，再切回 A：此时 A 需要走异步重新加载路径。
+        service.sessions.open(at: bURL)
+        try await waitUntil("B loaded") {
+            service.files.currentFileURL == bURL
+        }
+
+        service.sessions.open(at: aURL)
+        try await waitUntil("A loaded again") {
+            service.files.currentFileURL == aURL && service.files.content?.string == aContent
+        }
+
+        XCTAssertEqual(service.sessions.activeSessionID, aSession.id)
+        XCTAssertEqual(service.editing.cursorLine, 20, "加载完成后应恢复 A Session 保存的光标行")
+        XCTAssertEqual(service.editing.cursorColumn, 1)
+    }
+
     private func waitUntil(
         _ description: String,
         timeout: TimeInterval = 2,

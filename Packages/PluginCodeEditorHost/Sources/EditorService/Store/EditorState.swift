@@ -1816,7 +1816,28 @@ public final class EditorState: ObservableObject, SuperLog {
         documentHighlightPrewarmScheduler?.scheduleAllOpenTabs(activeFileURL: currentFileURL)
     }
 
-    func loadFile(from url: URL?) {
+    /// 加载文件正文。
+    ///
+    /// - Parameter restoringSession: 若该次加载源于切换到一个已有 Session，
+    ///   传入该 Session。加载开始时会捕获它的快照，异步加载完成后据此恢复
+    ///   光标/多光标/滚动/折叠状态。不能等到加载结束再读 live session：
+    ///   期间诊断等观察者会触发 `syncActiveSessionState()`，把尚未恢复的
+    ///   当前视图状态写进目标 Session。
+    func loadFile(from url: URL?, restoringSession: EditorSession? = nil) {
+        let restoreSnapshot = restoringSession.map { session in
+            EditorSessionSnapshotBuilder.snapshot(
+                preserving: session.id,
+                fileURL: session.fileURL,
+                multiCursorState: session.multiCursorState,
+                panelState: session.panelState,
+                isDirty: session.isDirty,
+                findReplaceState: session.findReplaceState,
+                scrollState: session.scrollState,
+                viewState: session.viewState,
+                foldingState: session.foldingState
+            )
+        }
+
         // 清理旧状态
         referencesRequestGeneration.invalidate()
         saveController.cancelSuccessClear()
@@ -1948,7 +1969,13 @@ public final class EditorState: ObservableObject, SuperLog {
                             textStorage: self.content
                         )
                         self.documentHighlightPrewarmScheduler?.scheduleAllOpenTabs(activeFileURL: loadingURL)
-                        self.syncActiveSessionState()
+                        if let restoreSnapshot {
+                            // 切换到的文件刚加载完：恢复加载开始时捕获的目标 Session 快照，
+                            // 不能用当前视图状态覆盖它。
+                            self.applySessionRestore(restoreSnapshot)
+                        } else {
+                            self.syncActiveSessionState()
+                        }
                         self.resetUndoHistory()
                         self.setupFileWatcher(for: loadingURL)
 
