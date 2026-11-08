@@ -26,6 +26,9 @@ final class ConversationMessageListVM: ObservableObject {
     private let pagination: MessageListPaginationService
     private let refreshGate = MessageListTailRefreshGate()
     private var agentTurnVMs: [UUID: AgentTurnVM] = [:]
+
+    /// 测试可读的 Turn VM 缓存规模；生产代码不依赖它。
+    var trackedAgentTurnVMCount: Int { agentTurnVMs.count }
     /// 当前已加载的消息窗口，按时间升序排列。
     private var messageWindow: [Message] = []
     private var activeConversationID: UUID?
@@ -85,7 +88,13 @@ final class ConversationMessageListVM: ObservableObject {
         activationSequence &+= 1
         let mySequence = activationSequence
 
+        let previousActiveConversationID = activeConversationID
         activeConversationID = conversationID
+        if previousActiveConversationID != conversationID {
+            // 切换会话后旧 Turn VM 不再展示；继续保留会让旧会话的消息事件
+            // 反复重读完整历史，且这些 VM 永远不会释放（issue #963）。
+            agentTurnVMs.removeAll()
+        }
         isLoading = true
         clearDisplayState()
         defer {
@@ -263,6 +272,7 @@ final class ConversationMessageListVM: ObservableObject {
         summaryItems = turnItems
         pendingUserSnapshot = pendingUserMessages
         pendingStatusSnapshot = pendingStatusMessage
+        pruneAgentTurnVMs(keeping: Set(agentTurns.map(\.id)))
         // 仅展示确实用于一次上下文压缩的事件；旧版本的预热事件继续隐藏。
         let timelineEvents = messageWindow.filter(MessageTimelineEvent.isActualContextCompaction)
         presentation = ListV1Presentation(
@@ -313,5 +323,11 @@ final class ConversationMessageListVM: ObservableObject {
         for vm in agentTurnVMs.values {
             Task { @MainActor in await vm.refresh() }
         }
+    }
+
+    /// 只保留当前窗口中仍会展示的行 VM。新 turn 启动后旧 pending item 会被
+    /// 新 id 取代，若继续缓存，每个失效 VM 都会持续监听消息事件（issue #963）。
+    private func pruneAgentTurnVMs(keeping ids: Set<UUID>) {
+        agentTurnVMs = agentTurnVMs.filter { ids.contains($0.key) }
     }
 }

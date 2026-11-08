@@ -5,7 +5,7 @@
 PluginMessageListBrief — Message List V1 (Brief) Manual + automated test reference for the V1 message list. V1 groups a conversation by **Agent Turn** and keeps everything else out of the way. Each turn shows the user message that triggered it, a collapsible process section, and the final reply. Live progress is reported by a single status card pinned to the bottom of the list, not inside the turns.
 
 平台: macOS 14+, iOS 17+
-测试文件: 26 个，用例总数: 152
+测试文件: 26 个，用例总数: 154
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -219,21 +219,23 @@ PluginMessageListBrief — Message List V1 (Brief) Manual + automated test refer
 | 150 | StuckLoadingMask | 首屏遮罩：会话切换复位后即使没有收敛轮次，遮罩也必须在预算内落下 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateReleasesMaskWithinBudgetAfterConversationSwitch` |
 | 151 | StuckLoadingMask | 首屏遮罩：失效的一轮结束后，同一会话必须能重新开始一轮 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateAcceptsNewRoundForSameConversationAfterStaleRound` |
 | 152 | StuckLoadingMask | 首屏遮罩：失效的一轮不得放行遮罩，但必须允许后续轮次接手 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateStaleRoundMustNotReleaseMaskButMustHandOver` |
+| 153 | ConversationMessageListVM | 切换会话释放上一会话的 Turn VM（**回归 #963**） | 会话 A 有 2 个 Turn、会话 B 有 1 个，先为 A 的行创建 VM | 切到 B 并重新 activate | B 的可见行重新出现，`trackedAgentTurnVMCount` 归零 | P1 | ✅ 已覆盖 | `switchingConversationReleasesPreviousTurnVMs` |
+| 154 | ConversationMessageListVM | Turn 离开窗口后释放其 VM（**回归 #963**） | 为 2 个可见 Turn 与 1 个已失效的 pending item 创建 VM | 插入一条新消息触发 rebuild | 失效 item 不再可见，VM 数回落到 2 | P1 | ✅ 已覆盖 | `prunesVMsForTurnsThatLeaveTheWindow` |
 
-> 说明：全部 **152 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **154 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 32 / 32
-- P1: 已覆盖 96 / 96
+- P1: 已覆盖 98 / 98
 - P2: 已覆盖 24 / 24
-- **合计: 152 / 152**（仅表示清单场景，非源码覆盖率）
+- **合计: 154 / 154**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（32 条）
-- **P1**: 其余功能性用例（96 条）
+- **P1**: 其余功能性用例（98 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（24 条）
 
 ## 跨平台说明
