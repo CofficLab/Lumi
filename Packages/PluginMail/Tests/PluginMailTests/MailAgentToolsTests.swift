@@ -110,6 +110,34 @@ final class MailAgentToolsTests: XCTestCase {
         XCTAssertTrue(result.contains("【未读】"))
     }
 
+    func testListMessagesRejectsOutOfRangeLimit() async throws {
+        store.upsertAccount(makeAccount())
+        store.setPassword("p", for: accountID)
+        let service = makeService(session: MockMailSession(messages: []))
+        let tool = MailListMessagesTool(service: service)
+
+        for invalid in [-1, 0, 51] {
+            do {
+                _ = try await tool.execute(arguments: ["limit": ToolArgument(invalid)])
+                XCTFail("limit=\(invalid) 应在工具层被拒绝")
+            } catch let error as ToolExecutionError {
+                XCTAssertTrue(
+                    (error.errorDescription ?? "").contains("limit"),
+                    "错误信息应指出 limit 非法"
+                )
+            }
+        }
+    }
+
+    func testListMessagesLimitSchemaDeclaresRange() {
+        let service = makeService(session: MockMailSession(messages: []))
+        let schema = MailListMessagesTool(service: service).inputSchema(for: .english)
+        let properties = schema["properties"] as? [String: Any]
+        let limit = properties?["limit"] as? [String: Any]
+        XCTAssertEqual(limit?["minimum"] as? Int, 1)
+        XCTAssertEqual(limit?["maximum"] as? Int, 50)
+    }
+
     func testReadMessageMarksAsReadAndReturnsBody() async throws {
         store.upsertAccount(makeAccount())
         store.setPassword("p", for: accountID)

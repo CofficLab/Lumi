@@ -43,6 +43,12 @@ public actor MailAgentToolService {
         folder: String,
         limit: Int
     ) async throws -> String {
+        guard limit >= 1 else {
+            throw ToolExecutionError.executionFailed(
+                toolName: MailListMessagesTool.toolName,
+                reason: "参数 limit 必须 ≥ 1，收到 \(limit)。"
+            )
+        }
         let account: MailAccountConfig
         do {
             account = try accountFor(accountID)
@@ -220,7 +226,7 @@ public struct MailListMessagesTool: SuperAgentTool {
             properties: [
                 "account_id": MailToolSupport.string("Account UUID from mail_list_accounts; optional, defaults to the first account."),
                 "folder": MailToolSupport.string("IMAP folder path; default INBOX."),
-                "limit": MailToolSupport.integer("Max messages to return; default 10, max 50."),
+                "limit": MailToolSupport.integer("Max messages to return; default 10, range 1...50.", minimum: 1, maximum: 50),
             ],
             required: []
         )
@@ -235,10 +241,17 @@ public struct MailListMessagesTool: SuperAgentTool {
     public var executionCapability: ToolExecutionCapability { .parallelReadOnly }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        try await service.listMessages(
+        let limit = MailToolSupport.optionalInt(arguments, "limit") ?? 10
+        guard (1...50).contains(limit) else {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "参数 limit 必须在 1...50 之间，收到 \(limit)。"
+            )
+        }
+        return try await service.listMessages(
             accountID: MailToolSupport.optionalUUID(arguments, "account_id"),
             folder: MailToolSupport.optionalString(arguments, "folder") ?? "INBOX",
-            limit: MailToolSupport.optionalInt(arguments, "limit") ?? 10
+            limit: limit
         )
     }
 }
@@ -401,8 +414,15 @@ private enum MailToolSupport {
         ["type": "string", "description": description]
     }
 
-    static func integer(_ description: String) -> [String: Any] {
-        ["type": "integer", "description": description]
+    static func integer(
+        _ description: String,
+        minimum: Int? = nil,
+        maximum: Int? = nil
+    ) -> [String: Any] {
+        var schema: [String: Any] = ["type": "integer", "description": description]
+        if let minimum { schema["minimum"] = minimum }
+        if let maximum { schema["maximum"] = maximum }
+        return schema
     }
 
     static func optionalString(_ arguments: [String: ToolArgument], _ key: String) -> String? {

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 59 条用例。
+PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 61 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 59
+测试文件: 6 个，用例总数: 61
 
 核心组件（源码目录）:
 - `Agent/`
@@ -38,7 +38,7 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 59 条�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **MailAccountStore**（26 条）：由 `testUpsertAndLoad`、`testUpsertUpdatesExistingByID`、`testDeleteRemovesAccountAndPassword` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MailAgentTools**（8 条）：由 `testRiskLevelsAndCapabilities`、`testListMessagesWithoutAccount`、`testListMessagesReturnsRecentSummaries` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MailAgentTools**（10 条）：由 `testRiskLevelsAndCapabilities`、`testListMessagesWithoutAccount`、`testListMessagesReturnsRecentSummaries` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailComposerService**（8 条）：由 `testSendBuildsMIMEAndAppendsToSent`、`testSendThrowsAuthFailedWithoutPassword`、`testSentFolderDiscoveryPrefersSentKind` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailSessionManager**（5 条）：由 `testSessionCachesByAccount`、`testSessionThrowsAuthFailedWhenPasswordMissing`、`testSessionThrowsAuthFailedOnBadCredentials` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailSyncService**（10 条）：由 `testUpsertAndLastUID`、`testContainsAndOverwrite`、`testUnreadCounts` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -107,27 +107,29 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 59 条�
 | 57 | MailAccountStore | testCorruptPreferencesAreQuarantined | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testCorruptPreferencesAreQuarantined` |
 | 58 | MailPluginRuntime | usesInjectedDirectory | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `usesInjectedDirectory` |
 | 59 | MailPluginRuntime | refusesFallbackWithoutInjection | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `refusesFallbackWithoutInjection` |
+| 60 | MailAgentTools | limit 为 -1/0/51 时返回参数错误，避免 `suffix` 负数导致进程终止 | 已配置账户 | 以越界 `limit` 调用 `mail_list_messages` | 抛出 `ToolExecutionError`，错误信息指出 limit 非法 | P0 | ✅ 已覆盖 | `testListMessagesRejectsOutOfRangeLimit` |
+| 61 | MailAgentTools | limit schema 声明 1...50 范围 | — | 读取 `mail_list_messages` 的 inputSchema | `minimum` 为 1、`maximum` 为 50 | P1 | ✅ 已覆盖 | `testListMessagesLimitSchemaDeclaresRange` |
 
-> 说明：全部 **59 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **61 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
-- P1: 已覆盖 50 / 50
+- P0: 已覆盖 7 / 7
+- P1: 已覆盖 51 / 51
 - P2: 已覆盖 3 / 3
-- **合计: 59 / 59**（仅表示清单场景，非源码覆盖率）
+- **合计: 61 / 61**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（50 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P1**: 其余功能性用例（51 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 59 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 61 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
