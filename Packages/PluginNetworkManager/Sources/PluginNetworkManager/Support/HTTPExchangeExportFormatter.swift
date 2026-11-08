@@ -139,8 +139,11 @@ enum HTTPExchangeExportFormatter {
     }
 
     /// Stable, filesystem-safe file name for one exported record, e.g.
-    /// `00001-GET-api.github.com-users-octocat.md`. The zero-padded sequence
-    /// keeps files unique even when multiple records share the same URL.
+    /// `00001-GET-api.github.com-users-octocat-<UUID>.md`.
+    ///
+    /// 批内序号只在同一批次内唯一：不同批次都从 `00001` 开始，同一方法/URL 的
+    /// 不同 exchange 会算出完全相同的路径，`document.write(atomically:)` 会
+    /// 静默覆盖上一次归档。因此文件名必须带上 exchange ID。
     static func exportFileName(for snapshot: HTTPExchangeExportSnapshot, index: Int) -> String {
         var name = String(format: "%05d-", index + 1) + snapshot.method + "-"
         if let url = URL(string: snapshot.url) {
@@ -148,11 +151,12 @@ enum HTTPExchangeExportFormatter {
             let path = url.path.replacingOccurrences(of: "/", with: "-")
             if !path.isEmpty { name += path }
         }
-        let cleaned = name.replacingOccurrences(of: "[/\\\\:?%*|\"<>]", with: "_", options: .regularExpression)
-        if cleaned.count > 120 {
-            return String(cleaned.prefix(120)) + ".md"
+        var cleaned = name.replacingOccurrences(of: "[/\\\\:?%*|\"<>]", with: "_", options: .regularExpression)
+        // 截断只作用于描述性前缀：ID 后缀必须完整保留，否则长 URL 会重新碰撞。
+        if cleaned.count > 90 {
+            cleaned = String(cleaned.prefix(90))
         }
-        return cleaned + ".md"
+        return cleaned + "-" + snapshot.id.uuidString + ".md"
     }
 
     static func text(_ data: Data?) -> String {
