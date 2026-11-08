@@ -45,11 +45,8 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     public init() {}
 
     public func migrateData(context: PluginDataMigrationContext) throws {
-        // A v5 install that already used the plugin ID keeps the historical
-        // inner `GoalTaskPluginSupport` database directory; the generic migration
-        // preserves that layout. Older installs used `GoalTaskPluginSupport` as the
-        // version-root child, so that source must be copied into the same
-        // inner directory rather than flattened into the plugin ID root.
+        // 已经使用插件 ID 的安装由通用迁移原样复制；更早的安装把数据库放在
+        // 版本根目录下的 `GoalTaskPlugin` 键里，需要单独合并到同一个内层目录。
         try PluginDataMigrationUtility.copyLegacyDirectories(
             legacyDirectoryNames: [],
             context: context
@@ -59,12 +56,18 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
             .appendingPathComponent("GoalTaskPlugin", isDirectory: true)
         let fileManager = FileManager.default
         for version in context.legacyDataRootDirectories.keys.sorted(by: >) {
-            guard let source = context.legacyPluginDataDirectory(
+            guard let legacyRoot = context.legacyPluginDataDirectory(
                 named: "GoalTaskPlugin",
                 in: version
-            ), fileManager.fileExists(atPath: source.path) else {
+            ), fileManager.fileExists(atPath: legacyRoot.path) else {
                 continue
             }
+            // v5 的存储键本身就是 `GoalTaskPlugin`，`GoalStateManager` 又在其下追加
+            // 一层，所以旧库实际位于 `<legacy-root>/GoalTaskPlugin/GoalTaskPlugin/goals.sqlite`。
+            // 当前读取路径是 `<current>/GoalTaskPlugin/goals.sqlite`：必须合并内层目录。
+            // 合并外层会把库再往下套一层，升级后旧目标看起来就像被清空。
+            let inner = legacyRoot.appendingPathComponent("GoalTaskPlugin", isDirectory: true)
+            let source = fileManager.fileExists(atPath: inner.path) ? inner : legacyRoot
             try fileManager.createDirectory(at: destination, withIntermediateDirectories: true)
             try PluginDataMigrationUtility.mergeDirectoryContents(
                 from: source,

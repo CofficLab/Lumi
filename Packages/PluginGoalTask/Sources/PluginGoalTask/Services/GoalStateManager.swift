@@ -66,6 +66,7 @@ public actor GoalStateManager: SuperLog {
         let fileManager = FileManager.default
 
         do {
+            promoteMisplacedLegacyStore(at: dbURL, fileManager: fileManager)
             quarantineFileIfItBlocksDirectory(at: dbDir)
             try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
         } catch {
@@ -99,6 +100,66 @@ public actor GoalStateManager: SuperLog {
         }
     }
     
+    /// 把被旧版迁移多套一层目录的数据库提升到读取位置。
+    ///
+    /// v5 的数据库位于 `<legacy-root>/GoalTaskPlugin/GoalTaskPlugin/goals.sqlite`，
+    /// 旧版迁移把它原样复制到了 `<db-dir>/GoalTaskPlugin/goals.sqlite`，而当前读取的是
+    /// `<db-dir>/goals.sqlite`。首次启动会在读取位置新建空库，把旧库永久遮住，
+    /// 用户看到的就是「目标被清空」。
+    ///
+    /// 只有读取位置完全没有 Goal/Task 数据时才提升，避免覆盖升级后新建的数据；
+    /// 被替换的空库改名保留（`.empty-<时间戳>`），仍可人工回滚。
+    static func promoteMisplacedLegacyStore(at dbURL: URL, fileManager: FileManager = .default) {
+        let dbDir = dbURL.deletingLastPathComponent()
+        let legacyDB = dbDir
+            .appendingPathComponent("GoalTaskPlugin", isDirectory: true)
+            .appendingPathComponent("goals.sqlite")
+        guard fileManager.fileExists(atPath: legacyDB.path) else { return }
+        if fileManager.fileExists(atPath: dbURL.path), !storeHasNoData(at: dbURL) { return }
+
+        if fileManager.fileExists(atPath: dbURL.path) {
+            let quarantine = dbDir.appendingPathComponent(
+                "goals.sqlite.empty-\(Int(Date().timeIntervalSince1970))"
+            )
+            try? fileManager.moveItem(at: dbURL, to: quarantine)
+        }
+        // 旧文件可能还带着未 checkpoint 的 WAL，必须一起搬；空库的 WAL 则要清掉。
+        for suffix in ["-wal", "-shm"] {
+            let emptySidecar = URL(fileURLWithPath: dbURL.path + suffix)
+            if fileManager.fileExists(atPath: emptySidecar.path) {
+                try? fileManager.removeItem(at: emptySidecar)
+            }
+        }
+        for suffix in ["", "-wal", "-shm"] {
+            let source = URL(fileURLWithPath: legacyDB.path + suffix)
+            guard fileManager.fileExists(atPath: source.path) else { continue }
+            let destination = URL(fileURLWithPath: dbURL.path + suffix)
+            try? fileManager.copyItem(at: source, to: destination)
+        }
+    }
+
+    /// 读取位置的数据库是否没有任何 Goal/Task 数据。
+    ///
+    /// 打不开或读取失败时返回 `false`：宁可不动，也不要把可能仍有数据的库换掉。
+    private static func storeHasNoData(at dbURL: URL) -> Bool {
+        let schema = Schema([Goal.self, GoalTask.self])
+        let configuration = ModelConfiguration(
+            schema: schema,
+            url: dbURL,
+            allowsSave: false,
+            cloudKitDatabase: .none
+        )
+        guard let container = try? ModelContainer(for: schema, configurations: [configuration]) else {
+            return false
+        }
+        let context = ModelContext(container)
+        guard let goalCount = try? context.fetchCount(FetchDescriptor<Goal>()),
+              let taskCount = try? context.fetchCount(FetchDescriptor<GoalTask>()) else {
+            return false
+        }
+        return goalCount == 0 && taskCount == 0
+    }
+
     private static func quarantinePersistentStore(at dbURL: URL) {
         let fileManager = FileManager.default
         let storeURLs = [

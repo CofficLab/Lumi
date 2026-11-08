@@ -5,7 +5,7 @@
 GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标）+ Task（任务）两层结构的任务追踪能力。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 140
+测试文件: 14 个，用例总数: 142
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -45,6 +45,7 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 - **GoalForkCoordinator**（12 条）：由 `testForkAndStartHappyPath`、`testResumePromptContent`、`testResumePromptListsOnlyOutstandingTasks`、`testResumePromptUsesForkedTaskIDs` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalHooks**（24 条）：由 `testNoManagerReturnsContextUnchanged`、`testNoActiveGoalsInjectsNothing`、`testBlockedGoalInjectsOnlyStopPrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalStateManagerAppendFork**（19 条）：由 `testAddTasksContinuesOrder`、`testAddTasksThrowsWhenGoalAlreadyFull`、`testAddTasksWritesPartialBatch` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GoalTaskMigration**（2 条）：由 `v5MigrationLandsDatabaseAtReadPath`、`promotesMisplacedStoreOnlyWhenReadPathIsEmpty` 锁定；升级迁移必须把 v5 数据库放到 `GoalStateManager` 实际读取的位置，改动迁移或数据库路径时优先跑对应测试文件。
 - **GoalStateManager**（13 条）：由 `testCreateGoal`、`testUpdateTaskStatusDerivesGoalStatus`、`testUpdateGoalStatusBlocked` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalTaskTimeline**（2 条）：由 `continuationMessage`、`limitReachedMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalToolbarButtonVisibility**（5 条）：由 `testHiddenWithoutGoals`、`testHiddenForSingleActiveGoal`、`testShownForMultipleGoals` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -198,16 +199,18 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 | 138 | GoalToolbarButtonVisibility | 多个 Goal 时即使侧栏没展示第二个也保留按钮 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testShownForMultipleGoalsWhenSidebarCollapsed` |
 | 139 | GoalStateManager | 分叉 blocked Goal 时保留阻塞原因 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testForkPreservesBlockedReason` |
 | 140 | GoalForkAttachmentIsolation | 分叉提交走显式附件重载，不消费也不清空发送器挂起的图片/文件附件 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testForkCommitDoesNotConsumePendingAttachments` |
+| 141 | GoalTaskMigration | v5 迁移把数据库放到 GoalStateManager 读取路径 | 旧布局 `<legacy>/GoalTaskPlugin/GoalTaskPlugin/goals.sqlite` | 调用 `migrateData` | 数据库落在 `<current>/<plugin-id>/GoalTaskPlugin/goals.sqlite`，不再多套一层，可重复执行（**回归** #767） | P0 | ✅ 已覆盖 | `v5MigrationLandsDatabaseAtReadPath` |
+| 142 | GoalTaskMigration | 读取位置为空时提升被多套一层的旧库 | 读取位置已有空库、内层存在旧库 | 构造 `GoalStateManager` | 旧数据可见；读取位置已有数据时不覆盖（**回归** #767） | P0 | ✅ 已覆盖 | `promotesMisplacedStoreOnlyWhenReadPathIsEmpty` |
 
-> 说明：全部 **140 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **142 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
+- P0: 已覆盖 12 / 12
 - P1: 已覆盖 115 / 115
 - P2: 已覆盖 15 / 15
-- **合计: 140 / 140**（仅表示清单场景，非源码覆盖率）
+- **合计: 142 / 142**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -218,7 +221,7 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 140 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 142 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

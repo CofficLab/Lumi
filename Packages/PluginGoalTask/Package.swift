@@ -52,6 +52,7 @@ let package = Package(
             dependencies: [
                 "GoalTaskPlugin",
                 "KitAgentTool",
+                .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
