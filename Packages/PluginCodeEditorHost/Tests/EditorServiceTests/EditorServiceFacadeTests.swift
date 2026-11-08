@@ -257,6 +257,57 @@ final class EditorServiceFacadeTests: XCTestCase {
         XCTAssertEqual(service.editing.cursorColumn, 1)
     }
 
+    /// 回归 #981：后退/前进不能只切 `activeSessionID`，必须加载目标文件并应用
+    /// 历史项快照，否则选中的 Session 与屏幕正文分裂。
+    func testGoBackLoadsTargetFileAndAppliesHistorySnapshot() async throws {
+        let service = makeService()
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("EditorNavigation-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let aURL = directory.appendingPathComponent("NavA.swift")
+        let bURL = directory.appendingPathComponent("NavB.swift")
+        let aContent = (1...30).map { "let navValue\($0) = \($0)" }.joined(separator: "\n") + "\n"
+        try aContent.write(to: aURL, atomically: true, encoding: .utf8)
+        try "let b = 2\n".write(to: bURL, atomically: true, encoding: .utf8)
+
+        service.sessions.open(at: aURL)
+        try await waitUntil("A loaded") {
+            service.files.currentFileURL == aURL && service.files.content?.string == aContent
+        }
+        let sessionA = try XCTUnwrap(service.sessions.activeSession)
+
+        // 让 A 的历史项记录一个第 15 行的快照（syncActiveSession 会替换当前历史项）。
+        let snapshot = EditorSession(fileURL: aURL)
+        let offset = (aContent as NSString).range(of: "let navValue15").location
+        snapshot.multiCursorState = MultiCursorState(
+            primary: MultiCursorSelection(location: offset, length: 0)
+        )
+        snapshot.viewState = EditorViewState(
+            primaryCursorLine: 15,
+            primaryCursorColumn: 1,
+            cursorPositions: [CursorPosition(line: 15, column: 1)]
+        )
+        service.sessions.syncActiveSession(from: snapshot)
+
+        service.sessions.open(at: bURL)
+        try await waitUntil("B loaded") {
+            service.files.currentFileURL == bURL
+        }
+
+        let entry = try XCTUnwrap(service.sessions.goBack())
+        XCTAssertEqual(entry.id, sessionA.id)
+        try await waitUntil("A loaded after goBack") {
+            service.files.currentFileURL == aURL && service.files.content?.string == aContent
+        }
+
+        XCTAssertEqual(service.sessions.activeSessionID, sessionA.id)
+        XCTAssertEqual(service.files.currentFileURL, aURL)
+        XCTAssertEqual(service.files.content?.string, aContent)
+        XCTAssertEqual(service.editing.cursorLine, 15, "后退应应用历史项保存的光标")
+    }
+
     private func waitUntil(
         _ description: String,
         timeout: TimeInterval = 2,
