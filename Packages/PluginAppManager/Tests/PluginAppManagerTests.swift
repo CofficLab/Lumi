@@ -176,6 +176,87 @@ struct PluginAppManagerTests {
         #expect(viewModel.installedApps.map(\.displayName) == ["Fresh"])
     }
 
+    @Test
+    func untrustedBundleNameCannotEscapeApplicationSupport() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("app-manager-path-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let home = root.appendingPathComponent("home", isDirectory: true)
+        let support = home.appendingPathComponent("Library/Application Support", isDirectory: true)
+        try FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
+        let innocentTarget = home.appendingPathComponent("Downloads/LumiAuditTarget", isDirectory: true)
+        try FileManager.default.createDirectory(at: innocentTarget, withIntermediateDirectories: true)
+
+        let appURL = try Self.makeApp(
+            in: home.appendingPathComponent("Downloads", isDirectory: true),
+            name: "Evil",
+            bundleName: "../../Downloads/LumiAuditTarget",
+            bundleIdentifier: "com.example.audit"
+        )
+        let app = AppModel(bundleURL: appURL)
+        #expect(app.bundleName == "Evil")
+
+        let files = await AppService(homeDirectory: home.path).scanRelatedFiles(for: app)
+
+        #expect(!files.contains { $0.path == innocentTarget.path })
+        #expect(files.allSatisfy { URL(fileURLWithPath: $0.path).standardizedFileURL.path.hasPrefix(support.path) == false })
+    }
+
+    @Test
+    func emptyBundleNameDoesNotSelectApplicationSupportRoot() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("app-manager-empty-name-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let home = root.appendingPathComponent("home", isDirectory: true)
+        let support = home.appendingPathComponent("Library/Application Support", isDirectory: true)
+        try FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
+
+        let appURL = try Self.makeApp(
+            in: home.appendingPathComponent("Downloads", isDirectory: true),
+            name: "Empty",
+            bundleName: "",
+            bundleIdentifier: "com.example.empty"
+        )
+        let app = AppModel(bundleURL: appURL)
+        #expect(app.bundleName == "Empty")
+
+        let files = await AppService(homeDirectory: home.path).scanRelatedFiles(for: app)
+
+        let supportPath = support.standardizedFileURL.path
+        #expect(!files.contains { URL(fileURLWithPath: $0.path).standardizedFileURL.path == supportPath })
+    }
+
+    @Test
+    func pathContainmentRejectsEscapesAndDirectoryItself() {
+        let root = "/tmp/LumiAppManagerRoot"
+        #expect(AppService.isContained(path: "\(root)/Child", in: root))
+        #expect(!AppService.isContained(path: "\(root)/../Elsewhere", in: root))
+        #expect(!AppService.isContained(path: root, in: root))
+        #expect(!AppService.isContained(path: "\(root)Extra/Child", in: root))
+    }
+
+    private static func makeApp(
+        in directory: URL,
+        name: String,
+        bundleName: String,
+        bundleIdentifier: String
+    ) throws -> URL {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let appURL = directory.appendingPathComponent("\(name).app", isDirectory: true)
+        let contents = appURL.appendingPathComponent("Contents", isDirectory: true)
+        try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true)
+        let plist: [String: Any] = [
+            "CFBundleName": bundleName,
+            "CFBundleIdentifier": bundleIdentifier,
+            "CFBundlePackageType": "APPL",
+        ]
+        let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+        try data.write(to: contents.appendingPathComponent("Info.plist"))
+        return appURL
+    }
+
     private static func app(path: String, name: String, size: Int64) -> AppModel {
         AppModel(
             bundleURL: URL(fileURLWithPath: path),
