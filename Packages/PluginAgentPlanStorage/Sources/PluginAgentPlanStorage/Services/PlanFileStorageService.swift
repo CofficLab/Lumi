@@ -117,10 +117,11 @@ public actor PlanFileStorageService {
     public func delete(filename: String) throws {
         _ = purgeExpiredFiles()
         let url = try resolveSafeURL(for: filename)
-        guard fileManager.fileExists(atPath: url.path) else {
+        guard fileManager.fileExists(atPath: url.path) || isSymbolicLink(url) else {
             throw PlanFileStorageError.fileNotFound(filename)
         }
-        guard isRegularFile(url) else {
+        // 符号链接只删除链接目录项本身；解析目标后再删除会误删另一个计划。
+        guard isSymbolicLink(url) || isRegularFile(url) else {
             throw PlanFileStorageError.notAFile(filename)
         }
         try fileManager.removeItem(at: url)
@@ -162,6 +163,10 @@ public actor PlanFileStorageService {
         return values.isDirectory == false
     }
 
+    private func isSymbolicLink(_ url: URL) -> Bool {
+        (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) ?? false
+    }
+
     private func relativePath(for url: URL) -> String {
         let rootPath = plansDirectory.resolvingSymlinksInPath().standardizedFileURL.path
         let prefix = rootPath.hasSuffix("/") ? rootPath : rootPath + "/"
@@ -180,12 +185,20 @@ public actor PlanFileStorageService {
             throw PlanFileStorageError.pathTraversal
         }
 
-        let root = plansDirectory.resolvingSymlinksInPath().standardizedFileURL
-        let candidate = plansDirectory.appendingPathComponent(trimmed)
-        let resolved = candidate.resolvingSymlinksInPath().standardizedFileURL
-        guard resolved.path == root.path || resolved.path.hasPrefix(root.path + "/") else {
+        let lexicalRoot = plansDirectory.standardizedFileURL
+        let candidate = lexicalRoot.appendingPathComponent(trimmed).standardizedFileURL
+        guard candidate.path == lexicalRoot.path || candidate.path.hasPrefix(lexicalRoot.path + "/") else {
             throw PlanFileStorageError.pathTraversal
         }
-        return resolved
+
+        // 解析后的路径也必须留在根目录内，避免经符号链接目录越界。
+        let resolvedRoot = lexicalRoot.resolvingSymlinksInPath().standardizedFileURL
+        let resolved = candidate.resolvingSymlinksInPath().standardizedFileURL
+        guard resolved.path == resolvedRoot.path || resolved.path.hasPrefix(resolvedRoot.path + "/") else {
+            throw PlanFileStorageError.pathTraversal
+        }
+
+        // 返回未解析的候选路径，让调用方作用于目录项本身而不是链接目标。
+        return candidate
     }
 }
