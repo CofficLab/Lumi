@@ -317,7 +317,7 @@ struct ConversationStoreTests {
         #expect(!(await store.deleteConversations(ids: [missingID])))
     }
 
-    @Test("ConversationManager delegates paged reads and caches only root summaries")
+    @Test("ConversationManager delegates paged reads and caches root summaries")
     @MainActor
     func managerFetchesPagesCountsAndRootCache() async throws {
         let (store, dir) = try makeStore()
@@ -349,9 +349,9 @@ struct ConversationStoreTests {
         #expect(await manager.conversationProjectCount() == 1)
 
         #expect(await manager.fetchConversation(id: childID)?.id == childID)
-        #expect(manager.conversations.isEmpty)
+        #expect(!manager.conversations.contains { $0.id == childID }, "子会话不应进入根缓存")
+        #expect(manager.conversations.map(\.id) == [rootID], "分页返回的根会话应已进入缓存")
         #expect(await manager.fetchConversation(id: rootID)?.id == rootID)
-        #expect(manager.conversations.map(\.id) == [rootID])
-        #expect(await manager.fetchConversation(id: rootID)?.id == rootID)
+        #expect(manager.conversations.map(\.id) == [rootID], "重复读取不应产生重复缓存项")
     }
 }

@@ -85,12 +85,16 @@ extension ConversationManager {
     }
 
     /// 先更新内存并通知 UI，再由调用方决定是否等待持久化。
+    ///
+    /// 缓存外的会话（分页加载的历史会话）也要返回 ID，否则设置会静默丢失；
+    /// 内存只在命中时同步，写盘始终以会话 ID 为准。
     private func applyVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) -> UUID? {
-        guard let conversationID,
-              let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+        guard let conversationID else {
             return nil
         }
-        conversations[index].verbosity = verbosity
+        if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
+            conversations[index].verbosity = verbosity
+        }
         notifyConversationObservers(.verbosityChanged(conversationID))
         return conversationID
     }
@@ -118,10 +122,9 @@ extension ConversationManager {
         guard let conversationID else {
             return
         }
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return
+        if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
+            conversations[index].reasoningEffort = reasoningEffort
         }
-        conversations[index].reasoningEffort = reasoningEffort
         notifyConversationObservers(.reasoningChanged(conversationID))
         notifyConversationsChanged()
 
@@ -145,10 +148,9 @@ extension ConversationManager {
         guard let conversationID else {
             return
         }
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return
+        if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
+            conversations[index].reasoningEffort = nil
         }
-        conversations[index].reasoningEffort = nil
         notifyConversationObservers(.reasoningChanged(conversationID))
         notifyConversationsChanged()
 
@@ -184,10 +186,9 @@ extension ConversationManager {
         guard let conversationID else {
             return
         }
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return
+        if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
+            conversations[index].automationLevel = automationLevel
         }
-        conversations[index].automationLevel = automationLevel
         notifyConversationObservers(.automationChanged(conversationID))
 
         Task {
@@ -222,10 +223,9 @@ extension ConversationManager {
         guard let conversationID else {
             return
         }
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return
+        if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
+            conversations[index].language = language
         }
-        conversations[index].language = language
         notifyConversationObservers(.languageChanged(conversationID))
 
         if Self.verbose {

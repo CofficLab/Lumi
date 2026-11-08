@@ -288,6 +288,21 @@ extension ConversationManager {
         updateCurrentTitle()
         persistSelectedConversationID()
         notifySelectedConversationChanged()
+        backfillConversationIfNeeded(id: id)
+    }
+
+    /// 选中分页加载出的会话时，缓存里可能还没有它的摘要。
+    /// 按 ID 从 Store 补载后再刷新标题，避免 `currentTitle` 退化成
+    /// "No conversation"（issue #965）。
+    private func backfillConversationIfNeeded(id: UUID) {
+        guard !conversations.contains(where: { $0.id == id }), let store else { return }
+        Task { @MainActor [weak self] in
+            guard let summary = await store.fetchConversation(id: id) else { return }
+            guard let self, self.selectedConversationID == id else { return }
+            self.cache(summary)
+            self.updateCurrentTitle()
+            self.notifyConversationObservers(.updated(id))
+        }
     }
 
     /// 注册选中对话观察者：选中值实际变化时回调，令牌释放或 cancel 后自动停止。
@@ -351,7 +366,8 @@ extension ConversationManager {
             Self.logger.info("\(Self.t)Deleting conversation \(id.uuidString.prefix(8))...")
         }
 
-        guard conversations.contains(where: { $0.id == id }) else { return }
+        // 不再要求缓存命中：分页展示的历史会话可能不在内存窗口里，
+        // 但删除必须以持久化记录为准（issue #965）。
         conversations.removeAll { $0.id == id }
         notifyConversationObservers(.deleted(id))
 
@@ -435,12 +451,14 @@ extension ConversationManager {
     }
 
     public func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool {
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return false
-        }
         let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let storedTitle = normalized.isEmpty ? nil : normalized
-        conversations[index].title = storedTitle
+        // 缓存外的会话也要能改名：写盘以 ID 为准，内存只在命中时同步。
+        if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
+            conversations[index].title = storedTitle
+        } else if store == nil {
+            return false
+        }
 
         if conversationID == selectedConversationID {
             updateCurrentTitle()
