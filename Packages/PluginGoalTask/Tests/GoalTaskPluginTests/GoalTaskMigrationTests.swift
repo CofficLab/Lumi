@@ -53,6 +53,45 @@ struct GoalTaskMigrationTests {
         #expect(try Data(contentsOf: readPath) == payload)
     }
 
+    @Test func v4MigrationReadsGoalTaskDirectory() throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory
+            .appendingPathComponent("GoalTaskV4Migration-\(UUID())")
+        defer { try? fileManager.removeItem(at: root) }
+
+        let legacyRoot = root.appendingPathComponent("v4", isDirectory: true)
+        let currentRoot = root.appendingPathComponent("current", isDirectory: true)
+        // v4 的数据目录是 `GoalTask`，`GoalStateManager` 仍然追加 `GoalTaskPlugin`。
+        let legacyDB = legacyRoot
+            .appendingPathComponent("GoalTask", isDirectory: true)
+            .appendingPathComponent("GoalTaskPlugin", isDirectory: true)
+            .appendingPathComponent("goals.sqlite")
+        try fileManager.createDirectory(
+            at: legacyDB.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        let payload = Data("v4-goals".utf8)
+        try payload.write(to: legacyDB)
+
+        let plugin = GoalTaskPlugin()
+        #expect(plugin.legacyDataDirectoryNames.contains("GoalTask"))
+        try plugin.migrateData(context: PluginDataMigrationContext(
+            pluginID: plugin.id,
+            currentMajorVersion: 6,
+            currentDataRootDirectory: currentRoot,
+            legacyDataRootDirectories: [4: legacyRoot]
+        ))
+
+        // 回归 #768：v4 的 `GoalTask` 目录必须被识别，并落到当前读取路径。
+        let dbDir = currentRoot
+            .appendingPathComponent(plugin.id, isDirectory: true)
+            .appendingPathComponent("GoalTaskPlugin", isDirectory: true)
+        #expect(try Data(contentsOf: dbDir.appendingPathComponent("goals.sqlite")) == payload)
+        #expect(!fileManager.fileExists(
+            atPath: dbDir.appendingPathComponent("GoalTaskPlugin/goals.sqlite").path
+        ))
+    }
+
     @Test func promotesMisplacedStoreOnlyWhenReadPathIsEmpty() async throws {
         let fileManager = FileManager.default
         let root = fileManager.temporaryDirectory

@@ -20,7 +20,8 @@ import os
 public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.goal-task", category: "GoalTask")
     public let id = "com.coffic.lumi.plugin.goal-task"
-    public let legacyDataDirectoryNames = ["GoalTaskPlugin"]
+    /// v4 的数据目录叫 `GoalTask`，v5 起改成 `GoalTaskPlugin`，两个都要识别。
+    public let legacyDataDirectoryNames = ["GoalTaskPlugin", "GoalTask"]
     public let order = 91
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.goal-task",
@@ -56,24 +57,27 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
             .appendingPathComponent("GoalTaskPlugin", isDirectory: true)
         let fileManager = FileManager.default
         for version in context.legacyDataRootDirectories.keys.sorted(by: >) {
-            guard let legacyRoot = context.legacyPluginDataDirectory(
-                named: "GoalTaskPlugin",
-                in: version
-            ), fileManager.fileExists(atPath: legacyRoot.path) else {
-                continue
-            }
-            // v5 的存储键本身就是 `GoalTaskPlugin`，`GoalStateManager` 又在其下追加
-            // 一层，所以旧库实际位于 `<legacy-root>/GoalTaskPlugin/GoalTaskPlugin/goals.sqlite`。
+            // v5 的存储键是 `GoalTaskPlugin`；v4 是 `GoalTask`。两者的
+            // `GoalStateManager` 都会再追加一层 `GoalTaskPlugin`，所以旧库实际位于
+            // `<legacy-root>/<key>/GoalTaskPlugin/goals.sqlite`。
             // 当前读取路径是 `<current>/GoalTaskPlugin/goals.sqlite`：必须合并内层目录。
             // 合并外层会把库再往下套一层，升级后旧目标看起来就像被清空。
-            let inner = legacyRoot.appendingPathComponent("GoalTaskPlugin", isDirectory: true)
-            let source = fileManager.fileExists(atPath: inner.path) ? inner : legacyRoot
-            try fileManager.createDirectory(at: destination, withIntermediateDirectories: true)
-            try PluginDataMigrationUtility.mergeDirectoryContents(
-                from: source,
-                to: destination,
-                fileManager: fileManager
-            )
+            for legacyName in ["GoalTaskPlugin", "GoalTask"] {
+                guard let legacyRoot = context.legacyPluginDataDirectory(
+                    named: legacyName,
+                    in: version
+                ), fileManager.fileExists(atPath: legacyRoot.path) else {
+                    continue
+                }
+                let inner = legacyRoot.appendingPathComponent("GoalTaskPlugin", isDirectory: true)
+                let source = fileManager.fileExists(atPath: inner.path) ? inner : legacyRoot
+                try fileManager.createDirectory(at: destination, withIntermediateDirectories: true)
+                try PluginDataMigrationUtility.mergeDirectoryContents(
+                    from: source,
+                    to: destination,
+                    fileManager: fileManager
+                )
+            }
         }
     }
 
