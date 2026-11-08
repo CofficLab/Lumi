@@ -136,21 +136,26 @@ actor TempFileStorageService {
         return files.sorted { $0.modifiedAt > $1.modifiedAt }
     }
 
+    /// 把工具传入的相对路径映射为安全 URL。
+    ///
+    /// 文件名不做 trim：macOS 允许首尾空格，`report.md` 与 ` report.md ` 是两个
+    /// 不同文件，裁剪会让后者静默覆盖前者。仅对「空或纯空白」这类无意义名称
+    /// 明确报错，不做任何改写。
     private func resolveSafeURL(for filename: String) throws -> URL {
-        let trimmed = filename.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
+        guard !filename.isEmpty,
+              filename.contains(where: { !$0.isWhitespace }) else {
             throw TempFileStorageError.invalidFilename
         }
-        guard !trimmed.hasPrefix("/") else {
+        guard !filename.hasPrefix("/") else {
             throw TempFileStorageError.invalidFilename
         }
 
-        let components = trimmed.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
+        let components = filename.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
         guard !components.contains("..") else {
             throw TempFileStorageError.pathTraversal
         }
 
-        let url = filesDirectory.appendingPathComponent(trimmed)
+        let url = filesDirectory.appendingPathComponent(filename)
         let resolved = url.standardizedFileURL
         let root = filesDirectory.standardizedFileURL.path
         let resolvedPath = resolved.path
