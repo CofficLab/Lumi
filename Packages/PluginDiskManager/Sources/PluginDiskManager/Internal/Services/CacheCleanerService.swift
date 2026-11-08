@@ -76,14 +76,19 @@ public final class CacheCleanerService: @unchecked Sendable {
         return freedSpace
     }
 
-    fileprivate nonisolated static func scanCategory(rule: CacheScanRule) async -> CacheCategory? {
+    nonisolated static func scanCategory(rule: CacheScanRule) async -> CacheCategory? {
         var cachePaths: [CachePath] = []
 
         for path in rule.paths {
             if Task.isCancelled { return nil }
             if let info = await getPathInfo(path) {
-                if path.hasSuffix("/Library/Caches") {
-                    let subPaths = await scanSubDirectories(at: path)
+                // 废纸篓与用户缓存一样按子项展开：绝不能把目录根本身交给清理，
+                // 否则 removeItem 会删掉 ~/.Trash 目录。
+                if path.hasSuffix("/Library/Caches") || path.hasSuffix("/.Trash") {
+                    let itemDescription = path.hasSuffix("/.Trash")
+                        ? pluginLocalization.string("Trash")
+                        : pluginLocalization.string("App Cache")
+                    let subPaths = await scanSubDirectories(at: path, itemDescription: itemDescription)
                     cachePaths.append(contentsOf: subPaths)
                 } else {
                     cachePaths.append(CachePath(
@@ -112,7 +117,7 @@ public final class CacheCleanerService: @unchecked Sendable {
         )
     }
 
-    private nonisolated static func scanSubDirectories(at path: String) async -> [CachePath] {
+    private nonisolated static func scanSubDirectories(at path: String, itemDescription: String) async -> [CachePath] {
         let url = URL(fileURLWithPath: path)
         var results: [CachePath] = []
 
@@ -126,7 +131,7 @@ public final class CacheCleanerService: @unchecked Sendable {
                 results.append(CachePath(
                     path: content.path,
                     name: content.lastPathComponent,
-                    description: pluginLocalization.string("App Cache"),
+                    description: itemDescription,
                     size: info.size,
                     fileCount: info.count,
                     canDelete: true
