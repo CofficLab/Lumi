@@ -99,3 +99,46 @@ private actor FakeRegistryManagerService: RegistryManagerServicing {
         return next
     }
 }
+
+// MARK: - Docker daemon.json 合并（回归 #736）
+
+@Test("现有 daemon.json 的关键配置在切换镜像源后保留")
+func dockerDaemonMergePreservesExistingKeys() throws {
+    let existing = Data(#"{"debug": true, "storage-driver": "overlay2", "registry-mirrors": ["https://old.example/"]}"#.utf8)
+
+    let merged = try DockerDaemonConfig.mergedData(existing: existing, mirrorURL: "https://new.example/")
+    let json = try #require(try JSONSerialization.jsonObject(with: merged) as? [String: Any])
+
+    #expect(json["debug"] as? Bool == true)
+    #expect(json["storage-driver"] as? String == "overlay2")
+    #expect(json["registry-mirrors"] as? [String] == ["https://new.example/"])
+}
+
+@Test("daemon.json 无法解析时中止并抛错，绝不返回可写数据")
+func dockerDaemonMergeRejectsUnparsableConfig() throws {
+    // 未闭合的对象：任何标准 JSON 解析器都读不出来（与用户手写注释/尾逗号同类）。
+    let broken = Data(#"{"debug": true, "registry-mirrors": ["https://old.example/"]"#.utf8)
+
+    do {
+        _ = try DockerDaemonConfig.mergedData(existing: broken, mirrorURL: "https://new.example/")
+        Issue.record("解析失败时不应返回新配置")
+    } catch let error as RegistryServiceError {
+        #expect(error.errorDescription?.contains("daemon.json") == true)
+    }
+}
+
+@Test("daemon.json 根节点不是对象时同样中止")
+func dockerDaemonMergeRejectsNonObjectRoot() {
+    #expect(throws: RegistryServiceError.self) {
+        try DockerDaemonConfig.mergedData(existing: Data("[]".utf8), mirrorURL: "https://new.example/")
+    }
+}
+
+@Test("daemon.json 不存在时只写入镜像源")
+func dockerDaemonMergeCreatesConfigWhenMissing() throws {
+    let merged = try DockerDaemonConfig.mergedData(existing: nil, mirrorURL: "https://new.example/")
+    let json = try #require(try JSONSerialization.jsonObject(with: merged) as? [String: Any])
+
+    #expect(json.count == 1)
+    #expect(json["registry-mirrors"] as? [String] == ["https://new.example/"])
+}
