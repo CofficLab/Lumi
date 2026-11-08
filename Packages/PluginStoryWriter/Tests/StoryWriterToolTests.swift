@@ -34,7 +34,9 @@ struct StoryWriterToolTests {
         StoryWriterStorage.configureV2(directory: directory)
 
         let missing = UUID().uuidString
-        #expect(try await tool("delete_story").execute(arguments: ["story_id": .init(missing)]) == "Error: story not found")
+        await #expect(throws: ToolExecutionError.self) {
+            try await tool("delete_story").execute(arguments: ["story_id": .init(missing)])
+        }
 
         _ = try await tool("create_story").execute(arguments: ["title": .init("Keep")])
         let store = StoryStore(pluginDirectory: directory)
@@ -44,10 +46,12 @@ struct StoryWriterToolTests {
         }
         let storyID = story.id.uuidString
 
-        #expect(try await tool("delete_chapter").execute(arguments: [
-            "story_id": .init(storyID),
-            "chapter_id": .init(missing)
-        ]) == "Error: chapter not found")
+        await #expect(throws: ToolExecutionError.self) {
+            try await tool("delete_chapter").execute(arguments: [
+                "story_id": .init(storyID),
+                "chapter_id": .init(missing)
+            ])
+        }
         #expect(await store.loadStory(id: story.id) != nil)
 
         #expect(try await tool("delete_story").execute(arguments: ["story_id": .init(storyID)]) == "🗑️ Deleted story \(storyID).")
@@ -62,12 +66,20 @@ struct StoryWriterToolTests {
         }
 
         let listStories = tool("list_stories")
-        #expect(try await listStories.execute(arguments: [:]) == "Error: Story Writer storage is not available.")
+        await #expect(throws: ToolExecutionError.self) {
+            try await listStories.execute(arguments: [:])
+        }
         StoryWriterStorage.configureV2(directory: directory)
         #expect(try await listStories.execute(arguments: [:]).contains("No stories found"))
-        #expect(try await tool("create_story").execute(arguments: [:]) == "Error: title is required")
-        #expect(try await tool("get_story").execute(arguments: ["story_id": .init("not-a-uuid")]) == "Error: story not found")
-        #expect(try await tool("delete_story").execute(arguments: [:]) == "Error: valid story_id is required")
+        await #expect(throws: ToolExecutionError.self) {
+            try await tool("create_story").execute(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            try await tool("get_story").execute(arguments: ["story_id": .init("not-a-uuid")])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            try await tool("delete_story").execute(arguments: [:])
+        }
 
         let createdStoryResult = try await tool("create_story").execute(arguments: [
             "title": .init("Clockwork Harbor"),
@@ -89,9 +101,15 @@ struct StoryWriterToolTests {
         ]) == "✅ Updated story **The Harbor Clock**.")
         #expect(try await tool("get_story").execute(arguments: ["title": .init("The Harbor Clock")]).contains("The tide rewinds."))
 
-        #expect(try await tool("list_chapters").execute(arguments: [:]) == "Error: valid story_id is required")
-        #expect(try await tool("create_chapter").execute(arguments: ["story_id": .init("bad"), "title": .init("Missing")]).contains("valid story_id and title"))
-        #expect(try await tool("create_chapter").execute(arguments: ["story_id": .init(UUID().uuidString), "title": .init("Orphan")]).contains("story may not exist"))
+        await #expect(throws: ToolExecutionError.self) {
+            try await tool("list_chapters").execute(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            try await tool("create_chapter").execute(arguments: ["story_id": .init("bad"), "title": .init("Missing")])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            try await tool("create_chapter").execute(arguments: ["story_id": .init(UUID().uuidString), "title": .init("Orphan")])
+        }
         let chapterResult = try await tool("create_chapter").execute(arguments: [
             "story_id": .init(storyID),
             "title": .init("Tide Table"),
@@ -110,9 +128,11 @@ struct StoryWriterToolTests {
         let chapterID = chapter.id.uuidString
         #expect((try await tool("list_chapters").execute(arguments: ["story_id": .init(storyID)])).contains("Tide Table"))
         #expect((try await tool("get_chapter").execute(arguments: ["story_id": .init(storyID), "chapter_id": .init(chapterID)])).contains("The harbor moved backward."))
-        #expect(try await tool("update_chapter").execute(arguments: [
-            "story_id": .init(storyID), "chapter_id": .init(chapterID), "status": .init("invalid")
-        ]) == "Error: invalid status")
+        await #expect(throws: ToolExecutionError.self) {
+            try await tool("update_chapter").execute(arguments: [
+                "story_id": .init(storyID), "chapter_id": .init(chapterID), "status": .init("invalid")
+            ])
+        }
         #expect(try await tool("update_chapter").execute(arguments: [
             "story_id": .init(storyID), "chapter_id": .init(chapterID), "title": .init("Rewinding"),
             "content": .init("The clock struck twelve."), "target_word_count": .init(1500), "status": .init("done")
@@ -124,16 +144,40 @@ struct StoryWriterToolTests {
         ])
         #expect(importedResult.contains("Created chapter **Imported**"))
         #expect((try await tool("export_story_as_markdown").execute(arguments: ["story_id": .init(storyID)])).contains("From a Markdown file."))
-        #expect(try await tool("delete_chapter").execute(arguments: ["story_id": .init(storyID)]) == "Error: valid story_id and chapter_id are required")
+        await #expect(throws: ToolExecutionError.self) {
+            try await tool("delete_chapter").execute(arguments: ["story_id": .init(storyID)])
+        }
         #expect(try await tool("delete_chapter").execute(arguments: ["story_id": .init(storyID), "chapter_id": .init(chapterID)]).contains("Deleted chapter"))
         #expect(try await tool("delete_story").execute(arguments: ["story_id": .init(storyID)]).contains("Deleted story"))
         #expect(try await listStories.execute(arguments: [:]).contains("No stories found"))
-        #expect(try await tool("export_story_as_markdown").execute(arguments: ["story_id": .init(storyID)]) == "Error: story not found")
+        await #expect(throws: ToolExecutionError.self) {
+            try await tool("export_story_as_markdown").execute(arguments: ["story_id": .init(storyID)])
+        }
     }
 
     @Test func toolsReportUnavailableStorage() async throws {
         StoryWriterStorage.configureV2(directory: nil)
-        #expect(try await tool("list_stories").execute(arguments: [:]) == "Error: Story Writer storage is not available.")
+        await #expect(throws: ToolExecutionError.self) {
+            try await tool("list_stories").execute(arguments: [:])
+        }
+    }
+
+    @Test func validationFailuresThrowThroughExecuteResult() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer {
+            StoryWriterStorage.configureV2(directory: nil)
+            try? FileManager.default.removeItem(at: directory)
+        }
+        StoryWriterStorage.configureV2(directory: directory)
+
+        // 回归：失败曾经只返回 "Error: ..." 字符串，默认 executeResult 仍产出
+        // isError == false，工具调用会被当成成功。现在必须一路抛到宿主。
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool("create_story").executeResult(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool("get_story").executeResult(arguments: ["story_id": .init(UUID().uuidString)])
+        }
     }
 }
 
