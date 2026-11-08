@@ -64,6 +64,7 @@ public actor AgentRulesService {
                 files = try FileManager.default.contentsOfDirectory(
                     at: directoryURL,
                     includingPropertiesForKeys: [
+                        .isRegularFileKey,
                         .fileSizeKey,
                         .contentModificationDateKey,
                         .creationDateKey
@@ -75,15 +76,19 @@ public actor AgentRulesService {
             }
 
             for file in files where file.pathExtension == "md" {
-                let filename = file.lastPathComponent
-                guard !seenFilenames.contains(filename) else { continue }
-                seenFilenames.insert(filename)
-
                 let resourceValues = try file.resourceValues(forKeys: [
+                    .isRegularFileKey,
                     .fileSizeKey,
                     .contentModificationDateKey,
                     .creationDateKey
                 ])
+
+                // 名称以 .md 结尾的子目录不是规则文件；读取目录会抛 EISDIR 并中断整个列表。
+                guard resourceValues.isRegularFile == true else { continue }
+
+                let filename = file.lastPathComponent
+                guard !seenFilenames.contains(filename) else { continue }
+                seenFilenames.insert(filename)
 
                 let fileSize = resourceValues.fileSize ?? 0
                 let modifiedAt = resourceValues.contentModificationDate ?? Date()
