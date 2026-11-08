@@ -198,6 +198,10 @@ public final class CADDocumentStore: ObservableObject {
         lastError = message
     }
 
+    public func clearError() {
+        lastError = nil
+    }
+
     public func resetForTests() {
         documents.removeAll()
         selectedDocumentId = nil
