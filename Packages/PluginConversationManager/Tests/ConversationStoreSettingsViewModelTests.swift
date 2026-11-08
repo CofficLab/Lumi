@@ -111,6 +111,41 @@ struct ConversationStoreSettingsViewModelTests {
         #expect(capability.pageRequests.count == 1)
     }
 
+    @Test func loadMoreDoesNotAppendStalePageAfterReload() async throws {
+        let capability = StubConversationStoreCapability()
+        let firstPage = makeConversations(count: 40)
+        capability.initialPage = firstPage
+        capability.totalCount = 45
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+
+        await viewModel.loadInitialIfNeeded()
+        #expect(viewModel.conversations.count == 40)
+        #expect(viewModel.hasMoreConversations)
+
+        capability.nextPage = makeConversations(count: 5, offset: 100)
+        capability.nextPageDelay = .milliseconds(400)
+
+        let more = Task { await viewModel.loadMoreIfNeeded() }
+        try await Task.sleep(for: .milliseconds(50))
+
+        let refreshed = makeConversations(count: 40, offset: 200)
+        capability.initialPage = refreshed
+        await viewModel.reloadConversations()
+
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(1))
+        while viewModel.conversations.first?.id != refreshed.first?.id, clock.now < deadline {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+
+        await more.value
+
+        #expect(
+            viewModel.conversations.map(\.id) == refreshed.map(\.id),
+            "旧分页不能追加到刷新后的列表"
+        )
+    }
+
     private func makeConversations(count: Int, offset: Int = 0, childOf parentID: UUID? = nil) -> [ConversationSummary] {
         (offset..<(offset + count)).map { index in
             let date = Date(timeIntervalSince1970: TimeInterval(index + 1))
@@ -142,6 +177,9 @@ final class StubConversationStoreCapability: ConversationStoreCapability {
     var messagesByConversation: [UUID: [Message]] = [:]
     var messageCounts: [UUID: Int] = [:]
     var pageRequests: [PageRequest] = []
+    /// 首屏/刷新页与翻页的注入延迟，用于构造「旧分页晚到」场景。
+    var pageDelay: Duration?
+    var nextPageDelay: Duration?
     private var conversationObserver: ((ConversationEvent) -> Void)?
 
     func fetchConversationPage(
@@ -156,6 +194,8 @@ final class StubConversationStoreCapability: ConversationStoreCapability {
             beforeID: beforeID,
             includingChildConversations: includingChildConversations
         ))
+        let delay = beforeID == nil ? pageDelay : nextPageDelay
+        if let delay { try? await Task.sleep(for: delay) }
         return beforeID == nil ? initialPage : nextPage
     }
 

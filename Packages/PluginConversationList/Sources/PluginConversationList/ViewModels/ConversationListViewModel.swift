@@ -161,13 +161,21 @@ final class ConversationListViewModel: ObservableObject {
     }
 
     func loadNextPage() async {
-        guard !isLoadingMore, hasMore else { return }
+        guard !isLoadingMore, hasMore, !isReloading else { return }
 
         isLoadingMore = true
+        defer { isLoadingMore = false }
+
+        let path = effectiveProjectPath
+        let expectedCount = conversations.count
         let page = await fetchPage(
+            path: path,
             beforeUpdatedAt: paginationCursor?.lastMessageAt,
             beforeID: paginationCursor?.id
         )
+
+        // 翻页期间切了项目或列表被刷新，旧页不能追加到新列表上。
+        guard effectiveProjectPath == path, conversations.count == expectedCount else { return }
 
         conversations.append(contentsOf: page)
         if let last = page.last {
@@ -177,7 +185,6 @@ final class ConversationListViewModel: ObservableObject {
             )
         }
         hasMore = page.count == Self.pageSize
-        isLoadingMore = false
     }
 
     func reload() async {
@@ -189,6 +196,7 @@ final class ConversationListViewModel: ObservableObject {
         isReloading = true
         defer {
             isReloading = false
+            isLoading = false
             if reloadPending {
                 reloadPending = false
                 Task { @MainActor in
@@ -213,6 +221,7 @@ final class ConversationListViewModel: ObservableObject {
         // 获取至少当前已经展示的数量，避免刷新后丢掉用户已经加载的分页。
         while snapshot.count < targetCount {
             let page = await fetchPage(
+                path: path,
                 beforeUpdatedAt: cursor?.lastMessageAt,
                 beforeID: cursor?.id
             )
@@ -223,6 +232,9 @@ final class ConversationListViewModel: ObservableObject {
             guard let last = page.last else { break }
             cursor = ConversationPageCursor(lastMessageAt: last.lastMessageAt, id: last.id)
         }
+
+        // 加载期间切了项目：整份快照都属于旧项目，直接丢弃。
+        guard effectiveProjectPath == path else { return }
 
         // 没有实际变化时不触发 SwiftUI 列表替换。
         if snapshot != conversations {
@@ -245,7 +257,6 @@ final class ConversationListViewModel: ObservableObject {
 
         await refreshProjectVisibilityIfNeeded(path: path)
         await refreshConversationCount(path: path)
-        isLoading = false
     }
 
     // MARK: - Private
@@ -268,10 +279,10 @@ final class ConversationListViewModel: ObservableObject {
     }
 
     private func fetchPage(
+        path: String?,
         beforeUpdatedAt: Date?,
         beforeID: UUID?
     ) async -> [ConversationSummary] {
-        let path = effectiveProjectPath
         if let path {
             return await context.conversations.fetchConversationPage(
                 limit: Self.pageSize,

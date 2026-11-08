@@ -86,21 +86,28 @@ final class ConversationStoreSettingsViewModel: ObservableObject {
     }
 
     func loadMoreIfNeeded() async {
-        guard !isLoadingConversations,
+        guard !isReloading,
+              !isLoadingConversations,
               !isLoadingMoreConversations,
               hasMoreConversations,
               let last = conversations.last else { return }
 
         isLoadingMoreConversations = true
+        defer { isLoadingMoreConversations = false }
+
+        let expectedCount = conversations.count
         let page = await capability.fetchConversationPage(
             limit: conversationPageSize,
             beforeUpdatedAt: last.lastMessageAt,
             beforeID: last.id,
             includingChildConversations: true
         )
+
+        // 翻页期间列表被刷新或替换，旧页不能追加到新列表上。
+        guard conversations.count == expectedCount, conversations.last?.id == last.id else { return }
+
         conversations.append(contentsOf: page)
         hasMoreConversations = page.count == conversationPageSize
-        isLoadingMoreConversations = false
         syncSelectionAfterConversationChange()
         await loadMessageCounts(for: page)
     }

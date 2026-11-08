@@ -217,6 +217,80 @@ import Testing
     contextObserver.cancel()
 }
 
+/// 旧项目的 reload 结果不能写进切换后的项目列表。
+@Test @MainActor func reloadDiscardsSnapshotFromPreviousProject() async throws {
+    let project = DefaultProjectProvider()
+    try await project.openProject(at: "/workspace/One")
+
+    let oldA = ConversationSummary(
+        id: UUID(), title: "A", createdAt: Date(), updatedAt: Date(), projectPath: "/workspace/One"
+    )
+    let newB = ConversationSummary(
+        id: UUID(), title: "B", createdAt: Date(), updatedAt: Date(), projectPath: "/workspace/Two"
+    )
+    let conversations = DelayedConversationManager(summaries: [oldA, newB])
+    conversations.setDelay(.milliseconds(400), forProjectPath: "/workspace/One")
+
+    let viewModel = ConversationListViewModel(
+        context: makeListContext(conversations: conversations, project: project),
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .currentProject
+    )
+
+    let stale = Task { await viewModel.reload() }
+    try await Task.sleep(for: .milliseconds(50))
+    try await project.openProject(at: "/workspace/Two")
+    await viewModel.reload()
+    await stale.value
+
+    #expect(
+        !viewModel.conversations.contains { $0.id == oldA.id },
+        "旧项目的快照不能写进新项目列表"
+    )
+    #expect(await waitUntil { viewModel.conversations.map(\.id) == [newB.id] })
+}
+
+/// 翻页结果晚到时，列表已被切项目刷新替换，不能把旧页追加到新列表。
+@Test @MainActor func loadNextPageDoesNotAppendStalePageAfterProjectSwitch() async throws {
+    let project = DefaultProjectProvider()
+    try await project.openProject(at: "/workspace/One")
+
+    let base = Date()
+    let many = (0..<60).map { index in
+        ConversationSummary(
+            id: UUID(),
+            title: "C\(index)",
+            createdAt: base,
+            updatedAt: base.addingTimeInterval(-Double(index) * 60),
+            projectPath: "/workspace/One"
+        )
+    }
+    let other = ConversationSummary(
+        id: UUID(), title: "Other", createdAt: base, updatedAt: base, projectPath: "/workspace/Two"
+    )
+    let conversations = DelayedConversationManager(summaries: many + [other])
+
+    let viewModel = ConversationListViewModel(
+        context: makeListContext(conversations: conversations, project: project),
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .currentProject
+    )
+    await viewModel.reload()
+    #expect(await waitUntil { viewModel.conversations.count == 40 })
+    #expect(viewModel.hasMore)
+
+    conversations.setDelay(.milliseconds(400), forProjectPath: "/workspace/One")
+    let more = Task { await viewModel.loadNextPage() }
+    try await Task.sleep(for: .milliseconds(50))
+    try await project.openProject(at: "/workspace/Two")
+    await viewModel.reload()
+
+    await more.value
+    #expect(await waitUntil { viewModel.conversations.map(\.id) == [other.id] })
+}
+
 @MainActor
 private func makeListContext(
     conversations: any ConversationManaging,
@@ -243,4 +317,147 @@ private func waitUntil(
         try? await Task.sleep(for: .milliseconds(5))
     }
     return condition()
+}
+
+/// 只为分页测试提供「按项目路径注入延迟」的会话管理器；
+/// 其余成员走 `ConversationManaging` 的默认实现。
+@MainActor
+private final class DelayedConversationManager: ConversationManaging {
+    private var summaries: [ConversationSummary]
+    private var delays: [String: Duration] = [:]
+
+    init(summaries: [ConversationSummary]) {
+        self.summaries = summaries
+    }
+
+    func setDelay(_ delay: Duration?, forProjectPath path: String) {
+        delays[path] = delay
+    }
+
+    var conversations: [ConversationSummary] { summaries }
+    var selectedConversationID: UUID? { nil }
+    var currentTitle: String { "" }
+    var dataDirectory: URL { URL(fileURLWithPath: "/tmp/PluginConversationListTests") }
+
+    func selectConversation(id: UUID) {}
+    func deselectConversation() {}
+    func deleteConversation(id: UUID) {}
+
+    func createConversation(
+        title: String?,
+        projectPath: String?,
+        providerID: String?,
+        modelName: String?
+    ) throws -> UUID {
+        try createConversation(
+            title: title,
+            projectPath: projectPath,
+            providerID: providerID,
+            modelName: modelName,
+            parentConversationID: nil
+        )
+    }
+
+    func createConversation(
+        title: String?,
+        projectPath: String?,
+        providerID: String?,
+        modelName: String?,
+        parentConversationID: UUID?
+    ) throws -> UUID {
+        let id = UUID()
+        summaries.append(ConversationSummary(
+            id: id, title: title ?? "New", createdAt: Date(), updatedAt: Date(), projectPath: projectPath
+        ))
+        return id
+    }
+
+    func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool { false }
+    func markConversationActive(id: UUID, messageDate: Date) {}
+    func isSending(for conversationID: UUID?) -> Bool { false }
+    func providerID(for conversationID: UUID?) -> String? { nil }
+    func modelName(for conversationID: UUID?) -> String? { nil }
+    func selectProvider(id: String, model: String?, for conversationID: UUID?) {}
+
+    var globalVerbosity: ResponseVerbosity { .standard }
+    func verbosity(for conversationID: UUID?) -> ResponseVerbosity { globalVerbosity }
+    func setVerbosity(_ level: ResponseVerbosity, for conversationID: UUID?) {}
+    func setGlobalVerbosity(_ level: ResponseVerbosity) {}
+
+    var globalReasoningEffort: ReasoningEffort? { nil }
+    func reasoningEffort(for conversationID: UUID?) -> ReasoningEffort { .medium }
+    func reasoningEffortOptional(for conversationID: UUID?) -> ReasoningEffort? { nil }
+    func setReasoningEffort(_ effort: ReasoningEffort, for conversationID: UUID?) {}
+    func clearReasoningEffort(for conversationID: UUID?) {}
+    func setGlobalReasoningEffort(_ effort: ReasoningEffort?) {}
+
+    var globalAutomationLevel: AutomationLevel { .chat }
+    func automationLevel(for conversationID: UUID?) -> AutomationLevel { globalAutomationLevel }
+    func setAutomationLevel(_ level: AutomationLevel, for conversationID: UUID?) {}
+    func setGlobalAutomationLevel(_ level: AutomationLevel) {}
+
+    var globalLanguage: ConversationLanguage { .chinese }
+    func language(for conversationID: UUID?) -> ConversationLanguage { globalLanguage }
+    func setLanguage(_ language: ConversationLanguage, for conversationID: UUID?) {}
+    func setGlobalLanguage(_ language: ConversationLanguage) {}
+
+    func addSelectedConversationObserver(
+        _ observer: @escaping (UUID?) -> Void
+    ) -> any SelectedConversationObserverHandle {
+        NoopObserverHandle()
+    }
+
+    func conversationProjectCount() async -> Int {
+        Set(summaries.compactMap(\.projectPath)).count
+    }
+
+    func conversationCount(projectPath: String?) async -> Int {
+        guard let projectPath else { return summaries.count }
+        return summaries.filter { $0.projectPath == projectPath }.count
+    }
+
+    func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date?,
+        beforeID: UUID?
+    ) async -> [ConversationSummary] {
+        page(summaries, limit: limit, beforeUpdatedAt: beforeUpdatedAt, beforeID: beforeID)
+    }
+
+    func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date?,
+        beforeID: UUID?,
+        includingChildConversations: Bool,
+        projectPath: String
+    ) async -> [ConversationSummary] {
+        if let delay = delays[projectPath] {
+            try? await Task.sleep(for: delay)
+        }
+        return page(
+            summaries.filter { $0.projectPath == projectPath },
+            limit: limit,
+            beforeUpdatedAt: beforeUpdatedAt,
+            beforeID: beforeID
+        )
+    }
+
+    private func page(
+        _ items: [ConversationSummary],
+        limit: Int,
+        beforeUpdatedAt: Date?,
+        beforeID: UUID?
+    ) -> [ConversationSummary] {
+        var list = items.sorted { $0.updatedAt > $1.updatedAt }
+        if let beforeID, let index = list.firstIndex(where: { $0.id == beforeID }) {
+            list = Array(list.dropFirst(index + 1))
+        } else if let beforeUpdatedAt {
+            list = list.filter { $0.updatedAt < beforeUpdatedAt }
+        }
+        return Array(list.prefix(limit))
+    }
+}
+
+private final class NoopObserverHandle: SelectedConversationObserverHandle {
+    func cancel() {}
 }
