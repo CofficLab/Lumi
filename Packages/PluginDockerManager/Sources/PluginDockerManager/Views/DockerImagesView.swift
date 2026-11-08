@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import AppKit
 import LumiLoggingKit
 struct DockerImagesView: View, SuperLog {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -15,8 +16,6 @@ struct DockerImagesView: View, SuperLog {
 
     // Import/Export
     @State private var showFileImporter = false
-    @State private var showFileExporter = false
-    @State private var imageToExport: DockerImage?
 
     init(viewModel: DockerManagerViewModel) {
         self.viewModel = viewModel
@@ -92,8 +91,7 @@ struct DockerImagesView: View, SuperLog {
                                     showTagSheet = true
                                 }
                                 Button(pluginLocalization.string("Export...")) {
-                                    imageToExport = image
-                                    showFileExporter = true
+                                    exportImage(image)
                                 }
                                 Button(pluginLocalization.string("Scan")) {
                                     Task { await viewModel.scanImage(image) }
@@ -214,45 +212,35 @@ struct DockerImagesView: View, SuperLog {
                 viewModel.reportFilePanelError(pluginLocalization.string("Import failed"), error: error)
             }
         }
-        .fileExporter(isPresented: $showFileExporter, document: DockerImageDocument(image: imageToExport), contentType: .data, defaultFilename: imageToExport?.name.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-") ?? "image") { result in
-            switch result {
-            case let .success(url):
-                if let img = imageToExport {
-                    Task { await viewModel.exportImage(img, to: url) }
-                }
-            case let .failure(error):
-                if DockerManagerPluginSupport.verbose {
-                    DockerManagerPluginSupport.logger.error("\(Self.t)Export failed: \(error.localizedDescription)")
-                }
-                viewModel.reportFilePanelError(pluginLocalization.string("Export failed"), error: error)
-            }
-        }
         .onAppear {
             Task { await viewModel.refreshImages() }
         }
         .navigationTitle(DockerManagerPluginSupport().name)
     }
+
+    /// 用 NSSavePanel 取得目标路径后再导出。
+    ///
+    /// 不能用 SwiftUI 的 fileExporter：它会在回调前先把文档（空占位内容）
+    /// 写到用户选定的路径，替换已有文件，导致 docker save 失败时原文件已被
+    /// 零字节内容覆盖。这里让保存面板只负责选择路径，写入交给 viewModel 的
+    /// 临时文件 + 原子替换流程。
+    private func exportImage(_ image: DockerImage) {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.data]
+        panel.canCreateDirectories = true
+        panel.nameFieldStringValue = image.name
+            .replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: ":", with: "-")
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            Task { @MainActor in
+                await viewModel.exportImage(image, to: url)
+            }
+        }
+    }
 }
 
 import UniformTypeIdentifiers
-
-struct DockerImageDocument: FileDocument {
-    static var readableContentTypes: [UTType] { [.data] }
-
-    var image: DockerImage?
-
-    init(image: DockerImage? = nil) {
-        self.image = image
-    }
-
-    init(configuration: ReadConfiguration) throws {
-        // Not used for export
-    }
-
-    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        return FileWrapper(regularFileWithContents: Data()) // Actual content is written by docker save command directly to file path, this is just a placeholder to trigger exporter
-    }
-}
 
 struct DockerImageRow: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme

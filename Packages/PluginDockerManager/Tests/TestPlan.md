@@ -5,7 +5,7 @@
 DockerManagerPlugin Docker container management plugin for Lumi.
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 53
+测试文件: 4 个，用例总数: 56
 
 核心组件（源码目录）:
 - `Models/`
@@ -90,21 +90,24 @@ DockerManagerPlugin Docker container management plugin for Lumi.
 | 51 | Docker image decoding | 全部行解析失败时抛错，而不是返回成功的空列表 | 只有无效 JSON 行 | 调用 `decodeImages` | 抛出 `DockerError.parsingFailed` | P0 | ✅ 已覆盖 | `allInvalidLinesThrow` |
 | 52 | Docker image decoding | 部分行解析失败时保留成功行 | 一行有效 + 一行无效 | 调用 `decodeImages` | 返回有效镜像，不抛错 | P1 | ✅ 已覆盖 | `partialFailureKeepsValidImages` |
 | 53 | Docker image decoding | 空输出返回空列表 | 空字符串 | 调用 `decodeImages` | 返回空数组 | P2 | ✅ 已覆盖 | `emptyOutputReturnsEmptyList` |
+| 54 | 综合 | 导出失败时保留目标路径上的原文件并清理临时文件 | 目标文件已存在，docker save 写了一半后失败 | 调用 `exportImage` | 返回 false，原文件内容不变，目录中无临时文件 | P0 | ✅ 已覆盖 | `failedExportKeepsExistingDestinationAndCleansTemporaryFile` |
+| 55 | 综合 | 导出成功时原子替换已有目标文件 | 目标文件已存在，docker save 成功 | 调用 `exportImage` | 返回 true，目标内容为新导出内容，目录中无临时文件 | P1 | ✅ 已覆盖 | `successfulExportAtomicallyReplacesExistingDestination` |
+| 56 | 综合 | docker save 未产出文件时报告失败且不留下文件 | 服务成功返回但未写文件 | 调用 `exportImage` | 返回 false，错误信息含 no output file，目录为空 | P1 | ✅ 已覆盖 | `exportWithoutOutputFileReportsFailureAndRemovesNothingElse` |
 
-> 说明：全部 **53 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **56 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
-- P1: 已覆盖 40 / 40
+- P0: 已覆盖 11 / 11
+- P1: 已覆盖 42 / 42
 - P2: 已覆盖 3 / 3
-- **合计: 53 / 53**（仅表示清单场景，非源码覆盖率）
+- **合计: 56 / 56**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（40 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
+- **P1**: 其余功能性用例（42 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明

@@ -1,6 +1,18 @@
 import Foundation
 import Combine
 import LumiLoggingKit
+
+enum DockerExportError: LocalizedError {
+    case missingOutput
+
+    var errorDescription: String? {
+        switch self {
+        case .missingOutput:
+            return "docker save produced no output file"
+        }
+    }
+}
+
 protocol DockerManagerServicing: Sendable {
     func listImages() async throws -> [DockerImage]
     func removeImage(_ id: String, force: Bool) async throws
@@ -287,15 +299,42 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
         }
     }
     
-    func exportImage(_ image: DockerImage, to url: URL) async {
+    /// 导出镜像。
+    ///
+    /// `docker save` 先写入同目录下的临时文件，成功后再原子替换目标文件；
+    /// 任何一步失败都会删除临时文件并保留目标路径上的原有内容，避免把一个
+    /// 写了一半或零字节的文件留在用户选定的路径上。
+    @discardableResult
+    func exportImage(_ image: DockerImage, to url: URL) async -> Bool {
         isLoading = true
         errorMessage = nil
+
+        let fileManager = FileManager.default
+        let temporaryURL = url
+            .deletingLastPathComponent()
+            .appendingPathComponent(".\(url.lastPathComponent).lumi-export-\(UUID().uuidString)")
+
+        var succeeded = false
         do {
-            try await service.exportImage(image.imageID, to: url.path)
+            try await service.exportImage(image.imageID, to: temporaryURL.path)
+            guard fileManager.fileExists(atPath: temporaryURL.path) else {
+                throw DockerExportError.missingOutput
+            }
+            if fileManager.fileExists(atPath: url.path) {
+                _ = try fileManager.replaceItemAt(url, withItemAt: temporaryURL)
+            } else {
+                try fileManager.moveItem(at: temporaryURL, to: url)
+            }
+            succeeded = true
         } catch {
+            if fileManager.fileExists(atPath: temporaryURL.path) {
+                try? fileManager.removeItem(at: temporaryURL)
+            }
             errorMessage = "Export failed: \(error.localizedDescription)"
         }
+
         isLoading = false
+        return succeeded
     }
     
     func loadImage(from url: URL) async {
