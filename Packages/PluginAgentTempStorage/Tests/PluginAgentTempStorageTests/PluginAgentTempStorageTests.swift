@@ -189,12 +189,42 @@ struct PluginAgentTempStorageTests {
     }
 
     @Test
+    func readFailsWhenExpiredFileCannotBeDeleted() async throws {
+        let root = try makeTemporaryDirectory()
+        defer {
+            // 恢复写权限后才能清理隔离目录。
+            try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: root.path)
+            try? FileManager.default.removeItem(at: root)
+        }
+        let service = TempFileStorageService(directory: root, retentionDays: 7)
+
+        let expired = root.appendingPathComponent("old.md")
+        try "old".write(to: expired, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes(
+            [.modificationDate: Date(timeIntervalSinceNow: -8 * 24 * 60 * 60)],
+            ofItemAtPath: expired.path
+        )
+
+        // 父目录不可写时文件仍可读，但删除必然失败：不能因此把过期内容当有效结果返回。
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: root.path)
+
+        await #expect {
+            _ = try await service.read(filename: "old.md")
+        } throws: { error in
+            guard case .purgeFailed(let detail) = error as? TempFileStorageError else { return false }
+            return detail.contains("old.md")
+        }
+        #expect(FileManager.default.fileExists(atPath: expired.path))
+    }
+
+    @Test
     func storageErrorsExposeDescriptions() {
         #expect(!TempFileStorageError.invalidFilename.errorDescription!.isEmpty)
         #expect(!TempFileStorageError.pathTraversal.errorDescription!.isEmpty)
         #expect(TempFileStorageError.fileNotFound("x").errorDescription?.contains("x") == true)
         #expect(TempFileStorageError.readFailed("boom").errorDescription?.contains("boom") == true)
         #expect(TempFileStorageError.settingsUnavailable("boom").errorDescription?.contains("boom") == true)
+        #expect(TempFileStorageError.purgeFailed("old.md").errorDescription?.contains("old.md") == true)
     }
 
     private func makeTemporaryDirectory() throws -> URL {

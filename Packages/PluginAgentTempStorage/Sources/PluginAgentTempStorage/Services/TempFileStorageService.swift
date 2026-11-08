@@ -13,6 +13,7 @@ enum TempFileStorageError: LocalizedError, Equatable {
     case fileNotFound(String)
     case readFailed(String)
     case settingsUnavailable(String)
+    case purgeFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -26,6 +27,8 @@ enum TempFileStorageError: LocalizedError, Equatable {
             "Failed to read temp file: \(reason)"
         case .settingsUnavailable(let reason):
             "Failed to read temp storage settings: \(reason)"
+        case .purgeFailed(let reason):
+            "Failed to delete expired temp files: \(reason)"
         }
     }
 }
@@ -81,6 +84,7 @@ actor TempFileStorageService {
             return
         }
 
+        var failures: [(name: String, reason: String)] = []
         for entry in entries {
             let values = try? entry.resourceValues(forKeys: [.contentModificationDateKey, .isDirectoryKey])
             if values?.isDirectory == true {
@@ -89,7 +93,20 @@ actor TempFileStorageService {
             guard let modifiedAt = values?.contentModificationDate, modifiedAt < cutoff else {
                 continue
             }
-            try? fileManager.removeItem(at: entry)
+            do {
+                try fileManager.removeItem(at: entry)
+            } catch {
+                // 删除失败不能静默：过期内容仍在磁盘上，随后 read/list 若照样成功
+                // 就会把本该被清理的数据当作有效结果返回。记录后继续清理其他条目。
+                failures.append((entry.lastPathComponent, error.localizedDescription))
+            }
+        }
+
+        guard failures.isEmpty else {
+            let detail = failures
+                .map { "\($0.name) (\($0.reason))" }
+                .joined(separator: ", ")
+            throw TempFileStorageError.purgeFailed(detail)
         }
     }
 
