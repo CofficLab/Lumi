@@ -146,6 +146,35 @@ struct ImageToPDFViewModelTests {
         #expect(model.lastErrorMessage != nil)
     }
 
+    @Test("转换失败汇总显示真实失败数量，不出现畸形格式符")
+    func failureSummaryReportsActualCount() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let inputs = root.appendingPathComponent("inputs", isDirectory: true)
+        try FileManager.default.createDirectory(at: inputs, withIntermediateDirectories: true)
+        let sources = ["a.png", "b.png"].map { inputs.appendingPathComponent($0) }
+        for source in sources {
+            try Data("not an image".utf8).write(to: source)
+        }
+
+        ImageToPDFRuntimeBridge.directoryURL = root.appendingPathComponent("staging", isDirectory: true)
+        defer { ImageToPDFRuntimeBridge.directoryURL = nil }
+
+        let model = ImageToPDFViewModel()
+        model.addImages(from: sources)
+        model.convertAll()
+        while model.isConverting {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        let message = try #require(model.lastErrorMessage)
+        // 回归 #759：`%l` 是不完整格式符，会输出 `0.000000ile(s)` 这类畸形文本。
+        #expect(message.contains("2"), "失败汇总应包含真实失败数量，实际: \(message)")
+        #expect(!message.contains("0.000000"), "失败汇总出现了无效格式符的产物，实际: \(message)")
+    }
+
     /// 1×1 PNG，足够让 `NSImage` 解码并产生一页 PDF。
     private static let onePixelPNGData = Data(
         base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
