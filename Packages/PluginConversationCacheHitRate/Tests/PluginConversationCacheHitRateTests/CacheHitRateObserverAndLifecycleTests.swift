@@ -465,7 +465,9 @@ struct CacheHitRateHistoryEdgeCaseTests {
 
         #expect(history.samples.count == 2)
         #expect(history.samples.map(\.index) == [0, 1])
-        #expect(history.samples.map(\.cachedTokens) == [10, 20].sorted())
+        // 同一时间戳按 UUID 排序，期望顺序必须由消息自身的 ID 推导，而不是假设 token 升序。
+        let expectedOrder = [first, second].sorted { $0.id.uuidString < $1.id.uuidString }
+        #expect(history.samples.map(\.cachedTokens) == expectedOrder.compactMap(\.cachedInputTokenCount))
     }
 
     @Test("累计命中率按 token 加权而非算术平均")
