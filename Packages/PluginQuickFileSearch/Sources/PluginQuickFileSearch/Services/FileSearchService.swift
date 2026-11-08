@@ -53,6 +53,8 @@ public final class FileSearchService: ObservableObject, SuperLog {
     private var indexStore = FileIndexStore(projectPath: "")
     private var searchTask: Task<Void, Never>?
     private var indexingProjectPath: String?
+    /// 项目代次。切换项目时递增，用于作废旧项目里发起、晚到的搜索结果。
+    private var projectGeneration: Int = 0
 
     // MARK: - Initialization
 
@@ -80,6 +82,7 @@ public final class FileSearchService: ObservableObject, SuperLog {
         }
 
         currentProjectPath = path
+        invalidateSearchState()
         indexStore = FileIndexStore(projectPath: path)
         rebuildIndex(for: path)
     }
@@ -90,6 +93,7 @@ public final class FileSearchService: ObservableObject, SuperLog {
         indexStore.clear()
         searchResults = []
         searchQuery = ""
+        invalidateSearchState()
     }
 
     /// 选择文件并更新项目状态
@@ -117,6 +121,7 @@ public final class FileSearchService: ObservableObject, SuperLog {
         guard !normalizedProjectPath.isEmpty, !normalizedQuery.isEmpty else { return [] }
 
         if currentProjectPath != normalizedProjectPath {
+            invalidateSearchState()
             currentProjectPath = normalizedProjectPath
             indexStore = FileIndexStore(projectPath: normalizedProjectPath)
         }
@@ -133,6 +138,14 @@ public final class FileSearchService: ObservableObject, SuperLog {
     }
 
     // MARK: - Private Methods
+
+    /// 作废上一项目发起的搜索：取消进行中的任务并立即隐藏旧结果。
+    private func invalidateSearchState() {
+        projectGeneration &+= 1
+        searchTask?.cancel()
+        searchTask = nil
+        searchResults = []
+    }
 
     /// 重建文件索引
     private func rebuildIndex(for path: String) {
@@ -194,8 +207,9 @@ public final class FileSearchService: ObservableObject, SuperLog {
         let startTime = Date()
         let lowercaseQuery = query.lowercased()
 
-        // 在访问 self.indexStore 之前先捕获文件列表
+        // 在访问 self.indexStore 之前先捕获文件列表和项目代次
         let files = indexStore.files
+        let generation = projectGeneration
 
         let results = await Task.detached(priority: .userInitiated) {
             FileSearchHelpers.searchInFiles(files, query: lowercaseQuery)
@@ -204,7 +218,12 @@ public final class FileSearchService: ObservableObject, SuperLog {
         await MainActor.run { [weak self] in
             guard let self else { return }
             guard !Task.isCancelled else { return }
-            guard Self.shouldApplySearchResults(currentQuery: self.searchQuery, completedQuery: query) else { return }
+            guard Self.shouldApplySearchResults(
+                currentQuery: self.searchQuery,
+                completedQuery: query,
+                currentGeneration: self.projectGeneration,
+                completedGeneration: generation
+            ) else { return }
             self.searchResults = results
 
             let duration = Date().timeIntervalSince(startTime)
@@ -218,8 +237,15 @@ public final class FileSearchService: ObservableObject, SuperLog {
         query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 
-    nonisolated static func shouldApplySearchResults(currentQuery: String, completedQuery: String) -> Bool {
-        normalizedQuery(currentQuery) == normalizedQuery(completedQuery)
+    /// 结果只在查询词未变、且仍属于当前项目代次时才允许写回。
+    nonisolated static func shouldApplySearchResults(
+        currentQuery: String,
+        completedQuery: String,
+        currentGeneration: Int,
+        completedGeneration: Int
+    ) -> Bool {
+        currentGeneration == completedGeneration
+            && normalizedQuery(currentQuery) == normalizedQuery(completedQuery)
     }
 
     nonisolated static func shouldRefreshSearchAfterIndexing(query: String) -> Bool {

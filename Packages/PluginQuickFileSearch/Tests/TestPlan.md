@@ -5,7 +5,7 @@
 QuickFileSearchPlugin Fast file search with Cmd+P
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 24
+测试文件: 1 个，用例总数: 25
 
 核心组件（源码目录）:
 - `Models/`
@@ -63,16 +63,17 @@ QuickFileSearchPlugin Fast file search with Cmd+P
 | 22 | 综合 | quickOpenResultsClampsNonPositiveLimits | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `quickOpenResultsClampsNonPositiveLimits` |
 | 23 | 综合 | fuzzyMatchRejectsEmptyQuery | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fuzzyMatchRejectsEmptyQuery` |
 | 24 | 综合 | fileSearchResultRowMapsCommonFileIconsWithoutDuplicateCases | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `fileSearchResultRowMapsCommonFileIconsWithoutDuplicateCases` |
+| 25 | 综合 | staleSearchResultsFromPreviousProjectAreDiscarded | — | 执行该用例 | 旧代次结果被丢弃，同代次仍采用 | P0 | ✅ 已覆盖 | `staleSearchResultsFromPreviousProjectAreDiscarded` |
 
-> 说明：全部 **24 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **25 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
+- P0: 已覆盖 4 / 4
 - P1: 已覆盖 15 / 15
 - P2: 已覆盖 6 / 6
-- **合计: 24 / 24**（仅表示清单场景，非源码覆盖率）
+- **合计: 25 / 25**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -83,7 +84,7 @@ QuickFileSearchPlugin Fast file search with Cmd+P
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 24 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 25 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

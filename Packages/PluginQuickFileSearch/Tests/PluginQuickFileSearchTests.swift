@@ -132,8 +132,21 @@ import ProviderEditor
 }
 
 @Test func staleSearchResultsTrimmedQueriesAreEquivalent() {
-    #expect(FileSearchService.shouldApplySearchResults(currentQuery: "  App  ", completedQuery: "App"))
-    #expect(!FileSearchService.shouldApplySearchResults(currentQuery: "App", completedQuery: "AppS"))
+    #expect(FileSearchService.shouldApplySearchResults(
+        currentQuery: "  App  ", completedQuery: "App", currentGeneration: 3, completedGeneration: 3
+    ))
+    #expect(!FileSearchService.shouldApplySearchResults(
+        currentQuery: "App", completedQuery: "AppS", currentGeneration: 3, completedGeneration: 3
+    ))
+}
+
+@Test func staleSearchResultsFromPreviousProjectAreDiscarded() {
+    #expect(!FileSearchService.shouldApplySearchResults(
+        currentQuery: "App", completedQuery: "App", currentGeneration: 2, completedGeneration: 1
+    ))
+    #expect(FileSearchService.shouldApplySearchResults(
+        currentQuery: "App", completedQuery: "App", currentGeneration: 2, completedGeneration: 2
+    ))
 }
 
 // MARK: - Existing Tests
@@ -193,9 +206,15 @@ import ProviderEditor
 }
 
 @Test func staleSearchResultsDoNotApplyToChangedQuery() {
-    #expect(FileSearchService.shouldApplySearchResults(currentQuery: "App", completedQuery: " app "))
-    #expect(!FileSearchService.shouldApplySearchResults(currentQuery: "Application", completedQuery: "App"))
-    #expect(!FileSearchService.shouldApplySearchResults(currentQuery: "", completedQuery: "App"))
+    #expect(FileSearchService.shouldApplySearchResults(
+        currentQuery: "App", completedQuery: " app ", currentGeneration: 0, completedGeneration: 0
+    ))
+    #expect(!FileSearchService.shouldApplySearchResults(
+        currentQuery: "Application", completedQuery: "App", currentGeneration: 0, completedGeneration: 0
+    ))
+    #expect(!FileSearchService.shouldApplySearchResults(
+        currentQuery: "", completedQuery: "App", currentGeneration: 0, completedGeneration: 0
+    ))
 }
 
 @Test func indexCompletionRefreshesOnlyActiveQueries() {
