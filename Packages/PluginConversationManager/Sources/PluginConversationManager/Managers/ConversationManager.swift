@@ -24,6 +24,9 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     public internal(set) var conversations: [ConversationSummary] = []
     /// 缓存数组之外的会话模型选择；列表整表重载或旧会话不在窗口内时仍然生效。
     var modelIDOverrides: [UUID: String] = [:]
+    /// 缓存数组之外的会话语言；后台会话被挤出有界缓存后，下一次请求仍须用它自己的
+    /// 语言而不是 New Chat 的全局默认值（issue #984）。
+    var languageOverrides: [UUID: ConversationLanguage] = [:]
     public internal(set) var selectedConversationID: UUID? {
         didSet {
             guard selectedConversationID != oldValue else { return }
@@ -242,6 +245,11 @@ public final class ConversationManager: ConversationManaging, SuperLog {
 
     func cache(_ summary: ConversationSummary) {
         guard summary.parentConversationID == nil else { return }
+        // 摘要一旦进入过缓存，就记住它的显式语言；后续被裁剪出窗口时，
+        // `language(for:)` 仍能读到会话自己的设置（issue #984）。
+        if let language = summary.language {
+            languageOverrides[summary.id] = language
+        }
         if let index = conversations.firstIndex(where: { $0.id == summary.id }) {
             conversations[index] = summary
         } else {
