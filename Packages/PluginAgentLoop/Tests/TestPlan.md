@@ -5,7 +5,7 @@
 PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProvider`。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 105
+测试文件: 11 个，用例总数: 106
 
 核心组件（源码目录）:
 - `Managers/`
@@ -44,6 +44,7 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 - **Tool 调用身份归一化的边界分支**（7 条）：由 `idsCollectsToolCallIDsFromBothRoles`、`normalizeDetectsCollisionAfterTrim`、`normalizeReturnsResponseUnchangedWithoutToolCalls` 等用例锁定；改动该模块时优先跑 `ToolCallIdentityAndHelpersEdgeCaseTests.swift`。
 - **消息与 LLM 消息互转的边界分支**（7 条）：由 `llmMessagesSkipsToolCallsWithoutResult`、`messageFromLLMMessageFallsBackToSystemForUnknownRole`、`llmMessageDropsInvalidBase64ImageAttachments` 等用例锁定；改动该模块时优先跑 `ToolCallIdentityAndHelpersEdgeCaseTests.swift`。
 - **AgentLoop 注入预算**（2 条）：由 `budgetSubtractsPreparedHistory`、`budgetNeverGoesNegative` 锁定；Hook 注入内容的预算必须扣除已准备的历史，且不得为负。
+- **AgentLoop 上下文校准**（1 条）：由 `calibrationUsesCacheTotalInput` 锁定；校准必须优先使用 `cacheTotalInputTokenCount`，缺失时才回退 `inputTokenCount`。
 
 ## 测试用例清单
 
@@ -154,27 +155,28 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 | 103 | 消息与 LLM 消息互转 | 持久化的 redacted thinking 会进入下一轮 LLMMessage | 构造带 `redactedThinkingData` 的 assistant 消息 | 读取 `llmMessage` | `redactedThinking` 按顺序还原 opaque data | P1 | ✅ 已覆盖 | `llmMessageCarriesRedactedThinking` |
 | 104 | AgentLoop 注入预算 | 钩子注入预算等于输入上限扣除已准备历史 | 输入上限 = 历史估算 + 1200 | 调用 `injectedContentTokenBudget` | 返回 1200，历史不被重复计入 | P1 | ✅ 已覆盖 | `budgetSubtractsPreparedHistory` |
 | 105 | AgentLoop 注入预算 | 历史占满输入上限时注入预算收敛为 0 | 输入上限小于历史估算 | 调用 `injectedContentTokenBudget` | 返回 0，不会出现负预算 | P2 | ✅ 已覆盖 | `budgetNeverGoesNegative` |
+| 106 | AgentLoop 上下文校准 | 校准优先使用缓存总输入（**回归 #968**） | 响应分别带 cacheTotal、仅 input、两者皆无 | 调用 `reportedInputTokenCount(for:)` | 依次返回 30,000、input 值、nil | P1 | ✅ 已覆盖 | `calibrationUsesCacheTotalInput` |
 
-> 说明：全部 **105 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **106 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 23 / 23
-- P1: 已覆盖 70 / 70
+- P1: 已覆盖 71 / 71
 - P2: 已覆盖 12 / 12
-- **合计: 105 / 105**（仅表示清单场景，非源码覆盖率）
+- **合计: 106 / 106**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（23 条）
-- **P1**: 其余功能性用例（70 条）
+- **P1**: 其余功能性用例（71 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 105 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 106 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

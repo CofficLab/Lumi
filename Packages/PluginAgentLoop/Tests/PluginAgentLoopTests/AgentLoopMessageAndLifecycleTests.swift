@@ -490,3 +490,29 @@ struct AgentLoopInjectedContentBudgetTests {
         #expect(budget == 0)
     }
 }
+
+/// Regression coverage for issue #968: calibration must use the actual total
+/// input, which cache-aware endpoints report separately from the uncached part.
+@MainActor
+@Suite("AgentLoop 上下文校准")
+struct AgentLoopCalibrationUsageTests {
+
+    @Test("上下文校准优先使用缓存总输入（回归 #968）")
+    func calibrationUsesCacheTotalInput() {
+        let manager = makeManager()
+
+        let cached = LLMResponse(
+            content: "",
+            inputTokenCount: 3_000,
+            cachedInputTokenCount: 27_000,
+            cacheTotalInputTokenCount: 30_000
+        )
+        #expect(manager.reportedInputTokenCount(for: cached) == 30_000)
+
+        let uncached = LLMResponse(content: "", inputTokenCount: 3_000)
+        #expect(manager.reportedInputTokenCount(for: uncached) == 3_000)
+
+        let unknown = LLMResponse(content: "")
+        #expect(manager.reportedInputTokenCount(for: unknown) == nil)
+    }
+}
