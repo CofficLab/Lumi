@@ -35,6 +35,39 @@ final class CADDesignerLogicTests: XCTestCase {
         XCTAssertEqual(transform.scale, 2)
     }
 
+    @MainActor
+    func testUndoRestoresComponentValuesWithoutChangingId() {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        _ = store.createDocument(name: "Undo Sync")
+
+        let instance = ProfileInstance(profileId: "profile-40x40-eu", length: 500)
+        try? store.addComponent(.profile(instance))
+        store.selectedComponentId = instance.id
+
+        try? store.updateComponent(id: instance.id) { component in
+            if case .profile(var profile) = component {
+                profile.length = 1000
+                component = .profile(profile)
+            }
+        }
+        if case .profile(let updated) = store.selectedComponent {
+            XCTAssertEqual(updated.length, 1000)
+        } else {
+            XCTFail("Expected a profile component")
+        }
+
+        store.undo()
+
+        // Undo 回退内容但保留 ID，因此面板同步必须以组件值为触发条件。
+        XCTAssertEqual(store.selectedComponent?.id, instance.id)
+        if case .profile(let restored) = store.selectedComponent {
+            XCTAssertEqual(restored.length, 500)
+        } else {
+            XCTFail("Expected a profile component after undo")
+        }
+    }
+
     func testCADDocumentCodableRoundTrip() throws {
         let profile = ProfileInstance(profileId: "profile-40x40-eu", length: 1200)
         let connector = ConnectorInstance(connectorId: "connector-corner-40")
