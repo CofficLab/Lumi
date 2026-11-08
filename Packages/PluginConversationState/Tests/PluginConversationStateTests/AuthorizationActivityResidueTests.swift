@@ -196,6 +196,78 @@ struct AuthorizationActivityResidueTests {
     }
 }
 
+/// 复现「Chat 模式整批拦截后，`.executingTool` 一路带到下一次 LLM 请求」的问题。
+///
+/// 拦截路径只生成 blocked 结果，不执行工具、不创建 ToolJob；Job 终态路径的
+/// activity 清理因此永远不会触发。`.batchCompleted` 是这条链路唯一能收尾的事件。
+@Suite("Chat 模式拦截后 activity 残留")
+struct BlockedBatchActivityResidueTests {
+
+    @Test("被拦截批次完成后 activity 不得停留在 executingTool（#992）")
+    @MainActor
+    func blockedBatchClearsExecutingToolActivity() {
+        let conversationID = UUID()
+        let turnID = UUID()
+        let call = ToolCall(id: "call_blocked_1", name: "write_file", arguments: "{}")
+        let toolManager = TestToolManager()
+        let provider = ConversationStateProvider()
+        let observer = ToolManagerStateObserver(toolManager: toolManager, provider: provider)
+
+        // 请求发出后响应带回工具调用，AgentLoop 已把 activity 写成 executingTool。
+        provider.update(
+            conversationID: conversationID,
+            turnID: turnID,
+            agentLoopState: .running,
+            activity: .executingTool
+        )
+
+        // 用户在响应返回前切到 Chat，随后整批调用被拦截。
+        toolManager.emit(.batchCompleted(
+            conversationID: conversationID,
+            turnID: turnID,
+            toolCalls: [call],
+            results: [.blocked(reason: "Tool execution was blocked because this conversation is in Chat mode.")]
+        ))
+
+        #expect(
+            provider.state(for: conversationID).activity == nil,
+            "拦截批次没有任何 ToolJob，若不在此清理，activity 会跨越下一次 LLM 请求一直显示「正在执行」"
+        )
+        observer.cancel()
+    }
+
+    @Test("批次因待授权暂停时不得清掉 waitingForUser（#992 护栏）")
+    @MainActor
+    func pendingApprovalKeepsWaitingForUser() {
+        let conversationID = UUID()
+        let turnID = UUID()
+        let call = ToolCall(id: "call_approval_1", name: "edit_file", arguments: "{}")
+        let toolManager = TestToolManager()
+        let provider = ConversationStateProvider()
+        let observer = ToolManagerStateObserver(toolManager: toolManager, provider: provider)
+
+        provider.update(
+            conversationID: conversationID,
+            turnID: turnID,
+            agentLoopState: .suspended,
+            activity: .waitingForUser
+        )
+
+        toolManager.emit(.batchCompleted(
+            conversationID: conversationID,
+            turnID: turnID,
+            toolCalls: [call],
+            results: [.needsUserResponse(payload: "{}")]
+        ))
+
+        #expect(
+            provider.state(for: conversationID).activity == .waitingForUser,
+            "批次暂停等待授权时，activity 必须保留，否则授权卡片出现时提示已经消失"
+        )
+        observer.cancel()
+    }
+}
+
 // MARK: - Test Doubles
 
 /// 「回合已挂起，且刚收到一次授权请求」的完整场景。
