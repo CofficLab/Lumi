@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationState 的实现包，包含 5 个主要类型；当前测试覆盖 10 条用例。
+PluginConversationState 的实现包，包含 5 个主要类型；当前测试覆盖 20 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 10
+测试文件: 3 个，用例总数: 20
 
 核心组件（源码目录）:
 - `Observers/`
@@ -26,6 +26,8 @@ PluginConversationState 的实现包，包含 5 个主要类型；当前测试�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **综合**（10 条）：由 `pluginMetadataIsStable`、`providerPublishesStateEvents`、`partialUpdatePreservesUnchangedFields` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **授权解决后 activity 残留**（5 条）：由 `activityClearedAfterAuthorizationResolved`、`activityClearedAfterAuthorizationRejected`、`activityClearedWithoutAnyToolJobEvent` 等用例锁定——授权完成后 activity 必须从 waitingForUser 清掉，不能只靠 ToolJobEvent 驱动，取消后迟到的事件也不得把它改回来。
+- **activity 的终态不变量**（5 条）：由 `terminalAgentLoopStateClearsActivity`、`lateEventCannotResurrectActivityOnTerminalTurn`、`nonTerminalTurnsStillAcceptActivity` 等用例锁定——终态回合的 activity 恒为空，idle 只承载 sending，快照替换路径同样受约束。
 
 ## 测试用例清单
 
@@ -41,27 +43,37 @@ PluginConversationState 的实现包，包含 5 个主要类型；当前测试�
 | 8 | 综合 | observerStopsReceivingAfterCancel | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `observerStopsReceivingAfterCancel` |
 | 9 | 综合 | jobActivityMergesIntoSnapshot | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `jobActivityMergesIntoSnapshot` |
 | 10 | 综合 | 恢复后的迟到 suspended 事件不会覆盖运行中状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `lateSuspendedEventDoesNotOverwriteResumedTurnState` |
+| 11 | 授权解决后 activity 残留 | 授权完成后 activity 不得停留在 waitingForUser | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `activityClearedAfterAuthorizationResolved` |
+| 12 | 授权解决后 activity 残留 | 授权被拒后 activity 不得停留在 waitingForUser | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `activityClearedAfterAuthorizationRejected` |
+| 13 | 授权解决后 activity 残留 | 授权请求不产生 ToolJobEvent 时仍必须能清掉 activity | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `activityClearedWithoutAnyToolJobEvent` |
+| 14 | 授权解决后 activity 残留 | 授权请求时回合已挂起，activity 才得以写入 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `authorizationRequestLandsOnSuspendedTurn` |
+| 15 | 授权解决后 activity 残留 | 回合取消后迟到的 Job 事件不得把 activity 改回 waitingForUser | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `lateJobEventDoesNotRestoreWaitingForUserAfterCancellation` |
+| 16 | activity 的终态不变量 | 回合进入终态后 activity 必须为空 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `terminalAgentLoopStateClearsActivity` |
+| 17 | activity 的终态不变量 | 终态回合不得被迟到的事件重新标记为正在做事 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `lateEventCannotResurrectActivityOnTerminalTurn` |
+| 18 | activity 的终态不变量 | 非终态回合的 activity 必须正常写入 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `nonTerminalTurnsStillAcceptActivity` |
+| 19 | activity 的终态不变量 | idle 回合只承载正在发送 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `idleTurnOnlyAcceptsSendingActivity` |
+| 20 | activity 的终态不变量 | 快照替换路径同样守住终态不变量 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `snapshotReplacementAlsoRespectsInvariant` |
 
-> 说明：全部 **10 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **20 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
-- P1: 已覆盖 8 / 8
+- P0: 已覆盖 8 / 8
+- P1: 已覆盖 10 / 10
 - P2: 已覆盖 2 / 2
-- **合计: 10 / 10**（仅表示清单场景，非源码覆盖率）
+- **合计: 20 / 20**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（8 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P1**: 其余功能性用例（10 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 10 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 20 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
