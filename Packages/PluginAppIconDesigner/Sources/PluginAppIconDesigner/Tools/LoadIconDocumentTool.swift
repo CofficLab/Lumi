@@ -35,11 +35,17 @@ public struct LoadIconDocumentTool: SuperAgentTool {
             let inputURL = URL(fileURLWithPath: inputPath)
             let loadedDocument = try IconDocumentFileService().load(from: inputURL)
             let replaceSelected = IconToolSupport.bool(arguments, "replaceSelected", default: false)
+            let targetId = IconToolSupport.string(arguments, "documentId")?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
             let scope = try await IconToolSupport.resolveScope(arguments)
 
             let document = try await MainActor.run {
                 if replaceSelected {
-                    return try IconToolSupport.store().replaceDocument(loadedDocument, scope: scope)
+                    return try IconToolSupport.store().replaceDocument(
+                        loadedDocument,
+                        replacingDocumentId: targetId?.isEmpty == false ? targetId : nil,
+                        scope: scope
+                    )
                 }
                 return IconToolSupport.store().importDocument(loadedDocument, scope: scope)
             }
