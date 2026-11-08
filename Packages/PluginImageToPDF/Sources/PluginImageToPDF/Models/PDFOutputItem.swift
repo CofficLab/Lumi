@@ -42,6 +42,15 @@ struct PDFOutputItem: Identifiable, Equatable {
         self.progress = 0
     }
 
+    /// 是否展示行内进度条。
+    ///
+    /// 只有 `processing` 才是进行中状态：进入 `failed` / `done` 后，
+    /// 残留的中间进度不能继续渲染，否则界面会同时显示"失败"和"进行中"。
+    var showsProgress: Bool {
+        guard case .processing = status else { return false }
+        return progress > 0 && progress < 1
+    }
+
     /// Label shown in the UI based on status.
     var displayStatus: String {
         switch status {
