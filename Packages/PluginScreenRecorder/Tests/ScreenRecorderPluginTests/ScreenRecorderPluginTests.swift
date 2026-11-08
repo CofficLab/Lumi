@@ -49,6 +49,52 @@ struct ScreenRecorderPluginTests {
         #expect((RecordingError.permissionDenied.errorDescription ?? "").isEmpty == false)
         #expect((RecordingError.targetIsLumi.errorDescription ?? "").isEmpty == false)
         #expect((RecordingError.notRecording.errorDescription ?? "").isEmpty == false)
+        #expect((RecordingError.microphoneUnsupported.errorDescription ?? "").isEmpty == false)
+    }
+
+    // MARK: - 回归 #757：麦克风采集的系统版本门槛
+
+    @Test("麦克风采集仅在 macOS 15+ 视为可用")
+    func microphoneCapabilityDependsOnMajorVersion() {
+        #expect(RecordingMicrophoneCapability.isSupported(majorVersion: 14) == false)
+        #expect(RecordingMicrophoneCapability.isSupported(majorVersion: 15))
+        #expect(RecordingMicrophoneCapability.isSupported(majorVersion: 26))
+    }
+
+    @Test("macOS 14 请求麦克风时明确报错，未请求则放行")
+    func microphoneValidationRejectsUnsupportedVersions() throws {
+        #expect(throws: RecordingError.self) {
+            try RecordingMicrophoneCapability.validate(includeMicrophone: true, majorVersion: 14)
+        }
+        // 不请求麦克风时版本不影响录制。
+        try RecordingMicrophoneCapability.validate(includeMicrophone: false, majorVersion: 14)
+        // macOS 15+ 正常通过。
+        try RecordingMicrophoneCapability.validate(includeMicrophone: true, majorVersion: 15)
+    }
+
+    @MainActor
+    @Test("macOS 14 上 start 在权限检查前就拒绝麦克风录制")
+    func startRejectsMicrophoneBeforePermissionsOnMacOS14() async {
+        let manager = RecordingSessionManager()
+        manager.osMajorVersionProvider = { 14 }
+        let config = RecordingConfig(
+            target: .display(),
+            includeMicrophone: true,
+            outputDirectory: URL(fileURLWithPath: "/tmp")
+        )
+
+        do {
+            try await manager.start(config: config)
+            Issue.record("Expected start to reject microphone capture on macOS 14")
+        } catch let error as RecordingError {
+            guard case .microphoneUnsupported = error else {
+                Issue.record("Unexpected error: \(error)")
+                return
+            }
+        } catch {
+            Issue.record("Unexpected error type: \(error)")
+        }
+        #expect(manager.hasActiveSession == false)
     }
 
     @MainActor

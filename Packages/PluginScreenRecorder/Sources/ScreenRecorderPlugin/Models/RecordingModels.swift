@@ -130,6 +130,7 @@ public struct RecordingResult: Sendable {
 public enum RecordingError: LocalizedError, Sendable {
     case permissionDenied
     case microphonePermissionDenied
+    case microphoneUnsupported
     case noSuchWindow(String)
     case targetIsLumi
     case alreadyRecording(String)
@@ -145,6 +146,8 @@ public enum RecordingError: LocalizedError, Sendable {
             "Screen Recording permission is required. Please grant it in System Settings."
         case .microphonePermissionDenied:
             "Microphone permission is required to record your voice. Please grant it in System Settings."
+        case .microphoneUnsupported:
+            "Microphone capture requires macOS 15 or later. Retry with include_microphone set to false, or record on macOS 15+ to capture your voice."
         case .noSuchWindow(let app):
             "No visible window found for “\(app)”. Is the app running?"
         case .targetIsLumi:
@@ -162,5 +165,34 @@ public enum RecordingError: LocalizedError, Sendable {
         case .cancelled:
             "The recording was cancelled."
         }
+    }
+}
+
+// MARK: - Microphone capability
+
+/// 麦克风采集能力判定。
+///
+/// `SCStreamConfiguration.captureMicrophone` 与 `.microphone` 输出都自 macOS 15 起提供。
+/// macOS 14 上继续录制只会得到「开始/保存都成功、但完全没有声音」的视频，
+/// 因此必须在请求权限和创建文件之前明确拒绝，不能静默降级。
+enum RecordingMicrophoneCapability {
+    /// SCStream 麦克风采集所需的最低系统主版本号。
+    static let minimumMajorVersion = 15
+
+    static var currentMajorVersion: Int {
+        ProcessInfo.processInfo.operatingSystemVersion.majorVersion
+    }
+
+    static func isSupported(majorVersion: Int) -> Bool {
+        majorVersion >= minimumMajorVersion
+    }
+
+    /// 请求了麦克风但系统不支持时抛出 `.microphoneUnsupported`。
+    static func validate(
+        includeMicrophone: Bool,
+        majorVersion: Int = currentMajorVersion
+    ) throws {
+        guard includeMicrophone, !isSupported(majorVersion: majorVersion) else { return }
+        throw RecordingError.microphoneUnsupported
     }
 }
