@@ -5,7 +5,7 @@
 PluginAppStoreConnect Current `KernelCore` implementation of the App Store Connect integration. - Product/module: `PluginAppStoreConnect` - Plugin id: `com.coffic.lumi.plugin.app-store-connect` - Rail tab: `app-store-connect.sidebar` - Enable policy: disabled by default The plugin provides App Store Connect account, app/version, localization, screenshot, release, and Xcode Cloud management through the workbench and the `app_store_connect_*` Agent tools.
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 66
+测试文件: 12 个，用例总数: 68
 
 核心组件（源码目录）:
 - `Sources/`
@@ -43,6 +43,7 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 - **VM App 切换**（3 条）：由 `loadingAnotherAppIsNotSkipped`、`lateVersionsFromPreviousAppAreDiscarded`、`currentVersionsAreApplied` 等用例锁定；改动 App 选择、版本加载或代次校验时优先跑对应测试文件。
 - **SetAppStoreConnectAgeRatingTool**（4 条）：由 `schemaExposesMissingAttributes`、`explicitFalseIsSent`、`absentAttributesAreOmitted`、`decodesNewAttributes` 锁定；改动年龄分级参数或 Apple 字段映射时优先跑对应测试文件。
 - **工具失败语义**（3 条）：由 `missingRequiredArgumentsThrow`、`blankArgumentsThrow`、`invalidIsEnabledThrows` 锁定；改动工具参数校验或失败处理时优先跑对应测试文件。
+- **ConnectClient 构建出口合规声明**（2 条）：由 `alreadySetDeclarationIsTreatedAsNoop`、`otherFailuresStillThrow` 锁定；改动 `updateBuildEncryption` 或 HTTP 409 错误分类时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -114,27 +115,29 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 | 64 | 工具失败语义 | isEnabled 非法时抛出而不是退回默认值 | 合法 workflowID | 传入 `isEnabled: maybe` | 抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `invalidIsEnabledThrows` |
 | 65 | ConnectCacheInvalidator | 关联 build 后失效该版本的关系读取缓存 | 关系读取已缓存为 `{"data": null}` | `PATCH /v1/appStoreVersions/{id}/relationships/build` | 该版本的关系读取缓存被清除，后续读取不再返回关联前的空值 | P0 | ✅ 已覆盖 | `buildAssignmentPatchInvalidatesRelationshipRead` |
 | 66 | ConnectCacheInvalidator | 关联 build 不影响其它版本的关系读取缓存 | 另一版本的关系读取已缓存 | 关联 version-1 的 build | version-2 的关系读取缓存保留 | P1 | ✅ 已覆盖 | `buildAssignmentPatchKeepsOtherVersions` |
+| 67 | ConnectClient 构建出口合规声明 | 声明值已相同时视为已达成，不抛错 | PATCH /v1/builds/{id} 返回 409 `ENTITY_ERROR.ATTRIBUTE.INVALID` | 调用 `updateBuildEncryption` | 返回 false，不抛错，关联流程可继续 | P0 | ✅ 已覆盖 | `alreadySetDeclarationIsTreatedAsNoop` |
+| 68 | ConnectClient 构建出口合规声明 | 声明写入的其它失败仍然抛出 | PATCH /v1/builds/{id} 返回 500 | 调用 `updateBuildEncryption` | 抛出 `AppStoreConnectClientError` | P1 | ✅ 已覆盖 | `otherFailuresStillThrow` |
 
-> 说明：全部 **66 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **68 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 15 / 15
-- P1: 已覆盖 46 / 46
+- P0: 已覆盖 16 / 16
+- P1: 已覆盖 47 / 47
 - P2: 已覆盖 5 / 5
-- **合计: 66 / 66**（仅表示清单场景，非源码覆盖率）
+- **合计: 68 / 68**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
-- **P1**: 其余功能性用例（46 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
+- **P1**: 其余功能性用例（47 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 66 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 68 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
