@@ -52,7 +52,10 @@ let package = Package(
             dependencies: [
                 "GoalTaskPlugin",
                 "KitAgentTool",
+                .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
             ],
             path: "Tests"
         )
