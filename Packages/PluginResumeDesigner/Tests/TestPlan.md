@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginResumeDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 15 条用例。
+PluginResumeDesigner 的实现包，包含 15 个主要类型；当前测试覆盖 26 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 22
+测试文件: 6 个，用例总数: 26
 
 核心组件（源码目录）:
 - `Observers/`
@@ -32,6 +32,7 @@ PluginResumeDesigner 的实现包，包含 14 个主要类型；当前测试覆�
 - `PatchResumeHTMLTool`
 - `PreviewResumePageTool`
 - `ReadResumeHTMLTool`
+- `ResumeExportTargets`
 
 ## 关键行为契约（实现约定，非协议要求）
 
@@ -44,6 +45,7 @@ PluginResumeDesigner 的实现包，包含 14 个主要类型；当前测试覆�
 
 - **ResumeDesignerSuite**（6 条）：由 `conversationScopedToolWritesIntoItsOwnProject`、`conversationScopedToolReadsFromItsOwnProject` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TestStorage**（1 条）：由 `doesNotCreateStorageDirectoryUntilWrite` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ResumeExportTargets**（3 条）：由 `fileNamesMatchExportMode`、`reportsEveryExistingTarget`、`pngOnlyIgnoresPDFConflict` 锁定 GUI 导出的目标清单与同名冲突检测。
 
 ## 测试用例清单
 
@@ -72,27 +74,30 @@ PluginResumeDesigner 的实现包，包含 14 个主要类型；当前测试覆�
 | 21 | ResumeDesignerSuite | 插件注册的 Agent 工具都带对话作用域包装 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registeredToolsAreConversationScoped` |
 | 22 | TestStorage | 加入项目不预建存储目录，真正写入时才创建 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doesNotCreateStorageDirectoryUntilWrite` |
 | 23 | ResumeDesignerPlugin | 启动器建议激活完整插件入口而不是只切换 Rail（**回归 #1006**） | 构造插件实例 | 读取 `promptSuggestion.action` | 为 `.activatePluginEntry`，ActivityBar 入口为 `<id>.entry`，Rail tab 为 `railTabID` | P1 | ✅ 已覆盖 | `promptSuggestionActivatesPluginEntry` |
+| 24 | ResumeExportTargets | PDF 导出列出 PDF 与全部页 PNG，PNG 导出不含 PDF | — | 调用 `fileNames` | 文件名顺序与写入顺序一致，PNG 模式不含 `.pdf` | P1 | ✅ 已覆盖 | `fileNamesMatchExportMode` |
+| 25 | ResumeExportTargets | 目标目录已有同名文件时全部报告，未冲突时不报告（**回归 #1007**） | 临时目录预置 `alice.pdf` 与 `alice-p02.png` | 调用 `existingFiles` | 空目录返回空；预置后按顺序返回两个冲突文件 | P0 | ✅ 已覆盖 | `reportsEveryExistingTarget` |
+| 26 | ResumeExportTargets | PNG-only 导出不把已有 PDF 算作冲突 | 临时目录预置 `alice.pdf` | 调用 `existingFiles(pngOnly: true)`，再预置 `alice-p01.png` 重查 | 首次为空；预置 PNG 后只报告该 PNG | P1 | ✅ 已覆盖 | `pngOnlyIgnoresPDFConflict` |
 
-> 说明：全部 **23 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
-- P1: 已覆盖 17 / 17
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 19 / 19
 - P2: 已覆盖 1 / 1
-- **合计: 23 / 23**（仅表示清单场景，非源码覆盖率）
+- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（17 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（19 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 23 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 26 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
