@@ -107,6 +107,31 @@ struct DatabaseManagerV2PluginTests {
     }
 }
 
+@Suite("Redis handshake")
+struct RedisHandshakeTests {
+    @Test("Redis 握手错误响应会转换为连接错误")
+    func errorResponseFailsHandshake() {
+        #expect(throws: DatabaseError.self) {
+            try RedisConnection.validateHandshake(
+                .error("WRONGPASS invalid username-password pair"),
+                context: "Redis 认证失败"
+            )
+        }
+        #expect(throws: DatabaseError.self) {
+            try RedisConnection.validateHandshake(
+                .error("NOAUTH Authentication required."),
+                context: "Redis 连接失败"
+            )
+        }
+    }
+
+    @Test("Redis 握手成功响应不抛错")
+    func successResponsePassesHandshake() throws {
+        try RedisConnection.validateHandshake(.simpleString("OK"), context: "Redis 认证失败")
+        try RedisConnection.validateHandshake(.simpleString("PONG"), context: "Redis 连接失败")
+    }
+}
+
 @Suite("SQLite RETURNING")
 struct SQLiteReturningTests {
     @Test("SQLite DML RETURNING 产生结果行时不报告失败")
