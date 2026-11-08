@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 66 条用例。
+PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 67 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 66
+测试文件: 7 个，用例总数: 67
 
 核心组件（源码目录）:
 - `Agent/`
@@ -39,6 +39,7 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 66 条�
 
 - **MailAccountStore**（26 条）：由 `testUpsertAndLoad`、`testUpsertUpdatesExistingByID`、`testDeleteRemovesAccountAndPassword` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailAgentTools**（11 条）：由 `testRiskLevelsAndCapabilities`、`testListMessagesWithoutAccount`、`testListMessagesReturnsRecentSummaries` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MailWorkspace**（1 条）：由 `testColdStartOfflineFallsBackToCachedInbox` 锁定；改动工作区账户/文件夹加载时优先跑对应测试文件。
 - **MailComposerService**（11 条）：由 `testSendBuildsMIMEAndAppendsToSent`、`testSendThrowsAuthFailedWithoutPassword`、`testSentFolderDiscoveryPrefersSentKind` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailSessionManager**（5 条）：由 `testSessionCachesByAccount`、`testSessionThrowsAuthFailedWhenPasswordMissing`、`testSessionThrowsAuthFailedOnBadCredentials` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailSyncService**（11 条）：由 `testUpsertAndLastUID`、`testContainsAndOverwrite`、`testUnreadCounts` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -114,27 +115,28 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 66 条�
 | 64 | MailComposerService | 相同账户/模式/上下文重新创建撰写 ViewModel 时恢复草稿全部字段 | 新建模式已填写收件人/抄送/主题/正文并添加附件 | 以相同上下文再次创建 ViewModel | 收件人、抄送、主题、正文、附件与保存时间均恢复 | P1 | ✅ 已覆盖 | `testDraftRestoreRestoresAllFields` |
 | 65 | MailComposerService | 草稿 JSON 损坏时回退到模式默认内容 | 草稿文件写入非法 JSON | 创建回复模式 ViewModel | 使用回复预填内容，不抛错、无保存时间 | P1 | ✅ 已覆盖 | `testCorruptDraftFallsBackToModeDefaults` |
 | 66 | MailComposerService | 发送成功后删除本地草稿，再次打开不残留旧内容 | 新建模式已保存草稿，mock 发送成功 | 发送后重新创建 ViewModel | 正文为空，旧草稿不恢复 | P1 | ✅ 已覆盖 | `testSuccessfulSendClearsLocalDraft` |
+| 67 | MailWorkspace | 冷启动离线时会话创建失败仍展示 INBOX 与本地缓存摘要 | 缓存已有 INBOX 邮件，会话工厂 connect 抛错 | 调用 `load()` 选择首个账户 | `isOffline` 为真，文件夹保留 INBOX，列表显示缓存邮件 | P1 | ✅ 已覆盖 | `testColdStartOfflineFallsBackToCachedInbox` |
 
-> 说明：全部 **66 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **67 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 7 / 7
-- P1: 已覆盖 56 / 56
+- P1: 已覆盖 57 / 57
 - P2: 已覆盖 3 / 3
-- **合计: 66 / 66**（仅表示清单场景，非源码覆盖率）
+- **合计: 67 / 67**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（56 条）
+- **P1**: 其余功能性用例（57 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 66 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 67 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
