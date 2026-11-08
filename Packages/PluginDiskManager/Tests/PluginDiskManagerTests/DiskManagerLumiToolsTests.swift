@@ -53,6 +53,14 @@ import KitAgentTool
         // 绝对路径保持原样。
         #expect(DiskManagerToolSupport.resolveScanPath("/tmp") == "/tmp")
     }
+
+    @Test func pathsPreserveOriginalStringsAndDropBlankEntries() {
+        let arguments = ["paths": ToolArgument(["/tmp/a ", "   ", "/tmp/b"])]
+
+        // 末尾空格属于路径本身，必须原样保留；纯空白条目仍应被剔除。
+        #expect(DiskManagerToolSupport.paths(arguments, "paths") == ["/tmp/a ", "/tmp/b"])
+        #expect(DiskManagerToolSupport.paths([:], "paths") == nil)
+    }
 }
 
 @Suite(.serialized)
@@ -257,5 +265,67 @@ struct LargeFilesServiceTests {
 
         #expect(output.contains("Failed to analyze directory tree"))
         #expect(!output.contains("No entries were found"))
+    }
+
+    // MARK: - 回归 #738：路径末尾空白不得被裁剪
+
+    @Test func cleanCachesToolDeletesExactPathWithTrailingWhitespace() async throws {
+        let fixture = try makeTrailingWhitespaceFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+
+        _ = try await CleanCachesTool().execute(
+            arguments: ["paths": ToolArgument([fixture.spacedPath])]
+        )
+
+        #expect(!FileManager.default.fileExists(atPath: fixture.spacedPath))
+        #expect(FileManager.default.fileExists(atPath: fixture.unspacedPath))
+    }
+
+    @Test func cleanXcodeCachesToolDeletesExactPathWithTrailingWhitespace() async throws {
+        let fixture = try makeTrailingWhitespaceFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+
+        _ = try await CleanXcodeCachesTool().execute(
+            arguments: ["paths": ToolArgument([fixture.spacedPath])]
+        )
+
+        #expect(!FileManager.default.fileExists(atPath: fixture.spacedPath))
+        #expect(FileManager.default.fileExists(atPath: fixture.unspacedPath))
+    }
+
+    @Test func cleanProjectsToolDeletesExactPathWithTrailingWhitespace() async throws {
+        let fixture = try makeTrailingWhitespaceFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+
+        _ = try await CleanProjectsTool().execute(
+            arguments: ["paths": ToolArgument([fixture.spacedPath])]
+        )
+
+        #expect(!FileManager.default.fileExists(atPath: fixture.spacedPath))
+        #expect(FileManager.default.fileExists(atPath: fixture.unspacedPath))
+    }
+
+    @Test func deleteFilesToolDeletesExactPathWithTrailingWhitespace() async throws {
+        let fixture = try makeTrailingWhitespaceFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+
+        _ = try await DeleteFilesTool().execute(
+            arguments: ["paths": ToolArgument([fixture.spacedPath])]
+        )
+
+        #expect(!FileManager.default.fileExists(atPath: fixture.spacedPath))
+        #expect(FileManager.default.fileExists(atPath: fixture.unspacedPath))
+    }
+
+    /// 造一对只差末尾空格的兄弟目录，用来验证删除工具不会「裁剪到另一个目录」。
+    private func makeTrailingWhitespaceFixture() throws
+        -> (root: URL, spacedPath: String, unspacedPath: String) {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-path-whitespace-\(UUID().uuidString)", isDirectory: true)
+        let spaced = root.appendingPathComponent("lumi-target ", isDirectory: true)
+        let unspaced = root.appendingPathComponent("lumi-target", isDirectory: true)
+        try FileManager.default.createDirectory(at: spaced, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: unspaced, withIntermediateDirectories: true)
+        return (root, spaced.path, unspaced.path)
     }
 }

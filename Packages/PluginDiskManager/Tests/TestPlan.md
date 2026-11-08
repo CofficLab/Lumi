@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 47 条用例。
+PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 52 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 47
+测试文件: 4 个，用例总数: 52
 
 核心组件（源码目录）:
 - `Internal/`
@@ -38,7 +38,7 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **CacheCleanerTrash**（2 条）：由 `scanExpandsTrashIntoChildren`、`cleanupKeepsTrashRoot` 锁定；改动废纸篓/缓存扫描与清理逻辑时优先跑对应测试文件。
-- **DiskManagerLumiTools**（19 条）：由 `formatBytesProducesHumanReadableString`、`formatBytesHandlesZero`、`formatDateReturnsUnknownForNil` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DiskManagerLumiTools**（24 条）：由 `formatBytesProducesHumanReadableString`、`formatBytesHandlesZero`、`formatDateReturnsUnknownForNil` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DiskModelsPureLogic**（19 条）：由 `classifiesImages`、`classifiesVideos`、`classifiesAudio` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（7 条）：由 `pluginMetadataIsStable`、`agentToolsContributionIsAvailable`、`railTabIDIsStable` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -93,27 +93,32 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 45 | DiskManagerLumiTools | 目录树工具对缺失根返回失败文案 | 不存在的路径参数 | 调用 `ScanDirectoryTreeTool.execute` | 输出 `Failed to analyze directory tree`，不输出空扫描成功文案 | P1 | ✅ 已覆盖 | `scanDirectoryTreeToolReportsMissingRootAsFailure` |
 | 46 | CacheCleanerTrash | 废纸篓扫描枚举子项，不把 ~/.Trash 本身生成为清理项 | 临时 home 下 .Trash 含两个文件 | 调用 `scanCategory` | 返回 2 个子项，均不是废纸篓根路径 | P0 | ✅ 已覆盖 | `scanExpandsTrashIntoChildren` |
 | 47 | CacheCleanerTrash | 清理废纸篓只删内部文件并保留根目录 | 临时 home 下 .Trash 含一个 256 字节文件 | 扫描后调用 `cleanup` | 释放 256 字节，~/.Trash 仍存在且为目录 | P0 | ✅ 已覆盖 | `cleanupKeepsTrashRoot` |
+| 48 | DiskManagerLumiTools | 路径数组解析保留原始字符串，仅用裁剪判断是否为空 | `["/tmp/a ", "   ", "/tmp/b"]` | 调用 `DiskManagerToolSupport.paths` | 返回 `["/tmp/a ", "/tmp/b"]`，纯空白条目被剔除 | P0 | ✅ 已覆盖 | `pathsPreserveOriginalStringsAndDropBlankEntries` |
+| 49 | DiskManagerLumiTools | clean-caches 删除带末尾空格的路径时不影响同名兄弟目录 | 临时目录下 `lumi-target` 与 `lumi-target ` 两个目录 | 只传 `lumi-target ` 调用 `CleanCachesTool.execute` | 后者被删除，前者保留 | P0 | ✅ 已覆盖 | `cleanCachesToolDeletesExactPathWithTrailingWhitespace` |
+| 50 | DiskManagerLumiTools | clean-xcode-caches 删除带末尾空格的路径时不影响同名兄弟目录 | 临时目录下 `lumi-target` 与 `lumi-target ` 两个目录 | 只传 `lumi-target ` 调用 `CleanXcodeCachesTool.execute` | 后者被删除，前者保留 | P0 | ✅ 已覆盖 | `cleanXcodeCachesToolDeletesExactPathWithTrailingWhitespace` |
+| 51 | DiskManagerLumiTools | clean-projects 删除带末尾空格的路径时不影响同名兄弟目录 | 临时目录下 `lumi-target` 与 `lumi-target ` 两个目录 | 只传 `lumi-target ` 调用 `CleanProjectsTool.execute` | 后者被删除，前者保留 | P0 | ✅ 已覆盖 | `cleanProjectsToolDeletesExactPathWithTrailingWhitespace` |
+| 52 | DiskManagerLumiTools | delete-files 删除带末尾空格的路径时不影响同名兄弟目录 | 临时目录下 `lumi-target` 与 `lumi-target ` 两个目录 | 只传 `lumi-target ` 调用 `DeleteFilesTool.execute` | 后者被删除，前者保留 | P0 | ✅ 已覆盖 | `deleteFilesToolDeletesExactPathWithTrailingWhitespace` |
 
-> 说明：全部 **45 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **52 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
+- P0: 已覆盖 7 / 7
 - P1: 已覆盖 38 / 38
 - P2: 已覆盖 7 / 7
-- **合计: 47 / 47**（仅表示清单场景，非源码覆盖率）
+- **合计: 52 / 52**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
 - **P1**: 其余功能性用例（38 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 45 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 52 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
