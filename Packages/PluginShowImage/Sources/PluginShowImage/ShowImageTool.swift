@@ -74,6 +74,9 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
     static let defaultMaxWidth = 400
     static let minMaxWidth = 100
     static let maxMaxWidth = 800
+    static let supportedImageExtensions = [
+        "png", "jpg", "jpeg", "gif", "tiff", "tif", "bmp", "heic", "heif", "webp", "ico", "icns", "svg",
+    ]
 
     private let network: (any NetworkProviding)?
 
@@ -124,10 +127,10 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let source = arguments["source"]?.value as? String else {
-            return "Error: Missing required 'source' parameter. Please provide a local file path or a remote URL."
+            throw ShowImageError.missingSource
         }
         guard !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return "Error: Missing required 'source' parameter. Please provide a local file path or a remote URL."
+            throw ShowImageError.missingSource
         }
 
         let title = (arguments["title"]?.value as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -138,26 +141,20 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
             Self.logger.info("\(Self.t)🖼️ 显示图片：\(source)")
         }
 
-        let imageSource: ShowImageSource
-        do {
-            imageSource = try Self.normalizedSource(from: source)
-        } catch {
-            return error.localizedDescription
-        }
+        let imageSource = try Self.normalizedSource(from: source)
 
         if case .local(let path) = imageSource {
             let fileURL = URL(fileURLWithPath: path)
             guard FileManager.default.fileExists(atPath: path) else {
-                return "Error: File not found: \(path)"
+                throw ShowImageError.fileNotFound(path)
             }
             // 只用于判断格式；文件名本身仍按原始路径读取。`URL.pathExtension`
             // 对「name.png␠」这类文件名返回空，这里先去空白再取扩展名。
             let extensionName = (fileURL.lastPathComponent as NSString)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             let ext = (extensionName as NSString).pathExtension.lowercased()
-            let supportedExtensions = ["png", "jpg", "jpeg", "gif", "tiff", "tif", "bmp", "heic", "heif", "webp", "ico", "icns", "svg"]
-            guard supportedExtensions.contains(ext) else {
-                return "Error: Unsupported image format '\(ext)'. Supported formats: \(supportedExtensions.joined(separator: ", "))"
+            guard Self.supportedImageExtensions.contains(ext) else {
+                throw ShowImageError.unsupportedFormat(ext: ext, supported: Self.supportedImageExtensions)
             }
         }
 
@@ -182,7 +179,7 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
 
     static func normalizedSource(from source: String) throws -> ShowImageSource {
         guard !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            throw SourceError.missingSource
+            throw ShowImageError.missingSource
         }
 
         // URL 可能被粘贴时带上首尾空白，按 trim 后解析；本地路径则必须逐字节保留，
@@ -195,16 +192,20 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
             case "file":
                 return .local(url.path)
             default:
-                throw SourceError.unsupportedScheme(scheme)
+                throw ShowImageError.unsupportedScheme(scheme)
             }
         }
 
         return .local(source)
     }
 
-    enum SourceError: LocalizedError, Equatable {
+    /// 校验失败必须抛出，而不是返回 `"Error: ..."` 文本：工具结果的成功/失败
+    /// 由 `ToolCallResult.isError` 决定，字符串里写 Error 对上层是成功语义。
+    enum ShowImageError: LocalizedError, Equatable {
         case missingSource
         case unsupportedScheme(String)
+        case fileNotFound(String)
+        case unsupportedFormat(ext: String, supported: [String])
 
         var errorDescription: String? {
             switch self {
@@ -212,6 +213,10 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
                 return "Error: Missing required 'source' parameter. Please provide a local file path or a remote URL."
             case .unsupportedScheme(let scheme):
                 return "Error: Unsupported image URL scheme '\(scheme)'. Only HTTP/HTTPS URLs are supported."
+            case .fileNotFound(let path):
+                return "Error: File not found: \(path)"
+            case .unsupportedFormat(let ext, let supported):
+                return "Error: Unsupported image format '\(ext)'. Supported formats: \(supported.joined(separator: ", "))"
             }
         }
     }

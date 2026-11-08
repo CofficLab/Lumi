@@ -54,23 +54,31 @@ import Testing
     let state = ShowImageState.shared
     state.clear()
 
-    let missingSource = try await tool.execute(arguments: [:])
-    #expect(missingSource.contains("Missing required 'source'"))
-    let emptySource = try await tool.execute(arguments: ["source": ToolArgument(" \n ")])
-    #expect(emptySource.contains("Missing required 'source'"))
+    await #expect(throws: ShowImageTool.ShowImageError.missingSource) {
+        try await tool.execute(arguments: [:])
+    }
+    await #expect(throws: ShowImageTool.ShowImageError.missingSource) {
+        try await tool.execute(arguments: ["source": ToolArgument(" \n ")])
+    }
 
-    let unsupportedScheme = try await tool.execute(arguments: ["source": ToolArgument("data:image/png;base64,AAAA")])
-    #expect(unsupportedScheme.contains("Unsupported image URL scheme 'data'"))
+    await #expect(throws: ShowImageTool.ShowImageError.unsupportedScheme("data")) {
+        try await tool.execute(arguments: ["source": ToolArgument("data:image/png;base64,AAAA")])
+    }
 
     let missingPath = FileManager.default.temporaryDirectory.appendingPathComponent("missing-image-\(UUID()).png")
-    let missingFile = try await tool.execute(arguments: ["source": ToolArgument(missingPath.path)])
-    #expect(missingFile.contains("File not found"))
+    await #expect(throws: ShowImageTool.ShowImageError.fileNotFound(missingPath.path)) {
+        try await tool.execute(arguments: ["source": ToolArgument(missingPath.path)])
+    }
 
     let textURL = FileManager.default.temporaryDirectory.appendingPathComponent("not-an-image-\(UUID()).txt")
     try Data("text".utf8).write(to: textURL)
     defer { try? FileManager.default.removeItem(at: textURL) }
-    let unsupportedFormat = try await tool.execute(arguments: ["source": ToolArgument(textURL.path)])
-    #expect(unsupportedFormat.contains("Unsupported image format 'txt'"))
+    await #expect(throws: ShowImageTool.ShowImageError.unsupportedFormat(
+        ext: "txt",
+        supported: ShowImageTool.supportedImageExtensions
+    )) {
+        try await tool.execute(arguments: ["source": ToolArgument(textURL.path)])
+    }
     #expect(state.displayItem == nil)
 
     let imageURL = FileManager.default.temporaryDirectory.appendingPathComponent("valid-image-\(UUID()).png")
@@ -104,15 +112,44 @@ import Testing
     #expect(state.displayItem == nil)
 }
 
+@Test @MainActor func validationFailuresThrowThroughExecuteResult() async throws {
+    let tool = ShowImageTool(network: nil)
+    let state = ShowImageState.shared
+    state.clear()
+
+    // 回归 #765：校验失败曾经只返回 "Error: ..." 字符串，默认 executeResult
+    // 仍产出 isError == false，工具 Job 以 completed 结束。
+    await #expect(throws: ShowImageTool.ShowImageError.missingSource) {
+        _ = try await tool.executeResult(arguments: [:])
+    }
+
+    let missingPath = FileManager.default.temporaryDirectory
+        .appendingPathComponent("missing-image-\(UUID()).png")
+    await #expect(throws: ShowImageTool.ShowImageError.fileNotFound(missingPath.path)) {
+        _ = try await tool.executeResult(arguments: ["source": ToolArgument(missingPath.path)])
+    }
+
+    let imageURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("valid-image-\(UUID()).png")
+    try Data([0x89, 0x50, 0x4E, 0x47]).write(to: imageURL)
+    defer { try? FileManager.default.removeItem(at: imageURL) }
+
+    let result = try await tool.executeResult(arguments: ["source": ToolArgument(imageURL.path)])
+    #expect(result.isError == false)
+    #expect(result.content.contains("Image displayed successfully"))
+
+    state.clear()
+}
+
 private func expectSourceError(
     _ source: String,
-    _ expected: ShowImageTool.SourceError,
+    _ expected: ShowImageTool.ShowImageError,
     sourceLocation: Testing.SourceLocation = #_sourceLocation
 ) {
     do {
         _ = try ShowImageTool.normalizedSource(from: source)
         Issue.record("Expected source normalization to fail", sourceLocation: sourceLocation)
-    } catch let error as ShowImageTool.SourceError {
+    } catch let error as ShowImageTool.ShowImageError {
         #expect(error == expected, sourceLocation: sourceLocation)
     } catch {
         Issue.record("Unexpected error: \(error)", sourceLocation: sourceLocation)
