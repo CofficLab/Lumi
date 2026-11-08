@@ -12,6 +12,7 @@ enum TempFileStorageError: LocalizedError, Equatable {
     case pathTraversal
     case fileNotFound(String)
     case readFailed(String)
+    case settingsUnavailable(String)
 
     var errorDescription: String? {
         switch self {
@@ -23,6 +24,8 @@ enum TempFileStorageError: LocalizedError, Equatable {
             "Temp file not found: \(name)"
         case .readFailed(let reason):
             "Failed to read temp file: \(reason)"
+        case .settingsUnavailable(let reason):
+            "Failed to read temp storage settings: \(reason)"
         }
     }
 }
@@ -33,19 +36,24 @@ actor TempFileStorageService {
 
     private let fileManager = FileManager.default
     private let filesDirectory: URL
-    private let retentionDays: () -> Int
+    private let retentionDays: () throws -> Int
 
     private init() {
         let pluginDir = AgentTempStoragePluginRuntimeBridge.resolvedPluginDirectory
         filesDirectory = pluginDir.appendingPathComponent("files", isDirectory: true)
         try? FileManager.default.createDirectory(at: filesDirectory, withIntermediateDirectories: true)
-        self.retentionDays = { AgentTempStoragePluginLocalStore.shared.retentionDays }
+        self.retentionDays = { try AgentTempStoragePluginLocalStore.shared.resolvedRetentionDays() }
     }
 
     /// Test-only initializer: point the service at an isolated directory with a fixed retention window.
     init(directory: URL, retentionDays: Int) {
+        self.init(directory: directory, retentionDaysProvider: { retentionDays })
+    }
+
+    /// Test-only initializer with a dynamic (possibly failing) retention provider.
+    init(directory: URL, retentionDaysProvider: @escaping @Sendable () throws -> Int) {
         filesDirectory = directory
-        self.retentionDays = { retentionDays }
+        self.retentionDays = retentionDaysProvider
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
 
@@ -53,8 +61,14 @@ actor TempFileStorageService {
         filesDirectory.path
     }
 
-    func purgeExpiredFiles(now: Date = Date()) {
-        let retentionDays = self.retentionDays()
+    func purgeExpiredFiles(now: Date = Date()) throws {
+        let retentionDays: Int
+        do {
+            retentionDays = try self.retentionDays()
+        } catch {
+            // 配置存在但不可读时不能猜测保留策略：中止清理并保留全部文件。
+            throw TempFileStorageError.settingsUnavailable(error.localizedDescription)
+        }
         guard let cutoff = Calendar.current.date(byAdding: .day, value: -retentionDays, to: now) else {
             return
         }
@@ -80,7 +94,7 @@ actor TempFileStorageService {
     }
 
     func write(filename: String, content: String) throws -> String {
-        purgeExpiredFiles()
+        try purgeExpiredFiles()
         let url = try resolveSafeURL(for: filename)
         try fileManager.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try content.write(to: url, atomically: true, encoding: .utf8)
@@ -88,7 +102,7 @@ actor TempFileStorageService {
     }
 
     func read(filename: String) throws -> String {
-        purgeExpiredFiles()
+        try purgeExpiredFiles()
         let url = try resolveSafeURL(for: filename)
         guard fileManager.fileExists(atPath: url.path) else {
             throw TempFileStorageError.fileNotFound(filename)
@@ -105,7 +119,7 @@ actor TempFileStorageService {
     /// 写入与读取都支持嵌套相对路径（`notes/today.md`），因此列表也必须递归，
     /// 否则嵌套文件可读写却永远不可见。`name` 返回相对根目录的路径。
     func listFiles() throws -> [TempFileInfo] {
-        purgeExpiredFiles()
+        try purgeExpiredFiles()
         let keys: [URLResourceKey] = [.fileSizeKey, .contentModificationDateKey, .isDirectoryKey]
         guard let enumerator = fileManager.enumerator(
             at: filesDirectory,
