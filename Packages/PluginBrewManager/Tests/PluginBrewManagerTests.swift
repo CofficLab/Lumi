@@ -136,6 +136,48 @@ struct PluginBrewManagerTests {
         #expect(viewModel.isLoading == false)
         #expect(viewModel.errorMessage == nil)
     }
+
+    @Test
+    func brewErrorDescriptionsCarryCommandDetail() {
+        #expect(BrewError.commandFailed("  Error: permission denied\n").errorDescription == "Error: permission denied")
+        #expect(BrewError.commandFailed("   \n").errorDescription == "The brew command failed.")
+        #expect(BrewError.notInstalled.errorDescription?.isEmpty == false)
+        #expect(BrewError.notFound.errorDescription?.isEmpty == false)
+        #expect(BrewError.parsingError(NSError(domain: "t", code: 1)).errorDescription?.contains("parse") == true)
+    }
+
+    @Test
+    func installFailureShowsCommandDetailToUser() async throws {
+        let package = BrewPackage(
+            name: "node",
+            desc: "JavaScript runtime",
+            homepage: nil,
+            version: "1.0.0",
+            installedVersion: nil,
+            outdated: false,
+            isCask: false
+        )
+        let viewModel = BrewManagerViewModel(service: FailingBrewManagerService(), autoCheckEnvironment: false)
+
+        await viewModel.install(package: package)
+
+        // 旧实现里 BrewError 没有 errorDescription，这里只会得到
+        // "The operation couldn't be completed. (BrewManagerPlugin.BrewError error 1.)"。
+        #expect(viewModel.errorMessage?.contains("permission denied") == true)
+    }
+}
+
+private actor FailingBrewManagerService: BrewManagerServicing {
+    func checkInstalled() async -> Bool { true }
+    func listInstalled() async throws -> [BrewPackage] { [] }
+    func getOutdated() async throws -> [BrewPackage] { [] }
+    func search(query: String) async throws -> [BrewPackage] { [] }
+    func install(name: String, isCask: Bool) async throws {
+        throw BrewError.commandFailed("Error: permission denied")
+    }
+    func uninstall(name: String, isCask: Bool) async throws {}
+    func upgrade(name: String, isCask: Bool) async throws {}
+    func upgradeAll() async throws {}
 }
 
 private actor FakeBrewManagerService: BrewManagerServicing {
