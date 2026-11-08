@@ -199,6 +199,45 @@ struct ConversationStoreSettingsViewModelTests {
         )
     }
 
+    @Test func messageChangeRefreshesCountAndSelectedPreview() async throws {
+        let capability = StubConversationStoreCapability()
+        let initial = makeConversations(count: 2)
+        let selectedID = initial[0].id
+        let backgroundID = initial[1].id
+        capability.initialPage = initial
+        capability.selectedConversationID = selectedID
+        capability.messageCounts = [selectedID: 2, backgroundID: 1]
+        capability.messagesByConversation[selectedID] = [
+            Message(conversationID: selectedID, role: .user, content: "m0"),
+            Message(conversationID: selectedID, role: .assistant, content: "m1"),
+        ]
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        await viewModel.loadMessages()
+        #expect(viewModel.messageCounts[selectedID] == 2)
+        #expect(viewModel.messagesForSelected.count == 2)
+
+        // 新消息不会改变会话摘要身份，只能靠消息变化事件驱动刷新。
+        let inserted = Message(conversationID: selectedID, role: .assistant, content: "m2")
+        capability.messageCounts[selectedID] = 3
+        capability.messagesByConversation[selectedID]?.append(inserted)
+        viewModel.handleMessageChange(.inserted(inserted, conversationID: selectedID))
+
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(1))
+        while viewModel.messagesForSelected.count != 3, clock.now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        #expect(viewModel.messageCounts[selectedID] == 3)
+        #expect(viewModel.messagesForSelected.last?.content == "m2")
+
+        // 非选中会话：只更新计数，不刷新当前预览。
+        viewModel.handleMessageChange(.updated(conversationID: backgroundID))
+        #expect(viewModel.messageCounts[backgroundID] == 1)
+        #expect(viewModel.messagesForSelected.count == 3)
+    }
+
     private func makeConversations(count: Int, offset: Int = 0, childOf parentID: UUID? = nil) -> [ConversationSummary] {
         (offset..<(offset + count)).map { index in
             let date = Date(timeIntervalSince1970: TimeInterval(index + 1))
@@ -235,6 +274,7 @@ final class StubConversationStoreCapability: ConversationStoreCapability {
     var pageDelay: Duration?
     var nextPageDelay: Duration?
     private var conversationObserver: ((ConversationEvent) -> Void)?
+    private var messageChangeObserver: ((MessageChange) -> Void)?
 
     func fetchConversationPage(
         limit: Int,
@@ -280,5 +320,14 @@ final class StubConversationStoreCapability: ConversationStoreCapability {
 
     func emit(_ event: ConversationEvent) {
         conversationObserver?(event)
+    }
+
+    func addMessageChangeObserver(_ callback: @escaping (MessageChange) -> Void) -> any MessageChangeObserverHandle {
+        messageChangeObserver = callback
+        return NoopMessageChangeObserverHandle()
+    }
+
+    func emitMessageChange(_ change: MessageChange) {
+        messageChangeObserver?(change)
     }
 }

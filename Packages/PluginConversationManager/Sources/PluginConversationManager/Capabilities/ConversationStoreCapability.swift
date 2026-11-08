@@ -33,6 +33,11 @@ protocol ConversationStoreCapability: AnyObject {
     func addConversationObserver(
         _ callback: @escaping (ConversationEvent) -> Void
     ) -> any ConversationObserverHandle
+
+    @discardableResult
+    func addMessageChangeObserver(
+        _ callback: @escaping (MessageChange) -> Void
+    ) -> any MessageChangeObserverHandle
 }
 
 /// 将 ConversationManager 与 MessageManaging 适配为设置页能力。
@@ -94,4 +99,20 @@ final class ConversationStoreCapabilityAdapter: ConversationStoreCapability {
     ) -> any ConversationObserverHandle {
         manager.addConversationObserver(callback)
     }
+
+    @discardableResult
+    func addMessageChangeObserver(
+        _ callback: @escaping (MessageChange) -> Void
+    ) -> any MessageChangeObserverHandle {
+        guard let messageManager else {
+            return NoopMessageChangeObserverHandle()
+        }
+        return messageManager.addMessageChangeObserver(callback)
+    }
+}
+
+/// 未注入消息管理器时的空令牌，避免调用方区分可选分支。
+@MainActor
+final class NoopMessageChangeObserverHandle: MessageChangeObserverHandle {
+    func cancel() {}
 }
