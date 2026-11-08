@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationList 的实现包，包含 14 个主要类型；当前测试覆盖 48 条用例。
+PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 53 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 48
+测试文件: 13 个，用例总数: 53
 
 核心组件（源码目录）:
 - `Helpers/`
@@ -24,6 +24,7 @@ PluginConversationList 的实现包，包含 14 个主要类型；当前测试�
 - `ConversationListPlugin`
 - `ConversationSortStabilizer`
 - `ConversationAttentionStore`
+- `ConversationAttentionScanner`
 - `ConversationPageCursor`
 - `ConversationListContextObserver`
 - `ConversationRailTabController`
@@ -104,21 +105,26 @@ PluginConversationList 的实现包，包含 14 个主要类型；当前测试�
 | 46 | ConversationStatsViewModel | 加载时一并取回各窗口的待删除条数 | 存根返回 5 | 加载统计 | 7 天与 30 天窗口的待删除条数都被填充 | P1 | ✅ 已覆盖 | `loadsDeletableCountsForAllWindows` |
 | 47 | ConversationStatsViewModel | 清理后刷新待删除条数 | 初始 9，清理后存根变为新值 | 调用清理 | 待删除条数更新为清理后的值 | P1 | ✅ 已覆盖 | `refreshesDeletableCountsAfterCleanup` |
 | 48 | ConversationStatsViewModel | 清理期间重复触发只执行一次 | 清理过程被挂起 | 连续触发两次清理 | 存储层只收到一次清理调用 | P1 | ✅ 已覆盖 | `ignoresConcurrentCleanup` |
+| 49 | ConversationAttentionScanner | 被挤出缓存的会话完成时仍产生完成边缘（**#993**） | 缓存为空，上一轮跟踪到 A 在运行，A 已结束 | 执行一轮扫描 | `finished` 含 A，`stillRunning` 为空 | P1 | ✅ 已覆盖 | `evictedConversationStillReportsCompletion` |
+| 50 | ConversationAttentionScanner | 被挤出缓存但仍在运行的会话必须继续被跟踪（**#993**） | 缓存为空，上一轮跟踪到 A 在运行，A 仍在运行 | 执行一轮扫描 | `stillRunning` 含 A，`finished` 为空 | P0 | ✅ 已覆盖 | `evictedRunningConversationStaysTracked` |
+| 51 | ConversationAttentionScanner | 从未观测为运行的会话结束时不得生成未读提示 | 缓存含 A，跟踪表为空，A 已结束 | 执行一轮扫描 | `finished` 与 `stillRunning` 均为空 | P0 | ✅ 已覆盖 | `neverRunningConversationDoesNotFinish` |
+| 52 | ConversationAttentionScanner | 缓存内的会话完成后停止跟踪 | 缓存与跟踪表均含 A，A 已结束 | 执行一轮扫描 | `finished` 含 A，`stillRunning` 为空 | P1 | ✅ 已覆盖 | `cachedConversationFinishesOnce` |
+| 53 | ConversationListPlugin | 会话删除后必须停止跟踪并清掉残留未读提示 | 已存在未读提示 | 删除会话 | `needsAttention` 变为 false | P0 | ✅ 已覆盖 | `pluginStopsTrackingAndClearsAttentionWhenConversationIsDeleted` |
 
-> 说明：全部 **48 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **53 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
-- P1: 已覆盖 37 / 37
+- P0: 已覆盖 3 / 3
+- P1: 已覆盖 39 / 39
 - P2: 已覆盖 11 / 11
-- **合计: 48 / 48**（仅表示清单场景，非源码覆盖率）
+- **合计: 53 / 53**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（37 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P1**: 其余功能性用例（39 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明

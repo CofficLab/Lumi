@@ -38,6 +38,7 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
 
     private var context: ConversationListContext?
     private var contextObserver: ConversationListContextObserver?
+    private var conversationObserver: (any ConversationObserverHandle)?
     private var railTabController: ConversationRailTabController?
     private var toolbarViewModel: ConversationListToolbarViewModel?
     private var railChatsViewModel: ConversationListViewModel?
@@ -158,6 +159,14 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
     public func onReady(kernel: KernelCoreContainer) throws {
         guard let context else { return }
 
+        // 跟踪表不能再按缓存求交集：后台会话被有界缓存挤出去后回合可能仍在运行，
+        // 只有删除事件才应该让它停止被跟踪（#993）。
+        conversationObserver = context.conversations.addConversationObserver { [weak self] event in
+            guard case .deleted(let id) = event else { return }
+            self?.runningConversationIDs.remove(id)
+            self?.attentionStore.markRead(conversationID: id)
+        }
+
         // 4. 回合结束 attention 监听：
         //    轮询 AgentTurn 状态，检测 running → 非 running 的边缘，
         //    结束时若对话未选中则标记关注，选中则标记已读。
@@ -173,6 +182,9 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         contextObserver?.cancel()
         contextObserver = nil
+
+        conversationObserver?.cancel()
+        conversationObserver = nil
 
         attentionMonitorTask?.cancel()
         attentionMonitorTask = nil
@@ -208,22 +220,14 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
     private func scanAttention(context: ConversationListContext) {
         guard let agentTurn = context.agentTurn else { return }
 
-        let currentIDs = Set(context.conversations.sortedConversations.map(\.id))
-        var stillRunning: Set<UUID> = []
-        var finished: Set<UUID> = []
+        let result = ConversationAttentionScanner.scan(
+            cachedIDs: Set(context.conversations.sortedConversations.map(\.id)),
+            previouslyRunning: runningConversationIDs,
+            isRunning: { agentTurn.isRunning(for: $0) }
+        )
+        runningConversationIDs = result.stillRunning
 
-        for conversation in context.conversations.sortedConversations {
-            if agentTurn.isRunning(for: conversation.id) {
-                stillRunning.insert(conversation.id)
-            } else if runningConversationIDs.contains(conversation.id) {
-                finished.insert(conversation.id)
-            }
-        }
-
-        // 只保留仍存在的对话，避免已删除对话的 ID 残留。
-        runningConversationIDs = stillRunning.intersection(currentIDs)
-
-        for id in finished where currentIDs.contains(id) {
+        for id in result.finished {
             if context.selectedConversationID == id {
                 attentionStore.markRead(conversationID: id)
             } else {
