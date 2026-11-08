@@ -70,7 +70,8 @@ final class ProviderSettingsPageViewModel: ObservableObject {
     }
 
     var providerCountLabel: String {
-        isLocal ? "\(filteredProviders.count) 个本地供应商" : "\(filteredProviders.count) 个云端供应商"
+        let key = isLocal ? "%lld 个本地供应商" : "%lld 个云端供应商"
+        return String(format: pluginLocalization.string(key), Int64(filteredProviders.count))
     }
 
     var headerSystemImage: String {
