@@ -37,10 +37,10 @@ public struct UpdateAppStoreConnectLocalizationTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let localizationID = arguments["localizationID"]?.stringValue, !localizationID.isEmpty else {
-            return "Missing or empty localizationID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty localizationID.")
         }
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
 
         // Only the fields explicitly provided by the caller are sent in the PATCH body;
         // unset fields keep their current values on App Store Connect.
@@ -68,7 +68,7 @@ public struct UpdateAppStoreConnectLocalizationTool: SuperAgentTool {
             )
             return "Localization updated: id=\(updated.id) locale=\(updated.locale)"
         } catch {
-            return "Failed to update localization: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to update localization: \(error.localizedDescription)")
         }
     }
 }

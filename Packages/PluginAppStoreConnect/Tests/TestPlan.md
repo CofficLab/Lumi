@@ -5,7 +5,7 @@
 PluginAppStoreConnect Current `KernelCore` implementation of the App Store Connect integration. - Product/module: `PluginAppStoreConnect` - Plugin id: `com.coffic.lumi.plugin.app-store-connect` - Rail tab: `app-store-connect.sidebar` - Enable policy: disabled by default The plugin provides App Store Connect account, app/version, localization, screenshot, release, and Xcode Cloud management through the workbench and the `app_store_connect_*` Agent tools.
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，用例总数: 61
+测试文件: 11 个，用例总数: 64
 
 核心组件（源码目录）:
 - `Sources/`
@@ -42,6 +42,7 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 - **VMBusy**（3 条）：由 `nestedRunBusyIsReentrant`、`fastOperationSkipsOverlay`、`slowOperationShowsOverlay` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **VM App 切换**（3 条）：由 `loadingAnotherAppIsNotSkipped`、`lateVersionsFromPreviousAppAreDiscarded`、`currentVersionsAreApplied` 等用例锁定；改动 App 选择、版本加载或代次校验时优先跑对应测试文件。
 - **SetAppStoreConnectAgeRatingTool**（4 条）：由 `schemaExposesMissingAttributes`、`explicitFalseIsSent`、`absentAttributesAreOmitted`、`decodesNewAttributes` 锁定；改动年龄分级参数或 Apple 字段映射时优先跑对应测试文件。
+- **工具失败语义**（3 条）：由 `missingRequiredArgumentsThrow`、`blankArgumentsThrow`、`invalidIsEnabledThrows` 锁定；改动工具参数校验或失败处理时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -108,21 +109,24 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 | 59 | SetAppStoreConnectAgeRatingTool | 显式 false 不被丢弃，仍进入 PATCH 属性 | — | 传入 `socialMedia=false` 等参数 | 属性中包含 `socialMedia: false` 等值 | P1 | ✅ 已覆盖 | `explicitFalseIsSent` |
 | 60 | SetAppStoreConnectAgeRatingTool | 未提供的字段不进入 PATCH 属性 | — | 只传 `socialMedia` | 属性键集合只有 `socialMedia` | P2 | ✅ 已覆盖 | `absentAttributesAreOmitted` |
 | 61 | SetAppStoreConnectAgeRatingTool | Apple 返回的新分级字段可被解码 | — | 解码含新增字段的声明 JSON | 新增字段值正确读出 | P1 | ✅ 已覆盖 | `decodesNewAttributes` |
+| 62 | 工具失败语义 | 缺少必填参数时抛出 `ToolExecutionError` | 无 | 依次调用 21 个需要必填参数的工具并传空参数 | 每次均抛出 `ToolExecutionError`，不再返回 `Missing or empty ...` 字符串 | P1 | ✅ 已覆盖 | `missingRequiredArgumentsThrow` |
+| 63 | 工具失败语义 | 空白参数等同于缺失并抛出 | 无 | 传入只含空白的 appID / versionID | 均抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `blankArgumentsThrow` |
+| 64 | 工具失败语义 | isEnabled 非法时抛出而不是退回默认值 | 合法 workflowID | 传入 `isEnabled: maybe` | 抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `invalidIsEnabledThrows` |
 
-> 说明：全部 **61 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **64 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 14 / 14
-- P1: 已覆盖 42 / 42
+- P1: 已覆盖 45 / 45
 - P2: 已覆盖 5 / 5
-- **合计: 61 / 61**（仅表示清单场景，非源码覆盖率）
+- **合计: 64 / 64**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
-- **P1**: 其余功能性用例（42 条）
+- **P1**: 其余功能性用例（45 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明

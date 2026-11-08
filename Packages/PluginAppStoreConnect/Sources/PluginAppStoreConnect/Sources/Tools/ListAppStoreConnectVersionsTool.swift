@@ -34,11 +34,11 @@ public struct ListAppStoreConnectVersionsTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let appID = arguments["appID"]?.stringValue, !appID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return "Missing or empty appID. Pass a valid App Store Connect app identifier."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty appID. Pass a valid App Store Connect app identifier.")
         }
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
 
         do {
             let versions = try await client.listVersions(appID: appID)
@@ -54,7 +54,7 @@ public struct ListAppStoreConnectVersionsTool: SuperAgentTool {
             let footer = "Use the id field as versionID for list-localizations / create-localization / read-version."
             return ([header] + lines + [footer]).joined(separator: "\n")
         } catch {
-            return "Failed to list versions: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to list versions: \(error.localizedDescription)")
         }
     }
 }

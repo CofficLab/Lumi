@@ -46,22 +46,22 @@ public struct CreateAppStoreConnectVersionTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let appID = arguments["appID"]?.stringValue, !appID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return "Missing or empty appID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty appID.")
         }
         guard let versionString = arguments["versionString"]?.stringValue,
               !versionString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return "Missing or empty versionString."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty versionString.")
         }
         guard let platform = arguments["platform"]?.stringValue,
               !platform.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return "Missing or empty platform."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty platform.")
         }
 
         let releaseType = arguments["releaseType"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines)
         let resolvedReleaseType = (releaseType?.isEmpty == false) ? releaseType! : "AFTER_APPROVAL"
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
 
         do {
             let existingVersions = try await client.listVersions(appID: appID)
@@ -78,7 +78,7 @@ public struct CreateAppStoreConnectVersionTool: SuperAgentTool {
             )
             return "App Store version created: id=\(created.id) version=\(created.versionString) platform=\(created.platform) state=\(created.appStoreState)"
         } catch {
-            return "Failed to create version: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to create version: \(error.localizedDescription)")
         }
     }
 }

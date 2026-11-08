@@ -116,11 +116,11 @@ public struct SetAppStoreConnectAgeRatingTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let versionID = arguments["versionID"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
               !versionID.isEmpty else {
-            return "Missing or empty versionID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty versionID.")
         }
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
 
         // Collect update attributes (if any)
         let updateAttributes = Self.updateAttributes(from: arguments)
@@ -159,7 +159,7 @@ public struct SetAppStoreConnectAgeRatingTool: SuperAgentTool {
             )
             return "Age rating updated for version id=\(versionID).\n" + formatDeclaration(updated)
         } catch {
-            return "Failed to manage age rating: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to manage age rating: \(error.localizedDescription)")
         }
     }
 

@@ -28,7 +28,7 @@ public struct ListAppStoreConnectCiProductsTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
         do {
             let products = try await client.listCiProducts()
             guard !products.isEmpty else { return "No Xcode Cloud products found." }
@@ -37,7 +37,7 @@ public struct ListAppStoreConnectCiProductsTool: SuperAgentTool {
             }
             return (["Xcode Cloud products:"] + lines).joined(separator: "\n")
         } catch {
-            return "Failed to list CI products: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to list CI products: \(error.localizedDescription)")
         }
     }
 }

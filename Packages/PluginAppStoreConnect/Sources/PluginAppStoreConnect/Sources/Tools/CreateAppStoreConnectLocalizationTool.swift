@@ -45,11 +45,11 @@ public struct CreateAppStoreConnectLocalizationTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let versionID = arguments["versionID"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
               !versionID.isEmpty else {
-            return "Missing or empty versionID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty versionID.")
         }
         guard let locale = arguments["locale"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
               !locale.isEmpty else {
-            return "Missing or empty locale."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty locale.")
         }
 
         let attributes = AppStoreVersionLocalization.CreateAttributes(
@@ -62,7 +62,7 @@ public struct CreateAppStoreConnectLocalizationTool: SuperAgentTool {
         )
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
         do {
             let created = try await client.createLocalization(
                 versionID: versionID,
@@ -71,7 +71,7 @@ public struct CreateAppStoreConnectLocalizationTool: SuperAgentTool {
             )
             return "Localization created: id=\(created.id) locale=\(created.locale)"
         } catch {
-            return "Failed to create localization: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to create localization: \(error.localizedDescription)")
         }
     }
 }
