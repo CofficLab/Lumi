@@ -134,4 +134,41 @@ struct ConversationManagerCRUDTests {
 
         try await Task.sleep(for: .milliseconds(20))
     }
+
+    /// 回归 #771：父会话删除时，子会话也会被连带删掉，观察者（例如
+    /// GoalTask）必须收到子会话的 `.deleted`，否则子会话的 Goals 会残留。
+    @Test func deletingRootNotifiesDescendantConversations() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationDescendantDelete-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = try ConversationStore(databaseRootURL: directory)
+        let manager = ConversationManager(store: store, dataDirectory: directory)
+
+        var events: [ConversationEvent] = []
+        let handle = manager.addConversationObserver { events.append($0) }
+        defer { handle.cancel() }
+
+        let rootID = try await manager.createConversationAndWait(
+            title: "Root",
+            projectPath: nil,
+            modelID: nil,
+            parentConversationID: nil
+        )
+        let childID = try await manager.createConversationAndWait(
+            title: "Child",
+            projectPath: nil,
+            modelID: nil,
+            parentConversationID: rootID
+        )
+
+        manager.deleteConversation(id: rootID)
+        for _ in 0..<100 where !events.contains(.deleted(childID)) {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+
+        #expect(events.contains(.deleted(rootID)))
+        #expect(events.contains(.deleted(childID)))
+    }
 }

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 53 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 54 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，用例总数: 53
+测试文件: 10 个，用例总数: 54
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -109,16 +109,17 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 51 | ConversationCountLedger | 删除会话后每日计数保持不变 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `countsSurviveDeletion` |
 | 52 | ConversationCountLedger | 批量清理旧对话后统计保持不变 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `countsSurviveBulkCleanup` |
 | 53 | ConversationCountLedger | 重启后账本从磁盘恢复，不重复回填 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `ledgerSurvivesRestart` |
+| 54 | ConversationManagerCRUD | 删除父会话时子会话也收到 `.deleted` 通知 | 根会话与一个子会话 | 删除根会话 | 观察者依次收到根与子会话的 `.deleted`（**回归 #771**） | P1 | ✅ 已覆盖 | `deletingRootNotifiesDescendantConversations` |
 
-> 说明：全部 **53 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 43 / 43
+- P1: 已覆盖 44 / 44
 - P2: 已覆盖 5 / 5
-- **合计: 53 / 53**（仅表示清单场景，非源码覆盖率）
+- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -129,7 +130,7 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 53 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 54 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
