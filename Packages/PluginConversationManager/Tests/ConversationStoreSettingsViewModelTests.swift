@@ -97,6 +97,59 @@ struct ConversationStoreSettingsViewModelTests {
         #expect(!viewModel.isMigrationActive)
     }
 
+    @Test func preferenceEventsRefreshCachedSummaries() async throws {
+        let capability = StubConversationStoreCapability()
+        let initial = makeConversations(count: 3)
+        capability.initialPage = initial
+        capability.summariesByID = Dictionary(uniqueKeysWithValues: initial.map { ($0.id, $0) })
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+
+        // Manager 在广播事件前已同步更新内存摘要，设置页应按 ID 拉取最新值。
+        var updated = initial[1]
+        updated.modelID = ConversationSummary(providerID: "openai", modelName: "gpt-4.1").modelID
+        updated.verbosity = .brief
+        updated.reasoningEffort = .high
+        updated.automationLevel = .autonomous
+        updated.language = .english
+        capability.summariesByID[updated.id] = updated
+
+        viewModel.handleConversationEvent(.providerChanged(updated.id))
+        viewModel.handleConversationEvent(.verbosityChanged(updated.id))
+        viewModel.handleConversationEvent(.reasoningChanged(updated.id))
+        viewModel.handleConversationEvent(.automationChanged(updated.id))
+        viewModel.handleConversationEvent(.languageChanged(updated.id))
+
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(1))
+        while viewModel.conversations[1] != updated, clock.now < deadline {
+            await Task.yield()
+        }
+
+        #expect(viewModel.conversations[1] == updated)
+        #expect(viewModel.conversations[0] == initial[0])
+        #expect(capability.pageRequests.count == 1, "偏好事件只更新单条摘要，不应整页重载")
+    }
+
+    @Test func reopeningRefreshesStaleSummaries() async throws {
+        let capability = StubConversationStoreCapability()
+        let initial = makeConversations(count: 3)
+        capability.initialPage = initial
+        capability.summariesByID = Dictionary(uniqueKeysWithValues: initial.map { ($0.id, $0) })
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+
+        // 设置页关闭期间 Manager 已更新偏好，但没有可观察的事件送达。
+        var updated = initial[0]
+        updated.verbosity = .brief
+        capability.summariesByID[updated.id] = updated
+
+        await viewModel.loadInitialIfNeeded()
+
+        #expect(viewModel.conversations[0] == updated)
+        #expect(capability.pageRequests.count == 1, "重进页面只刷新已加载摘要，不整页重载")
+    }
+
     @Test func emptyLoadsFinishAndMessagesClearWithoutSelection() async {
         let capability = StubConversationStoreCapability()
         let viewModel = ConversationStoreSettingsViewModel(capability: capability)
@@ -176,6 +229,7 @@ final class StubConversationStoreCapability: ConversationStoreCapability {
     var dailySeries = ConversationDailyCountSeries(points: [])
     var messagesByConversation: [UUID: [Message]] = [:]
     var messageCounts: [UUID: Int] = [:]
+    var summariesByID: [UUID: ConversationSummary] = [:]
     var pageRequests: [PageRequest] = []
     /// 首屏/刷新页与翻页的注入延迟，用于构造「旧分页晚到」场景。
     var pageDelay: Duration?
@@ -209,6 +263,10 @@ final class StubConversationStoreCapability: ConversationStoreCapability {
 
     func messagesSnapshot(in conversationID: UUID) async -> [Message] {
         messagesByConversation[conversationID] ?? []
+    }
+
+    func fetchConversationSummary(id: UUID) async -> ConversationSummary? {
+        summariesByID[id]
     }
 
     func messageCount(for conversationID: UUID) -> Int {
