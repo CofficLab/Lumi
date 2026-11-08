@@ -1788,12 +1788,12 @@ final class PastePreviewPopoverViewController: NSViewController {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
 
-        copyButton?.title = "Copied"
+        copyButton?.title = pluginLocalization.string("Copied")
         copyButton?.isEnabled = false
 
         copyFeedbackResetItem?.cancel()
         let resetItem = DispatchWorkItem { [weak self] in
-            self?.copyButton?.title = "Copy original"
+            self?.copyButton?.title = pluginLocalization.string("Copy original")
             self?.copyButton?.isEnabled = true
         }
         copyFeedbackResetItem = resetItem

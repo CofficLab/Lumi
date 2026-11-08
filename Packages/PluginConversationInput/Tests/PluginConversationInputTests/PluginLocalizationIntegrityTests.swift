@@ -65,6 +65,23 @@ struct PluginLocalizationIntegrityTests {
         #expect(entry.localizations["zh-Hans"] != english, "中文翻译不应与英文相同")
     }
 
+    @Test("复制反馈与恢复标题都使用本地化文案（回归 #990）")
+    func copyFeedbackStringsAreLocalized() throws {
+        // 缺陷现象：点击后写死 "Copied"，一秒后又写死 "Copy original"，
+        // 中文界面会从「复制原文」永久变成英文。
+        let expected: [String: String] = [
+            "Copied": "已复制",
+            "Copy original": "复制原文",
+        ]
+
+        let catalog = try Self.loadCatalog()
+        for (key, zhHans) in expected {
+            let entry = try #require(catalog[key], "「\(key)」未进入本地化资源")
+            #expect(entry.localizations["en"] == key, "「\(key)」缺 en 原文")
+            #expect(entry.localizations["zh-Hans"] == zhHans, "「\(key)」中文译文不符")
+        }
+    }
+
     @Test("Provider 错误文案含 en 翻译，不会在英文界面退化成 key")
     func providerErrorKeysIncludeEnglish() throws {
         // 缺陷现象：条目只有 zh-* 而缺 en，英文界面下 `String(localized:)`
