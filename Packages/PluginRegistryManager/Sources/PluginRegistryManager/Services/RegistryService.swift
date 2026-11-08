@@ -166,19 +166,63 @@ public actor RegistryService {
     
     private func setDockerRegistry(url: String) async throws {
         let path = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".docker/daemon.json")
-        var json: [String: Any] = [:]
-        
-        if let data = try? Data(contentsOf: path),
-           let existing = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            json = existing
+
+        // 文件已存在却读不出来时必须中止：不能拿空配置覆盖用户原有设置。
+        var existing: Data?
+        if FileManager.default.fileExists(atPath: path.path) {
+            do {
+                existing = try Data(contentsOf: path)
+            } catch {
+                throw RegistryServiceError.dockerDaemonConfigUnreadable(error.localizedDescription)
+            }
         }
-        
+
+        let data = try DockerDaemonConfig.mergedData(existing: existing, mirrorURL: url)
+
         // Ensure directory exists
         try? FileManager.default.createDirectory(at: path.deletingLastPathComponent(), withIntermediateDirectories: true)
-        
-        json["registry-mirrors"] = [url]
-        
-        let data = try JSONSerialization.data(withJSONObject: json, options: .prettyPrinted)
-        try data.write(to: path)
+        try data.write(to: path, options: .atomic)
+    }
+}
+
+/// Docker 镜像源写入：合并到现有 daemon.json，解析失败直接抛错。
+enum DockerDaemonConfig {
+    /// 把 `registry-mirrors` 合并进现有配置；`existing` 为 nil 表示文件不存在。
+    /// 现有内容无法解析时抛 `dockerDaemonConfigUnreadable`，调用方不会写文件。
+    static func mergedData(existing: Data?, mirrorURL: String) throws -> Data {
+        var json: [String: Any] = [:]
+
+        if let existing {
+            let object: Any
+            do {
+                object = try JSONSerialization.jsonObject(with: existing)
+            } catch {
+                throw RegistryServiceError.dockerDaemonConfigUnreadable(error.localizedDescription)
+            }
+            guard let dictionary = object as? [String: Any] else {
+                throw RegistryServiceError.dockerDaemonConfigUnreadable("root value is not a JSON object")
+            }
+            json = dictionary
+        }
+
+        json["registry-mirrors"] = [mirrorURL]
+
+        do {
+            return try JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys])
+        } catch {
+            throw RegistryServiceError.dockerDaemonConfigUnreadable(error.localizedDescription)
+        }
+    }
+}
+
+public enum RegistryServiceError: LocalizedError, Equatable {
+    /// 现有 daemon.json 无法读取或解析，未做任何写入。
+    case dockerDaemonConfigUnreadable(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .dockerDaemonConfigUnreadable(let detail):
+            return "daemon.json could not be read or parsed, so the Docker registry was not changed. Fix the file and try again. (\(detail))"
+        }
     }
 }

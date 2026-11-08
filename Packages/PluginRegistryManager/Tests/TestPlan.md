@@ -5,7 +5,7 @@
 RegistryManagerPlugin Manage Lumi registries
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 3
+测试文件: 1 个，用例总数: 7
 
 核心组件（源码目录）:
 - `Models/`
@@ -30,6 +30,7 @@ RegistryManagerPlugin Manage Lumi registries
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
+- **Docker 配置合并**（4 条）：由 `dockerDaemonMergePreservesExistingKeys`、`dockerDaemonMergeRejectsUnparsableConfig` 等用例锁定；改动 daemon.json 写入逻辑时优先跑对应测试文件。
 - **综合**（3 条）：由 `v2PluginMetadataIsStable`、`staleRefreshDoesNotOverwriteNewerRegistryResult`、`staleSetDoesNotOverwriteNewerRegistryChoice` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -39,15 +40,19 @@ RegistryManagerPlugin Manage Lumi registries
 | 1 | 综合 | v2PluginMetadataIsStable | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `v2PluginMetadataIsStable` |
 | 2 | 综合 | staleRefreshDoesNotOverwriteNewerRegistryResult | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `staleRefreshDoesNotOverwriteNewerRegistryResult` |
 | 3 | 综合 | staleSetDoesNotOverwriteNewerRegistryChoice | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `staleSetDoesNotOverwriteNewerRegistryChoice` |
+| 4 | Docker 配置合并 | 切换镜像源时保留 daemon.json 的其它键 | 现有配置含 debug、storage-driver、旧镜像源 | 合并新镜像源 | debug/storage-driver 保留，镜像源被替换 | P0 | ✅ 已覆盖 | `dockerDaemonMergePreservesExistingKeys` |
+| 5 | Docker 配置合并 | daemon.json 无法解析时中止并抛错 | 现有文件为非法 JSON | 合并新镜像源 | 抛 `RegistryServiceError`，不返回可写数据 | P0 | ✅ 已覆盖 | `dockerDaemonMergeRejectsUnparsableConfig` |
+| 6 | Docker 配置合并 | 根节点不是 JSON 对象时中止 | 现有文件内容为 `[]` | 合并新镜像源 | 抛 `RegistryServiceError` | P1 | ✅ 已覆盖 | `dockerDaemonMergeRejectsNonObjectRoot` |
+| 7 | Docker 配置合并 | 文件不存在时只写入镜像源 | 无现有文件 | 合并新镜像源 | 结果仅含 registry-mirrors | P2 | ✅ 已覆盖 | `dockerDaemonMergeCreatesConfigWhenMissing` |
 
 > 说明：全部 **3 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
-- P1: 已覆盖 2 / 2
-- P2: 已覆盖 1 / 1
+- P0: 已覆盖 2 / 2
+- P1: 已覆盖 3 / 3
+- P2: 已覆盖 2 / 2
 - **合计: 3 / 3**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
