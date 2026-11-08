@@ -1,3 +1,4 @@
+import AppKit
 import KitAgentTool
 import Foundation
 import KernelCore
@@ -362,5 +363,37 @@ struct AppIconDesignerPluginTests {
         let imported = try #require(IconDocumentStore.shared.selectedDocument)
         #expect(imported.id != original.id)
         #expect(imported.title == "Incoming B")
+    }
+
+    @Test("径向背景半径随导出尺寸缩放")
+    func radialBackgroundScalesWithRenderSize() throws {
+        let document = IconDocument(
+            title: "Radial Background",
+            width: 1024,
+            height: 1024,
+            background: .radialGradient(
+                colors: ["#FF0000", "#0000FF"],
+                center: .center,
+                startRadius: 0,
+                endRadius: 512
+            )
+        )
+        let service = AppIconExportService()
+        let largePNG = try service.renderPreviewPNG(document: document, pixelSize: 1024)
+        let smallPNG = try service.renderPreviewPNG(document: document, pixelSize: 64)
+
+        // 小尺寸中心仍是起始色，角落应已到达渐变末端（半径已缩放为 32）。
+        let smallCenter = try pixelColor(in: smallPNG, x: 32, y: 32)
+        let smallCorner = try pixelColor(in: smallPNG, x: 2, y: 2)
+        let largeCorner = try pixelColor(in: largePNG, x: 2, y: 2)
+
+        #expect(smallCenter.redComponent > 0.8)
+        #expect(smallCorner.blueComponent > 0.8, "16–64px 槽位也应显示完整渐变，而不是停在第一种颜色")
+        #expect(largeCorner.blueComponent > 0.8)
+    }
+
+    private func pixelColor(in pngData: Data, x: Int, y: Int) throws -> NSColor {
+        let bitmap = try #require(NSBitmapImageRep(data: pngData))
+        return try #require(bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB))
     }
 }
