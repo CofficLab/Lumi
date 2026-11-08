@@ -270,6 +270,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 125 | 错误 | 附件提交失败时附件回到挂起池 | 后台提交抛错 | `send()` 后等待错误回填 | `errorMessage` 非空，附件重新出现在挂起池与预览中，可直接重试 | P1 | ✅ 已覆盖 | `failedAttachmentCommitRestoresAttachments` |
 | 126 | 折叠块 | 折叠块前插入换行后发送，chip 区间仍指向原文本（**回归**） | 真实 Sender + Adapter + ViewModel；正文 `"\n" + body`，区间 `{start:1, length:body.count}` | 走回车发送路径 | 落库正文为 trim 后的 body；metadata 区间平移为 `{start:0, length:body.count}` 且精确指向 body（预 trim 会让区间越界被丢弃） | P0 | ✅ 已覆盖 | `leadingNewlineBeforeChipKeepsBlock` |
 | 127 | 折叠块 | 发送按钮路径同样保留 chip 区间（**回归**） | 真实链路；正文 `"  " + body + "\n"`，区间 `{start:2, length:body.count}` | 走发送按钮路径 | 区间随 trim 平移后仍精确指向 body，chip 不退化为纯文本 | P0 | ✅ 已覆盖 | `sendButtonKeepsBlockAfterTrim` |
+| 128 | 拖放 | 非空但不可解码的字节不算有效图片 | 只有 PNG 前两字节 / 纯文本 / 空数据 / 真实 1×1 PNG | 调用 `ChatInputEditorRules.isDecodableImageData` | 前三种为 false，真实 PNG 为 true | P1 | ✅ 已覆盖 | `undecodableImageBytesAreRejected` |
+| 129 | 拖放 | 拖入非空但不可解码的图片时报错且不进图片池 | `fake.png` 内容为纯文本 | `attachImage` 后等待 `errorMessage` | 错误提示包含文件名，挂起池为空（**回归** #764） | P0 | ✅ 已覆盖 | `droppingCorruptImageSurfacesErrorAndSkipsPool` |
 
 > **鉴别力验证**：本轮用一处变异确认用例不是「恒绿」——把
 > `Coordinator.textDidChange` 里的两道 IME 守卫
@@ -283,7 +285,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > 里有一份**代码完全相同**的守卫，全局替换第一处会改错函数，
 > 导致「用例仍然全绿」的假阴性。
 
-> 说明：全部 **127 条场景 / 132 个测试方法**已在 macOS 上实跑通过
+> 说明：全部 **129 条场景 / 134 个测试方法**已在 macOS 上实跑通过
 > （`swift test` → 164 tests in 25 suites；其中 6 条 chip 几何用例在本机
 > Xcode 27.2 SDK 下失败，已在未改动的 HEAD 上复现，属既有环境问题）。
 >
@@ -306,10 +308,10 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 
 ## 覆盖率统计
 
-- P0: 已覆盖 43 / 43
-- P1: 已覆盖 67 / 67
+- P0: 已覆盖 44 / 44
+- P1: 已覆盖 69 / 69
 - P2: 已覆盖 16 / 16
-- **合计: 126 / 126**（仅表示清单场景，非源码覆盖率）
+- **合计: 129 / 129**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

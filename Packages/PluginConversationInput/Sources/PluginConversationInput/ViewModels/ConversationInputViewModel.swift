@@ -364,19 +364,26 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     func attachImage(_ url: URL) {
         let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "image/png"
         Task { @MainActor in
-            guard let attachment = await Task.detached(priority: .userInitiated, operation: { () -> UserImageAttachment? in
-                guard let data = try? Data(contentsOf: url), !data.isEmpty else {
-                    return nil
-                }
-                return UserImageAttachment(
-                    mimeType: mimeType,
-                    base64Data: data.base64EncodedString(),
-                    fileName: url.lastPathComponent
+            let data = await Task.detached(priority: .userInitiated, operation: {
+                try? Data(contentsOf: url)
+            }).value
+
+            // 空文件保持静默忽略（见 #520），但非空字节必须能解码才算图片。
+            guard let data, !data.isEmpty else { return }
+            guard ChatInputEditorRules.isDecodableImageData(data) else {
+                capability.errorMessage = String(
+                    format: pluginLocalization.string("Could not read image: %@"),
+                    url.lastPathComponent
                 )
-            }).value else {
+                refresh()
                 return
             }
 
+            let attachment = UserImageAttachment(
+                mimeType: mimeType,
+                base64Data: data.base64EncodedString(),
+                fileName: url.lastPathComponent
+            )
             capability.addImageAttachment(attachment)
             capability.isInputFocused = true
         }
