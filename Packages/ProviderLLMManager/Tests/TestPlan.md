@@ -5,7 +5,7 @@
 ProviderLLMManager 的实现包，包含 5 个主要类型；当前测试覆盖 27 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 27
+测试文件: 5 个，用例总数: 57
 
 核心组件（源码目录）:
 - `Errors/`
@@ -27,7 +27,11 @@ ProviderLLMManager 的实现包，包含 5 个主要类型；当前测试覆盖 
 - **DefaultLLMProviderManagerProviding**（22 条）：由 `registerPreservesOrderAndReplaces`、`registerEmptyIDThrows`、`unregisterFallsBackSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DynamicModelList**（5 条）：由 `staticProviderUnchanged`、`remoteProviderDynamicModels`、`remoteProviderRefresh` 等用例锁定；改动该模块时优先跑对应测试文件。
 
-## 测试用例清单
+## 
+- **UserDefinedCloudProviderConfigurationTests**（17 条）：由 `rejectsEmptyOrWhitespaceDisplayName`、`trimsDisplayName` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **UserDefinedCloudProviderStoreTests**（13 条）：由 `upsertPersistsAndRegistersProvider`、`upsertReplacesConfigurationWithSameIdentifier` 等用例锁定；改动该模块时优先跑对应测试文件。
+
+测试用例清单
 
 | ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
 |----|------|------|----------|----------|----------|------|------|----------|
@@ -58,27 +62,57 @@ ProviderLLMManager 的实现包，包含 5 个主要类型；当前测试覆盖 
 | 25 | DynamicModelList | 远程 provider：刷新后 availableModels 变化立即反映到读取路径 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `remoteProviderRefresh` |
 | 26 | DynamicModelList | notifyModelsRefreshed 广播 modelsRefreshed 事件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `modelsRefreshedEvent` |
 | 27 | DynamicModelList | 选中远程模型后刷新仍保持有效（模型仍在动态池） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectionSurvivesRefresh` |
+| 28 | UserDefinedCloudProviderConfigurationTests | 名称为空或全是空白时校验失败（空串与空白串） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectsEmptyOrWhitespaceDisplayName` |
+| 29 | UserDefinedCloudProviderConfigurationTests | 校验通过后名称去掉首尾空白 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `trimsDisplayName` |
+| 30 | UserDefinedCloudProviderConfigurationTests | ID 为空时校验失败 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectsEmptyIdentifier` |
+| 31 | UserDefinedCloudProviderConfigurationTests | Base URL 非法时校验失败 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectsInvalidBaseURL` |
+| 32 | UserDefinedCloudProviderConfigurationTests | HTTP 与 HTTPS 的 Base URL 都合法 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `acceptsHTTPAndHTTPSBaseURL` |
+| 33 | UserDefinedCloudProviderConfigurationTests | 校验通过后 Base URL 去掉首尾空白 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `trimsBaseURL` |
+| 34 | UserDefinedCloudProviderConfigurationTests | 模型列表为空时校验失败 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectsEmptyModelList` |
+| 35 | UserDefinedCloudProviderConfigurationTests | 模型 ID 重复时校验失败 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectsDuplicateModelIDs` |
+| 36 | UserDefinedCloudProviderConfigurationTests | 模型 ID 为空白时校验失败 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectsBlankModelID` |
+| 37 | UserDefinedCloudProviderConfigurationTests | 默认模型不在列表中时回退到第一个模型 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `fallsBackToFirstModelWhenDefaultMissing` |
+| 38 | UserDefinedCloudProviderConfigurationTests | 默认模型在列表中时保持不变 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `keepsDefaultModelWhenPresent` |
+| 39 | UserDefinedCloudProviderConfigurationTests | Responses 格式关闭工具调用能力 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `responsesFormatDisablesToolSupport` |
+| 40 | UserDefinedCloudProviderConfigurationTests | OpenAI 与 Anthropic 格式保留工具调用能力 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `otherFormatsKeepToolSupport` |
+| 41 | UserDefinedCloudProviderConfigurationTests | 未知的 API 格式原始值回退到 OpenAI | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unknownAPIFormatFallsBackToOpenAI` |
+| 42 | UserDefinedCloudProviderConfigurationTests | API Key 存储键按供应商 ID 隔离 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `apiKeyStorageKeyIsScopedByProviderID` |
+| 43 | UserDefinedCloudProviderConfigurationTests | 官网为空串时解析为 nil | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `websiteURLIsNilWhenEmpty` |
+| 44 | UserDefinedCloudProviderConfigurationTests | 错误描述非空且为中文提示 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `errorDescriptionsAreNotEmpty` |
+| 45 | UserDefinedCloudProviderStoreTests | 新增供应商后配置落盘并注册到管理器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `upsertPersistsAndRegistersProvider` |
+| 46 | UserDefinedCloudProviderStoreTests | 同一 ID 再次新增是覆盖而不是追加 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `upsertReplacesConfigurationWithSameIdentifier` |
+| 47 | UserDefinedCloudProviderStoreTests | 配置非法时新增失败且不落盘不注册 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `upsertRejectsInvalidConfigurationWithoutSideEffects` |
+| 48 | UserDefinedCloudProviderStoreTests | 未装配管理器时新增失败并报持久化错误 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `upsertFailsWhenManagerNotAttached` |
+| 49 | UserDefinedCloudProviderStoreTests | 删除供应商会注销运行时实例并更新磁盘配置 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `removeUnregistersProviderAndDeletesConfiguration` |
+| 50 | UserDefinedCloudProviderStoreTests | 删除不存在的 ID 是空操作 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `removeIgnoresUnknownIdentifier` |
+| 51 | UserDefinedCloudProviderStoreTests | 重启后从磁盘恢复自定义供应商 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `restoresConfigurationsFromDisk` |
+| 52 | UserDefinedCloudProviderStoreTests | 装配时把磁盘上的供应商注册进管理器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `attachRegistersRestoredProviders` |
+| 53 | UserDefinedCloudProviderStoreTests | 磁盘上损坏的配置在加载时被丢弃 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `dropsInvalidConfigurationsWhenLoading` |
+| 54 | UserDefinedCloudProviderStoreTests | 磁盘文件不存在时加载为空配置 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `loadsEmptyWhenFileMissing` |
+| 55 | UserDefinedCloudProviderStoreTests | 能识别某个 ID 是否为自定义供应商 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `reportsCustomProviderMembership` |
+| 56 | UserDefinedCloudProviderStoreTests | 自定义供应商按所选 API 格式暴露对应配置 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `userDefinedProviderExposesFormatSpecificConfiguration` |
+| 57 | UserDefinedCloudProviderStoreTests | 自定义供应商在管理器中暴露为云端供应商 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `userDefinedProviderIsRegisteredAsRemoteProvider` |
 
-> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **57 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 20 / 20
-- P2: 已覆盖 4 / 4
-- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 12 / 12
+- P1: 已覆盖 36 / 36
+- P2: 已覆盖 9 / 9
+- **合计: 57 / 57**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（20 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
+- **P1**: 其余功能性用例（36 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 57 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
