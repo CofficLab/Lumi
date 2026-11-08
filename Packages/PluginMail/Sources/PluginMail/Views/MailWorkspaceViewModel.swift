@@ -132,7 +132,12 @@ final class MailWorkspaceViewModel: ObservableObject {
             folders = list.sorted { $0.kind.sortOrder < $1.kind.sortOrder }
             await syncAndLoad(folder: "INBOX", fullSync: true)
         } catch {
+            // 冷启动离线：会话或文件夹列表失败时仍保留 INBOX 入口，
+            // 并用本地缓存渲染列表，而不是留下空白工作区。
+            isOffline = true
+            folders = [MailFolder(path: "INBOX", kind: .inbox, delimiter: "/")]
             handleError(error, context: "加载文件夹")
+            await loadMessages(folder: "INBOX", reset: true)
         }
     }
 
@@ -148,6 +153,11 @@ final class MailWorkspaceViewModel: ObservableObject {
     }
 
     func refresh() async {
+        // 离线期间文件夹列表只保留了 INBOX 兜底，恢复后需重新拉取远程文件夹。
+        if isOffline, let accountID = selectedAccountID {
+            await selectAccount(id: accountID)
+            return
+        }
         await syncAndLoad(folder: selectedFolder, fullSync: true)
     }
 
