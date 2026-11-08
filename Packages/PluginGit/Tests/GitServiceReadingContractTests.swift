@@ -70,6 +70,28 @@ struct GitServiceReadingContractTests {
         #expect(status.staged.contains("staged.txt"))
     }
 
+    @Test("仅暂存的新增与删除保留 A/D 类型")
+    func stagedAddAndDeleteKeepTheirStates() async throws {
+        let repo = try makeRepository()
+        defer { try? FileManager.default.removeItem(at: repo) }
+
+        try write("keep\n", to: "gone.txt", in: repo)
+        try runGit(["add", "gone.txt"], in: repo)
+        try runGit(["commit", "-q", "-m", "init"], in: repo)
+
+        try write("new\n", to: "brand-new.txt", in: repo)
+        try runGit(["add", "brand-new.txt"], in: repo)
+        try runGit(["rm", "-q", "gone.txt"], in: repo)
+
+        let status = try await GitService.shared.getStatus(path: repo.path)
+        let changes = Dictionary(uniqueKeysWithValues: status.workingChanges().map { ($0.path, $0) })
+
+        #expect(changes["brand-new.txt"]?.state == .added)
+        #expect(changes["brand-new.txt"]?.isStaged == true)
+        #expect(changes["gone.txt"]?.state == .deleted)
+        #expect(changes["gone.txt"]?.isStaged == true)
+    }
+
     @Test("isRepository 对仓库与非仓库目录判定正确")
     func isRepositoryDetectsRepository() async throws {
         let repo = try makeRepository()

@@ -54,6 +54,11 @@ public struct GitStatus: Codable, Sendable, Equatable {
     public let deleted: [String]
     public let renamed: [String]
     public let staged: [String]
+    /// 已暂存文件的具体变更类型（`path -> state`，相对 HEAD）。
+    ///
+    /// 旧数据或调用方未提供时为空；此时 ``workingChanges()`` 对仅暂存的文件
+    /// 回退为 `.modified`，与历史行为一致。
+    public let stagedStates: [String: GitWorkingChangeState]
     /// 未跟踪文件（工作区有、Git 未纳入版本控制）。
     public let untracked: [String]
 
@@ -65,6 +70,7 @@ public struct GitStatus: Codable, Sendable, Equatable {
         deleted: [String] = [],
         renamed: [String] = [],
         staged: [String] = [],
+        stagedStates: [String: GitWorkingChangeState] = [:],
         untracked: [String] = []
     ) {
         self.branch = branch
@@ -74,10 +80,11 @@ public struct GitStatus: Codable, Sendable, Equatable {
         self.deleted = deleted
         self.renamed = renamed
         self.staged = staged
+        self.stagedStates = stagedStates
         self.untracked = untracked
     }
 
-    // 自定义解码以兼容旧 JSON（untracked 缺失时回退为空数组）。
+    // 自定义解码以兼容旧 JSON（untracked / stagedStates 缺失时回退为空）。
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         branch = try container.decode(String.self, forKey: .branch)
@@ -87,6 +94,7 @@ public struct GitStatus: Codable, Sendable, Equatable {
         deleted = try container.decodeIfPresent([String].self, forKey: .deleted) ?? []
         renamed = try container.decodeIfPresent([String].self, forKey: .renamed) ?? []
         staged = try container.decodeIfPresent([String].self, forKey: .staged) ?? []
+        stagedStates = try container.decodeIfPresent([String: GitWorkingChangeState].self, forKey: .stagedStates) ?? [:]
         untracked = try container.decodeIfPresent([String].self, forKey: .untracked) ?? []
     }
 
@@ -99,9 +107,8 @@ public struct GitStatus: Codable, Sendable, Equatable {
     /// ``GitWorkingChange`` 列表。
     ///
     /// 合成规则（staged 优先）：
-    /// - staged 中的文件：若同时出现在 modified/added/deleted/renamed 中，按
-    ///   各自 state 标记 `isStaged = true`；否则 state 取 `.modified`，
-    ///   `isStaged = true`。
+    /// - staged 中的文件：state 取 `stagedStates[path]`（暂存区相对 HEAD 的类型）；
+    ///   旧数据没有该映射时，若同一路径有未暂存记录则沿用其 state，否则回退 `.modified`。
     /// - 非 staged 的 modified/added/deleted/renamed/untracked：state 为对应枚举，
     ///   `isStaged = false`。
     /// - 同一文件在 staged 与非 staged 都出现时，返回 staged 版本（isStaged=true）。
@@ -114,14 +121,11 @@ public struct GitStatus: Codable, Sendable, Equatable {
         for p in renamed { changes[p] = GitWorkingChange(path: p, state: .renamed, isStaged: false) }
         for p in untracked { changes[p] = GitWorkingChange(path: p, state: .untracked, isStaged: false) }
 
-        // staged 覆盖：staged 中的文件，如果已有非 staged 记录，更新为 isStaged = true 并保留 state；
-        // 否则以 .modified 标记（表示已暂存的修改，但 GitStatus 未区分 staged 文件的具体 state）。
+        // staged 覆盖：优先使用暂存区相对 HEAD 的具体类型，避免仅暂存的新增/删除/重命名
+        // 被统一显示为修改。
         for p in staged {
-            if let existing = changes[p] {
-                changes[p] = GitWorkingChange(path: p, state: existing.state, isStaged: true)
-            } else {
-                changes[p] = GitWorkingChange(path: p, state: .modified, isStaged: true)
-            }
+            let state = stagedStates[p] ?? changes[p]?.state ?? .modified
+            changes[p] = GitWorkingChange(path: p, state: state, isStaged: true)
         }
 
         return changes.values.sorted { $0.path < $1.path }
