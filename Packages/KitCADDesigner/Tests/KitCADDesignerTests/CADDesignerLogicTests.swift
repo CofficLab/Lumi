@@ -96,6 +96,26 @@ final class CADDesignerLogicTests: XCTestCase {
         XCTAssertEqual(viewModel.measurement?.toComponentId, second?.id)
     }
 
+    @MainActor
+    func testCutResultKeepsStockLengthUsedForOptimization() {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        _ = store.createDocument(name: "Cut Length")
+        _ = try? store.addComponent(.profile(ProfileInstance(
+            profileId: "profile-40x40-eu",
+            length: 500
+        )))
+
+        let viewModel = CADWorkspaceViewModel(store: store, library: library)
+        viewModel.stockLength = 6000
+        viewModel.runCutOptimization()
+        XCTAssertEqual(viewModel.cutResult?.stockLength, 6000)
+
+        // 修改输入但未重新优化时，旧方案必须仍标记为 6000。
+        viewModel.stockLength = 1000
+        XCTAssertEqual(viewModel.cutResult?.stockLength, 6000)
+    }
+
     func testCADDocumentCodableRoundTrip() throws {
         let profile = ProfileInstance(profileId: "profile-40x40-eu", length: 1200)
         let connector = ConnectorInstance(connectorId: "connector-corner-40")

@@ -29,19 +29,23 @@ public struct CutOptimizationResult: Equatable, Sendable {
     public let totalUtilization: Double
     /// 超过单根原料长度、无法排入任何原料的需求长度（降序）。
     public let unschedulableDemands: [Double]
+    /// 生成该方案时使用的单根原料长度（mm），用于避免旧结果被新输入错误标注。
+    public let stockLength: Double
 
     public init(
         stocks: [CutStockResult],
         stockCount: Int,
         totalRemainder: Double,
         totalUtilization: Double,
-        unschedulableDemands: [Double] = []
+        unschedulableDemands: [Double] = [],
+        stockLength: Double
     ) {
         self.stocks = stocks
         self.stockCount = stockCount
         self.totalRemainder = totalRemainder
         self.totalUtilization = totalUtilization
         self.unschedulableDemands = unschedulableDemands
+        self.stockLength = stockLength
     }
 }
 
@@ -73,7 +77,8 @@ public struct CutOptimizer {
                 stockCount: 0,
                 totalRemainder: 0,
                 totalUtilization: 0,
-                unschedulableDemands: unschedulableDemands
+                unschedulableDemands: unschedulableDemands,
+                stockLength: stockLength
             )
         }
 
@@ -105,7 +110,8 @@ public struct CutOptimizer {
             stockCount: stocks.count,
             totalRemainder: totalRemainder,
             totalUtilization: totalUtilization,
-            unschedulableDemands: unschedulableDemands
+            unschedulableDemands: unschedulableDemands,
+            stockLength: stockLength
         )
     }
 }
