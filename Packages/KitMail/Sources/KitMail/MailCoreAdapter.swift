@@ -83,7 +83,9 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
 
     public func listFolders() async throws -> [MailFolder] {
         let folders: [MCOIMAPFolder] = try await perform { completion in
-            guard let op = self.imapSession.fetchSubscribedFoldersOperation() else {
+            // 协议约定列出全部文件夹：使用 IMAP LIST（全部）而非 LSUB（已订阅），
+            // 否则未订阅但仍存在的文件夹会从工作区消失。
+            guard let op = Self.fetchFoldersOperation(using: self.imapSession) else {
                 completion(nil, MailError.protocolError("operation creation failed"))
                 return
             }
@@ -98,6 +100,14 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
                 delimiter: String(folder.delimiter)
             )
         }
+    }
+
+    /// 文件夹枚举操作：始终取「全部文件夹」（IMAP LIST）。
+    /// 独立成函数以便测试锁定不会退回 `fetchSubscribedFoldersOperation`。
+    static func fetchFoldersOperation(
+        using session: MCOIMAPSession
+    ) -> MCOIMAPFetchFoldersOperation? {
+        session.fetchAllFoldersOperation()
     }
 
     public func fetchMessages(

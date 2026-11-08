@@ -2,7 +2,7 @@
 
 ## 包概述
 
-KitMail 的实现包，包含 13 个主要类型；当前测试覆盖 29 条用例。
+KitMail 的实现包，包含 13 个主要类型；当前测试覆盖 30 条用例。
 
 平台: macOS 14+, iOS 17+
 测试文件: 6 个，用例总数: 29
@@ -34,7 +34,7 @@ KitMail 的实现包，包含 13 个主要类型；当前测试覆盖 29 条用�
 
 - **综合**（1 条）：由 `testModuleExportsSessionProtocols` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailModels**（11 条）：由 `testAddressRoundTrip`、`testAddressRFC5322`、`testAddressHashable` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MailSessionProtocol**（10 条）：由 `testModuleExportsSessionProtocols`、`testMockSessionFullFlow`、`testMockSessionAuthFailure` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MailSessionProtocol**（11 条）：由 `testModuleExportsSessionProtocols`、`testMockSessionFullFlow`、`testMockSessionAuthFailure` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MimeMessageBuilder**（5 条）：由 `testBuildAndParseRoundTrip`、`testPlainOnlyBuild`、`testReplyHeaders` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailUID**（2 条）：由 `testValidatedAcceptsProtocolRange`、`testValidatedRejectsZeroAndOutOfRange` 等用例锁定；改动 UID 边界时优先跑对应测试文件。
 
@@ -71,27 +71,28 @@ KitMail 的实现包，包含 13 个主要类型；当前测试覆盖 29 条用�
 | 27 | MimeMessageBuilder | testReplyReferencesChain | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testReplyReferencesChain` |
 | 28 | MailUID | 1 与 UInt32.max 可安全收窄 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testValidatedAcceptsProtocolRange` |
 | 29 | MailUID | 0、UInt32.max+1、UInt64.max 返回 nil 而非 trap | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testValidatedRejectsZeroAndOutOfRange` |
+| 30 | MailSessionProtocol | 文件夹列表使用 IMAP LIST（全部文件夹），不退化为 LSUB（仅已订阅） | 用记录调用的 MCOIMAPSession 子类替换会话 | 调用 `MailCoreAdapter.fetchFoldersOperation(using:)` | 仅调用 `fetchAllFoldersOperation`，未调用 `fetchSubscribedFoldersOperation` | P1 | ✅ 已覆盖 | `testFolderListingRequestsAllFoldersNotSubscribed` |
 
-> 说明：全部 **29 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **30 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 1 / 1
-- P1: 已覆盖 27 / 27
+- P1: 已覆盖 28 / 28
 - P2: 已覆盖 1 / 1
-- **合计: 29 / 29**（仅表示清单场景，非源码覆盖率）
+- **合计: 30 / 30**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（27 条）
+- **P1**: 其余功能性用例（28 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 29 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 30 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
