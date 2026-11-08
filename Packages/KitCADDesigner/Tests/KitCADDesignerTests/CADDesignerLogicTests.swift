@@ -77,6 +77,26 @@ final class CADDesignerLogicTests: XCTestCase {
     }
 
     @MainActor
+    func testBOMKeepsDistinctFractionalLengths() {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        _ = store.createDocument(name: "Fractional BOM")
+
+        try? store.addComponent(.profile(ProfileInstance(profileId: "profile-40x40-eu", length: 500.25)))
+        try? store.addComponent(.profile(ProfileInstance(profileId: "profile-40x40-eu", length: 500.75)))
+
+        let report = BOMGenerator().generate(from: store.selectedDocument!, library: library)
+        let profileItems = report.items.filter { $0.length > 0 }
+
+        // 不同小数长度不得被截断合并为同一行。
+        XCTAssertEqual(profileItems.count, 2)
+        XCTAssertEqual(Set(profileItems.map(\.quantity)), [1])
+        XCTAssertEqual(Set(profileItems.map(\.length)), [500.25, 500.75])
+        XCTAssertTrue(profileItems.contains { $0.description.contains("500.25mm") })
+        XCTAssertTrue(profileItems.contains { $0.description.contains("500.75mm") })
+    }
+
+    @MainActor
     func testBOMWeightCalculation() {
         let store = CADDocumentStore.shared
         store.resetForTests()
