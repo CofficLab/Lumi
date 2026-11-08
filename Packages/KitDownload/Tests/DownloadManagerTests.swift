@@ -187,6 +187,36 @@ struct DownloadManagerTests {
         }
     }
 
+    @Test("URLSession 的 URLError.cancelled 保持为 cancelled 状态")
+    func urlSessionCancellationStaysCancelled() async throws {
+        try await withTempDir { tempDir in
+            let mockClient = MockHTTPClient()
+            // URLSession 取消抛的是 NSURLError -999，而非 Swift CancellationError
+            mockClient.downloadResult = .failure(URLError(.cancelled))
+
+            let config = DownloadManager.Configuration(downloadDirectory: tempDir)
+            let manager = DownloadManager(configuration: config, httpClient: mockClient)
+
+            let destination = tempDir.appendingPathComponent("cancelled.txt")
+            let task = DownloadTask(
+                id: "urlsession-cancel",
+                url: URL(string: "https://example.com/file.txt")!,
+                destination: destination
+            )
+
+            var thrown: Error?
+            do {
+                _ = try await manager.download(task)
+            } catch {
+                thrown = error
+            }
+
+            #expect(thrown as? DownloadError == .cancelled)
+            let state = await manager.state(for: task.id)
+            #expect(state == .cancelled)
+        }
+    }
+
     @Test("获取任务状态")
     func getTaskState() async throws {
         try await withTempDir { tempDir in

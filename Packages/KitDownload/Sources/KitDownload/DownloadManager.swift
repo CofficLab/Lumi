@@ -295,13 +295,25 @@ public actor DownloadManager {
             // 更新状态为完成
             updateState(task.id, .completed)
 
-        } catch is CancellationError {
-            updateState(task.id, .cancelled)
-        } catch let error as DownloadError {
-            updateState(task.id, .failed(error))
         } catch {
-            updateState(task.id, .failed(.unknown(error.localizedDescription)))
+            // 用户取消可能以 Swift CancellationError 或 URLError.cancelled(-999) 的形式
+            // 从 URLSession 冒出来，两者都必须保持为 .cancelled，不能被改写成未知失败。
+            if Self.isCancellation(error) {
+                updateState(task.id, .cancelled)
+            } else if let downloadError = error as? DownloadError {
+                updateState(task.id, .failed(downloadError))
+            } else {
+                updateState(task.id, .failed(.unknown(error.localizedDescription)))
+            }
         }
+    }
+
+    private static func isCancellation(_ error: Error) -> Bool {
+        if error is CancellationError {
+            return true
+        }
+        let nsError = error as NSError
+        return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled
     }
 
     private func updateState(_ taskId: String, _ state: DownloadTaskState) {
