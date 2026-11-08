@@ -152,4 +152,40 @@ struct ConversationManagerPreferenceTests {
         #expect(manager.globalLanguage == .chinese)
         #expect(manager.language(for: backgroundID) == .english)
     }
+
+    /// 回归 #986：New Chat 的默认详细度没有会话承载，必须跨重启保留。
+    @Test func globalVerbosityPersistsAcrossRestartWithoutSelectedConversation() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationVerbosityPersistenceTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let manager = ConversationManager(store: nil, dataDirectory: directory)
+        manager.setGlobalVerbosity(.brief)
+
+        // 写盘在串行队列上异步完成，等 state.json 落盘后再模拟重启。
+        let stateURL = directory.appendingPathComponent("state.json")
+        var persisted: ResponseVerbosity?
+        for _ in 0..<100 {
+            if let data = try? Data(contentsOf: stateURL),
+               let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let raw = object["globalVerbosity"] as? String,
+               let verbosity = ResponseVerbosity(rawValue: raw) {
+                persisted = verbosity
+                break
+            }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(persisted == .brief)
+
+        let store = try ConversationStore(databaseRootURL: directory)
+        let restarted = ConversationManager(store: store, dataDirectory: directory)
+        restarted.loadConversations()
+        for _ in 0..<100 where restarted.isLoadingConversations {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+
+        #expect(!restarted.isLoadingConversations)
+        #expect(restarted.selectedConversationID == nil)
+        #expect(restarted.globalVerbosity == .brief)
+    }
 }

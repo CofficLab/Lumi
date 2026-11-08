@@ -52,6 +52,8 @@ extension ConversationManager {
         guard globalVerbosity != verbosity else { return }
         globalVerbosity = verbosity
         notifyConversationObservers(.verbosityChanged(nil))
+        // New Chat 的默认详细度没有会话承载，必须单独落盘才能跨重启保留。
+        persistSelectedConversationID()
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setGlobalVerbosity: verbosity=\(verbosity.rawValue)")
