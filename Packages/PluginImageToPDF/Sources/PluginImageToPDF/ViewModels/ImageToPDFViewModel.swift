@@ -140,7 +140,7 @@ final class ImageToPDFViewModel: ObservableObject {
             }.count
             if failureCount > 0 {
                 lastErrorMessage = String(
-                    format: ImageToPDFLocalization.string("%l file(s) failed to convert"),
+                    format: ImageToPDFLocalization.string("%ld file(s) failed to convert"),
                     failureCount
                 )
             }
