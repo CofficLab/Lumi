@@ -89,3 +89,18 @@ import Testing
     // decision context without coupling the test to the process locale.
     #expect(message.contains("\n"))
 }
+
+@Test func outboundTargetPortUsesRemoteEndpointPort() {
+    let port = FirewallEndpointResolver.targetPort(
+        direction: .outbound,
+        localPort: "52344",
+        remotePort: "443"
+    )
+
+    #expect(port == "443")
+}
+
+@Test func inboundAndAnyTargetPortKeepLocalServicePort() {
+    #expect(FirewallEndpointResolver.targetPort(direction: .inbound, localPort: "443", remotePort: "52344") == "443")
+    #expect(FirewallEndpointResolver.targetPort(direction: .any, localPort: "443", remotePort: "52344") == "443")
+}
