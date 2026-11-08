@@ -188,15 +188,21 @@ public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
                 remainingTotal = n
             }
         } else {
-            // 全新下载：若本地有残留部分文件，截断从头写（服务器返回完整内容）
-            if existingBytes > 0 {
-                try? FileManager.default.removeItem(at: destination)
-            }
+            // 全新下载：服务器返回完整内容，remainingTotal 直接取 Content-Length。
+            // 目标已有文件时不会在这里删除它，见下方的临时文件替换逻辑。
             if let len = httpResp?.value(forHTTPHeaderField: "Content-Length"),
                let n = Int64(len) {
                 remainingTotal = n
             }
         }
+
+        // 服务器忽略 Range（返回 200）且目标已有文件时，不能删除旧文件后直接写
+        // 最终路径：传输中途失败会把用户原有的成品变成半截文件。改为先写同目录
+        // 临时文件，完整收完后再原子替换目标；失败时旧文件保持可用。
+        let replacementURL = (!supportsResume && existingBytes > 0)
+            ? Self.temporaryReplacementURL(for: destination)
+            : nil
+        let writeURL = replacementURL ?? destination
 
         // 流式追加写入：续传时 seek 到末尾追加；全新下载时覆盖写。
         // 确保目标目录存在
@@ -204,7 +210,7 @@ public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
         let writeMode: StreamingWriteMode = supportsResume ? .append : .replace
-        let handle = try FileHandle.openForStreamingWrite(at: destination, mode: writeMode)
+        let handle = try FileHandle.openForStreamingWrite(at: writeURL, mode: writeMode)
         defer { try? handle.close() }
 
         var writtenThisSession: Int64 = 0
@@ -232,12 +238,41 @@ public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
                 progressHandler(resumeBaseBytes + writtenThisSession, remainingTotal.map { resumeBaseBytes + $0 })
             }
         } catch {
-            // 取消（Task cancelled）或网络错误：已写入字节已在磁盘，直接抛出，
-            // 上层据磁盘文件大小下次续传。
+            // 取消（Task cancelled）或网络错误：续传的已写入字节已在磁盘，直接抛出；
+            // 替换下载则丢弃临时文件，保留目标路径上的旧文件。
+            if let replacementURL {
+                try? FileManager.default.removeItem(at: replacementURL)
+            }
             throw error
         }
 
+        // 替换下载：确认收到完整内容后原子替换目标，避免半截文件覆盖旧成品。
+        if let replacementURL {
+            try? handle.close()
+            do {
+                if let expected = remainingTotal, writtenThisSession != expected {
+                    throw DownloadError.networkError(
+                        "下载不完整：期望 \(expected) 字节，实际收到 \(writtenThisSession) 字节"
+                    )
+                }
+                if FileManager.default.fileExists(atPath: destination.path) {
+                    _ = try FileManager.default.replaceItemAt(destination, withItemAt: replacementURL)
+                } else {
+                    try FileManager.default.moveItem(at: replacementURL, to: destination)
+                }
+            } catch {
+                try? FileManager.default.removeItem(at: replacementURL)
+                throw error
+            }
+        }
+
         return writtenThisSession
+    }
+
+    /// 替换下载的临时文件路径：与目标同目录，保证 `replaceItemAt` 在同卷内原子完成。
+    private static func temporaryReplacementURL(for destination: URL) -> URL {
+        destination.deletingLastPathComponent()
+            .appendingPathComponent(".\(destination.lastPathComponent).download-\(UUID().uuidString)")
     }
 
     /// 解析 `Content-Range: bytes <start>-<end>/<total>` 中的 total；无法解析返回 nil。
