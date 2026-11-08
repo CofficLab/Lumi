@@ -501,6 +501,26 @@ struct AgentRulesToolbarTests {
         #expect(read.id == "foo.md")
     }
 
+    @Test("listRules skips .md directories instead of failing the whole list")
+    func listRulesSkipsMarkdownDirectories() async throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("AgentRulesDirEntry-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let rulesDirectory = projectURL.appending(path: ".lumi/rules")
+        try FileManager.default.createDirectory(
+            at: rulesDirectory.appending(path: "archive.md"),
+            withIntermediateDirectories: true
+        )
+        try "# Style\n\nKeep rules readable.\n"
+            .write(to: rulesDirectory.appending(path: "style.md"), atomically: true, encoding: .utf8)
+
+        let rules = try await AgentRulesService().listRules(projectPath: projectURL.path)
+
+        #expect(rules.map(\.filename) == ["style.md"])
+        #expect(rules.first?.id == "style")
+    }
+
     private func makeMetadata(id: String, filename: String) -> AgentRuleMetadata {
         AgentRuleMetadata(
             id: id,
