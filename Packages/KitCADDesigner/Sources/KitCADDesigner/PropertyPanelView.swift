@@ -34,7 +34,8 @@ struct PropertyPanelView: View {
             }
         }
         .background(Color(nsColor: .controlBackgroundColor))
-        .onChange(of: viewModel.selectedComponent?.id) { _ in
+        // 监听组件值而不只是 ID：Undo/Redo 会在 ID 不变的情况下回退内容。
+        .onChange(of: viewModel.selectedComponent) { _ in
             syncFromSelection()
         }
         .onAppear { syncFromSelection() }
