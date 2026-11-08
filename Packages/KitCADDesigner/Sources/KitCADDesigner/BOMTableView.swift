@@ -90,7 +90,7 @@ struct BOMTableView: View {
             if let result = viewModel.cutResult {
                 VStack(alignment: .leading, spacing: 6) {
                     if result.stockCount > 0 {
-                        Text("\(result.stockCount) × \(Int(viewModel.stockLength))mm 原料 · 总利用率 \(String(format: "%.1f%%", result.totalUtilization * 100))")
+                        Text("\(result.stockCount) × \(Int(result.stockLength))mm 原料 · 总利用率 \(String(format: "%.1f%%", result.totalUtilization * 100))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

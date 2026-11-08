@@ -56,27 +56,28 @@ KitCADDesigner 铝型材 3D 设计引擎（参考 MayCAD）—— 通过 3D 视�
 | 18 | CADDesignerLogic | 修改位置不得重置其他旋转轴和缩放 | 初始 rotationX=15, rotationY=30, rotationZ=90, scale=2 | 调用 `updatePlacement` 更新位置与 Y 旋转 | 位置和 rotationY 更新，rotationX/Z 与 scale 保持不变 | P0 | ✅ 已覆盖 | `testPlacementUpdatePreservesOtherTransformComponents` |
 | 19 | CADDesignerLogic | Undo 回退内容时组件 ID 不变，属性面板需按值同步 | 长度 500 → 1000 → Undo | 执行该用例 | Undo 后 ID 不变、长度回到 500（证明同步键不能只看 ID） | P1 | ✅ 已覆盖 | `testUndoRestoresComponentValuesWithoutChangingId` |
 | 20 | CADDesignerLogic | Measure 模式点击两个组件后计算距离 | 两组件位置 (0,0,0) 与 (3,4,0) | 调用 `handleViewportPick` 两次 | 第一次无结果，第二次距离为 5 且记录两端组件 ID | P1 | ✅ 已覆盖 | `testMeasureToolComputesDistanceFromTwoPicks` |
+| 21 | CADDesignerLogic | 旧切割方案保留其计算时使用的原料长度 | 以 6000mm 优化后把输入改为 1000mm，不重新优化 | 读取 `cutResult.stockLength` | 仍为 6000，不被新输入改写 | P1 | ✅ 已覆盖 | `testCutResultKeepsStockLengthUsedForOptimization` |
 
-> 说明：全部 **20 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **21 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 2 / 2
-- P1: 已覆盖 17 / 17
+- P1: 已覆盖 18 / 18
 - P2: 已覆盖 1 / 1
-- **合计: 20 / 20**（仅表示清单场景，非源码覆盖率）
+- **合计: 21 / 21**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（17 条）
+- **P1**: 其余功能性用例（18 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 20 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 21 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
