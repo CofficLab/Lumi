@@ -26,6 +26,10 @@ public final class LargeFilesService: @unchecked Sendable {
         try await Task.detached(priority: .utility) {
             try FileManager.default.removeItem(at: URL(fileURLWithPath: path))
         }.value
+        // 删除成功即意味着磁盘用量变化，通知仍在展示的容量文字与环形图刷新。
+        await MainActor.run {
+            NotificationCenter.default.post(name: .diskManagerDiskUsageDidChange, object: nil)
+        }
     }
 
     @MainActor

@@ -38,7 +38,7 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **CacheCleanerTrash**（2 条）：由 `scanExpandsTrashIntoChildren`、`cleanupKeepsTrashRoot` 锁定；改动废纸篓/缓存扫描与清理逻辑时优先跑对应测试文件。
-- **DiskManagerLumiTools**（26 条）：由 `formatBytesProducesHumanReadableString`、`formatBytesHandlesZero`、`formatDateReturnsUnknownForNil` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DiskManagerLumiTools**（27 条）：由 `formatBytesProducesHumanReadableString`、`formatBytesHandlesZero`、`formatDateReturnsUnknownForNil` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DiskModelsPureLogic**（19 条）：由 `classifiesImages`、`classifiesVideos`、`classifiesAudio` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（7 条）：由 `pluginMetadataIsStable`、`agentToolsContributionIsAvailable`、`railTabIDIsStable` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -104,16 +104,17 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 56 | CacheCleanerSafety | Xcode Archives 归入需确认级别，任何安全级别规则都不含它 | 真实扫描规则集合 | 检查包含 `Xcode/Archives` 的规则 | 该规则为 `.medium`；安全级别规则均不含 Archives | P0 | ✅ 已覆盖 | `xcodeArchivesRequiresExplicitSelection` |
 | 57 | CacheCleanerSafety | 开发者工具缓存不再包含 Archives | 真实扫描规则集合 | 取 `dev_cache` 规则的路径 | 路径中不含 `Xcode/Archives` | P1 | ✅ 已覆盖 | `developerToolCacheNoLongerContainsArchives` |
 | 58 | DiskManagerLumiTools | clean-caches 对普通文件根路径报告真实释放字节 | 临时目录下 8192 字节普通文件 | 调用 `sizeOfPath` 与 `CleanCachesTool.execute` | 测得 8192 字节，输出含实际大小且不含 0 字节 | P0 | ✅ 已覆盖 | `cleanCachesToolReportsActualSizeForRegularFile` |
+| 59 | DiskManagerLumiTools | 删除大文件成功后发出磁盘用量变化通知 | 临时目录下普通文件 | 调用 `LargeFilesService.deleteFile` | 收到 `diskManagerDiskUsageDidChange` 通知且文件已删除 | P0 | ✅ 已覆盖 | `deletingLargeFilePostsDiskUsageChangeNotification` |
 
-> 说明：全部 **58 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **59 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
+- P0: 已覆盖 11 / 11
 - P1: 已覆盖 40 / 40
 - P2: 已覆盖 8 / 8
-- **合计: 58 / 58**（仅表示清单场景，非源码覆盖率）
+- **合计: 59 / 59**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

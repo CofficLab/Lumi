@@ -322,6 +322,31 @@ struct LargeFilesServiceTests {
         #expect(!FileManager.default.fileExists(atPath: fileURL.path))
     }
 
+    // MARK: - 回归 #871：删除大文件后通知侧栏容量与环形图刷新
+
+    @Test func deletingLargeFilePostsDiskUsageChangeNotification() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-large-file-delete-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let fileURL = root.appendingPathComponent("big.bin")
+        try Data(repeating: 0, count: 1_024).write(to: fileURL)
+
+        try await confirmation("disk usage change notification") { confirm in
+            let token = NotificationCenter.default.addObserver(
+                forName: .diskManagerDiskUsageDidChange,
+                object: nil,
+                queue: nil
+            ) { _ in confirm() }
+            defer { NotificationCenter.default.removeObserver(token) }
+
+            try await LargeFilesService.shared.deleteFile(atPath: fileURL.path)
+        }
+
+        #expect(!FileManager.default.fileExists(atPath: fileURL.path))
+    }
+
     @Test func cleanXcodeCachesToolDeletesExactPathWithTrailingWhitespace() async throws {
         let fixture = try makeTrailingWhitespaceFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }

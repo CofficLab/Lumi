@@ -2,6 +2,11 @@ import Foundation
 import LumiLoggingKit
 import Combine
 
+extension Notification.Name {
+    /// 磁盘用量发生变化（例如删除大文件后），侧栏容量文字与环形图据此重新读取。
+    static let diskManagerDiskUsageDidChange = Notification.Name("com.coffic.lumi.disk-manager.disk-usage-did-change")
+}
+
 final class DiskManagerScanTaskHolder: @unchecked Sendable {
     var scanTask: Task<Void, Never>?
     var progressTask: Task<Void, Never>?
