@@ -108,8 +108,39 @@ extension MindMapDesignerPluginTests {
         let result = try await tool.executeResult(context: context, arguments: [:])
 
         // 列表必须只包含项目 A 的思维导图。
-        #expect(result.content.contains(mapA.id.prefix(8).description))
-        #expect(!result.content.contains(mapB.id.prefix(8).description))
+        #expect(result.content.contains(mapA.id))
+        #expect(!result.content.contains(mapB.id))
+    }
+
+    @Test("list_mind_maps 返回的完整 ID 可直接用于加载（回归 #1001）")
+    func listedIdentifierCanBeLoadedDirectly() async throws {
+        let project = try makeScopedProjectRoot("list-load")
+        defer { try? FileManager.default.removeItem(at: project) }
+        MindMapDesignerRuntime.reset()
+        MindMapDesignerRuntime.updateProjectStorageDirectory(projectPath: project.path)
+
+        let store = MindMapDesignerRuntime.store(forProjectPath: project.path)
+        let map = store.createMindMap(
+            title: "Discoverable",
+            rootText: "Root",
+            direction: .right,
+            scope: .project
+        )
+
+        let context = conversationScopedContext(projectPath: project.path)
+        let listed = try await ConversationScopedMindMapTool(ListMindMapsTool())
+            .executeResult(context: context, arguments: [:])
+
+        let line = listed.content.split(separator: "\n").first { $0.contains("Discoverable") }
+        let discovered = line.flatMap { line -> String? in
+            guard let open = line.firstIndex(of: "["), let close = line.firstIndex(of: "]") else { return nil }
+            return String(line[line.index(after: open)..<close])
+        }
+        #expect(discovered == map.id, "列表暴露的标识必须是完整 ID，否则后续工具无法精确匹配")
+
+        let loaded = try await ConversationScopedMindMapTool(LoadMindMapTool())
+            .executeResult(context: context, arguments: ["mapId": ToolArgument(discovered ?? "")])
+        #expect(loaded.content.contains("Discoverable"), "按列表 ID 加载应成功：\(loaded.content)")
     }
 
     @Test("跨项目写入不会污染 UI 当前打开项目的面板")
