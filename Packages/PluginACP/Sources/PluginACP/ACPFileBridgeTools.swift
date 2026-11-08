@@ -61,6 +61,10 @@ public struct ACPReadFileTool: SuperAgentTool, @unchecked Sendable {
 
     private let bridge: ACPFileBridge
 
+    /// 入口防御：异常行号/行数在 Debug 下 assert，Release 下钳制到安全范围。
+    private static let maxStartLine = 1_000_000
+    private static let maxLineCount = 10_000
+
     public init(bridge: ACPFileBridge) {
         self.bridge = bridge
     }
@@ -74,8 +78,18 @@ public struct ACPReadFileTool: SuperAgentTool, @unchecked Sendable {
             "type": "object",
             "properties": [
                 "path": ["type": "string", "description": "Absolute path to the file to read"],
-                "line": ["type": "integer", "description": "1-based line number to start reading from"],
-                "limit": ["type": "integer", "description": "Maximum number of lines to read"],
+                "line": [
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1_000_000,
+                    "description": "1-based line number to start reading from",
+                ],
+                "limit": [
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10_000,
+                    "description": "Maximum number of lines to read",
+                ],
             ],
             "required": ["path"],
         ]
@@ -95,11 +109,21 @@ public struct ACPReadFileTool: SuperAgentTool, @unchecked Sendable {
         guard let path = arguments.stringValue("path") else {
             throw ACPToolError.missingArgument("path")
         }
+        let rawLine = arguments.intValue("line")
+        let rawLimit = arguments.intValue("limit")
+        assert(
+            rawLine == nil || (1...Self.maxStartLine).contains(rawLine!),
+            "line must be in 1...\(Self.maxStartLine)"
+        )
+        assert(
+            rawLimit == nil || (1...Self.maxLineCount).contains(rawLimit!),
+            "limit must be in 1...\(Self.maxLineCount)"
+        )
         let content = try await bridge.read(
             conversationID: context.conversationID,
             path: path,
-            line: arguments.intValue("line"),
-            limit: arguments.intValue("limit")
+            line: rawLine.map { max(1, min(Self.maxStartLine, $0)) },
+            limit: rawLimit.map { max(1, min(Self.maxLineCount, $0)) }
         )
         return ToolCallResult(content: content)
     }
