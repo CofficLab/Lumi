@@ -214,7 +214,7 @@ struct ChatInputEditorRulesTests {
 
     @Test("图片扩展名大小写不敏感，非图片被否决")
     func imageExtensionMatchingIsCaseInsensitive() {
-        for ext in ["png", "PNG", "jpg", "jpeg", "heic", "webp", "gif", "tiff", "bmp"] {
+        for ext in ["png", "PNG", "jpg", "jpeg", "heic", "webp", "gif", "tiff", "tif", "TIF", "bmp"] {
             #expect(
                 ChatInputEditorRules.isChatImageFileURL(URL(fileURLWithPath: "/tmp/a.\(ext)")),
                 "\(ext) 应被识别为聊天图片"

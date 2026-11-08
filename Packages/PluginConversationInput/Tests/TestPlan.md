@@ -145,7 +145,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 61 | 拖放 | 前后空白与空行被正确跳过 | 含空行 / 纯空白行的多行串 | 走 `fileURLs` | 只产出 2 个有效 URL | P1 | ✅ 已覆盖 | `multilinePathsTrimAndSkipBlanks` |
 | 62 | 拖放 | 普通文本不被误当成路径 | `hello world` / 空串 / 纯空白 | 走 `fileURLs` | 全部产出空数组（`URL(string:)` 非 nil 但 `isFileURL` 为假，必须被否决） | P0 | ✅ 已覆盖 | `nonPathTextYieldsNoURL` |
 | 63 | 拖放 | 单值入口与多值入口首项一致 | 路径 / 非路径各一 | 分别调两个入口 | 结果一致；非路径为 nil | P2 | ✅ 已覆盖 | `singleValueEntryMatchesFirstOfMultiple` |
-| 64 | 类型 | 图片扩展名大小写不敏感，非图片与无扩展名被否决 | 9 种图片扩展 + 5 种非图片 + 无扩展名 | 逐个判定 | 图片全为真；其余全为假 | P1 | ✅ 已覆盖 | `imageExtensionMatchingIsCaseInsensitive` |
+| 64 | 类型 | 图片扩展名大小写不敏感，非图片与无扩展名被否决 | 11 个图片扩展样本（含 tif/TIF）+ 5 种非图片 + 无扩展名 | 逐个判定 | 图片全为真；其余全为假 | P1 | ✅ 已覆盖 | `imageExtensionMatchingIsCaseInsensitive` |
 | 65 | 附件 | 移除图片附件按 ID 精确命中 | 两个图片附件 | 移除其一 | 仅剩另一个，能力层与 ViewModel 一致 | P1 | ✅ 已覆盖 | `removeImageAttachmentTargetsSingleID` |
 | 66 | 附件 | 移除文件附件按 ID 精确命中 | 两个文件附件 | 移除其一 | 仅剩另一个 | P1 | ✅ 已覆盖 | `removeFileAttachmentTargetsSingleID` |
 | 67 | 附件 | 移除不存在的 ID 是安全空操作 | 一个文件附件 | 用随机 UUID 移除图片与文件 | 原附件不受影响，无崩溃 | P1 | ✅ 已覆盖 | `removingUnknownAttachmentIsNoOp` |

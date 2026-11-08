@@ -5,7 +5,7 @@ import ImageIO
 /// 输入编辑器规则集
 public enum ChatInputEditorRules {
     public static let imagePathExtensions: Set<String> = [
-        "jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "heic",
+        "jpg", "jpeg", "png", "gif", "bmp", "tiff", "tif", "webp", "heic",
     ]
 
     public static func swiftToUTF16Index(_ swiftIndex: Int, in string: String) -> Int {
