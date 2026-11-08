@@ -2,10 +2,10 @@
 
 ## 包概述
 
-ProviderToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 35 条用例。
+ProviderToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 52 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 35
+测试文件: 14 个，用例总数: 52
 
 ## 公开 API
 
@@ -32,7 +32,7 @@ ProviderToolManager 的实现包，包含 14 个主要类型；当前测试覆�
 
 - **DefaultToolManagerProviding**（13 条）：由 `executeSuccess`、`executePassesConversationContext`、`executeNotifiesObservers` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolCallRecordStore**（4 条）：由 `recordAndFetch`、`deleteAll`、`count` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ToolJobRecordStore**（3 条）：由 `upsertAndFetchLifecycle`、`queryAndDeleteByScope`、`outputIsBounded` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ToolJobRecordStore**（20 条）：由 `upsertAndFetchLifecycle`、`queryAndDeleteByScope`、`outputIsBounded` 等用例锁定；另有启动恢复的索引/物化成本基准，改动该模块时优先跑对应测试文件。
 - **ToolJob**（4 条）：由 `terminalStatuses`、`validTransitions`、`codableRoundTrip` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolManagerProviding**（11 条）：由 `addAndOrder`、`addMigratesOwnership`、`groupedByPlugin` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -75,27 +75,45 @@ ProviderToolManager 的实现包，包含 14 个主要类型；当前测试覆�
 | 33 | ToolManagerProviding | decode 非对象 JSON 抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `decodeNonObjectThrows` |
 | 34 | ToolManagerProviding | encode 往返一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `encodeRoundTrip` |
 | 35 | ToolCallRecordStore | 批量按 turnID 查询只返回指定 turn 的记录 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fetchRecordsForTurnIDs` |
+| 36 | ToolJobRecordStore | 启动恢复的查询走覆盖索引且不整表排序 | 临时库 | 执行该用例 | 查询计划命中覆盖索引 | P0 | ✅ 已覆盖 | `startupQueryMustUseCoveringIndex` |
+| 37 | ToolJobRecordStore | 启动恢复不物化终态 Job 的 resultJSON | 临时库（200 条 64KB 结果） | 执行该用例 | 终态结果不被搬入内存 | P0 | ✅ 已覆盖 | `startupRestoreMustNotMaterializeTerminalResults` |
+| 38 | ToolJobRecordStore | 启动恢复完整保留终态 Job 的身份与状态 | 临时库 | 执行该用例 | 身份与状态一致 | P0 | ✅ 已覆盖 | `startupRestoreMustKeepIdentityAndStatus` |
+| 39 | ToolJobRecordStore | 非终态 Job 必须完整恢复（含结果） | 临时库 | 执行该用例 | 结果不丢失 | P0 | ✅ 已覆盖 | `nonTerminalJobsMustKeepResult` |
+| 40 | ToolJobRecordStore | 非终态过滤必须下推到 SQL | 生产库副本（可选） | 执行该用例 | 过滤在 SQL 层完成 | P0 | ✅ 已覆盖 | `nonTerminalFilterMustBePushedDownToSQL` |
+| 41 | ToolJobRecordStore | 启动恢复的排序查询走覆盖索引 | 临时库（500 条） | 执行该用例 | 查询计划无临时排序 | P0 | ✅ 已覆盖 | `startupRestoreQueryUsesIndex` |
+| 42 | ToolJobRecordStore | 按会话查询的排序必须走索引 | 临时库（500 条） | 执行该用例 | 查询计划命中索引 | P0 | ✅ 已覆盖 | `conversationQueryUsesIndex` |
+| 43 | ToolJobRecordStore | 按 turn 查询的排序必须走索引 | 临时库（500 条） | 执行该用例 | 查询计划命中索引 | P0 | ✅ 已覆盖 | `turnQueryUsesIndex` |
+| 44 | ToolJobRecordStore | Date 往返会丢失精度，但 Unix 偏移量补正确 | 临时库 | 执行该用例 | 时间不落在 1995 年 | P1 | ✅ 已覆盖 | `dateRoundTripLosesPrecisionButKeepsEpoch` |
+| 45 | ToolJobRecordStore | 非终态读取只取那几十行：过滤下推后物化成本归零 | 生产库副本（可选） | 执行该用例 | 物化条数等于非终态数 | P1 | ✅ 已覆盖 | `pushedDownFilterRemovesMaterializationCost` |
+| 46 | ToolJobRecordStore | 启动查询走覆盖索引，不全表扫描 | 生产库副本（可选） | 执行该用例 | 查询计划无全表扫描 | P1 | ✅ 已覆盖 | `queryUsesCoveringIndex` |
+| 47 | ToolJobRecordStore | 终态 Job 的结果不再在启动时被物化 | 生产库副本（可选） | 执行该用例 | 终态结果条数为 0 | P1 | ✅ 已覆盖 | `terminalResultsAreNotMaterialized` |
+| 48 | ToolJobRecordStore | 恢复的 Job 条数随库增长，终态结果不被物化 | 生产库副本（可选） | 执行该用例 | 条数随库增长且无结果物化 | P1 | ✅ 已覆盖 | `restoredCountGrowsWithLibrarySize` |
+| 49 | ToolJobRecordStore | 库里没有任何上限机制阻止增长（无保留策略） | 生产库副本（可选） | 执行该用例 | 终态 Job 占比接近全部 | P1 | ✅ 已覆盖 | `noRetentionPolicyExists` |
+| 50 | ToolJobRecordStore | 终态 Job 占绝大多数，启动恢复只需非终态 | 生产库副本（可选） | 执行该用例 | 终态占比极高 | P1 | ✅ 已覆盖 | `terminalJobsDominate` |
+| 51 | ToolJobRecordStore | resultJSON 是 Job 库的存储成本主体 | 生产库副本（可选） | 执行该用例 | resultJSON 总量占比最高 | P2 | ✅ 已覆盖 | `resultJSONDominatesStorageCost` |
+| 52 | ToolJobRecordStore | 启动恢复耗时趋势（仅观测，不作断言依据） | 生产库副本（可选） | 执行该用例 | 打印耗时趋势 | P2 | ✅ 已覆盖 | `startupTimingForObservation` |
 
-> 说明：全部 **35 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **52 条场景**已在本包 `swift test` 中实跑通过。
+> 其中 10 条标注「生产库副本（可选）」的基准用例，未设置环境变量 `LUMI_PROD_TOOL_JOBS_SQLITE` 指向生产库副本时会提前返回（记为通过），设置后执行实际断言。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 4 / 4
-- P1: 已覆盖 30 / 30
-- P2: 已覆盖 1 / 1
-- **合计: 35 / 35**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 12 / 12
+- P1: 已覆盖 37 / 37
+- P2: 已覆盖 3 / 3
+- **合计: 52 / 52**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
-- **P1**: 其余功能性用例（30 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
+- **P1**: 其余功能性用例（37 条）
+- **P2**: 稳定常量、占位、文案、空集合、纯观测基准等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 35 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 52 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
