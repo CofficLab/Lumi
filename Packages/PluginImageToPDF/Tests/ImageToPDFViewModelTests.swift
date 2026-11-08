@@ -63,4 +63,51 @@ struct ImageToPDFViewModelTests {
         #expect(collected.count == urls.count)
         #expect(Set(collected) == Set(urls))
     }
+
+    @Test("同名不同目录的图片生成独立 PDF，导出不互相覆盖")
+    func duplicateFileNamesProduceDistinctPDFs() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let png = try #require(Self.onePixelPNGData)
+        let directoryA = root.appendingPathComponent("a", isDirectory: true)
+        let directoryB = root.appendingPathComponent("b", isDirectory: true)
+        try FileManager.default.createDirectory(at: directoryA, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: directoryB, withIntermediateDirectories: true)
+        let photoA = directoryA.appendingPathComponent("photo.png")
+        let photoB = directoryB.appendingPathComponent("photo.png")
+        try png.write(to: photoA)
+        try png.write(to: photoB)
+
+        let staging = root.appendingPathComponent("staging", isDirectory: true)
+        ImageToPDFRuntimeBridge.directoryURL = staging
+        defer { ImageToPDFRuntimeBridge.directoryURL = nil }
+
+        let model = ImageToPDFViewModel()
+        model.addImages(from: [photoA, photoB])
+        #expect(model.inputImages.count == 2)
+
+        model.convertAll()
+        while model.isConverting {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        let outputURLs = model.outputItems.compactMap { $0.status.outputURL }
+        #expect(outputURLs.count == 2)
+        #expect(Set(outputURLs.map(\.lastPathComponent)).count == 2)
+
+        let exportDirectory = root.appendingPathComponent("export", isDirectory: true)
+        let written = model.exportAll(to: exportDirectory)
+        #expect(written == 2)
+        let exported = try FileManager.default
+            .contentsOfDirectory(atPath: exportDirectory.path)
+            .filter { $0.hasSuffix(".pdf") }
+        #expect(exported.count == 2)
+    }
+
+    /// 1×1 PNG，足够让 `NSImage` 解码并产生一页 PDF。
+    private static let onePixelPNGData = Data(
+        base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    )
 }

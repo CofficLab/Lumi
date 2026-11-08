@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginImageToPDF 的实现包，包含 12 个主要类型；当前测试覆盖 7 条用例。
+PluginImageToPDF 的实现包，包含 12 个主要类型；当前测试覆盖 8 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 7
+测试文件: 3 个，用例总数: 8
 
 核心组件（源码目录）:
 - `Models/`
@@ -35,7 +35,7 @@ PluginImageToPDF 的实现包，包含 12 个主要类型；当前测试覆盖 7
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **ImageToPDFPlugin**（1 条）：由 `activatingPluginHidesChatSectionAndDeactivatingRestoresIt` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ImageToPDFViewModel**（3 条）：由 `managesImageInputs`、`rejectsUnreadableImage`、`collectsConcurrentDropResults` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ImageToPDFViewModel**（4 条）：由 `managesImageInputs`、`rejectsUnreadableImage`、`collectsConcurrentDropResults`、`duplicateFileNamesProduceDistinctPDFs` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **PDFOutputItem**（3 条）：由 `testInitialStatusIsPending`、`testDoneStatusExposesOutputURL`、`testFailedStatusIsTerminal` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -49,27 +49,28 @@ PluginImageToPDF 的实现包，包含 12 个主要类型；当前测试覆盖 7
 | 5 | PDFOutputItem | testInitialStatusIsPending | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testInitialStatusIsPending` |
 | 6 | PDFOutputItem | testDoneStatusExposesOutputURL | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testDoneStatusExposesOutputURL` |
 | 7 | PDFOutputItem | testFailedStatusIsTerminal | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testFailedStatusIsTerminal` |
+| 8 | ImageToPDFViewModel | 同名不同目录的图片生成独立 PDF，导出不互相覆盖 | 两个目录下各有一张 `photo.png` | 加入两张图 → `convertAll` → 导出到空目录 | 两个输出项指向不同文件名，导出目录得到 2 个 PDF | P0 | ✅ 已覆盖 | `duplicateFileNamesProduceDistinctPDFs` |
 
-> 说明：全部 **7 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **8 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
+- P0: 已覆盖 3 / 3
 - P1: 已覆盖 5 / 5
 - P2: 已覆盖 0 / 0
-- **合计: 7 / 7**（仅表示清单场景，非源码覆盖率）
+- **合计: 8 / 8**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
 - **P1**: 其余功能性用例（5 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 7 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 8 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

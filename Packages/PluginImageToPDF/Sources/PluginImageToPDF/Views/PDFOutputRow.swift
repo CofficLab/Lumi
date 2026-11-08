@@ -16,7 +16,7 @@ struct PDFOutputRow: View {
                     .clipShape(RoundedRectangle(cornerRadius: 6))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(item.source.suggestedPDFName)
+                    Text(item.outputName)
                         .font(.system(size: 13, weight: .medium))
                         .lineLimit(1)
                         .truncationMode(.middle)

@@ -29,12 +29,15 @@ enum PDFOutputStatus: Equatable {
 struct PDFOutputItem: Identifiable, Equatable {
     let id: UUID
     let source: ImageItem
+    /// 实际写出的 PDF 文件名；同名输入会由 ViewModel 分配唯一名字。
+    let outputName: String
     var status: PDFOutputStatus
     var progress: Double
 
-    init(source: ImageItem) {
+    init(source: ImageItem, outputName: String? = nil) {
         self.id = UUID()
         self.source = source
+        self.outputName = outputName ?? source.suggestedPDFName
         self.status = .pending
         self.progress = 0
     }

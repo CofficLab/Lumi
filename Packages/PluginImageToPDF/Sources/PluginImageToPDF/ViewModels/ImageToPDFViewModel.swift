@@ -93,7 +93,8 @@ final class ImageToPDFViewModel: ObservableObject {
 
         let stagingDirectory = makeStagingDirectory()
         let images = inputImages
-        outputItems = images.map { PDFOutputItem(source: $0) }
+        let names = Self.uniquePDFNames(for: images)
+        outputItems = zip(images, names).map { PDFOutputItem(source: $0, outputName: $1) }
         isConverting = true
         lastErrorMessage = nil
 
@@ -106,9 +107,7 @@ final class ImageToPDFViewModel: ObservableObject {
                 outputItems = runningItems
 
                 let item = runningItems[index]
-                let outputURL = stagingDirectory.appendingPathComponent(
-                    item.source.suggestedPDFName
-                )
+                let outputURL = stagingDirectory.appendingPathComponent(item.outputName)
 
                 let stream = service.convert(source: item.source, to: outputURL)
                 for await value in stream {
@@ -224,6 +223,26 @@ final class ImageToPDFViewModel: ObservableObject {
     }
 
     // MARK: - Private
+
+    /// 为一批输入分配互不冲突的 PDF 文件名：重名时追加 ` (2)`、` (3)`…
+    ///
+    /// 输入只按 URL 去重，来自不同目录的同名图片可以同时存在；如果直接用
+    /// `suggestedPDFName`，它们会写同一个暂存文件，后一张覆盖前一张。
+    static func uniquePDFNames(for images: [ImageItem]) -> [String] {
+        var used: Set<String> = []
+        return images.map { image in
+            let base = image.suggestedPDFName
+            let stem = (base as NSString).deletingPathExtension
+            var candidate = base
+            var suffix = 2
+            while used.contains(candidate.lowercased()) {
+                candidate = "\(stem) (\(suffix)).pdf"
+                suffix += 1
+            }
+            used.insert(candidate.lowercased())
+            return candidate
+        }
+    }
 
     /// Create (or reuse) a per-session staging directory.
     ///
