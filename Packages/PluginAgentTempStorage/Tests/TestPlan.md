@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆盖 13 条用例。
+PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆盖 14 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 13
+测试文件: 2 个，用例总数: 14
 
 核心组件（源码目录）:
 - `Services/`
@@ -48,27 +48,28 @@ PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆
 | 11 | 综合 | listFilesSortsByRecencyAndExcludesDirectories | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listFilesSortsByRecencyAndExcludesDirectories` |
 | 12 | 综合 | purgeRemovesOnlyFilesOlderThanRetention | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `purgeRemovesOnlyFilesOlderThanRetention` |
 | 13 | 综合 | storageErrorsExposeDescriptions | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `storageErrorsExposeDescriptions` |
+| 14 | 综合 | preservesLeadingAndTrailingSpacesInFilenames（首尾空格不得被裁剪，避免不同名称互相覆盖） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `preservesLeadingAndTrailingSpacesInFilenames` |
 
-> 说明：全部 **13 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **14 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
+- P0: 已覆盖 4 / 4
 - P1: 已覆盖 9 / 9
 - P2: 已覆盖 1 / 1
-- **合计: 13 / 13**（仅表示清单场景，非源码覆盖率）
+- **合计: 14 / 14**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
 - **P1**: 其余功能性用例（9 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 13 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 14 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

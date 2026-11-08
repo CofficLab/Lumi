@@ -59,6 +59,23 @@ struct PluginAgentTempStorageTests {
     }
 
     @Test
+    func preservesLeadingAndTrailingSpacesInFilenames() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = TempFileStorageService(directory: root, retentionDays: 7)
+
+        let plain = try await service.write(filename: "report.md", content: "first")
+        let spaced = try await service.write(filename: " report.md ", content: "second")
+
+        // 两个合法名称必须落到不同文件，不能因裁剪而互相覆盖。
+        #expect(plain != spaced)
+        #expect(spaced.hasSuffix("/ report.md "))
+        #expect(try await service.read(filename: "report.md") == "first")
+        #expect(try await service.read(filename: " report.md ") == "second")
+        #expect(try await service.listFiles().map(\.name).sorted() == [" report.md ", "report.md"])
+    }
+
+    @Test
     func storageRejectsInvalidAndTraversingPaths() async throws {
         let root = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
