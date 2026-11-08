@@ -54,13 +54,22 @@ public struct AssignAppStoreConnectBuildTool: SuperAgentTool {
         guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
 
         do {
-            if let usesNonExempt = AppStoreConnectToolSupport.parseBool(arguments["usesNonExemptEncryption"]) {
-                try await client.updateBuildEncryption(buildID: buildID, usesNonExemptEncryption: usesNonExempt)
-            }
+            // 关联是主操作，先做。出口合规声明只是附带的可选写入，
+            // 不能让它的失败把 build 留成未关联。
             try await client.assignBuild(versionID: versionID, buildID: buildID)
-            return "Build id=\(buildID) assigned to version id=\(versionID)."
         } catch {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to assign build: \(error.localizedDescription)")
         }
+
+        var content = "Build id=\(buildID) assigned to version id=\(versionID)."
+        if let usesNonExempt = AppStoreConnectToolSupport.parseBool(arguments["usesNonExemptEncryption"]) {
+            do {
+                try await client.updateBuildEncryption(buildID: buildID, usesNonExemptEncryption: usesNonExempt)
+            } catch {
+                // 声明没写成功不能推翻已完成的关联：把它降级为结果里的提示。
+                content += " Export compliance was not updated: \(error.localizedDescription)"
+            }
+        }
+        return content
     }
 }
