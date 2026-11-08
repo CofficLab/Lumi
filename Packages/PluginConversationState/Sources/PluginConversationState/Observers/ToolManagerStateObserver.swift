@@ -17,6 +17,9 @@ final class ToolManagerStateObserver: SuperLog {
     private var jobHandle: (any ToolJobObserverHandle)?
     private var jobsByConversation: [UUID: [String: ToolJob]] = [:]
     private var turnByConversation: [UUID: UUID?] = [:]
+    /// 仍在等待用户授权的回合。审批调用不产生 ToolJob，Job 事件不能决定
+    /// 是否清除「等待你的输入」，否则后台 Job 的进度会覆盖授权提示（#962）。
+    private var authorizationTurnByConversation: [UUID: UUID?] = [:]
 
     init(toolManager: any ToolManagerProviding, provider: ConversationStateProvider) {
         self.provider = provider
@@ -40,8 +43,13 @@ final class ToolManagerStateObserver: SuperLog {
         case .toolsChanged:
             break
         case .started(let id, let turn, _):
+            // 新回合一旦开始，上一回合遗留的授权等待不再有效。
+            if let pendingTurn = authorizationTurnByConversation[id], pendingTurn != turn {
+                authorizationTurnByConversation.removeValue(forKey: id)
+            }
             provider.update(conversationID: id, turnID: turn, toolState: .executing, activity: .executingTool)
         case .authorizationRequired(let id, let turn, _):
+            authorizationTurnByConversation[id] = turn
             provider.update(conversationID: id, turnID: turn, authorizationState: .required, activity: .waitingForUser)
         case .completed(let id, let turn, _, _):
             provider.update(conversationID: id, turnID: turn, toolState: .completed)
@@ -59,6 +67,9 @@ final class ToolManagerStateObserver: SuperLog {
                 if case .needsUserResponse = result { return true }
                 return false
             }
+            if !hasPendingApproval {
+                authorizationTurnByConversation.removeValue(forKey: id)
+            }
             provider.update(
                 conversationID: id,
                 turnID: turn,
@@ -66,6 +77,7 @@ final class ToolManagerStateObserver: SuperLog {
                 clearActivity: !hasPendingApproval
             )
         case .authorizedCompleted(let id, let turn, _, _):
+            authorizationTurnByConversation.removeValue(forKey: id)
             // 授权已解决（无论允许还是拒绝），「等待用户」这个状态到此结束。
             //
             // - Important: 这里**必须**清掉 activity。授权路径**不产生**
@@ -133,13 +145,21 @@ final class ToolManagerStateObserver: SuperLog {
 
         let isWaiting = jobs.contains { $0.status == .waitingForUser }
         let hasRunning = jobs.contains { !$0.status.isTerminal }
+        // 授权仍未解决时，主活动必须保持 waitingForUser；后台 Job 只能更新
+        // jobActivity，不能把提示改成「正在执行」或在完成时将其清除（#962）。
+        let awaitsAuthorization = {
+            guard let pendingTurn = authorizationTurnByConversation[job.conversationID] else { return false }
+            return pendingTurn == job.turnID
+        }()
         provider.update(
             conversationID: job.conversationID,
             turnID: job.turnID,
             toolState: isWaiting ? .suspended : (hasRunning ? .executing : .completed),
-            activity: isWaiting ? .waitingForUser : (hasRunning ? .executingTool : nil),
+            activity: awaitsAuthorization
+                ? .waitingForUser
+                : (isWaiting ? .waitingForUser : (hasRunning ? .executingTool : nil)),
             jobActivity: activity,
-            clearActivity: !hasRunning && !isWaiting
+            clearActivity: !awaitsAuthorization && !hasRunning && !isWaiting
         )
     }
 }
