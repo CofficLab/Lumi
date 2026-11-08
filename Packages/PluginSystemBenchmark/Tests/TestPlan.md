@@ -5,7 +5,7 @@
 PluginSystemBenchmark 的实现包，包含 6 个主要类型；当前测试覆盖 4 条用例。
 
 平台: macOS 14+
-测试文件: 1 个，用例总数: 4
+测试文件: 1 个，用例总数: 6
 
 核心组件（源码目录）:
 - `Models/`
@@ -39,27 +39,29 @@ PluginSystemBenchmark 的实现包，包含 6 个主要类型；当前测试覆�
 | 2 | Benchmark | progress advances in benchmark order | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `progressFractions` |
 | 3 | Benchmark | small configuration runs all local benchmark types | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `smallBenchmarkRuns` |
 | 4 | Benchmark | invalid configuration is rejected | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `invalidConfiguration` |
+| 5 | Benchmark | 用户主动取消显示中性的已取消状态，而不是失败 | 测试运行到 CPU 阶段 | 调用 `cancel()` | `cancellationMessage` 非空，`errorMessage` 为空，无报告 | P1 | ✅ 已覆盖 | `cancellingReportsNeutralState` |
+| 6 | Benchmark | 真实测试错误仍显示为失败 | 运行器直接抛错 | 启动测试 | `errorMessage` 为错误描述，`cancellationMessage` 为空 | P1 | ✅ 已覆盖 | `failureStillReportsError` |
 
-> 说明：全部 **4 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **6 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 1 / 1
-- P1: 已覆盖 3 / 3
+- P1: 已覆盖 5 / 5
 - P2: 已覆盖 0 / 0
-- **合计: 4 / 4**（仅表示清单场景，非源码覆盖率）
+- **合计: 6 / 6**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（3 条）
+- **P1**: 其余功能性用例（5 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 4 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 6 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
