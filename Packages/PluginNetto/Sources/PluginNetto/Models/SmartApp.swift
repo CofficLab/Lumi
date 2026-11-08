@@ -98,12 +98,17 @@ extension SmartApp {
 extension SmartApp {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
 
-    /// Current running app list (deduplicated)
-    public static let appList: [SmartApp] = getRunningAppList().map {
-        Self.fromRunningApp($0)
-    }.reduce(into: []) { result, app in
-        if !result.contains(where: { $0.id == app.id }) {
-            result.append(app)
+    /// 当前正在运行的应用列表（按 bundle id 去重）。
+    ///
+    /// 每次调用都重新读取 `NSWorkspace.runningApplications`，调用方负责在
+    /// 应用启动/退出或界面出现时刷新，不能把结果缓存成静态常量。
+    public static func runningApps() -> [SmartApp] {
+        getRunningAppList().map {
+            Self.fromRunningApp($0)
+        }.reduce(into: []) { result, app in
+            if !result.contains(where: { $0.id == app.id }) {
+                result.append(app)
+            }
         }
     }
     
