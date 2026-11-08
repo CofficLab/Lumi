@@ -77,8 +77,11 @@ ProviderGit 是编辑器侧的 Git **只读访问契约与数据模型**包。Pr
 | 4 | 日期 | 解析回退格式且拒绝非法输入 | `"2026-09-16 05:26:39 +0000"`、`"...39"`、`"not a date"` | 逐个解析 | 前两个非 nil；非法串返回 `nil` 而非抛错 | P1 | ✅ 已覆盖 | `parsesFallbackDateFormats` |
 | 5 | 内存实现 | 内存实现可服务 `status` 与分页 `log` | 预置 5 条 commit + 1 个 status | 读 status；`skip:2,count:2`；`skip:99`；`recentCommits` | branch 正确；分页返回 `h3,h4`；越界返回空；便捷重载返回全部 5 条 | P0 | ✅ 已覆盖 | `inMemoryImplementationServesStatusAndLog` |
 | 6 | 内存实现 | 未知仓库与 `nil` 路径都抛 `repositoryNotFound` | 空内存实现 | 读 `/missing` 与 `nil` | 两者都抛 `GitReadError`，不返回空状态、不回落 cwd | P0 | ✅ 已覆盖 | `inMemoryImplementationReportsUnknownRepository` |
+| 7 | 模型 | `workingChanges` 合成 staged 与 untracked 状态 | 同一文件既在 modified 又在 staged，另有仅 staged 与仅未跟踪文件 | 读 `workingChanges` | staged 优先且 `isStaged=true`；未暂存文件按对应 state 标记 | P1 | ✅ 已覆盖 | `workingChangesSynthesizesStagedAndUntracked` |
+| 8 | 模型 | 旧版 `GitStatus` JSON 缺 `untracked` 字段时降级为空数组 | 不含 `untracked` 的历史 JSON | 解码为 `GitStatus` | 解码成功且 `untracked == []`，不抛错 | P1 | ✅ 已覆盖 | `gitStatusDecodeToleratesMissingUntracked` |
+| 9 | 内存实现 | 内存实现可判定仓库并返回提交变更 | 注册 `/repo` 并预置提交 | `isRepository`；`commitChanges` | 仅注册路径返回 true；提交变更按预置数据返回 | P1 | ✅ 已覆盖 | `inMemoryImplementationServesCommitChangesAndIsRepository` |
 
-> 说明：全部 **6 条场景**已在 macOS 上实跑通过（`swift test` → 6 tests in 1 suite passed）。
+> 说明：全部 **9 条场景**已在 macOS 上实跑通过（`swift test` → 9 tests in 1 suite passed）。
 >
 > 本包是纯契约包，用例少而边界密，三处易错约定已在用例里显式锁定：
 > - **`allChangedFiles` 的去重是业务必需而非洁癖**（ID 1）：`a.swift` 同时出现在
@@ -98,8 +101,8 @@ ProviderGit 是编辑器侧的 Git **只读访问契约与数据模型**包。Pr
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 1 / 1
-- **合计: 6 / 6**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 4 / 4
+- **合计: 9 / 9**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
