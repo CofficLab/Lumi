@@ -13,14 +13,20 @@ final class MockMailSessionFactory: MailSessionFactory, @unchecked Sendable {
 
     private let behavior: Behavior
     private let messages: [MailMessageSummary]
+    /// 由测试预先创建、需要注入延迟的会话。
+    private let prebuiltSession: MockMailSession?
     nonisolated(unsafe) private(set) var createdCount = 0
+    /// 最近一次创建的会话，供测试注入延迟。
+    nonisolated(unsafe) private(set) var lastSession: MockMailSession?
 
     init(
         behavior: Behavior = Behavior(),
-        messages: [MailMessageSummary] = []
+        messages: [MailMessageSummary] = [],
+        session: MockMailSession? = nil
     ) {
         self.behavior = behavior
         self.messages = messages
+        self.prebuiltSession = session
     }
 
     func makeSession(
@@ -28,7 +34,9 @@ final class MockMailSessionFactory: MailSessionFactory, @unchecked Sendable {
         password: String
     ) async throws -> any MailSessionServing {
         createdCount += 1
-        return MockMailSession(behavior: behavior, messages: messages)
+        let session = prebuiltSession ?? MockMailSession(behavior: behavior, messages: messages)
+        lastSession = session
+        return session
     }
 }
 
@@ -43,10 +51,21 @@ actor MockMailSession: MailSessionServing {
     private(set) var sentMIMEs: [Data] = []
     /// 已 APPEND 的草稿（断言用）。
     private(set) var appendedDrafts: [(mime: Data, folder: String)] = []
+    /// 按文件夹/邮件注入的响应延迟，用于构造「旧任务晚到」场景。
+    private var folderFetchDelays: [String: Duration] = [:]
+    private var bodyDelays: [UInt64: Duration] = [:]
 
     init(behavior: MockMailSessionFactory.Behavior = MockMailSessionFactory.Behavior(), messages: [MailMessageSummary]) {
         self.behavior = behavior
         self.messages = messages
+    }
+
+    func setFolderFetchDelay(_ delay: Duration?, forFolder folder: String) {
+        folderFetchDelays[folder] = delay
+    }
+
+    func setBodyDelay(_ delay: Duration?, forUID uid: UInt64) {
+        bodyDelays[uid] = delay
     }
 
     /// 测试钩子：替换消息集（模拟服务器端新增/删除/未读变化）。
@@ -75,6 +94,7 @@ actor MockMailSession: MailSessionServing {
 
     func fetchMessages(folder: String, sinceUID: UInt64?, limit: Int) async throws -> [MailMessageSummary] {
         if behavior.failMessages { throw MailError.protocolError("mock fetch failure") }
+        if let delay = folderFetchDelays[folder] { try? await Task.sleep(for: delay) }
         var filtered = messages.filter { $0.folder == folder }
         if let sinceUID {
             filtered = filtered.filter { $0.uid > sinceUID }
@@ -83,7 +103,8 @@ actor MockMailSession: MailSessionServing {
     }
 
     func fetchBody(uid: UInt64, folder: String) async throws -> MailMessageDetail {
-        MailMessageDetail(
+        if let delay = bodyDelays[uid] { try? await Task.sleep(for: delay) }
+        return MailMessageDetail(
             summary: messages.first { $0.uid == uid } ?? MailMessageSummary(
                 accountID: UUID(uuidString: "00000000-0000-0000-0000-000000000000")!,
                 folder: folder,

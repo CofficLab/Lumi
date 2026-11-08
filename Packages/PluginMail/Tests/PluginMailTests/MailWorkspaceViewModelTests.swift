@@ -81,4 +81,91 @@ final class MailWorkspaceViewModelTests: XCTestCase {
         XCTAssertEqual(vm.messages.first?.subject, "Cached")
         XCTAssertNotNil(vm.errorMessage)
     }
+
+    /// 旧邮件的正文晚到，不能覆盖用户后来点开的邮件。
+    func testStaleBodyDoesNotOverrideNewerSelection() async throws {
+        let account = makeAccount()
+        store.upsertAccount(account)
+        store.setPassword("p", for: account.id)
+
+        let summaries = [
+            makeCacheSummary(accountID: account.id, uid: 1, subject: "First"),
+            makeCacheSummary(accountID: account.id, uid: 2, subject: "Second"),
+        ]
+        try await cache.upsertMessages(summaries, accountID: account.id, folder: "INBOX")
+
+        let session = MockMailSession(messages: summaries)
+        let manager = MailSessionManager(
+            factory: MockMailSessionFactory(messages: summaries, session: session),
+            accountStore: store
+        )
+        let vm = MailWorkspaceViewModel(
+            sessionManager: manager,
+            cache: cache,
+            accountStore: store,
+            dataDirectory: cacheDirectory,
+            sync: MailSyncService(session: session, cache: cache)
+        )
+        await vm.load()
+        await session.setBodyDelay(.milliseconds(300), forUID: 1)
+
+        let first = try XCTUnwrap(vm.messages.first { $0.uid == 1 })
+        let second = try XCTUnwrap(vm.messages.first { $0.uid == 2 })
+
+        let stale = Task { await vm.selectMessage(first) }
+        try await Task.sleep(for: .milliseconds(50))
+        await vm.selectMessage(second)
+        await stale.value
+
+        XCTAssertEqual(vm.selectedMessage?.uid, 2)
+        XCTAssertEqual(vm.selectedDetail?.summary.uid, 2, "旧邮件正文不能覆盖新选中的邮件")
+    }
+
+    /// 旧文件夹的同步晚到，不能覆盖新文件夹的列表，也不能提前关掉新同步的转圈。
+    func testStaleFolderSyncKeepsNewerFolderAndSpinner() async throws {
+        let account = makeAccount()
+        store.upsertAccount(account)
+        store.setPassword("p", for: account.id)
+
+        let inbox = makeCacheSummary(accountID: account.id, uid: 7, subject: "Inbox")
+        var archived = makeCacheSummary(accountID: account.id, uid: 9, subject: "Archived")
+        archived.folder = "Archive"
+        try await cache.upsertMessages([inbox], accountID: account.id, folder: "INBOX")
+        try await cache.upsertMessages([archived], accountID: account.id, folder: "Archive")
+
+        let session = MockMailSession(messages: [inbox, archived])
+        let manager = MailSessionManager(
+            factory: MockMailSessionFactory(messages: [inbox, archived], session: session),
+            accountStore: store
+        )
+        let vm = MailWorkspaceViewModel(
+            sessionManager: manager,
+            cache: cache,
+            accountStore: store,
+            dataDirectory: cacheDirectory,
+            sync: MailSyncService(session: session, cache: cache)
+        )
+        await vm.load()
+        XCTAssertEqual(vm.messages.map(\.uid), [7])
+
+        await session.setFolderFetchDelay(.milliseconds(300), forFolder: "INBOX")
+        await session.setFolderFetchDelay(.milliseconds(900), forFolder: "Archive")
+
+        let stale = Task { await vm.refresh() }
+        try await Task.sleep(for: .milliseconds(50))
+        let fresh = Task {
+            await vm.selectFolder(MailFolder(path: "Archive", kind: .archive, delimiter: "/"))
+        }
+
+        // 旧同步（300ms）已结束，新同步（900ms）仍在进行。
+        try await Task.sleep(for: .milliseconds(450))
+        XCTAssertTrue(vm.isSyncing, "旧同步结束不应关闭新同步的转圈")
+
+        await stale.value
+        await fresh.value
+
+        XCTAssertEqual(vm.selectedFolder, "Archive")
+        XCTAssertEqual(vm.messages.map(\.uid), [9], "旧文件夹的同步结果不能覆盖当前文件夹列表")
+        XCTAssertFalse(vm.isSyncing)
+    }
 }

@@ -122,27 +122,29 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 72 条�
 | 70 | MailHTMLContent | 用户点击的远程链接交给系统浏览器，不被远程开关取消 | `allowsRemoteContent = false`，导航类型为 linkActivated | 请求 https 链接 | 决策为 `openExternally`，不返回 cancel | P0 | ✅ 已覆盖 | `testLinkActivatedOpensExternallyEvenWithoutAuthorization` |
 | 71 | MailHTMLContent | 非用户触发的远程导航仅在授权后放行 | `.other` 类型的 https 导航 | 分别以未授权/已授权求值 | 未授权为 cancel，已授权为 allow | P1 | ✅ 已覆盖 | `testNonUserRemoteNavigationRequiresAuthorization` |
 | 72 | MailHTMLContent | 本地与无 URL 导航始终放行 | `allowsRemoteContent = false` | 以 nil 与 about:blank 求值 | 均为 allow | P2 | ✅ 已覆盖 | `testLocalNavigationAlwaysAllowed` |
+| 73 | MailWorkspace | 旧邮件正文晚到时不能覆盖后来点开的邮件 | INBOX 两封邮件，uid=1 的 fetchBody 延迟 300ms | 先点 uid=1，50ms 后点 uid=2，等旧任务结束 | `selectedDetail` 与 `selectedMessage` 都停留在 uid=2 | P0 | ✅ 已覆盖 | `testStaleBodyDoesNotOverrideNewerSelection` |
+| 74 | MailWorkspace | 旧文件夹同步晚到不能覆盖新文件夹列表，且不能关闭新同步的转圈 | INBOX 同步延迟 300ms、Archive 延迟 900ms | 在 INBOX 同步中切到 Archive，旧同步结束后检查 | 列表为 Archive 邮件；旧同步结束时 `isSyncing` 仍为真，全部结束后为假 | P0 | ✅ 已覆盖 | `testStaleFolderSyncKeepsNewerFolderAndSpinner` |
 
 > 说明：全部 **72 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
+- P0: 已覆盖 11 / 11
 - P1: 已覆盖 59 / 59
 - P2: 已覆盖 4 / 4
 - **合计: 72 / 72**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
 - **P1**: 其余功能性用例（59 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 72 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 74 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
