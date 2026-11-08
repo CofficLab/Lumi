@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginPrototypeDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 26 条用例。
+PluginPrototypeDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 35 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 34
+测试文件: 5 个，用例总数: 35
 
 核心组件（源码目录）:
 - `Conversation/`
@@ -80,20 +80,21 @@ PluginPrototypeDesigner 的实现包，包含 14 个主要类型；当前测试�
 | 32 | PrototypeExportNaming | 已存在的同名文件被识别为冲突 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `detectsExistingFiles` |
 | 33 | PrototypeExportNaming | 未参与导出的同名文件不算冲突 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `ignoresUnrelatedFiles` |
 | 34 | PrototypeDesignerPlugin | 加入项目不预建存储目录，真正写入时才创建 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doesNotCreateStorageDirectoryUntilWrite` |
+| 35 | 工具参数边界 | 超大设备尺寸在写盘前被拒绝（**回归 #1000**） | custom 宽 `1e20`；预设叠加 `1e20` 倍率 | 调用 `prototype_create_project` | 抛参数错误且不留下项目目录 | P0 | ✅ 已覆盖 | `oversizedDeviceMetricsAreRejectedBeforeWritingProject` |
 
-> 说明：全部 **34 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **35 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
+- P0: 已覆盖 7 / 7
 - P1: 已覆盖 24 / 24
 - P2: 已覆盖 4 / 4
-- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
+- **合计: 35 / 35**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
 - **P1**: 其余功能性用例（24 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
@@ -116,3 +117,4 @@ swift test
 3. **删除用例** → 在 commit message 说明理由
 4. **状态同步** → 实现后更新 TestPlan，标记 ✅ 并填写测试方法名
 5. **改名同步** → 重命名 `@Test` 函数后必须同步本表，否则 `Scripts/verify-testplan.py` 会报「登记方法在源码不存在」
+

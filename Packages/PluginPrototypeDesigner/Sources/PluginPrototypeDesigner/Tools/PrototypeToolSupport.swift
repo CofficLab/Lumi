@@ -72,7 +72,7 @@ enum PrototypeToolSupport {
         let device = project.device
         var lines: [String] = [
             "projectId=\(project.id) title=\(project.title) style=\(project.style.rawValue)",
-            "device=\(device.kind.rawValue) logical=\(Int(device.width))x\(Int(device.height)) scale=\(device.scale)x export=\(device.pixelWidth)x\(device.pixelHeight)",
+            "device=\(device.kind.rawValue) logical=\(device.logicalWidthInt)x\(device.logicalHeightInt) scale=\(device.scale)x export=\(device.pixelWidth)x\(device.pixelHeight)",
             "screenCount=\(project.screens.count) startScreen=\(project.resolvedStartScreen?.id ?? "none")",
         ]
         if project.sortedScreens.isEmpty {
@@ -152,16 +152,23 @@ enum PrototypeToolSupport {
             throw ToolArgumentError.invalid("deviceKind")
         }
         if let preset = kind.preset {
-            guard let scale = number(arguments, "deviceScale"), scale > 0 else { return preset }
-            return PrototypeDevice(kind: preset.kind, width: preset.width, height: preset.height, scale: scale)
+            guard let scale = number(arguments, "deviceScale") else { return preset }
+            let device = PrototypeDevice(kind: preset.kind, width: preset.width, height: preset.height, scale: scale)
+            guard device.hasRenderableMetrics else { throw ToolArgumentError.invalid("deviceScale") }
+            return device
         }
-        guard let width = number(arguments, "deviceWidth"), width > 0,
-              let height = number(arguments, "deviceHeight"), height > 0 else {
+        guard let width = number(arguments, "deviceWidth"),
+              let height = number(arguments, "deviceHeight") else {
             throw ToolArgumentError.invalid("deviceWidth/deviceHeight")
         }
         let scale = number(arguments, "deviceScale") ?? 2
-        guard scale > 0 else { throw ToolArgumentError.invalid("deviceScale") }
-        return PrototypeDevice(kind: .custom, width: width, height: height, scale: scale)
+        let device = PrototypeDevice(kind: .custom, width: width, height: height, scale: scale)
+        // 必须在写盘前拒绝：`1e20` 这类有限正数能通过 > 0 校验，
+        // 但摘要/导出做 Int 转换时会 trap 并留下半成品项目（#1000）。
+        guard device.hasRenderableMetrics else {
+            throw ToolArgumentError.invalid("deviceWidth/deviceHeight/deviceScale")
+        }
+        return device
     }
 
     // MARK: - 参数访问器
