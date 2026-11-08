@@ -5,6 +5,39 @@ import OSLog
 
 /// LibGit2 远程仓库操作扩展
 extension LibGit2 {
+    /// 获取当前分支配置的上游分支短名（如 `origin/main`）
+    /// - Parameter path: 仓库路径
+    /// - Returns: 上游分支短名；当前分支没有配置 upstream 时返回 `nil`
+    public static func getUpstreamBranchName(at path: String) throws -> String? {
+        return try LibGit2.serialized(at: path) {
+            let repo = try openRepository(at: path)
+            defer { git_repository_free(repo) }
+
+            var headRef: OpaquePointer? = nil
+            guard git_reference_lookup(&headRef, repo, "HEAD") == 0, let ref = headRef else {
+                return nil
+            }
+            defer { git_reference_free(headRef) }
+
+            var targetRef: OpaquePointer? = nil
+            guard git_reference_resolve(&targetRef, ref) == 0, let branchRef = targetRef else {
+                return nil
+            }
+            defer { git_reference_free(targetRef) }
+
+            var upstreamRef: OpaquePointer? = nil
+            guard git_branch_upstream(&upstreamRef, branchRef) == 0, let upstream = upstreamRef else {
+                return nil
+            }
+            defer { git_reference_free(upstreamRef) }
+
+            guard let namePtr = git_reference_shorthand(upstream) else {
+                return nil
+            }
+            return String(cString: namePtr)
+        }
+    }
+
     /// 获取未推送的提交（本地领先远程的提交）
     /// - Parameters:
     ///   - path: 仓库路径
