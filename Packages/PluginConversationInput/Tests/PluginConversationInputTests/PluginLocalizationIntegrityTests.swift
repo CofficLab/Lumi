@@ -82,6 +82,17 @@ struct PluginLocalizationIntegrityTests {
         }
     }
 
+    @Test("缺少 Provider 的诊断弹窗使用本地化文案（回归 #991）")
+    func missingProviderDiagnosticIsLocalized() {
+        let providers = ["ConversationInputProviding", "MessageSending"]
+        // 解析器优先使用 `Locale.preferredLanguages`，本机为中文，
+        // 因此这里只锁定中文分支；英文分支由全表 en 完整性用例兜底。
+        #expect(
+            MissingProviderMessage.text(for: providers, locale: Locale(identifier: "zh-Hans"))
+                == "缺少 Provider：ConversationInputProviding, MessageSending"
+        )
+    }
+
     @Test("Provider 错误文案含 en 翻译，不会在英文界面退化成 key")
     func providerErrorKeysIncludeEnglish() throws {
         // 缺陷现象：条目只有 zh-* 而缺 en，英文界面下 `String(localized:)`
