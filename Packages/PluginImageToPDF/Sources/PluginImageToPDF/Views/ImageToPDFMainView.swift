@@ -109,7 +109,7 @@ struct ImageToPDFMainView: View {
                     )
                 }
                 .buttonStyle(.bordered)
-                .disabled(viewModel.outputItems.isEmpty)
+                .disabled(!viewModel.canClear)
             }
 
             if viewModel.outputItems.isEmpty {

@@ -23,6 +23,14 @@ final class ImageToPDFViewModel: ObservableObject {
     /// True while a `convertAll` is running.
     @Published private(set) var isConverting: Bool = false
 
+    /// 只要还有未清空的输入或输出，Clear 就应可用。
+    ///
+    /// `clearAll()` 同时清空三者，所以按钮可用性不能只看 `outputItems`：
+    /// 用户只添加了图片、还没转换时也必须能一键清空。
+    var canClear: Bool {
+        !inputImages.isEmpty || !outputItems.isEmpty
+    }
+
     /// Human-readable message from the most recent failure, or nil.
     @Published private(set) var lastErrorMessage: String?
 
