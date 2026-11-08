@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationList 的实现包，包含 14 个主要类型；当前测试覆盖 27 条用例。
+PluginConversationList 的实现包，包含 14 个主要类型；当前测试覆盖 48 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 27
+测试文件: 12 个，用例总数: 48
 
 核心组件（源码目录）:
 - `Helpers/`
@@ -43,8 +43,11 @@ PluginConversationList 的实现包，包含 14 个主要类型；当前测试�
 - **ConversationListContext**（3 条）：由 `contextPublishesSelectionChangesOnceAndConversationRefreshes`、`contextTracksTheCurrentProjectNameAndPath`、`contextObserverRefreshesForStructureAndStateButIgnoresVerbosity` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationListPlugin**（3 条）：由 `pluginBootRegistersToolbarToolAndDynamicRailTabsThenShutsThemDown`、`pluginDoesNotPartiallyBootWithoutRequiredProviders`、`pluginMarksFinishedTurnsReadOrNeedsAttentionBasedOnSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationListToolbarViewModel**（2 条）：由 `toolbarRefreshesConversationPresenceAndObservesChatVisibility`、`toolbarShowsCurrentProjectScopeOnlyWhenItHasConversationsAndOthersExist` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ConversationListViewModel**（5 条）：由 `initialLoadAndHeaderReflectConversationAndProjectState`、`currentProjectScopeFiltersReloadAndUpdatesProjectTitle`、`nextPageAppendsOnlyTheRemainingConversations` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ConversationRailTabController**（2 条）：由 `railTabsFollowConversationAndCurrentProjectAvailability`、`stoppingRailControllerCancelsRefreshSubscriptions` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationListViewModel**（6 条）：由 `initialLoadAndHeaderReflectConversationAndProjectState`、`currentProjectScopeFiltersReloadAndUpdatesProjectTitle`、`conversationCountReflectsScopeAndUpdatesOnChange`、`nextPageAppendsOnlyTheRemainingConversations` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationRailTabController**（3 条）：由 `railTabsFollowConversationAndCurrentProjectAvailability`、`stoppingRailControllerCancelsRefreshSubscriptions`、`railVisibilityIsWrittenBackToHostOnEveryReconcile` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationRowAccessibility**（4 条）：由 `rowAccessibilityLabelAlwaysStartsWithTitle`、`rowAccessibilityLabelIncludesAutomationLevel`、`rowAccessibilityLabelFallsBackWhenTitleMissing`、`rowAccessibilityLabelSkipsEmptyProviderAndModel` 锁定行朗读文案的组成与回退规则。
+- **ConversationRowEmptyTitle**（4 条）：由 `rowLabelFallsBackForEmptyStringTitle`、`rowLabelFallsBackForWhitespaceOnlyTitle`、`emptyStringAndNilTitlesConverge`、`nonEmptyTitleIsPreserved` 锁定空标题回退文案的一致性。
+- **ConversationStatsViewModel**（8 条）：由 `loadsDailySeries`、`scopesToCurrentProject`、`cleansUpOlderConversations`、`ignoresConcurrentCleanup` 等用例锁定统计区间、清理边界与并发守卫。
 - **ConversationSortStabilizer**（3 条）：由 `sortTimeStaysAnchoredUntilTheHoldWindowExpires`、`markingViewedAnchorsTheConversationAtTheCurrentTime`、`cleanupKeepsRecentAnchorsAndDropsOldOnes` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GetRecentConversationsTool**（5 条）：由 `emptyConversationListReturnsHelpfulStatus`、`recentConversationTableEscapesTitlesAndMarksCurrentProject`、`recentConversationTableEscapesProjectNamesAndKeepsFiveColumns`、`recentConversationLimitDefaultsAndClampsToOneThroughTwenty` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RelativeTime**（3 条）：由 `relativeTimeFormatsPastMinutesHoursAndDays`、`relativeTimeTreatsRecentAndFutureDatesAsJustNow`、`conversationPageCursorKeepsItsTimestampAndIdentifier` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -83,27 +86,45 @@ PluginConversationList 的实现包，包含 14 个主要类型；当前测试�
 | 28 | RelativeTime | conversationPageCursorKeepsItsTimestampAndIdentifier | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `conversationPageCursorKeepsItsTimestampAndIdentifier` |
 | 29 | ConversationList | 切项目后丢弃旧项目的 reload 快照 | 项目 One 的分页延迟 400ms | reload 期间切到项目 Two | 列表不出现 One 的会话，最终为 Two 的会话 | P1 | ✅ 已覆盖 | `reloadDiscardsSnapshotFromPreviousProject` |
 | 30 | ConversationList | 切项目后旧翻页结果不追加到新列表 | 项目 One 有 60 条会话，翻页延迟 400ms | 翻页途中切到 Two 并刷新 | 列表只剩 Two 的会话 | P1 | ✅ 已覆盖 | `loadNextPageDoesNotAppendStalePageAfterProjectSwitch` |
+| 31 | ConversationListViewModel | 条数按作用域统计并随会话增删刷新 | 项目 One、Two 各一条会话，挂上下文观察器 | 分别用 `.all` 与 `.currentProject` 加载，再新建一条 Two 会话 | 全库条数为 2，当前项目为 1，新建后当前项目变为 2 | P1 | ✅ 已覆盖 | `conversationCountReflectsScopeAndUpdatesOnChange` |
+| 32 | ConversationRailTabController | 每次 reconcile 都把 Rail 可见性写回宿主 | 宿主初始可见性被 Chat 写成 true，且当前无会话 | 启动控制器 → 新建会话 → 删除最后一条会话 | 无 tab 时写回 false，有 tab 时写回 true，清空后回落 false | P1 | ✅ 已覆盖 | `railVisibilityIsWrittenBackToHostOnEveryReconcile` |
+| 33 | ConversationRowAccessibility | 行朗读文案始终以标题开头 | 会话带标题、提供方与模型 | 调用 `rowLabel(for:)` | 文案以标题开头，稳定标识符为 `lumi.conversation-list*` | P1 | ✅ 已覆盖 | `rowAccessibilityLabelAlwaysStartsWithTitle` |
+| 34 | ConversationRowAccessibility | 行朗读文案包含自动化等级 | 遍历全部 `AutomationLevel` | 调用 `rowLabel(for:)` | 每个等级对应的文案都包含其等级描述 | P1 | ✅ 已覆盖 | `rowAccessibilityLabelIncludesAutomationLevel` |
+| 35 | ConversationRowAccessibility | 标题缺失时行文案回退到占位文案 | 会话无标题、无自动化等级 | 调用 `rowLabel(for:)` | 返回非空占位文案，不出现空串 | P2 | ✅ 已覆盖 | `rowAccessibilityLabelFallsBackWhenTitleMissing` |
+| 36 | ConversationRowAccessibility | 空提供方与空模型不进入行文案 | 提供方与模型均为空串 | 调用 `rowLabel(for:)` | 文案不包含空段或多余分隔符 | P2 | ✅ 已覆盖 | `rowAccessibilityLabelSkipsEmptyProviderAndModel` |
+| 37 | ConversationRowEmptyTitle | 空字符串标题回退为占位文案，不得返回空串 | 标题为 `""` | 调用 `rowLabel(for:)` | 返回占位文案 | P2 | ✅ 已覆盖 | `rowLabelFallsBackForEmptyStringTitle` |
+| 38 | ConversationRowEmptyTitle | 纯空白标题回退为占位文案 | 标题为 `"   "` | 调用 `rowLabel(for:)` | 返回占位文案 | P2 | ✅ 已覆盖 | `rowLabelFallsBackForWhitespaceOnlyTitle` |
+| 39 | ConversationRowEmptyTitle | 空串标题与 nil 标题回退到同一占位文案 | 一条空串标题、一条 nil 标题 | 分别调用 `rowLabel(for:)` | 两次结果完全相同 | P2 | ✅ 已覆盖 | `emptyStringAndNilTitlesConverge` |
+| 40 | ConversationRowEmptyTitle | 有标题时保持原样 | 标题为普通文本 | 调用 `rowLabel(for:)` | 文案以原标题开头，不被替换 | P2 | ✅ 已覆盖 | `nonEmptyTitleIsPreserved` |
+| 41 | ConversationStatsViewModel | 加载每日计数序列并暴露区间总数与峰值 | 存根返回多个日期点 | 调用加载 | `series` 与总数、峰值按存根数据填充 | P1 | ✅ 已覆盖 | `loadsDailySeries` |
+| 42 | ConversationStatsViewModel | 统计作用域跟随当前项目 | 指定 projectPath | 加载统计 | 请求带上的项目路径与 ViewModel 一致 | P1 | ✅ 已覆盖 | `scopesToCurrentProject` |
+| 43 | ConversationStatsViewModel | 清理按创建时间分界点执行并刷新序列 | 存根返回待删除 id 列表 | 调用清理 | 删除条数与分界点正确，序列重新加载 | P1 | ✅ 已覆盖 | `cleansUpOlderConversations` |
+| 44 | ConversationStatsViewModel | 30 天窗口的分界点早于 7 天窗口 | — | 分别按 7 天与 30 天计算分界点 | 30 天分界点明显更早 | P1 | ✅ 已覆盖 | `thirtyDayWindowCutsOffEarlier` |
+| 45 | ConversationStatsViewModel | 可清理数量由存储层查询给出 | 存根返回 12 | 加载统计 | `deletableCount` 为 12 | P1 | ✅ 已覆盖 | `reportsDeletableCount` |
+| 46 | ConversationStatsViewModel | 加载时一并取回各窗口的待删除条数 | 存根返回 5 | 加载统计 | 7 天与 30 天窗口的待删除条数都被填充 | P1 | ✅ 已覆盖 | `loadsDeletableCountsForAllWindows` |
+| 47 | ConversationStatsViewModel | 清理后刷新待删除条数 | 初始 9，清理后存根变为新值 | 调用清理 | 待删除条数更新为清理后的值 | P1 | ✅ 已覆盖 | `refreshesDeletableCountsAfterCleanup` |
+| 48 | ConversationStatsViewModel | 清理期间重复触发只执行一次 | 清理过程被挂起 | 连续触发两次清理 | 存储层只收到一次清理调用 | P1 | ✅ 已覆盖 | `ignoresConcurrentCleanup` |
 
-> 说明：全部 **28 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **48 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 25 / 25
-- P2: 已覆盖 5 / 5
-- **合计: 30 / 30**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 37 / 37
+- P2: 已覆盖 11 / 11
+- **合计: 48 / 48**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（25 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
+- **P1**: 其余功能性用例（37 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 30 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 48 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
