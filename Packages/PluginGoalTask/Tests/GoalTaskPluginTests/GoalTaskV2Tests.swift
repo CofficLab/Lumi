@@ -204,13 +204,17 @@ extension SharedManagerSuite {
                 "tasks": ToolArgument([["title": "T1"]]),
             ])
 
-            let failed = try await GetGoalProgressV2Tool().executeResult(context: context, arguments: [
-                "goal_id": ToolArgument("nonexistent-goal-xyz"),
-            ])
-            // 错误消息必须包含候选 goal，让模型能自我恢复
-            #expect(failed.content.contains("goal not found"))
-            #expect(failed.content.contains("Available goals in this conversation"))
-            #expect(failed.content.contains("Candidate Listing Goal"))
+            // 回归 #769：失败必须抛出，错误消息里仍要带候选 goal 让模型能自我恢复。
+            do {
+                _ = try await GetGoalProgressV2Tool().executeResult(context: context, arguments: [
+                    "goal_id": ToolArgument("nonexistent-goal-xyz"),
+                ])
+                Issue.record("Expected get_goal_progress to throw for an unknown goal")
+            } catch {
+                #expect(error.localizedDescription.contains("goal not found"))
+                #expect(error.localizedDescription.contains("Available goals in this conversation"))
+                #expect(error.localizedDescription.contains("Candidate Listing Goal"))
+            }
         }
     }
 }

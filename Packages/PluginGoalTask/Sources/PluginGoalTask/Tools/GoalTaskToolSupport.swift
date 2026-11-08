@@ -51,6 +51,16 @@ enum GoalTaskToolSupport {
 
     // MARK: - goal_id resolution
 
+    /// 工具失败必须抛出，而不是返回 `Error: ...` 文本。
+    ///
+    /// 字符串结果会被默认包装成 `isError == false`，让上层误以为调用成功；
+    /// 抛出后 `ToolExecutionManager` 会把 `ToolCallResult.isError` 置为 true
+    /// 并把 Job 标成 failed。
+    struct GoalTaskToolError: Error, LocalizedError {
+        let message: String
+        var errorDescription: String? { message }
+    }
+
     /// 解析失败时携带的面向模型的错误消息。
     struct GoalResolutionError: Error, LocalizedError {
         let message: String
@@ -87,7 +97,7 @@ enum GoalTaskToolSupport {
             if byTitle.count == 1, let goal = byTitle.first { return .success(goal.id) }
             let candidates = byTitle.isEmpty ? scoped : byTitle
             return .failure(GoalResolutionError(message: """
-            Error: goal not found: `\(raw)`
+            goal not found: `\(raw)`
 
             Available goals in this conversation:
             \(candidates.isEmpty ? "- (none)" : goalListText(candidates))
@@ -101,7 +111,7 @@ enum GoalTaskToolSupport {
         if active.isEmpty, scoped.count == 1, let goal = scoped.first { return .success(goal.id) }
         let reason = active.count > 1 ? "multiple active goals found" : "goal_id is required"
         return .failure(GoalResolutionError(message: """
-        Error: \(reason).
+        \(reason).
 
         Available goals in this conversation:
         \(scoped.isEmpty ? "- (none)" : goalListText(scoped))

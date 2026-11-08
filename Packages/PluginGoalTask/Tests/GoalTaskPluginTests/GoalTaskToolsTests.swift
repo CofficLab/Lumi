@@ -41,6 +41,20 @@ extension SharedManagerSuite {
             return Harness(manager: manager, context: context, tempDir: tempDir)
         }
 
+        /// 断言调用失败并返回面向模型的错误消息。
+        ///
+        /// 回归 #769：失败必须抛出（`isError == true`），不能作为普通结果返回。
+        @MainActor
+        private func failureMessage<T>(_ body: () async throws -> T) async -> String {
+            do {
+                _ = try await body()
+                Issue.record("Expected the tool call to fail")
+                return ""
+            } catch {
+                return error.localizedDescription
+            }
+        }
+
         // MARK: - add_tasks_to_goal
 
         @Test("add_tasks_to_goal 追加任务并回显 Goal ID 与任务列表")
@@ -108,14 +122,16 @@ extension SharedManagerSuite {
                 "tasks": ToolArgument([["title": "T1"]]),
             ])
 
-            // 全部非法：返回错误提示且不写入
-            let noValid = try await AddTasksToGoalV2Tool().executeResult(context: harness.context, arguments: [
-                "tasks": ToolArgument([
-                    ["description": "no title"],
-                    ["title": "   "],
-                ]),
-            ])
-            #expect(noValid.content.contains("no valid tasks"))
+            // 全部非法：抛出错误且不写入
+            let noValid = await failureMessage {
+                try await AddTasksToGoalV2Tool().executeResult(context: harness.context, arguments: [
+                    "tasks": ToolArgument([
+                        ["description": "no title"],
+                        ["title": "   "],
+                    ]),
+                ])
+            }
+            #expect(noValid.contains("no valid tasks"))
 
             // 混合：只写入合法项
             let mixed = try await AddTasksToGoalV2Tool().executeResult(context: harness.context, arguments: [
@@ -134,13 +150,15 @@ extension SharedManagerSuite {
             let harness = try makeHarness()
             defer { harness.cleanup() }
 
-            let result = try await AddTasksToGoalV2Tool().executeResult(context: harness.context, arguments: [
-                "goal_id": ToolArgument("no-such-goal"),
-                "tasks": ToolArgument([["title": "T"]]),
-            ])
+            let message = await failureMessage {
+                try await AddTasksToGoalV2Tool().executeResult(context: harness.context, arguments: [
+                    "goal_id": ToolArgument("no-such-goal"),
+                    "tasks": ToolArgument([["title": "T"]]),
+                ])
+            }
 
-            #expect(result.content.contains("goal not found"))
-            #expect(result.content.contains("Available goals in this conversation"))
+            #expect(message.contains("goal not found"))
+            #expect(message.contains("Available goals in this conversation"))
         }
 
         @Test("add_tasks_to_goal 在 Goal 已满时报告失败而不是假装成功")
@@ -161,12 +179,14 @@ extension SharedManagerSuite {
                 goalId = try #require(await harness.manager.fetchGoals(conversationId: harness.context.conversationID.uuidString).first?.id)
             }
 
-            let result = try await AddTasksToGoalV2Tool().executeResult(context: harness.context, arguments: [
-                "goal_id": ToolArgument(goalId),
-                "tasks": ToolArgument([["title": "Overflow"]]),
-            ])
+            let message = await failureMessage {
+                try await AddTasksToGoalV2Tool().executeResult(context: harness.context, arguments: [
+                    "goal_id": ToolArgument(goalId),
+                    "tasks": ToolArgument([["title": "Overflow"]]),
+                ])
+            }
 
-            #expect(result.content.contains("failed to add tasks"))
+            #expect(message.contains("failed to add tasks"))
             #expect(await harness.manager.fetchTasks(goalId: goalId).count == GoalStateManager.maxTasksPerGoal)
         }
 
@@ -175,10 +195,12 @@ extension SharedManagerSuite {
             GoalTaskPluginSupport._sharedManager = nil
             defer { GoalTaskPluginSupport._sharedManager = nil }
 
-            let output = try await AddTasksToGoalV2Tool().execute(arguments: [
-                "tasks": ToolArgument([["title": "T"]]),
-            ])
-            #expect(output == "Error: goal task manager is not initialized")
+            let message = await failureMessage {
+                try await AddTasksToGoalV2Tool().execute(arguments: [
+                    "tasks": ToolArgument([["title": "T"]]),
+                ])
+            }
+            #expect(message == "goal task manager is not initialized")
         }
 
         // MARK: - update_task_status
@@ -216,17 +238,21 @@ extension SharedManagerSuite {
             GoalTaskPluginSupport._sharedManager = nil
             defer { GoalTaskPluginSupport._sharedManager = nil }
 
-            let output = try await UpdateTaskStatusV2Tool().execute(arguments: [
-                "task_id": ToolArgument("t"),
-                "status": ToolArgument("not_a_status"),
-            ])
-            #expect(output == "Error: invalid status")
+            let output = await failureMessage {
+                try await UpdateTaskStatusV2Tool().execute(arguments: [
+                    "task_id": ToolArgument("t"),
+                    "status": ToolArgument("not_a_status"),
+                ])
+            }
+            #expect(output == "invalid status")
 
             // 缺少 status 同样是无效
-            let missing = try await UpdateTaskStatusV2Tool().execute(arguments: [
-                "task_id": ToolArgument("t"),
-            ])
-            #expect(missing == "Error: invalid status")
+            let missing = await failureMessage {
+                try await UpdateTaskStatusV2Tool().execute(arguments: [
+                    "task_id": ToolArgument("t"),
+                ])
+            }
+            #expect(missing == "invalid status")
         }
 
         @Test("update_task_status 任务推进后重置续跑预算")
@@ -265,10 +291,12 @@ extension SharedManagerSuite {
             let harness = try makeHarness()
             defer { harness.cleanup() }
 
-            let output = try await UpdateTaskStatusV2Tool().execute(arguments: [
-                "task_id": ToolArgument("missing-task-id"),
-                "status": ToolArgument("completed"),
-            ])
+            let output = await failureMessage {
+                try await UpdateTaskStatusV2Tool().execute(arguments: [
+                    "task_id": ToolArgument("missing-task-id"),
+                    "status": ToolArgument("completed"),
+                ])
+            }
             #expect(output.contains("failed to update task"))
             #expect(output.contains("Task not found"))
         }
@@ -320,8 +348,27 @@ extension SharedManagerSuite {
             GoalTaskPluginSupport._sharedManager = nil
             defer { GoalTaskPluginSupport._sharedManager = nil }
 
-            let output = try await GetGoalProgressV2Tool().execute(arguments: [:])
-            #expect(output == "Error: goal task manager is not initialized")
+            let message = await failureMessage {
+                try await GetGoalProgressV2Tool().execute(arguments: [:])
+            }
+            #expect(message == "goal task manager is not initialized")
+        }
+
+        @Test("get_goal_progress 对不存在的 goal 抛出错误而不是成功结果")
+        @MainActor
+        func getProgressThrowsForUnknownGoal() async throws {
+            let harness = try makeHarness()
+            defer { harness.cleanup() }
+
+            // 回归 #769：曾经返回 "Error: goal not found" 字符串，
+            // 默认包装后 isError == false，工具 Job 仍标记为 completed。
+            let message = await failureMessage {
+                try await GetGoalProgressV2Tool().executeResult(context: harness.context, arguments: [
+                    "goal_id": ToolArgument("definitely-not-a-goal"),
+                ])
+            }
+            #expect(message.contains("goal not found"))
+            #expect(message.contains("Available goals in this conversation"))
         }
 
         @Test("update_goal_status 支持 blocked 并记录原因")
@@ -352,10 +399,12 @@ extension SharedManagerSuite {
             GoalTaskPluginSupport._sharedManager = nil
             defer { GoalTaskPluginSupport._sharedManager = nil }
 
-            let output = try await UpdateGoalStatusV2Tool().execute(arguments: [
-                "goal_id": ToolArgument("g"),
-                "status": ToolArgument("not_a_status"),
-            ])
+            let output = await failureMessage {
+                try await UpdateGoalStatusV2Tool().execute(arguments: [
+                    "goal_id": ToolArgument("g"),
+                    "status": ToolArgument("not_a_status"),
+                ])
+            }
             #expect(output.contains("invalid status"))
         }
     }
