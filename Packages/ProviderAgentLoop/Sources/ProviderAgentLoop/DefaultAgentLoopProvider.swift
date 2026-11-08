@@ -467,7 +467,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         if Self.verbose {
             Self.logger.debug("\(Self.t)LLM response received conversation=\(conversationID.uuidString.prefix(8)), hasTools=\(!(response.toolCalls ?? []).isEmpty)")
         }
-        var assistant = Message(conversationID: conversationID, role: .assistant, content: response.content, turnID: turnID, providerID: nil, modelName: response.model, reasoningContent: response.reasoningContent, toolCalls: response.toolCalls?.map { MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }, inputTokenCount: response.inputTokenCount, outputTokenCount: response.outputTokenCount, latencyMs: timing.latencyMs, timeToFirstTokenMs: timing.timeToFirstTokenMs, streamingDurationMs: timing.streamingDurationMs)
+        var assistant = Message(conversationID: conversationID, role: .assistant, content: response.content, turnID: turnID, providerID: nil, modelName: response.model, reasoningContent: response.reasoningContent, toolCalls: response.toolCalls?.map { MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }, inputTokenCount: response.inputTokenCount, outputTokenCount: response.outputTokenCount, cachedInputTokenCount: response.cachedInputTokenCount, cacheWriteInputTokenCount: response.cacheWriteInputTokenCount, cacheTotalInputTokenCount: response.cacheTotalInputTokenCount, latencyMs: timing.latencyMs, timeToFirstTokenMs: timing.timeToFirstTokenMs, streamingDurationMs: timing.streamingDurationMs)
         assistant.providerID = resolvedProviderID(for: conversationID)
         if let calls = assistant.toolCalls {
             assistant.toolCalls = calls.map { call in
@@ -689,7 +689,10 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                 reasoningContent: response.reasoningContent,
                 toolCalls: response.toolCalls?.map { MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
                 inputTokenCount: response.inputTokenCount,
-                outputTokenCount: response.outputTokenCount
+                outputTokenCount: response.outputTokenCount,
+                cachedInputTokenCount: response.cachedInputTokenCount,
+                cacheWriteInputTokenCount: response.cacheWriteInputTokenCount,
+                cacheTotalInputTokenCount: response.cacheTotalInputTokenCount
             )
             assistant.providerID = resolvedProviderID(for: conversationID)
             if let toolCalls = assistant.toolCalls {
