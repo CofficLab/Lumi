@@ -68,6 +68,34 @@ final class CADDesignerLogicTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testMeasureToolComputesDistanceFromTwoPicks() {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        _ = store.createDocument(name: "Measure")
+
+        let viewModel = CADWorkspaceViewModel(store: store, library: library)
+        let first = try? store.addComponent(.profile(ProfileInstance(
+            profileId: "profile-40x40-eu",
+            length: 500,
+            transform: Transform3D(positionX: 0, positionY: 0, positionZ: 0)
+        )))
+        let second = try? store.addComponent(.profile(ProfileInstance(
+            profileId: "profile-40x40-eu",
+            length: 500,
+            transform: Transform3D(positionX: 3, positionY: 4, positionZ: 0)
+        )))
+
+        viewModel.currentTool = .measure
+        viewModel.handleViewportPick(id: first!.id)
+        XCTAssertNil(viewModel.measurement)
+
+        viewModel.handleViewportPick(id: second!.id)
+        XCTAssertEqual(viewModel.measurement?.distance ?? -1, 5, accuracy: 0.001)
+        XCTAssertEqual(viewModel.measurement?.fromComponentId, first?.id)
+        XCTAssertEqual(viewModel.measurement?.toComponentId, second?.id)
+    }
+
     func testCADDocumentCodableRoundTrip() throws {
         let profile = ProfileInstance(profileId: "profile-40x40-eu", length: 1200)
         let connector = ConnectorInstance(connectorId: "connector-corner-40")
