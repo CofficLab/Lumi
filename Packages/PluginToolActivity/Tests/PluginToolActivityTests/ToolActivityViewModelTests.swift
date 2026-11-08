@@ -85,6 +85,95 @@ struct ToolActivityViewModelTests {
         #expect(!viewModel.isErroredResult(for: job))
         #expect(viewModel.statusTitle(for: job) == pluginLocalization.string("Completed"))
     }
+
+    /// 回归 #960：任务进入 `.running` 后可能长时间没有任何事件，
+    /// 只有计时刷新源存在，界面耗时才会继续走。
+    @Test("运行中的任务启动计时刷新，进入终态后停止（**回归 #960**）")
+    func tickingFollowsActiveJobs() {
+        let conversationID = UUID()
+        let conversations = StubConversationManager()
+        conversations.selectedConversationID = conversationID
+        let toolManager = StubToolManager()
+        let startedAt = Date()
+        let viewModel = ToolActivityViewModel(
+            conversations: conversations,
+            toolManager: toolManager,
+            dateProvider: { startedAt }
+        )
+        #expect(!viewModel.isTicking, "没有任务时不应空转计时器")
+
+        let running = ToolJob(
+            id: "job-running",
+            conversationID: conversationID,
+            toolCall: KitAgentTool.ToolCall(id: "call-running", name: "run_command", arguments: "{}"),
+            status: .running,
+            startedAt: startedAt
+        )
+        toolManager.emit(.started(running))
+        #expect(viewModel.isTicking, "运行中的任务必须驱动耗时刷新")
+
+        var completed = running
+        completed.status = .completed
+        completed.completedAt = startedAt.addingTimeInterval(12)
+        toolManager.emit(.completed(
+            jobID: completed.id,
+            result: ToolCallResult(content: "ok"),
+            snapshot: completed
+        ))
+        #expect(!viewModel.isTicking, "全部终态后应停止计时，避免无意义的重绘")
+        viewModel.cancel()
+    }
+
+    /// 静默期内 `now` 必须前进，耗时才会更新；终态后固定为最终耗时。
+    @Test("静默运行中的任务耗时随当前时间增长，终态后固定（**回归 #960**）")
+    func silentRunningJobDurationAdvancesThenFreezes() {
+        let conversationID = UUID()
+        let conversations = StubConversationManager()
+        conversations.selectedConversationID = conversationID
+        let toolManager = StubToolManager()
+        let startedAt = Date()
+        var clock = startedAt
+        let viewModel = ToolActivityViewModel(
+            conversations: conversations,
+            toolManager: toolManager,
+            dateProvider: { clock }
+        )
+
+        let running = ToolJob(
+            id: "job-silent",
+            conversationID: conversationID,
+            toolCall: KitAgentTool.ToolCall(id: "call-silent", name: "run_command", arguments: "{}"),
+            status: .running,
+            startedAt: startedAt
+        )
+        toolManager.emit(.started(running))
+        #expect(viewModel.elapsedDuration(for: running) == 0)
+
+        // 数秒没有任何 output / progress 事件，只有计时器推进时间。
+        clock = startedAt.addingTimeInterval(5)
+        viewModel.tick()
+        #expect(
+            viewModel.elapsedDuration(for: running) == 5,
+            "静默运行中的任务耗时没有随当前时间增长"
+        )
+        #expect(viewModel.formatDuration(5) == "5.0s")
+
+        var completed = running
+        completed.status = .completed
+        completed.completedAt = startedAt.addingTimeInterval(12)
+        toolManager.emit(.completed(
+            jobID: completed.id,
+            result: ToolCallResult(content: "ok"),
+            snapshot: completed
+        ))
+
+        // 终态之后即使世界时间继续前进，耗时也固定为最终值。
+        clock = startedAt.addingTimeInterval(90)
+        viewModel.tick()
+        #expect(viewModel.elapsedDuration(for: completed) == 12)
+        #expect(viewModel.formatDuration(12) == "12.0s")
+        viewModel.cancel()
+    }
 }
 
 @MainActor
