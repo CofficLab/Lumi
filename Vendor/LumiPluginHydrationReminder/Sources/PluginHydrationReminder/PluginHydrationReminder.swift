@@ -27,7 +27,7 @@ public final class PluginHydrationReminder: SuperPlugin {
             id: id,
             name: String(localized: "Hydration", table: "HydrationReminder", bundle: .module, comment: "Name of the hydration reminder plugin"),
             description: String(localized: "Remind you to stay hydrated every 2 hours", table: "HydrationReminder", bundle: .module, comment: "Description of what the Hydration Reminder plugin does"),
-            version: "1.0.0",
+            version: "1.0.1",
             category: .general,
             stage: .stable,
             policy: policy

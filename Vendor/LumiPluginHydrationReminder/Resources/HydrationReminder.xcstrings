@@ -9,7 +9,7 @@
             "value": "%1$lld hr"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "%1$lld 小時"
@@ -32,7 +32,7 @@
             "value": "%1$lld min"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "%1$lld 分鐘"
@@ -55,7 +55,7 @@
             "value": "Add Custom (minutes):"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "添加自訂(分鐘):"
@@ -77,7 +77,7 @@
             "value": "Add a custom hydration reminder interval."
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "新增自訂補水提醒時長。"
@@ -99,7 +99,7 @@
             "value": "基本操作"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "基本操作"
@@ -121,7 +121,7 @@
             "value": "Break reminder is off"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "補水提醒已關閉"
@@ -143,7 +143,7 @@
             "value": "点击「重置」可恢复内置间隔，并清除所有自定义间隔。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "點擊「重設」可恢復內建間隔，並清除所有自訂間隔。"
@@ -165,7 +165,7 @@
             "value": "点击「停止」结束提醒并清除倒计时。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "點擊「停止」結束提醒並清除倒數計時。"
@@ -187,7 +187,7 @@
             "value": "点击自定义间隔旁的删除按钮即可移除。内置间隔不可删除。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "點擊自訂間隔旁的刪除按鈕即可移除。內建間隔不可刪除。"
@@ -209,7 +209,7 @@
             "value": "自定义间隔"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "自訂間隔"
@@ -231,7 +231,7 @@
             "value": "Custom interval"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "自訂時長"
@@ -253,7 +253,7 @@
             "value": "Delete"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "刪除"
@@ -275,7 +275,7 @@
             "value": "Don't forget to drink some water!"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "別忘記喝點水！"
@@ -297,7 +297,7 @@
             "value": "在「添加自定义(分钟)」输入框中填入大于 0 的分钟数，点击添加按钮或按回车键。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "在「新增自訂(分鐘)」輸入框中填入大於 0 的分鐘數，點擊新增按鈕或按回車鍵。"
@@ -319,7 +319,7 @@
             "value": "图 1：状态栏弹窗布局"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "圖 1：狀態列彈出視窗版面"
@@ -341,7 +341,7 @@
             "value": "Hydration"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "補水"
@@ -364,7 +364,7 @@
             "value": "如果通知权限被拒绝，弹窗会显示警告，并提供打开系统设置的按钮。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "如果通知權限被拒絕，彈出視窗會顯示警告，並提供開啟系統設定的按鈕。"
@@ -386,7 +386,7 @@
             "value": "界面说明"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "介面說明"
@@ -408,7 +408,7 @@
             "value": "Interval"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "提醒間隔"
@@ -430,7 +430,7 @@
             "value": "间隔：一排间隔按钮，用于选择提醒的触发频率。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "間隔：一排間隔按鈕，用於選擇提醒的觸發頻率。"
@@ -452,7 +452,7 @@
             "value": "Manage your custom reminder intervals. Click the delete button to remove custom intervals."
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "管理您的自訂提醒時長。點擊刪除按鈕可刪除自定義時長。"
@@ -474,7 +474,7 @@
             "value": "Next break: %1$lld mins"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "下次休息：%1$lld 分鐘"
@@ -496,7 +496,7 @@
             "value": "Next break: 1 min"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "下次休息：1分鐘"
@@ -518,7 +518,7 @@
             "value": "Next break: less than 1 min"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "下次休息：不到1分鐘"
@@ -540,7 +540,7 @@
             "value": "注意事项"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "注意事項"
@@ -562,7 +562,7 @@
             "value": "通知警告：当通知权限被拒绝时显示，并提供跳转到系统设置的入口。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "通知警告：當通知權限被拒絕時顯示，並提供跳轉到系統設定的入口。"
@@ -584,7 +584,7 @@
             "value": "Notifications Disabled"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "通知已禁用"
@@ -606,7 +606,7 @@
             "value": "Open Settings"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "開啟設定"
@@ -628,7 +628,7 @@
             "value": "打开设置，进入「喝水」页面。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "開啟設定，進入「喝水」頁面。"
@@ -650,7 +650,7 @@
             "value": "打开菜单栏弹窗，点击「开始」开启提醒。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "開啟選單列彈出視窗，點擊「開始」開啟提醒。"
@@ -672,7 +672,7 @@
             "value": "概述"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "概述"
@@ -694,7 +694,7 @@
             "value": "在「间隔」区选择间隔以改变提醒频率，修改会立即生效。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "在「間隔」區選擇間隔以改變提醒頻率，修改會立即生效。"
@@ -716,7 +716,7 @@
             "value": "Please enable notifications in System Settings to receive break reminders."
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "請在系統設定中啟用通知，以便接收休息提醒。"
@@ -738,7 +738,7 @@
             "value": "Remind you to stay hydrated every 2 hours"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "每2小時提醒你補水"
@@ -761,7 +761,7 @@
             "value": "提醒行为"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "提醒行為"
@@ -783,7 +783,7 @@
             "value": "Reminder Intervals"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "提醒間隔"
@@ -805,7 +805,7 @@
             "value": "如果删除的是当前选中的间隔，会自动回退到第一个内置间隔。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "如果刪除的是目前選中的間隔，會自動回退到第一個內建間隔。"
@@ -827,7 +827,7 @@
             "value": "Reset"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "重設"
@@ -849,7 +849,7 @@
             "value": "Reset to Default Intervals"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "恢復預設時長"
@@ -871,7 +871,7 @@
             "value": "Restore the built-in reminder intervals."
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "恢復內建提醒時長。"
@@ -893,7 +893,7 @@
             "value": "设置页：在「提醒间隔」分组下，包含内置间隔、添加自定义间隔输入框和重置按钮。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "設定頁：在「提醒間隔」分組下，包含內建間隔、新增自訂間隔輸入框和重設按鈕。"
@@ -915,7 +915,7 @@
             "value": "Start"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "開始"
@@ -938,7 +938,7 @@
             "value": "开始 / 停止：位于弹窗头部的控制按钮。它显示的是下一步可执行的动作，因此提醒运行中时显示「停止」。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "開始 / 停止：位於彈出視窗頭部的控制按鈕。它顯示的是下一步可執行的動作，因此提醒執行中時顯示「停止」。"
@@ -960,7 +960,7 @@
             "value": "Status"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "狀態"
@@ -982,7 +982,7 @@
             "value": "状态：提醒的运行状态、距离下次休息的剩余时间，以及今天的休息次数。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "狀態：提醒的執行狀態、距離下次休息的剩餘時間，以及今天的休息次數。"
@@ -1004,7 +1004,7 @@
             "value": "Stop"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "停止"
@@ -1027,7 +1027,7 @@
             "value": "休息计数每天重置，记录当天已完成的休息次数。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "休息計數每天重置，記錄當天已完成的休息次數。"
@@ -1049,7 +1049,7 @@
             "value": "休息浮层是一个不接收交互的窗口，不会阻塞鼠标与键盘操作。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "休息浮層是一個不接收互動的視窗，不會阻塞滑鼠與鍵盤操作。"
@@ -1071,7 +1071,7 @@
             "value": "休息浮层会提示你喝点水，它会自动淡出，无需手动确认。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "休息浮層會提示你喝點水，它會自動淡出，無需手動確認。"
@@ -1093,7 +1093,7 @@
             "value": "新间隔会出现在列表中，并标记为自定义间隔。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "新間隔會出現在列表中，並標記為自訂間隔。"
@@ -1115,7 +1115,7 @@
             "value": "提醒运行期间持续倒计时，剩余时间显示在「状态」区。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "提醒執行期間持續倒數，剩餘時間顯示在「狀態」區。"
@@ -1137,7 +1137,7 @@
             "value": "本手册介绍喝水提醒功能的界面与基本操作：开启与停止提醒、选择喝水间隔，以及管理自定义间隔。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "本手冊介紹喝水提醒功能的介面與基本操作：開啟與停止提醒、選擇喝水間隔，以及管理自訂間隔。"
@@ -1159,7 +1159,7 @@
             "value": "Today: %1$lld breaks"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "今日：%1$lld 次休息"
@@ -1181,7 +1181,7 @@
             "value": "使用手册"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "使用手冊"
@@ -1203,7 +1203,7 @@
             "value": "间隔到达后，桌面会出现一层全屏渐变提示，几秒后自动淡出。"
           }
         },
-        "zh-HK": {
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "間隔到達後，桌面會出現一層全螢幕漸層提示，幾秒後自動淡出。"
