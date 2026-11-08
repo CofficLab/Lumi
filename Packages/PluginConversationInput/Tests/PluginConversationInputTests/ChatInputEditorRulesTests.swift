@@ -230,4 +230,15 @@ struct ChatInputEditorRulesTests {
         // 无扩展名同样被否决。
         #expect(!ChatInputEditorRules.isChatImageFileURL(URL(fileURLWithPath: "/tmp/noext")))
     }
+
+    @Test("非空但不可解码的字节不算有效图片")
+    func undecodableImageBytesAreRejected() throws {
+        // 只有 PNG 魔数前两字节，ImageIO 无法解出图像。
+        #expect(!ChatInputEditorRules.isDecodableImageData(Data([0x89, 0x50])))
+        #expect(!ChatInputEditorRules.isDecodableImageData(Data("not an image".utf8)))
+        #expect(!ChatInputEditorRules.isDecodableImageData(Data()))
+
+        let png = try #require(Data(base64Encoded: attachmentTestPNGBase64))
+        #expect(ChatInputEditorRules.isDecodableImageData(png))
+    }
 }

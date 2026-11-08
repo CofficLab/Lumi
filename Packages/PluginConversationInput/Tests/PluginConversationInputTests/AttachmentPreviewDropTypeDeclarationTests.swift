@@ -69,7 +69,10 @@ struct AttachmentPreviewDropTypeDeclarationTests {
         let capability = SendActionBarTestCapability()
         let viewModel = ConversationInputViewModel(capability: capability)
 
-        let fileURL = try makeFile(named: "pixel.png", contents: Data([0x89, 0x50]))
+        let fileURL = try makeFile(
+            named: "pixel.png",
+            contents: try #require(Data(base64Encoded: attachmentTestPNGBase64))
+        )
         defer { try? FileManager.default.removeItem(at: fileURL.deletingLastPathComponent()) }
 
         let provider = try await deliverProvider(forPath: fileURL.path)

@@ -133,14 +133,15 @@ struct ConversationInputViewModelAttachmentTests {
         defer { try? FileManager.default.removeItem(at: directory) }
 
         let fileURL = directory.appendingPathComponent("pixel.png")
-        #expect(FileManager.default.createFile(atPath: fileURL.path, contents: Data([0x89, 0x50])))
+        let png = try #require(Data(base64Encoded: attachmentTestPNGBase64))
+        #expect(FileManager.default.createFile(atPath: fileURL.path, contents: png))
 
         let capability = SendActionBarTestCapability()
         let viewModel = ConversationInputViewModel(capability: capability)
 
         viewModel.attachImage(fileURL)
 
-        await waitUntil("图片附件未加入挂起池") {
+        await waitUntil("图片附件未加入挂起池", timeout: .seconds(10)) {
             !capability.pendingImageAttachments.isEmpty
         }
 
@@ -148,8 +149,38 @@ struct ConversationInputViewModelAttachmentTests {
         #expect(attachment.fileName == "pixel.png")
         // 扩展名决定 MIME，未知扩展名回落到 image/png。
         #expect(attachment.mimeType == "image/png")
-        #expect(attachment.base64Data == Data([0x89, 0x50]).base64EncodedString())
+        #expect(attachment.base64Data == png.base64EncodedString())
         #expect(capability.isInputFocused)
+    }
+
+    @Test("拖入非空但不可解码的图片时报错且不进图片池")
+    func droppingCorruptImageSurfacesErrorAndSkipsPool() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("conversation-input-corrupt-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        // 扩展名像图片、字节非空，但内容无法解码。
+        let fileURL = directory.appendingPathComponent("fake.png")
+        #expect(
+            FileManager.default.createFile(
+                atPath: fileURL.path,
+                contents: Data("definitely not a png".utf8)
+            )
+        )
+
+        let capability = SendActionBarTestCapability()
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        viewModel.attachImage(fileURL)
+
+        await waitUntil("损坏图片未上报错误提示", timeout: .seconds(10)) {
+            viewModel.errorMessage != nil
+        }
+
+        #expect(capability.pendingImageAttachments.isEmpty)
+        let message = try #require(viewModel.errorMessage)
+        #expect(message.contains("fake.png"))
     }
 
     @Test("拖入空文件不会进入图片池")
@@ -302,3 +333,8 @@ struct ConversationInputViewModelAttachmentTests {
         #expect(!capability.isInputFocused)
     }
 }
+
+/// 1×1 PNG：必须能被 ImageIO 真正解码，附件才会进入待发送图片池。
+let attachmentTestPNGBase64 = """
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==
+"""
