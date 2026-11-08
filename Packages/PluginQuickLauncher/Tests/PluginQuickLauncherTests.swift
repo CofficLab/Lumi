@@ -114,4 +114,59 @@ struct QuickLauncherTests {
         #expect(plugin.order == 8)
         #expect(plugin.metadata.policy == .alwaysOn)
     }
+
+    // MARK: - 回归 #739：打开失败不得静默关闭面板
+
+    @Test func fileOpenFailureIsReportedAndDoesNotCountAsSuccess() throws {
+        let fileSearch = FileSearchService.shared
+        let model = LauncherSearchModel.shared
+        let item = LauncherFileItem(
+            id: "/tmp/lumi-missing-\(UUID().uuidString).txt",
+            name: "lumi-missing.txt",
+            path: "/tmp/lumi-missing-\(UUID().uuidString).txt",
+            isDirectory: false
+        )
+        defer {
+            fileSearch.setOpenURLForTesting { NSWorkspace.shared.open($0) }
+            fileSearch.setResultsForTesting([])
+            model.reset()
+        }
+
+        fileSearch.setOpenURLForTesting { _ in false }
+        fileSearch.setResultsForTesting([item])
+        model.query = "lumi-missing"
+
+        let index = try #require(model.results.firstIndex { $0.kind == .file })
+        #expect(model.execute(at: index) == false)
+        #expect(model.executionError?.contains("lumi-missing.txt") == true)
+    }
+
+    @Test func fileOpenSuccessUsesExactPathAndAllowsDismiss() throws {
+        let fileSearch = FileSearchService.shared
+        let model = LauncherSearchModel.shared
+        let item = LauncherFileItem(
+            id: "/tmp/lumi-open-\(UUID().uuidString).txt",
+            name: "lumi-open.txt",
+            path: "/tmp/lumi-open-\(UUID().uuidString).txt",
+            isDirectory: false
+        )
+        var openedPaths: [String] = []
+        defer {
+            fileSearch.setOpenURLForTesting { NSWorkspace.shared.open($0) }
+            fileSearch.setResultsForTesting([])
+            model.reset()
+        }
+
+        fileSearch.setOpenURLForTesting { url in
+            openedPaths.append(url.path)
+            return true
+        }
+        fileSearch.setResultsForTesting([item])
+        model.query = "lumi-open"
+
+        let index = try #require(model.results.firstIndex { $0.kind == .file })
+        #expect(model.execute(at: index) == true)
+        #expect(model.executionError == nil)
+        #expect(openedPaths == [item.path])
+    }
 }
