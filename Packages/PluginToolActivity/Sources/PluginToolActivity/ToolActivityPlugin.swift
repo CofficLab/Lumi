@@ -61,6 +61,12 @@ public final class ToolActivityPlugin: SuperPlugin, SuperLog {
         ])
     }
 
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        // 运行时停用不会走 onShutdown；必须在这里移除工具栏按钮并停止任务观察器，
+        // 否则界面会继续显示已停用插件的入口。
+        try onShutdown(kernel: kernel)
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar")
