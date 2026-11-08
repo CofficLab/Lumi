@@ -256,12 +256,14 @@ public actor AgentRulesService {
 
         let now = Date()
         let id = ruleID(forFilename: finalFilename)
+        // 内容自带一级标题时 title 参数不会写入文件，创建结果必须与后续列表一样从落盘内容提取标题。
+        let (resolvedTitle, description) = extractTitleAndDescription(from: finalContent)
 
         return AgentRule(
             id: id,
             filename: finalFilename,
-            title: title,
-            description: extractDescription(from: finalContent),
+            title: resolvedTitle,
+            description: description,
             fileSize: Int64(finalContent.count),
             createdAt: now,
             modifiedAt: now,
@@ -323,12 +325,6 @@ public actor AgentRulesService {
         let description = descriptionLines.joined(separator: " ").prefix(200).description
 
         return (title, description.isEmpty ? "No description available" : description)
-    }
-
-    /// 从 Markdown 内容中提取描述
-    private func extractDescription(from content: String) -> String {
-        let (_, description) = extractTitleAndDescription(from: content)
-        return description
     }
 }
 

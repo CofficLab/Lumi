@@ -521,6 +521,35 @@ struct AgentRulesToolbarTests {
         #expect(rules.first?.id == "style")
     }
 
+    @Test("createRule reports the heading actually written to disk")
+    func createRuleTitleMatchesWrittenContent() async throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("AgentRulesTitle-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let service = AgentRulesService()
+        let embedded = try await service.createRule(
+            projectPath: projectURL.path,
+            filename: "heading",
+            title: "Requested Title",
+            content: "# Embedded Title\n\nBody"
+        )
+
+        #expect(embedded.title == "Embedded Title")
+
+        let listed = try await service.listRules(projectPath: projectURL.path)
+        #expect(listed.first(where: { $0.filename == "heading.md" })?.title == embedded.title)
+
+        // 内容没有一级标题时仍使用参数标题，保持原行为。
+        let normal = try await service.createRule(
+            projectPath: projectURL.path,
+            filename: "normal",
+            title: "Requested Title",
+            content: "Body"
+        )
+        #expect(normal.title == "Requested Title")
+    }
+
     private func makeMetadata(id: String, filename: String) -> AgentRuleMetadata {
         AgentRuleMetadata(
             id: id,
