@@ -6,6 +6,11 @@ import ProviderToolManager
 @MainActor
 final class ToolActivityViewModel: ObservableObject {
     @Published private(set) var jobs: [ToolJob] = []
+    /// 已完成但 `ToolCallResult.isError == true` 的 Job。
+    ///
+    /// `.completed` 只表示执行过程没有抛异常；工具正常返回结构化失败结果时，
+    /// Job 仍是 `.completed`，必须单独保留结果里的 isError 才能显示失败态。
+    @Published private(set) var erroredCompletedJobIDs: Set<String> = []
 
     private let conversations: any ConversationManaging
     private let toolManager: any ToolManagerProviding
@@ -59,13 +64,27 @@ final class ToolActivityViewModel: ObservableObject {
     func refresh() {
         guard let conversationID = conversations.selectedConversationID else {
             jobs = []
+            erroredCompletedJobIDs = []
             return
         }
         jobs = toolManager.jobs(forConversationID: conversationID)
+        // 只保留当前会话仍在列表中的 Job，避免切换会话后残留上一会话的错误标记。
+        erroredCompletedJobIDs.formIntersection(jobs.map(\.id))
     }
 
     func displayName(for job: ToolJob) -> String {
         toolManager.displayDescription(for: job.toolCall) ?? job.toolCall.name
+    }
+
+    /// 工具是否以结构化错误结果结束（执行过程本身未抛异常）。
+    func isErroredResult(for job: ToolJob) -> Bool {
+        job.status == .completed && erroredCompletedJobIDs.contains(job.id)
+    }
+
+    func statusTitle(for job: ToolJob) -> String {
+        isErroredResult(for: job)
+            ? pluginLocalization.string("Failed")
+            : statusTitle(for: job.status)
     }
 
     func statusTitle(for status: ToolJobStatus) -> String {
@@ -107,9 +126,16 @@ final class ToolActivityViewModel: ObservableObject {
             snapshot = job
         case .output(_, _, _, let job), .progress(_, _, let job):
             snapshot = job
-        case .completed(_, _, let job), .failed(_, _, let job),
-             .cancelled(_, _, let job), .timedOut(_, _, let job):
+        case .completed(_, let result, let job):
             snapshot = job
+            if result.isError {
+                erroredCompletedJobIDs.insert(job.id)
+            } else {
+                erroredCompletedJobIDs.remove(job.id)
+            }
+        case .failed(_, _, let job), .cancelled(_, _, let job), .timedOut(_, _, let job):
+            snapshot = job
+            erroredCompletedJobIDs.remove(job.id)
         case .restored:
             return
         }

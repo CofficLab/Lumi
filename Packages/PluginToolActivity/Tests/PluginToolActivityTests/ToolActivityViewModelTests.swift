@@ -34,6 +34,57 @@ struct ToolActivityViewModelTests {
         #expect(viewModel.completedJobs.map(\.id) == [job.id])
         #expect(viewModel.activeCount == 0)
     }
+
+    @Test("completed 但 isError=true 的结果显示为失败")
+    func completedErrorResultShowsFailedStatus() {
+        let conversationID = UUID()
+        let conversations = StubConversationManager()
+        conversations.selectedConversationID = conversationID
+        let toolManager = StubToolManager()
+        let viewModel = ToolActivityViewModel(conversations: conversations, toolManager: toolManager)
+
+        let job = ToolJob(
+            id: "job-error",
+            conversationID: conversationID,
+            toolCall: KitAgentTool.ToolCall(id: "call-error", name: "read_image", arguments: "{}"),
+            status: .completed,
+            completedAt: Date()
+        )
+        toolManager.emit(.completed(
+            jobID: job.id,
+            result: ToolCallResult(content: "Error: Missing 'path' argument", isError: true),
+            snapshot: job
+        ))
+
+        #expect(viewModel.isErroredResult(for: job))
+        #expect(viewModel.statusTitle(for: job) == pluginLocalization.string("Failed"))
+        #expect(viewModel.statusTitle(for: job) != pluginLocalization.string("Completed"))
+    }
+
+    @Test("completed 且 isError=false 的结果保持 Completed")
+    func completedSuccessResultKeepsCompletedStatus() {
+        let conversationID = UUID()
+        let conversations = StubConversationManager()
+        conversations.selectedConversationID = conversationID
+        let toolManager = StubToolManager()
+        let viewModel = ToolActivityViewModel(conversations: conversations, toolManager: toolManager)
+
+        let job = ToolJob(
+            id: "job-ok",
+            conversationID: conversationID,
+            toolCall: KitAgentTool.ToolCall(id: "call-ok", name: "read_image", arguments: "{\"path\":\"a.png\"}"),
+            status: .completed,
+            completedAt: Date()
+        )
+        toolManager.emit(.completed(
+            jobID: job.id,
+            result: ToolCallResult(content: "image", isError: false),
+            snapshot: job
+        ))
+
+        #expect(!viewModel.isErroredResult(for: job))
+        #expect(viewModel.statusTitle(for: job) == pluginLocalization.string("Completed"))
+    }
 }
 
 @MainActor
