@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 63
+测试文件: 3 个，用例总数: 66
 
 核心组件（源码目录）:
 - `Agent/`
@@ -50,6 +50,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **DatabaseViewModelConnectionRace**（2 条）：由 `slowQueryFromPreviousConnectionDoesNotOverwriteNewConnection`、`slowerConnectDoesNotReplaceNewerSelection` 锁定，防止旧连接/慢查询覆盖当前连接状态。
 - **SQLite RETURNING**（2 条）：由 `executeAcceptsReturningRows`、`returningStatementsUseQueryPath` 锁定；改动 DML 路由或 SQLite step 循环时优先跑对应测试文件。
 - **Redis handshake**（2 条）：由 `errorResponseFailsHandshake`、`successResponsePassesHandshake` 锁定，防止 AUTH/PING 的 RESP 错误值被忽略。
+- **Redis RESP parsing**（3 条）：由 `trailingCRIsIncomplete`、`CRFollowedByNonLFTimesOut`、`splitCRLFCompletesAfterNextChunk` 锁定，防止 TCP 在 CR/LF 间分片时误判。
 
 ## 测试用例清单
 
@@ -119,27 +120,30 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 61 | SQLite RETURNING | DML RETURNING 识别为读路径，字面量中的 RETURNING 不误判 | — | 调用 `isReadStatement` | INSERT/UPDATE/DELETE ... RETURNING 均返回 true；`VALUES('RETURNING')` 返回 false | P1 | ✅ 已覆盖 | `returningStatementsUseQueryPath` |
 | 62 | Redis handshake | Redis 握手错误响应会转换为连接错误 | — | 用 WRONGPASS / NOAUTH 响应调用 `validateHandshake` | 两种响应都抛出 `DatabaseError` | P1 | ✅ 已覆盖 | `errorResponseFailsHandshake` |
 | 63 | Redis handshake | Redis 握手成功响应不抛错 | — | 用 OK / PONG 响应调用 `validateHandshake` | 不抛错 | P1 | ✅ 已覆盖 | `successResponsePassesHandshake` |
+| 64 | Redis RESP parsing | CR 位于缓冲区末尾时返回不完整 | — | 用 `+OK\r`、`$3\r`、`*1\r` 调用 `parseComplete` | 均返回 nil（等待下一块） | P1 | ✅ 已覆盖 | `trailingCRIsIncomplete` |
+| 65 | Redis RESP parsing | CR 后跟非法字节仍报格式错误 | — | 用 `+OK\rX` 调用 `parseComplete` | 抛出 `DatabaseError` | P1 | ✅ 已覆盖 | `CRFollowedByNonLFTimesOut` |
+| 66 | Redis RESP parsing | 下一块补全 LF 后可解析 | — | 用完整的 `+OK\r\n` 与 `$3\r\nfoo\r\n` 调用 `parseComplete` | 分别解析出 simpleString / bulkString | P1 | ✅ 已覆盖 | `splitCRLFCompletesAfterNextChunk` |
 
-> 说明：全部 **63 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **66 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 32 / 32
-- P1: 已覆盖 30 / 30
+- P1: 已覆盖 33 / 33
 - P2: 已覆盖 1 / 1
-- **合计: 63 / 63**（仅表示清单场景，非源码覆盖率）
+- **合计: 66 / 66**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（32 条）
-- **P1**: 其余功能性用例（30 条）
+- **P1**: 其余功能性用例（33 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 63 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 66 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
