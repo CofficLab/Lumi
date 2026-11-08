@@ -20,6 +20,29 @@ enum CADDesignerV2ToolSupport {
         double(arguments, key) ?? defaultValue
     }
 
+    /// `Double(Int.max)` 恰等于 2^63，用它做上界仍会在 `Int` 转换时触发陷阱，
+    /// 因此要求严格小于该值。非有限值同样拒绝。
+    static let safeMagnitudeLimit = 9_223_372_036_854_775_808.0
+
+    /// 读取必须为正且可安全转换为 `Int` 的尺寸参数；不合法时抛出结构化工具错误。
+    static func positiveDouble(_ arguments: [String: ToolArgument], _ key: String, default defaultValue: Double, toolName: String) throws -> Double {
+        let value = double(arguments, key, default: defaultValue)
+        guard value.isFinite, value > 0, value < safeMagnitudeLimit else {
+            throw failure(
+                en: "Invalid '\(key)' value: expected a finite, positive number below 2^63 mm.",
+                zh: "参数 '\(key)' 无效：需要有限、正数且小于 2^63 毫米的值。",
+                toolName: toolName
+            )
+        }
+        return value
+    }
+
+    /// 把毫米值格式化为整数文本；超出安全范围时保留 `Double` 描述，绝不触发 `Int` 陷阱。
+    static func millimetres(_ value: Double) -> String {
+        guard value.isFinite, abs(value) < safeMagnitudeLimit else { return String(value) }
+        return "\(Int(value))"
+    }
+
     static func componentSummary(_ component: CADComponent) -> String {
         let name = component.displayName(library: .shared)
         return localized(

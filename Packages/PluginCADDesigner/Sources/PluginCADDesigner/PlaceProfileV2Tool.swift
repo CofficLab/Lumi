@@ -29,10 +29,11 @@ public struct PlaceProfileV2Tool: SuperAgentTool {
                 toolName: name
             )
         }
-        let instance = ProfileInstance(profileId: profileID, length: CADDesignerV2ToolSupport.double(arguments, "length", default: 500), transform: Transform3D(positionX: CADDesignerV2ToolSupport.double(arguments, "x", default: 0), positionY: CADDesignerV2ToolSupport.double(arguments, "y", default: 0), positionZ: CADDesignerV2ToolSupport.double(arguments, "z", default: 0), rotationY: CADDesignerV2ToolSupport.double(arguments, "rotationY", default: 0)))
+        let length = try CADDesignerV2ToolSupport.positiveDouble(arguments, "length", default: 500, toolName: name)
+        let instance = ProfileInstance(profileId: profileID, length: length, transform: Transform3D(positionX: CADDesignerV2ToolSupport.double(arguments, "x", default: 0), positionY: CADDesignerV2ToolSupport.double(arguments, "y", default: 0), positionZ: CADDesignerV2ToolSupport.double(arguments, "z", default: 0), rotationY: CADDesignerV2ToolSupport.double(arguments, "rotationY", default: 0)))
         do {
             let component = try await MainActor.run { try CADDocumentStore.shared.addComponent(.profile(instance)) }
-            return CADDesignerV2ToolSupport.localized(en: "Placed profile.\n\(CADDesignerV2ToolSupport.componentSummary(component))\nspec: \(profileID)\nlength: \(Int(instance.length))mm", zh: "已放置型材。\n\(CADDesignerV2ToolSupport.componentSummary(component))\n规格: \(profileID)\n长度: \(Int(instance.length))mm")
+            return CADDesignerV2ToolSupport.localized(en: "Placed profile.\n\(CADDesignerV2ToolSupport.componentSummary(component))\nspec: \(profileID)\nlength: \(CADDesignerV2ToolSupport.millimetres(instance.length))mm", zh: "已放置型材。\n\(CADDesignerV2ToolSupport.componentSummary(component))\n规格: \(profileID)\n长度: \(CADDesignerV2ToolSupport.millimetres(instance.length))mm")
         } catch let error as ToolExecutionError {
             throw error
         } catch {

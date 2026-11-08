@@ -113,6 +113,29 @@ struct CADDesignerSuperPluginTests {
         #expect(cutting.contains("1200"))
     }
 
+    @Test("rejects unrepresentable profile lengths before mutating the document")
+    func rejectsUnrepresentableProfileLengthBeforeMutatingDocument() async throws {
+        CADDocumentStore.shared.resetForTests()
+        _ = CADDocumentStore.shared.createDocument(name: "V2 Length Guard")
+
+        do {
+            _ = try await PlaceProfileV2Tool().execute(arguments: [
+                "profileId": ToolArgument("profile-40x40-eu"), "length": ToolArgument(1e20),
+            ])
+            Issue.record("expected an oversized length to be rejected")
+        } catch let error as ToolExecutionError {
+            #expect(error.errorDescription?.contains("length") == true)
+        }
+        for length in [Double.infinity, 0, -5] {
+            await #expect(throws: ToolExecutionError.self) {
+                _ = try await PlaceProfileV2Tool().execute(arguments: [
+                    "profileId": ToolArgument("profile-40x40-eu"), "length": ToolArgument(length),
+                ])
+            }
+        }
+        #expect(CADDocumentStore.shared.selectedDocument?.components.isEmpty == true)
+    }
+
     @Test("tool failures throw instead of returning error strings")
     func toolFailuresThrow() async {
         CADDocumentStore.shared.resetForTests()
