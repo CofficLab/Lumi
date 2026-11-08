@@ -379,6 +379,21 @@ struct AnthropicAdapterStreamTests {
         #expect(chunk.content == nil)
     }
 
+    @Test("redacted_thinking 内容块开始事件带 opaque data")
+    func parsesRedactedThinkingContentBlockStart() throws {
+        let chunk = try #require(try adapter.parseStreamChunk(data: anthropicEvent(
+            "content_block_start",
+            [
+                "type": "content_block_start",
+                "index": 0,
+                "content_block": ["type": "redacted_thinking", "data": "opaque-data"],
+            ]
+        )))
+
+        #expect(chunk.eventType == .contentBlockStart)
+        #expect(chunk.redactedThinkingData == "opaque-data")
+    }
+
     @Test("文本增量事件带正文")
     func parsesTextDelta() throws {
         let chunk = try #require(try adapter.parseStreamChunk(data: anthropicEvent(
@@ -521,6 +536,24 @@ struct AnthropicAdapterMessageTests {
         #expect(toolUse["id"] as? String == "call-1")
         #expect(toolUse["name"] as? String == "app_read")
         #expect(toolUse["input"] as? [String: Any] != nil)
+    }
+
+    @Test("redacted thinking 在工具调用消息里按原样回传且位于 tool_use 之前")
+    func transformsRedactedThinkingBeforeToolUse() throws {
+        let message = LLMMessage(
+            role: .assistant,
+            content: "调用中",
+            toolCalls: [LLMToolCall(id: "call-1", name: "read_file", arguments: "{}")],
+            redactedThinking: [LLMRedactedThinkingBlock(data: "opaque-data")]
+        )
+
+        let result = adapter.transformMessage(message)
+
+        let content = try #require(result["content"] as? [[String: Any]])
+        let redactedIndex = try #require(content.firstIndex { $0["type"] as? String == "redacted_thinking" })
+        let toolUseIndex = try #require(content.firstIndex { $0["type"] as? String == "tool_use" })
+        #expect(content[redactedIndex]["data"] as? String == "opaque-data")
+        #expect(redactedIndex < toolUseIndex)
     }
 
     @Test("带思考内容的 assistant 消息生成 thinking 块")

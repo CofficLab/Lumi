@@ -441,6 +441,7 @@ private struct AdapterToolSchema: LLMToolSchemaProviding, @unchecked Sendable {
 final class StreamingAccumulator: @unchecked Sendable {
     private var content = ""
     private var reasoningContent = ""
+    private var redactedThinking: [LLMRedactedThinkingBlock] = []
     private var toolCalls: [Int: ToolCall] = [:]
     private var toolCallOrder: [Int] = []
     private var inputTokens: Int?
@@ -478,6 +479,11 @@ final class StreamingAccumulator: @unchecked Sendable {
             finished = true
         }
         if let rawEvent = chunk.rawEvent { rawStreamEvents.append(rawEvent) }
+
+        // redacted thinking 是不透明块，整块到达，不做增量拼接。
+        if let data = chunk.redactedThinkingData, !data.isEmpty {
+            redactedThinking.append(LLMRedactedThinkingBlock(data: data))
+        }
 
         // 思考增量
         //
@@ -536,6 +542,7 @@ final class StreamingAccumulator: @unchecked Sendable {
                 LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
             },
             reasoningContent: reasoningContent.isEmpty ? nil : reasoningContent,
+            redactedThinking: redactedThinking.isEmpty ? nil : redactedThinking,
             inputTokenCount: inputTokens,
             outputTokenCount: outputTokens,
             cachedInputTokenCount: cachedInputTokens,

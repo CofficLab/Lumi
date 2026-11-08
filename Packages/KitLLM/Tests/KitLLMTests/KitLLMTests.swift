@@ -229,6 +229,22 @@ struct KitLLMTests {
         #expect(!sanitized.contains("."))
     }
 
+    @Test("redacted thinking 块按到达顺序进入最终响应")
+    func redactedThinkingIsKeptInResponse() async throws {
+        let accumulator = StreamingAccumulator()
+        _ = await accumulator.consume(
+            StreamChunk(eventType: .contentBlockStart, redactedThinkingData: "opaque-1")
+        ) { _ in }
+        _ = await accumulator.consume(
+            StreamChunk(eventType: .contentBlockStart, redactedThinkingData: "opaque-2")
+        ) { _ in }
+        _ = await accumulator.consume(StreamChunk(isDone: true)) { _ in }
+
+        let response = try await accumulator.finish(model: "claude")
+
+        #expect(response.redactedThinking?.map(\.data) == ["opaque-1", "opaque-2"])
+    }
+
     @Test("超长工具名截断到 64 字符且稳定不撞名")
     func longToolNameIsTruncatedToProtocolLimit() {
         // MCP 适配器会给工具名加 `serverID.` 前缀；单个工具即可超过 64 字符。

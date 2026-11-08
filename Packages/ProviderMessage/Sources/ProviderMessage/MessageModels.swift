@@ -39,6 +39,8 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
     public var toolCallID: String?
     /// 思考/推理内容（reasoning）。
     public var reasoningContent: String?
+    /// Anthropic `redacted_thinking` 的不透明 `data`，下一轮请求需原样回传。
+    public var redactedThinkingData: [String]?
     /// 结构化工具调用列表。
     public var toolCalls: [MessageToolCall]?
     /// 输入 token 数。
@@ -78,6 +80,7 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
         preferredRendererID: String? = nil,
         toolCallID: String? = nil,
         reasoningContent: String? = nil,
+        redactedThinkingData: [String]? = nil,
         toolCalls: [MessageToolCall]? = nil,
         inputTokenCount: Int? = nil,
         outputTokenCount: Int? = nil,
@@ -110,6 +113,7 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
         self.preferredRendererID = preferredRendererID
         self.toolCallID = toolCallID
         self.reasoningContent = reasoningContent
+        self.redactedThinkingData = redactedThinkingData
         self.toolCalls = toolCalls
         self.inputTokenCount = inputTokenCount
         self.outputTokenCount = outputTokenCount

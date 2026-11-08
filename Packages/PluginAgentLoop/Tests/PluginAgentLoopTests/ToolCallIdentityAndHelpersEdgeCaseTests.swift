@@ -249,6 +249,22 @@ struct MessageConversionEdgeCaseTests {
         #expect(llmMessage.content == "这张图")
     }
 
+    /// 落库的 redacted thinking 必须在下一轮转换时回到 LLMMessage。
+    @Test("持久化的 redacted thinking 会进入下一轮 LLMMessage")
+    func llmMessageCarriesRedactedThinking() {
+        let message = Message(
+            conversationID: UUID(),
+            role: .assistant,
+            content: "",
+            redactedThinkingData: ["opaque-1", "opaque-2"],
+            toolCalls: [MessageToolCall(id: "call-1", name: "read_file", arguments: "{}")]
+        )
+
+        let llmMessage = message.llmMessage
+
+        #expect(llmMessage.redactedThinking?.map(\.data) == ["opaque-1", "opaque-2"])
+    }
+
     /// tool 消息没有 toolCallID 时不能误挂图片（无可匹配的 pending）。
     @Test("没有 toolCallID 的 tool 消息不会获得图片")
     func llmMessageToolWithoutToolCallIDGetsNoImages() {
