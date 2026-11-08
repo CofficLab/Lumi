@@ -47,8 +47,8 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
-    private var promptSuggestion: PromptSuggestion {
-        PromptSuggestion(id: "\(id).create", title: ResumeDesignerLocalization.string("Prompt.Suggestion.Create"), order: order * 1_000, systemImage: "doc.badge.gearshape", action: .activateRailTab(id: Self.railTabID), scope: .launcherAndContext(id))
+    var promptSuggestion: PromptSuggestion {
+        PromptSuggestion(id: "\(id).create", title: ResumeDesignerLocalization.string("Prompt.Suggestion.Create"), order: order * 1_000, systemImage: "doc.badge.gearshape", action: .activatePluginEntry(activityBarItemID: "\(id).entry", railTabID: Self.railTabID), scope: .launcherAndContext(id))
     }
 
     private func registerPromptSuggestion(kernel: KernelCoreContainer, requiresEnable: Bool) {
