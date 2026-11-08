@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginChatScreenshot 的实现包，包含 10 个主要类型；当前测试覆盖 27 条用例。
+PluginChatScreenshot 的实现包，包含 10 个主要类型；当前测试覆盖 28 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 27
+测试文件: 5 个，用例总数: 28
 
 核心组件（源码目录）:
 - `Capture/`
@@ -38,6 +38,7 @@ PluginChatScreenshot 的实现包，包含 10 个主要类型；当前测试覆�
 - **截图文件写入器编码**（6 条）：锁定 JPEG 编码、文件名生成、落盘与附件字段。
 - **Chat Screenshot 插件生命周期**（6 条）：锁定按钮与命令组的注册/注销。
 - **Chat Screenshot 权限请求**（3 条）：锁定 `ScreenCapturePermissionPrompter.ensurePermission` 必须先 preflight、未授权时补发系统授权请求。
+- **遮罩视图引用环**（1 条）：锁定 `ChatScreenshotOverlayController.wireCallbacks` 的闭包对视图弱捕获，装配回调后视图仍可释放。
 
 ## 测试用例清单
 
@@ -70,27 +71,28 @@ PluginChatScreenshot 的实现包，包含 10 个主要类型；当前测试覆�
 | 25 | 权限请求 | requestsSystemPromptWhenNotAuthorized | TCC 未授权 | preflight=false 时调用 ensurePermission | 触发 request 并返回 true | P0 | ✅ 已覆盖 | `requestsSystemPromptWhenNotAuthorized` |
 | 26 | 权限请求 | skipsRequestWhenAlreadyAuthorized | TCC 已授权 | preflight=true 时调用 ensurePermission | 不触发 request 并返回 true | P1 | ✅ 已覆盖 | `skipsRequestWhenAlreadyAuthorized` |
 | 27 | 权限请求 | returnsFalseWhenRequestDenied | 用户拒绝授权 | preflight=false、request=false | 返回 false | P1 | ✅ 已覆盖 | `returnsFalseWhenRequestDenied` |
+| 28 | 遮罩视图引用环 | overlayViewDeallocatesAfterCallbacksAreWired | 控制器与视图均为局部强引用 | 装配回调后离开作用域并 drain 自动释放池 | 视图弱引用为 nil（无泄漏） | P0 | ✅ 已覆盖 | `overlayViewDeallocatesAfterCallbacksAreWired` |
 
-> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **28 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 1 / 1
+- P0: 已覆盖 2 / 2
 - P1: 已覆盖 24 / 24
 - P2: 已覆盖 2 / 2
-- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
+- **合计: 28 / 28**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
 - **P1**: 其余功能性用例（24 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 28 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
