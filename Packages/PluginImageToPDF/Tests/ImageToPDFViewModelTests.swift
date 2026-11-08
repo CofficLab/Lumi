@@ -146,6 +146,43 @@ struct ImageToPDFViewModelTests {
         #expect(model.lastErrorMessage != nil)
     }
 
+    @Test("仅有输入图片也可 Clear，清空后恢复为不可用")
+    func clearAvailabilityTracksInputsAndOutputs() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let sourceURL = root.appendingPathComponent("photo.png")
+        try #require(Self.onePixelPNGData).write(to: sourceURL)
+
+        ImageToPDFRuntimeBridge.directoryURL = root.appendingPathComponent("staging", isDirectory: true)
+        defer { ImageToPDFRuntimeBridge.directoryURL = nil }
+
+        let model = ImageToPDFViewModel()
+        #expect(model.canClear == false)
+
+        // 回归 #760：只添加图片、还没转换时 Clear 必须可用。
+        model.addImages(from: [sourceURL])
+        #expect(model.canClear)
+
+        model.removeImage(try #require(model.inputImages.first))
+        #expect(model.canClear == false)
+
+        model.addImages(from: [sourceURL])
+        model.convertAll()
+        while model.isConverting {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        // 只保留输出、没有输入时也应可清空。
+        model.removeImage(try #require(model.inputImages.first))
+        #expect(model.inputImages.isEmpty)
+        #expect(!model.outputItems.isEmpty)
+        #expect(model.canClear)
+
+        model.clearAll()
+        #expect(model.canClear == false)
+    }
+
     @Test("转换失败汇总显示真实失败数量，不出现畸形格式符")
     func failureSummaryReportsActualCount() async throws {
         let root = FileManager.default.temporaryDirectory
