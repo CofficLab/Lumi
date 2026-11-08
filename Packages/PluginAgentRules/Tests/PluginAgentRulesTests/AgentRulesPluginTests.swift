@@ -470,6 +470,37 @@ struct AgentRulesToolbarTests {
         #expect(FileManager.default.fileExists(atPath: projectURL.appending(path: ".lumi/rules/notify.md").path))
     }
 
+    @Test("Rule ID strips only the final extension, keeping inner .md occurrences")
+    func ruleIdKeepsInnerMarkdownExtensions() async throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("AgentRulesIDs-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let service = AgentRulesService()
+        let first = try await service.createRule(
+            projectPath: projectURL.path,
+            filename: "foo",
+            title: "First",
+            content: ""
+        )
+        let second = try await service.createRule(
+            projectPath: projectURL.path,
+            filename: "foo.md.md",
+            title: "Second",
+            content: ""
+        )
+
+        #expect(first.id == "foo")
+        #expect(second.id == "foo.md")
+
+        let rules = try await service.listRules(projectPath: projectURL.path)
+        #expect(rules.count == 2)
+        #expect(Set(rules.map(\.id)) == ["foo", "foo.md"])
+
+        let read = try await service.readRule(projectPath: projectURL.path, filename: "foo.md.md")
+        #expect(read.id == "foo.md")
+    }
+
     private func makeMetadata(id: String, filename: String) -> AgentRuleMetadata {
         AgentRuleMetadata(
             id: id,

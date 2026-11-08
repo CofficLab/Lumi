@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 26 条用例。
+PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 27 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 26
+测试文件: 4 个，用例总数: 27
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -74,27 +74,28 @@ PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 2
 | 24 | AgentRulesPlugin | readRuleFallsBackToLegacyAgentDirectory | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readRuleFallsBackToLegacyAgentDirectory` |
 | 25 | AgentRulesToolbar | 规则变化通知只刷新当前项目的工具栏 | 当前项目 A，先通知 B 再通知 A | 发送 `agentRulesDidChange` 通知 | B 的通知不触发加载；A 的通知触发第二次加载 | P0 | ✅ 已覆盖 | `rulesChangeNotificationRefreshesMatchingProject` |
 | 26 | AgentRulesPlugin | create_agent_rule 成功后发出规则变化通知 | 临时项目目录 | 调用 `CreateAgentRuleTool.execute` | 收到携带该项目路径的 `agentRulesDidChange` 通知、规则文件已落盘 | P0 | ✅ 已覆盖 | `createRuleToolPostsChangeNotification` |
+| 27 | AgentRulesPlugin | 规则 ID 只去掉最后一个扩展名，保留文件名内部的 .md | 先后创建 `foo.md` 与 `foo.md.md` | 创建结果、`listRules`、`readRule` | 两条 ID 分别为 `foo` 与 `foo.md`，列表无重复 ID | P0 | ✅ 已覆盖 | `ruleIdKeepsInnerMarkdownExtensions` |
 
-> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
+- P0: 已覆盖 8 / 8
 - P1: 已覆盖 18 / 18
 - P2: 已覆盖 1 / 1
-- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
+- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
 - **P1**: 其余功能性用例（18 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 26 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
