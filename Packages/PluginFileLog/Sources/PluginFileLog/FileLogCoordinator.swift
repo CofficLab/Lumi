@@ -70,6 +70,11 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
 
     private var pollInFlight = false
 
+    /// 读取 OSLog 的实现；测试可替换为假数据，避免依赖真实 logd。
+    var logRecordReader: (String, Date) -> [LogRecord]? = { subsystem, sinceDate in
+        FileLogCoordinator.readLogRecords(subsystem: subsystem, since: sinceDate)
+    }
+
     /// 心跳节流计数：每次 OSLog 轮询 tick 自增，每 N 次打一条日志。
     private var pollTickCount = 0
     private let pollTickLogEvery = 10
@@ -259,9 +264,10 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
         let startDate = lastPolledDate
         let pollDate = Date()
         let subsystem = self.subsystem
+        let readRecords = self.logRecordReader
 
         pollQueue.async { [weak self] in
-            let records = Self.readLogRecords(subsystem: subsystem, since: startDate)
+            let records = readRecords(subsystem, startDate)
 
             self?.queue.async { [weak self] in
                 guard let self else { return }
@@ -562,6 +568,7 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<DiagnosticsArchive, Error>) in
             queue.async { [self] in
                 do {
+                    drainLogRecordsBeforeExport()
                     _ = writePendingRecords(upTo: .distantFuture)
                     flushCurrentFile()
                     let archive = try makeDiagnosticsArchiveOnQueue()
@@ -571,6 +578,25 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
                 }
             }
         }
+    }
+
+    /// 导出诊断前同步补一次 OSLog 读取，把「已产生但还没等到下一轮轮询」的日志
+    /// 也纳入归档。运行在 `queue` 上，与在途轮询结果的回写天然串行，不会丢条目；
+    /// `seenRecordKeys` 保证不会重复写入。
+    private func drainLogRecordsBeforeExport() {
+        guard isRunning, !isFileLoggingDisabled else { return }
+        let startDate = lastPolledDate
+        guard let records = logRecordReader(subsystem, startDate) else { return }
+
+        if let latest = records.map(\.date).max(), latest > lastPolledDate {
+            lastPolledDate = latest
+        }
+        for record in records where !seenRecordKeys.contains(record.key) {
+            seenRecordKeys.insert(record.key)
+            seenRecordKeyOrder.append(record.key)
+            pendingRecords.append(record)
+        }
+        trimSeenRecordKeys()
     }
 
     private func makeDiagnosticsArchiveOnQueue() throws -> DiagnosticsArchive {
