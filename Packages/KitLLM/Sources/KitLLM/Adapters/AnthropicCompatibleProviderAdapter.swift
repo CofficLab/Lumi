@@ -343,6 +343,14 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                         return StreamChunk(eventType: .contentBlockStart, rawEvent: text)
                     }
 
+                    if blockType == "redacted_thinking" {
+                        return StreamChunk(
+                            eventType: .contentBlockStart,
+                            rawEvent: text,
+                            redactedThinkingData: contentBlock["data"] as? String
+                        )
+                    }
+
                     if blockType == "tool_use" {
                         if let id = contentBlock["id"] as? String,
                            let name = contentBlock["name"] as? String {
@@ -484,9 +492,18 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             ]
         }
 
+        // redacted thinking 必须作为独立的不透明块原样回传。
+        // 协议要求 thinking / redacted_thinking 出现在 text 与 tool_use 之前。
+        let redactedBlocks: [[String: Any]] = (message.redactedThinking ?? []).compactMap { block in
+            guard !block.data.isEmpty else { return nil }
+            return ["type": "redacted_thinking", "data": block.data]
+        }
+        let hasReasoning = !redactedBlocks.isEmpty
+            || !(message.reasoningContent ?? "").isEmpty
+
         // 包含工具调用的 assistant 消息
         if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
-            var content: [[String: Any]] = []
+            var content: [[String: Any]] = redactedBlocks
 
             if let reasoningContent = message.reasoningContent,
                !reasoningContent.isEmpty {
@@ -512,11 +529,12 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             return ["role": "assistant", "content": content]
         }
 
-        if let reasoningContent = message.reasoningContent,
-           !reasoningContent.isEmpty {
-            var content: [[String: Any]] = [
-                ["type": "thinking", "thinking": reasoningContent],
-            ]
+        if hasReasoning {
+            var content = redactedBlocks
+            if let reasoningContent = message.reasoningContent,
+               !reasoningContent.isEmpty {
+                content.append(["type": "thinking", "thinking": reasoningContent])
+            }
             if !message.content.isEmpty {
                 content.append(["type": "text", "text": message.content])
             }

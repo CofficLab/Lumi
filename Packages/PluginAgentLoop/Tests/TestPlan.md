@@ -5,7 +5,7 @@
 PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProvider`。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 102
+测试文件: 11 个，用例总数: 103
 
 核心组件（源码目录）:
 - `Managers/`
@@ -150,27 +150,28 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 | 100 | 消息与 LLM 消息互转的边界分支 | 非 user 角色的图片不会写回附件 metadata | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `messageFromLLMMessageSkipsMetadataForNonUserRole` |
 | 101 | 消息与 LLM 消息互转的边界分支 | 非法 base64 的图片附件被安全丢弃 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `llmMessageDropsInvalidBase64ImageAttachments` |
 | 102 | 消息与 LLM 消息互转的边界分支 | 没有 toolCallID 的 tool 消息不会获得图片 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `llmMessageToolWithoutToolCallIDGetsNoImages` |
+| 103 | 消息与 LLM 消息互转 | 持久化的 redacted thinking 会进入下一轮 LLMMessage | 构造带 `redactedThinkingData` 的 assistant 消息 | 读取 `llmMessage` | `redactedThinking` 按顺序还原 opaque data | P1 | ✅ 已覆盖 | `llmMessageCarriesRedactedThinking` |
 
-> 说明：全部 **102 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **103 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 23 / 23
-- P1: 已覆盖 68 / 68
+- P1: 已覆盖 69 / 69
 - P2: 已覆盖 11 / 11
-- **合计: 102 / 102**（仅表示清单场景，非源码覆盖率）
+- **合计: 103 / 103**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（23 条）
-- **P1**: 其余功能性用例（68 条）
+- **P1**: 其余功能性用例（69 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 102 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 103 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

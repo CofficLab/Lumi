@@ -37,6 +37,9 @@ extension Message {
             toolCalls: toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
             toolCallID: toolCallID,
             reasoningContent: reasoningContent,
+            redactedThinking: redactedThinkingData?.map {
+                KitLLM.LLMRedactedThinkingBlock(data: $0)
+            },
             // 工具结果图片必须挂在独立的 tool 消息上，不能成为 assistant content。
             images: role == .user ? userImages : (role == .tool ? toolImages : [])
         )
