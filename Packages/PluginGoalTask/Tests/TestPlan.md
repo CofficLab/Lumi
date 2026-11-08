@@ -5,7 +5,7 @@
 GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标）+ Task（任务）两层结构的任务追踪能力。
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 139
+测试文件: 13 个，用例总数: 140
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -41,6 +41,7 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **GoalDisplayAndVM**（19 条）：由 `testMappingPreservesFields`、`testIsTerminal`、`testStatusSystemImage` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GoalForkAttachmentIsolation**（1 条）：由 `testForkCommitDoesNotConsumePendingAttachments` 锁定；分叉提交必须走显式附件重载，改动该调用点时优先跑对应测试文件。
 - **GoalForkCoordinator**（12 条）：由 `testForkAndStartHappyPath`、`testResumePromptContent`、`testResumePromptListsOnlyOutstandingTasks`、`testResumePromptUsesForkedTaskIDs` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalHooks**（24 条）：由 `testNoManagerReturnsContextUnchanged`、`testNoActiveGoalsInjectsNothing`、`testBlockedGoalInjectsOnlyStopPrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalStateManagerAppendFork**（19 条）：由 `testAddTasksContinuesOrder`、`testAddTasksThrowsWhenGoalAlreadyFull`、`testAddTasksWritesPartialBatch` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -196,27 +197,28 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 | 137 | GoalToolbarButtonVisibility | 多个 Goal 时保留按钮 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testShownForMultipleGoals` |
 | 138 | GoalToolbarButtonVisibility | 多个 Goal 时即使侧栏没展示第二个也保留按钮 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testShownForMultipleGoalsWhenSidebarCollapsed` |
 | 139 | GoalStateManager | 分叉 blocked Goal 时保留阻塞原因 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testForkPreservesBlockedReason` |
+| 140 | GoalForkAttachmentIsolation | 分叉提交走显式附件重载，不消费也不清空发送器挂起的图片/文件附件 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testForkCommitDoesNotConsumePendingAttachments` |
 
-> 说明：全部 **139 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **140 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
+- P0: 已覆盖 10 / 10
 - P1: 已覆盖 115 / 115
 - P2: 已覆盖 15 / 15
-- **合计: 139 / 139**（仅表示清单场景，非源码覆盖率）
+- **合计: 140 / 140**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
 - **P1**: 其余功能性用例（115 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 139 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 140 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
