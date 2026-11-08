@@ -14,6 +14,9 @@ protocol GitBranchCapability: AnyObject, Sendable {
     /// 当前分支名；detached HEAD 时为 `nil`。
     func currentBranch(atPath path: String) async throws -> String?
 
+    /// detached HEAD 时 HEAD 指向的完整 commit hash，用于胶囊标题里的短哈希。
+    func detachedHeadCommitHash(atPath path: String) async throws -> String?
+
     /// 列出本地分支（可选包含远程分支）。
     func listBranches(atPath path: String, includeRemote: Bool) async throws -> [GitBranchInfo]
 
@@ -32,6 +35,13 @@ protocol GitBranchCapability: AnyObject, Sendable {
     func addRepositoryObserver(
         _ callback: @escaping (GitRepositoryWatchingEvent) -> Void
     ) -> (any GitRepositoryWatchingObserverHandle)?
+}
+
+extension GitBranchCapability {
+    /// 默认不提供 detached HEAD 哈希；测试替身与未实现的适配器无需改动。
+    func detachedHeadCommitHash(atPath path: String) async throws -> String? {
+        nil
+    }
 }
 
 /// 将内核的 `GitBranchManaging` 收窄为插件能力。
@@ -57,6 +67,11 @@ final class GitBranchCapabilityAdapter: GitBranchCapability, @unchecked Sendable
     func currentBranch(atPath path: String) async throws -> String? {
         guard let provider else { throw GitBranchError.notARepository(path: path) }
         return try await provider.currentBranch(atPath: path)
+    }
+
+    func detachedHeadCommitHash(atPath path: String) async throws -> String? {
+        guard let provider else { return nil }
+        return try await provider.detachedHeadCommitHash(atPath: path)
     }
 
     func listBranches(atPath path: String, includeRemote: Bool) async throws -> [GitBranchInfo] {
