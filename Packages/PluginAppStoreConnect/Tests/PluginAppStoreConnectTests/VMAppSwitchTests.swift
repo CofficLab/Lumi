@@ -102,4 +102,31 @@ struct VMAppSwitchTests {
         #expect(viewModel.versions.map(\.id) == ["version-a"])
         #expect(viewModel.selectedVersion?.id == "version-a")
     }
+
+    @Test("账号切换后旧账号的 App 列表不得写入当前列表")
+    @MainActor
+    func lateAppsFromPreviousAccountAreDiscarded() {
+        let viewModel = makeViewModel()
+        let oldCredentials = viewModel.credentials
+        let appliedForOldAccount = viewModel.applyLoadedApps(
+            [makeApp(id: "app-a")],
+            for: oldCredentials
+        )
+        #expect(appliedForOldAccount)
+        #expect(viewModel.apps.map(\.id) == ["app-a"])
+
+        viewModel.credentials = AppStoreConnectCredentials(
+            issuerID: "new-issuer",
+            keyID: "new-key",
+            privateKey: "new-private-key"
+        )
+
+        let appliedAfterSwitch = viewModel.applyLoadedApps(
+            [makeApp(id: "app-b")],
+            for: oldCredentials
+        )
+
+        #expect(!appliedAfterSwitch)
+        #expect(viewModel.apps.map(\.id) == ["app-a"])
+    }
 }

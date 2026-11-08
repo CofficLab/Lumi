@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 93 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 94 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 93
+测试文件: 5 个，用例总数: 94
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -142,27 +142,28 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 91 | 工具管理视图 | statsAutoSelectFirstEntry | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `statsAutoSelectFirstEntry` |
 | 92 | 工具管理视图 | toolEntriesFlattenGroupsInOrder | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolEntriesFlattenGroupsInOrder` |
 | 93 | 工具管理视图 | toolListAutoSelectsFirstTool | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolListAutoSelectsFirstTool` |
+| 94 | 工具管理视图 | refreshDuringPaginationDropsStalePage | 120 条记录、翻页请求延迟 300ms | 翻页进行中刷新日志 | 刷新不被挡住，列表保持 50 条，旧翻页结果被丢弃，两个加载标记都归零 | P1 | ✅ 已覆盖 | `refreshDuringPaginationDropsStalePage` |
 
-> 说明：全部 **93 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **94 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 82 / 82
+- P1: 已覆盖 83 / 83
 - P2: 已覆盖 6 / 6
-- **合计: 93 / 93**（仅表示清单场景，非源码覆盖率）
+- **合计: 94 / 94**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（82 条）
+- **P1**: 其余功能性用例（83 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 93 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 94 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
