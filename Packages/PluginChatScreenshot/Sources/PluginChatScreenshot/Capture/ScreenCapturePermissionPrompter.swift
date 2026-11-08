@@ -5,22 +5,23 @@ import Foundation
 /// Screen Recording TCC 权限检测 + 用户引导
 ///
 /// `App.entitlements` 已声明 `com.apple.security.screen-capture`,但首次调用
-/// 截图 API 时系统仍会弹一次授权窗口。若用户拒绝或从未授权,
-/// `CGPreflightScreenCaptureAccess` 返回 false;此时应弹 NSAlert 引导用户
-/// 去 System Settings 手动授权。
+/// 截图 API 时系统仍会弹一次授权窗口。
 @MainActor
 public enum ScreenCapturePermissionPrompter {
-    /// 检查当前是否已授权 Screen Recording(可同步调用,无副作用)
-    public static func ensurePermission() -> Bool {
-        CGPreflightScreenCaptureAccess()
-    }
-
-    /// 触发系统授权弹窗(异步请求授权)
+    /// 检查权限，未授权时直接触发系统授权请求。
     ///
-    /// 调用后,系统会弹出 macOS 自带的授权窗口。返回时**不能**假设权限已就绪,
-    /// 应再次调 `ensurePermission()` 校验。
-    public static func requestPermission() {
-        CGRequestScreenCaptureAccess()
+    /// `CGPreflightScreenCaptureAccess()` 只做查询，权限处于「未决定」时同样返回
+    /// false 且不会弹窗；因此必须补一次 `CGRequestScreenCaptureAccess()` 才能真正
+    /// 拉起系统授权。该调用在「已拒绝」时不再弹窗，直接返回 false，交由调用方
+    /// 弹 NSAlert 引导用户去 System Settings。
+    ///
+    /// 两个系统调用以闭包注入，便于单元测试覆盖分支而不触碰真实 TCC。
+    public static func ensurePermission(
+        preflight: () -> Bool = { CGPreflightScreenCaptureAccess() },
+        request: () -> Bool = { CGRequestScreenCaptureAccess() }
+    ) -> Bool {
+        if preflight() { return true }
+        return request()
     }
 
     /// 弹出 NSAlert 告知用户需要权限,并可选打开 System Settings
