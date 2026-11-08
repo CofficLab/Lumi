@@ -144,18 +144,7 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
         let imageSource = try Self.normalizedSource(from: source)
 
         if case .local(let path) = imageSource {
-            let fileURL = URL(fileURLWithPath: path)
-            guard FileManager.default.fileExists(atPath: path) else {
-                throw ShowImageError.fileNotFound(path)
-            }
-            // 只用于判断格式；文件名本身仍按原始路径读取。`URL.pathExtension`
-            // 对「name.png␠」这类文件名返回空，这里先去空白再取扩展名。
-            let extensionName = (fileURL.lastPathComponent as NSString)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            let ext = (extensionName as NSString).pathExtension.lowercased()
-            guard Self.supportedImageExtensions.contains(ext) else {
-                throw ShowImageError.unsupportedFormat(ext: ext, supported: Self.supportedImageExtensions)
-            }
+            try Self.validateLocalImage(at: path)
         }
 
         await MainActor.run {
@@ -171,6 +160,40 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
     }
 
     // MARK: - Helpers
+
+    /// 发布显示状态前校验本地图片源。
+    ///
+    /// 仅检查「路径存在 + 扩展名」会让目录和伪造文件也被宣告为显示成功，
+    /// 因此这里还要确认它是可读的普通文件，并且内容真的能解码成图片。
+    static func validateLocalImage(at path: String) throws {
+        let fileURL = URL(fileURLWithPath: path)
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) else {
+            throw ShowImageError.fileNotFound(path)
+        }
+        guard !isDirectory.boolValue else {
+            throw ShowImageError.notAFile(path)
+        }
+        // 只用于判断格式；文件名本身仍按原始路径读取。`URL.pathExtension`
+        // 对「name.png␠」这类文件名返回空，这里先去空白再取扩展名。
+        let extensionName = (fileURL.lastPathComponent as NSString)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let ext = (extensionName as NSString).pathExtension.lowercased()
+        guard Self.supportedImageExtensions.contains(ext) else {
+            throw ShowImageError.unsupportedFormat(ext: ext, supported: Self.supportedImageExtensions)
+        }
+        guard FileManager.default.isReadableFile(atPath: path),
+              let data = try? Data(contentsOf: fileURL)
+        else {
+            throw ShowImageError.unreadableFile(path)
+        }
+        // 与 Overlay 的渲染路径保持一致（`NSImage(data:)`）。`NSImage` 是延迟解码的，
+        // 截断的数据头（如只有 JPEG SOI 的 4 字节）也能构造出实例，因此必须再确认
+        // 它真的解析出了 representation。
+        guard let image = NSImage(data: data), !image.representations.isEmpty else {
+            throw ShowImageError.undecodableImage(path)
+        }
+    }
 
     static func normalizedMaxWidth(_ value: Any?) -> Int {
         let rawMaxWidth = ToolArgumentNumber.int(value) ?? defaultMaxWidth
@@ -205,6 +228,9 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
         case missingSource
         case unsupportedScheme(String)
         case fileNotFound(String)
+        case notAFile(String)
+        case unreadableFile(String)
+        case undecodableImage(String)
         case unsupportedFormat(ext: String, supported: [String])
 
         var errorDescription: String? {
@@ -215,6 +241,12 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
                 return "Error: Unsupported image URL scheme '\(scheme)'. Only HTTP/HTTPS URLs are supported."
             case .fileNotFound(let path):
                 return "Error: File not found: \(path)"
+            case .notAFile(let path):
+                return "Error: Not a regular file: \(path)"
+            case .unreadableFile(let path):
+                return "Error: Cannot read file: \(path)"
+            case .undecodableImage(let path):
+                return "Error: Not a decodable image: \(path)"
             case .unsupportedFormat(let ext, let supported):
                 return "Error: Unsupported image format '\(ext)'. Supported formats: \(supported.joined(separator: ", "))"
             }
