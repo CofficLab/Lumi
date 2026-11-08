@@ -165,6 +165,47 @@ struct HTTPSummaryToolLimitTests {
         #expect(slow.contains("legacy.test/old-endpoint"))
     }
 
+    /// 回归 #663：detail 工具曾经只查最新 1,000 条，仍保留的旧记录会被
+    /// 报告为不存在。
+    @Test func exchangeDetailFindsRecordOlderThanTheFormerWindow() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("HTTPDetailWindow-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = HTTPExchangeStore(directory: directory, startsRetentionMaintenance: false)
+        let previousStore = NetworkService.shared.currentExchangeStore
+        NetworkService.shared.configureHTTPExchangeStore(store)
+        defer { NetworkService.shared.configureHTTPExchangeStore(previousStore) }
+
+        let fillerURL = try #require(URL(string: "https://filler.test/ping"))
+        let targetURL = try #require(URL(string: "https://legacy.test/old-endpoint"))
+        let base = Date().addingTimeInterval(-3_600)
+        var oldestID: String?
+
+        for index in 0..<1_001 {
+            let startedAt = base.addingTimeInterval(Double(index) * 0.001)
+            let url = index == 0 ? targetURL : fillerURL
+            let exchange = store.begin(request: URLRequest(url: url), startedAt: startedAt)
+            if index == 0 {
+                oldestID = exchange?.id.uuidString
+            }
+        }
+
+        let id = try #require(oldestID)
+
+        let byID = try await GetHTTPExchangeDetailTool().execute(arguments: [
+            "id": ToolArgument(id),
+        ])
+        #expect(byID.contains("## HTTP Exchange Detail"))
+        #expect(byID.contains("legacy.test/old-endpoint"))
+
+        let byURL = try await GetHTTPExchangeDetailTool().execute(arguments: [
+            "url": ToolArgument("legacy.test"),
+        ])
+        #expect(byURL.contains("legacy.test/old-endpoint"))
+    }
+
     private func record(
         _ store: HTTPExchangeStore,
         url: URL,
