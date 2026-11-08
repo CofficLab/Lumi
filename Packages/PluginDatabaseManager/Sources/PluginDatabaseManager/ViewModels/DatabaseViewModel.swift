@@ -539,12 +539,15 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         let database: String? = config.type == .sqlite ? nil : config.database
         for kind in config.type.sidebarObjectKinds {
             guard isCurrentConnection(generation, configId: config.id) else { return }
+            // 这是用户可见的 Reload：必须绕过缓存重新读库，
+            // 否则新建/删除表后对象树仍显示旧结构。
             _ = try? await schemaCache.objects(
                 for: config,
                 kind: kind,
                 database: database,
                 schema: nil,
-                connection: connection
+                connection: connection,
+                refresh: true
             )
         }
     }
