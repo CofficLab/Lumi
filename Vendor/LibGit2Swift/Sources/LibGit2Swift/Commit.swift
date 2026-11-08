@@ -299,9 +299,28 @@ extension LibGit2 {
         return commits
     }
 
+    /// 解析完整或缩写的 commit 哈希。
+    ///
+    /// `git_oid_fromstr` 只接受 40 位完整 OID，而 `git_log` 展示的是 7 位短哈希，
+    /// 直接查详情/diff 会失败；`git_revparse_single` 支持唯一前缀解析。
+    /// 前缀不唯一或对象不是 commit 时抛 `LibGit2Error.invalidValue`。
+    static func resolveCommitOID(_ hash: String, repo: OpaquePointer) throws -> git_oid {
+        var object: OpaquePointer?
+        guard git_revparse_single(&object, repo, hash) == 0, let object else {
+            throw LibGit2Error.invalidValue
+        }
+        defer { git_object_free(object) }
+
+        guard git_object_type(object) == GIT_OBJECT_COMMIT,
+              let oid = git_object_id(object) else {
+            throw LibGit2Error.invalidValue
+        }
+        return oid.pointee
+    }
+
     /// 获取指定提交的详细信息
     /// - Parameters:
-    ///   - commitHash: 提交哈希
+    ///   - commitHash: 提交哈希（完整或缩写）
     ///   - path: 仓库路径
     /// - Returns: 提交详细信息
     public static func getCommitDetail(commitHash: String, at path: String) throws -> GitCommit? {
@@ -309,12 +328,7 @@ extension LibGit2 {
             let repo = try openRepository(at: path)
             defer { git_repository_free(repo) }
 
-            var oid = git_oid()
-            let result = git_oid_fromstr(&oid, commitHash)
-
-            if result != 0 {
-                throw LibGit2Error.invalidValue
-            }
+            var oid = try resolveCommitOID(commitHash, repo: repo)
 
             var commit: OpaquePointer? = nil
             defer { if commit != nil { git_commit_free(commit) } }
