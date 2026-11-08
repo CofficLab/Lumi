@@ -123,4 +123,33 @@ struct ConversationManagerPreferenceTests {
         #expect(restarted.selectedConversationID == nil)
         #expect(restarted.globalLanguage == .english)
     }
+
+    /// 回归 #984：后台会话被挤出有界缓存后，请求仍应使用该会话自己的语言。
+    @Test func evictedConversationKeepsItsOwnLanguage() {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationLanguageEvictionTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let manager = ConversationManager(store: nil, dataDirectory: directory)
+        manager.setGlobalLanguage(.chinese)
+
+        let backgroundID = UUID()
+        manager.cache(ConversationSummary(
+            id: backgroundID,
+            createdAt: Date(timeIntervalSince1970: 1),
+            language: .english
+        ))
+
+        // 用 100 条更新的顶层会话把 background 挤出 80 条的有界窗口。
+        for index in 0..<100 {
+            manager.cache(ConversationSummary(
+                id: UUID(),
+                createdAt: Date(timeIntervalSince1970: TimeInterval(100 + index))
+            ))
+        }
+
+        #expect(!manager.conversations.contains { $0.id == backgroundID })
+        #expect(manager.globalLanguage == .chinese)
+        #expect(manager.language(for: backgroundID) == .english)
+    }
 }

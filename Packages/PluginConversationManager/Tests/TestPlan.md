@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 66 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 67 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 66
+测试文件: 11 个，用例总数: 67
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -44,7 +44,7 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 - **ConversationLegacyMigration**（6 条）：由 `readerCopiesLegacyDatabaseMapsFieldsReusesAndReleasesItsSnapshot`、`readerReportsMissingAndInvalidLegacyDatabases`、`locatorPrefersProductionAndUsesDebugFallback` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationManagerCRUD**（3 条）：由 `creationInheritsGlobalPreferencesAndKeepsChildOutOfRootCache`、`createAndWaitPersistsBeforeReturningAndCachesRoot`、`selectionTitleActivityAndDeletionUpdateCachedStateAndEvents` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationManagerObserverTransfer**（1 条）：由 `transferredObserversStayAliveAndCancelWithTheirOriginalHandles` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ConversationManagerPreference**（3 条）：由 `automationPreferenceDoesNotPublishStructuralListChange`、`globalAndConversationPreferencesUpdateCacheAndNotifyObservers`、`globalLanguagePersistsAcrossRestartWithoutSelectedConversation` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationManagerPreference**（4 条）：由 `automationPreferenceDoesNotPublishStructuralListChange`、`globalAndConversationPreferencesUpdateCacheAndNotifyObservers`、`globalLanguagePersistsAcrossRestartWithoutSelectedConversation`、`evictedConversationKeepsItsOwnLanguage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationStoreObserver**（2 条）：由 `forwardsEventsAndMigrationStateUntilCancelled`、`capabilityAdapterUsesManagerAndEmptyMessageFallbacks` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationStoreSettingsViewModel**（5 条）：由 `loadsPagesCountsMessagesAndSelectedConversation`、`selectionFallsBackWhenMissingAndReloadsForStructuralEvents`、`emptyLoadsFinishAndMessagesClearWithoutSelection`、`preferenceEventsRefreshCachedSummaries`、`reopeningRefreshesStaleSummaries` 等用例锁定；模型与偏好事件必须按 ID 就地刷新摘要，重进页面不得沿用陈旧快照。
 - **ConversationListRefresh**（1 条）：由 `activeUpdatesAreDebounced` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -123,27 +123,28 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 64 | ConversationStoreSettingsViewModel | 模型与偏好变更事件按 ID 刷新对应摘要（**回归 #966**） | 首屏已加载并持有摘要快照 | 投递 `.providerChanged` 与四类偏好事件 | 该条摘要更新为 Manager 当前值，其它条目不变，且不整页重载 | P1 | ✅ 已覆盖 | `preferenceEventsRefreshCachedSummaries` |
 | 65 | ConversationStoreSettingsViewModel | 重新进入页面会纠正陈旧摘要（**回归 #966**） | 首屏已加载，Manager 侧摘要已更新 | 再次调用 `loadInitialIfNeeded` | 已加载摘要就地刷新，不重新请求整页 | P1 | ✅ 已覆盖 | `reopeningRefreshesStaleSummaries` |
 | 66 | ConversationManagerPreference | New Chat 默认语言跨重启保留（**回归 #983**） | 未选中任何会话 | `setGlobalLanguage(.english)` 后新建 Manager 并 `loadConversations()` | 重启后 `globalLanguage` 仍为 English | P1 | ✅ 已覆盖 | `globalLanguagePersistsAcrossRestartWithoutSelectedConversation` |
+| 67 | ConversationManagerPreference | 被挤出缓存的会话保留自己的语言（**回归 #984**） | 后台会话 English，全局 Chinese | 写入 100 条更新的顶层会话把后台会话挤出窗口后调用 `language(for:)` | 仍返回该会话的 English，而非全局 Chinese | P1 | ✅ 已覆盖 | `evictedConversationKeepsItsOwnLanguage` |
 
-> 说明：全部 **66 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **67 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 8 / 8
-- P1: 已覆盖 53 / 53
+- P1: 已覆盖 54 / 54
 - P2: 已覆盖 5 / 5
-- **合计: 66 / 66**（仅表示清单场景，非源码覆盖率）
+- **合计: 67 / 67**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
-- **P1**: 其余功能性用例（53 条）
+- **P1**: 其余功能性用例（54 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 66 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 67 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

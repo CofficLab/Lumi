@@ -206,7 +206,11 @@ extension ConversationManager {
         guard let conversationID else {
             return globalLanguage
         }
-        return conversations.first { $0.id == conversationID }?.language ?? globalLanguage
+        // 缓存外的会话（被挤出窗口的后台会话）必须回落到它自己的语言，
+        // 不能借用与它无关的 New Chat 全局默认值（issue #984）。
+        return languageOverrides[conversationID]
+            ?? conversations.first { $0.id == conversationID }?.language
+            ?? globalLanguage
     }
 
     public func setGlobalLanguage(_ language: ConversationLanguage) {
@@ -225,6 +229,7 @@ extension ConversationManager {
         guard let conversationID else {
             return
         }
+        languageOverrides[conversationID] = language
         if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
             conversations[index].language = language
         }

@@ -369,6 +369,7 @@ extension ConversationManager {
         // 不再要求缓存命中：分页展示的历史会话可能不在内存窗口里，
         // 但删除必须以持久化记录为准（issue #965）。
         conversations.removeAll { $0.id == id }
+        languageOverrides[id] = nil
         notifyConversationObservers(.deleted(id))
 
         if selectedConversationID == id {
@@ -440,6 +441,7 @@ extension ConversationManager {
         }
 
         for id in allIDs {
+            languageOverrides[id] = nil
             notifyConversationObservers(.deleted(id))
         }
         notifyConversationsChanged()
