@@ -85,6 +85,20 @@ func bridgeDeallocation() {
     // If we reach here without a crash, the test passes
 }
 
+// MARK: - DDC Volume Write Plan Tests
+
+@Test("zero volume never writes the mute/screen-blank channel")
+func zeroVolumeSkipsScreenBlankChannel() {
+    #expect(DDCVolumeWritePlan.plan(for: 0) == .volumeOnly)
+    #expect(DDCVolumeWritePlan.plan(for: -10) == .volumeOnly)
+}
+
+@Test("non-zero volume unmutes before writing speaker volume")
+func nonZeroVolumeUnmutes() {
+    #expect(DDCVolumeWritePlan.plan(for: 1) == .unmute)
+    #expect(DDCVolumeWritePlan.plan(for: 100) == .unmute)
+}
+
 // MARK: - ControlledDisplay Mutation Safety Tests
 
 @Test("ControlledDisplay setValue and setSupported mutate correctly")

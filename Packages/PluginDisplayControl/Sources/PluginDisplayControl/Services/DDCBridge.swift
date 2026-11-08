@@ -27,6 +27,23 @@ private enum DDCVCPCode: UInt8 {
     }
 }
 
+// MARK: - DDC Volume Write Plan
+
+/// 音量写入时如何处理 `0x8D`（Audio Mute / Screen Blank）通道。
+///
+/// 该通道的值 `1` 在部分显示器上会同时请求 screen blank，因此零音量时
+/// 绝不能写入；零音量只需要把 speaker volume (`0x62`) 写成 0。
+enum DDCVolumeWritePlan: Equatable {
+    /// 非零音量：先把 `0x8D` 置为 `2` 解除此前可能存在的静音。
+    case unmute
+    /// 零音量：不触碰 `0x8D`，避免显示器黑屏。
+    case volumeOnly
+
+    static func plan(for value: Double) -> DDCVolumeWritePlan {
+        value > 0 ? .unmute : .volumeOnly
+    }
+}
+
 // MARK: - DDC Service (stored per display)
 
 private struct DDCService {
@@ -98,17 +115,14 @@ final class DisplayDDCBridge: SuperLog, @unchecked Sendable {
             ddcValue = max(1, ddcValue)
         }
 
-        // Handle mute for volume control
-        if control == .volume {
-            let muteValue: UInt16 = value > 0 ? 2 : 1
-            let muteSuccess = DDCTransport.write(
+        // 音量非零时解除静音；零音量不能写 0x8D（值 1 会触发 screen blank），
+        // 只靠下面的 speaker volume 写 0 达到静音效果。
+        if control == .volume, DDCVolumeWritePlan.plan(for: value) == .unmute {
+            _ = DDCTransport.write(
                 service: service.service,
                 vcpCode: DDCVCPCode.audioMuteScreenBlank.rawValue,
-                value: muteValue
+                value: 2
             )
-            if value <= 0, muteSuccess {
-                return true
-            }
         }
 
         for vcp in orderedCandidates(for: key) {
