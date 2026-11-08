@@ -131,7 +131,7 @@ private struct ToolActivityRow: View {
                     .font(.system(size: 12, weight: .medium))
                     .lineLimit(2)
                 HStack(spacing: 5) {
-                    Text(viewModel.statusTitle(for: job.status))
+                    Text(viewModel.statusTitle(for: job))
                     if let duration = duration {
                         Text("·")
                         Text(formatDuration(duration))
@@ -165,6 +165,7 @@ private struct ToolActivityRow: View {
     }
 
     private var iconName: String {
+        if viewModel.isErroredResult(for: job) { return "exclamationmark.triangle.fill" }
         switch job.status {
         case .waitingForUser: return "hand.raised.fill"
         case .completed: return "checkmark.circle.fill"
@@ -175,6 +176,7 @@ private struct ToolActivityRow: View {
     }
 
     private var color: Color {
+        if viewModel.isErroredResult(for: job) { return .red }
         switch job.status {
         case .waitingForUser: return .orange
         case .completed: return .green
