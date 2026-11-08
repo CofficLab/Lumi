@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 59
+测试文件: 3 个，用例总数: 61
 
 核心组件（源码目录）:
 - `Agent/`
@@ -48,6 +48,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **DatabaseConnectionDraft**（2 条）：由 `sqlitePathIsStoredVerbatim`、`sqlitePathRejectsWhitespaceOnlyInput` 锁定，防止连接表单改动合法文件路径。
 - **DatabaseManagerV2Plugin**（1 条）：由 `restoresDatabaseWorkspace` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DatabaseViewModelConnectionRace**（2 条）：由 `slowQueryFromPreviousConnectionDoesNotOverwriteNewConnection`、`slowerConnectDoesNotReplaceNewerSelection` 锁定，防止旧连接/慢查询覆盖当前连接状态。
+- **SQLite RETURNING**（2 条）：由 `executeAcceptsReturningRows`、`returningStatementsUseQueryPath` 锁定；改动 DML 路由或 SQLite step 循环时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -113,27 +114,29 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 57 | 连接草稿 | 全空白 SQLite 路径被拒绝 | — | 调用 `makeConfig` | 抛出 `missingSQLitePath` | P0 | ✅ 已覆盖 | `sqlitePathRejectsWhitespaceOnlyInput` |
 | 58 | 连接竞态 | 慢查询返回后不得覆盖已切换的连接状态 | 连接 A 执行挂起的慢查询，期间连接 B | 挂起 A 查询 → 连接 B → 放行 A 查询 | `selectedConfig` 仍为 B，`queryResult`/`errorMessage` 不被 A 写入，`isLoading` 为 false | P0 | ✅ 已覆盖 | `slowQueryFromPreviousConnectionDoesNotOverwriteNewConnection` |
 | 59 | 连接竞态 | 更慢的旧连接完成后不得抢占新选中连接 | A 连接被挂起，B 先连接成功 | 挂起 A 连接 → 连接 B → 放行 A 连接 | `selectedConfig` 仍为 B，A 的陈旧连接被回收关闭 | P0 | ✅ 已覆盖 | `slowerConnectDoesNotReplaceNewerSelection` |
+| 60 | SQLite RETURNING | SQLite DML RETURNING 产生结果行时不报告失败 | 临时 SQLite 库 | 执行 `INSERT ... RETURNING`（query）与 `UPDATE ... RETURNING`（execute），再查 count | INSERT 带回 id 行，execute 返回影响 1 行，count 为 1（仅写入一次） | P1 | ✅ 已覆盖 | `executeAcceptsReturningRows` |
+| 61 | SQLite RETURNING | DML RETURNING 识别为读路径，字面量中的 RETURNING 不误判 | — | 调用 `isReadStatement` | INSERT/UPDATE/DELETE ... RETURNING 均返回 true；`VALUES('RETURNING')` 返回 false | P1 | ✅ 已覆盖 | `returningStatementsUseQueryPath` |
 
-> 说明：全部 **59 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **61 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 32 / 32
-- P1: 已覆盖 26 / 26
+- P1: 已覆盖 28 / 28
 - P2: 已覆盖 1 / 1
-- **合计: 59 / 59**（仅表示清单场景，非源码覆盖率）
+- **合计: 61 / 61**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（32 条）
-- **P1**: 其余功能性用例（26 条）
+- **P1**: 其余功能性用例（28 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 59 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 61 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

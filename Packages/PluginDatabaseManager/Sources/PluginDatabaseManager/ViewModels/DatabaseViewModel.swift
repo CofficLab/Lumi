@@ -338,37 +338,23 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         multiExecutions = []
 
         do {
-            let upper = sql.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
-            if config.type == .redis {
-                // Redis：GET/SCAN 类命令走 query，其余走 execute
-                if upper.hasPrefix("GET") || upper.hasPrefix("SCAN") || upper.hasPrefix("HGET") || upper.hasPrefix("LRANGE") || upper.hasPrefix("SMEMBERS") || upper.hasPrefix("ZRANGE") {
-                    let result = try await connection.query(sql, params: nil)
-                    guard isCurrentConnection(generation, configId: config.id) else { return }
-                    queryResult = result
-                } else {
-                    let affected = try await connection.execute(sql, params: nil)
-                    guard isCurrentConnection(generation, configId: config.id) else { return }
-                    queryResult = QueryResult(columns: ["Result"], rows: [[.string("Success. Rows affected: \(affected)")]], rowsAffected: affected)
+            // Redis 读命令与 SQL 读语句共用同一判定，避免两处前缀列表漂移。
+            if Self.isReadStatement(sql, type: config.type) {
+                let result = try await connection.query(sql, params: nil)
+                guard isCurrentConnection(generation, configId: config.id) else { return }
+                queryResult = result
+                if Self.verbose {
+                    if DatabaseManagerPluginSupport.verbose {
+                                                DatabaseManagerPluginSupport.logger.info("\(self.t)查询成功，返回 \(result.rows.count) 行")
+                    }
                 }
             } else {
-                // SQL：SELECT/PRAGMA 走 query，其余走 execute
-                if upper.hasPrefix("SELECT") || upper.hasPrefix("PRAGMA") || upper.hasPrefix("SHOW") || upper.hasPrefix("DESCRIBE") {
-                    let result = try await connection.query(sql, params: nil)
-                    guard isCurrentConnection(generation, configId: config.id) else { return }
-                    queryResult = result
-                    if Self.verbose {
-                        if DatabaseManagerPluginSupport.verbose {
-                                                    DatabaseManagerPluginSupport.logger.info("\(self.t)查询成功，返回 \(result.rows.count) 行")
-                        }
-                    }
-                } else {
-                    let affected = try await connection.execute(sql, params: nil)
-                    guard isCurrentConnection(generation, configId: config.id) else { return }
-                    queryResult = QueryResult(columns: ["Result"], rows: [[.string("Success. Rows affected: \(affected)")]], rowsAffected: affected)
-                    if Self.verbose {
-                        if DatabaseManagerPluginSupport.verbose {
-                                                    DatabaseManagerPluginSupport.logger.info("\(self.t)执行成功，影响 \(affected) 行")
-                        }
+                let affected = try await connection.execute(sql, params: nil)
+                guard isCurrentConnection(generation, configId: config.id) else { return }
+                queryResult = QueryResult(columns: ["Result"], rows: [[.string("Success. Rows affected: \(affected)")]], rowsAffected: affected)
+                if Self.verbose {
+                    if DatabaseManagerPluginSupport.verbose {
+                                                DatabaseManagerPluginSupport.logger.info("\(self.t)执行成功，影响 \(affected) 行")
                     }
                 }
             }
@@ -457,9 +443,13 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             return upper.hasPrefix("GET") || upper.hasPrefix("SCAN") || upper.hasPrefix("HGET")
                 || upper.hasPrefix("LRANGE") || upper.hasPrefix("SMEMBERS") || upper.hasPrefix("ZRANGE")
         }
-        let upper = sql.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let upper = SQLStatementParser.stripLiteralsAndComments(sql)
+            .uppercased()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         return upper.hasPrefix("SELECT") || upper.hasPrefix("PRAGMA")
             || upper.hasPrefix("SHOW") || upper.hasPrefix("DESCRIBE")
+            // DML ... RETURNING 也产生结果行，必须走 query 才能把返回行展示出来。
+            || upper.contains("RETURNING")
     }
 
     // MARK: - 查询历史

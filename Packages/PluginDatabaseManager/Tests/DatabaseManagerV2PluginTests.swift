@@ -1,4 +1,5 @@
 @testable import DatabaseManagerPlugin
+import Foundation
 import KernelCore
 import ProviderEditor
 import PluginCodeEditorHost
@@ -103,5 +104,65 @@ struct DatabaseManagerV2PluginTests {
         #expect(throws: DatabaseConnectionDraftError.missingSQLitePath) {
             _ = try sqliteDraft(path: "  \n ").makeConfig()
         }
+    }
+}
+
+@Suite("SQLite RETURNING")
+struct SQLiteReturningTests {
+    @Test("SQLite DML RETURNING 产生结果行时不报告失败")
+    func executeAcceptsReturningRows() async throws {
+        let path = NSTemporaryDirectory() + "/lumi-returning-\(UUID().uuidString).sqlite"
+        defer { try? FileManager.default.removeItem(atPath: path) }
+
+        let connection = try await SQLiteDriver().connect(config: DatabaseConfig(
+            name: "Returning",
+            type: .sqlite,
+            database: path
+        ))
+        _ = try await connection.execute(
+            "CREATE TABLE t(id INTEGER PRIMARY KEY, name TEXT)",
+            params: nil
+        )
+
+        // RETURNING 走 query 时应带回结果行。
+        let inserted = try await connection.query(
+            "INSERT INTO t(name) VALUES('first') RETURNING id",
+            params: nil
+        )
+        #expect(inserted.columns == ["id"])
+        #expect(inserted.rows == [[.integer(1)]])
+
+        // 即使走 execute，也不能把 SQLITE_ROW 当成失败。
+        let affected = try await connection.execute(
+            "UPDATE t SET name = 'second' RETURNING id",
+            params: nil
+        )
+        #expect(affected == 1)
+
+        // 写入只发生一次：INSERT 与 UPDATE 都未重复执行。
+        let count = try await connection.query("SELECT count(*) FROM t", params: nil)
+        #expect(count.rows.first?.first == .integer(1))
+        await connection.close()
+    }
+
+    @Test("DML RETURNING 识别为读路径，字面量中的 RETURNING 不误判")
+    @MainActor
+    func returningStatementsUseQueryPath() {
+        #expect(DatabaseViewModel.isReadStatement(
+            "INSERT INTO t(name) VALUES('first') RETURNING id",
+            type: .sqlite
+        ))
+        #expect(DatabaseViewModel.isReadStatement(
+            "UPDATE t SET name = 'second' RETURNING id",
+            type: .sqlite
+        ))
+        #expect(DatabaseViewModel.isReadStatement(
+            "DELETE FROM t RETURNING id",
+            type: .sqlite
+        ))
+        #expect(!DatabaseViewModel.isReadStatement(
+            "INSERT INTO t(name) VALUES('RETURNING')",
+            type: .sqlite
+        ))
     }
 }
