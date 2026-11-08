@@ -58,11 +58,11 @@ final class ImageToPDFService: SuperLog, @unchecked Sendable {
 
     /// Convert a single image to a PDF at `outputURL`.
     ///
-    /// - Returns: `AsyncStream<Double>` of progress values in `0.0...1.0`
-    ///   that the caller can iterate on. The stream finishes after the
-    ///   PDF has been written to disk or after an error has been logged.
-    func convert(source: ImageItem, to outputURL: URL) -> AsyncStream<Double> {
-        AsyncStream { continuation in
+    /// - Returns: `AsyncThrowingStream<Double, Error>` of progress values in
+    ///   `0.0...1.0`. The stream finishes after the PDF has been written, or
+    ///   throws when the image cannot be read or the PDF cannot be written.
+    func convert(source: ImageItem, to outputURL: URL) -> AsyncThrowingStream<Double, Error> {
+        AsyncThrowingStream { continuation in
             let task = Task.detached(priority: .userInitiated) {
                 await Self.runConversion(
                     source: source,
@@ -83,9 +83,12 @@ final class ImageToPDFService: SuperLog, @unchecked Sendable {
     private static func runConversion(
         source: ImageItem,
         outputURL: URL,
-        continuation: AsyncStream<Double>.Continuation
+        continuation: AsyncThrowingStream<Double, Error>.Continuation
     ) async {
         do {
+            // 先清掉上一轮遗留的同名文件：否则本次失败时旧的 PDF 会被误认为成功产物。
+            try? FileManager.default.removeItem(at: outputURL)
+
             continuation.yield(0.1)
 
             guard let image = NSImage(contentsOf: source.url) else {
@@ -143,6 +146,9 @@ final class ImageToPDFService: SuperLog, @unchecked Sendable {
             let message = (error as? LocalizedError)?.errorDescription
                 ?? error.localizedDescription
             Self.logger.error("\(Self.t)Failed to convert \(source.lastPathComponent): \(message)")
+            // 把失败传给调用方，避免用「目标文件是否存在」猜结果。
+            continuation.finish(throwing: error)
+            return
         }
 
         continuation.finish()
