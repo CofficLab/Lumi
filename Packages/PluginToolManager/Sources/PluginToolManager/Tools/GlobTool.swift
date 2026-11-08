@@ -53,7 +53,7 @@ public struct GlobTool: SuperAgentTool, @unchecked Sendable {
         workspaceRootOverride: String?
     ) async throws -> String {
         guard let pattern = arguments.stringValue("pattern"), !pattern.isEmpty else {
-            return "Error: Missing 'pattern' argument"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing 'pattern' argument")
         }
         let explicitPath = arguments.stringValue("path")?.trimmingCharacters(in: .whitespacesAndNewlines)
         let defaultRoot = await workspaceRootProvider()
@@ -68,12 +68,18 @@ public struct GlobTool: SuperAgentTool, @unchecked Sendable {
             rootPath = FileManager.default.currentDirectoryPath
         }
         guard !rootPath.isEmpty else {
-            return "Error: No search path available; provide an absolute 'path'"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "No search path available; provide an absolute 'path'"
+            )
         }
 
         let rootURL = URL(fileURLWithPath: (rootPath as NSString).expandingTildeInPath).standardizedFileURL
         guard FileManager.default.fileExists(atPath: rootURL.path) else {
-            return "Error: Directory does not exist: \(rootURL.path)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Directory does not exist: \(rootURL.path)"
+            )
         }
 
         let regex = try Self.regex(for: pattern)

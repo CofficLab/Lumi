@@ -20,7 +20,7 @@ import Testing
     #expect(required == ["path"])
 }
 
-@Test func executeRejectsMissingPathAndReturnsReadableMissingFileError() async throws {
+@Test func executeRejectsMissingPathAndThrowsForMissingFile() async throws {
     let tool = DocxReadTool(extractText: { _ in throw StubExtractionError.unexpectedInvocation })
 
     do {
@@ -32,9 +32,11 @@ import Testing
         #expect(error.localizedDescription == "Missing 'path' argument")
     }
 
-    let result = try await tool.execute(arguments: ["path": ToolArgument("~/codex-missing.docx")])
-    let expandedPath = ("~/codex-missing.docx" as NSString).expandingTildeInPath
-    #expect(result == "Error: File not found at path: \(expandedPath)")
+    // 回归：文件不存在曾经返回 "Error: File not found ..." 字符串，
+    // 默认 executeResult 会把它当成成功结果。
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await tool.execute(arguments: ["path": ToolArgument("~/codex-missing.docx")])
+    }
 }
 
 @Test func executeReturnsExtractedAndEmptyDocumentContent() async throws {
