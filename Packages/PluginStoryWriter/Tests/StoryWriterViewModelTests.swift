@@ -151,6 +151,49 @@ struct StoryWriterViewModelTests {
     #expect(secondCount == 2)
 }
 
+@MainActor
+struct StoryEditorDraftTests {
+    @Test func cleanDraftAdoptsExternalSynopsisAndTitle() {
+        let story = Story(title: "Old", synopsis: "Old synopsis")
+        var draft = StoryEditorDraft(story: story)
+        var incoming = story
+        incoming.title = "Agent title"
+        incoming.synopsis = "Agent synopsis"
+
+        draft.applyExternalUpdate(incoming)
+
+        #expect(draft.synopsis == "Agent synopsis")
+        #expect(draft.storyToSave().title == "Agent title")
+        #expect(!draft.hasUnsavedSynopsis)
+    }
+
+    @Test func dirtySynopsisKeepsLocalTextButSavesAgainstLatestExternalVersion() {
+        let story = Story(title: "Old", synopsis: "Old synopsis")
+        var draft = StoryEditorDraft(story: story)
+        draft.updateSynopsis("Old synopsis + user")
+
+        var incoming = story
+        incoming.title = "Agent title"
+        incoming.synopsis = "Agent synopsis"
+        draft.applyExternalUpdate(incoming)
+
+        // 用户正在输入时不打断本地文本。
+        #expect(draft.synopsis == "Old synopsis + user")
+
+        // 但落盘必须基于外部最新版本，不能把 Agent 的标题写回旧值。
+        let saved = draft.storyToSave()
+        #expect(saved.id == story.id)
+        #expect(saved.title == "Agent title")
+        #expect(saved.synopsis == "Old synopsis + user")
+
+        // 保存回声不应再次触发同步覆盖。
+        draft.markSaved(saved)
+        draft.applyExternalUpdate(saved)
+        #expect(draft.synopsis == "Old synopsis + user")
+        #expect(!draft.hasUnsavedSynopsis)
+    }
+}
+
 private func makeTemporaryDirectory() throws -> URL {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("StoryWriterViewModelTests-\(UUID().uuidString)", isDirectory: true)
