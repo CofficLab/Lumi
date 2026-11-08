@@ -108,6 +108,23 @@ final class CADWorkspaceViewModel: ObservableObject {
         }
     }
 
+    /// 更新选中组件的位置与 Y 旋转，保留其余变换分量。
+    func updateSelectedComponentPlacement(
+        positionX: Double,
+        positionY: Double,
+        positionZ: Double,
+        rotationY: Double
+    ) {
+        guard var transform = selectedComponent?.transform else { return }
+        transform.updatePlacement(
+            positionX: positionX,
+            positionY: positionY,
+            positionZ: positionZ,
+            rotationY: rotationY
+        )
+        updateSelectedComponentTransform(transform)
+    }
+
     /// 更新选中组件的变换。
     func updateSelectedComponentTransform(_ transform: Transform3D) {
         guard let componentId = store.selectedComponentId else { return }

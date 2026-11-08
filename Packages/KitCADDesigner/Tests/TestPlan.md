@@ -53,27 +53,28 @@ KitCADDesigner 铝型材 3D 设计引擎（参考 MayCAD）—— 通过 3D 视�
 | 15 | CADDesignerLogic | 原生 .cadproj 扩展可被 Load/Save 面板接受 | — | 执行该用例 | `.cadDesignerProject` 声明 cadproj 扩展并 conform 到 JSON | P1 | ✅ 已覆盖 | `testNativeProjectContentTypeAcceptsCadprojExtension` |
 | 16 | CADDesignerLogic | 全部需求超长时仍报告无法排入的组件 | 需求 [8000, 7000]，原料 6000 | 执行该用例 | `stockCount == 0` 且 `unschedulableDemands == [8000, 7000]` | P1 | ✅ 已覆盖 | `testCutOptimizerReportsOnlyUnschedulableDemands` |
 | 17 | CADDesignerLogic | 不同小数切割长度不得被 BOM 合并 | 同规格 500.25 与 500.75 两根型材 | 执行该用例 | 生成 2 行、数量各 1，描述分别含 500.25mm / 500.75mm | P0 | ✅ 已覆盖 | `testBOMKeepsDistinctFractionalLengths` |
+| 18 | CADDesignerLogic | 修改位置不得重置其他旋转轴和缩放 | 初始 rotationX=15, rotationY=30, rotationZ=90, scale=2 | 调用 `updatePlacement` 更新位置与 Y 旋转 | 位置和 rotationY 更新，rotationX/Z 与 scale 保持不变 | P0 | ✅ 已覆盖 | `testPlacementUpdatePreservesOtherTransformComponents` |
 
-> 说明：全部 **17 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **18 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 1 / 1
+- P0: 已覆盖 2 / 2
 - P1: 已覆盖 15 / 15
 - P2: 已覆盖 1 / 1
-- **合计: 17 / 17**（仅表示清单场景，非源码覆盖率）
+- **合计: 18 / 18**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
 - **P1**: 其余功能性用例（15 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 17 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 18 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

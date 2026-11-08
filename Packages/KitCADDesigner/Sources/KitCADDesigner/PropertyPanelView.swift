@@ -157,11 +157,12 @@ struct PropertyPanelView: View {
     }
 
     private func applyPosition() {
-        let transform = Transform3D(
-            positionX: posX, positionY: posY, positionZ: posZ,
+        viewModel.updateSelectedComponentPlacement(
+            positionX: posX,
+            positionY: posY,
+            positionZ: posZ,
             rotationY: rotY
         )
-        viewModel.updateSelectedComponentTransform(transform)
     }
 
     private func syncFromSelection() {
