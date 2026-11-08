@@ -95,7 +95,10 @@ public struct OpenInTool: SuperAgentTool, @unchecked Sendable {
             arguments,
             conversationProjectPath: conversationProjectPath
         ), !path.isEmpty else {
-            return "## Open in \(config.displayName) ❌\n\n**Status**: No project is open and no path was provided."
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "No project is open and no path was provided."
+            )
         }
         let url = URL(fileURLWithPath: path)
 

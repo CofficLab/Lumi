@@ -112,4 +112,36 @@ struct CADDesignerSuperPluginTests {
         #expect(CADDocumentStore.shared.selectedDocument?.connections.count == 1)
         #expect(cutting.contains("1200"))
     }
+
+    @Test("tool failures throw instead of returning error strings")
+    func toolFailuresThrow() async {
+        CADDocumentStore.shared.resetForTests()
+
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await BuildFrameV2Tool().execute(arguments: [
+                "depth": ToolArgument(600), "height": ToolArgument(900),
+            ])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await PlaceProfileV2Tool().execute(arguments: ["profileId": ToolArgument("profile-missing")])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await PlaceConnectorV2Tool().execute(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await ConnectComponentsV2Tool().execute(arguments: ["fromComponentId": ToolArgument("a")])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await GenerateBOMV2Tool().execute(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await OptimizeCuttingV2Tool().execute(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await SaveCADProjectV2Tool().execute(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await LoadCADProjectV2Tool().execute(arguments: [:])
+        }
+    }
 }

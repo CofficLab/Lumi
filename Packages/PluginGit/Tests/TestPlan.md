@@ -136,16 +136,17 @@ GitPlugin Git integration plugin for Lumi editor.
 | 75 | GitShowShortHash | 无法匹配的短哈希仍然报错 | 同上 | 用 `0000000` 调用 `getCommitDetail` | 抛出错误而非返回空结果 | P1 | ✅ 已覆盖 | `unknownShortHashStillThrows` |
 | 76 | GitBranchDetachedHead | detached HEAD 不当作分支名 | 临时仓库有一次提交 | `checkoutCommit` 后调用 `currentBranch` / `detachedHeadCommitHash` | 分支名为 nil，哈希为完整 OID；切回分支后相反 | P0 | ✅ 已覆盖 | `detachedHeadIsNotReportedAsBranch` |
 | 77 | 综合 | git_branch 的失败分支抛出 `ToolExecutionError`（缺 name、未知 action、工作区脏） | 临时仓库，含一次提交并修改工作区文件 | 依次调用 `git_branch` 的 create / delete / checkout | 三次均抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `gitBranchToolThrowsForInvalidRequests` |
+| 78 | 综合 | git_log / git_commit / git_diff / git_show 的失败分支抛出 `ToolExecutionError` | 非 Git 仓库目录 | 缺 message、缺 hash、对非仓库路径取日志/差异/详情 | 全部抛出 `ToolExecutionError`，不再返回字符串 | P1 | ✅ 已覆盖 | `gitToolsThrowForMissingOrInvalidArguments` |
 
-> 说明：全部 **77 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **78 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 9 / 9
-- P1: 已覆盖 59 / 59
+- P1: 已覆盖 60 / 60
 - P2: 已覆盖 9 / 9
-- **合计: 77 / 77**（仅表示清单场景，非源码覆盖率）
+- **合计: 78 / 78**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

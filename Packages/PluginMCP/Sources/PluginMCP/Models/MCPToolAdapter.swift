@@ -108,10 +108,7 @@ public struct MCPToolAdapter: SuperAgentTool {
             }
             return mapped
         } catch let error as MCPClientError {
-            throw ToolExecutionError.executionFailed(
-                toolName: name,
-                reason: "MCP 调用失败：\(Self.describe(error))"
-            )
+            throw Self.failure(error, toolName: name)
         } catch {
             throw ToolExecutionError.executionFailed(
                 toolName: name,
@@ -154,19 +151,21 @@ public struct MCPToolAdapter: SuperAgentTool {
         )
     }
 
-    private static func describe(_ error: MCPClientError) -> String {
+    private static func failure(_ error: MCPClientError, toolName: String) -> ToolExecutionError {
+        let reason: String
         switch error {
         case .invalidConfiguration(let message):
-            return "配置无效：\(message)"
+            reason = "配置无效：\(message)"
         case .notConnected:
-            return "服务器未连接"
+            reason = "服务器未连接"
         case .processSpawnFailed(let message):
-            return "进程启动失败：\(message)"
+            reason = "进程启动失败：\(message)"
         case .serverTerminated(let code):
-            return "服务器进程已退出（码 \(code)）"
+            reason = "服务器进程已退出（码 \(code)）"
         case .transport(let message):
-            return "传输错误：\(message)"
+            reason = "传输错误：\(message)"
         }
+        return .executionFailed(toolName: toolName, reason: "MCP 调用失败：\(reason)")
     }
 }
 

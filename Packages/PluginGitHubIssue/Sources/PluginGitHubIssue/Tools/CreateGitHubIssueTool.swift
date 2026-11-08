@@ -10,7 +10,7 @@ import os
 ///   因为本工具的目的是让 LLM 把发现的 Lumi bug 反馈给维护者。
 /// - 依赖本地 `gh` CLI：认证由 `gh` 自身管理，插件不碰 token / Keychain。
 /// - `execute` 入口先做可用性检查（`which gh` + `gh auth status`），任一失败就
-///   **直接放弃提交**并返回清晰错误文本给 LLM——避免把失败伪装成「issue 已创建」。
+///   **直接放弃提交并抛出清晰错误**——避免把失败伪装成「issue 已创建」。
 /// - issue body 自动追加 Lumi / macOS 环境诊断信息，便于维护者复现。
 /// - 风险等级 `.medium`：访问网络并向外部仓库创建内容，属于跨边界写操作，
 ///   但不修改本地文件。
@@ -103,22 +103,45 @@ public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
 
         // 1. 强制英文校验：Lumi 的 issue 面向全球维护者，必须是英文。
         //    这是纯本地检查，无副作用，故放在最前——非英文内容必然不会进入 GitHub。
-        let languageViolation = Self.englishViolation(title: title, body: body)
-        if let languageViolation {
-            return languageViolation
+        let offenders = Self.nonEnglishOffenders(title: title, body: body)
+        if !offenders.isEmpty {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: """
+                Rejected: issue content must be written in English.
+
+                Non-Latin characters detected in: \(offenders.joined(separator: ", ")).
+
+                Lumi issues are read by maintainers worldwide, so the tool refuses to \
+                submit non-English content. Rewrite the affected text in English and \
+                call the tool again. If the non-Latin text comes from a log excerpt or \
+                an error message, keep the original inside a code block and describe \
+                it in English.
+                """
+            )
         }
 
         // 2. 定位 gh
         guard let ghPath = await GitHubCLI.locate() else {
-            return Self.unavailableMessage(
-                reason: "the `gh` CLI is not installed or not on PATH. Ask the user to run `brew install gh` and then `gh auth login`."
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: """
+                Cannot submit Lumi issue: the `gh` CLI is not installed or not on PATH. \
+                Ask the user to run `brew install gh` and then `gh auth login`. \
+                The submission was abandoned.
+                """
             )
         }
 
         // 3. 检查认证
         guard await GitHubCLI.isAuthenticated(ghPath: ghPath) else {
-            return Self.unavailableMessage(
-                reason: "`gh auth status` failed, so `gh` is not logged in. Ask the user to run `gh auth login` in a terminal."
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: """
+                Cannot submit Lumi issue: `gh auth status` failed, so `gh` is not logged in. \
+                Ask the user to run `gh auth login` in a terminal. \
+                The submission was abandoned.
+                """
             )
         }
 
@@ -139,10 +162,19 @@ public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
         )
 
         guard result.isSuccess, !result.issueURL.isEmpty else {
-            return Self.failureMessage(
-                exitCode: result.exitCode,
-                stdout: result.stdout,
-                stderr: result.stderr
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: """
+                `gh issue create` failed (exit=\(result.exitCode)).
+
+                stdout:
+                \(result.stdout)
+
+                stderr:
+                \(result.stderr)
+
+                The submission was abandoned. Please report this error to the user.
+                """
             )
         }
 
@@ -182,13 +214,11 @@ public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
 
     // MARK: - 辅助
 
-    /// 校验 title / body 是否为英文。返回非 nil 表示违反英文要求，附带说明。
+    /// 校验 title / body 是否为英文。返回非空的违规字段列表。
     ///
     /// Lumi 的 issue 面向全球维护者，中文 issue 对他们不可用。判据见
     /// ``EnglishLanguageGuard``：统计 CJK 字形数量，超过阈值即判为非英文。
-    ///
-    /// - Note: 错误提示本身用英文写——LLM 需要读懂它才知道怎么改写。
-    private static func englishViolation(title: String, body: String) -> String? {
+    private static func nonEnglishOffenders(title: String, body: String) -> [String] {
         let titleCount = EnglishLanguageGuard.nonLatinCharacterCount(in: title)
         let bodyCount = EnglishLanguageGuard.nonLatinCharacterCount(in: body)
 
@@ -199,42 +229,7 @@ public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
         if bodyCount >= EnglishLanguageGuard.minimumNonLatinCount {
             offenders.append("`body` (\(bodyCount) non-Latin characters)")
         }
-        guard !offenders.isEmpty else { return nil }
-
-        return """
-        ❌ Rejected: issue content must be written in English.
-
-        Non-Latin characters detected in: \(offenders.joined(separator: ", ")).
-
-        Lumi issues are read by maintainers worldwide, so the tool refuses to \
-        submit non-English content. Rewrite the affected text in English and \
-        call the tool again. If the non-Latin text comes from a log excerpt or \
-        an error message, keep the original inside a code block and describe \
-        it in English.
-        """
-    }
-
-    /// 不可用场景统一格式：LLM 看到这个文本就知道放弃提交。
-    ///
-    /// - Important: 提示文本保持英文，与 issue 语言要求一致；
-    ///   LLM 需要读懂它才知道该怎么向用户解释。
-    private static func unavailableMessage(reason: String) -> String {
-        "⚠️ Cannot submit Lumi issue: \(reason) The submission was abandoned."
-    }
-
-    /// gh 创建失败：把原始输出原样交给 LLM，便于二次诊断。
-    private static func failureMessage(exitCode: Int32, stdout: String, stderr: String) -> String {
-        """
-        ❌ `gh issue create` failed (exit=\(exitCode)).
-
-        stdout:
-        \(stdout)
-
-        stderr:
-        \(stderr)
-
-        The submission was abandoned. Please report this error to the user.
-        """
+        return offenders
     }
 
     /// `arguments["labels"]?.value` 可能是 `[String]`、`[Any]` 或 JSON 数组字符串，
@@ -305,7 +300,7 @@ extension CreateGitHubIssueTool {
     }
 
     /// 暴露英文校验，供测试断言。
-    static func englishViolationForTesting(title: String, body: String) -> String? {
-        englishViolation(title: title, body: body)
+    static func nonEnglishOffendersForTesting(title: String, body: String) -> [String] {
+        nonEnglishOffenders(title: title, body: body)
     }
 }

@@ -85,11 +85,10 @@ import Testing
     #expect(resolved == "/workspace/Conversation")
 }
 
-@Test @MainActor func executionReturnsReadableErrorWhenNoPathOrProjectExists() async throws {
+@Test @MainActor func executionThrowsWhenNoPathOrProjectExists() async {
     let tool = OpenInTool(config: OpenInTool.finder, project: DefaultProjectProvider())
 
-    let result = try await tool.execute(arguments: [:])
-
-    #expect(result.contains("No project is open and no path was provided"))
-    #expect(result.contains("Open in Finder"))
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await tool.execute(arguments: [:])
+    }
 }

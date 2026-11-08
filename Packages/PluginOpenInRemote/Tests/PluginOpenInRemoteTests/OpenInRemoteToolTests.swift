@@ -72,7 +72,7 @@ struct OpenInRemoteToolTests {
         #expect(tool.description(for: .english).contains("browser"))
     }
 
-    @Test("没有项目且未提供路径时返回失败说明")
+    @Test("没有项目且未提供路径时抛出错误")
     func reportsMissingTarget() async throws {
         let tool = OpenInRemoteTool(
             projectCapability: StubProjectCapability(currentProjectPath: nil),
@@ -81,12 +81,12 @@ struct OpenInRemoteToolTests {
             )
         )
 
-        let output = try await tool.execute(arguments: [:])
-
-        #expect(output.contains("No project is open"))
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: [:])
+        }
     }
 
-    @Test("仓库没有远程地址时返回失败说明")
+    @Test("仓库没有远程地址时抛出错误")
     func reportsMissingRemoteURL() async throws {
         let tool = OpenInRemoteTool(
             projectCapability: StubProjectCapability(currentProjectPath: "/repo"),
@@ -95,9 +95,9 @@ struct OpenInRemoteToolTests {
             )
         )
 
-        let output = try await tool.execute(arguments: [:])
-
-        #expect(output.contains("No remote repository URL was found"))
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: [:])
+        }
     }
 
     @Test("显式路径参数被透传到解析链路")
@@ -109,10 +109,13 @@ struct OpenInRemoteToolTests {
             )
         )
 
-        let output = try await tool.execute(arguments: ["path": ToolArgument("/explicit")])
-
-        #expect(output.contains("/explicit"))
-        #expect(!output.contains("/current"))
+        do {
+            _ = try await tool.execute(arguments: ["path": ToolArgument("/explicit")])
+            Issue.record("expected the tool to throw for a project without a remote")
+        } catch let ToolExecutionError.executionFailed(_, reason) {
+            #expect(reason.contains("/explicit"))
+            #expect(!reason.contains("/current"))
+        }
     }
 
     @Test("会话绑定项目优先于当前项目")
@@ -147,10 +150,13 @@ struct OpenInRemoteToolTests {
             conversationProjectPathProvider: { "/conversation" }
         )
 
-        let output = try await tool.executeResult(context: context, arguments: [:])
-
-        #expect(output.content.contains("/conversation"))
-        #expect(!output.content.contains("/current"))
+        do {
+            _ = try await tool.executeResult(context: context, arguments: [:])
+            Issue.record("expected the tool to throw for a project without a remote")
+        } catch let ToolExecutionError.executionFailed(_, reason) {
+            #expect(reason.contains("/conversation"))
+            #expect(!reason.contains("/current"))
+        }
     }
 }
 

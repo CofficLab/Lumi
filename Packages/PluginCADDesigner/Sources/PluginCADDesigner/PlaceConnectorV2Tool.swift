@@ -11,15 +11,24 @@ public struct PlaceConnectorV2Tool: SuperAgentTool {
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { "Place connector \(CADDesignerV2ToolSupport.string(arguments, "connectorId") ?? "?")" }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let connectorID = CADDesignerV2ToolSupport.string(arguments, "connectorId") else { return CADDesignerV2ToolSupport.missingParameter("connectorId") }
+        guard let connectorID = CADDesignerV2ToolSupport.string(arguments, "connectorId") else { throw CADDesignerV2ToolSupport.missingParameter("connectorId", toolName: name) }
         guard ComponentLibrary.shared.connectorSpec(id: connectorID) != nil else {
             let available = ComponentLibrary.shared.connectors.map(\.id).joined(separator: ", ")
-            return CADDesignerV2ToolSupport.localized(en: "Error: Unknown connector spec '\(connectorID)'. Available: \(available)", zh: "错误：未知连接件规格 '\(connectorID)'。可用：\(available)")
+            throw CADDesignerV2ToolSupport.failure(
+                en: "Unknown connector spec '\(connectorID)'. Available: \(available)",
+                zh: "未知连接件规格 '\(connectorID)'。可用：\(available)",
+                toolName: name
+            )
         }
         let instance = ConnectorInstance(connectorId: connectorID, transform: Transform3D(positionX: CADDesignerV2ToolSupport.double(arguments, "x", default: 0), positionY: CADDesignerV2ToolSupport.double(arguments, "y", default: 0), positionZ: CADDesignerV2ToolSupport.double(arguments, "z", default: 0), rotationY: CADDesignerV2ToolSupport.double(arguments, "rotationY", default: 0)))
         do {
             let component = try await MainActor.run { try CADDocumentStore.shared.addComponent(.connector(instance)) }
             return CADDesignerV2ToolSupport.localized(en: "Placed connector.\n\(CADDesignerV2ToolSupport.componentSummary(component))\nspec: \(connectorID)", zh: "已放置连接件。\n\(CADDesignerV2ToolSupport.componentSummary(component))\n规格: \(connectorID)")
-        } catch { await MainActor.run { CADDocumentStore.shared.setError(error.localizedDescription) }; return CADDesignerV2ToolSupport.error(error) }
+        } catch let error as ToolExecutionError {
+            throw error
+        } catch {
+            await MainActor.run { CADDocumentStore.shared.setError(error.localizedDescription) }
+            throw CADDesignerV2ToolSupport.failure(error, toolName: name)
+        }
     }
 }
