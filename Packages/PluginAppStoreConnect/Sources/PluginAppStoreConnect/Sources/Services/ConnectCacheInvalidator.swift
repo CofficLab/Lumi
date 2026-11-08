@@ -88,6 +88,18 @@ enum ConnectCacheInvalidator {
                 entry.path.contains("/ageRatingDeclaration")
             }
 
+        // 关联 / 更换 build：PATCH /v1/appStoreVersions/{id}/relationships/build。
+        // 读取同一关系的 GET 走 .version(id) 标签，但它的路径既不是版本详情、
+        // 也不以 /appStoreVersions 结尾，所以必须显式失效；否则 build 已关联后
+        // 提交前置检查仍会读到关联前的 {"data": null}。
+        case ("PATCH", let patchPath) where patchPath.hasPrefix("/v1/appStoreVersions/")
+            && patchPath.hasSuffix("/relationships/build"):
+            guard let versionID = extractID(after: "/v1/appStoreVersions/", in: patchPath) else { break }
+            cache.invalidate(tags: [.version(versionID)])
+            cache.invalidate(accountKey: accountKey) { entry in
+                entry.path == "/v1/appStoreVersions/\(versionID)/relationships/build"
+            }
+
         // 版本属性（copyright / releaseType / downloadable / earliestReleaseDate）更新。
         // 版本详情与所属 app 的版本列表都读同一批数据，两者都要失效。
         case ("PATCH", let patchPath) where patchPath.hasPrefix("/v1/appStoreVersions/"):

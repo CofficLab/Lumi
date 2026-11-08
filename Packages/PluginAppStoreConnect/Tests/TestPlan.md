@@ -5,7 +5,7 @@
 PluginAppStoreConnect Current `KernelCore` implementation of the App Store Connect integration. - Product/module: `PluginAppStoreConnect` - Plugin id: `com.coffic.lumi.plugin.app-store-connect` - Rail tab: `app-store-connect.sidebar` - Enable policy: disabled by default The plugin provides App Store Connect account, app/version, localization, screenshot, release, and Xcode Cloud management through the workbench and the `app_store_connect_*` Agent tools.
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 64
+测试文件: 11 个，用例总数: 66
 
 核心组件（源码目录）:
 - `Sources/`
@@ -36,7 +36,7 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 - **ASCSubmissionTimeline**（13 条）：由 `submissionPreviewBuildLabel`、`submissionPreviewSummaries`、`submissionPreviewCodableRoundTrip` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AppStoreConnectPlugin**（9 条）：由 `pluginMetadata`、`settingsEntry`、`activationKeepsChatToolbarCategoryVisible` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AppStoreConnectRuleContributor**（1 条）：由 `loadsReleaseSafetyRuleFromResource` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ConnectCacheInvalidator**（12 条）：由 `ageRatingPatchInvalidatesDeclarationRead`、`versionPatchInvalidatesDetailAndList` 等用例锁定；改动写操作后的缓存失效策略或缓存 key 结构时优先跑对应测试文件。
+- **ConnectCacheInvalidator**（14 条）：由 `ageRatingPatchInvalidatesDeclarationRead`、`versionPatchInvalidatesDetailAndList`、`buildAssignmentPatchInvalidatesRelationshipRead` 等用例锁定；改动写操作后的缓存失效策略或缓存 key 结构时优先跑对应测试文件。
 - **ASC Chat Toolbar binding**（8 条）：由 `appConfigurationProvidesAppID`、`bundleIDIsDetectedFromXcodeProject` 等用例锁定；改动聊天工具栏的项目绑定解析时优先跑对应测试文件。
 - **StubClientCapability**（5 条）：由 `appIDBindingLoadsVersions`、`switchingProjectsClearsState` 等用例锁定；改动聊天工具栏 ViewModel 的项目切换与绑定时优先跑对应测试文件。
 - **VMBusy**（3 条）：由 `nestedRunBusyIsReentrant`、`fastOperationSkipsOverlay`、`slowOperationShowsOverlay` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -60,7 +60,7 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 | 10 | ASCSubmissionTimeline | 提交审核渲染器可以接管提交时间线消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `submissionRendererMatchesSubmissionMessage` |
 | 11 | ASCSubmissionTimeline | 提交审核渲染器的优先级高于通用兜底渲染器 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `submissionRendererOrderBeatsDefault` |
 | 12 | ASCSubmissionTimeline | 插件启动时注册提交审核渲染器，关闭时注销 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginRegistersSubmissionRenderer` |
-| 13 | ASCSubmissionTimeline | 提交审核工具在缺少会话上下文时不产生时间线消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `submitToolWithoutContextProducesNoTimelineMessage` |
+| 13 | ASCSubmissionTimeline | 提交审核工具缺少 versionID 时抛出 `ToolExecutionError` | — | 执行该用例 | 断言抛出工具错误，不再返回 `isError` 字符串结果 | P1 | ✅ 已覆盖 | `submitToolWithoutVersionIDThrows` |
 | 14 | AppStoreConnectPlugin | plugin metadata follows the current integration conventions | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginMetadata` |
 | 15 | AppStoreConnectPlugin | plugin contributes its API configuration to Settings | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `settingsEntry` |
 | 16 | AppStoreConnectPlugin | activating the plugin keeps chat toolbar items visible | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activationKeepsChatToolbarCategoryVisible` |
@@ -109,30 +109,32 @@ PluginAppStoreConnect Current `KernelCore` implementation of the App Store Conne
 | 59 | SetAppStoreConnectAgeRatingTool | 显式 false 不被丢弃，仍进入 PATCH 属性 | — | 传入 `socialMedia=false` 等参数 | 属性中包含 `socialMedia: false` 等值 | P1 | ✅ 已覆盖 | `explicitFalseIsSent` |
 | 60 | SetAppStoreConnectAgeRatingTool | 未提供的字段不进入 PATCH 属性 | — | 只传 `socialMedia` | 属性键集合只有 `socialMedia` | P2 | ✅ 已覆盖 | `absentAttributesAreOmitted` |
 | 61 | SetAppStoreConnectAgeRatingTool | Apple 返回的新分级字段可被解码 | — | 解码含新增字段的声明 JSON | 新增字段值正确读出 | P1 | ✅ 已覆盖 | `decodesNewAttributes` |
-| 62 | 工具失败语义 | 缺少必填参数时抛出 `ToolExecutionError` | 无 | 依次调用 21 个需要必填参数的工具并传空参数 | 每次均抛出 `ToolExecutionError`，不再返回 `Missing or empty ...` 字符串 | P1 | ✅ 已覆盖 | `missingRequiredArgumentsThrow` |
+| 62 | 工具失败语义 | 缺少必填参数时抛出 `ToolExecutionError` | 无 | 依次调用 22 个需要必填参数的工具并传空参数 | 每次均抛出 `ToolExecutionError`，不再返回 `Missing or empty ...` 字符串 | P1 | ✅ 已覆盖 | `missingRequiredArgumentsThrow` |
 | 63 | 工具失败语义 | 空白参数等同于缺失并抛出 | 无 | 传入只含空白的 appID / versionID | 均抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `blankArgumentsThrow` |
 | 64 | 工具失败语义 | isEnabled 非法时抛出而不是退回默认值 | 合法 workflowID | 传入 `isEnabled: maybe` | 抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `invalidIsEnabledThrows` |
+| 65 | ConnectCacheInvalidator | 关联 build 后失效该版本的关系读取缓存 | 关系读取已缓存为 `{"data": null}` | `PATCH /v1/appStoreVersions/{id}/relationships/build` | 该版本的关系读取缓存被清除，后续读取不再返回关联前的空值 | P0 | ✅ 已覆盖 | `buildAssignmentPatchInvalidatesRelationshipRead` |
+| 66 | ConnectCacheInvalidator | 关联 build 不影响其它版本的关系读取缓存 | 另一版本的关系读取已缓存 | 关联 version-1 的 build | version-2 的关系读取缓存保留 | P1 | ✅ 已覆盖 | `buildAssignmentPatchKeepsOtherVersions` |
 
-> 说明：全部 **64 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **66 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 14 / 14
-- P1: 已覆盖 45 / 45
+- P0: 已覆盖 15 / 15
+- P1: 已覆盖 46 / 46
 - P2: 已覆盖 5 / 5
-- **合计: 64 / 64**（仅表示清单场景，非源码覆盖率）
+- **合计: 66 / 66**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
-- **P1**: 其余功能性用例（45 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
+- **P1**: 其余功能性用例（46 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 61 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 66 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

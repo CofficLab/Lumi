@@ -226,17 +226,17 @@ func pluginRegistersSubmissionRenderer() throws {
 // MARK: - Tool
 
 @MainActor
-@Test("提交审核工具在缺少会话上下文时不产生时间线消息")
-func submitToolWithoutContextProducesNoTimelineMessage() async throws {
+@Test("提交审核工具缺少 versionID 时抛出错误")
+func submitToolWithoutVersionIDThrows() async {
     let tool = SubmitAppStoreConnectVersionTool()
     let context = ToolExecutionContext(
         jobID: "job-1",
         conversationID: UUID()
     )
 
-    // 缺少 ASC 凭据时工具会提前失败，不会走到产生时间线消息的路径；
-    // 这里只验证「无上下文入口」不抛异常且返回错误结果。
-    let result = try await tool.executeResult(context: context, arguments: [:])
-    #expect(result.isError)
-    #expect(result.content.contains("versionID"))
+    // 缺少 ASC 凭据前就会因 versionID 缺失而失败；失败必须抛出，
+    // 不能返回一个 isError 字符串结果。
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await tool.executeResult(context: context, arguments: [:])
+    }
 }

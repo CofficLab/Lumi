@@ -114,11 +114,13 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
         }
     }
 
+    /// - Parameter cachePolicy: 单次请求的缓存策略；nil 表示沿用 client 的全局策略。
     func request<T: Decodable>(
         path: String,
         method: String = "GET",
         queryItems: [URLQueryItem] = [],
-        body: Data? = nil
+        body: Data? = nil,
+        cachePolicy: ConnectFetchPolicy? = nil
     ) async throws -> T {
         guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
             throw AppStoreConnectClientError.invalidURL
@@ -132,7 +134,7 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
         }
 
         let cacheKey = makeCacheKey(method: method, path: path, queryItems: queryItems)
-        if method == "GET", let cached = cache.get(logicalKey: cacheKey, fetchPolicy: fetchPolicy) {
+        if method == "GET", let cached = cache.get(logicalKey: cacheKey, fetchPolicy: cachePolicy ?? fetchPolicy) {
             return try decodeResponse(cached)
         }
 
