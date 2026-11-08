@@ -63,7 +63,10 @@ final class MailComposeViewModel: ObservableObject {
         self.dataDirectory = dataDirectory
         self.mode = mode
         self.originalDetail = originalDetail
-        applyModeDefaults()
+        // 同一账户/模式/原邮件上下文存在本地草稿时优先恢复，否则用模式默认内容。
+        if !restoreDraft() {
+            applyModeDefaults()
+        }
     }
 
     // MARK: - 模式预填
@@ -111,7 +114,26 @@ final class MailComposeViewModel: ObservableObject {
         return lines.joined(separator: "\n")
     }
 
-    // MARK: - 草稿自动保存
+    // MARK: - 草稿恢复与自动保存
+
+    /// 读取并恢复本地草稿；文件缺失、损坏或模式不匹配时返回 false。
+    private func restoreDraft() -> Bool {
+        guard let url = draftURL,
+              let data = try? Data(contentsOf: url),
+              let payload = try? JSONDecoder().decode(DraftPayload.self, from: data),
+              payload.mode == mode.key
+        else { return false }
+        to = payload.to
+        cc = payload.cc
+        subject = payload.subject
+        body = payload.body
+        attachments = payload.attachments.map {
+            MimeAttachmentData(filename: $0.filename, mimeType: $0.mimeType, data: $0.data)
+        }
+        draftSavedAt = (try? FileManager.default
+            .attributesOfItem(atPath: url.path)[.modificationDate]) as? Date
+        return true
+    }
 
     func saveDraftNow() {
         do {
