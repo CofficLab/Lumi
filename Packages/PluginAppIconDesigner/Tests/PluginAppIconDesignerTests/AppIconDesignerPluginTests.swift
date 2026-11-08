@@ -284,4 +284,83 @@ struct AppIconDesignerPluginTests {
 
         IconDesignerRuntime.reset()
     }
+
+    @Test("replaceSelected 用不同 ID 的 JSON 替换当前选中文档")
+    func loadIconDocumentReplacesSelectedDocumentWithDifferentId() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("IconToolReplaceTests-\(UUID().uuidString)")
+        let sourceURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("IconReplaceSource-\(UUID().uuidString).json")
+        defer {
+            IconDesignerRuntime.reset()
+            try? FileManager.default.removeItem(at: directory)
+            try? FileManager.default.removeItem(at: sourceURL)
+        }
+
+        IconDocumentStore.shared.setProjectStorage(projectPath: directory.path, projectStorageDirectory: directory)
+        let original = IconDocumentStore.shared.createDocument(
+            title: "Original A",
+            width: 1024,
+            height: 1024,
+            background: .color("#00000000"),
+            scope: .project
+        )
+        let incoming = IconDocument(id: UUID().uuidString, title: "Incoming B", width: 512, height: 512)
+        try IconDocumentFileService().save(document: incoming, to: sourceURL)
+
+        let result = try await LoadIconDocumentTool().execute(arguments: [
+            "inputPath": ToolArgument(sourceURL.path),
+            "replaceSelected": ToolArgument(true),
+        ])
+
+        // 选中文档被 B 的内容替换，ID 保持不变，列表里仍只有一条。
+        #expect(IconDocumentStore.shared.projectDocuments.count == 1)
+        #expect(IconDocumentStore.shared.selectedDocumentId == original.id)
+        let replaced = try #require(IconDocumentStore.shared.projectDocuments.first)
+        #expect(replaced.id == original.id)
+        #expect(replaced.title == "Incoming B")
+        #expect(replaced.width == 512)
+        #expect(result.contains(original.id))
+
+        // 旧文件名随标题变化清理，重载磁盘不出现重复文档。
+        let reloaded = IconDocumentFileStore.loadAll(storagePath: directory.path)
+        #expect(reloaded.count == 1)
+        #expect(reloaded.first?.id == original.id)
+        #expect(reloaded.first?.title == "Incoming B")
+    }
+
+    @Test("未要求替换时 load_icon_document 导入为新副本")
+    func loadIconDocumentImportsCopyWhenReplaceSelectedIsFalse() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("IconToolImportTests-\(UUID().uuidString)")
+        let sourceURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("IconImportSource-\(UUID().uuidString).json")
+        defer {
+            IconDesignerRuntime.reset()
+            try? FileManager.default.removeItem(at: directory)
+            try? FileManager.default.removeItem(at: sourceURL)
+        }
+
+        IconDocumentStore.shared.setProjectStorage(projectPath: directory.path, projectStorageDirectory: directory)
+        let original = IconDocumentStore.shared.createDocument(
+            title: "Original A",
+            width: 1024,
+            height: 1024,
+            background: .color("#00000000"),
+            scope: .project
+        )
+        let incoming = IconDocument(id: UUID().uuidString, title: "Incoming B", width: 512, height: 512)
+        try IconDocumentFileService().save(document: incoming, to: sourceURL)
+
+        _ = try await LoadIconDocumentTool().execute(arguments: [
+            "inputPath": ToolArgument(sourceURL.path),
+            "replaceSelected": ToolArgument(false),
+        ])
+
+        // 原文档保留，新副本拥有自己的 ID 并被选中。
+        #expect(IconDocumentStore.shared.projectDocuments.count == 2)
+        let imported = try #require(IconDocumentStore.shared.selectedDocument)
+        #expect(imported.id != original.id)
+        #expect(imported.title == "Incoming B")
+    }
 }
