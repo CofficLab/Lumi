@@ -97,6 +97,36 @@ struct HostsManagerViewModelTests {
         #expect(!model.filteredEntries.contains { $0.domains == ["loose.test"] })
     }
 
+    @Test("resets a group filter that disappears after reload, keeps one that remains")
+    func reloadReconcilesSelectedGroup() async throws {
+        let file = StubHostsFileForMutations()
+        file.seed("# GROUP: Old\n127.0.0.1 old.test\n")
+        let model = HostsManagerViewModel(
+            readHostsFile: { try await file.read() },
+            writeHostsFile: { try await file.write($0) }
+        )
+
+        await model.loadHosts()
+        model.selectedGroup = "Old"
+        #expect(!model.filteredEntries.isEmpty)
+
+        // 导入只含 New 的配置：Old 从 Picker 中消失，必须重置筛选，否则列表全空。
+        file.seed("# GROUP: New\n127.0.0.2 new.test\n")
+        await model.loadHosts()
+
+        #expect(model.groups == ["New"])
+        #expect(model.selectedGroup == nil)
+        #expect(model.filteredEntries.contains { $0.domains == ["new.test"] })
+
+        // 旧分组仍存在时应保留用户选择。
+        model.selectedGroup = "New"
+        file.seed("# GROUP: New\n127.0.0.3 newer.test\n# GROUP: Other\n127.0.0.4 other.test\n")
+        await model.loadHosts()
+
+        #expect(model.selectedGroup == "New")
+        #expect(model.filteredEntries.contains { $0.domains == ["newer.test"] })
+    }
+
     private func waitForSave(count: Int, model: HostsManagerViewModel, file: StubHostsFileForMutations) async {
         for _ in 0..<100 {
             if file.writes.count >= count, !model.isLoading { return }
