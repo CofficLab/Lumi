@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 58 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 63 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，用例总数: 58
+测试文件: 11 个，用例总数: 63
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -48,6 +48,7 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 - **ConversationStoreObserver**（2 条）：由 `forwardsEventsAndMigrationStateUntilCancelled`、`capabilityAdapterUsesManagerAndEmptyMessageFallbacks` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationStoreSettingsViewModel**（3 条）：由 `loadsPagesCountsMessagesAndSelectedConversation`、`selectionFallsBackWhenMissingAndReloadsForStructuralEvents`、`emptyLoadsFinishAndMessagesClearWithoutSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationListRefresh**（1 条）：由 `activeUpdatesAreDebounced` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **分页会话的可操作性**（5 条）：由 `deletesUncachedConversation`、`renamesUncachedConversation`、`selectingPagedConversationBackfillsTitle` 等用例锁定；分页返回的真实会话必须能执行与首屏会话相同的删除、改名、偏好与选择操作。
 - **ConversationStore**（12 条）：由 `createAndFetch`、`createStoresOnlyModelID`、`updateVerbosity` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 - **ConversationStore 项目会话 ID**（3 条）：由 `returnsOnlyProjectConversations`、`limitsToTheActivityWindow`、`emptyProjectReturnsEmptyArray` 锁定——项目维度统计靠会话存储提供「项目 → 会话 ID」的映射；`updatedSince` 把集合限制在活动窗口内，项目下没有会话时返回空数组。改动这条映射时必须优先跑该文件。
@@ -114,27 +115,32 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 56 | ConversationModelSelection | 会话不在缓存数组中时模型选择仍然生效 | 会话数组为空，指定一个 UUID | `selectModel` 后读取 `modelID/providerID/modelName` | 返回刚选中的模型，provider/model 可解析 | P0 | ✅ 已覆盖 | `selectModelAppliesToConversationOutsideCache` |
 | 57 | ConversationStore | 分页按最后消息时间 keyset，创建早但最近活跃的会话不会被漏掉（**回归 #964**） | 5 条会话，创建顺序与活跃顺序相反 | 以 `lastMessageAt` 为游标、limit=2 连续翻页 | 收集到的 ID 顺序等于活跃顺序，且无重复 | P0 | ✅ 已覆盖 | `paginatesByLastMessageAtKeyset` |
 | 58 | ConversationStore | 相同最后消息时间仍有稳定顺序，且分页不重复、不遗漏（**回归 #964**） | 4 条会话 `createdAt` 完全相同 | limit=2 连续翻页直到为空 | 收集到的 ID 集合等于全部 ID，数量一致 | P1 | ✅ 已覆盖 | `paginatesTiedTimestampsStably` |
+| 59 | 分页会话的可操作性 | 未缓存的会话也能删除（**回归 #965**） | 会话已持久化但不在管理器的缓存窗口内 | 调用 `deleteConversation(id:)` | 持久化记录被删除 | P1 | ✅ 已覆盖 | `deletesUncachedConversation` |
+| 60 | 分页会话的可操作性 | 未缓存的会话也能改名（**回归 #965**） | 会话不在缓存内 | 调用 `updateConversationTitle` | 返回 true，新标题落库 | P1 | ✅ 已覆盖 | `renamesUncachedConversation` |
+| 61 | 分页会话的可操作性 | 未缓存的会话也能保存偏好（**回归 #965**） | 会话不在缓存内 | 设置 verbosity 与 reasoningEffort | 两项偏好都落库 | P1 | ✅ 已覆盖 | `persistsPreferencesForUncachedConversation` |
+| 62 | 分页会话的可操作性 | 选中分页会话后会补载标题（**回归 #965**） | 会话不在缓存内 | `selectConversation(id:)` | 标题从 "No conversation" 恢复为真实标题 | P1 | ✅ 已覆盖 | `selectingPagedConversationBackfillsTitle` |
+| 63 | 分页会话的可操作性 | 分页结果会进入缓存（**回归 #965**） | 会话不在缓存内 | `fetchConversationPage` | 返回的根会话出现在缓存中 | P1 | ✅ 已覆盖 | `pagedResultsEnterCache` |
 
-> 说明：全部 **58 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **63 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 8 / 8
-- P1: 已覆盖 45 / 45
+- P1: 已覆盖 50 / 50
 - P2: 已覆盖 5 / 5
-- **合计: 58 / 58**（仅表示清单场景，非源码覆盖率）
+- **合计: 63 / 63**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
-- **P1**: 其余功能性用例（45 条）
+- **P1**: 其余功能性用例（50 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 58 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 63 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

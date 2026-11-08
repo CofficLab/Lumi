@@ -22,12 +22,18 @@ extension ConversationManager {
         beforeID: UUID? = nil,
         includingChildConversations: Bool
     ) async -> [ConversationSummary] {
-        await store?.fetchConversationPage(
+        let page = await store?.fetchConversationPage(
             limit: limit,
             beforeUpdatedAt: beforeUpdatedAt,
             beforeID: beforeID,
             includingChildConversations: includingChildConversations
         ) ?? []
+        // 分页结果同样要进缓存：否则翻到第二页后，这些真实会话在
+        // 删除/标题/偏好路径里会被缓存守卫当成不存在（issue #965）。
+        for summary in page {
+            cache(summary)
+        }
+        return page
     }
 
     public func fetchConversationPage(
@@ -37,13 +43,17 @@ extension ConversationManager {
         includingChildConversations: Bool,
         projectPath: String
     ) async -> [ConversationSummary] {
-        await store?.fetchConversationPage(
+        let page = await store?.fetchConversationPage(
             limit: limit,
             beforeUpdatedAt: beforeUpdatedAt,
             beforeID: beforeID,
             includingChildConversations: includingChildConversations,
             projectPath: projectPath
         ) ?? []
+        for summary in page {
+            cache(summary)
+        }
+        return page
     }
 
     public func fetchConversation(id: UUID) async -> ConversationSummary? {
