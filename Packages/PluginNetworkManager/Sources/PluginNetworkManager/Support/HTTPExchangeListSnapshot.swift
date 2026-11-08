@@ -16,6 +16,7 @@ struct HTTPExchangeListSnapshot: Sendable, Identifiable {
     let method: String
     let url: String
     let startedAt: Date
+    let duration: TimeInterval?
     let responseStatusCode: Int?
     let errorDescription: String?
 
@@ -24,6 +25,7 @@ struct HTTPExchangeListSnapshot: Sendable, Identifiable {
         method = record.requestMethod
         url = record.requestURL
         startedAt = record.startedAt
+        duration = record.duration
         responseStatusCode = record.responseStatusCode
         errorDescription = record.errorDescription
     }

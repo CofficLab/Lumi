@@ -98,6 +98,73 @@ struct HTTPSummaryToolLimitTests {
         }
     }
 
+    /// 回归 #664：四个查询工具曾经只加载固定数量的最新记录再过滤，
+    /// 落在窗口之外的旧匹配即使仍在保留期内也会被遗漏。
+    @Test func filtersFindMatchesOlderThanTheFormerFetchWindow() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("HTTPWindow-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = HTTPExchangeStore(directory: directory, startsRetentionMaintenance: false)
+        let previousStore = NetworkService.shared.currentExchangeStore
+        NetworkService.shared.configureHTTPExchangeStore(store)
+        defer { NetworkService.shared.configureHTTPExchangeStore(previousStore) }
+
+        let fillerURL = try #require(URL(string: "https://filler.test/ping"))
+        let targetURL = try #require(URL(string: "https://legacy.test/old-endpoint"))
+        // 旧窗口分别是 1,000 与 5,000 条，取 5,001 条让目标落在两者之外。
+        let recordCount = 5_001
+        let base = Date().addingTimeInterval(-3_600)
+
+        for index in 0..<recordCount {
+            let startedAt = base.addingTimeInterval(Double(index) * 0.001)
+            let url = index == 0 ? targetURL : fillerURL
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            if index == 0 {
+                request.httpBody = Data("payload".utf8)
+            }
+            let exchange = store.begin(request: request, startedAt: startedAt)
+            if index == 0 {
+                let response = HTTPURLResponse(
+                    url: url,
+                    statusCode: 500,
+                    httpVersion: "HTTP/1.1",
+                    headerFields: nil
+                )
+                store.finish(
+                    exchange,
+                    response: response,
+                    finishedAt: startedAt.addingTimeInterval(2.5)
+                )
+            }
+        }
+
+        let listed = try await ListHTTPExchangesTool().execute(arguments: [
+            "url_contains": ToolArgument("legacy.test"),
+            "include_body": ToolArgument(true),
+        ])
+        #expect(listed.contains("Found 1 matching exchanges"))
+        #expect(listed.contains("legacy.test/old-endpoint"))
+        #expect(listed.contains("Request Body: payload"))
+
+        let domainLog = try await GetHTTPDomainLogTool().execute(arguments: [
+            "domain": ToolArgument("legacy.test"),
+        ])
+        #expect(domainLog.contains("**Total Requests**: 1"))
+
+        let failed = try await GetHTTPFailedRequestsTool().execute(arguments: [:])
+        #expect(failed.contains("**Summary**: 1 failed requests"))
+        #expect(failed.contains("legacy.test/old-endpoint"))
+
+        let slow = try await GetHTTPSlowRequestsTool().execute(arguments: [
+            "threshold_seconds": ToolArgument(1.0),
+        ])
+        #expect(slow.contains("Found 1 slow requests"))
+        #expect(slow.contains("legacy.test/old-endpoint"))
+    }
+
     private func record(
         _ store: HTTPExchangeStore,
         url: URL,
