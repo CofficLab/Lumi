@@ -35,6 +35,8 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     private let goalVM = GoalVM()
     private var conversationBridge: GoalTaskConversationBridge?
     private var goalChangeObserver: GoalChangeObserver?
+    /// 会话被删除时清理该会话的 Goals。
+    private var conversationDeletionObserver: GoalTaskConversationDeletionObserver?
     /// 「在新对话中继续」的编排器，为 `nil` 表示缺少必需的 Provider。
     private var forkCoordinator: GoalForkCoordinator?
     /// `turnFinished` 自动续跑钩子（见 `Hooks/GoalTaskTurnFinishedHook.swift`）。
@@ -114,6 +116,23 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         goalChangeObserver = GoalChangeObserver { [weak self] conversationID in
             self?.goalVM.refreshIfCurrentConversation(conversationID)
         }
+        conversationDeletionObserver = GoalTaskConversationDeletionObserver(
+            conversations: conversations
+        ) { conversationID in
+            guard let manager = Plugin.currentManager() else {
+                Self.logger.error(
+                    "\(Self.t)Goal manager unavailable; goals for conversation \(conversationID) were not deleted"
+                )
+                return
+            }
+            do {
+                try await manager.deleteAllGoals(conversationId: conversationID.uuidString)
+            } catch {
+                Self.logger.error(
+                    "\(Self.t)Failed to delete goals for conversation \(conversationID): \(error.localizedDescription)"
+                )
+            }
+        }
 
         // 先把编排器固化为局部常量再进闭包:直接捕获 `self.forkCoordinator`
         // 会让 ChatSection 的构建时机与 Provider 注册顺序耦合,早于
@@ -182,6 +201,8 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         conversationBridge = nil
         goalChangeObserver?.cancel()
         goalChangeObserver = nil
+        conversationDeletionObserver?.cancel()
+        conversationDeletionObserver = nil
         forkCoordinator = nil
         turnFinishedHook = nil
         promptInjectionHandle?.cancel()

@@ -5,7 +5,7 @@
 GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标）+ Task（任务）两层结构的任务追踪能力。
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 145
+测试文件: 15 个，用例总数: 147
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -54,6 +54,7 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 - **TaskListSurface**（4 条）：由 `bottomEdgeHasVisibleShadow`、`topAndBottomShadowAreSymmetric`、`bottomBandMirrorsTopBand` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalViewRender**（8 条）：由 `taskRowHeightIsThirtyPoints`、`taskRowUsesOrangeSurface`、`longTitleIsTruncatedAtRowEdge` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalTopShadow**（3 条）：由 `topShadowRendersAbovePanelEdge`、`topShadowFadesMonotonically`、`noShadowWithoutActiveGoal` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GoalTaskConversationCleanup**（2 条）：由 `deletingConversationRemovesOnlyItsGoals`、`deletingMultipleConversationsRemovesEachGoalSet` 锁定；会话删除必须同步清理该会话的 Goals（**回归** #771），改动删除观察者时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -204,16 +205,18 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 | 143 | GoalTaskMigration | v4 的 `GoalTask` 数据目录必须被迁移 | 旧布局 `<legacy>/GoalTask/GoalTaskPlugin/goals.sqlite` | 调用 `migrateData` | 数据库落在当前读取路径；`legacyDataDirectoryNames` 含 `GoalTask`（**回归** #768） | P0 | ✅ 已覆盖 | `v4MigrationReadsGoalTaskDirectory` |
 | 144 | GoalTaskTools | GoalTask 工具的失败必须抛出结构化错误 | `get_goal_progress` 传入不存在的 goal_id | 调用 `executeResult` | 抛出错误且消息含候选列表；不再以 `isError == false` 返回（**回归** #769） | P0 | ✅ 已覆盖 | `getProgressThrowsForUnknownGoal` |
 | 145 | GoalVM | 侧栏定位最新的非终态 Goal | 先完成旧 Goal，再创建新 Goal | 构造 `GoalVM` 并 `refresh` | `activeGoal` 为新 Goal、`hasActiveWork == true`（**回归** #770） | P0 | ✅ 已覆盖 | `testActiveGoalPrefersLatestNonTerminalGoal` |
+| 146 | GoalTaskConversationCleanup | 删除会话时只清理该会话的 Goals | 两个会话各有 Goal | 删除其中一个会话 | 该会话 Goals 为空，另一会话 Goals 保留（**回归** #771） | P1 | ✅ 已覆盖 | `deletingConversationRemovesOnlyItsGoals` |
+| 147 | GoalTaskConversationCleanup | 删除多个会话时逐个清理 | 两个会话各有 Goal | 连续删除两个会话 | 两个会话的 Goals 都为空（**回归** #771） | P1 | ✅ 已覆盖 | `deletingMultipleConversationsRemovesEachGoalSet` |
 
-> 说明：全部 **145 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **147 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 15 / 15
-- P1: 已覆盖 115 / 115
+- P1: 已覆盖 117 / 117
 - P2: 已覆盖 15 / 15
-- **合计: 145 / 145**（仅表示清单场景，非源码覆盖率）
+- **合计: 147 / 147**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -224,7 +227,7 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 145 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 147 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

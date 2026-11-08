@@ -625,15 +625,21 @@ public actor GoalStateManager: SuperLog {
     /// 不再有恢复意义，留着只会在下次建 Goal 时少给几次机会。
     func deleteAllGoals(conversationId: String) throws {
         let context = ModelContext(container)
-        let goals = fetchAllGoals(conversationId: conversationId, context: context)
-        
+        // 直接 fetch 而不是走 `fetchAllGoals`：后者会把查询错误吞成空数组，
+        // 让删除失败看起来像「本来就没有 Goal」。
+        let descriptor = FetchDescriptor<Goal>(
+            predicate: #Predicate<Goal> { $0.conversationId == conversationId },
+            sortBy: [SortDescriptor(\.createdAt, order: .forward)]
+        )
+        let goals = try context.fetch(descriptor)
+
         for goal in goals {
             context.delete(goal)
         }
-        
+
         try context.save()
         clearRuntimeBudget(conversationId: conversationId)
-        
+
         if Self.verbose {
             Self.logger.info("\(Self.t)删除会话 \(conversationId) 的所有 Goals")
         }

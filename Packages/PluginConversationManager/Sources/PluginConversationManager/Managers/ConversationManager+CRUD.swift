@@ -371,6 +371,11 @@ extension ConversationManager {
                 agentTurn?.cancelTurn(in: conversationID)
                 messageManager?.clearMessages(in: conversationID)
                 await toolManager?.deleteToolCalls(for: conversationID)
+                // 子会话随父会话一起落库删除，也要通知观察者清理各自的数据
+                // （例如 GoalTask 的 goals.sqlite）。根会话已在上面同步通知过。
+                if conversationID != id {
+                    notifyConversationObservers(.deleted(conversationID))
+                }
             }
             _ = await store?.deleteConversations(ids: ids)
             self.notifyConversationsChanged()
