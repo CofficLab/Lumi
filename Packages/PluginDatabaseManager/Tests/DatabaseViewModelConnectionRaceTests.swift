@@ -12,13 +12,20 @@ private actor ControlledConnection: DatabaseConnection {
     private var slowQueryContinuation: CheckedContinuation<Void, Never>?
     private var slowQueryReleased = false
     private var closeCount = 0
+    /// 让下一次查询挂起（用于精确卡住「表列表」这类固定 SQL）。
+    private var blockNextQuery = false
 
     init(label: String) {
         self.label = label
     }
 
+    func armNextQueryBlock() {
+        blockNextQuery = true
+    }
+
     func query(_ sql: String, params: [DatabaseValue]?) async throws -> QueryResult {
-        if sql.contains(slowQueryToken) {
+        if sql.contains(slowQueryToken) || blockNextQuery {
+            blockNextQuery = false
             slowQueryStarted = true
             await withCheckedContinuation { continuation in
                 if slowQueryReleased {
@@ -246,6 +253,37 @@ private actor CountingDriver: DatabaseDriver {
         #expect(viewModel.isLoading == false)
         let staleConnectionClosed = await connectionA.isClosed()
         #expect(staleConnectionClosed)
+    }
+
+    @Test("旧库的表列表晚到时不得覆盖新选中的库")
+    func staleSQLiteTablesDoNotOverwriteNewDatabase() async {
+        let manager = DatabaseManagerCore()
+        await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
+        let connectionA = ControlledConnection(label: "table_a")
+        let connectionB = ControlledConnection(label: "table_b")
+        let driver = ControlledDriver(
+            type: .sqlite,
+            connections: ["db-a": connectionA, "db-b": connectionB]
+        )
+        await manager.register(driver: driver)
+        let viewModel = DatabaseViewModel(loadSavedConfigs: false, manager: manager)
+        let configA = DatabaseConfig(name: "db-a", type: .sqlite, database: "db-a")
+        let configB = DatabaseConfig(name: "db-b", type: .sqlite, database: "db-b")
+
+        // 卡住 A 的表列表查询，模拟旧库更晚返回。
+        await connectionA.armNextQueryBlock()
+        let slowConnect = Task { await viewModel.connect(config: configA) }
+        await connectionA.waitUntilSlowQueryStarts()
+
+        await viewModel.connect(config: configB)
+        #expect(viewModel.selectedConfig?.id == configB.id)
+
+        await connectionA.releaseSlowQuery()
+        await slowConnect.value
+
+        // A 的结果属于旧连接，不能写进当前详情页。
+        #expect(viewModel.selectedConfig?.id == configB.id)
+        #expect(viewModel.sqliteTables.isEmpty)
     }
 
     @Test("Reload 侧边栏对象树必须绕过缓存重新查询数据库")
