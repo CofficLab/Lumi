@@ -110,6 +110,12 @@ struct ProviderSettingsPageViewModelTests {
         )
     }
 
+    /// 计数标签跟随界面语言变化，断言时按当前语言现算，避免写死中文。
+    private func providerCountLabel(_ count: Int, isLocal: Bool) -> String {
+        let key = isLocal ? "%lld 个本地供应商" : "%lld 个云端供应商"
+        return String(format: pluginLocalization.string(key), Int64(count))
+    }
+
     // MARK: - 添加供应商的主链路
 
     @Test("新增自定义供应商后立即出现在云端供应商列表")
@@ -168,11 +174,11 @@ struct ProviderSettingsPageViewModelTests {
         defer { try? FileManager.default.removeItem(at: store.fileURL!) }
 
         let viewModel = makeViewModel(capability: capability)
-        #expect(viewModel.providerCountLabel == "0 个云端供应商")
+        #expect(viewModel.providerCountLabel == providerCountLabel(0, isLocal: false))
 
         try store.upsert(makeConfiguration())
 
-        #expect(viewModel.providerCountLabel == "1 个云端供应商")
+        #expect(viewModel.providerCountLabel == providerCountLabel(1, isLocal: false))
     }
 
     @Test("新增后选中态自动落到新供应商并显示其模型数")
@@ -212,7 +218,7 @@ struct ProviderSettingsPageViewModelTests {
         try store.remove(id: configuration.id)
 
         #expect(viewModel.filteredProviders.isEmpty)
-        #expect(viewModel.providerCountLabel == "0 个云端供应商")
+        #expect(viewModel.providerCountLabel == providerCountLabel(0, isLocal: false))
     }
 
     @Test("新增供应商可生成空白编辑器")
@@ -248,8 +254,8 @@ struct ProviderSettingsPageViewModelTests {
 
         #expect(cloudViewModel.filteredProviders.map(\.providerInfo.id) == ["remote-1"])
         #expect(localViewModel.filteredProviders.map(\.providerInfo.id) == ["local-1"])
-        #expect(cloudViewModel.providerCountLabel == "1 个云端供应商")
-        #expect(localViewModel.providerCountLabel == "1 个本地供应商")
+        #expect(cloudViewModel.providerCountLabel == providerCountLabel(1, isLocal: false))
+        #expect(localViewModel.providerCountLabel == providerCountLabel(1, isLocal: true))
     }
 
     @Test("搜索匹配名称、描述与 ID")

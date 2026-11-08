@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测试覆盖 79 条用例。
+PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测试覆盖 50 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 49
+测试文件: 6 个，用例总数: 50
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -44,6 +44,7 @@ PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测�
 - **ProviderDetailModelRefresh**（8 条）：由 `exposesRefreshEntryOnlyForRemoteProviders`、`noRefreshEntryForUnregisteredProvider`、`refreshUpdatesModels` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProviderSettingsPageViewModel**（14 条）：由 `listsNewlyAddedCloudProvider`、`customProviderRevisionIncrementsOnStoreChange`、`newlyAddedProviderIsSearchable` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProviderSettingsScopeViewModel**（4 条）：由 `defaultsToCloudScope`、`switchingScopeSwapsListAndSelection`、`scopesKeepIndependentSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **本地化资源完整性**（1 条）：由 `userFacingKeysIncludeEnglish` 锁定供应商设置页可见文案的 en 翻译；改动文案或 xcstrings 时优先跑该测试文件。
 
 ## 测试用例清单
 
@@ -98,27 +99,28 @@ PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测�
 | 47 | ProviderSettingsScopeViewModel | 切到本地后列表与详情换成本地供应商，并自动选中第一项 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `switchingScopeSwapsListAndSelection` |
 | 48 | ProviderSettingsScopeViewModel | 两个范围各自记住自己的选中项，来回切不互相污染 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `scopesKeepIndependentSelection` |
 | 49 | ProviderSettingsScopeViewModel | 范围枚举提供云端 / 本地两个页签标题与图标 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `scopeExposesTitlesAndIcons` |
+| 50 | 本地化资源完整性 | 供应商设置页全部可见文案都有非空 en 翻译，且不等于中文 key | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `userFacingKeysIncludeEnglish` |
 
-> 说明：全部 **49 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **50 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 1 / 1
-- P1: 已覆盖 41 / 41
+- P1: 已覆盖 42 / 42
 - P2: 已覆盖 7 / 7
-- **合计: 49 / 49**（仅表示清单场景，非源码覆盖率）
+- **合计: 50 / 50**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（41 条）
+- **P1**: 其余功能性用例（42 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 49 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 50 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
