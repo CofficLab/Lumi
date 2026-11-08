@@ -135,3 +135,120 @@ struct StatusBarProvidingMergeTests {
         #expect(provider.visibleStatusBarItems.map(\.id) == ["a", "b"])
     }
 }
+
+/// 状态栏可见性语义：容器是否应渲染完全由「是否存在贡献项」决定。
+///
+/// 没有贡献项时整条状态栏不渲染；有贡献项时（即使其内容当前渲染为空）仍视为存在贡献，
+/// 以避免容器通过测量渲染内容推断可见性。
+@Suite("StatusBar 可见性语义")
+@MainActor
+struct StatusBarVisibilityTests {
+    private func item(
+        _ id: String,
+        content: @escaping () -> AnyView = { AnyView(Text("item")) }
+    ) -> StatusBarItem {
+        StatusBarItem(id: id, title: id) { content() }
+    }
+
+    @Test("没有任何贡献时状态栏不可见")
+    func hiddenWithoutItems() {
+        let provider = DefaultStatusBarProviding()
+
+        #expect(provider.hasVisibleStatusBarItems == false)
+    }
+
+    @Test("存在贡献时状态栏可见")
+    func visibleWithItems() {
+        let provider = DefaultStatusBarProviding()
+        provider.addStatusBarItems([item("git")])
+
+        #expect(provider.hasVisibleStatusBarItems == true)
+    }
+
+    @Test("动态撤回全部贡献后状态栏重新隐藏")
+    func hidesAfterRemovingAllItems() {
+        let provider = DefaultStatusBarProviding()
+        provider.addStatusBarItems([item("git"), item("branch")])
+
+        provider.removeStatusBarItems(ids: ["git", "branch"])
+
+        #expect(provider.hasVisibleStatusBarItems == false)
+    }
+
+    @Test("重新出现贡献时状态栏恢复可见")
+    func becomesVisibleAgainAfterReadding() {
+        let provider = DefaultStatusBarProviding()
+        provider.addStatusBarItems([item("git")])
+        provider.removeStatusBarItems(ids: ["git"])
+
+        provider.addStatusBarItems([item("git")])
+
+        #expect(provider.hasVisibleStatusBarItems == true)
+    }
+
+    @Test("贡献存在但内容渲染为空时仍视为存在贡献")
+    func emptyContentStillCountsAsContribution() {
+        let provider = DefaultStatusBarProviding()
+        provider.addStatusBarItems([
+            item("placeholder", content: { AnyView(EmptyView()) }),
+        ])
+
+        // 语义明确：空内容不等于零贡献，由插件的注册/撤回决定容器可见性。
+        #expect(provider.hasVisibleStatusBarItems == true)
+    }
+
+    @Test("存在类型同样遵循可见性语义")
+    func existentialTypeFollowsVisibilitySemantics() {
+        let provider: any StatusBarProviding = DefaultStatusBarProviding()
+        #expect(provider.hasVisibleStatusBarItems == false)
+
+        provider.addStatusBarItems([item("git")])
+
+        #expect(provider.hasVisibleStatusBarItems == true)
+    }
+}
+
+#if os(macOS)
+/// 渲染尺寸验证：无贡献时容器必须完全不占高度，有贡献时保持原有 28pt 布局。
+@Suite("StatusBar 渲染尺寸")
+@MainActor
+struct StatusBarRenderSizeTests {
+    private func renderedHeight(provider: DefaultStatusBarProviding) -> CGFloat {
+        var renderedSize: CGSize = .zero
+        let renderer = ImageRenderer(content: provider.makeStatusBarView())
+        renderer.proposedSize = ProposedViewSize(width: 900, height: nil)
+        renderer.render { size, _ in
+            renderedSize = size
+        }
+        return renderedSize.height
+    }
+
+    @Test("无贡献时状态栏渲染高度为 0")
+    func emptyStatusBarTakesNoSpace() {
+        let provider = DefaultStatusBarProviding()
+
+        #expect(renderedHeight(provider: provider) == 0)
+    }
+
+    @Test("有贡献时状态栏保持 28pt 高度")
+    func contributedStatusBarKeepsHeight() {
+        let provider = DefaultStatusBarProviding()
+        provider.addStatusBarItems([
+            StatusBarItem(id: "git", title: "Git") { Text("Git") },
+        ])
+
+        #expect(renderedHeight(provider: provider) == 28)
+    }
+
+    @Test("撤回全部贡献后渲染高度回到 0")
+    func heightReturnsToZeroAfterRemove() {
+        let provider = DefaultStatusBarProviding()
+        provider.addStatusBarItems([
+            StatusBarItem(id: "git", title: "Git") { Text("Git") },
+        ])
+        provider.removeStatusBarItems(ids: ["git"])
+
+        #expect(renderedHeight(provider: provider) == 0)
+    }
+}
+#endif

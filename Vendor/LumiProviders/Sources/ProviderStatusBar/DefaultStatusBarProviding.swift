@@ -5,6 +5,9 @@ import SwiftUI
 /// `StatusBarProviding` 的默认实现：持有注入的 `StatusBarItem`，
 /// 并按 `placement`（leading / center / trailing）渲染为 28pt 高的状态栏。
 ///
+/// 没有任何贡献项时整条状态栏不渲染（不占高度，也不留背景、分隔线或点击区域）；
+/// 贡献项在有贡献后增删会驱动视图重新计算可见性。
+///
 /// 视觉与旧版 GitOK 状态栏对齐：
 /// - 高度 28pt，三段式布局（leading / center / trailing，段间 Spacer）；
 /// - 背景使用 `theme.surface`，顶部 1px 主题分隔线；
@@ -37,12 +40,20 @@ private struct StatusBarView: View {
     private let height: CGFloat = 28
 
     var body: some View {
+        if provider.hasVisibleStatusBarItems {
+            barContent
+        } else {
+            EmptyView()
+        }
+    }
+
+    private var barContent: some View {
         let items = provider.visibleStatusBarItems
         let leading = items.filter { $0.placement == .leading }
         let center = items.filter { $0.placement == .center }
         let trailing = items.filter { $0.placement == .trailing }
 
-        HStack(spacing: 8) {
+        return HStack(spacing: 8) {
             group(leading)
 
             Spacer(minLength: 12)
