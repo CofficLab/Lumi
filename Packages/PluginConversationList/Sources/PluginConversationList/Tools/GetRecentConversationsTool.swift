@@ -129,8 +129,13 @@ struct GetRecentConversationsTool: SuperAgentTool, @unchecked Sendable {
 
 private extension String {
     /// 转义 Markdown 表格中的管道符与换行，防止破坏表格结构。
+    ///
+    /// 必须先转义反斜杠：标题里若已有字面 `\|`，只替换管道会得到 `\\|`，
+    /// Markdown 把前两个反斜杠解释成一个字面反斜杠，管道符重新变成列分隔符，
+    /// 整行错列（#994）。
     func escapedForTable() -> String {
-        replacingOccurrences(of: "|", with: "\\|")
+        replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "|", with: "\\|")
             .replacingOccurrences(of: "\n", with: " ")
             .replacingOccurrences(of: "\r", with: " ")
     }
