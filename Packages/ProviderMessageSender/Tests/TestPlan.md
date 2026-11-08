@@ -22,7 +22,6 @@ ProviderMessageSender Lumi 编辑器 Provider。
 
 - **综合**（9 条）：由 `commitsUserMessageBeforeStartingTurn`、`preservesQueueBeforeDeferredTurnStart`、`sendsMessageThroughLoop` 等用例锁定；改动该模块时优先跑对应测试文件。
 
-## 
 - **DefaultMessageSender 回合中再发送的守门**（8 条）：由 `suspendedTurnQueuesNextMessage`、`externallyDrivenTurnQueuesNextMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProviderMessageSender**（4 条）：由 `commitsCollapsedBlocksIntoMetadata`、`rebasesCollapsedBlocksAfterTrim` 等用例锁定；改动该模块时优先跑对应测试文件。
 

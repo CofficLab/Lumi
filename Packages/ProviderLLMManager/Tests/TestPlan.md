@@ -27,7 +27,6 @@ ProviderLLMManager 的实现包，包含 5 个主要类型；当前测试覆盖 
 - **DefaultLLMProviderManagerProviding**（22 条）：由 `registerPreservesOrderAndReplaces`、`registerEmptyIDThrows`、`unregisterFallsBackSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DynamicModelList**（5 条）：由 `staticProviderUnchanged`、`remoteProviderDynamicModels`、`remoteProviderRefresh` 等用例锁定；改动该模块时优先跑对应测试文件。
 
-## 
 - **UserDefinedCloudProviderConfigurationTests**（17 条）：由 `rejectsEmptyOrWhitespaceDisplayName`、`trimsDisplayName` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **UserDefinedCloudProviderStoreTests**（13 条）：由 `upsertPersistsAndRegistersProvider`、`upsertReplacesConfigurationWithSameIdentifier` 等用例锁定；改动该模块时优先跑对应测试文件。
 

@@ -55,7 +55,6 @@ PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工�
 - **ScrollViewBottomController**（7 条）：由 `pinToBottomMovesOffsetToDocumentEnd`、`pinToBottomClampsOffsetWhenDocumentShorterThanViewport`、`controllerWithoutScrollViewIsNotAttached` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **StuckLoadingMask**（4 条）：由 `gateReleasesMaskWithinBudgetWithoutAnySettleRound`、`gateReleasesMaskWithinBudgetAfterConversationSwitch`、`gateAcceptsNewRoundForSameConversationAfterStaleRound` 等用例锁定；改动该模块时优先跑对应测试文件。
 
-## 
 - **BottomStickyPin**（5 条）：由 `bottomStaysPinnedWhenDocumentGrowsAfterSettle`、`bottomStaysPinnedAcrossConsecutiveGrowths` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListSuspendedToolRowIdentity**（3 条）：由 `mergedGroupRowIdentityChangesWhenMemberJoins`、`mergedGroupRowIdentityStableWhenMembersUnchanged` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListSyntheticRowOrdering**（3 条）：由 `toolGroupsSeparatedByTextMessageMustNotMerge`、`syntheticRowMustNotPrecedeItsSuspensionPoint` 等用例锁定；改动该模块时优先跑对应测试文件。
