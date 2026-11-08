@@ -20,17 +20,17 @@ public struct AddTasksToGoalV2Tool: SuperAgentTool, @unchecked Sendable {
     }
 
     private func execute(conversationID: UUID?, arguments: [String: ToolArgument]) async throws -> String {
-        guard let manager = GoalTaskToolSupport.manager() else { return "Error: goal task manager is not initialized" }
-        let inputs = GoalTaskToolSupport.taskInputs(arguments["tasks"]?.value); guard !inputs.isEmpty else { return "Error: no valid tasks found" }
+        guard let manager = GoalTaskToolSupport.manager() else { throw GoalTaskToolSupport.GoalTaskToolError(message: "goal task manager is not initialized") }
+        let inputs = GoalTaskToolSupport.taskInputs(arguments["tasks"]?.value); guard !inputs.isEmpty else { throw GoalTaskToolSupport.GoalTaskToolError(message: "no valid tasks found") }
         let goalId: String
         switch await GoalTaskToolSupport.resolveGoalId(raw: GoalTaskToolSupport.string(arguments, "goal_id"), conversationId: conversationID?.uuidString, manager: manager) {
         case .success(let id): goalId = id
-        case .failure(let error): return error.message
+        case .failure(let error): throw error
         }
         do {
             let tasks = try await manager.addTasksToGoal(goalId: goalId, tasks: inputs)
             if let goal = await manager.fetchGoal(id: goalId) { await manager.resetContinuationCount(conversationId: goal.conversationId); GoalTaskToolSupport.changed(goal.conversationId); return "✅ Added \(tasks.count) tasks to goal\n\n**Goal ID:** `\(goal.id)`\n\n" + tasks.enumerated().map { "\($0.offset + 1). [\($0.element.id)] **\($0.element.title)**" }.joined(separator: "\n") }
             return "✅ Added \(tasks.count) tasks to goal\n\n" + tasks.enumerated().map { "\($0.offset + 1). [\($0.element.id)] **\($0.element.title)**" }.joined(separator: "\n")
-        } catch { return "Error: failed to add tasks: \(error.localizedDescription)" }
+        } catch { throw GoalTaskToolSupport.GoalTaskToolError(message: "failed to add tasks: \(error.localizedDescription)") }
     }
 }

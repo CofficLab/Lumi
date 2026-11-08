@@ -20,13 +20,13 @@ public struct GetGoalProgressV2Tool: SuperAgentTool, @unchecked Sendable {
     }
 
     private func execute(conversationID: UUID?, arguments: [String: ToolArgument]) async throws -> String {
-        guard let manager = GoalTaskToolSupport.manager() else { return "Error: goal task manager is not initialized" }
+        guard let manager = GoalTaskToolSupport.manager() else { throw GoalTaskToolSupport.GoalTaskToolError(message: "goal task manager is not initialized") }
         let goalId: String
         switch await GoalTaskToolSupport.resolveGoalId(raw: GoalTaskToolSupport.string(arguments, "goal_id"), conversationId: conversationID?.uuidString, manager: manager) {
         case .success(let id): goalId = id
-        case .failure(let error): return error.message
+        case .failure(let error): throw error
         }
-        guard let goal = await manager.fetchGoal(id: goalId) else { return "Error: goal not found" }
+        guard let goal = await manager.fetchGoal(id: goalId) else { throw GoalTaskToolSupport.GoalTaskToolError(message: "goal not found") }
         let tasks = await manager.fetchTasks(goalId: goalId); let completed = tasks.filter { $0.status == .completed }.count; let skipped = tasks.filter { $0.status == .skipped }.count; let failed = tasks.filter { $0.status == .failed }.count; let active = tasks.filter { $0.status == .inProgress }.count; let pending = tasks.filter { $0.status == .pending }.count
         let progress = tasks.isEmpty ? 0 : Int(Double(completed + skipped) / Double(tasks.count) * 100)
         let rows = tasks.enumerated().map { index, task in "\(index + 1). \(icon(task.status)) \(task.title) [\(task.status.rawValue)]" }.joined(separator: "\n")

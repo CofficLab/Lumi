@@ -5,7 +5,7 @@
 GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标）+ Task（任务）两层结构的任务追踪能力。
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 143
+测试文件: 14 个，用例总数: 144
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -202,16 +202,17 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 | 141 | GoalTaskMigration | v5 迁移把数据库放到 GoalStateManager 读取路径 | 旧布局 `<legacy>/GoalTaskPlugin/GoalTaskPlugin/goals.sqlite` | 调用 `migrateData` | 数据库落在 `<current>/<plugin-id>/GoalTaskPlugin/goals.sqlite`，不再多套一层，可重复执行（**回归** #767） | P0 | ✅ 已覆盖 | `v5MigrationLandsDatabaseAtReadPath` |
 | 142 | GoalTaskMigration | 读取位置为空时提升被多套一层的旧库 | 读取位置已有空库、内层存在旧库 | 构造 `GoalStateManager` | 旧数据可见；读取位置已有数据时不覆盖（**回归** #767） | P0 | ✅ 已覆盖 | `promotesMisplacedStoreOnlyWhenReadPathIsEmpty` |
 | 143 | GoalTaskMigration | v4 的 `GoalTask` 数据目录必须被迁移 | 旧布局 `<legacy>/GoalTask/GoalTaskPlugin/goals.sqlite` | 调用 `migrateData` | 数据库落在当前读取路径；`legacyDataDirectoryNames` 含 `GoalTask`（**回归** #768） | P0 | ✅ 已覆盖 | `v4MigrationReadsGoalTaskDirectory` |
+| 144 | GoalTaskTools | GoalTask 工具的失败必须抛出结构化错误 | `get_goal_progress` 传入不存在的 goal_id | 调用 `executeResult` | 抛出错误且消息含候选列表；不再以 `isError == false` 返回（**回归** #769） | P0 | ✅ 已覆盖 | `getProgressThrowsForUnknownGoal` |
 
-> 说明：全部 **143 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **144 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 13 / 13
+- P0: 已覆盖 14 / 14
 - P1: 已覆盖 115 / 115
 - P2: 已覆盖 15 / 15
-- **合计: 143 / 143**（仅表示清单场景，非源码覆盖率）
+- **合计: 144 / 144**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -222,7 +223,7 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 143 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 144 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
