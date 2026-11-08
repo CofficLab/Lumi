@@ -68,6 +68,7 @@ public struct PromoDesignerView: View {
                 HTMLPreviewView(
                     htmlText: resolved.html,
                     fileURL: resolved.htmlURL,
+                    readAccessRootURL: resolved.directoryURL,
                     contentSize: preset.cgSize,
                     onBlockSelected: { selection in
                         sendBlockToChat(selection, resolved: resolved)
@@ -196,6 +197,7 @@ public struct PromoDesignerView: View {
                     let data = try await AppStorePromoHTMLExporter.exportPNG(
                         html: image.html,
                         fileURL: image.htmlURL,
+                        readAccessRootURL: image.directoryURL,
                         preset: preset
                     )
                     let localeDirectory = targetDirectory.appendingPathComponent(localeIdentifier, isDirectory: true)

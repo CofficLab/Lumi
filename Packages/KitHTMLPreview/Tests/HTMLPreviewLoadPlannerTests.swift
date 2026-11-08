@@ -123,6 +123,30 @@ struct HTMLPreviewLoadPlannerTests {
         #expect(directoryURL.absoluteDirectoryURL == directoryURL)
     }
 
+    @Test("read access root from an ancestor directory is honored for nested pages")
+    func ancestorReadAccessRootIsHonored() {
+        let fileURL = makeFileURL(fileName: "zh-Hans.html")
+        let root = URL(fileURLWithPath: "/tmp/KitHTMLPreview Tests", isDirectory: true)
+        let planner = HTMLPreviewLoadPlanner(fileReader: { _ in Data("<html></html>".utf8) })
+
+        #expect(planner.loadRequest(html: "<html></html>", fileURL: fileURL, readAccessRootURL: root) == .file(
+            fileURL: fileURL,
+            readAccessURL: root
+        ))
+    }
+
+    @Test("read access root that does not contain the file falls back to the file directory")
+    func unrelatedReadAccessRootFallsBackToParent() {
+        let fileURL = makeFileURL(fileName: "index.html")
+        let unrelated = URL(fileURLWithPath: "/tmp/KitHTMLPreview Other", isDirectory: true)
+        let planner = HTMLPreviewLoadPlanner(fileReader: { _ in Data("<html></html>".utf8) })
+
+        #expect(planner.loadRequest(html: "<html></html>", fileURL: fileURL, readAccessRootURL: unrelated) == .file(
+            fileURL: fileURL,
+            readAccessURL: fileURL.deletingLastPathComponent()
+        ))
+    }
+
     private func makeFileURL(fileName: String) -> URL {
         URL(fileURLWithPath: "/tmp/KitHTMLPreview Tests/Nested/\(fileName)")
     }

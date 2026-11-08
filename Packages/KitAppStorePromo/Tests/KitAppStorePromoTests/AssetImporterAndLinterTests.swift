@@ -208,4 +208,27 @@ struct AppStorePromoHTMLLinterTests {
         let report = AppStorePromoHTMLLinter().lint(html: html, documentDirectory: FileManager.default.temporaryDirectory)
         #expect(!report.errors.map(\.code).contains("missing_asset"))
     }
+
+    @Test func parentAssetsAreAllowedOnlyInsideDocumentDirectory() throws {
+        let imageRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let localizationDirectory = imageRoot.appendingPathComponent("localizations", isDirectory: true)
+        let assetDirectory = imageRoot.appendingPathComponent("assets", isDirectory: true)
+        try FileManager.default.createDirectory(at: localizationDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: assetDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: imageRoot) }
+        try Data([0xFF]).write(to: assetDirectory.appendingPathComponent("hero.png"))
+
+        let html = minimalHTML(body: #"<img src="../assets/hero.png"><img src="../../outside.png">"#)
+        let report = AppStorePromoHTMLLinter().lint(
+            html: html,
+            documentDirectory: imageRoot,
+            htmlDirectory: localizationDirectory
+        )
+
+        #expect(!report.errors.map(\.code).contains("missing_asset"), "共享 assets 应能在图片根目录内解析")
+        let unsafePaths = report.errors.filter { $0.code == "unsafe_asset_path" }.map(\.message)
+        #expect(unsafePaths.count == 1, "只有逃出图片根目录的路径应被拒绝")
+        #expect(unsafePaths.first?.contains("../../outside.png") == true)
+    }
 }

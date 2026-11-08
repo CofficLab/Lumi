@@ -11,6 +11,8 @@ public struct HTMLPreviewView: View {
 
     let htmlText: String
     let fileURL: URL?
+    /// 子目录页面的资源读取根目录（例如本地化 HTML 需要读取上级 assets）。
+    let readAccessRootURL: URL?
     /// When set, the WebView renders at this logical size and scales down to fit the container.
     let contentSize: CGSize?
     var onWebViewResolved: ((WKWebView) -> Void)?
@@ -25,6 +27,7 @@ public struct HTMLPreviewView: View {
     public init(
         htmlText: String,
         fileURL: URL? = nil,
+        readAccessRootURL: URL? = nil,
         contentSize: CGSize? = nil,
         onWebViewResolved: ((WKWebView) -> Void)? = nil,
         onBlockSelected: ((PromoBlockSelection) -> Void)? = nil,
@@ -33,6 +36,7 @@ public struct HTMLPreviewView: View {
     ) {
         self.htmlText = htmlText
         self.fileURL = fileURL
+        self.readAccessRootURL = readAccessRootURL
         self.contentSize = contentSize
         self.onWebViewResolved = onWebViewResolved
         self.onBlockSelected = onBlockSelected
@@ -65,6 +69,7 @@ public struct HTMLPreviewView: View {
             _WKWebViewWrapper(
                 html: htmlText,
                 fileURL: fileURL,
+                readAccessRootURL: readAccessRootURL,
                 containerSize: webViewSize,
                 onWebViewResolved: onWebViewResolved,
                 onBlockSelected: onBlockSelected,
@@ -107,6 +112,7 @@ public struct HTMLPreviewView: View {
 private struct _WKWebViewWrapper: NSViewRepresentable {
     let html: String
     let fileURL: URL?
+    let readAccessRootURL: URL?
     let containerSize: CGSize
     let onWebViewResolved: ((WKWebView) -> Void)?
     let onBlockSelected: ((PromoBlockSelection) -> Void)?
@@ -167,11 +173,15 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
             webView.frame = CGRect(origin: .zero, size: containerSize)
         }
 
-        let loadKey = LoadKey(html: html, fileURL: fileURL)
+        let loadKey = LoadKey(html: html, fileURL: fileURL, readAccessRootURL: readAccessRootURL)
         let didReload = context.coordinator.lastLoadKey != loadKey
         context.coordinator.lastLoadKey = loadKey
 
-        switch HTMLPreviewLoadPlanner().loadRequest(html: html, fileURL: fileURL) {
+        switch HTMLPreviewLoadPlanner().loadRequest(
+            html: html,
+            fileURL: fileURL,
+            readAccessRootURL: readAccessRootURL
+        ) {
         case .file(let fileURL, let readAccessURL):
             // 仅在内容变化时触发新加载；导航完成后 coordinator 会在 didFinish 重新注入 JS。
             if didReload {
@@ -439,6 +449,7 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
 fileprivate struct LoadKey: Equatable {
     let html: String
     let fileURL: URL?
+    let readAccessRootURL: URL?
 }
 
 /// 弱引用代理 `WKScriptMessageHandler`，打破 userContentController → handler → coordinator → webView 的保留环。

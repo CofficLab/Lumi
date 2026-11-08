@@ -35,7 +35,7 @@ public struct AppStorePromoHTMLLinter: Sendable {
         self.maximumUTF8Bytes = maximumUTF8Bytes
     }
 
-    public func lint(html: String, documentDirectory: URL? = nil) -> AppStorePromoLintReport {
+    public func lint(html: String, documentDirectory: URL? = nil, htmlDirectory: URL? = nil) -> AppStorePromoLintReport {
         var issues: [AppStorePromoLintIssue] = []
         let lower = html.lowercased()
 
@@ -74,15 +74,18 @@ public struct AppStorePromoHTMLLinter: Sendable {
             add(.warning, "background_missing", "Declare an opaque page background for App Store exports.")
         }
 
+        // 本地化 HTML 位于 localizations/ 子目录，相对路径要按它自身所在目录解析；
+        // 只要最终目标仍在图片根目录内就是安全的（本地化用 ../assets/ 共享素材）。
+        let baseDirectory = htmlDirectory ?? documentDirectory
         for path in localResourcePaths(in: html) {
             guard !path.hasPrefix("data:") && !path.hasPrefix("#") else { continue }
             let decoded = path.removingPercentEncoding ?? path
-            if decoded.hasPrefix("/") || decoded.contains("..") {
+            if decoded.hasPrefix("/") {
                 add(.error, "unsafe_asset_path", "Asset path escapes the page directory: \(path)")
                 continue
             }
-            if let documentDirectory {
-                let url = documentDirectory.appendingPathComponent(decoded).standardizedFileURL
+            if let documentDirectory, let baseDirectory {
+                let url = baseDirectory.appendingPathComponent(decoded).standardizedFileURL
                 let root = documentDirectory.standardizedFileURL.path
                 guard url.path.hasPrefix(root + "/") else {
                     add(.error, "unsafe_asset_path", "Asset path escapes the page directory: \(path)")
@@ -91,6 +94,8 @@ public struct AppStorePromoHTMLLinter: Sendable {
                 if !FileManager.default.fileExists(atPath: url.path) {
                     add(.error, "missing_asset", "Referenced asset does not exist: \(path)")
                 }
+            } else if decoded.contains("..") {
+                add(.error, "unsafe_asset_path", "Asset path escapes the page directory: \(path)")
             }
         }
 

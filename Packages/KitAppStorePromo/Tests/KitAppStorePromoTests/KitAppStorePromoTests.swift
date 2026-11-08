@@ -148,6 +148,74 @@ struct KitAppStorePromoTests {
         #expect(readChinese.htmlURL.lastPathComponent == "zh-Hans.html")
     }
 
+    @Test func localizationResolvesSharedAssetsFromImageRoot() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = AppStorePromoDocumentStore()
+        _ = try store.createTask(
+            storagePath: root.path,
+            slug: "assets",
+            title: "Assets",
+            appName: "Lumi",
+            deviceFamily: .mac,
+            localeIdentifier: "en-US"
+        )
+        _ = try store.createImage(
+            storagePath: root.path,
+            taskSlug: "assets",
+            imageSlug: "hero",
+            title: "Hello"
+        )
+        let primaryHTML = """
+        <!doctype html><html><head><meta name="viewport" content="width=device-width"></head>
+        <body style="background-color: white; overflow: hidden"><img src="./assets/hero.png"><h1>Hello</h1></body></html>
+        """
+        let imageRoot = root.appendingPathComponent("tasks/assets/images/hero", isDirectory: true)
+        let assetDirectory = imageRoot.appendingPathComponent("assets", isDirectory: true)
+        try FileManager.default.createDirectory(at: assetDirectory, withIntermediateDirectories: true)
+        try Data([0xFF]).write(to: assetDirectory.appendingPathComponent("hero.png"))
+        _ = try store.replaceHTML(
+            primaryHTML,
+            storagePath: root.path,
+            taskSlug: "assets",
+            imageSlug: "hero"
+        )
+
+        _ = try store.addLocalization(
+            "zh-hans",
+            copying: "en-US",
+            storagePath: root.path,
+            taskSlug: "assets",
+            imageSlug: "hero"
+        )
+
+        let primary = try store.readImage(
+            storagePath: root.path,
+            taskSlug: "assets",
+            imageSlug: "hero",
+            localeIdentifier: "en-US"
+        )
+        let localized = try store.readImage(
+            storagePath: root.path,
+            taskSlug: "assets",
+            imageSlug: "hero",
+            localeIdentifier: "zh-Hans"
+        )
+
+        #expect(primary.html.contains(#"src="./assets/hero.png""#), "主语言 HTML 不应被改写")
+        #expect(localized.html.contains(#"src="../assets/hero.png""#), "本地化应引用图片根目录下的共享素材")
+        #expect(!localized.html.contains(#"src="./assets/hero.png""#))
+        // 预览与导出以图片根目录为资源读取根，../assets 才在放行范围内。
+        #expect(localized.directoryURL.standardizedFileURL == imageRoot.standardizedFileURL)
+        #expect(try store.lintImage(
+            storagePath: root.path,
+            taskSlug: "assets",
+            imageSlug: "hero",
+            localeIdentifier: "zh-Hans"
+        ).isValid)
+    }
+
     @Test func legacyImageWithoutLocalesUsesTaskLocale() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         let imageDirectory = root.appendingPathComponent("tasks/legacy/images/hero", isDirectory: true)
