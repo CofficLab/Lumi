@@ -165,6 +165,93 @@ struct PluginBrewManagerTests {
         // "The operation couldn't be completed. (BrewManagerPlugin.BrewError error 1.)"。
         #expect(viewModel.errorMessage?.contains("permission denied") == true)
     }
+
+    @Test
+    func installSuccessReconcilesSearchResults() async throws {
+        let service = StatefulBrewManagerService(installed: [])
+        let viewModel = BrewManagerViewModel(service: service, autoCheckEnvironment: false)
+
+        viewModel.searchText = "node"
+        viewModel.performSearch()
+        try await Task.sleep(nanoseconds: 700_000_000)
+
+        guard let result = viewModel.searchResults.first else {
+            Issue.record("搜索没有返回结果")
+            return
+        }
+        #expect(result.installedVersion == nil)
+
+        await viewModel.install(package: result)
+
+        // 旧实现只刷新 installedPackages，Search 行仍是未安装状态。
+        #expect(viewModel.searchResults.first?.installedVersion == "26.4.0")
+        #expect(viewModel.searchResults.first?.isInstalled == true)
+    }
+
+    @Test
+    func uninstallSuccessReconcilesSearchResults() async throws {
+        let service = StatefulBrewManagerService(installed: ["node"])
+        let viewModel = BrewManagerViewModel(service: service, autoCheckEnvironment: false)
+
+        viewModel.searchText = "node"
+        viewModel.performSearch()
+        try await Task.sleep(nanoseconds: 700_000_000)
+
+        guard let result = viewModel.searchResults.first else {
+            Issue.record("搜索没有返回结果")
+            return
+        }
+        #expect(result.installedVersion == "26.4.0")
+
+        await viewModel.uninstall(package: result)
+
+        // 旧实现会让 Search 行继续显示已安装并隐藏 Install 按钮。
+        #expect(viewModel.searchResults.first?.installedVersion == nil)
+        #expect(viewModel.searchResults.first?.isInstalled == false)
+    }
+}
+
+private actor StatefulBrewManagerService: BrewManagerServicing {
+    private var installed: Set<String>
+
+    init(installed: Set<String>) {
+        self.installed = installed
+    }
+
+    private func makePackage(name: String, installedVersion: String?) -> BrewPackage {
+        BrewPackage(
+            name: name,
+            desc: "JavaScript runtime",
+            homepage: nil,
+            version: "26.4.0",
+            installedVersion: installedVersion,
+            outdated: false,
+            isCask: false
+        )
+    }
+
+    func checkInstalled() async -> Bool { true }
+
+    func listInstalled() async throws -> [BrewPackage] {
+        installed.contains("node") ? [makePackage(name: "node", installedVersion: "26.4.0")] : []
+    }
+
+    func getOutdated() async throws -> [BrewPackage] { [] }
+
+    func search(query: String) async throws -> [BrewPackage] {
+        [makePackage(name: "node", installedVersion: installed.contains("node") ? "26.4.0" : nil)]
+    }
+
+    func install(name: String, isCask: Bool) async throws {
+        installed.insert(name)
+    }
+
+    func uninstall(name: String, isCask: Bool) async throws {
+        installed.remove(name)
+    }
+
+    func upgrade(name: String, isCask: Bool) async throws {}
+    func upgradeAll() async throws {}
 }
 
 private actor FailingBrewManagerService: BrewManagerServicing {

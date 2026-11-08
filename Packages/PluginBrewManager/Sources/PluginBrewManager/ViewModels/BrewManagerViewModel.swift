@@ -125,6 +125,7 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
             
             self.installedPackages = installedList
             self.outdatedPackages = outdatedList
+            reconcileSearchResults(installed: installedList, outdated: outdatedList)
         } catch {
             if Self.verbose {
                 if BrewManagerPluginSupport.verbose {
@@ -136,7 +137,27 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
         
         isLoading = false
     }
-    
+
+    /// 用最新的已安装/可更新列表校正搜索结果。
+    ///
+    /// 搜索结果来自发起搜索时的快照，安装或卸载成功后必须同步状态，
+    /// 否则 Search 页会继续用旧的 `installedVersion` 渲染按钮。
+    private func reconcileSearchResults(installed: [BrewPackage], outdated: [BrewPackage]) {
+        guard !searchResults.isEmpty else { return }
+
+        let installedByName = Dictionary(installed.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
+        let outdatedNames = Set(outdated.map(\.name))
+
+        searchResults = searchResults.map { result in
+            let installedVersion = installedByName[result.name]?.installedVersion
+            let isOutdated = installedVersion != nil && outdatedNames.contains(result.name)
+            guard result.installedVersion != installedVersion || result.outdated != isOutdated else {
+                return result
+            }
+            return result.withInstallState(installedVersion: installedVersion, outdated: isOutdated)
+        }
+    }
+
     func performSearch() {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         searchCancellable?.cancel()
@@ -303,6 +324,21 @@ class BrewManagerViewModel: ObservableObject, SuperLog {
             errorMessage = pluginLocalization.string("Batch update failed: \(error.localizedDescription)")
         }
         isLoading = false
+    }
+}
+
+extension BrewPackage {
+    /// 返回仅替换安装状态、保留其余字段（名称、描述、版本等）的副本。
+    func withInstallState(installedVersion: String?, outdated: Bool) -> BrewPackage {
+        BrewPackage(
+            name: name,
+            desc: desc,
+            homepage: homepage,
+            version: version,
+            installedVersion: installedVersion,
+            outdated: outdated,
+            isCask: isCask
+        )
     }
 }
 
