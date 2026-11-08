@@ -31,7 +31,7 @@ ProviderLLMManager 的实现包，包含 5 个主要类型；当前测试覆盖 
 - **UserDefinedCloudProviderConfigurationTests**（17 条）：由 `rejectsEmptyOrWhitespaceDisplayName`、`trimsDisplayName` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **UserDefinedCloudProviderStoreTests**（13 条）：由 `upsertPersistsAndRegistersProvider`、`upsertReplacesConfigurationWithSameIdentifier` 等用例锁定；改动该模块时优先跑对应测试文件。
 
-测试用例清单
+## 测试用例清单
 
 | ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
 |----|------|------|----------|----------|----------|------|------|----------|

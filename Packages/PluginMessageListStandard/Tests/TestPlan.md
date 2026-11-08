@@ -60,7 +60,7 @@ PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工�
 - **MessageListSuspendedToolRowIdentity**（3 条）：由 `mergedGroupRowIdentityChangesWhenMemberJoins`、`mergedGroupRowIdentityStableWhenMembersUnchanged` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListSyntheticRowOrdering**（3 条）：由 `toolGroupsSeparatedByTextMessageMustNotMerge`、`syntheticRowMustNotPrecedeItsSuspensionPoint` 等用例锁定；改动该模块时优先跑对应测试文件。
 
-测试用例清单
+## 测试用例清单
 
 | ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
 |----|------|------|----------|----------|----------|------|------|----------|
