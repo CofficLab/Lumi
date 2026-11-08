@@ -6,7 +6,7 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 并以常驻注册的 ChatSection 槽位参与 `message-list` 互斥竞争。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，单元用例总数: 71（另有 6 条 UI 测试，见「UI 测试」章节）
+测试文件: 13 个，单元用例总数: 73（另有 6 条 UI 测试，见「UI 测试」章节）
 
 核心组件（源码目录）:
 - `Models/`
@@ -135,22 +135,24 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 | 69 | Activity scope | 项目维度没有历史时仍然显示 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `projectScopeStaysVisibleWithoutActivity` |
 | 70 | Activity scope | 切换统计范围会重新加载窗口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `switchingScopeReloads` |
 | 71 | Project context | 索引进行中时显示进行态而不是旧的文件数 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `indexingStateShowsProgress` |
+| 72 | Project context | 点击「打开文件树」先切回 Chat 再选中文件树（**回归 #1014**） | Browser 等工作区已隐藏 Rail，活动栏处于其它入口 | 调用 `ProjectContextNavigator.openFileTree`，用记录器观察调用顺序 | 先 `activateItem` Chat 入口，再 `activateTab` 文件树；顺序不可颠倒 | P0 | ✅ 已覆盖 | `fileTreeNavigationActivatesChatFirst` |
+| 73 | Project context | 缺少活动栏时仍退回激活文件树 tab（**#1014 护栏**） | 活动栏为 nil | 同上 | 只发生 `activateTab`，不崩溃、不吞掉导航 | P1 | ✅ 已覆盖 | `fileTreeNavigationFallsBackToRail` |
 
-> 说明：全部 **71 条单元场景**已在本包 `swift test` 中实跑通过；另有 6 条 UI 测试见下方章节。
+> 说明：全部 **73 条单元场景**已在本包 `swift test` 中实跑通过；另有 6 条 UI 测试见下方章节。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 12 / 12
-- P1: 已覆盖 51 / 51
+- P0: 已覆盖 13 / 13
+- P1: 已覆盖 52 / 52
 - P2: 已覆盖 8 / 8
-- **合计: 71 / 71**（仅表示清单场景，非源码覆盖率）
+- **合计: 73 / 73**（仅表示清单场景，非源码覆盖率）
 - **UI 测试: 6 条**（3 通过 / 2 跳过 / 1 未执行，见「UI 测试」章节）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
-- **P1**: 其余功能性用例（51 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P1**: 其余功能性用例（52 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## UI 测试

@@ -1,9 +1,12 @@
 import Foundation
+import ProviderActivityBar
 import ProviderConversation
 import ProviderGit
 import ProviderMessage
 import ProviderProject
 import ProviderProjectRAG
+import ProviderRailView
+import SwiftUI
 import Testing
 @testable import PluginMessageListEmpty
 
@@ -65,6 +68,60 @@ private final class ScopedMessageManager: MessageManaging {
         guard let conversationIDs else { return globalSeries }
         return conversationIDs.isEmpty ? [:] : scopedSeries
     }
+}
+
+// MARK: - Navigation stubs
+
+/// 记录跨插件跳转的调用顺序，用于断言「先切 Chat、再选文件树」。
+@MainActor
+private final class NavigationRecorder {
+    var events: [String] = []
+}
+
+@MainActor
+private final class RecordingActivityBar: ActivityBarProviding {
+    let recorder: NavigationRecorder
+    var items: [ActivityBarItem] = []
+
+    init(recorder: NavigationRecorder) {
+        self.recorder = recorder
+    }
+
+    func registerItems(_ items: [ActivityBarItem]) {
+        self.items = items
+    }
+
+    func activateItem(id: String?) {
+        guard let id else { return }
+        recorder.events.append("activity:\(id)")
+    }
+
+    func makeActivityBarView() -> AnyView { AnyView(EmptyView()) }
+}
+
+@MainActor
+private final class RecordingRail: RailViewProviding {
+    let recorder: NavigationRecorder
+    var tabs: [RailTabItem] = []
+
+    init(recorder: NavigationRecorder) {
+        self.recorder = recorder
+    }
+
+    func registerTabs(_ tabs: [RailTabItem]) {
+        self.tabs = tabs
+    }
+
+    func activateTab(id: String?) {
+        guard let id else { return }
+        recorder.events.append("tab:\(id)")
+    }
+
+    func activateTabWhenAvailable(id: String?) {
+        activateTab(id: id)
+    }
+
+    func makeRailView() -> AnyView { AnyView(EmptyView()) }
 }
 
 // MARK: - Tests
@@ -433,5 +490,71 @@ struct ActivityScopeTests {
         await model.setScope(.project)
         #expect(model.effectiveScope == .project)
         #expect(model.totalMessages == 7)
+    }
+
+    @Test("file tree navigation restores Chat before selecting Explorer")
+    func fileTreeNavigationActivatesChatFirst() {
+        let recorder = NavigationRecorder()
+        let activityBar = RecordingActivityBar(recorder: recorder)
+        activityBar.items = [ActivityBarItem(
+            id: "com.coffic.lumi.plugin.chat-panel.entry",
+            title: "Chat",
+            systemImage: "bubble.left",
+            ownerPluginID: "com.coffic.lumi.plugin.chat-panel"
+        )]
+        let rail = RecordingRail(recorder: recorder)
+        rail.tabs = [RailTabItem(
+            id: "explorer",
+            category: .fileTree,
+            title: "Explorer",
+            systemImage: "folder"
+        ) { EmptyView() }]
+        let services = MessageListEmptyServices(
+            project: nil,
+            promptSuggestions: nil,
+            promptSuggestionExecutor: nil,
+            messages: nil,
+            conversations: nil,
+            projectRAG: nil,
+            git: nil,
+            activityBar: activityBar,
+            railView: rail
+        )
+
+        ProjectContextNavigator.openFileTree(services: services)
+
+        // Browser 等工作区隐藏了 Rail；必须先切 Chat 让 Rail 重新挂载，
+        // 再选中文件树，否则这次点击没有任何可见结果。
+        #expect(recorder.events == [
+            "activity:com.coffic.lumi.plugin.chat-panel.entry",
+            "tab:explorer",
+        ])
+    }
+
+    @Test("file tree navigation still selects the tab without an activity bar")
+    func fileTreeNavigationFallsBackToRail() {
+        let recorder = NavigationRecorder()
+        let rail = RecordingRail(recorder: recorder)
+        rail.tabs = [RailTabItem(
+            id: "explorer",
+            category: .fileTree,
+            title: "Explorer",
+            systemImage: "folder"
+        ) { EmptyView() }]
+        let services = MessageListEmptyServices(
+            project: nil,
+            promptSuggestions: nil,
+            promptSuggestionExecutor: nil,
+            messages: nil,
+            conversations: nil,
+            projectRAG: nil,
+            git: nil,
+            activityBar: nil,
+            railView: rail
+        )
+
+        ProjectContextNavigator.openFileTree(services: services)
+
+        #expect(recorder.events == ["tab:explorer"])
     }
 }

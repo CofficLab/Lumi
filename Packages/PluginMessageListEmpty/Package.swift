@@ -46,6 +46,8 @@ let package = Package(
             dependencies: [
                 "PluginMessageListEmpty",
                 .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
+                .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderGit", package: "ProviderGit"),
