@@ -130,13 +130,21 @@ final class CADDesignerLogicTests: XCTestCase {
         XCTAssertEqual(result.totalRemainder, 0)
     }
 
-    func testCutOptimizerOversizedDemandFiltered() {
+    func testCutOptimizerReportsOversizedDemand() {
         let optimizer = CutOptimizer()
-        // 超过原料长度的需求应被过滤
+        // 超过原料长度的需求不参与排料，但必须被显式报告而不是静默丢弃
         let result = optimizer.optimize(demands: [7000, 500], stockLength: 6000)
         XCTAssertEqual(result.stockCount, 1)
         let totalCut = result.stocks.flatMap(\.cuts).reduce(0, +)
         XCTAssertEqual(totalCut, 500, accuracy: 0.001)
+        XCTAssertEqual(result.unschedulableDemands, [7000])
+    }
+
+    func testCutOptimizerReportsOnlyUnschedulableDemands() {
+        // 全部需求都超长时，不能返回一个“无需求”的空结果
+        let result = CutOptimizer().optimize(demands: [8000, 7000], stockLength: 6000)
+        XCTAssertEqual(result.stockCount, 0)
+        XCTAssertEqual(result.unschedulableDemands, [8000, 7000])
     }
 
     // MARK: - Component Library

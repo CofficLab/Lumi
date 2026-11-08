@@ -27,12 +27,21 @@ public struct CutOptimizationResult: Equatable, Sendable {
     public let totalRemainder: Double
     /// 总利用率。
     public let totalUtilization: Double
+    /// 超过单根原料长度、无法排入任何原料的需求长度（降序）。
+    public let unschedulableDemands: [Double]
 
-    public init(stocks: [CutStockResult], stockCount: Int, totalRemainder: Double, totalUtilization: Double) {
+    public init(
+        stocks: [CutStockResult],
+        stockCount: Int,
+        totalRemainder: Double,
+        totalUtilization: Double,
+        unschedulableDemands: [Double] = []
+    ) {
         self.stocks = stocks
         self.stockCount = stockCount
         self.totalRemainder = totalRemainder
         self.totalUtilization = totalUtilization
+        self.unschedulableDemands = unschedulableDemands
     }
 }
 
@@ -49,12 +58,23 @@ public struct CutOptimizer {
     ///   - stockLength: 单根原料长度（mm），默认 6000mm 欧标。
     /// - Returns: 切割方案。
     public func optimize(demands: [Double], stockLength: Double = 6000) -> CutOptimizationResult {
+        // 超过原料长度的需求无法被任何原料容纳，必须显式报告而不是静默丢弃。
+        let unschedulableDemands = demands
+            .filter { $0 > stockLength }
+            .sorted(by: >)
+
         let validDemands = demands
             .filter { $0 > 0 && $0 <= stockLength }
             .sorted(by: >)
 
         guard !validDemands.isEmpty else {
-            return CutOptimizationResult(stocks: [], stockCount: 0, totalRemainder: 0, totalUtilization: 0)
+            return CutOptimizationResult(
+                stocks: [],
+                stockCount: 0,
+                totalRemainder: 0,
+                totalUtilization: 0,
+                unschedulableDemands: unschedulableDemands
+            )
         }
 
         // bins[i] = (已用长度, 切割列表)
@@ -84,7 +104,8 @@ public struct CutOptimizer {
             stocks: stocks,
             stockCount: stocks.count,
             totalRemainder: totalRemainder,
-            totalUtilization: totalUtilization
+            totalUtilization: totalUtilization,
+            unschedulableDemands: unschedulableDemands
         )
     }
 }
