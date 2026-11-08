@@ -258,6 +258,30 @@ struct GoalStateManagerAppendForkTests {
         #expect(forked.completedAt == nil)
     }
 
+    @Test("分叉 blocked Goal 时保留阻塞原因")
+    func testForkPreservesBlockedReason() async throws {
+        let (manager, tempDir) = try makeManager()
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let source = try await manager.createGoal(
+            conversationId: "fork-blocked",
+            title: "Blocked goal",
+            description: nil,
+            successCriteria: nil,
+            tasks: [(title: "T", description: nil, executionContext: nil, parallelGroup: nil)]
+        )
+        _ = try await manager.updateGoalStatus(
+            id: source.goal.id,
+            status: .blocked,
+            blockedReason: "Missing API key"
+        )
+
+        let forked = try await manager.forkGoal(id: source.goal.id, into: "fork-blocked-target").goal
+
+        #expect(forked.status == .blocked)
+        #expect(forked.blockedReason == "Missing API key")
+    }
+
     @Test("目标会话已有活跃 Goal 时拒绝 fork")
     func testForkRejectsWhenTargetHasActiveGoal() async throws {
         let (manager, tempDir) = try makeManager()
