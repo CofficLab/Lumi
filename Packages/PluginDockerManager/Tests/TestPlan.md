@@ -5,7 +5,7 @@
 DockerManagerPlugin Docker container management plugin for Lumi.
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 49
+测试文件: 4 个，用例总数: 53
 
 核心组件（源码目录）:
 - `Models/`
@@ -86,27 +86,31 @@ DockerManagerPlugin Docker container management plugin for Lumi.
 | 47 | 综合 | selectingAnotherImageIgnoresStaleDetails | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectingAnotherImageIgnoresStaleDetails` |
 | 48 | 综合 | pullImageRejectsInvalidReferencesBeforeCallingDocker | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `pullImageRejectsInvalidReferencesBeforeCallingDocker` |
 | 49 | 综合 | tagImageRejectsInvalidReferencesBeforeCallingDocker | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `tagImageRejectsInvalidReferencesBeforeCallingDocker` |
+| 50 | Docker image decoding | 缺少 VirtualSize 时回退到 Size，而不是丢弃整行 | Docker 29.x 风格输出，无 VirtualSize | 解码该行 | `virtualSize == size`，镜像被保留 | P1 | ✅ 已覆盖 | `missingVirtualSizeFallsBackToSize` |
+| 51 | Docker image decoding | 全部行解析失败时抛错，而不是返回成功的空列表 | 只有无效 JSON 行 | 调用 `decodeImages` | 抛出 `DockerError.parsingFailed` | P0 | ✅ 已覆盖 | `allInvalidLinesThrow` |
+| 52 | Docker image decoding | 部分行解析失败时保留成功行 | 一行有效 + 一行无效 | 调用 `decodeImages` | 返回有效镜像，不抛错 | P1 | ✅ 已覆盖 | `partialFailureKeepsValidImages` |
+| 53 | Docker image decoding | 空输出返回空列表 | 空字符串 | 调用 `decodeImages` | 返回空数组 | P2 | ✅ 已覆盖 | `emptyOutputReturnsEmptyList` |
 
-> 说明：全部 **49 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **53 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
-- P1: 已覆盖 38 / 38
-- P2: 已覆盖 2 / 2
-- **合计: 49 / 49**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 10 / 10
+- P1: 已覆盖 40 / 40
+- P2: 已覆盖 3 / 3
+- **合计: 53 / 53**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（38 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P1**: 其余功能性用例（40 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 49 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 53 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
