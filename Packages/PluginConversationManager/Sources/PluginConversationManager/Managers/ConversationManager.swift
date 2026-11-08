@@ -117,7 +117,8 @@ public final class ConversationManager: ConversationManaging, SuperLog {
         // Synchronous load on MainActor - the store.fetchConversations is async but we await it
         Task { @MainActor in
             _ = await store.migrateLegacyModelSelections()
-            let persistedSelectedID = self.loadPersistedSelectedConversationID()
+            let persistedState = self.loadPersistedState()
+            let persistedSelectedID = persistedState?.selectedConversationID
             var loaded = await store.fetchConversationPage(limit: Self.initialPageSize)
 
             if let persistedSelectedID,
@@ -137,6 +138,11 @@ public final class ConversationManager: ConversationManaging, SuperLog {
                 if let selectedID = self.selectedConversationID,
                    !loaded.contains(where: { $0.id == selectedID }) {
                     self.selectedConversationID = loaded.first?.id
+                }
+                // New Chat 的默认语言独立于选中会话，必须跨重启保留；
+                // 选中会话存在时，下面的会话级恢复仍会覆盖它。
+                if let persistedLanguage = persistedState?.globalLanguage {
+                    self.globalLanguage = persistedLanguage
                 }
                 // 初始化全局详细程度为当前选中对话的详细程度
                 self.globalVerbosity = self.verbosity(for: self.selectedConversationID)
@@ -272,21 +278,22 @@ public final class ConversationManager: ConversationManaging, SuperLog {
         currentTitle = newTitle
     }
 
-    func loadPersistedSelectedConversationID() -> UUID? {
+    private func loadPersistedState() -> ConversationState? {
         guard let data = try? Data(contentsOf: stateFileURL),
               let state = try? JSONDecoder().decode(ConversationState.self, from: data) else {
             return nil
         }
-        return state.selectedConversationID
+        return state
     }
 
     func persistSelectedConversationID() {
         // 主线程零 I/O：编码与原子写盘全部移出点击链路（异步队列）。
         let selectedID = selectedConversationID
+        let language = globalLanguage
         let fileURL = stateFileURL
         let directory = fileURL.deletingLastPathComponent()
         Self.stateWriteQueue.async {
-            let state = ConversationState(selectedConversationID: selectedID)
+            let state = ConversationState(selectedConversationID: selectedID, globalLanguage: language)
             guard let data = try? JSONEncoder().encode(state) else { return }
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             try? data.write(to: fileURL, options: .atomic)
@@ -303,6 +310,8 @@ public final class ConversationManager: ConversationManaging, SuperLog {
 
 private struct ConversationState: Codable {
     let selectedConversationID: UUID?
+    /// 旧版本 `state.json` 不含该字段，用可选值兼容解码。
+    let globalLanguage: ConversationLanguage?
 }
 
 // MARK: - Selected Conversation Observer

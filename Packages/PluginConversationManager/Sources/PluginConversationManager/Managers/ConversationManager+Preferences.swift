@@ -213,6 +213,8 @@ extension ConversationManager {
         guard globalLanguage != language else { return }
         globalLanguage = language
         notifyConversationObservers(.languageChanged(nil))
+        // New Chat 的默认语言没有会话承载，必须单独落盘才能跨重启保留。
+        persistSelectedConversationID()
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setGlobalLanguage: language=\(language.rawValue)")
