@@ -20,6 +20,8 @@ public enum LLMToolNameSanitizer {
     /// - 若首字符不是字母（数字 / 下划线 / 短横线 / 非法字节），统一补 `tool_`
     ///   前缀，满足 Kimi 等端点「must start with a letter」的要求
     /// - 空名 / 全非法字符的兜底返回 `"tool"`
+    /// - 超过 64 字符时保留稳定前缀并追加基于原文的 64 位哈希，保证长度合规
+    ///   且同名工具每次得到相同结果、不同原文不会因截断撞名
     public static func sanitize(_ raw: String) -> String {
         var result = ""
         result.reserveCapacity(raw.utf8.count + 5)
@@ -34,7 +36,26 @@ public enum LLMToolNameSanitizer {
             }
             result.append(Character(UnicodeScalar(isLegal ? byte : 0x5F)))
         }
-        return result.isEmpty ? "tool" : result
+        guard !result.isEmpty else { return "tool" }
+
+        // Anthropic / OpenAI 都限制 function name 最多 64 字符。
+        // 转义后全为 ASCII，`count` 即字节数。
+        let maximumLength = 64
+        guard result.count > maximumLength else { return result }
+
+        let hash = stableHash(raw)
+        let prefixLength = maximumLength - hash.count - 1
+        return "\(result.prefix(prefixLength))_\(hash)"
+    }
+
+    /// FNV-1a 64 位哈希：不依赖 Swift 随机化 `Hasher`，跨进程稳定。
+    private static func stableHash(_ value: String) -> String {
+        var hash: UInt64 = 0xcbf2_9ce4_8422_2325
+        for byte in value.utf8 {
+            hash ^= UInt64(byte)
+            hash = hash &* 0x0000_0100_0000_01B3
+        }
+        return String(format: "%016llx", hash)
     }
 
     /// 建立「sanitize 后名字 → 原始注册名」的反查映射。
