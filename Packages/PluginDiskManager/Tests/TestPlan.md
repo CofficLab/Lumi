@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 52 条用例。
+PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 53 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 52
+测试文件: 4 个，用例总数: 53
 
 核心组件（源码目录）:
 - `Internal/`
@@ -38,7 +38,7 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **CacheCleanerTrash**（2 条）：由 `scanExpandsTrashIntoChildren`、`cleanupKeepsTrashRoot` 锁定；改动废纸篓/缓存扫描与清理逻辑时优先跑对应测试文件。
-- **DiskManagerLumiTools**（24 条）：由 `formatBytesProducesHumanReadableString`、`formatBytesHandlesZero`、`formatDateReturnsUnknownForNil` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DiskManagerLumiTools**（25 条）：由 `formatBytesProducesHumanReadableString`、`formatBytesHandlesZero`、`formatDateReturnsUnknownForNil` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DiskModelsPureLogic**（19 条）：由 `classifiesImages`、`classifiesVideos`、`classifiesAudio` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（7 条）：由 `pluginMetadataIsStable`、`agentToolsContributionIsAvailable`、`railTabIDIsStable` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -98,27 +98,28 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 50 | DiskManagerLumiTools | clean-xcode-caches 删除带末尾空格的路径时不影响同名兄弟目录 | 临时目录下 `lumi-target` 与 `lumi-target ` 两个目录 | 只传 `lumi-target ` 调用 `CleanXcodeCachesTool.execute` | 后者被删除，前者保留 | P0 | ✅ 已覆盖 | `cleanXcodeCachesToolDeletesExactPathWithTrailingWhitespace` |
 | 51 | DiskManagerLumiTools | clean-projects 删除带末尾空格的路径时不影响同名兄弟目录 | 临时目录下 `lumi-target` 与 `lumi-target ` 两个目录 | 只传 `lumi-target ` 调用 `CleanProjectsTool.execute` | 后者被删除，前者保留 | P0 | ✅ 已覆盖 | `cleanProjectsToolDeletesExactPathWithTrailingWhitespace` |
 | 52 | DiskManagerLumiTools | delete-files 删除带末尾空格的路径时不影响同名兄弟目录 | 临时目录下 `lumi-target` 与 `lumi-target ` 两个目录 | 只传 `lumi-target ` 调用 `DeleteFilesTool.execute` | 后者被删除，前者保留 | P0 | ✅ 已覆盖 | `deleteFilesToolDeletesExactPathWithTrailingWhitespace` |
+| 53 | DiskManagerLumiTools | 三个清理工具删除失败时抛出错误而非返回成功文本 | 不存在的绝对路径 | 调用 `executeResult` | 均抛出 `ToolExecutionError.executionFailed` | P0 | ✅ 已覆盖 | `cleanToolsThrowWhenDeletionFails` |
 
-> 说明：全部 **52 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **53 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
+- P0: 已覆盖 8 / 8
 - P1: 已覆盖 38 / 38
 - P2: 已覆盖 7 / 7
-- **合计: 52 / 52**（仅表示清单场景，非源码覆盖率）
+- **合计: 53 / 53**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
 - **P1**: 其余功能性用例（38 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 52 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 53 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

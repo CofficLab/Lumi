@@ -397,7 +397,10 @@ struct CleanCachesTool: SuperAgentTool {
                 "Cleaned \(paths.count) cache path(s); freed \(DiskManagerToolSupport.formatBytes(freed)).",
             ] + perLine).joined(separator: "\n")
         } catch {
-            return "Failed to clean caches: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Failed to clean caches: \(error.localizedDescription)"
+            )
         }
     }
 }
@@ -513,7 +516,10 @@ struct CleanXcodeCachesTool: SuperAgentTool {
                 "Cleaned \(paths.count) Xcode cache path(s); freed ~\(DiskManagerToolSupport.formatBytes(freed)).",
             ] + perLine).joined(separator: "\n")
         } catch {
-            return "Failed to clean Xcode caches: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Failed to clean Xcode caches: \(error.localizedDescription)"
+            )
         }
     }
 }
@@ -617,7 +623,10 @@ struct CleanProjectsTool: SuperAgentTool {
                 "Cleaned \(paths.count) project dependency path(s); freed ~\(DiskManagerToolSupport.formatBytes(freed)).",
             ] + perLine).joined(separator: "\n")
         } catch {
-            return "Failed to clean project dependencies: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Failed to clean project dependencies: \(error.localizedDescription)"
+            )
         }
     }
 }
