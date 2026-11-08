@@ -124,6 +124,54 @@ private actor ControlledDriver: DatabaseDriver {
     }
 }
 
+/// 记录所有 SQL 的假连接，用于验证结构刷新是否真的打到数据库。
+private actor QueryCountingConnection: DatabaseConnection {
+    private var issuedQueries: [String] = []
+
+    func query(_ sql: String, params: [DatabaseValue]?) async throws -> QueryResult {
+        issuedQueries.append(sql)
+        return QueryResult(columns: [], rows: [], rowsAffected: 0)
+    }
+
+    func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int {
+        issuedQueries.append(sql)
+        return 0
+    }
+
+    func beginTransaction() async throws -> any DatabaseTransaction {
+        TestTransaction()
+    }
+
+    func close() async {}
+
+    func isAlive() async -> Bool {
+        true
+    }
+
+    func isClosed() -> Bool {
+        false
+    }
+
+    func issuedQueryCount() -> Int {
+        issuedQueries.count
+    }
+}
+
+/// 返回固定计数连接的假驱动。
+private actor CountingDriver: DatabaseDriver {
+    nonisolated let type: DatabaseType
+    private let connection: QueryCountingConnection
+
+    init(type: DatabaseType, connection: QueryCountingConnection) {
+        self.type = type
+        self.connection = connection
+    }
+
+    func connect(config: DatabaseConfig) async throws -> any DatabaseConnection {
+        connection
+    }
+}
+
 @MainActor
 @Suite struct DatabaseViewModelConnectionRaceTests {
     private func makeSUT() async -> (
@@ -198,5 +246,25 @@ private actor ControlledDriver: DatabaseDriver {
         #expect(viewModel.isLoading == false)
         let staleConnectionClosed = await connectionA.isClosed()
         #expect(staleConnectionClosed)
+    }
+
+    @Test("Reload 侧边栏对象树必须绕过缓存重新查询数据库")
+    func sidebarReloadBypassesSchemaCache() async {
+        let manager = DatabaseManagerCore()
+        await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
+        let connection = QueryCountingConnection()
+        let driver = CountingDriver(type: .postgresql, connection: connection)
+        await manager.register(driver: driver)
+        let viewModel = DatabaseViewModel(loadSavedConfigs: false, manager: manager)
+        let config = DatabaseConfig(name: "db-reload", type: .postgresql, database: "db-reload")
+
+        await viewModel.connect(config: config)
+        let afterConnect = await connection.issuedQueryCount()
+
+        // 首次连接已经填充过结构缓存，Reload 不能再直接命中缓存。
+        await viewModel.refreshSidebarObjects()
+
+        let afterReload = await connection.issuedQueryCount()
+        #expect(afterReload > afterConnect)
     }
 }
