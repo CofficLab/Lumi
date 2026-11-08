@@ -55,21 +55,26 @@ struct TextActionsPermissionTests {
 
     @Test("授权状态变化时通过回调通知外部")
     func reportsGrantThroughCallback() {
-        let state = TextActionsPermissionState()
+        var granted = false
+        let state = TextActionsPermissionState(statusProvider: { granted ? .granted : .notGranted })
         defer { state.stop() }
 
         var grantedCount = 0
         state.onPermissionGranted = { grantedCount += 1 }
 
+        // 未授权时刷新不应通知。
         state.refresh()
+        #expect(grantedCount == 0)
 
-        // 只有当状态从「未授权」变为「已授权」时才通知。
-        // 重复 refresh 不应重复通知。
-        if state.status.isGranted {
-            #expect(grantedCount <= 1)
-        } else {
-            #expect(grantedCount == 0)
-        }
+        // 用户去系统设置授权后切回 Lumi：激活刷新读到 granted，
+        // 必须通知外部启动选区监听，否则划词功能静默失效。
+        granted = true
+        state.refresh()
+        #expect(grantedCount == 1)
+
+        // 已授权状态重复刷新不应重复通知。
+        state.refresh()
+        #expect(grantedCount == 1)
     }
 }
 

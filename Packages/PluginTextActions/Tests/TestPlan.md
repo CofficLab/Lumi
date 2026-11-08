@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 72 条用例。
+PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 87 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 72
+测试文件: 4 个，用例总数: 87
 
 核心组件（源码目录）:
 - `Views/`
@@ -81,61 +81,75 @@ PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 
 | 37 | TextActionsCore | 旧版翻译请求与新版语义一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `legacyTranslationRequestMatchesV2` |
 | 38 | TextActionsCore | 选区结果按值比较 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectedTextIsEquatable` |
 | 39 | TextActionsCore | 携带选区 bounds 参与比较 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `carriesSelectionRect` |
-| 31 | TextActionsPluginLifecycle | 注册时写入关于与说明书文档条目 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registerAddsDocsEntries` |
-| 32 | TextActionsPluginLifecycle | 缺少文档 Provider 时注册不抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registerWithoutDocsProviderIsNoop` |
-| 33 | TextActionsPluginLifecycle | 启动时把存储目录注入运行时 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bootInjectsStorageDirectory` |
-| 34 | TextActionsPluginLifecycle | 缺少存储 Provider 时启动不抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bootWithoutStorageProviderIsNoop` |
-| 35 | TextActionsPluginLifecycle | 关闭时移除设置入口并清理观察者 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shutdownCleansUp` |
-| 36 | TextActionsPluginLifecycle | 注销时移除文档条目 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unregisterRemovesDocsEntries` |
-| 37 | TextActionsPluginLifecycle | 插件元数据保持稳定 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `pluginMetadataIsStable` |
-| 38 | TextActionsPluginLifecycle | 没有旧开关时不做任何导入 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `skipsWhenNoLegacyValue` |
-| 39 | TextActionsPluginLifecycle | 取不到旧域时不做任何导入 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `skipsWhenDomainUnavailable` |
-| 40 | TextActionsPluginLifecycle | 旧开关被导入插件专属存储 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `importsLegacyValue` |
-| 41 | TextActionsPluginLifecycle | 存储已有值时不被旧开关覆盖 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doesNotOverwriteExistingValue` |
-| 42 | TextActionsStorage | 注入目录后 settingsDirectory 返回该目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `usesConfiguredDirectory` |
-| 43 | TextActionsStorage | 重置后回到默认回退目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resetsToFallbackDirectory` |
-| 44 | TextActionsStorage | 写入后能读回同一个值 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `roundTripsValue` |
-| 45 | TextActionsStorage | 写入 nil 会移除该键 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `removingValue` |
-| 46 | TextActionsStorage | 未写入的键读回 nil 与 false | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `missingKeyReadsAsEmpty` |
-| 47 | TextActionsStorage | 非布尔值按 false 处理 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nonBooleanReadsAsFalse` |
-| 48 | TextActionsStorage | 启用开关可读写 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `enabledSwitchRoundTrips` |
-| 49 | TextActionsStorage | 存储落在 settings.plist 且能被新实例读回 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `persistsAcrossInstances` |
-| 50 | TextActionsStorage | 损坏的 plist 被当作空字典 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `treatsCorruptFileAsEmpty` |
-| 51 | TextActionsStorage | 不同实例使用各自隔离的目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `isolatesInstancesByDirectory` |
-| 52 | TextActionMenuPanel | 初始状态是动作条 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `initialStateIsActions` |
-| 53 | TextActionMenuPanel | perform 转发给注入的处理器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `performForwardsToHandler` |
-| 54 | TextActionMenuPanel | 状态切换触发 onStateChange | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `stateChangeNotifies` |
-| 55 | TextActionMenuPanel | 文本变化不自动重置状态——由控制器决定何时回到动作条 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `textChangeDoesNotResetState` |
-| 56 | TextActionMenuPanel | 动作条渲染出内容 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `actionsStateRendersContent` |
-| 57 | TextActionMenuPanel | 复制反馈渲染出内容 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `copiedStateRendersContent` |
-| 58 | TextActionMenuPanel | 翻译结果渲染出内容 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `translatedStateRendersContent` |
-| 59 | TextActionMenuPanel | 翻译失败渲染出内容 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `failedStateRendersContent` |
-| 60 | TextActionMenuPanel | 面板不抢焦点、不在后台隐藏 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `panelIsNonActivatingAndPersistent` |
-| 61 | TextActionMenuPanel | 面板跨 Space 且可叠加在全屏应用上 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `panelCollectionBehavior` |
-| 62 | TextActionMenuPanel | 译文卡片在 SwiftUI 布局完成后上报实际尺寸 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `translatedIntrinsicSizeFollowsLayout` |
-| 63 | TextActionMenuPanel | 长译文把浮层撑到滚动上限 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `longTranslationExpandsPanel` |
-| 64 | TextActionMenuPanel | 品牌标识使用 App 图标资源 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `brandMarkUsesBundledAppIcon` |
+| 40 | TextActionsPluginLifecycle | 注册时写入关于与说明书文档条目 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registerAddsDocsEntries` |
+| 41 | TextActionsPluginLifecycle | 缺少文档 Provider 时注册不抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registerWithoutDocsProviderIsNoop` |
+| 42 | TextActionsPluginLifecycle | 启动时把存储目录注入运行时 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bootInjectsStorageDirectory` |
+| 43 | TextActionsPluginLifecycle | 缺少存储 Provider 时启动不抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bootWithoutStorageProviderIsNoop` |
+| 44 | TextActionsPluginLifecycle | 关闭时移除设置入口并清理观察者 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shutdownCleansUp` |
+| 45 | TextActionsPluginLifecycle | 注销时移除文档条目 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unregisterRemovesDocsEntries` |
+| 46 | TextActionsPluginLifecycle | 插件元数据保持稳定 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `pluginMetadataIsStable` |
+| 47 | TextActionsPluginLifecycle | 没有旧开关时不做任何导入 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `skipsWhenNoLegacyValue` |
+| 48 | TextActionsPluginLifecycle | 取不到旧域时不做任何导入 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `skipsWhenDomainUnavailable` |
+| 49 | TextActionsPluginLifecycle | 旧开关被导入插件专属存储 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `importsLegacyValue` |
+| 50 | TextActionsPluginLifecycle | 存储已有值时不被旧开关覆盖 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doesNotOverwriteExistingValue` |
+| 51 | TextActionsStorage | 注入目录后 settingsDirectory 返回该目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `usesConfiguredDirectory` |
+| 52 | TextActionsStorage | 重置后回到默认回退目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resetClearsInjectedDirectory` |
+| 53 | TextActionsStorage | 写入后能读回同一个值 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `roundTripsValue` |
+| 54 | TextActionsStorage | 写入 nil 会移除该键 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `removingValue` |
+| 55 | TextActionsStorage | 未写入的键读回 nil 与 false | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `missingKeyReadsAsEmpty` |
+| 56 | TextActionsStorage | 非布尔值按 false 处理 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nonBooleanReadsAsFalse` |
+| 57 | TextActionsStorage | 启用开关可读写 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `enabledSwitchRoundTrips` |
+| 58 | TextActionsStorage | 存储落在 settings.plist 且能被新实例读回 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `persistsAcrossInstances` |
+| 59 | TextActionsStorage | 损坏的 plist 被当作空字典 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `treatsCorruptFileAsEmpty` |
+| 60 | TextActionsStorage | 不同实例使用各自隔离的目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `isolatesInstancesByDirectory` |
+| 61 | TextActionMenuPanel | 初始状态是动作条 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `initialStateIsActions` |
+| 62 | TextActionMenuPanel | perform 转发给注入的处理器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `performForwardsToHandler` |
+| 63 | TextActionMenuPanel | 状态切换触发 onStateChange | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `stateChangeNotifies` |
+| 64 | TextActionMenuPanel | 文本变化不自动重置状态——由控制器决定何时回到动作条 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `textChangeDoesNotResetState` |
+| 65 | TextActionMenuPanel | 动作条渲染出内容 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `actionsStateRendersContent` |
+| 66 | TextActionMenuPanel | 复制反馈渲染出内容 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `copiedStateRendersContent` |
+| 67 | TextActionMenuPanel | 翻译结果渲染出内容 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `translatedStateRendersContent` |
+| 68 | TextActionMenuPanel | 翻译失败渲染出内容 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `failedStateRendersContent` |
+| 69 | TextActionMenuPanel | 面板不抢焦点、不在后台隐藏 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `panelIsNonActivatingAndPersistent` |
+| 70 | TextActionMenuPanel | 面板跨 Space 且可叠加在全屏应用上 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `panelCollectionBehavior` |
+| 71 | TextActionMenuPanel | 译文卡片在 SwiftUI 布局完成后上报实际尺寸 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `translatedIntrinsicSizeFollowsLayout` |
+| 72 | TextActionMenuPanel | 长译文把浮层撑到滚动上限 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `longTranslationExpandsPanel` |
+| 73 | TextActionMenuPanel | 品牌标识使用 App 图标资源 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `brandMarkUsesBundledAppIcon` |
+| 74 | TextActionsPluginLifecycle | 从未写入过开关时默认启用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `defaultsToEnabledWhenNeverWritten` |
+| 75 | TextActionsPluginLifecycle | 停用与关闭都会停止选区监听 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `disableAndShutdownStopSelectionMonitoring` |
+| 76 | TextActionsPluginLifecycle | 运行时启用会启动选区监听 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `enableStartsSelectionMonitoring` |
+| 77 | TextActionsPluginLifecycle | 插件开关关闭时 onReady 不启动监听 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readyDoesNotStartMonitoringWhenDisabled` |
+| 78 | TextActionsPluginLifecycle | onReady 即启动选区监听 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readyStartsSelectionMonitoring` |
+| 79 | TextActionsPluginLifecycle | 显式关闭后保持关闭 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `staysDisabledAfterExplicitlyDisabled` |
+| 80 | TextActionsPermission | 未授权时不启动监听 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doesNotMonitorWhenPermissionMissing` |
+| 81 | TextActionsPermission | 已授权状态可被识别 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `grantedStatusIsRecognized` |
+| 82 | TextActionsPermission | 授权后可以启动监听 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `monitorsAfterPermissionGranted` |
+| 83 | TextActionsPermission | 状态对象初始化即反映真实授权状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `permissionStateReflectsRealStatusOnInit` |
+| 84 | TextActionsPermission | 刷新推进 revision 以驱动视图重绘 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `refreshAdvancesRevision` |
+| 85 | TextActionsPermission | 授权翻转时通知外部启动监听，且只通知一次 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `reportsGrantThroughCallback` |
+| 86 | TextActionsPermission | 状态查询不触发系统授权弹窗 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `statusQueryDoesNotPromptSystem` |
+| 87 | TextActionsPermission | 停止激活监听可安全重复调用 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `stopIsIdempotent` |
 
-> 说明：全部 **73 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **87 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 60 / 60
-- P2: 已覆盖 8 / 8
-- **合计: 73 / 73**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 73 / 73
+- P2: 已覆盖 9 / 9
+- **合计: 87 / 87**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（60 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
+- **P1**: 其余功能性用例（73 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 73 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 87 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
