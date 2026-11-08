@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationState 的实现包，包含 5 个主要类型；当前测试覆盖 22 条用例。
+PluginConversationState 的实现包，包含 5 个主要类型；当前测试覆盖 24 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 22
+测试文件: 4 个，用例总数: 24
 
 核心组件（源码目录）:
 - `Observers/`
@@ -56,21 +56,23 @@ PluginConversationState 的实现包，包含 5 个主要类型；当前测试�
 | 20 | activity 的终态不变量 | 快照替换路径同样守住终态不变量 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `snapshotReplacementAlsoRespectsInvariant` |
 | 21 | Chat 模式拦截后 activity 残留 | 被拦截批次完成后 activity 不得停留在 executingTool（**#992**） | 回合运行中 + `.executingTool` | 发送仅含 `.blocked` 结果的 `.batchCompleted` | activity 变为 nil | P0 | ✅ 已覆盖 | `blockedBatchClearsExecutingToolActivity` |
 | 22 | Chat 模式拦截后 activity 残留 | 批次因待授权暂停时不得清掉 waitingForUser（**#992 护栏**） | 回合挂起 + `.waitingForUser` | 发送含 `.needsUserResponse` 的 `.batchCompleted` | activity 仍为 `.waitingForUser` | P0 | ✅ 已覆盖 | `pendingApprovalKeepsWaitingForUser` |
+| 23 | 授权等待期间的 Job 事件 | 后台 Job 的进度与完成不得覆盖等待提示（**回归 #962**） | 审批调用挂起，同一回合另有自动放行 Job 运行并完成 | 依次发 `.started` 与 `.completed` Job 事件 | activity 始终为 `.waitingForUser`，jobActivity 仍记录该 Job | P0 | ✅ 已覆盖 | `backgroundJobKeepsWaitingForUserWhileAuthorizationPending` |
+| 24 | 授权等待期间的 Job 事件 | 授权解决后 Job 终态仍可正常清理 activity（**#962 护栏**） | 先发 `.authorizedCompleted` | 再发运行中与完成的 Job 事件 | activity 最终为 nil，不会卡在等待 | P1 | ✅ 已覆盖 | `jobCompletionClearsActivityAfterAuthorizationResolved` |
 
-> 说明：全部 **22 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **24 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
-- P1: 已覆盖 11 / 11
+- P0: 已覆盖 10 / 10
+- P1: 已覆盖 12 / 12
 - P2: 已覆盖 2 / 2
-- **合计: 22 / 22**（仅表示清单场景，非源码覆盖率）
+- **合计: 24 / 24**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（11 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P1**: 其余功能性用例（12 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明

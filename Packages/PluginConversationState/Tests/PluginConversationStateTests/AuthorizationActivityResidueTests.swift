@@ -194,6 +194,78 @@ struct AuthorizationActivityResidueTests {
         )
         observer.cancel()
     }
+
+    @Test("授权等待期间后台 Job 的进度与完成不得覆盖等待提示（#962）")
+    @MainActor
+    func backgroundJobKeepsWaitingForUserWhileAuthorizationPending() {
+        let scenario = SuspendedAuthorizationScenario(toolCallID: "call_bg_1", file: "/tmp/bg.swift")
+
+        // 同一响应里的自动放行调用仍在跑：它会持续发 Job 事件，
+        // 但审批调用不会产生 Job，授权等待只能由 authorizedCompleted 收尾。
+        let call = ToolCall(id: "call_bg_auto", name: "read_file", arguments: "{}")
+        var job = ToolJob(
+            conversationID: scenario.conversationID,
+            turnID: scenario.turnID,
+            toolCall: call,
+            status: .running
+        )
+        scenario.toolManager.emitJob(.started(job))
+
+        #expect(
+            scenario.provider.state(for: scenario.conversationID).activity == .waitingForUser,
+            "后台 Job 开始时不得把授权等待改成「正在执行」"
+        )
+
+        job.status = .completed
+        scenario.toolManager.emitJob(.completed(
+            jobID: job.id,
+            result: ToolCallResult(content: "ok"),
+            snapshot: job
+        ))
+
+        let snapshot = scenario.provider.state(for: scenario.conversationID)
+        #expect(
+            snapshot.activity == .waitingForUser,
+            "后台 Job 完成时授权仍未解决，等待提示不得被清空"
+        )
+        #expect(snapshot.jobActivity.currentJobCount == 1)
+        scenario.observer.cancel()
+    }
+
+    @Test("授权解决后 Job 终态仍可正常清理 activity（#962 护栏）")
+    @MainActor
+    func jobCompletionClearsActivityAfterAuthorizationResolved() {
+        let scenario = SuspendedAuthorizationScenario(toolCallID: "call_bg_2", file: "/tmp/bg2.swift")
+
+        scenario.toolManager.emit(.authorizedCompleted(
+            conversationID: scenario.conversationID,
+            turnID: scenario.turnID,
+            toolCall: scenario.toolCall,
+            result: ToolCallResult(content: "ok")
+        ))
+        #expect(scenario.provider.state(for: scenario.conversationID).activity == nil)
+
+        let call = ToolCall(id: "call_bg_auto_2", name: "read_file", arguments: "{}")
+        var job = ToolJob(
+            conversationID: scenario.conversationID,
+            turnID: scenario.turnID,
+            toolCall: call,
+            status: .running
+        )
+        scenario.toolManager.emitJob(.started(job))
+        job.status = .completed
+        scenario.toolManager.emitJob(.completed(
+            jobID: job.id,
+            result: ToolCallResult(content: "ok"),
+            snapshot: job
+        ))
+
+        #expect(
+            scenario.provider.state(for: scenario.conversationID).activity == nil,
+            "授权已解决后，Job 终态应正常清理 activity，而不是继续显示等待"
+        )
+        scenario.observer.cancel()
+    }
 }
 
 /// 复现「Chat 模式整批拦截后，`.executingTool` 一路带到下一次 LLM 请求」的问题。
