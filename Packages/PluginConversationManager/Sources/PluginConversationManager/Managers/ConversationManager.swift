@@ -147,9 +147,14 @@ public final class ConversationManager: ConversationManaging, SuperLog {
                 if let persistedLanguage = persistedState?.globalLanguage {
                     self.globalLanguage = persistedLanguage
                 }
-                // 初始化全局详细程度为当前选中对话的详细程度
-                self.globalVerbosity = self.verbosity(for: self.selectedConversationID)
+                // New Chat 的默认详细度同样独立于选中会话，必须先恢复；有选中会话时
+                // 下面的会话级复制仍会覆盖它。
+                if let persistedVerbosity = persistedState?.globalVerbosity {
+                    self.globalVerbosity = persistedVerbosity
+                }
                 if self.selectedConversationID != nil {
+                    // 初始化全局详细程度为当前选中对话的详细程度
+                    self.globalVerbosity = self.verbosity(for: self.selectedConversationID)
                     self.globalReasoningEffort = self.reasoningEffortOptional(for: self.selectedConversationID)
                     self.globalAutomationLevel = self.automationLevel(for: self.selectedConversationID)
                     self.globalLanguage = self.language(for: self.selectedConversationID)
@@ -297,11 +302,16 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     func persistSelectedConversationID() {
         // 主线程零 I/O：编码与原子写盘全部移出点击链路（异步队列）。
         let selectedID = selectedConversationID
+        let verbosity = globalVerbosity
         let language = globalLanguage
         let fileURL = stateFileURL
         let directory = fileURL.deletingLastPathComponent()
         Self.stateWriteQueue.async {
-            let state = ConversationState(selectedConversationID: selectedID, globalLanguage: language)
+            let state = ConversationState(
+                selectedConversationID: selectedID,
+                globalVerbosity: verbosity,
+                globalLanguage: language
+            )
             guard let data = try? JSONEncoder().encode(state) else { return }
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             try? data.write(to: fileURL, options: .atomic)
@@ -318,7 +328,8 @@ public final class ConversationManager: ConversationManaging, SuperLog {
 
 private struct ConversationState: Codable {
     let selectedConversationID: UUID?
-    /// 旧版本 `state.json` 不含该字段，用可选值兼容解码。
+    /// 旧版本 `state.json` 不含这些全局字段，用可选值兼容解码。
+    let globalVerbosity: ResponseVerbosity?
     let globalLanguage: ConversationLanguage?
 }
 
