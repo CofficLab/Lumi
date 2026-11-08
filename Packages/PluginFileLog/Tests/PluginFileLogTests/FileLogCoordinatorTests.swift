@@ -205,6 +205,59 @@ struct FileLogCoordinatorTests {
         #expect(manifest["architecture"] as? String == "arm64")
     }
 
+    @Test func diagnosticsExportDrainsOsLogBeforeArchiving() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PluginFileLogDrainTests-\(UUID().uuidString)", isDirectory: true)
+        let logsDirectory = root.appendingPathComponent("logs", isDirectory: true)
+        let extractionDirectory = root.appendingPathComponent("extracted", isDirectory: true)
+        var archiveURL: URL?
+        defer {
+            if let archiveURL { try? FileManager.default.removeItem(at: archiveURL) }
+            try? FileManager.default.removeItem(at: root)
+        }
+
+        let coordinator = FileLogCoordinator(logsDirectory: logsDirectory, pollInterval: 3_600)
+        // 模拟「已产生但还没到下一轮轮询」的日志：不替换读取器时这里根本读不到。
+        coordinator.logRecordReader = { _, _ in
+            [
+                FileLogCoordinator.LogRecord(
+                    date: Date(),
+                    key: "pending-export-entry",
+                    line: "pending export entry\n"
+                )
+            ]
+        }
+        coordinator.start()
+        defer { coordinator.stopAndWait() }
+
+        let archive = try await coordinator.makeDiagnosticsArchive()
+        archiveURL = archive.url
+
+        try FileManager.default.createDirectory(at: extractionDirectory, withIntermediateDirectories: true)
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+        process.arguments = ["-x", "-k", archive.url.path, extractionDirectory.path]
+        try process.run()
+        process.waitUntilExit()
+        #expect(process.terminationStatus == 0)
+
+        let extractedFiles = try FileManager.default.contentsOfDirectory(
+            at: extractionDirectory,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        )
+        let archiveRoot = try #require(extractedFiles.first)
+        let stagedLogs = try FileManager.default.contentsOfDirectory(
+            at: archiveRoot.appendingPathComponent("logs", isDirectory: true),
+            includingPropertiesForKeys: nil
+        )
+        let logContents = try stagedLogs
+            .filter { $0.pathExtension == "log" }
+            .map { try String(contentsOf: $0, encoding: .utf8) }
+            .joined()
+        #expect(logContents.contains("pending export entry"))
+    }
+
     @MainActor
     @Test func pluginMigratesLogsRegistersDiagnosticsAndStops() throws {
         let root = FileManager.default.temporaryDirectory
