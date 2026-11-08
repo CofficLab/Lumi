@@ -7,7 +7,7 @@ Lumi is an AI-powered personal desktop assistant for macOS. It combines LLM chat
 [![Swift](https://img.shields.io/badge/Swift-6.0+-orange.svg)](https://swift.org)
 [![macOS](https://img.shields.io/badge/macOS-14.0+-blue.svg)](https://developer.apple.com/macos/)
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Latest release](https://img.shields.io/badge/release-v5.17.0-blue.svg)](https://github.com/CofficLab/Lumi/releases)
+[![Latest release](https://img.shields.io/github/v/release/CofficLab/Lumi?label=release&color=blue)](https://github.com/CofficLab/Lumi/releases)
 
 ![Lumi Application](docs/hero3.webp)
 
