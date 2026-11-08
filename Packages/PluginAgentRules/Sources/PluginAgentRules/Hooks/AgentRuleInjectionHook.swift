@@ -23,7 +23,8 @@ final class AgentRuleInjectionHook {
         let contributedRules = ruleProvider?.allRules() ?? []
         guard let prompt = AgentRulePromptBuilder.buildPrompt(
             projectRules: projectRules,
-            contributedRules: contributedRules
+            contributedRules: contributedRules,
+            maxTokens: context.injectedContentTokenBudget
         ) else {
             return context
         }

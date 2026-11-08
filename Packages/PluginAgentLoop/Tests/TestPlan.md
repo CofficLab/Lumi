@@ -5,7 +5,7 @@
 PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProvider`。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 103
+测试文件: 11 个，用例总数: 105
 
 核心组件（源码目录）:
 - `Managers/`
@@ -43,6 +43,7 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 - **挂起回合的取消**（5 条）：由 `cancellingSuspendedTurnClearsSuspension`、`cancellingSuspendedTurnDeliversCancelledEvent`、`cancellingDuringResumeDoesNotReviveTurn` 等用例锁定；改动该模块时优先跑 `SuspendedTurnCancellationTests.swift`。
 - **Tool 调用身份归一化的边界分支**（7 条）：由 `idsCollectsToolCallIDsFromBothRoles`、`normalizeDetectsCollisionAfterTrim`、`normalizeReturnsResponseUnchangedWithoutToolCalls` 等用例锁定；改动该模块时优先跑 `ToolCallIdentityAndHelpersEdgeCaseTests.swift`。
 - **消息与 LLM 消息互转的边界分支**（7 条）：由 `llmMessagesSkipsToolCallsWithoutResult`、`messageFromLLMMessageFallsBackToSystemForUnknownRole`、`llmMessageDropsInvalidBase64ImageAttachments` 等用例锁定；改动该模块时优先跑 `ToolCallIdentityAndHelpersEdgeCaseTests.swift`。
+- **AgentLoop 注入预算**（2 条）：由 `budgetSubtractsPreparedHistory`、`budgetNeverGoesNegative` 锁定；Hook 注入内容的预算必须扣除已准备的历史，且不得为负。
 
 ## 测试用例清单
 
@@ -151,27 +152,29 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 | 101 | 消息与 LLM 消息互转的边界分支 | 非法 base64 的图片附件被安全丢弃 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `llmMessageDropsInvalidBase64ImageAttachments` |
 | 102 | 消息与 LLM 消息互转的边界分支 | 没有 toolCallID 的 tool 消息不会获得图片 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `llmMessageToolWithoutToolCallIDGetsNoImages` |
 | 103 | 消息与 LLM 消息互转 | 持久化的 redacted thinking 会进入下一轮 LLMMessage | 构造带 `redactedThinkingData` 的 assistant 消息 | 读取 `llmMessage` | `redactedThinking` 按顺序还原 opaque data | P1 | ✅ 已覆盖 | `llmMessageCarriesRedactedThinking` |
+| 104 | AgentLoop 注入预算 | 钩子注入预算等于输入上限扣除已准备历史 | 输入上限 = 历史估算 + 1200 | 调用 `injectedContentTokenBudget` | 返回 1200，历史不被重复计入 | P1 | ✅ 已覆盖 | `budgetSubtractsPreparedHistory` |
+| 105 | AgentLoop 注入预算 | 历史占满输入上限时注入预算收敛为 0 | 输入上限小于历史估算 | 调用 `injectedContentTokenBudget` | 返回 0，不会出现负预算 | P2 | ✅ 已覆盖 | `budgetNeverGoesNegative` |
 
-> 说明：全部 **103 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **105 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 23 / 23
-- P1: 已覆盖 69 / 69
-- P2: 已覆盖 11 / 11
-- **合计: 103 / 103**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 70 / 70
+- P2: 已覆盖 12 / 12
+- **合计: 105 / 105**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（23 条）
-- **P1**: 其余功能性用例（69 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
+- **P1**: 其余功能性用例（70 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 103 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 105 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

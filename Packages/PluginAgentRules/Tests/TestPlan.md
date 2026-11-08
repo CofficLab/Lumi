@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 29 条用例。
+PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 32 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 29
+测试文件: 5 个，用例总数: 32
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -39,7 +39,8 @@ PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 2
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **AgentRulePromptBuilder**（2 条）：由 `projectRulesTakePrecedence`、`emptyRulesProduceNoPrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **AgentRulePromptBuilder**（4 条）：由 `projectRulesTakePrecedence`、`emptyRulesProduceNoPrompt`、`oversizedRulesAreTrimmedToBudget` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **AgentRuleInjectionBudget**（1 条）：由 `hookHonorsInjectedContentBudget` 锁定；规则在上下文预算之后注入，必须按剩余输入预算截断，否则请求会超出模型窗口。
 - **AgentRulesPlugin**（17 条）：由 `packageLoads`、`pluginHasRequiredMetadata`、`localStoreQuarantinesInvalidSettingsFileAndRecovers` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AgentRulesRuntimeDirectory**（2 条）：由 `usesInjectedDirectory`、`resetClearsInjectedDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AgentRulesConversationScope**（3 条）：由 `listToolUsesConversationProject`、`createToolWritesIntoConversationProject`、`explicitProjectPathBeatsConversationProject` 锁定；工具必须按调用所属会话的项目读写，显式参数优先。
@@ -77,27 +78,30 @@ PluginAgentRules 的实现包，包含 14 个主要类型；当前测试覆盖 2
 | 27 | AgentRulesPlugin | 规则 ID 只去掉最后一个扩展名，保留文件名内部的 .md | 先后创建 `foo.md` 与 `foo.md.md` | 创建结果、`listRules`、`readRule` | 两条 ID 分别为 `foo` 与 `foo.md`，列表无重复 ID | P0 | ✅ 已覆盖 | `ruleIdKeepsInnerMarkdownExtensions` |
 | 28 | AgentRulesPlugin | 以 .md 结尾的子目录不会让列表整体失败 | 规则目录内含 `style.md` 与 `archive.md/` 子目录 | 调用 `listRules` | 返回 `style.md`，不读取目录、不抛错 | P0 | ✅ 已覆盖 | `listRulesSkipsMarkdownDirectories` |
 | 29 | AgentRulesPlugin | 创建结果标题与落盘内容及后续列表一致 | content 自带一级标题 / 普通正文 | `createRule` 后调用 `listRules` | 自带标题时创建与列表都返回 `Embedded Title`；普通正文仍用参数标题 | P1 | ✅ 已覆盖 | `createRuleTitleMatchesWrittenContent` |
+| 30 | AgentRulePromptBuilder | 规则超过注入预算时被截断 | 超长规则 + `maxTokens: 500` | 调用 `buildPrompt` | 保留标题、出现截断提示，估算不超过 500 token | P0 | ✅ 已覆盖 | `oversizedRulesAreTrimmedToBudget` |
+| 31 | AgentRulePromptBuilder | 规则在预算内时保持完整 | 短规则 + 充足 `maxTokens` | 调用 `buildPrompt` | 规则内容完整且没有截断提示 | P1 | ✅ 已覆盖 | `rulesWithinBudgetAreKeptIntact` |
+| 32 | AgentRuleInjectionBudget | 钩子注入的规则不会超出剩余输入预算 | 超长插件规则 + `injectedContentTokenBudget: 600` | 执行 `AgentRuleInjectionHook.apply(to:)` | 注入的 system 消息估算不超过 600 token 且带截断提示 | P1 | ✅ 已覆盖 | `hookHonorsInjectedContentBudget` |
 
-> 说明：全部 **29 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **32 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
-- P1: 已覆盖 19 / 19
+- P0: 已覆盖 10 / 10
+- P1: 已覆盖 21 / 21
 - P2: 已覆盖 1 / 1
-- **合计: 29 / 29**（仅表示清单场景，非源码覆盖率）
+- **合计: 32 / 32**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（19 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P1**: 其余功能性用例（21 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 29 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 32 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

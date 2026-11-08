@@ -624,7 +624,11 @@ extension AgentLoopManager {
         if let lifecycleHooks {
             let context = WillSendToLLMContext(
                 messages: llmHistory,
-                conversationID: conversationID
+                conversationID: conversationID,
+                injectedContentTokenBudget: injectedContentTokenBudget(
+                    inputTokenLimit: contextRequest.budget.inputTokenLimit,
+                    preparedHistory: history
+                )
             )
             let result = await lifecycleHooks.runWillSendToLLM(context)
             preparedMessages = result.messages
@@ -843,6 +847,17 @@ extension AgentLoopManager {
 
     // - Important: 这三个纯函数保持 internal 而非 private，供 `@testable` 直接覆盖。
     //   它们没有任何外部调用方，收窄可见性只会让错误分类逻辑无法被单测验证。
+
+    /// 生命周期钩子注入内容可用的剩余输入预算。
+    ///
+    /// `inputTokenLimit` 已经扣掉输出预留、工具 schema 与安全余量，
+    /// 再扣掉本次真正发给模型的历史，剩下的才是钩子可以安全注入的上限。
+    func injectedContentTokenBudget(
+        inputTokenLimit: Int,
+        preparedHistory: [Message]
+    ) -> Int {
+        max(inputTokenLimit - LLMContextTokenEstimator.estimate(messages: preparedHistory), 0)
+    }
 
     /// 估算全部工具 schema 占用的 token 数，用于上下文预算的保守预留。
     func estimateToolSchemaTokens(_ schemas: [LLMFunctionSchema]) -> Int {

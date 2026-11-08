@@ -449,3 +449,44 @@ private final class StubAgentLoopObserverHandle: AgentLoopObserverHandle {
 }
 
 private enum StubError: Error { case unsupported }
+
+/// Regression coverage for issue #969: hook-injected content must compete with
+/// the prepared history for the same input budget.
+@MainActor
+@Suite("AgentLoop 注入预算")
+struct AgentLoopInjectedContentBudgetTests {
+
+    @Test("注入预算等于输入上限扣除已准备历史")
+    func budgetSubtractsPreparedHistory() {
+        let manager = makeManager()
+        let conversationID = UUID()
+        let history = [
+            Message(conversationID: conversationID, role: .user, content: String(repeating: "a", count: 3_000))
+        ]
+        let historyTokens = LLMContextTokenEstimator.estimate(messages: history)
+
+        let budget = manager.injectedContentTokenBudget(
+            inputTokenLimit: historyTokens + 1_200,
+            preparedHistory: history
+        )
+
+        #expect(budget == 1_200)
+    }
+
+    @Test("历史占满输入上限时注入预算收敛为 0")
+    func budgetNeverGoesNegative() {
+        let manager = makeManager()
+        let conversationID = UUID()
+        let history = [
+            Message(conversationID: conversationID, role: .user, content: String(repeating: "a", count: 3_000))
+        ]
+        let historyTokens = LLMContextTokenEstimator.estimate(messages: history)
+
+        let budget = manager.injectedContentTokenBudget(
+            inputTokenLimit: historyTokens - 500,
+            preparedHistory: history
+        )
+
+        #expect(budget == 0)
+    }
+}
