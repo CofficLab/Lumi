@@ -5,7 +5,7 @@
 KitWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 19 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 19
+测试文件: 4 个，用例总数: 38
 
 ## 公开 API
 
@@ -20,6 +20,12 @@ KitWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 19 条
 
 - **LumiWebServer**（12 条）：由 `testLiveRouteEchoAndParams`、`testNotFound`、`testAuthToken` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RouteMatcher**（7 条）：由 `testLiteralExactMatch`、`testParameterCapture`、`testMultipleParameters` 等用例锁定；改动该模块时优先跑对应测试文件。
+
+- **LumiWebServerEndToEndTests**（1 条）：由 `testDeclaredRoutesAreReachableOverHTTP` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **Payload**（1 条）：由 `testDiscoveryEndpointListsRegisteredRoutes` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **RouteInfo**（1 条）：由 `testUnregisteredRoutesBecomeUnreachable` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **LumiWebServerPipelineTests**（2 条）：由 `testAuthRejectsBeforeRouteMatching`、`testAuthErrorBodyIsUnified` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **Body**（14 条）：由 `testAnonymousAccessAllowed`、`testResponseCarriesRequestID` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -44,27 +50,46 @@ KitWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 19 条
 | 17 | RouteMatcher | testLeadingTrailingSlashesIgnored | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testLeadingTrailingSlashesIgnored` |
 | 18 | RouteMatcher | testEmptyAndRoot | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `testEmptyAndRoot` |
 | 19 | LumiWebServer | testStopDuringStartClosesListenerAndAllowsRestart | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testStopDuringStartClosesListenerAndAllowsRestart` |
+| 20 | LumiWebServerEndToEndTests | testDeclaredRoutesAreReachableOverHTTP | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testDeclaredRoutesAreReachableOverHTTP` |
+| 21 | Payload | testDiscoveryEndpointListsRegisteredRoutes | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testDiscoveryEndpointListsRegisteredRoutes` |
+| 22 | RouteInfo | testUnregisteredRoutesBecomeUnreachable | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testUnregisteredRoutesBecomeUnreachable` |
+| 23 | LumiWebServerPipelineTests | testAuthRejectsBeforeRouteMatching | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testAuthRejectsBeforeRouteMatching` |
+| 24 | LumiWebServerPipelineTests | testAuthErrorBodyIsUnified | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testAuthErrorBodyIsUnified` |
+| 25 | Body | testAnonymousAccessAllowed | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testAnonymousAccessAllowed` |
+| 26 | Body | testResponseCarriesRequestID | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testResponseCarriesRequestID` |
+| 27 | Body | testRequestIDIsPassedThrough | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testRequestIDIsPassedThrough` |
+| 28 | Body | testAPIErrorMapsToStatusCode | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testAPIErrorMapsToStatusCode` |
+| 29 | Body | testUnknownErrorBecomesGenericInternalError | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testUnknownErrorBecomesGenericInternalError` |
+| 30 | Body | testMethodMismatchReturns405 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testMethodMismatchReturns405` |
+| 31 | Body | testNotFoundReturnsUnifiedError | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testNotFoundReturnsUnifiedError` |
+| 32 | Body | testRequestLogRecordsRequest | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testRequestLogRecordsRequest` |
+| 33 | Body | testRequestLogRecordsFailures | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testRequestLogRecordsFailures` |
+| 34 | Body | testRequestLogDoesNotLeakBody | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testRequestLogDoesNotLeakBody` |
+| 35 | Body | testCORSPreflightResponse | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testCORSPreflightResponse` |
+| 36 | Body | testCORSRejectsUnlistedOrigin | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testCORSRejectsUnlistedOrigin` |
+| 37 | Body | testUptimeReflectsRunningState | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testUptimeReflectsRunningState` |
+| 38 | Body | testRegisteredRouteSummaries | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testRegisteredRouteSummaries` |
 
-> 说明：全部 **19 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 1 / 1
-- P1: 已覆盖 15 / 15
+- P0: 已覆盖 4 / 4
+- P1: 已覆盖 31 / 31
 - P2: 已覆盖 3 / 3
-- **合计: 19 / 19**（仅表示清单场景，非源码覆盖率）
+- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（15 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
+- **P1**: 其余功能性用例（31 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 19 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 38 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
