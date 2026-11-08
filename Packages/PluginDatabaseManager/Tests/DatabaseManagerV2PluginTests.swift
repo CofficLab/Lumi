@@ -132,6 +132,29 @@ struct RedisHandshakeTests {
     }
 }
 
+@Suite("Redis RESP parsing")
+struct RedisRESPParsingTests {
+    @Test("CR 位于缓冲区末尾时返回不完整")
+    func trailingCRIsIncomplete() throws {
+        #expect(try RedisRESPCodec.parseComplete(Data("+OK\r".utf8)) == nil)
+        #expect(try RedisRESPCodec.parseComplete(Data("$3\r".utf8)) == nil)
+        #expect(try RedisRESPCodec.parseComplete(Data("*1\r".utf8)) == nil)
+    }
+
+    @Test("CR 后跟非法字节仍报格式错误")
+    func CRFollowedByNonLFTimesOut() {
+        #expect(throws: DatabaseError.self) {
+            _ = try RedisRESPCodec.parseComplete(Data("+OK\rX".utf8))
+        }
+    }
+
+    @Test("下一块补全 LF 后可解析")
+    func splitCRLFCompletesAfterNextChunk() throws {
+        #expect(try RedisRESPCodec.parseComplete(Data("+OK\r\n".utf8)) == .simpleString("OK"))
+        #expect(try RedisRESPCodec.parseComplete(Data("$3\r\nfoo\r\n".utf8)) == .bulkString(Data("foo".utf8)))
+    }
+}
+
 @Suite("SQLite RETURNING")
 struct SQLiteReturningTests {
     @Test("SQLite DML RETURNING 产生结果行时不报告失败")

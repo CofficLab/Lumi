@@ -123,7 +123,11 @@ enum RedisRESPCodec {
             while offset < data.endIndex {
                 if data[offset] == UInt8(ascii: "\r") {
                     let next = data.index(after: offset)
-                    guard next < data.endIndex, data[next] == UInt8(ascii: "\n") else {
+                    // CR 恰好是缓冲区最后一个字节：LF 可能在下个网络块，属于不完整而非格式错误。
+                    guard next < data.endIndex else {
+                        throw RedisRESPParseError.incomplete
+                    }
+                    guard data[next] == UInt8(ascii: "\n") else {
                         throw RedisRESPParseError.malformed("Malformed RESP line ending")
                     }
                     let lineData = data[start..<offset]
