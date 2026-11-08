@@ -267,6 +267,26 @@ struct LargeFilesServiceTests {
         #expect(!output.contains("No entries were found"))
     }
 
+    // MARK: - 回归 #740：删除失败必须抛出错误，不能当作成功 Job
+
+    @Test func cleanToolsThrowWhenDeletionFails() async {
+        let missing = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-missing-clean-\(UUID().uuidString)", isDirectory: true)
+        let tools: [any SuperAgentTool] = [
+            CleanCachesTool(),
+            CleanXcodeCachesTool(),
+            CleanProjectsTool(),
+        ]
+
+        for tool in tools {
+            await #expect(throws: ToolExecutionError.self) {
+                _ = try await tool.executeResult(
+                    arguments: ["paths": ToolArgument([missing.path])]
+                )
+            }
+        }
+    }
+
     // MARK: - 回归 #738：路径末尾空白不得被裁剪
 
     @Test func cleanCachesToolDeletesExactPathWithTrailingWhitespace() async throws {
