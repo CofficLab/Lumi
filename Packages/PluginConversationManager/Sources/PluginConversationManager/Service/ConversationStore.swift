@@ -307,49 +307,45 @@ public actor ConversationStore: SuperLog {
 
         let context = ModelContext(container)
         normalizeEmptyParentConversationIDs(in: context)
-        let cursorTimestamp = beforeUpdatedAt?.timeIntervalSince1970
-        let cursorID = beforeID?.uuidString
+        backfillSortKeys(in: context)
+        let cursorKey: Int64? = {
+            guard let beforeUpdatedAt, let beforeID else { return nil }
+            return ConversationModel.makeSortKey(
+                date: beforeUpdatedAt.timeIntervalSince1970,
+                id: beforeID.uuidString
+            )
+        }()
         var descriptor: FetchDescriptor<ConversationModel>
 
-        // Use `createdAt` for DB-level cursor pagination (non-optional, safe for #Predicate).
-        if let cursorTimestamp, let cursorID {
+        // Keyset 必须与列表排序同基准：`sortKey` 降序。
+        // 旧实现按 createdAt 取页、再按 lastMessageAt 内存重排，会把
+        // 「创建早但最近活跃」的会话整条漏掉，并在下一页重复返回。
+        if let cursorKey {
             if includingChildConversations {
                 descriptor = FetchDescriptor<ConversationModel>(
                     predicate: #Predicate<ConversationModel> {
-                        $0.createdAt < cursorTimestamp ||
-                        ($0.createdAt == cursorTimestamp && $0.id < cursorID)
+                        $0.sortKey < cursorKey
                     },
-                    sortBy: [
-                        SortDescriptor(\.createdAt, order: .reverse),
-                        SortDescriptor(\.id, order: .reverse),
-                    ]
+                    sortBy: [SortDescriptor(\.sortKey, order: .reverse)]
                 )
             } else {
                 descriptor = FetchDescriptor<ConversationModel>(
                     predicate: #Predicate<ConversationModel> {
-                        ($0.createdAt < cursorTimestamp ||
-                        ($0.createdAt == cursorTimestamp && $0.id < cursorID)) &&
+                        $0.sortKey < cursorKey &&
                         $0.parentConversationID == nil
                     },
-                    sortBy: [
-                        SortDescriptor(\.createdAt, order: .reverse),
-                        SortDescriptor(\.id, order: .reverse),
-                    ]
+                    sortBy: [SortDescriptor(\.sortKey, order: .reverse)]
                 )
             }
         } else {
             if includingChildConversations {
-                descriptor = FetchDescriptor<ConversationModel>(sortBy: [
-                    SortDescriptor(\.createdAt, order: .reverse),
-                    SortDescriptor(\.id, order: .reverse),
-                ])
+                descriptor = FetchDescriptor<ConversationModel>(
+                    sortBy: [SortDescriptor(\.sortKey, order: .reverse)]
+                )
             } else {
                 descriptor = FetchDescriptor<ConversationModel>(
                     predicate: #Predicate<ConversationModel> { $0.parentConversationID == nil },
-                    sortBy: [
-                        SortDescriptor(\.createdAt, order: .reverse),
-                        SortDescriptor(\.id, order: .reverse),
-                    ]
+                    sortBy: [SortDescriptor(\.sortKey, order: .reverse)]
                 )
             }
         }
@@ -358,15 +354,8 @@ public actor ConversationStore: SuperLog {
 
         do {
             let models = try context.fetch(descriptor)
-            // Re-sort in-memory by lastMessageAt (optional, falls back to createdAt)
-            let summaries = models.compactMap { $0.toLumiConversationSummary() }
-            return summaries.sorted { lhs, rhs in
-                let lTime = lhs.lastMessageAt
-                let rTime = rhs.lastMessageAt
-                return lTime == rTime
-                    ? lhs.createdAt > rhs.createdAt
-                    : lTime > rTime
-            }
+            // 数据库已按 `sortKey` 排好，直接映射，避免二次排序改变顺序。
+            return models.compactMap { $0.toLumiConversationSummary() }
         } catch {
             Self.logger.error("\(Self.t)查询对话分页失败：\(error.localizedDescription)")
             return []
@@ -385,22 +374,24 @@ public actor ConversationStore: SuperLog {
 
         let context = ModelContext(container)
         normalizeEmptyParentConversationIDs(in: context)
-        let cursorTimestamp = beforeUpdatedAt?.timeIntervalSince1970
-        let cursorID = beforeID?.uuidString
+        backfillSortKeys(in: context)
+        let cursorKey: Int64? = {
+            guard let beforeUpdatedAt, let beforeID else { return nil }
+            return ConversationModel.makeSortKey(
+                date: beforeUpdatedAt.timeIntervalSince1970,
+                id: beforeID.uuidString
+            )
+        }()
         var descriptor: FetchDescriptor<ConversationModel>
 
-        if let cursorTimestamp, let cursorID {
+        if let cursorKey {
             descriptor = FetchDescriptor<ConversationModel>(
                 predicate: #Predicate<ConversationModel> {
-                    ($0.createdAt < cursorTimestamp ||
-                    ($0.createdAt == cursorTimestamp && $0.id < cursorID)) &&
+                    $0.sortKey < cursorKey &&
                     $0.projectPath == projectPath &&
                     (includingChildConversations || $0.parentConversationID == nil)
                 },
-                sortBy: [
-                    SortDescriptor(\.createdAt, order: .reverse),
-                    SortDescriptor(\.id, order: .reverse),
-                ]
+                sortBy: [SortDescriptor(\.sortKey, order: .reverse)]
             )
         } else {
             descriptor = FetchDescriptor<ConversationModel>(
@@ -408,10 +399,7 @@ public actor ConversationStore: SuperLog {
                     $0.projectPath == projectPath &&
                     (includingChildConversations || $0.parentConversationID == nil)
                 },
-                sortBy: [
-                    SortDescriptor(\.createdAt, order: .reverse),
-                    SortDescriptor(\.id, order: .reverse),
-                ]
+                sortBy: [SortDescriptor(\.sortKey, order: .reverse)]
             )
         }
 
@@ -419,14 +407,7 @@ public actor ConversationStore: SuperLog {
 
         do {
             let models = try context.fetch(descriptor)
-            let summaries = models.compactMap { $0.toLumiConversationSummary() }
-            return summaries.sorted { lhs, rhs in
-                let lTime = lhs.lastMessageAt
-                let rTime = rhs.lastMessageAt
-                return lTime == rTime
-                    ? lhs.createdAt > rhs.createdAt
-                    : lTime > rTime
-            }
+            return models.compactMap { $0.toLumiConversationSummary() }
         } catch {
             Self.logger.error("\(Self.t)按项目查询对话分页失败：\(error.localizedDescription)")
             return []
@@ -742,6 +723,10 @@ public actor ConversationStore: SuperLog {
         }
 
         model.lastMessageAt = messageDate.timeIntervalSince1970
+        model.sortKey = ConversationModel.makeSortKey(
+            date: messageDate.timeIntervalSince1970,
+            id: idString
+        )
         model.updatedAt = Date().timeIntervalSince1970
         return save(context, operation: "更新最后消息时间")
     }
@@ -889,6 +874,22 @@ public actor ConversationStore: SuperLog {
         }
         try? context.save()
         return models.count
+    }
+
+    /// 旧库新增 `sortKey` 列后为默认值 0；用最后消息时间（缺失时 createdAt）回填。
+    /// 时间戳恒大于 0，因此 0 可安全作为「未回填」哨兵。
+    private func backfillSortKeys(in context: ModelContext) {
+        let descriptor = FetchDescriptor<ConversationModel>(
+            predicate: #Predicate<ConversationModel> { $0.sortKey == 0 }
+        )
+        guard let models = try? context.fetch(descriptor), !models.isEmpty else { return }
+        for model in models {
+            model.sortKey = ConversationModel.makeSortKey(
+                date: model.lastMessageAt ?? model.createdAt,
+                id: model.id
+            )
+        }
+        try? context.save()
     }
 
     private func save(_ context: ModelContext, operation: StaticString) -> Bool {
