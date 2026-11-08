@@ -107,7 +107,7 @@ public final class GoatPlanProvider: VendorLLMProvider {
                     LLMModelInfo(id: "Qwen/Qwen3.6-Plus", displayName: "Qwen 3.6 Plus", contextWindowSize: 200_000),
                     // Step
                     LLMModelInfo(id: "stepfun/Step-3.7-Flash", displayName: "Step 3.7 Flash", contextWindowSize: 256_000),
-                    LLMModelInfo(id: "stepfun/Step-3.5-Flash", displayName: "Step 3.5 Flash", contextWindowSize: 1_000_000),
+                    LLMModelInfo(id: "stepfun/Step-3.5-Flash", displayName: "Step 3.5 Flash", contextWindowSize: 262_144),
                     // Tencent
                     LLMModelInfo(id: "tencent/hy3-paid", displayName: "Tencent Hy3", contextWindowSize: 262_144),
                     LLMModelInfo(id: "tencent/hy4-preview", displayName: "Tencent Hy4 Preview", contextWindowSize: 1_048_576),

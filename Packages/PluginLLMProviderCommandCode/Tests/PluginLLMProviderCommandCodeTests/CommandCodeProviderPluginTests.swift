@@ -89,6 +89,14 @@ struct CommandCodeProviderPluginTests {
         #expect(vision.supportsVision == true)
     }
 
+    @Test("Step 3.5 Flash 离线基线保留真实窗口（回归 #970）")
+    func stepFunFlashUsesRealContextWindow() throws {
+        let info = GoatPlanProvider().providerInfo
+
+        let flash = try #require(info.models.first(where: { $0.id == "stepfun/Step-3.5-Flash" }))
+        #expect(flash.contextWindowSize == 262_144)
+    }
+
     @Test("GoatPlan 支持远程模型源")
     func goatPlanUsesRemoteModelSource() throws {
         let provider = GoatPlanProvider()
