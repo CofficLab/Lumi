@@ -128,6 +128,7 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
             var deleted: [String] = []
             var renamed: [String] = []
             var staged: [String] = []
+            var stagedStates: [String: GitWorkingChangeState] = [:]
             var untracked: [String] = []
 
             for file in unstagedFiles {
@@ -142,10 +143,16 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
             }
 
             for file in stagedFiles {
+                let state: GitWorkingChangeState
                 switch file.changeType {
-                case "M", "A", "D", "R": staged.append(file.file)
-                default: break
+                case "M": state = .modified
+                case "A": state = .added
+                case "D": state = .deleted
+                case "R": state = .renamed
+                default: continue
                 }
+                staged.append(file.file)
+                stagedStates[file.file] = state
             }
 
             // 获取远程 upstream
@@ -159,6 +166,7 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
                 deleted: deleted,
                 renamed: renamed,
                 staged: staged,
+                stagedStates: stagedStates,
                 untracked: untracked
             )
         }

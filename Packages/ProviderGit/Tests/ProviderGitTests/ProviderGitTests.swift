@@ -54,6 +54,25 @@ struct ProviderGitTests {
         #expect(status.workingChanges().map(\.path) == ["a.swift", "b.swift", "c.swift", "d.swift", "e.swift", "f.txt", "old.swift"])
     }
 
+    @Test func workingChangesUsesStagedChangeStates() {
+        // 仅暂存的新增/删除/重命名必须保留暂存区类型，不能统一退化成 .modified。
+        let status = GitStatus(
+            branch: "main",
+            staged: ["added.swift", "deleted.swift", "renamed.swift"],
+            stagedStates: [
+                "added.swift": .added,
+                "deleted.swift": .deleted,
+                "renamed.swift": .renamed,
+            ]
+        )
+        let changes = Dictionary(uniqueKeysWithValues: status.workingChanges().map { ($0.path, $0) })
+
+        #expect(changes["added.swift"]?.state == .added)
+        #expect(changes["added.swift"]?.isStaged == true)
+        #expect(changes["deleted.swift"]?.state == .deleted)
+        #expect(changes["renamed.swift"]?.state == .renamed)
+    }
+
     @Test func modelsRoundTripThroughCodable() throws {
         let status = GitStatus(
             branch: "dev",
