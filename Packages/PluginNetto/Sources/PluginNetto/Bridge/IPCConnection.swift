@@ -126,7 +126,7 @@ public class IPCConnection: NSObject, SuperLog, @unchecked Sendable {
         // Checking Netto source: `Bridge/NEFilterFlowExt.swift` likely exists.
         
         // Ask the app to prompt the user
-        appProxy.promptUser(id: flow.getAppId(), hostname:flow.getHostname(), port: flow.getLocalPort(), direction: flow.direction, responseHandler: responseHandler)
+        appProxy.promptUser(id: flow.getAppId(), hostname:flow.getHostname(), port: flow.getTargetPort(), direction: flow.direction, responseHandler: responseHandler)
         
         return true
     }

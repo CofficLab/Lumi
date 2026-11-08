@@ -3,6 +3,24 @@ import Network
 import NetworkExtension
 import SwiftUI
 
+/// 根据流量方向选择与主机名配对的目标端口。
+enum FirewallEndpointResolver {
+    static func targetPort(
+        direction: NETrafficDirection,
+        localPort: String,
+        remotePort: String
+    ) -> String {
+        switch direction {
+        case .outbound:
+            return remotePort
+        case .inbound, .any:
+            return localPort
+        @unknown default:
+            return remotePort
+        }
+    }
+}
+
 extension NEFilterFlow {
     /// Get local port
     public func getLocalPort() -> String {
@@ -18,6 +36,35 @@ extension NEFilterFlow {
         default:
             return ""
         }
+    }
+
+    /// Get remote (target) port
+    public func getRemotePort() -> String {
+        guard let socketFlow = self as? NEFilterSocketFlow else {
+            return ""
+        }
+
+        guard #available(macOS 15.0, *) else { return "" }
+        guard let endpoint = socketFlow.remoteFlowEndpoint else { return "" }
+        switch endpoint {
+        case .hostPort(_, let port):
+            return String(describing: port)
+        default:
+            return ""
+        }
+    }
+
+    /// 与 `getHostname()` 配对的目标端口。
+    ///
+    /// outbound 连接的目标端口在 `remoteFlowEndpoint`；inbound 连接的服务端口
+    /// 在 `localFlowEndpoint`。二者不能混用，否则会把客户端的临时源端口显示成
+    /// 远程服务端口。
+    public func getTargetPort() -> String {
+        FirewallEndpointResolver.targetPort(
+            direction: direction,
+            localPort: getLocalPort(),
+            remotePort: getRemotePort()
+        )
     }
 
     /// Get hostname
