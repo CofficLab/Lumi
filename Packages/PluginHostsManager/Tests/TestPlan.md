@@ -5,7 +5,7 @@
 PluginHostsManager 的实现包，包含 7 个主要类型；当前测试覆盖 16 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 16
+测试文件: 5 个，用例总数: 17
 
 核心组件（源码目录）:
 - `Models/`
@@ -55,16 +55,17 @@ PluginHostsManager 的实现包，包含 7 个主要类型；当前测试覆盖 
 | 14 | 综合 | pluginMetadataIsStable | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `pluginMetadataIsStable` |
 | 15 | 综合 | localizationCatalogIsPackaged | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `localizationCatalogIsPackaged` |
 | 16 | 综合 | activatingPluginHidesChatSectionAndDeactivatingRestoresIt | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activatingPluginHidesChatSectionAndDeactivatingRestoresIt` |
+| 17 | 综合 | ungroupedEntryStaysBeforeFirstGroup | — | 执行该用例 | 空分组条目保存后位于首个 group header 之前，且不进入该组筛选 | P0 | ✅ 已覆盖 | `ungroupedEntryStaysBeforeFirstGroup` |
 
-> 说明：全部 **16 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **17 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
+- P0: 已覆盖 3 / 3
 - P1: 已覆盖 12 / 12
 - P2: 已覆盖 2 / 2
-- **合计: 16 / 16**（仅表示清单场景，非源码覆盖率）
+- **合计: 17 / 17**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -75,7 +76,7 @@ PluginHostsManager 的实现包，包含 7 个主要类型；当前测试覆盖 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 16 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 17 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
