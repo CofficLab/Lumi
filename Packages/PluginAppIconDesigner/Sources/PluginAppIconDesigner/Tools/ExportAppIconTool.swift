@@ -38,7 +38,7 @@ public struct ExportAppIconTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let language = IconToolSupport.language
         guard let outputDirectory = IconToolSupport.string(arguments, "outputDirectory"), !outputDirectory.isEmpty else {
-            return IconToolSupport.missingParameter("outputDirectory", language: language)
+            throw IconToolSupport.missingParameterFailure("outputDirectory", toolName: name, language: language)
         }
 
         let requestedArtifactId = IconToolSupport.string(arguments, "artifactId")
@@ -109,7 +109,7 @@ public struct ExportAppIconTool: SuperAgentTool {
             await MainActor.run {
                 AppIconArtifactStore.shared.setError(error.localizedDescription)
             }
-            return IconToolSupport.error(error, language: language)
+            throw IconToolSupport.failure(error, toolName: name, language: language)
         }
     }
 

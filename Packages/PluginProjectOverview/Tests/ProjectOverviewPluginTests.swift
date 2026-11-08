@@ -192,4 +192,20 @@ struct ProjectOverviewConversationScopeTests {
 
         #expect(path(in: result.content) == projectB.standardizedFileURL.path)
     }
+
+    /// 回归：路径不存在曾经返回 "Error: ..." 字符串，默认 `executeResult`
+    /// 会把它当成成功结果。
+    @Test("路径不存在时抛出而不是返回错误字符串")
+    func missingPathThrows() async throws {
+        let missing = FileManager.default.temporaryDirectory
+            .appendingPathComponent("overview-missing-\(UUID().uuidString)", isDirectory: true)
+        let tool = ProjectOverviewV2Tool(project: nil)
+
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.executeResult(
+                context: makeContext(projectPath: nil),
+                arguments: ["path": ToolArgument(missing.path)]
+            )
+        }
+    }
 }

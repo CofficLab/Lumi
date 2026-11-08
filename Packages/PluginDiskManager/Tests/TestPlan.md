@@ -89,8 +89,8 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 41 | DiskManagerLumiTools | 存在的空目录树返回空结果而非错误 | 空临时目录 | 调用 `scanTopLevelDirectoryUsage` | 返回空数组，不抛错 | P2 | ✅ 已覆盖 | `emptyScanRootReturnsEmptyResult` |
 | 42 | DiskManagerLumiTools | 不存在的大文件扫描根抛出可诊断错误 | 不存在的路径 | 调用 `LargeFilesService.scanLargeFiles` | 抛出 `DiskManagerScanError.rootUnavailable`，说明路径不存在 | P1 | ✅ 已覆盖 | `largeFileScanThrowsForMissingRoot` |
 | 43 | DiskManagerLumiTools | 存在的空目录大文件扫描返回空结果 | 空临时目录 | 调用 `LargeFilesService.scanLargeFiles` | 返回空数组，不抛错 | P2 | ✅ 已覆盖 | `largeFileScanReturnsEmptyForExistingEmptyRoot` |
-| 44 | DiskManagerLumiTools | 大文件工具对缺失根返回失败文案 | 不存在的路径参数 | 调用 `ScanLargeFilesTool.execute` | 输出 `Failed to scan large files`，不输出空扫描成功文案 | P1 | ✅ 已覆盖 | `scanLargeFilesToolReportsMissingRootAsFailure` |
-| 45 | DiskManagerLumiTools | 目录树工具对缺失根返回失败文案 | 不存在的路径参数 | 调用 `ScanDirectoryTreeTool.execute` | 输出 `Failed to analyze directory tree`，不输出空扫描成功文案 | P1 | ✅ 已覆盖 | `scanDirectoryTreeToolReportsMissingRootAsFailure` |
+| 44 | DiskManagerLumiTools | 大文件工具对缺失根抛出失败 | 不存在的路径参数 | 调用 `ScanLargeFilesTool.executeResult` | 抛出 `ToolExecutionError`，不再以 `isError == false` 的成功结果返回 | P1 | ✅ 已覆盖 | `scanLargeFilesToolReportsMissingRootAsFailure` |
+| 45 | DiskManagerLumiTools | 目录树工具对缺失根抛出失败 | 不存在的路径参数 | 调用 `ScanDirectoryTreeTool.executeResult` | 抛出 `ToolExecutionError`，不再以 `isError == false` 的成功结果返回 | P1 | ✅ 已覆盖 | `scanDirectoryTreeToolReportsMissingRootAsFailure` |
 | 46 | CacheCleanerTrash | 废纸篓扫描枚举子项，不把 ~/.Trash 本身生成为清理项 | 临时 home 下 .Trash 含两个文件 | 调用 `scanCategory` | 返回 2 个子项，均不是废纸篓根路径 | P0 | ✅ 已覆盖 | `scanExpandsTrashIntoChildren` |
 | 47 | CacheCleanerTrash | 清理废纸篓只删内部文件并保留根目录 | 临时 home 下 .Trash 含一个 256 字节文件 | 扫描后调用 `cleanup` | 释放 256 字节，~/.Trash 仍存在且为目录 | P0 | ✅ 已覆盖 | `cleanupKeepsTrashRoot` |
 | 48 | DiskManagerLumiTools | 路径数组解析保留原始字符串，仅用裁剪判断是否为空 | `["/tmp/a ", "   ", "/tmp/b"]` | 调用 `DiskManagerToolSupport.paths` | 返回 `["/tmp/a ", "/tmp/b"]`，纯空白条目被剔除 | P0 | ✅ 已覆盖 | `pathsPreserveOriginalStringsAndDropBlankEntries` |

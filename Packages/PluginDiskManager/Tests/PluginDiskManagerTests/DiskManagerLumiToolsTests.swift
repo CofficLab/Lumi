@@ -251,20 +251,18 @@ struct LargeFilesServiceTests {
         let missing = FileManager.default.temporaryDirectory
             .appendingPathComponent("lumi-missing-tool-large-\(UUID().uuidString)", isDirectory: true)
 
-        let output = try await ScanLargeFilesTool().execute(arguments: ["path": ToolArgument(missing.path)])
-
-        #expect(output.contains("Failed to scan large files"))
-        #expect(!output.contains("No files larger than 50 MB were found"))
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await ScanLargeFilesTool().executeResult(arguments: ["path": ToolArgument(missing.path)])
+        }
     }
 
     @Test func scanDirectoryTreeToolReportsMissingRootAsFailure() async throws {
         let missing = FileManager.default.temporaryDirectory
             .appendingPathComponent("lumi-missing-tool-tree-\(UUID().uuidString)", isDirectory: true)
 
-        let output = try await ScanDirectoryTreeTool().execute(arguments: ["path": ToolArgument(missing.path)])
-
-        #expect(output.contains("Failed to analyze directory tree"))
-        #expect(!output.contains("No entries were found"))
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await ScanDirectoryTreeTool().executeResult(arguments: ["path": ToolArgument(missing.path)])
+        }
     }
 
     // MARK: - 回归 #740：删除失败必须抛出错误，不能当作成功 Job

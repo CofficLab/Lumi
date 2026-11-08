@@ -1,8 +1,31 @@
+import KitAgentTool
 import XCTest
 @testable import DownloadPlugin
 
 @MainActor
 final class DownloadPluginTests: XCTestCase {
+
+    // MARK: - Tool failure semantics
+
+    /// 回归：失败分支曾经返回 "❌ ..." 字符串，默认 `executeResult`
+    /// 会把它包成 `isError == false` 的成功结果。
+    func testToolsThrowForInvalidArguments() async {
+        do {
+            _ = try await DownloadFileV2Tool().executeResult(
+                arguments: ["url": ToolArgument("ftp://example.com/a.zip")]
+            )
+            XCTFail("invalid URL scheme should throw")
+        } catch {
+            XCTAssertTrue(error is ToolExecutionError)
+        }
+
+        do {
+            _ = try await DownloadProgressV2Tool().executeResult(arguments: [:])
+            XCTFail("missing task_id should throw")
+        } catch {
+            XCTAssertTrue(error is ToolExecutionError)
+        }
+    }
 
     // MARK: - Plugin Info
 

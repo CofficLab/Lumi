@@ -63,10 +63,7 @@ public struct PreviewIconTool: SuperAgentTool {
             await MainActor.run {
                 IconToolSupport.store().setError(error.localizedDescription)
             }
-            return ToolCallResult(
-                content: IconToolSupport.error(error, language: language),
-                isError: true
-            )
+            throw IconToolSupport.failure(error, toolName: name, language: language)
         }
     }
 }

@@ -1,4 +1,5 @@
 import Foundation
+import KitAgentTool
 import Testing
 @testable import ScreenRecorderPlugin
 
@@ -106,5 +107,14 @@ struct ScreenRecorderPluginTests {
         #expect(StartRecordingV2Tool.toolName == "start_recording")
         #expect(StopRecordingV2Tool.toolName == "stop_recording")
         #expect(ListRecordableAppsV2Tool.toolName == "list_recordable_apps")
+    }
+
+    /// 回归：缺参曾经返回字符串，默认 `executeResult` 会当成成功结果。
+    @MainActor
+    @Test("缺少 application 时抛出而不是返回错误字符串")
+    func startRecordingThrowsWhenApplicationIsMissing() async {
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await StartRecordingV2Tool().executeResult(arguments: ["target": ToolArgument("app_window")])
+        }
     }
 }
