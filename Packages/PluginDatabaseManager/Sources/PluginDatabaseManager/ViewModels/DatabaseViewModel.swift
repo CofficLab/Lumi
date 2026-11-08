@@ -924,7 +924,14 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     /// 加载 SQLite 表列表
     public func loadSQLiteTables() async {
         guard let config = selectedConfig, config.type == .sqlite else { return }
-        guard let connection = await manager.getConnection(for: config.id) else { return }
+        let configID = config.id
+        guard let connection = await manager.getConnection(for: configID) else {
+            // 连接建立失败时清掉旧表，避免继续显示上一个库的表。
+            guard selectedConfig?.id == configID else { return }
+            sqliteTables = []
+            selectedSQLiteTable = nil
+            return
+        }
         do {
             let result = try await connection.query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;", params: nil)
             let names = result.rows.compactMap { row -> String? in
@@ -936,11 +943,14 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
                 }
                 return nil
             }
+            // 查询期间切换了数据库：结果属于旧连接，不能写进当前详情页。
+            guard selectedConfig?.id == configID else { return }
             sqliteTables = names
             if let selectedSQLiteTable, !names.contains(selectedSQLiteTable) {
                 self.selectedSQLiteTable = nil
             }
         } catch {
+            guard selectedConfig?.id == configID else { return }
             errorMessage = error.localizedDescription
         }
     }

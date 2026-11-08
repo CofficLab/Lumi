@@ -5,7 +5,7 @@
 DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 67
+测试文件: 3 个，用例总数: 68
 
 核心组件（源码目录）:
 - `Agent/`
@@ -47,7 +47,7 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 - **PostgreSQL schema**（3 条）：由 `postgresSchemaFilterListsAllNonSystemSchemasByDefault`、`postgresSchemaFilterBindsRequestedSchemaAsParameter` 等用例锁定；改动 schema 描述的过滤条件时优先跑对应测试文件。
 - **DatabaseConnectionDraft**（2 条）：由 `sqlitePathIsStoredVerbatim`、`sqlitePathRejectsWhitespaceOnlyInput` 锁定，防止连接表单改动合法文件路径。
 - **DatabaseManagerV2Plugin**（1 条）：由 `restoresDatabaseWorkspace` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **DatabaseViewModelConnectionRace**（3 条）：由 `slowQueryFromPreviousConnectionDoesNotOverwriteNewConnection`、`slowerConnectDoesNotReplaceNewerSelection`、`sidebarReloadBypassesSchemaCache` 锁定，防止旧连接/慢查询覆盖当前连接状态，以及 Reload 命中旧结构缓存。
+- **DatabaseViewModelConnectionRace**（4 条）：由 `slowQueryFromPreviousConnectionDoesNotOverwriteNewConnection`、`slowerConnectDoesNotReplaceNewerSelection`、`staleSQLiteTablesDoNotOverwriteNewDatabase`、`sidebarReloadBypassesSchemaCache` 锁定，防止旧连接/慢查询/旧表列表覆盖当前连接状态，以及 Reload 命中旧结构缓存。
 - **SQLite RETURNING**（2 条）：由 `executeAcceptsReturningRows`、`returningStatementsUseQueryPath` 锁定；改动 DML 路由或 SQLite step 循环时优先跑对应测试文件。
 - **Redis handshake**（2 条）：由 `errorResponseFailsHandshake`、`successResponsePassesHandshake` 锁定，防止 AUTH/PING 的 RESP 错误值被忽略。
 - **Redis RESP parsing**（3 条）：由 `trailingCRIsIncomplete`、`CRFollowedByNonLFTimesOut`、`splitCRLFCompletesAfterNextChunk` 锁定，防止 TCP 在 CR/LF 间分片时误判。
@@ -124,27 +124,28 @@ DatabaseManagerPlugin Manage SQLite, MySQL, PostgreSQL, and Redis
 | 65 | Redis RESP parsing | CR 后跟非法字节仍报格式错误 | — | 用 `+OK\rX` 调用 `parseComplete` | 抛出 `DatabaseError` | P1 | ✅ 已覆盖 | `CRFollowedByNonLFTimesOut` |
 | 66 | Redis RESP parsing | 下一块补全 LF 后可解析 | — | 用完整的 `+OK\r\n` 与 `$3\r\nfoo\r\n` 调用 `parseComplete` | 分别解析出 simpleString / bulkString | P1 | ✅ 已覆盖 | `splitCRLFCompletesAfterNextChunk` |
 | 67 | 连接竞态 | Reload 侧边栏对象树必须绕过缓存重新查询数据库 | PG 假连接记录所有 SQL，首次连接已填充结构缓存 | 连接后调用 `refreshSidebarObjects()` | 发出的查询数比连接后增加 | P0 | ✅ 已覆盖 | `sidebarReloadBypassesSchemaCache` |
+| 68 | 连接竞态 | 旧库的表列表晚到时不得覆盖新选中的库 | 卡住 A 库的 `sqlite_master` 查询，期间切到 B 库 | 挂起 A 表列表查询 → 连接 B → 放行 A 查询 | `selectedConfig` 仍为 B，`sqliteTables` 不被 A 的陈旧结果写入 | P0 | ✅ 已覆盖 | `staleSQLiteTablesDoNotOverwriteNewDatabase` |
 
-> 说明：全部 **67 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **68 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 33 / 33
+- P0: 已覆盖 34 / 34
 - P1: 已覆盖 33 / 33
 - P2: 已覆盖 1 / 1
-- **合计: 67 / 67**（仅表示清单场景，非源码覆盖率）
+- **合计: 68 / 68**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（33 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（34 条）
 - **P1**: 其余功能性用例（33 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 67 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 68 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

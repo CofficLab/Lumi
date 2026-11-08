@@ -108,6 +108,21 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
     @Published var scanResult: String?
 
     @Published var isLoading = false
+
+    /// 正在进行的操作数。`isLoading` 由计数派生，避免重叠或嵌套的操作
+    /// （如拉取镜像后刷新列表）互相把转圈提前关掉。
+    private var activeOperations = 0
+
+    private func beginLoading() {
+        activeOperations += 1
+        isLoading = true
+    }
+
+    private func endLoading() {
+        activeOperations = max(0, activeOperations - 1)
+        isLoading = activeOperations > 0
+    }
+
     @Published var errorMessage: String?
     @Published var searchText: String = ""
     
@@ -153,7 +168,8 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
                 DockerManagerPluginSupport.logger.info("\(self.t)刷新镜像列表")
             }
         }
-        isLoading = true
+        beginLoading()
+        defer { endLoading() }
         errorMessage = nil
 
         do {
@@ -171,8 +187,6 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             }
             errorMessage = error.localizedDescription
         }
-
-        isLoading = false
     }
 
     func deleteImage(_ image: DockerImage, force: Bool = false) async {
@@ -218,19 +232,18 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
                 DockerManagerPluginSupport.logger.info("\(self.t)拉取镜像: \(normalizedName)")
             }
         }
-        isLoading = true
+        beginLoading()
+        defer { endLoading() }
         errorMessage = nil
         do {
             _ = try await service.pullImage(normalizedName)
             await refreshImages()
-            isLoading = false
             return true
         } catch {
             if DockerManagerPluginSupport.verbose {
                 DockerManagerPluginSupport.logger.error("\(self.t)拉取镜像失败: \(error.localizedDescription)")
             }
             errorMessage = "拉取失败: \(error.localizedDescription)"
-            isLoading = false
             return false
         }
     }
@@ -285,16 +298,15 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             return false
         }
 
-        isLoading = true
+        beginLoading()
+        defer { endLoading() }
         errorMessage = nil
         do {
             try await service.tagImage(image.imageID, target: normalizedTag)
             await refreshImages()
-            isLoading = false
             return true
         } catch {
             errorMessage = "Tag failed: \(error.localizedDescription)"
-            isLoading = false
             return false
         }
     }
@@ -306,7 +318,8 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
     /// 写了一半或零字节的文件留在用户选定的路径上。
     @discardableResult
     func exportImage(_ image: DockerImage, to url: URL) async -> Bool {
-        isLoading = true
+        beginLoading()
+        defer { endLoading() }
         errorMessage = nil
 
         let fileManager = FileManager.default
@@ -333,12 +346,12 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
             errorMessage = "Export failed: \(error.localizedDescription)"
         }
 
-        isLoading = false
         return succeeded
     }
-    
+
     func loadImage(from url: URL) async {
-        isLoading = true
+        beginLoading()
+        defer { endLoading() }
         errorMessage = nil
         do {
             try await service.loadImage(from: url.path)
@@ -346,20 +359,23 @@ class DockerManagerViewModel: ObservableObject, SuperLog {
         } catch {
             errorMessage = "Load failed: \(error.localizedDescription)"
         }
-        isLoading = false
     }
-    
+
     func scanImage(_ image: DockerImage) async {
-        isLoading = true
+        let imageID = image.imageID
+        beginLoading()
+        defer { endLoading() }
         errorMessage = nil
         scanResult = "Scanning..."
         do {
-            let result = try await service.scanImage(image.imageID)
+            let result = try await service.scanImage(imageID)
+            // 扫描期间切换了镜像：结果属于上一个镜像，不能显示在当前的详情页。
+            guard selectedImage?.imageID == imageID else { return }
             scanResult = result
         } catch {
+            guard selectedImage?.imageID == imageID else { return }
             scanResult = "Scan failed: \(error.localizedDescription)"
         }
-        isLoading = false
     }
 
     func reportFilePanelError(_ action: String, error: Error) {
