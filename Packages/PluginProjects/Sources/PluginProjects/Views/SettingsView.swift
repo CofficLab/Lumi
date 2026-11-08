@@ -15,10 +15,6 @@ public struct SettingsView: View {
 
     @State private var selectedProjectPath: String?
     @State private var didSeedSelection = false
-    /// 各项目历史打开文件，key 为标准化后的项目路径。
-    /// 放在 `@State` 中而不是在 `body` 里同步读取磁盘，避免每次重绘都阻塞 UI。
-    @State private var openedFilesByPath: [String: ProjectOpenedFiles] = [:]
-    @State private var isLoadingOpenedFiles = true
     private let projectDetailSections: [ProjectDetailSectionItem]
 
     public init(viewModel: ProjectsViewModel, projectDetailSections: [ProjectDetailSectionItem] = []) {
@@ -69,7 +65,7 @@ public struct SettingsView: View {
             }
         }
         .task {
-            await loadOpenedFiles()
+            viewModel.startObservingOpenedFiles()
         }
         .onAppear { seedSelectionIfNeeded() }
         .onChange(of: projectPaths) { _ in syncSelectionAfterProjectChange() }
@@ -255,8 +251,8 @@ public struct SettingsView: View {
     @ViewBuilder
     private func openedFilesSection(for project: ProjectEntry) -> some View {
         let key = ProjectsStore.normalizedPath(project.path)
-        // 从 @State 缓存读取，避免每次重绘都去磁盘加载。
-        let opened = openedFilesByPath[key]
+        // 读取 ViewModel 中的缓存：它跟随 Store 变更刷新，避免显示首次进入时的旧快照。
+        let opened = viewModel.openedFilesByPath[key]
         let urls = opened?.openFileURLs ?? []
         let current = opened?.currentFileURL
 
@@ -264,7 +260,7 @@ public struct SettingsView: View {
             title: pluginLocalization.string("Opened Files"),
             titleAlignment: .leading
         ) {
-            if isLoadingOpenedFiles {
+            if viewModel.isLoadingOpenedFiles {
                 HStack(spacing: 8) {
                     ProgressView()
                         .controlSize(.small)
@@ -340,21 +336,6 @@ public struct SettingsView: View {
         guard let selectedProjectPath, projects.contains(where: { $0.path == selectedProjectPath }) else {
             self.selectedProjectPath = projects.first?.path
             return
-        }
-    }
-
-    // MARK: - Data
-
-    /// 异步加载所有项目的打开文件记录到 `@State` 缓存。
-    ///
-    /// 使用 `withCheckedContinuation` 让出控制权，让 SwiftUI 先渲染 loading 状态，
-    /// 避免在视图出现时阻塞主线程（来自 HTTPExchangeSettingsView 的修复模式）。
-    private func loadOpenedFiles() async {
-        await withCheckedContinuation { continuation in
-            let loaded = viewModel.store.loadOpenedFiles()
-            openedFilesByPath = loaded
-            isLoadingOpenedFiles = false
-            continuation.resume()
         }
     }
 
