@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 45 条用例。
+PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 47 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 45
+测试文件: 4 个，用例总数: 47
 
 核心组件（源码目录）:
 - `Internal/`
@@ -37,6 +37,7 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
+- **CacheCleanerTrash**（2 条）：由 `scanExpandsTrashIntoChildren`、`cleanupKeepsTrashRoot` 锁定；改动废纸篓/缓存扫描与清理逻辑时优先跑对应测试文件。
 - **DiskManagerLumiTools**（19 条）：由 `formatBytesProducesHumanReadableString`、`formatBytesHandlesZero`、`formatDateReturnsUnknownForNil` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DiskModelsPureLogic**（19 条）：由 `classifiesImages`、`classifiesVideos`、`classifiesAudio` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（7 条）：由 `pluginMetadataIsStable`、`agentToolsContributionIsAvailable`、`railTabIDIsStable` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -90,16 +91,18 @@ PluginDiskManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 43 | DiskManagerLumiTools | 存在的空目录大文件扫描返回空结果 | 空临时目录 | 调用 `LargeFilesService.scanLargeFiles` | 返回空数组，不抛错 | P2 | ✅ 已覆盖 | `largeFileScanReturnsEmptyForExistingEmptyRoot` |
 | 44 | DiskManagerLumiTools | 大文件工具对缺失根返回失败文案 | 不存在的路径参数 | 调用 `ScanLargeFilesTool.execute` | 输出 `Failed to scan large files`，不输出空扫描成功文案 | P1 | ✅ 已覆盖 | `scanLargeFilesToolReportsMissingRootAsFailure` |
 | 45 | DiskManagerLumiTools | 目录树工具对缺失根返回失败文案 | 不存在的路径参数 | 调用 `ScanDirectoryTreeTool.execute` | 输出 `Failed to analyze directory tree`，不输出空扫描成功文案 | P1 | ✅ 已覆盖 | `scanDirectoryTreeToolReportsMissingRootAsFailure` |
+| 46 | CacheCleanerTrash | 废纸篓扫描枚举子项，不把 ~/.Trash 本身生成为清理项 | 临时 home 下 .Trash 含两个文件 | 调用 `scanCategory` | 返回 2 个子项，均不是废纸篓根路径 | P0 | ✅ 已覆盖 | `scanExpandsTrashIntoChildren` |
+| 47 | CacheCleanerTrash | 清理废纸篓只删内部文件并保留根目录 | 临时 home 下 .Trash 含一个 256 字节文件 | 扫描后调用 `cleanup` | 释放 256 字节，~/.Trash 仍存在且为目录 | P0 | ✅ 已覆盖 | `cleanupKeepsTrashRoot` |
 
 > 说明：全部 **45 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
+- P0: 已覆盖 2 / 2
 - P1: 已覆盖 38 / 38
 - P2: 已覆盖 7 / 7
-- **合计: 45 / 45**（仅表示清单场景，非源码覆盖率）
+- **合计: 47 / 47**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
