@@ -431,8 +431,8 @@ public final class BrowserSessionManager: ObservableObject {
         guard let session = sessions[conversationID] else {
             throw BrowserSession.SessionError.noPage
         }
-        activeConversationID = conversationID
-        activeSession = session
+        // 只读查询故意不改 `activeConversationID` / `activeSession`：后台会话
+        // 的读取不能把用户当前选中的 Browser 工作区切走（issue #928）。
         return try await session.readPage(maxCharacters: maxCharacters)
     }
 
@@ -479,8 +479,6 @@ public final class BrowserSessionManager: ObservableObject {
         guard let session = sessions[conversationID] else {
             throw BrowserSession.SessionError.noPage
         }
-        activeConversationID = conversationID
-        activeSession = session
         return try await session.accessibilitySnapshot(interactiveOnly: interactiveOnly)
     }
 
@@ -495,8 +493,6 @@ public final class BrowserSessionManager: ObservableObject {
         guard let session = sessions[conversationID] else {
             throw BrowserSession.SessionError.noPage
         }
-        activeConversationID = conversationID
-        activeSession = session
         return try await session.findElements(role: role, name: name, text: text, limit: limit)
     }
 
@@ -510,8 +506,6 @@ public final class BrowserSessionManager: ObservableObject {
         guard let session = sessions[conversationID] else {
             throw BrowserSession.SessionError.noPage
         }
-        activeConversationID = conversationID
-        activeSession = session
         let result = try await session.wait(condition: condition, value: value, timeout: timeout)
         if result.timedOut {
             throw BrowserSession.SessionError.waitTimedOut(result.detail)
@@ -551,8 +545,6 @@ public final class BrowserSessionManager: ObservableObject {
         guard let session = sessions[conversationID] else {
             throw BrowserSession.SessionError.noPage
         }
-        activeConversationID = conversationID
-        activeSession = session
         return try await session.evaluate(script: script)
     }
 
@@ -561,8 +553,6 @@ public final class BrowserSessionManager: ObservableObject {
         guard let session = sessions[conversationID] else {
             throw BrowserSession.SessionError.noPage
         }
-        activeConversationID = conversationID
-        activeSession = session
         return try await session.screenshot(fullPage: fullPage)
     }
 
@@ -578,7 +568,7 @@ public final class BrowserSessionManager: ObservableObject {
         Task { try? await open(address, conversationID: conversationID, localAccessApproved: true) }
     }
 
-    private func session(for conversationID: UUID) -> BrowserSession {
+    func session(for conversationID: UUID) -> BrowserSession {
         if let session = sessions[conversationID] { return session }
         let session = BrowserSession(conversationID: conversationID)
         sessions[conversationID] = session
