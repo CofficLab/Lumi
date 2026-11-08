@@ -180,10 +180,14 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
             }
 
             // 统计
-            let files = try LibGit2.getDiffFileList(at: repoPath, staged: staged)
+            let allFiles = try LibGit2.getDiffFileList(at: repoPath, staged: staged)
             let (insertions, deletions) = GitDiffStats.countInsertionsDeletions(in: content)
 
-            let stats = !files.isEmpty ? GitDiffStats(filesChanged: files.count, insertions: insertions, deletions: deletions) : nil
+            // 指定 file 时 patch 只包含该文件，文件数必须与 patch 范围一致。
+            let filesChanged = file == nil ? allFiles.count : (content.isEmpty ? 0 : 1)
+            let stats = filesChanged > 0
+                ? GitDiffStats(filesChanged: filesChanged, insertions: insertions, deletions: deletions)
+                : nil
             return GitDiff(content: content, stats: stats)
         }
     }

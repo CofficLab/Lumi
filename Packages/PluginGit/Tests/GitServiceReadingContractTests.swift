@@ -115,4 +115,28 @@ struct GitServiceReadingContractTests {
         #expect(changes.contains { $0.path == "b.txt" })
         #expect(changes.contains { $0.path == "b.txt" && $0.state == .added })
     }
+
+    @Test("getDiff 指定单个文件时 filesChanged 只统计该文件")
+    func diffFileFilterCountsOnlyRequestedFile() async throws {
+        let repo = try makeRepository()
+        defer { try? FileManager.default.removeItem(at: repo) }
+
+        try write("base a\n", to: "a.txt", in: repo)
+        try write("base b\n", to: "b.txt", in: repo)
+        try runGit(["add", "."], in: repo)
+        try runGit(["commit", "-q", "-m", "init"], in: repo)
+
+        try write("changed a\n", to: "a.txt", in: repo)
+        try write("changed b\n", to: "b.txt", in: repo)
+
+        let diff = try await GitService.shared.getDiff(path: repo.path, staged: false, file: "a.txt")
+        #expect(diff.stats?.filesChanged == 1)
+        #expect(diff.content.contains("a.txt"))
+        #expect(!diff.content.contains("b.txt"))
+
+        // 指定文件没有差异时，patch 与统计都为“无”。
+        let missing = try await GitService.shared.getDiff(path: repo.path, staged: false, file: "missing.txt")
+        #expect(missing.content.isEmpty)
+        #expect(missing.stats == nil)
+    }
 }
