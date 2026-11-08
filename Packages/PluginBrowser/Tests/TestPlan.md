@@ -5,7 +5,7 @@
 PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace and the official Chrome DevTools MCP server for controlling Chrome.
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 33
+测试文件: 7 个，用例总数: 37
 
 核心组件（源码目录）:
 - `Models/`
@@ -52,6 +52,7 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 - **Browser 工具本地化**（3 条）：由 `allToolsDescribeInChinese`、`interactExposesEveryAction` 等用例锁定；工具描述与参数说明必须覆盖 4 种语言。
 - **PluginBrowser 工具装配**（5 条）：由 `registersAllTools`、`removesAllToolsOnShutdown` 等用例锁定；工具漏注册或漏注销是本插件最容易犯且最难发现的错误。
 - **Browser 活动会话隔离**（2 条）：由 `readOnlyToolsDoNotHijackActiveConversation`、`explicitSelectionStillSwitchesActiveConversation` 锁定；只读工具只能读取自己会话的页面，不得改写用户当前选中的 Browser 工作区。
+- **Browser 会话释放**（4 条）：由 `deletedConversationReleasesBrowserSession`、`deletingActiveConversationClearsActiveState` 等用例锁定；删除会话必须立刻释放 BrowserSession/WKWebView，并在活动会话被删时清空活动状态。
 
 ## 测试用例清单
 
@@ -90,16 +91,20 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 | 31 | 工具装配 | 只有读工具可以并行执行 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `executionCapabilitiesAreCorrect` |
 | 32 | Browser 活动会话隔离 | 后台会话的只读工具不会切换当前 Browser 会话 | 用户选中 A，B 已有页面会话 | 依次对 B 执行 read/snapshot/find/evaluate/screenshot | `activeConversationID` 始终为 A，`activeSession` 仍为空 | P1 | ✅ 已覆盖 | `readOnlyToolsDoNotHijackActiveConversation` |
 | 33 | Browser 活动会话隔离 | 用户显式选择会话仍然会切换 Browser 工作区 | 会话 B 已有页面会话 | 调用 `selectConversation(B)` | 活动会话与活动页面都切到 B | P1 | ✅ 已覆盖 | `explicitSelectionStillSwitchesActiveConversation` |
+| 34 | Browser 会话释放 | 删除会话后释放对应 BrowserSession | 会话已有页面会话 | 投递 `ConversationEvent.deleted` | BrowserSession 被释放（weak 引用为 nil），不再持有该会话 | P1 | ✅ 已覆盖 | `deletedConversationReleasesBrowserSession` |
+| 35 | Browser 会话释放 | 删除当前活动会话会清空活动状态 | 会话为当前活动会话 | 调用 `closeSession` | 活动会话与活动页面都清空 | P1 | ✅ 已覆盖 | `deletingActiveConversationClearsActiveState` |
+| 36 | Browser 会话释放 | 删除其它会话不影响当前活动的 Browser 会话 | 会话 A 活动，B 有页面会话 | 删除 B | A 仍是活动会话且页面实例保留，B 被释放 | P1 | ✅ 已覆盖 | `deletingOtherConversationKeepsActiveSession` |
+| 37 | Browser 会话释放 | 非删除类会话事件不会释放 BrowserSession | 会话已有页面会话 | 投递 `.updated` 与 `.listChanged` | 页面实例保留 | P2 | ✅ 已覆盖 | `unrelatedConversationEventsKeepSession` |
 
-> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **37 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 22 / 22
-- P2: 已覆盖 11 / 11
-- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 25 / 25
+- P2: 已覆盖 12 / 12
+- **合计: 37 / 37**（仅表示清单场景，非源码覆盖率）
 
 ## 未覆盖说明
 
@@ -113,13 +118,13 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（22 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
+- **P1**: 其余功能性用例（25 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 33 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 37 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
