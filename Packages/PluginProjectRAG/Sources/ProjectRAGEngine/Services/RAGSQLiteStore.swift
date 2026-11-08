@@ -8,6 +8,15 @@ private let ragVec0MinimumSQLiteVersionNumber = 3_051_003
 final class RAGSQLiteStore: @unchecked Sendable {
     private var db: OpaquePointer?
     private let dbURL: URL
+    /// 全部入口共享的单一连接锁。
+    ///
+    /// 这个 store 只持有一个 SQLite connection，而索引既可以由 idle scheduler
+    /// 触发，也可以由项目生命周期 Hook 触发。不同项目的 `replaceFileChunks`
+    /// 若在同一连接上交错执行，后到的 `BEGIN TRANSACTION` 会直接失败
+    /// （cannot start a transaction within a transaction），使该项目的索引
+    /// 整轮失败。所有触碰 `db` 的入口都必须先拿这把锁，用跨项目互斥
+    /// 换掉连接级事务冲突。
+    private let lock = NSRecursiveLock()
     private var sqliteVecPathLoaded: String?
     private static let vecTableName = "rag_vec_chunks"
     package(set) public var runtimeInfo: RAGRuntimeInfo = RAGRuntimeInfo(
@@ -28,6 +37,8 @@ final class RAGSQLiteStore: @unchecked Sendable {
     }
 
     func migrate() throws {
+        lock.lock()
+        defer { lock.unlock() }
         try execute(RAGSQL.createFilesTable)
         try execute(RAGSQL.createChunksTable)
         try addChunkLineRangeColumnsIfNeeded()
@@ -37,11 +48,15 @@ final class RAGSQLiteStore: @unchecked Sendable {
     }
 
     func configureVectorBackend(embeddingDimension: Int) throws {
+        lock.lock()
+        defer { lock.unlock() }
         guard db != nil else { return }
         runtimeInfo = try detectRuntimeInfo(embeddingDimension: embeddingDimension)
     }
 
     func fetchIndexedFileStates(projectPath: String) throws -> [String: RAGIndexedFileState] {
+        lock.lock()
+        defer { lock.unlock() }
         let sql = RAGSQL.fetchFileStates
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
@@ -77,6 +92,8 @@ final class RAGSQLiteStore: @unchecked Sendable {
         embeddings: [[Float]],
         embeddingDimension: Int
     ) throws {
+        lock.lock()
+        defer { lock.unlock() }
         guard chunks.count == embeddings.count else {
             throw RAGError.dbError("replaceFileChunks 参数异常：chunks/embeddings 数量不一致")
         }
@@ -145,6 +162,8 @@ final class RAGSQLiteStore: @unchecked Sendable {
     }
 
     func deleteFileState(projectPath: String, filePath: String) throws {
+        lock.lock()
+        defer { lock.unlock() }
         let sql = RAGSQL.deleteFileState
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
@@ -165,6 +184,8 @@ final class RAGSQLiteStore: @unchecked Sendable {
         modifiedTime: Double,
         contentHash: String
     ) throws {
+        lock.lock()
+        defer { lock.unlock() }
         try upsertFileState(
             projectPath: projectPath,
             filePath: filePath,
@@ -174,6 +195,8 @@ final class RAGSQLiteStore: @unchecked Sendable {
     }
 
     func deleteChunks(projectPath: String, filePath: String) throws {
+        lock.lock()
+        defer { lock.unlock() }
         let chunkIDs = try fetchChunkIDs(projectPath: projectPath, filePath: filePath)
         let sql = RAGSQL.deleteChunksByFile
         var statement: OpaquePointer?
@@ -200,6 +223,8 @@ final class RAGSQLiteStore: @unchecked Sendable {
         embeddingModel: String,
         embeddingDimension: Int
     ) throws {
+        lock.lock()
+        defer { lock.unlock() }
         let sql = RAGSQL.upsertProjectIndexState
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
@@ -220,6 +245,8 @@ final class RAGSQLiteStore: @unchecked Sendable {
     }
 
     func loadChunks(projectPath: String?, limit: Int? = nil) throws -> [RAGStoredChunk] {
+        lock.lock()
+        defer { lock.unlock() }
         var sql = "SELECT id, content, file_path, start_line, end_line, embedding FROM rag_chunks"
         if projectPath != nil {
             sql += " WHERE project_path = ?"
@@ -276,6 +303,8 @@ final class RAGSQLiteStore: @unchecked Sendable {
         lexicalLimit: Int = 2500,
         fallbackLimit: Int = 6500
     ) throws -> [RAGStoredChunk] {
+        lock.lock()
+        defer { lock.unlock() }
         let terms = Array(Set(queryTerms.filter { !$0.isEmpty }))
         guard !terms.isEmpty else {
             return try loadChunks(projectPath: projectPath, limit: fallbackLimit)
@@ -329,6 +358,8 @@ final class RAGSQLiteStore: @unchecked Sendable {
     }
 
     func fetchProjectIndexState(projectPath: String) throws -> RAGProjectIndexState? {
+        lock.lock()
+        defer { lock.unlock() }
         let sql = RAGSQL.fetchProjectIndexState
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
@@ -356,20 +387,26 @@ final class RAGSQLiteStore: @unchecked Sendable {
     }
 
     func countProjectFiles(projectPath: String) throws -> Int {
-        try querySingleInt(
+        lock.lock()
+        defer { lock.unlock() }
+        return try querySingleInt(
             sql: RAGSQL.countProjectFiles,
             param: projectPath
         )
     }
 
     func countProjectChunks(projectPath: String) throws -> Int {
-        try querySingleInt(
+        lock.lock()
+        defer { lock.unlock() }
+        return try querySingleInt(
             sql: RAGSQL.countProjectChunks,
             param: projectPath
         )
     }
 
     func searchNearestVectors(queryEmbedding: [Float], limit: Int) throws -> [RAGVectorMatch]? {
+        lock.lock()
+        defer { lock.unlock() }
         guard runtimeInfo.vectorBackend == .sqliteVec else { return nil }
         guard !queryEmbedding.isEmpty else { return [] }
 
@@ -410,6 +447,8 @@ final class RAGSQLiteStore: @unchecked Sendable {
     }
 
     func loadChunksByIDs(_ chunkIDs: [Int64], projectPath: String?) throws -> [RAGStoredChunk] {
+        lock.lock()
+        defer { lock.unlock() }
         guard !chunkIDs.isEmpty else { return [] }
         let placeholders = Array(repeating: "?", count: chunkIDs.count).joined(separator: ", ")
         var sql = """

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 95 条用例。
+PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 96 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 95
+测试文件: 4 个，用例总数: 96
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -46,6 +46,7 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 9
 - **综合**（11 条）：由 `retainsStableIdentifiers`、`registersProvider`、`injectsContextOnce` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RAGIndexScheduling**（4 条）：由 `selectsMissingIndexBeforeStaleIndex`、`neverSelectsCurrentProject`、`failedProjectUsesExponentialBackoff` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RAGPureLogic**（59 条）：由 `chunkEmptyInputReturnsEmpty`、`chunkSingleBlockProducesOneChunk`、`chunkProducesOverlapAcrossBlocks` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **RAGSQLiteStoreConcurrency**（1 条）：由 `concurrentWritersOnOneConnectionDoNotCollide` 用例锁定；该用例用 8 个线程同时向同一 store 写入不同项目，移除 `RAGSQLiteStore` 的连接锁后必定因「cannot start a transaction within a transaction」失败。
 
 ## 测试用例清单
 
@@ -146,27 +147,28 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 9
 | 93 | EmbeddingThreshold | 阈值常量合理 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `thresholdIsReasonable` |
 | 94 | ProjectRAGPlugin | search_code 未传 project_path 时使用会话绑定项目 | 会话绑定一个不存在的项目路径 | 调用 `executeResult(context:arguments:)` | 报错路径为会话项目而非当前项目 | P1 | ✅ 已覆盖 | `usesConversationProject` |
 | 95 | ProjectRAGPlugin | search_code 显式 project_path 优先于会话绑定项目 | 会话绑定项目 A，显式传 B | 调用 `executeResult(context:arguments:)` | 报错路径为 B，不含 A | P1 | ✅ 已覆盖 | `explicitPathBeatsConversationProject` |
+| 96 | RAGSQLiteStoreConcurrency | 并发索引不同项目不会因同一连接的嵌套事务互相失败 | 单一 `RAGSQLiteStore` 连接 | 8 个线程同时释放并各写入一个不同项目的 200 个 chunk | 全部写入成功，每个项目都有完整的文件状态与 chunk | P0 | ✅ 已覆盖 | `concurrentWritersOnOneConnectionDoNotCollide` |
 
-> 说明：全部 **95 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **96 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
+- P0: 已覆盖 7 / 7
 - P1: 已覆盖 78 / 78
 - P2: 已覆盖 11 / 11
-- **合计: 95 / 95**（仅表示清单场景，非源码覆盖率）
+- **合计: 96 / 96**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
 - **P1**: 其余功能性用例（78 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 95 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 96 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
