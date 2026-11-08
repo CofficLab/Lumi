@@ -170,6 +170,56 @@ struct ProviderMessageTests {
         #expect(!content.contains("AAEC"))
     }
 
+    @Test("二进制附件在源文件被替换后仍指向发送时的字节快照")
+    func binaryAttachmentUsesStableSnapshotAfterSourceChanges() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-attachment-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+
+        let sourceURL = root.appendingPathComponent("photo.jpg")
+        let originalBytes = Data([0xFF, 0xD8, 0xFF, 0xE0])
+        try originalBytes.write(to: sourceURL)
+        let attachment = try UserFileAttachmentLoader.load(from: sourceURL)
+        #expect(attachment.textContent == nil)
+
+        // 模拟发送后用户移动/替换了原文件。
+        try Data([0xFF, 0xFF]).write(to: sourceURL)
+
+        let snapshots = root.appendingPathComponent("snapshots", isDirectory: true)
+        let content = UserAttachmentMetadata.appendingFileAttachments(
+            [attachment],
+            to: "检查附件",
+            snapshotDirectory: snapshots
+        )
+
+        // 回归 #763：后续回合必须引用快照路径，而不是可变的原始路径。
+        #expect(!content.contains(sourceURL.path))
+        let snapshotURL = try #require(
+            UserAttachmentSnapshotStore.materialize(attachment, in: snapshots)
+        )
+        #expect(content.contains(snapshotURL.path))
+        #expect(try Data(contentsOf: snapshotURL) == originalBytes)
+    }
+
+    @Test("没有字节快照的旧二进制附件回退到原始路径")
+    func legacyBinaryAttachmentFallsBackToLocalPath() {
+        let content = UserAttachmentMetadata.appendingFileAttachments(
+            [
+                UserFileAttachment(
+                    fileName: "legacy.pdf",
+                    mimeType: "application/pdf",
+                    localPath: "/tmp/legacy.pdf"
+                ),
+            ],
+            to: "检查附件",
+            snapshotDirectory: FileManager.default.temporaryDirectory
+                .appendingPathComponent("lumi-snapshots-\(UUID().uuidString)", isDirectory: true)
+        )
+
+        #expect(content.contains("/tmp/legacy.pdf"))
+    }
+
     @Test("no attachments returns original content unchanged")
     func emptyAttachmentsReturnContent() {
         let content = "plain user text"
