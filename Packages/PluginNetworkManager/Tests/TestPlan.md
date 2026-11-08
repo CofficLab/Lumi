@@ -142,27 +142,28 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 88 | HTTP 统计工具 | 参数非法时抛出而非返回错误字符串 | 无 | 调用 domain 工具缺 domain、下载工具传非法 URL | 两次均抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `toolsThrowForInvalidArguments` |
 | 89 | get_http_exchange_detail | 记录不存在时抛出而非返回 "not found" 字符串 | 空 store | 调用 detail 工具传随机 id | 抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `exchangeDetailThrowsWhenRecordIsMissing` |
 | 90 | HTTP 查询窗口 | 过滤在完整保留数据上执行，旧匹配不被固定窗口截断 | 5,001 条记录，最旧一条命中 domain / 失败 / 慢请求 / URL 关键词 | 依次调用 list / domain / failed / slow | 四个工具均找到该记录（各 1 条），list 额外返回其请求体 | P0 | ✅ 已覆盖 | `filtersFindMatchesOlderThanTheFormerFetchWindow` |
+| 91 | get_http_exchange_detail | 按 UUID 与 URL 都能查到超出旧 1,000 条窗口的记录 | 1,001 条记录，最旧一条使用唯一 URL | 分别按 id 与 url 调用 detail 工具 | 两次都返回该记录详情 | P1 | ✅ 已覆盖 | `exchangeDetailFindsRecordOlderThanTheFormerWindow` |
 
-> 说明：全部 **90 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **91 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 33 / 33
-- P1: 已覆盖 51 / 51
+- P1: 已覆盖 52 / 52
 - P2: 已覆盖 6 / 6
-- **合计: 90 / 90**（仅表示清单场景，非源码覆盖率）
+- **合计: 91 / 91**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（33 条）
-- **P1**: 其余功能性用例（51 条）
+- **P1**: 其余功能性用例（52 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 90 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 91 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
