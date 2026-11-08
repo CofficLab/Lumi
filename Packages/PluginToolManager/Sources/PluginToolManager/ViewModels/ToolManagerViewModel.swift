@@ -58,9 +58,12 @@ final class ToolManagerViewModel: ObservableObject {
     @Published private(set) var records: [ToolCallRecord] = []
     @Published private(set) var selectedRecordID: String?
     @Published private(set) var isLoadingLog = false
+    @Published private(set) var isLoadingMoreLog = false
     @Published private(set) var hasMoreLog = true
     private var logCursorCreatedAt: Date?
     private var logCursorID: String?
+    /// 日志列表代次：每次整体刷新递增，迟到的翻页结果据此丢弃。
+    private var logGeneration = 0
 
     // 调用统计
     @Published private(set) var stats: [ToolStatEntry] = []
@@ -169,6 +172,11 @@ final class ToolManagerViewModel: ObservableObject {
     func refreshLog() async {
         guard !isLoadingLog else { return }
         isLoadingLog = true
+        defer { isLoadingLog = false }
+        // 刷新会整表替换，翻页中的旧请求必须作废；但刷新本身不能被翻页挡住，
+        // 否则用户在加载更多时点刷新会毫无反应。
+        logGeneration += 1
+        let generation = logGeneration
         logCursorCreatedAt = nil
         logCursorID = nil
         hasMoreLog = true
@@ -177,25 +185,28 @@ final class ToolManagerViewModel: ObservableObject {
             beforeCreatedAt: nil,
             beforeID: nil
         )
+        guard logGeneration == generation else { return }
         records = page
         updateLogCursor(page)
         if selectedRecordID == nil || !records.contains(where: { $0.id == selectedRecordID }) {
             selectedRecordID = records.first?.id
         }
-        isLoadingLog = false
     }
 
     func loadMoreLog() async {
-        guard hasMoreLog, !isLoadingLog else { return }
-        isLoadingLog = true
+        guard hasMoreLog, !isLoadingMoreLog, !isLoadingLog else { return }
+        isLoadingMoreLog = true
+        defer { isLoadingMoreLog = false }
+        let generation = logGeneration
         let page = await capability.fetchLogPage(
             limit: pageSize,
             beforeCreatedAt: logCursorCreatedAt,
             beforeID: logCursorID
         )
+        // 等待期间列表已被刷新：这页数据属于旧列表，不能追加到新列表尾部。
+        guard logGeneration == generation else { return }
         records.append(contentsOf: page)
         updateLogCursor(page)
-        isLoadingLog = false
     }
 
     private func updateLogCursor(_ page: [ToolCallRecord]) {

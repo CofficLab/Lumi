@@ -24,3 +24,28 @@
 - **闸门**：`python3 Scripts/check-tool-failure-strings.py` 扫描全部工具源码，发现 `return` 失败字面量会输出 `文件:行号` 并以非 0 退出。CI 见 `.github/workflows/tool-failure-strings.yml`。
 
 适用范围：`Packages/` 下所有 `SuperAgentTool` 的 `execute` / `executeResult` 实现。
+
+## 异步写回共享状态必须带身份校验
+
+`Task` / `async` 方法在 `await` 之后写 ViewModel 或 service 的共享状态前，必须确认自己仍属于当前上下文（当前账号、项目、连接、会话、选中条目等）。只捕获一次值、等待结束后直接赋值，会让旧请求的结果覆盖用户刚切换后的新状态，表现为「显示了上一个项目/连接/会话的数据」。
+
+- **统一形态**：`捕获身份 → await → 写回前比对`。身份可以是 `accountID + folder`、`projectPath`、`configID`、`imageID`、`selectionGeneration`、`logGeneration` 等；比较失败就直接 `return`，不要写任何状态，也不要补写错误文案。
+- **错误分支同样要校验**：`catch` 里写 `errorMessage` 之前也要比对身份，否则旧请求的失败会覆盖新上下文。
+- **列表翻页**：捕获列表标识与条数（或代次），写回前确认列表仍属于同一轮加载，否则丢弃该页，不要 `append`。
+- **加载标记**：`isLoading` / `isSyncing` 这类标记不要与「数据写回」共用同一个布尔值。多个操作重叠时用计数（`beginLoading()` / `endLoading()` + `defer`），或拆成 `isLoading` 与 `isLoadingMore`，避免新任务一开始就被旧任务的收尾关掉转圈。
+- **反例**：
+  ```swift
+  let configID = selectedConfig?.id
+  let rows = try await fetchRows(configID)
+  sqliteTables = rows        // await 期间可能已切库，旧结果覆盖新库
+  ```
+- **正确**：
+  ```swift
+  let configID = selectedConfig?.id
+  let rows = try await fetchRows(configID)
+  guard selectedConfig?.id == configID else { return }
+  sqliteTables = rows
+  ```
+- **回归测试**：每个修复点至少有一个测试用延迟/门闩构造「旧请求晚到」，断言新状态不被覆盖；只测最终成功路径不算覆盖此约定。
+
+适用范围：`Packages/` 下所有 `Task` / `async` 方法中在 `await` 后写 `@Published`、`private(set) var` 或共享 service 状态的位置。
