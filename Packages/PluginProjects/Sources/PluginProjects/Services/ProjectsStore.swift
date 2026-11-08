@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import os
 import LumiLoggingKit
 /// 单个项目打开过的文件记录（与 `ProjectProviding` 的 `openFileURLs` /
@@ -16,10 +17,16 @@ public struct ProjectOpenedFiles: Codable, Equatable, Sendable {
 /// 纯数据存取层，专注于项目的持久化存储。
 /// 不包含任何状态管理逻辑，所有数据通过方法参数传入/返回。
 @MainActor
-public final class ProjectsStore: SuperLog {
+public final class ProjectsStore: SuperLog, ObservableObject {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects.store")
     public nonisolated static let emoji = "📁"
     public static var verbose = false
+
+    /// 打开文件记录的变更计数。
+    ///
+    /// 长期存活的设置页据此重新加载快照；每次成功写入后自增，
+    /// 是唯一能感知「存储已更新」的信号。
+    @Published public private(set) var openedFilesRevision = 0
 
     // MARK: - Constants
 
@@ -109,6 +116,7 @@ public final class ProjectsStore: SuperLog {
             attributes: nil
         )
         Self.write(openedFiles, to: openedFilesFileURL)
+        openedFilesRevision &+= 1
     }
 
     /// 添加项目到列表，返回更新后的列表
