@@ -145,6 +145,25 @@ struct PluginProjectOverviewTests {
         #expect(!result.contains("Not a Git repository."))
     }
 
+    /// 回归 #979：2,000 字节读取块恰好结束在完整 UTF-8 字符边界时，`text.count`
+    /// 与 `preview.count` 都是 500，旧逻辑因此漏掉省略标记。
+    @Test("README preview marks content beyond the byte cap")
+    func readmePreviewMarksContentBeyondByteCap() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("test_readme_truncated_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        // 501 个 emoji：2000 字节正好是 500 个完整字符，第 501 个字符未读。
+        let readme = String(repeating: "😀", count: 501)
+        try readme.write(to: root.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
+
+        let preview = ReadmePreviewSection.render(at: root)
+
+        #expect(preview.hasSuffix("\n..."))
+        #expect(preview.filter { $0 == "😀" }.count == 500)
+    }
+
     @Test("localization catalog is packaged")
     func localizationCatalogIsPackaged() {
         let bundle = pluginLocalization.bundle
