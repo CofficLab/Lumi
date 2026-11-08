@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import KitAgentTool
 import KernelCore
 import ProviderChatSection
 import ProviderProject
@@ -403,6 +404,72 @@ struct AgentRulesToolbarTests {
         observer.cancel()
     }
 
+    @Test("Rules change notification reloads only the current project")
+    func rulesChangeNotificationRefreshesMatchingProject() async throws {
+        let loader = SequenceRulesLoader()
+        let projectProvider = DefaultProjectProvider()
+        let projectPath = "/tmp/agent-rules-notification"
+        let viewModel = AgentRulesToolbarViewModel(loadRules: { _ in await loader.load() })
+        let observer = AgentRulesToolbarProjectObserver(
+            projectProvider: projectProvider,
+            viewModel: viewModel
+        )
+        defer {
+            observer.cancel()
+            viewModel.cancel()
+        }
+
+        try await projectProvider.openProject(at: projectPath)
+        await waitUntil { viewModel.rules.map(\.id) == ["call-1"] }
+
+        // 其他项目的变更不应触发当前工具栏重新加载。
+        NotificationCenter.default.post(
+            name: .agentRulesDidChange,
+            object: nil,
+            userInfo: [AgentRulesChange.projectPathKey: "/tmp/agent-rules-elsewhere"]
+        )
+        try? await Task.sleep(for: .milliseconds(30))
+        #expect(viewModel.rules.map(\.id) == ["call-1"])
+
+        // 当前项目的变化必须触发一次重新读取。
+        NotificationCenter.default.post(
+            name: .agentRulesDidChange,
+            object: nil,
+            userInfo: [AgentRulesChange.projectPathKey: projectPath]
+        )
+        await waitUntil { viewModel.rules.map(\.id) == ["call-2"] }
+        #expect(viewModel.rules.map(\.id) == ["call-2"])
+    }
+
+    @Test("create_agent_rule posts a rules change notification for its project")
+    func createRuleToolPostsChangeNotification() async throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("AgentRulesNotify-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        try await confirmation("rules change notification") { confirm in
+            let token = NotificationCenter.default.addObserver(
+                forName: .agentRulesDidChange,
+                object: nil,
+                queue: nil
+            ) { notification in
+                guard notification.userInfo?[AgentRulesChange.projectPathKey] as? String == projectURL.path else {
+                    return
+                }
+                confirm()
+            }
+            defer { NotificationCenter.default.removeObserver(token) }
+
+            _ = try await CreateAgentRuleTool().execute(arguments: [
+                "project_path": ToolArgument(projectURL.path),
+                "filename": ToolArgument("notify"),
+                "title": ToolArgument("Notify"),
+            ])
+        }
+
+        #expect(FileManager.default.fileExists(atPath: projectURL.appending(path: ".lumi/rules/notify.md").path))
+    }
+
     private func makeMetadata(id: String, filename: String) -> AgentRuleMetadata {
         AgentRuleMetadata(
             id: id,
@@ -423,5 +490,26 @@ struct AgentRulesToolbarTests {
             if condition() { return }
             try? await Task.sleep(for: .milliseconds(5))
         }
+    }
+}
+
+/// 每次加载返回不同 id，便于断言工具栏确实重新读取了规则。
+private actor SequenceRulesLoader {
+    private var calls = 0
+
+    func load() -> [AgentRuleMetadata] {
+        calls += 1
+        let id = "call-\(calls)"
+        return [
+            AgentRuleMetadata(
+                id: id,
+                filename: "\(id).md",
+                title: id,
+                description: "",
+                fileSize: 0,
+                modifiedAt: .distantPast,
+                filePath: "/tmp/\(id).md"
+            ),
+        ]
     }
 }

@@ -91,6 +91,15 @@ public struct CreateAgentRuleTool: SuperAgentTool {
             content: content
         )
 
+        // 规则已落盘：通知同一进程内的工具栏重新读取，否则同一项目内计数与列表会停在旧状态。
+        await MainActor.run {
+            NotificationCenter.default.post(
+                name: .agentRulesDidChange,
+                object: nil,
+                userInfo: [AgentRulesChange.projectPathKey: projectPath]
+            )
+        }
+
         let result: [String: Any] = [
             "success": true,
             "message": "Rule document created successfully",
