@@ -181,7 +181,11 @@ extension ConversationManager {
         guard let conversationID else {
             return .build
         }
-        return conversations.first { $0.id == conversationID }?.automationLevel ?? .build
+        // 缓存未命中不等于 Build：后台会话被挤出有界窗口后，仍须使用它自己的
+        // 自动化级别，否则同一后台回合的工具可用性与授权策略会静默改变（issue #1008）。
+        return conversations.first { $0.id == conversationID }?.automationLevel
+            ?? automationLevelOverrides[conversationID]
+            ?? .build
     }
 
     public func setAutomationLevel(_ automationLevel: AutomationLevel, for conversationID: UUID?) {
@@ -191,6 +195,7 @@ extension ConversationManager {
         if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
             conversations[index].automationLevel = automationLevel
         }
+        automationLevelOverrides[conversationID] = automationLevel
         notifyConversationObservers(.automationChanged(conversationID))
 
         Task {
