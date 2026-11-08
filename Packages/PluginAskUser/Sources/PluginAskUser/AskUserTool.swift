@@ -91,21 +91,26 @@ public struct AskUserTool: SuperAgentTool, @unchecked Sendable {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let question = Self.string(arguments, "question"),
               !question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return Self.errorResult(message: pluginLocalization.string("question is required and cannot be empty"))
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: pluginLocalization.string("question is required and cannot be empty")
+            )
         }
 
         // mode 是必填的强制函数：LLM 必须先声明意图。
         guard let mode = Self.resolvedMode(arguments) else {
-            return Self.errorResult(
-                message: "mode is required. Choose one of: yes_no (是/否), choice (pick from options), free_text (open-ended)."
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "mode is required. Choose one of: yes_no (是/否), choice (pick from options), free_text (open-ended)."
             )
         }
 
         // mode=choice 必须带 options。
         let options = Self.resolvedOptions(arguments, mode: mode)
         if mode == "choice", options.isEmpty {
-            return Self.errorResult(
-                message: "mode=choice requires a non-empty options array. Pass options=[...] with the candidates, or switch to free_text."
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "mode=choice requires a non-empty options array. Pass options=[...] with the candidates, or switch to free_text."
             )
         }
 
@@ -119,19 +124,17 @@ public struct AskUserTool: SuperAgentTool, @unchecked Sendable {
         )
         guard let data = try? JSONEncoder().encode(payload),
               let content = String(data: data, encoding: .utf8) else {
-            return Self.errorResult(message: "Failed to encode ask_user payload")
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Failed to encode ask_user payload"
+            )
         }
         return content
     }
 
     public func executeResult(arguments: [String: ToolArgument]) async throws -> ToolCallResult {
+        // 失败一律抛出，由宿主标记 isError；这里只处理成功后的挂起语义。
         let content = try await execute(arguments: arguments)
-        guard let data = content.data(using: .utf8),
-              let response = try? JSONDecoder().decode(AskUserPendingResponse.self, from: data),
-              !response.question.isEmpty else {
-            return ToolCallResult(content: content, isError: content.hasPrefix(Self.errorPrefix))
-        }
-        // 挂起：AgentLoop 检测 awaitingUserResponse 后创建 suspension 暂停回合。
         return ToolCallResult(
             content: content,
             isError: false,
@@ -148,8 +151,6 @@ public struct AskUserTool: SuperAgentTool, @unchecked Sendable {
         AskUserOption(label: "是"),
         AskUserOption(label: "否"),
     ]
-
-    private static let errorPrefix = "❌"
 
     static func resolvedMode(_ arguments: [String: ToolArgument]) -> String? {
         guard let raw = string(arguments, "mode") else { return nil }
@@ -192,10 +193,6 @@ public struct AskUserTool: SuperAgentTool, @unchecked Sendable {
 
     private static func string(_ arguments: [String: ToolArgument], _ key: String) -> String? {
         arguments[key]?.value as? String
-    }
-
-    static func errorResult(message: String) -> String {
-        "\(errorPrefix) \(message)"
     }
 }
 
