@@ -28,16 +28,44 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
     }
 
     /// Reload the in-memory snapshot from disk, preserving the current
-    /// `currentStoryID` if it still exists.
+    /// `currentStoryID` and any still-existing chapter/character selection.
     public func reloadFromDisk() async {
-        let previousID = currentStoryID
+        let previousStoryID = currentStoryID
+        let previousNodeID = selectedNodeID
+        let previousNodeKind = selectedNodeKind
         stories = await store.loadAllStories()
-        if let previousID, stories.contains(where: { $0.id == previousID }) {
-            await selectStory(id: previousID)
-        } else if let first = stories.first {
-            await selectStory(id: first.id)
+
+        let storyID: UUID?
+        if let previousStoryID, stories.contains(where: { $0.id == previousStoryID }) {
+            storyID = previousStoryID
         } else {
-            await selectStory(id: nil)
+            storyID = stories.first?.id
+        }
+        currentStoryID = storyID
+        await loadStoryContent(id: storyID)
+
+        // 仅当原选中节点仍属于同一故事且真实存在时保留选择；否则回到故事概览。
+        if storyID == previousStoryID,
+           let previousNodeID,
+           let previousNodeKind,
+           nodeExists(previousNodeID, kind: previousNodeKind, inStory: storyID) {
+            selectedNodeID = previousNodeID
+            selectedNodeKind = previousNodeKind
+        } else {
+            selectedNodeID = storyID
+            selectedNodeKind = .story
+        }
+    }
+
+    private func nodeExists(_ id: UUID, kind: StoryWriterNodeKind, inStory storyID: UUID?) -> Bool {
+        guard let storyID else { return false }
+        switch kind {
+        case .story:
+            return id == storyID
+        case .chapter:
+            return chapters.contains { $0.id == id }
+        case .character:
+            return characters.contains { $0.id == id }
         }
     }
 
@@ -54,6 +82,10 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
         currentStoryID = id
         selectedNodeID = id
         selectedNodeKind = .story
+        await loadStoryContent(id: id)
+    }
+
+    private func loadStoryContent(id: UUID?) async {
         if let id {
             chapters = await store.loadChapters(storyID: id)
             characters = await store.loadCharacters(storyID: id)

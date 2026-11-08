@@ -71,6 +71,41 @@ struct StoryWriterViewModelTests {
         #expect(viewModel.selectedNodeKind == .story)
     }
 
+    @Test func reloadKeepsSelectedChapterAndRefreshesItsContent() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = StoryStore(pluginDirectory: directory)
+        let viewModel = StoryWriterViewModel(store: store)
+        let story = await viewModel.createStory(title: "First")
+        guard let chapter = await viewModel.createChapter(title: "Opening") else {
+            Issue.record("Could not create chapter")
+            return
+        }
+        await viewModel.selectStory(id: story.id)
+        viewModel.selectedNodeID = chapter.id
+        viewModel.selectedNodeKind = .chapter
+
+        var updated = chapter
+        updated.title = "Revised by agent"
+        updated.content = "New body"
+        await store.updateChapter(updated)
+
+        await viewModel.reloadFromDisk()
+
+        #expect(viewModel.currentStoryID == story.id)
+        #expect(viewModel.selectedNodeID == chapter.id, "重载不得把章节选择改回故事概览")
+        #expect(viewModel.selectedNodeKind == .chapter)
+        #expect(viewModel.chapters.first?.title == "Revised by agent")
+        #expect(viewModel.chapters.first?.content == "New body")
+
+        // 只有原选中节点确实不存在时才回退到故事概览。
+        await store.deleteChapter(id: chapter.id, storyID: story.id)
+        await viewModel.reloadFromDisk()
+
+        #expect(viewModel.selectedNodeID == story.id)
+        #expect(viewModel.selectedNodeKind == .story)
+    }
+
     @Test func reloadPreservesExistingSelectionAndFallsBackAfterDeletion() async throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
