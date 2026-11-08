@@ -5,7 +5,7 @@
 StoryWriterPlugin A two-pane story writing workspace. - **Left pane (rail tab)**: story picker dropdown + chapter tree - **Right pane (ActivityBar view container)**: selected node editor (chapter markdown / story metadata) - **AI assistance**: via a dedicated ChatSection flow (configured separately) - **Persistence**: self-managed JSON under `~/Library/Application Support/.../StoryWriter/`
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 17
+测试文件: 4 个，用例总数: 18
 
 核心组件（源码目录）:
 - `Models/`
@@ -64,21 +64,22 @@ StoryWriterPlugin A two-pane story writing workspace. - **Left pane (rail tab)**
 | 15 | StoryWriterTool | 删除不存在的故事/章节不报告成功 | 有效存储目录 | 调用 delete_story / delete_chapter 传入随机 UUID | 分别抛出 `story not found` / `chapter not found` 的 `ToolExecutionError`；真实删除仍成功 | P1 | ✅ 已覆盖 | `deletingMissingStoryOrChapterReportsNotFound` |
 | 16 | StoryWriterTool | 工具失败经 executeResult 抛出而非包成成功结果 | 有效存储目录 | 调用 create_story 缺 title、get_story 传随机 UUID，均走 `executeResult` | 两次均抛出 `ToolExecutionError`，不再产出 isError == false 的结果 | P1 | ✅ 已覆盖 | `validationFailuresThrowThroughExecuteResult` |
 | 17 | StoryWriterViewModel | 磁盘重载保留仍存在的章节选择并刷新内容（**回归 #1011**） | 故事已选中章节，磁盘上的章节内容被 Agent 更新 | 调用 `reloadFromDisk()` | 仍选中该章节并展示最新内容；章节在磁盘被删除后再重载才回到故事概览 | P0 | ✅ 已覆盖 | `reloadKeepsSelectedChapterAndRefreshesItsContent` |
+| 18 | StoryWriterTool | 章节状态在读取与更新工具之间无损往返（**回归 #1012**） | 已有进行中章节 | `get_chapter` 读取 status 后原样传给 `update_chapter`，并额外验证旧的 `inProgress` 令牌 | 读取输出 `in_progress` 而非 `inProgress`；更新成功且状态保持；旧令牌仍被接受 | P1 | ✅ 已覆盖 | `chapterStatusRoundTripsThroughReadAndUpdate` |
 
-> 说明：全部 **17 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **18 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 1 / 1
-- P1: 已覆盖 16 / 16
+- P1: 已覆盖 17 / 17
 - P2: 已覆盖 0 / 0
-- **合计: 17 / 17**（仅表示清单场景，非源码覆盖率）
+- **合计: 18 / 18**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（16 条）
+- **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
