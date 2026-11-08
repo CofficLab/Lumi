@@ -34,10 +34,10 @@ public struct ListAppStoreConnectScreenshotSetsTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let localizationID = arguments["localizationID"]?.stringValue, !localizationID.isEmpty else {
-            return "Missing or empty localizationID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty localizationID.")
         }
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
         do {
             let payload = try await client.loadScreenshotSets(localizationID: localizationID)
             guard !payload.sets.isEmpty else { return "No screenshot sets found for localization id=\(localizationID)." }
@@ -47,7 +47,7 @@ public struct ListAppStoreConnectScreenshotSetsTool: SuperAgentTool {
             }
             return (["Screenshot sets for localization id=\(localizationID):"] + lines).joined(separator: "\n")
         } catch {
-            return "Failed to list screenshot sets: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to list screenshot sets: \(error.localizedDescription)")
         }
     }
 }

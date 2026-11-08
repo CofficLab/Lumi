@@ -34,10 +34,10 @@ public struct ListAppStoreConnectLocalizationsTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let versionID = arguments["versionID"]?.stringValue, !versionID.isEmpty else {
-            return "Missing or empty versionID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty versionID.")
         }
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
         do {
             let localizations = try await client.listLocalizations(versionID: versionID)
             guard !localizations.isEmpty else { return "No localizations found for version id=\(versionID)." }
@@ -58,7 +58,7 @@ public struct ListAppStoreConnectLocalizationsTool: SuperAgentTool {
             }
             return ([header] + lines).joined(separator: "\n")
         } catch {
-            return "Failed to list localizations: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to list localizations: \(error.localizedDescription)")
         }
     }
 

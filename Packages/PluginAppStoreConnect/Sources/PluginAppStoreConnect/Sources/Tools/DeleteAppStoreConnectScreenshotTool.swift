@@ -35,17 +35,17 @@ public struct DeleteAppStoreConnectScreenshotTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let screenshotID = arguments["screenshotID"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
               !screenshotID.isEmpty else {
-            return "Missing or empty screenshotID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty screenshotID.")
         }
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
 
         do {
             try await client.deleteScreenshot(id: screenshotID)
             return "Screenshot id=\(screenshotID) deleted."
         } catch {
-            return "Failed to delete screenshot: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to delete screenshot: \(error.localizedDescription)")
         }
     }
 }

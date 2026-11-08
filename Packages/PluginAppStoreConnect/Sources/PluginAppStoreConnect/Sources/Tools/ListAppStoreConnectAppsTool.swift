@@ -41,7 +41,7 @@ public struct ListAppStoreConnectAppsTool: SuperAgentTool {
         let limit = min(max(rawLimit ?? 20, 1), 100)
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
 
         do {
             let apps = try await client.listApps(search: search, limit: limit)
@@ -56,7 +56,7 @@ public struct ListAppStoreConnectAppsTool: SuperAgentTool {
             }
             return ([header] + lines).joined(separator: "\n")
         } catch {
-            return "Failed to list apps: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to list apps: \(error.localizedDescription)")
         }
     }
 }

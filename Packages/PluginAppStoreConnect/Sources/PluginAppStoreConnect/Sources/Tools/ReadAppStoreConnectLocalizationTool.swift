@@ -39,17 +39,17 @@ public struct ReadAppStoreConnectLocalizationTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let localizationID = arguments["localizationID"]?.stringValue,
               !localizationID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return "Missing or empty localizationID. Pass a valid appStoreVersionLocalization identifier from list-localizations."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty localizationID. Pass a valid appStoreVersionLocalization identifier from list-localizations.")
         }
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
 
         do {
             let localization = try await client.readLocalization(id: localizationID)
             return AppStoreVersionLocalizationFormatter.detailString(localization)
         } catch {
-            return "Failed to read localization: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to read localization: \(error.localizedDescription)")
         }
     }
 }

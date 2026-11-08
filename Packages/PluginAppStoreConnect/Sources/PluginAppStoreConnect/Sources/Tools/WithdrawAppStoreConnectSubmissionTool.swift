@@ -35,11 +35,11 @@ public struct WithdrawAppStoreConnectSubmissionTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let versionID = arguments["versionID"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
               !versionID.isEmpty else {
-            return "Missing or empty versionID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty versionID.")
         }
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
 
         do {
             guard let submissionID = try await client.readSubmissionID(versionID: versionID) else {
@@ -48,7 +48,7 @@ public struct WithdrawAppStoreConnectSubmissionTool: SuperAgentTool {
             try await client.withdrawSubmission(submissionID: submissionID)
             return "Submission id=\(submissionID) for version id=\(versionID) withdrawn."
         } catch {
-            return "Failed to withdraw submission: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to withdraw submission: \(error.localizedDescription)")
         }
     }
 }

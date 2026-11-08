@@ -43,15 +43,15 @@ public struct AssignAppStoreConnectBuildTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let versionID = arguments["versionID"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
               !versionID.isEmpty else {
-            return "Missing or empty versionID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty versionID.")
         }
         guard let buildID = arguments["buildID"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
               !buildID.isEmpty else {
-            return "Missing or empty buildID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty buildID.")
         }
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
 
         do {
             if let usesNonExempt = AppStoreConnectToolSupport.parseBool(arguments["usesNonExemptEncryption"]) {
@@ -60,7 +60,7 @@ public struct AssignAppStoreConnectBuildTool: SuperAgentTool {
             try await client.assignBuild(versionID: versionID, buildID: buildID)
             return "Build id=\(buildID) assigned to version id=\(versionID)."
         } catch {
-            return "Failed to assign build: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to assign build: \(error.localizedDescription)")
         }
     }
 }

@@ -32,17 +32,17 @@ public struct StartAppStoreConnectCiBuildRunTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let workflowID = arguments["workflowID"]?.stringValue, !workflowID.isEmpty else {
-            return "Missing or empty workflowID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty workflowID.")
         }
         let branch = arguments["branch"]?.stringValue ?? ""
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
         do {
             let run = try await client.startCiBuildRun(workflowID: workflowID, branch: branch)
             let number = run.number.map(String.init) ?? "n/a"
             return "Build run started: id=\(run.id) number=\(number) progress=\(run.executionProgress)"
         } catch {
-            return "Failed to start CI build run: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to start CI build run: \(error.localizedDescription)")
         }
     }
 }
