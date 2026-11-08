@@ -19,8 +19,12 @@ public enum ReadmePreviewSection {
                   let text = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
                   !text.isEmpty
             else { continue }
+            // `text` 本身已被 2,000 字节上限截断：`preview.count < text.count` 只能
+            // 发现字符数超限，发现不了"读取块恰好结束在完整字符边界、文件后面还有
+            // 内容"的情况。必须再看文件是否还有未读字节。
+            let hasMoreBytes = (try? handle.read(upToCount: 1))?.isEmpty == false
             let preview = String(text.prefix(maxChars))
-            if preview.count < text.count { return "\(preview)\n..." }
+            if preview.count < text.count || hasMoreBytes { return "\(preview)\n..." }
             return preview
         }
         return ""
