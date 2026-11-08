@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 195 条用例。
+KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 198 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 195
+测试文件: 9 个，用例总数: 198
 
 核心组件（源码目录）:
 - `Adapters/`
@@ -39,9 +39,9 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 195 条用�
 
 - **APIKeyMemoryCache**（5 条）：由 `freshWithinTTL`、`negativeEntry`、`lastKnownIgnoresTTL` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AnthropicAdapter**（46 条）：由 `buildsRequestHeaders`、`buildsRequestBody`、`systemMessagesOverridePrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **综合**（42 条）：由 `messageCreation`、`requestCreation`、`providerInfo` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（44 条）：由 `messageCreation`、`requestCreation`、`providerInfo` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **OpenAICompatibleStreamParsing**（9 条）：由 `reasoningAndToolCallsCoexist`、`contentAndToolCallsCoexist`、`usageSurvivesToolCallFrame` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ProviderErrorAndContract**（44 条）：由 `parsesOpenAIErrorBody`、`parsesAnthropicErrorBody`、`fallsBackToGenericJSON` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ProviderErrorAndContract**（45 条）：由 `parsesOpenAIErrorBody`、`parsesAnthropicErrorBody`、`fallsBackToGenericJSON` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RetryAfterAndBackoff**（21 条）：由 `parsesDelaySeconds`、`headerLookupIsCaseInsensitive`、`parsesHTTPDate` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **VendorAPIService**（9 条）：由 `retriesOnServerError`、`givesUpAfterMaxAttempts`、`doesNotRetryOnClientError` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **VendorLLMProvider**（1 条）：由 `staticProviderBehavior` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -246,16 +246,19 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 195 条用�
 | 193 | VendorProvider | 工具 schema 转成适配器可用的形态并带回查映射 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolSchemasBuildReverseMap` |
 | 194 | VendorProvider | 没有工具时返回空的可选值 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `toolSchemasAreNilWhenEmpty` |
 | 195 | VendorProvider | 推理档位归一化并拒绝未知取值 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `normalizesReasoningEffort` |
+| 196 | 综合 | 思考增量只带 reasoningContent，不伪造正文 | 使用 StreamingAccumulator | 消费 `.thinkingDelta` 片段 | 回调只带 `reasoningContent`，`content` 保持为空 | P1 | ✅ 已覆盖 | `thinkingDeltaChunkDoesNotCarryContent` |
+| 197 | 综合 | 正文增量只带 content，不带 reasoningContent | 使用 StreamingAccumulator | 消费 `.textDelta` 片段 | 回调只带 `content`，`reasoningContent` 保持为空 | P1 | ✅ 已覆盖 | `textDeltaChunkDoesNotCarryReasoning` |
+| 198 | ProviderErrorAndContract | 退役标记可显式设置 | — | 分别以 `isRetired: true` / `false` / 缺省构造模型信息 | 标记与传入值一致，缺省为未退役 | P1 | ✅ 已覆盖 | `modelInfoRetiredFlag` |
 
-> 说明：全部 **195 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **198 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 39 / 39
-- P1: 已覆盖 142 / 142
+- P1: 已覆盖 145 / 145
 - P2: 已覆盖 14 / 14
-- **合计: 195 / 195**（仅表示清单场景，非源码覆盖率）
+- **合计: 198 / 198**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -266,7 +269,7 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 195 条用�
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 195 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 198 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
