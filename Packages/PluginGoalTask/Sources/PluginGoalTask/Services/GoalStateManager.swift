@@ -465,7 +465,8 @@ public actor GoalStateManager: SuperLog {
             title: source.title,
             goalDescription: source.goalDescription,
             successCriteria: source.successCriteria,
-            status: source.isTerminal ? .pending : source.status
+            status: source.isTerminal ? .pending : source.status,
+            blockedReason: source.isTerminal ? nil : source.blockedReason
         )
         context.insert(forked)
 

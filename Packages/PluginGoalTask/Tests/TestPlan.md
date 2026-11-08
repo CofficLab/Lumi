@@ -5,7 +5,7 @@
 GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标）+ Task（任务）两层结构的任务追踪能力。
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 138
+测试文件: 12 个，用例总数: 139
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -195,27 +195,28 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 | 136 | GoalToolbarButtonVisibility | 只有一个终态 Goal 且任务全部结束时同样隐藏按钮 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testHiddenForSingleFinishedGoal` |
 | 137 | GoalToolbarButtonVisibility | 多个 Goal 时保留按钮 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testShownForMultipleGoals` |
 | 138 | GoalToolbarButtonVisibility | 多个 Goal 时即使侧栏没展示第二个也保留按钮 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testShownForMultipleGoalsWhenSidebarCollapsed` |
+| 139 | GoalStateManager | 分叉 blocked Goal 时保留阻塞原因 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testForkPreservesBlockedReason` |
 
-> 说明：全部 **138 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **139 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 9 / 9
-- P1: 已覆盖 114 / 114
+- P1: 已覆盖 115 / 115
 - P2: 已覆盖 15 / 15
-- **合计: 138 / 138**（仅表示清单场景，非源码覆盖率）
+- **合计: 139 / 139**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（114 条）
+- **P1**: 其余功能性用例（115 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 138 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 139 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
