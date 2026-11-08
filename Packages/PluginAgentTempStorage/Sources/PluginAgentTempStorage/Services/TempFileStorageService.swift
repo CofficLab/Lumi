@@ -100,32 +100,40 @@ actor TempFileStorageService {
         }
     }
 
+    /// 递归枚举存储根目录下的所有文件。
+    ///
+    /// 写入与读取都支持嵌套相对路径（`notes/today.md`），因此列表也必须递归，
+    /// 否则嵌套文件可读写却永远不可见。`name` 返回相对根目录的路径。
     func listFiles() throws -> [TempFileInfo] {
         purgeExpiredFiles()
-        guard let entries = try? fileManager.contentsOfDirectory(
+        let keys: [URLResourceKey] = [.fileSizeKey, .contentModificationDateKey, .isDirectoryKey]
+        guard let enumerator = fileManager.enumerator(
             at: filesDirectory,
-            includingPropertiesForKeys: [.fileSizeKey, .contentModificationDateKey, .isDirectoryKey],
-            options: [.skipsHiddenFiles]
+            includingPropertiesForKeys: keys,
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]
         ) else {
             return []
         }
 
-        return entries.compactMap { url in
-            let values = try? url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey, .isDirectoryKey])
-            guard values?.isDirectory != true else { return nil }
-            let rootPath = filesDirectory.resolvingSymlinksInPath().standardizedFileURL.path
+        let rootPath = filesDirectory.resolvingSymlinksInPath().standardizedFileURL.path
+        var files: [TempFileInfo] = []
+        for case let url as URL in enumerator {
+            let values = try? url.resourceValues(forKeys: Set(keys))
+            guard values?.isDirectory != true else { continue }
             let resolvedURL = url.resolvingSymlinksInPath().standardizedFileURL
             let relativePath = resolvedURL.path.hasPrefix(rootPath + "/")
                 ? String(resolvedURL.path.dropFirst(rootPath.count + 1))
                 : url.lastPathComponent
-            return TempFileInfo(
-                name: relativePath,
-                path: url.path,
-                size: Int64(values?.fileSize ?? 0),
-                modifiedAt: values?.contentModificationDate ?? .distantPast
+            files.append(
+                TempFileInfo(
+                    name: relativePath,
+                    path: url.path,
+                    size: Int64(values?.fileSize ?? 0),
+                    modifiedAt: values?.contentModificationDate ?? .distantPast
+                )
             )
         }
-        .sorted { $0.modifiedAt > $1.modifiedAt }
+        return files.sorted { $0.modifiedAt > $1.modifiedAt }
     }
 
     private func resolveSafeURL(for filename: String) throws -> URL {

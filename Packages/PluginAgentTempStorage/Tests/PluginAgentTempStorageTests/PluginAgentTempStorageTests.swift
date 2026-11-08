@@ -52,9 +52,10 @@ struct PluginAgentTempStorageTests {
         #expect(path.hasSuffix("notes/today.md"))
         #expect(try await service.read(filename: "notes/today.md") == "# today")
 
-        // listFiles is flat: the nested file lives under a directory and is not enumerated.
+        // 列表必须递归：嵌套文件要能以相对路径出现，否则可读写却不可见。
         let listed = try await service.listFiles()
-        #expect(listed.isEmpty)
+        #expect(listed.map(\.name) == ["notes/today.md"])
+        #expect(listed.first?.path.hasSuffix("notes/today.md") == true)
     }
 
     @Test
