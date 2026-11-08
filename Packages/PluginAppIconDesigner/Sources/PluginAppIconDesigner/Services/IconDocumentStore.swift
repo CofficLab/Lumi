@@ -84,6 +84,20 @@ public final class IconDocumentStore: ObservableObject {
         refreshSelection()
     }
 
+    /// 从磁盘重载项目作用域，并尽量保留当前选中项。
+    ///
+    /// 供按项目缓存的 store 在每次使用前刷新，避免用旧的内存快照覆盖
+    /// 其它 store 已落盘的新修订；选中项若仍存在则保留，保证后续
+    /// 依赖「选中文档」的工具调用不中断。
+    public func reloadFromDisk() {
+        let selected = selectedDocumentId
+        reloadScope(.project)
+        selectedDocumentId = selected.flatMap { id in
+            projectDocuments.contains(where: { $0.id == id }) ? id : nil
+        }
+        clearHistory()
+    }
+
     /// Reloads one scope from disk.
     public func reloadScope(_ scope: IconScope) {
         let path = storagePath(for: scope)
