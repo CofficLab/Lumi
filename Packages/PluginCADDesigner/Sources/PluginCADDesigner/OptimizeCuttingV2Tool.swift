@@ -18,7 +18,13 @@ public struct OptimizeCuttingV2Tool: SuperAgentTool {
             let demands = document.components.compactMap { if case .profile(let instance) = $0 { instance.length } else { nil } }
             return CutOptimizer().optimize(demands: demands, stockLength: stockLength)
         }
-        guard let result else { return CADDesignerV2ToolSupport.localized(en: "Error: No CAD document is selected.", zh: "错误：未选中 CAD 文档。") }
+        guard let result else {
+            throw CADDesignerV2ToolSupport.failure(
+                en: "No CAD document is selected.",
+                zh: "未选中 CAD 文档。",
+                toolName: name
+            )
+        }
         if LanguagePreference.current == .chinese {
             var lines = ["切割优化结果：", "原料数: \(result.stockCount) × \(Int(stockLength))mm", "总利用率: \(String(format: "%.1f%%", result.totalUtilization * 100))", "总余料: \(Int(result.totalRemainder))mm", ""]
             for (index, stock) in result.stocks.enumerated() { lines.append("原料 #\(index + 1)：\(stock.cuts.map { "\(Int($0))" }.joined(separator: " + ")) mm（余 \(Int(stock.remainder))mm）") }

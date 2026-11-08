@@ -32,12 +32,28 @@ enum CADDesignerV2ToolSupport {
         LanguagePreference.current == .chinese ? zh : en
     }
 
-    static func missingParameter(_ name: String) -> String {
-        localized(en: "Error: Missing required '\(name)' parameter.", zh: "错误：缺少必填参数 '\(name)'。")
+    static func missingParameter(_ name: String, toolName: String) -> ToolExecutionError {
+        .executionFailed(
+            toolName: toolName,
+            reason: localized(
+                en: "Missing required '\(name)' parameter.",
+                zh: "缺少必填参数 '\(name)'。"
+            )
+        )
     }
 
-    static func error(_ error: Error) -> String {
-        localized(en: "Error: \(error.localizedDescription)", zh: "错误：\(localizedErrorDescription(error.localizedDescription))")
+    static func failure(_ error: Error, toolName: String) -> ToolExecutionError {
+        .executionFailed(
+            toolName: toolName,
+            reason: localized(
+                en: error.localizedDescription,
+                zh: localizedErrorDescription(error.localizedDescription)
+            )
+        )
+    }
+
+    static func failure(en: String, zh: String, toolName: String) -> ToolExecutionError {
+        .executionFailed(toolName: toolName, reason: localized(en: en, zh: zh))
     }
 
     private static func localizedErrorDescription(_ description: String) -> String {

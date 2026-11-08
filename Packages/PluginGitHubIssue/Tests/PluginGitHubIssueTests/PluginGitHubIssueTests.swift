@@ -87,23 +87,21 @@ struct PluginGitHubIssueTests {
 
     @Test("english violation is reported for Chinese title")
     func englishViolationDetectsChinese() {
-        let violation = CreateGitHubIssueTool.englishViolationForTesting(
+        let offenders = CreateGitHubIssueTool.nonEnglishOffendersForTesting(
             title: "工具返回空结果",
             body: "This body is English."
         )
-        #expect(violation != nil)
-        // 拒绝提示本身必须是英文，LLM 才读得懂。
-        let message = try? #require(violation)
-        #expect(message?.contains("English") == true)
+        #expect(!offenders.isEmpty)
+        #expect(offenders.contains { $0.contains("title") })
     }
 
-    @Test("english violation is nil for pure English content")
+    @Test("english violation is empty for pure English content")
     func englishViolationPassesEnglish() {
-        let violation = CreateGitHubIssueTool.englishViolationForTesting(
+        let offenders = CreateGitHubIssueTool.nonEnglishOffendersForTesting(
             title: "Tool returns empty result",
             body: "The read_file tool returned an empty string for a non-empty file."
         )
-        #expect(violation == nil)
+        #expect(offenders.isEmpty)
     }
 
     @Test("description is non-empty")

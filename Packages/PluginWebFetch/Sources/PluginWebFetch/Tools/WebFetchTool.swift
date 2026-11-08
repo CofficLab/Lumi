@@ -62,7 +62,6 @@ public struct WebFetchTool: SuperAgentTool {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "Network service is unavailable.")
         }
         let service = WebFetchService(fetcher: fetcher)
-        let result = await service.fetch(urlString: urlString, prompt: prompt)
-        return result
+        return try await service.fetch(urlString: urlString, prompt: prompt)
     }
 }

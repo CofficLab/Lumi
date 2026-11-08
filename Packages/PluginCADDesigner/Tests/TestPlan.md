@@ -41,16 +41,17 @@ PluginCADDesigner 铝型材 CAD 设计插件：把 `KitCADDesigner` 引擎包装
 | 5 | CADDesignerSuperPlugin | places and updates CAD components through stable V2 tool IDs | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `placesAndUpdatesComponentsThroughV2Tools` |
 | 6 | CADDesignerSuperPlugin | generates the CAD bill of materials through the V2 tool | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `generatesBOMThroughV2Tool` |
 | 7 | CADDesignerSuperPlugin | connects components and optimizes profile cuts through V2 tools | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `connectsAndOptimizesThroughV2Tools` |
+| 8 | CADDesignerSuperPlugin | tool failures throw instead of returning error strings | 重置文档存储 | 缺必填参数、未知型材/连接件、无选中文档 | 全部抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `toolFailuresThrow` |
 
-> 说明：全部 **7 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **8 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 6 / 6
+- P1: 已覆盖 7 / 7
 - P2: 已覆盖 1 / 1
-- **合计: 7 / 7**（仅表示清单场景，非源码覆盖率）
+- **合计: 8 / 8**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

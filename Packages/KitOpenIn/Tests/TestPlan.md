@@ -31,7 +31,7 @@ KitOpenIn 的实现包，包含 3 个主要类型；当前测试覆盖 8 条用�
 | 1 | OpenInTool | presetConfigurationsKeepStableToolNamesAndFallbacks | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `presetConfigurationsKeepStableToolNamesAndFallbacks` |
 | 2 | OpenInTool | toolMetadataDeclaresOptionalPathAndLowRisk | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolMetadataDeclaresOptionalPathAndLowRisk` |
 | 3 | OpenInTool | explicitPathOverridesProjectAndEmptyPathFallsBack | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `explicitPathOverridesProjectAndEmptyPathFallsBack` |
-| 4 | OpenInTool | executionReturnsReadableErrorWhenNoPathOrProjectExists | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `executionReturnsReadableErrorWhenNoPathOrProjectExists` |
+| 4 | OpenInTool | executionThrowsWhenNoPathOrProjectExists | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `executionThrowsWhenNoPathOrProjectExists` |
 | 5 | OpenInTool | 会话绑定项目优先于当前项目，显式 path 仍最优先 | 显式/会话/当前三条路径同时存在 | 调用 `resolvedTargetPath` | 依次取显式、会话、当前 | P1 | ✅ 已覆盖 | `conversationProjectOverridesCurrentProject` |
 | 6 | OpenInTool | 会话绑定项目被真正传入路径解析 | 当前项目为 `/workspace/Current`，会话绑定 `/workspace/Conversation` | 调用 `resolvedPath(_:conversationProjectPath:)` | 返回会话项目路径 | P1 | ✅ 已覆盖 | `conversationProjectIsPlumbedIntoResolution` |
 | 7 | OpenInFailureReporting | 失败会转换成错误 Toast，并保留标题与原因（**回归 #549**） | 注入记录型 Toast 实现 | `reportOpenFailure` | 收到一条 `.error` Toast，标题/详情一致 | P1 | ✅ 已覆盖 | `reportsFailureAsErrorToast` |

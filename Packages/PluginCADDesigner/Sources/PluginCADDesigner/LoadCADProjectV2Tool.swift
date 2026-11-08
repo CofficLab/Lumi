@@ -29,7 +29,7 @@ public struct LoadCADProjectV2Tool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let path = CADDesignerV2ToolSupport.string(arguments, "path") else {
-            return CADDesignerV2ToolSupport.missingParameter("path")
+            throw CADDesignerV2ToolSupport.missingParameter("path", toolName: name)
         }
 
         let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
@@ -43,9 +43,11 @@ public struct LoadCADProjectV2Tool: SuperAgentTool {
                 en: "Loaded project.\nprojectId: \(document.id)\nname: \(document.name)\ncomponentCount: \(document.components.count)",
                 zh: "已加载项目。\n项目ID: \(document.id)\n名称: \(document.name)\n组件数: \(document.components.count)"
             )
+        } catch let error as ToolExecutionError {
+            throw error
         } catch {
             await MainActor.run { CADDocumentStore.shared.setError(error.localizedDescription) }
-            return CADDesignerV2ToolSupport.error(error)
+            throw CADDesignerV2ToolSupport.failure(error, toolName: name)
         }
     }
 }

@@ -7,8 +7,8 @@ import Testing
 
 /// `TitleUpdateTool`（Agent 工具 `update_conversation_title`）的行为测试。
 ///
-/// 覆盖三条返回 ❌ 文案的分支——它们各自对应不同的失败原因，
-/// 工具返回值会直接展示给 LLM，措辞含混会让模型反复重试。
+/// 失败分支统一抛出 `ToolExecutionError`，由包装层标记 `isError`；
+/// 工具不再用返回文案表达失败。
 @Suite("标题更新工具")
 @MainActor
 struct TitleUpdateToolTests {
@@ -52,36 +52,35 @@ struct TitleUpdateToolTests {
 
     // MARK: - 失败分支
 
-    /// Provider 未注入时返回「服务不可用」，而不是抛错中断 Agent 回合。
-    @Test("Provider 缺失时返回服务不可用")
-    func reportsMissingProvider() async throws {
+    /// Provider 未注入时抛出「服务不可用」，由包装层标记 isError。
+    @Test("Provider 缺失时抛出服务不可用")
+    func reportsMissingProvider() async {
         let tool = TitleUpdateTool(conversations: nil)
 
-        let result = try await tool.execute(arguments: ["title": ToolArgument("标题")])
-
-        #expect(result.contains("Conversation service unavailable"))
-        #expect(result.contains("❌"))
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: ["title": ToolArgument("标题")])
+        }
     }
 
-    /// 未选中会话时返回「未找到」，与「服务不可用」区分开。
-    @Test("未选中会话时返回未找到")
-    func reportsNoSelection() async throws {
+    /// 未选中会话时抛出「未找到」，与「服务不可用」区分开。
+    @Test("未选中会话时抛出未找到")
+    func reportsNoSelection() async {
         let (tool, _) = makeTool(selected: nil)
 
-        let result = try await tool.execute(arguments: ["title": ToolArgument("标题")])
-
-        #expect(result.contains("Conversation not found or title update failed"))
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: ["title": ToolArgument("标题")])
+        }
     }
 
-    /// Provider 写库失败时同样走「未找到 / 更新失败」分支，且不应抛出。
-    @Test("写库失败时返回失败文案而不抛出")
-    func reportsPersistenceFailure() async throws {
+    /// Provider 写库失败时同样抛出「未找到 / 更新失败」。
+    @Test("写库失败时抛出更新失败")
+    func reportsPersistenceFailure() async {
         let id = UUID()
         let (tool, _) = makeTool(selected: id, failTitleUpdate: true)
 
-        let result = try await tool.execute(arguments: ["title": ToolArgument("标题")])
-
-        #expect(result.contains("Conversation not found or title update failed"))
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: ["title": ToolArgument("标题")])
+        }
     }
 
     // MARK: - 参数校验

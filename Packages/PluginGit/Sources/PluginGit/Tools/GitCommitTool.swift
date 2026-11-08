@@ -11,12 +11,21 @@ public struct GitCommitV2Tool: SuperAgentTool, @unchecked Sendable {
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { "提交变更" }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .medium }
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let message = GitV2ToolSupport.string(arguments, "message"), !message.isEmpty else { return "缺少必需的提交信息参数" }
+        guard let message = GitV2ToolSupport.string(arguments, "message"), !message.isEmpty else {
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "缺少必需的提交信息参数")
+        }
         do {
             let result = try await GitService.shared.commit(path: GitV2ToolSupport.path(arguments, project: project), message: message, files: GitV2ToolSupport.strings(arguments, "files"), amend: GitV2ToolSupport.bool(arguments, "amend") ?? false)
             var output = "## Git 提交成功 ✅\n\n**提交哈希**: `\(result.hash)`\n\n**提交信息**: \(result.message)\n\n**作者**: \(result.author) <\(result.email)>\n\n**时间**: \(result.date)\n\n"
             if !result.changedFiles.isEmpty { output += "### 变更文件\n" + result.changedFiles.map { "- `\($0)`\n" }.joined() + "\n" }
             return output
-        } catch { return "Git 提交失败：\(error.localizedDescription)" }
+        } catch let error as ToolExecutionError {
+            throw error
+        } catch {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Git 提交失败：\(error.localizedDescription)"
+            )
+        }
     }
 }

@@ -74,31 +74,24 @@ struct OpenInRemoteTool: SuperAgentTool, @unchecked Sendable {
             conversationProjectPath: conversationProjectPath,
             currentProjectPath: currentProjectPath
         ) else {
-            return """
-            ## Open in Remote ❌
-
-            **Status**: No project is open and no path was provided.
-            """
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "No project is open and no path was provided."
+            )
         }
 
         guard let url = await resolver.webURL(forRepositoryAt: path) else {
-            return """
-            ## Open in Remote ❌
-
-            **Path**: `\(path)`
-
-            **Status**: No remote repository URL was found for this project.
-            """
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "No remote repository URL was found for project: \(path)."
+            )
         }
 
         guard await MainActor.run(body: { RemoteRepositoryOpener.open(url) }) else {
-            return """
-            ## Open in Remote ❌
-
-            **Path**: `\(path)`
-
-            **Status**: The default browser could not be opened.
-            """
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "The default browser could not be opened."
+            )
         }
 
         return """

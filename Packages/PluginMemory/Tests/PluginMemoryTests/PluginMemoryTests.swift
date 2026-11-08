@@ -92,14 +92,15 @@ struct MemoryPluginTests {
         #expect(item != nil)
     }
 
-    @Test("RecallMemoryTool 未找到返回提示")
+    @Test("RecallMemoryTool 未找到时抛出错误")
     func recallToolNotFound() async throws {
         let (storage, root) = makeTempStorage()
         defer { try? FileManager.default.removeItem(at: root) }
 
         let tool = RecallMemoryTool(storage: storage, projectCapability: MemoryProjectCapabilityAdapter(project: nil))
-        let result = try await tool.execute(arguments: ["id": ToolArgument("nonexistent")])
-        #expect(result.contains("Not Found"))
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: ["id": ToolArgument("nonexistent")])
+        }
     }
 
     @Test("不同 ID 编码后不碰撞：保存、召回、删除互不影响")

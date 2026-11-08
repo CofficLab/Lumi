@@ -216,3 +216,37 @@ private struct GitPathEchoTool: SuperAgentTool {
         ])
     }
 }
+
+/// 回归：log / commit / diff / show 曾把失败写成字符串返回，默认
+/// `executeResult` 会把它当成成功结果，模型无法感知失败。
+@MainActor
+@Test func gitToolsThrowForMissingOrInvalidArguments() async throws {
+    let notARepository = FileManager.default.temporaryDirectory
+        .appendingPathComponent("not-a-repo-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: notARepository, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: notARepository) }
+
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await GitCommitV2Tool().executeResult(arguments: [:])
+    }
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await GitShowV2Tool().executeResult(arguments: [:])
+    }
+
+    let path = ToolArgument(notARepository.path)
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await GitStatusV2Tool().executeResult(arguments: ["path": path])
+    }
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await GitLogTool().executeResult(arguments: ["path": path])
+    }
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await GitDiffV2Tool().executeResult(arguments: ["path": path])
+    }
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await GitShowV2Tool().executeResult(arguments: [
+            "path": path,
+            "hash": ToolArgument("deadbeef"),
+        ])
+    }
+}

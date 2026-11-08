@@ -26,7 +26,14 @@ public struct GitLogTool: SuperAgentTool, @unchecked Sendable {
             var output = "## Git 提交历史\n\n"
             for (index, log) in logs.enumerated() { output += "### \(index + 1). `\(log.hash.prefix(7))` - \(log.message)\n\n**作者**: \(log.author)\n**日期**: \(log.date.prefix(10))\n\n" }
             return output
-        } catch { return "获取 Git 日志失败：\(error.localizedDescription)" }
+        } catch let error as ToolExecutionError {
+            throw error
+        } catch {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "获取 Git 日志失败：\(error.localizedDescription)"
+            )
+        }
     }
 
     /// 规范化 count 参数：接受 Int / Double / 数字字符串，钳制到 1...50。

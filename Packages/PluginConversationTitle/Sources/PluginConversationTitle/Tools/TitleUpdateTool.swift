@@ -102,7 +102,10 @@ public struct TitleUpdateTool: SuperAgentTool, SuperLog, @unchecked Sendable {
         // 经 MainActor.run 跳回主线程访问。
         guard let conversations else {
             Self.logger.error("\(Self.t)Conversation title tool cannot update title because ConversationManaging is unavailable")
-            return "## Update Conversation Title ❌\n\n**Status**: Conversation service unavailable."
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Conversation service unavailable."
+            )
         }
 
         let result = await MainActor.run {
@@ -125,7 +128,10 @@ public struct TitleUpdateTool: SuperAgentTool, SuperLog, @unchecked Sendable {
 
         guard result.updated, let conversationID = result.conversationID else {
             Self.logger.error("\(Self.t)Conversation title update did not produce a successful conversation ID")
-            return "## Update Conversation Title ❌\n\n**Status**: Conversation not found or title update failed."
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Conversation not found or title update failed."
+            )
         }
         return """
         ## Conversation Title Updated ✅
