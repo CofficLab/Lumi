@@ -43,7 +43,6 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 - **停止语义**：`cancelCurrentRequest()` 取消跟踪任务 + `agentLoop.cancelTurn` +
   广播 `.cancelled`，仅当无任何活动任务时才复位 `isSending = false`
 
-## 
 - **装配**（1 条）：由 `pluginRegistersMessageSendingProvider` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **降级**（1 条）：由 `pluginNoOpsWithoutDependencies` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **链路**（1 条）：由 `registeredSenderSendsMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
