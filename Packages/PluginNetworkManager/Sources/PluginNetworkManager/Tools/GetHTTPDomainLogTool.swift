@@ -61,14 +61,15 @@ struct GetHTTPDomainLogTool: SuperAgentTool, SuperLog {
             }
 
             let cutoff = Date().addingTimeInterval(-Double(hours) * 3600)
-            let allRecords = store.fetchPage(limit: 5000)
+            let domainLower = domain.lowercased()
 
-            let filtered = allRecords.filter { record in
+            // Scan the whole retained history so the time window, not a hidden
+            // record cap, decides what is included.
+            let filtered = store.scanHistory { record in
                 guard record.startedAt >= cutoff else { return false }
-                guard let url = URL(string: record.requestURL),
+                guard let url = URL(string: record.url),
                       let host = url.host else { return false }
 
-                let domainLower = domain.lowercased()
                 let hostLower = host.lowercased()
                 let domainMatches = hostLower == domainLower || hostLower.hasSuffix(".\(domainLower)")
 
@@ -90,10 +91,10 @@ struct GetHTTPDomainLogTool: SuperAgentTool, SuperLog {
             var statusCounts: [Int: Int] = [:]
 
             for record in filtered {
-                if let url = URL(string: record.requestURL) {
+                if let url = URL(string: record.url) {
                     pathCounts[url.path, default: 0] += 1
                 }
-                methodCounts[record.requestMethod, default: 0] += 1
+                methodCounts[record.method, default: 0] += 1
                 if let status = record.responseStatusCode {
                     statusCounts[status, default: 0] += 1
                 }

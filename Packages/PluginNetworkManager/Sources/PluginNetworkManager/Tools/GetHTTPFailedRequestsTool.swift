@@ -52,9 +52,10 @@ struct GetHTTPFailedRequestsTool: SuperAgentTool, SuperLog {
             }
 
             let cutoff = Date().addingTimeInterval(-Double(hours) * 3600)
-            let allRecords = store.fetchPage(limit: 5000)
 
-            var failedRecords = allRecords.filter { record in
+            // Scan the whole retained history so a matching failure older than
+            // a fixed recent window is still reported.
+            let failedRecords = store.scanHistory { record in
                 guard record.startedAt >= cutoff else { return false }
 
                 let hasNetworkError = record.errorDescription != nil
@@ -71,7 +72,7 @@ struct GetHTTPFailedRequestsTool: SuperAgentTool, SuperLog {
                 return hasNetworkError || hasHTTPError
             }
 
-            failedRecords.sort { $0.startedAt > $1.startedAt }
+            // `scanHistory` already yields newest first.
             // 汇总基于全部匹配记录；`limit` 只限制下方明细条数。
             let results = Array(failedRecords.prefix(limit))
 
@@ -102,7 +103,7 @@ struct GetHTTPFailedRequestsTool: SuperAgentTool, SuperLog {
                 sections.append("")
                 sections.append("### Network Errors")
                 for record in detailNetworkErrors.prefix(10) {
-                    sections.append("- [\(record.requestMethod)] \(record.requestURL)")
+                    sections.append("- [\(record.method)] \(record.url)")
                     sections.append("  Error: \(record.errorDescription ?? "Unknown")")
                 }
             }
@@ -111,7 +112,7 @@ struct GetHTTPFailedRequestsTool: SuperAgentTool, SuperLog {
                 sections.append("")
                 sections.append("### HTTP 4xx Client Errors")
                 for record in detailHTTP4xx.prefix(10) {
-                    sections.append("- [\(record.requestMethod)] \(record.requestURL)")
+                    sections.append("- [\(record.method)] \(record.url)")
                     sections.append("  Status: \(record.responseStatusCode ?? 0)")
                 }
             }
@@ -120,7 +121,7 @@ struct GetHTTPFailedRequestsTool: SuperAgentTool, SuperLog {
                 sections.append("")
                 sections.append("### HTTP 5xx Server Errors")
                 for record in detailHTTP5xx.prefix(10) {
-                    sections.append("- [\(record.requestMethod)] \(record.requestURL)")
+                    sections.append("- [\(record.method)] \(record.url)")
                     sections.append("  Status: \(record.responseStatusCode ?? 0)")
                 }
             }

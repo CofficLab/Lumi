@@ -268,6 +268,71 @@ public final class HTTPExchangeStore {
         return (try? context.fetch(descriptor)) ?? []
     }
 
+    /// Columns the list-style queries need. Everything else, in particular the
+    /// request and response BLOB bodies, stays in the store.
+    private nonisolated static func listProperties() -> [PartialKeyPath<HTTPExchangeRecord>] {
+        [
+            \.id,
+            \.startedAt,
+            \.requestMethod,
+            \.requestURL,
+            \.duration,
+            \.responseStatusCode,
+            \.errorDescription,
+        ]
+    }
+
+    /// Scan the whole retained history newest first, keeping every record that
+    /// matches `predicate`.
+    ///
+    /// The scan walks the table in bounded, metadata-only pages instead of
+    /// stopping at a fixed window of recent records, so a filter can still find
+    /// an old record that retention has not removed yet. Because only
+    /// `listProperties` are materialized, callers must not read bodies from the
+    /// snapshots; fetch the selected records separately when bodies are needed.
+    func scanHistory(
+        batchSize: Int = 500,
+        where predicate: (HTTPExchangeListSnapshot) -> Bool
+    ) -> [HTTPExchangeListSnapshot] {
+        guard let context = self.context else { return [] }
+        let pageSize = max(1, batchSize)
+        var matches: [HTTPExchangeListSnapshot] = []
+        var offset = 0
+
+        while true {
+            var descriptor = FetchDescriptor<HTTPExchangeRecord>(
+                sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+            )
+            descriptor.fetchLimit = pageSize
+            descriptor.fetchOffset = offset
+            descriptor.propertiesToFetch = Self.listProperties()
+
+            let page = (try? context.fetch(descriptor)) ?? []
+            matches.append(
+                contentsOf: page.map(HTTPExchangeListSnapshot.init(record:)).filter(predicate)
+            )
+
+            // The whole scan runs synchronously, so no insert can shift the
+            // offsets between pages.
+            guard page.count == pageSize else { break }
+            offset += page.count
+        }
+
+        return matches
+    }
+
+    /// Load full records, including bodies, for a small set of already selected
+    /// ids.
+    func records(withIDs ids: [UUID]) -> [UUID: HTTPExchangeRecord] {
+        guard let context = self.context, !ids.isEmpty else { return [:] }
+        let identifiers = ids
+        let descriptor = FetchDescriptor<HTTPExchangeRecord>(
+            predicate: #Predicate<HTTPExchangeRecord> { identifiers.contains($0.id) }
+        )
+        let records = (try? context.fetch(descriptor)) ?? []
+        return Dictionary(records.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    }
+
     /// Collect distinct host names from recent records.
     ///
     /// This walks a bounded window of the newest records and projects only
@@ -497,14 +562,7 @@ public final class HTTPExchangeStore {
         }
 
         descriptor.fetchLimit = limit
-        descriptor.propertiesToFetch = [
-            \.id,
-            \.startedAt,
-            \.requestMethod,
-            \.requestURL,
-            \.responseStatusCode,
-            \.errorDescription,
-        ]
+        descriptor.propertiesToFetch = Self.listProperties()
         return (try? context.fetch(descriptor)) ?? []
     }
 

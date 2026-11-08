@@ -51,14 +51,14 @@ struct GetHTTPSlowRequestsTool: SuperAgentTool, SuperLog {
             }
 
             let cutoff = Date().addingTimeInterval(-Double(hours) * 3600)
-            let allRecords = store.fetchPage(limit: 5000)
 
-            let slowRequests = allRecords
-                .filter { record in
-                    guard let duration = record.duration, duration >= threshold else { return false }
-                    return record.startedAt >= cutoff
-                }
-                .sorted { ($0.duration ?? 0) > ($1.duration ?? 0) }
+            // Scan the whole retained history so a slow request older than a
+            // fixed recent window is still reported.
+            let slowRequests = store.scanHistory { record in
+                guard let duration = record.duration, duration >= threshold else { return false }
+                return record.startedAt >= cutoff
+            }
+            .sorted { ($0.duration ?? 0) > ($1.duration ?? 0) }
 
             if slowRequests.isEmpty {
                 return "No slow requests (>=\(String(format: "%.1f", threshold))s) found."
@@ -71,7 +71,7 @@ struct GetHTTPSlowRequestsTool: SuperAgentTool, SuperLog {
             dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
 
             let lines = shownRequests.enumerated().map { index, record in
-                var line = "\(index + 1). [\(record.requestMethod)] \(record.requestURL)"
+                var line = "\(index + 1). [\(record.method)] \(record.url)"
                 line += String(format: "\n   Duration: %.2fs", record.duration ?? 0)
                 line += "\n   Time: \(dateFormatter.string(from: record.startedAt))"
                 if let statusCode = record.responseStatusCode {
