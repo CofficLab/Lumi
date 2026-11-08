@@ -1,11 +1,25 @@
 import Foundation
 import KitShell
 
-public enum BrewError: Error, Sendable, Equatable {
+public enum BrewError: Error, Sendable, Equatable, LocalizedError {
     case notInstalled
     case commandFailed(String)
     case parsingError(Error)
     case notFound
+
+    public var errorDescription: String? {
+        switch self {
+        case .notInstalled:
+            return "Homebrew is not installed or could not be located."
+        case .commandFailed(let detail):
+            let trimmed = detail.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? "The brew command failed." : trimmed
+        case .parsingError(let error):
+            return "Failed to parse Homebrew output: \(error.localizedDescription)"
+        case .notFound:
+            return "The requested package was not found."
+        }
+    }
 
     public static func == (lhs: BrewError, rhs: BrewError) -> Bool {
         switch (lhs, rhs) {
