@@ -5,7 +5,7 @@
 PluginNetworkManager Network monitoring and HTTP exchange management plugin for Lumi. Migrated from the legacy `Plugins/NetworkManagerPlugin` (KernelLumi / LumiPlugin architecture) to the new KernelCore / SuperPlugin architecture.
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 92
+测试文件: 12 个，用例总数: 95
 
 核心组件（源码目录）:
 - `Extensions/`
@@ -44,6 +44,7 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 
 - **LLMNetworkProviderAdapterRetry**（9 条）：由 `errorIsNormalizedToRetryableHTTPStatus`、`normalizedErrorIsClassifiedRetryable`、`agentLoopFailureIsRetryable` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **NetworkProviderResponseHeaderTimeout**（1 条）：由 `stalledResponseHeaderTimeoutSurvivesRetryClassification` 锁定兜底超时必须带 `NSURLErrorTimedOut`；改动流式响应头超时或错误归一化时优先跑对应测试文件。
+- **DownloadFileToolExchangeLogging**（3 条）：由 `successfulDownloadIsRecordedInExchangeLog`、`failedDownloadIsRecordedWithError`、`non2xxDownloadIsRecordedWithStatus` 锁定下载工具的 exchange 记录；改动 `network_download_file` 时优先跑对应测试文件。
 - **NetworkSpeedFormatter**（13 条）：由 `formatsGigabytesPerSecond`、`formatsMegabytesPerSecond`、`formatsKilobytesPerSecond` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **NetworkHistoryGraphGeometry**（3 条）：由 `timeFractionsReflectSamplingGap`、`hoverPicksPointByTimestamp` 等用例锁定；改动历史图表时间轴或悬停命中逻辑时优先跑对应测试文件。
 - **网络历史范围裁剪**（4 条）：由 `oneHourRangeUsesHighResolutionBuffer`、`fourHourRangeTrimsLongTermBuffer` 等用例锁定；改动历史时间范围语义或视图取数方式时优先跑对应测试文件。
@@ -145,27 +146,30 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 90 | HTTP 查询窗口 | 过滤在完整保留数据上执行，旧匹配不被固定窗口截断 | 5,001 条记录，最旧一条命中 domain / 失败 / 慢请求 / URL 关键词 | 依次调用 list / domain / failed / slow | 四个工具均找到该记录（各 1 条），list 额外返回其请求体 | P0 | ✅ 已覆盖 | `filtersFindMatchesOlderThanTheFormerFetchWindow` |
 | 91 | get_http_exchange_detail | 按 UUID 与 URL 都能查到超出旧 1,000 条窗口的记录 | 1,001 条记录，最旧一条使用唯一 URL | 分别按 id 与 url 调用 detail 工具 | 两次都返回该记录详情 | P1 | ✅ 已覆盖 | `exchangeDetailFindsRecordOlderThanTheFormerWindow` |
 | 92 | NetworkProviderResponseHeaderTimeout | 响应头兜底超时保留可重试分类（**回归 #975**） | 注入永不返回响应头的 URLProtocol 桩，兜底超时 0.2s | 调用 `withResponseHeaderTimeout`，再把合成错误经 `LLMNetworkProviderAdapter` 归一化并判定重试 | 错误带 `NSURLErrorTimedOut`；归一化为 `NSURLErrorDomain/-1001`；默认 3 次尝试下 `shouldRetry == true` | P0 | ✅ 已覆盖 | `stalledResponseHeaderTimeoutSurvivesRetryClassification` |
+| 93 | DownloadFileToolExchangeLogging | 成功下载写入一条 HTTP exchange（**回归 #977**） | 注入返回 200 + 正文的下载桩，配置临时 exchange store | 调用 `network_download_file` | 记录 1 条 GET，URL/状态码/响应正文/完成时间/耗时齐全 | P1 | ✅ 已覆盖 | `successfulDownloadIsRecordedInExchangeLog` |
+| 94 | DownloadFileToolExchangeLogging | 网络失败下载写入带错误的 HTTP exchange（**回归 #977**） | 注入抛 `URLError(.timedOut)` 的下载桩 | 调用 `network_download_file` | 仍然记录 1 条 exchange，errorDomain/errorCode 为 NSURLError 超时，状态码为空 | P1 | ✅ 已覆盖 | `failedDownloadIsRecordedWithError` |
+| 95 | DownloadFileToolExchangeLogging | 非 2xx 下载写入带状态码的 HTTP exchange（**回归 #977**） | 注入返回 500 + 正文的下载桩 | 调用 `network_download_file` | 记录 1 条 exchange，状态码 500 且保留响应正文 | P1 | ✅ 已覆盖 | `non2xxDownloadIsRecordedWithStatus` |
 
-> 说明：全部 **92 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **95 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 34 / 34
-- P1: 已覆盖 52 / 52
+- P1: 已覆盖 55 / 55
 - P2: 已覆盖 6 / 6
-- **合计: 92 / 92**（仅表示清单场景，非源码覆盖率）
+- **合计: 95 / 95**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（34 条）
-- **P1**: 其余功能性用例（52 条）
+- **P1**: 其余功能性用例（55 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 92 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 95 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
