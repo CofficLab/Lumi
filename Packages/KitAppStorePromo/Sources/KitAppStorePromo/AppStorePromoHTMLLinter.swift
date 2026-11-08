@@ -58,7 +58,9 @@ public struct AppStorePromoHTMLLinter: Sendable {
         if lower.range(of: #"<\s*iframe\b"#, options: .regularExpression) != nil {
             add(.error, "iframe_forbidden", "Iframes are not allowed in promotional artwork.")
         }
-        if lower.range(of: #"https?://"#, options: .regularExpression) != nil || lower.contains("//cdn.") {
+        // 只检查真正会触发资源加载的位置。整份文档扫描会把 inline SVG 必需的
+        // xmlns="http://www.w3.org/2000/svg" 误判成网络依赖（issue #1010）。
+        if !remoteResourceReferences(in: html).isEmpty {
             add(.error, "remote_resource", "Remote resources are not allowed; import files into the page assets directory.")
         }
         if lower.range(of: #"@import\s"#, options: .regularExpression) != nil {
@@ -102,13 +104,28 @@ public struct AppStorePromoHTMLLinter: Sendable {
         return AppStorePromoLintReport(issues: issues)
     }
 
-    private func localResourcePaths(in html: String) -> [String] {
-        let pattern = #"(?:src|href)\s*=\s*[\"']([^\"']+)[\"']"#
+    private func remoteResourceReferences(in html: String) -> [String] {
+        var candidates: [String] = []
+        candidates += captureValues(#"\b(?:src|poster|data)\s*=\s*["']([^"']+)["']"#, in: html)
+        candidates += captureValues(#"\bsrcset\s*=\s*["']([^"']+)["']"#, in: html)
+        candidates += captureValues(#"<(?:link|image|use)\b[^>]*?\bhref\s*=\s*["']([^"']+)["']"#, in: html)
+        candidates += captureValues(#"url\(\s*["']?([^"')]+)["']?\s*\)"#, in: html)
+        return candidates.filter { value in
+            let lower = value.lowercased()
+            return lower.contains("http://") || lower.contains("https://") || lower.contains("//cdn.")
+        }
+    }
+
+    private func captureValues(_ pattern: String, in html: String) -> [String] {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else { return [] }
         let range = NSRange(html.startIndex..., in: html)
         return regex.matches(in: html, range: range).compactMap { match in
             guard match.numberOfRanges > 1, let valueRange = Range(match.range(at: 1), in: html) else { return nil }
             return String(html[valueRange])
         }
+    }
+
+    private func localResourcePaths(in html: String) -> [String] {
+        captureValues(#"(?:src|href)\s*=\s*["']([^"']+)["']"#, in: html)
     }
 }

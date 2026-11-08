@@ -231,4 +231,23 @@ struct AppStorePromoHTMLLinterTests {
         #expect(unsafePaths.count == 1, "只有逃出图片根目录的路径应被拒绝")
         #expect(unsafePaths.first?.contains("../../outside.png") == true)
     }
+
+    @Test func inlineSVGNamespaceIsNotARemoteResource() {
+        let html = minimalHTML(body: """
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z"/></svg>
+        """)
+        let report = AppStorePromoHTMLLinter().lint(html: html)
+        #expect(!report.errors.map(\.code).contains("remote_resource"), "SVG namespace 不产生网络请求")
+        #expect(report.errors.isEmpty)
+    }
+
+    @Test func remoteResourcesInLoadingPositionsAreStillRejected() {
+        let html = minimalHTML(body: """
+        <link href="https://example.com/theme.css" rel="stylesheet">
+        <img src="https://example.com/a.png">
+        <div style="background-image: url('//cdn.example.com/bg.png')"></div>
+        """)
+        let report = AppStorePromoHTMLLinter().lint(html: html)
+        #expect(report.errors.map(\.code).contains("remote_resource"))
+    }
 }
