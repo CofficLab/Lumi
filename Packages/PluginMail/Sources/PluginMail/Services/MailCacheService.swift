@@ -174,7 +174,8 @@ public actor MailCacheService {
             }
         )
         let sqlHits = try context.fetch(descriptor)
-        let sqlUIDs = Set(sqlHits.map(\.uid))
+        // IMAP UID 只在单个文件夹内唯一，跨文件夹合并必须带上 folder 维度。
+        let sqlKeys = Set(sqlHits.map { MessageKey(folder: $0.folder, uid: $0.uid) })
         // 正文/snippet 命中不在 SQL 谓词内（CoreData 限制），用同一账户全量补扫合并。
         let bodyDescriptor = FetchDescriptor<MailCacheItem>(
             predicate: #Predicate {
@@ -183,11 +184,17 @@ public actor MailCacheService {
         )
         return try context.fetch(bodyDescriptor)
             .filter {
-                sqlUIDs.contains($0.uid)
+                sqlKeys.contains(MessageKey(folder: $0.folder, uid: $0.uid))
                     || ($0.snippet?.localizedStandardContains(lower) ?? false)
                     || ($0.plainTextBody?.localizedStandardContains(lower) ?? false)
             }
             .map(\.summaryProjection)
+    }
+
+    /// 缓存条目的完整身份：UID 只在同一 folder 内唯一。
+    private struct MessageKey: Hashable {
+        let folder: String
+        let uid: UInt64
     }
 
     // MARK: - 私有
