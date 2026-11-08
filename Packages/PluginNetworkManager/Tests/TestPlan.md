@@ -95,7 +95,7 @@ PluginNetworkManager Network monitoring and HTTP exchange management plugin for 
 | 40 | 综合 | httpExchangeBatchExportIncludesAllRecordsWithNumberedHeaders | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `httpExchangeBatchExportIncludesAllRecordsWithNumberedHeaders` |
 | 41 | 综合 | httpExchangeSnapshotExportMatchesRecordExport | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `httpExchangeSnapshotExportMatchesRecordExport` |
 | 42 | 综合 | batchExportFromSnapshotsReportsProgressPerRecord | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `batchExportFromSnapshotsReportsProgressPerRecord` |
-| 43 | 综合 | exportFileNameIsStableUniqueAndSanitized | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `exportFileNameIsStableUniqueAndSanitized` |
+| 43 | 综合 | exportFileNameIsStableUniqueAndSanitized（文件名带 exchange ID，不同批次同方法/URL 不碰撞；长 URL 截断保留 ID 后缀，**回归 #976**） | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `exportFileNameIsStableUniqueAndSanitized` |
 | 44 | 综合 | timeRangeFilterCutOffsAreCorrect | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `timeRangeFilterCutOffsAreCorrect` |
 | 45 | 综合 | exportProgressTracksLifecycleAndFailure | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `exportProgressTracksLifecycleAndFailure` |
 | 46 | 综合 | emitSSEEventsSplitsByBlankLineAndKeepsTail | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `emitSSEEventsSplitsByBlankLineAndKeepsTail` |
