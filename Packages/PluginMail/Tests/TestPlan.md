@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 61 条用例。
+PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 62 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 61
+测试文件: 6 个，用例总数: 62
 
 核心组件（源码目录）:
 - `Agent/`
@@ -41,7 +41,7 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 61 条�
 - **MailAgentTools**（10 条）：由 `testRiskLevelsAndCapabilities`、`testListMessagesWithoutAccount`、`testListMessagesReturnsRecentSummaries` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailComposerService**（8 条）：由 `testSendBuildsMIMEAndAppendsToSent`、`testSendThrowsAuthFailedWithoutPassword`、`testSentFolderDiscoveryPrefersSentKind` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailSessionManager**（5 条）：由 `testSessionCachesByAccount`、`testSessionThrowsAuthFailedWhenPasswordMissing`、`testSessionThrowsAuthFailedOnBadCredentials` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MailSyncService**（10 条）：由 `testUpsertAndLastUID`、`testContainsAndOverwrite`、`testUnreadCounts` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MailSyncService**（11 条）：由 `testUpsertAndLastUID`、`testContainsAndOverwrite`、`testUnreadCounts` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MailPluginRuntime**（2 条）：由 `usesInjectedDirectory`、`refusesFallbackWithoutInjection` 锁定；改动数据目录解析时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -109,27 +109,28 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 61 条�
 | 59 | MailPluginRuntime | refusesFallbackWithoutInjection | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `refusesFallbackWithoutInjection` |
 | 60 | MailAgentTools | limit 为 -1/0/51 时返回参数错误，避免 `suffix` 负数导致进程终止 | 已配置账户 | 以越界 `limit` 调用 `mail_list_messages` | 抛出 `ToolExecutionError`，错误信息指出 limit 非法 | P0 | ✅ 已覆盖 | `testListMessagesRejectsOutOfRangeLimit` |
 | 61 | MailAgentTools | limit schema 声明 1...50 范围 | — | 读取 `mail_list_messages` 的 inputSchema | `minimum` 为 1、`maximum` 为 50 | P1 | ✅ 已覆盖 | `testListMessagesLimitSchemaDeclaresRange` |
+| 62 | MailSyncService | 跨文件夹搜索不按裸 UID 合并结果 | INBOX 与 Archive 各有一封 uid=7 的邮件 | 不带 folder 搜索 `quarterly` | 仅返回 INBOX 的命中，Archive 同 UID 邮件不被误报 | P1 | ✅ 已覆盖 | `testSearchDoesNotMergeSameUIDAcrossFolders` |
 
-> 说明：全部 **61 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **62 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 7 / 7
-- P1: 已覆盖 51 / 51
+- P1: 已覆盖 52 / 52
 - P2: 已覆盖 3 / 3
-- **合计: 61 / 61**（仅表示清单场景，非源码覆盖率）
+- **合计: 62 / 62**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（51 条）
+- **P1**: 其余功能性用例（52 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 61 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 62 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
