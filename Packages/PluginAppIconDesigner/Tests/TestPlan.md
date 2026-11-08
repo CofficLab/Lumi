@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAppIconDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 19 条用例。
+PluginAppIconDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 20 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 19
+测试文件: 2 个，用例总数: 20
 
 核心组件（源码目录）:
 - `Models/`
@@ -64,21 +64,22 @@ PluginAppIconDesigner 的实现包，包含 14 个主要类型；当前测试覆
 | 17 | 存储 | 加入项目不预建存储目录，真正写入时才创建 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doesNotCreateStorageDirectoryUntilWrite` |
 | 18 | Agent 工具 | `replaceSelected=true` 时用不同 ID 的 JSON 替换当前选中文档，保留其 ID 并清理旧文件 | 已选中文档 A，B 的 JSON 位于存储目录外 | 调用 `load_icon_document(inputPath=B, replaceSelected=true)` | 列表中仅一条文档，ID 为 A，内容为 B，磁盘重载也只有一条 | P1 | ✅ 已覆盖 | `loadIconDocumentReplacesSelectedDocumentWithDifferentId` |
 | 19 | Agent 工具 | `replaceSelected=false` 时导入新副本而不是替换 | 已选中文档 A | 调用 `load_icon_document(inputPath=B)` | 列表两条文档，新副本拥有独立 ID 并被选中 | P1 | ✅ 已覆盖 | `loadIconDocumentImportsCopyWhenReplaceSelectedIsFalse` |
+| 20 | 跨对话隔离 | 缓存的项目 store 使用前从磁盘重载，旧快照不覆盖新修订 | 项目 A 由对话缓存，UI 切到项目 A 用 shared 编辑后再切回 | 再次通过对话使用缓存 store 编辑同一文档 | 内存与磁盘都保留 shared 写入的新修订 | P1 | ✅ 已覆盖 | `cachedScopedStoreReloadsBeforeUse` |
 
-> 说明：全部 **19 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **20 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 13 / 13
+- P1: 已覆盖 14 / 14
 - P2: 已覆盖 6 / 6
-- **合计: 19 / 19**（仅表示清单场景，非源码覆盖率）
+- **合计: 20 / 20**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（13 条）
+- **P1**: 其余功能性用例（14 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明

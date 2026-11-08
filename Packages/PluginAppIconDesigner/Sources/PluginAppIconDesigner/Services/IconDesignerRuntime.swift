@@ -75,6 +75,9 @@ enum IconDesignerRuntime {
             return IconDocumentStore.shared
         }
         if let cached = scopedStores[normalized] {
+            // shared store 或其它会话可能已把同一项目的新修订落盘，
+            // 使用缓存实例前先重载，避免旧整文档快照覆盖新内容。
+            cached.reloadFromDisk()
             return cached
         }
         let store = IconDocumentStore()
