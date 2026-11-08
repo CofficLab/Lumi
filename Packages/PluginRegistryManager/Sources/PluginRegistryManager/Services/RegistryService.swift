@@ -21,7 +21,7 @@ public actor RegistryService {
         }
     }
     
-    private func execute(_ command: String) async throws -> String {
+    func execute(_ command: String) async throws -> String {
         let task = Task.detached(priority: .userInitiated) {
             let process = Process()
             let stdoutPipe = Pipe()
@@ -93,13 +93,14 @@ public actor RegistryService {
             let output = String(data: stdoutBuffer.snapshot(), encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             let error = String(data: stderrBuffer.snapshot(), encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             
-            // Some commands output to stderr even on success, or non-zero exit code means something else.
-            // But generally check terminationStatus.
+            // 只要命令非零退出就说明没有生效，stdout 有内容也不能当作成功：
+            // login shell 的 profile 可能往 stdout 打印启动文本。
             if process.terminationStatus != 0 {
-                // Ignore "key not found" errors for get commands
-                if output.isEmpty && !error.isEmpty {
-                    throw NSError(domain: "RegistryService", code: Int(process.terminationStatus), userInfo: [NSLocalizedDescriptionKey: error])
-                }
+                throw RegistryServiceError.commandFailed(
+                    command: command,
+                    status: Int(process.terminationStatus),
+                    output: [error, output].filter { !$0.isEmpty }.joined(separator: "\n")
+                )
             }
             
             return output
@@ -111,11 +112,11 @@ public actor RegistryService {
         do {
             switch type {
             case .npm:
-                return try await execute("npm config get registry")
+                return Self.configValue(try await execute("npm config get registry"))
             case .yarn:
-                return try await execute("yarn config get registry")
+                return Self.configValue(try await execute("yarn config get registry"))
             case .pnpm:
-                return try await execute("pnpm config get registry")
+                return Self.configValue(try await execute("pnpm config get registry"))
             case .docker:
                 return try await getDockerRegistry()
             case .pip:
@@ -126,10 +127,10 @@ public actor RegistryService {
                 guard let pip = await availablePipCommand() else {
                     return "Not Installed"
                 }
-                let output = try await execute("\(pip) config get global.index-url")
+                let output = Self.configValue(try await execute("\(pip) config get global.index-url"))
                 return output.isEmpty ? "Default (PyPI)" : output
             case .go:
-                return try await execute("go env GOPROXY")
+                return Self.configValue(try await execute("go env GOPROXY"))
             }
         } catch {
             // Return default or specific error message
@@ -161,6 +162,15 @@ public actor RegistryService {
         }
     }
     
+    /// login shell 的 profile 可能往 stdout 打印启动文本；配置命令的有效值
+    /// 总是最后一行非空内容。
+    nonisolated static func configValue(_ output: String) -> String {
+        output
+            .split(whereSeparator: \.isNewline)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .last { !$0.isEmpty } ?? ""
+    }
+
     /// 按可用性选择 Pip 入口；全都不存在时才返回 nil（真正的未安装）。
     private func availablePipCommand() async -> String? {
         var available: Set<String> = []
@@ -239,6 +249,8 @@ public enum RegistryServiceError: LocalizedError, Equatable {
     case dockerDaemonConfigUnreadable(String)
     /// `pip`、`pip3`、`python3 -m pip` 全都不可用。
     case pipUnavailable
+    /// 包管理器命令以非零状态退出，配置没有被修改。
+    case commandFailed(command: String, status: Int, output: String)
 
     public var errorDescription: String? {
         switch self {
@@ -246,6 +258,11 @@ public enum RegistryServiceError: LocalizedError, Equatable {
             return "daemon.json could not be read or parsed, so the Docker registry was not changed. Fix the file and try again. (\(detail))"
         case .pipUnavailable:
             return "Pip could not be found. Install pip or make sure `pip3` or `python3 -m pip` is available on PATH."
+        case .commandFailed(let command, let status, let output):
+            if output.isEmpty {
+                return "`\(command)` failed with exit code \(status)."
+            }
+            return "`\(command)` failed with exit code \(status): \(output)"
         }
     }
 }

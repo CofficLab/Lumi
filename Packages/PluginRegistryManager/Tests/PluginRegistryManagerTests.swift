@@ -143,6 +143,39 @@ func dockerDaemonMergeCreatesConfigWhenMissing() throws {
     #expect(json["registry-mirrors"] as? [String] == ["https://new.example/"])
 }
 
+// MARK: - 命令退出状态（回归 #660）
+
+@Test("命令非零退出时即使有 stdout 也抛错")
+func executeThrowsOnNonZeroExitEvenWithStdout() async {
+    do {
+        _ = try await RegistryService.shared.execute("printf 'startup-noise\\n'; exit 7")
+        Issue.record("非零退出应当抛错")
+    } catch let error as RegistryServiceError {
+        guard case .commandFailed(let command, let status, let output) = error else {
+            Issue.record("意外的错误类型: \(error)")
+            return
+        }
+        #expect(status == 7)
+        #expect(command.contains("exit 7"))
+        #expect(output.contains("startup-noise"))
+    } catch {
+        Issue.record("意外的错误: \(error)")
+    }
+}
+
+@Test("命令成功时返回 stdout")
+func executeReturnsStdoutOnSuccess() async throws {
+    let output = try await RegistryService.shared.execute("printf 'https://registry.example/\\n'")
+
+    #expect(output.contains("https://registry.example/"))
+}
+
+@Test("profile 启动噪音不会被当成 registry 值")
+func configValueKeepsOnlyTheLastLine() {
+    #expect(RegistryService.configValue("startup-noise\n\nhttps://registry.example/  \n") == "https://registry.example/")
+    #expect(RegistryService.configValue("   \n  ") == "")
+}
+
 // MARK: - Pip 入口探测（回归 #662）
 
 @Test("只装了 pip3 时改用 pip3，而不是报告未安装")
