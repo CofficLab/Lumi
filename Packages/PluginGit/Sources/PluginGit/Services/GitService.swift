@@ -409,13 +409,36 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
 
     // MARK: - Unpushed Commits
 
-    /// 获取未推送到远程的 commit 哈希列表
+    /// 未推送提交的判定结果。
+    ///
+    /// `noUpstream` 必须与 `upToDate` 区分：没有上游分支时不存在可比对的远程基准，
+    /// 不能把“无法判断”当成“全部已推送”。
+    public enum UnpushedCommitsState: Equatable, Sendable {
+        /// 当前分支没有配置上游分支
+        case noUpstream
+        /// 有上游且本地没有领先的提交
+        case upToDate
+        /// 有上游且本地领先，携带未推送的 commit 哈希
+        case hasUnpushed([String])
+        /// 仓库或 libgit2 读取失败
+        case unavailable
+    }
+
+    /// 获取未推送提交的状态
     /// 使用 LibGit2Swift 原生实现，参考 GitOK 的 Project.getUnPushedCommits()
-    public func getUnpushedCommitHashes(path: String?) async -> [String] {
+    public func getUnpushedCommitsState(path: String?) async -> UnpushedCommitsState {
         let repoPath = Self.resolvePath(path)
-        return (try? await performOnGitQueue(repoPath: repoPath) {
-            try LibGit2.getUnPushedCommits(at: repoPath, verbose: false).map { $0.hash }
-        }) ?? []
+        do {
+            return try await performOnGitQueue(repoPath: repoPath) {
+                guard try LibGit2.getUpstreamBranchName(at: repoPath) != nil else {
+                    return .noUpstream
+                }
+                let hashes = try LibGit2.getUnPushedCommits(at: repoPath, verbose: false).map { $0.hash }
+                return hashes.isEmpty ? .upToDate : .hasUnpushed(hashes)
+            }
+        } catch {
+            return .unavailable
+        }
     }
 
     // MARK: - Git Commit
