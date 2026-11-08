@@ -81,6 +81,7 @@ import PluginNetworkManager
 import PluginDocxRead
 import PluginHostsManager
 import PluginIdleTime
+import PluginHydrationReminder
 import PluginActivityHeatmap
 import PluginLLMProviderAiRouter
 import PluginLLMManager
@@ -255,6 +256,7 @@ public struct DefaultPluginFactory: PluginFactory {
             VideoConverterPlugin(),
             WhiteNoisePlugin(),
             IdleTimePlugin(),
+            PluginHydrationReminder(),
             ActivityHeatmapPlugin(),
             ChatPanelPlugin(),
             ChatFileAttachmentPlugin(),
