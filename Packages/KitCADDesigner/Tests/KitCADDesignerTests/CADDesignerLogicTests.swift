@@ -16,6 +16,25 @@ final class CADDesignerLogicTests: XCTestCase {
         XCTAssertEqual(transform, decoded)
     }
 
+    func testPlacementUpdatePreservesOtherTransformComponents() {
+        var transform = Transform3D(
+            positionX: 1, positionY: 2, positionZ: 3,
+            rotationX: 15, rotationY: 30, rotationZ: 90,
+            scale: 2
+        )
+
+        transform.updatePlacement(positionX: 10, positionY: 20, positionZ: 30, rotationY: 45)
+
+        XCTAssertEqual(transform.positionX, 10)
+        XCTAssertEqual(transform.positionY, 20)
+        XCTAssertEqual(transform.positionZ, 30)
+        XCTAssertEqual(transform.rotationY, 45)
+        // 其余分量不得被重置
+        XCTAssertEqual(transform.rotationX, 15)
+        XCTAssertEqual(transform.rotationZ, 90)
+        XCTAssertEqual(transform.scale, 2)
+    }
+
     func testCADDocumentCodableRoundTrip() throws {
         let profile = ProfileInstance(profileId: "profile-40x40-eu", length: 1200)
         let connector = ConnectorInstance(connectorId: "connector-corner-40")
