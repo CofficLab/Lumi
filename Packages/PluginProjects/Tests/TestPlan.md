@@ -5,7 +5,7 @@
 PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 20 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 21
+测试文件: 6 个，用例总数: 22
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -72,16 +72,17 @@ PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 20 
 | 19 | ProjectsStore | 并发保存不遗留临时文件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `concurrentSavesLeaveNoTemporaryFiles` |
 | 20 | ProjectsStore | 并发保存后文件仍可读取 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `concurrentSavesLeaveReadableFile` |
 | 21 | ProjectsSettingsOpenedFiles | 打开文件记录变更后设置页缓存刷新 | 隔离 Store | `startObservingOpenedFiles` 后两次 `saveOpenedFiles` | 缓存跟随最新写入，而非首次快照 | P0 | ✅ 已覆盖 | `openedFilesProjectionRefreshesWhenStoreChanges` |
+| 22 | ProjectsSettingsOpenedFiles | preview-only 当前文件显示 Active 而非空态 | `openFileURLs` 为空、`currentFileURL` 非空 | 调用 `openedFilesSectionState` | 返回 `.content`，仅两者皆空才返回 `.empty` | P0 | ✅ 已覆盖 | `previewOnlyCurrentFileShowsActiveRow` |
 
-> 说明：全部 **21 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **22 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 4 / 4
+- P0: 已覆盖 5 / 5
 - P1: 已覆盖 17 / 17
 - P2: 已覆盖 0 / 0
-- **合计: 21 / 21**（仅表示清单场景，非源码覆盖率）
+- **合计: 22 / 22**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -92,7 +93,7 @@ PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 20 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 21 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 22 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

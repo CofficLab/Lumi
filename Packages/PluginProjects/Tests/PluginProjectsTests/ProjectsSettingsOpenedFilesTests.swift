@@ -37,4 +37,29 @@ struct ProjectsSettingsOpenedFilesTests {
         store.saveOpenedFiles([key: ProjectOpenedFiles()])
         #expect(viewModel.openedFilesByPath[key]?.openFileURLs == [])
     }
+
+    @Test("preview-only 的当前文件不能被当成没有打开文件")
+    func previewOnlyCurrentFileShowsActiveRow() {
+        let preview = URL(fileURLWithPath: "/tmp/demo/Sources/Preview.swift")
+
+        let state = SettingsView.openedFilesSectionState(
+            isLoading: false,
+            opened: ProjectOpenedFiles(openFileURLs: [], currentFileURL: preview)
+        )
+        #expect(state == .content(urls: [], current: preview))
+
+        // 真正没有任何文件记录时才显示空态。
+        let emptyState = SettingsView.openedFilesSectionState(
+            isLoading: false,
+            opened: ProjectOpenedFiles(openFileURLs: [], currentFileURL: nil)
+        )
+        #expect(emptyState == .empty)
+
+        // 加载中优先于空态。
+        let loadingState = SettingsView.openedFilesSectionState(
+            isLoading: true,
+            opened: ProjectOpenedFiles(openFileURLs: [], currentFileURL: nil)
+        )
+        #expect(loadingState == .loading)
+    }
 }
