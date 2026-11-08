@@ -5,7 +5,7 @@
 KitEditorKernel 可复用的编辑器内核纯逻辑模块（SwiftPM 包），尽量与 UI 解耦。 ## 全局技术架构 Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/editor-architecture.md](../../docs/editor-architecture.md)。 ```text 应用装配层 (LumiApp) ↓ 插件扩展层 (Packages/Plugin*) ↓ Host 内部服务 target (EditorService) ↓ ↓ 视图层 (EditorSource) 内核逻辑层 (EditorKernel) ← 本 Package ↓ 渲染基础层 (EditorTextView, EditorLanguages, EditorSymbols) ``` ## 本 Package 的位置 | 属性 | 值 | |------|-----| | **层级** | 内核逻辑层 | | **职责** | 无 UI 依赖的编辑域纯逻辑：选择集、多光标、查找替换、折叠、导航、保存工作流、LSP 请求模型与策略 | | **上游依赖** | `LanguageServerProtocol` | | **下游消费者** | `EditorService`（桥接为 App 侧控制器）、`EditorService/Proto`（扩展点协议引用内核模型） | | **不得依赖** | 任何 Plugin、`EditorSource`、`EditorTextView`、SwiftUI/AppKit 视图 |
 
 平台: macOS 14+, iOS 17+
-测试文件: 18 个，用例总数: 318
+测试文件: 18 个，用例总数: 319
 
 ## 公开 API
 
@@ -371,16 +371,17 @@ KitEditorKernel 可复用的编辑器内核纯逻辑模块（SwiftPM 包），�
 | 316 | XCConfigSyntaxCore | tokenize captures include and keys | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tokenizeContent` |
 | 317 | XCConfigSyntaxCore | include directive resolves by cursor location | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `includeDirectiveAtLocation` |
 | 318 | XCConfigSyntaxCore | key occurrences reports key and line | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `keyOccurrences` |
+| 319 | EditorSaveWorkflowController | 保存按调用方传入的原编码写回，保留 UTF-16 与 BOM | 文件以 UTF-16 写入 | 以 `encoding: .utf16` 执行保存 | 保存后前两字节仍为原 BOM，按 UTF-16 解码得到新内容 | P0 | ✅ 已覆盖 | `performSaveUsesProvidedEncoding` |
 
 > 说明：全部 **318 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 20 / 20
+- P0: 已覆盖 21 / 21
 - P1: 已覆盖 239 / 239
 - P2: 已覆盖 59 / 59
-- **合计: 318 / 318**（仅表示清单场景，非源码覆盖率）
+- **合计: 319 / 319**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
