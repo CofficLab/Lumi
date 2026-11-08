@@ -48,11 +48,14 @@ public struct ListProjectsTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let limit = Self.resolvedLimit(arguments: arguments) else {
-            return "Error: 'limit' must be an integer between 1 and \(Self.maxLimit)."
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "'limit' must be an integer between 1 and \(Self.maxLimit)."
+            )
         }
 
         guard let viewModel = await MainActor.run(body: { ProjectsRuntime.viewModel }) else {
-            return "Error: Projects view model is not available."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Projects view model is not available.")
         }
 
         return await MainActor.run {

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAppIconDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 23 条用例。
+PluginAppIconDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 25 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 23
+测试文件: 2 个，用例总数: 25
 
 核心组件（源码目录）:
 - `Models/`
@@ -68,21 +68,23 @@ PluginAppIconDesigner 的实现包，包含 14 个主要类型；当前测试覆
 | 21 | 导出 | 径向背景半径随导出尺寸缩放，各尺寸外观一致 | 1024 文档，径向渐变 endRadius=512 | 分别渲染 1024px 与 64px PNG | 小尺寸角落同样到达渐变末端 | P1 | ✅ 已覆盖 | `radialBackgroundScalesWithRenderSize` |
 | 22 | 导出 | SVG 导出保留渐变、阴影与模糊，不丢失视觉效果 | 线性渐变背景 + 径向渐变光晕（模糊） + 带阴影矩形 | 调用 `IconSVGRenderer.render` | 输出 `linearGradient`/`radialGradient` defs、`url(#…)` 填充、多段 `stop` 及 `feGaussianBlur`/`feFlood` 滤镜 | P0 | ✅ 已覆盖 | `svgExportPreservesGradientsShadowAndBlur` |
 | 23 | 导出 | SVG 导出不得把 SF Symbol 输出为字面名称 | 含 `sparkles` 符号图层与阴影 | 调用 `IconSVGRenderer.render` | 输出内嵌 base64 PNG 的 `<image>`，不出现 `<text>` 或符号名字面文本 | P0 | ✅ 已覆盖 | `svgExportRasterizesSymbolsInsteadOfLiteralNames` |
+| 24 | Agent 工具 | 缺少必填参数时抛出 `ToolExecutionError`，不返回本地化错误字符串 | 无 | 调用 `apply_icon_preset` / `export_app_icon` 不传必填参数 | 两次均抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `missingParameterThrows` |
+| 25 | Agent 工具 | 未知预设抛出 `ToolExecutionError` | 无 | 调用 `apply_icon_preset(presetId: not-a-preset)` | 抛出 `ToolExecutionError`，不返回错误文案 | P1 | ✅ 已覆盖 | `unknownPresetThrows` |
 
-> 说明：全部 **23 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **25 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 2 / 2
-- P1: 已覆盖 15 / 15
+- P1: 已覆盖 17 / 17
 - P2: 已覆盖 6 / 6
-- **合计: 23 / 23**（仅表示清单场景，非源码覆盖率）
+- **合计: 25 / 25**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（15 条）
+- **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明

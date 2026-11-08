@@ -79,8 +79,15 @@ public struct ProjectOverviewV2Tool: SuperAgentTool, @unchecked Sendable {
         let rootPath = path ?? conversationProjectPath ?? currentPath ?? FileManager.default.currentDirectoryPath
         let root = URL(fileURLWithPath: rootPath).standardizedFileURL
         var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: root.path, isDirectory: &isDirectory), isDirectory.boolValue else { return "Error: Path does not exist or is not a directory: \(rootPath)" }
-        guard (try? FileManager.default.contentsOfDirectory(atPath: root.path)) != nil else { return "Error: Cannot read directory." }
+        guard FileManager.default.fileExists(atPath: root.path, isDirectory: &isDirectory), isDirectory.boolValue else {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Path does not exist or is not a directory: \(rootPath)"
+            )
+        }
+        guard (try? FileManager.default.contentsOfDirectory(atPath: root.path)) != nil else {
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Cannot read directory.")
+        }
         var sections = ["## Project Overview\n\n**Path**: \(root.path)", "### Project type\n\(ProjectTypeSection.render(at: root))", "### Structure (root + one level down)\n\(StructureSection.render(at: root))", "### Git\n\(GitSection.render(at: root))", "### Manifest & config\n\(ManifestSection.render(at: root))"]
         let readme = ReadmePreviewSection.render(at: root); if !readme.isEmpty { sections.append("### README preview\n\(readme)") }
         sections.append("### Key files\n\(KeyFilesSection.render(at: root))")

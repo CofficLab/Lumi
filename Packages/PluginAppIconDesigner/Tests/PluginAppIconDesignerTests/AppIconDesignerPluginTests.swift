@@ -255,6 +255,27 @@ struct AppIconDesignerPluginTests {
         #expect(IconDocumentStore.shared.projectDocuments.isEmpty, "失败时不得留下内存中的文档")
     }
 
+    /// 回归：缺参曾经返回 "错误：缺少必填参数..." / "Error: Missing required..." 字符串，
+    /// 默认 `executeResult` 会把它当成成功结果。
+    @Test("缺少必填参数时抛出而不是返回本地化错误字符串")
+    func missingParameterThrows() async {
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await ApplyIconPresetTool().executeResult(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await ExportAppIconTool().executeResult(arguments: [:])
+        }
+    }
+
+    @Test("未知预设抛出而不是返回错误字符串")
+    func unknownPresetThrows() async {
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await ApplyIconPresetTool().executeResult(
+                arguments: ["presetId": ToolArgument("not-a-preset")]
+            )
+        }
+    }
+
     @Test("preview_icon 工具返回带 PNG 图片附件的结构化结果")
     func executePreviewIconToolReturnsImage() async throws {
         let directory = FileManager.default.temporaryDirectory

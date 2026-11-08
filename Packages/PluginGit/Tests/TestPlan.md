@@ -5,7 +5,7 @@
 GitPlugin Git integration plugin for Lumi editor.
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 76
+测试文件: 15 个，用例总数: 77
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -135,21 +135,22 @@ GitPlugin Git integration plugin for Lumi editor.
 | 74 | GitShowShortHash | 7 位短哈希可查到 commit 详情与变更文件 | 临时仓库有一次提交 | 用 `git_log` 返回哈希的前 7 位调用 `getCommitDetail` / `getCommitChangedFiles` | 返回完整哈希、消息与变更文件 | P0 | ✅ 已覆盖 | `shortHashResolvesDetailAndChangedFiles` |
 | 75 | GitShowShortHash | 无法匹配的短哈希仍然报错 | 同上 | 用 `0000000` 调用 `getCommitDetail` | 抛出错误而非返回空结果 | P1 | ✅ 已覆盖 | `unknownShortHashStillThrows` |
 | 76 | GitBranchDetachedHead | detached HEAD 不当作分支名 | 临时仓库有一次提交 | `checkoutCommit` 后调用 `currentBranch` / `detachedHeadCommitHash` | 分支名为 nil，哈希为完整 OID；切回分支后相反 | P0 | ✅ 已覆盖 | `detachedHeadIsNotReportedAsBranch` |
+| 77 | 综合 | git_branch 的失败分支抛出 `ToolExecutionError`（缺 name、未知 action、工作区脏） | 临时仓库，含一次提交并修改工作区文件 | 依次调用 `git_branch` 的 create / delete / checkout | 三次均抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `gitBranchToolThrowsForInvalidRequests` |
 
-> 说明：全部 **76 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **77 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 9 / 9
-- P1: 已覆盖 58 / 58
+- P1: 已覆盖 59 / 59
 - P2: 已覆盖 9 / 9
-- **合计: 76 / 76**（仅表示清单场景，非源码覆盖率）
+- **合计: 77 / 77**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（57 条）
+- **P1**: 其余功能性用例（58 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
 
 ## 跨平台说明

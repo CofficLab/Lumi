@@ -31,40 +31,34 @@ struct ListProjectsToolTests {
         try? FileManager.default.removeItem(at: directory)
     }
 
-    @Test("negative limit returns a parameter error instead of trapping in prefix")
+    @Test("negative limit throws instead of trapping in prefix")
     func negativeLimitReturnsParameterError() async throws {
         let directory = installRuntime()
         defer { removeRuntime(directory) }
 
-        let result = try await ListProjectsTool().execute(
-            arguments: ["limit": ToolArgument(-1)]
-        )
-
-        #expect(result == "Error: 'limit' must be an integer between 1 and 500.")
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await ListProjectsTool().executeResult(arguments: ["limit": ToolArgument(-1)])
+        }
     }
 
-    @Test("zero limit returns a parameter error instead of returning nothing")
+    @Test("zero limit throws instead of returning nothing")
     func zeroLimitReturnsParameterError() async throws {
         let directory = installRuntime()
         defer { removeRuntime(directory) }
 
-        let result = try await ListProjectsTool().execute(
-            arguments: ["limit": ToolArgument(0)]
-        )
-
-        #expect(result == "Error: 'limit' must be an integer between 1 and 500.")
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await ListProjectsTool().executeResult(arguments: ["limit": ToolArgument(0)])
+        }
     }
 
-    @Test("non-integer limit returns a parameter error instead of falling back silently")
+    @Test("non-integer limit throws instead of falling back silently")
     func nonIntegerLimitReturnsParameterError() async throws {
         let directory = installRuntime()
         defer { removeRuntime(directory) }
 
-        let result = try await ListProjectsTool().execute(
-            arguments: ["limit": ToolArgument(1e100)]
-        )
-
-        #expect(result == "Error: 'limit' must be an integer between 1 and 500.")
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await ListProjectsTool().executeResult(arguments: ["limit": ToolArgument(1e100)])
+        }
     }
 
     @Test("limit defaults to five and caps at five hundred")

@@ -28,7 +28,7 @@ public struct LoadIconDocumentTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let language = IconToolSupport.language
         guard let inputPath = IconToolSupport.string(arguments, "inputPath"), !inputPath.isEmpty else {
-            return IconToolSupport.missingParameter("inputPath", language: language)
+            throw IconToolSupport.missingParameterFailure("inputPath", toolName: name, language: language)
         }
 
         do {
@@ -72,7 +72,7 @@ public struct LoadIconDocumentTool: SuperAgentTool {
             await MainActor.run {
                 IconToolSupport.store().setError(error.localizedDescription)
             }
-            return IconToolSupport.error(error, language: language)
+            throw IconToolSupport.failure(error, toolName: name, language: language)
         }
     }
 }

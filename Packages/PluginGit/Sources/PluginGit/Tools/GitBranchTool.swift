@@ -22,15 +22,28 @@ public struct GitBranchV2Tool: SuperAgentTool, @unchecked Sendable {
             }
             return output
         case "create":
-            guard let name = GitV2ToolSupport.string(arguments, "name") else { return "创建分支需要指定 name 参数" }
+            guard let name = GitV2ToolSupport.string(arguments, "name") else {
+                throw ToolExecutionError.executionFailed(toolName: self.name, reason: "创建分支需要指定 name 参数")
+            }
             try GitBranchService.createBranch(name, at: path)
             return "✅ 已创建并切换到分支 `\(name)`"
         case "checkout":
-            guard let name = GitV2ToolSupport.string(arguments, "name") else { return "切换分支需要指定 name 参数" }
-            guard !GitBranchService.isWorkingTreeDirty(at: path) else { return "⚠️ 工作区有未提交的变更，建议先提交或 stash 后再切换分支。\n\n如仍要切换，请使用命令行操作。" }
+            guard let name = GitV2ToolSupport.string(arguments, "name") else {
+                throw ToolExecutionError.executionFailed(toolName: self.name, reason: "切换分支需要指定 name 参数")
+            }
+            guard !GitBranchService.isWorkingTreeDirty(at: path) else {
+                throw ToolExecutionError.executionFailed(
+                    toolName: self.name,
+                    reason: "工作区有未提交的变更，建议先提交或 stash 后再切换分支。如仍要切换，请使用命令行操作。"
+                )
+            }
             try GitBranchService.checkout(branch: name, at: path)
             return "✅ 已切换到分支 `\(name)`"
-        default: return "不支持的操作：\(GitV2ToolSupport.string(arguments, "action") ?? "")"
+        default:
+            throw ToolExecutionError.executionFailed(
+                toolName: self.name,
+                reason: "不支持的操作：\(GitV2ToolSupport.string(arguments, "action") ?? "")"
+            )
         }
     }
 }

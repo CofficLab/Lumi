@@ -38,7 +38,7 @@ public struct UpdateIconLayerTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let language = IconToolSupport.language
         guard let layerId = IconToolSupport.string(arguments, "layerId"), !layerId.isEmpty else {
-            return IconToolSupport.missingParameter("layerId", language: language)
+            throw IconToolSupport.missingParameterFailure("layerId", toolName: name, language: language)
         }
 
         do {
@@ -107,7 +107,7 @@ public struct UpdateIconLayerTool: SuperAgentTool {
             await MainActor.run {
                 IconToolSupport.store().setError(error.localizedDescription)
             }
-            return IconToolSupport.error(error, language: language)
+            throw IconToolSupport.failure(error, toolName: name, language: language)
         }
     }
 }
