@@ -103,6 +103,9 @@ struct MailComposeView: View {
             }
             .padding(16)
         }
+        .onChange(of: viewModel.to) { _ in viewModel.saveDraftNow() }
+        .onChange(of: viewModel.cc) { _ in viewModel.saveDraftNow() }
+        .onChange(of: viewModel.subject) { _ in viewModel.saveDraftNow() }
     }
 
     private func fieldRow(
