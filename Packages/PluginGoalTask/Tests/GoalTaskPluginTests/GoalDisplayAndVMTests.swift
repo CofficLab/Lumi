@@ -321,6 +321,42 @@ struct GoalVMTests {
         #expect(vm.hasActiveWork == true)
     }
 
+    @Test("侧栏定位最新的非终态 Goal，而不是已完成的旧 Goal")
+    func testActiveGoalPrefersLatestNonTerminalGoal() async throws {
+        let (manager, tempDir) = try makeManager()
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let conversationID = UUID(uuidString: "77777777-8888-9999-AAAA-BBBBBBBBBBBB")!
+        // 旧 Goal 完成后再创建新 Goal 是正常路径：列表按创建时间升序为 [A, B]。
+        let first = try await manager.createGoal(
+            conversationId: conversationID.uuidString,
+            title: "Goal A",
+            description: nil,
+            successCriteria: nil,
+            tasks: [(title: "old task", description: nil, executionContext: nil, parallelGroup: nil)]
+        )
+        _ = try await manager.updateGoalTaskStatus(id: first.tasks[0].id, status: .completed)
+        _ = try await manager.updateGoalStatus(id: first.goal.id, status: .completed)
+
+        _ = try await manager.createGoal(
+            conversationId: conversationID.uuidString,
+            title: "Goal B",
+            description: nil,
+            successCriteria: nil,
+            tasks: [(title: "active task", description: nil, executionContext: nil, parallelGroup: nil)]
+        )
+
+        let vm = GoalVM(managerProvider: { manager })
+        vm.updateCurrentConversationID(conversationID)
+        await vm.refresh()
+
+        // 回归 #770：曾经无条件取 goals.first，已完成的 A 会遮住真正活跃的 B。
+        #expect(vm.goals.map(\.goal.title) == ["Goal A", "Goal B"])
+        #expect(vm.activeGoal?.title == "Goal B")
+        #expect(vm.activeTasks.map(\.title) == ["active task"])
+        #expect(vm.hasActiveWork == true)
+    }
+
     @Test("Goal 终态且所有任务已结束时不显示侧栏")
     func testHasActiveWorkHiddenWhenEverythingDone() async throws {
         let (manager, tempDir) = try makeManager()

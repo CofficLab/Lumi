@@ -80,7 +80,7 @@ struct GoalToolbarButtonVisibilityTests {
         #expect(vm.shouldShowToolbarButton == true)
     }
 
-    @Test("多个 Goal 时即使侧栏没展示第二个也保留按钮")
+    @Test("多个 Goal 时即使侧栏只展示一个也保留按钮")
     func testShownForMultipleGoalsWhenSidebarCollapsed() {
         let vm = GoalVM(managerProvider: { nil })
         vm.goals = [
@@ -91,8 +91,9 @@ struct GoalToolbarButtonVisibilityTests {
             GoalListItem(goal: makeGoal(status: .pending, id: "g2"), tasks: []),
         ]
 
-        // 前置条件:侧栏只展示首个 Goal,第二个 Goal 只能通过弹窗看到。
-        #expect(vm.hasActiveWork == false)
+        // 侧栏只展示最新的非终态 Goal(g2),已完成的 g1 只能通过弹窗看到,
+        // 因此按钮必须保留。
+        #expect(vm.hasActiveWork == true)
         #expect(vm.shouldShowToolbarButton == true)
     }
 }
