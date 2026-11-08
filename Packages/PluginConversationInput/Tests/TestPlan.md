@@ -312,6 +312,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 158 | CollapsedContentChip 垂直对齐 | 胶囊不越过正文的行盒 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `staysWithinLineBox` |
 | 159 | CollapsedContentChip 垂直对齐 | chip 不侵入下一行文字 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `staysAboveFollowingLine` |
 | 160 | CollapsedContentChip 垂直对齐 | 行盒与 cell 高度不一致时，chip 仍与正文同基线 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `keepsBaselineWhenCellIsMisplaced` |
+| 161 | i18n | 英文界面 Composer 占位文案为英文（**回归 #989**） | xcstrings 中的占位条目 | 读取 en / zh-Hans 译文 | en 为英文原文，且与中文译文不同 | P1 | ✅ 已覆盖 | `composerPlaceholderHasEnglishText` |
 
 > **鉴别力验证**：本轮用一处变异确认用例不是「恒绿」——把
 > `Coordinator.textDidChange` 里的两道 IME 守卫
@@ -325,8 +326,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > 里有一份**代码完全相同**的守卫，全局替换第一处会改错函数，
 > 导致「用例仍然全绿」的假阴性。
 
-> 说明：全部 **160 条场景 / 164 个测试方法**已在 macOS 上实跑通过
-> （`swift test` → 164 tests in 25 suites；其中 6 条 chip 几何用例在本机
+> 说明：全部 **161 条场景 / 165 个测试方法**已在 macOS 上实跑通过
+> （`swift test` → 165 tests in 25 suites；其中 6 条 chip 几何用例在本机
 > Xcode 27.2 SDK 下失败，已在未改动的 HEAD 上复现，属既有环境问题）。
 >
 > 实现中几条易错约定已在用例里显式锁定：
@@ -349,9 +350,9 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 ## 覆盖率统计
 
 - P0: 已覆盖 45 / 45
-- P1: 已覆盖 97 / 97
+- P1: 已覆盖 98 / 98
 - P2: 已覆盖 18 / 18
-- **合计: 160 / 160**（仅表示清单场景，非源码覆盖率）
+- **合计: 161 / 161**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -361,7 +362,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
   中文 IME 组合态的状态写入与上屏发布次数（ID 115–116）
 - **P1**: 会话切换与状态刷新、附件生命周期与拖放、Observer 事件路由与初始快照、
   折叠块、拖放路径解析、错误提示、附件 ✕ 的幂等与陈旧 ID 容错（ID 91–95）、
-  全表语言完整性与占位符一致性（ID 99–100）、逐键失效广播的次数上界
+  全表语言完整性与占位符一致性（ID 99–100）、Composer 占位文案的英文回退
+  （ID 161）、逐键失效广播的次数上界
   （ID 105–109）、输入框悬浮卡片的间距 / 圆角 / 投影 / 内部内容内边距
   （ID 112–114 / 122）、中文 IME 单次按键的应用侧耗时预算（ID 117）
 - **P2**: Observer cancel 释放、编辑器延迟绑定与布局测量、placeholder 命中测试、
