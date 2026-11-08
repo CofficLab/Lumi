@@ -745,7 +745,7 @@ extension AgentLoopManager {
             }
 
             // 构建并落库 assistant 消息
-            if let inputTokenCount = response.inputTokenCount {
+            if let inputTokenCount = reportedInputTokenCount(for: response) {
                 contextProvider.reportInputUsage(
                     inputTokenCount,
                     for: contextRequest,
@@ -857,6 +857,15 @@ extension AgentLoopManager {
         preparedHistory: [Message]
     ) -> Int {
         max(inputTokenLimit - LLMContextTokenEstimator.estimate(messages: preparedHistory), 0)
+    }
+
+    /// 上下文校准使用的实际输入 token 数。
+    ///
+    /// 缓存型端点（如 Anthropic 兼容协议）的 `inputTokenCount` 可能只表示
+    /// 未命中缓存的部分，实际总输入由 `cacheTotalInputTokenCount` 给出；
+    /// 缺省时才退回 `inputTokenCount`。
+    func reportedInputTokenCount(for response: LLMResponse) -> Int? {
+        response.cacheTotalInputTokenCount ?? response.inputTokenCount
     }
 
     /// 估算全部工具 schema 占用的 token 数，用于上下文预算的保守预留。
