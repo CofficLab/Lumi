@@ -5,7 +5,7 @@
 PluginConversationCacheHitRate Lumi 编辑器插件。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 53
+测试文件: 5 个，用例总数: 57
 
 核心组件（源码目录）:
 - `Models/`
@@ -93,21 +93,25 @@ PluginConversationCacheHitRate Lumi 编辑器插件。
 | 51 | 缓存命中率历史 | 累计命中率按 token 加权而非算术平均 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cumulativeRateIsTokenWeighted` |
 | 52 | 缓存命中率历史 | 预览样例消息可构造出非空历史 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `previewMessagesProduceHistory` |
 | 53 | 缓存命中率折线图 | 平滑曲线不越出每段采样点的取值区间 | 像素坐标 0→100%→100% 的三个点 | 调用 `smoothedPath` 并检查控制点与曲线中点 | 控制点与中点 y 均在该段两端之间 | P0 | ✅ 已覆盖 | `smoothedPathNeverOvershootsSegmentEndpoints` |
+| 54 | 刷新门禁 | 当前会话的最新代次刷新可以发布（**回归 #998**） | revision 与当前一致 | 调用 `shouldPublish` | 返回 true | P1 | ✅ 已覆盖 | `latestRevisionForCurrentConversationIsPublished` |
+| 55 | 刷新门禁 | 被新 revision 取代的刷新不得发布（**回归 #998**） | S1 的 revision 1 晚于 S2 的 revision 2 返回 | 调用 `shouldPublish` | 返回 false，新统计不被旧快照覆盖 | P0 | ✅ 已覆盖 | `supersededRevisionIsDropped` |
+| 56 | 刷新门禁 | 已取消的刷新不得发布（**回归 #998**） | 外层任务已取消但 detached 快照仍返回 | 调用 `shouldPublish` | 返回 false | P0 | ✅ 已覆盖 | `cancelledRefreshIsDropped` |
+| 57 | 刷新门禁 | 切换会话后上一会话的快照不得发布 | 快照会话与当前选中会话不同 | 调用 `shouldPublish` | 返回 false | P1 | ✅ 已覆盖 | `staleConversationSnapshotIsDropped` |
 
-> 说明：全部 **53 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **57 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 41 / 41
+- P0: 已覆盖 4 / 4
+- P1: 已覆盖 43 / 43
 - P2: 已覆盖 10 / 10
-- **合计: 53 / 53**（仅表示清单场景，非源码覆盖率）
+- **合计: 57 / 57**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（41 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
+- **P1**: 其余功能性用例（43 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（10 条）
 
 ## 跨平台说明
