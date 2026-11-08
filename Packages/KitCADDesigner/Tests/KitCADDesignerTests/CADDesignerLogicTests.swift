@@ -321,4 +321,67 @@ final class CADDesignerLogicTests: XCTestCase {
         )
         XCTAssertTrue(type.conforms(to: .json))
     }
+
+    // MARK: - File Association Open
+
+    @MainActor
+    func testOpenProjectURLFromFileAssociationLoadsSelectedProject() throws {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        let document = CADDocument(
+            name: "Finder Open",
+            components: [.profile(ProfileInstance(profileId: "profile-40x40-eu", length: 700))]
+        )
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CADFinderOpen-\(UUID().uuidString).cadproj")
+        try ProjectSaveLoadService().save(document: document, to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let viewModel = CADWorkspaceViewModel(store: store, library: library)
+        // 工作区启动时会自动创建空项目；系统打开的文件必须替换为选中的项目。
+        XCTAssertEqual(store.selectedDocument?.name, "Untitled Project")
+
+        viewModel.openProjectURL(url)
+
+        XCTAssertEqual(store.selectedDocument?.name, "Finder Open")
+        XCTAssertEqual(store.selectedDocument?.components.count, 1)
+        XCTAssertEqual(store.lastExportURL, url)
+        XCTAssertNil(store.lastError)
+    }
+
+    @MainActor
+    func testOpenProjectURLRejectsUnsupportedExtensionWithoutReplacingWorkspace() throws {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        _ = store.createDocument(name: "Keep Me")
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("notes-\(UUID().uuidString).txt")
+        try "not a project".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let viewModel = CADWorkspaceViewModel(store: store, library: library)
+        viewModel.openProjectURL(url)
+
+        XCTAssertEqual(store.selectedDocument?.name, "Keep Me")
+        XCTAssertEqual(store.documents.count, 1)
+        XCTAssertNotNil(store.lastError)
+    }
+
+    @MainActor
+    func testOpenProjectURLReportsUndecodableFileWithoutReplacingWorkspace() throws {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        _ = store.createDocument(name: "Keep Me")
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("corrupt-\(UUID().uuidString).cadproj")
+        try "{ not valid json".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let viewModel = CADWorkspaceViewModel(store: store, library: library)
+        viewModel.openProjectURL(url)
+
+        XCTAssertEqual(store.selectedDocument?.name, "Keep Me")
+        XCTAssertEqual(store.documents.count, 1)
+        XCTAssertNotNil(store.lastError, "加载失败必须暴露对应文件的错误，而不是静默保留空项目")
+    }
 }

@@ -15,12 +15,41 @@ public struct CADDesignerView: View {
         VStack(spacing: 0) {
             header
             Divider()
+            if let error = store.lastError {
+                errorBanner(error)
+            }
             ToolBarView(viewModel: viewModel)
             Divider()
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(nsColor: .windowBackgroundColor))
+        .onOpenURL { url in
+            // Finder “打开方式”或系统文件关联直接打开 `.cadproj` 时，
+            // 把 URL 交给当前工作区，而不是丢弃后显示自动创建的空项目。
+            viewModel.openProjectURL(url)
+        }
+    }
+
+    private func errorBanner(_ message: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            Text(message)
+                .font(.caption)
+                .textSelection(.enabled)
+            Spacer(minLength: 0)
+            Button {
+                store.clearError()
+            } label: {
+                Image(systemName: "xmark")
+            }
+            .buttonStyle(.plain)
+            .help(L.string("Dismiss"))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 7)
+        .background(Color.orange.opacity(0.12))
     }
 
     // MARK: - Header

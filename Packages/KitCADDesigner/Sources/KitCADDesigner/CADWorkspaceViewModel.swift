@@ -251,6 +251,21 @@ final class CADWorkspaceViewModel: ObservableObject {
         }
     }
 
+    /// 处理系统文件关联（Finder “打开方式”/SwiftUI `onOpenURL`）投递的项目 URL。
+    ///
+    /// 只接受 `.cadproj`/`.json` 文件；其他扩展名或加载失败都会在 store 上留下
+    /// 对应文件的错误，而不是静默保留当前（可能是自动创建的空）项目。
+    func openProjectURL(_ url: URL) {
+        let fileExtension = url.pathExtension.lowercased()
+        guard url.isFileURL, Self.projectFileExtensions.contains(fileExtension) else {
+            store.setError("Unsupported project file: \(url.lastPathComponent)")
+            return
+        }
+        loadProject(from: url)
+    }
+
+    static let projectFileExtensions: Set<String> = ["cadproj", "json"]
+
     // MARK: - Undo / Redo
 
     func undo() {
