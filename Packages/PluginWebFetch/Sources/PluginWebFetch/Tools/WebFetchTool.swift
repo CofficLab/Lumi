@@ -54,12 +54,12 @@ public struct WebFetchTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let urlString = arguments["url"]?.value as? String else {
-            return "Error: Missing required 'url' parameter"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing required 'url' parameter")
         }
 
         let prompt = arguments["prompt"]?.value as? String
         guard let fetcher = await MainActor.run(body: { WebFetchRuntime.fetcher }) else {
-            return "Error: Network service is unavailable."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Network service is unavailable.")
         }
         let service = WebFetchService(fetcher: fetcher)
         let result = await service.fetch(urlString: urlString, prompt: prompt)

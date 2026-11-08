@@ -57,7 +57,10 @@ public struct DocxReadTool: SuperAgentTool {
 
         let sourceURL = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
         guard FileManager.default.fileExists(atPath: sourceURL.path) else {
-            return "Error: File not found at path: \(sourceURL.path)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "File not found at path: \(sourceURL.path)"
+            )
         }
 
         let text = try extractText(sourceURL)

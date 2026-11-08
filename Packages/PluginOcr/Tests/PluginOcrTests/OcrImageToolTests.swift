@@ -1,6 +1,7 @@
 import CoreText
 import Foundation
 import ImageIO
+import KitAgentTool
 import Testing
 @testable import PluginOcr
 
@@ -51,6 +52,49 @@ struct OcrImageToolTests {
         let bogus = "/tmp/lumi-ocr-not-exist-\(UUID().uuidString).png"
         await #expect(throws: OcrError.self) {
             _ = try await OcrEngine.recognizeText(at: bogus, languages: ["en-US"])
+        }
+    }
+
+    // MARK: - Tool failure paths
+
+    /// 回归：这些失败曾经返回 "Error: ..." 字符串，默认 `executeResult`
+    /// 会把它包成 `isError == false` 的成功结果。
+    @Test("tool throws instead of returning error strings")
+    func toolThrowsForInvalidInputs() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-ocr-dir-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let textURL = directory.appendingPathComponent("note.txt")
+        try "plain text".write(to: textURL, atomically: true, encoding: .utf8)
+        let tool = OcrImageTool()
+
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: [
+                "path": ToolArgument("/tmp/lumi-ocr-not-exist-\(UUID().uuidString).png"),
+            ])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: ["path": ToolArgument(directory.path)])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.executeResult(arguments: ["path": ToolArgument(textURL.path)])
+        }
+    }
+
+    /// 回归：识别失败曾经被 `error.localizedDescription` 转成成功文本返回。
+    @Test("engine failure propagates through the tool")
+    func engineFailurePropagates() async throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-ocr-broken-\(UUID().uuidString).png")
+        try Data("not an image".utf8).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        await #expect(throws: OcrError.self) {
+            _ = try await OcrImageTool().executeResult(arguments: ["path": ToolArgument(url.path)])
         }
     }
 

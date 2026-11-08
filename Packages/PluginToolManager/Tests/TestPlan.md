@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 63 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 93 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 63
+测试文件: 5 个，用例总数: 93
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -112,27 +112,57 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 61 | ShellCommandRisk | 超长输入不崩溃且判高风险 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `oversizedInputDoesNotCrash` |
 | 62 | ShellCommandRisk | ShellTool 接入链式风险分析 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shellToolUsesChainAwareRisk` |
 | 63 | ToolJobPersistence | 启动恢复终态 Job 后发布 restored 批量快照（**回归 #544**） | Job 记录库中已有终态记录 | 挂载记录库等待恢复 | 观察者收到一次 `.restored`，且可按会话查到该 Job | P1 | ✅ 已覆盖 | `restorePublishesSnapshotEvent` |
+| 64 | 工具参数安全 | globToolThrowsWhenPatternIsMissing | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `globToolThrowsWhenPatternIsMissing` |
+| 65 | 工具参数安全 | listDirectoryToolThrowsWhenDirectoryDoesNotExist | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listDirectoryToolThrowsWhenDirectoryDoesNotExist` |
+| 66 | 工具参数安全 | readFileAcceptsLimitLargerThanFileLength | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileAcceptsLimitLargerThanFileLength` |
+| 67 | 工具参数安全 | readFileCapsRepresentableOversizedLimit | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileCapsRepresentableOversizedLimit` |
+| 68 | 工具参数安全 | readFileDisplayDescriptionSurvivesIllegalArguments | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileDisplayDescriptionSurvivesIllegalArguments` |
+| 69 | 工具参数安全 | readFileHandlesIntMinOffsetWithoutOverflow | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileHandlesIntMinOffsetWithoutOverflow` |
+| 70 | 工具参数安全 | readFileHandlesNegativeOffsetCountingFromEnd | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileHandlesNegativeOffsetCountingFromEnd` |
+| 71 | 工具参数安全 | readFilePermissionRiskLevelSurvivesIllegalArguments | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFilePermissionRiskLevelSurvivesIllegalArguments` |
+| 72 | 工具参数安全 | readFileRejectsLimitAboveIntMaxFromJSON | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileRejectsLimitAboveIntMaxFromJSON` |
+| 73 | 工具参数安全 | readFileRejectsNegativeLimitInsteadOfTrapping | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileRejectsNegativeLimitInsteadOfTrapping` |
+| 74 | 工具参数安全 | readFileRejectsNonFiniteLimit | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileRejectsNonFiniteLimit` |
+| 75 | 工具参数安全 | readFileRejectsOutOfRangeLimitFromJSON | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileRejectsOutOfRangeLimitFromJSON` |
+| 76 | 工具参数安全 | readFileRejectsUnrepresentableOffset | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileRejectsUnrepresentableOffset` |
+| 77 | 工具参数安全 | readFileRejectsZeroLimit | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileRejectsZeroLimit` |
+| 78 | 工具参数安全 | readFileReportsOffsetBeyondEndOfFile | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileReportsOffsetBeyondEndOfFile` |
+| 79 | 工具参数安全 | shellDisplayDescriptionAndRiskSurviveIllegalArguments | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shellDisplayDescriptionAndRiskSurviveIllegalArguments` |
+| 80 | 工具参数安全 | shellOutputBudgetFallsBackForUnrepresentableValues | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shellOutputBudgetFallsBackForUnrepresentableValues` |
+| 81 | 工具参数安全 | shellOutputBudgetIsClampedToCeiling | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shellOutputBudgetIsClampedToCeiling` |
+| 82 | 工具参数安全 | shellRejectsNegativeTimeoutAsArgumentError | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shellRejectsNegativeTimeoutAsArgumentError` |
+| 83 | 工具参数安全 | shellRejectsUnrepresentableTimeoutAsArgumentError | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shellRejectsUnrepresentableTimeoutAsArgumentError` |
+| 84 | 工具参数安全 | shellStillRunsWithAValidTimeout | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shellStillRunsWithAValidTimeout` |
+| 85 | 工具管理视图 | logAutoSelectsFirstRecord | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `logAutoSelectsFirstRecord` |
+| 86 | 工具管理视图 | onlyToolModeWorksWithoutLogStore | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `onlyToolModeWorksWithoutLogStore` |
+| 87 | 工具管理视图 | selectedToolFallsBackWhenToolDisappears | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectedToolFallsBackWhenToolDisappears` |
+| 88 | 工具管理视图 | selectedToolSurvivesReload | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectedToolSurvivesReload` |
+| 89 | 工具管理视图 | selectModeSwitchesMode | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectModeSwitchesMode` |
+| 90 | 工具管理视图 | statEntryExposesErrorRate | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `statEntryExposesErrorRate` |
+| 91 | 工具管理视图 | statsAutoSelectFirstEntry | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `statsAutoSelectFirstEntry` |
+| 92 | 工具管理视图 | toolEntriesFlattenGroupsInOrder | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolEntriesFlattenGroupsInOrder` |
+| 93 | 工具管理视图 | toolListAutoSelectsFirstTool | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolListAutoSelectsFirstTool` |
 
-> 说明：全部 **63 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **93 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 52 / 52
+- P1: 已覆盖 82 / 82
 - P2: 已覆盖 6 / 6
-- **合计: 63 / 63**（仅表示清单场景，非源码覆盖率）
+- **合计: 93 / 93**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（51 条）
+- **P1**: 其余功能性用例（82 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 63 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 93 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

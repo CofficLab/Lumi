@@ -27,7 +27,7 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
             "properties": [
                 "path": ["type": "string", "description": "The absolute or workspace-relative path to the UTF-8 text file to read"],
                 "offset": ["type": "integer", "description": "1-based line number to start reading from. Negative values count backwards from the end (e.g. -1 is the last line)."],
-                "limit": ["type": "integer", "description": "Maximum number of lines to return. Defaults to 250 and is capped at 250 per request."],
+                "limit": ["type": "integer", "minimum": 1, "maximum": 250, "description": "Maximum number of lines to return. Defaults to 250 and is capped at 250 per request."],
             ],
             "required": ["path"],
         ]
@@ -79,7 +79,10 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
             let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
             let fileSize = (attributes[.size] as? NSNumber)?.int64Value ?? 0
             guard fileSize <= Self.maxWholeFileBytes else {
-                return "Error: File is too large (\(fileSize) bytes; maximum is \(Self.maxWholeFileBytes) bytes). Read it in chunks."
+                throw ToolExecutionError.executionFailed(
+                    toolName: name,
+                    reason: "File is too large (\(fileSize) bytes; maximum is \(Self.maxWholeFileBytes) bytes). Read it in chunks."
+                )
             }
 
             let rawText = try String(contentsOf: url, encoding: .utf8)
@@ -89,15 +92,15 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
             let requestedOffset = arguments.toolInt("offset")
             let requestedLimit = arguments.toolInt("limit")
 
-            // 越界 / NaN / 非有限值无法安全表示，必须作为参数错误返回。
+            // 越界 / NaN / 非有限值无法安全表示，必须作为参数错误抛出。
             if arguments["offset"]?.value != nil, requestedOffset == nil {
-                return "Error: 'offset' must be an integer line number."
+                throw ToolExecutionError.executionFailed(toolName: name, reason: "'offset' must be an integer line number.")
             }
             if arguments["limit"]?.value != nil, requestedLimit == nil {
-                return "Error: 'limit' must be a positive integer."
+                throw ToolExecutionError.executionFailed(toolName: name, reason: "'limit' must be a positive integer.")
             }
             if let requestedLimit, requestedLimit <= 0 {
-                return "Error: 'limit' must be a positive integer."
+                throw ToolExecutionError.executionFailed(toolName: name, reason: "'limit' must be a positive integer.")
             }
 
             let limit = min(requestedLimit ?? Self.defaultLineLimit, Self.maxLineLimit)
@@ -118,7 +121,10 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
             // limit 已保证为正且不超过上限，endIndex 不会小于 startIndex。
             let endIndex = min(startIndex + limit, totalLines)
             guard startIndex < totalLines else {
-                return "Error: Offset \(requestedOffset ?? 1) is beyond the file's \(totalLines) lines."
+                throw ToolExecutionError.executionFailed(
+                    toolName: name,
+                    reason: "Offset \(requestedOffset ?? 1) is beyond the file's \(totalLines) lines."
+                )
             }
 
             var output: [String] = []
@@ -139,8 +145,13 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
                 result += "\n... (showing lines \(startIndex + 1)-\(endIndex) of \(totalLines); use offset/limit to read more)"
             }
             return result
+        } catch let error as ToolExecutionError {
+            throw error
         } catch {
-            return "Error reading file: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Error reading file: \(error.localizedDescription)"
+            )
         }
     }
 }

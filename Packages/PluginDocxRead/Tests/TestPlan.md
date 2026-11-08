@@ -23,7 +23,7 @@ PluginDocxRead 的实现包，包含 2 个主要类型；当前测试覆盖 8 �
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **DocxReadPlugin**（2 条）：由 `pluginRegistersAndRemovesItsAgentTools`、`pluginLifecycleToleratesMissingToolManager` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **DocxReadTool**（6 条）：由 `toolMetadataDescribesRequiredPathAndLowRiskRead`、`executeRejectsMissingPathAndReturnsReadableMissingFileError`、`executeReturnsExtractedAndEmptyDocumentContent` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DocxReadTool**（6 条）：由 `toolMetadataDescribesRequiredPathAndLowRiskRead`、`executeRejectsMissingPathAndThrowsForMissingFile`、`executeReturnsExtractedAndEmptyDocumentContent` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -32,7 +32,7 @@ PluginDocxRead 的实现包，包含 2 个主要类型；当前测试覆盖 8 �
 | 1 | DocxReadPlugin | pluginRegistersAndRemovesItsAgentTools | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginRegistersAndRemovesItsAgentTools` |
 | 2 | DocxReadPlugin | pluginLifecycleToleratesMissingToolManager | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginLifecycleToleratesMissingToolManager` |
 | 3 | DocxReadTool | toolMetadataDescribesRequiredPathAndLowRiskRead | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolMetadataDescribesRequiredPathAndLowRiskRead` |
-| 4 | DocxReadTool | executeRejectsMissingPathAndReturnsReadableMissingFileError | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `executeRejectsMissingPathAndReturnsReadableMissingFileError` |
+| 4 | DocxReadTool | executeRejectsMissingPathAndThrowsForMissingFile | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `executeRejectsMissingPathAndThrowsForMissingFile` |
 | 5 | DocxReadTool | executeReturnsExtractedAndEmptyDocumentContent | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `executeReturnsExtractedAndEmptyDocumentContent` |
 | 6 | DocxReadTool | executePropagatesExtractionErrors | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `executePropagatesExtractionErrors` |
 | 7 | DocxReadTool | systemTextutilExtractsAValidDocxFile | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `systemTextutilExtractsAValidDocxFile` |

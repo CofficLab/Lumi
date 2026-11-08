@@ -47,11 +47,11 @@ public struct WebSearchTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let rawQuery = arguments["query"]?.value as? String else {
-            return "Error: Missing required 'query' parameter"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing required 'query' parameter")
         }
         let query = rawQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else {
-            return "Error: Missing required 'query' parameter"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing required 'query' parameter")
         }
 
         let results: [WebSearchResult]
@@ -59,7 +59,7 @@ public struct WebSearchTool: SuperAgentTool {
             results = try await searchClient(query)
         } else {
             guard let network = await MainActor.run(body: { WebSearchRuntime.network }) else {
-                return "Error: Network service is unavailable."
+                throw ToolExecutionError.executionFailed(toolName: name, reason: "Network service is unavailable.")
             }
             results = try await Self.fetchDuckDuckGoResults(query: query, network: network)
         }

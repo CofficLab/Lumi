@@ -29,8 +29,9 @@ private func withTempFile(
     try await withTempFile(lineCount: 5) { path in
         let tool = ReadFileTool()
         let arguments = try ToolArgumentCoding.decode("{\"path\":\"\(path)\",\"limit\":1e100}")
-        let result = try await tool.execute(arguments: arguments)
-        #expect(result.contains("Error"))
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: arguments)
+        }
     }
 }
 
@@ -41,8 +42,9 @@ private func withTempFile(
         let arguments = try ToolArgumentCoding.decode(
             "{\"path\":\"\(path)\",\"limit\":9223372036854775808}"
         )
-        let result = try await tool.execute(arguments: arguments)
-        #expect(result.contains("Error"))
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: arguments)
+        }
     }
 }
 
@@ -51,11 +53,12 @@ private func withTempFile(
     try await withTempFile(lineCount: 5) { path in
         let tool = ReadFileTool()
         for limit in [Double.infinity, Double.nan, -Double.infinity] {
-            let result = try await tool.execute(arguments: [
-                "path": ToolArgument(path),
-                "limit": ToolArgument(limit),
-            ])
-            #expect(result.contains("Error"))
+            await #expect(throws: ToolExecutionError.self) {
+                _ = try await tool.execute(arguments: [
+                    "path": ToolArgument(path),
+                    "limit": ToolArgument(limit),
+                ])
+            }
         }
     }
 }
@@ -64,11 +67,12 @@ private func withTempFile(
 @Test func readFileRejectsNegativeLimitInsteadOfTrapping() async throws {
     try await withTempFile(lineCount: 5) { path in
         let tool = ReadFileTool()
-        let result = try await tool.execute(arguments: [
-            "path": ToolArgument(path),
-            "limit": ToolArgument(-1),
-        ])
-        #expect(result.contains("Error"))
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: [
+                "path": ToolArgument(path),
+                "limit": ToolArgument(-1),
+            ])
+        }
     }
 }
 
@@ -76,11 +80,12 @@ private func withTempFile(
 @Test func readFileRejectsZeroLimit() async throws {
     try await withTempFile(lineCount: 5) { path in
         let tool = ReadFileTool()
-        let result = try await tool.execute(arguments: [
-            "path": ToolArgument(path),
-            "limit": ToolArgument(0),
-        ])
-        #expect(result.contains("Error"))
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: [
+                "path": ToolArgument(path),
+                "limit": ToolArgument(0),
+            ])
+        }
     }
 }
 
@@ -114,11 +119,12 @@ private func withTempFile(
 @Test func readFileReportsOffsetBeyondEndOfFile() async throws {
     try await withTempFile(lineCount: 5) { path in
         let tool = ReadFileTool()
-        let result = try await tool.execute(arguments: [
-            "path": ToolArgument(path),
-            "offset": ToolArgument(100),
-        ])
-        #expect(result.contains("beyond"))
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: [
+                "path": ToolArgument(path),
+                "offset": ToolArgument(100),
+            ])
+        }
     }
 }
 
@@ -126,11 +132,12 @@ private func withTempFile(
 @Test func readFileRejectsUnrepresentableOffset() async throws {
     try await withTempFile(lineCount: 5) { path in
         let tool = ReadFileTool()
-        let result = try await tool.execute(arguments: [
-            "path": ToolArgument(path),
-            "offset": ToolArgument(1e100),
-        ])
-        #expect(result.contains("Error"))
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: [
+                "path": ToolArgument(path),
+                "offset": ToolArgument(1e100),
+            ])
+        }
     }
 }
 
@@ -262,4 +269,26 @@ private func withTempFile(
         "max_output_bytes": ToolArgument(40_000),
     ])
     #expect(result.contains("hi"))
+}
+
+// MARK: - 失败必须以抛出表达
+
+/// 回归：这些失败分支曾经返回 "Error: ..." 字符串，默认 `executeResult`
+/// 会把字符串包成 `isError == false` 的结果，调用方误以为成功。
+@MainActor
+@Test func globToolThrowsWhenPatternIsMissing() async {
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await GlobTool().executeResult(arguments: [:])
+    }
+}
+
+@MainActor
+@Test func listDirectoryToolThrowsWhenDirectoryDoesNotExist() async {
+    let missing = FileManager.default.temporaryDirectory
+        .appendingPathComponent("lumi-missing-\(UUID().uuidString)", isDirectory: true)
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await ListDirectoryTool().executeResult(arguments: [
+            "path": ToolArgument(missing.path),
+        ])
+    }
 }
