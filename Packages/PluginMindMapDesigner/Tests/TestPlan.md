@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 24 条用例。
+PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 26 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 24
+测试文件: 4 个，用例总数: 26
 
 核心组件（源码目录）:
 - `Models/`
@@ -41,6 +41,7 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 - **MindMapMarkdownCodec 健壮性**（5 条）：由 `ignoresPlainTextAfterRoot`、`ignoresHeadingAfterRoot`、`emptyOutlineProducesFallbackRoot` 等用例锁定；改动大纲解析的层级与容错逻辑时优先跑对应测试文件。
 - **MindMapStore 写前同步**（3 条）：由 `writeDoesNotClobberNodesAddedElsewhere`、`createDoesNotDropExistingMaps`、`deleteUsesDiskState` 等用例锁定；改动 store 的读写顺序或缓存策略时优先跑对应测试文件。
 - **MindMapConversationScope**（7 条）：由 `conversationScopedToolReadsFromItsOwnProject`、`crossProjectWriteDoesNotPolluteSharedStore` 等用例锁定；改动会话作用域隔离时优先跑对应测试文件。
+- **MindMapStore 删除失败**（2 条）：由 `failedDeleteKeepsMapInList`、`fallbackDeleteThrowsWhenFileCannotBeRemoved` 用例锁定；目录不可写导致文件删不掉时，`MindMapFileStore.delete` 必须抛错，`MindMapStore` 保留列表项与选中项并写入 `lastError`，不得提交内存删除。
 
 ## 测试用例清单
 
@@ -70,27 +71,29 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 | 22 | MindMapStore 写前同步 | 新建导图不会挤掉磁盘上已有的导图 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `createDoesNotDropExistingMaps` |
 | 23 | MindMapStore 写前同步 | 删除别处创建的导图时以磁盘状态为准 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `deleteUsesDiskState` |
 | 24 | MindMapConversationScope | 列表返回完整 ID 且可直接用于加载（**回归 #1001**） | 项目中一张导图，list → 取 `[id]` → load | 依次调用 `list_mind_maps`、`load_mind_map` | 发现的 ID 等于完整 UUID，加载结果包含标题 | P0 | ✅ 已覆盖 | `listedIdentifierCanBeLoadedDirectly` |
+| 25 | MindMapStore 删除失败 | 删除文件失败时保留列表项与选中项并报告错误（**回归 #1061**） | 已加载一张导图，并将存储目录设为只读 | 调用 `deleteMindMap` 后再 reload | 列表与选中项保持不变，`lastError` 非空，文件仍在且重载后可见 | P1 | ✅ 已覆盖 | `failedDeleteKeepsMapInList` |
+| 26 | MindMapStore 删除失败 | 标题与磁盘不一致走兜底删除时失败同样抛错（**回归 #1061**） | 磁盘文件标题与内存标题不同，存储目录只读 | 调用 `MindMapFileStore.delete` | 抛错且文件仍在 | P1 | ✅ 已覆盖 | `fallbackDeleteThrowsWhenFileCannotBeRemoved` |
 
-> 说明：全部 **24 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 7 / 7
-- P1: 已覆盖 17 / 17
+- P1: 已覆盖 19 / 19
 - P2: 已覆盖 0 / 0
-- **合计: 24 / 24**（仅表示清单场景，非源码覆盖率）
+- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（17 条）
+- **P1**: 其余功能性用例（19 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 23 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 26 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
