@@ -132,6 +132,26 @@ struct OpenInRemoteToolTests {
         }
     }
 
+    /// 回归 #1096：打开失败曾返回普通字符串，导致 `isError == false` 与 completed Job。
+    @Test("浏览器拒绝打开时抛出工具执行错误")
+    func reportsBrowserOpenFailure() async throws {
+        let tool = OpenInRemoteTool(
+            projectCapability: StubProjectCapability(currentProjectPath: "/repo"),
+            resolver: RemoteRepositoryResolver(
+                gitCapability: StubGitCapability(rawRemote: "git@github.com:acme/repo.git")
+            ),
+            openURL: { _ in false }
+        )
+
+        do {
+            _ = try await tool.execute(arguments: [:])
+            Issue.record("expected the tool to throw when the browser refuses to open")
+        } catch let ToolExecutionError.executionFailed(toolName, reason) {
+            #expect(toolName == "open_in_remote")
+            #expect(reason.contains("browser"))
+        }
+    }
+
     @Test("显式路径参数被透传到解析链路")
     func passesExplicitPathThrough() async throws {
         let tool = OpenInRemoteTool(

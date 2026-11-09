@@ -10,13 +10,17 @@ struct OpenInRemoteTool: SuperAgentTool, @unchecked Sendable {
     private let projectCapability: any OpenInRemoteProjectCapability
     /// 解析器：把仓库路径解析为远程仓库 Web 链接。
     private let resolver: RemoteRepositoryResolver
+    /// 打开链接的动作。默认交给系统浏览器，测试可注入以覆盖打开失败分支。
+    private let openURL: @MainActor (URL) -> Bool
 
     init(
         projectCapability: any OpenInRemoteProjectCapability,
-        resolver: RemoteRepositoryResolver
+        resolver: RemoteRepositoryResolver,
+        openURL: @escaping @MainActor (URL) -> Bool = { RemoteRepositoryOpener.open($0) }
     ) {
         self.projectCapability = projectCapability
         self.resolver = resolver
+        self.openURL = openURL
     }
 
     var name: String { OpenInRemoteConstants.toolName }
@@ -87,7 +91,7 @@ struct OpenInRemoteTool: SuperAgentTool, @unchecked Sendable {
             )
         }
 
-        guard await MainActor.run(body: { RemoteRepositoryOpener.open(url) }) else {
+        guard await openURL(url) else {
             throw ToolExecutionError.executionFailed(
                 toolName: name,
                 reason: "The default browser could not be opened."
