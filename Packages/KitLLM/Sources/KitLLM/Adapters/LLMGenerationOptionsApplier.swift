@@ -66,13 +66,30 @@ public enum OpenAICompatibleGenerationOptionsApplier {
 
 /// Anthropic 兼容 API 的生成参数映射。
 public enum AnthropicCompatibleGenerationOptionsApplier {
+    /// 不支持 extended thinking 的 Claude 模型族。
+    ///
+    /// Anthropic 端点收到这些模型上的 `thinking` 会直接返回 400，因此必须整条
+    /// 省略。只拦截已知不支持的模型；非 Claude 模型（DeepSeek、Kimi、自定义
+    /// 中转等同样走 Anthropic 格式）保持原有透传行为。
+    private static let nonThinkingModelFragments = [
+        "claude-3-5-",
+        "claude-3-0-",
+        "claude-3-opus",
+        "claude-3-sonnet",
+        "claude-3-haiku",
+    ]
+
+    static func supportsExtendedThinking(model: String) -> Bool {
+        let normalized = model.lowercased()
+        return !nonThinkingModelFragments.contains { normalized.contains($0) }
+    }
+
     public static func apply(
         config: LLMConfig,
         model: String,
         defaultMaxTokens: Int,
         to body: inout [String: Any]
     ) {
-        _ = model
         if let temperature = config.temperature {
             body["temperature"] = temperature
         }
@@ -83,7 +100,8 @@ public enum AnthropicCompatibleGenerationOptionsApplier {
             body["max_tokens"] = defaultMaxTokens
         }
 
-        if let budget = thinkingBudgetTokens(for: config.reasoningEffort) {
+        if supportsExtendedThinking(model: model),
+           let budget = thinkingBudgetTokens(for: config.reasoningEffort) {
             body["thinking"] = [
                 "type": "enabled",
                 "budget_tokens": budget,
