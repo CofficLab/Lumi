@@ -5,11 +5,14 @@ import KernelCore
 import KitAgentTool
 import KitPrototype
 import ProviderActivityBar
+import ProviderAgentRules
 import ProviderChatSection
 import ProviderContentView
 import ProviderRailView
 import ProviderRootView
+import ProviderSkill
 import ProviderToolbar
+import ProviderToolManager
 import Testing
 @testable import PluginPrototypeDesigner
 
@@ -544,6 +547,50 @@ struct PrototypeDesignerPluginTests {
 
         #expect(rootView.isContentHeaderViewHidden == false)
         #expect(rootView.isRailViewVisible == rail.hasVisibleTabs)
+    }
+
+    @Test func disablingPluginWithdrawsAgentToolsAndEnablingRestores() async throws {
+        PrototypeDesignerRuntime.reset()
+        let kernel = KernelCoreContainer()
+        let toolManager = DefaultToolManagerProviding()
+        let skillProvider = DefaultSkillProvider()
+        let ruleProvider = DefaultAgentRuleProvider()
+
+        try kernel.registerProvider((any ToolManagerProviding).self, toolManager)
+        try kernel.registerProvider((any SkillProviding).self, skillProvider)
+        try kernel.registerProvider((any AgentRuleProviding).self, ruleProvider)
+        try kernel.registerProvider((any ActivityBarProviding).self, DefaultActivityBarProviding())
+        try kernel.registerProvider((any ChatSectionProviding).self, DefaultChatSectionProviding())
+        try kernel.registerProvider((any ContentViewProviding).self, DefaultContentViewProviding())
+        try kernel.registerProvider((any RailViewProviding).self, DefaultRailViewProviding())
+        try kernel.registerProvider((any RootViewProviding).self, DefaultRootViewProviding())
+        try kernel.registerProvider((any ToolbarProviding).self, DefaultToolbarProviding())
+
+        let pluginID = PrototypeDesignerPlugin().id
+        let expectedNames = Set(PrototypeDesignerPlugin.agentTools.map(\.name))
+        try kernel.start(plugins: [PrototypeDesignerPlugin()])
+        try await kernel.enablePlugin(id: pluginID)
+
+        #expect(Set(toolManager.allTools().map(\.name)) == expectedNames)
+        #expect(skillProvider.isProviderRegistered(providerID: pluginID))
+        #expect(ruleProvider.isProviderRegistered(providerID: pluginID))
+
+        try await kernel.disablePlugin(id: pluginID)
+
+        #expect(!kernel.isPluginEnabled(id: pluginID))
+        for name in expectedNames {
+            #expect(toolManager.tool(named: name) == nil, "\(name) must be withdrawn on disable")
+        }
+        #expect(!skillProvider.isProviderRegistered(providerID: pluginID))
+        #expect(!ruleProvider.isProviderRegistered(providerID: pluginID))
+
+        try await kernel.enablePlugin(id: pluginID)
+
+        #expect(Set(toolManager.allTools().map(\.name)) == expectedNames)
+        #expect(skillProvider.isProviderRegistered(providerID: pluginID))
+        #expect(ruleProvider.isProviderRegistered(providerID: pluginID))
+
+        try kernel.stop()
     }
 
     // MARK: - 测试辅助

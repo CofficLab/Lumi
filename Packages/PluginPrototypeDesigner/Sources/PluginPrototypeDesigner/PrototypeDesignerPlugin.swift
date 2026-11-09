@@ -75,39 +75,72 @@ public final class PrototypeDesignerPlugin: SuperPlugin, SuperLog {
         }
     }
 
-    public func onBoot(kernel: KernelCoreContainer) throws {
-        PrototypeDesignerRuntime.configure(kernel: kernel)
+    // MARK: - Agent 贡献注册 / 撤回
+
+    private func registerAgentTools(kernel: KernelCoreContainer) {
+        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else { return }
+        for tool in Self.agentTools {
+            toolManager.add(ConversationScopedPrototypeTool(tool), pluginID: id)
+        }
+    }
+
+    private func removeAgentTools(kernel: KernelCoreContainer) {
+        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else { return }
+        for tool in Self.agentTools {
+            toolManager.remove(id: tool.name)
+        }
+    }
+
+    private func registerSkillContributor(kernel: KernelCoreContainer) {
+        guard let skillProvider = kernel.resolveProvider((any SkillProviding).self) else { return }
+        guard !skillProvider.isProviderRegistered(providerID: id) else { return }
+        let contributor = PrototypeDesignerSkillContributor(providerID: id)
+        skillProvider.addProvider(contributor)
+        Self.logger.info("\(Self.t)Contributed \(contributor.allSkills.count) skill(s) via SkillProviding")
+    }
+
+    private func removeSkillContributor(kernel: KernelCoreContainer) {
+        kernel.resolveProvider((any SkillProviding).self)?.removeProvider(providerID: id)
+    }
+
+    private func registerRuleContributor(kernel: KernelCoreContainer) {
+        guard let ruleProvider = kernel.resolveProvider((any AgentRuleProviding).self) else { return }
+        guard !ruleProvider.isProviderRegistered(providerID: id) else { return }
+        let contributor = PrototypeDesignerRuleContributor(providerID: id)
+        ruleProvider.addProvider(contributor)
+        Self.logger.info("\(Self.t)Contributed \(contributor.allRules.count) rule(s) via AgentRuleProviding")
+    }
+
+    private func removeRuleContributor(kernel: KernelCoreContainer) {
+        kernel.resolveProvider((any AgentRuleProviding).self)?.removeProvider(providerID: id)
+    }
+
+    private func startProjectObserver(kernel: KernelCoreContainer) {
         projectObserver?.cancel()
         projectObserver = kernel.resolveProvider((any ProjectProviding).self).map { project in
             PrototypeDesignerProjectObserver(project: project) { path in
                 PrototypeDesignerRuntime.updateProjectStorageDirectory(projectPath: path)
             }
         }
+    }
+
+    private func stopProjectObserver() {
+        projectObserver?.cancel()
+        projectObserver = nil
+    }
+
+    public func onBoot(kernel: KernelCoreContainer) throws {
+        PrototypeDesignerRuntime.configure(kernel: kernel)
+        startProjectObserver(kernel: kernel)
 
         // 注册 Agent 工具到 ToolManagerProviding。
-        if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
-            for tool in Self.agentTools {
-                toolManager.add(ConversationScopedPrototypeTool(tool), pluginID: id)
-            }
-        }
+        registerAgentTools(kernel: kernel)
 
         // 注册 Skill 贡献者到 SkillProviding
-        if let skillProvider = kernel.resolveProvider((any SkillProviding).self) {
-            if !skillProvider.isProviderRegistered(providerID: id) {
-                let contributor = PrototypeDesignerSkillContributor(providerID: id)
-                skillProvider.addProvider(contributor)
-                Self.logger.info("\(Self.t)Contributed \(contributor.allSkills.count) skill(s) via SkillProviding")
-            }
-        }
+        registerSkillContributor(kernel: kernel)
 
         // 注册 Agent Rule 贡献者。
-        if let ruleProvider = kernel.resolveProvider((any AgentRuleProviding).self) {
-            if !ruleProvider.isProviderRegistered(providerID: id) {
-                let contributor = PrototypeDesignerRuleContributor(providerID: id)
-                ruleProvider.addProvider(contributor)
-                Self.logger.info("\(Self.t)Contributed \(contributor.allRules.count) rule(s) via AgentRuleProviding")
-            }
-        }
+        registerRuleContributor(kernel: kernel)
 
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
@@ -238,21 +271,18 @@ public final class PrototypeDesignerPlugin: SuperPlugin, SuperLog {
 
     public func onEnable(kernel: KernelCoreContainer) async throws {
         registerPromptSuggestion(kernel: kernel, requiresEnable: false)
+        // 禁用期间退出的项目观察者与运行时状态需要恢复。
+        PrototypeDesignerRuntime.configure(kernel: kernel)
+        startProjectObserver(kernel: kernel)
+        registerAgentTools(kernel: kernel)
+        registerSkillContributor(kernel: kernel)
+        registerRuleContributor(kernel: kernel)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        // 撤回注册的 Agent 工具。
-        if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
-            for tool in Self.agentTools {
-                toolManager.remove(id: tool.name)
-            }
-        }
-
-        // 撤回 Skill 贡献。
-        if let skillProvider = kernel.resolveProvider((any SkillProviding).self) {
-            skillProvider.removeProvider(providerID: id)
-        }
-        kernel.resolveProvider((any AgentRuleProviding).self)?.removeProvider(providerID: id)
+        removeAgentTools(kernel: kernel)
+        removeSkillContributor(kernel: kernel)
+        removeRuleContributor(kernel: kernel)
 
         kernel.resolveProvider((any RailViewProviding).self)?
             .removeTabs(ids: [Self.railTabID])
@@ -276,13 +306,17 @@ public final class PrototypeDesignerPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
 
-        projectObserver?.cancel()
-        projectObserver = nil
+        stopProjectObserver()
         PrototypeDesignerRuntime.reset()
     }
 
     public func onDisable(kernel: KernelCoreContainer) async throws {
         registerPromptSuggestion(kernel: kernel, requiresEnable: true)
+        // 禁用的插件不能再把项目/屏幕/HTML 工具暴露给后续 Agent 回合。
+        removeAgentTools(kernel: kernel)
+        removeSkillContributor(kernel: kernel)
+        removeRuleContributor(kernel: kernel)
+        stopProjectObserver()
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
