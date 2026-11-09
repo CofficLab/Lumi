@@ -544,6 +544,10 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
     ///
     /// 工具授权（`kind == "permission"`）没有这个例外：授权是安全闸门，
     /// 用户的新消息不能替代授权决定，必须继续排队。
+    ///
+    /// - Important: 例外只在队列为空时成立。队列里已有更早的消息时，
+    ///   若仍让新消息直接落库，后发送的消息会越过先排队的消息并抢走原回合
+    ///   的恢复（#1027）。此时按普通忙碌处理，新消息排在队尾。
     private func isSessionBusy(for conversationID: UUID) -> Bool {
         // 本类自己的账本也算「忙」：消息已提交但回合跟踪任务还没调度。
         if isSending(for: conversationID) { return true }
@@ -552,7 +556,8 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         // 挂起时区分 ask_user 提问与工具授权：只有提问可以被新消息跳过。
         if state == .suspended,
            let suspension = agentLoop.suspension(for: conversationID),
-           suspension.isAskUserSuspension {
+           suspension.isAskUserSuspension,
+           (pendingQueues[conversationID]?.isEmpty ?? true) {
             return false
         }
         return true
