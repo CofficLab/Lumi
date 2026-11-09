@@ -121,7 +121,10 @@ struct BrowserInteractionTypeScriptTests {
       return true;
     };
 
-    var document = { querySelector: function () { return __el; } };
+    var document = {
+      querySelector: function () { return __el; },
+      querySelectorAll: function () { return [__el]; }
+    };
     var getComputedStyle = function () { return { visibility: "visible", display: "block" }; };
     """#
 }

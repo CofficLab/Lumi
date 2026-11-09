@@ -55,10 +55,16 @@ enum BrowserInteractionScript {
       const ref = OPTS.ref;
       if (!ref) return fail("Missing element reference.");
 
-      const el = document.querySelector("[" + REF_ATTR + '="' + ref + '"]');
-      if (!el) {
+      // 页面可能在快照之后复制/改写 ref 属性；只取第一个匹配会静默操作
+      // 错误控件。匹配不唯一时拒绝执行，要求重新快照。
+      const matches = document.querySelectorAll("[" + REF_ATTR + '="' + ref + '"]');
+      if (matches.length === 0) {
         return fail("STALE_REF:" + ref);
       }
+      if (matches.length > 1) {
+        return fail("AMBIGUOUS_REF:" + ref + " matches " + matches.length + " elements. Take a new snapshot and retry.");
+      }
+      const el = matches[0];
 
       // 元素必须可见且可交互，否则点击会静默失败。
       const rect = el.getBoundingClientRect();
