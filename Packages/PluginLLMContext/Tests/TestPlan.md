@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 35 条用例。
+PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 38 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 35
+测试文件: 4 个，用例总数: 38
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -36,6 +36,7 @@ PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 3
 - **ContextUsageHistory**（9 条）：由 `emptyHistory`、`samplesUseReportedInputTokens`、`assistantOutputExcludedFromInput` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **LLMContextPlugin**（19 条）：由 `timelineMessagesAreExcludedFromLLMHistory`、`shortConversationUsesFullHistory`、`contextWindowUsageMatchesPreparedRequest` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **不可发送角色的预算隔离**（2 条）：由 `nonSendableRolesAreExcludedFromLLMHistory`、`fallbackKeepsUserRequestWhenErrorExceedsBudget` 锁定；`.error` / `.status` 必须在估算、摘要和 fallback 之前排除，否则尾部错误会挤掉真实用户请求（**回归 #1025**）。
+- **ContextTokenFormatting**（3 条）：由 `smallSizesKeepActualTokens`、`largeSizesUseShortUnits`、`zeroHasNoUnit` 锁定；小于 1000 的用量必须显示真实 token 数，不能因整数除法塌缩成 `0K`（**回归 #936**）。
 - **确定性降级的量纲与用户请求保留**（2 条）：由 `oversizedChineseUserMessageIsTruncatedInsteadOfDropped`、`largeSystemMessageDoesNotEvictUserRequest` 锁定；裁剪必须按 token 估算，且系统消息占满预算时仍要保留最新用户消息（**回归 #1022**）。
 
 ## 测试用例清单
@@ -77,22 +78,25 @@ PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 3
 | 33 | LLMContextPlugin | 降级裁剪不会让尾部错误消息挤掉真实用户请求（**回归 #1025**） | 输入上限约 1,096 token，历史为 user("hi") + 5,000 字符 error | 调用 `prepareContext` | 返回 user("hi")，错误不参与预算 | P1 | ✅ 已覆盖 | `fallbackKeepsUserRequestWhenErrorExceedsBudget` |
 | 34 | LLMContextPlugin | 超长中文用户消息按 token 裁剪后保留，而不是整条丢弃（**回归 #1022**） | 输入上限约 1,096 token，最新用户消息为 2,000 个汉字 | 调用 `prepareContext` | 保留一条带截断标记的用户消息，估算不超过上限 | P0 | ✅ 已覆盖 | `oversizedChineseUserMessageIsTruncatedInsteadOfDropped` |
 | 35 | LLMContextPlugin | 系统消息占满预算时仍保留本轮用户请求（**回归 #1022**） | 1,050 字中文 system + 30 字中文 user | 调用 `prepareContext` | 结果包含非空用户消息，估算不超过上限 | P0 | ✅ 已覆盖 | `largeSystemMessageDoesNotEvictUserRequest` |
+| 36 | ContextTokenFormatting | 小于 1000 的用量显示真实 token 数而不是 0K（**回归 #936**） | token 数为 1 / 500 / 999 | 调用 `formattedContextSize` | 分别显示 "1" / "500" / "999" | P1 | ✅ 已覆盖 | `smallSizesKeepActualTokens` |
+| 37 | ContextTokenFormatting | 千级与百万级仍使用 K/M 简写 | token 数为 1000 / 128000 / 1000000 / 1500000 | 调用 `formattedContextSize` | 分别显示 1K / 128K / 1M / 1.5M | P1 | ✅ 已覆盖 | `largeSizesUseShortUnits` |
+| 38 | ContextTokenFormatting | 零值不再显示为 0K | token 数为 0 | 调用 `formattedContextSize` | 显示 "0" | P2 | ✅ 已覆盖 | `zeroHasNoUnit` |
 
-> 说明：全部 **35 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 2 / 2
-- P1: 已覆盖 31 / 31
-- P2: 已覆盖 2 / 2
-- **合计: 35 / 35**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 33 / 33
+- P2: 已覆盖 3 / 3
+- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（31 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
+- **P1**: 其余功能性用例（33 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
