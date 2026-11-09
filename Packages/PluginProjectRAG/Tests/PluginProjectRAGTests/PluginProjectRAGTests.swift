@@ -3,10 +3,12 @@ import Foundation
 import KernelCore
 import KitAgentTool
 import KitLLM
+import ProjectRAGEngine
 import ProviderLifecycleHooks
 import ProviderIdleTime
 import ProviderProject
 import ProviderProjectRAG
+import ProviderStorage
 import Testing
 
 @Suite("ProjectRAGPlugin")
@@ -368,6 +370,16 @@ struct ProjectRAGBootSchedulingTests {
         try kernel.registerProvider((any ProjectProviding).self, project)
         try kernel.registerProvider((any IdleTimeProviding).self, DefaultIdleTimeProviding())
 
+        // 其他插件用例也会启动基于默认临时目录的 RAGService；共用同一个
+        // SQLite 文件会让本用例的 initialize 与它们互相等待。
+        let storageRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-boot-\(UUID().uuidString)", isDirectory: true)
+        try kernel.registerProvider(
+            (any StorageProviding).self,
+            StubStorageProvider(root: storageRoot)
+        )
+        defer { try? FileManager.default.removeItem(at: storageRoot) }
+
         let plugin = ProjectRAGPlugin()
         try plugin.onBoot(kernel: kernel)
 
@@ -380,5 +392,85 @@ struct ProjectRAGBootSchedulingTests {
 
         try plugin.onShutdown(kernel: kernel)
         #expect(plugin.scheduler == nil)
+    }
+}
+
+/// Regression coverage for issue #1065: the provider used to retain every
+/// registered callback even after its handle was released, so repeated
+/// settings re-renders left dead callbacks behind forever.
+@Suite("ProjectRAGProvider 观察者生命周期")
+@MainActor
+struct ProjectRAGProviderObserverLifetimeTests {
+    private func makeProvider() -> ProjectRAGProvider {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-provider-\(UUID().uuidString)", isDirectory: true)
+        return ProjectRAGProvider(
+            service: RAGService(databaseDirectoryProvider: { directory }),
+            project: nil
+        )
+    }
+
+    @Test("释放 handle 后不再收到事件")
+    func releasedHandleStopsReceivingEvents() {
+        let provider = makeProvider()
+        var events = 0
+        var handle: (any ProjectRAGObserverHandle)? = provider.addProjectRAGObserver { _ in
+            events += 1
+        }
+
+        provider.handleProjectChange()
+        #expect(events == 1)
+
+        handle = nil
+        provider.handleProjectChange()
+        #expect(events == 1, "释放 handle 后回调仍被 Provider 调用")
+    }
+
+    @Test("释放 handle 后回调捕获的值可以释放")
+    func releasingHandleReleasesCallbackCapture() {
+        let provider = makeProvider()
+        var capture: CallbackCapture? = CallbackCapture()
+        weak var weakCapture = capture
+        var handle: (any ProjectRAGObserverHandle)? = provider.addProjectRAGObserver { [capture] _ in
+            _ = capture
+        }
+
+        capture = nil
+        #expect(weakCapture != nil, "handle 存活时回调应持有其捕获值")
+
+        handle = nil
+        #expect(weakCapture == nil, "handle 释放后 Provider 仍强持有回调")
+    }
+
+    @Test("cancel 立即注销观察者")
+    func cancelRemovesObserver() {
+        let provider = makeProvider()
+        var events = 0
+        let handle = provider.addProjectRAGObserver { _ in
+            events += 1
+        }
+
+        provider.handleProjectChange()
+        handle.cancel()
+        provider.handleProjectChange()
+        #expect(events == 1, "cancel 之后仍收到事件")
+    }
+}
+
+private final class CallbackCapture {}
+
+private final class StubStorageProvider: StorageProviding {
+    let dataRootDirectory: URL
+
+    init(root: URL) {
+        dataRootDirectory = root
+    }
+
+    func pluginDataDirectory(for pluginID: String) -> URL {
+        dataRootDirectory.appendingPathComponent(pluginID, isDirectory: true)
+    }
+
+    func coreDataDirectory() -> URL {
+        dataRootDirectory
     }
 }

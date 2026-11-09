@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 20 条用例。
+PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 24 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 22
+测试文件: 7 个，用例总数: 24
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -73,6 +73,8 @@ PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 20 
 | 20 | ProjectsStore | 并发保存后文件仍可读取 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `concurrentSavesLeaveReadableFile` |
 | 21 | ProjectsSettingsOpenedFiles | 打开文件记录变更后设置页缓存刷新 | 隔离 Store | `startObservingOpenedFiles` 后两次 `saveOpenedFiles` | 缓存跟随最新写入，而非首次快照 | P0 | ✅ 已覆盖 | `openedFilesProjectionRefreshesWhenStoreChanges` |
 | 22 | ProjectsSettingsOpenedFiles | preview-only 当前文件显示 Active 而非空态 | `openFileURLs` 为空、`currentFileURL` 非空 | 调用 `openedFilesSectionState` | 返回 `.content`，仅两者皆空才返回 `.empty` | P0 | ✅ 已覆盖 | `previewOnlyCurrentFileShowsActiveRow` |
+| 23 | ProjectsPlugin RAG 状态观察者 | 重复构建详情区块会注销旧观察者 | kernel 注册计数用 RAG Provider | 对同一路径连续调用两次 `makeRAGStatusSection` | 旧观察者被 cancel，Provider 中只剩一个存活观察者 | P1 | ✅ 已覆盖 | `repeatedSectionCreationReplacesObserver` |
+| 24 | ProjectsPlugin RAG 状态观察者 | 切换到另一个项目会注销不可见详情的观察者 | kernel 注册计数用 RAG Provider | 依次为两个项目构建详情区块 | 第一个项目的观察者被 cancel，Provider 中只剩一个存活观察者 | P1 | ✅ 已覆盖 | `switchingProjectCancelsInvisibleObserver` |
 
 > 说明：全部 **22 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
@@ -80,9 +82,9 @@ PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 20 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 17 / 17
+- P1: 已覆盖 19 / 19
 - P2: 已覆盖 0 / 0
-- **合计: 22 / 22**（仅表示清单场景，非源码覆盖率）
+- **合计: 24 / 24**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -93,7 +95,7 @@ PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 20 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 22 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 24 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
