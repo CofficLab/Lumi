@@ -65,7 +65,7 @@ public struct ResumeHTMLLinter: Sendable {
         if lower.range(of: #"<\s*iframe\b"#, options: .regularExpression) != nil {
             add(.error, "iframe_forbidden", "Iframes are not allowed in resumes.")
         }
-        if lower.range(of: #"https?://"#, options: .regularExpression) != nil || lower.contains("//cdn.") {
+        if containsRemoteResourceReference(in: html) {
             add(.error, "remote_resource", "Remote resources are not allowed; import files into the resume assets directory.")
         }
         if lower.range(of: #"@import\s"#, options: .regularExpression) != nil {
@@ -132,5 +132,52 @@ public struct ResumeHTMLLinter: Sendable {
             guard match.numberOfRanges > 1, let valueRange = Range(match.range(at: 1), in: html) else { return nil }
             return String(html[valueRange])
         }
+    }
+
+    /// 只检查真正会加载资源的位置：资源属性、`srcset` 候选与 CSS `url(...)`。
+    ///
+    /// `xmlns="http://www.w3.org/2000/svg"` 这类命名空间标识不会触发网络
+    /// 请求，普通文本里的 URL 也不构成远程资源，都不能按“出现 http://
+    /// 就报错”处理。
+    private func containsRemoteResourceReference(in html: String) -> Bool {
+        let attributePattern = #"(?:\bsrc|\bhref|\bposter|\bdata)\s*=\s*(?:\"([^\"]*)\"|'([^']*)'|([^\s>]+))"#
+        for value in capturedValues(matching: attributePattern, in: html) where Self.isRemoteURL(value) {
+            return true
+        }
+
+        // srcset 是逗号分隔的候选列表，每个候选以 URL 开头。
+        let srcsetPattern = #"\bsrcset\s*=\s*(?:\"([^\"]*)\"|'([^']*)'|([^\s>]+))"#
+        for value in capturedValues(matching: srcsetPattern, in: html) {
+            for candidate in value.split(separator: ",") {
+                if let url = candidate.split(whereSeparator: \.isWhitespace).first,
+                   Self.isRemoteURL(String(url)) {
+                    return true
+                }
+            }
+        }
+
+        let urlPattern = #"url\(\s*([^)]*)\)"#
+        return capturedValues(matching: urlPattern, in: html).contains {
+            Self.isRemoteURL($0.trimmingCharacters(in: CharacterSet(charactersIn: " \t\r\n\"'")))
+        }
+    }
+
+    private func capturedValues(matching pattern: String, in html: String) -> [String] {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else { return [] }
+        let range = NSRange(html.startIndex..., in: html)
+        return regex.matches(in: html, range: range).compactMap { match in
+            for index in 1..<match.numberOfRanges {
+                let capture = match.range(at: index)
+                if capture.location != NSNotFound, let valueRange = Range(capture, in: html) {
+                    return String(html[valueRange])
+                }
+            }
+            return nil
+        }
+    }
+
+    private static func isRemoteURL(_ raw: String) -> Bool {
+        let value = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return value.hasPrefix("http://") || value.hasPrefix("https://") || value.hasPrefix("//")
     }
 }
