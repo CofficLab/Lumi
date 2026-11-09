@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 14 条用例。
+PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 16 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 14
+测试文件: 7 个，用例总数: 16
 
 核心组件（源码目录）:
 - `Models/`
@@ -45,6 +45,7 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 - **FileTreeDropProcessor**（2 条）：由 `partialDropFailureReportsFailedSources`、`successfulDropReportsNoFailedSources` 锁定。单个源移动失败不能静默跳过，`.moved` 必须携带 `failedSources` 供调用方提示部分失败（**回归 #1100**）。
 - **SelectionState**（2 条）：由 `shiftClickSelectsEveryVisibleItemInRange`、`visibleOrderUpdateDropsCollapsedItems` 锁定。Shift 范围选择依赖 `updateVisibleOrder` 建立的显示顺序，重建时必须丢弃已折叠/不可见行（**回归 #1101**）。
 - **FileTreeCollectionViewController**（1 条）：由 `controllerTracksVisibleOrderForShiftSelection` 锁定。每次树快照变化都必须把可见文件行按顺序写入 `SelectionState`，否则 Shift 点击只能退化为单选，右键“Send to Conversation”会漏发中间文件（**回归 #1101**）。
+- **FileTreeCollectionViewController（反选）**（2 条）：由 `commandDeselectRemovesPathFromSelection`、`deselectCallbackKeepsRowStillSelectedNatively` 锁定。Cmd 点击已选项必须实现 `didDeselectItemsAt` 并移除自定义路径，否则发送目标仍包含已取消文件；回调中仍在原生选中集合内的行不得移除（**回归 #1102**）。
 
 ## 测试用例清单
 
@@ -64,27 +65,29 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 | 12 | SelectionState | Shift 点击选中 anchor 到目标之间的全部可见行（**回归 #1101**） | 已登记 a、b、c 三行可见顺序 | 点击 a 后 Shift 点击 c | `selectedPaths` 为 a、b、c，`actionTargets` 按可见顺序返回三行 | P0 | ✅ 已覆盖 | `shiftClickSelectsEveryVisibleItemInRange` |
 | 13 | SelectionState | 可见行顺序重建后按新范围选择，不包含已折叠行 | 已登记 a、b、c，随后 b 折叠 | 重建为 a、c 后点击 a 并 Shift 点击 c | `selectedPaths` 仅含 a、c | P1 | ✅ 已覆盖 | `visibleOrderUpdateDropsCollapsedItems` |
 | 14 | FileTreeCollectionViewController | 文件树快照会建立可见行顺序，Shift 选择覆盖整个范围（**回归 #1101**） | 临时项目含 a、b、c 三个文件 | 加载视图并设置项目根后执行 Shift 选择 | 可见顺序包含三行，选中集合与发送目标均为 a、b、c | P0 | ✅ 已覆盖 | `controllerTracksVisibleOrderForShiftSelection` |
+| 15 | FileTreeCollectionViewController | Cmd 取消选中后自定义选择与发送目标只剩剩余项（**回归 #1102**） | 自定义选择为 a、b，AppKit 原生选中只剩 b | 触发 `didDeselectItemsAt` 取消 a | `selectedPaths` 只剩 b，`actionTargets` 不再包含 a | P0 | ✅ 已覆盖 | `commandDeselectRemovesPathFromSelection` |
+| 16 | FileTreeCollectionViewController | 反选回调中仍处于原生选中集合的行不会被移除 | 自定义选择为 a、b，原生选中仍含 a、b | 触发 `didDeselectItemsAt` 报告 a | 自定义选择保持 a、b 不变 | P2 | ✅ 已覆盖 | `deselectCallbackKeepsRowStillSelectedNatively` |
 
-> 说明：全部 **14 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **16 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
+- P0: 已覆盖 8 / 8
 - P1: 已覆盖 5 / 5
-- P2: 已覆盖 2 / 2
-- **合计: 14 / 14**（仅表示清单场景，非源码覆盖率）
+- P2: 已覆盖 3 / 3
+- **合计: 16 / 16**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
 - **P1**: 其余功能性用例（5 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 14 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 16 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
