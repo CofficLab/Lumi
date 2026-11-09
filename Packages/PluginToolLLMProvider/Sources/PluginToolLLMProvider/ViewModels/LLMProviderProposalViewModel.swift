@@ -68,11 +68,17 @@ final class LLMProviderProposalViewModel: ObservableObject {
 
     private let store: UserDefinedCloudProviderStore?
     private let manager: (any LLMManaging)?
+    /// 卡片所属会话；为 `nil` 时「Use This Provider」只更新全局选择。
+    private let conversationID: UUID?
+    /// 按会话写入模型的能力；缺失时退化为只更新全局选择。
+    private let conversationSelection: (any ConversationModelSelecting)?
 
     init(
         proposal: LLMProviderProposal,
         store: UserDefinedCloudProviderStore?,
-        manager: (any LLMManaging)?
+        manager: (any LLMManaging)?,
+        conversationID: UUID? = nil,
+        conversationSelection: (any ConversationModelSelecting)? = nil
     ) {
         self.providerID = proposal.id
         self.displayName = proposal.displayName
@@ -84,6 +90,8 @@ final class LLMProviderProposalViewModel: ObservableObject {
         self.websiteURL = proposal.websiteURLString ?? ""
         self.store = store
         self.manager = manager
+        self.conversationID = conversationID
+        self.conversationSelection = conversationSelection
     }
 
     /// 供应商是否已被保存过（决定按钮文案）。
@@ -192,6 +200,11 @@ final class LLMProviderProposalViewModel: ObservableObject {
         let normalizedDefaultModel = defaultModel.trimmingCharacters(in: .whitespacesAndNewlines)
         let model = models.contains { $0.id == normalizedDefaultModel } ? normalizedDefaultModel : models.first?.id
         manager.select(providerID: providerID, model: model, reason: .userSelected)
+        // 会话一旦绑定过模型，AgentLoop 会优先使用会话模型；只改全局选择
+        // 对当前会话无效，必须同时写回卡片所属会话（issue #946）。
+        if let conversationID, let conversationSelection {
+            conversationSelection.selectProvider(id: providerID, model: model, for: conversationID)
+        }
     }
 
     // MARK: - 构造

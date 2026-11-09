@@ -292,6 +292,42 @@ struct LLMProviderProposalViewModelTests {
         #expect(manager.selectedProviderID == "custom-acme")
         #expect(manager.selectedModel == "acme-small")
     }
+
+    /// 回归 #946：会话绑定过模型后 AgentLoop 优先用会话模型，只写全局选择无效。
+    @Test("Use This Provider 同时把模型写回卡片所属会话")
+    func selectingWritesModelToCardConversation() throws {
+        let manager = DefaultLLMProviderManagerProviding()
+        let (store, fileURL) = makeStore(manager: manager)
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        let conversationID = UUID()
+        let selection = SpyConversationModelSelection()
+        let viewModel = LLMProviderProposalViewModel(
+            proposal: makeProposal(),
+            store: store,
+            manager: manager,
+            conversationID: conversationID,
+            conversationSelection: selection
+        )
+        viewModel.save()
+        viewModel.selectAsCurrent()
+
+        #expect(manager.selectedProviderID == "custom-acme")
+        #expect(selection.calls.count == 1)
+        #expect(selection.calls.first?.providerID == "custom-acme")
+        #expect(selection.calls.first?.model == "acme-large")
+        #expect(selection.calls.first?.conversationID == conversationID)
+    }
+}
+
+/// 记录按会话写入的模型选择。
+@MainActor
+private final class SpyConversationModelSelection: ConversationModelSelecting {
+    private(set) var calls: [(providerID: String, model: String?, conversationID: UUID)] = []
+
+    func selectProvider(id: String, model: String?, for conversationID: UUID) {
+        calls.append((id, model, conversationID))
+    }
 }
 
 /// 写入 API Key 必然失败的供应商，用于验证卡片把凭据失败暴露出来。

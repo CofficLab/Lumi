@@ -2,6 +2,7 @@ import Foundation
 import KernelCore
 import KitAgentTool
 import LumiLoggingKit
+import ProviderConversation
 import ProviderLLMManager
 import ProviderMessageRendering
 import ProviderToolManager
@@ -71,7 +72,8 @@ public final class PluginLLMProviderToolPlugin: SuperPlugin, SuperLog {
 
     /// 注册工具结果渲染器。
     ///
-    /// 渲染器需要两个能力：自定义供应商 Store（落库）与 LLM 管理器（切换选中）。
+    /// 渲染器需要两个能力：自定义供应商 Store（落库）与 LLM 管理器（切换选中），
+    /// 以及会话管理（把模型写回卡片所属会话）。
     /// 任一缺失时仍注册渲染器——卡片会显示「服务不可用」而不是静默消失。
     private func registerRenderer(kernel: KernelCoreContainer) {
         guard let rendering = kernel.resolveProvider((any ToolCallRenderingProviding).self) else {
@@ -84,11 +86,16 @@ public final class PluginLLMProviderToolPlugin: SuperPlugin, SuperLog {
             Self.logger.warning("\(Self.t)UserDefinedCloudProviderStoreProviding is unavailable; the proposal card cannot save the provider")
         }
         let manager = kernel.resolveProvider((any LLMManaging).self)
+        let conversations = kernel.resolveProvider((any ConversationManaging).self)
+        if conversations == nil {
+            Self.logger.warning("\(Self.t)ConversationManaging is unavailable; the proposal card cannot switch the current conversation")
+        }
 
         rendering.register(
             LLMProviderRowRenderer(
                 store: store,
-                manager: manager
+                manager: manager,
+                conversations: conversations
             )
         )
     }

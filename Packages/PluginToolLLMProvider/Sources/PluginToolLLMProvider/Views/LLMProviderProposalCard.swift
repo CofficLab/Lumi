@@ -25,13 +25,17 @@ struct LLMProviderProposalCard: View {
     init(
         proposal: LLMProviderProposal,
         store: UserDefinedCloudProviderStore?,
-        manager: (any LLMManaging)?
+        manager: (any LLMManaging)?,
+        conversationID: UUID? = nil,
+        conversationSelection: (any ConversationModelSelecting)? = nil
     ) {
         _viewModel = StateObject(
             wrappedValue: LLMProviderProposalViewModel(
                 proposal: proposal,
                 store: store,
-                manager: manager
+                manager: manager,
+                conversationID: conversationID,
+                conversationSelection: conversationSelection
             )
         )
     }
