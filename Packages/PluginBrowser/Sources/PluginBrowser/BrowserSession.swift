@@ -234,8 +234,8 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         guard let page = try await webView.evaluateJavaScript(script) as? [String: Any] else {
             throw SessionError.noPage
         }
-        let pageTitle = page["title"] as? String ?? title
-        let pageURL = page["url"] as? String ?? urlString
+        let pageTitle = BrowserAccessibilityNode.escapeProtocolField(page["title"] as? String ?? title)
+        let pageURL = BrowserAccessibilityNode.escapeProtocolField(page["url"] as? String ?? urlString)
         // 页面正文里可能藏着伪造的边界标记，先中和再交给上层包裹。
         let text = BrowserContentBoundary.neutralize(page["text"] as? String ?? "")
         let truncated = page["truncated"] as? Bool ?? false
@@ -244,9 +244,11 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
             let tag = item["tag"] as? String ?? "element"
             let type = item["type"] as? String ?? ""
             let label = (item["label"] as? String ?? "").nonEmpty ?? "(no label)"
-            let href = (item["href"] as? String ?? "").nonEmpty.map { " → \($0)" } ?? ""
-            let descriptor = type.isEmpty ? tag : "\(tag) type=\(type)"
-            return "- @\(ref) [\(descriptor)] \(label)\(href)"
+            let href = (item["href"] as? String ?? "").nonEmpty.map {
+                " → \(BrowserAccessibilityNode.escapeProtocolField($0))"
+            } ?? ""
+            let descriptor = BrowserAccessibilityNode.escapeProtocolField(type.isEmpty ? tag : "\(tag) type=\(type)")
+            return "- @\(ref) [\(descriptor)] \(BrowserAccessibilityNode.escapeProtocolField(label))\(href)"
         }.joined(separator: "\n")
         return """
         # \(pageTitle)

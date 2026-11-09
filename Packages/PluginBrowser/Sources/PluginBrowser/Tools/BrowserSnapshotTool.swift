@@ -82,20 +82,17 @@ public struct BrowserSnapshotTool: SuperAgentTool {
             )
             content = matches.isEmpty
                 ? "No element matched. Take a browser_snapshot without filters to see what is on the page."
-                : matches.map { node in
-                    var line = "@\(node.ref) \(node.role) \"\(node.displayName)\""
-                    let flags = node.state.flags
-                    if !flags.isEmpty { line += " [\(flags.joined(separator: " "))]" }
-                    if let value = node.value { line += " value=\"\(value)\"" }
-                    if let href = node.href { line += " → \(href)" }
-                    return line
-                }.joined(separator: "\n")
+                : matches.map { $0.renderLine() }.joined(separator: "\n")
         } else {
             let snapshot = try await sessions.snapshot(
                 interactiveOnly: interactiveOnly,
                 conversationID: context.conversationID
             )
-            var lines = ["# \(snapshot.pageTitle)", "URL: \(snapshot.pageURL)", ""]
+            var lines = [
+                "# \(BrowserAccessibilityNode.escapeProtocolField(snapshot.pageTitle))",
+                "URL: \(BrowserAccessibilityNode.escapeProtocolField(snapshot.pageURL))",
+                "",
+            ]
             lines.append(snapshot.render(interactiveOnly: interactiveOnly))
             content = lines.joined(separator: "\n")
         }
