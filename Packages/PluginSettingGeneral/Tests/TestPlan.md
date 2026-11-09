@@ -5,7 +5,7 @@
 PluginSettingGeneral 的实现包，包含 14 个主要类型；当前测试覆盖 20 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 20
+测试文件: 5 个，用例总数: 25
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -40,6 +40,7 @@ PluginSettingGeneral 的实现包，包含 14 个主要类型；当前测试覆�
 - **CLIInstallViewModel**（10 条）：由 `initialStatusIsNotInstalled`、`installedStatusWhenOnPath`、`installedNotOnPathStatusCarriesDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GeneralSettingsCLISection**（2 条）：由 `generalSettingsRendersCLISection`、`clisectionWorksWithoutOptionalProviders` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（5 条）：由 `onBootRegistersGeneralEntry`、`onBootAppendsToExistingEntries`、`onBootNoOpsWithoutSettingView` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **UninstallSummary**（5 条）：由 `defaultsKeepEveryTarget`、`bothTogglesOffLeavesOnlyOwnedData`、`everythingExcludedYieldsEmptySummary` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -65,27 +66,32 @@ PluginSettingGeneral 的实现包，包含 14 个主要类型；当前测试覆�
 | 18 | 诊断导出 | 覆盖失败时保留原有文件（**回归 #997**） | 目标位置已有旧 zip，源 archive 不可读导致复制失败 | 调用 `installDiagnosticsArchive` | 抛错且目标内容不变，目录中无临时/备份残留 | P0 | ✅ 已覆盖 | `failedOverwriteKeepsExistingFile` |
 | 19 | 诊断导出 | 覆盖成功替换目标且不留残留 | 目标位置已有旧 zip | 调用 `installDiagnosticsArchive` | 目标内容更新，目录中只剩目标文件 | P1 | ✅ 已覆盖 | `successfulOverwriteReplacesDestinationWithoutLeftovers` |
 | 20 | 诊断导出 | 目标不存在时直接安装 | 目标路径为空 | 调用 `installDiagnosticsArchive` | 目标出现且内容正确 | P1 | ✅ 已覆盖 | `installsIntoEmptyDestination` |
+| 21 | UninstallSummary | 两个开关都打开时保留全部扫描结果 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `defaultsKeepEveryTarget` |
+| 22 | UninstallSummary | 关闭应用开关后不再计入应用及其体积（**回归 #1072**） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `applicationToggleOffExcludesApplication` |
+| 23 | UninstallSummary | 关闭凭据开关后不再计入 Keychain 项目 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `keychainToggleOffExcludesCredentials` |
+| 24 | UninstallSummary | 两个开关都关闭时只保留总会清理的 Lumi 数据 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bothTogglesOffLeavesOnlyOwnedData` |
+| 25 | UninstallSummary | 扫描结果全部被排除时汇总为空 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `everythingExcludedYieldsEmptySummary` |
 
-> 说明：全部 **20 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **25 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 1 / 1
-- P1: 已覆盖 19 / 19
-- P2: 已覆盖 0 / 0
-- **合计: 20 / 20**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 23 / 23
+- P2: 已覆盖 1 / 1
+- **合计: 25 / 25**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（19 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
+- **P1**: 其余功能性用例（23 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 17 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 25 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

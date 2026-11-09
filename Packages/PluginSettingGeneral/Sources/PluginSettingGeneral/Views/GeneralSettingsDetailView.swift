@@ -313,32 +313,44 @@ struct GeneralSettingsDetailView: View {
 
     @ViewBuilder
     private func uninstallSummary(scan: UninstallScan) -> some View {
-        AppSettingSection(
-            title: "将处理 \(scan.targets.count) 项 Lumi 数据，总计 \(formattedBytes(scan.totalSizeInBytes))。",
-            titleAlignment: .leading
-        ) {
-            VStack(spacing: 0) {
-                ForEach(Array(scan.targets.prefix(8).enumerated()), id: \.element.id) { index, target in
-                    AppSettingRow(
-                        title: target.kind.displayName,
-                        description: target.sizeInBytes > 0 ? formattedBytes(target.sizeInBytes) : "—",
-                        icon: uninstallIcon(for: target)
-                    ) {
-                        EmptyView()
+        let summary = UninstallSummary(
+            scan: scan,
+            removeApplication: viewModel.removeApplication,
+            removeKeychainCredentials: viewModel.removeKeychainCredentials
+        )
+
+        if summary.targets.isEmpty {
+            Text("当前选项不会删除任何项目。")
+                .font(.appBody)
+                .foregroundStyle(.secondary)
+        } else {
+            AppSettingSection(
+                title: "将处理 \(summary.targets.count) 项 Lumi 数据，总计 \(formattedBytes(summary.totalSizeInBytes))。",
+                titleAlignment: .leading
+            ) {
+                VStack(spacing: 0) {
+                    ForEach(Array(summary.targets.prefix(8).enumerated()), id: \.element.id) { index, target in
+                        AppSettingRow(
+                            title: target.kind.displayName,
+                            description: target.sizeInBytes > 0 ? formattedBytes(target.sizeInBytes) : "—",
+                            icon: uninstallIcon(for: target)
+                        ) {
+                            EmptyView()
+                        }
+
+                        if index < min(summary.targets.count, 8) - 1 {
+                            Divider()
+                                .padding(.vertical, 8)
+                        }
                     }
 
-                    if index < min(scan.targets.count, 8) - 1 {
-                        Divider()
-                            .padding(.vertical, 8)
+                    if summary.targets.count > 8 {
+                        Text("还有 \(summary.targets.count - 8) 项，将在确认后一起处理。")
+                            .font(.appCaption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, 8)
                     }
-                }
-
-                if scan.targets.count > 8 {
-                    Text("还有 \(scan.targets.count - 8) 项，将在确认后一起处理。")
-                        .font(.appCaption)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, 8)
                 }
             }
         }
