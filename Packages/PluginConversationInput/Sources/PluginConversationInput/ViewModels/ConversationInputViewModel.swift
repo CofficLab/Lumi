@@ -374,17 +374,20 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     }
 
     /// 将拖入目录的路径作为文本插入输入框。
+    ///
+    /// 不能直接改写 `capability.text`：binding 是拍平后的正文，编辑器发现
+    /// binding 变化会用纯文本整体重写自己，把已有 chip 展开并清空区间
+    /// （#1034）。改走编辑器的文本块通道，由编辑器在当前光标处插入路径，
+    /// 已有 attachment 原样保留；阈值取最大值，保证目录路径始终按纯文本插入。
     func insertDirectoryPath(_ url: URL) {
         guard !url.path.isEmpty else { return }
 
-        let currentText = capability.text
-        if currentText.isEmpty || currentText.hasSuffix("\n") {
-            capability.text += url.path
-        } else {
-            capability.text += "\n" + url.path
-        }
-        capability.isInputFocused = true
-        refresh()
+        enqueue(ConversationInputBlock(
+            text: url.path,
+            title: url.lastPathComponent,
+            systemImage: "folder",
+            collapseThreshold: .max
+        ))
     }
 
     /// 将拖入的非图片文件加入发送器挂起池。

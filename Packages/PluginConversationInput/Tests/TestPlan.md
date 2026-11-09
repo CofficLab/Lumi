@@ -159,8 +159,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 66 | 附件 | 移除文件附件按 ID 精确命中 | 两个文件附件 | 移除其一 | 仅剩另一个 | P1 | ✅ 已覆盖 | `removeFileAttachmentTargetsSingleID` |
 | 67 | 附件 | 移除不存在的 ID 是安全空操作 | 一个文件附件 | 用随机 UUID 移除图片与文件 | 原附件不受影响，无崩溃 | P1 | ✅ 已覆盖 | `removingUnknownAttachmentIsNoOp` |
 | 68 | 附件 | 附件池变化同步刷新列表与可发送状态 | 空池 → 图片池 → 空池 | 逐次挂载 / 清空并 refresh | `hasAttachments` 与 `canSend` 同步翻转 | P1 | ✅ 已覆盖 | `attachmentPoolChangeRefreshesState` |
-| 69 | 拖放 | 目录路径按需换行插入并聚焦 | 空输入框 | 连续拖入两个目录 | 首次直接写入；第二次追加换行；`isInputFocused` 为真 | P1 | ✅ 已覆盖 | `droppingDirectoryInsertsPathIntoText` |
-| 70 | 拖放 | 已有内容以换行结尾时不重复换行 | text 以 `\n` 结尾 | 拖入目录 | 结果只有一处换行 | P1 | ✅ 已覆盖 | `droppingDirectoryAfterTrailingNewlineDoesNotDouble` |
+| 69 | 拖放 | 目录路径交给编辑器插入且不直接改写草稿正文 | 已有草稿 | 拖入目录 | 生成纯文本块请求（永不折叠）、草稿正文不变、`isInputFocused` 为真 | P1 | ✅ 已覆盖 | `droppingDirectoryQueuesPlainTextBlock` |
+| 70 | 折叠块 | 插入目录路径不会展开已有 chip，区间保持不变 | 编辑器已有 chip | 以纯文本块插入目录路径 | 正文追加路径；chip 仍是 attachment；折叠区间仍指向原 chip | P1 | ✅ 已覆盖 | `insertingPlainTextKeepsExistingChip` |
 | 71 | 拖放 | 图片进入图片池并聚焦 | 真实临时 PNG 文件 | `attachImage` 后等待 | MIME 按扩展名为 `image/png`、base64 正确、文件名保留、聚焦 | P1 | ✅ 已覆盖 | `droppingImageAttachesToImagePool` |
 | 72 | 拖放 | 空文件不进图片池 | 0 字节 PNG | `attachImage` 后等待一轮 | 池为空且不产生错误提示 | P2 | ✅ 已覆盖 | `droppingEmptyImageIsIgnored` |
 | 73 | 拖放 | 普通文件进入文件池并聚焦 | 真实临时 txt 文件 | `attachFile` 后等待 | MIME `text/plain`、`textContent` 正确、聚焦 | P1 | ✅ 已覆盖 | `droppingFileAttachesToFilePool` |
@@ -297,7 +297,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 134 | 附件预览区拖放 | 多个 provider 的解析结果按拖放顺序排列 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `multipleProvidersKeepDropOrder` |
 | 135 | 附件预览区拖放 | 拖入预览区的图片进入图片池 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `droppedImageGoesToImagePool` |
 | 136 | 附件预览区拖放 | 拖入预览区的普通文件进入文件池 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `droppedFileGoesToFilePool` |
-| 137 | 附件预览区拖放 | 拖入预览区的目录路径插入输入框文本 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `droppedDirectoryInsertsPathIntoText` |
+| 137 | 附件预览区拖放 | 拖入预览区的目录路径交给输入框编辑器插入 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `droppedDirectoryQueuesPathForEditor` |
 | 138 | 附件预览区拖放 | 预览区与输入框共用同一套分流规则 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `previewAndEditorShareTheSameRoutingRule` |
 | 139 | 附件预览区拖放类型声明 | 预览区的 onDrop 只声明 .fileURL | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `previewDeclaresFileURLOnly` |
 | 140 | 附件预览区拖放类型声明 | SwiftUI 交付的 provider 仍带 public.file-url（图片） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `swiftUIKeepsFileURLForImage` |

@@ -93,34 +93,23 @@ struct ConversationInputViewModelAttachmentTests {
 
     // MARK: - 拖放：目录 → 文本
 
-    @Test("拖入目录时路径按需换行插入并聚焦输入框")
-    func droppingDirectoryInsertsPathIntoText() {
+    @Test("拖入目录把路径交给编辑器插入，不直接改写草稿正文")
+    func droppingDirectoryQueuesPlainTextBlock() {
         let capability = SendActionBarTestCapability()
         let viewModel = ConversationInputViewModel(capability: capability)
-
-        // 空输入框 → 直接写入，不加前导换行。
-        viewModel.insertDirectoryPath(URL(fileURLWithPath: "/tmp/pkg"))
-        #expect(viewModel.text == "/tmp/pkg")
-
-        // 已有内容且不以换行结尾 → 追加换行再写路径，避免与已有文字黏在一起。
-        viewModel.insertDirectoryPath(URL(fileURLWithPath: "/tmp/other"))
-        #expect(viewModel.text == "/tmp/pkg\n/tmp/other")
-
-        // 拖放会强制聚焦，用户可以直接继续写指令。
-        #expect(capability.isInputFocused)
-    }
-
-    @Test("已有内容以换行结尾时目录路径直接追加不重复换行")
-    func droppingDirectoryAfterTrailingNewlineDoesNotDouble() {
-        let capability = SendActionBarTestCapability()
-        let viewModel = ConversationInputViewModel(capability: capability)
-
         capability.text = "look at\n"
         viewModel.refresh()
 
         viewModel.insertDirectoryPath(URL(fileURLWithPath: "/tmp/pkg"))
 
-        #expect(viewModel.text == "look at\n/tmp/pkg")
+        let block = try! #require(viewModel.pendingBlock)
+        #expect(block.text == "/tmp/pkg")
+        // 目录路径始终按纯文本插入，不能折叠成 chip。
+        #expect(!block.shouldCollapse)
+        // 正文只能由编辑器上报：直接写 binding 会让编辑器把已有 chip 拍平。
+        #expect(viewModel.text == "look at\n")
+        // 拖放会强制聚焦，用户可以直接继续写指令。
+        #expect(capability.isInputFocused)
     }
 
     // MARK: - 拖放：图片 / 文件 → 挂起池
