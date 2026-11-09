@@ -66,7 +66,7 @@ extension ConversationManager {
         }
 
         await MainActor.run {
-            self.cache(summary)
+            self.cacheHydratedSummary(summary)
         }
         return summary
     }

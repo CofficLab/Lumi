@@ -294,12 +294,15 @@ extension ConversationManager {
     /// 选中分页加载出的会话时，缓存里可能还没有它的摘要。
     /// 按 ID 从 Store 补载后再刷新标题，避免 `currentTitle` 退化成
     /// "No conversation"（issue #965）。
+    ///
+    /// 走 `cacheHydratedSummary` 而不是裸 `cache`：补载也会带来真实的
+    /// 详细程度，UI 必须收到 `.verbosityChanged` 才能从缺省值纠正（issue #1069）。
     private func backfillConversationIfNeeded(id: UUID) {
         guard !conversations.contains(where: { $0.id == id }), let store else { return }
         Task { @MainActor [weak self] in
             guard let summary = await store.fetchConversation(id: id) else { return }
             guard let self, self.selectedConversationID == id else { return }
-            self.cache(summary)
+            self.cacheHydratedSummary(summary)
             self.updateCurrentTitle()
             self.notifyConversationObservers(.updated(id))
         }

@@ -147,4 +147,89 @@ struct ConversationPagedMutationTests {
         #expect(page.count == 1)
         #expect(manager.conversations.contains { $0.id == id })
     }
+
+    // MARK: - 水合后的详细度通知（#1069）
+
+    /// 选中分页会话时，UI 先按缺省 V2 渲染；补载摘要后必须补发
+    /// `.verbosityChanged`，否则工具栏和消息列表要等下一次无关事件才会纠正。
+    @Test("选中未缓存会话后水合详细度会通知 UI")
+    func selectingUncachedConversationPublishesHydratedVerbosity() async throws {
+        let (store, dir) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let manager = ConversationManager(store: store, dataDirectory: dir)
+        let id = UUID()
+        try await store.createConversation(id: id, title: "历史会话", verbosity: .brief, modelID: nil)
+        #expect(manager.verbosity(for: id) == .defaultVerbosity)
+
+        let recorder = ConversationEventRecorder()
+        let handle = manager.addConversationObserver { recorder.record($0) }
+        defer { handle.cancel() }
+
+        manager.selectConversation(id: id)
+
+        let notified = await waitUntil { recorder.containsVerbosityChange(for: id) }
+        #expect(notified, "水合后没有补发详细度事件")
+        #expect(manager.verbosity(for: id) == .brief)
+    }
+
+    /// 项目同步观察者走 `fetchConversation(id:)` 补载选中会话，这条路径同样
+    /// 必须在缓存写入后通知 UI。
+    @Test("补载选中会话时补发详细度事件")
+    func fetchingSelectedConversationPublishesHydratedVerbosity() async throws {
+        let (store, dir) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let manager = ConversationManager(store: store, dataDirectory: dir)
+        let id = UUID()
+        try await store.createConversation(id: id, title: "历史会话", verbosity: .brief, modelID: nil)
+        manager.selectedConversationID = id
+
+        let recorder = ConversationEventRecorder()
+        let handle = manager.addConversationObserver { recorder.record($0) }
+        defer { handle.cancel() }
+
+        _ = await manager.fetchConversation(id: id)
+
+        #expect(recorder.containsVerbosityChange(for: id))
+        #expect(manager.verbosity(for: id) == .brief)
+    }
+
+    @Test("补载非选中会话不触发详细度刷新")
+    func hydratingUnselectedConversationStaysSilent() async throws {
+        let (store, dir) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let manager = ConversationManager(store: store, dataDirectory: dir)
+        let id = UUID()
+        let otherID = UUID()
+        try await store.createConversation(id: id, title: "历史会话", verbosity: .brief, modelID: nil)
+        try await store.createConversation(id: otherID, title: "当前会话", modelID: nil)
+        manager.selectedConversationID = otherID
+
+        let recorder = ConversationEventRecorder()
+        let handle = manager.addConversationObserver { recorder.record($0) }
+        defer { handle.cancel() }
+
+        _ = await manager.fetchConversation(id: id)
+
+        #expect(manager.verbosity(for: id) == .brief)
+        #expect(!recorder.containsVerbosityChange(for: id))
+    }
+}
+
+/// 记录会话事件，供水合通知回归用例断言。
+@MainActor
+private final class ConversationEventRecorder {
+    private var events: [ConversationEvent] = []
+
+    func record(_ event: ConversationEvent) {
+        events.append(event)
+    }
+
+    func containsVerbosityChange(for id: UUID) -> Bool {
+        events.contains { event in
+            if case .verbosityChanged(let changed) = event {
+                return changed == id
+            }
+            return false
+        }
+    }
 }

@@ -291,6 +291,22 @@ public final class ConversationManager: ConversationManaging, SuperLog {
         }
     }
 
+    /// 把从存储补载的摘要写入缓存。
+    ///
+    /// 选中会话不在缓存时，UI 已按 `.defaultVerbosity` 渲染；水合后再读缓存
+    /// 虽然能拿到真实值，但工具栏与消息列表只监听 `.verbosityChanged`，
+    /// 不发事件就会一直停在缺省值（issue #1069）。只在选中会话的有效详细度
+    /// 真正变化时补发，避免无关的缓存写入触发 UI 刷新。
+    func cacheHydratedSummary(_ summary: ConversationSummary) {
+        let previousVerbosity = verbosity(for: summary.id)
+        cache(summary)
+        guard summary.id == selectedConversationID,
+              verbosity(for: summary.id) != previousVerbosity else {
+            return
+        }
+        notifyConversationObservers(.verbosityChanged(summary.id))
+    }
+
     func updateCurrentTitle() {
         let newTitle: String
         if let selectedID = selectedConversationID,

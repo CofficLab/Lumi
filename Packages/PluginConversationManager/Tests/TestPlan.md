@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 74 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 77 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 74
+测试文件: 11 个，用例总数: 77
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -48,7 +48,7 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 - **ConversationStoreObserver**（2 条）：由 `forwardsEventsAndMigrationStateUntilCancelled`、`capabilityAdapterUsesManagerAndEmptyMessageFallbacks` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationStoreSettingsViewModel**（5 条）：由 `loadsPagesCountsMessagesAndSelectedConversation`、`selectionFallsBackWhenMissingAndReloadsForStructuralEvents`、`emptyLoadsFinishAndMessagesClearWithoutSelection`、`preferenceEventsRefreshCachedSummaries`、`reopeningRefreshesStaleSummaries` 等用例锁定；模型与偏好事件必须按 ID 就地刷新摘要，重进页面不得沿用陈旧快照。
 - **ConversationListRefresh**（1 条）：由 `activeUpdatesAreDebounced` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **分页会话的可操作性**（5 条）：由 `deletesUncachedConversation`、`renamesUncachedConversation`、`selectingPagedConversationBackfillsTitle` 等用例锁定；分页返回的真实会话必须能执行与首屏会话相同的删除、改名、偏好与选择操作。
+- **分页会话的可操作性**（8 条）：由 `deletesUncachedConversation`、`renamesUncachedConversation`、`selectingPagedConversationBackfillsTitle` 等用例锁定；分页返回的真实会话必须能执行与首屏会话相同的删除、改名、偏好与选择操作。
 - **ConversationStore**（12 条）：由 `createAndFetch`、`createStoresOnlyModelID`、`updateVerbosity` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 - **ConversationStore 项目会话 ID**（3 条）：由 `returnsOnlyProjectConversations`、`limitsToTheActivityWindow`、`emptyProjectReturnsEmptyArray` 锁定——项目维度统计靠会话存储提供「项目 → 会话 ID」的映射；`updatedSince` 把集合限制在活动窗口内，项目下没有会话时返回空数组。改动这条映射时必须优先跑该文件。
@@ -131,6 +131,9 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 72 | ConversationPagedMutation | 回填加载触发缓存淘汰后仍能写入标题（**回归 #996**） | 81 条历史会话，冷启动缓存 40 条 | 逐条 `fetchConversation` 把候选补进缓存越过 80 上限，目标被同步淘汰后更新标题 | 目标不在缓存中，更新返回 true 且标题落库 | P1 | ✅ 已覆盖 | `renamesConversationEvictedRightAfterBackfillFetch` |
 | 73 | ConversationManagerPreference | 被挤出缓存的会话保留自己的自动化级别（**回归 #1008**） | 后台会话 Autonomous | 写入 100 条更新的顶层会话把后台会话挤出窗口后调用 `automationLevel(for:)` | 仍返回 `.autonomous`，不再回退 `.build` | P1 | ✅ 已覆盖 | `evictedConversationKeepsItsAutomationLevel` |
 | 74 | ConversationManagerPreference | 未知会话与 nil 仍回退 Build（**回归 #1008** 护栏） | 缓存中已有 Autonomous 会话 | 对 nil 与随机 UUID 调用 `automationLevel(for:)` | 均返回 `.build`，不被其它会话的级别污染 | P1 | ✅ 已覆盖 | `unknownConversationStillDefaultsToBuild` |
+| 75 | 分页会话的可操作性 | 选中未缓存会话后水合详细度会通知 UI（**回归 #1069**） | Manager 缓存没有该会话，持久化为 V1/brief | 选中会话并等待补载完成 | 补发 `.verbosityChanged(id)`，`verbosity(for:)` 变为 brief | P1 | ✅ 已覆盖 | `selectingUncachedConversationPublishesHydratedVerbosity` |
+| 76 | 分页会话的可操作性 | 补载选中会话时补发详细度事件（**回归 #1069**） | 选中会话不在缓存，`fetchConversation(id:)` 负责水合 | 调用 `fetchConversation(id:)` | 补发 `.verbosityChanged(id)` | P1 | ✅ 已覆盖 | `fetchingSelectedConversationPublishesHydratedVerbosity` |
+| 77 | 分页会话的可操作性 | 补载非选中会话不触发详细度刷新（**回归 #1069**） | 另一个会话处于选中状态 | 补载未选中的历史会话 | 不发送该 ID 的 `.verbosityChanged` | P2 | ✅ 已覆盖 | `hydratingUnselectedConversationStaysSilent` |
 
 > 说明：全部 **74 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
@@ -138,9 +141,9 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 ## 覆盖率统计
 
 - P0: 已覆盖 8 / 8
-- P1: 已覆盖 61 / 61
-- P2: 已覆盖 5 / 5
-- **合计: 74 / 74**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 63 / 63
+- P2: 已覆盖 6 / 6
+- **合计: 77 / 77**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
