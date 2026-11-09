@@ -1,3 +1,5 @@
+import CoreGraphics
+import ImageIO
 import KitAgentTool
 import Foundation
 import KitResume
@@ -145,6 +147,82 @@ extension ResumeDesignerSuite {
                 "paper": "a4",
                 "template": "classic",
             ]))
+        }
+    }
+
+    @Test("别名 resumeId 刷新后选中仍指向规范化文档（**回归 #1090**）")
+    func aliasedResumeIDNotifyKeepsNormalizedSelection() async throws {
+        let directory = makeTemporaryStorage()
+        defer { cleanup(directory) }
+
+        let created = try WorkspaceStore.shared.documentStore.createResume(
+            storagePath: WorkspaceStore.shared.projectStoragePath,
+            slug: "alice",
+            title: "Alice",
+            paper: .a4,
+            template: .classic
+        )
+        WorkspaceStore.shared.reload(selectResume: created.document.id)
+        #expect(WorkspaceStore.shared.selectedResume?.document.id == "alice")
+
+        // Store 层接受 " ALICE " 这个别名并落到 alice 目录，刷新时也必须用
+        // 规范化 ID，否则精确匹配失败会把预览清空。
+        await ResumeToolSupport.notify(resumeID: " ALICE ")
+
+        #expect(WorkspaceStore.shared.selectedResumeID == "alice")
+        #expect(WorkspaceStore.shared.selectedResume?.document.id == "alice")
+    }
+
+    @Test("resume_import_asset 使用大写 ID 导入后保留规范化选中与预览（**回归 #1090**）")
+    func importAssetWithUppercaseResumeIDKeepsSelection() async throws {
+        let directory = makeTemporaryStorage()
+        defer { cleanup(directory) }
+
+        _ = try WorkspaceStore.shared.documentStore.createResume(
+            storagePath: WorkspaceStore.shared.projectStoragePath,
+            slug: "alice",
+            title: "Alice",
+            paper: .a4,
+            template: .classic
+        )
+        WorkspaceStore.shared.reload(selectResume: "alice")
+        #expect(WorkspaceStore.shared.selectedResume?.document.id == "alice")
+
+        let source = directory.appendingPathComponent("photo.png")
+        try writeTinyPNG(to: source)
+
+        let result = try await ImportResumeAssetTool().execute(arguments: arguments([
+            "resumeId": "ALICE",
+            "sourcePath": source.path,
+        ]))
+
+        #expect(result.contains("Imported resume asset"))
+        // 素材必须落在规范化目录，且预览仍选中 alice。
+        #expect(FileManager.default.fileExists(
+            atPath: directory.appendingPathComponent("resumes/alice/assets/photo.png").path
+        ))
+        #expect(WorkspaceStore.shared.selectedResumeID == "alice")
+        #expect(WorkspaceStore.shared.selectedResume?.document.id == "alice")
+    }
+
+    /// 写入一张 2x2 的 PNG，供素材导入工具读取。
+    private func writeTinyPNG(to url: URL) throws {
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        guard let context = CGContext(
+            data: nil,
+            width: 2,
+            height: 2,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ), let image = context.makeImage(),
+            let destination = CGImageDestinationCreateWithURL(url as CFURL, "public.png" as CFString, 1, nil) else {
+            throw ResumeAssetError.unsupportedImage(url.path)
+        }
+        CGImageDestinationAddImage(destination, image, nil)
+        guard CGImageDestinationFinalize(destination) else {
+            throw ResumeAssetError.unsupportedImage(url.path)
         }
     }
 }

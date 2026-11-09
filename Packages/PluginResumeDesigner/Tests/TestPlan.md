@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginResumeDesigner 的实现包，包含 15 个主要类型；当前测试覆盖 26 条用例。
+PluginResumeDesigner 的实现包，包含 15 个主要类型；当前测试覆盖 28 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 26
+测试文件: 6 个，用例总数: 28
 
 核心组件（源码目录）:
 - `Observers/`
@@ -41,7 +41,7 @@ PluginResumeDesigner 的实现包，包含 15 个主要类型；当前测试覆�
 - **ResumeDesignerPlugin**（4 条）：由 `registersAndActivatesContributions`、`promptSuggestionLocalizationResolves`、`promptSuggestionActivatesPluginEntry`、`registersAndRemovesAgentTools` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ResumeDesignerRuleContributor**（1 条）：由 `loadsResumeRuleFromResource` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ResumeDocumentStore**（4 条）：由 `fullCRUD`、`rejectsInvalidSlugAndDuplicate`、`patchRequiresUniqueOldText` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ResumeTools**（7 条）：由 `createResumeToolCreatesDocument`、`listResumesToolListsDocuments`、`readResumeToolReturnsMetadata` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ResumeTools**（9 条）：由 `createResumeToolCreatesDocument`、`listResumesToolListsDocuments`、`readResumeToolReturnsMetadata` 等用例锁定；改动该模块时优先跑对应测试文件，其中 `aliasedResumeIDNotifyKeepsNormalizedSelection` 与 `importAssetWithUppercaseResumeIDKeepsSelection` 锁定「工具别名 ID 刷新后 UI 仍选中规范化文档」。
 
 - **ResumeDesignerSuite**（6 条）：由 `conversationScopedToolWritesIntoItsOwnProject`、`conversationScopedToolReadsFromItsOwnProject` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TestStorage**（1 条）：由 `doesNotCreateStorageDirectoryUntilWrite` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -77,20 +77,22 @@ PluginResumeDesigner 的实现包，包含 15 个主要类型；当前测试覆�
 | 24 | ResumeExportTargets | PDF 导出列出 PDF 与全部页 PNG，PNG 导出不含 PDF | — | 调用 `fileNames` | 文件名顺序与写入顺序一致，PNG 模式不含 `.pdf` | P1 | ✅ 已覆盖 | `fileNamesMatchExportMode` |
 | 25 | ResumeExportTargets | 目标目录已有同名文件时全部报告，未冲突时不报告（**回归 #1007**） | 临时目录预置 `alice.pdf` 与 `alice-p02.png` | 调用 `existingFiles` | 空目录返回空；预置后按顺序返回两个冲突文件 | P0 | ✅ 已覆盖 | `reportsEveryExistingTarget` |
 | 26 | ResumeExportTargets | PNG-only 导出不把已有 PDF 算作冲突 | 临时目录预置 `alice.pdf` | 调用 `existingFiles(pngOnly: true)`，再预置 `alice-p01.png` 重查 | 首次为空；预置 PNG 后只报告该 PNG | P1 | ✅ 已覆盖 | `pngOnlyIgnoresPDFConflict` |
+| 27 | ResumeTools | 别名 resumeId（`" ALICE "`）刷新后 UI 仍选中规范化文档 `alice`（**回归 #1090**） | 项目内已有 `alice` 且已选中 | 调用 `ResumeToolSupport.notify(resumeID: " ALICE ")` | `selectedResumeID == "alice"`，`selectedResume` 不为空 | P0 | ✅ 已覆盖 | `aliasedResumeIDNotifyKeepsNormalizedSelection` |
+| 28 | ResumeTools | `resume_import_asset` 用大写 ID 导入素材后保留规范化选中与预览（**回归 #1090**） | 项目内已有 `alice` 且已选中，临时目录写入 2x2 PNG | 以 `resumeId: "ALICE"` 执行导入 | 素材落在 `resumes/alice/assets/photo.png`；选中仍为 `alice` 且预览未清空 | P0 | ✅ 已覆盖 | `importAssetWithUppercaseResumeIDKeepsSelection` |
 
-> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **28 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
+- P0: 已覆盖 8 / 8
 - P1: 已覆盖 19 / 19
 - P2: 已覆盖 1 / 1
-- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
+- **合计: 28 / 28**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
 - **P1**: 其余功能性用例（19 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
