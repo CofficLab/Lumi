@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 107 条用例。
+PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 109 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 107
+测试文件: 13 个，用例总数: 109
 
 核心组件（源码目录）:
 - `Models/`
@@ -62,7 +62,7 @@ PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 
 - **Computer Use 系统权限渲染器**（3 条）：由 `rendererClaimsSystemPermissionFailure`、`rendererIgnoresAuthorizationSuspension` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Computer Use 访问上下文**（4 条）：由 `autonomousAllowsUnattendedAccess`、`autonomousSessionNeverRequestsAuthorization` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **None**（2 条）：由 `autonomousSessionSkipsNativeConsentButKeepsStopAvailable`、`legacyExplicitAllowlistIsPurged` 用例锁定；改动该模块时优先跑对应测试文件。
-- **Computer Use 目标窗口可见区域**（15 条）：由 `cornerOccluderKeepsMostOfTarget`、`degenerateTargetHasNoVisibleRegion` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **Computer Use 目标窗口可见区域**（17 条）：由 `cornerOccluderKeepsMostOfTarget`、`degenerateTargetHasNoVisibleRegion` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -175,27 +175,29 @@ PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 105 | Computer Use 目标窗口可见区域 | 按窗口 ID 定位目标时排在目标前面的窗口都算遮挡者 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `windowsInFrontOfTargetAreOccluders` |
 | 106 | Computer Use 目标窗口提示遮罩 | 目标矩形不变时仍重算可见区域 | — | 轮询时当前面板矩形与目标矩形相同 | 不移动面板，但仍重算可见区域 | P1 | ✅ 已覆盖 | `unchangedTargetStillRefreshesVisibleRegions` |
 | 107 | Computer Use 目标窗口提示遮罩 | 目标矩形变化时移动面板并重算可见区域 | — | 轮询时当前面板矩形与目标矩形不同 | 移动面板并重算可见区域 | P1 | ✅ 已覆盖 | `changedTargetMovesPanelAndRefreshes` |
+| 108 | Computer Use 目标窗口可见区域 | 浮动层窗口同样是遮挡者 | — | 前方浮动面板 layer = 3 完全盖住目标 | 可见区域为空 | P1 | ✅ 已覆盖 | `floatingWindowIsOccluder` |
+| 109 | Computer Use 目标窗口可见区域 | 自身遮罩面板不计入遮挡者 | — | 自身遮罩面板与目标完全重合 | 排除自身后可见区域等于目标矩形 | P1 | ✅ 已覆盖 | `overlayPanelIsExcluded` |
 
-> 说明：全部 **107 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **109 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 10 / 10
-- P1: 已覆盖 86 / 86
+- P1: 已覆盖 88 / 88
 - P2: 已覆盖 11 / 11
-- **合计: 107 / 107**（仅表示清单场景，非源码覆盖率）
+- **合计: 109 / 109**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（86 条）
+- **P1**: 其余功能性用例（88 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 107 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 109 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

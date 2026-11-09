@@ -105,6 +105,8 @@ enum ComputerUseWindowVisibility {
     ///     改用「进程 + 矩形重叠」近似匹配。
     ///   - processIdentifier: 目标窗口所属进程。
     ///   - windows: 窗口列表；为 `nil` 时实时查询当前 Space 的窗口。
+    ///   - excludingWindowID: 需要忽略的窗口（Lumi 自己的遮罩面板）。
+    ///     遮罩覆盖整个目标，不排除会把可见区域整个扣光。
     /// - Returns:
     ///   - 可见矩形（Quartz 桌面坐标），按面积从大到小排列；
     ///   - `nil` 表示**无法定位目标窗口**——它可能在别的 Space、已最小化，
@@ -114,7 +116,8 @@ enum ComputerUseWindowVisibility {
         target: CGRect,
         targetWindowID: CGWindowID?,
         processIdentifier: pid_t?,
-        windows: [[CFString: Any]]? = nil
+        windows: [[CFString: Any]]? = nil,
+        excludingWindowID: CGWindowID? = nil
     ) -> [CGRect]? {
         let list = windows ?? onScreenWindows()
         guard !list.isEmpty else { return nil }
@@ -125,8 +128,14 @@ enum ComputerUseWindowVisibility {
             targetRect: target
         ) else { return nil }
         // 列表自前向后排列：排在目标前面的窗口都压在目标之上。
+        //
+        // 不能只认 `layer == 0`：浮动面板、工具面板、菜单等非零层级的窗口
+        // 同样会真实挡住目标；唯一要精确排除的是 Lumi 自己的遮罩面板。
         let occluders = list[..<index].compactMap { window -> CGRect? in
-            guard (window[kCGWindowLayer] as? NSNumber)?.intValue == 0 else { return nil }
+            if let excludingWindowID,
+               (window[kCGWindowNumber] as? NSNumber)?.uint32Value == excludingWindowID {
+                return nil
+            }
             guard (window[kCGWindowAlpha] as? NSNumber)?.doubleValue ?? 1 > 0.01 else { return nil }
             guard let rect = rect(of: window), rect.intersects(target) else { return nil }
             return rect

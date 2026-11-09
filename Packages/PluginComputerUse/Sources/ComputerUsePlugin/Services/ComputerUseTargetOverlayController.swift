@@ -196,7 +196,8 @@ final class ComputerUseTargetOverlayController: SuperLog {
         guard let regions = ComputerUseWindowVisibility.visibleRegions(
             target: quartzRect,
             targetWindowID: targetWindowID,
-            processIdentifier: targetProcessIdentifier
+            processIdentifier: targetProcessIdentifier,
+            excludingWindowID: overlayWindowID
         ) else {
             // 无法定位目标窗口（可能在别的 Space、已最小化）。
             // 此时不能假设它完全可见，否则遮罩会盖到遮挡者身上。
@@ -214,6 +215,19 @@ final class ComputerUseTargetOverlayController: SuperLog {
         }
         model.visibleRegions = localRegions
         model.badgeRegion = badgeRegion(in: localRegions)
+    }
+
+    /// 遮罩面板自己的 `CGWindowID`。
+    ///
+    /// 面板层级是 `.screenSaver` 且覆盖整个目标，必须从遮挡者里排除，
+    /// 否则每次重算都会把自己的面板当作遮挡物，把可见区域扣成空。
+    private var overlayWindowID: CGWindowID? {
+        guard let number = panel?.windowNumber,
+              number > 0,
+              number <= Int(UInt32.max) else {
+            return nil
+        }
+        return CGWindowID(number)
     }
 
     /// 挑选安放角标的区域。
