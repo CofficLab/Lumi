@@ -66,13 +66,18 @@ enum ResumeToolSupport {
     ///
     /// 跨项目写入时不刷新：UI 面板展示的是「当前打开项目」的内容，
     /// 刷新它只会把另一个项目的数据混进来。
+    ///
+    /// `resumeID` 来自工具参数，可能是大小写/空白别名；Store 层会把别名
+    /// 规范化后落盘，UI 选中必须用同一个规范化 ID，否则精确匹配不到文档
+    /// 会清空当前预览。无法规范化的 ID 原样传递（不可能匹配到任何文档）。
     static func notify(resumeID: String? = nil) async {
+        let canonicalResumeID = resumeID.flatMap { try? ResumeDocumentStore.validatedSlug($0) }
         await MainActor.run {
             if let scoped = scopedProjectPath(),
                scoped != normalizedProjectPath(WorkspaceStore.shared.currentProjectPath) {
                 return
             }
-            WorkspaceStore.shared.reload(selectResume: resumeID)
+            WorkspaceStore.shared.reload(selectResume: canonicalResumeID ?? resumeID)
         }
     }
 
