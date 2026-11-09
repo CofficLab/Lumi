@@ -233,48 +233,66 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
 
         let result = host_processor_info(mach_host_self(), PROCESSOR_CPU_LOAD_INFO, &numCPUsU, &cpuInfoU, &numCpuInfoU)
 
-        if result == KERN_SUCCESS {
-            var totalUsage: Double = 0
+        guard result == KERN_SUCCESS else { return 0 }
 
-            if let prevCpuInfo = state.prevCpuInfo {
-                for i in 0..<Int32(numCPUs) {
-                    var inUse: Int32 = 0
-                    var total: Int32 = 0
-
-                    let baseIndex = Int(i) * Int(CPU_STATE_MAX)
-
-                    for j in 0..<Int(CPU_STATE_MAX) {
-                        let current = cpuInfoU![baseIndex + j]
-                        let prev = prevCpuInfo[baseIndex + j]
-                        let diff = current - prev
-
-                        total += diff
-
-                        if j != Int(CPU_STATE_IDLE) {
-                            inUse += diff
-                        }
-                    }
-
-                    if total > 0 {
-                        totalUsage += Double(inUse) / Double(total)
-                    }
-                }
-                totalUsage /= Double(numCPUs)
-            }
-
-            if let prevInfo = state.prevCpuInfo {
-                let size = Int(state.prevNumCpuInfo) * MemoryLayout<integer_t>.size
-                let ptr = UnsafeMutableRawPointer(prevInfo)
-                vm_deallocate(mach_task_self_, vm_address_t(Int(bitPattern: ptr)), vm_size_t(size))
-            }
-
-            state.prevCpuInfo = cpuInfoU
-            state.prevNumCpuInfo = numCpuInfoU
-
-            return totalUsage
+        var totalUsage: Double = 0
+        if let cpuInfoU, let prevCpuInfo = state.prevCpuInfo {
+            totalUsage = Self.cpuUsage(
+                current: cpuInfoU,
+                currentCount: Int(numCpuInfoU),
+                previous: prevCpuInfo,
+                previousCount: Int(state.prevNumCpuInfo),
+                cpuCount: Int(numCPUsU)
+            )
         }
 
-        return 0
+        if let prevInfo = state.prevCpuInfo {
+            let size = Int(state.prevNumCpuInfo) * MemoryLayout<integer_t>.size
+            let ptr = UnsafeMutableRawPointer(prevInfo)
+            vm_deallocate(mach_task_self_, vm_address_t(Int(bitPattern: ptr)), vm_size_t(size))
+        }
+
+        state.prevCpuInfo = cpuInfoU
+        state.prevNumCpuInfo = numCpuInfoU
+
+        return totalUsage
+    }
+
+    /// 按当前/历史 Mach buffer 计算平均 CPU 使用率。
+    ///
+    /// `host_processor_info` 返回的 `numCPUsU` / `numCpuInfoU` 才是本次调用的
+    /// 权威数量与长度；历史 buffer 的长度也可能与当前不同（例如 CPU 拓扑
+    /// 变化）。历史上这里用独立的 `sysctl` CPU 数量并直接下标，长度不足时
+    /// 会越界。长度不足的一律返回 0。
+    nonisolated static func cpuUsage(
+        current: UnsafePointer<integer_t>,
+        currentCount: Int,
+        previous: UnsafePointer<integer_t>,
+        previousCount: Int,
+        cpuCount: Int
+    ) -> Double {
+        let statesPerCPU = Int(CPU_STATE_MAX)
+        guard cpuCount > 0 else { return 0 }
+        let required = cpuCount * statesPerCPU
+        guard currentCount >= required, previousCount >= required else { return 0 }
+
+        var totalUsage: Double = 0
+        for cpu in 0..<cpuCount {
+            var inUse: Int64 = 0
+            var total: Int64 = 0
+            let baseIndex = cpu * statesPerCPU
+            for stateIndex in 0..<statesPerCPU {
+                let diff = Int64(current[baseIndex + stateIndex]) - Int64(previous[baseIndex + stateIndex])
+                total += diff
+                if stateIndex != Int(CPU_STATE_IDLE) {
+                    inUse += diff
+                }
+            }
+            if total > 0 {
+                totalUsage += Double(inUse) / Double(total)
+            }
+        }
+        return totalUsage / Double(cpuCount)
     }
 
     // MARK: - Memory Usage

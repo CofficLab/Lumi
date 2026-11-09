@@ -120,4 +120,27 @@ struct ToolJobRecordStoreTests {
         #expect(bounded.utf8.count == 64 * 1024)
         #expect(bounded == String(output.suffix(64 * 1024)))
     }
+
+    @Test("上下文不可用时所有接口安全降级且不崩溃")
+    func unavailableContextDegradesToNoOp() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ToolJobRecordStoreNoContext-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = ToolJobRecordStore(modelContext: nil, databaseRootURL: directory)
+        let conversationID = UUID()
+        let turnID = UUID()
+
+        await store.upsert(
+            makeRecord(id: "job-nil", conversationID: conversationID, turnID: turnID)
+        )
+
+        #expect(await store.fetchRecord(forJobID: "job-nil") == nil)
+        #expect(await store.fetchJobs(forConversationID: conversationID).isEmpty)
+        #expect(await store.fetchJobs(forTurnID: turnID).isEmpty)
+        #expect(await store.fetchNonTerminalJobs().isEmpty)
+        #expect(await store.fetchAllJobs().isEmpty)
+
+        await store.deleteAll(for: conversationID)
+    }
 }

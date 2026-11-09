@@ -204,9 +204,12 @@ public struct DefaultPluginFactory: PluginFactory {
 
     /// 产出默认插件列表。
     public func makePlugins() -> [any SuperPlugin] {
-        var plugins: [any SuperPlugin] = [
-            // 核心基础插件（order 10-20）：必须最先启动
-            try! StorageSuperPlugin(),
+        var plugins: [any SuperPlugin] = []
+        // 核心基础插件（order 10-20）：必须最先启动
+        if let storage = StorageSuperPlugin.makeIfAvailable() {
+            plugins.append(storage)
+        }
+        plugins += [
             CommandPlugin(),
             // 共享工具栏插件在 onReady 同步 macOS 与 iOS 的插件贡献启用状态。
             PluginToolbar(),

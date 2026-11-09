@@ -29,6 +29,26 @@ func storagePluginRegistersItsServiceAndCreatesScopedDirectories() throws {
 }
 
 @Test @MainActor
+func storagePluginFactoryReturnsNilInsteadOfTrappingWhenInitializationFails() {
+    let plugin = StorageSuperPlugin.makeIfAvailable { throw StorageBootstrapError() }
+    #expect(plugin == nil)
+}
+
+@Test @MainActor
+func storagePluginFactoryReturnsPluginWhenInitializationSucceeds() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("PluginStorageFactoryTests-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let plugin = try #require(StorageSuperPlugin.makeIfAvailable {
+        try StorageSuperPlugin(dataRootDirectory: root)
+    })
+    #expect(plugin.dataRootDirectory == root.standardizedFileURL)
+}
+
+private struct StorageBootstrapError: Error {}
+
+@Test @MainActor
 func storagePluginKeepsAHostProvidedService() throws {
     let hostRoot = FileManager.default.temporaryDirectory
         .appendingPathComponent("PluginStorageHostTests-\(UUID().uuidString)", isDirectory: true)

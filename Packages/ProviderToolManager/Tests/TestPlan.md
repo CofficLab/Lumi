@@ -2,10 +2,10 @@
 
 ## 包概述
 
-ProviderToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 53 条用例。
+ProviderToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 55 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 53
+测试文件: 14 个，用例总数: 55
 
 ## 公开 API
 
@@ -31,8 +31,8 @@ ProviderToolManager 的实现包，包含 14 个主要类型；当前测试覆�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **DefaultToolManagerProviding**（13 条）：由 `executeSuccess`、`executePassesConversationContext`、`executeNotifiesObservers` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ToolCallRecordStore**（4 条）：由 `recordAndFetch`、`deleteAll`、`count` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ToolJobRecordStore**（21 条）：由 `upsertAndFetchLifecycle`、`queryAndDeleteByScope`、`outputIsBounded` 等用例锁定；另有启动恢复的索引/物化成本基准，改动该模块时优先跑对应测试文件。
+- **ToolCallRecordStore**（5 条）：由 `recordAndFetch`、`deleteAll`、`count` 等用例锁定；另有上下文不可用时的安全降级，改动该模块时优先跑对应测试文件。
+- **ToolJobRecordStore**（22 条）：由 `upsertAndFetchLifecycle`、`queryAndDeleteByScope`、`outputIsBounded` 等用例锁定；另有启动恢复的索引/物化成本基准与上下文不可用时的安全降级，改动该模块时优先跑对应测试文件。
 - **ToolJob**（4 条）：由 `terminalStatuses`、`validTransitions`、`codableRoundTrip` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolManagerProviding**（11 条）：由 `addAndOrder`、`addMigratesOwnership`、`groupedByPlugin` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -93,28 +93,30 @@ ProviderToolManager 的实现包，包含 14 个主要类型；当前测试覆�
 | 51 | ToolJobRecordStore | resultJSON 是 Job 库的存储成本主体 | 生产库副本（可选） | 执行该用例 | resultJSON 总量占比最高 | P2 | ✅ 已覆盖 | `resultJSONDominatesStorageCost` |
 | 52 | ToolJobRecordStore | 启动恢复耗时趋势（仅观测，不作断言依据） | 生产库副本（可选） | 执行该用例 | 打印耗时趋势 | P2 | ✅ 已覆盖 | `startupTimingForObservation` |
 | 53 | ToolJobRecordStore | 累计输出超过 Int32.max 时重启恢复不截断 | 临时库 | 写入 3_000_000_000 字节后走原生 SQL 恢复 | 恢复值仍为 3_000_000_000 | P0 | ✅ 已覆盖 | `largeOutputByteCountSurvivesStartupRestore` |
+| 54 | ToolCallRecordStore | 上下文不可用时所有接口安全降级且不崩溃 | 注入 `nil` ModelContext | 依次调用 record/flush/各查询/deleteAll | 均安全返回空结果，不崩溃 | P0 | ✅ 已覆盖 | `unavailableContextDegradesToNoOp` |
+| 55 | ToolJobRecordStore | 上下文不可用时所有接口安全降级且不崩溃 | 注入 `nil` ModelContext | 依次调用 upsert/各查询/deleteAll | 均安全返回空结果，不崩溃 | P0 | ✅ 已覆盖 | `unavailableContextDegradesToNoOp` |
 
-> 说明：全部 **53 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **55 条场景**已在本包 `swift test` 中实跑通过。
 > 其中 10 条标注「生产库副本（可选）」的基准用例，未设置环境变量 `LUMI_PROD_TOOL_JOBS_SQLITE` 指向生产库副本时会提前返回（记为通过），设置后执行实际断言。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 13 / 13
+- P0: 已覆盖 15 / 15
 - P1: 已覆盖 37 / 37
 - P2: 已覆盖 3 / 3
-- **合计: 53 / 53**（仅表示清单场景，非源码覆盖率）
+- **合计: 55 / 55**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
 - **P1**: 其余功能性用例（37 条）
 - **P2**: 稳定常量、占位、文案、空集合、纯观测基准等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 53 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 55 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
