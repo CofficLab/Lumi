@@ -61,6 +61,29 @@ struct CADDesignerSuperPluginTests {
         #expect(output.contains("20"))
     }
 
+    @Test("rejects an explicitly provided unknown profile id")
+    func rejectsUnknownExplicitProfileID() async throws {
+        CADDocumentStore.shared.resetForTests()
+        _ = CADDocumentStore.shared.createDocument(name: "V2 Bad Profile")
+
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await BuildFrameV2Tool().execute(arguments: [
+                "width": ToolArgument(800), "depth": ToolArgument(600), "height": ToolArgument(900),
+                "series": ToolArgument("40"),
+                "profileId": ToolArgument("profile-40x40-typo"),
+            ])
+        }
+        #expect(CADDocumentStore.shared.selectedDocument?.components.isEmpty == true)
+
+        // 未提供 profileId 时仍回退到系列默认方形型材。
+        let output = try await BuildFrameV2Tool().execute(arguments: [
+            "width": ToolArgument(800), "depth": ToolArgument(600), "height": ToolArgument(900),
+            "series": ToolArgument("40"),
+        ])
+        #expect(output.contains("profile-40x40"))
+        #expect(CADDocumentStore.shared.selectedDocument?.components.count == 20)
+    }
+
     @Test("places and updates CAD components through stable V2 tool IDs")
     func placesAndUpdatesComponentsThroughV2Tools() async throws {
         CADDocumentStore.shared.resetForTests()

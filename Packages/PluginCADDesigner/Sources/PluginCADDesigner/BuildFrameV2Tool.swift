@@ -47,9 +47,17 @@ public struct BuildFrameV2Tool: SuperAgentTool {
 
         let series = ProfileSeries(rawValue: CADDesignerV2ToolSupport.string(arguments, "series") ?? "40") ?? .series40
         let profileID: String
-        if let override = CADDesignerV2ToolSupport.string(arguments, "profileId"),
-           ComponentLibrary.shared.profileSpec(id: override) != nil {
-            profileID = override
+        if let rawOverride = CADDesignerV2ToolSupport.string(arguments, "profileId"),
+           !rawOverride.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            // 显式覆盖必须命中真实型材；未知 ID 不能静默回退到系列默认规格。
+            guard ComponentLibrary.shared.profileSpec(id: rawOverride) != nil else {
+                throw CADDesignerV2ToolSupport.failure(
+                    en: "Unknown profile spec '\(rawOverride)'.",
+                    zh: "未知型材规格 '\(rawOverride)'。",
+                    toolName: name
+                )
+            }
+            profileID = rawOverride
         } else if let square = ComponentLibrary.shared.profiles.first(where: { $0.series == series && $0.width == $0.height }) {
             profileID = square.id
         } else {
