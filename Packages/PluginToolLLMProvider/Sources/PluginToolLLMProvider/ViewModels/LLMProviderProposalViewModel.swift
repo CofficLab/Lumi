@@ -154,6 +154,8 @@ final class LLMProviderProposalViewModel: ObservableObject {
         phase = .saving
         do {
             try store.upsert(configuration)
+            // 落盘用的是 trim 后的配置，草稿也要同步，避免后续选择使用旧口径。
+            defaultModel = configuration.defaultModel
         } catch {
             phase = .failed(error.localizedDescription)
             return
@@ -186,7 +188,9 @@ final class LLMProviderProposalViewModel: ObservableObject {
             phase = .failed(Self.errorMessage("The provider is not available yet."))
             return
         }
-        let model = models.contains { $0.id == defaultModel } ? defaultModel : models.first?.id
+        // 保存时已 trim，匹配也必须用同一口径，否则 " m2 " 匹配不上 m2。
+        let normalizedDefaultModel = defaultModel.trimmingCharacters(in: .whitespacesAndNewlines)
+        let model = models.contains { $0.id == normalizedDefaultModel } ? normalizedDefaultModel : models.first?.id
         manager.select(providerID: providerID, model: model, reason: .userSelected)
     }
 
