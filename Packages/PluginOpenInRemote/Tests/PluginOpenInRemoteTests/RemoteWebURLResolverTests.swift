@@ -52,6 +52,28 @@ struct RemoteWebURLResolverTests {
         )
     }
 
+    /// 回归 #1095：SSH path 的百分号编码不能在重建时解码，否则 `%23` 会变成
+    /// fragment 分隔符、截断仓库路径。
+    @Test("ssh:// 与 git:// 地址保留路径中的百分号编码")
+    func preservesEncodedCharactersInSchemePath() {
+        let hash = RemoteWebURLResolver.webURL(
+            fromRemote: "ssh://git@code.example.com/acme/repo%23draft.git"
+        )
+        #expect(hash?.absoluteString == "https://code.example.com/acme/repo%23draft")
+        // URL.path 仍把 `#` 当作仓库名的一部分，而不是 fragment 的起点。
+        #expect(hash?.path == "/acme/repo#draft")
+        #expect(hash?.fragment == nil)
+
+        #expect(
+            RemoteWebURLResolver.webURL(fromRemote: "ssh://git@code.example.com/acme/repo%3Fdraft.git")?
+                .absoluteString == "https://code.example.com/acme/repo%3Fdraft"
+        )
+        #expect(
+            RemoteWebURLResolver.webURL(fromRemote: "git://code.example.com/acme/repo%25draft.git")?
+                .absoluteString == "https://code.example.com/acme/repo%25draft"
+        )
+    }
+
     @Test("git:// 地址转换为 HTTPS web 链接并丢弃 Git 协议端口")
     func convertsGitProtocolRemote() {
         #expect(
