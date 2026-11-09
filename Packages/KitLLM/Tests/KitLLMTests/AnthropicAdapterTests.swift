@@ -520,6 +520,28 @@ struct AnthropicAdapterMessageTests {
         #expect(content.first?["tool_use_id"] as? String == "toolu_1")
     }
 
+    @Test("回归 #955：失败工具结果携带 is_error，成功结果不带")
+    func toolResultCarriesErrorFlagOnlyOnFailure() throws {
+        let failed = adapter.transformMessage(
+            LLMMessage(role: .tool, content: "失败", toolCallID: "toolu_1", isError: true)
+        )
+        let failedContent = try #require(failed["content"] as? [[String: Any]])
+        #expect(failedContent.first?["is_error"] as? Bool == true)
+
+        let succeeded = adapter.transformMessage(
+            LLMMessage(role: .tool, content: "成功", toolCallID: "toolu_2")
+        )
+        let succeededContent = try #require(succeeded["content"] as? [[String: Any]])
+        #expect(succeededContent.first?["is_error"] == nil)
+
+        let image = MessageImage(data: Data([0x01, 0x02]), mimeType: "image/png")
+        let failedWithImage = adapter.transformMessage(
+            LLMMessage(role: .tool, content: "失败", toolCallID: "toolu_3", isError: true, images: [image])
+        )
+        let imageContent = try #require(failedWithImage["content"] as? [[String: Any]])
+        #expect(imageContent.first?["is_error"] as? Bool == true)
+    }
+
     @Test("带工具调用的 assistant 消息转成 tool_use 块且名字被转义")
     func transformsAssistantToolCalls() throws {
         let message = LLMMessage(

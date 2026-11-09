@@ -49,6 +49,8 @@ extension Message {
             redactedThinking: redactedThinkingData?.map {
                 KitLLM.LLMRedactedThinkingBlock(data: $0)
             },
+            // 工具失败必须在协议层可见，不能被当成普通成功文本。
+            isError: isError,
             // 工具结果图片必须挂在独立的 tool 消息上，不能成为 assistant content。
             images: role == .user ? userImages : (role == .tool ? toolImages : [])
         )
@@ -127,6 +129,7 @@ func messageFromLLMMessage(_ message: LLMMessage, conversationID: UUID) -> Messa
         role: .init(rawValue: message.role.rawValue) ?? .system,
         content: message.content,
         metadata: metadata,
+        isError: message.isError,
         toolCallID: message.toolCallID,
         reasoningContent: message.reasoningContent,
         toolCalls: message.toolCalls?.map {
