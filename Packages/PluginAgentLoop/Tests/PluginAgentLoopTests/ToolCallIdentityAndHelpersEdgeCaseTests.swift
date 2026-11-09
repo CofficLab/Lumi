@@ -171,6 +171,29 @@ struct MessageConversionEdgeCaseTests {
         #expect(messages[1].images == [MessageImage(data: imageData, mimeType: "image/png")])
     }
 
+    @Test("回归 #955：工具消息的失败标志会传入 LLM 消息并由钩子回写保留")
+    func llmMessageCarriesToolErrorFlag() {
+        let conversationID = UUID()
+        let tool = Message(
+            conversationID: conversationID,
+            role: .tool,
+            content: "工具失败",
+            isError: true,
+            toolCallID: "call-1"
+        )
+        #expect(tool.llmMessage.isError)
+
+        let assistant = Message(conversationID: conversationID, role: .assistant, content: "ok")
+        #expect(!assistant.llmMessage.isError)
+
+        // 生命周期钩子返回的 LLM 消息也要把失败标志带回持久化消息。
+        let restored = messageFromLLMMessage(
+            LLMMessage(role: .tool, content: "工具失败", toolCallID: "call-1", isError: true),
+            conversationID: conversationID
+        )
+        #expect(restored.isError)
+    }
+
     /// assistant 消息可能没有工具调用（如纯文本回复）：
     /// 图片收集循环必须容忍 nil，而不是崩溃。
     @Test("没有工具调用的 assistant 消息跳过图片收集")

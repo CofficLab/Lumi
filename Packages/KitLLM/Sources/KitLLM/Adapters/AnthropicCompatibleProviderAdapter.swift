@@ -471,25 +471,26 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
     public func transformMessage(_ message: LLMMessage) -> [String: Any] {
         // 工具结果消息
         if let toolCallID = message.toolCallID {
+            let resultContent: Any
             if message.images.isEmpty {
-                return [
-                    "role": "user",
-                    "content": [
-                        ["type": "tool_result", "tool_use_id": toolCallID, "content": message.content],
-                    ],
-                ]
+                resultContent = message.content
+            } else {
+                resultContent = VisionMessageContentBuilder.anthropicBlocks(
+                    text: message.content,
+                    images: message.images
+                )
             }
 
-            let resultContent = VisionMessageContentBuilder.anthropicBlocks(
-                text: message.content,
-                images: message.images
-            )
-            return [
-                "role": "user",
-                "content": [
-                    ["type": "tool_result", "tool_use_id": toolCallID, "content": resultContent],
-                ],
+            // 协议仅在失败结果上携带 is_error；成功结果不得出现该键。
+            var block: [String: Any] = [
+                "type": "tool_result",
+                "tool_use_id": toolCallID,
+                "content": resultContent,
             ]
+            if message.isError {
+                block["is_error"] = true
+            }
+            return ["role": "user", "content": [block]]
         }
 
         // redacted thinking 必须作为独立的不透明块原样回传。

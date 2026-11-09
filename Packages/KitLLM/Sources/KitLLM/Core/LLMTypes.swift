@@ -33,6 +33,8 @@ public struct LLMMessage: Sendable, Equatable {
     public var reasoningContent: String?
     /// 不透明的 redacted thinking 块；下一轮请求必须按原样回传。
     public var redactedThinking: [LLMRedactedThinkingBlock]?
+    /// 工具结果是否为失败结果；Anthropic 协议据此生成 `is_error: true`。
+    public var isError: Bool
     public var images: [MessageImage]
 
     public init(
@@ -42,6 +44,7 @@ public struct LLMMessage: Sendable, Equatable {
         toolCallID: String? = nil,
         reasoningContent: String? = nil,
         redactedThinking: [LLMRedactedThinkingBlock]? = nil,
+        isError: Bool = false,
         images: [MessageImage] = []
     ) {
         self.role = role
@@ -50,6 +53,7 @@ public struct LLMMessage: Sendable, Equatable {
         self.toolCallID = toolCallID
         self.reasoningContent = reasoningContent
         self.redactedThinking = redactedThinking
+        self.isError = isError
         self.images = images
     }
 }
