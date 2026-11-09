@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 109 条用例。
+PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 113 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 109
+测试文件: 14 个，用例总数: 113
 
 核心组件（源码目录）:
 - `Models/`
@@ -178,26 +178,31 @@ PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 108 | Computer Use 目标窗口可见区域 | 浮动层窗口同样是遮挡者 | — | 前方浮动面板 layer = 3 完全盖住目标 | 可见区域为空 | P1 | ✅ 已覆盖 | `floatingWindowIsOccluder` |
 | 109 | Computer Use 目标窗口可见区域 | 自身遮罩面板不计入遮挡者 | — | 自身遮罩面板与目标完全重合 | 排除自身后可见区域等于目标矩形 | P1 | ✅ 已覆盖 | `overlayPanelIsExcluded` |
 
-> 说明：全部 **109 条场景**已在本包 `swift test` 中实跑通过。
+| 110 | Computer Use 授权恢复 | allowTokenReexecutes | 卡片回传 computer_use.allow_for_task | 解析恢复回答 | 必须重新执行工具，动作是 reexecute | P0 | ✅ 已覆盖 | `allowTokenReexecutes` |
+| 111 | Computer Use 授权恢复 | denyTokenRejectsWithMessage | 卡片回传 computer_use.deny 与说明 | 解析恢复回答 | 以说明文案失败结束，动作是 reject | P1 | ✅ 已覆盖 | `denyTokenRejectsWithMessage` |
+| 112 | Computer Use 授权恢复 | unknownAnswerReturnsText | 无法识别的恢复回答 | 解析恢复回答 | 保持 returnAnswer，把回答当结果 | P2 | ✅ 已覆盖 | `unknownAnswerReturnsText` |
+| 113 | Computer Use 授权恢复 | toolsDeclareResumeActionThroughExistential | 四个挂起工具通过 any SuperAgentTool 调用 | 分别传入允许、拒绝与普通回答 | 允许为 reexecute、拒绝为 reject、普通为 returnAnswer，动态分派不被默认实现吞掉 | P1 | ✅ 已覆盖 | `toolsDeclareResumeActionThroughExistential` |
+
+> 说明：全部 **113 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 10 / 10
-- P1: 已覆盖 88 / 88
-- P2: 已覆盖 11 / 11
-- **合计: 109 / 109**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 11 / 11
+- P1: 已覆盖 90 / 90
+- P2: 已覆盖 12 / 12
+- **合计: 113 / 113**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（88 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
+- **P1**: 其余功能性用例（90 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 109 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 113 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

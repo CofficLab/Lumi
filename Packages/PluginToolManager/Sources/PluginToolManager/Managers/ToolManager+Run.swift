@@ -167,6 +167,54 @@ extension ToolManager {
         return result
     }
 
+    /// 挂起交互恢复时如何完成本次调用由工具自己决定。
+    ///
+    /// Computer Use 的授权卡片回答「允许」时必须重新执行工具：授权回执
+    /// 不是观察结果，直接返回会让 Agent 在缺少截图/observation_id 的情况下
+    /// 继续推理。默认规则（风险等级 + 允许词）保持不变。
+    public func resolveUserResponse(
+        _ answer: String,
+        for toolCall: ToolCall,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> ToolCallResult {
+        if let tool = registeredTools[toolCall.name],
+           let arguments = try? ToolArgumentCoding.decode(toolCall.arguments) {
+            switch tool.userResponseAction(for: answer, arguments: arguments) {
+            case .reexecute:
+                // 挂起结果同时存在于内存缓存与终态 Job 中；两处都必须失效，
+                // 否则重执行会直接复用挂起结果，用户授权后拿到的仍是那张卡片。
+                discardCachedResult(for: toolCall.id, conversationID: conversationID, turnID: turnID)
+                toolExecutionManager.forgetTerminalJob(
+                    forToolCallID: toolCall.id,
+                    conversationID: conversationID,
+                    turnID: turnID
+                )
+                return await execute(toolCall, conversationID: conversationID, turnID: turnID)
+            case let .reject(reason):
+                return ToolCallResult(content: reason, isError: true)
+            case .returnAnswer:
+                break
+            }
+        }
+
+        if riskLevel(for: toolCall)?.requiresPermission == true {
+            switch answer.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+            case "允许", "同意", "是", "allow", "approve", "approved", "yes":
+                return await execute(toolCall, conversationID: conversationID, turnID: turnID)
+            default:
+                return ToolCallResult(content: "User rejected the tool execution request.", isError: true)
+            }
+        }
+        return ToolCallResult(content: answer)
+    }
+
+    private func discardCachedResult(for toolCallID: String, conversationID: UUID, turnID: UUID?) {
+        let key = resultCacheKey(toolCallID: toolCallID, conversationID: conversationID, turnID: turnID)
+        resultCache.removeValue(forKey: key)
+        resultCacheConversationIDs.removeValue(forKey: key)
+    }
+
     public func toolCalls(for turnID: UUID) async -> [ToolCallRecord] {
         guard let recordStore else { return [] }
         return await recordStore.fetchRecords(for: turnID)

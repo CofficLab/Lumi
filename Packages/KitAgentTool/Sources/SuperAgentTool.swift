@@ -101,6 +101,30 @@ public protocol SuperAgentTool: Sendable {
         context: ToolExecutionContext,
         arguments: [String: ToolArgument]
     ) async throws -> ToolCallResult
+
+    /// 挂起交互（`awaitingUserResponse`）结束后，用户回答应如何完成本次调用。
+    ///
+    /// 默认把回答文本当作工具结果返回（例如 `ask_user`）。如果工具的挂起
+    /// 只是为了拿到一次授权（例如 Computer Use 的观察/操作），则必须在回答
+    /// 表示允许时重新执行工具，否则调用方会把授权回执误当成业务结果。
+    ///
+    /// **必须声明为协议要求**：若仅放在扩展中，对存在类型
+    /// （`any SuperAgentTool`）调用时会静态分派到默认实现，工具自身覆盖的
+    /// 版本永远不会被调用。
+    func userResponseAction(
+        for answer: String,
+        arguments: [String: ToolArgument]
+    ) -> ToolUserResponseAction
+}
+
+/// 工具对「用户在挂起交互中给出的回答」的处理方式。
+public enum ToolUserResponseAction: Sendable, Equatable {
+    /// 把回答文本作为工具结果返回（默认）。
+    case returnAnswer
+    /// 授权已生效，重新执行工具并返回真实结果。
+    case reexecute
+    /// 用户拒绝：以失败结果结束本次调用，不重新执行。
+    case reject(reason: String)
 }
 
 extension SuperAgentTool {
@@ -150,5 +174,15 @@ extension SuperAgentTool {
     ) async throws -> ToolCallResult {
         _ = context
         return try await executeResult(arguments: arguments)
+    }
+
+    /// 默认把用户回答当作工具结果返回。
+    public func userResponseAction(
+        for answer: String,
+        arguments: [String: ToolArgument]
+    ) -> ToolUserResponseAction {
+        _ = answer
+        _ = arguments
+        return .returnAnswer
     }
 }
