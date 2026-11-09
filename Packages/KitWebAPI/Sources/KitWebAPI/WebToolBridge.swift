@@ -142,18 +142,41 @@ public struct WebToolExecutionResult: Encodable, Sendable {
     /// 是否处于「等待用户响应」的挂起状态。
     public let awaitingUserResponse: Bool
 
+    /// 结果中的图片附件（字节、MIME 类型与文件名）。
+    ///
+    /// `read_image` 这类工具的主要结果就是图片；HTTP 调用方需要拿到真实
+    /// 附件，而不是只看到一句「图片已附加」的正文。
+    public let images: [ImageAttachment]
+
     public init(
         tool: String,
         content: String,
         isError: Bool,
         duration: TimeInterval?,
-        awaitingUserResponse: Bool
+        awaitingUserResponse: Bool,
+        images: [ImageAttachment] = []
     ) {
         self.tool = tool
         self.content = content
         self.isError = isError
         self.duration = duration
         self.awaitingUserResponse = awaitingUserResponse
+        self.images = images
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case tool, content, isError, duration, awaitingUserResponse, images
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(tool, forKey: .tool)
+        try container.encode(content, forKey: .content)
+        try container.encode(isError, forKey: .isError)
+        try container.encodeIfPresent(duration, forKey: .duration)
+        try container.encode(awaitingUserResponse, forKey: .awaitingUserResponse)
+        // 无图片时不输出空数组，保持既有标量响应形状不变。
+        if !images.isEmpty { try container.encode(images, forKey: .images) }
     }
 }
 
@@ -300,7 +323,8 @@ public final class WebToolBridge {
             content: result.content,
             isError: result.isError,
             duration: result.duration,
-            awaitingUserResponse: result.awaitingUserResponse
+            awaitingUserResponse: result.awaitingUserResponse,
+            images: result.images
         )
     }
 
