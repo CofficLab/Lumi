@@ -14,6 +14,7 @@ import ProviderWebServer
 private final class StubTool: SuperAgentTool, @unchecked Sendable {
     let name: String
     let resultText: String
+    var resultImages: [ImageAttachment] = []
     private(set) var receivedArguments: [String: ToolArgument] = [:]
 
     init(name: String, resultText: String) {
@@ -44,6 +45,11 @@ private final class StubTool: SuperAgentTool, @unchecked Sendable {
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         receivedArguments = arguments
         return resultText
+    }
+
+    func executeResult(arguments: [String: ToolArgument]) async throws -> ToolCallResult {
+        receivedArguments = arguments
+        return ToolCallResult(content: resultText, images: resultImages)
     }
 }
 
@@ -277,6 +283,30 @@ struct WebToolBridgeTests {
         #expect(manager.lastExecutedCall?.name == "read_file")
     }
 
+    @Test("调用工具时透传图片附件")
+    func passesThroughImageAttachments() async throws {
+        let manager = StubToolManager()
+        let tool = StubTool(name: "read_image", resultText: "图片已附加到工具结果，可直接查看")
+        let png = Data([0x89, 0x50, 0x4E, 0x47])
+        tool.resultImages = [
+            ImageAttachment(data: png, mimeType: "image/png", fileName: "shot.png")
+        ]
+        manager.add(tool, pluginID: "builtin.tools")
+        let bridge = WebToolBridge(toolManager: manager)
+
+        let result = try await bridge.invoke(
+            tool: "read_image",
+            arguments: ["path": "/tmp/shot.png"],
+            conversationID: UUID()
+        )
+
+        #expect(result.isError == false)
+        #expect(result.images.count == 1)
+        #expect(result.images.first?.data == png)
+        #expect(result.images.first?.mimeType == "image/png")
+        #expect(result.images.first?.fileName == "shot.png")
+    }
+
     @Test("调用不存在的工具抛出 notFound")
     func throwsNotFoundForUnknownTool() async {
         let bridge = WebToolBridge(toolManager: StubToolManager())
@@ -436,5 +466,54 @@ struct WebToolRoutesTests {
         #expect(decoded.data.tool == "read_file")
         #expect(decoded.data.content == "file-content")
         #expect(decoded.data.isError == false)
+
+        // 无图片的结果不输出空的 images 字段，保持既有响应形状。
+        let raw = try #require(String(data: response.body, encoding: .utf8))
+        #expect(!raw.contains("\"images\""))
+    }
+
+    @Test("调用路由的响应携带图片附件字节与元数据")
+    func invokeRouteReturnsImageAttachments() async throws {
+        let manager = StubToolManager()
+        let tool = StubTool(name: "read_image", resultText: "图片已附加")
+        let png = Data([0x89, 0x50, 0x4E, 0x47])
+        tool.resultImages = [
+            ImageAttachment(data: png, mimeType: "image/png", fileName: "shot.png")
+        ]
+        manager.add(tool, pluginID: "builtin.tools")
+        let bridge = WebToolBridge(toolManager: manager)
+        let routes = WebToolRoutes.makeRoutes(bridge: bridge)
+        let invokeRoute = try #require(routes.first { $0.path == "/api/v1/tools/:name/invoke" })
+
+        let body = try JSONSerialization.data(withJSONObject: [
+            "arguments": ["path": "/tmp/shot.png"],
+            "conversationID": UUID().uuidString,
+        ])
+        let response = try await invokeRoute.handler(
+            WebRouteRequest(
+                method: .post,
+                path: "/api/v1/tools/read_image/invoke",
+                pathParameters: ["name": "read_image"],
+                body: body
+            )
+        )
+        #expect(response.statusCode == 200)
+
+        struct Envelope: Decodable {
+            struct Image: Decodable {
+                let data: Data
+                let mimeType: String
+                let fileName: String?
+            }
+            struct Item: Decodable {
+                let images: [Image]?
+            }
+            let data: Item
+        }
+        let decoded = try JSONDecoder().decode(Envelope.self, from: response.body)
+        let image = try #require(decoded.data.images?.first)
+        #expect(image.data == png)
+        #expect(image.mimeType == "image/png")
+        #expect(image.fileName == "shot.png")
     }
 }
