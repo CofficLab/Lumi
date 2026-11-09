@@ -94,18 +94,7 @@ struct MultipleSuspensionsResumeTests {
     @Test("只有一个挂起时行为不变，直接继续回合")
     func singleSuspensionStillContinuesAfterResume() async throws {
         let fixture = Fixture(suspensions: ["call_a"])
-        fixture.loop.runtimes[fixture.conversationID] = TurnRuntime(
-            phase: .awaitingUser(
-                turnID: fixture.turnID,
-                assistantMessageID: fixture.assistantMessageID,
-                pendingToolCalls: [],
-                suspension: fixture.suspension(toolCallID: "call_a")
-            ),
-            lastTurnID: fixture.turnID,
-            pendingSuspensions: ["call_a": fixture.suspension(toolCallID: "call_a")],
-            suspensionOrder: ["call_a"],
-            suspensionAssistantMessageID: fixture.assistantMessageID
-        )
+        fixture.installSingleSuspension("call_a")
 
         let outcome = try await fixture.loop.resumeTurn(
             in: fixture.conversationID,
@@ -118,6 +107,28 @@ struct MultipleSuspensionsResumeTests {
         #expect(outcome == .completed)
         #expect(fixture.llm.requestCount == 1)
         #expect(fixture.observedSuspensionIDs.isEmpty)
+    }
+
+    /// 回归 #944：恢复后没有剩余工具调用时，这条路径曾经不发布任何运行
+    /// 事件。会话状态由 AgentLoop 事件驱动，订阅方因此一直停在
+    /// `.suspended`，模型已经开始下一次请求而侧边栏仍显示暂停。
+    @Test("恢复后必须重新声明运行中")
+    func resumePublishesRunningEvent() async throws {
+        let fixture = Fixture(suspensions: ["call_a"])
+        fixture.installSingleSuspension("call_a")
+
+        _ = try await fixture.loop.resumeTurn(
+            in: fixture.conversationID,
+            request: AgentTurnResumeRequest(
+                suspensionID: "userInput:call_a",
+                answer: "answer a"
+            )
+        )
+
+        #expect(
+            fixture.observedStartedTurnIDs == [fixture.turnID],
+            "恢复路径必须发布可让会话状态回到 running 的回合事件"
+        )
     }
 }
 
@@ -142,6 +153,7 @@ private final class Fixture {
     let llm = CountingLLMManager()
     let loop: AgentLoopManager
     private(set) var observedSuspensionIDs: [String] = []
+    private(set) var observedStartedTurnIDs: [UUID] = []
 
     /// - Parameter suspensions: 预先挂起的工具调用 ID，按给定顺序挂起。
     init(suspensions: [String] = ["call_a", "call_b"]) {
@@ -199,9 +211,33 @@ private final class Fixture {
         )
 
         _ = loop.addAgentLoopObserver { [weak self] event in
-            guard case .suspended(_, _, let suspension) = event else { return }
-            self?.observedSuspensionIDs.append(suspension.suspensionID)
+            switch event {
+            case .started(_, let startedTurnID):
+                self?.observedStartedTurnIDs.append(startedTurnID)
+            case .suspended(_, _, let suspension):
+                self?.observedSuspensionIDs.append(suspension.suspensionID)
+            default:
+                break
+            }
         }
+    }
+
+    /// 把运行时压成「只剩一个挂起调用」的状态，用于覆盖恢复后直接进入
+    /// 下一次 LLM 请求的路径。
+    func installSingleSuspension(_ toolCallID: String) {
+        let suspension = suspension(toolCallID: toolCallID)
+        loop.runtimes[conversationID] = TurnRuntime(
+            phase: .awaitingUser(
+                turnID: turnID,
+                assistantMessageID: assistantMessageID,
+                pendingToolCalls: [],
+                suspension: suspension
+            ),
+            lastTurnID: turnID,
+            pendingSuspensions: [toolCallID: suspension],
+            suspensionOrder: [toolCallID],
+            suspensionAssistantMessageID: assistantMessageID
+        )
     }
 
     func suspension(toolCallID: String) -> AgentLoopSuspension {

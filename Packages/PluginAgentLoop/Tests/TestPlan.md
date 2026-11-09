@@ -5,7 +5,7 @@
 PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProvider`。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 115
+测试文件: 13 个，用例总数: 116
 
 核心组件（源码目录）:
 - `Managers/`
@@ -43,7 +43,7 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 - **挂起回落必须区分授权与交互**（3 条）：由 `askUserSuspensionKeepsNonAuthorizationState`、`permissionSuspensionStillResetsToPending`、`suspensionKindIsDecidedByPayload` 锁定；改动该模块时优先跑 `SuspendedInteractionStateTests.swift`。
 - **工具挂起时的授权状态回落**（4 条）：由 `suspensionResetsAuthorizationStateToPending`、`needsUserResponseBranchResetsAuthorizationState`、`completedToolCallKeepsItsAuthorizationState` 等用例锁定；改动该模块时优先跑 `SuspendedToolAuthorizationStateTests.swift`。
 - **挂起回合的取消**（5 条）：由 `cancellingSuspendedTurnClearsSuspension`、`cancellingSuspendedTurnDeliversCancelledEvent`、`cancellingDuringResumeDoesNotReviveTurn` 等用例锁定；改动该模块时优先跑 `SuspendedTurnCancellationTests.swift`。
-- **同一批次多个挂起点的恢复**（3 条）：由 `resumingOneSuspensionKeepsRemainingActive`、`allSuspensionsMustBeAnsweredBeforeNextLLMRequest`、`singleSuspensionStillContinuesAfterResume` 锁定；恢复一个挂起后必须停在剩余挂起点，全部回答完才允许请求 LLM（**回归 #1026**）。
+- **同一批次多个挂起点的恢复**（4 条）：由 `resumingOneSuspensionKeepsRemainingActive`、`allSuspensionsMustBeAnsweredBeforeNextLLMRequest`、`singleSuspensionStillContinuesAfterResume`、`resumePublishesRunningEvent` 锁定；恢复一个挂起后必须停在剩余挂起点，全部回答完才允许请求 LLM（**回归 #1026**）；恢复后没有剩余调用时必须重新发布运行事件（**回归 #944**）。
 - **Tool 调用身份归一化的边界分支**（7 条）：由 `idsCollectsToolCallIDsFromBothRoles`、`normalizeDetectsCollisionAfterTrim`、`normalizeReturnsResponseUnchangedWithoutToolCalls` 等用例锁定；改动该模块时优先跑 `ToolCallIdentityAndHelpersEdgeCaseTests.swift`。
 - **压缩历史下的工具调用身份归一化**（2 条）：由 `compressedTurnToolCallIDIsStillNormalized`、`otherTurnToolCallIDIsNotReserved` 锁定；去重集合必须包含同回合已落库但被上下文压缩掉的 ID（**回归 #1024**）。
 - **消息与 LLM 消息互转的边界分支**（7 条）：由 `llmMessagesSkipsToolCallsWithoutResult`、`messageFromLLMMessageFallsBackToSystemForUnknownRole`、`llmMessageDropsInvalidBase64ImageAttachments` 等用例锁定；改动该模块时优先跑 `ToolCallIdentityAndHelpersEdgeCaseTests.swift`。
@@ -169,27 +169,28 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 | 113 | 压缩历史下的工具调用身份归一化 | 同回合较早的 `ls_0` 已被压缩出上下文，provider 再次返回 `ls_0` 时必须换新 ID（**回归 #1024**） | 同回合 assistant/tool 消息含 `ls_0`，压缩历史不含 | 调用 `performLLMRequest` | 响应与落库消息使用新 ID，不再命中旧 Job | P1 | ✅ 已覆盖 | `compressedTurnToolCallIDIsStillNormalized` |
 | 114 | 压缩历史下的工具调用身份归一化 | 其他回合使用过的 ID 不参与本回合去重 | 其他回合含 `ls_0`，本回合未使用 | 调用 `performLLMRequest` | 响应保留 `ls_0` | P1 | ✅ 已覆盖 | `otherTurnToolCallIDIsNotReserved` |
 | 115 | 消息与 LLM 消息互转的边界分支 | 回归 #955：工具失败标志在历史转换与钩子回写中不丢失 | 构造 `isError: true` 的 tool 消息与 LLM 消息 | 转成 `LLMMessage`，再用 `messageFromLLMMessage` 回写 | 两处都保留失败标志，非错误消息为 false | P0 | ✅ 已覆盖 | `llmMessageCarriesToolErrorFlag` |
+| 116 | 同一批次多个挂起点的恢复 | 恢复后必须重新声明运行中，避免会话状态停在 suspended（**回归 #944**） | 仅一个 ask_user 挂起，回答后没有剩余工具调用 | 回答该挂起 | 恢复路径同步发布回合运行事件，订阅方可将状态置回 running | P0 | ✅ 已覆盖 | `resumePublishesRunningEvent` |
 
-> 说明：全部 **115 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **116 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 26 / 26
+- P0: 已覆盖 27 / 27
 - P1: 已覆盖 77 / 77
 - P2: 已覆盖 12 / 12
-- **合计: 115 / 115**（仅表示清单场景，非源码覆盖率）
+- **合计: 116 / 116**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（26 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（27 条）
 - **P1**: 其余功能性用例（77 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 115 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 116 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
