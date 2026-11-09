@@ -100,6 +100,51 @@ struct ComputerUseTargetOverlayTests {
         #expect(interval >= .milliseconds(50))
     }
 
+    // MARK: - 遮挡关系刷新
+
+    @MainActor
+    @Test("目标矩形不变时仍重算可见区域")
+    func unchangedTargetStillRefreshesVisibleRegions() throws {
+        let controller = ComputerUseTargetOverlayController.shared
+        let quartz = CGRect(x: 300, y: 388, width: 500, height: 392)
+        let frame = try #require(ScreenCoordinateConverter.appKitRect(fromQuartz: quartz))
+
+        var movedTo: [CGRect] = []
+        var refreshed: [CGRect] = []
+        controller.follow(
+            quartzRect: quartz,
+            currentPanelFrame: frame,
+            setPanelFrame: { movedTo.append($0) },
+            refreshVisibleRegions: { refreshed.append($0) }
+        )
+
+        // 目标窗口不动时面板不必移动，但遮挡它的其他窗口可能已经变了，
+        // 可见区域仍必须重算——否则遮罩会一直盖在遮挡者身上。
+        #expect(movedTo.isEmpty)
+        #expect(refreshed == [quartz])
+    }
+
+    @MainActor
+    @Test("目标矩形变化时移动面板并重算可见区域")
+    func changedTargetMovesPanelAndRefreshes() throws {
+        let controller = ComputerUseTargetOverlayController.shared
+        let quartz = CGRect(x: 300, y: 388, width: 500, height: 392)
+        let frame = try #require(ScreenCoordinateConverter.appKitRect(fromQuartz: quartz))
+        let slightlyDifferentFrame = frame.offsetBy(dx: 10, dy: 10)
+
+        var movedTo: [CGRect] = []
+        var refreshed: [CGRect] = []
+        controller.follow(
+            quartzRect: quartz,
+            currentPanelFrame: slightlyDifferentFrame,
+            setPanelFrame: { movedTo.append($0) },
+            refreshVisibleRegions: { refreshed.append($0) }
+        )
+
+        #expect(movedTo == [frame])
+        #expect(refreshed == [quartz])
+    }
+
     @Test("遮罩目标描述可比较")
     func overlayTargetIsEquatable() {
         let rect = CGRect(x: 10, y: 20, width: 300, height: 200)

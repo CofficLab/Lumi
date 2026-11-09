@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 105 条用例。
+PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 107 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 105
+测试文件: 13 个，用例总数: 107
 
 核心组件（源码目录）:
 - `Models/`
@@ -46,7 +46,7 @@ PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 
 - **ComputerUseInputExecutor**（4 条）：由 `inputExecutorMapsInBoundsImageCoordinates`、`inputExecutorRejectsInvalidCoordinatesWithoutIntegerOverflow` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ComputerUseModels**（6 条）：由 `observationMapsImageCoordinatesIntoWindowCoordinates`、`observationFallsBackToWindowOriginForInvalidImageDimensions` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **NativeControl**（6 条）：由 `revokedInputLeaseCannotBeRestarted`、`expiredLeaseRejectsFurtherInput` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **Computer Use 目标窗口提示遮罩**（10 条）：由 `quartzRectConvertsToAppKitUsingHostingScreen`、`degenerateRectanglesAreRejected` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **Computer Use 目标窗口提示遮罩**（12 条）：由 `quartzRectConvertsToAppKitUsingHostingScreen`、`degenerateRectanglesAreRejected` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Computer Use 会话作用域授权**（5 条）：由 `grantIsNotConsumedWithinTheSession`、`emptyIdentifierIsIgnored` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Computer Use 授权决策解析**（7 条）：由 `allowMessageStatesScope`、`denialMessageNamesTheApplication` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Computer Use 工具授权挂起**（4 条）：由 `authorizationRequiredBecomesSuspension`、`forbiddenDoesNotSuspend` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -173,27 +173,29 @@ PluginComputerUse 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 103 | Computer Use 目标窗口可见区域 | 可见区域互不重叠 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `visibleRegionsDoNotOverlap` |
 | 104 | Computer Use 目标窗口可见区域 | 排在目标后面的窗口不算遮挡者 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `windowsBehindTargetAreNotOccluders` |
 | 105 | Computer Use 目标窗口可见区域 | 按窗口 ID 定位目标时排在目标前面的窗口都算遮挡者 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `windowsInFrontOfTargetAreOccluders` |
+| 106 | Computer Use 目标窗口提示遮罩 | 目标矩形不变时仍重算可见区域 | — | 轮询时当前面板矩形与目标矩形相同 | 不移动面板，但仍重算可见区域 | P1 | ✅ 已覆盖 | `unchangedTargetStillRefreshesVisibleRegions` |
+| 107 | Computer Use 目标窗口提示遮罩 | 目标矩形变化时移动面板并重算可见区域 | — | 轮询时当前面板矩形与目标矩形不同 | 移动面板并重算可见区域 | P1 | ✅ 已覆盖 | `changedTargetMovesPanelAndRefreshes` |
 
-> 说明：全部 **105 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **107 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 10 / 10
-- P1: 已覆盖 84 / 84
+- P1: 已覆盖 86 / 86
 - P2: 已覆盖 11 / 11
-- **合计: 105 / 105**（仅表示清单场景，非源码覆盖率）
+- **合计: 107 / 107**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（84 条）
+- **P1**: 其余功能性用例（86 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 105 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 107 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
