@@ -216,8 +216,8 @@ public final class WebToolBridge {
 
     /// 刷新工具归属索引。
     ///
-    /// 工具注册表会随插件启停变化，调用方应在观察到工具变化后调用本方法，
-    /// 让描述里的 `pluginID` 保持准确。
+    /// 工具注册表会随插件启停、MCP 连接变化，描述查询前会自动调用；
+    /// 外部观察到工具变化后也可主动调用。
     public func refresh() {
         pluginIndex = Self.buildPluginIndex(from: toolManager)
     }
@@ -226,7 +226,10 @@ public final class WebToolBridge {
 
     /// 全部工具的描述列表。
     public func toolDescriptors() -> [WebToolDescriptor] {
-        toolManager.allTools().map { tool in
+        // 索引只在初始化时构建一次会漏掉之后注册的工具（插件启用、MCP 连接），
+        // 导致这些工具的 pluginID 被误报为 Built-in。
+        refresh()
+        return toolManager.allTools().map { tool in
             WebToolDescriptor(
                 name: tool.name,
                 pluginID: pluginIndex[tool.name] ?? "Built-in",
@@ -242,6 +245,8 @@ public final class WebToolBridge {
     /// - Parameter name: 工具名称。
     /// - Returns: 工具不存在时返回 `nil`。
     public func toolDescriptor(named name: String) -> WebToolDescriptor? {
+        // 同 `toolDescriptors()`：查询前刷新，归属信息不能停留在初始化快照。
+        refresh()
         guard let tool = toolManager.tool(named: name) else { return nil }
         return WebToolDescriptor(
             name: tool.name,
