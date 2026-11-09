@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 99 条用例。
+PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 102 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 99
+测试文件: 6 个，用例总数: 102
 
 核心组件（源码目录）:
 - `Views/`
@@ -33,7 +33,7 @@ PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **TextActionsPlugin**（16 条）：由 `pluginMetadata`、`localStorePersistsEnabledFlagInBinaryPlist`、`localStoreWritesNoUserDefaults` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **TextActionsCore**（28 条）：由 `doesNotPresentMenuForBlankText`、`presentsMenuForRealText`、`retryConstants`、`selectionRectWinsOverMouseAnchor` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **TextActionsCore**（31 条）：由 `doesNotPresentMenuForBlankText`、`presentsMenuForRealText`、`retryConstants`、`selectionRectWinsOverMouseAnchor` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionsPluginLifecycle**（11 条）：由 `registerAddsDocsEntries`、`registerWithoutDocsProviderIsNoop`、`bootInjectsStorageDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionsStorage**（10 条）：由 `usesConfiguredDirectory`、`resetsToFallbackDirectory`、`roundTripsValue` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionMenuPanel**（13 条）：由 `initialStateIsActions`、`performForwardsToHandler`、`stateChangeNotifies` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -142,27 +142,30 @@ PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 
 | 97 | TextActionsCore | 空选区 bounds 等同不可用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `emptySelectionRectFallsBackToAnchor` |
 | 98 | TextActionsCore | 选区中心落在屏幕外时回退到锚点 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `offscreenSelectionFallsBackToAnchor` |
 | 99 | TextActionsCore | 没有屏幕时返回 nil | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `noScreensReturnsNil` |
+| 100 | TextActionsCore | 落在浮层窗口内的事件不算外部事件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `eventInsidePanelIsIgnored` |
+| 101 | TextActionsCore | 落在其他窗口的事件会关闭浮层 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `eventInOtherWindowIsDismissed` |
+| 102 | TextActionsCore | 窗口号未知时不能误判为浮层内 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unknownWindowNumberNeverMatches` |
 
-> 说明：全部 **99 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **102 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 84 / 84
+- P1: 已覆盖 87 / 87
 - P2: 已覆盖 10 / 10
-- **合计: 99 / 99**（仅表示清单场景，非源码覆盖率）
+- **合计: 102 / 102**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（84 条）
+- **P1**: 其余功能性用例（87 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（10 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 99 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 102 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
