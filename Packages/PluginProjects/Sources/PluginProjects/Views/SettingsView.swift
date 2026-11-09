@@ -135,8 +135,7 @@ public struct SettingsView: View {
             didSeedSelection = true
         }) {
             HStack(spacing: 10) {
-                Image(systemName: "folder")
-                    .font(.system(size: 13, weight: .semibold))
+                ProjectStorageIcon(kind: ProjectStorageDetector.kind(for: project.path), size: 13)
                     .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
                     .frame(width: 24, height: 24)
                     .background(
@@ -215,6 +214,12 @@ public struct SettingsView: View {
                             detailRow(title: pluginLocalization.string("Name"), icon: "text.cursor", value: project.name)
                             Divider().padding(.vertical, 8)
                             detailRow(title: pluginLocalization.string("Path"), icon: "folder", value: project.path, monospace: true)
+                            Divider().padding(.vertical, 8)
+                            detailRow(
+                                title: pluginLocalization.string("Storage Location"),
+                                icon: ProjectStorageDetector.kind(for: project.path).symbolName,
+                                value: storageLocationDescription(for: project.path)
+                            )
                             Divider().padding(.vertical, 8)
                             detailRow(title: pluginLocalization.string("Language"), icon: "character.book.closed", value: project.language?.capitalized ?? pluginLocalization.string("Unknown"))
                             Divider().padding(.vertical, 8)
@@ -369,5 +374,19 @@ public struct SettingsView: View {
 
     private func formattedDate(_ date: Date) -> String {
         date.formatted(date: .abbreviated, time: .shortened)
+    }
+
+    /// 存储位置的可读描述。
+    private func storageLocationDescription(for path: String) -> String {
+        switch ProjectStorageDetector.kind(for: path) {
+        case .internalDisk:
+            return pluginLocalization.string("Local Disk")
+        case .externalDisk:
+            return pluginLocalization.string("External Drive")
+        case .networkVolume:
+            return pluginLocalization.string("Network Volume")
+        case .unavailable:
+            return pluginLocalization.string("Device Unavailable")
+        }
     }
 }
