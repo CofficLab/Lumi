@@ -1,4 +1,5 @@
 import Foundation
+import KitAgentTool
 import Testing
 @testable import PluginGitHubIssue
 
@@ -102,6 +103,40 @@ struct PluginGitHubIssueTests {
             body: "The read_file tool returned an empty string for a non-empty file."
         )
         #expect(offenders.isEmpty)
+    }
+
+    @Test("non-English content fails as a tool error instead of a successful result (#1051)")
+    func nonEnglishContentThrowsToolError() async {
+        // 经存在类型调用生产同款入口，确保走的是协议分派后的真实实现。
+        let tool: any SuperAgentTool = CreateGitHubIssueTool()
+        let context = ToolExecutionContext(jobID: "test-job", conversationID: UUID())
+
+        do {
+            _ = try await tool.executeResult(context: context, arguments: [
+                "title": ToolArgument("工具失效"),
+                "body": ToolArgument("This body is valid English and is only used to exercise validation."),
+            ])
+            Issue.record("Expected the language guard to fail the tool call")
+        } catch let error as ToolExecutionError {
+            #expect(error.errorDescription?.contains("Rejected") == true)
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+
+    @Test("missing title or body fails as a tool error instead of a successful result (#1051)")
+    func missingArgumentsThrowToolError() async {
+        let tool: any SuperAgentTool = CreateGitHubIssueTool()
+        let context = ToolExecutionContext(jobID: "test-job", conversationID: UUID())
+
+        do {
+            _ = try await tool.executeResult(context: context, arguments: [:])
+            Issue.record("Expected missing arguments to fail the tool call")
+        } catch let error as ToolExecutionError {
+            #expect(error.errorDescription?.contains("required") == true)
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
     }
 
     @Test("description is non-empty")
