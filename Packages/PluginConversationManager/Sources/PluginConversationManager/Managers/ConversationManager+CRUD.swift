@@ -459,22 +459,10 @@ extension ConversationManager {
         let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let storedTitle = normalized.isEmpty ? nil : normalized
         // 缓存外的会话也要能改名：写盘以 ID 为准，内存只在命中时同步。
-        if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
-            conversations[index].title = storedTitle
-        } else if store == nil {
+        guard conversations.contains(where: { $0.id == conversationID }) || store != nil else {
             return false
         }
-
-        if conversationID == selectedConversationID {
-            updateCurrentTitle()
-        }
-        notifyConversationsChanged()
-        notifyConversationObservers(.updated(conversationID))
-        eventBus?.publishAsLegacy(
-            ConversationTitleDidChangeEvent(conversationID: conversationID),
-            notificationName: .lumiConversationTitleDidChange,
-            userInfo: ["conversationID": conversationID]
-        )
+        applyTitleChange(storedTitle, for: conversationID)
 
         // 持久化到数据库（异步）
         Task {
@@ -485,6 +473,46 @@ extension ConversationManager {
             Self.logger.info("\(Self.t)updateConversationTitle: conversation=\(conversationID.uuidString.prefix(8)), title=\(storedTitle ?? "nil")")
         }
         return true
+    }
+
+    /// 更新标题并等待落盘，只有数据库确认保存成功才发布内存与 UI 变化。
+    ///
+    /// 先落盘再改内存：保存失败时内存、Header 和列表都保持旧标题，不会出现
+    /// 「界面显示新标题、重启后恢复旧标题」的假成功（issue #950）。
+    public func updateConversationTitleAndWait(_ title: String, for conversationID: UUID) async -> Bool {
+        guard let store else {
+            return updateConversationTitle(title, for: conversationID)
+        }
+
+        let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let storedTitle = normalized.isEmpty ? nil : normalized
+        guard await store.updateTitle(id: conversationID, title: normalized) else {
+            Self.logger.error("\(Self.t)updateConversationTitleAndWait: failed to persist title for conversation=\(conversationID.uuidString.prefix(8))")
+            return false
+        }
+        applyTitleChange(storedTitle, for: conversationID)
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)updateConversationTitleAndWait: conversation=\(conversationID.uuidString.prefix(8)), title=\(storedTitle ?? "nil")")
+        }
+        return true
+    }
+
+    /// 同步内存标题并通知 UI；缓存未命中时只发通知（写盘按 ID 进行）。
+    private func applyTitleChange(_ storedTitle: String?, for conversationID: UUID) {
+        if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
+            conversations[index].title = storedTitle
+        }
+        if conversationID == selectedConversationID {
+            updateCurrentTitle()
+        }
+        notifyConversationsChanged()
+        notifyConversationObservers(.updated(conversationID))
+        eventBus?.publishAsLegacy(
+            ConversationTitleDidChangeEvent(conversationID: conversationID),
+            notificationName: .lumiConversationTitleDidChange,
+            userInfo: ["conversationID": conversationID]
+        )
     }
 
     public func isSending(for conversationID: UUID?) -> Bool {

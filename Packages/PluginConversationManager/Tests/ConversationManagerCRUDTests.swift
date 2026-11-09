@@ -183,4 +183,61 @@ struct ConversationManagerCRUDTests {
         #expect(rootRemaining == nil)
         #expect(childRemaining == nil)
     }
+
+    /// 回归 #950：等待落盘的标题更新必须在返回前完成数据库写入。
+    @Test func updateConversationTitleAndWaitPersistsBeforeReturning() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationTitleAndWait-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = try ConversationStore(databaseRootURL: directory)
+        let manager = ConversationManager(store: store, dataDirectory: directory)
+        let id = try await manager.createConversationAndWait(
+            title: "Old title",
+            projectPath: nil,
+            modelID: nil,
+            parentConversationID: nil
+        )
+
+        // 不 sleep：返回即代表已落库。
+        let updated = await manager.updateConversationTitleAndWait("  New title  ", for: id)
+
+        #expect(updated)
+        #expect(manager.conversations.first(where: { $0.id == id })?.title == "New title")
+        #expect(manager.currentTitle == "New title")
+        let stored = await store.fetchConversation(id: id)
+        #expect(stored?.title == "New title")
+    }
+
+    /// 回归 #950：数据库保存失败时不得发布内存/UI 新标题，也不得报告成功。
+    @Test func updateConversationTitleAndWaitLeavesMemoryUntouchedWhenPersistFails() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationTitleFailure-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = try ConversationStore(databaseRootURL: directory)
+        let manager = ConversationManager(store: store, dataDirectory: directory)
+        let id = try await manager.createConversationAndWait(
+            title: "Stored title",
+            projectPath: nil,
+            modelID: nil,
+            parentConversationID: nil
+        )
+        // 绕过管理器删掉库行，制造 store.updateTitle 返回 false 的落盘失败。
+        let deleted = await store.deleteConversations(ids: [id])
+        #expect(deleted)
+
+        var events: [ConversationEvent] = []
+        let handle = manager.addConversationObserver { events.append($0) }
+        defer { handle.cancel() }
+
+        let updated = await manager.updateConversationTitleAndWait("Should not apply", for: id)
+
+        #expect(!updated)
+        #expect(manager.conversations.first(where: { $0.id == id })?.title == "Stored title")
+        #expect(manager.currentTitle == "Stored title")
+        #expect(!events.contains(.updated(id)))
+    }
 }
