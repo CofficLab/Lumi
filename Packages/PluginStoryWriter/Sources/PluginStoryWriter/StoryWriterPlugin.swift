@@ -98,8 +98,6 @@ public final class StoryWriterPlugin: SuperPlugin, PluginDataMigrating, SuperLog
                 rail?.deactivateWidthProfile(ownerID: pluginID)
             }
         }])
-        root?.setContentHeaderViewHidden(true)
-        content?.setContentView(AnyView(StoryWriterRootView()))
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
             docs.addAbout(DocsEntry(id: id, name: metadata.name) { StoryWriterAboutView() })
             docs.addManual(DocsEntry(id: id, name: metadata.name) { StoryWriterManualView() })
