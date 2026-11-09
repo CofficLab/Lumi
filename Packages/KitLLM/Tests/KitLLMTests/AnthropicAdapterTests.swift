@@ -209,6 +209,63 @@ struct AnthropicAdapterRequestTests {
         #expect(body["max_tokens"] as? Int == 9216)
     }
 
+    @Test("不支持 extended thinking 的 Claude 模型省略 thinking 且不抬高 max_tokens")
+    func omitsThinkingForUnsupportedClaudeModels() throws {
+        let adapter = makeAdapter(defaultMaxTokens: 4096)
+        let unsupportedModels = [
+            "claude-3-5-sonnet-20241022",
+            "claude-3-5-sonnet-20240620",
+            "claude-3-opus-20240229",
+            "claude-3-sonnet-20240229",
+            "claude-3-haiku-20240307",
+        ]
+
+        for model in unsupportedModels {
+            let config = LLMConfig(
+                model: model,
+                providerId: "anthropic",
+                maxTokens: 2048,
+                reasoningEffort: "low"
+            )
+
+            let body = try adapter.buildStreamingRequestBody(
+                messages: [LLMMessage(role: .user, content: "hi")],
+                model: model,
+                tools: nil,
+                systemPrompt: "",
+                config: config
+            )
+
+            #expect(body["thinking"] == nil, "\(model) 不应携带 thinking")
+            #expect(body["max_tokens"] as? Int == 2048, "\(model) 的 max_tokens 不应被推理预算抬高")
+        }
+    }
+
+    @Test("Claude 3.7 与 4 及非 Claude 兼容模型仍保留 thinking")
+    func keepsThinkingForSupportedModels() throws {
+        let adapter = makeAdapter()
+
+        for model in ["claude-3-7-sonnet-20250219", "deepseek-reasoner"] {
+            let config = LLMConfig(
+                model: model,
+                providerId: "anthropic",
+                reasoningEffort: "low"
+            )
+
+            let body = try adapter.buildStreamingRequestBody(
+                messages: [LLMMessage(role: .user, content: "hi")],
+                model: model,
+                tools: nil,
+                systemPrompt: "",
+                config: config
+            )
+
+            let thinking = try #require(body["thinking"] as? [String: Any], "\(model) 应保留 thinking")
+            #expect(thinking["type"] as? String == "enabled")
+            #expect(thinking["budget_tokens"] as? Int == 1024)
+        }
+    }
+
     @Test("开启缓存时最后一条文本块带缓存边界")
     func addsPromptCacheBoundary() throws {
         let adapter = makeAdapter(enablesPromptCaching: true)
