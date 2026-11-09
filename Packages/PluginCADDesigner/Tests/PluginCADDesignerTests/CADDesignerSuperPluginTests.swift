@@ -49,6 +49,22 @@ struct CADDesignerSuperPluginTests {
         #expect(CADDocumentStore.shared.selectedDocument?.name == document.name)
     }
 
+    @Test func loadReportsTheImportedProjectID() async throws {
+        CADDocumentStore.shared.resetForTests()
+        let original = CADDocumentStore.shared.createDocument(name: "Load ID")
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CADDesignerV2-\(UUID().uuidString).cadproj")
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        _ = try await SaveCADProjectV2Tool().execute(arguments: ["path": ToolArgument(url.path)])
+        let loaded = try await LoadCADProjectV2Tool().execute(arguments: ["path": ToolArgument(url.path)])
+        let selected = try #require(CADDocumentStore.shared.selectedDocument)
+
+        #expect(selected.id != original.id)
+        #expect(loaded.contains(selected.id))
+        #expect(!loaded.contains(original.id))
+    }
+
     @Test("builds the legacy frame shape through the V2 tool")
     func buildsFrameThroughV2Tool() async throws {
         CADDocumentStore.shared.resetForTests()
