@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 19 条用例。
+KitWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 44 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 38
+测试文件: 4 个，用例总数: 44
 
 ## 公开 API
 
@@ -24,8 +24,12 @@ KitWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 19 条
 - **LumiWebServerEndToEndTests**（1 条）：由 `testDeclaredRoutesAreReachableOverHTTP` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Payload**（1 条）：由 `testDiscoveryEndpointListsRegisteredRoutes` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RouteInfo**（1 条）：由 `testUnregisteredRoutesBecomeUnreachable` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **LumiWebServerPipelineTests**（2 条）：由 `testAuthRejectsBeforeRouteMatching`、`testAuthErrorBodyIsUnified` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **LumiWebServerPipelineTests**（8 条）：由 `testAuthRejectsBeforeRouteMatching`、`testAuthErrorBodyIsUnified`、`testCrossOriginWriteRejectedBeforeRoute` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Body**（14 条）：由 `testAnonymousAccessAllowed`、`testResponseCarriesRequestID` 等用例锁定；改动该模块时优先跑对应测试文件。
+
+### 跨源写保护契约
+
+写方法（POST/PUT/PATCH/DELETE）在鉴权之后、路由匹配之前校验来源：`Origin` 命中 CORS 白名单放行；`Sec-Fetch-Site` 为 `cross-site`/`same-site` 拒绝；`Origin` 与 `Host` 不同源拒绝。无 `Origin` 的非浏览器客户端保持兼容。拒绝时返回 403 与统一错误信封，且处理器不得执行。
 
 ## 测试用例清单
 
@@ -69,27 +73,33 @@ KitWebServer 的实现包，包含 2 个主要类型；当前测试覆盖 19 条
 | 36 | Body | testCORSRejectsUnlistedOrigin | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `testCORSRejectsUnlistedOrigin` |
 | 37 | Body | testUptimeReflectsRunningState | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testUptimeReflectsRunningState` |
 | 38 | Body | testRegisteredRouteSummaries | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testRegisteredRouteSummaries` |
+| 39 | LumiWebServerPipelineTests | testCrossOriginWriteRejectedBeforeRoute | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testCrossOriginWriteRejectedBeforeRoute` |
+| 40 | LumiWebServerPipelineTests | testCrossSiteFetchMetadataRejected | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testCrossSiteFetchMetadataRejected` |
+| 41 | LumiWebServerPipelineTests | testSameOriginWriteIsAllowed | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testSameOriginWriteIsAllowed` |
+| 42 | LumiWebServerPipelineTests | testWriteWithoutOriginIsAllowed | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testWriteWithoutOriginIsAllowed` |
+| 43 | LumiWebServerPipelineTests | testCORSAllowlistedOriginWriteIsAllowed | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testCORSAllowlistedOriginWriteIsAllowed` |
+| 44 | LumiWebServerPipelineTests | testCrossOriginReadIsAllowed | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testCrossOriginReadIsAllowed` |
 
-> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **44 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 4 / 4
-- P1: 已覆盖 31 / 31
+- P1: 已覆盖 37 / 37
 - P2: 已覆盖 3 / 3
-- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
+- **合计: 44 / 44**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
-- **P1**: 其余功能性用例（31 条）
+- **P1**: 其余功能性用例（37 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 38 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 44 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -99,9 +99,10 @@ private struct RouteDispatchMiddleware: RouterMiddleware {
 /// 1. **请求 ID** —— 生成/透传 `X-Request-ID`,写入响应头,便于日志关联。
 /// 2. **CORS 预检** —— `OPTIONS` 请求直接返回允许的方法与请求头。
 /// 3. **鉴权** —— 按 `authPolicy` 校验凭证,不通过则 401。
-/// 4. **路由匹配** —— 命中则执行 handler;未命中 404;路径匹配但方法不符 405。
-/// 5. **错误映射** —— `WebAPIError` 映射为对应状态码与统一 JSON 错误体。
-/// 6. **请求日志** —— 记录方法、路径、状态码与耗时(不含请求体与响应体)。
+/// 4. **跨源写保护** —— 浏览器发起的跨源写请求直接 403;无 Origin 的原生客户端放行。
+/// 5. **路由匹配** —— 命中则执行 handler;未命中 404;路径匹配但方法不符 405。
+/// 6. **错误映射** —— `WebAPIError` 映射为对应状态码与统一 JSON 错误体。
+/// 7. **请求日志** —— 记录方法、路径、状态码与耗时(不含请求体与响应体)。
 public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendable {
     /// 服务日志。
     nonisolated static let logger = Logger(
@@ -503,6 +504,23 @@ public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendabl
             )
         }
 
+        // CSRF 防护:跨源简单请求(CORS 预检之外的表单 POST)同样会送达，
+        // 仅靠「不返回 CORS 响应头」无法阻止写操作，必须在执行前拒绝。
+        if let rejection = crossOriginWriteRejection(method: method, headers: headers) {
+            return finish(
+                response: Self.makeErrorResponse(
+                    error: .forbidden(message: rejection),
+                    requestID: requestID
+                ),
+                requestID: requestID,
+                method: method.rawValue,
+                path: path,
+                pluginID: nil,
+                startedAt: startedAt,
+                headers: headers
+            )
+        }
+
         // 内置自描述端点:GET /api/plugins,实时列出所有已注册路由(无需读取请求体)。
         if method == .get, path == Self.discoveryPath {
             let infos = discoveryRouteInfos()
@@ -648,6 +666,64 @@ public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendabl
             )
         )
         return response
+    }
+
+    /// 会修改服务端状态的方法。
+    private static func isStateChanging(_ method: HTTPMethod) -> Bool {
+        switch method {
+        case .post, .put, .patch, .delete: return true
+        case .get, .head, .options: return false
+        }
+    }
+
+    /// 拒绝浏览器发起的跨源写请求（CSRF）。
+    ///
+    /// 跨源表单 POST 属于「简单请求」，浏览器不会先发 CORS 预检，因此
+    /// 「不返回 CORS 响应头」只能阻止页面读取响应，不能阻止写操作送达。
+    /// 判定规则：
+    /// - 显式配置的 CORS 允许来源视为已授权，放行其写请求；
+    /// - `Sec-Fetch-Site` 为 `cross-site` / `same-site` 时拒绝；
+    /// - `Origin` 与请求自身 host 不一致时拒绝；
+    /// - 没有 `Origin` 的调用方不是浏览器页面（curl、原生客户端），保持兼容。
+    ///
+    /// - Returns: 拒绝文案；允许时返回 `nil`。
+    private func crossOriginWriteRejection(method: HTTPMethod, headers: [String: String]) -> String? {
+        guard Self.isStateChanging(method) else { return nil }
+
+        let origin = headers["origin"]?.trimmingCharacters(in: .whitespaces)
+        if let origin, !origin.isEmpty, corsPolicy?.allowedOrigin(in: origin) != nil {
+            return nil
+        }
+
+        if let fetchSite = headers["sec-fetch-site"]?.trimmingCharacters(in: .whitespaces).lowercased(),
+           fetchSite != "same-origin", fetchSite != "none" {
+            return "Cross-origin \(method.rawValue) requests are not allowed."
+        }
+
+        guard let origin, !origin.isEmpty else { return nil }
+        guard Self.isSameOrigin(origin, hostHeader: headers["host"], defaultPort: boundPort ?? port) else {
+            return "Cross-origin \(method.rawValue) requests are not allowed."
+        }
+        return nil
+    }
+
+    /// `Origin` 是否与请求自身的 host 一致。
+    private static func isSameOrigin(_ origin: String, hostHeader: String?, defaultPort: Int) -> Bool {
+        guard let originComponents = URLComponents(string: origin),
+              let scheme = originComponents.scheme?.lowercased(),
+              scheme == "http" || scheme == "https",
+              let originHost = originComponents.host?.lowercased() else {
+            return false
+        }
+        let originPort = originComponents.port ?? (scheme == "https" ? 443 : 80)
+
+        let hostValue = (hostHeader?.isEmpty == false ? hostHeader : nil) ?? "127.0.0.1:\(defaultPort)"
+        guard let hostComponents = URLComponents(string: "http://\(hostValue)"),
+              let serverHost = hostComponents.host?.lowercased() else {
+            return false
+        }
+        let serverPort = hostComponents.port ?? defaultPort
+        return originHost == serverHost && originPort == serverPort
     }
 
     /// 解析或生成请求 ID。

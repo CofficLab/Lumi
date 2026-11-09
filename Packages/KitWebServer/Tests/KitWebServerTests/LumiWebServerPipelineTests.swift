@@ -303,6 +303,132 @@ final class LumiWebServerPipelineTests: XCTestCase {
         XCTAssertNil(http.value(forHTTPHeaderField: "Access-Control-Allow-Origin"))
     }
 
+    // MARK: - 跨源写保护
+
+    /// 跨源表单 POST 在进入路由前被拒绝（CORS 不返回响应头不足以阻止送达）。
+    func testCrossOriginWriteRejectedBeforeRoute() async throws {
+        let server = LumiWebServer(port: 0)
+        server.register([
+            WebRoute(id: "select", method: .post, path: "/state") { _ in .text("executed") },
+        ], forPlugin: "com.test.plugin")
+        try await server.start()
+        let port = try XCTUnwrap(server.boundPort)
+        defer { Task { await server.stop() } }
+
+        var request = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/state")!)
+        request.httpMethod = "POST"
+        request.setValue("http://evil.example", forHTTPHeaderField: "Origin")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let http = try XCTUnwrap(response as? HTTPURLResponse)
+
+        XCTAssertEqual(http.statusCode, 403)
+
+        struct ErrorEnvelope: Decodable {
+            struct Body: Decodable { let code: String }
+            let error: Body
+        }
+        let decoded = try JSONDecoder().decode(ErrorEnvelope.self, from: data)
+        XCTAssertEqual(decoded.error.code, "forbidden")
+    }
+
+    /// Fetch Metadata 标记为跨站时，即使没有 Origin 也拒绝。
+    func testCrossSiteFetchMetadataRejected() async throws {
+        let server = LumiWebServer(port: 0)
+        server.register([
+            WebRoute(id: "select", method: .post, path: "/state") { _ in .text("executed") },
+        ], forPlugin: "com.test.plugin")
+        try await server.start()
+        let port = try XCTUnwrap(server.boundPort)
+        defer { Task { await server.stop() } }
+
+        var request = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/state")!)
+        request.httpMethod = "POST"
+        request.setValue("cross-site", forHTTPHeaderField: "Sec-Fetch-Site")
+        let (_, response) = try await URLSession.shared.data(for: request)
+        let http = try XCTUnwrap(response as? HTTPURLResponse)
+
+        XCTAssertEqual(http.statusCode, 403)
+    }
+
+    /// 同源写请求正常执行。
+    func testSameOriginWriteIsAllowed() async throws {
+        let server = LumiWebServer(port: 0)
+        server.register([
+            WebRoute(id: "select", method: .post, path: "/state") { _ in .text("executed") },
+        ], forPlugin: "com.test.plugin")
+        try await server.start()
+        let port = try XCTUnwrap(server.boundPort)
+        defer { Task { await server.stop() } }
+
+        var request = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/state")!)
+        request.httpMethod = "POST"
+        request.setValue("http://127.0.0.1:\(port)", forHTTPHeaderField: "Origin")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let http = try XCTUnwrap(response as? HTTPURLResponse)
+
+        XCTAssertEqual(http.statusCode, 200)
+        XCTAssertEqual(String(data: data, encoding: .utf8), "executed")
+    }
+
+    /// 没有 Origin 的非浏览器调用方（curl、原生客户端）保持可用。
+    func testWriteWithoutOriginIsAllowed() async throws {
+        let server = LumiWebServer(port: 0)
+        server.register([
+            WebRoute(id: "select", method: .post, path: "/state") { _ in .text("executed") },
+        ], forPlugin: "com.test.plugin")
+        try await server.start()
+        let port = try XCTUnwrap(server.boundPort)
+        defer { Task { await server.stop() } }
+
+        var request = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/state")!)
+        request.httpMethod = "POST"
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let http = try XCTUnwrap(response as? HTTPURLResponse)
+
+        XCTAssertEqual(http.statusCode, 200)
+        XCTAssertEqual(String(data: data, encoding: .utf8), "executed")
+    }
+
+    /// 显式配置的 CORS 允许来源视为已授权，其写请求放行。
+    func testCORSAllowlistedOriginWriteIsAllowed() async throws {
+        let server = LumiWebServer(
+            port: 0,
+            corsPolicy: WebCORSPolicy(allowedOrigins: ["http://allowed.example"])
+        )
+        server.register([
+            WebRoute(id: "select", method: .post, path: "/state") { _ in .text("executed") },
+        ], forPlugin: "com.test.plugin")
+        try await server.start()
+        let port = try XCTUnwrap(server.boundPort)
+        defer { Task { await server.stop() } }
+
+        var request = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/state")!)
+        request.httpMethod = "POST"
+        request.setValue("http://allowed.example", forHTTPHeaderField: "Origin")
+        let (_, response) = try await URLSession.shared.data(for: request)
+        let http = try XCTUnwrap(response as? HTTPURLResponse)
+
+        XCTAssertEqual(http.statusCode, 200)
+    }
+
+    /// 读请求不受跨源写保护影响。
+    func testCrossOriginReadIsAllowed() async throws {
+        let server = LumiWebServer(port: 0)
+        server.register([
+            WebRoute(id: "ping", method: .get, path: "/ping") { _ in .text("pong") },
+        ], forPlugin: "com.test.plugin")
+        try await server.start()
+        let port = try XCTUnwrap(server.boundPort)
+        defer { Task { await server.stop() } }
+
+        var request = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/ping")!)
+        request.setValue("http://evil.example", forHTTPHeaderField: "Origin")
+        let (_, response) = try await URLSession.shared.data(for: request)
+        let http = try XCTUnwrap(response as? HTTPURLResponse)
+
+        XCTAssertEqual(http.statusCode, 200)
+    }
+
     // MARK: - 其它
 
     /// 运行时长在服务启动后大于 0。
