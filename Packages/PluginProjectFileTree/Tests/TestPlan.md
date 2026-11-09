@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 20 条用例。
+PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 25 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 20
+测试文件: 10 个，用例总数: 25
 
 核心组件（源码目录）:
 - `Models/`
@@ -47,6 +47,7 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 - **FileTreeCollectionViewController**（1 条）：由 `controllerTracksVisibleOrderForShiftSelection` 锁定。每次树快照变化都必须把可见文件行按顺序写入 `SelectionState`，否则 Shift 点击只能退化为单选，右键“Send to Conversation”会漏发中间文件（**回归 #1101**）。
 - **FileTreeCollectionViewController（反选）**（2 条）：由 `commandDeselectRemovesPathFromSelection`、`deselectCallbackKeepsRowStillSelectedNatively` 锁定。Cmd 点击已选项必须实现 `didDeselectItemsAt` 并移除自定义路径，否则发送目标仍包含已取消文件；回调中仍在原生选中集合内的行不得移除（**回归 #1102**）。
 - **FileTreeNodeItem**（3 条）：由 `samePathFileAndDirectoryHaveDistinctIdentity`、`swiftPackageMetadataChangesIdentity`、`reloadedNodeIdentityFollowsFileTypeSwap` 锁定。diffable 相等性必须包含 `isDirectory` 与图标元数据，同一路径的文件被替换成同名目录（或反向替换）时必须产出不相等的新节点，否则 cell 会继续显示旧文件类型（**回归 #1104**）。
+- **FileTreeFacade（VS Code）**（5 条）：由 `nonZeroCodeStatusFallsBackToApplication`、`unlaunchableCommandFallsBackToApplication`、`successfulCodeCommandSkipsApplicationFallback`、`applicationFallbackFailureReportsFailure`、`missingCommandExitStatusIsObserved` 锁定。`/usr/bin/env code` 能启动不代表 `code` 存在，必须检查实际退出状态；非零退出或无法启动时回退到 VS Code 应用 URL，并向上报告最终失败（**回归 #1105**）。
 
 ## 测试用例清单
 
@@ -72,27 +73,32 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 | 18 | FileTreeNodeItem | 同一路径的文件与目录具有不同 diffable 身份（**回归 #1104**） | 同一 URL 分别构造 `isDirectory` 为假与真的节点 | 比较两个节点并放入集合 | 节点不相等，集合元素数为 2 | P0 | ✅ 已覆盖 | `samePathFileAndDirectoryHaveDistinctIdentity` |
 | 19 | FileTreeNodeItem | Swift Package 目录元数据变化会改变节点身份 | 同一目录分别按普通目录与含 `Package.swift` 构造 | 比较两个节点 | 包目录节点与普通目录节点不相等 | P1 | ✅ 已覆盖 | `swiftPackageMetadataChangesIdentity` |
 | 20 | FileTreeNodeItem | 外部替换文件类型后精准刷新会更新节点身份（**回归 #1104**） | 根目录下 `entry` 为普通文件 | 标记 `entry` 为目录并 `reloadDirectory(root)` | 节点 `isDirectory` 变为真，且与新节点不相等 | P0 | ✅ 已覆盖 | `reloadedNodeIdentityFollowsFileTypeSwap` |
+| 21 | FileTreeFacade | `code` 命令非零退出时必须回退到应用打开（**回归 #1105**） | 命令退出状态为 127 | 解析打开结果 | 调用应用回退且最终成功 | P1 | ✅ 已覆盖 | `nonZeroCodeStatusFallsBackToApplication` |
+| 22 | FileTreeFacade | `code` 命令无法启动时回退到应用打开 | 命令退出状态为 nil | 解析打开结果 | 调用应用回退且最终成功 | P1 | ✅ 已覆盖 | `unlaunchableCommandFallsBackToApplication` |
+| 23 | FileTreeFacade | `code` 命令成功退出时不会触发应用回退 | 命令退出状态为 0 | 解析打开结果 | 返回成功且未调用应用回退 | P2 | ✅ 已覆盖 | `successfulCodeCommandSkipsApplicationFallback` |
+| 24 | FileTreeFacade | 应用回退仍失败时报告打开失败（**回归 #1105**） | 命令退出状态为 127，应用回退返回 false | 解析打开结果 | 最终结果为失败 | P0 | ✅ 已覆盖 | `applicationFallbackFailureReportsFailure` |
+| 25 | FileTreeFacade | 命令缺失时外部进程退出状态非零（**回归 #1105**） | 使用 `/usr/bin/env` 运行不存在的命令 | 执行并等待退出 | 退出状态非 nil 且非 0 | P0 | ✅ 已覆盖 | `missingCommandExitStatusIsObserved` |
 
-> 说明：全部 **20 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **25 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
-- P1: 已覆盖 6 / 6
-- P2: 已覆盖 3 / 3
-- **合计: 20 / 20**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 13 / 13
+- P1: 已覆盖 8 / 8
+- P2: 已覆盖 4 / 4
+- **合计: 25 / 25**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（6 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P1**: 其余功能性用例（8 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 20 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 25 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
