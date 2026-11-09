@@ -40,14 +40,14 @@ struct ProviderListView: View {
             AppDivider()
 
             // Search
-            ProviderSearchRow(text: $viewModel.searchText)
+            ProviderSearchRow(text: $viewModel.providerSearchText)
 
             AppDivider()
 
             // Provider items
             if !viewModel.providerInfos.isEmpty {
-                let providers = filteredProviders(viewModel.providerInfos)
-                if providers.isEmpty && viewModel.selectedScope == .frequent && viewModel.searchText.isEmpty {
+                let providers = viewModel.visibleProviders(viewModel.providerInfos)
+                if providers.isEmpty && viewModel.selectedScope == .frequent && viewModel.providerSearchText.isEmpty {
                     AppEmptyState(
                         icon: "star",
                         title: pluginLocalization.string("No frequent providers yet"),
@@ -155,29 +155,6 @@ struct ProviderListView: View {
         .accessibilityLabel("中转站")
     }
 
-    // MARK: - Filtering
-
-    /// 应用筛选范围与搜索文本，返回过滤后的供应商元数据。
-    private func filteredProviders(_ providers: [LLMProviderInfo]) -> [LLMProviderInfo] {
-        let filtered = providers.filter(viewModel.matchesActiveFilters)
-        let sorted: [LLMProviderInfo]
-        if viewModel.selectedScope == .frequent {
-            sorted = filtered.sorted {
-                viewModel.isMoreFrequentlyUsed($0.id, than: $1.id)
-            }
-        } else {
-            sorted = filtered.sorted {
-                $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
-            }
-        }
-        if viewModel.searchText.isEmpty {
-            return sorted
-        }
-        return sorted.filter {
-            $0.displayName.localizedCaseInsensitiveContains(viewModel.searchText)
-                || $0.id.localizedCaseInsensitiveContains(viewModel.searchText)
-        }
-    }
 }
 
 /// 供应商栏的范围筛选行（常用 / 云端 / 本地）。
