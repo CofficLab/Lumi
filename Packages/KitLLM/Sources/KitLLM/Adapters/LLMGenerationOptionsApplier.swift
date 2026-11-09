@@ -84,6 +84,21 @@ public enum AnthropicCompatibleGenerationOptionsApplier {
         return !nonThinkingModelFragments.contains { normalized.contains($0) }
     }
 
+    /// 单次输出上限只有 4096 的 Claude 3 模型。
+    ///
+    /// 默认配置给到 8192，超过这些模型的能力会直接被端点以 400 拒绝，因此最终
+    /// 下发的 `max_tokens` 必须限幅。其余模型保持配置值，不做统一降低。
+    private static let maxOutputTokenCaps: [(fragment: String, cap: Int)] = [
+        ("claude-3-opus", 4096),
+        ("claude-3-sonnet", 4096),
+        ("claude-3-haiku", 4096),
+    ]
+
+    static func maxOutputTokens(for model: String) -> Int? {
+        let normalized = model.lowercased()
+        return maxOutputTokenCaps.first { normalized.contains($0.fragment) }?.cap
+    }
+
     public static func apply(
         config: LLMConfig,
         model: String,
@@ -108,6 +123,12 @@ public enum AnthropicCompatibleGenerationOptionsApplier {
             ]
             let currentMaxTokens = body["max_tokens"] as? Int ?? defaultMaxTokens
             body["max_tokens"] = max(currentMaxTokens, budget + 1024)
+        }
+
+        if let cap = maxOutputTokens(for: model),
+           let currentMaxTokens = body["max_tokens"] as? Int,
+           currentMaxTokens > cap {
+            body["max_tokens"] = cap
         }
     }
 

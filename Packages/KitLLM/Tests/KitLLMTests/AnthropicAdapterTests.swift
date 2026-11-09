@@ -266,6 +266,62 @@ struct AnthropicAdapterRequestTests {
         }
     }
 
+    @Test("输出上限 4096 的 Claude 3 模型默认 max_tokens 被限幅")
+    func clampsDefaultMaxTokensForClaude3Models() throws {
+        let adapter = makeAdapter(defaultMaxTokens: 8192)
+
+        for model in ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"] {
+            let config = LLMConfig(model: model, providerId: "anthropic")
+
+            let body = try adapter.buildStreamingRequestBody(
+                messages: [LLMMessage(role: .user, content: "hi")],
+                model: model,
+                tools: nil,
+                systemPrompt: "",
+                config: config
+            )
+
+            #expect(body["max_tokens"] as? Int == 4096, "\(model) 的默认 max_tokens 应被限幅到 4096")
+        }
+    }
+
+    @Test("用户显式超过模型上限的 max_tokens 同样被限幅")
+    func clampsExplicitMaxTokensAboveModelCap() throws {
+        let adapter = makeAdapter(defaultMaxTokens: 8192)
+        let model = "claude-3-haiku-20240307"
+        let config = LLMConfig(model: model, providerId: "anthropic", maxTokens: 8192)
+
+        let body = try adapter.buildStreamingRequestBody(
+            messages: [LLMMessage(role: .user, content: "hi")],
+            model: model,
+            tools: nil,
+            systemPrompt: "",
+            config: config
+        )
+
+        #expect(body["max_tokens"] as? Int == 4096)
+    }
+
+    @Test("输出上限更高的模型不会被统一降低")
+    func keepsHigherMaxTokensForCapableModels() throws {
+        let adapter = makeAdapter(defaultMaxTokens: 8192)
+        let models = ["claude-3-5-sonnet-20241022", "claude-sonnet-4-20250514"]
+
+        for model in models {
+            let config = LLMConfig(model: model, providerId: "anthropic", maxTokens: 8192)
+
+            let body = try adapter.buildStreamingRequestBody(
+                messages: [LLMMessage(role: .user, content: "hi")],
+                model: model,
+                tools: nil,
+                systemPrompt: "",
+                config: config
+            )
+
+            #expect(body["max_tokens"] as? Int == 8192, "\(model) 的 max_tokens 不应被降低")
+        }
+    }
+
     @Test("开启缓存时最后一条文本块带缓存边界")
     func addsPromptCacheBoundary() throws {
         let adapter = makeAdapter(enablesPromptCaching: true)
