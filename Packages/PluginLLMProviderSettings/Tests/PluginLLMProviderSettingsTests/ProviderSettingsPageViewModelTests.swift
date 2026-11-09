@@ -370,6 +370,39 @@ struct ProviderSettingsPageViewModelTests {
         #expect(viewModel.selectedModelCount == 0)
     }
 
+    // MARK: - 详情 · 全局选中
+
+    /// 回归 #940：详情只在初始化时读取一次全局选中模型，别处（模型选择器、
+    /// 会话联动、其他供应商）切换后仍把旧模型标成「当前」。全局选中变化
+    /// 时必须刷新详情快照。
+    @Test("全局选中变化后详情刷新「当前」模型")
+    func detailRefreshesSelectedModelAfterExternalSelection() throws {
+        let (manager, _, capability) = makeFixture()
+        try manager.register(
+            MockRemoteProvider(
+                id: "provider-p",
+                displayName: "供应商 P",
+                models: [LLMModelInfo(id: "m1"), LLMModelInfo(id: "m2")]
+            )
+        )
+        try manager.register(
+            MockRemoteProvider(
+                id: "provider-q",
+                displayName: "供应商 Q",
+                models: [LLMModelInfo(id: "m3")]
+            )
+        )
+
+        let page = makeViewModel(capability: capability)
+        let detail = page.detailViewModel(for: "provider-p")
+        detail.select(modelID: "m1")
+        #expect(detail.isModelSelected("m1"))
+
+        capability.select(providerID: "provider-q", model: "m3")
+        #expect(detail.isModelSelected("m1") == false, "P 的模型已不是全局选中")
+        #expect(detail.selectedModelID == capability.selectedModelID)
+    }
+
     // MARK: - API Key 明文状态
 
     /// 回归 #942：明文展示状态曾保存在详情视图的本地 `@State` 里。切换
