@@ -74,4 +74,39 @@ struct EditorPreviewTests {
         project.updateCurrentFile(nil)
         #expect(viewModel.state == .markdown(fileURL.standardizedFileURL, "# Preview\n"))
     }
+
+    @Test("保存当前 Markdown 后 Preview 自动重读新内容（回归 #1016）")
+    func savingCurrentMarkdownRefreshesPreview() async throws {
+        let project = DefaultProjectProvider()
+        let filename = "lumi-editor-preview-" + UUID().uuidString + ".md"
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        try Data("# Before\n".utf8).write(to: fileURL)
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        let viewModel = EditorPreviewViewModel(
+            projectCapability: EditorPreviewProjectCapabilityAdapter(project: project),
+            pollInterval: .milliseconds(20)
+        )
+        project.updateCurrentFile(fileURL)
+        viewModel.updateCurrentFile(fileURL)
+        try await waitForMarkdown(viewModel, "# Before\n", fileURL: fileURL)
+
+        // 编辑器保存：文件原地更新，不产生任何项目事件。
+        try Data("# After saving\n".utf8).write(to: fileURL)
+
+        try await waitForMarkdown(viewModel, "# After saving\n", fileURL: fileURL)
+    }
+
+    private func waitForMarkdown(
+        _ viewModel: EditorPreviewViewModel,
+        _ expected: String,
+        fileURL: URL
+    ) async throws {
+        let expectedState = EditorPreviewState.markdown(fileURL.standardizedFileURL, expected)
+        for _ in 0..<200 {
+            if viewModel.state == expectedState { return }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(viewModel.state == expectedState)
+    }
 }
