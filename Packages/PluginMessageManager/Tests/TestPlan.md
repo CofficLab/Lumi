@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆盖 38 条用例。
+PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆盖 41 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 38
+测试文件: 8 个，用例总数: 41
 
 核心组件（源码目录）:
 - `Errors/`
@@ -28,7 +28,7 @@ PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **MessageManager**（19 条）：由 `messageChangePublishesBeforePersistence`、`readYourWritesForAssistant`、`asyncSnapshotIncludesPendingMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MessageManager**（22 条）：由 `messageChangePublishesBeforePersistence`、`readYourWritesForAssistant`、`asyncSnapshotIncludesPendingMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageManager 读取路径的分流**（3 条）：由 `llmPathOmitsIrrelevantFields`、`uiPathKeepsFullFields`、`llmPathKeepsTimelineMarkers` 锁定——LLM 路径不得携带时间线标记以外的 metadata 与原始事件流，但必须保留 `renderKind` / `lumi.timelineEvent`；UI 路径必须仍拿到完整字段。
 - **LLM 回合的消息物化范围**（2 条）：由 `llmReadMustNotMaterializeIrrelevantLargeFields`、`llmReadMustKeepContentAndToolCalls` 锁定——LLM 回合读取时只物化真正需要的内容，不得把无关大字段读进内存。
 - **MessageStore 会话查询索引**（2 条）：由 `storeCreatesConversationLookupIndex`、`conversationPageQueryPlanUsesIndex` 锁定——「按会话取消息」必须走 `(ZCONVERSATIONID, ZCREATEDAT)` 复合索引，不得退化成全表扫描。
@@ -80,27 +80,30 @@ PluginMessageManager 的实现包，包含 6 个主要类型；当前测试覆�
 | 36 | MessageStore 全量物化路径基准 | 全量路径取到整个会话，分页路径只取一页 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fullPathTakesEverythingWhilePagingTakesOnePage` |
 | 37 | MessageStore 全量物化路径基准 | 全量路径的物化量随会话长度增长 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fullPathScalesWithConversationLength` |
 | 38 | MessageManager 读取路径的分流 | LLM 路径保留时间线标记，界面事件仍可被过滤 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `llmPathKeepsTimelineMarkers` |
+| 39 | MessageManager | 最近一页:同 id 的 pending 新版本覆盖磁盘旧版本 | 磁盘已有 A，pending 保留同 id 的 B | 执行该用例 | 最近一页读出 B 的正文、工具结果与授权状态 | P1 | ✅ 已覆盖 | `recentPagePrefersPendingVersion` |
+| 40 | MessageManager | 完整快照:同 id 的 pending 新版本覆盖磁盘旧版本 | 磁盘已有 A，pending 保留同 id 的 B | 执行该用例 | 完整快照与 `messages(for:)` 读出 B | P1 | ✅ 已覆盖 | `fullSnapshotPrefersPendingVersion` |
+| 41 | MessageManager | LLM 上下文:同 id 的 pending 新版本覆盖磁盘旧版本 | 磁盘已有 A，pending 保留同 id 的 B | 执行该用例 | LLM 上下文读出 B 的正文与工具结果 | P1 | ✅ 已覆盖 | `llmSnapshotPrefersPendingVersion` |
 
-> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **41 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 11 / 11
-- P1: 已覆盖 27 / 27
+- P1: 已覆盖 30 / 30
 - P2: 已覆盖 0 / 0
-- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
+- **合计: 41 / 41**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（27 条）
+- **P1**: 其余功能性用例（30 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 38 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 41 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

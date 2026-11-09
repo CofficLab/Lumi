@@ -278,6 +278,103 @@ struct MessageManagerWriteBehindTests {
         #expect(persisted)
     }
 
+    /// 构造「磁盘已有旧版本 A、pending 保留同 ID 新版本 B」的写回窗口。
+    ///
+    /// 真实时序（初始 insert 先落盘、工具结果覆盖写尚未落盘）无法在测试里稳定
+    /// 复现，因此直接把 A 写进磁盘、把 B 放进 pending，锁住读合并方向。
+    private func seedDiskOldPendingNew(
+        store: MessageStore,
+        manager: MessageManager,
+        conversationID: UUID
+    ) throws -> UUID {
+        let toolCallID = "call-1"
+        let messageID = UUID()
+        let diskVersion = Message(
+            id: messageID,
+            conversationID: conversationID,
+            role: .assistant,
+            content: "old body",
+            createdAt: Date(timeIntervalSince1970: 100),
+            toolCalls: [
+                MessageToolCall(
+                    id: toolCallID,
+                    name: "write_file",
+                    arguments: "{}",
+                    authorizationState: "pendingAuthorization"
+                )
+            ]
+        )
+        try store.insertMessage(diskVersion)
+
+        var pendingVersion = diskVersion
+        pendingVersion.content = "new body"
+        pendingVersion.toolCalls?[0].result = MessageToolResult(content: "file written")
+        pendingVersion.toolCalls?[0].authorizationState = "userApproved"
+        manager.pending.enqueue(pendingVersion, conversationID: conversationID)
+        return messageID
+    }
+
+    @Test("最近一页:同 id 的 pending 新版本覆盖磁盘旧版本")
+    func recentPagePrefersPendingVersion() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let conversationID = UUID()
+        let messageID = try seedDiskOldPendingNew(
+            store: store, manager: manager, conversationID: conversationID
+        )
+
+        let page = manager.messagePage(
+            for: conversationID,
+            limit: 10,
+            beforeMessageID: nil,
+            includesToolMessages: true
+        )
+
+        let message = try #require(page.first { $0.id == messageID })
+        #expect(page.count == 1)
+        #expect(message.content == "new body")
+        #expect(message.toolCalls?.first?.result?.content == "file written")
+        #expect(message.toolCalls?.first?.authorizationState == "userApproved")
+    }
+
+    @Test("完整快照:同 id 的 pending 新版本覆盖磁盘旧版本")
+    func fullSnapshotPrefersPendingVersion() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let conversationID = UUID()
+        let messageID = try seedDiskOldPendingNew(
+            store: store, manager: manager, conversationID: conversationID
+        )
+
+        let snapshot = await manager.messagesSnapshot(in: conversationID)
+
+        let message = try #require(snapshot.first { $0.id == messageID })
+        #expect(snapshot.count == 1)
+        #expect(message.content == "new body")
+        #expect(message.toolCalls?.first?.authorizationState == "userApproved")
+        #expect(manager.messages(for: conversationID).first { $0.id == messageID }?.content == "new body")
+    }
+
+    @Test("LLM 上下文:同 id 的 pending 新版本覆盖磁盘旧版本")
+    func llmSnapshotPrefersPendingVersion() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let conversationID = UUID()
+        let messageID = try seedDiskOldPendingNew(
+            store: store, manager: manager, conversationID: conversationID
+        )
+
+        let history = await manager.messagesForLLM(in: conversationID)
+
+        let message = try #require(history.first { $0.id == messageID })
+        #expect(history.count == 1)
+        #expect(message.content == "new body")
+        #expect(message.toolCalls?.first?.result?.content == "file written")
+    }
+
     @Test("store 不可用时,assistant 消息仍可从内存读路径读到(优雅降级)")
     func readableEvenWhenStoreUnavailable() async throws {
         let manager = makeManager(store: nil)
