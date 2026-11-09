@@ -5,7 +5,7 @@
 PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProvider`。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 106
+测试文件: 11 个，用例总数: 109
 
 核心组件（源码目录）:
 - `Managers/`
@@ -35,6 +35,7 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 - **ToolJobCancellation**（5 条）：由 `resumingSuspendedTurnReportsRunning`、`invalidResumeRequestKeepsSuspendedTurnObservable`、`lateLLMResponseAfterCancellationIsIgnored` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolJobLoop**（6 条）：由 `toolJobsTransitionThroughWaitingPhase`、`cancellingWaitingToolJobsIgnoresLateCompletion`、`unknownToolJobEventIsIgnoredByReducer` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AgentLoop 消息辅助**（12 条）：由 `insertsToolResultMessage`、`appendsRenderedError`、`findsIncompleteToolCall` 等用例锁定；改动该模块时优先跑 `AgentLoopMessageAndLifecycleTests.swift`。
+- **工具参数裁剪进入模型上下文**（3 条）：由 `llmMessagesScrubsOmittedArguments`、`llmMessagesKeepsUndeclaredArguments`、`contextOmittedArgumentKeysCollectsDeclarations` 锁定；改动历史转 LLM 消息的转换时优先跑 `ToolCallIdentityAndHelpersEdgeCaseTests.swift`。
 - **PluginAgentLoop 生命周期**（6 条）：由 `onBootRegistersAgentLoopProvider`、`onBootReplacesExistingProvider`、`pluginMetadata` 等用例锁定；改动该模块时优先跑 `AgentLoopMessageAndLifecycleTests.swift`。
 - **AgentLoop 工具观察者**（3 条）：由 `toolJobObserverCancels`、`toolManagerObserverHandlesForeignAgentLoop`、`toolManagerObserverSubscribesAndCancels` 锁定；改动该模块时优先跑 `AgentLoopMessageAndLifecycleTests.swift`。
 - **LLM 错误分类与工具 schema 估算**（16 条）：由 `toolCallValidationErrorIsRecoverable`、`contextLimitPhrasesAreDetected`、`estimateSumsNameDescriptionParametersAndOverhead` 等用例锁定；改动该模块时优先跑 `LLMErrorClassificationTests.swift`。
@@ -156,21 +157,24 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 | 104 | AgentLoop 注入预算 | 钩子注入预算等于输入上限扣除已准备历史 | 输入上限 = 历史估算 + 1200 | 调用 `injectedContentTokenBudget` | 返回 1200，历史不被重复计入 | P1 | ✅ 已覆盖 | `budgetSubtractsPreparedHistory` |
 | 105 | AgentLoop 注入预算 | 历史占满输入上限时注入预算收敛为 0 | 输入上限小于历史估算 | 调用 `injectedContentTokenBudget` | 返回 0，不会出现负预算 | P2 | ✅ 已覆盖 | `budgetNeverGoesNegative` |
 | 106 | AgentLoop 上下文校准 | 校准优先使用缓存总输入（**回归 #968**） | 响应分别带 cacheTotal、仅 input、两者皆无 | 调用 `reportedInputTokenCount(for:)` | 依次返回 30,000、input 值、nil | P1 | ✅ 已覆盖 | `calibrationUsesCacheTotalInput` |
+| 107 | 工具参数裁剪进入模型上下文 | show_html 的 html 原文不再进入模型上下文（**回归 #1053**） | assistant 历史含带标记的 show_html 调用与一次普通调用 | 调用 `llmMessages(from:omittedArgumentKeys:)` | html 被替换为占位符、其余参数与调用配对不变 | P0 | ✅ 已覆盖 | `llmMessagesScrubsOmittedArguments` |
+| 108 | 工具参数裁剪进入模型上下文 | 没有裁剪声明时工具参数保持原样 | 历史含 show_html 调用但未传裁剪表 | 调用 `llmMessages(from:)` | 参数逐字保留 | P1 | ✅ 已覆盖 | `llmMessagesKeepsUndeclaredArguments` |
+| 109 | 工具参数裁剪进入模型上下文 | 按工具名收集裁剪声明，未声明的工具不出现 | 两个工具，仅一个声明裁剪键 | 调用 `contextOmittedArgumentKeys(for:)` | 只返回声明了键的工具 | P1 | ✅ 已覆盖 | `contextOmittedArgumentKeysCollectsDeclarations` |
 
-> 说明：全部 **106 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **109 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 23 / 23
-- P1: 已覆盖 71 / 71
+- P0: 已覆盖 24 / 24
+- P1: 已覆盖 73 / 73
 - P2: 已覆盖 12 / 12
-- **合计: 106 / 106**（仅表示清单场景，非源码覆盖率）
+- **合计: 109 / 109**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（23 条）
-- **P1**: 其余功能性用例（71 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（24 条）
+- **P1**: 其余功能性用例（73 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
 
 ## 跨平台说明

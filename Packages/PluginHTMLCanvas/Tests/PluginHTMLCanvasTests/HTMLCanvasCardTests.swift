@@ -55,6 +55,13 @@ struct HTMLCanvasCardTests {
         #expect(payload.hasHTMLFile)
     }
 
+    /// HTML 原文只服务于当次显示：工具必须声明它不进入后续模型上下文（Issue #1053）。
+    @Test func toolOmitsHTMLFromModelContext() {
+        let tool = ShowHTMLTool(bridge: HTMLCanvasMessageBridge(), storageDirectory: URL(fileURLWithPath: "/tmp"))
+
+        #expect(tool.contextOmittedArgumentKeys == ["html"])
+    }
+
     @Test func toolWritesHTMLToDisk() async throws {
         let manager = RecordingMessageManager()
         let bridge = HTMLCanvasMessageBridge()

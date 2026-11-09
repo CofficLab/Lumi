@@ -579,6 +579,9 @@ extension AgentLoopManager {
         let automationLevel = conversations.automationLevel(for: conversationID)
         let rawTools = toolManager.allTools()
         let tools = automationLevel.allowsTools ? rawTools : []
+        // 历史里的工具调用参数也要按工具契约裁剪（例如 show_html 的 HTML 原文），
+        // 与当前回合是否允许调用工具无关。
+        let omittedArgumentKeys = contextOmittedArgumentKeys(for: rawTools)
         if Self.verbose {
             let firstFive = tools.prefix(5).map(\.name)
             Self.logger.info("\(Self.t)加载 AgentTool 数量: \(tools.count)，前5个: \(firstFive)，automationLevel=\(automationLevel.rawValue)，rawCount=\(rawTools.count)")
@@ -619,7 +622,7 @@ extension AgentLoopManager {
         // AgentLoop 不读取全量历史，也不感知具体压缩策略。
         let contextResult = await contextProvider.prepareContext(for: contextRequest)
         let history = contextResult.messages
-        let llmHistory = llmMessages(from: history)
+        let llmHistory = llmMessages(from: history, omittedArgumentKeys: omittedArgumentKeys)
         var preparedMessages = llmHistory
         if let lifecycleHooks {
             let context = WillSendToLLMContext(
