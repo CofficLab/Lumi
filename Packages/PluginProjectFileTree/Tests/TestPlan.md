@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 17 条用例。
+PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 20 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 17
+测试文件: 9 个，用例总数: 20
 
 核心组件（源码目录）:
 - `Models/`
@@ -46,6 +46,7 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 - **SelectionState**（2 条）：由 `shiftClickSelectsEveryVisibleItemInRange`、`visibleOrderUpdateDropsCollapsedItems` 锁定。Shift 范围选择依赖 `updateVisibleOrder` 建立的显示顺序，重建时必须丢弃已折叠/不可见行（**回归 #1101**）。
 - **FileTreeCollectionViewController**（1 条）：由 `controllerTracksVisibleOrderForShiftSelection` 锁定。每次树快照变化都必须把可见文件行按顺序写入 `SelectionState`，否则 Shift 点击只能退化为单选，右键“Send to Conversation”会漏发中间文件（**回归 #1101**）。
 - **FileTreeCollectionViewController（反选）**（2 条）：由 `commandDeselectRemovesPathFromSelection`、`deselectCallbackKeepsRowStillSelectedNatively` 锁定。Cmd 点击已选项必须实现 `didDeselectItemsAt` 并移除自定义路径，否则发送目标仍包含已取消文件；回调中仍在原生选中集合内的行不得移除（**回归 #1102**）。
+- **FileTreeNodeItem**（3 条）：由 `samePathFileAndDirectoryHaveDistinctIdentity`、`swiftPackageMetadataChangesIdentity`、`reloadedNodeIdentityFollowsFileTypeSwap` 锁定。diffable 相等性必须包含 `isDirectory` 与图标元数据，同一路径的文件被替换成同名目录（或反向替换）时必须产出不相等的新节点，否则 cell 会继续显示旧文件类型（**回归 #1104**）。
 
 ## 测试用例清单
 
@@ -68,27 +69,30 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 | 15 | FileTreeCollectionViewController | Cmd 取消选中后自定义选择与发送目标只剩剩余项（**回归 #1102**） | 自定义选择为 a、b，AppKit 原生选中只剩 b | 触发 `didDeselectItemsAt` 取消 a | `selectedPaths` 只剩 b，`actionTargets` 不再包含 a | P0 | ✅ 已覆盖 | `commandDeselectRemovesPathFromSelection` |
 | 16 | FileTreeCollectionViewController | 反选回调中仍处于原生选中集合的行不会被移除 | 自定义选择为 a、b，原生选中仍含 a、b | 触发 `didDeselectItemsAt` 报告 a | 自定义选择保持 a、b 不变 | P2 | ✅ 已覆盖 | `deselectCallbackKeepsRowStillSelectedNatively` |
 | 17 | FileTreeDataSource | 重建期间的精准刷新会在提交后重放（**回归 #1103**） | 后台遍历已读取目录 D 的旧内容并被门闩阻塞 | 向 D 新增文件并调用 `reloadDirectory(D)`，随后放行遍历 | 重建提交后重放刷新，`new.txt` 出现在列表中 | P0 | ✅ 已覆盖 | `targetedReloadDuringRebuildIsReplayed` |
+| 18 | FileTreeNodeItem | 同一路径的文件与目录具有不同 diffable 身份（**回归 #1104**） | 同一 URL 分别构造 `isDirectory` 为假与真的节点 | 比较两个节点并放入集合 | 节点不相等，集合元素数为 2 | P0 | ✅ 已覆盖 | `samePathFileAndDirectoryHaveDistinctIdentity` |
+| 19 | FileTreeNodeItem | Swift Package 目录元数据变化会改变节点身份 | 同一目录分别按普通目录与含 `Package.swift` 构造 | 比较两个节点 | 包目录节点与普通目录节点不相等 | P1 | ✅ 已覆盖 | `swiftPackageMetadataChangesIdentity` |
+| 20 | FileTreeNodeItem | 外部替换文件类型后精准刷新会更新节点身份（**回归 #1104**） | 根目录下 `entry` 为普通文件 | 标记 `entry` 为目录并 `reloadDirectory(root)` | 节点 `isDirectory` 变为真，且与新节点不相等 | P0 | ✅ 已覆盖 | `reloadedNodeIdentityFollowsFileTypeSwap` |
 
-> 说明：全部 **17 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **20 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
-- P1: 已覆盖 5 / 5
+- P0: 已覆盖 11 / 11
+- P1: 已覆盖 6 / 6
 - P2: 已覆盖 3 / 3
-- **合计: 17 / 17**（仅表示清单场景，非源码覆盖率）
+- **合计: 20 / 20**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（5 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
+- **P1**: 其余功能性用例（6 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 17 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 20 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
