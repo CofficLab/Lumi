@@ -85,6 +85,93 @@ public struct MarkdownTheme: Sendable {
     /// 正文额外行距；由 `bodyTargetLineHeight` 与字体行高换算得到。
     public let bodyLineSpacing: CGFloat
 
+    // MARK: - 代码块（V4）
+
+    /// 代码块外壳上方间距。
+    public let codeBlockTopSpacing: CGFloat
+    /// 代码块外壳下方间距。
+    public let codeBlockBottomSpacing: CGFloat
+    /// 代码块圆角。
+    public let codeBlockCornerRadius: CGFloat
+    /// 代码块边框宽度。
+    public let codeBlockBorderWidth: CGFloat
+    /// 代码块 header 左内边距。
+    public let codeBlockHeaderLeadingPadding: CGFloat
+    /// 代码块 header 右内边距。
+    public let codeBlockHeaderTrailingPadding: CGFloat
+    /// 代码块 header 垂直内边距。
+    public let codeBlockHeaderVerticalPadding: CGFloat
+    /// 语言标签字号。
+    public let codeBlockLanguageFontSize: CGFloat
+    /// 语言标签是否等宽。
+    public let codeBlockLanguageIsMonospaced: Bool
+    /// 语言标签是否转小写。
+    public let codeBlockLanguageIsLowercase: Bool
+    /// 语言标签是否截断。
+    public let codeBlockLanguageTruncates: Bool
+    /// 缺省语言标签。
+    public let codeBlockDefaultLanguage: String
+    /// header 文件图标尺寸。
+    public let codeBlockHeaderFileIconSize: CGFloat
+    /// header 操作按钮边长。
+    public let codeBlockHeaderActionButtonSize: CGFloat
+    /// header 操作按钮图标尺寸。
+    public let codeBlockHeaderActionIconSize: CGFloat
+    /// 代码内容水平内边距。
+    public let codeBlockContentHorizontalPadding: CGFloat
+    /// 代码内容上方内边距。
+    public let codeBlockContentTopPadding: CGFloat
+    /// 代码内容下方内边距。
+    public let codeBlockContentBottomPadding: CGFloat
+    /// 代码字号。
+    public let codeBlockFontSize: CGFloat
+    /// 是否显示行号。
+    public let codeBlockShowsLineNumbers: Bool
+    /// 是否自动换行。
+    public let codeBlockWrapsLines: Bool
+    /// 固定最大高度；nil 表示不设限。
+    public let codeBlockMaxHeight: CGFloat?
+    /// 复制反馈时长（毫秒）。
+    public let codeBlockCopyFeedbackMilliseconds: Int
+    /// 流式期间是否高亮。
+    public let codeBlockHighlightsWhileStreaming: Bool
+
+    // MARK: - 表格（V4）
+
+    /// 表格圆角。
+    public let tableCornerRadius: CGFloat
+    /// 表格边框宽度。
+    public let tableBorderWidth: CGFloat
+    /// 单元格水平内边距。
+    public let tableCellHorizontalPadding: CGFloat
+    /// 单元格垂直内边距。
+    public let tableCellVerticalPadding: CGFloat
+    /// 表头字号。
+    public let tableHeaderFontSize: CGFloat
+    /// 表头字重。
+    public let tableHeaderWeight: Font.Weight
+    /// 表头对齐。
+    public let tableHeaderAlignment: Alignment
+    /// 单元格最小宽度。
+    public let tableCellMinWidth: CGFloat
+    /// 单元格最大宽度。
+    public let tableCellMaxWidth: CGFloat
+    /// 表格是否内部横向滚动。
+    public let tableScrollsHorizontally: Bool
+
+    // MARK: - 图片（V4）
+
+    /// 图片最大宽度占容器的比例。
+    public let imageMaxWidthFraction: CGFloat
+    /// 图片最大高度。
+    public let imageMaxHeight: CGFloat
+    /// 图片圆角。
+    public let imageCornerRadius: CGFloat
+    /// 连续图片是否组成 gallery。
+    public let imagesFormGallery: Bool
+    /// 图片加载失败是否显示错误占位。
+    public let imageShowsErrorPlaceholder: Bool
+
     /// 默认主题（标准系统字体和间距）
     public static let standard = MarkdownTheme(
         headingFont: { level in
@@ -157,7 +244,46 @@ public struct MarkdownTheme: Sendable {
             inlineCodeHorizontalPadding: 6,
             inlineCodeVerticalPadding: 2,
             bodyTargetLineHeight: 24.5,
-            bodyLineSpacing: lineSpacing(targetLineHeight: 24.5, fontSize: 14)
+            bodyLineSpacing: lineSpacing(targetLineHeight: 24.5, fontSize: 14),
+            codeBlockTopSpacing: 16,
+            codeBlockBottomSpacing: 16,
+            codeBlockCornerRadius: 12,
+            codeBlockBorderWidth: 1,
+            codeBlockHeaderLeadingPadding: 12,
+            codeBlockHeaderTrailingPadding: 8,
+            codeBlockHeaderVerticalPadding: 8,
+            codeBlockLanguageFontSize: 12,
+            codeBlockLanguageIsMonospaced: true,
+            codeBlockLanguageIsLowercase: true,
+            codeBlockLanguageTruncates: true,
+            codeBlockDefaultLanguage: "text",
+            codeBlockHeaderFileIconSize: 16,
+            codeBlockHeaderActionButtonSize: 28,
+            codeBlockHeaderActionIconSize: 14,
+            codeBlockContentHorizontalPadding: 8,
+            codeBlockContentTopPadding: 0,
+            codeBlockContentBottomPadding: 12,
+            codeBlockFontSize: 12,
+            codeBlockShowsLineNumbers: false,
+            codeBlockWrapsLines: false,
+            codeBlockMaxHeight: nil,
+            codeBlockCopyFeedbackMilliseconds: 2000,
+            codeBlockHighlightsWhileStreaming: false,
+            tableCornerRadius: 12,
+            tableBorderWidth: 1,
+            tableCellHorizontalPadding: 12,
+            tableCellVerticalPadding: 8,
+            tableHeaderFontSize: 14,
+            tableHeaderWeight: .regular,
+            tableHeaderAlignment: .leading,
+            tableCellMinWidth: 64,
+            tableCellMaxWidth: 448,
+            tableScrollsHorizontally: true,
+            imageMaxWidthFraction: 0.5,
+            imageMaxHeight: 360,
+            imageCornerRadius: 12,
+            imagesFormGallery: true,
+            imageShowsErrorPlaceholder: true
         )
     }
 
@@ -213,7 +339,46 @@ public struct MarkdownTheme: Sendable {
         inlineCodeHorizontalPadding: CGFloat = 0,
         inlineCodeVerticalPadding: CGFloat = 0,
         bodyTargetLineHeight: CGFloat = 0,
-        bodyLineSpacing: CGFloat = 4
+        bodyLineSpacing: CGFloat = 4,
+        codeBlockTopSpacing: CGFloat = 0,
+        codeBlockBottomSpacing: CGFloat = 0,
+        codeBlockCornerRadius: CGFloat = 6,
+        codeBlockBorderWidth: CGFloat = 1,
+        codeBlockHeaderLeadingPadding: CGFloat = 10,
+        codeBlockHeaderTrailingPadding: CGFloat = 10,
+        codeBlockHeaderVerticalPadding: CGFloat = 5,
+        codeBlockLanguageFontSize: CGFloat = 10,
+        codeBlockLanguageIsMonospaced: Bool = false,
+        codeBlockLanguageIsLowercase: Bool = false,
+        codeBlockLanguageTruncates: Bool = false,
+        codeBlockDefaultLanguage: String = "",
+        codeBlockHeaderFileIconSize: CGFloat = 0,
+        codeBlockHeaderActionButtonSize: CGFloat = 18,
+        codeBlockHeaderActionIconSize: CGFloat = 10,
+        codeBlockContentHorizontalPadding: CGFloat = 0,
+        codeBlockContentTopPadding: CGFloat = 0,
+        codeBlockContentBottomPadding: CGFloat = 0,
+        codeBlockFontSize: CGFloat = 13,
+        codeBlockShowsLineNumbers: Bool = false,
+        codeBlockWrapsLines: Bool = false,
+        codeBlockMaxHeight: CGFloat? = nil,
+        codeBlockCopyFeedbackMilliseconds: Int = 2000,
+        codeBlockHighlightsWhileStreaming: Bool = true,
+        tableCornerRadius: CGFloat = 6,
+        tableBorderWidth: CGFloat = 1,
+        tableCellHorizontalPadding: CGFloat = 10,
+        tableCellVerticalPadding: CGFloat = 8,
+        tableHeaderFontSize: CGFloat = 12,
+        tableHeaderWeight: Font.Weight = .semibold,
+        tableHeaderAlignment: Alignment = .leading,
+        tableCellMinWidth: CGFloat = 0,
+        tableCellMaxWidth: CGFloat = 0,
+        tableScrollsHorizontally: Bool = false,
+        imageMaxWidthFraction: CGFloat = 1,
+        imageMaxHeight: CGFloat = 0,
+        imageCornerRadius: CGFloat = 0,
+        imagesFormGallery: Bool = false,
+        imageShowsErrorPlaceholder: Bool = false
     ) {
         self.headingFont = headingFont
         self.bodyFont = bodyFont
@@ -252,5 +417,44 @@ public struct MarkdownTheme: Sendable {
         self.inlineCodeVerticalPadding = inlineCodeVerticalPadding
         self.bodyTargetLineHeight = bodyTargetLineHeight
         self.bodyLineSpacing = bodyLineSpacing
+        self.codeBlockTopSpacing = codeBlockTopSpacing
+        self.codeBlockBottomSpacing = codeBlockBottomSpacing
+        self.codeBlockCornerRadius = codeBlockCornerRadius
+        self.codeBlockBorderWidth = codeBlockBorderWidth
+        self.codeBlockHeaderLeadingPadding = codeBlockHeaderLeadingPadding
+        self.codeBlockHeaderTrailingPadding = codeBlockHeaderTrailingPadding
+        self.codeBlockHeaderVerticalPadding = codeBlockHeaderVerticalPadding
+        self.codeBlockLanguageFontSize = codeBlockLanguageFontSize
+        self.codeBlockLanguageIsMonospaced = codeBlockLanguageIsMonospaced
+        self.codeBlockLanguageIsLowercase = codeBlockLanguageIsLowercase
+        self.codeBlockLanguageTruncates = codeBlockLanguageTruncates
+        self.codeBlockDefaultLanguage = codeBlockDefaultLanguage
+        self.codeBlockHeaderFileIconSize = codeBlockHeaderFileIconSize
+        self.codeBlockHeaderActionButtonSize = codeBlockHeaderActionButtonSize
+        self.codeBlockHeaderActionIconSize = codeBlockHeaderActionIconSize
+        self.codeBlockContentHorizontalPadding = codeBlockContentHorizontalPadding
+        self.codeBlockContentTopPadding = codeBlockContentTopPadding
+        self.codeBlockContentBottomPadding = codeBlockContentBottomPadding
+        self.codeBlockFontSize = codeBlockFontSize
+        self.codeBlockShowsLineNumbers = codeBlockShowsLineNumbers
+        self.codeBlockWrapsLines = codeBlockWrapsLines
+        self.codeBlockMaxHeight = codeBlockMaxHeight
+        self.codeBlockCopyFeedbackMilliseconds = codeBlockCopyFeedbackMilliseconds
+        self.codeBlockHighlightsWhileStreaming = codeBlockHighlightsWhileStreaming
+        self.tableCornerRadius = tableCornerRadius
+        self.tableBorderWidth = tableBorderWidth
+        self.tableCellHorizontalPadding = tableCellHorizontalPadding
+        self.tableCellVerticalPadding = tableCellVerticalPadding
+        self.tableHeaderFontSize = tableHeaderFontSize
+        self.tableHeaderWeight = tableHeaderWeight
+        self.tableHeaderAlignment = tableHeaderAlignment
+        self.tableCellMinWidth = tableCellMinWidth
+        self.tableCellMaxWidth = tableCellMaxWidth
+        self.tableScrollsHorizontally = tableScrollsHorizontally
+        self.imageMaxWidthFraction = imageMaxWidthFraction
+        self.imageMaxHeight = imageMaxHeight
+        self.imageCornerRadius = imageCornerRadius
+        self.imagesFormGallery = imagesFormGallery
+        self.imageShowsErrorPlaceholder = imageShowsErrorPlaceholder
     }
 }
