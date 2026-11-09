@@ -193,6 +193,26 @@ struct AppStorePromoStoreCoverageTests {
         #expect(try store.readImage(storagePath: root.path, taskSlug: "t", imageSlug: "i").html == original.html)
     }
 
+    @Test func replaceHTMLRejectsMissingCSSURLAsset() throws {
+        let root = try makeRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = AppStorePromoDocumentStore()
+        _ = try store.createTask(
+            storagePath: root.path, slug: "t", title: "T",
+            appName: "Lumi", deviceFamily: .mac, localeIdentifier: "en-US"
+        )
+        _ = try store.createImage(storagePath: root.path, taskSlug: "t", imageSlug: "i", title: "I")
+
+        let html = """
+        <!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>body { overflow: hidden; background: #fff; background-image: url("assets/does-not-exist.png"); }</style>
+        </head><body></body></html>
+        """
+        #expect(throws: AppStorePromoStoreError.self) {
+            _ = try store.replaceHTML(html, storagePath: root.path, taskSlug: "t", imageSlug: "i")
+        }
+    }
+
     @Test func lintImageReportsStoredMarkupState() throws {
         let root = try makeRoot()
         defer { try? FileManager.default.removeItem(at: root) }

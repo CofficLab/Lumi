@@ -184,6 +184,37 @@ struct AppStorePromoHTMLLinterTests {
         #expect(!report.errors.map(\.code).contains("unsafe_asset_path"))
     }
 
+    @Test func missingCSSURLAssetFailsWhenDirectoryProvided() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        try Data([0xFF]).write(to: dir.appendingPathComponent("real.png"))
+
+        let html = minimalHTML(
+            body: #"<style>body { background-image: url("./real.png"), url("./ghost.png"); }</style>"#
+        )
+        let report = AppStorePromoHTMLLinter().lint(html: html, documentDirectory: dir)
+        let missing = report.errors.filter { $0.code == "missing_asset" }
+        #expect(missing.count == 1)
+        #expect(missing.first?.message.contains("ghost.png") == true)
+        #expect(!report.errors.map(\.code).contains("unsafe_asset_path"))
+    }
+
+    @Test func CSSDataURIsAndFragmentsAreSkipped() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let html = minimalHTML(
+            body: #"<style>body { background-image: url("data:image/png;base64,AAAA"), url(#gradient); }</style>"#
+        )
+        let report = AppStorePromoHTMLLinter().lint(html: html, documentDirectory: dir)
+        #expect(!report.errors.map(\.code).contains("missing_asset"))
+        #expect(!report.errors.map(\.code).contains("unsafe_asset_path"))
+    }
+
     @Test func dataURIsAreSkipped() {
         let html = minimalHTML(body: #"<img src="data:image/png;base64,AAAA">"#)
         let report = AppStorePromoHTMLLinter().lint(html: html, documentDirectory: FileManager.default.temporaryDirectory)
