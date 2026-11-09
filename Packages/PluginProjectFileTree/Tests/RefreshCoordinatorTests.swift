@@ -62,6 +62,48 @@ func emptyRootPathDoesNotStartWatching() {
     #expect(watcher.updatedDirectorySets.isEmpty)
 }
 
+/// 回归 #1099：全量刷新曾与精准刷新共用 `debounceTask`，取消 trailing 窗口后
+/// `isDebouncePending` 仍为 true，后续外部事件只累积到 pending，精准刷新永久停摆。
+@MainActor
+@Test("全量刷新不会让精准刷新永久停摆")
+func fullRefreshDoesNotStallTargetedRefresh() async throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("lumi-file-tree-refresh-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let coordinator = RefreshCoordinator()
+    coordinator.attach(observer: RecordingFileTreeWatcher())
+    coordinator.setProjectRootPath(root.path)
+
+    let changedFile = root.appendingPathComponent("E1.txt")
+    coordinator.handleDirectoryChanged(url: changedFile)
+    let firstEventPublished = await waitUntil { coordinator.targetedRefreshToken == 1 }
+    #expect(firstEventPublished)
+
+    coordinator.refresh()
+    let fullRefreshRan = await waitUntil { coordinator.refreshToken == 1 }
+    #expect(fullRefreshRan)
+
+    let secondFile = root.appendingPathComponent("E2.txt")
+    coordinator.handleDirectoryChanged(url: secondFile)
+    let secondEventPublished = await waitUntil { coordinator.targetedRefreshToken >= 2 }
+    #expect(secondEventPublished, "全量刷新后后续外部事件仍未触发精准刷新")
+}
+
+@MainActor
+private func waitUntil(
+    timeout: TimeInterval = 2,
+    _ condition: () -> Bool
+) async -> Bool {
+    let deadline = Date().addingTimeInterval(timeout)
+    while Date() < deadline {
+        if condition() { return true }
+        try? await Task.sleep(nanoseconds: 10_000_000)
+    }
+    return condition()
+}
+
 private final class RecordingFileTreeWatcher: FileTreeWatching, @unchecked Sendable {
     private(set) var updatedDirectorySets: [Set<URL>] = []
     private(set) var stopCount = 0

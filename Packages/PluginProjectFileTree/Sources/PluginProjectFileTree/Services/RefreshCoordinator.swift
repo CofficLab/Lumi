@@ -68,8 +68,12 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     /// Git 刷新请求计数器（用于日志去重）
     private var gitRefreshRequestCount: Int = 0
 
-    /// 防抖任务
-    private var debounceTask: Task<Void, Never>?
+    /// 全量刷新防抖任务。与精准刷新的 trailing 任务分离，
+    /// 避免 `refresh()` 取消 trailing 窗口后 pending 状态无法恢复（回归 #1099）。
+    private var fullRefreshDebounceTask: Task<Void, Never>?
+
+    /// 精准刷新 trailing 防抖任务。
+    private var targetedDebounceTask: Task<Void, Never>?
 
     /// 待下发的变化目录缓冲集合（标准化后的绝对路径）。
     /// watcher 事件累加进来，防抖结束后随 `targetedRefreshToken` 一起发布。
@@ -99,6 +103,8 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     }
 
     deinit {
+        fullRefreshDebounceTask?.cancel()
+        targetedDebounceTask?.cancel()
         gitStatusRefreshTask?.cancel()
         gitStatusDebounceTask?.cancel()
     }
@@ -117,6 +123,8 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
         // 清理旧项目的状态
         observer?.stopWatching()
         expandedPaths.removeAll()
+        fullRefreshDebounceTask?.cancel()
+        targetedDebounceTask?.cancel()
         pendingChangedPaths.removeAll()
         isDebouncePending = false
         gitStatusRefreshTask?.cancel()
@@ -157,7 +165,8 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     /// 停止所有监听（视图消失时调用）
     public func stop() {
         observer?.stopWatching()
-        debounceTask?.cancel()
+        fullRefreshDebounceTask?.cancel()
+        targetedDebounceTask?.cancel()
         pendingChangedPaths.removeAll()
         isDebouncePending = false
         gitStatusRefreshTask?.cancel()
@@ -313,10 +322,10 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     /// 全量防抖刷新：短时间内多次变化合并为一次，驱动整棵树重新加载。
     /// 用于手动刷新、项目切换、文件树内部增删改等需要触及全部节点的场景。
     private func triggerRefresh() {
-        debounceTask?.cancel()
+        fullRefreshDebounceTask?.cancel()
         let interval = self.debounceInterval
-        debounceTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: interval)
+        fullRefreshDebounceTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(nanoseconds: interval) } catch { return }
             guard let self else { return }
             self.refreshToken += 1
             if Self.verbose {
@@ -368,10 +377,10 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
 
     /// 启动 trailing debounce 计时器：等待 debounceInterval 后发布累积的变更
     private func startTrailingDebounce() {
-        debounceTask?.cancel()
+        targetedDebounceTask?.cancel()
         let interval = self.debounceInterval
-        debounceTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: interval)
+        targetedDebounceTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(nanoseconds: interval) } catch { return }
             guard let self else { return }
             // 窗口结束：发布累积的变更并重置状态
             self.publishTargetedRefresh()
