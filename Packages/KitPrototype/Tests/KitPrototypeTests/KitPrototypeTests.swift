@@ -236,6 +236,82 @@ struct KitPrototypeTests {
         }
     }
 
+    @Test func linterReportsMissingCSSURLAsset() throws {
+        try withTemporaryStorage { root in
+            // 屏幕 HTML 位于 <project>/screens，共享素材位于 <project>/assets。
+            let projectDirectory = root.appendingPathComponent("projects/p", isDirectory: true)
+            let screensDirectory = projectDirectory.appendingPathComponent("screens", isDirectory: true)
+            try FileManager.default.createDirectory(at: screensDirectory, withIntermediateDirectories: true)
+
+            let html = """
+            <!doctype html><html><head><meta name="viewport" content="width=device-width">
+            <style>body { background: #fff; background-image: url("../assets/does-not-exist.png"); overflow: hidden; }</style>
+            </head>
+            <body data-block="page" data-block-label="Page"></body></html>
+            """
+            let report = PrototypeHTMLLinter().lint(
+                html: html,
+                documentDirectory: screensDirectory,
+                allowedResourceRoot: projectDirectory
+            )
+            #expect(report.errors.map(\.code).contains("missing_asset"))
+        }
+    }
+
+    @Test func replaceScreenHTMLRejectsMissingCSSURLAsset() throws {
+        try withTemporaryStorage { root in
+            let store = PrototypeDocumentStore()
+            _ = try store.createProject(
+                storagePath: root.path,
+                slug: "p",
+                title: "P",
+                style: .hiFi,
+                device: PrototypeDeviceKind.desktop.preset!
+            )
+            _ = try store.addScreen(storagePath: root.path, projectSlug: "p", screenSlug: "home", title: "Home")
+
+            let html = """
+            <!doctype html><html><head><meta name="viewport" content="width=device-width">
+            <style>body { background: #fff; background-image: url("../assets/does-not-exist.png"); overflow: hidden; }</style>
+            </head>
+            <body data-block="page" data-block-label="Page"></body></html>
+            """
+            #expect(throws: PrototypeStoreError.self) {
+                _ = try store.replaceScreenHTML(
+                    html,
+                    storagePath: root.path,
+                    projectSlug: "p",
+                    screenSlug: "home"
+                )
+            }
+        }
+    }
+
+    @Test func linterAcceptsExistingAndNonLocalCSSURLAssets() throws {
+        try withTemporaryStorage { root in
+            let projectDirectory = root.appendingPathComponent("projects/p", isDirectory: true)
+            let screensDirectory = projectDirectory.appendingPathComponent("screens", isDirectory: true)
+            let assetsDirectory = projectDirectory.appendingPathComponent("assets", isDirectory: true)
+            try FileManager.default.createDirectory(at: screensDirectory, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(at: assetsDirectory, withIntermediateDirectories: true)
+            try Self.writePNG(to: assetsDirectory.appendingPathComponent("bg.png"), width: 2, height: 2)
+
+            let html = """
+            <!doctype html><html><head><meta name="viewport" content="width=device-width">
+            <style>body { background: #fff; background-image: url("../assets/bg.png"), url(data:image/png;base64,AAAA), url(#fallback); overflow: hidden; }</style>
+            </head>
+            <body data-block="page" data-block-label="Page"></body></html>
+            """
+            let report = PrototypeHTMLLinter().lint(
+                html: html,
+                documentDirectory: screensDirectory,
+                allowedResourceRoot: projectDirectory
+            )
+            #expect(!report.errors.map(\.code).contains("missing_asset"))
+            #expect(!report.errors.map(\.code).contains("unsafe_asset_path"))
+        }
+    }
+
     @Test func linterWarnsAboutEscapedScriptMarkup() {
         let html = """
         <!doctype html><html><head><meta name="viewport" content="width=device-width"></head>

@@ -209,12 +209,16 @@ public struct PrototypeHTMLLinter: Sendable {
         add: (PrototypeLintSeverity, String, String) -> Void
     ) {
         for path in Self.localResourcePaths(in: html) {
-            guard !path.hasPrefix("data:") && !path.hasPrefix("#") else { continue }
-            let decoded = path.removingPercentEncoding ?? path
+            let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+            // 远程地址由 remote_resource 报错，这里只校验本地文件。
+            guard !trimmed.hasPrefix("data:"),
+                  !trimmed.hasPrefix("#"),
+                  !Self.isRemoteURL(trimmed) else { continue }
+            let decoded = trimmed.removingPercentEncoding ?? trimmed
 
             // 绝对路径一律拒绝：原型必须可随项目整体搬迁。
             if decoded.hasPrefix("/") {
-                add(.error, "unsafe_asset_path", "Absolute asset paths are not allowed: \(path)")
+                add(.error, "unsafe_asset_path", "Absolute asset paths are not allowed: \(trimmed)")
                 continue
             }
             guard let documentDirectory else { continue }
@@ -241,13 +245,12 @@ public struct PrototypeHTMLLinter: Sendable {
     }
 
     private static func localResourcePaths(in html: String) -> [String] {
-        let pattern = #"(?:src|href)\s*=\s*[\"']([^\"']+)[\"']"#
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else { return [] }
-        let range = NSRange(html.startIndex..., in: html)
-        return regex.matches(in: html, range: range).compactMap { match in
-            guard match.numberOfRanges > 1, let valueRange = Range(match.range(at: 1), in: html) else { return nil }
-            return String(html[valueRange])
-        }
+        let attributePattern = #"(?:src|href)\s*=\s*[\"']([^\"']+)[\"']"#
+        // CSS `url(...)` 不在 src/href 里，但它与属性一样会加载资源；
+        // 漏掉它会让缺背景图的文档通过 lint。
+        let cssURLPattern = #"url\(\s*[\"']?([^\"')]+?)[\"']?\s*\)"#
+        return Self.capturedValues(matching: attributePattern, in: html)
+            + Self.capturedValues(matching: cssURLPattern, in: html)
     }
 
     /// 只检查真正会加载资源的位置：资源属性、`srcset` 候选与 CSS `url(...)`。
@@ -257,13 +260,13 @@ public struct PrototypeHTMLLinter: Sendable {
     /// 就报错”处理。
     private func containsRemoteResourceReference(in html: String) -> Bool {
         let attributePattern = #"(?:\bsrc|\bhref|\bposter|\bdata)\s*=\s*(?:\"([^\"]*)\"|'([^']*)'|([^\s>]+))"#
-        for value in capturedValues(matching: attributePattern, in: html) where Self.isRemoteURL(value) {
+        for value in Self.capturedValues(matching: attributePattern, in: html) where Self.isRemoteURL(value) {
             return true
         }
 
         // srcset 是逗号分隔的候选列表，每个候选以 URL 开头。
         let srcsetPattern = #"\bsrcset\s*=\s*(?:\"([^\"]*)\"|'([^']*)'|([^\s>]+))"#
-        for value in capturedValues(matching: srcsetPattern, in: html) {
+        for value in Self.capturedValues(matching: srcsetPattern, in: html) {
             for candidate in value.split(separator: ",") {
                 if let url = candidate.split(whereSeparator: \.isWhitespace).first,
                    Self.isRemoteURL(String(url)) {
@@ -273,12 +276,12 @@ public struct PrototypeHTMLLinter: Sendable {
         }
 
         let urlPattern = #"url\(\s*([^)]*)\)"#
-        return capturedValues(matching: urlPattern, in: html).contains {
+        return Self.capturedValues(matching: urlPattern, in: html).contains {
             Self.isRemoteURL($0.trimmingCharacters(in: CharacterSet(charactersIn: " \t\r\n\"'")))
         }
     }
 
-    private func capturedValues(matching pattern: String, in html: String) -> [String] {
+    private static func capturedValues(matching pattern: String, in html: String) -> [String] {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else { return [] }
         let range = NSRange(html.startIndex..., in: html)
         return regex.matches(in: html, range: range).compactMap { match in
