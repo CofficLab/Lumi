@@ -105,6 +105,42 @@ struct HTMLScreenshotterCaptureTests {
         #expect(error.errorDescription?.isEmpty == false)
         #expect(error.errorDescription?.lowercased().contains("timed out") == true)
     }
+
+    /// 回归 Issue #1055：合成尺寸超出上限时必须在分配位图前抛错，
+    /// 不能把整页内容无界地栅格化进内存。
+    @Test("rejects a document that exceeds the configured snapshot limits")
+    func rejectsOversizedDocument() async throws {
+        let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
+        let window = NSWindow(contentRect: webView.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        window.contentView = webView
+        window.makeKeyAndOrderFront(nil)
+        let html = """
+        <html><body style="margin:0">
+        <div style="height:500px;background:#ff0000"></div>
+        </body></html>
+        """
+        let delegate = NavigationWaiter()
+        webView.navigationDelegate = delegate
+        _ = try? await webView.loadHTMLString(html, baseURL: nil)
+        await delegate.waitForFinish(timeout: .seconds(5))
+        let layoutReady = await delegate.waitForLayout(webView: webView, timeout: .seconds(10))
+        #expect(layoutReady, "页面布局未在超时前就绪，WebKit 渲染可能未推进")
+
+        // 200pt 画布装不下 500pt 内容：合成高度必然超过 300pt 上限。
+        do {
+            _ = try await HTMLScreenshotter.capture(
+                webView,
+                limits: HTMLScreenshotLimits(maxPageCount: 64, maxPixels: 60_000, maxDimension: 300)
+            )
+            Issue.record("期望 snapshotTooLarge")
+        } catch let error as HTMLScreenshotter.HTMLError {
+            guard case .snapshotTooLarge = error else {
+                Issue.record("期望 snapshotTooLarge，实际为 \(error)")
+                return
+            }
+        }
+        _ = window
+    }
 }
 
 
