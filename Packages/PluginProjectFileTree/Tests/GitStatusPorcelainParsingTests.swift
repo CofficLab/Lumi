@@ -35,4 +35,39 @@ struct GitStatusPorcelainParsingTests {
         #expect(unstaged.map(\.file) == ["new.swift"])
         #expect(unstaged.map(\.changeType) == ["R"])
     }
+
+    @Test("add/add 与 delete/delete 冲突按 conflicted 处理")
+    func addAddAndDeleteDeleteAreConflicted() {
+        let porcelain = """
+        AA Conflict.swift
+        DD Removed.swift
+        UU Both.swift
+        """
+
+        let staged = GitStatusProvider.stagedFiles(from: porcelain)
+
+        #expect(staged.map(\.file) == ["Conflict.swift", "Removed.swift", "Both.swift"])
+        #expect(staged.map(\.changeType) == ["C", "C", "C"])
+        #expect(GitStatusProvider.parseStatus("C") == .conflicted)
+        #expect(GitStatusProvider.unstagedFiles(from: porcelain).isEmpty)
+    }
+
+    @Test("全部未合并状态码都被识别，普通状态不会被误判")
+    func unmergedCodesAreRecognized() {
+        for code in ["DD", "AU", "UD", "UA", "DU", "AA", "UU"] {
+            let characters = Array(code)
+            #expect(
+                GitStatusProvider.isUnmerged(x: characters[0], y: characters[1]),
+                "\(code) 应识别为未合并"
+            )
+        }
+
+        for code in [" M", "M ", "A ", " D", "??", "R ", " C"] {
+            let characters = Array(code)
+            #expect(
+                !GitStatusProvider.isUnmerged(x: characters[0], y: characters[1]),
+                "\(code) 不应识别为未合并"
+            )
+        }
+    }
 }
