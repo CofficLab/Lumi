@@ -52,6 +52,7 @@ public struct TreeView: View, SuperLog {
                         refreshTreeAfterMutation()
                     },
                     gitStatusSnapshot: coordinator.gitStatusSnapshot,
+                    gitStatusToken: coordinator.gitStatusToken,
                     packageDependencies: showPackageDependencies ? packageStore.dependencies : [],
                     targetedRefreshToken: coordinator.targetedRefreshToken,
                     changedDirectoryPaths: coordinator.changedDirectoryPaths
