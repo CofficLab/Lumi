@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitResume 的实现包，包含 6 个主要类型；当前测试覆盖 54 条用例。
+KitResume 的实现包，包含 6 个主要类型；当前测试覆盖 55 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 54
+测试文件: 3 个，用例总数: 55
 
 ## 公开 API
 
@@ -26,7 +26,7 @@ KitResume 的实现包，包含 6 个主要类型；当前测试覆盖 54 条用
 - **ResumeAssetImporter**（9 条）：由 `importsImageSuccessfully`、`sanitizesPreferredFileName`、`avoidsOverwritingExistingFile` 等用例锁定。
 - **Resume models**（6 条）：由 `paperPresetDerivedSizes`、`documentCodableRoundTrip`、`resolvedDocumentDerivedURLs` 等用例锁定。
 - **ResumeHTMLLinter**（11 条）：由 `reportSplitsErrorsAndWarnings`、`rejectsOversizedHTML`、`rejectsMissingPageRule` 等用例锁定。
-- **ResumeDocumentStore**（6 条）：由 `fullLifecycle`、`fallsBackToSlugForEmptyTitle`、`pathAllowListChecks` 等用例锁定。
+- **ResumeDocumentStore**（7 条）：由 `fullLifecycle`、`fallsBackToSlugForEmptyTitle`、`pathAllowListChecks` 等用例锁定。
 - **ResumeExportError**（2 条）：由 `exportErrorDescriptions`、`inspectionSummarizesPages` 锁定。
 - **ResumeExporter**（8 条）：由 `exportPNGsRendersEveryPage`、`pngDataMatchesSinglePageExport`、`exportPNGRejectsOutOfRangePageIndex` 等用例锁定。
 
@@ -88,20 +88,21 @@ KitResume 的实现包，包含 6 个主要类型；当前测试覆盖 54 条用
 | 52 | ResumeExporter | PNG 数据与单页导出结果一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pngDataMatchesSinglePageExport` |
 | 53 | ResumeExporter | 页码越界时抛出 noPages | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `exportPNGRejectsOutOfRangePageIndex` |
 | 54 | ResumeExporter | 页面检查拒绝没有 .resume-page 的 HTML | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `inspectPagesRejectsHTMLWithoutResumePage` |
+| 55 | ResumeDocumentStore | 创建校验失败回收半成品目录，修正后同 slug 可重试（**回归 #1088**） | 空存储目录 | 用远程资源标题创建 `alice` 触发 lint 失败，再改用合法标题创建同一 slug | 失败后 `resumes/alice` 不存在且列表为空；重试成功并列出 `alice` | P0 | ✅ 已覆盖 | `failedCreateRollsBackAndRetrySucceeds` |
 
-> 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **55 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
+- P0: 已覆盖 7 / 7
 - P1: 已覆盖 37 / 37
 - P2: 已覆盖 11 / 11
-- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
+- **合计: 55 / 55**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
 - **P1**: 其余功能性用例（37 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
