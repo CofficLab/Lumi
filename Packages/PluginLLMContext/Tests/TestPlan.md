@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 33 条用例。
+PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 35 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 33
+测试文件: 3 个，用例总数: 35
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -36,6 +36,7 @@ PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 3
 - **ContextUsageHistory**（9 条）：由 `emptyHistory`、`samplesUseReportedInputTokens`、`assistantOutputExcludedFromInput` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **LLMContextPlugin**（19 条）：由 `timelineMessagesAreExcludedFromLLMHistory`、`shortConversationUsesFullHistory`、`contextWindowUsageMatchesPreparedRequest` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **不可发送角色的预算隔离**（2 条）：由 `nonSendableRolesAreExcludedFromLLMHistory`、`fallbackKeepsUserRequestWhenErrorExceedsBudget` 锁定；`.error` / `.status` 必须在估算、摘要和 fallback 之前排除，否则尾部错误会挤掉真实用户请求（**回归 #1025**）。
+- **确定性降级的量纲与用户请求保留**（2 条）：由 `oversizedChineseUserMessageIsTruncatedInsteadOfDropped`、`largeSystemMessageDoesNotEvictUserRequest` 锁定；裁剪必须按 token 估算，且系统消息占满预算时仍要保留最新用户消息（**回归 #1022**）。
 
 ## 测试用例清单
 
@@ -74,16 +75,18 @@ PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 3
 | 31 | LLMContextPlugin | 保留窗口本身就超预算时仍然产出不超过预算的上下文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `irreducibleProtectedWindowStillProducesValidContext` |
 | 32 | LLMContextPlugin | 不可发送的错误与状态消息不进入 LLM 历史（**回归 #1025**） | 历史含 user、error 与 status 消息 | 调用 `messagesForLLM` | 只返回 user 消息 | P1 | ✅ 已覆盖 | `nonSendableRolesAreExcludedFromLLMHistory` |
 | 33 | LLMContextPlugin | 降级裁剪不会让尾部错误消息挤掉真实用户请求（**回归 #1025**） | 输入上限约 1,096 token，历史为 user("hi") + 5,000 字符 error | 调用 `prepareContext` | 返回 user("hi")，错误不参与预算 | P1 | ✅ 已覆盖 | `fallbackKeepsUserRequestWhenErrorExceedsBudget` |
+| 34 | LLMContextPlugin | 超长中文用户消息按 token 裁剪后保留，而不是整条丢弃（**回归 #1022**） | 输入上限约 1,096 token，最新用户消息为 2,000 个汉字 | 调用 `prepareContext` | 保留一条带截断标记的用户消息，估算不超过上限 | P0 | ✅ 已覆盖 | `oversizedChineseUserMessageIsTruncatedInsteadOfDropped` |
+| 35 | LLMContextPlugin | 系统消息占满预算时仍保留本轮用户请求（**回归 #1022**） | 1,050 字中文 system + 30 字中文 user | 调用 `prepareContext` | 结果包含非空用户消息，估算不超过上限 | P0 | ✅ 已覆盖 | `largeSystemMessageDoesNotEvictUserRequest` |
 
-> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **35 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
+- P0: 已覆盖 2 / 2
 - P1: 已覆盖 31 / 31
 - P2: 已覆盖 2 / 2
-- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
+- **合计: 35 / 35**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
