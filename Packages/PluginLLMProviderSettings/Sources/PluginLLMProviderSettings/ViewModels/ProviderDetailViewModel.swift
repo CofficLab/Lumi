@@ -37,6 +37,7 @@ final class ProviderDetailViewModel: ObservableObject {
     private let capability: any ProviderSettingsCapability
     private var customCancellable: AnyCancellable?
     private var modelsCancellable: AnyCancellable?
+    private var selectionCancellable: AnyCancellable?
 
     init(
         capability: any ProviderSettingsCapability,
@@ -66,6 +67,13 @@ final class ProviderDetailViewModel: ObservableObject {
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.models = self.capability.availableModels(for: providerID)
+            }
+        // 全局选中可能在别处变化（其他供应商、模型选择器、会话联动），
+        // 「当前」标记必须跟着全局值走，不能停在初始化时的快照（issue #940）。
+        selectionCancellable = capability.selectionChangedPublisher
+            .sink { [weak self] in
+                guard let self else { return }
+                self.selectedModelID = self.capability.selectedModelID
             }
     }
 
