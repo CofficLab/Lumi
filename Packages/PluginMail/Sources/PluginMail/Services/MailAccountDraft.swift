@@ -56,6 +56,16 @@ public struct MailAccountDraft: Equatable, Sendable {
         self.useTLS = useTLS
     }
 
+    /// 新建账户草稿：主机、端口与 TLS 立即与选中的服务商预设一致。
+    ///
+    /// 表单只在 Picker 变化时调用 `applyPresetDefaults()`，初始展示不会触发
+    /// 变更回调；因此新建路径必须在构造时就填好预设值。
+    public static func forNewAccount(provider: MailProviderPreset = .gmail) -> MailAccountDraft {
+        var draft = MailAccountDraft(provider: provider)
+        draft.applyPresetDefaults()
+        return draft
+    }
+
     /// 从已有配置初始化（编辑模式，密码从 Keychain 回填；服务商预设按 IMAP 主机推断）。
     public init(config: MailAccountConfig, password: String?) {
         self.init(
