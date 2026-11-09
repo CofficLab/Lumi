@@ -245,6 +245,13 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
     /// 后两列合计 82MB，在每次 LLM 回合里被读取、拷贝、JSON 解码，
     /// 然后永远不用。
     ///
+    /// ## 唯一必须保留的 metadata：时间线标记
+    ///
+    /// `llmHistory` 在读取之后才过滤 `MessageTimelineEvent.isTimelineEvent`，
+    /// 该判断依赖 `renderKind` 或 `metadata["lumi.timelineEvent"]`。因此窄读取
+    /// 必须带上 `ZRENDERKIND`，并用 SQL 的 `json_extract` 只取出这一个键，
+    /// 否则 Finder 卡片等界面事件会被当成普通历史发送给模型。
+    ///
     /// ## 为什么用原生 SQL 而不是 SwiftData
     ///
     /// SwiftData 没有「只 SELECT 部分列」的机制 —— `propertiesToFetch` 只影响
@@ -267,11 +274,17 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
             }
             defer { sqlite3_close(database) }
 
+            // `ZRENDERKIND` 与 metadata 里的时间线标记必须保留：
+            // `llmHistory` 依赖它们过滤 Finder 卡片等仅用于界面的消息。
+            // 只从 metadata JSON 中抽取这一个键，避免解码整份 35MB 数据。
             let sql = """
             SELECT ZID, ZCONVERSATIONID, ZTURNID, ZROLE, ZCONTENT, ZCREATEDAT, \
             ZISERROR, ZTOOLCALLID, ZREASONINGCONTENT, ZTOOLCALLSJSON, \
             ZINPUTTOKENCOUNT, ZOUTPUTTOKENCOUNT, ZCACHEDINPUTTOKENCOUNT, \
-            ZCACHEWRITEINPUTTOKENCOUNT, ZCACHETOTALINPUTTOKENCOUNT, ZSTOPREASON \
+            ZCACHEWRITEINPUTTOKENCOUNT, ZCACHETOTALINPUTTOKENCOUNT, ZSTOPREASON, \
+            ZRENDERKIND, \
+            CASE WHEN json_valid(ZMETADATAJSON) \
+            THEN json_extract(ZMETADATAJSON, '$."lumi.timelineEvent"') END \
             FROM ZMESSAGEMODEL WHERE ZCONVERSATIONID = ? ORDER BY ZCREATEDAT ASC
             """
             var statement: OpaquePointer?
@@ -320,6 +333,12 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
             try? JSONDecoder().decode([MessageToolCall].self, from: Data($0.utf8))
         }
 
+        // 只还原时间线标记；LLM 上下文不需要其余 metadata。
+        var metadata: [String: String] = [:]
+        if let timelineEvent = text(at: 17) {
+            metadata[MessageTimelineEvent.metadataKey] = timelineEvent
+        }
+
         return Message(
             id: id,
             conversationID: conversationID,
@@ -327,8 +346,9 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
             content: text(at: 4) ?? "",
             createdAt: Date(timeIntervalSince1970: sqlite3_column_double(statement, 5)),
             turnID: text(at: 2).flatMap(UUID.init(uuidString:)),
-            metadata: [:],
+            metadata: metadata,
             isError: sqlite3_column_int(statement, 6) != 0,
+            renderKind: text(at: 16),
             toolCallID: text(at: 7),
             reasoningContent: text(at: 8),
             toolCalls: toolCalls,
