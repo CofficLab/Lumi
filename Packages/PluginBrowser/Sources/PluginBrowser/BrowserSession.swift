@@ -22,6 +22,7 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         case scriptTooLong
         case scriptFailed(String)
         case screenshotUnavailable
+        case screenshotTooLarge(bytes: Int, limit: Int)
 
         var errorDescription: String? {
             switch self {
@@ -54,6 +55,8 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
                 "The script failed: \(reason)"
             case .screenshotUnavailable:
                 "A screenshot could not be captured from this page."
+            case .screenshotTooLarge(let bytes, let limit):
+                "The screenshot is \(bytes) bytes, which exceeds the \(limit)-byte attachment limit. Try a visible-page screenshot instead."
             }
         }
     }
