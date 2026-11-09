@@ -96,6 +96,15 @@ struct CustomCloudProviderForm: Equatable {
             uniquingKeysWith: { _, latest in latest }
         )
         let models = ids.map { previousModels[$0] ?? UserDefinedCloudModel(id: $0) }
+        // 无关字段的编辑不能改写默认模型：原默认模型仍在列表里就保留它，
+        // 只有新建或原默认模型已被删除时才回退到首模型。
+        let defaultModel: String
+        if let existingDefaultModel = existing?.defaultModel,
+           models.contains(where: { $0.id == existingDefaultModel }) {
+            defaultModel = existingDefaultModel
+        } else {
+            defaultModel = models.first?.id ?? ""
+        }
         let trimmedWebsite = websiteURL.trimmingCharacters(in: .whitespacesAndNewlines)
         return UserDefinedCloudProviderConfiguration(
             id: existing?.id ?? newID(),
@@ -103,7 +112,7 @@ struct CustomCloudProviderForm: Equatable {
             description: description,
             baseURL: baseURL,
             apiFormat: apiFormat,
-            defaultModel: models.first?.id ?? "",
+            defaultModel: defaultModel,
             models: models,
             // 空串归一成 nil；非空则存去空白后的值。
             //
