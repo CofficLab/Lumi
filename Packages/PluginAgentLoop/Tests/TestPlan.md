@@ -5,7 +5,7 @@
 PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProvider`。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 109
+测试文件: 12 个，用例总数: 112
 
 核心组件（源码目录）:
 - `Managers/`
@@ -42,6 +42,7 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 - **挂起回落必须区分授权与交互**（3 条）：由 `askUserSuspensionKeepsNonAuthorizationState`、`permissionSuspensionStillResetsToPending`、`suspensionKindIsDecidedByPayload` 锁定；改动该模块时优先跑 `SuspendedInteractionStateTests.swift`。
 - **工具挂起时的授权状态回落**（4 条）：由 `suspensionResetsAuthorizationStateToPending`、`needsUserResponseBranchResetsAuthorizationState`、`completedToolCallKeepsItsAuthorizationState` 等用例锁定；改动该模块时优先跑 `SuspendedToolAuthorizationStateTests.swift`。
 - **挂起回合的取消**（5 条）：由 `cancellingSuspendedTurnClearsSuspension`、`cancellingSuspendedTurnDeliversCancelledEvent`、`cancellingDuringResumeDoesNotReviveTurn` 等用例锁定；改动该模块时优先跑 `SuspendedTurnCancellationTests.swift`。
+- **同一批次多个挂起点的恢复**（3 条）：由 `resumingOneSuspensionKeepsRemainingActive`、`allSuspensionsMustBeAnsweredBeforeNextLLMRequest`、`singleSuspensionStillContinuesAfterResume` 锁定；恢复一个挂起后必须停在剩余挂起点，全部回答完才允许请求 LLM（**回归 #1026**）。
 - **Tool 调用身份归一化的边界分支**（7 条）：由 `idsCollectsToolCallIDsFromBothRoles`、`normalizeDetectsCollisionAfterTrim`、`normalizeReturnsResponseUnchangedWithoutToolCalls` 等用例锁定；改动该模块时优先跑 `ToolCallIdentityAndHelpersEdgeCaseTests.swift`。
 - **消息与 LLM 消息互转的边界分支**（7 条）：由 `llmMessagesSkipsToolCallsWithoutResult`、`messageFromLLMMessageFallsBackToSystemForUnknownRole`、`llmMessageDropsInvalidBase64ImageAttachments` 等用例锁定；改动该模块时优先跑 `ToolCallIdentityAndHelpersEdgeCaseTests.swift`。
 - **AgentLoop 注入预算**（2 条）：由 `budgetSubtractsPreparedHistory`、`budgetNeverGoesNegative` 锁定；Hook 注入内容的预算必须扣除已准备的历史，且不得为负。
@@ -160,27 +161,30 @@ PluginAgentLoop 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProv
 | 107 | 工具参数裁剪进入模型上下文 | show_html 的 html 原文不再进入模型上下文（**回归 #1053**） | assistant 历史含带标记的 show_html 调用与一次普通调用 | 调用 `llmMessages(from:omittedArgumentKeys:)` | html 被替换为占位符、其余参数与调用配对不变 | P0 | ✅ 已覆盖 | `llmMessagesScrubsOmittedArguments` |
 | 108 | 工具参数裁剪进入模型上下文 | 没有裁剪声明时工具参数保持原样 | 历史含 show_html 调用但未传裁剪表 | 调用 `llmMessages(from:)` | 参数逐字保留 | P1 | ✅ 已覆盖 | `llmMessagesKeepsUndeclaredArguments` |
 | 109 | 工具参数裁剪进入模型上下文 | 按工具名收集裁剪声明，未声明的工具不出现 | 两个工具，仅一个声明裁剪键 | 调用 `contextOmittedArgumentKeys(for:)` | 只返回声明了键的工具 | P1 | ✅ 已覆盖 | `contextOmittedArgumentKeysCollectsDeclarations` |
+| 110 | 同一批次多个挂起点的恢复 | 恢复一个挂起后停在剩余挂起点，不发起 LLM 请求（**回归 #1026**） | 两个 ask_user 同时挂起，active 是第二个 | 回答第二个挂起 | 回合停在第一个挂起点并投递挂起事件，LLM 请求次数为 0 | P0 | ✅ 已覆盖 | `resumingOneSuspensionKeepsRemainingActive` |
+| 111 | 同一批次多个挂起点的恢复 | 依次回答全部挂起后才发起下一次 LLM 请求 | 两个 ask_user 同时挂起 | 先回答第二个，再回答第一个 | 两条调用都有 role=tool 结果，之后才请求 LLM 并完成回合 | P1 | ✅ 已覆盖 | `allSuspensionsMustBeAnsweredBeforeNextLLMRequest` |
+| 112 | 同一批次多个挂起点的恢复 | 只有一个挂起时行为不变，直接继续回合 | 仅一个 ask_user 挂起 | 回答该挂起 | 不产生额外挂起事件，直接请求 LLM 并完成回合 | P1 | ✅ 已覆盖 | `singleSuspensionStillContinuesAfterResume` |
 
-> 说明：全部 **109 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **112 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 24 / 24
-- P1: 已覆盖 73 / 73
+- P0: 已覆盖 25 / 25
+- P1: 已覆盖 75 / 75
 - P2: 已覆盖 12 / 12
-- **合计: 109 / 109**（仅表示清单场景，非源码覆盖率）
+- **合计: 112 / 112**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（24 条）
-- **P1**: 其余功能性用例（73 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（25 条）
+- **P1**: 其余功能性用例（75 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 106 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 112 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -341,7 +341,7 @@ extension AgentLoopManager {
                     pendingToolCalls: [current] + pending.filter { $0.id != toolCall.id }
                 )
                 runtime.completionDelivered = false
-                runtime.pendingSuspensions.removeValue(forKey: toolCall.id)
+                runtime.clearSuspension(toolCallID: toolCall.id)
                 runtimes[conversationID] = runtime
                 return true
             default:
@@ -386,6 +386,55 @@ extension AgentLoopManager {
 
     /// 统一处理工具结果后的状态机推进：批次中若还有待执行工具，继续发出
     /// 工具事件；批次结束后才启动下一次 LLM 请求。
+    /// 同一批次还有未回答的挂起点时，把回合停在下一项。
+    ///
+    /// 状态机只把最近一次挂起放进 phase 作为 active suspension，其余保存在
+    /// `pendingSuspensions`。恢复当前挂起后若直接请求下一次 LLM，这些调用
+    /// 既不在 pending 集合、也没有 active suspension，永远拿不到 tool result，
+    /// 下一轮请求就会缺少必需的 `role=tool` 消息。
+    ///
+    /// - Returns: 成功停到下一项时返回新的运行时与 `.suspended` 结果。
+    @discardableResult
+    func suspendAtNextPendingSuspensionIfNeeded(
+        runtime: TurnRuntime,
+        conversationID: UUID,
+        turnID: UUID
+    ) -> (TurnRuntime, AgentLoopOutcome)? {
+        guard case .requestingLLM = runtime.phase,
+              !runtime.pendingSuspensions.isEmpty,
+              let assistantMessageID = runtime.suspensionAssistantMessageID else {
+            return nil
+        }
+        // `pendingSuspensions` 是字典，遍历顺序不稳定；按挂起先后取下一项。
+        let nextToolCallID = runtime.suspensionOrder.first {
+            runtime.pendingSuspensions[$0] != nil
+        } ?? runtime.pendingSuspensions.keys.sorted().first
+        guard let nextToolCallID,
+              let suspension = runtime.pendingSuspensions[nextToolCallID] else {
+            return nil
+        }
+        var suspended = runtime
+        suspended.phase = .awaitingUser(
+            turnID: turnID,
+            assistantMessageID: assistantMessageID,
+            pendingToolCalls: [],
+            suspension: suspension
+        )
+        suspended.completionDelivered = false
+        runtimes[conversationID] = suspended
+        finishTurn(
+            conversationID: conversationID,
+            turnID: turnID,
+            outcome: .suspended("awaiting user response")
+        )
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t)恢复挂起后停在下一项 conversation=\(conversationID.uuidString.prefix(8)), tool=\(nextToolCallID, privacy: .public)"
+            )
+        }
+        return (suspended, .suspended(suspension.suspensionID))
+    }
+
     private func continueAfterToolResults(
         runtime: TurnRuntime,
         conversationID: UUID,
@@ -393,6 +442,14 @@ extension AgentLoopManager {
     ) {
         switch runtime.phase {
         case .requestingLLM:
+            // 同一批次可能还有别的挂起点没回答；先停在那里，别急着请求 LLM。
+            if suspendAtNextPendingSuspensionIfNeeded(
+                runtime: runtime,
+                conversationID: conversationID,
+                turnID: turnID
+            ) != nil {
+                return
+            }
             if Self.verbose { Self.logger.info("\(Self.t)🚛 工具批次完成，继续请求 LLM conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))") }
             launchAdvance(conversationID: conversationID, turnID: turnID)
         case .executingTools(let nextTurnID, let assistantMessageID, let remaining) where !remaining.isEmpty:
