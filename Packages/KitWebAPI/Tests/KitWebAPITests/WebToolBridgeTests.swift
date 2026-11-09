@@ -62,6 +62,16 @@ private final class StubToolManager: ToolManagerProviding {
     var lastExecutedCall: ToolCall?
     var lastExecutedConversationID: UUID?
     var executeResult: ToolCallResult?
+    var authorizationDecisionOverride: ToolAuthorizationDecision?
+    private(set) var lastAuthorizationConversationID: UUID?
+
+    func authorizationDecision(
+        for toolCall: ToolCall,
+        conversationID: UUID
+    ) -> ToolAuthorizationDecision {
+        lastAuthorizationConversationID = conversationID
+        return authorizationDecisionOverride ?? .autoApproved
+    }
 
     func allTools() -> [any SuperAgentTool] {
         order.compactMap { registeredTools[$0] }
@@ -326,6 +336,51 @@ struct WebToolBridgeTests {
         }
     }
 
+    @Test("Chat 会话的策略阻断 HTTP 工具调用")
+    func blockedDecisionPreventsExecution() async {
+        let manager = StubToolManager()
+        manager.add(StubTool(name: "read_file", resultText: "file-content"), pluginID: "com.test.fs")
+        manager.authorizationDecisionOverride = .blocked(
+            reason: "Tool execution was blocked because this conversation is in Chat mode."
+        )
+        let fallback = UUID()
+        let bridge = WebToolBridge(toolManager: manager, fallbackConversationID: fallback)
+
+        do {
+            _ = try await bridge.invoke(tool: "read_file", arguments: [:], conversationID: nil)
+            Issue.record("Chat 会话不应执行工具")
+        } catch let error as WebAPIError {
+            #expect(error.statusCode == 403)
+            #expect(error.code == "forbidden")
+            #expect(error.message.contains("Chat mode"))
+        } catch {
+            Issue.record("应抛出 WebAPIError，实际为 \(error)")
+        }
+        // 策略判断使用解析后的会话 ID，且工具没有被执行。
+        #expect(manager.lastAuthorizationConversationID == fallback)
+        #expect(manager.lastExecutedCall == nil)
+    }
+
+    @Test("Build 会话中需要用户确认的调用不会经 HTTP 执行")
+    func approvalRequiredDecisionPreventsExecution() async {
+        let manager = StubToolManager()
+        manager.add(StubTool(name: "write_file", resultText: "written"), pluginID: "com.test.fs")
+        manager.authorizationDecisionOverride = .requiresUserApproval
+        let bridge = WebToolBridge(toolManager: manager)
+
+        do {
+            _ = try await bridge.invoke(tool: "write_file", arguments: [:], conversationID: UUID())
+            Issue.record("需要用户确认的调用不应经 HTTP 执行")
+        } catch let error as WebAPIError {
+            #expect(error.statusCode == 403)
+            #expect(error.code == "forbidden")
+            #expect(error.message.contains("requires user approval"))
+        } catch {
+            Issue.record("应抛出 WebAPIError，实际为 \(error)")
+        }
+        #expect(manager.lastExecutedCall == nil)
+    }
+
     @Test("会话解析器优先于缺省会话")
     func prefersResolverOverFallback() async throws {
         let manager = StubToolManager()
@@ -470,6 +525,40 @@ struct WebToolRoutesTests {
         // 无图片的结果不输出空的 images 字段，保持既有响应形状。
         let raw = try #require(String(data: response.body, encoding: .utf8))
         #expect(!raw.contains("\"images\""))
+    }
+
+    @Test("invoke 路由把会话策略拒绝映射为 forbidden")
+    func invokeRouteRejectsBlockedConversation() async throws {
+        let manager = StubToolManager()
+        manager.add(StubTool(name: "read_file", resultText: "file-content"), pluginID: "com.test.fs")
+        manager.authorizationDecisionOverride = .blocked(
+            reason: "Tool execution was blocked because this conversation is in Chat mode."
+        )
+        let bridge = WebToolBridge(toolManager: manager)
+        let routes = WebToolRoutes.makeRoutes(bridge: bridge)
+        let invokeRoute = try #require(routes.first { $0.path == "/api/v1/tools/:name/invoke" })
+
+        let body = try JSONSerialization.data(withJSONObject: [
+            "arguments": ["path": "/tmp/a.txt"],
+            "conversationID": UUID().uuidString,
+        ])
+        do {
+            _ = try await invokeRoute.handler(
+                WebRouteRequest(
+                    method: .post,
+                    path: "/api/v1/tools/read_file/invoke",
+                    pathParameters: ["name": "read_file"],
+                    body: body
+                )
+            )
+            Issue.record("Chat 会话不应执行工具")
+        } catch let error as WebAPIError {
+            #expect(error.statusCode == 403)
+            #expect(error.code == "forbidden")
+        } catch {
+            Issue.record("应抛出 WebAPIError，实际为 \(error)")
+        }
+        #expect(manager.lastExecutedCall == nil)
     }
 
     @Test("调用路由的响应携带图片附件字节与元数据")
