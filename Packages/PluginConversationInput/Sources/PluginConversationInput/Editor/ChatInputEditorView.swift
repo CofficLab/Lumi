@@ -761,8 +761,10 @@ extension ChatInputEditorView {
                 // chip 的 hover 依赖 tracking area，立即挂上不等 AppKit 的布局回调。
                 textView.syncPasteHoverTracking()
             } else {
-                // 已有内容时留一个空行，避免和用户已写的文字黏在一起。
-                let separator = insertionRange.location > 0 ? "\n" : ""
+                // 已有内容时留一个空行，避免和用户已写的文字黏在一起；
+                // 插入点紧跟换行时不重复补换行。
+                let prefix = (textView.string as NSString).substring(to: insertionRange.location)
+                let separator = prefix.isEmpty || prefix.hasSuffix("\n") ? "" : "\n"
                 textView.insertText(separator + block.text, replacementRange: insertionRange)
             }
 

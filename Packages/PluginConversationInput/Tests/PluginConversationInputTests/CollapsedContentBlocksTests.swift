@@ -65,6 +65,58 @@ struct CollapsedContentBlocksTests {
         #expect(result.text == "plain text")
     }
 
+    @Test("插入目录路径不会展开已有 chip，区间保持不变")
+    func insertingPlainTextKeepsExistingChip() throws {
+        var draft = ""
+        var height: CGFloat = ChatInputEditorView.minHeight
+        var focused = false
+        var cursor = 0
+        var dragging = false
+        var reported: [CollapsedContentBlock] = []
+
+        let view = ChatInputEditorView(
+            text: Binding(get: { draft }, set: { draft = $0 }),
+            height: Binding(get: { height }, set: { height = $0 }),
+            onSubmit: {},
+            onCollapsedBlocksChanged: { reported = $0 },
+            isFocused: Binding(get: { focused }, set: { focused = $0 }),
+            cursorPosition: Binding(get: { cursor }, set: { cursor = $0 }),
+            isImageDragHovering: Binding(get: { dragging }, set: { dragging = $0 })
+        )
+        let coordinator = view.makeCoordinator()
+        let textView = EditorTextView()
+        coordinator.attach(to: textView)
+
+        let pasted = "PASTED-BODY"
+        textView.textStorage?.append(NSAttributedString(string: "summarize "))
+        textView.hasPastePreviewAttachments = true
+        textView.textStorage?.append(
+            NSAttributedString(attachment: PastePreviewAttachment(originalText: pasted))
+        )
+        textView.setSelectedRange(NSRange(location: textView.string.count, length: 0))
+        coordinator.publishCommittedTextForTesting(from: textView)
+        #expect(draft == "summarize \(pasted)")
+        #expect(reported.count == 1)
+
+        // 目录拖放走同一条纯文本插入通道（阈值取最大值，永不折叠）。
+        coordinator.insert(
+            ConversationInputBlockRequest(
+                text: "/tmp/pkg",
+                title: "pkg",
+                systemImage: "folder",
+                collapseThreshold: .max
+            ),
+            in: textView
+        )
+
+        #expect(draft == "summarize \(pasted)\n/tmp/pkg")
+        #expect(textView.hasPastePreviewAttachments)
+        let block = try #require(reported.first)
+        #expect(reported.count == 1)
+        #expect(block.start == "summarize ".count)
+        #expect(block.length == pasted.count)
+    }
+
     @Test("编辑器把折叠块区间上报给上层")
     func reportsCollapsedBlocksUpward() {
         var draft = ""
