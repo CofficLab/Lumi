@@ -1,5 +1,6 @@
 import Foundation
 import ProviderAgentLoop
+import ProviderConversation
 import ProviderConversationState
 import ProviderLifecycleHooks
 import ProviderMessage
@@ -135,6 +136,72 @@ struct PluginConversationStateTests {
         provider.remove(conversationID: UUID())
 
         #expect(events.isEmpty)
+        handle.cancel()
+    }
+
+    @Test("删除会话会清理状态快照")
+    @MainActor
+    func deletedConversationRemovesStateSnapshot() throws {
+        let provider = ConversationStateProvider()
+        let conversations = DefaultConversationManager()
+        let conversationID = try conversations.createConversation(
+            title: "state",
+            projectPath: nil,
+            providerID: nil,
+            modelName: nil
+        )
+        provider.update(
+            conversationID: conversationID,
+            turnID: UUID(),
+            agentLoopState: .running,
+            activity: .thinking,
+            lastError: "boom"
+        )
+        provider.update(
+            conversationID: conversationID,
+            jobActivity: ConversationJobActivity(
+                currentJobCount: 2,
+                runningJobCount: 1,
+                recentJobDescription: "build"
+            )
+        )
+        let handle = ConversationStatePlugin().observeConversationDeletion(
+            conversations: conversations,
+            provider: provider
+        )
+
+        conversations.deleteConversation(id: conversationID)
+
+        let snapshot = provider.state(for: conversationID)
+        #expect(snapshot.turnID == nil)
+        #expect(snapshot.agentLoopState == .idle)
+        #expect(snapshot.activity == nil)
+        #expect(snapshot.lastError == nil)
+        #expect(!snapshot.jobActivity.hasJobs)
+        handle.cancel()
+    }
+
+    @Test("非删除事件不会清理状态快照")
+    @MainActor
+    func nonDeletionEventsKeepStateSnapshot() throws {
+        let provider = ConversationStateProvider()
+        let conversations = DefaultConversationManager()
+        let conversationID = try conversations.createConversation(
+            title: "state",
+            projectPath: nil,
+            providerID: nil,
+            modelName: nil
+        )
+        provider.update(conversationID: conversationID, agentLoopState: .running)
+        let handle = ConversationStatePlugin().observeConversationDeletion(
+            conversations: conversations,
+            provider: provider
+        )
+
+        _ = conversations.updateConversationTitle("renamed", for: conversationID)
+        conversations.markConversationActive(id: conversationID, messageDate: Date())
+
+        #expect(provider.state(for: conversationID).agentLoopState == .running)
         handle.cancel()
     }
 
