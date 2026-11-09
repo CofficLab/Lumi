@@ -145,7 +145,7 @@ struct ZCodeAssistantMessageView: View {
             if hasVisibleContent {
                 MarkdownBlockRenderer(
                     markdown: message.content,
-                    theme: ChatMarkdownTheme.make(from: theme)
+                    theme: ChatMarkdownTheme.makeZCode(from: theme)
                 )
                 .fixedSize(horizontal: false, vertical: true)
                 .textSelection(.enabled)

@@ -84,11 +84,13 @@ public struct MarkdownBlockRenderer: View {
             inlineText(text)
                 .font(theme.headingFont(level))
                 .fontWeight(level <= 2 ? .bold : .semibold)
+                .padding(.top, theme.headingTopSpacing)
+                .padding(.bottom, theme.headingBottomSpacing)
 
         case let .paragraph(text):
             inlineText(text)
                 .font(theme.bodyFont)
-                .lineSpacing(4)
+                .lineSpacing(theme.bodyLineSpacing > 0 ? theme.bodyLineSpacing : 4)
 
         case let .unorderedList(items):
             VStack(alignment: .leading, spacing: theme.listItemSpacing) {
@@ -97,10 +99,13 @@ public struct MarkdownBlockRenderer: View {
                         taskBulletView(state: item.taskState)
                         inlineText(item.text)
                             .font(theme.bodyFont)
-                            .lineSpacing(4)
+                            .lineSpacing(theme.bodyLineSpacing > 0 ? theme.bodyLineSpacing : 4)
                     }
                 }
             }
+            .padding(.top, theme.unorderedListTopSpacing)
+            .padding(.bottom, theme.unorderedListBottomSpacing)
+            .padding(.leading, theme.unorderedListLeadingPadding)
 
         case let .orderedList(items):
             VStack(alignment: .leading, spacing: theme.listItemSpacing) {
@@ -111,10 +116,12 @@ public struct MarkdownBlockRenderer: View {
                             .foregroundColor(theme.secondaryTextColor ?? .secondary)
                         inlineText(item.text)
                             .font(theme.bodyFont)
-                            .lineSpacing(4)
+                            .lineSpacing(theme.bodyLineSpacing > 0 ? theme.bodyLineSpacing : 4)
+                            .padding(.leading, theme.orderedListItemLeadingPadding)
                     }
                 }
             }
+            .padding(.leading, theme.orderedListLeadingPadding)
 
         case let .codeBlock(language, code):
             if MarkdownParser.isMermaidCodeBlock(language: language) {
@@ -135,12 +142,15 @@ public struct MarkdownBlockRenderer: View {
             HStack(alignment: .top, spacing: 10) {
                 RoundedRectangle(cornerRadius: 1.5)
                     .fill(theme.quoteBorderColor)
-                    .frame(width: 3)
+                    .frame(width: theme.quoteBorderWidth)
                 inlineText(text)
                     .font(theme.bodyFont)
                     .foregroundColor(theme.secondaryTextColor ?? .secondary)
-                    .lineSpacing(4)
+                    .lineSpacing(theme.bodyLineSpacing > 0 ? theme.bodyLineSpacing : 4)
+                    .padding(.leading, theme.quoteLeadingPadding)
             }
+            .padding(.top, theme.quoteTopSpacing)
+            .padding(.bottom, theme.quoteBottomSpacing)
 
         case let .table(headers, rows):
             tableView(headers: headers, rows: rows)
