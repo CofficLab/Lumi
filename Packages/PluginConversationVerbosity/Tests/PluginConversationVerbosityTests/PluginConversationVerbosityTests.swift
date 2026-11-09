@@ -137,6 +137,29 @@ struct PluginConversationVerbosityTests {
         #expect(viewModel.selectedVerbosity == .detailed)
         #expect(viewModel.observationRevision == before + 1)
     }
+
+    /// 回归 #1069：缓存在选中后才水合的会话依靠 `.verbosityChanged` 纠正 UI，
+    /// 观察者必须对该事件重新求值。
+    @Test("Observer 收到 verbosityChanged 后刷新选中详细度")
+    func observerRefreshesOnVerbosityChanged() throws {
+        let conversations = DefaultConversationManager()
+        let adapter = ConversationVerbosityCapabilityAdapter(conversations: conversations)
+        let viewModel = VerbosityViewModel(capability: adapter)
+        let observer = VerbosityObserver(capability: adapter, viewModel: viewModel)
+
+        let id = try conversations.createConversation(
+            title: nil,
+            projectPath: nil,
+            providerID: nil,
+            modelName: nil
+        )
+        #expect(viewModel.selectedVerbosity == .defaultVerbosity)
+
+        conversations.setVerbosity(.brief, for: id)
+
+        #expect(viewModel.selectedVerbosity == .brief)
+        observer.cancel()
+    }
 }
 
 @MainActor
