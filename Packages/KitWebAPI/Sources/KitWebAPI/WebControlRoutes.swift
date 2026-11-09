@@ -182,7 +182,7 @@ public enum WebControlRoutes {
                 guard !title.isEmpty else {
                     throw WebAPIError.badRequest(message: "Title must not be empty", field: "title")
                 }
-                guard conversations.updateConversationTitle(title, for: uuid) else {
+                guard await conversations.updateConversationTitleAndWait(title, for: uuid) else {
                     throw WebAPIError.notFound(message: "Conversation not found: \(id)")
                 }
                 return try .api(["id": uuid.uuidString, "title": title] as [String: String])

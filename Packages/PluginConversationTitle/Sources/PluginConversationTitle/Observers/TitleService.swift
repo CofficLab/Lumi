@@ -96,7 +96,7 @@ final class TitleService: SuperLog {
 
             let placeholder = Self.placeholderTitle(forFirstUserMessage: firstUserMessage.content)
             guard !placeholder.isEmpty else { continue }
-            guard conversations.updateConversationTitle(placeholder, for: id) else { continue }
+            guard await conversations.updateConversationTitleAndWait(placeholder, for: id) else { continue }
             backfilled += 1
         }
 
@@ -174,7 +174,7 @@ final class TitleService: SuperLog {
         ) else {
             return
         }
-        guard conversations.updateConversationTitle(generatedTitle, for: conversationID) else {
+        guard await conversations.updateConversationTitleAndWait(generatedTitle, for: conversationID) else {
             Self.logger.error("\(Self.t)Failed to persist generated title for conversation \(conversationID, privacy: .public)")
             return
         }
@@ -218,7 +218,7 @@ final class TitleService: SuperLog {
             return false
         }
 
-        guard conversations.updateConversationTitle(placeholder, for: conversationID) else {
+        guard await conversations.updateConversationTitleAndWait(placeholder, for: conversationID) else {
             Self.logger.error("\(Self.t)Failed to persist the fallback title for conversation \(conversationID, privacy: .public)")
             return false
         }

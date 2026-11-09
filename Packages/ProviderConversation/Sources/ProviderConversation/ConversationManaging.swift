@@ -228,6 +228,13 @@ public protocol ConversationManaging: AnyObject {
     /// 更新指定对话的标题
     func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool
 
+    /// 更新指定对话的标题，并等待持久化完成（如实现支持持久化）。
+    ///
+    /// 与同步版本的区别：返回 `true` 代表标题已经落盘，调用方可以据此向用户
+    /// 报告成功；落盘失败必须返回 `false`，且不应留下「界面已改、数据库仍旧」
+    /// 的假成功状态。默认实现直接复用同步接口，适用于没有持久化层的轻量实现。
+    func updateConversationTitleAndWait(_ title: String, for conversationID: UUID) async -> Bool
+
     // MARK: - Activity
 
     /// 标记对话为活跃(收到新消息)
@@ -442,6 +449,10 @@ public extension ConversationManaging {
 public extension ConversationManaging {
     func setVerbosityAndWait(_ verbosity: ResponseVerbosity, for conversationID: UUID?) async {
         setVerbosity(verbosity, for: conversationID)
+    }
+
+    func updateConversationTitleAndWait(_ title: String, for conversationID: UUID) async -> Bool {
+        updateConversationTitle(title, for: conversationID)
     }
 
     func transferObservers(to replacement: any ConversationManaging) {}
