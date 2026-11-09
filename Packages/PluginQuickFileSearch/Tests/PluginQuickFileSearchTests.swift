@@ -1,6 +1,7 @@
 import Testing
 import Foundation
 import ProviderEditor
+import ProviderProject
 @testable import QuickFileSearchPlugin
 
 @MainActor
@@ -8,6 +9,101 @@ import ProviderEditor
     let plugin = QuickFileSearchPlugin()
     #expect(plugin.id == "QuickFileSearch")
     #expect(plugin.metadata.policy == .alwaysOn)
+}
+
+// MARK: - Settings Project Status
+
+/// 回归 #937：设置页曾把插件启动时的项目路径冻结为不可变字符串，
+/// 之后切换或关闭项目仍显示旧项目（或一直 No project selected）。
+@Test @MainActor func settingsStatusShowsProjectActiveAtStartup() {
+    let provider = RecordingProjectProvider(currentProject: ProjectInfo(name: "A", path: "/tmp/A"))
+    let status = QuickFileSearchSettingsStatus(project: provider)
+
+    #expect(status.projectPath == "/tmp/A")
+}
+
+@Test @MainActor func settingsStatusFollowsProjectSwitch() {
+    let provider = RecordingProjectProvider(currentProject: ProjectInfo(name: "A", path: "/tmp/A"))
+    let status = QuickFileSearchSettingsStatus(project: provider)
+
+    provider.switchProject(to: ProjectInfo(name: "B", path: "/tmp/B"))
+
+    #expect(status.projectPath == "/tmp/B")
+}
+
+@Test @MainActor func settingsStatusRecoversAfterStartingWithoutProject() {
+    let provider = RecordingProjectProvider(currentProject: nil)
+    let status = QuickFileSearchSettingsStatus(project: provider)
+    #expect(status.projectPath.isEmpty)
+
+    provider.switchProject(to: ProjectInfo(name: "B", path: "/tmp/B"))
+
+    #expect(status.projectPath == "/tmp/B")
+}
+
+@Test @MainActor func settingsStatusClearsPathAfterProjectClose() {
+    let provider = RecordingProjectProvider(currentProject: ProjectInfo(name: "A", path: "/tmp/A"))
+    let status = QuickFileSearchSettingsStatus(project: provider)
+
+    provider.switchProject(to: nil)
+
+    #expect(status.projectPath.isEmpty)
+}
+
+@Test @MainActor func settingsStatusIgnoresUnrelatedProjectEvents() {
+    let provider = RecordingProjectProvider(currentProject: ProjectInfo(name: "A", path: "/tmp/A"))
+    let status = QuickFileSearchSettingsStatus(project: provider)
+
+    provider.emit(.openFilesChanged([URL(fileURLWithPath: "/tmp/A/File.swift")]))
+
+    #expect(status.projectPath == "/tmp/A")
+}
+
+@MainActor
+private final class RecordingProjectProvider: ProjectProviding {
+    var currentProject: ProjectInfo?
+    private var observers: [(ProjectProvidingEvent) -> Void] = []
+
+    init(currentProject: ProjectInfo?) {
+        self.currentProject = currentProject
+    }
+
+    var openFileURLs: [URL] { [] }
+    var currentFileURL: URL? { nil }
+    var projects: [ProjectInfo] { currentProject.map { [$0] } ?? [] }
+
+    func switchProject(to project: ProjectInfo?) {
+        currentProject = project
+        emit(.currentProjectChanged(project, reason: .settingsChange))
+    }
+
+    func emit(_ event: ProjectProvidingEvent) {
+        for observer in observers { observer(event) }
+    }
+
+    func openProject(at path: String, reason: ProjectChangeReason) async throws {}
+    func updateCurrentFile(_ fileURL: URL?) {}
+    func previewFile(_ fileURL: URL) {}
+    func pinFile(_ fileURL: URL) {}
+    func activateFile(_ fileURL: URL) {}
+    func updateOpenFiles(_ fileURLs: [URL]) {}
+    func closeFile(_ fileURL: URL) {}
+    func closeProject(reason: ProjectChangeReason) async {}
+    func refreshProjects() async throws {}
+    func synchronizeProjects(_ projects: [ProjectInfo]) {}
+
+    @discardableResult
+    func addObserver(
+        _ callback: @escaping (ProjectProvidingEvent) -> Void
+    ) -> any ProjectProvidingObserverHandle {
+        observers.append(callback)
+        return RecordingProjectObserverHandle()
+    }
+}
+
+@MainActor
+private final class RecordingProjectObserverHandle: ProjectProvidingObserverHandle {
+    func cancel() {}
 }
 
 // MARK: - File Index
