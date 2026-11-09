@@ -232,6 +232,65 @@ struct MindMapDesignerPluginTests {
         #expect(!MindMapFileStore.loadAll(storagePath: projectRoot.path).isEmpty)
     }
 
+    @Test func saveMindMapRecreatesMissingBackingFile() async throws {
+        MindMapDesignerRuntime.reset()
+        let projectRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
+        defer {
+            MindMapDesignerRuntime.reset()
+            try? FileManager.default.removeItem(at: projectRoot)
+        }
+        MindMapDesignerRuntime.setProjectStorage(projectPath: projectRoot.path, projectStorageDirectory: projectRoot)
+
+        let created = try await CreateMindMapTool().execute(
+            arguments: ["rootText": ToolArgument("Root"), "title": ToolArgument("Saver")]
+        )
+        let mapId = try #require(firstUUID(in: created))
+        let storagePath = await MainActor.run { MindMapStore.shared.projectStoragePath }
+
+        // 删除 backing JSON，但地图仍在当前 Store 内存里。
+        for file in try FileManager.default.contentsOfDirectory(atPath: storagePath) {
+            try FileManager.default.removeItem(
+                at: URL(fileURLWithPath: storagePath).appendingPathComponent(file)
+            )
+        }
+        #expect(await MainActor.run { MindMapStore.shared.projectMaps.contains { $0.id == mapId } })
+
+        let saved = try await SaveMindMapTool().execute(arguments: ["mapId": ToolArgument(mapId)])
+        #expect(saved.contains(mapId))
+
+        let reloaded = MindMapFileStore.loadAll(storagePath: storagePath)
+        #expect(reloaded.contains { $0.id == mapId })
+        #expect(await MainActor.run { MindMapStore.shared.projectMaps.contains { $0.id == mapId } })
+    }
+
+    @Test func saveMindMapReportsWriteFailure() async throws {
+        MindMapDesignerRuntime.reset()
+        let projectRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
+        defer {
+            MindMapDesignerRuntime.reset()
+            try? FileManager.default.removeItem(at: projectRoot)
+        }
+        MindMapDesignerRuntime.setProjectStorage(projectPath: projectRoot.path, projectStorageDirectory: projectRoot)
+
+        let created = try await CreateMindMapTool().execute(
+            arguments: ["rootText": ToolArgument("Root"), "title": ToolArgument("Broken")]
+        )
+        let mapId = try #require(firstUUID(in: created))
+        let storagePath = await MainActor.run { MindMapStore.shared.projectStoragePath }
+
+        // 用普通文件占住存储目录路径，使写入必然失败。
+        try FileManager.default.removeItem(at: URL(fileURLWithPath: storagePath))
+        try Data().write(to: URL(fileURLWithPath: storagePath))
+
+        await #expect(throws: (any Error).self) {
+            _ = try await SaveMindMapTool().execute(arguments: ["mapId": ToolArgument(mapId)])
+        }
+    }
+
     @Test func mapsCannotBeCreatedWithoutAnOpenProject() async throws {
         MindMapDesignerRuntime.reset()
         let created = try await CreateMindMapTool().execute(
@@ -240,7 +299,6 @@ struct MindMapDesignerPluginTests {
         #expect(firstUUID(in: created) == nil)
         #expect(await MainActor.run { MindMapStore.shared.projectMaps.isEmpty })
     }
-
     // MARK: - Helpers
 
     private func rootId(from output: String) -> String {

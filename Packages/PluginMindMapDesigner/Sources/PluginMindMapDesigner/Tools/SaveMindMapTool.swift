@@ -8,7 +8,7 @@ public struct SaveMindMapTool: SuperAgentTool {
     public init() {}
 
     public func description(for language: LanguagePreference) -> String {
-        "Persist the current mind map to disk and refresh the canvas. Edits are auto-saved, so this mainly confirms and reloads."
+        "Persist the current mind map to disk, recreating a missing file if needed, and refresh the canvas."
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
@@ -25,7 +25,9 @@ public struct SaveMindMapTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let language = MindMapToolSupport.language
-        let (map, scope) = try await MindMapToolSupport.resolveMap(arguments)
+        // 显式保存落盘的是内存中的当前状态，不能先 reload 把缺失文件的地图抹掉。
+        let (map, scope) = try await MindMapToolSupport.resolveMap(arguments, reloadingDisk: false)
+        try await MindMapToolSupport.save(map, scope: scope)
         await MindMapToolSupport.notify(scope: scope, mapId: map.id)
         switch language {
         case .chinese:
