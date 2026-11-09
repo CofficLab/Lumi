@@ -438,15 +438,18 @@ final class TextActionMenuController {
         // 初始展示时面板尚未 orderFront，不能以 isVisible 作为前置条件。
         guard !isFadingOut else { return }
 
-        let anchor = selection.anchor
-        let screen = NSScreen.screens.first(where: { NSMouseInRect(anchor, $0.frame, false) })
-            ?? NSScreen.main
-            ?? NSScreen.screens.first
+        let screens = NSScreen.screens
+        let screenIndex = TextActionScreenSelection.screenIndex(
+            selectionRect: selection.selectionRect,
+            anchor: selection.anchor,
+            screenFrames: screens.map(\.frame)
+        )
+        let screen = screenIndex.map { screens[$0] } ?? NSScreen.main ?? screens.first
         guard let screen else { return }
 
         let frame = TextActionMenuLayout.frame(
             selectionRect: selection.selectionRect,
-            anchor: anchor,
+            anchor: selection.anchor,
             menuSize: size,
             screenFrame: screen.visibleFrame
         )
