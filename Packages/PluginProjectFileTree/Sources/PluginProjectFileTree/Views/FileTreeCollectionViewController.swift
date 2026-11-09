@@ -447,6 +447,26 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         }
         context?.project?.previewFile(fileItem.url)
     }
+
+    /// Cmd 点击已选项时 AppKit 只走反选回调；不在这里同步，自定义选中集合和高亮
+    /// 会继续保留已被取消的路径，右键“Send to Conversation”仍会发送它（回归 #1102）。
+    func collectionView(
+        _ collectionView: NSCollectionView,
+        didDeselectItemsAt indexPaths: Set<IndexPath>
+    ) {
+        // 普通单击换行、Shift 收缩范围也会触发反选；只处理最终不在原生选中集合
+        // 里的行，避免回调顺序差异误删新范围内的项。
+        let stillSelected = collectionView.selectionIndexPaths
+        var removedAny = false
+        for indexPath in indexPaths where !stillSelected.contains(indexPath) {
+            guard let item = dataSource.itemIdentifier(for: indexPath),
+                  case .file(let fileItem) = item else { continue }
+            selectionState.removeFromSelection(fileItem.url)
+            removedAny = true
+        }
+        guard removedAny else { return }
+        syncSelectionState()
+    }
     
     func collectionView(
         _ collectionView: NSCollectionView,

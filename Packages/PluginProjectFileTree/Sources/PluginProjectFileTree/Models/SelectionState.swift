@@ -93,6 +93,11 @@ public final class SelectionState: ObservableObject {
         anchorPath = nil
     }
 
+    /// 移除单个已选路径。用于 AppKit 反选回调（Cmd 点击已选项）同步状态。
+    func removeFromSelection(_ url: URL) {
+        selectedPaths.remove(normalizedPath(url))
+    }
+
     public func handleTap(
         url: URL,
         isDirectory: Bool,
