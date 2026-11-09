@@ -42,6 +42,23 @@ public final class StorageSuperPlugin: SuperPlugin, SuperLog {
         try self.init(dataRootDirectory: nil)
     }
 
+    /// 尝试创建插件；默认数据根目录不可用时返回 `nil` 而不是终止进程。
+    ///
+    /// 宿主工厂在 `makePlugins()` 里使用它：没有存储插件时宿主仍可启动，
+    /// 只是失去持久化能力 —— 比用 `try!` 直接杀掉进程更可接受。
+    public static func makeIfAvailable(
+        builder: (() throws -> StorageSuperPlugin)? = nil
+    ) -> StorageSuperPlugin? {
+        do {
+            return try builder?() ?? StorageSuperPlugin()
+        } catch {
+            logger.error(
+                "创建 StorageSuperPlugin 失败，宿主将以无持久化模式继续：\(error.localizedDescription, privacy: .public)"
+            )
+            return nil
+        }
+    }
+
     /// Registers storage unless the host has already provided an explicit
     /// implementation. This lets tests and specialized hosts opt into their
     /// own root without the shared plugin overwriting it.

@@ -165,4 +165,42 @@ struct ToolCallRecordStoreTests {
         }
         #expect(await store.count() == 5)
     }
+
+    @Test("上下文不可用时所有接口安全降级且不崩溃")
+    func unavailableContextDegradesToNoOp() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ToolCallRecordStoreNoContext-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = ToolCallRecordStore(modelContext: nil, directory: directory)
+        let turnID = UUID()
+        let conversationID = UUID()
+
+        await store.record(
+            toolCallID: "call-nil",
+            toolName: "read_file",
+            toolDisplayName: "读取文件",
+            turnID: turnID,
+            conversationID: conversationID,
+            createdAt: Date(),
+            startedAt: Date(),
+            completedAt: Date(),
+            duration: 0.1,
+            argumentsJSON: "{}",
+            resultContent: "content",
+            resultIsError: false,
+            riskLevel: "low"
+        )
+        await store.flush()
+
+        #expect(await store.count() == 0)
+        #expect(await store.fetchRecord(forToolCallID: "call-nil") == nil)
+        #expect(await store.fetchRecords(forTurnID: turnID).isEmpty)
+        #expect(await store.fetchRecords(forTurnIDs: [turnID]).isEmpty)
+        #expect(await store.fetchRecords(for: conversationID).isEmpty)
+        #expect(await store.fetchPage(limit: 10).isEmpty)
+
+        await store.deleteAll(for: conversationID)
+        #expect(await store.count() == 0)
+    }
 }

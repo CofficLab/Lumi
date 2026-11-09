@@ -11,6 +11,19 @@ import Foundation
 ///
 /// 空语句（仅空白/注释）被过滤。返回的语句保留原始空白以便错误定位。
 public enum SQLStatementParser {
+    /// 返回 `index` 之后的字符位置；没有下一个字符时返回 `nil`。
+    ///
+    /// `String.index(_:offsetBy:limitedBy:)` 在恰好走到末尾时会返回
+    /// `endIndex`，而调用方随后会直接下标访问，造成越界 trap。这里统一
+    /// 把 `endIndex` 归一成 `nil`，让所有 `next` 都保证可安全下标。
+    private static func nextIndex(in string: String, after index: String.Index) -> String.Index? {
+        guard let next = string.index(index, offsetBy: 1, limitedBy: string.endIndex),
+              next < string.endIndex else {
+            return nil
+        }
+        return next
+    }
+
     public static func split(_ sql: String) -> [String] {
         var result: [String] = []
         var current = ""
@@ -28,7 +41,7 @@ public enum SQLStatementParser {
             var bcDepth = 0
             while i < statement.endIndex {
                 let c = statement[i]
-                let n = statement.index(i, offsetBy: 1, limitedBy: statement.endIndex)
+                let n = Self.nextIndex(in: statement, after: i)
                 if inLC {
                     if c == "\n" { inLC = false }
                     i = statement.index(after: i); continue
@@ -64,7 +77,7 @@ public enum SQLStatementParser {
 
         while index < sql.endIndex {
             let ch = sql[index]
-            let next = sql.index(index, offsetBy: 1, limitedBy: sql.endIndex)
+            let next = Self.nextIndex(in: sql, after: index)
 
             // 行注释状态
             if inLineComment {
@@ -171,7 +184,7 @@ public enum SQLStatementParser {
 
         while index < sql.endIndex {
             let ch = sql[index]
-            let next = sql.index(index, offsetBy: 1, limitedBy: sql.endIndex)
+            let next = Self.nextIndex(in: sql, after: index)
 
             if inLineComment {
                 if ch == "\n" {

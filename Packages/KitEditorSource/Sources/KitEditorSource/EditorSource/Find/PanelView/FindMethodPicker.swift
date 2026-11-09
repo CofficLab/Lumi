@@ -154,6 +154,18 @@ struct FindMethodPicker: NSViewRepresentable {
         return container
     }
 
+    /// 安全读取容器内指定序号的图片子视图。
+    ///
+    /// `makeNSView` 只在创建时按 `condensed` 添加图标和 chevron。SwiftUI 复用
+    /// 容器后若层级与期望不一致，直接下标 `subviews[1]`/`subviews[2]` 会越界
+    /// trap —— 外层 `as?` 发生在下标之后，无法保护越界。
+    enum Subviews {
+        static func imageView(at index: Int, in container: NSView) -> NSImageView? {
+            guard container.subviews.indices.contains(index) else { return nil }
+            return container.subviews[index] as? NSImageView
+        }
+    }
+
     func updateNSView(_ container: NSView, context: Context) {
         guard let popup = container.subviews.first as? NSPopUpButton else { return }
 
@@ -179,7 +191,7 @@ struct FindMethodPicker: NSViewRepresentable {
 
         // Update icon and chevron colors
         if condensed {
-            if let iconLabel = container.subviews[1] as? NSImageView {
+            if let iconLabel = Subviews.imageView(at: 1, in: container) {
                 let symbolName = method == .contains
                     ? "line.horizontal.3.decrease.circle"
                     : "line.horizontal.3.decrease.circle.fill"
@@ -189,7 +201,7 @@ struct FindMethodPicker: NSViewRepresentable {
                     ? (activeState == .inactive ? .tertiaryLabelColor : .labelColor)
                     : (activeState == .inactive ? .tertiaryLabelColor : .controlAccentColor)
             }
-            if let chevronLabel = container.subviews[2] as? NSImageView {
+            if let chevronLabel = Subviews.imageView(at: 2, in: container) {
                 chevronLabel.contentTintColor = activeState == .inactive ? .tertiaryLabelColor : .secondaryLabelColor
             }
         }
