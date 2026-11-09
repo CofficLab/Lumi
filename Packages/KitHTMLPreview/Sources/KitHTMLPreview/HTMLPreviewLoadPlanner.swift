@@ -10,21 +10,29 @@ struct HTMLPreviewLoadPlanner {
     }
 
     func loadRequest(html: String, fileURL: URL?, readAccessRootURL: URL? = nil) -> HTMLWebViewLoadRequest {
-        if let fileURL, isHTMLInSyncWithFile(html, at: fileURL) {
+        guard let fileURL else {
+            return .html(html: html, baseURL: nil)
+        }
+
+        // 调用方只提供文件（如快照失败后的 Canvas 回退）时，文件就是唯一内容源。
+        if html.isEmpty, let data = try? fileReader(fileURL), !data.isEmpty {
             return .file(
                 fileURL: fileURL,
                 readAccessURL: readAccessRoot(for: fileURL, preferred: readAccessRootURL)
             )
         }
 
-        if let fileURL {
-            return .html(
-                html: html,
-                baseURL: fileURL.deletingLastPathComponent().absoluteDirectoryURL
+        if isHTMLInSyncWithFile(html, at: fileURL) {
+            return .file(
+                fileURL: fileURL,
+                readAccessURL: readAccessRoot(for: fileURL, preferred: readAccessRootURL)
             )
         }
 
-        return .html(html: html, baseURL: nil)
+        return .html(
+            html: html,
+            baseURL: fileURL.deletingLastPathComponent().absoluteDirectoryURL
+        )
     }
 
     /// 子目录中的页面（如本地化 HTML）需要读取上级目录的共享资源；

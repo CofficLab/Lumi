@@ -46,7 +46,7 @@ public struct HTMLPreviewView: View {
 
     public var body: some View {
         Group {
-            if htmlText.isEmpty {
+            if Self.hasNoContent(htmlText: htmlText, fileURL: fileURL) {
                 emptyView
             } else if contentSize != nil {
                 ZStack {
@@ -59,6 +59,12 @@ public struct HTMLPreviewView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// 只有既没有 HTML 文本、也没有文件可加载时才显示空状态。
+    /// Canvas 快照失败后会以空 `htmlText` + `fileURL` 回退，此时仍需渲染 WebView。
+    static func hasNoContent(htmlText: String, fileURL: URL?) -> Bool {
+        htmlText.isEmpty && fileURL == nil
     }
 
     private var previewContent: some View {
