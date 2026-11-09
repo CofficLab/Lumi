@@ -263,6 +263,35 @@ struct LLMProviderProposalViewModelTests {
         #expect(manager.selectedProviderID == "custom-acme")
         #expect(manager.selectedModel == "acme-large")
     }
+
+    /// 回归 #948：保存会 trim 默认模型，选择时若用未 trim 的草稿就会退回首模型。
+    @Test("默认模型带首尾空白时按 trim 后的结果选中")
+    func selectAsCurrentUsesTrimmedDefaultModel() throws {
+        let manager = DefaultLLMProviderManagerProviding()
+        let (store, fileURL) = makeStore(manager: manager)
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        var proposal = makeProposal()
+        proposal.models = [
+            UserDefinedCloudModel(id: "acme-large"),
+            UserDefinedCloudModel(id: "acme-small"),
+        ]
+        let viewModel = LLMProviderProposalViewModel(
+            proposal: proposal,
+            store: store,
+            manager: manager
+        )
+        viewModel.defaultModel = " acme-small "
+        viewModel.save()
+
+        #expect(viewModel.defaultModel == "acme-small")
+        #expect(store.configurations.first?.defaultModel == "acme-small")
+
+        viewModel.selectAsCurrent()
+
+        #expect(manager.selectedProviderID == "custom-acme")
+        #expect(manager.selectedModel == "acme-small")
+    }
 }
 
 /// 写入 API Key 必然失败的供应商，用于验证卡片把凭据失败暴露出来。
