@@ -187,4 +187,53 @@ struct UninstallProviderTests {
         #expect(keychain.existingServices.contains("com.coffic.lumi.apikey"))
         #expect(!keychain.existingServices.contains("com.coffic.lumi.database-manager.debug"))
     }
+
+    @Test("扫描并删除 Mail 保存的邮箱密码（**回归 #1071**）")
+    func mailKeychainIsScannedAndRemoved() async throws {
+        let fixture = try Fixture()
+        let keychain = RecordingKeychainManager(existingServices: ["com.coffic.lumi.mail"])
+        let provider = DefaultUninstallProvider(
+            locations: fixture.locations,
+            persistentDomainRemover: RecordingDomainRemover(),
+            keychainManager: keychain
+        )
+
+        let scan = await provider.scan()
+        #expect(scan.targets.contains { $0.id == "keychain.com.coffic.lumi.mail" })
+
+        let result = try await provider.uninstall(options: UninstallOptions(
+            confirmation: UninstallOptions.confirmationPhrase,
+            removeKeychainCredentials: true,
+            removeApplication: false
+        ))
+
+        #expect(result.succeeded)
+        #expect(keychain.removedServices == ["com.coffic.lumi.mail"])
+        #expect(!keychain.existingServices.contains("com.coffic.lumi.mail"))
+    }
+
+    @Test("Debug 卸载只删除 Mail 的 Debug Keychain service")
+    func debugScopeUsesMailDebugService() async throws {
+        let fixture = try Fixture()
+        let keychain = RecordingKeychainManager(existingServices: [
+            "com.coffic.lumi.mail",
+            "com.coffic.lumi.mail.debug"
+        ])
+        let provider = DefaultUninstallProvider(
+            locations: fixture.locations,
+            scope: .debug,
+            persistentDomainRemover: RecordingDomainRemover(),
+            keychainManager: keychain
+        )
+
+        let result = try await provider.uninstall(options: UninstallOptions(
+            confirmation: UninstallOptions.confirmationPhrase,
+            removeKeychainCredentials: true,
+            removeApplication: false
+        ))
+
+        #expect(result.succeeded)
+        #expect(keychain.removedServices == ["com.coffic.lumi.mail.debug"])
+        #expect(keychain.existingServices.contains("com.coffic.lumi.mail"))
+    }
 }
