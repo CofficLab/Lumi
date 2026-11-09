@@ -30,9 +30,9 @@ struct ProjectContextCard: View {
         VStack(alignment: .leading, spacing: ActivityFusionCardMetrics.anchorSpacing) {
             anchor(identity)
 
-            if !model.rows.isEmpty {
+            if !visibleRows.isEmpty {
                 VStack(alignment: .leading, spacing: 7) {
-                    ForEach(model.rows) { row in
+                    ForEach(visibleRows) { row in
                         statusRow(row)
                     }
                 }
@@ -61,6 +61,21 @@ struct ProjectContextCard: View {
     }
 
     // MARK: - 组成
+
+    /// 真正可执行的行。
+    ///
+    /// Git 数据 Provider 是 `required`，即使 Git Workspace 从未启用，状态行
+    /// 仍能出现；此时若既没有入口也不能启用插件，这一行就是死按钮，直接不渲染。
+    private var visibleRows: [ProjectContextRow] {
+        model.rows.filter { row in
+            switch row.action {
+            case .openGit:
+                return ProjectContextNavigator.canOpenGitWorkspace(services: services)
+            case .openFileTree, .resumeConversation:
+                return true
+            }
+        }
+    }
 
     /// 顶部一行锚点：项目名 + 就绪状态。
     private func anchor(_ identity: ProjectContextIdentity) -> some View {
@@ -175,7 +190,7 @@ struct ProjectContextCard: View {
         case .openFileTree:
             ProjectContextNavigator.openFileTree(services: services)
         case .openGit:
-            ProjectContextNavigator.openGitWorkspace(services: services)
+            Task { await ProjectContextNavigator.openGitWorkspace(services: services) }
         case let .resumeConversation(id):
             services.conversations?.selectConversation(id: id)
         }
@@ -224,12 +239,31 @@ enum ProjectContextNavigator {
     }
 
     /// 打开 Git 工作区面板。
-    static func openGitWorkspace(services: MessageListEmptyServices) {
+    ///
+    /// Git Workspace 默认禁用，只有启用后才会在 `onBoot` 注册 Activity Bar
+    /// 入口。入口不存在时先启用插件，再激活它刚注册的入口；两级都不可用时
+    /// 保持原状（视图层会据此不把该行呈现为可点击动作）。
+    static func openGitWorkspace(services: MessageListEmptyServices) async {
         guard let activityBar = services.activityBar else { return }
+        if let item = activityBar.items.first(where: { $0.ownerPluginID == gitWorkspacePluginID }) {
+            activityBar.activateItem(id: item.id)
+            return
+        }
+        guard let pluginControl = services.pluginControl else { return }
+        guard await pluginControl.enablePlugin(id: gitWorkspacePluginID) else { return }
         if let item = activityBar.items.first(where: { $0.ownerPluginID == gitWorkspacePluginID }) {
             activityBar.activateItem(id: item.id)
         } else {
             activityBar.activateItem(id: "\(gitWorkspacePluginID).entry")
         }
+    }
+
+    /// Git 状态行是否真的可执行：已有入口，或能通过启停控制先启用插件。
+    static func canOpenGitWorkspace(services: MessageListEmptyServices) -> Bool {
+        guard let activityBar = services.activityBar else { return false }
+        if activityBar.items.contains(where: { $0.ownerPluginID == gitWorkspacePluginID }) {
+            return true
+        }
+        return services.pluginControl != nil
     }
 }
