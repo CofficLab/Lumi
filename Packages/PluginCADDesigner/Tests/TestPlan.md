@@ -5,7 +5,7 @@
 PluginCADDesigner 铝型材 CAD 设计插件：把 `KitCADDesigner` 引擎包装为 `SuperPlugin`，注册 10 个 `cad_*` Agent 工具， 并通过 `ContentViewProviding` 发布 3D 编辑工作区。
 
 平台: macOS 14+
-测试文件: 1 个，用例总数: 10
+测试文件: 1 个，用例总数: 11
 
 ## 公开 API
 
@@ -44,27 +44,28 @@ PluginCADDesigner 铝型材 CAD 设计插件：把 `KitCADDesigner` 引擎包装
 | 8 | CADDesignerSuperPlugin | tool failures throw instead of returning error strings | 重置文档存储 | 缺必填参数、未知型材/连接件、无选中文档 | 全部抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `toolFailuresThrow` |
 | 9 | CADDesignerSuperPlugin | rejects unrepresentable profile lengths before mutating the document | 重置文档存储并新建文档 | 传入 `length` 为 `1e20`、`infinity`、`0`、`-5` | 抛结构化 `ToolExecutionError`，文档组件数保持不变 | P1 | ✅ 已覆盖 | `rejectsUnrepresentableProfileLengthBeforeMutatingDocument` |
 | 10 | CADDesignerSuperPlugin | reports save and load I/O failures as tool errors | 重置文档存储并新建文档 | 保存到父目录不存在的路径，加载不存在的文件，均走 `executeResult` | 两条路径都抛 `ToolExecutionError`，不返回成功内容；目标文件不存在、文档未被改动 | P1 | ✅ 已覆盖 | `reportsSaveAndLoadIOFailuresAsToolErrors` |
+| 11 | CADDesignerSuperPlugin | 显式未知 `profileId` 报错且不创建组件（**回归 #1079**） | 重置文档存储并新建文档 | 传 `profileId: profile-40x40-typo` 调用 `cad_build_frame`；再省略 `profileId` 调用一次 | 首次抛 `ToolExecutionError` 且组件为空；省略时回退系列默认方形型材并创建 20 个组件 | P0 | ✅ 已覆盖 | `rejectsUnknownExplicitProfileID` |
 
-> 说明：全部 **10 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **11 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
+- P0: 已覆盖 1 / 1
 - P1: 已覆盖 9 / 9
 - P2: 已覆盖 1 / 1
-- **合计: 10 / 10**（仅表示清单场景，非源码覆盖率）
+- **合计: 11 / 11**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
 - **P1**: 其余功能性用例（9 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 10 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 11 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
