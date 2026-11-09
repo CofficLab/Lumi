@@ -150,6 +150,12 @@ public final class CADDocumentStore: ObservableObject {
     @discardableResult
     public func addConnection(_ edge: ConnectionEdge) throws -> CADDocument {
         try updateSelectedDocument { document in
+            guard document.componentIndex(id: edge.fromComponentID) != nil else {
+                throw CADDocumentStoreError.componentNotFound(edge.fromComponentID)
+            }
+            guard document.componentIndex(id: edge.toComponentID) != nil else {
+                throw CADDocumentStoreError.componentNotFound(edge.toComponentID)
+            }
             document.connections.append(edge)
         }
     }

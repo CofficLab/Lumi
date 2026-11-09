@@ -5,7 +5,7 @@
 KitCADDesigner 铝型材 3D 设计引擎（参考 MayCAD）—— 通过 3D 视口设计 T 型槽铝型材框架，自动生成物料清单（BOM）与切割优化方案。 本包只提供 CAD 引擎能力（模型 / 渲染 / 文档存储 / 视图），由插件 `PluginCADDesigner` 包装为 `SuperPlugin` 并注册 Agent 工具。 ## 功能 - **3D 视口**（SceneKit）：轨道相机、参考网格、XYZ 坐标轴、点击拾取选择组件 - **组件库**：欧标 20/30/40 系列铝型材（12 种规格）+ 连接件（角码、螺栓、滑块螺母、封端条、合页） - **参数化型材建模**：截面轮廓（矩形 + T 槽）+ `SCNShape` 拉伸 - **装配关系图**：组件间连接（rigid / hinge / bolt） - **物料清单（BOM）**：自动聚合相同规格型材与连接件 - **切割优化**：一维 First Fit Decreasing (FFD) 算法，最小化余料 - **项目保存/加载**：`.cadproj`（JSON）格式 - **截图导出**：视口 → PNG / PDF ## 目录结构 ``` Sources/KitCADDesigner/ ├── CADDesignerRuntimeBridge.swift # 数据目录注入 ├── Models/ # Codable 数据模型 ├── Core/ # 组件库、BOM、文档状态 ├── Services/ # 切割优化、保存加载、截图导出、本地化 ├── Renderer/ # S
 
 平台: macOS 14+
-测试文件: 1 个，用例总数: 24
+测试文件: 1 个，用例总数: 25
 
 ## 公开 API
 
@@ -30,7 +30,7 @@ KitCADDesigner 铝型材 3D 设计引擎（参考 MayCAD）—— 通过 3D 视�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **CADDesignerLogic**（24 条）：由 `testTransform3DCodableRoundTrip`、`testCADDocumentCodableRoundTrip`、`testCADDocumentDecodeMissingFields` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **CADDesignerLogic**（25 条）：由 `testTransform3DCodableRoundTrip`、`testCADDocumentCodableRoundTrip`、`testCADDocumentDecodeMissingFields` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -60,27 +60,28 @@ KitCADDesigner 铝型材 3D 设计引擎（参考 MayCAD）—— 通过 3D 视�
 | 22 | CADDesignerLogic | Finder 打开方式投递的项目 URL 应加载为选中项目 | 存盘后重置 store，工作区自动创建空项目 | 调用 `openProjectURL` 传入 `.cadproj` 的 file URL | 选中项目变为文件中的项目，组件数一致，`lastExportURL` 指向该文件 | P1 | ✅ 已覆盖 | `testOpenProjectURLFromFileAssociationLoadsSelectedProject` |
 | 23 | CADDesignerLogic | 非项目扩展名被拒绝且不替换当前工作区 | 已选中名为 Keep Me 的文档 | 调用 `openProjectURL` 传入 `.txt` 文件 | 当前项目不变，文档数不变，`lastError` 非空 | P1 | ✅ 已覆盖 | `testOpenProjectURLRejectsUnsupportedExtensionWithoutReplacingWorkspace` |
 | 24 | CADDesignerLogic | 损坏的项目文件报错且不替换当前工作区 | 已选中名为 Keep Me 的文档 | 调用 `openProjectURL` 传入无法解码的 `.cadproj` 文件 | 当前项目不变，文档数不变，`lastError` 非空 | P1 | ✅ 已覆盖 | `testOpenProjectURLReportsUndecodableFileWithoutReplacingWorkspace` |
+| 25 | CADDesignerLogic | 连接端点不在当前文档时拒绝写入（**回归 #1077**） | 文档含 1 根型材与 1 个连接件 | 分别用两个不存在的 ID、以及「存在 → 不存在」的端点调用 `addConnection` | 抛 `componentNotFound`，连接数保持 0；两端都存在时正常写入并得到 1 条连接 | P0 | ✅ 已覆盖 | `testAddConnectionRejectsUnknownEndpoints` |
 
-> 说明：全部 **24 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **25 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
+- P0: 已覆盖 3 / 3
 - P1: 已覆盖 21 / 21
 - P2: 已覆盖 1 / 1
-- **合计: 24 / 24**（仅表示清单场景，非源码覆盖率）
+- **合计: 25 / 25**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
 - **P1**: 其余功能性用例（21 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 24 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 25 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

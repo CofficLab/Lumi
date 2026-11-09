@@ -152,6 +152,39 @@ struct CADDesignerSuperPluginTests {
         #expect(cutting.contains("1200"))
     }
 
+    @Test("rejects connections whose endpoints are missing from the document")
+    func rejectsConnectionsWithUnknownEndpoints() async throws {
+        CADDocumentStore.shared.resetForTests()
+        _ = CADDocumentStore.shared.createDocument(name: "V2 Connect Guard")
+        _ = try await PlaceProfileV2Tool().execute(arguments: [
+            "profileId": ToolArgument("profile-40x40-eu"), "length": ToolArgument(500),
+        ])
+        _ = try await PlaceConnectorV2Tool().execute(arguments: ["connectorId": ToolArgument("connector-corner-40")])
+        guard let components = CADDocumentStore.shared.selectedDocument?.components, components.count == 2 else {
+            Issue.record("expected two components"); return
+        }
+
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await ConnectComponentsV2Tool().execute(arguments: [
+                "fromComponentId": ToolArgument("missing-a"), "toComponentId": ToolArgument("missing-b"),
+            ])
+        }
+        do {
+            _ = try await ConnectComponentsV2Tool().execute(arguments: [
+                "fromComponentId": ToolArgument(components[0].id), "toComponentId": ToolArgument("missing-b"),
+            ])
+            Issue.record("expected a missing endpoint to be rejected")
+        } catch let error as ToolExecutionError {
+            #expect(error.errorDescription?.contains("missing-b") == true)
+        }
+        #expect(CADDocumentStore.shared.selectedDocument?.connections.isEmpty == true)
+
+        _ = try await ConnectComponentsV2Tool().execute(arguments: [
+            "fromComponentId": ToolArgument(components[0].id), "toComponentId": ToolArgument(components[1].id),
+        ])
+        #expect(CADDocumentStore.shared.selectedDocument?.connections.count == 1)
+    }
+
     @Test("rejects unrepresentable profile lengths before mutating the document")
     func rejectsUnrepresentableProfileLengthBeforeMutatingDocument() async throws {
         CADDocumentStore.shared.resetForTests()
