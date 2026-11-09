@@ -177,7 +177,9 @@ public enum UserAttachmentMetadata {
             let mimeType = escapeAttribute(attachment.mimeType)
             let body: String
             if let textContent = attachment.textContent {
-                body = textContent
+                // 正文里的 `<` / `>` / `&` 必须转义，否则文件内容可以写出
+                // `</attached_file>` 提前结束真实附件并伪造新的附件块。
+                body = escapeText(textContent)
             } else if let resolvedPath = UserAttachmentSnapshotStore
                 .materialize(attachment, in: snapshotDirectory)?.path ?? attachment.localPath {
                 let path = escapeText(resolvedPath)
