@@ -341,4 +341,29 @@ struct ProviderSettingsPageViewModelTests {
         #expect(viewModel.selectedProvider == nil)
         #expect(viewModel.selectedModelCount == 0)
     }
+
+    // MARK: - API Key 明文状态
+
+    /// 回归 #942：明文展示状态曾保存在详情视图的本地 `@State` 里。切换
+    /// 供应商时 SwiftUI 复用同一视图身份，把旧供应商的「已展开」状态传给
+    /// 新供应商，新凭据未经点击就以明文出现。状态现在归属按供应商缓存的
+    /// ViewModel，切换后必须重新隐藏。
+    @Test("切换供应商后不得继承上一个供应商的 API Key 明文状态")
+    func apiKeyRevealStateIsScopedToProvider() throws {
+        let (manager, _, capability) = makeFixture()
+        try manager.register(MockRemoteProvider(id: "provider-p", displayName: "供应商 P"))
+        try manager.register(MockRemoteProvider(id: "provider-q", displayName: "供应商 Q"))
+
+        let page = makeViewModel(capability: capability)
+        let first = page.detailViewModel(for: "provider-p")
+        #expect(first.isAPIKeyRevealed == false)
+
+        first.isAPIKeyRevealed = true
+        let second = page.detailViewModel(for: "provider-q")
+        #expect(second.isAPIKeyRevealed == false, "新供应商必须默认隐藏 API Key")
+
+        let firstAgain = page.detailViewModel(for: "provider-p")
+        #expect(firstAgain === first, "同一供应商复用缓存的 ViewModel")
+        #expect(firstAgain.isAPIKeyRevealed == true, "明文状态属于原供应商")
+    }
 }

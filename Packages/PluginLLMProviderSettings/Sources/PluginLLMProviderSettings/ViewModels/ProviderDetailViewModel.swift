@@ -12,6 +12,11 @@ final class ProviderDetailViewModel: ObservableObject {
     @Published var apiKey = ""
     @Published private(set) var savedAPIKey = ""
     @Published private(set) var apiKeySaveError: String?
+    /// API Key 是否以明文展示。
+    ///
+    /// 属于当前供应商：ViewModel 按供应商缓存，切换供应商会拿到另一份
+    /// 实例，明文状态因此不会传播到另一个凭据（issue #942）。
+    @Published var isAPIKeyRevealed = false
     @Published private(set) var isCustomProvider = false
     @Published private(set) var providerID: String
     @Published private(set) var displayName: String

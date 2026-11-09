@@ -17,8 +17,6 @@ public struct ProviderDetailView: View {
     @ObservedObject private var viewModel: ProviderDetailViewModel
     @State private var isEditorPresented = false
     @State private var isDeleteConfirmationPresented = false
-    /// API Key 是否以明文展示（仅本地 UI 状态，不落盘）。
-    @State private var isAPIKeyRevealed = false
     /// 复制 API Key 后短暂显示「已复制」反馈。
     @State private var isAPIKeyCopied = false
 
@@ -141,7 +139,7 @@ public struct ProviderDetailView: View {
                 ) {
                     HStack(spacing: 6) {
                         Group {
-                            if isAPIKeyRevealed {
+                            if viewModel.isAPIKeyRevealed {
                                 TextField(pluginLocalization.string("输入 API Key"), text: $viewModel.apiKey)
                             } else {
                                 SecureField(pluginLocalization.string("输入 API Key"), text: $viewModel.apiKey)
@@ -165,11 +163,11 @@ public struct ProviderDetailView: View {
                     HStack(spacing: 8) {
                         if !viewModel.savedAPIKey.isEmpty {
                             AppIconButton(
-                                systemImage: isAPIKeyRevealed ? "eye.slash" : "eye"
+                                systemImage: viewModel.isAPIKeyRevealed ? "eye.slash" : "eye"
                             ) {
-                                isAPIKeyRevealed.toggle()
+                                viewModel.isAPIKeyRevealed.toggle()
                             }
-                            .help(pluginLocalization.string(isAPIKeyRevealed ? "隐藏 API Key" : "显示 API Key"))
+                            .help(pluginLocalization.string(viewModel.isAPIKeyRevealed ? "隐藏 API Key" : "显示 API Key"))
                         }
 
                         if !copyableAPIKey.isEmpty {
