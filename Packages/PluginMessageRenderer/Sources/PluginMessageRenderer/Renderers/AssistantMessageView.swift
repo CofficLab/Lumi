@@ -19,6 +19,22 @@ struct AssistantMessageView: View {
     }
 
     var body: some View {
+        // V4（ZCode）：独立呈现 —— 无气泡、无旧 chrome，
+        // 轮尾操作栏按 turn 出现。其余版本继续走旧路径。
+        if ZCodeAssistantTextStyle.usesZCodePresentation(verbosity: verbosity) {
+            ZCodeAssistantMessageView(
+                capability: capability,
+                stateViewModel: stateViewModel,
+                message: message,
+                verbosity: verbosity
+            )
+        } else {
+            legacyBody
+        }
+    }
+
+    /// V1–V3 的原始呈现。
+    private var legacyBody: some View {
         let contentVerbosity = Self.contentVerbosity(for: verbosity)
         return MessageViewChrome(
             message: message,
