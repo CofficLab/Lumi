@@ -335,4 +335,31 @@ struct MindMapMarkdownCodecRobustnessTests {
         #expect(map.title == "Source Heading")
         #expect(map.nodes.first?.text == "Source Heading")
     }
+
+    @Test("同级 Tab 缩进生成兄弟节点（回归 #1081）")
+    func tabIndentedSiblingsStaySiblings() throws {
+        let map = MindMapMarkdownCodec.decode(markdown: "# Topic\n- A\n\t- A1\n\t- A2", title: nil)
+        let a = try #require(map.nodes.first { $0.text == "A" })
+
+        #expect(map.nodes.count == 4)
+        #expect(map.nodes.first { $0.text == "A1" }?.parentId == a.id)
+        #expect(map.nodes.first { $0.text == "A2" }?.parentId == a.id)
+        #expect(!map.nodes.contains { node in
+            node.text == "A2" && map.nodes.contains { $0.id == node.parentId && $0.text == "A1" }
+        })
+    }
+
+    @Test("Tab 与两空格缩进产生相同结构")
+    func tabAndSpaceIndentationProduceSameShape() {
+        let tabbed = MindMapMarkdownCodec.decode(markdown: "# Topic\n- A\n\t- A1\n\t- A2", title: nil)
+        let spaced = MindMapMarkdownCodec.decode(markdown: "# Topic\n- A\n  - A1\n  - A2", title: nil)
+
+        func parentTexts(_ map: MindMap) -> [String: String?] {
+            let textByID = Dictionary(uniqueKeysWithValues: map.nodes.map { ($0.id, $0.text) })
+            return Dictionary(uniqueKeysWithValues: map.nodes.map { node in
+                (node.text, node.parentId.flatMap { textByID[$0] })
+            })
+        }
+        #expect(parentTexts(tabbed) == parentTexts(spaced))
+    }
 }
