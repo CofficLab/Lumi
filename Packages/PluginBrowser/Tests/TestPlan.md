@@ -5,7 +5,7 @@
 PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace and the official Chrome DevTools MCP server for controlling Chrome.
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 37
+测试文件: 8 个，用例总数: 43
 
 核心组件（源码目录）:
 - `Models/`
@@ -53,6 +53,7 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 - **PluginBrowser 工具装配**（5 条）：由 `registersAllTools`、`removesAllToolsOnShutdown` 等用例锁定；工具漏注册或漏注销是本插件最容易犯且最难发现的错误。
 - **Browser 活动会话隔离**（2 条）：由 `readOnlyToolsDoNotHijackActiveConversation`、`explicitSelectionStillSwitchesActiveConversation` 锁定；只读工具只能读取自己会话的页面，不得改写用户当前选中的 Browser 工作区。
 - **Browser 会话释放**（4 条）：由 `deletedConversationReleasesBrowserSession`、`deletingActiveConversationClearsActiveState` 等用例锁定；删除会话必须立刻释放 BrowserSession/WKWebView，并在活动会话被删时清空活动状态。
+- **Browser 整页截图边界**（6 条）：由 `clampsExtremelyWidePages`、`downscalesBeyondPixelBudget`、`outputPixelsStayWithinBudget` 等用例锁定；整页截图必须同时限制宽度、高度与总像素数，不能只钳制高度（issue #1060）。
 
 ## 测试用例清单
 
@@ -95,16 +96,22 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 | 35 | Browser 会话释放 | 删除当前活动会话会清空活动状态 | 会话为当前活动会话 | 调用 `closeSession` | 活动会话与活动页面都清空 | P1 | ✅ 已覆盖 | `deletingActiveConversationClearsActiveState` |
 | 36 | Browser 会话释放 | 删除其它会话不影响当前活动的 Browser 会话 | 会话 A 活动，B 有页面会话 | 删除 B | A 仍是活动会话且页面实例保留，B 被释放 | P1 | ✅ 已覆盖 | `deletingOtherConversationKeepsActiveSession` |
 | 37 | Browser 会话释放 | 非删除类会话事件不会释放 BrowserSession | 会话已有页面会话 | 投递 `.updated` 与 `.listChanged` | 页面实例保留 | P2 | ✅ 已覆盖 | `unrelatedConversationEventsKeepSession` |
+| 38 | Browser 整页截图边界 | 极宽页面被钳制到单边上限（**回归 #1060**） | width=200000、height=300 | 调用 `BrowserScreenshotGeometry.fitted` | rect 宽度等于 16000，不再使用页面原始宽度 | P1 | ✅ 已覆盖 | `clampsExtremelyWidePages` |
+| 39 | Browser 整页截图边界 | 超高页面同样被钳制 | height=500000 | 调用 `fitted` | rect 高度等于 16000 | P1 | ✅ 已覆盖 | `clampsExtremelyTallPages` |
+| 40 | Browser 整页截图边界 | 超过总像素预算时按比例降采样并保持长宽比 | 200000×200000 页面 | 调用 `fitted` 并计算输出尺寸 | outputScale < 1，输出长宽相等且总像素不超过 16M | P1 | ✅ 已覆盖 | `downscalesBeyondPixelBudget` |
+| 41 | Browser 整页截图边界 | 常规页面不缩放 | 1280×720 页面 | 调用 `fitted` | rect 原样返回且 outputScale 为 1 | P1 | ✅ 已覆盖 | `leavesNormalPagesUntouched` |
+| 42 | Browser 整页截图边界 | 非法尺寸至少保留 1 点 | 宽高为 0 或负数 | 调用 `fitted` | rect 宽高均为 1 | P2 | ✅ 已覆盖 | `clampsNonPositiveSizes` |
+| 43 | Browser 整页截图边界 | 降采样后的输出像素不超过预算 | 多种宽高组合 | 调用 `fitted` 并计算 outputPixels | 均不超过 16M | P1 | ✅ 已覆盖 | `outputPixelsStayWithinBudget` |
 
-> 说明：全部 **37 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **43 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 25 / 25
-- P2: 已覆盖 12 / 12
-- **合计: 37 / 37**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 30 / 30
+- P2: 已覆盖 13 / 13
+- **合计: 43 / 43**（仅表示清单场景，非源码覆盖率）
 
 ## 未覆盖说明
 
@@ -118,13 +125,13 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（25 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
+- **P1**: 其余功能性用例（30 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 37 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 43 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
