@@ -63,6 +63,35 @@ struct KitPrototypeTests {
         #expect(PrototypeHTMLLinter().lint(html: fragment).errors.map(\.code).contains("incomplete_document"))
     }
 
+    @Test func linterAcceptsInlineSVGNamespace() {
+        let html = """
+        <!doctype html><html><head><meta name="viewport" content="width=device-width"></head>
+        <body style="background:#fff; overflow:hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z"/></svg>
+        </body></html>
+        """
+        let report = PrototypeHTMLLinter().lint(html: html)
+        #expect(!report.errors.map(\.code).contains("remote_resource"))
+        #expect(report.isValid)
+    }
+
+    @Test func linterOnlyRejectsRemoteResourcesInLoadingPositions() {
+        func hasRemoteResource(_ body: String) -> Bool {
+            let html = """
+            <!doctype html><html><head><meta name="viewport" content="width=device-width"></head>
+            <body style="background:#fff; overflow:hidden">\(body)</body></html>
+            """
+            return PrototypeHTMLLinter().lint(html: html).errors.map(\.code).contains("remote_resource")
+        }
+
+        #expect(hasRemoteResource(#"<img src="https://evil.example/a.png">"#))
+        #expect(hasRemoteResource(#"<img src="//cdn.example/a.png">"#))
+        #expect(hasRemoteResource(#"<link rel="stylesheet" href="https://evil.example/s.css">"#))
+        #expect(hasRemoteResource(#"<div style="background:url(https://evil.example/bg.png)">x</div>"#))
+        // 普通文本里的 URL 不会加载资源，不应误报。
+        #expect(!hasRemoteResource(#"<p>Contact https://example.com/portfolio</p>"#))
+    }
+
     @Test func linterAllowsMotionButWarns() {
         let html = """
         <!doctype html><html><head><meta name="viewport" content="width=device-width"></head>
