@@ -100,23 +100,24 @@ public struct ResumeHTMLLinter: Sendable {
             add(.warning, "background_missing", "Declare an opaque page background so exports and prints have no transparent gaps.")
         }
 
-        // 本地资产存在性与路径安全。
+        // 本地资产存在性与路径安全（含 CSS `url(...)` 引用的背景/字体）。
         for path in localResourcePaths(in: html) {
-            guard !path.hasPrefix("data:") && !path.hasPrefix("#") else { continue }
-            let decoded = path.removingPercentEncoding ?? path
+            let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.hasPrefix("data:"), !trimmed.hasPrefix("#"), !Self.isRemoteURL(trimmed) else { continue }
+            let decoded = trimmed.removingPercentEncoding ?? trimmed
             if decoded.hasPrefix("/") || decoded.contains("..") {
-                add(.error, "unsafe_asset_path", "Asset path escapes the resume directory: \(path)")
+                add(.error, "unsafe_asset_path", "Asset path escapes the resume directory: \(trimmed)")
                 continue
             }
             if let documentDirectory {
                 let url = documentDirectory.appendingPathComponent(decoded).standardizedFileURL
                 let root = documentDirectory.standardizedFileURL.path
                 guard url.path.hasPrefix(root + "/") else {
-                    add(.error, "unsafe_asset_path", "Asset path escapes the resume directory: \(path)")
+                    add(.error, "unsafe_asset_path", "Asset path escapes the resume directory: \(trimmed)")
                     continue
                 }
                 if !FileManager.default.fileExists(atPath: url.path) {
-                    add(.error, "missing_asset", "Referenced asset does not exist: \(path)")
+                    add(.error, "missing_asset", "Referenced asset does not exist: \(trimmed)")
                 }
             }
         }
@@ -125,13 +126,11 @@ public struct ResumeHTMLLinter: Sendable {
     }
 
     private func localResourcePaths(in html: String) -> [String] {
-        let pattern = #"(?:src|href)\s*=\s*[\"']([^\"']+)[\"']"#
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else { return [] }
-        let range = NSRange(html.startIndex..., in: html)
-        return regex.matches(in: html, range: range).compactMap { match in
-            guard match.numberOfRanges > 1, let valueRange = Range(match.range(at: 1), in: html) else { return nil }
-            return String(html[valueRange])
-        }
+        let attributePattern = #"(?:src|href)\s*=\s*[\"']([^\"']+)[\"']"#
+        // CSS `url(...)` 同样会加载本地资源；背景图缺失不能让导出静默成功。
+        let cssURLPattern = #"url\(\s*[\"']?([^\"')]+?)[\"']?\s*\)"#
+        return capturedValues(matching: attributePattern, in: html)
+            + capturedValues(matching: cssURLPattern, in: html)
     }
 
     /// 只检查真正会加载资源的位置：资源属性、`srcset` 候选与 CSS `url(...)`。
