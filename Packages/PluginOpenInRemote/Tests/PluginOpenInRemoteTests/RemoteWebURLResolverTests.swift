@@ -101,6 +101,23 @@ struct RemoteWebURLResolverTests {
         #expect(RemoteWebURLResolver.webURL(fromRemote: "git@github.com:") == nil)
     }
 
+    /// 回归 #1067：`file://` 曾被当作 SCP-like 解析成 `https://file/tmp/repo`
+    /// 并交给浏览器打开。
+    @Test("本地 file:// remote 不产生 web 链接")
+    func returnsNilForLocalFileRemote() {
+        #expect(RemoteWebURLResolver.webURL(fromRemote: "file:///tmp/repo.git") == nil)
+        #expect(RemoteWebURLResolver.webURL(fromRemote: "file://localhost/tmp/repo.git") == nil)
+        #expect(RemoteWebURLResolver.webURL(fromRemote: "file:/tmp/repo.git") == nil)
+        #expect(RemoteWebURLResolver.webURL(fromRemote: "FILE:///tmp/repo.git") == nil)
+    }
+
+    @Test("未支持的 URI scheme 不按 SCP-like 拼装地址")
+    func returnsNilForUnsupportedURIScheme() {
+        #expect(RemoteWebURLResolver.webURL(fromRemote: "ftp://example.com/user/repo.git") == nil)
+        #expect(RemoteWebURLResolver.webURL(fromRemote: "s3://bucket/user/repo.git") == nil)
+        #expect(RemoteWebURLResolver.webURL(fromRemote: "git+ssh://git@github.com/user/repo.git") == nil)
+    }
+
     @Test("webURLString 与 webURL 结果一致")
     func webURLStringMatchesWebURL() {
         #expect(
