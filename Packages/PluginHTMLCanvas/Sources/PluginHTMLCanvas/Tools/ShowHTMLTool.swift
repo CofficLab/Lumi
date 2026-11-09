@@ -67,6 +67,9 @@ public struct ShowHTMLTool: SuperAgentTool, @unchecked Sendable {
         .low
     }
 
+    /// HTML 原文已经落盘并渲染在聊天里，后续回合只保留其余参数。
+    public var contextOmittedArgumentKeys: Set<String> { ["html"] }
+
     /// 无会话上下文的执行入口。
     ///
     /// 拿不到会话信息时不插入时间线消息——避免把消息写进一个不存在的会话里。
