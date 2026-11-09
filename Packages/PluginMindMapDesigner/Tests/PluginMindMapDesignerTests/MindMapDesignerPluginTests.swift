@@ -317,4 +317,22 @@ struct MindMapMarkdownCodecRobustnessTests {
         #expect(map.nodes.count == 1)
         #expect(map.nodes.first?.parentId == nil)
     }
+
+    @Test("显式 title 不被 Markdown 标题覆盖（回归 #1082）")
+    func explicitTitleWinsOverHeading() {
+        let map = MindMapMarkdownCodec.decode(markdown: "# Source Heading\n- Branch", title: "Custom Title")
+
+        #expect(map.title == "Custom Title")
+        #expect(map.nodes.first?.text == "Custom Title")
+        #expect(map.nodes.contains { $0.text == "Branch" })
+        #expect(!map.nodes.contains { $0.text == "Source Heading" })
+    }
+
+    @Test("空白 title 回退到 Markdown 首个标题")
+    func blankTitleFallsBackToHeading() {
+        let map = MindMapMarkdownCodec.decode(markdown: "# Source Heading\n- Branch", title: "   ")
+
+        #expect(map.title == "Source Heading")
+        #expect(map.nodes.first?.text == "Source Heading")
+    }
 }
