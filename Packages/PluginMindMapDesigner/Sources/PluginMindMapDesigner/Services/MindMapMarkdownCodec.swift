@@ -48,7 +48,9 @@ public enum MindMapMarkdownCodec {
             .map(String.init)
 
         var nodes: [MindMapNode] = []
-        var rootText = title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "Mind Map"
+        let explicitTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasExplicitTitle = !(explicitTitle ?? "").isEmpty
+        var rootText = explicitTitle ?? "Mind Map"
 
         // 每一层缩进对应的最新节点 id（stack[index] = 该缩进层最近的节点）。
         var stack: [String] = []
@@ -60,11 +62,14 @@ public enum MindMapMarkdownCodec {
 
             // 非列表行（indent == -1）：标题行作为文档标题，裸文本行作为根节点。
             if indent == -1 {
-                // 第一个无缩进的标题行（# 开头）作为文档标题而非节点。
+                // 第一个无缩进的标题行（# 开头）作为文档标题而非节点；
+                // 调用方显式给了 title 时保留显式值。
                 if nodes.isEmpty, content.hasPrefix("#") {
-                    let trimmed = content.drop(while: { $0 == "#" || $0 == " " })
-                    if !trimmed.isEmpty {
-                        rootText = String(trimmed)
+                    if !hasExplicitTitle {
+                        let trimmed = content.drop(while: { $0 == "#" || $0 == " " })
+                        if !trimmed.isEmpty {
+                            rootText = String(trimmed)
+                        }
                     }
                     continue
                 }
