@@ -47,6 +47,30 @@ struct EnglishLanguageGuardTests {
         #expect(!EnglishLanguageGuard.containsNonEnglishContent("Error: 「not found」"))
     }
 
+    @Test("short but fully Chinese text is rejected by ratio")
+    func shortPureCJKRejectedByRatio() {
+        #expect(EnglishLanguageGuard.containsNonEnglishContent("崩溃"))
+        #expect(EnglishLanguageGuard.containsNonEnglishContent("闪退"))
+        #expect(EnglishLanguageGuard.containsNonEnglishContent("中"))
+    }
+
+    @Test("short English text with a single CJK character is still tolerated")
+    func shortEnglishWithSingleCJKPasses() {
+        #expect(!EnglishLanguageGuard.containsNonEnglishContent("Fix: 中"))
+        #expect(!EnglishLanguageGuard.containsNonEnglishContent("Crash on launch 中"))
+    }
+
+    @Test("splitting Chinese across title and body is still rejected (#1050)")
+    func splitChineseAcrossFieldsRejected() {
+        let offenders = CreateGitHubIssueTool.nonEnglishOffendersForTesting(title: "崩溃", body: "闪退")
+        #expect(offenders.contains { $0.contains("title") })
+        #expect(offenders.contains { $0.contains("body") })
+
+        // 每个字段各只有 1 个 CJK 字符，绝对阈值达不到，仍须拒绝。
+        let singleCharacterFields = CreateGitHubIssueTool.nonEnglishOffendersForTesting(title: "崩", body: "溃")
+        #expect(!singleCharacterFields.isEmpty)
+    }
+
     @Test("counting is accurate")
     func countingIsAccurate() {
         #expect(EnglishLanguageGuard.nonLatinCharacterCount(in: "abc") == 0)

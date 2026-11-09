@@ -217,17 +217,15 @@ public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
     /// 校验 title / body 是否为英文。返回非空的违规字段列表。
     ///
     /// Lumi 的 issue 面向全球维护者，中文 issue 对他们不可用。判据见
-    /// ``EnglishLanguageGuard``：统计 CJK 字形数量，超过阈值即判为非英文。
+    /// ``EnglishLanguageGuard``：绝对字符数与占比任一超限即判为非英文，
+    /// 避免把中文拆到两个字段后各自低于阈值而绕过。
     private static func nonEnglishOffenders(title: String, body: String) -> [String] {
-        let titleCount = EnglishLanguageGuard.nonLatinCharacterCount(in: title)
-        let bodyCount = EnglishLanguageGuard.nonLatinCharacterCount(in: body)
-
         var offenders: [String] = []
-        if titleCount >= EnglishLanguageGuard.minimumNonLatinCount {
-            offenders.append("`title` (\(titleCount) non-Latin characters)")
+        if EnglishLanguageGuard.containsNonEnglishContent(title) {
+            offenders.append("`title` (\(EnglishLanguageGuard.nonLatinCharacterCount(in: title)) non-Latin characters)")
         }
-        if bodyCount >= EnglishLanguageGuard.minimumNonLatinCount {
-            offenders.append("`body` (\(bodyCount) non-Latin characters)")
+        if EnglishLanguageGuard.containsNonEnglishContent(body) {
+            offenders.append("`body` (\(EnglishLanguageGuard.nonLatinCharacterCount(in: body)) non-Latin characters)")
         }
         return offenders
     }
