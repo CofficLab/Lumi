@@ -207,6 +207,58 @@ struct ComputerUseWindowVisibilityTests {
         #expect(regions?.isEmpty == true)
     }
 
+    @Test("浮动层窗口同样是遮挡者")
+    func floatingWindowIsOccluder() {
+        // 浮动工具面板 layer = 3，完全盖住普通目标窗口。
+        // 只看 layer == 0 会把它当成不存在，露出整块被挡住的区域。
+        let target = CGRect(x: 0, y: 0, width: 400, height: 300)
+        let windows: [[CFString: Any]] = [
+            Self.window(number: 100, pid: 999, rect: target, layer: 3),
+            Self.window(number: 200, pid: 111, rect: target)
+        ]
+        let regions = ComputerUseWindowVisibility.visibleRegions(
+            target: target,
+            targetWindowID: 200,
+            processIdentifier: 111,
+            windows: windows
+        )
+
+        #expect(regions?.isEmpty == true)
+    }
+
+    @Test("自身遮罩面板不计入遮挡者")
+    func overlayPanelIsExcluded() {
+        let target = CGRect(x: 0, y: 0, width: 400, height: 300)
+        let windows: [[CFString: Any]] = [
+            // Lumi 自己的遮罩面板：高层级且与目标完全重合。
+            Self.window(number: 900, pid: 222, rect: target, layer: 1_000),
+            Self.window(number: 200, pid: 111, rect: target)
+        ]
+        let targetArguments = (
+            target: target,
+            targetWindowID: CGWindowID(200),
+            processIdentifier: pid_t(111)
+        )
+
+        // 不排除时遮罩会被自己的面板扣成空。
+        let unexcluded = ComputerUseWindowVisibility.visibleRegions(
+            target: targetArguments.target,
+            targetWindowID: targetArguments.targetWindowID,
+            processIdentifier: targetArguments.processIdentifier,
+            windows: windows
+        )
+        #expect(unexcluded?.isEmpty == true)
+
+        let excluded = ComputerUseWindowVisibility.visibleRegions(
+            target: targetArguments.target,
+            targetWindowID: targetArguments.targetWindowID,
+            processIdentifier: targetArguments.processIdentifier,
+            windows: windows,
+            excludingWindowID: 900
+        )
+        #expect(excluded == [target])
+    }
+
     @Test("窗口列表为空时无法定位目标")
     func emptyWindowListCannotLocateTarget() {
         let target = CGRect(x: 0, y: 0, width: 400, height: 300)
@@ -223,11 +275,16 @@ struct ComputerUseWindowVisibilityTests {
     // MARK: - 辅助
 
     /// 构造一条 `CGWindowListCopyWindowInfo` 风格的窗口记录。
-    private static func window(number: UInt32, pid: Int32, rect: CGRect) -> [CFString: Any] {
+    private static func window(
+        number: UInt32,
+        pid: Int32,
+        rect: CGRect,
+        layer: Int = 0
+    ) -> [CFString: Any] {
         [
             kCGWindowNumber as CFString: number,
             kCGWindowOwnerPID as CFString: pid,
-            kCGWindowLayer as CFString: 0,
+            kCGWindowLayer as CFString: layer,
             kCGWindowAlpha as CFString: 1.0,
             kCGWindowBounds as CFString: [
                 "X" as CFString: Int(rect.minX),
