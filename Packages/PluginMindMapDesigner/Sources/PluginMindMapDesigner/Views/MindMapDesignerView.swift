@@ -271,7 +271,7 @@ public struct MindMapDesignerView: View {
         }
     }
 
-    private func notifyMapAvailability() {
+    func notifyMapAvailability() {
         onMapAvailabilityChanged?(!store.projectMaps.isEmpty)
     }
 }
