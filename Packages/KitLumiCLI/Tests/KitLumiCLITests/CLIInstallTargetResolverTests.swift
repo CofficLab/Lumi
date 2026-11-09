@@ -71,6 +71,36 @@ struct CLIInstallTargetResolverTests {
         #expect(target != nil)
     }
 
+    /// 回归 #945：缺失的 PATH 项曾被提前记入 seenPaths，导致兜底目录被跳过。
+    @Test("PATH 中缺失的 ~/.local/bin 仍作为可写兜底候选")
+    func missingUserPathDirectoryStillFallsBackToUserTarget() throws {
+        let home = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: home) }
+        let userBin = home.appendingPathComponent(
+            CLIInstallTargetResolver.userDirectoryName,
+            isDirectory: true
+        )
+        #expect(!FileManager.default.fileExists(atPath: userBin.path))
+
+        let candidates = CLIInstallTargetResolver.candidates(
+            pathEntries: [userBin.path],
+            environment: ["HOME": home.path]
+        )
+        let target = try #require(candidates.first {
+            $0.directory.standardizedFileURL.path == userBin.standardizedFileURL.path
+        })
+        #expect(target.isOnPath)
+        #expect(target.isWritable)
+
+        let best = try #require(
+            CLIInstallTargetResolver.bestTarget(
+                pathEntries: [userBin.path],
+                environment: ["HOME": home.path]
+            )
+        )
+        #expect(best.directory.standardizedFileURL.path == userBin.standardizedFileURL.path)
+    }
+
     @Test("没有 HOME 时不产生用户级候选")
     func omitsUserTargetWithoutHome() {
         let candidates = CLIInstallTargetResolver.candidates(
