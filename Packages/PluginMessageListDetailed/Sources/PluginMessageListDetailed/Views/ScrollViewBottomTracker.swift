@@ -82,14 +82,39 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
     /// 宿主据此决定底部场景滚到底部（scrollTick）、非底部场景由 tracker 内部恢复 offset。
     var onLiveResizeEnd: ((Bool) -> Void)?
 
+    // MARK: - V4（ZCode）滚动来源
+
+    /// 滚动来源模式。
+    ///
+    /// - Important: 默认是 `.legacy`，**旧调用方无需修改**。
+    ///   `.legacy` 保持 V1–V3 的既有行为（只报告「是否在底部」）。
+    enum Mode {
+        /// V1–V3：只报告「是否在底部」。
+        case legacy
+        /// V4：额外报告每次滚动的**来源**与几何。
+        case v4
+    }
+
+    /// 滚动来源模式。
+    var mode: Mode = .legacy
+
+    /// V4 模式的滚动回调：来源 + 几何快照。
+    ///
+    /// - Note: 只有 `.v4` 模式才会被调用。
+    var onScrollEvent: ((ZCodeScrollEventSource, ScrollViewBottomController.Snapshot) -> Void)?
+
     init(
         onChange: @escaping (Bool) -> Void,
         controller: ScrollViewBottomController? = nil,
-        onLiveResizeEnd: ((Bool) -> Void)? = nil
+        onLiveResizeEnd: ((Bool) -> Void)? = nil,
+        mode: Mode = .legacy,
+        onScrollEvent: ((ZCodeScrollEventSource, ScrollViewBottomController.Snapshot) -> Void)? = nil
     ) {
         self.onChange = onChange
         self.controller = controller
         self.onLiveResizeEnd = onLiveResizeEnd
+        self.mode = mode
+        self.onScrollEvent = onScrollEvent
     }
 
     func makeNSView(context: Context) -> TrackerView {
@@ -101,6 +126,10 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
         view.onLiveResizeEnd = { [weak coordinator = context.coordinator] wasAtBottom in
             coordinator?.onLiveResizeEnd?(wasAtBottom)
         }
+        view.mode = mode
+        view.onScrollEvent = { [weak coordinator = context.coordinator] source, snapshot in
+            coordinator?.onScrollEvent?(source, snapshot)
+        }
         return view
     }
 
@@ -109,7 +138,10 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
         // SwiftUI 的尺寸协商，可能复活反馈环。仅同步回调句柄。
         context.coordinator.onChange = onChange
         context.coordinator.onLiveResizeEnd = onLiveResizeEnd
+        context.coordinator.onScrollEvent = onScrollEvent
         nsView.bottomController = controller
+        nsView.mode = mode
+        nsView.onScrollEvent = onScrollEvent
     }
 
     static func dismantleNSView(_ nsView: TrackerView, coordinator: Coordinator) {
@@ -117,15 +149,21 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onChange: onChange, onLiveResizeEnd: onLiveResizeEnd)
+        Coordinator(onChange: onChange, onLiveResizeEnd: onLiveResizeEnd, onScrollEvent: onScrollEvent)
     }
 
     final class Coordinator {
         var onChange: (Bool) -> Void
         var onLiveResizeEnd: ((Bool) -> Void)?
-        init(onChange: @escaping (Bool) -> Void, onLiveResizeEnd: ((Bool) -> Void)?) {
+        var onScrollEvent: ((ZCodeScrollEventSource, ScrollViewBottomController.Snapshot) -> Void)?
+        init(
+            onChange: @escaping (Bool) -> Void,
+            onLiveResizeEnd: ((Bool) -> Void)?,
+            onScrollEvent: ((ZCodeScrollEventSource, ScrollViewBottomController.Snapshot) -> Void)? = nil
+        ) {
             self.onChange = onChange
             self.onLiveResizeEnd = onLiveResizeEnd
+            self.onScrollEvent = onScrollEvent
         }
     }
 }
@@ -136,6 +174,18 @@ final class TrackerView: NSView {
     fileprivate var onChange: ((Bool) -> Void)?
     fileprivate var onLiveResizeEnd: ((Bool) -> Void)?
     fileprivate var bottomController: ScrollViewBottomController?
+    /// 滚动来源模式；默认 `.legacy`（V1–V3 行为）。
+    fileprivate var mode: ScrollViewBottomTracker.Mode = .legacy
+    /// V4 模式的滚动来源回调。
+    fileprivate var onScrollEvent: ((ZCodeScrollEventSource, ScrollViewBottomController.Snapshot) -> Void)?
+    /// 程序化滚动作用域：贴底写入 clip bounds 期间置位。
+    private var programmaticScope = ZCodeProgrammaticScrollScope()
+    /// 用户输入监测器（仅 V4 模式）。
+    private var userEventMonitor: Any?
+    /// 观察到的滚动视图所属 window 的标识；用于过滤其它 window 的事件。
+    private var targetWindowIdentifier: ObjectIdentifier?
+    /// 上次上报的滚动来源；用于避免重复上报同一次滚动。
+    private var lastReportedSource: ZCodeScrollEventSource?
     private var observation: NSObjectProtocol?
     /// 文档视图尺寸变化的观察者。
     ///
@@ -263,6 +313,8 @@ final class TrackerView: NSView {
         // （懒加载行物化 / Markdown 异步解析回填）只会改变文档高度，
         // 不会触发 clip view 的 bounds 变化通知。
         startObservingDocumentView(of: scrollView)
+        // V4 模式：启动用户输入监测，用于区分真实用户滚动与程序化/布局滚动。
+        startUserEventMonitor(for: scrollView)
         // 附着后立刻评估一次，把初始状态同步给回调。
         reevaluate()
     }
@@ -444,10 +496,143 @@ final class TrackerView: NSView {
             self.observation = nil
         }
         stopObservingDocumentView()
+        stopUserEventMonitor()
         if let observedScrollView {
             bottomController?.detach(from: observedScrollView)
         }
         observedScrollView = nil
+        programmaticScope = ZCodeProgrammaticScrollScope()
+    }
+
+    // MARK: - V4 滚动来源
+
+    /// 上报一次滚动来源事件。
+    ///
+    /// - Important: 只有 `.v4` 模式才上报；`.legacy` 模式行为完全不变。
+    private func reportScrollEvent(_ source: ZCodeScrollEventSource) {
+        guard mode == .v4 else { return }
+        guard let onScrollEvent else { return }
+        // 同一次滚动只上报一次。
+        guard lastReportedSource != source else { return }
+        lastReportedSource = source
+        guard let snapshot = currentSnapshot() else { return }
+        onScrollEvent(source, snapshot)
+    }
+
+    /// 当前几何快照。
+    private func currentSnapshot() -> ScrollViewBottomController.Snapshot? {
+        guard let scrollView = observedScrollView,
+              let documentView = scrollView.documentView else { return nil }
+        let clipView = scrollView.contentView
+        return ScrollViewBottomController.Snapshot(
+            documentHeight: documentView.bounds.height,
+            visibleHeight: clipView.bounds.height,
+            offsetY: clipView.bounds.origin.y
+        )
+    }
+
+    /// 启动用户输入监测（仅 V4 模式）。
+    ///
+    /// - Important: 监测必须按 **window + 滚动视图**过滤，
+    ///   否则 Rail（侧栏）的滚动会被误当成消息列表的滚动。
+    private func startUserEventMonitor(for scrollView: NSScrollView) {
+        guard mode == .v4 else { return }
+        stopUserEventMonitor()
+
+        targetWindowIdentifier = scrollView.window.map { ObjectIdentifier($0) }
+
+        let monitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.scrollWheel, .keyDown]
+        ) { [weak self] event in
+            guard let self else { return event }
+
+            // 过滤：必须是同一个 window。
+            if let targetID = self.targetWindowIdentifier,
+               let eventWindowID = event.window.map({ ObjectIdentifier($0) }),
+               eventWindowID != targetID {
+                return event
+            }
+
+            // 过滤：事件必须落在当前观察的滚动视图上。
+            guard let observed = self.observedScrollView else { return event }
+            guard self.eventTargetsScrollView(event, scrollView: observed) else { return event }
+
+            let input: ZCodeScrollSourceClassifier.Input
+            switch event.type {
+            case .scrollWheel:
+                input = ZCodeScrollSourceClassifier.Input(
+                    kind: .scrollWheel,
+                    deltaY: event.scrollingDeltaY,
+                    isEditableTarget: self.isEditableTarget(event),
+                    isProgrammaticScopeActive: self.programmaticScope.isActive
+                )
+            case .keyDown:
+                input = ZCodeScrollSourceClassifier.Input(
+                    kind: .key,
+                    key: Self.keyName(event),
+                    isEditableTarget: self.isEditableTarget(event),
+                    isProgrammaticScopeActive: self.programmaticScope.isActive
+                )
+            default:
+                return event
+            }
+
+            let source = ZCodeScrollSourceClassifier.classify(input)
+            if source == .user {
+                MainActor.assumeIsolated {
+                    self.reportScrollEvent(.user)
+                }
+            }
+            return event
+        }
+        userEventMonitor = monitor
+    }
+
+    /// 停止用户输入监测。
+    private func stopUserEventMonitor() {
+        if let userEventMonitor {
+            NSEvent.removeMonitor(userEventMonitor)
+            self.userEventMonitor = nil
+        }
+    }
+
+    /// 事件的 target 是否落在给定滚动视图上。
+    private func eventTargetsScrollView(_ event: NSEvent, scrollView: NSScrollView) -> Bool {
+        // 事件 window 与滚动视图 window 必须一致。
+        guard let eventWindow = event.window,
+              let scrollWindow = scrollView.window,
+              eventWindow === scrollWindow
+        else { return false }
+        // 事件 target 必须在滚动视图的层级里（排除 Rail 的滚动）。
+        guard let target = event.window?.firstResponder else { return true }
+        if let targetView = target as? NSView {
+            return targetView === scrollView
+                || targetView.isDescendant(of: scrollView)
+                || scrollView.isDescendant(of: targetView)
+        }
+        return true
+    }
+
+    /// 事件目标是否落在可编辑控件里。
+    private func isEditableTarget(_ event: NSEvent) -> Bool {
+        guard let target = event.window?.firstResponder as? NSView else { return false }
+        if target is NSTextView { return true }
+        if target is NSTextField { return true }
+        if let field = target as? NSTextField { return field.isEditable }
+        if let control = target as? NSControl, control.isEnabled { return false }
+        return false
+    }
+
+    /// 按键名。
+    private static func keyName(_ event: NSEvent) -> String {
+        guard let characters = event.charactersIgnoringModifiers else { return "" }
+        switch characters {
+        case "\u{1B}": return "Escape"
+        case "\r", "\n": return "Enter"
+        case "\t": return "Tab"
+        case " ": return " "
+        default: return characters
+        }
     }
 
     // MARK: - 底部判定（迟滞带）
