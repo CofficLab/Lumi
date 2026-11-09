@@ -86,7 +86,7 @@ public struct FileSearchPanelView: View {
                 .frame(width: 20)
 
             // 搜索输入框
-            TextField("搜索文件...", text: $searchService.searchQuery)
+            TextField(pluginLocalization.string("搜索文件..."), text: $searchService.searchQuery)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
                 .focused($isSearchFocused)
