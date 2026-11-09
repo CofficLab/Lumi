@@ -102,22 +102,27 @@ public enum CollapsedContentBlockMetadata {
         return result
     }
 
-    /// 把正文开头的空白裁掉后，同步平移所有区间。
+    /// 把正文首尾空白裁掉后，同步裁剪所有区间。
     ///
     /// 发送链路会 trim 正文（`trimmingCharacters(in: .whitespacesAndNewlines)`），
-    /// 区间以未 trim 的文本为基准。不平移的话，首行的 chip 在消息里会整体错位。
+    /// 区间以未 trim 的文本为基准。不平移的话，首行的 chip 在消息里会整体错位；
+    /// 而折叠块的区间覆盖粘贴原文（含首尾空白），只平移不离裁会让块越界后被
+    /// 整个丢弃，所以这里改为求区间与 trim 后正文的交集：部分重叠的块裁短保留，
+    /// 只有完全落在空白里的块才删除。
     public static func rebased(
         _ blocks: [CollapsedContentBlock],
         droppingLeadingWhitespaceOf content: String
     ) -> [CollapsedContentBlock] {
         let dropped = content.prefix(while: { $0.isWhitespace || $0.isNewline }).count
-        guard dropped > 0 else { return blocks }
+        let keptLength = content.trimmingCharacters(in: .whitespacesAndNewlines).count
+        guard dropped > 0 || keptLength < content.count else { return blocks }
         return blocks.compactMap { block in
-            let start = block.start - dropped
-            guard start >= 0 else { return nil }
+            let start = max(0, block.start - dropped)
+            let end = min(keptLength, block.start + block.length - dropped)
+            guard end > start else { return nil }
             return CollapsedContentBlock(
                 start: start,
-                length: block.length,
+                length: end - start,
                 title: block.title,
                 systemImage: block.systemImage
             )
