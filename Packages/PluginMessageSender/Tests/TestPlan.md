@@ -56,7 +56,7 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 - **会话**（1 条）：由 `nilConversationFallsBackToSelection`、`nilConversationCreatesAndSelectsNewConversation`、`explicitConversationWins` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **并发**（1 条）：由 `concurrentConversationsKeepGlobalSendingFlag` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **插件**（1 条）：由 `shutdownRemovesAgentLoopObserver`、`repeatedShutdownIsSafe` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MessageSender 回合中再发送的守门**（9 条）：由 `suspendedTurnQueuesNextMessage`、`suspendedTurnClearsSenderBusyFlag` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MessageSender 回合中再发送的守门**（10 条）：由 `suspendedTurnQueuesNextMessage`、`suspendedTurnClearsSenderBusyFlag` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageSender 停止与附件**（3 条）：由 `cancelStopsTurnUnknownToSender`、`cancelStopsSuspendedTurn` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -92,10 +92,11 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 | 27 | MessageSender 停止与附件 | AgentLoop 在跑但 sender 没有账本时仍然取消回合 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cancelStopsTurnUnknownToSender` |
 | 28 | MessageSender 停止与附件 | 挂起等待用户时也能取消回合 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cancelStopsSuspendedTurn` |
 | 29 | MessageSender 停止与附件 | sender 与 AgentLoop 都认为没有活回合时仍然不取消 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cancelWithoutAnyActiveTurnIsNoOp` |
+| 30 | MessageSender 回合中再发送的守门 | ask_user 挂起但队列非空时，新消息排在已有消息之后 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `askUserSuspensionDoesNotBypassQueuedMessages` |
 
 > 说明：ID 1–4 为原有套件。ID 5–17 由 `MessageSenderCommitTests`、
 > `MessageSenderCancellationTests`、`MessageSenderObservationTests` 三个新套件补齐，
-> 本表 29 行覆盖 40 个测试方法（参数化用例已展开说明），已在 macOS 上实跑通过。
+> 本表 30 行覆盖 41 个测试方法（参数化用例已展开说明），已在 macOS 上实跑通过。
 >
 > 实现中两条易错约定已在用例里显式锁定：
 > - **提交与回合分离**：`commitUserMessage` 只写库并登记 `pendingTurnStarts`，
@@ -108,9 +109,9 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 ## 覆盖率统计
 
 - P0: 已覆盖 7 / 7
-- P1: 已覆盖 20 / 20
+- P1: 已覆盖 21 / 21
 - P2: 已覆盖 2 / 2
-- **合计: 29 / 29**（仅表示清单场景，非源码覆盖率）
+- **合计: 30 / 30**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
