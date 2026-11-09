@@ -5,7 +5,7 @@
 PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace and the official Chrome DevTools MCP server for controlling Chrome.
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 46
+测试文件: 10 个，用例总数: 49
 
 核心组件（源码目录）:
 - `Models/`
@@ -55,6 +55,7 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 - **Browser 会话释放**（4 条）：由 `deletedConversationReleasesBrowserSession`、`deletingActiveConversationClearsActiveState` 等用例锁定；删除会话必须立刻释放 BrowserSession/WKWebView，并在活动会话被删时清空活动状态。
 - **Browser 整页截图边界**（6 条）：由 `clampsExtremelyWidePages`、`downscalesBeyondPixelBudget`、`outputPixelsStayWithinBudget` 等用例锁定；整页截图必须同时限制宽度、高度与总像素数，不能只钳制高度（issue #1060）。
 - **Browser type 动作的 Unicode 输入**（3 条）：由 `typePreservesEmojiAndCJK`、`typePreservesZWJEmoji`、`typePreservesCombiningMarks` 用例锁定；`type` 必须按完整字符（优先 grapheme）逐次写入，不能按 UTF-16 码元拆分 surrogate pair（issue #1059）。
+- **Browser contenteditable 输入**（3 条）：由 `fillWritesContentEditableHost`、`typeAppendsToContentEditableHost`、`rejectsNonEditableHost` 锁定；快照暴露为 textbox 的 contenteditable 元素必须能被 `fill` / `type` 写入，不可编辑元素仍须拒绝（issue #1093）。
 
 ## 测试用例清单
 
@@ -106,16 +107,19 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 | 44 | Browser type 动作的 Unicode 输入 | Emoji 与中文按完整字符输入（**回归 #1059**） | 输入框替身按 USVString 语义保存 value | 执行 type 脚本输入 `A😀B中文` | value 与输入完全一致，且每个字符各触发一组按键事件 | P1 | ✅ 已覆盖 | `typePreservesEmojiAndCJK` |
 | 45 | Browser type 动作的 Unicode 输入 | ZWJ 组合 Emoji 不被拆坏 | 同上 | 输入家庭 Emoji 序列 | value 与输入完全一致 | P1 | ✅ 已覆盖 | `typePreservesZWJEmoji` |
 | 46 | Browser type 动作的 Unicode 输入 | 组合附加符号不产生替换字符 | 同上 | 输入含 U+0301 组合符的文本 | value 与输入完全一致 | P1 | ✅ 已覆盖 | `typePreservesCombiningMarks` |
+| 47 | Browser contenteditable 输入 | fill 写入 contenteditable 内容并派发 input/change（**回归 #1093**） | contenteditable 的 div 替身 | 执行 fill 脚本 | textContent 等于输入，且派发 input 与 change | P1 | ✅ 已覆盖 | `fillWritesContentEditableHost` |
+| 48 | Browser contenteditable 输入 | type 逐字符追加到 contenteditable 内容（**回归 #1093**） | 同上 | 执行 type 脚本输入 `A😀` | textContent 等于输入，每个字符触发一组按键事件 | P1 | ✅ 已覆盖 | `typeAppendsToContentEditableHost` |
+| 49 | Browser contenteditable 输入 | 不可编辑的普通 div 仍然拒绝文本 | 非 contenteditable 的 div 替身 | 执行 fill 脚本 | 返回失败，内容保持不变 | P1 | ✅ 已覆盖 | `rejectsNonEditableHost` |
 
-> 说明：全部 **46 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **49 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 33 / 33
+- P1: 已覆盖 36 / 36
 - P2: 已覆盖 13 / 13
-- **合计: 46 / 46**（仅表示清单场景，非源码覆盖率）
+- **合计: 49 / 49**（仅表示清单场景，非源码覆盖率）
 
 ## 未覆盖说明
 
@@ -129,13 +133,13 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（33 条）
+- **P1**: 其余功能性用例（36 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 46 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 49 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

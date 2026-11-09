@@ -75,7 +75,18 @@ enum BrowserInteractionScript {
 
       const focus = () => { try { el.focus({ preventScroll: true }); } catch (_) {} };
 
+      // 富文本编辑器常用 `<div role="textbox" contenteditable>`，
+      // 它们没有 value 属性，但快照同样把它暴露为 textbox。
+      const isTextControl = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
+      const isEditableHost = !isTextControl && el.isContentEditable === true;
+
       const setValue = (value) => {
+        if (isEditableHost) {
+          el.textContent = value;
+          el.dispatchEvent(new Event("input", { bubbles: true }));
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+          return true;
+        }
         const proto = el instanceof HTMLTextAreaElement
           ? HTMLTextAreaElement.prototype
           : HTMLInputElement.prototype;
@@ -85,6 +96,15 @@ enum BrowserInteractionScript {
         el.dispatchEvent(new Event("input", { bubbles: true }));
         el.dispatchEvent(new Event("change", { bubbles: true }));
         return true;
+      };
+
+      const appendText = (char) => {
+        if (isEditableHost) {
+          el.textContent = (el.textContent || "") + char;
+        } else {
+          el.value = el.value + char;
+        }
+        el.dispatchEvent(new Event("input", { bubbles: true }));
       };
 
       const click = () => {
@@ -120,12 +140,14 @@ enum BrowserInteractionScript {
         }
 
         case "fill": {
-          if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) {
+          if (!isTextControl && !isEditableHost) {
             return fail("This element does not accept text. Use select or click instead.");
           }
-          const type = (el.getAttribute("type") || "").toLowerCase();
-          if (["file", "hidden"].includes(type)) {
-            return fail("This input cannot be filled with text.");
+          if (isTextControl) {
+            const type = (el.getAttribute("type") || "").toLowerCase();
+            if (["file", "hidden"].includes(type)) {
+              return fail("This input cannot be filled with text.");
+            }
           }
           focus();
           if (!setValue(String(OPTS.text || ""))) {
@@ -135,7 +157,7 @@ enum BrowserInteractionScript {
         }
 
         case "type": {
-          if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) {
+          if (!isTextControl && !isEditableHost) {
             return fail("This element does not accept text.");
           }
           focus();
@@ -156,9 +178,8 @@ enum BrowserInteractionScript {
           for (const char of graphemes) {
             el.dispatchEvent(new KeyboardEvent("keydown", { key: char, bubbles: true }));
             el.dispatchEvent(new KeyboardEvent("keypress", { key: char, bubbles: true }));
-            el.value = el.value + char;
+            appendText(char);
             el.dispatchEvent(new KeyboardEvent("keyup", { key: char, bubbles: true }));
-            el.dispatchEvent(new Event("input", { bubbles: true }));
           }
           el.dispatchEvent(new Event("change", { bubbles: true }));
           return { ok: true, href: "", message: "Typed." };
