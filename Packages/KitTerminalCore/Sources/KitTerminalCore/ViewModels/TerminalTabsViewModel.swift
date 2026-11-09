@@ -1,5 +1,17 @@
 import Foundation
 
+/// 会话视图在 ZStack 中的呈现状态。
+///
+/// 所有会话视图保持挂载以保留 shell 状态，因此透明视图仍会参与 hit testing；
+/// 只有选中项可以接收鼠标与键盘输入，并且必须位于输入层最上方（#1018）。
+public struct TerminalSessionPresentation: Equatable, Sendable {
+    public let isSelected: Bool
+
+    public var opacity: Double { isSelected ? 1 : 0 }
+    public var allowsHitTesting: Bool { isSelected }
+    public var zIndex: Double { isSelected ? 1 : 0 }
+}
+
 /// 终端 Tab 视图模型
 ///
 /// 管理多个终端会话的 Tab 状态，包括：
@@ -52,6 +64,10 @@ public final class TerminalTabsViewModel: ObservableObject {
 
     public func selectSession(_ id: UUID) {
         selectedSessionId = id
+    }
+
+    public func presentation(for sessionID: UUID) -> TerminalSessionPresentation {
+        TerminalSessionPresentation(isSelected: sessionID == selectedSessionId)
     }
 
     public func closeSession(_ id: UUID) {

@@ -86,8 +86,11 @@ public struct TerminalMainView: View {
             } else {
                 ZStack {
                     ForEach(viewModel.sessions) { session in
+                        let presentation = viewModel.presentation(for: session.id)
                         TerminalSessionContainerView(session: session)
-                            .opacity(viewModel.selectedSessionId == session.id ? 1 : 0)
+                            .opacity(presentation.opacity)
+                            .allowsHitTesting(presentation.allowsHitTesting)
+                            .zIndex(presentation.zIndex)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
