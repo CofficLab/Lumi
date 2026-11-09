@@ -73,12 +73,20 @@ enum ResumeToolSupport {
     static func notify(resumeID: String? = nil) async {
         let canonicalResumeID = resumeID.flatMap { try? ResumeDocumentStore.validatedSlug($0) }
         await MainActor.run {
-            if let scoped = scopedProjectPath(),
-               scoped != normalizedProjectPath(WorkspaceStore.shared.currentProjectPath) {
-                return
-            }
+            guard showsCurrentProject() else { return }
             WorkspaceStore.shared.reload(selectResume: canonicalResumeID ?? resumeID)
         }
+    }
+
+    /// 本次调用是否作用于 UI 正在显示的项目。
+    ///
+    /// 未绑定项目（非 Agent 调用或对话未绑定）时视为当前项目；
+    /// 绑定项目时必须与 UI 当前项目一致，后台项目的失败/刷新不得
+    /// 修改另一个项目的界面状态。
+    @MainActor
+    static func showsCurrentProject() -> Bool {
+        guard let scoped = scopedProjectPath() else { return true }
+        return scoped == normalizedProjectPath(WorkspaceStore.shared.currentProjectPath)
     }
 
     static func resumeSummary(_ document: ResumeDocument) -> String {

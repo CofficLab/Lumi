@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginResumeDesigner 的实现包，包含 15 个主要类型；当前测试覆盖 28 条用例。
+PluginResumeDesigner 的实现包，包含 15 个主要类型；当前测试覆盖 30 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 28
+测试文件: 6 个，用例总数: 30
 
 核心组件（源码目录）:
 - `Observers/`
@@ -43,7 +43,7 @@ PluginResumeDesigner 的实现包，包含 15 个主要类型；当前测试覆�
 - **ResumeDocumentStore**（4 条）：由 `fullCRUD`、`rejectsInvalidSlugAndDuplicate`、`patchRequiresUniqueOldText` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ResumeTools**（9 条）：由 `createResumeToolCreatesDocument`、`listResumesToolListsDocuments`、`readResumeToolReturnsMetadata` 等用例锁定；改动该模块时优先跑对应测试文件，其中 `aliasedResumeIDNotifyKeepsNormalizedSelection` 与 `importAssetWithUppercaseResumeIDKeepsSelection` 锁定「工具别名 ID 刷新后 UI 仍选中规范化文档」。
 
-- **ResumeDesignerSuite**（6 条）：由 `conversationScopedToolWritesIntoItsOwnProject`、`conversationScopedToolReadsFromItsOwnProject` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ResumeDesignerSuite**（8 条）：由 `conversationScopedToolWritesIntoItsOwnProject`、`conversationScopedToolReadsFromItsOwnProject` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TestStorage**（1 条）：由 `doesNotCreateStorageDirectoryUntilWrite` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ResumeExportTargets**（3 条）：由 `fileNamesMatchExportMode`、`reportsEveryExistingTarget`、`pngOnlyIgnoresPDFConflict` 锁定 GUI 导出的目标清单与同名冲突检测。
 
@@ -79,20 +79,22 @@ PluginResumeDesigner 的实现包，包含 15 个主要类型；当前测试覆�
 | 26 | ResumeExportTargets | PNG-only 导出不把已有 PDF 算作冲突 | 临时目录预置 `alice.pdf` | 调用 `existingFiles(pngOnly: true)`，再预置 `alice-p01.png` 重查 | 首次为空；预置 PNG 后只报告该 PNG | P1 | ✅ 已覆盖 | `pngOnlyIgnoresPDFConflict` |
 | 27 | ResumeTools | 别名 resumeId（`" ALICE "`）刷新后 UI 仍选中规范化文档 `alice`（**回归 #1090**） | 项目内已有 `alice` 且已选中 | 调用 `ResumeToolSupport.notify(resumeID: " ALICE ")` | `selectedResumeID == "alice"`，`selectedResume` 不为空 | P0 | ✅ 已覆盖 | `aliasedResumeIDNotifyKeepsNormalizedSelection` |
 | 28 | ResumeTools | `resume_import_asset` 用大写 ID 导入素材后保留规范化选中与预览（**回归 #1090**） | 项目内已有 `alice` 且已选中，临时目录写入 2x2 PNG | 以 `resumeId: "ALICE"` 执行导入 | 素材落在 `resumes/alice/assets/photo.png`；选中仍为 `alice` 且预览未清空 | P0 | ✅ 已覆盖 | `importAssetWithUppercaseResumeIDKeepsSelection` |
+| 29 | ResumeDesignerSuite | 后台项目（A）的预览失败不污染 UI 当前项目（B）的错误状态（**回归 #1089**） | UI 显示项目 B，对话 A 预览 A 中不存在的简历 | 以对话 A 作用域执行 `resume_preview_page` | 结果 `isError`；`lastError` 保持为空，当前项目仍为 B | P0 | ✅ 已覆盖 | `backgroundPreviewFailureDoesNotSetCurrentProjectError` |
+| 30 | ResumeDesignerSuite | 当前项目自身的预览失败仍会写入错误提示（**回归 #1089**） | UI 显示项目 B，作用域也是项目 B | 预览 B 中不存在的简历 | 结果 `isError` 且 `lastError` 非空 | P1 | ✅ 已覆盖 | `currentProjectPreviewFailureSurfacesError` |
 
-> 说明：全部 **28 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **30 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 8 / 8
-- P1: 已覆盖 19 / 19
+- P0: 已覆盖 9 / 9
+- P1: 已覆盖 20 / 20
 - P2: 已覆盖 1 / 1
-- **合计: 28 / 28**（仅表示清单场景，非源码覆盖率）
+- **合计: 30 / 30**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
 - **P1**: 其余功能性用例（19 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
