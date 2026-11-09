@@ -604,6 +604,24 @@ extension AgentLoopManager {
         }?.id
     }
 
+    /// 本回合已经使用过的 tool-call ID，包括已被上下文压缩掉的消息。
+    ///
+    /// 归一化只看压缩后的历史时，provider 在同一回合复用被压缩掉的 ID 不会
+    /// 改名，ToolManager 会把它当成已完成的旧 Job 直接返回；新调用既没有
+    /// `.created` 也没有终态事件，回合会永久停在等待工具结果（#1024）。
+    private func persistedToolCallIDs(
+        conversationID: UUID,
+        turnID: UUID
+    ) async -> Set<String> {
+        await messages.messagesSnapshot(in: conversationID).reduce(into: Set<String>()) { ids, message in
+            guard message.turnID == turnID else { return }
+            ids.formUnion(message.toolCalls?.map(\.id) ?? [])
+            if let toolCallID = message.toolCallID, !toolCallID.isEmpty {
+                ids.insert(toolCallID)
+            }
+        }
+    }
+
     enum LLMRequestResult {
         case success(LLMResponse, assistantMessageID: UUID)
         /// 保留原始错误，避免在落库前丢失专用 renderer 所需的元数据。
@@ -736,7 +754,8 @@ extension AgentLoopManager {
 
         let timingRecorder = LLMStreamTimingRecorder()
         let bridge = StreamingBridge(streaming: streaming)
-        let existingToolCallIDs = ToolCallIdentityNormalizer.ids(in: llmHistory)
+        let existingToolCallIDs = await ToolCallIdentityNormalizer.ids(in: llmHistory)
+            .union(persistedToolCallIDs(conversationID: conversationID, turnID: turnID))
         do {
             let streamedResponse = try await streamingManager.streamComplete(request) { [weak bridge, timingRecorder] chunk in
                 if chunk.content?.isEmpty == false
