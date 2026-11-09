@@ -4,6 +4,7 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
 import ProviderRootView
+import SwiftUI
 import Testing
 
 @testable import StoryWriterPlugin
@@ -48,6 +49,48 @@ func activationScopesRailView() throws {
     #expect(railView.visibleCategories == Set(RailViewCategory.allCases))
     #expect(railView.visibleTabID == nil)
     #expect(rootView.isContentHeaderViewHidden == false)
+
+    try plugin.onShutdown(kernel: kernel)
+}
+
+@MainActor
+@Test("首次启用不会替换其它工作区的内容与标题栏（回归 #1019）")
+func bootingPluginKeepsOtherWorkspaceContent() throws {
+    let kernel = KernelCoreContainer()
+    let activityBar = DefaultActivityBarProviding()
+    let contentView = DefaultContentViewProviding()
+    let railView = DefaultRailViewProviding()
+    let rootView = DefaultRootViewProviding()
+    try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+    try kernel.registerProvider((any ContentViewProviding).self, contentView)
+    try kernel.registerProvider((any RailViewProviding).self, railView)
+    try kernel.registerProvider((any RootViewProviding).self, rootView)
+
+    activityBar.addItems([
+        ActivityBarItem(
+            id: "code-editor.entry",
+            title: "Code Editor",
+            systemImage: "chevron.left.forwardslash.chevron.right",
+            order: 1,
+            ownerPluginID: "test.code-editor"
+        ) { _ in },
+    ])
+    #expect(activityBar.activeItemID == "code-editor.entry")
+
+    contentView.setContentView(AnyView(Text("Editor")))
+    var contentChanges = 0
+    _ = contentView.addContentViewObserver { event in
+        if case .contentChanged = event {
+            contentChanges += 1
+        }
+    }
+
+    let plugin = StoryWriterPlugin()
+    try plugin.onBoot(kernel: kernel)
+
+    #expect(activityBar.activeItemID == "code-editor.entry")
+    #expect(rootView.isContentHeaderViewHidden == false)
+    #expect(contentChanges == 0, "enabling the plugin must not replace the current workspace content")
 
     try plugin.onShutdown(kernel: kernel)
 }
