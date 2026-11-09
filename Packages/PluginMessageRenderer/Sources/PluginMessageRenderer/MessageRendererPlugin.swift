@@ -2,6 +2,7 @@ import os
 import KernelCore
 import LumiLoggingKit
 import LumiUI
+import ProviderAgentLoop
 import ProviderChatSection
 import ProviderConversation
 import ProviderMessage
@@ -82,7 +83,8 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
            let chat = kernel.resolveProvider((any ChatSectionProviding).self) {
             let viewModel = RiskApprovalChatViewModel(
                 conversations: conversations,
-                toolManager: toolManager
+                toolManager: toolManager,
+                agentLoop: kernel.resolveProvider((any AgentLoopProviding).self)
             )
             riskApprovalChatViewModel = viewModel
             chat.addItems([
