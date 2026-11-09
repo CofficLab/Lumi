@@ -53,11 +53,12 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         !imageAttachments.isEmpty || !fileAttachments.isEmpty
     }
 
-    /// 能否发送：内容非空白，或存在待发送附件。
+    /// 能否发送：内容非空白，或存在待发送附件；提交中的草稿不可再次发送。
     ///
     /// 抽成单一判定，避免「`refresh()` 与 `setText()` 各自算一遍」后规则漂移。
-    private static func canSend(text: String, hasAttachments: Bool) -> Bool {
-        hasAttachments || !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    private static func canSend(text: String, hasAttachments: Bool, isCommittingDraft: Bool) -> Bool {
+        guard !isCommittingDraft else { return false }
+        return hasAttachments || !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     // MARK: - Observer 入口（外部事件 → VM）
@@ -186,7 +187,11 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
 
     /// 重算 `canSend`，结果未变则不触发失效广播。
     private func updateCanSend() {
-        let resolved = Self.canSend(text: text, hasAttachments: hasAttachments)
+        let resolved = Self.canSend(
+            text: text,
+            hasAttachments: hasAttachments,
+            isCommittingDraft: capability.isCommittingDraft
+        )
         guard canSend != resolved else { return }
         canSend = resolved
     }
@@ -238,6 +243,10 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
 
     /// 发送当前输入框文本（含附件）。
     func send() {
+        // 提交中的草稿还在输入框里，此时再次触发会把同一条正文（或同一批
+        // 附件）当成新消息重复提交。标记由两条发送入口共用。
+        guard !capability.isCommittingDraft else { return }
+
         // 交给发送端的是编辑器原文，而不是预 trim 后的文本：
         // 折叠块区间以原文为基准，预 trim 会让 sender 失去前导空白，
         // 无法把区间平移到 trim 后的正文上。trim 统一由 sender 完成。
@@ -248,42 +257,58 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         let hasAttachments = !imageAttachments.isEmpty || !fileAttachments.isEmpty
         guard !trimmed.isEmpty || hasAttachments else { return }
 
-        // 发送瞬间的折叠块区间。草稿随后被清空，区间也必须同时作废，
+        // 发送瞬间的折叠块区间。提交成功后草稿被清空，区间也必须同时作废，
         // 否则下一次发送会带上上一条消息的区间。
         let blocks = capability.collapsedBlocks
 
-        capability.text = ""
         capability.errorMessage = nil
-        capability.collapsedBlocks = []
-        // 附件与正文一样，在被这条消息取走时就该离开挂起池。若等到异步编码
-        // 结束再清理，编码窗口内再次触发发送会把同一批附件当成新消息再提交一次。
-        if hasAttachments {
-            capability.clearAttachments()
-        }
-        refresh()
 
         if hasAttachments {
+            // 附件必须在发送瞬间离开挂起池。若等到异步编码结束再清理，
+            // 编码窗口内再次触发发送会把同一批附件当成新消息再提交一次。
+            capability.clearAttachments()
+            capability.isCommittingDraft = true
+            refresh()
+
             Task { @MainActor in
+                let commit: MessageSendCommit?
                 do {
-                    guard let commit = try await capability.commitUserMessageInBackground(
+                    commit = try await capability.commitUserMessageInBackground(
                         content,
                         imageAttachments: imageAttachments,
                         fileAttachments: fileAttachments,
                         collapsedBlocks: blocks,
                         conversationID: nil
-                    ) else { return }
-                    if Self.verbose {
-                        Self.logger.info("attachment commit completed queued=\(commit.wasQueued)")
-                    }
-                    guard !commit.wasQueued else { return }
-                    await capability.startTurn(for: commit)
+                    )
                 } catch {
-                    // 提交失败：附件已被消费，放回挂起池让用户直接重试。
+                    // 提交失败：附件已被消费，放回挂起池；正文与折叠块从未
+                    // 清空，仍在输入框里，用户修正故障后可直接重试。
                     imageAttachments.forEach(capability.addImageAttachment)
                     fileAttachments.forEach(capability.addFileAttachment)
                     capability.errorMessage = error.localizedDescription
+                    capability.isCommittingDraft = false
                     refresh()
+                    return
                 }
+
+                // 提交结束即释放门禁；后面的回合跟踪不能继续挡住发送。
+                capability.isCommittingDraft = false
+
+                guard let commit else {
+                    // 未形成有效提交：保留草稿，附件放回挂起池。
+                    imageAttachments.forEach(capability.addImageAttachment)
+                    fileAttachments.forEach(capability.addFileAttachment)
+                    refresh()
+                    return
+                }
+
+                clearSentDraft(content: content)
+                refresh()
+                if Self.verbose {
+                    Self.logger.info("attachment commit completed queued=\(commit.wasQueued)")
+                }
+                guard !commit.wasQueued else { return }
+                await capability.startTurn(for: commit)
             }
             return
         }
@@ -295,7 +320,14 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
                 fileAttachments: fileAttachments,
                 collapsedBlocks: blocks,
                 conversationID: nil
-            ) else { return }
+            ) else {
+                // 未形成有效提交：草稿原样保留，只清掉旧的错误提示。
+                refresh()
+                return
+            }
+
+            clearSentDraft(content: content)
+            refresh()
             guard !commit.wasQueued else { return }
 
             // 用户消息已同步进入内存时间线；回合跟踪延后，不阻塞 Return → 首帧路径。
@@ -303,9 +335,20 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
                 await capability.startTurn(for: commit)
             }
         } catch {
+            // 提交失败：草稿（正文 + 折叠块）原样保留。
             capability.errorMessage = error.localizedDescription
             refresh()
         }
+    }
+
+    /// 提交成功后清空本次发送的草稿。
+    ///
+    /// - Important: 只清空**本次发送的那一份**草稿。附件编码期间用户可能继续
+    ///   输入，此时输入框已经不是发出去的内容，直接清空会吞掉新草稿。
+    private func clearSentDraft(content: String) {
+        guard capability.text == content else { return }
+        capability.text = ""
+        capability.collapsedBlocks = []
     }
 
     /// 清空错误提示。

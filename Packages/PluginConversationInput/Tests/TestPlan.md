@@ -35,7 +35,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
   三个 ChatSection 条目
 
 ### ConversationInputCapability（内部协议，唯一对外依赖面）
-- 输入：`text` / `inputHeight` / `isInputFocused` / `inputCursorPosition` / `errorMessage` / `clearInput()`
+- 输入：`text` / `inputHeight` / `isInputFocused` / `inputCursorPosition` / `errorMessage` /
+  `collapsedBlocks` / `isCommittingDraft`（两条发送入口共用）/ `clearInput()`
 - 附件：`pendingImageAttachments` / `pendingFileAttachments` / 增删 / `clearAttachments()`
 - 发送：`commitUserMessage(_:imageAttachments:fileAttachments:conversationID:)`、
   `commitUserMessageInBackground(...)`、`startTurn(for:)`、`cancelCurrentRequest()`
@@ -47,13 +48,21 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 - `state: SendActionBarState`（`private(set)`）
 - `init(capability:)` - 以能力层快照初始化 `isSending` 与 `canSend`
 - `updateInputText(_:)` / `updateAttachments()` / `refreshConversationState()`
-- `send()` - 空白短路 → 清文本与错误 → 纯文本走**同步提交**、带附件走**后台编码提交**
-  → `wasQueued` 为真则不启动回合
+- `send()` - 空白短路 → 清错误 → 纯文本走**同步提交**、带附件走**后台编码提交**
+  → 提交成功后清正文与折叠块（进入待发队列也算成功）→ `wasQueued` 为真则不启动回合；
+  提交失败或未形成有效结果时草稿原样保留
 - `cancel()` - 委派 `capability.cancelCurrentRequest()`
 
 ### 关键行为契约（实现约定，非协议要求）
 - **按钮互斥**：`isSending` 为真只渲染 `StopButton`，否则只渲染 `SendButton`
-- **可发送判定唯一**：`hasAttachments || !trimmed.isEmpty`，纯空白永不亮
+- **可发送判定唯一**：`!isCommittingDraft && (hasAttachments || !trimmed.isEmpty)`，
+  纯空白与提交中的草稿永不亮
+- **成功后清空**：正文与折叠块只在提交成功（含 `wasQueued`）后清空；抛错或
+  `commit == nil` 时保留草稿。附件例外：发送瞬间即离开挂起池，失败时放回
+- **提交中不可重复发送**：附件编码窗口内 `isCommittingDraft` 为真，`send()` 直接
+  忽略，两条发送入口共用同一个标记
+- **迟到成功不吞新草稿**：异步提交成功时只在 `capability.text` 仍等于发出去的
+  正文时清空；编码期间用户新输入的内容必须保留
 - **附件路径强制后台**：有附件时必须走 `commitUserMessageInBackground`，
   同步路径必须零调用
 - **排队不抢跑**：`wasQueued == true` 或 `commit == nil` 时一律不调 `startTurn`
@@ -85,11 +94,11 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 6 | 判定 | 仅有附件时同样可以发送 | 无文本 + 一张图片 | 先 `updateAttachments()` 再挂附件 | 无附件不可发；有附件后可发 | P0 | ✅ 已覆盖 | `attachmentsAloneEnableSend` |
 | 7 | 判定 | 附件被移除后恢复为不可发送 | 一个文件附件 | 移除附件后 `updateAttachments()` | `canSend` 由 true 回到 false | P1 | ✅ 已覆盖 | `removingAttachmentsDisablesSend` |
 | 8 | 发送 | 空白输入且无附件时不提交任何消息 | text 为 `"   "` | `send()` | 同步/后台提交均零调用、**输入框内容不清空**、不启动回合 | P0 | ✅ 已覆盖 | `sendIgnoresBlankInput` |
-| 9 | 发送 | 纯文本走同步提交并随后启动回合 | text 带前后空格 | `send()` | 内容按**原文**交给发送端（trim 由发送端完成，保证折叠块区间与正文同一坐标系）；`conversationID` 显式传 `nil`；输入框立即清空、错误复位；同步路径命中、后台路径零调用；回合随后启动且会话 ID 正确 | P0 | ✅ 已覆盖 | `sendCommitsDraftTextSynchronously` |
+| 9 | 发送 | 纯文本走同步提交并随后启动回合 | text 带前后空格 | `send()` | 内容按**原文**交给发送端（trim 由发送端完成，保证折叠块区间与正文同一坐标系）；`conversationID` 显式传 `nil`；**提交成功后**输入框清空、错误复位；同步路径命中、后台路径零调用；回合随后启动且会话 ID 正确 | P0 | ✅ 已覆盖 | `sendCommitsDraftTextSynchronously` |
 | 10 | 发送 | 带附件的消息强制走后台编码提交 | text + 一张图片 | `send()` | 同步提交零调用；后台提交被调用且附件完整；回合随后启动 | P0 | ✅ 已覆盖 | `sendUsesBackgroundPathForAttachments` |
-| 11 | 发送 | 排队的消息不会启动回合 | `userMessageID == nil`（已排队） | `send()` 后等待调度结束 | 提交一次，`startTurn` 零调用 | P0 | ✅ 已覆盖 | `queuedCommitDoesNotStartTurn` |
-| 12 | 发送 | 提交返回 nil 时不启动回合 | 能力层返回 `nil` | `send()` 后等待调度结束 | 提交一次，`startTurn` 零调用 | P1 | ✅ 已覆盖 | `nilCommitDoesNotStartTurn` |
-| 13 | 错误 | 提交失败时把错误写入错误状态 | `commitUserMessage` 抛错 | `send()` | `errorMessage` 为错误描述；不启动回合 | P0 | ✅ 已覆盖 | `sendPropagatesCommitFailure` |
+| 11 | 发送 | 排队的消息不会启动回合 | `userMessageID == nil`（已排队） | `send()` 后等待调度结束 | 提交一次，草稿清空（入队也算成功），`startTurn` 零调用 | P0 | ✅ 已覆盖 | `queuedCommitDoesNotStartTurn` |
+| 12 | 发送 | 提交返回 nil 时不启动回合且保留草稿 | 能力层返回 `nil` | `send()` 后等待调度结束 | 提交一次，`capability.text` 原样保留，`startTurn` 零调用 | P1 | ✅ 已覆盖 | `nilCommitDoesNotStartTurn` |
+| 13 | 错误 | 提交失败时把错误写入错误状态并保留草稿 | `commitUserMessage` 抛错 | `send()` | `errorMessage` 为错误描述；正文与折叠块原样保留；不启动回合 | P0 | ✅ 已覆盖 | `sendPropagatesCommitFailure` |
 | 14 | 错误 | 发送前清除旧的错误提示 | 预置 `errorMessage = "stale error"` | `send()` | 发送后 `errorMessage == nil` | P1 | ✅ 已覆盖 | `sendClearsPreviousError` |
 | 15 | 停止 | 停止按钮取消当前请求 | 空能力层 | `cancel()` | `cancelCurrentRequest` 被调用 1 次 | P0 | ✅ 已覆盖 | `cancelDelegatesToCapability` |
 | 16 | 会话 | 刷新会话状态读取当前会话的发送中标记 | 选中会话 A，A 空闲 / B 发送中 | 先构造（应为非发送中），再切到 B 并刷新 | 切到发送中的 B 后 `isSending == true` | P1 | ✅ 已覆盖 | `refreshConversationStateReadsSelectedConversation` |
@@ -273,9 +282,9 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 119 | 折叠块 | 没有 chip 时不产生区间 | 纯文本存储 | 拍平内容 | 区间数组为空（纯文本不该被误判成折叠块） | P2 | ✅ 已覆盖 | `producesNoBlocksForPlainText` |
 | 120 | 折叠块 | 编辑器把折叠块区间上报给上层 | 装配 Coordinator 的编辑器 | 触发区间上报回调 | 回调收到折叠块区间（漏掉它，发送时消息会退化成一大段纯文字） | P1 | ✅ 已覆盖 | `reportsCollapsedBlocksUpward` |
 | 121 | 输入框卡片 | 输入框卡片内部保留内容内边距 | 渲染走完整 `composerContentInsets()` + `composerSurface()` 链路的标记色卡片 | 比较标记色块上缘（文字上缘）与卡片上缘之差 | 差值为 10pt（文字顶到卡片边缘会被读成「被裁切」；这条与「卡片与聊天区的外间距」是两回事，不许一起清零） | P1 | ✅ 已覆盖 | `cardKeepsContentInsets` |
-| 122 | 发送 | 带附件发送在编码完成前消费附件，编码窗口内再次发送被忽略 | text + 一个文件附件 | `send()` 后立即再 `send()` | 附件在异步编码前离开挂起池、`canSend` 转 false；第二次发送不再提交，后台提交仅 1 次且附件完整 | P0 | ✅ 已覆盖 | `sendWithAttachmentsConsumesThemBeforeEncoding` |
-| 123 | 发送 | 发送按钮路径同样在编码完成前消费附件 | text + 一张图片 | `send()` 后立即再 `send()` | 附件池清空、按钮熄灭；后台提交仅 1 次 | P0 | ✅ 已覆盖 | `sendingWithAttachmentsReservesThemBeforeEncoding` |
-| 124 | 错误 | 附件提交失败时附件回到挂起池 | 后台提交抛错 | `send()` 后等待错误回填 | `errorMessage` 非空，附件重新出现在挂起池与预览中，可直接重试 | P1 | ✅ 已覆盖 | `failedAttachmentCommitRestoresAttachments` |
+| 122 | 发送 | 带附件发送在编码完成前消费附件，编码窗口内再次发送被忽略 | text + 一个文件附件 | `send()` 后立即再 `send()` | 附件在异步编码前离开挂起池、正文等提交成功再清空、`canSend` 转 false；第二次发送因提交中标记不再提交，后台提交仅 1 次且附件完整 | P0 | ✅ 已覆盖 | `sendWithAttachmentsConsumesThemBeforeEncoding` |
+| 123 | 发送 | 发送按钮路径同样在编码完成前消费附件 | text + 一张图片 | `send()` 后立即再 `send()` | 附件池清空、正文仍在、按钮熄灭；后台提交仅 1 次 | P0 | ✅ 已覆盖 | `sendingWithAttachmentsReservesThemBeforeEncoding` |
+| 124 | 错误 | 附件提交失败时正文、折叠块与附件全部保留 | 后台提交抛错 | `send()` 后等待错误回填 | `errorMessage` 非空；正文与折叠块原样保留，附件重新出现在挂起池与预览中，可直接重试 | P1 | ✅ 已覆盖 | `failedAttachmentCommitRestoresDraft` |
 | 125 | 折叠块 | 折叠块前插入换行后发送，chip 区间仍指向原文本（**回归**） | 真实 Sender + Adapter + ViewModel；正文 `"\n" + body`，区间 `{start:1, length:body.count}` | 走回车发送路径 | 落库正文为 trim 后的 body；metadata 区间平移为 `{start:0, length:body.count}` 且精确指向 body（预 trim 会让区间越界被丢弃） | P0 | ✅ 已覆盖 | `leadingNewlineBeforeChipKeepsBlock` |
 | 126 | 折叠块 | 发送按钮路径同样保留 chip 区间（**回归**） | 真实链路；正文 `"  " + body + "\n"`，区间 `{start:2, length:body.count}` | 走发送按钮路径 | 区间随 trim 平移后仍精确指向 body，chip 不退化为纯文本 | P0 | ✅ 已覆盖 | `sendButtonKeepsBlockAfterTrim` |
 | 127 | 拖放 | 非空但不可解码的字节不算有效图片 | 只有 PNG 前两字节 / 纯文本 / 空数据 / 真实 1×1 PNG | 调用 `ChatInputEditorRules.isDecodableImageData` | 前三种为 false，真实 PNG 为 true | P1 | ✅ 已覆盖 | `undecodableImageBytesAreRejected` |
@@ -316,6 +325,18 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 162 | i18n | 复制反馈与恢复标题都本地化（**回归 #990**） | xcstrings 中的 `Copied` / `Copy original` | 读取 en / zh-Hans 译文 | 两条均有中英译文，中文分别为「已复制」「复制原文」 | P1 | ✅ 已覆盖 | `copyFeedbackStringsAreLocalized` |
 | 163 | i18n | 缺少 Provider 的诊断弹窗使用本地化文案（**回归 #991**） | 两个缺失 Provider | 以 zh-Hans 解析插值后的诊断文本 | 得到「缺少 Provider：…」，而不是英文拼接 | P0 | ✅ 已覆盖 | `missingProviderDiagnosticIsLocalized` |
 
+### 发送失败草稿保留（回归 #1068）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 164 | 发送 | 同步提交失败保留正文与折叠块 | 回车路径 + `commitUserMessage` 抛错 | `send()` | `errorMessage` 为错误描述；正文与折叠块原样保留，`canSend` 仍为 true | P0 | ✅ 已覆盖 | `sendPreservesDraftOnCommitFailure` |
+| 165 | 发送 | 同步提交返回 nil 时保留草稿 | 能力层返回 `nil` | `send()` | 提交一次，正文原样保留 | P1 | ✅ 已覆盖 | `sendPreservesDraftWhenCommitIsNil` |
+| 166 | 发送 | 按钮路径附件提交失败保留草稿并放回附件 | text + 图片 + 后台提交抛错 | `send()` 后等待错误回填 | 编码窗口内正文仍在且 `canSend == false`；失败后正文、附件恢复，标记复位 | P0 | ✅ 已覆盖 | `backgroundCommitFailureKeepsDraft` |
+| 167 | 发送 | 按钮路径附件提交成功清空正文与折叠块 | text + 折叠块 + 图片 | `send()` 后等待提交结束 | 正文与折叠块清空，提交中标记复位 | P0 | ✅ 已覆盖 | `backgroundCommitSuccessClearsDraft` |
+| 168 | 发送 | 按钮路径编码期间新输入不被成功后清理覆盖 | 挂起后台提交 | `send()` → 改写正文 → 放行提交 | 改写后的新草稿保留，不被清空 | P0 | ✅ 已覆盖 | `backgroundCommitSuccessKeepsEditedDraft` |
+| 169 | 发送 | 回车路径附件提交成功清空正文与折叠块 | text + 折叠块 + 文件附件 | `send()` 后等待提交结束 | `capability.text` 与折叠块清空，ViewModel 文本同步为空 | P0 | ✅ 已覆盖 | `successfulAttachmentCommitClearsDraft` |
+| 170 | 发送 | 回车路径编码期间新输入不被成功后清理覆盖 | 挂起后台提交 | `send()` → `setText` 改写 → 放行提交 | 新草稿在能力层与 ViewModel 中都保留 | P0 | ✅ 已覆盖 | `successfulAttachmentCommitKeepsEditedDraft` |
+
 > **鉴别力验证**：本轮用一处变异确认用例不是「恒绿」——把
 > `Coordinator.textDidChange` 里的两道 IME 守卫
 > （`hasMarkedText()` 与 `isIMEComposing`）移除后，
@@ -328,7 +349,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > 里有一份**代码完全相同**的守卫，全局替换第一处会改错函数，
 > 导致「用例仍然全绿」的假阴性。
 
-> 说明：全部 **163 条场景 / 167 个测试方法**已在 macOS 上实跑通过
+> 说明：全部 **170 条场景 / 176 个测试方法**已在 macOS 上实跑通过
 > （`swift test` → 167 tests in 25 suites；其中 6 条 chip 几何用例在本机
 > Xcode 27.2 SDK 下失败，已在未改动的 HEAD 上复现，属既有环境问题）。
 >
@@ -351,10 +372,10 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 
 ## 覆盖率统计
 
-- P0: 已覆盖 46 / 46
-- P1: 已覆盖 99 / 99
+- P0: 已覆盖 52 / 52
+- P1: 已覆盖 100 / 100
 - P2: 已覆盖 18 / 18
-- **合计: 163 / 163**（仅表示清单场景，非源码覆盖率）
+- **合计: 170 / 170**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
