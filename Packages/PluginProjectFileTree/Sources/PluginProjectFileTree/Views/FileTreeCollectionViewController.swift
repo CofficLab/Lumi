@@ -8,7 +8,7 @@ import SwiftUI
 ///
 /// 使用 NSCollectionView 实现高性能文件树渲染。
 @MainActor
-final class FileTreeCollectionViewController: NSViewController, SuperLog {
+final class FileTreeCollectionViewController: NSViewController, SuperLog, FileTreeGitStatusUpdating {
     nonisolated static let emoji = "📂"
     nonisolated static var verbose: Bool { ProjectFileTreePlugin.verbose }
     nonisolated static let logger = ProjectFileTreePlugin.logger
