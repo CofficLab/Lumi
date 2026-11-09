@@ -72,4 +72,19 @@ struct PanelBottomSuperPluginTests {
 
         try plugin.onShutdown(kernel: kernel)
     }
+
+    @Test("仅激活的底部面板入口接收输入并位于最上层（回归 #1017）")
+    func onlyActivePanelReceivesHitTesting() {
+        // Terminal 的 order 更高，但当前激活的是 Preview：隐藏的 Terminal 不得拦截输入。
+        let preview = PanelBottomItemPresentation(itemID: "editor.preview", activeItemID: "editor.preview")
+        let terminal = PanelBottomItemPresentation(itemID: "terminal.main", activeItemID: "editor.preview")
+
+        #expect(preview.isActive)
+        #expect(preview.opacity == 1)
+        #expect(preview.allowsHitTesting)
+        #expect(!terminal.isActive)
+        #expect(terminal.opacity == 0)
+        #expect(!terminal.allowsHitTesting)
+        #expect(preview.zIndex > terminal.zIndex)
+    }
 }
