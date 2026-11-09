@@ -3,6 +3,7 @@ import KernelCore
 import LumiLoggingKit
 import os
 import ProviderAgentLoop
+import ProviderConversation
 import ProviderMessage
 
 /// 自动恢复可重试 AgentLoop 失败的插件。
@@ -38,14 +39,15 @@ public final class AgentLoopRetryPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self),
-              let messages = kernel.resolveProvider((any MessageManaging).self) else {
-            Self.logger.error("\(Self.t)Required AgentLoopProviding or MessageManaging is unavailable")
+              let messages = kernel.resolveProvider((any MessageManaging).self),
+              let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
+            Self.logger.error("\(Self.t)Required AgentLoopProviding, MessageManaging or ConversationManaging is unavailable")
             return
         }
 
         coordinator?.cancel()
         coordinator = AgentLoopRetryCoordinator(
-            loop: AgentLoopRetryCapabilityAdapter(agentLoop: agentLoop),
+            loop: AgentLoopRetryCapabilityAdapter(agentLoop: agentLoop, conversations: conversations),
             messages: AgentLoopRetryMessageCapabilityAdapter(messages: messages),
             maxAttempts: Self.defaultMaxAttempts
         )

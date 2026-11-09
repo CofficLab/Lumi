@@ -28,6 +28,7 @@ final class AgentLoopRetryCoordinator {
     /// 生产环境默认用 `Task.sleep`；测试注入可观测实现以避免真实等待。
     private let sleeper: @Sendable (TimeInterval) async throws -> Void
     private var observerHandle: (any AgentLoopRetryObserverHandle)?
+    private var deletionObserverHandle: (any AgentLoopRetryObserverHandle)?
     private var states: [UUID: RetryState] = [:]
 
     init(
@@ -45,11 +46,16 @@ final class AgentLoopRetryCoordinator {
         observerHandle = loop.addTurnObserver { [weak self] event in
             self?.handle(event)
         }
+        deletionObserverHandle = loop.addConversationDeletionObserver { [weak self] conversationID in
+            self?.clearState(for: conversationID)
+        }
     }
 
     func cancel() {
         observerHandle?.cancel()
         observerHandle = nil
+        deletionObserverHandle?.cancel()
+        deletionObserverHandle = nil
         states.values.forEach { $0.retryTask?.cancel() }
         states.removeAll()
     }
@@ -198,7 +204,8 @@ final class AgentLoopRetryCoordinator {
               state.attempts == attempt,
               state.failedTurnID == failedTurnID,
               state.retryStartPending,
-              loop.turnState(for: conversationID) == .failed else {
+              loop.turnState(for: conversationID) == .failed,
+              loop.conversationExists(for: conversationID) else {
             return false
         }
         return true
