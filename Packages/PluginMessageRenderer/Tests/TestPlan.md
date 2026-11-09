@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆盖 53 条用例。
+PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆盖 62 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 53
+测试文件: 8 个，用例总数: 62
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -49,6 +49,7 @@ PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆
 - **ToolApprovalMisclaim**（4 条）：由 `askUserSuspensionIsNotClaimedByApprovalRenderer`、`misclaimedToolCallCannotBuildRequest`、`realPermissionRequestIsStillClaimed` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolCallGroupCollapsePolicy**（14 条）：由 `singleCallIsNotCollapsed`、`emptyGroupIsNotCollapsed`、`multipleCompletedCallsAreCollapsed` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolJobSummary**（5 条）：由 `mapsAllStatuses`、`projectsLiveJob`、`terminalJobIsNotStale` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ToolApprovalCancellation**（9 条）：由 `cancelledTurnClearsPendingApproval`、`cancelledTurnRefusesAllow`、`mismatchedSuspensionRefusesExecution` 等用例锁定；改动授权缓存或提交边界时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -107,27 +108,36 @@ PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆
 | 51 | ToolJobSummary | 终态 Job 不再标记为进行中 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `terminalJobIsNotStale` |
 | 52 | ToolJobSummary | 停止中的 Job 仍算进行中 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cancellingJobIsStillInFlight` |
 | 53 | ToolJobSummary | 步骤组摘要覆盖进行中、失败和完成 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `summarizesJobGroup` |
+| 54 | ToolApprovalCancellation | Stop 后底部授权缓存立即失效 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `cancelledTurnClearsPendingApproval` |
+| 55 | ToolApprovalCancellation | 完成与失败同样清理待授权缓存 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `terminalEventsClearPendingApproval` |
+| 56 | ToolApprovalCancellation | 迟到的旧回合终态不会误删新回合授权 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `staleTerminalEventKeepsNewerTurnApproval` |
+| 57 | ToolApprovalCancellation | 停止的回合点击允许不会执行工具 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `cancelledTurnRefusesAllow` |
+| 58 | ToolApprovalCancellation | 已结束或失败的回合同样拒绝执行 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `terminalTurnsRefuseExecution` |
+| 59 | ToolApprovalCancellation | 挂起指向其他工具时旧卡片不得执行 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `mismatchedSuspensionRefusesExecution` |
+| 60 | ToolApprovalCancellation | 挂起匹配时正常执行 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `matchingSuspensionExecutes` |
+| 61 | ToolApprovalCancellation | 应用重启后的 idle 回合仍允许授权 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `idleTurnStillAllowsRestartApproval` |
+| 62 | ToolApprovalCancellation | 未提供 AgentLoop 时保持旧行为 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingAgentLoopKeepsLegacyBehavior` |
 
-> 说明：全部 **53 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **62 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 14 / 14
-- P1: 已覆盖 37 / 37
+- P0: 已覆盖 19 / 19
+- P1: 已覆盖 41 / 41
 - P2: 已覆盖 2 / 2
-- **合计: 53 / 53**（仅表示清单场景，非源码覆盖率）
+- **合计: 62 / 62**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
-- **P1**: 其余功能性用例（37 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
+- **P1**: 其余功能性用例（41 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 53 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 62 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
