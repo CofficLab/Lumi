@@ -221,6 +221,60 @@ extension ResumeDesignerSuite {
         #expect(!FileManager.default.fileExists(atPath: scopedManifestURL(project: projectB, slug: "ghost-resume").path))
     }
 
+    @Test("后台项目的预览失败不污染当前项目错误状态（**回归 #1089**）")
+    func backgroundPreviewFailureDoesNotSetCurrentProjectError() async throws {
+        let projectA = try makeScopedProjectRoot("a")
+        let projectB = try makeScopedProjectRoot("b")
+        defer {
+            try? FileManager.default.removeItem(at: projectA)
+            try? FileManager.default.removeItem(at: projectB)
+        }
+
+        // UI 正在显示项目 B。
+        ResumeDesignerRuntime.reset()
+        let storageB = projectB
+            .appendingPathComponent(".lumi", isDirectory: true)
+            .appendingPathComponent(ResumeDesignerRuntime.projectFolderName, isDirectory: true)
+        ResumeDesignerRuntime.setProjectStorage(projectPath: projectB.path, projectStorageDirectory: storageB)
+        WorkspaceStore.shared.lastError = nil
+
+        // 项目 A 的后台对话预览一个不存在的简历。
+        let tool = ConversationScopedResumeTool(PreviewResumePageTool())
+        let context = conversationScopedContext(projectPath: projectA.path)
+        let result = try await tool.executeResult(
+            context: context,
+            arguments: arguments(["resumeId": "missing-in-a"])
+        )
+
+        // 错误只回给发起调用的对话，项目 B 的界面不受影响。
+        #expect(result.isError)
+        #expect(WorkspaceStore.shared.lastError == nil)
+        #expect(WorkspaceStore.shared.currentProjectPath == projectB.path)
+    }
+
+    @Test("当前项目的预览失败仍会提示错误（**回归 #1089**）")
+    func currentProjectPreviewFailureSurfacesError() async throws {
+        let projectB = try makeScopedProjectRoot("b")
+        defer { try? FileManager.default.removeItem(at: projectB) }
+
+        ResumeDesignerRuntime.reset()
+        let storageB = projectB
+            .appendingPathComponent(".lumi", isDirectory: true)
+            .appendingPathComponent(ResumeDesignerRuntime.projectFolderName, isDirectory: true)
+        ResumeDesignerRuntime.setProjectStorage(projectPath: projectB.path, projectStorageDirectory: storageB)
+        WorkspaceStore.shared.lastError = nil
+
+        let tool = ConversationScopedResumeTool(PreviewResumePageTool())
+        let context = conversationScopedContext(projectPath: projectB.path)
+        let result = try await tool.executeResult(
+            context: context,
+            arguments: arguments(["resumeId": "missing-in-b"])
+        )
+
+        #expect(result.isError)
+        #expect(WorkspaceStore.shared.lastError != nil)
+    }
+
     @Test("插件注册的 Agent 工具都带对话作用域包装")
     func registeredToolsAreConversationScoped() async throws {
         let kernel = KernelCoreContainer()
