@@ -510,6 +510,39 @@ struct ResumeDocumentStoreTests {
         }
     }
 
+    @Test("创建校验失败回收半成品目录，修正后同 slug 可重试（**回归 #1088**）")
+    func failedCreateRollsBackAndRetrySucceeds() throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = ResumeDocumentStore()
+
+        // 远程资源标题会让生成后的 lint 校验失败；目录此前已创建。
+        #expect(throws: ResumeStoreError.self) {
+            _ = try store.createResume(
+                storagePath: root.path,
+                slug: "alice",
+                title: "http://a",
+                paper: .a4,
+                template: .classic
+            )
+        }
+
+        let directory = root.appendingPathComponent("resumes/alice", isDirectory: true)
+        #expect(!FileManager.default.fileExists(atPath: directory.path))
+        #expect(try store.listResumes(storagePath: root.path).isEmpty)
+
+        // 修正输入后，同一 slug 不应再被残留目录阻塞。
+        let created = try store.createResume(
+            storagePath: root.path,
+            slug: "alice",
+            title: "Alice",
+            paper: .a4,
+            template: .classic
+        )
+        #expect(created.document.id == "alice")
+        #expect(try store.listResumes(storagePath: root.path).map(\.id) == ["alice"])
+    }
+
     @Test("ResumeStoreError 的错误描述覆盖全部 case")
     func storeErrorDescriptions() {
         #expect(
