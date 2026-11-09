@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 28 条用例。
+PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 30 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 28
+测试文件: 11 个，用例总数: 30
 
 核心组件（源码目录）:
 - `Models/`
@@ -49,6 +49,7 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 - **FileTreeNodeItem**（3 条）：由 `samePathFileAndDirectoryHaveDistinctIdentity`、`swiftPackageMetadataChangesIdentity`、`reloadedNodeIdentityFollowsFileTypeSwap` 锁定。diffable 相等性必须包含 `isDirectory` 与图标元数据，同一路径的文件被替换成同名目录（或反向替换）时必须产出不相等的新节点，否则 cell 会继续显示旧文件类型（**回归 #1104**）。
 - **FileTreeFacade（VS Code）**（5 条）：由 `nonZeroCodeStatusFallsBackToApplication`、`unlaunchableCommandFallsBackToApplication`、`successfulCodeCommandSkipsApplicationFallback`、`applicationFallbackFailureReportsFailure`、`missingCommandExitStatusIsObserved` 锁定。`/usr/bin/env code` 能启动不代表 `code` 存在，必须检查实际退出状态；非零退出或无法启动时回退到 VS Code 应用 URL，并向上报告最终失败（**回归 #1105**）。
 - **GitStatusProvider（porcelain 解析）**（3 条）：由 `arrowInRegularFileNameIsPreserved`、`stagedRenameUsesDestinationPath`、`worktreeRenameUsesDestinationPath` 锁定。只有 XY 为 `R`/`C` 时 `old -> new` 才是 Git 的分隔符；普通 `??`、` M` 条目里的 ` -> ` 属于文件名，必须完整保留，否则快照键失真、文件和父目录都查不到状态（**回归 #1106**）。
+- **GitStatusProvider（冲突状态）**（2 条）：由 `addAddAndDeleteDeleteAreConflicted`、`unmergedCodesAreRecognized` 锁定。未合并状态码包含 `DD`/`AU`/`UD`/`UA`/`DU`/`AA`/`UU`，不能只判断 `U`，否则 add/add 与 delete/delete 冲突会显示为普通新增/删除（**回归 #1107**）。
 
 ## 测试用例清单
 
@@ -82,27 +83,29 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 | 26 | GitStatusProvider | 普通文件名中的箭头不会被当作重命名（**回归 #1106**） | porcelain 含 `?? Sources/a -> b.swift` 与 ` M Sources/c -> d.swift` | 解析 unstaged 条目 | 路径完整保留，状态分别为 `?` 与 `M` | P0 | ✅ 已覆盖 | `arrowInRegularFileNameIsPreserved` |
 | 27 | GitStatusProvider | 暂存区重命名仍取箭头后的新路径 | porcelain 为 `R  old.swift -> new.swift` | 解析 staged 条目 | 路径为 `new.swift`，状态为 `R` | P1 | ✅ 已覆盖 | `stagedRenameUsesDestinationPath` |
 | 28 | GitStatusProvider | 工作区重命名同样取箭头后的新路径 | porcelain 为 ` R old.swift -> new.swift` | 解析 unstaged 条目 | 路径为 `new.swift`，状态为 `R` | P1 | ✅ 已覆盖 | `worktreeRenameUsesDestinationPath` |
+| 29 | GitStatusProvider | add/add 与 delete/delete 冲突按 conflicted 处理（**回归 #1107**） | porcelain 含 `AA`、`DD`、`UU` 三条冲突 | 解析 staged 与 unstaged 条目 | staged 三条均为 `C`，unstaged 为空，`C` 映射为 `.conflicted` | P0 | ✅ 已覆盖 | `addAddAndDeleteDeleteAreConflicted` |
+| 30 | GitStatusProvider | 全部未合并状态码都被识别，普通状态不会被误判 | — | 遍历 7 个未合并码与 7 个普通码 | 未合并码全部为真，普通码全部为假 | P1 | ✅ 已覆盖 | `unmergedCodesAreRecognized` |
 
-> 说明：全部 **28 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **30 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 14 / 14
-- P1: 已覆盖 10 / 10
+- P0: 已覆盖 15 / 15
+- P1: 已覆盖 11 / 11
 - P2: 已覆盖 4 / 4
-- **合计: 28 / 28**（仅表示清单场景，非源码覆盖率）
+- **合计: 30 / 30**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
-- **P1**: 其余功能性用例（10 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
+- **P1**: 其余功能性用例（11 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 28 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 30 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

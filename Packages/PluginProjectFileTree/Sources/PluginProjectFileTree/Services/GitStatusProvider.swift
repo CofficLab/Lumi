@@ -312,8 +312,8 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
             let chars = Array(line)
             let x = chars[0]
             let y = chars[1]
-            // 冲突：X 或 Y 为 U，视为 conflicted（优先）
-            if x == "U" || y == "U" {
+            // 未合并状态优先；AA/DD 不含 U，同样属于冲突（回归 #1107）。
+            if isUnmerged(x: x, y: y) {
                 return GitDiffFile(file: pathComponent(of: line, x: x, y: y), changeType: "C")
             }
             guard x != " " && x != "?" else { return nil }
@@ -334,9 +334,22 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
                 return GitDiffFile(file: pathComponent(of: line, x: x, y: y), changeType: "?")
             }
             // 冲突已在 staged 中处理；此处跳过
-            if x == "U" || y == "U" { return nil }
+            if isUnmerged(x: x, y: y) { return nil }
             guard y != " " else { return nil }
             return GitDiffFile(file: pathComponent(of: line, x: x, y: y), changeType: String(y))
+        }
+    }
+
+    /// porcelain v1 的未合并（冲突）状态码。
+    ///
+    /// 不能只检查 `U`：`AA`（add/add）与 `DD`（delete/delete）同样是冲突，
+    /// 否则会被当成普通 Added/Deleted 展示（回归 #1107）。
+    static func isUnmerged(x: Character, y: Character) -> Bool {
+        switch (x, y) {
+        case ("D", "D"), ("A", "U"), ("U", "D"), ("U", "A"), ("D", "U"), ("A", "A"), ("U", "U"):
+            return true
+        default:
+            return false
         }
     }
 
