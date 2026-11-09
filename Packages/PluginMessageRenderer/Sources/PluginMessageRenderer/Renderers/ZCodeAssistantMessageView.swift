@@ -32,6 +32,9 @@ enum ZCodeAssistantTextStyle {
     /// strong 字重。
     static let strongWeight: CGFloat = 500
 
+    /// 连续 reasoning / tool 等工作项之间的间距。
+    static let workItemSpacing: CGFloat = 16
+
     /// 实际行距（额外间距）。
     ///
     /// - Important: SwiftUI 的 `.lineSpacing` 是「额外间距」，
@@ -142,6 +145,15 @@ struct ZCodeAssistantMessageView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            if let reasoning, ZCodeReasoningStyle.shouldRender(text: reasoning, isStreaming: isRunning) {
+                ZCodeReasoningView(
+                    text: reasoning,
+                    isStreaming: isRunning,
+                    durationMilliseconds: message.streamingDurationMs.map { Int($0) }
+                )
+                .padding(.bottom, ZCodeAssistantTextStyle.workItemSpacing)
+            }
+
             if hasVisibleContent {
                 MarkdownBlockRenderer(
                     markdown: message.content,
@@ -154,9 +166,48 @@ struct ZCodeAssistantMessageView: View {
                 .lineSpacing(ZCodeAssistantTextStyle.lineSpacing)
             }
 
+            if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
+                Group {
+                    if ZCodeToolWorkHistoryStyle.shouldGroup(tools: toolCalls) {
+                        // 两个及以上连续 Explore/Execute 才形成父分组。
+                        ZCodeToolWorkHistoryView(
+                            capability: capability,
+                            stateViewModel: stateViewModel,
+                            message: message,
+                            verbosity: verbosity,
+                            toolCalls: toolCalls
+                        )
+                    } else {
+                        // 单工具或非分组家族：保持独立工具行。
+                        ToolCallRowsView(
+                            capability: capability,
+                            stateViewModel: stateViewModel,
+                            message: message,
+                            verbosity: verbosity,
+                            allowsCustomToolRenderers: true,
+                            originalVerbosity: verbosity
+                        )
+                    }
+                }
+                .padding(.top, hasVisibleContent ? ZCodeAssistantTextStyle.workItemSpacing : 0)
+            }
+
             actionBar
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// reasoning 正文。
+    private var reasoning: String? {
+        guard let content = message.reasoningContent,
+              !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else { return nil }
+        return content
+    }
+
+    /// 本轮是否仍在运行中。
+    private var isRunning: Bool {
+        turnContext?.isRunning ?? false
     }
 
     // MARK: - 轮尾操作栏
