@@ -151,7 +151,7 @@ struct PluginGitHubIssueTests {
         guard ProcessInfo.processInfo.environment["GITHUB_ISSUE_TEST_REQUIRE_GH"] == "1" else {
             return
         }
-        let path = GitHubCLI.locate()
+        let path = await GitHubCLI.locate()
         #expect(path != nil)
     }
 }
