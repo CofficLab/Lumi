@@ -200,11 +200,30 @@ public struct MarkdownTheme: Sendable {
     /// - Note: 正文 `bodyLineSpacing` 由目标行高 24.5 减去字体自身行高得到；
     ///   SwiftUI 的 `.lineSpacing` 是「额外间距」，不能直接传 24.5。
     ///
-    /// - Important: 刻意**不**做成 `static let`：`bodyLineSpacing` 需要读取
-    ///   `NSFont` 的度量，而静态初始化可能发生在非主线程的测试宿主里，
-    ///   AppKit 字体访问在那里并不安全。改为惰性求值后，字体度量只在
-    ///   真正首次访问时发生。
+    /// - Important: 刻意**不**做成 `static let`：静态初始化可能发生在
+    ///   非主线程的测试宿主里，`NSFont` 的度量访问在那里并不安全。
+    ///   改为惰性求值后，字体度量只在真正首次访问时发生。
+    ///
+    ///   但惰性求值每次都会重算，若 `NSFont` 的行高在进程生命周期内有
+    ///   极小波动，就会让「同一主题的两个实例」出现不同的 `bodyLineSpacing`。
+    ///   因此这里**缓存**第一次算出的结果，保证同一进程内取值恒定。
     public static var zcode: MarkdownTheme {
+        if let cached = cachedZCode {
+            return cached
+        }
+        let theme = makeZCodeTheme()
+        cachedZCode = theme
+        return theme
+    }
+
+    /// 缓存的 V4 主题；nil 表示尚未计算。
+    ///
+    /// - Note: 用 `nonisolated(unsafe)` 是因为这里只做一次性的惰性写入，
+    ///   值本身是不可变的；写入发生在首次访问 `zcode` 时。
+    private nonisolated(unsafe) static var cachedZCode: MarkdownTheme?
+
+    /// 构造 V4 主题。
+    private static func makeZCodeTheme() -> MarkdownTheme {
         MarkdownTheme(
             headingFont: { level in
                 switch level {
