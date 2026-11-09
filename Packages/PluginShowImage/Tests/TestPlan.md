@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginShowImage 的实现包，包含 3 个主要类型；当前测试覆盖 9 条用例。
+PluginShowImage 的实现包，包含 3 个主要类型；当前测试覆盖 11 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 9
+测试文件: 1 个，用例总数: 11
 
 ## 公开 API
 
@@ -35,26 +35,29 @@ PluginShowImage 的实现包，包含 3 个主要类型；当前测试覆盖 9 �
 | 8 | ShowImageTool | 拒绝缺少 host 的 HTTP(S) 远程地址（**回归 #1066**） | — | 归一化 `https:image.png`、`http:///image.png`、`https://user@:443/image.png` | 抛出 `missingRemoteHost`，不产生 `.remote` 来源 | P0 | ✅ 已覆盖 | `imageSourceRejectsRemoteURLWithoutHost` |
 | 9 | ShowImageTool | 无 host 的远程地址不发布展示状态、不报告成功（**回归 #1066**） | `ShowImageState` 已清空 | 调用 `executeResult(source: https:image.png)` | 抛出 `missingRemoteHost`，`displayItem` 仍为 `nil` | P0 | ✅ 已覆盖 | `rejectsRemoteURLWithoutHostWithoutPublishing` |
 
-> 说明：全部 **9 条场景**已在本包 `swift test` 中实跑通过。
+| 10 | ShowImageTool | 保留 file URL 的 authority，拒绝非本地 host（**回归 #1094**） | — | 归一化 `file://server/...`、`file://files.corp.internal/...` | 抛出 `nonLocalFileHost`，不产生 `.local` 来源；空 authority 与 `localhost` 仍按本机文件处理 | P0 | ✅ 已覆盖 | `imageSourceRejectsNonLocalFileURLHost` |
+| 11 | ShowImageTool | 非本地 file URL 不读取同名本机文件、不发布展示状态（**回归 #1094**） | 本机同路径存在有效图片 | 调用 `executeResult(source: file://server<path>)` | 抛出 `nonLocalFileHost`，`displayItem` 仍为 `nil` | P0 | ✅ 已覆盖 | `rejectsNonLocalFileURLWithoutPublishing` |
+
+> 说明：全部 **11 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
+- P0: 已覆盖 8 / 8
 - P1: 已覆盖 2 / 2
 - P2: 已覆盖 1 / 1
-- **合计: 9 / 9**（仅表示清单场景，非源码覆盖率）
+- **合计: 11 / 11**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
 - **P1**: 其余功能性用例（2 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 6 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 11 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
