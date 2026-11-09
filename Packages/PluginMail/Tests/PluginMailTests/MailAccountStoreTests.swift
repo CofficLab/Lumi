@@ -352,6 +352,33 @@ final class MailAccountDraftTests: XCTestCase {
         XCTAssertEqual(config.smtpPort, 65_535)
     }
 
+    func testNewAccountDraftStartsWithGmailPresetHosts() {
+        let draft = MailAccountDraft.forNewAccount()
+
+        XCTAssertEqual(draft.provider, .gmail)
+        XCTAssertEqual(draft.imapHost, "imap.gmail.com")
+        XCTAssertEqual(draft.smtpHost, "smtp.gmail.com")
+        XCTAssertEqual(draft.imapPort, 993)
+        XCTAssertEqual(draft.smtpPort, 465)
+        XCTAssertTrue(draft.useTLS)
+    }
+
+    func testNewAccountDraftAppliesRequestedPreset() {
+        let draft = MailAccountDraft.forNewAccount(provider: .outlook)
+
+        XCTAssertEqual(draft.imapHost, "outlook.office365.com")
+        XCTAssertEqual(draft.smtpHost, "smtp.office365.com")
+        XCTAssertEqual(draft.imapPort, 993)
+        XCTAssertEqual(draft.smtpPort, 587)
+    }
+
+    func testNewAccountDraftLeavesCustomHostsEmpty() {
+        let draft = MailAccountDraft.forNewAccount(provider: .custom)
+
+        XCTAssertTrue(draft.imapHost.isEmpty)
+        XCTAssertTrue(draft.smtpHost.isEmpty)
+    }
+
     func testApplyPresetKeepsCustomHosts() {
         var draft = MailAccountDraft(provider: .custom)
         draft.imapHost = "mail.mycompany.com"

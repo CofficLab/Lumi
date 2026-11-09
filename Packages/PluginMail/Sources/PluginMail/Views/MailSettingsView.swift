@@ -132,7 +132,7 @@ public struct MailSettingsView: View {
 
     private func beginAdding() {
         editingAccountID = nil
-        editingDraft = MailAccountDraft()
+        editingDraft = MailAccountDraft.forNewAccount()
     }
 
     private func beginEditing(_ account: MailAccountConfig) {

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 72 条用例。
+PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 77 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 72
+测试文件: 8 个，用例总数: 77
 
 核心组件（源码目录）:
 - `Agent/`
@@ -124,21 +124,24 @@ PluginMail 的实现包，包含 15 个主要类型；当前测试覆盖 72 条�
 | 72 | MailHTMLContent | 本地与无 URL 导航始终放行 | `allowsRemoteContent = false` | 以 nil 与 about:blank 求值 | 均为 allow | P2 | ✅ 已覆盖 | `testLocalNavigationAlwaysAllowed` |
 | 73 | MailWorkspace | 旧邮件正文晚到时不能覆盖后来点开的邮件 | INBOX 两封邮件，uid=1 的 fetchBody 延迟 300ms | 先点 uid=1，50ms 后点 uid=2，等旧任务结束 | `selectedDetail` 与 `selectedMessage` 都停留在 uid=2 | P0 | ✅ 已覆盖 | `testStaleBodyDoesNotOverrideNewerSelection` |
 | 74 | MailWorkspace | 旧文件夹同步晚到不能覆盖新文件夹列表，且不能关闭新同步的转圈 | INBOX 同步延迟 300ms、Archive 延迟 900ms | 在 INBOX 同步中切到 Archive，旧同步结束后检查 | 列表为 Archive 邮件；旧同步结束时 `isSyncing` 仍为真，全部结束后为假 | P0 | ✅ 已覆盖 | `testStaleFolderSyncKeepsNewerFolderAndSpinner` |
+| 75 | MailAccountDraft | 新建草稿默认 Gmail 时立即填入预设主机与端口（**回归 #1074**） | — | 调用 `MailAccountDraft.forNewAccount()` | `imap.gmail.com` / `smtp.gmail.com`，端口 993/465，启用 TLS | P1 | ✅ 已覆盖 | `testNewAccountDraftStartsWithGmailPresetHosts` |
+| 76 | MailAccountDraft | 新建草稿按指定服务商应用预设 | — | 调用 `forNewAccount(provider: .outlook)` | Outlook 主机与 587 端口被填入 | P1 | ✅ 已覆盖 | `testNewAccountDraftAppliesRequestedPreset` |
+| 77 | MailAccountDraft | 自定义服务商新建草稿保留空主机 | — | 调用 `forNewAccount(provider: .custom)` | IMAP/SMTP 主机为空，等待用户填写 | P1 | ✅ 已覆盖 | `testNewAccountDraftLeavesCustomHostsEmpty` |
 
-> 说明：全部 **72 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **77 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 11 / 11
-- P1: 已覆盖 59 / 59
+- P1: 已覆盖 62 / 62
 - P2: 已覆盖 4 / 4
-- **合计: 72 / 72**（仅表示清单场景，非源码覆盖率）
+- **合计: 77 / 77**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
-- **P1**: 其余功能性用例（59 条）
+- **P1**: 其余功能性用例（62 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
