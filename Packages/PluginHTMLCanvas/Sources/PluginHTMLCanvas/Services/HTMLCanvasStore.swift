@@ -56,6 +56,7 @@ enum HTMLCanvasStore {
         guard !html.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw StoreError.missingHTML
         }
+        try Task.checkCancellation()
 
         try FileManager.default.createDirectory(
             at: directory,
@@ -66,11 +67,21 @@ enum HTMLCanvasStore {
         let htmlURL = directory.appendingPathComponent("\(identifier).html", isDirectory: false)
         let snapshotURL = directory.appendingPathComponent("\(identifier).png", isDirectory: false)
 
+        // 取消或写入失败时清掉半成品，避免留下没有卡片引用的孤儿文件。
+        var committed = false
+        defer {
+            if !committed {
+                try? FileManager.default.removeItem(at: htmlURL)
+                try? FileManager.default.removeItem(at: snapshotURL)
+            }
+        }
+
         do {
             try html.write(to: htmlURL, atomically: true, encoding: .utf8)
         } catch {
             throw StoreError.writeFailed(error.localizedDescription)
         }
+        try Task.checkCancellation()
 
         // 快照渲染失败不阻断整条链路：载荷里 snapshotPath 留空，
         // 渲染器会回退到直接加载 HTML 文件。
@@ -80,12 +91,16 @@ enum HTMLCanvasStore {
             fileURL: htmlURL,
             size: CGSize(width: width, height: height)
         ) {
+            // 渲染期间可能已被取消：不要再写出图片。
+            try Task.checkCancellation()
             try? data.write(to: snapshotURL, options: .atomic)
             if FileManager.default.fileExists(atPath: snapshotURL.path) {
                 snapshotPath = snapshotURL.path
             }
         }
+        try Task.checkCancellation()
 
+        committed = true
         return HTMLCanvasPayload(
             title: title,
             htmlPath: htmlURL.path,
