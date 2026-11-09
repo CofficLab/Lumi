@@ -6,7 +6,7 @@ import os
 // MARK: - Models
 
 /// Git 单条 diff 文件信息（替代旧版 LibGit2Swift 的 `GitDiffFile`）。
-private struct GitDiffFile {
+struct GitDiffFile {
     /// 相对仓库根目录的文件路径。
     var file: String
     /// 变更类型：M/A/D/R/?/C。
@@ -306,7 +306,7 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
     }
 
     /// 从 porcelain 输出提取 staged（索引区）变更文件列表。
-    private static func stagedFiles(from porcelain: String) -> [GitDiffFile] {
+    static func stagedFiles(from porcelain: String) -> [GitDiffFile] {
         porcelain.components(separatedBy: "\n").compactMap { line in
             guard line.count >= 2 else { return nil }
             let chars = Array(line)
@@ -314,16 +314,16 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
             let y = chars[1]
             // 冲突：X 或 Y 为 U，视为 conflicted（优先）
             if x == "U" || y == "U" {
-                return GitDiffFile(file: pathComponent(of: line), changeType: "C")
+                return GitDiffFile(file: pathComponent(of: line, x: x, y: y), changeType: "C")
             }
             guard x != " " && x != "?" else { return nil }
             let changeType = String(x)
-            return GitDiffFile(file: pathComponent(of: line), changeType: changeType)
+            return GitDiffFile(file: pathComponent(of: line, x: x, y: y), changeType: changeType)
         }
     }
 
     /// 从 porcelain 输出提取 unstaged（工作区）变更文件列表（含 untracked "??"）。
-    private static func unstagedFiles(from porcelain: String) -> [GitDiffFile] {
+    static func unstagedFiles(from porcelain: String) -> [GitDiffFile] {
         porcelain.components(separatedBy: "\n").compactMap { line in
             guard line.count >= 2 else { return nil }
             let chars = Array(line)
@@ -331,21 +331,25 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
             let y = chars[1]
             // untracked：`?? path`
             if x == "?" && y == "?" {
-                return GitDiffFile(file: pathComponent(of: line), changeType: "?")
+                return GitDiffFile(file: pathComponent(of: line, x: x, y: y), changeType: "?")
             }
             // 冲突已在 staged 中处理；此处跳过
             if x == "U" || y == "U" { return nil }
             guard y != " " else { return nil }
-            return GitDiffFile(file: pathComponent(of: line), changeType: String(y))
+            return GitDiffFile(file: pathComponent(of: line, x: x, y: y), changeType: String(y))
         }
     }
 
-    /// 提取 porcelain 行的路径字段（兼容 rename 的 `old -> new`，取最终路径）。
-    private static func pathComponent(of line: String) -> String {
+    /// 提取 porcelain 行的路径字段。
+    ///
+    /// 只有 XY 指示 rename/copy 时，`old -> new` 中的箭头才是 Git 的分隔符；
+    /// 普通条目（如 `?? Sources/a -> b.swift`）里的 ` -> ` 属于文件名本身，
+    /// 无条件截断会让快照键变成 `b.swift`，文件和父目录都查不到状态（回归 #1106）。
+    private static func pathComponent(of line: String, x: Character, y: Character) -> String {
         // 跳过前两个状态字符和分隔空格。
         let raw = line.dropFirst(3)
-        // rename 格式：`R  old -> new`，取箭头后的新路径。
-        if let arrowRange = raw.range(of: " -> ") {
+        let isRenameOrCopy = x == "R" || x == "C" || y == "R" || y == "C"
+        if isRenameOrCopy, let arrowRange = raw.range(of: " -> ") {
             return String(raw[arrowRange.upperBound...])
         }
         return String(raw)

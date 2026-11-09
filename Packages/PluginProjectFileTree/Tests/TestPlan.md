@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 25 条用例。
+PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 28 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，用例总数: 25
+测试文件: 11 个，用例总数: 28
 
 核心组件（源码目录）:
 - `Models/`
@@ -48,6 +48,7 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 - **FileTreeCollectionViewController（反选）**（2 条）：由 `commandDeselectRemovesPathFromSelection`、`deselectCallbackKeepsRowStillSelectedNatively` 锁定。Cmd 点击已选项必须实现 `didDeselectItemsAt` 并移除自定义路径，否则发送目标仍包含已取消文件；回调中仍在原生选中集合内的行不得移除（**回归 #1102**）。
 - **FileTreeNodeItem**（3 条）：由 `samePathFileAndDirectoryHaveDistinctIdentity`、`swiftPackageMetadataChangesIdentity`、`reloadedNodeIdentityFollowsFileTypeSwap` 锁定。diffable 相等性必须包含 `isDirectory` 与图标元数据，同一路径的文件被替换成同名目录（或反向替换）时必须产出不相等的新节点，否则 cell 会继续显示旧文件类型（**回归 #1104**）。
 - **FileTreeFacade（VS Code）**（5 条）：由 `nonZeroCodeStatusFallsBackToApplication`、`unlaunchableCommandFallsBackToApplication`、`successfulCodeCommandSkipsApplicationFallback`、`applicationFallbackFailureReportsFailure`、`missingCommandExitStatusIsObserved` 锁定。`/usr/bin/env code` 能启动不代表 `code` 存在，必须检查实际退出状态；非零退出或无法启动时回退到 VS Code 应用 URL，并向上报告最终失败（**回归 #1105**）。
+- **GitStatusProvider（porcelain 解析）**（3 条）：由 `arrowInRegularFileNameIsPreserved`、`stagedRenameUsesDestinationPath`、`worktreeRenameUsesDestinationPath` 锁定。只有 XY 为 `R`/`C` 时 `old -> new` 才是 Git 的分隔符；普通 `??`、` M` 条目里的 ` -> ` 属于文件名，必须完整保留，否则快照键失真、文件和父目录都查不到状态（**回归 #1106**）。
 
 ## 测试用例清单
 
@@ -78,27 +79,30 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 | 23 | FileTreeFacade | `code` 命令成功退出时不会触发应用回退 | 命令退出状态为 0 | 解析打开结果 | 返回成功且未调用应用回退 | P2 | ✅ 已覆盖 | `successfulCodeCommandSkipsApplicationFallback` |
 | 24 | FileTreeFacade | 应用回退仍失败时报告打开失败（**回归 #1105**） | 命令退出状态为 127，应用回退返回 false | 解析打开结果 | 最终结果为失败 | P0 | ✅ 已覆盖 | `applicationFallbackFailureReportsFailure` |
 | 25 | FileTreeFacade | 命令缺失时外部进程退出状态非零（**回归 #1105**） | 使用 `/usr/bin/env` 运行不存在的命令 | 执行并等待退出 | 退出状态非 nil 且非 0 | P0 | ✅ 已覆盖 | `missingCommandExitStatusIsObserved` |
+| 26 | GitStatusProvider | 普通文件名中的箭头不会被当作重命名（**回归 #1106**） | porcelain 含 `?? Sources/a -> b.swift` 与 ` M Sources/c -> d.swift` | 解析 unstaged 条目 | 路径完整保留，状态分别为 `?` 与 `M` | P0 | ✅ 已覆盖 | `arrowInRegularFileNameIsPreserved` |
+| 27 | GitStatusProvider | 暂存区重命名仍取箭头后的新路径 | porcelain 为 `R  old.swift -> new.swift` | 解析 staged 条目 | 路径为 `new.swift`，状态为 `R` | P1 | ✅ 已覆盖 | `stagedRenameUsesDestinationPath` |
+| 28 | GitStatusProvider | 工作区重命名同样取箭头后的新路径 | porcelain 为 ` R old.swift -> new.swift` | 解析 unstaged 条目 | 路径为 `new.swift`，状态为 `R` | P1 | ✅ 已覆盖 | `worktreeRenameUsesDestinationPath` |
 
-> 说明：全部 **25 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **28 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 13 / 13
-- P1: 已覆盖 8 / 8
+- P0: 已覆盖 14 / 14
+- P1: 已覆盖 10 / 10
 - P2: 已覆盖 4 / 4
-- **合计: 25 / 25**（仅表示清单场景，非源码覆盖率）
+- **合计: 28 / 28**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
-- **P1**: 其余功能性用例（8 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
+- **P1**: 其余功能性用例（10 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 25 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 28 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
