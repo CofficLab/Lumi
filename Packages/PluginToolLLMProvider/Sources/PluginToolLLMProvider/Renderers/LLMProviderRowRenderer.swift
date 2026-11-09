@@ -1,5 +1,6 @@
 import Foundation
 import KitAgentTool
+import ProviderConversation
 import ProviderLLMManager
 import ProviderMessageRendering
 import SwiftUI
@@ -21,14 +22,17 @@ public struct LLMProviderRowRenderer: ToolCallRowRenderer {
 
     private let store: UserDefinedCloudProviderStore?
     private let manager: (any LLMManaging)?
+    private let conversations: (any ConversationManaging)?
 
     /// 依赖能力来自共享 Provider 层，故初始化器保持 internal。
     init(
         store: UserDefinedCloudProviderStore? = nil,
-        manager: (any LLMManaging)? = nil
+        manager: (any LLMManaging)? = nil,
+        conversations: (any ConversationManaging)? = nil
     ) {
         self.store = store
         self.manager = manager
+        self.conversations = conversations
     }
 
     public func canRender(toolCall: ToolCall) -> Bool {
@@ -56,7 +60,9 @@ public struct LLMProviderRowRenderer: ToolCallRowRenderer {
             LLMProviderProposalCard(
                 proposal: proposal,
                 store: store,
-                manager: manager
+                manager: manager,
+                conversationID: message.conversationId,
+                conversationSelection: conversations.map(ConversationModelSelectionAdapter.init)
             )
         )
     }
