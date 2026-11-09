@@ -41,7 +41,13 @@ struct ListView: View {
         if viewModel.isLoading {
             ListLoadingView()
         } else if viewModel.conversations.isEmpty {
-            ListEmptyView()
+            if viewModel.hasLoadError {
+                ListErrorView(onRetry: {
+                    Task { await viewModel.reload() }
+                })
+            } else {
+                ListEmptyView()
+            }
         } else {
             ScrollView {
                 LazyVStack(spacing: 4) {

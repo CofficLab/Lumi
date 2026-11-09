@@ -34,6 +34,11 @@ final class ConversationListViewModel: ObservableObject {
     /// 用于标题栏右侧的条数徽标：与列表内容口径一致——
     /// 「所有项目」统计全库顶层对话，「当前项目」统计该项目的顶层对话。
     @Published private(set) var conversationCount = 0
+    /// 最近一次分页读取是否失败。
+    ///
+    /// 与「列表为空」区分开：读取失败时列表保留上一份成功快照（或保持空），
+    /// 由该标记驱动错误/重试界面，避免把瞬态存储故障显示成空库。
+    @Published private(set) var hasLoadError = false
 
     let scope: Scope
 
@@ -155,7 +160,8 @@ final class ConversationListViewModel: ObservableObject {
     // MARK: - 数据加载
 
     func loadInitialIfNeeded() async {
-        if conversations.isEmpty, isLoading {
+        // 失败后允许视图重新出现时再次尝试；成功加载出的空库不再重复查询。
+        if conversations.isEmpty, isLoading || hasLoadError {
             await reload()
         }
     }
@@ -168,23 +174,30 @@ final class ConversationListViewModel: ObservableObject {
 
         let path = effectiveProjectPath
         let expectedCount = conversations.count
-        let page = await fetchPage(
-            path: path,
-            beforeUpdatedAt: paginationCursor?.lastMessageAt,
-            beforeID: paginationCursor?.id
-        )
-
-        // 翻页期间切了项目或列表被刷新，旧页不能追加到新列表上。
-        guard effectiveProjectPath == path, conversations.count == expectedCount else { return }
-
-        conversations.append(contentsOf: page)
-        if let last = page.last {
-            paginationCursor = ConversationPageCursor(
-                lastMessageAt: last.lastMessageAt,
-                id: last.id
+        do {
+            let page = try await fetchPage(
+                path: path,
+                beforeUpdatedAt: paginationCursor?.lastMessageAt,
+                beforeID: paginationCursor?.id
             )
+
+            // 翻页期间切了项目或列表被刷新，旧页不能追加到新列表上。
+            guard effectiveProjectPath == path, conversations.count == expectedCount else { return }
+
+            hasLoadError = false
+            conversations.append(contentsOf: page)
+            if let last = page.last {
+                paginationCursor = ConversationPageCursor(
+                    lastMessageAt: last.lastMessageAt,
+                    id: last.id
+                )
+            }
+            hasMore = page.count == Self.pageSize
+        } catch {
+            // 失败不改游标与 hasMore：再次滚动到列表底部时会重试，而不是永久失去分页能力。
+            guard effectiveProjectPath == path, conversations.count == expectedCount else { return }
+            hasLoadError = true
         }
-        hasMore = page.count == Self.pageSize
     }
 
     func reload() async {
@@ -219,22 +232,32 @@ final class ConversationListViewModel: ObservableObject {
         var cursor: ConversationPageCursor?
 
         // 获取至少当前已经展示的数量，避免刷新后丢掉用户已经加载的分页。
-        while snapshot.count < targetCount {
-            let page = await fetchPage(
-                path: path,
-                beforeUpdatedAt: cursor?.lastMessageAt,
-                beforeID: cursor?.id
-            )
-            guard !page.isEmpty else { break }
+        do {
+            while snapshot.count < targetCount {
+                let page = try await fetchPage(
+                    path: path,
+                    beforeUpdatedAt: cursor?.lastMessageAt,
+                    beforeID: cursor?.id
+                )
+                guard !page.isEmpty else { break }
 
-            snapshot.append(contentsOf: page)
-            guard page.count == Self.pageSize else { break }
-            guard let last = page.last else { break }
-            cursor = ConversationPageCursor(lastMessageAt: last.lastMessageAt, id: last.id)
+                snapshot.append(contentsOf: page)
+                guard page.count == Self.pageSize else { break }
+                guard let last = page.last else { break }
+                cursor = ConversationPageCursor(lastMessageAt: last.lastMessageAt, id: last.id)
+            }
+        } catch {
+            // 加载期间切了项目：旧项目的失败同样不能写到新项目上。
+            guard effectiveProjectPath == path else { return }
+            // 保留已有列表、游标与 hasMore，只暴露错误状态；瞬态读取失败
+            // 不能把已知良好的会话显示成空库。
+            hasLoadError = true
+            return
         }
 
         // 加载期间切了项目：整份快照都属于旧项目，直接丢弃。
         guard effectiveProjectPath == path else { return }
+        hasLoadError = false
 
         // 没有实际变化时不触发 SwiftUI 列表替换。
         if snapshot != conversations {
@@ -282,9 +305,9 @@ final class ConversationListViewModel: ObservableObject {
         path: String?,
         beforeUpdatedAt: Date?,
         beforeID: UUID?
-    ) async -> [ConversationSummary] {
+    ) async throws -> [ConversationSummary] {
         if let path {
-            return await context.conversations.fetchConversationPage(
+            return try await context.conversations.loadConversationPage(
                 limit: Self.pageSize,
                 beforeUpdatedAt: beforeUpdatedAt,
                 beforeID: beforeID,
@@ -292,10 +315,11 @@ final class ConversationListViewModel: ObservableObject {
                 projectPath: path
             )
         }
-        return await context.conversations.fetchConversationPage(
+        return try await context.conversations.loadConversationPage(
             limit: Self.pageSize,
             beforeUpdatedAt: beforeUpdatedAt,
-            beforeID: beforeID
+            beforeID: beforeID,
+            includingChildConversations: false
         )
     }
 

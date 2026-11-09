@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 56 条用例。
+PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 58 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 56
+测试文件: 13 个，用例总数: 58
 
 核心组件（源码目录）:
 - `Helpers/`
@@ -44,7 +44,7 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 - **ConversationListContext**（3 条）：由 `contextPublishesSelectionChangesOnceAndConversationRefreshes`、`contextTracksTheCurrentProjectNameAndPath`、`contextObserverRefreshesForStructureAndStateButIgnoresVerbosity` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationListPlugin**（3 条）：由 `pluginBootRegistersToolbarToolAndDynamicRailTabsThenShutsThemDown`、`pluginDoesNotPartiallyBootWithoutRequiredProviders`、`pluginMarksFinishedTurnsReadOrNeedsAttentionBasedOnSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationListToolbarViewModel**（3 条）：由 `toolbarRefreshesConversationPresenceAndObservesChatVisibility`、`toolbarShowsCurrentProjectScopeOnlyWhenItHasConversationsAndOthersExist`、`toolbarShowsCurrentProjectScopeWhenOnlyProjectlessConversationsDiffer` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ConversationListViewModel**（6 条）：由 `initialLoadAndHeaderReflectConversationAndProjectState`、`currentProjectScopeFiltersReloadAndUpdatesProjectTitle`、`conversationCountReflectsScopeAndUpdatesOnChange`、`nextPageAppendsOnlyTheRemainingConversations` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationListViewModel**（8 条）：由 `initialLoadAndHeaderReflectConversationAndProjectState`、`currentProjectScopeFiltersReloadAndUpdatesProjectTitle`、`conversationCountReflectsScopeAndUpdatesOnChange`、`reloadFailurePreservesConversationsAndPagination`、`initialLoadFailureRemainsRetryable` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationRailTabController**（4 条）：由 `railTabsFollowConversationAndCurrentProjectAvailability`、`railProjectTabAppearsWhenOnlyProjectlessConversationsDiffer`、`stoppingRailControllerCancelsRefreshSubscriptions`、`railVisibilityIsWrittenBackToHostOnEveryReconcile` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationRowAccessibility**（4 条）：由 `rowAccessibilityLabelAlwaysStartsWithTitle`、`rowAccessibilityLabelIncludesAutomationLevel`、`rowAccessibilityLabelFallsBackWhenTitleMissing`、`rowAccessibilityLabelSkipsEmptyProviderAndModel` 锁定行朗读文案的组成与回退规则。
 - **ConversationRowEmptyTitle**（4 条）：由 `rowLabelFallsBackForEmptyStringTitle`、`rowLabelFallsBackForWhitespaceOnlyTitle`、`emptyStringAndNilTitlesConverge`、`nonEmptyTitleIsPreserved` 锁定空标题回退文案的一致性。
@@ -113,16 +113,18 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 | 54 | GetRecentConversationsTool | 标题中的反斜杠加管道符仍留在单个单元格（**#994**） | 标题为字面 `A\|B` | 执行工具并解析数据行 | 输出 `A\\\|B`，数据行未转义管道符恰为 6 个 | P1 | ✅ 已覆盖 | `recentConversationTitleWithBackslashAndPipeStaysInSingleCell` |
 | 55 | ConversationListToolbarViewModel | 单项目加无项目会话时仍显示当前项目筛选（**#931**） | 未打开项目时创建会话 G，打开唯一项目 P 并创建会话 C | 刷新分段可见性 | 两个范围条数不同，`showsCurrentProjectScope` 为 true 且可选中当前项目 | P1 | ✅ 已覆盖 | `toolbarShowsCurrentProjectScopeWhenOnlyProjectlessConversationsDiffer` |
 | 56 | ConversationRailTabController | 单项目加无项目会话时仍注册项目标签（**#931**） | 未打开项目时创建会话 G，打开唯一项目 P 并创建会话 C | 启动控制器 | 「项目」标签出现，且项目列表只包含 C | P1 | ✅ 已覆盖 | `railProjectTabAppearsWhenOnlyProjectlessConversationsDiffer` |
+| 57 | ConversationListViewModel | 刷新读取失败保留已知良好列表与分页（**#932**） | 已加载 40 条，下一次分页读取抛错 | 触发 reload 与 loadNextPage，随后恢复存储再翻页 | 列表与游标不变、hasLoadError 为 true、hasMore 仍为 true；恢复后追加到 60 条 | P0 | ✅ 已覆盖 | `reloadFailurePreservesConversationsAndPagination` |
+| 58 | ConversationListViewModel | 首次加载失败后视图重现仍可重试（**#932**） | 首次分页读取抛错 | 再次调用 loadInitialIfNeeded | 仍为空列表且 hasLoadError；恢复后成功加载并清除错误 | P1 | ✅ 已覆盖 | `initialLoadFailureRemainsRetryable` |
 
-> 说明：全部 **56 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **58 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 42 / 42
+- P0: 已覆盖 4 / 4
+- P1: 已覆盖 43 / 43
 - P2: 已覆盖 11 / 11
-- **合计: 56 / 56**（仅表示清单场景，非源码覆盖率）
+- **合计: 58 / 58**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

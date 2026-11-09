@@ -1,6 +1,16 @@
 import Foundation
 import KitLLM
 
+/// 会话分页读取失败。
+///
+/// `fetchConversationPage` 会把读取异常折叠成空数组，调用方无法区分「读取失败」
+/// 与「确实没有会话」；需要保留已知良好数据的调用方改用 `loadConversationPage`，
+/// 由该错误显式暴露失败。
+public enum ConversationPageLoadError: Error, Equatable {
+    /// 持久化存储未就绪或已不可用。
+    case storageUnavailable
+}
+
 /// 选中对话变化观察者的注册令牌。
 ///
 /// 调用 `ConversationManaging.addSelectedConversationObserver(_:)` 后持有返回值
@@ -61,6 +71,26 @@ public protocol ConversationManaging: AnyObject {
         includingChildConversations: Bool,
         projectPath: String
     ) async -> [ConversationSummary]
+
+    /// Load one page, preserving read failures instead of folding them into `[]`.
+    ///
+    /// List UIs must keep showing the last known-good page when a transient
+    /// storage error occurs; an empty array would look like an empty library.
+    func loadConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date?,
+        beforeID: UUID?,
+        includingChildConversations: Bool
+    ) async throws -> [ConversationSummary]
+
+    /// Project-scoped variant of `loadConversationPage`.
+    func loadConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date?,
+        beforeID: UUID?,
+        includingChildConversations: Bool,
+        projectPath: String
+    ) async throws -> [ConversationSummary]
 
     /// Fetch one conversation summary by ID without requiring the full list.
     func fetchConversation(id: UUID) async -> ConversationSummary?
@@ -474,6 +504,27 @@ public extension ConversationManaging {
 
     func fetchConversationPage(limit: Int, beforeUpdatedAt: Date?, beforeID: UUID?, includingChildConversations: Bool, projectPath: String) async -> [ConversationSummary] {
         await fetchConversationPage(limit: limit, beforeUpdatedAt: beforeUpdatedAt, beforeID: beforeID, includingChildConversations: includingChildConversations)
+    }
+
+    /// 默认实现无法观察底层读取错误，退化为原有的非抛错分页；有持久化能力的
+    /// 实现应覆盖它，把真实的存储错误传给调用方。
+    func loadConversationPage(limit: Int, beforeUpdatedAt: Date?, beforeID: UUID?, includingChildConversations: Bool) async throws -> [ConversationSummary] {
+        await fetchConversationPage(
+            limit: limit,
+            beforeUpdatedAt: beforeUpdatedAt,
+            beforeID: beforeID,
+            includingChildConversations: includingChildConversations
+        )
+    }
+
+    func loadConversationPage(limit: Int, beforeUpdatedAt: Date?, beforeID: UUID?, includingChildConversations: Bool, projectPath: String) async throws -> [ConversationSummary] {
+        await fetchConversationPage(
+            limit: limit,
+            beforeUpdatedAt: beforeUpdatedAt,
+            beforeID: beforeID,
+            includingChildConversations: includingChildConversations,
+            projectPath: projectPath
+        )
     }
 
     func fetchConversation(id: UUID) async -> ConversationSummary? {

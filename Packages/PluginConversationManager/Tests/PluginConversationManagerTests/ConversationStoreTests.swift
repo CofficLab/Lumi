@@ -354,4 +354,33 @@ struct ConversationStoreTests {
         #expect(await manager.fetchConversation(id: rootID)?.id == rootID)
         #expect(manager.conversations.map(\.id) == [rootID], "重复读取不应产生重复缓存项")
     }
+
+    /// #932：存储不可用时必须抛错，让列表保留已知良好的快照，而不是返回空页。
+    @Test("存储不可用时分页读取抛错而不是返回空页")
+    @MainActor
+    func loadPageWithoutStoreThrows() async throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-conversation-tests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let manager = ConversationManager(store: nil, dataDirectory: dir)
+        await #expect(throws: ConversationPageLoadError.storageUnavailable) {
+            try await manager.loadConversationPage(
+                limit: 10,
+                beforeUpdatedAt: nil,
+                beforeID: nil,
+                includingChildConversations: false
+            )
+        }
+        await #expect(throws: ConversationPageLoadError.storageUnavailable) {
+            try await manager.loadConversationPage(
+                limit: 10,
+                beforeUpdatedAt: nil,
+                beforeID: nil,
+                includingChildConversations: false,
+                projectPath: "/project"
+            )
+        }
+    }
 }

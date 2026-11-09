@@ -137,6 +137,75 @@ import Testing
     #expect(viewModel.conversations.count == 41)
 }
 
+/// #932：瞬态读取失败不能把已加载的会话显示成空库，也不能永久关闭分页。
+@Test @MainActor func reloadFailurePreservesConversationsAndPagination() async throws {
+    let base = Date()
+    let many = (0..<60).map { index in
+        ConversationSummary(
+            id: UUID(),
+            title: "C\(index)",
+            createdAt: base,
+            updatedAt: base.addingTimeInterval(-Double(index) * 60),
+            projectPath: nil
+        )
+    }
+    let conversations = DelayedConversationManager(summaries: many)
+    let viewModel = ConversationListViewModel(
+        context: makeListContext(conversations: conversations),
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .all
+    )
+    await viewModel.reload()
+    #expect(viewModel.conversations.count == 40)
+    #expect(viewModel.hasMore)
+    let knownGoodIDs = viewModel.conversations.map(\.id)
+
+    conversations.setPageLoadError(TestPageLoadError())
+    await viewModel.reload()
+
+    #expect(viewModel.conversations.map(\.id) == knownGoodIDs, "读取失败不能清空已知良好的列表")
+    #expect(viewModel.hasMore, "读取失败不能关闭后续分页")
+    #expect(viewModel.hasLoadError)
+
+    await viewModel.loadNextPage()
+    #expect(viewModel.conversations.map(\.id) == knownGoodIDs, "翻页失败不能改动已有列表")
+    #expect(viewModel.hasMore, "翻页失败后仍应允许重试")
+
+    conversations.setPageLoadError(nil)
+    await viewModel.loadNextPage()
+    #expect(viewModel.conversations.count == 60)
+    #expect(!viewModel.hasLoadError)
+    viewModel.cancel()
+}
+
+/// #932：首次加载失败必须保持可重试，不能因为 `isLoading` 已复位而永远跳过加载。
+@Test @MainActor func initialLoadFailureRemainsRetryable() async throws {
+    let conversation = ConversationSummary(
+        id: UUID(), title: "Only", createdAt: Date(), updatedAt: Date(), projectPath: nil
+    )
+    let conversations = DelayedConversationManager(summaries: [conversation])
+    conversations.setPageLoadError(TestPageLoadError())
+    let viewModel = ConversationListViewModel(
+        context: makeListContext(conversations: conversations),
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .all
+    )
+
+    await viewModel.loadInitialIfNeeded()
+    #expect(viewModel.conversations.isEmpty)
+    #expect(!viewModel.isLoading)
+    #expect(viewModel.hasLoadError)
+
+    // 视图重新出现会再次调用 `loadInitialIfNeeded`：失败后必须重新尝试。
+    conversations.setPageLoadError(nil)
+    await viewModel.loadInitialIfNeeded()
+    #expect(viewModel.conversations.map(\.id) == [conversation.id])
+    #expect(!viewModel.hasLoadError)
+    viewModel.cancel()
+}
+
 @Test @MainActor func selectionClearsAttentionAndDeleteUsesConversationProvider() async throws {
     let conversations = DefaultConversationManager()
     let firstID = try conversations.createConversation(title: "First", projectPath: nil, providerID: nil, modelName: nil)
@@ -334,6 +403,12 @@ private final class DelayedConversationManager: ConversationManaging {
         delays[path] = delay
     }
 
+    private var pageLoadError: (any Error)?
+
+    func setPageLoadError(_ error: (any Error)?) {
+        pageLoadError = error
+    }
+
     var conversations: [ConversationSummary] { summaries }
     var selectedConversationID: UUID? { nil }
     var currentTitle: String { "" }
@@ -442,6 +517,38 @@ private final class DelayedConversationManager: ConversationManaging {
         )
     }
 
+    func loadConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date?,
+        beforeID: UUID?,
+        includingChildConversations: Bool
+    ) async throws -> [ConversationSummary] {
+        if let pageLoadError { throw pageLoadError }
+        return await fetchConversationPage(
+            limit: limit,
+            beforeUpdatedAt: beforeUpdatedAt,
+            beforeID: beforeID,
+            includingChildConversations: includingChildConversations
+        )
+    }
+
+    func loadConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date?,
+        beforeID: UUID?,
+        includingChildConversations: Bool,
+        projectPath: String
+    ) async throws -> [ConversationSummary] {
+        if let pageLoadError { throw pageLoadError }
+        return await fetchConversationPage(
+            limit: limit,
+            beforeUpdatedAt: beforeUpdatedAt,
+            beforeID: beforeID,
+            includingChildConversations: includingChildConversations,
+            projectPath: projectPath
+        )
+    }
+
     private func page(
         _ items: [ConversationSummary],
         limit: Int,
@@ -461,3 +568,5 @@ private final class DelayedConversationManager: ConversationManaging {
 private final class NoopObserverHandle: SelectedConversationObserverHandle {
     func cancel() {}
 }
+
+private struct TestPageLoadError: Error {}

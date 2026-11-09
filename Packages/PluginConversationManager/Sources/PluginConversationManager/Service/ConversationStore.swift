@@ -297,12 +297,35 @@ public actor ConversationStore: SuperLog {
     ///
     /// The cursor is the last item from the previous page. Keyset pagination
     /// avoids materializing all earlier rows as the conversation table grows.
+    ///
+    /// - Note: 读取失败会被折叠成空数组；需要区分「读取失败」与「空库」的调用方
+    ///   应改用 `loadConversationPage`。
     func fetchConversationPage(
         limit: Int,
         beforeUpdatedAt: Date? = nil,
         beforeID: UUID? = nil,
         includingChildConversations: Bool = false
     ) -> [ConversationSummary] {
+        do {
+            return try loadConversationPage(
+                limit: limit,
+                beforeUpdatedAt: beforeUpdatedAt,
+                beforeID: beforeID,
+                includingChildConversations: includingChildConversations
+            )
+        } catch {
+            Self.logger.error("\(Self.t)查询对话分页失败：\(error.localizedDescription)")
+            return []
+        }
+    }
+
+    /// Fetch one page, throwing storage errors instead of folding them into `[]`.
+    func loadConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date? = nil,
+        beforeID: UUID? = nil,
+        includingChildConversations: Bool = false
+    ) throws -> [ConversationSummary] {
         guard limit > 0 else { return [] }
 
         let context = ModelContext(container)
@@ -358,11 +381,14 @@ public actor ConversationStore: SuperLog {
             return models.compactMap { $0.toLumiConversationSummary() }
         } catch {
             Self.logger.error("\(Self.t)查询对话分页失败：\(error.localizedDescription)")
-            return []
+            throw error
         }
     }
 
     /// Fetch one page of conversations filtered by project path.
+    ///
+    /// - Note: 读取失败会被折叠成空数组；需要区分失败的调用方应改用
+    ///   `loadConversationPage(projectPath:)`。
     func fetchConversationPage(
         limit: Int,
         beforeUpdatedAt: Date? = nil,
@@ -370,6 +396,28 @@ public actor ConversationStore: SuperLog {
         includingChildConversations: Bool = false,
         projectPath: String
     ) -> [ConversationSummary] {
+        do {
+            return try loadConversationPage(
+                limit: limit,
+                beforeUpdatedAt: beforeUpdatedAt,
+                beforeID: beforeID,
+                includingChildConversations: includingChildConversations,
+                projectPath: projectPath
+            )
+        } catch {
+            Self.logger.error("\(Self.t)按项目查询对话分页失败：\(error.localizedDescription)")
+            return []
+        }
+    }
+
+    /// Fetch one project-scoped page, throwing storage errors instead of `[]`.
+    func loadConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date? = nil,
+        beforeID: UUID? = nil,
+        includingChildConversations: Bool = false,
+        projectPath: String
+    ) throws -> [ConversationSummary] {
         guard limit > 0 else { return [] }
 
         let context = ModelContext(container)
@@ -410,7 +458,7 @@ public actor ConversationStore: SuperLog {
             return models.compactMap { $0.toLumiConversationSummary() }
         } catch {
             Self.logger.error("\(Self.t)按项目查询对话分页失败：\(error.localizedDescription)")
-            return []
+            throw error
         }
     }
 

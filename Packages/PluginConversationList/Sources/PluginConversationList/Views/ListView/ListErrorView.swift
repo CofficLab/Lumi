@@ -8,9 +8,11 @@ struct ListErrorView: View {
     @LumiTheme private var theme: any LumiUITheme
 
     let reason: String?
+    var onRetry: (() -> Void)?
 
-    init(reason: String? = nil) {
+    init(reason: String? = nil, onRetry: (() -> Void)? = nil) {
         self.reason = reason
+        self.onRetry = onRetry
     }
 
     var body: some View {
@@ -29,6 +31,12 @@ struct ListErrorView: View {
                     .font(.appMicro)
                     .foregroundColor(theme.textTertiary.opacity(0.7))
                     .multilineTextAlignment(.center)
+            }
+
+            if let onRetry {
+                Button(pluginLocalization.string("Retry"), action: onRetry)
+                    .font(.appMicro)
+                    .buttonStyle(.bordered)
             }
         }
         .padding(.vertical, 20)
