@@ -64,16 +64,34 @@ enum RemoteWebURLResolver {
     ///
     /// 端口一律丢弃：SSH 与 Git 协议端口（如 `:22`、`:9418`）对浏览器访问的
     /// HTTPS 页面没有意义，继承到 web 链接只会连到错误端口。
+    ///
+    /// 路径必须使用 `percentEncodedPath` 并按 URLComponents 重新组装：
+    /// `path` 已经百分号解码，`%23` 会变成真正的 `#`，再当作文本重新解析时
+    /// 就变成 fragment 分隔符，截断仓库路径（issue #1095）。
     private static func schemeWebURL(from remote: String) -> URL? {
         guard let components = URLComponents(string: remote),
               let host = components.host,
               !host.isEmpty else {
             return nil
         }
-        var path = components.path
+        var path = components.percentEncodedPath
         while path.hasPrefix("/") { path.removeFirst() }
-        let suffix = path.isEmpty ? "" : "/\(path)"
-        return hostPathWebURL("\(host)\(suffix)")
+        while path.hasSuffix("/") { path.removeLast() }
+        if path.hasSuffix(".git") {
+            path.removeLast(4)
+        }
+
+        var target = URLComponents()
+        target.scheme = "https"
+        target.host = host
+        target.percentEncodedPath = path.isEmpty ? "" : "/\(path)"
+        guard let url = target.url,
+              url.scheme?.lowercased() == "https",
+              let targetHost = url.host,
+              !targetHost.isEmpty else {
+            return nil
+        }
+        return url
     }
 
     /// scp-like 语法 `[user@]host:path` → `https://host/path`。

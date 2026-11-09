@@ -5,7 +5,7 @@
 PluginOpenInRemote Lumi 编辑器插件：在默认浏览器中打开当前项目的远程仓库。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 33
+测试文件: 4 个，用例总数: 34
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -79,27 +79,28 @@ PluginOpenInRemote Lumi 编辑器插件：在默认浏览器中打开当前项�
 | 31 | RemoteWebURLResolver | 未支持的 URI scheme 不按 SCP-like 拼装地址（**回归 #1067**） | — | 解析 `ftp://`、`s3://`、`git+ssh://` | 全部返回 `nil` | P1 | ✅ 已覆盖 | `returnsNilForUnsupportedURIScheme` |
 | 32 | RemoteRepositoryResolver | 本地 `file://` remote 解析为 `nil`（**回归 #1067**） | Git 能力原样返回 `file:///tmp/repo.git` | 调用 `webURL(forRepositoryAt:)` | 返回 `nil` | P1 | ✅ 已覆盖 | `returnsNilForLocalFileRemote` |
 | 33 | OpenInRemoteTool | 本地 `file://` remote 报告没有可打开的 web 地址（**回归 #1067**） | origin 为 `file:///tmp/repo.git` | 调用 `execute(arguments:)` | 抛出「No remote repository URL」类错误，不误报打开成功 | P1 | ✅ 已覆盖 | `reportsMissingWebURLForFileRemote` |
+| 34 | RemoteWebURLResolver | SSH/Git 地址保留路径中的百分号编码，不把 `%23` 变成 fragment（**回归 #1095**） | origin 为 `ssh://git@code.example.com/acme/repo%23draft.git` | 解析为 web 链接 | 结果为 `https://code.example.com/acme/repo%23draft`，path 含 `#` 且无 fragment；`%3F`、`%25` 同样保留 | P0 | ✅ 已覆盖 | `preservesEncodedCharactersInSchemePath` |
 
-> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **34 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
+- P0: 已覆盖 3 / 3
 - P1: 已覆盖 30 / 30
 - P2: 已覆盖 1 / 1
-- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
+- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
 - **P1**: 其余功能性用例（30 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 29 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 34 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
