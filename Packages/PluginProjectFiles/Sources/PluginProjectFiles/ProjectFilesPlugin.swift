@@ -1,4 +1,5 @@
 import KernelCore
+import ProviderActivityBar
 import ProviderProject
 import ProviderRootView
 import SwiftUI
@@ -30,6 +31,7 @@ public final class ProjectFilesPlugin: SuperPlugin {
     )
 
     private weak var rootView: (any RootViewProviding)?
+    private weak var activityBar: (any ActivityBarProviding)?
     private var projectObserver: ProjectFilesProjectObserver?
     private var tabViewModel: ProjectFilesTabViewModel?
 
@@ -51,6 +53,7 @@ public final class ProjectFilesPlugin: SuperPlugin {
             self?.updateHeaderVisibility(for: project)
         }
         self.rootView = rootView
+        self.activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         self.tabViewModel = tabViewModel
         self.projectObserver = projectObserver
         rootView.setContentHeaderView(AnyView(ProjectFilesTabStripView(viewModel: tabViewModel)))
@@ -61,12 +64,31 @@ public final class ProjectFilesPlugin: SuperPlugin {
         projectObserver?.cancel()
         projectObserver = nil
         tabViewModel = nil
+        activityBar = nil
         kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderView(nil)
     }
 
-    /// 有打开文件时显示 content header，无文件时隐藏。
+    /// 有打开文件且文件工作区处于激活状态时显示 content header，否则隐藏。
+    ///
+    /// 只有声明 `preservesContentHeader` 的工作区（文件浏览/编辑）拥有标签条；
+    /// 其它工作区（如 Terminal）激活后，项目事件恢复打开文件不能把标签条
+    /// 重新显示到其内容上方。无 ActivityBar 的宿主保持旧行为（#1015）。
     private func updateHeaderVisibility(for project: any ProjectProviding) {
         let hasFiles = !project.openFileURLs.isEmpty || project.currentFileURL != nil
-        rootView?.setContentHeaderViewHidden(!hasFiles)
+        guard hasFiles else {
+            rootView?.setContentHeaderViewHidden(true)
+            return
+        }
+        guard activeWorkspacePreservesContentHeader else { return }
+        rootView?.setContentHeaderViewHidden(false)
+    }
+
+    private var activeWorkspacePreservesContentHeader: Bool {
+        guard let activityBar else { return true }
+        guard let activeID = activityBar.activeItemID,
+              let activeItem = activityBar.items.first(where: { $0.id == activeID }) else {
+            return true
+        }
+        return activeItem.preservesContentHeader
     }
 }

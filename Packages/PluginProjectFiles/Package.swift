@@ -19,6 +19,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
             ],
@@ -29,6 +30,7 @@ let package = Package(
             dependencies: [
                 "PluginProjectFiles",
                 .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
             ]

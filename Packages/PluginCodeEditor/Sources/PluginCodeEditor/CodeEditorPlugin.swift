@@ -159,7 +159,8 @@ public final class CodeEditorPlugin: SuperPlugin, SuperLog {
                 systemImage: "chevron.left.forwardslash.chevron.right",
                 order: order,
                 ownerPluginID: id,
-                preservesContentFooter: true
+                preservesContentFooter: true,
+                preservesContentHeader: true
             ) { [weak contentView, weak railView = self.railView, weak rootView = self.rootView, weak chat] state in
                 if state == .activated {
                     toolbar?.setVisibleCategories([.global, .chat, .project, .editor])
