@@ -11,6 +11,7 @@ let package = Package(
         .package(path: "../../Vendor/LumiKernel"),
         .package(path: "../../Vendor/LumiLogging"),
         .package(path: "../ProviderAgentLoop"),
+        .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderMessage"),
     ],
@@ -21,6 +22,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
             ],
@@ -31,6 +33,7 @@ let package = Package(
             dependencies: [
                 "PluginAgentLoopRetry",
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
             ],
