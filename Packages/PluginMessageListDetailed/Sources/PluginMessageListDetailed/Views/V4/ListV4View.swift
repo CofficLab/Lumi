@@ -42,6 +42,9 @@ struct ListV4View: View {
     /// 轮次投影缓存：只有历史变化才做 O(n) 重建。
     @StateObject private var projectionStore = ZCodeTurnProjectionStore()
 
+    /// V4 滚动所有权 reducer：只有真实用户滚动才能改变 `following`。
+    @StateObject private var scrollAnchor = ZCodeScrollAnchorBox()
+
     /// 内容就绪信号。
     @State private var scrollTick: Int = 0
 
@@ -75,6 +78,23 @@ struct ListV4View: View {
                 MessageLoadingView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(theme.surface.opacity(0.6))
+            }
+            // 「回到底部」按钮：只在脱离跟随且有内容时出现。
+            if scrollAnchor.shouldShowBackToBottom(rowCount: projection.turns.count) {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        ZCodeBackToBottomButton {
+                            scrollAnchor.resumeFollowing()
+                            runtime.atBottomBox.value = true
+                            scrollTick &+= 1
+                        }
+                        .padding(.trailing, ZCodeBackToBottomStyle.trailingSpacing)
+                        .padding(.bottom, ZCodeBackToBottomStyle.bottomSpacing)
+                    }
+                }
+                .transition(.opacity)
             }
         }
         .task {
@@ -132,7 +152,13 @@ struct ListV4View: View {
                 .background(
                     ScrollViewBottomTracker(
                         onChange: { runtime.atBottomBox.value = $0 },
-                        controller: runtime.bottomScrollController
+                        controller: runtime.bottomScrollController,
+                        // V4：额外上报滚动**来源**，让 reducer 能区分
+                        // 真实用户滚动与程序化 / 布局滚动。
+                        mode: .v4,
+                        onScrollEvent: { source, snapshot in
+                            handleScrollEvent(source: source, snapshot: snapshot)
+                        }
                     )
                 )
             }
@@ -181,6 +207,25 @@ struct ListV4View: View {
     }
 
     // MARK: - Turns
+
+    /// 处理一次带来源的滚动事件。
+    ///
+    /// - Important: 只有 `.user` 来源能改变 `following`；
+    ///   程序化与布局事件只更新几何账目（由 reducer 自身保证）。
+    private func handleScrollEvent(
+        source: ZCodeScrollEventSource,
+        snapshot: ScrollViewBottomController.Snapshot
+    ) {
+        let metrics = ZCodeScrollMetrics(
+            offsetY: snapshot.offsetY,
+            visibleHeight: snapshot.visibleHeight,
+            documentHeight: snapshot.documentHeight
+        )
+        scrollAnchor.handleScroll(metrics: metrics, source: source)
+        // 「是否在底部」与 V4 的 following 保持一致，
+        // 让已有的贴底逻辑（scrollTick）在离底后不再抢滚动。
+        runtime.atBottomBox.value = scrollAnchor.anchor.following
+    }
 
     /// 当前投影出的轮次。
     private var projection: ZCodeTurnProjection {
