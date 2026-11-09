@@ -40,8 +40,17 @@ struct OpenRouterProviderPluginTests {
         #expect(info.defaultModel == "alibaba/qwen3.5-397b")
         #expect(info.apiFormat.rawValue == "openAI")
         #expect(info.apiKeyStorageKey == "DevAssistant_ApiKey_OpenRouter")
-        #expect(info.providerType.rawValue == "cloudService")
+        #expect(info.providerType.rawValue == "relay")
         #expect(info.websiteURL == URL(string: "https://openrouter.ai/"))
+    }
+
+    @Test("回归 #957：OpenRouter 属于中转站而非模型厂商直供")
+    func openRouterIsClassifiedAsRelay() {
+        let info = OpenRouterProvider().providerInfo
+
+        // 模型选择器的 Cloud 视图按 providerType 分组：聚合服务必须进中转站区域。
+        #expect(info.providerType == .relay)
+        #expect(info.description.contains("Router"))
     }
 
     @Test("OpenRouter 模型清单完整有序且默认模型在内")
