@@ -69,7 +69,7 @@ final class ConversationSpeedViewModel: ObservableObject {
         modelName = latestAssistantMessage.modelName
         outputTokens = latestAssistantMessage.outputTokenCount
         streamingDurationMs = latestAssistantMessage.speedDurationMs
-        timeToFirstTokenMs = latestAssistantMessage.timeToFirstTokenMs
+        timeToFirstTokenMs = latestAssistantMessage.speedTimeToFirstTokenMs
         providerID = latestAssistantMessage.providerID
 
         if let tps = latestAssistantMessage.speedTokensPerSecond {

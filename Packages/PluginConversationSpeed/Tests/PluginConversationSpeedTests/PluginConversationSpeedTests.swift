@@ -27,6 +27,31 @@ import ProviderMessage
     #expect(viewModel.outputTokens == 120)
 }
 
+@Test @MainActor func speedViewModelReadsLegacyMetadataTiming() {
+    // #1029：旧版消息没有强类型计时列，Speed 也必须能展示历史样本。
+    let conversationID = UUID()
+    let message = Message(
+        conversationID: conversationID,
+        role: .assistant,
+        content: "response",
+        metadata: [
+            "latencyMs": "6000.0",
+            "streamingDurationMs": "4000.0",
+            "timeToFirstTokenMs": "2000.0",
+        ],
+        outputTokenCount: 120
+    )
+    let viewModel = ConversationSpeedViewModel()
+
+    viewModel.selectConversation(conversationID, messages: [message])
+
+    #expect(viewModel.cachedTPS == 20)
+    #expect(viewModel.speedHistory.count == 1)
+    #expect(viewModel.streamingDurationMs == 6_000)
+    #expect(viewModel.timeToFirstTokenMs == 2_000)
+    #expect(viewModel.unavailabilityReason == .waitingForResponse)
+}
+
 @Test @MainActor func speedViewModelClearsWhenConversationIsDeselected() async throws {
     let viewModel = ConversationSpeedViewModel()
     let conversationID = UUID()
