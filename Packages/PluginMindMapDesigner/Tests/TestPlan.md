@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 31 条用例。
+PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 33 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 31
+测试文件: 4 个，用例总数: 33
 
 核心组件（源码目录）:
 - `Models/`
@@ -37,7 +37,7 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **MindMapDesignerPlugin**（9 条）：由 `contributesRailTabAndCompleteToolSet`、`activatingPluginShowsChatSectionAndDeactivatingRestoresIt`、`markdownCodecRoundTrip` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MindMapDesignerPlugin**（11 条）：由 `contributesRailTabAndCompleteToolSet`、`activatingPluginShowsChatSectionAndDeactivatingRestoresIt`、`markdownCodecRoundTrip` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MindMapMarkdownCodec 健壮性**（9 条）：由 `ignoresPlainTextAfterRoot`、`ignoresHeadingAfterRoot`、`emptyOutlineProducesFallbackRoot` 等用例锁定；改动大纲解析的层级与容错逻辑时优先跑对应测试文件。
 - **MindMapStore 写前同步**（3 条）：由 `writeDoesNotClobberNodesAddedElsewhere`、`createDoesNotDropExistingMaps`、`deleteUsesDiskState` 等用例锁定；改动 store 的读写顺序或缓存策略时优先跑对应测试文件。
 - **MindMapConversationScope**（7 条）：由 `conversationScopedToolReadsFromItsOwnProject`、`crossProjectWriteDoesNotPolluteSharedStore` 等用例锁定；改动会话作用域隔离时优先跑对应测试文件。
@@ -78,27 +78,29 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 | 29 | MindMapMarkdownCodec 健壮性 | 空白 title 回退到 Markdown 首个标题 | — | 解码同一大纲并传 `title: "   "` | 地图标题与根节点均为 `Source Heading` | P1 | ✅ 已覆盖 | `blankTitleFallsBackToHeading` |
 | 30 | MindMapMarkdownCodec 健壮性 | 同级 Tab 缩进生成兄弟节点（**回归 #1081**） | — | 解码 `- A` 下两个以 Tab 缩进的 `A1`/`A2` | 两者 `parentId` 均为 `A`，不形成 `A1 → A2` 链 | P1 | ✅ 已覆盖 | `tabIndentedSiblingsStaySiblings` |
 | 31 | MindMapMarkdownCodec 健壮性 | Tab 与两空格缩进产生相同结构 | — | 分别解码同一大纲的 Tab 版与两空格版 | 两版节点父子关系完全一致 | P1 | ✅ 已覆盖 | `tabAndSpaceIndentationProduceSameShape` |
+| 32 | MindMapDesignerPlugin | `save_mind_map` 重建缺失的 backing JSON（**回归 #1080**） | 地图已在内存，JSON 文件被删除 | 调用 `save_mind_map(mapId:)` | 返回成功且磁盘重新出现该地图，内存列表仍包含它 | P0 | ✅ 已覆盖 | `saveMindMapRecreatesMissingBackingFile` |
+| 33 | MindMapDesignerPlugin | `save_mind_map` 写入失败必须抛错（**回归 #1080**） | 地图已创建，存储目录路径被普通文件占据 | 调用 `save_mind_map(mapId:)` | 抛出错误，不返回保存成功 | P0 | ✅ 已覆盖 | `saveMindMapReportsWriteFailure` |
 
-> 说明：全部 **31 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 8 / 8
+- P0: 已覆盖 10 / 10
 - P1: 已覆盖 23 / 23
 - P2: 已覆盖 0 / 0
-- **合计: 31 / 31**（仅表示清单场景，非源码覆盖率）
+- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
 - **P1**: 其余功能性用例（23 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 31 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 33 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
