@@ -83,13 +83,17 @@ public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
         context: ToolExecutionContext,
         arguments: [String: ToolArgument]
     ) async throws -> ToolCallResult {
-        _ = context
-        return ToolCallResult(content: try await run(arguments: arguments))
+        return ToolCallResult(content: try await run(context: context, arguments: arguments))
     }
 
     // MARK: - 内部
 
-    private func run(arguments: [String: ToolArgument]) async throws -> String {
+    private func run(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> String {
+        try ensureActive(context)
+
         guard let title = arguments.stringValue("title"),
               let body = arguments.stringValue("body"),
               !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -134,6 +138,7 @@ public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
         }
 
         // 3. 检查认证
+        try ensureActive(context)
         guard await GitHubCLI.isAuthenticated(ghPath: ghPath) else {
             throw ToolExecutionError.executionFailed(
                 toolName: name,
@@ -152,6 +157,7 @@ public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
         let fullBody = Self.renderedBody(userBody: body)
 
         // 6. 创建（目标仓库固定）
+        try ensureActive(context)
         let result = await GitHubCLI.createIssue(
             ghPath: ghPath,
             workingDirectory: nil,
@@ -160,6 +166,21 @@ public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
             labels: labels,
             repository: Self.defaultRepository
         )
+
+        if result.wasCancelled {
+            throw CancellationError()
+        }
+
+        if result.wasTimedOut {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: """
+                `gh issue create` timed out after \(Int(GitHubCLI.createTimeout))s and the \
+                process was terminated. The issue may or may not have been created; check \
+                \(Self.defaultRepository) before retrying.
+                """
+            )
+        }
 
         guard result.isSuccess, !result.issueURL.isEmpty else {
             throw ToolExecutionError.executionFailed(
@@ -213,6 +234,13 @@ public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
     }
 
     // MARK: - 辅助
+
+    /// 在每个可取消的等待前后确认调用方仍在等待，避免被停止的任务继续发布。
+    private func ensureActive(_ context: ToolExecutionContext) throws {
+        if Task.isCancelled || context.isCancelled() {
+            throw CancellationError()
+        }
+    }
 
     /// 校验 title / body 是否为英文。返回非空的违规字段列表。
     ///
