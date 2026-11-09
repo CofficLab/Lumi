@@ -288,6 +288,34 @@ struct ProviderSettingsPageViewModelTests {
         #expect(viewModel.filteredProviders.count == 2)
     }
 
+    /// 回归 #941：搜索只过滤左侧列表，右侧详情仍展示选中的供应商。
+    /// 头部模型数量曾从过滤后的列表里查找选中项，搜索把它排除后数量
+    /// 变成 `0 个模型`，与右侧详情矛盾。
+    @Test("搜索排除当前供应商时头部模型数量保持不变")
+    func searchDoesNotZeroSelectedProviderModelCount() throws {
+        let (manager, _, capability) = makeFixture()
+        try manager.register(
+            MockRemoteProvider(
+                id: "provider-p",
+                displayName: "供应商 P",
+                models: [LLMModelInfo(id: "m1"), LLMModelInfo(id: "m2")]
+            )
+        )
+        try manager.register(MockRemoteProvider(id: "provider-q", displayName: "供应商 Q"))
+
+        let viewModel = makeViewModel(capability: capability)
+        viewModel.selectProvider(id: "provider-p")
+        viewModel.searchText = "Q"
+
+        #expect(viewModel.filteredProviders.map(\.providerInfo.id) == ["provider-q"])
+        #expect(viewModel.selectedProvider?.providerInfo.id == "provider-p")
+        #expect(viewModel.selectedModelCount == 2, "详情仍展示 P，头部就必须显示 P 的模型数")
+
+        // 列表刷新也不能因为搜索词把选中项改成过滤后的第一项。
+        viewModel.synchronizeSelection()
+        #expect(viewModel.selectedProviderID == "provider-p")
+    }
+
     // MARK: - 选中态
 
     @Test("没有选中项时自动选中第一个供应商")
