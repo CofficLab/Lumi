@@ -19,7 +19,11 @@ public struct HTMLScreenshotter {
     /// - Note: `WKWebView.createPDF` 的完成回调**不保证**一定送达。若 WebKit 进程
     ///   状态异常或页面始终无法完成布局，回调可能永不到达，此时 continuation 永不恢复，
     ///   调用方（以及 `swift test` 进程）会永久挂起。因此这里必须带超时保护。
-    public static func capture(_ webView: WKWebView, timeout: TimeInterval = 30) async throws -> NSImage {
+    public static func capture(
+        _ webView: WKWebView,
+        timeout: TimeInterval = 30,
+        limits: HTMLScreenshotLimits = .standard
+    ) async throws -> NSImage {
         let pdfData = try await createPDF(from: webView, timeout: timeout)
 
         guard let pdfDocument = PDFDocument(data: pdfData) else {
@@ -44,8 +48,22 @@ public struct HTMLScreenshotter {
             maxWidth = max(maxWidth, bounds.width)
         }
 
-        guard totalHeight > 0, maxWidth > 0 else {
+        let geometry = HTMLScreenshotGeometry(
+            pageCount: pageCount,
+            width: maxWidth,
+            height: totalHeight
+        )
+        guard !geometry.isEmpty else {
             throw HTMLError.emptyDocument
+        }
+        // CSS 文档高度不受画布尺寸约束：先按页数与总像素拒绝，
+        // 再分配位图，避免超长页面驱动无界的内存分配与主线程栅格化。
+        guard !geometry.exceeds(limits) else {
+            throw HTMLError.snapshotTooLarge(
+                pageCount: geometry.pageCount,
+                width: geometry.width,
+                height: geometry.height
+            )
         }
 
         let imageSize = NSSize(width: maxWidth, height: totalHeight)
@@ -139,6 +157,49 @@ public struct HTMLScreenshotter {
     }
 }
 
+// MARK: - Limits
+
+/// 全页快照的独立资源上限。
+///
+/// `createPDF` 会按页面高度把文档切成任意多页，合成图片的尺寸由 PDF 的
+/// 页数与页面高度决定，而不是调用方传入的画布尺寸。没有独立上限时，
+/// 一段正常的 HTML 就能通过 CSS 高度驱动大量页面、同步栅格化与位图分配。
+public struct HTMLScreenshotLimits: Sendable, Equatable {
+    public var maxPageCount: Int
+    public var maxPixels: CGFloat
+    public var maxDimension: CGFloat
+
+    public init(
+        maxPageCount: Int = 64,
+        maxPixels: CGFloat = 16_000_000,
+        maxDimension: CGFloat = 16_000
+    ) {
+        self.maxPageCount = maxPageCount
+        self.maxPixels = maxPixels
+        self.maxDimension = maxDimension
+    }
+
+    public static let standard = HTMLScreenshotLimits()
+}
+
+/// 由 PDF 页面推导出的合成图片尺寸，用于在分配位图前校验资源上限。
+struct HTMLScreenshotGeometry: Equatable {
+    let pageCount: Int
+    let width: CGFloat
+    let height: CGFloat
+
+    var isEmpty: Bool {
+        pageCount <= 0 || width <= 0 || height <= 0
+    }
+
+    func exceeds(_ limits: HTMLScreenshotLimits) -> Bool {
+        pageCount > limits.maxPageCount
+            || width > limits.maxDimension
+            || height > limits.maxDimension
+            || width * height > limits.maxPixels
+    }
+}
+
 // MARK: - Error
 
 extension HTMLScreenshotter {
@@ -148,6 +209,8 @@ extension HTMLScreenshotter {
         case renderingFailed(String)
         /// 等待 WebKit 渲染结果超时。
         case renderTimedOut
+        /// 页面页数或像素数超出快照上限。
+        case snapshotTooLarge(pageCount: Int, width: CGFloat, height: CGFloat)
 
         public var errorDescription: String? {
             switch self {
@@ -159,6 +222,10 @@ extension HTMLScreenshotter {
                 return "Rendering failed: \(msg)"
             case .renderTimedOut:
                 return "Timed out while rendering HTML content"
+            case .snapshotTooLarge(let pageCount, let width, let height):
+                return "The HTML page is too large to snapshot "
+                    + "(\(pageCount) pages, \(Int(width))x\(Int(height))). "
+                    + "Reduce the document height."
             }
         }
     }
