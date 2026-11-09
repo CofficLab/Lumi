@@ -38,7 +38,9 @@ struct GeneralSettingsDetailView: View {
                 ManualsBrowserView(manuals: viewModel.manuals)
             }
         }
-        .sheet(isPresented: $isPresentingUninstall) {
+        .sheet(isPresented: $isPresentingUninstall, onDismiss: {
+            viewModel.cancelUninstallScan()
+        }) {
             uninstallSheet
         }
     }
