@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 79 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 80 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 79
+测试文件: 11 个，用例总数: 80
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -49,7 +49,7 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 - **ConversationStoreSettingsViewModel**（5 条）：由 `loadsPagesCountsMessagesAndSelectedConversation`、`selectionFallsBackWhenMissingAndReloadsForStructuralEvents`、`emptyLoadsFinishAndMessagesClearWithoutSelection`、`preferenceEventsRefreshCachedSummaries`、`reopeningRefreshesStaleSummaries` 等用例锁定；模型与偏好事件必须按 ID 就地刷新摘要，重进页面不得沿用陈旧快照。
 - **ConversationListRefresh**（1 条）：由 `activeUpdatesAreDebounced` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **分页会话的可操作性**（9 条）：由 `deletesUncachedConversation`、`renamesUncachedConversation`、`selectingPagedConversationBackfillsTitle` 等用例锁定；分页返回的真实会话必须能执行与首屏会话相同的删除、改名、偏好与选择操作。
-- **ConversationStore**（12 条）：由 `createAndFetch`、`createStoresOnlyModelID`、`updateVerbosity` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationStore**（13 条）：由 `createAndFetch`、`createStoresOnlyModelID`、`updateVerbosity` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 - **ConversationStore 项目会话 ID**（3 条）：由 `returnsOnlyProjectConversations`、`limitsToTheActivityWindow`、`emptyProjectReturnsEmptyArray` 锁定——项目维度统计靠会话存储提供「项目 → 会话 ID」的映射；`updatedSince` 把集合限制在活动窗口内，项目下没有会话时返回空数组。改动这条映射时必须优先跑该文件。
 
@@ -136,16 +136,17 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 77 | 分页会话的可操作性 | 补载非选中会话不触发详细度刷新（**回归 #1069**） | 另一个会话处于选中状态 | 补载未选中的历史会话 | 不发送该 ID 的 `.verbosityChanged` | P2 | ✅ 已覆盖 | `hydratingUnselectedConversationStaysSilent` |
 | 78 | ConversationManagerCRUD | 等待落盘的标题更新返回前已完成数据库写入（**回归 #950**） | store 支撑的 Manager 与会话 | 调用 `updateConversationTitleAndWait` 后立即查库 | 返回 true，内存与数据库标题均为新值 | P1 | ✅ 已覆盖 | `updateConversationTitleAndWaitPersistsBeforeReturning` |
 | 79 | ConversationManagerCRUD | 落盘失败不发布内存新标题也不报告成功（**回归 #950**） | 绕过管理器删除库行制造 `store.updateTitle` 失败 | 调用 `updateConversationTitleAndWait` | 返回 false，内存/当前标题保持旧值且不发 `.updated` 事件 | P0 | ✅ 已覆盖 | `updateConversationTitleAndWaitLeavesMemoryUntouchedWhenPersistFails` |
+| 80 | ConversationStore | 存储不可用时分页读取抛错而不是返回空页（**#932**） | Manager 未接入 store | 分别调用全库与项目两处分页读取 | 均抛出 `ConversationPageLoadError.storageUnavailable` | P1 | ✅ 已覆盖 | `loadPageWithoutStoreThrows` |
 
-> 说明：全部 **79 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **80 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 9 / 9
-- P1: 已覆盖 64 / 64
+- P1: 已覆盖 65 / 65
 - P2: 已覆盖 6 / 6
-- **合计: 79 / 79**（仅表示清单场景，非源码覆盖率）
+- **合计: 80 / 80**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -156,7 +157,7 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 79 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 80 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
