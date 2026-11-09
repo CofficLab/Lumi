@@ -65,6 +65,13 @@ final class GeneralSettingsViewModel: ObservableObject {
     @Published var removeKeychainCredentials = true
     @Published var removeApplication = true
 
+    /// 当前卸载扫描任务及其代次。
+    ///
+    /// 弹窗取消后会重新开始扫描；旧任务即使晚到也不能覆盖新结果或清除
+    /// 新扫描的加载态，因此写回前必须比对代次。
+    private var uninstallScanTask: Task<Void, Never>?
+    private var uninstallScanGeneration = 0
+
     init(
         docsCapability: any GeneralSettingsDocsCapability,
         updateChannelCapability: any GeneralSettingsUpdateChannelCapability,
@@ -204,6 +211,11 @@ final class GeneralSettingsViewModel: ObservableObject {
             return
         }
 
+        uninstallScanTask?.cancel()
+        uninstallScanTask = nil
+        uninstallScanGeneration &+= 1
+        let generation = uninstallScanGeneration
+
         uninstallFeedback = nil
         uninstallFeedbackKind = .info
         removeKeychainCredentials = true
@@ -211,10 +223,25 @@ final class GeneralSettingsViewModel: ObservableObject {
         uninstallScan = nil
         isScanningUninstall = true
 
-        Task { @MainActor in
-            uninstallScan = await uninstallCapability.scanUninstall()
+        uninstallScanTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let scan = await uninstallCapability.scanUninstall()
+            guard uninstallScanGeneration == generation else { return }
+            uninstallScan = scan
             isScanningUninstall = false
+            uninstallScanTask = nil
         }
+    }
+
+    /// 关闭卸载弹窗时调用：取消在途扫描并使其结果失效。
+    ///
+    /// 只清理由本代扫描产生的状态；重新打开弹窗会从 `beginUninstall()` 开始新一轮。
+    func cancelUninstallScan() {
+        uninstallScanTask?.cancel()
+        uninstallScanTask = nil
+        uninstallScanGeneration &+= 1
+        isScanningUninstall = false
+        uninstallScan = nil
     }
 
     func performUninstall() {
