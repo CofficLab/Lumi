@@ -97,6 +97,15 @@ public struct TurnRuntime {
     /// 当前挂起批次中所有挂起点（toolCallID → Suspension）。
     public var pendingSuspensions: [String: AgentLoopSuspension] = [:]
 
+    /// 未回答挂起点的先后顺序。
+    ///
+    /// `pendingSuspensions` 是字典，遍历顺序不稳定；恢复其中一个挂起后需要
+    /// 按确定顺序接着停在下一项，否则同一批次里其余调用会被跳过。
+    public var suspensionOrder: [String] = []
+
+    /// 承载当前挂起批次的 assistant 消息。
+    public var suspensionAssistantMessageID: UUID?
+
     /// 是否已请求取消。
     public var cancelRequested: Bool = false
 
@@ -126,6 +135,15 @@ public struct TurnRuntime {
         if case .awaitingUser(_, _, _, let s) = phase { return s }
         return nil
     }
+
+    /// 移除一个已经回答的挂起点，并同步清理顺序表。
+    public mutating func clearSuspension(toolCallID: String) {
+        pendingSuspensions.removeValue(forKey: toolCallID)
+        suspensionOrder.removeAll { $0 == toolCallID }
+        if pendingSuspensions.isEmpty {
+            suspensionAssistantMessageID = nil
+        }
+    }
     /// 当前或最近一次回合的身份。
     ///
     /// 终态 phase（completed / failed / cancelled）不携带 turnID，因此这里必须
@@ -139,6 +157,8 @@ public struct TurnRuntime {
         phase = .idle
         lastTurnID = nil
         pendingSuspensions = [:]
+        suspensionOrder = []
+        suspensionAssistantMessageID = nil
         cancelRequested = false
         completionDelivered = false
         llmRecoveryAttempts = 0
@@ -197,6 +217,8 @@ public enum TurnReducer {
             rt.cancelRequested = true
             if rt.phase.isTerminal { return (rt, nil) }
             rt.pendingSuspensions = [:]
+            rt.suspensionOrder = []
+            rt.suspensionAssistantMessageID = nil
             rt.phase = .cancelled
             return (rt, .cancelled)
 
@@ -285,6 +307,10 @@ public enum TurnReducer {
             }
             guard pending.contains(where: { $0.id == toolCallID }) else { return (rt, nil) }
             rt.pendingSuspensions[toolCallID] = suspension
+            if !rt.suspensionOrder.contains(toolCallID) {
+                rt.suspensionOrder.append(toolCallID)
+            }
+            rt.suspensionAssistantMessageID = assistantID
             pending.removeAll { $0.id == toolCallID }
             jobIDs.remove(toolCallID)
             rt.phase = .awaitingUser(
