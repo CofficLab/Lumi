@@ -145,6 +145,7 @@ struct ListV4View: View {
                         }
                 }
                 .id(viewModel.selectedConversationID)
+                .accessibilityIdentifier(ZCodeAccessibilityIdentifiers.listContainer)
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
                 // 让 Markdown 代码块使用 HorizontalScrollView，不捕获垂直滚动
@@ -158,6 +159,13 @@ struct ListV4View: View {
                         mode: .v4,
                         onScrollEvent: { source, snapshot in
                             handleScrollEvent(source: source, snapshot: snapshot)
+                        },
+                        // V4：用户已上滚离开底部时，文档变高**不得**把用户拽回去。
+                        shouldAutoFollow: { scrollAnchor.anchor.following },
+                        // 用户往回滚时立即解除跟随。
+                        onUserScrollDirection: { direction in
+                            scrollAnchor.handleUserScroll(direction: direction)
+                            runtime.atBottomBox.value = scrollAnchor.anchor.following
                         }
                     )
                 )
@@ -217,6 +225,7 @@ struct ListV4View: View {
         snapshot: ScrollViewBottomController.Snapshot
     ) {
         let metrics = ZCodeScrollMetrics(
+            userDirection: scrollAnchor.lastUserDirection,
             offsetY: snapshot.offsetY,
             visibleHeight: snapshot.visibleHeight,
             documentHeight: snapshot.documentHeight

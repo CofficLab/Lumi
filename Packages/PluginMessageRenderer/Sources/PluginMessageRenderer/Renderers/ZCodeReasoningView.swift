@@ -146,6 +146,16 @@ struct ZCodeReasoningView: View {
                     .fill(Color.secondary.opacity(0.2))
                     .frame(width: 1)
             }
+            // Important: 标识符**不能**挂在折叠块容器上：
+            //   SwiftUI 会把它向下传播给子元素，
+            //   展开按钮的标识符就被覆盖成 `reasoning`。
+            //   「这一块存在」改由**独立的标记元素**表达。
+            .overlay(alignment: .topLeading) {
+                ZCodeAccessibilityMarker(
+                    identifier: ZCodeRendererAccessibilityIdentifiers.reasoningBlock
+                )
+            }
+            .accessibilityElement(children: .contain)
             .onChange(of: isStreaming) { _, streaming in
                 // 完成时自动收起；用户显式选择优先，因此由状态机自行判断。
                 if !streaming {
@@ -182,6 +192,7 @@ struct ZCodeReasoningView: View {
         .buttonStyle(.plain)
         // macOS 的 SwiftUI 没有 `accessibilityExpanded`；
         // 用 `accessibilityValue` 暴露展开状态，语义等价。
+        .accessibilityIdentifier(ZCodeRendererAccessibilityIdentifiers.reasoningToggle)
         .accessibilityValue(collapseState.isExpanded ? "expanded" : "collapsed")
         .accessibilityAddTraits(.isButton)
         .focusable()

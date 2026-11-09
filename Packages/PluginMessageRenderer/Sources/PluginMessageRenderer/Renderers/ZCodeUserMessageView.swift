@@ -29,6 +29,8 @@ struct ZCodeUserMessageView: View {
     @State private var copyState = ZCodeCopyFeedbackState()
     /// 是否 hover。
     @State private var isHovered = false
+    /// 是否键盘聚焦。
+    @FocusState private var hasKeyboardFocus: Bool
 
     /// 本行的稳定身份：消息 id + 内容。
     private var rowIdentity: String {
@@ -45,11 +47,26 @@ struct ZCodeUserMessageView: View {
         return ZCodeUserBubbleLayout(content: AnyView(
             Group {
                 if showsBubble {
+                    ZCodeAccessibilityMarker(
+                        identifier: ZCodeRendererAccessibilityIdentifiers.userBubble
+                    )
                     bubbleBody
                 }
                 attachmentSection(attachments: attachments)
+                if showsBubble {
+                    // 复制按钮：hover / 键盘聚焦时才显示。
+                    //
+                    // - Important: 不能用 `opacity(0)` 隐藏 —— 那会让 AX 树
+                    //   **完全丢掉**这个元素，键盘用户与 UI 测试都拿不到它。
+                    //   正确做法是保留在树上、只改透明度，并用
+                    //   `accessibilityHidden` 之外的手段表达「当前不可见」。
+                    copyButton
+                        .opacity(isHovered || hasKeyboardFocus ? 1 : 0)
+                        .accessibilityHidden(false)
+                }
             }
         ))
+        .onHover { isHovered = $0 }
         .onAppear {
             collapseState.updateIdentity(content: message.content, rowID: rowIdentity)
         }
@@ -70,10 +87,75 @@ struct ZCodeUserMessageView: View {
                         contentLength: message.content.count
                     )
                 )
+                .accessibilityIdentifier(ZCodeRendererAccessibilityIdentifiers.userBubbleBody)
+
+                if isCollapsible {
+                    Button {
+                        collapseState.setExpanded(!collapseState.isExpanded)
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: collapseState.isExpanded ? "chevron.up" : "chevron.down")
+                                .font(.system(size: 10, weight: .medium))
+                            Text(collapseState.isExpanded
+                                 ? pluginLocalization.string("Collapse")
+                                 : pluginLocalization.string("Expand"))
+                                .font(.system(size: 12))
+                        }
+                        .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier(ZCodeRendererAccessibilityIdentifiers.userExpandToggle)
+                    // - Important: SwiftUI 的 Button 会把 label 当作 AX 的 `value` 暴露，
+                    //   `accessibilityValue` 在这类控件上**不会**单独呈现。
+                    //   要让「展开 / 收起」状态可被 UI 测试与辅助功能读到，
+                    //   必须用 `accessibilityLabel` 明确指定语义。
+                    .accessibilityLabel(
+                        collapseState.isExpanded
+                            ? pluginLocalization.string("Collapse")
+                            : pluginLocalization.string("Expand")
+                    )
+                }
             }
             .font(.system(size: ZCodeUserBubbleStyle.bodyFontSize))
             .frame(maxWidth: .infinity, alignment: .leading)
         ))
+    }
+
+    /// 用户气泡的复制按钮。
+    ///
+    /// - Important: 复制的是**原始** `Message.content`，不裁剪。
+    @ViewBuilder
+    private var copyButton: some View {
+        Button {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(
+                ZCodeUserBubbleStyle.copyText(for: message.content),
+                forType: .string
+            )
+            copyState.markCopied()
+        } label: {
+            Image(systemName: copyState.isCopied ? "checkmark" : "doc.on.doc")
+                .font(.system(size: ZCodeUserBubbleStyle.copyButtonIconSize))
+                .foregroundColor(.secondary)
+                .frame(
+                    width: ZCodeUserBubbleStyle.copyButtonSize,
+                    height: ZCodeUserBubbleStyle.copyButtonSize
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(ZCodeRendererAccessibilityIdentifiers.userCopyButton)
+        .accessibilityLabel(pluginLocalization.string("Copy"))
+    }
+
+    /// 正文是否超出折叠阈值。
+    ///
+    /// - Note: 用字符数的**保守估计**判断：真实高度要等布局完成后才知道，
+    ///   而布局完成前就需要决定是否显示折叠按钮。
+    ///   保守估计偏大 → 宁可多显示一个可展开的按钮，
+    ///   也不让长文被截断且无从展开。
+    private var isCollapsible: Bool {
+        ZCodeUserBubbleStyle.shouldCollapse(contentHeight: CGFloat(message.content.count))
     }
 
     // MARK: - 附件
@@ -124,6 +206,13 @@ private struct ZCodeUserBubbleSurface: View {
     var body: some View {
         let palette = ZCodeMessageAppearance.palette(for: colorScheme)
         content
+            // Important: 这里**不能**挂 `accessibilityIdentifier`，也**不能**加
+            //   `.accessibilityElement(children: .contain)`：
+            //   前者会向下传播、覆盖子元素（展开按钮、复制按钮）的标识符；
+            //   后者会把整个气泡合并成**一个** AX 元素，
+            //   内部元素因此不再单独暴露。
+            //
+            //   「这一行有用户气泡」由**独立的标记元素**表达（见 bubbleBody 的兄弟节点）。
             .padding(.horizontal, ZCodeUserBubbleStyle.horizontalPadding)
             .padding(.vertical, ZCodeUserBubbleStyle.verticalPadding)
             .background(palette.surface)
@@ -235,6 +324,18 @@ enum ZCodeUserBubbleStyle {
 
     /// 复制成功后的反馈时长（秒）。
     static let copyFeedbackDuration: TimeInterval = 1.2
+
+    /// 展开 / 收起按钮的文案。
+    ///
+    /// - Important: SwiftUI 的 Button 会把 label 当作 AX 的 `value` 暴露，
+    ///   `accessibilityValue` 不会单独呈现。
+    ///   因此「展开 / 收起」状态必须由**文案**承载，
+    ///   两者必须不同，否则辅助功能与 UI 测试都读不出状态。
+    static func toggleLabel(isExpanded: Bool) -> String {
+        isExpanded
+            ? pluginLocalization.string("Collapse")
+            : pluginLocalization.string("Expand")
+    }
 
     /// 复制内容：使用**原始** `Message.content`，不裁剪。
     static func copyText(for content: String) -> String {
@@ -370,5 +471,25 @@ struct UnevenRoundedRectangleCorners: Equatable {
             topTrailingRadius: topTrailing,
             style: .continuous
         )
+    }
+}
+
+
+/// 无障碍标记元素。
+///
+/// - Important: 必须**有非空 label**：`Text("")` 会被 AX 树当成空元素丢掉，
+///   `Color.clear` 更是纯绘制元素、根本不进 AX 树。
+///   这里给一个不可见的空格字符作为 label，视觉上仍是空白。
+///
+/// - Note: 尺寸取 1×1，既能被 AX 树看到，又不会在视觉上产生任何痕迹。
+struct ZCodeAccessibilityMarker: View {
+    let identifier: String
+
+    var body: some View {
+        Text(" ")
+            .font(.system(size: 1))
+            .frame(width: 1, height: 1)
+            .accessibilityIdentifier(identifier)
+            .allowsHitTesting(false)
     }
 }

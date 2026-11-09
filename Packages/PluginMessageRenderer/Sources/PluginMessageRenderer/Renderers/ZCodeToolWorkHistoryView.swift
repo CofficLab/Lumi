@@ -159,6 +159,16 @@ struct ZCodeToolWorkHistoryView: View {
                 .fill(Color.secondary.opacity(0.2))
                 .frame(width: 1)
         }
+        // Important: 标识符**不能**挂在分组容器上：
+        //   SwiftUI 会把它向下传播给子元素，
+        //   展开按钮的标识符就被覆盖成 `work-history`。
+        //   「这一组存在」改由**独立的标记元素**表达。
+        .overlay(alignment: .topLeading) {
+            ZCodeAccessibilityMarker(
+                identifier: ZCodeRendererAccessibilityIdentifiers.workHistory
+            )
+        }
+        .accessibilityElement(children: .contain)
         .task(id: isExpanded) {
             // 收起后 300ms 卸载重内容，避免折叠动画期间闪烁。
             if !isExpanded {
@@ -191,6 +201,7 @@ struct ZCodeToolWorkHistoryView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(ZCodeRendererAccessibilityIdentifiers.workHistoryToggle)
         .accessibilityValue(isExpanded ? "expanded" : "collapsed")
         .accessibilityAddTraits(.isButton)
         .focusable()

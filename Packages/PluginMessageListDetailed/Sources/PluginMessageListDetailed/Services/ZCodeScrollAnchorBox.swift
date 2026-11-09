@@ -10,6 +10,24 @@ final class ZCodeScrollAnchorBox: ObservableObject {
     /// 当前滚动所有权状态。
     @Published private(set) var anchor = ZCodeScrollAnchor()
 
+    /// 最近一次用户滚动方向。
+    ///
+    /// - Note: 供几何判定使用：往前滚时几何说了算，往回滚时方向说了算。
+    private(set) var lastUserDirection: ZCodeUserScrollDirection?
+
+    /// 处理用户滚动方向。
+    ///
+    /// - Important: 方向比几何更早可用：用户往回滚的那一刻，
+    ///   列表正在物化新行，几何还停在底部。
+    ///   靠方向立即解除跟随，才不会又被自动贴底拽回去。
+    func handleUserScroll(direction: ZCodeUserScrollDirection) {
+        lastUserDirection = direction
+        let before = anchor.following
+        anchor.handleUserScroll(direction: direction)
+        guard anchor.following != before else { return }
+        objectWillChange.send()
+    }
+
     /// 处理一次滚动事件。
     func handleScroll(metrics: ZCodeScrollMetrics, source: ZCodeScrollEventSource) {
         let before = anchor.following

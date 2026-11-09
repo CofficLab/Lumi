@@ -155,15 +155,29 @@ struct ZCodeAssistantMessageView: View {
             }
 
             if hasVisibleContent {
-                MarkdownBlockRenderer(
-                    markdown: message.content,
-                    theme: ChatMarkdownTheme.makeZCode(from: theme)
-                )
-                .fixedSize(horizontal: false, vertical: true)
-                .textSelection(.enabled)
-                .font(.system(size: ZCodeAssistantTextStyle.fontSize))
-                .tracking(ZCodeAssistantTextStyle.tracking)
-                .lineSpacing(ZCodeAssistantTextStyle.lineSpacing)
+                // Important: 标识符必须挂在**外层容器**上，不能挂在
+                //   `MarkdownBlockRenderer` 上 —— 后者会渲染多个 block，
+                //   修饰符被每个 block 继承，于是 AX 树里出现 N 个同名元素，
+                //   UI 测试按 firstMatch 命中哪一个全靠运气。
+                // Important: 标识符挂在**外层**容器上，且用
+                //   `.accessibilityElement(children: .contain)`。
+                //   若把标识符挂在 `MarkdownBlockRenderer` 上，修饰符会向下
+                //   传播到每一个 Markdown block，AX 树里就会出现 N 个同名元素；
+                //   若挂在 VStack 上而不加 `contain`，SwiftUI 会把整个子树
+                //   合并成**一个** AX 元素，内部元素反而全部消失。
+                VStack(alignment: .leading, spacing: 0) {
+                    MarkdownBlockRenderer(
+                        markdown: message.content,
+                        theme: ChatMarkdownTheme.makeZCode(from: theme)
+                    )
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
+                    .font(.system(size: ZCodeAssistantTextStyle.fontSize))
+                    .tracking(ZCodeAssistantTextStyle.tracking)
+                    .lineSpacing(ZCodeAssistantTextStyle.lineSpacing)
+                }
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier(ZCodeRendererAccessibilityIdentifiers.assistantBody)
             }
 
             if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
@@ -224,9 +238,18 @@ struct ZCodeAssistantMessageView: View {
                     Text(label)
                         .font(.system(size: ZCodeAssistantTextStyle.timeLabelFontSize))
                         .foregroundColor(palette.subtlest)
+                        .accessibilityIdentifier(ZCodeRendererAccessibilityIdentifiers.turnTimeLabel)
                 }
             }
             .padding(.top, 8)
+            // Important: 操作栏**容器**不能挂 `accessibilityIdentifier`。
+            //   SwiftUI 会把标识符向下传播给子元素，于是 `turn-copy`
+            //   与 `turn-time` 都被覆盖成 `turn-action-bar`，
+            //   UI 测试再也定位不到具体的按钮与时间。
+            //
+            //   「这一轮有操作栏」的可观测证据因此改由**子元素**表达：
+            //   每个 turn 恰好一个 `turn-copy` 按钮 + 一个 `turn-time` 标签。
+            //   这比「容器计数」更贴近语义 —— 操作栏的意义就是那个复制按钮。
         }
     }
 
@@ -243,6 +266,7 @@ struct ZCodeAssistantMessageView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(ZCodeRendererAccessibilityIdentifiers.turnCopyButton)
         .accessibilityLabel(pluginLocalization.string("Copy"))
     }
 

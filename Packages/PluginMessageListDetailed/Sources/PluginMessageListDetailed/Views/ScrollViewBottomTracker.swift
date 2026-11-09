@@ -103,22 +103,47 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
     /// - Note: 只有 `.v4` 模式才会被调用。
     var onScrollEvent: ((ZCodeScrollEventSource, ScrollViewBottomController.Snapshot) -> Void)?
 
+    /// 用户滚动的方向回调。
+    ///
+    /// - Important: 方向是用户意图的**直接**表达。
+    ///   它比「离底多远」更早可用：用户往回滚的那一刻，
+    ///   几何可能还停在底部（列表正在物化新行），但方向已经说明了意图。
+    var onUserScrollDirection: ((ZCodeUserScrollDirection) -> Void)?
+
+    /// 是否应该继续自动跟随底部。
+    ///
+    /// - Important: V4 用它回答「文档变高后要不要重新钉底」。
+    ///   用户已经上滚离开底部时（返回 false），文档随行物化变高
+    ///   **不得**把用户拽回底部 —— 那正是 V4 要修的核心问题。
+    ///
+    /// - Note: 旧模式（`.legacy`）为 nil，行为与从前完全一致。
+    var shouldAutoFollow: (() -> Bool)?
+
     init(
         onChange: @escaping (Bool) -> Void,
         controller: ScrollViewBottomController? = nil,
         onLiveResizeEnd: ((Bool) -> Void)? = nil,
         mode: Mode = .legacy,
-        onScrollEvent: ((ZCodeScrollEventSource, ScrollViewBottomController.Snapshot) -> Void)? = nil
+        onScrollEvent: ((ZCodeScrollEventSource, ScrollViewBottomController.Snapshot) -> Void)? = nil,
+        shouldAutoFollow: (() -> Bool)? = nil,
+        onUserScrollDirection: ((ZCodeUserScrollDirection) -> Void)? = nil
     ) {
         self.onChange = onChange
         self.controller = controller
         self.onLiveResizeEnd = onLiveResizeEnd
         self.mode = mode
         self.onScrollEvent = onScrollEvent
+        self.shouldAutoFollow = shouldAutoFollow
+        self.onUserScrollDirection = onUserScrollDirection
     }
 
     func makeNSView(context: Context) -> TrackerView {
         let view = TrackerView()
+        // Important: 必须在 `makeNSView` 里就设好 mode。
+        //   `attach`（进而 `startUserEventMonitor`）可能在视图挂到窗口时
+        //   就发生，那时 `updateNSView` 还没跑，mode 仍是默认的 `.legacy`，
+        //   用户输入监测因此根本没装上 —— 真实用户滚动永远改变不了 following。
+        view.mode = mode
         view.bottomController = controller
         view.onChange = { [weak coordinator = context.coordinator] atBottom in
             coordinator?.onChange(atBottom)
@@ -127,8 +152,12 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
             coordinator?.onLiveResizeEnd?(wasAtBottom)
         }
         view.mode = mode
+        view.shouldAutoFollow = shouldAutoFollow
         view.onScrollEvent = { [weak coordinator = context.coordinator] source, snapshot in
             coordinator?.onScrollEvent?(source, snapshot)
+        }
+        view.onUserScrollDirection = { [weak coordinator = context.coordinator] direction in
+            coordinator?.onUserScrollDirection?(direction)
         }
         return view
     }
@@ -139,9 +168,12 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
         context.coordinator.onChange = onChange
         context.coordinator.onLiveResizeEnd = onLiveResizeEnd
         context.coordinator.onScrollEvent = onScrollEvent
+        context.coordinator.onUserScrollDirection = onUserScrollDirection
         nsView.bottomController = controller
         nsView.mode = mode
         nsView.onScrollEvent = onScrollEvent
+        nsView.shouldAutoFollow = shouldAutoFollow
+        nsView.onUserScrollDirection = onUserScrollDirection
     }
 
     static func dismantleNSView(_ nsView: TrackerView, coordinator: Coordinator) {
@@ -149,21 +181,29 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onChange: onChange, onLiveResizeEnd: onLiveResizeEnd, onScrollEvent: onScrollEvent)
+        Coordinator(
+            onChange: onChange,
+            onLiveResizeEnd: onLiveResizeEnd,
+            onScrollEvent: onScrollEvent,
+            onUserScrollDirection: onUserScrollDirection
+        )
     }
 
     final class Coordinator {
         var onChange: (Bool) -> Void
         var onLiveResizeEnd: ((Bool) -> Void)?
         var onScrollEvent: ((ZCodeScrollEventSource, ScrollViewBottomController.Snapshot) -> Void)?
+        var onUserScrollDirection: ((ZCodeUserScrollDirection) -> Void)?
         init(
             onChange: @escaping (Bool) -> Void,
             onLiveResizeEnd: ((Bool) -> Void)?,
-            onScrollEvent: ((ZCodeScrollEventSource, ScrollViewBottomController.Snapshot) -> Void)? = nil
+            onScrollEvent: ((ZCodeScrollEventSource, ScrollViewBottomController.Snapshot) -> Void)? = nil,
+            onUserScrollDirection: ((ZCodeUserScrollDirection) -> Void)? = nil
         ) {
             self.onChange = onChange
             self.onLiveResizeEnd = onLiveResizeEnd
             self.onScrollEvent = onScrollEvent
+            self.onUserScrollDirection = onUserScrollDirection
         }
     }
 }
@@ -178,14 +218,18 @@ final class TrackerView: NSView {
     fileprivate var mode: ScrollViewBottomTracker.Mode = .legacy
     /// V4 模式的滚动来源回调。
     fileprivate var onScrollEvent: ((ZCodeScrollEventSource, ScrollViewBottomController.Snapshot) -> Void)?
+    /// 是否应该继续自动跟随底部（V4 用）。
+    fileprivate var shouldAutoFollow: (() -> Bool)?
+    /// 用户滚动方向回调。
+    fileprivate var onUserScrollDirection: ((ZCodeUserScrollDirection) -> Void)?
+    /// 待上报的用户滚动方向。
+    private var pendingUserScrollDirection: ZCodeUserScrollDirection?
     /// 程序化滚动作用域：贴底写入 clip bounds 期间置位。
     private var programmaticScope = ZCodeProgrammaticScrollScope()
     /// 用户输入监测器（仅 V4 模式）。
     private var userEventMonitor: Any?
     /// 观察到的滚动视图所属 window 的标识；用于过滤其它 window 的事件。
     private var targetWindowIdentifier: ObjectIdentifier?
-    /// 上次上报的滚动来源；用于避免重复上报同一次滚动。
-    private var lastReportedSource: ZCodeScrollEventSource?
     private var observation: NSObjectProtocol?
     /// 文档视图尺寸变化的观察者。
     ///
@@ -279,13 +323,47 @@ final class TrackerView: NSView {
     private func attachIfNeeded() {
         // Tracker 必须绑定到自己的消息 List。禁止从 window.contentView
         // 全局扫描，否则同一个窗口里的 Rail NSScrollView 可能被误选中。
-        guard let scrollView = enclosingScrollView else {
+        guard let scrollView = findOwningScrollView() else {
             stopObserving()
             return
         }
         guard scrollView !== observedScrollView else { return }
 
         attach(to: scrollView)
+    }
+
+    /// 找到承载本 tracker 的滚动视图。
+    ///
+    /// - Important: **不能**只用 AppKit 的 `enclosingScrollView`。
+    //    它只在视图是滚动视图的**后代**时才返回值；而 tracker 是挂在
+    //    `List` 上的 `background`，在 macOS 上它是滚动视图的**兄弟**，
+    //    `enclosingScrollView` 恒为 nil —— 观察者因此从未挂上，
+    //    「是否在底部」永远不更新。
+    ///
+    //    这里改为**向上遍历父视图链**，找第一个 `NSScrollView`；
+    //    找不到再退回 `enclosingScrollView`。
+    private func findOwningScrollView() -> NSScrollView? {
+        var candidate: NSView? = self
+        while let view = candidate {
+            if let scrollView = view as? NSScrollView {
+                return scrollView
+            }
+            candidate = view.superview
+        }
+        if let enclosing = enclosingScrollView { return enclosing }
+
+        // 兜底：从 window 层级里找**最窄的、且包含本 tracker 横向范围**的滚动视图。
+        guard let window else { return nil }
+        var candidates: [NSScrollView] = []
+        func collect(_ view: NSView) {
+            if let scrollView = view as? NSScrollView { candidates.append(scrollView) }
+            for sub in view.subviews { collect(sub) }
+        }
+        collect(window.contentView ?? NSView())
+        // 消息列表是窗口里最宽的滚动视图（会话列表只有 240）。
+        return candidates
+            .filter { $0.frame.width >= 400 }
+            .max { $0.frame.width < $1.frame.width }
     }
 
     /// 绑定滚动视图并挂上观察者。
@@ -377,6 +455,14 @@ final class TrackerView: NSView {
     private func handleDocumentFrameChange() {
         guard !isPinningToBottom else { return }
         guard !isRestoringAfterResize else { return }
+        // Important: V4 下，用户已经上滚离开底部时**不得**重新钉底。
+        //   文档随行物化变高（用户往回看时正好会物化更多行）
+        //   若继续钉底，用户会被硬拽回底部 —— 那正是 V4 要修的核心问题。
+        if let shouldAutoFollow, !shouldAutoFollow() {
+            lastObservedDocumentHeight = observedDocumentView?.bounds.height ?? -1
+            lastKnownMaxOffsetY = currentMaxOffsetY()
+            return
+        }
         guard let scrollView = observedScrollView,
               let documentView = scrollView.documentView else { return }
 
@@ -509,14 +595,72 @@ final class TrackerView: NSView {
     /// 上报一次滚动来源事件。
     ///
     /// - Important: 只有 `.v4` 模式才上报；`.legacy` 模式行为完全不变。
-    private func reportScrollEvent(_ source: ZCodeScrollEventSource) {
+    private func reportScrollEvent(
+        _ source: ZCodeScrollEventSource,
+        direction: ZCodeUserScrollDirection? = nil
+    ) {
         guard mode == .v4 else { return }
         guard let onScrollEvent else { return }
-        // 同一次滚动只上报一次。
-        guard lastReportedSource != source else { return }
-        lastReportedSource = source
+        pendingUserScrollDirection = direction
+        // - Important: 这里**不能**按「来源去重」。
+        //   去重会让**只有第一次**用户滚动被上报，
+        //   之后的上滚永远改变不了 `following` ——
+        //   「回到底部」按钮因此永远不出现。
+        //
+        //   去重的正确粒度是「同一次滚动」：由 AppKit 的
+        //   `boundsDidChange` 通知驱动，与用户输入事件解耦。
         guard let snapshot = currentSnapshot() else { return }
+        let direction = pendingUserScrollDirection
+        pendingUserScrollDirection = nil
         onScrollEvent(source, snapshot)
+    }
+
+    /// 从事件推导用户滚动方向。
+    ///
+    /// - Note: AppKit 的 `scrollingDeltaY > 0` 表示**内容向上移动**
+    ///   （用户把内容往上推，视口看到**更晚**的内容）—— 那是「往前」。
+    ///   `< 0` 则是内容向下移动，视口看到**更早**的内容 —— 那是「往回看」。
+    ///
+    ///   - Important: 这里很容易写反。写反的症状是
+    ///     「用户往上滚了，`following` 反而恢复」，于是永远回不到底部。
+    private func userScrollDirection(
+        from input: ZCodeScrollSourceClassifier.Input
+    ) -> ZCodeUserScrollDirection? {
+        switch input.kind {
+        case .scrollWheel, .touch:
+            guard input.deltaY != 0 else { return nil }
+            // AppKit 的 `scrollingDeltaY` 语义：
+            // **负值**表示内容**向上**移动（用户把内容往上推），
+            // 视口于是往下走、看到**更晚**的内容 —— 那是「往前」。
+            //
+            // - Important: 写反的症状是「用户往上滚了，`following` 反而恢复」，
+            //   于是「回到底部」按钮永远不出现。
+            return input.deltaY < 0 ? .forward : .backward
+        case .key:
+            switch input.key {
+            case "ArrowUp", "PageUp", "Home":
+                return .backward
+            case "ArrowDown", "PageDown", "End":
+                return .forward
+            default:
+                return nil
+            }
+        case .scrollbar:
+            // 滚动条拖动无法从事件里拿到方向，交由几何判定。
+            return nil
+        default:
+            return nil
+        }
+    }
+
+    /// 推迟一个主线程回合后上报用户滚动。
+    private func scheduleUserScrollReport(direction: ZCodeUserScrollDirection?) {
+        Task { @MainActor [weak self] in
+            // 让 AppKit 完成本轮滚动的布局与偏移更新。
+            await Task.yield()
+            guard let self else { return }
+            self.reportScrollEvent(.user, direction: direction)
+        }
     }
 
     /// 当前几何快照。
@@ -540,6 +684,7 @@ final class TrackerView: NSView {
         stopUserEventMonitor()
 
         targetWindowIdentifier = scrollView.window.map { ObjectIdentifier($0) }
+
 
         let monitor = NSEvent.addLocalMonitorForEvents(
             matching: [.scrollWheel, .keyDown]
@@ -578,9 +723,23 @@ final class TrackerView: NSView {
             }
 
             let source = ZCodeScrollSourceClassifier.classify(input)
+            // DIAG
             if source == .user {
+                // 方向先报：它是用户意图的直接表达，不受几何时序影响。
+                let direction = userScrollDirection(from: input)
+                if let direction {
+                    MainActor.assumeIsolated {
+                        self.onUserScrollDirection?(direction)
+                    }
+                }
+                // Important: 几何快照必须**等滚动真正发生之后**再取。
+                //   事件派发的瞬间 clip view 的偏移量还是**滚动前**的值，
+                //   用它判定「是否在底部」永远得到「在底部」，
+                //   `following` 于是永远不会解除。
+                //
+                //   这里推迟到下一个主线程回合再取快照。
                 MainActor.assumeIsolated {
-                    self.reportScrollEvent(.user)
+                    self.scheduleUserScrollReport(direction: direction)
                 }
             }
             return event
@@ -596,21 +755,27 @@ final class TrackerView: NSView {
         }
     }
 
-    /// 事件的 target 是否落在给定滚动视图上。
+    /// 事件是否发生在给定滚动视图上。
+    ///
+    /// - Important: 用事件的**坐标**判定，而不是 `firstResponder`。
+    ///   合成事件（`CGEvent.post`）的 `firstResponder` 通常是窗口本身，
+    ///   不是滚动视图；按 firstResponder 过滤会把所有用户滚动都丢掉，
+    ///   `following` 于是永远不解除。
+    ///
+    ///   坐标判定同时排除了 Rail（侧栏）的滚动：它不在消息列表的矩形里。
     private func eventTargetsScrollView(_ event: NSEvent, scrollView: NSScrollView) -> Bool {
         // 事件 window 与滚动视图 window 必须一致。
         guard let eventWindow = event.window,
               let scrollWindow = scrollView.window,
               eventWindow === scrollWindow
         else { return false }
-        // 事件 target 必须在滚动视图的层级里（排除 Rail 的滚动）。
-        guard let target = event.window?.firstResponder else { return true }
-        if let targetView = target as? NSView {
-            return targetView === scrollView
-                || targetView.isDescendant(of: scrollView)
-                || scrollView.isDescendant(of: targetView)
-        }
-        return true
+
+        // 事件坐标必须落在滚动视图的矩形内。
+        //
+        // - Note: `convert(_:to: nil)` 把视图坐标换成**窗口坐标**，
+        //   与 `event.locationInWindow` 同一坐标系。
+        let scrollFrame = scrollView.convert(scrollView.bounds, to: nil)
+        return scrollFrame.contains(event.locationInWindow)
     }
 
     /// 事件目标是否落在可编辑控件里。
