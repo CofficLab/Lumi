@@ -107,8 +107,12 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             canRender: { message in
                 message.renderKind == "turn-completed" || message.content == LumiChatMarkers.turnCompleted
             },
-            render: { message, _ in
-                AnyView(TurnCompletedMessageView(message: message))
+            render: { message, verbosity in
+                AnyView(
+                    verbosity == .zcode
+                        ? AnyView(ZCodeTimelineMarkerView(message: message))
+                        : AnyView(TurnCompletedMessageView(message: message))
+                )
             }
         ))
 
@@ -118,8 +122,12 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             canRender: { message in
                 MessageTimelineEvent.isContextCompaction(message)
             },
-            render: { message, _ in
-                AnyView(ContextCompactionMessageView(message: message))
+            render: { message, verbosity in
+                AnyView(
+                    verbosity == .zcode
+                        ? AnyView(ZCodeTimelineMarkerView(message: message))
+                        : AnyView(ContextCompactionMessageView(message: message))
+                )
             }
         ))
 
@@ -129,8 +137,12 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             canRender: { message in
                 MessageTimelineEvent.isAgentLoopRetry(message)
             },
-            render: { message, _ in
-                AnyView(AgentLoopRetryMessageView(message: message))
+            render: { message, verbosity in
+                AnyView(
+                    verbosity == .zcode
+                        ? AnyView(ZCodeTimelineMarkerView(message: message))
+                        : AnyView(AgentLoopRetryMessageView(message: message))
+                )
             }
         ))
 
@@ -140,8 +152,12 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             canRender: { message in
                 MessageTimelineEvent.isGoalTaskContinuation(message)
             },
-            render: { message, _ in
-                AnyView(GoalTaskContinuationMessageView(message: message))
+            render: { message, verbosity in
+                AnyView(
+                    verbosity == .zcode
+                        ? AnyView(ZCodeTimelineMarkerView(message: message))
+                        : AnyView(GoalTaskContinuationMessageView(message: message))
+                )
             }
         ))
 
@@ -151,8 +167,12 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             canRender: { message in
                 MessageTimelineEvent.isModelSwitched(message)
             },
-            render: { message, _ in
-                AnyView(ModelSwitchMessageView(message: message))
+            render: { message, verbosity in
+                AnyView(
+                    verbosity == .zcode
+                        ? AnyView(ZCodeTimelineMarkerView(message: message))
+                        : AnyView(ModelSwitchMessageView(message: message))
+                )
             }
         ))
 
@@ -165,7 +185,11 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
                     && message.content != LumiChatMarkers.turnCompleted
             },
             render: { message, verbosity in
-                AnyView(StatusMessageView(message: message, verbosity: verbosity))
+                AnyView(
+                    verbosity == .zcode
+                        ? AnyView(ZCodeTimelineMarkerView(message: message))
+                        : AnyView(StatusMessageView(message: message, verbosity: verbosity))
+                )
             }
         ))
 
@@ -177,11 +201,15 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
                 message.role == .error || message.isError
             },
             render: { [capability] message, verbosity in
-                AnyView(ErrorMessageView(
-                    capability: capability,
-                    message: message,
-                    verbosity: verbosity
-                ))
+                AnyView(
+                    verbosity == .zcode
+                        ? AnyView(ZCodeTimelineMarkerView(message: message))
+                        : AnyView(ErrorMessageView(
+                            capability: capability,
+                            message: message,
+                            verbosity: verbosity
+                        ))
+                )
             }
         ))
 
@@ -257,7 +285,11 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
                 message.role == .system
             },
             render: { message, verbosity in
-                AnyView(SystemMessageView(message: message, verbosity: verbosity))
+                AnyView(
+                    verbosity == .zcode
+                        ? AnyView(ZCodeTimelineMarkerView(message: message))
+                        : AnyView(SystemMessageView(message: message, verbosity: verbosity))
+                )
             }
         ))
 
@@ -267,7 +299,11 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             order: base - 10,
             canRender: { _ in true },
             render: { message, verbosity in
-                AnyView(DefaultMessageView(message: message, verbosity: verbosity))
+                AnyView(
+                    verbosity == .zcode
+                        ? AnyView(ZCodeTimelineMarkerView(message: message))
+                        : AnyView(DefaultMessageView(message: message, verbosity: verbosity))
+                )
             }
         ))
     }
