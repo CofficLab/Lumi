@@ -313,7 +313,14 @@ public final class MindMapStore: ObservableObject {
         var list = self.list(for: scope)
         guard let index = list.firstIndex(where: { $0.id == id }) else { return }
         let map = list[index]
-        MindMapFileStore.delete(map, storagePath: storagePath(for: scope))
+        do {
+            try MindMapFileStore.delete(map, storagePath: storagePath(for: scope))
+        } catch {
+            // 文件仍在时不能提交内存删除：否则地图会从 UI 消失，
+            // 下一次 reload 又会被磁盘上的文件「复活」。
+            lastError = error.localizedDescription
+            return
+        }
         list.remove(at: index)
         setList(list, for: scope)
 
