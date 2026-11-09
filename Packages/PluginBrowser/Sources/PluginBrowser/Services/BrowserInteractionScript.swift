@@ -141,12 +141,23 @@ enum BrowserInteractionScript {
           focus();
           // 逐字符输入并触发按键事件，贴近真实用户输入；
           // 与 fill 的差别是 fill 直接赋值、不触发按键。
+          // 必须按完整字符切分：按下标逐个码元写入会把 Emoji 的
+          // surrogate pair 拆开，产生替换字符（issue #1059）。
           const value = String(OPTS.text || "");
-          for (let i = 0; i < value.length; i++) {
-            el.dispatchEvent(new KeyboardEvent("keydown", { key: value[i], bubbles: true }));
-            el.dispatchEvent(new KeyboardEvent("keypress", { key: value[i], bubbles: true }));
-            el.value = el.value + value[i];
-            el.dispatchEvent(new KeyboardEvent("keyup", { key: value[i], bubbles: true }));
+          const graphemes = [];
+          if (typeof Intl !== "undefined" && typeof Intl.Segmenter === "function") {
+            const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+            for (const piece of segmenter.segment(value)) {
+              graphemes.push(piece.segment);
+            }
+          } else {
+            graphemes.push(...Array.from(value));
+          }
+          for (const char of graphemes) {
+            el.dispatchEvent(new KeyboardEvent("keydown", { key: char, bubbles: true }));
+            el.dispatchEvent(new KeyboardEvent("keypress", { key: char, bubbles: true }));
+            el.value = el.value + char;
+            el.dispatchEvent(new KeyboardEvent("keyup", { key: char, bubbles: true }));
             el.dispatchEvent(new Event("input", { bubbles: true }));
           }
           el.dispatchEvent(new Event("change", { bubbles: true }));
