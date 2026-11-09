@@ -2,10 +2,10 @@
 
 ## 包概述
 
-ProviderMessage 的实现包，包含 6 个主要类型；当前测试覆盖 41 条用例。
+ProviderMessage 的实现包，包含 6 个主要类型；当前测试覆盖 42 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 41
+测试文件: 3 个，用例总数: 42
 
 ## 公开 API
 
@@ -71,16 +71,17 @@ ProviderMessage 的实现包，包含 6 个主要类型；当前测试覆盖 41 
 | 39 | CollapsedContentBlock | 折叠块包含首尾空白时裁掉碰到的空白并保留其余区间 | 区间覆盖整段含首尾空白的正文 | 按 trim 后正文重算区间 | 区间裁短为正文长度，块不丢失 | P0 | ✅ 已覆盖 | `clipsSurroundingWhitespaceInsteadOfDroppingBlock` |
 | 40 | CollapsedContentBlock | 只含尾随空白时同样裁短保留 | 区间延伸到换行之后 | 按 trim 后正文重算区间 | 区间裁短到正文末尾 | P1 | ✅ 已覆盖 | `clipsTrailingWhitespaceOnly` |
 | 41 | CollapsedContentBlock | 部分与空白重叠的块裁短，完全落在空白里的块删除 | 块分别覆盖全空白与部分正文 | 按 trim 后正文重算区间 | 全空白块删除，部分重叠块裁短 | P1 | ✅ 已覆盖 | `dropsOnlyFullyTrimmedBlocks` |
+| 42 | UserAttachment | 文本附件正文中的结构标签被转义，不能伪造额外附件 | 正文含 `</attached_file>` 与伪开始标签 | 序列化到 LLM 正文 | 结构标签只来自真实附件，正文标签被转义 | P0 | ✅ 已覆盖 | `escapesStructureTagsInTextAttachmentBody` |
 
 > 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
+- P0: 已覆盖 3 / 3
 - P1: 已覆盖 31 / 31
 - P2: 已覆盖 8 / 8
-- **合计: 41 / 41**（仅表示清单场景，非源码覆盖率）
+- **合计: 42 / 42**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
