@@ -5,7 +5,7 @@
 PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测试覆盖 54 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 54
+测试文件: 7 个，用例总数: 55
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -105,27 +105,28 @@ PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测�
 | 52 | ProviderDetailCustomProviderRemoval | 删除成功后不残留上一次的错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `removalSuccessClearsPreviousError` |
 | 53 | CustomCloudProviderForm | 只改名称等无关字段时保留既有默认模型（**回归 #947**） | 既有配置默认模型为 `m2`，模型为 `m1`、`m2` | 回填表单只修改名称后构造配置 | `defaultModel` 仍为 `m2`，不重置为首模型 | P1 | ✅ 已覆盖 | `preservesExistingDefaultModelWhenEditingOtherFields` |
 | 54 | CustomCloudProviderForm | 既有默认模型已从列表删除时才回退到首模型（**回归 #947**） | 既有配置默认模型为 `m2`，模型改为 `m1`、`m3` | 构造配置 | `defaultModel` 回退为 `m1` | P1 | ✅ 已覆盖 | `fallsBackToFirstModelWhenExistingDefaultWasRemoved` |
+| 55 | ProviderSettingsPageViewModel | 切换供应商后不得继承上一个供应商的 API Key 明文状态（**回归 #942**） | 供应商 P 的详情已展开明文 Key，页面按供应商缓存 ViewModel | 取得供应商 Q 的详情 ViewModel | Q 默认隐藏 Key；P 的状态保留在自己的 ViewModel | P0 | ✅ 已覆盖 | `apiKeyRevealStateIsScopedToProvider` |
 
-> 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **55 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
+- P0: 已覆盖 3 / 3
 - P1: 已覆盖 45 / 45
 - P2: 已覆盖 7 / 7
-- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
+- **合计: 55 / 55**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
 - **P1**: 其余功能性用例（45 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 54 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 55 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
