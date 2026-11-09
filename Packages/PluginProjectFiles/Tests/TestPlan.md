@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFiles 的实现包，包含 6 个主要类型；当前测试覆盖 14 条用例。
+PluginProjectFiles 的实现包，包含 6 个主要类型；当前测试覆盖 15 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 14
+测试文件: 2 个，用例总数: 15
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -28,7 +28,7 @@ PluginProjectFiles 的实现包，包含 6 个主要类型；当前测试覆盖 
 
 - **ProjectFilesTabState**（3 条）：由 `projectsOpenFiles`、`emptyState`、`observesMultiplePinnedFiles` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Project Files ViewModel**（6 条）：由 `reloadPicksUpNewFiles`、`activateForwardsToCapability`、`closeClearsCurrentFileWhenNotPinned` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **Project Files 插件生命周期**（5 条）：由 `bootHidesHeaderWithoutFiles`、`bootShowsHeaderWithFiles`、`bootFailsWithoutProjectProvider` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **Project Files 插件生命周期**（6 条）：由 `bootHidesHeaderWithoutFiles`、`bootShowsHeaderWithFiles`、`bootFailsWithoutProjectProvider` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -48,27 +48,28 @@ PluginProjectFiles 的实现包，包含 6 个主要类型；当前测试覆盖 
 | 12 | Project Files 插件生命周期 | 缺少项目 Provider 时启动失败 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bootFailsWithoutProjectProvider` |
 | 13 | Project Files 插件生命周期 | 缺少根视图 Provider 时启动失败 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bootFailsWithoutRootViewProvider` |
 | 14 | Project Files 插件生命周期 | 关闭时清空 content header | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shutdownClearsContentHeader` |
+| 15 | Project Files 插件生命周期 | 非文件工作区激活时，恢复打开文件不会重新显示 content header（**回归 #1015**） | Terminal（不保留 header）已激活并隐藏 header，项目中已有打开文件 | 在 Terminal 激活状态下让项目恢复/新增打开文件，触发项目事件 | ProjectFiles 不覆盖工作区决定，content header 保持隐藏 | P0 | ✅ 已覆盖 | `restoringFilesKeepsHeaderHiddenInForeignWorkspace` |
 
-> 说明：全部 **14 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **15 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
+- P0: 已覆盖 1 / 1
 - P1: 已覆盖 13 / 13
 - P2: 已覆盖 1 / 1
-- **合计: 14 / 14**（仅表示清单场景，非源码覆盖率）
+- **合计: 15 / 15**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
 - **P1**: 其余功能性用例（13 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 14 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 15 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

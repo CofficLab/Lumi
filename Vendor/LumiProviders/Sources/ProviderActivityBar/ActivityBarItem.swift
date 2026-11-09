@@ -29,6 +29,11 @@ public struct ActivityBarItem: Identifiable {
     ///
     /// 默认入口不需要 Footer；需要继续显示的入口应显式声明。
     public let preservesContentFooter: Bool
+    /// 激活该入口时是否拥有主内容区顶部的 Content Header（文件标签条）。
+    ///
+    /// 只有文件浏览/编辑类工作区会保留 Content Header；其它工作区激活后
+    /// 自行隐藏，并应阻止文件状态变化把 Header 重新显示出来。
+    public let preservesContentHeader: Bool
     /// 该入口自身的激活状态变化时回调。
     ///
     /// ActivityBar 只向状态发生变化的入口发送通知：切换入口时，先通知旧入口
@@ -42,6 +47,7 @@ public struct ActivityBarItem: Identifiable {
         order: Int = 200,
         ownerPluginID: String? = nil,
         preservesContentFooter: Bool = false,
+        preservesContentHeader: Bool = false,
         onActivationChanged: @escaping @MainActor (ActivationState) -> Void = { _ in }
     ) {
         self.id = id
@@ -50,6 +56,7 @@ public struct ActivityBarItem: Identifiable {
         self.order = order
         self.ownerPluginID = ownerPluginID
         self.preservesContentFooter = preservesContentFooter
+        self.preservesContentHeader = preservesContentHeader
         self.onActivationChanged = onActivationChanged
     }
 }
