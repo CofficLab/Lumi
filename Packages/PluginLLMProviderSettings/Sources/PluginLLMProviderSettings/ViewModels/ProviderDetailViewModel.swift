@@ -26,6 +26,8 @@ final class ProviderDetailViewModel: ObservableObject {
     @Published private(set) var isRefreshingModels = false
     /// 最近一次刷新失败的原因（成功后清空）。
     @Published private(set) var modelRefreshError: String?
+    /// 删除自定义供应商失败的原因（成功后清空）。
+    @Published private(set) var customProviderRemoveError: String?
 
     private let capability: any ProviderSettingsCapability
     private var customCancellable: AnyCancellable?
@@ -117,8 +119,17 @@ final class ProviderDetailViewModel: ObservableObject {
         apiKeySaveError = nil
     }
 
+    /// 删除当前自定义供应商。
+    ///
+    /// 落盘失败时 Store 会保留原配置，这里把错误留在
+    /// `customProviderRemoveError`，避免界面表现为「删了但还在」。
     func removeCustomProvider() {
-        capability.removeCustomProvider(id: providerID)
+        customProviderRemoveError = nil
+        do {
+            try capability.removeCustomProvider(id: providerID)
+        } catch {
+            customProviderRemoveError = error.localizedDescription
+        }
     }
 
     func makeCustomProviderEditor() -> CustomCloudProviderEditor? {
