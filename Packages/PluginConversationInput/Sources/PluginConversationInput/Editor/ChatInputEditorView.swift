@@ -322,19 +322,29 @@ public struct ChatInputEditorView: NSViewRepresentable {
     /// 「粘贴时是折叠块、发出后却展开成一大段」的根因。
     private func resolvedContent(from textView: NSTextView) -> ResolvedEditorContent {
         guard let editorTextView = textView as? EditorTextView,
-              editorTextView.hasPastePreviewAttachments,
               let textStorage = textView.textStorage,
               textStorage.length > 0 else {
             return ResolvedEditorContent(text: textView.string, blocks: [])
         }
 
+        // 撤销可能把已删除的 chip 重新放回 text storage，而删除时已经
+        // 把标志清成了 false。是否拍平必须以存储里的真实 attachment 为准，
+        // 只信缓存标志会把 U+FFFC 占位符当成正文发出去。
+        guard editorTextView.hasPastePreviewAttachments
+                || (textView.string as NSString).range(of: Self.attachmentPlaceholder).location != NSNotFound else {
+            return ResolvedEditorContent(text: textView.string, blocks: [])
+        }
+
         let flattened = Self.flattenedContent(from: textStorage)
-        if !flattened.hasAttachments {
-            editorTextView.hasPastePreviewAttachments = false
+        editorTextView.hasPastePreviewAttachments = flattened.hasAttachments
+        guard flattened.hasAttachments else {
             return ResolvedEditorContent(text: textView.string, blocks: [])
         }
         return ResolvedEditorContent(text: flattened.text, blocks: flattened.blocks)
     }
+
+    /// 带 attachment 的字符在 `string` 中的占位符（U+FFFC）。
+    static let attachmentPlaceholder = "\u{FFFC}"
 
     /// 把带 chip 的富文本拍平成纯文本，并算出每个 chip 在纯文本中的区间。
     ///

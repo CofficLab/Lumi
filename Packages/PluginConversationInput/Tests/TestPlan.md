@@ -336,6 +336,7 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 168 | 发送 | 按钮路径编码期间新输入不被成功后清理覆盖 | 挂起后台提交 | `send()` → 改写正文 → 放行提交 | 改写后的新草稿保留，不被清空 | P0 | ✅ 已覆盖 | `backgroundCommitSuccessKeepsEditedDraft` |
 | 169 | 发送 | 回车路径附件提交成功清空正文与折叠块 | text + 折叠块 + 文件附件 | `send()` 后等待提交结束 | `capability.text` 与折叠块清空，ViewModel 文本同步为空 | P0 | ✅ 已覆盖 | `successfulAttachmentCommitClearsDraft` |
 | 170 | 发送 | 回车路径编码期间新输入不被成功后清理覆盖 | 挂起后台提交 | `send()` → `setText` 改写 → 放行提交 | 新草稿在能力层与 ViewModel 中都保留 | P0 | ✅ 已覆盖 | `successfulAttachmentCommitKeepsEditedDraft` |
+| 171 | 折叠块 | 撤销恢复被删除的 chip 后重新拍平正文并恢复区间（**回归 #1036**） | 正文 `"A " + chip`，删除 chip 并发布后再放回 attachment | 触发 `textDidChange` 对应的发布逻辑 | 发布文本包含 chip 原文而非 U+FFFC，折叠块区间恢复，标志重新为 true | P1 | ✅ 已覆盖 | `undoRestoringChipFlattensAgain` |
 
 > **鉴别力验证**：本轮用一处变异确认用例不是「恒绿」——把
 > `Coordinator.textDidChange` 里的两道 IME 守卫
@@ -349,8 +350,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 > 里有一份**代码完全相同**的守卫，全局替换第一处会改错函数，
 > 导致「用例仍然全绿」的假阴性。
 
-> 说明：全部 **170 条场景 / 176 个测试方法**已在 macOS 上实跑通过
-> （`swift test` → 167 tests in 25 suites；其中 6 条 chip 几何用例在本机
+> 说明：全部 **171 条场景 / 177 个测试方法**已在 macOS 上实跑通过
+> （`swift test` → 177 tests in 25 suites；其中 6 条 chip 几何用例在本机
 > Xcode 27.2 SDK 下失败，已在未改动的 HEAD 上复现，属既有环境问题）。
 >
 > 实现中几条易错约定已在用例里显式锁定：
@@ -373,9 +374,9 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 ## 覆盖率统计
 
 - P0: 已覆盖 52 / 52
-- P1: 已覆盖 100 / 100
+- P1: 已覆盖 101 / 101
 - P2: 已覆盖 18 / 18
-- **合计: 170 / 170**（仅表示清单场景，非源码覆盖率）
+- **合计: 171 / 171**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
