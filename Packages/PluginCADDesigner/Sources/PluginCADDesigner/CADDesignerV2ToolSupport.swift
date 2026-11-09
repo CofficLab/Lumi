@@ -80,6 +80,11 @@ enum CADDesignerV2ToolSupport {
     }
 
     private static func localizedErrorDescription(_ description: String) -> String {
-        description == "No CAD document is selected." ? "未选中 CAD 文档。" : description
+        if description == "No CAD document is selected." { return "未选中 CAD 文档。" }
+        let prefix = "CAD component not found: "
+        if description.hasPrefix(prefix) {
+            return "未找到 CAD 组件：\(description.dropFirst(prefix.count))"
+        }
+        return description
     }
 }

@@ -140,6 +140,34 @@ final class CADDesignerLogicTests: XCTestCase {
         XCTAssertEqual(document.connections.count, decoded.connections.count)
     }
 
+    @MainActor
+    func testAddConnectionRejectsUnknownEndpoints() throws {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        _ = store.createDocument(name: "Dangling Guard")
+        let profile = ProfileInstance(profileId: "profile-40x40-eu", length: 500)
+        let connector = ConnectorInstance(connectorId: "connector-corner-40")
+        _ = try store.addComponent(.profile(profile))
+        _ = try store.addComponent(.connector(connector))
+
+        do {
+            _ = try store.addConnection(ConnectionEdge(fromComponentID: "missing-a", toComponentID: "missing-b"))
+            XCTFail("expected both-missing endpoints to be rejected")
+        } catch let error as CADDocumentStoreError {
+            XCTAssertEqual(error, .componentNotFound("missing-a"))
+        }
+        do {
+            _ = try store.addConnection(ConnectionEdge(fromComponentID: profile.id, toComponentID: "missing-b"))
+            XCTFail("expected a missing target endpoint to be rejected")
+        } catch let error as CADDocumentStoreError {
+            XCTAssertEqual(error, .componentNotFound("missing-b"))
+        }
+        XCTAssertTrue(store.selectedDocument?.connections.isEmpty == true)
+
+        _ = try store.addConnection(ConnectionEdge(fromComponentID: profile.id, toComponentID: connector.id))
+        XCTAssertEqual(store.selectedDocument?.connections.count, 1)
+    }
+
     func testCADDocumentDecodeMissingFields() throws {
         // 验证向后兼容：缺失字段时使用默认值
         let json = "{\"id\":\"test-id\",\"name\":\"minimal\"}"
