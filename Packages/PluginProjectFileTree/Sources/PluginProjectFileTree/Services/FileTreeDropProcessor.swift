@@ -18,8 +18,8 @@ import Foundation
 /// )
 /// switch result {
 /// case .rejected: return
-/// case .moved(let pairs, let affectedParents):
-///     // 触发回调 / reload / 自动展开
+/// case .moved(let pairs, let failedSources, let affectedParents):
+///     // 触发回调 / reload / 自动展开；failedSources 非空时提示部分失败
 /// }
 /// ```
 ///
@@ -28,8 +28,9 @@ import Foundation
 ///   返回 `.rejected`，调用方据此决定是否重置高亮/弹 toast。
 /// - **去环**：`PathFormatter.topLevelURLs(from:)` 过滤掉嵌套子项，
 ///   避免把目录拖入自身子目录的死循环。
-/// - **失败容错**：单个 source 移动失败（如跨设备、权限不足）不阻断其余 source，
-///   汇总在 `movedPairs` 里交给 controller 决定后续处理。
+/// - **失败容错**：单个 source 移动失败（如跨设备、权限不足、目标同名已存在）不阻断
+///   其余 source，但失败项必须记录在 `failedSources` 里，调用方不能把部分完成
+///   当作整体成功（回归 #1100）。
 /// - **收集父目录**：把 target 与每个 source 的 parent 加入 `affectedParents`，
 ///   让数据源做精准 reload 而不是全树 `fullRefresh`。
 public enum FileTreeDropProcessor {
@@ -38,8 +39,12 @@ public enum FileTreeDropProcessor {
     public enum Result {
         /// 被拒绝：开关关闭 / target 非目录 / sources 为空 / 全部 move 失败。
         case rejected
-        /// 处理成功；返回 (oldURL, newURL) 列表与受影响的父目录集合。
-        case moved(pairs: [(old: URL, new: URL)], affectedParents: Set<URL>)
+        /// 至少一个 source 移动成功；返回成功 pairs、失败源与受影响的父目录集合。
+        case moved(
+            pairs: [(old: URL, new: URL)],
+            failedSources: [URL],
+            affectedParents: Set<URL>
+        )
     }
 
     /// 执行拖放处理。
@@ -64,9 +69,13 @@ public enum FileTreeDropProcessor {
 
         // 用 PathFormatter.topLevelURLs 过滤掉嵌套子项，避免目标被拖入自身子目录的环。
         var pairs: [(old: URL, new: URL)] = []
+        var failedSources: [URL] = []
         for sourceURL in PathFormatter.topLevelURLs(from: sourceURLs) {
-            guard let newURL = moveItem(sourceURL.path, targetURL.path),
-                  newURL != sourceURL else { continue }
+            guard let newURL = moveItem(sourceURL.path, targetURL.path) else {
+                failedSources.append(sourceURL)
+                continue
+            }
+            guard newURL != sourceURL else { continue }
             pairs.append((sourceURL, newURL))
         }
 
@@ -78,6 +87,6 @@ public enum FileTreeDropProcessor {
             affectedParents.insert(old.deletingLastPathComponent().standardizedFileURL)
         }
 
-        return .moved(pairs: pairs, affectedParents: affectedParents)
+        return .moved(pairs: pairs, failedSources: failedSources, affectedParents: affectedParents)
     }
 }
