@@ -6,7 +6,7 @@ import ProviderLifecycleHooks
 
 @testable import PluginAgentTurnNotification
 
-@Suite("AgentTurnNotificationPlugin")
+@Suite("AgentTurnNotificationPlugin", .serialized)
 @MainActor
 struct AgentTurnNotificationPluginTests {
     @Test("插件 onBoot/onShutdown 不抛错")
@@ -42,6 +42,8 @@ struct AgentTurnNotificationPluginTests {
         let plugin = AgentTurnNotificationPlugin()
         var notified: [String] = []
         plugin.notifier = { title, _, _ in notified.append(title) }
+        plugin.installTapHandler = { _ in }
+        plugin.uninstallTapHandler = { _ in }
         try plugin.onBoot(kernel: kernel)
 
         let conversationID = UUID()
@@ -55,5 +57,75 @@ struct AgentTurnNotificationPluginTests {
         #expect(notified == ["任务完成"])
 
         try plugin.onShutdown(kernel: kernel)
+    }
+
+    @Test("通知请求携带来源会话 ID")
+    func notificationRequestCarriesConversationID() {
+        let conversationID = UUID()
+        let request = AgentTurnNotificationPlugin.notificationRequest(
+            title: "任务完成",
+            body: "Agent 回合已结束",
+            conversationID: conversationID
+        )
+
+        let storedID = request.content.userInfo[TurnNotificationTapHandler.conversationIDKey] as? String
+        #expect(storedID == conversationID.uuidString)
+        #expect(request.content.title == "任务完成")
+        #expect(request.content.body == "Agent 回合已结束")
+        #expect(request.content.sound != nil)
+    }
+
+    @Test("点击通知激活应用并选中来源会话")
+    func tapSelectsOriginatingConversation() throws {
+        let originalAvailability = AgentTurnNotificationPlugin.isNotificationDeliveryAvailable
+        AgentTurnNotificationPlugin.isNotificationDeliveryAvailable = true
+        defer { AgentTurnNotificationPlugin.isNotificationDeliveryAvailable = originalAvailability }
+
+        let kernel = KernelCoreContainer()
+        let conversations = DefaultConversationManager(
+            dataDirectory: FileManager.default.temporaryDirectory
+                .appendingPathComponent("NotificationTap-\(UUID().uuidString)", isDirectory: true)
+        )
+        try kernel.registerProvider((any ConversationManaging).self, conversations)
+
+        let plugin = AgentTurnNotificationPlugin()
+        plugin.notifier = { _, _, _ in }
+        var installedHandler: TurnNotificationTapHandler?
+        var didUninstall = false
+        plugin.installTapHandler = { installedHandler = $0 }
+        plugin.uninstallTapHandler = { _ in didUninstall = true }
+        var didActivate = false
+        plugin.activateApplication = { didActivate = true }
+        try plugin.onBoot(kernel: kernel)
+
+        let handler = try #require(installedHandler)
+        let conversationID = UUID()
+        let handled = handler.handleTap(userInfo: [
+            TurnNotificationTapHandler.conversationIDKey: conversationID.uuidString,
+        ])
+
+        #expect(handled)
+        #expect(didActivate)
+        #expect(conversations.selectedConversationID == conversationID)
+
+        try plugin.onShutdown(kernel: kernel)
+        #expect(didUninstall)
+    }
+
+    @Test("缺少或非法会话 ID 的通知点击不改变选中会话")
+    func tapIgnoresInvalidConversationID() {
+        var activations = 0
+        var selectedID: UUID?
+        let handler = TurnNotificationTapHandler(
+            activateApplication: { activations += 1 },
+            selectConversation: { selectedID = $0 }
+        )
+
+        #expect(handler.handleTap(userInfo: [:]) == false)
+        #expect(handler.handleTap(userInfo: [
+            TurnNotificationTapHandler.conversationIDKey: "not-a-uuid",
+        ]) == false)
+        #expect(activations == 0)
+        #expect(selectedID == nil)
     }
 }
