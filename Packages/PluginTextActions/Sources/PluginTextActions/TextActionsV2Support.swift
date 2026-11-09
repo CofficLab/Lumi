@@ -28,6 +28,46 @@ enum TextActionsSettings {
     }
 }
 
+/// 菜单因键盘消失后的一次性抑制。
+///
+/// 只压制「让菜单消失的那一次按键」随后产生的同文本 keyUp：
+/// 命中一次即消费；键码变化（用户开始新的选择动作）或选区已清空时
+/// 立即清除，避免之后重建的相同选区被永久吞掉（issue #1058）。
+struct TextSelectionSuppression {
+    private var text: String?
+    private var keyCode: UInt16?
+
+    mutating func suppress(text: String?, keyCode: UInt16) {
+        self.text = text
+        self.keyCode = keyCode
+    }
+
+    mutating func clear() {
+        text = nil
+        keyCode = nil
+    }
+
+    /// 新的按键不属于消失菜单的那次按键序列时，先解除抑制。
+    mutating func clearIfKeyChanged(_ keyCode: UInt16) {
+        guard let suppressedKeyCode = self.keyCode, suppressedKeyCode != keyCode else { return }
+        clear()
+    }
+
+    /// 命中抑制时返回 true，并消费掉它，允许之后相同选区正常显示。
+    mutating func consumeMatch(text: String, keyCode: UInt16) -> Bool {
+        guard let suppressedText = self.text,
+              let suppressedKeyCode = self.keyCode,
+              suppressedText == text,
+              suppressedKeyCode == keyCode else {
+            return false
+        }
+        clear()
+        return true
+    }
+
+    var isActive: Bool { text != nil }
+}
+
 /// 选区监听与读取的调度者。
 ///
 /// 三个依赖全部可注入（事件监听、选区读取、权限检查），默认值是生产实现；
@@ -60,8 +100,8 @@ final class TextSelectionManager: TextSelectionMonitoring {
     /// 进行中的异步读取在落地前比对代次，过期即弃——防止
     /// 「菜单已被按键收起，进行中的重试又把它弹出来」。
     private var evaluationToken = 0
-    /// 键盘消失时展示的文本；同一选区不因 keyUp 复活。
-    private var suppressedKeyboardText: String?
+    /// 键盘消失时展示的文本与按键；只抑制这一次按键序列。
+    private var suppression = TextSelectionSuppression()
     /// 最近一次展示菜单的文本。
     private var lastPresentedText: String?
 
@@ -122,9 +162,15 @@ final class TextSelectionManager: TextSelectionMonitoring {
             // NSEvent 不可跨隔离域传递，先在回调线程提取值类型。
             let type = event.type
             let modifiers = event.modifierFlags
+            let keyCode = event.keyCode
             let anchor = NSEvent.mouseLocation
             Task { @MainActor [weak self] in
-                self?.handleSelectionTrigger(type: type, modifiers: modifiers, anchor: anchor)
+                self?.handleSelectionTrigger(
+                    type: type,
+                    modifiers: modifiers,
+                    keyCode: keyCode,
+                    anchor: anchor
+                )
             }
         }
     }
@@ -135,6 +181,7 @@ final class TextSelectionManager: TextSelectionMonitoring {
             self.monitor = nil
         }
         evaluationToken += 1
+        suppression.clear()
         TextActionMenuController.shared.hide()
     }
 
@@ -142,11 +189,12 @@ final class TextSelectionManager: TextSelectionMonitoring {
     private func handleMenuDismissed(_ reason: TextActionMenuDismissReason) {
         evaluationToken += 1
         switch reason {
-        case .keyboard:
-            // Cmd+C 等键盘消失：同一选区不被随后的 keyUp 复活。
-            suppressedKeyboardText = lastPresentedText
+        case .keyboard(let keyCode):
+            // 同一按键序列的 keyUp 不复活菜单；其它按键不受影响。
+            suppression.suppress(text: lastPresentedText, keyCode: keyCode)
             lastPresentedText = nil
         case .mouseDownOutside, .scroll, .actionPerformed, .programmatic:
+            suppression.clear()
             lastPresentedText = nil
         }
     }
@@ -154,24 +202,27 @@ final class TextSelectionManager: TextSelectionMonitoring {
     private func handleSelectionTrigger(
         type: NSEvent.EventType,
         modifiers: NSEvent.ModifierFlags,
+        keyCode: UInt16,
         anchor: CGPoint
     ) {
         switch type {
         case .leftMouseUp, .rightMouseUp:
-            suppressedKeyboardText = nil
-            beginEvaluation(anchor: anchor)
+            suppression.clear()
+            beginEvaluation(anchor: anchor, keyCode: keyCode)
         case .keyUp:
+            // 键码变化意味着用户开始了新的选择动作，旧的抑制不再适用。
+            suppression.clearIfKeyChanged(keyCode)
             let menuVisible = TextActionMenuController.shared.isVisible
             guard TextActionDismissPolicy.shouldEvaluateOnKeyUp(
                 modifiers: modifiers, menuVisible: menuVisible
             ) else { return }
-            beginEvaluation(anchor: anchor)
+            beginEvaluation(anchor: anchor, keyCode: keyCode)
         default:
             break
         }
     }
 
-    private func beginEvaluation(anchor: CGPoint) {
+    private func beginEvaluation(anchor: CGPoint, keyCode: UInt16) {
         guard isPermissionGranted else { return }
         evaluationToken += 1
         let token = evaluationToken
@@ -183,10 +234,10 @@ final class TextSelectionManager: TextSelectionMonitoring {
                 guard token == self.evaluationToken else { return }
                 if let result = self.selectedTextProvider.readSelectedText(anchor: anchor),
                    TextSelectionReadPolicy.shouldPresentMenu(for: result.text) {
-                    if result.text == self.suppressedKeyboardText {
+                    if self.suppression.consumeMatch(text: result.text, keyCode: keyCode) {
                         return
                     }
-                    self.suppressedKeyboardText = nil
+                    self.suppression.clear()
                     self.lastPresentedText = result.text
                     TextActionMenuController.shared.show(selection: result)
                     return
@@ -196,6 +247,9 @@ final class TextSelectionManager: TextSelectionMonitoring {
                 }
             }
             guard token == self.evaluationToken else { return }
+            // 选区已清空或不再满足展示条件：抑制只属于消失菜单的那次按键，
+            // 不应继续吞掉之后重新选择的相同文本。
+            self.suppression.clear()
             self.lastPresentedText = nil
             TextActionMenuController.shared.hide()
         }
@@ -208,8 +262,8 @@ final class TextSelectionManager: TextSelectionMonitoring {
 enum TextActionMenuDismissReason {
     /// 点击了菜单外任意处。
     case mouseDownOutside
-    /// 键盘输入（含 Esc 与快捷键）。
-    case keyboard
+    /// 键盘输入（含 Esc 与快捷键）；携带该次按键的 keyCode。
+    case keyboard(keyCode: UInt16)
     /// 滚动超过阈值。
     case scroll
     /// 菜单动作执行完毕（复制 / 搜索）。
@@ -415,9 +469,10 @@ final class TextActionMenuController {
             // 因此这里收到的一定是「菜单外」的事件。
             let type = event.type
             let modifiers = event.modifierFlags
+            let keyCode = event.keyCode
             let deltaY = event.scrollingDeltaY
             Task { @MainActor [weak self] in
-                self?.handleExternalEvent(type: type, modifiers: modifiers, deltaY: deltaY)
+                self?.handleExternalEvent(type: type, modifiers: modifiers, keyCode: keyCode, deltaY: deltaY)
             }
         }
     }
@@ -432,6 +487,7 @@ final class TextActionMenuController {
     private func handleExternalEvent(
         type: NSEvent.EventType,
         modifiers: NSEvent.ModifierFlags,
+        keyCode: UInt16,
         deltaY: CGFloat
     ) {
         switch type {
@@ -439,7 +495,7 @@ final class TextActionMenuController {
             hide(reason: .mouseDownOutside)
         case .keyDown:
             if TextActionDismissPolicy.shouldDismissOnKeyDown(modifiers: modifiers) {
-                hide(reason: .keyboard)
+                hide(reason: .keyboard(keyCode: keyCode))
             }
         case .scrollWheel:
             scrollAccumulation += deltaY
