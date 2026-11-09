@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 31 条用例。
+PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 33 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 31
+测试文件: 3 个，用例总数: 33
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -34,7 +34,8 @@ PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 3
 
 - **ContextPopoverLayout**（5 条）：由 `trendMarkersHeightIsConstrained`、`trendMarkersRendersInTightSpace`、`popoverHeightIsConstrainedWithManyEvents` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ContextUsageHistory**（9 条）：由 `emptyHistory`、`samplesUseReportedInputTokens`、`assistantOutputExcludedFromInput` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **LLMContextPlugin**（17 条）：由 `timelineMessagesAreExcludedFromLLMHistory`、`shortConversationUsesFullHistory`、`contextWindowUsageMatchesPreparedRequest` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **LLMContextPlugin**（19 条）：由 `timelineMessagesAreExcludedFromLLMHistory`、`shortConversationUsesFullHistory`、`contextWindowUsageMatchesPreparedRequest` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **不可发送角色的预算隔离**（2 条）：由 `nonSendableRolesAreExcludedFromLLMHistory`、`fallbackKeepsUserRequestWhenErrorExceedsBudget` 锁定；`.error` / `.status` 必须在估算、摘要和 fallback 之前排除，否则尾部错误会挤掉真实用户请求（**回归 #1025**）。
 
 ## 测试用例清单
 
@@ -71,27 +72,29 @@ PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 3
 | 29 | LLMContextPlugin | 摘要仍然覆盖得住最近区间时不会重新生成 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `validSnapshotIsReusedWithoutNewSummary` |
 | 30 | LLMContextPlugin | 压缩上下文会裁剪超大的旧工具输出 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `oversizedToolOutputIsTruncatedInCompactedContext` |
 | 31 | LLMContextPlugin | 保留窗口本身就超预算时仍然产出不超过预算的上下文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `irreducibleProtectedWindowStillProducesValidContext` |
+| 32 | LLMContextPlugin | 不可发送的错误与状态消息不进入 LLM 历史（**回归 #1025**） | 历史含 user、error 与 status 消息 | 调用 `messagesForLLM` | 只返回 user 消息 | P1 | ✅ 已覆盖 | `nonSendableRolesAreExcludedFromLLMHistory` |
+| 33 | LLMContextPlugin | 降级裁剪不会让尾部错误消息挤掉真实用户请求（**回归 #1025**） | 输入上限约 1,096 token，历史为 user("hi") + 5,000 字符 error | 调用 `prepareContext` | 返回 user("hi")，错误不参与预算 | P1 | ✅ 已覆盖 | `fallbackKeepsUserRequestWhenErrorExceedsBudget` |
 
-> 说明：全部 **31 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 29 / 29
+- P1: 已覆盖 31 / 31
 - P2: 已覆盖 2 / 2
-- **合计: 31 / 31**（仅表示清单场景，非源码覆盖率）
+- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（29 条）
+- **P1**: 其余功能性用例（31 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 31 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 33 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

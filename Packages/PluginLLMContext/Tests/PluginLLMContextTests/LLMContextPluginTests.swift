@@ -817,6 +817,83 @@ struct LLMContextPluginTests {
         #expect(result.estimatedInputTokens <= budget.inputTokenLimit)
         #expect(result.messages.contains { $0.metadata["llmContext"] == "summary" })
     }
+
+    @Test("不可发送的错误与状态消息不进入 LLM 历史")
+    func nonSendableRolesAreExcludedFromLLMHistory() async {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .user, content: "你好"),
+            to: conversationID
+        )
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .error, content: "provider failed"),
+            to: conversationID
+        )
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .status, content: "后台任务完成"),
+            to: conversationID
+        )
+
+        let result = await provider.messagesForLLM(in: conversationID)
+
+        #expect(result.map(\.role) == [.user])
+        #expect(result.first?.content == "你好")
+    }
+
+    @Test("降级裁剪不会让尾部错误消息挤掉真实用户请求")
+    func fallbackKeepsUserRequestWhenErrorExceedsBudget() async {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .user, content: "hi"),
+            to: conversationID
+        )
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .error,
+                content: String(repeating: "x", count: 5_000)
+            ),
+            to: conversationID
+        )
+
+        // 输入上限约 1,096 token：错误消息原文超预算，旧实现会截断它并 break，
+        // 让更早的 "hi" 完全没有机会进入请求。
+        let budget = LLMContextBudget(
+            contextWindowTokens: 4_096,
+            reservedOutputTokens: 2_000,
+            safetyMarginTokens: 1_000
+        )
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: nil,
+            model: nil,
+            budget: budget,
+            mode: .beforeSend
+        )
+
+        let result = await provider.prepareContext(for: request)
+
+        #expect(result.messages.map(\.role) == [.user])
+        #expect(result.messages.first?.content == "hi")
+    }
 }
 
 @MainActor

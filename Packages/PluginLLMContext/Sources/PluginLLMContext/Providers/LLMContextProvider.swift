@@ -33,6 +33,11 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
     static let compactionMessageThreshold = 40
     /// 每次滚动摘要最多处理的消息数，超过后下一次继续推进覆盖水位。
     static let maxSummaryMessages = 400
+    /// 最终会进入 provider 请求的角色。
+    ///
+    /// `.error` / `.status` 只用于本地时间线展示，序列化前会被丢弃。让它们参与
+    /// 估算、摘要和预算选择，会挤掉真正可发送的历史（#1025）。
+    static let sendableRoles: Set<ProviderMessage.MessageRole> = [.system, .user, .assistant, .tool]
     /// 每次摘要请求最多携带的估算 token 数的上限。
     static let maximumSummaryInputTokens = 128_000
     /// 摘要生成后至少保留的最近消息数；实际结果仍受 token 预算限制。
@@ -538,7 +543,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
 
     private func llmHistory(for conversationID: UUID) async -> [Message] {
         await messages.messagesForLLM(in: conversationID)
-            .filter { !MessageTimelineEvent.isTimelineEvent($0) }
+            .filter { Self.sendableRoles.contains($0.role) && !MessageTimelineEvent.isTimelineEvent($0) }
     }
 
     private func summarySource(
