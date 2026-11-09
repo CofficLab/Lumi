@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 101 条用例。
+PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 104 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 101
+测试文件: 5 个，用例总数: 104
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -155,16 +155,19 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 99 | ProjectRAGProvider 观察者生命周期 | 释放 handle 后不再收到事件 | Provider 已注册一个观察者 | 广播事件、释放 handle 后再广播 | 释放前后事件次数不变 | P1 | ✅ 已覆盖 | `releasedHandleStopsReceivingEvents` |
 | 100 | ProjectRAGProvider 观察者生命周期 | 释放 handle 后回调捕获的值可以释放 | 回调强引用一个测试对象 | 释放 handle 并检查弱引用 | 弱引用变为 nil，Provider 不再强持有回调 | P1 | ✅ 已覆盖 | `releasingHandleReleasesCallbackCapture` |
 | 101 | ProjectRAGProvider 观察者生命周期 | cancel 立即注销观察者 | Provider 已注册一个观察者 | 调用 `cancel` 后再广播事件 | 回调只收到注销前的事件 | P1 | ✅ 已覆盖 | `cancelRemovesObserver` |
+| 102 | RAGInjectionDeduplication | 去重键只保存固定长度摘要 | — | 用含敏感正文的消息构造去重键并比较 | 摘要为 64 位十六进制且不含原文；会话 ID 或消息序号不同则为不同键 | P1 | ✅ 已覆盖 | `keyStoresOnlyDigest` |
+| 103 | RAGInjectionDeduplication | 超过容量后淘汰最旧的回合 | 容量为 2 的去重窗口 | 依次记录三个不同回合 | 集合始终不超过 2 条，最旧回合被淘汰 | P1 | ✅ 已覆盖 | `evictsOldestTurnBeyondCapacity` |
+| 104 | RAGInjectionDeduplication | 重复记录同一回合不会扩大窗口 | 容量为 2 的去重窗口 | 记录同一回合两次再记录另一回合 | 集合为 2 条且原回合仍被记住 | P1 | ✅ 已覆盖 | `recordingSameTurnIsIdempotent` |
 
-> 说明：全部 **101 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **104 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 7 / 7
-- P1: 已覆盖 83 / 83
+- P1: 已覆盖 86 / 86
 - P2: 已覆盖 11 / 11
-- **合计: 101 / 101**（仅表示清单场景，非源码覆盖率）
+- **合计: 104 / 104**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -175,7 +178,7 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 101 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 104 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

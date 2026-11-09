@@ -474,3 +474,64 @@ private final class StubStorageProvider: StorageProviding {
         dataRootDirectory
     }
 }
+
+/// Regression coverage for issue #1063: the automatic-injection dedup used to
+/// keep the full user message text forever. It now stores only a fixed-size
+/// digest and remembers a bounded number of recent turns.
+@Suite("RAGInjectionDeduplication")
+struct RAGInjectionDeduplicationTests {
+    private func key(_ content: String, conversationID: UUID = UUID(), userMessageCount: Int = 1) -> RAGInjectionDeduplication.Key {
+        RAGInjectionDeduplication.Key(
+            conversationID: conversationID,
+            userMessageCount: userMessageCount,
+            content: content
+        )
+    }
+
+    @Test("去重键只保存固定长度摘要")
+    func keyStoresOnlyDigest() {
+        let content = "SECRET - full user message body"
+        let conversationID = UUID()
+        let first = key(content, conversationID: conversationID)
+        let second = key(content, conversationID: conversationID)
+
+        #expect(first.contentDigest.count == 64)
+        #expect(!first.contentDigest.contains("SECRET"))
+        #expect(first == second)
+        #expect(first != key(content, conversationID: UUID()))
+        #expect(first != key(content, conversationID: conversationID, userMessageCount: 2))
+    }
+
+    @Test("超过容量后淘汰最旧的回合")
+    func evictsOldestTurnBeyondCapacity() {
+        var dedup = RAGInjectionDeduplication(capacity: 2)
+        let first = key("first")
+        let second = key("second")
+        let third = key("third")
+
+        dedup.record(first)
+        dedup.record(second)
+        #expect(dedup.keys.count == 2)
+        #expect(dedup.contains(first))
+        #expect(dedup.contains(second))
+
+        dedup.record(third)
+        #expect(dedup.keys.count == 2)
+        #expect(!dedup.contains(first), "窗口应淘汰最旧的回合")
+        #expect(dedup.contains(second))
+        #expect(dedup.contains(third))
+    }
+
+    @Test("重复记录同一回合不会扩大窗口")
+    func recordingSameTurnIsIdempotent() {
+        var dedup = RAGInjectionDeduplication(capacity: 2)
+        let turn = key("same turn")
+
+        dedup.record(turn)
+        dedup.record(turn)
+        dedup.record(key("another turn"))
+
+        #expect(dedup.keys.count == 2)
+        #expect(dedup.contains(turn))
+    }
+}
