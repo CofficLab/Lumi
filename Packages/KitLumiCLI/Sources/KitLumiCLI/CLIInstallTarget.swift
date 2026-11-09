@@ -71,13 +71,15 @@ public enum CLIInstallTargetResolver {
             let standardized = url.standardizedFileURL
             let path = standardized.path
             guard !seenPaths.contains(path) else { continue }
-            seenPaths.insert(path)
 
             var isDirectory: ObjCBool = false
             guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory),
                   isDirectory.boolValue else { continue }
             guard fileManager.isWritableFile(atPath: path) else { continue }
 
+            // 只有真正收下的目录才记为“见过”。缺失的 PATH 项若提前占位，
+            // 会让后面的 ~/.local/bin 兜底误以为已经处理过而跳过（issue #945）。
+            seenPaths.insert(path)
             result.append(
                 CLIInstallTarget(
                     directory: standardized,
@@ -93,13 +95,13 @@ public enum CLIInstallTargetResolver {
             let standardized = url.standardizedFileURL
             let path = standardized.path
             guard !seenPaths.contains(path) else { continue }
-            seenPaths.insert(path)
 
             var isDirectory: ObjCBool = false
             guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory),
                   isDirectory.boolValue else { continue }
             guard fileManager.isWritableFile(atPath: path) else { continue }
 
+            seenPaths.insert(path)
             result.append(
                 CLIInstallTarget(
                     directory: standardized,
