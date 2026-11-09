@@ -3,6 +3,7 @@ import KernelCore
 import LumiLoggingKit
 import os
 import ProviderAgentLoop
+import ProviderConversation
 import ProviderConversationState
 import ProviderToolManager
 import ProviderMessageSender
@@ -22,6 +23,7 @@ public final class ConversationStatePlugin: SuperPlugin, SuperLog {
     private var agentLoopObserver: AgentLoopStateObserver?
     private var toolManagerObserver: ToolManagerStateObserver?
     private var senderObserver: MessageSenderStateObserver?
+    private var conversationObserver: (any ConversationObserverHandle)?
 
     public let id = "com.coffic.lumi.plugin.conversation-state"
     public let order = 10
@@ -55,6 +57,27 @@ public final class ConversationStatePlugin: SuperPlugin, SuperLog {
         agentLoopObserver = AgentLoopStateObserver(agentLoop: agentLoop, provider: provider)
         toolManagerObserver = ToolManagerStateObserver(toolManager: toolManager, provider: provider)
         senderObserver = MessageSenderStateObserver(sender: sender, provider: provider)
+
+        if let conversations = kernel.resolveProvider((any ConversationManaging).self) {
+            conversationObserver = observeConversationDeletion(
+                conversations: conversations,
+                provider: provider
+            )
+        } else {
+            Self.logger.error("\(Self.t)ConversationManaging not registered; deleted conversations will keep their state")
+        }
+    }
+
+    /// 会话删除后必须同步移除快照，否则 turn/activity/job/error 会一直
+    /// 留在字典里，状态查询也会对已删除会话返回过期状态。
+    func observeConversationDeletion(
+        conversations: any ConversationManaging,
+        provider: ConversationStateProvider
+    ) -> any ConversationObserverHandle {
+        conversations.addConversationObserver { event in
+            guard case let .deleted(conversationID) = event else { return }
+            provider.remove(conversationID: conversationID)
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -64,5 +87,7 @@ public final class ConversationStatePlugin: SuperPlugin, SuperLog {
         toolManagerObserver = nil
         senderObserver?.cancel()
         senderObserver = nil
+        conversationObserver?.cancel()
+        conversationObserver = nil
     }
 }

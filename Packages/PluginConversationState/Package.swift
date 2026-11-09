@@ -10,6 +10,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Vendor/LumiKernel"),
         .package(path: "../ProviderAgentLoop"),
+        .package(path: "../ProviderConversation"),
         .package(path: "../ProviderConversationState"),
         .package(path: "../../Vendor/LumiLogging"),
         .package(path: "../ProviderToolManager"),
@@ -21,6 +22,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderConversationState", package: "ProviderConversationState"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
@@ -30,7 +32,10 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginConversationStateTests",
-            dependencies: ["PluginConversationState"],
+            dependencies: [
+                "PluginConversationState",
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
+            ],
             path: "Tests/PluginConversationStateTests"
         ),
     ]
