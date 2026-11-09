@@ -30,6 +30,7 @@ let package = Package(
             name: "PluginGitHubIssueTests",
             dependencies: [
                 "PluginGitHubIssue",
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "KitTestSupport", package: "KitTestSupport"),
             ],
             path: "Tests/PluginGitHubIssueTests"
