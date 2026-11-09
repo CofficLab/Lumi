@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 87 条用例。
+PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 94 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 87
+测试文件: 6 个，用例总数: 94
 
 核心组件（源码目录）:
 - `Views/`
@@ -37,6 +37,7 @@ PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 
 - **TextActionsPluginLifecycle**（11 条）：由 `registerAddsDocsEntries`、`registerWithoutDocsProviderIsNoop`、`bootInjectsStorageDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionsStorage**（10 条）：由 `usesConfiguredDirectory`、`resetsToFallbackDirectory`、`roundTripsValue` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionMenuPanel**（13 条）：由 `initialStateIsActions`、`performForwardsToHandler`、`stateChangeNotifies` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **TextSelectionSuppression**（7 条）：键盘消失后的一次性抑制语义——只压制让菜单消失的那一次按键随后的同文本 keyUp（命中即消费），键码变化或选区清空立即解除；改动该逻辑时优先跑对应测试文件（issue #1058）。
 
 ## 测试用例清单
 
@@ -129,27 +130,34 @@ PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 
 | 85 | TextActionsPermission | 授权翻转时通知外部启动监听，且只通知一次 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `reportsGrantThroughCallback` |
 | 86 | TextActionsPermission | 状态查询不触发系统授权弹窗 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `statusQueryDoesNotPromptSystem` |
 | 87 | TextActionsPermission | 停止激活监听可安全重复调用 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `stopIsIdempotent` |
+| 88 | TextSelectionSuppression | 匹配的同文本 keyUp 只被抑制一次 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `matchingKeyUpIsSuppressedOnlyOnce` |
+| 89 | TextSelectionSuppression | 键码不同视为新的选择动作并解除抑制 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `differentKeyCodeStartsNewSelection` |
+| 90 | TextSelectionSuppression | 同一按键不会被 keyUp 清掉 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `sameKeyCodeKeepsSuppression` |
+| 91 | TextSelectionSuppression | 选区清空后解除抑制 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `clearingSelectionReleasesSuppression` |
+| 92 | TextSelectionSuppression | 不同键码不命中抑制 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `differentKeyCodeDoesNotMatch` |
+| 93 | TextSelectionSuppression | 不同文本不命中抑制 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `differentTextDoesNotMatch` |
+| 94 | TextSelectionSuppression | 没有展示中的文本时抑制不会生效 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingPresentedTextDoesNotArm` |
 
-> 说明：全部 **87 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **94 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 73 / 73
+- P1: 已覆盖 80 / 80
 - P2: 已覆盖 9 / 9
-- **合计: 87 / 87**（仅表示清单场景，非源码覆盖率）
+- **合计: 94 / 94**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（73 条）
+- **P1**: 其余功能性用例（80 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 87 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 94 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
