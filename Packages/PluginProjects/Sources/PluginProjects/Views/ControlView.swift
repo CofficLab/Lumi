@@ -18,10 +18,11 @@ struct ControlView: View {
     var body: some View {
         Button {
             isPopoverPresented = true
+            refreshStorageKinds()
         } label: {
             HStack(spacing: 6) {
-                Image(systemName: "folder")
-                    .font(.system(size: 12, weight: .semibold))
+                // 外置设备（U 盘、移动硬盘）用硬盘图标，与本机磁盘区分。
+                ProjectStorageIcon(kind: storageKind)
 
                 Text(viewModel.currentProject?.name ?? pluginLocalization.string("Projects"))
                     .font(.system(size: 13, weight: .medium))
@@ -69,6 +70,12 @@ struct ControlView: View {
         isHovering || isPopoverPresented
     }
 
+    /// 当前项目的存储类型；无项目时按本机磁盘处理。
+    private var storageKind: ProjectStorageKind {
+        guard let path = viewModel.currentProject?.path else { return .internalDisk }
+        return ProjectStorageDetector.kind(for: path)
+    }
+
     private func presentImporter() {
         isPopoverPresented = false
 
@@ -78,6 +85,14 @@ struct ControlView: View {
             await Task.yield()
             isImporterPresented = true
         }
+    }
+
+    /// 弹层展开时刷新存储类型缓存。
+    ///
+    /// 外置设备可能在应用运行期间被拔出或重新挂载，缓存的判定结果会过期；
+    /// 用户打开弹层时重新探测一次即可，无需常驻轮询。
+    private func refreshStorageKinds() {
+        ProjectStorageDetector.invalidateAll()
     }
 
     private func handleImport(_ result: Result<[URL], any Error>) {
