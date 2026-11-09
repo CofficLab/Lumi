@@ -5,7 +5,7 @@
 PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace and the official Chrome DevTools MCP server for controlling Chrome.
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 43
+测试文件: 9 个，用例总数: 46
 
 核心组件（源码目录）:
 - `Models/`
@@ -54,6 +54,7 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 - **Browser 活动会话隔离**（2 条）：由 `readOnlyToolsDoNotHijackActiveConversation`、`explicitSelectionStillSwitchesActiveConversation` 锁定；只读工具只能读取自己会话的页面，不得改写用户当前选中的 Browser 工作区。
 - **Browser 会话释放**（4 条）：由 `deletedConversationReleasesBrowserSession`、`deletingActiveConversationClearsActiveState` 等用例锁定；删除会话必须立刻释放 BrowserSession/WKWebView，并在活动会话被删时清空活动状态。
 - **Browser 整页截图边界**（6 条）：由 `clampsExtremelyWidePages`、`downscalesBeyondPixelBudget`、`outputPixelsStayWithinBudget` 等用例锁定；整页截图必须同时限制宽度、高度与总像素数，不能只钳制高度（issue #1060）。
+- **Browser type 动作的 Unicode 输入**（3 条）：由 `typePreservesEmojiAndCJK`、`typePreservesZWJEmoji`、`typePreservesCombiningMarks` 用例锁定；`type` 必须按完整字符（优先 grapheme）逐次写入，不能按 UTF-16 码元拆分 surrogate pair（issue #1059）。
 
 ## 测试用例清单
 
@@ -102,16 +103,19 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 | 41 | Browser 整页截图边界 | 常规页面不缩放 | 1280×720 页面 | 调用 `fitted` | rect 原样返回且 outputScale 为 1 | P1 | ✅ 已覆盖 | `leavesNormalPagesUntouched` |
 | 42 | Browser 整页截图边界 | 非法尺寸至少保留 1 点 | 宽高为 0 或负数 | 调用 `fitted` | rect 宽高均为 1 | P2 | ✅ 已覆盖 | `clampsNonPositiveSizes` |
 | 43 | Browser 整页截图边界 | 降采样后的输出像素不超过预算 | 多种宽高组合 | 调用 `fitted` 并计算 outputPixels | 均不超过 16M | P1 | ✅ 已覆盖 | `outputPixelsStayWithinBudget` |
+| 44 | Browser type 动作的 Unicode 输入 | Emoji 与中文按完整字符输入（**回归 #1059**） | 输入框替身按 USVString 语义保存 value | 执行 type 脚本输入 `A😀B中文` | value 与输入完全一致，且每个字符各触发一组按键事件 | P1 | ✅ 已覆盖 | `typePreservesEmojiAndCJK` |
+| 45 | Browser type 动作的 Unicode 输入 | ZWJ 组合 Emoji 不被拆坏 | 同上 | 输入家庭 Emoji 序列 | value 与输入完全一致 | P1 | ✅ 已覆盖 | `typePreservesZWJEmoji` |
+| 46 | Browser type 动作的 Unicode 输入 | 组合附加符号不产生替换字符 | 同上 | 输入含 U+0301 组合符的文本 | value 与输入完全一致 | P1 | ✅ 已覆盖 | `typePreservesCombiningMarks` |
 
-> 说明：全部 **43 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **46 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 30 / 30
+- P1: 已覆盖 33 / 33
 - P2: 已覆盖 13 / 13
-- **合计: 43 / 43**（仅表示清单场景，非源码覆盖率）
+- **合计: 46 / 46**（仅表示清单场景，非源码覆盖率）
 
 ## 未覆盖说明
 
@@ -125,13 +129,13 @@ PluginBrowser Lumi's browser capability plugin: an integrated WebKit workspace a
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（30 条）
+- **P1**: 其余功能性用例（33 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 43 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 46 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
