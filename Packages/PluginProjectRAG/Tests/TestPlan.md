@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 98 条用例。
+PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 101 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 98
+测试文件: 5 个，用例总数: 101
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -152,16 +152,19 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 9
 | 96 | RAGSQLiteStoreConcurrency | 并发索引不同项目不会因同一连接的嵌套事务互相失败 | 单一 `RAGSQLiteStore` 连接 | 8 个线程同时释放并各写入一个不同项目的 200 个 chunk | 全部写入成功，每个项目都有完整的文件状态与 chunk | P0 | ✅ 已覆盖 | `concurrentWritersOnOneConnectionDoNotCollide` |
 | 97 | RAGServiceModelMigration | 模型不匹配时后台索引仍完成全量重建 | 索引状态记录旧 embedding 模型，维度与当前一致 | 以 `background: true` 调用 `ensureIndexed` | 重建完成，索引状态与 chunk 数量更新为新模型 | P1 | ✅ 已覆盖 | `backgroundIndexRebuildsWhenEmbeddingModelChanged` |
 | 98 | ProjectRAGPlugin 启动调度 | 启动时没有当前项目也会启动 idle 调度 | kernel 注册了项目与 idle 能力，但当前项目为 nil | 调用 `onBoot` 并等待后台任务 | `scheduler` 非 nil；关闭后恢复 nil | P1 | ✅ 已覆盖 | `startsIdleSchedulerWithoutCurrentProject` |
+| 99 | ProjectRAGProvider 观察者生命周期 | 释放 handle 后不再收到事件 | Provider 已注册一个观察者 | 广播事件、释放 handle 后再广播 | 释放前后事件次数不变 | P1 | ✅ 已覆盖 | `releasedHandleStopsReceivingEvents` |
+| 100 | ProjectRAGProvider 观察者生命周期 | 释放 handle 后回调捕获的值可以释放 | 回调强引用一个测试对象 | 释放 handle 并检查弱引用 | 弱引用变为 nil，Provider 不再强持有回调 | P1 | ✅ 已覆盖 | `releasingHandleReleasesCallbackCapture` |
+| 101 | ProjectRAGProvider 观察者生命周期 | cancel 立即注销观察者 | Provider 已注册一个观察者 | 调用 `cancel` 后再广播事件 | 回调只收到注销前的事件 | P1 | ✅ 已覆盖 | `cancelRemovesObserver` |
 
-> 说明：全部 **98 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **101 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 7 / 7
-- P1: 已覆盖 80 / 80
+- P1: 已覆盖 83 / 83
 - P2: 已覆盖 11 / 11
-- **合计: 98 / 98**（仅表示清单场景，非源码覆盖率）
+- **合计: 101 / 101**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -172,7 +175,7 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 9
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 98 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 101 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
