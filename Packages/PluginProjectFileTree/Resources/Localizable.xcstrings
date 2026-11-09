@@ -290,6 +290,34 @@
         }
       }
     },
+    "Could not open in VS Code." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not open in VS Code."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法在 VS Code 中打开。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法在 VS Code 中開啟。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法在 VS Code 中開啟。"
+          }
+        }
+      }
+    },
     "Could not rename the item. The name may be invalid or an item with that name already exists." : {
       "localizations" : {
         "en" : {

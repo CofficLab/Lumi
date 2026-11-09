@@ -698,7 +698,14 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
     
     @objc private func openInVSCode(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
-        FileTreeFacade.openInVSCode(url)
+        FileTreeFacade.openInVSCode(url) { [weak self] opened in
+            guard !opened else { return }
+            self?.context?.toast?.show(
+                pluginLocalization.string("Could not open in VS Code."),
+                detail: url.lastPathComponent,
+                style: .error
+            )
+        }
     }
     
     @objc private func openInTerminal(_ sender: NSMenuItem) {
