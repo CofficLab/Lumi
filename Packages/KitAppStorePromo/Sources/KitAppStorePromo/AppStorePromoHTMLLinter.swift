@@ -80,10 +80,14 @@ public struct AppStorePromoHTMLLinter: Sendable {
         // 只要最终目标仍在图片根目录内就是安全的（本地化用 ../assets/ 共享素材）。
         let baseDirectory = htmlDirectory ?? documentDirectory
         for path in localResourcePaths(in: html) {
-            guard !path.hasPrefix("data:") && !path.hasPrefix("#") else { continue }
-            let decoded = path.removingPercentEncoding ?? path
+            let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+            // 远程地址由 remote_resource 报错，这里只校验本地文件。
+            guard !trimmed.hasPrefix("data:"),
+                  !trimmed.hasPrefix("#"),
+                  !Self.isRemoteURL(trimmed) else { continue }
+            let decoded = trimmed.removingPercentEncoding ?? trimmed
             if decoded.hasPrefix("/") {
-                add(.error, "unsafe_asset_path", "Asset path escapes the page directory: \(path)")
+                add(.error, "unsafe_asset_path", "Asset path escapes the page directory: \(trimmed)")
                 continue
             }
             if let documentDirectory, let baseDirectory {
@@ -110,10 +114,12 @@ public struct AppStorePromoHTMLLinter: Sendable {
         candidates += captureValues(#"\bsrcset\s*=\s*["']([^"']+)["']"#, in: html)
         candidates += captureValues(#"<(?:link|image|use)\b[^>]*?\bhref\s*=\s*["']([^"']+)["']"#, in: html)
         candidates += captureValues(#"url\(\s*["']?([^"')]+)["']?\s*\)"#, in: html)
-        return candidates.filter { value in
-            let lower = value.lowercased()
-            return lower.contains("http://") || lower.contains("https://") || lower.contains("//cdn.")
-        }
+        return candidates.filter(Self.isRemoteURL)
+    }
+
+    private static func isRemoteURL(_ raw: String) -> Bool {
+        let lower = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return lower.contains("http://") || lower.contains("https://") || lower.contains("//cdn.")
     }
 
     private func captureValues(_ pattern: String, in html: String) -> [String] {
@@ -126,6 +132,9 @@ public struct AppStorePromoHTMLLinter: Sendable {
     }
 
     private func localResourcePaths(in html: String) -> [String] {
+        // CSS `url(...)` 不在 src/href 里，但它与属性一样会加载资源；
+        // 漏掉它会让缺背景图的文档通过 lint。
         captureValues(#"(?:src|href)\s*=\s*["']([^"']+)["']"#, in: html)
+            + captureValues(#"url\(\s*["']?([^"')]+?)["']?\s*\)"#, in: html)
     }
 }
