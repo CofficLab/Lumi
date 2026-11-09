@@ -3,6 +3,7 @@ import Foundation
 import KernelCore
 import ProviderActivityBar
 import ProviderChatSection
+import ProviderRootView
 import Testing
 @testable import PluginMindMapDesigner
 
@@ -47,6 +48,46 @@ struct MindMapDesignerPluginTests {
         activityBar.activateItem(id: nil)
 
         #expect(chat.isVisible)
+    }
+
+    @Test("地图数量变化同步 Rail 可见性（回归 #1020）")
+    func mapAvailabilityChangesUpdateRailVisibility() throws {
+        MindMapDesignerRuntime.reset()
+        let projectRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("mindmap-rail-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
+        defer {
+            MindMapDesignerRuntime.reset()
+            try? FileManager.default.removeItem(at: projectRoot)
+        }
+        MindMapDesignerRuntime.setProjectStorage(
+            projectPath: projectRoot.path,
+            projectStorageDirectory: projectRoot
+        )
+
+        let rootView = DefaultRootViewProviding()
+        let view = MindMapDesignerPlugin().makeDesignerView(rootView: rootView)
+        #expect(MindMapStore.shared.projectMaps.isEmpty)
+
+        // 空列表：Rail 隐藏。
+        view.notifyMapAvailability()
+        #expect(!rootView.isRailViewVisible)
+
+        // Agent 创建首张图：Rail 出现。
+        let map = MindMapStore.shared.createMindMap(
+            title: "First",
+            rootText: "Root",
+            direction: .right,
+            scope: .project
+        )
+        view.notifyMapAvailability()
+        #expect(rootView.isRailViewVisible)
+
+        // 删除最后一张图：Rail 再次隐藏。
+        MindMapStore.shared.deleteMindMap(id: map.id, scope: .project)
+        #expect(MindMapStore.shared.projectMaps.isEmpty)
+        view.notifyMapAvailability()
+        #expect(!rootView.isRailViewVisible)
     }
 
     // MARK: - Markdown codec

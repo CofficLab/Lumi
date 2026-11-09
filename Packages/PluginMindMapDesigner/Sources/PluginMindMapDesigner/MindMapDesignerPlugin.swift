@@ -53,6 +53,16 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
         }
     }
 
+    /// 构造主视图，把地图数量变化同步到 Rail 可见性。
+    ///
+    /// 删除最后一张图后 Rail 要隐藏，Agent 创建首张图后 Rail 要出现；
+    /// 只在激活时算一次会留下空列表或藏住必要导航（#1020）。
+    func makeDesignerView(rootView: (any RootViewProviding)?) -> MindMapDesignerView {
+        MindMapDesignerView(store: store) { [weak rootView] hasMaps in
+            rootView?.setRailViewVisible(hasMaps)
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         MindMapDesignerRuntime.configure(kernel: kernel)
         projectObserver?.cancel()
@@ -138,7 +148,7 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
                             store: railWidthStore
                         )
                         self.store.reload()
-                        contentView?.setContentView(AnyView(MindMapDesignerView(store: self.store)))
+                        contentView?.setContentView(AnyView(self.makeDesignerView(rootView: rootView)))
                     } else {
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         rootView?.setContentHeaderViewHidden(false)
@@ -151,7 +161,7 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
             ])
         } else {
             store.reload()
-            contentView?.setContentView(AnyView(MindMapDesignerView(store: store)))
+            contentView?.setContentView(AnyView(makeDesignerView(rootView: rootView)))
             rootView?.setRailViewVisible(!store.projectMaps.isEmpty)
             chat?.setVisible(true)
             chat?.setContextActive(true)
