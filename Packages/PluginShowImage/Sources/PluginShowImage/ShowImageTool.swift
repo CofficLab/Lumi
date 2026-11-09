@@ -218,6 +218,12 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
                 }
                 return .remote(url.absoluteString)
             case "file":
+                // `file://server/tmp/x.png` 的 host 是 server，路径只是远端机器上
+                // 的路径；丢弃 authority 会把它静默换成本机同名文件（issue #1094）。
+                // 只有空 authority 与 localhost 才指向本机。
+                if let host = url.host, !host.isEmpty, host.lowercased() != "localhost" {
+                    throw ShowImageError.nonLocalFileHost(url.absoluteString)
+                }
                 return .local(url.path)
             default:
                 throw ShowImageError.unsupportedScheme(scheme)
@@ -233,6 +239,7 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
         case missingSource
         case unsupportedScheme(String)
         case missingRemoteHost(String)
+        case nonLocalFileHost(String)
         case fileNotFound(String)
         case notAFile(String)
         case unreadableFile(String)
@@ -247,6 +254,8 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
                 return "Error: Unsupported image URL scheme '\(scheme)'. Only HTTP/HTTPS URLs are supported."
             case .missingRemoteHost(let url):
                 return "Error: Remote image URL has no host: \(url)"
+            case .nonLocalFileHost(let url):
+                return "Error: File URL refers to a remote host, but only local files are supported: \(url)"
             case .fileNotFound(let path):
                 return "Error: File not found: \(path)"
             case .notAFile(let path):

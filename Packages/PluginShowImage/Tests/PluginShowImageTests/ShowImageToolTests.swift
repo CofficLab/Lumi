@@ -53,6 +53,39 @@ struct ShowImageToolTests {
         #expect(state.displayItem == nil)
     }
 
+    /// 回归 #1094：file URL 的 authority 不能被丢弃，否则会读成本机同路径文件。
+    @Test func imageSourceRejectsNonLocalFileURLHost() throws {
+        expectSourceError(
+            "file://server/tmp/existing.png",
+            .nonLocalFileHost("file://server/tmp/existing.png")
+        )
+        expectSourceError(
+            "file://files.corp.internal/Users/me/photo.png",
+            .nonLocalFileHost("file://files.corp.internal/Users/me/photo.png")
+        )
+        // 空 authority 与 localhost 才指向本机。
+        #expect(try ShowImageTool.normalizedSource(from: "file:///tmp/existing.png") == .local("/tmp/existing.png"))
+        #expect(try ShowImageTool.normalizedSource(from: "file://localhost/tmp/existing.png") == .local("/tmp/existing.png"))
+    }
+
+    @Test @MainActor func rejectsNonLocalFileURLWithoutPublishing() async throws {
+        let tool = ShowImageTool(network: nil)
+        let state = ShowImageState.shared
+        state.clear()
+
+        // 本机同路径文件存在且是有效图片；旧实现会静默发布它并报告成功。
+        let imageURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("valid-image-\(UUID()).png")
+        try testPNGData().write(to: imageURL)
+        defer { try? FileManager.default.removeItem(at: imageURL) }
+
+        let remoteFileURL = "file://server" + imageURL.path
+        await #expect(throws: ShowImageTool.ShowImageError.nonLocalFileHost(remoteFileURL)) {
+            _ = try await tool.executeResult(arguments: ["source": ToolArgument(remoteFileURL)])
+        }
+        #expect(state.displayItem == nil)
+    }
+
     @Test func maximumWidthUsesDefaultAndClampsEveryInputForm() {
         #expect(ShowImageTool.normalizedMaxWidth(nil) == 400)
         #expect(ShowImageTool.normalizedMaxWidth("bad") == 400)
