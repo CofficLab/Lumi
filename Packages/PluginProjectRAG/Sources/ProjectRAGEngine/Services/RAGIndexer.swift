@@ -36,7 +36,8 @@ public struct RAGIndexer: SuperLog, Sendable {
         background: Bool = false,
         shouldContinue: @escaping @Sendable () -> Bool = { true }
     ) async throws -> RAGIndexStats {
-        let files = RAGFileScanner.discoverFiles(in: projectPath)
+        // 扫描必须先成功再动索引：根目录不可用时报错退出，保留最后一份可用索引。
+        let files = try RAGFileScanner.discoverFilesOrThrow(in: projectPath)
         let indexedStates = try store.fetchIndexedFileStates(projectPath: projectPath)
         if Self.verbose {
             Self.logger.info("\(Self.t)全量重建开始 files=\(files.count) oldIndexedFiles=\(indexedStates.count)")
@@ -71,7 +72,8 @@ public struct RAGIndexer: SuperLog, Sendable {
         background: Bool = false,
         shouldContinue: @escaping @Sendable () -> Bool = { true }
     ) async throws -> RAGIndexStats {
-        let files = RAGFileScanner.discoverFiles(in: projectPath)
+        // 同 rebuild：扫描失败时不得把旧记录当成「文件已删除」清理掉。
+        let files = try RAGFileScanner.discoverFilesOrThrow(in: projectPath)
         if Self.verbose {
             Self.logger.info("\(Self.t)增量索引开始 files=\(files.count)")
         }
