@@ -10,7 +10,7 @@ import ProviderMessage
 ///   若每次都扫描整段长会话重建全部历史轮次，长列表会持续掉帧。
 ///   因此历史投影必须被缓存，只有历史真正变化时才失效。
 @MainActor
-final class ZCodeTurnProjectionStore {
+final class ZCodeTurnProjectionStore: ObservableObject {
 
     // MARK: - 状态
 
