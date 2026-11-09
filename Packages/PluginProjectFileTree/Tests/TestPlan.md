@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 16 条用例。
+PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 17 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 16
+测试文件: 8 个，用例总数: 17
 
 核心组件（源码目录）:
 - `Models/`
@@ -39,7 +39,7 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **ProjectFileTreePlugin**（2 条）：由 `explorerTabFollowsCurrentProject`、`gitStatusProviderDrainsLargeOutput` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **FileTreeDataSource**（1 条）：由 `collapsingParentClearsDescendantExpansion` 锁定；改动展开/折叠状态或展开路径持久化时优先跑对应测试文件。
+- **FileTreeDataSource**（2 条）：由 `collapsingParentClearsDescendantExpansion`、`targetedReloadDuringRebuildIsReplayed` 锁定；改动展开/折叠状态、展开路径持久化或重建流程时优先跑对应测试文件。折叠父目录必须清除后代展开状态；重建期间的精准刷新必须在提交后重放，不能被空树 guard 丢弃（**回归 #1103**）。
 - **RefreshCoordinator**（4 条）：由 `sameRootPathReappearanceRestartsWatching`、`sameRootPathReappearanceKeepsExpandedPaths`、`emptyRootPathDoesNotStartWatching`、`fullRefreshDoesNotStallTargetedRefresh` 锁定。视图消失会调用 `stop()` 关闭 watcher；同一根路径再次出现时必须重新挂载监听（并保留展开目录），不能因路径相等直接返回（**回归 #1097**）。全量刷新与精准刷新必须各自持有防抖任务且真正响应取消，全量刷新不能把精准 trailing 窗口取消后留下永久 pending（**回归 #1099**）。
 - **FileTreeNSViewBridge**（2 条）：由 `newGitStatusTokenUpdatesVisibleRows`、`repeatedGitStatusTokenDoesNotReload` 锁定。新 Git 快照令牌必须通过 `updateGitStatus` 赋值并重载可见行，不能只改属性；相同令牌不得重复重载（**回归 #1098**）。
 - **FileTreeDropProcessor**（2 条）：由 `partialDropFailureReportsFailedSources`、`successfulDropReportsNoFailedSources` 锁定。单个源移动失败不能静默跳过，`.moved` 必须携带 `failedSources` 供调用方提示部分失败（**回归 #1100**）。
@@ -67,27 +67,28 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 | 14 | FileTreeCollectionViewController | 文件树快照会建立可见行顺序，Shift 选择覆盖整个范围（**回归 #1101**） | 临时项目含 a、b、c 三个文件 | 加载视图并设置项目根后执行 Shift 选择 | 可见顺序包含三行，选中集合与发送目标均为 a、b、c | P0 | ✅ 已覆盖 | `controllerTracksVisibleOrderForShiftSelection` |
 | 15 | FileTreeCollectionViewController | Cmd 取消选中后自定义选择与发送目标只剩剩余项（**回归 #1102**） | 自定义选择为 a、b，AppKit 原生选中只剩 b | 触发 `didDeselectItemsAt` 取消 a | `selectedPaths` 只剩 b，`actionTargets` 不再包含 a | P0 | ✅ 已覆盖 | `commandDeselectRemovesPathFromSelection` |
 | 16 | FileTreeCollectionViewController | 反选回调中仍处于原生选中集合的行不会被移除 | 自定义选择为 a、b，原生选中仍含 a、b | 触发 `didDeselectItemsAt` 报告 a | 自定义选择保持 a、b 不变 | P2 | ✅ 已覆盖 | `deselectCallbackKeepsRowStillSelectedNatively` |
+| 17 | FileTreeDataSource | 重建期间的精准刷新会在提交后重放（**回归 #1103**） | 后台遍历已读取目录 D 的旧内容并被门闩阻塞 | 向 D 新增文件并调用 `reloadDirectory(D)`，随后放行遍历 | 重建提交后重放刷新，`new.txt` 出现在列表中 | P0 | ✅ 已覆盖 | `targetedReloadDuringRebuildIsReplayed` |
 
-> 说明：全部 **16 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **17 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 8 / 8
+- P0: 已覆盖 9 / 9
 - P1: 已覆盖 5 / 5
 - P2: 已覆盖 3 / 3
-- **合计: 16 / 16**（仅表示清单场景，非源码覆盖率）
+- **合计: 17 / 17**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
 - **P1**: 其余功能性用例（5 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 16 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 17 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
