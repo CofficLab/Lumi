@@ -1,5 +1,6 @@
 #if DEBUG
 import Foundation
+import os
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
@@ -136,6 +137,14 @@ public enum MessageListZCodeUITestingSupport {
     /// 流式会话是否标记为流式。
     public static var isStreamingFixture: Bool { true }
 
+    /// 夹具日志。
+    ///
+    /// - Note: 只在 DEBUG 下存在；分类名固定，便于 UI 测试排查时过滤。
+    private static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.message-list.zcode.uitesting"
+    )
+
     // MARK: - 注入
 
     /// 注入 V4 夹具会话。
@@ -147,13 +156,16 @@ public enum MessageListZCodeUITestingSupport {
         messages: any MessageManaging,
         agentLoop: (any AgentLoopProviding)? = nil
     ) -> (any ConversationObserverHandle)? {
-        guard isEnabled else { return nil }
+        guard isEnabled else {
+            Self.logger.info("seed 被跳过：启动参数未齐备")
+            return nil
+        }
         guard !hasSeeded(conversations: conversations) else {
             return NoopZCodeObserverHandle()
         }
         // 会话列表尚未加载完成时，等 `listChanged` 再种 —— 与既有夹具同构。
         if !conversations.isLoadingConversations {
-            doSeed(conversations: conversations, messages: messages)
+            doSeed(conversations: conversations, messages: messages, agentLoop: agentLoop)
             return NoopZCodeObserverHandle()
         }
         let box = OneShotZCodeObserverBox()
@@ -162,7 +174,7 @@ public enum MessageListZCodeUITestingSupport {
             // 一次性：先注销自己，再 seed（seed 会再次触发 listChanged）。
             box.handle?.cancel()
             box.handle = nil
-            doSeed(conversations: conversations, messages: messages)
+            doSeed(conversations: conversations, messages: messages, agentLoop: agentLoop)
         }
         box.handle = handle
         return handle
@@ -182,26 +194,77 @@ public enum MessageListZCodeUITestingSupport {
     /// 实际种入会话。
     private static func doSeed(
         conversations: any ConversationManaging,
-        messages: any MessageManaging
+        messages: any MessageManaging,
+        agentLoop: (any AgentLoopProviding)?
     ) {
-        seedVisual(conversations: conversations, messages: messages)
-        seedLongUser(conversations: conversations, messages: messages)
-        seedTool(conversations: conversations, messages: messages)
-        seedScroll(conversations: conversations, messages: messages)
-        seedStreaming(conversations: conversations, messages: messages)
+        Self.logger.info("doSeed 开始")
+
+        // 必须抑制自动回复：下面每个会话都会插入 user 消息，而
+        // `PluginAgentLoop.MessageObserver` 会对 user 消息自动 `runTurn`。
+        // 自动回合会写回一条 `createdAt = now` 的助手消息，把该会话的
+        // `lastMessageAt` 推到「现在」——几个会话的自动回复完成时刻各不相同，
+        // 于是会话列表的排序由这场竞态决定，run-to-run 不稳定。
+        //
+        // - Important: 抑制**只覆盖 seed 阶段**，seed 结束必须解除。
+        let seededConversationIDs = [
+            makeConversation(conversations: conversations, title: visualConversationTitle),
+            makeConversation(conversations: conversations, title: longUserConversationTitle),
+            makeConversation(conversations: conversations, title: toolConversationTitle),
+            makeConversation(conversations: conversations, title: scrollConversationTitle),
+            makeConversation(conversations: conversations, title: streamingConversationTitle),
+        ].compactMap { $0 }
+
+        for conversationID in seededConversationIDs {
+            agentLoop?.setAutoReplySuppressed(true, for: conversationID)
+        }
+
+        let byTitle: [String: UUID] = Dictionary(
+            uniqueKeysWithValues: seededConversationIDs.enumerated().map { index, id in
+                (fixtureTitles[index], id)
+            }
+        )
+        if let id = byTitle[visualConversationTitle] {
+            seedVisual(messages: messages, conversationID: id)
+        }
+        if let id = byTitle[longUserConversationTitle] {
+            seedLongUser(messages: messages, conversationID: id)
+        }
+        if let id = byTitle[toolConversationTitle] {
+            seedTool(messages: messages, conversationID: id)
+        }
+        if let id = byTitle[scrollConversationTitle] {
+            seedScroll(messages: messages, conversationID: id)
+        }
+        if let id = byTitle[streamingConversationTitle] {
+            seedStreaming(messages: messages, conversationID: id)
+        }
+
+        // seed 结束：解除抑制，让 UI 测试可以在夹具会话里正常发消息。
+        for conversationID in seededConversationIDs {
+            agentLoop?.setAutoReplySuppressed(false, for: conversationID)
+        }
+
+        // 详细程度必须是 `.zcode`：V4 列表槽位只在详细程度为 zcode 时激活，
+        // 否则 UI 测试测的是 V2 而不是 V4。
+        for conversationID in seededConversationIDs {
+            conversations.setVerbosity(.zcode, for: conversationID)
+        }
+
+        // 选中会话：让 UI 测试有明确的起始态。
+        if let first = seededConversationIDs.first {
+            conversations.selectConversation(id: first)
+        }
+
+        Self.logger.info("doSeed 完成，已种 \(seededConversationIDs.count) 个会话")
     }
 
     // MARK: - 各会话
 
     /// 常规视觉会话。
     private static func seedVisual(
-        conversations: any ConversationManaging,
-        messages: any MessageManaging
+        messages: any MessageManaging,
+        conversationID: UUID
     ) {
-        guard let conversationID = makeConversation(
-            conversations: conversations,
-            title: visualConversationTitle
-        ) else { return }
 
         insertUser(
             messages: messages,
@@ -219,13 +282,9 @@ public enum MessageListZCodeUITestingSupport {
 
     /// 长用户输入会话。
     private static func seedLongUser(
-        conversations: any ConversationManaging,
-        messages: any MessageManaging
+        messages: any MessageManaging,
+        conversationID: UUID
     ) {
-        guard let conversationID = makeConversation(
-            conversations: conversations,
-            title: longUserConversationTitle
-        ) else { return }
 
         insertUser(
             messages: messages,
@@ -243,13 +302,9 @@ public enum MessageListZCodeUITestingSupport {
 
     /// 工具历史会话。
     private static func seedTool(
-        conversations: any ConversationManaging,
-        messages: any MessageManaging
+        messages: any MessageManaging,
+        conversationID: UUID
     ) {
-        guard let conversationID = makeConversation(
-            conversations: conversations,
-            title: toolConversationTitle
-        ) else { return }
 
         insertUser(
             messages: messages,
@@ -268,13 +323,9 @@ public enum MessageListZCodeUITestingSupport {
 
     /// 滚动长列表会话。
     private static func seedScroll(
-        conversations: any ConversationManaging,
-        messages: any MessageManaging
+        messages: any MessageManaging,
+        conversationID: UUID
     ) {
-        guard let conversationID = makeConversation(
-            conversations: conversations,
-            title: scrollConversationTitle
-        ) else { return }
 
         for turn in 0..<scrollTurnCount {
             insertUser(
@@ -294,13 +345,9 @@ public enum MessageListZCodeUITestingSupport {
 
     /// 流式会话。
     private static func seedStreaming(
-        conversations: any ConversationManaging,
-        messages: any MessageManaging
+        messages: any MessageManaging,
+        conversationID: UUID
     ) {
-        guard let conversationID = makeConversation(
-            conversations: conversations,
-            title: streamingConversationTitle
-        ) else { return }
 
         insertUser(
             messages: messages,

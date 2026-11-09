@@ -125,6 +125,7 @@ struct ZCodeTimelineMarkerView: View {
                 Spacer(minLength: 0)
             }
             .padding(.vertical, ZCodeTimelineMarkerStyle.verticalSpacing)
+            .accessibilityIdentifier(ZCodeRendererAccessibilityIdentifiers.timelineMarker)
             .accessibilityElement(children: .combine)
         }
     }

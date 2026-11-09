@@ -34,6 +34,7 @@ struct ZCodeBackToBottomButton: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(ZCodeAccessibilityIdentifiers.backToBottom)
         .accessibilityLabel(pluginLocalization.string("Back to bottom"))
         .help(pluginLocalization.string("Back to bottom"))
     }

@@ -142,6 +142,7 @@ public final class PluginMessageListZCodePlugin: SuperPlugin, SuperLog {
         // - Important: 整段（含 seed 调用与句柄赋值）必须在 `#if DEBUG` 内，
         //   否则 Release 下会引用只在 DEBUG 定义的类型而编译失败。
         #if DEBUG
+        Self.logger.info("onBoot：V4 夹具启用=\(MessageListZCodeUITestingSupport.isEnabled)")
         if MessageListZCodeUITestingSupport.isEnabled, let conversations, let messages {
             uiTestingSeedHandle = MessageListZCodeUITestingSupport.seed(
                 conversations: conversations,

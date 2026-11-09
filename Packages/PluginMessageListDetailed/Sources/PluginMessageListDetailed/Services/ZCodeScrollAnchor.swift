@@ -14,8 +14,19 @@ enum ZCodeScrollEventSource: Equatable {
     case layout
 }
 
+/// 用户滚动的方向。
+enum ZCodeUserScrollDirection: Equatable {
+    /// 内容向上移动（视口往下走，看到更晚的内容）。
+    case forward
+    /// 内容向下移动（视口往上走，看到更早的内容）。
+    case backward
+}
+
 /// 滚动几何快照。
 struct ZCodeScrollMetrics: Equatable {
+    /// 用户滚动的方向；nil 表示本次事件不是用户滚动。
+    var userDirection: ZCodeUserScrollDirection?
+
     /// 滚动偏移（scrollTop）。
     var offsetY: CGFloat
     /// 可视区高度。
@@ -83,7 +94,59 @@ struct ZCodeScrollAnchor: Equatable {
     ///   程序化贴底与布局变化必须原样保留用户意图。
     mutating func handleScroll(metrics: ZCodeScrollMetrics, source: ZCodeScrollEventSource) {
         guard source == .user, metrics.areFiniteAndUsable else { return }
+
+        // Important: 用户**往回滚**时立刻解除跟随，不等几何稳定。
+        //
+        //   为什么要先看方向再看几何：用户往回看时，列表会顺带物化更多行，
+        //   文档高度随之增长；若此时自动贴底把用户拽回底部，
+        //   几何就永远停在底部 —— 用户「往上滚了却还在底部」，
+        //   而 `following` 也无从解除。
+        //
+        //   方向是用户意图的**直接**表达，比「离底多远」更早、更可靠。
+        if metrics.userDirection == .backward {
+            following = false
+            return
+        }
+
+        // Important: 几何判定**不得**无条件把已解除的跟随恢复回来。
+        //
+        //   用户往回滚时，列表正在物化新行，文档高度跟着涨，
+        //   此刻算出来的「离底距离」仍是 0 —— 用它恢复跟随，
+        //   等于把用户刚做的「往上滚」直接吃掉。
+        //
+        //   因此分两种情况：
+        //   - 用户**往前**滚（`userDirection == .forward`）：几何说了算。
+        //     用户主动往下滚回底部，就是想回到跟随状态。
+        //   - 方向未知（滚动条拖动等）：只在几何**明确**显示已回到底部
+        //     （距离已很小且非 0）时才恢复；否则保持脱离。
+        // Important: 几何判定在「已脱离跟随」时的语义。
+        //
+        //   - 离底**很远**（distance > 容差）：保持脱离。用户还在上面看。
+        //   - 离底**在容差内**：恢复跟随。用户确实回到底部了。
+        //
+        //   唯一的例外是「用户往回滚」这一刻：列表正在物化新行，
+        //   文档高度跟着涨，此刻算出来的距离仍是 0。
+        //   若据此恢复跟随，等于把用户刚做的「往上滚」直接吃掉。
+        //   所以往回滚时**一律**保持脱离，由方向事件单独决定。
+        if !following {
+            let distance = Self.distanceToBottom(metrics)
+            if metrics.userDirection == .backward {
+                return
+            }
+            guard distance <= Self.bottomTolerance else { return }
+        }
+
         following = Self.isAtBottom(metrics)
+    }
+
+    /// 处理用户滚动方向。
+    ///
+    /// - Important: 往回滚立即解除跟随；往前滚**不**恢复跟随 ——
+    ///   恢复跟随必须由几何判定（回到 48px 内）或用户点击
+    ///   「回到底」按钮，否则用户只是往下挪了一点就被强行拽到底。
+    mutating func handleUserScroll(direction: ZCodeUserScrollDirection) {
+        guard direction == .backward else { return }
+        following = false
     }
 
     /// 内容变化（新行追加 / 流式 delta 撑高 / 动态测高修正）后的动作。
