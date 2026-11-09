@@ -32,6 +32,34 @@
         }
       }
     },
+    "%lld items could not be moved" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld items could not be moved"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 个项目未能移动"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 個項目未能移動"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 個項目未能移動"
+          }
+        }
+      }
+    },
     "Are you sure you want to delete \"%@\"?" : {
       "localizations" : {
         "en" : {

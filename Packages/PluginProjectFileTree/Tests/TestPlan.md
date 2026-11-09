@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 9 条用例。
+PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 11 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 9
+测试文件: 5 个，用例总数: 11
 
 核心组件（源码目录）:
 - `Models/`
@@ -42,6 +42,7 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 - **FileTreeDataSource**（1 条）：由 `collapsingParentClearsDescendantExpansion` 锁定；改动展开/折叠状态或展开路径持久化时优先跑对应测试文件。
 - **RefreshCoordinator**（4 条）：由 `sameRootPathReappearanceRestartsWatching`、`sameRootPathReappearanceKeepsExpandedPaths`、`emptyRootPathDoesNotStartWatching`、`fullRefreshDoesNotStallTargetedRefresh` 锁定。视图消失会调用 `stop()` 关闭 watcher；同一根路径再次出现时必须重新挂载监听（并保留展开目录），不能因路径相等直接返回（**回归 #1097**）。全量刷新与精准刷新必须各自持有防抖任务且真正响应取消，全量刷新不能把精准 trailing 窗口取消后留下永久 pending（**回归 #1099**）。
 - **FileTreeNSViewBridge**（2 条）：由 `newGitStatusTokenUpdatesVisibleRows`、`repeatedGitStatusTokenDoesNotReload` 锁定。新 Git 快照令牌必须通过 `updateGitStatus` 赋值并重载可见行，不能只改属性；相同令牌不得重复重载（**回归 #1098**）。
+- **FileTreeDropProcessor**（2 条）：由 `partialDropFailureReportsFailedSources`、`successfulDropReportsNoFailedSources` 锁定。单个源移动失败不能静默跳过，`.moved` 必须携带 `failedSources` 供调用方提示部分失败（**回归 #1100**）。
 
 ## 测试用例清单
 
@@ -56,27 +57,29 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 | 7 | FileTreeNSViewBridge | 新的 Git 快照令牌会重载可见行（**回归 #1098**） | 桥接 Coordinator 已处理令牌 0 | 收到新令牌 1 与非空快照 | 视图控制器收到 `updateGitStatus`，快照内容为最新值 | P0 | ✅ 已覆盖 | `newGitStatusTokenUpdatesVisibleRows` |
 | 8 | FileTreeNSViewBridge | 相同 Git 状态令牌不会重复重载 | 桥接 Coordinator 已处理令牌 1 | 再次收到令牌 1 | 视图控制器只收到一次更新 | P2 | ✅ 已覆盖 | `repeatedGitStatusTokenDoesNotReload` |
 | 9 | RefreshCoordinator | 全量刷新不会让精准刷新永久停摆（**回归 #1099**） | E1 已发布并处于 trailing 窗口 | 窗口内调用 `refresh()`，随后产生 E2 | E2 仍递增 `targetedRefreshToken`，不会停在 pending | P0 | ✅ 已覆盖 | `fullRefreshDoesNotStallTargetedRefresh` |
+| 10 | FileTreeDropProcessor | 部分移动失败时必须上报失败源（**回归 #1100**） | 两个源中一个移动成功、一个目标同名冲突 | 执行拖放处理 | `.moved` 的 `failedSources` 仅含失败源，`affectedParents` 只含成功源的父目录 | P0 | ✅ 已覆盖 | `partialDropFailureReportsFailedSources` |
+| 11 | FileTreeDropProcessor | 全部移动成功时失败源列表为空 | 两个源均可移动 | 执行拖放处理 | `.moved` 的 `pairs` 为 2，`failedSources` 为空 | P1 | ✅ 已覆盖 | `successfulDropReportsNoFailedSources` |
 
-> 说明：全部 **9 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **11 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 4 / 4
-- P1: 已覆盖 3 / 3
+- P0: 已覆盖 5 / 5
+- P1: 已覆盖 4 / 4
 - P2: 已覆盖 2 / 2
-- **合计: 9 / 9**（仅表示清单场景，非源码覆盖率）
+- **合计: 11 / 11**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
-- **P1**: 其余功能性用例（3 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
+- **P1**: 其余功能性用例（4 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 9 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 11 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

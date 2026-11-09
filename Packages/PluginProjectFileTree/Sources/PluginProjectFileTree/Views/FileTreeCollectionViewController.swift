@@ -731,7 +731,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         switch result {
         case .rejected:
             return false
-        case .moved(let pairs, let affectedParents):
+        case .moved(_, let failedSources, let affectedParents):
             onTreeMutation?()
             
             for parent in affectedParents {
@@ -739,6 +739,18 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             }
             
             ensureDirectoryExpanded(targetURL)
+            
+            if !failedSources.isEmpty {
+                context?.toast?.show(
+                    String(
+                        format: pluginLocalization.string("%lld items could not be moved"),
+                        failedSources.count
+                    ),
+                    detail: failedSources.map(\.lastPathComponent).joined(separator: ", "),
+                    style: .warning
+                )
+            }
+            
             return true
         }
     }
