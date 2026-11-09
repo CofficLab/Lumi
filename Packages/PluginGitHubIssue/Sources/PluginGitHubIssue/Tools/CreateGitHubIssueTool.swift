@@ -72,6 +72,14 @@ public struct CreateGitHubIssueTool: SuperAgentTool, @unchecked Sendable {
         .medium
     }
 
+    /// 以用户 GitHub 身份向公开仓库发布内容，必须由用户确认本次标题与正文。
+    ///
+    /// 风险等级无法表达"内容需要人工审阅"：`.medium` 在 Build 模式会自动批准。
+    /// 因此每次调用都声明强制审批，避免模型或被注入的文本未经审阅公开发布。
+    public func requiresExplicitApproval(arguments: [String: ToolArgument]) -> Bool {
+        true
+    }
+
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
         guard let title = arguments.stringValue("title") else { return "提交 Lumi issue" }
         let preview = title.count > 40 ? String(title.prefix(40)) + "…" : title

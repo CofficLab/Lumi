@@ -105,6 +105,18 @@ struct PluginGitHubIssueTests {
         #expect(offenders.isEmpty)
     }
 
+    @Test("public issue creation always requires explicit approval (#1048)")
+    func publicIssueRequiresExplicitApproval() {
+        // 经存在类型调用，确保协议分派到工具自身的覆盖实现。
+        let tool: any SuperAgentTool = CreateGitHubIssueTool()
+
+        #expect(tool.requiresExplicitApproval(arguments: [:]))
+        #expect(tool.requiresExplicitApproval(arguments: [
+            "title": ToolArgument("Crash on launch"),
+            "body": ToolArgument("Steps to reproduce: ..."),
+        ]))
+    }
+
     @Test("non-English content fails as a tool error instead of a successful result (#1051)")
     func nonEnglishContentThrowsToolError() async {
         // 经存在类型调用生产同款入口，确保走的是协议分派后的真实实现。
