@@ -85,6 +85,14 @@ final class EmptyStateActivityViewModel: ObservableObject {
         totalTokens.map { $0 > 0 } ?? false
     }
 
+    /// 是否渲染 token 曲线（及其分隔线）。
+    ///
+    /// 热力图只依赖消息数，可以独立存在；token 区域没有消耗时应整段隐藏，
+    /// 否则零值会被画成一条平坦趋势线，并留下一条没有内容可分隔的分隔线。
+    var showsTokenTrend: Bool {
+        hasChartData && hasTokenActivity
+    }
+
     /// Oldest and newest visible day, or `nil` before the first load.
     var visibleRange: ClosedRange<Date>? {
         guard let first = days.first?.date, let last = days.last?.date else { return nil }

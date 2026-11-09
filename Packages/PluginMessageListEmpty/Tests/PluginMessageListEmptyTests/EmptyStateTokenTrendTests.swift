@@ -89,6 +89,65 @@ struct EmptyStateTokenTrendTests {
 
         #expect(model.hasTokenActivity == true)
         #expect(model.totalTokens == 4_200)
+        // 没有消息时热力图本身也不画，token 区域不能单独出现。
+        #expect(model.showsTokenTrend == false)
+    }
+
+    @Test("zero tokens hide the trend even when the heatmap has messages")
+    func zeroTokensHideTrendWithMessages() throws {
+        let today = calendar.startOfDay(for: .now)
+        let start = try #require(calendar.date(byAdding: .day, value: -2, to: today))
+
+        let model = EmptyStateActivityViewModel(
+            messages: nil,
+            calendar: calendar,
+            seededDays: EmptyStateActivityViewModel.makeDays(
+                counts: [start: 3],
+                startDate: start,
+                endDate: today,
+                calendar: calendar
+            ),
+            seededTokenDays: EmptyStateActivityViewModel.makeTokenDays(
+                counts: [:],
+                startDate: start,
+                endDate: today,
+                calendar: calendar
+            )
+        )
+
+        #expect(model.hasChartData)
+        #expect(model.hasTokenActivity == false)
+        // 有消息、零 token：只画热力图，不平白多出一条零值曲线和分隔线。
+        #expect(model.showsTokenTrend == false)
+        #expect(model.tokenDays.allSatisfy { $0.count == 0 })
+    }
+
+    @Test("token consumption keeps the trend visible next to the heatmap")
+    func tokenActivityShowsTrendWithMessages() throws {
+        let today = calendar.startOfDay(for: .now)
+        let start = try #require(calendar.date(byAdding: .day, value: -2, to: today))
+
+        let model = EmptyStateActivityViewModel(
+            messages: nil,
+            calendar: calendar,
+            seededDays: EmptyStateActivityViewModel.makeDays(
+                counts: [start: 2],
+                startDate: start,
+                endDate: today,
+                calendar: calendar
+            ),
+            seededTokenDays: EmptyStateActivityViewModel.makeTokenDays(
+                counts: [start: 1_200],
+                startDate: start,
+                endDate: today,
+                calendar: calendar
+            )
+        )
+
+        #expect(model.hasChartData)
+        #expect(model.hasTokenActivity)
+        #expect(model.showsTokenTrend)
+        #expect(model.tokenDays.contains { $0.count > 0 })
     }
 }
 
