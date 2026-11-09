@@ -99,6 +99,60 @@ struct CollapsedContentBlocksTests {
         #expect(reported.first?.start == 0)
         #expect(reported.first?.length == 4)
     }
+
+    @Test("撤销恢复被删除的 chip 后重新拍平正文并恢复区间")
+    func undoRestoringChipFlattensAgain() {
+        let pasted = String(repeating: "P", count: 30)
+        var draft = ""
+        var height: CGFloat = ChatInputEditorView.minHeight
+        var focused = false
+        var cursor = 0
+        var dragging = false
+        var reported: [CollapsedContentBlock] = []
+
+        let view = ChatInputEditorView(
+            text: Binding(get: { draft }, set: { draft = $0 }),
+            height: Binding(get: { height }, set: { height = $0 }),
+            onSubmit: {},
+            onCollapsedBlocksChanged: { reported = $0 },
+            isFocused: Binding(get: { focused }, set: { focused = $0 }),
+            cursorPosition: Binding(get: { cursor }, set: { cursor = $0 }),
+            isImageDragHovering: Binding(get: { dragging }, set: { dragging = $0 })
+        )
+        let coordinator = view.makeCoordinator()
+        let textView = EditorTextView()
+        coordinator.attach(to: textView)
+        textView.textStorage?.setAttributedString(NSAttributedString(string: "A "))
+
+        textView.hasPastePreviewAttachments = true
+        textView.textStorage?.append(
+            NSAttributedString(attachment: PastePreviewAttachment(originalText: pasted))
+        )
+        coordinator.publishCommittedTextForTesting(from: textView)
+        #expect(draft == "A \(pasted)")
+
+        // 删除 chip：发布后标志被清为 false，正文只剩 "A "。
+        textView.textStorage?.deleteCharacters(in: NSRange(location: 2, length: 1))
+        coordinator.publishCommittedTextForTesting(from: textView)
+        #expect(draft == "A ")
+        #expect(!textView.hasPastePreviewAttachments)
+        #expect(reported.isEmpty)
+
+        // Undo 把 attachment 放回 text storage，但不会同步恢复标志。
+        textView.textStorage?.append(
+            NSAttributedString(attachment: PastePreviewAttachment(originalText: pasted))
+        )
+        #expect(!textView.hasPastePreviewAttachments)
+
+        coordinator.publishCommittedTextForTesting(from: textView)
+
+        // 必须重新按真实 attachment 拍平，而不是把 U+FFFC 当正文发布。
+        #expect(draft == "A \(pasted)")
+        #expect(reported.count == 1)
+        #expect(reported.first?.start == 2)
+        #expect(reported.first?.length == pasted.count)
+        #expect(textView.hasPastePreviewAttachments)
+    }
 }
 /// 内联 chip 的排版几何。
 ///
