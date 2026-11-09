@@ -299,7 +299,7 @@ public actor ToolJobRecordStore {
             startedAt: date(at: 8),
             updatedAt: date(at: 9) ?? Date(),
             latestOutput: text(at: 11) ?? "",
-            outputByteCount: Int(sqlite3_column_int(statement, 12)),
+            outputByteCount: Int(sqlite3_column_int64(statement, 12)),
             processID: sqlite3_column_type(statement, 13) == SQLITE_NULL
                 ? nil
                 : Int32(sqlite3_column_int(statement, 13)),
