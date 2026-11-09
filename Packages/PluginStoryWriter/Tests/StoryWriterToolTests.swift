@@ -58,6 +58,29 @@ struct StoryWriterToolTests {
         #expect(await store.loadStory(id: story.id) == nil)
     }
 
+    @Test func listingChaptersDistinguishesMissingStoryFromEmptyStory() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer {
+            StoryWriterStorage.configureV2(directory: nil)
+            try? FileManager.default.removeItem(at: directory)
+        }
+        StoryWriterStorage.configureV2(directory: directory)
+
+        // 回归 #1064：父故事不存在时不能返回「暂无章节」的成功文案。
+        await #expect(throws: ToolExecutionError.self) {
+            try await tool("list_chapters").execute(arguments: ["story_id": .init(UUID().uuidString)])
+        }
+
+        let storyOutput = try await tool("create_story").execute(arguments: ["title": .init("Empty Shelf")])
+        let storyID = try #require(firstUUID(in: storyOutput))
+        #expect(try await tool("list_chapters").execute(arguments: ["story_id": .init(storyID)]) == "No chapters in this story yet.")
+
+        _ = try await tool("delete_story").execute(arguments: ["story_id": .init(storyID)])
+        await #expect(throws: ToolExecutionError.self) {
+            try await tool("list_chapters").execute(arguments: ["story_id": .init(storyID)])
+        }
+    }
+
     @Test func toolsValidateArgumentsAndSupportStoryChapterLifecycle() async throws {
         let directory = try makeTemporaryDirectory()
         defer {
