@@ -5,7 +5,7 @@
 PluginOpenInRemote Lumi 编辑器插件：在默认浏览器中打开当前项目的远程仓库。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 34
+测试文件: 4 个，用例总数: 35
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -38,7 +38,7 @@ PluginOpenInRemote Lumi 编辑器插件：在默认浏览器中打开当前项�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **OpenInRemotePlugin**（3 条）：由 `pluginRegistersAndRemovesToolDocumentationAndToolbarItem`、`pluginToleratesMissingProviders`、`pluginResolvesRemoteWebURLWithProviders` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **OpenInRemoteTool**（8 条）：由 `explicitPathWinsOverCurrentProject`、`fallsBackToCurrentProject`、`returnsNilWithoutAnyTarget` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **OpenInRemoteTool**（9 条）：由 `explicitPathWinsOverCurrentProject`、`fallsBackToCurrentProject`、`returnsNilWithoutAnyTarget` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RemoteRepositoryResolver**（7 条）：由 `resolvesWebURLFromOriginRemote`、`resolvesWebURLFromNamedRemote`、`returnsNilWhenRemoteIsMissing` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RemoteWebURLResolver**（13 条）：由 `convertsScpLikeRemote`、`convertsScpLikeRemoteWithoutGitSuffix`、`convertsScpLikeRemoteWithGroupPath` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -53,8 +53,8 @@ PluginOpenInRemote Lumi 编辑器插件：在默认浏览器中打开当前项�
 | 5 | OpenInRemoteTool | 未提供路径时回退到当前项目路径 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fallsBackToCurrentProject` |
 | 6 | OpenInRemoteTool | 既无显式路径也无当前项目时返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `returnsNilWithoutAnyTarget` |
 | 7 | OpenInRemoteTool | 工具名与风险等级符合低风险只读约定 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `exposesToolMetadata` |
-| 8 | OpenInRemoteTool | 没有项目且未提供路径时返回失败说明 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `reportsMissingTarget` |
-| 9 | OpenInRemoteTool | 仓库没有远程地址时返回失败说明 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `reportsMissingRemoteURL` |
+| 8 | OpenInRemoteTool | 没有项目且未提供路径时抛出工具执行错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `reportsMissingTarget` |
+| 9 | OpenInRemoteTool | 仓库没有远程地址时抛出工具执行错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `reportsMissingRemoteURL` |
 | 10 | OpenInRemoteTool | 显式路径参数被透传到解析链路 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `passesExplicitPathThrough` |
 | 11 | RemoteRepositoryResolver | 读取 origin remote 并转换为 web 链接 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resolvesWebURLFromOriginRemote` |
 | 12 | RemoteRepositoryResolver | 指定 remote 名称时按名称读取 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `resolvesWebURLFromNamedRemote` |
@@ -80,27 +80,28 @@ PluginOpenInRemote Lumi 编辑器插件：在默认浏览器中打开当前项�
 | 32 | RemoteRepositoryResolver | 本地 `file://` remote 解析为 `nil`（**回归 #1067**） | Git 能力原样返回 `file:///tmp/repo.git` | 调用 `webURL(forRepositoryAt:)` | 返回 `nil` | P1 | ✅ 已覆盖 | `returnsNilForLocalFileRemote` |
 | 33 | OpenInRemoteTool | 本地 `file://` remote 报告没有可打开的 web 地址（**回归 #1067**） | origin 为 `file:///tmp/repo.git` | 调用 `execute(arguments:)` | 抛出「No remote repository URL」类错误，不误报打开成功 | P1 | ✅ 已覆盖 | `reportsMissingWebURLForFileRemote` |
 | 34 | RemoteWebURLResolver | SSH/Git 地址保留路径中的百分号编码，不把 `%23` 变成 fragment（**回归 #1095**） | origin 为 `ssh://git@code.example.com/acme/repo%23draft.git` | 解析为 web 链接 | 结果为 `https://code.example.com/acme/repo%23draft`，path 含 `#` 且无 fragment；`%3F`、`%25` 同样保留 | P0 | ✅ 已覆盖 | `preservesEncodedCharactersInSchemePath` |
+| 35 | OpenInRemoteTool | 浏览器拒绝打开时抛出工具执行错误，不再以普通字符串报告成功（**回归 #1096**） | remote 可解析为 web 链接，注入的打开动作返回 `false` | 调用 `execute(arguments:)` | 抛出 `ToolExecutionError.executionFailed`，reason 指向浏览器无法打开 | P1 | ✅ 已覆盖 | `reportsBrowserOpenFailure` |
 
-> 说明：全部 **34 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **35 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 3 / 3
-- P1: 已覆盖 30 / 30
+- P1: 已覆盖 31 / 31
 - P2: 已覆盖 1 / 1
-- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
+- **合计: 35 / 35**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（30 条）
+- **P1**: 其余功能性用例（31 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 34 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 35 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
