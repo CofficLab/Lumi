@@ -206,6 +206,53 @@ import Testing
     viewModel.cancel()
 }
 
+/// #933：下一页在刷新期间先完成时，刷新不能用启动时的旧目标快照把它删掉。
+@Test @MainActor func reloadKeepsPagesAppendedWhileItRuns() async throws {
+    let base = Date()
+    let many = (0..<100).map { index in
+        ConversationSummary(
+            id: UUID(),
+            title: "C\(index)",
+            createdAt: base,
+            updatedAt: base.addingTimeInterval(-Double(index) * 60),
+            projectPath: nil
+        )
+    }
+    let conversations = DelayedConversationManager(summaries: many)
+    let viewModel = ConversationListViewModel(
+        context: makeListContext(conversations: conversations),
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .all
+    )
+    await viewModel.reload()
+    #expect(viewModel.conversations.count == 40)
+    #expect(viewModel.hasMore)
+
+    // 下一页 100ms 返回、刷新首屏 400ms 返回；等刷新也已发出首屏请求再放行下一页，
+    // 确保刷新捕获的目标仍是 40 条，而分页在刷新等待期间完成。
+    conversations.setPageDelays(firstPage: .milliseconds(400), nextPage: .milliseconds(100))
+    let nextPage = Task { await viewModel.loadNextPage() }
+    #expect(await waitUntil { conversations.pageRequestCount == 2 })
+    let refresh = Task { await viewModel.reload() }
+    #expect(await waitUntil { conversations.pageRequestCount == 3 })
+    await nextPage.value
+    // 分页完成后、刷新首屏返回前改标题：强制刷新发布替换后的快照。
+    conversations.retitle("Renamed", at: 0)
+    await refresh.value
+
+    #expect(viewModel.conversations.count == 80)
+    #expect(Set(viewModel.conversations.map(\.id)) == Set(many.prefix(80).map(\.id)))
+    #expect(viewModel.conversations.first?.title == "Renamed")
+    #expect(viewModel.hasMore, "刷新后仍有未加载页面")
+
+    await viewModel.loadNextPage()
+    #expect(viewModel.conversations.count == 100, "游标不能回退到第 40 条后重复读取")
+    #expect(Set(viewModel.conversations.map(\.id)) == Set(many.map(\.id)))
+    #expect(!viewModel.hasMore)
+    viewModel.cancel()
+}
+
 @Test @MainActor func selectionClearsAttentionAndDeleteUsesConversationProvider() async throws {
     let conversations = DefaultConversationManager()
     let firstID = try conversations.createConversation(title: "First", projectPath: nil, providerID: nil, modelName: nil)
@@ -409,6 +456,20 @@ private final class DelayedConversationManager: ConversationManaging {
         pageLoadError = error
     }
 
+    private var firstPageDelay: Duration?
+    private var nextPageDelay: Duration?
+    private(set) var pageRequestCount = 0
+
+    /// 分别控制首屏与后续页的返回时机，用来构造刷新与翻页的交错。
+    func setPageDelays(firstPage: Duration?, nextPage: Duration?) {
+        firstPageDelay = firstPage
+        nextPageDelay = nextPage
+    }
+
+    func retitle(_ title: String, at index: Int) {
+        summaries[index].title = title
+    }
+
     var conversations: [ConversationSummary] { summaries }
     var selectedConversationID: UUID? { nil }
     var currentTitle: String { "" }
@@ -524,6 +585,11 @@ private final class DelayedConversationManager: ConversationManaging {
         includingChildConversations: Bool
     ) async throws -> [ConversationSummary] {
         if let pageLoadError { throw pageLoadError }
+        pageRequestCount += 1
+        let delay = beforeID == nil && beforeUpdatedAt == nil ? firstPageDelay : nextPageDelay
+        if let delay {
+            try? await Task.sleep(for: delay)
+        }
         return await fetchConversationPage(
             limit: limit,
             beforeUpdatedAt: beforeUpdatedAt,

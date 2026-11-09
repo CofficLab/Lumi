@@ -230,19 +230,27 @@ final class ConversationListViewModel: ObservableObject {
 
         var snapshot: [ConversationSummary] = []
         var cursor: ConversationPageCursor?
+        var reachedEnd = false
 
-        // 获取至少当前已经展示的数量，避免刷新后丢掉用户已经加载的分页。
+        // 目标条数在每轮读取前重新计算：刷新期间 `loadNextPage()` 可能已追加新页，
+        // 用启动时的旧目标发布快照会把刚加载的行删掉。
         do {
-            while snapshot.count < targetCount {
+            while snapshot.count < max(targetCount, conversations.count) {
                 let page = try await fetchPage(
                     path: path,
                     beforeUpdatedAt: cursor?.lastMessageAt,
                     beforeID: cursor?.id
                 )
-                guard !page.isEmpty else { break }
+                guard !page.isEmpty else {
+                    reachedEnd = true
+                    break
+                }
 
                 snapshot.append(contentsOf: page)
-                guard page.count == Self.pageSize else { break }
+                guard page.count == Self.pageSize else {
+                    reachedEnd = true
+                    break
+                }
                 guard let last = page.last else { break }
                 cursor = ConversationPageCursor(lastMessageAt: last.lastMessageAt, id: last.id)
             }
@@ -273,9 +281,7 @@ final class ConversationListViewModel: ObservableObject {
             paginationCursor = snapshot.last.map {
                 ConversationPageCursor(lastMessageAt: $0.lastMessageAt, id: $0.id)
             }
-            hasMore = snapshot.count >= targetCount && snapshot.count > 0
-                ? snapshot.count == targetCount
-                : snapshot.count == Self.pageSize
+            hasMore = !reachedEnd
         }
 
         await refreshProjectVisibilityIfNeeded(path: path)
