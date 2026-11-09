@@ -288,6 +288,7 @@ final class TextActionMenuController {
     private let model = TextActionMenuModel()
     private var selection: SelectedText?
     private var dismissMonitor: Any?
+    private var localDismissMonitor: Any?
     private var scrollAccumulation: CGFloat = 0
     private var translationTask: Task<Void, Never>?
     /// 复制反馈等延迟消失的代次，防止旧延迟任务收起新菜单。
@@ -464,12 +465,11 @@ final class TextActionMenuController {
     // MARK: 外部事件消失
 
     private func installDismissMonitorIfNeeded() {
-        guard dismissMonitor == nil else { return }
-        dismissMonitor = NSEvent.addGlobalMonitorForEvents(
-            matching: [.leftMouseDown, .rightMouseDown, .keyDown, .scrollWheel]
-        ) { [weak self] event in
-            // 点击落在浮层自身上是进程内事件，不会进入全局监听，
-            // 因此这里收到的一定是「菜单外」的事件。
+        guard dismissMonitor == nil, localDismissMonitor == nil else { return }
+        let mask: NSEvent.EventTypeMask = [.leftMouseDown, .rightMouseDown, .keyDown, .scrollWheel]
+
+        dismissMonitor = NSEvent.addGlobalMonitorForEvents(matching: mask) { [weak self] event in
+            // 全局监听只收到其他应用的事件。
             let type = event.type
             let modifiers = event.modifierFlags
             let keyCode = event.keyCode
@@ -478,6 +478,27 @@ final class TextActionMenuController {
                 self?.handleExternalEvent(type: type, modifiers: modifiers, keyCode: keyCode, deltaY: deltaY)
             }
         }
+
+        // 发往 Lumi 自身窗口的点击与按键不会进入全局监听，点击主窗口或
+        // 设置窗口时浮层会一直留着。本地监听补上这一段，并放行落在浮层
+        // 自身上的点击与滚动（译文卡片需要滚动）。
+        localDismissMonitor = NSEvent.addLocalMonitorForEvents(matching: mask) { [weak self] event in
+            let type = event.type
+            let modifiers = event.modifierFlags
+            let keyCode = event.keyCode
+            let deltaY = event.scrollingDeltaY
+            let windowNumber = event.windowNumber
+            Task { @MainActor [weak self] in
+                self?.handleLocalEvent(
+                    type: type,
+                    modifiers: modifiers,
+                    keyCode: keyCode,
+                    deltaY: deltaY,
+                    windowNumber: windowNumber
+                )
+            }
+            return event
+        }
     }
 
     private func removeDismissMonitor() {
@@ -485,6 +506,24 @@ final class TextActionMenuController {
             NSEvent.removeMonitor(dismissMonitor)
             self.dismissMonitor = nil
         }
+        if let localDismissMonitor {
+            NSEvent.removeMonitor(localDismissMonitor)
+            self.localDismissMonitor = nil
+        }
+    }
+
+    private func handleLocalEvent(
+        type: NSEvent.EventType,
+        modifiers: NSEvent.ModifierFlags,
+        keyCode: UInt16,
+        deltaY: CGFloat,
+        windowNumber: Int
+    ) {
+        guard !TextActionDismissPolicy.isInsidePanel(
+            eventWindowNumber: windowNumber,
+            panelWindowNumber: panel?.windowNumber ?? 0
+        ) else { return }
+        handleExternalEvent(type: type, modifiers: modifiers, keyCode: keyCode, deltaY: deltaY)
     }
 
     private func handleExternalEvent(

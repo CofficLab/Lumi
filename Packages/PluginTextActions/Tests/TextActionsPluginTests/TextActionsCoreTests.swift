@@ -265,6 +265,22 @@ struct TextActionDismissPolicyTests {
     func scrollThresholdIsStable() {
         #expect(TextActionDismissPolicy.scrollThreshold == 60)
     }
+
+    @Test("落在浮层窗口内的事件不算外部事件")
+    func eventInsidePanelIsIgnored() {
+        #expect(TextActionDismissPolicy.isInsidePanel(eventWindowNumber: 42, panelWindowNumber: 42))
+    }
+
+    @Test("落在其他窗口的事件会关闭浮层")
+    func eventInOtherWindowIsDismissed() {
+        #expect(!TextActionDismissPolicy.isInsidePanel(eventWindowNumber: 7, panelWindowNumber: 42))
+    }
+
+    @Test("窗口号未知时不能误判为浮层内")
+    func unknownWindowNumberNeverMatches() {
+        #expect(!TextActionDismissPolicy.isInsidePanel(eventWindowNumber: 0, panelWindowNumber: 0))
+        #expect(!TextActionDismissPolicy.isInsidePanel(eventWindowNumber: 0, panelWindowNumber: 42))
+    }
 }
 
 // MARK: - 动作目录

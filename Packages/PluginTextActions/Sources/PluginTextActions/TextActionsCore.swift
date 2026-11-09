@@ -145,6 +145,15 @@ enum TextActionDismissPolicy {
         if menuVisible { return true }
         return modifiers.intersection([.shift, .command, .control, .option]).isEmpty == false
     }
+
+    /// 事件是否落在浮层自身窗口内。
+    ///
+    /// 全局监听收不到本进程事件，因此点击 Lumi 自己的窗口需要本地监听
+    /// 兜底；但落在浮层上的点击与滚动（译文卡片可滚动）不能收起菜单。
+    /// `windowNumber` 为 0 表示事件尚未绑定窗口，不能拿来与面板比较。
+    static func isInsidePanel(eventWindowNumber: Int, panelWindowNumber: Int) -> Bool {
+        panelWindowNumber != 0 && eventWindowNumber == panelWindowNumber
+    }
 }
 
 // MARK: - 动作目录
