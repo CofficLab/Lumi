@@ -452,7 +452,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "搜索文件..."
+            "value" : "Search files..."
           }
         },
         "zh-Hans" : {
@@ -486,7 +486,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "未找到匹配文件"
+            "value" : "No matching files"
           }
         },
         "zh-Hans" : {
@@ -520,7 +520,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "正在索引文件..."
+            "value" : "Indexing files..."
           }
         },
         "zh-Hans" : {

@@ -241,3 +241,53 @@ import ProviderEditor
     #expect(FileSearchResultRow.iconName(for: "View.mm") == "doc.text")
     #expect(FileSearchResultRow.iconName(for: "Archive.zip") == "archivebox")
 }
+
+// MARK: - Localization
+
+/// 回归 #939：搜索面板的占位、索引中与无结果文案，en 条目曾被填成中文
+/// 原文并标记 `translated`，英文界面因此显示简体中文；搜索框还直接使用
+/// 中文字面量，绕过了插件 bundle 的本地化查找。
+@Test func searchPanelStringsHaveEnglishTranslations() throws {
+    let catalog = try loadQuickFileSearchCatalog()
+    let expectedEnglish: [String: String] = [
+        "搜索文件...": "Search files...",
+        "正在索引文件...": "Indexing files...",
+        "未找到匹配文件": "No matching files",
+    ]
+
+    for (key, englishValue) in expectedEnglish {
+        let translations = try #require(catalog[key], "「\(key)」未进入本地化资源")
+        #expect(
+            translations["en"] == englishValue,
+            "英文界面下「\(key)」显示 \(translations["en"] ?? "nil")，而不是英文"
+        )
+        #expect(translations["zh-Hans"] == key, "简体中文界面下「\(key)」保持中文")
+    }
+}
+
+/// 从测试文件定位本包的 xcstrings（运行目录不可依赖）。
+private func loadQuickFileSearchCatalog() throws -> [String: [String: String]] {
+    let packageRoot = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+    let catalogURL = packageRoot
+        .appendingPathComponent("Resources")
+        .appendingPathComponent("Localizable.xcstrings")
+    let data = try Data(contentsOf: catalogURL)
+    let root = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    let strings = try #require(root["strings"] as? [String: Any])
+
+    var result: [String: [String: String]] = [:]
+    for (key, value) in strings {
+        let localizations = (value as? [String: Any])?["localizations"] as? [String: Any] ?? [:]
+        var translations: [String: String] = [:]
+        for (language, unit) in localizations {
+            guard let unit = unit as? [String: Any],
+                  let stringUnit = unit["stringUnit"] as? [String: Any],
+                  let text = stringUnit["value"] as? String else { continue }
+            translations[language] = text
+        }
+        result[key] = translations
+    }
+    return result
+}
