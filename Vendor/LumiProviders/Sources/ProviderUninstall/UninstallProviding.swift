@@ -234,6 +234,7 @@ public struct UninstallScope: Sendable, Equatable {
             "com.coffic.lumi.apikey",
             "com.coffic.lumi.database-manager",
             "com.coffic.lumi.appstoreconnect",
+            "com.coffic.lumi.mail",
             "com.kit.llm.apikey"
         ]
     )
@@ -244,7 +245,10 @@ public struct UninstallScope: Sendable, Equatable {
         preferenceDomains: ["com.coffic.lumi.debug"],
         cacheBundleIdentifiers: ["com.coffic.lumi.debug"],
         legacyApplicationSupportDirectories: [],
-        keychainServices: ["com.coffic.lumi.database-manager.debug"]
+        keychainServices: [
+            "com.coffic.lumi.database-manager.debug",
+            "com.coffic.lumi.mail.debug"
+        ]
     )
 
     public static func live(bundleIdentifier: String? = Bundle.main.bundleIdentifier) -> Self {
