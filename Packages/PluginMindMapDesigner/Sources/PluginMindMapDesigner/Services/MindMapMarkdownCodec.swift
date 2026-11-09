@@ -136,7 +136,9 @@ public enum MindMapMarkdownCodec {
             if ch == " " {
                 spaces += 1
             } else if ch == "\t" {
-                spaces += 4
+                // 一个 Tab 表示一级缩进（与两个空格等价）；按 4 空格计数会在
+                // 除以 2 后得到层级 2，使后续同级项错误地挂到前一项下面。
+                spaces += 2
             } else {
                 break
             }

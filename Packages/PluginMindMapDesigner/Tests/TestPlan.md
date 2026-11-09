@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 29 条用例。
+PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 31 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 29
+测试文件: 4 个，用例总数: 31
 
 核心组件（源码目录）:
 - `Models/`
@@ -38,7 +38,7 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **MindMapDesignerPlugin**（9 条）：由 `contributesRailTabAndCompleteToolSet`、`activatingPluginShowsChatSectionAndDeactivatingRestoresIt`、`markdownCodecRoundTrip` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MindMapMarkdownCodec 健壮性**（7 条）：由 `ignoresPlainTextAfterRoot`、`ignoresHeadingAfterRoot`、`emptyOutlineProducesFallbackRoot` 等用例锁定；改动大纲解析的层级与容错逻辑时优先跑对应测试文件。
+- **MindMapMarkdownCodec 健壮性**（9 条）：由 `ignoresPlainTextAfterRoot`、`ignoresHeadingAfterRoot`、`emptyOutlineProducesFallbackRoot` 等用例锁定；改动大纲解析的层级与容错逻辑时优先跑对应测试文件。
 - **MindMapStore 写前同步**（3 条）：由 `writeDoesNotClobberNodesAddedElsewhere`、`createDoesNotDropExistingMaps`、`deleteUsesDiskState` 等用例锁定；改动 store 的读写顺序或缓存策略时优先跑对应测试文件。
 - **MindMapConversationScope**（7 条）：由 `conversationScopedToolReadsFromItsOwnProject`、`crossProjectWriteDoesNotPolluteSharedStore` 等用例锁定；改动会话作用域隔离时优先跑对应测试文件。
 - **MindMapStore 删除失败**（2 条）：由 `failedDeleteKeepsMapInList`、`fallbackDeleteThrowsWhenFileCannotBeRemoved` 用例锁定；目录不可写导致文件删不掉时，`MindMapFileStore.delete` 必须抛错，`MindMapStore` 保留列表项与选中项并写入 `lastError`，不得提交内存删除。
@@ -76,27 +76,29 @@ PluginMindMapDesigner 的实现包，包含 14 个主要类型；当前测试覆
 | 27 | MindMapDesignerPlugin | 地图数量变化同步 Rail 可见性（**回归 #1020**） | 项目内无导图 | 空列表、创建首张、删除最后一张后各触发一次可用性通知 | Rail 依次隐藏、显示、隐藏 | P1 | ✅ 已覆盖 | `mapAvailabilityChangesUpdateRailVisibility` |
 | 28 | MindMapMarkdownCodec 健壮性 | 显式 title 不被 Markdown 标题覆盖（**回归 #1082**） | — | 解码 `# Source Heading\n- Branch` 并传 `title: "Custom Title"` | 地图标题与根节点均为 `Custom Title`，`Source Heading` 不成为节点 | P0 | ✅ 已覆盖 | `explicitTitleWinsOverHeading` |
 | 29 | MindMapMarkdownCodec 健壮性 | 空白 title 回退到 Markdown 首个标题 | — | 解码同一大纲并传 `title: "   "` | 地图标题与根节点均为 `Source Heading` | P1 | ✅ 已覆盖 | `blankTitleFallsBackToHeading` |
+| 30 | MindMapMarkdownCodec 健壮性 | 同级 Tab 缩进生成兄弟节点（**回归 #1081**） | — | 解码 `- A` 下两个以 Tab 缩进的 `A1`/`A2` | 两者 `parentId` 均为 `A`，不形成 `A1 → A2` 链 | P1 | ✅ 已覆盖 | `tabIndentedSiblingsStaySiblings` |
+| 31 | MindMapMarkdownCodec 健壮性 | Tab 与两空格缩进产生相同结构 | — | 分别解码同一大纲的 Tab 版与两空格版 | 两版节点父子关系完全一致 | P1 | ✅ 已覆盖 | `tabAndSpaceIndentationProduceSameShape` |
 
-> 说明：全部 **29 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **31 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 8 / 8
-- P1: 已覆盖 21 / 21
+- P1: 已覆盖 23 / 23
 - P2: 已覆盖 0 / 0
-- **合计: 29 / 29**（仅表示清单场景，非源码覆盖率）
+- **合计: 31 / 31**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
-- **P1**: 其余功能性用例（21 条）
+- **P1**: 其余功能性用例（23 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 29 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 31 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
