@@ -89,6 +89,34 @@ struct TextActionMenuLayout {
     }
 }
 
+// MARK: - 多屏选屏
+
+/// 浮层目标屏幕的选择。
+///
+/// 键盘触发选区时鼠标可能停在另一块屏幕（例如在副屏 Shift+方向键选词，
+/// 鼠标留在主屏）。因此有可用的选区 bounds 时以选区中心为准，只有
+/// bounds 缺失或落在所有屏幕之外时才回退到鼠标锚点。
+enum TextActionScreenSelection {
+    static func referencePoint(selectionRect: CGRect?, anchor: CGPoint) -> CGPoint {
+        guard let selectionRect, selectionRect.width > 0, selectionRect.height > 0 else {
+            return anchor
+        }
+        return CGPoint(x: selectionRect.midX, y: selectionRect.midY)
+    }
+
+    static func screenIndex(
+        selectionRect: CGRect?,
+        anchor: CGPoint,
+        screenFrames: [CGRect]
+    ) -> Int? {
+        let reference = referencePoint(selectionRect: selectionRect, anchor: anchor)
+        if let index = screenFrames.firstIndex(where: { NSMouseInRect(reference, $0, false) }) {
+            return index
+        }
+        return screenFrames.firstIndex(where: { NSMouseInRect(anchor, $0, false) })
+    }
+}
+
 // MARK: - 消失策略
 
 /// 菜单消失判定的纯逻辑，与全局事件监听解耦以便单测。

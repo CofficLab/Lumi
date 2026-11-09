@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 94 条用例。
+PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 99 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 94
+测试文件: 6 个，用例总数: 99
 
 核心组件（源码目录）:
 - `Views/`
@@ -33,7 +33,7 @@ PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **TextActionsPlugin**（16 条）：由 `pluginMetadata`、`localStorePersistsEnabledFlagInBinaryPlist`、`localStoreWritesNoUserDefaults` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **TextActionsCore**（24 条）：由 `doesNotPresentMenuForBlankText`、`presentsMenuForRealText`、`retryConstants` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **TextActionsCore**（28 条）：由 `doesNotPresentMenuForBlankText`、`presentsMenuForRealText`、`retryConstants`、`selectionRectWinsOverMouseAnchor` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionsPluginLifecycle**（11 条）：由 `registerAddsDocsEntries`、`registerWithoutDocsProviderIsNoop`、`bootInjectsStorageDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionsStorage**（10 条）：由 `usesConfiguredDirectory`、`resetsToFallbackDirectory`、`roundTripsValue` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TextActionMenuPanel**（13 条）：由 `initialStateIsActions`、`performForwardsToHandler`、`stateChangeNotifies` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -137,27 +137,32 @@ PluginTextActions 的实现包，包含 12 个主要类型；当前测试覆盖 
 | 92 | TextSelectionSuppression | 不同键码不命中抑制 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `differentKeyCodeDoesNotMatch` |
 | 93 | TextSelectionSuppression | 不同文本不命中抑制 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `differentTextDoesNotMatch` |
 | 94 | TextSelectionSuppression | 没有展示中的文本时抑制不会生效 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingPresentedTextDoesNotArm` |
+| 95 | TextActionsCore | 有选区 bounds 时按选区所在屏幕布局 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectionRectWinsOverMouseAnchor` |
+| 96 | TextActionsCore | 无选区 bounds 时回退到鼠标锚点所在屏幕 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fallsBackToAnchorWithoutSelectionRect` |
+| 97 | TextActionsCore | 空选区 bounds 等同不可用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `emptySelectionRectFallsBackToAnchor` |
+| 98 | TextActionsCore | 选区中心落在屏幕外时回退到锚点 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `offscreenSelectionFallsBackToAnchor` |
+| 99 | TextActionsCore | 没有屏幕时返回 nil | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `noScreensReturnsNil` |
 
-> 说明：全部 **94 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **99 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 80 / 80
-- P2: 已覆盖 9 / 9
-- **合计: 94 / 94**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 84 / 84
+- P2: 已覆盖 10 / 10
+- **合计: 99 / 99**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（80 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
+- **P1**: 其余功能性用例（84 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（10 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 94 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 99 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
