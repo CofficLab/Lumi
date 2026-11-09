@@ -5,7 +5,7 @@
 PluginOpenInRemote Lumi 编辑器插件：在默认浏览器中打开当前项目的远程仓库。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 29
+测试文件: 4 个，用例总数: 33
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -38,9 +38,9 @@ PluginOpenInRemote Lumi 编辑器插件：在默认浏览器中打开当前项�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **OpenInRemotePlugin**（3 条）：由 `pluginRegistersAndRemovesToolDocumentationAndToolbarItem`、`pluginToleratesMissingProviders`、`pluginResolvesRemoteWebURLWithProviders` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **OpenInRemoteTool**（7 条）：由 `explicitPathWinsOverCurrentProject`、`fallsBackToCurrentProject`、`returnsNilWithoutAnyTarget` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **RemoteRepositoryResolver**（6 条）：由 `resolvesWebURLFromOriginRemote`、`resolvesWebURLFromNamedRemote`、`returnsNilWhenRemoteIsMissing` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **RemoteWebURLResolver**（11 条）：由 `convertsScpLikeRemote`、`convertsScpLikeRemoteWithoutGitSuffix`、`convertsScpLikeRemoteWithGroupPath` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **OpenInRemoteTool**（8 条）：由 `explicitPathWinsOverCurrentProject`、`fallsBackToCurrentProject`、`returnsNilWithoutAnyTarget` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **RemoteRepositoryResolver**（7 条）：由 `resolvesWebURLFromOriginRemote`、`resolvesWebURLFromNamedRemote`、`returnsNilWhenRemoteIsMissing` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **RemoteWebURLResolver**（13 条）：由 `convertsScpLikeRemote`、`convertsScpLikeRemoteWithoutGitSuffix`、`convertsScpLikeRemoteWithGroupPath` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -75,21 +75,25 @@ PluginOpenInRemote Lumi 编辑器插件：在默认浏览器中打开当前项�
 | 27 | RemoteWebURLResolver | webURLString 与 webURL 结果一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `webURLStringMatchesWebURL` |
 | 28 | OpenInRemoteTool | 会话绑定项目优先于当前项目，显式 path 仍最优先 | 显式/会话/当前三条路径同时存在 | 调用 `resolvedTargetPath` | 依次取显式、会话、当前 | P1 | ✅ 已覆盖 | `conversationProjectWinsOverCurrentProject` |
 | 29 | OpenInRemoteTool | 未传 path 时使用会话绑定项目 | 当前项目 `/current`，会话绑定 `/conversation` | 调用 `executeResult(context:arguments:)` | 输出指向 `/conversation`，不含 `/current` | P1 | ✅ 已覆盖 | `usesConversationProject` |
+| 30 | RemoteWebURLResolver | 本地 `file://` remote 不产生 web 链接（**回归 #1067**） | — | 解析 `file:///tmp/repo.git`、`file://localhost/...`、`file:/tmp/...` | 全部返回 `nil`，不出现 `https://file/...` | P1 | ✅ 已覆盖 | `returnsNilForLocalFileRemote` |
+| 31 | RemoteWebURLResolver | 未支持的 URI scheme 不按 SCP-like 拼装地址（**回归 #1067**） | — | 解析 `ftp://`、`s3://`、`git+ssh://` | 全部返回 `nil` | P1 | ✅ 已覆盖 | `returnsNilForUnsupportedURIScheme` |
+| 32 | RemoteRepositoryResolver | 本地 `file://` remote 解析为 `nil`（**回归 #1067**） | Git 能力原样返回 `file:///tmp/repo.git` | 调用 `webURL(forRepositoryAt:)` | 返回 `nil` | P1 | ✅ 已覆盖 | `returnsNilForLocalFileRemote` |
+| 33 | OpenInRemoteTool | 本地 `file://` remote 报告没有可打开的 web 地址（**回归 #1067**） | origin 为 `file:///tmp/repo.git` | 调用 `execute(arguments:)` | 抛出「No remote repository URL」类错误，不误报打开成功 | P1 | ✅ 已覆盖 | `reportsMissingWebURLForFileRemote` |
 
-> 说明：全部 **29 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 2 / 2
-- P1: 已覆盖 26 / 26
+- P1: 已覆盖 30 / 30
 - P2: 已覆盖 1 / 1
-- **合计: 29 / 29**（仅表示清单场景，非源码覆盖率）
+- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（26 条）
+- **P1**: 其余功能性用例（30 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明

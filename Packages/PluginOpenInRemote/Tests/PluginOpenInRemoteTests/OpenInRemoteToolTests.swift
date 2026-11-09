@@ -22,6 +22,19 @@ struct OpenInRemoteToolTests {
         }
     }
 
+    /// 测试替身：固定返回一个 remote 地址。
+    private final class StubGitCapability: OpenInRemoteGitCapability, @unchecked Sendable {
+        private let rawRemote: String
+
+        init(rawRemote: String) {
+            self.rawRemote = rawRemote
+        }
+
+        func remoteURL(atPath path: String, remote: String) async -> String? {
+            rawRemote
+        }
+    }
+
     @Test("显式路径优先于当前项目路径")
     func explicitPathWinsOverCurrentProject() {
         #expect(
@@ -97,6 +110,25 @@ struct OpenInRemoteToolTests {
 
         await #expect(throws: ToolExecutionError.self) {
             _ = try await tool.execute(arguments: [:])
+        }
+    }
+
+    /// 回归 #1067：`file://` remote 曾被拼成 `https://file/tmp/repo` 并返回打开成功。
+    @Test("本地 file:// remote 报告没有可打开的 web 地址")
+    func reportsMissingWebURLForFileRemote() async throws {
+        let tool = OpenInRemoteTool(
+            projectCapability: StubProjectCapability(currentProjectPath: "/repo"),
+            resolver: RemoteRepositoryResolver(
+                gitCapability: StubGitCapability(rawRemote: "file:///tmp/repo.git")
+            )
+        )
+
+        do {
+            _ = try await tool.execute(arguments: [:])
+            Issue.record("expected the tool to throw for a local file remote")
+        } catch let ToolExecutionError.executionFailed(_, reason) {
+            #expect(reason.contains("No remote repository URL"))
+            #expect(!reason.contains("https://file"))
         }
     }
 

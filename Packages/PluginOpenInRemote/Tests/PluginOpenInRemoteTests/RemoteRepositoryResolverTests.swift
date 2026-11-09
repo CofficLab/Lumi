@@ -60,6 +60,15 @@ struct RemoteRepositoryResolverTests {
         #expect(await resolver.webURL(forRepositoryAt: "/repo") == nil)
     }
 
+    /// 回归 #1067：`GitService` 原样返回 `file://` remote，解析链路必须在此终止。
+    @Test("本地 file:// remote 解析为 nil")
+    func returnsNilForLocalFileRemote() async {
+        let git = StubGitCapability(remoteURLs: ["/repo": "file:///tmp/repo.git"])
+        let resolver = RemoteRepositoryResolver(gitCapability: git)
+
+        #expect(await resolver.webURL(forRepositoryAt: "/repo") == nil)
+    }
+
     @Test("空路径不触发读取")
     func skipsLookupForEmptyPath() async {
         let git = StubGitCapability(remoteURLs: [:])
