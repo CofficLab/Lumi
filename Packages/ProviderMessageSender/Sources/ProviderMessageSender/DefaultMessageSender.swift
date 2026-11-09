@@ -55,6 +55,34 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
     public private(set) var pendingFileAttachments: [UserFileAttachment] = []
     public private(set) var pendingQueues: [UUID: [PendingChatMessage]] = [:]
 
+    /// 在途附件读取计数与等待者。
+    ///
+    /// 选择文件到附件入池之间存在异步读取窗口；发送入口在窗口结束前必须
+    /// 挂在 `waitForAttachmentReads()` 上，否则先发出的消息漏掉附件，附件
+    /// 又滚进下一条消息（#1023）。
+    private var attachmentReadCount = 0
+    private var attachmentReadWaiters: [CheckedContinuation<Void, Never>] = []
+
+    public var pendingAttachmentReadCount: Int { attachmentReadCount }
+
+    public func beginAttachmentRead() {
+        attachmentReadCount += 1
+    }
+
+    public func endAttachmentRead() {
+        guard attachmentReadCount > 0 else { return }
+        attachmentReadCount -= 1
+        guard attachmentReadCount == 0 else { return }
+        let waiters = attachmentReadWaiters
+        attachmentReadWaiters.removeAll()
+        waiters.forEach { $0.resume() }
+    }
+
+    public func waitForAttachmentReads() async {
+        guard attachmentReadCount > 0 else { return }
+        await withCheckedContinuation { attachmentReadWaiters.append($0) }
+    }
+
     // MARK: - Sending State Observation
 
     private var sendingStateObservers: [WeakSendingStateObserver] = []

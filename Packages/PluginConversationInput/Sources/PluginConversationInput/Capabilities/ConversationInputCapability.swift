@@ -46,6 +46,15 @@ protocol ConversationInputCapability: AnyObject {
     func removeFileAttachment(id: UUID)
     func clearAttachments()
 
+    // MARK: - Attachment reading
+
+    /// 正在异步读取、尚未进入挂起池的附件数量。
+    var pendingAttachmentReadCount: Int { get }
+    func beginAttachmentRead()
+    func endAttachmentRead()
+    /// 等待全部在途附件读取结束；没有在途读取时立即返回。
+    func waitForAttachmentReads() async
+
     // MARK: - Send
 
     func commitUserMessage(
@@ -196,6 +205,24 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
 
     func addFileAttachment(_ attachment: UserFileAttachment) {
         sender?.addFileAttachment(attachment)
+    }
+
+    // MARK: - Attachment reading
+
+    var pendingAttachmentReadCount: Int {
+        sender?.pendingAttachmentReadCount ?? 0
+    }
+
+    func beginAttachmentRead() {
+        sender?.beginAttachmentRead()
+    }
+
+    func endAttachmentRead() {
+        sender?.endAttachmentRead()
+    }
+
+    func waitForAttachmentReads() async {
+        await sender?.waitForAttachmentReads()
     }
 
     func removeImageAttachment(id: UUID) {

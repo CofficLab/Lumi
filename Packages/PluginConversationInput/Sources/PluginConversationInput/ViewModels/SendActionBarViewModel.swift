@@ -15,6 +15,8 @@ final class SendActionBarViewModel: ObservableObject, SuperLog {
     nonisolated static let verbose = true
 
     private let capability: any ConversationInputCapability
+    /// 是否已经在等待在途附件读取。避免重复点击排起多条发送链。
+    private var isWaitingForAttachmentReads = false
 
     @Published private(set) var state: SendActionBarState
 
@@ -91,6 +93,19 @@ final class SendActionBarViewModel: ObservableObject, SuperLog {
         // 提交中的草稿还在输入框里，此时再次触发会把同一条正文（或同一批
         // 附件）当成新消息重复提交。标记由两条发送入口共用。
         guard !capability.isCommittingDraft else { return }
+
+        // 附件还在异步读取：等读取结束再快照，否则这条消息会漏掉用户刚选中
+        // 的附件，附件又滚进下一条无关消息（#1023）。
+        if capability.pendingAttachmentReadCount > 0 {
+            guard !isWaitingForAttachmentReads else { return }
+            isWaitingForAttachmentReads = true
+            Task { @MainActor in
+                await capability.waitForAttachmentReads()
+                isWaitingForAttachmentReads = false
+                send()
+            }
+            return
+        }
 
         // 交给发送端的是编辑器原文，而不是预 trim 后的文本：
         // 折叠块区间以原文为基准，预 trim 会让 sender 失去前导空白，
