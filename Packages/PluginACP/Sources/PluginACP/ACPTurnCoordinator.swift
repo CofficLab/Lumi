@@ -84,6 +84,8 @@ public final class ACPTurnCoordinator {
     private let messages: any ACPMessageReading
     private let sessions: ACPSessionManager
     private let requester: ACPClientRequester
+    /// 自动重试生命周期（可空：内核未装配重试插件时没有重试接管）。
+    private let retryLifecycle: (any AgentLoopRetryLifecycleProviding)?
     /// 流式增量桥（可空：未接入流式时回合结束整段发送）。
     private let streaming: ACPStreamingBridge?
     private let onSend: @MainActor (ACPMessage) -> Void
@@ -96,6 +98,7 @@ public final class ACPTurnCoordinator {
     /// 已上报工具调用元数据（key: toolCallId）。
     private var toolCallMetadata: [String: ToolCallMetadata] = [:]
     private var observerHandle: (any AgentLoopObserverHandle)?
+    private var retryObserverHandle: (any AgentLoopRetryLifecycleObserverHandle)?
     private var watchdogTasks: [ACPSessionId: Task<Void, Never>] = [:]
 
     public init(
@@ -104,6 +107,7 @@ public final class ACPTurnCoordinator {
         sessions: ACPSessionManager,
         requester: ACPClientRequester,
         streaming: ACPStreamingBridge? = nil,
+        retryLifecycle: (any AgentLoopRetryLifecycleProviding)? = nil,
         onSend: @escaping @MainActor (ACPMessage) -> Void,
         turnStartTimeout: TimeInterval? = nil
     ) {
@@ -111,6 +115,7 @@ public final class ACPTurnCoordinator {
         self.messages = messages
         self.sessions = sessions
         self.requester = requester
+        self.retryLifecycle = retryLifecycle
         self.streaming = streaming
         self.onSend = onSend
         // 默认 45 秒；支持 LUMI_ACP_TURN_TIMEOUT 环境变量覆盖（秒）。
@@ -124,6 +129,14 @@ public final class ACPTurnCoordinator {
         }
         observerHandle = agentLoop.addAgentLoopObserver { [weak self] event in
             self?.handle(event)
+        }
+        // 重试放弃时才向原 prompt 返回 refusal；重试成功 / 取消仍走
+        // AgentLoop 自己的 completed / cancelled 事件。
+        retryObserverHandle = retryLifecycle?.addRetryLifecycleObserver { [weak self] event in
+            guard case .gaveUp(let conversationID, let reason) = event else { return }
+            Task { @MainActor [weak self] in
+                await self?.finalize(conversationID: conversationID, cancelled: false, errorText: reason)
+            }
         }
         // 流式增量：内核追加 token 时立即转发为 agent_message_chunk。
         streaming?.onDelta = { [weak self] conversationID, delta in
@@ -206,7 +219,13 @@ public final class ACPTurnCoordinator {
     public func cancel(sessionID: ACPSessionId) {
         guard let record = sessions.record(for: sessionID) else { return }
         cancelPendingPermissions(sessionID: sessionID)
+        // 退避中的回合不处于运行态，`cancelTurn` 不会产生 cancelled 事件；
+        // 必须显式终止重试，并由 ACP 自己完成收尾，否则原请求一直悬挂。
+        retryLifecycle?.cancelRetry(for: record.conversationID)
         agentLoop.cancelTurn(in: record.conversationID)
+        Task { @MainActor [weak self] in
+            await self?.finalize(conversationID: record.conversationID, cancelled: true, errorText: nil)
+        }
     }
 
     // MARK: - 事件处理
@@ -487,6 +506,14 @@ public final class ACPTurnCoordinator {
               !turn.finalized else {
             return
         }
+
+        // 可重试失败可能已被自动重试接管：回合尚未结束，不能提前向原
+        // prompt 返回终态，否则后续重试的进度与结果无法再关联到该请求。
+        if !cancelled, errorText != nil,
+           retryLifecycle?.isRetrying(conversationID: conversationID) == true {
+            return
+        }
+
         activeTurns[sessionID]?.finalized = true
 
         // ACP 要求：回合结束前不得残留挂起的权限请求；未完成的工具调用

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAgentLoopRetry 的实现包，包含 3 个主要类型；当前测试覆盖 9 条用例。
+PluginAgentLoopRetry 的实现包，包含 3 个主要类型；当前测试覆盖 10 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 9
+测试文件: 1 个，用例总数: 10
 
 核心组件（源码目录）:
 - `Managers/`
@@ -23,7 +23,7 @@ PluginAgentLoopRetry 的实现包，包含 3 个主要类型；当前测试覆�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **AgentLoopRetryCoordinator**（2 条）：由 `deletionDuringBackoffCancelsRetry`、`doesNotRetryConversationDeletedDuringBackoff` 锁定；退避等待期间删除会话必须取消睡眠任务，且启动重试前必须确认会话仍存在。
+- **AgentLoopRetryCoordinator**（3 条）：由 `deletionDuringBackoffCancelsRetry`、`doesNotRetryConversationDeletedDuringBackoff`、`publishesRetryLifecycleEvents` 锁定；退避等待期间删除会话必须取消睡眠任务，启动重试前必须确认会话仍存在，并且每次调度 / 放弃重试都要发布生命周期事件（**#935**）。
 - **AgentLoopRetryPlugin**（5 条）：由 `retriesTransientFailureThreeTimes`、`doesNotRetryNonRetryableFailure`、`resetsAfterSuccessfulRetry` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -39,16 +39,17 @@ PluginAgentLoopRetry 的实现包，包含 3 个主要类型；当前测试覆�
 | 7 | AgentLoopRetryPlugin | 没有服务端建议时不额外等待 | 失败结果不含 Retry-After | 触发一次可重试失败 | 立即重试，不插入额外等待 | P1 | ✅ 已覆盖 | `doesNotWaitWithoutServerAdvice` |
 | 8 | AgentLoopRetryCoordinator | 退避等待期间删除会话会取消延迟重试（**#934**） | 失败结果带 Retry-After 60s，退避已开始 | 退避期间删除该会话 | 睡眠任务被取消，不启动新回合 | P1 | ✅ 已覆盖 | `deletionDuringBackoffCancelsRetry` |
 | 9 | AgentLoopRetryCoordinator | 退避结束时会话已被删除则不重启回合（**#934**） | 删除事件未送达协调器 | 退避结束时清除会话存在性 | 不调用 retryTurn 启动新回合 | P1 | ✅ 已覆盖 | `doesNotRetryConversationDeletedDuringBackoff` |
+| 10 | AgentLoopRetryCoordinator | 调度与放弃重试时发布生命周期事件（**#935**） | 可重试失败且预算已耗尽 | 触发失败并让重试再次失败 | 先发布 scheduled，耗尽后发布 gaveUp，`isRetrying` 复位 | P1 | ✅ 已覆盖 | `publishesRetryLifecycleEvents` |
 
-> 说明：全部 **9 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **10 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 4 / 4
+- P1: 已覆盖 5 / 5
 - P2: 已覆盖 0 / 0
-- **合计: 9 / 9**（仅表示清单场景，非源码覆盖率）
+- **合计: 10 / 10**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

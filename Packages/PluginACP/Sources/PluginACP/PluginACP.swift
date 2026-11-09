@@ -122,6 +122,9 @@ public final class PluginACP: SuperPlugin {
             sessions: sessions,
             requester: requester,
             streaming: streamingBridge,
+            // 自动重试可能接管可重试失败：ACP 必须与它共享回合生命周期，
+            // 否则会在重试仍进行时提前向原 prompt 返回 refusal。
+            retryLifecycle: kernel.resolveProvider((any AgentLoopRetryLifecycleProviding).self),
             onSend: { [weak server] message in
                 server?.sendToClient(message)
             }
