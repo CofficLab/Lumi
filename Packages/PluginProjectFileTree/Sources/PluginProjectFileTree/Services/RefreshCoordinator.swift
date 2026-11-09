@@ -54,7 +54,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     private var expandedPaths: Set<String> = []
 
     /// 插件入口注入的文件系统观察器。
-    private weak var observer: FileTreeObserver?
+    private weak var observer: (any FileTreeWatching)?
 
     /// Git 状态提供器（线程安全，无 MainActor 依赖）
     private let gitStatusProvider = GitStatusProvider()
@@ -94,7 +94,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     public init() {
     }
 
-    func attach(observer: FileTreeObserver) {
+    func attach(observer: any FileTreeWatching) {
         self.observer = observer
     }
 
@@ -105,9 +105,14 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
 
     // MARK: - Public - Lifecycle
 
-    /// 设置当前项目根路径（项目切换时调用）
+    /// 设置当前项目根路径（项目切换或视图重新出现时调用）
     public func setProjectRootPath(_ path: String) {
-        guard path != projectRootPath else { return }
+        if path == projectRootPath {
+            // 视图重新出现时根路径不变，但 `stop()` 已经关闭 watcher；
+            // 这里必须重新挂载监听并刷新 Git 状态，否则外部变更不再触发刷新。
+            resumeWatching()
+            return
+        }
 
         // 清理旧项目的状态
         observer?.stopWatching()
@@ -137,6 +142,15 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
             }
         } else {
             isGitRepo = false
+        }
+    }
+
+    /// 为当前根路径重新挂载监听并刷新首次 Git 状态（视图重新出现时调用）。
+    private func resumeWatching() {
+        guard !projectRootPath.isEmpty else { return }
+        updateWatcher()
+        if isGitRepo {
+            refreshGitStatus()
         }
     }
 

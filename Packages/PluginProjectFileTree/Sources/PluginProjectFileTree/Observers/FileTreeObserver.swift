@@ -1,11 +1,17 @@
 import Foundation
 import KitFileSystem
 
+/// RefreshCoordinator 依赖的监听边界，测试可注入记录型替身。
+protocol FileTreeWatching: AnyObject {
+    func updateWatchedDirectories(_ directories: Set<URL>)
+    func stopWatching()
+}
+
 /// 文件树唯一的 FileTreeWatcher 持有者。
 ///
 /// 观察器由插件入口创建并销毁，RefreshCoordinator 只负责把变化转换成
 /// ViewModel 可消费的刷新状态，不再自行注册外部文件系统监听。
-final class FileTreeObserver {
+final class FileTreeObserver: FileTreeWatching {
     private final class WeakCoordinator: @unchecked Sendable {
         weak var value: RefreshCoordinator?
     }
