@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 104 条用例。
+PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 109 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 104
+测试文件: 6 个，用例总数: 109
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -49,6 +49,8 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **RAGPureLogic**（59 条）：由 `chunkEmptyInputReturnsEmpty`、`chunkSingleBlockProducesOneChunk`、`chunkProducesOverlapAcrossBlocks` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RAGSQLiteStoreConcurrency**（1 条）：由 `concurrentWritersOnOneConnectionDoNotCollide` 用例锁定；该用例用 8 个线程同时向同一 store 写入不同项目，移除 `RAGSQLiteStore` 的连接锁后必定因「cannot start a transaction within a transaction」失败。
 - **RAGServiceModelMigration**（1 条）：由 `backgroundIndexRebuildsWhenEmbeddingModelChanged` 用例锁定；该用例预置一个模型标识过期但维度相同的索引状态，再以 `background: true` 触发索引，缺少后台迁移能力时会抛「后台索引暂不执行 embedding 模型迁移」。
+- **RAGFileScannerFailure**（3 条）：由 `missingRootThrows`、`regularFileRootThrows`、`emptyDirectoryReturnsNoFiles` 用例锁定；扫描接口必须把「根目录不可用」与「项目确实为空」区分开，前者抛 `RAGError.projectRootUnavailable`，后者才返回空数组。
+- **RAGIndexerScannerFailure**（2 条）：由 `incrementalIndexKeepsRecordsWhenRootDisappears`、`rebuildKeepsRecordsWhenRootDisappears` 用例锁定；项目根目录消失后索引必须中止，已索引文件数与索引状态保持不变，不得按「文件已删除」清空记录。
 
 ## 测试用例清单
 
@@ -158,27 +160,32 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 102 | RAGInjectionDeduplication | 去重键只保存固定长度摘要 | — | 用含敏感正文的消息构造去重键并比较 | 摘要为 64 位十六进制且不含原文；会话 ID 或消息序号不同则为不同键 | P1 | ✅ 已覆盖 | `keyStoresOnlyDigest` |
 | 103 | RAGInjectionDeduplication | 超过容量后淘汰最旧的回合 | 容量为 2 的去重窗口 | 依次记录三个不同回合 | 集合始终不超过 2 条，最旧回合被淘汰 | P1 | ✅ 已覆盖 | `evictsOldestTurnBeyondCapacity` |
 | 104 | RAGInjectionDeduplication | 重复记录同一回合不会扩大窗口 | 容量为 2 的去重窗口 | 记录同一回合两次再记录另一回合 | 集合为 2 条且原回合仍被记住 | P1 | ✅ 已覆盖 | `recordingSameTurnIsIdempotent` |
+| 105 | RAGFileScannerFailure | 项目根目录不存在时扫描抛错 | — | 对不存在的路径调用 `discoverFilesOrThrow` | 抛 `RAGError.projectRootUnavailable`；宽松接口仍返回空数组 | P1 | ✅ 已覆盖 | `missingRootThrows` |
+| 106 | RAGFileScannerFailure | 根路径是普通文件时扫描抛错 | 根路径指向一个 .swift 文件 | 对该路径调用 `discoverFilesOrThrow` | 抛 `RAGError.projectRootUnavailable` | P1 | ✅ 已覆盖 | `regularFileRootThrows` |
+| 107 | RAGFileScannerFailure | 空目录扫描返回空数组 | 创建一个无文件的临时目录 | 对该目录调用 `discoverFilesOrThrow` | 返回空数组且不抛错 | P1 | ✅ 已覆盖 | `emptyDirectoryReturnsNoFiles` |
+| 108 | RAGIndexerScannerFailure | 增量索引时项目根消失保留旧记录 | 已成功索引一个含 Swift 文件的项目 | 删除项目目录后再执行增量索引 | 抛错，已索引文件数与索引状态保持不变 | P1 | ✅ 已覆盖 | `incrementalIndexKeepsRecordsWhenRootDisappears` |
+| 109 | RAGIndexerScannerFailure | 全量重建时项目根消失保留旧记录 | 已成功重建一个含 Swift 文件的项目 | 删除项目目录后再执行全量重建 | 抛错，已索引文件数保持不变（扫描先于删除） | P1 | ✅ 已覆盖 | `rebuildKeepsRecordsWhenRootDisappears` |
 
-> 说明：全部 **104 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **109 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 7 / 7
-- P1: 已覆盖 86 / 86
+- P1: 已覆盖 91 / 91
 - P2: 已覆盖 11 / 11
-- **合计: 104 / 104**（仅表示清单场景，非源码覆盖率）
+- **合计: 109 / 109**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（80 条）
+- **P1**: 其余功能性用例（85 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 104 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 109 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
