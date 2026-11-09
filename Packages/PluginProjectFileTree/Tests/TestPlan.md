@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 11 条用例。
+PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 14 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 11
+测试文件: 6 个，用例总数: 14
 
 核心组件（源码目录）:
 - `Models/`
@@ -43,6 +43,8 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 - **RefreshCoordinator**（4 条）：由 `sameRootPathReappearanceRestartsWatching`、`sameRootPathReappearanceKeepsExpandedPaths`、`emptyRootPathDoesNotStartWatching`、`fullRefreshDoesNotStallTargetedRefresh` 锁定。视图消失会调用 `stop()` 关闭 watcher；同一根路径再次出现时必须重新挂载监听（并保留展开目录），不能因路径相等直接返回（**回归 #1097**）。全量刷新与精准刷新必须各自持有防抖任务且真正响应取消，全量刷新不能把精准 trailing 窗口取消后留下永久 pending（**回归 #1099**）。
 - **FileTreeNSViewBridge**（2 条）：由 `newGitStatusTokenUpdatesVisibleRows`、`repeatedGitStatusTokenDoesNotReload` 锁定。新 Git 快照令牌必须通过 `updateGitStatus` 赋值并重载可见行，不能只改属性；相同令牌不得重复重载（**回归 #1098**）。
 - **FileTreeDropProcessor**（2 条）：由 `partialDropFailureReportsFailedSources`、`successfulDropReportsNoFailedSources` 锁定。单个源移动失败不能静默跳过，`.moved` 必须携带 `failedSources` 供调用方提示部分失败（**回归 #1100**）。
+- **SelectionState**（2 条）：由 `shiftClickSelectsEveryVisibleItemInRange`、`visibleOrderUpdateDropsCollapsedItems` 锁定。Shift 范围选择依赖 `updateVisibleOrder` 建立的显示顺序，重建时必须丢弃已折叠/不可见行（**回归 #1101**）。
+- **FileTreeCollectionViewController**（1 条）：由 `controllerTracksVisibleOrderForShiftSelection` 锁定。每次树快照变化都必须把可见文件行按顺序写入 `SelectionState`，否则 Shift 点击只能退化为单选，右键“Send to Conversation”会漏发中间文件（**回归 #1101**）。
 
 ## 测试用例清单
 
@@ -59,27 +61,30 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 | 9 | RefreshCoordinator | 全量刷新不会让精准刷新永久停摆（**回归 #1099**） | E1 已发布并处于 trailing 窗口 | 窗口内调用 `refresh()`，随后产生 E2 | E2 仍递增 `targetedRefreshToken`，不会停在 pending | P0 | ✅ 已覆盖 | `fullRefreshDoesNotStallTargetedRefresh` |
 | 10 | FileTreeDropProcessor | 部分移动失败时必须上报失败源（**回归 #1100**） | 两个源中一个移动成功、一个目标同名冲突 | 执行拖放处理 | `.moved` 的 `failedSources` 仅含失败源，`affectedParents` 只含成功源的父目录 | P0 | ✅ 已覆盖 | `partialDropFailureReportsFailedSources` |
 | 11 | FileTreeDropProcessor | 全部移动成功时失败源列表为空 | 两个源均可移动 | 执行拖放处理 | `.moved` 的 `pairs` 为 2，`failedSources` 为空 | P1 | ✅ 已覆盖 | `successfulDropReportsNoFailedSources` |
+| 12 | SelectionState | Shift 点击选中 anchor 到目标之间的全部可见行（**回归 #1101**） | 已登记 a、b、c 三行可见顺序 | 点击 a 后 Shift 点击 c | `selectedPaths` 为 a、b、c，`actionTargets` 按可见顺序返回三行 | P0 | ✅ 已覆盖 | `shiftClickSelectsEveryVisibleItemInRange` |
+| 13 | SelectionState | 可见行顺序重建后按新范围选择，不包含已折叠行 | 已登记 a、b、c，随后 b 折叠 | 重建为 a、c 后点击 a 并 Shift 点击 c | `selectedPaths` 仅含 a、c | P1 | ✅ 已覆盖 | `visibleOrderUpdateDropsCollapsedItems` |
+| 14 | FileTreeCollectionViewController | 文件树快照会建立可见行顺序，Shift 选择覆盖整个范围（**回归 #1101**） | 临时项目含 a、b、c 三个文件 | 加载视图并设置项目根后执行 Shift 选择 | 可见顺序包含三行，选中集合与发送目标均为 a、b、c | P0 | ✅ 已覆盖 | `controllerTracksVisibleOrderForShiftSelection` |
 
-> 说明：全部 **11 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **14 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
-- P1: 已覆盖 4 / 4
+- P0: 已覆盖 7 / 7
+- P1: 已覆盖 5 / 5
 - P2: 已覆盖 2 / 2
-- **合计: 11 / 11**（仅表示清单场景，非源码覆盖率）
+- **合计: 14 / 14**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（4 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P1**: 其余功能性用例（5 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 11 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 14 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
