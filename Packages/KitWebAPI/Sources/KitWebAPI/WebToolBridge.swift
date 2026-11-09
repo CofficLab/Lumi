@@ -189,8 +189,9 @@ public struct WebToolExecutionResult: Encodable, Sendable {
 /// - `GET  /api/v1/tools/:name` —— 查看单个工具的详情与 schema
 /// - `POST /api/v1/tools/:name/invoke` —— 调用工具
 ///
-/// 工具执行复用 `ToolManagerProviding.execute`，因此授权策略、风险评估、
-/// 调用记录与 UI 反馈全部沿用内核既有机制，桥接层不重复实现。
+/// 工具执行复用 `ToolManagerProviding.execute`，并在执行前调用
+/// `authorizationDecision`，因此会话级策略（Chat 阻断、Build 高风险需确认）
+/// 与正常 Agent 路径保持一致；HTTP 无法弹出授权界面，需要批准的调用直接拒绝。
 ///
 /// - Note: 工具执行需要 `conversationID` 作为上下文（会话决定自动化等级与
 ///   项目路径）。调用方通过请求体 `conversationID` 指定；缺省时桥接器用
@@ -311,6 +312,19 @@ public final class WebToolBridge {
             name: name,
             arguments: Self.encodeArguments(arguments)
         )
+
+        // HTTP 没有交互式授权通道，必须沿用会话的自动化策略：
+        // Chat 直接拒绝；Build 中需要确认的调用不执行，由调用方在 Lumi 内确认。
+        switch toolManager.authorizationDecision(for: toolCall, conversationID: resolvedConversationID) {
+        case .autoApproved:
+            break
+        case .blocked(let reason):
+            throw WebAPIError.forbidden(message: reason)
+        case .requiresUserApproval:
+            throw WebAPIError.forbidden(
+                message: "Tool \(name) requires user approval in Lumi before it can be invoked over HTTP."
+            )
+        }
 
         let result = await toolManager.execute(
             toolCall,
