@@ -19,6 +19,7 @@ let package = Package(
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderToolManager"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../../Vendor/LumiLogging"),
     ],
     targets: [
@@ -50,6 +51,8 @@ let package = Package(
                 "ProviderWebServer",
                 "KitWebServer",
                 "KitWebAPI",
+                "ProviderToolManager",
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
             ]
         ),
     ]
