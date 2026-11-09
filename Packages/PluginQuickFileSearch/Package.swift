@@ -47,6 +47,7 @@ let package = Package(
             dependencies: [
                 "QuickFileSearchPlugin",
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
+                .product(name: "ProviderProject", package: "LumiProviders"),
             ],
             path: "Tests"
         )

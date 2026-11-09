@@ -1,13 +1,16 @@
 import LumiUI
+import ProviderProject
 import SwiftUI
 
 /// 快速文件搜索设置视图
 public struct QuickFileSearchSettingsView: View {
-    private let projectPath: String
+    @StateObject private var status: QuickFileSearchSettingsStatus
 
-    public init(projectPath: String) {
-        self.projectPath = projectPath
+    public init(project: (any ProjectProviding)?) {
+        _status = StateObject(wrappedValue: QuickFileSearchSettingsStatus(project: project))
     }
+
+    private var projectPath: String { status.projectPath }
 
     public var body: some View {
         AppSettingsContentScaffold(maxContentWidth: nil) {
@@ -93,7 +96,7 @@ public struct QuickFileSearchSettingsView: View {
 }
 
 #Preview("Quick File Search Settings") {
-    QuickFileSearchSettingsView(projectPath: "/tmp/MyProject")
+    QuickFileSearchSettingsView(project: nil)
         .inRootView()
         .frame(width: 600, height: 500)
 }
