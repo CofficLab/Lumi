@@ -50,7 +50,9 @@ protocol ProviderSettingsCapability: AnyObject {
     var customProviderConfigurationsPublisher: AnyPublisher<[UserDefinedCloudProviderConfiguration], Never> { get }
     func customProviderConfiguration(id: String) -> UserDefinedCloudProviderConfiguration?
     func isCustomProvider(id: String) -> Bool
-    func removeCustomProvider(id: String)
+
+    /// 删除自定义供应商。持久化失败时抛错，调用方不得当作已删除。
+    func removeCustomProvider(id: String) throws
     func makeCustomProviderEditor(configuration: UserDefinedCloudProviderConfiguration?) -> CustomCloudProviderEditor?
 
     // MARK: 下载
@@ -160,8 +162,8 @@ final class ProviderSettingsCapabilityAdapter: ProviderSettingsCapability {
         customProviderStore?.isCustomProvider(id: id) ?? false
     }
 
-    func removeCustomProvider(id: String) {
-        try? customProviderStore?.remove(id: id)
+    func removeCustomProvider(id: String) throws {
+        try customProviderStore?.remove(id: id)
     }
 
     func makeCustomProviderEditor(configuration: UserDefinedCloudProviderConfiguration?) -> CustomCloudProviderEditor? {

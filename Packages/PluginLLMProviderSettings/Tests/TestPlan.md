@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测试覆盖 50 条用例。
+PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测试覆盖 52 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 50
+测试文件: 7 个，用例总数: 52
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -42,6 +42,7 @@ PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测�
 - **CustomCloudProviderForm**（17 条）：由 `parsesModelIDsSeparatedByNewlines`、`parsesModelIDsSeparatedByCommas`、`parsesModelIDsSeparatedByMixedDelimiters` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **LLMProviderSettingsPlugin**（6 条）：由 `pluginRegistersSettingEntries`、`pluginShutdownRemovesEntries`、`pluginBootWithoutManagerIsNoop` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProviderDetailModelRefresh**（8 条）：由 `exposesRefreshEntryOnlyForRemoteProviders`、`noRefreshEntryForUnregisteredProvider`、`refreshUpdatesModels` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ProviderDetailCustomProviderRemoval**（2 条）：由 `removalFailureSurfacesErrorAndKeepsProvider`、`removalSuccessClearsPreviousError` 锁定；改动删除自定义供应商链路时优先跑对应测试文件。
 - **ProviderSettingsPageViewModel**（14 条）：由 `listsNewlyAddedCloudProvider`、`customProviderRevisionIncrementsOnStoreChange`、`newlyAddedProviderIsSearchable` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProviderSettingsScopeViewModel**（4 条）：由 `defaultsToCloudScope`、`switchingScopeSwapsListAndSelection`、`scopesKeepIndependentSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **本地化资源完整性**（1 条）：由 `userFacingKeysIncludeEnglish` 锁定供应商设置页可见文案的 en 翻译；改动文案或 xcstrings 时优先跑该测试文件。
@@ -100,27 +101,29 @@ PluginLLMProviderSettings 的实现包，包含 14 个主要类型；当前测�
 | 48 | ProviderSettingsScopeViewModel | 两个范围各自记住自己的选中项，来回切不互相污染 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `scopesKeepIndependentSelection` |
 | 49 | ProviderSettingsScopeViewModel | 范围枚举提供云端 / 本地两个页签标题与图标 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `scopeExposesTitlesAndIcons` |
 | 50 | 本地化资源完整性 | 供应商设置页全部可见文案都有非空 en 翻译，且不等于中文 key | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `userFacingKeysIncludeEnglish` |
+| 51 | ProviderDetailCustomProviderRemoval | 删除自定义供应商时落盘失败会展示错误并保留供应商 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `removalFailureSurfacesErrorAndKeepsProvider` |
+| 52 | ProviderDetailCustomProviderRemoval | 删除成功后不残留上一次的错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `removalSuccessClearsPreviousError` |
 
-> 说明：全部 **50 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **52 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 1 / 1
-- P1: 已覆盖 42 / 42
+- P0: 已覆盖 2 / 2
+- P1: 已覆盖 43 / 43
 - P2: 已覆盖 7 / 7
-- **合计: 50 / 50**（仅表示清单场景，非源码覆盖率）
+- **合计: 52 / 52**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（42 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
+- **P1**: 其余功能性用例（43 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 50 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 52 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

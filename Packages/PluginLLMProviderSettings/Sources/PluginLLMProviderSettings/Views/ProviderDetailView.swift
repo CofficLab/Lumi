@@ -51,6 +51,9 @@ public struct ProviderDetailView: View {
             if let modelRefreshError = viewModel.modelRefreshError {
                 AppErrorBanner(message: LocalizedStringKey(modelRefreshError))
             }
+            if let customProviderRemoveError = viewModel.customProviderRemoveError {
+                AppErrorBanner(message: LocalizedStringKey(customProviderRemoveError))
+            }
         }
         .sheet(isPresented: $isEditorPresented) {
             if let editor = viewModel.makeCustomProviderEditor() {
