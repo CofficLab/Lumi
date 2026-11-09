@@ -471,6 +471,67 @@ struct ResumeHTMLLinterTests {
         let report = linter.lint(html: html, paper: .a4)
         #expect(report.errors.contains { $0.code == "remote_resource" })
     }
+
+    @Test("CSS url(...) 引用缺失本地资源时报 missing_asset（**回归 #1086**）")
+    func reportsMissingCSSURLAsset() throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let html = """
+        <!doctype html><html lang="en"><head><meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+        html, body { margin: 0; background: #fff; }
+        .resume-page {
+          width: 794px;
+          height: 1123px;
+          overflow: hidden;
+          background: #fff url("assets/does-not-exist.png") center/cover no-repeat;
+        }
+        .entry { break-inside: avoid; }
+        </style>
+        </head><body>
+          <section class="resume-page"><p class="entry">Visible text</p></section>
+        </body></html>
+        """
+
+        let report = ResumeHTMLLinter().lint(html: html, paper: .a4, documentDirectory: root)
+        #expect(report.errors.contains {
+            $0.code == "missing_asset" && $0.message.contains("does-not-exist.png")
+        })
+    }
+
+    @Test("CSS url(...) 已存在的本地资源与 data/远程地址不误报（**回归 #1086**）")
+    func acceptsExistingAndNonLocalCSSURLAssets() throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let assets = root.appendingPathComponent("assets", isDirectory: true)
+        try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
+        try Data("png".utf8).write(to: assets.appendingPathComponent("bg.png"))
+
+        let html = """
+        <!doctype html><html lang="en"><head><meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+        html, body { margin: 0; background: #fff; }
+        .resume-page {
+          width: 794px;
+          height: 1123px;
+          overflow: hidden;
+          background: #fff url(assets/bg.png) center/cover no-repeat,
+                      url("data:image/png;base64,AAAA") no-repeat;
+        }
+        .entry { break-inside: avoid; }
+        </style>
+        </head><body>
+          <section class="resume-page"><p class="entry">Visible text</p></section>
+        </body></html>
+        """
+
+        let report = ResumeHTMLLinter().lint(html: html, paper: .a4, documentDirectory: root)
+        #expect(!report.errors.contains { $0.code == "missing_asset" })
+        #expect(!report.errors.contains { $0.code == "unsafe_asset_path" })
+    }
 }
 
 // MARK: - Document store
