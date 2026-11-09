@@ -261,6 +261,37 @@ struct AgentLoopRetryPluginTests {
         coordinator.cancel()
     }
 
+    @Test("调度与放弃重试时发布生命周期事件")
+    func publishesRetryLifecycleEvents() async {
+        let conversationID = UUID()
+        let messages = DefaultMessageManager()
+        let agentLoop = TestAgentLoop(outcomes: [.failed("network")])
+        agentLoop.emitsTerminalEvent = false
+        var events: [AgentLoopRetryLifecycleEvent] = []
+        let coordinator = AgentLoopRetryCoordinator(
+            loop: AgentLoopRetryCapabilityAdapter(agentLoop: agentLoop),
+            messages: AgentLoopRetryMessageCapabilityAdapter(messages: messages),
+            maxAttempts: 1,
+            onLifecycleEvent: { events.append($0) }
+        )
+        let failure = AgentLoopFailure(kind: .network, message: "连接被重置")
+        agentLoop.failure = failure
+
+        agentLoop.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: failure.message))
+        #expect(events == [.scheduled(conversationID: conversationID, attempt: 1)])
+        #expect(coordinator.isRetrying(conversationID: conversationID))
+        await yieldUntil { agentLoop.retryCalls.count == 1 }
+
+        // 重试再次失败且预算已耗尽：必须发布放弃事件，否则等待重试的
+        // 上层（如 ACP）会永远停在未收尾状态。
+        agentLoop.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: failure.message))
+        #expect(events.count == 2)
+        #expect(events.last == .gaveUp(conversationID: conversationID, reason: "连接被重置"))
+        #expect(!coordinator.isRetrying(conversationID: conversationID))
+
+        coordinator.cancel()
+    }
+
     @Test("退避等待期间删除会话会取消延迟重试")
     func deletionDuringBackoffCancelsRetry() async throws {
         let conversations = DefaultConversationManager()

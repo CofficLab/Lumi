@@ -2,7 +2,7 @@
 
 ## 包概述
 
-ProviderAgentLoop 的实现包，包含 9 个主要类型；当前测试覆盖 20 条用例。
+ProviderAgentLoop 的实现包，包含 12 个主要类型；当前测试覆盖 20 条用例。
 
 平台: macOS 14+, iOS 17+
 测试文件: 3 个，用例总数: 20
@@ -15,6 +15,9 @@ ProviderAgentLoop 的实现包，包含 9 个主要类型；当前测试覆盖 2
 - `AgentLoopEvent`
 - `AgentLoopOutcome`
 - `AgentLoopProviding`
+- `AgentLoopRetryLifecycleEvent`
+- `AgentLoopRetryLifecycleObserverHandle`
+- `AgentLoopRetryLifecycleProviding`
 - `AgentLoopState`
 - `AgentLoopSuspension`
 - `AgentTurnResumeRequest`
