@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginShowImage 的实现包，包含 3 个主要类型；当前测试覆盖 7 条用例。
+PluginShowImage 的实现包，包含 3 个主要类型；当前测试覆盖 9 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 7
+测试文件: 1 个，用例总数: 9
 
 ## 公开 API
 
@@ -32,20 +32,22 @@ PluginShowImage 的实现包，包含 3 个主要类型；当前测试覆盖 7 �
 | 5 | ShowImageTool | 本地路径的首尾空白必须逐字节保留 | 文件名以空格结尾/开头 | 归一化 source 并执行工具 | 返回原始路径；存在该文件时成功显示 | P0 | ✅ 已覆盖 | `imageSourcePreservesLocalPathWhitespace` |
 | 6 | ShowImageTool | 校验失败必须抛出错误，而不是返回 `Error: ...` 文本 | 缺失 source / 文件不存在 | 调用默认 `executeResult` | 抛出 `ShowImageError`；合法输入返回 `isError == false`（**回归** #765） | P0 | ✅ 已覆盖 | `validationFailuresThrowThroughExecuteResult` |
 | 7 | ShowImageTool | 本地源必须是可读、可解码的普通文件 | 目录、伪造 `.png`、截断图片、不可读文件 | 调用 `executeResult` 指向以上路径 | 分别抛出 `notAFile` / `undecodableImage` / `unreadableFile`，且不发布显示状态（**回归** #766） | P0 | ✅ 已覆盖 | `rejectsDirectoryUnreadableAndUndecodableSources` |
+| 8 | ShowImageTool | 拒绝缺少 host 的 HTTP(S) 远程地址（**回归 #1066**） | — | 归一化 `https:image.png`、`http:///image.png`、`https://user@:443/image.png` | 抛出 `missingRemoteHost`，不产生 `.remote` 来源 | P0 | ✅ 已覆盖 | `imageSourceRejectsRemoteURLWithoutHost` |
+| 9 | ShowImageTool | 无 host 的远程地址不发布展示状态、不报告成功（**回归 #1066**） | `ShowImageState` 已清空 | 调用 `executeResult(source: https:image.png)` | 抛出 `missingRemoteHost`，`displayItem` 仍为 `nil` | P0 | ✅ 已覆盖 | `rejectsRemoteURLWithoutHostWithoutPublishing` |
 
-> 说明：全部 **7 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **9 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 4 / 4
+- P0: 已覆盖 6 / 6
 - P1: 已覆盖 2 / 2
 - P2: 已覆盖 1 / 1
-- **合计: 7 / 7**（仅表示清单场景，非源码覆盖率）
+- **合计: 9 / 9**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
 - **P1**: 其余功能性用例（2 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
