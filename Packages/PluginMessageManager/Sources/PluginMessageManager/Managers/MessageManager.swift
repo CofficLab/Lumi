@@ -174,6 +174,7 @@ public final class MessageManager: MessageManaging, SuperLog {
         let pending = self.pending
         return await Task.detached(priority: priority) {
             // LLM 上下文只需要 content + reasoningContent + toolCalls，
+            // 外加时间线标记（`renderKind` / `lumi.timelineEvent`），
             // 用窄读取避开 `metadataJson`（35MB）与 `rawStreamEventsJSON`（47MB）
             // 这两类与 LLM 无关的大字段。
             let diskMessages: [Message] = switch scope {
