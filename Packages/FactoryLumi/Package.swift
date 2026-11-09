@@ -451,6 +451,9 @@ let package = Package(
                 .product(name: "PluginMessageManager", package: "PluginMessageManager"),
                 .product(name: "PluginMessageListEmpty", package: "PluginMessageListEmpty"),
                 .product(name: "PluginMessageListStandard", package: "PluginMessageListStandard"),
+                // V4（ZCode）消息列表与 V3 共处一个 package，仲裁测试需要直接
+                // 装配真实插件来断言 exclusiveGroup 槽位互斥。
+                .product(name: "PluginMessageListDetailed", package: "PluginMessageListDetailed"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "PluginToolbar", package: "LumiProviders"),
                 // 全新安装首屏装配（空态 → 首条消息 → 对话列表 tab）需要真实

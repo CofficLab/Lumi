@@ -342,6 +342,7 @@ public struct DefaultPluginFactory: PluginFactory {
             PluginMessageListBriefPlugin(),
             PluginMessageListStandardPlugin(),
             PluginMessageListDetailedPlugin(),
+            PluginMessageListZCodePlugin(),
             MessageRendererPlugin(),
             ConversationInputPlugin(),
             ConversationListPlugin(),
