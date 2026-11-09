@@ -220,6 +220,37 @@ struct WebToolBridgeTests {
         ]))
     }
 
+    @Test("桥接创建后注册的工具，单个查询仍返回真实归属插件")
+    func descriptorUsesPluginIDForToolRegisteredLater() throws {
+        let manager = StubToolManager()
+        let bridge = WebToolBridge(toolManager: manager)
+
+        manager.add(
+            StubTool(name: "open_in_cursor", resultText: "ok"),
+            pluginID: "com.coffic.lumi.plugin.open-in-cursor"
+        )
+
+        let descriptor = try #require(bridge.toolDescriptor(named: "open_in_cursor"))
+        #expect(descriptor.pluginID == "com.coffic.lumi.plugin.open-in-cursor")
+    }
+
+    @Test("桥接创建后注册的工具，列表仍返回真实归属插件")
+    func listUsesPluginIDForToolRegisteredLater() throws {
+        let manager = StubToolManager()
+        manager.add(StubTool(name: "read_file", resultText: "ok"), pluginID: "com.test.fs")
+        let bridge = WebToolBridge(toolManager: manager)
+
+        manager.add(
+            StubTool(name: "open_in_cursor", resultText: "ok"),
+            pluginID: "com.coffic.lumi.plugin.open-in-cursor"
+        )
+
+        let descriptors = bridge.toolDescriptors()
+        let added = try #require(descriptors.first { $0.name == "open_in_cursor" })
+        #expect(added.pluginID == "com.coffic.lumi.plugin.open-in-cursor")
+        #expect(descriptors.first { $0.name == "read_file" }?.pluginID == "com.test.fs")
+    }
+
     @Test("未知工具返回 nil")
     func returnsNilForUnknownTool() {
         let bridge = WebToolBridge(toolManager: StubToolManager())
