@@ -35,6 +35,24 @@ struct ShowImageToolTests {
         expectSourceError("ftp://example.com/image.png", .unsupportedScheme("ftp"))
     }
 
+    /// 回归 #1066：有 http(s) scheme 但没有 authority/host 的地址不是可加载的图片 URL。
+    @Test func imageSourceRejectsRemoteURLWithoutHost() {
+        expectSourceError("https:image.png", .missingRemoteHost("https:image.png"))
+        expectSourceError("http:///image.png", .missingRemoteHost("http:///image.png"))
+        expectSourceError("https://user@:443/image.png", .missingRemoteHost("https://user@:443/image.png"))
+    }
+
+    @Test @MainActor func rejectsRemoteURLWithoutHostWithoutPublishing() async throws {
+        let tool = ShowImageTool(network: nil)
+        let state = ShowImageState.shared
+        state.clear()
+
+        await #expect(throws: ShowImageTool.ShowImageError.missingRemoteHost("https:image.png")) {
+            _ = try await tool.executeResult(arguments: ["source": ToolArgument("https:image.png")])
+        }
+        #expect(state.displayItem == nil)
+    }
+
     @Test func maximumWidthUsesDefaultAndClampsEveryInputForm() {
         #expect(ShowImageTool.normalizedMaxWidth(nil) == 400)
         #expect(ShowImageTool.normalizedMaxWidth("bad") == 400)

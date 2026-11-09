@@ -211,6 +211,11 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
         if let url = URL(string: trimmed), let scheme = url.scheme {
             switch scheme.lowercased() {
             case "http", "https":
+                // `https:image.png`、`http:///image.png` 都有 http(s) scheme，却没有
+                // authority/host，不能作为远程图片来源发布（issue #1066）。
+                guard let host = url.host, !host.isEmpty else {
+                    throw ShowImageError.missingRemoteHost(url.absoluteString)
+                }
                 return .remote(url.absoluteString)
             case "file":
                 return .local(url.path)
@@ -227,6 +232,7 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
     enum ShowImageError: LocalizedError, Equatable {
         case missingSource
         case unsupportedScheme(String)
+        case missingRemoteHost(String)
         case fileNotFound(String)
         case notAFile(String)
         case unreadableFile(String)
@@ -239,6 +245,8 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
                 return "Error: Missing required 'source' parameter. Please provide a local file path or a remote URL."
             case .unsupportedScheme(let scheme):
                 return "Error: Unsupported image URL scheme '\(scheme)'. Only HTTP/HTTPS URLs are supported."
+            case .missingRemoteHost(let url):
+                return "Error: Remote image URL has no host: \(url)"
             case .fileNotFound(let path):
                 return "Error: File not found: \(path)"
             case .notAFile(let path):
