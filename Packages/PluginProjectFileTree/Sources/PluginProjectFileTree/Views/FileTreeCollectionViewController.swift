@@ -24,7 +24,7 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog, FileTr
 
     private var dataSource: FileTreeDiffableDataSource!
     private let fileTreeDataSource = FileTreeDataSource()
-    private var selectionState = SelectionState()
+    let selectionState = SelectionState()
     private var hoveredItemURL: URL?
     private var trackingArea: NSTrackingArea?
     private var appearanceObserver: FileTreeAppearanceObserver?
@@ -185,6 +185,15 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog, FileTr
         fileTreeDataSource.onItemsChanged = { [weak self] items in
             guard let self = self else { return }
 
+            // Shift 范围选择依赖可见行顺序；快照变化（展开/折叠、刷新、切项目）
+            // 后必须同步重建，否则索引始终为空、Shift 只能退化为单选（回归 #1101）。
+            self.selectionState.updateVisibleOrder(
+                items.compactMap { item -> URL? in
+                    guard case .file(let fileItem) = item else { return nil }
+                    return fileItem.url
+                }
+            )
+
             var snapshot = NSDiffableDataSourceSnapshot<Section, CollectionItem>()
             snapshot.appendSections([.main])
             snapshot.appendItems(items, toSection: .main)
@@ -290,6 +299,13 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog, FileTr
         collectionView.reloadItems(at: Set(visibleItems))
     }
 
+    /// 当前鼠标事件落点对应的行。用于从 Shift 选择回调的无序集合中找回目标行。
+    private func indexPathUnderCurrentClick() -> IndexPath? {
+        guard let event = NSApp.currentEvent else { return nil }
+        let point = collectionView.convert(event.locationInWindow, from: nil)
+        return collectionView.indexPathForItem(at: point)
+    }
+
     /// 同步可见文件行的选中样式，但不重建 cell。
     /// 普通单击后必须保留原 hosting view，AppKit 才能把下一击识别为双击。
     private func syncSelectionState() {
@@ -384,7 +400,14 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         _ collectionView: NSCollectionView,
         didSelectItemsAt indexPaths: Set<IndexPath>
     ) {
-        guard let indexPath = indexPaths.first,
+        let modifiers = ModifierFlags.currentClick
+        // Shift 点击时 AppKit 会把 anchor 到目标之间的行一次性加入选中集合，
+        // 集合本身没有顺序；必须用鼠标位置找回真正被点击的目标行，
+        // 否则可能把中间行当作终点，只选到一半范围（回归 #1101）。
+        let clickedIndexPath = modifiers.contains(.shift)
+            ? indexPathUnderCurrentClick()
+            : nil
+        guard let indexPath = clickedIndexPath ?? indexPaths.first,
               let item = dataSource.itemIdentifier(for: indexPath) else {
             return
         }
@@ -394,7 +417,6 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             return
         }
         
-        let modifiers = ModifierFlags.currentClick
         selectionState.handleTap(
             url: fileItem.url,
             isDirectory: fileItem.isDirectory,
