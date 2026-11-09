@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 54 条用例。
+PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 56 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 54
+测试文件: 13 个，用例总数: 56
 
 核心组件（源码目录）:
 - `Helpers/`
@@ -43,9 +43,9 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 - **ConversationAttentionStore**（2 条）：由 `attentionStorePublishesOnlyStateChanges`、`attentionIsTrackedIndependentlyForEachConversation` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationListContext**（3 条）：由 `contextPublishesSelectionChangesOnceAndConversationRefreshes`、`contextTracksTheCurrentProjectNameAndPath`、`contextObserverRefreshesForStructureAndStateButIgnoresVerbosity` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationListPlugin**（3 条）：由 `pluginBootRegistersToolbarToolAndDynamicRailTabsThenShutsThemDown`、`pluginDoesNotPartiallyBootWithoutRequiredProviders`、`pluginMarksFinishedTurnsReadOrNeedsAttentionBasedOnSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ConversationListToolbarViewModel**（2 条）：由 `toolbarRefreshesConversationPresenceAndObservesChatVisibility`、`toolbarShowsCurrentProjectScopeOnlyWhenItHasConversationsAndOthersExist` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationListToolbarViewModel**（3 条）：由 `toolbarRefreshesConversationPresenceAndObservesChatVisibility`、`toolbarShowsCurrentProjectScopeOnlyWhenItHasConversationsAndOthersExist`、`toolbarShowsCurrentProjectScopeWhenOnlyProjectlessConversationsDiffer` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationListViewModel**（6 条）：由 `initialLoadAndHeaderReflectConversationAndProjectState`、`currentProjectScopeFiltersReloadAndUpdatesProjectTitle`、`conversationCountReflectsScopeAndUpdatesOnChange`、`nextPageAppendsOnlyTheRemainingConversations` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ConversationRailTabController**（3 条）：由 `railTabsFollowConversationAndCurrentProjectAvailability`、`stoppingRailControllerCancelsRefreshSubscriptions`、`railVisibilityIsWrittenBackToHostOnEveryReconcile` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationRailTabController**（4 条）：由 `railTabsFollowConversationAndCurrentProjectAvailability`、`railProjectTabAppearsWhenOnlyProjectlessConversationsDiffer`、`stoppingRailControllerCancelsRefreshSubscriptions`、`railVisibilityIsWrittenBackToHostOnEveryReconcile` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationRowAccessibility**（4 条）：由 `rowAccessibilityLabelAlwaysStartsWithTitle`、`rowAccessibilityLabelIncludesAutomationLevel`、`rowAccessibilityLabelFallsBackWhenTitleMissing`、`rowAccessibilityLabelSkipsEmptyProviderAndModel` 锁定行朗读文案的组成与回退规则。
 - **ConversationRowEmptyTitle**（4 条）：由 `rowLabelFallsBackForEmptyStringTitle`、`rowLabelFallsBackForWhitespaceOnlyTitle`、`emptyStringAndNilTitlesConverge`、`nonEmptyTitleIsPreserved` 锁定空标题回退文案的一致性。
 - **ConversationStatsViewModel**（8 条）：由 `loadsDailySeries`、`scopesToCurrentProject`、`cleansUpOlderConversations`、`ignoresConcurrentCleanup` 等用例锁定统计区间、清理边界与并发守卫。
@@ -111,21 +111,23 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 | 52 | ConversationAttentionScanner | 缓存内的会话完成后停止跟踪 | 缓存与跟踪表均含 A，A 已结束 | 执行一轮扫描 | `finished` 含 A，`stillRunning` 为空 | P1 | ✅ 已覆盖 | `cachedConversationFinishesOnce` |
 | 53 | ConversationListPlugin | 会话删除后必须停止跟踪并清掉残留未读提示 | 已存在未读提示 | 删除会话 | `needsAttention` 变为 false | P0 | ✅ 已覆盖 | `pluginStopsTrackingAndClearsAttentionWhenConversationIsDeleted` |
 | 54 | GetRecentConversationsTool | 标题中的反斜杠加管道符仍留在单个单元格（**#994**） | 标题为字面 `A\|B` | 执行工具并解析数据行 | 输出 `A\\\|B`，数据行未转义管道符恰为 6 个 | P1 | ✅ 已覆盖 | `recentConversationTitleWithBackslashAndPipeStaysInSingleCell` |
+| 55 | ConversationListToolbarViewModel | 单项目加无项目会话时仍显示当前项目筛选（**#931**） | 未打开项目时创建会话 G，打开唯一项目 P 并创建会话 C | 刷新分段可见性 | 两个范围条数不同，`showsCurrentProjectScope` 为 true 且可选中当前项目 | P1 | ✅ 已覆盖 | `toolbarShowsCurrentProjectScopeWhenOnlyProjectlessConversationsDiffer` |
+| 56 | ConversationRailTabController | 单项目加无项目会话时仍注册项目标签（**#931**） | 未打开项目时创建会话 G，打开唯一项目 P 并创建会话 C | 启动控制器 | 「项目」标签出现，且项目列表只包含 C | P1 | ✅ 已覆盖 | `railProjectTabAppearsWhenOnlyProjectlessConversationsDiffer` |
 
-> 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **56 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 3 / 3
-- P1: 已覆盖 40 / 40
+- P1: 已覆盖 42 / 42
 - P2: 已覆盖 11 / 11
-- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
+- **合计: 56 / 56**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（40 条）
+- **P1**: 其余功能性用例（42 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
 
 ## 跨平台说明

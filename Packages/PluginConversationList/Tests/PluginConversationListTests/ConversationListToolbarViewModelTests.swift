@@ -43,8 +43,9 @@ import Testing
     _ = try conversations.createConversation(title: "First", projectPath: "/workspace/First", providerID: nil, modelName: nil)
     await viewModel.refreshProjectScopeVisibility()
     #expect(viewModel.hasMultipleProjects == false)
+    // 当前项目确有会话，但全库只剩这一个项目，两个范围结果相同，分段仍隐藏。
+    #expect(viewModel.currentProjectHasConversations)
     #expect(!viewModel.showsCurrentProjectScope)
-    #expect(!viewModel.currentProjectHasConversations)
 
     try await project.openProject(at: "/workspace/Second")
     _ = try conversations.createConversation(title: "Second", projectPath: "/workspace/Second", providerID: nil, modelName: nil)
@@ -63,6 +64,31 @@ import Testing
     #expect(!viewModel.showsCurrentProjectScope)
     #expect(viewModel.currentProjectTabTitle == "当前项目")
     #expect(viewModel.pickerSelection == .allProjects)
+}
+
+/// #931：只有一个项目路径，但库里还有无项目会话时，「全部对话」与当前项目
+/// 的结果并不相同，筛选入口必须保留，否则无法过滤掉无项目会话。
+@Test @MainActor func toolbarShowsCurrentProjectScopeWhenOnlyProjectlessConversationsDiffer() async throws {
+    let conversations = DefaultConversationManager()
+    let project = DefaultProjectProvider()
+    // 未打开项目时创建的会话保持 projectPath == nil。
+    _ = try conversations.createConversation(title: "Loose", projectPath: nil, providerID: nil, modelName: nil)
+
+    let viewModel = ConversationListToolbarViewModel(
+        context: makeContext(conversations: conversations, project: project)
+    )
+    try await project.openProject(at: "/workspace/Only")
+    _ = try conversations.createConversation(title: "Only", projectPath: "/workspace/Only", providerID: nil, modelName: nil)
+
+    await viewModel.refreshProjectScopeVisibility()
+
+    #expect(await conversations.conversationCount(projectPath: nil) == 2)
+    #expect(await conversations.conversationCount(projectPath: "/workspace/Only") == 1)
+    #expect(viewModel.hasMultipleProjects)
+    #expect(viewModel.currentProjectHasConversations)
+    #expect(viewModel.showsCurrentProjectScope)
+    viewModel.pickerSelection = .currentProject
+    #expect(viewModel.pickerSelection == .currentProject)
 }
 
 @MainActor

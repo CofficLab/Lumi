@@ -58,6 +58,42 @@ import Testing
     controller.stop()
 }
 
+/// #931：只有一个项目路径，但库里还有无项目会话时，两个范围仍不同，
+/// 「项目」标签必须出现，且项目列表只包含当前项目的会话。
+@Test @MainActor func railProjectTabAppearsWhenOnlyProjectlessConversationsDiffer() async throws {
+    let conversations = DefaultConversationManager()
+    let project = DefaultProjectProvider()
+    // 未打开项目时创建的会话保持 projectPath == nil。
+    _ = try conversations.createConversation(title: "Loose", projectPath: nil, providerID: nil, modelName: nil)
+    try await project.openProject(at: "/workspace/Only")
+    let onlyID = try conversations.createConversation(title: "Only", projectPath: "/workspace/Only", providerID: nil, modelName: nil)
+
+    let context = makeContext(conversations: conversations, project: project)
+    let attentionStore = ConversationAttentionStore()
+    let sortStabilizer = ConversationSortStabilizer()
+    let chatsViewModel = makeViewModel(context: context, attentionStore: attentionStore, sortStabilizer: sortStabilizer, scope: .all)
+    let projectViewModel = makeViewModel(context: context, attentionStore: attentionStore, sortStabilizer: sortStabilizer, scope: .currentProject)
+    let controller = ConversationRailTabController(
+        context: context,
+        attentionStore: attentionStore,
+        sortStabilizer: sortStabilizer,
+        chatsViewModel: chatsViewModel,
+        projectViewModel: projectViewModel,
+        order: 81,
+        pluginID: "test.conversation-list"
+    )
+    let rail = DefaultRailViewProviding()
+    controller.start(rail: rail)
+    defer { controller.stop() }
+
+    let projectTabID = "test.conversation-list.project-chats"
+    let projectTabRegistered = await waitUntil { rail.tabs.contains { $0.id == projectTabID } }
+    #expect(projectTabRegistered)
+
+    await projectViewModel.loadInitialIfNeeded()
+    #expect(projectViewModel.conversations.map(\.id) == [onlyID])
+}
+
 @Test @MainActor func stoppingRailControllerCancelsRefreshSubscriptions() async throws {
     let conversations = DefaultConversationManager()
     let context = makeContext(conversations: conversations)
