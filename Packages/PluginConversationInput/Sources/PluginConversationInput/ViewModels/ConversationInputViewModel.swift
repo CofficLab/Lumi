@@ -35,6 +35,8 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     @Published private(set) var pendingBlock: ConversationInputBlockRequest?
 
     private let capability: any ConversationInputCapability
+    /// 是否已经在等待在途附件读取。避免重复触发 Return 时排起多条发送链。
+    private var isWaitingForAttachmentReads = false
 
     /// 文本写入后的旁路回调，供派生的发送按钮同步状态。
     ///
@@ -247,6 +249,19 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
         // 附件）当成新消息重复提交。标记由两条发送入口共用。
         guard !capability.isCommittingDraft else { return }
 
+        // 附件还在异步读取：等读取结束再快照，否则这条消息会漏掉用户刚选中
+        // 的附件，附件又滚进下一条无关消息（#1023）。
+        if capability.pendingAttachmentReadCount > 0 {
+            guard !isWaitingForAttachmentReads else { return }
+            isWaitingForAttachmentReads = true
+            Task { @MainActor in
+                await capability.waitForAttachmentReads()
+                isWaitingForAttachmentReads = false
+                send()
+            }
+            return
+        }
+
         // 交给发送端的是编辑器原文，而不是预 trim 后的文本：
         // 折叠块区间以原文为基准，预 trim 会让 sender 失去前导空白，
         // 无法把区间平移到 trim 后的正文上。trim 统一由 sender 完成。
@@ -392,7 +407,10 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
 
     /// 将拖入的非图片文件加入发送器挂起池。
     func attachFile(_ url: URL) {
+        // 先同步登记，再启动读取：读取窗口内触发的发送会等它结束（#1023）。
+        capability.beginAttachmentRead()
         Task { @MainActor in
+            defer { capability.endAttachmentRead() }
             do {
                 let attachment = try await Task.detached(priority: .userInitiated) {
                     try UserFileAttachmentLoader.load(from: url)
@@ -409,7 +427,10 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     /// 将拖入的图片加入发送器挂起池。
     func attachImage(_ url: URL) {
         let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "image/png"
+        // 先同步登记，再启动读取：读取窗口内触发的发送会等它结束（#1023）。
+        capability.beginAttachmentRead()
         Task { @MainActor in
+            defer { capability.endAttachmentRead() }
             let data = await Task.detached(priority: .userInitiated, operation: {
                 try? Data(contentsOf: url)
             }).value

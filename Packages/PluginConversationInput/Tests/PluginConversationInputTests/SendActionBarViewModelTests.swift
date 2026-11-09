@@ -486,6 +486,29 @@ final class SendActionBarTestCapability: ConversationInputCapability {
         clearedAttachments = true
     }
 
+    // MARK: - Attachment reading
+
+    private(set) var pendingAttachmentReadCount = 0
+    private var attachmentReadWaiters: [CheckedContinuation<Void, Never>] = []
+
+    func beginAttachmentRead() {
+        pendingAttachmentReadCount += 1
+    }
+
+    func endAttachmentRead() {
+        guard pendingAttachmentReadCount > 0 else { return }
+        pendingAttachmentReadCount -= 1
+        guard pendingAttachmentReadCount == 0 else { return }
+        let waiters = attachmentReadWaiters
+        attachmentReadWaiters = []
+        waiters.forEach { $0.resume() }
+    }
+
+    func waitForAttachmentReads() async {
+        guard pendingAttachmentReadCount > 0 else { return }
+        await withCheckedContinuation { attachmentReadWaiters.append($0) }
+    }
+
     // MARK: - Send
 
     func commitUserMessage(

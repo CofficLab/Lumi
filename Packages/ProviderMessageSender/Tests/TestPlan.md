@@ -5,7 +5,7 @@
 ProviderMessageSender Lumi 编辑器 Provider。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 23
+测试文件: 3 个，用例总数: 26
 
 ## 公开 API
 
@@ -24,6 +24,7 @@ ProviderMessageSender Lumi 编辑器 Provider。
 
 - **DefaultMessageSender 回合中再发送的守门**（9 条）：由 `suspendedTurnQueuesNextMessage`、`externallyDrivenTurnQueuesNextMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProviderMessageSender**（4 条）：由 `commitsCollapsedBlocksIntoMetadata`、`rebasesCollapsedBlocksAfterTrim` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DefaultMessageSender 附件读取门禁**（3 条）：由 `attachmentReadCountTracksBeginAndEnd`、`waitResumesWhenLastReadEnds`、`waitReturnsImmediatelyWhenIdle` 锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -52,27 +53,30 @@ ProviderMessageSender Lumi 编辑器 Provider。
 | 21 | ProviderMessageSender | 排队中的消息在回放时保留折叠块 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `preservesCollapsedBlocksThroughQueue` |
 | 22 | ProviderMessageSender | 折叠块覆盖的首尾空白被 trim 时只裁短区间，不丢弃整块 | 正文首尾带换行，块覆盖全文 | 提交用户消息 | 正文 trim 后仍保留同一个 chip 区间 | P0 | ✅ 已覆盖 | `clipsCollapsedBlockWhenTrimRemovesSurroundingWhitespace` |
 | 23 | DefaultMessageSender 回合中再发送的守门 | ask_user 挂起但队列非空时，新消息排在已有消息之后 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `askUserSuspensionDoesNotBypassQueuedMessages` |
+| 24 | DefaultMessageSender 附件读取门禁 | 附件读取计数随 begin / end 增减，多余的 end 不会变负 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `attachmentReadCountTracksBeginAndEnd` |
+| 25 | DefaultMessageSender 附件读取门禁 | 最后一个附件读取结束时唤醒等待中的发送入口 | 一次在途读取 + 等待任务 | `endAttachmentRead()` 后等待任务恢复 | 结束前未恢复，结束后恢复 | P0 | ✅ 已覆盖 | `waitResumesWhenLastReadEnds` |
+| 26 | DefaultMessageSender 附件读取门禁 | 没有在途读取时等待立即返回 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `waitReturnsImmediatelyWhenIdle` |
 
-> 说明：全部 **23 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 21 / 21
+- P0: 已覆盖 3 / 3
+- P1: 已覆盖 23 / 23
 - P2: 已覆盖 0 / 0
-- **合计: 23 / 23**（仅表示清单场景，非源码覆盖率）
+- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（20 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
+- **P1**: 其余功能性用例（22 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 21 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 24 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

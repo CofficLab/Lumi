@@ -38,6 +38,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 - 输入：`text` / `inputHeight` / `isInputFocused` / `inputCursorPosition` / `errorMessage` /
   `collapsedBlocks` / `isCommittingDraft`（两条发送入口共用）/ `clearInput()`
 - 附件：`pendingImageAttachments` / `pendingFileAttachments` / 增删 / `clearAttachments()`
+- 附件读取：`pendingAttachmentReadCount` / `beginAttachmentRead()` / `endAttachmentRead()` /
+  `waitForAttachmentReads()`
 - 发送：`commitUserMessage(_:imageAttachments:fileAttachments:conversationID:)`、
   `commitUserMessageInBackground(...)`、`startTurn(for:)`、`cancelCurrentRequest()`
 - 会话：`selectedConversationID`、`isSending(for:)`
@@ -61,6 +63,8 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
   `commit == nil` 时保留草稿。附件例外：发送瞬间即离开挂起池，失败时放回
 - **提交中不可重复发送**：附件编码窗口内 `isCommittingDraft` 为真，`send()` 直接
   忽略，两条发送入口共用同一个标记
+- **读取中不抢发**：`pendingAttachmentReadCount > 0` 时两条发送入口都先挂起等待，
+  读取结束再快照附件；等待期间重复触发只保留一条发送链（回归 #1023）
 - **迟到成功不吞新草稿**：异步提交成功时只在 `capability.text` 仍等于发出去的
   正文时清空；编码期间用户新输入的内容必须保留
 - **附件路径强制后台**：有附件时必须走 `commitUserMessageInBackground`，
@@ -338,6 +342,15 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 | 170 | 发送 | 回车路径编码期间新输入不被成功后清理覆盖 | 挂起后台提交 | `send()` → `setText` 改写 → 放行提交 | 新草稿在能力层与 ViewModel 中都保留 | P0 | ✅ 已覆盖 | `successfulAttachmentCommitKeepsEditedDraft` |
 | 171 | 折叠块 | 撤销恢复被删除的 chip 后重新拍平正文并恢复区间（**回归 #1036**） | 正文 `"A " + chip`，删除 chip 并发布后再放回 attachment | 触发 `textDidChange` 对应的发布逻辑 | 发布文本包含 chip 原文而非 U+FFFC，折叠块区间恢复，标志重新为 true | P1 | ✅ 已覆盖 | `undoRestoringChipFlattensAgain` |
 
+### 附件读取期间的发送门禁（回归 #1023）
+
+| ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
+|----|------|------|----------|----------|----------|------|------|----------|
+| 172 | 发送 | 输入框发送等待在途附件读取，读完的附件随本条消息发出 | 正文 + 一次在途附件读取 | `send()` → 附件入池并 `endAttachmentRead()` | 读取结束前不提交；结束后后台提交携带该附件 | P0 | ✅ 已覆盖 | `conversationInputWaitsForAttachmentRead` |
+| 173 | 发送 | 发送按钮同样等待在途附件读取 | 正文 + 一次在途附件读取 | `send()` → 附件入池并 `endAttachmentRead()` | 读取结束前不提交；结束后后台提交携带该附件 | P0 | ✅ 已覆盖 | `sendActionBarWaitsForAttachmentRead` |
+| 174 | 发送 | 等待期间重复触发发送不会排队第二条发送链 | 一次在途附件读取 | 连续调用三次 `send()` 后再结束读取 | 只产生一次提交 | P0 | ✅ 已覆盖 | `repeatedSendWhileWaitingCommitsOnce` |
+| 175 | 附件 | 附件读取在挂起池入池前同步登记，读完归零 | 临时文本文件 | `attachFile(url)` 后观察计数 | 调用返回时计数为 1，入池后归零 | P1 | ✅ 已覆盖 | `attachFileRegistersReadSynchronously` |
+
 > **鉴别力验证**：本轮用一处变异确认用例不是「恒绿」——把
 > `Coordinator.textDidChange` 里的两道 IME 守卫
 > （`hasMarkedText()` 与 `isIMEComposing`）移除后，
@@ -373,10 +386,10 @@ PluginConversationInput 是编辑器底部输入区的实现包，包含**发送
 
 ## 覆盖率统计
 
-- P0: 已覆盖 52 / 52
-- P1: 已覆盖 101 / 101
+- P0: 已覆盖 55 / 55
+- P1: 已覆盖 102 / 102
 - P2: 已覆盖 18 / 18
-- **合计: 171 / 171**（仅表示清单场景，非源码覆盖率）
+- **合计: 175 / 175**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

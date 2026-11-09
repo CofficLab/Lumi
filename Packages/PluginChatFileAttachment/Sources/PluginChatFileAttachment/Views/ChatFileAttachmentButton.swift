@@ -42,8 +42,11 @@ struct ChatFileAttachmentButton: View {
         case .success(let urls):
             for url in urls {
                 let hasSecurityScopedAccess = url.startAccessingSecurityScopedResource()
+                // 先同步登记，再启动读取：读取窗口内触发的发送会等它结束（#1023）。
+                capability.beginAttachmentRead()
                 Task { @MainActor in
                     defer {
+                        capability.endAttachmentRead()
                         if hasSecurityScopedAccess {
                             url.stopAccessingSecurityScopedResource()
                         }
