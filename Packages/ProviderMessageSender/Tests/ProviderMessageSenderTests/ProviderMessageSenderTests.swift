@@ -81,6 +81,44 @@ struct ProviderMessageSenderTests {
         #expect(blocks.first?.start == 6)
     }
 
+    @Test("折叠块覆盖的首尾空白被 trim 时只裁短区间，不丢弃整块")
+    func clipsCollapsedBlockWhenTrimRemovesSurroundingWhitespace() throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
+        let sender = DefaultMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: loop
+        )
+
+        let body = String(repeating: "x", count: 1000)
+        let content = "\n" + body + "\n"
+        _ = try #require(
+            try sender.commitUserMessage(
+                content,
+                imageAttachments: [],
+                fileAttachments: [],
+                collapsedBlocks: [
+                    CollapsedContentBlock(start: 0, length: content.count, title: "粘贴的文本"),
+                ],
+                conversationID: nil
+            )
+        )
+        let conversationID = try #require(conversations.selectedConversationID)
+        let message = try #require(messages.messages(for: conversationID).first)
+
+        #expect(message.content == body)
+        // 落库后仍能从 metadata 还原出同一个 chip。
+        let blocks = CollapsedContentBlockMetadata.normalizedBlocks(
+            from: message.metadata,
+            contentLength: message.content.count
+        )
+        #expect(blocks.count == 1)
+        #expect(blocks.first?.start == 0)
+        #expect(blocks.first?.length == 1000)
+    }
+
     @Test("不携带折叠块时 metadata 里没有折叠块 key")
     func omitsCollapsedBlocksKeyWhenAbsent() throws {
         let conversations = DefaultConversationManager()

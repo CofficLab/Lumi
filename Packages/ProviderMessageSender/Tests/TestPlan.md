@@ -5,7 +5,7 @@
 ProviderMessageSender Lumi 编辑器 Provider。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 21
+测试文件: 2 个，用例总数: 22
 
 ## 公开 API
 
@@ -50,16 +50,17 @@ ProviderMessageSender Lumi 编辑器 Provider。
 | 19 | ProviderMessageSender | 正文被 trim 后折叠块区间同步平移 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rebasesCollapsedBlocksAfterTrim` |
 | 20 | ProviderMessageSender | 不携带折叠块时 metadata 里没有折叠块 key | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `omitsCollapsedBlocksKeyWhenAbsent` |
 | 21 | ProviderMessageSender | 排队中的消息在回放时保留折叠块 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `preservesCollapsedBlocksThroughQueue` |
+| 22 | ProviderMessageSender | 折叠块覆盖的首尾空白被 trim 时只裁短区间，不丢弃整块 | 正文首尾带换行，块覆盖全文 | 提交用户消息 | 正文 trim 后仍保留同一个 chip 区间 | P0 | ✅ 已覆盖 | `clipsCollapsedBlockWhenTrimRemovesSurroundingWhitespace` |
 
 > 说明：全部 **21 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 1 / 1
+- P0: 已覆盖 2 / 2
 - P1: 已覆盖 20 / 20
 - P2: 已覆盖 0 / 0
-- **合计: 21 / 21**（仅表示清单场景，非源码覆盖率）
+- **合计: 22 / 22**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
