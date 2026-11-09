@@ -53,7 +53,7 @@ struct RetiredModelUITests {
     func retiredModelIsSearchable() {
         let provider = RetiredTestProvider()
         let viewModel = Self.makeViewModel(provider: provider)
-        viewModel.searchText = "retired"
+        viewModel.modelSearchText = "retired"
 
         let visible = viewModel.visibleModels(for: provider.providerID)
         #expect(visible.contains("retired-model"), "退役模型不应被搜索过滤掉")

@@ -5,7 +5,7 @@
 PluginModelSelector Model Selector 插件（KernelCore 体系），由旧版 `Plugins/ModelSelectorPlugin` （KernelLumi / LumiPlugin 架构）完美复刻而来。
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 34
+测试文件: 8 个，用例总数: 37
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -36,6 +36,7 @@ PluginModelSelector Model Selector 插件（KernelCore 体系），由旧版 `Pl
 - **ModelListViewRender**（3 条）：由 `visibleModelsFollowSnapshot`、`remoteModelsCarryMetadata`、`fallsBackToStaticCatalog` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TimelineMessage**（6 条）：由 `insertsTimelineMessageOnSwitch`、`timelineMessageDoesNotLeakIntoLLMContext`、`sameModelProducesNoTimelineMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（12 条）：由 `classifiesViaMetadata`、`classifiesViaHeuristics`、`missingMetadataFallsBackToLanguage` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **独立搜索状态**（3 条）：由 `providerSearchDoesNotFilterModels`、`modelSearchDoesNotFilterProviders`、`clearingOneSearchKeepsTheOther` 锁定——左右两栏各自持有搜索词，任一栏的输入不得过滤另一栏（**#1030**）。
 
 ## 测试用例清单
 
@@ -75,27 +76,30 @@ PluginModelSelector Model Selector 插件（KernelCore 体系），由旧版 `Pl
 | 32 | 生产路径 | 退役模型遵循分类筛选规则 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `retiredModelFollowsCategoryRules` |
 | 33 | ModelSelectorViewModel | capability 丢弃选择时不记用量、不提示成功（**回归 #880**） | 选择 capability 忽略写入 | 调用 `select` | `select` 被调用但用量为 0、无 Toast | P0 | ✅ 已覆盖 | `droppedSelectionProducesNoSuccessFeedback` |
 | 34 | ModelSelectorViewModel | 选择真正生效后记录用量并提示成功 | 选择 capability 接受写入 | 调用 `select` | 用量 +1、收到一条 Toast | P1 | ✅ 已覆盖 | `appliedSelectionProducesSuccessFeedback` |
+| 35 | 独立搜索状态 | 搜索供应商不得把右栏模型筛空（**#1030**） | HyperAPI 有 11 个 `gpt-*` 模型 | 设置 `providerSearchText = "HyperAPI"` | 模型列表仍返回全部 11 个 | P0 | ✅ 已覆盖 | `providerSearchDoesNotFilterModels` |
+| 36 | 独立搜索状态 | 搜索模型不得过滤左栏供应商 | 已加载 HyperAPI | 设置 `modelSearchText = "gpt-9"` | 供应商列表仍包含 HyperAPI | P1 | ✅ 已覆盖 | `modelSearchDoesNotFilterProviders` |
+| 37 | 独立搜索状态 | 清空一侧搜索词不影响另一侧 | 两栏均有搜索词 | 清空 `providerSearchText` | `modelSearchText` 保持，模型仍按它过滤 | P1 | ✅ 已覆盖 | `clearingOneSearchKeepsTheOther` |
 
-> 说明：全部 **34 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **37 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 4 / 4
-- P1: 已覆盖 30 / 30
+- P0: 已覆盖 5 / 5
+- P1: 已覆盖 32 / 32
 - P2: 已覆盖 0 / 0
-- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
+- **合计: 37 / 37**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
-- **P1**: 其余功能性用例（30 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
+- **P1**: 其余功能性用例（32 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 34 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 37 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
