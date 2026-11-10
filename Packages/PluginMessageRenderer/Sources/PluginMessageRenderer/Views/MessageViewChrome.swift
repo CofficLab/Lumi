@@ -1,4 +1,3 @@
-import AppKit
 import LumiUI
 import ProviderConversation
 import ProviderMessage
@@ -51,7 +50,6 @@ struct MessageViewChrome<Content: View>: View {
         return Group {
             if isBrief {
                 messageBody(thinking: thinking)
-                    .contextMenu { briefContextMenu }
             } else {
                 messageBody(thinking: thinking)
             }
@@ -141,32 +139,5 @@ struct MessageViewChrome<Content: View>: View {
                 isRowHovered = false
             }
         }
-    }
-
-    @ViewBuilder
-    private var briefContextMenu: some View {
-        Button {
-            copyMessageContent()
-        } label: {
-            Label("复制消息", systemImage: "doc.on.doc")
-        }
-
-        if showsResendButton, capability != nil, !message.content.isEmpty {
-            Button {
-                Task {
-                    await capability?.resendMessage(
-                        content: message.content,
-                        conversationID: message.conversationID
-                    )
-                }
-            } label: {
-                Label("重新发送", systemImage: "arrow.clockwise")
-            }
-        }
-    }
-
-    private func copyMessageContent() {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(MessageViewHelpers.copyContent(for: message), forType: .string)
     }
 }

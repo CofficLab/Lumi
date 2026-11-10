@@ -30,6 +30,10 @@ private final class ChatGPTStubRendererCapability: MessageRendererCapability {
 
     func retryTurn(turnID: UUID, conversationID: UUID) async {}
 
+    func canStopTurn(conversationID: UUID) -> Bool { false }
+
+    func stopTurn(conversationID: UUID) {}
+
     func toolCallRenderer(for toolCall: ToolCall) -> (any ToolCallRowRenderer)? { nil }
 
     func makeToolJobActivityModel(
