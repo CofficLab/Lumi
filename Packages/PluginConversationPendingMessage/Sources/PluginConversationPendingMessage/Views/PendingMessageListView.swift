@@ -61,7 +61,7 @@ struct PendingMessageListView: View {
                             ) {
                                 viewModel.cancelPendingMessage(id: message.id)
                             }
-                            .help("取消待发送消息")
+                            .help(PendingMessageListLocalization.cancelHelp())
                         }
                         .padding(.horizontal, DesignTokens.Spacing.sm)
                         .padding(.vertical, 6)

@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "PluginConversationPendingMessage",
-    defaultLocalization: "zh-Hans",
+    defaultLocalization: "en",
     platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginConversationPendingMessage", targets: ["PluginConversationPendingMessage"]),
@@ -32,7 +32,8 @@ let package = Package(
                 "LumiUI",
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
-            path: "Sources/PluginConversationPendingMessage"
+            path: "Sources/PluginConversationPendingMessage",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginConversationPendingMessageTests",
