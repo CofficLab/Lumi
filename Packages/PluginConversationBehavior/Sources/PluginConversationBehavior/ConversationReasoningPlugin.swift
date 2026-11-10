@@ -94,7 +94,7 @@ struct ReasoningActionBarButton: View {
                 Image(systemName: "brain.head.profile")
                     .font(.appCallout)
 
-                Text(selectedEffort?.levelCode ?? "OFF")
+                Text(ReasoningChipLabel.text(for: selectedEffort))
                     .font(.appCaptionEmphasized)
 
                 Image(systemName: isPopoverPresented ? "chevron.up" : "chevron.down")
