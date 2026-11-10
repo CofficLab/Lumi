@@ -70,8 +70,13 @@ public final class PluginMessageListChatGPTPlugin: SuperPlugin, SuperLog {
             chat: MessageListChatSectionCapabilityAdapter(chat: chat)
         )
         // - Important: 创建**自己的** `ChatGPTListViewModel`，不共享其它档位的可变实例。
-        //   `streamingDisplayEnabled` 保持生产默认值 false（Task 7 在性能测试就位后开启）。
-        let viewModel = ChatGPTListViewModel(services: services)
+        //
+        //   V5 是**唯一**开启真实流式的档位（ADR-4）：流式尾行让助手回复
+        //   逐字显现，且逐帧合并更新。其它档位的默认 `false` 保持不变。
+        let viewModel = ChatGPTListViewModel(
+            services: services,
+            streamingDisplayEnabled: true
+        )
         self.viewModel = viewModel
 
         verbosityObservation = ChatGPTVerbosityObservationBox(

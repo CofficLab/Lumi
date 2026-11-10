@@ -132,6 +132,8 @@ final class StubRenderingCapability: MessageListRenderingCapability {
 final class StubStreamingCapability: MessageListStreamingCapability {
     var streamingMessageValue: Message?
     var stageValue: MessageStreamingStage = .idle
+    /// 写入次数计数：用于断言「16ms 窗口内多次 delta 合并为一次刷新」。
+    private(set) var writeCount = 0
 
     func streamingMessage(for conversationID: UUID) -> Message? {
         streamingMessageValue
@@ -139,6 +141,40 @@ final class StubStreamingCapability: MessageListStreamingCapability {
 
     func stage(for conversationID: UUID) -> MessageStreamingStage {
         stageValue
+    }
+
+    // MARK: - 写入侧（仅测试用）
+
+    func start(conversationID: UUID) {
+        writeCount += 1
+        streamingMessageValue = Message(
+            conversationID: conversationID,
+            role: .assistant,
+            content: ""
+        )
+        stageValue = .sending
+    }
+
+    func appendContent(_ content: String, conversationID: UUID) {
+        writeCount += 1
+        guard var row = streamingMessageValue else { return }
+        row.content += content
+        streamingMessageValue = row
+        stageValue = .generating
+    }
+
+    func appendThinking(_ content: String, conversationID: UUID) {
+        writeCount += 1
+        guard var row = streamingMessageValue else { return }
+        row.reasoningContent = (row.reasoningContent ?? "") + content
+        streamingMessageValue = row
+        stageValue = .thinking
+    }
+
+    func end(conversationID: UUID) {
+        writeCount += 1
+        streamingMessageValue = nil
+        stageValue = .idle
     }
 }
 
@@ -167,6 +203,8 @@ func makeStubServices(
     conversationState: StubConversationStateCapability = StubConversationStateCapability(),
     resolveText: @escaping (String) -> String = { $0 }
 ) -> MessageListServices {
+    // 参数顺序按「会话 → 消息 → 渲染 → 流式 → 状态」排列，
+    // 调用点必须遵循该顺序（Swift 的实参标签顺序规则）。
     conversations.selectedConversationID = conversationID
     return MessageListServices(
         conversations: conversations,
