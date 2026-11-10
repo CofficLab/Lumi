@@ -31,6 +31,8 @@ final class ConversationRailTabController {
     private let sortStabilizer: ConversationSortStabilizer
     private let chatsViewModel: ConversationListViewModel
     private let projectViewModel: ConversationListViewModel
+    /// 标签标题（会直接成为 Rail 按钮 tooltip）的本地化解析。
+    private let localizedTitle: (String) -> String
 
     private weak var rail: (any RailViewProviding)?
     private weak var rootView: (any RootViewProviding)?
@@ -45,7 +47,8 @@ final class ConversationRailTabController {
         chatsViewModel: ConversationListViewModel,
         projectViewModel: ConversationListViewModel,
         order: Int,
-        pluginID: String
+        pluginID: String,
+        localizedTitle: @escaping (String) -> String = { pluginLocalization.string($0) }
     ) {
         self.context = context
         self.attentionStore = attentionStore
@@ -53,6 +56,7 @@ final class ConversationRailTabController {
         self.chatsViewModel = chatsViewModel
         self.projectViewModel = projectViewModel
         self.order = order
+        self.localizedTitle = localizedTitle
         self.chatsTabID = "\(pluginID).chats"
         self.projectTabID = "\(pluginID).project-chats"
     }
@@ -159,7 +163,8 @@ final class ConversationRailTabController {
         return RailTabItem(
             id: chatsTabID,
             category: .chat,
-            title: "对话",
+            // title 会被宿主 `AppTabBar` 直接用作 `.help(title)`，即悬停 tooltip。
+            title: localizedTitle("Chats"),
             systemImage: "message.fill",
             order: order
         ) { [chatsViewModel] in
@@ -172,7 +177,7 @@ final class ConversationRailTabController {
         return RailTabItem(
             id: projectTabID,
             category: .chat,
-            title: "项目",
+            title: localizedTitle("Projects"),
             systemImage: "folder.fill",
             order: order
         ) { [projectViewModel] in
