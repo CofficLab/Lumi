@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 109 条用例。
+PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 112 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 6 个，用例总数: 109
+测试文件: 7 个，用例总数: 112
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -51,6 +51,7 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **RAGServiceModelMigration**（1 条）：由 `backgroundIndexRebuildsWhenEmbeddingModelChanged` 用例锁定；该用例预置一个模型标识过期但维度相同的索引状态，再以 `background: true` 触发索引，缺少后台迁移能力时会抛「后台索引暂不执行 embedding 模型迁移」。
 - **RAGFileScannerFailure**（3 条）：由 `missingRootThrows`、`regularFileRootThrows`、`emptyDirectoryReturnsNoFiles` 用例锁定；扫描接口必须把「根目录不可用」与「项目确实为空」区分开，前者抛 `RAGError.projectRootUnavailable`，后者才返回空数组。
 - **RAGIndexerScannerFailure**（2 条）：由 `incrementalIndexKeepsRecordsWhenRootDisappears`、`rebuildKeepsRecordsWhenRootDisappears` 用例锁定；项目根目录消失后索引必须中止，已索引文件数与索引状态保持不变，不得按「文件已删除」清空记录。
+- **RAGIndexingRegistry**（3 条）：由 `overlappingScopesStayIndexingUntilLastFinish`、`projectScopesAreIndependent`、`unmatchedFinishDoesNotUnderflow` 锁定。同一项目的索引作用域可以重叠（`ensureIndexed` 在 await 处让出 actor），必须按项目引用计数：任一作用域先结束不得清除其他仍在运行的索引标记；不同项目互不影响；多余的 `finish` 不得留下负计数（**回归 #1110**）。
 
 ## 测试用例清单
 
@@ -165,27 +166,30 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 107 | RAGFileScannerFailure | 空目录扫描返回空数组 | 创建一个无文件的临时目录 | 对该目录调用 `discoverFilesOrThrow` | 返回空数组且不抛错 | P1 | ✅ 已覆盖 | `emptyDirectoryReturnsNoFiles` |
 | 108 | RAGIndexerScannerFailure | 增量索引时项目根消失保留旧记录 | 已成功索引一个含 Swift 文件的项目 | 删除项目目录后再执行增量索引 | 抛错，已索引文件数与索引状态保持不变 | P1 | ✅ 已覆盖 | `incrementalIndexKeepsRecordsWhenRootDisappears` |
 | 109 | RAGIndexerScannerFailure | 全量重建时项目根消失保留旧记录 | 已成功重建一个含 Swift 文件的项目 | 删除项目目录后再执行全量重建 | 抛错，已索引文件数保持不变（扫描先于删除） | P1 | ✅ 已覆盖 | `rebuildKeepsRecordsWhenRootDisappears` |
+| 110 | RAGIndexingRegistry | 重叠索引作用域在最后一个结束前保持索引状态（**回归 #1110**） | 对同一项目调用两次 `start` | 调用一次 `finish` 后再查询 | `contains` 与 `hasAnyIndexing` 仍为真；第二次 `finish` 后才清空 | P0 | ✅ 已覆盖 | `overlappingScopesStayIndexingUntilLastFinish` |
+| 111 | RAGIndexingRegistry | 不同项目的索引状态互不影响 | 两个项目各 `start` 一次 | 结束第一个项目 | 第一个项目不再 indexing，第二个仍 indexing | P1 | ✅ 已覆盖 | `projectScopesAreIndependent` |
+| 112 | RAGIndexingRegistry | 多余的 finish 不会留下负计数 | 未调用 `start` | 直接调用 `finish` 后再 `start`/`finish` | 多余 `finish` 后为空；正常配对后仍能正确清空 | P2 | ✅ 已覆盖 | `unmatchedFinishDoesNotUnderflow` |
 
-> 说明：全部 **109 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **112 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
-- P1: 已覆盖 91 / 91
-- P2: 已覆盖 11 / 11
-- **合计: 109 / 109**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 8 / 8
+- P1: 已覆盖 92 / 92
+- P2: 已覆盖 12 / 12
+- **合计: 112 / 112**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（85 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（11 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P1**: 其余功能性用例（92 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 109 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 112 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
