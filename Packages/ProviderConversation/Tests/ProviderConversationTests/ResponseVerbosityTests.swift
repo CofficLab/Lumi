@@ -32,21 +32,17 @@ struct ResponseVerbosityTests {
         #expect(ResponseVerbosity.allCases.map(\.rawValue) == ["v1", "v2", "v3", "v4"])
     }
 
-    @Test("V4 的展示名是 ZCode")
-    func zcodeDisplayName() {
-        #expect(ResponseVerbosity.zcode.displayName == "ZCode")
-    }
-
-    @Test("V1–V3 的 rawValue 与展示名保持不变")
+    @Test("V1–V3 的 rawValue 保持不变")
     func existingLevelsRemainStable() {
         #expect(ResponseVerbosity.brief.rawValue == "v1")
         #expect(ResponseVerbosity.standard.rawValue == "v2")
         #expect(ResponseVerbosity.detailed.rawValue == "v3")
-
-        #expect(ResponseVerbosity.brief.displayName == "简洁")
-        #expect(ResponseVerbosity.standard.displayName == "标准")
-        #expect(ResponseVerbosity.detailed.displayName == "详细")
     }
+
+    // Note: 展示名与描述已由 #920 从 `ProviderConversation` 迁到
+    //   `PluginConversationVerbosity.VerbosityLocalization`（多语言）。
+    //   这里不再断言文案本身，只锁定「Provider 不再产出任何语言的显示名」
+    //   这一契约，避免 UI 文案回归到内核包里。
 
     @Test("JSON 编解码往返所有级别不丢失")
     func jsonRoundTripPreservesEveryLevel() throws {
