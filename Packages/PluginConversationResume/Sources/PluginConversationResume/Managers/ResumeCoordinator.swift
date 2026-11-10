@@ -206,13 +206,13 @@ final class ResumeCoordinator {
     /// 2. 修复孤儿 tool_call —— 否则这次 LLM 请求必然被 provider 拒绝；
     /// 3. 启动新回合。
     ///
-    /// - Parameter requestedID: 要恢复的会话。缺省取当前选中的会话。
+    /// - Parameter conversationID: 要恢复的会话。默认取当前选中的会话。
     ///
     /// - Important: 恢复的互斥必须**按会话**判定（#888）。旧实现在这里用
     ///   全局 `resumingConversationID == nil` 做 guard，于是任何其它会话正在
     ///   恢复时，本会话的恢复会被静默拒绝。改为集合后：同一会话的重复恢复
     ///   仍被抑制，不同会话之间互不阻塞。
-    func resume(for requestedID: UUID? = nil) async {
+    func resume(for conversationID requestedID: UUID? = nil) async {
         guard isActive else { return }
         let conversationID = requestedID ?? conversations.selectedConversationID
         guard let conversationID else { return }
