@@ -144,16 +144,17 @@ public actor RAGService: SuperLog {
     // MARK: - Indexing
 
     /// 确保指定项目已建立可用索引（不存在则全量，存在则增量）
+    @discardableResult
     public func ensureIndexed(
         projectPath: String,
         force: Bool = false,
         background: Bool = false
-    ) async throws {
+    ) async throws -> RAGIndexEnsureOutcome {
         guard !indexingPaused else {
             if Self.verbose {
                 Self.logger.info("\(Self.t)ensureIndexed skipped: indexing is paused project=\(projectPath)")
             }
-            return
+            return .paused
         }
         guard isInitialized else { throw RAGError.notInitialized }
         guard let indexer else { throw RAGError.internalStateCorrupted }
@@ -216,7 +217,7 @@ public actor RAGService: SuperLog {
                     "\(Self.t)✅ 全量重建完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
                 )
             }
-            return
+            return .indexed
         }
 
         if !force {
@@ -234,7 +235,7 @@ public actor RAGService: SuperLog {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)⏱️ 跳过：节流窗口内")
                 }
-                return
+                return .throttled
             }
             if let state = indexState,
                !isIndexStateStale(state, now: now) {
@@ -242,7 +243,7 @@ public actor RAGService: SuperLog {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)🟢 跳过：索引未过期")
                 }
-                return
+                return .fresh
             }
             lastEnsureAttemptByProject[normalized] = now
         }
@@ -260,6 +261,7 @@ public actor RAGService: SuperLog {
                 "\(Self.t)✅ 增量索引完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
             )
         }
+        return .indexed
     }
 
     /// 检查项目是否需要索引（快速检查，不执行实际索引）

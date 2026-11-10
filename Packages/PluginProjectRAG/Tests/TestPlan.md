@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 128 条用例。
+PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 130 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 128
+测试文件: 12 个，用例总数: 130
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -45,6 +45,7 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 
 - **综合**（12 条）：由 `retainsStableIdentifiers`、`registersProvider`、`injectsContextOnce` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProjectRAGPlugin 启动调度**（1 条）：由 `startsIdleSchedulerWithoutCurrentProject` 锁定；启动时没有当前项目也必须启动 idle 调度，否则整轮会话的后台索引都会被跳过。
+- **RAGServiceEnsureOutcome**（2 条）：由 `ensureIndexedReportsDistinctOutcomes`、`onlyIndexedAndFreshConfirmProgress` 锁定。`ensureIndexed` 必须区分 `indexed` / `fresh` / `throttled` / `paused`；只有前两者算调度进展，节流或暂停跳过不得清除失败退避，也必须等待下一个轮询间隔，否则失败索引后 scheduler 会把节流跳过记成成功并空转（**回归 #1116**）。
 - **RAGIndexScheduling**（4 条）：由 `selectsMissingIndexBeforeStaleIndex`、`neverSelectsCurrentProject`、`failedProjectUsesExponentialBackoff` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RAGPureLogic**（63 条）：由 `chunkEmptyInputReturnsEmpty`、`chunkSingleBlockProducesOneChunk`、`chunkProducesOverlapAcrossBlocks` 等用例锁定；改动该模块时优先跑对应测试文件。CRLF（`\r\n`）在 Swift 中是单个 Character，必须整体算一个换行，分块窗口与 `lineRange` 都按真实源码行计算（**回归 #1114**）。
 - **RAGSQLiteStoreConcurrency**（1 条）：由 `concurrentWritersOnOneConnectionDoNotCollide` 用例锁定；该用例用 8 个线程同时向同一 store 写入不同项目，移除 `RAGSQLiteStore` 的连接锁后必定因「cannot start a transaction within a transaction」失败。
@@ -189,27 +190,29 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 126 | RAGSQLiteCandidateDedup | 前 80 字符相同的不同 chunk 不被合并丢弃（**回归 #1115**） | 同一文件两个 chunk 共享 80 字符前缀，后续内容不同 | `loadCandidateChunks` 检索 `alpha beta` | 两个 chunk 都保留 | P0 | ✅ 已覆盖 | `mergeKeepsChunksThatShareContentPrefix` |
 | 127 | RAGSQLiteCandidateDedup | 较新的部分匹配不挤掉较旧的完整匹配（**回归 #1115**） | 旧 chunk 含 `alpha beta`，新 chunk 只含 `alpha`，前缀相同 | `loadCandidateChunks` 检索 `alpha beta` | 旧、新 chunk 的 id 都在候选中 | P0 | ✅ 已覆盖 | `partialMatchDoesNotEvictFullMatch` |
 | 128 | RAGSQLiteCandidateDedup | 词法与回退重叠的同一 chunk 只保留一次 | 单 chunk 命中查询词 | `loadCandidateChunks` 合并词法与回退 | 结果仅一条，内容不变 | P1 | ✅ 已覆盖 | `fallbackOverlapIsDeduplicated` |
+| 129 | RAGServiceEnsureOutcome | 暂停/新鲜/节流/完成索引返回不同结果（**回归 #1116**） | 当前模型且刚索引过的项目、无索引项目 | 依次在暂停、新鲜、节流与缺索引状态调用 `ensureIndexed` | 分别返回 `.paused`、`.fresh`、`.throttled`、`.indexed` | P0 | ✅ 已覆盖 | `ensureIndexedReportsDistinctOutcomes` |
+| 130 | RAGServiceEnsureOutcome | 只有完成索引或索引新鲜算作进展（**回归 #1116**） | 四种结果值 | 检查 `confirmsProgress` | `indexed`/`fresh` 为 true，`throttled`/`paused` 为 false | P1 | ✅ 已覆盖 | `onlyIndexedAndFreshConfirmProgress` |
 
 > 说明：全部 **114 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 16 / 16
-- P1: 已覆盖 99 / 99
+- P0: 已覆盖 17 / 17
+- P1: 已覆盖 100 / 100
 - P2: 已覆盖 13 / 13
-- **合计: 128 / 128**（仅表示清单场景，非源码覆盖率）
+- **合计: 130 / 130**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
-- **P1**: 其余功能性用例（99 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
+- **P1**: 其余功能性用例（100 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 128 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 130 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
