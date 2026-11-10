@@ -79,7 +79,9 @@ private enum GoalTaskContinuation {
                 ),
                 to: conversationID
             )
-            for goal in goals where goal.status != .completed && goal.status != .skipped {
+            // 只处理本次真正耗尽预算的活跃 Goal：历史的 failed Goal 不参与
+            // 续跑序列，改写它会把当时的真实失败原因覆盖成超限文案（#904）。
+            for goal in activeGoals {
                 _ = try? await manager.updateGoalStatus(
                     id: goal.id, status: .failed,
                     failureReason: "Automatic continuation limit reached before all tasks were completed."

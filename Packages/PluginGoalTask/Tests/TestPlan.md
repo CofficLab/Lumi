@@ -5,7 +5,7 @@
 GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标）+ Task（任务）两层结构的任务追踪能力。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 147
+测试文件: 15 个，用例总数: 148
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -43,7 +43,7 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 - **GoalDisplayAndVM**（19 条）：由 `testMappingPreservesFields`、`testIsTerminal`、`testStatusSystemImage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalForkAttachmentIsolation**（1 条）：由 `testForkCommitDoesNotConsumePendingAttachments` 锁定；分叉提交必须走显式附件重载，改动该调用点时优先跑对应测试文件。
 - **GoalForkCoordinator**（12 条）：由 `testForkAndStartHappyPath`、`testResumePromptContent`、`testResumePromptListsOnlyOutstandingTasks`、`testResumePromptUsesForkedTaskIDs` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **GoalHooks**（24 条）：由 `testNoManagerReturnsContextUnchanged`、`testNoActiveGoalsInjectsNothing`、`testBlockedGoalInjectsOnlyStopPrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GoalHooks**（25 条）：由 `testNoManagerReturnsContextUnchanged`、`testNoActiveGoalsInjectsNothing`、`testBlockedGoalInjectsOnlyStopPrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalStateManagerAppendFork**（19 条）：由 `testAddTasksContinuesOrder`、`testAddTasksThrowsWhenGoalAlreadyFull`、`testAddTasksWritesPartialBatch` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalTaskMigration**（3 条）：由 `v5MigrationLandsDatabaseAtReadPath`、`promotesMisplacedStoreOnlyWhenReadPathIsEmpty` 锁定；升级迁移必须把 v5 数据库放到 `GoalStateManager` 实际读取的位置，改动迁移或数据库路径时优先跑对应测试文件。
 - **GoalStateManager**（13 条）：由 `testCreateGoal`、`testUpdateTaskStatusDerivesGoalStatus`、`testUpdateGoalStatusBlocked` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -207,21 +207,22 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 | 145 | GoalVM | 侧栏定位最新的非终态 Goal | 先完成旧 Goal，再创建新 Goal | 构造 `GoalVM` 并 `refresh` | `activeGoal` 为新 Goal、`hasActiveWork == true`（**回归** #770） | P0 | ✅ 已覆盖 | `testActiveGoalPrefersLatestNonTerminalGoal` |
 | 146 | GoalTaskConversationCleanup | 删除会话时只清理该会话的 Goals | 两个会话各有 Goal | 删除其中一个会话 | 该会话 Goals 为空，另一会话 Goals 保留（**回归** #771） | P1 | ✅ 已覆盖 | `deletingConversationRemovesOnlyItsGoals` |
 | 147 | GoalTaskConversationCleanup | 删除多个会话时逐个清理 | 两个会话各有 Goal | 连续删除两个会话 | 两个会话的 Goals 都为空（**回归** #771） | P1 | ✅ 已覆盖 | `deletingMultipleConversationsRemovesEachGoalSet` |
+| 148 | GoalHooks | 续跑预算耗尽时只把本次活跃 Goal 标记失败 | 历史 failed Goal + 一个活跃 Goal，续跑次数已耗尽 | 触发 completed 钩子 | 历史失败原因保持不变，活跃 Goal 被标记为超限失败（**回归** #904） | P1 | ✅ 已覆盖 | `testLimitReachedKeepsHistoricalFailureReason` |
 
-> 说明：全部 **147 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **148 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 15 / 15
-- P1: 已覆盖 117 / 117
+- P1: 已覆盖 118 / 118
 - P2: 已覆盖 15 / 15
-- **合计: 147 / 147**（仅表示清单场景，非源码覆盖率）
+- **合计: 148 / 148**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（115 条）
+- **P1**: 其余功能性用例（116 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明
