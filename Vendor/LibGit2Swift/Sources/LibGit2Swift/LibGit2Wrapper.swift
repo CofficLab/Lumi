@@ -342,10 +342,13 @@ public class LibGit2: SuperLog {
     }
 
     /// 打开仓库
+    ///
+    /// 使用默认 flag（允许向上搜索），与 ``LibGit2/isGitRepository(at:)`` 语义一致：
+    /// 传入仓库子目录时打开其所属仓库，而不是报 `repositoryNotFound`。
     public static func openRepository(at path: String) throws -> OpaquePointer {
         return try LibGit2.serialized(at: path) {
             var repo: OpaquePointer?
-            let result = git_repository_open(&repo, path)
+            let result = git_repository_open_ext(&repo, path, 0, nil)
 
             if result != 0 {
                 throw LibGit2Error.repositoryNotFound(path)

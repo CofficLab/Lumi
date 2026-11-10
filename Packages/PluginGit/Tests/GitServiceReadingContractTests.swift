@@ -138,6 +138,34 @@ struct GitServiceReadingContractTests {
         #expect(changes.contains { $0.path == "b.txt" && $0.state == .added })
     }
 
+    @Test("项目路径是仓库子目录时仍能读取 status 与 log（回归 #912）")
+    func readsStatusAndLogFromRepositorySubdirectory() async throws {
+        let repo = try makeRepository()
+        defer { try? FileManager.default.removeItem(at: repo) }
+
+        try write("tracked\n", to: "tracked.txt", in: repo)
+        try runGit(["add", "tracked.txt"], in: repo)
+        try runGit(["commit", "-q", "-m", "init"], in: repo)
+
+        let nested = repo.appendingPathComponent("Sources", isDirectory: true)
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        try write("changed\n", to: "tracked.txt", in: repo)
+
+        // 前置判定本来就允许向上搜索；读取必须使用同一语义（#912）。
+        #expect(await GitService.shared.isRepository(atPath: nested.path))
+
+        let status = try await GitService.shared.getStatus(path: nested.path)
+        #expect(status.modified.contains("tracked.txt"))
+
+        let log = try await GitService.shared.getLog(
+            path: nested.path,
+            count: 1,
+            branch: nil,
+            file: nil
+        )
+        #expect(log.count == 1)
+    }
+
     @Test("getDiff 指定单个文件时 filesChanged 只统计该文件")
     func diffFileFilterCountsOnlyRequestedFile() async throws {
         let repo = try makeRepository()

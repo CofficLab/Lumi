@@ -5,7 +5,7 @@
 GitPlugin Git integration plugin for Lumi editor.
 
 平台: macOS 14+, iOS 17+
-测试文件: 18 个，用例总数: 79
+测试文件: 18 个，用例总数: 80
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -45,7 +45,8 @@ GitPlugin Git integration plugin for Lumi editor.
 - **GitChangeType**（12 条）：由 `mapsSingleLetterCodes`、`mapsFullWords`、`isCaseInsensitive` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitCommitToolPath**（8 条）：由 `absolutePathShouldBeConvertedToRelative`、`relativePathShouldRemainUnchanged`、`emptyFilesListShouldReturnEmpty` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitIgnoreService**（3 条）：由 `roundTripWriteAndRead`、`parsingRecognizesCommentAndNegationAndDirectory`、`templatesReturnNonEmptyContent` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **GitServiceReadingContract**（5 条）：由 `statusSeparatesUntrackedFiles`、`isRepositoryDetectsRepository`、`isRepositoryToleratesMissingPath` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GitServiceReadingContract**（6 条）：由 `statusSeparatesUntrackedFiles`、`isRepositoryDetectsRepository`、`isRepositoryToleratesMissingPath` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **子目录读取**：`GitServiceReadingContract` 要求传入仓库子目录时 status / log 与仓库根行为一致——判定（`isGitRepository`）与读取（`openRepository`）必须同为向上搜索语义（#912）。
 - **GitServiceRemoteURL**（4 条）：由 `readsOriginRemoteURLVerbatim`、`readsNamedRemoteURL`、`returnsNilForUnknownRemote` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitService**（5 条）：由 `getStatusThrowsForNonGitDirectory`、`getStatusThrowsForNonexistentPath`、`getDiffThrowsForNonGitDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitSharedQueueHangRepro**（4 条）：由 `hungCallOnOneRepositoryDoesNotBlockOthers`、`queuedCallOnBusyRepositoryIsCancellable`、`queuedCallTimesOutInsteadOfWaitingForever` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -139,27 +140,28 @@ GitPlugin Git integration plugin for Lumi editor.
 | 77 | 综合 | git_branch 的失败分支抛出 `ToolExecutionError`（缺 name、未知 action、工作区脏） | 临时仓库，含一次提交并修改工作区文件 | 依次调用 `git_branch` 的 create / delete / checkout | 三次均抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `gitBranchToolThrowsForInvalidRequests` |
 | 78 | 综合 | git_log / git_commit / git_diff / git_show 的失败分支抛出 `ToolExecutionError` | 非 Git 仓库目录 | 缺 message、缺 hash、对非仓库路径取日志/差异/详情 | 全部抛出 `ToolExecutionError`，不再返回字符串 | P1 | ✅ 已覆盖 | `gitToolsThrowForMissingOrInvalidArguments` |
 | 79 | GitBranchReadFailure | 当前分支读取失败抛出而不是伪装成 detached HEAD（回归 #915） | 临时仓库有一次提交，`.git/HEAD` 指向不存在的 `refs/heads/missing-branch` | 调用 `currentBranch`，同时确认分支列表仍可读 | `currentBranch` 抛出 `LibGit2Error`，不再返回 `nil` | P0 | ✅ 已覆盖 | `unreadableCurrentBranchThrowsInsteadOfReturningNil` |
+| 80 | GitServiceReadingContract | 项目路径是仓库子目录时仍能读取 status 与 log（回归 #912） | 临时仓库有一次提交，工作区有修改，项目路径取仓库下的 `Sources` 子目录 | 先 `isRepository`，再 `getStatus` 与 `getLog` | 判定为仓库，status 列出 `tracked.txt`，log 返回 1 条提交 | P1 | ✅ 已覆盖 | `readsStatusAndLogFromRepositorySubdirectory` |
 
-> 说明：全部 **79 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **80 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 10 / 10
-- P1: 已覆盖 60 / 60
+- P1: 已覆盖 61 / 61
 - P2: 已覆盖 9 / 9
-- **合计: 79 / 79**（仅表示清单场景，非源码覆盖率）
+- **合计: 80 / 80**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（60 条）
+- **P1**: 其余功能性用例（61 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 79 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 80 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

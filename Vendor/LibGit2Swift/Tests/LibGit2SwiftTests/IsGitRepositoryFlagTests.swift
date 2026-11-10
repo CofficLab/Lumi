@@ -118,6 +118,22 @@ final class IsGitRepositoryFlagTests: LibGit2SwiftTestCase {
             "Current isGitRepository with root directory returns true")
     }
 
+    /// 测试：`openRepository` 对仓库子目录也使用默认 flag（向上搜索）。
+    ///
+    /// `isGitRepository` 允许向上搜索，`openRepository` 曾用 `git_repository_open`
+    /// （等价 NO_SEARCH），导致「判定是仓库、读取却报 repositoryNotFound」。
+    func testOpenRepositoryFromSubdirectory() throws {
+        let subDir = testRepo.tempDirectory.appendingPathComponent("Sources")
+        try FileManager.default.createDirectory(at: subDir, withIntermediateDirectories: true)
+
+        let repo = try LibGit2.openRepository(at: subDir.path)
+        defer { git_repository_free(repo) }
+
+        let root = try XCTUnwrap(LibGit2.repositoryRoot(at: subDir.path))
+        let expected = try XCTUnwrap(LibGit2.repositoryRoot(at: testRepo.repositoryPath))
+        XCTAssertEqual(root, expected)
+    }
+
     // MARK: - 测试非 Git 目录
 
     /// 测试：非 Git 目录无论使用哪种 flag 都应返回 false
