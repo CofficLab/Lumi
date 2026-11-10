@@ -5,7 +5,7 @@
 GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标）+ Task（任务）两层结构的任务追踪能力。
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 148
+测试文件: 15 个，用例总数: 150
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -43,10 +43,10 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 - **GoalDisplayAndVM**（19 条）：由 `testMappingPreservesFields`、`testIsTerminal`、`testStatusSystemImage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalForkAttachmentIsolation**（1 条）：由 `testForkCommitDoesNotConsumePendingAttachments` 锁定；分叉提交必须走显式附件重载，改动该调用点时优先跑对应测试文件。
 - **GoalForkCoordinator**（12 条）：由 `testForkAndStartHappyPath`、`testResumePromptContent`、`testResumePromptListsOnlyOutstandingTasks`、`testResumePromptUsesForkedTaskIDs` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **GoalHooks**（25 条）：由 `testNoManagerReturnsContextUnchanged`、`testNoActiveGoalsInjectsNothing`、`testBlockedGoalInjectsOnlyStopPrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GoalHooks**（26 条）：由 `testNoManagerReturnsContextUnchanged`、`testNoActiveGoalsInjectsNothing`、`testBlockedGoalInjectsOnlyStopPrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalStateManagerAppendFork**（19 条）：由 `testAddTasksContinuesOrder`、`testAddTasksThrowsWhenGoalAlreadyFull`、`testAddTasksWritesPartialBatch` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalTaskMigration**（3 条）：由 `v5MigrationLandsDatabaseAtReadPath`、`promotesMisplacedStoreOnlyWhenReadPathIsEmpty` 锁定；升级迁移必须把 v5 数据库放到 `GoalStateManager` 实际读取的位置，改动迁移或数据库路径时优先跑对应测试文件。
-- **GoalStateManager**（13 条）：由 `testCreateGoal`、`testUpdateTaskStatusDerivesGoalStatus`、`testUpdateGoalStatusBlocked` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **GoalStateManager**（14 条）：由 `testCreateGoal`、`testUpdateTaskStatusDerivesGoalStatus`、`testUpdateGoalStatusBlocked` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalTaskTimeline**（2 条）：由 `continuationMessage`、`limitReachedMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalToolbarButtonVisibility**（5 条）：由 `testHiddenWithoutGoals`、`testHiddenForSingleActiveGoal`、`testShownForMultipleGoals` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GoalTaskTools**（20 条）：由 `addTasksAppendsAndReports`、`addTasksResolvesOmittedGoalId`、`addTasksFiltersEntriesWithoutTitle` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -208,21 +208,23 @@ GoalTaskPlugin 目标导向的任务管理插件，为 Lumi 提供 Goal（目标
 | 146 | GoalTaskConversationCleanup | 删除会话时只清理该会话的 Goals | 两个会话各有 Goal | 删除其中一个会话 | 该会话 Goals 为空，另一会话 Goals 保留（**回归** #771） | P1 | ✅ 已覆盖 | `deletingConversationRemovesOnlyItsGoals` |
 | 147 | GoalTaskConversationCleanup | 删除多个会话时逐个清理 | 两个会话各有 Goal | 连续删除两个会话 | 两个会话的 Goals 都为空（**回归** #771） | P1 | ✅ 已覆盖 | `deletingMultipleConversationsRemovesEachGoalSet` |
 | 148 | GoalHooks | 续跑预算耗尽时只把本次活跃 Goal 标记失败 | 历史 failed Goal + 一个活跃 Goal，续跑次数已耗尽 | 触发 completed 钩子 | 历史失败原因保持不变，活跃 Goal 被标记为超限失败（**回归** #904） | P1 | ✅ 已覆盖 | `testLimitReachedKeepsHistoricalFailureReason` |
+| 149 | GoalHooks | 新 Goal 获得独立续跑预算 | 上一 Goal 的续跑计数已耗尽并被标记 failed | 创建新 Goal 后触发 completed 钩子 | 新 Goal 正常续跑（1/5），不被立即判超限（**回归** #903） | P1 | ✅ 已覆盖 | `testNewGoalGetsFreshContinuationBudget` |
+| 150 | GoalStateManager | 创建新 Goal 重置会话续跑与代答预算 | 两个预算都已耗尽 | 调用 `createGoal` | 两个计数都从 1 重新开始（**回归** #903） | P1 | ✅ 已覆盖 | `testCreateGoalClearsConversationBudgets` |
 
-> 说明：全部 **148 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **150 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 15 / 15
-- P1: 已覆盖 118 / 118
+- P1: 已覆盖 120 / 120
 - P2: 已覆盖 15 / 15
-- **合计: 148 / 148**（仅表示清单场景，非源码覆盖率）
+- **合计: 150 / 150**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
-- **P1**: 其余功能性用例（116 条）
+- **P1**: 其余功能性用例（118 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（15 条）
 
 ## 跨平台说明

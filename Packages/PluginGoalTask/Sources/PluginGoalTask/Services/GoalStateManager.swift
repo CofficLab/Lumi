@@ -248,6 +248,10 @@ public actor GoalStateManager: SuperLog {
         
         try context.save()
         
+        // 预算按会话保存，上一个 Goal 耗尽后计数会停在原地。新建 Goal 是一条
+        // 独立的工作序列，必须拿到完整预算，否则首个完成回合就会被判超限（#903）。
+        resetContinuationCount(conversationId: conversationId)
+        
         if Self.verbose {
             Self.logger.info("\(Self.t)创建 Goal: \(title), 包含 \(createdTasks.count) 个 Task")
         }
