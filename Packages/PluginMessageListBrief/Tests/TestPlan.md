@@ -5,7 +5,7 @@
 PluginMessageListBrief — Message List V1 (Brief) Manual + automated test reference for the V1 message list. V1 groups a conversation by **Agent Turn** and keeps everything else out of the way. Each turn shows the user message that triggered it, a collapsible process section, and the final reply. Live progress is reported by a single status card pinned to the bottom of the list, not inside the turns.
 
 平台: macOS 14+, iOS 17+
-测试文件: 26 个，用例总数: 154
+测试文件: 26 个，用例总数: 160
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -48,7 +48,7 @@ PluginMessageListBrief — Message List V1 (Brief) Manual + automated test refer
 - **InitialPositionGate**（10 条）：由 `gateBecomesReadyAfterSuccessfulSettle`、`gateReleasesEvenWhenSettleFails`、`gateReleasesWhenSettleHangs` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ListPresentation**（14 条）：由 `loadingStateDuringActivate`、`activateRequiresSelectedConversation`、`loadEarlierHiddenWhenPageFits` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ListV1LargeData**（3 条）：由 `windowStaysBoundedWhilePaging`、`evictionKeepsNewestTurnMessages`、`refreshBackfillsTheEvictedGap` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MessageListSendPositioning**（1 条）：由 `conservativeReserveIsStable` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MessageListSendPositioning**（7 条）：由 `conservativeReserveIsStable`、`cancelBeforeFirstAssistantEndsPostSendPositioning`、`liveTurnEndingEndsPostSendPositioning` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListServices**（11 条）：由 `tailGateCollapsesBursts`、`overlappingRunnersReturnFalse`、`loadFirstPageProbesEarlier` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageListStateLifetime**（6 条）：由 `listViewMustNotHoldReferenceStateInPlainStoredProperty`、`listViewMustCarryRuntimeInStateObject`、`listViewMustCarryInitialPositionGate` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Observer**（18 条）：由 `messageObserverForwardsChanges`、`messageObserverIgnoresOtherConversations`、`messageObserverCancelStopsDelivery` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -221,27 +221,33 @@ PluginMessageListBrief — Message List V1 (Brief) Manual + automated test refer
 | 152 | StuckLoadingMask | 首屏遮罩：失效的一轮不得放行遮罩，但必须允许后续轮次接手 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `gateStaleRoundMustNotReleaseMaskButMustHandOver` |
 | 153 | ConversationMessageListVM | 切换会话释放上一会话的 Turn VM（**回归 #963**） | 会话 A 有 2 个 Turn、会话 B 有 1 个，先为 A 的行创建 VM | 切到 B 并重新 activate | B 的可见行重新出现，`trackedAgentTurnVMCount` 归零 | P1 | ✅ 已覆盖 | `switchingConversationReleasesPreviousTurnVMs` |
 | 154 | ConversationMessageListVM | Turn 离开窗口后释放其 VM（**回归 #963**） | 为 2 个可见 Turn 与 1 个已失效的 pending item 创建 VM | 插入一条新消息触发 rebuild | 失效 item 不再可见，VM 数回落到 2 | P1 | ✅ 已覆盖 | `prunesVMsForTurnsThatLeaveTheWindow` |
+| 155 | MessageListSendPositioning | 首条助手消息前取消：活动清空必须结束发送后定位（**回归 #894**） | 定位已开启且观察到活动，turn 投影仍为 pending | 先收到 turn 投影事件，再收到活动清空事件 | 投影事件不结束定位；活动清空结束定位并撤掉尾部留白 | P0 | ✅ 已覆盖 | `cancelBeforeFirstAssistantEndsPostSendPositioning` |
+| 156 | MessageListSendPositioning | 回合投影去掉实时活动时必须结束发送后定位 | 定位已开启 | 收到「没有接收实时活动的回合」事件 | 定位结束 | P0 | ✅ 已覆盖 | `liveTurnEndingEndsPostSendPositioning` |
+| 157 | MessageListSendPositioning | 活动从未出现前的清空不算回合收尾 | 定位已开启但活动尚未出现 | 先收到清空事件，再依次收到出现/清空事件 | 首次清空保持定位；出现后再清空才结束定位 | P1 | ✅ 已覆盖 | `activityClearingWithoutObservedActivityKeepsPositioning` |
+| 158 | MessageListSendPositioning | 回合运行中的活动变化保持定位 | 定位已开启且活动已出现 | 连续收到非空活动变化 | 定位保持开启 | P1 | ✅ 已覆盖 | `activityChangesWhileTurnRunsKeepPositioning` |
+| 159 | MessageListSendPositioning | 未开启定位时活动变化不影响状态 | 尚未发送 | 收到活动与 turn 投影事件 | 状态保持未激活 | P2 | ✅ 已覆盖 | `activityChangesBeforeSendAreIgnored` |
+| 160 | MessageListSendPositioning | 结束定位是幂等操作 | 定位已开启 | 连续调用两次 `end()`，再收到活动清空 | 不崩溃，定位保持结束 | P2 | ✅ 已覆盖 | `endIsIdempotent` |
 
-> 说明：全部 **154 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **160 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 32 / 32
-- P1: 已覆盖 98 / 98
-- P2: 已覆盖 24 / 24
-- **合计: 154 / 154**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 34 / 34
+- P1: 已覆盖 100 / 100
+- P2: 已覆盖 26 / 26
+- **合计: 160 / 160**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（32 条）
-- **P1**: 其余功能性用例（98 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（24 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（34 条）
+- **P1**: 其余功能性用例（100 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（26 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 152 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 160 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
