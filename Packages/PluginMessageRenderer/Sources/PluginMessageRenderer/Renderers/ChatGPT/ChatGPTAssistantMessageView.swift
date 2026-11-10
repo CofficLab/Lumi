@@ -34,6 +34,9 @@ struct ChatGPTAssistantMessageView: View {
     /// 复制反馈状态。
     @State private var copyState = ChatGPTCopyFeedbackState()
 
+    /// 动效偏好：Reduced Motion 或全局禁用动画时关闭操作栏淡入淡出。
+    @LumiMotionPreferenceReader private var motionPreference
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let reasoning, ChatGPTReasoningStyle.shouldRender(text: reasoning, isStreaming: isRunning) {
@@ -141,8 +144,12 @@ struct ChatGPTAssistantMessageView: View {
                 alignment: .leading
             )
             .opacity(isActionBarVisible ? 1 : 0)
+            // Important: Reduced Motion 下**不挂** animation —— 挂 nil 动画
+            //   仍会参与 SwiftUI 的差异计算。改为按偏好直接给出动画值。
             .animation(
-                .easeOut(duration: ChatGPTAssistantTextStyle.actionBarFadeDuration),
+                ChatGPTRendererMotion.allowsFadeAnimation(preference: motionPreference)
+                    ? .easeOut(duration: ChatGPTAssistantTextStyle.actionBarFadeDuration)
+                    : nil,
                 value: isActionBarVisible
             )
             // Important: 操作栏**容器**不能挂 `accessibilityIdentifier`。

@@ -62,6 +62,9 @@ struct ChatGPTListView: View {
     /// 聊天容器宽度（用于响应式列宽）。
     @State private var containerWidth: CGFloat = 0
 
+    /// 动效偏好：Reduced Motion 或全局禁用动画时关闭淡入与位移。
+    @LumiMotionPreferenceReader private var motionPreference
+
     init(services: MessageListServices, viewModel: ChatGPTListViewModel) {
         self.services = services
         _viewModel = ObservedObject(wrappedValue: viewModel)
@@ -99,7 +102,11 @@ struct ChatGPTListView: View {
                         .padding(.bottom, ChatGPTBackToBottomStyle.bottomSpacing)
                     }
                 }
-                .transition(.opacity)
+                .transition(
+                    ChatGPTMotion.allowsFadeAnimation(preference: motionPreference)
+                        ? .opacity
+                        : .identity
+                )
             }
         }
         .task {
