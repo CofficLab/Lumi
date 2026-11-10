@@ -5,7 +5,7 @@
 PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内存 / GPU / 电池 / 存储）与历史趋势， 支持主内容视图、菜单栏图表、设置页与文档页等贡献点。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 40
+测试文件: 10 个，用例总数: 41
 
 核心组件（源码目录）:
 - `Models/`
@@ -48,6 +48,7 @@ PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内�
 - **历史范围裁剪**（4 条）：由 `oneHourRangeUsesHighResolutionBuffer`、`fourHourRangeTrimsLongTermBuffer` 等用例锁定；改动历史时间范围语义或视图取数方式时优先跑对应测试文件。
 - **历史图表几何**（4 条）：由 `xMapsTimestampsProportionally`、`longGapKeepsProportionalWidth`、`xClampsOutOfRangeTimestamps`、`hoverSelectsNearestTimestamp` 锁定，防止绘线或悬浮选点退回数组等距映射。
 - **CPU 采样**（4 条）：由 `averageUsageAcrossCPUs`、`usageIsDeltaBased`、`shortBuffersReturnZero`、`zeroCPUCountReturnsZero` 锁定，防止 `host_processor_info` 返回的 CPU 数量/buffer 长度与循环不一致时越界。
+- **本地化**（1 条）：由 `memoryMonitorHasTranslationsInCompiledBundle` 锁定，防止 About 页 Core Capabilities 的词条在某个规范语言下缺失而回退成英文 key。
 
 ## 测试用例清单
 
@@ -93,27 +94,28 @@ PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内�
 | 38 | CPU 采样 | 差分基于历史采样而不是绝对值 | 当前/历史状态均非零 | 调用 `cpuUsage` | 按两次采样的增量返回 0.35 | P1 | ✅ 已覆盖 | `usageIsDeltaBased` |
 | 39 | CPU 采样 | buffer 长度不足 CPU 数量所需时返回 0 且不越界 | 数组长度小于 `cpuCount * CPU_STATE_MAX` | 以更大的 CPU 数量/长度调用 | 返回 0，不读取越界内存 | P0 | ✅ 已覆盖 | `shortBuffersReturnZero` |
 | 40 | CPU 采样 | CPU 数量为 0 时返回 0 | `cpuCount = 0` | 调用 `cpuUsage` | 返回 0 | P2 | ✅ 已覆盖 | `zeroCPUCountReturnsZero` |
+| 41 | 本地化 | Memory Monitor 在 en / zh-Hans / zh-Hant / zh-HK / zh-TW 下均有译文 | 编译后的资源包 | 读取各语言 `Localizable.strings` | 五种语言都返回对应译文，不回退成英文 key（**回归** #902） | P1 | ✅ 已覆盖 | `memoryMonitorHasTranslationsInCompiledBundle` |
 
-> 说明：全部 **40 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **41 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 26 / 26
+- P1: 已覆盖 27 / 27
 - P2: 已覆盖 9 / 9
-- **合计: 40 / 40**（仅表示清单场景，非源码覆盖率）
+- **合计: 41 / 41**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（26 条）
+- **P1**: 其余功能性用例（27 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 40 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 41 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
