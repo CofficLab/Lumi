@@ -14,10 +14,36 @@ enum GitDirectoryResolver {
     }
 
     static func resolveGitDirectory(for projectURL: URL) throws -> URL {
-        let dotGitURL = projectURL.appendingPathComponent(".git")
+        let projectDirectory = projectURL.standardizedFileURL
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: projectDirectory.path, isDirectory: &isDirectory),
+              isDirectory.boolValue else {
+            throw ResolverError.gitDirectoryNotFound(
+                projectDirectory.appendingPathComponent(".git").path
+            )
+        }
+
+        // 与 git 一致向上查找 `.git`：把仓库子目录作为项目打开时，
+        // 仓库根在上层目录（#913）。
+        var candidate = projectDirectory
+        for _ in 0..<128 {
+            if let resolved = try resolveGitEntry(in: candidate) { return resolved }
+            let parent = candidate.deletingLastPathComponent()
+            guard parent.path != candidate.path else { break }
+            candidate = parent
+        }
+        throw ResolverError.gitDirectoryNotFound(
+            projectDirectory.appendingPathComponent(".git").path
+        )
+    }
+
+    /// 只检查 `candidate/.git`：不存在返回 `nil` 继续向上；
+    /// 存在但格式非法则立即抛错，不越过这个仓库边界。
+    private static func resolveGitEntry(in candidate: URL) throws -> URL? {
+        let dotGitURL = candidate.appendingPathComponent(".git")
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: dotGitURL.path, isDirectory: &isDirectory) else {
-            throw ResolverError.gitDirectoryNotFound(dotGitURL.path)
+            return nil
         }
         if isDirectory.boolValue { return dotGitURL }
 
@@ -33,7 +59,7 @@ enum GitDirectoryResolver {
         if rawPath.hasPrefix("/") {
             return URL(fileURLWithPath: rawPath, isDirectory: true)
         }
-        return projectURL.appendingPathComponent(rawPath).standardizedFileURL
+        return candidate.appendingPathComponent(rawPath).standardizedFileURL
     }
 
     static func readSnapshot(gitDirectory: URL) -> GitDirectorySnapshot {
