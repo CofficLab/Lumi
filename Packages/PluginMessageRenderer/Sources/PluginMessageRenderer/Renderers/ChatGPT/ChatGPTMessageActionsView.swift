@@ -29,6 +29,9 @@ struct ChatGPTMessageActionsView: View {
 
     @State private var copyState = ChatGPTCopyFeedbackState()
 
+    /// 动效偏好：Reduced Motion 或全局禁用动画时关闭操作栏淡入淡出。
+    @LumiMotionPreferenceReader private var motionPreference
+
     /// 是否显示复制按钮。
     private var showsCopyButton: Bool {
         ChatGPTAssistantTextStyle.shouldShowCopyButton(copyText: copyText)
@@ -54,8 +57,11 @@ struct ChatGPTMessageActionsView: View {
                 alignment: .leading
             )
             .opacity(isVisible ? 1 : 0)
+            // Important: Reduced Motion 下关闭淡入淡出。
             .animation(
-                .easeOut(duration: ChatGPTAssistantTextStyle.actionBarFadeDuration),
+                ChatGPTRendererMotion.allowsFadeAnimation(preference: motionPreference)
+                    ? .easeOut(duration: ChatGPTAssistantTextStyle.actionBarFadeDuration)
+                    : nil,
                 value: isVisible
             )
             // Important: 透明时**不能**用 `hidden()` —— 那会把按钮从 AX 树里摘掉。

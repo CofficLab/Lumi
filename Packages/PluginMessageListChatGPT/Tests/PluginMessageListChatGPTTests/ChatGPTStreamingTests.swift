@@ -17,6 +17,23 @@ import Testing
 @Suite("V5 真实流式")
 struct ChatGPTStreamingTests {
 
+    /// 轮询等待某个条件成立。
+    ///
+    /// - Note: 不用固定 `sleep` 猜时序 —— 帧门禁是 16ms，
+    ///   固定 sleep 在慢机器上可能不够，在快机器上又浪费时间。
+    private func waitUntil(
+        timeoutNanoseconds: UInt64 = 500_000_000,
+        _ condition: @MainActor () -> Bool
+    ) async -> Bool {
+        let deadline = DispatchTime.now().uptimeNanoseconds + timeoutNanoseconds
+        while DispatchTime.now().uptimeNanoseconds < deadline {
+            if condition() { return true }
+            await Task.yield()
+            try? await Task.sleep(nanoseconds: 1_000_000)
+        }
+        return condition()
+    }
+
     private func makeViewModel(
         conversationID: UUID,
         streaming: StubStreamingCapability,
@@ -75,7 +92,7 @@ struct ChatGPTStreamingTests {
         streaming.appendContent("正在生成", conversationID: conversationID)
         viewModel.handleStreamingChange(.updated(conversationID))
         // 等待帧门禁落地。
-        try? await Task.sleep(nanoseconds: 40_000_000)
+        _ = await waitUntil { viewModel.streamingRow != nil }
 
         #expect(viewModel.streamingRow?.content == "正在生成")
         // 历史行不包含流式内容。
@@ -103,7 +120,7 @@ struct ChatGPTStreamingTests {
         // 帧门禁尚未到期：流式行还没更新。
         #expect(viewModel.streamingRow == nil)
 
-        try? await Task.sleep(nanoseconds: 60_000_000)
+        _ = await waitUntil { viewModel.streamingRow != nil }
 
         // 到期后一次性刷新，且拿到的是**最新**内容。
         #expect(viewModel.streamingRow != nil)
@@ -121,12 +138,12 @@ struct ChatGPTStreamingTests {
         streaming.start(conversationID: conversationID)
         streaming.appendContent("最后一段", conversationID: conversationID)
         viewModel.handleStreamingChange(.updated(conversationID))
-        try? await Task.sleep(nanoseconds: 40_000_000)
+        _ = await waitUntil { viewModel.streamingRow != nil }
         #expect(viewModel.streamingRow != nil)
 
         streaming.end(conversationID: conversationID)
         viewModel.handleStreamingChange(.updated(conversationID))
-        try? await Task.sleep(nanoseconds: 40_000_000)
+        _ = await waitUntil { viewModel.streamingRow == nil }
 
         #expect(viewModel.streamingRow == nil)
     }
@@ -160,7 +177,8 @@ struct ChatGPTStreamingTests {
         streaming.start(conversationID: conversationA)
         streaming.appendContent("A 的内容", conversationID: conversationA)
         viewModel.handleStreamingChange(.updated(conversationA))
-        try? await Task.sleep(nanoseconds: 40_000_000)
+        // 给帧门禁足够时间落地。
+        _ = await waitUntil { viewModel.streamingRow != nil }
 
         // 不得把 A 的流式行写进当前会话。
         #expect(viewModel.streamingRow == nil)
@@ -208,7 +226,8 @@ struct ChatGPTStreamingTests {
         streaming.start(conversationID: conversationID)
         streaming.appendContent("不该出现", conversationID: conversationID)
         viewModel.handleStreamingChange(.updated(conversationID))
-        try? await Task.sleep(nanoseconds: 40_000_000)
+        // 等帧门禁至少跑一轮。
+        _ = await waitUntil { viewModel.activityMessage != nil }
 
         #expect(viewModel.streamingRow == nil)
     }
