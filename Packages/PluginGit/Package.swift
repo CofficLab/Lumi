@@ -16,7 +16,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Vendor/LumiProviders"),
-        .package(path: "../../Vendor/LibGit2Swift"),
+        .package(url: "https://github.com/nookery/LibGit2Swift.git", exact: "1.0.7"),
         .package(path: "../../Vendor/LumiKernel"),
         .package(path: "../ProviderEditor"),
         .package(path: "../KitAgentTool"),
@@ -31,7 +31,7 @@ let package = Package(
         .target(
             name: "GitPlugin",
             dependencies: [
-                .product(name: "LibGit2Swift", package: "Libgit2swift"),
+                .product(name: "LibGit2Swift", package: "libgit2swift"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),

@@ -74,6 +74,24 @@
       }
     },
     {
+      "identity" : "libgit2swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nookery/LibGit2Swift.git",
+      "state" : {
+        "revision" : "547bbc76a08f24018560fea13543500713d157b6",
+        "version" : "1.0.7"
+      }
+    },
+    {
+      "identity" : "magiclog",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nookery/MagicLog.git",
+      "state" : {
+        "revision" : "f3680135b72e6c2158d21fba5769f17ba77798e5",
+        "version" : "1.0.0"
+      }
+    },
+    {
       "identity" : "mysql-nio",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/mysql-nio",
