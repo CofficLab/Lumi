@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationMode 的实现包，包含 3 个主要类型；当前测试覆盖 3 条用例。
+PluginConversationMode 的实现包，包含 3 个主要类型；当前测试覆盖 5 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 3
+测试文件: 1 个，用例总数: 5
 
 核心组件（源码目录）:
 - `Observers/`
@@ -24,6 +24,7 @@ PluginConversationMode 的实现包，包含 3 个主要类型；当前测试覆
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **ConversationModePlugin**（3 条）：由 `pluginLifecycle`、`automationLevelRoundTrip`、`conversationObservationBoxUsesTypedEvents` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **本地化**（2 条）：`automationLevelTextUsesInjectedLocalization` 锁定名称/说明必须经过插件本地化解析；`automationLevelStringsHaveTranslationsInCompiledBundle` 锁定 6 个词条在 en / zh-Hans / zh-Hant / zh-HK / zh-TW 均有译文（#919）。改动 `AutomationLevelToolbarView`、`Support/` 或 `Resources/Localizable.xcstrings` 时须保持成立。
 
 ## 测试用例清单
 
@@ -32,27 +33,29 @@ PluginConversationMode 的实现包，包含 3 个主要类型；当前测试覆
 | 1 | ConversationModePlugin | 插件 onBoot/onShutdown 不抛错且 Provider 保持可用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginLifecycle` |
 | 2 | ConversationModePlugin | 全局自动化级别通过 ConversationManaging 读写 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `automationLevelRoundTrip` |
 | 3 | ConversationModePlugin | 会话观察盒通过类型化事件刷新并支持取消 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `conversationObservationBoxUsesTypedEvents` |
+| 4 | 本地化 | 自动化等级名称与说明经过注入的本地化解析（**回归 #919**） | — | 对三档等级调用名称/说明解析并注入替身解析器 | 文案取自注入解析器，而非 `AutomationLevel` 中写死的中文 | P1 | ✅ 已覆盖 | `automationLevelTextUsesInjectedLocalization` |
+| 5 | 本地化 | 自动化等级词条在所有规范语言下都有译文（**回归 #919**） | — | 读取编译产物中每种语言的 `Localizable.strings` | 6 个词条在 en / zh-Hans / zh-Hant / zh-HK / zh-TW 均有对应译文 | P1 | ✅ 已覆盖 | `automationLevelStringsHaveTranslationsInCompiledBundle` |
 
-> 说明：全部 **3 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **5 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 3 / 3
+- P1: 已覆盖 5 / 5
 - P2: 已覆盖 0 / 0
-- **合计: 3 / 3**（仅表示清单场景，非源码覆盖率）
+- **合计: 5 / 5**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（3 条）
+- **P1**: 其余功能性用例（5 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 3 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 5 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
