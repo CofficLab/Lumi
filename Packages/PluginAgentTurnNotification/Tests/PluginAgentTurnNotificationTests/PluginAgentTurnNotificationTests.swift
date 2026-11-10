@@ -18,12 +18,97 @@ struct AgentTurnNotificationPluginTests {
         try plugin.onShutdown(kernel: kernel)
     }
 
-    @Test("presentation 按原因生成标题")
+    @Test("presentation 按原因经本地化解析生成标题与正文")
     func presentationTitles() {
-        #expect(TurnFinishedNotificationHook.presentation(for: "completed").title == "任务完成")
-        #expect(TurnFinishedNotificationHook.presentation(for: "failed").title == "任务失败")
-        #expect(TurnFinishedNotificationHook.presentation(for: "cancelled").title == "任务已取消")
-        #expect(TurnFinishedNotificationHook.presentation(for: "unknown").title == "回合结束")
+        let resolve: (String) -> String = { "key:\($0)" }
+
+        let completed = TurnFinishedNotificationHook.presentation(for: "completed", resolve: resolve)
+        #expect(completed.title == "key:Task Completed")
+        #expect(completed.body == "key:Agent turn finished")
+
+        let failed = TurnFinishedNotificationHook.presentation(for: "failed", resolve: resolve)
+        #expect(failed.title == "key:Task Failed")
+        #expect(failed.body == "key:Agent turn failed")
+
+        let cancelled = TurnFinishedNotificationHook.presentation(for: "cancelled", resolve: resolve)
+        #expect(cancelled.title == "key:Task Cancelled")
+        #expect(cancelled.body == "key:Agent turn cancelled")
+
+        let unknown = TurnFinishedNotificationHook.presentation(for: "unknown", resolve: resolve)
+        #expect(unknown.title == "key:Turn Finished")
+        #expect(unknown.body == "key:Agent turn finished")
+    }
+
+    @Test("通知标题与正文在五种规范语言下都有译文（回归 #898）")
+    func presentationLabelsHaveTranslationsInCompiledBundle() throws {
+        let expected: [String: [String: String]] = [
+            "Task Completed": [
+                "en": "Task Completed",
+                "zh-Hans": "任务完成",
+                "zh-Hant": "任務完成",
+                "zh-HK": "任務完成",
+                "zh-TW": "任務完成",
+            ],
+            "Agent turn finished": [
+                "en": "Agent turn finished",
+                "zh-Hans": "Agent 回合已结束",
+                "zh-Hant": "Agent 回合已結束",
+                "zh-HK": "Agent 回合已結束",
+                "zh-TW": "Agent 回合已結束",
+            ],
+            "Task Failed": [
+                "en": "Task Failed",
+                "zh-Hans": "任务失败",
+                "zh-Hant": "任務失敗",
+                "zh-HK": "任務失敗",
+                "zh-TW": "任務失敗",
+            ],
+            "Agent turn failed": [
+                "en": "Agent turn failed",
+                "zh-Hans": "Agent 回合执行失败",
+                "zh-Hant": "Agent 回合執行失敗",
+                "zh-HK": "Agent 回合執行失敗",
+                "zh-TW": "Agent 回合執行失敗",
+            ],
+            "Task Cancelled": [
+                "en": "Task Cancelled",
+                "zh-Hans": "任务已取消",
+                "zh-Hant": "任務已取消",
+                "zh-HK": "任務已取消",
+                "zh-TW": "任務已取消",
+            ],
+            "Agent turn cancelled": [
+                "en": "Agent turn cancelled",
+                "zh-Hans": "Agent 回合已取消",
+                "zh-Hant": "Agent 回合已取消",
+                "zh-HK": "Agent 回合已取消",
+                "zh-TW": "Agent 回合已取消",
+            ],
+            "Turn Finished": [
+                "en": "Turn Finished",
+                "zh-Hans": "回合结束",
+                "zh-Hant": "回合結束",
+                "zh-HK": "回合結束",
+                "zh-TW": "回合結束",
+            ],
+        ]
+
+        for (key, translations) in expected {
+            for (language, translation) in translations {
+                let table = try Self.compiledStrings(language: language)
+                #expect(
+                    table[key] == translation,
+                    "\(language) 下 \(key) 译文缺失或不符，通知会回退成其它语言"
+                )
+            }
+        }
+    }
+
+    private static func compiledStrings(language: String) throws -> [String: String] {
+        let bundle = pluginLocalization.bundle
+        let lprojPath = try #require(bundle.path(forResource: language, ofType: "lproj"))
+        let stringsPath = (lprojPath as NSString).appendingPathComponent("Localizable.strings")
+        return try #require(NSDictionary(contentsOfFile: stringsPath) as? [String: String])
     }
 
     @Test("V2 turn-finished hook 触发 notifier")
@@ -54,7 +139,7 @@ struct AgentTurnNotificationPluginTests {
                 endReason: .completed
             )
         )
-        #expect(notified == ["任务完成"])
+        #expect(notified == [pluginLocalization.string("Task Completed")])
 
         try plugin.onShutdown(kernel: kernel)
     }
