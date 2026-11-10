@@ -1,7 +1,7 @@
 import Foundation
 import ProviderMessage
 import Testing
-@testable import PluginMessageListDetailed
+@testable import PluginMessageListZCode
 
 /// `ZCodeTurnProjectionStore` 的增量 tail 契约测试。
 ///

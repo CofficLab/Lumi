@@ -21,7 +21,7 @@ import SwiftUI
 struct ListV4View: View {
     let services: MessageListServices
     @ObservedObject private var developerModeState: DeveloperModeStateViewModel
-    @ObservedObject private var viewModel: ListV3ViewModel
+    @ObservedObject private var viewModel: ListV4ViewModel
 
     @LumiTheme private var theme
 
@@ -54,7 +54,7 @@ struct ListV4View: View {
     init(
         services: MessageListServices,
         developerModeState: DeveloperModeStateViewModel,
-        viewModel: ListV3ViewModel
+        viewModel: ListV4ViewModel
     ) {
         self.services = services
         _developerModeState = ObservedObject(wrappedValue: developerModeState)

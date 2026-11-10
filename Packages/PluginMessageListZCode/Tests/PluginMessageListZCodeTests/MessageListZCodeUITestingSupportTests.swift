@@ -3,7 +3,7 @@ import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
 import Testing
-@testable import PluginMessageListDetailed
+@testable import PluginMessageListZCode
 
 /// V4（ZCode）UI 测试夹具契约测试。
 ///

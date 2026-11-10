@@ -94,6 +94,7 @@ let package = Package(
         .package(path: "../PluginMessageListBrief"),
         .package(path: "../PluginMessageListStandard"),
         .package(path: "../PluginMessageListDetailed"),
+        .package(path: "../PluginMessageListZCode"),
         .package(path: "../PluginMessageRenderer"),
         .package(path: "../PluginConversationList"),
         .package(path: "../PluginConversationNew"),
@@ -287,6 +288,7 @@ let package = Package(
                 .product(name: "PluginMessageListBrief", package: "PluginMessageListBrief"),
                 .product(name: "PluginMessageListStandard", package: "PluginMessageListStandard"),
                 .product(name: "PluginMessageListDetailed", package: "PluginMessageListDetailed"),
+                .product(name: "PluginMessageListZCode", package: "PluginMessageListZCode"),
                 .product(name: "PluginMessageRenderer", package: "PluginMessageRenderer"),
                 .product(name: "PluginConversationList", package: "PluginConversationList"),
                 .product(name: "PluginConversationNew", package: "PluginConversationNew"),
@@ -451,9 +453,10 @@ let package = Package(
                 .product(name: "PluginMessageManager", package: "PluginMessageManager"),
                 .product(name: "PluginMessageListEmpty", package: "PluginMessageListEmpty"),
                 .product(name: "PluginMessageListStandard", package: "PluginMessageListStandard"),
-                // V4（ZCode）消息列表与 V3 共处一个 package，仲裁测试需要直接
+                // V4（ZCode）消息列表是独立 package；仲裁测试需要直接
                 // 装配真实插件来断言 exclusiveGroup 槽位互斥。
                 .product(name: "PluginMessageListDetailed", package: "PluginMessageListDetailed"),
+                .product(name: "PluginMessageListZCode", package: "PluginMessageListZCode"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "PluginToolbar", package: "LumiProviders"),
                 // 全新安装首屏装配（空态 → 首条消息 → 对话列表 tab）需要真实

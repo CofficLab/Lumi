@@ -3,7 +3,7 @@ import ProviderMessage
 
 /// V4（ZCode）轮次投影器。
 ///
-/// 输入是 `ListV3ViewModel.historyRows`（已含 `.tool` 行过滤与连续 tool-only 合并），
+/// 输入是 `ListV4ViewModel.historyRows`（已含 `.tool` 行过滤与连续 tool-only 合并），
 /// 因此**独立 `.tool` 过滤与连续工具合并只有一份事实来源**，投影不再重复这两件事。
 ///
 /// 投影只产出 UI 值类型，**不写回** `Message` / SwiftData，
