@@ -71,6 +71,28 @@ struct AgentPlanToolsTests {
         #expect(try await service.read(filename: "plan.md") == "# plan")
     }
 
+    @Test("write_plan 拒绝首尾空白文件名且不覆盖同名计划（回归 #930）")
+    func writePlanRejectsSurroundingWhitespace() async throws {
+        let root = try makeTemporaryDirectory("write-whitespace")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = try PlanFileStorageService(directory: root, retentionDays: 30)
+        let tool = WritePlanTool(storage: service)
+
+        _ = try await tool.execute(arguments: [
+            "filename": ToolArgument("plan.md"),
+            "content": ToolArgument("first"),
+        ])
+
+        await #expect(throws: PlanFileStorageError.filenameHasSurroundingWhitespace) {
+            _ = try await tool.execute(arguments: [
+                "filename": ToolArgument(" plan.md "),
+                "content": ToolArgument("second"),
+            ])
+        }
+
+        #expect(try await service.read(filename: "plan.md") == "first")
+    }
+
     @Test("write_plan 缺少参数时抛错")
     func writePlanRequiresArguments() async throws {
         let root = try makeTemporaryDirectory("write-missing")
