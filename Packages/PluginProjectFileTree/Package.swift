@@ -41,6 +41,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
+                .product(name: "ProviderToast", package: "LumiProviders"),
             ],
             path: "Tests"
         ),

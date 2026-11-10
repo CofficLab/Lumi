@@ -39,6 +39,11 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog, FileTr
     /// 文件树上下文（项目 / 对话输入 / Toast 提示）。
     var context: FileTreeContext?
 
+    /// 批量删除执行器；测试注入桩以观察删除目标，生产环境走真实废纸篓。
+    var trashHandler: ([URL]) -> FileTreeFacade.TrashBatchResult = {
+        FileTreeFacade.trashItemsReporting(at: $0)
+    }
+
     /// 展开状态变化回调
     var onExpansionChange: ((String, Bool) -> Void)?
 
@@ -501,9 +506,9 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         return nil
     }
     
-    private func buildMenu(for url: URL, isDirectory: Bool) -> NSMenu {
+    func buildMenu(for url: URL, isDirectory: Bool) -> NSMenu {
         let menu = NSMenu()
-        let conversationTargets = selectionState.actionTargets(for: url)
+        let actionTargets = selectionState.actionTargets(for: url)
         
         if isDirectory {
             menu.addItem(menuItem(
@@ -529,7 +534,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         menu.addItem(menuItem(
             title: pluginLocalization.string("Send to Conversation"),
             action: #selector(sendToConversation(_:)),
-            urls: conversationTargets,
+            urls: actionTargets,
             enabled: context?.conversationInput != nil
         ))
         menu.addItem(.separator())
@@ -560,7 +565,8 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         menu.addItem(menuItem(
             title: pluginLocalization.string("Move to Trash"),
             action: #selector(deleteItem(_:)),
-            url: url
+            urls: actionTargets,
+            enabled: true
         ))
         
         return menu
@@ -670,26 +676,62 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
     }
     
     @objc private func deleteItem(_ sender: NSMenuItem) {
-        guard let url = sender.representedObject as? URL else { return }
-        guard FileTreeActions.presentDeleteConfirmation(url: url) else { return }
-        
-        guard FileTreeFacade.trashItem(at: url) else {
-            context?.toast?.show(
-                pluginLocalization.string("Could not move the item to the Trash."),
-                style: .error
-            )
+        guard let urls = sender.representedObject as? [URL], !urls.isEmpty else { return }
+        guard FileTreeActions.presentDeleteConfirmation(urls: urls) else { return }
+        performDelete(targets: urls)
+    }
+
+    /// 执行批量删除：菜单的多选目标全部交给 `trashItemsReporting`，按成功项
+    /// 移除选择并刷新父目录，失败项单独汇报，避免只删除右键项（回归 #1109）。
+    func performDelete(targets: [URL]) {
+        guard !targets.isEmpty else { return }
+        let result = trashHandler(targets)
+
+        guard !result.trashedURLs.isEmpty else {
+            let message = result.failedURLs.count > 1
+                ? String(
+                    format: pluginLocalization.string("%lld items could not be moved"),
+                    result.failedURLs.count
+                )
+                : pluginLocalization.string("Could not move the item to the Trash.")
+            context?.toast?.show(message, style: .error)
             return
         }
-        if Self.verbose {
-            Self.logger.info("\(Self.t)删除: \(url.path)")
+
+        for url in result.trashedURLs {
+            selectionState.removeFromSelection(url)
         }
-        selectionState.clearSelection()
-        refreshAfterMutation(parentURL: url.deletingLastPathComponent())
-        context?.toast?.show(
-            pluginLocalization.string("Moved to Trash"),
-            detail: url.lastPathComponent,
-            style: .success
-        )
+        for parent in Set(result.trashedURLs.map { $0.deletingLastPathComponent() }) {
+            refreshAfterMutation(parentURL: parent)
+        }
+
+        if !result.failedURLs.isEmpty {
+            context?.toast?.show(
+                String(
+                    format: pluginLocalization.string("%lld items could not be moved"),
+                    result.failedURLs.count
+                ),
+                detail: result.failedURLs.map(\.lastPathComponent).joined(separator: ", "),
+                style: .warning
+            )
+        } else {
+            let detail = result.trashedURLs.count == 1
+                ? result.trashedURLs[0].lastPathComponent
+                : String(
+                    format: pluginLocalization.string("%lld files"),
+                    result.trashedURLs.count
+                )
+            context?.toast?.show(
+                pluginLocalization.string("Moved to Trash"),
+                detail: detail,
+                style: .success
+            )
+        }
+
+        if Self.verbose {
+            let paths = result.trashedURLs.map(\.path).joined(separator: ", ")
+            Self.logger.info("\(Self.t)删除: \(paths)")
+        }
     }
     
     @objc private func revealInFinder(_ sender: NSMenuItem) {

@@ -108,12 +108,36 @@ public enum FileTreeFacade {
     /// 批量移入废纸篓，自动跳过嵌套子路径。
     @discardableResult
     public static func trashItems(at urls: [URL]) -> Int {
-        let targets = PathFormatter.topLevelURLs(from: urls)
-        var successCount = 0
-        for url in targets where trashItem(at: url) {
-            successCount += 1
+        trashItemsReporting(at: urls).trashedURLs.count
+    }
+
+    /// 批量移入废纸篓的结果。
+    ///
+    /// 多选删除必须处理 `actionTargets(for:)` 的全部目标，并保留失败项供
+    /// 调用方汇报部分失败（回归 #1109）。
+    struct TrashBatchResult: Equatable {
+        let trashedURLs: [URL]
+        let failedURLs: [URL]
+
+        var totalCount: Int { trashedURLs.count + failedURLs.count }
+        var hasPartialFailure: Bool { !trashedURLs.isEmpty && !failedURLs.isEmpty }
+    }
+
+    /// 逐个尝试移入废纸篓并回报成功/失败目标；嵌套子路径会被跳过。
+    static func trashItemsReporting(
+        at urls: [URL],
+        trash: (URL) -> Bool = { trashItem(at: $0) }
+    ) -> TrashBatchResult {
+        var trashedURLs: [URL] = []
+        var failedURLs: [URL] = []
+        for url in PathFormatter.topLevelURLs(from: urls) {
+            if trash(url) {
+                trashedURLs.append(url)
+            } else {
+                failedURLs.append(url)
+            }
         }
-        return successCount
+        return TrashBatchResult(trashedURLs: trashedURLs, failedURLs: failedURLs)
     }
 
     /// 移动文件或文件夹到目标目录

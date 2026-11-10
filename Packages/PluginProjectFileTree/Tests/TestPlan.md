@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 35 条用例。
+PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 41 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，用例总数: 35
+测试文件: 13 个，用例总数: 41
 
 核心组件（源码目录）:
 - `Models/`
@@ -51,6 +51,8 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 - **GitStatusProvider（porcelain 解析）**（3 条）：由 `arrowInRegularFileNameIsPreserved`、`stagedRenameUsesDestinationPath`、`worktreeRenameUsesDestinationPath` 锁定。只有 XY 为 `R`/`C` 时 `old -> new` 才是 Git 的分隔符；普通 `??`、` M` 条目里的 ` -> ` 属于文件名，必须完整保留，否则快照键失真、文件和父目录都查不到状态（**回归 #1106**）。
 - **GitStatusProvider（冲突状态）**（2 条）：由 `addAddAndDeleteDeleteAreConflicted`、`unmergedCodesAreRecognized` 锁定。未合并状态码包含 `DD`/`AU`/`UD`/`UA`/`DU`/`AA`/`UU`，不能只判断 `U`，否则 add/add 与 delete/delete 冲突会显示为普通新增/删除（**回归 #1107**）。
 - **FileTreeActions**（5 条）：由 `unchangedRenameIsNoOp`、`renameKeepsLeadingAndTrailingSpaces`、`emptyRenameIsNoOp`、`creationNameTrimsSpaces`、`whitespaceOnlyCreationNameIsRejected` 锁定。命名弹窗必须返回原始输入，重命名保留合法首尾空格、确认未修改的预填名称时按 no-op 处理（不得发起真实重命名）；新建文件/目录仍裁剪首尾空格并拒绝纯空白名称（**回归 #1108**）。
+- **FileTreeFacade（批量删除）**（3 条）：由 `batchTrashProcessesEveryTarget`、`batchTrashReportsPartialFailure`、`batchTrashSkipsNestedTargets` 锁定。`trashItemsReporting` 必须逐个处理顶层目标（跳过被选中目录的子路径），保留成功与失败集合，供调用方汇报部分失败（**回归 #1109**）。
+- **FileTreeCollectionViewController（批量删除）**（3 条）：由 `deleteMenuCarriesEverySelectedTarget`、`performDeleteTrashesEveryTarget`、`performDeleteKeepsFailedTargetSelected` 锁定。Move to Trash 菜单必须携带 `actionTargets(for:)` 的全部目标，删除后按成功项移除选择并刷新各自父目录；部分失败时保留失败项的选择并给出警告，不能只删除右键项（**回归 #1109**）。
 
 ## 测试用例清单
 
@@ -91,27 +93,33 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 | 33 | FileTreeActions | 清空输入不会触发重命名 | 输入为空字符串 | 解析重命名目标 | 返回 nil | P2 | ✅ 已覆盖 | `emptyRenameIsNoOp` |
 | 34 | FileTreeActions | 新建文件仍裁剪首尾空格 | 输入 `  note.txt  ` | 解析新建名称 | 返回 `note.txt` | P1 | ✅ 已覆盖 | `creationNameTrimsSpaces` |
 | 35 | FileTreeActions | 纯空白的新建名称被拒绝 | 输入 `   ` | 解析新建名称 | 返回 nil | P2 | ✅ 已覆盖 | `whitespaceOnlyCreationNameIsRejected` |
+| 36 | FileTreeFacade | 批量删除会处理全部选中目标（**回归 #1109**） | 两个目标 URL | 执行 `trashItemsReporting` | 两个目标都进入删除回调，全部记为成功 | P0 | ✅ 已覆盖 | `batchTrashProcessesEveryTarget` |
+| 37 | FileTreeFacade | 批量删除会保留失败项用于部分失败汇报（**回归 #1109**） | 两个目标中第二个删除失败 | 执行 `trashItemsReporting` | 成功项与失败项分别返回，`hasPartialFailure` 为真 | P0 | ✅ 已覆盖 | `batchTrashReportsPartialFailure` |
+| 38 | FileTreeFacade | 批量删除会跳过被选中目录的子路径 | 同时选中目录与目录内文件 | 执行 `trashItemsReporting` | 只对目录调用删除，总数按顶层目标计 | P2 | ✅ 已覆盖 | `batchTrashSkipsNestedTargets` |
+| 39 | FileTreeCollectionViewController | 多选时 Move to Trash 菜单携带全部选中项（**回归 #1109**） | 已 Cmd 选中 a.txt、b.txt | 构建 a.txt 的右键菜单 | 删除项 `representedObject` 为两项数组 | P0 | ✅ 已覆盖 | `deleteMenuCarriesEverySelectedTarget` |
+| 40 | FileTreeCollectionViewController | 多选删除会移除全部目标的选择（**回归 #1109**） | 已选中 a.txt、b.txt | `performDelete` 处理全部目标 | 删除器收到两项，选择清空，成功提示 | P0 | ✅ 已覆盖 | `performDeleteTrashesEveryTarget` |
+| 41 | FileTreeCollectionViewController | 部分失败时保留失败项的选择并给出警告 | 删除器只成功 a.txt、失败 b.txt | `performDelete` 处理全部目标 | 选择只剩 b.txt，提示为 warning 且包含 b.txt | P1 | ✅ 已覆盖 | `performDeleteKeepsFailedTargetSelected` |
 
-> 说明：全部 **35 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **41 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 17 / 17
-- P1: 已覆盖 12 / 12
-- P2: 已覆盖 6 / 6
-- **合计: 35 / 35**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 21 / 21
+- P1: 已覆盖 13 / 13
+- P2: 已覆盖 7 / 7
+- **合计: 41 / 41**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
-- **P1**: 其余功能性用例（12 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（21 条）
+- **P1**: 其余功能性用例（13 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 35 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 41 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
