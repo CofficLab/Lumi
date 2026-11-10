@@ -107,7 +107,13 @@ final class AgentRulesViewModel: ObservableObject {
             return
         }
         selectedProjectPath = projects.first?.path
-        if selectedProjectPath != nil {
+        if selectedProjectPath == nil {
+            // 最后一个项目被移除：立即清空旧项目状态。以往只在仍有选中项目时
+            // 才触发 reload，空列表分支永远进不去，页面会继续显示已移除项目
+            // 的规则计数与错误（#899）。
+            rules = []
+            errorMessage = nil
+        } else {
             Task { await reload() }
         }
     }
