@@ -157,7 +157,70 @@
   computed property，并行测试下两个实例的 `bodyLineSpacing` 可能不同。
   改为首次计算后缓存。
 
-## 12. 未完成 / 遗留
+## 12. 合并到 dev 时处理的集成问题
+
+本分支最初基于 `dff19441f`，dev 期间推进了 120+ 提交。合并（rebase）过程中
+发现并处理了以下问题：
+
+### 12.1 dev 自身编译不过（#920 的遗漏）
+
+`381ec8119 fix(PluginConversationVerbosity): localize response detail labels`
+把 `ResponseVerbosity.displayName` / `description` 从 `ProviderConversation` 移除
+（硬编码中文 → 插件本地化目录），但**漏掉了**
+`PluginConversationManager/Views/ConversationStoreSettingsView.swift:327` 这一处调用。
+
+后果：**纯 dev（`origin/dev`）编译 `PluginConversationManager` 直接失败**，
+App 无法构建。已用独立 worktree 在纯 dev 上复现确认。
+
+处理：按 #920 的既定架构补齐 —— 在 `PluginConversationManager` 自己的
+`Localizable.xcstrings` 里新增 `Verbosity Brief / Standard / Detailed / ZCode`
+四条（5 种语言），并新增 `VerbositySettingsLocalization.swift` 提供
+`localizedSettingsDisplayName()`。
+
+- Note: `PluginConversationManager` **不能**依赖 `PluginConversationVerbosity`
+  （插件不得依赖插件），因此两边是各自独立的一份目录副本。
+
+### 12.2 `ResponseVerbosity` 的 `.zcode` 分支需要同步到本地化层
+
+`PluginConversationVerbosity.VerbosityLocalization` 用**穷尽 switch**，
+新增 `.zcode` 后编译失败。已在该处补上 `.zcode` 的 key，
+并新增 "ZCode" / "ZCode Description" 两条 5 语言本地化条目。
+
+UI 侧无需改动：`VerbosityToolbarView` 用 `ResponseVerbosity.allCases` 渲染，
+`.zcode` 会自动作为第 4 档出现。
+
+### 12.3 `ProviderConversation` 的测试引用了已删除的属性
+
+`ResponseVerbosityTests` 断言了 `displayName`。已改为只锁定 rawValue /
+往返 / 枚举顺序，文案断言交由本地化层负责。
+
+### 12.4 `KitMarkdown` 并发崩溃（SIGSEGV）
+
+rebase 后跑全量测试时出现**偶发进程崩溃**（signal 11），纯 dev 复现不出来。
+
+根因：`MarkdownTheme.zcode` 的惰性初始化用 `nonisolated(unsafe)` 缓存，
+Swift Testing 并行执行时多个用例会**同时**首次访问它并并发读 `NSFont` ——
+AppKit 的字体度量不是线程安全的。
+
+处理：
+- `MarkdownTheme.zcode` 的「检查缓存 → 计算 → 写缓存」整段用 `NSLock` 串行化，
+  且**只在锁内**访问 `NSFont`；
+- `lineSpacing` 另用一把**独立的**锁 ——
+  `zcode` 持锁时会调用 `lineSpacing`，`NSLock` 不可重入，用同一把锁会死锁
+  （首次实现确实死锁了，已修正）。
+
+### 12.5 `HorizontalFittingSizeCacheTests` 的既存竞态
+
+`HorizontalFittingSizeStore.shared` 是进程级单例，
+`HorizontalFittingSizeCacheTests` 里的**两个用例**都以 `removeAll()` 开头收尾，
+而 Swift Testing 默认在文件内并行执行，两者互相清空对方数据。
+
+- Important: 该竞态是**既存**的 —— 在纯 dev 上 20 次连跑也能复现 1 次失败，
+  与本次新增用例无关；本分支只是因为用例数从 55 增到 109 而更容易撞上。
+
+处理：给该文件加 `@Suite(.serialized)`。加后本分支 12 次连跑 0 失败。
+
+## 13. 未完成 / 遗留
 
 1. **截图矩阵**（见第 10 节）—— 环境阻塞，未伪造。
 2. **`swift-log` 的 lock 不一致** —— 既存问题，未在本次范围内处理。
