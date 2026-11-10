@@ -489,6 +489,8 @@ public struct ConversationStoreSettingsView: View {
         case .brief: L("Brief")
         case .standard: L("Standard")
         case .detailed: L("Detailed")
+        // V4 是 ZCode 风格消息列表的呈现变体。
+        case .zcode: L("ZCode")
         case nil: L("Default")
         }
     }
