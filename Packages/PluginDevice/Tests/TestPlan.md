@@ -5,7 +5,7 @@
 PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内存 / GPU / 电池 / 存储）与历史趋势， 支持主内容视图、菜单栏图表、设置页与文档页等贡献点。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 43
+测试文件: 12 个，用例总数: 45
 
 核心组件（源码目录）:
 - `Models/`
@@ -48,7 +48,7 @@ PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内�
 - **历史范围裁剪**（4 条）：由 `oneHourRangeUsesHighResolutionBuffer`、`fourHourRangeTrimsLongTermBuffer` 等用例锁定；改动历史时间范围语义或视图取数方式时优先跑对应测试文件。
 - **历史图表几何**（4 条）：由 `xMapsTimestampsProportionally`、`longGapKeepsProportionalWidth`、`xClampsOutOfRangeTimestamps`、`hoverSelectsNearestTimestamp` 锁定，防止绘线或悬浮选点退回数组等距映射。
 - **CPU 采样**（4 条）：由 `averageUsageAcrossCPUs`、`usageIsDeltaBased`、`shortBuffersReturnZero`、`zeroCPUCountReturnsZero` 锁定，防止 `host_processor_info` 返回的 CPU 数量/buffer 长度与循环不一致时越界。
-- **本地化**（3 条）：由 `memoryMonitorHasTranslationsInCompiledBundle`、`sensorLabelUsesInjectedLocalization`、`sensorLabelHasTranslationsInCompiledBundle` 锁定，防止视图词条绕过 `pluginLocalization` 或在某个规范语言下缺失而回退成英文 key。
+- **本地化**（5 条）：由 `memoryMonitorHasTranslationsInCompiledBundle`、`sensorLabelUsesInjectedLocalization`、`sensorLabelHasTranslationsInCompiledBundle`、`registrationTitlesUseInjectedLocalization`、`entryLabelsHaveTranslationsInCompiledBundle` 锁定，防止视图词条与注册入口标题绕过 `pluginLocalization`，或在某个规范语言下缺失而回退成英文 key。
 
 ## 测试用例清单
 
@@ -97,27 +97,29 @@ PluginDevice Lumi 的设备信息插件，提供系统资源监控（CPU / 内�
 | 41 | 本地化 | Memory Monitor 在 en / zh-Hans / zh-Hant / zh-HK / zh-TW 下均有译文 | 编译后的资源包 | 读取各语言 `Localizable.strings` | 五种语言都返回对应译文，不回退成英文 key（**回归** #902） | P1 | ✅ 已覆盖 | `memoryMonitorHasTranslationsInCompiledBundle` |
 | 42 | 本地化 | 传感器行标签经注入的本地化解析并保留下标 | 注入 marker 解析器 | 调用 `ThermalSensorLabel.text(index: 3, resolve:)` | 得到 `localized:Sensor 3`，证明不再写死英文字面量（**回归** #901） | P1 | ✅ 已覆盖 | `sensorLabelUsesInjectedLocalization` |
 | 43 | 本地化 | Sensor %d 在编译产物中已有译文 | 编译后的资源包 | 读取 en / zh-Hans / zh-HK / zh-TW 的 `Localizable.strings` | 各语言都返回对应译文（**回归** #901） | P1 | ✅ 已覆盖 | `sensorLabelHasTranslationsInCompiledBundle` |
+| 44 | 本地化 | 文档、活动栏与菜单标题经过本地化解析 | 注入 marker 解析器，真实 kernel 启动并启用插件 | 读取文档入口、ActivityBar 入口与菜单栏贡献标题 | 全部为 `localized:Device Info` / `localized:Memory`，证明注册链不再写死中文字面量（**回归** #900） | P1 | ✅ 已覆盖 | `registrationTitlesUseInjectedLocalization` |
+| 45 | 本地化 | Device Info 与 Memory 词条在所有规范语言下都有译文 | 编译后的资源包 | 读取 en / zh-Hans / zh-Hant / zh-HK / zh-TW 的 `Localizable.strings` | 五种语言都有对应译文，不回退成英文 key（**回归** #900） | P1 | ✅ 已覆盖 | `entryLabelsHaveTranslationsInCompiledBundle` |
 
-> 说明：全部 **43 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **45 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 29 / 29
+- P1: 已覆盖 31 / 31
 - P2: 已覆盖 9 / 9
-- **合计: 43 / 43**（仅表示清单场景，非源码覆盖率）
+- **合计: 45 / 45**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（29 条）
+- **P1**: 其余功能性用例（31 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 43 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 45 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
