@@ -43,6 +43,8 @@ public final class ProjectsPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     private var projectObserver: ProjectProvidingObserver?
     private var openedFilesPersistence: ProjectOpenedFilesPersistence?
     private var conversationProjectSyncObserver: ConversationProjectSyncObserver?
+    /// 应用激活时重新探测项目存储状态（目录是否存在、外置盘是否在线）。
+    private var storageActivationObserver: ProjectStorageActivationObserver?
     private var ragStatusObservers: [String: ProjectRAGStatusObserver] = [:]
     /// `willSendToLLM` 项目路径注入钩子（见 `Hooks/ProjectPathInjectionHook.swift`）。
     private var projectPathInjectionHook: ProjectPathInjectionHook?
@@ -102,6 +104,13 @@ public final class ProjectsPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         self.projectObserver = projectObserver
         self.openedFilesPersistence = ProjectOpenedFilesPersistence(project: projectProvider, store: store)
         ProjectsRuntime.configure(viewModel: viewModel, projectObserver: projectObserver)
+
+        // 应用回到前台时重新探测存储状态：项目目录可能在后台期间被删除，
+        // 外置硬盘也可能被拔出，缓存的判定结果会过期。
+        storageActivationObserver?.cancel()
+        storageActivationObserver = ProjectStorageActivationObserver {
+            viewModel.refreshStorageState()
+        }
 
         // 恢复当前项目必须通过 ProjectProviding 执行，observer 会负责同步 ViewModel。
         if projectProvider.currentProject == nil, let storedCurrentProject {
@@ -241,6 +250,8 @@ public final class ProjectsPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         projectObserver = nil
         openedFilesPersistence?.cancel()
         openedFilesPersistence = nil
+        storageActivationObserver?.cancel()
+        storageActivationObserver = nil
         projectPathInjectionHookHandle?.cancel()
         projectPathInjectionHookHandle = nil
         projectPathInjectionHook = nil

@@ -36,7 +36,11 @@ public struct SettingsView: View {
     }
 
     public var body: some View {
-        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
+        // 显式读取存储状态修订号：缓存失效后需要重新探测存储类型，
+        // 依赖它才能让列表与详情里的图标、存储位置描述随之刷新。
+        let _ = viewModel.storageRevision
+
+        return AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
             GeometryReader { proxy in
                 VStack(alignment: .leading, spacing: 0) {
                     header
@@ -135,13 +139,17 @@ public struct SettingsView: View {
             didSeedSelection = true
         }) {
             HStack(spacing: 10) {
-                ProjectStorageIcon(kind: ProjectStorageDetector.kind(for: project.path), size: 13)
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                ProjectStorageIcon(
+                    kind: ProjectStorageDetector.kind(for: project.path),
+                    size: 13,
+                    tint: isSelected ? Color.accentColor : Color.secondary
+                )
                     .frame(width: 24, height: 24)
                     .background(
                         Color.primary.opacity(0.06),
                         in: RoundedRectangle(cornerRadius: 6)
                     )
+                    .help(ProjectStorageHint.text(for: ProjectStorageDetector.kind(for: project.path)))
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
@@ -385,7 +393,9 @@ public struct SettingsView: View {
             return pluginLocalization.string("External Drive")
         case .networkVolume:
             return pluginLocalization.string("Network Volume")
-        case .unavailable:
+        case .missingDirectory:
+            return pluginLocalization.string("Directory Missing")
+        case .unreachableVolume:
             return pluginLocalization.string("Device Unavailable")
         }
     }

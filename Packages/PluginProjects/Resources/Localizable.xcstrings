@@ -421,6 +421,40 @@
         }
       }
     },
+    "Directory Missing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Directory Missing"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目录已丢失"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目錄已遺失"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目錄已遺失"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目錄已遺失"
+          }
+        }
+      }
+    },
     "Files": {
       "extractionState": "manual",
       "localizations": {
@@ -1213,6 +1247,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "狀態"
+          }
+        }
+      }
+    },
+    "This project directory no longer exists on disk.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This project directory no longer exists on disk."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该项目目录在磁盘上已不存在。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "該專案目錄在磁碟上已不存在。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "該專案目錄在磁碟上已不存在。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "該專案目錄在磁碟上已不存在。"
+          }
+        }
+      }
+    },
+    "This project is on a drive that is not currently available.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This project is on a drive that is not currently available."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该项目位于当前不可用的驱动器上。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "該專案位於目前不可用的磁碟機上。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "該專案位於目前不可用的磁碟機上。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "該專案位於目前不可用的磁碟機上。"
           }
         }
       }
