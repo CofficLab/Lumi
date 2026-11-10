@@ -5,7 +5,7 @@
 GitPlugin Git integration plugin for Lumi editor.
 
 平台: macOS 14+, iOS 17+
-测试文件: 15 个，用例总数: 77
+测试文件: 18 个，用例总数: 79
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -52,6 +52,7 @@ GitPlugin Git integration plugin for Lumi editor.
 - **GitStashService**（3 条）：由 `pushPopRoundTrip`、`pushWithNoChangesReturnsNil`、`listAndCountMatch` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitSubmoduleService**（1 条）：由 `submoduleListReturnsEmptyForRepoWithoutSubmodules` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GitBranchDetachedHead**（1 条）：由 `detachedHeadIsNotReportedAsBranch` 锁定；detached HEAD 时 `currentBranch` 必须为 `nil`，提交哈希改由 `detachedHeadCommitHash` 提供。
+- **GitBranchReadFailure**（1 条）：由 `unreadableCurrentBranchThrowsInsteadOfReturningNil` 锁定；`currentBranch` 的 `nil` 只能是 detached HEAD，HEAD 指向缺失引用等读取失败必须抛出（#915）。
 - **GitShowShortHash**（2 条）：由 `shortHashResolvesDetailAndChangedFiles`、`unknownShortHashStillThrows` 锁定；`git_show` 必须接受 `git_log` 输出的 7 位短哈希，详情与变更文件两条路径都用解析后的完整 OID。
 - **综合**（11 条）：由 `sourceControlPluginRegistersEditorContract`、`v2PluginRegistersAllLegacyGitToolNames`、`gitLogToolNormalizesCount` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -137,27 +138,28 @@ GitPlugin Git integration plugin for Lumi editor.
 | 76 | GitBranchDetachedHead | detached HEAD 不当作分支名 | 临时仓库有一次提交 | `checkoutCommit` 后调用 `currentBranch` / `detachedHeadCommitHash` | 分支名为 nil，哈希为完整 OID；切回分支后相反 | P0 | ✅ 已覆盖 | `detachedHeadIsNotReportedAsBranch` |
 | 77 | 综合 | git_branch 的失败分支抛出 `ToolExecutionError`（缺 name、未知 action、工作区脏） | 临时仓库，含一次提交并修改工作区文件 | 依次调用 `git_branch` 的 create / delete / checkout | 三次均抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `gitBranchToolThrowsForInvalidRequests` |
 | 78 | 综合 | git_log / git_commit / git_diff / git_show 的失败分支抛出 `ToolExecutionError` | 非 Git 仓库目录 | 缺 message、缺 hash、对非仓库路径取日志/差异/详情 | 全部抛出 `ToolExecutionError`，不再返回字符串 | P1 | ✅ 已覆盖 | `gitToolsThrowForMissingOrInvalidArguments` |
+| 79 | GitBranchReadFailure | 当前分支读取失败抛出而不是伪装成 detached HEAD（回归 #915） | 临时仓库有一次提交，`.git/HEAD` 指向不存在的 `refs/heads/missing-branch` | 调用 `currentBranch`，同时确认分支列表仍可读 | `currentBranch` 抛出 `LibGit2Error`，不再返回 `nil` | P0 | ✅ 已覆盖 | `unreadableCurrentBranchThrowsInsteadOfReturningNil` |
 
-> 说明：全部 **78 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **79 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
+- P0: 已覆盖 10 / 10
 - P1: 已覆盖 60 / 60
 - P2: 已覆盖 9 / 9
-- **合计: 78 / 78**（仅表示清单场景，非源码覆盖率）
+- **合计: 79 / 79**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（58 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P1**: 其余功能性用例（60 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 76 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 79 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
