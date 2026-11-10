@@ -61,7 +61,7 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 - **并发**（1 条）：由 `concurrentConversationsKeepGlobalSendingFlag` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **插件**（1 条）：由 `shutdownRemovesAgentLoopObserver`、`repeatedShutdownIsSafe` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **MessageSender 回合中再发送的守门**（10 条）：由 `suspendedTurnQueuesNextMessage`、`suspendedTurnClearsSenderBusyFlag` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MessageSender 停止与附件**（3 条）：由 `cancelStopsTurnUnknownToSender`、`cancelStopsSuspendedTurn` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MessageSender 停止与附件**（5 条）：由 `cancelStopsTurnUnknownToSender`、`cancelStopsSuspendedTurn`、`cancelDuringTurnStartupWindowDoesNotReportError` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -99,10 +99,12 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 | 30 | MessageSender 回合中再发送的守门 | ask_user 挂起但队列非空时，新消息排在已有消息之后 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `askUserSuspensionDoesNotBypassQueuedMessages` |
 | 31 | MessageSender 附件读取门禁 | 附件读取计数随 begin / end 增减，多余的 end 不会变负 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `attachmentReadCountTracksBeginAndEnd` |
 | 32 | MessageSender 附件读取门禁 | 最后一个附件读取结束时唤醒等待中的发送入口 | 一次在途读取 + 等待任务 | `endAttachmentRead()` 后等待任务恢复 | 结束前未恢复，结束后恢复 | P0 | ✅ 已覆盖 | `waitResumesWhenLastReadEnds` |
+| 33 | MessageSender 停止与附件 | 启动窗口内取消回合跟踪任务不产生错误消息 | 直接调用 `beginTurn` 停在「Task 已创建未执行」窗口 | 取消该 Task 并等待结束 | 无 `turnFailed` 广播、消息列表无 `.error` 消息、`isSending == false` | P0 | ✅ 已覆盖 | `cancelDuringTurnStartupWindowDoesNotReportError` |
+| 34 | MessageSender 停止与附件 | 启动窗口内停止广播 cancelled 且不产生错误消息 | 同上，走公开入口 `cancelCurrentRequest` | 取消后等待任务结束 | 转交 `agentLoop.cancelTurn`、广播 `turnCompleted(.cancelled)`、无错误消息、仅保留用户消息 | P0 | ✅ 已覆盖 | `cancelCurrentRequestDuringStartupWindowDoesNotReportError` |
 
 > 说明：ID 1–4 为原有套件。ID 5–17 由 `MessageSenderCommitTests`、
 > `MessageSenderCancellationTests`、`MessageSenderObservationTests` 三个新套件补齐，
-> 本表 32 行覆盖 43 个测试方法（参数化用例已展开说明），已在 macOS 上实跑通过。
+> 本表 34 行覆盖 45 个测试方法（参数化用例已展开说明），已在 macOS 上实跑通过。
 >
 > 实现中两条易错约定已在用例里显式锁定：
 > - **提交与回合分离**：`commitUserMessage` 只写库并登记 `pendingTurnStarts`，
@@ -114,10 +116,10 @@ PluginMessageSender 是编辑器里「发送 / 停止」这条链路的实现包
 
 ## 覆盖率统计
 
-- P0: 已覆盖 8 / 8
+- P0: 已覆盖 10 / 10
 - P1: 已覆盖 22 / 22
 - P2: 已覆盖 2 / 2
-- **合计: 32 / 32**（仅表示清单场景，非源码覆盖率）
+- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 

@@ -630,7 +630,9 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     /// 该方法必须保持同步：调用方需要先把 `currentTasks` 写入，才能清除
     /// `pendingTurnStarts`，否则连续回车时会出现一个短暂的“既不 active、
     /// 也不 pending”的窗口。
-    private func beginTurn(conversationID: UUID, userMessageID: UUID) -> Task<Void, Never> {
+    /// 该方法保持 internal 以便测试直接复现「Task 已创建但尚未首次执行」
+    /// 的启动窗口（用户此时点停止）。
+    func beginTurn(conversationID: UUID, userMessageID: UUID) -> Task<Void, Never> {
         isSending = true
         notify(.started(conversationID: conversationID))
         if Self.verbose {
@@ -657,6 +659,13 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)turn completed: conversation=\(conversationID.uuidString.prefix(8))")
                 }
+            } catch is CancellationError {
+                // 启动窗口内被停止：跟踪 Task 还没跑到 waitForAgentLoop 就被
+                // 取消，`checkCancellation` 会抛 CancellationError。取消路径已经
+                // 合成过 `.cancelled`，这里直接退出即可——不能再插入 `.error`
+                // 消息或补发 `turnFailed`，否则用户主动停止会看到红色报错。
+                // `outcome` 初始值就是 `.cancelled`，`defer` 会正常收尾。
+                return
             } catch {
                 if Self.verbose {
                     Self.logger.error("\(Self.t)turn failed: conversation=\(conversationID.uuidString.prefix(8)), error=\(error.localizedDescription)")
