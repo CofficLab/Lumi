@@ -9,6 +9,57 @@ import SwiftUI
 ///
 /// 完整信息（供应商 ID / 模型名 / 时间）通过点击该行弹出 popover 查看，
 /// 避免长标识把时间线挤成省略号。
+/// 「用户切换模型」时间线标记的主行文案。
+///
+/// 抽成纯函数便于单测：模型名相同、供应商不同时，主行必须带上供应商，
+/// 否则会渲染成 `gpt-5 → gpt-5`，看起来什么都没变（#907）。
+enum ModelSwitchSummary {
+    struct Labels: Equatable {
+        let source: String?
+        let target: String
+    }
+
+    static func labels(
+        fromProviderID: String?,
+        fromModelName: String?,
+        toProviderID: String?,
+        toModelName: String?
+    ) -> Labels {
+        // 模型名相同、供应商不同：只显示模型名会变成 `gpt-5 → gpt-5`，
+        // 看起来像没有切换，因此两端都补上供应商（#907）。
+        if let fromModelName, let toModelName, fromModelName == toModelName,
+           let fromProviderID, let toProviderID, fromProviderID != toProviderID {
+            return Labels(
+                source: "\(fromProviderID) · \(fromModelName)",
+                target: "\(toProviderID) · \(toModelName)"
+            )
+        }
+
+        return Labels(
+            source: fromModelName ?? fromProviderID,
+            target: toModelName ?? toProviderID ?? "未知模型"
+        )
+    }
+
+    static func summaryText(
+        fromProviderID: String?,
+        fromModelName: String?,
+        toProviderID: String?,
+        toModelName: String?
+    ) -> String {
+        let labels = labels(
+            fromProviderID: fromProviderID,
+            fromModelName: fromModelName,
+            toProviderID: toProviderID,
+            toModelName: toModelName
+        )
+        guard let source = labels.source else {
+            return "切换到 \(labels.target)"
+        }
+        return "\(source) → \(labels.target)"
+    }
+}
+
 struct ModelSwitchMessageView: View {
     @LumiTheme private var theme
 
@@ -49,10 +100,12 @@ struct ModelSwitchMessageView: View {
 
     /// 主行的可读文本。
     private var summaryText: String {
-        guard let sourceLabel else {
-            return "切换到 \(targetLabel)"
-        }
-        return "\(sourceLabel) → \(targetLabel)"
+        ModelSwitchSummary.summaryText(
+            fromProviderID: fromProviderID,
+            fromModelName: fromModelName,
+            toProviderID: toProviderID,
+            toModelName: toModelName
+        )
     }
 
     // MARK: - Body
