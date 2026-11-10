@@ -21,7 +21,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiProviders"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),

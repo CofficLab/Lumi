@@ -9,13 +9,13 @@ let package = Package(
         .library(name: "PluginConversationStats", targets: ["PluginConversationStats"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiKernel"),
-        .package(path: "../../Vendor/LumiLogging"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderAgentLoop"),
-        .package(path: "../../Vendor/LumiUI"),
-        .package(path: "../../Vendor/LumiLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.13.0"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
     ],
     targets: [
         .target(

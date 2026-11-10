@@ -4,17 +4,17 @@ import PackageDescription
 let package = Package(
     name: "PluginConversationCacheHitRate",
     defaultLocalization: "en",
-    platforms: [.macOS("13.1"), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginConversationCacheHitRate", targets: ["PluginConversationCacheHitRate"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiKernel"),
-        .package(path: "../../Vendor/LumiLogging"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
-        .package(path: "../../Vendor/LumiLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
     ],
     targets: [
         .target(

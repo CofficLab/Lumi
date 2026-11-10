@@ -5,7 +5,7 @@ let package = Package(
     name: "KitHTMLPreview",
     defaultLocalization: "en",
     platforms: [
-        .macOS("13.1"),
+        .macOS("14.0"),
         .iOS(.v17)
     ],
     products: [
@@ -15,7 +15,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
     ],
 
     targets: [

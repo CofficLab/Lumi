@@ -4,19 +4,19 @@ import PackageDescription
 let package = Package(
     name: "PluginTextActions",
     defaultLocalization: "en",
-    platforms: [.macOS("13.1"), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginTextActions", targets: ["TextActionsPlugin"])
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiKernel"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../KitLLM"),
-        .package(path: "../../Vendor/LumiUI"),
-        .package(path: "../../Vendor/LumiLocalization"),
-        .package(path: "../../Vendor/LumiLogging"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.13.0"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderLLMManager"),
-        .package(path: "../../Vendor/LumiSettings"),
-        .package(path: "../../Vendor/LumiProviders"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0"),
         .package(path: "../KitTestSupport"),
     ],
     targets: [

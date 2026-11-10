@@ -4,14 +4,14 @@ import PackageDescription
 let package = Package(
     name: "PluginProjectFiles",
     defaultLocalization: "en",
-    platforms: [.macOS("13.1"), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginProjectFiles", targets: ["PluginProjectFiles"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiKernel"),
-        .package(path: "../../Vendor/LumiUI"),
-        .package(path: "../../Vendor/LumiProviders"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.13.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0"),
     ],
     targets: [
         .target(

@@ -3,15 +3,15 @@ import PackageDescription
 
 let package = Package(
     name: "PluginGithubMCP",
-    platforms: [.macOS("13.1")],
+    platforms: [.macOS("14.0")],
     products: [
         .library(name: "PluginGithubMCP", targets: ["PluginGithubMCP"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiKernel"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../KitMCP"),
         .package(path: "../ProviderMCP"),
-        .package(path: "../../Vendor/LumiLogging"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(

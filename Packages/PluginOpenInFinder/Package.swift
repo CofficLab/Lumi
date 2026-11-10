@@ -9,12 +9,12 @@ let package = Package(
         .library(name: "PluginOpenInFinder", targets: ["PluginOpenInFinder"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiKernel"),
-        .package(path: "../../Vendor/LumiLocalization"),
-        .package(path: "../../Vendor/LumiLogging"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitOpenIn"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../../Vendor/LumiProviders")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0")
     ],
     targets: [
         .target(
