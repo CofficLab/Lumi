@@ -18,14 +18,16 @@ import SwiftUI
 
 /// ZCode（V4）消息列表插件。
 ///
-/// 与 V3（`PluginMessageListDetailedPlugin`）**完全独立**：
-/// 独立的插件 ID、独立的 observer、独立的 `ListV3ViewModel` 实例、
-/// 独立的 shutdown。不与 V3 共享任何可变单例。
+/// 与 V1–V3 一样是**独立 Package**（`PluginMessageListZCode`）：
+/// 独立的插件 ID、独立的 observer、独立的 `ListV4ViewModel` 实例、
+/// 独立的 shutdown。不与其它消息列表包共享任何可变单例。
 ///
-/// - Important: 与 V3 共用同一 target（`PluginMessageListDetailed`）是有意为之：
-///   `ListV3ViewModel`、分页、消息快照、流式事件、工具组合、`List` cell 复用、
-///   初始定位与滚动协调底座都是 internal 且体量较大；新建 package 会迫使复制
-///   或扩大大量 API。
+/// - Important: 本包**不依赖**任何其它消息列表包（插件不得依赖插件）。
+///   `ListV4ViewModel`、分页、消息快照、流式事件、工具组合、
+///   `List` cell 复用、初始定位与滚动协调底座都在本包内**各自实现一份**。
+///
+///   代价是 V3 与 V4 存在两份近似的基础设施实现；
+///   收益是各档位可以独立演进、独立发布，且 V3 的行为完全不受 V4 影响。
 @MainActor
 public final class PluginMessageListZCodePlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.message-list.zcode", category: "MessageListZCode")
@@ -42,14 +44,14 @@ public final class PluginMessageListZCodePlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
-    private var viewModel: ListV3ViewModel?
+    private var viewModel: ListV4ViewModel?
     private var developerModeObserver: DeveloperModeStateObserver?
     private var messageChangeObserver: (any MessageChangeObserverHandle)?
     private var conversationStateObserver: (any ConversationStateObserverHandle)?
     private var streamingObserver: (any MessageStreamingObserverHandle)?
     private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
     private var conversationObserver: (any ConversationObserverHandle)?
-    private var verbosityObservation: VerbosityObservationBox?
+    private var verbosityObservation: ZCodeVerbosityObservationBox?
     /// UI 测试夹具的 seed 句柄（仅 DEBUG 下存在）。
     private var uiTestingSeedHandle: (any ConversationObserverHandle)?
 
@@ -94,12 +96,12 @@ public final class PluginMessageListZCodePlugin: SuperPlugin, SuperLog {
             toolbar: toolbar.map(MessageListToolbarCapabilityAdapter.init(toolbar:)),
             chat: MessageListChatSectionCapabilityAdapter(chat: chat),
         )
-        // - Important: 创建**自己的** `ListV3ViewModel`，不共享 V3 的可变实例。
+        // - Important: 创建**自己的** `ListV4ViewModel`，不共享 V3 的可变实例。
         //   `streamingDisplayEnabled` 保持生产默认值 false。
-        let viewModel = ListV3ViewModel(services: services)
+        let viewModel = ListV4ViewModel(services: services)
         self.viewModel = viewModel
 
-        let verbosityObservation = VerbosityObservationBox(
+        let verbosityObservation = ZCodeVerbosityObservationBox(
             conversations: conversations,
             chat: chat,
             pluginID: id,

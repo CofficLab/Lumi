@@ -3,6 +3,7 @@ import KernelCore
 import PluginMessageListDetailed
 import PluginMessageListEmpty
 import PluginMessageListStandard
+import PluginMessageListZCode
 import PluginMessageManager
 import ProviderChatSection
 import ProviderConversation
@@ -90,7 +91,8 @@ struct MessageListSlotArbitrationTests {
         #expect(!page.isEmpty, "前提失败：会话应当有消息")
     }
 
-    /// V4（ZCode）与 V1–V3 共处同一个 `message-list` exclusiveGroup。
+    /// V4（ZCode）与 V1–V3 共处同一个 `message-list` exclusiveGroup，
+    /// 但各自是**独立 package**、独立插件。
     ///
     /// 核心不变式：**任一时刻 active 的 message-list item 至多一个**。
     /// 只断言「排序后的 winner」是不够的 —— 两个插件同时 active 时，

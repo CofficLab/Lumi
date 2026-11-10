@@ -1,0 +1,499 @@
+import Foundation
+import KitMarkdown
+import ProviderConversation
+import ProviderConversationState
+import ProviderMessage
+import ProviderMessageRendering
+import ProviderMessageStreaming
+import ProviderToolManager
+
+/// Cheap fingerprint of the inputs that decide `MessageListRowBuilder.buildHistory`
+/// output, used to skip the (O(rows × content) memberwise) `historyRows` array
+/// comparison when nothing relevant changed between calls.
+private struct HistoryBuildSignatureV4: Equatable {
+    let conversationID: UUID?
+    let verbosity: ResponseVerbosity
+    /// 流式行可见性翻转时 status 行显隐不同，需纳入签名以触发重算。
+    let hidesStatus: Bool
+    /// Per persisted message — captures additions/removals/reordering AND
+    /// content edits while staying far cheaper than comparing full content strings.
+    let fingerprints: [MessageFingerprintV4]
+}
+
+private struct MessageFingerprintV4: Equatable {
+    let id: UUID
+    /// 内容指纹。
+    ///
+    /// 用**哈希**而不是长度：等长替换（"AAAA" → "BBBB"）长度不变，按长度判定
+    /// 会漏掉这种更新，历史行会继续持有旧文本。消息的落库版本可能因为重写、
+    /// 重试覆盖而产生等长结果，这不是纯理论情况。
+    let contentHash: Int
+    let role: MessageRole
+    let isToolExecutionOnly: Bool
+    let toolCallResultState: [String]
+    /// 授权状态（`pendingAuthorization` → `userApproved` / `userRejected`）。
+    ///
+    /// 它与 `result` 一起决定渲染层要不要再弹一次授权卡片
+    /// （`ToolApprovalRowRenderer.canRender`），因此必须纳入指纹：
+    /// 只比较结果内容长度与 `awaitingUserResponse` 的话，
+    /// 「结果没变、只有授权状态变了」这种回写会被漏掉，
+    /// 历史行会继续持有「等待授权」的旧快照。
+    let toolCallAuthorizationState: [String]
+}
+
+/// Message List V3 View Model (detailed / 详细模式)
+///
+/// 与 V2 的差异：V3 (detailed) 会**显示思考内容**（`reasoningContent`），
+/// V2 (standard) 不显示。思考内容显示逻辑在此基础上增量加入；当前与 V2 行为一致，
+/// 保留独立类型以便后续差异演化（与旧版结构保持一致）。
+///
+/// - **分页数据**：首屏加载 / 向上翻页 / 尾部刷新 / 窗口回收，
+///   委托给 `MessageListPaginationService`。
+/// - **行合并**：真实落库消息 + 状态行，委托给 `MessageListRowBuilder`。
+/// - **渲染器分发**：View 直接从 `MessageRenderingProviding` 获取渲染器，
+///   并透传 `verbosity`，本 viewmodel 不参与渲染。
+@MainActor
+final class ListV4ViewModel: ObservableObject {
+    /// 流式逐字显示开关。
+    ///
+    /// 曾是 `static` 全局开关，测试并行执行时会互相覆盖，导致同一 suite
+    /// 内单跑通过、并行失败。改为实例属性 + 构造注入后不再有共享状态。
+    /// 生产代码从不设置它，默认关闭。
+    private let streamingDisplayEnabled: Bool
+
+    init(
+        services: MessageListServices,
+        pagination: MessageListPaginationService = MessageListPaginationService(),
+        streamingDisplayEnabled: Bool = false
+    ) {
+        self.services = services
+        self.pagination = pagination
+        self.streamingDisplayEnabled = streamingDisplayEnabled
+    }
+
+    // MARK: - Published State (供 View 展示)
+
+    /// 稳定历史展示行：落库消息快照/结构化插入消息 + 状态行。
+    @Published private(set) var historyRows: [Message] = []
+
+    /// 流式临时行（独立于历史行）。语义同 V2；详见 `ListV2ViewModel.streamingRow`。
+    @Published private(set) var streamingRow: Message?
+    @Published private(set) var activityMessage: Message?
+
+    /// 内存中的真实落库消息（分页窗口），按时间升序；`hasPersistedMessages` 由它派生。
+    @Published private(set) var persistedMessages: [Message] = [] {
+        didSet { rebuildHistoryRows() }
+    }
+
+    /// 顶部是否还有更早的消息未加载。
+    @Published private(set) var hasEarlierMessages = false
+    /// 首屏 loading：切换会话时为 true，首屏数据就绪后置 false。
+    @Published private(set) var isLoading = true
+    /// 正在加载更早一页（View 分页按钮的 loading 态）。
+    @Published private(set) var isLoadingEarlier = false
+
+    /// V1 (brief) 模式下应**默认展开**的工具步骤组（助手消息 id）集合。
+    /// 当前策略是所有步骤组默认收起，因此该集合保持为空。
+    @Published private(set) var activeStepGroupMessageIDs: Set<UUID> = []
+
+    /// ToolManager-backed summaries keyed by AgentTurn ID。
+    @Published private(set) var turnActivitySummaries: [UUID: LumiTurnActivitySummary] = [:]
+
+    /// 最近一次当前会话的用户消息插入，用于让 View 在用户发送后滚到底部。
+    @Published private(set) var latestUserMessageID: UUID?
+
+    // MARK: - Dependencies & Internal State
+
+    private let services: MessageListServices
+    private let pagination: MessageListPaginationService
+    private let rowBuilder = MessageListRowBuilder()
+    private let tailRefreshGate = MessageListTailRefreshGate()
+
+    /// 切换会话时记录的目标会话，用于丢弃过期的后台读结果。
+    private var activeConversationID: UUID?
+    /// 单飞帧门禁：把逐 token 事件合并成每帧（~16ms）最多一次刷新。
+    private var streamingRefreshTask: Task<Void, Never>?
+    /// 流式行上次的可见性（nil↔非 nil），用于在切换时重算历史行。
+    private var streamingRowWasVisible = false
+    /// Signature of the inputs used to build the last `historyRows`。
+    private var lastHistoryBuildSignature: HistoryBuildSignatureV4?
+    /// 激活序列号，用于防止并发切换时旧的异步加载结果回写。
+    private var activationSequence: UInt64 = 0
+
+    // MARK: - Read-only Accessors (View 展示用)
+    var selectedConversationID: UUID? {
+        services.selectedConversationID
+    }
+
+    /// 内存中是否已有真实落库消息；供 View 判断空态（流式/状态行不算）。
+    var hasPersistedMessages: Bool {
+        !persistedMessages.isEmpty
+    }
+
+    /// 当前会话的响应详细程度；由 View 透传给渲染闭包。
+    var verbosity: ResponseVerbosity {
+        services.verbosity(for: selectedConversationID)
+    }
+
+    func renderer(for message: Message) -> MessageRendererItem? {
+        services.rendering?.renderer(for: message)
+    }
+
+    /// Loads the display snapshot for one AgentTurn.
+    func turnActivity(for turnID: UUID, conversationID: UUID) async -> LumiTurnActivity? {
+        guard let toolManager = services.toolManager else { return nil }
+        let records = await toolManager.toolCalls(for: turnID)
+        let state = services.agentTurn?.state(for: conversationID) ?? .idle
+        return TurnActivityBuilder.build(
+            turnID: turnID,
+            conversationID: conversationID,
+            state: state,
+            toolCalls: records
+        )
+    }
+
+    // MARK: - Lifecycle
+
+    /// 切换/进入会话：记录目标会话并加载最近一页；外部订阅由插件维护。
+    func activate(conversationID: UUID?) async {
+        // Ignore requests for a selection that is no longer current. The view
+        // uses activateCurrentConversation() so delayed view tasks cannot
+        // overwrite a newer conversation snapshot.
+        guard selectedConversationID == conversationID else { return }
+        activationSequence &+= 1
+        let mySequence = activationSequence
+
+        activeConversationID = conversationID
+        latestUserMessageID = nil
+        // 切换会话：清掉上一会话的流式行残留。
+        streamingRow = nil
+        activityMessage = services.activityMessage(for: conversationID)
+        streamingRowWasVisible = false
+        persistedMessages = []
+        hasEarlierMessages = false
+        turnActivitySummaries = [:]
+        isLoading = true
+        defer {
+            if mySequence == activationSequence {
+                isLoading = false
+            }
+        }
+        await loadFirstPage(conversationID: conversationID, sequence: mySequence)
+        guard mySequence == activationSequence,
+              selectedConversationID == conversationID else { return }
+        if let conversationID {
+            await refreshTurnActivitySummaries(conversationID: conversationID, sequence: mySequence)
+        } else {
+            turnActivitySummaries = [:]
+        }
+    }
+
+    /// Starts activation with the selection observed at task execution time.
+    func activateCurrentConversation() async {
+        await activate(conversationID: selectedConversationID)
+    }
+
+    /// 会话设置（verbosity 等）变化后的轻量刷新。
+    func refreshConversationSettingsIfNeeded() {
+        rebuildHistoryRows()
+    }
+
+    // MARK: - Pagination
+
+    /// 向上翻页：加载更早一页并 prepend，触发窗口回收。
+    /// - Returns: prepend 前最早一条消息的 id，View 应把它钉回视口顶部。
+    func loadEarlier() async -> UUID? {
+        guard let conversationID = selectedConversationID,
+              !isLoadingEarlier,
+              let currentFirstID = persistedMessages.first?.id else { return nil }
+        isLoadingEarlier = true
+        defer { isLoadingEarlier = false }
+        guard let result = await pagination.loadEarlier(
+            conversationID: conversationID,
+            messageManager: services.messages,
+            currentFirstID: currentFirstID,
+            hasEarlier: hasEarlierMessages
+        ) else { return nil }
+        // 加载期间用户可能切了会话，丢弃过期结果。
+        guard selectedConversationID == conversationID else { return nil }
+        persistedMessages = result.earlier + persistedMessages
+        hasEarlierMessages = result.hasEarlierMessages
+        persistedMessages = pagination.evictTailIfNeeded(messages: persistedMessages)
+        return result.anchorID
+    }
+
+    /// 尾部刷新：重新查最近一页，与当前尾部比对并覆盖（新消息到达 / 流式落库）。
+    @discardableResult
+    func refreshTail() async -> Bool {
+        await tailRefreshGate.run { [weak self] in
+            guard let self else { return false }
+            return await self.performTailRefresh()
+        }
+    }
+
+    /// Performs one tail snapshot read. The gate above guarantees this method
+    /// is never active more than once and requests arriving during I/O receive
+    /// one trailing pass before the owner returns.
+    private func performTailRefresh() async -> Bool {
+        guard let conversationID = selectedConversationID else { return false }
+        guard let result = await pagination.refreshTail(
+            conversationID: conversationID,
+            messageManager: services.messages,
+            current: persistedMessages
+        ) else { return false }
+        guard selectedConversationID == conversationID else { return false }
+
+        let messagesChanged = persistedMessages != result.merged
+        let hasEarlierChanged = result.hasEarlierMessages.map { $0 != hasEarlierMessages } ?? false
+        guard messagesChanged || hasEarlierChanged else { return false }
+
+        if messagesChanged {
+            persistedMessages = result.merged
+        }
+        if let hasEarlier = result.hasEarlierMessages, hasEarlierChanged {
+            hasEarlierMessages = hasEarlier
+        }
+        if messagesChanged {
+            await refreshTurnActivitySummaries(conversationID: conversationID)
+        }
+        return messagesChanged
+    }
+
+    // MARK: - Private
+
+    /// 首屏：加载最近一页，并探测是否还有更早消息。
+    private func loadFirstPage(conversationID: UUID?, sequence: UInt64) async {
+        guard let conversationID else {
+            persistedMessages = []
+            hasEarlierMessages = false
+            isLoading = false
+            return
+        }
+        let result = await pagination.loadFirstPage(
+            conversationID: conversationID,
+            messageManager: services.messages
+        )
+        // 切换会话期间用户可能又选了别的会话，丢弃过期结果。
+        guard sequence == activationSequence,
+              selectedConversationID == conversationID else { return }
+        persistedMessages = result.messages
+        hasEarlierMessages = result.hasEarlierMessages
+        isLoading = false
+    }
+
+    /// Refreshes only the turns represented by the current message window.
+    private func refreshTurnActivitySummaries(conversationID: UUID, sequence: UInt64? = nil) async {
+        guard let toolManager = services.toolManager else {
+            if !turnActivitySummaries.isEmpty {
+                turnActivitySummaries = [:]
+            }
+            return
+        }
+        let turnIDs = Set(
+            persistedMessages
+                .filter { $0.conversationID == conversationID }
+                .compactMap(\.turnID)
+        )
+        guard !turnIDs.isEmpty else {
+            if !turnActivitySummaries.isEmpty {
+                turnActivitySummaries = [:]
+            }
+            return
+        }
+
+        // 一次批量查询取回窗口内所有 turn 的调用记录。
+        //
+        // 逐 turn 查询会让刷新成本随窗口内 turn 数线性放大：窗口有几十个 turn
+        // 时，每次消息事件（工具结果回写）都要发几十次查询，而这些统计在
+        // V2/V3 的视图里并没有消费点。
+        let records = await toolManager.toolCalls(forTurnIDs: Array(turnIDs))
+        var recordsByTurn: [UUID: [ToolCallRecord]] = [:]
+        for record in records {
+            guard let turnID = record.turnID else { continue }
+            recordsByTurn[turnID, default: []].append(record)
+        }
+
+        var summaries: [UUID: LumiTurnActivitySummary] = [:]
+        for turnID in turnIDs {
+            let turnRecords = recordsByTurn[turnID] ?? []
+            let durations = turnRecords.compactMap(\.duration)
+            summaries[turnID] = LumiTurnActivitySummary(
+                turnID: turnID,
+                totalCount: turnRecords.count,
+                completedCount: turnRecords.filter { $0.completedAt != nil }.count,
+                failedCount: turnRecords.filter(\.resultIsError).count,
+                totalDuration: durations.isEmpty ? nil : durations.reduce(0, +)
+            )
+        }
+        guard sequence.map({ $0 == activationSequence }) ?? true,
+              selectedConversationID == conversationID else { return }
+        if turnActivitySummaries != summaries {
+            turnActivitySummaries = summaries
+        }
+    }
+
+    func handleSelectedConversationChange(_ conversationID: UUID?) {
+        // Invalidate the previous conversation before the async activation
+        // task starts, so rapid switching cannot publish stale snapshots.
+        activationSequence &+= 1
+        Task { @MainActor [weak self] in
+            await self?.activate(conversationID: conversationID)
+        }
+    }
+
+    func handleConversationStateChange(_ event: ConversationStateEvent) {
+        guard case let .updated(conversationID) = event,
+              conversationID == selectedConversationID else { return }
+        activityMessage = services.activityMessage(for: conversationID)
+    }
+
+    func handleStreamingChange(_ change: MessageStreamingChange) {
+        guard case let .updated(conversationID) = change,
+              conversationID == selectedConversationID else { return }
+        scheduleStreamingRefresh()
+    }
+
+    /// Applies an insertion directly from the in-memory message event.
+    func handleMessageChange(_ change: MessageChange) {
+        switch change {
+        case let .inserted(message, conversationID):
+            guard conversationID == selectedConversationID,
+                  message.role != .tool else { return }
+            if message.role == .user { latestUserMessageID = message.id }
+            var next = persistedMessages
+            if let index = next.firstIndex(where: { $0.id == message.id }) {
+                next[index] = message
+            } else {
+                next.append(message)
+                next.sort {
+                    if $0.createdAt == $1.createdAt { return $0.id < $1.id }
+                    return $0.createdAt < $1.createdAt
+                }
+            }
+            // Important: 这里**不**按 `maxRetainedCount` 裁剪窗口头部。
+            //
+            // 裁掉的是**最旧**的消息 —— 用户可能刚翻到那里看历史，新消息一到
+            // 它们就从窗口里消失了。窗口长度由另外两条路径守住：
+            // 尾部刷新（`refreshTail` 用最近一页替换窗口尾部，长度保持不变）
+            // 与向上翻页时的窗口回收（`evictTailIfNeeded`）。
+            persistedMessages = next
+        case let .persisted(_, conversationID),
+             let .updated(conversationID: conversationID),
+             let .deleted(_, conversationID: conversationID),
+             let .cleared(conversationID: conversationID):
+            guard conversationID == selectedConversationID else { return }
+            Task { @MainActor [weak self] in await self?.refreshTail() }
+        }
+    }
+
+    /// 帧门禁：把逐 token 的流式广播合并成每帧（~16ms）最多一次刷新。
+    private func scheduleStreamingRefresh() {
+        guard streamingRefreshTask == nil else { return }
+        streamingRefreshTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 16_000_000)
+            guard !Task.isCancelled, let self else { return }
+            self.streamingRefreshTask = nil
+            self.applyStreamingState()
+        }
+    }
+
+    /// 从流式服务读取当前状态，更新 `streamingRow`。可见性规则同 V2。
+    private func applyStreamingState() {
+        guard streamingDisplayEnabled, verbosity != .brief else {
+            updateStreamingRow(nil)
+            return
+        }
+        guard let streaming = services.streaming,
+              let conversationID = selectedConversationID else {
+            updateStreamingRow(nil)
+            return
+        }
+        let stage = streaming.stage(for: conversationID)
+        let row = streaming.streamingMessage(for: conversationID)
+        if (stage == .thinking || stage == .generating), let row,
+           row.conversationID == conversationID {
+            updateStreamingRow(row)
+        } else {
+            updateStreamingRow(nil)
+        }
+        activityMessage = streamingRow == nil
+            ? services.activityMessage(for: conversationID)
+            : nil
+    }
+
+    /// 更新流式行，并在可见性切换（nil↔非 nil）时重算历史行（隐藏/恢复 status 行）。
+    private func updateStreamingRow(_ row: Message?) {
+        let nowVisible = row != nil
+        streamingRow = row
+        if nowVisible != streamingRowWasVisible {
+            streamingRowWasVisible = nowVisible
+            rebuildHistoryRows()
+        }
+    }
+
+    /// Rebuilds only stable history rows from persisted messages. History rows
+    /// are database-driven; the only streaming influence is `hidesStatus`.
+    private func rebuildHistoryRows() {
+        let verbosity = self.verbosity
+        let conversationID = selectedConversationID
+        let hidesStatus = streamingRow != nil
+        let signature = HistoryBuildSignatureV4(
+            conversationID: conversationID,
+            verbosity: verbosity,
+            hidesStatus: hidesStatus,
+            fingerprints: persistedMessages.map {
+                MessageFingerprintV4(
+                    id: $0.id,
+                    contentHash: $0.content.hashValue,
+                    role: $0.role,
+                    isToolExecutionOnly: $0.isToolExecutionOnly,
+                    toolCallResultState: $0.toolCalls?.map {
+                        let result = $0.result
+                        let resultState = result.map {
+                            "\($0.content.count):\($0.awaitingUserResponse == true)"
+                        } ?? "nil"
+                        return "\($0.id):\(resultState)"
+                    } ?? [],
+                    toolCallAuthorizationState: $0.toolCalls?.map {
+                        "\($0.id):\($0.authorizationState ?? "nil")"
+                    } ?? []
+                )
+            }
+        )
+
+        guard signature != lastHistoryBuildSignature else { return }
+        lastHistoryBuildSignature = signature
+        let rows = rowBuilder.buildHistory(
+            persisted: persistedMessages,
+            conversationID: conversationID,
+            verbosity: verbosity,
+            hidesStatus: hidesStatus
+        )
+        if historyRows != rows {
+            historyRows = rows
+        }
+    }
+}
+
+/// ToolManager-backed per-turn activity summary（统计视图使用）。
+struct LumiTurnActivitySummary: Equatable, Sendable {
+    let turnID: UUID
+    let totalCount: Int
+    let completedCount: Int
+    let failedCount: Int
+    let totalDuration: TimeInterval?
+
+    init(
+        turnID: UUID,
+        totalCount: Int,
+        completedCount: Int,
+        failedCount: Int,
+        totalDuration: TimeInterval?
+    ) {
+        self.turnID = turnID
+        self.totalCount = totalCount
+        self.completedCount = completedCount
+        self.failedCount = failedCount
+        self.totalDuration = totalDuration
+    }
+}

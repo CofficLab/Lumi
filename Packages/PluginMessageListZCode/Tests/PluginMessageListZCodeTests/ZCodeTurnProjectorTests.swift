@@ -1,11 +1,11 @@
 import Foundation
 import ProviderMessage
 import Testing
-@testable import PluginMessageListDetailed
+@testable import PluginMessageListZCode
 
 /// V4（ZCode）轮次投影契约测试。
 ///
-/// 投影的唯一输入是 `ListV3ViewModel.historyRows`（已含 `.tool` 过滤与
+/// 投影的唯一输入是 `ListV4ViewModel.historyRows`（已含 `.tool` 过滤与
 /// 连续 tool-only 合并），因此这里直接用构造好的 `Message` 数组作为输入。
 ///
 /// 核心不变式：

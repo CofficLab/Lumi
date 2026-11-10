@@ -1,7 +1,7 @@
 import CoreGraphics
 import Foundation
 import Testing
-@testable import PluginMessageListDetailed
+@testable import PluginMessageListZCode
 
 /// V4（ZCode）滚动所有权 reducer 契约测试。
 ///

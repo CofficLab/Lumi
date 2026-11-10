@@ -118,6 +118,7 @@ import PluginMessageListEmpty
 import PluginMessageListBrief
 import PluginMessageListStandard
 import PluginMessageListDetailed
+import PluginMessageListZCode
 import PluginMessageManager
 import PluginMessageRenderer
 import PluginMessageSender
