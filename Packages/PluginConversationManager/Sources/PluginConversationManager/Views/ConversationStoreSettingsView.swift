@@ -324,7 +324,7 @@ public struct ConversationStoreSettingsView: View {
             VStack(spacing: 0) {
                 AppSettingRow(
                     title: L("Verbosity"),
-                    description: conversation.verbosity?.displayName ?? L("Default"),
+                    description: verbosityLabel(conversation.verbosity),
                     icon: "text.quote"
                 ) {
                     EmptyView()
@@ -481,6 +481,16 @@ public struct ConversationStoreSettingsView: View {
 
     private func formattedListDate(_ date: Date) -> String {
         date.formatted(date: .abbreviated, time: .standard)
+    }
+
+    /// 详细度的显示名。`ProviderConversation` 只保留行为，界面文案由插件目录维护（#920）。
+    private func verbosityLabel(_ verbosity: ResponseVerbosity?) -> String {
+        switch verbosity {
+        case .brief: L("Brief")
+        case .standard: L("Standard")
+        case .detailed: L("Detailed")
+        case nil: L("Default")
+        }
     }
 
     private func formattedDate(_ date: Date) -> String {
