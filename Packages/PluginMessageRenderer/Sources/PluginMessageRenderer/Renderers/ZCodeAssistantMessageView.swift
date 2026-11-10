@@ -39,11 +39,24 @@ enum ZCodeAssistantTextStyle {
     ///
     /// - Important: SwiftUI 的 `.lineSpacing` 是「额外间距」，
     ///   所以必须由目标行高减去字体自身的行高得到。
+    ///
+    /// - Important: `NSFont` 的度量访问**不是线程安全的**。
+    ///   这里用锁串行化：`static let` 的惰性初始化可能发生在任意线程，
+    ///   与并发的其它字体读取竞争时，AppKit 可能返回一个**降级字体**，
+    ///   于是同一进程内两次读到的行高不同（实测出现过 16.49 与 12.0）。
+    ///
+    ///   - Note: 锁必须覆盖「取字体 → 读度量 → 算结果」整段，
+    ///     只保护写入是不够的。
     static let lineSpacing: CGFloat = {
+        fontMetricsLock.lock()
+        defer { fontMetricsLock.unlock() }
         let font = NSFont.systemFont(ofSize: fontSize)
         let fontLineHeight = font.ascender - font.descender + font.leading
         return max(0, targetLineHeight - fontLineHeight)
     }()
+
+    /// 保护字体度量的读取。
+    private static let fontMetricsLock = NSLock()
 
     // MARK: - 呈现形态
 
