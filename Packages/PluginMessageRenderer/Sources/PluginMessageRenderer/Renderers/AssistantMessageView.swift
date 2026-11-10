@@ -19,9 +19,18 @@ struct AssistantMessageView: View {
     }
 
     var body: some View {
-        // V4（ZCode）：独立呈现 —— 无气泡、无旧 chrome，
-        // 轮尾操作栏按 turn 出现。其余版本继续走旧路径。
-        if ZCodeAssistantTextStyle.usesZCodePresentation(verbosity: verbosity) {
+        // V5（ChatGPT）：独立呈现 —— 无气泡、无旧 chrome，
+        // 居中阅读列，轮尾操作按 turn 出现。
+        if ChatGPTAssistantTextStyle.usesChatGPTPresentation(verbosity: verbosity) {
+            ChatGPTAssistantMessageView(
+                capability: capability,
+                stateViewModel: stateViewModel,
+                message: message,
+                verbosity: verbosity
+            )
+        } else if ZCodeAssistantTextStyle.usesZCodePresentation(verbosity: verbosity) {
+            // V4（ZCode）：独立呈现 —— 无气泡、无旧 chrome，
+            // 轮尾操作栏按 turn 出现。其余版本继续走旧路径。
             ZCodeAssistantMessageView(
                 capability: capability,
                 stateViewModel: stateViewModel,

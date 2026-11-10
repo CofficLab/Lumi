@@ -109,9 +109,11 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             },
             render: { message, verbosity in
                 AnyView(
-                    verbosity == .zcode
-                        ? AnyView(ZCodeTimelineMarkerView(message: message))
-                        : AnyView(TurnCompletedMessageView(message: message))
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(TurnCompletedMessageView(message: message))
                 )
             }
         ))
@@ -124,9 +126,11 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             },
             render: { message, verbosity in
                 AnyView(
-                    verbosity == .zcode
-                        ? AnyView(ZCodeTimelineMarkerView(message: message))
-                        : AnyView(ContextCompactionMessageView(message: message))
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(ContextCompactionMessageView(message: message))
                 )
             }
         ))
@@ -139,9 +143,11 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             },
             render: { message, verbosity in
                 AnyView(
-                    verbosity == .zcode
-                        ? AnyView(ZCodeTimelineMarkerView(message: message))
-                        : AnyView(AgentLoopRetryMessageView(message: message))
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(AgentLoopRetryMessageView(message: message))
                 )
             }
         ))
@@ -154,9 +160,11 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             },
             render: { message, verbosity in
                 AnyView(
-                    verbosity == .zcode
-                        ? AnyView(ZCodeTimelineMarkerView(message: message))
-                        : AnyView(GoalTaskContinuationMessageView(message: message))
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(GoalTaskContinuationMessageView(message: message))
                 )
             }
         ))
@@ -169,9 +177,11 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             },
             render: { message, verbosity in
                 AnyView(
-                    verbosity == .zcode
-                        ? AnyView(ZCodeTimelineMarkerView(message: message))
-                        : AnyView(ModelSwitchMessageView(message: message))
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(ModelSwitchMessageView(message: message))
                 )
             }
         ))
@@ -186,9 +196,11 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             },
             render: { message, verbosity in
                 AnyView(
-                    verbosity == .zcode
-                        ? AnyView(ZCodeTimelineMarkerView(message: message))
-                        : AnyView(StatusMessageView(message: message, verbosity: verbosity))
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(StatusMessageView(message: message, verbosity: verbosity))
                 )
             }
         ))
@@ -202,13 +214,19 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             },
             render: { [capability] message, verbosity in
                 AnyView(
-                    verbosity == .zcode
-                        ? AnyView(ZCodeTimelineMarkerView(message: message))
-                        : AnyView(ErrorMessageView(
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTErrorMessageView(
                             capability: capability,
                             message: message,
                             verbosity: verbosity
                         ))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(ErrorMessageView(
+                                capability: capability,
+                                message: message,
+                                verbosity: verbosity
+                            ))
                 )
             }
         ))
@@ -286,9 +304,11 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             },
             render: { message, verbosity in
                 AnyView(
-                    verbosity == .zcode
-                        ? AnyView(ZCodeTimelineMarkerView(message: message))
-                        : AnyView(SystemMessageView(message: message, verbosity: verbosity))
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(SystemMessageView(message: message, verbosity: verbosity))
                 )
             }
         ))
@@ -300,9 +320,11 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             canRender: { _ in true },
             render: { message, verbosity in
                 AnyView(
-                    verbosity == .zcode
-                        ? AnyView(ZCodeTimelineMarkerView(message: message))
-                        : AnyView(DefaultMessageView(message: message, verbosity: verbosity))
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTDefaultMessageView(message: message, verbosity: verbosity))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(DefaultMessageView(message: message, verbosity: verbosity))
                 )
             }
         ))

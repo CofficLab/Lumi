@@ -263,10 +263,3 @@ enum ChatGPTUserBubbleStyle {
         content
     }
 }
-
-enum ChatGPTRendererAccessibilityIdentifiers {
-    static let userBubble = "lumi.message.chatgpt.user-bubble"
-    static let userBubbleBody = "lumi.message.chatgpt.user-bubble-body"
-    static let userCopyButton = "lumi.message.chatgpt.user-copy"
-    static let userResendButton = "lumi.message.chatgpt.user-resend"
-}
