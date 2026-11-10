@@ -62,7 +62,7 @@ let package = Package(
         ),
         .testTarget(
             name: "ProjectRAGEngineTests",
-            dependencies: ["ProjectRAGEngine"],
+            dependencies: ["ProjectRAGEngine", "CSQLite"],
             path: "Tests/ProjectRAGEngineTests"
         ),
     ]

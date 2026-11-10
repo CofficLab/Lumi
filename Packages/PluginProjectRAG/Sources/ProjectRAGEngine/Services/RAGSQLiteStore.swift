@@ -5,6 +5,47 @@ import Foundation
 /// vec0.dylib 随 SQLite 3.51.3 构建；CSQLite target 编译的也是 3.51.3，两者同源。
 private let ragVec0MinimumSQLiteVersionNumber = 3_051_003
 
+/// SQLite blob 绑定约定。
+///
+/// `Data.withUnsafeBytes` 只保证 buffer 指针在闭包内有效，而 `sqlite3_step`
+/// 在闭包外执行。默认的 nil destructor 对应 `SQLITE_STATIC`，SQLite 不会复制
+/// 数据并会在 step 时解引用已失效的指针；因此这里统一使用 `SQLITE_TRANSIENT`，
+/// 让 SQLite 在 bind 返回前复制（回归 #1111）。
+enum RAGSQLiteBlobBinding {
+    /// Swift 未导入 `SQLITE_TRANSIENT` 宏，按 C 定义取 `(sqlite3_destructor_type)-1`。
+    static let transientDestructor: sqlite3_destructor_type = unsafeBitCast(
+        -1,
+        to: sqlite3_destructor_type.self
+    )
+
+    /// 绑定后 SQLite 会立即复制，调用方无需让 buffer 存活到 step。
+    @discardableResult
+    static func bind(
+        _ statement: OpaquePointer?,
+        index: Int32,
+        bytes: UnsafeRawBufferPointer
+    ) -> Int32 {
+        sqlite3_bind_blob(
+            statement,
+            index,
+            bytes.baseAddress,
+            Int32(bytes.count),
+            transientDestructor
+        )
+    }
+
+    @discardableResult
+    static func bind(
+        _ statement: OpaquePointer?,
+        index: Int32,
+        data: Data
+    ) -> Int32 {
+        data.withUnsafeBytes { buffer in
+            bind(statement, index: index, bytes: buffer)
+        }
+    }
+}
+
 final class RAGSQLiteStore: @unchecked Sendable {
     private var db: OpaquePointer?
     private let dbURL: URL
@@ -131,9 +172,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
                 }
 
                 let embeddingData = embedding.toData()
-                _ = embeddingData.withUnsafeBytes { buffer in
-                    sqlite3_bind_blob(insertStmt, 9, buffer.baseAddress, Int32(embeddingData.count), nil)
-                }
+                _ = RAGSQLiteBlobBinding.bind(insertStmt, index: 9, data: embeddingData)
                 sqlite3_bind_int64(insertStmt, 10, Int64(embeddingDimension))
                 sqlite3_bind_double(insertStmt, 11, createdAt)
 
@@ -422,9 +461,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
         defer { sqlite3_finalize(statement) }
 
         let queryData = queryEmbedding.toData()
-        _ = queryData.withUnsafeBytes { buffer in
-            sqlite3_bind_blob(statement, 1, buffer.baseAddress, Int32(queryData.count), nil)
-        }
+        _ = RAGSQLiteBlobBinding.bind(statement, index: 1, data: queryData)
         sqlite3_bind_int64(statement, 2, Int64(max(limit, 1)))
 
         var rows: [RAGVectorMatch] = []
@@ -779,9 +816,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
 
         sqlite3_bind_int64(statement, 1, rowID)
         let data = embedding.toData()
-        _ = data.withUnsafeBytes { buffer in
-            sqlite3_bind_blob(statement, 2, buffer.baseAddress, Int32(data.count), nil)
-        }
+        _ = RAGSQLiteBlobBinding.bind(statement, index: 2, data: data)
         guard sqlite3_step(statement) == SQLITE_DONE else {
             throw dbError("upsertVectorIndex failed")
         }
