@@ -8,6 +8,17 @@ import Testing
 /// `updateNSView` 每帧被调用，旧实现无条件清空 fittingSize 缓存，
 /// 导致每 16ms 对整段代码块重跑 `NSHostingView.fittingSize`。
 /// 修复后的契约：仅当内容指纹或宽度分桶变化时才允许重新测量。
+///
+/// - Important: 标 `.serialized`。
+///   本文件有两个用例操作**同一个进程级共享单例**
+///   `HorizontalFittingSizeStore.shared`，且都以 `removeAll()` 开头与收尾。
+///   Swift Testing 默认在文件内并行执行，两者会互相清空对方刚写入的数据 ——
+///   表现为 `sharedStoreSurvivesCoordinatorRebuild` 偶发失败
+///   （读到的 `height` 变成 nil）。
+///
+///   该竞态是**既存**的（纯 dev 基线上 20 次连跑也能复现 1 次），
+///   与任何新增用例无关；此处只是把它固定下来，不再偶发。
+@Suite(.serialized)
 struct HorizontalFittingSizeCacheTests {
 
     // MARK: - 宽度分桶
