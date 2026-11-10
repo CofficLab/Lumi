@@ -21,6 +21,11 @@ final class GitBranchToolbarViewModel: ObservableObject {
     @Published private(set) var isBusy = false
     /// 最近一次操作失败信息。
     @Published private(set) var errorMessage: String?
+    /// `errorMessage` 是否来自状态加载失败。
+    ///
+    /// 成功加载只清除加载类错误；切换/新建分支这类用户操作失败需要保留到
+    /// 用户手动关闭，不能被随后自动触发的刷新覆盖（#914）。
+    private var errorCameFromLoad = false
 
     private let capability: any GitBranchCapability
     private var loadTask: Task<Void, Never>?
@@ -47,6 +52,7 @@ final class GitBranchToolbarViewModel: ObservableObject {
         detachedHeadCommitHash = nil
         branches = []
         errorMessage = nil
+        errorCameFromLoad = false
         isGitRepository = false
         loadTask?.cancel()
         guard let path, !path.isEmpty else { return }
@@ -76,12 +82,14 @@ final class GitBranchToolbarViewModel: ObservableObject {
 
         isBusy = true
         errorMessage = nil
+        errorCameFromLoad = false
         defer { isBusy = false }
         do {
             try await capability.checkout(branch: branch.name, atPath: path)
             await reload(path: path, generation: nextGeneration())
         } catch {
             errorMessage = Self.describe(error)
+            errorCameFromLoad = false
             await reload(path: path, generation: nextGeneration())
         }
     }
@@ -94,12 +102,14 @@ final class GitBranchToolbarViewModel: ObservableObject {
 
         isBusy = true
         errorMessage = nil
+        errorCameFromLoad = false
         defer { isBusy = false }
         do {
             try await capability.createBranch(named: trimmed, atPath: path)
             await reload(path: path, generation: nextGeneration())
         } catch {
             errorMessage = Self.describe(error)
+            errorCameFromLoad = false
             await reload(path: path, generation: nextGeneration())
         }
     }
@@ -107,6 +117,7 @@ final class GitBranchToolbarViewModel: ObservableObject {
     /// 清除错误提示。
     func dismissError() {
         errorMessage = nil
+        errorCameFromLoad = false
     }
 
     // MARK: - 加载
@@ -129,6 +140,7 @@ final class GitBranchToolbarViewModel: ObservableObject {
             currentBranch = nil
             detachedHeadCommitHash = nil
             branches = []
+            clearLoadErrorIfNeeded()
             return
         }
 
@@ -142,13 +154,23 @@ final class GitBranchToolbarViewModel: ObservableObject {
             currentBranch = resolvedCurrent
             detachedHeadCommitHash = resolvedDetachedHash
             branches = Self.sorted(resolvedList)
+            // 数据已恢复：上一次加载失败不再成立（#914）。
+            clearLoadErrorIfNeeded()
         } catch {
             guard !Task.isCancelled, generation == loadGeneration else { return }
             currentBranch = nil
             detachedHeadCommitHash = nil
             branches = []
             errorMessage = Self.describe(error)
+            errorCameFromLoad = true
         }
+    }
+
+    /// 成功加载后让旧的加载错误失效，但不影响用户操作失败留下的提示。
+    private func clearLoadErrorIfNeeded() {
+        guard errorCameFromLoad else { return }
+        errorMessage = nil
+        errorCameFromLoad = false
     }
 
     /// 本地分支在前、当前分支置顶，其余按名称排序。
