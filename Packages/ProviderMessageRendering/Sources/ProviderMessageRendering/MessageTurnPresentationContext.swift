@@ -46,7 +46,16 @@ public extension EnvironmentValues {
         set { self[MessageTurnPresentationContextKey.self] = newValue }
     }
 
-    /// 当前轮次是否处于 hover 状态；用于控制轮尾操作栏的显隐。
+    /// 当前轮次的**助手段**是否处于 hover 状态；用于控制轮尾操作栏的显隐。
+    ///
+    /// - Important: 这里只表示「助手段」被悬停。
+    ///   用户气泡是**独立的 hover 域**：悬停用户行不会点亮助手操作栏。
+    ///
+    ///   基准：ZCode 原型用了两个 group ——
+    ///   `group/user-row`（`ConversationRowView.tsx`）与
+    ///   `group/assistant-turn`（`ConversationTurnGroup.tsx`）。
+    ///   之前 Lumi V4 把两者合并成一个整轮 hover，
+    ///   导致悬停用户气泡时助手轮尾操作栏也冒出来。
     var messageTurnIsHovered: Bool {
         get { self[MessageTurnIsHoveredKey.self] }
         set { self[MessageTurnIsHoveredKey.self] = newValue }
