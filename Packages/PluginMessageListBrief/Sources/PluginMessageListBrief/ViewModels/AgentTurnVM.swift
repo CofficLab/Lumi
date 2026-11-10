@@ -120,18 +120,21 @@ final class AgentTurnVM: ObservableObject {
         item: AgentTurnPresentationItem,
         userMessages: [Message],
         processMessages: [Message],
-        now: Date
+        now: Date,
+        resolve: (String) -> String = { pluginLocalization.string($0) }
     ) -> String {
         let startedAt = item.record?.startedAt ?? userMessages.first?.createdAt ?? now
         let endedAt = item.record?.endedAt ?? now
         let elapsed = max(0, endedAt.timeIntervalSince(startedAt))
         let stepCount = processStepCount(processMessages)
-        let summary = item.isShowingProcess
-            ? "执行中"
-            : "执行了\(stepCount)个步骤"
-        return item.isShowingProcess
-            ? "\(summary)\(stepCount > 0 ? " · \(stepCount)个步骤" : "") · \(formattedDuration(elapsed))"
-            : "\(summary) · \(formattedDuration(elapsed))"
+        let duration = formattedDuration(elapsed, resolve: resolve)
+        if item.isShowingProcess {
+            let steps = stepCount > 0
+                ? " · " + String(format: resolve("%lld steps"), stepCount)
+                : ""
+            return "\(resolve("Running"))\(steps) · \(duration)"
+        }
+        return String(format: resolve("Completed after %lld steps"), stepCount) + " · \(duration)"
     }
 
     private nonisolated static func processStepCount(_ messages: [Message]) -> Int {
@@ -141,16 +144,21 @@ final class AgentTurnVM: ObservableObject {
         return toolCallCount > 0 ? toolCallCount : messages.count
     }
 
-    private nonisolated static func formattedDuration(_ duration: TimeInterval) -> String {
+    private nonisolated static func formattedDuration(
+        _ duration: TimeInterval,
+        resolve: (String) -> String
+    ) -> String {
         let totalSeconds = Int(duration.rounded(.down))
         if totalSeconds < 60 {
-            return "\(totalSeconds)秒"
+            return String(format: resolve("%llds"), totalSeconds)
         }
         let totalMinutes = totalSeconds / 60
-        guard totalMinutes >= 60 else { return "\(totalMinutes)分钟" }
+        guard totalMinutes >= 60 else { return String(format: resolve("%lldm"), totalMinutes) }
         let hours = totalMinutes / 60
         let minutes = totalMinutes % 60
-        return minutes == 0 ? "\(hours)小时" : "\(hours)小时\(minutes)分钟"
+        return minutes == 0
+            ? String(format: resolve("%lldh"), hours)
+            : String(format: resolve("%lldh %lldm"), hours, minutes)
     }
 
     private nonisolated static func isTransientStatus(_ message: Message) -> Bool {

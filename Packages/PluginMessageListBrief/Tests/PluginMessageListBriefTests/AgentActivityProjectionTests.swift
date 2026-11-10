@@ -8,26 +8,31 @@ import Testing
 struct AgentActivityProjectionTests {
     private let conversationID = UUID()
 
+    /// 测试内固定为恒等解析，断言的是词条 key 而不是宿主机语言。
+    private static func identity(_ value: String) -> String { value }
+
     @Test("流式思考阶段映射为思考活动")
     func thinking() {
         let projection = AgentActivityProjection.resolve(
             conversationState: nil,
-            streamingStage: .thinking
+            streamingStage: .thinking,
+            resolve: Self.identity
         )
 
         #expect(projection?.phase == .thinking)
-        #expect(projection?.title == "正在思考…")
+        #expect(projection?.title == "Thinking…")
     }
 
     @Test("生成阶段映射为生成活动")
     func generating() {
         let projection = AgentActivityProjection.resolve(
             conversationState: nil,
-            streamingStage: .generating
+            streamingStage: .generating,
+            resolve: Self.identity
         )
 
         #expect(projection?.phase == .generating)
-        #expect(projection?.title == "正在生成回复…")
+        #expect(projection?.title == "Generating reply…")
     }
 
     @Test("工具阶段展示具体工具描述")
@@ -44,11 +49,12 @@ struct AgentActivityProjectionTests {
 
         let projection = AgentActivityProjection.resolve(
             conversationState: state,
-            streamingStage: .idle
+            streamingStage: .idle,
+            resolve: Self.identity
         )
 
         #expect(projection?.phase == .executingTool)
-        #expect(projection?.title == "正在执行")
+        #expect(projection?.title == "Executing")
         #expect(projection?.detail == "读取 Sources/App.swift")
     }
 
@@ -66,11 +72,12 @@ struct AgentActivityProjectionTests {
 
         let projection = AgentActivityProjection.resolve(
             conversationState: state,
-            streamingStage: .idle
+            streamingStage: .idle,
+            resolve: Self.identity
         )
 
-        #expect(projection?.title == "正在执行 2 个任务")
-        #expect(projection?.detail == "最近：搜索项目文件")
+        #expect(projection?.title == "Executing 2 tasks")
+        #expect(projection?.detail == "Latest: 搜索项目文件")
     }
 
     @Test("等待用户阶段不暴露工具输出")
@@ -87,11 +94,12 @@ struct AgentActivityProjectionTests {
 
         let projection = AgentActivityProjection.resolve(
             conversationState: state,
-            streamingStage: .idle
+            streamingStage: .idle,
+            resolve: Self.identity
         )
 
         #expect(projection?.phase == .waitingForUser)
-        #expect(projection?.title == "等待你的确认")
+        #expect(projection?.title == "Waiting for your confirmation")
         #expect(projection?.detail == "执行删除操作")
     }
 
@@ -104,11 +112,12 @@ struct AgentActivityProjectionTests {
 
         let projection = AgentActivityProjection.resolve(
             conversationState: state,
-            streamingStage: .idle
+            streamingStage: .idle,
+            resolve: Self.identity
         )
 
         #expect(projection?.phase == .thinking)
-        #expect(projection?.title == "正在处理…")
+        #expect(projection?.title == "Processing…")
     }
 
     @Test("回合暂停但 activity 短暂为空时保留等待状态")
@@ -120,11 +129,12 @@ struct AgentActivityProjectionTests {
 
         let projection = AgentActivityProjection.resolve(
             conversationState: state,
-            streamingStage: .idle
+            streamingStage: .idle,
+            resolve: Self.identity
         )
 
         #expect(projection?.phase == .waitingForUser)
-        #expect(projection?.title == "等待你的确认")
+        #expect(projection?.title == "Waiting for your confirmation")
     }
 
     @Test("空闲阶段不显示活动视图")

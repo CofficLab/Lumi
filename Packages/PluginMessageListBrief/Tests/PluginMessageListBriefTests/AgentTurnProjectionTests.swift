@@ -358,11 +358,12 @@ struct AgentTurnProjectionTests {
             item: item,
             userMessages: projection.userMessages,
             processMessages: projection.processMessages,
-            now: started.addingTimeInterval(12)
+            now: started.addingTimeInterval(12),
+            resolve: { $0 }
         )
 
-        #expect(title.contains("执行了3个步骤"))
-        #expect(title.contains("12秒"))
+        #expect(title.contains("Completed after 3 steps"))
+        #expect(title.contains("12s"))
     }
 
     @Test("§3.3 没有工具调用时步骤数回退到 process 消息数")
@@ -405,11 +406,12 @@ struct AgentTurnProjectionTests {
             item: item,
             userMessages: [user],
             processMessages: summary.processMessages,
-            now: started.addingTimeInterval(5)
+            now: started.addingTimeInterval(5),
+            resolve: { $0 }
         )
 
         // 2 条 process 消息，步骤数 = 2。
-        #expect(title.contains("执行了2个步骤"))
+        #expect(title.contains("Completed after 2 steps"))
     }
 
     @Test("§3.6 运行中回合的 disclosure 标题使用运行标签")
@@ -448,16 +450,18 @@ struct AgentTurnProjectionTests {
             item: item,
             userMessages: [user],
             processMessages: summary.processMessages,
-            now: started.addingTimeInterval(2)
+            now: started.addingTimeInterval(2),
+            resolve: { $0 }
         )
         let later = AgentTurnVM.processDisclosureTitle(
             item: item,
             userMessages: [user],
             processMessages: summary.processMessages,
-            now: started.addingTimeInterval(15)
+            now: started.addingTimeInterval(15),
+            resolve: { $0 }
         )
 
-        #expect(early.contains("执行中"))
+        #expect(early.contains("Running"))
         // 持续时间随 `now` 推进，必须单调不减（实现保证的「每秒钟 tick」）。
         #expect(later != early)
     }
