@@ -620,6 +620,7 @@
       }
     },
     "Export failed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

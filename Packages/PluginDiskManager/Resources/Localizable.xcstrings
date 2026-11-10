@@ -1194,12 +1194,6 @@
             "value" : "Clear Xcode DerivedData and package manager caches"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除 Xcode 派生数据和包管理器缓存"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1207,6 +1201,12 @@
           }
         },
         "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除 Xcode 派生数据和包管理器缓存"
+          }
+        },
+        "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "清除 Xcode 派生数据和包管理器缓存"
@@ -1221,6 +1221,7 @@
       }
     },
     "Clear Xcode DerivedData, Archives, and package manager caches" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1466,12 +1467,6 @@
             "value" : "Contains app archives and dSYMs that cannot be rebuilt"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "包含无法重建的 App 归档和 dSYM 调试符号"
-          }
-        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1479,6 +1474,12 @@
           }
         },
         "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "包含无法重建的 App 归档和 dSYM 调试符号"
+          }
+        },
+        "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "包含无法重建的 App 归档和 dSYM 调试符号"

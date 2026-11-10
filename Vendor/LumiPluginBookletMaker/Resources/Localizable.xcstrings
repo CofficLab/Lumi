@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     ".pdf" : {
       "localizations" : {
         "en" : {
@@ -70,6 +73,7 @@
       }
     },
     "%@ · %lld pages · %lld×%lld pt" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -346,6 +350,7 @@
       }
     },
     "%lld pages · %lld sheets · %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -450,6 +455,7 @@
       }
     },
     "%lld pages → %lld files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -484,6 +490,7 @@
       }
     },
     "%lld pages → %lld sheets, %lld print sides" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -658,6 +665,7 @@
       }
     },
     "%lld sheets of %@ · %lld print sides" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -896,6 +904,7 @@
       }
     },
     "2 Original Pages" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -930,6 +939,7 @@
       }
     },
     "2/3" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1067,6 +1077,7 @@
       }
     },
     "Add a split" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1378,6 +1389,7 @@
       }
     },
     "After Binding" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1690,6 +1702,7 @@
       }
     },
     "Batch input and file names" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1759,6 +1772,7 @@
       }
     },
     "Before Binding" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1828,6 +1842,7 @@
       }
     },
     "Blank page" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2380,6 +2395,7 @@
       }
     },
     "Choose Another PDF" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2518,6 +2534,7 @@
       }
     },
     "Choose PDF" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2587,6 +2604,7 @@
       }
     },
     "Choose the output paper size and layout: Booklet Fold, Sectioned Booklet, or Simple Pair." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2655,6 +2673,7 @@
       }
     },
     "Choose Tool" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2689,6 +2708,7 @@
       }
     },
     "Choose what you want to do with your PDF." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2723,6 +2743,7 @@
       }
     },
     "Choose where to split" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2965,6 +2986,7 @@
       }
     },
     "Combine multiple PDFs in order" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3101,7 +3123,11 @@
         }
       }
     },
+    "completed" : {
+
+    },
     "Convert a PDF into a 2-up imposition ready for A4 duplex printing, folding and stapling." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3447,6 +3473,7 @@
       }
     },
     "Create booklets and split PDF documents by page range." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3619,6 +3646,7 @@
       }
     },
     "Cut Points" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3758,6 +3786,7 @@
       }
     },
     "Document Actions" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4417,6 +4446,7 @@
       }
     },
     "Export failed — see log for details." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4486,6 +4516,7 @@
       }
     },
     "Export PDFs" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4553,6 +4584,9 @@
           }
         }
       }
+    },
+    "failed" : {
+
     },
     "Figure 1: Interface layout" : {
       "localizations" : {
@@ -5147,6 +5181,7 @@
       }
     },
     "How it works" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5390,6 +5425,7 @@
       }
     },
     "Live preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6292,6 +6328,7 @@
       }
     },
     "Not selected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6567,6 +6604,7 @@
       }
     },
     "Opening PDF Tools…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6671,6 +6709,7 @@
       }
     },
     "Original PDF · 8 pages" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6880,6 +6919,7 @@
       }
     },
     "Output: %lld sheets" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7088,6 +7128,7 @@
       }
     },
     "Page %lld, %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7227,6 +7268,7 @@
       }
     },
     "Pages %@ of %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7434,6 +7476,7 @@
       }
     },
     "Pages range %lld–%lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7813,6 +7856,9 @@
         }
       }
     },
+    "preparing" : {
+
+    },
     "Preparing preview…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8021,6 +8067,7 @@
       }
     },
     "Print both sides, flip on the long edge, then fold along the center." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8090,6 +8137,7 @@
       }
     },
     "Print on %@ paper, fold in half, and staple to create a booklet." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8193,6 +8241,7 @@
       }
     },
     "Print two pages side by side on %@ paper." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8227,6 +8276,7 @@
       }
     },
     "Privacy" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8261,6 +8311,7 @@
       }
     },
     "Progress percent %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8329,6 +8380,9 @@
         }
       }
     },
+    "ready" : {
+
+    },
     "Ready" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8365,6 +8419,7 @@
       }
     },
     "Ready to create your booklet" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8569,6 +8624,9 @@
         }
       }
     },
+    "rendering" : {
+
+    },
     "Reorder pages for folded binding" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8744,6 +8802,7 @@
       }
     },
     "Return to Sample" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9019,6 +9078,9 @@
           }
         }
       }
+    },
+    "selected" : {
+
     },
     "Selected" : {
       "extractionState" : "manual",
@@ -9507,6 +9569,7 @@
       }
     },
     "Skip" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10305,6 +10368,7 @@
       }
     },
     "Swipe to browse" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10373,6 +10437,7 @@
       }
     },
     "Tap a gap between pages. Blue scissors mark a split point." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10577,6 +10642,7 @@
       }
     },
     "Try Again" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10645,6 +10711,7 @@
       }
     },
     "Turn PDFs into a folded booklet, merge them, or split them into multiple files." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10747,6 +10814,7 @@
       }
     },
     "Unable to Open PDF Tools" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10780,7 +10848,11 @@
         }
       }
     },
+    "unselected" : {
+
+    },
     "Updates as you change settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11123,6 +11195,7 @@
       }
     },
     "With Sectioned Booklet, choose pages per signature; fold each signature separately, then stack and bind them in page order." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11157,6 +11230,7 @@
       }
     },
     "You can also tap the gaps between page previews." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
