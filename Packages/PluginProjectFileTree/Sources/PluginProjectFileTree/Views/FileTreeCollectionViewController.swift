@@ -585,12 +585,12 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
     
     @objc private func newFile(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
-        guard let name = FileTreeActions.presentNamePrompt(
+        guard let rawName = FileTreeActions.presentNamePrompt(
             title: pluginLocalization.string("New File"),
             message: pluginLocalization.string("Enter the name for the new file."),
             defaultName: "",
             confirmButton: pluginLocalization.string("Create")
-        ) else { return }
+        ), let name = FileTreeActions.creationName(from: rawName) else { return }
         
         guard let newURL = FileTreeFacade.createFile(in: url, name: name) else {
             context?.toast?.show(
@@ -613,12 +613,12 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
     
     @objc private func newFolder(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
-        guard let name = FileTreeActions.presentNamePrompt(
+        guard let rawName = FileTreeActions.presentNamePrompt(
             title: pluginLocalization.string("New Folder"),
             message: pluginLocalization.string("Enter the name for the new folder."),
             defaultName: "",
             confirmButton: pluginLocalization.string("Create")
-        ) else { return }
+        ), let name = FileTreeActions.creationName(from: rawName) else { return }
         
         guard let newURL = FileTreeFacade.createFolder(in: url, name: name) else {
             context?.toast?.show(
@@ -641,14 +641,15 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
     
     @objc private func renameItem(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
-        guard let newName = FileTreeActions.presentNamePrompt(
+        guard let rawName = FileTreeActions.presentNamePrompt(
             title: pluginLocalization.string("Rename"),
             message: pluginLocalization.string("Enter the new name for this item."),
             defaultName: url.lastPathComponent,
             confirmButton: pluginLocalization.string("Rename")
+        ), let newName = FileTreeActions.renameTarget(
+            from: rawName,
+            currentName: url.lastPathComponent
         ) else { return }
-        
-        guard newName != url.lastPathComponent else { return }
         
         guard let newURL = FileTreeFacade.renameItem(at: url, newName: newName) else {
             context?.toast?.show(

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 30 条用例。
+PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆盖 35 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 30
+测试文件: 12 个，用例总数: 35
 
 核心组件（源码目录）:
 - `Models/`
@@ -50,6 +50,7 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 - **FileTreeFacade（VS Code）**（5 条）：由 `nonZeroCodeStatusFallsBackToApplication`、`unlaunchableCommandFallsBackToApplication`、`successfulCodeCommandSkipsApplicationFallback`、`applicationFallbackFailureReportsFailure`、`missingCommandExitStatusIsObserved` 锁定。`/usr/bin/env code` 能启动不代表 `code` 存在，必须检查实际退出状态；非零退出或无法启动时回退到 VS Code 应用 URL，并向上报告最终失败（**回归 #1105**）。
 - **GitStatusProvider（porcelain 解析）**（3 条）：由 `arrowInRegularFileNameIsPreserved`、`stagedRenameUsesDestinationPath`、`worktreeRenameUsesDestinationPath` 锁定。只有 XY 为 `R`/`C` 时 `old -> new` 才是 Git 的分隔符；普通 `??`、` M` 条目里的 ` -> ` 属于文件名，必须完整保留，否则快照键失真、文件和父目录都查不到状态（**回归 #1106**）。
 - **GitStatusProvider（冲突状态）**（2 条）：由 `addAddAndDeleteDeleteAreConflicted`、`unmergedCodesAreRecognized` 锁定。未合并状态码包含 `DD`/`AU`/`UD`/`UA`/`DU`/`AA`/`UU`，不能只判断 `U`，否则 add/add 与 delete/delete 冲突会显示为普通新增/删除（**回归 #1107**）。
+- **FileTreeActions**（5 条）：由 `unchangedRenameIsNoOp`、`renameKeepsLeadingAndTrailingSpaces`、`emptyRenameIsNoOp`、`creationNameTrimsSpaces`、`whitespaceOnlyCreationNameIsRejected` 锁定。命名弹窗必须返回原始输入，重命名保留合法首尾空格、确认未修改的预填名称时按 no-op 处理（不得发起真实重命名）；新建文件/目录仍裁剪首尾空格并拒绝纯空白名称（**回归 #1108**）。
 
 ## 测试用例清单
 
@@ -85,27 +86,32 @@ PluginProjectFileTree 的实现包，包含 15 个主要类型；当前测试覆
 | 28 | GitStatusProvider | 工作区重命名同样取箭头后的新路径 | porcelain 为 ` R old.swift -> new.swift` | 解析 unstaged 条目 | 路径为 `new.swift`，状态为 `R` | P1 | ✅ 已覆盖 | `worktreeRenameUsesDestinationPath` |
 | 29 | GitStatusProvider | add/add 与 delete/delete 冲突按 conflicted 处理（**回归 #1107**） | porcelain 含 `AA`、`DD`、`UU` 三条冲突 | 解析 staged 与 unstaged 条目 | staged 三条均为 `C`，unstaged 为空，`C` 映射为 `.conflicted` | P0 | ✅ 已覆盖 | `addAddAndDeleteDeleteAreConflicted` |
 | 30 | GitStatusProvider | 全部未合并状态码都被识别，普通状态不会被误判 | — | 遍历 7 个未合并码与 7 个普通码 | 未合并码全部为真，普通码全部为假 | P1 | ✅ 已覆盖 | `unmergedCodesAreRecognized` |
+| 31 | FileTreeActions | 直接确认未修改的预填名称不会触发重命名（**回归 #1108**） | 输入与当前名称均为 ` draft ` | 解析重命名目标 | 返回 nil（no-op），不发起真实重命名 | P0 | ✅ 已覆盖 | `unchangedRenameIsNoOp` |
+| 32 | FileTreeActions | 重命名保留合法的首尾空格（**回归 #1108**） | 输入 `  draft  `，当前名称为 `draft` | 解析重命名目标 | 返回 `  draft  `，未被裁剪 | P0 | ✅ 已覆盖 | `renameKeepsLeadingAndTrailingSpaces` |
+| 33 | FileTreeActions | 清空输入不会触发重命名 | 输入为空字符串 | 解析重命名目标 | 返回 nil | P2 | ✅ 已覆盖 | `emptyRenameIsNoOp` |
+| 34 | FileTreeActions | 新建文件仍裁剪首尾空格 | 输入 `  note.txt  ` | 解析新建名称 | 返回 `note.txt` | P1 | ✅ 已覆盖 | `creationNameTrimsSpaces` |
+| 35 | FileTreeActions | 纯空白的新建名称被拒绝 | 输入 `   ` | 解析新建名称 | 返回 nil | P2 | ✅ 已覆盖 | `whitespaceOnlyCreationNameIsRejected` |
 
-> 说明：全部 **30 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **35 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 15 / 15
-- P1: 已覆盖 11 / 11
-- P2: 已覆盖 4 / 4
-- **合计: 30 / 30**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 17 / 17
+- P1: 已覆盖 12 / 12
+- P2: 已覆盖 6 / 6
+- **合计: 35 / 35**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
-- **P1**: 其余功能性用例（11 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
+- **P1**: 其余功能性用例（12 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 30 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 35 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
