@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试覆盖 23 条用例。
+PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试覆盖 24 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 23
+测试文件: 2 个，用例总数: 24
 
 核心组件（源码目录）:
 - `Providers/`
@@ -27,7 +27,8 @@ PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试�
 - **综合**（2 条）：由 `nonGitDirectoryIsIgnored`、`pluginRegistersProvider` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Git目录解析**（6 条）：由 `resolvesGitDirectory`、`resolvesAbsoluteGitFile`、`picksGitDirLineFromMultiLineFile` 等用例锁定。
 - **Git目录快照**（9 条）：由 `readsDirectHeadHash`、`fallsBackToPackedRefs`、`readsFullSnapshot` 等用例锁定。
-- **Git仓库监听Provider**（6 条）：由 `startsWatchingRepository`、`broadcastsStopped`、`cancelledObserverStopsReceiving` 等用例锁定。
+- **Git仓库监听Provider**（7 条）：由 `startsWatchingRepository`、`broadcastsStopped`、`cancelledObserverStopsReceiving` 等用例锁定。
+- **订阅令牌生命周期**：Provider 弱引用持有订阅令牌，释放令牌即注销（下次广播清理失效注册）；面板销毁后不得残留回调（#921）。
 
 ## 测试用例清单
 
@@ -56,27 +57,28 @@ PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试�
 | 21 | Git仓库监听Provider | 重复监听同一目录是幂等的 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `repeatedStartIsIdempotent` |
 | 22 | Git仓库监听Provider | 注销观察者后不再收到事件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cancelledObserverStopsReceiving` |
 | 23 | Git仓库监听Provider | 未监听就停止是安全的 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `stopWithoutStartIsSafe` |
+| 24 | Git仓库监听Provider | 释放订阅令牌后不再收到事件（回归 #921） | — | 释放令牌后启动/停止监听 | 观察者收不到任何广播 | P1 | ✅ 已覆盖 | `releasedObserverHandleStopsReceiving` |
 
-> 说明：全部 **23 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **24 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 19 / 19
+- P1: 已覆盖 20 / 20
 - P2: 已覆盖 4 / 4
-- **合计: 23 / 23**（仅表示清单场景，非源码覆盖率）
+- **合计: 24 / 24**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（19 条）
+- **P1**: 其余功能性用例（20 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 23 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 24 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

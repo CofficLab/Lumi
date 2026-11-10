@@ -298,6 +298,27 @@ struct GitRepositoryWatchProviderTests {
         provider.stopWatching()
     }
 
+    /// 回归 #921：Git Workspace 面板销毁时只释放 `@StateObject` 持有的订阅令牌，
+    /// 从不调用 `cancel()`；若 Provider 强引用回调，每打开一次面板就多一条永久
+    /// 注册，之后每次仓库事件都要遍历全部历史回调。
+    @Test("释放订阅令牌后不再收到事件（回归 #921）")
+    func releasedObserverHandleStopsReceiving() throws {
+        let fixture = try GitFixture.makeProject(label: "provider-release")
+        let provider = GitRepositoryWatchProvider()
+        var events: [GitRepositoryWatchingEvent] = []
+
+        // 作用域结束即释放令牌，模拟面板销毁后无人持有句柄。
+        do {
+            let handle = provider.addObserver { events.append($0) }
+            _ = handle
+        }
+
+        provider.startWatching(repositoryURL: fixture.projectURL)
+        provider.stopWatching()
+
+        #expect(events.isEmpty, "已释放的订阅令牌仍在接收广播，注册数量会随面板打开次数增长")
+    }
+
     @Test("注销观察者后不再收到事件")
     func cancelledObserverStopsReceiving() throws {
         let fixture = try GitFixture.makeProject(label: "provider-cancel")
