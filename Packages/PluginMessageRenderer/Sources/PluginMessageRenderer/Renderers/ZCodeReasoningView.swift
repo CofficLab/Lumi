@@ -129,7 +129,6 @@ struct ZCodeReasoningView: View {
     let durationMilliseconds: Int?
 
     @State private var collapseState = ZCodeReasoningCollapseState()
-    @State private var isHovered = false
     @State private var hasKeyboardFocus = false
 
     var body: some View {
@@ -196,7 +195,6 @@ struct ZCodeReasoningView: View {
         .accessibilityValue(collapseState.isExpanded ? "expanded" : "collapsed")
         .accessibilityAddTraits(.isButton)
         .focusable()
-        .onHover { isHovered = $0 }
     }
 
     /// 收起时显示摘要；展开时显示固定文案。

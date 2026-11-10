@@ -28,7 +28,11 @@ struct ZCodeUserMessageView: View {
     /// 复制反馈状态。
     @State private var copyState = ZCodeCopyFeedbackState()
     /// 是否 hover。
-    @State private var isHovered = false
+    ///
+    /// - Important: 必须是 `@StateObject`：宿主每重绘一次就会重新 `init`
+    ///   本视图一次，`let` 持有的状态对象会被重建，
+    ///   hover 防抖任务随之丢失（进入防抖永远不生效）。
+    @StateObject private var hoverState = MessageHoverState()
     /// 是否键盘聚焦。
     @FocusState private var hasKeyboardFocus: Bool
 
@@ -61,18 +65,34 @@ struct ZCodeUserMessageView: View {
                     //   正确做法是保留在树上、只改透明度，并用
                     //   `accessibilityHidden` 之外的手段表达「当前不可见」。
                     copyButton
-                        .opacity(isHovered || hasKeyboardFocus ? 1 : 0)
+                        .opacity(isCopyVisible ? 1 : 0)
                         .accessibilityHidden(false)
                 }
             }
+            // Important: hover 域挂在**气泡内容**上，不挂在整行 layout 上。
+            //
+            //   `ZCodeUserBubbleLayout` 是 `HStack { Spacer; 内容 }`，
+            //   宽度铺满整列；`onHover` 挂在它上面时，鼠标只要进入这一行的
+            //   **任何空白区域**（尤其是左侧大片空白），
+            //   气泡的复制按钮就会突然冒出来 —— 视觉上很突兀。
+            //
+            //   挂到内容上之后，只有真正悬停在气泡 / 附件 / 按钮上才触发。
+            .contentShape(Rectangle())
+            .onHover { hovering in
+                hoverState.setHovering(hovering)
+            }
         ))
-        .onHover { isHovered = $0 }
         .onAppear {
             collapseState.updateIdentity(content: message.content, rowID: rowIdentity)
         }
         .onChange(of: rowIdentity) { _, newValue in
             collapseState.updateIdentity(content: message.content, rowID: newValue)
         }
+    }
+
+    /// 复制按钮是否可见：hover（带防抖）或键盘聚焦。
+    private var isCopyVisible: Bool {
+        hoverState.isHovered || hasKeyboardFocus
     }
 
     // MARK: - 气泡

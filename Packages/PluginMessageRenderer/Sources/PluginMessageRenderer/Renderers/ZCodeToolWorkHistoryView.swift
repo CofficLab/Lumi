@@ -227,6 +227,11 @@ struct ZCodeToolWorkHistoryView: View {
                     toolCall: toolCall,
                     verbosity: verbosity,
                     showsDetails: true,
+                    // Important: V4 的工具行是**扁平**的 —— 不带 V2/V3 的
+                    //   持续卡片底色与描边。外层已经有「左 margin 8 + 左边框」的
+                    //   嵌套容器（见本视图的 body），工具行再套一层卡片会
+                    //   造成 hover 时整行「突然亮起来」的突兀感。
+                    appearance: .flat,
                     parameterPopoverToolCallID: $parameterPopoverToolCallID,
                     resultPopoverToolCallID: $resultPopoverToolCallID
                 )
