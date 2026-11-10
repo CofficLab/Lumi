@@ -232,6 +232,45 @@ struct UserDefinedCloudProviderStoreTests {
         #expect(store.configurations.map(\.id) == ["user-good"])
     }
 
+    @Test("加载时把非正上下文窗口归一化为未知（回归 #1121）")
+    func normalizesNonPositiveContextWindowWhenLoading() throws {
+        let fileURL = makeTemporaryFileURL()
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        // 修复前落盘的自定义供应商可能带有 0 / 负数窗口；这类配置不能丢失，
+        // 也不能继续把窗口元数据传给上下文预算。
+        let payload: [[String: Any]] = [
+            [
+                "id": "user-zero-window",
+                "displayName": "Acme",
+                "description": "",
+                "baseURL": "https://llm.example.com/v1",
+                "apiFormatRawValue": "openAI",
+                "defaultModel": "m1",
+                "models": [
+                    ["id": "m1", "displayName": "m1", "contextWindowSize": 0,
+                     "supportsVision": false, "supportsTools": true],
+                    ["id": "m2", "displayName": "m2", "contextWindowSize": -1,
+                     "supportsVision": false, "supportsTools": true]
+                ],
+                "websiteURLString": NSNull()
+            ]
+        ]
+        let data = try JSONSerialization.data(withJSONObject: payload)
+        try data.write(to: fileURL, options: .atomic)
+
+        let manager = DefaultLLMProviderManagerProviding()
+        let store = UserDefinedCloudProviderStore(fileURL: fileURL)
+        store.attach(manager: manager, apiService: VendorAPIService())
+
+        #expect(store.configurations.map(\.id) == ["user-zero-window"])
+        #expect(store.configurations.first?.models.map(\.contextWindowSize) == [nil, nil])
+        #expect(
+            manager.provider(id: "user-zero-window")?.providerInfo.models.map(\.contextWindowSize)
+                == [nil, nil]
+        )
+    }
+
     @Test("磁盘文件不存在时加载为空配置")
     func loadsEmptyWhenFileMissing() {
         let fileURL = makeTemporaryFileURL()

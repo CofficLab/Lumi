@@ -2,10 +2,10 @@
 
 ## 包概述
 
-ProviderLLMManager 的实现包，包含 5 个主要类型；当前测试覆盖 27 条用例。
+ProviderLLMManager 的实现包，包含 5 个主要类型；当前测试覆盖 59 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 57
+测试文件: 5 个，用例总数: 59
 
 核心组件（源码目录）:
 - `Errors/`
@@ -27,8 +27,8 @@ ProviderLLMManager 的实现包，包含 5 个主要类型；当前测试覆盖 
 - **DefaultLLMProviderManagerProviding**（22 条）：由 `registerPreservesOrderAndReplaces`、`registerEmptyIDThrows`、`unregisterFallsBackSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DynamicModelList**（5 条）：由 `staticProviderUnchanged`、`remoteProviderDynamicModels`、`remoteProviderRefresh` 等用例锁定；改动该模块时优先跑对应测试文件。
 
-- **UserDefinedCloudProviderConfigurationTests**（17 条）：由 `rejectsEmptyOrWhitespaceDisplayName`、`trimsDisplayName` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **UserDefinedCloudProviderStoreTests**（13 条）：由 `upsertPersistsAndRegistersProvider`、`upsertReplacesConfigurationWithSameIdentifier` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **UserDefinedCloudProviderConfigurationTests**（18 条）：由 `rejectsEmptyOrWhitespaceDisplayName`、`trimsDisplayName` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **UserDefinedCloudProviderStoreTests**（14 条）：由 `upsertPersistsAndRegistersProvider`、`upsertReplacesConfigurationWithSameIdentifier` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -91,27 +91,29 @@ ProviderLLMManager 的实现包，包含 5 个主要类型；当前测试覆盖 
 | 55 | UserDefinedCloudProviderStoreTests | 能识别某个 ID 是否为自定义供应商 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `reportsCustomProviderMembership` |
 | 56 | UserDefinedCloudProviderStoreTests | 自定义供应商按所选 API 格式暴露对应配置 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `userDefinedProviderExposesFormatSpecificConfiguration` |
 | 57 | UserDefinedCloudProviderStoreTests | 自定义供应商在管理器中暴露为云端供应商 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `userDefinedProviderIsRegisteredAsRemoteProvider` |
+| 58 | UserDefinedCloudProviderConfigurationTests | 非正上下文窗口校验后被归一化为未知（**回归 #1121**） | 模型窗口分别为 0、-4096、128000 | 调用 `validated()` | 前两者窗口变为 nil（按未知处理），正整数保持不变 | P0 | ✅ 已覆盖 | `normalizesNonPositiveContextWindowToUnknown` |
+| 59 | UserDefinedCloudProviderStoreTests | 加载时把非正上下文窗口归一化为未知（**回归 #1121**） | 磁盘配置中模型窗口为 0 / -1 | 新建 Store 并装配管理器 | 配置不会被丢弃；Store 与注册供应商的模型窗口均为 nil | P0 | ✅ 已覆盖 | `normalizesNonPositiveContextWindowWhenLoading` |
 
-> 说明：全部 **57 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **59 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 12 / 12
+- P0: 已覆盖 14 / 14
 - P1: 已覆盖 36 / 36
 - P2: 已覆盖 9 / 9
-- **合计: 57 / 57**（仅表示清单场景，非源码覆盖率）
+- **合计: 59 / 59**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
 - **P1**: 其余功能性用例（36 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 57 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 59 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

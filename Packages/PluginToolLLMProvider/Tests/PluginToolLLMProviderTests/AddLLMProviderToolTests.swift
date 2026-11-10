@@ -79,6 +79,20 @@ struct AddLLMProviderToolTests {
         #expect(proposal.apiFormat == .anthropic)
     }
 
+    @Test("非正上下文窗口不会进入提案（回归 #1121）")
+    func dropsNonPositiveContextWindow() async throws {
+        let text = try await makeTool().execute(arguments: arguments(
+            models: [
+                ["id": "m1", "contextWindowSize": 0],
+                ["id": "m2", "contextWindowSize": -4_096],
+                ["id": "m3", "contextWindowSize": 128_000],
+            ]
+        ))
+        let proposal = try #require(ProviderProposalPayload.decode(from: text))
+
+        #expect(proposal.models.map(\.contextWindowSize) == [nil, nil, 128_000])
+    }
+
     @Test("未指定默认模型时回落到第一个模型")
     func fallsBackToFirstModel() async throws {
         let text = try await makeTool().execute(arguments: arguments(
