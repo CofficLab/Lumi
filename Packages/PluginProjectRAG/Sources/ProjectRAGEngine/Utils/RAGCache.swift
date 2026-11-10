@@ -19,10 +19,17 @@ public final class RAGCache: @unchecked Sendable {
     }
 
     /// 构建缓存 key（SHA256 哈希）
+    ///
+    /// 每个字段先写入 UTF-8 字节长度再写入内容。query 和项目路径都可能包含
+    /// 分隔符，直接拼接会让不同三元组产生相同的散列输入（回归 #1112）。
     public func buildKey(query: String, projectPath: String?, topK: Int) -> String {
-        let raw = "\(query)|\(projectPath ?? "")|\(topK)"
-        let digest = SHA256.hash(data: Data(raw.utf8))
-        return digest.map { String(format: "%02x", $0) }.joined()
+        var hasher = SHA256()
+        for field in [query, projectPath ?? "", String(topK)] {
+            let bytes = Data(field.utf8)
+            hasher.update(data: Data("\(bytes.count):".utf8))
+            hasher.update(data: bytes)
+        }
+        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
     /// 获取缓存，过期返回 nil
