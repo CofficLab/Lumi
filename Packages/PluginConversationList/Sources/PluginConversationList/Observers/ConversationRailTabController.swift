@@ -10,7 +10,8 @@ import SwiftUI
 /// 复刻旧版 ConversationListPlugin.ConversationRailTabController，适配新版
 /// KernelCore / RailViewProviding 架构：
 /// - `chats`：全库存在任意顶层对话时展示，否则不注册该标签；
-/// - `project-chats`：全库顶层对话来自 ≥2 个项目且当前项目确有对话时展示。
+/// - `project-chats`：全库顶层对话范围大于当前项目范围（全部对话里还有其它项目
+///   或无项目会话）且当前项目确有对话时展示。
 ///
 /// 可见性在以下信号触发时重新评估（带去抖，避免一轮对话内反复查询 SQLite）：
 /// - `.lumiConversationsDidChange`：对话增删 / 标题 / 项目迁移；
@@ -30,6 +31,8 @@ final class ConversationRailTabController {
     private let sortStabilizer: ConversationSortStabilizer
     private let chatsViewModel: ConversationListViewModel
     private let projectViewModel: ConversationListViewModel
+    /// 标签标题（会直接成为 Rail 按钮 tooltip）的本地化解析。
+    private let localizedTitle: (String) -> String
 
     private weak var rail: (any RailViewProviding)?
     private weak var rootView: (any RootViewProviding)?
@@ -44,7 +47,8 @@ final class ConversationRailTabController {
         chatsViewModel: ConversationListViewModel,
         projectViewModel: ConversationListViewModel,
         order: Int,
-        pluginID: String
+        pluginID: String,
+        localizedTitle: @escaping (String) -> String = { pluginLocalization.string($0) }
     ) {
         self.context = context
         self.attentionStore = attentionStore
@@ -52,6 +56,7 @@ final class ConversationRailTabController {
         self.chatsViewModel = chatsViewModel
         self.projectViewModel = projectViewModel
         self.order = order
+        self.localizedTitle = localizedTitle
         self.chatsTabID = "\(pluginID).chats"
         self.projectTabID = "\(pluginID).project-chats"
     }
@@ -118,16 +123,15 @@ final class ConversationRailTabController {
             item: makeChatsItem()
         )
 
-        // `project-chats`：全库无对话时必然隐藏（短路，省去项目多样性查询）；
-        // 否则沿用既有判定——全库 ≥2 个项目且当前项目确有对话。
+        // `project-chats`：全库无对话时必然隐藏；否则仅当「全部对话」确实比当前
+        // 项目范围多出内容（其它项目或无项目会话）且当前项目确有对话时展示。
+        // 不能用项目路径数量判断：无项目会话不计入该数量，却会造成两个范围不同。
         let projectTabVisible: Bool
         if appCount > 0, let path = context.currentProjectPath {
-            let projectCount = await context.conversations.conversationProjectCount()
-            // 项目数 <2 时无需再查当前项目对话数，直接隐藏。
-            let currentCount = projectCount >= 2
-                ? (await context.conversations.conversationCount(projectPath: path))
-                : 0
-            projectTabVisible = currentCount > 0
+            let currentCount = await context.conversations.conversationCount(projectPath: path)
+            // 等待期间切了项目：本轮结果已过期，交给下一次刷新收敛。
+            guard context.currentProjectPath == path else { return }
+            projectTabVisible = currentCount > 0 && appCount > currentCount
         } else {
             projectTabVisible = false
         }
@@ -159,7 +163,8 @@ final class ConversationRailTabController {
         return RailTabItem(
             id: chatsTabID,
             category: .chat,
-            title: "对话",
+            // title 会被宿主 `AppTabBar` 直接用作 `.help(title)`，即悬停 tooltip。
+            title: localizedTitle("Chats"),
             systemImage: "message.fill",
             order: order
         ) { [chatsViewModel] in
@@ -172,7 +177,7 @@ final class ConversationRailTabController {
         return RailTabItem(
             id: projectTabID,
             category: .chat,
-            title: "项目",
+            title: localizedTitle("Projects"),
             systemImage: "folder.fill",
             order: order
         ) { [projectViewModel] in

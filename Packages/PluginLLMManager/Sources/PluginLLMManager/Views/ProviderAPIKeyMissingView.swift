@@ -112,7 +112,11 @@ struct ProviderAPIKeyMissingView: View {
             }
 
             if !viewModel.providerAvailable {
-                Text(pluginLocalization.string("Provider is not registered yet. Open Settings to configure this key."))
+                Text(pluginLocalization.string(
+                    viewModel.requiresManualProviderSelection
+                        ? "This message does not identify a single provider. Open Settings and set the API key for the right provider."
+                        : "Provider is not registered yet. Open Settings to configure this key."
+                ))
                     .font(.appCaption)
                     .foregroundStyle(theme.textSecondary)
             }

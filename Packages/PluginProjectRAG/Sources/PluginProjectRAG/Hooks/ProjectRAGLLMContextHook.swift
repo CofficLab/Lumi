@@ -12,7 +12,7 @@ final class ProjectRAGLLMContextHook {
     private let provider: any ProjectRAGProviding
     private let coordinator: CodeNavigationCoordinator
     private let searchMemory: ProjectRAGSearchMemory?
-    private var injectedQueryKeys: Set<String> = []
+    private var injectedTurns = RAGInjectionDeduplication()
 
     init(provider: any ProjectRAGProviding, searchMemory: ProjectRAGSearchMemory? = nil) {
         self.provider = provider
@@ -35,8 +35,12 @@ final class ProjectRAGLLMContextHook {
         // the next turn can inject semantic context after indexing completes.
         guard !provider.isIndexing(projectPath: projectPath) else { return context }
 
-        let queryKey = "\(context.conversationID.uuidString):\(userMessages.count):\(latestUserMessage.content)"
-        guard !injectedQueryKeys.contains(queryKey) else { return context }
+        let turnKey = RAGInjectionDeduplication.Key(
+            conversationID: context.conversationID,
+            userMessageCount: userMessages.count,
+            content: latestUserMessage.content
+        )
+        guard !injectedTurns.contains(turnKey) else { return context }
 
         do {
             let response = try await coordinator.search(
@@ -74,7 +78,7 @@ final class ProjectRAGLLMContextHook {
                 ),
                 at: 0
             )
-            injectedQueryKeys.insert(queryKey)
+            injectedTurns.record(turnKey)
             return updated
         } catch {
             // RAG 不可用时不改变原始请求，避免检索故障阻塞正常对话。

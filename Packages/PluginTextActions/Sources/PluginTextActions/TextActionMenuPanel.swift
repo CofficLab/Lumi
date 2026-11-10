@@ -31,7 +31,11 @@ final class TextActionMenuModel: ObservableObject {
     /// 由 `TextActionMenuController` 注入的动作处理器。
     var onPerform: @MainActor (TextAction) -> Void = { _ in }
 
-    /// 状态切换（动作条 ↔ 翻译卡片）会改变内容尺寸，通知控制器重新定位。
+    /// 状态切换通知（观察用）。
+    ///
+    /// 浮层尺寸**不由它驱动**：`didSet` 早于 SwiftUI 刷新，此时量尺寸拿到
+    /// 的是上一状态的值。尺寸跟随交给 `TextActionMenuHostingView`
+    /// 的 intrinsic size 回调。
     var onStateChange: (@MainActor (State) -> Void)?
 
     func perform(_ action: TextAction) { onPerform(action) }
@@ -74,18 +78,104 @@ final class TextActionMenuPanel: NSPanel {
 
 // MARK: - 浮层内容
 
+/// 承载 SwiftUI 内容的宿主视图。
+///
+/// 面板尺寸必须等 SwiftUI 真正完成新状态的布局后再取：`model.state` 的
+/// `didSet` 早于 SwiftUI 刷新，此刻 `fittingSize` 仍是上一个状态的值。
+/// 用它定尺寸会把面板卡在旧高度（例如「翻译中」的 270×46），译文卡片
+/// 只剩标题栏、正文被裁成 0 高——正是翻译结果布局崩坏的成因。
+///
+/// `invalidateIntrinsicContentSize` 是 AppKit 在 SwiftUI 算出新理想尺寸
+/// 之后回调的时机，因此把尺寸通知放在这里，并延后一拍读取 `fittingSize`。
+@MainActor
+final class TextActionMenuHostingView: NSHostingView<TextActionMenuView> {
+    /// SwiftUI 的理想尺寸变化后回调，携带新尺寸。
+    var onIntrinsicSizeChange: (@MainActor (CGSize) -> Void)?
+
+    private var lastReportedSize: CGSize = .zero
+    private var isPendingSizeCheck = false
+
+    required init(rootView: TextActionMenuView) {
+        super.init(rootView: rootView)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) is not supported")
+    }
+
+    override func invalidateIntrinsicContentSize() {
+        super.invalidateIntrinsicContentSize()
+        // invalidate 可能发生在布局进行中，此刻读取 fittingSize 会拿到
+        // 中间态；延后一拍让 SwiftUI 把新状态的布局落地。
+        guard !isPendingSizeCheck else { return }
+        isPendingSizeCheck = true
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.isPendingSizeCheck = false
+            let size = self.fittingSize
+            guard size.width > 0, size.height > 0, size != self.lastReportedSize else { return }
+            self.lastReportedSize = size
+            self.onIntrinsicSizeChange?(size)
+        }
+    }
+}
+
+/// Lumi 品牌标识。
+///
+/// 图片复用 `LumiApp` 的 App 图标（随包资源分发），保证与 Dock/菜单栏里的
+/// Lumi 是同一个符号，而不是另画一套。
+/// 源文件: `LumiApp/Assets.xcassets/AppIcon.appiconset/20260206090925-legacy-macos-128x128@2x.png`，
+/// App 图标更新时需同步替换 `Resources/LumiBrandMark.png`。
+@MainActor
+enum LumiBrandMark {
+    static let image: NSImage = {
+        guard let url = Bundle.module.url(forResource: "LumiBrandMark", withExtension: "png"),
+              let image = NSImage(contentsOf: url) else {
+            return NSImage(systemSymbolName: "bolt.fill", accessibilityDescription: "Lumi") ?? NSImage()
+        }
+        return image
+    }()
+}
+
 struct TextActionMenuView: View {
     @ObservedObject var model: TextActionMenuModel
 
     var body: some View {
-        content
-            .padding(5)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .strokeBorder(.white.opacity(0.14), lineWidth: 1)
-            )
-            .animation(.easeInOut(duration: 0.15), value: model.state)
+        VStack(alignment: .leading, spacing: 5) {
+            brandStrip
+            content
+        }
+        .padding(5)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .strokeBorder(.white.opacity(0.14), lineWidth: 1)
+        )
+        .animation(.easeInOut(duration: 0.15), value: model.state)
+    }
+
+    /// Lumi 身份标识。
+    ///
+    /// 放在所有状态共用的容器里（动作条、复制反馈、翻译中/结果/失败都会出现），
+    /// 而不是只加在翻译分支，避免有的入口有标识、有的没有。
+    /// 视觉权重刻意压低：9pt 次要色文字 + 13pt App 图标，内容仍是主视觉。
+    private var brandStrip: some View {
+        HStack(spacing: 4) {
+            Image(nsImage: LumiBrandMark.image)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 13, height: 13)
+                .accessibilityHidden(true)
+            Text("Lumi")
+                .font(.system(size: 9, weight: .medium))
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 3)
+        .padding(.top, 1)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Lumi")
     }
 
     @ViewBuilder

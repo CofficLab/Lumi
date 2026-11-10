@@ -7,6 +7,12 @@ import SwiftUI
 struct ItemView: View {
     @LumiTheme private var theme: any LumiUITheme
 
+    /// 需要注意的会话卡上那圈脉冲光环是否已展开。
+    ///
+    /// `phaseAnimator` 是 macOS 14 独占 API，这里用 `@State` + `repeatForever`
+    /// 动画在 macOS 13 上复现同样的两相脉冲效果。
+    @State private var isAttentionRingExpanded = false
+
     let conversation: ConversationSummary
     let conversationState: ConversationStateSnapshot?
     let isSelected: Bool
@@ -147,15 +153,19 @@ struct ItemView: View {
         ZStack {
             dotCore(color: Color.accentColor)
 
+            // macOS 13 兼容实现：`phaseAnimator` 是 macOS 14 独占 API。
+            // 用一个可开关的 @State 驱动 repeatForever 动画，等价于两相
+            // （放大淡出 → 复原）的无限循环脉冲。
             Circle()
                 .stroke(Color.accentColor.opacity(0.75), lineWidth: 1)
                 .frame(width: 6, height: 6)
-                .phaseAnimator([false, true]) { ring, phase in
-                    ring
-                        .scaleEffect(phase ? 3.2 : 1)
-                        .opacity(phase ? 0 : 0.75)
-                } animation: { _ in
-                    .easeOut(duration: 1.1)
+                .scaleEffect(isAttentionRingExpanded ? 3.2 : 1)
+                .opacity(isAttentionRingExpanded ? 0 : 0.75)
+                .onAppear {
+                    guard !isAttentionRingExpanded else { return }
+                    withAnimation(.easeOut(duration: 1.1).repeatForever(autoreverses: false)) {
+                        isAttentionRingExpanded = true
+                    }
                 }
         }
         .frame(width: 22, height: 22)

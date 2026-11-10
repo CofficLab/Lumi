@@ -25,14 +25,22 @@ public struct ListMindMapsTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let language = MindMapToolSupport.language
-        let maps = await MainActor.run { MindMapToolSupport.store().projectMaps }
+        // 列表必须反映磁盘上的真实状态：缓存的 store 可能还持有
+        // 别的入口（画布或另一个会话）新建导图之前的旧快照。
+        let maps = await MainActor.run {
+            let store = MindMapToolSupport.store()
+            store.reload()
+            return store.projectMaps
+        }
 
         if maps.isEmpty {
             return language == .chinese ? "当前项目暂无思维导图。" : "No mind maps in the current project."
         }
 
+        // 必须返回完整 ID：load / 编辑 / 导出工具都按完整 ID 精确匹配，
+        // 截断后 Agent 无法完成列表发现 → 加载的工作流（#1001）。
         let entries = maps.map { map in
-            "- [\(map.id.prefix(8))] \(map.title) (\(map.nodes.count) nodes)"
+            "- [\(map.id)] \(map.title) (\(map.nodes.count) nodes)"
         }.joined(separator: "\n")
 
         return language == .chinese

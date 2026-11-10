@@ -12,11 +12,20 @@ enum NetworkToolSupport {
     }
 
     static func int(_ arguments: [String: ToolArgument], _ key: String) -> Int? {
-        guard let value = arguments[key]?.value else { return nil }
-        if let int = value as? Int { return int }
-        if let number = value as? NSNumber { return number.intValue }
-        if let string = value as? String { return Int(string) }
-        return nil
+        ToolArgumentNumber.int(arguments[key]?.value)
+    }
+
+    /// 读取分页上限：负数/非法值回退默认值，再钳制到上限。
+    ///
+    /// 调用方会把结果直接交给 `prefix(_:)`，负数会触发集合切片陷阱。
+    static func limit(
+        _ arguments: [String: ToolArgument],
+        _ key: String = "limit",
+        default defaultValue: Int,
+        max maximum: Int
+    ) -> Int {
+        guard let requested = int(arguments, key), requested > 0 else { return defaultValue }
+        return min(requested, maximum)
     }
 
     static func bool(_ arguments: [String: ToolArgument], _ key: String) -> Bool? {

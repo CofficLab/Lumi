@@ -229,13 +229,34 @@ final class TrackerView: NSView {
     private func attachIfNeeded() {
         // Tracker 必须绑定到自己的消息 List。禁止从 window.contentView
         // 全局扫描，否则同一个窗口里的 Rail NSScrollView 可能被误选中。
-        guard let scrollView = enclosingScrollView else {
+        guard let scrollView = findOwningScrollView() else {
             stopObserving()
             return
         }
         guard scrollView !== observedScrollView else { return }
 
         attach(to: scrollView)
+    }
+
+    /// 找到承载本 tracker 的滚动视图。
+    ///
+    /// - Important: **不能**只用 AppKit 的 `enclosingScrollView`。
+    ///   它只在视图是滚动视图的**后代**时才返回值；而 tracker 是挂在
+    ///   `List` 上的 `background`，在 macOS 上它是滚动视图的**兄弟**，
+    ///   `enclosingScrollView` 恒为 nil —— 观察者因此从未挂上，
+    ///   「是否在底部」永远不更新。
+    ///
+    ///   这里改为**向上遍历父视图链**，找第一个 `NSScrollView`；
+    ///   找不到再退回 `enclosingScrollView`。
+    private func findOwningScrollView() -> NSScrollView? {
+        var candidate: NSView? = self
+        while let view = candidate {
+            if let scrollView = view as? NSScrollView {
+                return scrollView
+            }
+            candidate = view.superview
+        }
+        return enclosingScrollView
     }
 
     /// 绑定滚动视图并挂上观察者。

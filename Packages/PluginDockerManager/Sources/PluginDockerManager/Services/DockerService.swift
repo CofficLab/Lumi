@@ -60,24 +60,36 @@ public actor DockerService: SuperLog {
     /// - Throws: DockerError.commandFailed if docker command fails
     public func listImages() async throws -> [DockerImage] {
         let output = try await runDockerCommand(["images", "--format", "{{json .}}"])
+        return try Self.decodeImages(from: output)
+    }
+
+    /// 逐行解码 `docker images --format '{{json .}}'` 的输出。
+    ///
+    /// 单行失败会被记录；若所有非空行都失败，则抛出错误而不是把
+    /// 解析失败伪装成「成功返回空列表」。
+    static func decodeImages(from output: String) throws -> [DockerImage] {
         let lines = output.components(separatedBy: .newlines)
-        
         var images: [DockerImage] = []
+        var failedLines = 0
         let decoder = JSONDecoder()
-        
+
         for line in lines where !line.isEmpty {
-            if let data = line.data(using: .utf8) {
-                do {
-                    let image = try decoder.decode(DockerImage.self, from: data)
-                    images.append(image)
-                } catch {
-                    if DockerKit.verbose {
-                                            DockerKit.logger.error("\(self.t)Failed to decode image line: \(error)")
-                    }
-                }
+            guard let data = line.data(using: .utf8) else {
+                failedLines += 1
+                DockerKit.logger.error("DockerKit: image line is not valid UTF-8")
+                continue
+            }
+            do {
+                images.append(try decoder.decode(DockerImage.self, from: data))
+            } catch {
+                failedLines += 1
+                DockerKit.logger.error("DockerKit: failed to decode image line: \(error)")
             }
         }
-        
+
+        if images.isEmpty, failedLines > 0 {
+            throw DockerError.parsingFailed("\(failedLines) image line(s) could not be decoded")
+        }
         return images
     }
     

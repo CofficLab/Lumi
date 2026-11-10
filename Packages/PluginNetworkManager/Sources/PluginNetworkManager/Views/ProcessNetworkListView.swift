@@ -49,7 +49,7 @@ public struct ProcessNetworkListView: View {
             if viewModel.filteredProcesses.isEmpty {
                 VStack {
                     Spacer()
-                    Text(pluginLocalization.string("No active processes"))
+                    Text(pluginLocalization.string(viewModel.hasProcessSnapshot ? "No active processes" : "Collecting..."))
                         .foregroundColor(.secondary)
                     Spacer()
                 }
@@ -68,12 +68,12 @@ public struct ProcessNetworkListView: View {
         }
         .onAppear {
             DispatchQueue.main.async {
-                viewModel.showProcessMonitor = true
+                viewModel.acquireProcessMonitor()
             }
         }
         .onDisappear {
             DispatchQueue.main.async {
-                viewModel.showProcessMonitor = false
+                viewModel.releaseProcessMonitor()
             }
         }
         .infiniteWidth()

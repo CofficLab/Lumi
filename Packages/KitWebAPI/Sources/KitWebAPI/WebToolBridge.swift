@@ -142,18 +142,41 @@ public struct WebToolExecutionResult: Encodable, Sendable {
     /// 是否处于「等待用户响应」的挂起状态。
     public let awaitingUserResponse: Bool
 
+    /// 结果中的图片附件（字节、MIME 类型与文件名）。
+    ///
+    /// `read_image` 这类工具的主要结果就是图片；HTTP 调用方需要拿到真实
+    /// 附件，而不是只看到一句「图片已附加」的正文。
+    public let images: [ImageAttachment]
+
     public init(
         tool: String,
         content: String,
         isError: Bool,
         duration: TimeInterval?,
-        awaitingUserResponse: Bool
+        awaitingUserResponse: Bool,
+        images: [ImageAttachment] = []
     ) {
         self.tool = tool
         self.content = content
         self.isError = isError
         self.duration = duration
         self.awaitingUserResponse = awaitingUserResponse
+        self.images = images
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case tool, content, isError, duration, awaitingUserResponse, images
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(tool, forKey: .tool)
+        try container.encode(content, forKey: .content)
+        try container.encode(isError, forKey: .isError)
+        try container.encodeIfPresent(duration, forKey: .duration)
+        try container.encode(awaitingUserResponse, forKey: .awaitingUserResponse)
+        // 无图片时不输出空数组，保持既有标量响应形状不变。
+        if !images.isEmpty { try container.encode(images, forKey: .images) }
     }
 }
 
@@ -166,8 +189,9 @@ public struct WebToolExecutionResult: Encodable, Sendable {
 /// - `GET  /api/v1/tools/:name` —— 查看单个工具的详情与 schema
 /// - `POST /api/v1/tools/:name/invoke` —— 调用工具
 ///
-/// 工具执行复用 `ToolManagerProviding.execute`，因此授权策略、风险评估、
-/// 调用记录与 UI 反馈全部沿用内核既有机制，桥接层不重复实现。
+/// 工具执行复用 `ToolManagerProviding.execute`，并在执行前调用
+/// `authorizationDecision`，因此会话级策略（Chat 阻断、Build 高风险需确认）
+/// 与正常 Agent 路径保持一致；HTTP 无法弹出授权界面，需要批准的调用直接拒绝。
 ///
 /// - Note: 工具执行需要 `conversationID` 作为上下文（会话决定自动化等级与
 ///   项目路径）。调用方通过请求体 `conversationID` 指定；缺省时桥接器用
@@ -216,8 +240,8 @@ public final class WebToolBridge {
 
     /// 刷新工具归属索引。
     ///
-    /// 工具注册表会随插件启停变化，调用方应在观察到工具变化后调用本方法，
-    /// 让描述里的 `pluginID` 保持准确。
+    /// 工具注册表会随插件启停、MCP 连接变化，描述查询前会自动调用；
+    /// 外部观察到工具变化后也可主动调用。
     public func refresh() {
         pluginIndex = Self.buildPluginIndex(from: toolManager)
     }
@@ -226,7 +250,10 @@ public final class WebToolBridge {
 
     /// 全部工具的描述列表。
     public func toolDescriptors() -> [WebToolDescriptor] {
-        toolManager.allTools().map { tool in
+        // 索引只在初始化时构建一次会漏掉之后注册的工具（插件启用、MCP 连接），
+        // 导致这些工具的 pluginID 被误报为 Built-in。
+        refresh()
+        return toolManager.allTools().map { tool in
             WebToolDescriptor(
                 name: tool.name,
                 pluginID: pluginIndex[tool.name] ?? "Built-in",
@@ -242,6 +269,8 @@ public final class WebToolBridge {
     /// - Parameter name: 工具名称。
     /// - Returns: 工具不存在时返回 `nil`。
     public func toolDescriptor(named name: String) -> WebToolDescriptor? {
+        // 同 `toolDescriptors()`：查询前刷新，归属信息不能停留在初始化快照。
+        refresh()
         guard let tool = toolManager.tool(named: name) else { return nil }
         return WebToolDescriptor(
             name: tool.name,
@@ -284,6 +313,19 @@ public final class WebToolBridge {
             arguments: Self.encodeArguments(arguments)
         )
 
+        // HTTP 没有交互式授权通道，必须沿用会话的自动化策略：
+        // Chat 直接拒绝；Build 中需要确认的调用不执行，由调用方在 Lumi 内确认。
+        switch toolManager.authorizationDecision(for: toolCall, conversationID: resolvedConversationID) {
+        case .autoApproved:
+            break
+        case .blocked(let reason):
+            throw WebAPIError.forbidden(message: reason)
+        case .requiresUserApproval:
+            throw WebAPIError.forbidden(
+                message: "Tool \(name) requires user approval in Lumi before it can be invoked over HTTP."
+            )
+        }
+
         let result = await toolManager.execute(
             toolCall,
             conversationID: resolvedConversationID,
@@ -295,7 +337,8 @@ public final class WebToolBridge {
             content: result.content,
             isError: result.isError,
             duration: result.duration,
-            awaitingUserResponse: result.awaitingUserResponse
+            awaitingUserResponse: result.awaitingUserResponse,
+            images: result.images
         )
     }
 

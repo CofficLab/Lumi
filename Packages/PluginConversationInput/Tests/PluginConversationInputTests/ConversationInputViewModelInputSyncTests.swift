@@ -123,6 +123,38 @@ struct ConversationInputViewModelInputSyncTests {
         #expect(capability.commits.isEmpty, "纯空白不应产生提交")
     }
 
+    @Test("同步提交失败时保留正文与折叠块")
+    func sendPreservesDraftOnCommitFailure() {
+        let capability = SendActionBarTestCapability()
+        let block = CollapsedContentBlock(start: 0, length: 2, title: "hi")
+        capability.text = "hi"
+        capability.collapsedBlocks = [block]
+        capability.commitError = SendActionBarTestError.failed
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        viewModel.send()
+
+        #expect(viewModel.errorMessage == SendActionBarTestError.failed.localizedDescription)
+        #expect(capability.text == "hi")
+        #expect(capability.collapsedBlocks == [block])
+        #expect(viewModel.text == "hi")
+        #expect(viewModel.canSend)
+    }
+
+    @Test("同步提交未形成有效结果时保留草稿")
+    func sendPreservesDraftWhenCommitIsNil() {
+        let capability = SendActionBarTestCapability()
+        capability.text = "dropped"
+        capability.commit = nil
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        viewModel.send()
+
+        #expect(capability.commits.count == 1)
+        #expect(capability.text == "dropped")
+        #expect(viewModel.text == "dropped")
+    }
+
     @Test("setText 会把文本旁路通知到派生的发送按钮")
     func setTextNotifiesActionBar() {
         let capability = SendActionBarTestCapability()

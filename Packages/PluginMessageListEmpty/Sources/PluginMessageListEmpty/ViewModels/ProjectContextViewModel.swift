@@ -68,18 +68,17 @@ struct ProjectContextDetail: Identifiable, Equatable {
 /// 目录读取、Git 状态、索引状态、会话查询都会离开主线程；`loadGeneration`
 /// 保证慢的一次加载不会覆盖新的一次结果。
 @MainActor
-@Observable
-final class ProjectContextViewModel {
+final class ProjectContextViewModel: ObservableObject {
     /// 当前项目身份。没有项目时为 nil。
-    private(set) var identity: ProjectContextIdentity?
+    @Published private(set) var identity: ProjectContextIdentity?
     /// 可点击的状态行。
-    private(set) var rows: [ProjectContextRow] = []
+    @Published private(set) var rows: [ProjectContextRow] = []
     /// 展开态的键值对。
-    private(set) var details: [ProjectContextDetail] = []
+    @Published private(set) var details: [ProjectContextDetail] = []
     /// 展开态里的关键文件标签。
-    private(set) var keyFiles: [String] = []
+    @Published private(set) var keyFiles: [String] = []
     /// 是否正在加载。
-    private(set) var isLoading = false
+    @Published private(set) var isLoading = false
 
     private let project: (any ProjectProviding)?
     private let conversations: (any ConversationManaging)?

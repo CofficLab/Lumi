@@ -1,9 +1,13 @@
 import Foundation
+import ProviderActivityBar
 import ProviderConversation
 import ProviderGit
 import ProviderMessage
+import ProviderPluginControl
 import ProviderProject
 import ProviderProjectRAG
+import ProviderRailView
+import SwiftUI
 import Testing
 @testable import PluginMessageListEmpty
 
@@ -65,6 +69,99 @@ private final class ScopedMessageManager: MessageManaging {
         guard let conversationIDs else { return globalSeries }
         return conversationIDs.isEmpty ? [:] : scopedSeries
     }
+}
+
+// MARK: - Navigation stubs
+
+/// 记录跨插件跳转的调用顺序，用于断言「先切 Chat、再选文件树」。
+@MainActor
+private final class NavigationRecorder {
+    var events: [String] = []
+}
+
+@MainActor
+private final class RecordingActivityBar: ActivityBarProviding {
+    let recorder: NavigationRecorder
+    var items: [ActivityBarItem] = []
+
+    init(recorder: NavigationRecorder) {
+        self.recorder = recorder
+    }
+
+    func registerItems(_ items: [ActivityBarItem]) {
+        self.items = items
+    }
+
+    func activateItem(id: String?) {
+        guard let id else { return }
+        recorder.events.append("activity:\(id)")
+    }
+
+    func makeActivityBarView() -> AnyView { AnyView(EmptyView()) }
+}
+
+@MainActor
+private final class RecordingRail: RailViewProviding {
+    let recorder: NavigationRecorder
+    var tabs: [RailTabItem] = []
+
+    init(recorder: NavigationRecorder) {
+        self.recorder = recorder
+    }
+
+    func registerTabs(_ tabs: [RailTabItem]) {
+        self.tabs = tabs
+    }
+
+    func activateTab(id: String?) {
+        guard let id else { return }
+        recorder.events.append("tab:\(id)")
+    }
+
+    func activateTabWhenAvailable(id: String?) {
+        activateTab(id: id)
+    }
+
+    func makeRailView() -> AnyView { AnyView(EmptyView()) }
+}
+
+/// 插件启停替身：启用成功后模拟插件 `onBoot` 注册 Activity Bar 入口。
+@MainActor
+private final class RecordingPluginControl: PluginControlling {
+    let recorder: NavigationRecorder
+    let activityBar: RecordingActivityBar?
+    let succeeds: Bool
+    private(set) var enabledIDs: [String] = []
+
+    init(recorder: NavigationRecorder, activityBar: RecordingActivityBar? = nil, succeeds: Bool = true) {
+        self.recorder = recorder
+        self.activityBar = activityBar
+        self.succeeds = succeeds
+    }
+
+    var lastErrorDescription: String? { succeeds ? nil : "enable failed" }
+
+    func enablePlugin(id: String) async -> Bool {
+        enabledIDs.append(id)
+        recorder.events.append("enable:\(id)")
+        guard succeeds else { return false }
+        if let activityBar,
+           !activityBar.items.contains(where: { $0.ownerPluginID == id }) {
+            activityBar.registerItems(activityBar.items + [
+                ActivityBarItem(
+                    id: "\(id).entry",
+                    title: "Git",
+                    systemImage: "arrow.triangle.branch",
+                    ownerPluginID: id
+                )
+            ])
+        }
+        return true
+    }
+
+    func disablePlugin(id: String) async -> Bool { false }
+
+    func isEnabled(id: String) -> Bool { enabledIDs.contains(id) }
 }
 
 // MARK: - Tests
@@ -433,5 +530,190 @@ struct ActivityScopeTests {
         await model.setScope(.project)
         #expect(model.effectiveScope == .project)
         #expect(model.totalMessages == 7)
+    }
+
+    @Test("file tree navigation restores Chat before selecting Explorer")
+    func fileTreeNavigationActivatesChatFirst() {
+        let recorder = NavigationRecorder()
+        let activityBar = RecordingActivityBar(recorder: recorder)
+        activityBar.items = [ActivityBarItem(
+            id: "com.coffic.lumi.plugin.chat-panel.entry",
+            title: "Chat",
+            systemImage: "bubble.left",
+            ownerPluginID: "com.coffic.lumi.plugin.chat-panel"
+        )]
+        let rail = RecordingRail(recorder: recorder)
+        rail.tabs = [RailTabItem(
+            id: "explorer",
+            category: .fileTree,
+            title: "Explorer",
+            systemImage: "folder"
+        ) { EmptyView() }]
+        let services = MessageListEmptyServices(
+            project: nil,
+            promptSuggestions: nil,
+            promptSuggestionExecutor: nil,
+            messages: nil,
+            conversations: nil,
+            projectRAG: nil,
+            git: nil,
+            activityBar: activityBar,
+            railView: rail
+        )
+
+        ProjectContextNavigator.openFileTree(services: services)
+
+        // Browser 等工作区隐藏了 Rail；必须先切 Chat 让 Rail 重新挂载，
+        // 再选中文件树，否则这次点击没有任何可见结果。
+        #expect(recorder.events == [
+            "activity:com.coffic.lumi.plugin.chat-panel.entry",
+            "tab:explorer",
+        ])
+    }
+
+    @Test("file tree navigation still selects the tab without an activity bar")
+    func fileTreeNavigationFallsBackToRail() {
+        let recorder = NavigationRecorder()
+        let rail = RecordingRail(recorder: recorder)
+        rail.tabs = [RailTabItem(
+            id: "explorer",
+            category: .fileTree,
+            title: "Explorer",
+            systemImage: "folder"
+        ) { EmptyView() }]
+        let services = MessageListEmptyServices(
+            project: nil,
+            promptSuggestions: nil,
+            promptSuggestionExecutor: nil,
+            messages: nil,
+            conversations: nil,
+            projectRAG: nil,
+            git: nil,
+            activityBar: nil,
+            railView: rail
+        )
+
+        ProjectContextNavigator.openFileTree(services: services)
+
+        #expect(recorder.events == ["tab:explorer"])
+    }
+
+    @Test("git navigation activates an already registered workspace entry")
+    func gitNavigationActivatesExistingEntry() async {
+        let recorder = NavigationRecorder()
+        let activityBar = RecordingActivityBar(recorder: recorder)
+        activityBar.items = [Self.gitWorkspaceItem]
+        let services = MessageListEmptyServices(
+            project: nil,
+            promptSuggestions: nil,
+            promptSuggestionExecutor: nil,
+            messages: nil,
+            conversations: nil,
+            projectRAG: nil,
+            git: nil,
+            activityBar: activityBar,
+            railView: nil
+        )
+
+        await ProjectContextNavigator.openGitWorkspace(services: services)
+
+        #expect(recorder.events == ["activity:\(ProjectContextNavigator.gitWorkspacePluginID).entry"])
+    }
+
+    @Test("git navigation enables the workspace when its entry is missing")
+    func gitNavigationEnablesDisabledWorkspace() async {
+        let recorder = NavigationRecorder()
+        let activityBar = RecordingActivityBar(recorder: recorder)
+        let control = RecordingPluginControl(recorder: recorder, activityBar: activityBar)
+        let services = MessageListEmptyServices(
+            project: nil,
+            promptSuggestions: nil,
+            promptSuggestionExecutor: nil,
+            messages: nil,
+            conversations: nil,
+            projectRAG: nil,
+            git: nil,
+            activityBar: activityBar,
+            pluginControl: control,
+            railView: nil
+        )
+
+        await ProjectContextNavigator.openGitWorkspace(services: services)
+
+        // 先启用插件，等它注册入口后再激活；否则目标 id 从未存在，
+        // 点击表现就是「什么都不发生」。
+        #expect(control.enabledIDs == [ProjectContextNavigator.gitWorkspacePluginID])
+        #expect(recorder.events == [
+            "enable:\(ProjectContextNavigator.gitWorkspacePluginID)",
+            "activity:\(ProjectContextNavigator.gitWorkspacePluginID).entry",
+        ])
+    }
+
+    @Test("git navigation leaves the UI untouched when enabling fails")
+    func gitNavigationStopsWhenEnablingFails() async {
+        let recorder = NavigationRecorder()
+        let activityBar = RecordingActivityBar(recorder: recorder)
+        let control = RecordingPluginControl(recorder: recorder, activityBar: activityBar, succeeds: false)
+        let services = MessageListEmptyServices(
+            project: nil,
+            promptSuggestions: nil,
+            promptSuggestionExecutor: nil,
+            messages: nil,
+            conversations: nil,
+            projectRAG: nil,
+            git: nil,
+            activityBar: activityBar,
+            pluginControl: control,
+            railView: nil
+        )
+
+        await ProjectContextNavigator.openGitWorkspace(services: services)
+
+        #expect(recorder.events == ["enable:\(ProjectContextNavigator.gitWorkspacePluginID)"])
+    }
+
+    @Test("the git row only offers an action when the workspace can be reached")
+    func gitRowAvailabilityFollowsEntryAndController() {
+        let recorder = NavigationRecorder()
+        let activityBar = RecordingActivityBar(recorder: recorder)
+
+        let unreachable = MessageListEmptyServices(
+            project: nil,
+            promptSuggestions: nil,
+            promptSuggestionExecutor: nil,
+            messages: nil,
+            conversations: nil,
+            projectRAG: nil,
+            git: nil,
+            activityBar: activityBar,
+            railView: nil
+        )
+        #expect(!ProjectContextNavigator.canOpenGitWorkspace(services: unreachable))
+
+        let enabledLater = MessageListEmptyServices(
+            project: nil,
+            promptSuggestions: nil,
+            promptSuggestionExecutor: nil,
+            messages: nil,
+            conversations: nil,
+            projectRAG: nil,
+            git: nil,
+            activityBar: activityBar,
+            pluginControl: RecordingPluginControl(recorder: recorder),
+            railView: nil
+        )
+        #expect(ProjectContextNavigator.canOpenGitWorkspace(services: enabledLater))
+
+        activityBar.items = [Self.gitWorkspaceItem]
+        #expect(ProjectContextNavigator.canOpenGitWorkspace(services: unreachable))
+    }
+
+    private static var gitWorkspaceItem: ActivityBarItem {
+        ActivityBarItem(
+            id: "\(ProjectContextNavigator.gitWorkspacePluginID).entry",
+            title: "Git",
+            systemImage: "arrow.triangle.branch",
+            ownerPluginID: ProjectContextNavigator.gitWorkspacePluginID
+        )
     }
 }

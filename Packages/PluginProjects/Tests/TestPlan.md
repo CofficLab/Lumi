@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjects 的实现包，包含 14 个主要类型；当前测试覆盖 14 条用例。
+PluginProjects 的实现包，包含 15 个主要类型；当前测试覆盖 24 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 14
+测试文件: 7 个，用例总数: 24
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -36,6 +36,7 @@ PluginProjects 的实现包，包含 14 个主要类型；当前测试覆盖 14 
 - `ProjectsRuntime`
 - `ProjectOpenedFiles`
 - `AddProjectTool`
+- `ListProjectsTool`
 
 ## 关键行为契约（实现约定，非协议要求）
 
@@ -44,6 +45,7 @@ PluginProjects 的实现包，包含 14 个主要类型；当前测试覆盖 14 
 - **ConversationProjectSyncObserver**（7 条）：由 `selectingConversationWithProjectOpensProject`、`selectingConversationWithoutProjectDoesNotOpen`、`deselectDoesNotOpenProject` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（5 条）：由 `projectsPersistenceRoundTrip`、`openedFilesPersistenceRoundTrip`、`restoresAndPersistsOpenedFilesThroughProjectProviding` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProjectPathInjectionHook**（2 条）：由 `injectsConversationProject`、`skipsUnboundConversation` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ListProjectsTool**（4 条）：由 `negativeLimitReturnsParameterError`、`zeroLimitReturnsParameterError`、`nonIntegerLimitReturnsParameterError`、`limitDefaultsAndCaps` 锁定；改动 limit 解析时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -63,27 +65,37 @@ PluginProjects 的实现包，包含 14 个主要类型；当前测试覆盖 14 
 | 12 | 综合 | storageDirectoryUsesPluginID | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `storageDirectoryUsesPluginID` |
 | 13 | ProjectPathInjectionHook | injects the conversation project instead of the currently open project | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `injectsConversationProject` |
 | 14 | ProjectPathInjectionHook | does not inject when the conversation has no project | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `skipsUnboundConversation` |
+| 15 | ListProjectsTool | 负数 limit 返回参数错误，不进入 prefix 的负数 precondition | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `negativeLimitReturnsParameterError` |
+| 16 | ListProjectsTool | 0 limit 返回参数错误，语义固定为「非法」而非「不限制」 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `zeroLimitReturnsParameterError` |
+| 17 | ListProjectsTool | 非整数 limit（如 1e100）返回参数错误，不静默回退默认值 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nonIntegerLimitReturnsParameterError` |
+| 18 | ListProjectsTool | limit 缺省为 5，超过 500 安全截断 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `limitDefaultsAndCaps` |
+| 19 | ProjectsStore | 并发保存不遗留临时文件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `concurrentSavesLeaveNoTemporaryFiles` |
+| 20 | ProjectsStore | 并发保存后文件仍可读取 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `concurrentSavesLeaveReadableFile` |
+| 21 | ProjectsSettingsOpenedFiles | 打开文件记录变更后设置页缓存刷新 | 隔离 Store | `startObservingOpenedFiles` 后两次 `saveOpenedFiles` | 缓存跟随最新写入，而非首次快照 | P0 | ✅ 已覆盖 | `openedFilesProjectionRefreshesWhenStoreChanges` |
+| 22 | ProjectsSettingsOpenedFiles | preview-only 当前文件显示 Active 而非空态 | `openFileURLs` 为空、`currentFileURL` 非空 | 调用 `openedFilesSectionState` | 返回 `.content`，仅两者皆空才返回 `.empty` | P0 | ✅ 已覆盖 | `previewOnlyCurrentFileShowsActiveRow` |
+| 23 | ProjectsPlugin RAG 状态观察者 | 重复构建详情区块会注销旧观察者 | kernel 注册计数用 RAG Provider | 对同一路径连续调用两次 `makeRAGStatusSection` | 旧观察者被 cancel，Provider 中只剩一个存活观察者 | P1 | ✅ 已覆盖 | `repeatedSectionCreationReplacesObserver` |
+| 24 | ProjectsPlugin RAG 状态观察者 | 切换到另一个项目会注销不可见详情的观察者 | kernel 注册计数用 RAG Provider | 依次为两个项目构建详情区块 | 第一个项目的观察者被 cancel，Provider 中只剩一个存活观察者 | P1 | ✅ 已覆盖 | `switchingProjectCancelsInvisibleObserver` |
 
-> 说明：全部 **14 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **22 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 1 / 1
-- P1: 已覆盖 13 / 13
+- P0: 已覆盖 5 / 5
+- P1: 已覆盖 19 / 19
 - P2: 已覆盖 0 / 0
-- **合计: 14 / 14**（仅表示清单场景，非源码覆盖率）
+- **合计: 24 / 24**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（13 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 14 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 24 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

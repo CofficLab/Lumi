@@ -108,8 +108,11 @@ public struct ACPPluginFactory: PluginFactory {
     public init() {}
 
     public func makePlugins() -> [any SuperPlugin] {
-        [
-            try! StorageSuperPlugin(),
+        var plugins: [any SuperPlugin] = []
+        if let storage = StorageSuperPlugin.makeIfAvailable() {
+            plugins.append(storage)
+        }
+        plugins += [
             CommandPlugin(),
             ToastSuperPlugin(),
             PluginLLMManager(),
@@ -165,5 +168,6 @@ public struct ACPPluginFactory: PluginFactory {
             ZhipuProviderPlugin(),
             MLXProviderPlugin(),
         ]
+        return plugins
     }
 }

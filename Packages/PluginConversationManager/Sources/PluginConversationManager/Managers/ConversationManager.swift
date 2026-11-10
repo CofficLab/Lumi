@@ -22,6 +22,17 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     public nonisolated static let verbose = false
 
     public internal(set) var conversations: [ConversationSummary] = []
+    /// 缓存数组之外的会话模型选择；列表整表重载或旧会话不在窗口内时仍然生效。
+    var modelIDOverrides: [UUID: String] = [:]
+    /// 缓存数组之外的会话语言；后台会话被挤出有界缓存后，下一次请求仍须用它自己的
+    /// 语言而不是 New Chat 的全局默认值（issue #984）。
+    var languageOverrides: [UUID: ConversationLanguage] = [:]
+    /// 缓存数组之外的会话自动化级别；后台会话被挤出有界缓存后，工具可用性与
+    /// 授权策略仍须按用户为该会话选择的值执行（issue #1008）。
+    var automationLevelOverrides: [UUID: AutomationLevel] = [:]
+    /// 缓存数组之外的会话推理强度；后台回合被挤出有界缓存后，下一次 LLM 请求
+    /// 仍须携带用户为它保存的档位，而不是把「未加载」当成「未设置」（issue #892）。
+    var reasoningEffortOverrides: [UUID: ReasoningEffort] = [:]
     public internal(set) var selectedConversationID: UUID? {
         didSet {
             guard selectedConversationID != oldValue else { return }
@@ -48,7 +59,9 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     public var sortedConversations: [ConversationSummary] {
         conversations.sorted { lhs, rhs in
             if lhs.lastMessageAt == rhs.lastMessageAt {
-                return lhs.createdAt > rhs.createdAt
+                // 与数据库 keyset 的 `sortKey` 一样需要稳定 tie-break。哈希细节留在 Store，
+                // 内存列表只需保证同一时间戳下顺序确定。
+                return lhs.id.uuidString > rhs.id.uuidString
             }
             return lhs.lastMessageAt > rhs.lastMessageAt
         }
@@ -113,7 +126,8 @@ public final class ConversationManager: ConversationManaging, SuperLog {
         // Synchronous load on MainActor - the store.fetchConversations is async but we await it
         Task { @MainActor in
             _ = await store.migrateLegacyModelSelections()
-            let persistedSelectedID = self.loadPersistedSelectedConversationID()
+            let persistedState = self.loadPersistedState()
+            let persistedSelectedID = persistedState?.selectedConversationID
             var loaded = await store.fetchConversationPage(limit: Self.initialPageSize)
 
             if let persistedSelectedID,
@@ -134,9 +148,19 @@ public final class ConversationManager: ConversationManaging, SuperLog {
                    !loaded.contains(where: { $0.id == selectedID }) {
                     self.selectedConversationID = loaded.first?.id
                 }
-                // 初始化全局详细程度为当前选中对话的详细程度
-                self.globalVerbosity = self.verbosity(for: self.selectedConversationID)
+                // New Chat 的默认语言独立于选中会话，必须跨重启保留；
+                // 选中会话存在时，下面的会话级恢复仍会覆盖它。
+                if let persistedLanguage = persistedState?.globalLanguage {
+                    self.globalLanguage = persistedLanguage
+                }
+                // New Chat 的默认详细度同样独立于选中会话，必须先恢复；有选中会话时
+                // 下面的会话级复制仍会覆盖它。
+                if let persistedVerbosity = persistedState?.globalVerbosity {
+                    self.globalVerbosity = persistedVerbosity
+                }
                 if self.selectedConversationID != nil {
+                    // 初始化全局详细程度为当前选中对话的详细程度
+                    self.globalVerbosity = self.verbosity(for: self.selectedConversationID)
                     self.globalReasoningEffort = self.reasoningEffortOptional(for: self.selectedConversationID)
                     self.globalAutomationLevel = self.automationLevel(for: self.selectedConversationID)
                     self.globalLanguage = self.language(for: self.selectedConversationID)
@@ -232,6 +256,26 @@ public final class ConversationManager: ConversationManaging, SuperLog {
 
     func cache(_ summary: ConversationSummary) {
         guard summary.parentConversationID == nil else { return }
+        // 摘要一旦进入过缓存，就记住它的显式语言；后续被裁剪出窗口时，
+        // `language(for:)` 仍能读到会话自己的设置（issue #984）。
+        if let language = summary.language {
+            languageOverrides[summary.id] = language
+        }
+        // 显式模型绑定同样要跨缓存淘汰保留：后台会话的排队回合会在新回合开始时
+        // 按 ID 查询模型，丢失后会静默改用全局模型（issue #987）。
+        if let modelID = summary.modelID {
+            modelIDOverrides[summary.id] = modelID
+        }
+        // 自动化级别同样要跨缓存淘汰保留：后台回合在淘汰后仍会按会话 ID
+        // 查询该值，丢失后会回退 Build，改变工具授权策略（issue #1008）。
+        if let automationLevel = summary.automationLevel {
+            automationLevelOverrides[summary.id] = automationLevel
+        }
+        // 推理强度同理：后台会话的下一请求直接读取该值，丢失后会把
+        // 「摘要不在缓存」当成「用户未设置」，静默丢掉已保存的档位（issue #892）。
+        if let reasoningEffort = summary.reasoningEffort {
+            reasoningEffortOverrides[summary.id] = reasoningEffort
+        }
         if let index = conversations.firstIndex(where: { $0.id == summary.id }) {
             conversations[index] = summary
         } else {
@@ -255,6 +299,22 @@ public final class ConversationManager: ConversationManaging, SuperLog {
         }
     }
 
+    /// 把从存储补载的摘要写入缓存。
+    ///
+    /// 选中会话不在缓存时，UI 已按 `.defaultVerbosity` 渲染；水合后再读缓存
+    /// 虽然能拿到真实值，但工具栏与消息列表只监听 `.verbosityChanged`，
+    /// 不发事件就会一直停在缺省值（issue #1069）。只在选中会话的有效详细度
+    /// 真正变化时补发，避免无关的缓存写入触发 UI 刷新。
+    func cacheHydratedSummary(_ summary: ConversationSummary) {
+        let previousVerbosity = verbosity(for: summary.id)
+        cache(summary)
+        guard summary.id == selectedConversationID,
+              verbosity(for: summary.id) != previousVerbosity else {
+            return
+        }
+        notifyConversationObservers(.verbosityChanged(summary.id))
+    }
+
     func updateCurrentTitle() {
         let newTitle: String
         if let selectedID = selectedConversationID,
@@ -268,21 +328,27 @@ public final class ConversationManager: ConversationManaging, SuperLog {
         currentTitle = newTitle
     }
 
-    func loadPersistedSelectedConversationID() -> UUID? {
+    private func loadPersistedState() -> ConversationState? {
         guard let data = try? Data(contentsOf: stateFileURL),
               let state = try? JSONDecoder().decode(ConversationState.self, from: data) else {
             return nil
         }
-        return state.selectedConversationID
+        return state
     }
 
     func persistSelectedConversationID() {
         // 主线程零 I/O：编码与原子写盘全部移出点击链路（异步队列）。
         let selectedID = selectedConversationID
+        let verbosity = globalVerbosity
+        let language = globalLanguage
         let fileURL = stateFileURL
         let directory = fileURL.deletingLastPathComponent()
         Self.stateWriteQueue.async {
-            let state = ConversationState(selectedConversationID: selectedID)
+            let state = ConversationState(
+                selectedConversationID: selectedID,
+                globalVerbosity: verbosity,
+                globalLanguage: language
+            )
             guard let data = try? JSONEncoder().encode(state) else { return }
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             try? data.write(to: fileURL, options: .atomic)
@@ -299,6 +365,9 @@ public final class ConversationManager: ConversationManaging, SuperLog {
 
 private struct ConversationState: Codable {
     let selectedConversationID: UUID?
+    /// 旧版本 `state.json` 不含这些全局字段，用可选值兼容解码。
+    let globalVerbosity: ResponseVerbosity?
+    let globalLanguage: ConversationLanguage?
 }
 
 // MARK: - Selected Conversation Observer

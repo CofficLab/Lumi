@@ -23,7 +23,7 @@ public final class OpenRouterProvider: VendorLLMProvider {
                     LLMModelInfo(id: "google/gemma-3-27b-it:free", contextWindowSize: 131_072, supportsVision: true),
                     LLMModelInfo(id: "google/gemini-pro-2.5", contextWindowSize: 1_000_000, supportsVision: true),
                     LLMModelInfo(id: "meta-llama/llama-3.3-70b-instruct", contextWindowSize: 131_072, supportsVision: false),
-                    LLMModelInfo(id: "minimax/minimax-m2.1", contextWindowSize: 1_000_000, supportsVision: false),
+                    LLMModelInfo(id: "minimax/minimax-m2.1", contextWindowSize: 204_800, supportsVision: false),
                     LLMModelInfo(id: "minimax/minimax-m2.5:free", contextWindowSize: 204_800, supportsVision: false),
                     LLMModelInfo(id: "nvidia/nemotron-3-super-120b-a12b:free", contextWindowSize: 131_072, supportsVision: false),
                     LLMModelInfo(id: "openai/gpt-4o", contextWindowSize: 128_000, supportsVision: true),
@@ -35,7 +35,7 @@ public final class OpenRouterProvider: VendorLLMProvider {
                     LLMModelInfo(id: "z-ai/glm-4.5-air:free", contextWindowSize: 131_000, supportsVision: true),
                 ],
                 websiteURL: URL(string: "https://openrouter.ai/")!,
-                providerType: .cloudService,
+                providerType: .relay,
                 apiFormat: .openAI,
                 apiKeyStorageKey: "DevAssistant_ApiKey_OpenRouter"
             ),

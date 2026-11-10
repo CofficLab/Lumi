@@ -48,7 +48,9 @@ public enum EditorSaveParticipantController {
 
         if options.insertFinalNewline,
            transformed.isEmpty == false,
-           transformed.hasSuffix("\n") == false {
+           transformed.hasSuffix("\n") == false,
+           // CR-only 文件的最终换行是 \r，也应视为已满足，否则每次保存都会追加一个空行。
+           transformed.hasSuffix("\r") == false {
             transformed.append(preferredLineEnding(in: transformed))
             didInsertFinalNewline = true
         }

@@ -30,11 +30,11 @@ public struct DatabaseInspectorView: View {
             }
         }
         .background(theme.surface)
-        .onChange(of: viewModel.openTableObject?.id) { _, _ in
+        .onChange(of: viewModel.openTableObject?.id) { _ in
             section = .columns
             ddlText = ""
         }
-        .onChange(of: viewModel.selectedTableSchema?.ddl) { _, ddl in
+        .onChange(of: viewModel.selectedTableSchema?.ddl) { ddl in
             ddlText = ddl ?? ""
         }
         .sheet(isPresented: $showAddColumn) {

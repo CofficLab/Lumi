@@ -5,7 +5,7 @@
 PluginLLMProviderCommandCode CommandCode LLM 供应商插件，提供 GoatPlan Provider（OpenAI 兼容协议）。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 16
+测试文件: 2 个，用例总数: 18
 
 核心组件（源码目录）:
 - `LLMProviders/`
@@ -26,7 +26,7 @@ PluginLLMProviderCommandCode CommandCode LLM 供应商插件，提供 GoatPlan P
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **CommandCodeLocalStore**（9 条）：由 `writesSnapshotToPluginDirectory`、`configureUsesPluginDataDirectory`、`storeEmptyIgnored` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **CommandCodeProviderPlugin**（7 条）：由 `pluginIdentityAndMetadata`、`pluginRegistersGoatPlanProvider`、`goatPlanModelCatalog` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **CommandCodeProviderPlugin**（9 条）：由 `pluginIdentityAndMetadata`、`pluginRegistersGoatPlanProvider`、`goatPlanModelCatalog`、`longCatUsesCanonicalModelID`、`stepFunFlashUsesRealContextWindow` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -48,27 +48,29 @@ PluginLLMProviderCommandCode CommandCode LLM 供应商插件，提供 GoatPlan P
 | 14 | CommandCodeProviderPlugin | GoatPlan 供应商指向 commandcode 网关端点 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `goatPlanEndpointConfiguration` |
 | 15 | CommandCodeProviderPlugin | onBoot 在缺少 LLM 管理器时不抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `onBootWithoutManagerDoesNotThrow` |
 | 16 | CommandCodeProviderPlugin | onShutdown 不抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `onShutdownDoesNotThrow` |
+| 17 | CommandCodeProviderPlugin | Step 3.5 Flash 离线基线保留真实窗口（**回归 #970**） | — | 读取 `stepfun/Step-3.5-Flash` 的 `contextWindowSize` | 返回 262,144 | P1 | ✅ 已覆盖 | `stepFunFlashUsesRealContextWindow` |
+| 18 | CommandCodeProviderPlugin | LongCat 2.0 离线基线使用规范 ID（**回归 #971**） | 静态基线；远程返回规范 ID | 检查基线 ID 并执行 `RemoteModelMerger.merge` | 基线只有 `meituan/LongCat-2.0`，合并后不残留 `:free` 条目 | P1 | ✅ 已覆盖 | `longCatUsesCanonicalModelID` |
 
-> 说明：全部 **16 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **18 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 1 / 1
-- P1: 已覆盖 13 / 13
+- P1: 已覆盖 15 / 15
 - P2: 已覆盖 2 / 2
-- **合计: 16 / 16**（仅表示清单场景，非源码覆盖率）
+- **合计: 18 / 18**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（13 条）
+- **P1**: 其余功能性用例（15 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 16 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 18 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

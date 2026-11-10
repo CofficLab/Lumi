@@ -34,9 +34,14 @@ final class TextActionsPermissionState: ObservableObject {
     ///      真实数据目录，也不会在开发者机器上误注册全局事件监听。
     var onPermissionGranted: (() -> Void)?
 
+    /// 读取真实授权状态的入口。默认为系统查询，单测可注入以模拟
+    /// 「用户离开应用去授权，再切回来」这次状态翻转。
+    private let statusProvider: () -> TextActionsPermissionService.Status
+
     private var activationToken: NSObjectProtocol?
 
-    init() {
+    init(statusProvider: @escaping () -> TextActionsPermissionService.Status = { TextActionsPermissionService.status }) {
+        self.statusProvider = statusProvider
         refresh()
         activationToken = NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification,
@@ -63,7 +68,7 @@ final class TextActionsPermissionState: ObservableObject {
     /// 重新读取真实授权状态。
     func refresh() {
         let wasGranted = status.isGranted
-        status = TextActionsPermissionService.status
+        status = statusProvider()
         revision &+= 1
 
         // 授权状态从「未授权」变为「已授权」时必须通知外部——否则用户明明

@@ -67,7 +67,7 @@ public struct PrototypeRailView: View {
                 expandedProjectIDs.insert(selectedProjectID)
             }
         }
-        .onChange(of: workspace.selectedProjectID) { _, projectID in
+        .onChange(of: workspace.selectedProjectID) { projectID in
             if let projectID { expandedProjectIDs.insert(projectID) }
         }
     }

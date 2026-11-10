@@ -29,7 +29,7 @@ struct CreateVersionSheet: View {
                         .tag(candidate)
                 }
             }
-            .onChange(of: platform) { _, newPlatform in
+            .onChange(of: platform) { newPlatform in
                 versionString = viewModel.suggestedVersionString(for: newPlatform)
             }
 
@@ -92,7 +92,7 @@ struct CreateVersionSheet: View {
             await viewModel.prepareCreateVersionForm()
             resetForm()
         }
-        .onChange(of: viewModel.versions) { _, _ in
+        .onChange(of: viewModel.versions) { _ in
             versionString = viewModel.suggestedVersionString(for: platform)
         }
     }

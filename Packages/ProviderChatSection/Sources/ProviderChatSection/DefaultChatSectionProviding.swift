@@ -408,7 +408,20 @@ struct ChatToolbarRow: View {
                 // 而不是让 SwiftUI 压缩插件注入的 UI。
                 .fixedSize(horizontal: true, vertical: false)
             }
-            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+            // `scrollBounceBehavior` 是 macOS 13.3 才有的 API，最低支持版本是
+            // 13.1，因此需要按版本条件应用；13.1 上退化为系统默认回弹行为。
+            .modifier(HorizontalBasedOnSizeScrollBounceModifier())
+        }
+    }
+}
+
+/// macOS 13.3+ 才在水平轴上按内容尺寸决定回弹行为；13.1 上不做任何处理。
+private struct HorizontalBasedOnSizeScrollBounceModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 13.3, *) {
+            content.scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+        } else {
+            content
         }
     }
 }

@@ -208,7 +208,39 @@ struct GoalStateManagerTests {
         #expect(await manager.incrementContinuationCount(conversationId: cid) == 1)
         #expect(await manager.incrementAskUserAnswerCount(conversationId: cid) == 1)
     }
-    
+
+    /// 回归 #903：创建新 Goal 必须重置会话预算。
+    ///
+    /// 上一 Goal 耗尽续跑 / 代答预算后会被标记为 failed 并留在会话里；
+    /// 若创建链不重置计数，新 Goal 会继承耗尽状态，首个回合就失败。
+    @Test("Creating a new goal resets the conversation budgets")
+    func testCreateGoalClearsConversationBudgets() async throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
+        let cid = "create-budget"
+
+        for _ in 0..<GoalStateManager.maxAutomaticContinuations {
+            _ = await manager.incrementContinuationCount(conversationId: cid)
+        }
+        for _ in 0..<GoalStateManager.maxAutomaticAskUserAnswers {
+            _ = await manager.incrementAskUserAnswerCount(conversationId: cid)
+        }
+        #expect(await manager.incrementContinuationCount(conversationId: cid) == nil)
+        #expect(await manager.incrementAskUserAnswerCount(conversationId: cid) == nil)
+
+        _ = try await manager.createGoal(
+            conversationId: cid,
+            title: "Fresh",
+            description: nil,
+            successCriteria: nil,
+            tasks: [(title: "Task", description: nil, executionContext: nil, parallelGroup: nil)]
+        )
+
+        #expect(await manager.incrementContinuationCount(conversationId: cid) == 1)
+        #expect(await manager.incrementAskUserAnswerCount(conversationId: cid) == 1)
+    }
+
     @Test("Fetch goals by conversation")
     func testFetchGoals() async throws {
         let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())

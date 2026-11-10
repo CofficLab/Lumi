@@ -59,7 +59,7 @@ struct ListHTTPExchangesTool: SuperAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let limit = min(NetworkToolSupport.int(arguments, "limit") ?? 20, 100)
+        let limit = NetworkToolSupport.limit(arguments, default: 20, max: 100)
         let method = NetworkToolSupport.string(arguments, "method")?.uppercased()
         let urlContains = NetworkToolSupport.string(arguments, "url_contains")
         let statusCode = NetworkToolSupport.int(arguments, "status_code")
@@ -83,45 +83,38 @@ struct ListHTTPExchangesTool: SuperAgentTool, SuperLog {
             before = nil
         }
 
-        let result = await MainActor.run { () -> String in
+        let result = try await MainActor.run { () throws -> String in
             guard let store = NetworkService.shared.currentExchangeStore else {
-                return "Error: HTTP exchange store not available"
+                throw ToolExecutionError.executionFailed(toolName: name, reason: "HTTP exchange store not available")
             }
 
-            let allRecords = store.fetchPage(limit: 1000)
-            var filtered = allRecords
-
-            if let method {
-                filtered = filtered.filter { $0.requestMethod.uppercased() == method }
+            // Scan the whole retained history: a fixed "recent" window would
+            // hide older records that still match the filters.
+            let matched = store.scanHistory { snapshot in
+                if let method, snapshot.method.uppercased() != method { return false }
+                if let urlContains, !snapshot.url.localizedCaseInsensitiveContains(urlContains) { return false }
+                if let statusCode, snapshot.responseStatusCode != statusCode { return false }
+                if let since, snapshot.startedAt < since { return false }
+                if let before, snapshot.startedAt > before { return false }
+                return true
             }
 
-            if let urlContains {
-                filtered = filtered.filter { $0.requestURL.localizedCaseInsensitiveContains(urlContains) }
-            }
-
-            if let statusCode {
-                filtered = filtered.filter { $0.responseStatusCode == statusCode }
-            }
-
-            if let since {
-                filtered = filtered.filter { $0.startedAt >= since }
-            }
-
-            if let before {
-                filtered = filtered.filter { $0.startedAt <= before }
-            }
-
-            let results = Array(filtered.prefix(limit))
+            let results = Array(matched.prefix(limit))
 
             if results.isEmpty {
                 return "No HTTP exchanges found matching the criteria."
             }
 
+            // Bodies are only read for the records that are actually shown.
+            let recordsByID: [UUID: HTTPExchangeRecord] = includeBody
+                ? store.records(withIDs: results.map(\.id))
+                : [:]
+
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
 
             let lines = results.enumerated().map { index, record in
-                var line = "\(index + 1). [\(record.requestMethod)] \(record.requestURL)"
+                var line = "\(index + 1). [\(record.method)] \(record.url)"
                 line += "\n   Time: \(dateFormatter.string(from: record.startedAt))"
 
                 if let duration = record.duration {
@@ -136,12 +129,12 @@ struct ListHTTPExchangesTool: SuperAgentTool, SuperLog {
                     line += "\n   Error: \(error)"
                 }
 
-                if includeBody {
-                    if let reqBody = record.requestBody, !reqBody.isEmpty {
+                if includeBody, let fullRecord = recordsByID[record.id] {
+                    if let reqBody = fullRecord.requestBody, !reqBody.isEmpty {
                         let snippet = String(data: reqBody.prefix(500), encoding: .utf8) ?? "<binary data>"
                         line += "\n   Request Body: \(snippet)"
                     }
-                    if let respBody = record.responseBody, !respBody.isEmpty {
+                    if let respBody = fullRecord.responseBody, !respBody.isEmpty {
                         let snippet = String(data: respBody.prefix(500), encoding: .utf8) ?? "<binary data>"
                         line += "\n   Response Body: \(snippet)"
                     }
@@ -151,7 +144,7 @@ struct ListHTTPExchangesTool: SuperAgentTool, SuperLog {
             }
 
             return """
-            Found \(filtered.count) matching exchanges (showing \(results.count)):
+            Found \(matched.count) matching exchanges (showing \(results.count)):
 
             \(lines.joined(separator: "\n\n"))
             """

@@ -4,19 +4,19 @@ import PackageDescription
 let package = Package(
     name: "PluginPrototypeDesigner",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginPrototypeDesigner", targets: ["PluginPrototypeDesigner"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiProviders"),
+        .package(path: "../../Vendor/LumiLogging"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitPrototype"),
         .package(path: "../KitHTMLPreview"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
+        .package(path: "../../Vendor/LumiKernel"),
+        .package(path: "../../Vendor/LumiLocalization"),
+        .package(path: "../../Vendor/LumiUI"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderToolManager"),
     ],
@@ -69,7 +69,9 @@ let package = Package(
                 .product(name: "ProviderRootView", package: "LumiProviders"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
                 .product(name: "ProviderAgentRules", package: "LumiProviders"),
+                .product(name: "ProviderSkill", package: "LumiProviders"),
                 .product(name: "ProviderConversationInput", package: "LumiProviders"),
+                "ProviderToolManager",
             ]
         ),
     ]

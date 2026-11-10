@@ -106,7 +106,7 @@ struct ListV3View: View {
                         .id(MessageListScrollCoordinator.bottomAnchorID)
                         .accessibilityHidden(true)
                         .plainMessageListRow(insets: EdgeInsets())
-                        .onChange(of: scrollTick) { _, _ in
+                        .onChange(of: scrollTick) { _ in
                             guard initialPositionGate.isReady else { return }
                             let conversationID = viewModel.selectedConversationID
                             // 新消息行可能还没有完成尺寸布局；立即 scrollTo 会把
@@ -141,7 +141,7 @@ struct ListV3View: View {
                     )
                 )
             }
-            .onChange(of: historyBoundary) { _, _ in
+            .onChange(of: historyBoundary) { _ in
                 if runtime.atBottomBox.value {
                     scrollTick &+= 1
                 }
@@ -149,7 +149,7 @@ struct ListV3View: View {
                     prepareInitialPosition(proxy: proxy, messages: viewModel.historyRows)
                 }
             }
-            .onChange(of: viewModel.isLoading) { _, isLoading in
+            .onChange(of: viewModel.isLoading) { isLoading in
                 if isLoading {
                     runtime.scrollCoordinator.cancelPendingTasks()
                     initialPositionGate.resetForLoadingStart()
@@ -157,14 +157,14 @@ struct ListV3View: View {
                     prepareInitialPosition(proxy: proxy, messages: viewModel.historyRows)
                 }
             }
-            .onChange(of: viewModel.selectedConversationID) { _, _ in
+            .onChange(of: viewModel.selectedConversationID) { _ in
                 runtime.scrollCoordinator.cancelPendingTasks()
                 initialPositionGate.resetForConversationSwitch()
             }
             // 流式行出现或内容增长时跟随滚到底；内容增长期间沿用
             // atBottomBox 判定（用户上滑则不跟随）。不能只监听 id，因为流式
             // token 更新保持同一个行 id，但会持续改变行高。
-            .onChange(of: viewModel.streamingRow) { _, _ in
+            .onChange(of: viewModel.streamingRow) { _ in
                 guard viewModel.streamingRow != nil, runtime.atBottomBox.value else { return }
                 scrollTick &+= 1
             }
@@ -178,7 +178,7 @@ struct ListV3View: View {
                 }
             }
             // 用户消息已经由插件转发的类型化事件直接应用；这里仅负责滚到底部。
-            .onChange(of: viewModel.latestUserMessageID) { _, newID in
+            .onChange(of: viewModel.latestUserMessageID) { newID in
                 guard newID != nil else { return }
                 runtime.atBottomBox.value = true
                 scrollTick &+= 1

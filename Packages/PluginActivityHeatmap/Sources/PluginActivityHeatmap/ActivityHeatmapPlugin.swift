@@ -209,8 +209,7 @@ public struct ActivityDay: Identifiable, Sendable, Equatable {
 }
 
 @MainActor
-@Observable
-public final class ActivityHeatmapViewModel {
+public final class ActivityHeatmapViewModel: ObservableObject {
     private let messages: (any MessageManaging)?
     private let cache: ActivityHeatmapCache?
     private let preferences: ActivityHeatmapPreferences
@@ -218,14 +217,14 @@ public final class ActivityHeatmapViewModel {
     private var reloadGeneration = 0
     static let periodKey = ActivityHeatmapPreferences.periodKey
 
-    public var period: ActivityHeatmapPeriod {
+    @Published public var period: ActivityHeatmapPeriod {
         didSet { preferences.setStoredPeriodRawValue(period.rawValue) }
     }
-    public private(set) var days: [ActivityDay] = []
+    @Published public private(set) var days: [ActivityDay] = []
     /// The heatmap keeps a full year's daily history so its layout can decide
     /// how much to show from the available space independently of `period`.
-    public private(set) var heatmapDays: [ActivityDay] = []
-    public private(set) var isLoading = false
+    @Published public private(set) var heatmapDays: [ActivityDay] = []
+    @Published public private(set) var isLoading = false
     /// Days drawn by the token trend chart. Fixed to 30 days so the line chart
     /// matches the HTTP log and conversation dashboards, and so a restored
     /// legacy "last year" preference cannot pack 365 points into one width.
@@ -352,7 +351,7 @@ private struct LegacyPeriodPreference: Decodable {
 }
 
 public struct ActivityHeatmapSettingsView: View {
-    @State private var model: ActivityHeatmapViewModel
+    @ObservedObject private var model: ActivityHeatmapViewModel
     @LumiTheme private var theme
     private let idleTime: (any IdleTimeProviding)?
     private let idleTimeState: ActivityHeatmapIdleTimeState
@@ -372,7 +371,7 @@ public struct ActivityHeatmapSettingsView: View {
         idleTime: (any IdleTimeProviding)? = nil,
         idleTimeState: ActivityHeatmapIdleTimeState? = nil
     ) {
-        _model = State(initialValue: model)
+        self.model = model
         self.idleTime = idleTime
         self.idleTimeState = idleTimeState ?? ActivityHeatmapIdleTimeState(provider: idleTime)
     }
@@ -383,7 +382,7 @@ public struct ActivityHeatmapSettingsView: View {
         cache: ActivityHeatmapCache? = nil,
         preferences: ActivityHeatmapPreferences
     ) {
-        _model = State(initialValue: ActivityHeatmapViewModel(messages: messages, cache: cache, preferences: preferences))
+        self.model = ActivityHeatmapViewModel(messages: messages, cache: cache, preferences: preferences)
         self.idleTime = idleTime
         self.idleTimeState = ActivityHeatmapIdleTimeState(provider: idleTime)
     }

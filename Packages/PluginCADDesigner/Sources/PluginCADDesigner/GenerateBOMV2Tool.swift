@@ -18,7 +18,11 @@ public struct GenerateBOMV2Tool: SuperAgentTool {
             return BOMGenerator().generate(from: document, library: .shared)
         }
         guard let report else {
-            return CADDesignerV2ToolSupport.localized(en: "Error: No CAD document is selected.", zh: "错误：未选中 CAD 文档。")
+            throw CADDesignerV2ToolSupport.failure(
+                en: "No CAD document is selected.",
+                zh: "未选中 CAD 文档。",
+                toolName: name
+            )
         }
         if LanguagePreference.current == .chinese {
             var lines = ["物料清单（共 \(report.items.count) 项，总重 \(String(format: "%.2f", report.totalWeight)) kg）："]

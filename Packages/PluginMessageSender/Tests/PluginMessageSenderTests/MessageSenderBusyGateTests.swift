@@ -201,6 +201,43 @@ struct MessageSenderBusyGateTests {
         #expect(fixture.sender.pendingMessages(for: conversationID).isEmpty)
     }
 
+    /// 队列里已有更早的消息时，`ask_user` 例外必须关闭。
+    ///
+    /// 复现 #1027：B 在 A 仍在运行时入队；A 进入 `ask_user` 挂起后发送 C。
+    /// 若例外不检查队列，C 会直接落库并抢走原回合的恢复，落库/执行顺序
+    /// 变成 A → C → B。现在 C 必须排在 B 后面。
+    @Test("ask_user 挂起但队列非空时，新消息排在已有消息之后")
+    func askUserSuspensionDoesNotBypassQueuedMessages() throws {
+        let fixture = SenderFixture()
+        let conversationID = try fixture.conversations.createConversation(
+            title: nil, projectPath: nil, providerID: nil, modelName: nil
+        )
+
+        // A 仍在运行：B 进入待发队列。
+        fixture.agentLoop.currentState = .running
+        _ = try fixture.sender.commitUserMessage("B", conversationID: conversationID)
+
+        // A 转入 ask_user 挂起。
+        fixture.agentLoop.currentState = .suspended
+        fixture.agentLoop.activeTurnID = UUID()
+        fixture.agentLoop.activeSuspension = Self.askUserSuspension(conversationID: conversationID)
+
+        let commit = try fixture.sender.commitUserMessage("C", conversationID: conversationID)
+
+        #expect(
+            commit?.wasQueued == true,
+            "队列非空时，后发送的消息不得越过已排队的消息直接落库"
+        )
+        #expect(
+            fixture.sender.pendingMessages(for: conversationID).map(\.content) == ["B", "C"],
+            "待发队列必须保持先进先出"
+        )
+        #expect(
+            fixture.messages.messages(for: conversationID).isEmpty,
+            "C 不应直接写入消息列表"
+        )
+    }
+
     /// 工具授权挂起期间的新消息必须**入队**。
     ///
     /// 授权是安全闸门，与 `ask_user` 相反：用户的新消息不能替代授权决定。

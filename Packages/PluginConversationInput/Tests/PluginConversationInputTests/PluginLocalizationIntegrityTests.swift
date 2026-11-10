@@ -35,6 +35,7 @@ struct PluginLocalizationIntegrityTests {
             "Binary file",
             "Text file",
             "Missing provider(s): %@",
+            "Type a message, press Return to send…",
         ]
 
         let catalog = try Self.loadCatalog()
@@ -50,6 +51,46 @@ struct PluginLocalizationIntegrityTests {
                 "「\(key)」缺少语言翻译：\(missing.sorted().joined(separator: ", "))"
             )
         }
+    }
+
+    @Test("英文界面下 Composer 占位文案为英文，不回落中文（回归 #989）")
+    func composerPlaceholderHasEnglishText() throws {
+        let key = "Type a message, press Return to send…"
+        let entry = try #require(
+            try Self.loadCatalog()[key],
+            "Composer 占位文案未进入本地化资源"
+        )
+        let english = try #require(entry.localizations["en"], "占位文案缺 en 翻译")
+        #expect(english == key)
+        #expect(entry.localizations["zh-Hans"] != english, "中文翻译不应与英文相同")
+    }
+
+    @Test("复制反馈与恢复标题都使用本地化文案（回归 #990）")
+    func copyFeedbackStringsAreLocalized() throws {
+        // 缺陷现象：点击后写死 "Copied"，一秒后又写死 "Copy original"，
+        // 中文界面会从「复制原文」永久变成英文。
+        let expected: [String: String] = [
+            "Copied": "已复制",
+            "Copy original": "复制原文",
+        ]
+
+        let catalog = try Self.loadCatalog()
+        for (key, zhHans) in expected {
+            let entry = try #require(catalog[key], "「\(key)」未进入本地化资源")
+            #expect(entry.localizations["en"] == key, "「\(key)」缺 en 原文")
+            #expect(entry.localizations["zh-Hans"] == zhHans, "「\(key)」中文译文不符")
+        }
+    }
+
+    @Test("缺少 Provider 的诊断弹窗使用本地化文案（回归 #991）")
+    func missingProviderDiagnosticIsLocalized() {
+        let providers = ["ConversationInputProviding", "MessageSending"]
+        // 解析器优先使用 `Locale.preferredLanguages`，本机为中文，
+        // 因此这里只锁定中文分支；英文分支由全表 en 完整性用例兜底。
+        #expect(
+            MissingProviderMessage.text(for: providers, locale: Locale(identifier: "zh-Hans"))
+                == "缺少 Provider：ConversationInputProviding, MessageSending"
+        )
     }
 
     @Test("Provider 错误文案含 en 翻译，不会在英文界面退化成 key")

@@ -36,6 +36,21 @@ final class MailWorkspaceViewModel: ObservableObject {
     private let pageSize = 50
     private var loadedCount = 0
 
+    /// 正在同步的任务标识；只有仍在生效的那次同步才能关闭转圈。
+    private var activeSyncToken: UUID?
+
+    /// 列表/详情异步结果的绑定身份：账户 + 文件夹。
+    /// 写回共享状态前必须与当前选择比对，避免旧任务覆盖新上下文。
+    private struct MailViewContext: Equatable {
+        let accountID: UUID
+        let folder: String
+    }
+
+    private var currentContext: MailViewContext? {
+        guard let selectedAccountID else { return nil }
+        return MailViewContext(accountID: selectedAccountID, folder: selectedFolder)
+    }
+
     // 撰写
     @Published var isComposerPresented = false
     @Published var composeMode: MailComposeMode = .new
@@ -121,10 +136,12 @@ final class MailWorkspaceViewModel: ObservableObject {
         messages = []
         selectedMessage = nil
         selectedDetail = nil
-        guard let account = accounts.first(where: { $0.id == id }) else { return }
+        guard let account = accounts.first(where: { $0.id == id }),
+              let context = currentContext else { return }
         do {
             let session = try await sessionManager.session(for: account)
             let remoteFolders = try await session.listFolders()
+            guard currentContext == context else { return }
             // 本地优先：INBOX 缺省兜底
             let list = remoteFolders.isEmpty
                 ? [MailFolder(path: "INBOX", kind: .inbox, delimiter: "/")]
@@ -132,7 +149,13 @@ final class MailWorkspaceViewModel: ObservableObject {
             folders = list.sorted { $0.kind.sortOrder < $1.kind.sortOrder }
             await syncAndLoad(folder: "INBOX", fullSync: true)
         } catch {
+            guard currentContext == context else { return }
+            // 冷启动离线：会话或文件夹列表失败时仍保留 INBOX 入口，
+            // 并用本地缓存渲染列表，而不是留下空白工作区。
+            isOffline = true
+            folders = [MailFolder(path: "INBOX", kind: .inbox, delimiter: "/")]
             handleError(error, context: "加载文件夹")
+            await loadMessages(folder: "INBOX", reset: true)
         }
     }
 
@@ -148,14 +171,28 @@ final class MailWorkspaceViewModel: ObservableObject {
     }
 
     func refresh() async {
+        // 离线期间文件夹列表只保留了 INBOX 兜底，恢复后需重新拉取远程文件夹。
+        if isOffline, let accountID = selectedAccountID {
+            await selectAccount(id: accountID)
+            return
+        }
         await syncAndLoad(folder: selectedFolder, fullSync: true)
     }
 
     private func syncAndLoad(folder: String, fullSync: Bool = false) async {
-        guard let accountID = selectedAccountID else { return }
+        guard let context = currentContext else { return }
+        let accountID = context.accountID
+        let token = UUID()
+        activeSyncToken = token
         isSyncing = true
         errorMessage = nil
-        defer { isSyncing = false }
+        defer {
+            // 旧同步结束不能关掉新同步的转圈。
+            if activeSyncToken == token {
+                activeSyncToken = nil
+                isSyncing = false
+            }
+        }
         do {
             if let sync {
                 _ = try await sync.syncFolder(folder, accountID: accountID, fullSync: fullSync)
@@ -164,10 +201,12 @@ final class MailWorkspaceViewModel: ObservableObject {
                 let summaries = try await session.fetchMessages(folder: folder, sinceUID: nil, limit: pageSize)
                 try await cache.upsertMessages(summaries, accountID: accountID, folder: folder)
             }
+            guard currentContext == context else { return }
             isOffline = false
             await loadMessages(folder: folder, reset: true)
             await refreshUnreadBadges()
         } catch {
+            guard currentContext == context else { return }
             isOffline = true
             handleError(error, context: "同步 \(folder)")
             // 离线降级：仍展示本地缓存
@@ -177,20 +216,25 @@ final class MailWorkspaceViewModel: ObservableObject {
 
     private func loadMessages(folder: String, reset: Bool) async {
         guard let accountID = selectedAccountID else { return }
+        let context = MailViewContext(accountID: accountID, folder: folder)
         do {
             let all = try await cache.messages(accountID: accountID, folder: folder)
+            guard currentContext == context else { return }
             loadedCount = reset ? pageSize : loadedCount
             messages = Array(all.prefix(loadedCount))
         } catch {
+            guard currentContext == context else { return }
             messages = []
         }
     }
 
     /// 分页加载（列表滚动到底部时调用）。
     func loadMore() async {
-        guard let accountID = selectedAccountID, !messages.isEmpty else { return }
-        loadedCount += pageSize
-        let all = (try? await cache.messages(accountID: accountID, folder: selectedFolder)) ?? []
+        guard let context = currentContext, !messages.isEmpty else { return }
+        let targetCount = loadedCount + pageSize
+        let all = (try? await cache.messages(accountID: context.accountID, folder: context.folder)) ?? []
+        guard currentContext == context else { return }
+        loadedCount = targetCount
         messages = Array(all.prefix(loadedCount))
     }
 
@@ -199,31 +243,27 @@ final class MailWorkspaceViewModel: ObservableObject {
     func selectMessage(_ message: MailCacheItem.Summary) async {
         selectedMessage = message
         selectedDetail = nil
-        guard let accountID = selectedAccountID else { return }
+        guard let context = currentContext,
+              let account = accounts.first(where: { $0.id == context.accountID }) else { return }
         do {
             if let sync {
-                let session = try await currentSession()
-                let detail = try await session.fetchBody(uid: message.uid, folder: selectedFolder)
-                try await cache.upsertDetail(detail, accountID: accountID, folder: selectedFolder)
+                let session = try await sessionManager.session(for: account)
+                let detail = try await session.fetchBody(uid: message.uid, folder: context.folder)
+                try await cache.upsertDetail(detail, accountID: context.accountID, folder: context.folder)
+                // 旧邮件的正文晚到，不能盖掉用户后来点开的邮件。
+                guard currentContext == context, selectedMessage?.uid == message.uid else { return }
                 selectedDetail = detail
                 // 阅读即已读（写缓存 + 服务端）
                 try await cache.setFlags(
-                    accountID: accountID, folder: selectedFolder, uid: message.uid,
+                    accountID: context.accountID, folder: context.folder, uid: message.uid,
                     isRead: true, isFlagged: nil
                 )
                 await refreshUnreadBadges()
             }
         } catch {
+            guard currentContext == context, selectedMessage?.uid == message.uid else { return }
             handleError(error, context: "读取邮件")
         }
-    }
-
-    private func currentSession() async throws -> any MailSessionServing {
-        guard let accountID = selectedAccountID,
-              let account = accounts.first(where: { $0.id == accountID }) else {
-            throw MailError.offline
-        }
-        return try await sessionManager.session(for: account)
     }
 
     // MARK: - 未读徽标

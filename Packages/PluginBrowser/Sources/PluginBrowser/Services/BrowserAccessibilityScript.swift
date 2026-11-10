@@ -291,11 +291,12 @@ enum BrowserAccessibilityScript {
       const nodes = [];
       const elements = [];
 
+      // ref 必须由 Lumi 分配：页面预置的同名属性既不可信，也可能在多个
+      // 元素上重复，导致快照里的一个 ref 实际指向第一个匹配元素。
+      // 计数持久化在 window 上，跨快照不重用编号，避免旧属性残留造成冲突。
       const ensureRef = (el) => {
-        let ref = el.getAttribute(REF_ATTR);
-        if (ref) return ref;
         STATE.counter += 1;
-        ref = "lumi-" + STATE.counter;
+        const ref = "lumi-" + STATE.counter;
         try { el.setAttribute(REF_ATTR, ref); } catch (_) {}
         return ref;
       };

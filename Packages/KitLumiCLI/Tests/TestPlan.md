@@ -5,7 +5,7 @@
 KitLumiCLI `lumi` 命令行工具的安装包。负责挑选安装目录、生成脚本、写入磁盘与查询安装状态。
 
 平台: macOS 14+
-测试文件: 5 个，用例总数: 37
+测试文件: 5 个，用例总数: 38
 
 ## 公开 API
 
@@ -21,7 +21,7 @@ KitLumiCLI `lumi` 命令行工具的安装包。负责挑选安装目录、生�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **CLIEncodingConsistency**（4 条）：由 `scriptEncodingIsReversibleByApp`、`appEncodingIsReversibleByApp`、`scriptEncodingIsAcceptedByURLComponents` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **CLIInstallTargetResolver**（8 条）：由 `prefersWritablePathDirectory`、`excludesNonWritablePathDirectory`、`excludesMissingPathDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **CLIInstallTargetResolver**（9 条）：由 `prefersWritablePathDirectory`、`excludesNonWritablePathDirectory`、`excludesMissingPathDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CLIInstaller**（9 条）：由 `installCreatesExecutableScript`、`installReportsNotOnPath`、`installFailsForNonWritableTarget` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CLIPathResolver**（6 条）：由 `parsesPathEntries`、`parsesEmptyPath`、`resolvedPathContainsSystemDirectories` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **CLIScriptBuilder**（10 条）：由 `scriptStartsWithShebang`、`defaultCommandNameIsLumi`、`usesExistingOpenProjectProtocol` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -67,27 +67,28 @@ KitLumiCLI `lumi` 命令行工具的安装包。负责挑选安装目录、生�
 | 35 | CLIScriptBuilder | 未提供 App 路径时使用常见安装位置兜底 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fallsBackToCommonInstallLocations` |
 | 36 | CLIScriptBuilder | scheme 从 App 的 Info.plist 读取并有兜底值 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readsSchemeFromInfoPlist` |
 | 37 | CLIScriptBuilder | 生成的脚本通过 shell 语法检查 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `generatedScriptIsValidShell` |
+| 38 | CLIInstallTargetResolver | PATH 中缺失的 `~/.local/bin` 仍作为可写兜底候选（**回归 #945**） | `HOME` 下 `.local/bin` 不存在，PATH 包含该路径 | 解析候选目录与 `bestTarget` | 候选包含该目录，`isOnPath` 与 `isWritable` 均为 true，`bestTarget` 返回它 | P1 | ✅ 已覆盖 | `missingUserPathDirectoryStillFallsBackToUserTarget` |
 
-> 说明：全部 **37 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 2 / 2
-- P1: 已覆盖 33 / 33
+- P1: 已覆盖 34 / 34
 - P2: 已覆盖 2 / 2
-- **合计: 37 / 37**（仅表示清单场景，非源码覆盖率）
+- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（33 条）
+- **P1**: 其余功能性用例（34 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 37 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 38 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

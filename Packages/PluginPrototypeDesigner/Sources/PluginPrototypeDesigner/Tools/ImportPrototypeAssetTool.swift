@@ -31,7 +31,9 @@ public struct ImportPrototypeAssetTool: SuperAgentTool {
         let projectID = try PrototypeToolSupport.required("projectId", arguments)
         let sourcePath = try PrototypeToolSupport.required("sourcePath", arguments)
         let storagePath = try await PrototypeToolSupport.storagePath()
-        let directory = try PrototypeToolSupport.store.assetsDirectoryURL(
+        // 项目必须已存在：否则导入会留下没有 manifest 的孤儿目录，
+        // 既对用户不可见，又会占住 slug 让后续创建项目失败。
+        let directory = try PrototypeToolSupport.store.existingProjectAssetsDirectoryURL(
             storagePath: storagePath,
             projectSlug: projectID
         )

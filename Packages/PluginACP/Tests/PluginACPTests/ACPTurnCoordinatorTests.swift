@@ -11,6 +11,39 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         func cancel() {}
     }
 
+    /// Mock 重试生命周期：可切换「是否有重试接管」并手动发布放弃事件。
+    @MainActor
+    private final class MockRetryLifecycle: AgentLoopRetryLifecycleProviding {
+        var retrying = false
+        private(set) var cancelRetryCalls: [UUID] = []
+        private var observers: [UUID: (AgentLoopRetryLifecycleEvent) -> Void] = [:]
+
+        func isRetrying(conversationID: UUID) -> Bool {
+            retrying
+        }
+
+        func cancelRetry(for conversationID: UUID) {
+            cancelRetryCalls.append(conversationID)
+            retrying = false
+        }
+
+        func addRetryLifecycleObserver(
+            _ callback: @escaping (AgentLoopRetryLifecycleEvent) -> Void
+        ) -> any AgentLoopRetryLifecycleObserverHandle {
+            let id = UUID()
+            observers[id] = callback
+            return RetryLifecycleTestHandle { [weak self] in
+                self?.observers.removeValue(forKey: id)
+            }
+        }
+
+        func emit(_ event: AgentLoopRetryLifecycleEvent) {
+            for observer in observers.values {
+                observer(event)
+            }
+        }
+    }
+
     /// Mock 回合执行器：可注入事件、记录调用。
     @MainActor
     private final class MockTurnRunner: ACPTurnRunning {
@@ -185,6 +218,20 @@ final class ACPTurnCoordinatorTests: XCTestCase {
 
     private func makeSessionID() throws -> ACPSessionId {
         try sessions.createSession(cwd: "/tmp/project")
+    }
+
+    /// 用注入的重试生命周期重建协调器（其余依赖保持不变）。
+    private func installRetryLifecycle(_ lifecycle: MockRetryLifecycle) {
+        coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: client.makeRequester(),
+            retryLifecycle: lifecycle,
+            onSend: { [box] message in
+                box.messages.append(message)
+            }
+        )
     }
 
     /// 解析最近一次 `session/request_permission` 的参数。
@@ -958,6 +1005,121 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         })
     }
 
+    func testFailedTurnDefersFinalizeWhileRetryActive() throws {
+        let retry = MockRetryLifecycle()
+        installRetryLifecycle(retry)
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+        retry.retrying = true
+
+        runner.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: "HTTP 429"))
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+
+        // 重试已接管：原 prompt 必须保持未收尾状态。
+        XCTAssertFalse(sent.contains { $0.id == .number(1) })
+
+        // 重试成功后，同一原请求以 endTurn 收尾。
+        store.messagesByConversation[conversationID, default: []].append(
+            Message(conversationID: conversationID, role: .assistant, content: "重试成功")
+        )
+        retry.retrying = false
+        runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
+        waitUntil { self.sent.contains { $0.id == .number(1) } }
+
+        guard let response = sent.first(where: { $0.id == .number(1) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望最终响应")
+        }
+        let decoded = try result?.decoded(as: ACPPromptResult.self)
+        XCTAssertEqual(decoded?.stopReason, .endTurn)
+    }
+
+    func testRetryGaveUpReportsRefusal() throws {
+        let retry = MockRetryLifecycle()
+        installRetryLifecycle(retry)
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+        retry.retrying = true
+
+        runner.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: "HTTP 503"))
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        XCTAssertFalse(sent.contains { $0.id == .number(1) })
+
+        // 重试耗尽：只有此时才向原 prompt 返回 refusal。
+        retry.retrying = false
+        retry.emit(.gaveUp(conversationID: conversationID, reason: "重试次数已耗尽"))
+        waitUntil { self.sent.contains { $0.id == .number(1) } }
+
+        guard let response = sent.first(where: { $0.id == .number(1) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望最终响应")
+        }
+        let decoded = try result?.decoded(as: ACPPromptResult.self)
+        XCTAssertEqual(decoded?.stopReason, .refusal)
+        XCTAssertTrue(sent.contains {
+            guard case .notification(_, let params) = $0,
+                  let update = try? params?.decoded(as: ACPSessionUpdateParams.self),
+                  case .agentMessageChunk(let content) = update.update,
+                  case .text(let text, _) = content else { return false }
+            return text.contains("重试次数已耗尽")
+        })
+    }
+
+    func testFailedTurnWithInactiveRetryStillReportsRefusal() throws {
+        let retry = MockRetryLifecycle()
+        installRetryLifecycle(retry)
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+
+        // 没有重试接管时必须立即收尾，不能被注入的 Provider 误判为「等待中」。
+        runner.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: "auth failed"))
+        waitUntil { self.sent.contains { $0.id == .number(1) } }
+
+        guard let response = sent.first(where: { $0.id == .number(1) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望最终响应")
+        }
+        let decoded = try result?.decoded(as: ACPPromptResult.self)
+        XCTAssertEqual(decoded?.stopReason, .refusal)
+    }
+
+    func testCancelDuringRetryStopsRetryAndReportsCancelled() throws {
+        let retry = MockRetryLifecycle()
+        installRetryLifecycle(retry)
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+        retry.retrying = true
+
+        runner.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: "HTTP 429"))
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        XCTAssertFalse(sent.contains { $0.id == .number(1) })
+
+        coordinator.cancel(sessionID: sessionID)
+        waitUntil { self.sent.contains { $0.id == .number(1) } }
+
+        XCTAssertEqual(retry.cancelRetryCalls, [conversationID], "取消必须终止待执行的重试")
+        guard let response = sent.first(where: { $0.id == .number(1) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望最终响应")
+        }
+        let decoded = try result?.decoded(as: ACPPromptResult.self)
+        XCTAssertEqual(decoded?.stopReason, .cancelled)
+        XCTAssertFalse(runner.suppressedAutoReply.contains(conversationID))
+
+        // 取消后迟到的完成事件不得再补发第二次响应。
+        runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        XCTAssertEqual(sent.filter { $0.id == .number(1) }.count, 1)
+    }
+
     func testCancelledTurnStillReportsCancelledNotRefusal() throws {
         let sessionID = try makeSessionID()
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
@@ -1004,5 +1166,19 @@ final class ACPTurnCoordinatorTests: XCTestCase {
             ["Debug", "Release"]
         )
         XCTAssertEqual(ACPTurnCoordinator.choiceOptions(from: "not-an-array"), [])
+    }
+}
+
+/// 测试用的重试生命周期观察句柄。
+@MainActor
+private final class RetryLifecycleTestHandle: AgentLoopRetryLifecycleObserverHandle {
+    private let onCancel: () -> Void
+
+    init(_ onCancel: @escaping () -> Void) {
+        self.onCancel = onCancel
+    }
+
+    func cancel() {
+        onCancel()
     }
 }

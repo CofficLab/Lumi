@@ -21,9 +21,23 @@ extension VM {
 
     func reloadAppsFromNetwork() async throws {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        apps = try await client.listApps(search: query.isEmpty ? nil : query)
+        // 请求期间用户可能切换账号或断开连接，结果必须能判定归属。
+        let requestedCredentials = credentials
+        let loaded = try await client.listApps(search: query.isEmpty ? nil : query)
+        applyLoadedApps(loaded, for: requestedCredentials)
+    }
+
+    /// 写入 App 列表前校验账号身份，返回是否真的写入。
+    @discardableResult
+    func applyLoadedApps(
+        _ loaded: [AppStoreApp],
+        for requestedCredentials: AppStoreConnectCredentials
+    ) -> Bool {
+        guard credentials == requestedCredentials else { return false }
+        apps = loaded
         connectionStatus = AppStoreConnectLocalization.string("Connected")
         applyPersistedOrDefaultSelectedApp()
+        return true
     }
 
     func selectApp(_ app: AppStoreApp, openDistribution: Bool = false) {
@@ -31,6 +45,7 @@ extension VM {
         selectedApp = app
         localStore.setSelectedAppID(app.id, for: credentials)
         if appChanged {
+            selectionGeneration += 1
             selectedVersion = nil
             versions = []
             localizations = []

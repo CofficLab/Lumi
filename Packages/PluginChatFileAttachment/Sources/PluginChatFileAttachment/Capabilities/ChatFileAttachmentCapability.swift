@@ -14,6 +14,12 @@ protocol ChatFileAttachmentCapability: AnyObject {
 
     /// 读取附件失败时，把错误写入输入区展示。
     func presentLoadError(_ message: String)
+
+    /// 登记一次在途附件读取（读取开始前同步调用）。
+    func beginAttachmentRead()
+
+    /// 结束一次在途附件读取。
+    func endAttachmentRead()
 }
 
 /// 将内核的消息发送与输入区能力收窄为附件按钮所需的能力。
@@ -36,5 +42,13 @@ final class ChatFileAttachmentCapabilityAdapter: ChatFileAttachmentCapability {
 
     func presentLoadError(_ message: String) {
         conversationInput?.errorMessage = message
+    }
+
+    func beginAttachmentRead() {
+        sender?.beginAttachmentRead()
+    }
+
+    func endAttachmentRead() {
+        sender?.endAttachmentRead()
     }
 }

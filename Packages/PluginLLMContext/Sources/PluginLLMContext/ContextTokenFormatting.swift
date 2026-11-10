@@ -16,6 +16,9 @@ extension Int {
             if m == m.rounded() { return "\(Int(m))M" }
             return String(format: "%.1fM", m)
         }
+        // 不足 1K 时整数除法会把 1...999 全部压成「0K」，不同的真实用量
+        // 在趋势标签和 Min/Max 里无法区分；直接显示实际 token 数。
+        if self < 1_000 { return "\(self)" }
         return "\(self / 1000)K"
     }
 }

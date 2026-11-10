@@ -144,16 +144,18 @@ public actor RAGService: SuperLog {
     // MARK: - Indexing
 
     /// 确保指定项目已建立可用索引（不存在则全量，存在则增量）
+    @discardableResult
     public func ensureIndexed(
         projectPath: String,
         force: Bool = false,
-        background: Bool = false
-    ) async throws {
+        background: Bool = false,
+        token: RAGBackgroundIndexToken? = nil
+    ) async throws -> RAGIndexEnsureOutcome {
         guard !indexingPaused else {
             if Self.verbose {
                 Self.logger.info("\(Self.t)ensureIndexed skipped: indexing is paused project=\(projectPath)")
             }
-            return
+            return .paused
         }
         guard isInitialized else { throw RAGError.notInitialized }
         guard let indexer else { throw RAGError.internalStateCorrupted }
@@ -161,8 +163,17 @@ public actor RAGService: SuperLog {
         guard let embeddingProvider else { throw RAGError.internalStateCorrupted }
         try Task.checkCancellation()
 
+        let backgroundToken: RAGBackgroundIndexToken?
         if background {
-            backgroundCancellationGate.reset()
+            let activeToken = token ?? backgroundIndexingToken()
+            // 令牌在派发时就已捕获。中断后迟到的切片必须直接放弃，
+            // 既不能重新打开后台索引，也不能改动任何索引状态（回归 #1117）。
+            guard backgroundCancellationGate.isActive(activeToken) else {
+                throw CancellationError()
+            }
+            backgroundToken = activeToken
+        } else {
+            backgroundToken = nil
         }
 
         let normalized = RAGPathUtils.normalizeProjectPath(projectPath)
@@ -199,24 +210,26 @@ public actor RAGService: SuperLog {
             )
         }
 
+        // 模型不匹配时必须在后台完成一次全量重建：所有生产入口
+        // （检索、项目生命周期 Hook、idle scheduler）都以 background 方式
+        // 请求索引，拒绝后台迁移会让旧向量永远得不到重建。
         if force || modelMismatch {
-            if background && modelMismatch && !force {
-                throw RAGError.dbError("后台索引暂不执行 embedding 模型迁移，请在前台重建索引")
-            }
             if Self.verbose {
-                Self.logger.info("\(Self.t)♻️ 执行全量重建索引")
+                Self.logger.info("\(Self.t)♻️ 执行全量重建索引 background=\(background) modelMismatch=\(modelMismatch)")
             }
             let stats = try await indexer.rebuildProjectIndex(
                 at: normalized,
                 background: background,
-                shouldContinue: { [backgroundCancellationGate] in backgroundCancellationGate.isActive }
+                shouldContinue: { [backgroundCancellationGate] in
+                    backgroundToken.map { backgroundCancellationGate.isActive($0) } ?? true
+                }
             )
             if Self.verbose {
                 Self.logger.info(
                     "\(Self.t)✅ 全量重建完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
                 )
             }
-            return
+            return .indexed
         }
 
         if !force {
@@ -234,7 +247,7 @@ public actor RAGService: SuperLog {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)⏱️ 跳过：节流窗口内")
                 }
-                return
+                return .throttled
             }
             if let state = indexState,
                !isIndexStateStale(state, now: now) {
@@ -242,7 +255,7 @@ public actor RAGService: SuperLog {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)🟢 跳过：索引未过期")
                 }
-                return
+                return .fresh
             }
             lastEnsureAttemptByProject[normalized] = now
         }
@@ -253,13 +266,16 @@ public actor RAGService: SuperLog {
         let stats = try await indexer.indexProjectIncrementally(
             at: normalized,
             background: background,
-            shouldContinue: { [backgroundCancellationGate] in backgroundCancellationGate.isActive }
+            shouldContinue: { [backgroundCancellationGate] in
+                backgroundToken.map { backgroundCancellationGate.isActive($0) } ?? true
+            }
         )
         if Self.verbose {
             Self.logger.info(
                 "\(Self.t)✅ 增量索引完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
             )
         }
+        return .indexed
     }
 
     /// 检查项目是否需要索引（快速检查，不执行实际索引）
@@ -345,12 +361,21 @@ public actor RAGService: SuperLog {
             Self.logger.info("\(Self.t)🚀 启动后台索引任务: \(normalized)")
         }
 
+        // 在派发前捕获令牌：任务真正进入 ensureIndexed 之前若发生前台中断，
+        // 这个令牌就应随中断一起失效，不能在迟到的任务里重新打开后台索引。
+        let token = backgroundIndexingToken()
+
         // 在后台 Task 中执行索引
         let task = Task.detached(priority: .utility) { [weak self] in
             guard let self = self else { return }
 
             do {
-                try await self.ensureIndexed(projectPath: normalized, force: force, background: true)
+                try await self.ensureIndexed(
+                    projectPath: normalized,
+                    force: force,
+                    background: true,
+                    token: token
+                )
                 if Self.verbose {
                     Self.logger.info("\(Self.t)✅ 后台索引任务完成: \(normalized)")
                 }
@@ -365,12 +390,20 @@ public actor RAGService: SuperLog {
 
     /// 取消当前服务创建的后台索引任务。用于插件重载或内核重建。
     public func cancelBackgroundIndexing() {
-        backgroundCancellationGate.cancel()
+        backgroundCancellationGate.invalidate()
         for task in backgroundIndexTasks.values {
             task.cancel()
         }
         backgroundIndexTasks.removeAll()
         indexingProjects.removeAll()
+    }
+
+    /// 发放当前代次的后台索引令牌。
+    ///
+    /// 调用方必须在派发后台工作之前捕获令牌；`cancelBackgroundIndexing()`
+    /// 会让已捕获的令牌失效，迟到的任务无法再重新打开后台索引（回归 #1117）。
+    public func backgroundIndexingToken() -> RAGBackgroundIndexToken {
+        backgroundCancellationGate.issueToken()
     }
 
     private func finishBackgroundIndexing(_ projectPath: String) {
@@ -544,18 +577,26 @@ public actor RAGService: SuperLog {
 
 private final class RAGBackgroundCancellationGate: @unchecked Sendable {
     private let lock = NSLock()
-    private var cancelled = false
+    private var generation: UInt64 = 0
+    private var invalidated = false
 
-    var isActive: Bool {
-        lock.withLock { !cancelled }
+    /// 当前代次令牌。中断后发放新令牌会推进代次，旧令牌永久失效。
+    func issueToken() -> RAGBackgroundIndexToken {
+        lock.withLock {
+            if invalidated {
+                generation &+= 1
+                invalidated = false
+            }
+            return RAGBackgroundIndexToken(generation: generation)
+        }
     }
 
-    func reset() {
-        lock.withLock { cancelled = false }
+    func isActive(_ token: RAGBackgroundIndexToken) -> Bool {
+        lock.withLock { !invalidated && token.generation == generation }
     }
 
-    func cancel() {
-        lock.withLock { cancelled = true }
+    func invalidate() {
+        lock.withLock { invalidated = true }
     }
 }
 

@@ -131,7 +131,7 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     /// 产出 `MenuBarProviding` 实现（默认持有菜单栏条目数组）。
     public func makeMenuBarProvider() -> any MenuBarProviding {
-        DefaultMenuBarManager()
+        DefaultMenuBarProviding()
     }
 
     /// 产出 `LogoProviding` 实现（默认持有 Logo 项集合）。

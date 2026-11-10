@@ -41,6 +41,12 @@ final class NetworkMetricsObserver {
             .sink { [weak self] processes in self?.viewModels.network.updateProcesses(processes) }
             .store(in: &cancellables)
 
+        ProcessMonitorService.shared.$hasPublishedSample
+            .sink { [weak self] isReady in
+                self?.viewModels.network.updateProcessSnapshotReady(isReady)
+            }
+            .store(in: &cancellables)
+
         NetworkHistoryService.shared.$recentHistory
             .combineLatest(NetworkHistoryService.shared.$longTermHistory)
             .sink { [weak self] recent, longTerm in

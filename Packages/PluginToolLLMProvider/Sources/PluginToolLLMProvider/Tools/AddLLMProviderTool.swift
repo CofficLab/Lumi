@@ -63,7 +63,8 @@ public struct AddLLMProviderTool: SuperAgentTool, SuperLog, @unchecked Sendable 
         - `baseURL` must be the API root, for example "https://api.example.com/v1".
         - `apiFormat` defaults to "openAI"; use "anthropic" for Anthropic-compatible endpoints.
         - `models` accepts a list of {id, displayName, contextWindowSize, supportsVision, \
-        supportsTools}; provide it whenever you know the model ids, otherwise the user fills it in.
+        supportsTools}; provide it whenever you know the model ids, otherwise the user fills it in. \
+        `contextWindowSize` must be a positive integer; omit it when unknown.
         - At most one call per turn.
         """
     }
@@ -97,7 +98,11 @@ public struct AddLLMProviderTool: SuperAgentTool, SuperLog, @unchecked Sendable 
                         "properties": [
                             "id": ["type": "string"],
                             "displayName": ["type": "string"],
-                            "contextWindowSize": ["type": "integer"],
+                            "contextWindowSize": [
+                                "type": "integer",
+                                "minimum": 1,
+                                "description": "Known positive context window in tokens. Omit when unknown.",
+                            ],
                             "supportsVision": ["type": "boolean"],
                             "supportsTools": ["type": "boolean"],
                         ],
@@ -211,7 +216,7 @@ public struct AddLLMProviderTool: SuperAgentTool, SuperLog, @unchecked Sendable 
                 UserDefinedCloudModel(
                     id: id,
                     displayName: stringValue(dictionary["displayName"]),
-                    contextWindowSize: integerValue(dictionary["contextWindowSize"]),
+                    contextWindowSize: positiveIntegerValue(dictionary["contextWindowSize"]),
                     supportsVision: booleanValue(dictionary["supportsVision"]) ?? false,
                     supportsTools: booleanValue(dictionary["supportsTools"]) ?? true
                 )
@@ -229,10 +234,15 @@ public struct AddLLMProviderTool: SuperAgentTool, SuperLog, @unchecked Sendable 
 
     /// JSON 值转整数（兼容 `NSNumber` 与 `Double`）。
     static func integerValue(_ value: Any?) -> Int? {
-        if let int = value as? Int { return int }
-        if let double = value as? Double, double.rounded() == double { return Int(double) }
-        if let number = value as? NSNumber { return number.intValue }
-        return nil
+        // 保留旧行为：非整数的小数不是合法长度。
+        if let double = value as? Double, double.rounded() != double { return nil }
+        return ToolArgumentNumber.int(value)
+    }
+
+    /// 读取上下文窗口：只有正整数才是有效元数据，0 / 负数按未知处理（回归 #1121）。
+    static func positiveIntegerValue(_ value: Any?) -> Int? {
+        guard let integer = integerValue(value), integer > 0 else { return nil }
+        return integer
     }
 
     /// JSON 值转布尔。

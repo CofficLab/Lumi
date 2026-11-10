@@ -54,6 +54,23 @@ public protocol MessageSendingProviding: AnyObject {
     func removeFileAttachment(id: UUID)
     func clearFileAttachments()
 
+    // MARK: - Attachment reading（读取中的附件）
+
+    /// 正在异步读取、尚未进入挂起池的附件数量。
+    ///
+    /// 从用户选择文件到附件入池之间存在读取窗口。发送入口必须等这些读取
+    /// 结束再快照，否则先发出的消息会漏掉附件，附件又滚进下一条消息（#1023）。
+    var pendingAttachmentReadCount: Int { get }
+
+    /// 登记一次附件读取。必须在启动异步读取**之前**同步调用。
+    func beginAttachmentRead()
+
+    /// 结束一次附件读取；全部读取结束时唤醒等待中的发送入口。
+    func endAttachmentRead()
+
+    /// 等待全部在途附件读取结束；没有在途读取时立即返回。
+    func waitForAttachmentReads() async
+
     // MARK: - Pending Queue
 
     /// 指定会话的待发送消息队列（发送中时新消息入队）。
@@ -77,6 +94,9 @@ public protocol MessageSendingProviding: AnyObject {
 
     /// 携带折叠块提交用户消息。
     ///
+    /// - Parameter content: 编辑器原文，**不得预先 trim**。`collapsedBlocks`
+    ///   以它为坐标系；接收方负责 trim 正文并把区间同步平移，若调用方先
+    ///   trim，前导空白信息丢失，chip 区间会被判为越界而丢弃。
     /// - Parameter collapsedBlocks: 正文中被折叠成 chip 的区间。渲染层据此把
     ///   区间还原成可展开的 chip，而不是摊开成一大段文字。
     @discardableResult
@@ -153,6 +173,15 @@ public struct MessageSendCommit: Equatable, Sendable {
 }
 
 public extension MessageSendingProviding {
+    /// 默认实现：不跟踪附件读取，发送不会被读取阻塞。
+    var pendingAttachmentReadCount: Int { 0 }
+
+    func beginAttachmentRead() {}
+
+    func endAttachmentRead() {}
+
+    func waitForAttachmentReads() async {}
+
     /// 默认空实现，保持自定义发送器向后兼容。
     @discardableResult
     func addMessageSenderObserver(

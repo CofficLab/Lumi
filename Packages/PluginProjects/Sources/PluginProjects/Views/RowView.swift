@@ -10,8 +10,7 @@ struct RowView: View {
     var body: some View {
         AppListRow(isSelected: isSelected, action: select) {
             HStack(spacing: 10) {
-                Image(systemName: "folder")
-                    .font(.system(size: 13, weight: .semibold))
+                ProjectStorageIcon(kind: ProjectStorageDetector.kind(for: project.path), size: 13)
                     .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
                     .frame(width: 24, height: 24)
                     .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))

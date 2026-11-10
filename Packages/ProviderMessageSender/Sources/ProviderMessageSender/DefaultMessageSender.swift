@@ -37,6 +37,13 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
     private var completedOutcomes: [UUID: AgentLoopOutcome] = [:]
     private var agentLoopObserver: (any AgentLoopObserverHandle)?
     private var messageSenderObservers: [UUID: (MessageSenderEvent) -> Void] = [:]
+    /// 后台提交（附件编码 + 落库）的队尾：新提交排在它之后。
+    ///
+    /// 附件编码在 `Task.detached` 里跑，两个并发发送之间没有任何顺序保证；
+    /// 用户连续发送时，后一条可能先编码完并抢先落库，反转操作顺序。
+    private var backgroundCommitTail: Task<Void, Never>?
+    /// 测试用：按正文注入编码延迟，构造「并发发送、乱序完成」的窗口。
+    var backgroundCommitDelayForTesting: (@MainActor (String) -> Duration)?
 
     public private(set) var isSending = false {
         didSet {
@@ -47,6 +54,34 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
     public private(set) var pendingImageAttachments: [UserImageAttachment] = []
     public private(set) var pendingFileAttachments: [UserFileAttachment] = []
     public private(set) var pendingQueues: [UUID: [PendingChatMessage]] = [:]
+
+    /// 在途附件读取计数与等待者。
+    ///
+    /// 选择文件到附件入池之间存在异步读取窗口；发送入口在窗口结束前必须
+    /// 挂在 `waitForAttachmentReads()` 上，否则先发出的消息漏掉附件，附件
+    /// 又滚进下一条消息（#1023）。
+    private var attachmentReadCount = 0
+    private var attachmentReadWaiters: [CheckedContinuation<Void, Never>] = []
+
+    public var pendingAttachmentReadCount: Int { attachmentReadCount }
+
+    public func beginAttachmentRead() {
+        attachmentReadCount += 1
+    }
+
+    public func endAttachmentRead() {
+        guard attachmentReadCount > 0 else { return }
+        attachmentReadCount -= 1
+        guard attachmentReadCount == 0 else { return }
+        let waiters = attachmentReadWaiters
+        attachmentReadWaiters.removeAll()
+        waiters.forEach { $0.resume() }
+    }
+
+    public func waitForAttachmentReads() async {
+        guard attachmentReadCount > 0 else { return }
+        await withCheckedContinuation { attachmentReadWaiters.append($0) }
+    }
 
     // MARK: - Sending State Observation
 
@@ -249,6 +284,32 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         collapsedBlocks: [CollapsedContentBlock],
         conversationID: UUID?
     ) async throws -> MessageSendCommit? {
+        // 串行化后台提交，保证「先触发的发送先落库」。
+        let previous = backgroundCommitTail
+        let work = Task { @MainActor in
+            await previous?.value
+            return try await self.performBackgroundCommit(
+                content,
+                imageAttachments: imageAttachments,
+                fileAttachments: fileAttachments,
+                collapsedBlocks: collapsedBlocks,
+                conversationID: conversationID
+            )
+        }
+        backgroundCommitTail = Task { _ = try? await work.value }
+        return try await work.value
+    }
+
+    private func performBackgroundCommit(
+        _ content: String,
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment],
+        collapsedBlocks: [CollapsedContentBlock],
+        conversationID: UUID?
+    ) async throws -> MessageSendCommit? {
+        if let delay = backgroundCommitDelayForTesting?(content), delay > .zero {
+            try? await Task.sleep(for: delay)
+        }
         // Resolve the target before the detached metadata work. The user may
         // switch conversations while attachments are being encoded; the
         // message must stay assigned to the conversation active at send time.
@@ -511,6 +572,10 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
     ///
     /// 工具授权（`kind == "permission"`）没有这个例外：授权是安全闸门，
     /// 用户的新消息不能替代授权决定，必须继续排队。
+    ///
+    /// - Important: 例外只在队列为空时成立。队列里已有更早的消息时，
+    ///   若仍让新消息直接落库，后发送的消息会越过先排队的消息并抢走原回合
+    ///   的恢复（#1027）。此时按普通忙碌处理，新消息排在队尾。
     private func isSessionBusy(for conversationID: UUID) -> Bool {
         // 本类自己的账本也算「忙」：消息已提交但回合跟踪任务还没调度。
         if isSending(for: conversationID) { return true }
@@ -519,7 +584,8 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         // 挂起时区分 ask_user 提问与工具授权：只有提问可以被新消息跳过。
         if state == .suspended,
            let suspension = agentLoop.suspension(for: conversationID),
-           suspension.isAskUserSuspension {
+           suspension.isAskUserSuspension,
+           (pendingQueues[conversationID]?.isEmpty ?? true) {
             return false
         }
         return true

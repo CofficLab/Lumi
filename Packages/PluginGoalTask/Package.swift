@@ -5,19 +5,19 @@ let package = Package(
     name: "PluginGoalTask",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("14.0"),
         .iOS(.v17)
     ],
     products: [
         .library(name: "PluginGoalTask", targets: ["GoalTaskPlugin"])
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
+        .package(path: "../../Vendor/LumiProviders"),
+        .package(path: "../../Vendor/LumiKernel"),
         .package(path: "../KitAgentTool"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
+        .package(path: "../../Vendor/LumiLocalization"),
+        .package(path: "../../Vendor/LumiLogging"),
+        .package(path: "../../Vendor/LumiUI"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
@@ -52,7 +52,11 @@ let package = Package(
             dependencies: [
                 "GoalTaskPlugin",
                 "KitAgentTool",
+                .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
             ],
             path: "Tests"
         )

@@ -4,19 +4,19 @@ import PackageDescription
 let package = Package(
     name: "PluginTextActions",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("13.1"), .iOS(.v17)],
     products: [
         .library(name: "PluginTextActions", targets: ["TextActionsPlugin"])
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
+        .package(path: "../../Vendor/LumiKernel"),
         .package(path: "../KitLLM"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiUI"),
+        .package(path: "../../Vendor/LumiLocalization"),
+        .package(path: "../../Vendor/LumiLogging"),
         .package(path: "../ProviderLLMManager"),
-        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
+        .package(path: "../../Vendor/LumiSettings"),
+        .package(path: "../../Vendor/LumiProviders"),
         .package(path: "../KitTestSupport"),
     ],
     targets: [
@@ -35,7 +35,11 @@ let package = Package(
                 .product(name: "KitTestIsolation", package: "KitTestSupport"),
             ],
             path: "Sources/PluginTextActions",
-            resources: [.process("../../Resources/Localizable.xcstrings")]
+            resources: [
+                .process("../../Resources/Localizable.xcstrings"),
+                // Lumi 品牌标识：复用 App 图标，避免插件包另画一套风格不一致的符号
+                .process("../../Resources/LumiBrandMark.png"),
+            ]
         ),
         .testTarget(
             name: "TextActionsPluginTests",

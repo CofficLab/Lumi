@@ -1,4 +1,5 @@
 import Foundation
+import KitAgentTool
 import KitLLM
 import ProviderConversation
 import ProviderLifecycleHooks
@@ -55,5 +56,21 @@ public struct AgentLoopSuspension: Sendable, Equatable {
             return false
         }
         return (object["question"] as? String)?.isEmpty == false
+    }
+
+    /// 该挂起点是否在等待用户做**授权**决定。
+    ///
+    /// 与 `isAskUserSuspension` 互斥：授权挂起（通用工具授权
+    /// `kind == "permission"`、Computer Use 应用授权
+    /// `kind == "computer_use_authorization"`）等的是「允许 / 拒绝」，
+    /// 而 `ask_user` 等的是用户的回答。
+    ///
+    /// 会话级授权状态只应在这类挂起期间标记为 `.required`，
+    /// 否则会话列表会把普通提问误显示成授权盾牌。
+    ///
+    /// - Note: 判据来自共享契约 `ToolSuspensionKind`，不在此处硬编码
+    ///   载荷字段，避免生产者与消费者各自漂移。
+    public var isAuthorizationSuspension: Bool {
+        ToolSuspensionKind.isAuthorizationRequest(payload)
     }
 }

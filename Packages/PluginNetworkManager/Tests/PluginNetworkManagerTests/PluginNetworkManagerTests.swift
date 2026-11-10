@@ -522,7 +522,9 @@ import SQLite3
 }
 
 @Test func exportFileNameIsStableUniqueAndSanitized() {
+    let firstID = UUID(uuidString: "11111111-2222-3333-4444-555555555555")!
     let record = HTTPExchangeRecord(
+        id: firstID,
         startedAt: Date(timeIntervalSince1970: 1),
         requestMethod: "GET",
         requestURL: "https://api.github.com/users/octocat",
@@ -535,9 +537,42 @@ import SQLite3
     let name0 = HTTPExchangeExportFormatter.exportFileName(for: snapshot, index: 0)
     let name1 = HTTPExchangeExportFormatter.exportFileName(for: snapshot, index: 1)
 
-    #expect(name0 == "00001-GET-api.github.com-users-octocat.md")
-    #expect(name1 == "00002-GET-api.github.com-users-octocat.md")
+    #expect(name0 == "00001-GET-api.github.com-users-octocat-11111111-2222-3333-4444-555555555555.md")
+    #expect(name1 == "00002-GET-api.github.com-users-octocat-11111111-2222-3333-4444-555555555555.md")
     #expect(name0 != name1)
+
+    // #976：不同批次都从 00001 开始，同一方法/URL 的另一条 exchange 必须落到
+    // 不同路径，否则后一次导出会静默覆盖前一次的归档。
+    let secondRecord = HTTPExchangeRecord(
+        startedAt: Date(timeIntervalSince1970: 2),
+        requestMethod: "GET",
+        requestURL: "https://api.github.com/users/octocat",
+        requestHeadersJSON: Data("{}".utf8),
+        requestBody: nil,
+        requestDetailsJSON: Data("{}".utf8)
+    )
+    let secondName = HTTPExchangeExportFormatter.exportFileName(
+        for: HTTPExchangeExportSnapshot(record: secondRecord),
+        index: 0
+    )
+    #expect(secondName != name0)
+
+    // 长 URL 截断只能裁掉描述性前缀，ID 后缀必须完整保留。
+    let longRecord = HTTPExchangeRecord(
+        id: firstID,
+        startedAt: Date(timeIntervalSince1970: 3),
+        requestMethod: "GET",
+        requestURL: "https://example.com/" + String(repeating: "segment/", count: 40),
+        requestHeadersJSON: Data("{}".utf8),
+        requestBody: nil,
+        requestDetailsJSON: Data("{}".utf8)
+    )
+    let longName = HTTPExchangeExportFormatter.exportFileName(
+        for: HTTPExchangeExportSnapshot(record: longRecord),
+        index: 0
+    )
+    #expect(longName.hasSuffix("-11111111-2222-3333-4444-555555555555.md"))
+    #expect(longName.count == 90 + 1 + 36 + 3)
 }
 
 @Test func timeRangeFilterCutOffsAreCorrect() {
@@ -645,4 +680,15 @@ private actor PublicIPFetcherStub {
 private final class ProcessMonitorCounter {
     var starts = 0
     var stops = 0
+}
+
+@Test func httpExchangeDetailSchemaAcceptsIDOrURL() throws {
+    let schema = GetHTTPExchangeDetailTool().inputSchema(for: .english)
+
+    // 只要求 id 或 url 其中一个，不能把 url 无条件设为必填。
+    #expect(schema["required"] == nil)
+
+    let anyOf = try #require(schema["anyOf"] as? [[String: [String]]])
+    #expect(anyOf.contains(["required": ["id"]]))
+    #expect(anyOf.contains(["required": ["url"]]))
 }

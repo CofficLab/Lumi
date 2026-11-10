@@ -42,19 +42,20 @@ struct GetHTTPFailedRequestsTool: SuperAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let limit = min(NetworkToolSupport.int(arguments, "limit") ?? 20, 100)
+        let limit = NetworkToolSupport.limit(arguments, default: 20, max: 100)
         let hours = min(NetworkToolSupport.int(arguments, "hours") ?? 24, 720)
         let errorTypes = NetworkToolSupport.stringArray(arguments, "error_types")
 
-        let result = await MainActor.run { () -> String in
+        let result = try await MainActor.run { () throws -> String in
             guard let store = NetworkService.shared.currentExchangeStore else {
-                return "Error: HTTP exchange store not available"
+                throw ToolExecutionError.executionFailed(toolName: name, reason: "HTTP exchange store not available")
             }
 
             let cutoff = Date().addingTimeInterval(-Double(hours) * 3600)
-            let allRecords = store.fetchPage(limit: 5000)
 
-            var failedRecords = allRecords.filter { record in
+            // Scan the whole retained history so a matching failure older than
+            // a fixed recent window is still reported.
+            let failedRecords = store.scanHistory { record in
                 guard record.startedAt >= cutoff else { return false }
 
                 let hasNetworkError = record.errorDescription != nil
@@ -71,48 +72,56 @@ struct GetHTTPFailedRequestsTool: SuperAgentTool, SuperLog {
                 return hasNetworkError || hasHTTPError
             }
 
-            failedRecords.sort { $0.startedAt > $1.startedAt }
+            // `scanHistory` already yields newest first.
+            // 汇总基于全部匹配记录；`limit` 只限制下方明细条数。
             let results = Array(failedRecords.prefix(limit))
 
-            if results.isEmpty {
+            if failedRecords.isEmpty {
                 return "No failed requests found."
             }
 
-            let networkErrors = results.filter { $0.errorDescription != nil }
-            let http4xxErrors = results.filter { (($0.responseStatusCode ?? 0) >= 400 && ($0.responseStatusCode ?? 0) < 500) }
-            let http5xxErrors = results.filter { ($0.responseStatusCode ?? 0) >= 500 }
+            let networkErrors = failedRecords.filter { $0.errorDescription != nil }
+            let http4xxErrors = failedRecords.filter { (($0.responseStatusCode ?? 0) >= 400 && ($0.responseStatusCode ?? 0) < 500) }
+            let http5xxErrors = failedRecords.filter { ($0.responseStatusCode ?? 0) >= 500 }
 
             var sections: [String] = []
             sections.append("## Failed Requests (Last \(hours) hours)")
             sections.append("")
-            sections.append("**Summary**: \(results.count) failed requests")
+            sections.append("**Summary**: \(failedRecords.count) failed requests")
             sections.append("- Network Errors: \(networkErrors.count)")
             sections.append("- HTTP 4xx Errors: \(http4xxErrors.count)")
             sections.append("- HTTP 5xx Errors: \(http5xxErrors.count)")
+            if results.count < failedRecords.count {
+                sections.append("- Showing first \(results.count) of \(failedRecords.count) detail records (limit: \(limit))")
+            }
 
-            if !networkErrors.isEmpty {
+            let detailNetworkErrors = results.filter { $0.errorDescription != nil }
+            let detailHTTP4xx = results.filter { (($0.responseStatusCode ?? 0) >= 400 && ($0.responseStatusCode ?? 0) < 500) }
+            let detailHTTP5xx = results.filter { ($0.responseStatusCode ?? 0) >= 500 }
+
+            if !detailNetworkErrors.isEmpty {
                 sections.append("")
                 sections.append("### Network Errors")
-                for record in networkErrors.prefix(10) {
-                    sections.append("- [\(record.requestMethod)] \(record.requestURL)")
+                for record in detailNetworkErrors.prefix(10) {
+                    sections.append("- [\(record.method)] \(record.url)")
                     sections.append("  Error: \(record.errorDescription ?? "Unknown")")
                 }
             }
 
-            if !http4xxErrors.isEmpty {
+            if !detailHTTP4xx.isEmpty {
                 sections.append("")
                 sections.append("### HTTP 4xx Client Errors")
-                for record in http4xxErrors.prefix(10) {
-                    sections.append("- [\(record.requestMethod)] \(record.requestURL)")
+                for record in detailHTTP4xx.prefix(10) {
+                    sections.append("- [\(record.method)] \(record.url)")
                     sections.append("  Status: \(record.responseStatusCode ?? 0)")
                 }
             }
 
-            if !http5xxErrors.isEmpty {
+            if !detailHTTP5xx.isEmpty {
                 sections.append("")
                 sections.append("### HTTP 5xx Server Errors")
-                for record in http5xxErrors.prefix(10) {
-                    sections.append("- [\(record.requestMethod)] \(record.requestURL)")
+                for record in detailHTTP5xx.prefix(10) {
+                    sections.append("- [\(record.method)] \(record.url)")
                     sections.append("  Status: \(record.responseStatusCode ?? 0)")
                 }
             }

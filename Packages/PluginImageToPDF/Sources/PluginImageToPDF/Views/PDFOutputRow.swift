@@ -16,7 +16,7 @@ struct PDFOutputRow: View {
                     .clipShape(RoundedRectangle(cornerRadius: 6))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(item.source.suggestedPDFName)
+                    Text(item.outputName)
                         .font(.system(size: 13, weight: .medium))
                         .lineLimit(1)
                         .truncationMode(.middle)
@@ -28,7 +28,7 @@ struct PDFOutputRow: View {
                 actions
             }
 
-            if item.progress > 0 && item.progress < 1 {
+            if item.showsProgress {
                 ProgressView(value: item.progress)
                     .progressViewStyle(.linear)
             }

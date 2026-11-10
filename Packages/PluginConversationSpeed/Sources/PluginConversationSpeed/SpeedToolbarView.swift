@@ -43,7 +43,7 @@ struct SpeedToolbarView: View {
             )
             .frame(width: 420)
         }
-        .onChange(of: viewModel.selectedConversationID) { _, newValue in
+        .onChange(of: viewModel.selectedConversationID) { newValue in
             if newValue == nil {
                 popoverShown = false
             }

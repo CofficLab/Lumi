@@ -3,15 +3,16 @@ import PackageDescription
 
 let package = Package(
     name: "PluginConversationState",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginConversationState", targets: ["PluginConversationState"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
+        .package(path: "../../Vendor/LumiKernel"),
         .package(path: "../ProviderAgentLoop"),
+        .package(path: "../ProviderConversation"),
         .package(path: "../ProviderConversationState"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiLogging"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderMessageSender"),
     ],
@@ -21,6 +22,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderConversationState", package: "ProviderConversationState"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
@@ -30,7 +32,10 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginConversationStateTests",
-            dependencies: ["PluginConversationState"],
+            dependencies: [
+                "PluginConversationState",
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
+            ],
             path: "Tests/PluginConversationStateTests"
         ),
     ]

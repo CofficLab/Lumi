@@ -18,7 +18,7 @@ public struct ClipboardHistoryView: View {
                     text: $viewModel.searchText,
                     placeholder: pluginLocalization.string("Search clipboard history...")
                 )
-                .onChange(of: viewModel.searchText) { _, _ in
+                .onChange(of: viewModel.searchText) { _ in
                     viewModel.filterItems()
                 }
                 

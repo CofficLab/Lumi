@@ -53,6 +53,18 @@ final class LumiUITests: LumiUITestCase {
         XCTAssertTrue(element(identifier: "root.main").waitForExistence(timeout: 20), "主窗口根内容未出现")
     }
 
+    func testMenuBarStatusItemOpensAndClosesPopover() {
+        let statusItem = app.statusItems.matching(identifier: "lumi.menu-bar").firstMatch
+        XCTAssertTrue(statusItem.waitForExistence(timeout: 30))
+
+        statusItem.click()
+        let openAction = element(anyLabelOf: ["Open Lumi"])
+        XCTAssertTrue(openAction.waitForExistence(timeout: 15))
+
+        statusItem.click()
+        XCTAssertTrue(openAction.waitForNonExistence(timeout: 5))
+    }
+
     func testSettingsWindowOpensFromToolbarButton() {
         _ = openSettings()
         XCTAssertTrue(app.windows.count >= 2, "打开设置后应有独立的设置窗口")

@@ -1,9 +1,13 @@
 import AppKit
 import Combine
+import Darwin
 import Foundation
 import os
 import LumiLoggingKit
-/// Process monitoring service that reports top N CPU-consuming processes via libproc.
+/// Process monitoring service that reports CPU usage per process via libproc.
+///
+/// 同名多进程（如浏览器/IDE 的多个 Helper）会合并为一条记录并标注份数，
+/// 与网络区块的展示口径保持一致。发布的是全部活跃进程，由调用方决定截取前几条。
 @MainActor
 public final class ProcessService: ObservableObject, SuperLog {
     public static let shared = ProcessService()
@@ -13,9 +17,20 @@ public final class ProcessService: ObservableObject, SuperLog {
 
     // MARK: - Constants
 
-    private nonisolated static let processLimit = 5
-    /// `proc_taskinfo.pti_total_user/system` reports CPU time in 100ns ticks.
-    private nonisolated static let processTimeTicksPerSecond = 10000000.0
+    /// 进程采样间隔。与网络区块的 nettop 采样统一为 1 秒，避免两块榜单
+    /// 的刷新节奏不一致。
+    nonisolated static let samplingInterval: TimeInterval = 1.0
+
+    /// `proc_taskinfo.pti_total_user/system` 返回的是 mach absolute time ticks。
+    ///
+    /// 每秒 tick 数由 `mach_timebase_info` 决定：Apple Silicon 为 24 MHz，
+    /// Intel 为 1 GHz。不能按固定 100ns 换算，否则 Apple Silicon 上数值
+    /// 放大约 2.4 倍、Intel 上放大约 100 倍。
+    nonisolated(unsafe) static let timebase: mach_timebase_info_data_t = {
+        var info = mach_timebase_info_data_t()
+        mach_timebase_info(&info)
+        return info
+    }()
 
     // MARK: - Published Properties
 
@@ -44,7 +59,7 @@ public final class ProcessService: ObservableObject, SuperLog {
             previousTimestamp = Date().timeIntervalSince1970
             sampleProcesses()
 
-            monitoringTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
+            monitoringTimer = Timer.scheduledTimer(withTimeInterval: Self.samplingInterval, repeats: true) { [weak self] _ in
                 Task { @MainActor [weak self] in
                     self?.sampleProcesses()
                 }
@@ -141,7 +156,7 @@ public final class ProcessService: ObservableObject, SuperLog {
         guard actualCount > 0 else { return ([], previousSnapshot, now) }
 
         var currentSnapshot: [Int32: (user: UInt64, system: UInt64)] = [:]
-        var results: [ProcessMetric] = []
+        var samples: [CPUSample] = []
 
         for i in 0 ..< actualCount {
             if Task.isCancelled { break }
@@ -167,13 +182,10 @@ public final class ProcessService: ObservableObject, SuperLog {
                 let cpuPercent = cpuPercent(forProcessTimeDelta: totalDelta, elapsedSeconds: deltaTime)
 
                 if cpuPercent > 0.1 {
-                    let name = getProcessName(pid: pid)
-                    let icon = appBundlePaths[pid]
-
-                    results.append(ProcessMetric(
-                        id: pid,
-                        name: name,
-                        icon: icon,
+                    samples.append(CPUSample(
+                        pid: pid,
+                        name: getProcessName(pid: pid),
+                        icon: appBundlePaths[pid],
                         cpuUsage: cpuPercent,
                         memoryUsage: Int64(taskInfo.pti_resident_size)
                     ))
@@ -181,14 +193,86 @@ public final class ProcessService: ObservableObject, SuperLog {
             }
         }
 
-        return (
-            results.sorted { $0.cpuUsage > $1.cpuUsage }.prefix(Self.processLimit).map { $0 },
-            currentSnapshot,
-            now
-        )
+        return (aggregate(samples), currentSnapshot, now)
     }
 
+    /// 单个进程的原始采样值，供聚合与测试使用。
+    struct CPUSample: Sendable {
+        let pid: Int32
+        let name: String
+        let icon: String?
+        let cpuUsage: Double
+        let memoryUsage: Int64
+    }
+
+    /// 按进程名聚合同名多进程，并标注份数与本应用。
+    ///
+    /// 聚合后 CPU 与内存相加；`id` 取组内最小 PID 作为稳定标识，
+    /// `isCurrentApp` 只要组内包含 Lumi 自身进程即为真。
+    nonisolated static func aggregate(
+        _ samples: [CPUSample],
+        selfPID: Int32 = Int32(getpid())
+    ) -> [ProcessMetric] {
+        var groups: [String: CPUAggregate] = [:]
+
+        for sample in samples {
+            guard !sample.name.isEmpty else { continue }
+
+            if var group = groups[sample.name] {
+                group.pid = min(group.pid, sample.pid)
+                group.cpuUsage += sample.cpuUsage
+                group.memoryUsage += sample.memoryUsage
+                group.instanceCount += 1
+                group.isCurrentApp = group.isCurrentApp || sample.pid == selfPID
+                if group.icon == nil { group.icon = sample.icon }
+                groups[sample.name] = group
+            } else {
+                groups[sample.name] = CPUAggregate(
+                    pid: sample.pid,
+                    name: sample.name,
+                    icon: sample.icon,
+                    cpuUsage: sample.cpuUsage,
+                    memoryUsage: sample.memoryUsage,
+                    instanceCount: 1,
+                    isCurrentApp: sample.pid == selfPID
+                )
+            }
+        }
+
+        return groups.values
+            .map { group in
+                ProcessMetric(
+                    id: group.pid,
+                    name: group.name,
+                    icon: group.icon,
+                    cpuUsage: group.cpuUsage,
+                    memoryUsage: group.memoryUsage,
+                    instanceCount: group.instanceCount,
+                    isCurrentApp: group.isCurrentApp
+                )
+            }
+            .sorted { $0.cpuUsage > $1.cpuUsage }
+    }
+
+    private struct CPUAggregate {
+        var pid: Int32
+        var name: String
+        var icon: String?
+        var cpuUsage: Double
+        var memoryUsage: Int64
+        var instanceCount: Int
+        var isCurrentApp: Bool
+    }
+
+    /// 取可执行文件完整路径的文件名，避免 `proc_name` 的 16 字符截断
+    /// 造成不同进程被误判为同名（与网络区块的名称口径对齐）。
     private nonisolated static func getProcessName(pid: Int32) -> String {
+        var pathBuffer = [CChar](repeating: 0, count: 4096)
+        if proc_pidpath(pid, &pathBuffer, UInt32(pathBuffer.count)) > 0 {
+            let name = (String(cString: pathBuffer) as NSString).lastPathComponent
+            if !name.isEmpty { return name }
+        }
+
         let bufferSize = 1024
         var nameBuffer = [CChar](repeating: 0, count: bufferSize)
         let result = proc_name(pid, &nameBuffer, UInt32(bufferSize))
@@ -204,9 +288,12 @@ public final class ProcessService: ObservableObject, SuperLog {
 
     nonisolated static func cpuPercent(
         forProcessTimeDelta totalDelta: UInt64,
-        elapsedSeconds deltaTime: TimeInterval
+        elapsedSeconds deltaTime: TimeInterval,
+        timebase: mach_timebase_info_data_t = ProcessService.timebase
     ) -> Double {
         guard deltaTime > 0 else { return 0 }
-        return Double(totalDelta) / (deltaTime * processTimeTicksPerSecond) * 100.0
+        // mach ticks → 纳秒 → CPU 秒数；100% 表示占满一个核心。
+        let nanoseconds = Double(totalDelta) * Double(timebase.numer) / Double(timebase.denom)
+        return nanoseconds / (deltaTime * 1_000_000_000.0) * 100.0
     }
 }

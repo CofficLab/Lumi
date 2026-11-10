@@ -29,7 +29,7 @@ struct ListView: View {
             await viewModel.loadInitialIfNeeded()
         }
         // 项目切换或列表结构变化时刷新。
-        .onChange(of: viewModel.resolvedProjectPath) { _, _ in
+        .onChange(of: viewModel.resolvedProjectPath) { _ in
             Task { @MainActor in
                 await viewModel.reload()
             }
@@ -41,7 +41,13 @@ struct ListView: View {
         if viewModel.isLoading {
             ListLoadingView()
         } else if viewModel.conversations.isEmpty {
-            ListEmptyView()
+            if viewModel.hasLoadError {
+                ListErrorView(onRetry: {
+                    Task { await viewModel.reload() }
+                })
+            } else {
+                ListEmptyView()
+            }
         } else {
             ScrollView {
                 LazyVStack(spacing: 4) {

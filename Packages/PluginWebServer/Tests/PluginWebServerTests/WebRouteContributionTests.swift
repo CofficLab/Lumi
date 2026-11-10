@@ -1,9 +1,11 @@
 import Foundation
 import KernelCore
+import KitAgentTool
 import ProviderPluginControl
 import ProviderPluginManaging
 import ProviderSettingView
 import ProviderTheme
+import ProviderToolManager
 import ProviderWebServer
 import Testing
 import KitWebAPI
@@ -115,6 +117,59 @@ private final class FakePluginManager: PluginManaging, PluginControlling {
             callback(event)
         }
     }
+}
+
+/// 最小可用工具管理器：只满足工具桥接需要的注册表查询。
+///
+/// 生产环境里工具管理器与核心控制面同时存在，两者共用一次路由注册，
+/// 测试必须复现这个组合才能发现彼此覆盖。
+@MainActor
+private final class StubToolManager: ToolManagerProviding {
+    private var toolsByPlugin: [String: [any SuperAgentTool]] = [:]
+
+    func allTools() -> [any SuperAgentTool] {
+        toolsByPlugin.values.flatMap { $0 }
+    }
+
+    func add(_ tool: any SuperAgentTool, pluginID: String) {
+        toolsByPlugin[pluginID, default: []].append(tool)
+    }
+
+    func remove(id: String) {
+        for key in toolsByPlugin.keys {
+            toolsByPlugin[key]?.removeAll { $0.name == id }
+        }
+    }
+
+    func toolsGroupedByPlugin() -> [(pluginID: String, tools: [any SuperAgentTool])] {
+        toolsByPlugin.map { ($0.key, $0.value) }
+    }
+
+    func tool(named name: String) -> (any SuperAgentTool)? {
+        allTools().first { $0.name == name }
+    }
+
+    func displayDescription(for toolCall: ToolCall) -> String? {
+        toolCall.name
+    }
+
+    func riskLevel(for toolCall: ToolCall) -> CommandRiskLevel? {
+        .safe
+    }
+
+    func execute(
+        _ toolCall: ToolCall,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> ToolCallResult {
+        ToolCallResult(content: "")
+    }
+
+    func toolCalls(for turnID: UUID) async -> [ToolCallRecord] { [] }
+
+    func toolCallResult(for toolCallID: String) async -> ToolCallResult? { nil }
+
+    func deleteToolCalls(for conversationID: UUID) async {}
 }
 
 private final class FakeObserverHandle: PluginManagingObserverHandle {
@@ -355,6 +410,35 @@ struct WebServerPluginContributionTests {
         let summaries = webServer.registeredRouteSummaries()
         #expect(summaries.contains { $0.path == "/api/plugins/theme-manager/themes" })
         #expect(summaries.contains { $0.path == "/api/plugins/theme-manager/themes/:id/select" })
+    }
+
+    @Test("核心控制面与工具桥接的路由同时生效")
+    func keepsCoreAndToolRoutesTogether() throws {
+        let kernel = KernelCoreContainer()
+        try kernel.registerProvider((any ThemeProviding).self, DefaultThemeProviding())
+        try kernel.registerProvider((any WebServerProviding).self, DefaultWebServerProviding())
+        try kernel.registerProvider(
+            (any SettingViewProviding).self,
+            DefaultSettingViewProviding()
+        )
+        // 生产环境始终注册了工具管理器，工具桥接路由因此也会参与注册。
+        try kernel.registerProvider(
+            (any ToolManagerProviding).self,
+            StubToolManager()
+        )
+
+        let plugin = WebServerPlugin()
+        try plugin.onBoot(kernel: kernel)
+
+        let server = try #require(
+            kernel.resolveProvider((any WebServerProviding).self) as? LumiWebServer
+        )
+        let paths = Set(server.registeredRouteSummaries().map(\.path))
+
+        // 同一插件分两次注册会整体替换，导致前一组路由全部 404。
+        #expect(paths.contains("/api/v1/status"))
+        #expect(paths.contains("/api/v1/conversations"))
+        #expect(paths.contains("/api/v1/tools"))
     }
 
     @Test("插件可取得自己的路由登记器")

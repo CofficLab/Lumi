@@ -207,24 +207,25 @@ struct AskUserPluginTests {
         #expect(result.awaitingUserResponse)
     }
 
-    @Test("缺 mode 返回错误且不挂起")
+    @Test("缺 mode 抛出错误且不挂起")
     func missingMode() async throws {
         let tool = AskUserTool()
-        let result = try await tool.executeResult(arguments: [
-            "question": ToolArgument("你好?"),
-        ])
-        #expect(result.isError)
-        #expect(!result.awaitingUserResponse)
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.executeResult(arguments: [
+                "question": ToolArgument("你好?"),
+            ])
+        }
     }
 
-    @Test("choice 模式缺 options 返回错误")
+    @Test("choice 模式缺 options 抛出错误")
     func choiceMissingOptions() async throws {
         let tool = AskUserTool()
-        let result = try await tool.executeResult(arguments: [
-            "question": ToolArgument("选哪个?"),
-            "mode": ToolArgument("choice"),
-        ])
-        #expect(result.isError)
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.executeResult(arguments: [
+                "question": ToolArgument("选哪个?"),
+                "mode": ToolArgument("choice"),
+            ])
+        }
     }
 
     @Test("插件注册 ask_user 工具")

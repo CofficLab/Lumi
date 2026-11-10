@@ -19,16 +19,26 @@ struct MessageRowView: View {
     let message: Message
     let verbosity: ResponseVerbosity
 
+    /// 轮次呈现上下文。
+    ///
+    /// - Important: V1–V3 不传这个参数（默认 nil），行为完全不变。
+    ///   它只通过 SwiftUI Environment 传给 renderer，**不修改**
+    ///   `MessageRenderingProviding.MessageRendererItem.render` 的签名，
+    ///   因此第三方 renderer 无需改动。
+    let turnContext: MessageTurnPresentationContext?
+
     init(
         services: MessageListServices,
         developerModeState: DeveloperModeStateViewModel,
         message: Message,
-        verbosity: ResponseVerbosity
+        verbosity: ResponseVerbosity,
+        turnContext: MessageTurnPresentationContext? = nil
     ) {
         self.services = services
         self.developerModeState = developerModeState
         self.message = message
         self.verbosity = verbosity
+        self.turnContext = turnContext
     }
 
     private var renderer: MessageRendererItem? {
@@ -40,6 +50,7 @@ struct MessageRowView: View {
             if let renderer {
                 renderer.render(message, verbosity)
                     .messageRendererIdBadge(renderer.id, isEnabled: developerModeState.isDeveloperModeEnabled)
+                    .environment(\.messageTurnPresentation, turnContext)
             } else {
                 Text("No renderer for message: \(message.id)")
                     .foregroundColor(.orange)

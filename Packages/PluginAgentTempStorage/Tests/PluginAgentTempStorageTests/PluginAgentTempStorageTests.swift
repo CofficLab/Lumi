@@ -52,9 +52,27 @@ struct PluginAgentTempStorageTests {
         #expect(path.hasSuffix("notes/today.md"))
         #expect(try await service.read(filename: "notes/today.md") == "# today")
 
-        // listFiles is flat: the nested file lives under a directory and is not enumerated.
+        // 列表必须递归：嵌套文件要能以相对路径出现，否则可读写却不可见。
         let listed = try await service.listFiles()
-        #expect(listed.isEmpty)
+        #expect(listed.map(\.name) == ["notes/today.md"])
+        #expect(listed.first?.path.hasSuffix("notes/today.md") == true)
+    }
+
+    @Test
+    func preservesLeadingAndTrailingSpacesInFilenames() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = TempFileStorageService(directory: root, retentionDays: 7)
+
+        let plain = try await service.write(filename: "report.md", content: "first")
+        let spaced = try await service.write(filename: " report.md ", content: "second")
+
+        // 两个合法名称必须落到不同文件，不能因裁剪而互相覆盖。
+        #expect(plain != spaced)
+        #expect(spaced.hasSuffix("/ report.md "))
+        #expect(try await service.read(filename: "report.md") == "first")
+        #expect(try await service.read(filename: " report.md ") == "second")
+        #expect(try await service.listFiles().map(\.name).sorted() == [" report.md ", "report.md"])
     }
 
     @Test
@@ -123,9 +141,80 @@ struct PluginAgentTempStorageTests {
             ofItemAtPath: root.appendingPathComponent("old.md").path
         )
 
-        await service.purgeExpiredFiles()
+        try await service.purgeExpiredFiles()
         let remaining = try await service.listFiles()
         #expect(remaining.map(\.name) == ["fresh.md"])
+    }
+
+    @Test
+    func unreadableSettingsAbortPurgeAndSurfaceError() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let files = root.appendingPathComponent("files", isDirectory: true)
+        try FileManager.default.createDirectory(at: files, withIntermediateDirectories: true)
+
+        let store = AgentTempStoragePluginLocalStore(settingsDirectory: root)
+        store.retentionDays = 14
+        #expect(try store.resolvedRetentionDays() == 14)
+
+        let keep = files.appendingPathComponent("report.md")
+        try "keep".write(to: keep, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes(
+            [.modificationDate: Date(timeIntervalSinceNow: -8 * 24 * 60 * 60)],
+            ofItemAtPath: keep.path
+        )
+
+        // 已有配置在保存成功后才损坏：不能把读取故障当成「未配置」。
+        try Data("not a plist".utf8).write(to: root.appendingPathComponent("settings.plist"))
+
+        let service = TempFileStorageService(
+            directory: files,
+            retentionDaysProvider: { try store.resolvedRetentionDays() }
+        )
+
+        await #expect {
+            _ = try await service.read(filename: "report.md")
+        } throws: { error in
+            guard case .settingsUnavailable = error as? TempFileStorageError else { return false }
+            return true
+        }
+
+        // 按 14 天策略仍然有效的 8 天文件必须保留。
+        #expect(FileManager.default.fileExists(atPath: keep.path))
+        #expect(try String(contentsOf: keep, encoding: .utf8) == "keep")
+
+        // 配置确实不存在时才允许回退默认值。
+        try FileManager.default.removeItem(at: root.appendingPathComponent("settings.plist"))
+        #expect(try store.resolvedRetentionDays() == 7)
+    }
+
+    @Test
+    func readFailsWhenExpiredFileCannotBeDeleted() async throws {
+        let root = try makeTemporaryDirectory()
+        defer {
+            // 恢复写权限后才能清理隔离目录。
+            try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: root.path)
+            try? FileManager.default.removeItem(at: root)
+        }
+        let service = TempFileStorageService(directory: root, retentionDays: 7)
+
+        let expired = root.appendingPathComponent("old.md")
+        try "old".write(to: expired, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes(
+            [.modificationDate: Date(timeIntervalSinceNow: -8 * 24 * 60 * 60)],
+            ofItemAtPath: expired.path
+        )
+
+        // 父目录不可写时文件仍可读，但删除必然失败：不能因此把过期内容当有效结果返回。
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: root.path)
+
+        await #expect {
+            _ = try await service.read(filename: "old.md")
+        } throws: { error in
+            guard case .purgeFailed(let detail) = error as? TempFileStorageError else { return false }
+            return detail.contains("old.md")
+        }
+        #expect(FileManager.default.fileExists(atPath: expired.path))
     }
 
     @Test
@@ -134,6 +223,8 @@ struct PluginAgentTempStorageTests {
         #expect(!TempFileStorageError.pathTraversal.errorDescription!.isEmpty)
         #expect(TempFileStorageError.fileNotFound("x").errorDescription?.contains("x") == true)
         #expect(TempFileStorageError.readFailed("boom").errorDescription?.contains("boom") == true)
+        #expect(TempFileStorageError.settingsUnavailable("boom").errorDescription?.contains("boom") == true)
+        #expect(TempFileStorageError.purgeFailed("old.md").errorDescription?.contains("old.md") == true)
     }
 
     private func makeTemporaryDirectory() throws -> URL {

@@ -5,7 +5,7 @@ let package = Package(
     name: "PluginBrowser",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("14.0"),
         .iOS(.v17)
     ],
     products: [
@@ -15,16 +15,16 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
+        .package(path: "../../Vendor/LumiKernel"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiLocalization"),
+        .package(path: "../../Vendor/LumiLogging"),
         .package(path: "../KitMCP"),
         .package(path: "../ProviderMCP"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0")
+        .package(path: "../../Vendor/LumiProviders")
     ],
     targets: [
         .target(

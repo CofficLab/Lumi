@@ -1,0 +1,658 @@
+//
+// This source file is part of the Hummingbird server framework project
+// Copyright (c) the Hummingbird authors
+//
+// See LICENSE.txt for license information
+// SPDX-License-Identifier: Apache-2.0
+//
+
+import Foundation
+import HTTPTypes
+import HummingbirdTesting
+import InMemoryLogging
+import Logging
+import NIOConcurrencyHelpers
+import NIOFoundationEssentialsCompat
+import Testing
+
+@testable import Hummingbird
+
+struct MiddlewareTests {
+    static func randomBuffer(size: Int) -> ByteBuffer {
+        var data = [UInt8](repeating: 0, count: size)
+        data = data.map { _ in UInt8.random(in: 0...255) }
+        return ByteBufferAllocator().buffer(bytes: data)
+    }
+
+    @Test func testMiddleware() async throws {
+        struct TestMiddleware<Context: RequestContext>: RouterMiddleware {
+            public func handle(_ request: Request, context: Context, next: (Request, Context) async throws -> Response) async throws -> Response {
+                var response = try await next(request, context)
+                response.headers[.test] = "TestMiddleware"
+                return response
+            }
+        }
+        let router = Router()
+        router.add(middleware: TestMiddleware())
+        router.get("/hello") { _, _ -> String in
+            "Hello"
+        }
+        let app = Application(responder: router.buildResponder())
+        try await app.test(.router) { client in
+            try await client.execute(uri: "/hello", method: .get) { response in
+                #expect(response.headers[.test] == "TestMiddleware")
+            }
+        }
+    }
+
+    @Test func testMiddlewareOrder() async throws {
+        struct TestMiddleware<Context: RequestContext>: RouterMiddleware {
+            let string: String
+            public func handle(_ request: Request, context: Context, next: (Request, Context) async throws -> Response) async throws -> Response {
+                var response = try await next(request, context)
+                response.headers[values: .test].append(self.string)
+                return response
+            }
+        }
+        let router = Router()
+        router.add(middleware: TestMiddleware(string: "first"))
+        router.add(middleware: TestMiddleware(string: "second"))
+        router.get("/hello") { _, _ -> String in
+            "Hello"
+        }
+        let app = Application(responder: router.buildResponder())
+        try await app.test(.router) { client in
+            try await client.execute(uri: "/hello", method: .get) { response in
+                // headers come back in opposite order as middleware is applied to responses in that order
+                #expect(response.headers[values: .test].first == "second")
+                #expect(response.headers[values: .test].last == "first")
+            }
+        }
+    }
+
+    @Test func testMiddlewareRunOnce() async throws {
+        struct TestMiddleware<Context: RequestContext>: RouterMiddleware {
+            public func handle(_ request: Request, context: Context, next: (Request, Context) async throws -> Response) async throws -> Response {
+                var response = try await next(request, context)
+                #expect(response.headers[.test] == nil)
+                response.headers[.test] = "alreadyRun"
+                return response
+            }
+        }
+        let router = Router()
+        router.add(middleware: TestMiddleware())
+        router.get("/hello") { _, _ -> String in
+            "Hello"
+        }
+        let app = Application(responder: router.buildResponder())
+        try await app.test(.router) { client in
+            try await client.execute(uri: "/hello", method: .get) { _ in
+            }
+        }
+    }
+
+    @Test func testMiddlewareRunWhenNoRouteFound() async throws {
+        /// Error message returned by Hummingbird
+        struct ErrorMessage: Codable {
+            struct Details: Codable {
+                let message: String
+            }
+
+            let error: Details
+        }
+        struct TestMiddleware<Context: RequestContext>: RouterMiddleware {
+            public func handle(_ request: Request, context: Context, next: (Request, Context) async throws -> Response) async throws -> Response {
+                do {
+                    return try await next(request, context)
+                } catch let error as HTTPError where error.status == .notFound {
+                    throw HTTPError(.notFound, message: "Edited error")
+                }
+            }
+        }
+        let router = Router()
+        router.add(middleware: TestMiddleware())
+        let app = Application(responder: router.buildResponder())
+
+        try await app.test(.router) { client in
+            try await client.execute(uri: "/hello", method: .get) { response in
+                #expect(response.status == .notFound)
+                let error = try JSONDecoder().decode(ErrorMessage.self, from: response.body)
+                #expect(error.error.message == "Edited error")
+            }
+        }
+    }
+
+    @Test func testEndpointPathInGroup() async throws {
+        struct TestMiddleware<Context: RequestContext>: RouterMiddleware {
+            public func handle(_ request: Request, context: Context, next: (Request, Context) async throws -> Response) async throws -> Response {
+                #expect(context.endpointPath != nil)
+                return try await next(request, context)
+            }
+        }
+        let router = Router()
+        router.group()
+            .add(middleware: TestMiddleware())
+            .get("test") { _, _ in
+                "test"
+            }
+        let app = Application(responder: router.buildResponder())
+
+        try await app.test(.router) { client in
+            try await client.execute(uri: "/test", method: .get) { _ in }
+        }
+    }
+
+    @Test func testMiddlewareResponseBodyWriter() async throws {
+        struct TransformWriter: ResponseBodyWriter {
+            var parentWriter: any ResponseBodyWriter
+
+            mutating func write(_ buffer: ByteBuffer) async throws {
+                let output = ByteBuffer(bytes: buffer.readableBytesView.map { $0 ^ 255 })
+                try await self.parentWriter.write(output)
+            }
+
+            consuming func finish(_ trailingHeaders: HTTPFields?) async throws {
+                try await self.parentWriter.finish(trailingHeaders)
+            }
+        }
+        struct TransformMiddleware<Context: RequestContext>: RouterMiddleware {
+            public func handle(_ request: Request, context: Context, next: (Request, Context) async throws -> Response) async throws -> Response {
+                let response = try await next(request, context)
+                var editedResponse = response
+                editedResponse.body = .init { writer in
+                    let transformWriter = TransformWriter(parentWriter: writer)
+                    try await response.body.write(transformWriter)
+                }
+                return editedResponse
+            }
+        }
+        let router = Router()
+        router.group()
+            .add(middleware: TransformMiddleware())
+            .get("test") { request, _ in
+                Response(status: .ok, body: .init(asyncSequence: request.body))
+            }
+        let app = Application(responder: router.buildResponder())
+
+        try await app.test(.router) { client in
+            let buffer = Self.randomBuffer(size: 64000)
+            try await client.execute(uri: "/test", method: .get, body: buffer) { response in
+                let expectedOutput = ByteBuffer(bytes: buffer.readableBytesView.map { $0 ^ 255 })
+                #expect(expectedOutput == response.body)
+            }
+        }
+    }
+
+    @Test func testMappedResponseBodyWriter() async throws {
+        struct TransformWriter: ResponseBodyWriter {
+            var parentWriter: any ResponseBodyWriter
+
+            mutating func write(_ buffer: ByteBuffer) async throws {
+                let output = ByteBuffer(bytes: buffer.readableBytesView.map { $0 ^ 255 })
+                try await self.parentWriter.write(output)
+            }
+
+            func finish(_ trailingHeaders: HTTPFields?) async throws {
+                try await self.parentWriter.finish(trailingHeaders)
+            }
+        }
+        struct TransformMiddleware<Context: RequestContext>: RouterMiddleware {
+            public func handle(_ request: Request, context: Context, next: (Request, Context) async throws -> Response) async throws -> Response {
+                let response = try await next(request, context)
+                var editedResponse = response
+                editedResponse.body = editedResponse.body.map {
+                    ByteBuffer(bytes: $0.readableBytesView.map { $0 ^ 255 })
+                }
+                return editedResponse
+            }
+        }
+        let router = Router()
+        router.group()
+            .add(middleware: TransformMiddleware())
+            .get("test") { request, _ in
+                Response(status: .ok, body: .init(asyncSequence: request.body))
+            }
+        let app = Application(responder: router.buildResponder())
+
+        try await app.test(.router) { client in
+            let buffer = Self.randomBuffer(size: 64000)
+            try await client.execute(uri: "/test", method: .get, body: buffer) { response in
+                let expectedOutput = ByteBuffer(bytes: buffer.readableBytesView.map { $0 ^ 255 })
+                #expect(expectedOutput == response.body)
+            }
+        }
+    }
+
+    @Test func testCORSUseOrigin() async throws {
+        let router = Router()
+        router.add(middleware: CORSMiddleware())
+        router.get("/hello") { _, _ -> String in
+            "Hello"
+        }
+        let app = Application(responder: router.buildResponder())
+        try await app.test(.router) { client in
+            try await client.execute(uri: "/hello", method: .get, headers: [.origin: "foo.com"]) { response in
+                // headers come back in opposite order as middleware is applied to responses in that order
+                #expect(response.headers[.accessControlAllowOrigin] == "foo.com")
+            }
+        }
+    }
+
+    @Test func testCORSUseOneOf() async throws {
+        let router = Router()
+        router.add(middleware: CORSMiddleware(allowOrigin: .oneOf("https://foo.com", "https://bar.com")))
+        router.get("/hello") { _, _ -> String in
+            "Hello"
+        }
+        let app = Application(responder: router.buildResponder())
+        try await app.test(.router) { client in
+            try await client.execute(uri: "/hello", method: .get, headers: [.origin: "https://foo.com"]) { response in
+                // headers come back in opposite order as middleware is applied to responses in that order
+                #expect(response.headers[.accessControlAllowOrigin] == "https://foo.com")
+            }
+            try await client.execute(uri: "/hello", method: .get, headers: [.origin: "https://bar.com"]) { response in
+                // headers come back in opposite order as middleware is applied to responses in that order
+                #expect(response.headers[.accessControlAllowOrigin] == "https://bar.com")
+            }
+            try await client.execute(uri: "/hello", method: .get, headers: [.origin: "https://baz.com"]) { response in
+                // headers come back in opposite order as middleware is applied to responses in that order
+                #expect(response.headers[.accessControlAllowOrigin] == nil)
+            }
+        }
+    }
+
+    @Test func testCORSUseAll() async throws {
+        let router = Router()
+        router.add(middleware: CORSMiddleware(allowOrigin: .all))
+        router.get("/hello") { _, _ -> String in
+            "Hello"
+        }
+        let app = Application(responder: router.buildResponder())
+        try await app.test(.router) { client in
+            try await client.execute(uri: "/hello", method: .get, headers: [.origin: "foo.com"]) { response in
+                // headers come back in opposite order as middleware is applied to responses in that order
+                #expect(response.headers[.accessControlAllowOrigin] == "*")
+            }
+        }
+    }
+
+    @Test func testCORSOptions() async throws {
+        let router = Router()
+        router.add(
+            middleware: CORSMiddleware(
+                allowOrigin: .all,
+                allowHeaders: [.contentType, .authorization],
+                allowMethods: [.get, .put, .delete, .options],
+                allowCredentials: true,
+                exposedHeaders: ["content-length"],
+                maxAge: .seconds(3600)
+            )
+        )
+        router.get("/hello") { _, _ -> String in
+            "Hello"
+        }
+        let app = Application(responder: router.buildResponder())
+        try await app.test(.router) { client in
+            try await client.execute(uri: "/hello", method: .options, headers: [.origin: "foo.com"]) { response in
+                // headers come back in opposite order as middleware is applied to responses in that order
+                #expect(response.headers[.accessControlAllowOrigin] == "*")
+                let headers = response.headers[.accessControlAllowHeaders]  // .joined(separator: ", ")
+                #expect(headers == "content-type, authorization")
+                let methods = response.headers[.accessControlAllowMethods]  // .joined(separator: ", ")
+                #expect(methods == "GET, PUT, DELETE, OPTIONS")
+                #expect(response.headers[.accessControlAllowCredentials] == "true")
+                #expect(response.headers[.accessControlMaxAge] == "3600")
+                let exposedHeaders = response.headers[.accessControlExposeHeaders]  // .joined(separator: ", ")
+                #expect(exposedHeaders == "content-length")
+            }
+        }
+    }
+
+    @Test func testCORSHeadersAndErrors() async throws {
+        let router = Router()
+        router.add(middleware: CORSMiddleware())
+        let app = Application(responder: router.buildResponder())
+        try await app.test(.router) { client in
+            try await client.execute(uri: "/hello", method: .get, headers: [.origin: "foo.com"]) { response in
+                // headers come back in opposite order as middleware is applied to responses in that order
+                #expect(response.headers[.accessControlAllowOrigin] == "foo.com")
+            }
+        }
+    }
+
+    @Test func testLogRequestMiddleware() async throws {
+        let logHandler = InMemoryLogHandler()
+        let router = Router()
+        router.add(middleware: LogRequestsMiddleware(.info))
+        router.get("test") { _, _ in
+            HTTPResponse.Status.ok
+        }
+        let app = Application(
+            responder: router.buildResponder(),
+            logger: Logger(label: "TestLogging") { _ in logHandler }
+        )
+        try await app.test(.router) { client in
+            try await client.execute(
+                uri: "/test",
+                method: .get,
+                headers: [.contentType: "application/json"],
+                body: .init(string: "{}")
+            ) { _ in
+                let logs = logHandler.entries.filter { $0.metadata["hb.request.path"]?.description == "/test" }
+                let firstLog = try #require(logs.first)
+                #expect(firstLog.metadata["hb.request.method"]?.description == "GET")
+                #expect(firstLog.metadata["hb.request.id"] != nil)
+            }
+        }
+    }
+
+    @Test func testLogRequestMiddlewareHeaderFiltering() async throws {
+        let logHandler = InMemoryLogHandler()
+        let router = Router()
+        router.group()
+            .add(middleware: LogRequestsMiddleware(.info, includeHeaders: .all(except: [.connection])))
+            .get("all") { _, _ in HTTPResponse.Status.ok }
+        router.group()
+            .add(middleware: LogRequestsMiddleware(.info, includeHeaders: .none))
+            .get("none") { _, _ in HTTPResponse.Status.ok }
+        router.group()
+            .add(middleware: LogRequestsMiddleware(.info, includeHeaders: [.contentType]))
+            .get("some") { _, _ in HTTPResponse.Status.ok }
+        let app = Application(
+            responder: router.buildResponder(),
+            logger: Logger(label: "TestLogging") { _ in logHandler }
+        )
+        try await app.test(.live) { client in
+            try await client.execute(
+                uri: "/some",
+                method: .get,
+                headers: [.contentType: "application/json"],
+                body: .init(string: "{}")
+            ) { _ in
+                let logEntries = logHandler.entries.filter { $0.metadata["hb.request.path"]?.description == "/some" }
+                #expect(logEntries.first?.metadata["hb.request.headers"] == .stringConvertible(["content-type": "application/json"]))
+            }
+            try await client.execute(
+                uri: "/none",
+                method: .get,
+                headers: [.contentType: "application/json"],
+                body: .init(string: "{}")
+            ) { _ in
+                let logEntries = logHandler.entries.filter { $0.metadata["hb.request.path"]?.description == "/none" }
+                #expect(logEntries.first?.metadata["hb.request.headers"] == nil)
+            }
+            try await client.execute(
+                uri: "/all",
+                method: .get,
+                headers: [.contentType: "application/json"],
+                body: .init(string: "{}")
+            ) { _ in
+                let logEntries = logHandler.entries.filter { $0.metadata["hb.request.path"]?.description == "/all" }
+                guard case .stringConvertible(let headers) = logEntries.first?.metadata["hb.request.headers"] else {
+                    Issue.record("Should never get here")
+                    return
+                }
+                let reportedHeaders = try #require(headers as? [String: String])
+                #expect(reportedHeaders["content-type"] == "application/json")
+                #expect(reportedHeaders["content-length"] == "2")
+                #expect(reportedHeaders["connection"] == nil)
+            }
+        }
+    }
+
+    @Test func testLogRequestMiddlewareHeaderRedaction() async throws {
+        let logHandler = InMemoryLogHandler()
+        let router = Router()
+        router.group()
+            .add(middleware: LogRequestsMiddleware(.info, includeHeaders: .all(), redactHeaders: [.authorization]))
+            .get("all") { _, _ in HTTPResponse.Status.ok }
+        router.group()
+            .add(middleware: LogRequestsMiddleware(.info, includeHeaders: [.authorization], redactHeaders: [.authorization]))
+            .get("some") { _, _ in HTTPResponse.Status.ok }
+        let app = Application(
+            responder: router.buildResponder(),
+            logger: Logger(label: "TestLogging") { _ in logHandler }
+        )
+        try await app.test(.live) { client in
+            try await client.execute(
+                uri: "/some",
+                method: .get,
+                headers: [.authorization: "basic okhasdf87654"],
+                body: .init(string: "{}")
+            ) { _ in
+                let logEntries = logHandler.entries.filter { $0.metadata["hb.request.path"]?.description == "/some" }
+                #expect(logEntries.first?.metadata["hb.request.headers"] == .stringConvertible(["authorization": "***"]))
+            }
+            try await client.execute(
+                uri: "/all",
+                method: .get,
+                headers: [.authorization: "basic kjhdfi7udsfkhj"],
+                body: .init(string: "{}")
+            ) { _ in
+                let logEntries = logHandler.entries.filter { $0.metadata["hb.request.path"]?.description == "/all" }
+                guard case .stringConvertible(let headers) = logEntries.first?.metadata["hb.request.headers"] else {
+                    Issue.record("Should never get here")
+                    return
+                }
+                let reportedHeaders = try #require(headers as? [String: String])
+                #expect(reportedHeaders["authorization"] == "***")
+                #expect(reportedHeaders["content-length"] == "2")
+            }
+        }
+    }
+
+    @Test func testLogRequestMiddlewareMultipleHeaders() async throws {
+        let logHandler = InMemoryLogHandler()
+        let router = Router()
+        router.add(middleware: LogRequestsMiddleware(.info, includeHeaders: [.test]))
+        router.get("test") { _, _ in
+            HTTPResponse.Status.ok
+        }
+        let app = Application(
+            responder: router.buildResponder(),
+            logger: Logger(label: "TestLogging") { _ in logHandler }
+        )
+        try await app.test(.router) { client in
+            var headers = HTTPFields()
+            headers[.test] = "One"
+            headers.append(.init(name: .test, value: "Two"))
+            try await client.execute(
+                uri: "/test",
+                method: .get,
+                headers: headers,
+                body: .init(string: "{}")
+            ) { _ in
+                let logs = logHandler.entries.filter { $0.metadata["hb.request.path"]?.description == "/test" }
+                let firstLog = try #require(logs.first)
+                #expect(firstLog.metadata["hb.request.headers"] == .stringConvertible(["hbtest": "One, Two"]))
+            }
+        }
+    }
+
+    @Test func testContentSecurityMiddlewareDefaults() async throws {
+        let router = Router()
+        router.add(middleware: ContentSecurityMiddleware())
+        router.get("/") { _, _ in
+            HTTPResponse.Status.ok
+        }
+        let app = Application(router: router)
+        try await app.test(.router) { client in
+            try await client.execute(uri: "/", method: .get) { response in
+                #expect(response.headers[.contentSecurityPolicy] == "default-src 'self'; form-action 'self'; frame-ancestors 'self'")
+                #expect(response.headers[.xContentTypeOptions] == "nosniff")
+                #expect(response.headers[HTTPField.Name("Reporting-Endpoints")!] == nil)
+            }
+        }
+    }
+
+    @Test func testContentSecurityMiddleware() async throws {
+        let router = Router()
+        router.add(
+            middleware: ContentSecurityMiddleware(
+                contentSecurityPolicy: [.upgradeInsecureRequests, .reportTo("csp-endpoint")],
+                reportingEndpoints: [
+                    "csp-endpoint": "http://example.com/csp-reports", "permissions-endpoint": "http://example.com/permissions-reports",
+                ]
+            )
+        )
+        router.get("/") { _, _ in
+            HTTPResponse.Status.ok
+        }
+        let app = Application(router: router)
+        try await app.test(.router) { client in
+            try await client.execute(uri: "/", method: .get) { response in
+                #expect(response.headers[.contentSecurityPolicy] == "upgrade-insecure-requests; report-to csp-endpoint")
+                #expect(response.headers[.xContentTypeOptions] == "nosniff")
+                #expect(
+                    response.headers[HTTPField.Name("Reporting-Endpoints")!]
+                        == "csp-endpoint=\"http://example.com/csp-reports\",permissions-endpoint=\"http://example.com/permissions-reports\""
+                        || response.headers[HTTPField.Name("Reporting-Endpoints")!]
+                            == "permissions-endpoint=\"http://example.com/permissions-reports\",csp-endpoint=\"http://example.com/csp-reports\""
+
+                )
+            }
+        }
+    }
+
+    @Test func testMiddlewareResultBuilder() async throws {
+        let router = Router()
+        router.addMiddleware {
+            TestMiddleware(string: "first")
+            TestMiddleware(string: "second")
+        }
+        router.get("/hello") { _, _ -> String in
+            "Hello"
+        }
+        let app = Application(responder: router.buildResponder())
+        try await app.test(.router) { client in
+            try await client.execute(uri: "/hello", method: .get) { response in
+                // headers come back in opposite order as middleware is applied to responses in that order
+                #expect(response.headers[values: .test].first == "second")
+                #expect(response.headers[values: .test].last == "first")
+            }
+        }
+    }
+
+    @Test func testMiddlewareEitherResultBuilder() async throws {
+        func test(shouldUseFirst: Bool) async throws {
+            let router = Router()
+            router.addMiddleware {
+                if shouldUseFirst {
+                    TestMiddleware(string: "first")
+                } else {
+                    TestMiddleware(string: "second")
+                }
+            }
+            router.get("/hello") { _, _ in "Hello" }
+            let app = Application(responder: router.buildResponder())
+            try await app.test(.router) { client in
+                try await client.execute(uri: "/hello", method: .get) { response in
+                    #expect(response.headers[values: .test].first == (shouldUseFirst ? "first" : "second"))
+                    #expect(response.headers[values: .test].count == 1)
+                }
+            }
+        }
+
+        /// The first middleware should be the only middleware.
+        try await test(shouldUseFirst: true)
+        /// The second middleware should be the only middleware.
+        try await test(shouldUseFirst: false)
+    }
+
+    @Test func testMiddlewareOptionalIfResultBuilder() async throws {
+        func test(shouldUseFirst: Bool) async throws {
+            let router = Router()
+            router.addMiddleware {
+                if shouldUseFirst {
+                    TestMiddleware(string: "first")
+                }
+
+                TestMiddleware(string: "second")
+            }
+            router.get("/hello") { _, _ in "Hello" }
+            let app = Application(responder: router.buildResponder())
+            try await app.test(.router) { client in
+                try await client.execute(uri: "/hello", method: .get) { response in
+                    // headers come back in opposite order as middleware is applied to responses in that order
+                    #expect(response.headers[values: .test].first == "second")
+
+                    if shouldUseFirst {
+                        #expect(response.headers[values: .test].last == "first")
+                        #expect(response.headers[values: .test].count == 2)
+                    } else {
+                        #expect(response.headers[values: .test].count == 1)
+                    }
+                }
+            }
+        }
+
+        /// The first middleware should be included along with the second middleware.
+        try await test(shouldUseFirst: true)
+
+        /// The first middleware should be excluded, leaving only the second middleware.
+        try await test(shouldUseFirst: false)
+    }
+
+    @Test func testMiddlewareOptionalUnwrapResultBuilder() async throws {
+        func test<M: RouterMiddleware>(middleware: M?) async throws where M.Context == BasicRequestContext {
+            let router = Router()
+            router.addMiddleware {
+                if let middleware {
+                    middleware
+                }
+
+                TestMiddleware(string: "second")
+            }
+            router.get("/hello") { _, _ in "Hello" }
+            let app = Application(responder: router.buildResponder())
+            try await app.test(.router) { client in
+                try await client.execute(uri: "/hello", method: .get) { response in
+                    // headers come back in opposite order as middleware is applied to responses in that order
+                    #expect(response.headers[values: .test].first == "second")
+
+                    if middleware != nil {
+                        #expect(response.headers[values: .test].last == "first")
+                        #expect(response.headers[values: .test].count == 2)
+                    } else {
+                        #expect(response.headers[values: .test].count == 1)
+                    }
+                }
+            }
+        }
+
+        /// The first middleware should be included along with the second middleware.
+        try await test(middleware: TestMiddleware(string: "first"))
+
+        /// The first middleware should be excluded, leaving only the second middleware.
+        try await test(middleware: Optional<TestMiddleware>.none)
+    }
+
+    @Test func testMiddlewareArrayResultBuilder() async throws {
+        let limit = 5
+        let router = Router()
+        router.addMiddleware {
+            for i in 0..<limit {
+                TestMiddleware(string: String(i))
+            }
+        }
+        router.get("/hello") { _, _ in "Hello" }
+        let app = Application(responder: router.buildResponder())
+        try await app.test(.router) { client in
+            try await client.execute(uri: "/hello", method: .get) { response in
+                #expect(
+                    response.headers[values: .test] == (0..<limit).reversed().map { String($0) }
+                )
+            }
+        }
+    }
+}
+
+/// Middleware used in tests. Adds the provided `String` to the header's `.test` value.
+struct TestMiddleware<Context: RequestContext>: RouterMiddleware {
+    let string: String
+    public func handle(_ request: Request, context: Context, next: (Request, Context) async throws -> Response) async throws -> Response {
+        var response = try await next(request, context)
+        response.headers[values: .test].append(self.string)
+        return response
+    }
+}

@@ -97,40 +97,39 @@ public struct TitleUpdateTool: SuperAgentTool, SuperLog, @unchecked Sendable {
     ///   - title: 已裁剪的标题文本。
     ///   - conversationID: 目标会话 ID。传入时写该会话；为 nil 时退回
     ///     「当前选中会话」（仅供拿不到执行上下文的旧调用路径使用）。
+    @MainActor
     private func performUpdate(title: String, conversationID: UUID?) async throws -> String {
-        // ConversationManaging 是 MainActor 隔离；工具本身是 Sendable，
-        // 经 MainActor.run 跳回主线程访问。
+        // ConversationManaging 是 MainActor 隔离，因此整个函数固定跑在主线程。
         guard let conversations else {
             Self.logger.error("\(Self.t)Conversation title tool cannot update title because ConversationManaging is unavailable")
-            return "## Update Conversation Title ❌\n\n**Status**: Conversation service unavailable."
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Conversation service unavailable."
+            )
         }
 
-        let result = await MainActor.run {
-            let targetID: UUID?
-            if let conversationID {
-                targetID = conversationID
-            } else {
-                targetID = conversations.selectedConversationID
-            }
-            guard let targetID else {
-                Self.logger.error("\(Self.t)Conversation title tool cannot update title because no conversation is selected")
-                return (updated: false, conversationID: nil as UUID?)
-            }
-            let updated = conversations.updateConversationTitle(title, for: targetID)
-            if !updated {
-                Self.logger.error("\(Self.t)Failed to update title for conversation \(targetID, privacy: .public)")
-            }
-            return (updated: updated, conversationID: targetID)
+        let resolvedID = conversationID ?? conversations.selectedConversationID
+        guard let targetID = resolvedID else {
+            Self.logger.error("\(Self.t)Conversation title tool cannot update title because no conversation is selected")
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Conversation not found or title update failed."
+            )
         }
 
-        guard result.updated, let conversationID = result.conversationID else {
-            Self.logger.error("\(Self.t)Conversation title update did not produce a successful conversation ID")
-            return "## Update Conversation Title ❌\n\n**Status**: Conversation not found or title update failed."
+        // 等待落盘：数据库保存失败时必须向调用方报错，而不是先返回成功卡片。
+        let updated = await conversations.updateConversationTitleAndWait(title, for: targetID)
+        guard updated else {
+            Self.logger.error("\(Self.t)Failed to persist title for conversation \(targetID, privacy: .public)")
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Conversation not found or title update failed."
+            )
         }
         return """
         ## Conversation Title Updated ✅
 
-        **Conversation ID**: `\(conversationID.uuidString)`
+        **Conversation ID**: `\(targetID.uuidString)`
         **Title**: \(title)
         """
     }

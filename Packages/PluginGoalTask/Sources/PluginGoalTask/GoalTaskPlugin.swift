@@ -20,7 +20,8 @@ import os
 public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.goal-task", category: "GoalTask")
     public let id = "com.coffic.lumi.plugin.goal-task"
-    public let legacyDataDirectoryNames = ["GoalTaskPlugin"]
+    /// v4 的数据目录叫 `GoalTask`，v5 起改成 `GoalTaskPlugin`，两个都要识别。
+    public let legacyDataDirectoryNames = ["GoalTaskPlugin", "GoalTask"]
     public let order = 91
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.goal-task",
@@ -34,6 +35,8 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     private let goalVM = GoalVM()
     private var conversationBridge: GoalTaskConversationBridge?
     private var goalChangeObserver: GoalChangeObserver?
+    /// 会话被删除时清理该会话的 Goals。
+    private var conversationDeletionObserver: GoalTaskConversationDeletionObserver?
     /// 「在新对话中继续」的编排器，为 `nil` 表示缺少必需的 Provider。
     private var forkCoordinator: GoalForkCoordinator?
     /// `turnFinished` 自动续跑钩子（见 `Hooks/GoalTaskTurnFinishedHook.swift`）。
@@ -45,11 +48,8 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     public init() {}
 
     public func migrateData(context: PluginDataMigrationContext) throws {
-        // A v5 install that already used the plugin ID keeps the historical
-        // inner `GoalTaskPluginSupport` database directory; the generic migration
-        // preserves that layout. Older installs used `GoalTaskPluginSupport` as the
-        // version-root child, so that source must be copied into the same
-        // inner directory rather than flattened into the plugin ID root.
+        // 已经使用插件 ID 的安装由通用迁移原样复制；更早的安装把数据库放在
+        // 版本根目录下的 `GoalTaskPlugin` 键里，需要单独合并到同一个内层目录。
         try PluginDataMigrationUtility.copyLegacyDirectories(
             legacyDirectoryNames: [],
             context: context
@@ -59,18 +59,27 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
             .appendingPathComponent("GoalTaskPlugin", isDirectory: true)
         let fileManager = FileManager.default
         for version in context.legacyDataRootDirectories.keys.sorted(by: >) {
-            guard let source = context.legacyPluginDataDirectory(
-                named: "GoalTaskPlugin",
-                in: version
-            ), fileManager.fileExists(atPath: source.path) else {
-                continue
+            // v5 的存储键是 `GoalTaskPlugin`；v4 是 `GoalTask`。两者的
+            // `GoalStateManager` 都会再追加一层 `GoalTaskPlugin`，所以旧库实际位于
+            // `<legacy-root>/<key>/GoalTaskPlugin/goals.sqlite`。
+            // 当前读取路径是 `<current>/GoalTaskPlugin/goals.sqlite`：必须合并内层目录。
+            // 合并外层会把库再往下套一层，升级后旧目标看起来就像被清空。
+            for legacyName in ["GoalTaskPlugin", "GoalTask"] {
+                guard let legacyRoot = context.legacyPluginDataDirectory(
+                    named: legacyName,
+                    in: version
+                ), fileManager.fileExists(atPath: legacyRoot.path) else {
+                    continue
+                }
+                let inner = legacyRoot.appendingPathComponent("GoalTaskPlugin", isDirectory: true)
+                let source = fileManager.fileExists(atPath: inner.path) ? inner : legacyRoot
+                try fileManager.createDirectory(at: destination, withIntermediateDirectories: true)
+                try PluginDataMigrationUtility.mergeDirectoryContents(
+                    from: source,
+                    to: destination,
+                    fileManager: fileManager
+                )
             }
-            try fileManager.createDirectory(at: destination, withIntermediateDirectories: true)
-            try PluginDataMigrationUtility.mergeDirectoryContents(
-                from: source,
-                to: destination,
-                fileManager: fileManager
-            )
         }
     }
 
@@ -106,6 +115,23 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         goalVM.updateCurrentConversationID(bridge.selectedConversationID)
         goalChangeObserver = GoalChangeObserver { [weak self] conversationID in
             self?.goalVM.refreshIfCurrentConversation(conversationID)
+        }
+        conversationDeletionObserver = GoalTaskConversationDeletionObserver(
+            conversations: conversations
+        ) { conversationID in
+            guard let manager = Plugin.currentManager() else {
+                Self.logger.error(
+                    "\(Self.t)Goal manager unavailable; goals for conversation \(conversationID) were not deleted"
+                )
+                return
+            }
+            do {
+                try await manager.deleteAllGoals(conversationId: conversationID.uuidString)
+            } catch {
+                Self.logger.error(
+                    "\(Self.t)Failed to delete goals for conversation \(conversationID): \(error.localizedDescription)"
+                )
+            }
         }
 
         // 先把编排器固化为局部常量再进闭包:直接捕获 `self.forkCoordinator`
@@ -175,6 +201,8 @@ public final class GoalTaskPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
         conversationBridge = nil
         goalChangeObserver?.cancel()
         goalChangeObserver = nil
+        conversationDeletionObserver?.cancel()
+        conversationDeletionObserver = nil
         forkCoordinator = nil
         turnFinishedHook = nil
         promptInjectionHandle?.cancel()

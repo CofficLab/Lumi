@@ -68,11 +68,17 @@ final class LLMProviderProposalViewModel: ObservableObject {
 
     private let store: UserDefinedCloudProviderStore?
     private let manager: (any LLMManaging)?
+    /// 卡片所属会话；为 `nil` 时「Use This Provider」只更新全局选择。
+    private let conversationID: UUID?
+    /// 按会话写入模型的能力；缺失时退化为只更新全局选择。
+    private let conversationSelection: (any ConversationModelSelecting)?
 
     init(
         proposal: LLMProviderProposal,
         store: UserDefinedCloudProviderStore?,
-        manager: (any LLMManaging)?
+        manager: (any LLMManaging)?,
+        conversationID: UUID? = nil,
+        conversationSelection: (any ConversationModelSelecting)? = nil
     ) {
         self.providerID = proposal.id
         self.displayName = proposal.displayName
@@ -84,6 +90,8 @@ final class LLMProviderProposalViewModel: ObservableObject {
         self.websiteURL = proposal.websiteURLString ?? ""
         self.store = store
         self.manager = manager
+        self.conversationID = conversationID
+        self.conversationSelection = conversationSelection
     }
 
     /// 供应商是否已被保存过（决定按钮文案）。
@@ -154,6 +162,8 @@ final class LLMProviderProposalViewModel: ObservableObject {
         phase = .saving
         do {
             try store.upsert(configuration)
+            // 落盘用的是 trim 后的配置，草稿也要同步，避免后续选择使用旧口径。
+            defaultModel = configuration.defaultModel
         } catch {
             phase = .failed(error.localizedDescription)
             return
@@ -162,7 +172,17 @@ final class LLMProviderProposalViewModel: ObservableObject {
         // API Key 只写 Keychain，不进配置、不进对话。
         let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmedKey.isEmpty {
-            manager?.provider(id: providerID)?.setApiKey(trimmedKey)
+            // 凭据写入失败必须让用户看见：保留输入并报错，不能显示 Added。
+            guard let provider = manager?.provider(id: providerID) else {
+                phase = .failed(Self.errorMessage("The provider was saved, but the API key could not be stored. Please try again."))
+                return
+            }
+            do {
+                try provider.setApiKeyReportingErrors(trimmedKey)
+            } catch {
+                phase = .failed(Self.errorMessage("The provider was saved, but the API key could not be stored. Please try again."))
+                return
+            }
             apiKey = ""
         }
 
@@ -176,8 +196,15 @@ final class LLMProviderProposalViewModel: ObservableObject {
             phase = .failed(Self.errorMessage("The provider is not available yet."))
             return
         }
-        let model = models.contains { $0.id == defaultModel } ? defaultModel : models.first?.id
+        // 保存时已 trim，匹配也必须用同一口径，否则 " m2 " 匹配不上 m2。
+        let normalizedDefaultModel = defaultModel.trimmingCharacters(in: .whitespacesAndNewlines)
+        let model = models.contains { $0.id == normalizedDefaultModel } ? normalizedDefaultModel : models.first?.id
         manager.select(providerID: providerID, model: model, reason: .userSelected)
+        // 会话一旦绑定过模型，AgentLoop 会优先使用会话模型；只改全局选择
+        // 对当前会话无效，必须同时写回卡片所属会话（issue #946）。
+        if let conversationID, let conversationSelection {
+            conversationSelection.selectProvider(id: providerID, model: model, for: conversationID)
+        }
     }
 
     // MARK: - 构造

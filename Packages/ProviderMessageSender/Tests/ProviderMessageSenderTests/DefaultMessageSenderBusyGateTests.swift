@@ -119,6 +119,43 @@ struct DefaultMessageSenderBusyGateTests {
         #expect(fixture.sender.pendingMessages(for: conversationID).isEmpty)
     }
 
+    /// 队列里已有更早的消息时，`ask_user` 例外必须关闭。
+    ///
+    /// 复现 #1027：B 在 A 仍在运行时入队；A 进入 `ask_user` 挂起后发送 C。
+    /// 若例外不检查队列，C 会直接落库并抢走原回合的恢复，落库/执行顺序
+    /// 变成 A → C → B。现在 C 必须排在 B 后面。
+    @Test("ask_user 挂起但队列非空时，新消息排在已有消息之后")
+    func askUserSuspensionDoesNotBypassQueuedMessages() throws {
+        let fixture = SenderFixture()
+        let conversationID = try fixture.conversations.createConversation(
+            title: nil, projectPath: nil, providerID: nil, modelName: nil
+        )
+
+        // A 仍在运行：B 进入待发队列。
+        fixture.agentLoop.currentState = .running
+        _ = try fixture.sender.commitUserMessage("B", conversationID: conversationID)
+
+        // A 转入 ask_user 挂起。
+        fixture.agentLoop.currentState = .suspended
+        fixture.agentLoop.activeTurnID = UUID()
+        fixture.agentLoop.activeSuspension = Self.askUserSuspension(conversationID: conversationID)
+
+        let commit = try fixture.sender.commitUserMessage("C", conversationID: conversationID)
+
+        #expect(
+            commit?.wasQueued == true,
+            "队列非空时，后发送的消息不得越过已排队的消息直接落库"
+        )
+        #expect(
+            fixture.sender.pendingMessages(for: conversationID).map(\.content) == ["B", "C"],
+            "待发队列必须保持先进先出"
+        )
+        #expect(
+            fixture.messages.messages(for: conversationID).isEmpty,
+            "C 不应直接写入消息列表"
+        )
+    }
+
     /// 工具授权挂起期间的新消息必须**入队**。
     ///
     /// 授权是安全闸门，与 `ask_user` 相反：用户的新消息不能替代授权决定。
@@ -259,6 +296,54 @@ struct DefaultMessageSenderBusyGateTests {
         #expect(commit?.wasQueued == false)
         #expect(fixture.messages.messages(for: conversationID).map(\.content) == ["hello"])
         #expect(fixture.sender.pendingMessages(for: conversationID).isEmpty)
+    }
+
+    // MARK: - 并发发送顺序
+
+    /// 两条带附件的消息同时编码时，先触发的那条必须先落库。
+    ///
+    /// 附件编码各自在 `Task.detached` 里跑，完成顺序与触发顺序无关。若不做串行化，
+    /// 编码慢的第一条会被编码快的第二条抢先：时间线里先出现第二条，第一条反而进了
+    /// 待发队列——用户看到的顺序与操作顺序相反。
+    @Test("并发带附件发送按触发顺序落库")
+    func concurrentAttachmentSendsKeepCallOrder() async throws {
+        let fixture = SenderFixture()
+        let conversationID = try fixture.conversations.createConversation(
+            title: nil, projectPath: nil, providerID: nil, modelName: nil
+        )
+        fixture.sender.backgroundCommitDelayForTesting = { content in
+            content == "first" ? .milliseconds(150) : .zero
+        }
+
+        let image = UserImageAttachment(mimeType: "image/png", base64Data: "AAAA")
+        let first = Task { @MainActor in
+            try await fixture.sender.commitUserMessageInBackground(
+                "first",
+                imageAttachments: [image],
+                fileAttachments: [],
+                conversationID: conversationID
+            )
+        }
+        // 让第一条先进入编码窗口；第二条编码更快，没有串行化就会抢先落库。
+        try await Task.sleep(for: .milliseconds(30))
+        let second = Task { @MainActor in
+            try await fixture.sender.commitUserMessageInBackground(
+                "second",
+                imageAttachments: [image],
+                fileAttachments: [],
+                conversationID: conversationID
+            )
+        }
+
+        _ = try await first.value
+        _ = try await second.value
+
+        let timeline = fixture.messages.messages(for: conversationID)
+            .filter { $0.role == .user }
+            .map(\.content)
+        let pending = fixture.sender.pendingMessages(for: conversationID).map(\.content)
+        #expect(timeline == ["first"], "第一条必须先落库；顺序反转时这里会出现 second")
+        #expect(pending == ["second"], "第二条应在第一条之后进入待发队列")
     }
 
     // MARK: - Helpers

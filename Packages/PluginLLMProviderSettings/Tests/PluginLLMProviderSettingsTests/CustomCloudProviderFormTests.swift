@@ -130,6 +130,45 @@ struct CustomCloudProviderFormTests {
         #expect(configuration.defaultModel == "m1")
     }
 
+    /// 回归 #947：只改名称时，原默认模型 m2 曾被静默重置为列表首项 m1。
+    @Test("编辑无关字段时保留既有默认模型")
+    func preservesExistingDefaultModelWhenEditingOtherFields() {
+        let existing = UserDefinedCloudProviderConfiguration(
+            id: "user-existing",
+            displayName: "旧名字",
+            baseURL: "https://llm.example.com/v1",
+            defaultModel: "m2",
+            models: [UserDefinedCloudModel(id: "m1"), UserDefinedCloudModel(id: "m2")]
+        )
+        var form = CustomCloudProviderForm(configuration: existing)
+        form.displayName = "新名字"
+
+        let configuration = form.makeConfiguration(existing: existing)
+
+        #expect(configuration.displayName == "新名字")
+        #expect(configuration.defaultModel == "m2")
+    }
+
+    @Test("既有默认模型已被删除时回退到首模型")
+    func fallsBackToFirstModelWhenExistingDefaultWasRemoved() {
+        let existing = UserDefinedCloudProviderConfiguration(
+            id: "user-existing",
+            displayName: "旧名字",
+            baseURL: "https://llm.example.com/v1",
+            defaultModel: "m2",
+            models: [UserDefinedCloudModel(id: "m1"), UserDefinedCloudModel(id: "m2")]
+        )
+        let form = CustomCloudProviderForm(
+            displayName: "旧名字",
+            baseURL: "https://llm.example.com/v1",
+            modelIDsText: "m1\nm3"
+        )
+
+        let configuration = form.makeConfiguration(existing: existing)
+
+        #expect(configuration.defaultModel == "m1")
+    }
+
     @Test("配置构造保留选定的 API 协议格式")
     func buildsConfigurationPreservingAPIFormat() {
         let form = CustomCloudProviderForm(

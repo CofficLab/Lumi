@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import KitAgentTool
 import KernelCore
 import ProviderChatSection
 import ProviderProject
@@ -219,6 +220,66 @@ import ProviderProject
     #expect(ListAgentRulesTool.normalizedLimit("  ") == nil)
 }
 
+/// `.lumi/rules` 被普通文件占住时，即使 `.agent/rules` 里有可用规则，也必须报错，
+/// 不能把「读不到」伪装成空列表或不完整列表。
+@MainActor
+    @Test func listRulesThrowsWhenRulesPathIsNotADirectory() async throws {
+    let projectURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("AgentRulesTests-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: projectURL) }
+
+    let legacyRulesURL = projectURL.appending(path: ".agent/rules")
+    try FileManager.default.createDirectory(at: legacyRulesURL, withIntermediateDirectories: true)
+    try "# Legacy\n\nStill readable.".write(
+        to: legacyRulesURL.appending(path: "legacy.md"),
+        atomically: true,
+        encoding: .utf8
+    )
+    try FileManager.default.createDirectory(
+        at: projectURL.appending(path: ".lumi"),
+        withIntermediateDirectories: true
+    )
+    try "not a directory".write(
+        to: projectURL.appending(path: ".lumi/rules"),
+        atomically: true,
+        encoding: .utf8
+    )
+
+    await #expect(throws: AgentRulesError.self) {
+        _ = try await AgentRulesService.shared.listRules(projectPath: projectURL.path())
+    }
+}
+
+/// 目录存在但无法枚举时必须上抛，而不是成功返回 count=0。
+@MainActor
+    @Test func listRulesThrowsWhenRulesDirectoryIsUnreadable() async throws {
+    let projectURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("AgentRulesTests-\(UUID().uuidString)", isDirectory: true)
+    let rulesURL = projectURL.appending(path: ".lumi/rules")
+    try FileManager.default.createDirectory(at: rulesURL, withIntermediateDirectories: true)
+    defer {
+        try? FileManager.default.setAttributes(
+            [.posixPermissions: 0o755],
+            ofItemAtPath: rulesURL.path()
+        )
+        try? FileManager.default.removeItem(at: projectURL)
+    }
+
+    try "# Style\n\nHidden by permissions.".write(
+        to: rulesURL.appending(path: "style.md"),
+        atomically: true,
+        encoding: .utf8
+    )
+    try FileManager.default.setAttributes(
+        [.posixPermissions: 0o000],
+        ofItemAtPath: rulesURL.path()
+    )
+
+    await #expect(throws: AgentRulesError.self) {
+        _ = try await AgentRulesService.shared.listRules(projectPath: projectURL.path())
+    }
+}
+
 @Suite("AgentRulesToolbar")
 @MainActor
 struct AgentRulesToolbarTests {
@@ -343,6 +404,152 @@ struct AgentRulesToolbarTests {
         observer.cancel()
     }
 
+    @Test("Rules change notification reloads only the current project")
+    func rulesChangeNotificationRefreshesMatchingProject() async throws {
+        let loader = SequenceRulesLoader()
+        let projectProvider = DefaultProjectProvider()
+        let projectPath = "/tmp/agent-rules-notification"
+        let viewModel = AgentRulesToolbarViewModel(loadRules: { _ in await loader.load() })
+        let observer = AgentRulesToolbarProjectObserver(
+            projectProvider: projectProvider,
+            viewModel: viewModel
+        )
+        defer {
+            observer.cancel()
+            viewModel.cancel()
+        }
+
+        try await projectProvider.openProject(at: projectPath)
+        await waitUntil { viewModel.rules.map(\.id) == ["call-1"] }
+
+        // 其他项目的变更不应触发当前工具栏重新加载。
+        NotificationCenter.default.post(
+            name: .agentRulesDidChange,
+            object: nil,
+            userInfo: [AgentRulesChange.projectPathKey: "/tmp/agent-rules-elsewhere"]
+        )
+        try? await Task.sleep(for: .milliseconds(30))
+        #expect(viewModel.rules.map(\.id) == ["call-1"])
+
+        // 当前项目的变化必须触发一次重新读取。
+        NotificationCenter.default.post(
+            name: .agentRulesDidChange,
+            object: nil,
+            userInfo: [AgentRulesChange.projectPathKey: projectPath]
+        )
+        await waitUntil { viewModel.rules.map(\.id) == ["call-2"] }
+        #expect(viewModel.rules.map(\.id) == ["call-2"])
+    }
+
+    @Test("create_agent_rule posts a rules change notification for its project")
+    func createRuleToolPostsChangeNotification() async throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("AgentRulesNotify-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        try await confirmation("rules change notification") { confirm in
+            let token = NotificationCenter.default.addObserver(
+                forName: .agentRulesDidChange,
+                object: nil,
+                queue: nil
+            ) { notification in
+                guard notification.userInfo?[AgentRulesChange.projectPathKey] as? String == projectURL.path else {
+                    return
+                }
+                confirm()
+            }
+            defer { NotificationCenter.default.removeObserver(token) }
+
+            _ = try await CreateAgentRuleTool().execute(arguments: [
+                "project_path": ToolArgument(projectURL.path),
+                "filename": ToolArgument("notify"),
+                "title": ToolArgument("Notify"),
+            ])
+        }
+
+        #expect(FileManager.default.fileExists(atPath: projectURL.appending(path: ".lumi/rules/notify.md").path))
+    }
+
+    @Test("Rule ID strips only the final extension, keeping inner .md occurrences")
+    func ruleIdKeepsInnerMarkdownExtensions() async throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("AgentRulesIDs-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let service = AgentRulesService()
+        let first = try await service.createRule(
+            projectPath: projectURL.path,
+            filename: "foo",
+            title: "First",
+            content: ""
+        )
+        let second = try await service.createRule(
+            projectPath: projectURL.path,
+            filename: "foo.md.md",
+            title: "Second",
+            content: ""
+        )
+
+        #expect(first.id == "foo")
+        #expect(second.id == "foo.md")
+
+        let rules = try await service.listRules(projectPath: projectURL.path)
+        #expect(rules.count == 2)
+        #expect(Set(rules.map(\.id)) == ["foo", "foo.md"])
+
+        let read = try await service.readRule(projectPath: projectURL.path, filename: "foo.md.md")
+        #expect(read.id == "foo.md")
+    }
+
+    @Test("listRules skips .md directories instead of failing the whole list")
+    func listRulesSkipsMarkdownDirectories() async throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("AgentRulesDirEntry-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let rulesDirectory = projectURL.appending(path: ".lumi/rules")
+        try FileManager.default.createDirectory(
+            at: rulesDirectory.appending(path: "archive.md"),
+            withIntermediateDirectories: true
+        )
+        try "# Style\n\nKeep rules readable.\n"
+            .write(to: rulesDirectory.appending(path: "style.md"), atomically: true, encoding: .utf8)
+
+        let rules = try await AgentRulesService().listRules(projectPath: projectURL.path)
+
+        #expect(rules.map(\.filename) == ["style.md"])
+        #expect(rules.first?.id == "style")
+    }
+
+    @Test("createRule reports the heading actually written to disk")
+    func createRuleTitleMatchesWrittenContent() async throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("AgentRulesTitle-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let service = AgentRulesService()
+        let embedded = try await service.createRule(
+            projectPath: projectURL.path,
+            filename: "heading",
+            title: "Requested Title",
+            content: "# Embedded Title\n\nBody"
+        )
+
+        #expect(embedded.title == "Embedded Title")
+
+        let listed = try await service.listRules(projectPath: projectURL.path)
+        #expect(listed.first(where: { $0.filename == "heading.md" })?.title == embedded.title)
+
+        // 内容没有一级标题时仍使用参数标题，保持原行为。
+        let normal = try await service.createRule(
+            projectPath: projectURL.path,
+            filename: "normal",
+            title: "Requested Title",
+            content: "Body"
+        )
+        #expect(normal.title == "Requested Title")
+    }
+
     private func makeMetadata(id: String, filename: String) -> AgentRuleMetadata {
         AgentRuleMetadata(
             id: id,
@@ -363,5 +570,26 @@ struct AgentRulesToolbarTests {
             if condition() { return }
             try? await Task.sleep(for: .milliseconds(5))
         }
+    }
+}
+
+/// 每次加载返回不同 id，便于断言工具栏确实重新读取了规则。
+private actor SequenceRulesLoader {
+    private var calls = 0
+
+    func load() -> [AgentRuleMetadata] {
+        calls += 1
+        let id = "call-\(calls)"
+        return [
+            AgentRuleMetadata(
+                id: id,
+                filename: "\(id).md",
+                title: id,
+                description: "",
+                fileSize: 0,
+                modifiedAt: .distantPast,
+                filePath: "/tmp/\(id).md"
+            ),
+        ]
     }
 }

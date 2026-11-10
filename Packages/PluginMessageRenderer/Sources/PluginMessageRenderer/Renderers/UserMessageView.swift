@@ -15,6 +15,22 @@ struct UserMessageView: View {
     private var isBrief: Bool { verbosity == .brief }
 
     var body: some View {
+        // V4（ZCode）：独立的气泡呈现（surface 背景、圆角 12/2、右对齐、
+        // 长文折叠、hover 复制）。其余版本继续走旧 body。
+        if verbosity == .zcode {
+            ZCodeUserMessageView(
+                capability: capability,
+                stateViewModel: stateViewModel,
+                message: message,
+                verbosity: verbosity
+            )
+        } else {
+            legacyBody
+        }
+    }
+
+    /// V1–V3 的原始呈现。
+    private var legacyBody: some View {
         // 单次取用(带进程级缓存):历史上 userImageData / decodedFileAttachments
         // 各计算两次(JSON+base64 解码),且每次滚动重物化都重复执行。
         let attachments = message.cachedDecodedAttachments

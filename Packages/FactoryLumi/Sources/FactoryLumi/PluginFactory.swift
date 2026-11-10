@@ -54,6 +54,7 @@ import PluginPrototypeDesigner
 import PluginAskUser
 import PluginFinder
 import PluginHTMLCanvas
+import PluginDiskSpeedTest
 import PluginCaffeinate
 import PluginChatFileAttachment
 import PluginChatPanel
@@ -80,6 +81,7 @@ import PluginNetworkManager
 import PluginDocxRead
 import PluginHostsManager
 import PluginIdleTime
+import PluginHydrationReminder
 import PluginActivityHeatmap
 import PluginLLMProviderAiRouter
 import PluginLLMManager
@@ -116,6 +118,7 @@ import PluginMessageListEmpty
 import PluginMessageListBrief
 import PluginMessageListStandard
 import PluginMessageListDetailed
+import PluginMessageListZCode
 import PluginMessageManager
 import PluginMessageRenderer
 import PluginMessageSender
@@ -134,6 +137,7 @@ import PluginOpenInRemote
 import PluginOpenInVSCode
 import PluginOpenInXcode
 import PluginPluginManager
+import PluginAbout
 import PluginProjects
 import PluginProjectFileTree
 import PluginProjectFiles
@@ -201,9 +205,12 @@ public struct DefaultPluginFactory: PluginFactory {
 
     /// 产出默认插件列表。
     public func makePlugins() -> [any SuperPlugin] {
-        var plugins: [any SuperPlugin] = [
-            // 核心基础插件（order 10-20）：必须最先启动
-            try! StorageSuperPlugin(),
+        var plugins: [any SuperPlugin] = []
+        // 核心基础插件（order 10-20）：必须最先启动
+        if let storage = StorageSuperPlugin.makeIfAvailable() {
+            plugins.append(storage)
+        }
+        plugins += [
             CommandPlugin(),
             // 共享工具栏插件在 onReady 同步 macOS 与 iOS 的插件贡献启用状态。
             PluginToolbar(),
@@ -253,6 +260,7 @@ public struct DefaultPluginFactory: PluginFactory {
             VideoConverterPlugin(),
             WhiteNoisePlugin(),
             IdleTimePlugin(),
+            PluginHydrationReminder(),
             ActivityHeatmapPlugin(),
             ChatPanelPlugin(),
             ChatFileAttachmentPlugin(),
@@ -274,6 +282,7 @@ public struct DefaultPluginFactory: PluginFactory {
             AskUserPlugin(),
             FinderPlugin(),
             HTMLCanvasPlugin(),
+            DiskSpeedTestPlugin(),
             OpenInFinderPlugin(),
             OpenInXcodePlugin(),
             OpenInCursorPlugin(),
@@ -334,6 +343,7 @@ public struct DefaultPluginFactory: PluginFactory {
             PluginMessageListBriefPlugin(),
             PluginMessageListStandardPlugin(),
             PluginMessageListDetailedPlugin(),
+            PluginMessageListZCodePlugin(),
             MessageRendererPlugin(),
             ConversationInputPlugin(),
             ConversationListPlugin(),
@@ -345,6 +355,17 @@ public struct DefaultPluginFactory: PluginFactory {
             AgentLoopRetryPlugin(),
             MessageSenderPlugin(),
             PluginPluginManager(),
+            // 「关于」入口（共享远程包 LumiPluginAbout，注入 Lumi 品牌配置）。
+            // 与 PluginSettingGeneral 的「网站」分组内容重叠——「关于」页承载
+            // 更完整的信息（旗下应用 + 官网 + 法律链接），故该分组从通用页移除。
+            AboutPlugin(
+                id: "com.coffic.lumi.plugin.about",
+                configuration: AboutConfiguration(
+                    officialWebsiteURLString: "https://coffic.cn/lumi",
+                    privacyPolicyURLString: "https://coffic.cn/privacy",
+                    termsOfServiceURLString: "https://coffic.cn/terms"
+                )
+            ),
             // 设置视图管理器：替换 ProviderFactory 预注册的默认 SettingViewProviding 实现，
             // 必须先于各设置入口贡献插件（如 SettingGeneralPlugin order=200）。
             PluginSettingView(id: "com.coffic.lumi.plugin.setting-view"),

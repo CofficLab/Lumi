@@ -28,6 +28,12 @@ protocol ConversationInputCapability: AnyObject {
     /// （`SendActionBarViewModel`）。折叠块与正文一样属于草稿状态，
     /// 能力层是它唯一的存放处，两个 ViewModel 都从这里读，天然一致。
     var collapsedBlocks: [CollapsedContentBlock] { get set }
+    /// 草稿是否正在提交（附件编码窗口）。
+    ///
+    /// 两条发送入口共用：提交期间 `send()` 必须忽略重复触发，`canSend` 也应为
+    /// false——正文此时还没清空，不挡的话同一条草稿会被当成新消息再提交一次。
+    /// 范围只覆盖提交阶段，`startTurn` 之前必须复位。
+    var isCommittingDraft: Bool { get set }
     func clearInput()
 
     // MARK: - Attachments
@@ -39,6 +45,15 @@ protocol ConversationInputCapability: AnyObject {
     func removeImageAttachment(id: UUID)
     func removeFileAttachment(id: UUID)
     func clearAttachments()
+
+    // MARK: - Attachment reading
+
+    /// 正在异步读取、尚未进入挂起池的附件数量。
+    var pendingAttachmentReadCount: Int { get }
+    func beginAttachmentRead()
+    func endAttachmentRead()
+    /// 等待全部在途附件读取结束；没有在途读取时立即返回。
+    func waitForAttachmentReads() async
 
     // MARK: - Send
 
@@ -115,6 +130,8 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
     private let conversationState: (any ConversationStateProviding)?
     /// 草稿里的折叠块区间。草稿级状态，随正文一起清空。
     private var storedCollapsedBlocks: [CollapsedContentBlock] = []
+    /// 草稿提交中标记。两条发送入口共用，见协议声明。
+    private var storedIsCommittingDraft = false
 
     init(
         input: (any ConversationInputProviding)?,
@@ -162,6 +179,11 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
         set { storedCollapsedBlocks = newValue }
     }
 
+    var isCommittingDraft: Bool {
+        get { storedIsCommittingDraft }
+        set { storedIsCommittingDraft = newValue }
+    }
+
     func clearInput() {
         storedCollapsedBlocks = []
         input?.clear()
@@ -183,6 +205,24 @@ final class ConversationInputCapabilityAdapter: ConversationInputCapability {
 
     func addFileAttachment(_ attachment: UserFileAttachment) {
         sender?.addFileAttachment(attachment)
+    }
+
+    // MARK: - Attachment reading
+
+    var pendingAttachmentReadCount: Int {
+        sender?.pendingAttachmentReadCount ?? 0
+    }
+
+    func beginAttachmentRead() {
+        sender?.beginAttachmentRead()
+    }
+
+    func endAttachmentRead() {
+        sender?.endAttachmentRead()
+    }
+
+    func waitForAttachmentReads() async {
+        await sender?.waitForAttachmentReads()
     }
 
     func removeImageAttachment(id: UUID) {

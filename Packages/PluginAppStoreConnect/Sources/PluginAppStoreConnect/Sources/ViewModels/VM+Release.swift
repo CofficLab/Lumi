@@ -24,6 +24,11 @@ extension VM {
         async let submissionTask = client.readSubmissionID(versionID: version.id)
 
         let (fetchedBuilds, assigned, submission) = try await (buildsTask, assignedTask, submissionTask)
+        // 请求期间可能已经切到别的版本或 App：迟到的构建/提交状态不能覆盖当前选择。
+        guard selectedVersion?.id == version.id else {
+            Self.logger.info("\(self.t)discarded stale release info for version: \(version.id)")
+            return
+        }
         builds = fetchedBuilds
         assignedBuildID = assigned
         submissionID = submission
@@ -132,7 +137,7 @@ extension VM {
             return false
         }
         await runBusy(forceRefresh: true) {
-            try await loadScreenshots()
+            try await loadScreenshots(forceRefresh: true)
         }
         if !failures.isEmpty {
             errorMessage = failures.joined(separator: "\n")
@@ -144,7 +149,7 @@ extension VM {
         guard !isReadOnlyVersion else { return }
         await runBusy(forceRefresh: true) {
             try await client.deleteScreenshot(id: screenshot.id)
-            try await loadScreenshots()
+            try await loadScreenshots(forceRefresh: true)
         }
     }
 

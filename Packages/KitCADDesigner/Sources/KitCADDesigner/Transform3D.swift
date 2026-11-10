@@ -34,4 +34,17 @@ public struct Transform3D: Codable, Equatable, Sendable {
     }
 
     public static let identity = Transform3D()
+
+    /// 只更新位置与 Y 旋转，保留 rotationX/Z 与 scale 等其余分量。
+    public mutating func updatePlacement(
+        positionX: Double,
+        positionY: Double,
+        positionZ: Double,
+        rotationY: Double
+    ) {
+        self.positionX = positionX
+        self.positionY = positionY
+        self.positionZ = positionZ
+        self.rotationY = rotationY
+    }
 }

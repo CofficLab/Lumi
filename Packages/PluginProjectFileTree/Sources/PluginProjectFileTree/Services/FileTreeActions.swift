@@ -37,23 +37,47 @@ enum FileTreeActions {
 
         // 运行模态弹窗，回车等价于点确认
         if alert.runModal() == .alertFirstButtonReturn {
-            let name = textField.stringValue.trimmingCharacters(in: .whitespaces)
+            // 返回原始输入：首尾空格可能是合法文件名的一部分，重命名不能擅自裁剪
+            // （回归 #1108）。新建路径的空白校验交给 creationName。
+            let name = textField.stringValue
             return name.isEmpty ? nil : name
         }
         return nil
     }
 
+    /// 新建文件/目录时的最终名称：首尾空格视为无效输入的一部分并裁掉。
+    static func creationName(from input: String) -> String? {
+        let name = input.trimmingCharacters(in: .whitespaces)
+        return name.isEmpty ? nil : name
+    }
+
+    /// 重命名目标名称：保留用户输入的原始首尾空格；与当前名称相同或为空时返回 nil
+    /// （no-op），避免未修改预填名称的确认被当成一次真实重命名（回归 #1108）。
+    static func renameTarget(from input: String, currentName: String) -> String? {
+        guard !input.isEmpty, input != currentName else { return nil }
+        return input
+    }
+
     /// 弹出删除确认框。
-    /// - Parameter url: 待删除的文件/目录 URL
+    /// - Parameter urls: 待删除的文件/目录 URL；多于一个时使用批量文案
     /// - Returns: 用户确认删除返回 true，否则 false
-    static func presentDeleteConfirmation(url: URL) -> Bool {
+    static func presentDeleteConfirmation(urls: [URL]) -> Bool {
+        guard let firstURL = urls.first else { return false }
         let alert = NSAlert()
         alert.alertStyle = .warning
-        alert.messageText = String(
-            format: pluginLocalization.string("Are you sure you want to delete \"%@\"?"),
-            url.lastPathComponent
-        )
-        alert.informativeText = pluginLocalization.string("This item will be moved to the Trash.")
+        if urls.count == 1 {
+            alert.messageText = String(
+                format: pluginLocalization.string("Are you sure you want to delete \"%@\"?"),
+                firstURL.lastPathComponent
+            )
+            alert.informativeText = pluginLocalization.string("This item will be moved to the Trash.")
+        } else {
+            alert.messageText = String(
+                format: pluginLocalization.string("Are you sure you want to delete %lld items?"),
+                urls.count
+            )
+            alert.informativeText = pluginLocalization.string("These items will be moved to the Trash.")
+        }
         alert.addButton(withTitle: pluginLocalization.string("Move to Trash"))
         alert.addButton(withTitle: pluginLocalization.string("Cancel"))
         return alert.runModal() == .alertFirstButtonReturn

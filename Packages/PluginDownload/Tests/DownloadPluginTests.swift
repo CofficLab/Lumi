@@ -1,8 +1,31 @@
+import KitAgentTool
 import XCTest
 @testable import DownloadPlugin
 
 @MainActor
 final class DownloadPluginTests: XCTestCase {
+
+    // MARK: - Tool failure semantics
+
+    /// 回归：失败分支曾经返回 "❌ ..." 字符串，默认 `executeResult`
+    /// 会把它包成 `isError == false` 的成功结果。
+    func testToolsThrowForInvalidArguments() async {
+        do {
+            _ = try await DownloadFileV2Tool().executeResult(
+                arguments: ["url": ToolArgument("ftp://example.com/a.zip")]
+            )
+            XCTFail("invalid URL scheme should throw")
+        } catch {
+            XCTAssertTrue(error is ToolExecutionError)
+        }
+
+        do {
+            _ = try await DownloadProgressV2Tool().executeResult(arguments: [:])
+            XCTFail("missing task_id should throw")
+        } catch {
+            XCTAssertTrue(error is ToolExecutionError)
+        }
+    }
 
     // MARK: - Plugin Info
 
@@ -73,5 +96,29 @@ final class DownloadPluginTests: XCTestCase {
         let url = URL(string: "https://example.com/?tokenonly&other=value")!
         let name = DownloadPluginSupport.extractFilename(from: url)
         XCTAssertTrue(name.hasPrefix("download_"))
+    }
+
+    // MARK: - Batch URL Handling
+
+    func testClassifyBatchURLsKeepsInvalidEntriesInOrder() {
+        let raws = [
+            "https://example.com/a.zip",
+            "not a url",
+            "ftp://example.com/b.zip",
+            "https://example.com/c.zip",
+        ]
+        let items = DownloadPluginSupport.classifyBatchURLs(raws)
+
+        XCTAssertEqual(items.map(\.raw), raws, "无效项不能被静默丢弃")
+        XCTAssertNotNil(items[0].url)
+        XCTAssertNil(items[1].url, "malformed URL 应标记为无效")
+        XCTAssertNil(items[2].url, "非 HTTP/HTTPS scheme 应标记为无效")
+        XCTAssertNotNil(items[3].url)
+    }
+
+    func testBatchSummaryFlagsPartialCompletion() {
+        XCTAssertEqual(DownloadPluginSupport.batchSummary(succeeded: 2, total: 2), "📊 下载完成")
+        XCTAssertEqual(DownloadPluginSupport.batchSummary(succeeded: 1, total: 2), "📊 部分完成（成功 1 / 共 2）")
+        XCTAssertEqual(DownloadPluginSupport.batchSummary(succeeded: 0, total: 2), "📊 部分完成（成功 0 / 共 2）")
     }
 }

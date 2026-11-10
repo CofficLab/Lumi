@@ -35,20 +35,27 @@ public struct ApplyIconPresetTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let language = IconToolSupport.language
         guard let presetId = IconToolSupport.string(arguments, "presetId"), !presetId.isEmpty else {
-            return IconToolSupport.missingParameter("presetId", language: language)
+            throw IconToolSupport.missingParameterFailure("presetId", toolName: name, language: language)
         }
 
         guard let preset = IconPresetLibrary.preset(id: presetId) else {
             let available = IconPresetLibrary.all.map(\.id).joined(separator: ", ")
-            return IconToolSupport.localized(
-                language,
-                en: "Error: Unknown icon preset: \(presetId). Available presets: \(available)",
-                zh: "错误：未知图标预设：\(presetId)。可用预设：\(available)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: IconToolSupport.localized(
+                    language,
+                    en: "Unknown icon preset: \(presetId). Available presets: \(available)",
+                    zh: "未知图标预设：\(presetId)。可用预设：\(available)"
+                )
             )
         }
 
         let scope = try await IconToolSupport.resolveScope(arguments)
         let title = IconToolSupport.string(arguments, "title")
+
+        // 同 create_icon_document：没有落盘路径时不能先改内存再报成功。
+        _ = try await IconToolSupport.storagePath(for: scope)
+
         let document = await MainActor.run {
             IconToolSupport.store().createDocument(from: preset, title: title, scope: scope)
         }

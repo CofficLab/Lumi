@@ -1,6 +1,16 @@
 import Foundation
 import KitLLM
 
+/// 会话分页读取失败。
+///
+/// `fetchConversationPage` 会把读取异常折叠成空数组，调用方无法区分「读取失败」
+/// 与「确实没有会话」；需要保留已知良好数据的调用方改用 `loadConversationPage`，
+/// 由该错误显式暴露失败。
+public enum ConversationPageLoadError: Error, Equatable {
+    /// 持久化存储未就绪或已不可用。
+    case storageUnavailable
+}
+
 /// 选中对话变化观察者的注册令牌。
 ///
 /// 调用 `ConversationManaging.addSelectedConversationObserver(_:)` 后持有返回值
@@ -62,6 +72,26 @@ public protocol ConversationManaging: AnyObject {
         projectPath: String
     ) async -> [ConversationSummary]
 
+    /// Load one page, preserving read failures instead of folding them into `[]`.
+    ///
+    /// List UIs must keep showing the last known-good page when a transient
+    /// storage error occurs; an empty array would look like an empty library.
+    func loadConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date?,
+        beforeID: UUID?,
+        includingChildConversations: Bool
+    ) async throws -> [ConversationSummary]
+
+    /// Project-scoped variant of `loadConversationPage`.
+    func loadConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date?,
+        beforeID: UUID?,
+        includingChildConversations: Bool,
+        projectPath: String
+    ) async throws -> [ConversationSummary]
+
     /// Fetch one conversation summary by ID without requiring the full list.
     func fetchConversation(id: UUID) async -> ConversationSummary?
 
@@ -112,15 +142,18 @@ public protocol ConversationManaging: AnyObject {
         includingChildConversations: Bool
     ) async -> Int
 
-    /// 删除「创建于 `cutoff` 之前」的对话，返回被删除的会话 ID。
+    /// 删除「创建于 `cutoff` 之前」的对话，返回命中的顶层会话 ID。
     ///
     /// 用于「清理 N 天前的对话」这类按时间批量清理的入口。
+    ///
+    /// 连带删除的子 Agent 会话不包含在返回值里：返回集合必须与
+    /// `conversationCount` 的查询口径一致，调用方才能拿它当「已删除条数」展示。
     ///
     /// - Parameters:
     ///   - cutoff: 时间分界点；`createdAt` 早于它的会话会被删除。
     ///   - projectPath: 只清理该项目的对话；`nil` 表示全部项目。
     ///   - includingChildConversations: 是否连带删除子 Agent 会话。
-    /// - Returns: 被删除的会话 ID 列表。
+    /// - Returns: 命中的顶层会话 ID 列表（不含连带删除的子会话）。
     @discardableResult
     func deleteConversations(
         createdBefore cutoff: Date,
@@ -151,10 +184,42 @@ public protocol ConversationManaging: AnyObject {
     /// 创建新对话
     func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID
 
+    /// 创建新对话并等待持久化完成。
+    ///
+    /// 与同步版本的区别：持久化失败必须向上抛错，调用方据此避免把尚未落库的
+    /// 会话当成创建成功（例如 Agent 工具返回成功卡片）。默认实现直接复用
+    /// 同步接口，适用于没有持久化层的轻量实现。
+    func createConversationAndWait(
+        title: String?,
+        projectPath: String?,
+        modelID: String?,
+        parentConversationID: UUID?
+    ) async throws -> UUID
+
     /// Creates a conversation with an optional parent conversation.
     func createConversation(
         title: String?,
         projectPath: String?,
+        providerID: String?,
+        modelName: String?,
+        parentConversationID: UUID?
+    ) throws -> UUID
+
+    /// 按显式项目绑定创建新对话。
+    ///
+    /// 与 `projectPath` 版本的区别：`ProjectBinding` 能表达「明确不绑定」，
+    /// 而 `projectPath: nil` 在支持当前项目的实现里会回退到当前项目。
+    func createConversation(
+        title: String?,
+        binding: ProjectBinding,
+        providerID: String?,
+        modelName: String?
+    ) throws -> UUID
+
+    /// 按显式项目绑定创建新对话，可指定父会话。
+    func createConversation(
+        title: String?,
+        binding: ProjectBinding,
         providerID: String?,
         modelName: String?,
         parentConversationID: UUID?
@@ -195,6 +260,13 @@ public protocol ConversationManaging: AnyObject {
 
     /// 更新指定对话的标题
     func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool
+
+    /// 更新指定对话的标题，并等待持久化完成（如实现支持持久化）。
+    ///
+    /// 与同步版本的区别：返回 `true` 代表标题已经落盘，调用方可以据此向用户
+    /// 报告成功；落盘失败必须返回 `false`，且不应留下「界面已改、数据库仍旧」
+    /// 的假成功状态。默认实现直接复用同步接口，适用于没有持久化层的轻量实现。
+    func updateConversationTitleAndWait(_ title: String, for conversationID: UUID) async -> Bool
 
     // MARK: - Activity
 
@@ -325,6 +397,56 @@ public extension ConversationManaging {
 
     func createConversation(
         title: String?,
+        binding: ProjectBinding = .inheritCurrent,
+        modelID: String?
+    ) throws -> UUID {
+        let parsed = modelID.flatMap(LLMModelID.init(rawValue:))
+        return try createConversation(
+            title: title,
+            binding: binding,
+            providerID: parsed?.providerID,
+            modelName: parsed?.modelID
+        )
+    }
+
+    /// 默认实现：把绑定意图折回旧接口。
+    ///
+    /// 没有「当前项目」概念的实现里，`.inheritCurrent` 与 `.none` 都落成
+    /// `nil`，语义正确。**支持当前项目回退的实现必须重写本方法**，否则
+    /// `.none` 会被旧接口解释成「沿用当前项目」。
+    func createConversation(
+        title: String?,
+        binding: ProjectBinding = .inheritCurrent,
+        providerID: String?,
+        modelName: String?,
+        parentConversationID: UUID?
+    ) throws -> UUID {
+        try createConversation(
+            title: title,
+            projectPath: binding.resolvedProjectPath(inheriting: nil),
+            providerID: providerID,
+            modelName: modelName,
+            parentConversationID: parentConversationID
+        )
+    }
+
+    func createConversation(
+        title: String?,
+        binding: ProjectBinding = .inheritCurrent,
+        providerID: String?,
+        modelName: String?
+    ) throws -> UUID {
+        try createConversation(
+            title: title,
+            binding: binding,
+            providerID: providerID,
+            modelName: modelName,
+            parentConversationID: nil
+        )
+    }
+
+    func createConversation(
+        title: String?,
         projectPath: String?,
         modelID: String?,
         parentConversationID: UUID?
@@ -338,6 +460,21 @@ public extension ConversationManaging {
             parentConversationID: parentConversationID
         )
     }
+
+    /// 默认实现：没有持久化层的实现直接从同步接口返回。
+    func createConversationAndWait(
+        title: String?,
+        projectPath: String?,
+        modelID: String?,
+        parentConversationID: UUID?
+    ) async throws -> UUID {
+        try createConversation(
+            title: title,
+            projectPath: projectPath,
+            modelID: modelID,
+            parentConversationID: parentConversationID
+        )
+    }
 }
 
 /// Lightweight compatibility defaults for providers and test doubles that do
@@ -345,6 +482,10 @@ public extension ConversationManaging {
 public extension ConversationManaging {
     func setVerbosityAndWait(_ verbosity: ResponseVerbosity, for conversationID: UUID?) async {
         setVerbosity(verbosity, for: conversationID)
+    }
+
+    func updateConversationTitleAndWait(_ title: String, for conversationID: UUID) async -> Bool {
+        updateConversationTitle(title, for: conversationID)
     }
 
     func transferObservers(to replacement: any ConversationManaging) {}
@@ -366,6 +507,27 @@ public extension ConversationManaging {
 
     func fetchConversationPage(limit: Int, beforeUpdatedAt: Date?, beforeID: UUID?, includingChildConversations: Bool, projectPath: String) async -> [ConversationSummary] {
         await fetchConversationPage(limit: limit, beforeUpdatedAt: beforeUpdatedAt, beforeID: beforeID, includingChildConversations: includingChildConversations)
+    }
+
+    /// 默认实现无法观察底层读取错误，退化为原有的非抛错分页；有持久化能力的
+    /// 实现应覆盖它，把真实的存储错误传给调用方。
+    func loadConversationPage(limit: Int, beforeUpdatedAt: Date?, beforeID: UUID?, includingChildConversations: Bool) async throws -> [ConversationSummary] {
+        await fetchConversationPage(
+            limit: limit,
+            beforeUpdatedAt: beforeUpdatedAt,
+            beforeID: beforeID,
+            includingChildConversations: includingChildConversations
+        )
+    }
+
+    func loadConversationPage(limit: Int, beforeUpdatedAt: Date?, beforeID: UUID?, includingChildConversations: Bool, projectPath: String) async throws -> [ConversationSummary] {
+        await fetchConversationPage(
+            limit: limit,
+            beforeUpdatedAt: beforeUpdatedAt,
+            beforeID: beforeID,
+            includingChildConversations: includingChildConversations,
+            projectPath: projectPath
+        )
     }
 
     func fetchConversation(id: UUID) async -> ConversationSummary? {

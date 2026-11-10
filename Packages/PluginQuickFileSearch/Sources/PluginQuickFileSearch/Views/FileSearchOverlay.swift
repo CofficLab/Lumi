@@ -48,13 +48,13 @@ public struct FileSearchOverlay<Content: View>: View {
             hotkeyManager.startMonitoring()
             handleOnAppear()
         }
-        .onChange(of: projectPathProvider()) { _, newPath in
+        .onChange(of: projectPathProvider()) { newPath in
             handleProjectPathChange(newPath)
         }
-        .onChange(of: searchService.searchQuery) { _, _ in
+        .onChange(of: searchService.searchQuery) { _ in
             searchService.onSearchQueryChanged()
         }
-        .onChange(of: hotkeyManager.targetWindowId) { _, targetWindowId in
+        .onChange(of: hotkeyManager.targetWindowId) { targetWindowId in
             guard targetWindowId == windowIdProvider() else { return }
             handleOnAppear()
         }

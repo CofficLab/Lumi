@@ -4,6 +4,7 @@ public enum RAGError: LocalizedError, Sendable {
     case notInitialized
     case invalidProjectPath
     case internalStateCorrupted
+    case projectRootUnavailable(String)
     case dbError(String)
 
     public var errorDescription: String? {
@@ -14,6 +15,8 @@ public enum RAGError: LocalizedError, Sendable {
             return "Invalid project path"
         case .internalStateCorrupted:
             return "RAG internal state corrupted"
+        case let .projectRootUnavailable(path):
+            return "Project root unavailable: \(path)"
         case let .dbError(message):
             return "RAG database error: \(message)"
         }

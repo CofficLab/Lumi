@@ -41,7 +41,14 @@ public actor SQLiteConnection: DatabaseConnection {
 
         try bind(params: params ?? [], to: statement, db: db)
 
-        if sqlite3_step(statement) != SQLITE_DONE {
+        // `INSERT/UPDATE/DELETE ... RETURNING` 在 step 时返回结果行，
+        // 但写入已执行。消费掉这些行直到 DONE，不能把 SQLITE_ROW 当作失败。
+        var stepResult = sqlite3_step(statement)
+        while stepResult == SQLITE_ROW {
+            stepResult = sqlite3_step(statement)
+        }
+
+        guard stepResult == SQLITE_DONE else {
             let errorMsg = String(cString: sqlite3_errmsg(db))
             throw DatabaseError.queryFailed(errorMsg)
         }

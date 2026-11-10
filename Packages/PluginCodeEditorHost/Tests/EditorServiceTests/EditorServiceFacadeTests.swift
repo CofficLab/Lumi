@@ -206,6 +206,108 @@ final class EditorServiceFacadeTests: XCTestCase {
         XCTAssertFalse(service.files.isFileLoadInProgress)
     }
 
+    /// 回归 #980：切回一个已加载过的文件时，异步加载完成后必须恢复该 Session
+    /// 保存的视图状态，而不是把切换前的当前视图状态同步进目标 Session。
+    func testReopeningExistingSessionRestoresSavedStateAfterAsyncLoad() async throws {
+        let service = makeService()
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("EditorServiceFacadeTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let aURL = directory.appendingPathComponent("RestoreA.swift")
+        let bURL = directory.appendingPathComponent("RestoreB.swift")
+        let aContent = (1...30).map { "let value\($0) = \($0)" }.joined(separator: "\n") + "\n"
+        try aContent.write(to: aURL, atomically: true, encoding: .utf8)
+        try "let b = 2\n".write(to: bURL, atomically: true, encoding: .utf8)
+
+        service.sessions.open(at: aURL)
+        try await waitUntil("A loaded") {
+            service.files.currentFileURL == aURL && service.files.content?.string == aContent
+        }
+
+        // 模拟 A 的 Session 里已保存的光标（用户停在更深的第 20 行）。
+        // 真实会话会同时保存 multiCursorState 与 viewState.cursorPositions，
+        // 这里按同样结构构造，避免只写行号走不到真实恢复路径。
+        let line20Offset = (aContent as NSString).range(of: "let value20").location
+        let cursor = CursorPosition(line: 20, column: 1)
+        let aSession = try XCTUnwrap(service.sessions.activeSession)
+        aSession.multiCursorState = MultiCursorState(
+            primary: MultiCursorSelection(location: line20Offset, length: 0)
+        )
+        aSession.viewState = EditorViewState(
+            primaryCursorLine: 20,
+            primaryCursorColumn: 1,
+            cursorPositions: [cursor]
+        )
+
+        // 切到 B，再切回 A：此时 A 需要走异步重新加载路径。
+        service.sessions.open(at: bURL)
+        try await waitUntil("B loaded") {
+            service.files.currentFileURL == bURL
+        }
+
+        service.sessions.open(at: aURL)
+        try await waitUntil("A loaded again") {
+            service.files.currentFileURL == aURL && service.files.content?.string == aContent
+        }
+
+        XCTAssertEqual(service.sessions.activeSessionID, aSession.id)
+        XCTAssertEqual(service.editing.cursorLine, 20, "加载完成后应恢复 A Session 保存的光标行")
+        XCTAssertEqual(service.editing.cursorColumn, 1)
+    }
+
+    /// 回归 #981：后退/前进不能只切 `activeSessionID`，必须加载目标文件并应用
+    /// 历史项快照，否则选中的 Session 与屏幕正文分裂。
+    func testGoBackLoadsTargetFileAndAppliesHistorySnapshot() async throws {
+        let service = makeService()
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("EditorNavigation-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let aURL = directory.appendingPathComponent("NavA.swift")
+        let bURL = directory.appendingPathComponent("NavB.swift")
+        let aContent = (1...30).map { "let navValue\($0) = \($0)" }.joined(separator: "\n") + "\n"
+        try aContent.write(to: aURL, atomically: true, encoding: .utf8)
+        try "let b = 2\n".write(to: bURL, atomically: true, encoding: .utf8)
+
+        service.sessions.open(at: aURL)
+        try await waitUntil("A loaded") {
+            service.files.currentFileURL == aURL && service.files.content?.string == aContent
+        }
+        let sessionA = try XCTUnwrap(service.sessions.activeSession)
+
+        // 让 A 的历史项记录一个第 15 行的快照（syncActiveSession 会替换当前历史项）。
+        let snapshot = EditorSession(fileURL: aURL)
+        let offset = (aContent as NSString).range(of: "let navValue15").location
+        snapshot.multiCursorState = MultiCursorState(
+            primary: MultiCursorSelection(location: offset, length: 0)
+        )
+        snapshot.viewState = EditorViewState(
+            primaryCursorLine: 15,
+            primaryCursorColumn: 1,
+            cursorPositions: [CursorPosition(line: 15, column: 1)]
+        )
+        service.sessions.syncActiveSession(from: snapshot)
+
+        service.sessions.open(at: bURL)
+        try await waitUntil("B loaded") {
+            service.files.currentFileURL == bURL
+        }
+
+        let entry = try XCTUnwrap(service.sessions.goBack())
+        XCTAssertEqual(entry.id, sessionA.id)
+        try await waitUntil("A loaded after goBack") {
+            service.files.currentFileURL == aURL && service.files.content?.string == aContent
+        }
+
+        XCTAssertEqual(service.sessions.activeSessionID, sessionA.id)
+        XCTAssertEqual(service.files.currentFileURL, aURL)
+        XCTAssertEqual(service.files.content?.string, aContent)
+        XCTAssertEqual(service.editing.cursorLine, 15, "后退应应用历史项保存的光标")
+    }
+
     private func waitUntil(
         _ description: String,
         timeout: TimeInterval = 2,

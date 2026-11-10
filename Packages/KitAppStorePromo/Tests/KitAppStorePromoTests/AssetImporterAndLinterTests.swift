@@ -184,6 +184,37 @@ struct AppStorePromoHTMLLinterTests {
         #expect(!report.errors.map(\.code).contains("unsafe_asset_path"))
     }
 
+    @Test func missingCSSURLAssetFailsWhenDirectoryProvided() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        try Data([0xFF]).write(to: dir.appendingPathComponent("real.png"))
+
+        let html = minimalHTML(
+            body: #"<style>body { background-image: url("./real.png"), url("./ghost.png"); }</style>"#
+        )
+        let report = AppStorePromoHTMLLinter().lint(html: html, documentDirectory: dir)
+        let missing = report.errors.filter { $0.code == "missing_asset" }
+        #expect(missing.count == 1)
+        #expect(missing.first?.message.contains("ghost.png") == true)
+        #expect(!report.errors.map(\.code).contains("unsafe_asset_path"))
+    }
+
+    @Test func CSSDataURIsAndFragmentsAreSkipped() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let html = minimalHTML(
+            body: #"<style>body { background-image: url("data:image/png;base64,AAAA"), url(#gradient); }</style>"#
+        )
+        let report = AppStorePromoHTMLLinter().lint(html: html, documentDirectory: dir)
+        #expect(!report.errors.map(\.code).contains("missing_asset"))
+        #expect(!report.errors.map(\.code).contains("unsafe_asset_path"))
+    }
+
     @Test func dataURIsAreSkipped() {
         let html = minimalHTML(body: #"<img src="data:image/png;base64,AAAA">"#)
         let report = AppStorePromoHTMLLinter().lint(html: html, documentDirectory: FileManager.default.temporaryDirectory)
@@ -207,5 +238,47 @@ struct AppStorePromoHTMLLinterTests {
         let html = minimalHTML(body: ##"<a href="#section">Jump</a>"##)
         let report = AppStorePromoHTMLLinter().lint(html: html, documentDirectory: FileManager.default.temporaryDirectory)
         #expect(!report.errors.map(\.code).contains("missing_asset"))
+    }
+
+    @Test func parentAssetsAreAllowedOnlyInsideDocumentDirectory() throws {
+        let imageRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let localizationDirectory = imageRoot.appendingPathComponent("localizations", isDirectory: true)
+        let assetDirectory = imageRoot.appendingPathComponent("assets", isDirectory: true)
+        try FileManager.default.createDirectory(at: localizationDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: assetDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: imageRoot) }
+        try Data([0xFF]).write(to: assetDirectory.appendingPathComponent("hero.png"))
+
+        let html = minimalHTML(body: #"<img src="../assets/hero.png"><img src="../../outside.png">"#)
+        let report = AppStorePromoHTMLLinter().lint(
+            html: html,
+            documentDirectory: imageRoot,
+            htmlDirectory: localizationDirectory
+        )
+
+        #expect(!report.errors.map(\.code).contains("missing_asset"), "共享 assets 应能在图片根目录内解析")
+        let unsafePaths = report.errors.filter { $0.code == "unsafe_asset_path" }.map(\.message)
+        #expect(unsafePaths.count == 1, "只有逃出图片根目录的路径应被拒绝")
+        #expect(unsafePaths.first?.contains("../../outside.png") == true)
+    }
+
+    @Test func inlineSVGNamespaceIsNotARemoteResource() {
+        let html = minimalHTML(body: """
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z"/></svg>
+        """)
+        let report = AppStorePromoHTMLLinter().lint(html: html)
+        #expect(!report.errors.map(\.code).contains("remote_resource"), "SVG namespace 不产生网络请求")
+        #expect(report.errors.isEmpty)
+    }
+
+    @Test func remoteResourcesInLoadingPositionsAreStillRejected() {
+        let html = minimalHTML(body: """
+        <link href="https://example.com/theme.css" rel="stylesheet">
+        <img src="https://example.com/a.png">
+        <div style="background-image: url('//cdn.example.com/bg.png')"></div>
+        """)
+        let report = AppStorePromoHTMLLinter().lint(html: html)
+        #expect(report.errors.map(\.code).contains("remote_resource"))
     }
 }

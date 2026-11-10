@@ -209,6 +209,119 @@ struct AnthropicAdapterRequestTests {
         #expect(body["max_tokens"] as? Int == 9216)
     }
 
+    @Test("不支持 extended thinking 的 Claude 模型省略 thinking 且不抬高 max_tokens")
+    func omitsThinkingForUnsupportedClaudeModels() throws {
+        let adapter = makeAdapter(defaultMaxTokens: 4096)
+        let unsupportedModels = [
+            "claude-3-5-sonnet-20241022",
+            "claude-3-5-sonnet-20240620",
+            "claude-3-opus-20240229",
+            "claude-3-sonnet-20240229",
+            "claude-3-haiku-20240307",
+        ]
+
+        for model in unsupportedModels {
+            let config = LLMConfig(
+                model: model,
+                providerId: "anthropic",
+                maxTokens: 2048,
+                reasoningEffort: "low"
+            )
+
+            let body = try adapter.buildStreamingRequestBody(
+                messages: [LLMMessage(role: .user, content: "hi")],
+                model: model,
+                tools: nil,
+                systemPrompt: "",
+                config: config
+            )
+
+            #expect(body["thinking"] == nil, "\(model) 不应携带 thinking")
+            #expect(body["max_tokens"] as? Int == 2048, "\(model) 的 max_tokens 不应被推理预算抬高")
+        }
+    }
+
+    @Test("Claude 3.7 与 4 及非 Claude 兼容模型仍保留 thinking")
+    func keepsThinkingForSupportedModels() throws {
+        let adapter = makeAdapter()
+
+        for model in ["claude-3-7-sonnet-20250219", "deepseek-reasoner"] {
+            let config = LLMConfig(
+                model: model,
+                providerId: "anthropic",
+                reasoningEffort: "low"
+            )
+
+            let body = try adapter.buildStreamingRequestBody(
+                messages: [LLMMessage(role: .user, content: "hi")],
+                model: model,
+                tools: nil,
+                systemPrompt: "",
+                config: config
+            )
+
+            let thinking = try #require(body["thinking"] as? [String: Any], "\(model) 应保留 thinking")
+            #expect(thinking["type"] as? String == "enabled")
+            #expect(thinking["budget_tokens"] as? Int == 1024)
+        }
+    }
+
+    @Test("输出上限 4096 的 Claude 3 模型默认 max_tokens 被限幅")
+    func clampsDefaultMaxTokensForClaude3Models() throws {
+        let adapter = makeAdapter(defaultMaxTokens: 8192)
+
+        for model in ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"] {
+            let config = LLMConfig(model: model, providerId: "anthropic")
+
+            let body = try adapter.buildStreamingRequestBody(
+                messages: [LLMMessage(role: .user, content: "hi")],
+                model: model,
+                tools: nil,
+                systemPrompt: "",
+                config: config
+            )
+
+            #expect(body["max_tokens"] as? Int == 4096, "\(model) 的默认 max_tokens 应被限幅到 4096")
+        }
+    }
+
+    @Test("用户显式超过模型上限的 max_tokens 同样被限幅")
+    func clampsExplicitMaxTokensAboveModelCap() throws {
+        let adapter = makeAdapter(defaultMaxTokens: 8192)
+        let model = "claude-3-haiku-20240307"
+        let config = LLMConfig(model: model, providerId: "anthropic", maxTokens: 8192)
+
+        let body = try adapter.buildStreamingRequestBody(
+            messages: [LLMMessage(role: .user, content: "hi")],
+            model: model,
+            tools: nil,
+            systemPrompt: "",
+            config: config
+        )
+
+        #expect(body["max_tokens"] as? Int == 4096)
+    }
+
+    @Test("输出上限更高的模型不会被统一降低")
+    func keepsHigherMaxTokensForCapableModels() throws {
+        let adapter = makeAdapter(defaultMaxTokens: 8192)
+        let models = ["claude-3-5-sonnet-20241022", "claude-sonnet-4-20250514"]
+
+        for model in models {
+            let config = LLMConfig(model: model, providerId: "anthropic", maxTokens: 8192)
+
+            let body = try adapter.buildStreamingRequestBody(
+                messages: [LLMMessage(role: .user, content: "hi")],
+                model: model,
+                tools: nil,
+                systemPrompt: "",
+                config: config
+            )
+
+            #expect(body["max_tokens"] as? Int == 8192, "\(model) 的 max_tokens 不应被降低")
+        }
+    }
+
     @Test("开启缓存时最后一条文本块带缓存边界")
     func addsPromptCacheBoundary() throws {
         let adapter = makeAdapter(enablesPromptCaching: true)
@@ -379,6 +492,21 @@ struct AnthropicAdapterStreamTests {
         #expect(chunk.content == nil)
     }
 
+    @Test("redacted_thinking 内容块开始事件带 opaque data")
+    func parsesRedactedThinkingContentBlockStart() throws {
+        let chunk = try #require(try adapter.parseStreamChunk(data: anthropicEvent(
+            "content_block_start",
+            [
+                "type": "content_block_start",
+                "index": 0,
+                "content_block": ["type": "redacted_thinking", "data": "opaque-data"],
+            ]
+        )))
+
+        #expect(chunk.eventType == .contentBlockStart)
+        #expect(chunk.redactedThinkingData == "opaque-data")
+    }
+
     @Test("文本增量事件带正文")
     func parsesTextDelta() throws {
         let chunk = try #require(try adapter.parseStreamChunk(data: anthropicEvent(
@@ -505,6 +633,28 @@ struct AnthropicAdapterMessageTests {
         #expect(content.first?["tool_use_id"] as? String == "toolu_1")
     }
 
+    @Test("回归 #955：失败工具结果携带 is_error，成功结果不带")
+    func toolResultCarriesErrorFlagOnlyOnFailure() throws {
+        let failed = adapter.transformMessage(
+            LLMMessage(role: .tool, content: "失败", toolCallID: "toolu_1", isError: true)
+        )
+        let failedContent = try #require(failed["content"] as? [[String: Any]])
+        #expect(failedContent.first?["is_error"] as? Bool == true)
+
+        let succeeded = adapter.transformMessage(
+            LLMMessage(role: .tool, content: "成功", toolCallID: "toolu_2")
+        )
+        let succeededContent = try #require(succeeded["content"] as? [[String: Any]])
+        #expect(succeededContent.first?["is_error"] == nil)
+
+        let image = MessageImage(data: Data([0x01, 0x02]), mimeType: "image/png")
+        let failedWithImage = adapter.transformMessage(
+            LLMMessage(role: .tool, content: "失败", toolCallID: "toolu_3", isError: true, images: [image])
+        )
+        let imageContent = try #require(failedWithImage["content"] as? [[String: Any]])
+        #expect(imageContent.first?["is_error"] as? Bool == true)
+    }
+
     @Test("带工具调用的 assistant 消息转成 tool_use 块且名字被转义")
     func transformsAssistantToolCalls() throws {
         let message = LLMMessage(
@@ -521,6 +671,24 @@ struct AnthropicAdapterMessageTests {
         #expect(toolUse["id"] as? String == "call-1")
         #expect(toolUse["name"] as? String == "app_read")
         #expect(toolUse["input"] as? [String: Any] != nil)
+    }
+
+    @Test("redacted thinking 在工具调用消息里按原样回传且位于 tool_use 之前")
+    func transformsRedactedThinkingBeforeToolUse() throws {
+        let message = LLMMessage(
+            role: .assistant,
+            content: "调用中",
+            toolCalls: [LLMToolCall(id: "call-1", name: "read_file", arguments: "{}")],
+            redactedThinking: [LLMRedactedThinkingBlock(data: "opaque-data")]
+        )
+
+        let result = adapter.transformMessage(message)
+
+        let content = try #require(result["content"] as? [[String: Any]])
+        let redactedIndex = try #require(content.firstIndex { $0["type"] as? String == "redacted_thinking" })
+        let toolUseIndex = try #require(content.firstIndex { $0["type"] as? String == "tool_use" })
+        #expect(content[redactedIndex]["data"] as? String == "opaque-data")
+        #expect(redactedIndex < toolUseIndex)
     }
 
     @Test("带思考内容的 assistant 消息生成 thinking 块")

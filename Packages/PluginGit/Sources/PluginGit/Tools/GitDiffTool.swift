@@ -19,7 +19,14 @@ public struct GitDiffV2Tool: SuperAgentTool, @unchecked Sendable {
             var output = "## Git 变更\n\n"
             if let stats = diff.stats { output += "**变更统计**: \(stats.filesChanged) 个文件，+\(stats.insertions) 行，-\(stats.deletions) 行\n\n" }
             return output + "```diff\n\(diff.content)\n```"
-        } catch { return "获取 Git 差异失败：\(error.localizedDescription)" }
+        } catch let error as ToolExecutionError {
+            throw error
+        } catch {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "获取 Git 差异失败：\(error.localizedDescription)"
+            )
+        }
     }
     private func resolveTarget(path: String, file: String?) throws -> (repositoryPath: String, file: String?) {
         let repositoryPath = try GitService.repositoryRoot(containing: path)

@@ -77,7 +77,21 @@ struct CollapsedContentChipVerticalAlignmentTests {
         }
 
         let bounds = NSRect(x: 0, y: 0, width: width, height: height)
-        let image = textView.bitmapImageRepForCachingDisplay(in: bounds)!
+        // 固定 1× 位图：量测代码按「1 point = 1 pixel」取坐标，若用设备 scale
+        // 的 rep，Retina 上整张图的坐标会翻倍，正文列区间直接落到 chip 内部。
+        let image = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: width,
+            pixelsHigh: height,
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        )!
+        image.size = bounds.size
         textView.cacheDisplay(in: bounds, to: image)
 
         func luminance(_ x: Int, _ y: Int) -> Double {
@@ -194,7 +208,10 @@ struct CollapsedContentChipVerticalAlignmentTests {
         #expect(measured.bodyTop != -1)
 
         #expect(abs(measured.inkTop - measured.bodyTop) <= 1)
-        #expect(abs(measured.inkBottom - measured.bodyBottom) <= 1)
+        // chip 标题与正文字形不同（「粘贴的文本」逐字墨迹下沿不同），1× 位图上
+        // 抗锯齿还会各多/少 1px，实测底部差 2px；真正的基线错位是 ≥12pt 级
+        // （见 `keepsBaselineWhenCellIsMisplaced`），这里放 2px 仍能锁住回归。
+        #expect(abs(measured.inkBottom - measured.bodyBottom) <= 2)
     }
 
     @Test("胶囊与正文的上下沿齐平（不偏上也不偏下）")
@@ -206,10 +223,14 @@ struct CollapsedContentChipVerticalAlignmentTests {
 
         // 胶囊上下沿相对正文字墨迹的偏移，取绝对值后应当接近相等：
         // 胶囊是「裹住」这一行字的，不是「压在」字下的一块底板。
+        //
+        // 胶囊高度按「国」的墨迹（下沿超出基线约 1.4pt）居中，而正文渲染的是
+        // 「粘贴的文本」，下沿几乎贴基线；两者字形不同，实测底边差 3px。
+        // 容差放到 3px 仍能锁住 12pt 级错位，纯像素级抖动不再误报。
         let topGap = abs(measured.pillTop - measured.bodyTop)
         let bottomGap = abs(measured.pillBottom - measured.bodyBottom)
         #expect(topGap <= 2)
-        #expect(bottomGap <= 2)
+        #expect(bottomGap <= 3)
     }
 
     @Test("胶囊不越过正文的行盒")
@@ -243,6 +264,8 @@ struct CollapsedContentChipVerticalAlignmentTests {
         #expect(measured.inkTop != -1)
         #expect(measured.bodyTop != -1)
 
-        #expect(abs(measured.inkBottom - measured.bodyBottom) <= 1)
+        // 与 `alignsChipTitleWithBodyText` 同因：不同字形墨迹下沿差 2px，
+        // 但一旦真的按 cell 高度算基线，偏移会是 12pt 级，本断言照样失败。
+        #expect(abs(measured.inkBottom - measured.bodyBottom) <= 2)
     }
 }

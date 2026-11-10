@@ -12,7 +12,8 @@ enum AgentLoopRetryTimeline {
         failedTurnID: UUID,
         attempt: Int,
         maxAttempts: Int,
-        failure: AgentLoopFailure
+        failure: AgentLoopFailure,
+        resolve: (String) -> String = { pluginLocalization.string($0) }
     ) -> Message {
         var metadata: [String: String] = [
             MessageTimelineEvent.metadataKey: MessageTimelineEvent.agentLoopRetry,
@@ -38,7 +39,7 @@ enum AgentLoopRetryTimeline {
         return Message(
             conversationID: conversationID,
             role: .system,
-            content: "正在重试（\(attempt)/\(maxAttempts)）：\(reason)",
+            content: String(format: resolve("Retrying (%lld/%lld): %@"), attempt, maxAttempts, reason),
             turnID: failedTurnID,
             metadata: metadata,
             providerID: failure.providerID,

@@ -5,7 +5,7 @@
 PluginCADDesigner 铝型材 CAD 设计插件：把 `KitCADDesigner` 引擎包装为 `SuperPlugin`，注册 10 个 `cad_*` Agent 工具， 并通过 `ContentViewProviding` 发布 3D 编辑工作区。
 
 平台: macOS 14+
-测试文件: 1 个，用例总数: 7
+测试文件: 1 个，用例总数: 13
 
 ## 公开 API
 
@@ -28,7 +28,7 @@ PluginCADDesigner 铝型材 CAD 设计插件：把 `KitCADDesigner` 引擎包装
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **CADDesignerSuperPlugin**（7 条）：由 `publishesWorkspace`、`createsProjectThroughV2Tool`、`savesAndLoadsProjectThroughV2Tools` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **CADDesignerSuperPlugin**（13 条）：由 `publishesWorkspace`、`createsProjectThroughV2Tool`、`savesAndLoadsProjectThroughV2Tools` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -41,27 +41,33 @@ PluginCADDesigner 铝型材 CAD 设计插件：把 `KitCADDesigner` 引擎包装
 | 5 | CADDesignerSuperPlugin | places and updates CAD components through stable V2 tool IDs | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `placesAndUpdatesComponentsThroughV2Tools` |
 | 6 | CADDesignerSuperPlugin | generates the CAD bill of materials through the V2 tool | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `generatesBOMThroughV2Tool` |
 | 7 | CADDesignerSuperPlugin | connects components and optimizes profile cuts through V2 tools | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `connectsAndOptimizesThroughV2Tools` |
+| 8 | CADDesignerSuperPlugin | tool failures throw instead of returning error strings | 重置文档存储 | 缺必填参数、未知型材/连接件、无选中文档 | 全部抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `toolFailuresThrow` |
+| 9 | CADDesignerSuperPlugin | rejects unrepresentable profile lengths before mutating the document | 重置文档存储并新建文档 | 传入 `length` 为 `1e20`、`infinity`、`0`、`-5` | 抛结构化 `ToolExecutionError`，文档组件数保持不变 | P1 | ✅ 已覆盖 | `rejectsUnrepresentableProfileLengthBeforeMutatingDocument` |
+| 10 | CADDesignerSuperPlugin | reports save and load I/O failures as tool errors | 重置文档存储并新建文档 | 保存到父目录不存在的路径，加载不存在的文件，均走 `executeResult` | 两条路径都抛 `ToolExecutionError`，不返回成功内容；目标文件不存在、文档未被改动 | P1 | ✅ 已覆盖 | `reportsSaveAndLoadIOFailuresAsToolErrors` |
+| 11 | CADDesignerSuperPlugin | 显式未知 `profileId` 报错且不创建组件（**回归 #1079**） | 重置文档存储并新建文档 | 传 `profileId: profile-40x40-typo` 调用 `cad_build_frame`；再省略 `profileId` 调用一次 | 首次抛 `ToolExecutionError` 且组件为空；省略时回退系列默认方形型材并创建 20 个组件 | P0 | ✅ 已覆盖 | `rejectsUnknownExplicitProfileID` |
+| 12 | CADDesignerSuperPlugin | 加载结果报告实际选中的导入项目 ID（**回归 #1078**） | 保存一个项目后调用 `cad_load_project` | 比较返回的 `projectId` 与 `selectedDocument.id` | 返回的是导入副本的新 ID，不含文件里的旧 ID | P0 | ✅ 已覆盖 | `loadReportsTheImportedProjectID` |
+| 13 | CADDesignerSuperPlugin | 连接端点缺失时拒绝创建悬空连接（**回归 #1077**） | 文档含一根型材与一个连接件 | 分别用两个不存在的 ID、以及「存在 → 不存在」的端点调用 `cad_connect_components` | 均抛 `ToolExecutionError` 且连接数为 0；两端都存在时创建成功、连接数为 1 | P0 | ✅ 已覆盖 | `rejectsConnectionsWithUnknownEndpoints` |
 
-> 说明：全部 **7 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **13 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
-- P1: 已覆盖 6 / 6
+- P0: 已覆盖 3 / 3
+- P1: 已覆盖 9 / 9
 - P2: 已覆盖 1 / 1
-- **合计: 7 / 7**（仅表示清单场景，非源码覆盖率）
+- **合计: 13 / 13**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（6 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P1**: 其余功能性用例（9 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 7 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 13 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

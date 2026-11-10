@@ -3,22 +3,22 @@ import PackageDescription
 
 let package = Package(
     name: "PluginConversationPendingMessage",
-    defaultLocalization: "zh-Hans",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    defaultLocalization: "en",
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginConversationPendingMessage", targets: ["PluginConversationPendingMessage"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiKernel"),
+        .package(path: "../../Vendor/LumiLogging"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderLifecycleHooks"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiUI"),
+        .package(path: "../../Vendor/LumiLocalization"),
     ],
     targets: [
         .target(
@@ -32,7 +32,8 @@ let package = Package(
                 "LumiUI",
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
-            path: "Sources/PluginConversationPendingMessage"
+            path: "Sources/PluginConversationPendingMessage",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginConversationPendingMessageTests",

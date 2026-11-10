@@ -1,5 +1,6 @@
 import EditorService
 import EditorSource
+import LumiUI
 import SwiftUI
 
 /// Host-owned standard source editor surface.
@@ -42,10 +43,10 @@ struct EditorSurfaceView: View {
                 ProgressView(CodeEditorHostLocalization.string("Opening file…"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ContentUnavailableView(
-                    CodeEditorHostLocalization.string("No file open"),
-                    systemImage: "doc.text",
-                    description: Text(CodeEditorHostLocalization.string("Select a file from the Explorer to begin editing."))
+                AppEmptyState(
+                    icon: "doc.text",
+                    title: CodeEditorHostLocalization.string("No file open"),
+                    description: CodeEditorHostLocalization.string("Select a file from the Explorer to begin editing.")
                 )
             }
         }

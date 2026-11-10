@@ -116,4 +116,24 @@ struct ConversationModelSelectionTests {
             """
         )
     }
+
+    /// 缓存数组之外的会话（窗口外旧会话）也必须能钉选模型。
+    @Test("会话不在缓存数组中时模型选择仍然生效")
+    func selectModelAppliesToConversationOutsideCache() throws {
+        let (manager, directory) = makeManager()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let conversationID = UUID()
+        let modelID = try #require(LLMModelID(providerID: "ui-test", modelID: "ui-test-long"))
+        #expect(manager.conversations.isEmpty)
+
+        manager.selectModel(id: modelID.rawValue, for: conversationID)
+
+        #expect(
+            manager.modelID(for: conversationID) == modelID.rawValue,
+            "缓存外会话的模型选择被静默丢弃，实际 \(manager.modelID(for: conversationID) ?? "nil")"
+        )
+        #expect(manager.providerID(for: conversationID) == "ui-test")
+        #expect(manager.modelName(for: conversationID) == "ui-test-long")
+    }
 }

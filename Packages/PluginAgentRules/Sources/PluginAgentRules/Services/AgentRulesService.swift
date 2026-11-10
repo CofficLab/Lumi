@@ -31,38 +31,64 @@ public actor AgentRulesService {
     public func listRules(projectPath: String) async throws -> [AgentRuleMetadata] {
         let directoryURLs = getRulesDirectoryURLs(for: projectPath)
 
-        // 两个目录都不存在时才算「目录缺失」。
-        guard directoryURLs.contains(where: {
-            FileManager.default.fileExists(atPath: $0.path())
-        }) else {
-            throw AgentRulesError.directoryNotFound(directoryURLs[0].path())
-        }
-
         // 按文件名去重，`.lumi` 优先。
         var seenFilenames = Set<String>()
         var rules: [AgentRuleMetadata] = []
+        var hasExistingDirectory = false
 
         for directoryURL in directoryURLs {
-            guard let files = try? FileManager.default.contentsOfDirectory(
-                at: directoryURL,
-                includingPropertiesForKeys: [
-                    .fileSizeKey,
-                    .contentModificationDateKey,
-                    .creationDateKey
-                ],
-                options: [.skipsHiddenFiles]
-            ) else { continue }
+            // `readURLs` 产出的 URL 带目录尾斜杠，而普通文件在这种路径上做存在性检查会
+            // 返回 false，从而被误判为「目录不存在」，所以先去掉尾斜杠再判断。
+            var directoryPath = directoryURL.path()
+            if directoryPath.hasSuffix("/") && directoryPath.count > 1 {
+                directoryPath.removeLast()
+            }
+
+            var isDirectory: ObjCBool = false
+            guard FileManager.default.fileExists(
+                atPath: directoryPath,
+                isDirectory: &isDirectory
+            ) else {
+                continue
+            }
+            hasExistingDirectory = true
+            // 路径被普通文件占住时不能当作空目录继续。
+            guard isDirectory.boolValue else {
+                throw AgentRulesError.notADirectory(directoryPath)
+            }
+
+            // 枚举失败必须上抛：吞掉错误会把「读不到规则」伪装成「没有规则」，
+            // 也会让两个兼容目录之一失败时静默返回不完整列表。
+            let files: [URL]
+            do {
+                files = try FileManager.default.contentsOfDirectory(
+                    at: directoryURL,
+                    includingPropertiesForKeys: [
+                        .isRegularFileKey,
+                        .fileSizeKey,
+                        .contentModificationDateKey,
+                        .creationDateKey
+                    ],
+                    options: [.skipsHiddenFiles]
+                )
+            } catch {
+                throw AgentRulesError.directoryUnreadable(directoryPath)
+            }
 
             for file in files where file.pathExtension == "md" {
-                let filename = file.lastPathComponent
-                guard !seenFilenames.contains(filename) else { continue }
-                seenFilenames.insert(filename)
-
                 let resourceValues = try file.resourceValues(forKeys: [
+                    .isRegularFileKey,
                     .fileSizeKey,
                     .contentModificationDateKey,
                     .creationDateKey
                 ])
+
+                // 名称以 .md 结尾的子目录不是规则文件；读取目录会抛 EISDIR 并中断整个列表。
+                guard resourceValues.isRegularFile == true else { continue }
+
+                let filename = file.lastPathComponent
+                guard !seenFilenames.contains(filename) else { continue }
+                seenFilenames.insert(filename)
 
                 let fileSize = resourceValues.fileSize ?? 0
                 let modifiedAt = resourceValues.contentModificationDate ?? Date()
@@ -72,7 +98,7 @@ public actor AgentRulesService {
                 let content = try readTextFile(at: file)
                 let (title, description) = extractTitleAndDescription(from: content)
 
-                let id = filename.replacingOccurrences(of: ".md", with: "")
+                let id = ruleID(forFilename: filename)
 
                 let rule = AgentRuleMetadata(
                     id: id,
@@ -86,6 +112,11 @@ public actor AgentRulesService {
 
                 rules.append(rule)
             }
+        }
+
+        // 两个目录都不存在时才算「目录缺失」。
+        guard hasExistingDirectory else {
+            throw AgentRulesError.directoryNotFound(directoryURLs[0].path())
         }
 
         // 按修改时间排序（最新的在前）
@@ -169,7 +200,7 @@ public actor AgentRulesService {
         // 提取标题和描述
         let (title, description) = extractTitleAndDescription(from: content)
 
-        let id = filename.replacingOccurrences(of: ".md", with: "")
+        let id = ruleID(forFilename: filename)
 
         return AgentRule(
             id: id,
@@ -224,13 +255,15 @@ public actor AgentRulesService {
         try finalContent.write(to: fileURL, atomically: true, encoding: .utf8)
 
         let now = Date()
-        let id = finalFilename.replacingOccurrences(of: ".md", with: "")
+        let id = ruleID(forFilename: finalFilename)
+        // 内容自带一级标题时 title 参数不会写入文件，创建结果必须与后续列表一样从落盘内容提取标题。
+        let (resolvedTitle, description) = extractTitleAndDescription(from: finalContent)
 
         return AgentRule(
             id: id,
             filename: finalFilename,
-            title: title,
-            description: extractDescription(from: finalContent),
+            title: resolvedTitle,
+            description: description,
             fileSize: Int64(finalContent.count),
             createdAt: now,
             modifiedAt: now,
@@ -240,6 +273,12 @@ public actor AgentRulesService {
     }
 
     // MARK: - Private Helpers
+
+    /// 规则 ID 等于文件名去掉最后一个路径扩展名；不能删除文件名内部的 `.md` 片段，
+    /// 否则 `foo.md` 与 `foo.md.md` 会得到相同的公开 ID。
+    private func ruleID(forFilename filename: String) -> String {
+        (filename as NSString).deletingPathExtension
+    }
 
     /// 读取用户编辑的规则文件，允许系统按 BOM 或文件内容检测编码。
     private func readTextFile(at url: URL) throws -> String {
@@ -287,18 +326,14 @@ public actor AgentRulesService {
 
         return (title, description.isEmpty ? "No description available" : description)
     }
-
-    /// 从 Markdown 内容中提取描述
-    private func extractDescription(from content: String) -> String {
-        let (_, description) = extractTitleAndDescription(from: content)
-        return description
-    }
 }
 
 // MARK: - Errors
 
 public enum AgentRulesError: LocalizedError {
     case directoryNotFound(String)
+    case notADirectory(String)
+    case directoryUnreadable(String)
     case fileNotFound(String)
     case fileAlreadyExists(String)
     case invalidFileFormat(String)
@@ -307,6 +342,10 @@ public enum AgentRulesError: LocalizedError {
         switch self {
         case .directoryNotFound(let path):
             return "Rules directory not found: \(path)"
+        case .notADirectory(let path):
+            return "Rules path is not a directory: \(path)"
+        case .directoryUnreadable(let path):
+            return "Rules directory is not readable: \(path)"
         case .fileNotFound(let path):
             return "Rule file not found: \(path)"
         case .fileAlreadyExists(let path):

@@ -1,0 +1,330 @@
+//
+// This source file is part of the Hummingbird server framework project
+// Copyright (c) the Hummingbird authors
+//
+// See LICENSE.txt for license information
+// SPDX-License-Identifier: Apache-2.0
+//
+
+public import HummingbirdCore
+public import Logging
+public import NIOCore
+import NIOHTTP1
+import NIOHTTPTypes
+import NIOPosix
+public import ServiceLifecycle
+public import UnixSignals
+
+#if os(iOS)
+import NIOTransportServices
+#endif
+
+/// Where should the application get its EventLoopGroup from
+public enum EventLoopGroupProvider {
+    /// Use this EventLoopGroup
+    case shared(any EventLoopGroup)
+    /// Use one of the singleton EventLoopGroups
+    case singleton
+
+    public var eventLoopGroup: any EventLoopGroup {
+        switch self {
+        case .singleton:
+            #if os(iOS)
+            return NIOTSEventLoopGroup.singleton
+            #else
+            return MultiThreadedEventLoopGroup.singleton
+            #endif
+        case .shared(let elg):
+            return elg
+        }
+    }
+}
+
+/// Protocol for an Application. Brings all the components of Hummingbird together
+@available(hummingbird 2.0, *)
+public protocol ApplicationProtocol: Service where Context: InitializableFromSource<ApplicationRequestContextSource> {
+    /// Responder that generates a response from a requests and context
+    associatedtype Responder: HTTPResponder
+    /// Context passed with Request to responder
+    typealias Context = Responder.Context
+
+    /// Build the responder
+    var responder: Responder { get async throws }
+    /// Server channel builder
+    var server: HTTPServerBuilder { get }
+
+    /// event loop group used by application
+    var eventLoopGroup: any EventLoopGroup { get }
+    /// Application configuration
+    var configuration: ApplicationConfiguration { get }
+    /// Logger
+    var logger: Logger { get }
+    /// This is called once the server is running and we have an active Channel
+    @Sendable func onServerRunning(_ channel: any Channel) async
+    /// services attached to the application.
+    var services: [any Service] { get }
+    /// Array of processes run before we kick off the server. These tend to be processes that need
+    /// other services running but need to be run before the server is setup
+    var processesRunBeforeServerStart: [@Sendable () async throws -> Void] { get }
+}
+
+@available(hummingbird 2.0, *)
+extension ApplicationProtocol {
+    /// Server channel setup
+    public var server: HTTPServerBuilder { .http1() }
+}
+
+@available(hummingbird 2.0, *)
+extension ApplicationProtocol {
+    /// Default event loop group used by application
+    public var eventLoopGroup: any EventLoopGroup { MultiThreadedEventLoopGroup.singleton }
+    /// Default Configuration
+    public var configuration: ApplicationConfiguration { .init() }
+    /// Default Logger
+    public var logger: Logger { Logger(label: self.configuration.serverName ?? "HummingBird") }
+    /// Default onServerRunning that does nothing
+    public func onServerRunning(_: any Channel) async {}
+    /// Default to no extra services attached to the application.
+    public var services: [any Service] { [] }
+    /// Default to no processes being run before the server is setup
+    public var processesRunBeforeServerStart: [@Sendable () async throws -> Void] { [] }
+}
+
+/// Conform to `Service` from `ServiceLifecycle`.
+@available(hummingbird 2.0, *)
+extension ApplicationProtocol {
+    /// Construct application and run it
+    public func run() async throws {
+        let dateCache = DateCache()
+        let responder = try await self.responder
+
+        // create server `Service``
+        let server = try self.server.buildServer(
+            configuration: self.configuration.httpServer,
+            eventLoopGroup: self.eventLoopGroup,
+            logger: self.logger
+        ) { (request, responseWriter: consuming ResponseWriter, channel) in
+            let logger = self.logger.with(metadataKey: "hb.request.id", value: .stringConvertible(RequestID()))
+            let response = try await withLogger(logger) { logger in
+                let context = Self.Responder.Context(
+                    source: .init(
+                        channel: channel,
+                        logger: logger
+                    )
+                )
+                // respond to request
+                var response: Response
+                do {
+                    response = try await responder.respond(to: request, context: context)
+                } catch let error as HTTPParserError {
+                    throw error
+                } catch {
+                    logger.debug("Unrecognised Error", metadata: ["error.type": "\(error)"])
+                    response = Response(
+                        status: .internalServerError,
+                        body: .init()
+                    )
+                }
+                response.headers[.date] = dateCache.date
+                // server name header
+                if let serverName = self.configuration.serverName {
+                    response.headers[.server] = serverName
+                }
+                return response
+            }
+            do {
+                // Write response — fast path for ByteBuffer/empty bodies (1 write instead of 3)
+                try await responseWriter.write(response: response.head, body: response.body)
+            } catch is HTTPParserError {
+                // cannot throw the parser error, as that will cause another response
+                // to be written
+                throw HTTPChannelError.parseErrorWhileWritingResponse
+            }
+
+        } onServerRunning: {
+            await self.onServerRunning($0)
+        }
+        let serverService = server.withPrelude {
+            for process in self.processesRunBeforeServerStart {
+                try await process()
+            }
+        }
+        let services: [any Service] = self.services + [dateCache, serverService]
+        let serviceGroup = ServiceGroup(
+            configuration: .init(services: services, logger: self.logger)
+        )
+        try await serviceGroup.run()
+    }
+
+    /// Helper function that runs application inside a ServiceGroup which will gracefully
+    /// shutdown on signals SIGINT, SIGTERM
+    public func runService(gracefulShutdownSignals: [UnixSignal] = [.sigterm, .sigint]) async throws {
+        let serviceGroup = ServiceGroup(
+            configuration: .init(
+                services: [self],
+                gracefulShutdownSignals: gracefulShutdownSignals,
+                logger: self.logger
+            )
+        )
+        try await serviceGroup.run()
+    }
+}
+
+/// Application class. Brings together all the components of Hummingbird together
+///
+/// ```
+/// let router = Router()
+/// router.middleware.add(MyMiddleware())
+/// router.get("hello") { _ in
+///     return "hello"
+/// }
+/// let app = Application(responder: router.buildResponder())
+/// try await app.runService()
+/// ```
+/// Editing the application setup after calling `runService` will produce undefined behaviour.
+@available(hummingbird 2.0, *)
+public struct Application<Responder: HTTPResponder>: ApplicationProtocol
+where Responder.Context: InitializableFromSource<ApplicationRequestContextSource> {
+    // MARK: Member variables
+
+    /// event loop group used by application
+    public let eventLoopGroup: any EventLoopGroup
+    /// routes requests to responders based on URI
+    public let responder: Responder
+    /// Configuration
+    public var configuration: ApplicationConfiguration
+    /// Logger
+    public var logger: Logger
+    /// on server running
+    private var _onServerRunning: @Sendable (any Channel) async -> Void
+    /// Server channel setup
+    public let server: HTTPServerBuilder
+    /// services attached to the application.
+    public var services: [any Service]
+    /// Processes to be run before server is started
+    public private(set) var processesRunBeforeServerStart: [@Sendable () async throws -> Void]
+
+    // MARK: Initialization
+
+    /// Initialize new Application
+    ///
+    /// - Parameters:
+    ///   - responder: HTTP responder. Returns a response based off a request and context
+    ///   - server: Server child channel setup (http1, http2, http1WithWebSocketUpgrade etc)
+    ///   - configuration: Application configuration
+    ///   - services: List of Services for Application to add to its internal ServiceGroup
+    ///   - onServerRunning: Function called once the server is running
+    ///   - eventLoopGroupProvider: Where to get our EventLoopGroup
+    ///   - logger: Logger application uses
+    public init(
+        responder: Responder,
+        server: HTTPServerBuilder = .http1(),
+        configuration: ApplicationConfiguration = ApplicationConfiguration(),
+        services: [any Service] = [],
+        onServerRunning: @escaping @Sendable (any Channel) async -> Void = { _ in },
+        eventLoopGroupProvider: EventLoopGroupProvider = .singleton,
+        logger: Logger? = nil
+    ) {
+        if let logger {
+            self.logger = logger
+        } else {
+            var logger = Logger(label: configuration.serverName ?? "Hummingbird")
+            if let logLevel = Environment().get("LOG_LEVEL").flatMap({ Logger.Level(rawValue: $0) }) {
+                logger.logLevel = logLevel
+            }
+            self.logger = logger
+        }
+        self.responder = responder
+        self.server = server
+        self.configuration = configuration
+        self._onServerRunning = onServerRunning
+
+        self.eventLoopGroup = eventLoopGroupProvider.eventLoopGroup
+        self.services = services
+        self.processesRunBeforeServerStart = []
+    }
+
+    /// Initialize new Application
+    ///
+    /// - Parameters:
+    ///   - router: Router used to generate responses from requests
+    ///   - server: Server child channel setup (http1, http2, http1WithWebSocketUpgrade etc)
+    ///   - configuration: Application configuration
+    ///   - services: List of Services for Application to add to its internal ServiceGroup
+    ///   - onServerRunning: Function called once the server is running
+    ///   - eventLoopGroupProvider: Where to get our EventLoopGroup
+    ///   - logger: Logger application uses
+    public init<ResponderBuilder: HTTPResponderBuilder>(
+        router: ResponderBuilder,
+        server: HTTPServerBuilder = .http1(),
+        configuration: ApplicationConfiguration = ApplicationConfiguration(),
+        services: [any Service] = [],
+        onServerRunning: @escaping @Sendable (any Channel) async -> Void = { _ in },
+        eventLoopGroupProvider: EventLoopGroupProvider = .singleton,
+        logger: Logger? = nil
+    ) where Responder == ResponderBuilder.Responder {
+        self.init(
+            responder: router.buildResponder(),
+            server: server,
+            configuration: configuration,
+            services: services,
+            onServerRunning: onServerRunning,
+            eventLoopGroupProvider: eventLoopGroupProvider,
+            logger: logger
+        )
+    }
+
+    // MARK: Methods
+
+    ///  Add service to be managed by application ServiceGroup
+    /// - Parameter services: list of services to be added
+    public mutating func addServices(_ services: any Service...) {
+        self.services.append(contentsOf: services)
+    }
+
+    ///  Add service to be managed by application ServiceGroup
+    /// - Parameter services: list of services to be added
+    public mutating func addServices(_ services: some Sequence<any Service>) {
+        self.services.append(contentsOf: services)
+    }
+
+    /// Add a process to run before we kick off the server service
+    ///
+    /// This is for processes that might need another Service running but need
+    /// to run before the server has started. For example a database migration
+    /// process might need the database connection pool running but should be
+    /// finished before any request to the server can be made. Also they may be
+    /// situations where you want another Service to have fully initialized
+    /// before starting the server service.
+    ///
+    /// - Parameter process: Process to run before server is started
+    public mutating func beforeServerStarts(perform process: @escaping @Sendable () async throws -> Void) {
+        self.processesRunBeforeServerStart.append(process)
+    }
+
+    public func buildResponder() async throws -> Responder {
+        self.responder
+    }
+
+    public func onServerRunning(_ channel: any Channel) async {
+        await self._onServerRunning(channel)
+    }
+}
+
+@available(hummingbird 2.0, *)
+extension Application: CustomStringConvertible {
+    public var description: String { "Application" }
+}
+
+extension Logger {
+    /// Create new Logger with additional metadata value
+    /// - Parameters:
+    ///   - metadataKey: Metadata key
+    ///   - value: Metadata value
+    /// - Returns: Logger
+    func with(metadataKey: String, value: MetadataValue) -> Logger {
+        var logger = self
+        logger[metadataKey: metadataKey] = value
+        return logger
+    }
+}

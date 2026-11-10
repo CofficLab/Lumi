@@ -37,7 +37,7 @@ struct ProviderModelDownloadView: View {
     }
 
     var body: some View {
-        AppSettingSection(title: "模型下载") {
+        AppSettingSection(title: pluginLocalization.string("模型下载")) {
             VStack(spacing: 0) {
                 cacheRow
                 
@@ -48,7 +48,7 @@ struct ProviderModelDownloadView: View {
             }
         }
         
-        AppSettingSection(title: "可用模型") {
+        AppSettingSection(title: pluginLocalization.string("可用模型")) {
             VStack(spacing: 0) {
                 ForEach(Array(models.enumerated()), id: \.element.id) { index, model in
                     if index > 0 {
@@ -66,12 +66,12 @@ struct ProviderModelDownloadView: View {
 
     private var cacheRow: some View {
         AppSettingRow(
-            title: "缓存占用",
+            title: pluginLocalization.string("缓存占用"),
             description: ByteCountFormatter.string(fromByteCount: downloadState.cacheSizeBytes, countStyle: .file),
             icon: "internaldrive"
         ) {
             #if os(macOS)
-            AppButton("打开", systemImage: "folder", style: .secondary, size: .small) {
+            AppButton(pluginLocalization.string("打开"), systemImage: "folder", style: .secondary, size: .small) {
                 NSWorkspace.shared.open(capability.modelCacheDirectoryURL)
             }
             #endif
@@ -80,12 +80,12 @@ struct ProviderModelDownloadView: View {
 
     private var downloadSpeedRow: some View {
         AppSettingRow(
-            title: "下载限速",
+            title: pluginLocalization.string("下载限速"),
             description: speedLimitDescription,
             icon: "speedometer"
         ) {
             Picker("", selection: $speedLimitBytes) {
-                Text("不限速").tag(0)
+                Text(pluginLocalization.string("不限速")).tag(0)
                 Text("512 KB/s").tag(512 * 1024)
                 Text("1 MB/s").tag(1024 * 1024)
                 Text("2 MB/s").tag(2 * 1024 * 1024)
@@ -94,7 +94,7 @@ struct ProviderModelDownloadView: View {
             .labelsHidden()
             .pickerStyle(.menu)
             .frame(width: 120)
-            .onChange(of: speedLimitBytes) { _, value in
+            .onChange(of: speedLimitBytes) { value in
                 capability.setDownloadSpeedLimit(bytesPerSecond: value > 0 ? value : nil)
             }
         }
@@ -102,12 +102,12 @@ struct ProviderModelDownloadView: View {
     
     private var speedLimitDescription: String {
         switch speedLimitBytes {
-        case 0: "不限速"
+        case 0: pluginLocalization.string("不限速")
         case 512 * 1024: "512 KB/s"
         case 1024 * 1024: "1 MB/s"
         case 2 * 1024 * 1024: "2 MB/s"
         case 5 * 1024 * 1024: "5 MB/s"
-        default: "自定义"
+        default: pluginLocalization.string("自定义")
         }
     }
 
@@ -129,9 +129,9 @@ struct ProviderModelDownloadView: View {
         
         // 根据状态确定描述
         let rowDescription: String? = {
-            if isDownloading { return "正在下载..." }
-            if isPaused { return "已暂停" }
-            if isCached { return "已下载" }
+            if isDownloading { return pluginLocalization.string("正在下载...") }
+            if isPaused { return pluginLocalization.string("已暂停") }
+            if isCached { return pluginLocalization.string("已下载") }
             return nil
         }()
         
@@ -196,25 +196,25 @@ struct ProviderModelDownloadView: View {
         isCached: Bool
     ) -> some View {
         if isCached {
-            AppButton("删除", systemImage: "trash", style: .destructive, size: .small) {
+            AppButton(pluginLocalization.string("删除"), systemImage: "trash", style: .destructive, size: .small) {
                 delete(modelID)
             }
         } else if isDownloading {
             AppButton(systemImage: "pause.fill", style: .tonal, size: .small) {
                 capability.pauseDownload()
             }
-            .help("暂停下载")
+            .help(pluginLocalization.string("暂停下载"))
         } else if isPaused {
             AppButton(systemImage: "play.fill", style: .tonal, size: .small) {
                 Task { await capability.resumeDownload() }
             }
-            .help("继续下载")
+            .help(pluginLocalization.string("继续下载"))
             AppButton(systemImage: "xmark", style: .ghost, size: .small) {
                 capability.cancelDownload()
             }
-            .help("取消下载")
+            .help(pluginLocalization.string("取消下载"))
         } else {
-            AppButton("下载", systemImage: "arrow.down.circle", style: .primary, size: .small) {
+            AppButton(pluginLocalization.string("下载"), systemImage: "arrow.down.circle", style: .primary, size: .small) {
                 startDownload(modelID)
             }
         }

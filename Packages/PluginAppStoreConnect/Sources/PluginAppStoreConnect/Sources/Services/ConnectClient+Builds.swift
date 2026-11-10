@@ -48,10 +48,15 @@ extension ConnectClient {
     }
 
     /// 读取版本当前已关联的 build id；未关联时返回 nil。
-    func readAssignedBuildID(versionID: String) async throws -> String? {
+    /// - Parameter cachePolicy: 单次读取的缓存策略；nil 表示沿用 client 的全局策略。
+    func readAssignedBuildID(
+        versionID: String,
+        cachePolicy: ConnectFetchPolicy? = nil
+    ) async throws -> String? {
         Self.logger.info("\(Self.t)readAssignedBuildID versionID=\(versionID)")
         let response: AppStoreConnectOptionalRelationshipResponse = try await request(
-            path: "/v1/appStoreVersions/\(versionID)/relationships/build"
+            path: "/v1/appStoreVersions/\(versionID)/relationships/build",
+            cachePolicy: cachePolicy
         )
         return response.data?.id
     }
@@ -74,7 +79,12 @@ extension ConnectClient {
     }
 
     /// 更新构建的出口合规声明（是否使用非豁免加密）。
-    func updateBuildEncryption(buildID: String, usesNonExemptEncryption: Bool) async throws {
+    ///
+    /// - Returns: 是否真的写入了新值。
+    ///   Apple 在声明的值已经相同时返回 409 `ENTITY_ERROR.ATTRIBUTE.INVALID`
+    ///   并拒绝这次写入；既然目标状态已经达成，这里返回 false 而不是抛错。
+    @discardableResult
+    func updateBuildEncryption(buildID: String, usesNonExemptEncryption: Bool) async throws -> Bool {
         let payload: [String: Any] = [
             "data": [
                 "type": "builds",
@@ -86,11 +96,18 @@ extension ConnectClient {
         ]
         let body = try JSONSerialization.data(withJSONObject: payload)
         Self.logger.info("\(Self.t)updateBuildEncryption buildID=\(buildID) usesNonExemptEncryption=\(usesNonExemptEncryption)")
-        let _: AppStoreConnectSingleResponse<ConnectBuild> = try await request(
-            path: "/v1/builds/\(buildID)",
-            method: "PATCH",
-            body: body
-        )
+        do {
+            let _: AppStoreConnectSingleResponse<ConnectBuild> = try await request(
+                path: "/v1/builds/\(buildID)",
+                method: "PATCH",
+                body: body
+            )
+            return true
+        } catch AppStoreConnectClientError.conflict(let code, _)
+            where code == "ENTITY_ERROR.ATTRIBUTE.INVALID" {
+            Self.logger.info("\(Self.t)updateBuildEncryption buildID=\(buildID) already has the requested value")
+            return false
+        }
     }
 }
 

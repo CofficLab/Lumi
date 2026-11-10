@@ -8,7 +8,8 @@ import ProviderProjectRAG
 public final class ProjectRAGProvider: ProjectRAGProviding {
     private let service: RAGService
     private weak var project: (any ProjectProviding)?
-    private var observers: [UUID: (ProjectRAGEvent) -> Void] = [:]
+    /// 弱引用持有令牌：外部释放令牌后即视为自动注销，下次注册或广播时清理。
+    private var observers: [WeakProjectRAGObserver] = []
 
     public init(service: RAGService, project: (any ProjectProviding)?) {
         self.service = service
@@ -21,11 +22,10 @@ public final class ProjectRAGProvider: ProjectRAGProviding {
 
     @discardableResult
     public func addProjectRAGObserver(_ callback: @escaping (ProjectRAGEvent) -> Void) -> any ProjectRAGObserverHandle {
-        let id = UUID()
-        observers[id] = callback
-        return ProjectRAGObserverHandleImpl { [weak self] in
-            self?.observers.removeValue(forKey: id)
-        }
+        observers.removeAll { $0.handle == nil }
+        let handle = ProjectRAGObserverHandleImpl(owner: self, callback: callback)
+        observers.append(WeakProjectRAGObserver(handle))
+        return handle
     }
 
     public var isInitialized: Bool { service.isInitialized }
@@ -108,25 +108,51 @@ public final class ProjectRAGProvider: ProjectRAGProviding {
         return currentProjectPath
     }
 
+    /// 移除指定观察者（供令牌的 `cancel` 调用）。
+    fileprivate func removeObserver(_ handle: ProjectRAGObserverHandleImpl) {
+        observers.removeAll { $0.handle === handle }
+    }
+
     private func notify(_ event: ProjectRAGEvent) {
-        for callback in observers.values {
-            callback(event)
+        // 释放令牌的回调不会再收到事件，先清理再复制遍历，避免回调中
+        // 注销自身导致集合在遍历期间变化。
+        observers.removeAll { $0.handle == nil }
+        let liveObservers = observers
+        for observer in liveObservers {
+            observer.handle?.invoke(event)
         }
     }
 }
 
 @MainActor
 private final class ProjectRAGObserverHandleImpl: ProjectRAGObserverHandle {
-    private let cancellation: () -> Void
+    private weak var owner: ProjectRAGProvider?
+    fileprivate let callback: (ProjectRAGEvent) -> Void
     private var isCancelled = false
 
-    init(cancellation: @escaping () -> Void) {
-        self.cancellation = cancellation
+    init(owner: ProjectRAGProvider, callback: @escaping (ProjectRAGEvent) -> Void) {
+        self.owner = owner
+        self.callback = callback
     }
 
     func cancel() {
         guard !isCancelled else { return }
         isCancelled = true
-        cancellation()
+        owner?.removeObserver(self)
+    }
+
+    fileprivate func invoke(_ event: ProjectRAGEvent) {
+        guard !isCancelled else { return }
+        callback(event)
+    }
+}
+
+/// 观察者集合的元素：弱引用持有令牌，令牌被外部释放后自动失效。
+@MainActor
+private final class WeakProjectRAGObserver {
+    fileprivate weak var handle: ProjectRAGObserverHandleImpl?
+
+    init(_ handle: ProjectRAGObserverHandleImpl) {
+        self.handle = handle
     }
 }

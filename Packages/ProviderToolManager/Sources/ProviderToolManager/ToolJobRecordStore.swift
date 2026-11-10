@@ -14,7 +14,8 @@ public actor ToolJobRecordStore {
     /// 终态状态名——用于把「非终态」过滤下推到 SQL。
     private static let terminalStatusNames = ["completed", "failed", "cancelled", "timedOut"]
 
-    private let modelContext: ModelContext
+    /// `nil` 表示持久化与内存容器都创建失败——此时服务安全降级为 no-op。
+    private let modelContext: ModelContext?
     private var deletedConversationIDs: Set<String> = []
     nonisolated public let directory: URL
     /// 消息库文件路径——启动恢复的原生 SQL 快路径直接读它。
@@ -34,17 +35,29 @@ public actor ToolJobRecordStore {
             cloudKitDatabase: .none
         )
 
-        let container: ModelContainer
+        let modelContext: ModelContext?
         do {
-            container = try ModelContainer(for: schema, configurations: [configuration])
+            let container = try ModelContainer(for: schema, configurations: [configuration])
+            modelContext = ModelContext(container)
         } catch {
             let memoryConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-            container = (try? ModelContainer(for: schema, configurations: [memoryConfiguration]))
-                ?? (try! ModelContainer())
+            if let container = try? ModelContainer(for: schema, configurations: [memoryConfiguration]) {
+                modelContext = ModelContext(container)
+            } else {
+                modelContext = nil
+            }
         }
-        self.modelContext = ModelContext(container)
-        self.modelContext.autosaveEnabled = false
+        modelContext?.autosaveEnabled = false
+        self.modelContext = modelContext
         Self.ensureStartupLookupIndex(at: storeURL)
+    }
+
+    /// 测试用：直接注入上下文；`nil` 表示存储不可用。
+    init(modelContext: ModelContext?, databaseRootURL: URL) {
+        self.modelContext = modelContext
+        self.directory = databaseRootURL
+        self.databaseURL = databaseRootURL.appendingPathComponent("tool_jobs.sqlite", isDirectory: false)
+        modelContext?.autosaveEnabled = false
     }
 
     /// 建立「按创建时间排序 + 只读身份列」所需的覆盖索引。
@@ -95,6 +108,7 @@ public actor ToolJobRecordStore {
     /// 创建或更新一条 Job 快照。按 Job ID 幂等写入。
     public func upsert(_ record: ToolJobRecord) {
         guard !deletedConversationIDs.contains(record.conversationID.uuidString) else { return }
+        guard let modelContext else { return }
         let descriptor = FetchDescriptor<ToolJobRecordModel>(
             predicate: #Predicate<ToolJobRecordModel> { $0.id == record.id }
         )
@@ -107,6 +121,7 @@ public actor ToolJobRecordStore {
     }
 
     public func fetchRecord(forJobID jobID: String) -> ToolJobRecord? {
+        guard let modelContext else { return nil }
         let descriptor = FetchDescriptor<ToolJobRecordModel>(
             predicate: #Predicate<ToolJobRecordModel> { $0.id == jobID }
         )
@@ -127,7 +142,8 @@ public actor ToolJobRecordStore {
     /// 终态状态是**字符串**（`ToolJobStatus.rawValue`），可以直接写进 SQL，
     /// 让 SQLite 只返回那几十行。
     public func fetchNonTerminalJobs() -> [ToolJobRecord] {
-        fetchCompleteNonTerminalJobsViaSQL()
+        guard modelContext != nil else { return [] }
+        return fetchCompleteNonTerminalJobsViaSQL()
     }
 
     /// 返回全部 Job 快照，供执行管理器在启动时恢复幂等索引。
@@ -152,6 +168,7 @@ public actor ToolJobRecordStore {
     ///
     /// 所以过滤下推必须**贯穿到取数方式本身**。
     public func fetchAllJobs() -> [ToolJobRecord] {
+        guard modelContext != nil else { return [] }
         let identities = fetchIdentitiesViaSQL()
         guard !identities.isEmpty else { return [] }
 
@@ -299,7 +316,7 @@ public actor ToolJobRecordStore {
             startedAt: date(at: 8),
             updatedAt: date(at: 9) ?? Date(),
             latestOutput: text(at: 11) ?? "",
-            outputByteCount: Int(sqlite3_column_int(statement, 12)),
+            outputByteCount: Int(sqlite3_column_int64(statement, 12)),
             processID: sqlite3_column_type(statement, 13) == SQLITE_NULL
                 ? nil
                 : Int32(sqlite3_column_int(statement, 13)),
@@ -311,6 +328,7 @@ public actor ToolJobRecordStore {
     }
 
     public func fetchJobs(forConversationID conversationID: UUID) -> [ToolJobRecord] {
+        guard let modelContext else { return [] }
         let conversationIDString = conversationID.uuidString
         let descriptor = FetchDescriptor<ToolJobRecordModel>(
             predicate: #Predicate<ToolJobRecordModel> { $0.conversationID == conversationIDString },
@@ -321,6 +339,7 @@ public actor ToolJobRecordStore {
     }
 
     public func fetchJobs(forTurnID turnID: UUID) -> [ToolJobRecord] {
+        guard let modelContext else { return [] }
         let turnIDString = turnID.uuidString
         let descriptor = FetchDescriptor<ToolJobRecordModel>(
             predicate: #Predicate<ToolJobRecordModel> { $0.turnID == turnIDString },
@@ -331,6 +350,7 @@ public actor ToolJobRecordStore {
     }
 
     public func deleteAll(for conversationID: UUID) {
+        guard let modelContext else { return }
         let conversationIDString = conversationID.uuidString
         deletedConversationIDs.insert(conversationIDString)
         let descriptor = FetchDescriptor<ToolJobRecordModel>(

@@ -27,6 +27,31 @@ import ProviderMessage
     #expect(viewModel.outputTokens == 120)
 }
 
+@Test @MainActor func speedViewModelReadsLegacyMetadataTiming() {
+    // #1029：旧版消息没有强类型计时列，Speed 也必须能展示历史样本。
+    let conversationID = UUID()
+    let message = Message(
+        conversationID: conversationID,
+        role: .assistant,
+        content: "response",
+        metadata: [
+            "latencyMs": "6000.0",
+            "streamingDurationMs": "4000.0",
+            "timeToFirstTokenMs": "2000.0",
+        ],
+        outputTokenCount: 120
+    )
+    let viewModel = ConversationSpeedViewModel()
+
+    viewModel.selectConversation(conversationID, messages: [message])
+
+    #expect(viewModel.cachedTPS == 20)
+    #expect(viewModel.speedHistory.count == 1)
+    #expect(viewModel.streamingDurationMs == 6_000)
+    #expect(viewModel.timeToFirstTokenMs == 2_000)
+    #expect(viewModel.unavailabilityReason == .waitingForResponse)
+}
+
 @Test @MainActor func speedViewModelClearsWhenConversationIsDeselected() async throws {
     let viewModel = ConversationSpeedViewModel()
     let conversationID = UUID()
@@ -98,6 +123,41 @@ import ProviderMessage
     #expect(viewModel.providerID == nil)
     #expect(viewModel.outputTokens == nil)
     #expect(viewModel.unavailabilityReason == .waitingForResponse)
+}
+
+@Test @MainActor func speedViewModelShowsLatestResponseWhenItLacksMetrics() {
+    let conversationID = UUID()
+    let earlier = Message(
+        conversationID: conversationID,
+        role: .assistant,
+        content: "response A",
+        createdAt: Date(timeIntervalSince1970: 100),
+        providerID: "provider-a",
+        modelName: "model-a",
+        outputTokenCount: 120,
+        streamingDurationMs: 6_000
+    )
+    let latest = Message(
+        conversationID: conversationID,
+        role: .assistant,
+        content: "response B",
+        createdAt: Date(timeIntervalSince1970: 200),
+        providerID: "provider-b",
+        modelName: "model-b",
+        outputTokenCount: nil,
+        streamingDurationMs: 6_000
+    )
+    let viewModel = ConversationSpeedViewModel()
+
+    viewModel.selectConversation(conversationID, messages: [earlier, latest])
+
+    // 最新响应缺少 outputTokenCount：Current speed 不可用，且详情必须来自 B 而非 A。
+    #expect(viewModel.cachedTPS == nil)
+    #expect(viewModel.unavailabilityReason == .missingOutputTokens)
+    #expect(viewModel.modelName == "model-b")
+    #expect(viewModel.providerID == "provider-b")
+    #expect(viewModel.outputTokens == nil)
+    #expect(viewModel.speedHistory.map(\.id) == [earlier.id])
 }
 
 @Test @MainActor func speedViewModelUsesAssistantMetricsInsteadOfUserMessageMetadata() {

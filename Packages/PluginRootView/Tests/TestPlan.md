@@ -5,7 +5,7 @@
 PluginRootView Lumi 的根布局插件。 本包不是公共 `ProviderRootView` Provider。公共协议与默认实现来自远程 `LumiProviders` 包，本包只提供 Lumi 专属的桌面布局、视图装配和 `RootViewPlugin` 生命周期适配。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 26
+测试文件: 2 个，用例总数: 28
 
 核心组件（源码目录）:
 - `PanelBottom/`
@@ -34,7 +34,7 @@ PluginRootView Lumi 的根布局插件。 本包不是公共 `ProviderRootView` 
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **PanelBottomSuperPlugin**（2 条）：由 `installsAndUninstallsFooterContainer`、`reusesProviderAcrossKernelRestart` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **PanelBottomSuperPlugin**（3 条）：由 `installsAndUninstallsFooterContainer`、`reusesProviderAcrossKernelRestart` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（24 条）：由 `rootViewPluginManagesProviderLifecycle`、`rootOverlaysRegisterAndRemoveByID`、`rootViewChangesAreObservable` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -67,27 +67,29 @@ PluginRootView Lumi 的根布局插件。 本包不是公共 `ProviderRootView` 
 | 24 | 综合 | 重复注入相同类型视图时跳过赋值（不发布类型化事件） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `repeatedSameTypeInjectionSkipsPublish` |
 | 25 | 综合 | 注入状态变化（nil ↔ 非 nil）时正常更新（发布类型化事件） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `valueTransitionStillPublishes` |
 | 26 | 综合 | 重复注入 nil 时跳过赋值（不发布类型化事件） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `repeatedNilInjectionSkipsPublish` |
+| 27 | 综合 | Rail 面板挂载条件跟随 Rail 标签内容 | 未绑定 Rail Provider | 绑定 Rail Provider 后动态注册标签 | 未绑定时可挂载；绑定空标签时不可挂载；注册标签后重新可挂载 | P1 | ✅ 已覆盖 | `railContentFlagFollowsRailTabs` |
+| 28 | PanelBottomSuperPlugin | 仅激活的底部面板入口接收输入并位于最上层（**回归 #1017**） | 已挂载 Preview 与 Terminal，当前激活 Preview | 分别计算两个入口的呈现状态 | Preview 不透明、可命中且 zIndex 更高；order 更高的 Terminal 透明、不可命中且 zIndex 更低 | P0 | ✅ 已覆盖 | `onlyActivePanelReceivesHitTesting` |
 
-> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **28 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 19 / 19
+- P0: 已覆盖 3 / 3
+- P1: 已覆盖 20 / 20
 - P2: 已覆盖 5 / 5
-- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
+- **合计: 28 / 28**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（19 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P1**: 其余功能性用例（20 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 26 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 28 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

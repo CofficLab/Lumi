@@ -5,7 +5,7 @@
 DockerManagerPlugin Docker container management plugin for Lumi.
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 49
+测试文件: 4 个，用例总数: 58
 
 核心组件（源码目录）:
 - `Models/`
@@ -29,7 +29,7 @@ DockerManagerPlugin Docker container management plugin for Lumi.
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **DockerManagerLogic**（35 条）：由 `parsesDecimalUnits`、`parsesBinaryUnits`、`parsesFractionalAndSpacedValues` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DockerManagerLogic**（37 条）：由 `parsesDecimalUnits`、`parsesBinaryUnits`、`parsesFractionalAndSpacedValues` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DockerManagerPluginLifecycle**（9 条）：由 `registerAddsDocsEntries`、`registerWithoutDocsProviderIsNoop`、`bootRegistersActivityBarItem` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（5 条）：由 `pluginMetadataIsStable`、`v2IdentifiersRemainStable`、`selectingAnotherImageIgnoresStaleDetails` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -86,27 +86,36 @@ DockerManagerPlugin Docker container management plugin for Lumi.
 | 47 | 综合 | selectingAnotherImageIgnoresStaleDetails | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectingAnotherImageIgnoresStaleDetails` |
 | 48 | 综合 | pullImageRejectsInvalidReferencesBeforeCallingDocker | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `pullImageRejectsInvalidReferencesBeforeCallingDocker` |
 | 49 | 综合 | tagImageRejectsInvalidReferencesBeforeCallingDocker | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `tagImageRejectsInvalidReferencesBeforeCallingDocker` |
+| 50 | Docker image decoding | 缺少 VirtualSize 时回退到 Size，而不是丢弃整行 | Docker 29.x 风格输出，无 VirtualSize | 解码该行 | `virtualSize == size`，镜像被保留 | P1 | ✅ 已覆盖 | `missingVirtualSizeFallsBackToSize` |
+| 51 | Docker image decoding | 全部行解析失败时抛错，而不是返回成功的空列表 | 只有无效 JSON 行 | 调用 `decodeImages` | 抛出 `DockerError.parsingFailed` | P0 | ✅ 已覆盖 | `allInvalidLinesThrow` |
+| 52 | Docker image decoding | 部分行解析失败时保留成功行 | 一行有效 + 一行无效 | 调用 `decodeImages` | 返回有效镜像，不抛错 | P1 | ✅ 已覆盖 | `partialFailureKeepsValidImages` |
+| 53 | Docker image decoding | 空输出返回空列表 | 空字符串 | 调用 `decodeImages` | 返回空数组 | P2 | ✅ 已覆盖 | `emptyOutputReturnsEmptyList` |
+| 54 | 综合 | 导出失败时保留目标路径上的原文件并清理临时文件 | 目标文件已存在，docker save 写了一半后失败 | 调用 `exportImage` | 返回 false，原文件内容不变，目录中无临时文件 | P0 | ✅ 已覆盖 | `failedExportKeepsExistingDestinationAndCleansTemporaryFile` |
+| 55 | 综合 | 导出成功时原子替换已有目标文件 | 目标文件已存在，docker save 成功 | 调用 `exportImage` | 返回 true，目标内容为新导出内容，目录中无临时文件 | P1 | ✅ 已覆盖 | `successfulExportAtomicallyReplacesExistingDestination` |
+| 56 | 综合 | docker save 未产出文件时报告失败且不留下文件 | 服务成功返回但未写文件 | 调用 `exportImage` | 返回 false，错误信息含 no output file，目录为空 | P1 | ✅ 已覆盖 | `exportWithoutOutputFileReportsFailureAndRemovesNothingElse` |
+| 57 | DockerManagerLogic | 扫描期间切换镜像后，旧扫描结果不再写入详情页 | 镜像 A 扫描延迟 300ms，期间选中镜像 B | 扫描 A → 切到 B → 等 A 返回 | `selectedImage` 仍为 B，`scanResult` 保持 nil，`isLoading` 为 false | P0 | ✅ 已覆盖 | `staleScanResultIsIgnoredAfterImageSwitch` |
+| 58 | DockerManagerLogic | 重叠操作期间转圈保持到最后一个操作结束 | 扫描耗时 400ms | 扫描进行中再刷新镜像列表 | 刷新结束时 `isLoading` 仍为 true，扫描结束后才变 false | P1 | ✅ 已覆盖 | `overlappingOperationsKeepLoadingUntilLastCompletes` |
 
-> 说明：全部 **49 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **58 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
-- P1: 已覆盖 38 / 38
-- P2: 已覆盖 2 / 2
-- **合计: 49 / 49**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 12 / 12
+- P1: 已覆盖 43 / 43
+- P2: 已覆盖 3 / 3
+- **合计: 58 / 58**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（38 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（12 条）
+- **P1**: 其余功能性用例（43 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 49 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 58 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

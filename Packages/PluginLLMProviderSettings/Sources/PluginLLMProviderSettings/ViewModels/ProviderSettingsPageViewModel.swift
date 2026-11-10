@@ -49,20 +49,28 @@ final class ProviderSettingsPageViewModel: ObservableObject {
         capability.allProviders
     }
 
+    /// 当前作用域（云端 / 本地）内的全部供应商，不受搜索词影响。
+    private var scopedProviders: [any SuperLLMProvider] {
+        allProviders.filter { $0.providerInfo.isLocal == isLocal }
+    }
+
     var filteredProviders: [any SuperLLMProvider] {
-        let scope = allProviders.filter { $0.providerInfo.isLocal == isLocal }
         let keyword = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !keyword.isEmpty else { return scope }
-        return scope.filter {
+        guard !keyword.isEmpty else { return scopedProviders }
+        return scopedProviders.filter {
             $0.providerInfo.displayName.localizedCaseInsensitiveContains(keyword)
                 || $0.providerInfo.description.localizedCaseInsensitiveContains(keyword)
                 || $0.providerInfo.id.localizedCaseInsensitiveContains(keyword)
         }
     }
 
+    /// 当前选中的供应商。
+    ///
+    /// 搜索只过滤左侧列表，右侧详情仍按选中 ID 展示；头部统计必须使用
+    /// 同一口径，否则搜索排除它时模型数量会错误地变成 0（issue #941）。
     var selectedProvider: (any SuperLLMProvider)? {
         guard let selectedProviderID else { return nil }
-        return filteredProviders.first { $0.providerInfo.id == selectedProviderID }
+        return scopedProviders.first { $0.providerInfo.id == selectedProviderID }
     }
 
     var selectedModelCount: Int {
@@ -70,7 +78,8 @@ final class ProviderSettingsPageViewModel: ObservableObject {
     }
 
     var providerCountLabel: String {
-        isLocal ? "\(filteredProviders.count) 个本地供应商" : "\(filteredProviders.count) 个云端供应商"
+        let key = isLocal ? "%lld 个本地供应商" : "%lld 个云端供应商"
+        return String(format: pluginLocalization.string(key), Int64(filteredProviders.count))
     }
 
     var headerSystemImage: String {
@@ -106,8 +115,10 @@ final class ProviderSettingsPageViewModel: ObservableObject {
     }
 
     /// 供应商列表变化后保证选中项仍然有效（视图生命周期调用）。
+    ///
+    /// 只看作用域内的真实供应商：搜索词不是删除，不能借此清空或改写选中项。
     func synchronizeSelection() {
-        let ids = filteredProviders.map(\.providerInfo.id)
+        let ids = scopedProviders.map(\.providerInfo.id)
         if let selectedProviderID, !ids.contains(selectedProviderID) {
             self.selectedProviderID = ids.first
         } else if selectedProviderID == nil {

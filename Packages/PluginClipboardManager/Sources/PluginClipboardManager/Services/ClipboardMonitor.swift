@@ -96,10 +96,27 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
             if let fileItems = fileItems(fromString: str, appName: appName), !fileItems.isEmpty {
                 return fileItems
             }
-            return [ClipboardItem(type: .text, content: str, appName: appName)]
+            // 同时抓取 RTF / HTML，回写时才能恢复格式与链接目标；超出上限的负载
+            // 会在 ClipboardItem 初始化时整体丢弃，退化为纯文本。
+            let richText = richTextPayloads(from: pasteboard)
+            return [ClipboardItem(
+                type: .text,
+                content: str,
+                appName: appName,
+                richTextRTF: richText.rtf,
+                richTextHTML: richText.html
+            )]
         }
 
         return []
+    }
+
+    /// 读取剪贴板里的富文本表示。HTML 可能非常大，交给 ClipboardItem 统一限流。
+    private static func richTextPayloads(from pasteboard: NSPasteboard) -> (rtf: Data?, html: String?) {
+        let rtf = pasteboard.data(forType: .rtf)
+        let html = pasteboard.data(forType: .html)
+            .flatMap { String(data: $0, encoding: .utf8) }
+        return (rtf, html)
     }
 
     /// Saves image to disk in background Task, returns path on success

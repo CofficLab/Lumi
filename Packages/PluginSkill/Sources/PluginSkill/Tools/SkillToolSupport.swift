@@ -46,9 +46,6 @@ enum SkillToolSupport {
 
     /// 读取整型参数，兼容 JSON 里出现的 Double / 字符串写法。
     static func int(_ arguments: [String: ToolArgument], _ key: String) -> Int? {
-        if let value = arguments[key]?.value as? Int { return value }
-        if let value = arguments[key]?.value as? Double { return Int(value) }
-        if let value = arguments[key]?.value as? String { return Int(value) }
-        return nil
+        ToolArgumentNumber.int(arguments[key]?.value)
     }
 }

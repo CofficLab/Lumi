@@ -425,6 +425,113 @@ struct ResumeHTMLLinterTests {
         let report = linter.lint(html: validResumeHTML(), paper: .a4)
         #expect(report.isValid, "unexpected errors: \(report.errors.map(\.message))")
     }
+
+    @Test("inline SVG 的 XML namespace 不算远程资源（**回归 #1087**）")
+    func acceptsInlineSVGNamespace() {
+        let linter = ResumeHTMLLinter()
+        let svg = """
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+          <path d="M0 0h24v24H0z"/>
+        </svg>
+        """
+        let report = linter.lint(html: validResumeHTML(pageBody: svg), paper: .a4)
+        #expect(!report.errors.contains { $0.code == "remote_resource" })
+        #expect(report.isValid, "unexpected errors: \(report.errors.map(\.message))")
+    }
+
+    @Test("只拒绝资源加载位置的远程 URL（**回归 #1087**）")
+    func rejectsRemoteResourcesInLoadingPositions() {
+        let linter = ResumeHTMLLinter()
+
+        let remoteImage = validResumeHTML(pageBody: #"<img src="https://evil.example/a.png">"#)
+        #expect(linter.lint(html: remoteImage, paper: .a4).errors.contains { $0.code == "remote_resource" })
+
+        let protocolRelative = validResumeHTML(pageBody: #"<img src="//cdn.example/a.png">"#)
+        #expect(linter.lint(html: protocolRelative, paper: .a4).errors.contains { $0.code == "remote_resource" })
+
+        let remoteLink = validResumeHTML(pageBody: #"<link rel="stylesheet" href="https://evil.example/s.css">"#)
+        #expect(linter.lint(html: remoteLink, paper: .a4).errors.contains { $0.code == "remote_resource" })
+
+        let cssBackground = validResumeHTML(
+            pageBody: #"<div style="background: url( https://evil.example/bg.png )">x</div>"#
+        )
+        #expect(linter.lint(html: cssBackground, paper: .a4).errors.contains { $0.code == "remote_resource" })
+
+        // 普通文本里的 URL 不会加载资源，不应被误报。
+        let plainText = validResumeHTML(pageBody: #"<p>Contact https://example.com/portfolio</p>"#)
+        #expect(!linter.lint(html: plainText, paper: .a4).errors.contains { $0.code == "remote_resource" })
+    }
+
+    @Test("srcset 中的远程候选同样被拒绝（**回归 #1087**）")
+    func rejectsRemoteSrcsetCandidate() {
+        let linter = ResumeHTMLLinter()
+        let html = validResumeHTML(
+            pageBody: #"<img src="assets/a.png" srcset="assets/a.png 1x, https://evil.example/a@2x.png 2x">"#
+        )
+        let report = linter.lint(html: html, paper: .a4)
+        #expect(report.errors.contains { $0.code == "remote_resource" })
+    }
+
+    @Test("CSS url(...) 引用缺失本地资源时报 missing_asset（**回归 #1086**）")
+    func reportsMissingCSSURLAsset() throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let html = """
+        <!doctype html><html lang="en"><head><meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+        html, body { margin: 0; background: #fff; }
+        .resume-page {
+          width: 794px;
+          height: 1123px;
+          overflow: hidden;
+          background: #fff url("assets/does-not-exist.png") center/cover no-repeat;
+        }
+        .entry { break-inside: avoid; }
+        </style>
+        </head><body>
+          <section class="resume-page"><p class="entry">Visible text</p></section>
+        </body></html>
+        """
+
+        let report = ResumeHTMLLinter().lint(html: html, paper: .a4, documentDirectory: root)
+        #expect(report.errors.contains {
+            $0.code == "missing_asset" && $0.message.contains("does-not-exist.png")
+        })
+    }
+
+    @Test("CSS url(...) 已存在的本地资源与 data/远程地址不误报（**回归 #1086**）")
+    func acceptsExistingAndNonLocalCSSURLAssets() throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let assets = root.appendingPathComponent("assets", isDirectory: true)
+        try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
+        try Data("png".utf8).write(to: assets.appendingPathComponent("bg.png"))
+
+        let html = """
+        <!doctype html><html lang="en"><head><meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+        html, body { margin: 0; background: #fff; }
+        .resume-page {
+          width: 794px;
+          height: 1123px;
+          overflow: hidden;
+          background: #fff url(assets/bg.png) center/cover no-repeat,
+                      url("data:image/png;base64,AAAA") no-repeat;
+        }
+        .entry { break-inside: avoid; }
+        </style>
+        </head><body>
+          <section class="resume-page"><p class="entry">Visible text</p></section>
+        </body></html>
+        """
+
+        let report = ResumeHTMLLinter().lint(html: html, paper: .a4, documentDirectory: root)
+        #expect(!report.errors.contains { $0.code == "missing_asset" })
+        #expect(!report.errors.contains { $0.code == "unsafe_asset_path" })
+    }
 }
 
 // MARK: - Document store
@@ -508,6 +615,40 @@ struct ResumeDocumentStoreTests {
         #expect(throws: ResumeStoreError.invalidSlug("")) {
             _ = try ResumeDocumentStore.validatedSlug("")
         }
+    }
+
+    @Test("创建校验失败回收半成品目录，修正后同 slug 可重试（**回归 #1088**）")
+    func failedCreateRollsBackAndRetrySucceeds() throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        // 用一个极小的字节上限，让生成后的 lint 必然失败；此时目录已创建。
+        let rejectingStore = ResumeDocumentStore(linter: ResumeHTMLLinter(maximumUTF8Bytes: 128))
+        #expect(throws: ResumeStoreError.self) {
+            _ = try rejectingStore.createResume(
+                storagePath: root.path,
+                slug: "alice",
+                title: "Alice",
+                paper: .a4,
+                template: .classic
+            )
+        }
+
+        let directory = root.appendingPathComponent("resumes/alice", isDirectory: true)
+        #expect(!FileManager.default.fileExists(atPath: directory.path))
+        #expect(try rejectingStore.listResumes(storagePath: root.path).isEmpty)
+
+        // 换回正常校验器后，同一 slug 不应再被残留目录阻塞。
+        let store = ResumeDocumentStore()
+        let created = try store.createResume(
+            storagePath: root.path,
+            slug: "alice",
+            title: "Alice",
+            paper: .a4,
+            template: .classic
+        )
+        #expect(created.document.id == "alice")
+        #expect(try store.listResumes(storagePath: root.path).map(\.id) == ["alice"])
     }
 
     @Test("ResumeStoreError 的错误描述覆盖全部 case")

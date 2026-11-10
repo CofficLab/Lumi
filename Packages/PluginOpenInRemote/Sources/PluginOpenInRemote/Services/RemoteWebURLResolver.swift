@@ -15,21 +15,28 @@ import Foundation
 enum RemoteWebURLResolver {
     /// 把 remote 地址转换为 HTTPS web 链接。
     ///
+    /// `file://`、`ftp://` 等没有对应仓库网页的协议一律返回 `nil`，
+    /// 不能按 SCP-like 语法硬凑成 `https://file/...` 这类无关地址。
+    ///
     /// - Parameter remote: 原始 remote 地址。
     /// - Returns: 可在浏览器打开的链接；无法识别或为空时返回 `nil`。
     static func webURL(fromRemote remote: String) -> URL? {
         let trimmed = remote.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
 
-        let lowercased = trimmed.lowercased()
-        if lowercased.hasPrefix("ssh://") {
-            return sshWebURL(from: trimmed)
+        if let scheme = uriScheme(of: trimmed) {
+            switch scheme {
+            case "ssh", "git":
+                return schemeWebURL(from: trimmed)
+            case "http", "https":
+                return webURL(strippingGitSuffix: trimmed)
+            default:
+                return nil
+            }
         }
-        if lowercased.hasPrefix("git://") {
-            return hostPathWebURL(String(trimmed.dropFirst("git://".count)))
-        }
-        if lowercased.hasPrefix("http://") || lowercased.hasPrefix("https://") {
-            return webURL(strippingGitSuffix: trimmed)
+        // 不带 authority 的本地写法（如 `file:/tmp/repo.git`）同样没有 web 页面。
+        if trimmed.lowercased().hasPrefix("file:") {
+            return nil
         }
         // 其余按 scp-like 语法处理：[user@]host:path
         return scpWebURL(from: trimmed)
@@ -42,19 +49,49 @@ enum RemoteWebURLResolver {
 
     // MARK: - 私有转换
 
-    /// `ssh://[user@]host[:port]/path` → `https://host/path`。
+    /// 提取 `scheme://` 形式的 URI scheme。
     ///
-    /// 端口被丢弃：Web 页面走 HTTPS 的标准端口，SSH 端口对浏览器无意义。
-    private static func sshWebURL(from remote: String) -> URL? {
+    /// SCP-like 地址（`[user@]host:path`）冒号后直接是路径，没有 `//`，
+    /// 返回 `nil` 交给 ``scpWebURL(from:)``。
+    private static func uriScheme(of remote: String) -> String? {
+        guard let colonIndex = remote.firstIndex(of: ":") else { return nil }
+        let afterColon = remote.index(after: colonIndex)
+        guard remote[afterColon...].hasPrefix("//") else { return nil }
+        return remote[..<colonIndex].lowercased()
+    }
+
+    /// `scheme://[user@]host[:port]/path` → `https://host/path`。
+    ///
+    /// 端口一律丢弃：SSH 与 Git 协议端口（如 `:22`、`:9418`）对浏览器访问的
+    /// HTTPS 页面没有意义，继承到 web 链接只会连到错误端口。
+    ///
+    /// 路径必须使用 `percentEncodedPath` 并按 URLComponents 重新组装：
+    /// `path` 已经百分号解码，`%23` 会变成真正的 `#`，再当作文本重新解析时
+    /// 就变成 fragment 分隔符，截断仓库路径（issue #1095）。
+    private static func schemeWebURL(from remote: String) -> URL? {
         guard let components = URLComponents(string: remote),
               let host = components.host,
               !host.isEmpty else {
             return nil
         }
-        var path = components.path
+        var path = components.percentEncodedPath
         while path.hasPrefix("/") { path.removeFirst() }
-        let suffix = path.isEmpty ? "" : "/\(path)"
-        return hostPathWebURL("\(host)\(suffix)")
+        while path.hasSuffix("/") { path.removeLast() }
+        if path.hasSuffix(".git") {
+            path.removeLast(4)
+        }
+
+        var target = URLComponents()
+        target.scheme = "https"
+        target.host = host
+        target.percentEncodedPath = path.isEmpty ? "" : "/\(path)"
+        guard let url = target.url,
+              url.scheme?.lowercased() == "https",
+              let targetHost = url.host,
+              !targetHost.isEmpty else {
+            return nil
+        }
+        return url
     }
 
     /// scp-like 语法 `[user@]host:path` → `https://host/path`。

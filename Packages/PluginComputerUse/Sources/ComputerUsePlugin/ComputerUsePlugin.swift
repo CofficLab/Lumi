@@ -191,6 +191,15 @@ public struct ComputerObserveV2Tool: SuperAgentTool, ComputerUseSuspendingTool {
         await performExecute(context: context, arguments: arguments)
     }
 
+    /// 授权卡片回答「允许」后必须重新执行，才能生成截图和新的 observation_id。
+    public func userResponseAction(
+        for answer: String,
+        arguments: [String: ToolArgument]
+    ) -> ToolUserResponseAction {
+        _ = arguments
+        return computerUseUserResponseAction(for: answer)
+    }
+
     /// 执行观察。`context` 为 `nil` 时按 A2 保守处理（仍会弹一次性授权卡片）。
     private func performExecute(
         context: ToolExecutionContext?,
@@ -257,6 +266,15 @@ public struct ComputerActV2Tool: SuperAgentTool, ComputerUseSuspendingTool {
         arguments: [String: ToolArgument]
     ) async throws -> ToolCallResult {
         await performExecute(context: context, arguments: arguments)
+    }
+
+    /// 授权卡片回答「允许」后必须重新执行，才能真实执行界面操作。
+    public func userResponseAction(
+        for answer: String,
+        arguments: [String: ToolArgument]
+    ) -> ToolUserResponseAction {
+        _ = arguments
+        return computerUseUserResponseAction(for: answer)
     }
 
     /// 执行原生输入操作。`context` 为 `nil` 时按 A2 保守处理。

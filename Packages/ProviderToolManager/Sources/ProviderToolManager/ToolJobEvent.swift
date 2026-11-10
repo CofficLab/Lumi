@@ -29,6 +29,11 @@ public struct ToolJobProgress: Codable, Sendable, Equatable {
 
 /// Job 执行生命周期事件。
 public enum ToolJobEvent: Sendable {
+    /// 启动恢复完成后的历史终态 Job 快照。
+    ///
+    /// 恢复不走逐条 `created` 事件，因此打开中的活动面板需要这个批量快照
+    /// 才能把异步恢复出来的历史任务补进列表。
+    case restored([ToolJob])
     case created(ToolJob)
     case started(ToolJob)
     case output(jobID: String, stream: ToolOutputStream, chunk: String, snapshot: ToolJob)

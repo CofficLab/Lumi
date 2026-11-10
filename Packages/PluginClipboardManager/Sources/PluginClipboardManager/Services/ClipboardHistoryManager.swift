@@ -27,6 +27,13 @@ public actor ClipboardHistoryManager: SuperLog {
     /// 数据保留期限（秒）- 默认保留 30 天
     private let retentionPeriod: TimeInterval = 30 * 24 * 60 * 60
 
+    /// 两次按需时间清理的最小间隔。
+    ///
+    /// 启动时的清理走过一次后，长期运行的进程靠访问节流兜底：
+    /// 剪贴板写入和列表查询都会检查是否已到清理时间，避免过期记录一直可见。
+    static let cleanupInterval: TimeInterval = 60 * 60
+    private var lastCleanupDate: Date = .distantPast
+
     // MARK: - Initialization
 
     private init() {
@@ -134,6 +141,7 @@ public actor ClipboardHistoryManager: SuperLog {
     /// 添加剪贴板项
     @discardableResult
     public func add(_ item: ClipboardHistoryItem) async -> Bool {
+        await cleanupIfDue()
         let context = ModelContext(container)
 
         context.insert(item)
@@ -141,7 +149,7 @@ public actor ClipboardHistoryManager: SuperLog {
         // 定期清理过期数据（每 50 条数据检查一次）
         let descriptor = FetchDescriptor<ClipboardHistoryItem>()
         if let count = try? context.fetchCount(descriptor), count > maxRecords + 100 {
-            await cleanupOldData(context: context)
+            cleanupOldData(context: context)
         }
 
         let saved = save(context, operation: "保存剪贴板项")
@@ -182,6 +190,7 @@ public actor ClipboardHistoryManager: SuperLog {
 
     /// 查询所有项（按时间倒序）
     public func getAll(limit: Int = 1000) async -> [ClipboardHistoryItem] {
+        await cleanupIfDue()
         let context = ModelContext(container)
         let limit = Self.normalizedFetchLimit(limit)
 
@@ -202,6 +211,7 @@ public actor ClipboardHistoryManager: SuperLog {
 
     /// 查询指定时间范围内的数据
     public func query(from startTime: Date, to endTime: Date) async -> [ClipboardHistoryItem] {
+        await cleanupIfDue()
         let context = ModelContext(container)
 
         var descriptor = FetchDescriptor<ClipboardHistoryItem>(
@@ -222,6 +232,7 @@ public actor ClipboardHistoryManager: SuperLog {
 
     /// 搜索
     public func search(keyword: String, limit: Int = 100) async -> [ClipboardHistoryItem] {
+        await cleanupIfDue()
         let context = ModelContext(container)
         let limit = Self.normalizedFetchLimit(limit)
 
@@ -256,6 +267,7 @@ public actor ClipboardHistoryManager: SuperLog {
 
     /// 获取最新 N 条记录
     public func getLatest(limit: Int = 100) async -> [ClipboardHistoryItem] {
+        await cleanupIfDue()
         let context = ModelContext(container)
         let limit = Self.normalizedFetchLimit(limit)
 
@@ -373,8 +385,10 @@ public actor ClipboardHistoryManager: SuperLog {
 
     /// 清理过期数据
     public func cleanup() async {
+        let now = Date()
+        lastCleanupDate = now
         let context = ModelContext(container)
-        await cleanupOldData(context: context)
+        cleanupOldData(context: context, now: now)
     }
 
     /// 从 JSON 迁移数据
@@ -408,10 +422,20 @@ public actor ClipboardHistoryManager: SuperLog {
 
     // MARK: - Private Helpers
 
+    /// 按需清理过期数据。
+    ///
+    /// 距上次清理不足 `cleanupInterval` 时直接跳过，避免每次读写都扫描全表；
+    /// 首次访问或间隔已到时执行一次，使长期运行的进程不再依赖重启。
+    private func cleanupIfDue(now: Date = Date()) async {
+        guard now.timeIntervalSince(lastCleanupDate) >= Self.cleanupInterval else { return }
+        lastCleanupDate = now
+        let context = ModelContext(container)
+        cleanupOldData(context: context, now: now)
+    }
+
     /// 清理过期数据
-    private func cleanupOldData(context: ModelContext) async {
-        let cutoffDate = Date().timeIntervalSince1970 - retentionPeriod
-        let cutoff = Date(timeIntervalSince1970: cutoffDate)
+    private func cleanupOldData(context: ModelContext, now: Date = Date()) {
+        let cutoff = now.addingTimeInterval(-retentionPeriod)
 
         let descriptor = FetchDescriptor<ClipboardHistoryItem>(
             predicate: #Predicate<ClipboardHistoryItem> { item in

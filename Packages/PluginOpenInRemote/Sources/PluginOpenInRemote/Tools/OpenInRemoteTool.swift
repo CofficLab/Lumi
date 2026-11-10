@@ -10,13 +10,17 @@ struct OpenInRemoteTool: SuperAgentTool, @unchecked Sendable {
     private let projectCapability: any OpenInRemoteProjectCapability
     /// 解析器：把仓库路径解析为远程仓库 Web 链接。
     private let resolver: RemoteRepositoryResolver
+    /// 打开链接的动作。默认交给系统浏览器，测试可注入以覆盖打开失败分支。
+    private let openURL: @MainActor (URL) -> Bool
 
     init(
         projectCapability: any OpenInRemoteProjectCapability,
-        resolver: RemoteRepositoryResolver
+        resolver: RemoteRepositoryResolver,
+        openURL: @escaping @MainActor (URL) -> Bool = { RemoteRepositoryOpener.open($0) }
     ) {
         self.projectCapability = projectCapability
         self.resolver = resolver
+        self.openURL = openURL
     }
 
     var name: String { OpenInRemoteConstants.toolName }
@@ -48,39 +52,50 @@ struct OpenInRemoteTool: SuperAgentTool, @unchecked Sendable {
         return "在浏览器中打开当前项目的远程仓库"
     }
 
+    func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        ToolCallResult(content: try await execute(
+            arguments: arguments,
+            conversationProjectPath: await context.conversationProjectPath()
+        ))
+    }
+
     func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await execute(arguments: arguments, conversationProjectPath: nil)
+    }
+
+    private func execute(
+        arguments: [String: ToolArgument],
+        conversationProjectPath: String?
+    ) async throws -> String {
         let explicitPath = arguments["path"]?.value as? String
         let currentProjectPath = await projectCapability.currentProjectPath
 
         guard let path = Self.resolvedTargetPath(
             explicitPath: explicitPath,
+            conversationProjectPath: conversationProjectPath,
             currentProjectPath: currentProjectPath
         ) else {
-            return """
-            ## Open in Remote ❌
-
-            **Status**: No project is open and no path was provided.
-            """
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "No project is open and no path was provided."
+            )
         }
 
         guard let url = await resolver.webURL(forRepositoryAt: path) else {
-            return """
-            ## Open in Remote ❌
-
-            **Path**: `\(path)`
-
-            **Status**: No remote repository URL was found for this project.
-            """
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "No remote repository URL was found for project: \(path)."
+            )
         }
 
-        guard await MainActor.run(body: { RemoteRepositoryOpener.open(url) }) else {
-            return """
-            ## Open in Remote ❌
-
-            **Path**: `\(path)`
-
-            **Status**: The default browser could not be opened.
-            """
+        guard await openURL(url) else {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "The default browser could not be opened."
+            )
         }
 
         return """
@@ -92,9 +107,14 @@ struct OpenInRemoteTool: SuperAgentTool, @unchecked Sendable {
         """
     }
 
-    /// 解析目标路径：显式参数 > 当前项目路径。
-    static func resolvedTargetPath(explicitPath: String?, currentProjectPath: String?) -> String? {
+    /// 解析目标路径：显式参数 > 会话绑定项目 > 当前项目路径。
+    static func resolvedTargetPath(
+        explicitPath: String?,
+        conversationProjectPath: String? = nil,
+        currentProjectPath: String?
+    ) -> String? {
         if let explicitPath, !explicitPath.isEmpty { return explicitPath }
+        if let conversationProjectPath, !conversationProjectPath.isEmpty { return conversationProjectPath }
         return currentProjectPath
     }
 }

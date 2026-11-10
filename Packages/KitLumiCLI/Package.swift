@@ -5,7 +5,7 @@ let package = Package(
     name: "KitLumiCLI",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("13.1"),
     ],
     products: [
         .library(

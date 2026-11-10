@@ -73,9 +73,32 @@ public struct OpenInTool: SuperAgentTool, @unchecked Sendable {
         return "在 \(config.displayName) 中打开当前项目"
     }
 
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        ToolCallResult(content: try await execute(
+            arguments: arguments,
+            conversationProjectPath: await context.conversationProjectPath()
+        ))
+    }
+
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let path = await resolvedPath(arguments), !path.isEmpty else {
-            return "## Open in \(config.displayName) ❌\n\n**Status**: No project is open and no path was provided."
+        try await execute(arguments: arguments, conversationProjectPath: nil)
+    }
+
+    private func execute(
+        arguments: [String: ToolArgument],
+        conversationProjectPath: String?
+    ) async throws -> String {
+        guard let path = await resolvedPath(
+            arguments,
+            conversationProjectPath: conversationProjectPath
+        ), !path.isEmpty else {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "No project is open and no path was provided."
+            )
         }
         let url = URL(fileURLWithPath: path)
 
@@ -100,18 +123,27 @@ public struct OpenInTool: SuperAgentTool, @unchecked Sendable {
         """
     }
 
-    /// 解析目标路径：显式参数 > 当前项目路径。ProjectProviding 是 MainActor
-    /// 隔离，经 MainActor.run 跳回主线程读取。
-    private func resolvedPath(_ arguments: [String: ToolArgument]) async -> String? {
+    /// 解析目标路径：显式参数 > 会话绑定项目 > 当前项目路径。ProjectProviding 是
+    /// MainActor 隔离，经 MainActor.run 跳回主线程读取。
+    func resolvedPath(
+        _ arguments: [String: ToolArgument],
+        conversationProjectPath: String?
+    ) async -> String? {
         let currentProjectPath = await MainActor.run { project?.currentProject?.path }
         return Self.resolvedTargetPath(
             explicitPath: arguments["path"]?.value as? String,
+            conversationProjectPath: conversationProjectPath,
             currentProjectPath: currentProjectPath
         )
     }
 
-    static func resolvedTargetPath(explicitPath: String?, currentProjectPath: String?) -> String? {
+    static func resolvedTargetPath(
+        explicitPath: String?,
+        conversationProjectPath: String? = nil,
+        currentProjectPath: String?
+    ) -> String? {
         if let explicitPath, !explicitPath.isEmpty { return explicitPath }
+        if let conversationProjectPath, !conversationProjectPath.isEmpty { return conversationProjectPath }
         return currentProjectPath
     }
 }

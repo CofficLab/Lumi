@@ -29,7 +29,7 @@ public struct SaveCADProjectV2Tool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let path = CADDesignerV2ToolSupport.string(arguments, "path") else {
-            return CADDesignerV2ToolSupport.missingParameter("path")
+            throw CADDesignerV2ToolSupport.missingParameter("path", toolName: name)
         }
 
         let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
@@ -45,9 +45,11 @@ public struct SaveCADProjectV2Tool: SuperAgentTool {
                 en: "Project saved to: \(url.path)",
                 zh: "项目已保存到：\(url.path)"
             )
+        } catch let error as ToolExecutionError {
+            throw error
         } catch {
             await MainActor.run { CADDocumentStore.shared.setError(error.localizedDescription) }
-            return CADDesignerV2ToolSupport.error(error)
+            throw CADDesignerV2ToolSupport.failure(error, toolName: name)
         }
     }
 }

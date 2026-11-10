@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "ProviderGit",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("13.1"), .iOS(.v17)],
     products: [
         .library(name: "ProviderGit", targets: ["ProviderGit"]),
     ],

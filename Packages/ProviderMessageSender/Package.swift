@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "ProviderMessageSender",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "ProviderMessageSender", targets: ["ProviderMessageSender"]),
     ],
@@ -12,7 +12,7 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderLifecycleHooks"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiLogging"),
     ],
     targets: [
         .target(

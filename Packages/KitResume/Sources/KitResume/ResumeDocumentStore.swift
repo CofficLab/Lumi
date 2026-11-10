@@ -109,22 +109,29 @@ public struct ResumeDocumentStore: @unchecked Sendable {
             at: directory.appendingPathComponent(Self.assetsDirectoryName, isDirectory: true),
             withIntermediateDirectories: true
         )
-        let document = ResumeDocument(
-            id: normalized,
-            title: title.isEmpty ? normalized : title,
-            paper: paper,
-            template: template
-        )
-        let html = ResumeTemplateFactory.html(title: document.title, template: template, paper: paper)
-        let report = linter.lint(html: html, paper: paper, documentDirectory: directory)
-        guard report.isValid else { throw ResumeStoreError.invalidHTML(report.errors) }
-        try html.write(
-            to: directory.appendingPathComponent(Self.htmlFileName),
-            atomically: true,
-            encoding: .utf8
-        )
-        try writeManifest(document, to: directory)
-        return ResumeResolvedDocument(document: document, directoryURL: directory, html: html)
+        // 创建应具备事务性：生成/校验/写入任一步失败都回收半成品目录，
+        // 否则目录不可见却会让后续合法重试一直报 alreadyExists。
+        do {
+            let document = ResumeDocument(
+                id: normalized,
+                title: title.isEmpty ? normalized : title,
+                paper: paper,
+                template: template
+            )
+            let html = ResumeTemplateFactory.html(title: document.title, template: template, paper: paper)
+            let report = linter.lint(html: html, paper: paper, documentDirectory: directory)
+            guard report.isValid else { throw ResumeStoreError.invalidHTML(report.errors) }
+            try html.write(
+                to: directory.appendingPathComponent(Self.htmlFileName),
+                atomically: true,
+                encoding: .utf8
+            )
+            try writeManifest(document, to: directory)
+            return ResumeResolvedDocument(document: document, directoryURL: directory, html: html)
+        } catch {
+            try? fileManager.removeItem(at: directory)
+            throw error
+        }
     }
 
     public func readResume(storagePath: String, slug: String) throws -> ResumeResolvedDocument {

@@ -1,0 +1,100 @@
+//
+// This source file is part of the Hummingbird server framework project
+// Copyright (c) the Hummingbird authors
+//
+// See LICENSE.txt for license information
+// SPDX-License-Identifier: Apache-2.0
+//
+
+public import Hummingbird
+
+/// Router middleware that applies a middleware chain to URIs with a specified prefix
+public struct RouteGroup<Context: RouterRequestContext, Handler: MiddlewareProtocol>: RouterMiddleware
+where Handler.Input == Request, Handler.Output == Response, Handler.Context == Context {
+    public typealias Input = Request
+    public typealias Output = Response
+
+    /// Full URI path to route
+    @usableFromInline
+    let fullPath: RouterPath
+    /// Path local to group route this group is defined in.
+    @usableFromInline
+    let routerPath: RouterPath
+    /// Group handler
+    @usableFromInline
+    let handler: Handler
+    /// Route options
+    public let options: RouterBuilderOptions
+
+    /// Create RouteGroup from result builder
+    /// - Parameters:
+    ///   - routerPath: Path local to group route this group is defined in
+    ///   - builder: RouteGroup builder
+    public init(
+        _ routerPath: RouterPath,
+        @MiddlewareFixedTypeBuilder<Request, Response, Context> builder: () -> Handler
+    ) {
+        // Get builder state from service context
+        var routerBuildState = RouterBuilderState.current ?? .init(options: [])
+        let parentGroupPath = routerBuildState.routeGroupPath
+        self.fullPath = parentGroupPath.appendingPath(routerPath)
+        routerBuildState.routeGroupPath = self.fullPath
+        self.handler = RouterBuilderState.$current.withValue(routerBuildState) {
+            builder()
+        }
+        self.routerPath = routerPath
+        self.options = RouterBuilderState.current?.options ?? []
+    }
+
+    /// Create RouteGroup from RequestContext transform and result builder
+    /// - Parameters:
+    ///   - routerPath: Path local to group route this group is defined in
+    ///   - context: RequestContext to convert to
+    ///   - builder: RouteGroup builder
+    ///
+    /// The ``Hummingbird/RequestContext`` that the group uses must conform to ``Hummingbird/ChildRequestContext``
+    /// and the `ParentContext` of that `RequestContext` be the `RequestContext` we are transforming
+    /// from eg
+    /// ```
+    /// struct TransformedRequestContext: ChildRequestContext {
+    ///     typealias ParentContext = BasicRequestContext
+    ///     var coreContext: CoreRequestContextStorage
+    ///     init(context: ParentContext) throws {
+    ///         self.coreContext = .init(source: context)
+    ///     }
+    /// }
+    /// ```
+    public init<ChildHandler: MiddlewareProtocol, ChildContext: ChildRequestContext & RouterRequestContext>(
+        _ routerPath: RouterPath,
+        context: ChildContext.Type,
+        @MiddlewareFixedTypeBuilder<Request, Response, ChildContext> builder: () -> ChildHandler
+    ) where ChildContext == ChildContext, Handler == ThrowingContextTransform<Context, ChildContext, ChildHandler> {
+        // Get builder state from service context
+        var routerBuildState = RouterBuilderState.current ?? .init(options: [])
+        let parentGroupPath = routerBuildState.routeGroupPath
+        self.fullPath = parentGroupPath.appendingPath(routerPath)
+        routerBuildState.routeGroupPath = self.fullPath
+        self.handler = RouterBuilderState.$current.withValue(routerBuildState) {
+            ThrowingContextTransform(to: ChildHandler.Context.self, builder: builder)
+        }
+        self.routerPath = routerPath
+        self.options = RouterBuilderState.current?.options ?? []
+    }
+
+    /// Process HTTP request and return an HTTP response
+    /// - Parameters:
+    ///   - input: Request
+    ///   - context: Request context
+    ///   - next: Next middleware to run, if no route handler is found
+    /// - Returns: Response
+    @inlinable
+    public func handle(_ input: Input, context: Context, next: (Input, Context) async throws -> Output) async throws -> Output {
+        if let updatedContext = self.routerPath.matchPrefix(context) {
+            context.coreContext.endpointPath.value = self.fullPath.description
+            return try await self.handler.handle(input, context: updatedContext) { input, _ in
+                try await next(input, context)
+            }
+        }
+        return try await next(input, context)
+    }
+}

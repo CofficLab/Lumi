@@ -77,7 +77,7 @@ struct MindMapCanvas: View {
             }
         }
         // 切换思维导图时重置视图状态。
-        .onChange(of: map.id) { _, _ in
+        .onChange(of: map.id) { _ in
             selectedNodeId = nil
             editingNodeId = nil
             scale = 1.0

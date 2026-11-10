@@ -70,9 +70,15 @@ public actor StoryStore: SuperLog {
         saveStory(updated)
     }
 
-    public func deleteStory(id: UUID) {
-        let dir = storyDirectory(for: id)
-        try? FileManager.default.removeItem(at: dir)
+    @discardableResult
+    public func deleteStory(id: UUID) -> Bool {
+        guard loadStory(id: id) != nil else { return false }
+        do {
+            try FileManager.default.removeItem(at: storyDirectory(for: id))
+            return true
+        } catch {
+            return false
+        }
     }
 
     // MARK: - Chapters
@@ -119,13 +125,19 @@ public actor StoryStore: SuperLog {
         saveChapter(updated)
     }
 
-    public func deleteChapter(id: UUID, storyID: UUID) {
-        let file = chapterFile(id: id, storyID: storyID)
-        try? FileManager.default.removeItem(at: file)
+    @discardableResult
+    public func deleteChapter(id: UUID, storyID: UUID) -> Bool {
+        guard loadChapter(id: id, storyID: storyID) != nil else { return false }
+        do {
+            try FileManager.default.removeItem(at: chapterFile(id: id, storyID: storyID))
+        } catch {
+            return false
+        }
         if var story = loadStory(id: storyID) {
             story.chapterIDs.removeAll { $0 == id }
             saveStory(story)
         }
+        return true
     }
 
     // MARK: - Characters

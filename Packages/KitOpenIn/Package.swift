@@ -4,14 +4,14 @@ import PackageDescription
 let package = Package(
     name: "KitOpenIn",
     defaultLocalization: "zh-Hans",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("13.1"), .iOS(.v17)],
     products: [
         .library(name: "KitOpenIn", targets: ["KitOpenIn"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
+        .package(path: "../../Vendor/LumiProviders"),
         .package(path: "../KitAgentTool"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
+        .package(path: "../../Vendor/LumiUI"),
     ],
     targets: [
         .target(
@@ -20,6 +20,7 @@ let package = Package(
                 "KitAgentTool",
                 "LumiUI",
                 .product(name: "ProviderProject", package: "LumiProviders"),
+                .product(name: "ProviderToast", package: "LumiProviders"),
             ],
             path: "Sources/KitOpenIn",
             resources: [.process("../../Resources")]
@@ -30,6 +31,7 @@ let package = Package(
                 "KitOpenIn",
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
+                .product(name: "ProviderToast", package: "LumiProviders"),
             ]
         ),
     ]

@@ -36,30 +36,43 @@ public struct BuildFrameV2Tool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let width = CADDesignerV2ToolSupport.double(arguments, "width") else {
-            return CADDesignerV2ToolSupport.missingParameter("width")
+            throw CADDesignerV2ToolSupport.missingParameter("width", toolName: name)
         }
         guard let depth = CADDesignerV2ToolSupport.double(arguments, "depth") else {
-            return CADDesignerV2ToolSupport.missingParameter("depth")
+            throw CADDesignerV2ToolSupport.missingParameter("depth", toolName: name)
         }
         guard let height = CADDesignerV2ToolSupport.double(arguments, "height") else {
-            return CADDesignerV2ToolSupport.missingParameter("height")
+            throw CADDesignerV2ToolSupport.missingParameter("height", toolName: name)
         }
 
         let series = ProfileSeries(rawValue: CADDesignerV2ToolSupport.string(arguments, "series") ?? "40") ?? .series40
         let profileID: String
-        if let override = CADDesignerV2ToolSupport.string(arguments, "profileId"),
-           ComponentLibrary.shared.profileSpec(id: override) != nil {
-            profileID = override
+        if let rawOverride = CADDesignerV2ToolSupport.string(arguments, "profileId"),
+           !rawOverride.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            // 显式覆盖必须命中真实型材；未知 ID 不能静默回退到系列默认规格。
+            guard ComponentLibrary.shared.profileSpec(id: rawOverride) != nil else {
+                throw CADDesignerV2ToolSupport.failure(
+                    en: "Unknown profile spec '\(rawOverride)'.",
+                    zh: "未知型材规格 '\(rawOverride)'。",
+                    toolName: name
+                )
+            }
+            profileID = rawOverride
         } else if let square = ComponentLibrary.shared.profiles.first(where: { $0.series == series && $0.width == $0.height }) {
             profileID = square.id
         } else {
-            return CADDesignerV2ToolSupport.localized(
-                en: "Error: No square profile found for series \(series.rawValue).",
-                zh: "错误：\(series.rawValue) 系列未找到正方形型材。"
+            throw CADDesignerV2ToolSupport.failure(
+                en: "No square profile found for series \(series.rawValue).",
+                zh: "\(series.rawValue) 系列未找到正方形型材。",
+                toolName: name
             )
         }
         guard let spec = ComponentLibrary.shared.profileSpec(id: profileID) else {
-            return CADDesignerV2ToolSupport.localized(en: "Error: Unknown profile spec '\(profileID)'.", zh: "错误：未知型材规格 '\(profileID)'。")
+            throw CADDesignerV2ToolSupport.failure(
+                en: "Unknown profile spec '\(profileID)'.",
+                zh: "未知型材规格 '\(profileID)'。",
+                toolName: name
+            )
         }
 
         let connectorID = ComponentLibrary.shared.connectors.first { $0.series == series && $0.kind == .cornerBracket }?.id
@@ -102,9 +115,11 @@ public struct BuildFrameV2Tool: SuperAgentTool {
                 en: "Built frame (\(Int(width))×\(Int(depth))×\(Int(height)) mm).\ncomponentCount: \(added.count)\nposts: 4 × \(Int(height))mm\nbeams: 4 × \(Int(beamXLength))mm + 4 × \(Int(beamZLength))mm\nbrackets: \(connectorID == nil ? 0 : 8)\nprofile: \(profileID)",
                 zh: "已生成框架（\(Int(width))×\(Int(depth))×\(Int(height)) mm）。\n组件数: \(added.count)\n立柱: 4 × \(Int(height))mm\n横梁: 4 × \(Int(beamXLength))mm + 4 × \(Int(beamZLength))mm\n角码: \(connectorID == nil ? 0 : 8)\n型材规格: \(profileID)"
             )
+        } catch let error as ToolExecutionError {
+            throw error
         } catch {
             await MainActor.run { CADDocumentStore.shared.setError(error.localizedDescription) }
-            return CADDesignerV2ToolSupport.error(error)
+            throw CADDesignerV2ToolSupport.failure(error, toolName: name)
         }
     }
 }

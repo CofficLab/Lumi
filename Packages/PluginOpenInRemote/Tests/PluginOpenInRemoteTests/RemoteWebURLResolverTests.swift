@@ -52,11 +52,38 @@ struct RemoteWebURLResolverTests {
         )
     }
 
-    @Test("git:// 地址转换为 HTTPS web 链接")
+    /// 回归 #1095：SSH path 的百分号编码不能在重建时解码，否则 `%23` 会变成
+    /// fragment 分隔符、截断仓库路径。
+    @Test("ssh:// 与 git:// 地址保留路径中的百分号编码")
+    func preservesEncodedCharactersInSchemePath() {
+        let hash = RemoteWebURLResolver.webURL(
+            fromRemote: "ssh://git@code.example.com/acme/repo%23draft.git"
+        )
+        #expect(hash?.absoluteString == "https://code.example.com/acme/repo%23draft")
+        // URL.path 仍把 `#` 当作仓库名的一部分，而不是 fragment 的起点。
+        #expect(hash?.path == "/acme/repo#draft")
+        #expect(hash?.fragment == nil)
+
+        #expect(
+            RemoteWebURLResolver.webURL(fromRemote: "ssh://git@code.example.com/acme/repo%3Fdraft.git")?
+                .absoluteString == "https://code.example.com/acme/repo%3Fdraft"
+        )
+        #expect(
+            RemoteWebURLResolver.webURL(fromRemote: "git://code.example.com/acme/repo%25draft.git")?
+                .absoluteString == "https://code.example.com/acme/repo%25draft"
+        )
+    }
+
+    @Test("git:// 地址转换为 HTTPS web 链接并丢弃 Git 协议端口")
     func convertsGitProtocolRemote() {
         #expect(
             RemoteWebURLResolver.webURL(fromRemote: "git://github.com/user/repo.git")?
                 .absoluteString == "https://github.com/user/repo"
+        )
+        // 9418 是 Git 协议默认端口，不能继承到 HTTPS 地址上，否则浏览器会连错端口。
+        #expect(
+            RemoteWebURLResolver.webURL(fromRemote: "git://github.com:9418/acme/repo.git")?
+                .absoluteString == "https://github.com/acme/repo"
         )
     }
 
@@ -94,6 +121,23 @@ struct RemoteWebURLResolverTests {
         #expect(RemoteWebURLResolver.webURL(fromRemote: "   ") == nil)
         #expect(RemoteWebURLResolver.webURL(fromRemote: "not-a-remote") == nil)
         #expect(RemoteWebURLResolver.webURL(fromRemote: "git@github.com:") == nil)
+    }
+
+    /// 回归 #1067：`file://` 曾被当作 SCP-like 解析成 `https://file/tmp/repo`
+    /// 并交给浏览器打开。
+    @Test("本地 file:// remote 不产生 web 链接")
+    func returnsNilForLocalFileRemote() {
+        #expect(RemoteWebURLResolver.webURL(fromRemote: "file:///tmp/repo.git") == nil)
+        #expect(RemoteWebURLResolver.webURL(fromRemote: "file://localhost/tmp/repo.git") == nil)
+        #expect(RemoteWebURLResolver.webURL(fromRemote: "file:/tmp/repo.git") == nil)
+        #expect(RemoteWebURLResolver.webURL(fromRemote: "FILE:///tmp/repo.git") == nil)
+    }
+
+    @Test("未支持的 URI scheme 不按 SCP-like 拼装地址")
+    func returnsNilForUnsupportedURIScheme() {
+        #expect(RemoteWebURLResolver.webURL(fromRemote: "ftp://example.com/user/repo.git") == nil)
+        #expect(RemoteWebURLResolver.webURL(fromRemote: "s3://bucket/user/repo.git") == nil)
+        #expect(RemoteWebURLResolver.webURL(fromRemote: "git+ssh://git@github.com/user/repo.git") == nil)
     }
 
     @Test("webURLString 与 webURL 结果一致")

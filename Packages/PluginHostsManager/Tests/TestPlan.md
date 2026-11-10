@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginHostsManager 的实现包，包含 7 个主要类型；当前测试覆盖 16 条用例。
+PluginHostsManager 的实现包，包含 7 个主要类型；当前测试覆盖 18 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 16
+测试文件: 5 个，用例总数: 18
 
 核心组件（源码目录）:
 - `Models/`
@@ -31,7 +31,7 @@ PluginHostsManager 的实现包，包含 7 个主要类型；当前测试覆盖 
 
 - **HostsFileService**（2 条）：由 `readsAndBacksUpHostsFile`、`reportsMissingHostsFile` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HostsManagerFileFlow**（2 条）：由 `loadsAndSavesThroughInjectedFileOperations`、`reportsFileOperationFailures` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **HostsManagerViewModel**（3 条）：由 `filtersByGroupAndSearch`、`rejectsInvalidEntry`、`mutatesEntriesAndPersists` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **HostsManagerViewModel**（4 条）：由 `filtersByGroupAndSearch`、`rejectsInvalidEntry`、`mutatesEntriesAndPersists`、`reloadReconcilesSelectedGroup` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **HostsParser**（6 条）：由 `parsesActiveEntries`、`parsesCommentsAndGroups`、`preservesBlankLines` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（3 条）：由 `pluginMetadataIsStable`、`localizationCatalogIsPackaged`、`activatingPluginHidesChatSectionAndDeactivatingRestoresIt` 等用例锁定；改动该模块时优先跑对应测试文件。
 
@@ -55,27 +55,29 @@ PluginHostsManager 的实现包，包含 7 个主要类型；当前测试覆盖 
 | 14 | 综合 | pluginMetadataIsStable | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `pluginMetadataIsStable` |
 | 15 | 综合 | localizationCatalogIsPackaged | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `localizationCatalogIsPackaged` |
 | 16 | 综合 | activatingPluginHidesChatSectionAndDeactivatingRestoresIt | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activatingPluginHidesChatSectionAndDeactivatingRestoresIt` |
+| 17 | 综合 | ungroupedEntryStaysBeforeFirstGroup | — | 执行该用例 | 空分组条目保存后位于首个 group header 之前，且不进入该组筛选 | P0 | ✅ 已覆盖 | `ungroupedEntryStaysBeforeFirstGroup` |
+| 18 | HostsManagerViewModel | 刷新后清理已不存在的分组筛选，保留仍存在的选择 | 注入可切换内容的 hosts 文件 | 选中 Old 后重载为仅含 New 的配置，再选中保留分组重载 | 旧分组消失时 `selectedGroup` 归 nil 且新条目可见；分组仍在时保留选择 | P0 | ✅ 已覆盖 | `reloadReconcilesSelectedGroup` |
 
-> 说明：全部 **16 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **18 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
+- P0: 已覆盖 4 / 4
 - P1: 已覆盖 12 / 12
 - P2: 已覆盖 2 / 2
-- **合计: 16 / 16**（仅表示清单场景，非源码覆盖率）
+- **合计: 18 / 18**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
 - **P1**: 其余功能性用例（12 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 16 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 17 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

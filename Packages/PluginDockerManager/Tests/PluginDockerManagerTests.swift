@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import DockerManagerPlugin
 
@@ -67,6 +68,73 @@ struct PluginDockerManagerTests {
         #expect(await service.taggedImages() == [TaggedImage(id: image.imageID, target: "repo/name:Release_1")])
     }
 
+    @Test
+    func failedExportKeepsExistingDestinationAndCleansTemporaryFile() async throws {
+        let image = Self.image(id: "sha256:test", repository: "test")
+        let service = FakeDockerManagerService()
+        await service.setExportBehavior(.writeThenFail(Data("partial tarball".utf8)))
+        let viewModel = DockerManagerViewModel(service: service)
+
+        let directory = Self.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let destination = directory.appendingPathComponent("image.tar")
+        let original = Data("original tarball".utf8)
+        try original.write(to: destination)
+
+        let succeeded = await viewModel.exportImage(image, to: destination)
+
+        #expect(succeeded == false)
+        #expect(try Data(contentsOf: destination) == original)
+        #expect(viewModel.errorMessage?.hasPrefix("Export failed:") == true)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: directory.path) == ["image.tar"])
+    }
+
+    @Test
+    func successfulExportAtomicallyReplacesExistingDestination() async throws {
+        let image = Self.image(id: "sha256:test", repository: "test")
+        let service = FakeDockerManagerService()
+        let exported = Data("fresh tarball".utf8)
+        await service.setExportBehavior(.succeed(exported))
+        let viewModel = DockerManagerViewModel(service: service)
+
+        let directory = Self.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let destination = directory.appendingPathComponent("image.tar")
+        try Data("stale tarball".utf8).write(to: destination)
+
+        let succeeded = await viewModel.exportImage(image, to: destination)
+
+        #expect(succeeded == true)
+        #expect(viewModel.errorMessage == nil)
+        #expect(try Data(contentsOf: destination) == exported)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: directory.path) == ["image.tar"])
+    }
+
+    @Test
+    func exportWithoutOutputFileReportsFailureAndRemovesNothingElse() async throws {
+        let image = Self.image(id: "sha256:test", repository: "test")
+        let service = FakeDockerManagerService()
+        await service.setExportBehavior(.succeedWithoutWriting)
+        let viewModel = DockerManagerViewModel(service: service)
+
+        let directory = Self.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let destination = directory.appendingPathComponent("image.tar")
+
+        let succeeded = await viewModel.exportImage(image, to: destination)
+
+        #expect(succeeded == false)
+        #expect(viewModel.errorMessage?.contains("no output file") == true)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: directory.path).isEmpty)
+    }
+
+    private static func temporaryDirectory() -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("docker-export-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
+    }
+
     private static func image(id: String, repository: String) -> DockerImage {
         DockerImage(
             imageID: id,
@@ -86,13 +154,27 @@ private struct TaggedImage: Equatable, Sendable {
     let target: String
 }
 
+private struct FakeExportFailure: Error {}
+
 private actor FakeDockerManagerService: DockerManagerServicing {
+    enum ExportBehavior: Sendable {
+        case fail
+        case succeed(Data)
+        case succeedWithoutWriting
+        case writeThenFail(Data)
+    }
+
     let delays: [String: UInt64]
     private var pullRequests: [String] = []
     private var tagRequests: [TaggedImage] = []
+    private var exportBehavior: ExportBehavior = .fail
 
     init(delays: [String: UInt64] = [:]) {
         self.delays = delays
+    }
+
+    func setExportBehavior(_ behavior: ExportBehavior) {
+        exportBehavior = behavior
     }
 
     func listImages() async throws -> [DockerImage] {
@@ -140,7 +222,19 @@ private actor FakeDockerManagerService: DockerManagerServicing {
         tagRequests.append(TaggedImage(id: id, target: target))
     }
 
-    func exportImage(_ id: String, to path: String) async throws {}
+    func exportImage(_ id: String, to path: String) async throws {
+        switch exportBehavior {
+        case .fail:
+            throw FakeExportFailure()
+        case .succeedWithoutWriting:
+            break
+        case let .succeed(data):
+            try data.write(to: URL(fileURLWithPath: path))
+        case let .writeThenFail(data):
+            try data.write(to: URL(fileURLWithPath: path))
+            throw FakeExportFailure()
+        }
+    }
 
     func loadImage(from path: String) async throws {}
 

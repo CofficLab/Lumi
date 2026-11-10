@@ -12,7 +12,10 @@ public struct RAGChunker: Sendable {
     }
 
     public func chunk(_ content: String) -> [RAGChunk] {
-        let lines = content.components(separatedBy: .newlines)
+        // 按 Character 拆分：`\r\n` 在 Swift 中是单个字符，必须整体算一个换行，
+        // 否则 CRLF 文件每两行之间会多出一个空行、窗口和行号翻倍（回归 #1114）。
+        // 保留空子序列，显式空行仍然占用真实行号。
+        let lines = content.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
         guard !lines.isEmpty else { return [] }
 
         var chunks: [RAGChunk] = []

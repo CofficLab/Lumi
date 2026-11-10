@@ -143,6 +143,29 @@ struct FileLogCoordinatorTests {
         #expect(FileManager.default.fileExists(atPath: legacyDirectory.path))
     }
 
+    @Test func migrationMigratesHiddenLogsAndNeverDeletesUncheckedHiddenFiles() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PluginFileLogHiddenMigrationTests-\(UUID().uuidString)", isDirectory: true)
+        let legacyDirectory = root.appendingPathComponent("FileLog", isDirectory: true)
+        let currentDirectory = root.appendingPathComponent(FileLogPlugin.pluginID, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        try FileManager.default.createDirectory(at: legacyDirectory, withIntermediateDirectories: true)
+        try Data("hidden log".utf8).write(to: legacyDirectory.appendingPathComponent(".important.log"))
+        try Data("keep me".utf8).write(to: legacyDirectory.appendingPathComponent(".keep"))
+
+        try FileLogCoordinator.migrateLegacyDirectory(from: legacyDirectory, to: currentDirectory)
+
+        let migrated = currentDirectory.appendingPathComponent(".important.log")
+        #expect(FileManager.default.fileExists(atPath: migrated.path), "隐藏日志也必须迁移")
+        #expect(try String(contentsOf: migrated, encoding: .utf8) == "hidden log")
+        #expect(
+            try String(contentsOf: legacyDirectory.appendingPathComponent(".keep"), encoding: .utf8) == "keep me",
+            "未被迁移逻辑检查的隐藏文件不得随目录删除"
+        )
+        #expect(FileManager.default.fileExists(atPath: legacyDirectory.path), "旧目录非空时不得递归删除")
+    }
+
     @Test func migrationSkipsMissingOrIdenticalDirectoriesAndRemovesAnEmptyLegacyDirectory() throws {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("PluginFileLogEmptyMigrationTests-\(UUID().uuidString)", isDirectory: true)
@@ -203,6 +226,59 @@ struct FileLogCoordinatorTests {
         let manifest = try #require(JSONSerialization.jsonObject(with: manifestData) as? [String: Any])
         #expect(manifest["logFileCount"] as? Int == 1)
         #expect(manifest["architecture"] as? String == "arm64")
+    }
+
+    @Test func diagnosticsExportDrainsOsLogBeforeArchiving() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PluginFileLogDrainTests-\(UUID().uuidString)", isDirectory: true)
+        let logsDirectory = root.appendingPathComponent("logs", isDirectory: true)
+        let extractionDirectory = root.appendingPathComponent("extracted", isDirectory: true)
+        var archiveURL: URL?
+        defer {
+            if let archiveURL { try? FileManager.default.removeItem(at: archiveURL) }
+            try? FileManager.default.removeItem(at: root)
+        }
+
+        let coordinator = FileLogCoordinator(logsDirectory: logsDirectory, pollInterval: 3_600)
+        // 模拟「已产生但还没到下一轮轮询」的日志：不替换读取器时这里根本读不到。
+        coordinator.logRecordReader = { _, _ in
+            [
+                FileLogCoordinator.LogRecord(
+                    date: Date(),
+                    key: "pending-export-entry",
+                    line: "pending export entry\n"
+                )
+            ]
+        }
+        coordinator.start()
+        defer { coordinator.stopAndWait() }
+
+        let archive = try await coordinator.makeDiagnosticsArchive()
+        archiveURL = archive.url
+
+        try FileManager.default.createDirectory(at: extractionDirectory, withIntermediateDirectories: true)
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+        process.arguments = ["-x", "-k", archive.url.path, extractionDirectory.path]
+        try process.run()
+        process.waitUntilExit()
+        #expect(process.terminationStatus == 0)
+
+        let extractedFiles = try FileManager.default.contentsOfDirectory(
+            at: extractionDirectory,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        )
+        let archiveRoot = try #require(extractedFiles.first)
+        let stagedLogs = try FileManager.default.contentsOfDirectory(
+            at: archiveRoot.appendingPathComponent("logs", isDirectory: true),
+            includingPropertiesForKeys: nil
+        )
+        let logContents = try stagedLogs
+            .filter { $0.pathExtension == "log" }
+            .map { try String(contentsOf: $0, encoding: .utf8) }
+            .joined()
+        #expect(logContents.contains("pending export entry"))
     }
 
     @MainActor

@@ -33,7 +33,7 @@ struct ToolActivityToolbarView: View {
                 .frame(width: 380, height: 430)
         }
         .onAppear { viewModel.refresh() }
-        .onChange(of: viewModel.selectedConversationID) { _, newValue in
+        .onChange(of: viewModel.selectedConversationID) { newValue in
             if newValue == nil {
                 isPresented = false
             }
@@ -131,10 +131,10 @@ private struct ToolActivityRow: View {
                     .font(.system(size: 12, weight: .medium))
                     .lineLimit(2)
                 HStack(spacing: 5) {
-                    Text(viewModel.statusTitle(for: job.status))
-                    if let duration = duration {
+                    Text(viewModel.statusTitle(for: job))
+                    if let duration = viewModel.elapsedDuration(for: job) {
                         Text("·")
-                        Text(formatDuration(duration))
+                        Text(viewModel.formatDuration(duration))
                     }
                 }
                 .font(.caption2)
@@ -165,6 +165,7 @@ private struct ToolActivityRow: View {
     }
 
     private var iconName: String {
+        if viewModel.isErroredResult(for: job) { return "exclamationmark.triangle.fill" }
         switch job.status {
         case .waitingForUser: return "hand.raised.fill"
         case .completed: return "checkmark.circle.fill"
@@ -175,6 +176,7 @@ private struct ToolActivityRow: View {
     }
 
     private var color: Color {
+        if viewModel.isErroredResult(for: job) { return .red }
         switch job.status {
         case .waitingForUser: return .orange
         case .completed: return .green
@@ -182,16 +184,5 @@ private struct ToolActivityRow: View {
         case .cancelled, .cancelling: return .secondary
         case .queued, .running: return .accentColor
         }
-    }
-
-    private var duration: TimeInterval? {
-        guard let startedAt = job.startedAt else { return nil }
-        return (job.completedAt ?? Date()).timeIntervalSince(startedAt)
-    }
-
-    private func formatDuration(_ value: TimeInterval) -> String {
-        if value < 1 { return "<1s" }
-        if value < 60 { return String(format: "%.1fs", value) }
-        return String(format: "%.1fm", value / 60)
     }
 }

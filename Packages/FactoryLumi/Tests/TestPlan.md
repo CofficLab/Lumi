@@ -5,7 +5,7 @@
 FactoryLumi Lumi 的**装配根**（Composition Root）：将 KernelCore 内核、全部 Provider 默认实现、 100+ 插件与视图组装集中在一个包中完成接线，是 Lumi 主应用启动的唯一入口。 ## 职责 FactoryLumi 不包含业务逻辑，只负责**把正确的事情在正确的时机做对**： | 职责 | 实现 | 说明 | | --- | --- | --- | | 内核创建 | `KernelFactory` | 创建 `KernelCoreContainer`，装配 Provider，启动插件 | | Provider 工厂 | `DefaultProviderFactory` | 产出 30+ 个 Provider 默认实现并按依赖顺序注册 | | Plugin 工厂 | `DefaultPluginFactory` | 产出 100+ 个插件，统一校验、排序、原子启动 | | View 工厂 | `DefaultViewFactory` | 用内核 Provider 组装主视图与设置视图 | | 菜单集成 | `AppCommands` | 把 `CommandProviding` 贡献映射到 macOS 系统菜单 | | 主题桥接 | `PaletteChromeTheme` | 把新版 `LumiThemePalette` 适配回 LumiUI 旧版 chrome 主题 | ## 三大工厂协议 ```swift /// 产出全部插件。宿主可实现该协议覆盖插件列表。 protocol PluginFactory {
 
 平台: macOS 14+, iOS 17+
-测试文件: 5 个，用例总数: 45
+测试文件: 12 个，用例总数: 65
 
 核心组件（源码目录）:
 - `Contracts/`
@@ -32,8 +32,13 @@ FactoryLumi Lumi 的**装配根**（Composition Root）：将 KernelCore 内核�
 - **ConversationManagerReplacement**（2 条）：由 `replacesDefaultConversationManaging`、`resolvedProviderIsUsable` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（37 条）：由 `defaultFactoryIncludesEditorPluginStack`、`defaultFactoryIncludesMailPlugin`、`selectedPluginFactoryFiltersTheCatalog` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **IdleTimeProvider**（1 条）：由 `makeIdleTimeProviderReturnsFullService` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **KernelFactoryInfrastructure**（3 条）：由 `startsAsyncPlugins`、`migratesPluginDataBeforeBoot`、`registersInfrastructureProviders` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **MessageListSlotArbitration**（2 条）：由 `persistedConversationDoesNotRenderEmptyState`、`emptyStateDoesNotClaimSlotWhileEvaluationPending` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **KernelFactoryInfrastructure**（4 条）：由 `startsAsyncPlugins`、`migratesPluginDataBeforeBoot`、`migrationFailureDoesNotBlockStartup` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MessageListSlotArbitration**（2 条）：由 `persistedConversationDoesNotRenderEmptyState`、`emptyStateDoesNotClaimSlotWhileEvaluationPending` 等用例锁定。
+- **FactoryLumi**（2 条）：由 `defaultFactoryIncludesHydrationReminder`、`defaultFactoryIncludesLLMProviderToolPlugin` 锁定。
+- **PluginFinder / PluginFinderEndToEnd / PluginFinderToggle**（5 条）：卡片的装配、端到端渲染与启停撤回。
+- **PluginHTMLCanvas / PluginHTMLCanvasEndToEnd**（5 条）：HTML 画布工具与渲染器的装配、端到端渲染与停用。
+- **FreshInstallFirstMessage**（4 条）：全新安装首屏的空态/首条消息槽位与 chats tab 注册。
+- **SettingsLayoutConformance**（3 条）：设置页统一 GroupBox 卡片、基准间距与入口审计覆盖。
 
 ## 测试用例清单
 
@@ -84,27 +89,47 @@ FactoryLumi Lumi 的**装配根**（Composition Root）：将 KernelCore 内核�
 | 43 | KernelFactoryInfrastructure | Factory 注册可替换 WebServer 与真实 PluginControl | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registersInfrastructureProviders` |
 | 44 | MessageListSlotArbitration | 已落库消息的会话不应渲染空态 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `persistedConversationDoesNotRenderEmptyState` |
 | 45 | MessageListSlotArbitration | 判定进行中空态不得抢占槽位 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emptyStateDoesNotClaimSlotWhileEvaluationPending` |
+| 46 | FactoryLumi | 默认目录包含共享喝水提醒插件 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `defaultFactoryIncludesHydrationReminder` |
+| 47 | FactoryLumi | 默认目录包含「用对话添加 LLM 供应商」插件，启动后工具与渲染器都注册进内核 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `defaultFactoryIncludesLLMProviderToolPlugin` |
+| 48 | PluginFinder | 默认插件目录包含 Finder 插件 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `defaultFactoryIncludesFinderPlugin` |
+| 49 | PluginFinderEndToEnd | 工具经由工具管理器执行后产生可渲染的卡片消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolExecutionProducesRenderableCardMessage` |
+| 50 | PluginFinderEndToEnd | 卡片消息不进入发给 LLM 的上下文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cardMessageIsExcludedFromLLMContext` |
+| 51 | PluginFinderToggle | 运行时禁用插件后撤回工具与渲染器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `disablingPluginWithdrawsToolAndRenderer` |
+| 52 | PluginFinderToggle | 运行时重新启用插件后恢复工具与渲染器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `enablingPluginRestoresToolAndRenderer` |
+| 53 | PluginHTMLCanvas | 默认插件目录包含 HTML 画布插件 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `defaultFactoryIncludesHTMLCanvasPlugin` |
+| 54 | PluginHTMLCanvas | 启用插件后注册 show_html 工具与卡片渲染器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `enabledPluginRegistersToolAndRenderer` |
+| 55 | PluginHTMLCanvas | 插件停用后不注册工具与渲染器 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `disabledPluginRegistersNothing` |
+| 56 | PluginHTMLCanvasEndToEnd | 工具经由工具管理器执行后产生可渲染的画布消息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolExecutionProducesRenderableCanvasMessage` |
+| 57 | PluginHTMLCanvasEndToEnd | 画布消息不进入发给 LLM 的上下文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `canvasMessageIsExcludedFromLLMContext` |
+| 58 | FreshInstallFirstMessage | 全新安装首屏空态占槽且消息列表让位 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `freshInstallShowsEmptyStateNotMessageList` |
+| 59 | FreshInstallFirstMessage | 首条消息写入后空态交还 message-list 槽位 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstMessageHandsSlotBackToMessageList` |
+| 60 | FreshInstallFirstMessage | 首条消息创建会话后注册 chats tab 并同步 Rail 可见性 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `firstMessageRegistersChatsTabAndShowsRail` |
+| 61 | FreshInstallFirstMessage | 清空消息只交还槽位而不注销 chats tab | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `clearingMessagesDoesNotUnregisterChatsTab` |
+| 62 | SettingsLayoutConformance | 每个设置入口的详情页都使用基准间距 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `auditedPagesMatchBaseline` |
+| 63 | SettingsLayoutConformance | 设置入口详情页统一使用原生 GroupBox 卡片体系 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `settingsPagesUseNativeGroupBoxCards` |
+| 64 | SettingsLayoutConformance | 仓库里每个注册到设置窗口的入口都被审计表覆盖 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `everyRegisteredEntryIsAudited` |
+| 65 | KernelFactoryInfrastructure | 插件数据迁移失败不阻断内核启动 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `migrationFailureDoesNotBlockStartup` |
 
-> 说明：全部 **45 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **65 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 1 / 1
-- P1: 已覆盖 23 / 23
-- P2: 已覆盖 21 / 21
-- **合计: 45 / 45**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 2 / 2
+- P1: 已覆盖 38 / 38
+- P2: 已覆盖 25 / 25
+- **合计: 65 / 65**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（23 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（21 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
+- **P1**: 其余功能性用例（38 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（25 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 45 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 65 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

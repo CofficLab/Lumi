@@ -42,6 +42,9 @@ struct DiskUsageRingView: View {
         .onAppear {
             viewModel.refreshDiskUsage()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .diskManagerDiskUsageDidChange)) { _ in
+            viewModel.refreshDiskUsage()
+        }
     }
 }
 

@@ -92,14 +92,49 @@ struct MemoryPluginTests {
         #expect(item != nil)
     }
 
-    @Test("RecallMemoryTool 未找到返回提示")
+    @Test("RecallMemoryTool 未找到时抛出错误")
     func recallToolNotFound() async throws {
         let (storage, root) = makeTempStorage()
         defer { try? FileManager.default.removeItem(at: root) }
 
         let tool = RecallMemoryTool(storage: storage, projectCapability: MemoryProjectCapabilityAdapter(project: nil))
-        let result = try await tool.execute(arguments: ["id": ToolArgument("nonexistent")])
-        #expect(result.contains("Not Found"))
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: ["id": ToolArgument("nonexistent")])
+        }
+    }
+
+    @Test("不同 ID 编码后不碰撞：保存、召回、删除互不影响")
+    func distinctIDsDoNotCollide() async throws {
+        let (storage, root) = makeTempStorage()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let first = try await storage.save(
+            id: "a b", type: .project, name: "A", description: "",
+            content: "content-A", scope: .global, projectPath: nil
+        )
+        let second = try await storage.save(
+            id: "a@b", type: .project, name: "B", description: "",
+            content: "content-B", scope: .global, projectPath: nil
+        )
+        // 字面量百分号 ID 也不能与编码结果撞车。
+        let third = try await storage.save(
+            id: "a%20b", type: .project, name: "C", description: "",
+            content: "content-C", scope: .global, projectPath: nil
+        )
+
+        #expect(first.filePath != second.filePath)
+        #expect(third.filePath != first.filePath)
+
+        #expect(try await storage.load(id: "a b", type: .project, scope: .global, projectPath: nil)?.content == "content-A")
+        #expect(try await storage.load(id: "a@b", type: .project, scope: .global, projectPath: nil)?.content == "content-B")
+        #expect(try await storage.load(id: "a%20b", type: .project, scope: .global, projectPath: nil)?.content == "content-C")
+
+        let listed = await storage.list(scope: .global, projectPath: nil)
+        #expect(Set(listed.map(\.id)) == ["a b", "a@b", "a%20b"])
+
+        try await storage.delete(id: "a b", scope: .global, projectPath: nil)
+        #expect(try await storage.load(id: "a b", type: .project, scope: .global, projectPath: nil) == nil)
+        #expect(try await storage.load(id: "a@b", type: .project, scope: .global, projectPath: nil)?.content == "content-B")
     }
 
     @Test("插件注册 4 个记忆工具")

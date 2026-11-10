@@ -36,6 +36,16 @@ final class ToolJobActivityModel: ObservableObject {
     private func consume(_ event: ToolJobEvent) {
         let snapshot: ToolJob
         switch event {
+        case .restored(let values):
+            // 只关心本卡片对应的那条历史任务；批量快照里没有就忽略。
+            guard let value = values.first(where: { $0.id == jobID })
+                ?? values.first(where: {
+                    $0.toolCall.id == toolCallID
+                        && $0.conversationID == conversationID
+                        && $0.turnID == turnID
+                })
+            else { return }
+            snapshot = value
         case .created(let value), .started(let value), .waitingForUser(let value):
             snapshot = value
         case .output(let id, _, _, let value), .progress(let id, _, let value),

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginDeveloperMode 的实现包，包含 6 个主要类型；当前测试覆盖 2 条用例。
+PluginDeveloperMode 的实现包，包含 6 个主要类型；当前测试覆盖 14 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 2
+测试文件: 2 个，用例总数: 14
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -30,6 +30,10 @@ PluginDeveloperMode 的实现包，包含 6 个主要类型；当前测试覆盖
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **DeveloperModePlugin**（2 条）：由 `bootRegistersProviderAndToolbarItem`、`toolbarToggleUpdatesProvider` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **开发者模式 ViewModel**（3 条）：由 `startsDisabled`、`updateAppliesExternalState`、`toggleForwardsToCapability` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **开发者模式 Observer**（3 条）：由 `syncsInitialState`、`appliesEnabledChangedEvent`、`cancelStopsUpdates` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **开发者模式能力适配器**（3 条）：由 `forwardsToProvider`、`treatsReleasedProviderAsDisabled`、`forwardsObserverSubscription` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **开发者模式插件生命周期**（3 条）：由 `bootWithoutProviderIsNoop`、`bootWithoutToolbarIsNoop`、`shutdownRemovesToolbarItems` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -37,27 +41,39 @@ PluginDeveloperMode 的实现包，包含 6 个主要类型；当前测试覆盖
 |----|------|------|----------|----------|----------|------|------|----------|
 | 1 | DeveloperModePlugin | registers the provider and a leading toolbar toggle | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bootRegistersProviderAndToolbarItem` |
 | 2 | DeveloperModePlugin | toolbar toggle updates the kernel provider | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolbarToggleUpdatesProvider` |
+| 3 | 开发者模式 ViewModel | 初始状态为关闭 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `startsDisabled` |
+| 4 | 开发者模式 ViewModel | update 写入外部状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `updateAppliesExternalState` |
+| 5 | 开发者模式 ViewModel | toggle 转发给能力层 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toggleForwardsToCapability` |
+| 6 | 开发者模式 Observer | 初始化时同步能力层当前状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `syncsInitialState` |
+| 7 | 开发者模式 Observer | 收到 enabledChanged 事件后更新 ViewModel | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `appliesEnabledChangedEvent` |
+| 8 | 开发者模式 Observer | 取消后释放订阅并停止更新 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cancelStopsUpdates` |
+| 9 | 开发者模式能力适配器 | 转发启用状态与切换动作 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `forwardsToProvider` |
+| 10 | 开发者模式能力适配器 | Provider 释放后按关闭处理 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `treatsReleasedProviderAsDisabled` |
+| 11 | 开发者模式能力适配器 | 观察者订阅透传到 Provider | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `forwardsObserverSubscription` |
+| 12 | 开发者模式插件生命周期 | 缺少开发者模式 Provider 时不注册工具栏项也不抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bootWithoutProviderIsNoop` |
+| 13 | 开发者模式插件生命周期 | 缺少工具栏 Provider 时启动不抛错 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `bootWithoutToolbarIsNoop` |
+| 14 | 开发者模式插件生命周期 | 关闭时移除工具栏项 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shutdownRemovesToolbarItems` |
 
-> 说明：全部 **2 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **14 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 2 / 2
+- P1: 已覆盖 14 / 14
 - P2: 已覆盖 0 / 0
-- **合计: 2 / 2**（仅表示清单场景，非源码覆盖率）
+- **合计: 14 / 14**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（2 条）
+- **P1**: 其余功能性用例（14 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 2 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 14 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

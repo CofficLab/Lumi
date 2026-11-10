@@ -22,6 +22,10 @@ public struct LauncherView: View {
     public var body: some View {
         VStack(spacing: 0) {
             searchHeader
+            if let error = searchModel.executionError {
+                Divider()
+                executionErrorView(error)
+            }
             if !searchModel.results.isEmpty || isFileSearching {
                 Divider()
                 resultsSection
@@ -45,8 +49,25 @@ public struct LauncherView: View {
         .onAppear {
             isInputFocused = true
         }
-        .onKeyPress { keyPress in
-            handleKeyPress(keyPress)
+        // macOS 13 兼容实现：`onKeyPress` 是 macOS 14 独占 API。上下箭头用
+        // SwiftUI 的 `onMoveCommand`（macOS 11+）区分方向，Esc 用
+        // `onExitCommand`（macOS 11+），二者合起来覆盖原 `onKeyPress` 的行为。
+        .onMoveCommand { direction in
+            switch direction {
+            case .up:
+                if searchModel.selectedIndex > 0 {
+                    searchModel.selectedIndex -= 1
+                }
+            case .down:
+                if searchModel.selectedIndex < searchModel.results.count - 1 {
+                    searchModel.selectedIndex += 1
+                }
+            default:
+                break
+            }
+        }
+        .onExitCommand {
+            dismiss()
         }
     }
 
@@ -160,6 +181,20 @@ public struct LauncherView: View {
         .frame(maxWidth: .infinity)
     }
 
+    private func executionErrorView(_ message: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 11))
+                .foregroundColor(.orange)
+            Text(verbatim: message)
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+    }
+
     private var hintView: some View {
         VStack(spacing: 8) {
             Text(pluginLocalization.string("Type to search apps, files and commands"))
@@ -185,8 +220,9 @@ public struct LauncherView: View {
     private func selectAndExecute(_ result: LauncherResult) {
         guard let index = flattenedIndex(of: result) else { return }
         searchModel.selectedIndex = index
-        searchModel.execute(at: index)
-        dismiss()
+        if searchModel.execute(at: index) {
+            dismiss()
+        }
     }
 
     private func executeSelected() {
@@ -199,30 +235,6 @@ public struct LauncherView: View {
         LauncherWindowController.shared.hide()
     }
 
-    // MARK: - Keyboard
-
-    private func handleKeyPress(_ keyPress: KeyPress) -> KeyPress.Result {
-        switch keyPress.key {
-        case .upArrow:
-            if searchModel.selectedIndex > 0 {
-                searchModel.selectedIndex -= 1
-            }
-            return .handled
-
-        case .downArrow:
-            if searchModel.selectedIndex < searchModel.results.count - 1 {
-                searchModel.selectedIndex += 1
-            }
-            return .handled
-
-        case .escape:
-            dismiss()
-            return .handled
-
-        default:
-            return .ignored
-        }
-    }
 }
 
 // MARK: - Section Header

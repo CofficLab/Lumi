@@ -3,6 +3,7 @@ import Foundation
 import LumiLoggingKit
 import os
 import ProviderConversation
+import ProviderMessage
 
 /// 观察会话存储的外部事件，并将变化同步到设置页 ViewModel。
 ///
@@ -19,6 +20,7 @@ final class ConversationStoreObserver: SuperLog {
     private let capability: any ConversationStoreCapability
     private weak var viewModel: ConversationStoreSettingsViewModel?
     private var conversationHandle: (any ConversationObserverHandle)?
+    private var messageChangeHandle: (any MessageChangeObserverHandle)?
     private var migrationProgress: ConversationMigrationProgressStore?
     private var migrationCancellable: AnyCancellable?
 
@@ -34,6 +36,9 @@ final class ConversationStoreObserver: SuperLog {
         conversationHandle = capability.addConversationObserver { [weak self] event in
             self?.handle(event)
         }
+        messageChangeHandle = capability.addMessageChangeObserver { [weak self] change in
+            self?.viewModel?.handleMessageChange(change)
+        }
         migrationCancellable = migrationProgress?.$phase.sink { [weak self] phase in
             self?.handleMigrationChange(phase)
         }
@@ -42,6 +47,8 @@ final class ConversationStoreObserver: SuperLog {
     func cancel() {
         conversationHandle?.cancel()
         conversationHandle = nil
+        messageChangeHandle?.cancel()
+        messageChangeHandle = nil
         migrationCancellable?.cancel()
         migrationCancellable = nil
         migrationProgress = nil

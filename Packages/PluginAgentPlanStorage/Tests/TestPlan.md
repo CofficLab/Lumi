@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAgentPlanStorage 的实现包，包含 8 个主要类型；当前测试覆盖 30 条用例。
+PluginAgentPlanStorage 的实现包，包含 8 个主要类型；当前测试覆盖 34 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 30
+测试文件: 2 个，用例总数: 34
 
 核心组件（源码目录）:
 - `Services/`
@@ -29,8 +29,8 @@ PluginAgentPlanStorage 的实现包，包含 8 个主要类型；当前测试覆
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **AgentPlanStorageTools**（21 条）：由 `writePlanStoresContent`、`writePlanRequiresArguments`、`readPlanReturnsContent` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **综合**（9 条）：由 `pluginMetadataAndToolNamesAreStable`、`storageSupportsNestedReadWriteListAndDelete`、`storageRejectsTraversalAndAbsolutePaths` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **AgentPlanStorageTools**（22 条）：由 `writePlanStoresContent`、`writePlanRequiresArguments`、`readPlanReturnsContent` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（12 条）：由 `pluginMetadataAndToolNamesAreStable`、`storageSupportsNestedReadWriteListAndDelete`、`storageRejectsTraversalAndAbsolutePaths`、`deletingInternalSymlinkRemovesLinkNotTarget`、`deletingDanglingSymlinkRemovesOnlyTheLink` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -66,27 +66,31 @@ PluginAgentPlanStorage 的实现包，包含 8 个主要类型；当前测试覆
 | 28 | 综合 | listFilesSortsByRecencyAndExcludesDirectories | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listFilesSortsByRecencyAndExcludesDirectories` |
 | 29 | 综合 | retentionClampsToAtLeastOneDay | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `retentionClampsToAtLeastOneDay` |
 | 30 | 综合 | storageErrorsExposeDescriptionsWithContext | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `storageErrorsExposeDescriptionsWithContext` |
+| 31 | 综合 | 删除指向内部计划的符号链接只移除链接自身（**回归 #972**） | 根目录内有 real.md 与指向它的 alias.md | `delete(filename: "alias.md")` | real.md 保留且可读，alias.md 目录项消失 | P1 | ✅ 已覆盖 | `deletingInternalSymlinkRemovesLinkNotTarget` |
+| 32 | 综合 | 删除悬空符号链接只移除链接自身（**回归 #972**） | 根目录内有指向不存在目标的 dangling.md | `delete(filename: "dangling.md")` | 链接目录项被移除，不抛 fileNotFound | P1 | ✅ 已覆盖 | `deletingDanglingSymlinkRemovesOnlyTheLink` |
+| 33 | AgentPlanStorageTools | write_plan 拒绝首尾空白文件名且不覆盖同名计划（**回归 #930**） | 已写入 plan.md | 用 ` plan.md ` 再写一次 | 抛出 `filenameHasSurroundingWhitespace`，plan.md 内容保持 first | P0 | ✅ 已覆盖 | `writePlanRejectsSurroundingWhitespace` |
+| 34 | 综合 | 首尾空白文件名被拒绝而不是静默裁剪（**回归 #930**） | 已写入 plan.md | 对 ` plan.md ` / `\tplan.md\n` 执行写、读、删 | 三者均抛 `filenameHasSurroundingWhitespace`，plan.md 未被覆盖或删除 | P0 | ✅ 已覆盖 | `surroundingWhitespaceIsRejectedInsteadOfRewritten` |
 
-> 说明：全部 **30 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **34 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 3 / 3
-- P1: 已覆盖 23 / 23
+- P0: 已覆盖 5 / 5
+- P1: 已覆盖 25 / 25
 - P2: 已覆盖 4 / 4
-- **合计: 30 / 30**（仅表示清单场景，非源码覆盖率）
+- **合计: 34 / 34**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
-- **P1**: 其余功能性用例（23 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
+- **P1**: 其余功能性用例（25 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 30 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 34 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

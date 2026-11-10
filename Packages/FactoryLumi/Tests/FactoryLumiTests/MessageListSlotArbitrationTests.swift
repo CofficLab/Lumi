@@ -1,7 +1,9 @@
 import Foundation
 import KernelCore
+import PluginMessageListDetailed
 import PluginMessageListEmpty
 import PluginMessageListStandard
+import PluginMessageListZCode
 import PluginMessageManager
 import ProviderChatSection
 import ProviderConversation
@@ -88,6 +90,64 @@ struct MessageListSlotArbitrationTests {
         )
         #expect(!page.isEmpty, "前提失败：会话应当有消息")
     }
+
+    /// V4（ZCode）与 V1–V3 共处同一个 `message-list` exclusiveGroup，
+    /// 但各自是**独立 package**、独立插件。
+    ///
+    /// 核心不变式：**任一时刻 active 的 message-list item 至多一个**。
+    /// 只断言「排序后的 winner」是不够的 —— 两个插件同时 active 时，
+    /// winner 仍可能恰好正确，但用户会看到两个列表叠加。
+    @Test("V1–V4 往返时 active 的 message-list item 至多一个")
+    func onlyOneMessageListItemIsActiveAcrossV1ToV4() async throws {
+        let context = try await MessageListFixtureHarness.make()
+
+        for verbosity in [
+            ResponseVerbosity.brief,
+            .standard,
+            .detailed,
+            .zcode,
+            .brief,
+        ] {
+            context.conversations.setVerbosity(verbosity, for: context.conversationID)
+            try await context.settle()
+
+            let activeIDs = context.activeMessageListItemIDs
+            #expect(
+                activeIDs.count <= 1,
+                "verbosity=\(verbosity.rawValue) 时同时有 \(activeIDs.count) 个 active item：\(activeIDs)"
+            )
+        }
+    }
+
+    /// V4（ZCode）选中时，槽位必须属于 V4 插件。
+    @Test("选择 ZCode V4 时槽位属于 V4 插件")
+    func zcodeVerbosityActivatesZCodePlugin() async throws {
+        let context = try await MessageListFixtureHarness.make()
+
+        context.conversations.setVerbosity(.zcode, for: context.conversationID)
+        try await context.settle()
+
+        #expect(context.renderedMessageListItemID == context.zcodePluginID)
+        #expect(context.activeMessageListItemIDs == [context.zcodePluginID])
+    }
+
+    /// shutdown 后 V4 的 ChatSection item 必须被移除，且 observer 全部取消。
+    @Test("V4 shutdown 后移除 ChatSection item")
+    func zcodeShutdownRemovesChatSectionItem() async throws {
+        let context = try await MessageListFixtureHarness.make()
+
+        context.conversations.setVerbosity(.zcode, for: context.conversationID)
+        try await context.settle()
+        #expect(context.renderedMessageListItemID == context.zcodePluginID)
+
+        context.shutdownZCode()
+
+        #expect(
+            !context.chat.items.contains { $0.id == context.zcodePluginID },
+            "V4 shutdown 后 ChatSection item 仍然存在"
+        )
+        #expect(context.activeMessageListItemIDs.isEmpty)
+    }
 }
 
 // MARK: - Harness
@@ -102,12 +162,17 @@ private final class MessageListFixtureHarness {
     let conversationID: UUID
     let standardPluginID: String
     let emptyPluginID: String
+    let zcodePluginID: String
 
     /// 必须持有插件实例：空态 item 的 `isActive` 闭包以 `[weak self]` 捕获插件，
     /// 插件被释放后闭包恒返回 `false`，会让「空态从不渲染」假象通过断言。
     /// 这与 `VerbosityObservationBox` 在插件入口强持有的理由一致。
     private let emptyPlugin: PluginMessageListEmptyPlugin
     private let standardPlugin: PluginMessageListStandardPlugin
+    /// V4（ZCode）插件同样必须被强持有。
+    private let zcodePlugin: PluginMessageListZCodePlugin
+    /// V4 插件 shutdown 时需要的 kernel。
+    private let kernel: KernelCoreContainer
 
     /// 同一 exclusiveGroup 下最终会渲染的 item id。
     var renderedMessageListItemID: String? {
@@ -117,6 +182,22 @@ private final class MessageListFixtureHarness {
             .id
     }
 
+    /// 同一 exclusiveGroup 下**所有** active 的 item id。
+    ///
+    /// - Important: 不能只断言排序后的 winner —— 两个插件同时 active 时
+    ///   winner 可能恰好正确，但用户会看到两个列表叠加。
+    var activeMessageListItemIDs: [String] {
+        chat.items
+            .filter { $0.exclusiveGroup == "message-list" && $0.placement == .stack }
+            .filter { $0.isActive() }
+            .map(\.id)
+    }
+
+    /// 关闭 V4 插件，验证 shutdown 完整清理。
+    func shutdownZCode() {
+        try? zcodePlugin.onShutdown(kernel: kernel)
+    }
+
     private init(
         chat: DefaultChatSectionProviding,
         messages: MessageManager,
@@ -124,8 +205,11 @@ private final class MessageListFixtureHarness {
         conversationID: UUID,
         standardPluginID: String,
         emptyPluginID: String,
+        zcodePluginID: String,
         emptyPlugin: PluginMessageListEmptyPlugin,
-        standardPlugin: PluginMessageListStandardPlugin
+        standardPlugin: PluginMessageListStandardPlugin,
+        zcodePlugin: PluginMessageListZCodePlugin,
+        kernel: KernelCoreContainer
     ) {
         self.chat = chat
         self.messages = messages
@@ -133,8 +217,11 @@ private final class MessageListFixtureHarness {
         self.conversationID = conversationID
         self.standardPluginID = standardPluginID
         self.emptyPluginID = emptyPluginID
+        self.zcodePluginID = zcodePluginID
         self.emptyPlugin = emptyPlugin
         self.standardPlugin = standardPlugin
+        self.zcodePlugin = zcodePlugin
+        self.kernel = kernel
     }
 
     static func make() async throws -> MessageListFixtureHarness {
@@ -165,6 +252,10 @@ private final class MessageListFixtureHarness {
         // 空态：按需注册，抢占同一个 exclusiveGroup。
         let empty = PluginMessageListEmptyPlugin()
         try empty.onBoot(kernel: kernel)
+
+        // V4（ZCode）：与 V1–V3 共处同一个 exclusiveGroup。
+        let zcode = PluginMessageListZCodePlugin()
+        try zcode.onBoot(kernel: kernel)
 
         let conversationID = try conversations.createConversation(
             title: "Fixture",
@@ -206,8 +297,11 @@ private final class MessageListFixtureHarness {
             conversationID: conversationID,
             standardPluginID: standard.id,
             emptyPluginID: empty.id,
+            zcodePluginID: zcode.id,
             emptyPlugin: empty,
-            standardPlugin: standard
+            standardPlugin: standard,
+            zcodePlugin: zcode,
+            kernel: kernel
         )
     }
 

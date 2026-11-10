@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// Title toolbar 弹出的 popover 内容（复刻旧版 ConversationListPlugin.ToolbarPopoverContent）
@@ -15,27 +16,26 @@ import SwiftUI
 /// View 只依赖 ViewModel，不创建外部 Observer。
 struct ToolbarPopoverContent: View {
     @ObservedObject private var viewModel: ConversationListToolbarViewModel
+    @ObservedObject private var pinState: ToolbarPopoverState
     private let allProjectsViewModel: ConversationListViewModel
     private let currentProjectViewModel: ConversationListViewModel
 
     init(
         viewModel: ConversationListToolbarViewModel,
         allProjectsViewModel: ConversationListViewModel,
-        currentProjectViewModel: ConversationListViewModel
+        currentProjectViewModel: ConversationListViewModel,
+        pinState: ToolbarPopoverState
     ) {
         self.viewModel = viewModel
         self.allProjectsViewModel = allProjectsViewModel
         self.currentProjectViewModel = currentProjectViewModel
+        self.pinState = pinState
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            // 仅当「当前项目」分段可见时才渲染分段栏，否则只剩 "所有项目"，
-            // 单一分段无需展示 Picker（与 rail 标签条「>1 个 tab 才显示」一致）。
-            if viewModel.showsCurrentProjectScope {
-                tabBar
-                Divider()
-            }
+            tabBar
+            Divider()
             content
         }
         .frame(width: 300)
@@ -43,7 +43,7 @@ struct ToolbarPopoverContent: View {
         .task(id: viewModel.currentProjectPath) {
             await viewModel.refreshProjectScopeVisibility()
         }
-        .onChange(of: viewModel.contextRevision) { _, _ in
+        .onChange(of: viewModel.contextRevision) { _ in
             Task { await viewModel.refreshProjectScopeVisibility() }
         }
     }
@@ -52,18 +52,45 @@ struct ToolbarPopoverContent: View {
 
     @ViewBuilder
     private var tabBar: some View {
-        Picker("", selection: pickerSelectionBinding) {
-            Text("所有项目")
-                .tag(ConversationListToolbarViewModel.Scope.allProjects)
-            Text(viewModel.currentProjectTabTitle)
-                .tag(ConversationListToolbarViewModel.Scope.currentProject)
+        HStack(spacing: 8) {
+            // 仅当「当前项目」分段可见时才渲染分段栏，否则只剩 "所有项目"，
+            // 单一分段无需展示 Picker（与 rail 标签条「>1 个 tab 才显示」一致）。
+            if viewModel.showsCurrentProjectScope {
+                Picker("", selection: pickerSelectionBinding) {
+                    Text("所有项目")
+                        .tag(ConversationListToolbarViewModel.Scope.allProjects)
+                    Text(viewModel.currentProjectTabTitle)
+                        .tag(ConversationListToolbarViewModel.Scope.currentProject)
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .disabled(viewModel.currentProjectName == nil)
+            }
+
+            Spacer(minLength: 0)
+
+            #if os(macOS)
+            pinButton
+            #endif
         }
-        .labelsHidden()
-        .pickerStyle(.segmented)
-        .disabled(viewModel.currentProjectName == nil)
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
     }
+
+    #if os(macOS)
+    private var pinButton: some View {
+        AppIconButton(
+            systemImage: pinState.isPinned ? "pin.fill" : "pin",
+            size: .compact,
+            isActive: pinState.isPinned
+        ) {
+            pinState.isPinned.toggle()
+        }
+        .help(pluginLocalization.string(pinState.isPinned ? "Unpin" : "Pin"))
+        .accessibilityLabel(pluginLocalization.string(pinState.isPinned ? "Unpin" : "Pin"))
+        .accessibilityIdentifier(ConversationListAccessibility.pinButtonID)
+    }
+    #endif
 
     /// 绑定:无项目时,即使 selectedScope 落在 .currentProject,也强制保持在 .allProjects,
     /// 避免 Picker 出现"已选中但 disabled"的卡死视觉。

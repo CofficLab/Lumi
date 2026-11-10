@@ -17,7 +17,7 @@ public struct ListProjectsTool: SuperAgentTool {
             "properties": [
                 "limit": [
                     "type": "integer",
-                    "description": "Maximum number of projects to return (default: 5, max: 500)",
+                    "description": "Maximum number of projects to return (default: 5, min: 1, max: 500)",
                 ],
             ],
         ]
@@ -31,13 +31,31 @@ public struct ListProjectsTool: SuperAgentTool {
         .safe
     }
 
-    private let maxLimit = 500
+    private static let defaultLimit = 5
+    private static let maxLimit = 500
+
+    /// 解析 `limit`：缺省取默认值，超出上限安全截断；
+    /// 显式传入无法解析或小于 1 的值返回 nil，由调用方转为参数错误。
+    ///
+    /// `prefix(_:)` 对负数会触发 precondition，因此必须先在这里收住。
+    static func resolvedLimit(arguments: [String: ToolArgument]) -> Int? {
+        guard arguments["limit"]?.value != nil else { return defaultLimit }
+        guard let requested = ProjectToolSupport.int(arguments, "limit"), requested >= 1 else {
+            return nil
+        }
+        return min(requested, maxLimit)
+    }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let limit = min(ProjectToolSupport.int(arguments, "limit") ?? 5, maxLimit)
+        guard let limit = Self.resolvedLimit(arguments: arguments) else {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "'limit' must be an integer between 1 and \(Self.maxLimit)."
+            )
+        }
 
         guard let viewModel = await MainActor.run(body: { ProjectsRuntime.viewModel }) else {
-            return "Error: Projects view model is not available."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Projects view model is not available.")
         }
 
         return await MainActor.run {

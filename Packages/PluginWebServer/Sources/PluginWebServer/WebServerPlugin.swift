@@ -89,8 +89,12 @@ public final class WebServerPlugin: SuperPlugin, SuperLog {
         self.contributionHost = host
 
         registerThemeRoutes(kernel: kernel, server: server)
-        registerCoreRoutes(kernel: kernel, server: server)
-        registerToolRoutes(kernel: kernel, server: server)
+
+        // 核心控制面与工具桥接必须合并成**一次**注册：`LumiWebServer.register`
+        // 对同一插件是整体替换语义，分两次注册会让后一组路由覆盖前一组。
+        var bootRoutes = makeCoreRoutes(kernel: kernel, server: server)
+        bootRoutes.append(contentsOf: makeToolRoutes(kernel: kernel))
+        server.register(bootRoutes, forPlugin: id)
 
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
@@ -209,8 +213,8 @@ public final class WebServerPlugin: SuperPlugin, SuperLog {
         }
     }
 
-    /// 注册核心控制面路由（状态、插件、会话）。
-    private func registerCoreRoutes(kernel: KernelCoreContainer, server: LumiWebServer) {
+    /// 构造核心控制面路由（状态、插件、会话）。
+    private func makeCoreRoutes(kernel: KernelCoreContainer, server: LumiWebServer) -> [WebRoute] {
         let context = WebControlContext(
             conversations: kernel.resolveProvider((any ConversationManaging).self),
             messages: kernel.resolveProvider((any MessageManaging).self),
@@ -240,16 +244,16 @@ public final class WebServerPlugin: SuperPlugin, SuperLog {
             )
         }
 
-        server.register(routes, forPlugin: id)
+        return routes
     }
 
-    /// 注册 Agent Tool 桥接路由。
-    private func registerToolRoutes(kernel: KernelCoreContainer, server: LumiWebServer) {
+    /// 构造 Agent Tool 桥接路由。
+    private func makeToolRoutes(kernel: KernelCoreContainer) -> [WebRoute] {
         guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
             if Self.verbose {
                 Self.logger.info("\(Self.t)tool manager unavailable, skipping tool bridge routes")
             }
-            return
+            return []
         }
 
         let conversations = kernel.resolveProvider((any ConversationManaging).self)
@@ -261,6 +265,6 @@ public final class WebServerPlugin: SuperPlugin, SuperLog {
         )
         self.toolBridge = bridge
 
-        server.register(WebToolRoutes.makeRoutes(bridge: bridge), forPlugin: id)
+        return WebToolRoutes.makeRoutes(bridge: bridge)
     }
 }

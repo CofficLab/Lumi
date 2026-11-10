@@ -168,6 +168,73 @@ struct TextActionMenuLayoutTests {
     }
 }
 
+// MARK: - 多屏选屏
+
+@Suite("Text Actions 多屏选屏")
+struct TextActionScreenSelectionTests {
+    private let mainScreen = CGRect(x: 0, y: 0, width: 1_440, height: 900)
+    private let secondaryScreen = CGRect(x: -1_920, y: 0, width: 1_920, height: 1_080)
+    private let mouseAnchor = CGPoint(x: 200, y: 200)
+
+    @Test("有选区 bounds 时按选区所在屏幕布局")
+    func selectionRectWinsOverMouseAnchor() {
+        // 鼠标停在主屏，选区在副屏——键盘操作时的典型场景。
+        let selection = CGRect(x: -1_000, y: 500, width: 120, height: 20)
+        let index = TextActionScreenSelection.screenIndex(
+            selectionRect: selection,
+            anchor: mouseAnchor,
+            screenFrames: [mainScreen, secondaryScreen]
+        )
+
+        #expect(index == 1)
+    }
+
+    @Test("无选区 bounds 时回退到鼠标锚点所在屏幕")
+    func fallsBackToAnchorWithoutSelectionRect() {
+        let index = TextActionScreenSelection.screenIndex(
+            selectionRect: nil,
+            anchor: CGPoint(x: -500, y: 400),
+            screenFrames: [mainScreen, secondaryScreen]
+        )
+
+        #expect(index == 1)
+    }
+
+    @Test("空选区 bounds 等同不可用")
+    func emptySelectionRectFallsBackToAnchor() {
+        let index = TextActionScreenSelection.screenIndex(
+            selectionRect: CGRect(x: -1_000, y: 500, width: 0, height: 0),
+            anchor: mouseAnchor,
+            screenFrames: [mainScreen, secondaryScreen]
+        )
+
+        #expect(index == 0)
+    }
+
+    @Test("选区中心落在屏幕外时回退到锚点")
+    func offscreenSelectionFallsBackToAnchor() {
+        let selection = CGRect(x: 5_000, y: 5_000, width: 100, height: 20)
+        let index = TextActionScreenSelection.screenIndex(
+            selectionRect: selection,
+            anchor: mouseAnchor,
+            screenFrames: [mainScreen, secondaryScreen]
+        )
+
+        #expect(index == 0)
+    }
+
+    @Test("没有屏幕时返回 nil")
+    func noScreensReturnsNil() {
+        let index = TextActionScreenSelection.screenIndex(
+            selectionRect: CGRect(x: 0, y: 0, width: 10, height: 10),
+            anchor: CGPoint(x: 5, y: 5),
+            screenFrames: []
+        )
+
+        #expect(index == nil)
+    }
+}
+
 // MARK: - 消失策略
 
 @Suite("Text Actions 消失策略")
@@ -197,6 +264,22 @@ struct TextActionDismissPolicyTests {
     @Test("滚动阈值固定")
     func scrollThresholdIsStable() {
         #expect(TextActionDismissPolicy.scrollThreshold == 60)
+    }
+
+    @Test("落在浮层窗口内的事件不算外部事件")
+    func eventInsidePanelIsIgnored() {
+        #expect(TextActionDismissPolicy.isInsidePanel(eventWindowNumber: 42, panelWindowNumber: 42))
+    }
+
+    @Test("落在其他窗口的事件会关闭浮层")
+    func eventInOtherWindowIsDismissed() {
+        #expect(!TextActionDismissPolicy.isInsidePanel(eventWindowNumber: 7, panelWindowNumber: 42))
+    }
+
+    @Test("窗口号未知时不能误判为浮层内")
+    func unknownWindowNumberNeverMatches() {
+        #expect(!TextActionDismissPolicy.isInsidePanel(eventWindowNumber: 0, panelWindowNumber: 0))
+        #expect(!TextActionDismissPolicy.isInsidePanel(eventWindowNumber: 0, panelWindowNumber: 42))
     }
 }
 

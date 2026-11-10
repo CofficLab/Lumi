@@ -1,0 +1,257 @@
+//
+// This source file is part of the Hummingbird server framework project
+// Copyright (c) the Hummingbird authors
+//
+// See LICENSE.txt for license information
+// SPDX-License-Identifier: Apache-2.0
+//
+
+import NIOCore
+
+#if canImport(FoundationEssentials)
+internal import FoundationEssentials
+#else
+internal import Foundation
+#endif
+
+extension RouterTrie {
+    /// Resolve a path to a `Value` if available
+    @inlinable
+    public func resolve(_ path: String) -> (value: Value, parameters: Parameters)? {
+        var context = ResolveContext(
+            path: path,
+            trie: trie,
+            values: values,
+            caseInsensitive: self.options.contains(.caseInsensitive)
+        )
+        return context.resolve()
+    }
+
+    @usableFromInline
+    struct ResolveContext {
+        @usableFromInline let path: String
+        @usableFromInline let trie: Trie
+        @usableFromInline let values: [Value?]
+        @usableFromInline var parameters = Parameters()
+        @usableFromInline let caseInsensitive: Bool
+
+        @usableFromInline init(
+            path: String,
+            trie: Trie,
+            values: [Value?],
+            caseInsensitive: Bool
+        ) {
+            self.path = path
+            self.trie = trie
+            self.values = values
+            self.caseInsensitive = caseInsensitive
+        }
+
+        @inlinable
+        mutating func resolve() -> (value: Value, parameters: Parameters)? {
+            var iterator = path.splitSequence(separator: "/").makeIterator()
+
+            guard let component = iterator.next() else {
+                // Empty path - check root node
+                guard let value = values[trie.nodes[0].valueIndex] else {
+                    return nil
+                }
+                return (value: value, parameters: self.parameters)
+            }
+
+            var nodeIndex = 1
+            guard
+                let node = descend(
+                    component: component,
+                    iterator: iterator,
+                    nodeIndex: &nodeIndex
+                )
+            else {
+                return nil
+            }
+
+            if let value = values[node.valueIndex] {
+                return (value: value, parameters: self.parameters)
+            } else {
+                return nil
+            }
+        }
+
+        @inlinable
+        mutating func descend(
+            component: Substring,
+            iterator: SplitStringSequence<String>.Iterator,
+            nodeIndex: inout Int
+        ) -> TrieNode? {
+            var node = self.matchComponent(component, atNodeIndex: &nodeIndex)
+            var iterator = iterator
+
+            if node.token == .recursiveWildcard {
+                // we have found a recursive wildcard. Go through all the path components until we match one of them
+                // or reach the end of the path component array
+                var range = component.startIndex..<component.endIndex
+
+                while let nextComponent = iterator.next() {
+                    var _nodeIndex = nodeIndex
+                    let recursiveNode = self.matchComponent(nextComponent, atNodeIndex: &_nodeIndex)
+                    if recursiveNode.token != .deadEnd {
+                        node = recursiveNode
+                        nodeIndex = _nodeIndex
+                        break
+                    }
+                    // extend range of catch all text
+                    range = range.lowerBound..<nextComponent.endIndex
+                }
+                self.parameters.setCatchAll(self.path[range])
+            }
+
+            if node.token == .deadEnd {
+                return nil
+            }
+
+            if let nextComponent = iterator.next() {
+                // There's another component to the route
+                var nextIndex = nodeIndex
+
+                // If a dead end is found, we're done
+                while self.trie.nodes[nextIndex].token != .deadEnd {
+                    if let node = descend(
+                        component: nextComponent,
+                        iterator: iterator,
+                        nodeIndex: &nodeIndex
+                    ) {
+                        return node
+                    }
+                    nextIndex = self.trie.nodes[nextIndex].nextSiblingNodeIndex
+                    nodeIndex = nextIndex
+                }
+
+                return nil
+            } else {
+                return node
+            }
+        }
+
+        /// Match sibling node for path component
+        @inlinable
+        mutating func matchComponent(_ component: Substring, atNodeIndex nodeIndex: inout Int) -> TrieNode {
+            while nodeIndex < self.trie.nodes.count {
+                let node = self.trie.nodes[nodeIndex]
+                let result = self.matchComponent(component, node: node)
+                switch result {
+                case .match, .deadEnd:
+                    nodeIndex += 1
+                    return node
+                default:
+                    nodeIndex = Int(node.nextSiblingNodeIndex)
+                }
+            }
+
+            // should never get here
+            return TrieNode(valueIndex: 0, token: .deadEnd, nextSiblingNodeIndex: .max)
+        }
+
+        @usableFromInline
+        enum MatchResult {
+            case match, mismatch, ignore, deadEnd
+        }
+
+        @usableFromInline
+        func equals(_ lhs: Substring, _ rhs: Substring) -> Bool {
+            if self.caseInsensitive {
+                return lhs._routerCaseInsensitiveCompare(rhs)
+            } else {
+                return lhs == rhs
+            }
+        }
+
+        @usableFromInline
+        func hasPrefix(_ lhs: Substring, _ rhs: Substring) -> Bool {
+            if self.caseInsensitive {
+                return lhs.prefix(rhs.count)._routerCaseInsensitiveCompare(rhs)
+            } else {
+                return lhs.hasPrefix(rhs)
+            }
+        }
+
+        @usableFromInline
+        func hasSuffix(_ lhs: Substring, _ rhs: Substring) -> Bool {
+            if self.caseInsensitive {
+                return lhs.suffix(rhs.count)._routerCaseInsensitiveCompare(rhs)
+            } else {
+                return lhs.hasSuffix(rhs)
+            }
+        }
+
+        @inlinable
+        mutating func matchComponent(_ component: Substring, node: TrieNode) -> MatchResult {
+            switch node.token {
+            case .path(let constant):
+                // The current node is a constant
+                if equals(self.trie.stringValues[Int(constant)], component) {
+                    return .match
+                }
+
+                return .mismatch
+            case .capture(let parameter):
+                self.parameters[self.trie.stringValues[Int(parameter)]] = component
+                return .match
+            case .prefixCapture(let parameter, let suffix):
+                let suffix = self.trie.stringValues[Int(suffix)]
+
+                if hasSuffix(component, suffix) {
+                    self.parameters[self.trie.stringValues[Int(parameter)]] = component.dropLast(suffix.count)
+                    return .match
+                }
+
+                return .mismatch
+            case .suffixCapture(let prefix, let parameter):
+                let prefix = self.trie.stringValues[Int(prefix)]
+                if hasPrefix(component, prefix) {
+                    self.parameters[self.trie.stringValues[Int(parameter)]] = component.dropFirst(prefix.count)
+                    return .match
+                }
+
+                return .mismatch
+            case .wildcard:
+                // Always matches, descend
+                return .match
+            case .prefixWildcard(let suffix):
+                if hasSuffix(component, self.trie.stringValues[Int(suffix)]) {
+                    return .match
+                }
+
+                return .mismatch
+            case .suffixWildcard(let prefix):
+                if hasPrefix(component, self.trie.stringValues[Int(prefix)]) {
+                    return .match
+                }
+
+                return .mismatch
+            case .recursiveWildcard:
+                return .match
+            case .null:
+                return .ignore
+            case .deadEnd:
+                return .deadEnd
+            }
+        }
+    }
+}
+
+extension StringProtocol {
+    @inlinable
+    package func _routerCaseInsensitiveCompare<OtherString: StringProtocol>(_ other: OtherString) -> Bool {
+        guard self.count == other.count else { return false }
+
+        var iterator = self.makeIterator()
+        var otherIterator = other.makeIterator()
+        while let c = iterator.next() {
+            let otherC = otherIterator.next()!
+            if c.lowercased() != otherC.lowercased() {
+                return false
+            }
+        }
+        return true
+    }
+}

@@ -99,9 +99,10 @@ private struct RouteDispatchMiddleware: RouterMiddleware {
 /// 1. **请求 ID** —— 生成/透传 `X-Request-ID`,写入响应头,便于日志关联。
 /// 2. **CORS 预检** —— `OPTIONS` 请求直接返回允许的方法与请求头。
 /// 3. **鉴权** —— 按 `authPolicy` 校验凭证,不通过则 401。
-/// 4. **路由匹配** —— 命中则执行 handler;未命中 404;路径匹配但方法不符 405。
-/// 5. **错误映射** —— `WebAPIError` 映射为对应状态码与统一 JSON 错误体。
-/// 6. **请求日志** —— 记录方法、路径、状态码与耗时(不含请求体与响应体)。
+/// 4. **跨源写保护** —— 浏览器发起的跨源写请求直接 403;无 Origin 的原生客户端放行。
+/// 5. **路由匹配** —— 命中则执行 handler;未命中 404;路径匹配但方法不符 405。
+/// 6. **错误映射** —— `WebAPIError` 映射为对应状态码与统一 JSON 错误体。
+/// 7. **请求日志** —— 记录方法、路径、状态码与耗时(不含请求体与响应体)。
 public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendable {
     /// 服务日志。
     nonisolated static let logger = Logger(
@@ -140,6 +141,25 @@ public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendabl
     private var runTask: Task<Void, Never>?
     /// 服务启动时刻，用于计算运行时长。
     private var startedAt: Date?
+
+    /// 生命周期阶段，串行化 start/stop 的重叠调用。
+    private enum LifecyclePhase {
+        case idle
+        case starting
+        case running
+        case stopping
+    }
+
+    private let lifecycleLock = NSLock()
+    private var lifecyclePhase: LifecyclePhase = .idle
+    /// 进行中的启动任务；stop 会等待它结束后再关闭服务组。
+    private var startupTask: Task<Int, Error>?
+    /// 进行中的关闭任务；并发的 stop 会等待同一个关闭任务。
+    private var shutdownTask: Task<Void, Never>?
+    /// 生命周期轮次；每次 start 递增，用于识别「已被后续 start 取代」的旧启动。
+    private var lifecycleGeneration = 0
+    /// 测试用启动延迟，便于确定性地覆盖启动/停止重叠路径。
+    var startupDelayForTesting: Duration = .zero
 
     // 路由表(pluginID -> routes)与派发用的扁平匹配器列表,统一用锁保护。
     private let lock = NSLock()
@@ -279,8 +299,63 @@ public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendabl
 
     // MARK: WebServerProviding - Lifecycle
 
+    private func withLifecycleLock<T>(_ body: () -> T) -> T {
+        lifecycleLock.lock()
+        defer { lifecycleLock.unlock() }
+        return body()
+    }
+
     public func start() async throws {
-        guard !isRunning else { return }
+        let registration: (task: Task<Int, Error>, generation: Int)? = withLifecycleLock {
+            guard lifecyclePhase == .idle else { return nil }
+            lifecycleGeneration += 1
+            let generation = lifecycleGeneration
+            let task = Task { [self] in
+                try await performStart()
+            }
+            startupTask = task
+            lifecyclePhase = .starting
+            return (task, generation)
+        }
+        guard let registration else { return }
+        let startup = registration.task
+
+        do {
+            let actualPort = try await startup.value
+
+            // 启动期间已被 stop 接管时不再标记为运行中：由 stop 负责关闭服务组。
+            withLifecycleLock {
+                // 已被 stop 关闭、或被后续 start 取代时，不能再修改运行状态。
+                guard lifecyclePhase == .starting,
+                      lifecycleGeneration == registration.generation else { return }
+                lifecyclePhase = .running
+                startupTask = nil
+                boundPort = actualPort
+                startedAt = Date()
+                isRunning = true
+            }
+        } catch {
+            let waitTask: Task<Void, Never>? = withLifecycleLock {
+                // 本次启动已被后续生命周期操作取代，关闭工作由取代者负责。
+                guard lifecycleGeneration == registration.generation else { return nil }
+                if lifecyclePhase == .stopping { return shutdownTask }
+                // 保持 stopping 直到 shutdown 完成，阻止新的 start 与旧服务组重叠。
+                lifecyclePhase = .stopping
+                let task = Task<Void, Never> { [weak self] in
+                    _ = await self?.shutdown()
+                }
+                shutdownTask = task
+                return task
+            }
+            await waitTask?.value
+            throw error
+        }
+    }
+
+    private func performStart() async throws -> Int {
+        if startupDelayForTesting > .zero {
+            try? await Task.sleep(for: startupDelayForTesting)
+        }
 
         let gate = StartGate()
         let router = Router()
@@ -310,32 +385,66 @@ public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendabl
         }
         self.runTask = runTask
 
-        do {
-            // 等待服务真正绑定端口;若启动期间出错(如端口被占用)则抛出。
-            let actualPort = try await withCheckedThrowingContinuation { continuation in
-                gate.arm(continuation)
-            }
-            self.boundPort = actualPort
-            self.startedAt = Date()
-            self.isRunning = true
-        } catch {
-            await stop()
-            throw error
+        // 等待服务真正绑定端口;若启动期间出错(如端口被占用)则抛出。
+        return try await withCheckedThrowingContinuation { continuation in
+            gate.arm(continuation)
         }
     }
 
     public func stop() async {
-        guard isRunning else { return }
-        isRunning = false
-        let group = serviceGroup
-        serviceGroup = nil
-        if let group {
-            await group.triggerGracefulShutdown()
-            _ = await runTask?.value
+        let waitTask: Task<Void, Never>? = withLifecycleLock {
+            switch lifecyclePhase {
+            case .idle:
+                return nil
+            case .stopping:
+                if let existing = shutdownTask { return existing }
+                // 异常状态兜底：仍等待启动结束后关闭，避免遗留监听器。
+                let startup = startupTask
+                let task = Task { [weak self] in
+                    _ = try? await startup?.value
+                    await self?.shutdown()
+                }
+                shutdownTask = task
+                return task
+            case .starting, .running:
+                lifecyclePhase = .stopping
+                let startup = startupTask
+                let task = Task { [weak self] in
+                    _ = try? await startup?.value
+                    await self?.shutdown()
+                }
+                shutdownTask = task
+                return task
+            }
         }
-        runTask = nil
-        boundPort = nil
-        startedAt = nil
+        await waitTask?.value
+    }
+
+    /// 关闭服务组并复位状态；调用方负责把 phase 置为 `.stopping` 或确保没有并发 start。
+    private func shutdown() async {
+        let resources: (ServiceGroup?, Task<Void, Never>?) = withLifecycleLock {
+            isRunning = false
+            let group = serviceGroup
+            let runTask = self.runTask
+            serviceGroup = nil
+            self.runTask = nil
+            return (group, runTask)
+        }
+
+        if let group = resources.0 {
+            await group.triggerGracefulShutdown()
+            _ = await resources.1?.value
+        }
+
+        withLifecycleLock {
+            boundPort = nil
+            startedAt = nil
+            if lifecyclePhase == .stopping {
+                lifecyclePhase = .idle
+            }
+            startupTask = nil
+            shutdownTask = nil
+        }
     }
 
     // MARK: Request Dispatch
@@ -386,6 +495,23 @@ public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendabl
         if let authError = authPolicy.validate(headers: headers) {
             return finish(
                 response: Self.makeErrorResponse(error: authError, requestID: requestID),
+                requestID: requestID,
+                method: method.rawValue,
+                path: path,
+                pluginID: nil,
+                startedAt: startedAt,
+                headers: headers
+            )
+        }
+
+        // CSRF 防护:跨源简单请求(CORS 预检之外的表单 POST)同样会送达，
+        // 仅靠「不返回 CORS 响应头」无法阻止写操作，必须在执行前拒绝。
+        if let rejection = crossOriginWriteRejection(method: method, headers: headers) {
+            return finish(
+                response: Self.makeErrorResponse(
+                    error: .forbidden(message: rejection),
+                    requestID: requestID
+                ),
                 requestID: requestID,
                 method: method.rawValue,
                 path: path,
@@ -540,6 +666,64 @@ public final class LumiWebServer: WebServerExtendedProviding, @unchecked Sendabl
             )
         )
         return response
+    }
+
+    /// 会修改服务端状态的方法。
+    private static func isStateChanging(_ method: HTTPMethod) -> Bool {
+        switch method {
+        case .post, .put, .patch, .delete: return true
+        case .get, .head, .options: return false
+        }
+    }
+
+    /// 拒绝浏览器发起的跨源写请求（CSRF）。
+    ///
+    /// 跨源表单 POST 属于「简单请求」，浏览器不会先发 CORS 预检，因此
+    /// 「不返回 CORS 响应头」只能阻止页面读取响应，不能阻止写操作送达。
+    /// 判定规则：
+    /// - 显式配置的 CORS 允许来源视为已授权，放行其写请求；
+    /// - `Sec-Fetch-Site` 为 `cross-site` / `same-site` 时拒绝；
+    /// - `Origin` 与请求自身 host 不一致时拒绝；
+    /// - 没有 `Origin` 的调用方不是浏览器页面（curl、原生客户端），保持兼容。
+    ///
+    /// - Returns: 拒绝文案；允许时返回 `nil`。
+    private func crossOriginWriteRejection(method: HTTPMethod, headers: [String: String]) -> String? {
+        guard Self.isStateChanging(method) else { return nil }
+
+        let origin = headers["origin"]?.trimmingCharacters(in: .whitespaces)
+        if let origin, !origin.isEmpty, corsPolicy?.allowedOrigin(in: origin) != nil {
+            return nil
+        }
+
+        if let fetchSite = headers["sec-fetch-site"]?.trimmingCharacters(in: .whitespaces).lowercased(),
+           fetchSite != "same-origin", fetchSite != "none" {
+            return "Cross-origin \(method.rawValue) requests are not allowed."
+        }
+
+        guard let origin, !origin.isEmpty else { return nil }
+        guard Self.isSameOrigin(origin, hostHeader: headers["host"], defaultPort: boundPort ?? port) else {
+            return "Cross-origin \(method.rawValue) requests are not allowed."
+        }
+        return nil
+    }
+
+    /// `Origin` 是否与请求自身的 host 一致。
+    private static func isSameOrigin(_ origin: String, hostHeader: String?, defaultPort: Int) -> Bool {
+        guard let originComponents = URLComponents(string: origin),
+              let scheme = originComponents.scheme?.lowercased(),
+              scheme == "http" || scheme == "https",
+              let originHost = originComponents.host?.lowercased() else {
+            return false
+        }
+        let originPort = originComponents.port ?? (scheme == "https" ? 443 : 80)
+
+        let hostValue = (hostHeader?.isEmpty == false ? hostHeader : nil) ?? "127.0.0.1:\(defaultPort)"
+        guard let hostComponents = URLComponents(string: "http://\(hostValue)"),
+              let serverHost = hostComponents.host?.lowercased() else {
+            return false
+        }
+        let serverPort = hostComponents.port ?? defaultPort
+        return originHost == serverHost && originPort == serverPort
     }
 
     /// 解析或生成请求 ID。

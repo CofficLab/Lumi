@@ -17,14 +17,18 @@ extension ConversationManager {
 
     public func modelID(for conversationID: UUID?) -> String? {
         guard let conversationID else { return nil }
-        return conversations.first { $0.id == conversationID }?.modelID
+        // 缓存数组外的会话（窗口外旧会话/整表重载）也要保留刚选中的模型；
+        // 否则 selectModel 的 guard 会让选择静默消失。
+        return modelIDOverrides[conversationID]
+            ?? conversations.first { $0.id == conversationID }?.modelID
     }
 
     public func selectModel(id: String, for conversationID: UUID?) {
-        guard let conversationID,
-              let index = conversations.firstIndex(where: { $0.id == conversationID }),
-              LLMModelID(rawValue: id) != nil else { return }
-        conversations[index].modelID = id
+        guard let conversationID, LLMModelID(rawValue: id) != nil else { return }
+        modelIDOverrides[conversationID] = id
+        if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
+            conversations[index].modelID = id
+        }
         notifyConversationObservers(.providerChanged(conversationID))
 
         Task {
@@ -48,6 +52,8 @@ extension ConversationManager {
         guard globalVerbosity != verbosity else { return }
         globalVerbosity = verbosity
         notifyConversationObservers(.verbosityChanged(nil))
+        // New Chat 的默认详细度没有会话承载，必须单独落盘才能跨重启保留。
+        persistSelectedConversationID()
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setGlobalVerbosity: verbosity=\(verbosity.rawValue)")
@@ -81,12 +87,16 @@ extension ConversationManager {
     }
 
     /// 先更新内存并通知 UI，再由调用方决定是否等待持久化。
+    ///
+    /// 缓存外的会话（分页加载的历史会话）也要返回 ID，否则设置会静默丢失；
+    /// 内存只在命中时同步，写盘始终以会话 ID 为准。
     private func applyVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) -> UUID? {
-        guard let conversationID,
-              let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+        guard let conversationID else {
             return nil
         }
-        conversations[index].verbosity = verbosity
+        if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
+            conversations[index].verbosity = verbosity
+        }
         notifyConversationObservers(.verbosityChanged(conversationID))
         return conversationID
     }
@@ -114,10 +124,10 @@ extension ConversationManager {
         guard let conversationID else {
             return
         }
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return
+        if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
+            conversations[index].reasoningEffort = reasoningEffort
         }
-        conversations[index].reasoningEffort = reasoningEffort
+        reasoningEffortOverrides[conversationID] = reasoningEffort
         notifyConversationObservers(.reasoningChanged(conversationID))
         notifyConversationsChanged()
 
@@ -134,17 +144,22 @@ extension ConversationManager {
         guard let conversationID else {
             return nil
         }
+        // 缓存未命中不等于「未设置」：后台会话被挤出有界窗口后，下一请求
+        // 仍须使用它自己的推理强度，否则出站请求会静默省略 reasoning_effort
+        // （issue #892）。
         return conversations.first { $0.id == conversationID }?.reasoningEffort
+            ?? reasoningEffortOverrides[conversationID]
     }
 
     public func clearReasoningEffort(for conversationID: UUID?) {
         guard let conversationID else {
             return
         }
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return
+        if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
+            conversations[index].reasoningEffort = nil
         }
-        conversations[index].reasoningEffort = nil
+        // 显式清除必须同时丢弃淘汰前的快照，否则会话在缓存外仍会读回旧档位。
+        reasoningEffortOverrides[conversationID] = nil
         notifyConversationObservers(.reasoningChanged(conversationID))
         notifyConversationsChanged()
 
@@ -173,17 +188,21 @@ extension ConversationManager {
         guard let conversationID else {
             return .build
         }
-        return conversations.first { $0.id == conversationID }?.automationLevel ?? .build
+        // 缓存未命中不等于 Build：后台会话被挤出有界窗口后，仍须使用它自己的
+        // 自动化级别，否则同一后台回合的工具可用性与授权策略会静默改变（issue #1008）。
+        return conversations.first { $0.id == conversationID }?.automationLevel
+            ?? automationLevelOverrides[conversationID]
+            ?? .build
     }
 
     public func setAutomationLevel(_ automationLevel: AutomationLevel, for conversationID: UUID?) {
         guard let conversationID else {
             return
         }
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return
+        if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
+            conversations[index].automationLevel = automationLevel
         }
-        conversations[index].automationLevel = automationLevel
+        automationLevelOverrides[conversationID] = automationLevel
         notifyConversationObservers(.automationChanged(conversationID))
 
         Task {
@@ -201,13 +220,19 @@ extension ConversationManager {
         guard let conversationID else {
             return globalLanguage
         }
-        return conversations.first { $0.id == conversationID }?.language ?? globalLanguage
+        // 缓存外的会话（被挤出窗口的后台会话）必须回落到它自己的语言，
+        // 不能借用与它无关的 New Chat 全局默认值（issue #984）。
+        return languageOverrides[conversationID]
+            ?? conversations.first { $0.id == conversationID }?.language
+            ?? globalLanguage
     }
 
     public func setGlobalLanguage(_ language: ConversationLanguage) {
         guard globalLanguage != language else { return }
         globalLanguage = language
         notifyConversationObservers(.languageChanged(nil))
+        // New Chat 的默认语言没有会话承载，必须单独落盘才能跨重启保留。
+        persistSelectedConversationID()
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setGlobalLanguage: language=\(language.rawValue)")
@@ -218,10 +243,10 @@ extension ConversationManager {
         guard let conversationID else {
             return
         }
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return
+        languageOverrides[conversationID] = language
+        if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
+            conversations[index].language = language
         }
-        conversations[index].language = language
         notifyConversationObservers(.languageChanged(conversationID))
 
         if Self.verbose {

@@ -113,7 +113,10 @@ struct AttachmentPreviewDropTests {
         let capability = SendActionBarTestCapability()
         let viewModel = ConversationInputViewModel(capability: capability)
 
-        let fileURL = try makeFile(named: "pixel.png", contents: Data([0x89, 0x50]))
+        let fileURL = try makeFile(
+            named: "pixel.png",
+            contents: try #require(Data(base64Encoded: attachmentTestPNGBase64))
+        )
         defer { try? FileManager.default.removeItem(at: fileURL.deletingLastPathComponent()) }
         viewModel.attach(droppedURL: fileURL)
 
@@ -144,8 +147,8 @@ struct AttachmentPreviewDropTests {
         #expect(attachment.textContent == "hello")
     }
 
-    @Test("拖入预览区的目录路径插入输入框文本")
-    func droppedDirectoryInsertsPathIntoText() async throws {
+    @Test("拖入预览区的目录路径交给输入框编辑器插入")
+    func droppedDirectoryQueuesPathForEditor() async throws {
         let capability = SendActionBarTestCapability()
         let viewModel = ConversationInputViewModel(capability: capability)
 
@@ -156,7 +159,7 @@ struct AttachmentPreviewDropTests {
 
         viewModel.attach(droppedURL: directory)
 
-        #expect(viewModel.text == directory.path)
+        #expect(viewModel.pendingBlock?.text == directory.path)
     }
 
     @Test("预览区与输入框共用同一套分流规则")
@@ -168,7 +171,10 @@ struct AttachmentPreviewDropTests {
         let editorCapability = SendActionBarTestCapability()
         let editorViewModel = ConversationInputViewModel(capability: editorCapability)
 
-        let fileURL = try makeFile(named: "shared.png", contents: Data([0x89, 0x50]))
+        let fileURL = try makeFile(
+            named: "shared.png",
+            contents: try #require(Data(base64Encoded: attachmentTestPNGBase64))
+        )
         defer { try? FileManager.default.removeItem(at: fileURL.deletingLastPathComponent()) }
 
         previewViewModel.attach(droppedURL: fileURL)

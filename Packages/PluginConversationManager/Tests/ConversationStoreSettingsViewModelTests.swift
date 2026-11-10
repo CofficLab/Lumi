@@ -97,6 +97,59 @@ struct ConversationStoreSettingsViewModelTests {
         #expect(!viewModel.isMigrationActive)
     }
 
+    @Test func preferenceEventsRefreshCachedSummaries() async throws {
+        let capability = StubConversationStoreCapability()
+        let initial = makeConversations(count: 3)
+        capability.initialPage = initial
+        capability.summariesByID = Dictionary(uniqueKeysWithValues: initial.map { ($0.id, $0) })
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+
+        // Manager 在广播事件前已同步更新内存摘要，设置页应按 ID 拉取最新值。
+        var updated = initial[1]
+        updated.modelID = ConversationSummary(providerID: "openai", modelName: "gpt-4.1").modelID
+        updated.verbosity = .brief
+        updated.reasoningEffort = .high
+        updated.automationLevel = .autonomous
+        updated.language = .english
+        capability.summariesByID[updated.id] = updated
+
+        viewModel.handleConversationEvent(.providerChanged(updated.id))
+        viewModel.handleConversationEvent(.verbosityChanged(updated.id))
+        viewModel.handleConversationEvent(.reasoningChanged(updated.id))
+        viewModel.handleConversationEvent(.automationChanged(updated.id))
+        viewModel.handleConversationEvent(.languageChanged(updated.id))
+
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(1))
+        while viewModel.conversations[1] != updated, clock.now < deadline {
+            await Task.yield()
+        }
+
+        #expect(viewModel.conversations[1] == updated)
+        #expect(viewModel.conversations[0] == initial[0])
+        #expect(capability.pageRequests.count == 1, "偏好事件只更新单条摘要，不应整页重载")
+    }
+
+    @Test func reopeningRefreshesStaleSummaries() async throws {
+        let capability = StubConversationStoreCapability()
+        let initial = makeConversations(count: 3)
+        capability.initialPage = initial
+        capability.summariesByID = Dictionary(uniqueKeysWithValues: initial.map { ($0.id, $0) })
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+
+        // 设置页关闭期间 Manager 已更新偏好，但没有可观察的事件送达。
+        var updated = initial[0]
+        updated.verbosity = .brief
+        capability.summariesByID[updated.id] = updated
+
+        await viewModel.loadInitialIfNeeded()
+
+        #expect(viewModel.conversations[0] == updated)
+        #expect(capability.pageRequests.count == 1, "重进页面只刷新已加载摘要，不整页重载")
+    }
+
     @Test func emptyLoadsFinishAndMessagesClearWithoutSelection() async {
         let capability = StubConversationStoreCapability()
         let viewModel = ConversationStoreSettingsViewModel(capability: capability)
@@ -109,6 +162,80 @@ struct ConversationStoreSettingsViewModelTests {
         #expect(viewModel.totalConversationCount == 0)
         await viewModel.loadInitialIfNeeded()
         #expect(capability.pageRequests.count == 1)
+    }
+
+    @Test func loadMoreDoesNotAppendStalePageAfterReload() async throws {
+        let capability = StubConversationStoreCapability()
+        let firstPage = makeConversations(count: 40)
+        capability.initialPage = firstPage
+        capability.totalCount = 45
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+
+        await viewModel.loadInitialIfNeeded()
+        #expect(viewModel.conversations.count == 40)
+        #expect(viewModel.hasMoreConversations)
+
+        capability.nextPage = makeConversations(count: 5, offset: 100)
+        capability.nextPageDelay = .milliseconds(400)
+
+        let more = Task { await viewModel.loadMoreIfNeeded() }
+        try await Task.sleep(for: .milliseconds(50))
+
+        let refreshed = makeConversations(count: 40, offset: 200)
+        capability.initialPage = refreshed
+        await viewModel.reloadConversations()
+
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(1))
+        while viewModel.conversations.first?.id != refreshed.first?.id, clock.now < deadline {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+
+        await more.value
+
+        #expect(
+            viewModel.conversations.map(\.id) == refreshed.map(\.id),
+            "旧分页不能追加到刷新后的列表"
+        )
+    }
+
+    @Test func messageChangeRefreshesCountAndSelectedPreview() async throws {
+        let capability = StubConversationStoreCapability()
+        let initial = makeConversations(count: 2)
+        let selectedID = initial[0].id
+        let backgroundID = initial[1].id
+        capability.initialPage = initial
+        capability.selectedConversationID = selectedID
+        capability.messageCounts = [selectedID: 2, backgroundID: 1]
+        capability.messagesByConversation[selectedID] = [
+            Message(conversationID: selectedID, role: .user, content: "m0"),
+            Message(conversationID: selectedID, role: .assistant, content: "m1"),
+        ]
+        let viewModel = ConversationStoreSettingsViewModel(capability: capability)
+        await viewModel.loadInitialIfNeeded()
+        await viewModel.loadMessages()
+        #expect(viewModel.messageCounts[selectedID] == 2)
+        #expect(viewModel.messagesForSelected.count == 2)
+
+        // 新消息不会改变会话摘要身份，只能靠消息变化事件驱动刷新。
+        let inserted = Message(conversationID: selectedID, role: .assistant, content: "m2")
+        capability.messageCounts[selectedID] = 3
+        capability.messagesByConversation[selectedID]?.append(inserted)
+        viewModel.handleMessageChange(.inserted(inserted, conversationID: selectedID))
+
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(1))
+        while viewModel.messagesForSelected.count != 3, clock.now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        #expect(viewModel.messageCounts[selectedID] == 3)
+        #expect(viewModel.messagesForSelected.last?.content == "m2")
+
+        // 非选中会话：只更新计数，不刷新当前预览。
+        viewModel.handleMessageChange(.updated(conversationID: backgroundID))
+        #expect(viewModel.messageCounts[backgroundID] == 1)
+        #expect(viewModel.messagesForSelected.count == 3)
     }
 
     private func makeConversations(count: Int, offset: Int = 0, childOf parentID: UUID? = nil) -> [ConversationSummary] {
@@ -141,8 +268,13 @@ final class StubConversationStoreCapability: ConversationStoreCapability {
     var dailySeries = ConversationDailyCountSeries(points: [])
     var messagesByConversation: [UUID: [Message]] = [:]
     var messageCounts: [UUID: Int] = [:]
+    var summariesByID: [UUID: ConversationSummary] = [:]
     var pageRequests: [PageRequest] = []
+    /// 首屏/刷新页与翻页的注入延迟，用于构造「旧分页晚到」场景。
+    var pageDelay: Duration?
+    var nextPageDelay: Duration?
     private var conversationObserver: ((ConversationEvent) -> Void)?
+    private var messageChangeObserver: ((MessageChange) -> Void)?
 
     func fetchConversationPage(
         limit: Int,
@@ -156,6 +288,8 @@ final class StubConversationStoreCapability: ConversationStoreCapability {
             beforeID: beforeID,
             includingChildConversations: includingChildConversations
         ))
+        let delay = beforeID == nil ? pageDelay : nextPageDelay
+        if let delay { try? await Task.sleep(for: delay) }
         return beforeID == nil ? initialPage : nextPage
     }
 
@@ -171,6 +305,10 @@ final class StubConversationStoreCapability: ConversationStoreCapability {
         messagesByConversation[conversationID] ?? []
     }
 
+    func fetchConversationSummary(id: UUID) async -> ConversationSummary? {
+        summariesByID[id]
+    }
+
     func messageCount(for conversationID: UUID) -> Int {
         messageCounts[conversationID] ?? 0
     }
@@ -182,5 +320,14 @@ final class StubConversationStoreCapability: ConversationStoreCapability {
 
     func emit(_ event: ConversationEvent) {
         conversationObserver?(event)
+    }
+
+    func addMessageChangeObserver(_ callback: @escaping (MessageChange) -> Void) -> any MessageChangeObserverHandle {
+        messageChangeObserver = callback
+        return NoopMessageChangeObserverHandle()
+    }
+
+    func emitMessageChange(_ change: MessageChange) {
+        messageChangeObserver?(change)
     }
 }

@@ -78,9 +78,17 @@ public final class RAGIndexScheduler: SuperLog {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)idle scheduler indexing project=\(candidate.projectPath)")
                 }
-                try await runWorkSlice(for: candidate.projectPath)
-                retryStates[candidate.projectPath, default: .init()].recordSuccess()
-                saveRetryStates()
+                // 在派发切片前捕获令牌，前台中断后这个切片不会再重启后台索引。
+                let token = await service.backgroundIndexingToken()
+                let outcome = try await runWorkSlice(for: candidate.projectPath, token: token)
+                if outcome.confirmsProgress {
+                    retryStates[candidate.projectPath, default: .init()].recordSuccess()
+                    saveRetryStates()
+                } else {
+                    // 节流/暂停跳过不代表成功：保留失败退避，并等待一个轮询
+                    // 间隔，避免同一候选在节流窗口内无 sleep 地反复空转（回归 #1116）。
+                    nextEligibleAt = Date().addingTimeInterval(configuration.schedulerPollInterval)
+                }
             } catch is RAGIndexSliceExpired {
                 // A slice ending is expected; incremental file state lets the
                 // next idle window resume without losing completed files.
@@ -130,10 +138,17 @@ public final class RAGIndexScheduler: SuperLog {
         return candidates
     }
 
-    private func runWorkSlice(for projectPath: String) async throws {
-        try await withThrowingTaskGroup(of: Void.self) { group in
+    private func runWorkSlice(
+        for projectPath: String,
+        token: RAGBackgroundIndexToken
+    ) async throws -> RAGIndexEnsureOutcome {
+        try await withThrowingTaskGroup(of: RAGIndexEnsureOutcome.self) { group in
             group.addTask { [service] in
-                try await service.ensureIndexed(projectPath: projectPath, background: true)
+                try await service.ensureIndexed(
+                    projectPath: projectPath,
+                    background: true,
+                    token: token
+                )
             }
             group.addTask {
                 try await Task.sleep(for: .seconds(5 * 60))
@@ -141,7 +156,7 @@ public final class RAGIndexScheduler: SuperLog {
             }
 
             defer { group.cancelAll() }
-            try await group.next()!
+            return try await group.next()!
         }
     }
 

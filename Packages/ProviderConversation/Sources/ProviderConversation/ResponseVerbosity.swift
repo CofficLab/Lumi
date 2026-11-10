@@ -5,6 +5,11 @@ public enum ResponseVerbosity: CaseIterable, Codable, Identifiable, RawRepresent
     case brief
     case standard
     case detailed
+    /// ZCode 风格消息列表（V4）。
+    ///
+    /// 这是**呈现变体**，不是回复长度策略：它只决定消息列表的外观，
+    /// 不得影响提示词、回复长度或 Agent 执行。
+    case zcode
 
     /// 未显式指定时使用的默认级别（单一事实来源）。
     /// 所有回退到默认值的位置都应引用此处，避免各处不一致。
@@ -17,6 +22,7 @@ public enum ResponseVerbosity: CaseIterable, Codable, Identifiable, RawRepresent
         case .brief: "v1"
         case .standard: "v2"
         case .detailed: "v3"
+        case .zcode: "v4"
         }
     }
 
@@ -25,16 +31,17 @@ public enum ResponseVerbosity: CaseIterable, Codable, Identifiable, RawRepresent
         case "v1", "brief": self = .brief
         case "v2", "standard", "normal": self = .standard
         case "v3", "detailed": self = .detailed
+        case "v4", "zcode": self = .zcode
         default: return nil
         }
     }
 
     public var levelCode: String { rawValue.uppercased() }
 
-    public var displayName: String {
-        switch self { case .brief: "简洁"; case .standard: "标准"; case .detailed: "详细" }
-    }
-
+    // Important: `displayName` / `description` 已被 #920 移除 ——
+    //   用户可见文案改由 `PluginConversationVerbosity.VerbosityLocalization`
+    //   维护（多语言），`ProviderConversation` 不再产出任何语言的显示名。
+    //   V4 的 ZCode 文案同样在那里补齐。
     public var iconName: String {
         switch self {
         // A checkmark makes the concise, conclusion-first mode visibly
@@ -42,14 +49,7 @@ public enum ResponseVerbosity: CaseIterable, Codable, Identifiable, RawRepresent
         case .brief: "checkmark.circle"
         case .standard: "text.justify.left"
         case .detailed: "doc.richtext"
-        }
-    }
-
-    public var description: String {
-        switch self {
-        case .brief: "只返回核心结论"
-        case .standard: "包含必要说明和步骤"
-        case .detailed: "包含完整推理和上下文"
+        case .zcode: "bubble.left.and.bubble.right"
         }
     }
 }

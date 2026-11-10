@@ -17,6 +17,13 @@ enum EnglishLanguageGuard {
     /// 3 个以上才足以说明内容确实是非英文文本。
     static let minimumNonLatinCount = 3
 
+    /// 非拉丁字符在整段文本中的最低占比，超过即判为非英文。
+    ///
+    /// 只靠字符计数会被「把中文拆到 title 与 body」绕过：两个字段各 2 个字符
+    /// 都不到绝对阈值，但整份提交 100% 是非英文。占比判据对短文本同样有效，
+    /// 同时仍容忍英文正文里偶发的 1~2 个 CJK 字符（占比很低）。
+    static let minimumNonLatinRatio = 0.2
+
     /// 覆盖 CJK 表意文字、假名、谚文及 CJK 标点。
     private static let nonLatinRanges: [ClosedRange<UInt32>] = [
         0x3000...0x303F,   // CJK Symbols and Punctuation（、。《》等）
@@ -38,6 +45,12 @@ enum EnglishLanguageGuard {
 
     /// 判断文本是否含有足够多的非拉丁字符（即不是英文）。
     static func containsNonEnglishContent(_ text: String) -> Bool {
-        nonLatinCharacterCount(in: text) >= minimumNonLatinCount
+        let nonLatinCount = nonLatinCharacterCount(in: text)
+        guard nonLatinCount > 0 else { return false }
+        if nonLatinCount >= minimumNonLatinCount { return true }
+
+        let scalarCount = text.unicodeScalars.count
+        guard scalarCount > 0 else { return false }
+        return Double(nonLatinCount) / Double(scalarCount) >= minimumNonLatinRatio
     }
 }

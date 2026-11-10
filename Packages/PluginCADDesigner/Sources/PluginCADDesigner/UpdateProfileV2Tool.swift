@@ -11,7 +11,7 @@ public struct UpdateProfileV2Tool: SuperAgentTool {
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { "Update component \(CADDesignerV2ToolSupport.string(arguments, "componentId") ?? "?")" }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let componentID = CADDesignerV2ToolSupport.string(arguments, "componentId") else { return CADDesignerV2ToolSupport.missingParameter("componentId") }
+        guard let componentID = CADDesignerV2ToolSupport.string(arguments, "componentId") else { throw CADDesignerV2ToolSupport.missingParameter("componentId", toolName: name) }
         do {
             let document = try await MainActor.run { try CADDocumentStore.shared.updateComponent(id: componentID) { component in
                 var transform = component.transform
@@ -23,6 +23,11 @@ public struct UpdateProfileV2Tool: SuperAgentTool {
                 if let length = CADDesignerV2ToolSupport.double(arguments, "length"), case .profile(var profile) = component { profile.length = length; component = .profile(profile) }
             } }
             return CADDesignerV2ToolSupport.localized(en: "Updated component.\nprojectId: \(document.id)\ncomponentId: \(componentID)", zh: "已更新组件。\n项目ID: \(document.id)\n组件ID: \(componentID)")
-        } catch { await MainActor.run { CADDocumentStore.shared.setError(error.localizedDescription) }; return CADDesignerV2ToolSupport.error(error) }
+        } catch let error as ToolExecutionError {
+            throw error
+        } catch {
+            await MainActor.run { CADDocumentStore.shared.setError(error.localizedDescription) }
+            throw CADDesignerV2ToolSupport.failure(error, toolName: name)
+        }
     }
 }

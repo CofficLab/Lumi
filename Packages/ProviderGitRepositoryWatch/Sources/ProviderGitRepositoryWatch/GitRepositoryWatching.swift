@@ -13,8 +13,12 @@ public enum GitRepositoryWatchingEvent: Equatable, Sendable {
 }
 
 /// Git 仓库监听订阅句柄。
+///
+/// 句柄的生命周期即订阅生命周期：持有返回值即可持续接收事件；释放句柄等同于
+/// 注销（实现需在下次广播时清理失效注册），也无需再调用 `cancel()`。
 @MainActor
 public protocol GitRepositoryWatchingObserverHandle: AnyObject {
+    /// 立即停止接收事件；重复调用无副作用。
     func cancel()
 }
 
@@ -39,18 +43,22 @@ public protocol GitRepositoryWatching: AnyObject {
 @MainActor
 public final class DefaultGitRepositoryWatching: GitRepositoryWatching {
     public private(set) var watchingRepositoryURL: URL?
-    private var observers: [(id: UUID, callback: (GitRepositoryWatchingEvent) -> Void)] = []
+    /// 弱引用持有订阅令牌：外部释放令牌后，其 deinit 即视为自动注销，
+    /// 下次广播时清理已失效的弱引用（与 `DefaultProjectProvider` 一致）。
+    private var observers: [WeakObserver] = []
 
     public init() {}
 
     public func addObserver(
         _ callback: @escaping (GitRepositoryWatchingEvent) -> Void
     ) -> any GitRepositoryWatchingObserverHandle {
-        let id = UUID()
-        observers.append((id, callback))
-        return Handle { [weak self] in
-            self?.observers.removeAll { $0.id == id }
-        }
+        let handle = Handle(owner: self, callback: callback)
+        observers.append(WeakObserver(handle))
+        return handle
+    }
+
+    private func remove(_ handle: Handle) {
+        observers.removeAll { $0.handle === handle }
     }
 
     public func startWatching(repositoryURL: URL) {
@@ -68,21 +76,43 @@ public final class DefaultGitRepositoryWatching: GitRepositoryWatching {
 
     /// 供真实实现、测试和宿主主动操作完成后广播语义事件。
     public func broadcast(_ event: GitRepositoryWatchingEvent) {
+        observers.removeAll { $0.handle == nil }
         let current = observers
         for observer in current {
-            observer.callback(event)
+            observer.handle?.invoke(event)
         }
     }
 
     private final class Handle: GitRepositoryWatchingObserverHandle {
-        private let onCancel: () -> Void
+        private weak var owner: DefaultGitRepositoryWatching?
+        private let callback: (GitRepositoryWatchingEvent) -> Void
+        private var isCancelled = false
 
-        init(onCancel: @escaping () -> Void) {
-            self.onCancel = onCancel
+        init(
+            owner: DefaultGitRepositoryWatching,
+            callback: @escaping (GitRepositoryWatchingEvent) -> Void
+        ) {
+            self.owner = owner
+            self.callback = callback
         }
 
         func cancel() {
-            onCancel()
+            guard !isCancelled else { return }
+            isCancelled = true
+            owner?.remove(self)
+        }
+
+        fileprivate func invoke(_ event: GitRepositoryWatchingEvent) {
+            guard !isCancelled else { return }
+            callback(event)
+        }
+    }
+
+    private final class WeakObserver {
+        weak var handle: Handle?
+
+        init(_ handle: Handle) {
+            self.handle = handle
         }
     }
 }

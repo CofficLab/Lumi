@@ -28,7 +28,10 @@ public final class MessageManager: MessageManaging, SuperLog {
     private let conversations: (any ConversationManaging)?
 
     /// 内存中的"已通知 UI、尚未落盘"消息缓冲(write-behind 的脏数据)。
-    private nonisolated let pending = PendingMessageBuffer()
+    ///
+    /// internal 而非 private：测试需要直接构造「磁盘已有旧版本、pending 保留新版本」
+    /// 的窗口，后台落盘时序无法在测试里稳定复现。
+    nonisolated let pending = PendingMessageBuffer()
 
     /// 后台 utility 串行落盘队列，保证消息、更新和删除按调用顺序执行。
     ///
@@ -96,18 +99,35 @@ public final class MessageManager: MessageManaging, SuperLog {
             Self.logger.info("\(Self.t)mergedPage conversation=\(conversationID.uuidString.prefix(8)) disk=\(disk.count) pending=\(pending.count) before=\(cursorState)")
         }
 
-        if pending.isEmpty { return disk }
+        guard !pending.isEmpty else { return disk }
 
-        let diskIDs = Set(disk.map(\.id))
-        var merged = disk
-        for msg in pending where !diskIDs.contains(msg.id) {
-            merged.append(msg)
+        // pending 里的同 id 版本比磁盘新（例如工具结果刚写回、尚未落盘），
+        // 必须以 pending 覆盖磁盘，否则读路径会把旧版本继续展示出去。
+        var mergedByID = Dictionary(uniqueKeysWithValues: disk.map { ($0.id, $0) })
+        for message in pending {
+            mergedByID[message.id] = message
         }
-        merged.sort { lhs, rhs in
+        let merged = mergedByID.values.sorted { lhs, rhs in
             if lhs.createdAt == rhs.createdAt { return lhs.id < rhs.id }
             return lhs.createdAt < rhs.createdAt
         }
         return Array(merged.suffix(limit))
+    }
+
+    /// 按 id 合并磁盘与 pending，pending 版本始终胜出。
+    private nonisolated static func mergePendingVersions(
+        _ disk: [Message],
+        _ pendingMessages: [Message]
+    ) -> [Message] {
+        guard !pendingMessages.isEmpty else { return disk }
+        var mergedByID = Dictionary(uniqueKeysWithValues: disk.map { ($0.id, $0) })
+        for message in pendingMessages {
+            mergedByID[message.id] = message
+        }
+        return mergedByID.values.sorted { lhs, rhs in
+            if lhs.createdAt == rhs.createdAt { return lhs.id < rhs.id }
+            return lhs.createdAt < rhs.createdAt
+        }
     }
 
     // MARK: - MessageManaging (reads)
@@ -121,14 +141,10 @@ public final class MessageManager: MessageManaging, SuperLog {
         // asynchronously, so reading only from disk can briefly hide a freshly
         // inserted tool result and cause the same tool call to execute again.
         // Merge pending writes here and de-duplicate by message ID so a message
-        // is represented exactly once during that window.
-        let diskIDs = Set(diskMessages.map(\.id))
-        var all = diskMessages
-        all.append(contentsOf: pendingMessages.filter { !diskIDs.contains($0.id) })
-        all.sort {
-            if $0.createdAt == $1.createdAt { return $0.id < $1.id }
-            return $0.createdAt < $1.createdAt
-        }
+        // is represented exactly once during that window. The pending version
+        // wins because it carries the newest edits (e.g. a tool result that has
+        // not been persisted yet).
+        let all = Self.mergePendingVersions(diskMessages, pendingMessages)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)messages(for:) conversation=\(conversationID.uuidString.prefix(8)) messages=\(all.count)")
@@ -174,6 +190,7 @@ public final class MessageManager: MessageManaging, SuperLog {
         let pending = self.pending
         return await Task.detached(priority: priority) {
             // LLM 上下文只需要 content + reasoningContent + toolCalls，
+            // 外加时间线标记（`renderKind` / `lumi.timelineEvent`），
             // 用窄读取避开 `metadataJson`（35MB）与 `rawStreamEventsJSON`（47MB）
             // 这两类与 LLM 无关的大字段。
             let diskMessages: [Message] = switch scope {
@@ -183,14 +200,7 @@ public final class MessageManager: MessageManaging, SuperLog {
                 store?.fetchMessagesForLLMContext(conversationId: conversationID) ?? []
             }
             let pendingMessages = pending.snapshot(for: conversationID)
-            let diskIDs = Set(diskMessages.map(\.id))
-            var all = diskMessages
-            all.append(contentsOf: pendingMessages.filter { !diskIDs.contains($0.id) })
-            all.sort {
-                if $0.createdAt == $1.createdAt { return $0.id < $1.id }
-                return $0.createdAt < $1.createdAt
-            }
-            return all
+            return Self.mergePendingVersions(diskMessages, pendingMessages)
         }.value
     }
 

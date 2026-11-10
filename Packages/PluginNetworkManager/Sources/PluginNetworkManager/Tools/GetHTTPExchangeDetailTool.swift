@@ -29,7 +29,11 @@ struct GetHTTPExchangeDetailTool: SuperAgentTool, SuperLog {
                     "description": "Whether to include full bodies. Default: false.",
                 ],
             ],
-            "required": ["url"],
+            // id 或 url 二选一即可，任意一个都能定位记录。
+            "anyOf": [
+                ["required": ["id"]],
+                ["required": ["url"]],
+            ],
         ]
     }
 
@@ -46,25 +50,31 @@ struct GetHTTPExchangeDetailTool: SuperAgentTool, SuperLog {
         let url = NetworkToolSupport.string(arguments, "url")
         let includeBody = NetworkToolSupport.bool(arguments, "include_body") ?? false
 
-        let result = await MainActor.run { () -> String in
+        let result = try await MainActor.run { () throws -> String in
             guard let store = NetworkService.shared.currentExchangeStore else {
-                return "Error: HTTP exchange store not available"
+                throw ToolExecutionError.executionFailed(toolName: name, reason: "HTTP exchange store not available")
             }
-
-            let records = store.fetchPage(limit: 1000)
 
             let record: HTTPExchangeRecord?
 
             if let idStr, let uuid = UUID(uuidString: idStr) {
-                record = records.first { $0.id == uuid }
+                // A UUID is an exact identifier, so read it straight from the
+                // store instead of searching a truncated recent page.
+                record = store.records(withIDs: [uuid])[uuid]
             } else if let url {
-                record = records.first { $0.requestURL.contains(url) }
+                // The newest matching URL can be older than any fixed recent
+                // window; `scanHistory` walks the whole retained history.
+                let match = store.scanHistory { $0.url.contains(url) }.first
+                record = match.flatMap { store.records(withIDs: [$0.id])[$0.id] }
             } else {
                 record = nil
             }
 
             guard let record else {
-                return "HTTP exchange not found."
+                throw ToolExecutionError.executionFailed(
+                    toolName: name,
+                    reason: "HTTP exchange not found."
+                )
             }
 
             let dateFormatter = DateFormatter()

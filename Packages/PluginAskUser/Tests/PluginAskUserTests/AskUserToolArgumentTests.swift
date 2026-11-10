@@ -129,7 +129,7 @@ struct AskUserToolArgumentTests {
 
     // MARK: - 空问题
 
-    @Test("空问题、纯空白问题、缺失问题均返回错误且不挂起")
+    @Test("空问题、纯空白问题、缺失问题均抛出且不挂起")
     func rejectsEmptyQuestion() async throws {
         let tool = AskUserTool()
 
@@ -139,19 +139,25 @@ struct AskUserToolArgumentTests {
             ["question": ToolArgument("   \n "), "mode": ToolArgument("yes_no")],
             ["question": ToolArgument(42), "mode": ToolArgument("yes_no")],
         ] {
-            let result = try await tool.executeResult(arguments: arguments)
-            #expect(result.isError, "空问题应报错：\(arguments)")
-            #expect(!result.awaitingUserResponse, "空问题不应挂起回合")
-            #expect(result.content.hasPrefix("❌"))
+            await #expect(throws: ToolExecutionError.self) {
+                _ = try await tool.executeResult(arguments: arguments)
+            }
         }
     }
 
     // MARK: - 执行结果的挂起语义
 
-    @Test("错误结果带 ❌ 前缀以便 AgentLoop 与日志区分")
-    func errorPrefix() {
-        #expect(AskUserTool.errorResult(message: "boom").hasPrefix("❌"))
-        #expect(AskUserTool.errorResult(message: "boom").contains("boom"))
+    @Test("缺少 mode 或 choice 没有 options 时抛出")
+    func rejectsInvalidModeOrEmptyChoice() async throws {
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await AskUserTool().executeResult(arguments: ["question": ToolArgument("继续吗?")])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await AskUserTool().executeResult(arguments: [
+                "question": ToolArgument("选哪个?"),
+                "mode": ToolArgument("choice"),
+            ])
+        }
     }
 
     @Test("合法调用返回 awaitingUserResponse 且 interactionState 为 waiting")

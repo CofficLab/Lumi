@@ -1,0 +1,300 @@
+import SwiftUI
+
+public struct AppButton: View {
+    @LumiTheme private var theme
+    @LumiMotionPreferenceReader private var motionPreference
+    @State private var isHovered = false
+
+    public enum Style {
+        case primary
+        case secondary
+        case ghost
+        case tonal
+        case warning
+        case destructive
+    }
+
+    public enum Size {
+        case small
+        case medium
+    }
+
+    struct Metrics: Equatable {
+        let horizontalPadding: CGFloat
+        let verticalPadding: CGFloat
+    }
+
+    let title: Text
+    let systemImage: String?
+    let showsTitle: Bool
+    let style: Style
+    let size: Size
+    let fillsWidth: Bool
+    let isDisabled: Bool
+    let action: () -> Void
+
+    public init(
+        _ title: LocalizedStringKey,
+        systemImage: String? = nil,
+        style: Style = .secondary,
+        size: Size = .medium,
+        fillsWidth: Bool = false,
+        action: @escaping () -> Void
+    ) {
+        self.title = Text(title)
+        self.systemImage = systemImage
+        self.style = style
+        self.size = size
+        self.showsTitle = true
+        self.fillsWidth = fillsWidth
+        self.isDisabled = false
+        self.action = action
+    }
+
+    public init(
+        _ title: String,
+        systemImage: String? = nil,
+        style: Style = .secondary,
+        size: Size = .medium,
+        fillsWidth: Bool = false,
+        action: @escaping () -> Void
+    ) {
+        self.title = Text(title)
+        self.systemImage = systemImage
+        self.style = style
+        self.size = size
+        self.showsTitle = true
+        self.fillsWidth = fillsWidth
+        self.isDisabled = false
+        self.action = action
+    }
+
+    init(
+        _ title: Text,
+        systemImage: String? = nil,
+        style: Style = .secondary,
+        size: Size = .medium,
+        fillsWidth: Bool = false,
+        action: @escaping () -> Void
+    ) {
+        self.title = title
+        self.systemImage = systemImage
+        self.style = style
+        self.size = size
+        self.showsTitle = true
+        self.fillsWidth = fillsWidth
+        self.isDisabled = false
+        self.action = action
+    }
+
+    /// 仅图标按钮。
+    public init(
+        systemImage: String,
+        style: Style = .ghost,
+        size: Size = .small,
+        action: @escaping () -> Void
+    ) {
+        self.title = Text(verbatim: "")
+        self.systemImage = systemImage
+        self.showsTitle = false
+        self.style = style
+        self.size = size
+        self.fillsWidth = false
+        self.isDisabled = false
+        self.action = action
+    }
+
+    private init(
+        title: Text,
+        systemImage: String?,
+        showsTitle: Bool,
+        style: Style,
+        size: Size,
+        fillsWidth: Bool,
+        isDisabled: Bool,
+        action: @escaping () -> Void
+    ) {
+        self.title = title
+        self.systemImage = systemImage
+        self.showsTitle = showsTitle
+        self.style = style
+        self.size = size
+        self.fillsWidth = fillsWidth
+        self.isDisabled = isDisabled
+        self.action = action
+    }
+
+    public var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                if let systemImage {
+                    Image(systemName: systemImage)
+                }
+                if showsTitle {
+                    title
+                }
+            }
+            .font(font)
+            .foregroundStyle(foregroundColor)
+            .padding(.horizontal, metrics.horizontalPadding)
+            .padding(.vertical, metrics.verticalPadding)
+            .frame(maxWidth: fillsWidth ? .infinity : nil)
+            .background(background)
+            .overlay(border)
+            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(isDisabled)
+        .opacity(isDisabled && style != .primary ? 0.5 : 1.0)
+        .scaleEffect(isEffectivelyHovered && motionPreference.allowsMotion ? AppUI.Motion.hoverScale : 1.0)
+        .onHover { hovering in
+            AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
+                isHovered = hovering && !isDisabled
+            }
+        }
+    }
+
+    /// Returns a new button with the disabled state set.
+    public func disabled(_ isDisabled: Bool) -> AppButton {
+        AppButton(
+            title: title,
+            systemImage: systemImage,
+            showsTitle: showsTitle,
+            style: style,
+            size: size,
+            fillsWidth: fillsWidth,
+            isDisabled: isDisabled,
+            action: action
+        )
+    }
+
+    var metrics: Metrics {
+        switch size {
+        case .small:
+            Metrics(horizontalPadding: 10, verticalPadding: 6)
+        case .medium:
+            Metrics(horizontalPadding: 14, verticalPadding: 10)
+        }
+    }
+
+    private var font: Font {
+        switch size {
+        case .small:
+            DesignTokens.Typography.caption1
+        case .medium:
+            DesignTokens.Typography.bodyEmphasized
+        }
+    }
+
+    private var foregroundColor: Color {
+        switch style {
+        case .primary:
+            if isDisabled {
+                return theme.primary.opacity(0.72)
+            }
+            return .white
+        case .secondary:
+            return theme.textPrimary
+        case .ghost:
+            return theme.primary
+        case .tonal:
+            return theme.textSecondary
+        case .warning:
+            return .yellow
+        case .destructive:
+            return theme.error
+        }
+    }
+
+    private var background: some View {
+        Group {
+            switch style {
+            case .primary:
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .fill(
+                        isDisabled
+                            ? theme.primary.opacity(0.14)
+                            : (isEffectivelyHovered ? theme.primary.opacity(0.9) : theme.primary)
+                    )
+            case .secondary:
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .fill(isEffectivelyHovered ? theme.appListRowHoverBackground : theme.appStatusMutedFill)
+            case .ghost:
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .fill(isEffectivelyHovered ? theme.appAccentSoftFill : Color.clear)
+            case .tonal:
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .fill(isEffectivelyHovered ? theme.textSecondary.opacity(0.18) : theme.textSecondary.opacity(0.10))
+            case .warning:
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .fill(isEffectivelyHovered ? Color.yellow.opacity(0.18) : Color.yellow.opacity(0.10))
+            case .destructive:
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .fill(isEffectivelyHovered ? theme.error.opacity(0.35) : theme.error.opacity(0.22))
+            }
+        }
+    }
+
+    private var isEffectivelyHovered: Bool {
+        isHovered && !isDisabled
+    }
+
+    private var border: some View {
+        Group {
+            switch style {
+            case .secondary:
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .stroke(
+                        isEffectivelyHovered ? theme.appHoverBorder : theme.appSubtleBorder,
+                        lineWidth: 1
+                    )
+            case .ghost:
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .stroke(
+                        isEffectivelyHovered ? theme.primary.opacity(0.45) : theme.primary.opacity(0.25),
+                        lineWidth: 1
+                    )
+            case .warning:
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .stroke(
+                        isEffectivelyHovered ? Color.yellow.opacity(0.55) : Color.yellow.opacity(0.35),
+                        lineWidth: 1
+                    )
+            case .destructive:
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .stroke(
+                        isEffectivelyHovered ? theme.error.opacity(0.55) : theme.error.opacity(0.35),
+                        lineWidth: 1
+                    )
+            default:
+                EmptyView()
+            }
+        }
+    }
+}
+
+#Preview {
+    HStack {
+        Spacer()
+        VStack(spacing: 12) {
+            HStack(spacing: 8) {
+                AppButton(LumiUILocalization.string("Primary"), style: .primary) {}
+                AppButton(LumiUILocalization.string("Secondary"), style: .secondary) {}
+            }
+            HStack(spacing: 8) {
+                AppButton(LumiUILocalization.string("Ghost"), style: .ghost) {}
+                AppButton(LumiUILocalization.string("Tonal"), style: .tonal) {}
+                AppButton(LumiUILocalization.string("Destructive"), style: .destructive) {}
+            }
+            HStack(spacing: 8) {
+                AppButton(LumiUILocalization.string("Small"), systemImage: "star", style: .primary, size: .small) {}
+                AppButton(LumiUILocalization.string("With Icon"), systemImage: "gearshape", style: .secondary) {}
+            }
+        }
+        Spacer()
+    }
+    .padding()
+    .frame(maxHeight: .infinity)
+    .frame(maxWidth: .infinity)
+    .background(Color.gray.opacity(0.15))
+}

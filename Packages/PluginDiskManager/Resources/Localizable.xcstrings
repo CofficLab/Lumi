@@ -1186,7 +1186,42 @@
         }
       }
     },
+    "Clear Xcode DerivedData and package manager caches" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Xcode DerivedData and package manager caches"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除 Xcode 派生数据和包管理器缓存"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除 Xcode 派生数据和包管理器缓存"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除 Xcode 派生数据和包管理器缓存"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除 Xcode 派生数据和包管理器缓存"
+          }
+        }
+      }
+    },
     "Clear Xcode DerivedData, Archives, and package manager caches" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1420,6 +1455,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "清理前請確認勾選的項目;清理後無法還原。"
+          }
+        }
+      }
+    },
+    "Contains app archives and dSYMs that cannot be rebuilt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contains app archives and dSYMs that cannot be rebuilt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "包含无法重建的 App 归档和 dSYM 调试符号"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "包含无法重建的 App 归档和 dSYM 调试符号"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "包含无法重建的 App 归档和 dSYM 调试符号"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "包含无法重建的 App 归档和 dSYM 调试符号"
           }
         }
       }

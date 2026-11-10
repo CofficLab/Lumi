@@ -32,58 +32,65 @@ import Foundation
 /// 3. 只在缓存缺失时取图标，取用 `NSWorkspace.icon(forFile:)`
 ///    绕开 LaunchServices 同步 XPC（实测快 12 倍，且图标内容与
 ///    `NSRunningApplication.icon` **逐字节相同**）。
-final class ProcessIconResolver {
+final class ProcessIconResolver: @unchecked Sendable {
 
     /// 缓存键：程序的 bundle identifier。
     ///
     /// 无 bundle identifier 的进程（如系统内核任务）用其可执行路径兜底。
     private var iconCache: [String: NSImage] = [:]
 
-    /// 兜底图标（取不到程序图标时使用）。
-    private let fallbackIcon: NSImage?
-
     /// 线程安全锁。
     private let lock = NSLock()
 
-    init() {
-        fallbackIcon = NSWorkspace.shared.icon(forFile: "/bin/bash")
-    }
-
-    /// 解析指定 PID 的图标。
+    /// 批量解析指定 PID 的图标。
     ///
-    /// - Parameter pid: 进程 ID。
-    /// - Returns: 图标；解析不到时返回兜底图标。
-    func icon(forPID pid: Int) -> NSImage? {
-        // 一次枚举取回全部进程，避免逐 PID 构造 NSRunningApplication
-        // （那会反复触发 LaunchServices 同步 XPC）。
+    /// - Parameter pids: 进程 ID 列表。
+    /// - Returns: PID → 图标；只包含能解析到运行程序的 PID。
+    ///
+    /// - Note: `runningApplications` 只枚举一次，随后按 PID 查表；
+    ///   避免调用方对每个 PID 各枚举一次。无法解析的 PID 不返回图标，
+    ///   由 UI 使用中性图标，避免给系统守护进程套上 `/bin/bash` 图标。
+    func icons(forPIDs pids: [Int]) -> [Int: NSImage] {
         let running = NSWorkspace.shared.runningApplications
-
-        guard let app = running.first(where: { $0.processIdentifier == pid_t(pid) }) else {
-            return fallbackIcon
+        var appsByPID: [pid_t: NSRunningApplication] = [:]
+        for app in running {
+            appsByPID[app.processIdentifier] = app
         }
 
-        let key = app.bundleIdentifier ?? app.bundleURL?.path ?? String(pid)
+        var result: [Int: NSImage] = [:]
+        for pid in Set(pids) {
+            guard let app = appsByPID[pid_t(pid)] else {
+                continue
+            }
 
-        lock.lock()
-        if let cached = iconCache[key] {
+            let key = app.bundleIdentifier ?? app.bundleURL?.path ?? String(pid)
+
+            lock.lock()
+            if let cached = iconCache[key] {
+                lock.unlock()
+                result[pid] = cached
+                continue
+            }
             lock.unlock()
-            return cached
+
+            // NSWorkspace.icon(forFile:) 不走 LaunchServices 同步 XPC。
+            let icon: NSImage
+            if let bundleURL = app.bundleURL {
+                icon = NSWorkspace.shared.icon(forFile: bundleURL.path)
+            } else if let appIcon = app.icon {
+                icon = appIcon
+            } else {
+                continue
+            }
+
+            lock.lock()
+            iconCache[key] = icon
+            lock.unlock()
+
+            result[pid] = icon
         }
-        lock.unlock()
 
-        // NSWorkspace.icon(forFile:) 不走 LaunchServices 同步 XPC。
-        let icon: NSImage?
-        if let bundleURL = app.bundleURL {
-            icon = NSWorkspace.shared.icon(forFile: bundleURL.path)
-        } else {
-            icon = app.icon
-        }
-
-        lock.lock()
-        iconCache[key] = icon
-        lock.unlock()
-
-        return icon ?? fallbackIcon
+        return result
     }
 
     /// 清空缓存。

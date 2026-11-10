@@ -57,7 +57,7 @@ public struct AddIconShapeTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let language = IconToolSupport.language
         guard let shapeName = IconToolSupport.string(arguments, "shape") else {
-            return IconToolSupport.missingParameter("shape", language: language)
+            throw IconToolSupport.missingParameterFailure("shape", toolName: name, language: language)
         }
 
         do {
@@ -89,7 +89,7 @@ public struct AddIconShapeTool: SuperAgentTool {
             await MainActor.run {
                 IconToolSupport.store().setError(error.localizedDescription)
             }
-            return IconToolSupport.error(error, language: language)
+            throw IconToolSupport.failure(error, toolName: name, language: language)
         }
     }
 

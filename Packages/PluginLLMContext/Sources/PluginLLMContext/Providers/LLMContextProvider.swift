@@ -33,12 +33,22 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
     static let compactionMessageThreshold = 40
     /// 每次滚动摘要最多处理的消息数，超过后下一次继续推进覆盖水位。
     static let maxSummaryMessages = 400
+    /// 最终会进入 provider 请求的角色。
+    ///
+    /// `.error` / `.status` 只用于本地时间线展示，序列化前会被丢弃。让它们参与
+    /// 估算、摘要和预算选择，会挤掉真正可发送的历史（#1025）。
+    static let sendableRoles: Set<ProviderMessage.MessageRole> = [.system, .user, .assistant, .tool]
     /// 每次摘要请求最多携带的估算 token 数的上限。
     static let maximumSummaryInputTokens = 128_000
     /// 摘要生成后至少保留的最近消息数；实际结果仍受 token 预算限制。
     static let minimumRecentMessageCount = 16
     /// 单条消息进入摘要请求的最大字符数。
     static let maxCharsPerMessage = 4_000
+    /// 估算器为每条消息附加的固定开销。
+    ///
+    /// 与 `LLMContextTokenEstimator.estimate(message:)` 里的 `+ 12` 保持一致；
+    /// 按 token 裁剪正文时必须先扣掉它，否则裁剪结果仍会超过预算（#1022）。
+    static let messageOverheadTokens = 12
     /// 压缩上下文中单条工具输出的最大字符数。
     ///
     /// 工具输出是上下文膨胀的首要来源：一次 `read` 或 `shell` 就能带来数万 token。
@@ -78,6 +88,17 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         let sourceLastMessageID: UUID
     }
 
+    /// 单次摘要刷新的结果。
+    ///
+    /// 等待中的硬阈值请求需要区分「结果已写入/可复用」和「请求期间历史
+    /// 前进导致结果作废」，后者不能当作本轮压缩已经完成（回归 #1118）。
+    private enum SummaryRefreshOutcome: Sendable {
+        case updated
+        case reused
+        case skipped
+        case discardedForNewMessages
+    }
+
     /// 一次压缩组装的结果。
     private struct CompactedHistory {
         let messages: [Message]
@@ -95,7 +116,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
     private let summaryStore: ContextSummaryStore?
     private var summaries: [UUID: SummarySnapshot] = [:]
     private var loadedSummaryIDs: Set<UUID> = []
-    private var summaryTasks: [UUID: Task<Void, Never>] = [:]
+    private var summaryTasks: [UUID: Task<SummaryRefreshOutcome, Never>] = [:]
     private var lastPreparationRequests: [UUID: LLMContextPreparationRequest] = [:]
     private var calibrationFactors: [String: Double] = [:]
     private var forcedCompactionIDs: Set<UUID> = []
@@ -349,25 +370,31 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
 
         let conversationID = request.conversationID
         summaryTasks[conversationID] = Task { @MainActor [weak self] in
-            guard let self else { return }
+            guard let self else { return .skipped }
             defer { self.summaryTasks[conversationID] = nil }
             if delay {
                 do {
                     try await Task.sleep(nanoseconds: 400_000_000)
                 } catch {
-                    return
+                    return .skipped
                 }
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled else { return .skipped }
             }
-            await self.refreshSummaryIfNeeded(for: request)
+            return await self.refreshSummaryIfNeeded(for: request)
         }
     }
 
     private func ensureCompaction(for request: LLMContextPreparationRequest) async {
         if let task = summaryTasks[request.conversationID] {
-            await task.value
+            let outcome = await task.value
+            guard outcome == .discardedForNewMessages else { return }
+            // 预热摘要返回时历史已经前进，结果在保存前被丢弃。等待中的硬阈值
+            // 请求不能把这次过期预热当成压缩已完成，必须按最新历史重试；重新
+            // 走调度入口，让同一会话的其他等待者加入同一次重试（回归 #1118）。
+            scheduleBackgroundCompaction(for: request, delay: false)
+            _ = await summaryTasks[request.conversationID]?.value
         } else {
-            await refreshSummaryIfNeeded(for: request)
+            _ = await refreshSummaryIfNeeded(for: request)
         }
     }
 
@@ -428,8 +455,8 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
 
     private func refreshSummaryIfNeeded(
         for request: LLMContextPreparationRequest
-    ) async {
-        guard isActive else { return }
+    ) async -> SummaryRefreshOutcome {
+        guard isActive else { return .skipped }
 
         let history = await llmHistory(for: request.conversationID)
         let conversationModelID = conversations.modelID(for: request.conversationID)
@@ -441,7 +468,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             }
         if let requestModelID = request.modelID,
            llmProvider.modelRoute(for: requestModelID) == nil {
-            return
+            return .skipped
         }
         let route = requestedModelID.flatMap(llmProvider.modelRoute(for:))
         let providerID = route?.providerID ?? request.providerID ?? activeProviderID
@@ -457,7 +484,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             snapshot: compatibleSnapshot ? existingSnapshot : nil,
             budget: request.budget
         ) else {
-            return
+            return .skipped
         }
 
         // 已有摘要仍然覆盖得住最近区间时直接复用，不再调用摘要接口。
@@ -470,13 +497,13 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
            snapshot.modelName == modelName,
            let compacted = compactedHistory(history, snapshot: snapshot, request: request),
            !compacted.tailTruncated {
-            return
+            return .reused
         }
 
         // 摘要请求必须使用与当前请求相同的路由上下文；如果路由已切换，
         // 放弃本次预热，下一次请求会用新的 provider/model 重新调度。
         if requestedModelID == nil, let providerID, providerID != activeProviderID {
-            return
+            return .skipped
         }
 
         let summaryRequest = LLMRequest(
@@ -493,11 +520,13 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         do {
             let response = try await llmProvider.complete(summaryRequest)
             let summary = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !summary.isEmpty else { return }
+            guard !summary.isEmpty else { return .skipped }
 
             // 摘要请求期间产生了新消息，旧结果不能覆盖最新历史。
             let latest = await llmHistory(for: request.conversationID)
-            guard latest.last?.id == source.sourceLastMessageID else { return }
+            guard latest.last?.id == source.sourceLastMessageID else {
+                return .discardedForNewMessages
+            }
 
             let snapshot = SummarySnapshot(
                 text: summary,
@@ -526,11 +555,12 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
                 }
                 // 内存摘要仍然可以服务当前会话，不因磁盘失败丢弃压缩结果。
             }
-
+            return .updated
         } catch {
             if Self.verbose {
                 Self.logger.error("摘要生成失败：\(error.localizedDescription, privacy: .public)")
             }
+            return .skipped
         }
     }
 
@@ -538,7 +568,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
 
     private func llmHistory(for conversationID: UUID) async -> [Message] {
         await messages.messagesForLLM(in: conversationID)
-            .filter { !MessageTimelineEvent.isTimelineEvent($0) }
+            .filter { Self.sendableRoles.contains($0.role) && !MessageTimelineEvent.isTimelineEvent($0) }
     }
 
     private func summarySource(
@@ -737,49 +767,128 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         budget: LLMContextBudget
     ) -> [Message] {
         let limit = budget.inputTokenLimit
-        var result: [Message] = []
-        var remaining = limit
 
         // 降级路径同样先做工具输出瘦身，避免单条大输出吃掉整个预算。
         let trimmed = trimmingToolOutputs(history)
+        let selected = fallbackSelection(trimmed, limit: limit, reservedForUser: 0)
+
+        // 系统消息（尤其是摘要/系统提示）或更新的工具结果可能把预算占满，
+        // 导致本轮用户请求整条被省略。此时重选一次，并为当前请求预留空间：
+        // 宁可少带历史，也不能让 provider 收到一个没有用户请求的对话（#1022）。
+        guard let latestUser = trimmed.last(where: { $0.role == .user }),
+              !selected.contains(where: { $0.role == .user }) else {
+            return selected
+        }
+        let reserve = min(
+            LLMContextTokenEstimator.estimate(message: latestUser),
+            max(limit / 4, 256)
+        )
+        return fallbackSelection(trimmed, limit: limit, reservedForUser: reserve)
+    }
+
+    /// 按预算从 system 消息与尾部历史中挑选可发送内容。
+    ///
+    /// `reservedForUser` 只约束前置 system 消息与尾部消息的取用，确保最新用户
+    /// 消息仍有一份裁剪版的空间；没有用户消息时传 0，行为与旧实现一致。
+    private func fallbackSelection(
+        _ trimmed: [Message],
+        limit: Int,
+        reservedForUser: Int
+    ) -> [Message] {
+        var result: [Message] = []
+        var remaining = limit
 
         for message in trimmed where message.role == .system {
+            let available = max(remaining - reservedForUser, 0)
             let cost = LLMContextTokenEstimator.estimate(message: message)
-            if cost <= remaining {
+            if cost <= available {
                 result.append(message)
                 remaining -= cost
             } else {
-                let bounded = boundedMessage(message, maxTokens: remaining)
-                if LLMContextTokenEstimator.estimate(message: bounded) <= remaining {
+                let bounded = boundedMessage(message, maxTokens: available)
+                let boundedCost = LLMContextTokenEstimator.estimate(message: bounded)
+                if boundedCost <= available {
                     result.append(bounded)
-                    remaining -= LLMContextTokenEstimator.estimate(message: bounded)
+                    remaining -= boundedCost
                 }
             }
         }
 
         var tail: [Message] = []
         for message in trimmed.reversed() where message.role != .system {
+            let available = max(remaining - reservedForUser, 0)
             let cost = LLMContextTokenEstimator.estimate(message: message)
-            if cost <= remaining {
+            if cost <= available {
                 tail.insert(message, at: 0)
                 remaining -= cost
-            } else {
-                if tail.isEmpty {
-                    let bounded = boundedMessage(message, maxTokens: remaining)
-                    if LLMContextTokenEstimator.estimate(message: bounded) <= remaining {
-                        tail.insert(bounded, at: 0)
-                    }
+                continue
+            }
+            if tail.isEmpty, available > 0 {
+                let bounded = boundedMessage(message, maxTokens: available)
+                let boundedCost = LLMContextTokenEstimator.estimate(message: bounded)
+                if boundedCost <= available {
+                    tail.insert(bounded, at: 0)
+                    remaining -= boundedCost
                 }
-                break
+            }
+            break
+        }
+
+        // 预留的空间最终给当前请求：即使尾部循环因预算耗尽提前退出，
+        // 也把它的一份裁剪版插到尾部最前面（时间顺序上它就是最旧的那条）。
+        if reservedForUser > 0,
+           !tail.contains(where: { $0.role == .user }),
+           let latestUser = trimmed.last(where: { $0.role == .user }),
+           remaining > 0 {
+            let bounded = boundedMessage(latestUser, maxTokens: remaining)
+            if LLMContextTokenEstimator.estimate(message: bounded) <= remaining {
+                tail.insert(bounded, at: 0)
             }
         }
+
         result.append(contentsOf: tail)
         return result
     }
 
     private func boundedMessage(_ message: Message, maxTokens: Int? = nil) -> Message {
+        guard let maxTokens else {
+            return boundedMessageByCharacters(message, maxChars: Self.maxCharsPerMessage)
+        }
+        // 预算裁剪必须与 `LLMContextTokenEstimator` 使用同一量纲：字符数对
+        // 三字节字符只有字节估算的约三分之一，按字符裁剪后仍会超预算（#1022）。
         var copy = message
-        let maxChars = maxTokens.map { max($0 * 2, 1) } ?? Self.maxCharsPerMessage
+        var budget = max(maxTokens - Self.messageOverheadTokens, 1)
+        copy.content = boundedText(copy.content, maxTokens: budget)
+        budget = max(budget - LLMContextTokenEstimator.estimate(text: copy.content), 1)
+        if let reasoning = copy.reasoningContent {
+            copy.reasoningContent = boundedText(reasoning, maxTokens: budget)
+        }
+        // 工具调用参数不按 token 截断：截成非法 JSON 会让整次请求失败（#562）。
+        return copy
+    }
+
+    /// 截断正文直到估算 token 数（含截断标记）不超过 `maxTokens`。
+    private func boundedText(_ text: String, maxTokens: Int) -> String {
+        guard LLMContextTokenEstimator.estimate(text: text) > maxTokens else { return text }
+        let marker = "…[truncated]"
+        guard maxTokens > LLMContextTokenEstimator.estimate(text: marker) else { return "" }
+        var low = 0
+        var high = text.count
+        while low < high {
+            let mid = (low + high + 1) / 2
+            let candidate = "\(text.prefix(mid))\(marker)"
+            if LLMContextTokenEstimator.estimate(text: candidate) <= maxTokens {
+                low = mid
+            } else {
+                high = mid - 1
+            }
+        }
+        return low > 0 ? "\(text.prefix(low))\(marker)" : ""
+    }
+
+    /// 固定字符上限裁剪，用于摘要请求这类不按发送预算收缩的场景。
+    private func boundedMessageByCharacters(_ message: Message, maxChars: Int) -> Message {
+        var copy = message
         if copy.content.count > maxChars {
             copy.content = "\(copy.content.prefix(maxChars))…[truncated]"
         }

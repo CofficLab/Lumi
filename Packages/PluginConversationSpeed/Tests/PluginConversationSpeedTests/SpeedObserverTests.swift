@@ -51,6 +51,48 @@ import Testing
     #expect(viewModel.selectedConversationID != secondID)
 }
 
+@Test @MainActor func conversationObserverBindsNewSelectionBeforeSnapshotArrives() async throws {
+    let conversations = DefaultConversationManager()
+    let messages = DefaultMessageManager()
+    let firstID = try conversations.createConversation(title: "First", projectPath: nil, providerID: nil, modelName: nil)
+    let secondID = try conversations.createConversation(title: "Second", projectPath: nil, providerID: nil, modelName: nil)
+    messages.insertMessage(
+        Message(
+            conversationID: firstID,
+            role: .assistant,
+            content: "response",
+            providerID: "provider-a",
+            modelName: "model-a",
+            outputTokenCount: 80,
+            streamingDurationMs: 4_000
+        ),
+        to: firstID
+    )
+    messages.insertMessage(speedObserverMessage(conversationID: secondID, outputTokens: 30, durationMs: 3_000), to: secondID)
+    conversations.selectConversation(id: firstID)
+
+    let viewModel = ConversationSpeedViewModel()
+    let observer = SpeedConversationObserver(conversations: conversations, messages: messages, viewModel: viewModel)
+    let firstLoaded = await waitUntil { viewModel.cachedTPS == 20 }
+    #expect(firstLoaded)
+
+    // 同步切换选择；此时 B 的异步快照尚未返回。
+    conversations.selectConversation(id: secondID)
+
+    #expect(viewModel.selectedConversationID == secondID)
+    #expect(viewModel.cachedTPS == nil)
+    #expect(viewModel.speedHistory.isEmpty)
+    #expect(viewModel.unavailabilityReason == .waitingForResponse)
+    #expect(viewModel.modelName == nil)
+    #expect(viewModel.providerID == nil)
+
+    // 快照返回后仍应落到 B。
+    let secondLoaded = await waitUntil { viewModel.cachedTPS == 10 }
+    #expect(secondLoaded)
+    #expect(viewModel.selectedConversationID == secondID)
+    observer.cancel()
+}
+
 @Test @MainActor func messageObserverDebouncesSelectedConversationAndIgnoresOtherConversations() async throws {
     let conversations = DefaultConversationManager()
     let messages = DefaultMessageManager()

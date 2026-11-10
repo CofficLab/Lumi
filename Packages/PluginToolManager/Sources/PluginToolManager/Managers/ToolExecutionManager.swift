@@ -173,6 +173,26 @@ final class ToolExecutionManager {
         }
     }
 
+    /// 丢弃一次已结束调用的 Job，让同一个 `toolCall.id` 可以再次执行。
+    ///
+    /// 授权挂起后的重执行与普通重试不同：旧 Job 的终态结果就是「等待授权」。
+    /// 不丢弃会让 `submit` 命中 Job 去重、直接复用挂起结果，工具永远不会真正
+    /// 再跑一次。只丢弃终态 Job；仍在运行的调用保持原有去重语义。
+    func forgetTerminalJob(
+        forToolCallID toolCallID: String,
+        conversationID: UUID,
+        turnID: UUID?
+    ) {
+        guard let job = jobsByID.values.first(where: {
+            $0.conversationID == conversationID
+                && $0.turnID == turnID
+                && $0.toolCall.id == toolCallID
+        }), job.status.isTerminal else { return }
+        jobsByID.removeValue(forKey: job.id)
+        resultsByID.removeValue(forKey: job.id)
+        submissionOrder.removeAll { $0 == job.id }
+    }
+
     func waitForResult(jobID: String) async -> ToolCallResult? {
         if let result = resultsByID[jobID] {
             return result
@@ -593,6 +613,7 @@ final class ToolExecutionManager {
 
     private func restore(_ records: [ToolJobRecord]) {
         let message = "工具进程在应用重启后无法恢复，未自动重试。"
+        var restoredTerminalJobs: [ToolJob] = []
         for record in records where jobsByID[record.id] == nil {
             if record.status.isTerminal {
                 let toolCall = ToolCall(
@@ -618,6 +639,7 @@ final class ToolExecutionManager {
                 if let result = record.result {
                     resultsByID[job.id] = result
                 }
+                restoredTerminalJobs.append(job)
                 continue
             }
 
@@ -647,6 +669,11 @@ final class ToolExecutionManager {
             persist(job, result: result)
             emit(.created(job))
             emit(.failed(jobID: job.id, result: result, snapshot: job))
+        }
+
+        // 终态历史记录没有逐条事件；用一次批量快照让打开中的 UI 补齐列表。
+        if !restoredTerminalJobs.isEmpty {
+            emit(.restored(restoredTerminalJobs))
         }
     }
 }

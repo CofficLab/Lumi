@@ -153,19 +153,26 @@ enum IconToolSupport {
         }
     }
 
-    static func error(_ error: Error, language: LanguagePreference) -> String {
-        localized(
-            language,
-            en: "Error: \(error.localizedDescription)",
-            zh: "错误：\(localizedErrorDescription(error.localizedDescription))"
+    /// 工具失败必须抛出：默认 `executeResult` 会把返回字符串当作成功结果。
+    static func failure(_ error: Error, toolName: String, language: LanguagePreference) -> ToolExecutionError {
+        .executionFailed(
+            toolName: toolName,
+            reason: localized(
+                language,
+                en: error.localizedDescription,
+                zh: localizedErrorDescription(error.localizedDescription)
+            )
         )
     }
 
-    static func missingParameter(_ name: String, language: LanguagePreference) -> String {
-        localized(
-            language,
-            en: "Error: Missing required '\(name)' parameter.",
-            zh: "错误：缺少必填参数 '\(name)'。"
+    static func missingParameterFailure(_ name: String, toolName: String, language: LanguagePreference) -> ToolExecutionError {
+        .executionFailed(
+            toolName: toolName,
+            reason: localized(
+                language,
+                en: "Missing required '\(name)' parameter.",
+                zh: "缺少必填参数 '\(name)'。"
+            )
         )
     }
 

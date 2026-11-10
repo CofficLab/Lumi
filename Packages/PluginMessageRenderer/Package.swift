@@ -4,14 +4,14 @@ import PackageDescription
 let package = Package(
     name: "PluginMessageRenderer",
     defaultLocalization: "zh-Hans",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginMessageRenderer", targets: ["PluginMessageRenderer"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiProviders"),
+        .package(path: "../../Vendor/LumiKernel"),
+        .package(path: "../../Vendor/LumiLogging"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderChatSection"),
@@ -19,8 +19,8 @@ let package = Package(
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderToolManager"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiUI"),
+        .package(path: "../../Vendor/LumiLocalization"),
         .package(path: "../KitMarkdown"),
     ],
     targets: [

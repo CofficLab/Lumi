@@ -4,22 +4,23 @@ import PackageDescription
 let package = Package(
     name: "PluginWebServer",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginWebServer", targets: ["PluginWebServer"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
-        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
+        .package(path: "../../Vendor/LumiKernel"),
+        .package(path: "../../Vendor/LumiUI"),
+        .package(path: "../../Vendor/LumiProviders"),
+        .package(path: "../../Vendor/LumiSettings"),
         .package(path: "../ProviderWebServer"),
         .package(path: "../KitWebServer"),
         .package(path: "../KitWebAPI"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderToolManager"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../KitAgentTool"),
+        .package(path: "../../Vendor/LumiLogging"),
     ],
     targets: [
         .target(
@@ -50,6 +51,8 @@ let package = Package(
                 "ProviderWebServer",
                 "KitWebServer",
                 "KitWebAPI",
+                "ProviderToolManager",
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
             ]
         ),
     ]

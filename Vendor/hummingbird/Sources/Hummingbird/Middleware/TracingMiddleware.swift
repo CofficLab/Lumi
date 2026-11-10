@@ -1,0 +1,217 @@
+//
+// This source file is part of the Hummingbird server framework project
+// Copyright (c) the Hummingbird authors
+//
+// See LICENSE.txt for license information
+// SPDX-License-Identifier: Apache-2.0
+//
+
+public import HTTPTypes
+public import HummingbirdCore
+import Instrumentation
+public import NIOCore
+public import Tracing
+
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
+
+/// Middleware creating Distributed Tracing spans for each request.
+///
+/// Creates a span for each request, including attributes such as the HTTP method.
+///
+/// You may opt in to recording a specific subset of HTTP request/response header values by passing
+/// a set of header names.
+///
+/// Uses [Swift-Distributed-Tracing](https://github.com/apple/swift-distributed-tracing) for recording the traces.
+/// Swift-Distributed-Tracing has a flexible backend, which will need to be initialized before any traces are recorded.
+///
+/// A list of implementations is available in the swift-distributed-tracing repository's README.
+@available(hummingbird 2.0, *)
+public struct TracingMiddleware<Context: RequestContext>: RouterMiddleware {
+    private let headerNamesToRecord: Set<RecordingHeader>
+    private let queryParametersToRedact: Set<Substring>
+    private let attributes: SpanAttributes?
+
+    /// Intialize a new TracingMiddleware.
+    ///
+    /// - Parameters
+    ///     - recordingHeaders: A list of HTTP header names to be recorded as span attributes. By default, no headers
+    ///         are being recorded.
+    ///     - parameters: A list of static parameters added to every span. These could be the "net.host.name",
+    ///         "net.host.port" or "http.scheme"
+    public init(
+        recordingHeaders headerNamesToRecord: some Collection<HTTPField.Name> = [],
+        attributes: SpanAttributes? = nil
+    ) {
+        self.init(recordingHeaders: headerNamesToRecord, redactingQueryParameters: [], attributes: attributes)
+    }
+
+    /// Intialize a new TracingMiddleware.
+    ///
+    /// - Parameters
+    ///     - recordingHeaders: A list of HTTP header names to be recorded as span attributes. By default, no headers
+    ///         are being recorded.
+    ///     - redactingQueryParameters: A set of query parameter keys to redact. By default, all query parameters are
+    ///         being recorded without redaction.
+    ///     - parameters: A list of static parameters added to every span. These could be the "net.host.name",
+    ///         "net.host.port" or "http.scheme"
+    public init(
+        recordingHeaders headerNamesToRecord: some Collection<HTTPField.Name> = [],
+        redactingQueryParameters queryParametersToRedact: Set<String> = [],
+        attributes: SpanAttributes? = nil
+    ) {
+        self.headerNamesToRecord = Set(headerNamesToRecord.map(RecordingHeader.init))
+        self.queryParametersToRedact = Set(queryParametersToRedact.map { $0[...] })
+        self.attributes = attributes
+    }
+
+    public func handle(_ request: Request, context: Context, next: (Request, Context) async throws -> Response) async throws -> Response {
+        var instrumentationContext = InstrumentationContext.current ?? InstrumentationContext.topLevel
+        InstrumentationSystem.instrument.extract(request.headers, into: &instrumentationContext, using: HTTPHeadersExtractor())
+
+        // span name is updated after route has run
+        let operationName = "HTTP \(request.method.rawValue) route not found"
+
+        let span = startSpan(operationName, context: instrumentationContext, ofKind: .server)
+        span.updateAttributes { attributes in
+            if let staticAttributes = self.attributes {
+                attributes.merge(staticAttributes)
+            }
+            attributes["http.request.method"] = request.method.rawValue
+            attributes["url.path"] = request.uri.path
+            if self.queryParametersToRedact.isEmpty {
+                attributes["url.query"] = request.uri.query
+            } else {
+                attributes["url.query"] = request.uri.queryParameters
+                    .lazy
+                    .map { (key, value) in
+                        self.queryParametersToRedact.contains(key) ? "\(key)=REDACTED" : "\(key)=\(value)"
+                    }
+                    .joined(separator: "&")
+            }
+            // TODO: Get HTTP version and scheme
+            // attributes["http.flavor"] = "\(request.version.major).\(request.version.minor)"
+            // attributes["url.scheme"] = request.uri.scheme?.rawValue
+            attributes["user_agent.original"] = request.headers[.userAgent]
+            attributes["http.request.body.size"] = request.headers[.contentLength].map { Int($0) } ?? nil
+
+            if let remoteAddress = (context as? any RemoteAddressRequestContext)?.remoteAddress {
+                attributes["net.sock.peer.port"] = remoteAddress.port
+
+                switch remoteAddress.protocol {
+                case .inet:
+                    attributes["net.sock.peer.addr"] = remoteAddress.ipAddress
+                case .inet6:
+                    attributes["net.sock.family"] = "inet6"
+                    attributes["net.sock.peer.addr"] = remoteAddress.ipAddress
+                case .unix:
+                    attributes["net.sock.family"] = "unix"
+                    attributes["net.sock.peer.addr"] = remoteAddress.pathname
+                default:
+                    break
+                }
+            }
+            attributes = self.recordHeaders(request.headers, toSpanAttributes: attributes, withPrefix: "http.request.header.")
+        }
+
+        do {
+            return try await InstrumentationContext.$current.withValue(span.context) {
+                var response = try await next(request, context)
+                if let endpointPath = context.endpointPath {
+                    span.operationName = endpointPath
+                }
+                span.updateAttributes { attributes in
+                    attributes["http.route"] = context.endpointPath
+                    attributes = self.recordHeaders(response.headers, toSpanAttributes: attributes, withPrefix: "http.response.header.")
+
+                    attributes["http.response.status_code"] = Int(response.status.code)
+                    attributes["http.response.body.size"] = response.body.contentLength
+                }
+                let spanWrapper = UnsafeTransfer(SpanWrapper(span))
+                response.body = response.body.withPostWriteClosure {
+                    spanWrapper.wrappedValue.end()
+                }
+                return response
+            }
+        } catch {
+            if let endpointPath = context.endpointPath {
+                span.operationName = endpointPath
+            }
+            let statusCode = (error as? any HTTPResponseError)?.status.code ?? 500
+            span.updateAttributes { attributes in
+                attributes["http.route"] = context.endpointPath
+                attributes["http.response.status_code"] = statusCode
+            }
+            if 500..<600 ~= statusCode {
+                span.setStatus(.init(code: .error))
+            }
+            span.recordError(error)
+            span.end()
+            throw error
+        }
+    }
+
+    func recordHeaders(_ headers: HTTPFields, toSpanAttributes attributes: SpanAttributes, withPrefix prefix: String) -> SpanAttributes {
+        var attributes = attributes
+        for header in self.headerNamesToRecord {
+            let values = headers[values: header.name]
+            guard !values.isEmpty else { continue }
+            let attribute = "\(prefix)\(header.attributeName)"
+
+            if values.count == 1 {
+                attributes[attribute] = values[0]
+            } else {
+                attributes[attribute] = values
+            }
+        }
+        return attributes
+    }
+}
+
+/// Stores a reference to a span and on release ends the span
+private class SpanWrapper {
+    var span: (any Span)?
+
+    init(_ span: any Span) {
+        self.span = span
+    }
+
+    func end() {
+        self.span?.end()
+        self.span = nil
+    }
+
+    deinit {
+        self.span?.end()
+    }
+}
+
+/// Protocol for request context that stores the remote address of connected client.
+///
+/// If you want the TracingMiddleware to record the remote address of requests
+/// then your request context will need to conform to this protocol
+public protocol RemoteAddressRequestContext: RequestContext {
+    /// Connected host address
+    var remoteAddress: SocketAddress? { get }
+}
+
+@available(hummingbird 2.0, *)
+struct RecordingHeader: Hashable {
+    let name: HTTPField.Name
+    let attributeName: String
+
+    init(name: HTTPField.Name) {
+        self.name = name
+        self.attributeName = name.canonicalName.replacing("-", with: "_")
+    }
+}
+
+private struct HTTPHeadersExtractor: Extractor {
+    func extract(key name: String, from headers: HTTPFields) -> String? {
+        guard let headerName = HTTPField.Name(name) else { return nil }
+        return headers[headerName]
+    }
+}

@@ -5,9 +5,10 @@ import KitShell
 public enum GitSection {
     /// 渲染 Git 仓库信息
     public static func render(at root: URL) -> String {
-        let gitDir = root.appendingPathComponent(".git", isDirectory: true)
-        // .git can be a directory (normal repo) or a file (submodule with gitdir pointer)
-        guard FileManager.default.fileExists(atPath: gitDir.path) else {
+        // 传入的可能是仓库子目录（或被 worktree/submodule 的 `.git` 文件指向上级），
+        // 只检查 `root/.git` 会把它们误判为非仓库。交给 Git 按正常规则向上发现工作树。
+        guard runGit(args: ["rev-parse", "--is-inside-work-tree"], in: root)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) == "true" else {
             return "Not a Git repository."
         }
 

@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "magiclog",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nookery/MagicLog.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "f3680135b72e6c2158d21fba5769f17ba77798e5"
+      }
+    }
+  ],
+  "version" : 2
+}

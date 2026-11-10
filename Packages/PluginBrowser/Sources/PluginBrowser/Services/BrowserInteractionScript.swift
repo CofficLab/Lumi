@@ -55,10 +55,16 @@ enum BrowserInteractionScript {
       const ref = OPTS.ref;
       if (!ref) return fail("Missing element reference.");
 
-      const el = document.querySelector("[" + REF_ATTR + '="' + ref + '"]');
-      if (!el) {
+      // 页面可能在快照之后复制/改写 ref 属性；只取第一个匹配会静默操作
+      // 错误控件。匹配不唯一时拒绝执行，要求重新快照。
+      const matches = document.querySelectorAll("[" + REF_ATTR + '="' + ref + '"]');
+      if (matches.length === 0) {
         return fail("STALE_REF:" + ref);
       }
+      if (matches.length > 1) {
+        return fail("AMBIGUOUS_REF:" + ref + " matches " + matches.length + " elements. Take a new snapshot and retry.");
+      }
+      const el = matches[0];
 
       // 元素必须可见且可交互，否则点击会静默失败。
       const rect = el.getBoundingClientRect();
@@ -75,7 +81,18 @@ enum BrowserInteractionScript {
 
       const focus = () => { try { el.focus({ preventScroll: true }); } catch (_) {} };
 
+      // 富文本编辑器常用 `<div role="textbox" contenteditable>`，
+      // 它们没有 value 属性，但快照同样把它暴露为 textbox。
+      const isTextControl = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
+      const isEditableHost = !isTextControl && el.isContentEditable === true;
+
       const setValue = (value) => {
+        if (isEditableHost) {
+          el.textContent = value;
+          el.dispatchEvent(new Event("input", { bubbles: true }));
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+          return true;
+        }
         const proto = el instanceof HTMLTextAreaElement
           ? HTMLTextAreaElement.prototype
           : HTMLInputElement.prototype;
@@ -85,6 +102,15 @@ enum BrowserInteractionScript {
         el.dispatchEvent(new Event("input", { bubbles: true }));
         el.dispatchEvent(new Event("change", { bubbles: true }));
         return true;
+      };
+
+      const appendText = (char) => {
+        if (isEditableHost) {
+          el.textContent = (el.textContent || "") + char;
+        } else {
+          el.value = el.value + char;
+        }
+        el.dispatchEvent(new Event("input", { bubbles: true }));
       };
 
       const click = () => {
@@ -120,12 +146,14 @@ enum BrowserInteractionScript {
         }
 
         case "fill": {
-          if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) {
+          if (!isTextControl && !isEditableHost) {
             return fail("This element does not accept text. Use select or click instead.");
           }
-          const type = (el.getAttribute("type") || "").toLowerCase();
-          if (["file", "hidden"].includes(type)) {
-            return fail("This input cannot be filled with text.");
+          if (isTextControl) {
+            const type = (el.getAttribute("type") || "").toLowerCase();
+            if (["file", "hidden"].includes(type)) {
+              return fail("This input cannot be filled with text.");
+            }
           }
           focus();
           if (!setValue(String(OPTS.text || ""))) {
@@ -135,19 +163,29 @@ enum BrowserInteractionScript {
         }
 
         case "type": {
-          if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) {
+          if (!isTextControl && !isEditableHost) {
             return fail("This element does not accept text.");
           }
           focus();
           // 逐字符输入并触发按键事件，贴近真实用户输入；
           // 与 fill 的差别是 fill 直接赋值、不触发按键。
+          // 必须按完整字符切分：按下标逐个码元写入会把 Emoji 的
+          // surrogate pair 拆开，产生替换字符（issue #1059）。
           const value = String(OPTS.text || "");
-          for (let i = 0; i < value.length; i++) {
-            el.dispatchEvent(new KeyboardEvent("keydown", { key: value[i], bubbles: true }));
-            el.dispatchEvent(new KeyboardEvent("keypress", { key: value[i], bubbles: true }));
-            el.value = el.value + value[i];
-            el.dispatchEvent(new KeyboardEvent("keyup", { key: value[i], bubbles: true }));
-            el.dispatchEvent(new Event("input", { bubbles: true }));
+          const graphemes = [];
+          if (typeof Intl !== "undefined" && typeof Intl.Segmenter === "function") {
+            const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+            for (const piece of segmenter.segment(value)) {
+              graphemes.push(piece.segment);
+            }
+          } else {
+            graphemes.push(...Array.from(value));
+          }
+          for (const char of graphemes) {
+            el.dispatchEvent(new KeyboardEvent("keydown", { key: char, bubbles: true }));
+            el.dispatchEvent(new KeyboardEvent("keypress", { key: char, bubbles: true }));
+            appendText(char);
+            el.dispatchEvent(new KeyboardEvent("keyup", { key: char, bubbles: true }));
           }
           el.dispatchEvent(new Event("change", { bubbles: true }));
           return { ok: true, href: "", message: "Typed." };

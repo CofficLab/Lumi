@@ -137,6 +137,113 @@ struct PluginConversationVerbosityTests {
         #expect(viewModel.selectedVerbosity == .detailed)
         #expect(viewModel.observationRevision == before + 1)
     }
+
+    /// 回归 #920：弹层选项名称与说明、chip tooltip 必须经过插件本地化解析，
+    /// 而不是读取 `ResponseVerbosity` 里写死的中文字面量。
+    ///
+    /// 用注入的替身解析器断言「文案确实来自解析器」，因为真实解析结果取决于
+    /// 宿主首选语言，无法在 CI 上给出与语言无关的期望值。
+    @Test("详细度名称与说明经过注入的本地化解析（回归 #920）")
+    func verbosityTextUsesInjectedLocalization() {
+        let cases: [(ResponseVerbosity, String, String)] = [
+            (.brief, "Brief", "Brief Description"),
+            (.standard, "Standard", "Standard Description"),
+            (.detailed, "Detailed", "Detailed Description"),
+        ]
+        let resolve: (String) -> String = { "localized:\($0)" }
+
+        for (level, nameKey, descriptionKey) in cases {
+            #expect(
+                level.localizedDisplayName(resolve: resolve) == "localized:\(nameKey)",
+                "详细度名称未经过本地化解析：\(level.rawValue)"
+            )
+            #expect(
+                level.localizedDescription(resolve: resolve) == "localized:\(descriptionKey)",
+                "详细度说明未经过本地化解析：\(level.rawValue)"
+            )
+        }
+    }
+
+    /// 回归 #920：名称与说明词条必须在编译产物里对每种受支持语言都有译文，
+    /// 否则英文界面会显示中文，或中文界面回落成英文 key。
+    @Test("详细度词条在所有规范语言下都有译文（回归 #920）")
+    func verbosityStringsHaveTranslationsInCompiledBundle() throws {
+        let expected: [String: [String: String]] = [
+            "Brief": [
+                "en": "Brief", "zh-Hans": "简洁", "zh-Hant": "簡潔",
+                "zh-HK": "簡潔", "zh-TW": "簡潔",
+            ],
+            "Standard": [
+                "en": "Standard", "zh-Hans": "标准", "zh-Hant": "標準",
+                "zh-HK": "標準", "zh-TW": "標準",
+            ],
+            "Detailed": [
+                "en": "Detailed", "zh-Hans": "详细", "zh-Hant": "詳細",
+                "zh-HK": "詳細", "zh-TW": "詳細",
+            ],
+            "Brief Description": [
+                "en": "Returns only the core conclusion",
+                "zh-Hans": "只返回核心结论",
+                "zh-Hant": "只回傳核心結論",
+                "zh-HK": "只回傳核心結論",
+                "zh-TW": "只回傳核心結論",
+            ],
+            "Standard Description": [
+                "en": "Includes essential explanations and steps",
+                "zh-Hans": "包含必要说明和步骤",
+                "zh-Hant": "包含必要說明和步驟",
+                "zh-HK": "包含必要說明和步驟",
+                "zh-TW": "包含必要說明和步驟",
+            ],
+            "Detailed Description": [
+                "en": "Includes full reasoning and context",
+                "zh-Hans": "包含完整推理和上下文",
+                "zh-Hant": "包含完整推理與上下文",
+                "zh-HK": "包含完整推理與上下文",
+                "zh-TW": "包含完整推理與上下文",
+            ],
+        ]
+
+        for (key, translations) in expected {
+            for (language, translation) in translations {
+                let table = try Self.compiledStrings(language: language)
+                #expect(
+                    table[key] == translation,
+                    "\(language) 下 \(key) 译文缺失或不符，详细度控件会回退到其它语言"
+                )
+            }
+        }
+    }
+
+    private static func compiledStrings(language: String) throws -> [String: String] {
+        let bundle = pluginLocalization.bundle
+        let lprojPath = try #require(bundle.path(forResource: language, ofType: "lproj"))
+        let stringsPath = (lprojPath as NSString).appendingPathComponent("Localizable.strings")
+        return try #require(NSDictionary(contentsOfFile: stringsPath) as? [String: String])
+    }
+
+    /// 回归 #1069：缓存在选中后才水合的会话依靠 `.verbosityChanged` 纠正 UI，
+    /// 观察者必须对该事件重新求值。
+    @Test("Observer 收到 verbosityChanged 后刷新选中详细度")
+    func observerRefreshesOnVerbosityChanged() throws {
+        let conversations = DefaultConversationManager()
+        let adapter = ConversationVerbosityCapabilityAdapter(conversations: conversations)
+        let viewModel = VerbosityViewModel(capability: adapter)
+        let observer = VerbosityObserver(capability: adapter, viewModel: viewModel)
+
+        let id = try conversations.createConversation(
+            title: nil,
+            projectPath: nil,
+            providerID: nil,
+            modelName: nil
+        )
+        #expect(viewModel.selectedVerbosity == .defaultVerbosity)
+
+        conversations.setVerbosity(.brief, for: id)
+
+        #expect(viewModel.selectedVerbosity == .brief)
+        observer.cancel()
+    }
 }
 
 @MainActor

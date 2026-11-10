@@ -60,7 +60,12 @@ public struct ReviewPromoImageTool: SuperAgentTool {
         guard report.isValid else { throw AppStorePromoStoreError.invalidHTML(report.errors) }
 
         // 2. 渲染 PNG（复用 PreviewPromoImageTool 的渲染管线）。
-        let data = try await AppStorePromoHTMLExporter.exportPNG(html: image.html, fileURL: image.htmlURL, preset: preset)
+        let data = try await AppStorePromoHTMLExporter.exportPNG(
+            html: image.html,
+            fileURL: image.htmlURL,
+            readAccessRootURL: image.directoryURL,
+            preset: preset
+        )
         let attachment = ImageAttachment(
             data: data,
             mimeType: "image/png",

@@ -1,4 +1,5 @@
 import Foundation
+import KitAgentTool
 import KitLLM
 import ProviderMessage
 import Testing
@@ -170,6 +171,29 @@ struct MessageConversionEdgeCaseTests {
         #expect(messages[1].images == [MessageImage(data: imageData, mimeType: "image/png")])
     }
 
+    @Test("回归 #955：工具消息的失败标志会传入 LLM 消息并由钩子回写保留")
+    func llmMessageCarriesToolErrorFlag() {
+        let conversationID = UUID()
+        let tool = Message(
+            conversationID: conversationID,
+            role: .tool,
+            content: "工具失败",
+            isError: true,
+            toolCallID: "call-1"
+        )
+        #expect(tool.llmMessage.isError)
+
+        let assistant = Message(conversationID: conversationID, role: .assistant, content: "ok")
+        #expect(!assistant.llmMessage.isError)
+
+        // 生命周期钩子返回的 LLM 消息也要把失败标志带回持久化消息。
+        let restored = messageFromLLMMessage(
+            LLMMessage(role: .tool, content: "工具失败", toolCallID: "call-1", isError: true),
+            conversationID: conversationID
+        )
+        #expect(restored.isError)
+    }
+
     /// assistant 消息可能没有工具调用（如纯文本回复）：
     /// 图片收集循环必须容忍 nil，而不是崩溃。
     @Test("没有工具调用的 assistant 消息跳过图片收集")
@@ -249,6 +273,22 @@ struct MessageConversionEdgeCaseTests {
         #expect(llmMessage.content == "这张图")
     }
 
+    /// 落库的 redacted thinking 必须在下一轮转换时回到 LLMMessage。
+    @Test("持久化的 redacted thinking 会进入下一轮 LLMMessage")
+    func llmMessageCarriesRedactedThinking() {
+        let message = Message(
+            conversationID: UUID(),
+            role: .assistant,
+            content: "",
+            redactedThinkingData: ["opaque-1", "opaque-2"],
+            toolCalls: [MessageToolCall(id: "call-1", name: "read_file", arguments: "{}")]
+        )
+
+        let llmMessage = message.llmMessage
+
+        #expect(llmMessage.redactedThinking?.map(\.data) == ["opaque-1", "opaque-2"])
+    }
+
     /// tool 消息没有 toolCallID 时不能误挂图片（无可匹配的 pending）。
     @Test("没有 toolCallID 的 tool 消息不会获得图片")
     func llmMessageToolWithoutToolCallIDGetsNoImages() {
@@ -280,4 +320,105 @@ struct MessageConversionEdgeCaseTests {
         #expect(messages[1].role == .tool)
         #expect(messages[1].images.isEmpty)
     }
+}
+
+// MARK: - 工具参数裁剪进入模型上下文（Issue #1053）
+
+/// `show_html` 承诺 HTML 不回流给模型，但原始 tool call 参数此前被逐字复制。
+/// 这组用例钉住转换边界：声明的键被替换成占位符，其余参数与调用配对不变。
+@Suite("工具参数裁剪进入模型上下文")
+struct ToolArgumentScrubbingTests {
+
+    @Test("show_html 的 html 原文不再进入模型上下文")
+    func llmMessagesScrubsOmittedArguments() throws {
+        let conversationID = UUID()
+        let marker = "SECRET_HTML_MARKER"
+        let assistant = Message(
+            conversationID: conversationID,
+            role: .assistant,
+            content: "",
+            toolCalls: [
+                MessageToolCall(
+                    id: "call-html",
+                    name: "show_html",
+                    arguments: #"{"html":"<html><body>\#(marker)</body></html>","title":"Report"}"#
+                ),
+                MessageToolCall(id: "call-file", name: "read_file", arguments: #"{"path":"a.txt"}"#)
+            ]
+        )
+        let tool = Message(
+            conversationID: conversationID,
+            role: .tool,
+            content: "HTML displayed",
+            toolCallID: "call-html"
+        )
+
+        let messages = llmMessages(
+            from: [assistant, tool],
+            omittedArgumentKeys: ["show_html": ["html"]]
+        )
+
+        let calls = try #require(messages[0].toolCalls)
+        #expect(calls.count == 2)
+        #expect(calls[0].id == "call-html")
+        #expect(calls[0].name == "show_html")
+        #expect(!calls[0].arguments.contains(marker))
+        #expect(calls[0].arguments.contains("Report"))
+        // 未声明裁剪的工具参数保持原样。
+        #expect(calls[1].arguments == #"{"path":"a.txt"}"#)
+        // 工具结果仍与调用配对。
+        #expect(messages[1].toolCallID == "call-html")
+    }
+
+    @Test("没有裁剪声明时工具参数保持原样")
+    func llmMessagesKeepsUndeclaredArguments() throws {
+        let conversationID = UUID()
+        let arguments = #"{"html":"<html><body>KEEP</body></html>"}"#
+        let assistant = Message(
+            conversationID: conversationID,
+            role: .assistant,
+            content: "",
+            toolCalls: [MessageToolCall(id: "call-html", name: "show_html", arguments: arguments)]
+        )
+
+        let messages = llmMessages(from: [assistant])
+
+        let calls = try #require(messages[0].toolCalls)
+        #expect(calls[0].arguments == arguments)
+    }
+
+    @Test("按工具名收集裁剪声明，未声明的工具不出现")
+    func contextOmittedArgumentKeysCollectsDeclarations() {
+        let tools: [any SuperAgentTool] = [ScrubbingTool(), PlainScrubbingTool()]
+
+        let map = contextOmittedArgumentKeys(for: tools)
+
+        #expect(map == ["scrubbing_tool": ["html"]])
+    }
+}
+
+private struct ScrubbingTool: SuperAgentTool {
+    let name = "scrubbing_tool"
+
+    var contextOmittedArgumentKeys: Set<String> { ["html"] }
+
+    func description(for language: LanguagePreference) -> String { "Scrub demo" }
+
+    func inputSchema(for language: LanguagePreference) -> [String: Any] { ["type": "object"] }
+
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .safe }
+
+    func displayDescription(for arguments: [String: ToolArgument]) -> String { "Scrub demo" }
+}
+
+private struct PlainScrubbingTool: SuperAgentTool {
+    let name = "plain_tool"
+
+    func description(for language: LanguagePreference) -> String { "Plain demo" }
+
+    func inputSchema(for language: LanguagePreference) -> [String: Any] { ["type": "object"] }
+
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .safe }
+
+    func displayDescription(for arguments: [String: ToolArgument]) -> String { "Plain demo" }
 }

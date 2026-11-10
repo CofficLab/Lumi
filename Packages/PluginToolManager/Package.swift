@@ -5,25 +5,25 @@ let package = Package(
     name: "PluginToolManager",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("14.0"),
         .iOS(.v17)
     ],
     products: [
         .library(name: "PluginToolManager", targets: ["PluginToolManager"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
+        .package(path: "../../Vendor/LumiProviders"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitFileSystem"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
+        .package(path: "../../Vendor/LumiKernel"),
+        .package(path: "../../Vendor/LumiLocalization"),
+        .package(path: "../../Vendor/LumiSettings"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderConversation"),
         .package(path: "../KitShell"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiUI"),
+        .package(path: "../../Vendor/LumiLogging"),
     ],
     targets: [
         .target(

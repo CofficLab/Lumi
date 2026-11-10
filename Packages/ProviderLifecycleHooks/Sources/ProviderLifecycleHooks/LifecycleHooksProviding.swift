@@ -34,10 +34,22 @@ public struct WillSendToLLMContext: Sendable {
     public var messages: [LLMMessage]
     /// 会话 ID。
     public let conversationID: UUID
+    /// 钩子注入内容可用的剩余输入 token 预算。
+    ///
+    /// 上下文 Provider 只对持久化历史做预算，钩子在其后追加的内容不参与
+    /// 压缩、摘要或兜底裁剪。钩子必须把自己注入的部分限制在这个预算内，
+    /// 否则请求会超出模型窗口，而紧急重试也会带着同样超限的内容再次失败。
+    /// 为 `nil` 表示调用方没有提供预算（保留不受限的旧行为）。
+    public let injectedContentTokenBudget: Int?
 
-    public init(messages: [LLMMessage], conversationID: UUID) {
+    public init(
+        messages: [LLMMessage],
+        conversationID: UUID,
+        injectedContentTokenBudget: Int? = nil
+    ) {
         self.messages = messages
         self.conversationID = conversationID
+        self.injectedContentTokenBudget = injectedContentTokenBudget
     }
 }
 

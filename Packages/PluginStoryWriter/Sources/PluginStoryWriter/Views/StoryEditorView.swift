@@ -3,12 +3,19 @@ import SwiftUI
 /// Editor for story metadata (title, synopsis).
 struct StoryEditorView: View {
     @ObservedObject var viewModel: StoryWriterViewModel
-    @State var story: Story
+    let story: Story
 
     @Environment(\.locale) private var locale
 
+    @State private var draft: StoryEditorDraft
     @State private var isEditingTitle = false
     @State private var editTitle = ""
+
+    init(viewModel: StoryWriterViewModel, story: Story) {
+        self.viewModel = viewModel
+        self.story = story
+        _draft = State(initialValue: StoryEditorDraft(story: story))
+    }
 
     private func L(_ key: String) -> String {
         pluginLocalization.string(key, locale: locale)
@@ -65,7 +72,10 @@ struct StoryEditorView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(L("Synopsis"))
                         .font(.headline)
-                    TextEditor(text: $story.synopsis)
+                    TextEditor(text: Binding(
+                        get: { draft.synopsis },
+                        set: { draft.updateSynopsis($0) }
+                    ))
                         .frame(minHeight: 120)
                         .border(.separator)
                 }
@@ -87,22 +97,28 @@ struct StoryEditorView: View {
             }
             .padding(20)
         }
-        .onChange(of: story.synopsis) { _, _ in
-            saveStory()
+        .onChange(of: story) { incoming in
+            // 父级在外部更新后送来同一故事的新版本，同步到本地草稿。
+            draft.applyExternalUpdate(incoming)
+        }
+        .onChange(of: draft.synopsis) { newValue in
+            guard newValue != draft.baseStory.synopsis else { return }
+            let saved = draft.storyToSave()
+            draft.markSaved(saved)
+            Task {
+                await viewModel.updateStory(saved)
+            }
         }
     }
 
     private func saveTitle() {
         isEditingTitle = false
         if !editTitle.isEmpty && editTitle != story.title {
-            story.title = editTitle
-            saveStory()
-        }
-    }
-
-    private func saveStory() {
-        Task {
-            await viewModel.updateStory(story)
+            let saved = draft.storyToSave(title: editTitle)
+            draft.markSaved(saved)
+            Task {
+                await viewModel.updateStory(saved)
+            }
         }
     }
 

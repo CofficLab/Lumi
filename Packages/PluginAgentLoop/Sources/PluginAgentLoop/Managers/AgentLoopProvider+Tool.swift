@@ -19,6 +19,9 @@ extension AgentLoopManager {
     /// 终态，兼容路径继续消费 ToolManagerEvent，避免同一个工具结果被写回两次。
     func handleToolJobEvent(_ event: ToolJobEvent) {
         switch event {
+        case .restored:
+            // 启动恢复的历史任务属于已结束的回合，无需重建运行态。
+            break
         case .created(let job), .started(let job), .waitingForUser(let job):
             registerToolJob(job)
         case .output, .progress:
@@ -338,7 +341,7 @@ extension AgentLoopManager {
                     pendingToolCalls: [current] + pending.filter { $0.id != toolCall.id }
                 )
                 runtime.completionDelivered = false
-                runtime.pendingSuspensions.removeValue(forKey: toolCall.id)
+                runtime.clearSuspension(toolCallID: toolCall.id)
                 runtimes[conversationID] = runtime
                 return true
             default:
@@ -383,6 +386,55 @@ extension AgentLoopManager {
 
     /// 统一处理工具结果后的状态机推进：批次中若还有待执行工具，继续发出
     /// 工具事件；批次结束后才启动下一次 LLM 请求。
+    /// 同一批次还有未回答的挂起点时，把回合停在下一项。
+    ///
+    /// 状态机只把最近一次挂起放进 phase 作为 active suspension，其余保存在
+    /// `pendingSuspensions`。恢复当前挂起后若直接请求下一次 LLM，这些调用
+    /// 既不在 pending 集合、也没有 active suspension，永远拿不到 tool result，
+    /// 下一轮请求就会缺少必需的 `role=tool` 消息。
+    ///
+    /// - Returns: 成功停到下一项时返回新的运行时与 `.suspended` 结果。
+    @discardableResult
+    func suspendAtNextPendingSuspensionIfNeeded(
+        runtime: TurnRuntime,
+        conversationID: UUID,
+        turnID: UUID
+    ) -> (TurnRuntime, AgentLoopOutcome)? {
+        guard case .requestingLLM = runtime.phase,
+              !runtime.pendingSuspensions.isEmpty,
+              let assistantMessageID = runtime.suspensionAssistantMessageID else {
+            return nil
+        }
+        // `pendingSuspensions` 是字典，遍历顺序不稳定；按挂起先后取下一项。
+        let nextToolCallID = runtime.suspensionOrder.first {
+            runtime.pendingSuspensions[$0] != nil
+        } ?? runtime.pendingSuspensions.keys.sorted().first
+        guard let nextToolCallID,
+              let suspension = runtime.pendingSuspensions[nextToolCallID] else {
+            return nil
+        }
+        var suspended = runtime
+        suspended.phase = .awaitingUser(
+            turnID: turnID,
+            assistantMessageID: assistantMessageID,
+            pendingToolCalls: [],
+            suspension: suspension
+        )
+        suspended.completionDelivered = false
+        runtimes[conversationID] = suspended
+        finishTurn(
+            conversationID: conversationID,
+            turnID: turnID,
+            outcome: .suspended("awaiting user response")
+        )
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t)恢复挂起后停在下一项 conversation=\(conversationID.uuidString.prefix(8)), tool=\(nextToolCallID, privacy: .public)"
+            )
+        }
+        return (suspended, .suspended(suspension.suspensionID))
+    }
+
     private func continueAfterToolResults(
         runtime: TurnRuntime,
         conversationID: UUID,
@@ -390,6 +442,14 @@ extension AgentLoopManager {
     ) {
         switch runtime.phase {
         case .requestingLLM:
+            // 同一批次可能还有别的挂起点没回答；先停在那里，别急着请求 LLM。
+            if suspendAtNextPendingSuspensionIfNeeded(
+                runtime: runtime,
+                conversationID: conversationID,
+                turnID: turnID
+            ) != nil {
+                return
+            }
             if Self.verbose { Self.logger.info("\(Self.t)🚛 工具批次完成，继续请求 LLM conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))") }
             launchAdvance(conversationID: conversationID, turnID: turnID)
         case .executingTools(let nextTurnID, let assistantMessageID, let remaining) where !remaining.isEmpty:
@@ -544,6 +604,24 @@ extension AgentLoopManager {
         }?.id
     }
 
+    /// 本回合已经使用过的 tool-call ID，包括已被上下文压缩掉的消息。
+    ///
+    /// 归一化只看压缩后的历史时，provider 在同一回合复用被压缩掉的 ID 不会
+    /// 改名，ToolManager 会把它当成已完成的旧 Job 直接返回；新调用既没有
+    /// `.created` 也没有终态事件，回合会永久停在等待工具结果（#1024）。
+    private func persistedToolCallIDs(
+        conversationID: UUID,
+        turnID: UUID
+    ) async -> Set<String> {
+        await messages.messagesSnapshot(in: conversationID).reduce(into: Set<String>()) { ids, message in
+            guard message.turnID == turnID else { return }
+            ids.formUnion(message.toolCalls?.map(\.id) ?? [])
+            if let toolCallID = message.toolCallID, !toolCallID.isEmpty {
+                ids.insert(toolCallID)
+            }
+        }
+    }
+
     enum LLMRequestResult {
         case success(LLMResponse, assistantMessageID: UUID)
         /// 保留原始错误，避免在落库前丢失专用 renderer 所需的元数据。
@@ -576,6 +654,9 @@ extension AgentLoopManager {
         let automationLevel = conversations.automationLevel(for: conversationID)
         let rawTools = toolManager.allTools()
         let tools = automationLevel.allowsTools ? rawTools : []
+        // 历史里的工具调用参数也要按工具契约裁剪（例如 show_html 的 HTML 原文），
+        // 与当前回合是否允许调用工具无关。
+        let omittedArgumentKeys = contextOmittedArgumentKeys(for: rawTools)
         if Self.verbose {
             let firstFive = tools.prefix(5).map(\.name)
             Self.logger.info("\(Self.t)加载 AgentTool 数量: \(tools.count)，前5个: \(firstFive)，automationLevel=\(automationLevel.rawValue)，rawCount=\(rawTools.count)")
@@ -616,12 +697,16 @@ extension AgentLoopManager {
         // AgentLoop 不读取全量历史，也不感知具体压缩策略。
         let contextResult = await contextProvider.prepareContext(for: contextRequest)
         let history = contextResult.messages
-        let llmHistory = llmMessages(from: history)
+        let llmHistory = llmMessages(from: history, omittedArgumentKeys: omittedArgumentKeys)
         var preparedMessages = llmHistory
         if let lifecycleHooks {
             let context = WillSendToLLMContext(
                 messages: llmHistory,
-                conversationID: conversationID
+                conversationID: conversationID,
+                injectedContentTokenBudget: injectedContentTokenBudget(
+                    inputTokenLimit: contextRequest.budget.inputTokenLimit,
+                    preparedHistory: history
+                )
             )
             let result = await lifecycleHooks.runWillSendToLLM(context)
             preparedMessages = result.messages
@@ -669,7 +754,8 @@ extension AgentLoopManager {
 
         let timingRecorder = LLMStreamTimingRecorder()
         let bridge = StreamingBridge(streaming: streaming)
-        let existingToolCallIDs = ToolCallIdentityNormalizer.ids(in: llmHistory)
+        let existingToolCallIDs = await ToolCallIdentityNormalizer.ids(in: llmHistory)
+            .union(persistedToolCallIDs(conversationID: conversationID, turnID: turnID))
         do {
             let streamedResponse = try await streamingManager.streamComplete(request) { [weak bridge, timingRecorder] chunk in
                 if chunk.content?.isEmpty == false
@@ -738,7 +824,7 @@ extension AgentLoopManager {
             }
 
             // 构建并落库 assistant 消息
-            if let inputTokenCount = response.inputTokenCount {
+            if let inputTokenCount = reportedInputTokenCount(for: response) {
                 contextProvider.reportInputUsage(
                     inputTokenCount,
                     for: contextRequest,
@@ -753,6 +839,7 @@ extension AgentLoopManager {
                 providerID: response.model.flatMap { _ in nil } ?? nil,
                 modelName: response.model,
                 reasoningContent: response.reasoningContent,
+                redactedThinkingData: response.redactedThinking?.map(\.data),
                 toolCalls: response.toolCalls?.map { MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
                 inputTokenCount: response.inputTokenCount,
                 outputTokenCount: response.outputTokenCount,
@@ -839,6 +926,26 @@ extension AgentLoopManager {
 
     // - Important: 这三个纯函数保持 internal 而非 private，供 `@testable` 直接覆盖。
     //   它们没有任何外部调用方，收窄可见性只会让错误分类逻辑无法被单测验证。
+
+    /// 生命周期钩子注入内容可用的剩余输入预算。
+    ///
+    /// `inputTokenLimit` 已经扣掉输出预留、工具 schema 与安全余量，
+    /// 再扣掉本次真正发给模型的历史，剩下的才是钩子可以安全注入的上限。
+    func injectedContentTokenBudget(
+        inputTokenLimit: Int,
+        preparedHistory: [Message]
+    ) -> Int {
+        max(inputTokenLimit - LLMContextTokenEstimator.estimate(messages: preparedHistory), 0)
+    }
+
+    /// 上下文校准使用的实际输入 token 数。
+    ///
+    /// 缓存型端点（如 Anthropic 兼容协议）的 `inputTokenCount` 可能只表示
+    /// 未命中缓存的部分，实际总输入由 `cacheTotalInputTokenCount` 给出；
+    /// 缺省时才退回 `inputTokenCount`。
+    func reportedInputTokenCount(for response: LLMResponse) -> Int? {
+        response.cacheTotalInputTokenCount ?? response.inputTokenCount
+    }
 
     /// 估算全部工具 schema 占用的 token 数，用于上下文预算的保守预留。
     func estimateToolSchemaTokens(_ schemas: [LLMFunctionSchema]) -> Int {

@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import ProviderConversation
 import WebKit
 
 @MainActor
@@ -21,6 +22,7 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         case scriptTooLong
         case scriptFailed(String)
         case screenshotUnavailable
+        case screenshotTooLarge(bytes: Int, limit: Int)
 
         var errorDescription: String? {
             switch self {
@@ -53,6 +55,8 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
                 "The script failed: \(reason)"
             case .screenshotUnavailable:
                 "A screenshot could not be captured from this page."
+            case .screenshotTooLarge(let bytes, let limit):
+                "The screenshot is \(bytes) bytes, which exceeds the \(limit)-byte attachment limit. Try a visible-page screenshot instead."
             }
         }
     }
@@ -92,6 +96,21 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
                 self?.syncPageState(from: webView)
             }
         }
+    }
+
+    /// 释放页面资源。
+    ///
+    /// 会话被删除后必须立刻调用：`sessions` 字典移除只是丢掉强引用，
+    /// WKWebView 的 KVO 观察、导航任务与未完成的 continuation 仍需主动收尾，
+    /// 否则 WebContent 进程和回调会在页面之外继续存活。
+    func tearDown() {
+        urlObservation?.invalidate()
+        urlObservation = nil
+        navigationTimeoutTask?.cancel()
+        navigationTimeoutTask = nil
+        finishNavigation(.failure(SessionError.navigationCancelled), token: navigationToken)
+        webView.stopLoading()
+        webView.navigationDelegate = nil
     }
 
     private func syncPageState(from webView: WKWebView) {
@@ -215,8 +234,8 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
         guard let page = try await webView.evaluateJavaScript(script) as? [String: Any] else {
             throw SessionError.noPage
         }
-        let pageTitle = page["title"] as? String ?? title
-        let pageURL = page["url"] as? String ?? urlString
+        let pageTitle = BrowserAccessibilityNode.escapeProtocolField(page["title"] as? String ?? title)
+        let pageURL = BrowserAccessibilityNode.escapeProtocolField(page["url"] as? String ?? urlString)
         // 页面正文里可能藏着伪造的边界标记，先中和再交给上层包裹。
         let text = BrowserContentBoundary.neutralize(page["text"] as? String ?? "")
         let truncated = page["truncated"] as? Bool ?? false
@@ -225,9 +244,11 @@ final class BrowserSession: NSObject, ObservableObject, WKNavigationDelegate {
             let tag = item["tag"] as? String ?? "element"
             let type = item["type"] as? String ?? ""
             let label = (item["label"] as? String ?? "").nonEmpty ?? "(no label)"
-            let href = (item["href"] as? String ?? "").nonEmpty.map { " → \($0)" } ?? ""
-            let descriptor = type.isEmpty ? tag : "\(tag) type=\(type)"
-            return "- @\(ref) [\(descriptor)] \(label)\(href)"
+            let href = (item["href"] as? String ?? "").nonEmpty.map {
+                " → \(BrowserAccessibilityNode.escapeProtocolField($0))"
+            } ?? ""
+            let descriptor = BrowserAccessibilityNode.escapeProtocolField(type.isEmpty ? tag : "\(tag) type=\(type)")
+            return "- @\(ref) [\(descriptor)] \(BrowserAccessibilityNode.escapeProtocolField(label))\(href)"
         }.joined(separator: "\n")
         return """
         # \(pageTitle)
@@ -409,6 +430,29 @@ public final class BrowserSessionManager: ObservableObject {
         activeSession = conversationID.flatMap { sessions[$0] }
     }
 
+    /// 会话被删除后立刻释放它的 BrowserSession 与 WKWebView。
+    func closeSession(for conversationID: UUID) {
+        guard let session = sessions.removeValue(forKey: conversationID) else { return }
+        if activeConversationID == conversationID {
+            activeConversationID = nil
+        }
+        if activeSession === session {
+            activeSession = nil
+        }
+        session.tearDown()
+    }
+
+    /// 处理对话领域事件：只有删除会释放浏览器会话，其它事件不影响实例。
+    func handleConversationEvent(_ event: ConversationEvent) {
+        guard case .deleted(let conversationID) = event else { return }
+        closeSession(for: conversationID)
+    }
+
+    /// 是否仍持有该会话的浏览器实例。
+    func hasSession(for conversationID: UUID) -> Bool {
+        sessions[conversationID] != nil
+    }
+
     /// 打开一个地址。
     ///
     /// - Parameter localAccessApproved: 用户是否**已明确批准**访问本地/内网地址。
@@ -431,8 +475,8 @@ public final class BrowserSessionManager: ObservableObject {
         guard let session = sessions[conversationID] else {
             throw BrowserSession.SessionError.noPage
         }
-        activeConversationID = conversationID
-        activeSession = session
+        // 只读查询故意不改 `activeConversationID` / `activeSession`：后台会话
+        // 的读取不能把用户当前选中的 Browser 工作区切走（issue #928）。
         return try await session.readPage(maxCharacters: maxCharacters)
     }
 
@@ -479,8 +523,6 @@ public final class BrowserSessionManager: ObservableObject {
         guard let session = sessions[conversationID] else {
             throw BrowserSession.SessionError.noPage
         }
-        activeConversationID = conversationID
-        activeSession = session
         return try await session.accessibilitySnapshot(interactiveOnly: interactiveOnly)
     }
 
@@ -495,8 +537,6 @@ public final class BrowserSessionManager: ObservableObject {
         guard let session = sessions[conversationID] else {
             throw BrowserSession.SessionError.noPage
         }
-        activeConversationID = conversationID
-        activeSession = session
         return try await session.findElements(role: role, name: name, text: text, limit: limit)
     }
 
@@ -510,8 +550,6 @@ public final class BrowserSessionManager: ObservableObject {
         guard let session = sessions[conversationID] else {
             throw BrowserSession.SessionError.noPage
         }
-        activeConversationID = conversationID
-        activeSession = session
         let result = try await session.wait(condition: condition, value: value, timeout: timeout)
         if result.timedOut {
             throw BrowserSession.SessionError.waitTimedOut(result.detail)
@@ -551,8 +589,6 @@ public final class BrowserSessionManager: ObservableObject {
         guard let session = sessions[conversationID] else {
             throw BrowserSession.SessionError.noPage
         }
-        activeConversationID = conversationID
-        activeSession = session
         return try await session.evaluate(script: script)
     }
 
@@ -561,8 +597,6 @@ public final class BrowserSessionManager: ObservableObject {
         guard let session = sessions[conversationID] else {
             throw BrowserSession.SessionError.noPage
         }
-        activeConversationID = conversationID
-        activeSession = session
         return try await session.screenshot(fullPage: fullPage)
     }
 
@@ -578,7 +612,7 @@ public final class BrowserSessionManager: ObservableObject {
         Task { try? await open(address, conversationID: conversationID, localAccessApproved: true) }
     }
 
-    private func session(for conversationID: UUID) -> BrowserSession {
+    func session(for conversationID: UUID) -> BrowserSession {
         if let session = sessions[conversationID] { return session }
         let session = BrowserSession(conversationID: conversationID)
         sessions[conversationID] = session

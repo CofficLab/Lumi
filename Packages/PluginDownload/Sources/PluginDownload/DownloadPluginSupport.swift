@@ -24,4 +24,29 @@ public enum DownloadPluginSupport {
         let formatter = DateFormatter(); formatter.dateFormat = "yyyyMMdd_HHmmss"
         return "download_\(formatter.string(from: Date()))"
     }
+
+    /// 批量下载的单个条目。
+    ///
+    /// 保留原始字符串而不是过滤掉无效项：调用方需要看到自己请求过的每一条，
+    /// 否则批量结果会看起来「全部处理完了」。
+    struct BatchURLItem: Equatable {
+        let raw: String
+        let url: URL?
+    }
+
+    nonisolated static func classifyBatchURLs(_ rawValues: [String]) -> [BatchURLItem] {
+        rawValues.map { raw in
+            guard let url = URL(string: raw),
+                  let scheme = url.scheme?.lowercased(),
+                  scheme == "http" || scheme == "https" else {
+                return BatchURLItem(raw: raw, url: nil)
+            }
+            return BatchURLItem(raw: raw, url: url)
+        }
+    }
+
+    /// 只要有条目失败就不能报「下载完成」。
+    nonisolated static func batchSummary(succeeded: Int, total: Int) -> String {
+        succeeded == total ? "📊 下载完成" : "📊 部分完成（成功 \(succeeded) / 共 \(total)）"
+    }
 }

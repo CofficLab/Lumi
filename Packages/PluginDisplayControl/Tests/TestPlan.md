@@ -5,7 +5,7 @@
 DisplayControlPlugin External display DDC (Display Data Channel) control for Lumi. - Brightness, Volume, Contrast control for external monitors via DDC/CI (VCP commands over I2C) - Built-in display brightness via DisplayServices - Apple Silicon DDC service matching (Arm64DDCMatcher) - Debounced writes (150ms) to prevent DDC overload - Unsupported controls are automatically disabled Based on reference implementation from [hagimi-monitor](https://github.com/Acerola-1/hagimi-monitor).
 
 平台: macOS 14+, iOS 17+
-测试文件: 7 个，用例总数: 33
+测试文件: 7 个，用例总数: 35
 
 核心组件（源码目录）:
 - `Models/`
@@ -36,7 +36,7 @@ DisplayControlPlugin External display DDC (Display Data Channel) control for Lum
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **DDCBridge**（12 条）：由 `bridgeReturnsNilWithoutService`、`bridgeReturnsNilAfterEmptyRefresh`、`bridgeRefreshWithInvalidIDs` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DDCBridge**（14 条）：由 `bridgeReturnsNilWithoutService`、`bridgeReturnsNilAfterEmptyRefresh`、`bridgeRefreshWithInvalidIDs` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DisplayControlLocalization**（4 条）：由 `pluginBundleIncludesLocalizedStringsCatalog`、`loadsSimplifiedChineseStrings`、`stringCatalogDefinesRequiredLanguages` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DisplayControlPlugin**（9 条）：由 `pluginInfoIdentifier`、`pluginInfoDisplayName`、`pluginCategory` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **DisplayControlRuntime**（3 条）：由 `usesInjectedDirectory`、`resetClearsInjectedDirectory`、`bootInjectsStorageDirectory` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -80,27 +80,29 @@ DisplayControlPlugin External display DDC (Display Data Channel) control for Lum
 | 31 | PrivateDisplaySymbol | 私有符号解析不会崩溃，缺失时降级为不可用 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `privateSymbolsDegradeGracefully` |
 | 32 | PrivateDisplaySymbol | DisplayService 在私有符号缺失时不会崩溃 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `displayServiceSurvivesMissingSymbols` |
 | 33 | PrivateDisplaySymbol | DisplayService 对未知 display id 安全降级 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `displayServiceHandlesUnknownDisplayID` |
+| 34 | DDCBridge | 零音量不得写入 0x8D（该值会触发 screen blank） | — | 调用 `DDCVolumeWritePlan.plan(for: 0)` | 返回 `.volumeOnly`，不触碰静音通道 | P0 | ✅ 已覆盖 | `zeroVolumeSkipsScreenBlankChannel` |
+| 35 | DDCBridge | 非零音量先解除静音再写扬声器音量 | — | 调用 `DDCVolumeWritePlan.plan(for: 1)` | 返回 `.unmute` | P1 | ✅ 已覆盖 | `nonZeroVolumeUnmutes` |
 
-> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **35 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 6 / 6
-- P1: 已覆盖 23 / 23
+- P0: 已覆盖 7 / 7
+- P1: 已覆盖 24 / 24
 - P2: 已覆盖 4 / 4
-- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
+- **合计: 35 / 35**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
-- **P1**: 其余功能性用例（23 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P1**: 其余功能性用例（24 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 33 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 35 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -59,6 +59,7 @@ extension EditorState {
         saveWorkflowController.performSave(
             content: content,
             url: url,
+            encoding: originalFileEncoding,
             verbose: Self.verbose,
             logInfo: { [logger] message in
                 logger.info("\(Self.t)\(message)")

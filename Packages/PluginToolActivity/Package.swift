@@ -4,14 +4,16 @@ import PackageDescription
 let package = Package(
     name: "PluginToolActivity",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginToolActivity", targets: ["PluginToolActivity"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiKernel"),
+        .package(path: "../../Vendor/LumiLocalization"),
+        .package(path: "../../Vendor/LumiLogging"),
+        .package(path: "../KitAgentTool"),
+        .package(path: "../KitLLM"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderToolManager"),
@@ -34,7 +36,10 @@ let package = Package(
             name: "PluginToolActivityTests",
             dependencies: [
                 "PluginToolActivity",
+                "ProviderConversation",
                 "ProviderToolManager",
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
+                .product(name: "KitLLM", package: "KitLLM"),
             ],
             path: "Tests/PluginToolActivityTests"
         ),

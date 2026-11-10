@@ -53,6 +53,13 @@ public enum MessageTimelineEvent {
     /// 因此不应进入后续 LLM 上下文。
     public static let htmlCanvas = "html-canvas"
     public static let htmlCanvasRenderKind = "html-canvas"
+    /// 磁盘测速插件的卡片时间线事件。
+    ///
+    /// 插件在工具执行后插入一条带该标记的消息，由插件自己注册的渲染器
+    /// 画成一张测速进度卡片。这条消息只是给人看的界面产物，不是一次对话轮次，
+    /// 因此不应进入后续 LLM 上下文。
+    public static let diskSpeed = "disk-speed"
+    public static let diskSpeedRenderKind = "disk-speed"
     public static let goalTaskContinuationActionKey = "goalTaskContinuationAction"
     public static let goalTaskContinuationAttemptKey = "goalTaskContinuationAttempt"
     public static let goalTaskContinuationMaxAttemptsKey = "goalTaskContinuationMaxAttempts"
@@ -118,6 +125,12 @@ public enum MessageTimelineEvent {
             || message.metadata[metadataKey] == htmlCanvas
     }
 
+    /// 是否属于磁盘测速插件的卡片时间线事件。
+    public static func isDiskSpeed(_ message: Message) -> Bool {
+        message.renderKind == diskSpeedRenderKind
+            || message.metadata[metadataKey] == diskSpeed
+    }
+
     /// 仅用于界面时间线的消息不应被重新发送给 LLM。
     public static func isTimelineEvent(_ message: Message) -> Bool {
         isContextCompaction(message)
@@ -127,6 +140,7 @@ public enum MessageTimelineEvent {
             || isModelSwitched(message)
             || isFinder(message)
             || isHTMLCanvas(message)
+            || isDiskSpeed(message)
     }
 
     /// 只有真正用于压缩上下文的事件才应显示在消息列表中。

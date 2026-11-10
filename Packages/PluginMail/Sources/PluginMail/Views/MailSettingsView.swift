@@ -132,7 +132,7 @@ public struct MailSettingsView: View {
 
     private func beginAdding() {
         editingAccountID = nil
-        editingDraft = MailAccountDraft()
+        editingDraft = MailAccountDraft.forNewAccount()
     }
 
     private func beginEditing(_ account: MailAccountConfig) {
@@ -145,7 +145,10 @@ public struct MailSettingsView: View {
 
     private func save(_ draft: MailAccountDraft) {
         let id = editingAccountID ?? UUID()
-        let config = draft.toConfig(id: id)
+        guard let config = try? draft.toConfig(id: id) else {
+            errorMessage = "IMAP 与 SMTP 端口必须在 1–65535 之间。"
+            return
+        }
         accountStore.upsertAccount(config)
         accountStore.setPassword(draft.password, for: id)
         // 若编辑了已连接账户的凭据/主机，断开以强制下次重建会话。

@@ -5,6 +5,7 @@ import LumiLoggingKit
 import KitOpenIn
 import ProviderProject
 import ProviderDocsView
+import ProviderToast
 import ProviderToolManager
 import ProviderToolbar
 
@@ -43,6 +44,9 @@ public final class OpenInCursorPlugin: SuperPlugin, SuperLog {
 
         if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
             let projectCapability = OpenInProjectCapabilityAdapter(project: project)
+            let failureReporter = OpenInFailureToastReporter(
+                toast: kernel.resolveProvider((any ToastProviding).self)
+            )
             toolbar.addToolbarItems([
                 ToolbarItem(
                     id: "\(id).toolbar",
@@ -51,7 +55,11 @@ public final class OpenInCursorPlugin: SuperPlugin, SuperLog {
                     category: .project,
                     order: order
                 ) {
-                    OpenInCursorToolbarView(tool: tool, projectCapability: projectCapability)
+                    OpenInCursorToolbarView(
+                        tool: tool,
+                        projectCapability: projectCapability,
+                        failureReporter: failureReporter
+                    )
                 },
             ])
         }

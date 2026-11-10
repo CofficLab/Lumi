@@ -93,12 +93,117 @@ import Foundation
         }
     }
 
+    // MARK: - 字面量与注释不参与只读判定
+
+    @Test func readonlySQLAllowsWriteKeywordInsideStringLiteral() throws {
+        // 字面量里的 DROP 不是代码，不该被当成写操作。
+        let result = try DatabaseAgentToolService.readonlySQL(
+            "SELECT 'DROP' AS word", type: .sqlite, limit: 100
+        )
+        #expect(result == "SELECT 'DROP' AS word LIMIT 100")
+    }
+
+    @Test func readonlySQLAllowsWriteKeywordInsideComparisonLiteral() throws {
+        let result = try DatabaseAgentToolService.readonlySQL(
+            "SELECT id FROM t WHERE body = 'UPDATE'", type: .sqlite, limit: 100
+        )
+        #expect(result == "SELECT id FROM t WHERE body = 'UPDATE' LIMIT 100")
+    }
+
+    @Test func readonlySQLAllowsSemicolonInsideStringLiteral() throws {
+        // 字面量里的分号不是语句分隔符。
+        let result = try DatabaseAgentToolService.readonlySQL(
+            "SELECT 'a;b' AS s", type: .sqlite, limit: 100
+        )
+        #expect(result == "SELECT 'a;b' AS s LIMIT 100")
+    }
+
+    @Test func readonlySQLAllowsWriteKeywordInsideComment() throws {
+        let result = try DatabaseAgentToolService.readonlySQL(
+            "SELECT 1 -- DROP TABLE users", type: .sqlite, limit: 100
+        )
+        #expect(result == "SELECT 1 -- DROP TABLE users LIMIT 100")
+    }
+
+    @Test func readonlySQLAllowsWriteKeywordInsideBlockComment() throws {
+        let result = try DatabaseAgentToolService.readonlySQL(
+            "SELECT 1 /* DELETE FROM users */", type: .sqlite, limit: 100
+        )
+        #expect(result == "SELECT 1 /* DELETE FROM users */ LIMIT 100")
+    }
+
+    @Test func readonlySQLPreservesLiteralContentInReturnedStatement() throws {
+        // 判定用骨架，但执行用的必须是原始 SQL。
+        let result = try DatabaseAgentToolService.readonlySQL(
+            "SELECT 'DROP; DELETE' AS payload, x FROM t", type: .sqlite, limit: 50
+        )
+        #expect(result == "SELECT 'DROP; DELETE' AS payload, x FROM t LIMIT 50")
+    }
+
+    @Test func readonlySQLStillRejectsMultipleStatements() throws {
+        // 剥离字面量后，真正的第二条语句仍然会被拦下。
+        #expect(throws: DatabaseAgentToolError.self) {
+            _ = try DatabaseAgentToolService.readonlySQL(
+                "SELECT 'a' AS x; DROP TABLE users", type: .sqlite, limit: 100
+            )
+        }
+    }
+
+    @Test func readonlySQLStillRejectsWriteKeywordOutsideLiteral() throws {
+        // 裸关键字仍然必须被拦下。
+        #expect(throws: DatabaseAgentToolError.self) {
+            _ = try DatabaseAgentToolService.readonlySQL(
+                "SELECT * FROM t WHERE x = DROP()", type: .sqlite, limit: 100
+            )
+        }
+    }
+
+    @Test func readonlySQLStillRejectsWriteStatementAfterLiteral() throws {
+        #expect(throws: DatabaseAgentToolError.self) {
+            _ = try DatabaseAgentToolService.readonlySQL(
+                "SELECT 'ok' AS x FROM t WHERE 1=1 UNION DELETE FROM users", type: .sqlite, limit: 100
+            )
+        }
+    }
+
+    @Test func readonlySQLHandlesEscapedQuoteInsideLiteral() throws {
+        // `''` 是转义的单引号，剥离时不能提前结束字面量。
+        let result = try DatabaseAgentToolService.readonlySQL(
+            "SELECT 'it''s DROP' AS s", type: .sqlite, limit: 100
+        )
+        #expect(result == "SELECT 'it''s DROP' AS s LIMIT 100")
+    }
+
     @Test func readonlySQLDoesNotAutoInjectLimitForExplain() throws {
         // EXPLAIN is allowed but not a SELECT, so no LIMIT should be appended.
         let result = try DatabaseAgentToolService.readonlySQL(
             "EXPLAIN SELECT * FROM users", type: .sqlite, limit: 100
         )
         #expect(result == "EXPLAIN SELECT * FROM users")
+    }
+
+    // MARK: - PostgreSQL schema 过滤（#703）
+
+    @Test func postgresSchemaFilterListsAllNonSystemSchemasByDefault() {
+        let filter = DatabaseAgentToolService.postgresSchemaFilter(schema: nil)
+        // 不能写死 public：analytics 之类的普通 schema 也要能被描述。
+        #expect(filter.sql.contains("NOT IN ('pg_catalog', 'information_schema')"))
+        #expect(!filter.sql.contains("'public'"))
+        #expect(filter.params.isEmpty)
+    }
+
+    @Test func postgresSchemaFilterBindsRequestedSchemaAsParameter() {
+        let filter = DatabaseAgentToolService.postgresSchemaFilter(schema: "analytics")
+        #expect(filter.sql.contains("table_schema = $1"))
+        // schema 名必须走绑定参数，不能拼进 SQL。
+        #expect(!filter.sql.contains("analytics"))
+        #expect(filter.params == [.string("analytics")])
+    }
+
+    @Test func postgresSchemaFilterTreatsBlankSchemaAsUnspecified() {
+        let filter = DatabaseAgentToolService.postgresSchemaFilter(schema: "   ")
+        #expect(filter.sql.contains("NOT IN"))
+        #expect(filter.params.isEmpty)
     }
 
     // MARK: - quoteIdentifier
@@ -258,5 +363,68 @@ import Foundation
         let payload = DatabaseAgentToolService.rowsAsDictionaries(result, limit: 3)
         #expect(payload.rowsReturned == 3)
         #expect(payload.truncated == true)
+    }
+}
+
+/// 针对真实 SQLite 连接的复用规则测试。
+@Suite(.serialized) struct DatabaseAgentToolServiceConnectionTests {
+
+    @Test func queryReadonlyUsesUpdatedConfigWhenSavedConnectionIsEdited() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DatabaseAgentConfig-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let oldURL = directory.appending(path: "old.sqlite")
+        let newURL = directory.appending(path: "new.sqlite")
+        try await Self.createSQLiteFile(at: oldURL, table: "old_table")
+        try await Self.createSQLiteFile(at: newURL, table: "new_table")
+
+        let id = UUID()
+        let sql = "SELECT name FROM sqlite_master WHERE type = 'table'"
+        var config = DatabaseConfig(id: id, name: "Agent", type: .sqlite, database: oldURL.path)
+        await DatabaseAgentConnectionRegistry.shared.upsert(config)
+        defer {
+            Task {
+                await DatabaseAgentConnectionRegistry.shared.remove(id: id)
+                await DatabaseManagerCore.shared.disconnect(configId: id)
+            }
+        }
+
+        let oldResult = try await DatabaseAgentToolService.shared.queryReadonly(
+            connectionId: id, sql: sql, limit: 10
+        )
+        #expect(oldResult.contains("old_table"))
+
+        // 编辑已保存连接（保留 id、换成新库）后，不能继续复用旧连接。
+        config.database = newURL.path
+        await DatabaseAgentConnectionRegistry.shared.upsert(config)
+
+        let newResult = try await DatabaseAgentToolService.shared.queryReadonly(
+            connectionId: id, sql: sql, limit: 10
+        )
+        #expect(newResult.contains("new_table"))
+        #expect(!newResult.contains("old_table"))
+
+        // 主动断开后再次查询应重连到当前配置。
+        await DatabaseManagerCore.shared.disconnect(configId: id)
+        let afterDisconnect = try await DatabaseAgentToolService.shared.queryReadonly(
+            connectionId: id, sql: sql, limit: 10
+        )
+        #expect(afterDisconnect.contains("new_table"))
+    }
+
+    private static func createSQLiteFile(at url: URL, table: String) async throws {
+        let manager = DatabaseManagerCore()
+        // 直接注册驱动：`DatabaseDriverBootstrap` 是进程级一次性注册，
+        // 这里不能抢先把它消耗掉，否则共享 manager 拿不到驱动。
+        await manager.register(driver: SQLiteDriver())
+        let connection = try await manager.connect(
+            config: DatabaseConfig(name: table, type: .sqlite, database: url.path)
+        )
+        _ = try await connection.execute(
+            "CREATE TABLE \(table) (id INTEGER PRIMARY KEY)", params: nil
+        )
+        await connection.close()
     }
 }

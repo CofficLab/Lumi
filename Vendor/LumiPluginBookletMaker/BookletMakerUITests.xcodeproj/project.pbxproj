@@ -1,0 +1,868 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		08BE7FC6D1306D43AD9938BE /* ProviderStorage in Frameworks */ = {isa = PBXBuildFile; productRef = DF972B28023BDF686995F69B /* ProviderStorage */; };
+		25640B1FE45B2C52F7D185CA /* PluginBookletMaker in Frameworks */ = {isa = PBXBuildFile; productRef = 73002E0B07A13AB03B4347B9 /* PluginBookletMaker */; };
+		299BFACE6EFE2505A4358472 /* BookletMakerMobileBookletUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BDE5F24BFB1495725CE085E /* BookletMakerMobileBookletUITests.swift */; };
+		2D41C657CE9D82F1E04F35FC /* BookletMakerExportPanelUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B4E9A19CDB3105622C8B5AC /* BookletMakerExportPanelUITests.swift */; };
+		2E16C72377049C88EB981D88 /* TestHostRootLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31CAE47A46F54A478BD92EF7 /* TestHostRootLayout.swift */; };
+		31824A4925E0AD670C85F30C /* LumiLocalizationKit in Frameworks */ = {isa = PBXBuildFile; productRef = D8E7A05F9A808740D392259B /* LumiLocalizationKit */; };
+		33D7E9F25A36D8872EEC2558 /* LumiUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4B219F95A403D500B84927FC /* LumiUI */; };
+		3E9F132A8574008F38922591 /* BookletMakerUITestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F8D50415B963D1260CB99CC /* BookletMakerUITestCase.swift */; };
+		424A2DB08BAAE48A3F89BA45 /* BookletMakerBookletUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F65CDB9515D384E68BE332A /* BookletMakerBookletUITests.swift */; };
+		6257AE446AF05AB9198C2656 /* BookletMakerMobileUITestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8B04F82F63CB3A5A5285DCA /* BookletMakerMobileUITestCase.swift */; };
+		635F5F608FCF709BDCE9B6CB /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4D2EC6AD545741320FC783E /* App.swift */; };
+		650FED7BBAB30B7865150615 /* BookletMakerCore in Frameworks */ = {isa = PBXBuildFile; productRef = CDA9913ECC2F8797848C27FD /* BookletMakerCore */; };
+		696DF8673D1493C748A9F17F /* PluginBookletMaker in Frameworks */ = {isa = PBXBuildFile; productRef = A0DCD6CFD5BFCB31E4A9F734 /* PluginBookletMaker */; };
+		8B8A3973E216C82EA0824300 /* BookletMakerMobileSplitUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA4A8026A2AE82018A88EA43 /* BookletMakerMobileSplitUITests.swift */; };
+		8C64A96C5BCC0CC8DC201FB7 /* ProviderRailView in Frameworks */ = {isa = PBXBuildFile; productRef = 88689047B7221B1692768C12 /* ProviderRailView */; };
+		9018909FE4224CD88DE7BBCA /* BookletMakerMobileToolSwitchUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07E3381E6194EDCA34ED8919 /* BookletMakerMobileToolSwitchUITests.swift */; };
+		91750BE42210ABAAF96F8B07 /* LumiLoggingKit in Frameworks */ = {isa = PBXBuildFile; productRef = E37AE234734B921FCC7CA46D /* LumiLoggingKit */; };
+		9F7824E8DDB8113088D50586 /* BookletMakerMobileMergeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75433CD2E1BDFD385A9B95FF /* BookletMakerMobileMergeUITests.swift */; };
+		A474E5F88078C04FAC2AE36F /* ProviderDocsView in Frameworks */ = {isa = PBXBuildFile; productRef = E547DC186F2EDD5D77C70697 /* ProviderDocsView */; };
+		A856168BF90A624981BA6FBF /* ProviderToolbar in Frameworks */ = {isa = PBXBuildFile; productRef = 4D49213B7D9DB2F2BD06A461 /* ProviderToolbar */; };
+		ACCC1322B43C9A84F8D707E3 /* ProviderContentView in Frameworks */ = {isa = PBXBuildFile; productRef = 5FA831DFFB2ABAA8CBE7F42D /* ProviderContentView */; };
+		C7FA9E147993B67AC906CF65 /* KernelCore in Frameworks */ = {isa = PBXBuildFile; productRef = A472E5097040A40EDB8DDB93 /* KernelCore */; };
+		CA6852E68D0B0CD1A0878A93 /* LumiThemePack in Frameworks */ = {isa = PBXBuildFile; productRef = AA16333FFB96047DEDC03BAB /* LumiThemePack */; };
+		D2DBFB2E6DDB00CD766B3BBB /* MergeQueueFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4C8EBCCCCBEFFCE2BEB3479 /* MergeQueueFixture.swift */; };
+		DA81E45BF72DE12F75EA8D55 /* BookletMakerToolSwitchUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0541B0CBAA2B756FE8BBE8B9 /* BookletMakerToolSwitchUITests.swift */; };
+		E1AEDC47FDBD5DC0FFF2D176 /* BookletMakerMergeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC9C4960BD0B5F47B85311D8 /* BookletMakerMergeUITests.swift */; };
+		E244E9A8EDB0D0E92A205240 /* ProviderTheme in Frameworks */ = {isa = PBXBuildFile; productRef = A9AFEBFBCC1C2F0A6E008D26 /* ProviderTheme */; };
+		E75A7263230B8F6A031AB8AA /* BookletMakerSplitUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1155D17D844DADD8723FEDFC /* BookletMakerSplitUITests.swift */; };
+		F26869F9068BA83144767BBF /* BookletMakerLocalizationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A69282C95CC7C787E1B2CCC /* BookletMakerLocalizationUITests.swift */; };
+		F83F0BFBD7A245DE737A4FD2 /* MobileTestHostApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE13791767B3E9148B44D01 /* MobileTestHostApp.swift */; };
+		F945E0A059A28B9412498E3A /* ProviderRootView in Frameworks */ = {isa = PBXBuildFile; productRef = 3BB54E30AC1BCF6A480C51E0 /* ProviderRootView */; };
+		FC64FC7C481BBB0D429CDEDF /* BookletMakerMergeQueueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 115B8A2057F8A7F67D8FB72D /* BookletMakerMergeQueueUITests.swift */; };
+		FF2A6EF590B3B9DD5FC07C55 /* ProviderActivityBar in Frameworks */ = {isa = PBXBuildFile; productRef = 5E1A15515973E44E90B729BA /* ProviderActivityBar */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		0750F72D75127520D2CA33DF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F67C90ADC20B0C083BD68ACA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B47B3420FD4E36F67A76FFC2;
+			remoteInfo = BookletMakerMobileTestHost;
+		};
+		9A4CFDBED3B47F1EC7B0B96C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F67C90ADC20B0C083BD68ACA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8ED954C4A2B680A50F7B19D1;
+			remoteInfo = BookletMakerTestHost;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0541B0CBAA2B756FE8BBE8B9 /* BookletMakerToolSwitchUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookletMakerToolSwitchUITests.swift; sourceTree = "<group>"; };
+		07E3381E6194EDCA34ED8919 /* BookletMakerMobileToolSwitchUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookletMakerMobileToolSwitchUITests.swift; sourceTree = "<group>"; };
+		1155D17D844DADD8723FEDFC /* BookletMakerSplitUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookletMakerSplitUITests.swift; sourceTree = "<group>"; };
+		115B8A2057F8A7F67D8FB72D /* BookletMakerMergeQueueUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookletMakerMergeQueueUITests.swift; sourceTree = "<group>"; };
+		1A69282C95CC7C787E1B2CCC /* BookletMakerLocalizationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookletMakerLocalizationUITests.swift; sourceTree = "<group>"; };
+		2BDE5F24BFB1495725CE085E /* BookletMakerMobileBookletUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookletMakerMobileBookletUITests.swift; sourceTree = "<group>"; };
+		31CAE47A46F54A478BD92EF7 /* TestHostRootLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestHostRootLayout.swift; sourceTree = "<group>"; };
+		33688AEAEEDD2237F1A3BA9F /* BookletMakerMobileUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BookletMakerMobileUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3F8D50415B963D1260CB99CC /* BookletMakerUITestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookletMakerUITestCase.swift; sourceTree = "<group>"; };
+		5F65CDB9515D384E68BE332A /* BookletMakerBookletUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookletMakerBookletUITests.swift; sourceTree = "<group>"; };
+		6B4E9A19CDB3105622C8B5AC /* BookletMakerExportPanelUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookletMakerExportPanelUITests.swift; sourceTree = "<group>"; };
+		75433CD2E1BDFD385A9B95FF /* BookletMakerMobileMergeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookletMakerMobileMergeUITests.swift; sourceTree = "<group>"; };
+		A4C8EBCCCCBEFFCE2BEB3479 /* MergeQueueFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergeQueueFixture.swift; sourceTree = "<group>"; };
+		AAE13791767B3E9148B44D01 /* MobileTestHostApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileTestHostApp.swift; sourceTree = "<group>"; };
+		BA4A8026A2AE82018A88EA43 /* BookletMakerMobileSplitUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookletMakerMobileSplitUITests.swift; sourceTree = "<group>"; };
+		CAA85E60323F290082361ED7 /* BookletMakerTestHost.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BookletMakerTestHost.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D8B04F82F63CB3A5A5285DCA /* BookletMakerMobileUITestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookletMakerMobileUITestCase.swift; sourceTree = "<group>"; };
+		DC9FF72FEF6771781795C97E /* BookletMakerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BookletMakerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E20C6AFED608908EB14B4677 /* BookletMakerMobileTestHost.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BookletMakerMobileTestHost.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E4D2EC6AD545741320FC783E /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
+		EC3BA0EA5AD7CD47AA72EF48 /* LumiPluginBookletMaker */ = {isa = PBXFileReference; lastKnownFileType = folder; name = LumiPluginBookletMaker; path = .; sourceTree = SOURCE_ROOT; };
+		EC9C4960BD0B5F47B85311D8 /* BookletMakerMergeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookletMakerMergeUITests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		50243783BD4343CD97A88676 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				25640B1FE45B2C52F7D185CA /* PluginBookletMaker in Frameworks */,
+				650FED7BBAB30B7865150615 /* BookletMakerCore in Frameworks */,
+				C7FA9E147993B67AC906CF65 /* KernelCore in Frameworks */,
+				FF2A6EF590B3B9DD5FC07C55 /* ProviderActivityBar in Frameworks */,
+				8C64A96C5BCC0CC8DC201FB7 /* ProviderRailView in Frameworks */,
+				F945E0A059A28B9412498E3A /* ProviderRootView in Frameworks */,
+				ACCC1322B43C9A84F8D707E3 /* ProviderContentView in Frameworks */,
+				A856168BF90A624981BA6FBF /* ProviderToolbar in Frameworks */,
+				08BE7FC6D1306D43AD9938BE /* ProviderStorage in Frameworks */,
+				A474E5F88078C04FAC2AE36F /* ProviderDocsView in Frameworks */,
+				E244E9A8EDB0D0E92A205240 /* ProviderTheme in Frameworks */,
+				33D7E9F25A36D8872EEC2558 /* LumiUI in Frameworks */,
+				91750BE42210ABAAF96F8B07 /* LumiLoggingKit in Frameworks */,
+				31824A4925E0AD670C85F30C /* LumiLocalizationKit in Frameworks */,
+				CA6852E68D0B0CD1A0878A93 /* LumiThemePack in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		548AA884F974C7BF8B5DAA1A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				696DF8673D1493C748A9F17F /* PluginBookletMaker in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0C0A9BCFC59A299DEFE510FC /* BookletMakerUITestHost */ = {
+			isa = PBXGroup;
+			children = (
+				6C6FB491C86235D12EBD53A9 /* MobileUITests */,
+				3CDE8634F2A8DE9DA71D4E4C /* Sources */,
+				3D4BA0BEFCF3B8DF2F956736 /* Sources-ios */,
+				6B82D306F401908ABB09F5EF /* UITests */,
+			);
+			path = BookletMakerUITestHost;
+			sourceTree = "<group>";
+		};
+		3CDE8634F2A8DE9DA71D4E4C /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				E4D2EC6AD545741320FC783E /* App.swift */,
+				A4C8EBCCCCBEFFCE2BEB3479 /* MergeQueueFixture.swift */,
+				31CAE47A46F54A478BD92EF7 /* TestHostRootLayout.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		3D4BA0BEFCF3B8DF2F956736 /* Sources-ios */ = {
+			isa = PBXGroup;
+			children = (
+				AAE13791767B3E9148B44D01 /* MobileTestHostApp.swift */,
+			);
+			path = "Sources-ios";
+			sourceTree = "<group>";
+		};
+		6B82D306F401908ABB09F5EF /* UITests */ = {
+			isa = PBXGroup;
+			children = (
+				5F65CDB9515D384E68BE332A /* BookletMakerBookletUITests.swift */,
+				6B4E9A19CDB3105622C8B5AC /* BookletMakerExportPanelUITests.swift */,
+				1A69282C95CC7C787E1B2CCC /* BookletMakerLocalizationUITests.swift */,
+				115B8A2057F8A7F67D8FB72D /* BookletMakerMergeQueueUITests.swift */,
+				EC9C4960BD0B5F47B85311D8 /* BookletMakerMergeUITests.swift */,
+				1155D17D844DADD8723FEDFC /* BookletMakerSplitUITests.swift */,
+				0541B0CBAA2B756FE8BBE8B9 /* BookletMakerToolSwitchUITests.swift */,
+				3F8D50415B963D1260CB99CC /* BookletMakerUITestCase.swift */,
+			);
+			path = UITests;
+			sourceTree = "<group>";
+		};
+		6C6FB491C86235D12EBD53A9 /* MobileUITests */ = {
+			isa = PBXGroup;
+			children = (
+				2BDE5F24BFB1495725CE085E /* BookletMakerMobileBookletUITests.swift */,
+				75433CD2E1BDFD385A9B95FF /* BookletMakerMobileMergeUITests.swift */,
+				BA4A8026A2AE82018A88EA43 /* BookletMakerMobileSplitUITests.swift */,
+				07E3381E6194EDCA34ED8919 /* BookletMakerMobileToolSwitchUITests.swift */,
+				D8B04F82F63CB3A5A5285DCA /* BookletMakerMobileUITestCase.swift */,
+			);
+			path = MobileUITests;
+			sourceTree = "<group>";
+		};
+		9DE7B1236BA7B296D7BEFDC7 = {
+			isa = PBXGroup;
+			children = (
+				0C0A9BCFC59A299DEFE510FC /* BookletMakerUITestHost */,
+				DE2FB0C4B94CE0AED6333B2A /* Packages */,
+				F8677C20A0B69A2D798BD27E /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		DE2FB0C4B94CE0AED6333B2A /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				EC3BA0EA5AD7CD47AA72EF48 /* LumiPluginBookletMaker */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		F8677C20A0B69A2D798BD27E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E20C6AFED608908EB14B4677 /* BookletMakerMobileTestHost.app */,
+				33688AEAEEDD2237F1A3BA9F /* BookletMakerMobileUITests.xctest */,
+				CAA85E60323F290082361ED7 /* BookletMakerTestHost.app */,
+				DC9FF72FEF6771781795C97E /* BookletMakerUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0E0596E5C7BBE6B575552CC9 /* BookletMakerUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 556B3597FA4567E2A8A4BDC9 /* Build configuration list for PBXNativeTarget "BookletMakerUITests" */;
+			buildPhases = (
+				12E66BB386E28CD21C258608 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3451F2B6AFC1B4B91449A2F4 /* PBXTargetDependency */,
+			);
+			name = BookletMakerUITests;
+			packageProductDependencies = (
+			);
+			productName = BookletMakerUITests;
+			productReference = DC9FF72FEF6771781795C97E /* BookletMakerUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		8ED954C4A2B680A50F7B19D1 /* BookletMakerTestHost */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5D22A2E88E8D3C41385ED9B3 /* Build configuration list for PBXNativeTarget "BookletMakerTestHost" */;
+			buildPhases = (
+				7B1E925179BD5EACE44390DC /* Sources */,
+				50243783BD4343CD97A88676 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BookletMakerTestHost;
+			packageProductDependencies = (
+				73002E0B07A13AB03B4347B9 /* PluginBookletMaker */,
+				CDA9913ECC2F8797848C27FD /* BookletMakerCore */,
+				A472E5097040A40EDB8DDB93 /* KernelCore */,
+				5E1A15515973E44E90B729BA /* ProviderActivityBar */,
+				88689047B7221B1692768C12 /* ProviderRailView */,
+				3BB54E30AC1BCF6A480C51E0 /* ProviderRootView */,
+				5FA831DFFB2ABAA8CBE7F42D /* ProviderContentView */,
+				4D49213B7D9DB2F2BD06A461 /* ProviderToolbar */,
+				DF972B28023BDF686995F69B /* ProviderStorage */,
+				E547DC186F2EDD5D77C70697 /* ProviderDocsView */,
+				A9AFEBFBCC1C2F0A6E008D26 /* ProviderTheme */,
+				4B219F95A403D500B84927FC /* LumiUI */,
+				E37AE234734B921FCC7CA46D /* LumiLoggingKit */,
+				D8E7A05F9A808740D392259B /* LumiLocalizationKit */,
+				AA16333FFB96047DEDC03BAB /* LumiThemePack */,
+			);
+			productName = BookletMakerTestHost;
+			productReference = CAA85E60323F290082361ED7 /* BookletMakerTestHost.app */;
+			productType = "com.apple.product-type.application";
+		};
+		B47B3420FD4E36F67A76FFC2 /* BookletMakerMobileTestHost */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8D7CFBA4BDB1AF494A9A0030 /* Build configuration list for PBXNativeTarget "BookletMakerMobileTestHost" */;
+			buildPhases = (
+				9FC1CDBC768C9E6C6B3EE55A /* Sources */,
+				548AA884F974C7BF8B5DAA1A /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BookletMakerMobileTestHost;
+			packageProductDependencies = (
+				A0DCD6CFD5BFCB31E4A9F734 /* PluginBookletMaker */,
+			);
+			productName = BookletMakerMobileTestHost;
+			productReference = E20C6AFED608908EB14B4677 /* BookletMakerMobileTestHost.app */;
+			productType = "com.apple.product-type.application";
+		};
+		EDD26E6AE04698D36B6FCD48 /* BookletMakerMobileUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D9E89ED48AA332C31FF59A8 /* Build configuration list for PBXNativeTarget "BookletMakerMobileUITests" */;
+			buildPhases = (
+				8029176F38971187EBD16076 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D7401583F6C551CEABC42A22 /* PBXTargetDependency */,
+			);
+			name = BookletMakerMobileUITests;
+			packageProductDependencies = (
+			);
+			productName = BookletMakerMobileUITests;
+			productReference = 33688AEAEEDD2237F1A3BA9F /* BookletMakerMobileUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F67C90ADC20B0C083BD68ACA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					0E0596E5C7BBE6B575552CC9 = {
+						TestTargetID = 8ED954C4A2B680A50F7B19D1;
+					};
+					EDD26E6AE04698D36B6FCD48 = {
+						TestTargetID = B47B3420FD4E36F67A76FFC2;
+					};
+				};
+			};
+			buildConfigurationList = CDCCE62AFE8DDF74E90D4B0C /* Build configuration list for PBXProject "BookletMakerUITests" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 9DE7B1236BA7B296D7BEFDC7;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				88F079112CF485B015DE9264 /* XCRemoteSwiftPackageReference "LumiKernel" */,
+				56B455D42864DA96703ED248 /* XCRemoteSwiftPackageReference "LumiLocalization" */,
+				70EB7B662F3CF3761221165D /* XCRemoteSwiftPackageReference "LumiLogging" */,
+				360DDF8C5650BE49C6559931 /* XCRemoteSwiftPackageReference "LumiProviders" */,
+				DBF1AB288BC0CEBC840A0E94 /* XCRemoteSwiftPackageReference "LumiThemePack" */,
+				BF3C328D3F4E1D9605E20DF7 /* XCRemoteSwiftPackageReference "LumiUI" */,
+				A8FAFABFD15A58F7FDFC9BFD /* XCLocalSwiftPackageReference "." */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F8677C20A0B69A2D798BD27E /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8ED954C4A2B680A50F7B19D1 /* BookletMakerTestHost */,
+				0E0596E5C7BBE6B575552CC9 /* BookletMakerUITests */,
+				B47B3420FD4E36F67A76FFC2 /* BookletMakerMobileTestHost */,
+				EDD26E6AE04698D36B6FCD48 /* BookletMakerMobileUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		12E66BB386E28CD21C258608 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				424A2DB08BAAE48A3F89BA45 /* BookletMakerBookletUITests.swift in Sources */,
+				2D41C657CE9D82F1E04F35FC /* BookletMakerExportPanelUITests.swift in Sources */,
+				F26869F9068BA83144767BBF /* BookletMakerLocalizationUITests.swift in Sources */,
+				FC64FC7C481BBB0D429CDEDF /* BookletMakerMergeQueueUITests.swift in Sources */,
+				E1AEDC47FDBD5DC0FFF2D176 /* BookletMakerMergeUITests.swift in Sources */,
+				E75A7263230B8F6A031AB8AA /* BookletMakerSplitUITests.swift in Sources */,
+				DA81E45BF72DE12F75EA8D55 /* BookletMakerToolSwitchUITests.swift in Sources */,
+				3E9F132A8574008F38922591 /* BookletMakerUITestCase.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7B1E925179BD5EACE44390DC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				635F5F608FCF709BDCE9B6CB /* App.swift in Sources */,
+				D2DBFB2E6DDB00CD766B3BBB /* MergeQueueFixture.swift in Sources */,
+				2E16C72377049C88EB981D88 /* TestHostRootLayout.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8029176F38971187EBD16076 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				299BFACE6EFE2505A4358472 /* BookletMakerMobileBookletUITests.swift in Sources */,
+				9F7824E8DDB8113088D50586 /* BookletMakerMobileMergeUITests.swift in Sources */,
+				8B8A3973E216C82EA0824300 /* BookletMakerMobileSplitUITests.swift in Sources */,
+				9018909FE4224CD88DE7BBCA /* BookletMakerMobileToolSwitchUITests.swift in Sources */,
+				6257AE446AF05AB9198C2656 /* BookletMakerMobileUITestCase.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9FC1CDBC768C9E6C6B3EE55A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F83F0BFBD7A245DE737A4FD2 /* MobileTestHostApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3451F2B6AFC1B4B91449A2F4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8ED954C4A2B680A50F7B19D1 /* BookletMakerTestHost */;
+			targetProxy = 9A4CFDBED3B47F1EC7B0B96C /* PBXContainerItemProxy */;
+		};
+		D7401583F6C551CEABC42A22 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B47B3420FD4E36F67A76FFC2 /* BookletMakerMobileTestHost */;
+			targetProxy = 0750F72D75127520D2CA33DF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0B120595C3AF77596E54135A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmaker.uitests;
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = BookletMakerTestHost;
+			};
+			name = Release;
+		};
+		302F88A32DDCBF22D1B06088 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmaker.mobile.uitests;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = BookletMakerMobileTestHost;
+			};
+			name = Release;
+		};
+		36CBB773ADBE14F3D1E8B8D7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmaker.mobile.testhost;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		46B6632D6B039B345482F5DD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Coffic Lab. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmaker.testhost;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		A3EAE99C20C1AC4A2CAD7275 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		B7987016DE8AC9CC27513E58 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		B9BB9760CBE9386B6C3D7A88 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmaker.mobile.uitests;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = BookletMakerMobileTestHost;
+			};
+			name = Debug;
+		};
+		C4189D8D6D8D2B88AC4E03CE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmaker.mobile.testhost;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		E248F7087AF0E47F92B2F374 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Coffic Lab. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmaker.testhost;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		FA3821E531D11052C15EFF58 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmaker.uitests;
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = BookletMakerTestHost;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4D9E89ED48AA332C31FF59A8 /* Build configuration list for PBXNativeTarget "BookletMakerMobileUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B9BB9760CBE9386B6C3D7A88 /* Debug */,
+				302F88A32DDCBF22D1B06088 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		556B3597FA4567E2A8A4BDC9 /* Build configuration list for PBXNativeTarget "BookletMakerUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FA3821E531D11052C15EFF58 /* Debug */,
+				0B120595C3AF77596E54135A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5D22A2E88E8D3C41385ED9B3 /* Build configuration list for PBXNativeTarget "BookletMakerTestHost" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				46B6632D6B039B345482F5DD /* Debug */,
+				E248F7087AF0E47F92B2F374 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8D7CFBA4BDB1AF494A9A0030 /* Build configuration list for PBXNativeTarget "BookletMakerMobileTestHost" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				36CBB773ADBE14F3D1E8B8D7 /* Debug */,
+				C4189D8D6D8D2B88AC4E03CE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CDCCE62AFE8DDF74E90D4B0C /* Build configuration list for PBXProject "BookletMakerUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A3EAE99C20C1AC4A2CAD7275 /* Debug */,
+				B7987016DE8AC9CC27513E58 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A8FAFABFD15A58F7FDFC9BFD /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		360DDF8C5650BE49C6559931 /* XCRemoteSwiftPackageReference "LumiProviders" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CofficLab/LumiProviders.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.9.0;
+			};
+		};
+		56B455D42864DA96703ED248 /* XCRemoteSwiftPackageReference "LumiLocalization" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CofficLab/LumiLocalization.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.1;
+			};
+		};
+		70EB7B662F3CF3761221165D /* XCRemoteSwiftPackageReference "LumiLogging" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CofficLab/LumiLogging.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.1;
+			};
+		};
+		88F079112CF485B015DE9264 /* XCRemoteSwiftPackageReference "LumiKernel" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CofficLab/LumiKernel.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+		BF3C328D3F4E1D9605E20DF7 /* XCRemoteSwiftPackageReference "LumiUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CofficLab/LumiUI.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.10.0;
+			};
+		};
+		DBF1AB288BC0CEBC840A0E94 /* XCRemoteSwiftPackageReference "LumiThemePack" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CofficLab/LumiThemePack.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.6;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3BB54E30AC1BCF6A480C51E0 /* ProviderRootView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 360DDF8C5650BE49C6559931 /* XCRemoteSwiftPackageReference "LumiProviders" */;
+			productName = ProviderRootView;
+		};
+		4B219F95A403D500B84927FC /* LumiUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BF3C328D3F4E1D9605E20DF7 /* XCRemoteSwiftPackageReference "LumiUI" */;
+			productName = LumiUI;
+		};
+		4D49213B7D9DB2F2BD06A461 /* ProviderToolbar */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 360DDF8C5650BE49C6559931 /* XCRemoteSwiftPackageReference "LumiProviders" */;
+			productName = ProviderToolbar;
+		};
+		5E1A15515973E44E90B729BA /* ProviderActivityBar */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 360DDF8C5650BE49C6559931 /* XCRemoteSwiftPackageReference "LumiProviders" */;
+			productName = ProviderActivityBar;
+		};
+		5FA831DFFB2ABAA8CBE7F42D /* ProviderContentView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 360DDF8C5650BE49C6559931 /* XCRemoteSwiftPackageReference "LumiProviders" */;
+			productName = ProviderContentView;
+		};
+		73002E0B07A13AB03B4347B9 /* PluginBookletMaker */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PluginBookletMaker;
+		};
+		88689047B7221B1692768C12 /* ProviderRailView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 360DDF8C5650BE49C6559931 /* XCRemoteSwiftPackageReference "LumiProviders" */;
+			productName = ProviderRailView;
+		};
+		A0DCD6CFD5BFCB31E4A9F734 /* PluginBookletMaker */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PluginBookletMaker;
+		};
+		A472E5097040A40EDB8DDB93 /* KernelCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 88F079112CF485B015DE9264 /* XCRemoteSwiftPackageReference "LumiKernel" */;
+			productName = KernelCore;
+		};
+		A9AFEBFBCC1C2F0A6E008D26 /* ProviderTheme */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 360DDF8C5650BE49C6559931 /* XCRemoteSwiftPackageReference "LumiProviders" */;
+			productName = ProviderTheme;
+		};
+		AA16333FFB96047DEDC03BAB /* LumiThemePack */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DBF1AB288BC0CEBC840A0E94 /* XCRemoteSwiftPackageReference "LumiThemePack" */;
+			productName = LumiThemePack;
+		};
+		CDA9913ECC2F8797848C27FD /* BookletMakerCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BookletMakerCore;
+		};
+		D8E7A05F9A808740D392259B /* LumiLocalizationKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 56B455D42864DA96703ED248 /* XCRemoteSwiftPackageReference "LumiLocalization" */;
+			productName = LumiLocalizationKit;
+		};
+		DF972B28023BDF686995F69B /* ProviderStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 360DDF8C5650BE49C6559931 /* XCRemoteSwiftPackageReference "LumiProviders" */;
+			productName = ProviderStorage;
+		};
+		E37AE234734B921FCC7CA46D /* LumiLoggingKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 70EB7B662F3CF3761221165D /* XCRemoteSwiftPackageReference "LumiLogging" */;
+			productName = LumiLoggingKit;
+		};
+		E547DC186F2EDD5D77C70697 /* ProviderDocsView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 360DDF8C5650BE49C6559931 /* XCRemoteSwiftPackageReference "LumiProviders" */;
+			productName = ProviderDocsView;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = F67C90ADC20B0C083BD68ACA /* Project object */;
+}

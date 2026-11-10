@@ -31,6 +31,14 @@ private struct SystemBenchmarkDashboardView: View {
                     progressCard
                 }
 
+                if let cancellationMessage = viewModel.cancellationMessage {
+                    AppStatusBanner(
+                        kind: .info,
+                        title: BenchmarkLocalization.string("Benchmark cancelled"),
+                        message: cancellationMessage
+                    )
+                }
+
                 if let errorMessage = viewModel.errorMessage {
                     AppStatusBanner(
                         kind: .error,

@@ -78,7 +78,7 @@ public struct PromoRailView: View {
                 expandedTaskIDs.insert(selectedTaskID)
             }
         }
-        .onChange(of: workspace.selectedTaskID) { _, taskID in
+        .onChange(of: workspace.selectedTaskID) { taskID in
             if let taskID { expandedTaskIDs.insert(taskID) }
         }
     }

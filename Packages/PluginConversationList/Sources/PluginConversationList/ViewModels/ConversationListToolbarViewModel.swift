@@ -62,7 +62,7 @@ final class ConversationListToolbarViewModel: ObservableObject {
         context.currentProjectName
     }
 
-    /// 是否展示 "当前项目" 分段：已选中项目、全库 ≥2 个项目、且当前项目有对话。
+    /// 是否展示 "当前项目" 分段：已选中项目，且「全部对话」与当前项目的结果确实不同。
     var showsCurrentProjectScope: Bool {
         currentProjectPath != nil && hasMultipleProjects && currentProjectHasConversations
     }
@@ -99,26 +99,26 @@ final class ConversationListToolbarViewModel: ObservableObject {
         hasAnyConversations = count > 0
     }
 
-    /// 查询全库项目多样性 + 当前项目对话数，更新分段可见性相关状态。
+    /// 查询「全部对话」与当前项目两个范围的对话数，更新分段可见性相关状态。
     func refreshProjectScopeVisibility() async {
-        let path = currentProjectPath
-
-        // 全库顶层对话是否来自 ≥2 个项目：单一项目时「全部对话」已等同该项目，
-        // 「当前项目」分段冗余，直接隐藏，无需再查当前项目对话数。
-        let projectCount = await context.conversations.conversationProjectCount()
-        guard currentProjectPath == path else { return }
-        hasMultipleProjects = projectCount >= 2
-
-        guard let path, hasMultipleProjects else {
+        guard let path = currentProjectPath else {
+            hasMultipleProjects = false
             currentProjectHasConversations = false
             if selectedScope == .currentProject {
                 selectedScope = .allProjects
             }
             return
         }
+
+        // 「当前项目」分段的价值在于两个范围结果不同：只有全库还包含其它项目或无项目
+        // 会话时才需要它。按项目路径数量判断会漏掉无项目会话（projectPath == nil）。
+        let allCount = await context.conversations.conversationCount(projectPath: nil)
+        guard currentProjectPath == path else { return }
         let count = await context.conversations.conversationCount(projectPath: path)
         guard currentProjectPath == path else { return }
+
         currentProjectHasConversations = count > 0
+        hasMultipleProjects = count > 0 && allCount > count
         if !showsCurrentProjectScope, selectedScope == .currentProject {
             selectedScope = .allProjects
         }

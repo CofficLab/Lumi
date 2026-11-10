@@ -136,7 +136,7 @@ public struct MailAccountFormView: View {
             .labelsHidden()
             .pickerStyle(.menu)
         }
-        .onChange(of: draft.provider) { _, newValue in
+        .onChange(of: draft.provider) { newValue in
             draft.applyPresetDefaults()
         }
     }
@@ -151,12 +151,19 @@ public struct MailAccountFormView: View {
 
     private func portRow(_ title: String, port: Binding<Int>) -> some View {
         AppSettingRow(title: title) {
-            TextField(
-                title,
-                value: port,
-                format: .number
-            )
-            .textFieldStyle(.plain)
+            VStack(alignment: .leading, spacing: 4) {
+                TextField(
+                    title,
+                    value: port,
+                    format: .number
+                )
+                .textFieldStyle(.plain)
+                if !MailAccountDraft.isValidPort(port.wrappedValue) {
+                    Text("端口必须在 1–65535 之间。")
+                        .font(.appCaption)
+                        .foregroundColor(theme.error)
+                }
+            }
         }
     }
 
@@ -225,7 +232,14 @@ public struct MailAccountFormView: View {
             formError = "请先填写邮箱地址与密码/授权码。"
             return
         }
-        let config = draft.toConfig(id: accountID ?? UUID())
+        guard draft.hasValidPorts else {
+            formError = "IMAP 与 SMTP 端口必须在 1–65535 之间。"
+            return
+        }
+        guard let config = try? draft.toConfig(id: accountID ?? UUID()) else {
+            formError = "IMAP 与 SMTP 端口必须在 1–65535 之间。"
+            return
+        }
         do {
             try await sessionManager.testConnection(account: config, password: draft.password)
             testResult = .success("连接成功：认证通过。")
@@ -246,6 +260,10 @@ public struct MailAccountFormView: View {
         }
         guard !draft.imapHost.isEmpty, !draft.smtpHost.isEmpty else {
             formError = "IMAP 与 SMTP 服务器不能为空。"
+            return
+        }
+        guard draft.hasValidPorts else {
+            formError = "IMAP 与 SMTP 端口必须在 1–65535 之间。"
             return
         }
         onSave(draft)

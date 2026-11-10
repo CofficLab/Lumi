@@ -199,9 +199,3 @@ struct ChatScreenshotCropBoundaryTests {
         #expect(result.height == 1)
     }
 }
-
-// MARK: - 权限探测
-//
-// `ScreenCapturePermissionPrompter.ensurePermission()` 只是转发
-// `CGPreflightScreenCaptureAccess()`，没有可测的分支逻辑；实测单次调用会让
-// TCC 查询阻塞 40s 以上，且不保证在 CI 环境有屏幕录制授权，故不纳入单元测试。

@@ -13,7 +13,13 @@ public struct GitStatusV2Tool: SuperAgentTool, @unchecked Sendable {
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         do { return format(try await GitService.shared.getStatus(path: GitV2ToolSupport.path(arguments, project: project))) }
-        catch { return "获取 Git 状态失败：\(error.localizedDescription)" }
+        catch let error as ToolExecutionError { throw error }
+        catch {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "获取 Git 状态失败：\(error.localizedDescription)"
+            )
+        }
     }
     private func format(_ status: GitStatus) -> String {
         var output = "## Git 仓库状态\n\n**分支**: `\(status.branch)`\n\n"

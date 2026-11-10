@@ -12,6 +12,7 @@ import ProviderMessageSender
 enum ScreenshotFlowRunner {
     /// 启动一次完整截图流程（可安全重复调用，进行中会自然忽略）。
     static func run(kernel: KernelCoreContainer) async {
+        // 权限未决定时这里会拉起系统授权弹窗，用户拒绝后才落到下面的设置引导。
         guard ScreenCapturePermissionPrompter.ensurePermission() else {
             ScreenCapturePermissionPrompter.presentAlert(openSettingsOnConfirm: true)
             return

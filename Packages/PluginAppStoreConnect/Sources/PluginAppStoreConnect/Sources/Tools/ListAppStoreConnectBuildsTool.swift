@@ -38,12 +38,12 @@ public struct ListAppStoreConnectBuildsTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let appID = arguments["appID"]?.stringValue, !appID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return "Missing or empty appID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty appID.")
         }
         let platform = arguments["platform"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
 
         do {
             let builds = try await client.listBuilds(
@@ -63,7 +63,7 @@ public struct ListAppStoreConnectBuildsTool: SuperAgentTool {
             }
             return (["Builds for app id=\(appID):"] + lines).joined(separator: "\n")
         } catch {
-            return "Failed to list builds: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to list builds: \(error.localizedDescription)")
         }
     }
 }

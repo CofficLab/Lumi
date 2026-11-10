@@ -30,12 +30,21 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
     private var viewModels: DevicePluginViewModels?
     private var metricsObserver: DeviceMetricsObserver?
 
-    public init() {}
+    /// 入口标题的本地化解析；测试可注入替身断言注册链不再写死字面量。
+    private let localize: (String) -> String
+
+    public init() {
+        self.localize = { pluginLocalization.string($0) }
+    }
+
+    init(localize: @escaping (String) -> String) {
+        self.localize = localize
+    }
 
     public func onRegister(kernel: KernelCoreContainer) throws {
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: "设备信息") { DeviceInfoAboutView() })
-            docs.addManual(DocsEntry(id: id, name: "设备信息") { DeviceInfoManualView() })
+            docs.addAbout(DocsEntry(id: id, name: localize("Device Info")) { DeviceInfoAboutView() })
+            docs.addManual(DocsEntry(id: id, name: localize("Device Info")) { DeviceInfoManualView() })
         }
     }
 
@@ -63,7 +72,7 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
             activityBar.addItems([
                 ActivityBarItem(
                     id: entryID,
-                    title: "设备信息",
+                    title: localize("Device Info"),
                     systemImage: "gauge.with.dots.needle.50percent",
                     order: order,
                     ownerPluginID: id
@@ -88,23 +97,12 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
             contentView?.setContentView(AnyView(DeviceInfoView(viewModels: viewModels)))
         }
 
-        // 3. 贡献菜单栏内容与弹窗（沿用旧版 menuBarContentItems / menuBarPopupItems）
-        if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
-            menuBar.addContent(MenuBarContentItem(id: "\(id).metrics", title: "设备信息", order: order) {
-                DeviceInfoMenuBarContentView(viewModel: viewModels.menuBar)
-            })
-            menuBar.addPopup(MenuBarPopupItem(id: "\(id).cpu", title: "CPU", order: order) {
-                DeviceInfoMenuBarPopupView(
-                    viewModel: viewModels.cpu,
-                    thermalViewModel: viewModels.thermal,
-                    historyViewModel: viewModels.cpuHistory,
-                    thermalHistoryViewModel: viewModels.thermalHistory
-                )
-            })
-            menuBar.addPopup(MenuBarPopupItem(id: "\(id).memory", title: "内存", order: order) {
-                MemoryMenuBarPopupView(viewModel: viewModels.memory, historyViewModel: viewModels.memoryHistory)
-            })
-        }
+        try contributeMenuBar(to: kernel, viewModels: viewModels)
+    }
+
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        guard let viewModels else { return }
+        try contributeMenuBar(to: kernel, viewModels: viewModels)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -122,14 +120,49 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
-        kernel.resolveProvider((any MenuBarProviding).self)?.removeItems(ids: [
-            "\(id).metrics",
-            "\(id).cpu",
-            "\(id).memory",
-        ])
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    }
+
+    private func contributeMenuBar(
+        to kernel: KernelCoreContainer,
+        viewModels: DevicePluginViewModels
+    ) throws {
+        guard let menuBar = kernel.resolveProvider((any MenuBarProviding).self) else { return }
+        let ownerID = id
+        try kernel.trackContribution {
+            menuBar.removeItems(ownedBy: ownerID)
+        }
+        menuBar.addContent(MenuBarContribution(
+            id: "\(id).metrics",
+            title: localize("Device Info"),
+            order: order,
+            ownerPluginID: id
+        ) {
+            DeviceInfoMenuBarContentView(viewModel: viewModels.menuBar)
+        })
+        menuBar.addPopup(MenuBarContribution(
+            id: "\(id).cpu",
+            title: "CPU",
+            order: order,
+            ownerPluginID: id
+        ) {
+            DeviceInfoMenuBarPopupView(
+                viewModel: viewModels.cpu,
+                thermalViewModel: viewModels.thermal,
+                historyViewModel: viewModels.cpuHistory,
+                thermalHistoryViewModel: viewModels.thermalHistory
+            )
+        })
+        menuBar.addPopup(MenuBarContribution(
+            id: "\(id).memory",
+            title: localize("Memory"),
+            order: order,
+            ownerPluginID: id
+        ) {
+            MemoryMenuBarPopupView(viewModel: viewModels.memory, historyViewModel: viewModels.memoryHistory)
+        })
     }
 }

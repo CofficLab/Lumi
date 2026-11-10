@@ -173,7 +173,7 @@ struct ConversationStoreTests {
         #expect(firstPage.map(\.id) == [recentID])
         let secondPage = await store.fetchConversationPage(
             limit: 2,
-            beforeUpdatedAt: firstPage[0].createdAt,
+            beforeUpdatedAt: firstPage[0].lastMessageAt,
             beforeID: recentID,
             projectPath: "/project/a"
         )
@@ -193,6 +193,82 @@ struct ConversationStoreTests {
         #expect(series.points.map(\.count) == [1, 2, 1])
         #expect(series.peakCount == 2)
         #expect(await store.fetchDailyCountSeries(days: 0, endingAt: today).points.isEmpty)
+    }
+
+    @Test("分页按最后消息时间 keyset，创建早但最近活跃的会话不会被漏掉")
+    func paginatesByLastMessageAtKeyset() async throws {
+        let (store, dir) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let base = Date(timeIntervalSince1970: 1_800_000_000)
+        let ids = (0..<5).map { _ in UUID() }
+        for (index, id) in ids.enumerated() {
+            // 创建顺序与活跃顺序相反：index 0 最早创建，但最后收到消息。
+            try await store.createConversation(
+                id: id,
+                title: "C\(index)",
+                createdAt: base.addingTimeInterval(Double(index) * 60)
+            )
+            #expect(await store.updateLastMessageAt(
+                id: id,
+                messageDate: base.addingTimeInterval(Double(ids.count - index) * 60)
+            ))
+        }
+
+        var collected: [UUID] = []
+        var cursorDate: Date?
+        var cursorID: UUID?
+        for _ in 0..<20 {
+            let page = await store.fetchConversationPage(
+                limit: 2,
+                beforeUpdatedAt: cursorDate,
+                beforeID: cursorID
+            )
+            guard !page.isEmpty else { break }
+            collected.append(contentsOf: page.map(\.id))
+            guard page.count == 2, let last = page.last else { break }
+            cursorDate = last.lastMessageAt
+            cursorID = last.id
+        }
+
+        #expect(collected == ids)
+        #expect(Set(collected).count == collected.count)
+    }
+
+    @Test("相同最后消息时间仍有稳定顺序，且分页不重复、不遗漏")
+    func paginatesTiedTimestampsStably() async throws {
+        let (store, dir) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let timestamp = Date(timeIntervalSince1970: 1_800_000_000)
+        let ids = (0..<4).map { _ in UUID() }
+        for id in ids {
+            try await store.createConversation(
+                id: id,
+                title: "tie",
+                createdAt: timestamp
+            )
+        }
+
+        var collected: [UUID] = []
+        var cursorDate: Date?
+        var cursorID: UUID?
+        for _ in 0..<20 {
+            let page = await store.fetchConversationPage(
+                limit: 2,
+                beforeUpdatedAt: cursorDate,
+                beforeID: cursorID
+            )
+            guard !page.isEmpty else { break }
+            collected.append(contentsOf: page.map(\.id))
+            guard page.count == 2, let last = page.last else { break }
+            cursorDate = last.lastMessageAt
+            cursorID = last.id
+        }
+
+        // 相同时间戳下由 sortKey 的 id 哈希决定顺序；这里锁定分页不重复、不遗漏。
+        #expect(Set(collected) == Set(ids))
+        #expect(collected.count == ids.count)
     }
 
     @Test("会话字段更新和批量迁移路径")
@@ -241,7 +317,7 @@ struct ConversationStoreTests {
         #expect(!(await store.deleteConversations(ids: [missingID])))
     }
 
-    @Test("ConversationManager delegates paged reads and caches only root summaries")
+    @Test("ConversationManager delegates paged reads and caches root summaries")
     @MainActor
     func managerFetchesPagesCountsAndRootCache() async throws {
         let (store, dir) = try makeStore()
@@ -273,9 +349,38 @@ struct ConversationStoreTests {
         #expect(await manager.conversationProjectCount() == 1)
 
         #expect(await manager.fetchConversation(id: childID)?.id == childID)
-        #expect(manager.conversations.isEmpty)
+        #expect(!manager.conversations.contains { $0.id == childID }, "子会话不应进入根缓存")
+        #expect(manager.conversations.map(\.id) == [rootID], "分页返回的根会话应已进入缓存")
         #expect(await manager.fetchConversation(id: rootID)?.id == rootID)
-        #expect(manager.conversations.map(\.id) == [rootID])
-        #expect(await manager.fetchConversation(id: rootID)?.id == rootID)
+        #expect(manager.conversations.map(\.id) == [rootID], "重复读取不应产生重复缓存项")
+    }
+
+    /// #932：存储不可用时必须抛错，让列表保留已知良好的快照，而不是返回空页。
+    @Test("存储不可用时分页读取抛错而不是返回空页")
+    @MainActor
+    func loadPageWithoutStoreThrows() async throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-conversation-tests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let manager = ConversationManager(store: nil, dataDirectory: dir)
+        await #expect(throws: ConversationPageLoadError.storageUnavailable) {
+            try await manager.loadConversationPage(
+                limit: 10,
+                beforeUpdatedAt: nil,
+                beforeID: nil,
+                includingChildConversations: false
+            )
+        }
+        await #expect(throws: ConversationPageLoadError.storageUnavailable) {
+            try await manager.loadConversationPage(
+                limit: 10,
+                beforeUpdatedAt: nil,
+                beforeID: nil,
+                includingChildConversations: false,
+                projectPath: "/project"
+            )
+        }
     }
 }

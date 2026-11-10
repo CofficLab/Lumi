@@ -42,7 +42,7 @@ public struct RegisterAppIconArtifactTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let language = IconToolSupport.language
         guard let path = IconToolSupport.string(arguments, "path"), !path.isEmpty else {
-            return IconToolSupport.missingParameter("path", language: language)
+            throw IconToolSupport.missingParameterFailure("path", toolName: name, language: language)
         }
 
         let title = IconToolSupport.string(arguments, "title")
@@ -69,7 +69,7 @@ public struct RegisterAppIconArtifactTool: SuperAgentTool {
             await MainActor.run {
                 AppIconArtifactStore.shared.setError(error.localizedDescription)
             }
-            return IconToolSupport.error(error, language: language)
+            throw IconToolSupport.failure(error, toolName: name, language: language)
         }
     }
 }

@@ -35,7 +35,7 @@ public struct ExportIconSVGTool: SuperAgentTool {
                 withIntermediateDirectories: true
             )
 
-            let svg = IconSVGRenderer().render(document: document)
+            let svg = try await IconSVGRenderer().render(document: document)
             try svg.write(to: outputURL, atomically: true, encoding: .utf8)
 
             await MainActor.run {
@@ -59,7 +59,7 @@ public struct ExportIconSVGTool: SuperAgentTool {
             await MainActor.run {
                 IconToolSupport.store().setError(error.localizedDescription)
             }
-            return IconToolSupport.error(error, language: language)
+            throw IconToolSupport.failure(error, toolName: name, language: language)
         }
     }
 

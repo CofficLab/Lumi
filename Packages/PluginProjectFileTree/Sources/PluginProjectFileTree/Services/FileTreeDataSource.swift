@@ -106,6 +106,13 @@ final class FileTreeDataSource: SuperLog {
     /// 正在进行中的后台重建任务。
     private var rebuildTask: Task<Void, Never>?
 
+    /// 是否有后台重建正在进行。重建提交的是开始时的磁盘快照，
+    /// 期间的精准刷新必须在提交后重放（回归 #1103）。
+    private var isRebuilding: Bool = false
+
+    /// 重建期间收到、尚未应用的精准刷新目录。
+    private var pendingReloadsDuringRebuild: Set<URL> = []
+
     /// 使用默认依赖的初始化（保持向后兼容）
     init() {
         self.fileSystemReader = DefaultFileSystemReader()
@@ -126,6 +133,7 @@ final class FileTreeDataSource: SuperLog {
         projectRootPath = path
         expandedPaths = expandedPathStore.expandedPaths(for: path)
         isPackageExpanded = FileTreeSettings.shared.isPackageDependencySectionExpanded(for: path)
+        pendingReloadsDuringRebuild.removeAll()
         // 切换项目时立即清空，避免短暂显示上一个项目的文件树残留。
         rebuildItems(clearImmediately: true)
     }
@@ -164,6 +172,8 @@ final class FileTreeDataSource: SuperLog {
     private func rebuildItems(clearImmediately: Bool = false) {
         guard !projectRootPath.isEmpty else {
             rebuildTask?.cancel()
+            isRebuilding = false
+            pendingReloadsDuringRebuild.removeAll()
             items = []
             onItemsChanged?(items)
             return
@@ -177,6 +187,7 @@ final class FileTreeDataSource: SuperLog {
         // 递增版本号，使任何在途的后台遍历结果作废。
         rebuildGeneration += 1
         let generation = rebuildGeneration
+        isRebuilding = true
 
         // 快照重建所需的不可变输入（`fileSystemReader` 为 Sendable）。
         let rootURL = URL(fileURLWithPath: projectRootPath)
@@ -207,6 +218,22 @@ final class FileTreeDataSource: SuperLog {
             )
             self.items = fileItems.map { .file($0) } + packageItems
             self.onItemsChanged?(self.items)
+            self.isRebuilding = false
+            self.replayPendingReloads()
+        }
+    }
+
+    /// 重放重建期间收到的精准刷新。
+    ///
+    /// 重建提交的是启动时的磁盘快照；期间若 watcher 已发布变化目录，bridge 可能
+    /// 已经消费令牌，这里必须重新扫描这些目录，否则外部新增会在空树 guard 处丢失
+    /// （回归 #1103）。
+    private func replayPendingReloads() {
+        guard !pendingReloadsDuringRebuild.isEmpty else { return }
+        let urls = pendingReloadsDuringRebuild
+        pendingReloadsDuringRebuild.removeAll()
+        for url in urls {
+            reloadDirectory(at: url)
         }
     }
 
@@ -313,7 +340,7 @@ final class FileTreeDataSource: SuperLog {
         if expandedPaths.contains(relativePath) {
             expandedPaths.remove(relativePath)
             expandedPathStore.removeExpandedPath(relativePath, for: projectRootPath)
-            collapseChildren(of: url)
+            collapseDescendants(of: relativePath)
         } else {
             expandedPaths.insert(relativePath)
             expandedPathStore.addExpandedPath(relativePath, for: projectRootPath)
@@ -321,13 +348,32 @@ final class FileTreeDataSource: SuperLog {
         rebuildItems()
     }
 
-    private func collapseChildren(of url: URL) {
-        let urlPath = url.path
-        expandedPaths = expandedPaths.filter { !$0.hasPrefix(urlPath) }
+    /// 清除指定目录所有后代的展开状态（含持久化）。
+    ///
+    /// `expandedPaths` 存的是项目相对路径（如 `/src/Views`），不能用绝对路径做前缀匹配，
+    /// 否则后代路径永远命中不了。补上路径分隔符，避免 `/src/Views` 误伤 `/src/ViewsOld`。
+    private func collapseDescendants(of relativePath: String) {
+        let prefix = relativePath.hasSuffix("/") ? relativePath : relativePath + "/"
+        let descendants = expandedPaths.filter { $0.hasPrefix(prefix) }
+        guard !descendants.isEmpty else { return }
+        expandedPaths.subtract(descendants)
+        for path in descendants {
+            expandedPathStore.removeExpandedPath(path, for: projectRootPath)
+        }
     }
 
     /// 精准刷新：仅重载指定目录的子节点
     func reloadDirectory(at url: URL) {
+        // 重建期间的 items 是清空或旧快照，直接 reload 会被随后提交的遍历结果覆盖，
+        // 甚至因空树 guard 静默返回；先记下，等重建提交后重放（回归 #1103）。
+        guard !isRebuilding else {
+            pendingReloadsDuringRebuild.insert(url)
+            return
+        }
+        reloadDirectoryNow(at: url)
+    }
+
+    private func reloadDirectoryNow(at url: URL) {
         // 找到对应的 file 节点
         guard let index = items.firstIndex(where: {
             if case .file(let fileItem) = $0 { return fileItem.url == url }

@@ -37,10 +37,11 @@ final class WorkingTreeWatcher: @unchecked Sendable {
             Task { @MainActor in watcher.onChange() }
         }
         let paths = [url.path] as CFArray
+        // 不设置 `IgnoreSelf`：内置编辑器保存、Agent 工具写文件等都在本进程内，
+        // 过滤自身事件会让已打开的 Git Changes 永远停在这些写入之前（#911）。
         let flags = FSEventStreamCreateFlags(
             kFSEventStreamCreateFlagFileEvents |
-            kFSEventStreamCreateFlagNoDefer |
-            kFSEventStreamCreateFlagIgnoreSelf
+            kFSEventStreamCreateFlagNoDefer
         )
         guard let stream = FSEventStreamCreate(
             kCFAllocatorDefault,

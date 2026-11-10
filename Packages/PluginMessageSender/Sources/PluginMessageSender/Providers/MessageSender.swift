@@ -44,6 +44,34 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     public private(set) var pendingFileAttachments: [UserFileAttachment] = []
     public private(set) var pendingQueues: [UUID: [PendingChatMessage]] = [:]
 
+    /// 在途附件读取计数与等待者。
+    ///
+    /// 选择文件到附件入池之间存在异步读取窗口；发送入口在窗口结束前必须
+    /// 挂在 `waitForAttachmentReads()` 上，否则先发出的消息漏掉附件，附件
+    /// 又滚进下一条消息（#1023）。
+    private var attachmentReadCount = 0
+    private var attachmentReadWaiters: [CheckedContinuation<Void, Never>] = []
+
+    public var pendingAttachmentReadCount: Int { attachmentReadCount }
+
+    public func beginAttachmentRead() {
+        attachmentReadCount += 1
+    }
+
+    public func endAttachmentRead() {
+        guard attachmentReadCount > 0 else { return }
+        attachmentReadCount -= 1
+        guard attachmentReadCount == 0 else { return }
+        let waiters = attachmentReadWaiters
+        attachmentReadWaiters.removeAll()
+        waiters.forEach { $0.resume() }
+    }
+
+    public func waitForAttachmentReads() async {
+        guard attachmentReadCount > 0 else { return }
+        await withCheckedContinuation { attachmentReadWaiters.append($0) }
+    }
+
     // MARK: - Sending State Observation
 
     private var sendingStateObservers: [WeakSendingStateObserver] = []
@@ -501,6 +529,10 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     ///
     /// 工具授权（`kind == "permission"`）没有这个例外：授权是安全闸门，
     /// 用户的新消息不能替代授权决定，必须继续排队。
+    ///
+    /// - Important: 例外只在队列为空时成立。队列里已有更早的消息时，
+    ///   若仍让新消息直接落库，后发送的消息会越过先排队的消息并抢走原回合
+    ///   的恢复（#1027）。此时按普通忙碌处理，新消息排在队尾。
     private func isSessionBusy(for conversationID: UUID) -> Bool {
         // 本类自己的账本也算「忙」：消息已提交但回合跟踪任务还没调度。
         if isSending(for: conversationID) { return true }
@@ -509,7 +541,8 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         // 挂起时区分 ask_user 提问与工具授权：只有提问可以被新消息跳过。
         if state == .suspended,
            let suspension = agentLoop.suspension(for: conversationID),
-           suspension.isAskUserSuspension {
+           suspension.isAskUserSuspension,
+           (pendingQueues[conversationID]?.isEmpty ?? true) {
             return false
         }
         return true
@@ -597,7 +630,9 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     /// 该方法必须保持同步：调用方需要先把 `currentTasks` 写入，才能清除
     /// `pendingTurnStarts`，否则连续回车时会出现一个短暂的“既不 active、
     /// 也不 pending”的窗口。
-    private func beginTurn(conversationID: UUID, userMessageID: UUID) -> Task<Void, Never> {
+    /// 该方法保持 internal 以便测试直接复现「Task 已创建但尚未首次执行」
+    /// 的启动窗口（用户此时点停止）。
+    func beginTurn(conversationID: UUID, userMessageID: UUID) -> Task<Void, Never> {
         isSending = true
         notify(.started(conversationID: conversationID))
         if Self.verbose {
@@ -624,6 +659,13 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)turn completed: conversation=\(conversationID.uuidString.prefix(8))")
                 }
+            } catch is CancellationError {
+                // 启动窗口内被停止：跟踪 Task 还没跑到 waitForAgentLoop 就被
+                // 取消，`checkCancellation` 会抛 CancellationError。取消路径已经
+                // 合成过 `.cancelled`，这里直接退出即可——不能再插入 `.error`
+                // 消息或补发 `turnFailed`，否则用户主动停止会看到红色报错。
+                // `outcome` 初始值就是 `.cancelled`，`defer` 会正常收尾。
+                return
             } catch {
                 if Self.verbose {
                     Self.logger.error("\(Self.t)turn failed: conversation=\(conversationID.uuidString.prefix(8)), error=\(error.localizedDescription)")

@@ -34,10 +34,10 @@ public struct ReadAppStoreConnectCiWorkflowTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let workflowID = arguments["workflowID"]?.stringValue, !workflowID.isEmpty else {
-            return "Missing or empty workflowID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty workflowID.")
         }
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
         do {
             let wf = try await client.readCiWorkflow(id: workflowID)
             return """
@@ -51,7 +51,7 @@ public struct ReadAppStoreConnectCiWorkflowTool: SuperAgentTool {
             - description=\(wf.description.isEmpty ? "(empty)" : wf.description)
             """
         } catch {
-            return "Failed to read CI workflow: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to read CI workflow: \(error.localizedDescription)")
         }
     }
 }

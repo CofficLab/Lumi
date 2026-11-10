@@ -53,6 +53,20 @@ public final class SelectionState: ObservableObject {
         visibleOrder.append(path)
     }
 
+    /// 用当前可见文件行重建范围索引。
+    ///
+    /// `didSelectItemsAt` 只给出选中集合，Shift 范围选择必须依赖显示顺序；
+    /// 每次树结构或展开状态变化后都要按快照顺序重新登记（回归 #1101）。
+    func updateVisibleOrder(_ urls: [URL]) {
+        resetVisibleOrder()
+        for url in urls {
+            trackVisible(url)
+        }
+    }
+
+    /// 当前可见文件行的顺序，供测试与调试观察范围索引是否建立。
+    var visiblePaths: [String] { visibleOrder }
+
     func untrackVisible(_ url: URL) {
         let path = normalizedPath(url)
         guard let index = visibleOrderIndex[path] else { return }
@@ -77,6 +91,11 @@ public final class SelectionState: ObservableObject {
     public func clearSelection() {
         selectedPaths = []
         anchorPath = nil
+    }
+
+    /// 移除单个已选路径。用于 AppKit 反选回调（Cmd 点击已选项）同步状态。
+    func removeFromSelection(_ url: URL) {
+        selectedPaths.remove(normalizedPath(url))
     }
 
     public func handleTap(

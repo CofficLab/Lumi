@@ -20,13 +20,13 @@ public struct UpdateGoalStatusV2Tool: SuperAgentTool, @unchecked Sendable {
     }
 
     private func execute(conversationID: UUID?, arguments: [String: ToolArgument]) async throws -> String {
-        guard let value = GoalTaskToolSupport.string(arguments, "status"), let status = Goal.GoalStatus(rawValue: value) else { return "Error: invalid status" }
-        guard let manager = GoalTaskToolSupport.manager() else { return "Error: goal task manager is not initialized" }
+        guard let value = GoalTaskToolSupport.string(arguments, "status"), let status = Goal.GoalStatus(rawValue: value) else { throw GoalTaskToolSupport.GoalTaskToolError(message: "invalid status") }
+        guard let manager = GoalTaskToolSupport.manager() else { throw GoalTaskToolSupport.GoalTaskToolError(message: "goal task manager is not initialized") }
         let goalId: String
         switch await GoalTaskToolSupport.resolveGoalId(raw: GoalTaskToolSupport.string(arguments, "goal_id"), conversationId: conversationID?.uuidString, manager: manager) {
         case .success(let id): goalId = id
-        case .failure(let error): return error.message
+        case .failure(let error): throw error
         }
-        do { let goal = try await manager.updateGoalStatus(id: goalId, status: status, blockedReason: GoalTaskToolSupport.string(arguments, "blocked_reason"), failureReason: GoalTaskToolSupport.string(arguments, "failure_reason")); GoalTaskToolSupport.changed(goal.conversationId); return "✅ Goal **\(goal.title)** (Goal ID: `\(goal.id)`) updated to **\(status.rawValue)**" } catch { return "Error: failed to update goal: \(error.localizedDescription)" }
+        do { let goal = try await manager.updateGoalStatus(id: goalId, status: status, blockedReason: GoalTaskToolSupport.string(arguments, "blocked_reason"), failureReason: GoalTaskToolSupport.string(arguments, "failure_reason")); GoalTaskToolSupport.changed(goal.conversationId); return "✅ Goal **\(goal.title)** (Goal ID: `\(goal.id)`) updated to **\(status.rawValue)**" } catch { throw GoalTaskToolSupport.GoalTaskToolError(message: "failed to update goal: \(error.localizedDescription)") }
     }
 }

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆盖 13 条用例。
+PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆盖 16 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 13
+测试文件: 2 个，用例总数: 16
 
 核心组件（源码目录）:
 - `Services/`
@@ -29,7 +29,7 @@ PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **AgentTempStorageRuntimeBridge**（3 条）：由 `injectedDirectoryResolvesToInjectedDirectory`、`sharedStorageUsesInjectedDirectory`、`refusesFallbackWithoutInjection` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **综合**（10 条）：由 `pluginMetadataIsStable`、`pluginRegistersThreeTools`、`toolsAreLowRisk` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（12 条）：由 `pluginMetadataIsStable`、`pluginRegistersThreeTools`、`toolsAreLowRisk`、`unreadableSettingsAbortPurgeAndSurfaceError` 等用例锁定；其中 `storageSupportsNestedReadWriteAndList` 锁定列表必须递归枚举嵌套文件；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -42,33 +42,36 @@ PluginAgentTempStorage 的实现包，包含 7 个主要类型；当前测试覆
 | 5 | 综合 | pluginRegistersThreeTools | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginRegistersThreeTools` |
 | 6 | 综合 | toolsAreLowRisk | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolsAreLowRisk` |
 | 7 | 综合 | localizationCatalogIsPackaged | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `localizationCatalogIsPackaged` |
-| 8 | 综合 | storageSupportsNestedReadWriteAndList | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `storageSupportsNestedReadWriteAndList` |
+| 8 | 综合 | storageSupportsNestedReadWriteAndList（嵌套写入后列表递归可见） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `storageSupportsNestedReadWriteAndList` |
 | 9 | 综合 | storageRejectsInvalidAndTraversingPaths | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `storageRejectsInvalidAndTraversingPaths` |
 | 10 | 综合 | readReportsMissingFile | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readReportsMissingFile` |
 | 11 | 综合 | listFilesSortsByRecencyAndExcludesDirectories | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listFilesSortsByRecencyAndExcludesDirectories` |
 | 12 | 综合 | purgeRemovesOnlyFilesOlderThanRetention | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `purgeRemovesOnlyFilesOlderThanRetention` |
 | 13 | 综合 | storageErrorsExposeDescriptions | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `storageErrorsExposeDescriptions` |
+| 14 | 综合 | preservesLeadingAndTrailingSpacesInFilenames（首尾空格不得被裁剪，避免不同名称互相覆盖） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `preservesLeadingAndTrailingSpacesInFilenames` |
+| 15 | 综合 | 配置不可读时中止清理并保留文件，同时暴露配置错误（**回归 #973**） | 已保存 14 天策略后损坏 settings.plist，存在 8 天前的文件 | 调用 `read` 触发清理 | 抛出 `settingsUnavailable`，8 天文件仍在；删除配置后才回退默认 7 天 | P1 | ✅ 已覆盖 | `unreadableSettingsAbortPurgeAndSurfaceError` |
+| 16 | 综合 | 过期文件删除失败时读取不得返回过期内容（**回归 #974**） | 顶层文件修改时间早于保留期，父目录置为 0o555 使删除失败但文件仍可读 | 调用 `read` 触发清理 | 抛出 `purgeFailed` 且详情包含文件名，过期文件仍存在于磁盘但不再被当作正常结果返回 | P1 | ✅ 已覆盖 | `readFailsWhenExpiredFileCannotBeDeleted` |
 
-> 说明：全部 **13 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **16 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 10 / 10
+- P0: 已覆盖 4 / 4
+- P1: 已覆盖 11 / 11
 - P2: 已覆盖 1 / 1
-- **合计: 13 / 13**（仅表示清单场景，非源码覆盖率）
+- **合计: 16 / 16**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（10 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
+- **P1**: 其余功能性用例（11 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 13 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 16 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

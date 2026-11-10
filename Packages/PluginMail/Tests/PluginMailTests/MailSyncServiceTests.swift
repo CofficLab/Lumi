@@ -94,6 +94,25 @@ final class MailCacheServiceTests: XCTestCase {
         let invoiceHits = try await service.search(accountID: accountID, folder: nil, query: "invoice").map(\.uid)
         XCTAssertEqual(invoiceHits, [2])
     }
+
+    func testSearchDoesNotMergeSameUIDAcrossFolders() async throws {
+        try await service.upsertMessages(
+            [summary(uid: 7, folder: "INBOX", subject: "Quarterly meeting")],
+            accountID: accountID,
+            folder: "INBOX"
+        )
+        try await service.upsertMessages(
+            [summary(uid: 7, folder: "Archive", subject: "Lunch menu")],
+            accountID: accountID,
+            folder: "Archive"
+        )
+
+        let hits = try await service.search(accountID: accountID, folder: nil, query: "quarterly")
+
+        XCTAssertEqual(hits.count, 1, "另一文件夹的同 UID 邮件不应被误报为命中")
+        XCTAssertEqual(hits.first?.uid, 7)
+        XCTAssertEqual(hits.first?.subject, "Quarterly meeting")
+    }
 }
 
 final class MailSyncServiceTests: XCTestCase {

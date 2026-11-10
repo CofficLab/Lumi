@@ -1368,6 +1368,22 @@
         }
       }
     },
+    "Components exceed stock length" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld components exceed the stock length and were not scheduled: %2$@ mm"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld 个组件超过原料长度，未排入方案：%2$@ mm"
+          }
+        }
+      }
+    },
     "Optimize" : {
       "localizations" : {
         "en" : {

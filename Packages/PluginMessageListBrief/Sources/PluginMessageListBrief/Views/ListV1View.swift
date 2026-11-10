@@ -32,8 +32,14 @@ struct ListV1View: View {
     /// 进入 List 布局后再执行 scrollTo，避免最后一行被底部输入框遮挡。
     @State private var scrollTick: Int = 0
     /// 发送新消息后，临时把最新回合定位在视口上方约四分之一处。
-    @State private var usesPostSendPositioning = false
+    @State private var postSendPositioning = PostSendPositioningState()
     @State private var viewportHeight: CGFloat = 0
+
+    /// 上一帧的已展示用户消息 ID 集合。
+    ///
+    /// macOS 13 的 `onChange(of:)` 单参数版拿不到旧值，这里手动保存上一帧的
+    /// 快照，由 `handleUserMessageInsertion` 求差集得到新插入的消息。
+    @State private var previousUserMessageIDs: Set<UUID> = []
 
     /// 首屏定位的就绪编排（含超时兜底），见 InitialPositionGate。
     ///
@@ -113,7 +119,7 @@ struct ListV1View: View {
                         .id(MessageListScrollCoordinator.bottomAnchorID)
                         .accessibilityHidden(true)
                         .plainMessageListRow(insets: EdgeInsets())
-                        .onChange(of: scrollTick) { _, _ in
+                        .onChange(of: scrollTick) { _ in
                             guard initialPositionGate.isReady else { return }
                             let conversationID = selectedConversationID
                             runtime.scrollCoordinator.scheduleScrollToBottomAfterLayout(
@@ -144,7 +150,7 @@ struct ListV1View: View {
                     )
                 )
             }
-            .onChange(of: visibleRowIDs) { _, _ in
+            .onChange(of: visibleRowIDs) { _ in
                 // 发送后定位期间不跟随滚到底：此时 atBottomBox 是被"滚到占位
                 // 底部"作伪成 true 的，跟随滚动会把最新内容贴到视口底部，抵消
                 // 刚完成的"新回合停在视口上方"定位。定位结束后由
@@ -156,24 +162,32 @@ struct ListV1View: View {
                     prepareInitialPosition(proxy: proxy, messages: displayedHistoryMessages)
                 }
             }
-            .onChange(of: displayedUserMessageIDs) { oldIDs, newIDs in
-                handleUserMessageInsertion(oldIDs: oldIDs, newIDs: newIDs)
+            .onChange(of: displayedUserMessageIDs) { newIDs in
+                let oldIDs = previousUserMessageIDs
+                previousUserMessageIDs = Set(newIDs)
+                handleUserMessageInsertion(oldIDs: Array(oldIDs), newIDs: newIDs)
             }
-            .onChange(of: messageListVM.agentTurns) { _, items in
+            .onChange(of: messageListVM.agentTurns) { items in
                 handleTurnLifecycleChange(items)
             }
-            .onChange(of: stateVM.activity) { _, _ in
+            .onChange(of: stateVM.activity) { activity in
+                // 首条 assistant 消息之前取消时，turn 投影不会变化，活动清空
+                // 是唯一的收尾信号（#894）。此时同样要撤掉尾部留白并回到底部。
+                if postSendPositioning.handleActivity(isPresent: activity != nil) {
+                    scrollTick &+= 1
+                    return
+                }
                 guard initialPositionGate.isReady,
                       runtime.atBottomBox.value,
                       !usesPostSendPositioning else { return }
                 scrollTick &+= 1
             }
-            .onChange(of: selectedConversationID) { _, _ in
-                usesPostSendPositioning = false
+            .onChange(of: selectedConversationID) { _ in
+                postSendPositioning.end()
                 runtime.scrollCoordinator.cancelPendingTasks()
                 initialPositionGate.resetForConversationSwitch()
             }
-            .onChange(of: messageListVM.isLoading) { _, isLoading in
+            .onChange(of: messageListVM.isLoading) { isLoading in
                 if isLoading {
                     runtime.scrollCoordinator.cancelPendingTasks()
                     initialPositionGate.resetForLoadingStart()
@@ -311,6 +325,8 @@ struct ListV1View: View {
             .id
     }
 
+    private var usesPostSendPositioning: Bool { postSendPositioning.isActive }
+
     private var postSendTailReserve: CGFloat {
         guard usesPostSendPositioning else { return 0 }
         // Do not measure a live List row with GeometryReader + PreferenceKey.
@@ -343,17 +359,17 @@ struct ListV1View: View {
               let latestDisplayedUserMessageID,
               insertedIDs.contains(latestDisplayedUserMessageID) else { return }
 
-        usesPostSendPositioning = true
+        postSendPositioning.begin(activityIsPresent: stateVM.activity != nil)
         // A send should bring the new turn into view even if the user was
         // reading an older part of the conversation.
         scrollTick &+= 1
     }
 
     private func handleTurnLifecycleChange(_ items: [AgentTurnPresentationItem]) {
-        guard usesPostSendPositioning,
-              !items.contains(where: \.acceptsLiveActivity) else { return }
+        guard postSendPositioning.handleTurns(
+            hasLiveTurn: items.contains(where: \.acceptsLiveActivity)
+        ) else { return }
 
-        usesPostSendPositioning = false
         // 定位态结束：撤掉尾部留白并把视图对齐到真实内容底部。这里不再依赖
         // atBottomBox —— 定位期间用户停在"占位底部"，流式增长会让它翻成 false，
         // 若继续用该判定则回复结束后不会回到底部，用户会停在中间看不到收尾。

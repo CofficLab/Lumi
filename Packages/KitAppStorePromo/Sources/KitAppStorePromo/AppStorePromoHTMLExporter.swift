@@ -27,6 +27,7 @@ public enum AppStorePromoHTMLExporter {
     public static func exportPNG(
         html: String,
         fileURL: URL?,
+        readAccessRootURL: URL? = nil,
         preset: AppStorePromoDisplayPreset,
         loadTimeout: TimeInterval = 8,
         resourceTimeout: TimeInterval = 5
@@ -39,7 +40,12 @@ public enum AppStorePromoHTMLExporter {
         webView.navigationDelegate = delegate
 
         if let fileURL {
-            webView.loadFileURL(fileURL, allowingReadAccessTo: fileURL.deletingLastPathComponent())
+            // 本地化 HTML 位于 localizations/ 子目录，需放行图片根目录才能读取
+            // 上级的共享 assets（issue #1009）。
+            webView.loadFileURL(
+                fileURL,
+                allowingReadAccessTo: readAccessRootURL ?? fileURL.deletingLastPathComponent()
+            )
         } else {
             webView.loadHTMLString(html, baseURL: nil)
         }

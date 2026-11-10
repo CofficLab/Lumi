@@ -11,8 +11,10 @@ extension Message {
     /// 再一次性发送，该值可能接近零。此时 `latencyMs`（完整请求延迟）更能反映
     /// 用户感知速度。
     var speedDurationMs: Double? {
-        let streaming = streamingDurationMs
-        let latency = latencyMs
+        // 旧版把计时写进 metadata，没有强类型列。强类型优先、metadata 兜底，
+        // 否则升级后历史响应的样本会被整体丢弃（#1029）。
+        let streaming = streamingDurationMs ?? legacyTimingMs("streamingDurationMs")
+        let latency = latencyMs ?? legacyTimingMs("latencyMs")
 
         switch (streaming, latency) {
         case let (s?, l?) where s > 0 && l > 0:
@@ -34,6 +36,15 @@ extension Message {
             return nil
         }
         return Double(outputTokens) / (durationMs / 1000.0)
+    }
+
+    /// 首 token 延迟（毫秒）；强类型字段缺失时回退到旧版 metadata。
+    var speedTimeToFirstTokenMs: Double? {
+        timeToFirstTokenMs ?? legacyTimingMs("timeToFirstTokenMs")
+    }
+
+    private func legacyTimingMs(_ key: String) -> Double? {
+        metadata[key].flatMap(Double.init)
     }
 }
 

@@ -23,6 +23,14 @@ final class ImageToPDFViewModel: ObservableObject {
     /// True while a `convertAll` is running.
     @Published private(set) var isConverting: Bool = false
 
+    /// 只要还有未清空的输入或输出，Clear 就应可用。
+    ///
+    /// `clearAll()` 同时清空三者，所以按钮可用性不能只看 `outputItems`：
+    /// 用户只添加了图片、还没转换时也必须能一键清空。
+    var canClear: Bool {
+        !inputImages.isEmpty || !outputItems.isEmpty
+    }
+
     /// Human-readable message from the most recent failure, or nil.
     @Published private(set) var lastErrorMessage: String?
 
@@ -93,7 +101,8 @@ final class ImageToPDFViewModel: ObservableObject {
 
         let stagingDirectory = makeStagingDirectory()
         let images = inputImages
-        outputItems = images.map { PDFOutputItem(source: $0) }
+        let names = Self.uniquePDFNames(for: images)
+        outputItems = zip(images, names).map { PDFOutputItem(source: $0, outputName: $1) }
         isConverting = true
         lastErrorMessage = nil
 
@@ -106,23 +115,27 @@ final class ImageToPDFViewModel: ObservableObject {
                 outputItems = runningItems
 
                 let item = runningItems[index]
-                let outputURL = stagingDirectory.appendingPathComponent(
-                    item.source.suggestedPDFName
-                )
+                let outputURL = stagingDirectory.appendingPathComponent(item.outputName)
 
                 let stream = service.convert(source: item.source, to: outputURL)
-                for await value in stream {
-                    runningItems[index].progress = value
-                    outputItems = runningItems
-                }
+                do {
+                    for try await value in stream {
+                        runningItems[index].progress = value
+                        outputItems = runningItems
+                    }
 
-                if FileManager.default.fileExists(atPath: outputURL.path) {
-                    runningItems[index].status = .done(outputURL)
-                    runningItems[index].progress = 1
-                } else {
-                    runningItems[index].status = .failed(
-                        ImageToPDFLocalization.string("Unknown error")
-                    )
+                    if FileManager.default.fileExists(atPath: outputURL.path) {
+                        runningItems[index].status = .done(outputURL)
+                        runningItems[index].progress = 1
+                    } else {
+                        runningItems[index].status = .failed(
+                            ImageToPDFLocalization.string("Unknown error")
+                        )
+                    }
+                } catch {
+                    // 失败时清掉可能残留的旧目标，避免用户导出上一轮的内容。
+                    try? FileManager.default.removeItem(at: outputURL)
+                    runningItems[index].status = .failed(error.localizedDescription)
                 }
                 outputItems = runningItems
             }
@@ -135,7 +148,7 @@ final class ImageToPDFViewModel: ObservableObject {
             }.count
             if failureCount > 0 {
                 lastErrorMessage = String(
-                    format: ImageToPDFLocalization.string("%l file(s) failed to convert"),
+                    format: ImageToPDFLocalization.string("%ld file(s) failed to convert"),
                     failureCount
                 )
             }
@@ -224,6 +237,26 @@ final class ImageToPDFViewModel: ObservableObject {
     }
 
     // MARK: - Private
+
+    /// 为一批输入分配互不冲突的 PDF 文件名：重名时追加 ` (2)`、` (3)`…
+    ///
+    /// 输入只按 URL 去重，来自不同目录的同名图片可以同时存在；如果直接用
+    /// `suggestedPDFName`，它们会写同一个暂存文件，后一张覆盖前一张。
+    static func uniquePDFNames(for images: [ImageItem]) -> [String] {
+        var used: Set<String> = []
+        return images.map { image in
+            let base = image.suggestedPDFName
+            let stem = (base as NSString).deletingPathExtension
+            var candidate = base
+            var suffix = 2
+            while used.contains(candidate.lowercased()) {
+                candidate = "\(stem) (\(suffix)).pdf"
+                suffix += 1
+            }
+            used.insert(candidate.lowercased())
+            return candidate
+        }
+    }
 
     /// Create (or reuse) a per-session staging directory.
     ///

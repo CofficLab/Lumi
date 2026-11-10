@@ -446,4 +446,69 @@ struct ListPresentationTests {
         try? await Task.sleep(nanoseconds: 50_000_000)
         #expect(vm.isLoading == false)
     }
+
+    // MARK: - §8.6 Turn VM 生命周期
+
+    @Test("§8.6 切换会话释放上一会话的 Turn VM（回归 #963）")
+    func switchingConversationReleasesPreviousTurnVMs() async {
+        let firstID = UUID()
+        let secondID = UUID()
+        let stub = StubMessages(snapshot: [
+            Message(conversationID: firstID, role: .user, content: "a1", createdAt: Date(timeIntervalSince1970: 1)),
+            Message(conversationID: firstID, role: .user, content: "a2", createdAt: Date(timeIntervalSince1970: 2)),
+            Message(conversationID: secondID, role: .user, content: "b1", createdAt: Date(timeIntervalSince1970: 3))
+        ])
+        let conversations = StubConversations(selected: firstID)
+        let vm = ConversationMessageListVM(
+            services: makeServices(messages: stub, conversations: conversations),
+            pageSize: 40
+        )
+        await vm.activateCurrentConversation()
+        for item in vm.agentTurns { _ = vm.agentTurnVM(for: item) }
+        #expect(vm.trackedAgentTurnVMCount == 2)
+
+        conversations.selected = secondID
+        await vm.activateCurrentConversation()
+
+        #expect(vm.agentTurns.count == 1)
+        #expect(vm.trackedAgentTurnVMCount == 0, "旧会话的 Turn VM 不得继续驻留")
+    }
+
+    @Test("§8.6 Turn 离开窗口后释放其 VM（回归 #963）")
+    func prunesVMsForTurnsThatLeaveTheWindow() async {
+        let stub = StubMessages(snapshot: [
+            Message(conversationID: conversationID, role: .user, content: "a1", createdAt: Date(timeIntervalSince1970: 1)),
+            Message(conversationID: conversationID, role: .user, content: "a2", createdAt: Date(timeIntervalSince1970: 2))
+        ])
+        let conversations = StubConversations(selected: conversationID)
+        let vm = ConversationMessageListVM(
+            services: makeServices(messages: stub, conversations: conversations),
+            pageSize: 40
+        )
+        await vm.activateCurrentConversation()
+        for item in vm.agentTurns { _ = vm.agentTurnVM(for: item) }
+        #expect(vm.trackedAgentTurnVMCount == 2)
+
+        let ghost = Message(
+            id: UUID(),
+            conversationID: conversationID,
+            role: .user,
+            content: "ghost",
+            createdAt: Date(timeIntervalSince1970: 3)
+        )
+        let staleItem = AgentTurnPresentationItem(pendingUserMessages: [ghost], statusMessage: nil)
+        _ = vm.agentTurnVM(for: staleItem)
+        #expect(vm.trackedAgentTurnVMCount == 3)
+
+        let inserted = Message(
+            conversationID: conversationID,
+            role: .assistant,
+            content: "ok",
+            createdAt: Date(timeIntervalSince1970: 10)
+        )
+        vm.handleMessageChange(.inserted(inserted, conversationID: conversationID))
+
+        #expect(!vm.agentTurns.contains { $0.id == staleItem.id })
+        #expect(vm.trackedAgentTurnVMCount == 2, "离开窗口的 Turn VM 必须被淘汰")
+    }
 }

@@ -47,7 +47,7 @@ struct ComposerView: View {
             text: textBinding,
             height: heightBinding,
             textColor: NSColor(theme.textPrimary),
-            placeholder: "输入消息，按 Return 发送…",
+            placeholder: pluginLocalization.string("Type a message, press Return to send…"),
             chipPalette: PasteChipPalette(theme: theme),
             onSubmit: onSend,
             onEnter: onSend,

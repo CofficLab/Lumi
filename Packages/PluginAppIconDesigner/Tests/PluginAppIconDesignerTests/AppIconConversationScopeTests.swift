@@ -219,4 +219,50 @@ extension AppIconDesignerPluginTests {
         try kernel.stop()
         try? FileManager.default.removeItem(at: storage.dataRootDirectory)
     }
+
+    @Test("缓存的项目 store 使用前重载，不用旧快照覆盖新修订")
+    func cachedScopedStoreReloadsBeforeUse() throws {
+        let projectA = try makeScopedProjectRoot("stale-a")
+        let projectB = try makeScopedProjectRoot("stale-b")
+        defer {
+            IconDesignerRuntime.reset()
+            try? FileManager.default.removeItem(at: projectA)
+            try? FileManager.default.removeItem(at: projectB)
+        }
+
+        // UI 当前打开项目 B，对话 A 首次使用自己的缓存 store（内存快照：宽度 1024）。
+        IconDesignerRuntime.reset()
+        IconDesignerRuntime.updateProjectStorageDirectory(projectPath: projectB.path)
+        let scopedStore = IconDesignerRuntime.store(forProjectPath: projectA.path)
+        let document = scopedStore.createDocument(
+            title: "Stale Icon",
+            width: 1024,
+            height: 1024,
+            background: .color("#00000000"),
+            scope: .project
+        )
+
+        // UI 切到项目 A，用 shared store 把宽度改成 2048 并落盘。
+        IconDesignerRuntime.updateProjectStorageDirectory(projectPath: projectA.path)
+        let edited = try IconDocumentStore.shared.updateDocument(id: document.id, scope: .project) { document in
+            document.width = 2048
+        }
+        #expect(edited.width == 2048)
+
+        // UI 切回项目 B，对话 A 再次拿到缓存实例做编辑。
+        IconDesignerRuntime.updateProjectStorageDirectory(projectPath: projectB.path)
+        let scopedAgain = IconDesignerRuntime.store(forProjectPath: projectA.path)
+        #expect(scopedAgain === scopedStore)
+        let updated = try scopedAgain.updateDocument(id: document.id, scope: .project) { document in
+            document.height = 2048
+        }
+        #expect(updated.width == 2048, "必须先读到 shared store 落盘的宽度 2048，而不是旧快照")
+        #expect(updated.height == 2048)
+
+        // 磁盘最终内容是两次编辑的叠加，且没有重复文档。
+        let onDisk = IconDocumentFileStore.loadAll(storagePath: scopedStorageURL(project: projectA).path)
+        #expect(onDisk.count == 1)
+        #expect(onDisk.first?.width == 2048)
+        #expect(onDisk.first?.height == 2048)
+    }
 }

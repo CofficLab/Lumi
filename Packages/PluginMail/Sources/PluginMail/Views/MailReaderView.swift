@@ -1,5 +1,6 @@
 import SwiftUI
 import WebKit
+import AppKit
 import LumiUI
 import KitMail
 
@@ -12,6 +13,9 @@ public struct MailReaderView: View {
 
     let detail: MailMessageDetail
 
+    /// 是否已由用户授权加载远程图片/样式；每封邮件默认关闭。
+    @State private var allowsRemoteContent = false
+
     public init(detail: MailMessageDetail) {
         self.detail = detail
     }
@@ -23,7 +27,13 @@ public struct MailReaderView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     if let html = detail.htmlBody, !html.isEmpty {
-                        MailHTMLContentView(html: html)
+                        if !allowsRemoteContent {
+                            remoteContentBar
+                        }
+                        MailHTMLContentView(
+                            html: html,
+                            allowsRemoteContent: allowsRemoteContent
+                        )
                     } else {
                         Text(detail.plainTextBody?.isEmpty == false ? detail.plainTextBody! : "（无正文）")
                             .font(.appBody)
@@ -39,6 +49,32 @@ public struct MailReaderView: View {
                 MailAttachmentBarView(attachments: detail.attachments)
             }
         }
+        // 切换到另一封邮件时重置授权，避免远程内容在未确认时自动加载。
+        .onChange(of: detail.summary.uid) { _ in
+            allowsRemoteContent = false
+        }
+    }
+
+    /// 远程内容授权条：默认拦截，用户明确点击后才放行。
+    private var remoteContentBar: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "shield.lefthalf.filled")
+                .font(.appCaption)
+                .foregroundColor(theme.textTertiary)
+            Text("为保护隐私，已拦截远程图片和样式。")
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+            Spacer()
+            AppButton("加载远程内容", style: .secondary, size: .small) {
+                allowsRemoteContent = true
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(theme.appListRowBackground)
+        )
     }
 
     private var header: some View {
@@ -85,8 +121,8 @@ public struct MailReaderView: View {
 
 // MARK: - HTML 渲染（禁 JS / 拦截远程资源）
 
-/// WKWebView 封装：`javaScriptEnabled = false`；默认拦截远程图片/样式等资源，
-/// 仅当用户点击「加载远程内容」时放行。
+/// WKWebView 封装：`javaScriptEnabled = false`；默认经 CSP 在 WebKit 内容层
+/// 拦截全部远程子资源（图片/样式/字体），仅当用户点击「加载远程内容」时放行。
 public struct MailHTMLContentView: NSViewRepresentable {
     let html: String
     /// 是否允许加载远程资源（由外部状态控制，默认 false）。
@@ -112,24 +148,41 @@ public struct MailHTMLContentView: NSViewRepresentable {
     }
 
     public func updateNSView(_ webView: WKWebView, context: Context) {
-        context.coordinator.allowRemote = allowsRemoteContent
-        // 仅当内容变化时重新加载，避免每次 update 重绘闪烁
-        if webView.url == nil {
-            load(html, into: webView)
+        let coordinator = context.coordinator
+        coordinator.allowRemote = allowsRemoteContent
+        // 内容或授权状态变化时重新加载，避免每次 update 重绘闪烁
+        if coordinator.loadedHTML != html || coordinator.loadedAllowsRemote != allowsRemoteContent {
+            coordinator.loadedHTML = html
+            coordinator.loadedAllowsRemote = allowsRemoteContent
+            load(html, into: webView, allowsRemoteContent: allowsRemoteContent)
         }
     }
 
-    private func load(_ html: String, into webView: WKWebView) {
-        webView.loadHTMLString(baseHTML(with: html), baseURL: nil)
+    private func load(_ html: String, into webView: WKWebView, allowsRemoteContent: Bool) {
+        webView.loadHTMLString(
+            Self.baseHTML(with: html, allowsRemoteContent: allowsRemoteContent),
+            baseURL: nil
+        )
     }
 
-    /// 包装：深色适配 + 基础排版，远程资源默认被 navigationDelegate 拦截。
-    private func baseHTML(with body: String) -> String {
-        """
+    /// 包装：深色适配 + 基础排版。
+    ///
+    /// 远程内容策略落在 CSP 上：未授权时 `default-src 'none'` 让 WebKit 直接
+    /// 拒绝所有远程子资源请求（`WKNavigationDelegate` 只覆盖导航动作，不覆盖
+    /// 图片/样式等子资源，不能用来实现该策略）。授权后不再注入限制性策略。
+    static func baseHTML(with body: String, allowsRemoteContent: Bool) -> String {
+        let policy = allowsRemoteContent
+            ? ""
+            : """
+              <meta http-equiv="Content-Security-Policy" \
+              content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:">
+              """
+        return """
         <!DOCTYPE html>
         <html>
         <head>
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        \(policy)
         <style>
           body { font-family: -apple-system, system-ui; font-size: 14px;
                  line-height: 1.6; color: #1d1d1f; margin: 0; padding: 0;
@@ -145,31 +198,59 @@ public struct MailHTMLContentView: NSViewRepresentable {
         """
     }
 
+    /// 导航决策：用户点击的远程链接交给系统浏览器；其余远程导航仅在授权后放行。
+    enum NavigationDecision: Equatable {
+        case allow
+        case cancel
+        case openExternally(URL)
+    }
+
+    static func navigationDecision(
+        for url: URL?,
+        navigationType: WKNavigationType,
+        allowsRemoteContent: Bool
+    ) -> NavigationDecision {
+        guard let url, isRemote(url) else { return .allow }
+        if navigationType == .linkActivated {
+            return .openExternally(url)
+        }
+        return allowsRemoteContent ? .allow : .cancel
+    }
+
+    static func isRemote(_ url: URL) -> Bool {
+        url.scheme == "http" || url.scheme == "https"
+    }
+
     public func makeCoordinator() -> Coordinator {
         Coordinator()
     }
 
     public final class Coordinator: NSObject, WKNavigationDelegate {
         var allowRemote = false
+        /// 已加载内容与授权状态（用于判断是否需要重新加载）。
+        var loadedHTML: String?
+        var loadedAllowsRemote: Bool?
 
         public func webView(
             _ webView: WKWebView,
             decidePolicyFor navigationAction: WKNavigationAction,
             decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
         ) {
-            if navigationAction.navigationType == .other, navigationAction.request.url == nil {
+            let decision = MailHTMLContentView.navigationDecision(
+                for: navigationAction.request.url,
+                navigationType: navigationAction.navigationType,
+                allowsRemoteContent: allowRemote
+            )
+            switch decision {
+            case .allow:
                 decisionHandler(.allow)
-                return
+            case .cancel:
+                decisionHandler(.cancel)
+            case .openExternally(let url):
+                // 邮件内的链接交给系统浏览器，阅读窗格不承担网页导航。
+                NSWorkspace.shared.open(url)
+                decisionHandler(.cancel)
             }
-            // 拦截远程资源加载（图片/样式/iframe 等），除非用户授权
-            if let url = navigationAction.request.url {
-                let isRemote = url.scheme == "http" || url.scheme == "https"
-                if isRemote && !allowRemote {
-                    decisionHandler(.cancel)
-                    return
-                }
-            }
-            decisionHandler(.allow)
         }
     }
 }

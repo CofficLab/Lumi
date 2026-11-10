@@ -313,6 +313,18 @@ public extension ToolManagerProviding {
         conversationID: UUID,
         turnID: UUID?
     ) async -> ToolCallResult {
+        if let tool = tool(named: toolCall.name),
+           let arguments = try? ToolArgumentCoding.decode(toolCall.arguments) {
+            switch tool.userResponseAction(for: answer, arguments: arguments) {
+            case .reexecute:
+                return await execute(toolCall, conversationID: conversationID, turnID: turnID)
+            case let .reject(reason):
+                return ToolCallResult(content: reason, isError: true)
+            case .returnAnswer:
+                break
+            }
+        }
+
         if riskLevel(for: toolCall)?.requiresPermission == true {
             switch answer.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
             case "允许", "同意", "是", "allow", "approve", "approved", "yes":

@@ -6,7 +6,7 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 并以常驻注册的 ChatSection 槽位参与 `message-list` 互斥竞争。
 
 平台: macOS 14+, iOS 17+
-测试文件: 12 个，单元用例总数: 76（另有 6 条 UI 测试，见「UI 测试」章节）
+测试文件: 13 个，单元用例总数: 79（另有 6 条 UI 测试，见「UI 测试」章节）
 
 核心组件（源码目录）:
 - `Models/`
@@ -43,7 +43,6 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **CapabilityMotifGeometry**（5 条）：由 `motifCardSitsFullyInsideTheCanvas`、`motifSupportingGeometryStaysInsideTheCard`、`motifBandsStayInsideTheCardAndDoNotOverlap` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **FlowLayoutGeometry**（2 条）：由 `flowLayoutReportsTheWidestWrappedRowAndPositionsEachItem`、`flowLayoutUsesNaturalWidthWithoutWrappingAndHandlesNoItems` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **GuideObserver**（2 条）：由 `guideStateTracksContextSelectionProjectsAndSuggestionChanges`、`toolbarCoordinatorOnlyHidesProjectToolsWhileActiveAndNoProjectsExist` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **PluginMessageListEmptyPlugin**（4 条）：由 `pluginShowsEmptyStateOnlyForSelectedConversationWithoutVisibleMessages`、`pluginCanProvideNoSelectionEmptyStateWithoutOptionalProviders`、`pluginDoesNotBootWithoutChatSectionProvider`、`abandonedEvaluationNeverLeavesStateHanging` 锁定；改动该模块时优先跑对应测试文件。
@@ -51,112 +50,115 @@ PluginMessageListEmpty 的实现包，提供聊天区在「未选中会话 / 当
 - **RegistrationEvaluationWindow**（2 条，P0）：由 `emptyStateStaysOutOfTheSlotWhileEvaluationIsInFlight`、`emptyStateOnlyAppearsAfterEvaluationSettles` 锁定。锁定 `registrationState = .evaluating` 期间**不参与** `message-list` 槽位竞争这一三态模型核心不变量；改动 `scheduleRegistrationEvaluation` / `shouldRenderEmptyState` 时必须优先跑该文件。
 - **EmptyStateActivityLoading**（7 条）：由 `loading fills the window and derives totals from both series`、`re-entering the empty state on the same day reuses the loaded window`、`a stale slow load cannot overwrite a newer window`、`a missing message provider degrades to an invisible strip` 锁定。覆盖 `loadIfNeeded(force:)` 的窗口填充、同日缓存门、`loadGeneration` 竞态防护、缺 provider 降级、token 与消息两级独立判空；改动 `EmptyStateActivityViewModel` 的加载路径时必须优先跑该文件。
 - **EmptyStateActivityWindow**（10 条）：由 `the window covers every calendar day including idle ones`、`a same-day merge keeps the larger count regardless of arrival order`、`levels are normalized against the busiest day in the window`、`a quiet day next to a busy one stays on the lowest active level` 锁定。覆盖 `makeDays` 的窗口填充、跨天归一化、同日合并取 max、level 相对峰值归一化与 ceiling 除法；改动热力图分桶逻辑时必须优先跑该文件。
-- **EmptyStateTokenTrend**（7 条）：由 `token days fill the whole window including idle days`、`no token consumption keeps the trend hidden`、`values below one thousand are shown verbatim` 等用例锁定；改动 token 序列或它的紧凑数字格式化（`ActivityTokenFormat.compact`）时优先跑对应测试文件。
+- **EmptyStateTokenTrend**（9 条）：由 `token days fill the whole window including idle days`、`no token consumption keeps the trend hidden`、`zero tokens hide the trend even when the heatmap has messages`、`values below one thousand are shown verbatim` 等用例锁定；改动 token 序列、曲线可见性或它的紧凑数字格式化（`ActivityTokenFormat.compact`）时优先跑对应测试文件。
 - **ActivityCardLayout**（2 条）：由 `activityCardOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth`、`activityCardLayoutIgnoresWidthBeyondTheCardCap` 锁定。守住「活动卡宽度够才并排」的阈值 `ActivityCardLayout.sideBySideMinWidth`（及其组成常量），以及「卡片封顶 520pt 之后，槽位再宽也不改变排布」这条不变量；改动活动卡排布时必须优先跑该文件。
 - **ActivitySparklineGeometry**（7 条）：由 `every point stays inside the canvas`、`the series is normalized against its own peak`、`a flat series becomes a horizontal line` 等用例锁定。覆盖曲线与画布的坐标映射（归一化基准、峰值贴顶、等值序列成直线、单点居中）；改动曲线绘制时必须优先跑该文件。Canvas 里画错了不会让编译失败，只能靠这组几何断言守住。
 
-- **Project context**（9 条）：由 `homeDirectoryIsFolded`、`detectsProjectType`、`indexRowAppears`、`indexingStateShowsProgress`、`gitRowFollowsTheWorkingTree`、`lastConversationRowAppears`、`detailsReportConversationCount`、`noProjectClearsEverything` 等用例锁定。覆盖项目身份（路径折叠 + 技术栈判定）、就绪状态行（索引 / Git / 上次会话）、展开详情与「没有项目就清空」这条不变量；改动 `ProjectContextViewModel` 的组装逻辑时必须优先跑该文件。
+- **Project context**（16 条）：由 `homeDirectoryIsFolded`、`detectsProjectType`、`indexRowAppears`、`gitRowFollowsTheWorkingTree`、`gitNavigationEnablesDisabledWorkspace`、`gitRowAvailabilityFollowsEntryAndController` 等用例锁定。覆盖项目身份（路径折叠 + 技术栈判定）、就绪状态行（索引 / Git / 上次会话）、展开详情、「没有项目就清空」以及跨插件导航（含为默认禁用的 Git Workspace 补启用）等不变量；改动 `ProjectContextViewModel` 或 `ProjectContextNavigator` 时必须优先跑该文件。
 - **Activity scope**（4 条）：由 `projectScopeFiltersByConversation`、`fallsBackToGlobalWithoutProject`、`projectScopeStaysVisibleWithoutActivity`、`switchingScopeReloads` 锁定。覆盖「项目维度只统计本项目消息」「没有项目退回全局」「项目维度没有历史仍然显示」「切换范围重新加载」四条语义；改动活动卡的统计口径时必须优先跑该文件。
 
 ## 测试用例清单
 
 | ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
 |----|------|------|----------|----------|----------|------|------|----------|
-| 1 | CapabilityMotifGeometry | motifCardSitsFullyInsideTheCanvas | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `motifCardSitsFullyInsideTheCanvas` |
-| 2 | CapabilityMotifGeometry | motifSupportingGeometryStaysInsideTheCard | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `motifSupportingGeometryStaysInsideTheCard` |
-| 3 | CapabilityMotifGeometry | motifBandsStayInsideTheCardAndDoNotOverlap | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `motifBandsStayInsideTheCardAndDoNotOverlap` |
-| 4 | CapabilityMotifGeometry | motifSymbolFitsWithinTheCardForEverySupportedSize | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `motifSymbolFitsWithinTheCardForEverySupportedSize` |
-| 5 | CapabilityMotifGeometry | motifRejectsGeometryThatLeavesTheCard | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `motifRejectsGeometryThatLeavesTheCard` |
-| 6 | FlowLayoutGeometry | flowLayoutReportsTheWidestWrappedRowAndPositionsEachItem | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `flowLayoutReportsTheWidestWrappedRowAndPositionsEachItem` |
-| 7 | FlowLayoutGeometry | flowLayoutUsesNaturalWidthWithoutWrappingAndHandlesNoItems | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `flowLayoutUsesNaturalWidthWithoutWrappingAndHandlesNoItems` |
-| 8 | GuideObserver | guideStateTracksContextSelectionProjectsAndSuggestionChanges | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `guideStateTracksContextSelectionProjectsAndSuggestionChanges` |
-| 9 | GuideObserver | toolbarCoordinatorOnlyHidesProjectToolsWhileActiveAndNoProjectsExist | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolbarCoordinatorOnlyHidesProjectToolsWhileActiveAndNoProjectsExist` |
-| 10 | PluginMessageListEmptyPlugin | pluginShowsEmptyStateOnlyForSelectedConversationWithoutVisibleMessages | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginShowsEmptyStateOnlyForSelectedConversationWithoutVisibleMessages` |
-| 11 | PluginMessageListEmptyPlugin | pluginCanProvideNoSelectionEmptyStateWithoutOptionalProviders | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `pluginCanProvideNoSelectionEmptyStateWithoutOptionalProviders` |
-| 12 | PluginMessageListEmptyPlugin | pluginDoesNotBootWithoutChatSectionProvider | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginDoesNotBootWithoutChatSectionProvider` |
-| 13 | PluginMessageListEmptyPlugin | abandonedEvaluationNeverLeavesStateHanging | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `abandonedEvaluationNeverLeavesStateHanging` |
-| 14 | PromptSuggestionVisibility | promptSuggestionsRespectProjectVisibilityAndLauncherScope | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `promptSuggestionsRespectProjectVisibilityAndLauncherScope` |
-| 15 | PromptSuggestionVisibility | promptSuggestionVisibilityAndScopeMustBothMatch | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `promptSuggestionVisibilityAndScopeMustBothMatch` |
-| 16 | RegistrationEvaluationWindow | emptyStateStaysOutOfTheSlotWhileEvaluationIsInFlight | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emptyStateStaysOutOfTheSlotWhileEvaluationIsInFlight` |
-| 17 | RegistrationEvaluationWindow | emptyStateOnlyAppearsAfterEvaluationSettles | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emptyStateOnlyAppearsAfterEvaluationSettles` |
-| 18 | EmptyStateActivityLoading | loading fills the window and derives totals from both series | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `loadPopulatesWindowAndTotals` |
-| 19 | EmptyStateActivityLoading | the provider is asked for a window anchored at the model calendar | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `loadQueriesWindowStart` |
-| 20 | EmptyStateActivityLoading | re-entering the empty state on the same day reuses the loaded window | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `sameDayReentryHitsTheCacheGate` |
-| 21 | EmptyStateActivityLoading | an empty history resolves to zero instead of staying unknown | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `emptyHistoryResolvesToZero` |
-| 22 | EmptyStateActivityLoading | a missing message provider degrades to an invisible strip | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingProviderDegrades` |
-| 23 | EmptyStateActivityLoading | a stale slow load cannot overwrite a newer window | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `staleSlowLoadLosesToTheNewerOne` |
-| 24 | EmptyStateActivityLoading | token activity is tracked independently from message activity | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tokenActivityIsIndependentFromMessages` |
-| 25 | EmptyStateActivityWindow | the window covers every calendar day including idle ones | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `windowCoversIdleDays` |
-| 26 | EmptyStateActivityWindow | timestamps inside one day collapse into a single bucket | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `timestampsNormalizeIntoDayBuckets` |
-| 27 | EmptyStateActivityWindow | a same-day merge keeps the larger count regardless of arrival order | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `sameDayMergeKeepsLargerCountInEitherOrder` |
-| 28 | EmptyStateActivityWindow | levels are normalized against the busiest day in the window | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `levelsNormalizeAgainstPeak` |
-| 29 | EmptyStateActivityWindow | a quiet day next to a busy one stays on the lowest active level | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `quietDayDoesNotRoundDownToEmpty` |
-| 30 | EmptyStateActivityWindow | the only active day is the peak and lands on the top level | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `loneActiveDayIsThePeak` |
-| 31 | EmptyStateActivityWindow | an all-zero window stays entirely on the empty level | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `allZeroWindowStaysEmpty` |
-| 32 | EmptyStateActivityWindow | a window ending before it starts produces no entries | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `invertedWindowIsEmpty` |
-| 33 | EmptyStateActivityWindow | the visible range spans the first and last day of the window | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `visibleRangeCoversTheWindow` |
-| 34 | EmptyStateActivityWindow | a seeded all-zero window hides the strip instead of drawing an empty grid | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `seededZeroWindowHidesStrip` |
-| 35 | EmptyStateTokenTrend | token days fill the whole window including idle days | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tokenDaysFillWindow` |
-| 36 | EmptyStateTokenTrend | token days normalize timestamps falling inside the same day | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tokenDaysNormalizeToDayBuckets` |
-| 37 | EmptyStateTokenTrend | no token consumption keeps the trend hidden | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tokenActivityIsHiddenWhenEmpty` |
-| 38 | EmptyStateTokenTrend | seeded token days make the trend visible | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `seededTokenDaysEnableTrend` |
-| 39 | CompactTokenFormatting | values below one thousand are shown verbatim | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `smallValuesVerbatim` |
-| 40 | CompactTokenFormatting | thousands switch to one decimal below one hundred units | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `thousandsFormatting` |
-| 41 | CompactTokenFormatting | millions and billions use their own suffixes | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `largeMagnitudes` |
+| 1 | FlowLayoutGeometry | flowLayoutReportsTheWidestWrappedRowAndPositionsEachItem | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `flowLayoutReportsTheWidestWrappedRowAndPositionsEachItem` |
+| 2 | FlowLayoutGeometry | flowLayoutUsesNaturalWidthWithoutWrappingAndHandlesNoItems | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `flowLayoutUsesNaturalWidthWithoutWrappingAndHandlesNoItems` |
+| 3 | GuideObserver | guideStateTracksContextSelectionProjectsAndSuggestionChanges | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `guideStateTracksContextSelectionProjectsAndSuggestionChanges` |
+| 4 | GuideObserver | toolbarCoordinatorOnlyHidesProjectToolsWhileActiveAndNoProjectsExist | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolbarCoordinatorOnlyHidesProjectToolsWhileActiveAndNoProjectsExist` |
+| 5 | PluginMessageListEmptyPlugin | pluginShowsEmptyStateOnlyForSelectedConversationWithoutVisibleMessages | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginShowsEmptyStateOnlyForSelectedConversationWithoutVisibleMessages` |
+| 6 | PluginMessageListEmptyPlugin | pluginCanProvideNoSelectionEmptyStateWithoutOptionalProviders | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `pluginCanProvideNoSelectionEmptyStateWithoutOptionalProviders` |
+| 7 | PluginMessageListEmptyPlugin | pluginDoesNotBootWithoutChatSectionProvider | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginDoesNotBootWithoutChatSectionProvider` |
+| 8 | PluginMessageListEmptyPlugin | abandonedEvaluationNeverLeavesStateHanging | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `abandonedEvaluationNeverLeavesStateHanging` |
+| 9 | PromptSuggestionVisibility | promptSuggestionsRespectProjectVisibilityAndLauncherScope | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `promptSuggestionsRespectProjectVisibilityAndLauncherScope` |
+| 10 | PromptSuggestionVisibility | promptSuggestionVisibilityAndScopeMustBothMatch | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `promptSuggestionVisibilityAndScopeMustBothMatch` |
+| 11 | RegistrationEvaluationWindow | emptyStateStaysOutOfTheSlotWhileEvaluationIsInFlight | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emptyStateStaysOutOfTheSlotWhileEvaluationIsInFlight` |
+| 12 | RegistrationEvaluationWindow | emptyStateOnlyAppearsAfterEvaluationSettles | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emptyStateOnlyAppearsAfterEvaluationSettles` |
+| 13 | EmptyStateActivityLoading | loading fills the window and derives totals from both series | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `loadPopulatesWindowAndTotals` |
+| 14 | EmptyStateActivityLoading | the provider is asked for a window anchored at the model calendar | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `loadQueriesWindowStart` |
+| 15 | EmptyStateActivityLoading | re-entering the empty state on the same day reuses the loaded window | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `sameDayReentryHitsTheCacheGate` |
+| 16 | EmptyStateActivityLoading | an empty history resolves to zero instead of staying unknown | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `emptyHistoryResolvesToZero` |
+| 17 | EmptyStateActivityLoading | a missing message provider degrades to an invisible strip | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingProviderDegrades` |
+| 18 | EmptyStateActivityLoading | a stale slow load cannot overwrite a newer window | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `staleSlowLoadLosesToTheNewerOne` |
+| 19 | EmptyStateActivityLoading | token activity is tracked independently from message activity | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tokenActivityIsIndependentFromMessages` |
+| 20 | EmptyStateActivityWindow | the window covers every calendar day including idle ones | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `windowCoversIdleDays` |
+| 21 | EmptyStateActivityWindow | timestamps inside one day collapse into a single bucket | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `timestampsNormalizeIntoDayBuckets` |
+| 22 | EmptyStateActivityWindow | a same-day merge keeps the larger count regardless of arrival order | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `sameDayMergeKeepsLargerCountInEitherOrder` |
+| 23 | EmptyStateActivityWindow | levels are normalized against the busiest day in the window | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `levelsNormalizeAgainstPeak` |
+| 24 | EmptyStateActivityWindow | a quiet day next to a busy one stays on the lowest active level | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `quietDayDoesNotRoundDownToEmpty` |
+| 25 | EmptyStateActivityWindow | the only active day is the peak and lands on the top level | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `loneActiveDayIsThePeak` |
+| 26 | EmptyStateActivityWindow | an all-zero window stays entirely on the empty level | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `allZeroWindowStaysEmpty` |
+| 27 | EmptyStateActivityWindow | a window ending before it starts produces no entries | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `invertedWindowIsEmpty` |
+| 28 | EmptyStateActivityWindow | the visible range spans the first and last day of the window | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `visibleRangeCoversTheWindow` |
+| 29 | EmptyStateActivityWindow | a seeded all-zero window hides the strip instead of drawing an empty grid | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `seededZeroWindowHidesStrip` |
+| 30 | EmptyStateTokenTrend | token days fill the whole window including idle days | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tokenDaysFillWindow` |
+| 31 | EmptyStateTokenTrend | token days normalize timestamps falling inside the same day | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tokenDaysNormalizeToDayBuckets` |
+| 32 | EmptyStateTokenTrend | no token consumption keeps the trend hidden | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tokenActivityIsHiddenWhenEmpty` |
+| 33 | EmptyStateTokenTrend | seeded token days make the trend visible | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `seededTokenDaysEnableTrend` |
+| 34 | CompactTokenFormatting | values below one thousand are shown verbatim | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `smallValuesVerbatim` |
+| 35 | CompactTokenFormatting | thousands switch to one decimal below one hundred units | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `thousandsFormatting` |
+| 36 | CompactTokenFormatting | millions and billions use their own suffixes | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `largeMagnitudes` |
 
-| 42 | EmptyStateActivityLoading | a zero result stays retryable so late-arriving data still shows | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `zeroResultDoesNotPinTheStrip` |
-| 43 | EmptyStateActivityLoading | a non-zero result still short-circuits repeat queries | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nonZeroResultKeepsTheCacheGate` |
-| 44 | MessageListEmptyUITestingSupport | seeds exactly the three conversations the UI tests depend on | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureSeedsAllThreeConversations` |
-| 45 | MessageListEmptyUITestingSupport | selects the empty conversation as the starting state | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureSelectsEmptyConversation` |
-| 46 | MessageListEmptyUITestingSupport | the empty conversation really has no messages | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureEmptyConversationIsEmpty` |
-| 47 | MessageListEmptyUITestingSupport | the history conversation has the messages the activity strip counts | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureHistoryConversationHasMessages` |
-| 48 | MessageListEmptyUITestingSupport | activity counts include tool messages, unlike the empty-state check | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fixtureActivityCountsUseCrossConversationScope` |
-| 49 | MessageListEmptyUITestingSupport | history messages carry tokens so the trend line has data | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureHistoryCarriesTokens` |
-| 50 | MessageListEmptyUITestingSupport | the tool-only conversation stays empty for the empty-state check | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fixtureToolOnlyConversationCountsAsEmpty` |
-| 51 | MessageListEmptyUITestingSupport | repeated seed does not duplicate conversations | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `fixtureSeedIsIdempotent` |
-| 52 | MessageListEmptyUITestingSupport | the fixture only activates with its launch argument | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fixtureOnlyActivatesWithLaunchArgument` |
+| 37 | EmptyStateActivityLoading | a zero result stays retryable so late-arriving data still shows | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `zeroResultDoesNotPinTheStrip` |
+| 38 | EmptyStateActivityLoading | a non-zero result still short-circuits repeat queries | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nonZeroResultKeepsTheCacheGate` |
+| 39 | MessageListEmptyUITestingSupport | seeds exactly the three conversations the UI tests depend on | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureSeedsAllThreeConversations` |
+| 40 | MessageListEmptyUITestingSupport | selects the empty conversation as the starting state | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureSelectsEmptyConversation` |
+| 41 | MessageListEmptyUITestingSupport | the empty conversation really has no messages | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureEmptyConversationIsEmpty` |
+| 42 | MessageListEmptyUITestingSupport | the history conversation has the messages the activity strip counts | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureHistoryConversationHasMessages` |
+| 43 | MessageListEmptyUITestingSupport | activity counts include tool messages, unlike the empty-state check | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fixtureActivityCountsUseCrossConversationScope` |
+| 44 | MessageListEmptyUITestingSupport | history messages carry tokens so the trend line has data | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fixtureHistoryCarriesTokens` |
+| 45 | MessageListEmptyUITestingSupport | the tool-only conversation stays empty for the empty-state check | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fixtureToolOnlyConversationCountsAsEmpty` |
+| 46 | MessageListEmptyUITestingSupport | repeated seed does not duplicate conversations | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `fixtureSeedIsIdempotent` |
+| 47 | MessageListEmptyUITestingSupport | the fixture only activates with its launch argument | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fixtureOnlyActivatesWithLaunchArgument` |
 
-| 53 | EmptyStateAccessibility | emptyStateAccessibilityIdentifiersAreStableAndDistinct | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emptyStateAccessibilityIdentifiersAreStableAndDistinct` |
+| 48 | EmptyStateAccessibility | emptyStateAccessibilityIdentifiersAreStableAndDistinct | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `emptyStateAccessibilityIdentifiersAreStableAndDistinct` |
 
-| 54 | ActivityFooterLayout | activityCardOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activityCardOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth` |
-| 55 | ActivityFooterLayout | activityCardLayoutIgnoresWidthBeyondTheCardCap | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activityCardLayoutIgnoresWidthBeyondTheCardCap` |
-| 56 | ActivitySparklineGeometry | an empty series draws nothing | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptySeriesHasNoPoints` |
-| 57 | ActivitySparklineGeometry | a zero-sized canvas draws nothing | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `zeroSizedCanvasHasNoPoints` |
-| 58 | ActivitySparklineGeometry | the peak sits at the top of the canvas and the valley near the bottom | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `peakAndValleyAnchorToTheCanvas` |
-| 59 | ActivitySparklineGeometry | every point stays inside the canvas | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pointsStayInsideTheCanvas` |
-| 60 | ActivitySparklineGeometry | the series is normalized against its own peak | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `normalizationIsRelativeToThePeak` |
-| 61 | ActivitySparklineGeometry | a flat series becomes a horizontal line | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `flatSeriesIsHorizontal` |
-| 62 | ActivitySparklineGeometry | a single sample is centered horizontally | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `singleSampleIsCentered` |
-| 63 | Project context | 家目录在展示路径里折叠成 ~ | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `homeDirectoryIsFolded` |
-| 64 | Project context | 项目类型由清单文件推断 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `detectsProjectType` |
-| 65 | Project context | 没有清单文件的项目没有类型标签 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `unknownTypeHasNoLabel` |
-| 66 | Project context | 索引行报告已索引的文件数 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `indexRowAppears` |
-| 67 | Project context | 只有存在未提交改动时才出现 Git 行 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gitRowFollowsTheWorkingTree` |
-| 68 | Project context | 上次会话行指向最近一次会话 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `lastConversationRowAppears` |
-| 69 | Project context | 详情报告本项目的会话数 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `detailsReportConversationCount` |
-| 70 | Project context | 入口文件变成标签 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `notableFilesBecomeLabels` |
-| 71 | Project context | 没有项目时清空全部状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `noProjectClearsEverything` |
-| 72 | Activity scope | 项目维度必须只统计这个项目的消息 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `projectScopeFiltersByConversation` |
-| 73 | Activity scope | 没有项目时退回全局口径 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fallsBackToGlobalWithoutProject` |
-| 74 | Activity scope | 项目维度没有历史时仍然显示 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `projectScopeStaysVisibleWithoutActivity` |
-| 75 | Activity scope | 切换统计范围会重新加载窗口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `switchingScopeReloads` |
-| 76 | Project context | 索引进行中时显示进行态而不是旧的文件数 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `indexingStateShowsProgress` |
+| 49 | ActivityFooterLayout | activityCardOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activityCardOnlyGoesSideBySideWhenTheChartKeepsItsMinimumWidth` |
+| 50 | ActivityFooterLayout | activityCardLayoutIgnoresWidthBeyondTheCardCap | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `activityCardLayoutIgnoresWidthBeyondTheCardCap` |
+| 51 | ActivitySparklineGeometry | an empty series draws nothing | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptySeriesHasNoPoints` |
+| 52 | ActivitySparklineGeometry | a zero-sized canvas draws nothing | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `zeroSizedCanvasHasNoPoints` |
+| 53 | ActivitySparklineGeometry | the peak sits at the top of the canvas and the valley near the bottom | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `peakAndValleyAnchorToTheCanvas` |
+| 54 | ActivitySparklineGeometry | every point stays inside the canvas | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pointsStayInsideTheCanvas` |
+| 55 | ActivitySparklineGeometry | the series is normalized against its own peak | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `normalizationIsRelativeToThePeak` |
+| 56 | ActivitySparklineGeometry | a flat series becomes a horizontal line | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `flatSeriesIsHorizontal` |
+| 57 | ActivitySparklineGeometry | a single sample is centered horizontally | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `singleSampleIsCentered` |
+| 58 | Project context | 家目录在展示路径里折叠成 ~ | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `homeDirectoryIsFolded` |
+| 59 | Project context | 项目类型由清单文件推断 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `detectsProjectType` |
+| 60 | Project context | 没有清单文件的项目没有类型标签 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `unknownTypeHasNoLabel` |
+| 61 | Project context | 索引行报告已索引的文件数 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `indexRowAppears` |
+| 62 | Project context | 只有存在未提交改动时才出现 Git 行 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `gitRowFollowsTheWorkingTree` |
+| 63 | Project context | 上次会话行指向最近一次会话 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `lastConversationRowAppears` |
+| 64 | Project context | 详情报告本项目的会话数 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `detailsReportConversationCount` |
+| 65 | Project context | 入口文件变成标签 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `notableFilesBecomeLabels` |
+| 66 | Project context | 没有项目时清空全部状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `noProjectClearsEverything` |
+| 67 | Activity scope | 项目维度必须只统计这个项目的消息 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `projectScopeFiltersByConversation` |
+| 68 | Activity scope | 没有项目时退回全局口径 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `fallsBackToGlobalWithoutProject` |
+| 69 | Activity scope | 项目维度没有历史时仍然显示 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `projectScopeStaysVisibleWithoutActivity` |
+| 70 | Activity scope | 切换统计范围会重新加载窗口 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `switchingScopeReloads` |
+| 71 | Project context | 索引进行中时显示进行态而不是旧的文件数 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `indexingStateShowsProgress` |
+| 72 | Project context | 点击「打开文件树」先切回 Chat 再选中文件树（**回归 #1014**） | Browser 等工作区已隐藏 Rail，活动栏处于其它入口 | 调用 `ProjectContextNavigator.openFileTree`，用记录器观察调用顺序 | 先 `activateItem` Chat 入口，再 `activateTab` 文件树；顺序不可颠倒 | P0 | ✅ 已覆盖 | `fileTreeNavigationActivatesChatFirst` |
+| 73 | Project context | 缺少活动栏时仍退回激活文件树 tab（**#1014 护栏**） | 活动栏为 nil | 同上 | 只发生 `activateTab`，不崩溃、不吞掉导航 | P1 | ✅ 已覆盖 | `fileTreeNavigationFallsBackToRail` |
+| 74 | EmptyStateTokenTrend | 有消息但零 token 时隐藏曲线与分隔线，只留热力图（**回归 #1042**） | 窗口内消息数 > 0、token 合计为 0 | 构造模型并读取 `showsTokenTrend` | 为 `false`；`tokenDays` 全为零但不会被绘制 | P1 | ✅ 已覆盖 | `zeroTokensHideTrendWithMessages` |
+| 75 | EmptyStateTokenTrend | 有 token 消耗时曲线随热力图一起显示 | 窗口内消息数 > 0、token 合计 > 0 | 构造模型并读取 `showsTokenTrend` | 为 `true`，曲线数据包含非零值 | P1 | ✅ 已覆盖 | `tokenActivityShowsTrendWithMessages` |
+| 76 | Project context | Git 入口已存在时直接激活，不重复启用插件 | Activity Bar 已含 Git Workspace 入口 | 调用 `openGitWorkspace` | 只发生一次 `activateItem` | P1 | ✅ 已覆盖 | `gitNavigationActivatesExistingEntry` |
+| 77 | Project context | Git 入口缺失时先启用 Git Workspace 再激活新入口（**回归 #1041**） | 插件默认禁用、Activity Bar 无入口，启停控制可用 | 启用回调中模拟注册入口，调用 `openGitWorkspace` | 先 `enablePlugin`，随后激活刚注册的入口 | P1 | ✅ 已覆盖 | `gitNavigationEnablesDisabledWorkspace` |
+| 78 | Project context | 启用失败时不激活任何入口 | 启停控制返回失败 | 调用 `openGitWorkspace` | 只记录一次启用尝试，界面不被改动 | P1 | ✅ 已覆盖 | `gitNavigationStopsWhenEnablingFails` |
+| 79 | Project context | Git 行仅在目标可达时提供动作 | 入口缺失 / 有启停控制 / 入口已存在三种组合 | 调用 `canOpenGitWorkspace` | 仅后两种为 `true`，否则不渲染该死按钮 | P1 | ✅ 已覆盖 | `gitRowAvailabilityFollowsEntryAndController` |
 
-> 说明：全部 **76 条单元场景**已在本包 `swift test` 中实跑通过（6 suites / 62 tests，约 0.02 s）；另有 6 条 UI 测试见下方章节。
+> 说明：全部 **79 条单元场景**已在本包 `swift test` 中实跑通过；另有 6 条 UI 测试见下方章节。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 13 / 13
-- P1: 已覆盖 55 / 55
+- P1: 已覆盖 58 / 58
 - P2: 已覆盖 8 / 8
-- **合计: 76 / 76**（仅表示清单场景，非源码覆盖率）
+- **合计: 79 / 79**（仅表示清单场景，非源码覆盖率）
 - **UI 测试: 6 条**（3 通过 / 2 跳过 / 1 未执行，见「UI 测试」章节）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
-- **P1**: 其余功能性用例（55 条）
+- **P1**: 其余功能性用例（58 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## UI 测试
@@ -270,7 +272,7 @@ App 启动时空态先渲染、跨会话统计稍后就绪，首次查询**本�
 
 ## 跨平台说明
 
-- 单元测试：Package 声明 macOS 14+, iOS 17+，75 条用例位于 `Tests/`
+- 单元测试：Package 声明 macOS 14+, iOS 17+，79 条用例位于 `Tests/`
 - UI 测试：仅 macOS（`LumiUITests` target），6 条用例
 
 ## 测试执行

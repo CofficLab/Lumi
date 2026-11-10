@@ -231,9 +231,41 @@ extension BrowserSession {
     /// - Parameter fullPage: 是否截取整页（纵向拼接）。
     /// - Returns: PNG 图片数据。
     func screenshot(fullPage: Bool) async throws -> Data {
+        guard fullPage, let geometry = await fullPageGeometry() else {
+            return try await capture(rect: nil, snapshotWidth: nil)
+        }
+        return try await captureFullPage(geometry)
+    }
+
+    /// 整页截图按几何上限降采样，再按附件大小上限逐级缩小。
+    private func captureFullPage(_ geometry: BrowserScreenshotGeometry) async throws -> Data {
+        var scale = geometry.outputScale
+        var lastSize = 0
+        // 最多再降采样两次；仍未达标就拒绝，避免无限重试。
+        for _ in 0..<3 {
+            let data = try await capture(
+                rect: geometry.rect,
+                snapshotWidth: geometry.snapshotWidth(scale: scale)
+            )
+            if data.count <= BrowserScreenshotGeometry.maxAttachmentBytes {
+                return data
+            }
+            lastSize = data.count
+            scale *= 0.5
+        }
+        throw SessionError.screenshotTooLarge(
+            bytes: lastSize,
+            limit: BrowserScreenshotGeometry.maxAttachmentBytes
+        )
+    }
+
+    private func capture(rect: CGRect?, snapshotWidth: CGFloat?) async throws -> Data {
         let configuration = WKSnapshotConfiguration()
-        if fullPage, let rect = await fullPageContentRect() {
+        if let rect {
             configuration.rect = rect
+        }
+        if let snapshotWidth {
+            configuration.snapshotWidth = NSNumber(value: Double(snapshotWidth))
         }
         configuration.afterScreenUpdates = true
 
@@ -256,8 +288,8 @@ extension BrowserSession {
         #endif
     }
 
-    /// 计算整页内容的高度。
-    private func fullPageContentRect() async -> CGRect? {
+    /// 计算整页内容的截图几何信息。
+    private func fullPageGeometry() async -> BrowserScreenshotGeometry? {
         let script = """
         (() => {
           const body = document.body;
@@ -284,8 +316,46 @@ extension BrowserSession {
               height > 0, width > 0 else {
             return nil
         }
-        // 整页截图有高度上限，超过后截断即可——超大页面截图会撑爆内存。
-        let capped = min(height, 16_000)
-        return CGRect(x: 0, y: 0, width: width, height: capped)
+        return BrowserScreenshotGeometry.fitted(width: width, height: height)
+    }
+}
+
+/// 整页截图的内容边界与降采样策略。
+///
+/// `WKSnapshotConfiguration.rect` 直接使用页面 CSS 尺寸；如果只钳制高度，
+/// 极宽页面会让快照位图按宽度无界增长（issue #1060）。这里同时限制
+/// 单边尺寸、总像素数，并为最终附件大小预留降采样空间。
+struct BrowserScreenshotGeometry: Equatable {
+    /// 单边上限（点）。
+    static let maxDimension: CGFloat = 16_000
+    /// 单张截图的总像素上限。
+    static let maxPixels: CGFloat = 16_000_000
+    /// 返回给模型的 PNG 附件大小上限。
+    static let maxAttachmentBytes = 12 * 1_024 * 1_024
+
+    let rect: CGRect
+    /// 相对页面尺寸的输出缩放；1 表示按原尺寸输出。
+    let outputScale: CGFloat
+
+    static func fitted(width: CGFloat, height: CGFloat) -> BrowserScreenshotGeometry {
+        let clampedWidth = min(max(width, 1), maxDimension)
+        let clampedHeight = min(max(height, 1), maxDimension)
+        let pixels = clampedWidth * clampedHeight
+        let scale = pixels > maxPixels ? (maxPixels / pixels).squareRoot() : 1
+        return BrowserScreenshotGeometry(
+            rect: CGRect(x: 0, y: 0, width: clampedWidth, height: clampedHeight),
+            outputScale: scale
+        )
+    }
+
+    /// 指定缩放下的输出宽度（点）。
+    func snapshotWidth(scale: CGFloat) -> CGFloat {
+        max(1, rect.width * scale)
+    }
+
+    /// 按 `outputScale` 输出时的像素总数。
+    var outputPixels: CGFloat {
+        let scale = outputScale
+        return rect.width * scale * rect.height * scale
     }
 }

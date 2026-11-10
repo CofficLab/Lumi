@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginCaffeinate 的实现包，包含 10 个主要类型；当前测试覆盖 14 条用例。
+PluginCaffeinate 的实现包，包含 10 个主要类型；当前测试覆盖 15 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 14
+测试文件: 2 个，用例总数: 15
 
 核心组件（源码目录）:
 - `Services/`
@@ -32,7 +32,7 @@ PluginCaffeinate 的实现包，包含 10 个主要类型；当前测试覆盖 1
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **CaffeinateDuration**（9 条）：由 `indefiniteTimeIntervalIsZero`、`minutesConvertToSeconds`、`hoursConvertToSeconds` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **综合**（5 条）：由 `pluginMetadataIsStable`、`agentToolsExistAndHaveSchemas`、`pluginRegistersAgentTools` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（6 条）：由 `pluginMetadataIsStable`、`agentToolsExistAndHaveSchemas`、`pluginRegistersAgentTools` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -52,27 +52,28 @@ PluginCaffeinate 的实现包，包含 10 个主要类型；当前测试覆盖 1
 | 12 | 综合 | pluginRegistersAgentTools | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginRegistersAgentTools` |
 | 13 | 综合 | localizationCatalogIsPackaged | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `localizationCatalogIsPackaged` |
 | 14 | 综合 | migratesLegacyStorageToPluginIDDirectory | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `migratesLegacyStorageToPluginIDDirectory` |
+| 15 | 综合 | unloadRemovesMenuBarContribution | 内核已注册 MenuBarProviding | 启动插件后卸载 | 菜单栏贡献随插件卸载被移除 | P1 | ✅ 已覆盖 | `unloadRemovesMenuBarContribution` |
 
-> 说明：全部 **14 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **15 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 10 / 10
+- P1: 已覆盖 11 / 11
 - P2: 已覆盖 4 / 4
-- **合计: 14 / 14**（仅表示清单场景，非源码覆盖率）
+- **合计: 15 / 15**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（10 条）
+- **P1**: 其余功能性用例（11 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 14 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 15 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

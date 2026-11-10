@@ -19,25 +19,34 @@ public struct DatabaseWorkspaceView: View {
     }
 
     public var body: some View {
-        MainView(viewModel: viewModel)
-            .inspector(isPresented: $viewModel.inspectorVisible) {
+        // macOS 13 兼容实现：`.inspector(isPresented:)` 是 macOS 14 独占 API，
+        // 这里改用 HStack 自行实现右侧可开关面板（宽度与 `.inspectorColumnWidth`
+        // 的 240...560 区间保持一致）。
+        HStack(spacing: 0) {
+            MainView(viewModel: viewModel)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            if viewModel.inspectorVisible {
+                AppDivider()
+                    .frame(width: 1)
                 DatabaseInspectorView(viewModel: viewModel)
-                    .inspectorColumnWidth(min: 240, ideal: 320, max: 560)
+                    .frame(minWidth: 240, idealWidth: 320, maxWidth: 560)
             }
-            .overlay(alignment: .topTrailing) {
-                Button {
-                    viewModel.toggleInspector()
-                } label: {
-                    Image(systemName: viewModel.inspectorVisible ? "sidebar.trailing.collapse" : "sidebar.trailing")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .padding(8)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .help(pluginLocalization.string("Toggle Inspector"))
-                .padding(.top, 6)
-                .padding(.trailing, 6)
+        }
+        .overlay(alignment: .topTrailing) {
+            Button {
+                viewModel.toggleInspector()
+            } label: {
+                Image(systemName: viewModel.inspectorVisible ? "sidebar.trailing.collapse" : "sidebar.trailing")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .padding(8)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .help(pluginLocalization.string("Toggle Inspector"))
+            .padding(.top, 6)
+            .padding(.trailing, 6)
+        }
     }
 }

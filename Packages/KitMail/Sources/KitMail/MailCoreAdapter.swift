@@ -33,6 +33,10 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
     private let smtpSession: MCOSMTPSession
     private let queue = DispatchQueue(label: "com.lumi.kitmail.adapter", qos: .userInitiated)
 
+    private var bridge: MailCoreCallbackBridge {
+        MailCoreCallbackBridge(queue: queue)
+    }
+
     public init(account: MailAccountConfig, password: String) {
         self.account = account
 
@@ -58,32 +62,34 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
     // MARK: - MailSessionServing
 
     public func connect() async throws {
-        try await perform { completion in
+        try await bridge.performVoid { completion in
             guard let op = self.imapSession.connectOperation() else {
-                completion(nil, MailError.protocolError("operation creation failed"))
+                completion(MailError.protocolError("operation creation failed"))
                 return
             }
             op.start { error in
-                completion(nil, error)
+                completion(error)
             }
-        } as Void
+        }
     }
 
     public func disconnect() async {
-        try? await perform { completion in
+        try? await bridge.performVoid { completion in
             guard let op = self.imapSession.disconnectOperation() else {
-                completion(nil, MailError.protocolError("operation creation failed"))
+                completion(MailError.protocolError("operation creation failed"))
                 return
             }
             op.start { error in
-                completion(nil, error)
+                completion(error)
             }
-        } as Void
+        }
     }
 
     public func listFolders() async throws -> [MailFolder] {
-        let folders: [MCOIMAPFolder] = try await perform { completion in
-            guard let op = self.imapSession.fetchSubscribedFoldersOperation() else {
+        let folders: [MCOIMAPFolder] = try await bridge.perform { completion in
+            // 协议约定列出全部文件夹：使用 IMAP LIST（全部）而非 LSUB（已订阅），
+            // 否则未订阅但仍存在的文件夹会从工作区消失。
+            guard let op = Self.fetchFoldersOperation(using: self.imapSession) else {
                 completion(nil, MailError.protocolError("operation creation failed"))
                 return
             }
@@ -100,6 +106,14 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
         }
     }
 
+    /// 文件夹枚举操作：始终取「全部文件夹」（IMAP LIST）。
+    /// 独立成函数以便测试锁定不会退回 `fetchSubscribedFoldersOperation`。
+    static func fetchFoldersOperation(
+        using session: MCOIMAPSession
+    ) -> MCOIMAPFetchFoldersOperation? {
+        session.fetchAllFoldersOperation()
+    }
+
     public func fetchMessages(
         folder: String,
         sinceUID: UInt64?,
@@ -107,10 +121,12 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
     ) async throws -> [MailMessageSummary] {
         let messages: [MCOIMAPMessage]
         if let sinceUID {
-            // 增量：uid > sinceUID 的全部新邮件
-            let range = MCORangeMake(UInt64(sinceUID) + 1, UINT64_MAX - UInt64(sinceUID))
+            // 增量：uid > sinceUID 的全部新邮件。
+            // 游标同样必须先校验，避免 +1 在 UInt64.max 上溢出。
+            let cursor = try Self.validatedUID(sinceUID)
+            let range = MCORangeMake(UInt64(cursor) + 1, UINT64_MAX - UInt64(cursor))
             let uids = MCOIndexSet(range: range)
-            messages = try await perform { completion in
+            messages = try await bridge.perform { completion in
                 guard let op = self.imapSession.fetchMessagesOperation(
                     withFolder: folder,
                     requestKind: [.headers, .flags, .structure],
@@ -125,7 +141,7 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
             }
         } else {
             // 全量：取最新 limit 条（倒序）
-            let info: MCOIMAPFolderInfo = try await perform { completion in
+            let info: MCOIMAPFolderInfo = try await bridge.perform { completion in
                 guard let op = self.imapSession.folderInfoOperation(folder) else {
                     completion(nil, MailError.protocolError("operation creation failed"))
                     return
@@ -138,7 +154,7 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
             let upper = max(count - Int64(limit) + 1, 1)
             let range = MCORangeMake(UInt64(upper), UInt64(count - upper + 1))
             let numbers = MCOIndexSet(range: range)
-            messages = try await perform { completion in
+            messages = try await bridge.perform { completion in
                 guard let op = self.imapSession.fetchMessagesByNumberOperation(
                     withFolder: folder,
                     requestKind: [.headers, .flags, .structure],
@@ -156,8 +172,11 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
     }
 
     public func fetchBody(uid: UInt64, folder: String) async throws -> MailMessageDetail {
-        let rawData: Data = try await perform { completion in
-            guard let op = self.imapSession.fetchMessageOperation(withFolder: folder, uid: UInt32(uid)) else {
+        // MailCore 的接口只接受 UInt32；越界 UID 在这里转为参数错误，
+        // 而不是在 `UInt32(uid)` 处 trap。
+        let uid32 = try Self.validatedUID(uid)
+        let rawData: Data = try await bridge.perform { completion in
+            guard let op = self.imapSession.fetchMessageOperation(withFolder: folder, uid: uid32) else {
                 completion(nil, MailError.protocolError("operation creation failed"))
                 return
             }
@@ -189,7 +208,7 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
 
         let html = parser.htmlRendering(with: nil)
         let plain = parser.plainTextRendering()
-        let attachments = try await fetchAttachments(for: parser, uid: uid, folder: folder)
+        let attachments = try await fetchAttachments(for: parser, uid: uid32, folder: folder)
 
         return MailMessageDetail(
             summary: summary,
@@ -206,6 +225,7 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
         isRead: Bool?,
         isFlagged: Bool?
     ) async throws {
+        let uid32 = try Self.validatedUID(uid)
         var pending: [(kind: MCOIMAPStoreFlagsRequestKind, flags: MCOMessageFlag)] = []
         if let isRead {
             pending.append((isRead ? .add : .remove, .seen))
@@ -214,20 +234,20 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
             pending.append((isFlagged ? .add : .remove, .flagged))
         }
         for (kind, flags) in pending {
-            try await perform { completion in
+            try await bridge.performVoid { completion in
                 guard let op = self.imapSession.storeFlagsOperation(
                     withFolder: folder,
-                    uids: MCOIndexSet(index: UInt64(uid)),
+                    uids: MCOIndexSet(index: UInt64(uid32)),
                     kind: kind,
                     flags: flags
                 ) else {
-                    completion(nil, MailError.protocolError("operation creation failed"))
+                    completion(MailError.protocolError("operation creation failed"))
                     return
                 }
                 op.start { error in
-                    completion(nil, error)
+                    completion(error)
                 }
-            } as Void
+            }
         }
     }
 
@@ -239,7 +259,7 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
             subject,
             other: MCOIMAPSearchExpression.searchOr(from, other: recipient)
         )
-        let indexSet: MCOIndexSet = try await perform { completion in
+        let indexSet: MCOIndexSet = try await bridge.perform { completion in
             guard let op = self.imapSession.searchExpressionOperation(withFolder: folder, expression: expression) else {
                 completion(nil, MailError.protocolError("operation creation failed"))
                 return
@@ -256,31 +276,31 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
     }
 
     public func sendMessage(mime: Data) async throws {
-        try await perform { completion in
+        try await bridge.performVoid { completion in
             guard let op = self.smtpSession.sendOperation(with: mime) else {
-                completion(nil, MailError.protocolError("operation creation failed"))
+                completion(MailError.protocolError("operation creation failed"))
                 return
             }
             op.start { error in
-                completion(nil, error)
+                completion(error)
             }
-        } as Void
+        }
     }
 
     public func appendDraft(mime: Data, folder: String) async throws {
-        try await perform { completion in
+        try await bridge.performVoid { completion in
             guard let op = self.imapSession.appendMessageOperation(
                 withFolder: folder,
                 messageData: mime,
                 flags: .draft
             ) else {
-                completion(nil, MailError.protocolError("operation creation failed"))
+                completion(MailError.protocolError("operation creation failed"))
                 return
             }
             op.start { error, _ in
-                completion(nil, error)
+                completion(error)
             }
-        } as Void
+        }
     }
 
     // MARK: - 映射
@@ -341,7 +361,7 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
     /// 遍历消息结构，对需要网络的附件 part 下载并落盘。
     private func fetchAttachments(
         for parser: MCOMessageParser,
-        uid: UInt64,
+        uid: UInt32,
         folder: String
     ) async throws -> [MailAttachment] {
         let parts = parser.attachments as? [MCOAbstractPart] ?? []
@@ -374,10 +394,10 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
             // 需从服务器下载：partID / encoding 在 MCOIMAPPart 上
             guard let imapPart = part as? MCOIMAPPart,
                   let partID = imapPart.partID else { continue }
-            let data: Data = try await perform { completion in
+            let data: Data = try await bridge.perform { completion in
                 guard let op = self.imapSession.fetchMessageAttachmentOperation(
                     withFolder: folder,
-                    uid: UInt32(uid),
+                    uid: uid,
                     partID: partID,
                     encoding: imapPart.encoding
                 ) else {
@@ -403,6 +423,16 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
         return results
     }
 
+    /// 收窄 UID 前的统一校验：非法值转为 `MailError.invalidArgument`。
+    private static func validatedUID(_ uid: UInt64) throws -> UInt32 {
+        guard let value = MailUID.validated(uid) else {
+            throw MailError.invalidArgument(
+                "uid must be between 1 and \(MailUID.maximum), got \(uid)"
+            )
+        }
+        return value
+    }
+
     private func attachmentDirectory() -> URL {
         let base = FileManager.default.temporaryDirectory
             .appendingPathComponent("KitMail", isDirectory: true)
@@ -418,36 +448,7 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
         return sanitized.isEmpty ? "attachment" : sanitized
     }
 
-    // MARK: - 并发桥接
-
-    /// 串行队列上执行 MailCore 操作并桥接为 async/await。
-    /// 带 30s 超时 watchdog；回调与 watchdog 经 `CallbackGate` 只生效一次。
-    private func perform<T: Sendable>(
-        timeout: TimeInterval = MailCoreAdapter.operationTimeout,
-        _ run: @escaping (@escaping (T?, Error?) -> Void) -> Void
-    ) async throws -> T {
-        try await withCheckedThrowingContinuation { continuation in
-            let gate = CallbackGate()
-            queue.asyncAfter(deadline: .now() + timeout) {
-                _ = gate.once {
-                    continuation.resume(throwing: MailError.network)
-                }
-            }
-            queue.async {
-                run { value, error in
-                    _ = gate.once {
-                        if let error {
-                            continuation.resume(throwing: Self.mapError(error))
-                        } else if let value {
-                            continuation.resume(returning: value)
-                        } else {
-                            continuation.resume(throwing: MailError.protocolError("empty result"))
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // MARK: - 错误映射
 
     /// MCOErrorCode → MailError。
     static func mapError(_ error: Error) -> MailError {
@@ -472,6 +473,69 @@ public final class MailCoreAdapter: MailSessionServing, @unchecked Sendable {
             return .notFound
         default:
             return .protocolError(nsError.localizedDescription)
+        }
+    }
+}
+
+/// MailCore 回调 → async/await 的桥接（内部类型，便于测试直接驱动回调）。
+///
+/// 操作在传入的串行队列上执行；回调与超时 watchdog 经 `CallbackGate`
+/// 只生效一次。有返回值的操作走 `perform`；Void 操作走 `performVoid`——
+/// MailCore 的 Void 回调成功时是 `completion(nil, nil)`，若按 `perform`
+/// 的「无 value 即空结果」规则处理，会被误判为协议错误。
+struct MailCoreCallbackBridge: Sendable {
+    let queue: DispatchQueue
+
+    func perform<T: Sendable>(
+        timeout: TimeInterval = MailCoreAdapter.operationTimeout,
+        _ run: @escaping (@escaping (T?, Error?) -> Void) -> Void
+    ) async throws -> T {
+        try await withCheckedThrowingContinuation { continuation in
+            let gate = CallbackGate()
+            queue.asyncAfter(deadline: .now() + timeout) {
+                _ = gate.once {
+                    continuation.resume(throwing: MailError.network)
+                }
+            }
+            queue.async {
+                run { value, error in
+                    _ = gate.once {
+                        if let error {
+                            continuation.resume(throwing: MailCoreAdapter.mapError(error))
+                        } else if let value {
+                            continuation.resume(returning: value)
+                        } else {
+                            continuation.resume(throwing: MailError.protocolError("empty result"))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// 无返回值操作：`error == nil` 即成功，不再要求回调携带 value。
+    func performVoid(
+        timeout: TimeInterval = MailCoreAdapter.operationTimeout,
+        _ run: @escaping (@escaping (Error?) -> Void) -> Void
+    ) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let gate = CallbackGate()
+            queue.asyncAfter(deadline: .now() + timeout) {
+                _ = gate.once {
+                    continuation.resume(throwing: MailError.network)
+                }
+            }
+            queue.async {
+                run { error in
+                    _ = gate.once {
+                        if let error {
+                            continuation.resume(throwing: MailCoreAdapter.mapError(error))
+                        } else {
+                            continuation.resume()
+                        }
+                    }
+                }
+            }
         }
     }
 }

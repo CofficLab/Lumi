@@ -143,22 +143,7 @@ public final class ProjectsPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
                     id: "\(id).rag-status",
                     order: 150
                 ) { projectPath in
-                    let capability = ProjectRAGStatusCapability {
-                        kernel.resolveProvider((any ProjectRAGProviding).self)
-                    }
-                    let viewModel = ProjectRAGStatusViewModel(
-                        projectPath: projectPath,
-                        capability: capability
-                    )
-                    let observer = ProjectRAGStatusObserver(
-                        capability: capability,
-                        viewModel: viewModel
-                    )
-                    self.ragStatusObservers[projectPath] = observer
-                    return ProjectRAGStatusSection(
-                        projectPath: projectPath,
-                        viewModel: viewModel
-                    )
+                    self.makeRAGStatusSection(projectPath: projectPath, kernel: kernel)
                 }
             ])
             settings.addEntries([
@@ -172,6 +157,40 @@ public final class ProjectsPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
                 },
             ])
         }
+    }
+
+    /// 构建设置页的项目 RAG 状态区块。
+    ///
+    /// SwiftUI 会在父视图重建时反复调用该工厂，而详情页同时只展示一个项目；
+    /// 先注销旧观察者，避免每次重建都在 `ProjectRAGProvider` 中留下一份
+    /// 永远收不到通知的失效回调（issue #1065）。
+    func makeRAGStatusSection(projectPath: String, kernel: KernelCoreContainer) -> ProjectRAGStatusSection {
+        discardRAGStatusObservers()
+        let capability = ProjectRAGStatusCapability {
+            kernel.resolveProvider((any ProjectRAGProviding).self)
+        }
+        let viewModel = ProjectRAGStatusViewModel(
+            projectPath: projectPath,
+            capability: capability
+        )
+        let observer = ProjectRAGStatusObserver(
+            capability: capability,
+            viewModel: viewModel
+        )
+        ragStatusObservers[projectPath] = observer
+        return ProjectRAGStatusSection(
+            projectPath: projectPath,
+            viewModel: viewModel
+        )
+    }
+
+    /// 注销全部详情观察者。详情切换或视图销毁后，旧观察者不再有可见的
+    /// 订阅方，留在 Provider 中只会累积通知开销。
+    private func discardRAGStatusObservers() {
+        for observer in ragStatusObservers.values {
+            observer.cancel()
+        }
+        ragStatusObservers.removeAll()
     }
 
     public func onReady(kernel: KernelCoreContainer) throws {
@@ -237,10 +256,7 @@ public final class ProjectsPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
             .removeEntries(ids: ["\(id).settings"])
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeProjectDetailSections(ids: ["\(id).rag-status"])
-        for observer in ragStatusObservers.values {
-            observer.cancel()
-        }
-        ragStatusObservers.removeAll()
+        discardRAGStatusObservers()
         ProjectsRuntime.reset()
     }
 

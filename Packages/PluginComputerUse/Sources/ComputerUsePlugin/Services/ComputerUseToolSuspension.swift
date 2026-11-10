@@ -88,6 +88,29 @@ extension SuperAgentTool where Self: ComputerUseSuspendingTool {
     }
 }
 
+/// 解析 Computer Use 授权卡片回传的恢复回答。
+///
+/// 卡片把决策编码为 `<token>\n<说明>`（见 `ComputerUseAuthorizationRowRenderer.resolve`）。
+/// 允许必须重新执行工具拿到真实观察/操作结果；拒绝不能重新执行，
+/// 否则会再次挂起等一个已经给出的答案。
+func computerUseUserResponseAction(for answer: String) -> ToolUserResponseAction {
+    let lines = answer.split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: false)
+    let decisionToken = lines.first
+        .map(String.init)?
+        .trimmingCharacters(in: .whitespacesAndNewlines) ?? answer
+    switch ComputerUseAuthorizationResolver.decision(for: decisionToken) {
+    case .allowForTask:
+        return .reexecute
+    case .deny:
+        let message = lines.count > 1
+            ? String(lines[1]).trimmingCharacters(in: .whitespacesAndNewlines)
+            : ""
+        return .reject(reason: message.isEmpty ? answer : message)
+    case nil:
+        return .returnAnswer
+    }
+}
+
 /// 标记支持聊天内授权挂起的工具。
 ///
 /// 提供这个约束是为了让协议扩展只在真正实现了挂起语义的工具上可见，

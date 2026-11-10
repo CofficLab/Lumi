@@ -67,6 +67,9 @@ public struct ShowHTMLTool: SuperAgentTool, @unchecked Sendable {
         .low
     }
 
+    /// HTML 原文已经落盘并渲染在聊天里，后续回合只保留其余参数。
+    public var contextOmittedArgumentKeys: Set<String> { ["html"] }
+
     /// 无会话上下文的执行入口。
     ///
     /// 拿不到会话信息时不插入时间线消息——避免把消息写进一个不存在的会话里。
@@ -91,7 +94,8 @@ public struct ShowHTMLTool: SuperAgentTool, @unchecked Sendable {
             timeline: HTMLCanvasTimelineContext(
                 conversationID: context.conversationID,
                 turnID: context.turnID
-            )
+            ),
+            isCancelled: context.isCancelled
         )
     }
 
@@ -102,11 +106,15 @@ public struct ShowHTMLTool: SuperAgentTool, @unchecked Sendable {
     /// - Parameters:
     ///   - arguments: 工具参数。
     ///   - timeline: 会话上下文；为 nil 时不产生时间线消息。
+    ///   - isCancelled: 执行层的取消查询。
     /// - Returns: 工具结果。
     private func run(
         arguments: [String: ToolArgument],
-        timeline: HTMLCanvasTimelineContext?
+        timeline: HTMLCanvasTimelineContext?,
+        isCancelled: @Sendable () -> Bool = { false }
     ) async throws -> ToolCallResult {
+        try Self.checkCancellation(isCancelled)
+
         guard let html = Self.string(from: arguments, key: "html"),
               !html.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return ToolCallResult(
@@ -128,6 +136,8 @@ public struct ShowHTMLTool: SuperAgentTool, @unchecked Sendable {
                 height: height,
                 directory: storageDirectory
             )
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
             return ToolCallResult(
                 content: "Failed to render the HTML interface: \(error.localizedDescription)",
@@ -135,19 +145,50 @@ public struct ShowHTMLTool: SuperAgentTool, @unchecked Sendable {
             )
         }
 
+        // 取消后不能留下可见副作用：落盘文件与时间线卡片都视为未发生。
+        guard !Self.isCancellationRequested(isCancelled) else {
+            Self.discard(payload)
+            throw CancellationError()
+        }
+
         if let timeline {
-            await MainActor.run {
+            let inserted = await MainActor.run {
+                guard !Self.isCancellationRequested(isCancelled) else { return false }
                 bridge.insert(
                     conversationID: timeline.conversationID,
                     turnID: timeline.turnID,
                     payload: payload
                 )
+                return true
+            }
+            guard inserted else {
+                Self.discard(payload)
+                throw CancellationError()
             }
         }
 
         return ToolCallResult(
             content: "HTML interface displayed in the chat (\(Int(width))x\(Int(height))). The user can see it rendered below your message."
         )
+    }
+
+    // MARK: - Cancellation
+
+    private static func isCancellationRequested(_ isCancelled: @Sendable () -> Bool) -> Bool {
+        Task.isCancelled || isCancelled()
+    }
+
+    private static func checkCancellation(_ isCancelled: @Sendable () -> Bool) throws {
+        if isCancellationRequested(isCancelled) {
+            throw CancellationError()
+        }
+    }
+
+    /// 删除尚未发布到时间线的产物。
+    private static func discard(_ payload: HTMLCanvasPayload) {
+        for path in [payload.htmlPath, payload.snapshotPath] where !path.isEmpty {
+            try? FileManager.default.removeItem(atPath: path)
+        }
     }
 
     // MARK: - Arguments

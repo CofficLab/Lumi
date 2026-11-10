@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Testing
 @testable import PluginNetworkManager
@@ -132,6 +133,59 @@ struct ProcessMonitorServiceLifecycleTests {
         let shared = ProcessMonitorService.shared
         #expect(!shared.isNettopRunning)
     }
+
+    @Test("默认 nettop 参数包含 -n 与 1 秒采样间隔")
+    func defaultNettopArgumentsIncludeNameResolutionOffAndInterval() throws {
+        let task = try #require(ProcessMonitorService.makeDefaultNettopProcess())
+        let arguments = try #require(task.arguments)
+
+        #expect(arguments.contains("-n"))
+
+        let intervalIndex = try #require(arguments.firstIndex(of: "-s"))
+        #expect(arguments.indices.contains(intervalIndex + 1))
+        #expect(arguments[intervalIndex + 1] == "1")
+    }
+
+    @Test("默认 nettop 启用无缓冲输出")
+    func defaultNettopEnablesUnbufferedOutput() throws {
+        let task = try #require(ProcessMonitorService.makeDefaultNettopProcess())
+        let environment = try #require(task.environment)
+
+        #expect(environment["NSUnbufferedIO"] == "YES")
+    }
+
+    @Test("start 为子进程保留阻塞 stdin 管道")
+    func startRetainsInputPipe() {
+        final class TaskBox: @unchecked Sendable { var task: Process? }
+        let box = TaskBox()
+
+        let service = ProcessMonitorService.makeForTesting {
+            let task = Process()
+            task.launchPath = "/bin/sleep"
+            task.arguments = ["60"]
+            box.task = task
+            return task
+        }
+
+        service.startMonitoring()
+        defer { service.stopMonitoring() }
+
+        #expect(service.inputPipe != nil)
+        #expect((box.task?.standardInput as? Pipe) != nil)
+    }
+
+    @Test("stop 释放 stdin 管道与 nettop 进程")
+    func stopReleasesInputPipeAndProcess() {
+        let (service, _) = makeService()
+
+        service.startMonitoring()
+        #expect(service.inputPipe != nil)
+        #expect(service.isNettopRunning)
+
+        service.stopMonitoring()
+        #expect(service.inputPipe == nil)
+        #expect(!service.isNettopRunning)
+    }
 }
 
 /// 面板可见性开关与 nettop 启停的联动测试。
@@ -179,5 +233,25 @@ struct ProcessMonitorVisibilityTests {
 
         #expect(counter.starts == 1)
         #expect(counter.stops == 1)
+    }
+}
+
+/// 批量图标解析的回归测试。
+@Suite("ProcessIconResolver 批量解析")
+struct ProcessIconResolverBatchTests {
+
+    @Test("只返回能解析到运行程序的 PID，不存在的 PID 不给兜底图标")
+    func batchSkipsPIDsWithoutRunningApplication() throws {
+        let resolver = ProcessIconResolver()
+        let app = try #require(
+            NSWorkspace.shared.runningApplications.first { $0.bundleIdentifier != nil }
+        )
+        let appPID = Int(app.processIdentifier)
+        let missingPID = 999_999
+        let icons = resolver.icons(forPIDs: [appPID, missingPID])
+
+        #expect(icons.count == 1)
+        #expect(icons[appPID] != nil)
+        #expect(icons[missingPID] == nil)
     }
 }

@@ -79,6 +79,20 @@ public final class MindMapStore: ObservableObject {
         setList(MindMapFileStore.loadAll(storagePath: path), for: scope)
     }
 
+    /// 写操作前把内存列表与磁盘对齐。
+    ///
+    /// 本 store 可能不是 UI 当前项目使用的那个（后台会话按对话项目缓存了独立实例），
+    /// 而另一个入口（画布或别的会话）可能已经改过同一批文件。
+    /// 内存里的列表是加载时的旧快照，直接基于它写回会把别人的新改动整张覆盖掉。
+    /// 因此任何写操作前先重新读盘，只保留那些磁盘上已不存在的条目会被自然丢弃。
+    func synchronizeBeforeWrite() {
+        let path = storagePath(for: .project)
+        guard !path.isEmpty else { return }
+        let onDisk = MindMapFileStore.loadAll(storagePath: path)
+        // 磁盘上没有的条目说明已被删除，内存快照同样要丢弃。
+        setList(onDisk, for: .project)
+    }
+
     /// 在某个作用域的数据变化后调用：按需刷新并切换选中。
     public func reload(scope: MindMapScope, selectMapId mapId: String? = nil) {
         reloadScope(scope)
@@ -109,6 +123,9 @@ public final class MindMapStore: ObservableObject {
         let finalTitle = (trimmedTitle?.isEmpty == false) ? trimmedTitle! : rootText
         let root = MindMapNode(parentId: nil, text: rootText)
         let map = MindMap(title: finalTitle, nodes: [root], layoutDirection: direction)
+        // 新建前先同步磁盘：新导图应追加到磁盘上的真实列表，
+        // 而不是内存里的旧快照（否则会把别的会话新建的导图挤掉）。
+        synchronizeBeforeWrite()
         insert(map, at: 0, scope: scope)
         selectedScope = scope
         selectedMapId = map.id
@@ -228,6 +245,8 @@ public final class MindMapStore: ObservableObject {
 
     @discardableResult
     public func replaceMindMap(_ map: MindMap, scope: MindMapScope) throws -> MindMap {
+        // 整图替换同样要基于磁盘最新状态，否则会用旧快照覆盖别人的新编辑。
+        synchronizeBeforeWrite()
         var list = self.list(for: scope)
         var replacement = map
         if let index = list.firstIndex(where: { $0.id == replacement.id }) {
@@ -259,6 +278,9 @@ public final class MindMapStore: ObservableObject {
         map.id = UUID().uuidString
         map.createdAt = Date()
         map.updatedAt = map.createdAt
+        // 导入是「新增」：先同步磁盘，避免内存里的旧列表把新导图挤掉，
+        // 也避免同 id 的旧条目被覆盖。
+        synchronizeBeforeWrite()
         insert(map, at: 0, scope: scope)
         selectedScope = scope
         selectedMapId = map.id
@@ -286,10 +308,19 @@ public final class MindMapStore: ObservableObject {
     }
 
     public func deleteMindMap(id: String, scope: MindMapScope) {
+        // 写前先与磁盘对齐：删除要以磁盘上的真实状态为准。
+        synchronizeBeforeWrite()
         var list = self.list(for: scope)
         guard let index = list.firstIndex(where: { $0.id == id }) else { return }
         let map = list[index]
-        MindMapFileStore.delete(map, storagePath: storagePath(for: scope))
+        do {
+            try MindMapFileStore.delete(map, storagePath: storagePath(for: scope))
+        } catch {
+            // 文件仍在时不能提交内存删除：否则地图会从 UI 消失，
+            // 下一次 reload 又会被磁盘上的文件「复活」。
+            lastError = error.localizedDescription
+            return
+        }
         list.remove(at: index)
         setList(list, for: scope)
 
@@ -316,6 +347,8 @@ public final class MindMapStore: ObservableObject {
 
     @discardableResult
     private func updateMap(id: String, scope: MindMapScope, _ update: (inout MindMap) throws -> Void) throws -> MindMap {
+        // 写前先与磁盘对齐，避免用陈旧快照整体覆盖别人的新编辑。
+        synchronizeBeforeWrite()
         var list = self.list(for: scope)
         guard let index = list.firstIndex(where: { $0.id == id }) else {
             throw MindMapStoreError.mapNotFound(id)

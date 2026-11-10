@@ -9,7 +9,9 @@ import SwiftData
 ///
 /// 存储目录: 宿主通过 `StorageProviding.pluginDataDirectory(for:)` 提供。
 public actor ToolCallRecordStore {
-    private let modelContext: ModelContext
+    /// `nil` 表示持久化与内存容器都创建失败——此时服务安全降级为 no-op，
+    /// 而不是用 `try!` 终止进程。
+    private let modelContext: ModelContext?
 
     /// 数据库根目录，允许 UI 在主线程读取以打开 Finder。
     nonisolated public let directory: URL
@@ -36,17 +38,29 @@ public actor ToolCallRecordStore {
             allowsSave: true,
             cloudKitDatabase: .none
         )
-        let container: ModelContainer
+        let modelContext: ModelContext?
         do {
-            container = try ModelContainer(for: schema, configurations: [configuration])
+            let container = try ModelContainer(for: schema, configurations: [configuration])
+            modelContext = ModelContext(container)
         } catch {
             // 建库失败时回退到内存容器，保证服务可用（与旧实现一致）。
+            // 内存容器也失败时降级为 no-op：`try!` 会把初始化失败升级为进程崩溃。
             let memoryConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-            container = (try? ModelContainer(for: schema, configurations: [memoryConfiguration]))
-                ?? (try! ModelContainer())
+            if let container = try? ModelContainer(for: schema, configurations: [memoryConfiguration]) {
+                modelContext = ModelContext(container)
+            } else {
+                modelContext = nil
+            }
         }
-        self.modelContext = ModelContext(container)
-        self.modelContext.autosaveEnabled = false
+        modelContext?.autosaveEnabled = false
+        self.modelContext = modelContext
+    }
+
+    /// 测试用：直接注入上下文；`nil` 表示存储不可用。
+    init(modelContext: ModelContext?, directory: URL) {
+        self.modelContext = modelContext
+        self.directory = directory
+        modelContext?.autosaveEnabled = false
     }
 
     /// 初始化后启动定时刷新任务（由外部调用以避免 actor 初始化问题）。
@@ -116,6 +130,7 @@ public actor ToolCallRecordStore {
     /// 按原始 `ToolCall.id` 查询一条记录（尚未 flush 的缓冲记录也会先落库）。
     public func fetchRecord(forToolCallID toolCallID: String) -> ToolCallRecord? {
         flush()
+        guard let modelContext else { return nil }
         let descriptor = FetchDescriptor<ToolCallRecordModel>(
             predicate: #Predicate<ToolCallRecordModel> {
                 $0.toolCallID == toolCallID
@@ -127,6 +142,7 @@ public actor ToolCallRecordStore {
     /// 查询某个 AgentTurn 的全部工具调用，按开始时间升序返回。
     public func fetchRecords(forTurnID turnID: UUID) -> [ToolCallRecord] {
         flush()
+        guard let modelContext else { return [] }
         let turnIDString = turnID.uuidString
         let descriptor = FetchDescriptor<ToolCallRecordModel>(
             predicate: #Predicate<ToolCallRecordModel> {
@@ -148,6 +164,7 @@ public actor ToolCallRecordStore {
     public func fetchRecords(forTurnIDs turnIDs: [UUID]) -> [ToolCallRecord] {
         guard !turnIDs.isEmpty else { return [] }
         flush()
+        guard let modelContext else { return [] }
         let turnIDStrings = turnIDs.map(\.uuidString)
         let descriptor = FetchDescriptor<ToolCallRecordModel>(
             predicate: #Predicate<ToolCallRecordModel> { model in
@@ -162,6 +179,7 @@ public actor ToolCallRecordStore {
     /// 查询某个会话的全部记录，按开始时间倒序返回。
     public func fetchRecords(for conversationID: UUID) -> [ToolCallRecord] {
         flush()
+        guard let modelContext else { return [] }
         let conversationIDString = conversationID.uuidString
         let descriptor = FetchDescriptor<ToolCallRecordModel>(
             predicate: #Predicate<ToolCallRecordModel> {
@@ -176,6 +194,7 @@ public actor ToolCallRecordStore {
     /// 记录总数。
     public func count() -> Int {
         flush()
+        guard let modelContext else { return 0 }
         return (try? modelContext.fetchCount(FetchDescriptor<ToolCallRecordModel>())) ?? 0
     }
 
@@ -190,6 +209,7 @@ public actor ToolCallRecordStore {
     ) -> [ToolCallRecord] {
         guard limit > 0 else { return [] }
         flush()
+        guard let modelContext else { return [] }
 
         var descriptor: FetchDescriptor<ToolCallRecordModel>
         if let cursorDate = beforeCreatedAt, let cursorID = beforeID {
@@ -219,6 +239,7 @@ public actor ToolCallRecordStore {
         deletedConversationIDs.insert(conversationID.uuidString)
         // 写后读屏障：先 flush，保证删除前已接受的记录不会在删除后被写回。
         flush()
+        guard let modelContext else { return }
         let conversationIDString = conversationID.uuidString
         let descriptor = FetchDescriptor<ToolCallRecordModel>(
             predicate: #Predicate<ToolCallRecordModel> {
@@ -237,6 +258,11 @@ public actor ToolCallRecordStore {
     /// 把缓冲区中的记录批量写入磁盘。
     func flush() {
         guard !pendingRecords.isEmpty else { return }
+        guard let modelContext else {
+            // 存储不可用时丢弃缓冲，避免无界增长。
+            pendingRecords.removeAll(keepingCapacity: true)
+            return
+        }
         let batch = pendingRecords
         pendingRecords.removeAll(keepingCapacity: true)
         for model in batch {

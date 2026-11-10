@@ -15,10 +15,6 @@ public struct SettingsView: View {
 
     @State private var selectedProjectPath: String?
     @State private var didSeedSelection = false
-    /// 各项目历史打开文件，key 为标准化后的项目路径。
-    /// 放在 `@State` 中而不是在 `body` 里同步读取磁盘，避免每次重绘都阻塞 UI。
-    @State private var openedFilesByPath: [String: ProjectOpenedFiles] = [:]
-    @State private var isLoadingOpenedFiles = true
     private let projectDetailSections: [ProjectDetailSectionItem]
 
     public init(viewModel: ProjectsViewModel, projectDetailSections: [ProjectDetailSectionItem] = []) {
@@ -69,10 +65,10 @@ public struct SettingsView: View {
             }
         }
         .task {
-            await loadOpenedFiles()
+            viewModel.startObservingOpenedFiles()
         }
         .onAppear { seedSelectionIfNeeded() }
-        .onChange(of: projectPaths) { _, _ in syncSelectionAfterProjectChange() }
+        .onChange(of: projectPaths) { _ in syncSelectionAfterProjectChange() }
     }
 
     // MARK: - Header
@@ -139,8 +135,7 @@ public struct SettingsView: View {
             didSeedSelection = true
         }) {
             HStack(spacing: 10) {
-                Image(systemName: "folder")
-                    .font(.system(size: 13, weight: .semibold))
+                ProjectStorageIcon(kind: ProjectStorageDetector.kind(for: project.path), size: 13)
                     .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
                     .frame(width: 24, height: 24)
                     .background(
@@ -220,6 +215,12 @@ public struct SettingsView: View {
                             Divider().padding(.vertical, 8)
                             detailRow(title: pluginLocalization.string("Path"), icon: "folder", value: project.path, monospace: true)
                             Divider().padding(.vertical, 8)
+                            detailRow(
+                                title: pluginLocalization.string("Storage Location"),
+                                icon: ProjectStorageDetector.kind(for: project.path).symbolName,
+                                value: storageLocationDescription(for: project.path)
+                            )
+                            Divider().padding(.vertical, 8)
                             detailRow(title: pluginLocalization.string("Language"), icon: "character.book.closed", value: project.language?.capitalized ?? pluginLocalization.string("Unknown"))
                             Divider().padding(.vertical, 8)
                             detailRow(title: pluginLocalization.string("Last Used"), icon: "calendar", value: formattedDate(project.lastUsed))
@@ -255,16 +256,19 @@ public struct SettingsView: View {
     @ViewBuilder
     private func openedFilesSection(for project: ProjectEntry) -> some View {
         let key = ProjectsStore.normalizedPath(project.path)
-        // 从 @State 缓存读取，避免每次重绘都去磁盘加载。
-        let opened = openedFilesByPath[key]
-        let urls = opened?.openFileURLs ?? []
-        let current = opened?.currentFileURL
+        // 读取 ViewModel 中的缓存：它跟随 Store 变更刷新，避免显示首次进入时的旧快照。
+        let opened = viewModel.openedFilesByPath[key]
+        let state = Self.openedFilesSectionState(
+            isLoading: viewModel.isLoadingOpenedFiles,
+            opened: opened
+        )
 
         AppSettingSection(
             title: pluginLocalization.string("Opened Files"),
             titleAlignment: .leading
         ) {
-            if isLoadingOpenedFiles {
+            switch state {
+            case .loading:
                 HStack(spacing: 8) {
                     ProgressView()
                         .controlSize(.small)
@@ -272,11 +276,11 @@ public struct SettingsView: View {
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
                 }
-            } else if urls.isEmpty {
+            case .empty:
                 Text(pluginLocalization.string("No opened files recorded"))
                     .font(.callout)
                     .foregroundStyle(theme.textSecondary)
-            } else {
+            case .content(let urls, let current):
                 VStack(alignment: .leading, spacing: 6) {
                     if let current {
                         HStack(spacing: 6) {
@@ -313,6 +317,29 @@ public struct SettingsView: View {
         }
     }
 
+    /// Opened Files 区域的展示状态。
+    ///
+    /// Explorer 单击产生的 preview 文件只写入 `currentFileURL`，`openFileURLs`
+    /// 仍为空；这种 preview-only 状态必须显示 Active 行，而不是「没有打开文件」。
+    enum OpenedFilesSectionState: Equatable {
+        case loading
+        case empty
+        case content(urls: [URL], current: URL?)
+    }
+
+    static func openedFilesSectionState(
+        isLoading: Bool,
+        opened: ProjectOpenedFiles?
+    ) -> OpenedFilesSectionState {
+        guard !isLoading else { return .loading }
+        let urls = opened?.openFileURLs ?? []
+        let current = opened?.currentFileURL
+        guard urls.isEmpty && current == nil else {
+            return .content(urls: urls, current: current)
+        }
+        return .empty
+    }
+
     private func detailRow(title: String, icon: String, value: String, monospace: Bool = false) -> some View {
         AppSettingRow(title: title, icon: icon) {
             Text(value)
@@ -343,24 +370,23 @@ public struct SettingsView: View {
         }
     }
 
-    // MARK: - Data
-
-    /// 异步加载所有项目的打开文件记录到 `@State` 缓存。
-    ///
-    /// 使用 `withCheckedContinuation` 让出控制权，让 SwiftUI 先渲染 loading 状态，
-    /// 避免在视图出现时阻塞主线程（来自 HTTPExchangeSettingsView 的修复模式）。
-    private func loadOpenedFiles() async {
-        await withCheckedContinuation { continuation in
-            let loaded = viewModel.store.loadOpenedFiles()
-            openedFilesByPath = loaded
-            isLoadingOpenedFiles = false
-            continuation.resume()
-        }
-    }
-
     // MARK: - Formatting
 
     private func formattedDate(_ date: Date) -> String {
         date.formatted(date: .abbreviated, time: .shortened)
+    }
+
+    /// 存储位置的可读描述。
+    private func storageLocationDescription(for path: String) -> String {
+        switch ProjectStorageDetector.kind(for: path) {
+        case .internalDisk:
+            return pluginLocalization.string("Local Disk")
+        case .externalDisk:
+            return pluginLocalization.string("External Drive")
+        case .networkVolume:
+            return pluginLocalization.string("Network Volume")
+        case .unavailable:
+            return pluginLocalization.string("Device Unavailable")
+        }
     }
 }

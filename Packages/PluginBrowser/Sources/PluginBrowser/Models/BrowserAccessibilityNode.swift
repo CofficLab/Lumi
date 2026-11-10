@@ -129,26 +129,52 @@ extension BrowserAccessibilityNode {
 // MARK: - 渲染
 
 extension BrowserAccessibilityNode {
+    /// 转义进入逐行文本协议的页面字段。
+    ///
+    /// 页面提供的字段未转义时，换行会伪造出额外的节点行，
+    /// 引号与反斜杠会模糊 name/value 的字段边界。
+    static func escapeProtocolField(_ value: String) -> String {
+        var out = ""
+        out.reserveCapacity(value.count)
+        for character in value {
+            switch character {
+            case "\\": out += "\\\\"
+            case "\"": out += "\\\""
+            case "\r": out += "\\r"
+            case "\n": out += "\\n"
+            case "\t": out += "\\t"
+            default: out.append(character)
+            }
+        }
+        return out
+    }
+
+    /// 渲染为单行文本记录，格式为 `@ref role "name" [flags]`。
+    ///
+    /// 过滤与未过滤快照共用此实现，保证同一节点只有一种序列化结果。
+    func renderLine() -> String {
+        var line = "@\(ref) \(Self.escapeProtocolField(role))"
+        line += " \"\(Self.escapeProtocolField(displayName))\""
+        let flags = state.flags
+        if !flags.isEmpty {
+            line += " [\(flags.joined(separator: " "))]"
+        }
+        if let value {
+            line += " value=\"\(Self.escapeProtocolField(value))\""
+        }
+        if let href {
+            line += " → \(Self.escapeProtocolField(href))"
+        }
+        return line
+    }
+
     /// 渲染为带缩进的文本行，格式为 `@ref role "name" [flags]`。
     ///
     /// 缩进深度体现页面结构，让 LLM 能区分「主内容区里的按钮」和「页脚里的链接」。
     static func renderLines(_ nodes: [BrowserAccessibilityNode], depth: Int = 0) -> [String] {
         var lines: [String] = []
         for node in nodes {
-            var line = String(repeating: "  ", count: depth)
-            line += "@\(node.ref) \(node.role)"
-            line += " \"\(node.displayName)\""
-            let flags = node.state.flags
-            if !flags.isEmpty {
-                line += " [\(flags.joined(separator: " "))]"
-            }
-            if let value = node.value {
-                line += " value=\"\(value)\""
-            }
-            if let href = node.href {
-                line += " → \(href)"
-            }
-            lines.append(line)
+            lines.append(String(repeating: "  ", count: depth) + node.renderLine())
             lines.append(contentsOf: renderLines(node.children, depth: depth + 1))
         }
         return lines

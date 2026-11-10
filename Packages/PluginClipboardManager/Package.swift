@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "PluginClipboardManager",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(
             name: "PluginClipboardManager",
@@ -12,12 +12,13 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
+        .package(path: "../../Vendor/LumiProviders"),
+        .package(path: "../../Vendor/LumiKernel"),
+        .package(path: "../../Vendor/LumiSettings"),
         .package(path: "../ProviderChatSection"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiUI"),
+        .package(path: "../../Vendor/LumiLocalization"),
+        .package(path: "../../Vendor/LumiLogging"),
         .package(path: "../KitTestSupport"),
     ],
     targets: [
@@ -32,6 +33,7 @@ let package = Package(
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
                 .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderRootView", package: "LumiProviders"),
+                .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
@@ -49,6 +51,7 @@ let package = Package(
                 .target(name: "ClipboardManagerPlugin"),
                 .product(name: "KitTestSupport", package: "KitTestSupport"),
                 .product(name: "KitTestIsolation", package: "KitTestSupport"),
+                .product(name: "ProviderSettingView", package: "LumiSettings"),
             ],
             path: "Tests"
         )

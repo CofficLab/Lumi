@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationVerbosity 的实现包，包含 7 个主要类型；当前测试覆盖 8 条用例。
+PluginConversationVerbosity 的实现包，包含 7 个主要类型；当前测试覆盖 11 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 8
+测试文件: 1 个，用例总数: 11
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -30,7 +30,8 @@ PluginConversationVerbosity 的实现包，包含 7 个主要类型；当前测�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **综合**（8 条）：由 `verbosityRegistersToolbarButton`、`capabilityAdapterExposesVerbosityOnly`、`observerWritesViewModelDirectlyAndSupportsCancel` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（9 条）：由 `verbosityRegistersToolbarButton`、`capabilityAdapterExposesVerbosityOnly`、`observerWritesViewModelDirectlyAndSupportsCancel` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **本地化**（2 条）：`verbosityTextUsesInjectedLocalization` 锁定名称/说明必须经过插件本地化解析；`verbosityStringsHaveTranslationsInCompiledBundle` 锁定 6 个词条在 en / zh-Hans / zh-Hant / zh-HK / zh-TW 均有译文（#920）。改动 `Views/`、`Support/` 或 `Resources/Localizable.xcstrings` 时须保持成立。
 
 ## 测试用例清单
 
@@ -44,27 +45,30 @@ PluginConversationVerbosity 的实现包，包含 7 个主要类型；当前测�
 | 6 | 综合 | select without a conversation updates global verbosity | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectWithoutConversationUpdatesGlobal` |
 | 7 | 综合 | select with a conversation updates that conversation and waits | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectWithConversationUpdatesConversation` |
 | 8 | 综合 | refresh re-resolves verbosity and bumps observation revision | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `refreshBumpsRevisionAndReadsCapability` |
+| 9 | 综合 | Observer 收到 verbosityChanged 后刷新选中详细度（**回归 #1069**） | 选中会话的详细度先为默认值 | 触发 `.verbosityChanged` | `selectedVerbosity` 切换为该会话保存的值 | P1 | ✅ 已覆盖 | `observerRefreshesOnVerbosityChanged` |
+| 10 | 本地化 | 详细度名称与说明经过注入的本地化解析（**回归 #920**） | — | 对三档详细度调用名称/说明解析并注入替身解析器 | 文案取自注入解析器，而非 `ResponseVerbosity` 中写死的中文 | P1 | ✅ 已覆盖 | `verbosityTextUsesInjectedLocalization` |
+| 11 | 本地化 | 详细度词条在所有规范语言下都有译文（**回归 #920**） | — | 读取编译产物中每种语言的 `Localizable.strings` | 6 个词条在 en / zh-Hans / zh-Hant / zh-HK / zh-TW 均有对应译文 | P1 | ✅ 已覆盖 | `verbosityStringsHaveTranslationsInCompiledBundle` |
 
-> 说明：全部 **8 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **11 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 8 / 8
+- P1: 已覆盖 11 / 11
 - P2: 已覆盖 0 / 0
-- **合计: 8 / 8**（仅表示清单场景，非源码覆盖率）
+- **合计: 11 / 11**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（8 条）
+- **P1**: 其余功能性用例（11 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 8 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 11 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

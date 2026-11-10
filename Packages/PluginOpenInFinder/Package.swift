@@ -4,17 +4,17 @@ import PackageDescription
 let package = Package(
     name: "PluginOpenInFinder",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginOpenInFinder", targets: ["PluginOpenInFinder"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiKernel"),
+        .package(path: "../../Vendor/LumiLocalization"),
+        .package(path: "../../Vendor/LumiLogging"),
         .package(path: "../KitOpenIn"),
         .package(path: "../ProviderToolManager"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0")
+        .package(path: "../../Vendor/LumiProviders")
     ],
     targets: [
         .target(
@@ -25,6 +25,7 @@ let package = Package(
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 "KitOpenIn",
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
+                .product(name: "ProviderToast", package: "LumiProviders"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 "ProviderToolManager",
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
@@ -39,6 +40,8 @@ let package = Package(
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "KitOpenIn", package: "KitOpenIn"),
                 .product(name: "ProviderDocsView", package: "LumiProviders"),
+                .product(name: "ProviderProject", package: "LumiProviders"),
+                .product(name: "ProviderToast", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
             ]

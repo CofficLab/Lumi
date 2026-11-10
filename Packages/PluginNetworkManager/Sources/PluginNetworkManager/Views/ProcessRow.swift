@@ -33,9 +33,28 @@ public struct ProcessRow: View {
                         .lineLimit(1)
                         .foregroundColor(.primary)
 
-                    Text(pluginLocalization.string("PID: \(process.id)"))
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+                    HStack(spacing: 4) {
+                        Text(pluginLocalization.string("PID: \(process.id)"))
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+
+                        if process.instanceCount > 1 {
+                            Text("×\(process.instanceCount)")
+                                .font(.system(size: 9, design: .monospaced))
+                                .foregroundColor(.secondary)
+                        }
+
+                        if process.isCurrentApp {
+                            Text(pluginLocalization.string("This app"))
+                                .font(.system(size: 9))
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                                .fixedSize()
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(Capsule().fill(Color.secondary.opacity(0.12)))
+                        }
+                    }
                 }
             }
             .frame(width: availableWidth * 0.50, alignment: .leading)

@@ -5,7 +5,7 @@
 PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工具栏 **Response Detail** 处于 `V2 (标准)` 时， 聊天区由本包接管；`V1` / `V3` 分别由 `PluginMessageListBrief` / `PluginMessageListDetailed` 接管。
 
 平台: macOS 14+, iOS 17+
-测试文件: 19 个，用例总数: 114
+测试文件: 20 个，用例总数: 120
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -54,6 +54,10 @@ PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工�
 - **MessageListTurnActivity**（8 条）：由 `turnActivitySortsToolCallsStably`、`turnActivitySummarisesRecords`、`turnActivityHandlesEmptyAndUnfinished` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ScrollViewBottomController**（7 条）：由 `pinToBottomMovesOffsetToDocumentEnd`、`pinToBottomClampsOffsetWhenDocumentShorterThanViewport`、`controllerWithoutScrollViewIsNotAttached` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **StuckLoadingMask**（4 条）：由 `gateReleasesMaskWithinBudgetWithoutAnySettleRound`、`gateReleasesMaskWithinBudgetAfterConversationSwitch`、`gateAcceptsNewRoundForSameConversationAfterStaleRound` 等用例锁定；改动该模块时优先跑对应测试文件。
+
+- **BottomStickyPin**（5 条）：由 `bottomStaysPinnedWhenDocumentGrowsAfterSettle`、`bottomStaysPinnedAcrossConsecutiveGrowths` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MessageListSuspendedToolRowIdentity**（3 条）：由 `mergedGroupRowIdentityChangesWhenMemberJoins`、`mergedGroupRowIdentityStableWhenMembersUnchanged` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **MessageListSyntheticRowOrdering**（3 条）：由 `toolGroupsSeparatedByTextMessageMustNotMerge`、`syntheticRowMustNotPrecedeItsSuspensionPoint` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -173,27 +177,33 @@ PluginMessageListStandard Lumi 消息列表 **V2（标准）** 实现包。工�
 | 112 | BottomStickyPin | 文档变高后「是否在底部」必须仍为 true，否则后续新消息彻底不再跟随滚到底 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `bottomStateStaysTrueAfterDocumentGrowth` |
 | 113 | BottomStickyPin | 用户已上滚时文档变高不得把列表拽回底部 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `bottomIsNotYankedBackWhenUserScrolledAway` |
 | 114 | BottomStickyPin | 解绑之后不得再自动钉底（换会话重建 List 时旧 tracker 不得继续操作） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `noAutoPinAfterDetach` |
+| 115 | MessageListSuspendedToolRowIdentity | 合并组新增成员后，合成消息的行标识必须随之变化 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `mergedGroupRowIdentityChangesWhenMemberJoins` |
+| 116 | MessageListSuspendedToolRowIdentity | 合并组的行标识在成员集合不变时保持稳定 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `mergedGroupRowIdentityStableWhenMembersUnchanged` |
+| 117 | MessageListSuspendedToolRowIdentity | 挂起消息单独成组时，合成行必须保留该挂起调用 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `suspendedMessageAloneKeepsItsToolCall` |
+| 118 | MessageListSyntheticRowOrdering | 同一 turn 内被文本消息隔开的两组工具消息不得合并成一行 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `toolGroupsSeparatedByTextMessageMustNotMerge` |
+| 119 | MessageListSyntheticRowOrdering | 合成行的位置不得早于它所承载的授权挂起点 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `syntheticRowMustNotPrecedeItsSuspensionPoint` |
+| 120 | MessageListSyntheticRowOrdering | 无 turnID 的工具消息仍按时间相邻合并 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolOnlyMessagesWithoutTurnIDStillMergeConsecutively` |
 
-> 说明：全部 **109 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **120 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 34 / 34
-- P1: 已覆盖 71 / 71
-- P2: 已覆盖 9 / 9
-- **合计: 114 / 114**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 38 / 38
+- P1: 已覆盖 72 / 72
+- P2: 已覆盖 10 / 10
+- **合计: 120 / 120**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（31 条）
-- **P1**: 其余功能性用例（69 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（9 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（38 条）
+- **P1**: 其余功能性用例（72 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（10 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 109 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 120 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

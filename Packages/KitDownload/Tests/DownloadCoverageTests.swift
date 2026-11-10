@@ -80,10 +80,11 @@ struct DownloadCoverageTests {
             .appendingPathComponent(UUID().uuidString + ".bin")
         defer { try? FileManager.default.removeItem(at: dest) }
         let body = Data((0..<64).map { UInt8($0) })
+        // 没有本地文件和 validator 时客户端不会发送 Range，服务器应返回完整内容。
         DownloadCoverageStubURLProtocol.handler = { _ in
             self.respond(
-                status: 206,
-                headers: ["Content-Length": String(body.count), "Content-Range": "bytes 4-63/64"],
+                status: 200,
+                headers: ["Content-Length": String(body.count)],
                 body: body
             )
         }
@@ -96,7 +97,7 @@ struct DownloadCoverageTests {
             progressHandler: { _, _ in },
             onCancelled: { _ in }
         )
-        #expect(FileManager.default.fileExists(atPath: dest.path))
+        #expect(try Data(contentsOf: dest) == body)
     }
 
     @Test("isComplete returns false for missing file")

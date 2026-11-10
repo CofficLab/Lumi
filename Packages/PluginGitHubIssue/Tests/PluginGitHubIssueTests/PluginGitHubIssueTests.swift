@@ -1,4 +1,5 @@
 import Foundation
+import KitAgentTool
 import Testing
 @testable import PluginGitHubIssue
 
@@ -87,23 +88,67 @@ struct PluginGitHubIssueTests {
 
     @Test("english violation is reported for Chinese title")
     func englishViolationDetectsChinese() {
-        let violation = CreateGitHubIssueTool.englishViolationForTesting(
+        let offenders = CreateGitHubIssueTool.nonEnglishOffendersForTesting(
             title: "工具返回空结果",
             body: "This body is English."
         )
-        #expect(violation != nil)
-        // 拒绝提示本身必须是英文，LLM 才读得懂。
-        let message = try? #require(violation)
-        #expect(message?.contains("English") == true)
+        #expect(!offenders.isEmpty)
+        #expect(offenders.contains { $0.contains("title") })
     }
 
-    @Test("english violation is nil for pure English content")
+    @Test("english violation is empty for pure English content")
     func englishViolationPassesEnglish() {
-        let violation = CreateGitHubIssueTool.englishViolationForTesting(
+        let offenders = CreateGitHubIssueTool.nonEnglishOffendersForTesting(
             title: "Tool returns empty result",
             body: "The read_file tool returned an empty string for a non-empty file."
         )
-        #expect(violation == nil)
+        #expect(offenders.isEmpty)
+    }
+
+    @Test("public issue creation always requires explicit approval (#1048)")
+    func publicIssueRequiresExplicitApproval() {
+        // 经存在类型调用，确保协议分派到工具自身的覆盖实现。
+        let tool: any SuperAgentTool = CreateGitHubIssueTool()
+
+        #expect(tool.requiresExplicitApproval(arguments: [:]))
+        #expect(tool.requiresExplicitApproval(arguments: [
+            "title": ToolArgument("Crash on launch"),
+            "body": ToolArgument("Steps to reproduce: ..."),
+        ]))
+    }
+
+    @Test("non-English content fails as a tool error instead of a successful result (#1051)")
+    func nonEnglishContentThrowsToolError() async {
+        // 经存在类型调用生产同款入口，确保走的是协议分派后的真实实现。
+        let tool: any SuperAgentTool = CreateGitHubIssueTool()
+        let context = ToolExecutionContext(jobID: "test-job", conversationID: UUID())
+
+        do {
+            _ = try await tool.executeResult(context: context, arguments: [
+                "title": ToolArgument("工具失效"),
+                "body": ToolArgument("This body is valid English and is only used to exercise validation."),
+            ])
+            Issue.record("Expected the language guard to fail the tool call")
+        } catch let error as ToolExecutionError {
+            #expect(error.errorDescription?.contains("Rejected") == true)
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+
+    @Test("missing title or body fails as a tool error instead of a successful result (#1051)")
+    func missingArgumentsThrowToolError() async {
+        let tool: any SuperAgentTool = CreateGitHubIssueTool()
+        let context = ToolExecutionContext(jobID: "test-job", conversationID: UUID())
+
+        do {
+            _ = try await tool.executeResult(context: context, arguments: [:])
+            Issue.record("Expected missing arguments to fail the tool call")
+        } catch let error as ToolExecutionError {
+            #expect(error.errorDescription?.contains("required") == true)
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
     }
 
     @Test("description is non-empty")
@@ -118,7 +163,7 @@ struct PluginGitHubIssueTests {
         guard ProcessInfo.processInfo.environment["GITHUB_ISSUE_TEST_REQUIRE_GH"] == "1" else {
             return
         }
-        let path = GitHubCLI.locate()
+        let path = await GitHubCLI.locate()
         #expect(path != nil)
     }
 }

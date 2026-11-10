@@ -36,7 +36,7 @@ struct ComputerUseSettingsView: View {
         .padding(.bottom, 16)
         .id(revision)
         .onAppear(perform: refresh)
-        .onChange(of: state.revision) { _, _ in refresh() }
+        .onChange(of: state.revision) { _ in refresh() }
     }
 
     private var permissionsSection: some View {

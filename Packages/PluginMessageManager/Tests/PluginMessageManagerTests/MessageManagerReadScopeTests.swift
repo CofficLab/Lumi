@@ -8,7 +8,8 @@ import Testing
 /// ## 为什么要分流
 ///
 /// - `messagesForLLM` → LLM 回合（`LLMContextProvider.prepareContext`）。
-///   只需要 `content` + `reasoningContent` + `toolCalls`。
+///   只需要 `content` + `reasoningContent` + `toolCalls`，
+///   外加 `renderKind` / `lumi.timelineEvent` 标记 —— 下游靠它过滤界面事件。
 /// - `messagesSnapshot` → UI 渲染路径。需要完整信息（`metadata`、错误详情等）。
 ///
 /// 如果 LLM 路径也用完整读取，生产库里 `metadataJson`（35MB）与
@@ -63,10 +64,11 @@ struct MessageManagerReadScopeTests {
         let llm = await manager.messagesForLLM(in: conversationID)
         #expect(!llm.isEmpty, "LLM 路径应能读到探针消息")
 
-        // LLM 路径：不含 metadata / rawStreamEventsJSON。
+        // LLM 路径：探针的普通 metadata 键不应被物化
+        // （时间线标记是唯一例外，见下方专门的用例）。
         #expect(
             llm.allSatisfy { $0.metadata.isEmpty },
-            "LLM 路径不应物化 metadata"
+            "LLM 路径不应物化时间线标记以外的 metadata"
         )
         #expect(
             llm.allSatisfy { $0.rawStreamEventsJSON == nil },
@@ -112,5 +114,58 @@ struct MessageManagerReadScopeTests {
             snapshot.contains { $0.rawStreamEventsJSON != nil },
             "UI 路径应保留 rawStreamEventsJSON"
         )
+    }
+
+    @Test("LLM 路径保留时间线标记，界面事件仍可被过滤")
+    func llmPathKeepsTimelineMarkers() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MessageManagerTimeline-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = try MessageStore(databaseRootURL: directory)
+        let conversationID = UUID()
+
+        // 生产里 Finder 卡片同时带 renderKind 与 metadata 标记。
+        let finderCard = Message(
+            conversationID: conversationID,
+            role: .system,
+            content: "Finder 卡片：/Users/example",
+            metadata: [MessageTimelineEvent.metadataKey: MessageTimelineEvent.finder],
+            renderKind: MessageTimelineEvent.finderRenderKind
+        )
+        // 模型切换事件只靠 metadata 标记识别，用来单独验证 json_extract 路径。
+        let modelSwitched = Message(
+            conversationID: conversationID,
+            role: .system,
+            content: "已切换到其他模型",
+            metadata: [MessageTimelineEvent.metadataKey: MessageTimelineEvent.modelSwitched]
+        )
+        let plain = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: "普通消息",
+            metadata: ["probe": "value"]
+        )
+        try store.insertMessage(finderCard)
+        try store.insertMessage(modelSwitched)
+        try store.insertMessage(plain)
+
+        let manager = MessageManager(store: store, dataDirectory: directory)
+        let llm = await manager.messagesForLLM(in: conversationID)
+
+        let readFinder = try #require(llm.first { $0.id == finderCard.id })
+        #expect(readFinder.renderKind == MessageTimelineEvent.finderRenderKind)
+        #expect(readFinder.metadata == [MessageTimelineEvent.metadataKey: MessageTimelineEvent.finder])
+        #expect(MessageTimelineEvent.isTimelineEvent(readFinder))
+
+        let readSwitched = try #require(llm.first { $0.id == modelSwitched.id })
+        #expect(readSwitched.renderKind == nil)
+        #expect(readSwitched.metadata == [MessageTimelineEvent.metadataKey: MessageTimelineEvent.modelSwitched])
+        #expect(MessageTimelineEvent.isTimelineEvent(readSwitched))
+
+        let readPlain = try #require(llm.first { $0.id == plain.id })
+        #expect(readPlain.metadata.isEmpty, "普通消息的 metadata 仍不应被物化")
+        #expect(readPlain.renderKind == nil)
+        #expect(!MessageTimelineEvent.isTimelineEvent(readPlain))
     }
 }

@@ -93,11 +93,54 @@ struct ToolJobRecordStoreTests {
         #expect(await store.fetchRecord(forJobID: "job-c") != nil)
     }
 
+    @Test("超过 Int32.max 的输出字节数在启动恢复后保持完整")
+    func largeOutputByteCountSurvivesStartupRestore() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        var record = makeRecord(
+            id: "job-large-output",
+            conversationID: UUID(),
+            turnID: UUID(),
+            status: .completed
+        )
+        record.outputByteCount = 3_000_000_000
+        await store.upsert(record)
+
+        // fetchAllJobs 走原生 SQL 解码，累计输出不能被压回 32 位。
+        let restored = await store.fetchAllJobs()
+        let job = try #require(restored.first { $0.id == "job-large-output" })
+        #expect(job.outputByteCount == 3_000_000_000)
+    }
+
     @Test("Job Store 输出尾部保持在 64 KiB 以内")
     func outputIsBounded() {
         let output = String(repeating: "x", count: 70 * 1024)
         let bounded = ToolJobRecordStore.boundedOutput(output)
         #expect(bounded.utf8.count == 64 * 1024)
         #expect(bounded == String(output.suffix(64 * 1024)))
+    }
+
+    @Test("上下文不可用时所有接口安全降级且不崩溃")
+    func unavailableContextDegradesToNoOp() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ToolJobRecordStoreNoContext-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = ToolJobRecordStore(modelContext: nil, databaseRootURL: directory)
+        let conversationID = UUID()
+        let turnID = UUID()
+
+        await store.upsert(
+            makeRecord(id: "job-nil", conversationID: conversationID, turnID: turnID)
+        )
+
+        #expect(await store.fetchRecord(forJobID: "job-nil") == nil)
+        #expect(await store.fetchJobs(forConversationID: conversationID).isEmpty)
+        #expect(await store.fetchJobs(forTurnID: turnID).isEmpty)
+        #expect(await store.fetchNonTerminalJobs().isEmpty)
+        #expect(await store.fetchAllJobs().isEmpty)
+
+        await store.deleteAll(for: conversationID)
     }
 }

@@ -60,10 +60,14 @@ struct PluginWebSearchTests {
 
     @Test("tool rejects blank copied query")
     func toolRejectsBlankCopiedQuery() async throws {
-        let tool = WebSearchTool()
-        let result = try await tool.execute(arguments: ["query": ToolArgument(" \n\t ")])
-
-        #expect(result == "Error: Missing required 'query' parameter")
+        // 回归：空 query 曾经返回 "Error: ..." 字符串，默认 executeResult
+        // 会把它当成成功结果。
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await WebSearchTool().executeResult(arguments: ["query": ToolArgument(" \n\t ")])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await WebSearchTool().executeResult(arguments: [:])
+        }
     }
 
     @Test("tool reports empty search result")

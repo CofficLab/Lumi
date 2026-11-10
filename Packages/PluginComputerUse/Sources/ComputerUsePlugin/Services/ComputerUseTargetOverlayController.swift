@@ -149,7 +149,16 @@ final class ComputerUseTargetOverlayController: SuperLog {
                 try? await Task.sleep(for: Self.followInterval)
                 guard !Task.isCancelled else { return }
                 guard let self, let rect = self.geometryObserver?.currentRect() else { continue }
-                self.follow(rect)
+                self.follow(
+                    quartzRect: rect,
+                    currentPanelFrame: self.panel?.frame,
+                    setPanelFrame: { [weak self] frame in
+                        self?.panel?.setFrame(frame, display: true)
+                    },
+                    refreshVisibleRegions: { [weak self] rect in
+                        self?.applyVisibleRegions(for: rect)
+                    }
+                )
             }
         }
     }
@@ -161,13 +170,22 @@ final class ComputerUseTargetOverlayController: SuperLog {
         geometryObserver = nil
     }
 
-    /// 目标窗口移动或缩放后，把遮罩挪到新位置。
-    private func follow(_ quartzRect: CGRect) {
+    /// 执行一次跟随轮询：移动面板与重算可见区域彼此独立。
+    ///
+    /// 目标窗口本身不动时，遮挡它的其他窗口仍可能移动、关闭或改变层级，
+    /// 所以可见区域必须每次轮询都重算；只有矩形变化时才需要移动面板，
+    /// 避免无意义的重绘。
+    func follow(
+        quartzRect: CGRect,
+        currentPanelFrame: CGRect?,
+        setPanelFrame: (CGRect) -> Void,
+        refreshVisibleRegions: (CGRect) -> Void
+    ) {
         guard let appKitRect = ScreenCoordinateConverter.appKitRect(fromQuartz: quartzRect) else { return }
-        guard appKitRect != panel?.frame else { return }
-        panel?.setFrame(appKitRect, display: true)
-        // 位置变了，可见区域也要跟着重算：遮挡关系可能同时发生变化。
-        applyVisibleRegions(for: quartzRect)
+        if appKitRect != currentPanelFrame {
+            setPanelFrame(appKitRect)
+        }
+        refreshVisibleRegions(quartzRect)
     }
 
     /// 重新计算目标窗口的可见区域，并同步到视图模型。
@@ -178,7 +196,8 @@ final class ComputerUseTargetOverlayController: SuperLog {
         guard let regions = ComputerUseWindowVisibility.visibleRegions(
             target: quartzRect,
             targetWindowID: targetWindowID,
-            processIdentifier: targetProcessIdentifier
+            processIdentifier: targetProcessIdentifier,
+            excludingWindowID: overlayWindowID
         ) else {
             // 无法定位目标窗口（可能在别的 Space、已最小化）。
             // 此时不能假设它完全可见，否则遮罩会盖到遮挡者身上。
@@ -196,6 +215,19 @@ final class ComputerUseTargetOverlayController: SuperLog {
         }
         model.visibleRegions = localRegions
         model.badgeRegion = badgeRegion(in: localRegions)
+    }
+
+    /// 遮罩面板自己的 `CGWindowID`。
+    ///
+    /// 面板层级是 `.screenSaver` 且覆盖整个目标，必须从遮挡者里排除，
+    /// 否则每次重算都会把自己的面板当作遮挡物，把可见区域扣成空。
+    private var overlayWindowID: CGWindowID? {
+        guard let number = panel?.windowNumber,
+              number > 0,
+              number <= Int(UInt32.max) else {
+            return nil
+        }
+        return CGWindowID(number)
     }
 
     /// 挑选安放角标的区域。

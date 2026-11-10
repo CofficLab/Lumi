@@ -3,6 +3,12 @@ import LumiLoggingKit
 import os
 import SwiftUI
 
+/// 接收 Git 状态快照的视图边界，测试可注入记录型替身。
+@MainActor
+protocol FileTreeGitStatusUpdating: AnyObject {
+    func updateGitStatus(_ snapshot: GitStatusSnapshot)
+}
+
 /// NSViewRepresentable 桥接层
 ///
 /// 将 FileTreeCollectionViewController 包装为 SwiftUI 视图。
@@ -16,6 +22,10 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
     let onExpansionChange: ((String, Bool) -> Void)?
     let onTreeMutation: (() -> Void)?
     let gitStatusSnapshot: GitStatusSnapshot
+
+    /// Git 状态快照版本令牌：变化时重载可见行，让已显示的标记立即更新。
+    let gitStatusToken: Int
+
     let packageDependencies: [PackageDependency]
 
     /// 精准刷新令牌：watcher 检测到外部文件系统变化时由 RefreshCoordinator 递增。
@@ -44,6 +54,7 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
         viewController.gitStatusSnapshot = gitStatusSnapshot
 
         context.coordinator.viewController = viewController
+        context.coordinator.lastGitStatusToken = gitStatusToken
         if Self.verbose {
             Self.logger.info("\(Self.t)💾 ViewController 已保存到 Coordinator")
         }
@@ -76,7 +87,7 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
 
         viewController.setPackageDependencies(packageDependencies)
 
-        viewController.gitStatusSnapshot = gitStatusSnapshot
+        context.coordinator.applyGitStatus(gitStatusSnapshot, token: gitStatusToken, to: viewController)
 
         // 精准刷新：watcher 检测到外部文件系统变化时，RefreshCoordinator 递增
         // targetedRefreshToken 并下发 changedDirectoryPaths。此处据此驱动 reloadDirectory，
@@ -107,5 +118,20 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
         var viewController: FileTreeCollectionViewController?
         /// 已处理过的精准刷新令牌，用于在 updateNSView 中去重。
         var lastTargetedRefreshToken: Int = -1
+        /// 已处理过的 Git 状态令牌，避免相同快照重复刷新可见行。
+        var lastGitStatusToken: Int = -1
+
+        /// 接受新快照时通过 `updateGitStatus` 同时赋值并重载可见行；
+        /// 仅赋值会让已显示的 Git 标记停留在旧值（回归 #1098）。
+        @MainActor
+        func applyGitStatus(
+            _ snapshot: GitStatusSnapshot,
+            token: Int,
+            to viewController: any FileTreeGitStatusUpdating
+        ) {
+            guard token != lastGitStatusToken else { return }
+            lastGitStatusToken = token
+            viewController.updateGitStatus(snapshot)
+        }
     }
 }

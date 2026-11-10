@@ -55,6 +55,13 @@ struct HTMLCanvasCardTests {
         #expect(payload.hasHTMLFile)
     }
 
+    /// HTML 原文只服务于当次显示：工具必须声明它不进入后续模型上下文（Issue #1053）。
+    @Test func toolOmitsHTMLFromModelContext() {
+        let tool = ShowHTMLTool(bridge: HTMLCanvasMessageBridge(), storageDirectory: URL(fileURLWithPath: "/tmp"))
+
+        #expect(tool.contextOmittedArgumentKeys == ["html"])
+    }
+
     @Test func toolWritesHTMLToDisk() async throws {
         let manager = RecordingMessageManager()
         let bridge = HTMLCanvasMessageBridge()
@@ -116,6 +123,61 @@ struct HTMLCanvasCardTests {
 
         #expect(result.isError)
         #expect(manager.inserted.isEmpty)
+    }
+
+    /// 回归 Issue #1054：开始前已取消的工具不能落盘，也不能插入卡片。
+    @Test func toolSkipsTimelineWhenCancelledBeforeStart() async throws {
+        let manager = RecordingMessageManager()
+        let bridge = HTMLCanvasMessageBridge()
+        bridge.configure(messages: manager)
+
+        let directory = try makeTemporaryDirectory()
+        let tool = ShowHTMLTool(bridge: bridge, storageDirectory: directory)
+
+        await #expect(throws: CancellationError.self) {
+            _ = try await tool.executeResult(
+                context: ToolExecutionContext(
+                    jobID: "job-cancelled",
+                    conversationID: UUID(),
+                    turnID: UUID(),
+                    isCancelled: { true }
+                ),
+                arguments: ["html": ToolArgument(Self.sampleHTML)]
+            )
+        }
+
+        #expect(manager.inserted.isEmpty)
+        let contents = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+        #expect(contents.isEmpty)
+    }
+
+    /// 回归 Issue #1054：快照完成时才发现取消，也不能发布卡片或留下产物。
+    @Test func toolSkipsTimelineWhenCancellationArrivesAfterRender() async throws {
+        let manager = RecordingMessageManager()
+        let bridge = HTMLCanvasMessageBridge()
+        bridge.configure(messages: manager)
+
+        // 第一次查询（开始前）返回未取消，让渲染真实跑完；
+        // 第二次查询（发布前）返回已取消。
+        let probe = ScriptedCancellation(uncancelledCalls: 1)
+        let directory = try makeTemporaryDirectory()
+        let tool = ShowHTMLTool(bridge: bridge, storageDirectory: directory)
+
+        await #expect(throws: CancellationError.self) {
+            _ = try await tool.executeResult(
+                context: ToolExecutionContext(
+                    jobID: "job-late-cancel",
+                    conversationID: UUID(),
+                    turnID: UUID(),
+                    isCancelled: { probe.isCancelled }
+                ),
+                arguments: ["html": ToolArgument(Self.sampleHTML)]
+            )
+        }
+
+        #expect(manager.inserted.isEmpty)
+        let contents = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+        #expect(contents.isEmpty)
     }
 
     // MARK: - 参数解析
@@ -293,6 +355,26 @@ struct HTMLCanvasCardTests {
     <html><head><meta charset="utf-8"><title>Demo</title></head>
     <body><h1>Demo</h1></body></html>
     """
+}
+
+/// 前 N 次查询返回未取消，之后返回已取消；用于复现「渲染完成后才发现取消」。
+private final class ScriptedCancellation: @unchecked Sendable {
+    private let lock = NSLock()
+    private var uncancelledCalls: Int
+
+    init(uncancelledCalls: Int) {
+        self.uncancelledCalls = uncancelledCalls
+    }
+
+    var isCancelled: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        if uncancelledCalls > 0 {
+            uncancelledCalls -= 1
+            return false
+        }
+        return true
+    }
 }
 
 /// 记录插入的消息，替代真实 `MessageManaging`。

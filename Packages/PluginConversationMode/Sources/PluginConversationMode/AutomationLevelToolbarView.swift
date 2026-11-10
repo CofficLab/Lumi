@@ -41,7 +41,7 @@ struct AutomationLevelToolbarView: View {
             .background(backgroundColor, in: RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
-        .help(selectedLevel.description)
+        .help(selectedLevel.localizedDescription())
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             AutomationLevelPopover(selectedLevel: selectedLevel) { level in
                 updateAutomationLevel(level)
@@ -122,12 +122,12 @@ private struct AutomationLevelRow: View {
                 HStack(spacing: 6) {
                     Text(level.levelCode)
                         .font(.system(size: 12, weight: .semibold))
-                    Text(level.displayName)
+                    Text(level.localizedDisplayName())
                         .font(.system(size: 11))
                 }
                 .foregroundColor(.primary)
 
-                Text(level.description)
+                Text(level.localizedDescription())
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }

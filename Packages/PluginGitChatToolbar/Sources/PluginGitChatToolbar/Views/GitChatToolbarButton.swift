@@ -26,7 +26,7 @@ struct GitChatToolbarButton: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             GitChatPopoverView(viewModel: viewModel)
         }
-        .onChange(of: viewModel.projectPath) { _, _ in
+        .onChange(of: viewModel.projectPath) { _ in
             // 项目切换：关闭弹层避免显示旧仓库数据。
             isPopoverPresented = false
         }

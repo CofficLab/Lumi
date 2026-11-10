@@ -28,6 +28,46 @@ enum TextActionsSettings {
     }
 }
 
+/// 菜单因键盘消失后的一次性抑制。
+///
+/// 只压制「让菜单消失的那一次按键」随后产生的同文本 keyUp：
+/// 命中一次即消费；键码变化（用户开始新的选择动作）或选区已清空时
+/// 立即清除，避免之后重建的相同选区被永久吞掉（issue #1058）。
+struct TextSelectionSuppression {
+    private var text: String?
+    private var keyCode: UInt16?
+
+    mutating func suppress(text: String?, keyCode: UInt16) {
+        self.text = text
+        self.keyCode = keyCode
+    }
+
+    mutating func clear() {
+        text = nil
+        keyCode = nil
+    }
+
+    /// 新的按键不属于消失菜单的那次按键序列时，先解除抑制。
+    mutating func clearIfKeyChanged(_ keyCode: UInt16) {
+        guard let suppressedKeyCode = self.keyCode, suppressedKeyCode != keyCode else { return }
+        clear()
+    }
+
+    /// 命中抑制时返回 true，并消费掉它，允许之后相同选区正常显示。
+    mutating func consumeMatch(text: String, keyCode: UInt16) -> Bool {
+        guard let suppressedText = self.text,
+              let suppressedKeyCode = self.keyCode,
+              suppressedText == text,
+              suppressedKeyCode == keyCode else {
+            return false
+        }
+        clear()
+        return true
+    }
+
+    var isActive: Bool { text != nil }
+}
+
 /// 选区监听与读取的调度者。
 ///
 /// 三个依赖全部可注入（事件监听、选区读取、权限检查），默认值是生产实现；
@@ -60,8 +100,8 @@ final class TextSelectionManager: TextSelectionMonitoring {
     /// 进行中的异步读取在落地前比对代次，过期即弃——防止
     /// 「菜单已被按键收起，进行中的重试又把它弹出来」。
     private var evaluationToken = 0
-    /// 键盘消失时展示的文本；同一选区不因 keyUp 复活。
-    private var suppressedKeyboardText: String?
+    /// 键盘消失时展示的文本与按键；只抑制这一次按键序列。
+    private var suppression = TextSelectionSuppression()
     /// 最近一次展示菜单的文本。
     private var lastPresentedText: String?
 
@@ -122,9 +162,15 @@ final class TextSelectionManager: TextSelectionMonitoring {
             // NSEvent 不可跨隔离域传递，先在回调线程提取值类型。
             let type = event.type
             let modifiers = event.modifierFlags
+            let keyCode = event.keyCode
             let anchor = NSEvent.mouseLocation
             Task { @MainActor [weak self] in
-                self?.handleSelectionTrigger(type: type, modifiers: modifiers, anchor: anchor)
+                self?.handleSelectionTrigger(
+                    type: type,
+                    modifiers: modifiers,
+                    keyCode: keyCode,
+                    anchor: anchor
+                )
             }
         }
     }
@@ -135,6 +181,7 @@ final class TextSelectionManager: TextSelectionMonitoring {
             self.monitor = nil
         }
         evaluationToken += 1
+        suppression.clear()
         TextActionMenuController.shared.hide()
     }
 
@@ -142,11 +189,12 @@ final class TextSelectionManager: TextSelectionMonitoring {
     private func handleMenuDismissed(_ reason: TextActionMenuDismissReason) {
         evaluationToken += 1
         switch reason {
-        case .keyboard:
-            // Cmd+C 等键盘消失：同一选区不被随后的 keyUp 复活。
-            suppressedKeyboardText = lastPresentedText
+        case .keyboard(let keyCode):
+            // 同一按键序列的 keyUp 不复活菜单；其它按键不受影响。
+            suppression.suppress(text: lastPresentedText, keyCode: keyCode)
             lastPresentedText = nil
         case .mouseDownOutside, .scroll, .actionPerformed, .programmatic:
+            suppression.clear()
             lastPresentedText = nil
         }
     }
@@ -154,24 +202,27 @@ final class TextSelectionManager: TextSelectionMonitoring {
     private func handleSelectionTrigger(
         type: NSEvent.EventType,
         modifiers: NSEvent.ModifierFlags,
+        keyCode: UInt16,
         anchor: CGPoint
     ) {
         switch type {
         case .leftMouseUp, .rightMouseUp:
-            suppressedKeyboardText = nil
-            beginEvaluation(anchor: anchor)
+            suppression.clear()
+            beginEvaluation(anchor: anchor, keyCode: keyCode)
         case .keyUp:
+            // 键码变化意味着用户开始了新的选择动作，旧的抑制不再适用。
+            suppression.clearIfKeyChanged(keyCode)
             let menuVisible = TextActionMenuController.shared.isVisible
             guard TextActionDismissPolicy.shouldEvaluateOnKeyUp(
                 modifiers: modifiers, menuVisible: menuVisible
             ) else { return }
-            beginEvaluation(anchor: anchor)
+            beginEvaluation(anchor: anchor, keyCode: keyCode)
         default:
             break
         }
     }
 
-    private func beginEvaluation(anchor: CGPoint) {
+    private func beginEvaluation(anchor: CGPoint, keyCode: UInt16) {
         guard isPermissionGranted else { return }
         evaluationToken += 1
         let token = evaluationToken
@@ -183,10 +234,10 @@ final class TextSelectionManager: TextSelectionMonitoring {
                 guard token == self.evaluationToken else { return }
                 if let result = self.selectedTextProvider.readSelectedText(anchor: anchor),
                    TextSelectionReadPolicy.shouldPresentMenu(for: result.text) {
-                    if result.text == self.suppressedKeyboardText {
+                    if self.suppression.consumeMatch(text: result.text, keyCode: keyCode) {
                         return
                     }
-                    self.suppressedKeyboardText = nil
+                    self.suppression.clear()
                     self.lastPresentedText = result.text
                     TextActionMenuController.shared.show(selection: result)
                     return
@@ -196,6 +247,9 @@ final class TextSelectionManager: TextSelectionMonitoring {
                 }
             }
             guard token == self.evaluationToken else { return }
+            // 选区已清空或不再满足展示条件：抑制只属于消失菜单的那次按键，
+            // 不应继续吞掉之后重新选择的相同文本。
+            self.suppression.clear()
             self.lastPresentedText = nil
             TextActionMenuController.shared.hide()
         }
@@ -208,8 +262,8 @@ final class TextSelectionManager: TextSelectionMonitoring {
 enum TextActionMenuDismissReason {
     /// 点击了菜单外任意处。
     case mouseDownOutside
-    /// 键盘输入（含 Esc 与快捷键）。
-    case keyboard
+    /// 键盘输入（含 Esc 与快捷键）；携带该次按键的 keyCode。
+    case keyboard(keyCode: UInt16)
     /// 滚动超过阈值。
     case scroll
     /// 菜单动作执行完毕（复制 / 搜索）。
@@ -230,10 +284,11 @@ final class TextActionMenuController {
     var onDismiss: (@MainActor (TextActionMenuDismissReason) -> Void)?
 
     private var panel: TextActionMenuPanel?
-    private var hostingView: NSHostingView<TextActionMenuView>?
+    private var hostingView: TextActionMenuHostingView?
     private let model = TextActionMenuModel()
     private var selection: SelectedText?
     private var dismissMonitor: Any?
+    private var localDismissMonitor: Any?
     private var scrollAccumulation: CGFloat = 0
     private var translationTask: Task<Void, Never>?
     /// 复制反馈等延迟消失的代次，防止旧延迟任务收起新菜单。
@@ -247,9 +302,6 @@ final class TextActionMenuController {
     init() {
         model.onPerform = { [weak self] action in
             self?.perform(action)
-        }
-        model.onStateChange = { [weak self] _ in
-            self?.layoutPanel(animated: true)
         }
     }
 
@@ -363,7 +415,13 @@ final class TextActionMenuController {
 
     private func ensurePanel() {
         guard panel == nil else { return }
-        let hosting = NSHostingView(rootView: TextActionMenuView(model: model))
+        let hosting = TextActionMenuHostingView(rootView: TextActionMenuView(model: model))
+        // 状态切换（动作条 ↔ 翻译卡片）由 SwiftUI 的实际布局结果驱动重排，
+        // 不在 `onStateChange` 里同步量尺寸——那时 SwiftUI 还没刷新，
+        // `fittingSize` 仍是上一状态的值，会把译文卡片裁在旧高度里。
+        hosting.onIntrinsicSizeChange = { [weak self] size in
+            self?.resizePanel(to: size, animated: true)
+        }
         let panel = TextActionMenuPanel()
         panel.contentView = hosting
         self.hostingView = hosting
@@ -371,23 +429,32 @@ final class TextActionMenuController {
     }
 
     private func layoutPanel(animated: Bool) {
-        guard let panel, let hostingView, let selection else { return }
+        guard let hostingView else { return }
         hostingView.invalidateIntrinsicContentSize()
-        let size = hostingView.fittingSize
-        guard size.width > 0, size.height > 0 else { return }
+        resizePanel(to: hostingView.fittingSize, animated: animated)
+    }
 
-        let anchor = selection.anchor
-        let screen = NSScreen.screens.first(where: { NSMouseInRect(anchor, $0.frame, false) })
-            ?? NSScreen.main
-            ?? NSScreen.screens.first
+    private func resizePanel(to size: CGSize, animated: Bool) {
+        guard let panel, let selection, size.width > 0, size.height > 0 else { return }
+        // 初始展示时面板尚未 orderFront，不能以 isVisible 作为前置条件。
+        guard !isFadingOut else { return }
+
+        let screens = NSScreen.screens
+        let screenIndex = TextActionScreenSelection.screenIndex(
+            selectionRect: selection.selectionRect,
+            anchor: selection.anchor,
+            screenFrames: screens.map(\.frame)
+        )
+        let screen = screenIndex.map { screens[$0] } ?? NSScreen.main ?? screens.first
         guard let screen else { return }
 
         let frame = TextActionMenuLayout.frame(
             selectionRect: selection.selectionRect,
-            anchor: anchor,
+            anchor: selection.anchor,
             menuSize: size,
             screenFrame: screen.visibleFrame
         )
+        guard frame != panel.frame else { return }
         if animated {
             panel.setFrame(frame, display: true, animate: true)
         } else {
@@ -398,18 +465,39 @@ final class TextActionMenuController {
     // MARK: 外部事件消失
 
     private func installDismissMonitorIfNeeded() {
-        guard dismissMonitor == nil else { return }
-        dismissMonitor = NSEvent.addGlobalMonitorForEvents(
-            matching: [.leftMouseDown, .rightMouseDown, .keyDown, .scrollWheel]
-        ) { [weak self] event in
-            // 点击落在浮层自身上是进程内事件，不会进入全局监听，
-            // 因此这里收到的一定是「菜单外」的事件。
+        guard dismissMonitor == nil, localDismissMonitor == nil else { return }
+        let mask: NSEvent.EventTypeMask = [.leftMouseDown, .rightMouseDown, .keyDown, .scrollWheel]
+
+        dismissMonitor = NSEvent.addGlobalMonitorForEvents(matching: mask) { [weak self] event in
+            // 全局监听只收到其他应用的事件。
             let type = event.type
             let modifiers = event.modifierFlags
+            let keyCode = event.keyCode
             let deltaY = event.scrollingDeltaY
             Task { @MainActor [weak self] in
-                self?.handleExternalEvent(type: type, modifiers: modifiers, deltaY: deltaY)
+                self?.handleExternalEvent(type: type, modifiers: modifiers, keyCode: keyCode, deltaY: deltaY)
             }
+        }
+
+        // 发往 Lumi 自身窗口的点击与按键不会进入全局监听，点击主窗口或
+        // 设置窗口时浮层会一直留着。本地监听补上这一段，并放行落在浮层
+        // 自身上的点击与滚动（译文卡片需要滚动）。
+        localDismissMonitor = NSEvent.addLocalMonitorForEvents(matching: mask) { [weak self] event in
+            let type = event.type
+            let modifiers = event.modifierFlags
+            let keyCode = event.keyCode
+            let deltaY = event.scrollingDeltaY
+            let windowNumber = event.windowNumber
+            Task { @MainActor [weak self] in
+                self?.handleLocalEvent(
+                    type: type,
+                    modifiers: modifiers,
+                    keyCode: keyCode,
+                    deltaY: deltaY,
+                    windowNumber: windowNumber
+                )
+            }
+            return event
         }
     }
 
@@ -418,11 +506,30 @@ final class TextActionMenuController {
             NSEvent.removeMonitor(dismissMonitor)
             self.dismissMonitor = nil
         }
+        if let localDismissMonitor {
+            NSEvent.removeMonitor(localDismissMonitor)
+            self.localDismissMonitor = nil
+        }
+    }
+
+    private func handleLocalEvent(
+        type: NSEvent.EventType,
+        modifiers: NSEvent.ModifierFlags,
+        keyCode: UInt16,
+        deltaY: CGFloat,
+        windowNumber: Int
+    ) {
+        guard !TextActionDismissPolicy.isInsidePanel(
+            eventWindowNumber: windowNumber,
+            panelWindowNumber: panel?.windowNumber ?? 0
+        ) else { return }
+        handleExternalEvent(type: type, modifiers: modifiers, keyCode: keyCode, deltaY: deltaY)
     }
 
     private func handleExternalEvent(
         type: NSEvent.EventType,
         modifiers: NSEvent.ModifierFlags,
+        keyCode: UInt16,
         deltaY: CGFloat
     ) {
         switch type {
@@ -430,7 +537,7 @@ final class TextActionMenuController {
             hide(reason: .mouseDownOutside)
         case .keyDown:
             if TextActionDismissPolicy.shouldDismissOnKeyDown(modifiers: modifiers) {
-                hide(reason: .keyboard)
+                hide(reason: .keyboard(keyCode: keyCode))
             }
         case .scrollWheel:
             scrollAccumulation += deltaY

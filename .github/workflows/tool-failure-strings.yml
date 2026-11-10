@@ -1,0 +1,19 @@
+name: Tool Failure Strings
+
+on:
+  pull_request:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check tools throw instead of returning failure strings
+        run: python3 Scripts/check-tool-failure-strings.py

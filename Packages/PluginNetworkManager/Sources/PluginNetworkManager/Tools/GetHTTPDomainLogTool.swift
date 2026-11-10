@@ -48,27 +48,28 @@ struct GetHTTPDomainLogTool: SuperAgentTool, SuperLog {
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         let domain = NetworkToolSupport.string(arguments, "domain") ?? ""
         let pathPrefix = NetworkToolSupport.string(arguments, "path_prefix")
-        let limit = min(NetworkToolSupport.int(arguments, "limit") ?? 50, 200)
+        let limit = NetworkToolSupport.limit(arguments, default: 50, max: 200)
         let hours = min(NetworkToolSupport.int(arguments, "hours") ?? 24, 720)
 
         guard !domain.isEmpty else {
-            return "Error: domain parameter is required"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "domain parameter is required")
         }
 
-        let result = await MainActor.run { () -> String in
+        let result = try await MainActor.run { () throws -> String in
             guard let store = NetworkService.shared.currentExchangeStore else {
-                return "Error: HTTP exchange store not available"
+                throw ToolExecutionError.executionFailed(toolName: name, reason: "HTTP exchange store not available")
             }
 
             let cutoff = Date().addingTimeInterval(-Double(hours) * 3600)
-            let allRecords = store.fetchPage(limit: 5000)
+            let domainLower = domain.lowercased()
 
-            let filtered = allRecords.filter { record in
+            // Scan the whole retained history so the time window, not a hidden
+            // record cap, decides what is included.
+            let filtered = store.scanHistory { record in
                 guard record.startedAt >= cutoff else { return false }
-                guard let url = URL(string: record.requestURL),
+                guard let url = URL(string: record.url),
                       let host = url.host else { return false }
 
-                let domainLower = domain.lowercased()
                 let hostLower = host.lowercased()
                 let domainMatches = hostLower == domainLower || hostLower.hasSuffix(".\(domainLower)")
 
@@ -81,9 +82,7 @@ struct GetHTTPDomainLogTool: SuperAgentTool, SuperLog {
                 return true
             }
 
-            let results = Array(filtered.prefix(limit))
-
-            if results.isEmpty {
+            if filtered.isEmpty {
                 return "No HTTP logs found for domain '\(domain)'."
             }
 
@@ -91,11 +90,11 @@ struct GetHTTPDomainLogTool: SuperAgentTool, SuperLog {
             var methodCounts: [String: Int] = [:]
             var statusCounts: [Int: Int] = [:]
 
-            for record in results {
-                if let url = URL(string: record.requestURL) {
+            for record in filtered {
+                if let url = URL(string: record.url) {
                     pathCounts[url.path, default: 0] += 1
                 }
-                methodCounts[record.requestMethod, default: 0] += 1
+                methodCounts[record.method, default: 0] += 1
                 if let status = record.responseStatusCode {
                     statusCounts[status, default: 0] += 1
                 }
@@ -104,7 +103,7 @@ struct GetHTTPDomainLogTool: SuperAgentTool, SuperLog {
             var sections: [String] = []
             sections.append("## HTTP Logs for \(domain)")
             sections.append("")
-            sections.append("**Total Requests**: \(results.count)")
+            sections.append("**Total Requests**: \(filtered.count)")
             sections.append("")
             sections.append("### Request Methods")
             for (method, count) in methodCounts.sorted(by: { $0.value > $1.value }) {
@@ -117,7 +116,8 @@ struct GetHTTPDomainLogTool: SuperAgentTool, SuperLog {
             }
             sections.append("")
             sections.append("### Top Paths")
-            for (path, count) in pathCounts.sorted(by: { $0.value > $1.value }).prefix(10) {
+            // `limit` 只约束明细条数，汇总始终覆盖全部匹配记录。
+            for (path, count) in pathCounts.sorted(by: { $0.value > $1.value }).prefix(min(10, limit)) {
                 sections.append("- \(path): \(count)")
             }
 

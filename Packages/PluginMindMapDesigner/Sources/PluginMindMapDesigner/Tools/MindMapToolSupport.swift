@@ -58,7 +58,14 @@ enum MindMapToolSupport {
 
     /// 解析工具要操作的思维导图：优先读可选 mapId，缺省回退到选中思维导图。
     /// 返回思维导图快照与固定的项目作用域。
-    static func resolveMap(_ arguments: [String: ToolArgument]) async throws -> (MindMap, MindMapScope) {
+    ///
+    /// - Parameter reloadingDisk: 为 `true` 时先与磁盘对齐（普通工具以磁盘为准）。
+    ///   显式保存必须传 `false`：reload 会把 backing JSON 已缺失的地图从内存列表
+    ///   抹掉，导致「保存当前状态」反而无从保存。
+    static func resolveMap(
+        _ arguments: [String: ToolArgument],
+        reloadingDisk: Bool = true
+    ) async throws -> (MindMap, MindMapScope) {
         let scope = try await resolveScope(arguments)
         let explicitId = string(arguments, "mapId")?.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -68,6 +75,10 @@ enum MindMapToolSupport {
                 throw MindMapStoreError.projectRequired
             }
             if let explicitId, !explicitId.isEmpty {
+                // 内存快照可能是缓存的旧状态，先与磁盘对齐再解析。
+                if reloadingDisk {
+                    store.reload()
+                }
                 if let match = store.maps(for: scope).first(where: { $0.id == explicitId }) {
                     return (match, scope)
                 }
@@ -79,11 +90,23 @@ enum MindMapToolSupport {
                 }
                 throw MindMapStoreError.mapNotFound(explicitId)
             }
+            // 未指定 mapId 时也以磁盘为准：缓存的 store 可能还没看到
+            // 别的入口新建的导图。
+            if reloadingDisk {
+                store.reload()
+            }
             guard let selected = store.selectedMap else {
                 throw MindMapStoreError.noSelectedMap
             }
             return (selected, store.selectedScope)
         }
+    }
+
+    /// 显式把地图写入其作用域目录；失败必须抛给调用方，不能报告保存成功。
+    static func save(_ map: MindMap, scope: MindMapScope) async throws {
+        let path = await MainActor.run { store().storagePath(for: scope) }
+        guard !path.isEmpty else { throw MindMapStoreError.projectRequired }
+        try MindMapFileStore.save(map, storagePath: path)
     }
 
     /// 写操作完成后刷新项目内列表并保持选中。

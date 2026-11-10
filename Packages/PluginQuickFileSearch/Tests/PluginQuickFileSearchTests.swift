@@ -1,6 +1,7 @@
 import Testing
 import Foundation
 import ProviderEditor
+import ProviderProject
 @testable import QuickFileSearchPlugin
 
 @MainActor
@@ -8,6 +9,101 @@ import ProviderEditor
     let plugin = QuickFileSearchPlugin()
     #expect(plugin.id == "QuickFileSearch")
     #expect(plugin.metadata.policy == .alwaysOn)
+}
+
+// MARK: - Settings Project Status
+
+/// 回归 #937：设置页曾把插件启动时的项目路径冻结为不可变字符串，
+/// 之后切换或关闭项目仍显示旧项目（或一直 No project selected）。
+@Test @MainActor func settingsStatusShowsProjectActiveAtStartup() {
+    let provider = RecordingProjectProvider(currentProject: ProjectInfo(name: "A", path: "/tmp/A"))
+    let status = QuickFileSearchSettingsStatus(project: provider)
+
+    #expect(status.projectPath == "/tmp/A")
+}
+
+@Test @MainActor func settingsStatusFollowsProjectSwitch() {
+    let provider = RecordingProjectProvider(currentProject: ProjectInfo(name: "A", path: "/tmp/A"))
+    let status = QuickFileSearchSettingsStatus(project: provider)
+
+    provider.switchProject(to: ProjectInfo(name: "B", path: "/tmp/B"))
+
+    #expect(status.projectPath == "/tmp/B")
+}
+
+@Test @MainActor func settingsStatusRecoversAfterStartingWithoutProject() {
+    let provider = RecordingProjectProvider(currentProject: nil)
+    let status = QuickFileSearchSettingsStatus(project: provider)
+    #expect(status.projectPath.isEmpty)
+
+    provider.switchProject(to: ProjectInfo(name: "B", path: "/tmp/B"))
+
+    #expect(status.projectPath == "/tmp/B")
+}
+
+@Test @MainActor func settingsStatusClearsPathAfterProjectClose() {
+    let provider = RecordingProjectProvider(currentProject: ProjectInfo(name: "A", path: "/tmp/A"))
+    let status = QuickFileSearchSettingsStatus(project: provider)
+
+    provider.switchProject(to: nil)
+
+    #expect(status.projectPath.isEmpty)
+}
+
+@Test @MainActor func settingsStatusIgnoresUnrelatedProjectEvents() {
+    let provider = RecordingProjectProvider(currentProject: ProjectInfo(name: "A", path: "/tmp/A"))
+    let status = QuickFileSearchSettingsStatus(project: provider)
+
+    provider.emit(.openFilesChanged([URL(fileURLWithPath: "/tmp/A/File.swift")]))
+
+    #expect(status.projectPath == "/tmp/A")
+}
+
+@MainActor
+private final class RecordingProjectProvider: ProjectProviding {
+    var currentProject: ProjectInfo?
+    private var observers: [(ProjectProvidingEvent) -> Void] = []
+
+    init(currentProject: ProjectInfo?) {
+        self.currentProject = currentProject
+    }
+
+    var openFileURLs: [URL] { [] }
+    var currentFileURL: URL? { nil }
+    var projects: [ProjectInfo] { currentProject.map { [$0] } ?? [] }
+
+    func switchProject(to project: ProjectInfo?) {
+        currentProject = project
+        emit(.currentProjectChanged(project, reason: .settingsChange))
+    }
+
+    func emit(_ event: ProjectProvidingEvent) {
+        for observer in observers { observer(event) }
+    }
+
+    func openProject(at path: String, reason: ProjectChangeReason) async throws {}
+    func updateCurrentFile(_ fileURL: URL?) {}
+    func previewFile(_ fileURL: URL) {}
+    func pinFile(_ fileURL: URL) {}
+    func activateFile(_ fileURL: URL) {}
+    func updateOpenFiles(_ fileURLs: [URL]) {}
+    func closeFile(_ fileURL: URL) {}
+    func closeProject(reason: ProjectChangeReason) async {}
+    func refreshProjects() async throws {}
+    func synchronizeProjects(_ projects: [ProjectInfo]) {}
+
+    @discardableResult
+    func addObserver(
+        _ callback: @escaping (ProjectProvidingEvent) -> Void
+    ) -> any ProjectProvidingObserverHandle {
+        observers.append(callback)
+        return RecordingProjectObserverHandle()
+    }
+}
+
+@MainActor
+private final class RecordingProjectObserverHandle: ProjectProvidingObserverHandle {
+    func cancel() {}
 }
 
 // MARK: - File Index
@@ -132,8 +228,21 @@ import ProviderEditor
 }
 
 @Test func staleSearchResultsTrimmedQueriesAreEquivalent() {
-    #expect(FileSearchService.shouldApplySearchResults(currentQuery: "  App  ", completedQuery: "App"))
-    #expect(!FileSearchService.shouldApplySearchResults(currentQuery: "App", completedQuery: "AppS"))
+    #expect(FileSearchService.shouldApplySearchResults(
+        currentQuery: "  App  ", completedQuery: "App", currentGeneration: 3, completedGeneration: 3
+    ))
+    #expect(!FileSearchService.shouldApplySearchResults(
+        currentQuery: "App", completedQuery: "AppS", currentGeneration: 3, completedGeneration: 3
+    ))
+}
+
+@Test func staleSearchResultsFromPreviousProjectAreDiscarded() {
+    #expect(!FileSearchService.shouldApplySearchResults(
+        currentQuery: "App", completedQuery: "App", currentGeneration: 2, completedGeneration: 1
+    ))
+    #expect(FileSearchService.shouldApplySearchResults(
+        currentQuery: "App", completedQuery: "App", currentGeneration: 2, completedGeneration: 2
+    ))
 }
 
 // MARK: - Existing Tests
@@ -193,9 +302,15 @@ import ProviderEditor
 }
 
 @Test func staleSearchResultsDoNotApplyToChangedQuery() {
-    #expect(FileSearchService.shouldApplySearchResults(currentQuery: "App", completedQuery: " app "))
-    #expect(!FileSearchService.shouldApplySearchResults(currentQuery: "Application", completedQuery: "App"))
-    #expect(!FileSearchService.shouldApplySearchResults(currentQuery: "", completedQuery: "App"))
+    #expect(FileSearchService.shouldApplySearchResults(
+        currentQuery: "App", completedQuery: " app ", currentGeneration: 0, completedGeneration: 0
+    ))
+    #expect(!FileSearchService.shouldApplySearchResults(
+        currentQuery: "Application", completedQuery: "App", currentGeneration: 0, completedGeneration: 0
+    ))
+    #expect(!FileSearchService.shouldApplySearchResults(
+        currentQuery: "", completedQuery: "App", currentGeneration: 0, completedGeneration: 0
+    ))
 }
 
 @Test func indexCompletionRefreshesOnlyActiveQueries() {
@@ -221,4 +336,54 @@ import ProviderEditor
     #expect(FileSearchResultRow.iconName(for: "Bridge.h") == "doc.text")
     #expect(FileSearchResultRow.iconName(for: "View.mm") == "doc.text")
     #expect(FileSearchResultRow.iconName(for: "Archive.zip") == "archivebox")
+}
+
+// MARK: - Localization
+
+/// 回归 #939：搜索面板的占位、索引中与无结果文案，en 条目曾被填成中文
+/// 原文并标记 `translated`，英文界面因此显示简体中文；搜索框还直接使用
+/// 中文字面量，绕过了插件 bundle 的本地化查找。
+@Test func searchPanelStringsHaveEnglishTranslations() throws {
+    let catalog = try loadQuickFileSearchCatalog()
+    let expectedEnglish: [String: String] = [
+        "搜索文件...": "Search files...",
+        "正在索引文件...": "Indexing files...",
+        "未找到匹配文件": "No matching files",
+    ]
+
+    for (key, englishValue) in expectedEnglish {
+        let translations = try #require(catalog[key], "「\(key)」未进入本地化资源")
+        #expect(
+            translations["en"] == englishValue,
+            "英文界面下「\(key)」显示 \(translations["en"] ?? "nil")，而不是英文"
+        )
+        #expect(translations["zh-Hans"] == key, "简体中文界面下「\(key)」保持中文")
+    }
+}
+
+/// 从测试文件定位本包的 xcstrings（运行目录不可依赖）。
+private func loadQuickFileSearchCatalog() throws -> [String: [String: String]] {
+    let packageRoot = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+    let catalogURL = packageRoot
+        .appendingPathComponent("Resources")
+        .appendingPathComponent("Localizable.xcstrings")
+    let data = try Data(contentsOf: catalogURL)
+    let root = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    let strings = try #require(root["strings"] as? [String: Any])
+
+    var result: [String: [String: String]] = [:]
+    for (key, value) in strings {
+        let localizations = (value as? [String: Any])?["localizations"] as? [String: Any] ?? [:]
+        var translations: [String: String] = [:]
+        for (language, unit) in localizations {
+            guard let unit = unit as? [String: Any],
+                  let stringUnit = unit["stringUnit"] as? [String: Any],
+                  let text = stringUnit["value"] as? String else { continue }
+            translations[language] = text
+        }
+        result[key] = translations
+    }
+    return result
 }

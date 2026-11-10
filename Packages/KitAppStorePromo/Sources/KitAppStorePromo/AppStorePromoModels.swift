@@ -38,7 +38,7 @@ public enum AppStorePromoDisplaySpec {
         .init(displayType: "APP_IPHONE_67", family: .iphone, width: 1290, height: 2796),
         .init(displayType: "APP_IPHONE_65", family: .iphone, width: 1284, height: 2778),
         .init(displayType: "APP_IPHONE_61", family: .iphone, width: 1170, height: 2532),
-        .init(displayType: "APP_IPHONE_58", family: .iphone, width: 1170, height: 2532),
+        .init(displayType: "APP_IPHONE_58", family: .iphone, width: 1125, height: 2436),
         .init(displayType: "APP_IPAD_PRO_3GEN_129", family: .ipad, width: 2048, height: 2732),
         .init(displayType: "APP_IPAD_PRO_3GEN_11", family: .ipad, width: 1668, height: 2388),
         .init(displayType: "APP_DESKTOP", family: .mac, width: 1280, height: 800),

@@ -4,14 +4,14 @@ import PackageDescription
 let package = Package(
     name: "PluginMessageListBrief",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [.library(name: "PluginMessageListBrief", targets: ["PluginMessageListBrief"])],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.18.0"),
-        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
+        .package(path: "../../Vendor/LumiProviders"),
+        .package(path: "../../Vendor/LumiKernel"),
+        .package(path: "../../Vendor/LumiUI"),
         .package(path: "../KitMarkdown"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiLocalization"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
@@ -20,7 +20,7 @@ let package = Package(
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../ProviderLifecycleHooks"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiLogging"),
     ],
     targets: [
         .target(name: "PluginMessageListBrief", dependencies: [

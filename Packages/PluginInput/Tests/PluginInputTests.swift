@@ -182,6 +182,32 @@ import ProviderStorage
 }
 
 @MainActor
+@Test func refreshingSettingsReloadsInputSources() {
+    // InputSettingsViewModel 会触碰 InputService.shared，进而读取插件数据目录。
+    // 测试进程里守卫拒绝回退到本机真实目录，因此必须先注入临时目录。
+    InputPluginRuntimeBridge.pluginDirectory = InputPluginTestDoubles.makeTemporaryDirectory("refresh-sources")
+    defer { InputPluginRuntimeBridge.pluginDirectory = nil }
+
+    let viewModel = InputSettingsViewModel()
+    let stale = InputSource(
+        id: "stale.input.source",
+        name: "Stale",
+        category: "TISCategoryKeyboardInputSource",
+        isSelectable: true
+    )
+    viewModel.apply(availableSources: [stale])
+
+    viewModel.refreshSources()
+
+    // 刷新必须重新枚举系统输入源，而不是复用启动时缓存的列表。
+    #expect(!viewModel.availableSources.contains(stale))
+    #expect(
+        viewModel.availableSources.map(\.id)
+            == InputService.shared.availableInputSources.map(\.id)
+    )
+}
+
+@MainActor
 @Test func removeRuleIgnoresStaleOffsets() {
     // InputSettingsViewModel 会触碰 InputService.shared，进而读取插件数据目录。
     // 测试进程里守卫拒绝回退到本机真实目录，因此必须先注入临时目录。

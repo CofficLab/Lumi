@@ -322,19 +322,29 @@ public struct ChatInputEditorView: NSViewRepresentable {
     /// 「粘贴时是折叠块、发出后却展开成一大段」的根因。
     private func resolvedContent(from textView: NSTextView) -> ResolvedEditorContent {
         guard let editorTextView = textView as? EditorTextView,
-              editorTextView.hasPastePreviewAttachments,
               let textStorage = textView.textStorage,
               textStorage.length > 0 else {
             return ResolvedEditorContent(text: textView.string, blocks: [])
         }
 
+        // 撤销可能把已删除的 chip 重新放回 text storage，而删除时已经
+        // 把标志清成了 false。是否拍平必须以存储里的真实 attachment 为准，
+        // 只信缓存标志会把 U+FFFC 占位符当成正文发出去。
+        guard editorTextView.hasPastePreviewAttachments
+                || (textView.string as NSString).range(of: Self.attachmentPlaceholder).location != NSNotFound else {
+            return ResolvedEditorContent(text: textView.string, blocks: [])
+        }
+
         let flattened = Self.flattenedContent(from: textStorage)
-        if !flattened.hasAttachments {
-            editorTextView.hasPastePreviewAttachments = false
+        editorTextView.hasPastePreviewAttachments = flattened.hasAttachments
+        guard flattened.hasAttachments else {
             return ResolvedEditorContent(text: textView.string, blocks: [])
         }
         return ResolvedEditorContent(text: flattened.text, blocks: flattened.blocks)
     }
+
+    /// 带 attachment 的字符在 `string` 中的占位符（U+FFFC）。
+    static let attachmentPlaceholder = "\u{FFFC}"
 
     /// 把带 chip 的富文本拍平成纯文本，并算出每个 chip 在纯文本中的区间。
     ///
@@ -751,8 +761,10 @@ extension ChatInputEditorView {
                 // chip 的 hover 依赖 tracking area，立即挂上不等 AppKit 的布局回调。
                 textView.syncPasteHoverTracking()
             } else {
-                // 已有内容时留一个空行，避免和用户已写的文字黏在一起。
-                let separator = insertionRange.location > 0 ? "\n" : ""
+                // 已有内容时留一个空行，避免和用户已写的文字黏在一起；
+                // 插入点紧跟换行时不重复补换行。
+                let prefix = (textView.string as NSString).substring(to: insertionRange.location)
+                let separator = prefix.isEmpty || prefix.hasSuffix("\n") ? "" : "\n"
                 textView.insertText(separator + block.text, replacementRange: insertionRange)
             }
 
@@ -1788,12 +1800,12 @@ final class PastePreviewPopoverViewController: NSViewController {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
 
-        copyButton?.title = "Copied"
+        copyButton?.title = pluginLocalization.string("Copied")
         copyButton?.isEnabled = false
 
         copyFeedbackResetItem?.cancel()
         let resetItem = DispatchWorkItem { [weak self] in
-            self?.copyButton?.title = "Copy original"
+            self?.copyButton?.title = pluginLocalization.string("Copy original")
             self?.copyButton?.isEnabled = true
         }
         copyFeedbackResetItem = resetItem

@@ -29,10 +29,11 @@ public struct SidebarView: View {
 
     /// 顶部阴影的模糊半径(点):决定阴影顶端渐隐的柔和程度。
     ///
-    /// 8pt 与面板下方任务列表容器(`taskListSurface` 用的
-    /// `DesignTokens.Shadow.innerFieldBlur`)量级相当,两处阴影因此读起来
-    /// 是同一套质感,而不是一硬一软。
-    private static let topShadowBlur: CGFloat = 8
+    /// 面板下方任务列表容器(`taskListSurface`)用的是
+    /// `DesignTokens.Shadow.innerFieldBlur`(2pt)配合上下各内缩 2pt,
+    /// 得到一条很紧的内阴影带。顶部阴影是**投影**而非内阴影,
+    /// 扩散范围更大,半径取 4pt 才能与之读起来是同一套柔和质感。
+    private static let topShadowBlur: CGFloat = 4
 
     /// 顶部阴影紧贴面板顶边的实心核心高度(点)。
     ///
@@ -129,8 +130,11 @@ public struct SidebarView: View {
     }
 
     /// 顶部阴影的不透明度:暗色主题下同样的黑色几乎看不出层次,故暗色更重。
+    ///
+    /// 阴影带已从 20pt 收窄到 12pt,峰值浓度相应下调:早先 0.18 / 0.30 是配合
+    /// 20pt 宽的带调的,带窄后同样的浓度会读成一条压得很重的黑边。
     private var topShadowOpacity: Double {
-        colorScheme == .dark ? 0.30 : 0.18
+        colorScheme == .dark ? 0.26 : 0.16
     }
 
     // MARK: - Blocked Reason

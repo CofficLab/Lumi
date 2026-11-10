@@ -44,7 +44,7 @@ public struct DesignerView: View {
         .onAppear {
             notifyDocumentAvailability()
         }
-        .onChange(of: viewModel.projectDocuments.count) { _, _ in
+        .onChange(of: viewModel.projectDocuments.count) { _ in
             notifyDocumentAvailability()
         }
     }
@@ -168,7 +168,8 @@ public struct DesignerView: View {
 
         do {
             let url = directoryURL.appendingPathComponent("\(document.fileSafeName).svg")
-            try IconSVGRenderer().render(document: document).write(to: url, atomically: true, encoding: .utf8)
+            let svg = try await IconSVGRenderer().render(document: document)
+            try svg.write(to: url, atomically: true, encoding: .utf8)
             viewModel.setExportURL(url)
         } catch {
             viewModel.setError(error.localizedDescription)

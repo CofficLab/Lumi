@@ -77,6 +77,43 @@ public enum UserFileAttachmentLoader {
     }
 }
 
+// MARK: - Snapshot store
+
+/// 历史附件的字节快照存储。
+///
+/// 消息 metadata 里已经持久化了发送时的 base64 字节；后续回合必须基于这份
+/// 快照恢复文件，而不是无条件引用可能被移动、删除或替换的原始路径。
+public enum UserAttachmentSnapshotStore {
+    /// 受管目录：按附件 `id` 恢复出的文件落在同名路径，跨回合稳定。
+    public static var defaultDirectory: URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("LumiAttachmentSnapshots", isDirectory: true)
+    }
+
+    /// 把附件保存的字节快照落到 `directory`，返回稳定路径。
+    ///
+    /// 同一附件（`id` 固定）始终复用同一路径；没有快照或写入失败时返回 nil，
+    /// 由调用方回退到 `localPath`。
+    public static func materialize(_ attachment: UserFileAttachment, in directory: URL) -> URL? {
+        guard let base64 = attachment.base64Data,
+              let data = Data(base64Encoded: base64) else { return nil }
+        let fileName = (attachment.fileName as NSString).lastPathComponent
+        guard !fileName.isEmpty, fileName != ".", fileName != ".." else { return nil }
+
+        let target = directory.appendingPathComponent("\(attachment.id.uuidString)-\(fileName)")
+        let fileManager = FileManager.default
+        if fileManager.fileExists(atPath: target.path) { return target }
+
+        do {
+            try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+            try data.write(to: target, options: .atomic)
+            return target
+        } catch {
+            return nil
+        }
+    }
+}
+
 // MARK: - Metadata codec
 
 /// `Message.metadata` 中附件 JSON 的编解码。
@@ -126,10 +163,12 @@ public enum UserAttachmentMetadata {
 
     /// 将文本文件附件追加到用户消息正文，供不支持独立文件字段的 LLM 协议使用。
     ///
-    /// 二进制附件不把 base64 字节混入提示词；有本地路径时提示 Agent 调用本地工具处理。
+    /// 二进制附件不把 base64 字节混入提示词：优先从持久化的字节快照恢复到
+    /// 受管目录并引用该稳定路径，只有旧消息没有快照时才回退到原始 `localPath`。
     public static func appendingFileAttachments(
         _ attachments: [UserFileAttachment],
-        to content: String
+        to content: String,
+        snapshotDirectory: URL = UserAttachmentSnapshotStore.defaultDirectory
     ) -> String {
         guard !attachments.isEmpty else { return content }
 
@@ -138,9 +177,12 @@ public enum UserAttachmentMetadata {
             let mimeType = escapeAttribute(attachment.mimeType)
             let body: String
             if let textContent = attachment.textContent {
-                body = textContent
-            } else if let localPath = attachment.localPath {
-                let path = escapeText(localPath)
+                // 正文里的 `<` / `>` / `&` 必须转义，否则文件内容可以写出
+                // `</attached_file>` 提前结束真实附件并伪造新的附件块。
+                body = escapeText(textContent)
+            } else if let resolvedPath = UserAttachmentSnapshotStore
+                .materialize(attachment, in: snapshotDirectory)?.path ?? attachment.localPath {
+                let path = escapeText(resolvedPath)
                 body = """
                 [Binary file; content is not decoded. MIME type: \(attachment.mimeType)]
                 Local file path: \(path)

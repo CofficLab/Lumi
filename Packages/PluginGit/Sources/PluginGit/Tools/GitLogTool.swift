@@ -26,21 +26,22 @@ public struct GitLogTool: SuperAgentTool, @unchecked Sendable {
             var output = "## Git 提交历史\n\n"
             for (index, log) in logs.enumerated() { output += "### \(index + 1). `\(log.hash.prefix(7))` - \(log.message)\n\n**作者**: \(log.author)\n**日期**: \(log.date.prefix(10))\n\n" }
             return output
-        } catch { return "获取 Git 日志失败：\(error.localizedDescription)" }
+        } catch let error as ToolExecutionError {
+            throw error
+        } catch {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "获取 Git 日志失败：\(error.localizedDescription)"
+            )
+        }
     }
 
     /// 规范化 count 参数：接受 Int / Double / 数字字符串，钳制到 1...50。
+    ///
+    /// 转换必须先检查范围：JSON 数字会桥接成 `Double`，而 `Int(_:)` 对超出
+    /// `Int` 范围的 `Double` 会触发运行时陷阱，直接终止宿主进程。
+    /// 无法安全表示的值（`1e100`、`nan` 等）退回默认值 10。
     static func normalizedCount(_ value: Any?) -> Int {
-        let requested: Int
-        if let int = value as? Int {
-            requested = int
-        } else if let double = value as? Double {
-            requested = Int(double)
-        } else if let string = value as? String, let int = Int(string) {
-            requested = int
-        } else {
-            requested = 10
-        }
-        return min(max(requested, 1), 50)
+        ToolArgumentNumber.int(value, clampedTo: 1...50, default: 10)
     }
 }

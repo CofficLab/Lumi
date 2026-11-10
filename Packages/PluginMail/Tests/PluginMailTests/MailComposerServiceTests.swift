@@ -119,14 +119,22 @@ final class MailComposeViewModelTests: XCTestCase {
     /// 每个用例一套独立的临时目录 + 内存 Keychain：不读写真实用户凭据。
     private var fixture: MailAccountStoreFixture!
     private var store: MailAccountStore!
+    /// 每个用例独立的插件数据目录，避免草稿文件跨用例串扰。
+    private var dataDirectory: URL!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         fixture = try MailAccountStoreFixture()
         store = fixture.store
+        dataDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-mail-compose-\(UUID().uuidString)", isDirectory: true)
     }
 
     override func tearDownWithError() throws {
+        if let dataDirectory {
+            try? FileManager.default.removeItem(at: dataDirectory)
+        }
+        dataDirectory = nil
         fixture = nil
         store = nil
         try super.tearDownWithError()
@@ -187,7 +195,7 @@ final class MailComposeViewModelTests: XCTestCase {
             composer: MailComposerService(sessionManager: manager, accountStore: store),
             sessionManager: manager,
             account: account ?? makeAccount(),
-            dataDirectory: FileManager.default.temporaryDirectory,
+            dataDirectory: dataDirectory,
             mode: mode,
             originalDetail: detail
         )
@@ -220,6 +228,58 @@ final class MailComposeViewModelTests: XCTestCase {
         XCTAssertEqual(vm.to, "", "转发收件人为空，由用户填写")
         XCTAssertTrue(vm.body.contains("Forwarded message"))
         XCTAssertTrue(vm.body.contains("Please review the plan."))
+    }
+
+    func testDraftRestoreRestoresAllFields() {
+        let account = makeAccount()
+        let vm = makeVM(mode: .new, account: account)
+        vm.to = "lisi@example.com"
+        vm.cc = "wangwu@example.com"
+        vm.subject = "Quarterly"
+        vm.body = "Draft body"
+        vm.addAttachment(Data("pdf-bytes".utf8), filename: "plan.pdf")
+        XCTAssertNotNil(vm.draftSavedAt, "编辑后应写入本地草稿")
+
+        let reopened = makeVM(mode: .new, account: account)
+        XCTAssertEqual(reopened.to, "lisi@example.com")
+        XCTAssertEqual(reopened.cc, "wangwu@example.com")
+        XCTAssertEqual(reopened.subject, "Quarterly")
+        XCTAssertEqual(reopened.body, "Draft body")
+        XCTAssertEqual(reopened.attachments.count, 1)
+        XCTAssertEqual(reopened.attachments.first?.filename, "plan.pdf")
+        XCTAssertEqual(reopened.attachments.first?.data, Data("pdf-bytes".utf8))
+        XCTAssertNotNil(reopened.draftSavedAt, "恢复后应保留草稿保存时间")
+    }
+
+    func testCorruptDraftFallsBackToModeDefaults() throws {
+        let account = makeAccount()
+        let draftsDir = dataDirectory.appendingPathComponent("drafts", isDirectory: true)
+        try FileManager.default.createDirectory(at: draftsDir, withIntermediateDirectories: true)
+        let draftURL = draftsDir.appendingPathComponent("\(account.id.uuidString)-reply-42.json")
+        try Data("{ not valid json".utf8).write(to: draftURL)
+
+        let vm = makeVM(mode: .reply, detail: makeDetail(), account: account)
+        XCTAssertEqual(vm.to, "lisi@example.com", "草稿损坏时应回退到回复预填")
+        XCTAssertEqual(vm.subject, "Re: Project Update")
+        XCTAssertTrue(vm.body.contains("Please review the plan."))
+        XCTAssertNil(vm.draftSavedAt)
+    }
+
+    func testSuccessfulSendClearsLocalDraft() async {
+        let session = MockMailSession(messages: [])
+        let account = makeAccount()
+        store.setPassword("p", for: account.id)
+        let vm = makeVM(mode: .new, session: session, account: account)
+        vm.to = "lisi@example.com"
+        vm.body = "Body"
+        vm.saveDraftNow()
+
+        vm.send()
+        await waitForPhaseSettle(vm)
+        XCTAssertEqual(vm.phase, .sent, "mock 发送应成功")
+
+        let reopened = makeVM(mode: .new, account: account)
+        XCTAssertEqual(reopened.body, "", "发送成功后应删除本地草稿")
     }
 
     func testSendFailureRetainsDraftState() async {

@@ -18,10 +18,45 @@ public actor ConversationStore: SuperLog {
 
     private let container: ModelContainer
 
+    /// 每日对话条数账本。
+    ///
+    /// 统计与「会话是否还在库里」解耦：清理旧对话不会让历史计数塌陷。
+    /// 详见 `ConversationCountLedger`。
+    private let ledger: ConversationCountLedger
+
     // MARK: - Initialization
 
     public init(databaseRootURL: URL) throws {
-        self.container = try Self.makeContainer(databaseRootURL: databaseRootURL)
+        let container = try Self.makeContainer(databaseRootURL: databaseRootURL)
+        self.container = container
+        let ledger = ConversationCountLedger(
+            fileURL: databaseRootURL.appendingPathComponent(ConversationCountLedger.fileName)
+        )
+        self.ledger = ledger
+        // 必须在任何删除发生之前完成对齐：账本一旦记下「某天有 N 个对话」，
+        // 后续删除会话就不会再改动它。若推迟到用户打开统计面板才回填，
+        // 这期间被清理掉的历史就永远补不回来了。
+        Self.seedLedger(ledger: ledger, container: container)
+    }
+
+    /// 用会话表的现状回填账本（仅首次建立账本时执行）。
+    private static func seedLedger(ledger: ConversationCountLedger, container: ModelContainer) {
+        // 先读盘再判断：否则每次启动都会认为账本是空的，把整张会话表重扫一遍。
+        ledger.load()
+        guard !ledger.isSeededFromTable else { return }
+        let context = ModelContext(container)
+        let descriptor = FetchDescriptor<ConversationModel>()
+        guard let models = try? context.fetch(descriptor) else { return }
+        var buckets: [ConversationCountLedger.BucketKey: Int] = [:]
+        for model in models {
+            let key = ConversationCountLedger.BucketKey(
+                day: ConversationCountLedger.dayKey(for: Date(timeIntervalSince1970: model.createdAt)),
+                projectPath: model.projectPath,
+                isChildConversation: model.parentConversationID != nil
+            )
+            buckets[key, default: 0] += 1
+        }
+        ledger.mergeSeeded(tableCounts: buckets)
     }
 
     static func makeContainer(databaseRootURL: URL) throws -> ModelContainer {
@@ -150,11 +185,30 @@ public actor ConversationStore: SuperLog {
         context.insert(model)
         try context.save()
 
+        // 记入统计账本：计数独立于会话行存在，删除会话不会让它回落。
+        recordCount(createdAt: createdAt, projectPath: projectPath, parentConversationID: parentConversationID)
+
         if Self.verbose {
             Self.logger.info("\(Self.t)创建对话：\(title ?? "nil"), 模型 ID：\(modelID ?? "nil"), 项目：\(projectPath ?? "nil")")
         }
 
         return model
+    }
+
+    /// 把一次会话创建记入统计账本。
+    private func recordCount(
+        createdAt: Date,
+        projectPath: String?,
+        parentConversationID: UUID?
+    ) {
+        ledger.apply([
+            ConversationCountLedger.Increment(
+                day: ConversationCountLedger.dayKey(for: createdAt),
+                projectPath: projectPath,
+                isChildConversation: parentConversationID != nil,
+                count: 1
+            )
+        ])
     }
 
     /// 将旧 SwiftData providerId + modelName 行一次性折叠为单一 modelID。
@@ -205,10 +259,19 @@ public actor ConversationStore: SuperLog {
         }()
 
         var inserted = 0
+        var increments: [ConversationCountLedger.Increment] = []
         for summary in summaries {
             let idString = summary.id.uuidString
             guard !existingIDs.contains(idString) else { continue }
             context.insert(ConversationModel.from(summary: summary))
+            increments.append(
+                ConversationCountLedger.Increment(
+                    day: ConversationCountLedger.dayKey(for: summary.createdAt),
+                    projectPath: summary.projectPath,
+                    isChildConversation: summary.parentConversationID != nil,
+                    count: 1
+                )
+            )
             inserted += 1
         }
 
@@ -216,6 +279,8 @@ public actor ConversationStore: SuperLog {
 
         do {
             try context.save()
+            // 迁移来的历史会话同样计入账本，否则旧数据不会出现在统计里。
+            ledger.apply(increments)
             if Self.verbose {
                 Self.logger.info("\(Self.t)迁移导入 \(inserted) 条历史会话")
             }
@@ -232,59 +297,78 @@ public actor ConversationStore: SuperLog {
     ///
     /// The cursor is the last item from the previous page. Keyset pagination
     /// avoids materializing all earlier rows as the conversation table grows.
+    ///
+    /// - Note: 读取失败会被折叠成空数组；需要区分「读取失败」与「空库」的调用方
+    ///   应改用 `loadConversationPage`。
     func fetchConversationPage(
         limit: Int,
         beforeUpdatedAt: Date? = nil,
         beforeID: UUID? = nil,
         includingChildConversations: Bool = false
     ) -> [ConversationSummary] {
+        do {
+            return try loadConversationPage(
+                limit: limit,
+                beforeUpdatedAt: beforeUpdatedAt,
+                beforeID: beforeID,
+                includingChildConversations: includingChildConversations
+            )
+        } catch {
+            Self.logger.error("\(Self.t)查询对话分页失败：\(error.localizedDescription)")
+            return []
+        }
+    }
+
+    /// Fetch one page, throwing storage errors instead of folding them into `[]`.
+    func loadConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date? = nil,
+        beforeID: UUID? = nil,
+        includingChildConversations: Bool = false
+    ) throws -> [ConversationSummary] {
         guard limit > 0 else { return [] }
 
         let context = ModelContext(container)
         normalizeEmptyParentConversationIDs(in: context)
-        let cursorTimestamp = beforeUpdatedAt?.timeIntervalSince1970
-        let cursorID = beforeID?.uuidString
+        backfillSortKeys(in: context)
+        let cursorKey: Int64? = {
+            guard let beforeUpdatedAt, let beforeID else { return nil }
+            return ConversationModel.makeSortKey(
+                date: beforeUpdatedAt.timeIntervalSince1970,
+                id: beforeID.uuidString
+            )
+        }()
         var descriptor: FetchDescriptor<ConversationModel>
 
-        // Use `createdAt` for DB-level cursor pagination (non-optional, safe for #Predicate).
-        if let cursorTimestamp, let cursorID {
+        // Keyset 必须与列表排序同基准：`sortKey` 降序。
+        // 旧实现按 createdAt 取页、再按 lastMessageAt 内存重排，会把
+        // 「创建早但最近活跃」的会话整条漏掉，并在下一页重复返回。
+        if let cursorKey {
             if includingChildConversations {
                 descriptor = FetchDescriptor<ConversationModel>(
                     predicate: #Predicate<ConversationModel> {
-                        $0.createdAt < cursorTimestamp ||
-                        ($0.createdAt == cursorTimestamp && $0.id < cursorID)
+                        $0.sortKey < cursorKey
                     },
-                    sortBy: [
-                        SortDescriptor(\.createdAt, order: .reverse),
-                        SortDescriptor(\.id, order: .reverse),
-                    ]
+                    sortBy: [SortDescriptor(\.sortKey, order: .reverse)]
                 )
             } else {
                 descriptor = FetchDescriptor<ConversationModel>(
                     predicate: #Predicate<ConversationModel> {
-                        ($0.createdAt < cursorTimestamp ||
-                        ($0.createdAt == cursorTimestamp && $0.id < cursorID)) &&
+                        $0.sortKey < cursorKey &&
                         $0.parentConversationID == nil
                     },
-                    sortBy: [
-                        SortDescriptor(\.createdAt, order: .reverse),
-                        SortDescriptor(\.id, order: .reverse),
-                    ]
+                    sortBy: [SortDescriptor(\.sortKey, order: .reverse)]
                 )
             }
         } else {
             if includingChildConversations {
-                descriptor = FetchDescriptor<ConversationModel>(sortBy: [
-                    SortDescriptor(\.createdAt, order: .reverse),
-                    SortDescriptor(\.id, order: .reverse),
-                ])
+                descriptor = FetchDescriptor<ConversationModel>(
+                    sortBy: [SortDescriptor(\.sortKey, order: .reverse)]
+                )
             } else {
                 descriptor = FetchDescriptor<ConversationModel>(
                     predicate: #Predicate<ConversationModel> { $0.parentConversationID == nil },
-                    sortBy: [
-                        SortDescriptor(\.createdAt, order: .reverse),
-                        SortDescriptor(\.id, order: .reverse),
-                    ]
+                    sortBy: [SortDescriptor(\.sortKey, order: .reverse)]
                 )
             }
         }
@@ -293,22 +377,18 @@ public actor ConversationStore: SuperLog {
 
         do {
             let models = try context.fetch(descriptor)
-            // Re-sort in-memory by lastMessageAt (optional, falls back to createdAt)
-            let summaries = models.compactMap { $0.toLumiConversationSummary() }
-            return summaries.sorted { lhs, rhs in
-                let lTime = lhs.lastMessageAt
-                let rTime = rhs.lastMessageAt
-                return lTime == rTime
-                    ? lhs.createdAt > rhs.createdAt
-                    : lTime > rTime
-            }
+            // 数据库已按 `sortKey` 排好，直接映射，避免二次排序改变顺序。
+            return models.compactMap { $0.toLumiConversationSummary() }
         } catch {
             Self.logger.error("\(Self.t)查询对话分页失败：\(error.localizedDescription)")
-            return []
+            throw error
         }
     }
 
     /// Fetch one page of conversations filtered by project path.
+    ///
+    /// - Note: 读取失败会被折叠成空数组；需要区分失败的调用方应改用
+    ///   `loadConversationPage(projectPath:)`。
     func fetchConversationPage(
         limit: Int,
         beforeUpdatedAt: Date? = nil,
@@ -316,26 +396,50 @@ public actor ConversationStore: SuperLog {
         includingChildConversations: Bool = false,
         projectPath: String
     ) -> [ConversationSummary] {
+        do {
+            return try loadConversationPage(
+                limit: limit,
+                beforeUpdatedAt: beforeUpdatedAt,
+                beforeID: beforeID,
+                includingChildConversations: includingChildConversations,
+                projectPath: projectPath
+            )
+        } catch {
+            Self.logger.error("\(Self.t)按项目查询对话分页失败：\(error.localizedDescription)")
+            return []
+        }
+    }
+
+    /// Fetch one project-scoped page, throwing storage errors instead of `[]`.
+    func loadConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date? = nil,
+        beforeID: UUID? = nil,
+        includingChildConversations: Bool = false,
+        projectPath: String
+    ) throws -> [ConversationSummary] {
         guard limit > 0 else { return [] }
 
         let context = ModelContext(container)
         normalizeEmptyParentConversationIDs(in: context)
-        let cursorTimestamp = beforeUpdatedAt?.timeIntervalSince1970
-        let cursorID = beforeID?.uuidString
+        backfillSortKeys(in: context)
+        let cursorKey: Int64? = {
+            guard let beforeUpdatedAt, let beforeID else { return nil }
+            return ConversationModel.makeSortKey(
+                date: beforeUpdatedAt.timeIntervalSince1970,
+                id: beforeID.uuidString
+            )
+        }()
         var descriptor: FetchDescriptor<ConversationModel>
 
-        if let cursorTimestamp, let cursorID {
+        if let cursorKey {
             descriptor = FetchDescriptor<ConversationModel>(
                 predicate: #Predicate<ConversationModel> {
-                    ($0.createdAt < cursorTimestamp ||
-                    ($0.createdAt == cursorTimestamp && $0.id < cursorID)) &&
+                    $0.sortKey < cursorKey &&
                     $0.projectPath == projectPath &&
                     (includingChildConversations || $0.parentConversationID == nil)
                 },
-                sortBy: [
-                    SortDescriptor(\.createdAt, order: .reverse),
-                    SortDescriptor(\.id, order: .reverse),
-                ]
+                sortBy: [SortDescriptor(\.sortKey, order: .reverse)]
             )
         } else {
             descriptor = FetchDescriptor<ConversationModel>(
@@ -343,10 +447,7 @@ public actor ConversationStore: SuperLog {
                     $0.projectPath == projectPath &&
                     (includingChildConversations || $0.parentConversationID == nil)
                 },
-                sortBy: [
-                    SortDescriptor(\.createdAt, order: .reverse),
-                    SortDescriptor(\.id, order: .reverse),
-                ]
+                sortBy: [SortDescriptor(\.sortKey, order: .reverse)]
             )
         }
 
@@ -354,17 +455,10 @@ public actor ConversationStore: SuperLog {
 
         do {
             let models = try context.fetch(descriptor)
-            let summaries = models.compactMap { $0.toLumiConversationSummary() }
-            return summaries.sorted { lhs, rhs in
-                let lTime = lhs.lastMessageAt
-                let rTime = rhs.lastMessageAt
-                return lTime == rTime
-                    ? lhs.createdAt > rhs.createdAt
-                    : lTime > rTime
-            }
+            return models.compactMap { $0.toLumiConversationSummary() }
         } catch {
             Self.logger.error("\(Self.t)按项目查询对话分页失败：\(error.localizedDescription)")
-            return []
+            throw error
         }
     }
 
@@ -459,7 +553,10 @@ public actor ConversationStore: SuperLog {
         }
     }
 
-    /// Build a recent daily conversation-count series with bounded count queries.
+    /// Build a recent daily conversation-count series.
+    ///
+    /// 数据来自**统计账本**而非会话表：会话被清理（删除 7/30 天前的对话）后，
+    /// 历史计数依然保留，曲线不会塌陷。详见 `ConversationCountLedger`。
     ///
     /// - Parameters:
     ///   - days: 序列长度（向前回溯的天数）。
@@ -474,54 +571,21 @@ public actor ConversationStore: SuperLog {
     ) -> ConversationDailyCountSeries {
         guard days > 0 else { return ConversationDailyCountSeries(points: []) }
 
-        let context = ModelContext(container)
-        normalizeEmptyParentConversationIDs(in: context)
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: date)
         let firstDay = calendar.date(byAdding: .day, value: -(days - 1), to: today) ?? today
+        let dailyCounts = ledger.dailyCounts(
+            projectPath: projectPath,
+            includingChildConversations: includingChildConversations
+        )
         let points = (0..<days).compactMap { offset -> ConversationDailyCountPoint? in
-            guard let day = calendar.date(byAdding: .day, value: offset, to: firstDay),
-                  let nextDay = calendar.date(byAdding: .day, value: 1, to: day) else {
+            guard let day = calendar.date(byAdding: .day, value: offset, to: firstDay) else {
                 return nil
             }
-
-            let startTimestamp = day.timeIntervalSince1970
-            let endTimestamp = nextDay.timeIntervalSince1970
-            let count = (try? context.fetchCount(dailyCountDescriptor(
-                startTimestamp: startTimestamp,
-                endTimestamp: endTimestamp,
-                projectPath: projectPath,
-                includingChildConversations: includingChildConversations
-            ))) ?? 0
+            let count = dailyCounts[ConversationCountLedger.dayKey(for: day)] ?? 0
             return ConversationDailyCountPoint(day: day, count: count)
         }
         return ConversationDailyCountSeries(points: points)
-    }
-
-    /// 单日区间内的对话计数条件。
-    private func dailyCountDescriptor(
-        startTimestamp: TimeInterval,
-        endTimestamp: TimeInterval,
-        projectPath: String?,
-        includingChildConversations: Bool
-    ) -> FetchDescriptor<ConversationModel> {
-        if let projectPath {
-            return FetchDescriptor<ConversationModel>(
-                predicate: #Predicate<ConversationModel> {
-                    $0.createdAt >= startTimestamp &&
-                    $0.createdAt < endTimestamp &&
-                    $0.projectPath == projectPath &&
-                    (includingChildConversations || $0.parentConversationID == nil)
-                }
-            )
-        }
-        return FetchDescriptor<ConversationModel>(
-            predicate: #Predicate<ConversationModel> {
-                $0.createdAt >= startTimestamp &&
-                $0.createdAt < endTimestamp &&
-                (includingChildConversations || $0.parentConversationID == nil)
-            }
-        )
     }
 
     /// 查找「创建于 `cutoff` 之前」的对话 ID。
@@ -707,6 +771,10 @@ public actor ConversationStore: SuperLog {
         }
 
         model.lastMessageAt = messageDate.timeIntervalSince1970
+        model.sortKey = ConversationModel.makeSortKey(
+            date: messageDate.timeIntervalSince1970,
+            id: idString
+        )
         model.updatedAt = Date().timeIntervalSince1970
         return save(context, operation: "更新最后消息时间")
     }
@@ -854,6 +922,22 @@ public actor ConversationStore: SuperLog {
         }
         try? context.save()
         return models.count
+    }
+
+    /// 旧库新增 `sortKey` 列后为默认值 0；用最后消息时间（缺失时 createdAt）回填。
+    /// 时间戳恒大于 0，因此 0 可安全作为「未回填」哨兵。
+    private func backfillSortKeys(in context: ModelContext) {
+        let descriptor = FetchDescriptor<ConversationModel>(
+            predicate: #Predicate<ConversationModel> { $0.sortKey == 0 }
+        )
+        guard let models = try? context.fetch(descriptor), !models.isEmpty else { return }
+        for model in models {
+            model.sortKey = ConversationModel.makeSortKey(
+                date: model.lastMessageAt ?? model.createdAt,
+                id: model.id
+            )
+        }
+        try? context.save()
     }
 
     private func save(_ context: ModelContext, operation: StaticString) -> Bool {

@@ -146,6 +146,54 @@ struct ToolJobPersistenceTests {
         #expect(settled?.result?.isError == true)
     }
 
+    /// 回归 #544：恢复完成后必须发布批量快照，打开中的活动面板才能补齐列表。
+    @MainActor
+    @Test("启动恢复终态 Job 后发布 restored 批量快照")
+    func restorePublishesSnapshotEvent() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let conversationID = UUID()
+        let now = Date()
+        let record = ToolJobRecord(
+            id: "restored-1",
+            toolCallID: "call-restored-1",
+            conversationID: conversationID,
+            turnID: UUID(),
+            toolName: "run_command",
+            argumentsJSON: "{}",
+            argumentsHash: ToolJobRecord.makeArgumentsHash("{}"),
+            status: .completed,
+            createdAt: now,
+            startedAt: now,
+            updatedAt: now,
+            latestOutput: "done",
+            outputByteCount: 4
+        )
+        await store.upsert(record)
+
+        let manager = ToolManager()
+        var restoredBatches: [[ToolJob]] = []
+        let handle = manager.addToolJobObserver { event in
+            if case .restored(let jobs) = event {
+                restoredBatches.append(jobs)
+            }
+        }
+        defer { handle.cancel() }
+
+        manager.jobRecordStore = store
+
+        for _ in 0..<40 {
+            if !restoredBatches.isEmpty { break }
+            try? await Task.sleep(nanoseconds: 25_000_000)
+        }
+
+        let restored = try #require(restoredBatches.first)
+        #expect(restored.map(\.id) == [record.id])
+        #expect(restored.first?.status == .completed)
+        #expect(manager.jobs(forConversationID: conversationID).map(\.id) == [record.id])
+    }
+
     @MainActor
     @Test("删除会话会取消运行中的 Job 并阻止迟到持久化")
     func deletingConversationCancelsJobsAndClearsRecords() async throws {

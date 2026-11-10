@@ -86,8 +86,11 @@ public struct TerminalMainView: View {
             } else {
                 ZStack {
                     ForEach(viewModel.sessions) { session in
+                        let presentation = viewModel.presentation(for: session.id)
                         TerminalSessionContainerView(session: session)
-                            .opacity(viewModel.selectedSessionId == session.id ? 1 : 0)
+                            .opacity(presentation.opacity)
+                            .allowsHitTesting(presentation.allowsHitTesting)
+                            .zIndex(presentation.zIndex)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -96,10 +99,10 @@ public struct TerminalMainView: View {
         .onAppear {
             viewModel.ensureInitialSession(workingDirectory: currentProjectPathForTerminal)
         }
-        .onChange(of: projectProvider?.currentProjectPath) { _, _ in
+        .onChange(of: projectProvider?.currentProjectPath) { _ in
             viewModel.updateDefaultWorkingDirectory(currentProjectPathForTerminal)
         }
-        .onChange(of: projectPath) { _, _ in
+        .onChange(of: projectPath) { _ in
             viewModel.updateDefaultWorkingDirectory(currentProjectPathForTerminal)
         }
     }

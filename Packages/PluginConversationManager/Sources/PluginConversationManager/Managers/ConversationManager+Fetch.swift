@@ -22,12 +22,18 @@ extension ConversationManager {
         beforeID: UUID? = nil,
         includingChildConversations: Bool
     ) async -> [ConversationSummary] {
-        await store?.fetchConversationPage(
+        let page = await store?.fetchConversationPage(
             limit: limit,
             beforeUpdatedAt: beforeUpdatedAt,
             beforeID: beforeID,
             includingChildConversations: includingChildConversations
         ) ?? []
+        // 分页结果同样要进缓存：否则翻到第二页后，这些真实会话在
+        // 删除/标题/偏好路径里会被缓存守卫当成不存在（issue #965）。
+        for summary in page {
+            cache(summary)
+        }
+        return page
     }
 
     public func fetchConversationPage(
@@ -37,13 +43,59 @@ extension ConversationManager {
         includingChildConversations: Bool,
         projectPath: String
     ) async -> [ConversationSummary] {
-        await store?.fetchConversationPage(
+        let page = await store?.fetchConversationPage(
             limit: limit,
             beforeUpdatedAt: beforeUpdatedAt,
             beforeID: beforeID,
             includingChildConversations: includingChildConversations,
             projectPath: projectPath
         ) ?? []
+        for summary in page {
+            cache(summary)
+        }
+        return page
+    }
+
+    /// 分页读取的失败必须传给调用方：列表刷新要保留上一份成功快照，
+    /// 不能把瞬态存储错误当成空库。
+    public func loadConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date? = nil,
+        beforeID: UUID? = nil,
+        includingChildConversations: Bool
+    ) async throws -> [ConversationSummary] {
+        guard let store else { throw ConversationPageLoadError.storageUnavailable }
+        let page = try await store.loadConversationPage(
+            limit: limit,
+            beforeUpdatedAt: beforeUpdatedAt,
+            beforeID: beforeID,
+            includingChildConversations: includingChildConversations
+        )
+        for summary in page {
+            cache(summary)
+        }
+        return page
+    }
+
+    public func loadConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date? = nil,
+        beforeID: UUID? = nil,
+        includingChildConversations: Bool,
+        projectPath: String
+    ) async throws -> [ConversationSummary] {
+        guard let store else { throw ConversationPageLoadError.storageUnavailable }
+        let page = try await store.loadConversationPage(
+            limit: limit,
+            beforeUpdatedAt: beforeUpdatedAt,
+            beforeID: beforeID,
+            includingChildConversations: includingChildConversations,
+            projectPath: projectPath
+        )
+        for summary in page {
+            cache(summary)
+        }
+        return page
     }
 
     public func fetchConversation(id: UUID) async -> ConversationSummary? {
@@ -56,7 +108,7 @@ extension ConversationManager {
         }
 
         await MainActor.run {
-            self.cache(summary)
+            self.cacheHydratedSummary(summary)
         }
         return summary
     }

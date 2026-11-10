@@ -5,7 +5,7 @@ let package = Package(
     name: "KitMarkdown",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("13.1"),
         .iOS(.v17)
     ],
     products: [
@@ -26,8 +26,8 @@ let package = Package(
         .package(path: "../KitTreeSitterGrammars"),
         .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.9.0"),
         .package(url: "https://github.com/lukilabs/beautiful-mermaid-swift", from: "1.0.4"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
+        .package(path: "../../Vendor/LumiLocalization"),
+        .package(path: "../../Vendor/LumiUI"),
         // 代码块语法高亮：tree-sitter 运行时与内置语法。
         // 版本约束与 PluginCodeEditorLanguages 保持一致，保证解析结果一致。
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter.git", from: "0.25.0"),

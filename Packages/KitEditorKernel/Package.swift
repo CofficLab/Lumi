@@ -5,7 +5,7 @@ let package = Package(
     name: "KitEditorKernel",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("13.1"),
         .iOS(.v17)
     ],
     products: [
@@ -17,8 +17,8 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.14.2"),
         .package(path: "../KitEditorLanguageRuntime"),
-        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(path: "../../Vendor/LumiLogging"),
+        .package(path: "../../Vendor/LumiLocalization"),
     ],
     targets: [
         .target(

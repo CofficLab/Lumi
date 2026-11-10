@@ -24,6 +24,9 @@ extension SharedManagerSuite {
             var forkedDescription: String? = "forked description"
             var forkedCriteria: String? = "forked criteria"
 
+            /// fork 返回的任务副本；默认空，供「任务列表」用例注入。
+            var forkedTasks: [GoalTask] = []
+
             var createdConversations: [String] = []
             var discardedConversations: [UUID] = []
             var forkedGoalIDs: [(id: String, into: UUID)] = []
@@ -40,14 +43,17 @@ extension SharedManagerSuite {
                 discardedConversations.append(id)
             }
 
-            func forkGoal(id: String, into conversationID: UUID) async throws -> Goal {
+            func forkGoal(id: String, into conversationID: UUID) async throws -> ForkedGoal {
                 forkedGoalIDs.append((id, conversationID))
                 if let forkError { throw forkError }
-                return Goal(
-                    conversationId: conversationID.uuidString,
-                    title: "Forked goal",
-                    goalDescription: forkedDescription,
-                    successCriteria: forkedCriteria
+                return ForkedGoal(
+                    goal: Goal(
+                        conversationId: conversationID.uuidString,
+                        title: "Forked goal",
+                        goalDescription: forkedDescription,
+                        successCriteria: forkedCriteria
+                    ),
+                    tasks: forkedTasks
                 )
             }
 
@@ -80,17 +86,17 @@ extension SharedManagerSuite {
             ))
         }
 
-        private func makeTasks(_ entries: [(String, GoalTask.TaskStatus)]) -> [GoalTaskDisplayItem] {
+        private func makeTasks(_ entries: [(String, GoalTask.TaskStatus)]) -> [GoalTask] {
             entries.map { title, status in
-                GoalTaskDisplayItem(from: GoalTask(
-                    goalId: "source",
+                GoalTask(
+                    goalId: "forked",
                     title: title,
                     taskDescription: nil,
                     executionContext: nil,
                     status: status,
                     order: 0,
                     parallelGroup: nil
-                ))
+                )
             }
         }
 
@@ -101,7 +107,7 @@ extension SharedManagerSuite {
             let capability = SpyCapability()
             let coordinator = GoalForkCoordinator(capability: capability)
 
-            try await coordinator.forkAndStart(goal: makeGoal(), tasks: [])
+            try await coordinator.forkAndStart(goal: makeGoal())
 
             #expect(capability.createdConversations == ["Original goal"])
             #expect(capability.forkedGoalIDs.count == 1)
@@ -117,7 +123,7 @@ extension SharedManagerSuite {
             let capability = SpyCapability()
             let coordinator = GoalForkCoordinator(capability: capability)
 
-            try await coordinator.forkAndStart(goal: makeGoal(), tasks: [])
+            try await coordinator.forkAndStart(goal: makeGoal())
 
             let prompt = try #require(capability.committedTexts.first?.text)
             #expect(prompt.contains("这个对话延续自另一个对话中的目标"))
@@ -133,13 +139,15 @@ extension SharedManagerSuite {
             let capability = SpyCapability()
             let coordinator = GoalForkCoordinator(capability: capability)
 
-            try await coordinator.forkAndStart(goal: makeGoal(), tasks: makeTasks([
+            capability.forkedTasks = makeTasks([
                 ("已完成", .completed),
                 ("待办一", .pending),
                 ("进行中", .inProgress),
                 ("已跳过", .skipped),
                 ("已失败", .failed),
-            ]))
+            ])
+
+            try await coordinator.forkAndStart(goal: makeGoal())
 
             let prompt = try #require(capability.committedTexts.first?.text)
             #expect(prompt.contains("## 未完成的任务"))
@@ -150,15 +158,31 @@ extension SharedManagerSuite {
             #expect(prompt.contains("已失败") == false)
         }
 
+        @Test("开场指令使用分叉副本的任务 ID，而非源任务 ID")
+        func testResumePromptUsesForkedTaskIDs() async throws {
+            let capability = SpyCapability()
+            let sourceTask = GoalTask(goalId: "source", title: "待办", status: .pending)
+            capability.forkedTasks = [
+                GoalTask(goalId: "forked", title: "待办", status: .pending)
+            ]
+            let forkedTaskID = try #require(capability.forkedTasks.first?.id)
+            let coordinator = GoalForkCoordinator(capability: capability)
+
+            try await coordinator.forkAndStart(goal: makeGoal())
+
+            let prompt = try #require(capability.committedTexts.first?.text)
+            #expect(prompt.contains("[\(forkedTaskID)]"))
+            #expect(prompt.contains(sourceTask.id) == false)
+        }
+
         @Test("全部任务已结束时开场指令不含未完成区块")
         func testResumePromptWithoutOutstandingTasks() async throws {
             let capability = SpyCapability()
             let coordinator = GoalForkCoordinator(capability: capability)
 
-            try await coordinator.forkAndStart(
-                goal: makeGoal(),
-                tasks: makeTasks([("已完成", .completed), ("已跳过", .skipped)])
-            )
+            capability.forkedTasks = makeTasks([("已完成", .completed), ("已跳过", .skipped)])
+
+            try await coordinator.forkAndStart(goal: makeGoal())
 
             let prompt = try #require(capability.committedTexts.first?.text)
             #expect(prompt.contains("## 未完成的任务") == false)
@@ -172,8 +196,7 @@ extension SharedManagerSuite {
             let coordinator = GoalForkCoordinator(capability: capability)
 
             try await coordinator.forkAndStart(
-                goal: makeGoal(description: nil, criteria: nil),
-                tasks: []
+                goal: makeGoal(description: nil, criteria: nil)
             )
 
             let prompt = try #require(capability.committedTexts.first?.text)
@@ -190,7 +213,7 @@ extension SharedManagerSuite {
             capability.forkedCriteria = ""
             let coordinator = GoalForkCoordinator(capability: capability)
 
-            try await coordinator.forkAndStart(goal: makeGoal(), tasks: [])
+            try await coordinator.forkAndStart(goal: makeGoal())
 
             let prompt = try #require(capability.committedTexts.first?.text)
             #expect(prompt.contains("成功标准：") == false)
@@ -206,7 +229,7 @@ extension SharedManagerSuite {
             let coordinator = GoalForkCoordinator(capability: capability)
 
             await #expect(throws: StubError.self) {
-                try await coordinator.forkAndStart(goal: makeGoal(), tasks: [])
+                try await coordinator.forkAndStart(goal: makeGoal())
             }
             #expect(capability.forkedGoalIDs.isEmpty)
             #expect(capability.startedTurns == 0)
@@ -220,7 +243,7 @@ extension SharedManagerSuite {
             let coordinator = GoalForkCoordinator(capability: capability)
 
             await #expect(throws: StubError.self) {
-                try await coordinator.forkAndStart(goal: makeGoal(), tasks: [])
+                try await coordinator.forkAndStart(goal: makeGoal())
             }
             // 已建对话但复制失败，必须被回收
             #expect(capability.createdConversations.count == 1)
@@ -236,7 +259,7 @@ extension SharedManagerSuite {
             let coordinator = GoalForkCoordinator(capability: capability)
 
             await #expect(throws: GoalForkError.emptyPrompt) {
-                try await coordinator.forkAndStart(goal: makeGoal(), tasks: [])
+                try await coordinator.forkAndStart(goal: makeGoal())
             }
             #expect(capability.discardedConversations.count == 1)
             #expect(capability.startedTurns == 0)
@@ -249,7 +272,7 @@ extension SharedManagerSuite {
             let coordinator = GoalForkCoordinator(capability: capability)
 
             await #expect(throws: StubError.self) {
-                try await coordinator.forkAndStart(goal: makeGoal(), tasks: [])
+                try await coordinator.forkAndStart(goal: makeGoal())
             }
             #expect(capability.discardedConversations.count == 1)
             #expect(capability.startedTurns == 0)

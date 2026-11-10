@@ -32,11 +32,17 @@ public struct UserDefinedCloudModel: Codable, Equatable, Identifiable, Sendable 
         self.supportsTools = supportsTools
     }
 
+    /// 非正窗口不是合法元数据，按未知处理，让上下文预算走回退窗口（回归 #1121）。
+    var normalizedContextWindowSize: Int? {
+        guard let contextWindowSize, contextWindowSize > 0 else { return nil }
+        return contextWindowSize
+    }
+
     var providerModel: LLMModelInfo {
         LLMModelInfo(
             id: id,
             displayName: displayName,
-            contextWindowSize: contextWindowSize,
+            contextWindowSize: normalizedContextWindowSize,
             supportsVision: supportsVision,
             supportsTools: supportsTools
         )
@@ -113,6 +119,15 @@ public struct UserDefinedCloudProviderConfiguration: Codable, Equatable, Identif
         }
         if !copy.models.contains(where: { $0.id == copy.defaultModel }) {
             copy.defaultModel = copy.models[0].id
+        }
+        copy.models = copy.models.map { model in
+            UserDefinedCloudModel(
+                id: model.id,
+                displayName: model.displayName,
+                contextWindowSize: model.normalizedContextWindowSize,
+                supportsVision: model.supportsVision,
+                supportsTools: model.supportsTools
+            )
         }
         if copy.apiFormat == .responses {
             // The shared Responses implementation currently does not forward

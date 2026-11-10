@@ -5,7 +5,7 @@
 NettoPlugin Manage network permissions for macOS applications.
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 54
+测试文件: 6 个，用例总数: 59
 
 核心组件（源码目录）:
 - `Bridge/`
@@ -99,27 +99,32 @@ NettoPlugin Manage network permissions for macOS applications.
 | 52 | 综合 | loadSettingsKeepsPersistedAllowRules | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `loadSettingsKeepsPersistedAllowRules` |
 | 53 | 综合 | loadSettingsHandlesDuplicateAppIdsWithoutCrashing | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `loadSettingsHandlesDuplicateAppIdsWithoutCrashing` |
 | 54 | 综合 | connectionPromptMessageIncludesDecisionContext | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `connectionPromptMessageIncludesDecisionContext` |
+| 55 | 综合 | 注入目录后使用注入目录而非真实数据目录 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `usesInjectedDirectory` |
+| 56 | 综合 | 未注入目录时必须拒绝回退到真实数据目录 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `refusesFallbackWithoutInjection` |
+| 57 | 综合 | outbound 的目标端口取 remote endpoint，排除客户端临时端口 | — | 调用 `FirewallEndpointResolver.targetPort` | 返回 443 而非 52344 | P1 | ✅ 已覆盖 | `outboundTargetPortUsesRemoteEndpointPort` |
+| 58 | 综合 | inbound / any 的目标端口保留本地服务端口 | — | 调用 `FirewallEndpointResolver.targetPort` | 返回 443 | P1 | ✅ 已覆盖 | `inboundAndAnyTargetPortKeepLocalServicePort` |
+| 59 | Netto 运行应用列表 | 应用启动/退出后 refresh 重新计算结果 | 运行列表从 [A,B] 变为 [B,C] | 调用 `refresh()` | `apps` 变为 [B,C]，不再是首次快照 | P1 | ✅ 已覆盖 | `refreshRecomputesRunningApps` |
 
-> 说明：全部 **54 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **59 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
-- P1: 已覆盖 41 / 41
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 45 / 45
 - P2: 已覆盖 8 / 8
-- **合计: 54 / 54**（仅表示清单场景，非源码覆盖率）
+- **合计: 59 / 59**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（41 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（45 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 54 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 59 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
