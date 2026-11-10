@@ -107,6 +107,20 @@ final class ProjectContextViewModel: ObservableObject {
     /// 当前是否有项目。没有项目时整个上下文卡都不渲染。
     var hasProject: Bool { project?.currentProject != nil }
 
+    /// 当前可展示的项目身份。
+    ///
+    /// - Important: 必须同时满足「有项目」与「身份存在」才可展示（#889）。
+    ///   两者是独立条件：`identity` 是上一次加载留下的缓存，`hasProject`
+    ///   反映当前是否真的有项目选中。任一不满足就返回 nil，界面不得展示
+    ///   已关闭项目的路径/身份。
+    ///
+    ///   收敛到一处而不是让每个视图各判一次：身份行与项目上下文卡是两条
+    ///   独立的展示路径，各写各的判断迟早会漏掉一条。
+    var displayIdentity: ProjectContextIdentity? {
+        guard hasProject else { return nil }
+        return identity
+    }
+
     /// 当前项目的根目录路径。没有项目时为 nil。
     var currentProjectPath: String? { project?.currentProject?.path }
 
@@ -189,7 +203,20 @@ final class ProjectContextViewModel: ObservableObject {
     }
 
     /// 清空所有状态（没有项目时）。
+    ///
+    /// - Important: 必须先推进 `loadGeneration` 再清值（#889）。
+    ///   旧实现只在「真正开始加载」时递增代次，而这条清空路径不递增，
+    ///   于是项目 P 的加载若还卡在目录读取 / 索引状态 / Git 查询上，
+    ///   P 被关闭并清空后，旧加载返回时 `generation == loadGeneration` 仍成立，
+    ///   把 P 的 `identity`、`rows`、`details` 和 `loadedProjectPath` 全部写回。
+    ///   空消息页会重新显示已经关闭的 P 的路径/身份，且没有新项目触发
+    ///   另一次加载时，这份错误状态不会被纠正。
+    ///
+    ///   「当前没有项目」同样是一种状态变更，必须像换项目一样作废在途加载。
     private func clear() {
+        // 作废所有在途加载：它们返回时代次已经不匹配，会自行放弃写回。
+        loadGeneration &+= 1
+        isLoading = false
         identity = nil
         rows = []
         details = []
