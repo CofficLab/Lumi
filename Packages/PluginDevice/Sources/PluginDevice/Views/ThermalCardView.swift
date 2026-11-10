@@ -51,7 +51,7 @@ struct ThermalCardView: View {
 
             ForEach(values) { reading in
                 HStack {
-                    Text(String(format: "Sensor %d", reading.index))
+                    Text(ThermalSensorLabel.text(index: reading.index))
                         .font(.system(size: 9, design: .monospaced))
                         .foregroundColor(theme.textTertiary)
                     Spacer()
@@ -84,5 +84,15 @@ struct ThermalCardView: View {
         case .device: return pluginLocalization.string("Device")
         case .surface: return pluginLocalization.string("Surface")
         }
+    }
+}
+
+/// 传感器行标签；`resolve` 便于测试注入，默认走插件本地化资源。
+enum ThermalSensorLabel {
+    static func text(
+        index: Int,
+        resolve: (String) -> String = { pluginLocalization.string($0) }
+    ) -> String {
+        String(format: resolve("Sensor %d"), index)
     }
 }
