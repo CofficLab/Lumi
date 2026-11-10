@@ -136,12 +136,17 @@ struct ProviderListView: View {
         }
     }
 
+    /// 分组标题与辅助功能标签共用本地化文案，避免两处各取一份（#906）。
+    private var relayTitle: String {
+        ProviderListLocalization.relaySectionTitle()
+    }
+
     private var relaySectionDivider: some View {
         HStack(spacing: 8) {
             Rectangle()
                 .fill(theme.divider)
                 .frame(height: 1)
-            Text("中转站")
+            Text(relayTitle)
                 .font(.appMicro)
                 .foregroundStyle(theme.textSecondary)
                 .fixedSize()
@@ -152,7 +157,7 @@ struct ProviderListView: View {
         .padding(.horizontal, 4)
         .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("中转站")
+        .accessibilityLabel(relayTitle)
     }
 
 }
