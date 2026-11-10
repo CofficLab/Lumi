@@ -23,3 +23,13 @@ extension ReasoningEffort {
         resolve(displayNameKey)
     }
 }
+
+/// Reasoning chip 的状态文案：关闭态走本地化 `Off`，开启态显示档位代码。
+enum ReasoningChipLabel {
+    static func text(
+        for effort: ReasoningEffort?,
+        resolve: (String) -> String = { pluginLocalization.string($0) }
+    ) -> String {
+        effort?.levelCode ?? resolve("Off")
+    }
+}

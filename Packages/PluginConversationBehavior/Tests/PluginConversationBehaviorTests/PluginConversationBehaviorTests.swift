@@ -231,6 +231,37 @@ struct PluginConversationBehaviorTests {
         let stringsPath = (lprojPath as NSString).appendingPathComponent("Localizable.strings")
         return try #require(NSDictionary(contentsOfFile: stringsPath) as? [String: String])
     }
+
+    /// 回归 #917：推理关闭时 chip 必须显示本地化的 `Off` 词条，
+    /// 不能回退到硬编码的 `OFF` 字面量。
+    @Test("关闭态的 chip 文案使用 Off 本地化词条（回归 #917）")
+    func reasoningChipOffUsesLocalizedKey() {
+        let resolve: (String) -> String = { "localized:\($0)" }
+
+        #expect(ReasoningChipLabel.text(for: nil, resolve: resolve) == "localized:Off")
+        #expect(ReasoningChipLabel.text(for: .high, resolve: resolve) == "HIGH")
+    }
+
+    /// 回归 #917：`Off` 词条在编译产物里对每种受支持语言都要有译文，
+    /// 否则 chip 的关闭态会在某些语言下回落成英文 key。
+    @Test("Off 词条在所有规范语言下都有译文（回归 #917）")
+    func offStringHasTranslationsInCompiledBundle() throws {
+        let expected: [String: String] = [
+            "en": "Off",
+            "zh-Hans": "关闭",
+            "zh-Hant": "关闭",
+            "zh-HK": "关闭",
+            "zh-TW": "关闭",
+        ]
+
+        for (language, translation) in expected {
+            let table = try Self.compiledStrings(language: language)
+            #expect(
+                table["Off"] == translation,
+                "\(language) 下 Off 译文缺失或不符，chip 关闭态会显示未翻译文案"
+            )
+        }
+    }
 }
 
 @MainActor

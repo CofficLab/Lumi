@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationBehavior 的实现包，包含 5 个主要类型；当前测试覆盖 11 条用例。
+PluginConversationBehavior 的实现包，包含 5 个主要类型；当前测试覆盖 13 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 11
+测试文件: 1 个，用例总数: 13
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -26,7 +26,7 @@ PluginConversationBehavior 的实现包，包含 5 个主要类型；当前测�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **综合**（9 条）：由 `reasoningRegisters`、`reasoningRoundTrip`、`languageHookInjectsPreferenceAndPreservesHistory` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **本地化**（2 条）：`reasoningEffortNamesUseInjectedLocalization` 锁定档位名称必须经过插件本地化解析；`reasoningEffortStringsHaveTranslationsInCompiledBundle` 锁定 5 个词条在 en / zh-Hans / zh-Hant / zh-HK / zh-TW 均有译文（#918）。改动 `ConversationReasoningPlugin`、`Support/` 或 `Resources/Localizable.xcstrings` 时须保持成立。
+- **本地化**（4 条）：`reasoningEffortNamesUseInjectedLocalization` 锁定档位名称必须经过插件本地化解析；`reasoningEffortStringsHaveTranslationsInCompiledBundle` 锁定 5 个词条在 en / zh-Hans / zh-Hant / zh-HK / zh-TW 均有译文（#918）；`reasoningChipOffUsesLocalizedKey` 锁定关闭态 chip 走 `Off` 词条而非 `OFF` 字面量，`offStringHasTranslationsInCompiledBundle` 锁定该词条的译文（#917）。改动 `ConversationReasoningPlugin`、`Support/` 或 `Resources/Localizable.xcstrings` 时须保持成立。
 
 ## 测试用例清单
 
@@ -43,27 +43,29 @@ PluginConversationBehavior 的实现包，包含 5 个主要类型；当前测�
 | 9 | 综合 | New Chat（无选中会话）调整 Reasoning 才更新全局默认 | 未选中任何会话 | apply `.high`、再 apply `.off` | 全局默认依次变为 `.high`、`nil` | P1 | ✅ 已覆盖 | `reasoningSelectionWithoutConversationUpdatesGlobalDefault` |
 | 10 | 本地化 | 推理档位名称经过注入的本地化解析（**回归 #918**） | — | 对五个档位调用名称解析并注入替身解析器 | 名称取自注入解析器，而非 `ReasoningEffort` 中写死的中文 | P1 | ✅ 已覆盖 | `reasoningEffortNamesUseInjectedLocalization` |
 | 11 | 本地化 | 推理档位词条在所有规范语言下都有译文（**回归 #918**） | — | 读取编译产物中每种语言的 `Localizable.strings` | 5 个词条在 en / zh-Hans / zh-Hant / zh-HK / zh-TW 均有对应译文 | P1 | ✅ 已覆盖 | `reasoningEffortStringsHaveTranslationsInCompiledBundle` |
+| 12 | 本地化 | 关闭态的 chip 文案使用 Off 本地化词条（**回归 #917**） | — | 以 nil 档位与 `.high` 调用 chip 文案解析并注入替身解析器 | nil 档位返回注入解析器的 `Off` 结果，非 nil 返回档位代码 | P1 | ✅ 已覆盖 | `reasoningChipOffUsesLocalizedKey` |
+| 13 | 本地化 | Off 词条在所有规范语言下都有译文（**回归 #917**） | — | 读取编译产物中每种语言的 `Localizable.strings` | `Off` 在 en / zh-Hans / zh-Hant / zh-HK / zh-TW 均有对应译文 | P1 | ✅ 已覆盖 | `offStringHasTranslationsInCompiledBundle` |
 
-> 说明：全部 **11 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **13 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 11 / 11
+- P1: 已覆盖 13 / 13
 - P2: 已覆盖 0 / 0
-- **合计: 11 / 11**（仅表示清单场景，非源码覆盖率）
+- **合计: 13 / 13**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（11 条）
+- **P1**: 其余功能性用例（13 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 11 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 13 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
