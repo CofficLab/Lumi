@@ -259,7 +259,7 @@ public struct MarkdownBlockRenderer: View {
                     .padding(.vertical, theme.tableCellVerticalPadding)
                     .frame(
                         minWidth: theme.tableCellMinWidth,
-                        maxWidth: theme.tableCellMaxWidth,
+                        maxWidth: theme.tableCellMaxWidth > 0 ? theme.tableCellMaxWidth : nil,
                         alignment: theme.tableHeaderAlignment
                     )
                     .frame(maxWidth: .infinity, alignment: theme.tableHeaderAlignment)
