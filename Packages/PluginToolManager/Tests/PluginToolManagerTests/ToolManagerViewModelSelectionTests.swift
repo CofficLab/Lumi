@@ -16,6 +16,9 @@ private final class StubCapability: ToolManagerCapability {
     var toolsGroupedByPlugin: [(pluginID: String, tools: [any SuperAgentTool])] = []
     var hasLogStore = true
     var records: [ToolCallRecord] = []
+    var pageDelay: Duration?
+    /// 只延迟「带游标的翻页请求」，用于构造翻页中途刷新的场景。
+    var delaysPaginationOnly = false
 
     func countRecords() async -> Int { records.count }
 
@@ -24,7 +27,15 @@ private final class StubCapability: ToolManagerCapability {
         beforeCreatedAt: Date?,
         beforeID: String?
     ) async -> [ToolCallRecord] {
-        Array(records.prefix(limit))
+        if delaysPaginationOnly, beforeID != nil, let pageDelay {
+            try? await Task.sleep(for: pageDelay)
+        }
+        var start = 0
+        if let beforeID,
+           let index = records.firstIndex(where: { $0.id == beforeID }) {
+            start = index + 1
+        }
+        return Array(records.dropFirst(start).prefix(limit))
     }
 }
 
@@ -193,6 +204,34 @@ func onlyToolModeWorksWithoutLogStore() {
     #expect(ToolManagerViewModel.Mode.executionLog.requiresLogStore == true)
     #expect(ToolManagerViewModel.Mode.toolStats.requiresLogStore == true)
     #expect(viewModel.hasLogStore == false)
+}
+
+@MainActor
+@Test("翻页期间刷新不会被挡住，迟到的翻页结果也不会追加")
+func refreshDuringPaginationDropsStalePage() async {
+    var capability = StubCapability()
+    capability.records = (0..<120).map { makeRecord(id: "r\($0)", toolName: "read_file") }
+    capability.pageDelay = .milliseconds(300)
+    capability.delaysPaginationOnly = true
+    let viewModel = ToolManagerViewModel(capability: capability)
+
+    await viewModel.refreshLog()
+    #expect(viewModel.records.count == 50)
+
+    let loadMore = Task { await viewModel.loadMoreLog() }
+    while !viewModel.isLoadingMoreLog {
+        await Task.yield()
+    }
+
+    // 翻页未结束时刷新必须真的执行，而不是被共用标记静默挡回。
+    await viewModel.refreshLog()
+    #expect(viewModel.records.count == 50)
+    #expect(!viewModel.isLoadingLog)
+
+    await loadMore.value
+    // 旧列表的第二页不能追加到刚刷新出来的列表尾部。
+    #expect(viewModel.records.count == 50)
+    #expect(!viewModel.isLoadingMoreLog)
 }
 
 @MainActor

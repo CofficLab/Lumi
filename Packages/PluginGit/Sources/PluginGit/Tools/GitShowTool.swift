@@ -11,7 +11,9 @@ public struct GitShowV2Tool: SuperAgentTool, @unchecked Sendable {
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { "查看提交详情" }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let hash = GitV2ToolSupport.string(arguments, "hash"), !hash.isEmpty else { return "缺少必需的 commit 哈希参数" }
+        guard let hash = GitV2ToolSupport.string(arguments, "hash"), !hash.isEmpty else {
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "缺少必需的 commit 哈希参数")
+        }
         do {
             let path = try await GitV2ToolSupport.path(arguments, project: project)
             let detail = try await GitService.shared.getCommitDetail(path: path, hash: hash)
@@ -21,6 +23,13 @@ public struct GitShowV2Tool: SuperAgentTool, @unchecked Sendable {
             if let stats = detail.stats { output += "**统计**: \(stats.filesChanged) 个文件，+\(stats.insertions) 行，-\(stats.deletions) 行\n\n" }
             if !files.isEmpty { output += "### 变更文件\n" + files.map { "- `[\($0.changeType.displayLabel)]` \($0.path)\n" }.joined() + "\n" }
             return output
-        } catch { return "获取 commit 详情失败：\(error.localizedDescription)" }
+        } catch let error as ToolExecutionError {
+            throw error
+        } catch {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "获取 commit 详情失败：\(error.localizedDescription)"
+            )
+        }
     }
 }

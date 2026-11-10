@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 68 条用例。
+PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 72 条用例。
 
 平台: macOS 14+
-测试文件: 5 个，用例总数: 68
+测试文件: 5 个，用例总数: 77
 
 核心组件（源码目录）:
 - `Views/`
@@ -37,7 +37,7 @@ PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 68 条�
 - **ACPFileClient**（9 条）：由 `testReadWithoutCapabilityThrows`、`testWriteWithoutCapabilityThrows`、`testReadSendsAbsolutePathAndReturnsContent` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ACPProtocolHandler**（17 条）：由 `testInitializeReturnsHandshakeResult`、`testInitializeAcceptsOlderOrNewerVersion`、`testInitializeRejectsMissingParams` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ACPSessionManager**（6 条）：由 `testCreateSessionMapsToConversation`、`testSessionIDFormat`、`testMultipleSessionsAreIndependent` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ACPTurnCoordinator**（30 条）：由 `testStartTurnInsertsUserMessageAndRunsTurn`、`testCompletedTurnSendsTextAndEndTurnResult`、`testCompletedFinalizesOnlyOnce` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ACPTurnCoordinator**（34 条）：由 `testStartTurnInsertsUserMessageAndRunsTurn`、`testCompletedTurnSendsTextAndEndTurnResult`、`testCompletedFinalizesOnlyOnce` 等用例锁定；改动该模块时优先跑对应测试文件。可重试失败与自动重试共享生命周期：重试接管时不得提前收尾，放弃或取消时才返回终态（**#935**）。
 
 ## 测试用例清单
 
@@ -111,27 +111,36 @@ PluginACP 的实现包，包含 14 个主要类型；当前测试覆盖 68 条�
 | 66 | ACPTurnCoordinator | testTextExtraction | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testTextExtraction` |
 | 67 | ACPTurnCoordinator | testToolKindInference | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testToolKindInference` |
 | 68 | ACPTurnCoordinator | testChoiceOptionsParsing | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testChoiceOptionsParsing` |
+| 69 | ACP 文件桥参数 | 超大 limit 返回 nil 而不是崩溃 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `oversizedLimitReturnsNil` |
+| 70 | ACP 文件桥参数 | 超大 line 返回 nil 而不是崩溃 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `oversizedLineReturnsNil` |
+| 71 | ACP 文件桥参数 | 非有限值返回 nil | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `nonFiniteReturnsNil` |
+| 72 | ACP 文件桥参数 | 范围内的整数正常解析 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `inRangeIntegersParse` |
+| 73 | ACP 文件桥参数 | 缺失或非数值参数返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingOrNonNumericReturnsNil` |
+| 74 | ACPTurnCoordinator | 重试接管期间失败事件不提前返回终态（**#935**） | 重试生命周期报告该会话正在重试 | 触发可重试失败事件 | 原 prompt 不收尾；重试成功后才返回 endTurn | P1 | ✅ 已覆盖 | `testFailedTurnDefersFinalizeWhileRetryActive` |
+| 75 | ACPTurnCoordinator | 重试耗尽时向原 prompt 返回 refusal（**#935**） | 重试接管后发布 gaveUp | 触发放弃事件 | 返回 refusal 并上报原因 | P1 | ✅ 已覆盖 | `testRetryGaveUpReportsRefusal` |
+| 76 | ACPTurnCoordinator | 没有重试接管时失败仍立即返回 refusal（**#935**） | 注入的重试生命周期报告未重试 | 触发失败事件 | 立即返回 refusal | P1 | ✅ 已覆盖 | `testFailedTurnWithInactiveRetryStillReportsRefusal` |
+| 77 | ACPTurnCoordinator | 重试期间取消会终止重试并返回 cancelled（**#935**） | 可重试失败后进入重试等待 | 调用 `cancel(sessionID:)` | 取消待执行重试、返回 cancelled，迟到完成事件不重复响应 | P1 | ✅ 已覆盖 | `testCancelDuringRetryStopsRetryAndReportsCancelled` |
 
-> 说明：全部 **68 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **77 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 14 / 14
-- P1: 已覆盖 53 / 53
+- P0: 已覆盖 17 / 17
+- P1: 已覆盖 59 / 59
 - P2: 已覆盖 1 / 1
-- **合计: 68 / 68**（仅表示清单场景，非源码覆盖率）
+- **合计: 77 / 77**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
-- **P1**: 其余功能性用例（53 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
+- **P1**: 其余功能性用例（55 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+
-- 68 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 73 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

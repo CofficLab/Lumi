@@ -21,12 +21,4 @@ extension [String: ToolArgument] {
         }
         return nil
     }
-
-    func intValue(_ key: String) -> Int? {
-        guard let value = self[key]?.value else { return nil }
-        if let int = value as? Int { return int }
-        if let double = value as? Double { return Int(double) }
-        if let string = value as? String { return Int(string.trimmingCharacters(in: .whitespacesAndNewlines)) }
-        return nil
-    }
 }

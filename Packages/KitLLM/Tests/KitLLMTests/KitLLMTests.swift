@@ -184,6 +184,40 @@ struct KitLLMTests {
         }
     }
 
+    @Test("非推理模型不下发 reasoning_effort，避免 400（回归 #985）")
+    func openAIAdapterDropsReasoningEffortForNonReasoningModels() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://api.openai.com/v1/chat/completions")
+        )
+        for model in ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo", "gpt-4.1"] {
+            let body = try adapter.buildStreamingRequestBody(
+                messages: [LLMMessage(role: .user, content: "hi")],
+                model: model,
+                tools: nil,
+                systemPrompt: "",
+                config: LLMConfig(model: model, providerId: "openai", reasoningEffort: "high")
+            )
+            #expect(body["reasoning_effort"] == nil, "\(model) 不支持 reasoning_effort，不应下发")
+        }
+    }
+
+    @Test("推理模型仍正常下发 reasoning_effort")
+    func openAIAdapterSendsReasoningEffortForReasoningModels() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://api.openai.com/v1/chat/completions")
+        )
+        for model in ["gpt-5", "gpt-5-mini", "o1", "o3-mini", "some-model"] {
+            let body = try adapter.buildStreamingRequestBody(
+                messages: [LLMMessage(role: .user, content: "hi")],
+                model: model,
+                tools: nil,
+                systemPrompt: "",
+                config: LLMConfig(model: model, providerId: "openai", reasoningEffort: "high")
+            )
+            #expect(body["reasoning_effort"] as? String == "high", "\(model) 应当保留 reasoning_effort")
+        }
+    }
+
     @Test("档位归一化忽略大小写与空白，并拒绝 auto")
     func reasoningEffortNormalization() {
         #expect(OpenAICompatibleGenerationOptionsApplier.normalizedReasoningEffort(" HIGH ") == "high")
@@ -227,6 +261,37 @@ struct KitLLMTests {
         let original = "my.tool.name"
         let sanitized = LLMToolNameSanitizer.sanitize(original)
         #expect(!sanitized.contains("."))
+    }
+
+    @Test("redacted thinking 块按到达顺序进入最终响应")
+    func redactedThinkingIsKeptInResponse() async throws {
+        let accumulator = StreamingAccumulator()
+        _ = await accumulator.consume(
+            StreamChunk(eventType: .contentBlockStart, redactedThinkingData: "opaque-1")
+        ) { _ in }
+        _ = await accumulator.consume(
+            StreamChunk(eventType: .contentBlockStart, redactedThinkingData: "opaque-2")
+        ) { _ in }
+        _ = await accumulator.consume(StreamChunk(isDone: true)) { _ in }
+
+        let response = try await accumulator.finish(model: "claude")
+
+        #expect(response.redactedThinking?.map(\.data) == ["opaque-1", "opaque-2"])
+    }
+
+    @Test("超长工具名截断到 64 字符且稳定不撞名")
+    func longToolNameIsTruncatedToProtocolLimit() {
+        // MCP 适配器会给工具名加 `serverID.` 前缀；单个工具即可超过 64 字符。
+        let longName = "s." + String(repeating: "a", count: 64)
+        let sanitized = LLMToolNameSanitizer.sanitize(longName)
+
+        #expect(sanitized.count == 64, "Anthropic / OpenAI 的 function name 上限是 64 字符")
+        #expect(sanitized.hasPrefix("s_"))
+        #expect(LLMToolNameSanitizer.sanitize(longName) == sanitized, "同一工具名必须得到稳定结果")
+
+        // 只有末尾不同、截断前缀相同的名字也必须区分开。
+        let sibling = "s." + String(repeating: "a", count: 63) + "b"
+        #expect(LLMToolNameSanitizer.sanitize(sibling) != sanitized)
     }
 
     @Test("OpenAI adapter 构建请求体")

@@ -48,7 +48,7 @@ struct CacheHitRateToolbarView: View {
             )
             .frame(width: 420)
         }
-        .onChange(of: selectedConversationID) { _, newValue in
+        .onChange(of: selectedConversationID) { newValue in
             if newValue == nil {
                 isPopoverPresented = false
             }
@@ -56,7 +56,7 @@ struct CacheHitRateToolbarView: View {
         .task(id: "\(selectedConversationID?.uuidString ?? "nil")-\(messageRefreshRevision)") {
             try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled else { return }
-            await refresh()
+            await refresh(revision: messageRefreshRevision)
         }
         .onAppear {
             guard observerHandle == nil else { return }
@@ -95,7 +95,7 @@ struct CacheHitRateToolbarView: View {
         return pluginLocalization.string("Cache hit rate unavailable: click for details")
     }
 
-    private func refresh() async {
+    private func refresh(revision: Int) async {
         guard let conversationID = selectedConversationID else {
             stats = .empty
             history = .empty
@@ -103,7 +103,13 @@ struct CacheHitRateToolbarView: View {
             return
         }
         let snapshot = await messages.messagesSnapshot(in: conversationID)
-        guard conversationID == selectedConversationID else { return }
+        guard CacheHitRateRefreshGate.shouldPublish(
+            revision: revision,
+            currentRevision: messageRefreshRevision,
+            conversationID: conversationID,
+            selectedConversationID: selectedConversationID,
+            isCancelled: Task.isCancelled
+        ) else { return }
         stats = CacheHitRateStats.compute(messages: snapshot)
         history = CacheHitRateHistory.build(from: snapshot)
         if stats.sampleCount > 0 {
@@ -113,5 +119,24 @@ struct CacheHitRateToolbarView: View {
         } else {
             unavailabilityReason = .waitingForResponse
         }
+    }
+}
+
+/// 快照 `await` 返回后的发布门禁。
+///
+/// `messagesSnapshot` 内部用 detached 任务读盘，取消外层 SwiftUI 任务不会终止它，
+/// 已取消/被新 revision 取代的刷新仍能走到发布这一步；必须同时校验取消状态与
+/// 刷新代次，否则旧快照会覆盖同会话的新统计（#998）。
+enum CacheHitRateRefreshGate {
+    static func shouldPublish(
+        revision: Int,
+        currentRevision: Int,
+        conversationID: UUID,
+        selectedConversationID: UUID?,
+        isCancelled: Bool
+    ) -> Bool {
+        guard !isCancelled else { return false }
+        guard conversationID == selectedConversationID else { return false }
+        return revision == currentRevision
     }
 }

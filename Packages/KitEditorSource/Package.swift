@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "KitEditorSource",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(
             name: "EditorSource",
@@ -19,7 +19,7 @@ let package = Package(
         .package(path: "../KitEditorLanguageRuntime"),
         .package(
             url: "https://github.com/ChimeHQ/TextFormation",
-            from: "0.8.2"
+            from: "0.9.0"
         )
     ],
     targets: [

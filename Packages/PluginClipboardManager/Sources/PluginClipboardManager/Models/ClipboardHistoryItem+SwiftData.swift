@@ -26,10 +26,26 @@ public final class ClipboardHistoryItem: @unchecked Sendable {
     
     /// 搜索关键词（已在存储前转换为小写）
     public var searchKeywords: String
+
+    /// 捕获时的 RTF 原始数据；旧库没有该列，读取时为 nil。
+    public var richTextRTF: Data?
+
+    /// 捕获时的 HTML 字符串；旧库没有该列，读取时为 nil。
+    public var richTextHTML: String?
     
     // MARK: - 初始化
     
-    public init(id: UUID = UUID(), timestamp: Date = Date(), type: String, content: String, isPinned: Bool = false, appName: String? = nil, searchKeywords: String) {
+    public init(
+        id: UUID = UUID(),
+        timestamp: Date = Date(),
+        type: String,
+        content: String,
+        isPinned: Bool = false,
+        appName: String? = nil,
+        searchKeywords: String,
+        richTextRTF: Data? = nil,
+        richTextHTML: String? = nil
+    ) {
         self.id = id
         self.timestamp = timestamp
         self.type = type
@@ -38,6 +54,8 @@ public final class ClipboardHistoryItem: @unchecked Sendable {
         self.appName = appName
         // 确保搜索关键词以小写存储
         self.searchKeywords = searchKeywords.lowercased()
+        self.richTextRTF = richTextRTF
+        self.richTextHTML = richTextHTML
     }
     
     // MARK: - 转换方法
@@ -51,7 +69,9 @@ public final class ClipboardHistoryItem: @unchecked Sendable {
             content: item.content,
             isPinned: item.isPinned,
             appName: item.appName,
-            searchKeywords: item.searchKeywords
+            searchKeywords: item.searchKeywords,
+            richTextRTF: item.richTextRTF,
+            richTextHTML: item.richTextHTML
         )
     }
     
@@ -61,7 +81,9 @@ public final class ClipboardHistoryItem: @unchecked Sendable {
             type: ClipboardItemType(rawValue: type) ?? .text,
             content: content,
             appName: appName,
-            isPinned: isPinned
+            isPinned: isPinned,
+            richTextRTF: richTextRTF,
+            richTextHTML: richTextHTML
         )
     }
     

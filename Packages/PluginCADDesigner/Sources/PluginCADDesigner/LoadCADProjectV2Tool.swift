@@ -29,23 +29,28 @@ public struct LoadCADProjectV2Tool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let path = CADDesignerV2ToolSupport.string(arguments, "path") else {
-            return CADDesignerV2ToolSupport.missingParameter("path")
+            throw CADDesignerV2ToolSupport.missingParameter("path", toolName: name)
         }
 
         let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
         do {
             let document = try ProjectSaveLoadService().load(from: url)
-            await MainActor.run {
-                _ = CADDocumentStore.shared.importDocument(document)
+            // importDocument 会生成新的项目 ID 并选中它；返回值必须报告这个副本，
+            // 否则调用方拿到的是文件里未被选中的旧 ID。
+            let imported = await MainActor.run {
+                let imported = CADDocumentStore.shared.importDocument(document)
                 CADDocumentStore.shared.setExportURL(url)
+                return imported
             }
             return CADDesignerV2ToolSupport.localized(
-                en: "Loaded project.\nprojectId: \(document.id)\nname: \(document.name)\ncomponentCount: \(document.components.count)",
-                zh: "已加载项目。\n项目ID: \(document.id)\n名称: \(document.name)\n组件数: \(document.components.count)"
+                en: "Loaded project.\nprojectId: \(imported.id)\nname: \(imported.name)\ncomponentCount: \(imported.components.count)",
+                zh: "已加载项目。\n项目ID: \(imported.id)\n名称: \(imported.name)\n组件数: \(imported.components.count)"
             )
+        } catch let error as ToolExecutionError {
+            throw error
         } catch {
             await MainActor.run { CADDocumentStore.shared.setError(error.localizedDescription) }
-            return CADDesignerV2ToolSupport.error(error)
+            throw CADDesignerV2ToolSupport.failure(error, toolName: name)
         }
     }
 }

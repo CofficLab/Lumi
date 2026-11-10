@@ -2,6 +2,7 @@ import Foundation
 import Testing
 @testable import PluginAgentLoopRetry
 import ProviderAgentLoop
+import ProviderConversation
 import ProviderLifecycleHooks
 import ProviderMessage
 
@@ -259,6 +260,117 @@ struct AgentLoopRetryPluginTests {
         #expect(attempts == [1, 2, 3])
         coordinator.cancel()
     }
+
+    @Test("调度与放弃重试时发布生命周期事件")
+    func publishesRetryLifecycleEvents() async {
+        let conversationID = UUID()
+        let messages = DefaultMessageManager()
+        let agentLoop = TestAgentLoop(outcomes: [.failed("network")])
+        agentLoop.emitsTerminalEvent = false
+        var events: [AgentLoopRetryLifecycleEvent] = []
+        let coordinator = AgentLoopRetryCoordinator(
+            loop: AgentLoopRetryCapabilityAdapter(agentLoop: agentLoop),
+            messages: AgentLoopRetryMessageCapabilityAdapter(messages: messages),
+            maxAttempts: 1,
+            onLifecycleEvent: { events.append($0) }
+        )
+        let failure = AgentLoopFailure(kind: .network, message: "连接被重置")
+        agentLoop.failure = failure
+
+        agentLoop.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: failure.message))
+        #expect(events == [.scheduled(conversationID: conversationID, attempt: 1)])
+        #expect(coordinator.isRetrying(conversationID: conversationID))
+        await yieldUntil { agentLoop.retryCalls.count == 1 }
+
+        // 重试再次失败且预算已耗尽：必须发布放弃事件，否则等待重试的
+        // 上层（如 ACP）会永远停在未收尾状态。
+        agentLoop.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: failure.message))
+        #expect(events.count == 2)
+        #expect(events.last == .gaveUp(conversationID: conversationID, reason: "连接被重置"))
+        #expect(!coordinator.isRetrying(conversationID: conversationID))
+
+        coordinator.cancel()
+    }
+
+    @Test("退避等待期间删除会话会取消延迟重试")
+    func deletionDuringBackoffCancelsRetry() async throws {
+        let conversations = DefaultConversationManager()
+        let conversationID = try conversations.createConversation(
+            title: nil,
+            projectPath: nil,
+            providerID: nil,
+            modelName: nil
+        )
+        let messages = DefaultMessageManager()
+        let agentLoop = TestAgentLoop(outcomes: [.failed("network")])
+        agentLoop.emitsTerminalEvent = false
+        let gate = SleepGate()
+        let coordinator = AgentLoopRetryCoordinator(
+            loop: AgentLoopRetryCapabilityAdapter(agentLoop: agentLoop, conversations: conversations),
+            messages: AgentLoopRetryMessageCapabilityAdapter(messages: messages),
+            maxAttempts: 3,
+            sleeper: { _ in
+                await withTaskCancellationHandler {
+                    await gate.wait()
+                } onCancel: {
+                    Task { await gate.markCancelled() }
+                }
+                if await gate.wasCancelled {
+                    throw CancellationError()
+                }
+            }
+        )
+
+        agentLoop.failure = AgentLoopFailure(
+            kind: .server,
+            message: "服务集群负载较高",
+            httpStatusCode: 529,
+            retryAfterSeconds: 60
+        )
+        agentLoop.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: "服务集群负载较高"))
+        #expect(await gate.waitUntilEntered())
+
+        // 退避期间用户删除会话：睡眠任务必须被取消，且不能再启动回合。
+        conversations.deleteConversation(id: conversationID)
+        try? await Task.sleep(for: .milliseconds(50))
+        await gate.release()
+        try? await Task.sleep(for: .milliseconds(50))
+
+        #expect(agentLoop.retryCalls.isEmpty)
+        #expect(await gate.wasCancelled, "删除会话必须取消退避任务")
+        coordinator.cancel()
+    }
+
+    @Test("退避结束时会话已被删除则不重启回合")
+    func doesNotRetryConversationDeletedDuringBackoff() async {
+        let conversationID = UUID()
+        let messages = DefaultMessageManager()
+        let capability = TestRetryCapability()
+        capability.failure = AgentLoopFailure(
+            kind: .server,
+            message: "服务集群负载较高",
+            httpStatusCode: 529,
+            retryAfterSeconds: 30
+        )
+        let gate = SleepGate()
+        let coordinator = AgentLoopRetryCoordinator(
+            loop: capability,
+            messages: AgentLoopRetryMessageCapabilityAdapter(messages: messages),
+            maxAttempts: 3,
+            sleeper: { _ in await gate.wait() }
+        )
+
+        capability.emit(.failed(conversationID: conversationID, turnID: UUID()))
+        #expect(await gate.waitUntilEntered())
+
+        // 删除事件没有送达协调器时，重试前仍要自行确认会话存在。
+        capability.exists = false
+        await gate.release()
+        try? await Task.sleep(for: .milliseconds(50))
+
+        #expect(capability.retryCalls.isEmpty, "已删除的会话不能启动新回合")
+        coordinator.cancel()
+    }
 }
 
 @MainActor
@@ -369,6 +481,113 @@ private final class TestAgentLoop: AgentLoopProviding {
         func cancel() {
             cancellation()
         }
+    }
+}
+
+/// 可被测试放行或标记取消的睡眠门闩，用来把协调器稳定地停在退避阶段。
+private actor SleepGate {
+    private(set) var entered = false
+    private(set) var wasCancelled = false
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    func wait() async {
+        entered = true
+        if wasCancelled { return }
+        await withCheckedContinuation { continuation = $0 }
+    }
+
+    func markCancelled() {
+        wasCancelled = true
+        resume()
+    }
+
+    func release() {
+        resume()
+    }
+
+    func waitUntilEntered(timeout: Duration = .seconds(1)) async -> Bool {
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: timeout)
+        while clock.now < deadline {
+            if entered { return true }
+            try? await Task.sleep(for: .milliseconds(5))
+        }
+        return entered
+    }
+
+    private func resume() {
+        continuation?.resume()
+        continuation = nil
+    }
+}
+
+/// 只实现协调器所需能力的测试替身：可以单独改动会话存在性而不发删除事件。
+@MainActor
+private final class TestRetryCapability: AgentLoopRetryCapability {
+    var failure: AgentLoopFailure?
+    var state: AgentLoopRetryTurnState = .failed
+    var exists = true
+    private var turnObservers: [UUID: (AgentLoopRetryEvent) -> Void] = [:]
+    private var deletionObservers: [UUID: (UUID) -> Void] = [:]
+    private(set) var retryCalls: [UUID] = []
+
+    func addTurnObserver(
+        _ callback: @escaping (AgentLoopRetryEvent) -> Void
+    ) -> any AgentLoopRetryObserverHandle {
+        let id = UUID()
+        turnObservers[id] = callback
+        return TestObserverHandle { [weak self] in
+            self?.turnObservers.removeValue(forKey: id)
+        }
+    }
+
+    func addConversationDeletionObserver(
+        _ callback: @escaping (UUID) -> Void
+    ) -> any AgentLoopRetryObserverHandle {
+        let id = UUID()
+        deletionObservers[id] = callback
+        return TestObserverHandle { [weak self] in
+            self?.deletionObservers.removeValue(forKey: id)
+        }
+    }
+
+    func lastFailure(for conversationID: UUID) -> AgentLoopFailure? {
+        failure
+    }
+
+    func turnState(for conversationID: UUID) -> AgentLoopRetryTurnState {
+        state
+    }
+
+    func conversationExists(for conversationID: UUID) -> Bool {
+        exists
+    }
+
+    func retryTurn(in conversationID: UUID, after failedTurnID: UUID) async throws -> AgentLoopOutcome {
+        retryCalls.append(conversationID)
+        return .completed
+    }
+
+    func emit(_ event: AgentLoopRetryEvent) {
+        if case .failed = event {
+            state = .failed
+        }
+        for observer in turnObservers.values {
+            observer(event)
+        }
+    }
+}
+
+@MainActor
+private final class TestObserverHandle: AgentLoopRetryObserverHandle {
+    private let cancellation: () -> Void
+
+    init(_ cancellation: @escaping () -> Void) {
+        self.cancellation = cancellation
+    }
+
+    func cancel() {
+        cancellation()
     }
 }
 

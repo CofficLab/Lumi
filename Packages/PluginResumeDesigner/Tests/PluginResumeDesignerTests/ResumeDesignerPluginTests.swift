@@ -19,7 +19,7 @@ import Testing
 @Suite("PluginResumeDesigner 综合测试", .serialized)
 @MainActor
 struct ResumeDesignerSuite {
-    private final class TestStorage: StorageProviding {
+    final class TestStorage: StorageProviding {
         let dataRootDirectory: URL
 
         init() {
@@ -128,6 +128,17 @@ struct ResumeDesignerSuite {
     func promptSuggestionLocalizationResolves() {
         let key = "Prompt.Suggestion.Create"
         #expect(ResumeDesignerLocalization.string(key) != key)
+    }
+
+    @Test("启动器建议激活完整插件入口而不是只切换 Rail")
+    func promptSuggestionActivatesPluginEntry() {
+        let plugin = ResumeDesignerPlugin()
+        guard case let .activatePluginEntry(activityBarItemID, railTabID) = plugin.promptSuggestion.action else {
+            Issue.record("expected .activatePluginEntry, got \(String(describing: plugin.promptSuggestion.action))")
+            return
+        }
+        #expect(activityBarItemID == "\(plugin.id).entry")
+        #expect(railTabID == ResumeDesignerPlugin.railTabID)
     }
 
     @Test("启动后 10 个 Agent 工具注册到 ToolManagerProviding，停止后移除")

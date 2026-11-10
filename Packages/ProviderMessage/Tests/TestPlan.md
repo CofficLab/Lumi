@@ -2,10 +2,10 @@
 
 ## 包概述
 
-ProviderMessage 的实现包，包含 6 个主要类型；当前测试覆盖 29 条用例。
+ProviderMessage 的实现包，包含 6 个主要类型；当前测试覆盖 42 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 29
+测试文件: 3 个，用例总数: 42
 
 ## 公开 API
 
@@ -23,7 +23,8 @@ ProviderMessage 的实现包，包含 6 个主要类型；当前测试覆盖 29 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **CollapsedContentBlock**（7 条）：由 `encodesAndDecodesBlocks`、`decodesEmptyForLegacyData`、`encodesNothingForEmptyBlocks` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **综合**（22 条）：由 `lifecycle`、`asyncSnapshot`、`dailyAggregates` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **CollapsedContentChipStyle**（5 条）：由 `keepsTypographyScale`、`splitsTitleAndDetail`、`dropsEmptyDetail` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（26 条）：由 `lifecycle`、`asyncSnapshot`、`dailyAggregates` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -58,27 +59,40 @@ ProviderMessage 的实现包，包含 6 个主要类型；当前测试覆盖 29 
 | 27 | 综合 | isActualContextCompaction requires the actual marker | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `actualCompactionRequiresMarker` |
 | 28 | 综合 | compactionReason maps known values and falls back to legacy | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `compactionReasonMapping` |
 | 29 | 综合 | integerMetadata parses int strings and tolerates missing or non-numeric | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `integerMetadataParsing` |
+| 30 | 综合 | 二进制附件在源文件被替换后仍指向发送时的字节快照 | 发送后替换原文件字节 | 渲染附件正文 | 引用受管快照路径，内容等于发送时字节 | P1 | ✅ 已覆盖 | `binaryAttachmentUsesStableSnapshotAfterSourceChanges` |
+| 31 | 综合 | 没有字节快照的旧二进制附件回退到原始路径 | 仅有 `localPath` 的旧附件 | 渲染附件正文 | 正文包含原始路径 | P2 | ✅ 已覆盖 | `legacyBinaryAttachmentFallsBackToLocalPath` |
+| 32 | CollapsedContentChipStyle | 字号与消息列表的排版规格一致 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `keepsTypographyScale` |
+| 33 | CollapsedContentChipStyle | 标题串按第一个分隔符拆成标题与统计信息 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `splitsTitleAndDetail` |
+| 34 | CollapsedContentChipStyle | 分隔符后为空时没有统计信息 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `dropsEmptyDetail` |
+| 35 | CollapsedContentChipStyle | 空标题原样返回 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `handlesEmptyTitle` |
+| 36 | CollapsedContentChipStyle | 没有分隔符时整串都是标题 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `keepsWholeTitleWhenNoSeparator` |
+| 37 | 综合 | 模型切换时间线事件可识别且不回流 LLM | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `modelSwitchedTimelineDetection` |
+| 38 | 综合 | 模型切换事件仅凭 renderKind 也可识别 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `modelSwitchedDetectionByRenderKind` |
+| 39 | CollapsedContentBlock | 折叠块包含首尾空白时裁掉碰到的空白并保留其余区间 | 区间覆盖整段含首尾空白的正文 | 按 trim 后正文重算区间 | 区间裁短为正文长度，块不丢失 | P0 | ✅ 已覆盖 | `clipsSurroundingWhitespaceInsteadOfDroppingBlock` |
+| 40 | CollapsedContentBlock | 只含尾随空白时同样裁短保留 | 区间延伸到换行之后 | 按 trim 后正文重算区间 | 区间裁短到正文末尾 | P1 | ✅ 已覆盖 | `clipsTrailingWhitespaceOnly` |
+| 41 | CollapsedContentBlock | 部分与空白重叠的块裁短，完全落在空白里的块删除 | 块分别覆盖全空白与部分正文 | 按 trim 后正文重算区间 | 全空白块删除，部分重叠块裁短 | P1 | ✅ 已覆盖 | `dropsOnlyFullyTrimmedBlocks` |
+| 42 | UserAttachment | 文本附件正文中的结构标签被转义，不能伪造额外附件 | 正文含 `</attached_file>` 与伪开始标签 | 序列化到 LLM 正文 | 结构标签只来自真实附件，正文标签被转义 | P0 | ✅ 已覆盖 | `escapesStructureTagsInTextAttachmentBody` |
 
-> 说明：全部 **29 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 1 / 1
-- P1: 已覆盖 24 / 24
-- P2: 已覆盖 4 / 4
-- **合计: 29 / 29**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 3 / 3
+- P1: 已覆盖 31 / 31
+- P2: 已覆盖 8 / 8
+- **合计: 42 / 42**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（24 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
+- **P1**: 其余功能性用例（29 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 29 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 38 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # 刷新所有含远程依赖的 Package 的 Package.resolved
-ROOT="/Users/angel/Code/Coffic/Lumi"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="$ROOT/.update-logs"
 mkdir -p "$OUT"
 rm -f "$OUT"/*.log "$OUT"/*.rc "$OUT"/FAILED.txt "$OUT"/pkgs.txt

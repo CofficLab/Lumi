@@ -26,6 +26,11 @@ public struct NetworkMenuBarPopupView: View {
 
                 // History trend chart (last 60 seconds)
                 miniTrendView
+
+                Divider()
+
+                // Top network processes (inline, same presentation as the CPU block)
+                TopNetworkProcessesView(viewModel: viewModel)
             }
         }
     }
@@ -73,7 +78,7 @@ public struct NetworkMenuBarPopupView: View {
     // MARK: - Mini Trend View
 
     private var miniTrendView: some View {
-        let recentData = Array(historyViewModel.recentHistory.suffix(60))
+        let recentData = historyViewModel.points(inLastSeconds: 60)
         let maxSpeed = max(
             recentData.map(\.downloadSpeed).max() ?? 0,
             recentData.map(\.uploadSpeed).max() ?? 0,

@@ -101,50 +101,50 @@ public struct CreateNewConversationTool: SuperAgentTool, SuperLog, @unchecked Se
             )
         }
 
-        // NewChatCapability 是 MainActor 隔离；工具是 Sendable，
-        // 经 MainActor.run 跳回主线程访问。
-        let outcome = await MainActor.run { () -> Result<NewConversationSuggestion, Error> in
-            guard let conversations else {
-                Self.logger.error("\(Self.t)create_new_conversation cannot proceed because the conversation capability is unavailable")
-                return .failure(NewChatCapabilityError.providerUnavailable)
-            }
+        let title = Self.titleArgument(from: arguments) ?? Self.derivedTitle(from: task)
+        return try await prepareAndRender(title: title, task: task)
+    }
 
-            // 记录调用前的选中态：创建顶层对话会把它抢到新对话上。
-            let previousSelection = conversations.selectedConversationID
-
-            do {
-                let title = Self.titleArgument(from: arguments) ?? Self.derivedTitle(from: task)
-                let newID = try conversations.createTopLevelConversation(
-                    title: title,
-                    projectPath: conversations.currentProjectPath,
-                    modelID: conversations.currentModelID
-                )
-                // 立刻恢复选中态：用户在当前对话里可能正在输入，不能被甩进空对话。
-                conversations.restoreSelection(to: previousSelection)
-                Self.logger.info("\(Self.t)prepared new conversation id=\(newID.uuidString, privacy: .public), restored selection to \(previousSelection?.uuidString ?? "nil", privacy: .public)")
-                return .success(NewConversationSuggestion(
-                    conversationID: newID,
-                    title: title,
-                    starter: task
-                ))
-            } catch {
-                // 失败路径同样要恢复选中态，避免把用户留在新建的空对话里。
-                conversations.restoreSelection(to: previousSelection)
-                Self.logger.error("\(Self.t)failed to create new conversation: \(error.localizedDescription, privacy: .public)")
-                return .failure(error)
-            }
+    /// 在会话能力所在的 MainActor 上创建对话并渲染结果。
+    ///
+    /// NewChatCapability 是 MainActor 隔离；工具本身是 Sendable，因此把整个
+    /// 准备过程放进主线程方法，避免把非 Sendable 的能力对象跨隔离域传递。
+    @MainActor
+    private func prepareAndRender(title: String, task: String) async throws -> String {
+        guard let conversations else {
+            Self.logger.error("\(Self.t)create_new_conversation cannot proceed because the conversation capability is unavailable")
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Conversation service is unavailable"
+            )
         }
 
-        switch outcome {
-        case .success(let suggestion):
-            return Self.resultText(for: suggestion)
-        case .failure:
-            return """
-            ## New Conversation Not Prepared ❌
+        // 记录调用前的选中态：创建顶层对话会把它抢到新对话上。
+        let previousSelection = conversations.selectedConversationID
 
-            **Status**: The conversation service is unavailable. \
-            Keep working on the current task in this conversation.
-            """
+        do {
+            // 等待落库：失败会抛错，不能给用户看到「已准备成功」的卡片。
+            let newID = try await conversations.createTopLevelConversation(
+                title: title,
+                projectPath: conversations.currentProjectPath,
+                modelID: conversations.currentModelID
+            )
+            // 立刻恢复选中态：用户在当前对话里可能正在输入，不能被甩进空对话。
+            conversations.restoreSelection(to: previousSelection)
+            Self.logger.info("\(Self.t)prepared new conversation id=\(newID.uuidString, privacy: .public), restored selection to \(previousSelection?.uuidString ?? "nil", privacy: .public)")
+            return Self.resultText(for: NewConversationSuggestion(
+                conversationID: newID,
+                title: title,
+                starter: task
+            ))
+        } catch {
+            // 失败路径同样要恢复选中态，避免把用户留在新建的空对话里。
+            conversations.restoreSelection(to: previousSelection)
+            Self.logger.error("\(Self.t)failed to create new conversation: \(error.localizedDescription, privacy: .public)")
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Failed to create the conversation: \(error.localizedDescription)"
+            )
         }
     }
 

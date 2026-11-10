@@ -62,6 +62,13 @@ public final class DiskService: SuperLog, @unchecked Sendable {
             let fileManager = FileManager.default
             var size: Int64 = 0
 
+            // 根路径本身是普通文件时，enumerator 不会产出任何子项，必须直接取 fileSize，
+            // 否则清理工具会把成功删除的文件报告成释放 0 字节。
+            if let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey]),
+               values.isDirectory == false {
+                return Int64(values.fileSize ?? 0)
+            }
+
             guard let enumerator = fileManager.enumerator(
                 at: url,
                 includingPropertiesForKeys: [.fileSizeKey],

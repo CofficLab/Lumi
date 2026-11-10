@@ -18,8 +18,10 @@ import ProviderTheme
 import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
+import ProviderMessageRendering
 import ProviderLLMManager
 import PluginProjectFiles
+import PluginToolLLMProvider
 import PluginToolbar
 import KitLLM
 import ProviderMessage
@@ -93,6 +95,25 @@ struct FactoryLumiTests {
         ])
     }
 
+    @Test("默认目录包含「用对话添加 LLM 供应商」插件，启动后工具与渲染器都注册进内核")
+    func defaultFactoryIncludesLLMProviderToolPlugin() throws {
+        let plugins = Dictionary(
+            uniqueKeysWithValues: DefaultPluginFactory().makePlugins().map { ($0.id, $0) }
+        )
+        let plugin = try #require(plugins["com.coffic.lumi.plugin.tool-llm-provider"])
+        #expect(plugin.metadata.policy == .alwaysOn)
+        // 必须晚于供应商设置插件：自定义供应商 Store 在那里注册。
+        #expect(plugin.order > 100)
+
+        // 真实内核启动一次，确认工具与提案卡片渲染器都挂上了。
+        let kernel = try makeKernelWithAllConfigurablePluginsEnabled()
+        let toolManager = try #require(kernel.resolveProvider((any ToolManagerProviding).self))
+        #expect(toolManager.tool(named: AddLLMProviderTool.toolName) != nil)
+
+        let rendering = try #require(kernel.resolveProvider((any ToolCallRenderingProviding).self))
+        #expect(rendering.allRenderers.contains { type(of: $0).id == LLMProviderRowRenderer.id })
+    }
+
     @Test("默认目录包含邮件插件（disabledByDefault）")
     func defaultFactoryIncludesMailPlugin() throws {
         let plugins = Dictionary(
@@ -101,6 +122,14 @@ struct FactoryLumiTests {
         let mail = try #require(plugins["com.coffic.lumi.plugin.mail"])
         #expect(mail.metadata.policy == .disabledByDefault)
         #expect(mail.metadata.category == .system)
+    }
+
+    @Test("默认目录包含共享喝水提醒插件")
+    func defaultFactoryIncludesHydrationReminder() throws {
+        let plugins = DefaultPluginFactory().makePlugins()
+        let hydration = try #require(plugins.first { $0.id == "com.coffic.lumi.plugin.hydration" })
+
+        #expect(hydration.metadata.policy == .enabledByDefault)
     }
 
     private final class AdditionalPlugin: SuperPlugin {

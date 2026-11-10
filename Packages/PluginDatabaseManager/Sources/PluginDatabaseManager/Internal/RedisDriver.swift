@@ -123,7 +123,11 @@ enum RedisRESPCodec {
             while offset < data.endIndex {
                 if data[offset] == UInt8(ascii: "\r") {
                     let next = data.index(after: offset)
-                    guard next < data.endIndex, data[next] == UInt8(ascii: "\n") else {
+                    // CR 恰好是缓冲区最后一个字节：LF 可能在下个网络块，属于不完整而非格式错误。
+                    guard next < data.endIndex else {
+                        throw RedisRESPParseError.incomplete
+                    }
+                    guard data[next] == UInt8(ascii: "\n") else {
                         throw RedisRESPParseError.malformed("Malformed RESP line ending")
                     }
                     let lineData = data[start..<offset]
@@ -292,9 +296,31 @@ public actor RedisConnection: DatabaseConnection {
         alive = true
 
         if let password, !password.isEmpty {
-            _ = try await send(["AUTH", password])
+            let authResponse = try await send(["AUTH", password])
+            do {
+                try Self.validateHandshake(authResponse, context: "Redis 认证失败")
+            } catch {
+                connection.cancel()
+                alive = false
+                throw error
+            }
         }
-        _ = try await send(["PING"])
+        let pingResponse = try await send(["PING"])
+        do {
+            try Self.validateHandshake(pingResponse, context: "Redis 连接失败")
+        } catch {
+            connection.cancel()
+            alive = false
+            throw error
+        }
+    }
+
+    /// RESP 的 `-ERR`/`-WRONGPASS`/`-NOAUTH` 是正常返回的错误值而非传输异常，
+    /// 握手后必须显式检查，否则错误密码也会被当作连接成功。
+    static func validateHandshake(_ response: RespValue, context: String) throws {
+        if case .error(let message) = response {
+            throw DatabaseError.connectionFailed("\(context): \(message)")
+        }
     }
 
     public func execute(_ sql: String, params: [DatabaseValue]?) async throws -> Int {

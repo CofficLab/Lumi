@@ -8,7 +8,7 @@ import SwiftUI
 ///
 /// 使用 NSCollectionView 实现高性能文件树渲染。
 @MainActor
-final class FileTreeCollectionViewController: NSViewController, SuperLog {
+final class FileTreeCollectionViewController: NSViewController, SuperLog, FileTreeGitStatusUpdating {
     nonisolated static let emoji = "📂"
     nonisolated static var verbose: Bool { ProjectFileTreePlugin.verbose }
     nonisolated static let logger = ProjectFileTreePlugin.logger
@@ -24,7 +24,7 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
 
     private var dataSource: FileTreeDiffableDataSource!
     private let fileTreeDataSource = FileTreeDataSource()
-    private var selectionState = SelectionState()
+    let selectionState = SelectionState()
     private var hoveredItemURL: URL?
     private var trackingArea: NSTrackingArea?
     private var appearanceObserver: FileTreeAppearanceObserver?
@@ -38,6 +38,11 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
     }
     /// 文件树上下文（项目 / 对话输入 / Toast 提示）。
     var context: FileTreeContext?
+
+    /// 批量删除执行器；测试注入桩以观察删除目标，生产环境走真实废纸篓。
+    var trashHandler: ([URL]) -> FileTreeFacade.TrashBatchResult = {
+        FileTreeFacade.trashItemsReporting(at: $0)
+    }
 
     /// 展开状态变化回调
     var onExpansionChange: ((String, Bool) -> Void)?
@@ -185,6 +190,15 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
         fileTreeDataSource.onItemsChanged = { [weak self] items in
             guard let self = self else { return }
 
+            // Shift 范围选择依赖可见行顺序；快照变化（展开/折叠、刷新、切项目）
+            // 后必须同步重建，否则索引始终为空、Shift 只能退化为单选（回归 #1101）。
+            self.selectionState.updateVisibleOrder(
+                items.compactMap { item -> URL? in
+                    guard case .file(let fileItem) = item else { return nil }
+                    return fileItem.url
+                }
+            )
+
             var snapshot = NSDiffableDataSourceSnapshot<Section, CollectionItem>()
             snapshot.appendSections([.main])
             snapshot.appendItems(items, toSection: .main)
@@ -290,6 +304,13 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
         collectionView.reloadItems(at: Set(visibleItems))
     }
 
+    /// 当前鼠标事件落点对应的行。用于从 Shift 选择回调的无序集合中找回目标行。
+    private func indexPathUnderCurrentClick() -> IndexPath? {
+        guard let event = NSApp.currentEvent else { return nil }
+        let point = collectionView.convert(event.locationInWindow, from: nil)
+        return collectionView.indexPathForItem(at: point)
+    }
+
     /// 同步可见文件行的选中样式，但不重建 cell。
     /// 普通单击后必须保留原 hosting view，AppKit 才能把下一击识别为双击。
     private func syncSelectionState() {
@@ -384,7 +405,14 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         _ collectionView: NSCollectionView,
         didSelectItemsAt indexPaths: Set<IndexPath>
     ) {
-        guard let indexPath = indexPaths.first,
+        let modifiers = ModifierFlags.currentClick
+        // Shift 点击时 AppKit 会把 anchor 到目标之间的行一次性加入选中集合，
+        // 集合本身没有顺序；必须用鼠标位置找回真正被点击的目标行，
+        // 否则可能把中间行当作终点，只选到一半范围（回归 #1101）。
+        let clickedIndexPath = modifiers.contains(.shift)
+            ? indexPathUnderCurrentClick()
+            : nil
+        guard let indexPath = clickedIndexPath ?? indexPaths.first,
               let item = dataSource.itemIdentifier(for: indexPath) else {
             return
         }
@@ -394,7 +422,6 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             return
         }
         
-        let modifiers = ModifierFlags.currentClick
         selectionState.handleTap(
             url: fileItem.url,
             isDirectory: fileItem.isDirectory,
@@ -424,6 +451,26 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             return
         }
         context?.project?.previewFile(fileItem.url)
+    }
+
+    /// Cmd 点击已选项时 AppKit 只走反选回调；不在这里同步，自定义选中集合和高亮
+    /// 会继续保留已被取消的路径，右键“Send to Conversation”仍会发送它（回归 #1102）。
+    func collectionView(
+        _ collectionView: NSCollectionView,
+        didDeselectItemsAt indexPaths: Set<IndexPath>
+    ) {
+        // 普通单击换行、Shift 收缩范围也会触发反选；只处理最终不在原生选中集合
+        // 里的行，避免回调顺序差异误删新范围内的项。
+        let stillSelected = collectionView.selectionIndexPaths
+        var removedAny = false
+        for indexPath in indexPaths where !stillSelected.contains(indexPath) {
+            guard let item = dataSource.itemIdentifier(for: indexPath),
+                  case .file(let fileItem) = item else { continue }
+            selectionState.removeFromSelection(fileItem.url)
+            removedAny = true
+        }
+        guard removedAny else { return }
+        syncSelectionState()
     }
     
     func collectionView(
@@ -459,9 +506,9 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         return nil
     }
     
-    private func buildMenu(for url: URL, isDirectory: Bool) -> NSMenu {
+    func buildMenu(for url: URL, isDirectory: Bool) -> NSMenu {
         let menu = NSMenu()
-        let conversationTargets = selectionState.actionTargets(for: url)
+        let actionTargets = selectionState.actionTargets(for: url)
         
         if isDirectory {
             menu.addItem(menuItem(
@@ -487,7 +534,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         menu.addItem(menuItem(
             title: pluginLocalization.string("Send to Conversation"),
             action: #selector(sendToConversation(_:)),
-            urls: conversationTargets,
+            urls: actionTargets,
             enabled: context?.conversationInput != nil
         ))
         menu.addItem(.separator())
@@ -518,7 +565,8 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         menu.addItem(menuItem(
             title: pluginLocalization.string("Move to Trash"),
             action: #selector(deleteItem(_:)),
-            url: url
+            urls: actionTargets,
+            enabled: true
         ))
         
         return menu
@@ -543,12 +591,12 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
     
     @objc private func newFile(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
-        guard let name = FileTreeActions.presentNamePrompt(
+        guard let rawName = FileTreeActions.presentNamePrompt(
             title: pluginLocalization.string("New File"),
             message: pluginLocalization.string("Enter the name for the new file."),
             defaultName: "",
             confirmButton: pluginLocalization.string("Create")
-        ) else { return }
+        ), let name = FileTreeActions.creationName(from: rawName) else { return }
         
         guard let newURL = FileTreeFacade.createFile(in: url, name: name) else {
             context?.toast?.show(
@@ -571,12 +619,12 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
     
     @objc private func newFolder(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
-        guard let name = FileTreeActions.presentNamePrompt(
+        guard let rawName = FileTreeActions.presentNamePrompt(
             title: pluginLocalization.string("New Folder"),
             message: pluginLocalization.string("Enter the name for the new folder."),
             defaultName: "",
             confirmButton: pluginLocalization.string("Create")
-        ) else { return }
+        ), let name = FileTreeActions.creationName(from: rawName) else { return }
         
         guard let newURL = FileTreeFacade.createFolder(in: url, name: name) else {
             context?.toast?.show(
@@ -599,14 +647,15 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
     
     @objc private func renameItem(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
-        guard let newName = FileTreeActions.presentNamePrompt(
+        guard let rawName = FileTreeActions.presentNamePrompt(
             title: pluginLocalization.string("Rename"),
             message: pluginLocalization.string("Enter the new name for this item."),
             defaultName: url.lastPathComponent,
             confirmButton: pluginLocalization.string("Rename")
+        ), let newName = FileTreeActions.renameTarget(
+            from: rawName,
+            currentName: url.lastPathComponent
         ) else { return }
-        
-        guard newName != url.lastPathComponent else { return }
         
         guard let newURL = FileTreeFacade.renameItem(at: url, newName: newName) else {
             context?.toast?.show(
@@ -627,26 +676,62 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
     }
     
     @objc private func deleteItem(_ sender: NSMenuItem) {
-        guard let url = sender.representedObject as? URL else { return }
-        guard FileTreeActions.presentDeleteConfirmation(url: url) else { return }
-        
-        guard FileTreeFacade.trashItem(at: url) else {
-            context?.toast?.show(
-                pluginLocalization.string("Could not move the item to the Trash."),
-                style: .error
-            )
+        guard let urls = sender.representedObject as? [URL], !urls.isEmpty else { return }
+        guard FileTreeActions.presentDeleteConfirmation(urls: urls) else { return }
+        performDelete(targets: urls)
+    }
+
+    /// 执行批量删除：菜单的多选目标全部交给 `trashItemsReporting`，按成功项
+    /// 移除选择并刷新父目录，失败项单独汇报，避免只删除右键项（回归 #1109）。
+    func performDelete(targets: [URL]) {
+        guard !targets.isEmpty else { return }
+        let result = trashHandler(targets)
+
+        guard !result.trashedURLs.isEmpty else {
+            let message = result.failedURLs.count > 1
+                ? String(
+                    format: pluginLocalization.string("%lld items could not be moved"),
+                    result.failedURLs.count
+                )
+                : pluginLocalization.string("Could not move the item to the Trash.")
+            context?.toast?.show(message, style: .error)
             return
         }
-        if Self.verbose {
-            Self.logger.info("\(Self.t)删除: \(url.path)")
+
+        for url in result.trashedURLs {
+            selectionState.removeFromSelection(url)
         }
-        selectionState.clearSelection()
-        refreshAfterMutation(parentURL: url.deletingLastPathComponent())
-        context?.toast?.show(
-            pluginLocalization.string("Moved to Trash"),
-            detail: url.lastPathComponent,
-            style: .success
-        )
+        for parent in Set(result.trashedURLs.map { $0.deletingLastPathComponent() }) {
+            refreshAfterMutation(parentURL: parent)
+        }
+
+        if !result.failedURLs.isEmpty {
+            context?.toast?.show(
+                String(
+                    format: pluginLocalization.string("%lld items could not be moved"),
+                    result.failedURLs.count
+                ),
+                detail: result.failedURLs.map(\.lastPathComponent).joined(separator: ", "),
+                style: .warning
+            )
+        } else {
+            let detail = result.trashedURLs.count == 1
+                ? result.trashedURLs[0].lastPathComponent
+                : String(
+                    format: pluginLocalization.string("%lld files"),
+                    result.trashedURLs.count
+                )
+            context?.toast?.show(
+                pluginLocalization.string("Moved to Trash"),
+                detail: detail,
+                style: .success
+            )
+        }
+
+        if Self.verbose {
+            let paths = result.trashedURLs.map(\.path).joined(separator: ", ")
+            Self.logger.info("\(Self.t)删除: \(paths)")
+        }
     }
     
     @objc private func revealInFinder(_ sender: NSMenuItem) {
@@ -656,7 +741,14 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
     
     @objc private func openInVSCode(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
-        FileTreeFacade.openInVSCode(url)
+        FileTreeFacade.openInVSCode(url) { [weak self] opened in
+            guard !opened else { return }
+            self?.context?.toast?.show(
+                pluginLocalization.string("Could not open in VS Code."),
+                detail: url.lastPathComponent,
+                style: .error
+            )
+        }
     }
     
     @objc private func openInTerminal(_ sender: NSMenuItem) {
@@ -731,7 +823,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         switch result {
         case .rejected:
             return false
-        case .moved(let pairs, let affectedParents):
+        case .moved(_, let failedSources, let affectedParents):
             onTreeMutation?()
             
             for parent in affectedParents {
@@ -739,6 +831,18 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             }
             
             ensureDirectoryExpanded(targetURL)
+            
+            if !failedSources.isEmpty {
+                context?.toast?.show(
+                    String(
+                        format: pluginLocalization.string("%lld items could not be moved"),
+                        failedSources.count
+                    ),
+                    detail: failedSources.map(\.lastPathComponent).joined(separator: ", "),
+                    style: .warning
+                )
+            }
+            
             return true
         }
     }

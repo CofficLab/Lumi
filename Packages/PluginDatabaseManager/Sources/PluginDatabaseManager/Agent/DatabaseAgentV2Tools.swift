@@ -18,10 +18,10 @@ public struct DatabaseDescribeSchemaV2Tool: SuperAgentTool {
     public let name = Self.toolName
     public init() {}
     public func description(for language: LanguagePreference) -> String { "Describe tables, columns, or key samples for an Agent-accessible database connection." }
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] { DatabaseV2ToolSupport.schema(properties: ["connection_id": DatabaseV2ToolSupport.string("Connection UUID returned by database_list_connections"), "limit": DatabaseV2ToolSupport.integer("Maximum entries to return; default 100, maximum 1000.")], required: ["connection_id"]) }
+    public func inputSchema(for language: LanguagePreference) -> [String: Any] { DatabaseV2ToolSupport.schema(properties: ["connection_id": DatabaseV2ToolSupport.string("Connection UUID returned by database_list_connections"), "limit": DatabaseV2ToolSupport.integer("Maximum entries to return; default 100, maximum 1000."), "schema": DatabaseV2ToolSupport.string("Optional schema to restrict the description to (PostgreSQL). Omit it to describe every non-system schema.")], required: ["connection_id"]) }
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { "Describe database schema" }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
-    public func execute(arguments: [String: ToolArgument]) async throws -> String { try await DatabaseAgentToolService.shared.describeSchema(connectionId: DatabaseV2ToolSupport.connectionID(arguments), limit: DatabaseV2ToolSupport.limit(arguments)) }
+    public func execute(arguments: [String: ToolArgument]) async throws -> String { try await DatabaseAgentToolService.shared.describeSchema(connectionId: DatabaseV2ToolSupport.connectionID(arguments), limit: DatabaseV2ToolSupport.limit(arguments), schemaName: DatabaseV2ToolSupport.optionalString(arguments, "schema")) }
 }
 
 public struct DatabaseReadonlyQueryV2Tool: SuperAgentTool {
@@ -55,5 +55,11 @@ private enum DatabaseV2ToolSupport {
     static func requiredString(_ arguments: [String: ToolArgument], _ key: String) throws -> String {
         guard let value = arguments[key]?.value as? String, !value.isEmpty else { throw DatabaseAgentToolError.missingArgument(key) }
         return value
+    }
+    /// 可选字符串参数：缺省或空白视为未提供。
+    static func optionalString(_ arguments: [String: ToolArgument], _ key: String) -> String? {
+        guard let value = arguments[key]?.value as? String else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }

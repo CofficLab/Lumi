@@ -48,6 +48,10 @@ public enum WebFetchError: LocalizedError, Equatable {
     case invalidURL(String)
     case unsupportedScheme(String?)
     case invalidResponseType
+    case httpStatus(Int, String)
+    case unsupportedRedirectScheme(String)
+    case undecodableHTML
+    case undecodableText
 
     public var errorDescription: String? {
         switch self {
@@ -59,6 +63,14 @@ public enum WebFetchError: LocalizedError, Equatable {
             return "Only HTTP/HTTPS URLs are supported"
         case .invalidResponseType:
             return "Invalid response type"
+        case .httpStatus(let code, let text):
+            return "HTTP \(code) - \(text)"
+        case .unsupportedRedirectScheme(let url):
+            return "Redirect target uses an unsupported URL scheme: \(url)"
+        case .undecodableHTML:
+            return "Could not decode HTML content"
+        case .undecodableText:
+            return "Could not decode text content"
         }
     }
 }
@@ -81,29 +93,23 @@ public struct WebFetchService: Sendable {
         self.now = now
     }
 
-    public func fetch(urlString: String, prompt: String? = nil) async -> String {
-        do {
-            let normalizedURLString = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !normalizedURLString.isEmpty else {
-                throw WebFetchError.missingURL
-            }
-            guard let url = URL(string: normalizedURLString) else {
-                throw WebFetchError.invalidURL(urlString)
-            }
-            guard Self.isSupportedHTTPURL(url) else {
-                throw WebFetchError.unsupportedScheme(url.scheme)
-            }
-
-            if let cached = cache?.get(normalizedURLString, now: now()) {
-                return processCachedContent(cached, prompt: prompt)
-            }
-
-            return try await fetchURL(url, prompt: prompt)
-        } catch let error as WebFetchError {
-            return "Error: \(error.localizedDescription)"
-        } catch {
-            return "Error: Failed to fetch URL - \(error.localizedDescription)"
+    public func fetch(urlString: String, prompt: String? = nil) async throws -> String {
+        let normalizedURLString = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedURLString.isEmpty else {
+            throw WebFetchError.missingURL
         }
+        guard let url = URL(string: normalizedURLString) else {
+            throw WebFetchError.invalidURL(urlString)
+        }
+        guard Self.isSupportedHTTPURL(url) else {
+            throw WebFetchError.unsupportedScheme(url.scheme)
+        }
+
+        if let cached = cache?.get(normalizedURLString, now: now()) {
+            return processCachedContent(cached, prompt: prompt)
+        }
+
+        return try await fetchURL(url, prompt: prompt)
     }
 
     public func processContent(
@@ -113,7 +119,7 @@ public struct WebFetchService: Sendable {
         statusCode: Int,
         duration: Double,
         prompt: String? = nil
-    ) -> String {
+    ) throws -> String {
         let mimeType = contentType
             .split(separator: ";")
             .first?
@@ -122,11 +128,11 @@ public struct WebFetchService: Sendable {
 
         switch mimeType {
         case "text/html", "application/xhtml+xml":
-            return processHTML(data: data, url: url, statusCode: statusCode, duration: duration, prompt: prompt)
+            return try processHTML(data: data, url: url, statusCode: statusCode, duration: duration, prompt: prompt)
         case "application/json":
             return processJSON(data: data, statusCode: statusCode, duration: duration)
         case "text/plain", "text/markdown":
-            return processPlainText(data: data, statusCode: statusCode, duration: duration)
+            return try processPlainText(data: data, statusCode: statusCode, duration: duration)
         case "application/pdf":
             return processBinary(data: data, contentType: mimeType, url: url, statusCode: statusCode, duration: duration)
         case "image/jpeg", "image/png", "image/gif", "image/webp":
@@ -134,9 +140,9 @@ public struct WebFetchService: Sendable {
         default:
             if let text = String(data: data, encoding: .utf8) {
                 if text.contains("<html") || text.contains("<body") {
-                    return processHTML(data: data, url: url, statusCode: statusCode, duration: duration, prompt: prompt)
+                    return try processHTML(data: data, url: url, statusCode: statusCode, duration: duration, prompt: prompt)
                 }
-                return processPlainText(data: data, statusCode: statusCode, duration: duration)
+                return try processPlainText(data: data, statusCode: statusCode, duration: duration)
             }
             return processBinary(data: data, contentType: mimeType, url: url, statusCode: statusCode, duration: duration)
         }
@@ -147,7 +153,7 @@ public struct WebFetchService: Sendable {
         redirectURL: String,
         statusCode: Int,
         prompt: String? = nil
-    ) -> String {
+    ) throws -> String {
         let resolvedRedirectURL: URL
         if redirectURL.hasPrefix("//"),
            let scheme = originalURL.scheme,
@@ -162,17 +168,7 @@ public struct WebFetchService: Sendable {
         }
 
         guard Self.isSupportedHTTPURL(resolvedRedirectURL) else {
-            return """
-## Redirect Detected
-
-**Original URL**: \(originalURL.absoluteString)
-**Redirect URL**: \(resolvedRedirectURL.absoluteString)
-**Status**: \(statusCode) \(redirectStatusText(statusCode))
-
----
-
-Error: Redirect target uses an unsupported URL scheme. Only HTTP/HTTPS URLs can be fetched.
-"""
+            throw WebFetchError.unsupportedRedirectScheme(resolvedRedirectURL.absoluteString)
         }
 
         let isCrossDomain = originalURL.host != resolvedRedirectURL.host
@@ -257,7 +253,7 @@ Error: Redirect target uses an unsupported URL scheme. Only HTTP/HTTPS URLs can 
 
         if let redirectURL = httpResponse.value(forHTTPHeaderField: "Location"),
            (300..<400).contains(httpResponse.statusCode) {
-            return handleRedirect(
+            return try handleRedirect(
                 originalURL: url,
                 redirectURL: redirectURL,
                 statusCode: httpResponse.statusCode,
@@ -266,11 +262,14 @@ Error: Redirect target uses an unsupported URL scheme. Only HTTP/HTTPS URLs can 
         }
 
         guard (200..<300).contains(httpResponse.statusCode) else {
-            return "Error: HTTP \(httpResponse.statusCode) - \(HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode))"
+            throw WebFetchError.httpStatus(
+                httpResponse.statusCode,
+                HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode)
+            )
         }
 
         let contentType = httpResponse.value(forHTTPHeaderField: "Content-Type") ?? "text/plain"
-        let result = processContent(
+        let result = try processContent(
             data: data,
             contentType: contentType,
             url: url,
@@ -310,9 +309,9 @@ Error: Redirect target uses an unsupported URL scheme. Only HTTP/HTTPS URLs can 
         return encoded
     }
 
-    private func processHTML(data: Data, url: URL, statusCode: Int, duration: Double, prompt: String?) -> String {
+    private func processHTML(data: Data, url: URL, statusCode: Int, duration: Double, prompt: String?) throws -> String {
         guard let html = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .ascii) else {
-            return "Error: Could not decode HTML content"
+            throw WebFetchError.undecodableHTML
         }
 
         let markdown = HTMLToMarkdownConverter.convert(html, baseURL: url)
@@ -354,9 +353,9 @@ Error: Redirect target uses an unsupported URL scheme. Only HTTP/HTTPS URLs can 
         return result
     }
 
-    private func processPlainText(data: Data, statusCode: Int, duration: Double) -> String {
+    private func processPlainText(data: Data, statusCode: Int, duration: Double) throws -> String {
         guard let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .ascii) else {
-            return "Error: Could not decode text content"
+            throw WebFetchError.undecodableText
         }
 
         return fetchHeader(

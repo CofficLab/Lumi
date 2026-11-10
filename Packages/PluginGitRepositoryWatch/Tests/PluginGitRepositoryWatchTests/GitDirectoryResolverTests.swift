@@ -90,6 +90,17 @@ struct GitDirectoryResolverTests {
         #expect(resolved.path == target.path)
     }
 
+    @Test("项目目录是仓库子目录时向上找到仓库根的 .git（回归 #913）")
+    func resolvesAncestorGitDirectory() throws {
+        let fixture = try GitFixture.makeProject(label: "ancestor")
+        let nested = fixture.projectURL.appendingPathComponent("Sources/Feature", isDirectory: true)
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+
+        let resolved = try GitDirectoryResolver.resolveGitDirectory(for: nested)
+
+        #expect(resolved.standardizedFileURL == fixture.gitDirectory.standardizedFileURL)
+    }
+
     @Test(".git 不存在时抛出未找到错误")
     func throwsWhenGitDirectoryMissing() throws {
         let root = FileManager.default.temporaryDirectory
@@ -248,6 +259,25 @@ struct GitRepositoryWatchProviderTests {
         provider.stopWatching()
     }
 
+    @Test("项目路径是仓库子目录时正常监听并广播 started（回归 #913）")
+    func startsWatchingFromNestedProjectDirectory() throws {
+        let fixture = try GitFixture.makeProject(label: "provider-nested")
+        let nested = fixture.projectURL.appendingPathComponent("Sources", isDirectory: true)
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        let provider = GitRepositoryWatchProvider()
+        var events: [GitRepositoryWatchingEvent] = []
+        let handle = provider.addObserver { events.append($0) }
+        defer { handle.cancel() }
+
+        provider.startWatching(repositoryURL: nested)
+
+        #expect(provider.isWatcherActive)
+        #expect(provider.watchedGitDirectoryPath == fixture.gitDirectory.standardizedFileURL.path)
+        #expect(events.count == 1)
+
+        provider.stopWatching()
+    }
+
     @Test("监听非仓库目录时不广播 started")
     func ignoresNonRepository() throws {
         let root = FileManager.default.temporaryDirectory
@@ -298,6 +328,27 @@ struct GitRepositoryWatchProviderTests {
         provider.stopWatching()
     }
 
+    /// 回归 #921：Git Workspace 面板销毁时只释放 `@StateObject` 持有的订阅令牌，
+    /// 从不调用 `cancel()`；若 Provider 强引用回调，每打开一次面板就多一条永久
+    /// 注册，之后每次仓库事件都要遍历全部历史回调。
+    @Test("释放订阅令牌后不再收到事件（回归 #921）")
+    func releasedObserverHandleStopsReceiving() throws {
+        let fixture = try GitFixture.makeProject(label: "provider-release")
+        let provider = GitRepositoryWatchProvider()
+        var events: [GitRepositoryWatchingEvent] = []
+
+        // 作用域结束即释放令牌，模拟面板销毁后无人持有句柄。
+        do {
+            let handle = provider.addObserver { events.append($0) }
+            _ = handle
+        }
+
+        provider.startWatching(repositoryURL: fixture.projectURL)
+        provider.stopWatching()
+
+        #expect(events.isEmpty, "已释放的订阅令牌仍在接收广播，注册数量会随面板打开次数增长")
+    }
+
     @Test("注销观察者后不再收到事件")
     func cancelledObserverStopsReceiving() throws {
         let fixture = try GitFixture.makeProject(label: "provider-cancel")
@@ -319,5 +370,53 @@ struct GitRepositoryWatchProviderTests {
         provider.stopWatching()
 
         #expect(provider.watchingRepositoryURL == nil)
+    }
+
+    /// 回归 #911：FSEvents 的 `IgnoreSelf` 会过滤掉同一进程触发的写入。
+    /// 内置编辑器保存发生在 Lumi 进程内，若被过滤，已打开的 Git Changes
+    /// 不会收到 `.workingTreeChanged`，只能停留在保存前的状态。
+    @Test("进程内写入工作区也会广播 workingTreeChanged（回归 #911）")
+    func reportsInProcessWorkingTreeWrites() async throws {
+        let fixture = try GitFixture.makeProject(label: "provider-self-write")
+        let provider = GitRepositoryWatchProvider()
+        var events: [GitRepositoryWatchingEvent] = []
+        let handle = provider.addObserver { events.append($0) }
+        defer {
+            handle.cancel()
+            provider.stopWatching()
+        }
+
+        provider.startWatching(repositoryURL: fixture.projectURL)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // 与编辑器保存一致：由本进程写文件。
+        try "saved\n".write(
+            to: fixture.projectURL.appendingPathComponent("saved.txt"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let sawWorkingTreeChange = await waitUntil(timeout: 5) {
+            events.contains {
+                if case .workingTreeChanged = $0 { return true }
+                return false
+            }
+        }
+
+        #expect(sawWorkingTreeChange, "进程内保存没有触发 workingTreeChanged，Changes 会停留在旧状态")
+    }
+
+    /// 轮询等待条件成立，避免依赖固定 sleep 时长。
+    private func waitUntil(
+        timeout: TimeInterval,
+        poll: TimeInterval = 0.1,
+        _ condition: @MainActor () -> Bool
+    ) async -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition() { return true }
+            try? await Task.sleep(nanoseconds: UInt64(poll * 1_000_000_000))
+        }
+        return condition()
     }
 }

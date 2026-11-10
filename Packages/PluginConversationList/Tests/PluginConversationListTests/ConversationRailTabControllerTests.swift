@@ -58,6 +58,42 @@ import Testing
     controller.stop()
 }
 
+/// #931：只有一个项目路径，但库里还有无项目会话时，两个范围仍不同，
+/// 「项目」标签必须出现，且项目列表只包含当前项目的会话。
+@Test @MainActor func railProjectTabAppearsWhenOnlyProjectlessConversationsDiffer() async throws {
+    let conversations = DefaultConversationManager()
+    let project = DefaultProjectProvider()
+    // 未打开项目时创建的会话保持 projectPath == nil。
+    _ = try conversations.createConversation(title: "Loose", projectPath: nil, providerID: nil, modelName: nil)
+    try await project.openProject(at: "/workspace/Only")
+    let onlyID = try conversations.createConversation(title: "Only", projectPath: "/workspace/Only", providerID: nil, modelName: nil)
+
+    let context = makeContext(conversations: conversations, project: project)
+    let attentionStore = ConversationAttentionStore()
+    let sortStabilizer = ConversationSortStabilizer()
+    let chatsViewModel = makeViewModel(context: context, attentionStore: attentionStore, sortStabilizer: sortStabilizer, scope: .all)
+    let projectViewModel = makeViewModel(context: context, attentionStore: attentionStore, sortStabilizer: sortStabilizer, scope: .currentProject)
+    let controller = ConversationRailTabController(
+        context: context,
+        attentionStore: attentionStore,
+        sortStabilizer: sortStabilizer,
+        chatsViewModel: chatsViewModel,
+        projectViewModel: projectViewModel,
+        order: 81,
+        pluginID: "test.conversation-list"
+    )
+    let rail = DefaultRailViewProviding()
+    controller.start(rail: rail)
+    defer { controller.stop() }
+
+    let projectTabID = "test.conversation-list.project-chats"
+    let projectTabRegistered = await waitUntil { rail.tabs.contains { $0.id == projectTabID } }
+    #expect(projectTabRegistered)
+
+    await projectViewModel.loadInitialIfNeeded()
+    #expect(projectViewModel.conversations.map(\.id) == [onlyID])
+}
+
 @Test @MainActor func stoppingRailControllerCancelsRefreshSubscriptions() async throws {
     let conversations = DefaultConversationManager()
     let context = makeContext(conversations: conversations)
@@ -145,6 +181,61 @@ import Testing
     #expect(hiddenAgain, "清空对话后宿主 Rail 可见性未回落，空栏会残留在界面上")
 
     controller.stop()
+}
+
+/// #923：Rail 标签的 `title` 会被宿主 `AppTabBar` 直接用作 `.help(title)`，
+/// 也就是鼠标悬停 tooltip。标题必须走插件本地化，不能写死中文。
+@Test @MainActor func railTabTitlesUsePluginLocalization() async throws {
+    let conversations = DefaultConversationManager()
+    let project = DefaultProjectProvider()
+    _ = try conversations.createConversation(title: "Loose", projectPath: nil, providerID: nil, modelName: nil)
+    try await project.openProject(at: "/workspace/Only")
+    _ = try conversations.createConversation(title: "Only", projectPath: "/workspace/Only", providerID: nil, modelName: nil)
+
+    let context = makeContext(conversations: conversations, project: project)
+    let attentionStore = ConversationAttentionStore()
+    let sortStabilizer = ConversationSortStabilizer()
+    let controller = ConversationRailTabController(
+        context: context,
+        attentionStore: attentionStore,
+        sortStabilizer: sortStabilizer,
+        chatsViewModel: makeViewModel(context: context, attentionStore: attentionStore, sortStabilizer: sortStabilizer, scope: .all),
+        projectViewModel: makeViewModel(context: context, attentionStore: attentionStore, sortStabilizer: sortStabilizer, scope: .currentProject),
+        order: 81,
+        pluginID: "test.conversation-list",
+        localizedTitle: { key in "localized:\(key)" }
+    )
+    let rail = DefaultRailViewProviding()
+    controller.start(rail: rail)
+    defer { controller.stop() }
+
+    let chatsTabID = "test.conversation-list.chats"
+    let projectTabID = "test.conversation-list.project-chats"
+    #expect(await waitUntil { rail.tabs.contains { $0.id == chatsTabID } })
+    #expect(await waitUntil { rail.tabs.contains { $0.id == projectTabID } })
+
+    let chatsTab = try #require(rail.tabs.first { $0.id == chatsTabID })
+    let projectTab = try #require(rail.tabs.first { $0.id == projectTabID })
+    // 两个标题都必须来自本地化解析，而不是写死字面量。
+    #expect(chatsTab.title == "localized:Chats")
+    #expect(projectTab.title == "localized:Projects")
+}
+
+/// 标签标题依赖的两个 key 必须真的存在于插件字符串表中，且随语言切换。
+@Test func railTabTitleKeysHaveTranslations() throws {
+    #expect(try compiledStrings(language: "en")["Chats"] == "Chats")
+    #expect(try compiledStrings(language: "en")["Projects"] == "Projects")
+    #expect(try compiledStrings(language: "zh-Hans")["Chats"] == "对话")
+    #expect(try compiledStrings(language: "zh-Hans")["Projects"] == "项目")
+    #expect(try compiledStrings(language: "zh-Hant")["Projects"] == "專案")
+    #expect(try compiledStrings(language: "zh-TW")["Projects"] == "專案")
+}
+
+private func compiledStrings(language: String) throws -> [String: String] {
+    let bundle = PluginConversationList.pluginLocalization.bundle
+    let lprojPath = try #require(bundle.path(forResource: language, ofType: "lproj"))
+    let stringsPath = (lprojPath as NSString).appendingPathComponent("Localizable.strings")
+    return try #require(NSDictionary(contentsOfFile: stringsPath) as? [String: String])
 }
 
 @MainActor

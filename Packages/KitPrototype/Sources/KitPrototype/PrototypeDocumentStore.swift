@@ -122,6 +122,25 @@ public struct PrototypeDocumentStore: @unchecked Sendable {
         return url
     }
 
+    /// 已存在项目的素材目录；项目不存在时抛 `notFound`，不产生任何目录变更。
+    ///
+    /// 与 ``assetsDirectoryURL(storagePath:projectSlug:)`` 的区别是本方法
+    /// 不创建目录 —— 未创建项目就导入素材会留下孤儿目录，
+    /// 既对用户不可见，又会占住 slug 让后续创建项目失败。
+    public func existingProjectAssetsDirectoryURL(
+        storagePath: String,
+        projectSlug: String
+    ) throws -> URL {
+        let directory = try projectDirectoryURL(storagePath: storagePath, projectSlug: projectSlug)
+        let manifest = directory.appendingPathComponent(Self.manifestFileName)
+        guard fileManager.fileExists(atPath: manifest.path) else {
+            throw PrototypeStoreError.notFound(directory.path)
+        }
+        let url = directory.appendingPathComponent(Self.assetsDirectoryName, isDirectory: true)
+        try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
+    }
+
     // MARK: - 项目 CRUD
 
     public func listProjects(storagePath: String) throws -> [PrototypeProject] {

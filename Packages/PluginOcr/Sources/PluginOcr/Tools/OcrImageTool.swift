@@ -56,36 +56,41 @@ public struct OcrImageTool: SuperAgentTool {
         guard let rawPath = (arguments["path"]?.value as? String)?
             .trimmingCharacters(in: .whitespacesAndNewlines),
             !rawPath.isEmpty else {
-            return "Error: Missing required 'path' argument. Provide an absolute path to a local image."
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Missing required 'path' argument. Provide an absolute path to a local image."
+            )
         }
 
         let url = URL(fileURLWithPath: (rawPath as NSString).expandingTildeInPath).standardizedFileURL
         let path = url.path
 
         guard FileManager.default.fileExists(atPath: path) else {
-            return "Error: File not found: \(path)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "File not found: \(path)")
         }
         var isDirectory: ObjCBool = false
         FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory)
         if isDirectory.boolValue {
-            return "Error: Path is a directory, not a file: \(path)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Path is a directory, not a file: \(path)"
+            )
         }
         // 仅在能解析出 UTType 且明确不是图片时拒绝；未知扩展名放行交由 Vision 尝试。
         if let type = UTType(filenameExtension: url.pathExtension), !type.conforms(to: .image) {
-            return "Error: Not an image file: \(url.lastPathComponent)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Not an image file: \(url.lastPathComponent)"
+            )
         }
 
         let languages = Self.resolveLanguages(arguments["language"]?.value as? String)
 
-        do {
-            let text = try await OcrEngine.recognizeText(at: path, languages: languages)
-            if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                return "No text was recognized in the image."
-            }
-            return text
-        } catch {
-            return error.localizedDescription
+        let text = try await OcrEngine.recognizeText(at: path, languages: languages)
+        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "No text was recognized in the image."
         }
+        return text
     }
 
     /// 把简短语言代码映射为 Vision 支持的 `recognitionLanguages`。

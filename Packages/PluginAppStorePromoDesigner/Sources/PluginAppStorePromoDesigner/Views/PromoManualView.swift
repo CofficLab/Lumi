@@ -57,7 +57,7 @@ struct PromoManualView: View {
                 .init(L("Images are exported as PNGs at the selected size, grouped into folders by language.")),
             ])
             ManualBulletList(items: [
-                .init(L("Available sizes: iPhone 6.7\" (1290×2796), iPhone 6.5\" (1284×2778), iPhone 6.1\" / 5.8\" (1170×2532), iPad Pro 12.9\" (2048×2732), iPad Pro 11\" (1668×2388), and Desktop (1280×800).")),
+                .init(L("Available sizes: iPhone 6.7\" (1290×2796), iPhone 6.5\" (1284×2778), iPhone 6.1\" (1170×2532), iPhone 5.8\" (1125×2436), iPad Pro 12.9\" (2048×2732), iPad Pro 11\" (1668×2388), and Desktop (1280×800).")),
             ])
             exportFigure
 

@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import os
 import LumiLoggingKit
@@ -30,10 +31,26 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
         }
     }
 
+    /// 各项目历史打开文件，key 为标准化后的项目路径。
+    ///
+    /// 由 Store 的变更通知驱动刷新；设置页长期存活，只在 `.task` 里读一次
+    /// 快照会一直显示旧状态。
+    @Published public private(set) var openedFilesByPath: [String: ProjectOpenedFiles] = [:]
+    /// 打开文件记录是否已完成首次加载。
+    @Published public private(set) var isLoadingOpenedFiles = true
+
+    /// 存储状态修订号。
+    ///
+    /// 项目目录是否仍在磁盘上属于易变信息（目录可能被删除、外置硬盘可能被拔出）。
+    /// 探测结果按路径缓存在 `ProjectStorageDetector` 中，缓存失效时必须让视图
+    /// 重新读取，于是用这个修订号驱动重绘。
+    @Published public private(set) var storageRevision = 0
+
     // MARK: - Dependencies
 
     public let store: ProjectsStore
     private let projectCapability: any ProjectsProjectCapability
+    private var openedFilesObserver: AnyCancellable?
 
     // MARK: - Init
 
@@ -55,6 +72,35 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
     }
 
     // MARK: - Intents
+
+    /// 刷新项目存储状态缓存，并递增修订号驱动视图重绘。
+    ///
+    /// 项目目录是否还在磁盘上会随外部操作变化（目录被删除、外置硬盘被拔出、
+    /// 网络卷重新挂载）。探测结果按路径缓存在 `ProjectStorageDetector` 中，
+    /// 因此每次刷新都要先清空缓存再让视图重新读取。
+    public func refreshStorageState() {
+        ProjectStorageDetector.invalidateAll()
+        storageRevision &+= 1
+    }
+
+    /// 订阅 Store 的打开文件变更，并完成首次加载。
+    ///
+    /// 设置页复用同一个 ViewModel 长期存活，必须跟随 Store 的写入刷新，
+    /// 否则打开/关闭文件后仍显示首次进入时的快照。
+    func startObservingOpenedFiles() {
+        guard openedFilesObserver == nil else { return }
+        openedFilesObserver = store.$openedFilesRevision
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.reloadOpenedFiles()
+            }
+        reloadOpenedFiles()
+    }
+
+    private func reloadOpenedFiles() {
+        openedFilesByPath = store.loadOpenedFiles()
+        isLoadingOpenedFiles = false
+    }
 
     /// 从项目能力同步插件所需的项目快照。
     ///

@@ -182,8 +182,23 @@ KitMarkdown 是可复用的 Markdown 解析与渲染组件，采用**双 target*
 | 108 | 引用 | 列表行内引用无过多空白 | 列表行容器 | 度量 | 空白在阈值内 | P1 | ✅ 已覆盖 | `quoteInListRowDoesNotCreateExcessiveVerticalWhitespace` |
 | 109 | 流式 | 按 block 边界切分与全量解析等价 | 多 block 文档 | 切分后拼接 | 与 `parse` 结果相同 | P0 | ✅ 已覆盖 | `splitAtBlockBoundariesEqualsFullParse` |
 | 110 | 流式 | 流式追加每步匹配全量解析 | 逐块追加 | 每步比较 | 每一步都与全量解析一致 | P0 | ✅ 已覆盖 | `streamingAppendMatchesFullParseAtEachStep` |
+| 111 | 代码高亮渲染 | 带语言标记的代码块必须渲染出多种语法颜色 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `codeBlockRendersSyntaxColors` |
+| 112 | 代码高亮渲染 | 无语言标记的代码块不应出现语法颜色（对照组） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `plainCodeBlockHasNoSyntaxColors` |
+| 113 | 代码高亮渲染 | 普通段落不应出现语法颜色（对照组） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `plainParagraphHasNoSyntaxColors` |
+| 114 | 代码高亮渲染 | 代码块内容变化后必须跟随更新并重新着色 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `codeBlockFollowsContentChanges` |
+| 115 | 代码高亮资源一致性 | 聊天与编辑器使用同一份高亮查询文件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `highlightQueriesStayInSync` |
+| 116 | 代码高亮 Provider | swift 代码被着色成多种颜色 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `highlightsSwiftCode` |
+| 117 | 代码高亮 Provider | 各受支持语言都能被着色 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `highlightsSupportedLanguages` |
+| 118 | 代码高亮 Provider | 语言别名归一化到同一语法 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `normalizesLanguageAliases` |
+| 119 | 代码高亮 Provider | 不支持的语言降级为 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `returnsNilForUnsupportedLanguage` |
+| 120 | 代码高亮 Provider | 高亮不改变代码文本 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `preservesCodeText` |
+| 121 | 代码高亮 Provider | 空代码不产生高亮 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `returnsNilForEmptyCode` |
+| 122 | 代码高亮 Provider | 深浅配色使用不同的 cache 标识 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `distinguishesPalettesByCacheIdentifier` |
+| 123 | 复制按钮 | 复制时传递代码原文 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `copiesRawCode` |
+| 124 | 复制按钮 | 复制内容不含 Markdown 围栏与语言标记 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `copiesWithoutFence` |
+| 125 | 复制按钮 | 多行代码的换行被完整保留 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `preservesNewlines` |
 
-> 说明：全部 **110 条场景**已在 macOS 上实跑通过。
+> 说明：全部 **125 条场景**已在 macOS 上实跑通过。
 >
 > 本包的价值集中在**回归锁定**，几条易错约定已在用例里显式锁定：
 > - **表格规整的误判面比正确面更危险**（ID 39/41/42/46/53/54）：shell 管道
@@ -212,26 +227,28 @@ KitMarkdown 是可复用的 Markdown 解析与渲染组件，采用**双 target*
 
 ## 覆盖率统计
 
-- P0: 已覆盖 42 / 42
-- P1: 已覆盖 66 / 66
+- P0: 已覆盖 44 / 44
+- P1: 已覆盖 79 / 79
 - P2: 已覆盖 2 / 2
-- **合计: 110 / 110**（仅表示清单场景，非源码覆盖率）
+- **合计: 125 / 125**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 模型相等性、空/纯空白文档、多行代码块完整性、复杂文档解析、
   表格规整的正误判双向（竖线段落、shell 管道、TS 联合、转义竖线、围栏内表格、
   非法分隔行回退）、代码块不被截断与不塌陷、聊天滚动高度一致性、
-  尺寸缓存命中与失效、CJK 加粗与未闭合定界、原生解析不被改动、流式等价
+  尺寸缓存命中与失效、CJK 加粗与未闭合定界、原生解析不被改动、流式等价、
+  语法着色必须生效且随内容更新
 - **P1**: 其余解析形态（标题层级、列表、表格对齐、Mermaid 识别）、
-  尺寸缓存分桶与共享 store、异步布局稳定性、引用块切分与空白、行内回退分支
+  尺寸缓存分桶与共享 store、异步布局稳定性、引用块切分与空白、行内回退分支、
+  高亮 provider 的语言归一化与降级、聊天与编辑器高亮资源一致性、复制按钮内容
 - **P2**: `thematicBreak` 相等性、共享 store 容量淘汰
 
 ## 跨平台说明
 
 - Package 声明 macOS 14+ / iOS 17+
 - `KitMarkdownCoreTests`（ID 1–56）为**跨平台**：纯 Foundation 解析逻辑
-- `KitMarkdownTests`（ID 57–110）依赖 SwiftUI/AppKit 布局度量
+- `KitMarkdownTests`（ID 57–125）依赖 SwiftUI/AppKit 布局度量
   （`NSHostingView` / `HorizontalScrollView` / `NSScrollView`），
   涉及真实测量高度的断言（ID 59–66、77–83、97–108）为 **macOS 专属**
 - 所有布局度量类用例依赖宿主窗口环境，`KitMarkdownTesting` 提供统一支撑；

@@ -156,6 +156,34 @@ struct SkillPluginTests {
         #expect(viewModel.availableSkillCount == 0)
     }
 
+    @Test("可用技能总数按合并规则去重，同名项目技能覆盖底座")
+    func settingsAvailableCountDeduplicatesOverriddenBaseSkills() async {
+        let service = SkillService(scanner: ProjectPathScanner(), builtinProvider: EmptyBuiltin())
+        let viewModel = SkillSettingsViewModel(service: service)
+        viewModel.updateBaseSkills([SkillMetadata(name: "skill-alpha", title: "Base Alpha", description: "")])
+        viewModel.updateProjects([ProjectInfo(name: "Alpha", path: "/tmp/skill-alpha")])
+        viewModel.selectProject(path: "/tmp/skill-alpha")
+        await waitUntil { viewModel.projectSkills.contains { $0.name == "skill-alpha" } }
+
+        #expect(viewModel.projectSkills.count == 1)
+        #expect(viewModel.baseSkills.count == 1)
+        #expect(viewModel.availableSkillCount == 1)
+    }
+
+    @Test("无同名技能时可用技能总数为两组之和")
+    func settingsAvailableCountSumsDistinctSkills() async {
+        let service = SkillService(scanner: ProjectPathScanner(), builtinProvider: EmptyBuiltin())
+        let viewModel = SkillSettingsViewModel(service: service)
+        viewModel.updateBaseSkills([SkillMetadata(name: "base-skill", title: "Base Skill", description: "")])
+        viewModel.updateProjects([ProjectInfo(name: "Alpha", path: "/tmp/skill-alpha")])
+        viewModel.selectProject(path: "/tmp/skill-alpha")
+        await waitUntil { viewModel.projectSkills.contains { $0.name == "skill-alpha" } }
+
+        #expect(viewModel.projectSkills.count == 1)
+        #expect(viewModel.baseSkills.count == 1)
+        #expect(viewModel.availableSkillCount == 2)
+    }
+
     @Test("SkillSettingsObserver 同步项目列表与技能底座")
     func settingsObserverSyncsProjectsAndBase() async throws {
         let project = DefaultProjectProvider()

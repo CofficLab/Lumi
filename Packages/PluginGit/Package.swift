@@ -5,7 +5,7 @@ let package = Package(
     name: "PluginGit",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("14.0"),
         .iOS(.v17)
     ],
     products: [
@@ -15,15 +15,15 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
-        .package(url: "https://github.com/nookery/LibGit2Swift", .branch("main")),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0"),
+        .package(url: "https://github.com/nookery/LibGit2Swift.git", exact: "1.0.7"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderEditor"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderGit"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../ProviderMessageRendering"),
-        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.13.0"),
         .package(path: "../KitShell"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
@@ -31,7 +31,7 @@ let package = Package(
         .target(
             name: "GitPlugin",
             dependencies: [
-                .product(name: "LibGit2Swift", package: "Libgit2swift"),
+                .product(name: "LibGit2Swift", package: "libgit2swift"),
                 .product(name: "KernelCore", package: "LumiKernel"),
                 .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
@@ -39,7 +39,6 @@ let package = Package(
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderSkill", package: "LumiProviders"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
-                .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitShell", package: "KitShell"),

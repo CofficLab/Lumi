@@ -57,14 +57,14 @@ public struct AddIconShapeTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let language = IconToolSupport.language
         guard let shapeName = IconToolSupport.string(arguments, "shape") else {
-            return IconToolSupport.missingParameter("shape", language: language)
+            throw IconToolSupport.missingParameterFailure("shape", toolName: name, language: language)
         }
 
         do {
             let layer = try makeLayer(shapeName: shapeName, arguments: arguments)
             let (document, scope) = try await IconToolSupport.resolveDocument(arguments)
             let updated = try await MainActor.run {
-                try IconDocumentStore.shared.addLayer(layer, documentId: document.id, scope: scope)
+                try IconToolSupport.store().addLayer(layer, documentId: document.id, scope: scope)
             }
             await IconToolSupport.notify(scope: scope, documentId: document.id)
             switch language {
@@ -87,9 +87,9 @@ public struct AddIconShapeTool: SuperAgentTool {
             }
         } catch {
             await MainActor.run {
-                IconDocumentStore.shared.setError(error.localizedDescription)
+                IconToolSupport.store().setError(error.localizedDescription)
             }
-            return IconToolSupport.error(error, language: language)
+            throw IconToolSupport.failure(error, toolName: name, language: language)
         }
     }
 

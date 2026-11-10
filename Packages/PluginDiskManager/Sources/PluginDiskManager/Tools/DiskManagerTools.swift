@@ -30,17 +30,21 @@ enum DiskManagerToolSupport {
     /// Returns the home directory when the input is missing/empty so the tool
     /// always has a usable root.
     static func resolveScanPath(_ raw: String?) -> String {
-        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        let home = FileManager.default.homeDirectoryForCurrentUser
         let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let candidate: String
         if trimmed.isEmpty || trimmed == "~" {
-            candidate = home
-        } else if trimmed.hasPrefix("~/") {
-            candidate = home + String(trimmed.dropFirst())
-        } else {
-            candidate = (trimmed as NSString).expandingTildeInPath
+            return home.path
         }
-        return candidate
+        if trimmed.hasPrefix("~/") {
+            return home.appendingPathComponent(String(trimmed.dropFirst(2))).path
+        }
+        // 其余路径先展开 ~user，仍非绝对路径时锚定到用户主目录，
+        // 避免被 FileManager 按进程工作目录解释。
+        let expanded = (trimmed as NSString).expandingTildeInPath
+        if (expanded as NSString).isAbsolutePath {
+            return expanded
+        }
+        return home.appendingPathComponent(expanded).path
     }
 
     /// Measure the on-disk size of a path before deletion so cleanup tools can
@@ -57,16 +61,21 @@ enum DiskManagerToolSupport {
     }
 
     static func int(_ arguments: [String: ToolArgument], _ key: String) -> Int? {
-        guard let value = arguments[key]?.value else { return nil }
-        if let int = value as? Int { return int }
-        if let number = value as? NSNumber { return number.intValue }
-        if let string = value as? String { return Int(string) }
-        return nil
+        ToolArgumentNumber.int(arguments[key]?.value)
     }
 
     static func stringArray(_ arguments: [String: ToolArgument], _ key: String) -> [String]? {
         guard let array = arguments[key]?.value as? [Any] else { return nil }
         return array.compactMap { $0 as? String }
+    }
+
+    /// 解析路径数组，保留原始字符串。
+    ///
+    /// 裁剪空白只用于判断条目是否为空；绝不能把裁剪后的字符串交给删除逻辑，
+    /// 因为 `"/tmp/cache "` 和 `"/tmp/cache"` 是两个不同的路径，裁剪会静默删错目录。
+    static func paths(_ arguments: [String: ToolArgument], _ key: String) -> [String]? {
+        guard let raw = stringArray(arguments, key) else { return nil }
+        return raw.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     }
 }
 
@@ -95,7 +104,7 @@ struct DiskUsageTool: SuperAgentTool {
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let usage = await DiskService.shared.getDiskUsage() else {
-            return "Failed to read disk usage."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to read disk usage.")
         }
         let percent = Int((usage.usedPercentage * 100).rounded())
         return """
@@ -154,7 +163,10 @@ struct ScanLargeFilesTool: SuperAgentTool {
         do {
             files = try await LargeFilesService.shared.scanLargeFiles(atPath: path)
         } catch {
-            return "Failed to scan large files at \(path): \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Failed to scan large files at \(path): \(error.localizedDescription)"
+            )
         }
         guard !files.isEmpty else {
             return "No files larger than 50 MB were found under \(path)."
@@ -217,7 +229,10 @@ struct ScanDirectoryTreeTool: SuperAgentTool {
         do {
             entries = try await DirectoryTreeService.shared.scanTopLevelDirectoryUsage(atPath: path)
         } catch {
-            return "Failed to analyze directory tree at \(path): \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Failed to analyze directory tree at \(path): \(error.localizedDescription)"
+            )
         }
         guard !entries.isEmpty else {
             return "No entries were found under \(path)."
@@ -361,12 +376,15 @@ struct CleanCachesTool: SuperAgentTool {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let paths = DiskManagerToolSupport.stringArray(arguments, "paths")?
-            .map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) })
-            .filter({ !$0.isEmpty }) else {
-            return "Missing or invalid 'paths'. Provide an array of cache directory paths."
+        guard let paths = DiskManagerToolSupport.paths(arguments, "paths") else {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Missing or invalid 'paths'. Provide an array of cache directory paths."
+            )
         }
-        guard !paths.isEmpty else { return "No cache paths were provided." }
+        guard !paths.isEmpty else {
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "No cache paths were provided.")
+        }
 
         // Measure each path before deletion so we can report the freed bytes,
         // since CacheCleanerService.cleanup sums `CachePath.size` itself.
@@ -390,7 +408,10 @@ struct CleanCachesTool: SuperAgentTool {
                 "Cleaned \(paths.count) cache path(s); freed \(DiskManagerToolSupport.formatBytes(freed)).",
             ] + perLine).joined(separator: "\n")
         } catch {
-            return "Failed to clean caches: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Failed to clean caches: \(error.localizedDescription)"
+            )
         }
     }
 }
@@ -478,12 +499,15 @@ struct CleanXcodeCachesTool: SuperAgentTool {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let paths = DiskManagerToolSupport.stringArray(arguments, "paths")?
-            .map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) })
-            .filter({ !$0.isEmpty }) else {
-            return "Missing or invalid 'paths'. Provide an array of Xcode cache paths."
+        guard let paths = DiskManagerToolSupport.paths(arguments, "paths") else {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Missing or invalid 'paths'. Provide an array of Xcode cache paths."
+            )
         }
-        guard !paths.isEmpty else { return "No Xcode cache paths were provided." }
+        guard !paths.isEmpty else {
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "No Xcode cache paths were provided.")
+        }
 
         // Rebuild XcodeCleanItem shells so the service can delete them. The
         // category is unknown at delete time, but the service only uses `path`.
@@ -508,7 +532,10 @@ struct CleanXcodeCachesTool: SuperAgentTool {
                 "Cleaned \(paths.count) Xcode cache path(s); freed ~\(DiskManagerToolSupport.formatBytes(freed)).",
             ] + perLine).joined(separator: "\n")
         } catch {
-            return "Failed to clean Xcode caches: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Failed to clean Xcode caches: \(error.localizedDescription)"
+            )
         }
     }
 }
@@ -592,12 +619,15 @@ struct CleanProjectsTool: SuperAgentTool {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let paths = DiskManagerToolSupport.stringArray(arguments, "paths")?
-            .map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) })
-            .filter({ !$0.isEmpty }) else {
-            return "Missing or invalid 'paths'. Provide an array of project dependency paths."
+        guard let paths = DiskManagerToolSupport.paths(arguments, "paths") else {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Missing or invalid 'paths'. Provide an array of project dependency paths."
+            )
         }
-        guard !paths.isEmpty else { return "No project dependency paths were provided." }
+        guard !paths.isEmpty else {
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "No project dependency paths were provided.")
+        }
 
         var items: [CleanableItem] = []
         for path in paths {
@@ -614,7 +644,10 @@ struct CleanProjectsTool: SuperAgentTool {
                 "Cleaned \(paths.count) project dependency path(s); freed ~\(DiskManagerToolSupport.formatBytes(freed)).",
             ] + perLine).joined(separator: "\n")
         } catch {
-            return "Failed to clean project dependencies: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Failed to clean project dependencies: \(error.localizedDescription)"
+            )
         }
     }
 }
@@ -656,12 +689,15 @@ struct DeleteFilesTool: SuperAgentTool {
     }
 
     func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let paths = DiskManagerToolSupport.stringArray(arguments, "paths")?
-            .map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) })
-            .filter({ !$0.isEmpty }) else {
-            return "Missing or invalid 'paths'. Provide an array of absolute paths."
+        guard let paths = DiskManagerToolSupport.paths(arguments, "paths") else {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Missing or invalid 'paths'. Provide an array of absolute paths."
+            )
         }
-        guard !paths.isEmpty else { return "No paths were provided." }
+        guard !paths.isEmpty else {
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "No paths were provided.")
+        }
 
         var deleted: [String] = []
         var failed: [(String, String)] = []

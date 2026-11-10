@@ -4,12 +4,12 @@ import PackageDescription
 let package = Package(
     name: "PluginMessageManager",
     defaultLocalization: "zh-Hans",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginMessageManager", targets: ["PluginMessageManager"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderConversation"),

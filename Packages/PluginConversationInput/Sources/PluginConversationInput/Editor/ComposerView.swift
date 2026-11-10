@@ -47,17 +47,13 @@ struct ComposerView: View {
             text: textBinding,
             height: heightBinding,
             textColor: NSColor(theme.textPrimary),
-            placeholder: "输入消息，按 Return 发送…",
+            placeholder: pluginLocalization.string("Type a message, press Return to send…"),
+            chipPalette: PasteChipPalette(theme: theme),
             onSubmit: onSend,
             onEnter: onSend,
             onFileDrop: { url in
-                if ChatInputEditorRules.isDirectoryURL(url) {
-                    viewModel.insertDirectoryPath(url)
-                } else if ChatInputEditorRules.isChatImageFileURL(url) {
-                    viewModel.attachImage(url)
-                } else {
-                    viewModel.attachFile(url)
-                }
+                // 分流规则收敛在 ViewModel，输入框与附件预览共用同一份。
+                viewModel.attach(droppedURL: url)
             },
             onBlockInserted: { id in viewModel.consumePendingBlock(id: id) },
             onCollapsedBlocksChanged: { blocks in viewModel.updateCollapsedBlocks(blocks) },
@@ -67,9 +63,7 @@ struct ComposerView: View {
             pendingBlock: viewModel.pendingBlock
         )
         .frame(height: viewModel.inputHeight)
-        .padding(.horizontal, ComposerLayout.contentHorizontalInset)
-        .padding(.top, ComposerLayout.contentTopInset)
-        .padding(.bottom, ComposerLayout.contentBottomInset)
+        .composerContentInsets()
         .composerSurface()
     }
 }

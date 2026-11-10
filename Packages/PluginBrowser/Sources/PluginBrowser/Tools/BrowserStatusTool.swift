@@ -8,7 +8,7 @@ public struct BrowserStatusTool: SuperAgentTool {
     public init(sessions: BrowserSessionManager) { self.sessions = sessions }
 
     public func description(for language: LanguagePreference) -> String {
-        "Get the current URL and title of the browser page in this conversation. Lightweight — does not read page content."
+        BrowserToolText.statusDescription(language)
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
@@ -16,7 +16,7 @@ public struct BrowserStatusTool: SuperAgentTool {
     }
 
     public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        "查看当前网页地址"
+        BrowserToolText.displayStatus(.current)
     }
 
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }

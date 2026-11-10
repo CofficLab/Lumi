@@ -276,6 +276,8 @@ private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
     var observedStatuses: [ToolJobStatus] = []
     let statusHandle = manager.addToolJobObserver { event in
         switch event {
+        case .restored(let jobs):
+            observedStatuses.append(contentsOf: jobs.map(\.status))
         case .created(let job), .started(let job), .waitingForUser(let job):
             observedStatuses.append(job.status)
         case .progress(_, _, let snapshot), .output(_, _, _, let snapshot),

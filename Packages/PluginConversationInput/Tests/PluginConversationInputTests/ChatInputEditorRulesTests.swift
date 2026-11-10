@@ -214,7 +214,7 @@ struct ChatInputEditorRulesTests {
 
     @Test("图片扩展名大小写不敏感，非图片被否决")
     func imageExtensionMatchingIsCaseInsensitive() {
-        for ext in ["png", "PNG", "jpg", "jpeg", "heic", "webp", "gif", "tiff", "bmp"] {
+        for ext in ["png", "PNG", "jpg", "jpeg", "heic", "webp", "gif", "tiff", "tif", "TIF", "bmp"] {
             #expect(
                 ChatInputEditorRules.isChatImageFileURL(URL(fileURLWithPath: "/tmp/a.\(ext)")),
                 "\(ext) 应被识别为聊天图片"
@@ -229,5 +229,16 @@ struct ChatInputEditorRulesTests {
         }
         // 无扩展名同样被否决。
         #expect(!ChatInputEditorRules.isChatImageFileURL(URL(fileURLWithPath: "/tmp/noext")))
+    }
+
+    @Test("非空但不可解码的字节不算有效图片")
+    func undecodableImageBytesAreRejected() throws {
+        // 只有 PNG 魔数前两字节，ImageIO 无法解出图像。
+        #expect(!ChatInputEditorRules.isDecodableImageData(Data([0x89, 0x50])))
+        #expect(!ChatInputEditorRules.isDecodableImageData(Data("not an image".utf8)))
+        #expect(!ChatInputEditorRules.isDecodableImageData(Data()))
+
+        let png = try #require(Data(base64Encoded: attachmentTestPNGBase64))
+        #expect(ChatInputEditorRules.isDecodableImageData(png))
     }
 }

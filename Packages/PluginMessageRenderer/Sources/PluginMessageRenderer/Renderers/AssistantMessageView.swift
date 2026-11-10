@@ -19,6 +19,31 @@ struct AssistantMessageView: View {
     }
 
     var body: some View {
+        // V5（ChatGPT）：独立呈现 —— 无气泡、无旧 chrome，
+        // 居中阅读列，轮尾操作按 turn 出现。
+        if ChatGPTAssistantTextStyle.usesChatGPTPresentation(verbosity: verbosity) {
+            ChatGPTAssistantMessageView(
+                capability: capability,
+                stateViewModel: stateViewModel,
+                message: message,
+                verbosity: verbosity
+            )
+        } else if ZCodeAssistantTextStyle.usesZCodePresentation(verbosity: verbosity) {
+            // V4（ZCode）：独立呈现 —— 无气泡、无旧 chrome，
+            // 轮尾操作栏按 turn 出现。其余版本继续走旧路径。
+            ZCodeAssistantMessageView(
+                capability: capability,
+                stateViewModel: stateViewModel,
+                message: message,
+                verbosity: verbosity
+            )
+        } else {
+            legacyBody
+        }
+    }
+
+    /// V1–V3 的原始呈现。
+    private var legacyBody: some View {
         let contentVerbosity = Self.contentVerbosity(for: verbosity)
         return MessageViewChrome(
             message: message,
@@ -49,6 +74,16 @@ private struct AssistantMessageBody: View {
     /// 原始回复级别是否为 V1（brief）。`contentVerbosity` 已把 brief 升格为
     /// standard 以复用 V2 内容布局，但工具调用渲染需要区分"是否真的 V1"。
     let isV1: Bool
+
+    /// **原始**回复级别（未经升格）。
+    ///
+    /// `contentVerbosity` 只在 brief 时被升格成 standard，其余原样透传，
+    /// 因此「是 V1 则还原为 brief，否则用 contentVerbosity」即可无损还原。
+    /// 工具调用的折叠判定必须用它：折叠**只发生在 V2**，用升格后的值会
+    /// 把 V1 连坐成 V2 一并折叠。
+    private var originalVerbosity: ResponseVerbosity {
+        isV1 ? .brief : contentVerbosity
+    }
 
     private var reasoningContent: String? {
         guard let reasoning = message.reasoningContent,
@@ -93,7 +128,10 @@ private struct AssistantMessageBody: View {
                     stateViewModel: stateViewModel,
                     message: message,
                     verbosity: contentVerbosity,
-                    allowsCustomToolRenderers: !isV1
+                    allowsCustomToolRenderers: !isV1,
+                    // 折叠判定需要**原始**级别：contentVerbosity 已把 brief
+                    // 升格成 standard，用它判断会把 V1 连坐成 V2 一并折叠。
+                    originalVerbosity: originalVerbosity
                 )
                     .padding(.top, shouldHideAssistantBody ? 0 : 4)
             }

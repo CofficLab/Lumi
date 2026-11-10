@@ -5,8 +5,16 @@ import SwiftUI
 struct OpenInFinderToolbarView: View {
     @StateObject private var model: OpenInFinderToolbarViewModel
 
-    init(tool: OpenInTool, projectCapability: OpenInProjectCapability) {
-        _model = StateObject(wrappedValue: OpenInFinderToolbarViewModel(tool: tool, projectCapability: projectCapability))
+    init(
+        tool: OpenInTool,
+        projectCapability: OpenInProjectCapability,
+        failureReporter: any OpenInFailureReporting
+    ) {
+        _model = StateObject(wrappedValue: OpenInFinderToolbarViewModel(
+            tool: tool,
+            projectCapability: projectCapability,
+            failureReporter: failureReporter
+        ))
     }
 
     var body: some View {
@@ -30,6 +38,10 @@ struct OpenInFinderToolbarView: View {
 // MARK: - 预览
 
 #Preview("Open In Finder Toolbar") {
-    OpenInFinderToolbarView(tool: OpenInTool(config: OpenInTool.finder, project: nil), projectCapability: OpenInProjectCapabilityAdapter(project: nil))
+    OpenInFinderToolbarView(
+        tool: OpenInTool(config: OpenInTool.finder, project: nil),
+        projectCapability: OpenInProjectCapabilityAdapter(project: nil),
+        failureReporter: NoopOpenInFailureReporter()
+    )
         .padding()
 }

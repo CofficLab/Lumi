@@ -80,4 +80,61 @@ struct BenchmarkTests {
             try await runner.run()
         }
     }
+
+    @Test("用户主动取消显示中性的已取消状态，而不是失败")
+    func cancellingReportsNeutralState() async throws {
+        let viewModel = SystemBenchmarkViewModel(runner: EndlessBenchmarkRunner())
+        viewModel.start()
+        try await Self.waitUntil { viewModel.progress == .cpu }
+
+        viewModel.cancel()
+        try await Self.waitUntil { !viewModel.isRunning }
+
+        #expect(viewModel.cancellationMessage != nil)
+        #expect(viewModel.errorMessage == nil)
+        #expect(viewModel.report == nil)
+    }
+
+    @Test("真实测试错误仍显示为失败")
+    func failureStillReportsError() async throws {
+        let viewModel = SystemBenchmarkViewModel(runner: FailingBenchmarkRunner())
+        viewModel.start()
+        try await Self.waitUntil { !viewModel.isRunning }
+
+        #expect(viewModel.errorMessage == "benchmark exploded")
+        #expect(viewModel.cancellationMessage == nil)
+        #expect(viewModel.report == nil)
+    }
+
+    private static func waitUntil(_ condition: @MainActor () -> Bool) async throws {
+        for _ in 0..<400 {
+            if condition() { return }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        #expect(condition(), "condition not met before timeout")
+    }
+}
+
+/// 跑到 `.cpu` 后一直挂起，直到任务被取消。
+private actor EndlessBenchmarkRunner: SystemBenchmarkRunning {
+    func run(
+        progress: @escaping @Sendable (BenchmarkProgress) async -> Void
+    ) async throws -> BenchmarkReport {
+        await progress(.cpu)
+        while true {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+    }
+}
+
+private struct FailingBenchmarkRunner: SystemBenchmarkRunning {
+    struct Failure: LocalizedError {
+        var errorDescription: String? { "benchmark exploded" }
+    }
+
+    func run(
+        progress: @escaping @Sendable (BenchmarkProgress) async -> Void
+    ) async throws -> BenchmarkReport {
+        throw Failure()
+    }
 }

@@ -2,6 +2,7 @@ import os
 import KernelCore
 import LumiLoggingKit
 import LumiUI
+import ProviderAgentLoop
 import ProviderChatSection
 import ProviderConversation
 import ProviderMessage
@@ -39,6 +40,7 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
         "core-context-compaction",
         "core-agent-loop-retry",
         "core-goal-task-continuation",
+        "core-model-switched",
         "core-status-message",
         "core-error-message",
         "core-tool-message",
@@ -81,7 +83,8 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
            let chat = kernel.resolveProvider((any ChatSectionProviding).self) {
             let viewModel = RiskApprovalChatViewModel(
                 conversations: conversations,
-                toolManager: toolManager
+                toolManager: toolManager,
+                agentLoop: kernel.resolveProvider((any AgentLoopProviding).self)
             )
             riskApprovalChatViewModel = viewModel
             chat.addItems([
@@ -97,6 +100,23 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
         }
         let base = Self.baseOrder
 
+        // Important: 所有核心 renderer 的产出都经 `renderWithMenu` 包一层，
+        //   统一挂上消息行右键菜单。
+        //   菜单挂在**注册层**而不是各个具体视图里，是因为 V4/V5
+        //   （ZCode / ChatGPT）用的是独立渲染器，**不走** `MessageViewChrome`；
+        //   挂视图内部会漏掉这批行。挂在注册层则 V1–V5 行为完全一致。
+        func renderWithMenu(
+            _ view: AnyView,
+            capability: (any MessageRendererCapability)?,
+            message: Message
+        ) -> AnyView {
+            MessageContextMenu.attach(
+                to: view,
+                capability: capability,
+                message: message
+            )
+        }
+
         // 优先级最高：turn-completed / status 特殊渲染
         manager.register(MessageRendererItem(
             id: "core-turn-completed",
@@ -104,8 +124,19 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             canRender: { message in
                 message.renderKind == "turn-completed" || message.content == LumiChatMarkers.turnCompleted
             },
-            render: { message, _ in
-                AnyView(TurnCompletedMessageView(message: message))
+            render: { [capability] message, verbosity in
+                let view = AnyView(
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(TurnCompletedMessageView(message: message))
+                )
+                return renderWithMenu(
+                    view,
+                    capability: capability,
+                    message: message
+                )
             }
         ))
 
@@ -115,8 +146,19 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             canRender: { message in
                 MessageTimelineEvent.isContextCompaction(message)
             },
-            render: { message, _ in
-                AnyView(ContextCompactionMessageView(message: message))
+            render: { [capability] message, verbosity in
+                let view = AnyView(
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(ContextCompactionMessageView(message: message))
+                )
+                return renderWithMenu(
+                    view,
+                    capability: capability,
+                    message: message
+                )
             }
         ))
 
@@ -126,8 +168,19 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             canRender: { message in
                 MessageTimelineEvent.isAgentLoopRetry(message)
             },
-            render: { message, _ in
-                AnyView(AgentLoopRetryMessageView(message: message))
+            render: { [capability] message, verbosity in
+                let view = AnyView(
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(AgentLoopRetryMessageView(message: message))
+                )
+                return renderWithMenu(
+                    view,
+                    capability: capability,
+                    message: message
+                )
             }
         ))
 
@@ -137,8 +190,41 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             canRender: { message in
                 MessageTimelineEvent.isGoalTaskContinuation(message)
             },
-            render: { message, _ in
-                AnyView(GoalTaskContinuationMessageView(message: message))
+            render: { [capability] message, verbosity in
+                let view = AnyView(
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(GoalTaskContinuationMessageView(message: message))
+                )
+                return renderWithMenu(
+                    view,
+                    capability: capability,
+                    message: message
+                )
+            }
+        ))
+
+        manager.register(MessageRendererItem(
+            id: "core-model-switched",
+            order: base + 316,
+            canRender: { message in
+                MessageTimelineEvent.isModelSwitched(message)
+            },
+            render: { [capability] message, verbosity in
+                let view = AnyView(
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(ModelSwitchMessageView(message: message))
+                )
+                return renderWithMenu(
+                    view,
+                    capability: capability,
+                    message: message
+                )
             }
         ))
 
@@ -150,8 +236,19 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
                     && message.renderKind != "turn-completed"
                     && message.content != LumiChatMarkers.turnCompleted
             },
-            render: { message, verbosity in
-                AnyView(StatusMessageView(message: message, verbosity: verbosity))
+            render: { [capability] message, verbosity in
+                let view = AnyView(
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(StatusMessageView(message: message, verbosity: verbosity))
+                )
+                return renderWithMenu(
+                    view,
+                    capability: capability,
+                    message: message
+                )
             }
         ))
 
@@ -163,11 +260,26 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
                 message.role == .error || message.isError
             },
             render: { [capability] message, verbosity in
-                AnyView(ErrorMessageView(
+                let view = AnyView(
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTErrorMessageView(
+                            capability: capability,
+                            message: message,
+                            verbosity: verbosity
+                        ))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(ErrorMessageView(
+                                capability: capability,
+                                message: message,
+                                verbosity: verbosity
+                            ))
+                )
+                return renderWithMenu(
+                    view,
                     capability: capability,
-                    message: message,
-                    verbosity: verbosity
-                ))
+                    message: message
+                )
             }
         ))
 
@@ -178,8 +290,16 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             canRender: { message in
                 message.role == .tool
             },
-            render: { message, verbosity in
-                AnyView(ToolMessageView(message: message, verbosity: verbosity))
+            render: { [capability] message, verbosity in
+                let view = AnyView(ToolMessageView(
+                    message: message,
+                    verbosity: verbosity
+                ))
+                return renderWithMenu(
+                    view,
+                    capability: capability,
+                    message: message
+                )
             }
         ))
 
@@ -191,12 +311,17 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
                 message.role == .user
             },
             render: { [capability, stateViewModel] message, verbosity in
-                AnyView(UserMessageView(
+                let view = AnyView(UserMessageView(
                     capability: capability,
                     stateViewModel: stateViewModel,
                     message: message,
                     verbosity: verbosity
                 ))
+                return renderWithMenu(
+                    view,
+                    capability: capability,
+                    message: message
+                )
             }
         ))
 
@@ -209,12 +334,17 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
                 message.renderKind == "tool-step-group" || message.renderKind == "turn-activity"
             },
             render: { [capability, stateViewModel] message, verbosity in
-                AnyView(ToolStepGroupMessageView(
+                let view = AnyView(ToolStepGroupMessageView(
                     capability: capability,
                     stateViewModel: stateViewModel,
                     message: message,
                     verbosity: verbosity
                 ))
+                return renderWithMenu(
+                    view,
+                    capability: capability,
+                    message: message
+                )
             }
         ))
 
@@ -226,12 +356,17 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
                 message.role == .assistant
             },
             render: { [capability, stateViewModel] message, verbosity in
-                AnyView(AssistantMessageView(
+                let view = AnyView(AssistantMessageView(
                     capability: capability,
                     stateViewModel: stateViewModel,
                     message: message,
                     verbosity: verbosity
                 ))
+                return renderWithMenu(
+                    view,
+                    capability: capability,
+                    message: message
+                )
             }
         ))
 
@@ -242,8 +377,22 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             canRender: { message in
                 message.role == .system
             },
-            render: { message, verbosity in
-                AnyView(SystemMessageView(message: message, verbosity: verbosity))
+            render: { [capability] message, verbosity in
+                let view = AnyView(
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTTimelineMarkerView(message: message))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(SystemMessageView(
+                                message: message,
+                                verbosity: verbosity
+                            ))
+                )
+                return renderWithMenu(
+                    view,
+                    capability: capability,
+                    message: message
+                )
             }
         ))
 
@@ -252,8 +401,22 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             id: "core-default-markdown",
             order: base - 10,
             canRender: { _ in true },
-            render: { message, verbosity in
-                AnyView(DefaultMessageView(message: message, verbosity: verbosity))
+            render: { [capability] message, verbosity in
+                let view = AnyView(
+                    verbosity == .chatGPT
+                        ? AnyView(ChatGPTDefaultMessageView(message: message, verbosity: verbosity))
+                        : verbosity == .zcode
+                            ? AnyView(ZCodeTimelineMarkerView(message: message))
+                            : AnyView(DefaultMessageView(
+                                message: message,
+                                verbosity: verbosity
+                            ))
+                )
+                return renderWithMenu(
+                    view,
+                    capability: capability,
+                    message: message
+                )
             }
         ))
     }

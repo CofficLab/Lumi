@@ -2,6 +2,7 @@ import ProviderActivityBar
 import ProviderConversation
 import ProviderGit
 import ProviderMessage
+import ProviderPluginControl
 import ProviderProject
 import ProviderProjectRAG
 import ProviderPromptSuggestion
@@ -30,6 +31,35 @@ struct MessageListEmptyServices {
     let git: (any GitRepositoryReading)?
     /// Activity bar, used to jump to the Git workspace panel.
     let activityBar: (any ActivityBarProviding)?
+    /// 插件启停控制。Git Workspace 默认禁用，点击项目的 Git 状态行时
+    /// 需要先把它启用，否则 Activity Bar 里根本没有可激活的入口。
+    let pluginControl: (any PluginControlling)?
     /// Rail view, used to jump to the project file tree.
     let railView: (any RailViewProviding)?
+
+    /// `pluginControl` 有默认值：老调用点（预览、测试）可以不关心启停，
+    /// 此时 Git 状态行只在入口已存在时才可点。
+    init(
+        project: (any ProjectProviding)?,
+        promptSuggestions: (any PromptSuggestionProviding)?,
+        promptSuggestionExecutor: (any PromptSuggestionExecuting)?,
+        messages: (any MessageManaging)?,
+        conversations: (any ConversationManaging)?,
+        projectRAG: (any ProjectRAGProviding)?,
+        git: (any GitRepositoryReading)?,
+        activityBar: (any ActivityBarProviding)?,
+        pluginControl: (any PluginControlling)? = nil,
+        railView: (any RailViewProviding)?
+    ) {
+        self.project = project
+        self.promptSuggestions = promptSuggestions
+        self.promptSuggestionExecutor = promptSuggestionExecutor
+        self.messages = messages
+        self.conversations = conversations
+        self.projectRAG = projectRAG
+        self.git = git
+        self.activityBar = activityBar
+        self.pluginControl = pluginControl
+        self.railView = railView
+    }
 }

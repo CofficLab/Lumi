@@ -96,6 +96,11 @@ struct ToolCallRowsView: View {
     /// 这样 ask_user 等挂起交互不会在消息正文渲染完整交互视图（V1 由底部
     /// 固定区单独展示），仅保留默认工具行摘要。
     let allowsCustomToolRenderers: Bool
+    /// **原始**回复级别（未经 `AssistantMessageView.contentVerbosity` 升格）。
+    ///
+    /// 折叠判定必须用原始级别：`verbosity` 里 brief 已被升格成 standard，
+    /// 用它判断会把 V1 连坐成 V2 一并折叠。
+    let originalVerbosity: ResponseVerbosity
 
     /// 根据"是否为 V1（原始 brief）"决定是否允许自定义工具渲染器。
     /// V1：不允许（ask_user 等挂起交互只由底部固定区展示）；V2/V3：允许。
@@ -112,13 +117,15 @@ struct ToolCallRowsView: View {
         stateViewModel: MessageRendererStateViewModel,
         message: Message,
         verbosity: ResponseVerbosity,
-        allowsCustomToolRenderers: Bool
+        allowsCustomToolRenderers: Bool,
+        originalVerbosity: ResponseVerbosity
     ) {
         self.capability = capability
         self.stateViewModel = stateViewModel
         self.message = message
         self.verbosity = verbosity
         self.allowsCustomToolRenderers = allowsCustomToolRenderers
+        self.originalVerbosity = originalVerbosity
     }
 
     private var toolCalls: [MessageToolCall] {
@@ -208,6 +215,35 @@ struct ToolCallRowsView: View {
     }
 
     private var lumiCardRows: some View {
+        Group {
+            // 多个工具调用折叠成一行摘要，点击后在 popover 里逐条展开。
+            // 单个调用、以及任何「等用户处理」的调用都直接铺开——
+            // 后者若被藏进 popover，授权卡片就没人看得见，回合会永远卡住。
+            //
+            // - Important: 判定用 **originalVerbosity**（原始级别），
+            //   不能用 `verbosity`：brief 在进入这里之前已被升格成 standard，
+            //   用升格后的值会把 V1 连坐成 V2 一并折叠。
+            if ToolCallGroupCollapsePolicy.shouldCollapse(
+                toolCalls,
+                verbosity: originalVerbosity
+            ) {
+                ToolCallGroupSummaryRow(
+                    toolCalls: toolCalls
+                ) {
+                    AnyView(
+                        ToolCallGroupPopoverContent(toolCalls: toolCalls) {
+                            AnyView(cardRows)
+                        }
+                    )
+                }
+            } else {
+                cardRows
+            }
+        }
+    }
+
+    /// 逐条工具行。折叠态在 popover 内展示，铺开态直接展示。
+    private var cardRows: some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(toolCalls) { toolCall in
                 toolCallRow(for: toolCall)
@@ -240,6 +276,9 @@ struct ToolCallRowsView: View {
                 toolCall: toolCall,
                 verbosity: verbosity,
                 showsDetails: verbosity != .brief,
+                // Important: V4（ZCode）的工具行是**扁平**的 —— 不带 V2/V3 的
+                //   持续卡片底色与描边，否则 hover 时整行会「突然亮起来」。
+                appearance: verbosity == .zcode ? .flat : nil,
                 parameterPopoverToolCallID: $parameterPopoverToolCallID,
                 resultPopoverToolCallID: $resultPopoverToolCallID
             )
@@ -248,6 +287,29 @@ struct ToolCallRowsView: View {
 }
 
 // MARK: - ToolCallRowView
+
+/// 工具调用行的**外观形态**。
+///
+/// - Note: 三种形态对应三档消息列表各自的工具行视觉：
+///   - `inline`：V1（brief）——默认无背景 / 描边，仅悬停时一层极淡底色；
+///   - `card`：V2 / V3 —— 持续可见的卡片（背景 + 描边）；
+///   - `flat`：V4（ZCode）—— 扁平，无持续卡片底色与描边。
+enum ToolCallRowAppearance: Equatable {
+    /// V1（brief）：inline。
+    case inline
+    /// V2 / V3：持续卡片。
+    case card
+    /// V4（ZCode）：扁平。
+    ///
+    /// - Important: V4 的工具行位于「左 margin 8 + 左边框」的嵌套容器里
+    ///   （见 `ZCodeToolWorkHistoryView`），**不再需要**自己的卡片底色与描边。
+    ///   沿用 V2/V3 的卡片外观会让 hover 时整行「突然亮起来」，
+    ///   与周围扁平的工作历史视觉不一致 —— 这是 hover 突兀感的来源之一。
+    ///
+    ///   基准：ZCode 3.15.1 计划第 2.6 节 —— 工具行只保留文字与
+    ///   悬停时显现的操作按钮，没有持续卡片底色。
+    case flat
+}
 
 /// 单个工具调用卡片行。供 `ToolCallRowsView`(V2/V3)与
 /// `CollapsibleToolStepGroup`(V1 展开态)共用,故为 internal。
@@ -264,6 +326,11 @@ struct ToolCallRowView: View {
     /// - V1 可折叠步骤组展开态:强制 `true`,让用户在 brief 下也能查看结果。
     /// - 执行耗时不再作为行内独立元素,统一在「调用结果」popover 内容区顶部展示。
     let showsDetails: Bool
+    /// 工具行的外观形态。
+    ///
+    /// - Note: 缺省时沿用 `showsDetails` 的既有分流（V1 inline / V2·V3 卡片），
+    ///   因此**既有调用方无需修改**。
+    let appearance: ToolCallRowAppearance
     @Binding var parameterPopoverToolCallID: String?
     @Binding var resultPopoverToolCallID: String?
 
@@ -278,6 +345,7 @@ struct ToolCallRowView: View {
         toolCall: MessageToolCall,
         verbosity: ResponseVerbosity,
         showsDetails: Bool,
+        appearance: ToolCallRowAppearance? = nil,
         parameterPopoverToolCallID: Binding<String?>,
         resultPopoverToolCallID: Binding<String?>
     ) {
@@ -287,6 +355,8 @@ struct ToolCallRowView: View {
         self.toolCall = toolCall
         self.verbosity = verbosity
         self.showsDetails = showsDetails
+        // Important: 缺省时沿用旧分流，既有调用方的外观**逐字不变**。
+        self.appearance = appearance ?? (showsDetails ? .card : .inline)
         self._parameterPopoverToolCallID = parameterPopoverToolCallID
         self._resultPopoverToolCallID = resultPopoverToolCallID
         self._jobActivity = StateObject(wrappedValue: capability.makeToolJobActivityModel(
@@ -365,6 +435,10 @@ struct ToolCallRowView: View {
                         .font(.appCaption)
                         .foregroundColor(visualState.isFailure ? theme.error : theme.textPrimary)
                         .lineLimit(1)
+                        // 标识符按 **工具调用 id** 而非文案：文案是本地化文本
+                        // 且会被 `lineLimit(1)` 截断，按文案定位在非英文环境
+                        // 或长描述下必然失败。
+                        .accessibilityIdentifier(ToolCallRowAccessibility.row(toolCall.id))
                 }
 
                 Spacer(minLength: 12)
@@ -397,7 +471,7 @@ struct ToolCallRowView: View {
             }
         }
         .modifier(ToolCallRowContainerModifier(
-            showsDetails: showsDetails,
+            appearance: appearance,
             isHovering: isHovering,
             rowBackground: rowBackground,
             rowBorder: rowBorder,
@@ -545,27 +619,28 @@ struct ToolCallRowView: View {
     }
 }
 
-/// 工具调用行的容器样式,按 `showsDetails` 分流,确保 V1 的 inline 改动
-/// 不会波及 V2/V3 的卡片外观。
+/// 工具调用行的容器样式,按 `appearance` 分流,确保 V1 的 inline 与
+/// V4 的 flat 改动不会波及 V2/V3 的卡片外观。
 ///
 /// 背景/描边以泛型视图值传入(历史上是返回 `AnyView` 的闭包,每次 body
 /// 求值分配两个闭包 + 类型擦除包装)。
 private struct ToolCallRowContainerModifier<Background: View, Border: View>: ViewModifier {
-    let showsDetails: Bool
+    let appearance: ToolCallRowAppearance
     let isHovering: Bool
     let rowBackground: Background
     let rowBorder: Border
     let hoverBackground: Color
 
     func body(content: Content) -> some View {
-        if showsDetails {
+        switch appearance {
+        case .card:
             // V2/V3:持续可见的卡片。
             content
                 .padding(EdgeInsets(top: 5, leading: 10, bottom: 5, trailing: 10))
                 .background(rowBackground)
                 .overlay(rowBorder)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        } else {
+        case .inline:
             // V1:inline,默认无背景/描边,仅悬停时一层极淡底色。
             content
                 .padding(EdgeInsets(top: 4, leading: 6, bottom: 4, trailing: 6))
@@ -573,6 +648,16 @@ private struct ToolCallRowContainerModifier<Background: View, Border: View>: Vie
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .contentShape(Rectangle())
                 .animation(.easeOut(duration: 0.12), value: isHovering)
+        case .flat:
+            // V4(ZCode):扁平。没有持续卡片底色与描边,
+            // hover 只让「参数 / 结果」按钮显现。
+            //
+            // - Important: 不能给 flat 加 hover 底色 —— 那样整行会
+            //   在 hover 时「突然亮起来」,与周围扁平的工作历史不一致。
+            //   交互提示完全交给悬停时显现的操作按钮承担。
+            content
+                .padding(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                .contentShape(Rectangle())
         }
     }
 }

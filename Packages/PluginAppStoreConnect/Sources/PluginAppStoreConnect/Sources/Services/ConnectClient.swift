@@ -23,6 +23,9 @@ enum AppStoreConnectClientError: LocalizedError {
     case invalidURL
     case resourceNotFound(String)
     case requestFailed(String)
+    /// HTTP 409，并保留服务端的错误码（如 `ENTITY_ERROR.ATTRIBUTE.INVALID`），
+    /// 便于调用方区分「状态冲突」与普通请求失败。
+    case conflict(code: String?, message: String)
     case invalidResponse
 
     var errorDescription: String? {
@@ -36,6 +39,8 @@ enum AppStoreConnectClientError: LocalizedError {
         case .resourceNotFound(let message):
             return message
         case .requestFailed(let message):
+            return message
+        case .conflict(_, let message):
             return message
         case .invalidResponse:
             return AppStoreConnectLocalization.string("App Store Connect returned an invalid response.")
@@ -114,11 +119,13 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
         }
     }
 
+    /// - Parameter cachePolicy: 单次请求的缓存策略；nil 表示沿用 client 的全局策略。
     func request<T: Decodable>(
         path: String,
         method: String = "GET",
         queryItems: [URLQueryItem] = [],
-        body: Data? = nil
+        body: Data? = nil,
+        cachePolicy: ConnectFetchPolicy? = nil
     ) async throws -> T {
         guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
             throw AppStoreConnectClientError.invalidURL
@@ -132,7 +139,7 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
         }
 
         let cacheKey = makeCacheKey(method: method, path: path, queryItems: queryItems)
-        if method == "GET", let cached = cache.get(logicalKey: cacheKey, fetchPolicy: fetchPolicy) {
+        if method == "GET", let cached = cache.get(logicalKey: cacheKey, fetchPolicy: cachePolicy ?? fetchPolicy) {
             return try decodeResponse(cached)
         }
 
@@ -149,11 +156,7 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
         let (data, statusCode) = try await send(request)
 
         guard (200 ..< 300).contains(statusCode) else {
-            let message = apiErrorMessage(from: data, statusCode: statusCode)
-            if statusCode == 404 {
-                throw AppStoreConnectClientError.resourceNotFound(message)
-            }
-            throw AppStoreConnectClientError.requestFailed(message)
+            throw apiError(from: data, statusCode: statusCode)
         }
 
         if method == "GET" {
@@ -207,11 +210,7 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
         let (data, statusCode) = try await send(request)
 
         guard (200 ..< 300).contains(statusCode) else {
-            let message = apiErrorMessage(from: data, statusCode: statusCode)
-            if statusCode == 404 {
-                throw AppStoreConnectClientError.resourceNotFound(message)
-            }
-            throw AppStoreConnectClientError.requestFailed(message)
+            throw apiError(from: data, statusCode: statusCode)
         }
 
         cache.invalidateAfterMutation(
@@ -236,6 +235,23 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
             .sorted { $0.name == $1.name ? ($0.value ?? "") < ($1.value ?? "") : $0.name < $1.name }
             .map { "\($0.name)=\($0.value ?? "")" }
             .joined(separator: "&")
+    }
+
+    private func apiError(from data: Data, statusCode: Int) -> AppStoreConnectClientError {
+        let message = apiErrorMessage(from: data, statusCode: statusCode)
+        switch statusCode {
+        case 404:
+            return .resourceNotFound(message)
+        case 409:
+            return .conflict(code: apiErrorCode(from: data), message: message)
+        default:
+            return .requestFailed(message)
+        }
+    }
+
+    private func apiErrorCode(from data: Data) -> String? {
+        (try? JSONDecoder().decode(AppStoreConnectErrorResponse.self, from: data))?
+            .errors.first?.code
     }
 
     private func apiErrorMessage(from data: Data, statusCode: Int) -> String {

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 195 条用例。
+KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 210 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 195
+测试文件: 9 个，用例总数: 210
 
 核心组件（源码目录）:
 - `Adapters/`
@@ -38,10 +38,10 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 195 条用�
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **APIKeyMemoryCache**（5 条）：由 `freshWithinTTL`、`negativeEntry`、`lastKnownIgnoresTTL` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **AnthropicAdapter**（46 条）：由 `buildsRequestHeaders`、`buildsRequestBody`、`systemMessagesOverridePrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **综合**（42 条）：由 `messageCreation`、`requestCreation`、`providerInfo` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **AnthropicAdapter**（47 条）：由 `buildsRequestHeaders`、`buildsRequestBody`、`systemMessagesOverridePrompt` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（44 条）：由 `messageCreation`、`requestCreation`、`providerInfo` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **OpenAICompatibleStreamParsing**（9 条）：由 `reasoningAndToolCallsCoexist`、`contentAndToolCallsCoexist`、`usageSurvivesToolCallFrame` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ProviderErrorAndContract**（44 条）：由 `parsesOpenAIErrorBody`、`parsesAnthropicErrorBody`、`fallsBackToGenericJSON` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ProviderErrorAndContract**（45 条）：由 `parsesOpenAIErrorBody`、`parsesAnthropicErrorBody`、`fallsBackToGenericJSON` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **RetryAfterAndBackoff**（21 条）：由 `parsesDelaySeconds`、`headerLookupIsCaseInsensitive`、`parsesHTTPDate` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **VendorAPIService**（9 条）：由 `retriesOnServerError`、`givesUpAfterMaxAttempts`、`doesNotRetryOnClientError` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **VendorLLMProvider**（1 条）：由 `staticProviderBehavior` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -246,27 +246,42 @@ KitLLM 的实现包，包含 14 个主要类型；当前测试覆盖 195 条用�
 | 193 | VendorProvider | 工具 schema 转成适配器可用的形态并带回查映射 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolSchemasBuildReverseMap` |
 | 194 | VendorProvider | 没有工具时返回空的可选值 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `toolSchemasAreNilWhenEmpty` |
 | 195 | VendorProvider | 推理档位归一化并拒绝未知取值 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `normalizesReasoningEffort` |
+| 196 | 综合 | 思考增量只带 reasoningContent，不伪造正文 | 使用 StreamingAccumulator | 消费 `.thinkingDelta` 片段 | 回调只带 `reasoningContent`，`content` 保持为空 | P1 | ✅ 已覆盖 | `thinkingDeltaChunkDoesNotCarryContent` |
+| 197 | 综合 | 正文增量只带 content，不带 reasoningContent | 使用 StreamingAccumulator | 消费 `.textDelta` 片段 | 回调只带 `content`，`reasoningContent` 保持为空 | P1 | ✅ 已覆盖 | `textDeltaChunkDoesNotCarryReasoning` |
+| 198 | ProviderErrorAndContract | 退役标记可显式设置 | — | 分别以 `isRetired: true` / `false` / 缺省构造模型信息 | 标记与传入值一致，缺省为未退役 | P1 | ✅ 已覆盖 | `modelInfoRetiredFlag` |
+| 199 | 综合 | 超长工具名截断到 64 字符且稳定不撞名 | 工具名为 `s.` + 64 个字母 | 连续调用 sanitize 并比较相邻超长名 | 结果长度恰为 64、带稳定前缀、同名结果一致、不同原文不撞名 | P0 | ✅ 已覆盖 | `longToolNameIsTruncatedToProtocolLimit` |
+| 200 | Anthropic 流式解析 | `redacted_thinking` 内容块开始事件带 opaque data | 构造带 `data` 的 `content_block_start` | 解析事件 | 事件类型为 `contentBlockStart`，`redactedThinkingData` 等于原文 | P1 | ✅ 已覆盖 | `parsesRedactedThinkingContentBlockStart` |
+| 201 | Anthropic 消息转换 | redacted thinking 按原样回传且位于 tool_use 之前 | assistant 带工具调用与 redacted 块 | 调用 `transformMessage` | 生成 `redacted_thinking` 块，`data` 原文一致且排在 `tool_use` 前 | P1 | ✅ 已覆盖 | `transformsRedactedThinkingBeforeToolUse` |
+| 202 | 综合 | redacted thinking 块按到达顺序进入最终响应 | 连续消费两个 redacted 块并结束流 | 调用 `finish` | 最终响应按顺序包含两段 opaque data | P1 | ✅ 已覆盖 | `redactedThinkingIsKeptInResponse` |
+| 203 | 综合 | 非推理模型不下发 reasoning_effort（**回归 #985**） | OpenAI 默认档位 HIGH | 为 gpt-4o 等非推理模型构建请求体 | 请求体不含 `reasoning_effort` | P0 | ✅ 已覆盖 | `openAIAdapterDropsReasoningEffortForNonReasoningModels` |
+| 204 | 综合 | 推理模型与未知模型仍正常下发 reasoning_effort | 档位 HIGH | 为 gpt-5 / o 系列 / 自定义模型构建请求体 | 均保留 `reasoning_effort: high` | P1 | ✅ 已覆盖 | `openAIAdapterSendsReasoningEffortForReasoningModels` |
+| 205 | Anthropic 消息转换 | 回归 #955：失败工具结果携带 `is_error: true`，成功结果不带 | 分别构造失败/成功/失败带图的 tool 消息 | 调用 `transformMessage` | 失败结果（含图片）含 `is_error: true`，成功结果无该键 | P0 | ✅ 已覆盖 | `toolResultCarriesErrorFlagOnlyOnFailure` |
+| 206 | 生成参数映射 | 回归 #952：不支持 extended thinking 的 Claude 模型不下发 `thinking` | Claude 3.0/3.5 系列 + 任意有效档位 + 显式 max_tokens | 构建流式请求体 | 不含 `thinking`，`max_tokens` 保持用户值不被预算抬高 | P0 | ✅ 已覆盖 | `omitsThinkingForUnsupportedClaudeModels` |
+| 207 | 生成参数映射 | Claude 3.7/4 与非 Claude 兼容模型仍保留 `thinking` | Claude 3.7 / DeepSeek 模型 + 档位 LOW | 构建流式请求体 | `thinking.type == enabled` 且预算为 1024 | P1 | ✅ 已覆盖 | `keepsThinkingForSupportedModels` |
+| 208 | 生成参数映射 | 回归 #951：输出上限 4096 的 Claude 3 模型默认 max_tokens 被限幅 | Claude 3 Opus/Sonnet/Haiku + 默认配置 8192 | 构建流式请求体 | `max_tokens` 均为 4096 | P0 | ✅ 已覆盖 | `clampsDefaultMaxTokensForClaude3Models` |
+| 209 | 生成参数映射 | 用户显式超过模型上限的 max_tokens 同样被限幅 | Claude 3 Haiku + 显式 8192 | 构建流式请求体 | `max_tokens` 为 4096 | P1 | ✅ 已覆盖 | `clampsExplicitMaxTokensAboveModelCap` |
+| 210 | 生成参数映射 | 输出上限更高的模型不会被统一降低 | Claude 3.5 Sonnet / Sonnet 4 + 8192 | 构建流式请求体 | `max_tokens` 保持 8192 | P1 | ✅ 已覆盖 | `keepsHigherMaxTokensForCapableModels` |
 
-> 说明：全部 **195 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **210 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 39 / 39
-- P1: 已覆盖 142 / 142
+- P0: 已覆盖 44 / 44
+- P1: 已覆盖 152 / 152
 - P2: 已覆盖 14 / 14
-- **合计: 195 / 195**（仅表示清单场景，非源码覆盖率）
+- **合计: 210 / 210**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（39 条）
-- **P1**: 其余功能性用例（142 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（44 条）
+- **P1**: 其余功能性用例（152 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（14 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 195 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 210 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

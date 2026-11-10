@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitOpenIn 的实现包，包含 3 个主要类型；当前测试覆盖 4 条用例。
+KitOpenIn 的实现包，包含 3 个主要类型；当前测试覆盖 8 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 4
+测试文件: 2 个，用例总数: 8
 
 ## 公开 API
 
@@ -14,12 +14,15 @@ KitOpenIn 的实现包，包含 3 个主要类型；当前测试覆盖 4 条用�
 - `OpenInAboutView`
 - `OpenInManualView`
 - `OpenInTool`
+- `OpenInFailureReporting`
+- `OpenInFailureToastReporter`
 
 ## 关键行为契约（实现约定，非协议要求）
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **OpenInTool**（4 条）：由 `presetConfigurationsKeepStableToolNamesAndFallbacks`、`toolMetadataDeclaresOptionalPathAndLowRisk`、`explicitPathOverridesProjectAndEmptyPathFallsBack` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **OpenInTool**（6 条）：由 `presetConfigurationsKeepStableToolNamesAndFallbacks`、`toolMetadataDeclaresOptionalPathAndLowRisk`、`explicitPathOverridesProjectAndEmptyPathFallsBack`、`conversationProjectOverridesCurrentProject` 等用例锁定；工具必须按调用所属会话的项目解析路径，显式 path 优先。
+- **OpenInFailureReporting**（2 条）：失败必须转成用户可见的错误 Toast；未注册 Toast 能力时安静降级。
 
 ## 测试用例清单
 
@@ -28,28 +31,32 @@ KitOpenIn 的实现包，包含 3 个主要类型；当前测试覆盖 4 条用�
 | 1 | OpenInTool | presetConfigurationsKeepStableToolNamesAndFallbacks | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `presetConfigurationsKeepStableToolNamesAndFallbacks` |
 | 2 | OpenInTool | toolMetadataDeclaresOptionalPathAndLowRisk | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolMetadataDeclaresOptionalPathAndLowRisk` |
 | 3 | OpenInTool | explicitPathOverridesProjectAndEmptyPathFallsBack | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `explicitPathOverridesProjectAndEmptyPathFallsBack` |
-| 4 | OpenInTool | executionReturnsReadableErrorWhenNoPathOrProjectExists | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `executionReturnsReadableErrorWhenNoPathOrProjectExists` |
+| 4 | OpenInTool | executionThrowsWhenNoPathOrProjectExists | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `executionThrowsWhenNoPathOrProjectExists` |
+| 5 | OpenInTool | 会话绑定项目优先于当前项目，显式 path 仍最优先 | 显式/会话/当前三条路径同时存在 | 调用 `resolvedTargetPath` | 依次取显式、会话、当前 | P1 | ✅ 已覆盖 | `conversationProjectOverridesCurrentProject` |
+| 6 | OpenInTool | 会话绑定项目被真正传入路径解析 | 当前项目为 `/workspace/Current`，会话绑定 `/workspace/Conversation` | 调用 `resolvedPath(_:conversationProjectPath:)` | 返回会话项目路径 | P1 | ✅ 已覆盖 | `conversationProjectIsPlumbedIntoResolution` |
+| 7 | OpenInFailureReporting | 失败会转换成错误 Toast，并保留标题与原因（**回归 #549**） | 注入记录型 Toast 实现 | `reportOpenFailure` | 收到一条 `.error` Toast，标题/详情一致 | P1 | ✅ 已覆盖 | `reportsFailureAsErrorToast` |
+| 8 | OpenInFailureReporting | 没有注册 Toast 能力时安静降级 | `toast == nil` | `reportOpenFailure` | 不崩溃、无副作用 | P2 | ✅ 已覆盖 | `toleratesMissingToastProvider` |
 
-> 说明：全部 **4 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **8 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 2 / 2
-- P2: 已覆盖 2 / 2
-- **合计: 4 / 4**（仅表示清单场景，非源码覆盖率）
+- P1: 已覆盖 5 / 5
+- P2: 已覆盖 3 / 3
+- **合计: 8 / 8**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（2 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
+- **P1**: 其余功能性用例（5 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 4 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 8 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

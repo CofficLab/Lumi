@@ -116,3 +116,29 @@ final class MailCoreAdapterErrorMappingTests: XCTestCase {
         }
     }
 }
+
+/// 回归 #727：文件夹列表必须走 IMAP LIST（全部），而不是 LSUB（已订阅）。
+final class MailCoreAdapterFolderOperationTests: XCTestCase {
+    func testFolderListingRequestsAllFoldersNotSubscribed() {
+        let session = FolderOperationSpySession()
+        _ = MailCoreAdapter.fetchFoldersOperation(using: session)
+        XCTAssertEqual(session.allFoldersCallCount, 1, "应请求全部文件夹")
+        XCTAssertEqual(session.subscribedFoldersCallCount, 0, "不应按订阅状态过滤")
+    }
+}
+
+/// 记录调用了哪种文件夹操作；返回 nil 使调用方走既有错误分支。
+private final class FolderOperationSpySession: MCOIMAPSession {
+    private(set) var allFoldersCallCount = 0
+    private(set) var subscribedFoldersCallCount = 0
+
+    override func fetchAllFoldersOperation() -> MCOIMAPFetchFoldersOperation! {
+        allFoldersCallCount += 1
+        return nil
+    }
+
+    override func fetchSubscribedFoldersOperation() -> MCOIMAPFetchFoldersOperation! {
+        subscribedFoldersCallCount += 1
+        return nil
+    }
+}

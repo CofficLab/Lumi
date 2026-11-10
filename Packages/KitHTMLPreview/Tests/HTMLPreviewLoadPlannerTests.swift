@@ -123,6 +123,78 @@ struct HTMLPreviewLoadPlannerTests {
         #expect(directoryURL.absoluteDirectoryURL == directoryURL)
     }
 
+    @Test("read access root from an ancestor directory is honored for nested pages")
+    func ancestorReadAccessRootIsHonored() {
+        let fileURL = makeFileURL(fileName: "zh-Hans.html")
+        let root = URL(fileURLWithPath: "/tmp/KitHTMLPreview Tests", isDirectory: true)
+        let planner = HTMLPreviewLoadPlanner(fileReader: { _ in Data("<html></html>".utf8) })
+
+        #expect(planner.loadRequest(html: "<html></html>", fileURL: fileURL, readAccessRootURL: root) == .file(
+            fileURL: fileURL,
+            readAccessURL: root
+        ))
+    }
+
+    @Test("read access root that does not contain the file falls back to the file directory")
+    func unrelatedReadAccessRootFallsBackToParent() {
+        let fileURL = makeFileURL(fileName: "index.html")
+        let unrelated = URL(fileURLWithPath: "/tmp/KitHTMLPreview Other", isDirectory: true)
+        let planner = HTMLPreviewLoadPlanner(fileReader: { _ in Data("<html></html>".utf8) })
+
+        #expect(planner.loadRequest(html: "<html></html>", fileURL: fileURL, readAccessRootURL: unrelated) == .file(
+            fileURL: fileURL,
+            readAccessURL: fileURL.deletingLastPathComponent()
+        ))
+    }
+
+    @Test("empty HTML with a readable file loads the file (Canvas snapshot fallback, #1052)")
+    func emptyHTMLWithReadableFileLoadsFileURL() {
+        let fileURL = makeFileURL(fileName: "canvas.html")
+        let fileHTML = "<html><body>canvas</body></html>"
+        let planner = HTMLPreviewLoadPlanner(fileReader: { url in
+            #expect(url == fileURL)
+            return Data(fileHTML.utf8)
+        })
+
+        #expect(planner.loadRequest(html: "", fileURL: fileURL) == .file(
+            fileURL: fileURL,
+            readAccessURL: fileURL.deletingLastPathComponent()
+        ))
+    }
+
+    @Test("empty HTML with an unreadable file falls back to an empty HTML document")
+    func emptyHTMLWithUnreadableFileFallsBackToHTML() {
+        struct ReadFailure: Error {}
+
+        let fileURL = makeFileURL(fileName: "missing-canvas.html")
+        let planner = HTMLPreviewLoadPlanner(fileReader: { _ in throw ReadFailure() })
+
+        #expect(planner.loadRequest(html: "", fileURL: fileURL) == .html(
+            html: "",
+            baseURL: fileURL.deletingLastPathComponent().absoluteDirectoryURL
+        ))
+    }
+
+    @Test("empty HTML without a file URL stays an empty HTML document")
+    func emptyHTMLWithoutFileURLStaysHTML() {
+        let planner = HTMLPreviewLoadPlanner(fileReader: { _ in
+            Issue.record("fileReader should not be called when fileURL is nil")
+            return Data()
+        })
+
+        #expect(planner.loadRequest(html: "", fileURL: nil) == .html(html: "", baseURL: nil))
+    }
+
+    @Test("view only shows the empty state without both HTML text and a file (#1052)")
+    func viewEmptyStateRequiresNoTextAndNoFile() {
+        #expect(HTMLPreviewView.hasNoContent(htmlText: "", fileURL: nil))
+
+        let fileURL = makeFileURL(fileName: "canvas.html")
+        #expect(!HTMLPreviewView.hasNoContent(htmlText: "", fileURL: fileURL))
+        #expect(!HTMLPreviewView.hasNoContent(htmlText: "<p>hi</p>", fileURL: nil))
+        #expect(!HTMLPreviewView.hasNoContent(htmlText: "<p>hi</p>", fileURL: fileURL))
+    }
+
     private func makeFileURL(fileName: String) -> URL {
         URL(fileURLWithPath: "/tmp/KitHTMLPreview Tests/Nested/\(fileName)")
     }

@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 52 条用例。
+PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 97 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 52
+测试文件: 8 个，用例总数: 97
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -42,6 +42,7 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 - **综合**（27 条）：由 `toolManagerBatchStopsAtApproval`、`authorizedToolReusesExistingResultInsteadOfExecutingAgain`、`unknownToolSkipsAuthorizationAndReturnsNotFoundResult` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ShellDesktopSandbox**（15 条）：由 `desktopSandboxAllowsTerminalCommandsAndNestedChildren`、`desktopSandboxRejectsAppleEventsFromNestedInterpreter`、`compiledHelperInheritsDesktopServiceDenials` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolExecutionScheduling**（7 条）：由 `toolContextResolvesProjectForOwningConversation`、`readOnlyJobsRunInParallelWithPerTurnLimit`、`sideEffectJobsCreateAnOrderingBarrier` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ShellCommandRisk**（10 条）：由 `readOnlyCommandsStayLow`、`networkExfiltrationAndDownloadExecuteAreHigh`、`shellToolUsesChainAwareRisk` 等用例锁定；改动风险评估时优先跑 `ShellCommandRiskTests`。
 - **ToolJobPersistence**（3 条）：由 `executionLifecycleIsPersisted`、`unfinishedJobsAreSettledAfterRestart`、`deletingConversationCancelsJobsAndClearsRecords` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
@@ -100,27 +101,73 @@ PluginToolManager 的实现包，包含 14 个主要类型；当前测试覆盖 
 | 50 | ToolJobPersistence | ToolExecutionManager 持久化 Job 生命周期和结果 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `executionLifecycleIsPersisted` |
 | 51 | ToolJobPersistence | 启动时未完成的 Job 被安全标记为失败且不自动重跑 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `unfinishedJobsAreSettledAfterRestart` |
 | 52 | ToolJobPersistence | 删除会话会取消运行中的 Job 并阻止迟到持久化 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `deletingConversationCancelsJobsAndClearsRecords` |
+| 53 | ShellCommandRisk | 只读命令与无副作用参数判低风险 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readOnlyCommandsStayLow` |
+| 54 | ShellCommandRisk | 引号与转义内的分隔符不拆分命令链 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `quotedAndEscapedSeparatorsStayLow` |
+| 55 | ShellCommandRisk | 网络外发与下载即执行判高风险 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `networkExfiltrationAndDownloadExecuteAreHigh` |
+| 56 | ShellCommandRisk | 嵌套命令替换与解释器间接执行判高风险 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nestedSubstitutionAndInterpreterExecutionAreHigh` |
+| 57 | ShellCommandRisk | 只读命令替换不误判 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `nestedReadOnlySubstitutionStaysLow` |
+| 58 | ShellCommandRisk | 破坏性操作、提权与敏感路径判高风险 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `destructivePrivilegeAndSensitivePathsAreHigh` |
+| 59 | ShellCommandRisk | 白名单之外的命令 fail-safe 判高风险 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unknownCommandsFailSafeToHigh` |
+| 60 | ShellCommandRisk | 安全重定向与畸形输入边界 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `harmlessRedirectionAndMalformedInputs` |
+| 61 | ShellCommandRisk | 超长输入不崩溃且判高风险 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `oversizedInputDoesNotCrash` |
+| 62 | ShellCommandRisk | ShellTool 接入链式风险分析 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shellToolUsesChainAwareRisk` |
+| 63 | ToolJobPersistence | 启动恢复终态 Job 后发布 restored 批量快照（**回归 #544**） | Job 记录库中已有终态记录 | 挂载记录库等待恢复 | 观察者收到一次 `.restored`，且可按会话查到该 Job | P1 | ✅ 已覆盖 | `restorePublishesSnapshotEvent` |
+| 64 | 工具参数安全 | globToolThrowsWhenPatternIsMissing | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `globToolThrowsWhenPatternIsMissing` |
+| 65 | 工具参数安全 | listDirectoryToolThrowsWhenDirectoryDoesNotExist | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `listDirectoryToolThrowsWhenDirectoryDoesNotExist` |
+| 66 | 工具参数安全 | readFileAcceptsLimitLargerThanFileLength | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileAcceptsLimitLargerThanFileLength` |
+| 67 | 工具参数安全 | readFileCapsRepresentableOversizedLimit | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileCapsRepresentableOversizedLimit` |
+| 68 | 工具参数安全 | readFileDisplayDescriptionSurvivesIllegalArguments | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileDisplayDescriptionSurvivesIllegalArguments` |
+| 69 | 工具参数安全 | readFileHandlesIntMinOffsetWithoutOverflow | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileHandlesIntMinOffsetWithoutOverflow` |
+| 70 | 工具参数安全 | readFileHandlesNegativeOffsetCountingFromEnd | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileHandlesNegativeOffsetCountingFromEnd` |
+| 71 | 工具参数安全 | readFilePermissionRiskLevelSurvivesIllegalArguments | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFilePermissionRiskLevelSurvivesIllegalArguments` |
+| 72 | 工具参数安全 | readFileRejectsLimitAboveIntMaxFromJSON | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileRejectsLimitAboveIntMaxFromJSON` |
+| 73 | 工具参数安全 | readFileRejectsNegativeLimitInsteadOfTrapping | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileRejectsNegativeLimitInsteadOfTrapping` |
+| 74 | 工具参数安全 | readFileRejectsNonFiniteLimit | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileRejectsNonFiniteLimit` |
+| 75 | 工具参数安全 | readFileRejectsOutOfRangeLimitFromJSON | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileRejectsOutOfRangeLimitFromJSON` |
+| 76 | 工具参数安全 | readFileRejectsUnrepresentableOffset | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileRejectsUnrepresentableOffset` |
+| 77 | 工具参数安全 | readFileRejectsZeroLimit | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileRejectsZeroLimit` |
+| 78 | 工具参数安全 | readFileReportsOffsetBeyondEndOfFile | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `readFileReportsOffsetBeyondEndOfFile` |
+| 79 | 工具参数安全 | shellDisplayDescriptionAndRiskSurviveIllegalArguments | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shellDisplayDescriptionAndRiskSurviveIllegalArguments` |
+| 80 | 工具参数安全 | shellOutputBudgetFallsBackForUnrepresentableValues | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shellOutputBudgetFallsBackForUnrepresentableValues` |
+| 81 | 工具参数安全 | shellOutputBudgetIsClampedToCeiling | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shellOutputBudgetIsClampedToCeiling` |
+| 82 | 工具参数安全 | shellRejectsNegativeTimeoutAsArgumentError | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shellRejectsNegativeTimeoutAsArgumentError` |
+| 83 | 工具参数安全 | shellRejectsUnrepresentableTimeoutAsArgumentError | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shellRejectsUnrepresentableTimeoutAsArgumentError` |
+| 84 | 工具参数安全 | shellStillRunsWithAValidTimeout | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `shellStillRunsWithAValidTimeout` |
+| 85 | 工具管理视图 | logAutoSelectsFirstRecord | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `logAutoSelectsFirstRecord` |
+| 86 | 工具管理视图 | onlyToolModeWorksWithoutLogStore | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `onlyToolModeWorksWithoutLogStore` |
+| 87 | 工具管理视图 | selectedToolFallsBackWhenToolDisappears | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectedToolFallsBackWhenToolDisappears` |
+| 88 | 工具管理视图 | selectedToolSurvivesReload | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectedToolSurvivesReload` |
+| 89 | 工具管理视图 | selectModeSwitchesMode | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `selectModeSwitchesMode` |
+| 90 | 工具管理视图 | statEntryExposesErrorRate | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `statEntryExposesErrorRate` |
+| 91 | 工具管理视图 | statsAutoSelectFirstEntry | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `statsAutoSelectFirstEntry` |
+| 92 | 工具管理视图 | toolEntriesFlattenGroupsInOrder | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolEntriesFlattenGroupsInOrder` |
+| 93 | 工具管理视图 | toolListAutoSelectsFirstTool | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolListAutoSelectsFirstTool` |
+| 94 | 工具管理视图 | refreshDuringPaginationDropsStalePage | 120 条记录、翻页请求延迟 300ms | 翻页进行中刷新日志 | 刷新不被挡住，列表保持 50 条，旧翻页结果被丢弃，两个加载标记都归零 | P1 | ✅ 已覆盖 | `refreshDuringPaginationDropsStalePage` |
 
-> 说明：全部 **52 条场景**已在本包 `swift test` 中实跑通过。
+| 95 | 工具恢复 | resolveUserResponseReexecutesAfterAuthorization | 低风险工具首次执行返回 awaitingUserResponse | 用户回答 computer_use.allow_for_task | 必须重新执行工具拿到真实结果，不得复用挂起的授权回执，执行计数为 2 | P0 | ✅ 已覆盖 | `resolveUserResponseReexecutesAfterAuthorization` |
+| 96 | 工具恢复 | resolveUserResponseRejectionDoesNotReexecute | 低风险工具首次执行返回 awaitingUserResponse | 用户回答 computer_use.deny | 返回失败结果并带上拒绝说明，执行计数保持 1 | P1 | ✅ 已覆盖 | `resolveUserResponseRejectionDoesNotReexecute` |
+| 97 | 工具恢复 | resolveUserResponseKeepsAnswerOnlyBehaviourByDefault | 未声明恢复动作的挂起工具 | 用户给出普通回答 | 回答文本直接作为工具结果，不重新执行 | P1 | ✅ 已覆盖 | `resolveUserResponseKeepsAnswerOnlyBehaviourByDefault` |
+
+> 说明：全部 **97 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 5 / 5
-- P1: 已覆盖 43 / 43
-- P2: 已覆盖 4 / 4
-- **合计: 52 / 52**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 6 / 6
+- P1: 已覆盖 85 / 85
+- P2: 已覆盖 6 / 6
+- **合计: 97 / 97**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（43 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（6 条）
+- **P1**: 其余功能性用例（85 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 52 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 97 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

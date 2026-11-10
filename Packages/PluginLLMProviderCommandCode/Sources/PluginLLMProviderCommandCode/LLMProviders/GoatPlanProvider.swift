@@ -107,7 +107,7 @@ public final class GoatPlanProvider: VendorLLMProvider {
                     LLMModelInfo(id: "Qwen/Qwen3.6-Plus", displayName: "Qwen 3.6 Plus", contextWindowSize: 200_000),
                     // Step
                     LLMModelInfo(id: "stepfun/Step-3.7-Flash", displayName: "Step 3.7 Flash", contextWindowSize: 256_000),
-                    LLMModelInfo(id: "stepfun/Step-3.5-Flash", displayName: "Step 3.5 Flash", contextWindowSize: 1_000_000),
+                    LLMModelInfo(id: "stepfun/Step-3.5-Flash", displayName: "Step 3.5 Flash", contextWindowSize: 262_144),
                     // Tencent
                     LLMModelInfo(id: "tencent/hy3-paid", displayName: "Tencent Hy3", contextWindowSize: 262_144),
                     LLMModelInfo(id: "tencent/hy4-preview", displayName: "Tencent Hy4 Preview", contextWindowSize: 1_048_576),
@@ -119,7 +119,7 @@ public final class GoatPlanProvider: VendorLLMProvider {
                     LLMModelInfo(id: "google/gemini-3.5-flash-lite", displayName: "Gemini 3.5 Flash Lite", contextWindowSize: 1_000_000),
                     LLMModelInfo(id: "google/gemini-3.1-flash-lite", displayName: "Gemini 3.1 Flash Lite", contextWindowSize: 1_000_000),
                     // Others
-                    LLMModelInfo(id: "meituan/LongCat-2.0:free", displayName: "LongCat 2.0", contextWindowSize: 1_048_576),
+                    LLMModelInfo(id: "meituan/LongCat-2.0", displayName: "LongCat 2.0", contextWindowSize: 1_048_576),
                     LLMModelInfo(id: "sakana/fugu-ultra", displayName: "Fugu Ultra", contextWindowSize: 1_000_000),
                     LLMModelInfo(id: "nvidia/nemotron-3-ultra-550b-a55b", displayName: "Nemotron 3 Ultra", contextWindowSize: 1_000_000),
                     LLMModelInfo(id: "thinkingmachines/inkling", displayName: "Inkling", contextWindowSize: 256_000),

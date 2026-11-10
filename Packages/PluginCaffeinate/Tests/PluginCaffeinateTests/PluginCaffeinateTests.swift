@@ -1,5 +1,7 @@
 import KitAgentTool
 import Foundation
+import KernelCore
+import ProviderMenuBar
 import ProviderStorage
 import Testing
 @testable import PluginCaffeinate
@@ -65,6 +67,21 @@ struct PluginCaffeinateTests {
         let hasCompiledStrings = bundle.path(forResource: "zh-Hans", ofType: "lproj") != nil
         #expect(hasCatalog || hasCompiledStrings)
         #expect(pluginLocalization.string("Caffeinate").isEmpty == false)
+    }
+
+    @Test("卸载自动撤回菜单栏贡献")
+    func unloadRemovesMenuBarContribution() async throws {
+        let kernel = KernelCoreContainer()
+        let menuBar = DefaultMenuBarProviding()
+        try kernel.registerProvider((any MenuBarProviding).self, menuBar)
+        let plugin = CaffeinatePlugin()
+        try kernel.start(plugins: [plugin])
+
+        #expect(menuBar.popupItems.map(\.id) == ["\(plugin.id).popup"])
+        #expect(menuBar.popupItems.first?.ownerPluginID == plugin.id)
+
+        try await kernel.unloadPluginAsync(id: plugin.id)
+        #expect(menuBar.popupItems.isEmpty)
     }
 }
 

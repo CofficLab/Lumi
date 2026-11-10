@@ -1,5 +1,6 @@
 import Foundation
 import KitLLM
+import ProviderConversation
 import ProviderLLMManager
 import Testing
 @testable import PluginLLMProviderMiniMax
@@ -55,14 +56,14 @@ struct MiniMaxSelectionGateTests {
 
     // MARK: - 观察者：初始同步
 
-    @Test("观察者启动时补同步一次当前选中态")
+    @Test("观察者启动时补同步一次当前状态")
     func observerSyncsInitialStateOnStart() {
         let gate = MiniMaxSelectionGate()
         var selectCount = 0
         var deselectCount = 0
 
         let observer = MiniMaxSelectionObserver(
-            manager: StubLLMManager(selectedProviderID: "minimax-tokenplan"),
+            capability: StubQuotaCapability(providerID: "minimax-tokenplan"),
             gate: gate,
             onSelect: { selectCount += 1 },
             onDeselect: { deselectCount += 1 }
@@ -83,7 +84,7 @@ struct MiniMaxSelectionGateTests {
         var deselectCount = 0
 
         let observer = MiniMaxSelectionObserver(
-            manager: StubLLMManager(selectedProviderID: "openai"),
+            capability: StubQuotaCapability(providerID: "openai"),
             gate: gate,
             onSelect: { selectCount += 1 },
             onDeselect: { deselectCount += 1 }
@@ -99,15 +100,15 @@ struct MiniMaxSelectionGateTests {
 
     // MARK: - 观察者：事件驱动
 
-    @Test("收到 selectionChanged 切换到 MiniMax 时开启门控并拉取")
+    @Test("收到生效供应商变化切到 MiniMax 时开启门控并拉取")
     func selectionEventEnablesGateAndFetches() {
-        let manager = StubLLMManager(selectedProviderID: "openai")
+        let capability = StubQuotaCapability(providerID: "openai")
         let gate = MiniMaxSelectionGate()
         var selectCount = 0
         var deselectCount = 0
 
         let observer = MiniMaxSelectionObserver(
-            manager: manager,
+            capability: capability,
             gate: gate,
             onSelect: { selectCount += 1 },
             onDeselect: { deselectCount += 1 }
@@ -116,11 +117,7 @@ struct MiniMaxSelectionGateTests {
         // start() 的初始同步：非 MiniMax → deselect 1 次。
         #expect(deselectCount == 1)
 
-        manager.emit(.selectionChanged(
-            providerID: "minimax-tokenplan",
-            model: "MiniMax-M2.7",
-            reason: .userSelected
-        ))
+        capability.emit(providerID: "minimax-tokenplan")
 
         #expect(gate.isEnabled)
         #expect(selectCount == 1)
@@ -129,15 +126,15 @@ struct MiniMaxSelectionGateTests {
         observer.cancel()
     }
 
-    @Test("收到 selectionChanged 切走 MiniMax 时关闭门控并取消在途请求")
+    @Test("收到生效供应商变化切走 MiniMax 时关闭门控并取消在途请求")
     func selectionEventDisablesGate() {
-        let manager = StubLLMManager(selectedProviderID: "minimax-tokenplan")
+        let capability = StubQuotaCapability(providerID: "minimax-tokenplan")
         let gate = MiniMaxSelectionGate()
         var selectCount = 0
         var deselectCount = 0
 
         let observer = MiniMaxSelectionObserver(
-            manager: manager,
+            capability: capability,
             gate: gate,
             onSelect: { selectCount += 1 },
             onDeselect: { deselectCount += 1 }
@@ -145,7 +142,7 @@ struct MiniMaxSelectionGateTests {
         observer.start()
         #expect(selectCount == 1)
 
-        manager.emit(.selectionChanged(providerID: "openai", model: "gpt-4o", reason: .userSelected))
+        capability.emit(providerID: "openai")
 
         #expect(!gate.isEnabled)
         #expect(selectCount == 1)
@@ -154,41 +151,14 @@ struct MiniMaxSelectionGateTests {
         observer.cancel()
     }
 
-    @Test("非 selectionChanged 事件不影响门控")
-    func unrelatedEventsDoNotChangeGate() {
-        let manager = StubLLMManager(selectedProviderID: "minimax-tokenplan")
-        let gate = MiniMaxSelectionGate()
-        var selectCount = 0
-        var deselectCount = 0
-
-        let observer = MiniMaxSelectionObserver(
-            manager: manager,
-            gate: gate,
-            onSelect: { selectCount += 1 },
-            onDeselect: { deselectCount += 1 }
-        )
-        observer.start()
-        #expect(selectCount == 1)
-
-        // 模型列表刷新与供应商注册变化都不影响「当前选的是谁」。
-        manager.emit(.modelsRefreshed(providerID: "minimax-tokenplan"))
-        manager.emit(.providersChanged(providerID: "openai", reason: .added))
-
-        #expect(gate.isEnabled)
-        #expect(selectCount == 1)
-        #expect(deselectCount == 0)
-
-        observer.cancel()
-    }
-
     @Test("cancel 后不再响应事件")
     func cancelledObserverIgnoresEvents() {
-        let manager = StubLLMManager(selectedProviderID: "openai")
+        let capability = StubQuotaCapability(providerID: "openai")
         let gate = MiniMaxSelectionGate()
         var selectCount = 0
 
         let observer = MiniMaxSelectionObserver(
-            manager: manager,
+            capability: capability,
             gate: gate,
             onSelect: { selectCount += 1 },
             onDeselect: {}
@@ -196,11 +166,7 @@ struct MiniMaxSelectionGateTests {
         observer.start()
         observer.cancel()
 
-        manager.emit(.selectionChanged(
-            providerID: "minimax-tokenplan",
-            model: nil,
-            reason: .userSelected
-        ))
+        capability.emit(providerID: "minimax-tokenplan")
 
         #expect(selectCount == 0)
         #expect(!gate.isEnabled)
@@ -208,12 +174,12 @@ struct MiniMaxSelectionGateTests {
 
     @Test("重复 start 不会重复注册观察者")
     func repeatedStartRegistersOnce() {
-        let manager = StubLLMManager(selectedProviderID: "minimax-tokenplan")
+        let capability = StubQuotaCapability(providerID: "minimax-tokenplan")
         let gate = MiniMaxSelectionGate()
         var selectCount = 0
 
         let observer = MiniMaxSelectionObserver(
-            manager: manager,
+            capability: capability,
             gate: gate,
             onSelect: { selectCount += 1 },
             onDeselect: {}
@@ -223,17 +189,13 @@ struct MiniMaxSelectionGateTests {
 
         // 关键语义：句柄只保留一条（旧的在 start 内被 cancel），
         // 因此后续事件只回调一次，不会因重复 start 而倍增。
-        #expect(manager.activeObserverCount == 1)
+        #expect(capability.activeObserverCount == 1)
 
-        // 每次 start 都会重新同步一次当前选中态，故此时已回调两次。
+        // 每次 start 都会重新同步一次当前状态，故此时已回调两次。
         #expect(selectCount == 2)
 
-        manager.emit(.selectionChanged(providerID: "openai", model: nil, reason: .userSelected))
-        manager.emit(.selectionChanged(
-            providerID: "minimax-tokenplan",
-            model: nil,
-            reason: .userSelected
-        ))
+        capability.emit(providerID: "openai")
+        capability.emit(providerID: "minimax-tokenplan")
 
         #expect(selectCount == 3)
 
@@ -251,74 +213,43 @@ struct MiniMaxSelectionGateTests {
 
 // MARK: - Stub
 
-/// 可主动发事件的 ``LLMManaging`` 桩。
+/// 可主动发事件的 ``MiniMaxQuotaCapability`` 桩。
 ///
 /// 与只返回 Noop 句柄的简化桩不同，这里真的保存回调并在 `emit(_:)` 时调用，
 /// 否则观察者的「事件驱动」分支永远无法被覆盖。
 @MainActor
-final class StubLLMManager: LLMManaging {
-    private let stubSelectedProviderID: String?
-    private var callbacks: [UUID: (LLMManagerEvent) -> Void] = [:]
+final class StubQuotaCapability: MiniMaxQuotaCapability {
+    private let stubProviderID: String?
+    private var callbacks: [UUID: (String?) -> Void] = [:]
 
-    init(selectedProviderID: String?) {
-        self.stubSelectedProviderID = selectedProviderID
+    init(providerID: String?) {
+        self.stubProviderID = providerID
     }
 
     /// 当前活跃的观察者数量（用于验证重复 start）。
     var activeObserverCount: Int { callbacks.count }
 
-    /// 向所有活跃观察者投递事件。
-    func emit(_ event: LLMManagerEvent) {
+    /// 向所有活跃观察者投递「生效供应商」变化。
+    func emit(providerID: String?) {
         for callback in callbacks.values {
-            callback(event)
+            callback(providerID)
         }
     }
 
-    var selectedProviderID: String? { stubSelectedProviderID }
-    var selectedModel: String? { nil }
+    var effectiveProviderID: String? { stubProviderID }
 
-    func addObserver(_ callback: @escaping (LLMManagerEvent) -> Void) -> any LLMManagerObserverHandle {
+    func addObserver(_ callback: @escaping (String?) -> Void) -> any MiniMaxQuotaObserverHandle {
         let id = UUID()
         callbacks[id] = callback
-        return StubObserverHandle { [weak self] in
+        return StubQuotaObserverHandle { [weak self] in
             self?.callbacks.removeValue(forKey: id)
         }
-    }
-
-    func allProviders() -> [any SuperLLMProvider] { [] }
-    func provider(id: String) -> (any SuperLLMProvider)? { nil }
-    func provider(for modelID: LLMModelID) -> (any SuperLLMProvider)? { nil }
-    var providerCount: Int { 0 }
-    func register(_ provider: any SuperLLMProvider) throws {}
-    func unregister(id: String) {}
-    func models(for providerID: String) -> [String] { [] }
-    func select(providerID: String, model: String?, reason: ModelSelectionReason) {}
-    func modelID(providerID: String, model: String?) -> LLMModelID? { nil }
-    func notifyModelsRefreshed(providerID: String) {}
-
-    // MARK: SuperLLMProvider
-
-    var providerID: String { "stub" }
-    var providerInfo: LLMProviderInfo {
-        LLMProviderInfo(
-            id: "stub",
-            displayName: "Stub",
-            description: "test stub",
-            defaultModel: "stub",
-            models: [],
-            websiteURL: URL(string: "https://example.com")!,
-            apiFormat: .openAI,
-            apiKeyStorageKey: "stub"
-        )
-    }
-    func complete(_ request: LLMRequest) async throws -> LLMResponse {
-        throw VendorAPIError.requestFailed("stub")
     }
 }
 
 /// 可取消的观察句柄。
 @MainActor
-private final class StubObserverHandle: LLMManagerObserverHandle {
+private final class StubQuotaObserverHandle: MiniMaxQuotaObserverHandle {
     private let onCancel: () -> Void
 
     init(onCancel: @escaping () -> Void) {

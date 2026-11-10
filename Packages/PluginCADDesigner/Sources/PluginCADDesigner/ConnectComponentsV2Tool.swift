@@ -11,8 +11,8 @@ public struct ConnectComponentsV2Tool: SuperAgentTool {
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { "Connect components" }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let fromID = CADDesignerV2ToolSupport.string(arguments, "fromComponentId") else { return CADDesignerV2ToolSupport.missingParameter("fromComponentId") }
-        guard let toID = CADDesignerV2ToolSupport.string(arguments, "toComponentId") else { return CADDesignerV2ToolSupport.missingParameter("toComponentId") }
+        guard let fromID = CADDesignerV2ToolSupport.string(arguments, "fromComponentId") else { throw CADDesignerV2ToolSupport.missingParameter("fromComponentId", toolName: name) }
+        guard let toID = CADDesignerV2ToolSupport.string(arguments, "toComponentId") else { throw CADDesignerV2ToolSupport.missingParameter("toComponentId", toolName: name) }
         let type = ConnectionType(rawValue: CADDesignerV2ToolSupport.string(arguments, "connectionType") ?? "rigid") ?? .rigid
         let fromFace = ProfileFace(rawValue: CADDesignerV2ToolSupport.string(arguments, "fromFace") ?? "end") ?? .end
         let toFace = ProfileFace(rawValue: CADDesignerV2ToolSupport.string(arguments, "toFace") ?? "side") ?? .side
@@ -20,6 +20,11 @@ public struct ConnectComponentsV2Tool: SuperAgentTool {
         do {
             let document = try await MainActor.run { try CADDocumentStore.shared.addConnection(edge) }
             return CADDesignerV2ToolSupport.localized(en: "Created connection.\nconnectionId: \(edge.id)\nfrom: \(fromID) → to: \(toID)\ntype: \(type.rawValue)\ntotalConnections: \(document.connections.count)", zh: "已创建连接。\n连接ID: \(edge.id)\n从: \(fromID) → 到: \(toID)\n类型: \(type.rawValue)\n总连接数: \(document.connections.count)")
-        } catch { await MainActor.run { CADDocumentStore.shared.setError(error.localizedDescription) }; return CADDesignerV2ToolSupport.error(error) }
+        } catch let error as ToolExecutionError {
+            throw error
+        } catch {
+            await MainActor.run { CADDocumentStore.shared.setError(error.localizedDescription) }
+            throw CADDesignerV2ToolSupport.failure(error, toolName: name)
+        }
     }
 }

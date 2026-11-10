@@ -70,21 +70,31 @@ public struct FileTreeNodeItem: Hashable, Sendable {
         self.projectRootPath = projectRootPath
     }
 
+    /// 相等性是 NSDiffableDataSource 判断是否需要重配置 cell 的唯一依据。
+    /// 同一路径的文件与目录必须被视为不同节点，否则外部把文件替换成同名目录
+    /// （或反向替换）时标识符被判定未变化，cell 会继续显示旧类型（回归 #1104）。
+    /// `iconMetadata.isSwiftPackageDirectory` 同样属于决定图标的显示数据。
     public func hash(into hasher: inout Hasher) {
         hasher.combine(url)
         hasher.combine(depth)
         hasher.combine(isExpanded)
+        hasher.combine(isDirectory)
+        hasher.combine(iconMetadata)
     }
 
     public static func == (lhs: FileTreeNodeItem, rhs: FileTreeNodeItem) -> Bool {
-        lhs.url == rhs.url && lhs.depth == rhs.depth && lhs.isExpanded == rhs.isExpanded
+        lhs.url == rhs.url
+            && lhs.depth == rhs.depth
+            && lhs.isExpanded == rhs.isExpanded
+            && lhs.isDirectory == rhs.isDirectory
+            && lhs.iconMetadata == rhs.iconMetadata
     }
 }
 
 /// 文件图标元数据
 ///
 /// 预计算图标所需的文件信息，避免在 Cell 中重复解析。
-public struct FileTreeIconMetadata: Sendable {
+public struct FileTreeIconMetadata: Hashable, Sendable {
     public let fileName: String
     public let fileExtension: String
     public let isDirectory: Bool

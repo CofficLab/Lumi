@@ -206,7 +206,7 @@ struct GoalStateManagerAppendForkTests {
         )
 
         let targetConversation = "fork-target"
-        let forked = try await manager.forkGoal(id: source.goal.id, into: targetConversation)
+        let forked = try await manager.forkGoal(id: source.goal.id, into: targetConversation).goal
 
         #expect(forked.id != source.goal.id)
         #expect(forked.conversationId == targetConversation)
@@ -252,10 +252,34 @@ struct GoalStateManagerAppendForkTests {
         )
         _ = try await manager.updateGoalStatus(id: source.goal.id, status: .completed)
 
-        let forked = try await manager.forkGoal(id: source.goal.id, into: "fork-terminal-target")
+        let forked = try await manager.forkGoal(id: source.goal.id, into: "fork-terminal-target").goal
 
         #expect(forked.status == .pending)
         #expect(forked.completedAt == nil)
+    }
+
+    @Test("分叉 blocked Goal 时保留阻塞原因")
+    func testForkPreservesBlockedReason() async throws {
+        let (manager, tempDir) = try makeManager()
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let source = try await manager.createGoal(
+            conversationId: "fork-blocked",
+            title: "Blocked goal",
+            description: nil,
+            successCriteria: nil,
+            tasks: [(title: "T", description: nil, executionContext: nil, parallelGroup: nil)]
+        )
+        _ = try await manager.updateGoalStatus(
+            id: source.goal.id,
+            status: .blocked,
+            blockedReason: "Missing API key"
+        )
+
+        let forked = try await manager.forkGoal(id: source.goal.id, into: "fork-blocked-target").goal
+
+        #expect(forked.status == .blocked)
+        #expect(forked.blockedReason == "Missing API key")
     }
 
     @Test("目标会话已有活跃 Goal 时拒绝 fork")
@@ -311,7 +335,7 @@ struct GoalStateManagerAppendForkTests {
         )
         _ = try await manager.updateGoalStatus(id: stale.goal.id, status: .failed)
 
-        let forked = try await manager.forkGoal(id: source.goal.id, into: "fork-term-target")
+        let forked = try await manager.forkGoal(id: source.goal.id, into: "fork-term-target").goal
         #expect(forked.title == "Source")
         #expect(await manager.fetchGoals(conversationId: "fork-term-target").count == 2)
     }

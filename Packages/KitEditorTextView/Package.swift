@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "KitEditorTextView",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         // A Fast, Efficient text view for code.
         .library(
@@ -18,12 +18,12 @@ let package = Package(
         // Text mutation, storage helpers
         .package(
             url: "https://github.com/ChimeHQ/TextStory",
-            from: "0.9.0"
+            from: "0.9.2"
         ),
         // Useful data structures
         .package(
             url: "https://github.com/apple/swift-collections.git",
-            .upToNextMajor(from: "1.0.0")
+            .upToNextMajor(from: "1.7.5")
         ),
         // Logging protocol
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),

@@ -39,11 +39,11 @@ public struct UploadAppStoreConnectScreenshotTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let setID = arguments["screenshotSetID"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
               !setID.isEmpty else {
-            return "Missing or empty screenshotSetID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty screenshotSetID.")
         }
         guard let filePath = arguments["filePath"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
               !filePath.isEmpty else {
-            return "Missing or empty filePath."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty filePath.")
         }
 
         let fileURL = URL(fileURLWithPath: filePath)
@@ -52,13 +52,13 @@ public struct UploadAppStoreConnectScreenshotTool: SuperAgentTool {
         }
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
 
         do {
             let screenshotID = try await client.uploadScreenshot(setID: setID, fileURL: fileURL)
             return "Screenshot uploaded: id=\(screenshotID) file=\(fileURL.lastPathComponent) set=\(setID)"
         } catch {
-            return "Failed to upload screenshot: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to upload screenshot: \(error.localizedDescription)")
         }
     }
 }

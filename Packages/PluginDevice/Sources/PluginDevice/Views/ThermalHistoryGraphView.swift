@@ -35,8 +35,11 @@ struct ThermalHistoryGraphView: View {
                         gridLines(for: geometry.size)
 
                         if !dataPoints.isEmpty {
+                            let timestamps = dataPoints.map(\.timestamp)
+
                             ThermalGraphArea(
                                 data: dataPoints.map(\.celsius),
+                                timestamps: timestamps,
                                 minValue: minValue,
                                 maxValue: maxValue
                             )
@@ -53,6 +56,7 @@ struct ThermalHistoryGraphView: View {
 
                             ThermalGraphLine(
                                 data: dataPoints.map(\.celsius),
+                                timestamps: timestamps,
                                 minValue: minValue,
                                 maxValue: maxValue
                             )
@@ -79,7 +83,6 @@ struct ThermalHistoryGraphView: View {
                     .onContinuousHover { phase in
                         switch phase {
                         case .active(let location):
-                            hoverLocation = location
                             updateHoverDataPoint(at: location.x, width: geometry.size.width)
                         case .ended:
                             hoverLocation = nil
@@ -183,11 +186,28 @@ struct ThermalHistoryGraphView: View {
     }
 
     private func updateHoverDataPoint(at x: CGFloat, width: CGFloat) {
-        guard !dataPoints.isEmpty else { return }
+        let timestamps = dataPoints.map(\.timestamp)
+        guard let index = DeviceHistoryChartGeometry.nearestIndex(
+            to: x,
+            timestamps: timestamps,
+            width: width
+        ) else {
+            hoverLocation = nil
+            hoverDataPoint = nil
+            return
+        }
 
-        let index = Int(x / width * CGFloat(dataPoints.count - 1))
-        let safeIndex = max(0, min(dataPoints.count - 1, index))
-        hoverDataPoint = dataPoints[safeIndex]
+        let point = dataPoints[index]
+        hoverDataPoint = point
+        hoverLocation = CGPoint(
+            x: DeviceHistoryChartGeometry.x(
+                for: point.timestamp,
+                start: timestamps.first ?? point.timestamp,
+                end: timestamps.last ?? point.timestamp,
+                width: width
+            ),
+            y: 0
+        )
     }
 
     private func clampedX(_ x: CGFloat, width: CGFloat) -> CGFloat {
@@ -200,21 +220,25 @@ struct ThermalHistoryGraphView: View {
 
 struct ThermalGraphLine: Shape {
     var data: [Double]
+    var timestamps: [TimeInterval]
     var minValue: Double
     var maxValue: Double
 
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let span = maxValue - minValue
-        guard data.count > 1, span.isFinite, span > 0 else { return path }
+        guard data.count > 1, data.count == timestamps.count,
+              let start = timestamps.first, let end = timestamps.last,
+              span.isFinite, span > 0 else { return path }
 
-        let stepX = rect.width / CGFloat(data.count - 1)
         let scaleY = rect.height / CGFloat(span)
 
         path.move(to: CGPoint(x: 0, y: rect.height - CGFloat(data[0] - minValue) * scaleY))
 
         for index in 1..<data.count {
-            let x = CGFloat(index) * stepX
+            let x = DeviceHistoryChartGeometry.x(
+                for: timestamps[index], start: start, end: end, width: rect.width
+            )
             let y = rect.height - CGFloat(data[index] - minValue) * scaleY
             path.addLine(to: CGPoint(x: x, y: y))
         }
@@ -225,22 +249,26 @@ struct ThermalGraphLine: Shape {
 
 struct ThermalGraphArea: Shape {
     var data: [Double]
+    var timestamps: [TimeInterval]
     var minValue: Double
     var maxValue: Double
 
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let span = maxValue - minValue
-        guard data.count > 1, span.isFinite, span > 0 else { return path }
+        guard data.count > 1, data.count == timestamps.count,
+              let start = timestamps.first, let end = timestamps.last,
+              span.isFinite, span > 0 else { return path }
 
-        let stepX = rect.width / CGFloat(data.count - 1)
         let scaleY = rect.height / CGFloat(span)
 
         path.move(to: CGPoint(x: 0, y: rect.height))
         path.addLine(to: CGPoint(x: 0, y: rect.height - CGFloat(data[0] - minValue) * scaleY))
 
         for index in 1..<data.count {
-            let x = CGFloat(index) * stepX
+            let x = DeviceHistoryChartGeometry.x(
+                for: timestamps[index], start: start, end: end, width: rect.width
+            )
             let y = rect.height - CGFloat(data[index] - minValue) * scaleY
             path.addLine(to: CGPoint(x: x, y: y))
         }

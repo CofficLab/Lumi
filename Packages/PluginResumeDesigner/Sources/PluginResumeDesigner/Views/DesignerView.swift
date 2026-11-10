@@ -49,7 +49,7 @@ public struct DesignerView: View {
         .onAppear {
             notifyResumeAvailability()
         }
-        .onChange(of: workspace.projectResumes.count) { _, _ in
+        .onChange(of: workspace.projectResumes.count) { _ in
             notifyResumeAvailability()
         }
         .alert(
@@ -200,6 +200,13 @@ public struct DesignerView: View {
                     fileURL: selected.htmlURL,
                     paper: selected.document.paper
                 )
+                let conflicts = ResumeExportTargets.existingFiles(
+                    resumeID: selected.document.id,
+                    pageCount: document.pageCount,
+                    pngOnly: pngOnly,
+                    in: directory
+                )
+                guard conflicts.isEmpty || confirmOverwrite(conflicts) else { return }
                 if !pngOnly, let data = document.dataRepresentation() {
                     try data.write(to: directory.appendingPathComponent("\(selected.document.id).pdf"), options: .atomic)
                 }
@@ -219,6 +226,18 @@ public struct DesignerView: View {
                 workspace.setError(error)
             }
         }
+    }
+
+    /// 任一目标文件已存在时必须先获得明确同意，与 Agent 导出的 `overwrite` 语义一致。
+    private func confirmOverwrite(_ conflicts: [URL]) -> Bool {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = L.string("Files already exist in the export folder")
+        alert.informativeText = conflicts.map(\.lastPathComponent).joined(separator: "\n")
+            + "\n\n" + L.string("Replacing existing files cannot be undone.")
+        alert.addButton(withTitle: L.string("Replace"))
+        alert.addButton(withTitle: L.string("Cancel"))
+        return alert.runModal() == .alertFirstButtonReturn
     }
 
     /// 系统打印：导出管线生成的 PDF 页面即物理纸张尺寸，天然无缩放。

@@ -122,7 +122,7 @@ struct ModelListView: View {
             // 模型少到无需搜索时仍保留刷新按钮（靠右），不额外占用一行。
             if showsSearchOrRefresh {
                 ModelSearchRow(
-                    text: $viewModel.searchText,
+                    text: $viewModel.modelSearchText,
                     showsSearchBar: viewModel.showsModelSearchBar,
                     refreshAction: refreshAction
                 )

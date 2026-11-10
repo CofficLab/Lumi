@@ -84,11 +84,13 @@ public struct MarkdownBlockRenderer: View {
             inlineText(text)
                 .font(theme.headingFont(level))
                 .fontWeight(level <= 2 ? .bold : .semibold)
+                .padding(.top, theme.headingTopSpacing)
+                .padding(.bottom, theme.headingBottomSpacing)
 
         case let .paragraph(text):
             inlineText(text)
                 .font(theme.bodyFont)
-                .lineSpacing(4)
+                .lineSpacing(theme.bodyLineSpacing > 0 ? theme.bodyLineSpacing : 4)
 
         case let .unorderedList(items):
             VStack(alignment: .leading, spacing: theme.listItemSpacing) {
@@ -97,10 +99,13 @@ public struct MarkdownBlockRenderer: View {
                         taskBulletView(state: item.taskState)
                         inlineText(item.text)
                             .font(theme.bodyFont)
-                            .lineSpacing(4)
+                            .lineSpacing(theme.bodyLineSpacing > 0 ? theme.bodyLineSpacing : 4)
                     }
                 }
             }
+            .padding(.top, theme.unorderedListTopSpacing)
+            .padding(.bottom, theme.unorderedListBottomSpacing)
+            .padding(.leading, theme.unorderedListLeadingPadding)
 
         case let .orderedList(items):
             VStack(alignment: .leading, spacing: theme.listItemSpacing) {
@@ -111,10 +116,12 @@ public struct MarkdownBlockRenderer: View {
                             .foregroundColor(theme.secondaryTextColor ?? .secondary)
                         inlineText(item.text)
                             .font(theme.bodyFont)
-                            .lineSpacing(4)
+                            .lineSpacing(theme.bodyLineSpacing > 0 ? theme.bodyLineSpacing : 4)
+                            .padding(.leading, theme.orderedListItemLeadingPadding)
                     }
                 }
             }
+            .padding(.leading, theme.orderedListLeadingPadding)
 
         case let .codeBlock(language, code):
             if MarkdownParser.isMermaidCodeBlock(language: language) {
@@ -135,12 +142,15 @@ public struct MarkdownBlockRenderer: View {
             HStack(alignment: .top, spacing: 10) {
                 RoundedRectangle(cornerRadius: 1.5)
                     .fill(theme.quoteBorderColor)
-                    .frame(width: 3)
+                    .frame(width: theme.quoteBorderWidth)
                 inlineText(text)
                     .font(theme.bodyFont)
                     .foregroundColor(theme.secondaryTextColor ?? .secondary)
-                    .lineSpacing(4)
+                    .lineSpacing(theme.bodyLineSpacing > 0 ? theme.bodyLineSpacing : 4)
+                    .padding(.leading, theme.quoteLeadingPadding)
             }
+            .padding(.top, theme.quoteTopSpacing)
+            .padding(.bottom, theme.quoteBottomSpacing)
 
         case let .table(headers, rows):
             tableView(headers: headers, rows: rows)
@@ -154,50 +164,97 @@ public struct MarkdownBlockRenderer: View {
 
     @ViewBuilder
     private func codeBlockView(language: String?, code: String) -> some View {
+        let showsLanguageLabel = language.map { !$0.isEmpty } == true && theme.showLanguageLabel
+        // 缺省语言：V4 用 `text`，旧版本不显示语言标签。
+        let displayLanguage: String = {
+            guard let language, !language.isEmpty else { return theme.codeBlockDefaultLanguage }
+            return theme.codeBlockLanguageIsLowercase ? language.lowercased() : language
+        }()
         VStack(alignment: .leading, spacing: 0) {
-            if let language, !language.isEmpty, theme.showLanguageLabel {
-                HStack {
-                    Text(language)
-                        .font(.system(size: 10, weight: .medium))
+            if showsLanguageLabel {
+                HStack(spacing: 8) {
+                    Text(displayLanguage)
+                        .font(.system(
+                            size: theme.codeBlockLanguageFontSize,
+                            design: theme.codeBlockLanguageIsMonospaced ? .monospaced : .default
+                        ))
+                        .lineLimit(1)
+                        .truncationMode(theme.codeBlockLanguageTruncates ? .tail : .head)
                         .foregroundColor(theme.secondaryTextColor ?? .secondary)
                     Spacer()
+                    // 复制按钮放在语言标签行右侧：既能看见，又不会盖住代码内容。
+                    CodeBlockCopyButton(
+                        code: code,
+                        feedbackDuration: .milliseconds(theme.codeBlockCopyFeedbackMilliseconds)
+                    )
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
+                .padding(.leading, theme.codeBlockHeaderLeadingPadding)
+                .padding(.trailing, theme.codeBlockHeaderTrailingPadding)
+                .padding(.vertical, theme.codeBlockHeaderVerticalPadding)
                 .background(Color.secondary.opacity(0.08))
             }
 
             HighlightedCodeView(
                 code: code,
                 language: language,
-                font: theme.codeFont,
+                font: .system(size: theme.codeBlockFontSize, design: .monospaced),
                 preferOuterScroll: preferOuterScroll
             )
+            .padding(.horizontal, theme.codeBlockContentHorizontalPadding)
+            .padding(.top, theme.codeBlockContentTopPadding)
+            .padding(.bottom, theme.codeBlockContentBottomPadding)
         }
+        .padding(.top, theme.codeBlockTopSpacing)
+        .padding(.bottom, theme.codeBlockBottomSpacing)
         .background(theme.codeBlockBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .clipShape(RoundedRectangle(cornerRadius: theme.codeBlockCornerRadius))
         .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .strokeBorder(Color.secondary.opacity(0.12), lineWidth: 1)
+            RoundedRectangle(cornerRadius: theme.codeBlockCornerRadius)
+                .strokeBorder(Color.secondary.opacity(0.12), lineWidth: theme.codeBlockBorderWidth)
         )
+        // 没有语言标签时没有头部栏可放按钮，退化为悬浮在右上角。
+        //
+        // 用 overlay 而非在 VStack 里插入一行：避免改变代码块高度，
+        // 否则会让消息列表的行高测量缓存（`HorizontalFittingSizeCache`）
+        // 与实际内容不一致。
+        .overlay(alignment: .topTrailing) {
+            if !showsLanguageLabel {
+                CodeBlockCopyButton(
+                    code: code,
+                    feedbackDuration: .milliseconds(theme.codeBlockCopyFeedbackMilliseconds)
+                )
+                .padding(.top, 6)
+                .padding(.trailing, 6)
+            }
+        }
     }
 
     // MARK: - Table
 
     @ViewBuilder
     private func tableView(headers: [String], rows: [[String]]) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let content = VStack(alignment: .leading, spacing: 0) {
             tableRowView(headers, isHeader: true)
             ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
                 Divider().opacity(0.4)
                 tableRowView(row, isHeader: false)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .clipShape(RoundedRectangle(cornerRadius: theme.tableCornerRadius))
         .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .strokeBorder(Color.secondary.opacity(0.12), lineWidth: 1)
+            RoundedRectangle(cornerRadius: theme.tableCornerRadius)
+                .strokeBorder(Color.secondary.opacity(0.12), lineWidth: theme.tableBorderWidth)
         )
+
+        // Important: 只有主题显式声明 `tableScrollsHorizontally` 时才包横向滚动。
+        //   宽表格不能撑破阅读列（V5 的 768 列），但 V1–V3 的既有布局必须**逐值不变**。
+        if theme.tableScrollsHorizontally {
+            ScrollView(.horizontal, showsIndicators: true) {
+                content
+            }
+        } else {
+            content
+        }
     }
 
     @ViewBuilder
@@ -206,11 +263,16 @@ public struct MarkdownBlockRenderer: View {
             ForEach(Array(cells.enumerated()), id: \.offset) { idx, cell in
                 inlineText(cell)
                     .font(isHeader
-                        ? .system(size: 12, weight: .semibold)
-                        : .system(size: 12))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                        ? .system(size: theme.tableHeaderFontSize, weight: theme.tableHeaderWeight)
+                        : .system(size: theme.tableHeaderFontSize))
+                    .padding(.horizontal, theme.tableCellHorizontalPadding)
+                    .padding(.vertical, theme.tableCellVerticalPadding)
+                    .frame(
+                        minWidth: theme.tableCellMinWidth,
+                        maxWidth: theme.tableCellMaxWidth > 0 ? theme.tableCellMaxWidth : nil,
+                        alignment: theme.tableHeaderAlignment
+                    )
+                    .frame(maxWidth: .infinity, alignment: theme.tableHeaderAlignment)
                 if idx < cells.count - 1 {
                     Divider().opacity(0.25)
                 }

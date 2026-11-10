@@ -5,7 +5,7 @@ let package = Package(
     name: "KitHTMLPreview",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("14.0"),
         .iOS(.v17)
     ],
     products: [

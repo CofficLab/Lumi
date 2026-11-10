@@ -1,5 +1,6 @@
 import KitAgentTool
 import LumiUI
+import ProviderAgentLoop
 import ProviderChatSection
 import ProviderConversation
 import ProviderToolManager
@@ -36,10 +37,12 @@ final class RiskApprovalChatViewModel: ObservableObject {
     private var toolManagerObserver: (any ToolManagerObserverHandle)?
     private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
     private var conversationObserver: (any ConversationObserverHandle)?
+    private var agentLoopObserver: (any AgentLoopObserverHandle)?
 
     init(
         conversations: any ConversationManaging,
-        toolManager: any ToolManagerProviding
+        toolManager: any ToolManagerProviding,
+        agentLoop: (any AgentLoopProviding)? = nil
     ) {
         self.conversations = conversations
         self.toolManager = toolManager
@@ -47,6 +50,12 @@ final class RiskApprovalChatViewModel: ObservableObject {
         self.verbosity = conversations.verbosity(for: conversations.selectedConversationID)
 
         toolManagerObserver = toolManager.addToolManagerObserver { [weak self] event in
+            self?.consume(event)
+        }
+        // 授权卡片的缓存不随落库消息更新：Stop 只会把占位写成终态，
+        // 不会发出 ToolManager 完成事件。必须直接监听回合终态，否则旧卡
+        // 会一直留在 Brief 底部（#1028）。
+        agentLoopObserver = agentLoop?.addAgentLoopObserver { [weak self] event in
             self?.consume(event)
         }
         selectedConversationObserver = conversations.addSelectedConversationObserver { [weak self] conversationID in
@@ -88,6 +97,8 @@ final class RiskApprovalChatViewModel: ObservableObject {
         selectedConversationObserver = nil
         conversationObserver?.cancel()
         conversationObserver = nil
+        agentLoopObserver?.cancel()
+        agentLoopObserver = nil
         pendingApprovals.removeAll()
     }
 
@@ -107,6 +118,31 @@ final class RiskApprovalChatViewModel: ObservableObject {
         default:
             break
         }
+    }
+
+    /// 回合进入终态后丢弃该回合的待授权卡片。
+    ///
+    /// - Note: 只清理同一 turn 的缓存。迟到的旧回合终态事件不能误删
+    ///   用户随后新回合刚排上的授权。
+    func consume(_ event: AgentLoopEvent) {
+        let conversationID: UUID
+        let turnID: UUID?
+        switch event {
+        case let .completed(id, finishedTurnID):
+            conversationID = id
+            turnID = finishedTurnID
+        case let .cancelled(id, finishedTurnID):
+            conversationID = id
+            turnID = finishedTurnID
+        case let .failed(id, failedTurnID, _):
+            conversationID = id
+            turnID = failedTurnID
+        default:
+            return
+        }
+        guard let pending = pendingApprovals[conversationID] else { return }
+        guard pending.turnID == nil || turnID == nil || pending.turnID == turnID else { return }
+        pendingApprovals.removeValue(forKey: conversationID)
     }
 
     private func synchronizeSelection(_ conversationID: UUID?) {

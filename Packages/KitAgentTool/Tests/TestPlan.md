@@ -5,7 +5,7 @@
 KitAgentTool 可复用的 Agent 工具协议与运行时模型。定义 LLM 工具调用、参数解析、权限风险、取消上下文与多语言 schema，供宿主应用与插件共享。
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 67
+测试文件: 9 个，用例总数: 93
 
 ## 公开 API
 
@@ -35,6 +35,7 @@ KitAgentTool 可复用的 Agent 工具协议与运行时模型。定义 LLM 工�
 - **CoreModel**（23 条）：由 `initStoresAllFields`、`initDefaultsAuthorizationStateToPending`、`codableRoundTripPreservesExplicitAuthorizationState` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **LanguagePreference**（7 条）：由 `chineseLocaleMapsToChinese`、`englishLocaleMapsToEnglish`、`currentIsNotNilCase` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolError**（5 条）：由 `toolNotFoundIncludesToolName`、`toolExecutionFailedIncludesUnderlyingDescription`、`toolNotFoundDescription` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ToolCallContextArguments**（7 条）：由 `replacesOnlyRequestedKey`、`invalidJSONReturnsOriginal`、`existentialDispatchUsesToolDeclaration` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolExecutionContext**（2 条）：由 `legacyToolUsesDefaultContextImplementation`、`contextAwareToolReportsOutputAndProgress` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolImageResultCodec**（7 条）：由 `encodePrefixesMarkerAndRoundTripsContent`、`decodeReturnsNilForPlainTextResult`、`decodeReturnsNilForInvalidJSONPayload` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **UncoveredLogic**（14 条）：由 `defaultDescriptionUsesEnglishVariant`、`defaultInputSchemaUsesEnglishVariant`、`defaultExecuteThrowsExecutionFailed` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -110,27 +111,53 @@ KitAgentTool 可复用的 Agent 工具协议与运行时模型。定义 LLM 工�
 | 65 | UncoveredLogic | encodeOmitsDefaultOptionalFields | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `encodeOmitsDefaultOptionalFields` |
 | 66 | UncoveredLogic | returnsKeyItselfWhenTranslationMissing | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `returnsKeyItselfWhenTranslationMissing` |
 | 67 | UncoveredLogic | knownKeyResolvesFromModuleCatalog | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `knownKeyResolvesFromModuleCatalog` |
+| 68 | ToolArgumentNumber | 整数原样返回 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `returnsPlainInt` |
+| 69 | ToolArgumentNumber | 范围内的 Double 转换成功 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `convertsFiniteDouble` |
+| 70 | ToolArgumentNumber | 超出 Int 范围的 Double 返回 nil 而不是崩溃 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectsOutOfRangeDouble` |
+| 71 | ToolArgumentNumber | 非有限 Double 返回 nil | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectsNonFiniteDouble` |
+| 72 | ToolArgumentNumber | 数字字符串可转换 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `convertsNumericString` |
+| 73 | ToolArgumentNumber | 非数值类型返回 nil | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `rejectsOtherTypes` |
+| 74 | ToolArgumentNumber | int(fromDouble:) 对边界值安全 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `convertsBoundaryDoubles` |
+| 75 | ToolArgumentNumber | 可表示但超范围的值被钳制 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `clampsOutOfRangeValues` |
+| 76 | ToolArgumentNumber | 无法表示的值退回默认值而不是被当作超大值 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `unrepresentableValuesFallBackToDefault` |
+| 77 | ToolArgumentNumber | 无法表示的值退回默认值 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `fallsBackToDefault` |
+| 78 | ToolArgumentNumber | 字典扩展读取整型参数 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `dictionaryExtensionReadsIntegers` |
+| 79 | ToolArgumentNumber | 字典扩展读取并钳制整型参数 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `dictionaryExtensionClampsIntegers` |
+| 80 | ToolInteractionPayload | 权限载荷同时满足两个谓词 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `permissionPayloadSatisfiesBothPredicates` |
+| 81 | ToolInteractionPayload | 计算机使用载荷是授权而非权限 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `computerUsePayloadIsAuthorizationButNotPermission` |
+| 82 | ToolInteractionPayload | 交互载荷不是权限请求 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `interactionPayloadIsNotPermissionRequest` |
+| 83 | ToolInteractionPayload | 纯文本不是结构化载荷 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `plainTextIsNotStructuredPayload` |
+| 84 | ToolInteractionPayload | 解码兼容大写旧键 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `decodesLegacyUppercaseKey` |
+| 85 | ToolInteractionPayload | 编码后的键为小写 d | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `encodedKeyIsLowercaseD` |
+| 86 | ToolInteractionPayload | 往返转换保留字段 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `roundTripPreservesValues` |
+| 87 | ToolCallContextArguments | 只替换声明的键，其余参数保持不变 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `replacesOnlyRequestedKey` |
+| 88 | ToolCallContextArguments | 没有声明要移除的键时原样返回 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `emptyOmissionSetReturnsOriginal` |
+| 89 | ToolCallContextArguments | 参数里没有目标键时原样返回 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `missingKeyReturnsOriginal` |
+| 90 | ToolCallContextArguments | 非法 JSON 原样返回，不破坏历史 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `invalidJSONReturnsOriginal` |
+| 91 | ToolCallContextArguments | 非对象 JSON 原样返回 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `nonObjectJSONReturnsOriginal` |
+| 92 | ToolCallContextArguments | 裁剪结果仍是合法 JSON 对象 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `scrubbedOutputRemainsValidJSONObject` |
+| 93 | ToolCallContextArguments | 存在类型上调用也命中工具自己的声明 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `existentialDispatchUsesToolDeclaration` |
 
-> 说明：全部 **67 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **93 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
-- P1: 已覆盖 49 / 49
-- P2: 已覆盖 16 / 16
-- **合计: 67 / 67**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 8 / 8
+- P1: 已覆盖 66 / 66
+- P2: 已覆盖 19 / 19
+- **合计: 93 / 93**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（2 条）
-- **P1**: 其余功能性用例（49 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（16 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P1**: 其余功能性用例（66 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（19 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 67 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 86 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

@@ -5,7 +5,7 @@
 KitEditorSource 维护中的 CodeEdit 源码编辑器包（源自 CodeEditApp 的 `CodeEditSourceEditor`）。提供编辑器 UI 与文本编辑能力（语法高亮、Tree-sitter、查找替换等）。 ## 全局技术架构 Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/editor-architecture.md](../../docs/editor-architecture.md)。 ```text 应用装配层 (LumiApp) ↓ 插件扩展层 (Packages/Plugin*) ↓ Host 内部服务 target (EditorService) ↓ ↓ 视图层 (EditorSource) 内核逻辑层 (EditorKernel) ↑ 本 Package ↓ 渲染基础层 (EditorTextView, EditorLanguages, EditorSymbols) ``` ## 本 Package 的位置 | 属性 | 值 | |------|-----| | **层级** | 视图层 | | **职责** | `SourceEditor` SwiftUI 组件；Tree-sitter 语法高亮管线；缩进与文本格式化规则 | | **上游依赖** | `EditorTextView`、`EditorLanguages`、`EditorSymbols`、`TextFormation` | | **下游消费者** | `EditorService`（`SourceEditorAdapter` 绑定）、`E
 
 平台: macOS 14+, iOS 17+
-测试文件: 14 个，用例总数: 68
+测试文件: 15 个，用例总数: 71
 
 核心组件（源码目录）:
 - `EditorSource/`
@@ -46,6 +46,7 @@ KitEditorSource 维护中的 CodeEdit 源码编辑器包（源自 CodeEditApp �
 - **TreeSitterDocumentStore**（1 条）：由 `testReattachSameDocumentKeyReusesStateWithoutCancelledQuery` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TreeSitterHighlight**（6 条）：由 `testQueryHighlightsWithoutStateReturnsCancelled`、`testSetUpPostsStateDidUpdateNotification`、`testQueryHighlightsAfterSyncSetUpReturnsSuccess` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **TreeSitterLargeFilePerformance**（5 条）：由 `testTreeSitterStateInitialization`、`testHighlightQueryPerformance`、`testIncrementalParseAfterEdit` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **FindMethodPickerSubview**（3 条）：由 `missingSubviewsReturnNil`、`existingSubviewsAreResolved`、`nonImageViewReturnsNil` 锁定，防止 `updateNSView` 在容器子视图数量不足时直接下标越界。
 
 ## 测试用例清单
 
@@ -119,27 +120,30 @@ KitEditorSource 维护中的 CodeEdit 源码编辑器包（源自 CodeEditApp �
 | 66 | TreeSitterLargeFilePerformance | testIncrementalParseAfterEdit | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testIncrementalParseAfterEdit` |
 | 67 | TreeSitterLargeFilePerformance | testFullFileHighlighting | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testFullFileHighlighting` |
 | 68 | TreeSitterLargeFilePerformance | testDifferentLanguageParsing | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testDifferentLanguageParsing` |
+| 69 | FindMethodPickerSubview | 子视图数量不足时不会越界并返回 nil | 空容器或仅含 popup 的容器 | 以序号 1/2 调用 `Subviews.imageView(at:in:)` | 返回 nil，不崩溃 | P0 | ✅ 已覆盖 | `missingSubviewsReturnNil` |
+| 70 | FindMethodPickerSubview | 序号在范围内时返回对应图片视图 | popup + 图标 + chevron | 以序号 1/2/3/-1 调用 | 返回对应 `NSImageView`，越界返回 nil | P1 | ✅ 已覆盖 | `existingSubviewsAreResolved` |
+| 71 | FindMethodPickerSubview | 序号指向非图片视图时返回 nil | popup + 普通 `NSView` | 以序号 0/1 调用 | 均返回 nil | P1 | ✅ 已覆盖 | `nonImageViewReturnsNil` |
 
-> 说明：全部 **68 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **71 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 7 / 7
-- P1: 已覆盖 58 / 58
+- P0: 已覆盖 8 / 8
+- P1: 已覆盖 60 / 60
 - P2: 已覆盖 3 / 3
-- **合计: 68 / 68**（仅表示清单场景，非源码覆盖率）
+- **合计: 71 / 71**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
-- **P1**: 其余功能性用例（58 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（8 条）
+- **P1**: 其余功能性用例（60 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 68 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 71 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

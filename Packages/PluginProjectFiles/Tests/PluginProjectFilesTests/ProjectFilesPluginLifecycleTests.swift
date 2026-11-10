@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import ProviderActivityBar
 import ProviderProject
 import ProviderRootView
 import Testing
@@ -185,5 +186,44 @@ struct ProjectFilesPluginLifecycleTests {
         try plugin.onShutdown(kernel: kernel)
 
         #expect(rootView.contentHeaderView == nil)
+    }
+
+    @Test("非文件工作区激活时，恢复打开文件不会重新显示 content header（回归 #1015）")
+    func restoringFilesKeepsHeaderHiddenInForeignWorkspace() throws {
+        let kernel = KernelCoreContainer()
+        let project = DefaultProjectProvider()
+        project.pinFile(URL(fileURLWithPath: "/tmp/A.swift"))
+        try kernel.registerProvider((any ProjectProviding).self, project)
+        let rootView = DefaultRootViewProviding()
+        try kernel.registerProvider((any RootViewProviding).self, rootView)
+        let activityBar = DefaultActivityBarProviding()
+        activityBar.addItems([
+            ActivityBarItem(
+                id: "editor.entry",
+                title: "Editor",
+                systemImage: "doc",
+                order: 1,
+                preservesContentHeader: true
+            ),
+            ActivityBarItem(
+                id: "terminal.entry",
+                title: "Terminal",
+                systemImage: "terminal",
+                order: 2
+            ),
+        ])
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+
+        let plugin = ProjectFilesPlugin()
+        try plugin.onBoot(kernel: kernel)
+        defer { try? plugin.onShutdown(kernel: kernel) }
+        #expect(!rootView.isContentHeaderViewHidden)
+
+        // Terminal 激活并隐藏 header 后，切换项目恢复打开文件。
+        activityBar.activateItem(id: "terminal.entry")
+        rootView.setContentHeaderViewHidden(true)
+        project.pinFile(URL(fileURLWithPath: "/tmp/B.swift"))
+
+        #expect(rootView.isContentHeaderViewHidden)
     }
 }

@@ -110,6 +110,60 @@ final class MailAgentToolsTests: XCTestCase {
         XCTAssertTrue(result.contains("【未读】"))
     }
 
+    func testListMessagesFallsBackToCacheWhenSessionConnectFails() async throws {
+        store.upsertAccount(makeAccount())
+        store.setPassword("p", for: accountID)
+        try await cache.upsertMessages(
+            [summary(uid: 9, subject: "Cached hello")],
+            accountID: accountID,
+            folder: "INBOX"
+        )
+        let manager = MailSessionManager(
+            factory: MockMailSessionFactory(behavior: .init(failConnect: true)),
+            accountStore: store
+        )
+        let service = MailAgentToolService(
+            sessionManager: manager,
+            cache: cache,
+            composer: MailComposerService(sessionManager: manager, accountStore: store),
+            accountStore: store
+        )
+        let tool = MailListMessagesTool(service: service)
+
+        let result = try await tool.execute(arguments: ["limit": ToolArgument(5)])
+
+        XCTAssertTrue(result.contains("Cached hello"), "断网冷启动应读取本地缓存")
+        XCTAssertTrue(result.contains("本地缓存"), "断网结果应明确标识来自缓存")
+    }
+
+    func testListMessagesRejectsOutOfRangeLimit() async throws {
+        store.upsertAccount(makeAccount())
+        store.setPassword("p", for: accountID)
+        let service = makeService(session: MockMailSession(messages: []))
+        let tool = MailListMessagesTool(service: service)
+
+        for invalid in [-1, 0, 51] {
+            do {
+                _ = try await tool.execute(arguments: ["limit": ToolArgument(invalid)])
+                XCTFail("limit=\(invalid) 应在工具层被拒绝")
+            } catch let error as ToolExecutionError {
+                XCTAssertTrue(
+                    (error.errorDescription ?? "").contains("limit"),
+                    "错误信息应指出 limit 非法"
+                )
+            }
+        }
+    }
+
+    func testListMessagesLimitSchemaDeclaresRange() {
+        let service = makeService(session: MockMailSession(messages: []))
+        let schema = MailListMessagesTool(service: service).inputSchema(for: .english)
+        let properties = schema["properties"] as? [String: Any]
+        let limit = properties?["limit"] as? [String: Any]
+        XCTAssertEqual(limit?["minimum"] as? Int, 1)
+        XCTAssertEqual(limit?["maximum"] as? Int, 50)
+    }
+
     func testReadMessageMarksAsReadAndReturnsBody() async throws {
         store.upsertAccount(makeAccount())
         store.setPassword("p", for: accountID)
@@ -125,6 +179,28 @@ final class MailAgentToolsTests: XCTestCase {
         let flags = await session.flagUpdates
         XCTAssertEqual(flags.first?.uid, 7)
         XCTAssertEqual(flags.first?.isRead, true)
+    }
+
+    func testReadMessageRejectsUIDAboveUInt32() async throws {
+        store.upsertAccount(makeAccount())
+        store.setPassword("p", for: accountID)
+        let session = MockMailSession(messages: [])
+        let tool = MailReadMessageTool(service: makeService(session: session))
+
+        do {
+            _ = try await tool.execute(arguments: [
+                "uid": ToolArgument(4_294_967_296),
+            ])
+            XCTFail("超过 UInt32.max 的 uid 应在工具层被拒绝")
+        } catch let error as ToolExecutionError {
+            XCTAssertTrue(
+                (error.errorDescription ?? "").contains("uid"),
+                "错误信息应指出 uid 非法"
+            )
+        }
+
+        let flags = await session.flagUpdates
+        XCTAssertTrue(flags.isEmpty, "非法 uid 不应触达会话层")
     }
 
     func testSearchMessagesFindsCachedHits() async throws {

@@ -8,7 +8,11 @@ final class ComputerUseService: @unchecked Sendable {
     struct ObservationResult: Sendable {
         let observation: ComputerUseObservation
         let attachment: UserImageAttachment
-        let isApplicationAllowed: Bool
+        /// 目标应用在本次会话中是否已获授权。
+        ///
+        /// 供模型判断「后续能否继续操作这个应用」，不参与任何拦截判定——
+        /// 真正的判定发生在 `observe` / `act` 入口。
+        let isApplicationAuthorized: Bool
     }
 
     static let shared = ComputerUseService()
@@ -26,7 +30,11 @@ final class ComputerUseService: @unchecked Sendable {
         self.authorizationStore = authorizationStore
     }
 
-    func observe(application: String?, windowTitle: String?) async throws -> ObservationResult {
+    func observe(
+        application: String?,
+        windowTitle: String?,
+        context: ComputerUseAccessContext
+    ) async throws -> ObservationResult {
         guard ComputerUsePermissionService.hasScreenRecordingPermission else {
             throw ComputerUseError.screenRecordingPermissionRequired
         }
@@ -41,18 +49,23 @@ final class ComputerUseService: @unchecked Sendable {
             )
         }
         guard let selection else { throw ComputerUseError.noMatchingWindow }
-        try requireAuthorized(selection, operation: "observe")
-        return try await capture(window: selection)
+        try requireAuthorized(selection, operation: "observe", context: context)
+        return try await capture(window: selection, context: context)
     }
 
     /// 校验目标应用是否已获授权。
     ///
     /// 命中未授权应用时抛出携带应用信息的 `authorizationRequired` 错误，
     /// 由工具层转换成挂起回合的授权请求，而不是让整轮直接失败。
-    private func requireAuthorized(_ window: ComputerUseWindow, operation: String) throws {
+    private func requireAuthorized(
+        _ window: ComputerUseWindow,
+        operation: String,
+        context: ComputerUseAccessContext
+    ) throws {
         switch accessChecker.outcome(
             for: window.bundleIdentifier,
-            applicationName: window.applicationName
+            applicationName: window.applicationName,
+            context: context
         ) {
         case .allowed:
             return
@@ -68,14 +81,19 @@ final class ComputerUseService: @unchecked Sendable {
     }
 
     @MainActor
-    func act(observationID: UUID, actions: [ComputerUseAction], reason: String) async throws -> ObservationResult {
+    func act(
+        observationID: UUID,
+        actions: [ComputerUseAction],
+        reason: String,
+        context: ComputerUseAccessContext
+    ) async throws -> ObservationResult {
             guard ComputerUsePermissionService.hasAccessibilityPermission else {
                 throw ComputerUseError.accessibilityPermissionRequired
             }
             guard let observation = observation(id: observationID) else {
                 throw ComputerUseError.observationNotFound
             }
-            try requireAuthorized(observation.window, operation: "act")
+            try requireAuthorized(observation.window, operation: "act", context: context)
 
             let currentWindow = ComputerUseWindowProvider.availableWindows().first(where: { $0.id == observation.window.id })
             guard let currentWindow,
@@ -86,7 +104,7 @@ final class ComputerUseService: @unchecked Sendable {
 
         guard actions.contains(where: \.requiresNativeInput) else {
             for action in actions { try await ComputerUseInputExecutor.execute(action, observation: observation) }
-            return try await capture(window: currentWindow)
+            return try await capture(window: currentWindow, context: context)
         }
         guard AccessibilityService.shared.hasRecentInspection(currentWindow.bundleIdentifier) else {
             throw ComputerUseError.invalidArguments("Call accessibility_observe for this application first. Prefer accessibility_act; native input is only a fallback.")
@@ -95,13 +113,16 @@ final class ComputerUseService: @unchecked Sendable {
             throw ComputerUseError.invalidArguments("Explain why Accessibility cannot perform this operation in reason.")
         }
         let coordinator = NativeControlCoordinator.shared
-        let session = try await coordinator.acquireWhenAvailable(application: currentWindow.applicationName,
-                                              bundleID: currentWindow.bundleIdentifier, reason: reason)
+        let session = try await coordinator.acquireWhenAvailable(
+            application: currentWindow.applicationName,
+            bundleID: currentWindow.bundleIdentifier,
+            reason: reason,
+            unattended: context.allowsUnattendedAccess
+        )
         stateLock.withLock { _ = observations.removeValue(forKey: observationID) }
         defer { coordinator.release(session) }
         let driver = NativeInputDriver(session: session) { [self] in
             guard ComputerUsePermissionService.hasAccessibilityPermission,
-                  authorizationStore.isAllowed(currentWindow.bundleIdentifier),
                   authorizationStore.isNativeAllowed(currentWindow.bundleIdentifier) else { throw NativeControlInterruption.stopped }
             guard NSWorkspace.shared.frontmostApplication?.processIdentifier == currentWindow.processIdentifier,
                   let topWindow = ComputerUseWindowProvider.availableWindows().first(where: { $0.processIdentifier == currentWindow.processIdentifier }),
@@ -117,6 +138,10 @@ final class ComputerUseService: @unchecked Sendable {
             try coordinator.validateOwner(session)
             NSRunningApplication(processIdentifier: currentWindow.processIdentifier)?.activate(options: [])
             try await Task.sleep(for: .milliseconds(150))
+            // 目标窗口遮罩：原生输入路径是**独占桌面**操作，遮罩强度更高，
+            // 明确告知用户「这个窗口现在归 Lumi 管」。
+            let overlay = beginTargetOverlay(for: currentWindow)
+            defer { overlay?.end() }
             for (index, action) in actions.enumerated() {
                 try coordinator.validateOwner(session)
                 coordinator.updateProgress(computerUseText("Step {current} of {total}", ["current": String(index + 1), "total": String(actions.count)]))
@@ -125,7 +150,7 @@ final class ComputerUseService: @unchecked Sendable {
             driver.releaseHeldInput()
             // Release the desktop before screenshot encoding or the next LLM request.
             coordinator.release(session)
-            return try await capture(window: currentWindow)
+            return try await capture(window: currentWindow, context: context)
         } catch let interruption as NativeControlInterruption {
             driver.releaseHeldInput()
             switch interruption {
@@ -144,12 +169,38 @@ final class ComputerUseService: @unchecked Sendable {
         stateLock.withLock { observations[id] }
     }
 
-    func isApplicationAllowed(for observationID: UUID) -> Bool {
-        guard let observation = observation(id: observationID) else { return false }
-        return authorizationStore.isAllowed(observation.window.bundleIdentifier)
+    // MARK: - 目标窗口遮罩
+
+    /// 在目标窗口上显示「Lumi 正在操作」遮罩。
+    ///
+    /// 原生输入路径已经用桌面横幅告知了用户，但横幅在**屏幕角落**，
+    /// 用户真正盯着的目标窗口上没有任何提示。遮罩把提示搬到用户视线所及之处。
+    ///
+    /// - Note: 几何查询失败不阻断操作：遮罩是提示，不是操作的前置条件。
+    ///
+    /// - Returns: 已启动的遮罩会话；无法定位窗口时返回 `nil`。
+    @MainActor
+    private func beginTargetOverlay(for window: ComputerUseWindow) -> ComputerUseTargetOverlayController? {
+        guard let rect = ComputerUseTargetGeometryProvider.quartzRect(forWindowID: window.id) else {
+            return nil
+        }
+        let controller = ComputerUseTargetOverlayController.shared
+        controller.begin(
+            ComputerUseTargetOverlayController.Target(
+                quartzRect: rect,
+                applicationName: window.applicationName,
+                intensity: .blocking,
+                windowID: window.id,
+                processIdentifier: window.processIdentifier
+            )
+        )
+        return controller
     }
 
-    private func capture(window: ComputerUseWindow) async throws -> ObservationResult {
+    private func capture(
+        window: ComputerUseWindow,
+        context: ComputerUseAccessContext
+    ) async throws -> ObservationResult {
         let content = try await SCShareableContent.excludingDesktopWindows(
             false,
             onScreenWindowsOnly: true
@@ -186,7 +237,10 @@ final class ComputerUseService: @unchecked Sendable {
         return ObservationResult(
             observation: observation,
             attachment: encoded.attachment,
-            isApplicationAllowed: authorizationStore.isAllowed(window.bundleIdentifier)
+            isApplicationAuthorized: accessChecker.isAuthorizedWithoutConsuming(
+                window.bundleIdentifier,
+                context: context
+            )
         )
     }
 

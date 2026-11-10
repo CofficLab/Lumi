@@ -51,7 +51,7 @@ public final class QuickFileSearchPlugin: SuperPlugin, SuperLog {
                 searchService: self.searchService
             )
         }])
-        kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([SettingEntryItem(id: id, title: pluginLocalization.string("Quick File Search"), systemImage: "magnifyingglass", order: order) { QuickFileSearchSettingsView(projectPath: project?.currentProject?.path ?? "") }])
+        kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([SettingEntryItem(id: id, title: pluginLocalization.string("Quick File Search"), systemImage: "magnifyingglass", order: order) { QuickFileSearchSettingsView(project: project) }])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

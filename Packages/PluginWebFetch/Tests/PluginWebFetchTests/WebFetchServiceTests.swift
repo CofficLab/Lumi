@@ -9,9 +9,15 @@ struct WebFetchServiceTests {
         let requests = RequestCounter()
         let service = WebFetchService(fetcher: StubFetcher(data: Data(), counter: requests), cache: nil)
 
-        #expect(await service.fetch(urlString: "  ") == "Error: Missing required 'url' parameter")
-        #expect(await service.fetch(urlString: "http://[") == "Error: Invalid URL format: http://[")
-        #expect(await service.fetch(urlString: "file:///tmp/page.html") == "Error: Only HTTP/HTTPS URLs are supported")
+        await #expect(throws: WebFetchError.self) {
+            _ = try await service.fetch(urlString: "  ")
+        }
+        await #expect(throws: WebFetchError.self) {
+            _ = try await service.fetch(urlString: "http://[")
+        }
+        await #expect(throws: WebFetchError.self) {
+            _ = try await service.fetch(urlString: "file:///tmp/page.html")
+        }
         #expect(await requests.count() == 0)
     }
 
@@ -34,8 +40,8 @@ struct WebFetchServiceTests {
             now: { now }
         )
 
-        let first = await service.fetch(urlString: "https://example.com/docs")
-        let second = await service.fetch(urlString: "https://example.com/docs")
+        let first = try await service.fetch(urlString: "https://example.com/docs")
+        let second = try await service.fetch(urlString: "https://example.com/docs")
 
         #expect(first.contains("# Documentation"))
         #expect(first.contains("Install the package."))
@@ -52,20 +58,21 @@ struct WebFetchServiceTests {
             cache: WebFetchCache()
         )
 
-        let first = await service.fetch(urlString: "https://example.com/unavailable")
-        let second = await service.fetch(urlString: "https://example.com/unavailable")
-
-        #expect(first.contains("Error: HTTP 503"))
-        #expect(second.contains("Error: HTTP 503"))
+        await #expect(throws: WebFetchError.self) {
+            _ = try await service.fetch(urlString: "https://example.com/unavailable")
+        }
+        await #expect(throws: WebFetchError.self) {
+            _ = try await service.fetch(urlString: "https://example.com/unavailable")
+        }
         #expect(await requests.count() == 2)
     }
 
     @Test("resolves redirects and rejects redirect targets with unsafe schemes")
-    func handlesRedirectTargets() {
+    func handlesRedirectTargets() throws {
         let service = WebFetchService(fetcher: StubFetcher(data: Data(), counter: RequestCounter()), cache: nil)
         let original = URL(string: "https://example.com/docs/start")!
 
-        let redirect = service.handleRedirect(
+        let redirect = try service.handleRedirect(
             originalURL: original,
             redirectURL: "//cdn.example.com/guide",
             statusCode: 302,
@@ -75,12 +82,13 @@ struct WebFetchServiceTests {
         #expect(redirect.contains("Found"))
         #expect(redirect.contains("- prompt: \"find setup\""))
 
-        let blocked = service.handleRedirect(
-            originalURL: original,
-            redirectURL: "file:///etc/passwd",
-            statusCode: 301
-        )
-        #expect(blocked.contains("Error: Redirect target uses an unsupported URL scheme"))
+        #expect(throws: WebFetchError.self) {
+            _ = try service.handleRedirect(
+                originalURL: original,
+                redirectURL: "file:///etc/passwd",
+                statusCode: 301
+            )
+        }
     }
 
     @Test("extracts matching English and Chinese paragraphs and explains a miss")
@@ -94,16 +102,16 @@ struct WebFetchServiceTests {
     }
 
     @Test("formats valid JSON and reports invalid JSON without losing its body")
-    func formatsJSONResponses() {
+    func formatsJSONResponses() throws {
         let service = WebFetchService(fetcher: StubFetcher(data: Data(), counter: RequestCounter()), cache: nil)
-        let valid = service.processContent(
+        let valid = try service.processContent(
             data: Data(#"{"z":1,"a":2}"#.utf8),
             contentType: "application/json; charset=utf-8",
             url: URL(string: "https://example.com/data.json")!,
             statusCode: 200,
             duration: 1
         )
-        let invalid = service.processContent(
+        let invalid = try service.processContent(
             data: Data("{invalid".utf8),
             contentType: "application/json",
             url: URL(string: "https://example.com/data.json")!,
@@ -118,27 +126,20 @@ struct WebFetchServiceTests {
     }
 
     @Test("routes plain text, sniffed HTML, and undecodable text")
-    func processesTextContentTypes() {
+    func processesTextContentTypes() throws {
         let service = WebFetchService(fetcher: StubFetcher(data: Data(), counter: RequestCounter()), cache: nil)
         let url = URL(string: "https://example.com/content")!
 
-        let plainText = service.processContent(
+        let plainText = try service.processContent(
             data: Data("plain body".utf8),
             contentType: "text/plain; charset=utf-8",
             url: url,
             statusCode: 200,
             duration: 1
         )
-        let sniffedHTML = service.processContent(
+        let sniffedHTML = try service.processContent(
             data: Data("<html><body><p>sniffed body</p></body></html>".utf8),
             contentType: "application/x-custom",
-            url: url,
-            statusCode: 200,
-            duration: 1
-        )
-        let invalidText = service.processContent(
-            data: Data([0xFF]),
-            contentType: "text/plain",
             url: url,
             statusCode: 200,
             duration: 1
@@ -147,7 +148,15 @@ struct WebFetchServiceTests {
         #expect(plainText.contains("Content-Type**: Plain Text"))
         #expect(plainText.contains("plain body"))
         #expect(sniffedHTML.contains("sniffed body"))
-        #expect(invalidText == "Error: Could not decode text content")
+        #expect(throws: WebFetchError.self) {
+            _ = try service.processContent(
+                data: Data([0xFF]),
+                contentType: "text/plain",
+                url: url,
+                statusCode: 200,
+                duration: 1
+            )
+        }
     }
 
     @Test("saves binary and image responses under the supplied temporary directory")
@@ -160,14 +169,14 @@ struct WebFetchServiceTests {
         let pdfData = Data([0x25, 0x50, 0x44, 0x46])
         let imageData = Data([0x89, 0x50, 0x4E, 0x47])
 
-        let binaryResult = service.processContent(
+        let binaryResult = try service.processContent(
             data: pdfData,
             contentType: "application/pdf",
             url: url,
             statusCode: 200,
             duration: 1
         )
-        let imageResult = service.processContent(
+        let imageResult = try service.processContent(
             data: imageData,
             contentType: "image/png",
             url: url,

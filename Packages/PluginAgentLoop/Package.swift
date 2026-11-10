@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "PluginAgentLoop",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginAgentLoop", targets: ["PluginAgentLoop"]),
     ],

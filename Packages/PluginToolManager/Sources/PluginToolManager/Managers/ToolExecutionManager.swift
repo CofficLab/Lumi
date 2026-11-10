@@ -173,11 +173,42 @@ final class ToolExecutionManager {
         }
     }
 
+    /// 丢弃一次已结束调用的 Job，让同一个 `toolCall.id` 可以再次执行。
+    ///
+    /// 授权挂起后的重执行与普通重试不同：旧 Job 的终态结果就是「等待授权」。
+    /// 不丢弃会让 `submit` 命中 Job 去重、直接复用挂起结果，工具永远不会真正
+    /// 再跑一次。只丢弃终态 Job；仍在运行的调用保持原有去重语义。
+    func forgetTerminalJob(
+        forToolCallID toolCallID: String,
+        conversationID: UUID,
+        turnID: UUID?
+    ) {
+        guard let job = jobsByID.values.first(where: {
+            $0.conversationID == conversationID
+                && $0.turnID == turnID
+                && $0.toolCall.id == toolCallID
+        }), job.status.isTerminal else { return }
+        jobsByID.removeValue(forKey: job.id)
+        resultsByID.removeValue(forKey: job.id)
+        submissionOrder.removeAll { $0 == job.id }
+    }
+
     func waitForResult(jobID: String) async -> ToolCallResult? {
         if let result = resultsByID[jobID] {
             return result
         }
-        guard jobsByID[jobID] != nil else { return nil }
+        guard let job = jobsByID[jobID] else { return nil }
+
+        // 终态 Job 的结果在启动恢复时**没有**被物化（那会让启动成本随
+        // Job 总量线性增长），这里按需从库里取一次。
+        //
+        // 终态 Job 不会再有 `finish` 事件来唤醒等待者，所以必须在这里返回，
+        // 否则等待者会永久挂起。
+        if job.status.isTerminal {
+            guard let store = jobRecordStore else { return nil }
+            return await store.fetchRecord(forJobID: jobID)?.result
+        }
+
         return await withCheckedContinuation { continuation in
             if let result = resultsByID[jobID] {
                 continuation.resume(returning: result)
@@ -582,6 +613,7 @@ final class ToolExecutionManager {
 
     private func restore(_ records: [ToolJobRecord]) {
         let message = "工具进程在应用重启后无法恢复，未自动重试。"
+        var restoredTerminalJobs: [ToolJob] = []
         for record in records where jobsByID[record.id] == nil {
             if record.status.isTerminal {
                 let toolCall = ToolCall(
@@ -607,6 +639,7 @@ final class ToolExecutionManager {
                 if let result = record.result {
                     resultsByID[job.id] = result
                 }
+                restoredTerminalJobs.append(job)
                 continue
             }
 
@@ -636,6 +669,11 @@ final class ToolExecutionManager {
             persist(job, result: result)
             emit(.created(job))
             emit(.failed(jobID: job.id, result: result, snapshot: job))
+        }
+
+        // 终态历史记录没有逐条事件；用一次批量快照让打开中的 UI 补齐列表。
+        if !restoredTerminalJobs.isEmpty {
+            emit(.restored(restoredTerminalJobs))
         }
     }
 }

@@ -18,8 +18,6 @@ struct CollapsedContentChips: View {
     /// 该折叠段是否已展开为正文。
     @State private var expandedBlocks: Set<Int> = []
 
-    private static let chipFont: Font = .system(size: 12, weight: .medium)
-
     var body: some View {
         // 区间已归一化：无折叠块时直接渲染纯文本，走与旧消息完全一致的路径。
         guard !blocks.isEmpty else {
@@ -111,12 +109,48 @@ struct CollapsedContentChips: View {
 /// 单个折叠块 chip：点击在「一行摘要」与「完整原文」之间切换。
 private struct CollapsedContentChip: View {
     @LumiTheme private var theme
+    @LumiMotionPreferenceReader private var motionPreference
 
     let title: String
     let systemImage: String
     let isExpanded: Bool
     let content: String
     let onToggle: () -> Void
+
+    /// 是否悬停在 chip 上。
+    ///
+    /// 输入框那侧的 chip 有 hover（底色与描边同色系加深），消息列表这侧
+    /// 原本没有——同一个 chip 在两个地方长成两个样子。悬停态取同一份
+    /// ``CollapsedContentChipStyle`` 的 `hoverFillOpacity` / `hoverStrokeOpacity`，
+    /// 保证两边加深幅度一致。
+    @State private var isHovered = false
+
+    /// 标题与统计信息。
+    ///
+    /// metadata 里存的是一个拼好的标题串（「粘贴的文本 · 13,253 字 · 75 行」），
+    /// 这里按分隔符拆开，好让「这是什么」与「有多大」分成两层排版——与输入框
+    /// 里的 chip 一致。
+    private var parts: (label: String, detail: String?) {
+        CollapsedContentChipStyle.split(title: title)
+    }
+
+    /// chip 底色。悬停时同色系加深。
+    private var fillColor: Color {
+        theme.textPrimary.opacity(
+            isHovered
+                ? CollapsedContentChipStyle.hoverFillOpacity
+                : CollapsedContentChipStyle.fillOpacity
+        )
+    }
+
+    /// chip 描边色。悬停时同色系加深。
+    private var strokeColor: Color {
+        theme.textPrimary.opacity(
+            isHovered
+                ? CollapsedContentChipStyle.hoverStrokeOpacity
+                : CollapsedContentChipStyle.strokeOpacity
+        )
+    }
 
     var body: some View {
         Button(action: onToggle) {
@@ -133,53 +167,72 @@ private struct CollapsedContentChip: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(10)
                 .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(theme.textPrimary.opacity(0.05))
+                    RoundedRectangle(cornerRadius: CollapsedContentChipStyle.cornerRadius, style: .continuous)
+                        .fill(fillColor)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(theme.textPrimary.opacity(0.10), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: CollapsedContentChipStyle.cornerRadius, style: .continuous)
+                        .strokeBorder(strokeColor, lineWidth: CollapsedContentChipStyle.strokeWidth)
                 )
             } else {
-                HStack(spacing: 6) {
+                HStack(spacing: CollapsedContentChipStyle.iconSpacing) {
                     Image(systemName: systemImage)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: CollapsedContentChipStyle.iconSize, weight: .medium))
                         .foregroundColor(theme.textSecondary)
-                    Text(title)
-                        .font(CollapsedContentChip.font)
+
+                    // 标题与统计信息分层：标题用正文色，统计信息小一号用次级色。
+                    Text(parts.label)
+                        .font(.system(size: CollapsedContentChipStyle.titleSize, weight: .medium))
                         .foregroundColor(theme.textPrimary)
                         .lineLimit(1)
+
+                    if let detail = parts.detail {
+                        Text(detail)
+                            .font(.system(size: CollapsedContentChipStyle.detailSize))
+                            .foregroundColor(theme.textTertiary)
+                            .lineLimit(1)
+                    }
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
+                .padding(.horizontal, CollapsedContentChipStyle.horizontalPadding)
+                .padding(.vertical, CollapsedContentChipStyle.standaloneVerticalPadding)
                 .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(theme.textPrimary.opacity(0.06))
+                    RoundedRectangle(cornerRadius: CollapsedContentChipStyle.cornerRadius, style: .continuous)
+                        .fill(fillColor)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(theme.textPrimary.opacity(0.12), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: CollapsedContentChipStyle.cornerRadius, style: .continuous)
+                        .strokeBorder(strokeColor, lineWidth: CollapsedContentChipStyle.strokeWidth)
                 )
             }
         }
         .buttonStyle(.plain)
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
+                isHovered = hovering
+            }
+        }
     }
 
     private var header: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: CollapsedContentChipStyle.iconSpacing) {
             Image(systemName: systemImage)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: CollapsedContentChipStyle.iconSize, weight: .medium))
                 .foregroundColor(theme.textSecondary)
-            Text(title)
-                .font(CollapsedContentChip.font)
+            Text(parts.label)
+                .font(.system(size: CollapsedContentChipStyle.titleSize, weight: .medium))
                 .foregroundColor(theme.textPrimary)
                 .lineLimit(1)
+            if let detail = parts.detail {
+                Text(detail)
+                    .font(.system(size: CollapsedContentChipStyle.detailSize))
+                    .foregroundColor(theme.textTertiary)
+                    .lineLimit(1)
+            }
             Spacer(minLength: 0)
             Text(pluginLocalization.string("Show less"))
                 .font(.system(size: 10))
                 .foregroundColor(theme.textTertiary)
         }
     }
-
-    private static let font: Font = .system(size: 12, weight: .medium)
 }

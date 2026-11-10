@@ -78,6 +78,7 @@ public final class EditorSaveWorkflowController {
     public func performSave(
         content: String,
         url: URL?,
+        encoding: String.Encoding = .utf8,
         verbose: Bool,
         logInfo: @escaping (String) -> Void,
         logError: @escaping (String) -> Void,
@@ -117,7 +118,8 @@ public final class EditorSaveWorkflowController {
                 try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                     DispatchQueue.global(qos: .userInitiated).async {
                         do {
-                            try content.write(to: url, atomically: true, encoding: .utf8)
+                            // 按打开时检测到的原编码写回，避免普通保存静默改写编码/BOM。
+                            try content.write(to: url, atomically: true, encoding: encoding)
                             continuation.resume()
                         } catch {
                             continuation.resume(throwing: error)

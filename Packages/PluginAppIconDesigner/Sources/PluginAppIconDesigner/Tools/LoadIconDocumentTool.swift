@@ -28,20 +28,26 @@ public struct LoadIconDocumentTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let language = IconToolSupport.language
         guard let inputPath = IconToolSupport.string(arguments, "inputPath"), !inputPath.isEmpty else {
-            return IconToolSupport.missingParameter("inputPath", language: language)
+            throw IconToolSupport.missingParameterFailure("inputPath", toolName: name, language: language)
         }
 
         do {
             let inputURL = URL(fileURLWithPath: inputPath)
             let loadedDocument = try IconDocumentFileService().load(from: inputURL)
             let replaceSelected = IconToolSupport.bool(arguments, "replaceSelected", default: false)
+            let targetId = IconToolSupport.string(arguments, "documentId")?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
             let scope = try await IconToolSupport.resolveScope(arguments)
 
             let document = try await MainActor.run {
                 if replaceSelected {
-                    return try IconDocumentStore.shared.replaceDocument(loadedDocument, scope: scope)
+                    return try IconToolSupport.store().replaceDocument(
+                        loadedDocument,
+                        replacingDocumentId: targetId?.isEmpty == false ? targetId : nil,
+                        scope: scope
+                    )
                 }
-                return IconDocumentStore.shared.importDocument(loadedDocument, scope: scope)
+                return IconToolSupport.store().importDocument(loadedDocument, scope: scope)
             }
             await IconToolSupport.notify(scope: scope, documentId: document.id)
 
@@ -64,9 +70,9 @@ public struct LoadIconDocumentTool: SuperAgentTool {
             )
         } catch {
             await MainActor.run {
-                IconDocumentStore.shared.setError(error.localizedDescription)
+                IconToolSupport.store().setError(error.localizedDescription)
             }
-            return IconToolSupport.error(error, language: language)
+            throw IconToolSupport.failure(error, toolName: name, language: language)
         }
     }
 }

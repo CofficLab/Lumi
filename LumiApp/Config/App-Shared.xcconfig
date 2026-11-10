@@ -6,6 +6,9 @@
 
 #include "Base.xcconfig"
 
+// 部署目标（与项目级 CommonWarnings.xcconfig 保持一致）
+MACOSX_DEPLOYMENT_TARGET = 14.0
+
 // 运行时
 DEAD_CODE_STRIPPING = YES
 ENABLE_HARDENED_RUNTIME = YES

@@ -32,6 +32,34 @@
         }
       }
     },
+    "%lld items could not be moved" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld items could not be moved"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 个项目未能移动"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 個項目未能移動"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 個項目未能移動"
+          }
+        }
+      }
+    },
     "Are you sure you want to delete \"%@\"?" : {
       "localizations" : {
         "en" : {
@@ -56,6 +84,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "確定要刪除 \"%@\" 嗎？"
+          }
+        }
+      }
+    },
+    "Are you sure you want to delete %lld items?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to delete %lld items?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要删除 %lld 个项目吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定要刪除 %lld 個項目嗎？"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定要刪除 %lld 個項目嗎？"
           }
         }
       }
@@ -258,6 +314,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "無法將該項目移到垃圾桶。"
+          }
+        }
+      }
+    },
+    "Could not open in VS Code." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not open in VS Code."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法在 VS Code 中打开。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法在 VS Code 中開啟。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法在 VS Code 中開啟。"
           }
         }
       }
@@ -966,6 +1050,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "該項目將被移到垃圾桶。"
+          }
+        }
+      }
+    },
+    "These items will be moved to the Trash." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "These items will be moved to the Trash."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这些项目将被移到废纸篓。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這些項目將被移到垃圾桶。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這些項目將被移到垃圾桶。"
           }
         }
       }

@@ -56,22 +56,23 @@ final class ConversationSpeedViewModel: ObservableObject {
         }
 
         let latestAssistantMessage = messages.last(where: { $0.role == .assistant })
-        let latestSpeedMessage = history.last?.message ?? latestAssistantMessage
 
-        guard let latestSpeedMessage else {
+        guard let latestAssistantMessage else {
             cachedTPS = nil
             unavailabilityReason = .waitingForResponse
             clearDetails()
             return
         }
 
-        modelName = latestSpeedMessage.modelName
-        outputTokens = latestSpeedMessage.outputTokenCount
-        streamingDurationMs = latestSpeedMessage.speedDurationMs
-        timeToFirstTokenMs = latestSpeedMessage.timeToFirstTokenMs
-        providerID = latestSpeedMessage.providerID
+        // Current speed 及其详情必须描述最新一条 assistant 响应。
+        // 不能回退到历史中最后一条带指标的响应，否则旧响应的 TPS/路由会冒充当前响应。
+        modelName = latestAssistantMessage.modelName
+        outputTokens = latestAssistantMessage.outputTokenCount
+        streamingDurationMs = latestAssistantMessage.speedDurationMs
+        timeToFirstTokenMs = latestAssistantMessage.speedTimeToFirstTokenMs
+        providerID = latestAssistantMessage.providerID
 
-        if let tps = history.last?.tokensPerSecond {
+        if let tps = latestAssistantMessage.speedTokensPerSecond {
             cachedTPS = tps
             unavailabilityReason = .waitingForResponse
             return

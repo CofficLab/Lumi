@@ -54,7 +54,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     private var expandedPaths: Set<String> = []
 
     /// 插件入口注入的文件系统观察器。
-    private weak var observer: FileTreeObserver?
+    private weak var observer: (any FileTreeWatching)?
 
     /// Git 状态提供器（线程安全，无 MainActor 依赖）
     private let gitStatusProvider = GitStatusProvider()
@@ -68,8 +68,12 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     /// Git 刷新请求计数器（用于日志去重）
     private var gitRefreshRequestCount: Int = 0
 
-    /// 防抖任务
-    private var debounceTask: Task<Void, Never>?
+    /// 全量刷新防抖任务。与精准刷新的 trailing 任务分离，
+    /// 避免 `refresh()` 取消 trailing 窗口后 pending 状态无法恢复（回归 #1099）。
+    private var fullRefreshDebounceTask: Task<Void, Never>?
+
+    /// 精准刷新 trailing 防抖任务。
+    private var targetedDebounceTask: Task<Void, Never>?
 
     /// 待下发的变化目录缓冲集合（标准化后的绝对路径）。
     /// watcher 事件累加进来，防抖结束后随 `targetedRefreshToken` 一起发布。
@@ -94,24 +98,33 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     public init() {
     }
 
-    func attach(observer: FileTreeObserver) {
+    func attach(observer: any FileTreeWatching) {
         self.observer = observer
     }
 
     deinit {
+        fullRefreshDebounceTask?.cancel()
+        targetedDebounceTask?.cancel()
         gitStatusRefreshTask?.cancel()
         gitStatusDebounceTask?.cancel()
     }
 
     // MARK: - Public - Lifecycle
 
-    /// 设置当前项目根路径（项目切换时调用）
+    /// 设置当前项目根路径（项目切换或视图重新出现时调用）
     public func setProjectRootPath(_ path: String) {
-        guard path != projectRootPath else { return }
+        if path == projectRootPath {
+            // 视图重新出现时根路径不变，但 `stop()` 已经关闭 watcher；
+            // 这里必须重新挂载监听并刷新 Git 状态，否则外部变更不再触发刷新。
+            resumeWatching()
+            return
+        }
 
         // 清理旧项目的状态
         observer?.stopWatching()
         expandedPaths.removeAll()
+        fullRefreshDebounceTask?.cancel()
+        targetedDebounceTask?.cancel()
         pendingChangedPaths.removeAll()
         isDebouncePending = false
         gitStatusRefreshTask?.cancel()
@@ -140,10 +153,20 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
         }
     }
 
+    /// 为当前根路径重新挂载监听并刷新首次 Git 状态（视图重新出现时调用）。
+    private func resumeWatching() {
+        guard !projectRootPath.isEmpty else { return }
+        updateWatcher()
+        if isGitRepo {
+            refreshGitStatus()
+        }
+    }
+
     /// 停止所有监听（视图消失时调用）
     public func stop() {
         observer?.stopWatching()
-        debounceTask?.cancel()
+        fullRefreshDebounceTask?.cancel()
+        targetedDebounceTask?.cancel()
         pendingChangedPaths.removeAll()
         isDebouncePending = false
         gitStatusRefreshTask?.cancel()
@@ -299,10 +322,10 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     /// 全量防抖刷新：短时间内多次变化合并为一次，驱动整棵树重新加载。
     /// 用于手动刷新、项目切换、文件树内部增删改等需要触及全部节点的场景。
     private func triggerRefresh() {
-        debounceTask?.cancel()
+        fullRefreshDebounceTask?.cancel()
         let interval = self.debounceInterval
-        debounceTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: interval)
+        fullRefreshDebounceTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(nanoseconds: interval) } catch { return }
             guard let self else { return }
             self.refreshToken += 1
             if Self.verbose {
@@ -354,10 +377,10 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
 
     /// 启动 trailing debounce 计时器：等待 debounceInterval 后发布累积的变更
     private func startTrailingDebounce() {
-        debounceTask?.cancel()
+        targetedDebounceTask?.cancel()
         let interval = self.debounceInterval
-        debounceTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: interval)
+        targetedDebounceTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(nanoseconds: interval) } catch { return }
             guard let self else { return }
             // 窗口结束：发布累积的变更并重置状态
             self.publishTargetedRefresh()

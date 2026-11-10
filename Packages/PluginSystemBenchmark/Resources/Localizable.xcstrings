@@ -33,6 +33,22 @@
         }
       }
     },
+    "Benchmark cancelled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benchmark cancelled"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "测速已取消"
+          }
+        }
+      }
+    },
     "Benchmark failed" : {
       "localizations" : {
         "en" : {
@@ -591,6 +607,7 @@
       }
     },
     "Test cancelled" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -665,6 +682,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "测试在本地运行，可随时取消。"
+          }
+        }
+      }
+    },
+    "The test was cancelled before it finished." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The test was cancelled before it finished."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "测试在完成前被取消。"
           }
         }
       }

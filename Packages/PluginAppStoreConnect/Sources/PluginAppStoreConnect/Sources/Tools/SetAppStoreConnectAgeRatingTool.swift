@@ -16,7 +16,9 @@ public struct SetAppStoreConnectAgeRatingTool: SuperAgentTool {
         "alcoholTobaccoOrDrugUseOrReferences",
         "contests",
         "gamblingSimulated",
+        "gunsOrOtherWeapons",
         "horrorOrFearThemes",
+        "matureOrSuggestiveThemes",
         "medicalOrTreatmentInformation",
         "profanityOrCrudeHumor",
         "sexualContentGraphicAndNudity",
@@ -24,12 +26,31 @@ public struct SetAppStoreConnectAgeRatingTool: SuperAgentTool {
         "violenceCartoonOrFantasy",
         "violenceRealistic",
         "violenceRealisticProlongedGraphicOrSadistic",
+        "ageRatingOverride",
+        "ageRatingOverrideV2",
+        "koreaAgeRatingOverride",
+    ]
+
+    /// Override fields use a different value set than the content-descriptor fields.
+    private static let ratingKeyDescriptions: [String: String] = [
+        "ageRatingOverride": "NONE, NINE_PLUS, THIRTEEN_PLUS, SIXTEEN_PLUS, EIGHTEEN_PLUS, or UNRATED",
+        "ageRatingOverrideV2": "NONE, NINE_PLUS, THIRTEEN_PLUS, SIXTEEN_PLUS, EIGHTEEN_PLUS, or UNRATED",
+        "koreaAgeRatingOverride": "NONE, FIFTEEN_PLUS, or NINETEEN_PLUS",
     ]
 
     private static let boolRatingKeys: [String] = [
+        "advertising",
+        "ageAssurance",
         "gambling",
+        "healthOrWellnessTopics",
+        "lootBox",
+        "messagingAndChat",
+        "parentalControls",
         "seventeenPlus",
+        "socialMedia",
+        "socialMediaAgeRestricted",
         "unrestrictedWebAccess",
+        "userGeneratedContent",
     ]
 
     private static let kidsAgeBandKey = "kidsAgeBand"
@@ -42,6 +63,8 @@ public struct SetAppStoreConnectAgeRatingTool: SuperAgentTool {
             + "String ratings accept NONE, INFREQUENT, or FREQUENT "
             + "(legacy INFREQUENT_OR_MILD / FREQUENT_OR_INTENSE also accepted). "
             + "kidsAgeBand accepts FIVE_AND_UNDER, SIX_TO_EIGHT, or NINE_TO_ELEVEN. "
+            + "Boolean attributes such as socialMedia, advertising, lootBox, and messagingAndChat accept true or false. "
+            + "socialMedia must be set before a review submission can be accepted. "
             + "The declaration is app-level and shared by all versions. "
             + "IMPORTANT: The App Store Connect API cannot create a new age-rating declaration — "
             + "it can only read or update existing ones. Complete the questionnaire once per app "
@@ -66,7 +89,7 @@ public struct SetAppStoreConnectAgeRatingTool: SuperAgentTool {
         for key in Self.ratingKeys {
             properties[key] = .object([
                 "type": .string("string"),
-                "description": .string(levelDesc)
+                "description": .string(Self.ratingKeyDescriptions[key] ?? levelDesc)
             ])
         }
         for key in Self.boolRatingKeys {
@@ -93,29 +116,14 @@ public struct SetAppStoreConnectAgeRatingTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let versionID = arguments["versionID"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
               !versionID.isEmpty else {
-            return "Missing or empty versionID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty versionID.")
         }
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
 
         // Collect update attributes (if any)
-        var updateAttributes: [String: Any] = [:]
-        for key in Self.ratingKeys {
-            if let value = arguments[key]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
-               !value.isEmpty {
-                updateAttributes[key] = value
-            }
-        }
-        for key in Self.boolRatingKeys {
-            if let value = AppStoreConnectToolSupport.parseBool(arguments[key]) {
-                updateAttributes[key] = value
-            }
-        }
-        if let kids = arguments[Self.kidsAgeBandKey]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !kids.isEmpty {
-            updateAttributes[Self.kidsAgeBandKey] = kids
-        }
+        let updateAttributes = Self.updateAttributes(from: arguments)
 
         do {
             // Read mode
@@ -151,8 +159,32 @@ public struct SetAppStoreConnectAgeRatingTool: SuperAgentTool {
             )
             return "Age rating updated for version id=\(versionID).\n" + formatDeclaration(updated)
         } catch {
-            return "Failed to manage age rating: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to manage age rating: \(error.localizedDescription)")
         }
+    }
+
+    /// 把工具参数转换为 `ageRatingDeclarations` 的 PATCH 属性。
+    ///
+    /// 空字符串与非布尔值会被忽略，未提供的字段不会出现在结果里；
+    /// 布尔字段显式传 `false` 时同样会写入（例如 `socialMedia: false`）。
+    static func updateAttributes(from arguments: [String: ToolArgument]) -> [String: Any] {
+        var attributes: [String: Any] = [:]
+        for key in Self.ratingKeys {
+            if let value = arguments[key]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !value.isEmpty {
+                attributes[key] = value
+            }
+        }
+        for key in Self.boolRatingKeys {
+            if let value = AppStoreConnectToolSupport.parseBool(arguments[key]) {
+                attributes[key] = value
+            }
+        }
+        if let kids = arguments[Self.kidsAgeBandKey]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !kids.isEmpty {
+            attributes[Self.kidsAgeBandKey] = kids
+        }
+        return attributes
     }
 
     private func formatDeclaration(_ d: AgeRatingDeclaration) -> String {
@@ -172,6 +204,20 @@ public struct SetAppStoreConnectAgeRatingTool: SuperAgentTool {
         lines.append("  violenceCartoonOrFantasy=\(d.violenceCartoonOrFantasy ?? "(nil)")")
         lines.append("  violenceRealistic=\(d.violenceRealistic ?? "(nil)")")
         lines.append("  violenceRealisticProlongedGraphicOrSadistic=\(d.violenceRealisticProlongedGraphicOrSadistic ?? "(nil)")")
+        lines.append("  gunsOrOtherWeapons=\(d.gunsOrOtherWeapons ?? "(nil)")")
+        lines.append("  matureOrSuggestiveThemes=\(d.matureOrSuggestiveThemes ?? "(nil)")")
+        lines.append("  ageRatingOverride=\(d.ageRatingOverride ?? "(nil)")")
+        lines.append("  ageRatingOverrideV2=\(d.ageRatingOverrideV2 ?? "(nil)")")
+        lines.append("  koreaAgeRatingOverride=\(d.koreaAgeRatingOverride ?? "(nil)")")
+        lines.append("  advertising=\(d.advertising.map { "\($0)" } ?? "(nil)")")
+        lines.append("  ageAssurance=\(d.ageAssurance.map { "\($0)" } ?? "(nil)")")
+        lines.append("  healthOrWellnessTopics=\(d.healthOrWellnessTopics.map { "\($0)" } ?? "(nil)")")
+        lines.append("  lootBox=\(d.lootBox.map { "\($0)" } ?? "(nil)")")
+        lines.append("  messagingAndChat=\(d.messagingAndChat.map { "\($0)" } ?? "(nil)")")
+        lines.append("  parentalControls=\(d.parentalControls.map { "\($0)" } ?? "(nil)")")
+        lines.append("  socialMedia=\(d.socialMedia.map { "\($0)" } ?? "(nil)")")
+        lines.append("  socialMediaAgeRestricted=\(d.socialMediaAgeRestricted.map { "\($0)" } ?? "(nil)")")
+        lines.append("  userGeneratedContent=\(d.userGeneratedContent.map { "\($0)" } ?? "(nil)")")
         return lines.joined(separator: "\n")
     }
 }

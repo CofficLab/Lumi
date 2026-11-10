@@ -1,4 +1,5 @@
 import Foundation
+import ProviderAgentLoop
 
 /// 监听 AgentLoop 事件并在可重试失败后自动重启回合。
 ///
@@ -27,7 +28,10 @@ final class AgentLoopRetryCoordinator {
     ///
     /// 生产环境默认用 `Task.sleep`；测试注入可观测实现以避免真实等待。
     private let sleeper: @Sendable (TimeInterval) async throws -> Void
+    /// 重试链的生命周期通知（调度 / 放弃），供需要共享回合生命周期的上层使用。
+    private let onLifecycleEvent: (AgentLoopRetryLifecycleEvent) -> Void
     private var observerHandle: (any AgentLoopRetryObserverHandle)?
+    private var deletionObserverHandle: (any AgentLoopRetryObserverHandle)?
     private var states: [UUID: RetryState] = [:]
 
     init(
@@ -36,20 +40,27 @@ final class AgentLoopRetryCoordinator {
         maxAttempts: Int,
         sleeper: @escaping @Sendable (TimeInterval) async throws -> Void = { seconds in
             try await Task.sleep(nanoseconds: UInt64(max(seconds, 0) * 1_000_000_000))
-        }
+        },
+        onLifecycleEvent: @escaping (AgentLoopRetryLifecycleEvent) -> Void = { _ in }
     ) {
         self.loop = loop
         self.messages = messages
         self.maxAttempts = max(0, maxAttempts)
         self.sleeper = sleeper
+        self.onLifecycleEvent = onLifecycleEvent
         observerHandle = loop.addTurnObserver { [weak self] event in
             self?.handle(event)
+        }
+        deletionObserverHandle = loop.addConversationDeletionObserver { [weak self] conversationID in
+            self?.clearState(for: conversationID)
         }
     }
 
     func cancel() {
         observerHandle?.cancel()
         observerHandle = nil
+        deletionObserverHandle?.cancel()
+        deletionObserverHandle = nil
         states.values.forEach { $0.retryTask?.cancel() }
         states.removeAll()
     }
@@ -91,17 +102,36 @@ final class AgentLoopRetryCoordinator {
         states[conversationID] = state
     }
 
+    /// 该会话当前是否有自动重试已调度或正在执行。
+    ///
+    /// 首次可重试失败不是终态：调用方必须等到重试链收敛。
+    func isRetrying(conversationID: UUID) -> Bool {
+        states[conversationID] != nil
+    }
+
+    /// 主动放弃该会话的待执行重试（例如 ACP 收到 `session/cancel`）。
+    ///
+    /// 不发送放弃通知：取消的终态由调用方自己决定。
+    func cancelRetry(for conversationID: UUID) {
+        clearState(for: conversationID)
+    }
+
     private func handleFailure(conversationID: UUID, turnID: UUID) {
-        guard let failure = loop.lastFailure(for: conversationID),
-              failure.isRetryable,
-              maxAttempts > 0 else {
+        let failure = loop.lastFailure(for: conversationID)
+        let hadRetryChain = states[conversationID] != nil
+        guard let failure, failure.isRetryable, maxAttempts > 0 else {
             clearState(for: conversationID)
+            // 首次失败不可重试时没有重试链，不算「放弃重试」。
+            if hadRetryChain, let failure {
+                onLifecycleEvent(.gaveUp(conversationID: conversationID, reason: failure.message))
+            }
             return
         }
 
         let completedAttempts = states[conversationID]?.attempts ?? 0
         guard completedAttempts < maxAttempts else {
             clearState(for: conversationID)
+            onLifecycleEvent(.gaveUp(conversationID: conversationID, reason: failure.message))
             return
         }
 
@@ -114,6 +144,7 @@ final class AgentLoopRetryCoordinator {
             retryStartPending: true,
             retryTask: nil
         )
+        onLifecycleEvent(.scheduled(conversationID: conversationID, attempt: completedAttempts + 1))
 
         states[conversationID]?.retryTask = Task { @MainActor [weak self] in
             await self?.performRetry(
@@ -185,6 +216,7 @@ final class AgentLoopRetryCoordinator {
                 "Retry request rejected for conversation \(conversationID.uuidString): \(error.localizedDescription)"
             )
             states.removeValue(forKey: conversationID)
+            onLifecycleEvent(.gaveUp(conversationID: conversationID, reason: error.localizedDescription))
         }
     }
 
@@ -198,7 +230,8 @@ final class AgentLoopRetryCoordinator {
               state.attempts == attempt,
               state.failedTurnID == failedTurnID,
               state.retryStartPending,
-              loop.turnState(for: conversationID) == .failed else {
+              loop.turnState(for: conversationID) == .failed,
+              loop.conversationExists(for: conversationID) else {
             return false
         }
         return true

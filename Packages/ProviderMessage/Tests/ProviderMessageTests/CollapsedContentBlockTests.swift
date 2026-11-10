@@ -72,11 +72,60 @@ struct CollapsedContentBlockTests {
 
     @Test("正文没有前导空白时区间保持不变")
     func keepsBlocksWhenNoLeadingWhitespace() {
-        let blocks = [CollapsedContentBlock(start: 3, length: 5, title: "A")]
+        let blocks = [CollapsedContentBlock(start: 1, length: 3, title: "A")]
         let rebased = CollapsedContentBlockMetadata.rebased(
             blocks,
             droppingLeadingWhitespaceOf: "hello"
         )
         #expect(rebased == blocks)
+    }
+
+    @Test("折叠块包含首尾空白时，裁掉碰到的空白并保留其余区间")
+    func clipsSurroundingWhitespaceInsteadOfDroppingBlock() {
+        let body = String(repeating: "x", count: 1000)
+        let content = "\n" + body + "\n"
+        let blocks = [CollapsedContentBlock(start: 0, length: content.count, title: "粘贴的文本")]
+
+        let rebased = CollapsedContentBlockMetadata.rebased(
+            blocks,
+            droppingLeadingWhitespaceOf: content
+        )
+
+        #expect(rebased.map(\.start) == [0])
+        #expect(rebased.map(\.length) == [1000])
+        #expect(rebased.first?.title == "粘贴的文本")
+    }
+
+    @Test("只含尾随空白时同样裁短保留")
+    func clipsTrailingWhitespaceOnly() {
+        let body = String(repeating: "y", count: 1000)
+        let content = body + "\n"
+        let blocks = [CollapsedContentBlock(start: 0, length: content.count, title: "A")]
+
+        let rebased = CollapsedContentBlockMetadata.rebased(
+            blocks,
+            droppingLeadingWhitespaceOf: content
+        )
+
+        #expect(rebased.map(\.length) == [1000])
+    }
+
+    @Test("部分与空白重叠的块裁短，完全落在空白里的块删除")
+    func dropsOnlyFullyTrimmedBlocks() {
+        let content = "\n\nbody"
+        let blocks = [
+            CollapsedContentBlock(start: 0, length: 2, title: "全是空白"),
+            CollapsedContentBlock(start: 1, length: 4, title: "部分重叠"),
+        ]
+
+        let rebased = CollapsedContentBlockMetadata.rebased(
+            blocks,
+            droppingLeadingWhitespaceOf: content
+        )
+
+        #expect(rebased.count == 1)
+        #expect(rebased.first?.title == "部分重叠")
+        #expect(rebased.first?.start == 0)
+        #expect(rebased.first?.length == 3)
     }
 }

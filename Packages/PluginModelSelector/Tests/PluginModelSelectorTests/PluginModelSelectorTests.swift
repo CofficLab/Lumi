@@ -119,7 +119,7 @@ struct ModelSearchBarVisibilityTests {
 
         viewModel.selectedProviderID = "small-provider"
         viewModel.prepareInitialScope()
-        viewModel.searchText = "model-3"
+        viewModel.modelSearchText = "model-3"
 
         #expect(!viewModel.showsModelSearchBar)
         // 搜索框不可见时残留文本不得继续过滤列表。
@@ -137,7 +137,7 @@ struct ModelSearchBarVisibilityTests {
 
         viewModel.selectedProviderID = "large-provider"
         viewModel.prepareInitialScope()
-        viewModel.searchText = "model-3"
+        viewModel.modelSearchText = "model-3"
 
         #expect(viewModel.showsModelSearchBar)
         #expect(viewModel.activeModelSearchText == "model-3")
@@ -267,14 +267,77 @@ struct LLMProviderManagerBoxTests {
     }
 }
 
+/// Provider 与 Model 两栏同屏展示，搜索词必须彼此独立（#1030）。
+@Suite("独立搜索状态")
+@MainActor
+struct IndependentSearchTests {
+    @Test("搜索供应商不会把右栏模型筛空")
+    func providerSearchDoesNotFilterModels() throws {
+        let models = (1...11).map { "gpt-\($0)" }
+        let manager = DefaultLLMManager()
+        try manager.register(TestProvider(id: "hyperapi", displayName: "HyperAPI", models: models))
+        let viewModel = Self.makeViewModel(manager: manager)
+        viewModel.selectedProviderID = "hyperapi"
+
+        // 旧实现里这个赋值同时成为模型过滤词，而模型 ID 都不含 HyperAPI。
+        viewModel.providerSearchText = "HyperAPI"
+
+        #expect(viewModel.visibleProviders(viewModel.providerInfos).map(\.id) == ["hyperapi"])
+        #expect(viewModel.visibleModels(for: "hyperapi").count == models.count)
+    }
+
+    @Test("搜索模型不会过滤左栏供应商")
+    func modelSearchDoesNotFilterProviders() throws {
+        let manager = DefaultLLMManager()
+        try manager.register(TestProvider(
+            id: "hyperapi",
+            displayName: "HyperAPI",
+            models: (1...11).map { "gpt-\($0)" }
+        ))
+        let viewModel = Self.makeViewModel(manager: manager)
+
+        viewModel.modelSearchText = "gpt-9"
+
+        #expect(viewModel.visibleProviders(viewModel.providerInfos).map(\.id) == ["hyperapi"])
+    }
+
+    @Test("清空一侧搜索词不影响另一侧")
+    func clearingOneSearchKeepsTheOther() throws {
+        let manager = DefaultLLMManager()
+        try manager.register(TestProvider(
+            id: "hyperapi",
+            displayName: "HyperAPI",
+            models: (1...11).map { "gpt-\($0)" }
+        ))
+        let viewModel = Self.makeViewModel(manager: manager)
+        viewModel.selectedProviderID = "hyperapi"
+        viewModel.providerSearchText = "HyperAPI"
+        viewModel.modelSearchText = "gpt-9"
+
+        viewModel.providerSearchText = ""
+
+        #expect(viewModel.modelSearchText == "gpt-9")
+        #expect(viewModel.visibleModels(for: "hyperapi").map { $0 } == ["gpt-9"])
+    }
+
+    private static func makeViewModel(manager: any LLMManaging) -> ModelSelectorViewModel {
+        let box = LLMProviderManagerBox(manager: manager)
+        return ModelSelectorViewModel(
+            box: box,
+            usageStore: ProviderUsageStore(directory: nil),
+            toastCapability: ModelSelectorToastCapabilityAdapter(toast: nil)
+        )
+    }
+}
+
 @MainActor
 private final class TestProvider: ManagedLLMProvider {
     let providerInfo: LLMProviderInfo
 
-    init(id: String, models: [String]) {
+    init(id: String, displayName: String? = nil, models: [String]) {
         providerInfo = LLMProviderInfo(
             id: id,
-            displayName: id,
+            displayName: displayName ?? id,
             defaultModel: models[0],
             models: models.map { LLMModelInfo(id: $0) }
         )

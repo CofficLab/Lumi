@@ -38,7 +38,7 @@ public struct ExportAppIconTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let language = IconToolSupport.language
         guard let outputDirectory = IconToolSupport.string(arguments, "outputDirectory"), !outputDirectory.isEmpty else {
-            return IconToolSupport.missingParameter("outputDirectory", language: language)
+            throw IconToolSupport.missingParameterFailure("outputDirectory", toolName: name, language: language)
         }
 
         let requestedArtifactId = IconToolSupport.string(arguments, "artifactId")
@@ -79,7 +79,7 @@ public struct ExportAppIconTool: SuperAgentTool {
 
             // 3. 回退：选中文档 → 选中 artifact → 报错。
             let exportSource = try await MainActor.run { () -> ExportSource in
-                if let document = IconDocumentStore.shared.selectedDocument {
+                if let document = IconToolSupport.store().selectedDocument {
                     return ExportSource.document(document)
                 }
                 if let artifact = AppIconArtifactStore.shared.selectedArtifact {
@@ -109,14 +109,14 @@ public struct ExportAppIconTool: SuperAgentTool {
             await MainActor.run {
                 AppIconArtifactStore.shared.setError(error.localizedDescription)
             }
-            return IconToolSupport.error(error, language: language)
+            throw IconToolSupport.failure(error, toolName: name, language: language)
         }
     }
 
     private func rememberExport(_ result: IconComposerExportService.ExportResult) async {
         await MainActor.run {
             AppIconArtifactStore.shared.setExportURL(result.iconURL)
-            IconDocumentStore.shared.setExportURL(result.iconURL)
+            IconToolSupport.store().setExportURL(result.iconURL)
         }
     }
 

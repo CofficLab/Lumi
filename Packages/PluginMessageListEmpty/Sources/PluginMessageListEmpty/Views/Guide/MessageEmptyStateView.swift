@@ -51,7 +51,13 @@ struct MessageEmptyStateView: View {
                             .multilineTextAlignment(.center)
 
                         // 副标题：有项目时让位给项目身份行，其余情况沿用原文案。
-                        if let identity = projectContext?.identity {
+                        //
+                        // - Important: 用 `displayIdentity` 而不是裸的 `identity`（#889）。
+                        //   身份行与下方项目上下文卡是两条独立的展示路径，卡片那条
+                        //   已经检查了 `hasProject`，身份行这条没有。少了这个判断，
+                        //   只要 ViewModel 里残留旧身份（哪怕是别的路径写进去的），
+                        //   已关闭项目的路径就会重新出现在空态页上。
+                        if let identity = projectContext?.displayIdentity {
                             ProjectIdentityLine(identity: identity)
                                 .padding(.top, 8)
                         } else if let subtitle = guideState.context?.subtitle,

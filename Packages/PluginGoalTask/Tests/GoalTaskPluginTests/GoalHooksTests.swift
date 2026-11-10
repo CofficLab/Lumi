@@ -609,6 +609,130 @@ extension SharedManagerSuite {
             #expect(goal.failureReason?.contains("Automatic continuation limit reached") == true)
         }
 
+        /// 回归 #904：超限处理只能改本次耗尽预算的活跃 Goal。
+        ///
+        /// 历史 failed Goal 已经不参与续跑序列，把它一并改写成「超限」会覆盖
+        /// 模型或用户当时留下的真实失败原因。
+        @Test("续跑超限不覆盖历史失败 Goal 的原因（回归 #904）")
+        func testLimitReachedKeepsHistoricalFailureReason() async throws {
+            let (manager, conversationID, tempDir) = try makeHarness()
+            defer {
+                GoalTaskPluginSupport._sharedManager = nil
+                try? FileManager.default.removeItem(at: tempDir)
+            }
+            let agentLoop = SpyAgentLoop()
+            let messages = SpyMessages()
+            let hook = GoalTaskTurnFinishedHook(agentLoop: agentLoop, messages: messages)
+
+            let historical = try await manager.createGoal(
+                conversationId: conversationID.uuidString,
+                title: "Historical failure",
+                description: nil,
+                successCriteria: nil,
+                tasks: [(title: "old", description: nil, executionContext: nil, parallelGroup: nil)]
+            )
+            _ = try await manager.updateGoalStatus(
+                id: historical.goal.id,
+                status: .failed,
+                failureReason: "authentication expired"
+            )
+
+            let active = try await manager.createGoal(
+                conversationId: conversationID.uuidString,
+                title: "Active goal",
+                description: nil,
+                successCriteria: nil,
+                tasks: [
+                    (title: "A", description: nil, executionContext: nil, parallelGroup: nil),
+                    (title: "B", description: nil, executionContext: nil, parallelGroup: nil),
+                ]
+            )
+            let activeTasks = await manager.fetchTasks(goalId: active.goal.id)
+            _ = try await manager.updateGoalTaskStatus(id: activeTasks[0].id, status: .completed)
+
+            for _ in 0..<GoalStateManager.maxAutomaticContinuations {
+                _ = await manager.incrementContinuationCount(conversationId: conversationID.uuidString)
+            }
+
+            await hook.apply(to: turnContext(conversationID, reason: .completed))
+            await settle()
+
+            let goals = await manager.fetchGoals(conversationId: conversationID.uuidString)
+            let old = try #require(goals.first { $0.id == historical.goal.id })
+            #expect(old.status == .failed)
+            #expect(old.failureReason == "authentication expired", "历史失败原因不得被超限文案覆盖")
+
+            let current = try #require(goals.first { $0.id == active.goal.id })
+            #expect(current.status == .failed)
+            #expect(current.failureReason?.contains("Automatic continuation limit reached") == true)
+        }
+
+        /// 回归 #903：新 Goal 不能继承上一 Goal 耗尽后的续跑计数。
+        ///
+        /// 预算按会话保存，上一 Goal 因超限失败后计数仍停在上限；若创建新
+        /// Goal 时不重置，它的第一个完成回合就会被立即判超限，拿不到任何
+        /// 自动续跑机会。
+        @Test("新 Goal 获得独立续跑预算，不继承上一 Goal 的耗尽计数（回归 #903）")
+        func testNewGoalGetsFreshContinuationBudget() async throws {
+            let (manager, conversationID, tempDir) = try makeHarness()
+            defer {
+                GoalTaskPluginSupport._sharedManager = nil
+                try? FileManager.default.removeItem(at: tempDir)
+            }
+            let agentLoop = SpyAgentLoop()
+            let messages = SpyMessages()
+            let hook = GoalTaskTurnFinishedHook(agentLoop: agentLoop, messages: messages)
+
+            let doomed = try await manager.createGoal(
+                conversationId: conversationID.uuidString,
+                title: "Doomed goal",
+                description: nil,
+                successCriteria: nil,
+                tasks: [
+                    (title: "A", description: nil, executionContext: nil, parallelGroup: nil),
+                    (title: "B", description: nil, executionContext: nil, parallelGroup: nil),
+                ]
+            )
+            for _ in 0..<GoalStateManager.maxAutomaticContinuations {
+                _ = await manager.incrementContinuationCount(conversationId: conversationID.uuidString)
+            }
+
+            await hook.apply(to: turnContext(conversationID, reason: .completed))
+            await settle()
+
+            let doomedGoal = try #require(
+                await manager.fetchGoals(conversationId: conversationID.uuidString)
+                    .first { $0.id == doomed.goal.id }
+            )
+            #expect(doomedGoal.status == .failed)
+            #expect(messages.inserted.contains { $0.content.contains("Goal 自动续跑已停止") })
+            #expect(agentLoop.runTurnCount == 0)
+
+            messages.inserted.removeAll()
+            _ = try await manager.createGoal(
+                conversationId: conversationID.uuidString,
+                title: "Fresh goal",
+                description: nil,
+                successCriteria: nil,
+                tasks: [
+                    (title: "C", description: nil, executionContext: nil, parallelGroup: nil),
+                    (title: "D", description: nil, executionContext: nil, parallelGroup: nil),
+                ]
+            )
+
+            await hook.apply(to: turnContext(conversationID, reason: .completed))
+            await settle()
+
+            #expect(agentLoop.runTurnCount == 1, "新 Goal 的首个完成回合必须能正常续跑")
+            let fresh = try #require(
+                await manager.fetchGoals(conversationId: conversationID.uuidString)
+                    .first { $0.title == "Fresh goal" }
+            )
+            #expect(fresh.status == .inProgress)
+            #expect(messages.inserted.count == 1)
+            #expect(messages.inserted[0].content.contains("Goal 自动继续（1/5）"))
+        }
+
         @Test("活跃 Goal 的任务已全部结束时不续跑")
         func testNoContinuationWhenNoOpenTasks() async throws {
             let (manager, conversationID, tempDir) = try makeHarness()

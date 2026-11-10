@@ -23,7 +23,7 @@ final class MockNewChatCapability: NewChatCapability {
         title: String?,
         projectPath: String?,
         modelID: String?
-    ) throws -> UUID {
+    ) async throws -> UUID {
         createdConversations.append((title, projectPath, modelID))
         if let createError { throw createError }
         let id = UUID()

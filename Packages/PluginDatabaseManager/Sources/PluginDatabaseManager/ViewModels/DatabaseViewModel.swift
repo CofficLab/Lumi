@@ -71,11 +71,16 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         inspectorVisible.toggle()
     }
 
-    private let manager = DatabaseManagerCore.shared
+    private let manager: DatabaseManagerCore
 
     /// 宿主注入的嵌入式编辑器能力（语法高亮）；nil 时 View 退回 TextEditor。
     @Published public var embeddedEditorProvider: (any EditorEmbeddedEditorProviding)?
     nonisolated(unsafe) private var connectedConfigId: UUID?
+    /// 连接代际：每次连接/断开都自增。
+    ///
+    /// 查询、加载键列表等异步操作返回时必须校验代际，避免旧连接（或慢查询）
+    /// 的结果覆盖掉新连接已经写入的状态。
+    private var connectionGeneration: Int = 0
     /// 是否已尝试过自动重连（每次启动只自动连一次）。
     private var didAutoConnect = false
 
@@ -85,7 +90,9 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
 
     /// 测试专用初始化：`loadSavedConfigs == false` 时跳过从 UserDefaults 读取已存配置，
     /// 始终使用一份独立的内存 demo 连接，避免并行测试共享进程级 UserDefaults 串扰。
-    public init(loadSavedConfigs: Bool) {
+    /// `manager` 可注入，用于构造可控延迟的驱动复现连接竞态。
+    public init(loadSavedConfigs: Bool, manager: DatabaseManagerCore = .shared) {
+        self.manager = manager
         Task {
             await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
         }
@@ -179,8 +186,11 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     }
 
     public func connect(config: DatabaseConfig) async {
+        let generation = beginConnectionGeneration()
         await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
+        guard connectionGeneration == generation else { return }
         await DatabaseAgentConnectionRegistry.shared.upsert(config)
+        guard connectionGeneration == generation else { return }
         if Self.verbose {
             if DatabaseManagerPluginSupport.verbose {
                             DatabaseManagerPluginSupport.logger.info("\(self.t)连接数据库: \(config.name)")
@@ -190,6 +200,11 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         errorMessage = nil
         do {
             _ = try await manager.connect(config: config)
+            // 连接期间用户已切换/断开：回收刚建立的连接，不再写任何状态。
+            guard connectionGeneration == generation else {
+                await manager.disconnect(configId: config.id)
+                return
+            }
             let previousConfigId = selectedConfig?.id
             selectedConfig = config
             connectedConfigId = config.id
@@ -228,6 +243,8 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             // 为侧边栏对象树预加载可见分类（表/视图/例程），MySQL/PG 由此不再空白。
             await refreshSidebarObjects()
 
+            guard connectionGeneration == generation else { return }
+
             if let previousConfigId, previousConfigId != config.id {
                 await manager.disconnect(configId: previousConfigId)
             }
@@ -238,6 +255,7 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
                 }
             }
         } catch {
+            guard connectionGeneration == generation else { return }
             if DatabaseManagerPluginSupport.verbose {
                             DatabaseManagerPluginSupport.logger.error("\(self.t)数据库连接失败: \(error.localizedDescription)")
             }
@@ -248,13 +266,17 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
 
     public func disconnect() async {
         guard let config = selectedConfig else { return }
+        let generation = beginConnectionGeneration()
         if Self.verbose {
             if DatabaseManagerPluginSupport.verbose {
                             DatabaseManagerPluginSupport.logger.info("\(self.t)断开数据库连接: \(config.name)")
             }
         }
         await manager.disconnect(configId: config.id)
+        // 断开等待期间又建立了新连接：不要清掉新连接的状态。
+        guard connectionGeneration == generation else { return }
         isConnected = false
+        isLoading = false
         selectedConfig = nil
         connectedConfigId = nil
         queryResult = nil
@@ -272,18 +294,41 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         DatabaseConnectionStore.lastSelectedConfigID = nil
     }
 
+    /// 开始一次新的连接代际，使此前所有在途异步操作失效。
+    private func beginConnectionGeneration() -> Int {
+        connectionGeneration += 1
+        return connectionGeneration
+    }
+
+    /// 异步操作返回后校验：仍是同一代、同一条连接时才允许写回状态。
+    private func isCurrentConnection(_ generation: Int, configId: UUID) -> Bool {
+        connectionGeneration == generation && connectedConfigId == configId
+    }
+
     public func executeQuery() async {
-        guard let config = selectedConfig, let connection = await manager.getConnection(for: config.id) else {
+        let generation = connectionGeneration
+        let sql = queryText
+        guard let config = selectedConfig else {
             errorMessage = "未连接到数据库"
             if DatabaseManagerPluginSupport.verbose {
                             DatabaseManagerPluginSupport.logger.error("\(self.t)执行查询失败: 未连接到数据库")
             }
             return
         }
+        guard let connection = await manager.getConnection(for: config.id) else {
+            guard isCurrentConnection(generation, configId: config.id) else { return }
+            errorMessage = "未连接到数据库"
+            if DatabaseManagerPluginSupport.verbose {
+                            DatabaseManagerPluginSupport.logger.error("\(self.t)执行查询失败: 未连接到数据库")
+            }
+            return
+        }
+        // 取连接期间用户可能已经切走：旧连接的结果不允许再落到界面上。
+        guard isCurrentConnection(generation, configId: config.id) else { return }
 
         if Self.verbose {
             if DatabaseManagerPluginSupport.verbose {
-                            DatabaseManagerPluginSupport.logger.info("\(self.t)执行查询: \(self.queryText.prefix(50))...")
+                            DatabaseManagerPluginSupport.logger.info("\(self.t)执行查询: \(sql.prefix(50))...")
             }
         }
 
@@ -293,45 +338,37 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         multiExecutions = []
 
         do {
-            let upper = queryText.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
-            if selectedConfig?.type == .redis {
-                // Redis：GET/SCAN 类命令走 query，其余走 execute
-                if upper.hasPrefix("GET") || upper.hasPrefix("SCAN") || upper.hasPrefix("HGET") || upper.hasPrefix("LRANGE") || upper.hasPrefix("SMEMBERS") || upper.hasPrefix("ZRANGE") {
-                    let result = try await connection.query(queryText, params: nil)
-                    queryResult = result
-                } else {
-                    let affected = try await connection.execute(queryText, params: nil)
-                    queryResult = QueryResult(columns: ["Result"], rows: [[.string("Success. Rows affected: \(affected)")]], rowsAffected: affected)
+            // Redis 读命令与 SQL 读语句共用同一判定，避免两处前缀列表漂移。
+            if Self.isReadStatement(sql, type: config.type) {
+                let result = try await connection.query(sql, params: nil)
+                guard isCurrentConnection(generation, configId: config.id) else { return }
+                queryResult = result
+                if Self.verbose {
+                    if DatabaseManagerPluginSupport.verbose {
+                                                DatabaseManagerPluginSupport.logger.info("\(self.t)查询成功，返回 \(result.rows.count) 行")
+                    }
                 }
             } else {
-                // SQL：SELECT/PRAGMA 走 query，其余走 execute
-                if upper.hasPrefix("SELECT") || upper.hasPrefix("PRAGMA") || upper.hasPrefix("SHOW") || upper.hasPrefix("DESCRIBE") {
-                    let result = try await connection.query(queryText, params: nil)
-                    queryResult = result
-                    if Self.verbose {
-                        if DatabaseManagerPluginSupport.verbose {
-                                                    DatabaseManagerPluginSupport.logger.info("\(self.t)查询成功，返回 \(result.rows.count) 行")
-                        }
-                    }
-                } else {
-                    let affected = try await connection.execute(queryText, params: nil)
-                    queryResult = QueryResult(columns: ["Result"], rows: [[.string("Success. Rows affected: \(affected)")]], rowsAffected: affected)
-                    if Self.verbose {
-                        if DatabaseManagerPluginSupport.verbose {
-                                                    DatabaseManagerPluginSupport.logger.info("\(self.t)执行成功，影响 \(affected) 行")
-                        }
+                let affected = try await connection.execute(sql, params: nil)
+                guard isCurrentConnection(generation, configId: config.id) else { return }
+                queryResult = QueryResult(columns: ["Result"], rows: [[.string("Success. Rows affected: \(affected)")]], rowsAffected: affected)
+                if Self.verbose {
+                    if DatabaseManagerPluginSupport.verbose {
+                                                DatabaseManagerPluginSupport.logger.info("\(self.t)执行成功，影响 \(affected) 行")
                     }
                 }
             }
         } catch {
+            guard isCurrentConnection(generation, configId: config.id) else { return }
             if DatabaseManagerPluginSupport.verbose {
                             DatabaseManagerPluginSupport.logger.error("\(self.t)查询执行失败: \(error.localizedDescription)")
             }
             errorMessage = error.localizedDescription
         }
+        guard isCurrentConnection(generation, configId: config.id) else { return }
         isLoading = false
         // 成功或失败都记历史（失败时用户可能想重试/修改）。
-        await recordExecutedSQLs([queryText])
+        await recordExecutedSQLs([sql], config: config)
     }
 
     /// 把 `queryText` 按 `;` 拆成多条语句依次执行（事务不包裹：跨引擎语义不一致）。
@@ -349,11 +386,13 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             return
         }
 
+        let generation = connectionGeneration
         guard let config = selectedConfig,
               let connection = await manager.getConnection(for: config.id) else {
             errorMessage = "未连接到数据库"
             return
         }
+        guard isCurrentConnection(generation, configId: config.id) else { return }
 
         isLoading = true
         errorMessage = nil
@@ -368,10 +407,12 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             do {
                 if Self.isReadStatement(stmt, type: config.type) {
                     let result = try await connection.query(stmt, params: nil)
+                    guard isCurrentConnection(generation, configId: config.id) else { return }
                     exec.result = result
                     lastSuccess = result
                 } else {
                     let affected = try await connection.execute(stmt, params: nil)
+                    guard isCurrentConnection(generation, configId: config.id) else { return }
                     let result = QueryResult(
                         columns: ["Result"],
                         rows: [[.string("OK. Rows affected: \(affected)")]],
@@ -381,6 +422,7 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
                     lastSuccess = result
                 }
             } catch {
+                guard isCurrentConnection(generation, configId: config.id) else { return }
                 exec.errorMessage = error.localizedDescription
             }
             exec.durationMs = Date().timeIntervalSince(start) * 1000
@@ -391,7 +433,7 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         queryResult = lastSuccess
         selectedExecutionIndex = 0
         isLoading = false
-        await recordExecutedSQLs(statements)
+        await recordExecutedSQLs(statements, config: config)
     }
 
     /// 判断一条 SQL 是否为"读"语句（走 query 路径）而非"写"（走 execute 路径）。
@@ -401,9 +443,13 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             return upper.hasPrefix("GET") || upper.hasPrefix("SCAN") || upper.hasPrefix("HGET")
                 || upper.hasPrefix("LRANGE") || upper.hasPrefix("SMEMBERS") || upper.hasPrefix("ZRANGE")
         }
-        let upper = sql.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let upper = SQLStatementParser.stripLiteralsAndComments(sql)
+            .uppercased()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         return upper.hasPrefix("SELECT") || upper.hasPrefix("PRAGMA")
             || upper.hasPrefix("SHOW") || upper.hasPrefix("DESCRIBE")
+            // DML ... RETURNING 也产生结果行，必须走 query 才能把返回行展示出来。
+            || upper.contains("RETURNING")
     }
 
     // MARK: - 查询历史
@@ -438,8 +484,10 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     }
 
     /// 记录已执行的 SQL（多语句时按语句逐条记）。
-    private func recordExecutedSQLs(_ statements: [String]) async {
-        guard let config = selectedConfig else { return }
+    ///
+    /// `config` 由调用方在执行前快照传入：查询返回时连接可能已经切换，
+    /// 历史必须归属真正执行它的连接。
+    private func recordExecutedSQLs(_ statements: [String], config: DatabaseConfig) async {
         for sql in statements {
             await historyStore.record(sql: sql, configName: config.name, database: config.database)
         }
@@ -448,8 +496,10 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
 
     /// 加载 Redis 键列表（循环 SCAN 直到游标归零，带安全上限避免巨型键空间卡死）。
     public func loadRedisKeys() async {
+        let generation = connectionGeneration
         guard let config = selectedConfig, config.type == .redis else { return }
         guard let connection = await manager.getConnection(for: config.id) else { return }
+        guard isCurrentConnection(generation, configId: config.id) else { return }
         guard let redis = connection as? RedisConnection else {
             errorMessage = "Redis 连接类型异常"
             return
@@ -461,11 +511,14 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             let safetyCap = 10_000
             repeat {
                 let step = try await redis.scanKeys(cursor: cursor, match: "*", count: 200)
+                guard isCurrentConnection(generation, configId: config.id) else { return }
                 keys.append(contentsOf: step.keys)
                 cursor = step.nextCursor
             } while cursor != "0" && keys.count < safetyCap
+            guard isCurrentConnection(generation, configId: config.id) else { return }
             redisKeys = keys
         } catch {
+            guard isCurrentConnection(generation, configId: config.id) else { return }
             errorMessage = error.localizedDescription
         }
     }
@@ -479,16 +532,22 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     /// 加载当前连接在侧边栏可见的对象分类（表/视图/例程…），结果写入 ``schemaCache``。
     /// MySQL/PG 首次连接后侧边栏不再为空，全靠这里填充。
     public func refreshSidebarObjects() async {
+        let generation = connectionGeneration
         guard let config = selectedConfig, config.type != .redis else { return }
         guard let connection = await manager.getConnection(for: config.id) else { return }
+        guard isCurrentConnection(generation, configId: config.id) else { return }
         let database: String? = config.type == .sqlite ? nil : config.database
         for kind in config.type.sidebarObjectKinds {
+            guard isCurrentConnection(generation, configId: config.id) else { return }
+            // 这是用户可见的 Reload：必须绕过缓存重新读库，
+            // 否则新建/删除表后对象树仍显示旧结构。
             _ = try? await schemaCache.objects(
                 for: config,
                 kind: kind,
                 database: database,
                 schema: nil,
-                connection: connection
+                connection: connection,
+                refresh: true
             )
         }
     }
@@ -536,15 +595,22 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
 
     /// 加载当前对象结构；刷新时绕过缓存重新读取数据库 catalog。
     public func loadSelectedTableSchema(refresh: Bool = false) async {
+        let generation = connectionGeneration
         guard let config = selectedConfig, let object = openTableObject else { return }
         guard let connection = await manager.getConnection(for: config.id) else {
             tableSchemaError = "Not connected to database"
             return
         }
+        guard isCurrentConnection(generation, configId: config.id) else { return }
 
         isLoadingTableSchema = true
         tableSchemaError = nil
-        defer { isLoadingTableSchema = false }
+        defer {
+            // 连接已切换时由更新的加载负责收尾，旧任务不要提前关掉进度。
+            if generation == connectionGeneration {
+                isLoadingTableSchema = false
+            }
+        }
 
         do {
             let schema = try await schemaCache.tableSchema(
@@ -553,7 +619,8 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
                 connection: connection,
                 refresh: refresh
             )
-            guard openTableObject?.id == object.id else { return }
+            guard isCurrentConnection(generation, configId: config.id),
+                  openTableObject?.id == object.id else { return }
             selectedTableSchema = schema
             if schemaChangeManager?.hasChanges != true {
                 schemaChangeManager = SchemaChangeManager(table: object, columns: schema.columns, indexes: schema.indexes)
@@ -562,7 +629,8 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
                 changeManager = TableChangeManager(table: object, schema: schema)
             }
         } catch {
-            guard openTableObject?.id == object.id else { return }
+            guard isCurrentConnection(generation, configId: config.id),
+                  openTableObject?.id == object.id else { return }
             selectedTableSchema = nil
             changeManager = nil
             schemaChangeManager = nil
@@ -645,12 +713,14 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     /// 加载当前页数据（`SELECT * FROM ... [ORDER BY ...] LIMIT pageSize OFFSET page*pageSize`）。
     /// 页码超出范围时自动钳制到最后一页。
     public func loadTablePage() async {
+        let generation = connectionGeneration
         guard let config = selectedConfig, let table = openTableObject else { return }
         guard config.type.capabilities.supportsPagination else { return }
         guard let connection = await manager.getConnection(for: config.id) else {
             errorMessage = "未连接到数据库"
             return
         }
+        guard isCurrentConnection(generation, configId: config.id) else { return }
 
         let tableExpr = Self.qualifiedName(for: table, type: config.type)
         var sql = "SELECT * FROM \(tableExpr)"
@@ -665,6 +735,8 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         errorMessage = nil
         do {
             let result = try await connection.query(sql, params: nil)
+            guard isCurrentConnection(generation, configId: config.id),
+                  openTableObject?.id == table.id else { return }
             queryResult = result
             // 如果本页空且不是首页，回退到上一页（例如删除后）
             if result.rows.isEmpty, tablePage > 0 {
@@ -675,6 +747,7 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             }
             queryText = sql  // 让 SQL 编辑器可见当前浏览语句
         } catch {
+            guard isCurrentConnection(generation, configId: config.id) else { return }
             errorMessage = error.localizedDescription
         }
         isLoading = false
@@ -687,12 +760,16 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
 
     /// 后台执行 `SELECT COUNT(*) FROM ...` 填充 ``tableRowCount``。
     public func refreshTableRowCount() async {
+        let generation = connectionGeneration
         guard let config = selectedConfig, let table = openTableObject else { return }
         guard config.type.capabilities.supportsPagination else { return }
         guard let connection = await manager.getConnection(for: config.id) else { return }
+        guard isCurrentConnection(generation, configId: config.id) else { return }
         let tableExpr = Self.qualifiedName(for: table, type: config.type)
         do {
             let result = try await connection.query("SELECT COUNT(*) FROM \(tableExpr)", params: nil)
+            guard isCurrentConnection(generation, configId: config.id),
+                  openTableObject?.id == table.id else { return }
             if let row = result.rows.first, let first = row.first {
                 switch first {
                 case .integer(let v): tableRowCount = v
@@ -847,7 +924,14 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     /// 加载 SQLite 表列表
     public func loadSQLiteTables() async {
         guard let config = selectedConfig, config.type == .sqlite else { return }
-        guard let connection = await manager.getConnection(for: config.id) else { return }
+        let configID = config.id
+        guard let connection = await manager.getConnection(for: configID) else {
+            // 连接建立失败时清掉旧表，避免继续显示上一个库的表。
+            guard selectedConfig?.id == configID else { return }
+            sqliteTables = []
+            selectedSQLiteTable = nil
+            return
+        }
         do {
             let result = try await connection.query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;", params: nil)
             let names = result.rows.compactMap { row -> String? in
@@ -859,11 +943,14 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
                 }
                 return nil
             }
+            // 查询期间切换了数据库：结果属于旧连接，不能写进当前详情页。
+            guard selectedConfig?.id == configID else { return }
             sqliteTables = names
             if let selectedSQLiteTable, !names.contains(selectedSQLiteTable) {
                 self.selectedSQLiteTable = nil
             }
         } catch {
+            guard selectedConfig?.id == configID else { return }
             errorMessage = error.localizedDescription
         }
     }

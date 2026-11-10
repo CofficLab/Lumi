@@ -5,7 +5,7 @@
 KitEditorKernel 可复用的编辑器内核纯逻辑模块（SwiftPM 包），尽量与 UI 解耦。 ## 全局技术架构 Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/editor-architecture.md](../../docs/editor-architecture.md)。 ```text 应用装配层 (LumiApp) ↓ 插件扩展层 (Packages/Plugin*) ↓ Host 内部服务 target (EditorService) ↓ ↓ 视图层 (EditorSource) 内核逻辑层 (EditorKernel) ← 本 Package ↓ 渲染基础层 (EditorTextView, EditorLanguages, EditorSymbols) ``` ## 本 Package 的位置 | 属性 | 值 | |------|-----| | **层级** | 内核逻辑层 | | **职责** | 无 UI 依赖的编辑域纯逻辑：选择集、多光标、查找替换、折叠、导航、保存工作流、LSP 请求模型与策略 | | **上游依赖** | `LanguageServerProtocol` | | **下游消费者** | `EditorService`（桥接为 App 侧控制器）、`EditorService/Proto`（扩展点协议引用内核模型） | | **不得依赖** | 任何 Plugin、`EditorSource`、`EditorTextView`、SwiftUI/AppKit 视图 |
 
 平台: macOS 14+, iOS 17+
-测试文件: 18 个，用例总数: 318
+测试文件: 19 个，用例总数: 338
 
 ## 公开 API
 
@@ -48,6 +48,10 @@ KitEditorKernel 可复用的编辑器内核纯逻辑模块（SwiftPM 包），�
 - **WorkspaceEditFileOperationsCoverage**（8 条）：由 `fileURLRejects`、`createBranches`、`renameBranches` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **WorkspaceEditFileOperations**（2 条）：由 `fileURLParsing`、`createDeleteOperations` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **XCConfigSyntaxCore**（3 条）：由 `tokenizeContent`、`includeDirectiveAtLocation`、`keyOccurrences` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **EditorSaveWorkflowController**（9 条）：由 `performSaveUsesProvidedEncoding`、`performSaveSucceeds`、`performSaveFailsWhenFileMissing` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **EditorSaveController**（5 条）：由 `buildsPipelineOptions`、`performSaveReportsMissingFile`、`performSaveReportsFailure` 等用例锁定。
+- **EditorSaveStateController**（3 条）：由 `appliesSaveSuccess`、`appliesSaveFailure`、`appliesMissingFileFailure` 锁定。
+- **EditorSaveWorkflowPolicy**（2 条）：由 `saveStateIcons`、`policyDecisions` 锁定。
 
 ## 测试用例清单
 
@@ -371,27 +375,47 @@ KitEditorKernel 可复用的编辑器内核纯逻辑模块（SwiftPM 包），�
 | 316 | XCConfigSyntaxCore | tokenize captures include and keys | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `tokenizeContent` |
 | 317 | XCConfigSyntaxCore | include directive resolves by cursor location | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `includeDirectiveAtLocation` |
 | 318 | XCConfigSyntaxCore | key occurrences reports key and line | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `keyOccurrences` |
+| 319 | EditorSaveWorkflowController | 保存按调用方传入的原编码写回，保留 UTF-16 与 BOM | 文件以 UTF-16 写入 | 以 `encoding: .utf16` 执行保存 | 保存后前两字节仍为原 BOM，按 UTF-16 解码得到新内容 | P0 | ✅ 已覆盖 | `performSaveUsesProvidedEncoding` |
+| 320 | EditorSaveParticipantController | CR-only 文本已有结尾换行时不再追加，重复保存幂等 | 文本以 `\r` 结尾且开启 insertFinalNewline | 执行保存前处理两次 | 文本不变、`didInsertFinalNewline` 为 false | P0 | ✅ 已覆盖 | `saveParticipantKeepsExistingCRFinalNewline` |
+| 321 | EditorSaveWorkflowController | 有未保存改动时才触发立即保存 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `savesNowOnlyWhenDirty` |
+| 322 | EditorSaveWorkflowController | 非 verbose 模式不记录日志 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `quietModeSkipsLogging` |
+| 323 | EditorSaveWorkflowController | 正在保存时不重复执行保存任务 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `skipsSaveTaskWhileSaving` |
+| 324 | EditorSaveWorkflowController | url 为 nil 时不执行保存并记录失败日志 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `performSaveWithoutURL` |
+| 325 | EditorSaveWorkflowController | 保存成功时写入文件并推进状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `performSaveSucceeds` |
+| 326 | EditorSaveWorkflowController | 文件已不存在时报告失败并进入 error 状态 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `performSaveFailsWhenFileMissing` |
+| 327 | EditorSaveWorkflowController | 写入失败时报告错误并进入 error 状态 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `performSaveFailsWhenWriteFails` |
+| 328 | EditorSaveWorkflowController | prepareAndSaveNow 在内容或文件缺失时直接返回 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `prepareAndSaveNowRequiresContentAndURL` |
+| 329 | EditorSaveController | pipelineOptions 透传各开关 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `buildsPipelineOptions` |
+| 330 | EditorSaveController | performSave 在文件不存在时走 onMissingFile | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `performSaveReportsMissingFile` |
+| 331 | EditorSaveController | performSave 写入抛错时触发 onFailure | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `performSaveReportsFailure` |
+| 332 | EditorSaveController | scheduleSuccessClear 在延迟后清空状态 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `schedulesSuccessClear` |
+| 333 | EditorSaveController | cancelSuccessClear 取消待执行的清理 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `cancelsSuccessClear` |
+| 334 | EditorSaveStateController | 保存成功后按顺序推进各副作用 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `appliesSaveSuccess` |
+| 335 | EditorSaveStateController | 保存失败时进入 error 状态并同步会话 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `appliesSaveFailure` |
+| 336 | EditorSaveStateController | 文件缺失时进入 fileNotFound 错误状态 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `appliesMissingFileFailure` |
+| 337 | EditorSaveWorkflowPolicy | 保存状态枚举暴露图标 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `saveStateIcons` |
+| 338 | EditorSaveWorkflowPolicy | 策略只按未保存标记与保存中状态判断 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `policyDecisions` |
 
-> 说明：全部 **318 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **338 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 20 / 20
-- P1: 已覆盖 239 / 239
-- P2: 已覆盖 59 / 59
-- **合计: 318 / 318**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 28 / 28
+- P1: 已覆盖 249 / 249
+- P2: 已覆盖 61 / 61
+- **合计: 338 / 338**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（20 条）
-- **P1**: 其余功能性用例（239 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（59 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（28 条）
+- **P1**: 其余功能性用例（249 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（61 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 318 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 338 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

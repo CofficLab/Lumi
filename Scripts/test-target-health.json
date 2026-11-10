@@ -470,7 +470,7 @@
   "PluginGit": {
     "status": "ok",
     "errors": [],
-    "hasTestPlan": false
+    "hasTestPlan": true
   },
   "PluginGitRepositoryWatch": {
     "status": "ok",
@@ -1068,5 +1068,10 @@
     "status": "ok",
     "errors": [],
     "hasTestPlan": false
+  },
+  "PluginOpenInRemote": {
+    "status": "ok",
+    "errors": [],
+    "hasTestPlan": true
   }
 }

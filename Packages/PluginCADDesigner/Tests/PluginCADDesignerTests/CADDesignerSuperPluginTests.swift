@@ -49,6 +49,22 @@ struct CADDesignerSuperPluginTests {
         #expect(CADDocumentStore.shared.selectedDocument?.name == document.name)
     }
 
+    @Test func loadReportsTheImportedProjectID() async throws {
+        CADDocumentStore.shared.resetForTests()
+        let original = CADDocumentStore.shared.createDocument(name: "Load ID")
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CADDesignerV2-\(UUID().uuidString).cadproj")
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        _ = try await SaveCADProjectV2Tool().execute(arguments: ["path": ToolArgument(url.path)])
+        let loaded = try await LoadCADProjectV2Tool().execute(arguments: ["path": ToolArgument(url.path)])
+        let selected = try #require(CADDocumentStore.shared.selectedDocument)
+
+        #expect(selected.id != original.id)
+        #expect(loaded.contains(selected.id))
+        #expect(!loaded.contains(original.id))
+    }
+
     @Test("builds the legacy frame shape through the V2 tool")
     func buildsFrameThroughV2Tool() async throws {
         CADDocumentStore.shared.resetForTests()
@@ -59,6 +75,29 @@ struct CADDesignerSuperPluginTests {
         #expect(BuildFrameV2Tool.toolName == "cad_build_frame")
         #expect(CADDocumentStore.shared.selectedDocument?.components.count == 20)
         #expect(output.contains("20"))
+    }
+
+    @Test("rejects an explicitly provided unknown profile id")
+    func rejectsUnknownExplicitProfileID() async throws {
+        CADDocumentStore.shared.resetForTests()
+        _ = CADDocumentStore.shared.createDocument(name: "V2 Bad Profile")
+
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await BuildFrameV2Tool().execute(arguments: [
+                "width": ToolArgument(800), "depth": ToolArgument(600), "height": ToolArgument(900),
+                "series": ToolArgument("40"),
+                "profileId": ToolArgument("profile-40x40-typo"),
+            ])
+        }
+        #expect(CADDocumentStore.shared.selectedDocument?.components.isEmpty == true)
+
+        // 未提供 profileId 时仍回退到系列默认方形型材。
+        let output = try await BuildFrameV2Tool().execute(arguments: [
+            "width": ToolArgument(800), "depth": ToolArgument(600), "height": ToolArgument(900),
+            "series": ToolArgument("40"),
+        ])
+        #expect(output.contains("profile-40x40"))
+        #expect(CADDocumentStore.shared.selectedDocument?.components.count == 20)
     }
 
     @Test("places and updates CAD components through stable V2 tool IDs")
@@ -111,5 +150,113 @@ struct CADDesignerSuperPluginTests {
         #expect(connection.contains("bolt"))
         #expect(CADDocumentStore.shared.selectedDocument?.connections.count == 1)
         #expect(cutting.contains("1200"))
+    }
+
+    @Test("rejects connections whose endpoints are missing from the document")
+    func rejectsConnectionsWithUnknownEndpoints() async throws {
+        CADDocumentStore.shared.resetForTests()
+        _ = CADDocumentStore.shared.createDocument(name: "V2 Connect Guard")
+        _ = try await PlaceProfileV2Tool().execute(arguments: [
+            "profileId": ToolArgument("profile-40x40-eu"), "length": ToolArgument(500),
+        ])
+        _ = try await PlaceConnectorV2Tool().execute(arguments: ["connectorId": ToolArgument("connector-corner-40")])
+        guard let components = CADDocumentStore.shared.selectedDocument?.components, components.count == 2 else {
+            Issue.record("expected two components"); return
+        }
+
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await ConnectComponentsV2Tool().execute(arguments: [
+                "fromComponentId": ToolArgument("missing-a"), "toComponentId": ToolArgument("missing-b"),
+            ])
+        }
+        do {
+            _ = try await ConnectComponentsV2Tool().execute(arguments: [
+                "fromComponentId": ToolArgument(components[0].id), "toComponentId": ToolArgument("missing-b"),
+            ])
+            Issue.record("expected a missing endpoint to be rejected")
+        } catch let error as ToolExecutionError {
+            #expect(error.errorDescription?.contains("missing-b") == true)
+        }
+        #expect(CADDocumentStore.shared.selectedDocument?.connections.isEmpty == true)
+
+        _ = try await ConnectComponentsV2Tool().execute(arguments: [
+            "fromComponentId": ToolArgument(components[0].id), "toComponentId": ToolArgument(components[1].id),
+        ])
+        #expect(CADDocumentStore.shared.selectedDocument?.connections.count == 1)
+    }
+
+    @Test("rejects unrepresentable profile lengths before mutating the document")
+    func rejectsUnrepresentableProfileLengthBeforeMutatingDocument() async throws {
+        CADDocumentStore.shared.resetForTests()
+        _ = CADDocumentStore.shared.createDocument(name: "V2 Length Guard")
+
+        do {
+            _ = try await PlaceProfileV2Tool().execute(arguments: [
+                "profileId": ToolArgument("profile-40x40-eu"), "length": ToolArgument(1e20),
+            ])
+            Issue.record("expected an oversized length to be rejected")
+        } catch let error as ToolExecutionError {
+            #expect(error.errorDescription?.contains("length") == true)
+        }
+        for length in [Double.infinity, 0, -5] {
+            await #expect(throws: ToolExecutionError.self) {
+                _ = try await PlaceProfileV2Tool().execute(arguments: [
+                    "profileId": ToolArgument("profile-40x40-eu"), "length": ToolArgument(length),
+                ])
+            }
+        }
+        #expect(CADDocumentStore.shared.selectedDocument?.components.isEmpty == true)
+    }
+
+    @Test("reports save and load I/O failures as tool errors")
+    func reportsSaveAndLoadIOFailuresAsToolErrors() async throws {
+        CADDocumentStore.shared.resetForTests()
+        _ = CADDocumentStore.shared.createDocument(name: "V2 IO Failure")
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let unsavable = directory.appendingPathComponent("missing-parent").appendingPathComponent("project.cadproj")
+
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await SaveCADProjectV2Tool().executeResult(arguments: ["path": ToolArgument(unsavable.path)])
+        }
+        #expect(!FileManager.default.fileExists(atPath: unsavable.path))
+
+        let missingSource = directory.appendingPathComponent("absent.cadproj")
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await LoadCADProjectV2Tool().executeResult(arguments: ["path": ToolArgument(missingSource.path)])
+        }
+        #expect(CADDocumentStore.shared.selectedDocument?.components.isEmpty == true)
+    }
+
+    @Test("tool failures throw instead of returning error strings")
+    func toolFailuresThrow() async {
+        CADDocumentStore.shared.resetForTests()
+
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await BuildFrameV2Tool().execute(arguments: [
+                "depth": ToolArgument(600), "height": ToolArgument(900),
+            ])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await PlaceProfileV2Tool().execute(arguments: ["profileId": ToolArgument("profile-missing")])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await PlaceConnectorV2Tool().execute(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await ConnectComponentsV2Tool().execute(arguments: ["fromComponentId": ToolArgument("a")])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await GenerateBOMV2Tool().execute(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await OptimizeCuttingV2Tool().execute(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await SaveCADProjectV2Tool().execute(arguments: [:])
+        }
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await LoadCADProjectV2Tool().execute(arguments: [:])
+        }
     }
 }

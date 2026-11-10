@@ -49,23 +49,57 @@ public final class AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
     private var isActive = false
     /// 回合结束通知钩子（见 `Hooks/TurnFinishedNotificationHook.swift`）。
     private var turnFinishedHook: TurnFinishedNotificationHook?
+    /// 点击通知后恢复来源会话的 delegate。
+    private var tapHandler: TurnNotificationTapHandler?
     /// 通知发送器（测试可注入 no-op）。
     ///
     /// 无 bundle 的进程（命令行工具、headless agent 等）必须跳过：
     /// `UNUserNotificationCenter.current()` 在 `mainBundle.bundleURL` 不含
     /// bundle 时会抛 `NSInternalInconsistencyException`，直接终止进程。
-    public var notifier: @MainActor (String, String, UUID) -> Void = { title, body, _ in
+    public var notifier: @MainActor (String, String, UUID) -> Void = { title, body, conversationID in
         guard AgentTurnNotificationPlugin.isNotificationDeliveryAvailable else { return }
+        UNUserNotificationCenter.current().add(
+            AgentTurnNotificationPlugin.notificationRequest(
+                title: title,
+                body: body,
+                conversationID: conversationID
+            )
+        )
+    }
+
+    /// 点击通知后把应用带向前台的实现；测试可注入 no-op。
+    var activateApplication: @MainActor () -> Void = {
+        TurnNotificationTapHandler.activateHostApplication()
+    }
+    /// 安装/移除通知中心 delegate；测试可注入以避免无 bundle 环境访问系统 API。
+    var installTapHandler: @MainActor (TurnNotificationTapHandler) -> Void = { handler in
+        UNUserNotificationCenter.current().delegate = handler
+    }
+    var uninstallTapHandler: @MainActor (TurnNotificationTapHandler) -> Void = { handler in
+        let center = UNUserNotificationCenter.current()
+        if center.delegate === handler {
+            center.delegate = nil
+        }
+    }
+
+    /// 发送侧构造的通知请求；`userInfo` 必须携带来源会话 ID 供点击路由使用。
+    static func notificationRequest(
+        title: String,
+        body: String,
+        conversationID: UUID
+    ) -> UNNotificationRequest {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
         content.sound = .default
-        let request = UNNotificationRequest(
+        content.userInfo = [
+            TurnNotificationTapHandler.conversationIDKey: conversationID.uuidString,
+        ]
+        return UNNotificationRequest(
             identifier: "turn-finished-\(UUID().uuidString)",
             content: content,
             trigger: nil
         )
-        UNUserNotificationCenter.current().add(request)
     }
 
     public init() {}
@@ -95,9 +129,23 @@ public final class AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
             .addTurnFinishedHook { [weak hook] context in
                 hook?.apply(to: context)
             }
+
+        let conversations = kernel.resolveProvider((any ConversationManaging).self)
+        let tapHandler = TurnNotificationTapHandler(
+            activateApplication: activateApplication,
+            selectConversation: { conversationID in
+                conversations?.selectConversation(id: conversationID)
+            }
+        )
+        self.tapHandler = tapHandler
+        installTapHandler(tapHandler)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        if let tapHandler {
+            uninstallTapHandler(tapHandler)
+            self.tapHandler = nil
+        }
         isActive = false
         turnFinishedHook = nil
     }

@@ -70,6 +70,28 @@ struct GitServiceReadingContractTests {
         #expect(status.staged.contains("staged.txt"))
     }
 
+    @Test("仅暂存的新增与删除保留 A/D 类型")
+    func stagedAddAndDeleteKeepTheirStates() async throws {
+        let repo = try makeRepository()
+        defer { try? FileManager.default.removeItem(at: repo) }
+
+        try write("keep\n", to: "gone.txt", in: repo)
+        try runGit(["add", "gone.txt"], in: repo)
+        try runGit(["commit", "-q", "-m", "init"], in: repo)
+
+        try write("new\n", to: "brand-new.txt", in: repo)
+        try runGit(["add", "brand-new.txt"], in: repo)
+        try runGit(["rm", "-q", "gone.txt"], in: repo)
+
+        let status = try await GitService.shared.getStatus(path: repo.path)
+        let changes = Dictionary(uniqueKeysWithValues: status.workingChanges().map { ($0.path, $0) })
+
+        #expect(changes["brand-new.txt"]?.state == .added)
+        #expect(changes["brand-new.txt"]?.isStaged == true)
+        #expect(changes["gone.txt"]?.state == .deleted)
+        #expect(changes["gone.txt"]?.isStaged == true)
+    }
+
     @Test("isRepository 对仓库与非仓库目录判定正确")
     func isRepositoryDetectsRepository() async throws {
         let repo = try makeRepository()
@@ -114,5 +136,57 @@ struct GitServiceReadingContractTests {
 
         #expect(changes.contains { $0.path == "b.txt" })
         #expect(changes.contains { $0.path == "b.txt" && $0.state == .added })
+    }
+
+    @Test("项目路径是仓库子目录时仍能读取 status 与 log（回归 #912）")
+    func readsStatusAndLogFromRepositorySubdirectory() async throws {
+        let repo = try makeRepository()
+        defer { try? FileManager.default.removeItem(at: repo) }
+
+        try write("tracked\n", to: "tracked.txt", in: repo)
+        try runGit(["add", "tracked.txt"], in: repo)
+        try runGit(["commit", "-q", "-m", "init"], in: repo)
+
+        let nested = repo.appendingPathComponent("Sources", isDirectory: true)
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        try write("changed\n", to: "tracked.txt", in: repo)
+
+        // 前置判定本来就允许向上搜索；读取必须使用同一语义（#912）。
+        #expect(await GitService.shared.isRepository(atPath: nested.path))
+
+        let status = try await GitService.shared.getStatus(path: nested.path)
+        #expect(status.modified.contains("tracked.txt"))
+
+        let log = try await GitService.shared.getLog(
+            path: nested.path,
+            count: 1,
+            branch: nil,
+            file: nil
+        )
+        #expect(log.count == 1)
+    }
+
+    @Test("getDiff 指定单个文件时 filesChanged 只统计该文件")
+    func diffFileFilterCountsOnlyRequestedFile() async throws {
+        let repo = try makeRepository()
+        defer { try? FileManager.default.removeItem(at: repo) }
+
+        try write("base a\n", to: "a.txt", in: repo)
+        try write("base b\n", to: "b.txt", in: repo)
+        try runGit(["add", "."], in: repo)
+        try runGit(["commit", "-q", "-m", "init"], in: repo)
+
+        try write("changed a\n", to: "a.txt", in: repo)
+        try write("changed b\n", to: "b.txt", in: repo)
+
+        let diff = try await GitService.shared.getDiff(path: repo.path, staged: false, file: "a.txt")
+        #expect(diff.stats?.filesChanged == 1)
+        #expect(diff.content.contains("a.txt"))
+        #expect(!diff.content.contains("b.txt"))
+
+        // 指定文件没有差异时，patch 与统计都为“无”。
+        let missing = try await GitService.shared.getDiff(path: repo.path, staged: false, file: "missing.txt")
+        #expect(missing.content.isEmpty)
+        #expect(missing.stats == nil)
     }
 }

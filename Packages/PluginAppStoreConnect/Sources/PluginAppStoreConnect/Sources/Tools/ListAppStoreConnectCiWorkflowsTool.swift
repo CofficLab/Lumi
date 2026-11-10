@@ -34,10 +34,10 @@ public struct ListAppStoreConnectCiWorkflowsTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let productID = arguments["productID"]?.stringValue, !productID.isEmpty else {
-            return "Missing or empty productID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty productID.")
         }
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
         do {
             let workflows = try await client.listCiWorkflows(productID: productID)
             guard !workflows.isEmpty else { return "No workflows found for product id=\(productID)." }
@@ -46,7 +46,7 @@ public struct ListAppStoreConnectCiWorkflowsTool: SuperAgentTool {
             }
             return (["Xcode Cloud workflows for product id=\(productID):"] + lines).joined(separator: "\n")
         } catch {
-            return "Failed to list CI workflows: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to list CI workflows: \(error.localizedDescription)")
         }
     }
 }

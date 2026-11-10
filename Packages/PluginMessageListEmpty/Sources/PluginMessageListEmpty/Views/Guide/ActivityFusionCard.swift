@@ -32,16 +32,21 @@ struct ActivityFusionCard: View {
                 if placesSideBySide {
                     // 并排时两块竖直居中：热力图窄而高，曲线宽而矮，
                     // 居中对齐让整张卡读起来是一个整体而不是两个控件。
+                    // 零 token 时曲线与分隔线整段隐藏，只留热力图。
                     HStack(alignment: .center, spacing: ActivityFusionCardMetrics.contentSpacing) {
                         heatmap
-                        separator
-                        sparkline
+                        if model.showsTokenTrend {
+                            separator
+                            sparkline
+                        }
                     }
                 } else {
                     VStack(alignment: .leading, spacing: ActivityFusionCardMetrics.contentSpacing) {
                         heatmap
-                        sparkline
-                            .frame(height: ActivityFusionCardMetrics.sparklineHeight)
+                        if model.showsTokenTrend {
+                            sparkline
+                                .frame(height: ActivityFusionCardMetrics.sparklineHeight)
+                        }
                     }
                 }
             } else {

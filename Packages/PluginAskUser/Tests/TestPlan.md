@@ -61,8 +61,8 @@ PluginAskUser 的实现包，包含 5 个主要类型；当前测试覆盖 47 �
 | 26 | AskUserToolArgument | 非数组的 options 返回空（由上层报 choice 缺选项错误） | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `choiceRejectsNonArray` |
 | 27 | AskUserToolArgument | choice 传入空数组时返回空，由上层拦截 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `choiceEmptyArray` |
 | 28 | AskUserToolArgument | badge 归一化：压缩空白、丢弃空值、截断到 16 字符 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `badgeNormalization` |
-| 29 | AskUserToolArgument | 空问题、纯空白问题、缺失问题均返回错误且不挂起 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `rejectsEmptyQuestion` |
-| 30 | AskUserToolArgument | 错误结果带 ❌ 前缀以便 AgentLoop 与日志区分 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `errorPrefix` |
+| 29 | AskUserToolArgument | 空问题、纯空白问题、缺失问题均抛出 `ToolExecutionError` 且不挂起 | 无 | 调用 `executeResult` 传空/空白/非字符串 question | 每次均抛出 `ToolExecutionError`，不返回 `❌` 前缀字符串 | P0 | ✅ 已覆盖 | `rejectsEmptyQuestion` |
+| 30 | AskUserToolArgument | 缺少 mode 或 choice 没有 options 时抛出 | 无 | 调用 `executeResult` 缺 mode / choice 无 options | 均抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `rejectsInvalidModeOrEmptyChoice` |
 | 31 | AskUserToolArgument | 合法调用返回 awaitingUserResponse 且 interactionState 为 waiting | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `successfulResultSuspends` |
 | 32 | AskUserToolArgument | 三种模式的 payload 都能被解码回完整响应 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `payloadRoundTrips` |
 | 33 | AskUserToolArgument | schema 声明 question/mode 必填，options 仅在 choice 下有意义 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `schemaContract` |
@@ -76,8 +76,8 @@ PluginAskUser 的实现包，包含 5 个主要类型；当前测试覆盖 47 �
 | 41 | 综合 | 选项 badge 可编码解码且兼容旧字符串格式 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `optionBadgeCoding` |
 | 42 | 综合 | AskUser Schema 声明可选 badge | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `badgeSchema` |
 | 43 | 综合 | free_text 模式：无选项，挂起等待回答 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `freeTextMode` |
-| 44 | 综合 | 缺 mode 返回错误且不挂起 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `missingMode` |
-| 45 | 综合 | choice 模式缺 options 返回错误 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `choiceMissingOptions` |
+| 44 | 综合 | 缺 mode 抛出错误且不挂起 | 无 | 调用 `executeResult` 只传 question | 抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `missingMode` |
+| 45 | 综合 | choice 模式缺 options 抛出错误 | 无 | 调用 `executeResult(mode: choice)` 不传 options | 抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `choiceMissingOptions` |
 | 46 | 综合 | 插件注册 ask_user 工具 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `pluginRegistersTool` |
 | 47 | 综合 | ask_user 工具经 AgentLoop 挂起后可恢复（端到端） | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `endToEndSuspension` |
 

@@ -33,7 +33,7 @@ public struct SetIconBackgroundTool: SuperAgentTool {
         do {
             let (document, scope) = try await IconToolSupport.resolveDocument(arguments)
             let updated = try await MainActor.run {
-                try IconDocumentStore.shared.updateDocument(id: document.id, scope: scope) { document in
+                try IconToolSupport.store().updateDocument(id: document.id, scope: scope) { document in
                     document.background = paint
                 }
             }
@@ -53,9 +53,9 @@ public struct SetIconBackgroundTool: SuperAgentTool {
             )
         } catch {
             await MainActor.run {
-                IconDocumentStore.shared.setError(error.localizedDescription)
+                IconToolSupport.store().setError(error.localizedDescription)
             }
-            return IconToolSupport.error(error, language: language)
+            throw IconToolSupport.failure(error, toolName: name, language: language)
         }
     }
 

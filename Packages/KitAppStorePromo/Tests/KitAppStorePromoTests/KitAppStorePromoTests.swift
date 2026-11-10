@@ -11,6 +11,20 @@ struct KitAppStorePromoTests {
         #expect(Set(presets.map(\.displayType)).count == presets.count)
         #expect(presets.allSatisfy { $0.width > 0 && $0.height > 0 })
         #expect(AppStorePromoDisplaySpec.preset(for: "APP_DESKTOP")?.width == 1280)
+        let expectedSizes: [String: (Int, Int)] = [
+            "APP_IPHONE_67": (1290, 2796),
+            "APP_IPHONE_65": (1284, 2778),
+            "APP_IPHONE_61": (1170, 2532),
+            "APP_IPHONE_58": (1125, 2436),
+            "APP_IPAD_PRO_3GEN_129": (2048, 2732),
+            "APP_IPAD_PRO_3GEN_11": (1668, 2388),
+            "APP_DESKTOP": (1280, 800),
+        ]
+        for (displayType, size) in expectedSizes {
+            let preset = AppStorePromoDisplaySpec.preset(for: displayType)
+            #expect(preset?.width == size.0, "Unexpected width for \(displayType)")
+            #expect(preset?.height == size.1, "Unexpected height for \(displayType)")
+        }
     }
 
     @Test func linterRejectsRemoteAndExecutableHTML() {
@@ -132,6 +146,74 @@ struct KitAppStorePromoTests {
         #expect(readChinese.html.contains("你好"))
         #expect(english.htmlURL.lastPathComponent == "index.html")
         #expect(readChinese.htmlURL.lastPathComponent == "zh-Hans.html")
+    }
+
+    @Test func localizationResolvesSharedAssetsFromImageRoot() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = AppStorePromoDocumentStore()
+        _ = try store.createTask(
+            storagePath: root.path,
+            slug: "assets",
+            title: "Assets",
+            appName: "Lumi",
+            deviceFamily: .mac,
+            localeIdentifier: "en-US"
+        )
+        _ = try store.createImage(
+            storagePath: root.path,
+            taskSlug: "assets",
+            imageSlug: "hero",
+            title: "Hello"
+        )
+        let primaryHTML = """
+        <!doctype html><html><head><meta name="viewport" content="width=device-width"></head>
+        <body style="background-color: white; overflow: hidden"><img src="./assets/hero.png"><h1>Hello</h1></body></html>
+        """
+        let imageRoot = root.appendingPathComponent("tasks/assets/images/hero", isDirectory: true)
+        let assetDirectory = imageRoot.appendingPathComponent("assets", isDirectory: true)
+        try FileManager.default.createDirectory(at: assetDirectory, withIntermediateDirectories: true)
+        try Data([0xFF]).write(to: assetDirectory.appendingPathComponent("hero.png"))
+        _ = try store.replaceHTML(
+            primaryHTML,
+            storagePath: root.path,
+            taskSlug: "assets",
+            imageSlug: "hero"
+        )
+
+        _ = try store.addLocalization(
+            "zh-hans",
+            copying: "en-US",
+            storagePath: root.path,
+            taskSlug: "assets",
+            imageSlug: "hero"
+        )
+
+        let primary = try store.readImage(
+            storagePath: root.path,
+            taskSlug: "assets",
+            imageSlug: "hero",
+            localeIdentifier: "en-US"
+        )
+        let localized = try store.readImage(
+            storagePath: root.path,
+            taskSlug: "assets",
+            imageSlug: "hero",
+            localeIdentifier: "zh-Hans"
+        )
+
+        #expect(primary.html.contains(#"src="./assets/hero.png""#), "主语言 HTML 不应被改写")
+        #expect(localized.html.contains(#"src="../assets/hero.png""#), "本地化应引用图片根目录下的共享素材")
+        #expect(!localized.html.contains(#"src="./assets/hero.png""#))
+        // 预览与导出以图片根目录为资源读取根，../assets 才在放行范围内。
+        #expect(localized.directoryURL.standardizedFileURL == imageRoot.standardizedFileURL)
+        #expect(try store.lintImage(
+            storagePath: root.path,
+            taskSlug: "assets",
+            imageSlug: "hero",
+            localeIdentifier: "zh-Hans"
+        ).isValid)
     }
 
     @Test func legacyImageWithoutLocalesUsesTaskLocale() throws {

@@ -16,8 +16,8 @@ import ProviderToolManager
 }
 
 public struct DownloadListV2Tool: SuperAgentTool { public static let toolName = "list_downloads"; public let name = toolName; public init() {}; public func description(for: LanguagePreference) -> String { "List current download tasks." }; public func inputSchema(for: LanguagePreference) -> [String: Any] { ["type": "object", "properties": [:]] }; public func displayDescription(for: [String: ToolArgument]) -> String { "列出所有下载任务" }; public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }; public func execute(arguments: [String: ToolArgument]) async throws -> String { let states = await DownloadRuntime.manager.allTaskStates(); guard !states.isEmpty else { return "📋 当前没有下载任务" }; return (["📋 当前下载任务:"] + states.map { "\($0.key): \(String(describing: $0.value))" }).joined(separator: "\n") } }
-public struct DownloadProgressV2Tool: SuperAgentTool { public static let toolName = "download_progress"; public let name = toolName; public init() {}; public func description(for: LanguagePreference) -> String { "Query detailed progress for a download task." }; public func inputSchema(for: LanguagePreference) -> [String: Any] { ["type": "object", "properties": ["task_id": ["type": "string"]], "required": ["task_id"]] }; public func displayDescription(for: [String: ToolArgument]) -> String { "查询下载进度" }; public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }; public func execute(arguments: [String: ToolArgument]) async throws -> String { guard let id = arguments["task_id"]?.value as? String else { return "❌ 错误：task_id 参数必需" }; guard let state = await DownloadRuntime.manager.state(for: id) else { return "❌ 未找到任务: \(id)" }; return "任务 ID: \(id)\n状态: \(String(describing: state))" } }
-public struct DownloadCancelV2Tool: SuperAgentTool { public static let toolName = "cancel_download"; public let name = toolName; public init() {}; public func description(for: LanguagePreference) -> String { "Cancel an ongoing download task." }; public func inputSchema(for: LanguagePreference) -> [String: Any] { ["type": "object", "properties": ["task_id": ["type": "string"]], "required": ["task_id"]] }; public func displayDescription(for: [String: ToolArgument]) -> String { "取消下载" }; public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }; public func execute(arguments: [String: ToolArgument]) async throws -> String { guard let id = arguments["task_id"]?.value as? String else { return "❌ 错误：task_id 参数必需" }; guard let state = await DownloadRuntime.manager.state(for: id) else { return "❌ 未找到任务: \(id)" }; switch state { case .pending, .downloading: await DownloadRuntime.manager.cancel(taskId: id); return "✅ 已取消下载\n任务 ID: \(id)"; case .completed: return "⚠️ 任务已完成，无需取消\n任务 ID: \(id)"; case .cancelled: return "⚠️ 任务已被取消\n任务 ID: \(id)"; case .failed: return "⚠️ 任务已失败，无需取消\n任务 ID: \(id)" } } }
+public struct DownloadProgressV2Tool: SuperAgentTool { public static let toolName = "download_progress"; public let name = toolName; public init() {}; public func description(for: LanguagePreference) -> String { "Query detailed progress for a download task." }; public func inputSchema(for: LanguagePreference) -> [String: Any] { ["type": "object", "properties": ["task_id": ["type": "string"]], "required": ["task_id"]] }; public func displayDescription(for: [String: ToolArgument]) -> String { "查询下载进度" }; public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }; public func execute(arguments: [String: ToolArgument]) async throws -> String { guard let id = arguments["task_id"]?.value as? String else { throw ToolExecutionError.executionFailed(toolName: name, reason: "task_id 参数必需") }; guard let state = await DownloadRuntime.manager.state(for: id) else { throw ToolExecutionError.executionFailed(toolName: name, reason: "未找到任务: \(id)") }; return "任务 ID: \(id)\n状态: \(String(describing: state))" } }
+public struct DownloadCancelV2Tool: SuperAgentTool { public static let toolName = "cancel_download"; public let name = toolName; public init() {}; public func description(for: LanguagePreference) -> String { "Cancel an ongoing download task." }; public func inputSchema(for: LanguagePreference) -> [String: Any] { ["type": "object", "properties": ["task_id": ["type": "string"]], "required": ["task_id"]] }; public func displayDescription(for: [String: ToolArgument]) -> String { "取消下载" }; public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }; public func execute(arguments: [String: ToolArgument]) async throws -> String { guard let id = arguments["task_id"]?.value as? String else { throw ToolExecutionError.executionFailed(toolName: name, reason: "task_id 参数必需") }; guard let state = await DownloadRuntime.manager.state(for: id) else { throw ToolExecutionError.executionFailed(toolName: name, reason: "未找到任务: \(id)") }; switch state { case .pending, .downloading: await DownloadRuntime.manager.cancel(taskId: id); return "✅ 已取消下载\n任务 ID: \(id)"; case .completed: return "⚠️ 任务已完成，无需取消\n任务 ID: \(id)"; case .cancelled: return "⚠️ 任务已被取消\n任务 ID: \(id)"; case .failed: return "⚠️ 任务已失败，无需取消\n任务 ID: \(id)" } } }
 
 public struct DownloadFileV2Tool: SuperAgentTool {
     public static let toolName = "download_file"; public let name = toolName; public init() {}
@@ -26,17 +26,17 @@ public struct DownloadFileV2Tool: SuperAgentTool {
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { "下载文件" }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let raw = arguments["url"]?.value as? String, let url = URL(string: raw), ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return "❌ 错误：无效的 URL" }
+        guard let raw = arguments["url"]?.value as? String, let url = URL(string: raw), ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { throw ToolExecutionError.executionFailed(toolName: name, reason: "无效的 URL") }
         let filename = (arguments["filename"]?.value as? String).flatMap { $0.isEmpty ? nil : $0 } ?? DownloadPluginSupport.extractFilename(from: url)
         let directory = (arguments["directory"]?.value as? String).map { URL(fileURLWithPath: $0, isDirectory: true) } ?? DownloadPluginSupport.defaultDownloadDirectory()
         let id = UUID().uuidString
         let task = DownloadTask(id: id, url: url, destination: directory.appendingPathComponent(filename), expectedSize: nil); await DownloadRuntime.tasks.remember(task)
         do { let file = try await DownloadRuntime.manager.download(task); return "✅ 下载完成\n文件名: \(filename)\n任务 ID: \(id)\n路径: \(file.path)" }
-        catch { return "❌ 下载失败: \(error.localizedDescription)\n任务 ID: \(id)" }
+        catch { throw ToolExecutionError.executionFailed(toolName: name, reason: "下载失败: \(error.localizedDescription)\n任务 ID: \(id)") }
     }
 }
 
-public struct DownloadRetryV2Tool: SuperAgentTool { public static let toolName = "retry_download"; public let name = toolName; public init() {}; public func description(for: LanguagePreference) -> String { "Retry a failed or cancelled tracked download." }; public func inputSchema(for: LanguagePreference) -> [String: Any] { ["type": "object", "properties": ["task_id": ["type": "string"]], "required": ["task_id"]] }; public func displayDescription(for: [String: ToolArgument]) -> String { "重试下载" }; public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }; public func execute(arguments: [String: ToolArgument]) async throws -> String { guard let oldID = arguments["task_id"]?.value as? String, let old = await DownloadRuntime.tasks.task(id: oldID) else { return "❌ 无法获取任务详情: \(arguments["task_id"]?.value as? String ?? "")" }; guard let state = await DownloadRuntime.manager.state(for: oldID) else { return "❌ 未找到任务: \(oldID)" }; guard case .failed = state else { guard case .cancelled = state else { return "⚠️ 任务当前不可重试\n任务 ID: \(oldID)" }; return try await retry(old) }; return try await retry(old) }; private func retry(_ old: DownloadTask) async throws -> String { let task = DownloadTask(id: UUID().uuidString, url: old.url, destination: old.destination, expectedSize: old.expectedSize); await DownloadRuntime.tasks.remember(task); do { let file = try await DownloadRuntime.manager.download(task); return "✅ 重试成功\n文件名: \(file.lastPathComponent)\n任务 ID: \(task.id)\n路径: \(file.path)" } catch { return "❌ 重试失败: \(error.localizedDescription)\n任务 ID: \(task.id)" } } }
+public struct DownloadRetryV2Tool: SuperAgentTool { public static let toolName = "retry_download"; public let name = toolName; public init() {}; public func description(for: LanguagePreference) -> String { "Retry a failed or cancelled tracked download." }; public func inputSchema(for: LanguagePreference) -> [String: Any] { ["type": "object", "properties": ["task_id": ["type": "string"]], "required": ["task_id"]] }; public func displayDescription(for: [String: ToolArgument]) -> String { "重试下载" }; public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }; public func execute(arguments: [String: ToolArgument]) async throws -> String { guard let oldID = arguments["task_id"]?.value as? String, let old = await DownloadRuntime.tasks.task(id: oldID) else { throw ToolExecutionError.executionFailed(toolName: name, reason: "无法获取任务详情: \(arguments["task_id"]?.value as? String ?? "")") }; guard let state = await DownloadRuntime.manager.state(for: oldID) else { throw ToolExecutionError.executionFailed(toolName: name, reason: "未找到任务: \(oldID)") }; guard case .failed = state else { guard case .cancelled = state else { throw ToolExecutionError.executionFailed(toolName: name, reason: "任务当前不可重试\n任务 ID: \(oldID)") }; return try await retry(old) }; return try await retry(old) }; private func retry(_ old: DownloadTask) async throws -> String { let task = DownloadTask(id: UUID().uuidString, url: old.url, destination: old.destination, expectedSize: old.expectedSize); await DownloadRuntime.tasks.remember(task); do { let file = try await DownloadRuntime.manager.download(task); return "✅ 重试成功\n文件名: \(file.lastPathComponent)\n任务 ID: \(task.id)\n路径: \(file.path)" } catch { throw ToolExecutionError.executionFailed(toolName: name, reason: "重试失败: \(error.localizedDescription)\n任务 ID: \(task.id)") } } }
 
 public struct DownloadBatchV2Tool: SuperAgentTool {
     public static let toolName = "download_batch"; public let name = toolName; public init() {}
@@ -45,15 +45,29 @@ public struct DownloadBatchV2Tool: SuperAgentTool {
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { "批量下载" }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let rawURLs: [String]
-        if let values = arguments["urls"]?.value as? [String] { rawURLs = values }
-        else if let values = arguments["urls"]?.value as? [Any] { rawURLs = values.compactMap { $0 as? String } }
-        else { rawURLs = [] }
-        let urls = rawURLs.compactMap(URL.init(string:)).filter { ["http", "https"].contains($0.scheme?.lowercased() ?? "") }
-        guard !urls.isEmpty else { return "❌ 错误：urls 参数必需且必须是 HTTP/HTTPS 字符串数组" }
+        let rawValues: [String]
+        if let values = arguments["urls"]?.value as? [String] { rawValues = values }
+        else if let values = arguments["urls"]?.value as? [Any] {
+            rawValues = values.map { ($0 as? String) ?? String(describing: $0) }
+        }
+        else { rawValues = [] }
+
+        let items = DownloadPluginSupport.classifyBatchURLs(rawValues)
+        guard items.contains(where: { $0.url != nil }) else { throw ToolExecutionError.executionFailed(toolName: name, reason: "urls 参数必需且必须是 HTTP/HTTPS 字符串数组") }
         let directory = (arguments["directory"]?.value as? String).map { URL(fileURLWithPath: $0, isDirectory: true) } ?? DownloadPluginSupport.defaultDownloadDirectory()
-        var lines = ["📊 下载完成", "保存目录: \(directory.path)"]
-        for url in urls { let id = UUID().uuidString; let name = DownloadPluginSupport.extractFilename(from: url); let task = DownloadTask(id: id, url: url, destination: directory.appendingPathComponent(name), expectedSize: nil); await DownloadRuntime.tasks.remember(task); do { _ = try await DownloadRuntime.manager.download(task); lines.append("✅ \(name)\n任务 ID: \(id)") } catch { lines.append("❌ 失败: \(name) — \(error.localizedDescription)\n任务 ID: \(id)") } }
-        return lines.joined(separator: "\n")
+        var lines: [String] = []
+        var succeeded = 0
+        for item in items {
+            guard let url = item.url else {
+                // 无效项必须出现在结果里，不能静默丢弃
+                lines.append("❌ 无效 URL: \(item.raw)")
+                continue
+            }
+            let id = UUID().uuidString; let name = DownloadPluginSupport.extractFilename(from: url); let task = DownloadTask(id: id, url: url, destination: directory.appendingPathComponent(name), expectedSize: nil); await DownloadRuntime.tasks.remember(task)
+            do { _ = try await DownloadRuntime.manager.download(task); succeeded += 1; lines.append("✅ \(name)\n任务 ID: \(id)") }
+            catch { lines.append("❌ 失败: \(name) — \(error.localizedDescription)\n任务 ID: \(id)") }
+        }
+        let header = DownloadPluginSupport.batchSummary(succeeded: succeeded, total: items.count)
+        return ([header, "保存目录: \(directory.path)"] + lines).joined(separator: "\n")
     }
 }

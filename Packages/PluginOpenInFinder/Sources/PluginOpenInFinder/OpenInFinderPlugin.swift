@@ -4,6 +4,7 @@ import KernelCore
 import LumiLoggingKit
 import KitOpenIn
 import ProviderProject
+import ProviderToast
 import ProviderDocsView
 import ProviderToolManager
 import ProviderToolbar
@@ -43,15 +44,22 @@ public final class OpenInFinderPlugin: SuperPlugin, SuperLog {
 
         if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
             let projectCapability = OpenInProjectCapabilityAdapter(project: project)
+            let failureReporter = OpenInFailureToastReporter(
+                toast: kernel.resolveProvider((any ToastProviding).self)
+            )
             toolbar.addToolbarItems([
                 ToolbarItem(
                     id: "\(id).toolbar",
                     title: OpenInFinderLocalization.string("Open In Finder"),
                     placement: .leading,
-                    category: .global,
+                    category: .project,
                     order: order
                 ) {
-                    OpenInFinderToolbarView(tool: tool, projectCapability: projectCapability)
+                    OpenInFinderToolbarView(
+                        tool: tool,
+                        projectCapability: projectCapability,
+                        failureReporter: failureReporter
+                    )
                 },
             ])
         }

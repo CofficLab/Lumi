@@ -17,6 +17,38 @@ import Testing
     #expect(speedMessage().speedDurationMs == nil)
 }
 
+@Test func legacyMetadataTimingRestoresHistoricalSpeedAndTTFT() {
+    // #1029：旧版只把计时写进 metadata，强类型字段为空。
+    let message = speedMessage(
+        streamingDurationMs: nil,
+        latencyMs: nil,
+        metadata: [
+            "latencyMs": "6000.0",
+            "streamingDurationMs": "4000.0",
+            "timeToFirstTokenMs": "2000.0",
+        ]
+    )
+
+    #expect(message.speedDurationMs == 6_000)
+    #expect(message.speedTokensPerSecond == 20)
+    #expect(message.speedTimeToFirstTokenMs == 2_000)
+}
+
+@Test func typedTimingTakesPrecedenceOverLegacyMetadata() {
+    let message = speedMessage(
+        streamingDurationMs: 1_000,
+        latencyMs: 2_000,
+        timeToFirstTokenMs: 500,
+        metadata: [
+            "latencyMs": "9000.0",
+            "timeToFirstTokenMs": "8000.0",
+        ]
+    )
+
+    #expect(message.speedDurationMs == 2_000)
+    #expect(message.speedTimeToFirstTokenMs == 500)
+}
+
 @Test func speedRequiresOutputTokensAndPositiveDuration() {
     #expect(speedMessage(outputTokens: nil).speedTokensPerSecond == nil)
     #expect(speedMessage(streamingDurationMs: nil).speedTokensPerSecond == nil)
@@ -80,6 +112,8 @@ private func speedMessage(
     outputTokens: Int? = 120,
     streamingDurationMs: Double? = nil,
     latencyMs: Double? = nil,
+    timeToFirstTokenMs: Double? = nil,
+    metadata: [String: String] = [:],
     createdAt: Date = Date(timeIntervalSince1970: 1)
 ) -> Message {
     Message(
@@ -87,8 +121,10 @@ private func speedMessage(
         role: role,
         content: "response",
         createdAt: createdAt,
+        metadata: metadata,
         outputTokenCount: outputTokens,
         latencyMs: latencyMs,
+        timeToFirstTokenMs: timeToFirstTokenMs,
         streamingDurationMs: streamingDurationMs
     )
 }

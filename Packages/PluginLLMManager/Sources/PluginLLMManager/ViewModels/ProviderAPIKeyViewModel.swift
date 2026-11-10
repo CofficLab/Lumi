@@ -15,6 +15,7 @@ final class ProviderAPIKeyViewModel: ObservableObject {
     @Published private(set) var didSaveAPIKey = false
     @Published private(set) var isChecking = false
     @Published private(set) var providerAvailable = false
+    @Published private(set) var requiresManualProviderSelection = false
     @Published private(set) var providerName = "LLM Provider"
     @Published private(set) var providerWebsiteURL: URL?
 
@@ -22,6 +23,14 @@ final class ProviderAPIKeyViewModel: ObservableObject {
 
     private let capability: any LLMManagerCapability
     private let message: Message
+
+    private struct ProviderBinding {
+        let provider: (any SuperLLMProvider)?
+        /// 旧消息文本里记录的供应商名，用于展示与反查。
+        let displayNameHint: String?
+        /// 旧消息没有 providerID 且无法唯一反查到供应商。
+        let requiresManualSelection: Bool
+    }
 
     init(capability: any LLMManagerCapability, message: Message) {
         self.capability = capability
@@ -35,9 +44,30 @@ final class ProviderAPIKeyViewModel: ObservableObject {
 
     func saveAPIKey() {
         guard let provider = resolvedProvider else { return }
-        provider.setApiKey(apiKey)
-        apiKey = provider.getApiKey()
-        keyIsReadable = !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let submitted = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        do {
+            try provider.setApiKeyReportingErrors(apiKey)
+        } catch {
+            // 存储失败时保留用户输入，不能清空错误或显示 Saved（回归 #1119）。
+            didSaveAPIKey = false
+            saveError = error.localizedDescription
+            return
+        }
+
+        // 不抛错的旧实现可能吞掉写入失败；只有读回值与提交值一致才代表
+        // Key 真正落盘，否则同样按保存失败处理（回归 #1119）。
+        let stored = provider.getApiKey().trimmingCharacters(in: .whitespacesAndNewlines)
+        guard stored == submitted else {
+            didSaveAPIKey = false
+            saveError = String(
+                localized: "The API key could not be verified after saving.",
+                defaultValue: "The API key could not be verified after saving."
+            )
+            return
+        }
+
+        apiKey = stored
+        keyIsReadable = !stored.isEmpty
         saveError = nil
         didSaveAPIKey = true
     }
@@ -69,24 +99,73 @@ final class ProviderAPIKeyViewModel: ObservableObject {
 
     // MARK: - Private
 
+    /// 错误消息所属的供应商。
+    ///
+    /// 旧版本落库的消息没有 `providerID`，只能从错误文本里的供应商名反查。
+    /// 绝不能退回当前全局选中项：那会把别的供应商的 Key 读到卡片里，保存时
+    /// 还会覆盖它（回归 #1120）。无法唯一确定时为 nil，由 View 禁用内联写入。
+    private func resolveProvider() -> ProviderBinding {
+        if let providerID = message.providerID {
+            return ProviderBinding(
+                provider: capability.provider(id: providerID),
+                displayNameHint: nil,
+                requiresManualSelection: false
+            )
+        }
+
+        guard let hint = Self.providerDisplayName(in: message) else {
+            return ProviderBinding(
+                provider: nil,
+                displayNameHint: nil,
+                requiresManualSelection: true
+            )
+        }
+
+        let matches = capability.allProviders().filter {
+            $0.providerInfo.displayName.compare(
+                hint,
+                options: [.caseInsensitive, .diacriticInsensitive]
+            ) == .orderedSame
+        }
+        return ProviderBinding(
+            provider: matches.count == 1 ? matches[0] : nil,
+            displayNameHint: hint,
+            requiresManualSelection: matches.count != 1
+        )
+    }
+
     private var resolvedProvider: (any SuperLLMProvider)? {
-        // 错误消息通常不带 providerID(AgentLoop.appendError 未填),用当前选中兜底,
-        // 否则 provider == nil 会把输入框 disabled,表现为"点不进去"。
-        let providerID = message.providerID ?? capability.selectedProviderID
-        guard let providerID else { return nil }
-        return capability.provider(id: providerID)
+        resolveProvider().provider
+    }
+
+    /// 从错误文本解析旧消息记录的供应商名。
+    private static func providerDisplayName(in message: Message) -> String? {
+        if let raw = message.rawErrorDetail?.trimmingCharacters(in: .whitespacesAndNewlines),
+           raw.hasPrefix(LLMProviderAPIKeyMessage.rawErrorPrefix) {
+            let name = raw
+                .dropFirst(LLMProviderAPIKeyMessage.rawErrorPrefix.count)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            return name.isEmpty ? nil : name
+        }
+
+        let content = message.content.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard content.hasPrefix(LLMProviderAPIKeyMessage.legacyErrorPrefix) else {
+            return nil
+        }
+        let remainder = content.dropFirst(LLMProviderAPIKeyMessage.legacyErrorPrefix.count)
+        guard let closingQuote = remainder.firstIndex(of: "\"") else { return nil }
+        let name = remainder[..<closingQuote].trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? nil : name
     }
 
     private func reloadProviderInfo() {
-        let provider = resolvedProvider
-        providerAvailable = provider != nil
-        providerName = provider.map { $0.providerInfo.displayName }
-            ?? message.rawErrorDetail?.replacingOccurrences(
-                of: "\(LLMProviderAPIKeyMessage.rawErrorPrefix) ",
-                with: ""
-            )
+        let binding = resolveProvider()
+        providerAvailable = binding.provider != nil
+        requiresManualProviderSelection = binding.requiresManualSelection
+        providerName = binding.provider?.providerInfo.displayName
+            ?? binding.displayNameHint
             ?? "LLM Provider"
-        providerWebsiteURL = provider?.providerInfo.websiteURL
+        providerWebsiteURL = binding.provider?.providerInfo.websiteURL
     }
 
     private func reloadKeyState() {

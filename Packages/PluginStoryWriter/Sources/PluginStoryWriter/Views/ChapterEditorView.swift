@@ -64,7 +64,7 @@ struct ChapterEditorView: View {
             .padding(.vertical, 8)
             .border(.separator)
         }
-        .onChange(of: chapter.content) { _, _ in
+        .onChange(of: chapter.content) { _ in
             saveChapter()
         }
     }

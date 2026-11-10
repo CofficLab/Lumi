@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "PluginGithubMCP",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS("14.0")],
     products: [
         .library(name: "PluginGithubMCP", targets: ["PluginGithubMCP"]),
     ],

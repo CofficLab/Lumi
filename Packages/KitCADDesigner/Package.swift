@@ -4,13 +4,13 @@ import PackageDescription
 let package = Package(
     name: "KitCADDesigner",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS("14.0")],
     products: [
         .library(name: "KitCADDesigner", targets: ["KitCADDesigner"]),
     ],
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.13.0"),
     ],
     targets: [
         .target(

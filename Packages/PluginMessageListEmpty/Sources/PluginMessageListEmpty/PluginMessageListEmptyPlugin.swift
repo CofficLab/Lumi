@@ -7,6 +7,7 @@ import ProviderChatSection
 import ProviderConversation
 import ProviderGit
 import ProviderMessage
+import ProviderPluginControl
 import ProviderProject
 import ProviderProjectRAG
 import ProviderPromptSuggestion
@@ -102,6 +103,7 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         let git = kernel.resolveProvider((any GitRepositoryReading).self)
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let pluginControl = kernel.resolveProvider((any PluginControlling).self)
         let services = MessageListEmptyServices(
             project: project,
             promptSuggestions: promptSuggestions,
@@ -111,6 +113,7 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
             projectRAG: projectRAG,
             git: git,
             activityBar: activityBar,
+            pluginControl: pluginControl,
             railView: railView
         )
         let toolbarCoordinator = NoConversationSelectedToolbarCoordinator(

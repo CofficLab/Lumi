@@ -78,6 +78,91 @@ Sources/PluginMessageListBrief/
 - **`#if DEBUG` 守卫必须覆盖整个函数体**
   `MessageListBriefUITestingSupport` 只在 DEBUG 存在，引用点必须同等包裹，
   否则 Release 构建报 `cannot find '...' in scope`。
+- **活跃回合的过程区自动展开；历史回合默认折叠**
+  用户发送消息后，过程区自动展开、agent 的动作实时可见 —— 不用点任何按钮。
+  展开状态由 `ProcessSectionExpansion` 管理，它记住**用户是否曾手动操作过**：
+  自动展开只在用户从未表达偏好时生效，用户手动折叠后不再被覆盖（否则就成了
+  「强制展开」）。历史回合默认折叠，否则长会话会被几十个过程区刷屏。
+- **展开的过程区限高在视口的 60%（`ProcessSectionLayout.maxHeightFraction`）**
+  展开后的过程区可能包含整段 LLM 回复正文与大量工具步骤，不限高时一次展开
+  就能把整屏撑满、把外层列表顶出视口。内容短于上限时高度自适应，超出则
+  在区内垂直滚动。**回合结束后移到折叠区外的那条最终回复不受此限**。
+- **限高不靠手动测高，靠 `ScrollView` 的固有尺寸**
+  `ScrollView` 配限高 frame 的固有高度就是 `min(内容高, 上限)`，
+  而 `List` 的行高正好取这个值（渲染级测试 `BoundedProcessSectionRenderTests`
+  锁定了这条几何事实）。**不要**改用 `GeometryReader + PreferenceKey` 测高 ——
+  那会踩中本文件已记录的反馈环（流式 token → 高度 → 布局 → 高度）。
+- **限高 frame 必须带 `minHeight`，否则内层 clipView 的可视高度会塌成 0**
+  曾出现「拖右侧滚动条能滚、滚轮不能滚」。根因是只用 `.frame(maxHeight:)`：
+  `ScrollView` 的固有高度等于**内容高度**，`List` 把这一行裁到上限时，
+  SwiftUI 会把内层 clipView 的可视高度一并压成 **0** ——
+  内层于是**没有可视区域**，滚轮与拖拽都无处可滚；而拖动滚动条直接操作
+  scroller 的几何、不依赖可视区域，所以仍能拖动。
+  真实 app 实测（DEBUG 几何探针读数）：
+
+  | 写法 | document | visible（clipView 可视高度） |
+  | --- | --- | --- |
+  | `.frame(maxHeight:)` | 3576 | **0** |
+  | `.frame(height:)` | 3576 | 160 |
+  | `.frame(minHeight: 1, maxHeight:)` | 3576 | **160** |
+
+  给出 `minHeight` 后 SwiftUI 拿到确定下界，clipView 不再塌成 0。
+  `minHeight: 1`（而不是 `maxHeight`）保留了「内容短于上限时自适应」的语义
+  （实测：3 步骤的折叠区 doc=150 / visible=150，未占满上限 160）。
+  - Note: 这是**另一个**独立问题。「向上滑看更早的过程内容时内层不动、
+    外层滚动条动」的根因是滚轮方向语义相反，见下一条。
+- **macOS 嵌套滚动视图默认没有滚动链**
+  实测：内层 `NSScrollView` 到底后继续拖动，外层列表纹丝不动。接力必须自己
+  实现 —— 见 `ProcessSectionScrollRelay`（应用层滚轮事件监视器 + `hitTest`
+  沿 `superview` 链定位内层 + 边界判定后转发给外层 `enclosingScrollView`）。
+  边界判定留 1pt 容差，避免「差一点点就卡住」。
+- **SwiftUI 内层的滚轮方向与原生相反，接力必须主动驱动它**
+  曾出现「在过程区滚动，触发的是**外部的滚动条**，它自己根本不滚动」。
+
+  实测的方向语义（macOS）：
+
+  | 接收方 | `deltaY = -40`（触控板向上滑）时 offset 的变化 |
+  | --- | --- |
+  | 原生 `NSScrollView` | `+40`（offset 增大，内容向下走） |
+  | SwiftUI `HostingScrollView` | **−40**（offset 减小，内容向上走） |
+
+  过程折叠区展开时自动**钉在底部**（offset = 文档高 − 视口高）。用户
+  「向上滑看更早的过程内容」（`deltaY < 0`）时：
+
+  - SwiftUI 语义要求 offset **增大** → 已在最大值 → 没有空间 → **内层纹丝不动**；
+  - 事件继续往下传 → 被外层**原生** List 消费 → **外层滚动条动**。
+
+  修复：relay 命中内层时**主动驱动**它 —— 直接改 `clipView.bounds`，
+  方向用**原生**语义（`offset += deltaY`），不沿用 SwiftUI 的反向语义。
+  - Important: 不能只是「放行」让 SwiftUI 自己的手势处理 —— 实测放行后
+    内层偏移**同样**纹丝不动（嵌套在 `List` 行里时它不处理这类事件）。
+  - Important: 不能调用 `scrollView.scrollWheel(with:)` —— 它对 SwiftUI 的
+    `HostingScrollView` 无效（实测：调用后偏移不变）。直接改
+    `clipView.bounds` 与自动钉底（`pinToBottom`）同一范式。
+- **贴底跟随时「首次评估」不算用户上滚**
+  展开一个内容超长的折叠区时初始偏移就在顶部；若把「不在底部」当成用户上滚，
+  跟随会在第一次内容增长时就被打断。只有**非首次**评估中离开底部才算打断。
+- **贴底跟随靠两个互斥的 AppKit 通知，不用 `defaultScrollAnchor(.bottom)`**
+  实测：`documentView.frameDidChange`（内容变高）✅ 触发、
+  `clipView.boundsDidChange`（用户滚动）✅ 触发，二者**完全互斥**。
+  `defaultScrollAnchor(.bottom)` 虽然也会在内容增长时贴底，但**用户上滚后会被
+  下一次内容增长拽回底部**，无法打断 —— 与「用户可打断」的预期冲突。
+  - Important: 观察器**必须放在 `ScrollView` 的内容内部**。放在 `.background`
+    里（ScrollView 外面）时 `enclosingScrollView` 恒为 `nil`，观察器**静默失效**
+    （实测确认）。
+  - Important: 通知用 `queue: nil`（同步处理）。用 `queue: .main` 会把钉底
+    推迟到下一个 runloop 迭代，表现为「内容已经出现了，但视口还没跟上」。
+  - Important: 钉底会改 `clipView.bounds`，**同步**触发 `boundsDidChange` ——
+    必须用 `isPinning` 标志排除，否则钉底动作自己会被当成「用户上滚」而打断跟随。
+- **全局滚轮事件监视器必须在最后一个观察者注销时移除**
+  `NSEvent.addLocalMonitorForEvents` 注册的监视器持有 app 的事件循环引用，
+  残留时 **app 可能无法正常退出**（实测：UI 测试 teardown 报
+  「Failed to terminate」，禁用监视器后恢复正常）。折叠区全部收起时没有接力
+  需求，监视器就该消失；另在 `willTerminateNotification` 兜底移除。
+- **内容版本号必须用跨进程稳定的哈希**
+  `String.hashValue` / `UUID.hashValue` 的种子**每个进程启动都会变**，
+  同一条消息在不同进程里版本号不同，视图 identity 随之漂移。用
+  `UUID.stableHashValue`（原始字节哈希）。
 
 ## 能力边界
 
@@ -136,6 +221,17 @@ Adapter 在插件入口 `onBoot(kernel:)` 中构造并注入；Observer 仍使�
 | 3.6 | Watch the disclosure row of a running turn | The summary uses the running label plus the step count, and the duration **ticks every second**. | ✅ `AgentTurnProjectionTests.runningDisclosureTitleUsesRunningLabel` |
 | 3.7 | Expand and collapse repeatedly | The expand/collapse animates. Rows outside the turn do not jump and Markdown content does not flash. | 🖱 |
 | 3.8 | Click inside an expanded process message | The click reaches the message content; it is not swallowed by the disclosure row. | 🖱（依赖 SwiftUI Button 命中测试） |
+| 3.9 | Expand a process section whose content is short | The section takes only the height it needs — no blank space is reserved up to the cap. | ✅ `BoundedProcessSectionRenderTests.shortContentUsesContentHeight` |
+| 3.10 | Expand a process section whose content is long (a full streamed reply) | The section is capped at **60% of the list viewport** and scrolls inside itself; the turn row no longer grows past the cap. | ✅ `BoundedProcessSectionRenderTests.overflowingContentIsCapped` + 🔧 `ProcessSectionLayout.maxHeightFraction == 0.6` |
+| 3.11 | Scroll inside the expanded section to its end, then keep scrolling | The remaining scroll is handed to the outer list, so the conversation keeps moving instead of feeling stuck. | 🖱 + ✅ `ProcessSectionScrollRelayTests.forwardsWhenInnerReachesBottom`（边界判定）+ 🔧 事件转发需真实鼠标 |
+| 3.12 | Scroll up inside the expanded section while a reply streams | The section stops auto-following and stays where you put it; it is not pulled back to the bottom. | 🖱 + ✅ `ProcessSectionFollowStateTests.stopsFollowingAfterUserScrollsUp` |
+| 3.13 | Scroll back to the bottom of the section | Auto-follow resumes; new content keeps arriving at the bottom. | 🖱 + ✅ `ProcessSectionFollowStateTests.resumesFollowingWhenUserReturnsToBottom` |
+| 3.14 | Expand a long section and let the reply stream without touching the scroll | The section stays pinned to the bottom, so the newest text is always the visible one. | ✅ `ProcessSectionAutoPinRenderTests.contentGrowthPinsToBottom` |
+| 3.16 | Send a message and watch the process area | The process area **expands on its own** — no click needed — and the agent's steps appear as they are written. | ✅ `ProcessSectionAutoExpandRenderTests.activeTurnShowsProcessByDefault` + 🖱（真实 LLM 回合） |
+| 3.17 | Open a long conversation with finished turns | Finished turns keep their process area **collapsed** — the list is not flooded with dozens of open process areas. | ✅ `ProcessSectionAutoExpandRenderTests.historicalTurnHidesProcessByDefault` |
+| 3.18 | Manually collapse the process area, then let the next turn run | The area stays collapsed — automatic expansion must not override an explicit user choice. | ✅ `ProcessSectionExpansionTests.userCollapseIsNotOverridden` + 🖱（下一回合的真实交互） |
+| 3.19 | Expand a long process area | The view is already positioned at the bottom, so the newest step is visible without scrolling. | ✅ `ProcessSectionAutoPinRenderTests.initialPositionIsAtBottom` |
+| 3.15 | Read the final reply of a finished turn | The final reply below the disclosure is **not** capped — it still renders at full height. | 🖱（未改动该路径） |
 
 ### 4. Load earlier messages
 

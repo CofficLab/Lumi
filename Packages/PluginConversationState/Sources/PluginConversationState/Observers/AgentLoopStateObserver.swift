@@ -42,9 +42,24 @@ final class AgentLoopStateObserver: SuperLog {
                 clearError: true
             )
         case .toolCallsReceived(let id, let turn, _, _):
-            provider.update(conversationID: id, turnID: turn, agentLoopState: .running, toolState: .executing, activity: .executingTool)
+            // 回合恢复后会重新进入这一步：用户已经做出授权/回答决定，
+            // 会话级授权状态必须回落，否则盾牌会一直挂到回合结束。
+            provider.update(
+                conversationID: id,
+                turnID: turn,
+                agentLoopState: .running,
+                toolState: .executing,
+                authorizationState: ConversationAuthorizationState.none,
+                activity: .executingTool
+            )
         case .llmResponseReceived(let id, let turn, _):
-            provider.update(conversationID: id, turnID: turn, agentLoopState: .running, activity: .thinking)
+            provider.update(
+                conversationID: id,
+                turnID: turn,
+                agentLoopState: .running,
+                authorizationState: ConversationAuthorizationState.none,
+                activity: .thinking
+            )
         case .suspended(let id, let turn, let suspension):
             guard let agentLoop,
                   agentLoop.state(for: id) == .suspended,
@@ -57,6 +72,13 @@ final class AgentLoopStateObserver: SuperLog {
                 turnID: turn,
                 agentLoopState: .suspended,
                 toolState: .suspended,
+                // 执行期授权（如 Computer Use 的应用授权）不经过
+                // `ToolManagerEvent.authorizationRequired`，只能在这里依据
+                // 挂起载荷标记 `.required`。`ask_user` 等交互挂起载荷没有
+                // `kind` 字段，不能误标成授权等待。
+                authorizationState: suspension.isAuthorizationSuspension
+                    ? ConversationAuthorizationState.required
+                    : nil,
                 activity: .waitingForUser
             )
         case .completed(let id, let turn):

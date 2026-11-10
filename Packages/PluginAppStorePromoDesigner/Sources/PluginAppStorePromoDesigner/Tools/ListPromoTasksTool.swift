@@ -28,7 +28,11 @@ public struct ListPromoTasksTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let tasks = await MainActor.run { WorkspaceStore.shared.projectTasks }
+        // 直接读当前调用所属项目的存储，而不是 UI 全局缓存——
+        // 后者跟随「当前打开项目」，在多对话并行时会串项目。
+        let tasks = try PromoToolSupport.store.listTasks(
+            storagePath: try await PromoToolSupport.storagePath()
+        )
         let lines = tasks.map { PromoToolSupport.taskSummary($0) }
         if lines.isEmpty {
             return "No App Store promotional artwork tasks found."

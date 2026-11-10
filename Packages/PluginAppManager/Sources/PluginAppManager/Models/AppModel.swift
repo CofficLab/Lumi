@@ -30,9 +30,9 @@ struct AppModel: Identifiable, Hashable, @unchecked Sendable {
         self.bundleURL = bundleURL
 
         let bundle = Bundle(url: bundleURL)
-        self.bundleName = bundle?.object(forInfoDictionaryKey: "CFBundleName") as? String
+        let rawBundleName = bundle?.object(forInfoDictionaryKey: "CFBundleName") as? String
             ?? bundle?.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
-            ?? bundleURL.deletingPathExtension().lastPathComponent
+        self.bundleName = Self.sanitizedBundleName(rawBundleName, bundleURL: bundleURL)
         self.bundleIdentifier = bundle?.bundleIdentifier
         self.version = bundle?.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         
@@ -72,7 +72,7 @@ struct AppModel: Identifiable, Hashable, @unchecked Sendable {
     /// 从缓存初始化
     init(bundleURL: URL, name: String, identifier: String?, version: String?, iconFileName: String?, size: Int64) {
         self.bundleURL = bundleURL
-        self.bundleName = name
+        self.bundleName = Self.sanitizedBundleName(name, bundleURL: bundleURL)
         self.bundleIdentifier = identifier
         self.version = version
         self.iconFileName = iconFileName
@@ -104,6 +104,22 @@ struct AppModel: Identifiable, Hashable, @unchecked Sendable {
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(bundleURL.path)
+    }
+
+    /// 校验字符串能否安全地作为单个路径 component 使用。
+    /// 拒绝空值、`.`/`..` 以及包含分隔符或 NUL 的名称，避免拼接路径时逃逸出目标目录。
+    static func isValidPathComponent(_ value: String) -> Bool {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != ".", trimmed != ".." else { return false }
+        guard !value.contains("/"), !value.contains("\0") else { return false }
+        return true
+    }
+
+    /// CFBundleName 来自应用自带的 Info.plist，不可直接信任；非法时回退到 .app 目录名。
+    static func sanitizedBundleName(_ raw: String?, bundleURL: URL) -> String {
+        let fallback = bundleURL.deletingPathExtension().lastPathComponent
+        guard let raw, isValidPathComponent(raw) else { return fallback }
+        return raw
     }
 
     static func == (lhs: AppModel, rhs: AppModel) -> Bool {

@@ -32,18 +32,18 @@ public struct SetAppStoreConnectCiWorkflowEnabledTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let workflowID = arguments["workflowID"]?.stringValue, !workflowID.isEmpty else {
-            return "Missing or empty workflowID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty workflowID.")
         }
         guard let isEnabled = AppStoreConnectToolSupport.parseBool(arguments["isEnabled"]) else {
-            return "Missing or invalid isEnabled. Use true or false."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or invalid isEnabled. Use true or false.")
         }
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
         do {
             let workflow = try await client.updateCiWorkflowEnabled(id: workflowID, isEnabled: isEnabled)
             return "Workflow updated: id=\(workflow.id) enabled=\(workflow.isEnabled)"
         } catch {
-            return "Failed to update workflow: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to update workflow: \(error.localizedDescription)")
         }
     }
 }

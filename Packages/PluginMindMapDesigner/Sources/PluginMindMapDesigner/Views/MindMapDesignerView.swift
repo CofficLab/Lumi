@@ -75,7 +75,7 @@ public struct MindMapDesignerView: View {
         .onAppear {
             notifyMapAvailability()
         }
-        .onChange(of: store.projectMaps.count) { _, _ in
+        .onChange(of: store.projectMaps.count) { _ in
             notifyMapAvailability()
         }
     }
@@ -271,7 +271,7 @@ public struct MindMapDesignerView: View {
         }
     }
 
-    private func notifyMapAvailability() {
+    func notifyMapAvailability() {
         onMapAvailabilityChanged?(!store.projectMaps.isEmpty)
     }
 }

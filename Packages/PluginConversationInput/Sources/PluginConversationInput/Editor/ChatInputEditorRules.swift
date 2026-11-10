@@ -1,10 +1,11 @@
 import AppKit
 import Foundation
+import ImageIO
 
 /// 输入编辑器规则集
 public enum ChatInputEditorRules {
     public static let imagePathExtensions: Set<String> = [
-        "jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "heic",
+        "jpg", "jpeg", "png", "gif", "bmp", "tiff", "tif", "webp", "heic",
     ]
 
     public static func swiftToUTF16Index(_ swiftIndex: Int, in string: String) -> Int {
@@ -57,6 +58,19 @@ public enum ChatInputEditorRules {
 
     public static func isChatImageFileURL(_ url: URL) -> Bool {
         imagePathExtensions.contains(url.pathExtension.lowercased())
+    }
+
+    /// 判断字节能否真正解码成一张图片。
+    ///
+    /// 扩展名只决定路由，不能证明内容有效：`fake.png` 这类非空但损坏的文件
+    /// 必须在进入待发送图片池之前被拒绝，否则会被当成视觉附件发给 Provider。
+    public static func isDecodableImageData(_ data: Data) -> Bool {
+        guard !data.isEmpty,
+              let source = CGImageSourceCreateWithData(data as CFData, nil),
+              CGImageSourceGetCount(source) > 0 else {
+            return false
+        }
+        return CGImageSourceCreateImageAtIndex(source, 0, nil) != nil
     }
 
     /// Returns whether a dropped file URL points to a directory.

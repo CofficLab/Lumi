@@ -151,6 +151,29 @@ struct StoryStoreTests {
         #expect(await store.exportStoryAsMarkdown(storyID: UUID()) == nil)
     }
 
+    @Test func deletingMissingTargetsReportsNoDeletion() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = StoryStore(pluginDirectory: directory)
+
+        let story = await store.createStory(title: "Keep")
+        guard let chapter = await store.createChapter(storyID: story.id, title: "Keep") else {
+            Issue.record("Could not create chapter")
+            return
+        }
+
+        #expect(await store.deleteStory(id: UUID()) == false)
+        #expect(await store.deleteChapter(id: UUID(), storyID: story.id) == false)
+        #expect(await store.deleteChapter(id: chapter.id, storyID: UUID()) == false)
+        #expect(await store.loadStory(id: story.id) != nil)
+        #expect(await store.loadChapter(id: chapter.id, storyID: story.id) != nil)
+
+        #expect(await store.deleteChapter(id: chapter.id, storyID: story.id) == true)
+        #expect(await store.loadChapter(id: chapter.id, storyID: story.id) == nil)
+        #expect(await store.deleteStory(id: story.id) == true)
+        #expect(await store.loadStory(id: story.id) == nil)
+    }
+
     @Test func modelsCountNonWhitespaceContentAndExposeAllChapterStates() {
         let chapter = Chapter(storyID: UUID(), title: "Words", content: "你好 world\n")
         #expect(chapter.wordCount == 7)

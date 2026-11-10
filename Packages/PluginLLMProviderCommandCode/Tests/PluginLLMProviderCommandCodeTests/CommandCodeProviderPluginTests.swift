@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import KitLLM
 import ProviderLLMManager
 import Testing
 @testable import PluginLLMProviderCommandCode
@@ -70,7 +71,7 @@ struct CommandCodeProviderPluginTests {
             "tencent/hy3-paid", "tencent/hy4-preview",
             "google/gemini-3.8-flash", "google/gemini-3.7-flash", "google/gemini-3.6-flash",
             "google/gemini-3.5-flash", "google/gemini-3.5-flash-lite", "google/gemini-3.1-flash-lite",
-            "meituan/LongCat-2.0:free", "sakana/fugu-ultra", "nvidia/nemotron-3-ultra-550b-a55b",
+            "meituan/LongCat-2.0", "sakana/fugu-ultra", "nvidia/nemotron-3-ultra-550b-a55b",
             "thinkingmachines/inkling", "thinkingmachines/inkling-small",
             "poolside/laguna-s-2.1-free", "inclusionai/ling-3.0-flash-sante:free",
             "meta/muse-spark-1.1", "meta/muse-spark-1.2", "meta/muse-spark-1.2-contributor",
@@ -87,6 +88,30 @@ struct CommandCodeProviderPluginTests {
         // 唯一显式声明支持视觉的模型
         let vision = try #require(info.models.first(where: { $0.id == "deepseek/deepseek-v4.1-flash" }))
         #expect(vision.supportsVision == true)
+    }
+
+    @Test("LongCat 2.0 离线基线使用规范 ID（回归 #971）")
+    func longCatUsesCanonicalModelID() {
+        let info = GoatPlanProvider().providerInfo
+        let ids = info.modelIDs
+
+        #expect(ids.contains("meituan/LongCat-2.0"))
+        #expect(!ids.contains("meituan/LongCat-2.0:free"))
+
+        // 远程返回规范 ID 时，合并目录不应再同时保留旧的 :free 条目。
+        let merged = RemoteModelMerger.merge(
+            base: info.models,
+            remote: [LLMModelInfo(id: "meituan/LongCat-2.0", contextWindowSize: 1_048_576)]
+        )
+        #expect(merged.map(\.id).filter { $0.contains("LongCat") } == ["meituan/LongCat-2.0"])
+    }
+
+    @Test("Step 3.5 Flash 离线基线保留真实窗口（回归 #970）")
+    func stepFunFlashUsesRealContextWindow() throws {
+        let info = GoatPlanProvider().providerInfo
+
+        let flash = try #require(info.models.first(where: { $0.id == "stepfun/Step-3.5-Flash" }))
+        #expect(flash.contextWindowSize == 262_144)
     }
 
     @Test("GoatPlan 支持远程模型源")

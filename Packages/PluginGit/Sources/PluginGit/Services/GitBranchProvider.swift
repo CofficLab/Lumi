@@ -22,7 +22,20 @@ public final class GitBranchProvider: GitBranchManaging, @unchecked Sendable {
     public func currentBranch(atPath path: String) async throws -> String? {
         let repoPath = try Self.requireRepositoryRoot(containing: path)
         return try await perform(repoPath: repoPath) {
-            try? LibGit2.getCurrentBranch(at: repoPath)
+            // `LibGit2.getCurrentBranch` 在 detached HEAD 时返回完整 commit hash，
+            // 但契约要求此时没有分支名，不能把 OID 冒充分支名。
+            guard try LibGit2.isHEADDetached(at: repoPath) == false else { return nil }
+            // 契约里 nil 只表示 detached HEAD；HEAD 指向缺失引用等读取失败
+            // 必须抛出，否则会被界面当成正常状态（#915）。
+            return try LibGit2.getCurrentBranch(at: repoPath)
+        }
+    }
+
+    public func detachedHeadCommitHash(atPath path: String) async throws -> String? {
+        let repoPath = try Self.requireRepositoryRoot(containing: path)
+        return try await perform(repoPath: repoPath) {
+            guard try LibGit2.isHEADDetached(at: repoPath) else { return nil }
+            return try? LibGit2.getCurrentBranch(at: repoPath)
         }
     }
 

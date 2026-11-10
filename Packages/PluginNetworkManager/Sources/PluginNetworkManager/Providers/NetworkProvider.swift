@@ -266,7 +266,11 @@ public final class NetworkProvider: NetworkProviding {
     /// （交换记录停在 `beginRecord` 未收口）。用竞速任务保证最迟
     /// `timeout` 秒内失败：超时任务先完成则抛可重试的 `HTTPNetworkError`，
     /// 并取消底层 `bytes` 任务释放挂起连接；正常则返回 `(bytes, response)`。
-    private static func withResponseHeaderTimeout(
+    ///
+    /// 合成的超时必须带 `NSURLErrorTimedOut`：上层 `LLMNetworkProviderAdapter`
+    /// 仅凭 `underlyingCode` 才能把它归一化为可重试的网络错误，否则会退化为
+    /// `VendorAPIError.requestFailed`，默认三次尝试只执行第一次。
+    static func withResponseHeaderTimeout(
         session: URLSession,
         urlRequest: URLRequest,
         url: URL,
@@ -280,12 +284,17 @@ public final class NetworkProvider: NetworkProviding {
                 try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
                 throw HTTPNetworkError(
                     url: url,
-                    underlyingDescription: "等待响应头超时（\(Int(timeout))s，连接无响应）"
+                    underlyingDescription: "等待响应头超时（\(Int(timeout))s，连接无响应）",
+                    underlyingCode: NSURLErrorTimedOut
                 )
             }
             defer { group.cancelAll() }
             guard let result = try await group.next() else {
-                throw HTTPNetworkError(url: url, underlyingDescription: "连接无响应")
+                throw HTTPNetworkError(
+                    url: url,
+                    underlyingDescription: "连接无响应",
+                    underlyingCode: NSURLErrorTimedOut
+                )
             }
             return result
         }

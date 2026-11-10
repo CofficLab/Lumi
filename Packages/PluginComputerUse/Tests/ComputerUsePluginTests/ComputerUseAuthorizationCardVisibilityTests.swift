@@ -151,7 +151,8 @@ struct ComputerUseAuthorizationCardVisibilityTests {
     /// 渲染器按优先级降序取第一个 `canRender` 为真的（见
     /// `ToolCallRenderingProviding.renderer(for:)`）。Computer Use 的优先级
     /// 是 200，高于通用授权卡片的 120——这个顺序不能被破坏，否则
-    /// 「允许一次 / 始终允许 / 拒绝」会退化成「允许 / 拒绝」两按钮。
+    /// 「本任务内允许 / 拒绝」会退化成「允许 / 拒绝」两按钮，
+    /// 丢掉「仅本任务有效」的语义。
     ///
     /// 这条同时锁住通用渲染器不抢占：通用渲染器只接受
     /// `kind == "permission"` 的载荷，Computer Use 载荷是

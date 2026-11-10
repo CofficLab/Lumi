@@ -5,7 +5,7 @@ let package = Package(
     name: "ProviderConversation",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("14.0"),
         .iOS(.v17)
     ],
     products: [

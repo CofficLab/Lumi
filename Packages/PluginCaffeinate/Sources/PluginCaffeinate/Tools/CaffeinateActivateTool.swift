@@ -39,9 +39,11 @@ struct CaffeinateActivateTool: SuperAgentTool {
     @MainActor
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         let modeString = arguments["mode"]?.value as? String ?? "systemAndDisplay"
-        let duration = (arguments["duration"]?.value as? NSNumber)?.doubleValue
-            ?? (arguments["duration"]?.value as? Double)
-            ?? 0
+        let duration = Self.sanitizedDuration(
+            (arguments["duration"]?.value as? NSNumber)?.doubleValue
+                ?? (arguments["duration"]?.value as? Double)
+                ?? 0
+        )
 
         let mode: CaffeinateManager.SleepMode
         switch modeString {
@@ -74,6 +76,13 @@ struct CaffeinateActivateTool: SuperAgentTool {
         
         System will stay awake. Use `caffeinate_deactivate` to stop, or `caffeinate_status` to check current state.
         """
+    }
+
+    /// 时长来自 JSON 参数，可能是 `inf` / `nan` / 超出 `Int` 范围的值；
+    /// 直接进入 `Int(seconds)` 会触发运行时陷阱，这里先收敛到可表示区间。
+    static func sanitizedDuration(_ raw: Double) -> TimeInterval {
+        guard raw.isFinite, raw > 0 else { return 0 }
+        return min(raw, TimeInterval(Int.max / 2))
     }
 
     private func formatDuration(_ seconds: TimeInterval) -> String {

@@ -62,7 +62,8 @@ public struct DockerImage: Identifiable, Codable, Hashable, Sendable {
         self.createdAt = try container.decode(String.self, forKey: .createdAt)
         self.createdSince = try container.decode(String.self, forKey: .createdSince)
         self.size = try container.decode(String.self, forKey: .size)
-        self.virtualSize = try container.decode(String.self, forKey: .virtualSize)
+        // 新版 Docker CLI 不再保证输出 VirtualSize；缺失时回退到 Size。
+        self.virtualSize = try container.decodeIfPresent(String.self, forKey: .virtualSize) ?? self.size
         self.digest = try container.decodeIfPresent(String.self, forKey: .digest) ?? ""
     }
 

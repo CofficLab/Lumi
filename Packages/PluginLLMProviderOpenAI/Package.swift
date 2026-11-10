@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "PluginLLMProviderOpenAI",
     platforms: [
-        .macOS(.v14),
+        .macOS("14.0"),
         .iOS(.v17)
     ],
     products: [

@@ -40,9 +40,19 @@ public final class SettingsToolbarPlugin: SuperPlugin, SuperLog {
             return
         }
 
-        let item = ToolbarItem(
+        toolbar.addToolbarItems([Self.makeSettingsToolbarItem()])
+    }
+
+    /// 构造设置按钮的工具栏项。
+    ///
+    /// `title` 会被宿主 `DefaultToolbarProviding` 直接用作 `.help(...)`，即按钮
+    /// 悬停提示，因此必须经过本地化解析，不能写死某一语言的字面量（#922）。
+    static func makeSettingsToolbarItem(
+        localized: (String) -> String = { pluginLocalization.string($0) }
+    ) -> ProviderToolbar.ToolbarItem {
+        ProviderToolbar.ToolbarItem(
             id: "settings",
-            title: "设置",
+            title: localized("Settings"),
             placement: .trailing,
             category: .global,
             order: 300
@@ -51,8 +61,6 @@ public final class SettingsToolbarPlugin: SuperPlugin, SuperLog {
                 NotificationCenter.default.post(name: .lumiOpenSettings, object: nil)
             }
         }
-
-        toolbar.addToolbarItems([item])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

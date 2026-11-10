@@ -28,16 +28,21 @@ final class TurnFinishedNotificationHook {
     // MARK: - Presentation
 
     /// 按结束原因生成通知标题与正文（纯函数，可测试）。
-    nonisolated static func presentation(for reason: String) -> (title: String, body: String) {
+    ///
+    /// `resolve` 默认走插件本地化资源；测试可注入替身断言文案确实经过本地化。
+    nonisolated static func presentation(
+        for reason: String,
+        resolve: (String) -> String = { pluginLocalization.string($0) }
+    ) -> (title: String, body: String) {
         switch reason {
         case "completed":
-            return ("任务完成", "Agent 回合已结束")
+            return (resolve("Task Completed"), resolve("Agent turn finished"))
         case "failed":
-            return ("任务失败", "Agent 回合执行失败")
+            return (resolve("Task Failed"), resolve("Agent turn failed"))
         case "cancelled":
-            return ("任务已取消", "Agent 回合已取消")
+            return (resolve("Task Cancelled"), resolve("Agent turn cancelled"))
         default:
-            return ("回合结束", "Agent 回合已结束")
+            return (resolve("Turn Finished"), resolve("Agent turn finished"))
         }
     }
 }

@@ -140,6 +140,9 @@ public protocol MessageManaging: AnyObject {
     ) -> any MessageChangeObserverHandle
 }
 
+/// 单页消息数量上限：异常输入在 Debug 下 assert，Release 下钳制。
+private let maxMessagePageLimit = 10_000
+
 public extension MessageManaging {
     func messagesSnapshot(in conversationID: UUID) async -> [Message] {
         await messagesForLLM(in: conversationID)
@@ -161,11 +164,14 @@ public extension MessageManaging {
         beforeMessageID: UUID?,
         includesToolMessages: Bool = false
     ) -> [Message] {
-        guard limit > 0 else { return [] }
+        assert(limit >= 1, "messagePage(limit:) requires limit >= 1")
+        let limit = max(1, min(maxMessagePageLimit, limit))
         let all = messages(for: conversationID)
             .filter { includesToolMessages || $0.role != .tool }
             .sorted {
-                if $0.createdAt == $1.createdAt { return $0.id < $1.id }
+                // `UUID: Comparable` 是 macOS 14 才有的 conformance，改用
+                // `uuidString` 做字典序比较以兼容 macOS 13。
+                if $0.createdAt == $1.createdAt { return $0.id.uuidString < $1.id.uuidString }
                 return $0.createdAt < $1.createdAt
             }
         guard let beforeMessageID else { return Array(all.suffix(limit)) }

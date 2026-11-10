@@ -46,8 +46,7 @@ enum EmptyStateActivityScope: String, CaseIterable, Equatable, Sendable {
 /// statistics from ``MessageManaging`` so the strip reflects the user's actual
 /// history rather than the empty conversation being displayed.
 @MainActor
-@Observable
-final class EmptyStateActivityViewModel {
+final class EmptyStateActivityViewModel: ObservableObject {
     /// How many trailing calendar days the strip covers.
     ///
     /// `nonisolated` because it is an immutable literal that the pure bucketing
@@ -66,24 +65,32 @@ final class EmptyStateActivityViewModel {
     private var loadGeneration = 0
 
     /// 用户选择的统计范围。
-    private(set) var scope: EmptyStateActivityScope = .project
+    @Published private(set) var scope: EmptyStateActivityScope = .project
 
-    private(set) var days: [EmptyStateActivityDay] = []
-    private(set) var isLoading = false
+    @Published private(set) var days: [EmptyStateActivityDay] = []
+    @Published private(set) var isLoading = false
 
     /// Total messages inside the window. `nil` until the first load resolves.
-    private(set) var totalMessages: Int?
+    @Published private(set) var totalMessages: Int?
 
     /// Daily token consumption over the same window as ``days``.
-    private(set) var tokenDays: [EmptyStateTokenDay] = []
+    @Published private(set) var tokenDays: [EmptyStateTokenDay] = []
 
     /// Tokens consumed inside the window, or `nil` before the first load.
-    private(set) var totalTokens: Int?
+    @Published private(set) var totalTokens: Int?
 
     /// Zero tokens means the trend line would be a flat axis with nothing to
     /// say, so the chart is omitted rather than drawn empty.
     var hasTokenActivity: Bool {
         totalTokens.map { $0 > 0 } ?? false
+    }
+
+    /// 是否渲染 token 曲线（及其分隔线）。
+    ///
+    /// 热力图只依赖消息数，可以独立存在；token 区域没有消耗时应整段隐藏，
+    /// 否则零值会被画成一条平坦趋势线，并留下一条没有内容可分隔的分隔线。
+    var showsTokenTrend: Bool {
+        hasChartData && hasTokenActivity
     }
 
     /// Oldest and newest visible day, or `nil` before the first load.

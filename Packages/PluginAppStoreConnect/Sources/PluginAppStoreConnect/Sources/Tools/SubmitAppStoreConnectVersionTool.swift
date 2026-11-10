@@ -76,28 +76,40 @@ public struct SubmitAppStoreConnectVersionTool: SuperAgentTool {
     ) async throws -> ToolCallResult {
         guard let versionID = arguments["versionID"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
               !versionID.isEmpty else {
-            return ToolCallResult(content: "Missing or empty versionID.", isError: true)
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty versionID.")
         }
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
         guard let client else {
-            let message = errorMessage ?? "Failed to initialize App Store Connect client."
-            return ToolCallResult(content: message, isError: true)
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: errorMessage ?? "Failed to initialize App Store Connect client."
+            )
         }
 
         do {
-            // 前置检查 1：必须先关联 build
-            guard let assignedBuildID = try await client.readAssignedBuildID(versionID: versionID) else {
-                return ToolCallResult(
-                    content: "Cannot submit: no build is assigned to version id=\(versionID). Use assign-build first.",
-                    isError: true
+            // 前置检查 1：必须先关联 build。
+            // 缓存里可能还留着关联 build 之前的 {"data": null}，直接采信会让用户
+            // 收到「no build is assigned」这种与实际状态矛盾的提示；因此读不到时
+            // 强制走一次网络复核，再判定失败。
+            var assignedBuildID = try await client.readAssignedBuildID(versionID: versionID)
+            if assignedBuildID == nil {
+                assignedBuildID = try await client.readAssignedBuildID(
+                    versionID: versionID,
+                    cachePolicy: .networkOnly
+                )
+            }
+            guard let assignedBuildID else {
+                throw ToolExecutionError.executionFailed(
+                    toolName: name,
+                    reason: "Cannot submit: no build is assigned to version id=\(versionID). Use assign-build first."
                 )
             }
             // 前置检查 2：不能重复提交
             if try await client.readSubmissionID(versionID: versionID) != nil {
-                return ToolCallResult(
-                    content: "Cannot submit: version id=\(versionID) already has a pending submission.",
-                    isError: true
+                throw ToolExecutionError.executionFailed(
+                    toolName: name,
+                    reason: "Cannot submit: version id=\(versionID) already has a pending submission."
                 )
             }
 
@@ -122,7 +134,7 @@ public struct SubmitAppStoreConnectVersionTool: SuperAgentTool {
                 preview.stage = .failed
                 preview.errorMessage = content
                 await insertTimelineMessage(timeline: timeline, preview: preview)
-                return ToolCallResult(content: content, isError: true)
+                throw ToolExecutionError.executionFailed(toolName: name, reason: content)
             }
 
             do {
@@ -139,10 +151,12 @@ public struct SubmitAppStoreConnectVersionTool: SuperAgentTool {
                 await insertTimelineMessage(timeline: timeline, preview: preview)
                 throw error
             }
+        } catch let error as ToolExecutionError {
+            throw error
         } catch {
-            return ToolCallResult(
-                content: "Failed to submit version: \(error.localizedDescription)",
-                isError: true
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Failed to submit version: \(error.localizedDescription)"
             )
         }
     }

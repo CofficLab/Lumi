@@ -1,4 +1,5 @@
 import Foundation
+import KitAgentTool
 
 public struct DatabaseConnectionSummary: Encodable {
     public let id: String
@@ -51,6 +52,8 @@ public actor DatabaseAgentToolService {
 
     private let manager = DatabaseManagerCore.shared
     private let registry = DatabaseAgentConnectionRegistry.shared
+    /// 每个连接建立时使用的配置快照，用于判断是否可以复用。
+    private var connectedConfigs: [UUID: DatabaseConfig] = [:]
 
     private init() {}
 
@@ -69,7 +72,10 @@ public actor DatabaseAgentToolService {
         return try Self.encodeJSON(summaries)
     }
 
-    public func describeSchema(connectionId: UUID, limit: Int) async throws -> String {
+    /// 描述连接的表结构。
+    ///
+    /// - Parameter schemaName: 只描述某个 schema（PostgreSQL）。为空时描述全部非系统 schema。
+    public func describeSchema(connectionId: UUID, limit: Int, schemaName: String? = nil) async throws -> String {
         let limit = try Self.normalizedLimit(limit)
         let config = try await config(for: connectionId)
         let connection = try await connection(for: config)
@@ -104,15 +110,20 @@ public actor DatabaseAgentToolService {
             )
             return try Self.encodeJSON(Self.rowsAsDictionaries(result, limit: limit))
         case .postgresql:
+            // 不写死 public：应用表常在 analytics 之类的普通 schema 里。
+            // 未指定 schema 时列出所有非系统 schema。
+            let requested = schemaName?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let hasRequested = !(requested?.isEmpty ?? true)
+            let (schemaSQL, params) = Self.postgresSchemaFilter(schema: requested)
             let result = try await connection.query(
                 """
-                SELECT table_name, column_name, data_type, is_nullable
+                SELECT table_schema, table_name, column_name, data_type, is_nullable
                 FROM information_schema.columns
-                WHERE table_schema = 'public'
-                ORDER BY table_name, ordinal_position
+                WHERE true \(schemaSQL)
+                ORDER BY table_schema, table_name, ordinal_position
                 LIMIT \(limit)
                 """,
-                params: nil
+                params: params.isEmpty ? nil : params
             )
             return try Self.encodeJSON(Self.rowsAsDictionaries(result, limit: limit))
         case .redis:
@@ -149,10 +160,16 @@ public actor DatabaseAgentToolService {
 
     private func connection(for config: DatabaseConfig) async throws -> any DatabaseConnection {
         await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
-        if let connection = await manager.getConnection(for: config.id), await connection.isAlive() {
+        // 连接必须与建立时的配置一致；配置被编辑（同一 id 换库/换地址）后，
+        // 直接复用旧连接会继续读写编辑前的位置。
+        if connectedConfigs[config.id] == config,
+           let connection = await manager.getConnection(for: config.id),
+           await connection.isAlive() {
             return connection
         }
-        return try await manager.connect(config: config)
+        let connection = try await manager.connect(config: config)
+        connectedConfigs[config.id] = config
+        return connection
     }
 
     public static func connectionId(from value: Any?) throws -> UUID {
@@ -167,16 +184,10 @@ public actor DatabaseAgentToolService {
 
     public static func normalizedLimit(_ value: Any?) throws -> Int {
         if value == nil { return defaultRows }
-        if let int = value as? Int {
-            return try normalizedLimit(int)
+        guard let int = ToolArgumentNumber.int(value) else {
+            throw DatabaseAgentToolError.invalidLimit
         }
-        if let double = value as? Double {
-            return try normalizedLimit(Int(double))
-        }
-        if let string = value as? String, let int = Int(string) {
-            return try normalizedLimit(int)
-        }
-        throw DatabaseAgentToolError.invalidLimit
+        return try normalizedLimit(int)
     }
 
     public static func normalizedLimit(_ limit: Int) throws -> Int {
@@ -196,12 +207,16 @@ public actor DatabaseAgentToolService {
             throw DatabaseAgentToolError.missingArgument("sql")
         }
 
-        let withoutTrailingSemicolon = trimmed.hasSuffix(";") ? String(trimmed.dropLast()) : trimmed
-        if withoutTrailingSemicolon.contains(";") {
+        // 判定用「代码骨架」：字符串字面量与注释里的内容不是代码。
+        // `SELECT 'DROP' AS word` 是合法读取，`SELECT 1; DROP TABLE t` 才是写操作。
+        // 执行用的仍是原始 SQL —— 骨架只用于判断，绝不替代语句本身。
+        let skeleton = SQLStatementParser.stripLiteralsAndComments(trimmed)
+        let skeletonWithoutTrailingSemicolon = skeleton.hasSuffix(";") ? String(skeleton.dropLast()) : skeleton
+        if skeletonWithoutTrailingSemicolon.contains(";") {
             throw DatabaseAgentToolError.unsafeSQL("multiple statements are not allowed")
         }
 
-        let first = withoutTrailingSemicolon
+        let first = skeletonWithoutTrailingSemicolon
             .split(whereSeparator: { $0.isWhitespace || $0 == "(" })
             .first?
             .uppercased() ?? ""
@@ -222,16 +237,35 @@ public actor DatabaseAgentToolService {
             throw DatabaseAgentToolError.unsafeSQL("only read-only statements are allowed")
         }
 
-        let upper = withoutTrailingSemicolon.uppercased()
+        let upper = skeletonWithoutTrailingSemicolon.uppercased()
         let forbidden = ["INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "TRUNCATE", "CREATE", "REPLACE", "GRANT", "REVOKE", "CALL", "COPY", "LOAD", "ATTACH", "DETACH"]
         if forbidden.contains(where: { upper.range(of: "\\b\($0)\\b", options: .regularExpression) != nil }) {
             throw DatabaseAgentToolError.unsafeSQL("write or administrative keyword detected")
         }
 
+        // 返回给执行层的是原始 SQL：字面量与注释必须原样保留。
+        let statement = trimmed.hasSuffix(";") ? String(trimmed.dropLast()) : trimmed
+
         guard first == "SELECT", upper.range(of: "\\bLIMIT\\b", options: .regularExpression) == nil else {
-            return withoutTrailingSemicolon
+            return statement
         }
-        return "\(withoutTrailingSemicolon) LIMIT \(limit)"
+        return "\(statement) LIMIT \(limit)"
+    }
+
+    /// PostgreSQL schema 过滤条件。
+    ///
+    /// - 指定 schema 时用绑定参数 `$1`（不拼进 SQL，避免注入）；
+    /// - 未指定时列出所有非系统 schema —— 应用表常在 analytics 之类的普通 schema 里，
+    ///   写死 public 会让这些表完全无法被发现。
+    static func postgresSchemaFilter(schema: String?) -> (sql: String, params: [DatabaseValue]) {
+        let trimmed = schema?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty else {
+            return (
+                "AND table_schema NOT IN ('pg_catalog', 'information_schema')",
+                []
+            )
+        }
+        return ("AND table_schema = $1", [.string(trimmed)])
     }
 
     public static func rowsAsDictionaries(_ result: QueryResult, limit: Int) -> DatabaseQueryPayload {

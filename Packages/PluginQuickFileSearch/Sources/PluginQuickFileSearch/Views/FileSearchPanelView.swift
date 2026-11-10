@@ -50,11 +50,28 @@ public struct FileSearchPanelView: View {
             isSearchFocused = true
             selectedIndex = 0
         }
-        .onChange(of: searchService.searchResults.count) { _, _ in
+        .onChange(of: searchService.searchResults.count) { _ in
             selectedIndex = 0
         }
-        .onKeyPress { keyPress in
-            handleKeyPress(keyPress)
+        // macOS 13 兼容实现：`onKeyPress` 是 macOS 14 独占 API。上下箭头用
+        // SwiftUI 的 `onMoveCommand`（macOS 11+）区分方向，Esc 用
+        // `onExitCommand`（macOS 11+），二者合起来覆盖原 `onKeyPress` 的行为。
+        .onMoveCommand { direction in
+            switch direction {
+            case .up:
+                if selectedIndex > 0 {
+                    selectedIndex -= 1
+                }
+            case .down:
+                if selectedIndex < searchService.searchResults.count - 1 {
+                    selectedIndex += 1
+                }
+            default:
+                break
+            }
+        }
+        .onExitCommand {
+            dismissSearch()
         }
     }
 
@@ -69,7 +86,7 @@ public struct FileSearchPanelView: View {
                 .frame(width: 20)
 
             // 搜索输入框
-            TextField("搜索文件...", text: $searchService.searchQuery)
+            TextField(pluginLocalization.string("搜索文件..."), text: $searchService.searchQuery)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
                 .focused($isSearchFocused)
@@ -206,34 +223,6 @@ public struct FileSearchPanelView: View {
         hotkeyManager.hideOverlay()
     }
 
-    // MARK: - Keyboard Handling
-
-    private func handleKeyPress(_ keyPress: KeyPress) -> KeyPress.Result {
-        switch keyPress.key {
-        case .upArrow:
-            if selectedIndex > 0 {
-                selectedIndex -= 1
-            }
-            return .handled
-
-        case .downArrow:
-            if selectedIndex < searchService.searchResults.count - 1 {
-                selectedIndex += 1
-            }
-            return .handled
-
-        case .escape:
-            dismissSearch()
-            return .handled
-
-        case .return:
-            selectFile(at: selectedIndex)
-            return .handled
-
-        default:
-            return .ignored
-        }
-    }
 }
 
 // MARK: - Preview

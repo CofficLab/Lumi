@@ -34,12 +34,14 @@ struct CPUHistoryGraphView: View {
                         gridLines(for: geometry.size)
 
                         if !dataPoints.isEmpty {
+                            let timestamps = dataPoints.map(\.timestamp)
+
                             // Usage Area
-                            CPUGraphArea(data: dataPoints.map { $0.usage }, maxValue: maxValue)
+                            CPUGraphArea(data: dataPoints.map { $0.usage }, timestamps: timestamps, maxValue: maxValue)
                                 .fill(LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.5), Color.blue.opacity(0.1)]), startPoint: .top, endPoint: .bottom))
 
                             // Usage Line
-                            CPUGraphLine(data: dataPoints.map { $0.usage }, maxValue: maxValue)
+                            CPUGraphLine(data: dataPoints.map { $0.usage }, timestamps: timestamps, maxValue: maxValue)
                                 .stroke(.blue, lineWidth: 1.5)
                         } else {
                             Text(pluginLocalization.string("Collecting..."))
@@ -66,7 +68,6 @@ struct CPUHistoryGraphView: View {
                     .onContinuousHover { phase in
                         switch phase {
                         case .active(let location):
-                            hoverLocation = location
                             updateHoverDataPoint(at: location.x, width: geometry.size.width)
                         case .ended:
                             hoverLocation = nil
@@ -176,11 +177,28 @@ struct CPUHistoryGraphView: View {
     }
     
     private func updateHoverDataPoint(at x: CGFloat, width: CGFloat) {
-        guard !dataPoints.isEmpty else { return }
-        
-        let index = Int(x / width * CGFloat(dataPoints.count - 1))
-        let safeIndex = max(0, min(dataPoints.count - 1, index))
-        hoverDataPoint = dataPoints[safeIndex]
+        let timestamps = dataPoints.map(\.timestamp)
+        guard let index = DeviceHistoryChartGeometry.nearestIndex(
+            to: x,
+            timestamps: timestamps,
+            width: width
+        ) else {
+            hoverLocation = nil
+            hoverDataPoint = nil
+            return
+        }
+
+        let point = dataPoints[index]
+        hoverDataPoint = point
+        hoverLocation = CGPoint(
+            x: DeviceHistoryChartGeometry.x(
+                for: point.timestamp,
+                start: timestamps.first ?? point.timestamp,
+                end: timestamps.last ?? point.timestamp,
+                width: width
+            ),
+            y: 0
+        )
     }
     
     private func clampedX(_ x: CGFloat, width: CGFloat) -> CGFloat {
@@ -194,19 +212,23 @@ struct CPUHistoryGraphView: View {
 
 struct CPUGraphLine: Shape {
     var data: [Double]
+    var timestamps: [TimeInterval]
     var maxValue: Double
     
     func path(in rect: CGRect) -> Path {
         var path = Path()
-        guard data.count > 1, maxValue.isFinite, maxValue > 0 else { return path }
+        guard data.count > 1, data.count == timestamps.count,
+              let start = timestamps.first, let end = timestamps.last,
+              maxValue.isFinite, maxValue > 0 else { return path }
         
-        let stepX = rect.width / CGFloat(data.count - 1)
         let scaleY = rect.height / CGFloat(maxValue)
         
         path.move(to: CGPoint(x: 0, y: rect.height - CGFloat(data[0]) * scaleY))
         
         for index in 1..<data.count {
-            let x = CGFloat(index) * stepX
+            let x = DeviceHistoryChartGeometry.x(
+                for: timestamps[index], start: start, end: end, width: rect.width
+            )
             let y = rect.height - CGFloat(data[index]) * scaleY
             path.addLine(to: CGPoint(x: x, y: y))
         }
@@ -217,20 +239,24 @@ struct CPUGraphLine: Shape {
 
 struct CPUGraphArea: Shape {
     var data: [Double]
+    var timestamps: [TimeInterval]
     var maxValue: Double
     
     func path(in rect: CGRect) -> Path {
         var path = Path()
-        guard data.count > 1, maxValue.isFinite, maxValue > 0 else { return path }
+        guard data.count > 1, data.count == timestamps.count,
+              let start = timestamps.first, let end = timestamps.last,
+              maxValue.isFinite, maxValue > 0 else { return path }
         
-        let stepX = rect.width / CGFloat(data.count - 1)
         let scaleY = rect.height / CGFloat(maxValue)
         
         path.move(to: CGPoint(x: 0, y: rect.height))
         path.addLine(to: CGPoint(x: 0, y: rect.height - CGFloat(data[0]) * scaleY))
         
         for index in 1..<data.count {
-            let x = CGFloat(index) * stepX
+            let x = DeviceHistoryChartGeometry.x(
+                for: timestamps[index], start: start, end: end, width: rect.width
+            )
             let y = rect.height - CGFloat(data[index]) * scaleY
             path.addLine(to: CGPoint(x: x, y: y))
         }

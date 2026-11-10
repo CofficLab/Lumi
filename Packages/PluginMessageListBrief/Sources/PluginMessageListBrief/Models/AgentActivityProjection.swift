@@ -46,7 +46,8 @@ struct AgentActivityProjection: Equatable, Sendable {
 
     static func resolve(
         conversationState: ConversationStateSnapshot?,
-        streamingStage: MessageStreamingStage
+        streamingStage: MessageStreamingStage,
+        resolve: (String) -> String = { pluginLocalization.string($0) }
     ) -> AgentActivityProjection? {
         if let activity = conversationState?.activity {
             switch activity {
@@ -57,19 +58,19 @@ struct AgentActivityProjection: Equatable, Sendable {
                 if runningCount > 1 {
                     return AgentActivityProjection(
                         phase: .executingTool,
-                        title: "正在执行 \(runningCount) 个任务",
-                        detail: description.map { "最近：\($0)" }
+                        title: String(format: resolve("Executing %lld tasks"), runningCount),
+                        detail: description.map { String(format: resolve("Latest: %@"), $0) }
                     )
                 }
                 return AgentActivityProjection(
                     phase: .executingTool,
-                    title: "正在执行",
+                    title: resolve("Executing"),
                     detail: description
                 )
             case .waitingForUser:
                 return AgentActivityProjection(
                     phase: .waitingForUser,
-                    title: "等待你的确认",
+                    title: resolve("Waiting for your confirmation"),
                     detail: conversationState?.jobActivity.recentJobDescription
                 )
             case .sending, .thinking:
@@ -79,20 +80,20 @@ struct AgentActivityProjection: Equatable, Sendable {
 
         switch streamingStage {
         case .sending:
-            return AgentActivityProjection(phase: .sending, title: "正在发送消息…", detail: nil)
+            return AgentActivityProjection(phase: .sending, title: resolve("Sending message…"), detail: nil)
         case .thinking:
-            return AgentActivityProjection(phase: .thinking, title: "正在思考…", detail: nil)
+            return AgentActivityProjection(phase: .thinking, title: resolve("Thinking…"), detail: nil)
         case .generating:
-            return AgentActivityProjection(phase: .generating, title: "正在生成回复…", detail: nil)
+            return AgentActivityProjection(phase: .generating, title: resolve("Generating reply…"), detail: nil)
         case .idle:
             break
         }
 
         switch conversationState?.activity {
         case .sending:
-            return AgentActivityProjection(phase: .sending, title: "正在发送消息…", detail: nil)
+            return AgentActivityProjection(phase: .sending, title: resolve("Sending message…"), detail: nil)
         case .thinking:
-            return AgentActivityProjection(phase: .thinking, title: "正在思考…", detail: nil)
+            return AgentActivityProjection(phase: .thinking, title: resolve("Thinking…"), detail: nil)
         case .executingTool, .waitingForUser, .none:
             break
         }
@@ -101,11 +102,11 @@ struct AgentActivityProjection: Equatable, Sendable {
         // AgentLoop 尚未结束，底部状态行就必须继续存在。
         switch conversationState?.agentLoopState {
         case .running:
-            return AgentActivityProjection(phase: .thinking, title: "正在处理…", detail: nil)
+            return AgentActivityProjection(phase: .thinking, title: resolve("Processing…"), detail: nil)
         case .suspended:
             return AgentActivityProjection(
                 phase: .waitingForUser,
-                title: "等待你的确认",
+                title: resolve("Waiting for your confirmation"),
                 detail: conversationState?.jobActivity.recentJobDescription
             )
         case .idle, .completed, .failed, .cancelled, .none:

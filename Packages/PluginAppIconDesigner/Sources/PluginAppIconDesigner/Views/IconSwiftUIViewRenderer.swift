@@ -21,7 +21,7 @@ struct IconRenderedDocumentView: View {
 
             ZStack(alignment: .topLeading) {
                 Rectangle()
-                    .fill(paint(document.background))
+                    .fill(paint(document.background, scale: scale))
                     .frame(width: document.width * scale, height: document.height * scale)
                     .position(x: xOffset + document.width * scale / 2, y: yOffset + document.height * scale / 2)
 
@@ -47,7 +47,7 @@ struct IconRenderedDocumentView: View {
         }
     }
 
-    private func paint(_ paint: IconPaint) -> AnyShapeStyle {
+    private func paint(_ paint: IconPaint, scale: Double) -> AnyShapeStyle {
         switch paint {
         case .color(let value):
             return AnyShapeStyle(Color(iconHex: value))
@@ -64,8 +64,8 @@ struct IconRenderedDocumentView: View {
                 RadialGradient(
                     colors: colors.map(Color.init(iconHex:)),
                     center: UnitPoint(iconPoint: center),
-                    startRadius: startRadius,
-                    endRadius: endRadius
+                    startRadius: startRadius * scale,
+                    endRadius: endRadius * scale
                 )
             )
         }

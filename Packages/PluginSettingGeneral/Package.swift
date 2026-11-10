@@ -5,7 +5,7 @@ let package = Package(
     name: "PluginSettingGeneral",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("14.0"),
         .iOS(.v17)
     ],
     products: [
@@ -17,9 +17,10 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.13.0"),
         .package(path: "../ProviderDiagnostics"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
+        .package(path: "../KitLumiCLI"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0"),
         .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
     ],
@@ -37,6 +38,7 @@ let package = Package(
                 .product(name: "ProviderAppUpdate", package: "LumiProviders"),
                 .product(name: "ProviderSettingView", package: "LumiSettings"),
                 .product(name: "ProviderStorage", package: "LumiProviders"),
+                .product(name: "KitLumiCLI", package: "KitLumiCLI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
             ],
             path: "Sources/PluginSettingGeneral",
@@ -44,7 +46,10 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginSettingGeneralTests",
-            dependencies: ["PluginSettingGeneral"]
+            dependencies: [
+                "PluginSettingGeneral",
+                .product(name: "KitLumiCLI", package: "KitLumiCLI"),
+            ]
         )
     ]
 )

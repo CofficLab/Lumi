@@ -2,6 +2,23 @@ import LumiUI
 import ProviderPanelBottom
 import SwiftUI
 
+/// 底部面板单个入口在内容区 ZStack 中的呈现状态。
+///
+/// 已挂载的非激活入口保留在 ZStack 中以复用状态（终端等），但透明视图仍会
+/// 参与 SwiftUI 命中测试；只有激活入口可以接收输入，并且必须位于最上层，
+/// 否则 order 更高的隐藏入口会拦截当前入口的点击与滚动（#1017）。
+struct PanelBottomItemPresentation: Equatable {
+    let isActive: Bool
+
+    var opacity: Double { isActive ? 1 : 0 }
+    var allowsHitTesting: Bool { isActive }
+    var zIndex: Double { isActive ? 1 : 0 }
+
+    init(itemID: String, activeItemID: String?) {
+        isActive = itemID == activeItemID
+    }
+}
+
 /// 底部面板 tab 容器（content footer 的内容视图）。
 ///
 /// 由 `PanelBottomPlugin` 注入 content footer 插槽：
@@ -25,7 +42,7 @@ struct PanelBottomView: View {
         }
         .debugViewBadge("Panel Bottom", alignment: .bottomLeading)
         .onAppear { mountActiveItem() }
-        .onChange(of: provider.activeItemID) { _, _ in
+        .onChange(of: provider.activeItemID) { _ in
             mountActiveItem()
         }
     }
@@ -52,8 +69,14 @@ struct PanelBottomView: View {
         ZStack {
             ForEach(provider.items) { item in
                 if mountedIDs.contains(item.id) {
+                    let presentation = PanelBottomItemPresentation(
+                        itemID: item.id,
+                        activeItemID: provider.activeItemID
+                    )
                     item.makeView()
-                        .opacity(item.id == provider.activeItemID ? 1 : 0)
+                        .opacity(presentation.opacity)
+                        .allowsHitTesting(presentation.allowsHitTesting)
+                        .zIndex(presentation.zIndex)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .debugViewBadge(item.id)
                 }

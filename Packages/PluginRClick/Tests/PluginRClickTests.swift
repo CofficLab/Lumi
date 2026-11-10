@@ -170,9 +170,33 @@ import ProviderStorage
     #expect(manager.addTemplate(NewFileTemplate(name: "Unsafe/Name", extensionName: "swift")) == false)
     #expect(manager.addTemplate(NewFileTemplate(name: "Swift", extensionName: "swift/path")) == false)
     #expect(manager.addTemplate(NewFileTemplate(name: "  Swift  ", extensionName: ".swift")) == true)
+    #expect(manager.lastSaveSucceeded == true)
     #expect(manager.config.fileTemplates.count == initialTemplates.count + 1)
     #expect(manager.config.fileTemplates.last?.name == "Swift")
     #expect(manager.config.fileTemplates.last?.extensionName == "swift")
+}
+
+@MainActor
+@Test func addTemplateReportsPersistenceFailureAndRollsBack() throws {
+    let tempRoot = FileManager.default.temporaryDirectory
+        .appendingPathComponent("RClickConfigManager-PersistFailure-\(UUID().uuidString)", isDirectory: true)
+    let blockedParent = tempRoot.appending(path: "blocked")
+    defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+    try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+    // 用普通文件占据父路径，App Group 写盘与本地备份都会失败。
+    try "not a directory".write(to: blockedParent, atomically: true, encoding: .utf8)
+
+    let manager = RClickConfigManager(
+        appGroupConfigFileURL: blockedParent.appending(path: RClickConfigManager.sharedConfigFilename),
+        store: RClickPluginLocalStore(pluginDirectory: blockedParent.appending(path: "LocalStore"))
+    )
+    let initialTemplates = manager.config.fileTemplates
+
+    #expect(manager.addTemplate(NewFileTemplate(name: "Swift", extensionName: "swift")) == false)
+    #expect(manager.lastSaveSucceeded == false)
+    // 写盘失败时不能把内存变更表现为已保存。
+    #expect(manager.config.fileTemplates == initialTemplates)
 }
 
 @MainActor

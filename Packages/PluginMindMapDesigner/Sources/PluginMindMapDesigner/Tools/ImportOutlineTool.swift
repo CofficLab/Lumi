@@ -39,7 +39,7 @@ public struct ImportOutlineTool: SuperAgentTool {
         guard let outline = MindMapToolSupport.nonEmpty(MindMapToolSupport.string(arguments, "outline")) else {
             return MindMapToolSupport.missingParameter("outline", language: language)
         }
-        guard await MainActor.run(body: { !MindMapStore.shared.projectStoragePath.isEmpty }) else {
+        guard await MainActor.run(body: { !MindMapToolSupport.store().projectStoragePath.isEmpty }) else {
             return MindMapToolSupport.error(MindMapStoreError.projectRequired, language: language)
         }
 
@@ -53,7 +53,7 @@ public struct ImportOutlineTool: SuperAgentTool {
         }()
 
         let map = await MainActor.run {
-            MindMapStore.shared.importFromMarkdown(markdown: outline, title: title, direction: direction, scope: scope)
+            MindMapToolSupport.store().importFromMarkdown(markdown: outline, title: title, direction: direction, scope: scope)
         }
         await MindMapToolSupport.notify(scope: scope, mapId: map.id)
 

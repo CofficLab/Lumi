@@ -72,12 +72,20 @@ public struct ListDirectoryTool: SuperAgentTool, @unchecked Sendable {
         do {
             var isDirectory: ObjCBool = false
             guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue else {
-                return "Error: Directory does not exist: \(url.path)"
+                throw ToolExecutionError.executionFailed(
+                    toolName: name,
+                    reason: "Directory does not exist: \(url.path)"
+                )
             }
             let output = try list(url: url, recursive: recursive)
             return output.lines.joined(separator: "\n") + (output.truncated ? "\n... (truncated)" : "")
+        } catch let error as ToolExecutionError {
+            throw error
         } catch {
-            return "Error listing directory: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Error listing directory: \(error.localizedDescription)"
+            )
         }
     }
 

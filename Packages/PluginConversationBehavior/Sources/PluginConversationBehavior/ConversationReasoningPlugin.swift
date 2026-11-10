@@ -94,7 +94,7 @@ struct ReasoningActionBarButton: View {
                 Image(systemName: "brain.head.profile")
                     .font(.appCallout)
 
-                Text(selectedEffort?.levelCode ?? "OFF")
+                Text(ReasoningChipLabel.text(for: selectedEffort))
                     .font(.appCaptionEmphasized)
 
                 Image(systemName: isPopoverPresented ? "chevron.up" : "chevron.down")
@@ -121,12 +121,15 @@ struct ReasoningActionBarButton: View {
     }
 
     func apply(_ option: ReasoningOption) {
+        // 选中会话时只改该会话；只有 New Chat（无选中会话）才改全局默认值，
+        // 否则调整一个已有会话会连带改掉之后新建会话的默认档位。
         switch option {
         case .off:
             if let id = conversations.selectedConversationID {
                 conversations.clearReasoningEffort(for: id)
+            } else {
+                conversations.setGlobalReasoningEffort(nil)
             }
-            conversations.setGlobalReasoningEffort(nil)
             ConversationBehaviorToast.show(
                 toast,
                 title: pluginLocalization.string("Reasoning Effort"),
@@ -135,8 +138,9 @@ struct ReasoningActionBarButton: View {
         case let .effort(effort):
             if let id = conversations.selectedConversationID {
                 conversations.setReasoningEffort(effort, for: id)
+            } else {
+                conversations.setGlobalReasoningEffort(effort)
             }
-            conversations.setGlobalReasoningEffort(effort)
             ConversationBehaviorToast.show(
                 toast,
                 title: pluginLocalization.string("Reasoning Effort"),
@@ -198,7 +202,7 @@ private struct ReasoningPopover: View {
                         Text(effort.levelCode)
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.primary)
-                        Text(effort.displayName)
+                        Text(effort.localizedDisplayName())
                             .font(.system(size: 11))
                             .foregroundColor(.secondary)
                         Spacer()

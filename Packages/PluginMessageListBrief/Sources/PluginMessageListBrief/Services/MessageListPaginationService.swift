@@ -25,9 +25,19 @@ struct MessageListPaginationService {
     /// 上限用于兜住极端长会话，避免尾部刷新退化成无界扫描。
     private static let maxBackfillRounds = 10
 
+    /// 入口防御：异常配置在 Debug 下通过 assert 暴露调用方错误，
+    /// Release 下钳制到安全范围，避免 `pageSize + 1` 溢出或 `suffix` 负数 trap。
+    private static let maxPageSize = 200
+    private static let maxRetainedMessages = 10_000
+
     init(pageSize: Int = 40, maxRetainedCount: Int = 300) {
-        self.pageSize = pageSize
-        self.maxRetainedCount = maxRetainedCount
+        assert((1...Self.maxPageSize).contains(pageSize), "pageSize must be in 1...\(Self.maxPageSize)")
+        assert(
+            (1...Self.maxRetainedMessages).contains(maxRetainedCount),
+            "maxRetainedCount must be in 1...\(Self.maxRetainedMessages)"
+        )
+        self.pageSize = max(1, min(Self.maxPageSize, pageSize))
+        self.maxRetainedCount = max(1, min(Self.maxRetainedMessages, maxRetainedCount))
     }
 
     /// 加载首屏（最近一页）+ 是否还有更早消息。

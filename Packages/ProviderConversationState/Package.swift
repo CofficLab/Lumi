@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "ProviderConversationState",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "ProviderConversationState", targets: ["ProviderConversationState"]),
     ],

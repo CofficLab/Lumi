@@ -46,6 +46,9 @@ final class SpeedConversationObserver: SuperLog {
             viewModel.selectConversation(nil, messages: [])
             return
         }
+        // 选择变化时先同步绑定到新会话并清空旧指标，再异步读取快照。
+        // 否则新会话快照返回前，工具栏会继续展示上一个会话的数据。
+        viewModel.selectConversation(conversationID, messages: [])
         scheduleRefresh(for: conversationID)
     }
 

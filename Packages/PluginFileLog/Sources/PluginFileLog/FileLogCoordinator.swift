@@ -55,8 +55,33 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
     private var lastPolledDate = Date.distantPast
     private var pollTimer: DispatchSourceTimer?
     private var pendingRecords: [LogRecord] = []
+
+    /// 已写入记录的键集合，用于去重。
+    ///
+    /// - Important: 必须有上界。该集合此前只增不减，长时间运行的 App
+    ///   会持续累积（每条日志一个字符串），造成内存泄漏。
     private var seenRecordKeys: Set<String> = []
+    private var seenRecordKeyOrder: [String] = []
+
+    /// `seenRecordKeys` 的最大容量。
+    ///
+    /// 远大于单次轮询可能读到的条数，保证去重不会误伤。
+    static let seenRecordKeysCapacity = 20_000
+
+    /// 已持久化记录的时间高水位。
+    ///
+    /// - Important: OSLogStore 的读取是累计的，`position(date:)` 不裁剪范围，
+    ///   因此仅靠有界去重集合无法挡住被 FIFO 淘汰的旧记录——每轮都会把它们
+    ///   当成新日志再写一次（#927）。早于该高水位的记录一律丢弃，保证同一条
+    ///   OSLog 记录最多持久化一次，与去重集合是否淘汰 key 无关。
+    private var persistedHighWatermark = Date.distantPast
+
     private var pollInFlight = false
+
+    /// 读取 OSLog 的实现；测试可替换为假数据，避免依赖真实 logd。
+    var logRecordReader: (String, Date) -> [LogRecord]? = { subsystem, sinceDate in
+        FileLogCoordinator.readLogRecords(subsystem: subsystem, since: sinceDate)
+    }
 
     /// 心跳节流计数：每次 OSLog 轮询 tick 自增，每 N 次打一条日志。
     private var pollTickCount = 0
@@ -91,8 +116,8 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
         maxFileSize: Int = 5 * 1024 * 1024,
         maxDirectorySize: Int = 50 * 1024 * 1024,
         maxRetentionDays: Int = 7,
-        pollInterval: TimeInterval = 2.0,
-        writeDelay: TimeInterval = 3.0
+        pollInterval: TimeInterval = 15.0,
+        writeDelay: TimeInterval = 1.0
     ) {
         self.directoryOverride = logsDirectory
         self.maxFileSize = maxFileSize
@@ -108,9 +133,13 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
             guard !isRunning else { return }
             isRunning = true
             isFileLoggingDisabled = false
+            // 起点取「当前时刻 - writeDelay」：writeDelay 只用于让刚写入的日志
+            // 在 logd 里落稳，不应让读窗口整体后移一轮。
             lastPolledDate = Date().addingTimeInterval(-writeDelay)
             pendingRecords = []
             seenRecordKeys = []
+            seenRecordKeyOrder = []
+            persistedHighWatermark = .distantPast
             if Self.verbose { Self.logger.info("\(Self.t)启动 OSLog 轮询(间隔 \(self.pollInterval)s)，写入 \(self.logsDirectory.path)") }
             purgeExpiredLogs()
             purgeOversizedLogs()
@@ -244,9 +273,10 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
         let startDate = lastPolledDate
         let pollDate = Date()
         let subsystem = self.subsystem
+        let readRecords = self.logRecordReader
 
         pollQueue.async { [weak self] in
-            let records = Self.readLogRecords(subsystem: subsystem, since: startDate)
+            let records = readRecords(subsystem, startDate)
 
             self?.queue.async { [weak self] in
                 guard let self else { return }
@@ -254,13 +284,13 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
                 guard self.isRunning, !self.isFileLoggingDisabled else { return }
                 guard let records else { return }
 
-                self.lastPolledDate = pollDate.addingTimeInterval(-self.writeDelay)
-                for record in records where !self.seenRecordKeys.contains(record.key) {
-                    self.seenRecordKeys.insert(record.key)
-                    self.pendingRecords.append(record)
-                }
-
-                let wroteRecords = self.writePendingRecords(upTo: pollDate.addingTimeInterval(-self.writeDelay))
+                // 写盘 cutoff 用 `pollDate` 而非 `pollDate - writeDelay`。
+                //
+                // - Note: `writeDelay` 的本意是「等日志在 logd 里落稳再读」，
+                //   属于**读取**阶段的延迟。读到的记录其产生时刻必然早于
+                //   `pollDate`，再减一次 `writeDelay` 会让每条日志额外
+                //   多等一轮（实测平均落盘延迟 6.86s），并使 pending 持续积压。
+                let wroteRecords = self.ingest(records, upTo: pollDate)
                 if wroteRecords {
                     self.flushCurrentFile()
                     if !self.isFileLoggingDisabled {
@@ -272,6 +302,49 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
                 if Self.verbose, self.pollTickCount % self.pollTickLogEvery == 0 {
                     Self.logger.info("\(Self.t)tick #\(self.pollTickCount) OSLog 轮询完成，本轮读到 \(records.count) 条，待写 \(self.pendingRecords.count) 条")
                 }
+            }
+        }
+    }
+
+    /// 处理一轮 OSLog 读取结果：去重后把新记录排入待写队列，并写盘。
+    ///
+    /// 调用方必须运行在 `queue` 上。
+    @discardableResult
+    private func ingest(_ records: [LogRecord], upTo cutoff: Date) -> Bool {
+        // 读窗口推进到「本次实际读到的最后一条日志时间」。
+        //
+        // - Important: 不能用 `pollDate - writeDelay`——那会让读窗口
+        //   永远滞后于实际进度，导致重复读取窗口内的旧条目。
+        let latestReadDate = records.map(\.date).max()
+        if let latest = latestReadDate, latest > lastPolledDate {
+            lastPolledDate = latest
+        }
+
+        // 早于高水位的记录已经持久化过：OSLogStore 累计读取会把它们再返回一次，
+        // 若只靠集合去重，被淘汰的 key 会重新入库并重复写盘（#927）。
+        // 同一时间戳的边界记录仍交由 `seenRecordKeys` 去重。
+        for record in records
+        where record.date >= persistedHighWatermark && !seenRecordKeys.contains(record.key) {
+            seenRecordKeys.insert(record.key)
+            seenRecordKeyOrder.append(record.key)
+            pendingRecords.append(record)
+        }
+        if let latest = latestReadDate, latest > persistedHighWatermark {
+            persistedHighWatermark = latest
+        }
+        trimSeenRecordKeys()
+
+        return writePendingRecords(upTo: cutoff)
+    }
+
+    /// 同步执行一轮读取结果处理，供测试在不启动定时器的情况下复现累计读取。
+    func ingestPolledRecords(_ records: [LogRecord], pollDate: Date) {
+        queue.sync { [self] in
+            guard isRunning, !isFileLoggingDisabled else { return }
+            let wroteRecords = ingest(records, upTo: pollDate)
+            if wroteRecords {
+                flushCurrentFile()
+                checkFileSize()
             }
         }
     }
@@ -384,6 +457,19 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
         }
     }
 
+    /// 裁剪 `seenRecordKeys`，避免长时间运行时无界增长。
+    ///
+    /// 按插入顺序淘汰最旧的键（FIFO）。容量远大于单次轮询可能读到的条数，
+    /// 因此淘汰不会导致近期日志被重复写入。
+    private func trimSeenRecordKeys() {
+        guard seenRecordKeyOrder.count > Self.seenRecordKeysCapacity else { return }
+        let overflow = seenRecordKeyOrder.count - Self.seenRecordKeysCapacity
+        for key in seenRecordKeyOrder.prefix(overflow) {
+            seenRecordKeys.remove(key)
+        }
+        seenRecordKeyOrder.removeFirst(overflow)
+    }
+
     @discardableResult
     private func writePendingRecords(upTo cutoff: Date) -> Bool {
         let result = Self.recordsReadyToWrite(pendingRecords, upTo: cutoff)
@@ -482,10 +568,11 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
               fileManager.fileExists(atPath: legacyDirectory.path) else { return }
 
         try prepareLogsDirectory(currentDirectory, fileManager: fileManager)
+        // 不能跳过隐藏文件：否则 `.important.log` 不会被迁移，而下面判断目录为空时
+        // 同样看不见它，最终 `removeItem` 会递归删掉从未检查过的内容（#999）。
         let legacyFiles = try fileManager.contentsOfDirectory(
             at: legacyDirectory,
-            includingPropertiesForKeys: nil,
-            options: .skipsHiddenFiles
+            includingPropertiesForKeys: nil
         ).filter { $0.pathExtension.lowercased() == "log" }
 
         for legacyFile in legacyFiles {
@@ -502,10 +589,11 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
             try fileManager.moveItem(at: legacyFile, to: destination)
         }
 
+        // 只有包含隐藏条目在内的完整枚举确认目录为空才删除；`removeItem` 对目录是
+        // 递归删除，跳过隐藏文件时的空数组不能当作“目录已空”。
         if (try? fileManager.contentsOfDirectory(
             at: legacyDirectory,
-            includingPropertiesForKeys: nil,
-            options: .skipsHiddenFiles
+            includingPropertiesForKeys: nil
         ).isEmpty) == true {
             try? fileManager.removeItem(at: legacyDirectory)
         }
@@ -517,6 +605,7 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<DiagnosticsArchive, Error>) in
             queue.async { [self] in
                 do {
+                    drainLogRecordsBeforeExport()
                     _ = writePendingRecords(upTo: .distantFuture)
                     flushCurrentFile()
                     let archive = try makeDiagnosticsArchiveOnQueue()
@@ -526,6 +615,15 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
                 }
             }
         }
+    }
+
+    /// 导出诊断前同步补一次 OSLog 读取，把「已产生但还没等到下一轮轮询」的日志
+    /// 也纳入归档。运行在 `queue` 上，与在途轮询结果的回写天然串行，不会丢条目；
+    /// 去重集合与日期高水位共同保证不会重复写入。
+    private func drainLogRecordsBeforeExport() {
+        guard isRunning, !isFileLoggingDisabled else { return }
+        guard let records = logRecordReader(subsystem, lastPolledDate) else { return }
+        _ = ingest(records, upTo: .distantFuture)
     }
 
     private func makeDiagnosticsArchiveOnQueue() throws -> DiagnosticsArchive {

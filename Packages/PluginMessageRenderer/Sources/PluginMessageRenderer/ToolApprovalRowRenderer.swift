@@ -10,16 +10,55 @@ import ProviderMessageRendering
 import ProviderToolManager
 import SwiftUI
 
-struct ToolPermissionRequest: Codable {
+/// 工具授权请求（渲染层视图模型）。
+///
+/// - Note: 载荷的编解码由 `KitAgentTool.ToolInteractionPayload` 负责——
+///   它是这份跨层契约的唯一归属。渲染层只做「展示」与「决定」，不再
+///   自己定义一份副本（历史上这里有一份副本，且键名与生产者不一致，
+///   导致授权载荷解码必然失败）。
+struct ToolPermissionRequest {
     let toolCallID: String
     let kind: String
     let question: String
     let options: [String]
     let mode: String
 
-    enum CodingKeys: String, CodingKey {
-        case toolCallID = "toolCallId"
-        case kind, question, options, mode
+    init(
+        toolCallID: String,
+        kind: String,
+        question: String,
+        options: [String],
+        mode: String
+    ) {
+        self.toolCallID = toolCallID
+        self.kind = kind
+        self.question = question
+        self.options = options
+        self.mode = mode
+    }
+
+    /// 从工具结果内容里解析授权请求。
+    init?(payload: ToolInteractionPayload) {
+        self.init(
+            toolCallID: payload.toolCallID,
+            kind: payload.kind,
+            question: payload.question,
+            options: payload.options,
+            mode: payload.mode
+        )
+    }
+
+    /// 从工具结果内容里解析授权请求。
+    ///
+    /// - Returns: 载荷确实是**通用工具授权**请求时返回该请求；否则 `nil`。
+    ///
+    /// - Note: Computer Use 的应用授权载荷（`kind == "computer_use_authorization"`）
+    ///   不属于此类——它由 Computer Use 自己的渲染器接管。
+    static func decode(from content: String) -> ToolPermissionRequest? {
+        guard let payload = ToolInteractionPayload.decodePermission(from: content) else {
+            return nil
+        }
+        return ToolPermissionRequest(payload: payload)
     }
 }
 
@@ -144,11 +183,7 @@ final class ToolApprovalBridge: SuperLog {
 
     func permissionRequest(for toolCall: ToolCall) -> ToolPermissionRequest? {
         if let content = toolCall.result?.content,
-           let request = try? JSONDecoder().decode(
-               ToolPermissionRequest.self,
-               from: Data(content.utf8)
-           ),
-           request.kind == "permission" {
+           let request = ToolPermissionRequest.decode(from: content) {
             if Self.verbose {
                 Self.logger.info(
                     "\(Self.t)使用工具结果中的授权请求 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public)"
@@ -168,7 +203,7 @@ final class ToolApprovalBridge: SuperLog {
         
         return ToolPermissionRequest(
             toolCallID: "approval:\(toolCall.id)",
-            kind: "permission",
+            kind: ToolSuspensionKind.permission,
             question: "此操作被判定为\(risk.displayName)，是否允许执行？\n\(toolManager?.displayDescription(for: toolCall) ?? toolCall.name)",
             options: ["允许", "拒绝"],
             mode: "yes_no"
@@ -176,9 +211,36 @@ final class ToolApprovalBridge: SuperLog {
     }
 
     func resolve(conversationID: UUID, toolCall: ToolCall, answer: String) {
+        Task { @MainActor in
+            await performResolve(
+                conversationID: conversationID,
+                toolCall: toolCall,
+                answer: answer
+            )
+        }
+    }
+
+    /// 实际提交授权决定。
+    ///
+    /// 拆出 async 版本，让边界校验可以被测试同步驱动；按钮侧仍通过
+    /// `resolve` 派发到主线程。
+    func performResolve(
+        conversationID: UUID,
+        toolCall: ToolCall,
+        answer: String
+    ) async {
         guard let toolManager else {
             Self.logger.error(
                 "\(Self.t)提交授权结果失败：ToolManager 不可用 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public)"
+            )
+            return
+        }
+        // 卡片可能是回合死掉之后才被点中的旧快照。Stop 只改写持久化占位，
+        // 不会广播 ToolManager 事件；没有这道边界校验，点击会直接进入
+        // `executeAuthorized`，让用户已经终止的高风险工具照样产生副作用（#1028）。
+        guard isAuthorizationStillActive(conversationID: conversationID, toolCall: toolCall) else {
+            Self.logger.warning(
+                "\(Self.t)忽略过期授权：回合已结束或挂起已不匹配 conversation=\(conversationID.uuidString, privacy: .public) tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public)"
             )
             return
         }
@@ -200,20 +262,40 @@ final class ToolApprovalBridge: SuperLog {
         Self.logger.info(
             "\(Self.t)提交授权结果 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public) approved=\(approved, privacy: .public)"
         )
-        Task { @MainActor in
-            if approved {
-                _ = await toolManager.executeAuthorized(
-                    toolCall,
-                    conversationID: conversationID,
-                    turnID: turnID
-                )
-            } else {
-                _ = await toolManager.rejectAuthorized(
-                    toolCall,
-                    conversationID: conversationID,
-                    turnID: turnID
-                )
-            }
+        if approved {
+            _ = await toolManager.executeAuthorized(
+                toolCall,
+                conversationID: conversationID,
+                turnID: turnID
+            )
+        } else {
+            _ = await toolManager.rejectAuthorized(
+                toolCall,
+                conversationID: conversationID,
+                turnID: turnID
+            )
+        }
+    }
+
+    /// 授权提交时回合与挂起是否仍然有效。
+    ///
+    /// - `completed` / `failed` / `cancelled`：回合已经结束，拒绝执行。
+    /// - `suspended`：只有当前挂起正指向这个工具调用时才允许，避免同会话
+    ///   后续回合的旧卡片跨调用执行。
+    /// - `idle`：允许。应用重启后运行时尚未重建，授权卡片复活时仍需可用，
+    ///   `prepareRuntimeForToolResult` 会按持久化消息重建回合。
+    /// - `running`：允许。恢复窗口内 FSM 可能已离开 `awaitingUser`，但工具
+    ///   仍属于当前回合。
+    /// - 无法解析 AgentLoop（如精简宿主）：保持旧行为，交由既有执行路径处理。
+    func isAuthorizationStillActive(conversationID: UUID, toolCall: ToolCall) -> Bool {
+        guard let agentLoop else { return true }
+        switch agentLoop.state(for: conversationID) {
+        case .completed, .failed, .cancelled:
+            return false
+        case .suspended:
+            return agentLoop.suspension(for: conversationID)?.toolCallID == toolCall.id
+        case .idle, .running:
+            return true
         }
     }
 
@@ -236,7 +318,25 @@ public struct ToolApprovalRowRenderer: ToolCallRowRenderer, SuperLog {
         // 从 pending 改成 userApproved/userRejected。只有仍在等待授权时才展示。
         let isWaitingForAuthorization = toolCall.result == nil || toolCall.result?.awaitingUserResponse == true
         let shouldRender = isPending && isWaitingForAuthorization
-        return shouldRender
+        guard shouldRender else { return false }
+
+        // - Important: 载荷必须确实是**授权请求**。
+        //   挂起有两种语义：授权（等用户点允许/拒绝）与交互（等用户回答问题，
+        //   如 `ask_user`）。两者在消息里的形态几乎一样，只靠 `pendingAuthorization`
+        //   无法区分。而交互载荷不是授权载荷——授权卡片构造不出请求，
+        //   只会渲染出「无法解析工具审批请求」这句兜底文案。
+        //
+        //   载荷里的 `kind` 字段是可靠证据（见 `ToolSuspensionKind`）。
+        //
+        //   - Note: `result == nil` 时无法判别载荷，返回 true 保留旧行为：
+        //     由 `render` 按风险等级兜底构造，兼容只落库了状态、没落库载荷的
+        //     旧数据。有载荷时则以载荷为准——载荷明确是别的交互（如 `ask_user`）
+        //     时绝不能接管，那正是误接管的来源。
+        //     「非结构化」的旧载荷（如纯文本）同样保留旧行为：无法判别它是什么，
+        //     只能交给风险等级兜底。
+        guard let content = toolCall.result?.content else { return true }
+        guard ToolSuspensionKind.hasStructuredPayload(content) else { return true }
+        return ToolSuspensionKind.isPermissionRequest(content)
     }
 
     @MainActor

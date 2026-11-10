@@ -165,13 +165,29 @@ public final class FileSearchService: NSObject, ObservableObject, SuperLog {
 
     // MARK: - Open
 
-    /// 打开文件（默认应用）
-    public func openFile(_ item: LauncherFileItem) {
-        NSWorkspace.shared.open(URL(fileURLWithPath: item.path))
+    /// 打开文件（默认应用），返回系统是否真的打开了它。
+    @discardableResult
+    public func openFile(_ item: LauncherFileItem) -> Bool {
+        openURL(URL(fileURLWithPath: item.path))
     }
+
+    /// 打开 URL 的实际实现；测试可替换以避免真的拉起应用。
+    private var openURL: (URL) -> Bool = { NSWorkspace.shared.open($0) }
 
     /// 在 Finder 中显示
     public func revealInFinder(_ item: LauncherFileItem) {
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: item.path)])
+    }
+
+    // MARK: - Testing
+
+    /// 注入测试用文件结果，避免依赖 Spotlight 查询。
+    public func setResultsForTesting(_ items: [LauncherFileItem]) {
+        results = items
+    }
+
+    /// 替换打开文件行为，返回 false 用于模拟打开失败。
+    public func setOpenURLForTesting(_ opener: @escaping (URL) -> Bool) {
+        openURL = opener
     }
 }

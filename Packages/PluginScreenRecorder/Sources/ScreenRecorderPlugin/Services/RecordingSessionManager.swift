@@ -28,6 +28,9 @@ public final class RecordingSessionManager {
 
     public init() {}
 
+    /// 当前系统主版本号；测试注入以覆盖 macOS 14 分支。
+    var osMajorVersionProvider: () -> Int = { RecordingMicrophoneCapability.currentMajorVersion }
+
     @discardableResult
     public func addObserver(
         _ callback: @escaping (RecordingActivity) -> Void
@@ -45,7 +48,14 @@ public final class RecordingSessionManager {
     ///
     /// `config.outputDirectory` 必须由调用方（工具）预先用 `kernel.isPathAllowed` 校验。
     public func start(config: RecordingConfig) async throws {
-        // 1) 权限。
+        // 1) 能力校验：macOS 14 的 SCStream 无法采集麦克风。必须在请求权限、
+        //    创建临时文件之前拒绝，否则会返回「成功」但导出视频没有人声。
+        try RecordingMicrophoneCapability.validate(
+            includeMicrophone: config.includeMicrophone,
+            majorVersion: osMajorVersionProvider()
+        )
+
+        // 2) 权限。
         guard RecordingPermissionService.hasScreenRecordingPermission else {
             RecordingPermissionService.requestScreenRecordingPermission()
             throw RecordingError.permissionDenied
@@ -57,16 +67,16 @@ public final class RecordingSessionManager {
             if !granted { throw RecordingError.microphonePermissionDenied }
         }
 
-        // 2) 互斥：同一时刻仅一个活跃会话。
+        // 3) 互斥：同一时刻仅一个活跃会话。
         if hasActiveSession {
             throw RecordingError.alreadyRecording(currentSession?.targetDescription ?? "")
         }
 
-        // 3) 解析目标 → 过滤器。
+        // 4) 解析目标 → 过滤器。
         let (filter, targetDescription, window) = try await resolveTarget(for: config)
         if let window { RecordableWindowProvider.activate(window) }
 
-        // 4) 准备引擎与临时文件。
+        // 5) 准备引擎与临时文件。
         currentSession = nil
         elapsedSeconds = 0
         resolvedWindow = window
@@ -86,7 +96,7 @@ public final class RecordingSessionManager {
             throw error
         }
 
-        // 5) 进入录制态。
+        // 6) 进入录制态。
         currentSession = RecordingSession(
             id: config.sessionID,
             config: config,

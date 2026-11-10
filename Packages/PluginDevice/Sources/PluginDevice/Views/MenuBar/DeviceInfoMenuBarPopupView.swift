@@ -30,7 +30,8 @@ public struct DeviceInfoMenuBarPopupView: View {
         HoverableContainerView(
             detailView: CPUHistoryDetailView(
                 viewModel: historyViewModel,
-                thermalViewModel: thermalHistoryViewModel
+                thermalViewModel: thermalHistoryViewModel,
+                processViewModel: viewModel
             )
         ) {
             VStack(spacing: 0) {
@@ -119,7 +120,7 @@ public struct DeviceInfoMenuBarPopupView: View {
     // MARK: - Top Processes View
 
     private var topProcessesView: some View {
-        TopProcessesView(processes: viewModel.topProcesses)
+        TopProcessesView(processes: viewModel.topProcessesPreview)
     }
 
     // MARK: - Helpers

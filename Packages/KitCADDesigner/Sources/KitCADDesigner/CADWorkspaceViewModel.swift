@@ -4,11 +4,19 @@ import SwiftUI
 /// CAD 工作区视图模型：协调 Store、SceneController 与工具状态。
 @MainActor
 final class CADWorkspaceViewModel: ObservableObject {
-    @Published var currentTool: CADToolKind = .select
+    @Published var currentTool: CADToolKind = .select {
+        didSet {
+            guard currentTool != oldValue else { return }
+            measurementAnchorId = nil
+            measurement = nil
+        }
+    }
     @Published var bomReport: BOMReport?
     @Published var cutResult: CutOptimizationResult?
     @Published var stockLength: Double = 6000
     @Published var measurement: MeasurementResult?
+    /// Measure 模式下已拾取的第一个组件。
+    @Published private(set) var measurementAnchorId: String?
     @Published var isExporting = false
 
     let store: CADDocumentStore
@@ -108,6 +116,23 @@ final class CADWorkspaceViewModel: ObservableObject {
         }
     }
 
+    /// 更新选中组件的位置与 Y 旋转，保留其余变换分量。
+    func updateSelectedComponentPlacement(
+        positionX: Double,
+        positionY: Double,
+        positionZ: Double,
+        rotationY: Double
+    ) {
+        guard var transform = selectedComponent?.transform else { return }
+        transform.updatePlacement(
+            positionX: positionX,
+            positionY: positionY,
+            positionZ: positionZ,
+            rotationY: rotationY
+        )
+        updateSelectedComponentTransform(transform)
+    }
+
     /// 更新选中组件的变换。
     func updateSelectedComponentTransform(_ transform: Transform3D) {
         guard let componentId = store.selectedComponentId else { return }
@@ -137,6 +162,26 @@ final class CADWorkspaceViewModel: ObservableObject {
     func selectComponent(id: String?) {
         store.selectComponent(id: id)
         sceneController.selectComponent(id: id)
+    }
+
+    /// 视口点击入口：Measure 模式收集两个组件并计算距离，其余模式执行选择。
+    func handleViewportPick(id: String?) {
+        guard let id else {
+            selectComponent(id: nil)
+            return
+        }
+
+        selectComponent(id: id)
+
+        guard currentTool == .measure else { return }
+
+        if let anchor = measurementAnchorId, anchor != id {
+            measure(from: anchor, to: id)
+            measurementAnchorId = nil
+        } else {
+            measurement = nil
+            measurementAnchorId = id
+        }
     }
 
     // MARK: - BOM & Cut Optimization
@@ -205,6 +250,21 @@ final class CADWorkspaceViewModel: ObservableObject {
             store.setError(error.localizedDescription)
         }
     }
+
+    /// 处理系统文件关联（Finder “打开方式”/SwiftUI `onOpenURL`）投递的项目 URL。
+    ///
+    /// 只接受 `.cadproj`/`.json` 文件；其他扩展名或加载失败都会在 store 上留下
+    /// 对应文件的错误，而不是静默保留当前（可能是自动创建的空）项目。
+    func openProjectURL(_ url: URL) {
+        let fileExtension = url.pathExtension.lowercased()
+        guard url.isFileURL, Self.projectFileExtensions.contains(fileExtension) else {
+            store.setError("Unsupported project file: \(url.lastPathComponent)")
+            return
+        }
+        loadProject(from: url)
+    }
+
+    static let projectFileExtensions: Set<String> = ["cadproj", "json"]
 
     // MARK: - Undo / Redo
 

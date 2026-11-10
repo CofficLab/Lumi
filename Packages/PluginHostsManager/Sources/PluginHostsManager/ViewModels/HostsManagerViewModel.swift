@@ -112,6 +112,10 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
         do {
             let content = try await readHostsFile()
             self.entries = HostsParser.parse(content: content)
+            // 导入/外部刷新后分组集合可能变化：旧分组若已不存在，继续用它过滤会让全部条目隐藏。
+            if let selectedGroup, !groups.contains(selectedGroup) {
+                self.selectedGroup = nil
+            }
             if Self.verbose {
                 if HostsManagerPlugin.verbose {
                                     HostsManagerPlugin.logger.info("\(self.t)Hosts file loaded successfully: \(self.entries.count) entries")
@@ -201,8 +205,13 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
                 entries.append(newEntry)
             }
         } else {
-            // Add to end
-            entries.append(newEntry)
+            // 未分组条目必须留在第一个 group header 之前，否则序列化后会
+            // 落在末组 header 之后，被筛选和重载当成该组成员。
+            let firstGroupIndex = entries.firstIndex { entry in
+                if case .groupHeader = entry.type { return true }
+                return false
+            } ?? entries.count
+            entries.insert(newEntry, at: firstGroupIndex)
         }
         
         Task {

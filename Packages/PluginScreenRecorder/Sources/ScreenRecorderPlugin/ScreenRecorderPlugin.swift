@@ -108,8 +108,8 @@ public struct StartRecordingV2Tool: SuperAgentTool {
             "duration_seconds": ["type": "integer", "minimum": 1, "maximum": 3600],
             "include_app_audio": ["type": "boolean", "default": false],
             "include_microphone": ["type": "boolean", "default": false],
-            "frame_rate": ["type": "integer", "default": 30],
-            "resolution_height": ["type": "integer"],
+            "frame_rate": ["type": "integer", "minimum": 1, "maximum": 60, "default": 30],
+            "resolution_height": ["type": "integer", "minimum": 1, "maximum": 4320],
             "output_directory": ["type": "string"],
             "filename": ["type": "string"],
         ], "additionalProperties": false]
@@ -129,7 +129,10 @@ public struct StartRecordingV2Tool: SuperAgentTool {
             target = .display(excludeLumi: true)
         } else {
             guard !application.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                return "No visible-window application was specified."
+                throw ToolExecutionError.executionFailed(
+                    toolName: name,
+                    reason: "No visible-window application was specified."
+                )
             }
             target = .appWindow(application: application, windowTitle: ScreenRecorderV2Support.string(arguments, "window_title"))
         }
@@ -148,9 +151,15 @@ public struct StartRecordingV2Tool: SuperAgentTool {
             try await RecordingSessionManager.shared.start(config: config)
             return "Recording started. Output will be saved to \(outputDirectory.path). Say stop or use the floating Stop button when finished."
         } catch let error as RecordingError {
-            return await ScreenRecorderV2Support.describe(error)
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: await ScreenRecorderV2Support.describe(error)
+            )
         } catch {
-            return "Failed to start recording: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Failed to start recording: \(error.localizedDescription)"
+            )
         }
     }
 }
@@ -170,9 +179,15 @@ public struct StopRecordingV2Tool: SuperAgentTool {
             let megabytes = Double(result.fileSizeBytes) / 1_000_000
             return "Saved \(result.outputURL.path) (\(result.durationSeconds)s, \(result.width)×\(result.height), \(String(format: "%.1f", megabytes)) MB)."
         } catch let error as RecordingError {
-            return await ScreenRecorderV2Support.describe(error)
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: await ScreenRecorderV2Support.describe(error)
+            )
         } catch {
-            return "Failed to stop recording: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Failed to stop recording: \(error.localizedDescription)"
+            )
         }
     }
 }
@@ -208,9 +223,7 @@ private enum ScreenRecorderV2Support {
     }
 
     static func integer(_ arguments: [String: ToolArgument], _ key: String) -> Int? {
-        if let value = arguments[key]?.value as? Int { return value }
-        if let value = arguments[key]?.value as? NSNumber { return value.intValue }
-        return nil
+        ToolArgumentNumber.int(arguments[key]?.value)
     }
 
     static func boolean(_ arguments: [String: ToolArgument], _ key: String) -> Bool {

@@ -133,23 +133,7 @@ public final class NetworkManagerPlugin: SuperPlugin, PluginDataMigrating, Super
             }
         }
 
-        // 4. 注册 MenuBar 内容项和弹窗项
-        if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
-            menuBar.addContent(MenuBarContentItem(
-                id: "\(id).speed",
-                title: pluginLocalization.string("Network Speed"),
-                order: order
-            ) {
-                NetworkMenuBarContentView(viewModel: viewModels.network)
-            })
-            menuBar.addPopup(MenuBarPopupItem(
-                id: "\(id).popup",
-                title: pluginLocalization.string("Network Monitor"),
-                order: order
-            ) {
-                NetworkMenuBarPopupView(viewModel: viewModels.network, historyViewModel: viewModels.history)
-            })
-        }
+        try contributeMenuBar(to: kernel, viewModels: viewModels)
 
         // 5. 注册设置入口
         if let settingView = kernel.resolveProvider((any SettingViewProviding).self),
@@ -170,6 +154,11 @@ public final class NetworkManagerPlugin: SuperPlugin, PluginDataMigrating, Super
         }
     }
 
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        guard let viewModels else { return }
+        try contributeMenuBar(to: kernel, viewModels: viewModels)
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
         metricsObserver?.cancel()
         metricsObserver = nil
@@ -180,10 +169,6 @@ public final class NetworkManagerPlugin: SuperPlugin, PluginDataMigrating, Super
                 toolManager.remove(id: tool.name)
             }
         }
-
-        // 撤回 MenuBar 项
-        kernel.resolveProvider((any MenuBarProviding).self)?
-            .removeItems(ids: ["\(id).speed", "\(id).popup"])
 
         // 撤回设置入口
         kernel.resolveProvider((any SettingViewProviding).self)?
@@ -199,6 +184,33 @@ public final class NetworkManagerPlugin: SuperPlugin, PluginDataMigrating, Super
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    }
+
+    private func contributeMenuBar(
+        to kernel: KernelCoreContainer,
+        viewModels: NetworkPluginViewModels
+    ) throws {
+        guard let menuBar = kernel.resolveProvider((any MenuBarProviding).self) else { return }
+        let ownerID = id
+        try kernel.trackContribution {
+            menuBar.removeItems(ownedBy: ownerID)
+        }
+        menuBar.addContent(MenuBarContribution(
+            id: "\(id).speed",
+            title: pluginLocalization.string("Network Speed"),
+            order: order,
+            ownerPluginID: id
+        ) {
+            NetworkMenuBarContentView(viewModel: viewModels.network)
+        })
+        menuBar.addPopup(MenuBarContribution(
+            id: "\(id).popup",
+            title: pluginLocalization.string("Network Monitor"),
+            order: order,
+            ownerPluginID: id
+        ) {
+            NetworkMenuBarPopupView(viewModel: viewModels.network, historyViewModel: viewModels.history)
+        })
     }
 
     // MARK: - Agent Tools

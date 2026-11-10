@@ -28,4 +28,25 @@ final class PDFOutputItemTests: XCTestCase {
         item.status = .failed("boom")
         XCTAssertTrue(item.status.isTerminal)
     }
+
+    /// 回归 #761：进入 failed 终态后不能再显示进行中的进度条。
+    func testFailedStatusStopsShowingProgress() {
+        let source = ImageItem(url: URL(fileURLWithPath: "/tmp/a.png"), fileSize: 0)
+        var item = PDFOutputItem(source: source)
+        item.status = .processing
+        item.progress = 0.1
+        XCTAssertTrue(item.showsProgress)
+
+        item.status = .failed("boom")
+        XCTAssertEqual(item.progress, 0.1)
+        XCTAssertFalse(item.showsProgress)
+    }
+
+    func testDoneStatusStopsShowingProgress() {
+        let source = ImageItem(url: URL(fileURLWithPath: "/tmp/a.png"), fileSize: 0)
+        var item = PDFOutputItem(source: source)
+        item.status = .done(URL(fileURLWithPath: "/tmp/a.pdf"))
+        item.progress = 0.9
+        XCTAssertFalse(item.showsProgress)
+    }
 }

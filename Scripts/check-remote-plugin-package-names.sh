@@ -11,7 +11,7 @@
 # 但 manifest 写成 `name: "PluginActivityBar"` 时，Xcode 里显示的就是
 # `PluginActivityBar` —— 用户看到的名字里 Lumi 前缀就丢了。
 #
-# 本仓库对 10 个远程插件包统一要求：manifest 的 `name:` 必须是
+# 本仓库对 12 个远程插件包统一要求：manifest 的 `name:` 必须是
 # `LumiPluginXXX`，与仓库名一致（`LumiPluginBookletMaker` 等已合规）。
 # 注意只约束**包名**；product / target 仍然是 `PluginXXX`
 # （例如 LumiPluginStorage 的包名带前缀，product 叫 PluginStorage），
@@ -31,10 +31,12 @@ workspace_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # 注意：manifest 包名与仓库名一致（远程插件包统一带 Lumi 前缀）。
 # 用 "repo:expected" 列表而非关联数组 —— macOS 自带 bash 3.2 不支持关联数组。
 EXPECTED_PACKAGE_PAIRS=(
+  "LumiPluginAbout:LumiPluginAbout"
   "LumiPluginActivityBar:LumiPluginActivityBar"
   "LumiPluginBookletMaker:LumiPluginBookletMaker"
   "LumiPluginCommand:LumiPluginCommand"
   "LumiPluginIdleTime:LumiPluginIdleTime"
+  "LumiPluginHydrationReminder:LumiPluginHydrationReminder"
   "LumiPluginPluginManager:LumiPluginPluginManager"
   "LumiPluginSettingView:LumiPluginSettingView"
   "LumiPluginStorage:LumiPluginStorage"

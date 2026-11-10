@@ -118,7 +118,15 @@ public enum VendorAPIKeyTools {
     }
 
     /// 写入 API Key。
+    ///
+    /// 兼容旧调用方：无法区分成功与失败。需要向用户报告凭据未保存的调用方
+    /// 应使用 ``setReportingErrors(_:storageKey:)``。
     public static func set(_ apiKey: String, storageKey: String) {
+        try? setReportingErrors(apiKey, storageKey: storageKey)
+    }
+
+    /// 写入 API Key；主、备两条 Keychain 路径都失败时抛错。
+    public static func setReportingErrors(_ apiKey: String, storageKey: String) throws {
         let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             remove(storageKey: storageKey)
@@ -126,7 +134,7 @@ public enum VendorAPIKeyTools {
         }
 
         let key = cacheKey(for: storageKey)
-        withKeyLock(key) {
+        try withKeyLock(key) {
             // KeychainStore 使用 Update/Add，写入失败时保留旧值，避免
             // 「先删除、后添加」造成不可恢复的丢 Key。
             do {
@@ -140,7 +148,7 @@ public enum VendorAPIKeyTools {
                     try legacyFileStore().setReportingErrors(trimmed, forKey: storageKey)
                 } catch {
                     // 写入全部失败时保留旧缓存，避免把未落盘的新值记成可用。
-                    return
+                    throw VendorAPIKeyStorageError.writeFailed
                 }
             }
             cache.remember(trimmed, forKey: key)
@@ -178,11 +186,11 @@ public enum VendorAPIKeyTools {
         return lock
     }
 
-    private static func withKeyLock(_ key: String, _ body: () -> Void) {
+    private static func withKeyLock<T>(_ key: String, _ body: () throws -> T) rethrows -> T {
         let lock = keyLock(for: key)
         lock.lock()
         defer { lock.unlock() }
-        body()
+        return try body()
     }
 
     private static func read(storageKey: String, retryMissing: Bool = false) throws -> String? {
@@ -345,5 +353,17 @@ public enum VendorAPIKeyTools {
             result.append(KeychainStore(service: extractedKitLLMService))
         }
         return result
+    }
+}
+
+/// API Key 写入失败。
+///
+/// 主、备两条 Keychain 路径同时拒绝写入时抛出，让上层能把「凭据没有保存」
+/// 如实反馈给用户，而不是当作成功处理。
+public enum VendorAPIKeyStorageError: LocalizedError, Sendable {
+    case writeFailed
+
+    public var errorDescription: String? {
+        "The API key could not be saved to the Keychain."
     }
 }

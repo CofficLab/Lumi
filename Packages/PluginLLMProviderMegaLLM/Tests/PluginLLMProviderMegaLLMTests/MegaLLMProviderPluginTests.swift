@@ -73,6 +73,17 @@ struct MegaLLMProviderPluginTests {
         #expect(claude.supportsVision == true)
     }
 
+    @Test("MegaLLM 上下文窗口保留模型真实上限（回归 #967）")
+    func megaLLMContextWindowsMatchModelLimits() throws {
+        let info = MegaLLMProvider().providerInfo
+
+        let deepSeek = try #require(info.models.first(where: { $0.id == "deepseek-ai/deepseek-v3.1" }))
+        #expect(deepSeek.contextWindowSize == 128_000)
+
+        let miniMax = try #require(info.models.first(where: { $0.id == "minimaxai/minimax-m2.1" }))
+        #expect(miniMax.contextWindowSize == 200_000)
+    }
+
     @Test("MegaLLM 供应商指向 ai.megallm.io 网关端点")
     func megaLLMEndpointConfiguration() {
         let provider = MegaLLMProvider()

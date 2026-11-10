@@ -30,43 +30,91 @@ struct TextSelectionReadPolicyTests {
     }
 }
 
+// MARK: - 坐标换算
+
+@Suite("Text Actions 坐标换算")
+struct TextActionCoordinatesTests {
+
+    @Test("Quartz 左上原点翻转为 Cocoa 左下原点")
+    func flipsVerticalOrigin() {
+        let quartz = CGRect(x: 100, y: 50, width: 200, height: 20)
+        let cocoa = TextActionCoordinates.quartzToCocoa(quartz, primaryScreenHeight: 900)
+
+        #expect(cocoa.minX == 100)
+        #expect(cocoa.width == 200)
+        #expect(cocoa.height == 20)
+        // Cocoa y = 900 - 50 - 20
+        #expect(cocoa.minY == 830)
+        #expect(cocoa.maxY == 850)
+    }
+
+    @Test("多屏下主屏左侧的负坐标保持不变")
+    func keepsNegativeCoordinates() {
+        let quartz = CGRect(x: -800, y: 100, width: 300, height: 20)
+        let cocoa = TextActionCoordinates.quartzToCocoa(quartz, primaryScreenHeight: 900)
+
+        #expect(cocoa.minX == -800)
+        #expect(cocoa.minY == 780)
+    }
+}
+
 // MARK: - 菜单布局
 
 @Suite("Text Actions 菜单布局")
 struct TextActionMenuLayoutTests {
 
     private let screen = CGRect(x: 0, y: 0, width: 1440, height: 900)
-    private let size = CGSize(width: 200, height: 120)
+    private let size = CGSize(width: 200, height: 44)
 
-    @Test("锚点居中时水平居中、垂直下移")
-    func centersOnAnchor() {
+    @Test("菜单显示在选区上方居中")
+    func placesAboveSelectionCentered() {
+        let selection = CGRect(x: 640, y: 400, width: 120, height: 20)
         let frame = TextActionMenuLayout.frame(
-            for: CGPoint(x: 700, y: 400),
+            selectionRect: selection,
+            anchor: CGPoint(x: 0, y: 0),
             menuSize: size,
             screenFrame: screen
         )
 
         #expect(frame.width == 200)
-        #expect(frame.height == 120)
-        #expect(frame.midX == 700)
-        #expect(frame.minY == 418)
+        #expect(frame.height == 44)
+        #expect(frame.midX == selection.midX)
+        #expect(frame.minY == selection.maxY + 6)
     }
 
-    @Test("靠左时夹到屏幕左边")
-    func clampsToLeftEdge() {
+    @Test("上方空间不足时放到选区下方")
+    func fallsBelowWhenNoRoomAbove() {
+        // 选区贴近屏幕顶部，上方放不下 44pt 的菜单。
+        let selection = CGRect(x: 640, y: 870, width: 120, height: 20)
         let frame = TextActionMenuLayout.frame(
-            for: CGPoint(x: 10, y: 400),
+            selectionRect: selection,
+            anchor: CGPoint(x: 0, y: 0),
             menuSize: size,
             screenFrame: screen
         )
 
-        #expect(frame.minX == screen.minX)
+        #expect(frame.maxY == selection.minY - 6)
     }
 
-    @Test("靠右时夹到屏幕右边")
-    func clampsToRightEdge() {
+    @Test("选区靠左时夹到屏幕左边距")
+    func clampsToLeftEdge() {
+        let selection = CGRect(x: 0, y: 400, width: 60, height: 20)
         let frame = TextActionMenuLayout.frame(
-            for: CGPoint(x: 1439, y: 400),
+            selectionRect: selection,
+            anchor: CGPoint(x: 0, y: 0),
+            menuSize: size,
+            screenFrame: screen
+        )
+
+        #expect(frame.minX == screen.minX + 8)
+    }
+
+    @Test("选区靠右时夹到屏幕右边距")
+    func clampsToRightEdge() {
+        let selection = CGRect(x: 1380, y: 400, width: 60, height: 20)
+        let frame = TextActionMenuLayout.frame(
+            selectionRect: selection,
+            anchor: CGPoint(x: 0, y: 0),
             menuSize: size,
             screenFrame: screen
         )
@@ -74,28 +122,164 @@ struct TextActionMenuLayoutTests {
         #expect(frame.maxX == screen.maxX - 8)
     }
 
-    @Test("靠上时夹到屏幕上边")
-    func clampsToTopEdge() {
+    @Test("无选区 bounds 时回退到锚点上方")
+    func fallsBackToAnchor() {
+        let anchor = CGPoint(x: 700, y: 400)
         let frame = TextActionMenuLayout.frame(
-            for: CGPoint(x: 700, y: 899),
+            selectionRect: nil,
+            anchor: anchor,
             menuSize: size,
             screenFrame: screen
         )
 
-        #expect(frame.maxY == screen.maxY - 8)
+        #expect(frame.midX == anchor.x)
+        #expect(frame.minY == anchor.y + 14)
     }
 
-    @Test("自定义边距与偏移生效")
-    func respectsCustomMarginAndOffset() {
+    @Test("上下都放不下时夹回屏幕内")
+    func clampsVerticallyWhenNeitherSideFits() {
+        // 超高菜单：上下都放不下。
+        let hugeSize = CGSize(width: 200, height: 800)
+        let selection = CGRect(x: 640, y: 800, width: 120, height: 20)
         let frame = TextActionMenuLayout.frame(
-            for: CGPoint(x: 700, y: 400),
+            selectionRect: selection,
+            anchor: CGPoint(x: 0, y: 0),
+            menuSize: hugeSize,
+            screenFrame: screen
+        )
+
+        #expect(frame.minY >= screen.minY)
+        #expect(frame.maxY <= screen.maxY)
+    }
+
+    @Test("自定义边距与间距生效")
+    func respectsCustomMarginAndGap() {
+        let selection = CGRect(x: 640, y: 400, width: 120, height: 20)
+        let frame = TextActionMenuLayout.frame(
+            selectionRect: selection,
+            anchor: CGPoint(x: 0, y: 0),
             menuSize: size,
             screenFrame: screen,
             margin: 20,
-            verticalOffset: 50
+            gap: 12
         )
 
-        #expect(frame.minY == 450)
+        #expect(frame.minY == selection.maxY + 12)
+    }
+}
+
+// MARK: - 多屏选屏
+
+@Suite("Text Actions 多屏选屏")
+struct TextActionScreenSelectionTests {
+    private let mainScreen = CGRect(x: 0, y: 0, width: 1_440, height: 900)
+    private let secondaryScreen = CGRect(x: -1_920, y: 0, width: 1_920, height: 1_080)
+    private let mouseAnchor = CGPoint(x: 200, y: 200)
+
+    @Test("有选区 bounds 时按选区所在屏幕布局")
+    func selectionRectWinsOverMouseAnchor() {
+        // 鼠标停在主屏，选区在副屏——键盘操作时的典型场景。
+        let selection = CGRect(x: -1_000, y: 500, width: 120, height: 20)
+        let index = TextActionScreenSelection.screenIndex(
+            selectionRect: selection,
+            anchor: mouseAnchor,
+            screenFrames: [mainScreen, secondaryScreen]
+        )
+
+        #expect(index == 1)
+    }
+
+    @Test("无选区 bounds 时回退到鼠标锚点所在屏幕")
+    func fallsBackToAnchorWithoutSelectionRect() {
+        let index = TextActionScreenSelection.screenIndex(
+            selectionRect: nil,
+            anchor: CGPoint(x: -500, y: 400),
+            screenFrames: [mainScreen, secondaryScreen]
+        )
+
+        #expect(index == 1)
+    }
+
+    @Test("空选区 bounds 等同不可用")
+    func emptySelectionRectFallsBackToAnchor() {
+        let index = TextActionScreenSelection.screenIndex(
+            selectionRect: CGRect(x: -1_000, y: 500, width: 0, height: 0),
+            anchor: mouseAnchor,
+            screenFrames: [mainScreen, secondaryScreen]
+        )
+
+        #expect(index == 0)
+    }
+
+    @Test("选区中心落在屏幕外时回退到锚点")
+    func offscreenSelectionFallsBackToAnchor() {
+        let selection = CGRect(x: 5_000, y: 5_000, width: 100, height: 20)
+        let index = TextActionScreenSelection.screenIndex(
+            selectionRect: selection,
+            anchor: mouseAnchor,
+            screenFrames: [mainScreen, secondaryScreen]
+        )
+
+        #expect(index == 0)
+    }
+
+    @Test("没有屏幕时返回 nil")
+    func noScreensReturnsNil() {
+        let index = TextActionScreenSelection.screenIndex(
+            selectionRect: CGRect(x: 0, y: 0, width: 10, height: 10),
+            anchor: CGPoint(x: 5, y: 5),
+            screenFrames: []
+        )
+
+        #expect(index == nil)
+    }
+}
+
+// MARK: - 消失策略
+
+@Suite("Text Actions 消失策略")
+struct TextActionDismissPolicyTests {
+
+    @Test("普通按键与快捷键让菜单消失")
+    func keyDownDismisses() {
+        #expect(TextActionDismissPolicy.shouldDismissOnKeyDown(modifiers: []) == true)
+        #expect(TextActionDismissPolicy.shouldDismissOnKeyDown(modifiers: [.command]) == true)
+        #expect(TextActionDismissPolicy.shouldDismissOnKeyDown(modifiers: [.command, .shift]) == true)
+        #expect(TextActionDismissPolicy.shouldDismissOnKeyDown(modifiers: [.control]) == true)
+    }
+
+    @Test("仅 Shift 的组合不消失——正在调整选区")
+    func shiftOnlyDoesNotDismiss() {
+        #expect(TextActionDismissPolicy.shouldDismissOnKeyDown(modifiers: [.shift]) == false)
+    }
+
+    @Test("菜单不可见时只有带修饰键的 keyUp 触发重读")
+    func keyUpEvaluationGating() {
+        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [], menuVisible: false) == false)
+        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [.shift], menuVisible: false) == true)
+        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [.command], menuVisible: false) == true)
+        #expect(TextActionDismissPolicy.shouldEvaluateOnKeyUp(modifiers: [], menuVisible: true) == true)
+    }
+
+    @Test("滚动阈值固定")
+    func scrollThresholdIsStable() {
+        #expect(TextActionDismissPolicy.scrollThreshold == 60)
+    }
+
+    @Test("落在浮层窗口内的事件不算外部事件")
+    func eventInsidePanelIsIgnored() {
+        #expect(TextActionDismissPolicy.isInsidePanel(eventWindowNumber: 42, panelWindowNumber: 42))
+    }
+
+    @Test("落在其他窗口的事件会关闭浮层")
+    func eventInOtherWindowIsDismissed() {
+        #expect(!TextActionDismissPolicy.isInsidePanel(eventWindowNumber: 7, panelWindowNumber: 42))
+    }
+
+    @Test("窗口号未知时不能误判为浮层内")
+    func unknownWindowNumberNeverMatches() {
+        #expect(!TextActionDismissPolicy.isInsidePanel(eventWindowNumber: 0, panelWindowNumber: 0))
+        #expect(!TextActionDismissPolicy.isInsidePanel(eventWindowNumber: 0, panelWindowNumber: 42))
     }
 }
 
@@ -169,5 +353,15 @@ struct SelectedTextTests {
         #expect(first == second)
         #expect(first != other)
         #expect(first.anchor == anchor)
+        #expect(first.selectionRect == nil)
+    }
+
+    @Test("携带选区 bounds 参与比较")
+    func carriesSelectionRect() {
+        let rect = CGRect(x: 1, y: 2, width: 3, height: 4)
+        let withRect = SelectedText(text: "hello", anchor: .zero, selectionRect: rect)
+
+        #expect(withRect.selectionRect == rect)
+        #expect(withRect != SelectedText(text: "hello", anchor: .zero))
     }
 }

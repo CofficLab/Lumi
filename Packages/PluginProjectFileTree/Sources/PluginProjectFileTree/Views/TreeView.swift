@@ -52,6 +52,7 @@ public struct TreeView: View, SuperLog {
                         refreshTreeAfterMutation()
                     },
                     gitStatusSnapshot: coordinator.gitStatusSnapshot,
+                    gitStatusToken: coordinator.gitStatusToken,
                     packageDependencies: showPackageDependencies ? packageStore.dependencies : [],
                     targetedRefreshToken: coordinator.targetedRefreshToken,
                     changedDirectoryPaths: coordinator.changedDirectoryPaths
@@ -61,7 +62,7 @@ public struct TreeView: View, SuperLog {
         }
         .environmentObject(selectionState)
         .frame(maxHeight: .infinity)
-        .onChange(of: viewModel.currentProjectPath) { _, newPath in
+        .onChange(of: viewModel.currentProjectPath) { newPath in
             projectPathDidChange(to: newPath)
         }
         .onAppear(perform: onAppear)

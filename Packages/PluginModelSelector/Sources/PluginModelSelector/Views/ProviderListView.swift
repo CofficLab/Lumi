@@ -40,14 +40,14 @@ struct ProviderListView: View {
             AppDivider()
 
             // Search
-            ProviderSearchRow(text: $viewModel.searchText)
+            ProviderSearchRow(text: $viewModel.providerSearchText)
 
             AppDivider()
 
             // Provider items
             if !viewModel.providerInfos.isEmpty {
-                let providers = filteredProviders(viewModel.providerInfos)
-                if providers.isEmpty && viewModel.selectedScope == .frequent && viewModel.searchText.isEmpty {
+                let providers = viewModel.visibleProviders(viewModel.providerInfos)
+                if providers.isEmpty && viewModel.selectedScope == .frequent && viewModel.providerSearchText.isEmpty {
                     AppEmptyState(
                         icon: "star",
                         title: pluginLocalization.string("No frequent providers yet"),
@@ -128,12 +128,17 @@ struct ProviderListView: View {
             viewModel.prepareInitialScope()
             viewModel.selectProviderInCurrentScopeIfNeeded()
         }
-        .onChange(of: viewModel.selectedProviderID) { _, _ in
+        .onChange(of: viewModel.selectedProviderID) { _ in
             viewModel.synchronizeScopeWithSelection()
         }
-        .onChange(of: viewModel.selectedScope) { _, _ in
+        .onChange(of: viewModel.selectedScope) { _ in
             viewModel.selectProviderInCurrentScopeIfNeeded()
         }
+    }
+
+    /// 分组标题与辅助功能标签共用本地化文案，避免两处各取一份（#906）。
+    private var relayTitle: String {
+        ProviderListLocalization.relaySectionTitle()
     }
 
     private var relaySectionDivider: some View {
@@ -141,7 +146,7 @@ struct ProviderListView: View {
             Rectangle()
                 .fill(theme.divider)
                 .frame(height: 1)
-            Text("中转站")
+            Text(relayTitle)
                 .font(.appMicro)
                 .foregroundStyle(theme.textSecondary)
                 .fixedSize()
@@ -152,32 +157,9 @@ struct ProviderListView: View {
         .padding(.horizontal, 4)
         .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("中转站")
+        .accessibilityLabel(relayTitle)
     }
 
-    // MARK: - Filtering
-
-    /// 应用筛选范围与搜索文本，返回过滤后的供应商元数据。
-    private func filteredProviders(_ providers: [LLMProviderInfo]) -> [LLMProviderInfo] {
-        let filtered = providers.filter(viewModel.matchesActiveFilters)
-        let sorted: [LLMProviderInfo]
-        if viewModel.selectedScope == .frequent {
-            sorted = filtered.sorted {
-                viewModel.isMoreFrequentlyUsed($0.id, than: $1.id)
-            }
-        } else {
-            sorted = filtered.sorted {
-                $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
-            }
-        }
-        if viewModel.searchText.isEmpty {
-            return sorted
-        }
-        return sorted.filter {
-            $0.displayName.localizedCaseInsensitiveContains(viewModel.searchText)
-                || $0.id.localizedCaseInsensitiveContains(viewModel.searchText)
-        }
-    }
 }
 
 /// 供应商栏的范围筛选行（常用 / 云端 / 本地）。

@@ -56,17 +56,41 @@ public enum RAGFileScanner: SuperLog {
         return files
     }
 
-    /// 扫描项目目录下的所有文件
+    /// 扫描项目目录下的所有文件。
+    ///
+    /// 供检索/回退搜索使用：扫描失败时退化为空结果，不影响单次检索。
+    /// 索引流程必须改用 `discoverFilesOrThrow`，否则「扫描失败」会被误判为
+    /// 「项目没有任何文件」，进而清空整份索引（issue #1062）。
     public static func discoverFiles(in projectPath: String, maxFileSizeBytes: Int = defaultMaxFileSizeBytes) -> [String] {
+        (try? discoverFilesOrThrow(in: projectPath, maxFileSizeBytes: maxFileSizeBytes)) ?? []
+    }
+
+    /// 扫描项目目录下的所有文件；根目录不可用或无法枚举时抛错。
+    ///
+    /// 只有成功完成扫描才返回结果。空数组表示「确实没有任何可索引文件」，
+    /// 调用方据此清理记录才是安全的。
+    public static func discoverFilesOrThrow(
+        in projectPath: String,
+        maxFileSizeBytes: Int = defaultMaxFileSizeBytes
+    ) throws -> [String] {
         let started = Date()
         let rootURL = URL(fileURLWithPath: projectPath)
+
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: projectPath, isDirectory: &isDirectory),
+              isDirectory.boolValue,
+              FileManager.default.isReadableFile(atPath: projectPath) else {
+            if Self.verbose { Self.logger.warning("\(Self.t)discoverFiles 项目根不可用，路径: \(projectPath)") }
+            throw RAGError.projectRootUnavailable(projectPath)
+        }
+
         guard let enumerator = FileManager.default.enumerator(
             at: rootURL,
             includingPropertiesForKeys: [.isRegularFileKey, .isDirectoryKey, .fileSizeKey],
             options: [.skipsHiddenFiles]
         ) else {
             if Self.verbose { Self.logger.warning("\(Self.t)discoverFiles 无法创建枚举器，路径: \(projectPath)") }
-            return []
+            throw RAGError.projectRootUnavailable(projectPath)
         }
 
         var files: [String] = []

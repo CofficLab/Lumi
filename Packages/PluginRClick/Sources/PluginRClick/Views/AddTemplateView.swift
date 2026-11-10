@@ -5,13 +5,15 @@ public struct AddTemplateView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     @Binding var isPresented: Bool
-    public var onAdd: (String, String, String) -> Void
+    /// 返回是否成功持久化；返回 `false` 时保留编辑页并提示错误。
+    public var onAdd: (String, String, String) -> Bool
 
     @State private var name = ""
     @State private var ext = ""
     @State private var content = ""
     @State private var showNameError = false
     @State private var showExtensionError = false
+    @State private var showSaveError = false
 
     public var body: some View {
         VStack(spacing: 20) {
@@ -25,13 +27,19 @@ public struct AddTemplateView: View {
                     title: pluginLocalization.string("Name (e.g. Python Script)"),
                     text: $name
                 )
-                .onChange(of: name) { _, _ in showNameError = false }
+                .onChange(of: name) { _ in
+                    showNameError = false
+                    showSaveError = false
+                }
 
                 GlassTextField(
                     title: pluginLocalization.string("Extension (e.g. py)"),
                     text: $ext
                 )
-                .onChange(of: ext) { _, _ in showExtensionError = false }
+                .onChange(of: ext) { _ in
+                    showExtensionError = false
+                    showSaveError = false
+                }
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(pluginLocalization.string("Default Content"))
@@ -53,6 +61,10 @@ public struct AddTemplateView: View {
                 AppErrorBanner(message: LocalizedStringKey(pluginLocalization.string("Extension can only contain letters, numbers, hyphen, or underscore")))
             }
 
+            if showSaveError {
+                AppErrorBanner(message: LocalizedStringKey(pluginLocalization.string("Couldn't save the template. Check that Lumi can write its configuration, then try again.")))
+            }
+
             HStack {
                 AppButton(pluginLocalization.string("Cancel"), style: .ghost, fillsWidth: true, action: { isPresented = false })
                 Spacer()
@@ -67,7 +79,10 @@ public struct AddTemplateView: View {
                         return
                     }
 
-                    onAdd(normalizedName, normalizedExtension, content)
+                    guard onAdd(normalizedName, normalizedExtension, content) else {
+                        showSaveError = true
+                        return
+                    }
                     isPresented = false
                 })
                 .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || ext.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)

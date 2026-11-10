@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "PluginConversationExport",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginConversationExport", targets: ["PluginConversationExport"]),
     ],
@@ -15,7 +15,7 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0")
     ],
     targets: [
         .target(

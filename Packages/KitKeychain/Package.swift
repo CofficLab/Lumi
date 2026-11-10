@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "KitKeychain",
     platforms: [
-        .macOS(.v14),
+        .macOS("13.1"),
         .iOS(.v17)
     ],
     products: [

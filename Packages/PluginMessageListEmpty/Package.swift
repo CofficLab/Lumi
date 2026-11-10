@@ -4,11 +4,11 @@ import PackageDescription
 let package = Package(
     name: "PluginMessageListEmpty",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [.library(name: "PluginMessageListEmpty", targets: ["PluginMessageListEmpty"])],
     dependencies: [
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.13.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitProjectDetect"),
@@ -17,7 +17,7 @@ let package = Package(
         .package(path: "../ProviderGit"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderProjectRAG"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.13.0")
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0")
     ],
     targets: [
         .target(
@@ -33,6 +33,7 @@ let package = Package(
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderGit", package: "ProviderGit"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderPluginControl", package: "LumiProviders"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderProjectRAG", package: "ProviderProjectRAG"),
                 .product(name: "ProviderPromptSuggestion", package: "LumiProviders"),
@@ -46,10 +47,13 @@ let package = Package(
             dependencies: [
                 "PluginMessageListEmpty",
                 .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "ProviderActivityBar", package: "LumiProviders"),
+                .product(name: "ProviderRailView", package: "LumiProviders"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderGit", package: "ProviderGit"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderPluginControl", package: "LumiProviders"),
                 .product(name: "ProviderProject", package: "LumiProviders"),
                 .product(name: "ProviderProjectRAG", package: "ProviderProjectRAG"),
                 .product(name: "ProviderPromptSuggestion", package: "LumiProviders"),

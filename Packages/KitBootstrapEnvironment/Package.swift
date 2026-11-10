@@ -10,7 +10,7 @@ let package = Package(
     name: "KitBootstrapEnvironment",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("13.1"),
         .iOS(.v17),
     ],
     products: [

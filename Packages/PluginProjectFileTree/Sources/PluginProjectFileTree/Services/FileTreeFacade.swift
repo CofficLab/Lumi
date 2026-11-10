@@ -108,12 +108,36 @@ public enum FileTreeFacade {
     /// 批量移入废纸篓，自动跳过嵌套子路径。
     @discardableResult
     public static func trashItems(at urls: [URL]) -> Int {
-        let targets = PathFormatter.topLevelURLs(from: urls)
-        var successCount = 0
-        for url in targets where trashItem(at: url) {
-            successCount += 1
+        trashItemsReporting(at: urls).trashedURLs.count
+    }
+
+    /// 批量移入废纸篓的结果。
+    ///
+    /// 多选删除必须处理 `actionTargets(for:)` 的全部目标，并保留失败项供
+    /// 调用方汇报部分失败（回归 #1109）。
+    struct TrashBatchResult: Equatable {
+        let trashedURLs: [URL]
+        let failedURLs: [URL]
+
+        var totalCount: Int { trashedURLs.count + failedURLs.count }
+        var hasPartialFailure: Bool { !trashedURLs.isEmpty && !failedURLs.isEmpty }
+    }
+
+    /// 逐个尝试移入废纸篓并回报成功/失败目标；嵌套子路径会被跳过。
+    static func trashItemsReporting(
+        at urls: [URL],
+        trash: (URL) -> Bool = { trashItem(at: $0) }
+    ) -> TrashBatchResult {
+        var trashedURLs: [URL] = []
+        var failedURLs: [URL] = []
+        for url in PathFormatter.topLevelURLs(from: urls) {
+            if trash(url) {
+                trashedURLs.append(url)
+            } else {
+                failedURLs.append(url)
+            }
         }
-        return successCount
+        return TrashBatchResult(trashedURLs: trashedURLs, failedURLs: failedURLs)
     }
 
     /// 移动文件或文件夹到目标目录
@@ -180,16 +204,76 @@ public enum FileTreeFacade {
     }
 
     /// 在 VS Code 中打开文件或文件夹
-    /// - Parameter url: 文件或文件夹 URL
-    public static func openInVSCode(_ url: URL) {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = ["code", url.path]
+    ///
+    /// `/usr/bin/env` 能启动不代表 `code` 命令存在：未安装 shell command 时，
+    /// env 随后会以非零状态退出。必须等待并检查退出状态，失败时回退到
+    /// VS Code 应用 URL，并通过 `completion` 报告最终结果（回归 #1105）。
+    /// - Parameters:
+    ///   - url: 文件或文件夹 URL
+    ///   - completion: 每次打开尝试结束时在主线程回调最终是否成功
+    public static func openInVSCode(
+        _ url: URL,
+        completion: @escaping @MainActor @Sendable (Bool) -> Void
+    ) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let status = runAndWait(
+                executable: "/usr/bin/env",
+                arguments: ["code", url.path]
+            )
+            Task { @MainActor in
+                let opened = await resolveVSCodeOpen(commandStatus: status) {
+                    await openWithVSCodeApplication(url)
+                }
+                completion(opened)
+            }
+        }
+    }
 
+    /// 只有 `code` 命令以 0 退出才算打开成功；命令缺失、无法启动或非零退出
+    /// 都必须回退到应用打开。
+    @MainActor
+    static func resolveVSCodeOpen(
+        commandStatus: Int32?,
+        openApplication: () async -> Bool
+    ) async -> Bool {
+        if commandStatus == 0 {
+            return true
+        }
+        return await openApplication()
+    }
+
+    /// 启动外部命令并等待退出，返回退出状态；无法启动进程时返回 nil。
+    static func runAndWait(executable: String, arguments: [String]) -> Int32? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: executable)
+        process.arguments = arguments
         do {
             try process.run()
+            process.waitUntilExit()
+            return process.terminationStatus
         } catch {
-            NSWorkspace.shared.open(url)
+            return nil
+        }
+    }
+
+    /// 使用 VS Code 应用本身打开目标（不依赖 `code` shell command）。
+    @MainActor
+    private static func openWithVSCodeApplication(_ url: URL) async -> Bool {
+        guard let appURL = NSWorkspace.shared.urlForApplication(
+            withBundleIdentifier: "com.microsoft.VSCode"
+        ) else {
+            return false
+        }
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        return await withCheckedContinuation { continuation in
+            NSWorkspace.shared.open(
+                [url],
+                withApplicationAt: appURL,
+                configuration: configuration
+            ) { _, error in
+                continuation.resume(returning: error == nil)
+            }
         }
     }
 

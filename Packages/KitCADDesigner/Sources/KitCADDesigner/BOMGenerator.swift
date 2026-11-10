@@ -62,7 +62,7 @@ public struct BOMGenerator {
                 guard let spec = library.profileSpec(id: instance.profileId) else { continue }
                 let weight = instance.weight(spec: spec)
                 totalWeight += weight
-                let key = "\(spec.id)@\(Int(instance.length))"
+                let key = "\(spec.id)@\(instance.length)"
                 if var entry = grouped[key] {
                     entry.count += 1
                     entry.weight += weight
@@ -89,7 +89,7 @@ public struct BOMGenerator {
             .map { entry in
                 BOMItem(
                     partNumber: entry.spec.id,
-                    description: "\(entry.spec.sizeLabel) 欧标型材 × \(Int(entry.length))mm",
+                    description: "\(entry.spec.sizeLabel) 欧标型材 × \(lengthLabel(entry.length))mm",
                     length: entry.length,
                     quantity: entry.count,
                     weight: entry.weight,
@@ -112,5 +112,11 @@ public struct BOMGenerator {
             }
 
         return BOMReport(items: items, totalWeight: totalWeight, totalComponentCount: totalComponentCount)
+    }
+
+    /// 精确展示长度：整数去掉 `.0`，小数保留原始精度，避免把 500.25 显示为 500。
+    private func lengthLabel(_ value: Double) -> String {
+        let text = String(value)
+        return text.hasSuffix(".0") ? String(text.dropLast(2)) : text
     }
 }

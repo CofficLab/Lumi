@@ -40,8 +40,29 @@ struct OpenRouterProviderPluginTests {
         #expect(info.defaultModel == "alibaba/qwen3.5-397b")
         #expect(info.apiFormat.rawValue == "openAI")
         #expect(info.apiKeyStorageKey == "DevAssistant_ApiKey_OpenRouter")
-        #expect(info.providerType.rawValue == "cloudService")
+        #expect(info.providerType.rawValue == "relay")
         #expect(info.websiteURL == URL(string: "https://openrouter.ai/"))
+    }
+
+    @Test("回归 #957：OpenRouter 属于中转站而非模型厂商直供")
+    func openRouterIsClassifiedAsRelay() {
+        let info = OpenRouterProvider().providerInfo
+
+        // 模型选择器的 Cloud 视图按 providerType 分组：聚合服务必须进中转站区域。
+        #expect(info.providerType == .relay)
+        #expect(info.description.contains("Router"))
+    }
+
+    @Test("回归 #956：MiniMax M2.1 使用 204,800 上下文窗口")
+    func minimaxM2ContextWindowMatchesFamilySpec() throws {
+        let models = OpenRouterProvider().providerInfo.models
+        let m21 = try #require(models.first(where: { $0.id == "minimax/minimax-m2.1" }))
+        let m25 = try #require(models.first(where: { $0.id == "minimax/minimax-m2.5:free" }))
+
+        // 仓库内 MiniMax 家族元数据规定 M2.x 均为 204,800；
+        // AgentLoop 直接用该字段计算压缩阈值，放大窗口会让超限历史不被压缩。
+        #expect(m21.contextWindowSize == 204_800)
+        #expect(m21.contextWindowSize == m25.contextWindowSize)
     }
 
     @Test("OpenRouter 模型清单完整有序且默认模型在内")

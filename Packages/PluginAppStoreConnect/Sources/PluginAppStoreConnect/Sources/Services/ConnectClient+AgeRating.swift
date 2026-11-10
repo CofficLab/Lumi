@@ -211,8 +211,10 @@ struct AgeRatingDeclaration: Decodable {
     let contests: String?
     let gambling: Bool?
     let gamblingSimulated: String?
+    let gunsOrOtherWeapons: String?
     let horrorOrFearThemes: String?
     let kidsAgeBand: String?
+    let matureOrSuggestiveThemes: String?
     let medicalOrTreatmentInformation: String?
     let profanityOrCrudeHumor: String?
     let seventeenPlus: Bool?
@@ -222,6 +224,18 @@ struct AgeRatingDeclaration: Decodable {
     let violenceCartoonOrFantasy: String?
     let violenceRealistic: String?
     let violenceRealisticProlongedGraphicOrSadistic: String?
+    let ageRatingOverride: String?
+    let ageRatingOverrideV2: String?
+    let koreaAgeRatingOverride: String?
+    let advertising: Bool?
+    let ageAssurance: Bool?
+    let healthOrWellnessTopics: Bool?
+    let lootBox: Bool?
+    let messagingAndChat: Bool?
+    let parentalControls: Bool?
+    let socialMedia: Bool?
+    let socialMediaAgeRestricted: Bool?
+    let userGeneratedContent: Bool?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -233,8 +247,10 @@ struct AgeRatingDeclaration: Decodable {
         case contests
         case gambling
         case gamblingSimulated
+        case gunsOrOtherWeapons
         case horrorOrFearThemes
         case kidsAgeBand
+        case matureOrSuggestiveThemes
         case medicalOrTreatmentInformation
         case profanityOrCrudeHumor
         case seventeenPlus
@@ -244,6 +260,18 @@ struct AgeRatingDeclaration: Decodable {
         case violenceCartoonOrFantasy
         case violenceRealistic
         case violenceRealisticProlongedGraphicOrSadistic
+        case ageRatingOverride
+        case ageRatingOverrideV2
+        case koreaAgeRatingOverride
+        case advertising
+        case ageAssurance
+        case healthOrWellnessTopics
+        case lootBox
+        case messagingAndChat
+        case parentalControls
+        case socialMedia
+        case socialMediaAgeRestricted
+        case userGeneratedContent
     }
 
     init(from decoder: Decoder) throws {
@@ -254,8 +282,10 @@ struct AgeRatingDeclaration: Decodable {
         contests = try attrs.decodeIfPresent(String.self, forKey: .contests)
         gambling = try attrs.decodeIfPresent(Bool.self, forKey: .gambling)
         gamblingSimulated = try attrs.decodeIfPresent(String.self, forKey: .gamblingSimulated)
+        gunsOrOtherWeapons = try attrs.decodeIfPresent(String.self, forKey: .gunsOrOtherWeapons)
         horrorOrFearThemes = try attrs.decodeIfPresent(String.self, forKey: .horrorOrFearThemes)
         kidsAgeBand = try attrs.decodeIfPresent(String.self, forKey: .kidsAgeBand)
+        matureOrSuggestiveThemes = try attrs.decodeIfPresent(String.self, forKey: .matureOrSuggestiveThemes)
         medicalOrTreatmentInformation = try attrs.decodeIfPresent(String.self, forKey: .medicalOrTreatmentInformation)
         profanityOrCrudeHumor = try attrs.decodeIfPresent(String.self, forKey: .profanityOrCrudeHumor)
         seventeenPlus = try attrs.decodeIfPresent(Bool.self, forKey: .seventeenPlus)
@@ -265,5 +295,17 @@ struct AgeRatingDeclaration: Decodable {
         violenceCartoonOrFantasy = try attrs.decodeIfPresent(String.self, forKey: .violenceCartoonOrFantasy)
         violenceRealistic = try attrs.decodeIfPresent(String.self, forKey: .violenceRealistic)
         violenceRealisticProlongedGraphicOrSadistic = try attrs.decodeIfPresent(String.self, forKey: .violenceRealisticProlongedGraphicOrSadistic)
+        ageRatingOverride = try attrs.decodeIfPresent(String.self, forKey: .ageRatingOverride)
+        ageRatingOverrideV2 = try attrs.decodeIfPresent(String.self, forKey: .ageRatingOverrideV2)
+        koreaAgeRatingOverride = try attrs.decodeIfPresent(String.self, forKey: .koreaAgeRatingOverride)
+        advertising = try attrs.decodeIfPresent(Bool.self, forKey: .advertising)
+        ageAssurance = try attrs.decodeIfPresent(Bool.self, forKey: .ageAssurance)
+        healthOrWellnessTopics = try attrs.decodeIfPresent(Bool.self, forKey: .healthOrWellnessTopics)
+        lootBox = try attrs.decodeIfPresent(Bool.self, forKey: .lootBox)
+        messagingAndChat = try attrs.decodeIfPresent(Bool.self, forKey: .messagingAndChat)
+        parentalControls = try attrs.decodeIfPresent(Bool.self, forKey: .parentalControls)
+        socialMedia = try attrs.decodeIfPresent(Bool.self, forKey: .socialMedia)
+        socialMediaAgeRestricted = try attrs.decodeIfPresent(Bool.self, forKey: .socialMediaAgeRestricted)
+        userGeneratedContent = try attrs.decodeIfPresent(Bool.self, forKey: .userGeneratedContent)
     }
 }

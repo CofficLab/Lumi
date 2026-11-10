@@ -48,7 +48,7 @@ final class AccessibilityService {
         inspections[bundleID].map { Date().timeIntervalSince($0) < 120 } ?? false
     }
 
-    func observe(application query: String) throws -> String {
+    func observe(application query: String, context: ComputerUseAccessContext) throws -> String {
         guard ComputerUsePermissionService.hasAccessibilityPermission else {
             throw ComputerUseError.accessibilityPermissionRequired
         }
@@ -61,7 +61,12 @@ final class AccessibilityService {
         guard apps.count == 1, let app = apps.first, let bundleID = app.bundleIdentifier else {
             throw ComputerUseError.invalidArguments("Use the exact bundle identifier of one running application.")
         }
-        try requireAuthorized(bundleID: bundleID, applicationName: app.localizedName ?? bundleID, operation: "accessibility_observe")
+        try requireAuthorized(
+            bundleID: bundleID,
+            applicationName: app.localizedName ?? bundleID,
+            operation: "accessibility_observe",
+            context: context
+        )
         let root = AXUIElementCreateApplication(app.processIdentifier)
         AXUIElementSetMessagingTimeout(root, 0.2)
         var refs: [String: AXUIElement] = [:]
@@ -117,7 +122,13 @@ final class AccessibilityService {
         return try json(snapshot)
     }
 
-    func act(observationID: String, elementID: String, action: String, value: String?) throws -> String {
+    func act(
+        observationID: String,
+        elementID: String,
+        action: String,
+        value: String?,
+        context: ComputerUseAccessContext
+    ) throws -> String {
         guard !NativeControlCoordinator.shared.isBusy else {
             throw ComputerUseError.invalidArguments("A native operation is active or paused. Wait for the user; do not change its target through Accessibility.")
         }
@@ -128,10 +139,14 @@ final class AccessibilityService {
               let ref = stored.refs[elementID] else {
             throw ComputerUseError.invalidArguments("Expired or invalid AX element. Call accessibility_observe again.")
         }
-        guard authorization.isAllowed(stored.snapshot.bundleIdentifier)
-            || authorization.consumeOneShot(bundleIdentifier: stored.snapshot.bundleIdentifier) else {
-            throw ComputerUseError.applicationNotAllowed(stored.snapshot.application)
-        }
+        // 快照可能来自另一次 observe 调用（观察与操作是两次独立工具调用），
+        // 因此这里必须**重新判定**授权，不能假设 observe 时已经通过。
+        try requireAuthorized(
+            bundleID: stored.snapshot.bundleIdentifier,
+            applicationName: stored.snapshot.application,
+            operation: "accessibility_act",
+            context: context
+        )
         guard string(ref, kAXSubroleAttribute) != kAXSecureTextFieldSubrole else { throw ComputerUseError.secureInputBlocked }
         guard attribute(ref, kAXRoleAttribute) != nil,
               (attribute(ref, kAXEnabledAttribute) as? Bool) != false else {
@@ -139,6 +154,10 @@ final class AccessibilityService {
         }
         let before = valueText(ref)
         let result: AXError
+        // 遮罩必须在 AX 动作**之前**显示：动作是瞬时的，先显示再执行，
+        // 用户才可能看到「Lumi 正在操作这个窗口」。
+        let overlay = beginTargetOverlay(element: ref, snapshot: stored.snapshot, pid: stored.pid)
+        defer { overlay?.end() }
         if action == "set_value" {
             guard let value, value.utf8.count <= 20_000 else { throw ComputerUseError.invalidArguments("set_value requires text <= 20 KB") }
             var settable = DarwinBoolean(false)
@@ -165,6 +184,42 @@ final class AccessibilityService {
 
     static let allowedActions = [kAXPressAction, kAXPickAction, kAXIncrementAction, kAXDecrementAction, kAXConfirmAction]
 
+    // MARK: - 目标窗口遮罩
+
+    /// 在目标窗口上显示「Lumi 正在操作」遮罩。
+    ///
+    /// AX 路径此前**完全没有桌面提示**：用户看到界面被改动，却无从判断
+    /// 是 Lumi 干的还是应用自己变的。遮罩补上了这个缺口。
+    ///
+    /// - Note: 读不到窗口几何时**不报错**。遮罩是提示而非操作必需项，
+    ///   几何查询失败不应让一次本来能成功的 AX 动作失败。
+    ///
+    /// - Returns: 已启动的遮罩会话；无法定位窗口时返回 `nil`。
+    private func beginTargetOverlay(
+        element: AXUIElement,
+        snapshot: Snapshot,
+        pid: pid_t
+    ) -> ComputerUseTargetOverlayController? {
+        guard let windowElement = ComputerUseTargetGeometryProvider.axWindowElement(of: element),
+              let rect = ComputerUseTargetGeometryProvider.axWindowRect(of: element) else {
+            return nil
+        }
+        let controller = ComputerUseTargetOverlayController.shared
+        controller.begin(
+            ComputerUseTargetOverlayController.Target(
+                quartzRect: rect,
+                applicationName: snapshot.application,
+                intensity: .subtle,
+                // AX 路径拿不到 CGWindowID，靠「进程 + 矩形重叠」近似匹配遮挡关系。
+                windowID: nil,
+                processIdentifier: pid
+            ),
+            windowElement: windowElement,
+            processIdentifier: pid
+        )
+        return controller
+    }
+
     /// 校验目标应用是否已获授权。
     ///
     /// 未授权时抛出 `authorizationRequired`，由工具层转换成挂起回合的
@@ -172,11 +227,13 @@ final class AccessibilityService {
     private func requireAuthorized(
         bundleID: String,
         applicationName: String,
-        operation: String
+        operation: String,
+        context: ComputerUseAccessContext
     ) throws {
         switch ComputerUseAccessChecker(authorization: authorization).outcome(
             for: bundleID,
-            applicationName: applicationName
+            applicationName: applicationName,
+            context: context
         ) {
         case .allowed:
             return

@@ -5,7 +5,7 @@
 PluginAppStorePromoDesigner 的实现包，包含 14 个主要类型；当前测试覆盖 9 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 9
+测试文件: 3 个，用例总数: 16
 
 核心组件（源码目录）:
 - `Observers/`
@@ -40,6 +40,8 @@ PluginAppStorePromoDesigner 的实现包，包含 14 个主要类型；当前测
 - **AppStorePromoDesignerPlugin**（8 条）：由 `openingWithoutConfiguredStorageDoesNotShowAnError`、`contributesRailTabAndCompleteToolSet`、`promptSuggestionLocalizationResolves` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AppStorePromoDesignerRuleContributor**（1 条）：由 `loadsPromoRuleFromResource` 等用例锁定；改动该模块时优先跑对应测试文件。
 
+- **AppStorePromoDesignerPluginTests**（7 条）：由 `conversationScopedToolWritesIntoItsOwnProject`、`conversationScopedToolReadsFromItsOwnProject` 等用例锁定；改动该模块时优先跑对应测试文件。
+
 ## 测试用例清单
 
 | ID | 类别 | 描述 | 前置条件 | 操作步骤 | 预期结果 | 优先级 | 状态 | 测试方法 |
@@ -53,27 +55,34 @@ PluginAppStorePromoDesigner 的实现包，包含 14 个主要类型；当前测
 | 7 | AppStorePromoDesignerPlugin | agentToolsUseOnlyProjectStorage | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `agentToolsUseOnlyProjectStorage` |
 | 8 | AppStorePromoDesignerPlugin | toolsRequireAnOpenProject | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `toolsRequireAnOpenProject` |
 | 9 | AppStorePromoDesignerRuleContributor | 促销图设计插件从 Markdown 资源贡献 Agent Rule | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `loadsPromoRuleFromResource` |
+| 10 | AppStorePromoDesignerPluginTests | 对话 A 的工具调用写入对话 A 的项目，而不是 UI 当前打开的项目 B | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `conversationScopedToolWritesIntoItsOwnProject` |
+| 11 | AppStorePromoDesignerPluginTests | 对话 A 的工具读取只看到项目 A 的任务 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `conversationScopedToolReadsFromItsOwnProject` |
+| 12 | AppStorePromoDesignerPluginTests | 跨项目写入不会刷新 UI 当前打开项目的面板 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `crossProjectWriteDoesNotReloadWorkspaceOfAnotherProject` |
+| 13 | AppStorePromoDesignerPluginTests | 未绑定项目的对话回退到 UI 当前打开项目 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `unscopedConversationFallsBackToCurrentProject` |
+| 14 | AppStorePromoDesignerPluginTests | 对话绑定的项目路径无效时不会写进别的项目 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `scopedConversationWithMissingProjectNeverWritesElsewhere` |
+| 15 | AppStorePromoDesignerPluginTests | 插件注册的 Agent 工具都带对话作用域包装 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registeredToolsAreConversationScoped` |
+| 16 | AppStorePromoDesignerPluginTests | 加入项目不预建存储目录，真正写入时才创建 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `doesNotCreateStorageDirectoryUntilWrite` |
 
-> 说明：全部 **9 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **16 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
-- P1: 已覆盖 8 / 8
+- P0: 已覆盖 1 / 1
+- P1: 已覆盖 14 / 14
 - P2: 已覆盖 1 / 1
-- **合计: 9 / 9**（仅表示清单场景，非源码覆盖率）
+- **合计: 16 / 16**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（8 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
+- **P1**: 其余功能性用例（14 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 9 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 16 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

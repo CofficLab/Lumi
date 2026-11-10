@@ -2,6 +2,17 @@ import Foundation
 import KitTestIsolation
 import ProviderProject
 
+/// Agent Rules 数据变化事件，供同一进程内的工具栏等界面失效缓存。
+public enum AgentRulesChange {
+    /// 发生变化的项目路径（`String`）。
+    public static let projectPathKey = "projectPath"
+}
+
+extension Notification.Name {
+    /// 规则文件被创建/修改后发出；携带 ``AgentRulesChange/projectPathKey``。
+    public static let agentRulesDidChange = Notification.Name("com.coffic.lumi.plugin.agent-rules.did-change")
+}
+
 /// AgentRules 插件的运行时持有（KernelCore 体系）。
 ///
 /// 由旧版 `kernel.currentProjectPath` / `kernel.project` 依赖迁移而来：

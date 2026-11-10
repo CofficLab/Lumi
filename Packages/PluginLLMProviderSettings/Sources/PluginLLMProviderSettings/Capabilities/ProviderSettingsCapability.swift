@@ -24,6 +24,9 @@ protocol ProviderSettingsCapability: AnyObject {
     /// 远程模型源刷新成功后发布 providerID（供 VM 订阅刷新 models）。
     var modelsUpdatedPublisher: AnyPublisher<String, Never> { get }
 
+    /// 全局选中模型变化发布者（供详情刷新「当前」标记）。
+    var selectionChangedPublisher: AnyPublisher<Void, Never> { get }
+
     /// 指定供应商的动态模型池：远程型读 `availableModels`，静态型读 `providerInfo.models`。
     func availableModels(for providerID: String) -> [LLMModelInfo]
 
@@ -50,7 +53,9 @@ protocol ProviderSettingsCapability: AnyObject {
     var customProviderConfigurationsPublisher: AnyPublisher<[UserDefinedCloudProviderConfiguration], Never> { get }
     func customProviderConfiguration(id: String) -> UserDefinedCloudProviderConfiguration?
     func isCustomProvider(id: String) -> Bool
-    func removeCustomProvider(id: String)
+
+    /// 删除自定义供应商。持久化失败时抛错，调用方不得当作已删除。
+    func removeCustomProvider(id: String) throws
     func makeCustomProviderEditor(configuration: UserDefinedCloudProviderConfiguration?) -> CustomCloudProviderEditor?
 
     // MARK: 下载
@@ -66,6 +71,7 @@ final class ProviderSettingsCapabilityAdapter: ProviderSettingsCapability {
     private let customProviderStore: UserDefinedCloudProviderStore?
 
     private let modelsUpdatedSubject = PassthroughSubject<String, Never>()
+    private let selectionChangedSubject = PassthroughSubject<Void, Never>()
     private var observer: (any LLMManagerObserverHandle)?
 
     init(
@@ -74,9 +80,14 @@ final class ProviderSettingsCapabilityAdapter: ProviderSettingsCapability {
     ) {
         self.manager = manager
         self.customProviderStore = customProviderStore
-        observer = manager.addObserver { [modelsUpdatedSubject] event in
-            if case let .modelsRefreshed(providerID) = event {
+        observer = manager.addObserver { [modelsUpdatedSubject, selectionChangedSubject] event in
+            switch event {
+            case let .modelsRefreshed(providerID):
                 modelsUpdatedSubject.send(providerID)
+            case .selectionChanged:
+                selectionChangedSubject.send()
+            case .providersChanged:
+                break
             }
         }
     }
@@ -116,6 +127,10 @@ final class ProviderSettingsCapabilityAdapter: ProviderSettingsCapability {
 
     var modelsUpdatedPublisher: AnyPublisher<String, Never> {
         modelsUpdatedSubject.eraseToAnyPublisher()
+    }
+
+    var selectionChangedPublisher: AnyPublisher<Void, Never> {
+        selectionChangedSubject.eraseToAnyPublisher()
     }
 
     func availableModels(for providerID: String) -> [LLMModelInfo] {
@@ -160,8 +175,8 @@ final class ProviderSettingsCapabilityAdapter: ProviderSettingsCapability {
         customProviderStore?.isCustomProvider(id: id) ?? false
     }
 
-    func removeCustomProvider(id: String) {
-        try? customProviderStore?.remove(id: id)
+    func removeCustomProvider(id: String) throws {
+        try customProviderStore?.remove(id: id)
     }
 
     func makeCustomProviderEditor(configuration: UserDefinedCloudProviderConfiguration?) -> CustomCloudProviderEditor? {

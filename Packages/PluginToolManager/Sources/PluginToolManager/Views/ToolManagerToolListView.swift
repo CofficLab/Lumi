@@ -5,7 +5,7 @@ import SwiftUI
 /// 工具列表（主从布局的左栏）：按插件分组列出内核里已注册的工具。
 ///
 /// 工具数量可达上百个，因此按插件分组并用 `AppSectionLabel` 标出组名；
-/// 组内每行是工具名 + 描述，点击即选中，右侧详情随之切换。
+/// 组内每行只显示工具名，点击即选中，右侧详情随之切换。
 struct ToolManagerToolListView: View {
     @ObservedObject var viewModel: ToolManagerViewModel
     @LumiTheme private var theme
@@ -64,22 +64,16 @@ struct ToolManagerToolListView: View {
                 viewModel.selectTool(named: tool.name)
             }
         }) {
-            HStack(alignment: .top, spacing: 10) {
+            HStack(alignment: .center, spacing: 10) {
                 Image(systemName: "wrench.and.screwdriver")
                     .font(.appBody)
                     .foregroundStyle(theme.textSecondary)
                     .frame(width: 22, height: 22)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(tool.name)
-                        .font(.appCaptionEmphasized)
-                        .foregroundStyle(theme.textPrimary)
-                        .lineLimit(1)
-                    Text(tool.description(for: .current))
-                        .font(.appMicro)
-                        .foregroundStyle(theme.textSecondary)
-                        .lineLimit(2)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                Text(tool.name)
+                    .font(.appCaptionEmphasized)
+                    .foregroundStyle(theme.textPrimary)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
             }
         }
     }

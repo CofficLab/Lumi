@@ -152,16 +152,19 @@ public final class ConversationStateProvider: ConversationStateProviding, SuperL
 
     /// 只有仍在进行的回合才承载 activity。
     ///
-    /// - Important: `.sending` 是**唯一**在 `agentLoopState == .idle` 时
-    ///   也合法的 activity。它由 `MessageSenderStateObserver` 在消息投递阶段
-    ///   写入，而回合要到 `AgentLoopEvent.started` 才转成 `.running`——
-    ///   两者之间存在一个真实的时间窗口。
+    /// - Important: `.sending` 是**投递期** activity，与回合状态无关。
+    ///   它由 `MessageSenderStateObserver` 在消息投递阶段写入，而回合要到
+    ///   `AgentLoopEvent.started` 才转成 `.running`——两者之间存在一个真实的
+    ///   时间窗口。这个窗口横跨**任意**上一轮结局：首轮时 `agentLoopState`
+    ///   是 `.idle`，之后则是 `.completed` / `.failed` / `.cancelled`。
     ///
-    ///   若把 `.idle` 一律视为终态，这个窗口内的 activity 会被守卫拦掉，
-    ///   表现为「发送中」提示闪现或残留（回归见
-    ///   `LumiMessageListBriefUITests.testBottomStatusCardIsHiddenWhenIdle`）。
+    ///   若把 `.sending` 的合法性绑定在 `agentLoopState == .idle` 上，它就
+    ///   只能活在第一轮——第二轮起，上一轮的终态会把它一并吞掉，活动行整段
+    ///   消失（#891）。`agentLoopState` 描述的是**上一轮**回合的结局，
+    ///   `.sending` 描述的是**这一轮**投递的状态，两者不在同一个时间尺度上，
+    ///   不该用前者否决后者。
     ///
-    ///   因此约束精确到「哪个 activity 可以出现在终态回合上」，
+    ///   因此约束精确到「哪个 activity 可以出现在非活动回合上」，
     ///   而不是笼统地按 `agentLoopState` 一刀切。
     private static func acceptsActivity(
         _ activity: ConversationActivity?,
@@ -171,11 +174,13 @@ public final class ConversationStateProvider: ConversationStateProviding, SuperL
         switch agentLoopState {
         case .running, .suspended:
             return true
-        case .idle:
-            // 发送阶段尚未启动回合，此时只有「正在发送」是真实状态。
+        case .idle, .completed, .failed, .cancelled:
+            // 回合不在进行时，只有「正在发送」是真实状态：它属于投递阶段，
+            // 不属于任何一回合，因此不受上一轮结局的影响。
+            //
+            // 回合期的 activity（thinking / executingTool / waitingForUser）
+            // 在这里一律拒绝——迟到的观察者事件不得把死掉的回合拖回「正在做事」。
             return activity == .sending
-        case .completed, .failed, .cancelled:
-            return false
         }
     }
 

@@ -5,7 +5,7 @@ let package = Package(
     name: "ProviderWebServer",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("13.1"),
         .iOS(.v17)
     ],
     products: [
@@ -23,8 +23,14 @@ let package = Package(
             sources: [
                 "DefaultWebServerProviding.swift",
                 "HTTPMethod.swift",
+                "WebAPIError.swift",
+                "WebAuthPolicy.swift",
+                "WebCORSPolicy.swift",
+                "WebPagination.swift",
                 "WebRequestActivity.swift",
                 "WebRoute.swift",
+                "WebRouteBuilder.swift",
+                "WebServerExtendedProviding.swift",
                 "WebServerProviding.swift",
             ]
         ),

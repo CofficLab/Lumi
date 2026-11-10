@@ -40,6 +40,7 @@ public struct InputSettingsView: View {
         }
         .onAppear {
             viewModel.refreshRunningApps()
+            viewModel.refreshSources()
         }
     }
 

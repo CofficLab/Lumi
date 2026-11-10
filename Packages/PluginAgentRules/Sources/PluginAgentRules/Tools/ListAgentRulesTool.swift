@@ -43,12 +43,29 @@ public struct ListAgentRulesTool: SuperAgentTool {
         .low
     }
 
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        ToolCallResult(content: try await execute(
+            arguments: arguments,
+            conversationProjectPath: await context.conversationProjectPath()
+        ))
+    }
+
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        // 优先使用显式参数，fallback 到当前项目。
+        try await execute(arguments: arguments, conversationProjectPath: nil)
+    }
+
+    private func execute(
+        arguments: [String: ToolArgument],
+        conversationProjectPath: String?
+    ) async throws -> String {
+        // 优先使用显式参数，其次工具调用所属会话绑定的项目，最后回退到当前项目。
         let explicitPath = (arguments["project_path"]?.value as? String)?
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let currentPath: String? = await MainActor.run { AgentRulesRuntime.currentProjectPath }
-        let projectPath = explicitPath ?? currentPath
+        let projectPath = explicitPath ?? conversationProjectPath ?? currentPath
 
         guard let projectPath, !projectPath.isEmpty else {
             throw AgentRulesError.invalidFileFormat("project_path is required (no current project selected)")
@@ -69,18 +86,7 @@ public struct ListAgentRulesTool: SuperAgentTool {
     }
 
     static func normalizedLimit(_ value: Any?) -> Int? {
-        let raw: Int?
-        if let int = value as? Int {
-            raw = int
-        } else if let double = value as? Double {
-            raw = Int(double)
-        } else if let string = value as? String, let int = Int(string) {
-            raw = int
-        } else {
-            raw = nil
-        }
-
-        guard let raw else { return nil }
+        guard let raw = ToolArgumentNumber.int(value) else { return nil }
         return min(max(raw, Self.minLimit), Self.maxLimit)
     }
 

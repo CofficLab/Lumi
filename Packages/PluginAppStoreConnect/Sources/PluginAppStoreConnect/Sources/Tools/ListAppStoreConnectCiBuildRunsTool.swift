@@ -38,13 +38,13 @@ public struct ListAppStoreConnectCiBuildRunsTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let workflowID = arguments["workflowID"]?.stringValue, !workflowID.isEmpty else {
-            return "Missing or empty workflowID."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing or empty workflowID.")
         }
         let parsedLimit = AppStoreConnectToolSupport.parseInt(arguments["limit"]) ?? 20
         let limit = min(max(parsedLimit, 1), 200)
 
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
-        guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
+        guard let client else { throw ToolExecutionError.executionFailed(toolName: name, reason: errorMessage ?? "Failed to initialize App Store Connect client.") }
         do {
             let runs = try await client.listCiBuildRuns(workflowID: workflowID, limit: limit)
             guard !runs.isEmpty else { return "No build runs found for workflow id=\(workflowID)." }
@@ -55,7 +55,7 @@ public struct ListAppStoreConnectCiBuildRunsTool: SuperAgentTool {
             }
             return (["Build runs for workflow id=\(workflowID):"] + lines).joined(separator: "\n")
         } catch {
-            return "Failed to list CI build runs: \(error.localizedDescription)"
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Failed to list CI build runs: \(error.localizedDescription)")
         }
     }
 }

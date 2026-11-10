@@ -43,6 +43,19 @@ public protocol SuperAgentTool: Sendable {
     /// read-only execution.
     var executionCapability: ToolExecutionCapability { get }
 
+    /// 后续回合送入模型时应从原始调用参数中移除的键。
+    ///
+    /// 用于「参数本身只是展示载荷」的工具：例如 `show_html` 的 HTML 原文已经
+    /// 落盘并渲染在聊天里，再逐轮回传只会持续消耗上下文窗口。被移除的值会替换
+    /// 成占位字符串，调用 ID 与名称保持不变，保证工具调用配对仍然合法。
+    ///
+    /// 默认不移除任何键。
+    ///
+    /// **必须声明为协议要求**：若仅放在扩展中，对存在类型
+    /// （`any SuperAgentTool`）调用时会静态分派到默认实现，工具自身覆盖的
+    /// 版本永远不会被调用。
+    var contextOmittedArgumentKeys: Set<String> { get }
+
     /// 根据当前调用参数返回面向用户的简短操作描述（必填）
     ///
     /// 每个工具必须提供面向用户的操作描述，帮助用户快速理解当前操作。
@@ -88,6 +101,30 @@ public protocol SuperAgentTool: Sendable {
         context: ToolExecutionContext,
         arguments: [String: ToolArgument]
     ) async throws -> ToolCallResult
+
+    /// 挂起交互（`awaitingUserResponse`）结束后，用户回答应如何完成本次调用。
+    ///
+    /// 默认把回答文本当作工具结果返回（例如 `ask_user`）。如果工具的挂起
+    /// 只是为了拿到一次授权（例如 Computer Use 的观察/操作），则必须在回答
+    /// 表示允许时重新执行工具，否则调用方会把授权回执误当成业务结果。
+    ///
+    /// **必须声明为协议要求**：若仅放在扩展中，对存在类型
+    /// （`any SuperAgentTool`）调用时会静态分派到默认实现，工具自身覆盖的
+    /// 版本永远不会被调用。
+    func userResponseAction(
+        for answer: String,
+        arguments: [String: ToolArgument]
+    ) -> ToolUserResponseAction
+}
+
+/// 工具对「用户在挂起交互中给出的回答」的处理方式。
+public enum ToolUserResponseAction: Sendable, Equatable {
+    /// 把回答文本作为工具结果返回（默认）。
+    case returnAnswer
+    /// 授权已生效，重新执行工具并返回真实结果。
+    case reexecute
+    /// 用户拒绝：以失败结果结束本次调用，不重新执行。
+    case reject(reason: String)
 }
 
 extension SuperAgentTool {
@@ -97,6 +134,9 @@ extension SuperAgentTool {
     /// Unknown/custom tools are serialized by default because their side
     /// effects cannot be inferred safely from the protocol alone.
     public var executionCapability: ToolExecutionCapability { .serialSideEffect }
+
+    /// 默认把全部参数原样送入模型上下文。
+    public var contextOmittedArgumentKeys: Set<String> { [] }
 
     /// 默认描述（英文）
     public var description: String {
@@ -134,5 +174,15 @@ extension SuperAgentTool {
     ) async throws -> ToolCallResult {
         _ = context
         return try await executeResult(arguments: arguments)
+    }
+
+    /// 默认把用户回答当作工具结果返回。
+    public func userResponseAction(
+        for answer: String,
+        arguments: [String: ToolArgument]
+    ) -> ToolUserResponseAction {
+        _ = answer
+        _ = arguments
+        return .returnAnswer
     }
 }

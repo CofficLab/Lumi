@@ -44,7 +44,10 @@ public struct RecallMemoryTool: SuperAgentTool, @unchecked Sendable {
         let scope = MemoryToolSupport.scope(arguments)
         let projectPath = await MainActor.run { projectCapability.currentProjectPath }
         guard let item = try await storage.load(id: id, type: .project, scope: scope, projectPath: scope == .project ? projectPath : nil) else {
-            return "## Memory Not Found ❌\n\n**ID**: `\(id)`"
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "Memory not found: \(id)"
+            )
         }
         return item.formattedContent(staleThresholdDays: 30)
     }

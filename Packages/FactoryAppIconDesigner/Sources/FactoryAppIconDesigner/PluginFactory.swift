@@ -20,8 +20,11 @@ public struct DefaultPluginFactory: PluginFactory {
     public init() {}
 
     public func makePlugins() -> [any SuperPlugin] {
-        [
-            try! StorageSuperPlugin(),
+        var plugins: [any SuperPlugin] = []
+        if let storage = StorageSuperPlugin.makeIfAvailable() {
+            plugins.append(storage)
+        }
+        plugins += [
             CommandPlugin(),
             PluginSettingView(id: "com.coffic.lumi.plugin.setting-view"),
             PluginLogoManager(),
@@ -33,6 +36,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ThemePackPlugin(),
             AlwaysOnPlugin(AppIconDesignerPlugin()),
         ]
+        return plugins
     }
 }
 

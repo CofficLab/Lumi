@@ -84,6 +84,20 @@ public final class IconDocumentStore: ObservableObject {
         refreshSelection()
     }
 
+    /// 从磁盘重载项目作用域，并尽量保留当前选中项。
+    ///
+    /// 供按项目缓存的 store 在每次使用前刷新，避免用旧的内存快照覆盖
+    /// 其它 store 已落盘的新修订；选中项若仍存在则保留，保证后续
+    /// 依赖「选中文档」的工具调用不中断。
+    public func reloadFromDisk() {
+        let selected = selectedDocumentId
+        reloadScope(.project)
+        selectedDocumentId = selected.flatMap { id in
+            projectDocuments.contains(where: { $0.id == id }) ? id : nil
+        }
+        clearHistory()
+    }
+
     /// Reloads one scope from disk.
     public func reloadScope(_ scope: IconScope) {
         let path = storagePath(for: scope)
@@ -270,12 +284,29 @@ public final class IconDocumentStore: ObservableObject {
         }
     }
 
+    /// 用传入文档的内容替换目标文档，保留目标文档的 ID 与创建时间。
+    ///
+    /// 目标优先级：显式 `replacingDocumentId` > 当前选中文档 > 传入文档自身 ID。
+    /// 前两者未命中时抛 `documentNotFound`，不再静默导入新文档；
+    /// 只有完全未指定目标（且传入 ID 也不在列表中）时才作为新文档导入。
     @discardableResult
-    public func replaceDocument(_ document: IconDocument, scope: IconScope) throws -> IconDocument {
+    public func replaceDocument(
+        _ document: IconDocument,
+        replacingDocumentId targetId: String? = nil,
+        scope: IconScope
+    ) throws -> IconDocument {
         var replacement = IconDocumentSanitizer.sanitized(document)
         var list = documentsList(for: scope)
-        if let index = list.firstIndex(where: { $0.id == replacement.id }) {
+        let trimmedTarget = targetId?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let explicitTarget = (trimmedTarget?.isEmpty == false) ? trimmedTarget : nil
+        let selectedTarget = selectedScope == scope ? selectedDocumentId : nil
+        let requestedTarget = explicitTarget ?? selectedTarget
+        let resolvedTarget = requestedTarget ?? replacement.id
+
+        if let index = list.firstIndex(where: { $0.id == resolvedTarget }) {
             let previous = list[index]
+            replacement.id = previous.id
+            replacement.createdAt = previous.createdAt
             replacement.updatedAt = Date()
             guard replacement != previous else {
                 lastError = nil
@@ -287,6 +318,12 @@ public final class IconDocumentStore: ObservableObject {
                 recordUndo(previous)
             }
             persist(replacement, scope: scope)
+            // 标题变化会改变文件名，清掉旧文件，避免重载后出现重复文档。
+            if IconDocumentFileStore.fileName(for: replacement) != IconDocumentFileStore.fileName(for: previous) {
+                IconDocumentFileStore.delete(previous, storagePath: storagePath(for: scope))
+            }
+        } else if let requestedTarget {
+            throw IconDocumentStoreError.documentNotFound(requestedTarget)
         } else {
             replacement.id = UUID().uuidString
             replacement.createdAt = Date()

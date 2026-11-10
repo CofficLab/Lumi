@@ -223,6 +223,144 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         }
     }
 
+    /// 返回某会话全部消息，但**只保留 LLM 上下文需要的字段**。
+    ///
+    /// ## 为什么需要这个窄读取
+    ///
+    /// `fetchMessages` 会把**每一列**都物化，并逐条 JSON 解码
+    /// `metadataJson` 与 `toolCallsJson`。但 LLM 回合
+    /// （`LLMContextProvider.prepareContext` → `llmHistory` →
+    /// `messagesForLLM`）只需要 `content` + `reasoningContent` + `toolCalls`。
+    ///
+    /// 生产库实测被浪费掉的体积：
+    ///
+    /// | 列 | 体积 | LLM 需要吗 |
+    /// |---|---|---|
+    /// | `ZTOOLCALLSJSON` | 281 MB | 需要 |
+    /// | `ZCONTENT` | 121 MB | 需要 |
+    /// | `ZREASONINGCONTENT` | 54 MB | 需要 |
+    /// | `ZRAWSTREAMEVENTSJSON` | 47 MB | **不需要** |
+    /// | `ZMETADATAJSON` | 35 MB | **不需要** |
+    ///
+    /// 后两列合计 82MB，在每次 LLM 回合里被读取、拷贝、JSON 解码，
+    /// 然后永远不用。
+    ///
+    /// ## 唯一必须保留的 metadata：时间线标记
+    ///
+    /// `llmHistory` 在读取之后才过滤 `MessageTimelineEvent.isTimelineEvent`，
+    /// 该判断依赖 `renderKind` 或 `metadata["lumi.timelineEvent"]`。因此窄读取
+    /// 必须带上 `ZRENDERKIND`，并用 SQL 的 `json_extract` 只取出这一个键，
+    /// 否则 Finder 卡片等界面事件会被当成普通历史发送给模型。
+    ///
+    /// ## 为什么用原生 SQL 而不是 SwiftData
+    ///
+    /// SwiftData 没有「只 SELECT 部分列」的机制 —— `propertiesToFetch` 只影响
+    /// faulting 行为，不改变 SQLite 实际读取的行数据（已在
+    /// `ProviderToolManager` 的 `ToolJobPropertiesToFetchTests` 中实测否证：
+    /// 只快 1.3 倍）。所以必须用原生 SQL 直接 SELECT 需要的列。
+    ///
+    /// UI 渲染路径继续用 `fetchMessages`，行为不变。
+    func fetchMessagesForLLMContext(conversationId: UUID) -> [Message] {
+        locked {
+            var database: OpaquePointer?
+            guard sqlite3_open_v2(
+                databaseURL.path,
+                &database,
+                SQLITE_OPEN_READONLY,
+                nil
+            ) == SQLITE_OK, let database else {
+                if let database { sqlite3_close(database) }
+                return []
+            }
+            defer { sqlite3_close(database) }
+
+            // `ZRENDERKIND` 与 metadata 里的时间线标记必须保留：
+            // `llmHistory` 依赖它们过滤 Finder 卡片等仅用于界面的消息。
+            // 只从 metadata JSON 中抽取这一个键，避免解码整份 35MB 数据。
+            let sql = """
+            SELECT ZID, ZCONVERSATIONID, ZTURNID, ZROLE, ZCONTENT, ZCREATEDAT, \
+            ZISERROR, ZTOOLCALLID, ZREASONINGCONTENT, ZTOOLCALLSJSON, \
+            ZINPUTTOKENCOUNT, ZOUTPUTTOKENCOUNT, ZCACHEDINPUTTOKENCOUNT, \
+            ZCACHEWRITEINPUTTOKENCOUNT, ZCACHETOTALINPUTTOKENCOUNT, ZSTOPREASON, \
+            ZRENDERKIND, \
+            CASE WHEN json_valid(ZMETADATAJSON) \
+            THEN json_extract(ZMETADATAJSON, '$."lumi.timelineEvent"') END \
+            FROM ZMESSAGEMODEL WHERE ZCONVERSATIONID = ? ORDER BY ZCREATEDAT ASC
+            """
+            var statement: OpaquePointer?
+            guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else {
+                return []
+            }
+            defer { sqlite3_finalize(statement) }
+
+            let conversationIdString = conversationId.uuidString
+            sqlite3_bind_text(statement, 1, conversationIdString, -1, sqliteTransient)
+
+            var messages: [Message] = []
+            while sqlite3_step(statement) == SQLITE_ROW {
+                guard let message = Self.decodeLLMContextRow(statement) else { continue }
+                messages.append(message)
+            }
+            return messages
+        }
+    }
+
+    /// 把一行 SQLite 记录解码成 LLM 上下文用的 `Message`。
+    private static func decodeLLMContextRow(_ statement: OpaquePointer?) -> Message? {
+        guard let statement else { return nil }
+        guard let idPointer = sqlite3_column_text(statement, 0),
+              let conversationPointer = sqlite3_column_text(statement, 1),
+              let rolePointer = sqlite3_column_text(statement, 3) else {
+            return nil
+        }
+
+        guard let id = UUID(uuidString: String(cString: idPointer)),
+              let conversationID = UUID(uuidString: String(cString: conversationPointer)),
+              let role = MessageRole(rawValue: String(cString: rolePointer)) else {
+            return nil
+        }
+
+        func text(at index: Int32) -> String? {
+            guard let pointer = sqlite3_column_text(statement, index) else { return nil }
+            return String(cString: pointer)
+        }
+        func optionalInt(at index: Int32) -> Int? {
+            guard sqlite3_column_type(statement, index) != SQLITE_NULL else { return nil }
+            return Int(sqlite3_column_int(statement, index))
+        }
+
+        let toolCalls: [MessageToolCall]? = text(at: 9).flatMap {
+            try? JSONDecoder().decode([MessageToolCall].self, from: Data($0.utf8))
+        }
+
+        // 只还原时间线标记；LLM 上下文不需要其余 metadata。
+        var metadata: [String: String] = [:]
+        if let timelineEvent = text(at: 17) {
+            metadata[MessageTimelineEvent.metadataKey] = timelineEvent
+        }
+
+        return Message(
+            id: id,
+            conversationID: conversationID,
+            role: role,
+            content: text(at: 4) ?? "",
+            createdAt: Date(timeIntervalSince1970: sqlite3_column_double(statement, 5)),
+            turnID: text(at: 2).flatMap(UUID.init(uuidString:)),
+            metadata: metadata,
+            isError: sqlite3_column_int(statement, 6) != 0,
+            renderKind: text(at: 16),
+            toolCallID: text(at: 7),
+            reasoningContent: text(at: 8),
+            toolCalls: toolCalls,
+            inputTokenCount: optionalInt(at: 10),
+            outputTokenCount: optionalInt(at: 11),
+            cachedInputTokenCount: optionalInt(at: 12),
+            cacheWriteInputTokenCount: optionalInt(at: 13),
+            cacheTotalInputTokenCount: optionalInt(at: 14),
+            stopReason: text(at: 15)
+        )
+    }
+
     /// 返回某会话第一条用户消息，仅物化一条记录，供自动标题等轻量读取使用。
     func fetchFirstUserMessage(conversationId: UUID) -> Message? {
         locked {

@@ -16,6 +16,12 @@ public actor SkillCreationService {
 
     private let fileManager = FileManager.default
 
+    /// 扫描器使用的加载器：CRUD 与扫描共用同一套「什么算有效 Skill」的判定。
+    ///
+    /// 单独维护一份判定规则必然漂移：一旦 CRUD 允许写出扫描器读不回来的内容，
+    /// 就会出现「工具返回成功、Skill 却不出现」的不一致。
+    private let loader = SkillDirectoryLoader()
+
     public init() {}
 
     // MARK: - Create
@@ -73,11 +79,13 @@ public actor SkillCreationService {
     public func readSkill(projectPath: String, name: String) throws -> SkillMetadata? {
         let name = Self.sanitize(name)
         guard !name.isEmpty else { return nil }
-        guard let directoryURL = locateSkillDirectory(projectPath: projectPath, name: name) else {
-            return nil
+        // 与扫描器同源：逐个候选目录尝试，首个「有效」的命中即返回。
+        // 残缺的 `.lumi` 条目会被跳过，继续回退到完整的历史条目。
+        for directoryURL in candidateSkillDirectories(projectPath: projectPath, name: name) {
+            guard let skill = loader.loadSkill(at: directoryURL) else { continue }
+            return skill
         }
-        guard Self.isCompleteSkillDirectory(directoryURL) else { return nil }
-        return Self.loadMetadata(name: name, from: directoryURL)
+        return nil
     }
 
     // MARK: - Update
@@ -99,7 +107,8 @@ public actor SkillCreationService {
         content: String? = nil
     ) throws -> SkillMetadata {
         let name = Self.sanitize(name)
-        guard let directoryURL = locateSkillDirectory(projectPath: projectPath, name: name) else {
+        // 与扫描器同源：跳过残缺条目，回退到完整的历史条目。
+        guard let directoryURL = locateValidSkillDirectory(projectPath: projectPath, name: name) else {
             throw SkillCreationError.notFound(
                 ProjectConfigDirectory.writeURL(
                     projectPath: projectPath,
@@ -107,9 +116,6 @@ public actor SkillCreationService {
                 )
                 .appendingPathComponent(name).path
             )
-        }
-        guard Self.isCompleteSkillDirectory(directoryURL) else {
-            throw SkillCreationError.notFound(directoryURL.path)
         }
 
         // 以磁盘上的现有元数据为基底，只覆盖显式传入的字段。
@@ -141,6 +147,8 @@ public actor SkillCreationService {
     /// 删除的是技能**实际所在**的目录（`.lumi/skills` 或历史目录 `.agent/skills`）。
     public func deleteSkill(projectPath: String, name: String) throws {
         let name = Self.sanitize(name)
+        // 删除以「实际存在的目录」为准：残缺的 `.lumi` 条目同样要能被删掉，
+        // 否则它会一直占着名字，让历史条目永远读不到。
         guard let directoryURL = locateSkillDirectory(projectPath: projectPath, name: name) else {
             throw SkillCreationError.notFound(
                 ProjectConfigDirectory.writeURL(
@@ -159,6 +167,9 @@ public actor SkillCreationService {
     ///
     /// 依次在 `.lumi/skills` 与历史目录 `.agent/skills` 中查找，返回第一个
     /// 已存在的技能目录；都不存在时返回 `nil`。
+    ///
+    /// 注意这里只看「目录是否存在」，不检查完整性 —— 残缺条目也要能被定位到，
+    /// 否则用户永远删不掉它、也读不到后面的历史条目。
     private func locateSkillDirectory(projectPath: String, name: String) -> URL? {
         guard !name.isEmpty else { return nil }
         return ProjectConfigDirectory.locate(
@@ -166,6 +177,21 @@ public actor SkillCreationService {
             component: SkillDirectoryNames.skills,
             name: name
         )
+    }
+
+    /// 候选技能目录列表（`.lumi/skills` 在前，历史目录在后）。
+    private func candidateSkillDirectories(projectPath: String, name: String) -> [URL] {
+        guard !name.isEmpty else { return [] }
+        return ProjectConfigDirectory.readURLs(
+            projectPath: projectPath,
+            component: SkillDirectoryNames.skills
+        ).map { $0.appendingPathComponent(name, isDirectory: true) }
+    }
+
+    /// 定位**有效**的技能目录：跳过残缺条目，回退到完整的历史条目。
+    private func locateValidSkillDirectory(projectPath: String, name: String) -> URL? {
+        candidateSkillDirectories(projectPath: projectPath, name: name)
+            .first { loader.loadSkill(at: $0) != nil }
     }
 
     /// 解析技能**写入**目录 URL（`.lumi/skills/<name>`，不创建目录）。
@@ -184,12 +210,6 @@ public actor SkillCreationService {
             component: SkillDirectoryNames.skills
         )
         .appendingPathComponent(name, isDirectory: true)
-    }
-
-    /// 目录是否同时含 `metadata.json` 与 `SKILL.md`（扫描器的完整性要求）。
-    private static func isCompleteSkillDirectory(_ directoryURL: URL) -> Bool {
-        FileManager.default.fileExists(atPath: directoryURL.appendingPathComponent("metadata.json").path)
-            && FileManager.default.fileExists(atPath: directoryURL.appendingPathComponent("SKILL.md").path)
     }
 
     /// 技能目录名规范化：转小写 kebab-case，并剔除一切路径分隔符与 `..`。
@@ -234,18 +254,33 @@ public actor SkillCreationService {
     }
 
     private static func writeMetadata(_ metadata: SkillMetadata, to directoryURL: URL) throws {
-        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         // `SkillMetadata` 的 encode 只输出 name / title / description / triggers /
         // version，正好与扫描器解码的字段一致。
         let data = try encoder.encode(metadata)
+        // 与扫描器同一上限：写出扫描器读不回来的文件，等于「成功但 Skill 消失」。
+        // 先校验再落盘，避免留下占位目录。
+        let limit = SkillDirectoryLoader().maxMetadataSize
+        guard data.count <= limit else {
+            throw SkillCreationError.metadataTooLarge(
+                path: Self.metadataJSONPath(directoryURL).path,
+                byteCount: data.count,
+                limit: limit
+            )
+        }
+        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
         try data.write(to: directoryURL.appendingPathComponent("metadata.json"), options: .atomic)
     }
 
     private static func writeBody(_ body: String, to directoryURL: URL) throws {
         try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
         try body.write(to: directoryURL.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
+    }
+
+    /// `metadata.json` 的路径。
+    static func metadataJSONPath(_ directoryURL: URL) -> URL {
+        directoryURL.appendingPathComponent("metadata.json")
     }
 
     /// 组装 `SKILL.md`：frontmatter + 标题 + 正文。
@@ -262,11 +297,12 @@ public actor SkillCreationService {
         lines.append("description: \(metadata.description)")
         lines.append("---")
         lines.append("")
-        lines.append("# \(metadata.title)")
-        if !body.isEmpty {
-            if body.hasPrefix("# ") {
-                lines.append(body)
-            } else {
+        if body.hasPrefix("# ") {
+            // 正文自带一级标题，仅补 frontmatter，避免生成重复 H1。
+            lines.append(body)
+        } else {
+            lines.append("# \(metadata.title)")
+            if !body.isEmpty {
                 lines.append("")
                 lines.append(body)
             }

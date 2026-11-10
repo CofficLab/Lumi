@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "PluginComputerUse",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "PluginComputerUse", targets: ["ComputerUsePlugin"]),
         .executable(name: "AXFixture", targets: ["AXFixture"]),
@@ -18,10 +18,11 @@ let package = Package(
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../ProviderAgentLoop"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
+        .package(path: "../ProviderConversation"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.13.0"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0"),
         .package(path: "../KitTestSupport"),
     ],
     targets: [
@@ -38,6 +39,7 @@ let package = Package(
                 .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
                 .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),

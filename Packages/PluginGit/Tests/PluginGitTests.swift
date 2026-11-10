@@ -177,3 +177,76 @@ private struct GitPathEchoTool: SuperAgentTool {
 
     #expect(remote == "CofficLab/Lumi")
 }
+
+/// 回归：分支工具的失败分支曾经返回字符串（缺 name、工作区脏、未知 action），
+/// 默认 `executeResult` 会把它当成成功结果。
+@MainActor
+@Test func gitBranchToolThrowsForInvalidRequests() async throws {
+    let repo = TestRepoFixture(name: "branch-failure-\(UUID().uuidString)")
+    try repo.setUp()
+    defer { try? FileManager.default.removeItem(at: repo.tempDirectory) }
+
+    let tool = GitBranchV2Tool()
+
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await tool.executeResult(arguments: [
+            "path": ToolArgument(repo.repositoryPath),
+            "action": ToolArgument("create"),
+        ])
+    }
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await tool.executeResult(arguments: [
+            "path": ToolArgument(repo.repositoryPath),
+            "action": ToolArgument("delete"),
+        ])
+    }
+
+    // 工作区有未提交变更时拒绝切换分支。
+    try repo.createFileAndCommit(name: "tracked.txt", content: "v1", message: "initial")
+    try "v2".write(
+        to: repo.tempDirectory.appendingPathComponent("tracked.txt"),
+        atomically: true,
+        encoding: .utf8
+    )
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await tool.executeResult(arguments: [
+            "path": ToolArgument(repo.repositoryPath),
+            "action": ToolArgument("checkout"),
+            "name": ToolArgument("feature/dirty"),
+        ])
+    }
+}
+
+/// 回归：log / commit / diff / show 曾把失败写成字符串返回，默认
+/// `executeResult` 会把它当成成功结果，模型无法感知失败。
+@MainActor
+@Test func gitToolsThrowForMissingOrInvalidArguments() async throws {
+    let notARepository = FileManager.default.temporaryDirectory
+        .appendingPathComponent("not-a-repo-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: notARepository, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: notARepository) }
+
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await GitCommitV2Tool().executeResult(arguments: [:])
+    }
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await GitShowV2Tool().executeResult(arguments: [:])
+    }
+
+    let path = ToolArgument(notARepository.path)
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await GitStatusV2Tool().executeResult(arguments: ["path": path])
+    }
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await GitLogTool().executeResult(arguments: ["path": path])
+    }
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await GitDiffV2Tool().executeResult(arguments: ["path": path])
+    }
+    await #expect(throws: ToolExecutionError.self) {
+        _ = try await GitShowV2Tool().executeResult(arguments: [
+            "path": path,
+            "hash": ToolArgument("deadbeef"),
+        ])
+    }
+}

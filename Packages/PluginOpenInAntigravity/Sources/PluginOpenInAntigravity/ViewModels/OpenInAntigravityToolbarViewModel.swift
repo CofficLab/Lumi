@@ -7,14 +7,20 @@ final class OpenInAntigravityToolbarViewModel: ObservableObject {
     let tool: OpenInTool
     /// 强引用能力 Adapter，保证 ViewModel 存续期间能力始终可用。
     private let projectCapability: OpenInProjectCapability
+    private let failureReporter: any OpenInFailureReporting
     private var projectObserver: (any OpenInProjectObserverHandle)?
 
     @Published private(set) var currentProjectPath: String?
     @Published private(set) var isOpening = false
 
-    init(tool: OpenInTool, projectCapability: OpenInProjectCapability) {
+    init(
+        tool: OpenInTool,
+        projectCapability: OpenInProjectCapability,
+        failureReporter: any OpenInFailureReporting
+    ) {
         self.tool = tool
         self.projectCapability = projectCapability
+        self.failureReporter = failureReporter
         self.currentProjectPath = projectCapability.currentProjectPath
         self.projectObserver = projectCapability.addProjectObserver { [weak self] event in
             guard case let .currentProjectChanged(path) = event else { return }
@@ -38,6 +44,11 @@ final class OpenInAntigravityToolbarViewModel: ObservableObject {
                 _ = try await tool.execute(arguments: [:])
             } catch {
                 OpenInAntigravityPlugin.logger.error("\(OpenInAntigravityPlugin.t)Failed to open project in Antigravity: \(error.localizedDescription)")
+                // 失败不能无声：向用户展示具体原因。
+                failureReporter.reportOpenFailure(
+                    title: OpenInAntigravityLocalization.string("Cannot open project"),
+                    detail: "\(OpenInTool.antigravity.displayName): \(error.localizedDescription)"
+                )
             }
         }
     }

@@ -38,10 +38,6 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
     public let name = "run_command"
     public let executionCapability: ToolExecutionCapability = .serialSideEffect
 
-    private static let highRiskCommands: Set<String> = [
-        "rm", "rmdir", "mv", "sudo", "kill", "killall", "chmod", "chown", "dd", "shutdown", "reboot"
-    ]
-
     /// Upper bound for a caller-supplied `max_output_bytes` (16 MiB per stream).
     static let maxOutputBytesCeiling = 16 * 1024 * 1024
 
@@ -76,13 +72,7 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
         guard let command = arguments.stringValue("command") else { return .high }
         if arguments.boolValue("unsandboxed") == true { return .high }
-        let base = command
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .split(whereSeparator: { $0.isWhitespace })
-            .first
-            .map(String.init)?
-            .lowercased() ?? ""
-        return Self.highRiskCommands.contains(base) ? .high : .low
+        return ShellCommandRiskAnalyzer.riskLevel(for: command)
     }
 
     /// An unsandboxed call is declared as needing explicit approval.
@@ -154,7 +144,23 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
             throw NSError(domain: "ShellTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing command"])
         }
 
-        let timeout = TimeInterval(arguments.intValue("timeout") ?? Int(commandTimeout))
+        let timeout: TimeInterval
+        if let rawTimeout = arguments["timeout"]?.value {
+            // 越界 / NaN / 非有限值无法安全表示时按参数错误失败，而不是 trap。
+            guard let seconds = arguments.toolInt("timeout"), seconds > 0 else {
+                throw NSError(
+                    domain: "ShellTool",
+                    code: 400,
+                    userInfo: [
+                        NSLocalizedDescriptionKey:
+                            "Invalid 'timeout': \(rawTimeout). It must be a positive integer number of seconds."
+                    ]
+                )
+            }
+            timeout = TimeInterval(seconds)
+        } else {
+            timeout = TimeInterval(Int(commandTimeout))
+        }
 
         // macOS 只允许进程树被沙箱化一次，被包装的命令无法再创建沙箱，
         // 因此 swift build / xcodebuild / 宏展开 这类命令必须显式退出包装。
@@ -191,7 +197,7 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
     /// The ceiling exists because the result is handed to an LLM: an unbounded
     /// budget would let one command blow up the context window.
     static func resolvedOutputBudget(for arguments: [String: ToolArgument]) -> Int {
-        guard let requested = arguments.intValue("max_output_bytes"), requested > 0 else {
+        guard let requested = arguments.toolInt("max_output_bytes"), requested > 0 else {
             return ShellOptions.defaultOptions.maxOutputBytes
         }
         return min(requested, Self.maxOutputBytesCeiling)

@@ -18,7 +18,18 @@ private func makeTemporaryDirectory(_ prefix: String) throws -> URL {
 private func makeStorage() throws -> (ClipboardStorage, URL) {
     let root = try makeTemporaryDirectory("clipm-storage")
     let manager = ClipboardHistoryManager(databaseDirectory: root)
-    return (ClipboardStorage(historyManager: manager), root)
+    // 固定上限，避免测试读取真实设置文件而依赖开发者本机状态。
+    return (ClipboardStorage(historyManager: manager, historyLimitProvider: { 500 }), root)
+}
+
+private func makeSolidImage() -> NSImage {
+    let size = NSSize(width: 8, height: 8)
+    let image = NSImage(size: size)
+    image.lockFocus()
+    NSColor.systemBlue.setFill()
+    NSRect(origin: .zero, size: size).fill()
+    image.unlockFocus()
+    return image
 }
 
 // MARK: - Storage
@@ -65,6 +76,150 @@ struct ClipboardStorageTests {
 
         let items = await storage.getItems()
         #expect(items.count == 2)
+    }
+
+    @Test("历史大小设置会裁剪超出的非固定项")
+    func respectsConfiguredHistoryLimit() async throws {
+        let root = try makeTemporaryDirectory("clipm-limit")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let storage = ClipboardStorage(
+            historyManager: ClipboardHistoryManager(databaseDirectory: root),
+            historyLimitProvider: { 2 }
+        )
+
+        for content in ["one", "two", "three"] {
+            await storage.add(item: ClipboardItem(type: .text, content: content))
+        }
+
+        let items = await storage.getItems()
+        #expect(items.count == 2)
+        #expect(Set(items.map(\.content)) == ["two", "three"])
+    }
+
+    @Test("Unlimited 设置不裁剪历史")
+    func unlimitedHistorySkipsTrim() async throws {
+        let root = try makeTemporaryDirectory("clipm-unlimited")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let storage = ClipboardStorage(
+            historyManager: ClipboardHistoryManager(databaseDirectory: root),
+            historyLimitProvider: { Int.max }
+        )
+
+        for content in ["one", "two", "three"] {
+            await storage.add(item: ClipboardItem(type: .text, content: content))
+        }
+
+        let items = await storage.getItems()
+        #expect(items.count == 3)
+    }
+
+    @Test("富文本负载随条目持久化并可读回")
+    func preservesRichTextPayloads() async throws {
+        let (storage, root) = try makeStorage()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let rtf = Data("{\\rtf1\\ansi styled}".utf8)
+        let html = "<p><a href=\"https://example.com\">styled</a></p>"
+        await storage.add(item: ClipboardItem(
+            type: .text,
+            content: "styled",
+            richTextRTF: rtf,
+            richTextHTML: html
+        ))
+
+        let items = await storage.getItems()
+        #expect(items.count == 1)
+        #expect(items.first?.richTextRTF == rtf)
+        #expect(items.first?.richTextHTML == html)
+    }
+
+    @Test("纯文本相同但富文本负载不同时保留为两条")
+    func keepsSameTextWithDifferentRichPayloads() async throws {
+        let (storage, root) = try makeStorage()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        await storage.add(item: ClipboardItem(
+            type: .text,
+            content: "same",
+            richTextHTML: "<p>same</p>"
+        ))
+        await storage.add(item: ClipboardItem(
+            type: .text,
+            content: "same",
+            richTextHTML: "<p><b>same</b></p>"
+        ))
+
+        let items = await storage.getItems()
+        #expect(items.count == 2)
+    }
+
+    @Test("纯文本与富文本负载都相同时去重")
+    func deduplicatesIdenticalRichPayloads() async throws {
+        let (storage, root) = try makeStorage()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let html = "<p>same</p>"
+        await storage.add(item: ClipboardItem(type: .text, content: "same", richTextHTML: html))
+        await storage.add(item: ClipboardItem(type: .text, content: "same", richTextHTML: html))
+
+        #expect(await storage.getItems().count == 1)
+    }
+
+    @Test("连续复制同一图片只保留一条记录，并清理旧文件")
+    @MainActor
+    func deduplicatesIdenticalImageContent() async throws {
+        let (storage, root) = try makeStorage()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let pasteboard = NSPasteboard.withUniqueName()
+        let image = makeSolidImage()
+        pasteboard.clearContents()
+        pasteboard.writeObjects([image])
+
+        let imageDirectory = root.appendingPathComponent("images", isDirectory: true)
+        try FileManager.default.createDirectory(at: imageDirectory, withIntermediateDirectories: true)
+
+        let firstItems = await ClipboardMonitor.itemsAsync(
+            from: pasteboard,
+            appName: nil,
+            imageDirectory: imageDirectory
+        )
+        let first = try #require(firstItems.first)
+        await storage.add(item: first)
+
+        // 模拟从历史执行 Copy：同一张图再次被采集，路径每次都不同。
+        let secondItems = await ClipboardMonitor.itemsAsync(
+            from: pasteboard,
+            appName: nil,
+            imageDirectory: imageDirectory
+        )
+        let second = try #require(secondItems.first)
+        #expect(second.content != first.content)
+        await storage.add(item: second)
+
+        let items = await storage.getItems()
+        #expect(items.count == 1)
+        #expect(items.first?.content == second.content)
+        #expect(!FileManager.default.fileExists(atPath: first.content))
+    }
+
+    @Test("不同图片内容仍各自保留")
+    @MainActor
+    func keepsDifferentImages() async throws {
+        let (storage, root) = try makeStorage()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let imageDirectory = root.appendingPathComponent("images", isDirectory: true)
+        try FileManager.default.createDirectory(at: imageDirectory, withIntermediateDirectories: true)
+        let firstPath = imageDirectory.appendingPathComponent("first.png")
+        let secondPath = imageDirectory.appendingPathComponent("second.png")
+        try Data("image-a".utf8).write(to: firstPath)
+        try Data("image-b".utf8).write(to: secondPath)
+
+        await storage.add(item: ClipboardItem(type: .image, content: firstPath.path))
+        await storage.add(item: ClipboardItem(type: .image, content: secondPath.path))
+
+        #expect(await storage.getItems().count == 2)
     }
 
     @Test("已有项被固定时，重复内容不去重")

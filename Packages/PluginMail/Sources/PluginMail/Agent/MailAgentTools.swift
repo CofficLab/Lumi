@@ -43,6 +43,12 @@ public actor MailAgentToolService {
         folder: String,
         limit: Int
     ) async throws -> String {
+        guard limit >= 1 else {
+            throw ToolExecutionError.executionFailed(
+                toolName: MailListMessagesTool.toolName,
+                reason: "参数 limit 必须 ≥ 1，收到 \(limit)。"
+            )
+        }
         let account: MailAccountConfig
         do {
             account = try accountFor(accountID)
@@ -51,9 +57,11 @@ public actor MailAgentToolService {
         } catch {
             throw error
         }
-        // 同步增量（离线时用缓存兜底）
-        let session = try await sessionManager.session(for: account)
+        // 同步增量（离线时用缓存兜底）。会话创建也在兜底范围内：
+        // 冷启动断网时 `session(for:)` 会直接抛连接错误。
+        var usedCacheFallback = false
         do {
+            let session = try await sessionManager.session(for: account)
             let summaries = try await session.fetchMessages(
                 folder: folder,
                 sinceUID: nil,
@@ -61,14 +69,19 @@ public actor MailAgentToolService {
             )
             try await cache.upsertMessages(summaries, accountID: account.id, folder: folder)
         } catch {
-            // 离线降级：继续读缓存
+            usedCacheFallback = true
         }
         let items = try await cache.messages(accountID: account.id, folder: folder)
         let recent = items.suffix(limit).reversed()
         guard !recent.isEmpty else {
-            return "「\(folder)」暂无邮件。"
+            return usedCacheFallback
+                ? "「\(folder)」暂无邮件（当前离线，未能连接服务器）。"
+                : "「\(folder)」暂无邮件。"
         }
         var lines = ["账户 \(account.email) / \(folder) 最近 \(recent.count) 封邮件："]
+        if usedCacheFallback {
+            lines.append("提示：当前无法连接邮件服务器，以下内容来自本地缓存。")
+        }
         for item in recent {
             lines.append("- uid=\(item.uid) \(unreadMarker(item))「\(item.subject.isEmpty ? "(无主题)" : item.subject)」 \(sender(item)) \(item.date.formatted(date: .abbreviated, time: .shortened))")
         }
@@ -220,7 +233,7 @@ public struct MailListMessagesTool: SuperAgentTool {
             properties: [
                 "account_id": MailToolSupport.string("Account UUID from mail_list_accounts; optional, defaults to the first account."),
                 "folder": MailToolSupport.string("IMAP folder path; default INBOX."),
-                "limit": MailToolSupport.integer("Max messages to return; default 10, max 50."),
+                "limit": MailToolSupport.integer("Max messages to return; default 10, range 1...50.", minimum: 1, maximum: 50),
             ],
             required: []
         )
@@ -235,10 +248,17 @@ public struct MailListMessagesTool: SuperAgentTool {
     public var executionCapability: ToolExecutionCapability { .parallelReadOnly }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        try await service.listMessages(
+        let limit = MailToolSupport.optionalInt(arguments, "limit") ?? 10
+        guard (1...50).contains(limit) else {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "参数 limit 必须在 1...50 之间，收到 \(limit)。"
+            )
+        }
+        return try await service.listMessages(
             accountID: MailToolSupport.optionalUUID(arguments, "account_id"),
             folder: MailToolSupport.optionalString(arguments, "folder") ?? "INBOX",
-            limit: MailToolSupport.optionalInt(arguments, "limit") ?? 10
+            limit: limit
         )
     }
 }
@@ -277,8 +297,16 @@ public struct MailReadMessageTool: SuperAgentTool {
     public var executionCapability: ToolExecutionCapability { .parallelReadOnly }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let uid = MailToolSupport.optionalInt(arguments, "uid") else {
+        guard let rawUID = MailToolSupport.optionalInt(arguments, "uid"), rawUID > 0 else {
             throw ToolExecutionError.executionFailed(toolName: name, reason: "缺少必需参数: uid")
+        }
+        // UID 的上界是所有转换点共享的 IMAP 协议约束；这里提前收住，
+        // 避免把非法值带进会话层。
+        guard let uid = MailUID.validated(UInt64(rawUID)) else {
+            throw ToolExecutionError.executionFailed(
+                toolName: name,
+                reason: "uid 超出 IMAP 允许范围（1...\(MailUID.maximum)）"
+            )
         }
         return try await service.readMessage(
             accountID: MailToolSupport.optionalUUID(arguments, "account_id"),
@@ -393,8 +421,15 @@ private enum MailToolSupport {
         ["type": "string", "description": description]
     }
 
-    static func integer(_ description: String) -> [String: Any] {
-        ["type": "integer", "description": description]
+    static func integer(
+        _ description: String,
+        minimum: Int? = nil,
+        maximum: Int? = nil
+    ) -> [String: Any] {
+        var schema: [String: Any] = ["type": "integer", "description": description]
+        if let minimum { schema["minimum"] = minimum }
+        if let maximum { schema["maximum"] = maximum }
+        return schema
     }
 
     static func optionalString(_ arguments: [String: ToolArgument], _ key: String) -> String? {
@@ -403,12 +438,8 @@ private enum MailToolSupport {
     }
 
     static func optionalInt(_ arguments: [String: ToolArgument], _ key: String) -> Int? {
-        guard let value = arguments[key]?.value else { return nil }
-        if let int = value as? Int { return int }
-        if let int = value as? Int64 { return Int(int) }
-        if let double = value as? Double { return Int(double) }
-        if let string = value as? String { return Int(string) }
-        return nil
+        if let int64 = arguments[key]?.value as? Int64 { return Int(int64) }
+        return ToolArgumentNumber.int(arguments[key]?.value)
     }
 
     static func optionalUUID(_ arguments: [String: ToolArgument], _ key: String) -> UUID? {

@@ -5,7 +5,7 @@
 KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，用例总数: 79
+测试文件: 10 个，用例总数: 84
 
 ## 公开 API
 
@@ -119,21 +119,26 @@ KitDownload KitDownload 是 Lumi 项目中负责下载相关能力的 Package。
 | 77 | ResumeHandler | 追加数据到文件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `appendData` |
 | 78 | ResumeHandler | 完成下载重命名文件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `finalizeDownload` |
 | 79 | ResumeHandler | 完成下载覆盖已存在的文件 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `finalizeDownloadOverwrite` |
+| 80 | DefaultHTTPClient | 服务器忽略 Range 时中途失败保留旧文件并清理临时文件 | 目标已有文件，服务器返回 200 且传一部分后断连 | 调用 `download(existingBytes: 旧文件大小)` | 抛错，目标文件内容不变，目录中无临时文件 | P0 | ✅ 已覆盖 | `replacementFailureKeepsExistingFileAndRemovesTemporaryFile` |
+| 81 | DefaultHTTPClient | 远程 validator 变化时向服务器发 If-Range，并用完整内容替换部分文件 | 本地部分文件与已保存 validator | 服务器返回 200 完整内容 | 请求带 Range 与 If-Range，最终文件为完整新内容，无临时文件 | P0 | ✅ 已覆盖 | `ifRangeMismatchDownloadsFullBodyAndReplacesPartial` |
+| 82 | DefaultHTTPClient | 服务器忽略 If-Range 返回 206 但 ETag 已变时从头重下 | 本地 validator 与响应 ETag 不一致 | 第一次 206、第二次 200 | 共 2 次请求，第二次无 Range，最终文件为新版本完整内容 | P0 | ✅ 已覆盖 | `ignoredIfRangeWithChangedETagRestartsFromScratch` |
+| 83 | DefaultHTTPClient | 下载中断后持久化 validator，再次请求可条件续传 | 下载到一半被取消 | 重新下载同一 URL | If-Range 携带原 validator，续传后文件完整，完成后清除 validator | P1 | ✅ 已覆盖 | `interruptedDownloadPersistsValidatorAndResumesConditionally` |
+| 84 | DownloadManager | URLSession 的 URLError.cancelled 保持为 cancelled 状态 | 底层客户端抛出 NSURLError -999 | 调用 `download` | 抛出 `DownloadError.cancelled`，任务状态为 `.cancelled` | P1 | ✅ 已覆盖 | `urlSessionCancellationStaysCancelled` |
 
-> 说明：全部 **79 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **84 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 4 / 4
-- P1: 已覆盖 67 / 67
+- P0: 已覆盖 7 / 7
+- P1: 已覆盖 69 / 69
 - P2: 已覆盖 8 / 8
-- **合计: 79 / 79**（仅表示清单场景，非源码覆盖率）
+- **合计: 84 / 84**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
-- **P1**: 其余功能性用例（67 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（7 条）
+- **P1**: 其余功能性用例（69 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（8 条）
 
 ## 跨平台说明

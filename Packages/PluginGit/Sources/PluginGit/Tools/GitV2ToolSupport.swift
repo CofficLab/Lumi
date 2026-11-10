@@ -24,11 +24,7 @@ enum GitV2ToolSupport {
     }
 
     static func int(_ arguments: [String: ToolArgument], _ key: String) -> Int? {
-        guard let value = arguments[key]?.value else { return nil }
-        if let int = value as? Int { return int }
-        if let double = value as? Double { return Int(double) }
-        if let string = value as? String { return Int(string) }
-        return nil
+        ToolArgumentNumber.int(arguments[key]?.value)
     }
 
     static func strings(_ arguments: [String: ToolArgument], _ key: String) -> [String] {

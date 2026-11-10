@@ -81,7 +81,12 @@ public struct ExportPromoTaskTool: SuperAgentTool {
                         localeIdentifier: localeIdentifier
                     )
                     guard report.isValid else { throw AppStorePromoStoreError.invalidHTML(report.errors) }
-                    let data = try await AppStorePromoHTMLExporter.exportPNG(html: image.html, fileURL: image.htmlURL, preset: preset)
+                    let data = try await AppStorePromoHTMLExporter.exportPNG(
+                        html: image.html,
+                        fileURL: image.htmlURL,
+                        readAccessRootURL: image.directoryURL,
+                        preset: preset
+                    )
                     let stagedURL = stagingDirectory.appendingPathComponent("rendered-\(stagedExports.count).png")
                     try data.write(to: stagedURL, options: .atomic)
                     stagedExports.append(StagedExport(

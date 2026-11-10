@@ -174,6 +174,78 @@ struct MessageSenderCancellationTests {
         #expect(fixture.sender.isSending == false)
     }
 
+    // MARK: - 启动窗口内停止：用户主动停止不得被当成失败
+
+    /// 用户按下停止时，回合跟踪任务可能还没跑到第一次 `checkCancellation`
+    /// ——`Task` 已创建但尚未获得执行机会。这个窗口里取消任务，
+    /// `checkCancellation` 抛出的 `CancellationError` 属于「用户主动停止」，
+    /// 不是回合失败：不得插入 `.error` 消息，也不得广播 `turnFailed`。
+    ///
+    /// 直接调用 `beginTurn` 是为了确定性地停在启动窗口内：测试与被测代码
+    /// 同在主 actor，同步调用返回时 Task 体还没被调度过。
+    @Test("启动窗口内取消回合跟踪任务不产生错误消息")
+    func cancelDuringTurnStartupWindowDoesNotReportError() async throws {
+        let fixture = SenderFixture()
+        let conversationID = try fixture.conversations.createConversation(
+            title: nil, projectPath: nil, providerID: nil, modelName: nil
+        )
+        var failures: [String] = []
+        let observer = fixture.sender.addMessageSenderObserver { event in
+            if case .turnFailed(_, let reason) = event { failures.append(reason) }
+        }
+        defer { observer.cancel() }
+
+        let task = fixture.sender.beginTurn(
+            conversationID: conversationID,
+            userMessageID: UUID()
+        )
+        // 用户此刻按下停止。
+        task.cancel()
+        await task.value
+
+        #expect(failures.isEmpty)
+        #expect(fixture.messages.messages(for: conversationID).isEmpty)
+        #expect(fixture.sender.isSending == false)
+    }
+
+    /// 同一条链路的公开入口版本：走 `cancelCurrentRequest`，
+    /// 断言停止照常广播 `.cancelled`、转交 AgentLoop，且不产生错误消息。
+    @Test("启动窗口内停止广播 cancelled 且不产生错误消息")
+    func cancelCurrentRequestDuringStartupWindowDoesNotReportError() async throws {
+        let fixture = SenderFixture()
+        let conversationID = try fixture.conversations.createConversation(
+            title: nil, projectPath: nil, providerID: nil, modelName: nil
+        )
+        var outcomes: [AgentLoopOutcome] = []
+        var failures: [String] = []
+        let observer = fixture.sender.addMessageSenderObserver { event in
+            switch event {
+            case .turnCompleted(_, let outcome): outcomes.append(outcome)
+            case .turnFailed(_, let reason): failures.append(reason)
+            default: break
+            }
+        }
+        defer { observer.cancel() }
+
+        let result = try fixture.sender.commitUserMessage("hi", conversationID: conversationID)
+        let commit = try #require(result)
+        let userMessageID = try #require(commit.userMessageID)
+
+        let task = fixture.sender.beginTurn(
+            conversationID: conversationID,
+            userMessageID: userMessageID
+        )
+        fixture.sender.cancelCurrentRequest()
+        await task.value
+
+        #expect(fixture.agentLoop.cancelledConversationIDs == [conversationID])
+        #expect(outcomes == [.cancelled])
+        #expect(failures.isEmpty)
+        // 只有用户消息本身，没有多余的错误消息。
+        #expect(fixture.messages.messages(for: conversationID).map(\.content) == ["hi"])
+        #expect(fixture.sender.isSending == false)
+    }
+
     // MARK: - ID 9: 附件挂起池
 
     @Test("附件池支持增删清空，并按实际变化广播 attachmentsChanged")

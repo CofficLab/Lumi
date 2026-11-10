@@ -80,7 +80,7 @@ struct QueryHistoryView: View {
         }
         .padding(6)
         .background(theme.appSubtleBorder, in: .rect(cornerRadius: 6))
-        .onChange(of: viewModel.historySearchText) { _, new in
+        .onChange(of: viewModel.historySearchText) { new in
             Task { await viewModel.searchHistory(new) }
         }
     }

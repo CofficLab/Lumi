@@ -31,7 +31,7 @@ struct VerbosityToolbarView: View {
             .background(Color.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
-        .help(viewModel.selectedVerbosity.description)
+        .help(viewModel.selectedVerbosity.localizedDescription())
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             VerbosityPopover(selected: viewModel.selectedVerbosity) { level in
                 viewModel.select(level)
@@ -79,7 +79,7 @@ private struct VerbosityRow: View {
                 HStack(spacing: 6) {
                     Text(level.levelCode)
                         .font(.system(size: 12, weight: .semibold))
-                    Text(level.displayName)
+                    Text(level.localizedDisplayName())
                         .font(.system(size: 11))
                     if level == .brief {
                         BetaBadgeView()
@@ -87,7 +87,7 @@ private struct VerbosityRow: View {
                 }
                 .foregroundColor(.primary)
 
-                Text(level.description)
+                Text(level.localizedDescription())
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }

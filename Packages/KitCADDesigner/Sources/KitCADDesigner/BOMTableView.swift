@@ -89,9 +89,27 @@ struct BOMTableView: View {
 
             if let result = viewModel.cutResult {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("\(result.stockCount) × \(Int(viewModel.stockLength))mm 原料 · 总利用率 \(String(format: "%.1f%%", result.totalUtilization * 100))")
+                    if result.stockCount > 0 {
+                        Text("\(result.stockCount) × \(Int(result.stockLength))mm 原料 · 总利用率 \(String(format: "%.1f%%", result.totalUtilization * 100))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if !result.unschedulableDemands.isEmpty {
+                        let lengths = result.unschedulableDemands
+                            .map { String(Int($0)) }
+                            .joined(separator: ", ")
+                        Label(
+                            L.format(
+                                "Components exceed stock length",
+                                Int64(result.unschedulableDemands.count),
+                                lengths
+                            ),
+                            systemImage: "exclamationmark.triangle.fill"
+                        )
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.orange)
+                    }
 
                     ForEach(Array(result.stocks.enumerated()), id: \.offset) { index, stock in
                         VStack(alignment: .leading, spacing: 2) {

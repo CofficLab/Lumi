@@ -87,7 +87,7 @@ extension AgentLoopManager {
                 turnID: turnID
             )
         }
-        runtime.pendingSuspensions.removeValue(forKey: toolCallID)
+        runtime.clearSuspension(toolCallID: toolCallID)
         // Reducer 的 toolCallCompleted 事件只接受 executingTools；恢复时把
         // 当前已挂起调用临时放回待执行集合，再由 reducer 原子移除它。
         runtime.phase = .executingTools(
@@ -110,7 +110,22 @@ extension AgentLoopManager {
                 assistantMessageID: assistantMessageID,
                 toolCalls: remaining
             ))
+        } else if let (_, suspendedOutcome) = suspendAtNextPendingSuspensionIfNeeded(
+            runtime: next,
+            conversationID: conversationID,
+            turnID: turnID
+        ) {
+            // 同一批次还有别的挂起点没回答：停在下一项，等用户继续回答。
+            resumingConversations.remove(conversationID)
+            return suspendedOutcome
         } else {
+            // 恢复后没有剩余工具调用，回合直接进入下一次 LLM 请求。
+            // 这条路径必须像新回合（`runTurn`）一样重新声明「运行中」：
+            // 会话状态由 AgentLoop 事件驱动，缺少运行事件会让它停留在
+            // `.suspended`，模型已经在思考而侧边栏仍显示暂停（issue #944）。
+            // 恢复的是同一回合，复用 `.started` 而不新增事件类型；
+            // 订阅方按 conversationID/turnID 处理，重复收到不会重启回合。
+            notify(.started(conversationID: conversationID, turnID: turnID))
             launchAdvance(conversationID: conversationID, turnID: turnID)
         }
         // 只保护 resolveUserResponse 到状态转换这一小段临界区；恢复后的

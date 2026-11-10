@@ -17,8 +17,6 @@ public struct ProviderDetailView: View {
     @ObservedObject private var viewModel: ProviderDetailViewModel
     @State private var isEditorPresented = false
     @State private var isDeleteConfirmationPresented = false
-    /// API Key 是否以明文展示（仅本地 UI 状态，不落盘）。
-    @State private var isAPIKeyRevealed = false
     /// 复制 API Key 后短暂显示「已复制」反馈。
     @State private var isAPIKeyCopied = false
 
@@ -51,6 +49,9 @@ public struct ProviderDetailView: View {
             if let modelRefreshError = viewModel.modelRefreshError {
                 AppErrorBanner(message: LocalizedStringKey(modelRefreshError))
             }
+            if let customProviderRemoveError = viewModel.customProviderRemoveError {
+                AppErrorBanner(message: LocalizedStringKey(customProviderRemoveError))
+            }
         }
         .sheet(isPresented: $isEditorPresented) {
             if let editor = viewModel.makeCustomProviderEditor() {
@@ -59,16 +60,16 @@ public struct ProviderDetailView: View {
             }
         }
         .confirmationDialog(
-            "删除自定义供应商？",
+            pluginLocalization.string("删除自定义供应商？"),
             isPresented: $isDeleteConfirmationPresented,
             titleVisibility: .visible
         ) {
-            Button("删除", role: .destructive) {
+            Button(pluginLocalization.string("删除"), role: .destructive) {
                 viewModel.removeCustomProvider()
             }
-            Button("取消", role: .cancel) {}
+            Button(pluginLocalization.string("取消"), role: .cancel) {}
         } message: {
-            Text("这会移除供应商配置和对应的 API Key。")
+            Text(pluginLocalization.string("这会移除供应商配置和对应的 API Key。"))
         }
     }
 
@@ -85,16 +86,16 @@ public struct ProviderDetailView: View {
                 Spacer()
                 if let url = viewModel.websiteURL {
                     Link(destination: url) {
-                        AppTag("访问官网", systemImage: "arrow.up.right.square", style: .accent)
+                        AppTag(pluginLocalization.string("访问官网"), systemImage: "arrow.up.right.square", style: .accent)
                     }
                     .buttonStyle(.plain)
                 }
                 if viewModel.canEditCustomProvider {
-                    AppButton("编辑", systemImage: "pencil", style: .secondary, size: .small) {
+                    AppButton(pluginLocalization.string("编辑"), systemImage: "pencil", style: .secondary, size: .small) {
                         isEditorPresented = true
                     }
                     .accessibilityIdentifier(ProviderSettingsAccessibility.editProviderButton)
-                    AppButton("删除", systemImage: "trash", style: .destructive, size: .small) {
+                    AppButton(pluginLocalization.string("删除"), systemImage: "trash", style: .destructive, size: .small) {
                         isDeleteConfirmationPresented = true
                     }
                 }
@@ -129,19 +130,19 @@ public struct ProviderDetailView: View {
     // MARK: - API Key Section
 
     private var apiKeySection: some View {
-        AppSettingSection(title: "API 密钥") {
+        AppSettingSection(title: pluginLocalization.string("API 密钥")) {
             VStack(spacing: 0) {
                 AppSettingRow(
                     title: "API Key",
-                    description: "配置访问凭证",
+                    description: pluginLocalization.string("配置访问凭证"),
                     icon: "key"
                 ) {
                     HStack(spacing: 6) {
                         Group {
-                            if isAPIKeyRevealed {
-                                TextField("输入 API Key", text: $viewModel.apiKey)
+                            if viewModel.isAPIKeyRevealed {
+                                TextField(pluginLocalization.string("输入 API Key"), text: $viewModel.apiKey)
                             } else {
-                                SecureField("输入 API Key", text: $viewModel.apiKey)
+                                SecureField(pluginLocalization.string("输入 API Key"), text: $viewModel.apiKey)
                             }
                         }
                         .textFieldStyle(.plain)
@@ -154,17 +155,19 @@ public struct ProviderDetailView: View {
                     .padding(.vertical, 8)
 
                 AppSettingRow(
-                    title: "操作",
-                    description: viewModel.savedAPIKey.isEmpty ? "尚未保存 API Key" : "已保存 API Key"
+                    title: pluginLocalization.string("操作"),
+                    description: pluginLocalization.string(
+                        viewModel.savedAPIKey.isEmpty ? "尚未保存 API Key" : "已保存 API Key"
+                    )
                 ) {
                     HStack(spacing: 8) {
                         if !viewModel.savedAPIKey.isEmpty {
                             AppIconButton(
-                                systemImage: isAPIKeyRevealed ? "eye.slash" : "eye"
+                                systemImage: viewModel.isAPIKeyRevealed ? "eye.slash" : "eye"
                             ) {
-                                isAPIKeyRevealed.toggle()
+                                viewModel.isAPIKeyRevealed.toggle()
                             }
-                            .help(isAPIKeyRevealed ? "隐藏 API Key" : "显示 API Key")
+                            .help(pluginLocalization.string(viewModel.isAPIKeyRevealed ? "隐藏 API Key" : "显示 API Key"))
                         }
 
                         if !copyableAPIKey.isEmpty {
@@ -174,11 +177,11 @@ public struct ProviderDetailView: View {
                             ) {
                                 copyAPIKey()
                             }
-                            .help(isAPIKeyCopied ? "已复制" : "复制 API Key")
+                            .help(pluginLocalization.string(isAPIKeyCopied ? "已复制" : "复制 API Key"))
                             .accessibilityIdentifier(ProviderSettingsAccessibility.copyAPIKeyButton)
                         }
 
-                        AppButton("保存", systemImage: "checkmark", style: .primary, size: .small) {
+                        AppButton(pluginLocalization.string("保存"), systemImage: "checkmark", style: .primary, size: .small) {
                             viewModel.saveAPIKey()
                         }
                         .disabled(
@@ -187,7 +190,7 @@ public struct ProviderDetailView: View {
                         )
 
                         if !viewModel.savedAPIKey.isEmpty {
-                            AppButton("删除", systemImage: "trash", style: .destructive, size: .small) {
+                            AppButton(pluginLocalization.string("删除"), systemImage: "trash", style: .destructive, size: .small) {
                                 viewModel.removeAPIKey()
                             }
                         }
@@ -197,7 +200,7 @@ public struct ProviderDetailView: View {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundColor(theme.success)
                                     .font(.appCaption)
-                                Text("已保存")
+                                Text(pluginLocalization.string("已保存"))
                                     .font(.appCaption)
                                     .foregroundColor(theme.success)
                             }
@@ -210,7 +213,7 @@ public struct ProviderDetailView: View {
                         .padding(.vertical, 8)
 
                     AppSettingRow(
-                        title: "错误",
+                        title: pluginLocalization.string("错误"),
                         description: apiKeySaveError
                     ) {
                         EmptyView()
@@ -224,7 +227,7 @@ public struct ProviderDetailView: View {
     // MARK: - Model Section
 
     private var modelSection: some View {
-        AppSettingSection(title: "可用模型") {
+        AppSettingSection(title: pluginLocalization.string("可用模型")) {
             VStack(spacing: 0) {
                 ForEach(viewModel.models.enumerated().map({ $0 }), id: \.element.id) { index, model in
                     if index > 0 {
@@ -241,15 +244,17 @@ public struct ProviderDetailView: View {
         let isSelected = viewModel.isModelSelected(model.id)
         return AppSettingRow(
             title: model.displayName,
-            description: model.contextWindowSize.map { "上下文 \(Self.formatted($0))" },
+            description: model.contextWindowSize.map {
+                String(format: pluginLocalization.string("上下文 %@"), Self.formatted($0))
+            },
             icon: isSelected ? "checkmark.circle.fill" : (model.supportsVision ? "eye" : "cpu")
         ) {
             HStack(spacing: 6) {
                 if model.supportsVision {
-                    AppTag("视觉", systemImage: "eye", style: .accent)
+                    AppTag(pluginLocalization.string("视觉"), systemImage: "eye", style: .accent)
                 }
                 if isSelected {
-                    AppTag("当前", systemImage: "checkmark", style: .accent)
+                    AppTag(pluginLocalization.string("当前"), systemImage: "checkmark", style: .accent)
                 }
             }
         }

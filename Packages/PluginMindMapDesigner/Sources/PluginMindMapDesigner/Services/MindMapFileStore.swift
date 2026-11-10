@@ -52,22 +52,26 @@ public enum MindMapFileStore {
 
     /// 删除指定目录下属于该思维导图的文件。优先按文件名删除，失败时按 id 前缀扫描兜底，
     /// 以兼容标题被重命名后残留的旧文件。
-    public static func delete(_ map: MindMap, storagePath: String) {
+    ///
+    /// 只有确认文件已删除才正常返回；任何一步删不掉都会抛错，调用方不得据此更新内存列表。
+    public static func delete(_ map: MindMap, storagePath: String) throws {
         guard !storagePath.isEmpty else { return }
         let directory = URL(fileURLWithPath: storagePath, isDirectory: true)
         let primary = directory.appendingPathComponent(fileName(for: map))
         if fileManager.fileExists(atPath: primary.path) {
-            try? fileManager.removeItem(at: primary)
+            try fileManager.removeItem(at: primary)
             return
         }
-        guard let urls = try? fileManager.contentsOfDirectory(
+        // 目录不存在时该文件不可能存在，视为已经删除。
+        guard fileManager.fileExists(atPath: directory.path) else { return }
+        let urls = try fileManager.contentsOfDirectory(
             at: directory,
             includingPropertiesForKeys: nil,
             options: [.skipsHiddenFiles]
-        ) else { return }
+        )
         let suffix = "-\(map.id.prefix(8)).json"
         for url in urls where url.pathExtension.lowercased() == "json" && url.lastPathComponent.hasSuffix(suffix) {
-            try? fileManager.removeItem(at: url)
+            try fileManager.removeItem(at: url)
         }
     }
 

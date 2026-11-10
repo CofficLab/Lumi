@@ -15,6 +15,15 @@ public enum MessageRole: String, Codable, Sendable, Equatable {
 
 // MARK: - Kit 级消息类型
 
+/// Anthropic `redacted_thinking` 块：`data` 是不透明密文，必须原样回传。
+public struct LLMRedactedThinkingBlock: Codable, Sendable, Equatable {
+    public let data: String
+
+    public init(data: String) {
+        self.data = data
+    }
+}
+
 /// LLM 消息（协议适配器层使用）。
 public struct LLMMessage: Sendable, Equatable {
     public let role: MessageRole
@@ -22,6 +31,10 @@ public struct LLMMessage: Sendable, Equatable {
     public var toolCalls: [LLMToolCall]?
     public var toolCallID: String?
     public var reasoningContent: String?
+    /// 不透明的 redacted thinking 块；下一轮请求必须按原样回传。
+    public var redactedThinking: [LLMRedactedThinkingBlock]?
+    /// 工具结果是否为失败结果；Anthropic 协议据此生成 `is_error: true`。
+    public var isError: Bool
     public var images: [MessageImage]
 
     public init(
@@ -30,6 +43,8 @@ public struct LLMMessage: Sendable, Equatable {
         toolCalls: [LLMToolCall]? = nil,
         toolCallID: String? = nil,
         reasoningContent: String? = nil,
+        redactedThinking: [LLMRedactedThinkingBlock]? = nil,
+        isError: Bool = false,
         images: [MessageImage] = []
     ) {
         self.role = role
@@ -37,6 +52,8 @@ public struct LLMMessage: Sendable, Equatable {
         self.toolCalls = toolCalls
         self.toolCallID = toolCallID
         self.reasoningContent = reasoningContent
+        self.redactedThinking = redactedThinking
+        self.isError = isError
         self.images = images
     }
 }
@@ -141,6 +158,7 @@ public struct LLMResponse: Sendable, Equatable {
     public let model: String?
     public let toolCalls: [LLMToolCall]?
     public let reasoningContent: String?
+    public let redactedThinking: [LLMRedactedThinkingBlock]?
     public let inputTokenCount: Int?
     public let outputTokenCount: Int?
     public let cachedInputTokenCount: Int?
@@ -156,6 +174,7 @@ public struct LLMResponse: Sendable, Equatable {
         model: String? = nil,
         toolCalls: [LLMToolCall]? = nil,
         reasoningContent: String? = nil,
+        redactedThinking: [LLMRedactedThinkingBlock]? = nil,
         inputTokenCount: Int? = nil,
         outputTokenCount: Int? = nil,
         cachedInputTokenCount: Int? = nil,
@@ -170,6 +189,7 @@ public struct LLMResponse: Sendable, Equatable {
         self.model = model
         self.toolCalls = toolCalls
         self.reasoningContent = reasoningContent
+        self.redactedThinking = redactedThinking
         self.inputTokenCount = inputTokenCount
         self.outputTokenCount = outputTokenCount
         self.cachedInputTokenCount = cachedInputTokenCount

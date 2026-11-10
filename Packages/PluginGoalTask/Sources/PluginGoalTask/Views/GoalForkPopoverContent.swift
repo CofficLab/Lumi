@@ -180,7 +180,7 @@ struct GoalForkPopoverContent: View {
         Task {
             defer { isForking = false }
             do {
-                try await forkCoordinator.forkAndStart(goal: goal, tasks: tasks)
+                try await forkCoordinator.forkAndStart(goal: goal)
             } catch {
                 errorMessage = error.localizedDescription
             }

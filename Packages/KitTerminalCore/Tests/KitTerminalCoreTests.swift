@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import KitTerminalCore
 
@@ -54,6 +55,28 @@ struct KitTerminalCoreTests {
         let viewModel = TerminalTabsViewModel(themeIdProvider: { "xcode-dark" })
         #expect(viewModel.sessions.isEmpty)
         #expect(viewModel.selectedSessionId == nil)
+    }
+
+    @MainActor
+    @Test("切回较早会话后只有该会话可接收输入（回归 #1018）")
+    func onlySelectedSessionIsHitTestable() {
+        let viewModel = TerminalTabsViewModel(themeIdProvider: { "xcode-dark" })
+        let early = UUID()
+        let later = UUID()
+
+        // 先选中后创建的 later，再切回较早的 early；数组顺序不变。
+        viewModel.selectedSessionId = later
+        viewModel.selectSession(early)
+
+        let earlyPresentation = viewModel.presentation(for: early)
+        let laterPresentation = viewModel.presentation(for: later)
+
+        #expect(earlyPresentation.isSelected)
+        #expect(earlyPresentation.opacity == 1)
+        #expect(earlyPresentation.allowsHitTesting)
+        #expect(laterPresentation.opacity == 0)
+        #expect(!laterPresentation.allowsHitTesting)
+        #expect(earlyPresentation.zIndex > laterPresentation.zIndex)
     }
 
     @MainActor

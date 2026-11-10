@@ -249,7 +249,11 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
             localeIdentifier: normalizedLocale
         )
         try fileManager.createDirectory(at: destinationURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try source.html.write(to: destinationURL, atomically: true, encoding: .utf8)
+        // 本地化 HTML 位于 localizations/ 下一层，复制的 ./assets/... 会解析到
+        // 不存在的 localizations/assets/...；改写为 ../assets/... 复用图片根
+        // 目录下的共享素材（issue #1009）。
+        try Self.relocatingAssetsForLocalization(source.html)
+            .write(to: destinationURL, atomically: true, encoding: .utf8)
 
         let now = Date()
         task.images[imageIndex].localeIdentifiers.append(normalizedLocale)
@@ -346,7 +350,11 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
             imageSlug: imageSlug,
             localeIdentifier: localeIdentifier
         )
-        return linter.lint(html: image.html, documentDirectory: image.directoryURL)
+        return linter.lint(
+            html: image.html,
+            documentDirectory: image.directoryURL,
+            htmlDirectory: image.htmlURL.deletingLastPathComponent()
+        )
     }
 
     public func assetsDirectoryURL(storagePath: String, taskSlug: String, imageSlug: String) throws -> URL {
@@ -431,6 +439,21 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
             throw AppStorePromoStoreError.localeNotFound(normalized)
         }
         return match
+    }
+
+    private static let dotSlashAssetsPattern = try! NSRegularExpression(
+        pattern: #"(?<!\.)\./assets/"#
+    )
+
+    /// 把复制到 `localizations/` 的 HTML 中的 `./assets/` 改写为 `../assets/`。
+    /// 负向后顾避免把已经是 `../assets/` 的引用改写成 `../../assets/`。
+    private static func relocatingAssetsForLocalization(_ html: String) -> String {
+        let range = NSRange(html.startIndex..., in: html)
+        return dotSlashAssetsPattern.stringByReplacingMatches(
+            in: html,
+            range: range,
+            withTemplate: "../assets/"
+        )
     }
 
     private func localizedHTMLURL(

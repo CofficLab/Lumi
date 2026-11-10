@@ -1,3 +1,4 @@
+import Foundation
 import LumiUI
 import ProviderConversationInput
 import ProviderMessageSender
@@ -15,7 +16,7 @@ struct SendActionBarButton: View {
     var body: some View {
         HStack(spacing: 6) {
             if let viewModel {
-                normalContent(viewModel: viewModel)
+                SendActionBarObservedContent(viewModel: viewModel)
             } else {
                 ErrorButton {
                     showErrorPopover = true
@@ -27,10 +28,30 @@ struct SendActionBarButton: View {
         }
     }
 
-    // MARK: - Normal content
+    // MARK: - Popover
 
-    @ViewBuilder
-    private func normalContent(viewModel: SendActionBarViewModel) -> some View {
+    private var errorPopoverContent: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 4) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.red)
+                Text(pluginLocalization.string("Provider Error"))
+                    .font(.headline)
+            }
+            Text(MissingProviderMessage.text(for: missingProviders))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(12)
+        .frame(minWidth: 200)
+    }
+}
+
+private struct SendActionBarObservedContent: View {
+    @ObservedObject var viewModel: SendActionBarViewModel
+
+    var body: some View {
         let state = viewModel.state
 
         if state.showsSendButton {
@@ -45,24 +66,19 @@ struct SendActionBarButton: View {
                 .accessibilityIdentifier(SendActionBarAccessibility.stopButton)
         }
     }
+}
 
-    // MARK: - Popover
+// MARK: - MissingProviderMessage
 
-    private var errorPopoverContent: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 4) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.red)
-                Text(pluginLocalization.string("Provider Error"))
-                    .font(.headline)
-            }
-            Text("Missing provider(s): \(missingProviders.joined(separator: ", "))")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(12)
-        .frame(minWidth: 200)
+/// 缺失 Provider 诊断文案。
+///
+/// 单独抽出是为了让单测能验证「插值后仍是本地化文案」，而不只是校验资源条目存在。
+enum MissingProviderMessage {
+    static func text(for providers: [String], locale: Locale = .current) -> String {
+        String(
+            format: pluginLocalization.string("Missing provider(s): %@", locale: locale),
+            providers.joined(separator: ", ")
+        )
     }
 }
 

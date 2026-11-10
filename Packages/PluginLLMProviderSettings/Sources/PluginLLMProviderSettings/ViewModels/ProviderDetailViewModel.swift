@@ -12,6 +12,11 @@ final class ProviderDetailViewModel: ObservableObject {
     @Published var apiKey = ""
     @Published private(set) var savedAPIKey = ""
     @Published private(set) var apiKeySaveError: String?
+    /// API Key 是否以明文展示。
+    ///
+    /// 属于当前供应商：ViewModel 按供应商缓存，切换供应商会拿到另一份
+    /// 实例，明文状态因此不会传播到另一个凭据（issue #942）。
+    @Published var isAPIKeyRevealed = false
     @Published private(set) var isCustomProvider = false
     @Published private(set) var providerID: String
     @Published private(set) var displayName: String
@@ -26,10 +31,13 @@ final class ProviderDetailViewModel: ObservableObject {
     @Published private(set) var isRefreshingModels = false
     /// 最近一次刷新失败的原因（成功后清空）。
     @Published private(set) var modelRefreshError: String?
+    /// 删除自定义供应商失败的原因（成功后清空）。
+    @Published private(set) var customProviderRemoveError: String?
 
     private let capability: any ProviderSettingsCapability
     private var customCancellable: AnyCancellable?
     private var modelsCancellable: AnyCancellable?
+    private var selectionCancellable: AnyCancellable?
 
     init(
         capability: any ProviderSettingsCapability,
@@ -59,6 +67,13 @@ final class ProviderDetailViewModel: ObservableObject {
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.models = self.capability.availableModels(for: providerID)
+            }
+        // 全局选中可能在别处变化（其他供应商、模型选择器、会话联动），
+        // 「当前」标记必须跟着全局值走，不能停在初始化时的快照（issue #940）。
+        selectionCancellable = capability.selectionChangedPublisher
+            .sink { [weak self] in
+                guard let self else { return }
+                self.selectedModelID = self.capability.selectedModelID
             }
     }
 
@@ -117,8 +132,17 @@ final class ProviderDetailViewModel: ObservableObject {
         apiKeySaveError = nil
     }
 
+    /// 删除当前自定义供应商。
+    ///
+    /// 落盘失败时 Store 会保留原配置，这里把错误留在
+    /// `customProviderRemoveError`，避免界面表现为「删了但还在」。
     func removeCustomProvider() {
-        capability.removeCustomProvider(id: providerID)
+        customProviderRemoveError = nil
+        do {
+            try capability.removeCustomProvider(id: providerID)
+        } catch {
+            customProviderRemoveError = error.localizedDescription
+        }
     }
 
     func makeCustomProviderEditor() -> CustomCloudProviderEditor? {

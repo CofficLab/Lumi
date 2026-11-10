@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import os
 import ProviderLogo
@@ -11,7 +12,7 @@ import SwiftUI
 /// - 消费方通过 `addLogoObserver` 感知 Logo 集合与高亮状态变化；
 /// - 内置结构化日志，便于诊断注册 / 注销 / 高亮状态切换。
 @MainActor
-public final class LogoManager: LogoProviding, SuperLog {
+public final class LogoManager: LogoProviding, ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.logo-manager", category: "Plugin")
     public nonisolated static let emoji = "🖼️"
     nonisolated static let verbose = false
@@ -83,6 +84,9 @@ public final class LogoManager: LogoProviding, SuperLog {
     }
 
     private func notify(_ event: LogoProvidingEvent) {
+        // 菜单栏宿主只订阅 `ObservableObject.objectWillChange`，typed observer
+        // 不会驱动 SwiftUI 重绘；两者必须同时发布，否则高亮变化要等无关重绘才生效。
+        objectWillChange.send()
         observers.values.forEach { $0(event) }
     }
 

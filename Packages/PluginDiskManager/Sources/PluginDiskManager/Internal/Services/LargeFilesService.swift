@@ -11,7 +11,7 @@ public final class LargeFilesService: @unchecked Sendable {
 
     public func scanLargeFiles(atPath path: String, forceRefresh: Bool = true) async throws -> [LargeFileEntry] {
         _ = forceRefresh
-        return await coordinator.scanLargeFiles(path: path)
+        return try await coordinator.scanLargeFiles(path: path)
     }
 
     public func progressStream() async -> AsyncStream<ScanProgress> {
@@ -26,6 +26,10 @@ public final class LargeFilesService: @unchecked Sendable {
         try await Task.detached(priority: .utility) {
             try FileManager.default.removeItem(at: URL(fileURLWithPath: path))
         }.value
+        // 删除成功即意味着磁盘用量变化，通知仍在展示的容量文字与环形图刷新。
+        await MainActor.run {
+            NotificationCenter.default.post(name: .diskManagerDiskUsageDidChange, object: nil)
+        }
     }
 
     @MainActor
@@ -37,7 +41,7 @@ public final class LargeFilesService: @unchecked Sendable {
 // MARK: - LargeFilesScanCoordinator
 
 actor LargeFilesScanCoordinator {
-    private var activeTask: Task<[LargeFileEntry], Never>?
+    private var activeTask: Task<[LargeFileEntry], Error>?
     private var lastPath: String?
     private var scannedFiles: Int = 0
     private var scannedDirectories: Int = 0
@@ -79,7 +83,7 @@ actor LargeFilesScanCoordinator {
         progressContinuations[id] = nil
     }
 
-    func scanLargeFiles(path: String) async -> [LargeFileEntry] {
+    func scanLargeFiles(path: String) async throws -> [LargeFileEntry] {
         activeTask?.cancel()
 
         scannedFiles = 0
@@ -97,13 +101,19 @@ actor LargeFilesScanCoordinator {
             startTime: startTime ?? Date()
         )
 
-        let task = Task { await performScan(path: path) }
+        let task = Task { try await performScan(path: path) }
         activeTask = task
-        let result = await task.value
 
-        currentProgress = nil
-        startTime = nil
-        return result
+        do {
+            let result = try await task.value
+            currentProgress = nil
+            startTime = nil
+            return result
+        } catch {
+            currentProgress = nil
+            startTime = nil
+            throw error
+        }
     }
 
     func cancelCurrentScan() {
@@ -113,20 +123,17 @@ actor LargeFilesScanCoordinator {
         startTime = nil
     }
 
-    private func performScan(path: String) async -> [LargeFileEntry] {
+    private func performScan(path: String) async throws -> [LargeFileEntry] {
         let rootURL = URL(fileURLWithPath: path)
-        let fm = FileManager.default
 
         let start = startTime ?? Date()
         var lastEmitAt = Date.distantPast
 
-        guard let enumerator = fm.enumerator(
+        let enumerator = try ScanRootEnumerator.make(
             at: rootURL,
             includingPropertiesForKeys: [.isDirectoryKey, .isPackageKey, .fileSizeKey, .contentModificationDateKey],
             options: [.skipsHiddenFiles, .skipsPackageDescendants]
-        ) else {
-            return []
-        }
+        )
 
         var top = MaxHeap<LargeFileEntry>(capacity: 100)
 

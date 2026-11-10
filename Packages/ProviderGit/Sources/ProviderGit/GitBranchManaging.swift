@@ -45,6 +45,12 @@ public protocol GitBranchManaging: Sendable {
     /// 当前分支名；处于 detached HEAD 时返回 `nil`。
     func currentBranch(atPath path: String) async throws -> String?
 
+    /// detached HEAD 时 HEAD 指向的完整 commit hash；在分支上或非仓库时返回 `nil`。
+    ///
+    /// `currentBranch` 在 detached HEAD 时必须为 `nil`，界面用本方法单独展示
+    /// 短哈希，避免把 40 位 OID 当作分支名。
+    func detachedHeadCommitHash(atPath path: String) async throws -> String?
+
     /// 列出本地分支（可选包含远程分支）。
     ///
     /// - Parameter includeRemote: 是否一并返回远程分支。
@@ -55,6 +61,15 @@ public protocol GitBranchManaging: Sendable {
 
     /// 创建新分支并切换过去。
     func createBranch(named name: String, atPath path: String) async throws
+}
+
+// MARK: - 默认实现
+
+extension GitBranchManaging {
+    /// 默认不提供 detached HEAD 哈希，已有实现无需改动即可继续编译。
+    public func detachedHeadCommitHash(atPath path: String) async throws -> String? {
+        nil
+    }
 }
 
 // MARK: - 错误
@@ -93,19 +108,22 @@ public final class InMemoryGitBranchManaging: GitBranchManaging, @unchecked Send
         var branches: [String: [GitBranchInfo]]
         var checkoutFailures: [String: String]
         var createFailures: [String: String]
+        var detachedHeadHashes: [String: String]
 
         init(
             repositories: Set<String>,
             currentBranch: [String: String],
             branches: [String: [GitBranchInfo]],
             checkoutFailures: [String: String] = [:],
-            createFailures: [String: String] = [:]
+            createFailures: [String: String] = [:],
+            detachedHeadHashes: [String: String] = [:]
         ) {
             self.repositories = repositories
             self.currentBranch = currentBranch
             self.branches = branches
             self.checkoutFailures = checkoutFailures
             self.createFailures = createFailures
+            self.detachedHeadHashes = detachedHeadHashes
         }
     }
 
@@ -117,14 +135,16 @@ public final class InMemoryGitBranchManaging: GitBranchManaging, @unchecked Send
         currentBranch: [String: String] = [:],
         branches: [String: [GitBranchInfo]] = [:],
         checkoutFailures: [String: String] = [:],
-        createFailures: [String: String] = [:]
+        createFailures: [String: String] = [:],
+        detachedHeadHashes: [String: String] = [:]
     ) {
         storage = Storage(
             repositories: repositories,
             currentBranch: currentBranch,
             branches: branches,
             checkoutFailures: checkoutFailures,
-            createFailures: createFailures
+            createFailures: createFailures,
+            detachedHeadHashes: detachedHeadHashes
         )
     }
 
@@ -143,6 +163,11 @@ public final class InMemoryGitBranchManaging: GitBranchManaging, @unchecked Send
         queue.sync { storage.currentBranch[path] = branch }
     }
 
+    /// 设置某个路径的 detached HEAD 提交哈希。
+    public func setDetachedHeadCommitHash(_ hash: String?, forPath path: String) {
+        queue.sync { storage.detachedHeadHashes[path] = hash }
+    }
+
     public func isRepository(atPath path: String) async -> Bool {
         queue.sync { storage.repositories.contains(path) }
     }
@@ -150,6 +175,11 @@ public final class InMemoryGitBranchManaging: GitBranchManaging, @unchecked Send
     public func currentBranch(atPath path: String) async throws -> String? {
         try requireRepository(path)
         return queue.sync { storage.currentBranch[path] }
+    }
+
+    public func detachedHeadCommitHash(atPath path: String) async throws -> String? {
+        try requireRepository(path)
+        return queue.sync { storage.detachedHeadHashes[path] }
     }
 
     public func listBranches(atPath path: String, includeRemote: Bool) async throws -> [GitBranchInfo] {

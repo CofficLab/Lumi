@@ -106,18 +106,32 @@ public struct DiskMetrics: Equatable {
 // MARK: - Process Monitoring Models
 
 public struct ProcessMetric: Identifiable, Hashable, Sendable {
-    public let id: Int32 // PID
+    public let id: Int32 // PID（聚合后为组内最小 PID）
     public let name: String
     public let icon: String? // Bundle path or similar
     public let cpuUsage: Double
     public let memoryUsage: Int64
+    /// 同名进程的份数；聚合后大于 1 时界面需标注份数。
+    public let instanceCount: Int
+    /// 该组是否包含 Lumi 自身进程；界面需单独标注，但不从榜单中排除。
+    public let isCurrentApp: Bool
 
-    public init(id: Int32, name: String, icon: String?, cpuUsage: Double, memoryUsage: Int64) {
+    public init(
+        id: Int32,
+        name: String,
+        icon: String?,
+        cpuUsage: Double,
+        memoryUsage: Int64,
+        instanceCount: Int = 1,
+        isCurrentApp: Bool = false
+    ) {
         self.id = id
         self.name = name
         self.icon = icon
         self.cpuUsage = cpuUsage
         self.memoryUsage = memoryUsage
+        self.instanceCount = instanceCount
+        self.isCurrentApp = isCurrentApp
     }
 
     public var memoryString: String {

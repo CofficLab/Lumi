@@ -1,2 +1,9 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# 预编译二进制产物：必须按二进制处理，禁止行尾转换。
+# 若被误判为文本，CRLF 转换会损坏 ar 归档，导致链接期符号错误。
+*.a binary
+*.dylib binary
+*.so binary
+*.xcframework binary

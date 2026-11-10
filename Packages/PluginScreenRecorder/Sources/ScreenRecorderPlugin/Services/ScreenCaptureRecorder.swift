@@ -81,11 +81,12 @@ final class ScreenCaptureRecorder: NSObject, @unchecked Sendable {
         streamConfig.queueDepth = 6
         var captureMicrophone = false
         if config.includeMicrophone {
+            // 兜底：调用方若绕过会话管理器，也不能在 macOS 14 上静默降级成无声录制。
+            try RecordingMicrophoneCapability.validate(includeMicrophone: true)
             if #available(macOS 15.0, *) {
                 streamConfig.captureMicrophone = true
                 captureMicrophone = true
             }
-            // macOS 14 不支持 SCStream 麦克风采集，静默降级（仅画面 / app 声音）。
         }
 
         let stream = SCStream(filter: filter, configuration: streamConfig, delegate: self)

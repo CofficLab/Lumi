@@ -38,13 +38,13 @@ public struct UpdateIconLayerTool: SuperAgentTool {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let language = IconToolSupport.language
         guard let layerId = IconToolSupport.string(arguments, "layerId"), !layerId.isEmpty else {
-            return IconToolSupport.missingParameter("layerId", language: language)
+            throw IconToolSupport.missingParameterFailure("layerId", toolName: name, language: language)
         }
 
         do {
             let (document, scope) = try await IconToolSupport.resolveDocument(arguments)
             let updated = try await MainActor.run {
-                try IconDocumentStore.shared.updateLayer(id: layerId, documentId: document.id, scope: scope) { layer in
+                try IconToolSupport.store().updateLayer(id: layerId, documentId: document.id, scope: scope) { layer in
                     if let fill = IconToolSupport.string(arguments, "fill") {
                         layer.fill = .color(fill)
                     }
@@ -105,9 +105,9 @@ public struct UpdateIconLayerTool: SuperAgentTool {
             )
         } catch {
             await MainActor.run {
-                IconDocumentStore.shared.setError(error.localizedDescription)
+                IconToolSupport.store().setError(error.localizedDescription)
             }
-            return IconToolSupport.error(error, language: language)
+            throw IconToolSupport.failure(error, toolName: name, language: language)
         }
     }
 }

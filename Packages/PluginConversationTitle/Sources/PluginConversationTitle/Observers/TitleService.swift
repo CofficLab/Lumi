@@ -87,8 +87,8 @@ final class TitleService: SuperLog {
 
         var backfilled = 0
         for id in ids {
-            // `fetchConversation` 会把这条对话放进内存缓存，
-            // `updateConversationTitle` 需要它在场才能写标题。
+            // 补缓存是为了复核 Store 中的最新标题；标题写入本身按 ID 落库，
+            // 不要求这条摘要此刻仍留在有界缓存里（#996）。
             guard let summary = await conversations.fetchConversation(id: id) else { continue }
             // 缓存可能比查询结果新：以缓存里的标题为准。
             guard !summary.hasCustomTitle else { continue }
@@ -96,7 +96,7 @@ final class TitleService: SuperLog {
 
             let placeholder = Self.placeholderTitle(forFirstUserMessage: firstUserMessage.content)
             guard !placeholder.isEmpty else { continue }
-            guard conversations.updateConversationTitle(placeholder, for: id) else { continue }
+            guard await conversations.updateConversationTitleAndWait(placeholder, for: id) else { continue }
             backfilled += 1
         }
 
@@ -174,7 +174,7 @@ final class TitleService: SuperLog {
         ) else {
             return
         }
-        guard conversations.updateConversationTitle(generatedTitle, for: conversationID) else {
+        guard await conversations.updateConversationTitleAndWait(generatedTitle, for: conversationID) else {
             Self.logger.error("\(Self.t)Failed to persist generated title for conversation \(conversationID, privacy: .public)")
             return
         }
@@ -218,7 +218,7 @@ final class TitleService: SuperLog {
             return false
         }
 
-        guard conversations.updateConversationTitle(placeholder, for: conversationID) else {
+        guard await conversations.updateConversationTitleAndWait(placeholder, for: conversationID) else {
             Self.logger.error("\(Self.t)Failed to persist the fallback title for conversation \(conversationID, privacy: .public)")
             return false
         }

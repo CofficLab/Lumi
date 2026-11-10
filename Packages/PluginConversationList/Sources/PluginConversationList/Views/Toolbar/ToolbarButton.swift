@@ -11,7 +11,7 @@ struct ToolbarButton: View {
     @ObservedObject private var viewModel: ConversationListToolbarViewModel
     let popoverAllViewModel: ConversationListViewModel
     let popoverCurrentViewModel: ConversationListViewModel
-    @State private var isPresented = false
+    @StateObject private var popoverState = ToolbarPopoverState()
 
     init(
         viewModel: ConversationListToolbarViewModel,
@@ -26,25 +26,64 @@ struct ToolbarButton: View {
     var body: some View {
         Group {
             if viewModel.isChatSectionVisible && viewModel.hasAnyConversations {
-                AppIconButton(
-                    systemImage: "message.fill"
-                ) {
-                    isPresented.toggle()
-                }
-                .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-                    ToolbarPopoverContent(
-                        viewModel: viewModel,
-                        allProjectsViewModel: popoverAllViewModel,
-                        currentProjectViewModel: popoverCurrentViewModel
-                    )
-                }
+                toolbarButton
             }
         }
         .task {
             await viewModel.refreshConversationPresence()
         }
-        .onChange(of: viewModel.contextRevision) { _, _ in
+        .onChange(of: viewModel.contextRevision) { _ in
             Task { await viewModel.refreshConversationPresence() }
         }
     }
+
+    private var button: some View {
+        AppIconButton(
+            systemImage: "message.fill",
+            isActive: popoverState.isPresented
+        ) {
+            popoverState.isPresented.toggle()
+        }
+        .accessibilityLabel(pluginLocalization.string("Chats"))
+    }
+
+    #if os(macOS)
+    private var toolbarButton: some View {
+        button
+            // macOS 的 SwiftUI `.popover` 无法切换常驻行为，用 AppKit 宿主替换。
+            .background(
+                ConversationListPopoverPresenter(
+                    isPresented: $popoverState.isPresented,
+                    isPinned: $popoverState.isPinned
+                ) {
+                    popoverContent
+                }
+            )
+    }
+    #else
+    private var toolbarButton: some View {
+        button
+            .popover(isPresented: $popoverState.isPresented, arrowEdge: .bottom) {
+                popoverContent
+            }
+    }
+    #endif
+
+    private var popoverContent: some View {
+        ToolbarPopoverContent(
+            viewModel: viewModel,
+            allProjectsViewModel: popoverAllViewModel,
+            currentProjectViewModel: popoverCurrentViewModel,
+            pinState: popoverState
+        )
+    }
+}
+
+/// 工具栏 popover 的展示状态。
+///
+/// 图钉状态只在本次弹窗生命周期内有效：关闭后由 presenter 重置为未钉住，
+/// 下次打开仍从默认的临时浮层行为开始（避免「下次普通点击打开却关不掉」的隐性状态）。
+final class ToolbarPopoverState: ObservableObject {
+    @Published var isPresented = false
+    @Published var isPinned = false
 }

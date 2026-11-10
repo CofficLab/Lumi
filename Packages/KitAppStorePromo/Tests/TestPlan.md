@@ -2,10 +2,10 @@
 
 ## 包概述
 
-KitAppStorePromo 的实现包，包含 6 个主要类型；当前测试覆盖 57 条用例。
+KitAppStorePromo 的实现包，包含 6 个主要类型；当前测试覆盖 64 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 53
+测试文件: 4 个，用例总数: 64
 
 ## 公开 API
 
@@ -88,27 +88,34 @@ KitAppStorePromo 的实现包，包含 6 个主要类型；当前测试覆盖 57
 | 55 | AppStorePromoHTMLExporterTimeout | 截图状态在未挂接 continuation 时也能安全完成 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `snapshotStateFinishesWithoutContinuation` |
 | 56 | AppStorePromoHTMLExporterTimeout | 截图超时错误有可读描述 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `snapshotTimedOutDescription` |
 | 57 | AppStorePromoHTMLExporterTimeout | 既有错误描述保持不变 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `existingErrorDescriptionsPreserved` |
+| 58 | AppStorePromoDocumentStore | 本地化复制后仍能读取图片根目录下的共享素材（**回归 #1009**） | 主语言 HTML 引用 `./assets/hero.png`，素材实际在 `images/hero/assets/` | 添加 zh-Hans 本地化并分别读回主语言与本地化 HTML | 主语言保持不变；本地化为 `../assets/hero.png`；图片根目录为资源根；lint 通过 | P1 | ✅ 已覆盖 | `localizationResolvesSharedAssetsFromImageRoot` |
+| 59 | AppStorePromoHTMLLinter | 上级素材只在图片根目录内放行（**回归 #1009**） | 图片根目录含 `assets/hero.png`，HTML 位于 `localizations/` | 以 `documentDirectory` + `htmlDirectory` 执行 lint | `../assets/hero.png` 通过；只有 `../../outside.png` 被报 `unsafe_asset_path` | P1 | ✅ 已覆盖 | `parentAssetsAreAllowedOnlyInsideDocumentDirectory` |
+| 60 | AppStorePromoHTMLLinter | inline SVG 命名空间不被当作远程资源（**回归 #1010**） | 合法文档正文含 `xmlns="http://www.w3.org/2000/svg"` | 执行 lint | 无 `remote_resource`，且无其它 error | P0 | ✅ 已覆盖 | `inlineSVGNamespaceIsNotARemoteResource` |
+| 61 | AppStorePromoHTMLLinter | 资源加载位置上的远程地址仍被拒绝（**#1010 护栏**） | `<link href>`、`<img src>`、CSS `url()` 均指向远程/CDN | 执行 lint | 报出 `remote_resource` | P0 | ✅ 已覆盖 | `remoteResourcesInLoadingPositionsAreStillRejected` |
+| 62 | AppStorePromoHTMLLinter | CSS `url(...)` 缺失资源报 `missing_asset`（**回归 #1083**） | 目录含 `real.png`，CSS 同时引用 `./ghost.png` | 执行 lint | 恰好 1 条 `missing_asset`（ghost.png）；无 `unsafe_asset_path` | P0 | ✅ 已覆盖 | `missingCSSURLAssetFailsWhenDirectoryProvided` |
+| 63 | AppStorePromoDocumentStore | 替换 HTML 时缺失的 CSS 背景图阻止保存（**回归 #1083**） | 任务与图片已创建，CSS 引用不存在的 `assets/does-not-exist.png` | 调用 `replaceHTML` | 抛出 `AppStorePromoStoreError` | P0 | ✅ 已覆盖 | `replaceHTMLRejectsMissingCSSURLAsset` |
+| 64 | AppStorePromoHTMLLinter | CSS 中的 data URI 与片段引用不误报 | — | lint 含 `url(data:...)` 与 `url(#gradient)` 的文档 | 无 `missing_asset` / `unsafe_asset_path` | P1 | ✅ 已覆盖 | `CSSDataURIsAndFragmentsAreSkipped` |
 
-> 说明：全部 **57 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **64 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
-- P1: 已覆盖 42 / 42
+- P0: 已覆盖 13 / 13
+- P1: 已覆盖 45 / 45
 - P2: 已覆盖 6 / 6
-- **合计: 57 / 57**（仅表示清单场景，非源码覆盖率）
+- **合计: 64 / 64**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（42 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P1**: 其余功能性用例（45 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（6 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 57 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 60 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

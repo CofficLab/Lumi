@@ -1,4 +1,5 @@
 import Foundation
+import UniformTypeIdentifiers
 @testable import KitCADDesigner
 
 import XCTest
@@ -13,6 +14,106 @@ final class CADDesignerLogicTests: XCTestCase {
         let data = try JSONEncoder().encode(transform)
         let decoded = try JSONDecoder().decode(Transform3D.self, from: data)
         XCTAssertEqual(transform, decoded)
+    }
+
+    func testPlacementUpdatePreservesOtherTransformComponents() {
+        var transform = Transform3D(
+            positionX: 1, positionY: 2, positionZ: 3,
+            rotationX: 15, rotationY: 30, rotationZ: 90,
+            scale: 2
+        )
+
+        transform.updatePlacement(positionX: 10, positionY: 20, positionZ: 30, rotationY: 45)
+
+        XCTAssertEqual(transform.positionX, 10)
+        XCTAssertEqual(transform.positionY, 20)
+        XCTAssertEqual(transform.positionZ, 30)
+        XCTAssertEqual(transform.rotationY, 45)
+        // 其余分量不得被重置
+        XCTAssertEqual(transform.rotationX, 15)
+        XCTAssertEqual(transform.rotationZ, 90)
+        XCTAssertEqual(transform.scale, 2)
+    }
+
+    @MainActor
+    func testUndoRestoresComponentValuesWithoutChangingId() {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        _ = store.createDocument(name: "Undo Sync")
+
+        let instance = ProfileInstance(profileId: "profile-40x40-eu", length: 500)
+        try? store.addComponent(.profile(instance))
+        store.selectedComponentId = instance.id
+
+        try? store.updateComponent(id: instance.id) { component in
+            if case .profile(var profile) = component {
+                profile.length = 1000
+                component = .profile(profile)
+            }
+        }
+        if case .profile(let updated) = store.selectedComponent {
+            XCTAssertEqual(updated.length, 1000)
+        } else {
+            XCTFail("Expected a profile component")
+        }
+
+        store.undo()
+
+        // Undo 回退内容但保留 ID，因此面板同步必须以组件值为触发条件。
+        XCTAssertEqual(store.selectedComponent?.id, instance.id)
+        if case .profile(let restored) = store.selectedComponent {
+            XCTAssertEqual(restored.length, 500)
+        } else {
+            XCTFail("Expected a profile component after undo")
+        }
+    }
+
+    @MainActor
+    func testMeasureToolComputesDistanceFromTwoPicks() {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        _ = store.createDocument(name: "Measure")
+
+        let viewModel = CADWorkspaceViewModel(store: store, library: library)
+        let first = try? store.addComponent(.profile(ProfileInstance(
+            profileId: "profile-40x40-eu",
+            length: 500,
+            transform: Transform3D(positionX: 0, positionY: 0, positionZ: 0)
+        )))
+        let second = try? store.addComponent(.profile(ProfileInstance(
+            profileId: "profile-40x40-eu",
+            length: 500,
+            transform: Transform3D(positionX: 3, positionY: 4, positionZ: 0)
+        )))
+
+        viewModel.currentTool = .measure
+        viewModel.handleViewportPick(id: first!.id)
+        XCTAssertNil(viewModel.measurement)
+
+        viewModel.handleViewportPick(id: second!.id)
+        XCTAssertEqual(viewModel.measurement?.distance ?? -1, 5, accuracy: 0.001)
+        XCTAssertEqual(viewModel.measurement?.fromComponentId, first?.id)
+        XCTAssertEqual(viewModel.measurement?.toComponentId, second?.id)
+    }
+
+    @MainActor
+    func testCutResultKeepsStockLengthUsedForOptimization() {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        _ = store.createDocument(name: "Cut Length")
+        _ = try? store.addComponent(.profile(ProfileInstance(
+            profileId: "profile-40x40-eu",
+            length: 500
+        )))
+
+        let viewModel = CADWorkspaceViewModel(store: store, library: library)
+        viewModel.stockLength = 6000
+        viewModel.runCutOptimization()
+        XCTAssertEqual(viewModel.cutResult?.stockLength, 6000)
+
+        // 修改输入但未重新优化时，旧方案必须仍标记为 6000。
+        viewModel.stockLength = 1000
+        XCTAssertEqual(viewModel.cutResult?.stockLength, 6000)
     }
 
     func testCADDocumentCodableRoundTrip() throws {
@@ -37,6 +138,34 @@ final class CADDesignerLogicTests: XCTestCase {
         XCTAssertEqual(document.name, decoded.name)
         XCTAssertEqual(document.components.count, decoded.components.count)
         XCTAssertEqual(document.connections.count, decoded.connections.count)
+    }
+
+    @MainActor
+    func testAddConnectionRejectsUnknownEndpoints() throws {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        _ = store.createDocument(name: "Dangling Guard")
+        let profile = ProfileInstance(profileId: "profile-40x40-eu", length: 500)
+        let connector = ConnectorInstance(connectorId: "connector-corner-40")
+        _ = try store.addComponent(.profile(profile))
+        _ = try store.addComponent(.connector(connector))
+
+        do {
+            _ = try store.addConnection(ConnectionEdge(fromComponentID: "missing-a", toComponentID: "missing-b"))
+            XCTFail("expected both-missing endpoints to be rejected")
+        } catch let error as CADDocumentStoreError {
+            XCTAssertEqual(error, .componentNotFound("missing-a"))
+        }
+        do {
+            _ = try store.addConnection(ConnectionEdge(fromComponentID: profile.id, toComponentID: "missing-b"))
+            XCTFail("expected a missing target endpoint to be rejected")
+        } catch let error as CADDocumentStoreError {
+            XCTAssertEqual(error, .componentNotFound("missing-b"))
+        }
+        XCTAssertTrue(store.selectedDocument?.connections.isEmpty == true)
+
+        _ = try store.addConnection(ConnectionEdge(fromComponentID: profile.id, toComponentID: connector.id))
+        XCTAssertEqual(store.selectedDocument?.connections.count, 1)
     }
 
     func testCADDocumentDecodeMissingFields() throws {
@@ -73,6 +202,26 @@ final class CADDesignerLogicTests: XCTestCase {
         XCTAssertEqual(length500Item?.quantity, 2)
         XCTAssertEqual(length800Item?.quantity, 1)
         XCTAssertEqual(report.totalComponentCount, 3)
+    }
+
+    @MainActor
+    func testBOMKeepsDistinctFractionalLengths() {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        _ = store.createDocument(name: "Fractional BOM")
+
+        try? store.addComponent(.profile(ProfileInstance(profileId: "profile-40x40-eu", length: 500.25)))
+        try? store.addComponent(.profile(ProfileInstance(profileId: "profile-40x40-eu", length: 500.75)))
+
+        let report = BOMGenerator().generate(from: store.selectedDocument!, library: library)
+        let profileItems = report.items.filter { $0.length > 0 }
+
+        // 不同小数长度不得被截断合并为同一行。
+        XCTAssertEqual(profileItems.count, 2)
+        XCTAssertEqual(Set(profileItems.map(\.quantity)), [1])
+        XCTAssertEqual(Set(profileItems.map(\.length)), [500.25, 500.75])
+        XCTAssertTrue(profileItems.contains { $0.description.contains("500.25mm") })
+        XCTAssertTrue(profileItems.contains { $0.description.contains("500.75mm") })
     }
 
     @MainActor
@@ -129,13 +278,21 @@ final class CADDesignerLogicTests: XCTestCase {
         XCTAssertEqual(result.totalRemainder, 0)
     }
 
-    func testCutOptimizerOversizedDemandFiltered() {
+    func testCutOptimizerReportsOversizedDemand() {
         let optimizer = CutOptimizer()
-        // 超过原料长度的需求应被过滤
+        // 超过原料长度的需求不参与排料，但必须被显式报告而不是静默丢弃
         let result = optimizer.optimize(demands: [7000, 500], stockLength: 6000)
         XCTAssertEqual(result.stockCount, 1)
         let totalCut = result.stocks.flatMap(\.cuts).reduce(0, +)
         XCTAssertEqual(totalCut, 500, accuracy: 0.001)
+        XCTAssertEqual(result.unschedulableDemands, [7000])
+    }
+
+    func testCutOptimizerReportsOnlyUnschedulableDemands() {
+        // 全部需求都超长时，不能返回一个“无需求”的空结果
+        let result = CutOptimizer().optimize(demands: [8000, 7000], stockLength: 6000)
+        XCTAssertEqual(result.stockCount, 0)
+        XCTAssertEqual(result.unschedulableDemands, [8000, 7000])
     }
 
     // MARK: - Component Library
@@ -181,5 +338,78 @@ final class CADDesignerLogicTests: XCTestCase {
         XCTAssertEqual(document.id, loaded.id)
         XCTAssertEqual(document.name, loaded.name)
         XCTAssertEqual(document.components.count, loaded.components.count)
+    }
+
+    func testNativeProjectContentTypeAcceptsCadprojExtension() {
+        let type = UTType.cadDesignerProject
+        let extensions = type.tags[.filenameExtension] ?? []
+        XCTAssertTrue(
+            extensions.contains("cadproj") || type.preferredFilenameExtension == "cadproj",
+            "Load/Save panels must accept the native .cadproj extension"
+        )
+        XCTAssertTrue(type.conforms(to: .json))
+    }
+
+    // MARK: - File Association Open
+
+    @MainActor
+    func testOpenProjectURLFromFileAssociationLoadsSelectedProject() throws {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        let document = CADDocument(
+            name: "Finder Open",
+            components: [.profile(ProfileInstance(profileId: "profile-40x40-eu", length: 700))]
+        )
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CADFinderOpen-\(UUID().uuidString).cadproj")
+        try ProjectSaveLoadService().save(document: document, to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let viewModel = CADWorkspaceViewModel(store: store, library: library)
+        // 工作区启动时会自动创建空项目；系统打开的文件必须替换为选中的项目。
+        XCTAssertEqual(store.selectedDocument?.name, "Untitled Project")
+
+        viewModel.openProjectURL(url)
+
+        XCTAssertEqual(store.selectedDocument?.name, "Finder Open")
+        XCTAssertEqual(store.selectedDocument?.components.count, 1)
+        XCTAssertEqual(store.lastExportURL, url)
+        XCTAssertNil(store.lastError)
+    }
+
+    @MainActor
+    func testOpenProjectURLRejectsUnsupportedExtensionWithoutReplacingWorkspace() throws {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        _ = store.createDocument(name: "Keep Me")
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("notes-\(UUID().uuidString).txt")
+        try "not a project".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let viewModel = CADWorkspaceViewModel(store: store, library: library)
+        viewModel.openProjectURL(url)
+
+        XCTAssertEqual(store.selectedDocument?.name, "Keep Me")
+        XCTAssertEqual(store.documents.count, 1)
+        XCTAssertNotNil(store.lastError)
+    }
+
+    @MainActor
+    func testOpenProjectURLReportsUndecodableFileWithoutReplacingWorkspace() throws {
+        let store = CADDocumentStore.shared
+        store.resetForTests()
+        _ = store.createDocument(name: "Keep Me")
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("corrupt-\(UUID().uuidString).cadproj")
+        try "{ not valid json".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let viewModel = CADWorkspaceViewModel(store: store, library: library)
+        viewModel.openProjectURL(url)
+
+        XCTAssertEqual(store.selectedDocument?.name, "Keep Me")
+        XCTAssertEqual(store.documents.count, 1)
+        XCTAssertNotNil(store.lastError, "加载失败必须暴露对应文件的错误，而不是静默保留空项目")
     }
 }

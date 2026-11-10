@@ -119,7 +119,7 @@ struct SendActionBarViewModelTests {
     }
 
     @Test("纯文本走同步提交并随后启动回合")
-    func sendCommitsTrimmedTextSynchronously() async throws {
+    func sendCommitsDraftTextSynchronously() async throws {
         let conversationID = UUID()
         let capability = SendActionBarTestCapability()
         capability.text = "  hello world  "
@@ -129,7 +129,8 @@ struct SendActionBarViewModelTests {
         viewModel.send()
 
         let commit = try #require(capability.commits.first)
-        #expect(commit.content == "hello world")
+        // 传原文而非预 trim 文本：折叠块区间以原文为坐标系，trim 由 sender 做。
+        #expect(commit.content == "  hello world  ")
         // 发送时显式传 nil，由发送能力解析目标会话。
         #expect(commit.conversationID == nil)
         #expect(commit.usedBackgroundPath == false)
@@ -170,6 +171,35 @@ struct SendActionBarViewModelTests {
         }
     }
 
+    @Test("带附件发送在编码完成前消费附件，编码窗口内再次发送被忽略")
+    func sendingWithAttachmentsReservesThemBeforeEncoding() async throws {
+        let conversationID = UUID()
+        let capability = SendActionBarTestCapability()
+        capability.text = "first"
+        let image = UserImageAttachment(mimeType: "image/png", base64Data: "AAAA")
+        capability.pendingImageAttachments = [image]
+        capability.commit = MessageSendCommit(conversationID: conversationID, userMessageID: UUID())
+        let viewModel = SendActionBarViewModel(capability: capability)
+
+        viewModel.send()
+
+        // 附件在进入异步编码前就离开挂起池，按钮随之熄灭；正文等提交成功再清空。
+        #expect(capability.pendingImageAttachments.isEmpty)
+        #expect(capability.text == "first")
+        #expect(!viewModel.state.canSend)
+
+        // 编码尚未完成时再次点发送：没有正文也没有附件，必须被忽略。
+        viewModel.send()
+
+        await waitUntil("附件消息未走后台提交") {
+            !capability.backgroundCommits.isEmpty
+        }
+        // 只提交一次，且提交的正是发出去的那张图。
+        #expect(capability.backgroundCommits.count == 1)
+        let commit = try #require(capability.backgroundCommits.first)
+        #expect(commit.imageAttachments.map(\.id) == [image.id])
+    }
+
     @Test("排队的消息不会启动回合")
     func queuedCommitDoesNotStartTurn() async throws {
         let capability = SendActionBarTestCapability()
@@ -180,11 +210,13 @@ struct SendActionBarViewModelTests {
         viewModel.send()
 
         #expect(capability.commits.count == 1)
+        // 进入待发队列也算提交成功：草稿可以清空。
+        #expect(capability.text.isEmpty)
         await awaitSettle()
         #expect(capability.startedCommits.isEmpty)
     }
 
-    @Test("提交返回 nil 时不启动回合")
+    @Test("提交返回 nil 时不启动回合，且保留草稿")
     func nilCommitDoesNotStartTurn() async throws {
         let capability = SendActionBarTestCapability()
         capability.text = "dropped"
@@ -194,14 +226,17 @@ struct SendActionBarViewModelTests {
         viewModel.send()
 
         #expect(capability.commits.count == 1)
+        #expect(capability.text == "dropped")
         await awaitSettle()
         #expect(capability.startedCommits.isEmpty)
     }
 
-    @Test("提交失败时把错误写入错误状态")
+    @Test("提交失败时把错误写入错误状态并保留草稿")
     func sendPropagatesCommitFailure() {
         let capability = SendActionBarTestCapability()
+        let block = CollapsedContentBlock(start: 0, length: 4, title: "boom")
         capability.text = "boom"
+        capability.collapsedBlocks = [block]
         capability.commitError = SendActionBarTestError.failed
         let viewModel = SendActionBarViewModel(capability: capability)
 
@@ -209,6 +244,78 @@ struct SendActionBarViewModelTests {
 
         #expect(capability.errorMessage == SendActionBarTestError.failed.localizedDescription)
         #expect(capability.startedCommits.isEmpty)
+        // 失败后正文与折叠块原样保留，用户修正故障后可直接重试。
+        #expect(capability.text == "boom")
+        #expect(capability.collapsedBlocks == [block])
+        #expect(!capability.isCommittingDraft)
+    }
+
+    @Test("附件提交失败时保留草稿并放回附件")
+    func backgroundCommitFailureKeepsDraft() async throws {
+        let capability = SendActionBarTestCapability()
+        let image = UserImageAttachment(mimeType: "image/png", base64Data: "AAAA")
+        capability.text = "look"
+        capability.pendingImageAttachments = [image]
+        capability.commitError = SendActionBarTestError.failed
+        let viewModel = SendActionBarViewModel(capability: capability)
+
+        viewModel.send()
+
+        // 提交成功前正文不清空；提交中标记负责挡住重复发送。
+        #expect(capability.text == "look")
+        #expect(capability.isCommittingDraft)
+        #expect(!viewModel.state.canSend)
+
+        await waitUntil("附件提交失败后错误未回填") {
+            capability.errorMessage != nil
+        }
+
+        #expect(capability.text == "look")
+        #expect(capability.pendingImageAttachments.map(\.id) == [image.id])
+        #expect(!capability.isCommittingDraft)
+        #expect(viewModel.state.canSend)
+    }
+
+    @Test("附件提交成功后清空正文与折叠块")
+    func backgroundCommitSuccessClearsDraft() async throws {
+        let capability = SendActionBarTestCapability()
+        let block = CollapsedContentBlock(start: 0, length: 5, title: "first")
+        capability.text = "first"
+        capability.collapsedBlocks = [block]
+        capability.pendingImageAttachments = [
+            UserImageAttachment(mimeType: "image/png", base64Data: "AAAA")
+        ]
+        capability.commit = MessageSendCommit(conversationID: UUID(), userMessageID: UUID())
+        let viewModel = SendActionBarViewModel(capability: capability)
+
+        viewModel.send()
+
+        await waitUntil("附件提交未结束") { !capability.isCommittingDraft }
+
+        #expect(capability.text.isEmpty)
+        #expect(capability.collapsedBlocks.isEmpty)
+    }
+
+    @Test("编码期间继续输入时，成功后不清空新草稿")
+    func backgroundCommitSuccessKeepsEditedDraft() async throws {
+        let capability = SendActionBarTestCapability()
+        capability.text = "first"
+        capability.pendingFileAttachments = [
+            UserFileAttachment(fileName: "notes.txt", mimeType: "text/plain", textContent: "notes")
+        ]
+        capability.commit = MessageSendCommit(conversationID: UUID(), userMessageID: UUID())
+        capability.holdsBackgroundCommits = true
+        let viewModel = SendActionBarViewModel(capability: capability)
+
+        viewModel.send()
+        await waitUntil("后台提交未开始") { !capability.backgroundCommits.isEmpty }
+
+        // 编码期间用户继续输入，这份新草稿不能被提交成功的清理抹掉。
+        capability.text = "first edited"
+        capability.releaseBackgroundCommits()
+        await waitUntil("附件提交未结束") { !capability.isCommittingDraft }
+
+        #expect(capability.text == "first edited")
     }
 
     @Test("发送前清除旧的错误提示")
@@ -334,6 +441,11 @@ final class SendActionBarTestCapability: ConversationInputCapability {
     var errorMessage: String?
     /// 草稿里的折叠块区间（草稿级状态，随正文一起清空）。
     var collapsedBlocks: [CollapsedContentBlock] = []
+    /// 草稿提交中标记，两条发送入口共用。
+    var isCommittingDraft = false
+    /// 挂起后台提交，模拟附件编码尚未完成；调用 `releaseBackgroundCommits()` 放行。
+    var holdsBackgroundCommits = false
+    private var backgroundCommitWaiters: [CheckedContinuation<Void, Never>] = []
     var pendingImageAttachments: [UserImageAttachment] = []
     var pendingFileAttachments: [UserFileAttachment] = []
     var selectedConversationID: UUID?
@@ -372,6 +484,29 @@ final class SendActionBarTestCapability: ConversationInputCapability {
         pendingImageAttachments = []
         pendingFileAttachments = []
         clearedAttachments = true
+    }
+
+    // MARK: - Attachment reading
+
+    private(set) var pendingAttachmentReadCount = 0
+    private var attachmentReadWaiters: [CheckedContinuation<Void, Never>] = []
+
+    func beginAttachmentRead() {
+        pendingAttachmentReadCount += 1
+    }
+
+    func endAttachmentRead() {
+        guard pendingAttachmentReadCount > 0 else { return }
+        pendingAttachmentReadCount -= 1
+        guard pendingAttachmentReadCount == 0 else { return }
+        let waiters = attachmentReadWaiters
+        attachmentReadWaiters = []
+        waiters.forEach { $0.resume() }
+    }
+
+    func waitForAttachmentReads() async {
+        guard pendingAttachmentReadCount > 0 else { return }
+        await withCheckedContinuation { attachmentReadWaiters.append($0) }
     }
 
     // MARK: - Send
@@ -414,8 +549,18 @@ final class SendActionBarTestCapability: ConversationInputCapability {
                 collapsedBlocks: collapsedBlocks
             )
         )
+        if holdsBackgroundCommits {
+            await withCheckedContinuation { backgroundCommitWaiters.append($0) }
+        }
         if let commitError { throw commitError }
         return commit
+    }
+
+    /// 放行被 `holdsBackgroundCommits` 挂起的后台提交。
+    func releaseBackgroundCommits() {
+        let waiters = backgroundCommitWaiters
+        backgroundCommitWaiters = []
+        waiters.forEach { $0.resume() }
     }
 
     func startTurn(for commit: MessageSendCommit) async {

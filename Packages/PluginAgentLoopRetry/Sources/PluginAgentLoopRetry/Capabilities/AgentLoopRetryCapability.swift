@@ -1,5 +1,6 @@
 import Foundation
 import ProviderAgentLoop
+import ProviderConversation
 import ProviderMessage
 
 /// 重试协调器关注的回合状态。
@@ -29,6 +30,12 @@ protocol AgentLoopRetryCapability: AnyObject {
 
     /// 查询指定会话的回合状态。
     func turnState(for conversationID: UUID) -> AgentLoopRetryTurnState
+
+    /// 暂停重试期间会话被删除时回调；协调器必须取消该会话的延迟重试。
+    func addConversationDeletionObserver(_ callback: @escaping (UUID) -> Void) -> any AgentLoopRetryObserverHandle
+
+    /// 会话是否仍然存在。退避结束后不能为已删除的会话启动新回合。
+    func conversationExists(for conversationID: UUID) -> Bool
 
     /// 重启指定会话中紧接 `failedTurnID` 之后的回合。
     func retryTurn(in conversationID: UUID, after failedTurnID: UUID) async throws -> AgentLoopOutcome
@@ -63,9 +70,13 @@ typealias AgentLoopRetryFailure = AgentLoopFailure
 @MainActor
 final class AgentLoopRetryCapabilityAdapter: AgentLoopRetryCapability {
     private let agentLoop: any AgentLoopProviding
+    private let conversations: (any ConversationManaging)?
 
-    init(agentLoop: any AgentLoopProviding) {
+    /// - Parameter conversations: 未注入时退化为「始终存在且收不到删除事件」，
+    ///   仅供不关心会话生命周期的测试替身使用；生产必须注入。
+    init(agentLoop: any AgentLoopProviding, conversations: (any ConversationManaging)? = nil) {
         self.agentLoop = agentLoop
+        self.conversations = conversations
     }
 
     func addTurnObserver(_ callback: @escaping (AgentLoopRetryEvent) -> Void) -> any AgentLoopRetryObserverHandle {
@@ -96,8 +107,39 @@ final class AgentLoopRetryCapabilityAdapter: AgentLoopRetryCapability {
         agentLoop.state(for: conversationID) == .failed ? .failed : .other
     }
 
+    func addConversationDeletionObserver(_ callback: @escaping (UUID) -> Void) -> any AgentLoopRetryObserverHandle {
+        guard let conversations else {
+            return AgentLoopRetryClosureHandle {}
+        }
+        let handle = conversations.addConversationObserver { event in
+            if case .deleted(let conversationID) = event {
+                callback(conversationID)
+            }
+        }
+        return AgentLoopRetryClosureHandle { handle.cancel() }
+    }
+
+    func conversationExists(for conversationID: UUID) -> Bool {
+        guard let conversations else { return true }
+        return conversations.conversations.contains { $0.id == conversationID }
+    }
+
     func retryTurn(in conversationID: UUID, after failedTurnID: UUID) async throws -> AgentLoopOutcome {
         try await agentLoop.retryTurn(in: conversationID, after: failedTurnID)
+    }
+}
+
+/// 用闭包包装不同 Provider 的观察句柄，统一成协调器自己的句柄类型。
+@MainActor
+private final class AgentLoopRetryClosureHandle: AgentLoopRetryObserverHandle {
+    private let onCancel: () -> Void
+
+    init(_ onCancel: @escaping () -> Void) {
+        self.onCancel = onCancel
+    }
+
+    func cancel() {
+        onCancel()
     }
 }
 

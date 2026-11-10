@@ -34,6 +34,11 @@ public enum TimeRange: String, CaseIterable, Identifiable {
         case .month1: return 2592000
         }
     }
+
+    /// 仅 1 小时范围使用秒级高频缓冲,更长范围使用分钟级聚合缓冲。
+    public var usesHighResolutionBuffer: Bool {
+        self == .hour1
+    }
 }
 
 @MainActor

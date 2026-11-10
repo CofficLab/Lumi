@@ -18,13 +18,41 @@ enum ResumeToolSupport {
 
     // MARK: - Storage & argument helpers
 
-    /// 当前项目存储路径。无路径时抛 invalidStoragePath。
+    /// 当前调用所属对话绑定的项目路径（规范化）。
+    ///
+    /// - 未绑定项目的对话、或非 Agent 调用时返回 `nil`（无约束）。
+    static func scopedProjectPath() -> String? {
+        if case .conversation(let projectPath) = ResumeConversationProjectScope.binding {
+            return normalizedProjectPath(projectPath)
+        }
+        return nil
+    }
+
+    /// 当前调用所属项目的存储路径。
+    ///
+    /// 对话绑定了项目时按该项目解析，避免用户在对话切换期间导致数据写进
+    /// 另一个对话的项目；对话未绑定项目时回退到当前打开项目
+    /// （此时内核不会因对话切换而改变当前项目，回退不会串项目）。
+    /// 无路径时抛 invalidStoragePath。
     static func storagePath() async throws -> String {
         try await MainActor.run {
+            if let scoped = scopedProjectPath(),
+               let directory = ResumeDesignerRuntime.resumeStorageDirectory(forProjectPath: scoped) {
+                return directory.path
+            }
             let path = WorkspaceStore.shared.projectStoragePath
             guard !path.isEmpty else { throw ResumeStoreError.invalidStoragePath }
             return path
         }
+    }
+
+    /// 标准化项目路径，便于与 UI 当前项目路径比较。
+    private static func normalizedProjectPath(_ path: String?) -> String? {
+        guard let path = path?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty else {
+            return nil
+        }
+        return URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL.path
     }
 
     static func required(_ key: String, _ arguments: [String: ToolArgument]) throws -> String {
@@ -34,8 +62,31 @@ enum ResumeToolSupport {
         return value
     }
 
+    /// 通知 UI 刷新。
+    ///
+    /// 跨项目写入时不刷新：UI 面板展示的是「当前打开项目」的内容，
+    /// 刷新它只会把另一个项目的数据混进来。
+    ///
+    /// `resumeID` 来自工具参数，可能是大小写/空白别名；Store 层会把别名
+    /// 规范化后落盘，UI 选中必须用同一个规范化 ID，否则精确匹配不到文档
+    /// 会清空当前预览。无法规范化的 ID 原样传递（不可能匹配到任何文档）。
     static func notify(resumeID: String? = nil) async {
-        await MainActor.run { WorkspaceStore.shared.reload(selectResume: resumeID) }
+        let canonicalResumeID = resumeID.flatMap { try? ResumeDocumentStore.validatedSlug($0) }
+        await MainActor.run {
+            guard showsCurrentProject() else { return }
+            WorkspaceStore.shared.reload(selectResume: canonicalResumeID ?? resumeID)
+        }
+    }
+
+    /// 本次调用是否作用于 UI 正在显示的项目。
+    ///
+    /// 未绑定项目（非 Agent 调用或对话未绑定）时视为当前项目；
+    /// 绑定项目时必须与 UI 当前项目一致，后台项目的失败/刷新不得
+    /// 修改另一个项目的界面状态。
+    @MainActor
+    static func showsCurrentProject() -> Bool {
+        guard let scoped = scopedProjectPath() else { return true }
+        return scoped == normalizedProjectPath(WorkspaceStore.shared.currentProjectPath)
     }
 
     static func resumeSummary(_ document: ResumeDocument) -> String {
@@ -141,11 +192,7 @@ enum ResumeToolSupport {
     }
 
     static func int(_ arguments: [String: ToolArgument], _ key: String) -> Int? {
-        guard let value = arguments[key]?.value else { return nil }
-        if let int = value as? Int { return int }
-        if let number = value as? NSNumber { return number.intValue }
-        if let string = value as? String { return Int(string) }
-        return nil
+        ToolArgumentNumber.int(arguments[key]?.value)
     }
 
     static func array(_ arguments: [String: ToolArgument], _ key: String) -> [Any] {

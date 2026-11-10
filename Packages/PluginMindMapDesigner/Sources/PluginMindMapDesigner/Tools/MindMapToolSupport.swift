@@ -22,13 +22,33 @@ enum MindMapToolSupport {
 
     // MARK: - Project Map Resolution
 
-    /// 当前已打开项目的路径（来自 Runtime 缓存）。
-    static func currentProjectPath() async -> String? {
-        await MainActor.run {
-            MindMapDesignerRuntime.currentProjectPath?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .nilIfEmpty
+    /// 当前调用所属对话绑定的项目路径（规范化）。
+    ///
+    /// - 未绑定项目的对话、或非 Agent 调用时返回 `nil`（无约束）。
+    static func scopedProjectPath() -> String? {
+        if case .conversation(let projectPath) = MindMapConversationProjectScope.binding {
+            return normalizedProjectPath(projectPath)
         }
+        return nil
+    }
+
+    /// 当前调用所属项目的 store。
+    ///
+    /// 对话绑定了项目时使用该项目的 store（与 UI 当前项目不同时为隔离实例），
+    /// 避免用户在对话切换期间导致数据写进另一个对话的项目；
+    /// 对话未绑定项目时用 UI 当前项目的 store。
+    @MainActor
+    static func store() -> MindMapStore {
+        MindMapDesignerRuntime.store(forProjectPath: scopedProjectPath())
+    }
+
+    /// 标准化项目路径，便于与 UI 当前项目路径比较。
+    private static func normalizedProjectPath(_ path: String?) -> String? {
+        guard let path = path?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty else {
+            return nil
+        }
+        return URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL.path
     }
 
     /// 所有工具都固定操作当前项目内的思维导图。
@@ -38,16 +58,27 @@ enum MindMapToolSupport {
 
     /// 解析工具要操作的思维导图：优先读可选 mapId，缺省回退到选中思维导图。
     /// 返回思维导图快照与固定的项目作用域。
-    static func resolveMap(_ arguments: [String: ToolArgument]) async throws -> (MindMap, MindMapScope) {
+    ///
+    /// - Parameter reloadingDisk: 为 `true` 时先与磁盘对齐（普通工具以磁盘为准）。
+    ///   显式保存必须传 `false`：reload 会把 backing JSON 已缺失的地图从内存列表
+    ///   抹掉，导致「保存当前状态」反而无从保存。
+    static func resolveMap(
+        _ arguments: [String: ToolArgument],
+        reloadingDisk: Bool = true
+    ) async throws -> (MindMap, MindMapScope) {
         let scope = try await resolveScope(arguments)
         let explicitId = string(arguments, "mapId")?.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return try await MainActor.run {
-            let store = MindMapStore.shared
+            let store = store()
             guard !store.projectStoragePath.isEmpty else {
                 throw MindMapStoreError.projectRequired
             }
             if let explicitId, !explicitId.isEmpty {
+                // 内存快照可能是缓存的旧状态，先与磁盘对齐再解析。
+                if reloadingDisk {
+                    store.reload()
+                }
                 if let match = store.maps(for: scope).first(where: { $0.id == explicitId }) {
                     return (match, scope)
                 }
@@ -59,6 +90,11 @@ enum MindMapToolSupport {
                 }
                 throw MindMapStoreError.mapNotFound(explicitId)
             }
+            // 未指定 mapId 时也以磁盘为准：缓存的 store 可能还没看到
+            // 别的入口新建的导图。
+            if reloadingDisk {
+                store.reload()
+            }
             guard let selected = store.selectedMap else {
                 throw MindMapStoreError.noSelectedMap
             }
@@ -66,9 +102,23 @@ enum MindMapToolSupport {
         }
     }
 
+    /// 显式把地图写入其作用域目录；失败必须抛给调用方，不能报告保存成功。
+    static func save(_ map: MindMap, scope: MindMapScope) async throws {
+        let path = await MainActor.run { store().storagePath(for: scope) }
+        guard !path.isEmpty else { throw MindMapStoreError.projectRequired }
+        try MindMapFileStore.save(map, storagePath: path)
+    }
+
     /// 写操作完成后刷新项目内列表并保持选中。
+    ///
+    /// 跨项目写入时不刷新 UI：面板展示的是「当前打开项目」的内容，
+    /// 刷新它只会把另一个项目的数据混进来。
     static func notify(scope: MindMapScope, mapId: String?) async {
         await MainActor.run {
+            if let scoped = scopedProjectPath(),
+               scoped != normalizedProjectPath(MindMapStore.shared.currentProjectPath) {
+                return
+            }
             MindMapStore.shared.reload(scope: scope, selectMapId: mapId)
         }
     }

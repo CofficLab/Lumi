@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationSpeed 的实现包，包含 8 个主要类型；当前测试覆盖 16 条用例。
+PluginConversationSpeed 的实现包，包含 8 个主要类型；当前测试覆盖 21 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 3 个，用例总数: 16
+测试文件: 3 个，用例总数: 21
 
 核心组件（源码目录）:
 - `Observers/`
@@ -29,9 +29,9 @@ PluginConversationSpeed 的实现包，包含 8 个主要类型；当前测试�
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **综合**（6 条）：由 `speedPluginInstantiates`、`speedViewModelUpdatesFromMessageSnapshot`、`speedViewModelClearsWhenConversationIsDeselected` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **SpeedModels**（7 条）：由 `speedDurationUsesTheLongerAvailableRequestDuration`、`speedDurationFallsBackToEitherPositiveMeasurement`、`speedRequiresOutputTokensAndPositiveDuration` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **SpeedObserver**（3 条）：由 `conversationObserverLoadsAndTracksTheSelectedConversation`、`conversationObserverCancelStopsFurtherSelectionUpdates`、`messageObserverDebouncesSelectedConversationAndIgnoresOtherConversations` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **综合**（8 条）：由 `speedPluginInstantiates`、`speedViewModelUpdatesFromMessageSnapshot`、`speedViewModelClearsWhenConversationIsDeselected`、`speedViewModelReadsLegacyMetadataTiming` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **SpeedModels**（9 条）：由 `speedDurationUsesTheLongerAvailableRequestDuration`、`speedDurationFallsBackToEitherPositiveMeasurement`、`legacyMetadataTimingRestoresHistoricalSpeedAndTTFT` 等用例锁定——强类型计时缺失时必须回退到旧版 metadata（**#1029**）。
+- **SpeedObserver**（4 条）：由 `conversationObserverLoadsAndTracksTheSelectedConversation`、`conversationObserverCancelStopsFurtherSelectionUpdates`、`conversationObserverBindsNewSelectionBeforeSnapshotArrives` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -53,27 +53,32 @@ PluginConversationSpeed 的实现包，包含 8 个主要类型；当前测试�
 | 14 | SpeedObserver | conversationObserverLoadsAndTracksTheSelectedConversation | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `conversationObserverLoadsAndTracksTheSelectedConversation` |
 | 15 | SpeedObserver | conversationObserverCancelStopsFurtherSelectionUpdates | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `conversationObserverCancelStopsFurtherSelectionUpdates` |
 | 16 | SpeedObserver | messageObserverDebouncesSelectedConversationAndIgnoresOtherConversations | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `messageObserverDebouncesSelectedConversationAndIgnoresOtherConversations` |
+| 17 | SpeedObserver | 切换选中会话时立即绑定新会话并清空旧指标，不等异步快照返回 | — | 执行该用例 | 断言成立 | P0 | ✅ 已覆盖 | `conversationObserverBindsNewSelectionBeforeSnapshotArrives` |
+| 18 | 综合 | 最新响应缺少速度指标时 Current speed 不可用且详情来自最新响应 | 会话内有 A（有指标）与 B（无 outputTokenCount）两条 assistant | 选中会话后读取 ViewModel | cachedTPS 为 nil、原因为 missingOutputTokens、model/provider 来自 B、历史保留 A | P0 | ✅ 已覆盖 | `speedViewModelShowsLatestResponseWhenItLacksMetrics` |
+| 19 | 综合 | 旧消息仅 metadata 有计时时 ViewModel 仍展示 TPS/TTFT（**#1029**） | assistant 消息无强类型计时，metadata 含 latency/streaming/TTFT | 选中会话后读取 ViewModel | TPS 20、历史 1 条、TTFT 2000、状态为可用 | P0 | ✅ 已覆盖 | `speedViewModelReadsLegacyMetadataTiming` |
+| 20 | SpeedModels | 强类型计时缺失时从 metadata 恢复历史速度与 TTFT（**#1029**） | 同上，outputTokenCount = 120 | 读取 `speedDurationMs` / `speedTokensPerSecond` / `speedTimeToFirstTokenMs` | 6000 ms、20 tokens/s、2000 ms | P0 | ✅ 已覆盖 | `legacyMetadataTimingRestoresHistoricalSpeedAndTTFT` |
+| 21 | SpeedModels | 强类型计时优先于 metadata | 强类型与 metadata 同时存在 | 读取时长与 TTFT | 取强类型值 | P1 | ✅ 已覆盖 | `typedTimingTakesPrecedenceOverLegacyMetadata` |
 
-> 说明：全部 **16 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **21 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
-- P1: 已覆盖 16 / 16
+- P0: 已覆盖 4 / 4
+- P1: 已覆盖 17 / 17
 - P2: 已覆盖 0 / 0
-- **合计: 16 / 16**（仅表示清单场景，非源码覆盖率）
+- **合计: 21 / 21**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（16 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（4 条）
+- **P1**: 其余功能性用例（17 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 16 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 21 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

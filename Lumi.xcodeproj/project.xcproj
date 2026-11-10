@@ -24,6 +24,12 @@
       "kind": "local",
       "path": "Packages/KitBootstrapEnvironment",
     }, {
+      "kind": "remote",
+      "repository": "https://github.com/CofficLab/LumiProviders.git",
+      "version": {
+        "up-to-next-major-version": "1.22.0",
+      },
+    }, {
       "kind": "local",
       "path": "Packages/FactoryLumi",
     }, {
@@ -280,6 +286,10 @@
         }, {
           "package": "KitBootstrapEnvironment",
           "product-name": "KitBootstrapEnvironment",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": "LumiProviders",
+          "product-name": "MenuBarHostKit",
           "build-phase": { "build-phase": "frameworks" },
         }, {
           "package": "PluginAppUpdate",

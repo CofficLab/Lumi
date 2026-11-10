@@ -49,7 +49,7 @@ public final class EditorSessionService {
         }
 
         if state.currentFileURL != url {
-            state.loadFile(from: url)
+            state.loadFile(from: url, restoringSession: session)
         }
     }
 
@@ -72,7 +72,7 @@ public final class EditorSessionService {
         }
 
         if state.currentFileURL != fileURL {
-            state.loadFile(from: fileURL)
+            state.loadFile(from: fileURL, restoringSession: session)
         }
     }
 
@@ -129,12 +129,27 @@ public final class EditorSessionService {
 
     @discardableResult
     public func goBack() -> EditorSession? {
-        sessionStore.goBack()
+        applyNavigationEntry(sessionStore.goBack())
     }
 
     @discardableResult
     public func goForward() -> EditorSession? {
-        sessionStore.goForward()
+        applyNavigationEntry(sessionStore.goForward())
+    }
+
+    /// 历史导航不能只切 `activeSessionID`：还要把正文切到历史项对应的文件，
+    /// 并应用该历史项保存的快照，否则选中的 Session 与屏幕上的内容会分裂。
+    @discardableResult
+    private func applyNavigationEntry(_ entry: EditorSession?) -> EditorSession? {
+        guard let entry else { return nil }
+        guard let fileURL = entry.fileURL else { return entry }
+
+        if state.currentFileURL == fileURL {
+            state.applySessionRestore(entry)
+        } else {
+            state.loadFile(from: fileURL, restoringSession: entry)
+        }
+        return entry
     }
 
     public func syncActiveSession(from snapshot: EditorSession) {

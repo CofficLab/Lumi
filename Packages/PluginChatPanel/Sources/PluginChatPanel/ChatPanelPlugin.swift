@@ -173,15 +173,28 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             }
             rootView.setContentViewHidden(isChatActive)
             rootView.setContentHeaderViewHidden(!isChatActive)
+
+            // Restore the last active tab **before** narrowing the visible
+            // categories.
+            //
+            // - Important: 顺序不能反（#887）。`setVisibleCategories` 内部会
+            //   同步调用 `reconcileActiveTab()`：原标签在新的可见集合里不可见
+            //   时，它会回退到 `visibleTabs[0]` 并立刻发出 `activeTabChanged`。
+            //   Rail 观察者同步响应并把**这个临时回退项**写进偏好存储，于是
+            //   随后的恢复读到的已经是被覆盖过的错误值，用户的选择永久丢失。
+            //
+            //   先发起恢复能让 Rail 走 `pendingActiveTabID` 这条路：
+            //   `reconcileActiveTab` 里 pending 的优先级高于回退项，因此恢复
+            //   目标会被正确接住，不会被回退顶掉。
+            if isChatActive {
+                self.restoreSavedRailTab()
+            }
+
             railView?.setVisibleCategories(isChatActive ? [.chat, .fileTree] : Set(RailViewCategory.allCases))
             if let railView {
                 rootView.setRailView(railView.makeRailView())
             }
             rootView.setRailViewVisible(isChatActive || (railView?.hasVisibleTabs ?? false))
-            // Restore the last active tab when Chat becomes active.
-            if isChatActive, let savedTabID = activeTabStore?.load() {
-                railView?.activateTabWhenAvailable(id: savedTabID)
-            }
         }])
         
         activityBar.activateItem(id: entryID)

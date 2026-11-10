@@ -68,22 +68,7 @@ public enum RAGLexicalFileSearcher {
     ) throws -> [RAGSearchResult]? {
         guard let executable = ripgrepExecutable() else { return nil }
 
-        let pattern = "(?i)(\(terms.map { NSRegularExpression.escapedPattern(for: $0) }.joined(separator: "|")))"
-        var arguments = [
-            "--json",
-            "--no-heading",
-            "--color", "never",
-            "--max-count", "3",
-            "--max-filesize", "1500K",
-            "--context", "3",
-        ]
-        for fileExtension in RAGFileScanner.allowedExtensions {
-            arguments.append(contentsOf: ["--glob", "*.\(fileExtension)"])
-        }
-        for directory in RAGFileScanner.grepExcludeDirPatterns {
-            arguments.append(contentsOf: ["--glob", "!\(directory)/**"])
-        }
-        arguments.append(contentsOf: ["--regexp", pattern, projectPath])
+        let arguments = ripgrepArguments(terms: terms, projectPath: projectPath)
 
         let outputPipe = Pipe()
         let process = Process()
@@ -172,6 +157,32 @@ public enum RAGLexicalFileSearcher {
                     lineRange: RAGLineRange(startLine: startLine, endLine: endLine)
                 )
             }
+    }
+
+    /// ripgrep 参数。
+    ///
+    /// `--no-ignore` 必须保留：索引扫描（`RAGFileScanner`）和路径搜索
+    /// （`RAGFilePathSearcher`）都不读取 `.gitignore`，词法搜索若沿用
+    /// ripgrep 默认 ignore 规则，被忽略的源码会在有匹配时被静默排除（回归 #1113）。
+    static func ripgrepArguments(terms: [String], projectPath: String) -> [String] {
+        let pattern = "(?i)(\(terms.map { NSRegularExpression.escapedPattern(for: $0) }.joined(separator: "|")))"
+        var arguments = [
+            "--json",
+            "--no-heading",
+            "--no-ignore",
+            "--color", "never",
+            "--max-count", "3",
+            "--max-filesize", "1500K",
+            "--context", "3",
+        ]
+        for fileExtension in RAGFileScanner.allowedExtensions {
+            arguments.append(contentsOf: ["--glob", "*.\(fileExtension)"])
+        }
+        for directory in RAGFileScanner.grepExcludeDirPatterns {
+            arguments.append(contentsOf: ["--glob", "!\(directory)/**"])
+        }
+        arguments.append(contentsOf: ["--regexp", pattern, projectPath])
+        return arguments
     }
 
     private static func ripgrepExecutable() -> URL? {

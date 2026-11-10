@@ -39,20 +39,20 @@ public struct CreateGoalV2Tool: SuperAgentTool, @unchecked Sendable {
         conversationID: UUID,
         arguments: [String: ToolArgument]
     ) async throws -> String {
-        guard let title = GoalTaskToolSupport.string(arguments, "title"), !title.isEmpty else { return "Error: title is required" }
-        guard let manager = GoalTaskToolSupport.manager() else { return "Error: goal task manager is not initialized" }
+        guard let title = GoalTaskToolSupport.string(arguments, "title"), !title.isEmpty else { throw GoalTaskToolSupport.GoalTaskToolError(message: "title is required") }
+        guard let manager = GoalTaskToolSupport.manager() else { throw GoalTaskToolSupport.GoalTaskToolError(message: "goal task manager is not initialized") }
         let conversationId = conversationID.uuidString
         let tasks = GoalTaskToolSupport.taskInputs(arguments["tasks"]?.value)
-        guard !tasks.isEmpty else { return "Error: no valid tasks found" }
+        guard !tasks.isEmpty else { throw GoalTaskToolSupport.GoalTaskToolError(message: "no valid tasks found") }
         let existingGoals = await manager.fetchGoals(conversationId: conversationId)
         if let active = existingGoals.first(where: { ![Goal.GoalStatus.completed, .failed, .skipped].contains($0.status) }) {
-            return "⚠️ Cannot create new goal: there is an unfinished goal.\n\n**Current goal:** \(active.title)\n**Goal ID:** `\(active.id)`\n**Status:** \(active.status.rawValue)\n\nComplete or skip it with `update_goal_status` (goal_id: `\(active.id)`) before creating another goal."
+            throw GoalTaskToolSupport.GoalTaskToolError(message: "Cannot create new goal: there is an unfinished goal.\n\n**Current goal:** \(active.title)\n**Goal ID:** `\(active.id)`\n**Status:** \(active.status.rawValue)\n\nComplete or skip it with `update_goal_status` (goal_id: `\(active.id)`) before creating another goal.")
         }
         do {
             let result = try await manager.createGoal(conversationId: conversationId, title: title, description: GoalTaskToolSupport.string(arguments, "description"), successCriteria: GoalTaskToolSupport.string(arguments, "successCriteria"), tasks: tasks)
             GoalTaskToolSupport.changed(conversationId)
             let items = result.tasks.enumerated().map { "\($0.offset + 1). \($0.element.status == .inProgress ? "▶️" : "⏳") [\($0.element.id)] **\($0.element.title)**" }.joined(separator: "\n")
             return "✅ Created goal: **\(result.goal.title)**\n\n**Goal ID:** `\(result.goal.id)` — you MUST use this `goal_id` in `update_goal_status` / `add_tasks_to_goal` / `get_goal_progress`. Keep it for the whole conversation.\n\n**Tasks (\(result.tasks.count)):**\n\(items)\n\nNow start working on the first task (or first parallel group)."
-        } catch { return "Error: failed to create goal: \(error.localizedDescription)" }
+        } catch { throw GoalTaskToolSupport.GoalTaskToolError(message: "failed to create goal: \(error.localizedDescription)") }
     }
 }

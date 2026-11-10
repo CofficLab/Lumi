@@ -42,15 +42,34 @@ public struct RAGCodeSearchTool: SuperAgentTool {
 
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
 
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        ToolCallResult(content: try await execute(
+            arguments: arguments,
+            conversationProjectPath: await context.conversationProjectPath()
+        ))
+    }
+
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await execute(arguments: arguments, conversationProjectPath: nil)
+    }
+
+    private func execute(
+        arguments: [String: ToolArgument],
+        conversationProjectPath: String?
+    ) async throws -> String {
         guard let query = (arguments["query"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
               !query.isEmpty else {
             return "## Code Search\n\nMissing required `query` parameter."
         }
         let explicitPath = (arguments["project_path"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let currentPath = await MainActor.run { ProjectRAGRuntime.provider?.currentProjectPath }
+        // 优先显式参数，其次工具调用所属会话绑定的项目，最后回退到 UI 当前项目。
         let projectPath = explicitPath?.isEmpty == false
             ? explicitPath
-            : await MainActor.run { ProjectRAGRuntime.provider?.currentProjectPath }
+            : conversationProjectPath ?? currentPath
         guard let projectPath, !projectPath.isEmpty else {
             return "## Code Search\n\nOpen a project or provide `project_path`."
         }

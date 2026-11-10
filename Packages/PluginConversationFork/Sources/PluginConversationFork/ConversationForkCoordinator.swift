@@ -96,18 +96,35 @@ final class ConversationForkCoordinator {
         let summaryOutcome = await summarizer.summarize(conversationID: conversationID)
 
         // 透传旧对话的标题 / 项目 / 模型到新对话。
+        // 项目必须用显式绑定：源对话无项目时传 `.none`，否则旧接口会把
+        // `nil` 解释成「沿用当前项目」，副本被悄悄挂到当前项目上。
         let oldSummary = conversations.conversations.first { $0.id == conversationID }
+        let binding: ProjectBinding = oldSummary?.projectPath.map(ProjectBinding.project) ?? .none
         let newID: UUID
         do {
             newID = try conversations.createConversation(
                 title: oldSummary?.title,
-                projectPath: oldSummary?.projectPath,
+                binding: binding,
                 modelID: conversations.modelID(for: conversationID)
             )
         } catch {
             throw ForkError.createFailed
         }
         conversations.selectConversation(id: newID)
+
+        // 新建对话默认取全局 New Chat 设置；分叉应沿用源对话的会话级设置，
+        // 否则 Chat 对话会分叉成 Build 并重新获得工具能力，推理档位与详细程度也会被重置。
+        conversations.setAutomationLevel(conversations.automationLevel(for: conversationID), for: newID)
+        conversations.setVerbosity(conversations.verbosity(for: conversationID), for: newID)
+        // 源对话可能显式关闭推理（存 nil）；此时不能回退到全局档位。
+        if let effort = oldSummary?.reasoningEffort {
+            conversations.setReasoningEffort(effort, for: newID)
+        } else {
+            conversations.clearReasoningEffort(for: newID)
+        }
+        // 创建对话时语言取自当时的 UI 选中会话；摘要期间可能已切换，
+        // 这里按启动时锁定的源对话重新设置，避免继承另一个会话的语言。
+        conversations.setLanguage(conversations.language(for: conversationID), for: newID)
 
         // 续写失败不致命：摘要已作为首条消息写入新对话，用户可以在输入区重试。
         try? await sender.sendMessage(summaryOutcome.summary, conversationID: newID)

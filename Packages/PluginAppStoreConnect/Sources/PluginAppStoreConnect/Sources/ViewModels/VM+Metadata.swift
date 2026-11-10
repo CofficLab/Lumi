@@ -5,7 +5,13 @@ extension VM {
         guard let version = selectedVersion else { return }
         let preferredLocalizationID = selectedLocalizationID
         await runBusy {
-            localizations = try await client.listLocalizations(versionID: version.id)
+            let fetched = try await client.listLocalizations(versionID: version.id)
+            // 请求期间可能已经切到别的版本或 App：迟到的本地化内容不能覆盖当前选择。
+            guard selectedVersion?.id == version.id else {
+                Self.logger.info("\(self.t)discarded stale localizations for version: \(version.id)")
+                return
+            }
+            localizations = fetched
             if let preferredLocalizationID,
                localizations.contains(where: { $0.id == preferredLocalizationID }) {
                 selectedLocalizationID = preferredLocalizationID

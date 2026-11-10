@@ -17,6 +17,11 @@ public struct PrototypeDesignerView: View {
     @ObservedObject private var workspace: WorkspaceStore
     @State private var mode: Mode = .preview
     @State private var isExporting = false
+    /// 待确认覆盖的导出目录。
+    @State private var pendingExportDirectory: URL?
+    /// 与待导出目录冲突的文件名。
+    @State private var pendingExportConflicts: [String] = []
+    @State private var isConfirmingOverwrite = false
     private let onProjectAvailabilityChanged: ((Bool) -> Void)?
 
     // MARK: - 初始化
@@ -56,7 +61,7 @@ public struct PrototypeDesignerView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { notifyProjectAvailability() }
-        .onChange(of: workspace.projects.count) { _, _ in notifyProjectAvailability() }
+        .onChange(of: workspace.projects.count) { _ in notifyProjectAvailability() }
         .alert(
             PrototypeLocalization.string("Operation Failed"),
             isPresented: errorBinding
@@ -65,6 +70,25 @@ public struct PrototypeDesignerView: View {
         } message: {
             Text(workspace.lastError ?? "")
         }
+        .confirmationDialog(
+            PrototypeLocalization.string("Some files already exist in the destination folder."),
+            isPresented: $isConfirmingOverwrite
+        ) {
+            Button(PrototypeLocalization.string("Overwrite")) {
+                Task { await confirmOverwrite() }
+            }
+            Button(PrototypeLocalization.string("Cancel"), role: .cancel) {
+                cancelOverwrite()
+            }
+        } message: {
+            Text(overwriteConflictMessage)
+        }
+    }
+
+    /// 覆盖确认弹窗的正文：列出冲突文件名。
+    private var overwriteConflictMessage: String {
+        let header = PrototypeLocalization.string("The following files will be replaced:")
+        return "\(header)\n\(pendingExportConflicts.joined(separator: "\n"))"
     }
 
     // MARK: - 子视图
@@ -118,6 +142,8 @@ public struct PrototypeDesignerView: View {
     }
 
     /// 把整个原型项目的每一屏渲染成 PNG 导出到用户选择的目录。
+    ///
+    /// 目标目录里已有同名文件时先让用户确认，避免静默覆盖用户的文件。
     @MainActor
     private func exportSelectedProject() async {
         guard let project = workspace.selectedProject, !project.screens.isEmpty else { return }
@@ -129,6 +155,24 @@ public struct PrototypeDesignerView: View {
         panel.prompt = PrototypeLocalization.string("Export")
         guard panel.runModal() == .OK, let directory = panel.url else { return }
 
+        let filenames = PrototypeExportNaming.filenames(for: project)
+        let conflicts = PrototypeExportNaming.existingConflicts(
+            in: directory,
+            filenames: filenames
+        )
+        if !conflicts.isEmpty {
+            pendingExportDirectory = directory
+            pendingExportConflicts = conflicts
+            isConfirmingOverwrite = true
+            return
+        }
+
+        await performExport(to: directory, project: project)
+    }
+
+    /// 导出已确认的目录。
+    @MainActor
+    private func performExport(to directory: URL, project: PrototypeProject) async {
         isExporting = true
         defer { isExporting = false }
         do {
@@ -152,7 +196,7 @@ public struct PrototypeDesignerView: View {
                     fileURL: resolved.htmlURL,
                     device: device
                 )
-                let filename = String(format: "%02d-%@.png", screen.order + 1, screen.id)
+                let filename = PrototypeExportNaming.filename(for: screen)
                 try data.write(
                     to: directory.appendingPathComponent(filename),
                     options: .atomic
@@ -163,6 +207,23 @@ public struct PrototypeDesignerView: View {
         } catch {
             workspace.setError(error)
         }
+    }
+
+    /// 用户确认覆盖后继续导出。
+    @MainActor
+    private func confirmOverwrite() async {
+        guard let directory = pendingExportDirectory,
+              let project = workspace.selectedProject else { return }
+        pendingExportDirectory = nil
+        pendingExportConflicts = []
+        await performExport(to: directory, project: project)
+    }
+
+    /// 用户取消覆盖，放弃本次导出。
+    @MainActor
+    private func cancelOverwrite() {
+        pendingExportDirectory = nil
+        pendingExportConflicts = []
     }
 
     @MainActor

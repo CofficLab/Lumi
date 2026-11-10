@@ -5,14 +5,6 @@ import os
 import ProviderToolManager
 import ProviderConversation
 
-private struct ToolInteractionPayload: Codable {
-    let toolCallID: String
-    let kind: String
-    let question: String
-    let options: [String]
-    let mode: String
-}
-
 /// PluginToolManager 自己实现的工具注册、执行、授权和调用记录管理。
 @MainActor
 public final class ToolManager: ToolManagerProviding, SuperLog {

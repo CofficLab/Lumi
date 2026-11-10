@@ -19,12 +19,47 @@ public enum MessageTimelineEvent {
     public static let agentLoopRetryRetryAfterKey = "agentLoopRetryRetryAfter"
     public static let goalTaskContinuation = "goal-task-continuation"
     public static let goalTaskContinuationRenderKind = "goal-task-continuation"
+    /// 用户主动切换模型的结构化时间线事件。
+    ///
+    /// 该消息把「从哪个供应商/模型切到了哪个供应商/模型」显式呈现给用户，
+    /// 只用于界面时间线，不应进入后续 LLM 上下文。
+    public static let modelSwitched = "model-switched"
+    public static let modelSwitchedRenderKind = "model-switched"
+    /// 切换前的供应商 ID。
+    public static let modelSwitchedFromProviderIDKey = "modelSwitchedFromProviderID"
+    /// 切换前的模型名。
+    public static let modelSwitchedFromModelNameKey = "modelSwitchedFromModelName"
+    /// 切换后的供应商 ID。
+    public static let modelSwitchedToProviderIDKey = "modelSwitchedToProviderID"
+    /// 切换后的模型名。
+    public static let modelSwitchedToModelNameKey = "modelSwitchedToModelName"
     /// App Store Connect 提交审核的结构化时间线事件。
     ///
     /// 该消息把「即将提交的版本 / Build / 平台 / 状态 / 本地化」显式呈现给用户，
     /// 只用于界面时间线，不应进入后续 LLM 上下文。
     public static let appStoreSubmission = "app-store-submission"
     public static let appStoreSubmissionRenderKind = "app-store-submission"
+    /// Finder 插件的卡片时间线事件。
+    ///
+    /// 插件在工具执行后插入一条带该标记的消息，由插件自己注册的渲染器
+    /// 画成可交互卡片。这条消息只是给人看的界面产物，不是一次对话轮次，
+    /// 因此不应进入后续 LLM 上下文。
+    public static let finder = "finder"
+    public static let finderRenderKind = "finder-card"
+    /// HTML 画布插件的卡片时间线事件。
+    ///
+    /// 插件在工具执行后插入一条带该标记的消息，由插件自己注册的渲染器
+    /// 画成一张 HTML 界面卡片。这条消息只是给人看的界面产物，不是一次对话轮次，
+    /// 因此不应进入后续 LLM 上下文。
+    public static let htmlCanvas = "html-canvas"
+    public static let htmlCanvasRenderKind = "html-canvas"
+    /// 磁盘测速插件的卡片时间线事件。
+    ///
+    /// 插件在工具执行后插入一条带该标记的消息，由插件自己注册的渲染器
+    /// 画成一张测速进度卡片。这条消息只是给人看的界面产物，不是一次对话轮次，
+    /// 因此不应进入后续 LLM 上下文。
+    public static let diskSpeed = "disk-speed"
+    public static let diskSpeedRenderKind = "disk-speed"
     public static let goalTaskContinuationActionKey = "goalTaskContinuationAction"
     public static let goalTaskContinuationAttemptKey = "goalTaskContinuationAttempt"
     public static let goalTaskContinuationMaxAttemptsKey = "goalTaskContinuationMaxAttempts"
@@ -72,12 +107,40 @@ public enum MessageTimelineEvent {
             || message.metadata[metadataKey] == appStoreSubmission
     }
 
+    /// 是否属于「用户主动切换模型」的结构化时间线事件。
+    public static func isModelSwitched(_ message: Message) -> Bool {
+        message.renderKind == modelSwitchedRenderKind
+            || message.metadata[metadataKey] == modelSwitched
+    }
+
+    /// 是否属于 Finder 插件的卡片时间线事件。
+    public static func isFinder(_ message: Message) -> Bool {
+        message.renderKind == finderRenderKind
+            || message.metadata[metadataKey] == finder
+    }
+
+    /// 是否属于 HTML 画布插件的卡片时间线事件。
+    public static func isHTMLCanvas(_ message: Message) -> Bool {
+        message.renderKind == htmlCanvasRenderKind
+            || message.metadata[metadataKey] == htmlCanvas
+    }
+
+    /// 是否属于磁盘测速插件的卡片时间线事件。
+    public static func isDiskSpeed(_ message: Message) -> Bool {
+        message.renderKind == diskSpeedRenderKind
+            || message.metadata[metadataKey] == diskSpeed
+    }
+
     /// 仅用于界面时间线的消息不应被重新发送给 LLM。
     public static func isTimelineEvent(_ message: Message) -> Bool {
         isContextCompaction(message)
             || isAgentLoopRetry(message)
             || isGoalTaskContinuation(message)
             || isAppStoreSubmission(message)
+            || isModelSwitched(message)
+            || isFinder(message)
+            || isHTMLCanvas(message)
+            || isDiskSpeed(message)
     }
 
     /// 只有真正用于压缩上下文的事件才应显示在消息列表中。

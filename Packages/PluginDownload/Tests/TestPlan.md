@@ -5,7 +5,7 @@
 DownloadPlugin Lumi plugin: Download file management.
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 8
+测试文件: 1 个，用例总数: 11
 
 核心组件（源码目录）:
 - `Services/`
@@ -22,7 +22,7 @@ DownloadPlugin Lumi plugin: Download file management.
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
-- **DownloadPlugin**（8 条）：由 `testPluginInfo`、`testDefaultDownloadDirectory`、`testExtractFilenameFromURL` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **DownloadPlugin**（11 条）：由 `testPluginInfo`、`testDefaultDownloadDirectory`、`testExtractFilenameFromURL` 等用例锁定；改动该模块时优先跑对应测试文件。
 
 ## 测试用例清单
 
@@ -36,27 +36,30 @@ DownloadPlugin Lumi plugin: Download file management.
 | 6 | DownloadPlugin | testExtractFilenameFromQueryFileParam | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testExtractFilenameFromQueryFileParam` |
 | 7 | DownloadPlugin | testExtractFilenameDecodesPercentEncodedQueryValue | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testExtractFilenameDecodesPercentEncodedQueryValue` |
 | 8 | DownloadPlugin | testExtractFilenameSkipsMalformedQueryPairs | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testExtractFilenameSkipsMalformedQueryPairs` |
+| 9 | DownloadPlugin | 批量 URL 分类保留无效项及其原始顺序 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testClassifyBatchURLsKeepsInvalidEntriesInOrder` |
+| 10 | DownloadPlugin | 批量结果有失败项时汇总标记为部分完成 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testBatchSummaryFlagsPartialCompletion` |
+| 11 | DownloadPlugin | 工具失败以抛出表达而非返回错误字符串 | 无 | 调用 `DownloadFileV2Tool` 传非法 URL、`DownloadProgressV2Tool` 缺 task_id | 均抛出 `ToolExecutionError` | P1 | ✅ 已覆盖 | `testToolsThrowForInvalidArguments` |
 
-> 说明：全部 **8 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **11 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 7 / 7
+- P1: 已覆盖 10 / 10
 - P2: 已覆盖 1 / 1
-- **合计: 8 / 8**（仅表示清单场景，非源码覆盖率）
+- **合计: 11 / 11**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（7 条）
+- **P1**: 其余功能性用例（10 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 8 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 11 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

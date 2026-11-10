@@ -63,6 +63,35 @@ struct KitPrototypeTests {
         #expect(PrototypeHTMLLinter().lint(html: fragment).errors.map(\.code).contains("incomplete_document"))
     }
 
+    @Test func linterAcceptsInlineSVGNamespace() {
+        let html = """
+        <!doctype html><html><head><meta name="viewport" content="width=device-width"></head>
+        <body style="background:#fff; overflow:hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z"/></svg>
+        </body></html>
+        """
+        let report = PrototypeHTMLLinter().lint(html: html)
+        #expect(!report.errors.map(\.code).contains("remote_resource"))
+        #expect(report.isValid)
+    }
+
+    @Test func linterOnlyRejectsRemoteResourcesInLoadingPositions() {
+        func hasRemoteResource(_ body: String) -> Bool {
+            let html = """
+            <!doctype html><html><head><meta name="viewport" content="width=device-width"></head>
+            <body style="background:#fff; overflow:hidden">\(body)</body></html>
+            """
+            return PrototypeHTMLLinter().lint(html: html).errors.map(\.code).contains("remote_resource")
+        }
+
+        #expect(hasRemoteResource(#"<img src="https://evil.example/a.png">"#))
+        #expect(hasRemoteResource(#"<img src="//cdn.example/a.png">"#))
+        #expect(hasRemoteResource(#"<link rel="stylesheet" href="https://evil.example/s.css">"#))
+        #expect(hasRemoteResource(#"<div style="background:url(https://evil.example/bg.png)">x</div>"#))
+        // 普通文本里的 URL 不会加载资源，不应误报。
+        #expect(!hasRemoteResource(#"<p>Contact https://example.com/portfolio</p>"#))
+    }
+
     @Test func linterAllowsMotionButWarns() {
         let html = """
         <!doctype html><html><head><meta name="viewport" content="width=device-width"></head>
@@ -204,6 +233,82 @@ struct KitPrototypeTests {
                     screenSlug: "home"
                 )
             }
+        }
+    }
+
+    @Test func linterReportsMissingCSSURLAsset() throws {
+        try withTemporaryStorage { root in
+            // 屏幕 HTML 位于 <project>/screens，共享素材位于 <project>/assets。
+            let projectDirectory = root.appendingPathComponent("projects/p", isDirectory: true)
+            let screensDirectory = projectDirectory.appendingPathComponent("screens", isDirectory: true)
+            try FileManager.default.createDirectory(at: screensDirectory, withIntermediateDirectories: true)
+
+            let html = """
+            <!doctype html><html><head><meta name="viewport" content="width=device-width">
+            <style>body { background: #fff; background-image: url("../assets/does-not-exist.png"); overflow: hidden; }</style>
+            </head>
+            <body data-block="page" data-block-label="Page"></body></html>
+            """
+            let report = PrototypeHTMLLinter().lint(
+                html: html,
+                documentDirectory: screensDirectory,
+                allowedResourceRoot: projectDirectory
+            )
+            #expect(report.errors.map(\.code).contains("missing_asset"))
+        }
+    }
+
+    @Test func replaceScreenHTMLRejectsMissingCSSURLAsset() throws {
+        try withTemporaryStorage { root in
+            let store = PrototypeDocumentStore()
+            _ = try store.createProject(
+                storagePath: root.path,
+                slug: "p",
+                title: "P",
+                style: .hiFi,
+                device: PrototypeDeviceKind.desktop.preset!
+            )
+            _ = try store.addScreen(storagePath: root.path, projectSlug: "p", screenSlug: "home", title: "Home")
+
+            let html = """
+            <!doctype html><html><head><meta name="viewport" content="width=device-width">
+            <style>body { background: #fff; background-image: url("../assets/does-not-exist.png"); overflow: hidden; }</style>
+            </head>
+            <body data-block="page" data-block-label="Page"></body></html>
+            """
+            #expect(throws: PrototypeStoreError.self) {
+                _ = try store.replaceScreenHTML(
+                    html,
+                    storagePath: root.path,
+                    projectSlug: "p",
+                    screenSlug: "home"
+                )
+            }
+        }
+    }
+
+    @Test func linterAcceptsExistingAndNonLocalCSSURLAssets() throws {
+        try withTemporaryStorage { root in
+            let projectDirectory = root.appendingPathComponent("projects/p", isDirectory: true)
+            let screensDirectory = projectDirectory.appendingPathComponent("screens", isDirectory: true)
+            let assetsDirectory = projectDirectory.appendingPathComponent("assets", isDirectory: true)
+            try FileManager.default.createDirectory(at: screensDirectory, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(at: assetsDirectory, withIntermediateDirectories: true)
+            try Self.writePNG(to: assetsDirectory.appendingPathComponent("bg.png"), width: 2, height: 2)
+
+            let html = """
+            <!doctype html><html><head><meta name="viewport" content="width=device-width">
+            <style>body { background: #fff; background-image: url("../assets/bg.png"), url(data:image/png;base64,AAAA), url(#fallback); overflow: hidden; }</style>
+            </head>
+            <body data-block="page" data-block-label="Page"></body></html>
+            """
+            let report = PrototypeHTMLLinter().lint(
+                html: html,
+                documentDirectory: screensDirectory,
+                allowedResourceRoot: projectDirectory
+            )
+            #expect(!report.errors.map(\.code).contains("missing_asset"))
+            #expect(!report.errors.map(\.code).contains("unsafe_asset_path"))
         }
     }
 
@@ -725,5 +830,33 @@ struct KitPrototypeTests {
             throw PrototypeAssetError.unsupportedImage(url.path)
         }
         try data.write(to: url, options: .atomic)
+    }
+}
+
+@Suite("设备尺寸边界")
+struct PrototypeDeviceMetricsTests {
+    @Test func oversizedDimensionsAreRejectedAndNeverTrap() {
+        let device = PrototypeDevice(kind: .custom, width: 1e20, height: 800, scale: 1)
+        #expect(device.hasRenderableMetrics == false)
+        // 即使构造成功（例如旧文档），像素/逻辑尺寸也必须夹在 Int 范围内而不是 trap。
+        #expect(device.pixelWidth == Int.max)
+        #expect(device.logicalWidthInt == Int.max)
+        #expect(device.logicalHeightInt == 800)
+    }
+
+    @Test func nonFiniteOrNonPositiveMetricsAreRejected() {
+        #expect(PrototypeDevice(kind: .custom, width: .nan, height: 800, scale: 1).hasRenderableMetrics == false)
+        #expect(PrototypeDevice(kind: .custom, width: .infinity, height: 800, scale: 1).hasRenderableMetrics == false)
+        #expect(PrototypeDevice(kind: .custom, width: 0, height: 800, scale: 1).hasRenderableMetrics == false)
+        #expect(PrototypeDevice(kind: .custom, width: 393, height: 852, scale: 0).hasRenderableMetrics == false)
+        // 单值合法但乘积溢出，导出时同样不安全。
+        #expect(PrototypeDevice(kind: .custom, width: 1e15, height: 800, scale: 1e6).hasRenderableMetrics == false)
+    }
+
+    @Test func normalPresetMetricsStayValid() {
+        let device = PrototypeDevice(kind: .iPhone15Pro, width: 393, height: 852, scale: 3)
+        #expect(device.hasRenderableMetrics)
+        #expect(device.pixelWidth == 1179)
+        #expect(device.pixelHeight == 2556)
     }
 }

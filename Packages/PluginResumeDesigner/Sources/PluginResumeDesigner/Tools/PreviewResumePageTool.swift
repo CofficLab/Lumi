@@ -67,7 +67,11 @@ public struct PreviewResumePageTool: SuperAgentTool {
             )
         } catch {
             await MainActor.run {
-                WorkspaceStore.shared.setError(error)
+                // 后台项目的预览失败只回给发起调用的对话；当前 UI 显示的是
+                // 另一个项目时，不能把该错误作为 Export Failed 弹出。
+                if ResumeToolSupport.showsCurrentProject() {
+                    WorkspaceStore.shared.setError(error)
+                }
             }
             return ToolCallResult(
                 content: ResumeToolSupport.error(error, language: language),

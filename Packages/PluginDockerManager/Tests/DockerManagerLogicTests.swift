@@ -24,6 +24,8 @@ private actor StubDockerService: DockerManagerServicing {
     var exportError: Error?
     var loadError: Error?
     var scanError: Error?
+    /// 注入扫描延迟，用于构造「旧扫描晚到」场景。
+    var scanDelay: Duration?
 
     private(set) var removedImages: [(id: String, force: Bool)] = []
     private(set) var pulledImages: [String] = []
@@ -76,6 +78,7 @@ private actor StubDockerService: DockerManagerServicing {
 
     func scanImage(_ id: String) async throws -> String {
         scannedImages.append(id)
+        if let scanDelay { try? await Task.sleep(for: scanDelay) }
         if let scanError { throw scanError }
         return scanResult
     }
@@ -90,6 +93,7 @@ private actor StubDockerService: DockerManagerServicing {
     func setExportError(_ value: Error?) { exportError = value }
     func setLoadError(_ value: Error?) { loadError = value }
     func setScanError(_ value: Error?) { scanError = value }
+    func setScanDelay(_ value: Duration?) { scanDelay = value }
 }
 
 // MARK: - 模型
@@ -471,10 +475,49 @@ struct DockerManagerViewModelTests {
         let image = Self.image(id: "sha256:a", repository: "alpha")
         let service = StubDockerService()
         let viewModel = DockerManagerViewModel(service: service)
+        await viewModel.selectImage(image)
 
         await viewModel.scanImage(image)
 
         #expect(viewModel.scanResult == "scan output")
+        #expect(viewModel.isLoading == false)
+    }
+
+    @Test("扫描期间切换镜像后，旧扫描结果不再写入详情页")
+    func staleScanResultIsIgnoredAfterImageSwitch() async throws {
+        let imageA = Self.image(id: "sha256:a", repository: "alpha")
+        let imageB = Self.image(id: "sha256:b", repository: "beta")
+        let service = StubDockerService()
+        await service.setImages([imageA, imageB])
+        await service.setScanDelay(.milliseconds(300))
+        let viewModel = DockerManagerViewModel(service: service)
+
+        let stale = Task { await viewModel.scanImage(imageA) }
+        try await Task.sleep(for: .milliseconds(50))
+        await viewModel.selectImage(imageB)
+        await stale.value
+
+        #expect(viewModel.selectedImage?.imageID == imageB.imageID)
+        #expect(viewModel.scanResult == nil, "上一个镜像的扫描结果不能显示在当前详情页")
+        #expect(viewModel.isLoading == false)
+    }
+
+    @Test("重叠操作期间转圈保持到最后一个操作结束")
+    func overlappingOperationsKeepLoadingUntilLastCompletes() async throws {
+        let image = Self.image(id: "sha256:a", repository: "alpha")
+        let service = StubDockerService()
+        await service.setImages([image])
+        await service.setScanDelay(.milliseconds(400))
+        let viewModel = DockerManagerViewModel(service: service)
+        await viewModel.selectImage(image)
+
+        let scan = Task { await viewModel.scanImage(image) }
+        try await Task.sleep(for: .milliseconds(50))
+        await viewModel.refreshImages()
+
+        #expect(viewModel.isLoading, "扫描仍在进行，刷新结束不应关闭转圈")
+
+        await scan.value
         #expect(viewModel.isLoading == false)
     }
 
@@ -484,6 +527,7 @@ struct DockerManagerViewModelTests {
         let service = StubDockerService()
         await service.setScanError(DockerError.commandFailed("trivy missing"))
         let viewModel = DockerManagerViewModel(service: service)
+        await viewModel.selectImage(image)
 
         await viewModel.scanImage(image)
 

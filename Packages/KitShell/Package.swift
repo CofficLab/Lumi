@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "KitShell",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "KitShell", targets: ["KitShell"]),
     ],

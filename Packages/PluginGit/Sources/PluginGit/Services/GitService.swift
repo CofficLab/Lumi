@@ -128,6 +128,7 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
             var deleted: [String] = []
             var renamed: [String] = []
             var staged: [String] = []
+            var stagedStates: [String: GitWorkingChangeState] = [:]
             var untracked: [String] = []
 
             for file in unstagedFiles {
@@ -142,10 +143,16 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
             }
 
             for file in stagedFiles {
+                let state: GitWorkingChangeState
                 switch file.changeType {
-                case "M", "A", "D", "R": staged.append(file.file)
-                default: break
+                case "M": state = .modified
+                case "A": state = .added
+                case "D": state = .deleted
+                case "R": state = .renamed
+                default: continue
                 }
+                staged.append(file.file)
+                stagedStates[file.file] = state
             }
 
             // 获取远程 upstream
@@ -159,6 +166,7 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
                 deleted: deleted,
                 renamed: renamed,
                 staged: staged,
+                stagedStates: stagedStates,
                 untracked: untracked
             )
         }
@@ -180,10 +188,14 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
             }
 
             // 统计
-            let files = try LibGit2.getDiffFileList(at: repoPath, staged: staged)
+            let allFiles = try LibGit2.getDiffFileList(at: repoPath, staged: staged)
             let (insertions, deletions) = GitDiffStats.countInsertionsDeletions(in: content)
 
-            let stats = !files.isEmpty ? GitDiffStats(filesChanged: files.count, insertions: insertions, deletions: deletions) : nil
+            // 指定 file 时 patch 只包含该文件，文件数必须与 patch 范围一致。
+            let filesChanged = file == nil ? allFiles.count : (content.isEmpty ? 0 : 1)
+            let stats = filesChanged > 0
+                ? GitDiffStats(filesChanged: filesChanged, insertions: insertions, deletions: deletions)
+                : nil
             return GitDiff(content: content, stats: stats)
         }
     }
@@ -251,6 +263,26 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
     public func commitChanges(atPath path: String?, hash: String) async throws -> [GitCommitChange] {
         let files = try await getCommitChangedFiles(path: path, hash: hash)
         return files.map { GitCommitChange(path: $0.path, state: $0.changeType.toWorkingChangeState()) }
+    }
+
+    /// 实现 ``GitRepositoryReading/remoteURL(atPath:remote:)``。
+    ///
+    /// 读取仓库的 remote 地址（默认 `origin`），返回**原始 URL**——不做任何
+    /// 协议转换（scp-like / `ssh://` / `https://` 原样返回），转换规则由消费方
+    /// 自行决定，避免把「Git 事实」与「Web 链接规则」耦合在契约层。
+    ///
+    /// 读取失败（非仓库、无该 remote、路径不存在）统一返回 `nil`，与契约
+    /// 「不抛错」的语义一致。
+    public func remoteURL(atPath path: String?, remote: String) async -> String? {
+        let repoPath = Self.resolvePath(path)
+
+        // 路径不存在时直接返回：libgit2 打开不存在的路径会进入一条会污染线程
+        // 栈展开状态的 C 路径（见 performOnGitQueue 的「路径存在性检查为何必须前置」）。
+        guard FileManager.default.fileExists(atPath: repoPath) else { return nil }
+
+        return try? await performOnGitQueue(repoPath: repoPath) {
+            LibGit2.getRemoteURL(at: repoPath, remote: remote)
+        }
     }
 
     // MARK: - Log With Skip (for pagination)
@@ -385,13 +417,36 @@ public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReadi
 
     // MARK: - Unpushed Commits
 
-    /// 获取未推送到远程的 commit 哈希列表
+    /// 未推送提交的判定结果。
+    ///
+    /// `noUpstream` 必须与 `upToDate` 区分：没有上游分支时不存在可比对的远程基准，
+    /// 不能把“无法判断”当成“全部已推送”。
+    public enum UnpushedCommitsState: Equatable, Sendable {
+        /// 当前分支没有配置上游分支
+        case noUpstream
+        /// 有上游且本地没有领先的提交
+        case upToDate
+        /// 有上游且本地领先，携带未推送的 commit 哈希
+        case hasUnpushed([String])
+        /// 仓库或 libgit2 读取失败
+        case unavailable
+    }
+
+    /// 获取未推送提交的状态
     /// 使用 LibGit2Swift 原生实现，参考 GitOK 的 Project.getUnPushedCommits()
-    public func getUnpushedCommitHashes(path: String?) async -> [String] {
+    public func getUnpushedCommitsState(path: String?) async -> UnpushedCommitsState {
         let repoPath = Self.resolvePath(path)
-        return (try? await performOnGitQueue(repoPath: repoPath) {
-            try LibGit2.getUnPushedCommits(at: repoPath, verbose: false).map { $0.hash }
-        }) ?? []
+        do {
+            return try await performOnGitQueue(repoPath: repoPath) {
+                guard try LibGit2.getUpstreamBranchName(at: repoPath) != nil else {
+                    return .noUpstream
+                }
+                let hashes = try LibGit2.getUnPushedCommits(at: repoPath, verbose: false).map { $0.hash }
+                return hashes.isEmpty ? .upToDate : .hasUnpushed(hashes)
+            }
+        } catch {
+            return .unavailable
+        }
     }
 
     // MARK: - Git Commit

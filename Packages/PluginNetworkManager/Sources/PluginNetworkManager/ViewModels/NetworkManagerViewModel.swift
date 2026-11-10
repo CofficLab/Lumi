@@ -17,6 +17,10 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
     
     // Process monitoring related
     @Published var processes: [NetworkProcess] = []
+    /// 是否已经收到至少一个有效的进程采样。
+    ///
+    /// 首次采样发布前，进程明细应显示「收集数据中」而不是「没有活跃进程」。
+    @Published var hasProcessSnapshot = false
     @Published var showProcessMonitor = false {
         didSet {
             guard oldValue != showProcessMonitor else { return }
@@ -39,7 +43,20 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
             .sorted { $0.totalSpeed > $1.totalSpeed }
     }
 
+    /// 主菜单栏弹窗网络区块内联展示的高占用进程。
+    ///
+    /// 与 CPU 区块保持一致取前 5 名；仅此处限制条数，不改变详情列表的展示规则。
+    /// 同时排除格式化后显示为 `0B/s` 的进程，避免出现「有列表但全是 0」。
+    public var topNetworkProcesses: [NetworkProcess] {
+        Array(
+            filteredProcesses
+                .filter { SpeedFormatter.formatForStatusBar($0.totalSpeed) != "0B/s" }
+                .prefix(5)
+        )
+    }
+
     private var isProcessMonitoringActive = false
+    private var processMonitorRequestCount = 0
     private let processMonitoringStarter: @MainActor () -> Void
     private let processMonitoringStopper: @MainActor () -> Void
 
@@ -73,8 +90,30 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
         processMonitoringStopper()
     }
 
+    /// 请求保持进程监控运行（引用计数）。
+    ///
+    /// 主弹窗的内联进程列表与悬停详情浮层会同时可见，
+    /// 用引用计数避免其中一个消失时把 nettop 提前关掉。
+    public func acquireProcessMonitor() {
+        processMonitorRequestCount += 1
+        guard processMonitorRequestCount == 1 else { return }
+        showProcessMonitor = true
+    }
+
+    /// 释放一次进程监控请求；计数归零时才真正停止 nettop。
+    public func releaseProcessMonitor() {
+        guard processMonitorRequestCount > 0 else { return }
+        processMonitorRequestCount -= 1
+        guard processMonitorRequestCount == 0 else { return }
+        showProcessMonitor = false
+    }
+
     public func updateProcesses(_ processes: [NetworkProcess]) {
         self.processes = processes
+    }
+
+    public func updateProcessSnapshotReady(_ isReady: Bool) {
+        hasProcessSnapshot = isReady
     }
 
     // Removed updateStats() as it is replaced by Combine subscription

@@ -5,7 +5,7 @@ let package = Package(
     name: "PluginDatabaseManager",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14),
+        .macOS("14.0"),
         .iOS(.v17)
     ],
     products: [
@@ -15,7 +15,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.12.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0"),
         .package(path: "../ProviderEditor"),
         .package(path: "../PluginCodeEditorHost"),
         .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
@@ -24,13 +24,13 @@ let package = Package(
         .package(path: "../ProviderExternalFile"),
         .package(path: "../ProviderToolManager"),
         .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.11.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.13.0"),
         .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitKeychain"),
         .package(url: "https://github.com/vapor/mysql-nio", from: "1.9.2"),
         .package(url: "https://github.com/vapor/postgres-nio", from: "1.33.2"),
-        .package(url: "https://github.com/apple/swift-nio.git", from: "2.104.0"),
-        .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.37.5"),
+        .package(url: "https://github.com/apple/swift-nio.git", from: "2.105.0"),
+        .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.37.6"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.16.2"),
     ],
     targets: [

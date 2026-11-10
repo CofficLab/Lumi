@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆盖 202 条用例。
+PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆盖 208 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 22 个，用例总数: 202
+测试文件: 24 个，用例总数: 208
 
 核心组件（源码目录）:
 - `Editor/`
@@ -58,7 +58,8 @@ PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆�
 - **EditorProjectContextLSPRefresh**（24 条）：由 `testBuildServerPathChangeRequiresServerRestart`、`testLegacyReuseLogicIgnoredBuildServerPathChange`、`testBuildServerKindExtractsInitializationOption` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorProvidingV2AdapterCapability**（15 条）：由 `testOpenDocumentLoadsContentAndActivatesSession`、`testOpenDocumentInBackgroundDoesNotActivate`、`testDiagnosticsSnapshotMapsSeverityMessageAndDocumentURI` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorSelectionSet**（11 条）：由 `testInitialSelection`、`testEmptySelectionsFallbackToInitial`、`testMultipleSelectionsAreSortedByLocation` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **EditorServiceFacade**（11 条）：由 `testOpenFileSessionOnlySignalsPendingContentLoadForActiveSession`、`testOpenFileCreatesAndActivatesSession`、`testOpenFileReusesExistingSessionForSameURL` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **EditorServiceFacade**（13 条）：由 `testOpenFileSessionOnlySignalsPendingContentLoadForActiveSession`、`testOpenFileCreatesAndActivatesSession`、`testOpenFileReusesExistingSessionForSameURL` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **EditorNavigationHistory**（2 条）：由 `testRemoveDropsEveryEntryForClosedSession`、`testRemoveFallsBackToNearestEntryWhenCurrentSessionClosed` 锁定关闭标签后历史清理与索引维护；改动导航历史时优先跑对应测试文件。
 - **EditorStateTheme**（2 条）：由 `testThemeObserverCancellationStopsCallbacks`、`testSameThemeNotificationRefreshesThemeAfterContributorRegistration` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorSyntaxThemeResolver**（2 条）：由 `testResolveUsesRegisteredContributorPalette`、`testRegisterOrReplaceThemeContributorOverridesFallback` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **EditorViewportRuntime**（14 条）：由 `testViewportRenderControllerComputesBufferedRenderRange`、`testViewportRenderControllerClampsAtDocumentBounds`、`testViewportRenderControllerDebounceDecisionTracksScrollDelta` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -271,27 +272,33 @@ PluginCodeEditorHost 的实现包，包含 14 个主要类型；当前测试覆�
 | 200 | LSPCoordinatorJumpToDefinition | testRequestDefinitionWaitsForInFlightOpenTask | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `testRequestDefinitionWaitsForInFlightOpenTask` |
 | 201 | CodeEditorHostSuperPlugin | registers the shared editor service and every host capability | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `registersEditorServices` |
 | 202 | CodeEditorHostSuperPlugin | removes every editor capability during shutdown | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `removesEditorServices` |
+| 203 | EditorDocumentEncoding | 打开 UTF-16 文本时记录检测到的编码，按该编码写回字节不变 | sample.txt 以 UTF-16 写入 | 调用 `loadDocument` 后按记录编码写回 | 编码非 UTF-8，写回字节与原文件完全一致（含 BOM） | P0 | ✅ 已覆盖 | `loadTextDocumentCapturesDetectedEncoding` |
+| 204 | EditorDocumentEncoding | UTF-8 文本记录的编码仍为 UTF-8 | sample.txt 以 UTF-8 写入 | 调用 `loadDocument` | 编码为 UTF-8 | P1 | ✅ 已覆盖 | `loadUTF8DocumentKeepsUTF8` |
+| 205 | EditorServiceFacade | 切回已加载过的文件时异步加载完成后恢复该 Session 保存的视图状态（**回归 #980**） | A 文件 Session 保存第 20 行光标与多光标状态，切换到 B 后再切回 A，触发异步重新加载 | 调用 `open(at:)` 并等待 A 重新加载完成 | 活动 Session 仍为 A，`cursorLine == 20`、`cursorColumn == 1`，不再被当前视图状态覆盖 | P1 | ✅ 已覆盖 | `testReopeningExistingSessionRestoresSavedStateAfterAsyncLoad` |
+| 206 | EditorServiceFacade | 后退加载目标文件并应用历史项快照（**回归 #981**） | A 的历史项记录第 15 行光标，打开 B 后调用 `goBack()` | 等待 A 重新加载完成 | 活动 Session 为 A、`currentFileURL` 与正文切回 A、`cursorLine == 15` | P1 | ✅ 已覆盖 | `testGoBackLoadsTargetFileAndAppliesHistorySnapshot` |
+| 207 | EditorNavigationHistory | 关闭标签时清除该 Session 的全部历史项（**回归 #982**） | A → B → A → C 形成 `[A, B, A, C]` | 调用 `remove(a.id)` | 历史变为 `[B, C]`，当前项仍为 C，后退只能到 B，历史中不再有 A | P1 | ✅ 已覆盖 | `testRemoveDropsEveryEntryForClosedSession` |
+| 208 | EditorNavigationHistory | 关闭当前历史项对应的 Session 后回退到最近有效项（**回归 #982**） | 历史 `[A, B, A, C]` 且当前索引位于第二个 A | 调用 `remove(a.id)` | 历史变为 `[B, C]`，当前项落在 C，不出现已关闭的 A | P1 | ✅ 已覆盖 | `testRemoveFallsBackToNearestEntryWhenCurrentSessionClosed` |
 
-> 说明：全部 **202 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **208 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 15 / 15
-- P1: 已覆盖 168 / 168
+- P0: 已覆盖 16 / 16
+- P1: 已覆盖 173 / 173
 - P2: 已覆盖 19 / 19
-- **合计: 202 / 202**（仅表示清单场景，非源码覆盖率）
+- **合计: 208 / 208**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（15 条）
-- **P1**: 其余功能性用例（168 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
+- **P1**: 其余功能性用例（173 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（19 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 202 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 208 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

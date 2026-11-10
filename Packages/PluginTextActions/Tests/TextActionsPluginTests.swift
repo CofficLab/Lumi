@@ -19,14 +19,16 @@ func localStorePersistsEnabledFlagInBinaryPlist() throws {
     defer { try? FileManager.default.removeItem(at: directory) }
 
     let store = TextActionsPluginLocalStore(settingsDirectory: directory)
-    #expect(!store.isEnabled)
-
-    store.setEnabled(true)
+    // 缺省为启用（从未写过该键）：划词失效时完全静默，
+    // 缺省关闭会让新装用户拿到一个「装上却像没装」的功能。
     #expect(store.isEnabled)
+
+    store.setEnabled(false)
+    #expect(!store.isEnabled)
 
     // 重新构造实例，确认已落盘而非仅在内存中生效。
     let reloaded = TextActionsPluginLocalStore(settingsDirectory: directory)
-    #expect(reloaded.isEnabled)
+    #expect(!reloaded.isEnabled)
 
     let plistURL = directory.appendingPathComponent("settings.plist")
     let data = try Data(contentsOf: plistURL)
@@ -99,7 +101,9 @@ func v2PluginPreservesIdentityAndOptInPolicy() {
     let plugin = TextActionsPlugin()
     #expect(plugin.id == "com.coffic.lumi.plugin.text-actions")
     #expect(plugin.order == 275)
-    #expect(plugin.metadata.policy == .disabledByDefault)
+    // 划词是「装上就该能用」的功能，且失效时完全静默，
+    // 因此插件必须默认启用，而不是要求用户先手动开启。
+    #expect(plugin.metadata.policy == .enabledByDefault)
 }
 
 @Test
@@ -120,21 +124,28 @@ func nonEmptySelectionPresentsMenu(_ text: String) {
 
 @Test
 func menuLayoutClampsToScreenEdges() {
-    let frame = TextActionMenuLayout.frame(
-        for: CGPoint(x: 0, y: 0),
-        menuSize: CGSize(width: 200, height: 60),
-        screenFrame: CGRect(x: 0, y: 0, width: 1_000, height: 800)
-    )
-    #expect(frame.minX == 0)
-    #expect(frame.minY == 18)
+    let screen = CGRect(x: 0, y: 0, width: 1_000, height: 800)
+    let size = CGSize(width: 200, height: 60)
 
-    let topRightFrame = TextActionMenuLayout.frame(
-        for: CGPoint(x: 1_000, y: 790),
-        menuSize: CGSize(width: 200, height: 60),
-        screenFrame: CGRect(x: 0, y: 0, width: 1_000, height: 800)
+    // 无选区 bounds：回退锚点上方，水平夹到左边距。
+    let frame = TextActionMenuLayout.frame(
+        selectionRect: nil,
+        anchor: CGPoint(x: 0, y: 0),
+        menuSize: size,
+        screenFrame: screen
     )
-    #expect(topRightFrame.maxX == 992)
-    #expect(topRightFrame.maxY == 792)
+    #expect(frame.minX == 8)
+    #expect(frame.minY == 14)
+
+    // 有选区 bounds：靠右时夹到右边距；上方空间不足时放到选区下方。
+    let topRightFrame = TextActionMenuLayout.frame(
+        selectionRect: CGRect(x: 940, y: 770, width: 60, height: 20),
+        anchor: CGPoint(x: 1_000, y: 790),
+        menuSize: size,
+        screenFrame: screen
+    )
+    #expect(topRightFrame.maxX == 992.0)
+    #expect(topRightFrame.maxY == 764.0)
 }
 
 @MainActor

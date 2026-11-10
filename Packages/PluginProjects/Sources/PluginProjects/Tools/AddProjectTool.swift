@@ -34,19 +34,19 @@ public struct AddProjectTool: SuperAgentTool {
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let viewModel = await MainActor.run(body: { ProjectsRuntime.viewModel }) else {
-            return "Error: Projects view model is not available."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Projects view model is not available.")
         }
 
         guard let path = ProjectToolSupport.string(arguments, "path") else {
-            return "Error: Missing required parameter `path`."
+            throw ToolExecutionError.executionFailed(toolName: name, reason: "Missing required parameter `path`.")
         }
 
-        return await MainActor.run {
+        return try await MainActor.run {
             do {
                 let project = try viewModel.add(path: path, select: false)
                 return successMessage(project: project, projects: viewModel.projects)
             } catch {
-                return "Error: \(error.localizedDescription)"
+                throw ToolExecutionError.executionFailed(toolName: name, reason: error.localizedDescription)
             }
         }
     }

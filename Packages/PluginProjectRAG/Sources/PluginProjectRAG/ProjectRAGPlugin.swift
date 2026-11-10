@@ -33,6 +33,8 @@ public final class ProjectRAGPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
 
     private var service: RAGService?
     private var schedulerTask: Task<Void, Never>?
+    /// idle 调度器实例，启动后一直存在（即使启动时没有当前项目）。
+    private(set) var scheduler: RAGIndexScheduler?
     private var llmContextHook: ProjectRAGLLMContextHook?
     private var llmContextHookHandle: (any LifecycleHookHandle)?
     private var projectLifecycleHook: ProjectRAGProjectLifecycleHook?
@@ -78,19 +80,25 @@ public final class ProjectRAGPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
 
         // Indexing deliberately happens off the boot path: startup remains
         // responsive and RAGService deduplicates concurrent index requests.
-        schedulerTask = Task(priority: .utility) { [weak project, weak idleTime] in
+        schedulerTask = Task(priority: .utility) { [weak self] in
             do {
                 try await service.initialize()
-                guard let path = await MainActor.run(body: { project?.currentProject?.path }),
-                      !path.isEmpty else { return }
-                await service.ensureIndexedBackground(projectPath: path)
+                // 启动时没有当前项目只跳过「立即索引当前项目」，不能跳过 idle
+                // 调度：调度器每轮循环都会重新读取当前项目，用户随后打开项目
+                // 后，其它已知项目仍然可以被后台索引（issue #925）。
+                if let path = await MainActor.run(body: { project?.currentProject?.path }),
+                   !path.isEmpty {
+                    await service.ensureIndexedBackground(projectPath: path)
+                }
                 guard let project, let idleTime else { return }
-                await RAGIndexScheduler(
+                let scheduler = RAGIndexScheduler(
                     projects: project,
                     idleTime: idleTime,
                     service: service,
                     stateDirectory: directory
-                ).run()
+                )
+                await MainActor.run { self?.scheduler = scheduler }
+                await scheduler.run()
             } catch {
                 // Search stays available and can retry indexing on its first use.
             }
@@ -102,6 +110,7 @@ public final class ProjectRAGPlugin: SuperPlugin, PluginDataMigrating, SuperLog 
         kernel.unregisterProvider((any ProjectRAGProviding).self)
         schedulerTask?.cancel()
         schedulerTask = nil
+        scheduler = nil
         llmContextHookHandle?.cancel()
         llmContextHookHandle = nil
         llmContextHook = nil

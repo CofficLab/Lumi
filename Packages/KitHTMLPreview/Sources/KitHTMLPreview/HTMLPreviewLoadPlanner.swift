@@ -9,22 +9,41 @@ struct HTMLPreviewLoadPlanner {
         self.fileReader = fileReader
     }
 
-    func loadRequest(html: String, fileURL: URL?) -> HTMLWebViewLoadRequest {
-        if let fileURL, isHTMLInSyncWithFile(html, at: fileURL) {
+    func loadRequest(html: String, fileURL: URL?, readAccessRootURL: URL? = nil) -> HTMLWebViewLoadRequest {
+        guard let fileURL else {
+            return .html(html: html, baseURL: nil)
+        }
+
+        // 调用方只提供文件（如快照失败后的 Canvas 回退）时，文件就是唯一内容源。
+        if html.isEmpty, let data = try? fileReader(fileURL), !data.isEmpty {
             return .file(
                 fileURL: fileURL,
-                readAccessURL: fileURL.deletingLastPathComponent()
+                readAccessURL: readAccessRoot(for: fileURL, preferred: readAccessRootURL)
             )
         }
 
-        if let fileURL {
-            return .html(
-                html: html,
-                baseURL: fileURL.deletingLastPathComponent().absoluteDirectoryURL
+        if isHTMLInSyncWithFile(html, at: fileURL) {
+            return .file(
+                fileURL: fileURL,
+                readAccessURL: readAccessRoot(for: fileURL, preferred: readAccessRootURL)
             )
         }
 
-        return .html(html: html, baseURL: nil)
+        return .html(
+            html: html,
+            baseURL: fileURL.deletingLastPathComponent().absoluteDirectoryURL
+        )
+    }
+
+    /// 子目录中的页面（如本地化 HTML）需要读取上级目录的共享资源；
+    /// 仅当首选目录确实包含该文件时才采用，避免把读取权限放大到无关目录。
+    private func readAccessRoot(for fileURL: URL, preferred: URL?) -> URL {
+        let parent = fileURL.deletingLastPathComponent()
+        guard let preferred else { return parent }
+        let filePath = fileURL.standardizedFileURL.path
+        let preferredPath = preferred.standardizedFileURL.path
+        guard filePath.hasPrefix(preferredPath + "/") else { return parent }
+        return preferred
     }
 
     func isHTMLInSyncWithFile(_ html: String, at url: URL) -> Bool {

@@ -29,7 +29,13 @@ final class ModelSelectorViewModel: ObservableObject {
     /// 读取 `providerInfo.models` 会漏掉它们。
     @Published private(set) var modelInfos: [String: [LLMModelInfo]] = [:]
     @Published private(set) var usageRecords: [String: ProviderUsageRecord] = [:]
-    @Published var searchText = ""
+    /// 左栏供应商搜索词。
+    ///
+    /// 必须与 `modelSearchText` 分开：两栏同屏展示，共用同一个词会让
+    /// 「搜供应商」顺带把右栏模型筛空（#1030）。
+    @Published var providerSearchText = ""
+    /// 右栏模型搜索词。
+    @Published var modelSearchText = ""
     @Published var selectedScope = ProviderScope.cloud
     @Published var selectedCategory = ModelCategory.all
 
@@ -87,6 +93,30 @@ final class ModelSelectorViewModel: ObservableObject {
         providerInfos.first { $0.id == id }
     }
 
+    /// 范围筛选 + 供应商搜索词过滤并排序后的供应商列表。
+    ///
+    /// 与 `visibleModels(for:)` 对称：过滤规则放在 ViewModel 里，
+    /// 与模型搜索使用各自独立的查询词（#1030）。
+    func visibleProviders(_ providers: [LLMProviderInfo]) -> [LLMProviderInfo] {
+        let filtered = providers.filter(matchesActiveFilters)
+        let sorted: [LLMProviderInfo]
+        if selectedScope == .frequent {
+            sorted = filtered.sorted {
+                isMoreFrequentlyUsed($0.id, than: $1.id)
+            }
+        } else {
+            sorted = filtered.sorted {
+                $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+            }
+        }
+        let query = providerSearchText
+        guard !query.isEmpty else { return sorted }
+        return sorted.filter {
+            $0.displayName.localizedCaseInsensitiveContains(query)
+                || $0.id.localizedCaseInsensitiveContains(query)
+        }
+    }
+
     func models(for providerID: String) -> [String] {
         modelIDs[providerID] ?? []
     }
@@ -138,7 +168,7 @@ final class ModelSelectorViewModel: ObservableObject {
     /// 实际参与过滤的搜索文本；搜索框不可见时一律视为未搜索，
     /// 避免残留文本把模型从列表里悄悄筛掉。
     var activeModelSearchText: String {
-        showsModelSearchBar ? searchText : ""
+        showsModelSearchBar ? modelSearchText : ""
     }
 
     func modelID(providerID: String, model: String) -> String? {
@@ -239,6 +269,10 @@ final class ModelSelectorViewModel: ObservableObject {
         guard let model,
               let modelID = box.modelID(providerID: providerID, model: model) else { return }
         box.select(modelID: modelID)
+        // box.select 会同步刷新快照；若选中态没有变成目标模型，说明写入被静默丢弃，
+        // 不能记用量或提示「已切换」。
+        guard box.selectedModelID == modelID else { return }
+
         usageStore.recordUse(providerID: providerID)
 
         let providerDisplayName = providerInfo(id: providerID)?.displayName ?? providerID

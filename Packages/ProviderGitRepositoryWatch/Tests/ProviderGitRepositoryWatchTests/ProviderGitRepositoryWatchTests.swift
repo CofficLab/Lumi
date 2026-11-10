@@ -24,6 +24,24 @@ struct ProviderGitRepositoryWatchTests {
         ])
     }
 
+    /// 回归 #921：订阅令牌的生命周期就是订阅的生命周期。
+    ///
+    /// 消费者（如面板的 `@StateObject`）销毁后没人再持有令牌，若实现仍强引用
+    /// 回调，注册会随每次打开面板累积，广播开销单调增长。
+    @Test("releasing an observer handle unsubscribes without explicit cancel")
+    func releasingHandleUnsubscribes() {
+        let provider = DefaultGitRepositoryWatching()
+        var count = 0
+        do {
+            let handle = provider.addObserver { _ in count += 1 }
+            _ = handle
+        }
+
+        provider.broadcast(.workingTreeChanged)
+
+        #expect(count == 0, "令牌释放后仍保留注册，历史订阅会随打开次数累积（#921）")
+    }
+
     @Test("cancelled observers no longer receive events")
     func cancellation() {
         let provider = DefaultGitRepositoryWatching()

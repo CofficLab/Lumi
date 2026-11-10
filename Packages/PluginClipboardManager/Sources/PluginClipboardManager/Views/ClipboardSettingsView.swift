@@ -4,12 +4,15 @@ import SwiftUI
 public struct ClipboardSettingsView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @State private var historySize: Int = 500
+    @State private var historySize: Int = ClipboardSettings.defaultHistorySize
     @State private var isMonitoringEnabled: Bool = true
 
-    private let store = ClipboardManagerPluginLocalStore.shared
-    private let monitoringKey = "ClipboardMonitoringEnabled"
-    private let historySizeKey = "ClipboardHistorySize"
+    /// 监控开关变化时通知插件运行时立即启停采集。
+    private let onMonitoringChange: ((Bool) -> Void)?
+
+    public init(onMonitoringChange: ((Bool) -> Void)? = nil) {
+        self.onMonitoringChange = onMonitoringChange
+    }
 
     public var body: some View {
         PluginSettingsScaffold(
@@ -21,11 +24,8 @@ public struct ClipboardSettingsView: View {
             dataSection
         }
         .task {
-            isMonitoringEnabled = store.bool(forKey: monitoringKey)
-            historySize = store.integer(forKey: historySizeKey)
-            if historySize == 0 {
-                historySize = 500
-            }
+            isMonitoringEnabled = ClipboardSettings.isMonitoringEnabled
+            historySize = ClipboardSettings.historyLimit
         }
     }
 
@@ -40,8 +40,9 @@ public struct ClipboardSettingsView: View {
                     icon: "doc.on.clipboard",
                     isOn: $isMonitoringEnabled
                 )
-                .onChange(of: isMonitoringEnabled) { _, newValue in
-                    store.set(newValue, forKey: monitoringKey)
+                .onChange(of: isMonitoringEnabled) { newValue in
+                    ClipboardSettings.setMonitoringEnabled(newValue)
+                    onMonitoringChange?(newValue)
                 }
 
                 Divider()
@@ -61,8 +62,8 @@ public struct ClipboardSettingsView: View {
                     .pickerStyle(.menu)
                     .frame(minWidth: 120)
                 }
-                .onChange(of: historySize) { _, newValue in
-                    store.set(newValue, forKey: historySizeKey)
+                .onChange(of: historySize) { newValue in
+                    ClipboardSettings.setHistoryLimit(newValue)
                 }
             }
         }

@@ -81,6 +81,44 @@ struct ProviderMessageSenderTests {
         #expect(blocks.first?.start == 6)
     }
 
+    @Test("折叠块覆盖的首尾空白被 trim 时只裁短区间，不丢弃整块")
+    func clipsCollapsedBlockWhenTrimRemovesSurroundingWhitespace() throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
+        let sender = DefaultMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: loop
+        )
+
+        let body = String(repeating: "x", count: 1000)
+        let content = "\n" + body + "\n"
+        _ = try #require(
+            try sender.commitUserMessage(
+                content,
+                imageAttachments: [],
+                fileAttachments: [],
+                collapsedBlocks: [
+                    CollapsedContentBlock(start: 0, length: content.count, title: "粘贴的文本"),
+                ],
+                conversationID: nil
+            )
+        )
+        let conversationID = try #require(conversations.selectedConversationID)
+        let message = try #require(messages.messages(for: conversationID).first)
+
+        #expect(message.content == body)
+        // 落库后仍能从 metadata 还原出同一个 chip。
+        let blocks = CollapsedContentBlockMetadata.normalizedBlocks(
+            from: message.metadata,
+            contentLength: message.content.count
+        )
+        #expect(blocks.count == 1)
+        #expect(blocks.first?.start == 0)
+        #expect(blocks.first?.length == 1000)
+    }
+
     @Test("不携带折叠块时 metadata 里没有折叠块 key")
     func omitsCollapsedBlocksKeyWhenAbsent() throws {
         let conversations = DefaultConversationManager()
@@ -343,6 +381,7 @@ struct ProviderMessageSenderTests {
         let messages = DefaultMessageManager()
         let loop = StubAgentLoop(messages: messages)
         loop.responseContent = "resumed"
+        loop.resumeError = AgentLoopError.invalidResumeRequest
         let sender = DefaultMessageSender(
             conversations: conversations,
             messages: messages,
@@ -366,12 +405,24 @@ struct ProviderMessageSenderTests {
 
 /// 测试用 AgentLoop 桩：最小实现，直接返回预设内容。
 @MainActor
-private final class StubAgentLoop: AgentLoopProviding {
+final class StubAgentLoop: AgentLoopProviding {
     private let messages: any MessageManaging
     private var messageObserver: (any MessageInsertedObserverHandle)?
     private var observers: [UUID: (AgentLoopEvent) -> Void] = [:]
     var responseContent: String = ""
     var onRunTurn: ((@MainActor (UUID) async throws -> AgentLoopOutcome))?
+
+    // MARK: 回合状态（供守门逻辑断言）
+    //
+    // 「会话忙不忙」的事实来源是 AgentLoop 回合状态机，因此桩必须可配置
+    // 状态、当前回合与挂起点，否则测不出「外部拉起的回合」这类场景。
+    var currentState: AgentLoopState = .idle
+    var activeTurnID: UUID?
+    var activeSuspension: AgentLoopSuspension?
+    /// `resumeTurn` 的结果；默认 `.completed`。
+    var resumeOutcome: AgentLoopOutcome = .completed
+    /// 非 nil 时 `resumeTurn` 抛出该错误，覆盖失败分支。
+    var resumeError: (any Error)?
 
     init(messages: any MessageManaging) {
         self.messages = messages
@@ -410,16 +461,16 @@ private final class StubAgentLoop: AgentLoopProviding {
     }
 
     func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome {
-        throw AgentLoopError.invalidResumeRequest
+        if let resumeError { throw resumeError }
+        return resumeOutcome
     }
 
     func cancelTurn(in conversationID: UUID) {}
-    func state(for conversationID: UUID) -> AgentLoopState { .idle }
-    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { nil }
-    func isRunning(for conversationID: UUID) -> Bool { false }
-    func currentTurnID(for conversationID: UUID) -> UUID? { nil }
+    func state(for conversationID: UUID) -> AgentLoopState { currentState }
+    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { activeSuspension }
+    func isRunning(for conversationID: UUID) -> Bool { currentState == .running }
+    func currentTurnID(for conversationID: UUID) -> UUID? { activeTurnID }
     func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
-
 }
 
 @MainActor

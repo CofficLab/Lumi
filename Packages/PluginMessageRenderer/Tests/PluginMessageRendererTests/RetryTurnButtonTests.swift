@@ -38,6 +38,10 @@ private final class StubRendererCapability: MessageRendererCapability {
         retryRequests.append((turnID, conversationID))
     }
 
+    func canStopTurn(conversationID: UUID) -> Bool { false }
+
+    func stopTurn(conversationID: UUID) {}
+
     func toolCallRenderer(for toolCall: ToolCall) -> (any ToolCallRowRenderer)? { nil }
 
     func makeToolJobActivityModel(

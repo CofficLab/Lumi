@@ -40,8 +40,10 @@ struct PluginWebFetchTests {
 
     @Test("tool rejects missing url")
     func toolRejectsMissingURL() async throws {
-        let tool = WebFetchTool()
-        let result = try await tool.execute(arguments: [:])
-        #expect(result == "Error: Missing required 'url' parameter")
+        // 回归：缺参曾经返回 "Error: ..." 字符串，默认 executeResult
+        // 会把它当成成功结果。
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await WebFetchTool().executeResult(arguments: [:])
+        }
     }
 }

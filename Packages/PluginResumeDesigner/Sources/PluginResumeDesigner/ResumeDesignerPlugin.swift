@@ -47,8 +47,8 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
-    private var promptSuggestion: PromptSuggestion {
-        PromptSuggestion(id: "\(id).create", title: ResumeDesignerLocalization.string("Prompt.Suggestion.Create"), order: order * 1_000, systemImage: "doc.badge.gearshape", action: .activateRailTab(id: Self.railTabID), scope: .launcherAndContext(id))
+    var promptSuggestion: PromptSuggestion {
+        PromptSuggestion(id: "\(id).create", title: ResumeDesignerLocalization.string("Prompt.Suggestion.Create"), order: order * 1_000, systemImage: "doc.badge.gearshape", action: .activatePluginEntry(activityBarItemID: "\(id).entry", railTabID: Self.railTabID), scope: .launcherAndContext(id))
     }
 
     private func registerPromptSuggestion(kernel: KernelCoreContainer, requiresEnable: Bool) {
@@ -76,9 +76,10 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
         }
 
         // 注册 Agent 工具到 ToolManagerProviding
+        // 工具必须按「调用所属对话」的项目读写，避免多对话并行时串项目。
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {
-                toolManager.add(tool, pluginID: id)
+                toolManager.add(ConversationScopedResumeTool(tool), pluginID: id)
             }
         }
 

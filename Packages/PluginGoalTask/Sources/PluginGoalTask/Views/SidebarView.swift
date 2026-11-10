@@ -27,11 +27,18 @@ public struct SidebarView: View {
     /// 直接贴住底边会显得拥挤,这里留一段固定底部内边距。
     private static let taskListBottomInset: CGFloat = 10
 
-    /// 顶部阴影的高度(点):阴影自面板顶边向上扩散的覆盖范围。
+    /// 顶部阴影的模糊半径(点):决定阴影顶端渐隐的柔和程度。
     ///
-    /// 12pt 足够让「面板浮在聊天区之上」的层次读得出来,又不至于糊到上方
-    /// 消息列表的内容上。
-    static let topShadowHeight: CGFloat = 12
+    /// 面板下方任务列表容器(`taskListSurface`)用的是
+    /// `DesignTokens.Shadow.innerFieldBlur`(2pt)配合上下各内缩 2pt,
+    /// 得到一条很紧的内阴影带。顶部阴影是**投影**而非内阴影,
+    /// 扩散范围更大,半径取 4pt 才能与之读起来是同一套柔和质感。
+    private static let topShadowBlur: CGFloat = 4
+
+    /// 顶部阴影紧贴面板顶边的实心核心高度(点)。
+    ///
+    /// 核心保持实色,让阴影在顶边处有明确的接触感;核心之外交给模糊衰减。
+    private static let topShadowCore: CGFloat = 4
 
     /// 是否有可见的 Goal
     private var hasVisibleGoal: Bool {
@@ -104,34 +111,30 @@ public struct SidebarView: View {
     ///
     /// 面板本身没有底色(与聊天区同底),SwiftUI 的 `.shadow()` 只会把文字和图标
     /// 的轮廓投影出去,画不出「整条面板浮起来」的层次,因此这里手绘一段朝上的
-    /// 渐变:紧贴顶边最实,向上快速衰减为透明。
+    /// 阴影。
     ///
     /// 阴影落在面板上方(消息列表一侧),把 Goal 面板与上方的对话内容分开,
     /// 面板因此读起来是「压在聊天区之上的一层」。
+    ///
+    /// 具体写法见 `GoalTopShadowView`:与面板下方任务列表容器的内阴影同源,
+    /// 都是「模糊挖空」而非线性渐变,避免出现一条生硬的灰边。
     @ViewBuilder
     private var topShadow: some View {
         if hasVisibleGoal {
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.black.opacity(0),
-                            Color.black.opacity(topShadowOpacity),
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(height: Self.topShadowHeight)
-                // 上移到面板顶边之外:阴影要「压」在上方的内容上,而不是落在面板内部。
-                .offset(y: -Self.topShadowHeight)
-                .allowsHitTesting(false)
+            GoalTopShadowView(
+                opacity: topShadowOpacity,
+                blurRadius: Self.topShadowBlur,
+                coreHeight: Self.topShadowCore
+            )
         }
     }
 
     /// 顶部阴影的不透明度:暗色主题下同样的黑色几乎看不出层次,故暗色更重。
+    ///
+    /// 阴影带已从 20pt 收窄到 12pt,峰值浓度相应下调:早先 0.18 / 0.30 是配合
+    /// 20pt 宽的带调的,带窄后同样的浓度会读成一条压得很重的黑边。
     private var topShadowOpacity: Double {
-        colorScheme == .dark ? 0.42 : 0.14
+        colorScheme == .dark ? 0.26 : 0.16
     }
 
     // MARK: - Blocked Reason

@@ -110,6 +110,12 @@ struct ProviderSettingsPageViewModelTests {
         )
     }
 
+    /// 计数标签跟随界面语言变化，断言时按当前语言现算，避免写死中文。
+    private func providerCountLabel(_ count: Int, isLocal: Bool) -> String {
+        let key = isLocal ? "%lld 个本地供应商" : "%lld 个云端供应商"
+        return String(format: pluginLocalization.string(key), Int64(count))
+    }
+
     // MARK: - 添加供应商的主链路
 
     @Test("新增自定义供应商后立即出现在云端供应商列表")
@@ -168,11 +174,11 @@ struct ProviderSettingsPageViewModelTests {
         defer { try? FileManager.default.removeItem(at: store.fileURL!) }
 
         let viewModel = makeViewModel(capability: capability)
-        #expect(viewModel.providerCountLabel == "0 个云端供应商")
+        #expect(viewModel.providerCountLabel == providerCountLabel(0, isLocal: false))
 
         try store.upsert(makeConfiguration())
 
-        #expect(viewModel.providerCountLabel == "1 个云端供应商")
+        #expect(viewModel.providerCountLabel == providerCountLabel(1, isLocal: false))
     }
 
     @Test("新增后选中态自动落到新供应商并显示其模型数")
@@ -212,7 +218,7 @@ struct ProviderSettingsPageViewModelTests {
         try store.remove(id: configuration.id)
 
         #expect(viewModel.filteredProviders.isEmpty)
-        #expect(viewModel.providerCountLabel == "0 个云端供应商")
+        #expect(viewModel.providerCountLabel == providerCountLabel(0, isLocal: false))
     }
 
     @Test("新增供应商可生成空白编辑器")
@@ -248,8 +254,8 @@ struct ProviderSettingsPageViewModelTests {
 
         #expect(cloudViewModel.filteredProviders.map(\.providerInfo.id) == ["remote-1"])
         #expect(localViewModel.filteredProviders.map(\.providerInfo.id) == ["local-1"])
-        #expect(cloudViewModel.providerCountLabel == "1 个云端供应商")
-        #expect(localViewModel.providerCountLabel == "1 个本地供应商")
+        #expect(cloudViewModel.providerCountLabel == providerCountLabel(1, isLocal: false))
+        #expect(localViewModel.providerCountLabel == providerCountLabel(1, isLocal: true))
     }
 
     @Test("搜索匹配名称、描述与 ID")
@@ -280,6 +286,34 @@ struct ProviderSettingsPageViewModelTests {
         // 空白关键字视为无筛选
         viewModel.searchText = "   "
         #expect(viewModel.filteredProviders.count == 2)
+    }
+
+    /// 回归 #941：搜索只过滤左侧列表，右侧详情仍展示选中的供应商。
+    /// 头部模型数量曾从过滤后的列表里查找选中项，搜索把它排除后数量
+    /// 变成 `0 个模型`，与右侧详情矛盾。
+    @Test("搜索排除当前供应商时头部模型数量保持不变")
+    func searchDoesNotZeroSelectedProviderModelCount() throws {
+        let (manager, _, capability) = makeFixture()
+        try manager.register(
+            MockRemoteProvider(
+                id: "provider-p",
+                displayName: "供应商 P",
+                models: [LLMModelInfo(id: "m1"), LLMModelInfo(id: "m2")]
+            )
+        )
+        try manager.register(MockRemoteProvider(id: "provider-q", displayName: "供应商 Q"))
+
+        let viewModel = makeViewModel(capability: capability)
+        viewModel.selectProvider(id: "provider-p")
+        viewModel.searchText = "Q"
+
+        #expect(viewModel.filteredProviders.map(\.providerInfo.id) == ["provider-q"])
+        #expect(viewModel.selectedProvider?.providerInfo.id == "provider-p")
+        #expect(viewModel.selectedModelCount == 2, "详情仍展示 P，头部就必须显示 P 的模型数")
+
+        // 列表刷新也不能因为搜索词把选中项改成过滤后的第一项。
+        viewModel.synchronizeSelection()
+        #expect(viewModel.selectedProviderID == "provider-p")
     }
 
     // MARK: - 选中态
@@ -334,5 +368,63 @@ struct ProviderSettingsPageViewModelTests {
         #expect(viewModel.selectedProviderID == nil)
         #expect(viewModel.selectedProvider == nil)
         #expect(viewModel.selectedModelCount == 0)
+    }
+
+    // MARK: - 详情 · 全局选中
+
+    /// 回归 #940：详情只在初始化时读取一次全局选中模型，别处（模型选择器、
+    /// 会话联动、其他供应商）切换后仍把旧模型标成「当前」。全局选中变化
+    /// 时必须刷新详情快照。
+    @Test("全局选中变化后详情刷新「当前」模型")
+    func detailRefreshesSelectedModelAfterExternalSelection() throws {
+        let (manager, _, capability) = makeFixture()
+        try manager.register(
+            MockRemoteProvider(
+                id: "provider-p",
+                displayName: "供应商 P",
+                models: [LLMModelInfo(id: "m1"), LLMModelInfo(id: "m2")]
+            )
+        )
+        try manager.register(
+            MockRemoteProvider(
+                id: "provider-q",
+                displayName: "供应商 Q",
+                models: [LLMModelInfo(id: "m3")]
+            )
+        )
+
+        let page = makeViewModel(capability: capability)
+        let detail = page.detailViewModel(for: "provider-p")
+        detail.select(modelID: "m1")
+        #expect(detail.isModelSelected("m1"))
+
+        capability.select(providerID: "provider-q", model: "m3")
+        #expect(detail.isModelSelected("m1") == false, "P 的模型已不是全局选中")
+        #expect(detail.selectedModelID == capability.selectedModelID)
+    }
+
+    // MARK: - API Key 明文状态
+
+    /// 回归 #942：明文展示状态曾保存在详情视图的本地 `@State` 里。切换
+    /// 供应商时 SwiftUI 复用同一视图身份，把旧供应商的「已展开」状态传给
+    /// 新供应商，新凭据未经点击就以明文出现。状态现在归属按供应商缓存的
+    /// ViewModel，切换后必须重新隐藏。
+    @Test("切换供应商后不得继承上一个供应商的 API Key 明文状态")
+    func apiKeyRevealStateIsScopedToProvider() throws {
+        let (manager, _, capability) = makeFixture()
+        try manager.register(MockRemoteProvider(id: "provider-p", displayName: "供应商 P"))
+        try manager.register(MockRemoteProvider(id: "provider-q", displayName: "供应商 Q"))
+
+        let page = makeViewModel(capability: capability)
+        let first = page.detailViewModel(for: "provider-p")
+        #expect(first.isAPIKeyRevealed == false)
+
+        first.isAPIKeyRevealed = true
+        let second = page.detailViewModel(for: "provider-q")
+        #expect(second.isAPIKeyRevealed == false, "新供应商必须默认隐藏 API Key")
+
+        let firstAgain = page.detailViewModel(for: "provider-p")
+        #expect(firstAgain === first, "同一供应商复用缓存的 ViewModel")
+        #expect(firstAgain.isAPIKeyRevealed == true, "明文状态属于原供应商")
     }
 }

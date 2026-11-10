@@ -21,6 +21,8 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
     private static let initialPageSize = 40
 
     public private(set) var conversations: [ConversationSummary] = []
+    /// 缓存数组之外的会话模型选择；`loadConversations` 整表替换后仍然生效。
+    private var modelIDOverrides: [UUID: String] = [:]
     public private(set) var selectedConversationID: UUID? {
         didSet {
             guard selectedConversationID != oldValue else { return }
@@ -381,14 +383,18 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
 
     public func modelID(for conversationID: UUID?) -> String? {
         guard let conversationID else { return nil }
-        return conversations.first { $0.id == conversationID }?.modelID
+        // 缓存数组外的会话（整表重载/窗口外旧会话）也要保留刚选中的模型，
+        // 否则选择会被静默丢弃。
+        return modelIDOverrides[conversationID]
+            ?? conversations.first { $0.id == conversationID }?.modelID
     }
 
     public func selectModel(id: String, for conversationID: UUID?) {
-        guard let conversationID,
-              let index = conversations.firstIndex(where: { $0.id == conversationID }),
-              LLMModelID(rawValue: id) != nil else { return }
-        conversations[index].modelID = id
+        guard let conversationID, LLMModelID(rawValue: id) != nil else { return }
+        modelIDOverrides[conversationID] = id
+        if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
+            conversations[index].modelID = id
+        }
         notifyConversationObservers(.providerChanged(conversationID))
     }
 

@@ -76,6 +76,8 @@ public struct StreamChunk: Sendable, Equatable {
     public let cacheTotalInputTokens: Int?
     public let responseID: String?
     public let stopReason: String?
+    /// `redacted_thinking` 块的不透明数据，原样收集后回传。
+    public let redactedThinkingData: String?
 
     public init(
         content: String? = nil,
@@ -93,7 +95,8 @@ public struct StreamChunk: Sendable, Equatable {
         cacheWriteInputTokens: Int? = nil,
         cacheTotalInputTokens: Int? = nil,
         responseID: String? = nil,
-        stopReason: String? = nil
+        stopReason: String? = nil,
+        redactedThinkingData: String? = nil
     ) {
         self.content = content
         self.isDone = isDone
@@ -111,13 +114,14 @@ public struct StreamChunk: Sendable, Equatable {
         self.cacheTotalInputTokens = cacheTotalInputTokens
         self.responseID = responseID
         self.stopReason = stopReason
+        self.redactedThinkingData = redactedThinkingData
     }
 
     public func withRawStreamPayload(_ raw: String?) -> StreamChunk {
-        StreamChunk(content: content, isDone: isDone, toolCalls: toolCalls, error: error, partialJson: partialJson, toolCallIndex: toolCallIndex, eventType: eventType, rawEvent: rawEvent, rawStreamPayload: raw, inputTokens: inputTokens, outputTokens: outputTokens, cachedInputTokens: cachedInputTokens, cacheWriteInputTokens: cacheWriteInputTokens, cacheTotalInputTokens: cacheTotalInputTokens, responseID: responseID, stopReason: stopReason)
+        StreamChunk(content: content, isDone: isDone, toolCalls: toolCalls, error: error, partialJson: partialJson, toolCallIndex: toolCallIndex, eventType: eventType, rawEvent: rawEvent, rawStreamPayload: raw, inputTokens: inputTokens, outputTokens: outputTokens, cachedInputTokens: cachedInputTokens, cacheWriteInputTokens: cacheWriteInputTokens, cacheTotalInputTokens: cacheTotalInputTokens, responseID: responseID, stopReason: stopReason, redactedThinkingData: redactedThinkingData)
     }
 
     public func withToolCalls(_ newToolCalls: [ToolCall]?) -> StreamChunk {
-        StreamChunk(content: content, isDone: isDone, toolCalls: newToolCalls, error: error, partialJson: partialJson, toolCallIndex: toolCallIndex, eventType: eventType, rawEvent: rawEvent, rawStreamPayload: rawStreamPayload, inputTokens: inputTokens, outputTokens: outputTokens, cachedInputTokens: cachedInputTokens, cacheWriteInputTokens: cacheWriteInputTokens, cacheTotalInputTokens: cacheTotalInputTokens, responseID: responseID, stopReason: stopReason)
+        StreamChunk(content: content, isDone: isDone, toolCalls: newToolCalls, error: error, partialJson: partialJson, toolCallIndex: toolCallIndex, eventType: eventType, rawEvent: rawEvent, rawStreamPayload: rawStreamPayload, inputTokens: inputTokens, outputTokens: outputTokens, cachedInputTokens: cachedInputTokens, cacheWriteInputTokens: cacheWriteInputTokens, cacheTotalInputTokens: cacheTotalInputTokens, responseID: responseID, stopReason: stopReason, redactedThinkingData: redactedThinkingData)
     }
 }

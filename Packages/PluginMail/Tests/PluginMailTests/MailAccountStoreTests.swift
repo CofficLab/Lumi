@@ -306,14 +306,14 @@ final class MailProviderPresetTests: XCTestCase {
 }
 
 final class MailAccountDraftTests: XCTestCase {
-    func testToConfigMapsTypes() {
+    func testToConfigMapsTypes() throws {
         var draft = MailAccountDraft(provider: .qq)
         draft.displayName = "王五"
         draft.email = "wangwu@qq.com"
         draft.password = "authcode"
         draft.applyPresetDefaults()
 
-        let config = draft.toConfig()
+        let config = try draft.toConfig()
         XCTAssertEqual(config.imapHost, "imap.qq.com")
         XCTAssertEqual(config.imapPort, 993)
         XCTAssertEqual(config.smtpHost, "smtp.qq.com")
@@ -321,6 +321,62 @@ final class MailAccountDraftTests: XCTestCase {
         XCTAssertEqual(config.username, "wangwu@qq.com", "QQ 预设用户名默认等于邮箱")
         XCTAssertEqual(config.loginType, .password)
         XCTAssertTrue(config.useTLS)
+    }
+
+    func testToConfigRejectsOutOfRangePorts() {
+        let invalidPorts = [-1, 0, 65_536, 70_000]
+        for port in invalidPorts {
+            XCTAssertFalse(MailAccountDraft.isValidPort(port), "端口 \(port) 应被判定为非法")
+            XCTAssertThrowsError(
+                try MailAccountDraft(provider: .custom, imapPort: port).toConfig(),
+                "IMAP 端口 \(port) 不应静默截断"
+            ) { error in
+                XCTAssertEqual(error as? MailAccountDraftError, .invalidPort(field: "IMAP", value: port))
+            }
+            XCTAssertThrowsError(
+                try MailAccountDraft(provider: .custom, smtpPort: port).toConfig(),
+                "SMTP 端口 \(port) 不应静默截断"
+            ) { error in
+                XCTAssertEqual(error as? MailAccountDraftError, .invalidPort(field: "SMTP", value: port))
+            }
+        }
+    }
+
+    func testToConfigAcceptsPortBoundaries() throws {
+        XCTAssertTrue(MailAccountDraft.isValidPort(1))
+        XCTAssertTrue(MailAccountDraft.isValidPort(65_535))
+        XCTAssertTrue(MailAccountDraft(provider: .custom, imapPort: 1, smtpPort: 65_535).hasValidPorts)
+
+        let config = try MailAccountDraft(provider: .custom, imapPort: 1, smtpPort: 65_535).toConfig()
+        XCTAssertEqual(config.imapPort, 1)
+        XCTAssertEqual(config.smtpPort, 65_535)
+    }
+
+    func testNewAccountDraftStartsWithGmailPresetHosts() {
+        let draft = MailAccountDraft.forNewAccount()
+
+        XCTAssertEqual(draft.provider, .gmail)
+        XCTAssertEqual(draft.imapHost, "imap.gmail.com")
+        XCTAssertEqual(draft.smtpHost, "smtp.gmail.com")
+        XCTAssertEqual(draft.imapPort, 993)
+        XCTAssertEqual(draft.smtpPort, 465)
+        XCTAssertTrue(draft.useTLS)
+    }
+
+    func testNewAccountDraftAppliesRequestedPreset() {
+        let draft = MailAccountDraft.forNewAccount(provider: .outlook)
+
+        XCTAssertEqual(draft.imapHost, "outlook.office365.com")
+        XCTAssertEqual(draft.smtpHost, "smtp.office365.com")
+        XCTAssertEqual(draft.imapPort, 993)
+        XCTAssertEqual(draft.smtpPort, 587)
+    }
+
+    func testNewAccountDraftLeavesCustomHostsEmpty() {
+        let draft = MailAccountDraft.forNewAccount(provider: .custom)
+
+        XCTAssertTrue(draft.imapHost.isEmpty)
+        XCTAssertTrue(draft.smtpHost.isEmpty)
     }
 
     func testApplyPresetKeepsCustomHosts() {

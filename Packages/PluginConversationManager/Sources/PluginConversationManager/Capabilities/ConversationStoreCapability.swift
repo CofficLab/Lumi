@@ -24,12 +24,20 @@ protocol ConversationStoreCapability: AnyObject {
 
     func messagesSnapshot(in conversationID: UUID) async -> [Message]
 
+    /// 读取一条会话的最新摘要：优先管理器内存（偏好变更会先同步到这里），回退存储层。
+    func fetchConversationSummary(id: UUID) async -> ConversationSummary?
+
     func messageCount(for conversationID: UUID) -> Int
 
     @discardableResult
     func addConversationObserver(
         _ callback: @escaping (ConversationEvent) -> Void
     ) -> any ConversationObserverHandle
+
+    @discardableResult
+    func addMessageChangeObserver(
+        _ callback: @escaping (MessageChange) -> Void
+    ) -> any MessageChangeObserverHandle
 }
 
 /// 将 ConversationManager 与 MessageManaging 适配为设置页能力。
@@ -77,6 +85,10 @@ final class ConversationStoreCapabilityAdapter: ConversationStoreCapability {
         await messageManager?.messagesSnapshot(in: conversationID) ?? []
     }
 
+    func fetchConversationSummary(id: UUID) async -> ConversationSummary? {
+        await manager.fetchConversation(id: id)
+    }
+
     func messageCount(for conversationID: UUID) -> Int {
         messageManager?.messageCount(for: conversationID) ?? 0
     }
@@ -87,4 +99,20 @@ final class ConversationStoreCapabilityAdapter: ConversationStoreCapability {
     ) -> any ConversationObserverHandle {
         manager.addConversationObserver(callback)
     }
+
+    @discardableResult
+    func addMessageChangeObserver(
+        _ callback: @escaping (MessageChange) -> Void
+    ) -> any MessageChangeObserverHandle {
+        guard let messageManager else {
+            return NoopMessageChangeObserverHandle()
+        }
+        return messageManager.addMessageChangeObserver(callback)
+    }
+}
+
+/// 未注入消息管理器时的空令牌，避免调用方区分可选分支。
+@MainActor
+final class NoopMessageChangeObserverHandle: MessageChangeObserverHandle {
+    func cancel() {}
 }
