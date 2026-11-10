@@ -5,7 +5,7 @@
 PluginMessageListBrief — Message List V1 (Brief) Manual + automated test reference for the V1 message list. V1 groups a conversation by **Agent Turn** and keeps everything else out of the way. Each turn shows the user message that triggered it, a collapsible process section, and the final reply. Live progress is reported by a single status card pinned to the bottom of the list, not inside the turns.
 
 平台: macOS 14+, iOS 17+
-测试文件: 26 个，用例总数: 160
+测试文件: 27 个，用例总数: 165
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -38,6 +38,7 @@ PluginMessageListBrief — Message List V1 (Brief) Manual + automated test refer
 
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
+- **ActivityLocalization**（5 条）：由 `activityTitlesUseInjectedLocalization`、`toolActivityUsesInjectedLocalization`、`disclosureTitleUsesInjectedLocalization` 等用例锁定；活动行与过程摘要必须经本地化解析，词条需覆盖 5 种语言（#893）。
 - **AgentActivityProjection**（13 条）：由 `thinking`、`generating`、`executingTool` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AgentTurnProjection**（9 条）：由 `finishedTurnLayout`、`twoUserMessagesRemainSeparateTurns`、`toolAndSystemRowsAreHidden` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **AgentTurnVM**（3 条）：由 `agentTurnVMPublishesProjectionChanges`、`activeToolCallStaysInsideProcessDisclosure`、`pendingAndRecordedTurnKeepStableListIdentity` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -227,27 +228,32 @@ PluginMessageListBrief — Message List V1 (Brief) Manual + automated test refer
 | 158 | MessageListSendPositioning | 回合运行中的活动变化保持定位 | 定位已开启且活动已出现 | 连续收到非空活动变化 | 定位保持开启 | P1 | ✅ 已覆盖 | `activityChangesWhileTurnRunsKeepPositioning` |
 | 159 | MessageListSendPositioning | 未开启定位时活动变化不影响状态 | 尚未发送 | 收到活动与 turn 投影事件 | 状态保持未激活 | P2 | ✅ 已覆盖 | `activityChangesBeforeSendAreIgnored` |
 | 160 | MessageListSendPositioning | 结束定位是幂等操作 | 定位已开启 | 连续调用两次 `end()`，再收到活动清空 | 不崩溃，定位保持结束 | P2 | ✅ 已覆盖 | `endIsIdempotent` |
+| 161 | ActivityLocalization | 活动标题经过注入的本地化解析（**回归 #893**） | — | 用 `[key]` 标记解析器解析发送/思考/生成/处理阶段 | 标题分别返回 `[Sending message…]`、`[Thinking…]`、`[Generating reply…]`、`[Processing…]` | P1 | ✅ 已覆盖 | `activityTitlesUseInjectedLocalization` |
+| 162 | ActivityLocalization | 工具与等待阶段的活动文案经过注入的本地化解析（**回归 #893**） | — | 用标记解析器解析单/多任务与等待确认状态 | 单任务 `[Executing]`；多任务 `[Executing 2 tasks]` + `[Latest: …]`；等待 `[Waiting for your confirmation]` | P1 | ✅ 已覆盖 | `toolActivityUsesInjectedLocalization` |
+| 163 | ActivityLocalization | 过程折叠标题与耗时经过注入的本地化解析（**回归 #893**） | — | 用标记解析器生成运行中与已完成回合的标题 | 运行中 `[Running] · [1 steps] · [12s]`；已完成 `[Completed after 1 steps] · [12s]` | P1 | ✅ 已覆盖 | `disclosureTitleUsesInjectedLocalization` |
+| 164 | ActivityLocalization | 耗时单位依次切换为秒/分/时（**回归 #893**） | — | 用标记解析器生成 45s / 90s / 3600s / 3900s 的标题 | 分别以 `[45s]`、`[1m]`、`[1h]`、`[1h 5m]` 结尾 | P1 | ✅ 已覆盖 | `durationUnitsUseInjectedLocalization` |
+| 165 | ActivityLocalization | 活动与过程摘要词条在所有规范语言下都有译文（**回归 #893**） | — | 读取编译后 `.lproj/Localizable.strings` | 15 个词条在 5 种语言下均符合预期 | P1 | ✅ 已覆盖 | `activityLabelsHaveTranslationsInCompiledBundle` |
 
-> 说明：全部 **160 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **165 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 34 / 34
-- P1: 已覆盖 100 / 100
+- P1: 已覆盖 105 / 105
 - P2: 已覆盖 26 / 26
-- **合计: 160 / 160**（仅表示清单场景，非源码覆盖率）
+- **合计: 165 / 165**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（34 条）
-- **P1**: 其余功能性用例（100 条）
+- **P1**: 其余功能性用例（105 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（26 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 160 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 165 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
