@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationState 的实现包，包含 5 个主要类型；当前测试覆盖 29 条用例。
+PluginConversationState 的实现包，包含 5 个主要类型；当前测试覆盖 33 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 29
+测试文件: 5 个，用例总数: 33
 
 核心组件（源码目录）:
 - `Observers/`
@@ -28,6 +28,7 @@ PluginConversationState 的实现包，包含 5 个主要类型；当前测试�
 - **综合**（12 条）：由 `pluginMetadataIsStable`、`providerPublishesStateEvents`、`partialUpdatePreservesUnchangedFields`、`deletedConversationRemovesStateSnapshot` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **授权解决后 activity 残留**（5 条）：由 `activityClearedAfterAuthorizationResolved`、`activityClearedAfterAuthorizationRejected`、`activityClearedWithoutAnyToolJobEvent` 等用例锁定——授权完成后 activity 必须从 waitingForUser 清掉，不能只靠 ToolJobEvent 驱动，取消后迟到的事件也不得把它改回来。
 - **activity 的终态不变量**（5 条）：由 `terminalAgentLoopStateClearsActivity`、`lateEventCannotResurrectActivityOnTerminalTurn`、`nonTerminalTurnsStillAcceptActivity` 等用例锁定——终态回合的 activity 恒为空，idle 只承载 sending，快照替换路径同样受约束。
+- **pre-turn 活动状态**（4 条）：由 `secondTurnSendingActivitySurvivesPreviousTerminalState`、`messageSenderStartedWritesSendingActivity` 等用例锁定——发送前窗口的 `.sending` 不受上一轮终态影响（#891），回合期 activity 仍不得回流到已死掉的回合。
 - **Chat 模式拦截后 activity 残留**（2 条）：由 `blockedBatchClearsExecutingToolActivity`、`pendingApprovalKeepsWaitingForUser` 锁定——整批拦截（无 ToolJob）后 `.batchCompleted` 必须清掉 `.executingTool`，但批次因待授权暂停时要保留 `.waitingForUser`。
 - **执行期授权状态**（3 条）：由 `authorizationSuspensionMarksAuthorizationRequired`、`askUserSuspensionKeepsAuthorizationNone`、`resumedTurnClearsAuthorizationRequired` 锁定——执行期授权挂起（Computer Use）必须标记 `authorizationState == .required`，`ask_user` 挂起不得误标，用户做出决定后必须回落。
 
@@ -64,27 +65,31 @@ PluginConversationState 的实现包，包含 5 个主要类型；当前测试�
 | 27 | 执行期授权状态 | 用户做出决定后会话授权状态必须回落 | 执行期授权挂起后已标记 required | 恢复回合并发送 `.toolCallsReceived` | `authorizationState == .none` | P0 | ✅ 已覆盖 | `resumedTurnClearsAuthorizationRequired` |
 | 28 | 综合 | 删除会话会清理状态快照（**#1031**） | 会话已有 turn/activity/job/error 快照 | 通过 `ConversationManaging` 删除该会话 | 快照回落为 idle 默认值，jobActivity 清空 | P0 | ✅ 已覆盖 | `deletedConversationRemovesStateSnapshot` |
 | 29 | 综合 | 非删除事件不会清理状态快照 | 会话已有运行中快照 | 触发标题更新与活跃标记事件 | 快照保持 `running` | P1 | ✅ 已覆盖 | `nonDeletionEventsKeepStateSnapshot` |
+| 30 | pre-turn 活动状态 | 第二轮的发送前活动不得被上一轮终态吞掉（**#891**） | 第一轮已进入 `.completed` / `.failed` / `.cancelled` | 写入 `activity = .sending` | activity 仍为 `.sending` | P0 | ✅ 已覆盖 | `secondTurnSendingActivitySurvivesPreviousTerminalState` |
+| 31 | pre-turn 活动状态 | MessageSender 事件到达后必须写入发送中活动（**#891**） | 第一轮已进入终态 | 发出 `MessageSenderEvent.started` | activity 为 `.sending` | P0 | ✅ 已覆盖 | `messageSenderStartedWritesSendingActivity` |
+| 32 | pre-turn 活动状态 | 终态回合仍不得承载回合期活动（**#891 护栏**） | 回合已进入终态 | 写入 thinking / executingTool / waitingForUser | activity 恒为 nil | P0 | ✅ 已覆盖 | `terminalTurnStillRejectsTurnScopedActivity` |
+| 33 | pre-turn 活动状态 | 发送前窗口不得把回合状态改写成 idle（**#891 护栏**） | 第一轮已进入终态 | 写入 `activity = .sending` | agentLoopState 保持终态，activity 为 `.sending` | P0 | ✅ 已覆盖 | `sendingActivityDoesNotResetAgentLoopState` |
 
-> 说明：全部 **29 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **33 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 13 / 13
+- P0: 已覆盖 17 / 17
 - P1: 已覆盖 14 / 14
 - P2: 已覆盖 2 / 2
-- **合计: 29 / 29**（仅表示清单场景，非源码覆盖率）
+- **合计: 33 / 33**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（17 条）
 - **P1**: 其余功能性用例（14 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（2 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 29 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 33 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
