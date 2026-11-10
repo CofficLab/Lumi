@@ -90,6 +90,17 @@ struct GitDirectoryResolverTests {
         #expect(resolved.path == target.path)
     }
 
+    @Test("项目目录是仓库子目录时向上找到仓库根的 .git（回归 #913）")
+    func resolvesAncestorGitDirectory() throws {
+        let fixture = try GitFixture.makeProject(label: "ancestor")
+        let nested = fixture.projectURL.appendingPathComponent("Sources/Feature", isDirectory: true)
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+
+        let resolved = try GitDirectoryResolver.resolveGitDirectory(for: nested)
+
+        #expect(resolved.standardizedFileURL == fixture.gitDirectory.standardizedFileURL)
+    }
+
     @Test(".git 不存在时抛出未找到错误")
     func throwsWhenGitDirectoryMissing() throws {
         let root = FileManager.default.temporaryDirectory
@@ -241,6 +252,25 @@ struct GitRepositoryWatchProviderTests {
         provider.startWatching(repositoryURL: fixture.projectURL)
 
         #expect(provider.watchingRepositoryURL != nil)
+        #expect(provider.isWatcherActive)
+        #expect(provider.watchedGitDirectoryPath == fixture.gitDirectory.standardizedFileURL.path)
+        #expect(events.count == 1)
+
+        provider.stopWatching()
+    }
+
+    @Test("项目路径是仓库子目录时正常监听并广播 started（回归 #913）")
+    func startsWatchingFromNestedProjectDirectory() throws {
+        let fixture = try GitFixture.makeProject(label: "provider-nested")
+        let nested = fixture.projectURL.appendingPathComponent("Sources", isDirectory: true)
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        let provider = GitRepositoryWatchProvider()
+        var events: [GitRepositoryWatchingEvent] = []
+        let handle = provider.addObserver { events.append($0) }
+        defer { handle.cancel() }
+
+        provider.startWatching(repositoryURL: nested)
+
         #expect(provider.isWatcherActive)
         #expect(provider.watchedGitDirectoryPath == fixture.gitDirectory.standardizedFileURL.path)
         #expect(events.count == 1)
