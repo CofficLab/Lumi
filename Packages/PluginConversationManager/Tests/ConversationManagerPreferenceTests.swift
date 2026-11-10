@@ -246,6 +246,104 @@ struct ConversationManagerPreferenceTests {
         #expect(manager.automationLevel(for: backgroundID) == .autonomous)
     }
 
+    /// 回归 #892：后台会话被挤出有界缓存后，下一次请求仍须使用它自己的推理强度。
+    @Test func evictedConversationKeepsItsReasoningEffort() {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationReasoningEvictionTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let manager = ConversationManager(store: nil, dataDirectory: directory)
+
+        let backgroundID = UUID()
+        manager.cache(ConversationSummary(
+            id: backgroundID,
+            createdAt: Date(timeIntervalSince1970: 1),
+            reasoningEffort: .high
+        ))
+
+        // 用 100 条更新的顶层会话把 background 挤出 80 条的有界窗口。
+        for index in 0..<100 {
+            manager.cache(ConversationSummary(
+                id: UUID(),
+                createdAt: Date(timeIntervalSince1970: TimeInterval(100 + index))
+            ))
+        }
+
+        #expect(!manager.conversations.contains { $0.id == backgroundID })
+        #expect(manager.reasoningEffortOptional(for: backgroundID) == .high)
+    }
+
+    /// 回归 #892：会话已被挤出缓存时设置推理强度，也必须作用于后续请求。
+    @Test func evictedConversationUsesReasoningSetWhileMissing() {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationReasoningMissingSetTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let manager = ConversationManager(store: nil, dataDirectory: directory)
+
+        let backgroundID = UUID()
+        manager.cache(ConversationSummary(
+            id: backgroundID,
+            createdAt: Date(timeIntervalSince1970: 1),
+            reasoningEffort: .low
+        ))
+        for index in 0..<100 {
+            manager.cache(ConversationSummary(
+                id: UUID(),
+                createdAt: Date(timeIntervalSince1970: TimeInterval(100 + index))
+            ))
+        }
+        #expect(!manager.conversations.contains { $0.id == backgroundID })
+
+        manager.setReasoningEffort(.max, for: backgroundID)
+
+        #expect(manager.reasoningEffortOptional(for: backgroundID) == .max)
+    }
+
+    /// 护栏 #892：在缓存外清除推理强度后，不能残留淘汰前的旧档位。
+    @Test func clearedReasoningOnEvictedConversationStaysOff() {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationReasoningClearTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let manager = ConversationManager(store: nil, dataDirectory: directory)
+
+        let backgroundID = UUID()
+        manager.cache(ConversationSummary(
+            id: backgroundID,
+            createdAt: Date(timeIntervalSince1970: 1),
+            reasoningEffort: .high
+        ))
+        for index in 0..<100 {
+            manager.cache(ConversationSummary(
+                id: UUID(),
+                createdAt: Date(timeIntervalSince1970: TimeInterval(100 + index))
+            ))
+        }
+        #expect(!manager.conversations.contains { $0.id == backgroundID })
+
+        manager.clearReasoningEffort(for: backgroundID)
+
+        #expect(manager.reasoningEffortOptional(for: backgroundID) == nil)
+    }
+
+    /// 护栏 #892：从未见过的会话仍是「没有显式档位」，不能被其他会话污染。
+    @Test func unknownConversationHasNoReasoningEffort() {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationReasoningUnknownTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let manager = ConversationManager(store: nil, dataDirectory: directory)
+        manager.cache(ConversationSummary(
+            id: UUID(),
+            createdAt: Date(timeIntervalSince1970: 1),
+            reasoningEffort: .high
+        ))
+
+        #expect(manager.reasoningEffortOptional(for: nil) == nil)
+        #expect(manager.reasoningEffortOptional(for: UUID()) == nil)
+    }
+
     /// 护栏 #1008：缓存外仍未知的会话不能被其他会话的级别污染，nil 仍回退 Build。
     @Test func unknownConversationStillDefaultsToBuild() {
         let directory = FileManager.default.temporaryDirectory

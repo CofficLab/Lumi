@@ -373,6 +373,7 @@ extension ConversationManager {
         // 但删除必须以持久化记录为准（issue #965）。
         conversations.removeAll { $0.id == id }
         languageOverrides[id] = nil
+        reasoningEffortOverrides[id] = nil
         notifyConversationObservers(.deleted(id))
 
         if selectedConversationID == id {
@@ -445,6 +446,7 @@ extension ConversationManager {
 
         for id in allIDs {
             languageOverrides[id] = nil
+            reasoningEffortOverrides[id] = nil
             notifyConversationObservers(.deleted(id))
         }
         notifyConversationsChanged()

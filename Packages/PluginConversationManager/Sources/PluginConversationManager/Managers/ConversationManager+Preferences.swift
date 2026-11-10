@@ -127,6 +127,7 @@ extension ConversationManager {
         if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
             conversations[index].reasoningEffort = reasoningEffort
         }
+        reasoningEffortOverrides[conversationID] = reasoningEffort
         notifyConversationObservers(.reasoningChanged(conversationID))
         notifyConversationsChanged()
 
@@ -143,7 +144,11 @@ extension ConversationManager {
         guard let conversationID else {
             return nil
         }
+        // 缓存未命中不等于「未设置」：后台会话被挤出有界窗口后，下一请求
+        // 仍须使用它自己的推理强度，否则出站请求会静默省略 reasoning_effort
+        // （issue #892）。
         return conversations.first { $0.id == conversationID }?.reasoningEffort
+            ?? reasoningEffortOverrides[conversationID]
     }
 
     public func clearReasoningEffort(for conversationID: UUID?) {
@@ -153,6 +158,8 @@ extension ConversationManager {
         if let index = conversations.firstIndex(where: { $0.id == conversationID }) {
             conversations[index].reasoningEffort = nil
         }
+        // 显式清除必须同时丢弃淘汰前的快照，否则会话在缓存外仍会读回旧档位。
+        reasoningEffortOverrides[conversationID] = nil
         notifyConversationObservers(.reasoningChanged(conversationID))
         notifyConversationsChanged()
 
