@@ -531,22 +531,87 @@ struct ModelSwitchTimelineTests {
 
     @Test("摘要文案区分「首次选定」与「从 A 切到 B」")
     func summaryTextDistinguishesFirstSelection() {
+        // 恒等解析：只钉住摘要结构，不依赖宿主机首选语言。
+        let identity: (String) -> String = { $0 }
+
         let first = ModelSwitchTimeline.summaryText(
             fromProviderID: nil,
             fromModelName: nil,
             toProviderID: "openai",
-            toModelName: "gpt-5"
+            toModelName: "gpt-5",
+            resolve: identity
         )
-        #expect(first.contains("gpt-5"))
-        #expect(!first.contains("已从"), "首次选定不应编造一个旧模型")
+        #expect(first == "Switched to openai · gpt-5", "首次选定不应编造一个旧模型")
 
         let switched = ModelSwitchTimeline.summaryText(
             fromProviderID: "openai",
             fromModelName: "gpt-5",
             toProviderID: "anthropic",
-            toModelName: "claude-opus"
+            toModelName: "claude-opus",
+            resolve: identity
         )
-        #expect(switched.contains("gpt-5"))
-        #expect(switched.contains("claude-opus"))
+        #expect(switched == "Switched from openai · gpt-5 to anthropic · claude-opus")
+    }
+
+    /// 回归 #905：摘要前缀与未知模型兜底必须来自解析器，
+    /// 否则写入的消息正文会把中文固化进英文界面的历史记录。
+    @Test("摘要文案经过注入的本地化解析（回归 #905）")
+    func summaryTextUsesInjectedLocalization() {
+        let resolved: (String) -> String = { "[\($0)]" }
+
+        let first = ModelSwitchTimeline.summaryText(
+            fromProviderID: nil,
+            fromModelName: nil,
+            toProviderID: "openai",
+            toModelName: "gpt-5",
+            resolve: resolved
+        )
+        #expect(first == "[Switched to %@]".replacingOccurrences(of: "%@", with: "openai · gpt-5"))
+
+        let unknown = ModelSwitchTimeline.summaryText(
+            fromProviderID: nil,
+            fromModelName: nil,
+            toProviderID: nil,
+            toModelName: nil,
+            resolve: resolved
+        )
+        #expect(unknown == "[Switched to %@]".replacingOccurrences(of: "%@", with: "[Unknown model]"))
+    }
+
+    /// 回归 #905：摘要词条必须在编译产物里对每种受支持语言都有译文。
+    @Test("模型切换摘要词条在所有规范语言下都有译文（回归 #905）")
+    func summaryTextHasTranslationsInCompiledBundle() throws {
+        let expected: [String: [String: String]] = [
+            "Switched to %@": [
+                "en": "Switched to %@", "zh-Hans": "已切换到 %@", "zh-Hant": "已切換到 %@",
+                "zh-HK": "已切換到 %@", "zh-TW": "已切換到 %@",
+            ],
+            "Switched from %@ to %@": [
+                "en": "Switched from %@ to %@", "zh-Hans": "已从 %@ 切换到 %@",
+                "zh-Hant": "已從 %@ 切換到 %@", "zh-HK": "已從 %@ 切換到 %@",
+                "zh-TW": "已從 %@ 切換到 %@",
+            ],
+            "Unknown model": [
+                "en": "Unknown model", "zh-Hans": "未知模型", "zh-Hant": "未知模型",
+                "zh-HK": "未知模型", "zh-TW": "未知模型",
+            ],
+        ]
+
+        for language in ["en", "zh-Hans", "zh-Hant", "zh-HK", "zh-TW"] {
+            let table = try Self.compiledStrings(language: language)
+            for (key, translations) in expected {
+                #expect(
+                    table[key] == translations[language],
+                    "\(language) 下 \(key) 译文缺失或不符，切换摘要会回退到其它语言"
+                )
+            }
+        }
+    }
+
+    private static func compiledStrings(language: String) throws -> [String: String] {
+        let bundle = pluginLocalization.bundle
+        let lprojPath = try #require(bundle.path(forResource: language, ofType: "lproj"))
+        let stringsPath = (lprojPath as NSString).appendingPathComponent("Localizable.strings")
+        return try #require(NSDictionary(contentsOfFile: stringsPath) as? [String: String])
     }
 }

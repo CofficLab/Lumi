@@ -62,18 +62,21 @@ enum ModelSwitchTimeline {
     /// 消息正文的可读摘要。
     ///
     /// 没有「切换前」时（首次为会话选定模型）只说「已切换到」，
-    /// 不编造一个并不存在的旧模型。
+    /// 不编造一个并不存在的旧模型。文案随写入时界面语言本地化（#905）；
+    /// 消息正文会持久化，因此只在写入时解析一次。
     static func summaryText(
         fromProviderID: String?,
         fromModelName: String?,
         toProviderID: String?,
-        toModelName: String?
+        toModelName: String?,
+        resolve: (String) -> String = { pluginLocalization.string($0) }
     ) -> String {
-        let target = displayName(providerID: toProviderID, modelName: toModelName) ?? "未知模型"
+        let target = displayName(providerID: toProviderID, modelName: toModelName)
+            ?? resolve("Unknown model")
         guard let source = displayName(providerID: fromProviderID, modelName: fromModelName) else {
-            return "已切换到 \(target)"
+            return String(format: resolve("Switched to %@"), target)
         }
-        return "已从 \(source) 切换到 \(target)"
+        return String(format: resolve("Switched from %@ to %@"), source, target)
     }
 
     /// 把「供应商 + 模型」拼成一行可读文本。

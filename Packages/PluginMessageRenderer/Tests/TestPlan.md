@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆盖 69 条用例。
+PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆盖 71 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 69
+测试文件: 9 个，用例总数: 71
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -50,7 +50,7 @@ PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆
 - **ToolCallGroupCollapsePolicy**（14 条）：由 `singleCallIsNotCollapsed`、`emptyGroupIsNotCollapsed`、`multipleCompletedCallsAreCollapsed` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolJobSummary**（5 条）：由 `mapsAllStatuses`、`projectsLiveJob`、`terminalJobIsNotStale` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ToolApprovalCancellation**（9 条）：由 `cancelledTurnClearsPendingApproval`、`cancelledTurnRefusesAllow`、`mismatchedSuspensionRefusesExecution` 等用例锁定；改动授权缓存或提交边界时优先跑对应测试文件。
-- **ModelSwitchSummary**（7 条）：由 `sameModelAcrossProvidersKeepsProviders`、`differentModelsStayCompact`、`firstSelectionHasNoSource` 等用例锁定；模型切换主行在「模型名相同、供应商不同」时必须同时展示两端供应商，否则会渲染成 `gpt-5 → gpt-5`（#907）。
+- **ModelSwitchSummary**（9 条）：由 `sameModelAcrossProvidersKeepsProviders`、`differentModelsStayCompact`、`firstSelectionHasNoSource` 等用例锁定；模型切换主行在「模型名相同、供应商不同」时必须同时展示两端供应商，否则会渲染成 `gpt-5 → gpt-5`（#907）；主行、详情弹层与辅助功能文案必须经本地化解析，词条需覆盖 5 种语言（#905）。
 
 ## 测试用例清单
 
@@ -123,29 +123,32 @@ PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆
 | 65 | ModelSwitchSummary | 模型名不同时保持紧凑文案，不追加供应商 | 同一供应商下切换不同模型 | 调用 `summaryText` | 文案为 `gpt-5 → gpt-4o` | P1 | ✅ 已覆盖 | `differentModelsStayCompact` |
 | 66 | ModelSwitchSummary | 同供应商同名模型仍按模型名展示 | 两端供应商与模型都相同 | 调用 `summaryText` | 文案为 `gpt-5 → gpt-5` | P1 | ✅ 已覆盖 | `sameProviderKeepsModelOnlyLabels` |
 | 67 | ModelSwitchSummary | 缺少任一供应商时不拼接半边供应商 | 只有切换前供应商 | 调用 `summaryText` | 保持纯模型名文案 | P2 | ✅ 已覆盖 | `missingProviderDoesNotPrefix` |
-| 68 | ModelSwitchSummary | 首次选择模型时只显示切换后的模型 | 切换前信息为 nil | 调用 `summaryText` | 文案为 `切换到 gpt-5` | P1 | ✅ 已覆盖 | `firstSelectionHasNoSource` |
+| 68 | ModelSwitchSummary | 首次选择模型时只显示切换后的模型 | 切换前信息为 nil | 调用 `summaryText`（恒等解析） | 文案为 `Switched to gpt-5` | P1 | ✅ 已覆盖 | `firstSelectionHasNoSource` |
 | 69 | ModelSwitchSummary | 只有供应商 ID 时退回显示供应商 | 两端都没有模型名 | 调用 `summaryText` | 文案为 `openai → airouter` | P2 | ✅ 已覆盖 | `providerOnlyFallsBackToIDs` |
+| 70 | ModelSwitchSummary | 摘要片段经过注入的本地化解析（回归 #905） | — | 用 `[key]` 标记解析器调用 `summaryText` / `labels` | 返回带标记的本地化片段 | P1 | ✅ 已覆盖 | `summaryUsesInjectedLocalization` |
+| 71 | ModelSwitchSummary | 模型切换词条在所有规范语言下都有译文（回归 #905） | — | 读取编译后 `.lproj/Localizable.strings` | 10 个词条在 5 种语言下均符合预期 | P1 | ✅ 已覆盖 | `switchLabelsHaveTranslationsInCompiledBundle` |
 
-> 说明：全部 **69 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **71 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 19 / 19
-- P1: 已覆盖 46 / 46
+- P1: 已覆盖 48 / 48
 - P2: 已覆盖 4 / 4
-- **合计: 69 / 69**（仅表示清单场景，非源码覆盖率）
+- **合计: 71 / 71**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（19 条）
-- **P1**: 其余功能性用例（46 条）
+- **P1**: 其余功能性用例（48 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 69 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 71 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 本地化用例依赖 SwiftBuild 编译出的 `.xcstrings`，需确认 `en` 与四种中文变体 `.lproj` 均已产出
 
 ## 测试执行
 
