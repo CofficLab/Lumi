@@ -1,2 +1,0 @@
-- ☑️ I understand it is strictly prohibited to use AI to write PR description
-- AI usage disclosure: 
