@@ -5,7 +5,7 @@ let package = Package(
     name: "ProviderConversation",
     defaultLocalization: "en",
     platforms: [
-        .macOS("13.1"),
+        .macOS("14.0"),
         .iOS(.v17)
     ],
     products: [
@@ -16,7 +16,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KitLLM"),
-        .package(path: "../../Vendor/LumiLogging"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../KitTestSupport"),
     ],
     targets: [

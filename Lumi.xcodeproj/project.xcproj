@@ -24,8 +24,11 @@
       "kind": "local",
       "path": "Packages/KitBootstrapEnvironment",
     }, {
-      "kind": "local",
-      "path": "Vendor/LumiProviders",
+      "kind": "remote",
+      "repository": "https://github.com/CofficLab/LumiProviders.git",
+      "version": {
+        "up-to-next-major-version": "1.22.0",
+      },
     }, {
       "kind": "local",
       "path": "Packages/FactoryLumi",

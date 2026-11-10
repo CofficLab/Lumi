@@ -9,10 +9,10 @@ let package = Package(
         .library(name: "PluginWebServer", targets: ["PluginWebServer"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiKernel"),
-        .package(path: "../../Vendor/LumiUI"),
-        .package(path: "../../Vendor/LumiProviders"),
-        .package(path: "../../Vendor/LumiSettings"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.13.0"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
         .package(path: "../ProviderWebServer"),
         .package(path: "../KitWebServer"),
         .package(path: "../KitWebAPI"),
@@ -20,7 +20,7 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../KitAgentTool"),
-        .package(path: "../../Vendor/LumiLogging"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
     ],
     targets: [
         .target(

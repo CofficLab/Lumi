@@ -3,14 +3,14 @@ import PackageDescription
 let package = Package(
     name: "PluginChatPanel",
     defaultLocalization: "en",
-    platforms: [.macOS("13.1"), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [.library(name: "PluginChatPanel", targets: ["PluginChatPanel"])],
     dependencies: [
-        .package(path: "../../Vendor/LumiProviders"),
-        .package(path: "../../Vendor/LumiLogging"),
-        .package(path: "../../Vendor/LumiKernel"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderChatSection"),
-        .package(path: "../../Vendor/LumiLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
     ],
     targets: [
         .target(name: "PluginChatPanel", dependencies: [

@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "KitEditorSource",
-    platforms: [.macOS("13.1"), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(
             name: "EditorSource",

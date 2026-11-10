@@ -4,12 +4,12 @@ import PackageDescription
 let package = Package(
     name: "KitShell",
     defaultLocalization: "en",
-    platforms: [.macOS("13.1"), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "KitShell", targets: ["KitShell"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
     ],
 
     targets: [

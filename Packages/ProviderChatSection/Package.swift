@@ -3,12 +3,12 @@ import PackageDescription
 
 let package = Package(
     name: "ProviderChatSection",
-    platforms: [.macOS("13.1"), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         .library(name: "ProviderChatSection", targets: ["ProviderChatSection"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiUI"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.13.0"),
         .package(path: "../ProviderConversation"),
     ],
     targets: [

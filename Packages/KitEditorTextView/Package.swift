@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "KitEditorTextView",
     defaultLocalization: "en",
-    platforms: [.macOS("13.1"), .iOS(.v17)],
+    platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [
         // A Fast, Efficient text view for code.
         .library(
@@ -26,9 +26,9 @@ let package = Package(
             .upToNextMajor(from: "1.7.5")
         ),
         // Logging protocol
-        .package(path: "../../Vendor/LumiLogging"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         // Runtime localization
-        .package(path: "../../Vendor/LumiLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
     ],
     targets: [
         // The main text view target.

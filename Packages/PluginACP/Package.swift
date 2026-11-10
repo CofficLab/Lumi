@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "PluginACP", targets: ["PluginACP"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiKernel"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderACP"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderConversation"),
@@ -17,9 +17,9 @@ let package = Package(
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../KitAgentTool"),
-        .package(path: "../../Vendor/LumiLocalization"),
-        .package(path: "../../Vendor/LumiSettings"),
-        .package(path: "../../Vendor/LumiUI"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.13.0"),
     ],
     targets: [
         .target(

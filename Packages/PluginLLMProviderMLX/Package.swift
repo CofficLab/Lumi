@@ -6,13 +6,13 @@ let package = Package(
     platforms: [.macOS("14.0"), .iOS(.v17)],
     products: [.library(name: "PluginLLMProviderMLX", targets: ["PluginLLMProviderMLX"])],
     dependencies: [
-        .package(path: "../../Vendor/LumiProviders"),
-        .package(path: "../../Vendor/LumiLogging"),
-        .package(path: "../../Vendor/LumiKernel"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),
         .package(path: "../KitDownload"),
-        .package(path: "../../Vendor/mlx-swift-lm"),
+        .package(url: "https://github.com/ml-explore/mlx-swift-lm.git", from: "3.32.3"),
         .package(
             url: "https://github.com/huggingface/swift-transformers.git",
             exact: "1.4.0"

@@ -9,17 +9,17 @@ let package = Package(
         .library(name: "PluginSkill", targets: ["PluginSkill"]),
     ],
     dependencies: [
-        .package(path: "../../Vendor/LumiProviders"),
-        .package(path: "../../Vendor/LumiKernel"),
+        .package(url: "https://github.com/CofficLab/LumiProviders.git", from: "1.22.0"),
+        .package(url: "https://github.com/CofficLab/LumiKernel.git", from: "1.1.0"),
         .package(path: "../KitLLM"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../../Vendor/LumiLogging"),
+        .package(url: "https://github.com/CofficLab/LumiLogging.git", from: "1.0.1"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderLifecycleHooks"),
-        .package(path: "../../Vendor/LumiSettings"),
-        .package(path: "../../Vendor/LumiLocalization"),
-        .package(path: "../../Vendor/LumiUI"),
+        .package(url: "https://github.com/CofficLab/LumiSettings.git", from: "1.1.0"),
+        .package(url: "https://github.com/CofficLab/LumiLocalization.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.13.0"),
     ],
     targets: [
         .target(
