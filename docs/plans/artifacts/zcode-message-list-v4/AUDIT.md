@@ -220,7 +220,75 @@ AppKit 的字体度量不是线程安全的。
 
 处理：给该文件加 `@Suite(.serialized)`。加后本分支 12 次连跑 0 失败。
 
-## 13. 未完成 / 遗留
+## 13. 独立 Package 化（V4 迁出 `PluginMessageListDetailed`）
+
+V4 原先与 V3 共处 `PluginMessageListDetailed` 包内 —— 这**偏离了**项目惯例：
+V1 / V2 / V3 各自是独立 Package（`PluginMessageListBrief` /
+`PluginMessageListStandard` / `PluginMessageListDetailed`）。
+现已把 V4 迁为独立 Package `PluginMessageListZCode`。
+
+### 13.1 迁出内容
+
+| 类别 | 内容 |
+|---|---|
+| V4 专属 | `PluginMessageListZCodePlugin`、`ListV4View`、`ZCodeTurnView` 等 13 个文件 |
+| 基础设施 | `ListV4ViewModel`、分页、行构建、滚动协调、首屏门禁、底部判定等 32 个文件 |
+| 测试 | 12 个测试文件（V4 专属 6 + 基础设施 6） |
+
+共 45 个源文件 / 约 5400 行。
+
+### 13.2 去 V3 化
+
+- `ListV3ViewModel` → `ListV4ViewModel`（新包内副本）
+- `HistoryBuildSignatureV3` → `HistoryBuildSignatureV4`
+- `MessageFingerprintV3` → `MessageFingerprintV4`
+- `VerbosityObservationBox` → `ZCodeVerbosityObservationBox`
+
+### 13.3 V3 侧保持原样
+
+V3 的 `ListV3ViewModel`、`ListV3View` 名字与结构**一字未动**，
+其 `ScrollViewBottomTracker` 回退到 V4 之前的状态
+（`243eeb92e`），剥离全部 V4 专用代码（`mode`、来源上报、方向回调、
+程序化作用域、用户事件监测）。
+
+唯一带回 V3 的是 `findOwningScrollView()` 修复 ——
+那是**真实的 bug 修复**（tracker 挂在 `List` 的 `background` 上，
+是滚动视图的**兄弟**而非后代，`enclosingScrollView` 恒为 nil，
+观察者从未挂上），V3 与 V4 都需要。
+
+### 13.4 边界
+
+- 新包**不依赖**任何其它消息列表包（插件不得依赖插件）。
+- 渲染层（`PluginMessageRenderer`）仍**共用**：`.zcode` 是同一 renderer
+  内的分支，第三方 renderer 的注册顺序、`order` 值与分发逻辑不变。
+- `FactoryLumi` 新增对新包的依赖与插件注册；
+  仲裁测试的 import 改为指向新包。
+
+### 13.5 代价与收益
+
+**代价**：V3 与 V4 存在两份近似的基础设施实现（滚动跟踪、分页、
+行构建、首屏门禁等约 2400 行）。
+
+**收益**：各档位可独立演进、独立发布；V3 的行为完全不受 V4 影响。
+
+### 13.6 验证
+
+| 包 | 结果 |
+|---|---|
+| `PluginMessageListZCode`（新） | 141 tests / 8 suites passed |
+| `PluginMessageListDetailed`（V3） | 117 tests / 9 suites passed |
+| `PluginMessageListStandard` | 120 tests / 2 suites passed |
+| `PluginMessageListBrief` | 165 tests / 20 suites passed |
+| `PluginMessageRenderer` | 196 tests / 18 suites passed |
+| `KitMarkdown` | 55 tests / 4 suites passed |
+| `ProviderMessageRendering` | 17 tests / 3 suites passed |
+| `PluginConversationManager` | 88 tests / 16 suites passed |
+| `FactoryLumi` 槽位仲裁 | 5 tests / 1 suite passed |
+
+App 全量构建 **BUILD SUCCEEDED**；
+`PluginMessageListZCode` 与 `PluginMessageListDetailed` 的 **Release** 构建均通过。
+
+## 14. 未完成 / 遗留
 
 1. **截图矩阵**（见第 10 节）—— 环境阻塞，未伪造。
 2. **`swift-log` 的 lock 不一致** —— 既存问题，未在本次范围内处理。
