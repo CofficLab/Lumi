@@ -160,6 +160,27 @@ struct UserDefinedCloudProviderConfigurationTests {
         }
     }
 
+    @Test("非正上下文窗口校验后被归一化为未知（回归 #1121）")
+    func normalizesNonPositiveContextWindowToUnknown() throws {
+        let configuration = UserDefinedCloudProviderConfiguration(
+            id: "user-1",
+            displayName: "团队网关",
+            baseURL: "https://llm.example.com/v1",
+            defaultModel: "m1",
+            models: [
+                UserDefinedCloudModel(id: "m1", contextWindowSize: 0),
+                UserDefinedCloudModel(id: "m2", contextWindowSize: -4_096),
+                UserDefinedCloudModel(id: "m3", contextWindowSize: 128_000),
+            ]
+        )
+
+        let validated = try configuration.validated()
+
+        #expect(validated.models[0].contextWindowSize == nil)
+        #expect(validated.models[1].contextWindowSize == nil)
+        #expect(validated.models[2].contextWindowSize == 128_000)
+    }
+
     @Test("默认模型不在列表中时回退到第一个模型")
     func fallsBackToFirstModelWhenDefaultMissing() throws {
         let configuration = UserDefinedCloudProviderConfiguration(
