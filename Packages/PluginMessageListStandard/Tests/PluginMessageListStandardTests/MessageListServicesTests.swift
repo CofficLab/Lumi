@@ -7,9 +7,10 @@ import Testing
 // MARK: - activityMessage 投影
 
 @MainActor
-private func services(
+func services(
     conversationState: StubConversationStateCapability?,
-    selected: UUID? = UUID()
+    selected: UUID? = UUID(),
+    resolveText: @escaping (String) -> String = { $0 }
 ) -> MessageListServices {
     MessageListServices(
         conversations: StubConversationCapability(selected: selected),
@@ -20,10 +21,11 @@ private func services(
         agentTurn: nil, promptSuggestions: nil, promptSuggestionExecutor: nil,
         project: nil, toolbar: nil, chat: nil
     )
+    .withResolver(resolveText)
 }
 
 @MainActor
-private func snapshot(
+func snapshot(
     conversationID: UUID,
     activity: ConversationActivity?,
     job: ConversationJobActivity = ConversationJobActivity()
@@ -49,19 +51,19 @@ func activityMessageCoversSimpleStates() {
     let sendingRow = sending.activityMessage(for: conversationID)
     #expect(sendingRow?.role == .status)
     #expect(sendingRow?.conversationID == conversationID)
-    #expect(sendingRow?.content.contains("发送") == true)
+    #expect(sendingRow?.content == "Sending message…")
 
     let thinking = services(
         conversationState: snapshot(conversationID: conversationID, activity: .thinking),
         selected: conversationID
     )
-    #expect(thinking.activityMessage(for: conversationID)?.content.contains("思考") == true)
+    #expect(thinking.activityMessage(for: conversationID)?.content == "Thinking…")
 
     let waiting = services(
         conversationState: snapshot(conversationID: conversationID, activity: .waitingForUser),
         selected: conversationID
     )
-    #expect(waiting.activityMessage(for: conversationID)?.content.contains("等待") == true)
+    #expect(waiting.activityMessage(for: conversationID)?.content == "Waiting for your input…")
 }
 
 @MainActor
@@ -80,9 +82,8 @@ func activityMessageUsesJobDescription() {
     let row = services(conversationState: stub, selected: conversationID)
         .activityMessage(for: conversationID)
 
-    // 有运行中任务时拼接描述：「正在读取文件…」，而非通用文案
-    #expect(row?.content.contains("读取文件") == true)
-    #expect(row?.content.contains("正在") == true)
+    // 有运行中任务时拼接描述：「Running 读取文件…」，而非通用文案
+    #expect(row?.content == "Running 读取文件…")
 }
 
 @MainActor
@@ -97,7 +98,7 @@ func activityMessageFallsBackWithoutRunningJob() {
     )
     let rowA = services(conversationState: noRunning, selected: conversationID)
         .activityMessage(for: conversationID)
-    #expect(rowA?.content.contains("旧任务") == false)
+    #expect(rowA?.content == "Executing tool…")
 
     // 没有描述 → 同样退回通用文案
     let noDescription = snapshot(
@@ -107,7 +108,7 @@ func activityMessageFallsBackWithoutRunningJob() {
     )
     let rowB = services(conversationState: noDescription, selected: conversationID)
         .activityMessage(for: conversationID)
-    #expect(rowB?.content.contains("执行") == true)
+    #expect(rowB?.content == "Executing tool…")
 }
 
 @MainActor
