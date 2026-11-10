@@ -407,6 +407,60 @@ import Testing
     #expect(await waitUntil { viewModel.conversations.map(\.id) == [other.id] })
 }
 
+/// #896：切到条数更多的新项目后，reload 不能拿旧列表条数给新项目判「没有下一页」。
+@Test @MainActor func projectSwitchReloadKeepsPagingUntilNewProjectIsExhausted() async throws {
+    let project = DefaultProjectProvider()
+    try await project.openProject(at: "/workspace/A")
+
+    let base = Date()
+    let projectA = (0..<41).map { index in
+        ConversationSummary(
+            id: UUID(),
+            title: "A\(index)",
+            createdAt: base,
+            updatedAt: base.addingTimeInterval(-Double(index) * 60),
+            projectPath: "/workspace/A"
+        )
+    }
+    let projectB = (0..<81).map { index in
+        ConversationSummary(
+            id: UUID(),
+            title: "B\(index)",
+            createdAt: base,
+            updatedAt: base.addingTimeInterval(-Double(index) * 60),
+            projectPath: "/workspace/B"
+        )
+    }
+    let conversations = DelayedConversationManager(summaries: projectA + projectB)
+
+    let viewModel = ConversationListViewModel(
+        context: makeListContext(conversations: conversations, project: project),
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .currentProject
+    )
+
+    // 先把 A 的 41 条全部加载完：此时旧列表条数 41 不是页大小的整数倍。
+    await viewModel.reload()
+    await viewModel.loadNextPage()
+    #expect(viewModel.conversations.count == 41)
+    #expect(!viewModel.hasMore)
+
+    try await project.openProject(at: "/workspace/B")
+    await viewModel.reload()
+
+    // 越过旧目标 41 条后，B 仍有第 81 条未加载，hasMore 必须保持打开。
+    #expect(viewModel.conversations.count == 80)
+    #expect(viewModel.hasMore, "刷新不能按旧列表条数猜测新项目已没有下一页")
+    #expect(viewModel.conversationCount == 81)
+
+    await viewModel.loadNextPage()
+    #expect(viewModel.conversations.count == 81)
+    #expect(Set(viewModel.conversations.map(\.id)) == Set(projectB.map(\.id)))
+    #expect(!viewModel.hasMore)
+    viewModel.cancel()
+}
+
 @MainActor
 private func makeListContext(
     conversations: any ConversationManaging,

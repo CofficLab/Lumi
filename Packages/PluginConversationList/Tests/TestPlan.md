@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 61 条用例。
+PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 62 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 61
+测试文件: 13 个，用例总数: 62
 
 核心组件（源码目录）:
 - `Helpers/`
@@ -118,16 +118,17 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 | 59 | ConversationListViewModel | 刷新与下一页交错时不删除已追加页面（**#933**） | 已加载 40 条，下一页 100ms 返回、刷新首屏 400ms 返回 | 分页完成后改标题并等待刷新发布 | 列表保留 80 条、hasMore 仍为 true，随后可加载到 100 条 | P0 | ✅ 已覆盖 | `reloadKeepsPagesAppendedWhileItRuns` |
 | 60 | ConversationRailTabController | Chat 侧栏标签标题走本地化，tooltip 不再硬编码中文（**#923**） | 同时存在 Chats 与项目标签 | 启动控制器并注入标题解析器 | 两个标签标题均来自解析器，而非中文字面量 | P1 | ✅ 已覆盖 | `railTabTitlesUsePluginLocalization` |
 | 61 | ConversationRailTabController | 标签标题依赖的 Chats/Projects key 具备多语言翻译（**#923**） | 插件编译后的字符串表 | 读取各语言 Localizable.strings | 英文为 Chats/Projects，简中为 对话/项目，繁中为 專案 | P1 | ✅ 已覆盖 | `railTabTitleKeysHaveTranslations` |
+| 62 | ConversationListViewModel | 切到条数更多的新项目后 reload 保持 hasMore 打开（**#896**） | 项目 A 已加载全部 41 条，项目 B 有 81 条 | 切到 B 并 reload，随后 loadNextPage | reload 后显示 80 条且 hasMore 为 true，翻页后补齐 81 条并关闭 hasMore | P1 | ✅ 已覆盖 | `projectSwitchReloadKeepsPagingUntilNewProjectIsExhausted` |
 
-> 说明：全部 **61 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **62 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 45 / 45
+- P1: 已覆盖 46 / 46
 - P2: 已覆盖 11 / 11
-- **合计: 61 / 61**（仅表示清单场景，非源码覆盖率）
+- **合计: 62 / 62**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
