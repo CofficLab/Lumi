@@ -2,7 +2,7 @@ import LumiUI
 import SwiftUI
 
 struct RowView: View {
-    let project: LumiProject
+    let project: ProjectEntry
     let isSelected: Bool
     let select: () -> Void
     let remove: () -> Void
@@ -10,10 +10,14 @@ struct RowView: View {
     var body: some View {
         AppListRow(isSelected: isSelected, action: select) {
             HStack(spacing: 10) {
-                ProjectStorageIcon(kind: ProjectStorageDetector.kind(for: project.path), size: 13)
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                ProjectStorageIcon(
+                    kind: ProjectStorageDetector.kind(for: project.path),
+                    size: 13,
+                    tint: isSelected ? Color.accentColor : Color.secondary
+                )
                     .frame(width: 24, height: 24)
                     .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
+                    .help(storageHint)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(project.name)
@@ -45,5 +49,10 @@ struct RowView: View {
                 .accessibilityLabel(pluginLocalization.string("Remove Project"))
             }
         }
+    }
+
+    /// 存储状态提示；仅在项目不可用时给出说明。
+    private var storageHint: String {
+        ProjectStorageHint.text(for: ProjectStorageDetector.kind(for: project.path))
     }
 }
