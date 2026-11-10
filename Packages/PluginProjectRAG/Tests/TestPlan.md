@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 121 条用例。
+PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 125 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，用例总数: 121
+测试文件: 10 个，用例总数: 125
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -46,7 +46,7 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **综合**（12 条）：由 `retainsStableIdentifiers`、`registersProvider`、`injectsContextOnce` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ProjectRAGPlugin 启动调度**（1 条）：由 `startsIdleSchedulerWithoutCurrentProject` 锁定；启动时没有当前项目也必须启动 idle 调度，否则整轮会话的后台索引都会被跳过。
 - **RAGIndexScheduling**（4 条）：由 `selectsMissingIndexBeforeStaleIndex`、`neverSelectsCurrentProject`、`failedProjectUsesExponentialBackoff` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **RAGPureLogic**（59 条）：由 `chunkEmptyInputReturnsEmpty`、`chunkSingleBlockProducesOneChunk`、`chunkProducesOverlapAcrossBlocks` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **RAGPureLogic**（63 条）：由 `chunkEmptyInputReturnsEmpty`、`chunkSingleBlockProducesOneChunk`、`chunkProducesOverlapAcrossBlocks` 等用例锁定；改动该模块时优先跑对应测试文件。CRLF（`\r\n`）在 Swift 中是单个 Character，必须整体算一个换行，分块窗口与 `lineRange` 都按真实源码行计算（**回归 #1114**）。
 - **RAGSQLiteStoreConcurrency**（1 条）：由 `concurrentWritersOnOneConnectionDoNotCollide` 用例锁定；该用例用 8 个线程同时向同一 store 写入不同项目，移除 `RAGSQLiteStore` 的连接锁后必定因「cannot start a transaction within a transaction」失败。
 - **RAGServiceModelMigration**（1 条）：由 `backgroundIndexRebuildsWhenEmbeddingModelChanged` 用例锁定；该用例预置一个模型标识过期但维度相同的索引状态，再以 `background: true` 触发索引，缺少后台迁移能力时会抛「后台索引暂不执行 embedding 模型迁移」。
 - **RAGFileScannerFailure**（3 条）：由 `missingRootThrows`、`regularFileRootThrows`、`emptyDirectoryReturnsNoFiles` 用例锁定；扫描接口必须把「根目录不可用」与「项目确实为空」区分开，前者抛 `RAGError.projectRootUnavailable`，后者才返回空数组。
@@ -181,27 +181,31 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 119 | RAGCacheKey | 切换项目路径后不复用旧缓存 | 已向项目 A 写入结果 | 用项目 B 构造 key 并 `get` | 返回 nil | P1 | ✅ 已覆盖 | `replacedProjectPathStillMisses` |
 | 120 | RAGLexicalIgnore | ripgrep 词法参数禁用 ignore 规则（**回归 #1113**） | 任意查询词与项目路径 | 构造 `RAGLexicalFileSearcher.ripgrepArguments` | 参数包含 `--no-ignore`，项目路径位于末尾 | P0 | ✅ 已覆盖 | `ripgrepArgumentsDisableIgnoreRules` |
 | 121 | RAGLexicalIgnore | 词法搜索包含被忽略目录中的源码（**回归 #1113**） | 临时 git 仓库，`.gitignore` 忽略 `generated/` | `Tracked.swift` 与 `generated/Ignored.swift` 都含查询词，执行词法搜索 | 两条来源都出现在结果中，不得遗漏被忽略目录 | P0 | ✅ 已覆盖 | `lexicalSearchFindsSourceInGitignoredDirectory` |
+| 122 | RAGPureLogic | CRLF 只计一次换行，内容与行号正确（**回归 #1114**） | 内容为 `"a\r\nb"` | 执行 `RAGChunker().chunk` | 内容为 `"a\nb"`，`lineRange` 为 1...2 | P0 | ✅ 已覆盖 | `chunkTreatsCRLFAsSingleLineBreak` |
+| 123 | RAGPureLogic | CRLF 文件按真实源码行切窗口 | 10 行内容全部用 `\r\n` 连接 | `maxLines: 4, overlapLines: 0` 执行分块 | 窗口为 1...4、5...8、9...10 | P1 | ✅ 已覆盖 | `chunkCountsCRLFWindowsBySourceLines` |
+| 124 | RAGPureLogic | CRLF 中的空行仍占真实行号 | 内容为 `"a\r\n\r\nb"` | 执行分块 | 内容为 `"a\n\nb"`，`lineRange` 为 1...3 | P1 | ✅ 已覆盖 | `chunkKeepsBlankLineInCRLF` |
+| 125 | RAGPureLogic | 单独的 CR 也作为换行 | 内容为 `"a\rb"` | 执行分块 | 内容为 `"a\nb"`，`lineRange` 为 1...2 | P2 | ✅ 已覆盖 | `chunkTreatsLoneCarriageReturnAsLineBreak` |
 
 > 说明：全部 **114 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 13 / 13
-- P1: 已覆盖 96 / 96
-- P2: 已覆盖 12 / 12
-- **合计: 121 / 121**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 14 / 14
+- P1: 已覆盖 98 / 98
+- P2: 已覆盖 13 / 13
+- **合计: 125 / 125**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
-- **P1**: 其余功能性用例（96 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
+- **P1**: 其余功能性用例（98 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 121 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 125 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

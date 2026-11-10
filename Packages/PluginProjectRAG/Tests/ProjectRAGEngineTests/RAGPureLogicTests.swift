@@ -59,6 +59,37 @@ import Foundation
         let chunks = RAGChunker(maxLines: 5, overlapLines: 1).chunk(content)
         #expect(chunks.map(\.index) == Array(0..<chunks.count))
     }
+
+    @Test func chunkTreatsCRLFAsSingleLineBreak() {
+        let chunks = RAGChunker(maxLines: 80, overlapLines: 0).chunk("a\r\nb")
+        #expect(chunks.count == 1)
+        #expect(chunks[0].content == "a\nb")
+        #expect(chunks[0].lineRange == RAGLineRange(startLine: 1, endLine: 2))
+    }
+
+    @Test func chunkCountsCRLFWindowsBySourceLines() {
+        let content = (0..<10).map { "line \($0)" }.joined(separator: "\r\n")
+        let chunks = RAGChunker(maxLines: 4, overlapLines: 0).chunk(content)
+        #expect(chunks.map(\.lineRange) == [
+            RAGLineRange(startLine: 1, endLine: 4),
+            RAGLineRange(startLine: 5, endLine: 8),
+            RAGLineRange(startLine: 9, endLine: 10),
+        ])
+    }
+
+    @Test func chunkKeepsBlankLineInCRLF() {
+        let chunks = RAGChunker(maxLines: 80, overlapLines: 0).chunk("a\r\n\r\nb")
+        #expect(chunks.count == 1)
+        #expect(chunks[0].content == "a\n\nb")
+        #expect(chunks[0].lineRange == RAGLineRange(startLine: 1, endLine: 3))
+    }
+
+    @Test func chunkTreatsLoneCarriageReturnAsLineBreak() {
+        let chunks = RAGChunker(maxLines: 80, overlapLines: 0).chunk("a\rb")
+        #expect(chunks.count == 1)
+        #expect(chunks[0].content == "a\nb")
+        #expect(chunks[0].lineRange == RAGLineRange(startLine: 1, endLine: 2))
+    }
 }
 
 @Suite struct RAGMathUtilsTests {
