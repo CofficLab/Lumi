@@ -204,10 +204,18 @@ public struct MarkdownTheme: Sendable {
     ///   非主线程的测试宿主里，`NSFont` 的度量访问在那里并不安全。
     ///   改为惰性求值后，字体度量只在真正首次访问时发生。
     ///
-    ///   但惰性求值每次都会重算，若 `NSFont` 的行高在进程生命周期内有
-    ///   极小波动，就会让「同一主题的两个实例」出现不同的 `bodyLineSpacing`。
-    ///   因此这里**缓存**第一次算出的结果，保证同一进程内取值恒定。
+    ///   惰性求值必须**线程安全**：Swift Testing 默认并行执行，
+    ///   多个用例同时首次访问 `zcode` 时若都去读 `NSFont`，
+    ///   AppKit 的字体度量在并发下并不安全 —— 表现为进程 SIGSEGV。
+    ///   因此这里用锁把「计算 + 缓存」做成原子操作，
+    ///   并且**只在锁内**访问 `NSFont`。
+    ///
+    ///   缓存还有第二个作用：若 `NSFont` 的行高在进程生命周期内有极小波动，
+    ///   重算会让「同一主题的两个实例」出现不同的 `bodyLineSpacing`。
+    ///   缓存第一次的结果，保证同一进程内取值恒定。
     public static var zcode: MarkdownTheme {
+        zcodeLock.lock()
+        defer { zcodeLock.unlock() }
         if let cached = cachedZCode {
             return cached
         }
@@ -216,10 +224,23 @@ public struct MarkdownTheme: Sendable {
         return theme
     }
 
+    /// 保护字体度量的读取。
+    ///
+    /// - Important: 与 `zcodeLock` 分开，避免 `zcode` → `lineSpacing` 的嵌套死锁。
+    private static let fontMetricsLock = NSLock()
+
+    /// 保护 V4 主题的惰性初始化。
+    ///
+    /// - Important: 锁必须覆盖**整个**「检查缓存 → 计算 → 写缓存」过程，
+    ///   只保护写入是不够的 —— 两个线程可能同时通过 `nil` 检查，
+    ///   然后都去读 `NSFont`。
+    private static let zcodeLock = NSLock()
+
     /// 缓存的 V4 主题；nil 表示尚未计算。
     ///
-    /// - Note: 用 `nonisolated(unsafe)` 是因为这里只做一次性的惰性写入，
-    ///   值本身是不可变的；写入发生在首次访问 `zcode` 时。
+    /// - Note: 只在 `zcodeLock` 保护下读写，锁保证了互斥与可见性。
+    ///   仍需 `nonisolated(unsafe)` 只是为了通过 Swift 6 的并发检查 ——
+    ///   该检查无法静态推断「锁保护」这一事实。
     private nonisolated(unsafe) static var cachedZCode: MarkdownTheme?
 
     /// 构造 V4 主题。
@@ -310,7 +331,16 @@ public struct MarkdownTheme: Sendable {
     ///
     /// - Important: SwiftUI 的 `.lineSpacing` 是额外间距，
     ///   因此不能把目标行高直接传进去。
+    ///
+    /// - Important: `NSFont` 的度量访问**不是线程安全的**。
+    ///   这里用一把**独立的**锁串行化，避免 Swift Testing 并行执行时
+    ///   多个用例同时读字体度量而导致崩溃。
+    ///
+    ///   - Note: 必须与 `zcodeLock` 分开。`zcode` 持有 `zcodeLock` 时会调用
+    ///     本方法，而 `NSLock` **不可重入** —— 用同一把锁会直接死锁。
     static func lineSpacing(targetLineHeight: CGFloat, fontSize: CGFloat) -> CGFloat {
+        fontMetricsLock.lock()
+        defer { fontMetricsLock.unlock() }
         let font = NSFont.systemFont(ofSize: fontSize)
         let fontLineHeight = font.ascender - font.descender + font.leading
         return max(0, targetLineHeight - fontLineHeight)
