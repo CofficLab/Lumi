@@ -452,7 +452,9 @@ extension ConversationManager {
         if Self.verbose {
             Self.logger.info("\(Self.t)批量删除 \(allIDs.count) 个过期对话")
         }
-        return Array(allIDs)
+        // 返回值必须与查询口径一致：只报告命中的顶层会话，连带删除的子
+        // Agent 会话不能计入，否则「清理前 N 条」与「已删除 M 条」对不上（#897）。
+        return ids
     }
 
     public func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool {

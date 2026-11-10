@@ -142,15 +142,18 @@ public protocol ConversationManaging: AnyObject {
         includingChildConversations: Bool
     ) async -> Int
 
-    /// 删除「创建于 `cutoff` 之前」的对话，返回被删除的会话 ID。
+    /// 删除「创建于 `cutoff` 之前」的对话，返回命中的顶层会话 ID。
     ///
     /// 用于「清理 N 天前的对话」这类按时间批量清理的入口。
+    ///
+    /// 连带删除的子 Agent 会话不包含在返回值里：返回集合必须与
+    /// `conversationCount` 的查询口径一致，调用方才能拿它当「已删除条数」展示。
     ///
     /// - Parameters:
     ///   - cutoff: 时间分界点；`createdAt` 早于它的会话会被删除。
     ///   - projectPath: 只清理该项目的对话；`nil` 表示全部项目。
     ///   - includingChildConversations: 是否连带删除子 Agent 会话。
-    /// - Returns: 被删除的会话 ID 列表。
+    /// - Returns: 命中的顶层会话 ID 列表（不含连带删除的子会话）。
     @discardableResult
     func deleteConversations(
         createdBefore cutoff: Date,

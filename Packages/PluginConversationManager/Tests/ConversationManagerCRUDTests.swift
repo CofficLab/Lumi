@@ -240,4 +240,53 @@ struct ConversationManagerCRUDTests {
         #expect(manager.currentTitle == "Stored title")
         #expect(!events.contains(.updated(id)))
     }
+
+    /// 回归 #897：批量清理的返回值必须与查询口径一致（顶层会话），
+    /// 不能把连带删除的子 Agent 会话也计入，否则统计面板会出现
+    /// 「清理前 1 条、清理后显示 3 条」的口径跳变。
+    @Test func bulkDeletionReturnsTopLevelTargetsNotCascadedChildren() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationBulkDelete-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = try ConversationStore(databaseRootURL: directory)
+        let manager = ConversationManager(store: store, dataDirectory: directory)
+
+        let now = Date()
+        let parent = UUID()
+        let child1 = UUID()
+        let child2 = UUID()
+        let recent = UUID()
+        try await store.createConversation(
+            id: parent, title: "parent", createdAt: now.addingTimeInterval(-86_400 * 10)
+        )
+        try await store.createConversation(
+            id: child1, title: "child 1",
+            createdAt: now.addingTimeInterval(-86_400 * 9),
+            parentConversationID: parent
+        )
+        try await store.createConversation(
+            id: child2, title: "child 2",
+            createdAt: now.addingTimeInterval(-86_400 * 9),
+            parentConversationID: parent
+        )
+        try await store.createConversation(id: recent, title: "recent", createdAt: now)
+
+        let cutoff = now.addingTimeInterval(-86_400)
+        let deleted = await manager.deleteConversations(
+            createdBefore: cutoff,
+            projectPath: nil,
+            includingChildConversations: false
+        )
+
+        // 顶层口径只有 parent；返回值必须与清理前的计数一致。
+        #expect(deleted == [parent])
+        // 子会话仍然被连带删除，只剩未过期的 recent。
+        let remaining = await store.conversationIDs(
+            createdBefore: Date().addingTimeInterval(86_400 * 365),
+            includingChildConversations: true
+        )
+        #expect(remaining == [recent])
+    }
 }
