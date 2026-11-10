@@ -88,6 +88,36 @@ enum ZCodeAssistantTextStyle {
     /// 时间标签字号。
     static let timeLabelFontSize: CGFloat = 12
 
+    /// 轮尾操作栏的**常驻占位**高度。
+    ///
+    /// - Important: 操作栏必须**常驻占位**，只在不显示时把透明度降为 0。
+    ///   若用条件插入，操作栏一出现整行就长高 32pt，下一轮内容被顶下去 ——
+    ///   这正是「hover 一下底下就跳」的直接原因。
+    ///
+    ///   基准：ZCode 原型 `ConversationTurnGroup.tsx` 的
+    ///   `opacity-0 transition-opacity group-hover/assistant-turn:opacity-100`
+    ///   —— 元素始终在布局里占位，只改透明度。
+    static let actionBarSlotHeight: CGFloat = 32
+
+    /// 操作栏淡入 / 淡出时长（秒）。
+    static let actionBarFadeDuration: TimeInterval = 0.15
+
+    /// 操作栏是否应该**预留常驻占位**。
+    ///
+    /// - Important: 只有「轮尾助手正文」「本轮已完成」「确实有可显示内容」
+    ///   三者同时成立时才占位。
+    ///
+    ///   - 占位条件里**不含 hover**：占位一旦与 hover 绑定，
+    ///     hover 就会改变行高，正是要消除的跳动。
+    ///   - `isRunning` 为真时不占位：流式期间正文还在增长，
+    ///     尾部留 32pt 空白比「流式结束时多出一行操作栏」更突兀；
+    ///     而流式轮与历史轮是**不同的 turn**，完成时的行高变化不是 hover 引起的。
+    static func shouldReserveActionBarSlot(context: MessageTurnPresentationContext?) -> Bool {
+        guard let context else { return false }
+        guard context.isTailAssistantText, !context.isRunning else { return false }
+        return !context.assistantCopyText.isEmpty || context.completedAt != nil
+    }
+
     /// 操作栏是否应该显示。
     ///
     /// - Important: 必须**同时**满足「是轮尾助手正文」「本轮已完成」「处于 hover」。
@@ -239,9 +269,22 @@ struct ZCodeAssistantMessageView: View {
 
     // MARK: - 轮尾操作栏
 
+    /// 轮尾操作栏。
+    ///
+    /// - Important: **常驻占位**，只在不显示时把透明度降为 0。
+    ///
+    ///   之前这里是条件插入（`if shouldShowActionBar { ... }`），
+    ///   操作栏一出现就多出 32pt，下一轮内容被顶下去 —— 这正是
+    ///   「hover 一下底下就跳」的根因。
+    ///
+    ///   现在改为：占位与否只看「轮尾 + 已完成 + 有内容」（与 hover 无关），
+    ///   hover 只切换透明度。行高因此恒定，hover 不再引起任何位移。
+    ///
+    ///   基准：ZCode 原型 `ConversationTurnGroup.tsx` 的
+    ///   `opacity-0 transition-opacity group-hover/assistant-turn:opacity-100`。
     @ViewBuilder
     private var actionBar: some View {
-        if ZCodeAssistantTextStyle.shouldShowActionBar(context: turnContext, isHovered: isTurnHovered) {
+        if ZCodeAssistantTextStyle.shouldReserveActionBarSlot(context: turnContext) {
             HStack(spacing: 8) {
                 if let copyText = turnContext?.assistantCopyText,
                    ZCodeAssistantTextStyle.shouldShowCopyButton(copyText: copyText) {
@@ -255,6 +298,15 @@ struct ZCodeAssistantMessageView: View {
                 }
             }
             .padding(.top, 8)
+            // Important: 透明时**不能**用 `hidden()` / `removeFromTree` ——
+            //   那会把按钮从 AX 树里摘掉，键盘用户与 UI 测试都拿不到。
+            //   正确做法是保留在树上、只改透明度。
+            .frame(minHeight: ZCodeAssistantTextStyle.actionBarSlotHeight - 8, alignment: .leading)
+            .opacity(isActionBarVisible ? 1 : 0)
+            .animation(
+                .easeOut(duration: ZCodeAssistantTextStyle.actionBarFadeDuration),
+                value: isActionBarVisible
+            )
             // Important: 操作栏**容器**不能挂 `accessibilityIdentifier`。
             //   SwiftUI 会把标识符向下传播给子元素，于是 `turn-copy`
             //   与 `turn-time` 都被覆盖成 `turn-action-bar`，
@@ -264,6 +316,11 @@ struct ZCodeAssistantMessageView: View {
             //   每个 turn 恰好一个 `turn-copy` 按钮 + 一个 `turn-time` 标签。
             //   这比「容器计数」更贴近语义 —— 操作栏的意义就是那个复制按钮。
         }
+    }
+
+    /// 操作栏当前是否可见（占位已在 `actionBar` 里处理）。
+    private var isActionBarVisible: Bool {
+        ZCodeAssistantTextStyle.shouldShowActionBar(context: turnContext, isHovered: isTurnHovered)
     }
 
     private func copyButton(text: String) -> some View {
