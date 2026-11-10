@@ -88,6 +88,17 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         let sourceLastMessageID: UUID
     }
 
+    /// 单次摘要刷新的结果。
+    ///
+    /// 等待中的硬阈值请求需要区分「结果已写入/可复用」和「请求期间历史
+    /// 前进导致结果作废」，后者不能当作本轮压缩已经完成（回归 #1118）。
+    private enum SummaryRefreshOutcome: Sendable {
+        case updated
+        case reused
+        case skipped
+        case discardedForNewMessages
+    }
+
     /// 一次压缩组装的结果。
     private struct CompactedHistory {
         let messages: [Message]
@@ -105,7 +116,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
     private let summaryStore: ContextSummaryStore?
     private var summaries: [UUID: SummarySnapshot] = [:]
     private var loadedSummaryIDs: Set<UUID> = []
-    private var summaryTasks: [UUID: Task<Void, Never>] = [:]
+    private var summaryTasks: [UUID: Task<SummaryRefreshOutcome, Never>] = [:]
     private var lastPreparationRequests: [UUID: LLMContextPreparationRequest] = [:]
     private var calibrationFactors: [String: Double] = [:]
     private var forcedCompactionIDs: Set<UUID> = []
@@ -359,25 +370,31 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
 
         let conversationID = request.conversationID
         summaryTasks[conversationID] = Task { @MainActor [weak self] in
-            guard let self else { return }
+            guard let self else { return .skipped }
             defer { self.summaryTasks[conversationID] = nil }
             if delay {
                 do {
                     try await Task.sleep(nanoseconds: 400_000_000)
                 } catch {
-                    return
+                    return .skipped
                 }
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled else { return .skipped }
             }
-            await self.refreshSummaryIfNeeded(for: request)
+            return await self.refreshSummaryIfNeeded(for: request)
         }
     }
 
     private func ensureCompaction(for request: LLMContextPreparationRequest) async {
         if let task = summaryTasks[request.conversationID] {
-            await task.value
+            let outcome = await task.value
+            guard outcome == .discardedForNewMessages else { return }
+            // 预热摘要返回时历史已经前进，结果在保存前被丢弃。等待中的硬阈值
+            // 请求不能把这次过期预热当成压缩已完成，必须按最新历史重试；重新
+            // 走调度入口，让同一会话的其他等待者加入同一次重试（回归 #1118）。
+            scheduleBackgroundCompaction(for: request, delay: false)
+            _ = await summaryTasks[request.conversationID]?.value
         } else {
-            await refreshSummaryIfNeeded(for: request)
+            _ = await refreshSummaryIfNeeded(for: request)
         }
     }
 
@@ -438,8 +455,8 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
 
     private func refreshSummaryIfNeeded(
         for request: LLMContextPreparationRequest
-    ) async {
-        guard isActive else { return }
+    ) async -> SummaryRefreshOutcome {
+        guard isActive else { return .skipped }
 
         let history = await llmHistory(for: request.conversationID)
         let conversationModelID = conversations.modelID(for: request.conversationID)
@@ -451,7 +468,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             }
         if let requestModelID = request.modelID,
            llmProvider.modelRoute(for: requestModelID) == nil {
-            return
+            return .skipped
         }
         let route = requestedModelID.flatMap(llmProvider.modelRoute(for:))
         let providerID = route?.providerID ?? request.providerID ?? activeProviderID
@@ -467,7 +484,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             snapshot: compatibleSnapshot ? existingSnapshot : nil,
             budget: request.budget
         ) else {
-            return
+            return .skipped
         }
 
         // 已有摘要仍然覆盖得住最近区间时直接复用，不再调用摘要接口。
@@ -480,13 +497,13 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
            snapshot.modelName == modelName,
            let compacted = compactedHistory(history, snapshot: snapshot, request: request),
            !compacted.tailTruncated {
-            return
+            return .reused
         }
 
         // 摘要请求必须使用与当前请求相同的路由上下文；如果路由已切换，
         // 放弃本次预热，下一次请求会用新的 provider/model 重新调度。
         if requestedModelID == nil, let providerID, providerID != activeProviderID {
-            return
+            return .skipped
         }
 
         let summaryRequest = LLMRequest(
@@ -503,11 +520,13 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         do {
             let response = try await llmProvider.complete(summaryRequest)
             let summary = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !summary.isEmpty else { return }
+            guard !summary.isEmpty else { return .skipped }
 
             // 摘要请求期间产生了新消息，旧结果不能覆盖最新历史。
             let latest = await llmHistory(for: request.conversationID)
-            guard latest.last?.id == source.sourceLastMessageID else { return }
+            guard latest.last?.id == source.sourceLastMessageID else {
+                return .discardedForNewMessages
+            }
 
             let snapshot = SummarySnapshot(
                 text: summary,
@@ -536,11 +555,12 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
                 }
                 // 内存摘要仍然可以服务当前会话，不因磁盘失败丢弃压缩结果。
             }
-
+            return .updated
         } catch {
             if Self.verbose {
                 Self.logger.error("摘要生成失败：\(error.localizedDescription, privacy: .public)")
             }
+            return .skipped
         }
     }
 

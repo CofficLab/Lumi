@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 38 条用例。
+PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 39 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 4 个，用例总数: 38
+测试文件: 5 个，用例总数: 39
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -38,6 +38,7 @@ PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 3
 - **不可发送角色的预算隔离**（2 条）：由 `nonSendableRolesAreExcludedFromLLMHistory`、`fallbackKeepsUserRequestWhenErrorExceedsBudget` 锁定；`.error` / `.status` 必须在估算、摘要和 fallback 之前排除，否则尾部错误会挤掉真实用户请求（**回归 #1025**）。
 - **ContextTokenFormatting**（3 条）：由 `smallSizesKeepActualTokens`、`largeSizesUseShortUnits`、`zeroHasNoUnit` 锁定；小于 1000 的用量必须显示真实 token 数，不能因整数除法塌缩成 `0K`（**回归 #936**）。
 - **确定性降级的量纲与用户请求保留**（2 条）：由 `oversizedChineseUserMessageIsTruncatedInsteadOfDropped`、`largeSystemMessageDoesNotEvictUserRequest` 锁定；裁剪必须按 token 估算，且系统消息占满预算时仍要保留最新用户消息（**回归 #1022**）。
+- **StalePrewarmSummaryRetry**（1 条）：由 `hardThresholdRetriesAfterDiscardedPrewarm` 锁定。硬阈值等待的预热摘要若因请求期间产生新消息而被丢弃，必须按最新历史重新生成一次再决定是否降级，不能把过期预热当作本轮压缩已完成（**回归 #1118**）。
 
 ## 测试用例清单
 
@@ -81,27 +82,28 @@ PluginLLMContext 的实现包，包含 12 个主要类型；当前测试覆盖 3
 | 36 | ContextTokenFormatting | 小于 1000 的用量显示真实 token 数而不是 0K（**回归 #936**） | token 数为 1 / 500 / 999 | 调用 `formattedContextSize` | 分别显示 "1" / "500" / "999" | P1 | ✅ 已覆盖 | `smallSizesKeepActualTokens` |
 | 37 | ContextTokenFormatting | 千级与百万级仍使用 K/M 简写 | token 数为 1000 / 128000 / 1000000 / 1500000 | 调用 `formattedContextSize` | 分别显示 1K / 128K / 1M / 1.5M | P1 | ✅ 已覆盖 | `largeSizesUseShortUnits` |
 | 38 | ContextTokenFormatting | 零值不再显示为 0K | token 数为 0 | 调用 `formattedContextSize` | 显示 "0" | P2 | ✅ 已覆盖 | `zeroHasNoUnit` |
+| 39 | StalePrewarmSummaryRetry | 等待过期预热摘要后按最新历史重试（**回归 #1118**） | 无可用摘要且已达硬阈值；预热摘要请求被挂起 | 请求挂起期间插入下一回合消息，硬阈值 `prepareContext` 等待该预热后放行 | 预热因水位过旧被丢弃后重新生成一次摘要，返回压缩上下文且不降级；摘要请求共 2 次 | P0 | ✅ 已覆盖 | `hardThresholdRetriesAfterDiscardedPrewarm` |
 
-> 说明：全部 **38 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **39 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 2 / 2
+- P0: 已覆盖 3 / 3
 - P1: 已覆盖 33 / 33
 - P2: 已覆盖 3 / 3
-- **合计: 38 / 38**（仅表示清单场景，非源码覆盖率）
+- **合计: 39 / 39**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
 - **P1**: 其余功能性用例（33 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（3 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 33 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 39 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
