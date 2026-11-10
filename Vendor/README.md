@@ -27,7 +27,7 @@ tag）。把上游包以本地副本的形式纳入本仓库，就可以在**不
 | 目录 | 上游仓库 | 来源版本 |
 |------|---------|---------|
 | LumiKernel | CofficLab/LumiKernel | 1.1.0 |
-| LumiKitReminder | CofficLab/LumiKitReminder | 1.0.0 |
+| LumiKitReminder | CofficLab/LumiKitReminder | 1.0.1 |
 | LumiLocalization | CofficLab/LumiLocalization | 1.0.1 |
 | LumiLogging | CofficLab/LumiLogging | 1.0.1 |
 | LumiProviders | CofficLab/LumiProviders | 1.19.0 |
@@ -38,7 +38,7 @@ tag）。把上游包以本地副本的形式纳入本仓库，就可以在**不
 | LumiPluginBookletMaker | CofficLab/LumiPluginBookletMaker | 2.1.0 |
 | LumiPluginCommand | CofficLab/LumiPluginCommand | 1.0.1 |
 | LumiPluginIdleTime | CofficLab/LumiPluginIdleTime | 1.0.0 |
-| LumiPluginHydrationReminder | CofficLab/LumiPluginHydrationReminder | 1.0.0 |
+| LumiPluginHydrationReminder | CofficLab/LumiPluginHydrationReminder | 1.0.2 |
 | LumiPluginPluginManager | CofficLab/LumiPluginPluginManager | 1.7.0 |
 | LumiPluginSettingView | CofficLab/LumiPluginSettingView | 1.0.3 |
 | LumiPluginStorage | CofficLab/LumiPluginStorage | 1.1.1 |

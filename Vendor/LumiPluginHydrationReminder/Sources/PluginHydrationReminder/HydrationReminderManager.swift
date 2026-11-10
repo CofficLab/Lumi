@@ -16,7 +16,9 @@ class HydrationReminderManager: NSObject, ObservableObject, SuperLog {
     static let shared = HydrationReminderManager(
         environment: SystemReminderEnvironment { kind in
             guard kind == .hydration else { return }
-            HydrationReminderOverlayWindow().showAndFadeOut()
+            // 必须使用单例遮罩：临时对象会被立即释放，
+            // 导致控制器淡出回调不执行，遮罩永久滞留屏幕。
+            HydrationReminderOverlayWindow.shared.showAndFadeOut()
         }
     )
 
@@ -92,6 +94,11 @@ class HydrationReminderManager: NSObject, ObservableObject, SuperLog {
     }
 
     func stop() {
+        // 停止提醒时立即收起正在展示的遮罩：
+        // 遮罩覆盖全屏且用户可能正在盯着它，没有理由让它继续停留。
+        // 放在 `guard` 之前，保证「提醒已停但遮罩仍在」的情况也能被清理。
+        HydrationReminderOverlayWindow.shared.dismissAll()
+
         guard isActive else { return }
         environment.cancel(timer)
         timer = nil
