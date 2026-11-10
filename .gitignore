@@ -101,3 +101,12 @@ __pycache__/
 .workbuddy/
 
 .zcode/
+
+# LibGit2Swift 预编译静态库
+#
+# Clibgit2.xcframework 是以 .binaryTarget 引入的预编译产物，其 macOS slice
+# （macos-arm64_x86_64/libgit2_all.a）是 Release 归档的必需项。上一条 `*.a`
+# 规则会把它排除掉，导致 CI 上 xcodebuild 报
+# "the expected library .../libgit2_all.a was not found"。
+# 上游 nookery/LibGit2Swift 完整追踪了这 4 个 slice，这里同样必须入库。
+!Vendor/LibGit2Swift/Sources/Clibgit2.xcframework/**/*.a
