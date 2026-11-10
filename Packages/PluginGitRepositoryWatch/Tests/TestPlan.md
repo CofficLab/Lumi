@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试覆盖 26 条用例。
+PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试覆盖 27 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 26
+测试文件: 2 个，用例总数: 27
 
 核心组件（源码目录）:
 - `Providers/`
@@ -27,9 +27,10 @@ PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试�
 - **综合**（2 条）：由 `nonGitDirectoryIsIgnored`、`pluginRegistersProvider` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **Git目录解析**（7 条）：由 `resolvesGitDirectory`、`resolvesAbsoluteGitFile`、`picksGitDirLineFromMultiLineFile` 等用例锁定。
 - **Git目录快照**（9 条）：由 `readsDirectHeadHash`、`fallsBackToPackedRefs`、`readsFullSnapshot` 等用例锁定。
-- **Git仓库监听Provider**（8 条）：由 `startsWatchingRepository`、`broadcastsStopped`、`cancelledObserverStopsReceiving` 等用例锁定。
+- **Git仓库监听Provider**（9 条）：由 `startsWatchingRepository`、`broadcastsStopped`、`cancelledObserverStopsReceiving` 等用例锁定。
 - **订阅令牌生命周期**：Provider 弱引用持有订阅令牌，释放令牌即注销（下次广播清理失效注册）；面板销毁后不得残留回调（#921）。
 - **仓库根向上发现**：项目路径位于仓库子目录时，解析器须与 git 一致向上查找最近的 `.git`；遇到存在但格式非法的 `.git` 立即报错，不越过该仓库边界（#913）。
+- **进程内工作区写入**：工作区 FSEventStream 不得设置 `IgnoreSelf`；内置编辑器保存、Agent 工具写文件都在同一进程内，过滤自身事件会让已打开的 Changes 停在旧状态（#911）。
 
 ## 测试用例清单
 
@@ -61,27 +62,28 @@ PluginGitRepositoryWatch 的实现包，包含 5 个主要类型；当前测试�
 | 24 | Git仓库监听Provider | 释放订阅令牌后不再收到事件（回归 #921） | — | 释放令牌后启动/停止监听 | 观察者收不到任何广播 | P1 | ✅ 已覆盖 | `releasedObserverHandleStopsReceiving` |
 | 25 | Git目录解析 | 项目目录是仓库子目录时向上找到仓库根的 .git（回归 #913） | 项目目录含嵌套子目录 | 以子目录为项目路径解析 | 返回仓库根的 `.git` | P1 | ✅ 已覆盖 | `resolvesAncestorGitDirectory` |
 | 26 | Git仓库监听Provider | 项目路径是仓库子目录时正常监听并广播 started（回归 #913） | 项目目录含嵌套子目录 | 以子目录启动监听 | 监听器就绪且广播一次 started | P1 | ✅ 已覆盖 | `startsWatchingFromNestedProjectDirectory` |
+| 27 | Git仓库监听Provider | 进程内写入工作区也会广播 workingTreeChanged（回归 #911） | 真实仓库，Provider 已启动监听 | 由测试进程（与编辑器保存同一进程）写入文件 | 节流与防抖后收到 `.workingTreeChanged` | P1 | ✅ 已覆盖 | `reportsInProcessWorkingTreeWrites` |
 
-> 说明：全部 **26 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **27 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 0 / 0
-- P1: 已覆盖 22 / 22
+- P1: 已覆盖 23 / 23
 - P2: 已覆盖 4 / 4
-- **合计: 26 / 26**（仅表示清单场景，非源码覆盖率）
+- **合计: 27 / 27**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
-- **P1**: 其余功能性用例（22 条）
+- **P1**: 其余功能性用例（23 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（4 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 26 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 27 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
