@@ -28,10 +28,7 @@ struct AgentLoopRetryMessageView: View {
     }
 
     private var statusText: String {
-        if let attempt, let maxAttempts {
-            return "正在重试（\(attempt)/\(maxAttempts)）"
-        }
-        return "正在重试"
+        AgentLoopRetrySummary.statusText(attempt: attempt, maxAttempts: maxAttempts)
     }
 
     private var reason: String? {
@@ -91,7 +88,7 @@ struct AgentLoopRetryMessageView: View {
         .popover(isPresented: $showsDetail, arrowEdge: .bottom) {
             detailPopover
         }
-        .help("点击查看重试详情")
+        .help(pluginLocalization.string("Tap to view retry details"))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(statusText)
     }
@@ -105,22 +102,22 @@ struct AgentLoopRetryMessageView: View {
                 .font(.subheadline.weight(.semibold))
 
             if let reason, !reason.isEmpty {
-                detailRow(title: "原因", body: reason)
+                detailRow(title: pluginLocalization.string("Reason"), body: reason)
             }
             if let kind, !kind.isEmpty {
-                detailRow(title: "错误类型", body: kind)
+                detailRow(title: pluginLocalization.string("Error Type"), body: kind)
             }
             if let httpStatus, !httpStatus.isEmpty {
-                detailRow(title: "HTTP 状态码", body: httpStatus)
+                detailRow(title: pluginLocalization.string("HTTP Status Code"), body: httpStatus)
             }
-            if let retryAfterSeconds, !retryAfterSeconds.isEmpty {
-                detailRow(title: "等待", body: "\(retryAfterSeconds) 秒后重试")
+            if let retryAfter = AgentLoopRetrySummary.retryAfterText(seconds: retryAfterSeconds) {
+                detailRow(title: pluginLocalization.string("Wait"), body: retryAfter)
             }
             if let providerID, !providerID.isEmpty {
                 detailRow(title: "Provider", body: providerID)
             }
             if let modelName, !modelName.isEmpty {
-                detailRow(title: "模型", body: modelName)
+                detailRow(title: pluginLocalization.string("Model"), body: modelName)
             }
         }
         .padding(12)
