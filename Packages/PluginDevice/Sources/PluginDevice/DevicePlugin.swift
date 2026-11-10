@@ -30,12 +30,21 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
     private var viewModels: DevicePluginViewModels?
     private var metricsObserver: DeviceMetricsObserver?
 
-    public init() {}
+    /// 入口标题的本地化解析；测试可注入替身断言注册链不再写死字面量。
+    private let localize: (String) -> String
+
+    public init() {
+        self.localize = { pluginLocalization.string($0) }
+    }
+
+    init(localize: @escaping (String) -> String) {
+        self.localize = localize
+    }
 
     public func onRegister(kernel: KernelCoreContainer) throws {
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: "设备信息") { DeviceInfoAboutView() })
-            docs.addManual(DocsEntry(id: id, name: "设备信息") { DeviceInfoManualView() })
+            docs.addAbout(DocsEntry(id: id, name: localize("Device Info")) { DeviceInfoAboutView() })
+            docs.addManual(DocsEntry(id: id, name: localize("Device Info")) { DeviceInfoManualView() })
         }
     }
 
@@ -63,7 +72,7 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
             activityBar.addItems([
                 ActivityBarItem(
                     id: entryID,
-                    title: "设备信息",
+                    title: localize("Device Info"),
                     systemImage: "gauge.with.dots.needle.50percent",
                     order: order,
                     ownerPluginID: id
@@ -128,7 +137,7 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         }
         menuBar.addContent(MenuBarContribution(
             id: "\(id).metrics",
-            title: "设备信息",
+            title: localize("Device Info"),
             order: order,
             ownerPluginID: id
         ) {
@@ -149,7 +158,7 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         })
         menuBar.addPopup(MenuBarContribution(
             id: "\(id).memory",
-            title: "内存",
+            title: localize("Memory"),
             order: order,
             ownerPluginID: id
         ) {

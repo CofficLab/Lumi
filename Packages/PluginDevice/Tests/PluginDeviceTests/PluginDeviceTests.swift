@@ -38,7 +38,7 @@ struct PluginDeviceTests {
         // 文档：关于 + 说明书
         #expect(docs.aboutEntries.count == 1)
         #expect(docs.aboutEntries[0].id == plugin.id)
-        #expect(docs.aboutEntries[0].name == "设备信息")
+        #expect(docs.aboutEntries[0].name == pluginLocalization.string("Device Info"))
         #expect(docs.manualEntries.count == 1)
         #expect(docs.manualEntries[0].id == plugin.id)
         #expect(type(of: docs.aboutEntries[0].makeView()) == AnyView.self)
