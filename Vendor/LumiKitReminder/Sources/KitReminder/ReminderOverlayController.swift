@@ -13,6 +13,22 @@ import SwiftUI
 /// - 屏幕之间可能有不同的缩放系数，窗口按各自屏幕的坐标系定位即可。
 ///
 /// 三个提醒插件（护眼 / 喝水 / 拉伸）共用本组件，仅渐变配色不同。
+///
+/// ## 生命周期：为什么控制器必须自持有
+///
+/// 遮罩显示结束后需要延迟淡出，这个延迟回调**必须**在控制器还活着时执行。
+/// 早期实现里，插件用临时对象创建控制器：
+///
+/// ```swift
+/// HydrationReminderOverlayWindow().showAndFadeOut()
+/// ```
+///
+/// 表达式求值完，临时对象立即释放，控制器随之释放；淡出回调里的
+/// `self` 变成 nil，回调体永不执行——窗口停留在 `alphaValue == 1`，
+/// 全屏遮罩**永久滞留屏幕**，且因 `ignoresMouseEvents` 无法点击关闭。
+///
+/// 这里用 `selfRetain` 在展示期间持有自己，直到淡出真正完成才释放，
+/// 从根上消除「回调因 self 为 nil 而失效」这一类问题。
 @MainActor
 public final class ReminderOverlayController {
     /// 窗口的窗口级别：浮在普通应用之上。
@@ -28,90 +44,145 @@ public final class ReminderOverlayController {
     private let fadeOutDuration: TimeInterval = 2.0
 
     /// 当前显示的窗口（每个屏幕一个）。
-    private var windows: [NSWindow] = []
+    private var windows: [ReminderOverlayWindowing] = []
 
-    /// 遮罩内容（由调用方提供，不同提醒有不同文案与配色）。
-    private let content: () -> AnyView
+    /// 展示期间对自身的强引用。
+    ///
+    /// 淡出回调通过弱引用访问控制器，靠这份强引用保证回调执行时
+    /// 控制器仍然存活。淡出完成后立即释放。
+    private var selfRetain: ReminderOverlayController?
+
+    /// 待执行的淡出任务，用于「用户手动关闭」时取消自动淡出。
+    private var pendingFadeOut: DispatchWorkItem?
+
+    /// 窗口工厂：生产环境创建真实的 `NSPanel`，测试注入可控替身。
+    private let windowFactory: @MainActor (@escaping @MainActor () -> Void) -> [ReminderOverlayWindowing]
 
     /// - Parameters:
     ///   - displayDuration: 保持显示时长（秒）。
     ///   - content: 遮罩内容视图工厂。
-    public init(
+    public convenience init(
         displayDuration: TimeInterval = 3.0,
         content: @escaping () -> AnyView
     ) {
+        self.init(
+            displayDuration: displayDuration,
+            windowFactory: { dismiss in
+                ReminderOverlayController.makeScreenWindows(content: content, onDismiss: dismiss)
+            }
+        )
+    }
+
+    /// 指定窗口工厂的初始化入口。
+    ///
+    /// 单元测试用它注入替身窗口，从而在**无窗口进程**中验证时序逻辑
+    /// （尤其是「淡出回调必定执行」这一条）。
+    ///
+    /// - Parameters:
+    ///   - displayDuration: 保持显示时长（秒）。
+    ///   - windowFactory: 窗口工厂，参数为「关闭全部遮罩」的回调。
+    init(
+        displayDuration: TimeInterval = 3.0,
+        windowFactory: @escaping @MainActor (@escaping @MainActor () -> Void) -> [ReminderOverlayWindowing]
+    ) {
         self.displayDuration = displayDuration
-        self.content = content
+        self.windowFactory = windowFactory
+    }
+
+    /// 当前是否仍有遮罩在展示。
+    public var isVisible: Bool {
+        windows.contains { $0.isVisible }
     }
 
     /// 在所有屏幕上显示遮罩，动画淡入后自动淡出。
     public func showAndFadeOut() {
-        dismissAll()
+        closeWindows()
+        cancelPendingFadeOut()
 
-        let screens = NSScreen.screens
-        guard !screens.isEmpty else { return }
-
-        for screen in screens {
-            let window = makeWindow(for: screen)
-            windows.append(window)
+        let dismiss: @MainActor () -> Void = { [weak self] in
+            self?.dismissAll()
         }
+        let created = windowFactory(dismiss)
+        guard !created.isEmpty else { return }
+
+        windows = created
+        // 自持有：淡出回调依赖控制器存活，见类型注释。
+        selfRetain = self
 
         for window in windows {
-            window.alphaValue = 0
-            window.orderFrontRegardless()
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = fadeInDuration
-                window.animator().alphaValue = 1.0
-            }
+            window.setAlpha(0, animated: false, duration: 0, completion: nil)
+            window.show()
+        }
+        for window in windows {
+            window.setAlpha(1, animated: true, duration: fadeInDuration, completion: nil)
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + displayDuration) { [weak self] in
-            self?.fadeOutAndClose()
-        }
+        scheduleFadeOut(after: displayDuration)
     }
 
     /// 立即关闭所有遮罩窗口。
+    ///
+    /// 用户手动关闭（点击 / Esc）、插件停止提醒时都会走这里。
     public func dismissAll() {
+        cancelPendingFadeOut()
+        closeWindows()
+        selfRetain = nil
+    }
+
+    // MARK: - 私有
+
+    /// 关闭并释放当前所有窗口。
+    private func closeWindows() {
         for window in windows {
-            window.orderOut(nil)
-            window.close()
+            window.hide()
+            window.tearDown()
         }
         windows.removeAll()
     }
 
-    private func makeWindow(for screen: NSScreen) -> NSWindow {
-        let window = NSWindow(
-            // 用 frame 而非 visibleFrame：遮罩应覆盖整块屏幕，包括 Dock 与菜单栏区域。
-            contentRect: screen.frame,
-            styleMask: [.borderless, .fullSizeContentView],
-            backing: .buffered,
-            defer: false
-        )
-
-        window.isOpaque = false
-        window.backgroundColor = .clear
-        window.level = windowLevel
-        window.isReleasedWhenClosed = false
-        window.ignoresMouseEvents = true
-        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
-        window.contentView = NSHostingView(rootView: content())
-
-        return window
+    /// 安排延迟淡出。
+    ///
+    /// 闭包用弱引用访问控制器：控制器在展示期间由 `selfRetain` 持有，
+    /// 因此弱引用一定能解析成功。
+    private func scheduleFadeOut(after delay: TimeInterval) {
+        let item = DispatchWorkItem { [weak self] in
+            self?.fadeOutAndClose()
+        }
+        pendingFadeOut = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: item)
     }
 
+    /// 取消尚未执行的淡出任务。
+    private func cancelPendingFadeOut() {
+        pendingFadeOut?.cancel()
+        pendingFadeOut = nil
+    }
+
+    /// 淡出并关闭。
     private func fadeOutAndClose() {
+        pendingFadeOut = nil
+
         let fading = windows
         windows.removeAll()
 
         for window in fading {
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = fadeOutDuration
-                context.completionHandler = {
-                    window.orderOut(nil)
-                    window.close()
-                }
-                window.animator().alphaValue = 0
+            window.setAlpha(0, animated: true, duration: fadeOutDuration) {
+                window.hide()
+                window.tearDown()
             }
+        }
+
+        // 淡出已发起，控制器不再需要自持有。
+        selfRetain = nil
+    }
+
+    /// 为每块屏幕创建一个遮罩面板。
+    private static func makeScreenWindows(
+        content: @escaping () -> AnyView,
+        onDismiss: @escaping @MainActor () -> Void
+    ) -> [ReminderOverlayWindowing] {
+        NSScreen.screens.map { screen in
+            ReminderOverlayPanelWindow(screen: screen, content: content, onDismiss: onDismiss)
         }
     }
 }
