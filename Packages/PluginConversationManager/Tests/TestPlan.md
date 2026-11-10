@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 81 条用例。
+PluginConversationManager 的实现包，包含 14 个主要类型；当前测试覆盖 85 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 11 个，用例总数: 81
+测试文件: 11 个，用例总数: 85
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -44,7 +44,7 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 - **ConversationLegacyMigration**（6 条）：由 `readerCopiesLegacyDatabaseMapsFieldsReusesAndReleasesItsSnapshot`、`readerReportsMissingAndInvalidLegacyDatabases`、`locatorPrefersProductionAndUsesDebugFallback` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationManagerCRUD**（3 条）：由 `creationInheritsGlobalPreferencesAndKeepsChildOutOfRootCache`、`createAndWaitPersistsBeforeReturningAndCachesRoot`、`selectionTitleActivityAndDeletionUpdateCachedStateAndEvents` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationManagerObserverTransfer**（1 条）：由 `transferredObserversStayAliveAndCancelWithTheirOriginalHandles` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ConversationManagerPreference**（9 条）：由 `automationPreferenceDoesNotPublishStructuralListChange`、`globalAndConversationPreferencesUpdateCacheAndNotifyObservers`、`globalLanguagePersistsAcrossRestartWithoutSelectedConversation`、`evictedConversationKeepsItsOwnLanguage`、`globalVerbosityPersistsAcrossRestartWithoutSelectedConversation`、`evictedConversationKeepsItsBoundModel`、`evictedConversationKeepsItsAutomationLevel`、`unknownConversationStillDefaultsToBuild` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationManagerPreference**（13 条）：由 `automationPreferenceDoesNotPublishStructuralListChange`、`globalAndConversationPreferencesUpdateCacheAndNotifyObservers`、`globalLanguagePersistsAcrossRestartWithoutSelectedConversation`、`evictedConversationKeepsItsOwnLanguage`、`globalVerbosityPersistsAcrossRestartWithoutSelectedConversation`、`evictedConversationKeepsItsBoundModel`、`evictedConversationKeepsItsAutomationLevel`、`evictedConversationKeepsItsReasoningEffort`、`evictedConversationUsesReasoningSetWhileMissing`、`clearedReasoningOnEvictedConversationStaysOff`、`unknownConversationHasNoReasoningEffort`、`unknownConversationStillDefaultsToBuild` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationStoreObserver**（2 条）：由 `forwardsEventsAndMigrationStateUntilCancelled`、`capabilityAdapterUsesManagerAndEmptyMessageFallbacks` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationStoreSettingsViewModel**（5 条）：由 `loadsPagesCountsMessagesAndSelectedConversation`、`selectionFallsBackWhenMissingAndReloadsForStructuralEvents`、`emptyLoadsFinishAndMessagesClearWithoutSelection`、`preferenceEventsRefreshCachedSummaries`、`reopeningRefreshesStaleSummaries` 等用例锁定；模型与偏好事件必须按 ID 就地刷新摘要，重进页面不得沿用陈旧快照。
 - **ConversationListRefresh**（1 条）：由 `activeUpdatesAreDebounced` 等用例锁定；改动该模块时优先跑对应测试文件。
@@ -138,22 +138,26 @@ PluginConversationManager 的实现包，包含 14 个主要类型；当前测�
 | 79 | ConversationManagerCRUD | 落盘失败不发布内存新标题也不报告成功（**回归 #950**） | 绕过管理器删除库行制造 `store.updateTitle` 失败 | 调用 `updateConversationTitleAndWait` | 返回 false，内存/当前标题保持旧值且不发 `.updated` 事件 | P0 | ✅ 已覆盖 | `updateConversationTitleAndWaitLeavesMemoryUntouchedWhenPersistFails` |
 | 80 | ConversationStore | 存储不可用时分页读取抛错而不是返回空页（**#932**） | Manager 未接入 store | 分别调用全库与项目两处分页读取 | 均抛出 `ConversationPageLoadError.storageUnavailable` | P1 | ✅ 已覆盖 | `loadPageWithoutStoreThrows` |
 | 81 | ConversationManagerCRUD | 批量清理只报告命中的顶层会话，不把连带删除的子会话计入（**回归 #897**） | 一个过期父会话 + 两个过期子会话 + 一个新会话 | 以 `includingChildConversations: false` 调用 `deleteConversations(createdBefore:)` | 返回 `[parent]`，库中只剩新会话；「清理前计数」与「已删除条数」口径一致 | P1 | ✅ 已覆盖 | `bulkDeletionReturnsTopLevelTargetsNotCascadedChildren` |
+| 82 | ConversationManagerPreference | 被挤出缓存的会话保留自己的推理强度（**回归 #892**） | 后台会话 High | 写入 100 条更新的顶层会话把后台会话挤出窗口后调用 `reasoningEffortOptional(for:)` | 仍返回 `.high`，下一次请求不会省略 reasoning_effort | P0 | ✅ 已覆盖 | `evictedConversationKeepsItsReasoningEffort` |
+| 83 | ConversationManagerPreference | 会话在缓存外设置推理强度也作用于后续请求（**回归 #892**） | 后台会话已被挤出缓存 | `setReasoningEffort(.max, for:)` 后读取 | 返回 `.max` | P1 | ✅ 已覆盖 | `evictedConversationUsesReasoningSetWhileMissing` |
+| 84 | ConversationManagerPreference | 缓存外清除推理强度后不残留淘汰前的旧档位（**回归 #892** 护栏） | 后台会话 High 且已被挤出缓存 | `clearReasoningEffort(for:)` 后读取 | 返回 nil | P1 | ✅ 已覆盖 | `clearedReasoningOnEvictedConversationStaysOff` |
+| 85 | ConversationManagerPreference | 未知会话仍没有显式推理强度（**回归 #892** 护栏） | 缓存中已有 High 会话 | 对 nil 与随机 UUID 读取 | 均返回 nil，不被其他会话污染 | P2 | ✅ 已覆盖 | `unknownConversationHasNoReasoningEffort` |
 
-> 说明：全部 **81 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **85 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
-- P1: 已覆盖 66 / 66
-- P2: 已覆盖 6 / 6
-- **合计: 81 / 81**（仅表示清单场景，非源码覆盖率）
+- P0: 已覆盖 10 / 10
+- P1: 已覆盖 68 / 68
+- P2: 已覆盖 7 / 7
+- **合计: 85 / 85**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（61 条）
-- **P2**: 稳定常量、占位、文案、空集合等边界用例（5 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（10 条）
+- **P1**: 其余功能性用例（68 条）
+- **P2**: 稳定常量、占位、文案、空集合等边界用例（7 条）
 
 ## 跨平台说明
 

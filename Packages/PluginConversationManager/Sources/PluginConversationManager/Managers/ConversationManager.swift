@@ -30,6 +30,9 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     /// 缓存数组之外的会话自动化级别；后台会话被挤出有界缓存后，工具可用性与
     /// 授权策略仍须按用户为该会话选择的值执行（issue #1008）。
     var automationLevelOverrides: [UUID: AutomationLevel] = [:]
+    /// 缓存数组之外的会话推理强度；后台回合被挤出有界缓存后，下一次 LLM 请求
+    /// 仍须携带用户为它保存的档位，而不是把「未加载」当成「未设置」（issue #892）。
+    var reasoningEffortOverrides: [UUID: ReasoningEffort] = [:]
     public internal(set) var selectedConversationID: UUID? {
         didSet {
             guard selectedConversationID != oldValue else { return }
@@ -267,6 +270,11 @@ public final class ConversationManager: ConversationManaging, SuperLog {
         // 查询该值，丢失后会回退 Build，改变工具授权策略（issue #1008）。
         if let automationLevel = summary.automationLevel {
             automationLevelOverrides[summary.id] = automationLevel
+        }
+        // 推理强度同理：后台会话的下一请求直接读取该值，丢失后会把
+        // 「摘要不在缓存」当成「用户未设置」，静默丢掉已保存的档位（issue #892）。
+        if let reasoningEffort = summary.reasoningEffort {
+            reasoningEffortOverrides[summary.id] = reasoningEffort
         }
         if let index = conversations.firstIndex(where: { $0.id == summary.id }) {
             conversations[index] = summary
