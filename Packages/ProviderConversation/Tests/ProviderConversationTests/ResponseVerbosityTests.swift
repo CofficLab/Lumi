@@ -22,14 +22,22 @@ struct ResponseVerbosityTests {
         #expect(ResponseVerbosity(rawValue: "ZCODE") == .zcode)
     }
 
+    @Test("V5 的 rawValue 是 v5，并接受 chatgpt 别名")
+    func chatGPTRawValueAndAliases() {
+        #expect(ResponseVerbosity.chatGPT.rawValue == "v5")
+        #expect(ResponseVerbosity(rawValue: "v5") == .chatGPT)
+        #expect(ResponseVerbosity(rawValue: "chatgpt") == .chatGPT)
+        #expect(ResponseVerbosity(rawValue: "CHATGPT") == .chatGPT)
+    }
+
     @Test("默认级别仍是 V2 标准")
     func defaultVerbosityRemainsStandard() {
         #expect(ResponseVerbosity.defaultVerbosity == .standard)
     }
 
-    @Test("allCases 按 v1 v2 v3 v4 顺序包含四种级别")
-    func allCasesContainFourLevelsInOrder() {
-        #expect(ResponseVerbosity.allCases.map(\.rawValue) == ["v1", "v2", "v3", "v4"])
+    @Test("allCases 按 v1 v2 v3 v4 v5 顺序包含五种级别")
+    func allCasesContainFiveLevelsInOrder() {
+        #expect(ResponseVerbosity.allCases.map(\.rawValue) == ["v1", "v2", "v3", "v4", "v5"])
     }
 
     @Test("V1–V3 的 rawValue 保持不变")
@@ -64,9 +72,16 @@ struct ResponseVerbosityTests {
         #expect(ResponseVerbosity(rawValue: persisted) == .zcode)
     }
 
-    @Test("未知 rawValue 不被误判为 V4")
+    @Test("以字符串形式持久化 v5 后能解回 ChatGPT")
+    func stringPersistedV5DecodesBackToChatGPT() throws {
+        let persisted = ResponseVerbosity.chatGPT.rawValue
+        #expect(persisted == "v5")
+        #expect(ResponseVerbosity(rawValue: persisted) == .chatGPT)
+    }
+
+    @Test("未知 rawValue 被拒绝")
     func unknownRawValueIsRejected() {
-        #expect(ResponseVerbosity(rawValue: "v5") == nil)
+        #expect(ResponseVerbosity(rawValue: "v6") == nil)
         #expect(ResponseVerbosity(rawValue: "") == nil)
     }
 }

@@ -149,6 +149,8 @@ struct PluginConversationVerbosityTests {
             (.brief, "Brief", "Brief Description"),
             (.standard, "Standard", "Standard Description"),
             (.detailed, "Detailed", "Detailed Description"),
+            (.zcode, "ZCode", "ZCode Description"),
+            (.chatGPT, "ChatGPT", "ChatGPT Description"),
         ]
         let resolve: (String) -> String = { "localized:\($0)" }
 
@@ -201,6 +203,28 @@ struct PluginConversationVerbosityTests {
                 "zh-Hant": "包含完整推理與上下文",
                 "zh-HK": "包含完整推理與上下文",
                 "zh-TW": "包含完整推理與上下文",
+            ],
+            "ZCode": [
+                "en": "ZCode", "zh-Hans": "ZCode", "zh-Hant": "ZCode",
+                "zh-HK": "ZCode", "zh-TW": "ZCode",
+            ],
+            "ZCode Description": [
+                "en": "ZCode-style message presentation",
+                "zh-Hans": "ZCode 风格消息呈现",
+                "zh-Hant": "ZCode 風格訊息呈現",
+                "zh-HK": "ZCode 風格訊息呈現",
+                "zh-TW": "ZCode 風格訊息呈現",
+            ],
+            "ChatGPT": [
+                "en": "ChatGPT", "zh-Hans": "ChatGPT", "zh-Hant": "ChatGPT",
+                "zh-HK": "ChatGPT", "zh-TW": "ChatGPT",
+            ],
+            "ChatGPT Description": [
+                "en": "ChatGPT-style message list",
+                "zh-Hans": "ChatGPT 风格消息列表",
+                "zh-Hant": "ChatGPT 風格訊息列表",
+                "zh-HK": "ChatGPT 風格訊息列表",
+                "zh-TW": "ChatGPT 風格訊息列表",
             ],
         ]
 

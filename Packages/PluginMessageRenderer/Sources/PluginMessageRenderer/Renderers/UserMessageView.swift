@@ -17,7 +17,14 @@ struct UserMessageView: View {
     var body: some View {
         // V4（ZCode）：独立的气泡呈现（surface 背景、圆角 12/2、右对齐、
         // 长文折叠、hover 复制）。其余版本继续走旧 body。
-        if verbosity == .zcode {
+        if ChatGPTUserMessageView.usesChatGPTPresentation(verbosity: verbosity) {
+            ChatGPTUserMessageView(
+                capability: capability,
+                stateViewModel: stateViewModel,
+                message: message,
+                verbosity: verbosity
+            )
+        } else if verbosity == .zcode {
             ZCodeUserMessageView(
                 capability: capability,
                 stateViewModel: stateViewModel,

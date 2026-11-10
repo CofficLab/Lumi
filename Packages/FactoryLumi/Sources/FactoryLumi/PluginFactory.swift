@@ -119,6 +119,7 @@ import PluginMessageListBrief
 import PluginMessageListStandard
 import PluginMessageListDetailed
 import PluginMessageListZCode
+import PluginMessageListChatGPT
 import PluginMessageManager
 import PluginMessageRenderer
 import PluginMessageSender
@@ -344,6 +345,7 @@ public struct DefaultPluginFactory: PluginFactory {
             PluginMessageListStandardPlugin(),
             PluginMessageListDetailedPlugin(),
             PluginMessageListZCodePlugin(),
+            PluginMessageListChatGPTPlugin(),
             MessageRendererPlugin(),
             ConversationInputPlugin(),
             ConversationListPlugin(),

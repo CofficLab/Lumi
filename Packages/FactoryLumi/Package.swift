@@ -95,6 +95,7 @@ let package = Package(
         .package(path: "../PluginMessageListStandard"),
         .package(path: "../PluginMessageListDetailed"),
         .package(path: "../PluginMessageListZCode"),
+        .package(path: "../PluginMessageListChatGPT"),
         .package(path: "../PluginMessageRenderer"),
         .package(path: "../PluginConversationList"),
         .package(path: "../PluginConversationNew"),
@@ -289,6 +290,7 @@ let package = Package(
                 .product(name: "PluginMessageListStandard", package: "PluginMessageListStandard"),
                 .product(name: "PluginMessageListDetailed", package: "PluginMessageListDetailed"),
                 .product(name: "PluginMessageListZCode", package: "PluginMessageListZCode"),
+                .product(name: "PluginMessageListChatGPT", package: "PluginMessageListChatGPT"),
                 .product(name: "PluginMessageRenderer", package: "PluginMessageRenderer"),
                 .product(name: "PluginConversationList", package: "PluginConversationList"),
                 .product(name: "PluginConversationNew", package: "PluginConversationNew"),
@@ -457,6 +459,7 @@ let package = Package(
                 // 装配真实插件来断言 exclusiveGroup 槽位互斥。
                 .product(name: "PluginMessageListDetailed", package: "PluginMessageListDetailed"),
                 .product(name: "PluginMessageListZCode", package: "PluginMessageListZCode"),
+                .product(name: "PluginMessageListChatGPT", package: "PluginMessageListChatGPT"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "PluginToolbar", package: "LumiProviders"),
                 // 全新安装首屏装配（空态 → 首条消息 → 对话列表 tab）需要真实
