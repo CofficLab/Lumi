@@ -78,7 +78,9 @@ public final class RAGIndexScheduler: SuperLog {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)idle scheduler indexing project=\(candidate.projectPath)")
                 }
-                let outcome = try await runWorkSlice(for: candidate.projectPath)
+                // 在派发切片前捕获令牌，前台中断后这个切片不会再重启后台索引。
+                let token = await service.backgroundIndexingToken()
+                let outcome = try await runWorkSlice(for: candidate.projectPath, token: token)
                 if outcome.confirmsProgress {
                     retryStates[candidate.projectPath, default: .init()].recordSuccess()
                     saveRetryStates()
@@ -136,10 +138,17 @@ public final class RAGIndexScheduler: SuperLog {
         return candidates
     }
 
-    private func runWorkSlice(for projectPath: String) async throws -> RAGIndexEnsureOutcome {
+    private func runWorkSlice(
+        for projectPath: String,
+        token: RAGBackgroundIndexToken
+    ) async throws -> RAGIndexEnsureOutcome {
         try await withThrowingTaskGroup(of: RAGIndexEnsureOutcome.self) { group in
             group.addTask { [service] in
-                try await service.ensureIndexed(projectPath: projectPath, background: true)
+                try await service.ensureIndexed(
+                    projectPath: projectPath,
+                    background: true,
+                    token: token
+                )
             }
             group.addTask {
                 try await Task.sleep(for: .seconds(5 * 60))
