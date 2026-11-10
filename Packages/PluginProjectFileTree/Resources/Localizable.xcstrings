@@ -88,6 +88,34 @@
         }
       }
     },
+    "Are you sure you want to delete %lld items?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to delete %lld items?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要删除 %lld 个项目吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定要刪除 %lld 個項目嗎？"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定要刪除 %lld 個項目嗎？"
+          }
+        }
+      }
+    },
     "Browse project files with Git status, drag-and-drop and file operations in the Explorer rail." : {
       "localizations" : {
         "en" : {
@@ -1022,6 +1050,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "該項目將被移到垃圾桶。"
+          }
+        }
+      }
+    },
+    "These items will be moved to the Trash." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "These items will be moved to the Trash."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这些项目将被移到废纸篓。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這些項目將被移到垃圾桶。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這些項目將被移到垃圾桶。"
           }
         }
       }

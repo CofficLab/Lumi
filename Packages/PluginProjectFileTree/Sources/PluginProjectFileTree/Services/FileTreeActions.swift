@@ -59,16 +59,25 @@ enum FileTreeActions {
     }
 
     /// 弹出删除确认框。
-    /// - Parameter url: 待删除的文件/目录 URL
+    /// - Parameter urls: 待删除的文件/目录 URL；多于一个时使用批量文案
     /// - Returns: 用户确认删除返回 true，否则 false
-    static func presentDeleteConfirmation(url: URL) -> Bool {
+    static func presentDeleteConfirmation(urls: [URL]) -> Bool {
+        guard let firstURL = urls.first else { return false }
         let alert = NSAlert()
         alert.alertStyle = .warning
-        alert.messageText = String(
-            format: pluginLocalization.string("Are you sure you want to delete \"%@\"?"),
-            url.lastPathComponent
-        )
-        alert.informativeText = pluginLocalization.string("This item will be moved to the Trash.")
+        if urls.count == 1 {
+            alert.messageText = String(
+                format: pluginLocalization.string("Are you sure you want to delete \"%@\"?"),
+                firstURL.lastPathComponent
+            )
+            alert.informativeText = pluginLocalization.string("This item will be moved to the Trash.")
+        } else {
+            alert.messageText = String(
+                format: pluginLocalization.string("Are you sure you want to delete %lld items?"),
+                urls.count
+            )
+            alert.informativeText = pluginLocalization.string("These items will be moved to the Trash.")
+        }
         alert.addButton(withTitle: pluginLocalization.string("Move to Trash"))
         alert.addButton(withTitle: pluginLocalization.string("Cancel"))
         return alert.runModal() == .alertFirstButtonReturn
