@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 59 条用例。
+PluginConversationList 的实现包，包含 15 个主要类型；当前测试覆盖 61 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 13 个，用例总数: 59
+测试文件: 13 个，用例总数: 61
 
 核心组件（源码目录）:
 - `Helpers/`
@@ -45,7 +45,7 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 - **ConversationListPlugin**（3 条）：由 `pluginBootRegistersToolbarToolAndDynamicRailTabsThenShutsThemDown`、`pluginDoesNotPartiallyBootWithoutRequiredProviders`、`pluginMarksFinishedTurnsReadOrNeedsAttentionBasedOnSelection` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationListToolbarViewModel**（3 条）：由 `toolbarRefreshesConversationPresenceAndObservesChatVisibility`、`toolbarShowsCurrentProjectScopeOnlyWhenItHasConversationsAndOthersExist`、`toolbarShowsCurrentProjectScopeWhenOnlyProjectlessConversationsDiffer` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationListViewModel**（9 条）：由 `initialLoadAndHeaderReflectConversationAndProjectState`、`currentProjectScopeFiltersReloadAndUpdatesProjectTitle`、`conversationCountReflectsScopeAndUpdatesOnChange`、`reloadFailurePreservesConversationsAndPagination`、`reloadKeepsPagesAppendedWhileItRuns` 等用例锁定；改动该模块时优先跑对应测试文件。
-- **ConversationRailTabController**（4 条）：由 `railTabsFollowConversationAndCurrentProjectAvailability`、`railProjectTabAppearsWhenOnlyProjectlessConversationsDiffer`、`stoppingRailControllerCancelsRefreshSubscriptions`、`railVisibilityIsWrittenBackToHostOnEveryReconcile` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ConversationRailTabController**（6 条）：由 `railTabsFollowConversationAndCurrentProjectAvailability`、`railProjectTabAppearsWhenOnlyProjectlessConversationsDiffer`、`stoppingRailControllerCancelsRefreshSubscriptions`、`railVisibilityIsWrittenBackToHostOnEveryReconcile`、`railTabTitlesUsePluginLocalization`、`railTabTitleKeysHaveTranslations` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **ConversationRowAccessibility**（4 条）：由 `rowAccessibilityLabelAlwaysStartsWithTitle`、`rowAccessibilityLabelIncludesAutomationLevel`、`rowAccessibilityLabelFallsBackWhenTitleMissing`、`rowAccessibilityLabelSkipsEmptyProviderAndModel` 锁定行朗读文案的组成与回退规则。
 - **ConversationRowEmptyTitle**（4 条）：由 `rowLabelFallsBackForEmptyStringTitle`、`rowLabelFallsBackForWhitespaceOnlyTitle`、`emptyStringAndNilTitlesConverge`、`nonEmptyTitleIsPreserved` 锁定空标题回退文案的一致性。
 - **ConversationStatsViewModel**（8 条）：由 `loadsDailySeries`、`scopesToCurrentProject`、`cleansUpOlderConversations`、`ignoresConcurrentCleanup` 等用例锁定统计区间、清理边界与并发守卫。
@@ -116,16 +116,18 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 | 57 | ConversationListViewModel | 刷新读取失败保留已知良好列表与分页（**#932**） | 已加载 40 条，下一次分页读取抛错 | 触发 reload 与 loadNextPage，随后恢复存储再翻页 | 列表与游标不变、hasLoadError 为 true、hasMore 仍为 true；恢复后追加到 60 条 | P0 | ✅ 已覆盖 | `reloadFailurePreservesConversationsAndPagination` |
 | 58 | ConversationListViewModel | 首次加载失败后视图重现仍可重试（**#932**） | 首次分页读取抛错 | 再次调用 loadInitialIfNeeded | 仍为空列表且 hasLoadError；恢复后成功加载并清除错误 | P1 | ✅ 已覆盖 | `initialLoadFailureRemainsRetryable` |
 | 59 | ConversationListViewModel | 刷新与下一页交错时不删除已追加页面（**#933**） | 已加载 40 条，下一页 100ms 返回、刷新首屏 400ms 返回 | 分页完成后改标题并等待刷新发布 | 列表保留 80 条、hasMore 仍为 true，随后可加载到 100 条 | P0 | ✅ 已覆盖 | `reloadKeepsPagesAppendedWhileItRuns` |
+| 60 | ConversationRailTabController | Chat 侧栏标签标题走本地化，tooltip 不再硬编码中文（**#923**） | 同时存在 Chats 与项目标签 | 启动控制器并注入标题解析器 | 两个标签标题均来自解析器，而非中文字面量 | P1 | ✅ 已覆盖 | `railTabTitlesUsePluginLocalization` |
+| 61 | ConversationRailTabController | 标签标题依赖的 Chats/Projects key 具备多语言翻译（**#923**） | 插件编译后的字符串表 | 读取各语言 Localizable.strings | 英文为 Chats/Projects，简中为 对话/项目，繁中为 專案 | P1 | ✅ 已覆盖 | `railTabTitleKeysHaveTranslations` |
 
-> 说明：全部 **59 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **61 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 43 / 43
+- P1: 已覆盖 45 / 45
 - P2: 已覆盖 11 / 11
-- **合计: 59 / 59**（仅表示清单场景，非源码覆盖率）
+- **合计: 61 / 61**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -136,7 +138,7 @@ PluginConversationList 的实现包，包含 15 个主要类型；当前测试�
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 48 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 50 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
