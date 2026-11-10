@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginLLMManager 的实现包，包含 11 个主要类型；当前测试覆盖 15 条用例。
+PluginLLMManager 的实现包，包含 11 个主要类型；当前测试覆盖 18 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 2 个，用例总数: 15
+测试文件: 3 个，用例总数: 18
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -38,6 +38,7 @@ PluginLLMManager 的实现包，包含 11 个主要类型；当前测试覆盖 1
 按测试模块归纳，改动对应模块时须保持既有断言成立:
 
 - **综合**（15 条）：由 `onBootReplacesDefaultManager`、`onBootRegistersAPIKeyRenderers`、`legacyMissingAPIKeyMessageMatchesRenderer` 等用例锁定；改动该模块时优先跑对应测试文件。
+- **ProviderAPIKeySaveVerification**（3 条）：由 `writeFailureKeepsInputAndReportsError`、`silentWriteLossIsNotReportedAsSaved`、`readBackMatchConfirmsSave` 锁定。API Key 卡片必须调用 throwing 写入并在读回值等于提交值后才显示 Saved；写入失败或读回不一致时保留用户输入并展示错误（**回归 #1119**）。
 
 ## 测试用例清单
 
@@ -58,27 +59,30 @@ PluginLLMManager 的实现包，包含 11 个主要类型；当前测试覆盖 1
 | 13 | 综合 | models(for:) 读取动态模型池，含远程新增模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `modelsReadsDynamicPool` |
 | 14 | 综合 | 远程新增模型可解析 modelID 并路由 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `remoteModelSelectableAndRoutable` |
 | 15 | 综合 | 请求自带远程新增模型时不被回退到默认模型 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `requestedRemoteModelIsNotDowngraded` |
+| 16 | ProviderAPIKeySaveVerification | Keychain 写入失败时不显示 Saved 并保留输入（**回归 #1119**） | 供应商模拟 `setApiKeyReportingErrors` 抛 `writeFailed` | 输入 `sk-new` 后调用 `saveAPIKey` | `didSaveAPIKey == false`，`saveError` 为真实错误，输入仍为 `sk-new`，没有写入任何 Key | P0 | ✅ 已覆盖 | `writeFailureKeepsInputAndReportsError` |
+| 17 | ProviderAPIKeySaveVerification | 静默写失败不会被当作保存成功（**回归 #1119**） | 已有旧 Key `sk-old`，写入实现不落盘也不抛错 | 输入 `sk-new` 后调用 `saveAPIKey` | 读回仍是 `sk-old`，`didSaveAPIKey == false` 且有错误，输入保留 `sk-new` | P0 | ✅ 已覆盖 | `silentWriteLossIsNotReportedAsSaved` |
+| 18 | ProviderAPIKeySaveVerification | 读回值与提交值一致才显示 Saved | 供应商正常持久化，输入前后带空格 | 输入 `  sk-new  ` 后调用 `saveAPIKey` | 存储值为 `sk-new`，`didSaveAPIKey == true`，无错误，`keyIsReadable == true` | P1 | ✅ 已覆盖 | `readBackMatchConfirmsSave` |
 
-> 说明：全部 **15 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **18 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 1 / 1
-- P1: 已覆盖 13 / 13
+- P0: 已覆盖 3 / 3
+- P1: 已覆盖 14 / 14
 - P2: 已覆盖 1 / 1
-- **合计: 15 / 15**（仅表示清单场景，非源码覆盖率）
+- **合计: 18 / 18**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（1 条）
-- **P1**: 其余功能性用例（13 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
+- **P1**: 其余功能性用例（14 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 15 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 18 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

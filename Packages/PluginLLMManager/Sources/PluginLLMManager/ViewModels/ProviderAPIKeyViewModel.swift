@@ -35,9 +35,30 @@ final class ProviderAPIKeyViewModel: ObservableObject {
 
     func saveAPIKey() {
         guard let provider = resolvedProvider else { return }
-        provider.setApiKey(apiKey)
-        apiKey = provider.getApiKey()
-        keyIsReadable = !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let submitted = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        do {
+            try provider.setApiKeyReportingErrors(apiKey)
+        } catch {
+            // 存储失败时保留用户输入，不能清空错误或显示 Saved（回归 #1119）。
+            didSaveAPIKey = false
+            saveError = error.localizedDescription
+            return
+        }
+
+        // 不抛错的旧实现可能吞掉写入失败；只有读回值与提交值一致才代表
+        // Key 真正落盘，否则同样按保存失败处理（回归 #1119）。
+        let stored = provider.getApiKey().trimmingCharacters(in: .whitespacesAndNewlines)
+        guard stored == submitted else {
+            didSaveAPIKey = false
+            saveError = String(
+                localized: "The API key could not be verified after saving.",
+                defaultValue: "The API key could not be verified after saving."
+            )
+            return
+        }
+
+        apiKey = stored
+        keyIsReadable = !stored.isEmpty
         saveError = nil
         didSaveAPIKey = true
     }
