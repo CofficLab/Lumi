@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆盖 71 条用例。
+PluginMessageRenderer 的实现包，包含 15 个主要类型；当前测试覆盖 74 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 71
+测试文件: 10 个，用例总数: 74
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -127,16 +127,19 @@ PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆
 | 69 | ModelSwitchSummary | 只有供应商 ID 时退回显示供应商 | 两端都没有模型名 | 调用 `summaryText` | 文案为 `openai → airouter` | P2 | ✅ 已覆盖 | `providerOnlyFallsBackToIDs` |
 | 70 | ModelSwitchSummary | 摘要片段经过注入的本地化解析（回归 #905） | — | 用 `[key]` 标记解析器调用 `summaryText` / `labels` | 返回带标记的本地化片段 | P1 | ✅ 已覆盖 | `summaryUsesInjectedLocalization` |
 | 71 | ModelSwitchSummary | 模型切换词条在所有规范语言下都有译文（回归 #905） | — | 读取编译后 `.lproj/Localizable.strings` | 10 个词条在 5 种语言下均符合预期 | P1 | ✅ 已覆盖 | `switchLabelsHaveTranslationsInCompiledBundle` |
+| 72 | AgentLoopRetrySummary | 重试状态文案经过注入的本地化解析（回归 #895） | — | 用 `[key]` 标记解析器调用 `statusText` | 有次数时返回 `[Retrying (1/3)]`，无次数时返回 `[Retrying]` | P1 | ✅ 已覆盖 | `statusUsesInjectedLocalization` |
+| 73 | AgentLoopRetrySummary | 退避文案经过注入的本地化解析（回归 #895） | — | 用 `[key]` 标记解析器调用 `retryAfterText` | 有效秒数返回 `[30 seconds before retry]`，缺省或非数字返回 nil | P1 | ✅ 已覆盖 | `retryAfterUsesInjectedLocalization` |
+| 74 | AgentLoopRetrySummary | 自动重试词条在所有规范语言下都有译文（回归 #895） | — | 读取编译后 `.lproj/Localizable.strings` | 9 个词条在 5 种语言下均符合预期 | P1 | ✅ 已覆盖 | `retryLabelsHaveTranslationsInCompiledBundle` |
 
-> 说明：全部 **71 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **74 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 19 / 19
-- P1: 已覆盖 48 / 48
+- P1: 已覆盖 51 / 51
 - P2: 已覆盖 4 / 4
-- **合计: 71 / 71**（仅表示清单场景，非源码覆盖率）
+- **合计: 74 / 74**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
@@ -147,7 +150,7 @@ PluginMessageRenderer 的实现包，包含 14 个主要类型；当前测试覆
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 71 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 74 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 - 本地化用例依赖 SwiftBuild 编译出的 `.xcstrings`，需确认 `en` 与四种中文变体 `.lproj` 均已产出
 
 ## 测试执行
