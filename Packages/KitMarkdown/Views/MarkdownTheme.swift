@@ -243,6 +243,120 @@ public struct MarkdownTheme: Sendable {
     ///   该检查无法静态推断「锁保护」这一事实。
     private nonisolated(unsafe) static var cachedZCode: MarkdownTheme?
 
+    /// V5（ChatGPT）主题。
+    ///
+    /// 基准是 V5 方案第 2.2 / 2.5 节：
+    /// - 正文 15，目标行高 24；
+    /// - 表格**横向滚动**，不撑破 768 的阅读列；
+    /// - 代码块继续内部横滚；
+    /// - 标题比 V4 更克制，不制造大段垂直留白。
+    ///
+    /// - Important: 与 V4 一样**刻意不**做成 `static let`：
+    ///   静态初始化可能发生在非主线程的测试宿主里，`NSFont` 的度量访问
+    ///   在那里并不安全。改为惰性求值并用锁保证线程安全。
+    public static var chatGPT: MarkdownTheme {
+        chatGPTLock.lock()
+        defer { chatGPTLock.unlock() }
+        if let cached = cachedChatGPT {
+            return cached
+        }
+        let theme = makeChatGPTTheme()
+        cachedChatGPT = theme
+        return theme
+    }
+
+    /// 保护 V5 主题的惰性初始化。
+    ///
+    /// - Important: 锁必须覆盖**整个**「检查缓存 → 计算 → 写缓存」过程。
+    private static let chatGPTLock = NSLock()
+
+    /// 缓存的 V5 主题；nil 表示尚未计算。
+    private nonisolated(unsafe) static var cachedChatGPT: MarkdownTheme?
+
+    /// 构造 V5 主题。
+    private static func makeChatGPTTheme() -> MarkdownTheme {
+        MarkdownTheme(
+            headingFont: { level in
+                switch level {
+                case 1: return .system(size: 17, weight: .semibold)
+                case 2: return .system(size: 16, weight: .semibold)
+                case 3: return .system(size: 15, weight: .semibold)
+                default: return .system(size: 14, weight: .semibold)
+                }
+            },
+            bodyFont: .system(size: 15),
+            codeFont: .system(size: 13, design: .monospaced),
+            blockSpacing: 10,
+            listItemSpacing: 6,
+            headingTopSpacing: 16,
+            headingBottomSpacing: 8,
+            firstChildRemovesTopSpacing: true,
+            unorderedListTopSpacing: 8,
+            unorderedListBottomSpacing: 8,
+            unorderedListLeadingPadding: 20,
+            nestedListTopSpacing: 4,
+            nestedListBottomSpacing: 4,
+            orderedListLeadingPadding: 0,
+            orderedListItemLeadingPadding: 4,
+            orderedListUsesInsideDecimal: true,
+            quoteTopSpacing: 12,
+            quoteBottomSpacing: 12,
+            quoteBorderWidth: 2,
+            quoteLeadingPadding: 12,
+            linkFontSize: 15,
+            linkWeight: .regular,
+            linkHasUnderlineByDefault: false,
+            linkUnderlineOffset: 4,
+            inlineCodeFontSize: 12,
+            inlineCodeCornerRadius: 6,
+            inlineCodeHorizontalMargin: 2,
+            inlineCodeHorizontalPadding: 6,
+            inlineCodeVerticalPadding: 2,
+            bodyTargetLineHeight: 24,
+            bodyLineSpacing: lineSpacing(targetLineHeight: 24, fontSize: 15),
+            codeBlockTopSpacing: 12,
+            codeBlockBottomSpacing: 12,
+            codeBlockCornerRadius: 8,
+            codeBlockBorderWidth: 1,
+            codeBlockHeaderLeadingPadding: 12,
+            codeBlockHeaderTrailingPadding: 8,
+            codeBlockHeaderVerticalPadding: 8,
+            codeBlockLanguageFontSize: 12,
+            codeBlockLanguageIsMonospaced: true,
+            codeBlockLanguageIsLowercase: true,
+            codeBlockLanguageTruncates: true,
+            codeBlockDefaultLanguage: "text",
+            codeBlockHeaderFileIconSize: 16,
+            codeBlockHeaderActionButtonSize: 28,
+            codeBlockHeaderActionIconSize: 14,
+            codeBlockContentHorizontalPadding: 8,
+            codeBlockContentTopPadding: 0,
+            codeBlockContentBottomPadding: 12,
+            codeBlockFontSize: 12,
+            codeBlockShowsLineNumbers: false,
+            codeBlockWrapsLines: false,
+            codeBlockMaxHeight: nil,
+            codeBlockCopyFeedbackMilliseconds: 2000,
+            codeBlockHighlightsWhileStreaming: false,
+            tableCornerRadius: 8,
+            tableBorderWidth: 1,
+            tableCellHorizontalPadding: 10,
+            tableCellVerticalPadding: 6,
+            tableHeaderFontSize: 13,
+            tableHeaderWeight: .semibold,
+            tableHeaderAlignment: .leading,
+            tableCellMinWidth: 64,
+            tableCellMaxWidth: 448,
+            // 宽表格必须内部横滚，不能撑破 768 的阅读列。
+            tableScrollsHorizontally: true,
+            imageMaxWidthFraction: 0.8,
+            imageMaxHeight: 480,
+            imageCornerRadius: 8,
+            imagesFormGallery: true,
+            imageShowsErrorPlaceholder: true
+        )
+    }
+
     /// 构造 V4 主题。
     private static func makeZCodeTheme() -> MarkdownTheme {
         MarkdownTheme(
