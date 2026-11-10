@@ -31,10 +31,6 @@ public enum ResponseVerbosity: CaseIterable, Codable, Identifiable, RawRepresent
 
     public var levelCode: String { rawValue.uppercased() }
 
-    public var displayName: String {
-        switch self { case .brief: "简洁"; case .standard: "标准"; case .detailed: "详细" }
-    }
-
     public var iconName: String {
         switch self {
         // A checkmark makes the concise, conclusion-first mode visibly
@@ -42,14 +38,6 @@ public enum ResponseVerbosity: CaseIterable, Codable, Identifiable, RawRepresent
         case .brief: "checkmark.circle"
         case .standard: "text.justify.left"
         case .detailed: "doc.richtext"
-        }
-    }
-
-    public var description: String {
-        switch self {
-        case .brief: "只返回核心结论"
-        case .standard: "包含必要说明和步骤"
-        case .detailed: "包含完整推理和上下文"
         }
     }
 }
