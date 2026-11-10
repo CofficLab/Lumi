@@ -5,7 +5,7 @@
 PluginChatPanel 的实现包，包含 2 个主要类型；当前测试覆盖 7 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 1 个，用例总数: 7
+测试文件: 2 个，用例总数: 10
 
 核心组件（源码目录）:
 - `Observers/`
@@ -35,27 +35,30 @@ PluginChatPanel 的实现包，包含 2 个主要类型；当前测试覆盖 7 �
 | 5 | ChatPanelPlugin | Chat 激活期间 Rail 可见类别被清空时仍保持 Rail 可见 | — | 执行该用例 | 断言成立 | P2 | ✅ 已覆盖 | `chatKeepsRailVisibleWhenVisibleCategoriesEmpty` |
 | 6 | ChatPanelPlugin | 切到其它入口再切回 Chat 时 Rail 恢复可见 | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `railRestoresWhenReactivatingChat` |
 | 7 | ChatPanelPlugin | Chat 在 tab 延迟注册后仍恢复保存的 Rail active tab | — | 执行该用例 | 断言成立 | P1 | ✅ 已覆盖 | `chatRestoresTabRegisteredAfterReady` |
+| 8 | Rail 偏好恢复 | 切回 Chat 时恢复离开前选择的 Chats，不被临时回退项覆盖（**回归 #887**） | 已注册 Explorer（`.fileTree`）与 Chats（`.chat`），用户选中 Chats | 切到其它插件收窄分类，再切回 Chat | 选中的是 Chats，不是回退项 Explorer | P0 | ✅ 已覆盖 | `reactivatingChatRestoresChatsNotFallbackTab` |
+| 9 | Rail 偏好恢复 | 可见分类切换产生的临时回退项不得写入偏好存储（**回归 #887**） | 同上 | 同上 | 偏好存储里是 Chats，不是 Explorer | P0 | ✅ 已覆盖 | `fallbackTabIsNotPersisted` |
+| 10 | Rail 偏好恢复 | 恢复后偏好仍然指向用户选择的标签（**回归 #887 护栏**） | 同上 | 反复切走切回两次 | 稳定恢复 Chats，不来回漂移 | P0 | ✅ 已覆盖 | `preferenceRemainsUserSelectionAfterRestore` |
 
-> 说明：全部 **7 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **10 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 0 / 0
+- P0: 已覆盖 3 / 3
 - P1: 已覆盖 6 / 6
 - P2: 已覆盖 1 / 1
-- **合计: 7 / 7**（仅表示清单场景，非源码覆盖率）
+- **合计: 10 / 10**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（0 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（3 条）
 - **P1**: 其余功能性用例（6 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（1 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 7 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 10 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
