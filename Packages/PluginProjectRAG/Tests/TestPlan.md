@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 125 条用例。
+PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 128 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 10 个，用例总数: 125
+测试文件: 11 个，用例总数: 128
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -54,6 +54,7 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **RAGIndexingRegistry**（3 条）：由 `overlappingScopesStayIndexingUntilLastFinish`、`projectScopesAreIndependent`、`unmatchedFinishDoesNotUnderflow` 锁定。同一项目的索引作用域可以重叠（`ensureIndexed` 在 await 处让出 actor），必须按项目引用计数：任一作用域先结束不得清除其他仍在运行的索引标记；不同项目互不影响；多余的 `finish` 不得留下负计数（**回归 #1110**）。
 - **RAGCacheKey**（5 条）：由 `collidingQueryAndPathProduceDifferentKeys`、`cacheMissesAcrossCollidingTriples`、`identicalTriplesShareCacheEntry`、`topKParticipatesInTheKey`、`replacedProjectPathStillMisses` 锁定。query 与项目路径都允许出现 `|` 等字符，缓存键必须按字段长度编码而不是直接拼接分隔符，否则不同三元组会共用缓存并返回其他查询/项目的结果（**回归 #1112**）。
 - **RAGLexicalIgnore**（2 条）：由 `ripgrepArgumentsDisableIgnoreRules`、`lexicalSearchFindsSourceInGitignoredDirectory` 锁定。索引扫描和路径搜索都不读取 `.gitignore`，词法搜索的 ripgrep 参数必须带 `--no-ignore`，否则被忽略目录中的源码在有其他匹配时会被静默漏掉（**回归 #1113**）。
+- **RAGSQLiteCandidateDedup**（3 条）：由 `mergeKeepsChunksThatShareContentPrefix`、`partialMatchDoesNotEvictFullMatch`、`fallbackOverlapIsDeduplicated` 锁定。词法与回退候选合并必须按数据库 chunk id 去重；不能用「路径 + 内容前 80 字符」，否则同前缀的不同 chunk 会互相覆盖，完整命中的旧 chunk 会在评分前被较新的部分匹配挤掉（**回归 #1115**）。
 - **RAGSQLiteBlobBinding**（2 条）：由 `sqliteCopiesBlobBeforeBindReturns`、`storedEmbeddingSurvivesSourceBufferRelease` 锁定。`withUnsafeBytes` 只保证 buffer 在闭包内有效，`sqlite3_step` 在闭包外执行，因此 blob 必须用 `SQLITE_TRANSIENT` 绑定，让 SQLite 在 bind 返回前复制；bind 后覆写源缓冲区仍应能读回原值（**回归 #1111**）。
 
 ## 测试用例清单
@@ -185,27 +186,30 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 123 | RAGPureLogic | CRLF 文件按真实源码行切窗口 | 10 行内容全部用 `\r\n` 连接 | `maxLines: 4, overlapLines: 0` 执行分块 | 窗口为 1...4、5...8、9...10 | P1 | ✅ 已覆盖 | `chunkCountsCRLFWindowsBySourceLines` |
 | 124 | RAGPureLogic | CRLF 中的空行仍占真实行号 | 内容为 `"a\r\n\r\nb"` | 执行分块 | 内容为 `"a\n\nb"`，`lineRange` 为 1...3 | P1 | ✅ 已覆盖 | `chunkKeepsBlankLineInCRLF` |
 | 125 | RAGPureLogic | 单独的 CR 也作为换行 | 内容为 `"a\rb"` | 执行分块 | 内容为 `"a\nb"`，`lineRange` 为 1...2 | P2 | ✅ 已覆盖 | `chunkTreatsLoneCarriageReturnAsLineBreak` |
+| 126 | RAGSQLiteCandidateDedup | 前 80 字符相同的不同 chunk 不被合并丢弃（**回归 #1115**） | 同一文件两个 chunk 共享 80 字符前缀，后续内容不同 | `loadCandidateChunks` 检索 `alpha beta` | 两个 chunk 都保留 | P0 | ✅ 已覆盖 | `mergeKeepsChunksThatShareContentPrefix` |
+| 127 | RAGSQLiteCandidateDedup | 较新的部分匹配不挤掉较旧的完整匹配（**回归 #1115**） | 旧 chunk 含 `alpha beta`，新 chunk 只含 `alpha`，前缀相同 | `loadCandidateChunks` 检索 `alpha beta` | 旧、新 chunk 的 id 都在候选中 | P0 | ✅ 已覆盖 | `partialMatchDoesNotEvictFullMatch` |
+| 128 | RAGSQLiteCandidateDedup | 词法与回退重叠的同一 chunk 只保留一次 | 单 chunk 命中查询词 | `loadCandidateChunks` 合并词法与回退 | 结果仅一条，内容不变 | P1 | ✅ 已覆盖 | `fallbackOverlapIsDeduplicated` |
 
 > 说明：全部 **114 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 14 / 14
-- P1: 已覆盖 98 / 98
+- P0: 已覆盖 16 / 16
+- P1: 已覆盖 99 / 99
 - P2: 已覆盖 13 / 13
-- **合计: 125 / 125**（仅表示清单场景，非源码覆盖率）
+- **合计: 128 / 128**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（14 条）
-- **P1**: 其余功能性用例（98 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（16 条）
+- **P1**: 其余功能性用例（99 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（13 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 125 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 128 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 

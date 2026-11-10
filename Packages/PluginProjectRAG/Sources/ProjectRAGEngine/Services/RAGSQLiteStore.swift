@@ -384,12 +384,13 @@ final class RAGSQLiteStore: @unchecked Sendable {
         guard remainingLimit > 0 else { return lexical }
         let fallback = try loadChunks(projectPath: projectPath, limit: remainingLimit)
         var merged: [RAGStoredChunk] = []
-        var seen = Set<String>()
+        // 按数据库 chunk id 去重。文件路径 + 内容前 80 字符不是唯一标识，
+        // 相同前缀的不同 chunk 会互相覆盖，且在评分前就丢掉候选（回归 #1115）。
+        var seen = Set<Int64>()
         merged.reserveCapacity(lexical.count + fallback.count)
 
         for item in lexical + fallback {
-            let key = item.filePath + "::" + String(item.content.prefix(80))
-            if seen.insert(key).inserted {
+            if seen.insert(item.id).inserted {
                 merged.append(item)
             }
         }
