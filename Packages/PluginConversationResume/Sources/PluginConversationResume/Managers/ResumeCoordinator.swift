@@ -212,9 +212,9 @@ final class ResumeCoordinator {
     ///   全局 `resumingConversationID == nil` 做 guard，于是任何其它会话正在
     ///   恢复时，本会话的恢复会被静默拒绝。改为集合后：同一会话的重复恢复
     ///   仍被抑制，不同会话之间互不阻塞。
-    func resume(for conversationID requestedID: UUID? = nil) async {
+    func resume(for requestedConversationID: UUID? = nil) async {
         guard isActive else { return }
-        let conversationID = requestedID ?? conversations.selectedConversationID
+        let conversationID = requestedConversationID ?? conversations.selectedConversationID
         guard let conversationID else { return }
         // 同一会话的重复恢复要挡住；别的会话正在恢复与此无关。
         guard resumingConversationIDs.insert(conversationID).inserted else { return }
