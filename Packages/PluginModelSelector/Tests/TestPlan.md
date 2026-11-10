@@ -5,7 +5,7 @@
 PluginModelSelector Model Selector 插件（KernelCore 体系），由旧版 `Plugins/ModelSelectorPlugin` （KernelLumi / LumiPlugin 架构）完美复刻而来。
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 37
+测试文件: 9 个，用例总数: 39
 
 核心组件（源码目录）:
 - `Capabilities/`
@@ -37,6 +37,7 @@ PluginModelSelector Model Selector 插件（KernelCore 体系），由旧版 `Pl
 - **TimelineMessage**（6 条）：由 `insertsTimelineMessageOnSwitch`、`timelineMessageDoesNotLeakIntoLLMContext`、`sameModelProducesNoTimelineMessage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **综合**（12 条）：由 `classifiesViaMetadata`、`classifiesViaHeuristics`、`missingMetadataFallsBackToLanguage` 等用例锁定；改动该模块时优先跑对应测试文件。
 - **独立搜索状态**（3 条）：由 `providerSearchDoesNotFilterModels`、`modelSearchDoesNotFilterProviders`、`clearingOneSearchKeepsTheOther` 锁定——左右两栏各自持有搜索词，任一栏的输入不得过滤另一栏（**#1030**）。
+- **本地化**（2 条）：中转站分组标题必须经 `ProviderListLocalization` 解析，`Relay` 词条需在 en/zh-Hans/zh-Hant/zh-HK/zh-TW 下都有译文（#906）。
 
 ## 测试用例清单
 
@@ -79,27 +80,30 @@ PluginModelSelector Model Selector 插件（KernelCore 体系），由旧版 `Pl
 | 35 | 独立搜索状态 | 搜索供应商不得把右栏模型筛空（**#1030**） | HyperAPI 有 11 个 `gpt-*` 模型 | 设置 `providerSearchText = "HyperAPI"` | 模型列表仍返回全部 11 个 | P0 | ✅ 已覆盖 | `providerSearchDoesNotFilterModels` |
 | 36 | 独立搜索状态 | 搜索模型不得过滤左栏供应商 | 已加载 HyperAPI | 设置 `modelSearchText = "gpt-9"` | 供应商列表仍包含 HyperAPI | P1 | ✅ 已覆盖 | `modelSearchDoesNotFilterProviders` |
 | 37 | 独立搜索状态 | 清空一侧搜索词不影响另一侧 | 两栏均有搜索词 | 清空 `providerSearchText` | `modelSearchText` 保持，模型仍按它过滤 | P1 | ✅ 已覆盖 | `clearingOneSearchKeepsTheOther` |
+| 38 | 本地化 | 中转站分组标题经过注入的本地化解析（回归 #906） | — | 注入 resolver 调用 `relaySectionTitle(resolve:)` | 返回 `localized:Relay` | P1 | ✅ 已覆盖 | `relaySectionTitleUsesInjectedLocalization` |
+| 39 | 本地化 | 中转站分组标题词条在 5 种语言下都有译文（回归 #906） | — | 读取编译后 `.lproj/Localizable.strings` | 每种语言译文符合预期 | P1 | ✅ 已覆盖 | `relaySectionTitleHasTranslationsInCompiledBundle` |
 
-> 说明：全部 **37 条场景**已在本包 `swift test` 中实跑通过。
+> 说明：全部 **39 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
 - P0: 已覆盖 5 / 5
-- P1: 已覆盖 32 / 32
+- P1: 已覆盖 34 / 34
 - P2: 已覆盖 0 / 0
-- **合计: 37 / 37**（仅表示清单场景，非源码覆盖率）
+- **合计: 39 / 39**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
 - **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（5 条）
-- **P1**: 其余功能性用例（32 条）
+- **P1**: 其余功能性用例（34 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（0 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 37 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 39 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 本地化用例依赖 SwiftBuild 编译出的 `.xcstrings`，需确认 `en` 与四种中文变体 `.lproj` 均已产出
 
 ## 测试执行
 
