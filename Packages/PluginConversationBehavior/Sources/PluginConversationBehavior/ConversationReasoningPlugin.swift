@@ -202,7 +202,7 @@ private struct ReasoningPopover: View {
                         Text(effort.levelCode)
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.primary)
-                        Text(effort.displayName)
+                        Text(effort.localizedDisplayName())
                             .font(.system(size: 11))
                             .foregroundColor(.secondary)
                         Spacer()

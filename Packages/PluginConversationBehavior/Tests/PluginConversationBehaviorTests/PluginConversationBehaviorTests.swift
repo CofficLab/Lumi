@@ -162,6 +162,75 @@ struct PluginConversationBehaviorTests {
         #expect(conversations.globalReasoningEffort == nil)
         #expect(toast.shownToasts.count == 2)
     }
+
+    /// 回归 #918：弹层档位名称必须经过插件本地化解析，而不是读取
+    /// `ReasoningEffort` 里写死的中文字面量。
+    ///
+    /// 用注入的替身解析器断言「文案确实来自解析器」，因为真实解析结果取决于
+    /// 宿主首选语言，无法在 CI 上给出与语言无关的期望值。
+    @Test("推理档位名称经过注入的本地化解析（回归 #918）")
+    func reasoningEffortNamesUseInjectedLocalization() {
+        let cases: [(ReasoningEffort, String)] = [
+            (.low, "Low"),
+            (.medium, "Medium"),
+            (.high, "High"),
+            (.xhigh, "Extra High"),
+            (.max, "Max"),
+        ]
+        let resolve: (String) -> String = { "localized:\($0)" }
+
+        for (effort, nameKey) in cases {
+            #expect(
+                effort.localizedDisplayName(resolve: resolve) == "localized:\(nameKey)",
+                "推理档位名称未经过本地化解析：\(effort.rawValue)"
+            )
+        }
+    }
+
+    /// 回归 #918：档位名称词条必须在编译产物里对每种受支持语言都有译文，
+    /// 否则英文界面会显示中文，或中文界面回落成英文 key。
+    @Test("推理档位词条在所有规范语言下都有译文（回归 #918）")
+    func reasoningEffortStringsHaveTranslationsInCompiledBundle() throws {
+        let expected: [String: [String: String]] = [
+            "Low": [
+                "en": "Low", "zh-Hans": "低", "zh-Hant": "低",
+                "zh-HK": "低", "zh-TW": "低",
+            ],
+            "Medium": [
+                "en": "Medium", "zh-Hans": "中", "zh-Hant": "中",
+                "zh-HK": "中", "zh-TW": "中",
+            ],
+            "High": [
+                "en": "High", "zh-Hans": "高", "zh-Hant": "高",
+                "zh-HK": "高", "zh-TW": "高",
+            ],
+            "Extra High": [
+                "en": "Extra High", "zh-Hans": "超高", "zh-Hant": "超高",
+                "zh-HK": "超高", "zh-TW": "超高",
+            ],
+            "Max": [
+                "en": "Max", "zh-Hans": "极限", "zh-Hant": "極限",
+                "zh-HK": "極限", "zh-TW": "極限",
+            ],
+        ]
+
+        for (key, translations) in expected {
+            for (language, translation) in translations {
+                let table = try Self.compiledStrings(language: language)
+                #expect(
+                    table[key] == translation,
+                    "\(language) 下 \(key) 译文缺失或不符，推理档位弹层会回退到其它语言"
+                )
+            }
+        }
+    }
+
+    private static func compiledStrings(language: String) throws -> [String: String] {
+        let bundle = pluginLocalization.bundle
+        let lprojPath = try #require(bundle.path(forResource: language, ofType: "lproj"))
+        let stringsPath = (lprojPath as NSString).appendingPathComponent("Localizable.strings")
+        return try #require(NSDictionary(contentsOfFile: stringsPath) as? [String: String])
+    }
 }
 
 @MainActor
