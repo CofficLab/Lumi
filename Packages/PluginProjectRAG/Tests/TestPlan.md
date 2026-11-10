@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 114 条用例。
+PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 119 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 8 个，用例总数: 114
+测试文件: 9 个，用例总数: 119
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -52,6 +52,7 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **RAGFileScannerFailure**（3 条）：由 `missingRootThrows`、`regularFileRootThrows`、`emptyDirectoryReturnsNoFiles` 用例锁定；扫描接口必须把「根目录不可用」与「项目确实为空」区分开，前者抛 `RAGError.projectRootUnavailable`，后者才返回空数组。
 - **RAGIndexerScannerFailure**（2 条）：由 `incrementalIndexKeepsRecordsWhenRootDisappears`、`rebuildKeepsRecordsWhenRootDisappears` 用例锁定；项目根目录消失后索引必须中止，已索引文件数与索引状态保持不变，不得按「文件已删除」清空记录。
 - **RAGIndexingRegistry**（3 条）：由 `overlappingScopesStayIndexingUntilLastFinish`、`projectScopesAreIndependent`、`unmatchedFinishDoesNotUnderflow` 锁定。同一项目的索引作用域可以重叠（`ensureIndexed` 在 await 处让出 actor），必须按项目引用计数：任一作用域先结束不得清除其他仍在运行的索引标记；不同项目互不影响；多余的 `finish` 不得留下负计数（**回归 #1110**）。
+- **RAGCacheKey**（5 条）：由 `collidingQueryAndPathProduceDifferentKeys`、`cacheMissesAcrossCollidingTriples`、`identicalTriplesShareCacheEntry`、`topKParticipatesInTheKey`、`replacedProjectPathStillMisses` 锁定。query 与项目路径都允许出现 `|` 等字符，缓存键必须按字段长度编码而不是直接拼接分隔符，否则不同三元组会共用缓存并返回其他查询/项目的结果（**回归 #1112**）。
 - **RAGSQLiteBlobBinding**（2 条）：由 `sqliteCopiesBlobBeforeBindReturns`、`storedEmbeddingSurvivesSourceBufferRelease` 锁定。`withUnsafeBytes` 只保证 buffer 在闭包内有效，`sqlite3_step` 在闭包外执行，因此 blob 必须用 `SQLITE_TRANSIENT` 绑定，让 SQLite 在 bind 返回前复制；bind 后覆写源缓冲区仍应能读回原值（**回归 #1111**）。
 
 ## 测试用例清单
@@ -172,27 +173,32 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 112 | RAGIndexingRegistry | 多余的 finish 不会留下负计数 | 未调用 `start` | 直接调用 `finish` 后再 `start`/`finish` | 多余 `finish` 后为空；正常配对后仍能正确清空 | P2 | ✅ 已覆盖 | `unmatchedFinishDoesNotUnderflow` |
 | 113 | RAGSQLiteBlobBinding | SQLite 在 bind 返回前复制 blob（**回归 #1111**） | 创建内存表并准备插入语句 | 用原始指针绑定 blob，bind 返回后覆写源缓冲区再 step/读回 | 读回值与原值一致，证明 SQLite 已复制 | P0 | ✅ 已覆盖 | `sqliteCopiesBlobBeforeBindReturns` |
 | 114 | RAGSQLiteBlobBinding | 源缓冲区释放后仍能读回完整向量（**回归 #1111**） | 临时数据库与已知 embedding | `replaceFileChunks` 后制造内存复用并 `loadChunks` | 读回的 embedding 与写入值一致 | P1 | ✅ 已覆盖 | `storedEmbeddingSurvivesSourceBufferRelease` |
+| 115 | RAGCacheKey | 含分隔符的 query/项目路径不产生相同缓存键（**回归 #1112**） | topK 固定为 3 | 对比 `("alpha\|/tmp/B", "/tmp/A")` 与 `("alpha", "/tmp/B\|/tmp/A")` 的 key | 两个 key 不相等 | P0 | ✅ 已覆盖 | `collidingQueryAndPathProduceDifferentKeys` |
+| 116 | RAGCacheKey | 碰撞三元组之间不共享缓存条目（**回归 #1112**） | 先写入第一组结果 | 用第二组三元组构造 key 并 `get` | 返回 nil，未命中第一组结果 | P0 | ✅ 已覆盖 | `cacheMissesAcrossCollidingTriples` |
+| 117 | RAGCacheKey | 相同三元组稳定命中同一条目 | 写入 query/projectPath/topK 完全相同的结果 | 用相同三元组再次构造 key 并 `get` | key 相同且读回原结果 | P1 | ✅ 已覆盖 | `identicalTriplesShareCacheEntry` |
+| 118 | RAGCacheKey | topK 参与缓存键 | 其他字段相同 | 分别用 topK 3 与 4 构造 key | 两个 key 不相等 | P1 | ✅ 已覆盖 | `topKParticipatesInTheKey` |
+| 119 | RAGCacheKey | 切换项目路径后不复用旧缓存 | 已向项目 A 写入结果 | 用项目 B 构造 key 并 `get` | 返回 nil | P1 | ✅ 已覆盖 | `replacedProjectPathStillMisses` |
 
 > 说明：全部 **114 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 9 / 9
-- P1: 已覆盖 93 / 93
+- P0: 已覆盖 11 / 11
+- P1: 已覆盖 96 / 96
 - P2: 已覆盖 12 / 12
-- **合计: 114 / 114**（仅表示清单场景，非源码覆盖率）
+- **合计: 119 / 119**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（9 条）
-- **P1**: 其余功能性用例（93 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
+- **P1**: 其余功能性用例（96 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 114 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 119 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
