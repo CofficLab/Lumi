@@ -16,7 +16,7 @@ struct SendActionBarButton: View {
     var body: some View {
         HStack(spacing: 6) {
             if let viewModel {
-                normalContent(viewModel: viewModel)
+                SendActionBarObservedContent(viewModel: viewModel)
             } else {
                 ErrorButton {
                     showErrorPopover = true
@@ -25,25 +25,6 @@ struct SendActionBarButton: View {
                     errorPopoverContent
                 }
             }
-        }
-    }
-
-    // MARK: - Normal content
-
-    @ViewBuilder
-    private func normalContent(viewModel: SendActionBarViewModel) -> some View {
-        let state = viewModel.state
-
-        if state.showsSendButton {
-            SendButton(canSend: state.canSend, action: { viewModel.send() })
-                .help(pluginLocalization.string("Send"))
-                .accessibilityIdentifier(SendActionBarAccessibility.sendButton)
-        }
-
-        if state.showsStopButton {
-            StopButton(action: { viewModel.cancel() })
-                .help(pluginLocalization.string("Stop"))
-                .accessibilityIdentifier(SendActionBarAccessibility.stopButton)
         }
     }
 
@@ -64,6 +45,26 @@ struct SendActionBarButton: View {
         }
         .padding(12)
         .frame(minWidth: 200)
+    }
+}
+
+private struct SendActionBarObservedContent: View {
+    @ObservedObject var viewModel: SendActionBarViewModel
+
+    var body: some View {
+        let state = viewModel.state
+
+        if state.showsSendButton {
+            SendButton(canSend: state.canSend, action: { viewModel.send() })
+                .help(pluginLocalization.string("Send"))
+                .accessibilityIdentifier(SendActionBarAccessibility.sendButton)
+        }
+
+        if state.showsStopButton {
+            StopButton(action: { viewModel.cancel() })
+                .help(pluginLocalization.string("Stop"))
+                .accessibilityIdentifier(SendActionBarAccessibility.stopButton)
+        }
     }
 }
 
