@@ -135,10 +135,29 @@ struct PluginAgentPlanStorageTests {
         await #expect(throws: PlanFileStorageError.invalidFilename) {
             _ = try await service.write(filename: "   ", content: "x")
         }
+    }
 
-        let path = try await service.write(filename: "  spaced.md  ", content: "trimmed")
-        #expect(path.hasSuffix("spaced.md"))
-        #expect(try await service.read(filename: "spaced.md") == "trimmed")
+    @Test
+    func surroundingWhitespaceIsRejectedInsteadOfRewritten() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = try PlanFileStorageService(directory: root, retentionDays: 30)
+
+        _ = try await service.write(filename: "plan.md", content: "first")
+
+        // 修复前会被裁剪成 plan.md，静默覆盖已有计划（回归 #930）。
+        await #expect(throws: PlanFileStorageError.filenameHasSurroundingWhitespace) {
+            _ = try await service.write(filename: " plan.md ", content: "second")
+        }
+        await #expect(throws: PlanFileStorageError.filenameHasSurroundingWhitespace) {
+            _ = try await service.read(filename: " plan.md ")
+        }
+        await #expect(throws: PlanFileStorageError.filenameHasSurroundingWhitespace) {
+            try await service.delete(filename: "\tplan.md\n")
+        }
+
+        #expect(try await service.read(filename: "plan.md") == "first")
+        #expect(await service.listFiles().map(\.name) == ["plan.md"])
     }
 
     @Test
@@ -183,6 +202,7 @@ struct PluginAgentPlanStorageTests {
     @Test
     func storageErrorsExposeDescriptionsWithContext() {
         #expect(!PlanFileStorageError.invalidFilename.errorDescription!.isEmpty)
+        #expect(!PlanFileStorageError.filenameHasSurroundingWhitespace.errorDescription!.isEmpty)
         #expect(!PlanFileStorageError.pathTraversal.errorDescription!.isEmpty)
         #expect(PlanFileStorageError.fileNotFound("x").errorDescription?.contains("x") == true)
         #expect(PlanFileStorageError.notAFile("y").errorDescription?.contains("y") == true)

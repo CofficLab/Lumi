@@ -16,6 +16,7 @@ public struct PlanFileInfo: Sendable, Equatable {
 
 public enum PlanFileStorageError: LocalizedError, Equatable {
     case invalidFilename
+    case filenameHasSurroundingWhitespace
     case pathTraversal
     case fileNotFound(String)
     case notAFile(String)
@@ -25,6 +26,8 @@ public enum PlanFileStorageError: LocalizedError, Equatable {
         switch self {
         case .invalidFilename:
             "Plan filename must be a non-empty relative path."
+        case .filenameHasSurroundingWhitespace:
+            "Plan filename must not start or end with whitespace."
         case .pathTraversal:
             "Plan filename must stay within the plan storage directory."
         case .fileNotFound(let filename):
@@ -176,17 +179,22 @@ public actor PlanFileStorageService {
 
     private func resolveSafeURL(for filename: String) throws -> URL {
         let trimmed = filename.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, !trimmed.hasPrefix("/") else {
+        guard !trimmed.isEmpty, !filename.hasPrefix("/") else {
             throw PlanFileStorageError.invalidFilename
         }
+        // 裁剪后再读写会把 ` plan.md ` 映射到 `plan.md`，静默覆盖或误删同名
+        // 计划；这里明确拒绝首尾空白，保留文件名一一对应（回归 #930）。
+        guard trimmed == filename else {
+            throw PlanFileStorageError.filenameHasSurroundingWhitespace
+        }
 
-        let components = trimmed.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
+        let components = filename.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
         guard !components.contains("..") else {
             throw PlanFileStorageError.pathTraversal
         }
 
         let lexicalRoot = plansDirectory.standardizedFileURL
-        let candidate = lexicalRoot.appendingPathComponent(trimmed).standardizedFileURL
+        let candidate = lexicalRoot.appendingPathComponent(filename).standardizedFileURL
         guard candidate.path == lexicalRoot.path || candidate.path.hasPrefix(lexicalRoot.path + "/") else {
             throw PlanFileStorageError.pathTraversal
         }
