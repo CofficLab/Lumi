@@ -2,6 +2,7 @@ import os
 import KernelCore
 import LumiLoggingKit
 import LumiUI
+import ProviderAgentLoop
 import ProviderChatSection
 import ProviderConversation
 import ProviderConversationState
@@ -46,6 +47,8 @@ public final class PluginMessageListChatGPTPlugin: SuperPlugin, SuperLog {
     private var streamingObserver: (any MessageStreamingObserverHandle)?
     private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
     private var conversationObserver: (any ConversationObserverHandle)?
+    /// UI 测试夹具的 seed 句柄（仅 DEBUG 下存在）。
+    private var uiTestingSeedHandle: (any ConversationObserverHandle)?
 
     public init() {}
 
@@ -59,6 +62,7 @@ public final class PluginMessageListChatGPTPlugin: SuperPlugin, SuperLog {
         let messages = kernel.resolveProvider((any MessageManaging).self)
         let rendering = kernel.resolveProvider((any MessageRenderingProviding).self)
         let streaming = kernel.resolveProvider((any MessageStreamingProviding).self)
+        let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self)
 
         // 组装层把 Provider 收窄成插件的最小能力协议。
         let services = MessageListServices(
@@ -119,6 +123,19 @@ public final class PluginMessageListChatGPTPlugin: SuperPlugin, SuperLog {
                 viewModel?.refreshConversationSettingsIfNeeded()
             }
         }
+
+        // - Important: 整段（含 seed 调用与句柄赋值）必须在 `#if DEBUG` 内，
+        //   否则 Release 下会引用只在 DEBUG 定义的类型而编译失败。
+        #if DEBUG
+        Self.logger.info("onBoot：V5 夹具启用=\(MessageListChatGPTUITestingSupport.isEnabled)")
+        if MessageListChatGPTUITestingSupport.isEnabled, let conversations, let messages {
+            uiTestingSeedHandle = MessageListChatGPTUITestingSupport.seed(
+                conversations: conversations,
+                messages: messages,
+                agentLoop: agentLoop
+            )
+        }
+        #endif
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -134,6 +151,8 @@ public final class PluginMessageListChatGPTPlugin: SuperPlugin, SuperLog {
         conversationObserver = nil
         verbosityObservation?.cancel()
         verbosityObservation = nil
+        uiTestingSeedHandle?.cancel()
+        uiTestingSeedHandle = nil
         viewModel = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeItem(id: id)
