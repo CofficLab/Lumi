@@ -47,8 +47,6 @@ tag）。把上游包以本地副本的形式纳入本仓库，就可以在**不
 | LumiPluginToast | CofficLab/LumiPluginToast | 1.2.3 |
 | LumiPluginAbout | CofficLab/LumiPluginAbout | 2.0.0 |
 | MagicAlert | nookery/MagicAlert | 1.0.1 |
-| MagicLog | nookery/MagicLog | main |
-| LibGit2Swift | nookery/LibGit2Swift | main |
 | hummingbird | hummingbird-project/hummingbird | 2.28.1 |
 | mlx-swift | ml-explore/mlx-swift | 0.32.3 |
 | mlx-swift-lm | ml-explore/mlx-swift-lm | 3.32.3 |
@@ -74,6 +72,18 @@ tag）。把上游包以本地副本的形式纳入本仓库，就可以在**不
    mlx 的 Metal 后端 C++ 源码使用 `bfloat` 类型（Metal Shading Language 专属，
    macOS 14 才有），无法降到 13.1。因此 `PluginLLMProviderMLX` 及其依赖者
    （仅 ACP 工具链）保持 macOS 14.0。
+
+## 不再走 Vendor 的包
+
+以下包已改为直接远程依赖，按版本号锁定，不再保留本地副本：
+
+| 包 | 远程地址 | 版本 | 原因 |
+|----|---------|------|------|
+| LibGit2Swift | nookery/LibGit2Swift | 1.0.7 | 上游 `platforms` 已是 `.macOS(.v14)`，与 Lumi 部署目标一致；本地副本里的功能改造（upstream 分支名查询、短哈希解析、子目录打开仓库）已回流上游 1.0.7 |
+| MagicLog | nookery/MagicLog | 1.0.0 | 仅被 LibGit2Swift 依赖，随之改为远程版本依赖 |
+
+原先 `branch: "main"` 的引用方式无法满足「稳定版本不能依赖不稳定版本」的
+SwiftPM 约束，因此这两个包统一改用 `exact:` 锁定版本号。
 
 ## 维护约定
 
