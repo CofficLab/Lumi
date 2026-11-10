@@ -17,6 +17,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Vendor/LumiLogging"),
         .package(path: "../../Vendor/LumiKernel"),
+        .package(path: "../../Vendor/LumiLocalization"),
         .package(path: "../../Vendor/LumiUI"),
         .package(path: "../../Vendor/LumiProviders")
     ],
@@ -26,10 +27,12 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiLoggingKit", package: "LumiLogging"),
                 .product(name: "KernelCore", package: "LumiKernel"),
+                .product(name: "LumiLocalizationKit", package: "LumiLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderToolbar", package: "LumiProviders"),
             ],
-            path: "Sources/PluginToolbarSettings"
+            path: "Sources/PluginToolbarSettings",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginToolbarSettingsTests",
