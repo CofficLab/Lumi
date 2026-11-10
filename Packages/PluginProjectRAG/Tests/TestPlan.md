@@ -2,10 +2,10 @@
 
 ## 包概述
 
-PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 119 条用例。
+PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 121 条用例。
 
 平台: macOS 14+, iOS 17+
-测试文件: 9 个，用例总数: 119
+测试文件: 10 个，用例总数: 121
 
 核心组件（源码目录）:
 - `Hooks/`
@@ -53,6 +53,7 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 - **RAGIndexerScannerFailure**（2 条）：由 `incrementalIndexKeepsRecordsWhenRootDisappears`、`rebuildKeepsRecordsWhenRootDisappears` 用例锁定；项目根目录消失后索引必须中止，已索引文件数与索引状态保持不变，不得按「文件已删除」清空记录。
 - **RAGIndexingRegistry**（3 条）：由 `overlappingScopesStayIndexingUntilLastFinish`、`projectScopesAreIndependent`、`unmatchedFinishDoesNotUnderflow` 锁定。同一项目的索引作用域可以重叠（`ensureIndexed` 在 await 处让出 actor），必须按项目引用计数：任一作用域先结束不得清除其他仍在运行的索引标记；不同项目互不影响；多余的 `finish` 不得留下负计数（**回归 #1110**）。
 - **RAGCacheKey**（5 条）：由 `collidingQueryAndPathProduceDifferentKeys`、`cacheMissesAcrossCollidingTriples`、`identicalTriplesShareCacheEntry`、`topKParticipatesInTheKey`、`replacedProjectPathStillMisses` 锁定。query 与项目路径都允许出现 `|` 等字符，缓存键必须按字段长度编码而不是直接拼接分隔符，否则不同三元组会共用缓存并返回其他查询/项目的结果（**回归 #1112**）。
+- **RAGLexicalIgnore**（2 条）：由 `ripgrepArgumentsDisableIgnoreRules`、`lexicalSearchFindsSourceInGitignoredDirectory` 锁定。索引扫描和路径搜索都不读取 `.gitignore`，词法搜索的 ripgrep 参数必须带 `--no-ignore`，否则被忽略目录中的源码在有其他匹配时会被静默漏掉（**回归 #1113**）。
 - **RAGSQLiteBlobBinding**（2 条）：由 `sqliteCopiesBlobBeforeBindReturns`、`storedEmbeddingSurvivesSourceBufferRelease` 锁定。`withUnsafeBytes` 只保证 buffer 在闭包内有效，`sqlite3_step` 在闭包外执行，因此 blob 必须用 `SQLITE_TRANSIENT` 绑定，让 SQLite 在 bind 返回前复制；bind 后覆写源缓冲区仍应能读回原值（**回归 #1111**）。
 
 ## 测试用例清单
@@ -178,27 +179,29 @@ PluginProjectRAG 的实现包，包含 14 个主要类型；当前测试覆盖 1
 | 117 | RAGCacheKey | 相同三元组稳定命中同一条目 | 写入 query/projectPath/topK 完全相同的结果 | 用相同三元组再次构造 key 并 `get` | key 相同且读回原结果 | P1 | ✅ 已覆盖 | `identicalTriplesShareCacheEntry` |
 | 118 | RAGCacheKey | topK 参与缓存键 | 其他字段相同 | 分别用 topK 3 与 4 构造 key | 两个 key 不相等 | P1 | ✅ 已覆盖 | `topKParticipatesInTheKey` |
 | 119 | RAGCacheKey | 切换项目路径后不复用旧缓存 | 已向项目 A 写入结果 | 用项目 B 构造 key 并 `get` | 返回 nil | P1 | ✅ 已覆盖 | `replacedProjectPathStillMisses` |
+| 120 | RAGLexicalIgnore | ripgrep 词法参数禁用 ignore 规则（**回归 #1113**） | 任意查询词与项目路径 | 构造 `RAGLexicalFileSearcher.ripgrepArguments` | 参数包含 `--no-ignore`，项目路径位于末尾 | P0 | ✅ 已覆盖 | `ripgrepArgumentsDisableIgnoreRules` |
+| 121 | RAGLexicalIgnore | 词法搜索包含被忽略目录中的源码（**回归 #1113**） | 临时 git 仓库，`.gitignore` 忽略 `generated/` | `Tracked.swift` 与 `generated/Ignored.swift` 都含查询词，执行词法搜索 | 两条来源都出现在结果中，不得遗漏被忽略目录 | P0 | ✅ 已覆盖 | `lexicalSearchFindsSourceInGitignoredDirectory` |
 
 > 说明：全部 **114 条场景**已在本包 `swift test` 中实跑通过。
 > 用例名与描述取自 `Tests/` 下的真实 `@Test` 声明，改动测试时须同步本表。
 
 ## 覆盖率统计
 
-- P0: 已覆盖 11 / 11
+- P0: 已覆盖 13 / 13
 - P1: 已覆盖 96 / 96
 - P2: 已覆盖 12 / 12
-- **合计: 119 / 119**（仅表示清单场景，非源码覆盖率）
+- **合计: 121 / 121**（仅表示清单场景，非源码覆盖率）
 
 ## 优先级说明
 
-- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（11 条）
+- **P0**: 描述/名称含崩溃、泄漏、截断、丢失、竞态、超时、必须、不得、重试等失效类信号的用例（13 条）
 - **P1**: 其余功能性用例（96 条）
 - **P2**: 稳定常量、占位、文案、空集合等边界用例（12 条）
 
 ## 跨平台说明
 
 - Package 声明: macOS 14+, iOS 17+
-- 119 条用例位于 `Tests/`，需在目标平台执行 `swift test`
+- 121 条用例位于 `Tests/`，需在目标平台执行 `swift test`
 
 ## 测试执行
 
